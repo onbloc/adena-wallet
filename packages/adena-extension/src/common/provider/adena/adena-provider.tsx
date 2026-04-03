@@ -5,14 +5,14 @@ import { TokenRepository } from '@repositories/common/token';
 import { FaucetRepository } from '@repositories/faucet/faucet';
 import {
   TransactionHistoryApiRepository,
-  TransactionHistoryIndexerRepository
+  TransactionHistoryIndexerRepository,
 } from '@repositories/transaction';
 import { TransactionGasRepository } from '@repositories/transaction/transaction-gas';
 import {
   WalletAccountRepository,
   WalletAddressRepository,
   WalletEstablishRepository,
-  WalletRepository
+  WalletRepository,
 } from '@repositories/wallet';
 import { FaucetService } from '@services/faucet';
 import { MultisigService } from '@services/multisig';
@@ -20,19 +20,19 @@ import { ChainService, TokenService } from '@services/resource';
 import {
   TransactionGasService,
   TransactionHistoryService,
-  TransactionService
+  TransactionService,
 } from '@services/transaction';
 import {
   WalletAccountService,
   WalletAddressBookService,
   WalletBalanceService,
   WalletEstablishService,
-  WalletService
+  WalletService,
 } from '@services/wallet';
 import { NetworkState } from '@states';
 import axios from 'axios';
 import React, {
-  createContext, useEffect, useMemo, useState
+  createContext, useEffect, useMemo, useState,
 } from 'react';
 import { useRecoilValue } from 'recoil';
 
@@ -84,32 +84,32 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const walletRepository = useMemo(
     () => new WalletRepository(localStorage, sessionStorage),
-    [localStorage, sessionStorage]
+    [localStorage, sessionStorage],
   );
 
   const accountRepository = useMemo(
     () => new WalletAccountRepository(localStorage),
-    [localStorage]
+    [localStorage],
   );
 
   const establishRepository = useMemo(
     () => new WalletEstablishRepository(localStorage),
-    [localStorage]
+    [localStorage],
   );
 
   const addressBookRepository = useMemo(
     () => new WalletAddressRepository(localStorage),
-    [localStorage]
+    [localStorage],
   );
 
   const chainRepository = useMemo(
     () => new ChainRepository(localStorage, axiosInstance),
-    [localStorage, axiosInstance]
+    [localStorage, axiosInstance],
   );
 
   const tokenRepository = useMemo(
     () => new TokenRepository(localStorage, axiosInstance, currentNetwork, gnoProvider),
-    [localStorage, axiosInstance, currentNetwork]
+    [localStorage, axiosInstance, currentNetwork],
   );
 
   const transactionHistoryRepository = useMemo(() => {
@@ -140,17 +140,17 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const accountService = useMemo(
     () => new WalletAccountService(accountRepository, gnoProvider),
-    [accountRepository, gnoProvider]
+    [accountRepository, gnoProvider],
   );
 
   const addressBookService = useMemo(
     () => new WalletAddressBookService(walletRepository, addressBookRepository),
-    [walletRepository, addressBookRepository]
+    [walletRepository, addressBookRepository],
   );
 
   const establishService = useMemo(
     () => new WalletEstablishService(establishRepository),
-    [establishRepository]
+    [establishRepository],
   );
 
   const transactionService = useMemo(() => {
@@ -160,7 +160,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const transactionHistoryService = useMemo(
     () => new TransactionHistoryService(gnoProvider, transactionHistoryRepository),
-    [gnoProvider, transactionHistoryRepository]
+    [gnoProvider, transactionHistoryRepository],
   );
 
   const transactionGasService = useMemo(() => {
@@ -195,7 +195,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
         transactionHistoryService,
         faucetService,
         transactionGasService,
-        multisigService
+        multisigService,
       }}
     >
       {children}

@@ -9,7 +9,7 @@ export interface NFTAssetMetadataProps {
   queryGRC721TokenMetadata: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<GRC721MetadataModel | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<GRC721MetadataModel | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<GRC721MetadataModel | null>;
 }
 
@@ -19,8 +19,8 @@ const NFTAssetMetadata: React.FC<NFTAssetMetadataProps> = ({ asset, queryGRC721T
     asset.tokenId,
     {
       enabled: asset.isMetadata,
-      refetchOnMount: true
-    }
+      refetchOnMount: true,
+    },
   );
 
   const isFetchedTokenMetadataWithEnabled = useMemo(() => {

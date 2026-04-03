@@ -15,12 +15,12 @@ describe('AddressBookList Component', () => {
         {
           addressBookId: '1',
           description: '(g1uh...ohno)',
-          name: 'Account 1'
-        }
+          name: 'Account 1',
+        },
       ],
       onClickItem: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -29,7 +29,7 @@ describe('AddressBookList Component', () => {
         <ThemeProvider theme={theme}>
           <AddressBookList {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

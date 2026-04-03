@@ -9,7 +9,7 @@ import styled from 'styled-components';
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   height: 100%;
@@ -19,7 +19,7 @@ const Wrapper = styled.main`
 const StyledFormWrapper = styled.div`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   margin-top: 12px;
@@ -40,7 +40,7 @@ const FormBox = styled.div`
 
 export const ChangePassword = (): JSX.Element => {
   const {
-    currPwdState, newPwdState, confirmPwdState, errorMessage, buttonState, onKeyDown
+    currPwdState, newPwdState, confirmPwdState, errorMessage, buttonState, onKeyDown,
   }
     = useChangePassword();
 
@@ -86,7 +86,7 @@ export const ChangePassword = (): JSX.Element => {
         confirmButtonProps={{
           onClick: buttonState.onClick.save,
           text: 'Save',
-          props: { disabled: buttonState.disabled }
+          props: { disabled: buttonState.disabled },
         }}
       />
     </Wrapper>

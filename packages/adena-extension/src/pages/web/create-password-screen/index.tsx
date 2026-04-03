@@ -10,7 +10,7 @@ import {
   WebErrorText,
   WebInput,
   WebMain,
-  WebText
+  WebText,
 } from '@components/atoms';
 import { TermsCheckbox, WebTitleWithDescription } from '@components/molecules';
 import { WebMainHeader } from '@components/pages/web/main-header';
@@ -61,7 +61,7 @@ const CreatePasswordScreen = (): JSX.Element => {
     buttonState,
     validateMatchPassword,
     onKeyDown,
-    clearPassword
+    clearPassword,
   } = useCreatePasswordScreen();
 
   const { goBack } = useAppNavigate<RoutePath.WebCreatePassword>();
@@ -107,7 +107,7 @@ const CreatePasswordScreen = (): JSX.Element => {
                 placeholder='Password'
                 style={{
                   width: '100%',
-                  flexShrink: 0
+                  flexShrink: 0,
                 }}
                 value={passwordState.value}
                 onChange={passwordState.onChange}

@@ -8,7 +8,7 @@ export class StorageMigration007 implements Migration<StorageModelDataV007> {
   public readonly version = 7;
 
   async up(
-    current: StorageModel<StorageModelDataV006>
+    current: StorageModel<StorageModelDataV006>,
   ): Promise<StorageModel<StorageModelDataV007>> {
     if (!this.validateModelV006(current.data)) {
       throw new Error('Storage Data does not match version V006');
@@ -19,8 +19,8 @@ export class StorageMigration007 implements Migration<StorageModelDataV007> {
       data: {
         ...previous,
         ACCOUNT_GRC721_COLLECTIONS: {},
-        ACCOUNT_GRC721_PINNED_PACKAGES: {}
-      }
+        ACCOUNT_GRC721_PINNED_PACKAGES: {},
+      },
     };
   }
 

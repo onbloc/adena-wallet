@@ -14,7 +14,7 @@ const StyledContainer = styled(View)`
 
 const CreateAccountStep = ({
   selectedKeyringId,
-  useAccountAddScreenReturn
+  useAccountAddScreenReturn,
 }: {
   selectedKeyringId?: string;
   useAccountAddScreenReturn: UseAccountAddScreenReturn;

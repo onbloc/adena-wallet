@@ -21,7 +21,7 @@ import { RoutePath } from '@types';
 import { isAirgapAccount, isMultisigAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import {
-  type JSX, useCallback, useEffect, useMemo
+  type JSX, useCallback, useEffect, useMemo,
 } from 'react';
 import { useRecoilState } from 'recoil';
 import styled from 'styled-components';
@@ -51,7 +51,7 @@ const Wrapper = styled.main`
   .main-button-wrapper {
     ${mixins.flex({
       direction: 'row',
-      justify: 'space-between'
+      justify: 'space-between',
     })};
     width: 100%;
     gap: 8px;
@@ -177,8 +177,8 @@ export const WalletMain = (): JSX.Element => {
           name: tokenBalance.name,
           balanceAmount: {
             value: BigNumber(tokenBalance.amount.value).toFormat(),
-            denom: tokenBalance.amount.denom
-          }
+            denom: tokenBalance.amount.denom,
+          },
         };
       });
   }, [currentBalances, getTokenImage]);
@@ -196,7 +196,7 @@ export const WalletMain = (): JSX.Element => {
       }
       navigate(RoutePath.TokenDetails, { state: { tokenBalance } });
     },
-    [navigate, tokens]
+    [navigate, tokens],
   );
 
   const onClickManageButton = useCallback(() => {
@@ -216,7 +216,7 @@ export const WalletMain = (): JSX.Element => {
         <MainTokenBalance
           amount={{
             value: BigNumber(mainTokenBalance?.value ?? '0').toFormat(),
-            denom: mainTokenBalance?.denom ?? 'GNOT'
+            denom: mainTokenBalance?.denom ?? 'GNOT',
           }}
         />
       </div>

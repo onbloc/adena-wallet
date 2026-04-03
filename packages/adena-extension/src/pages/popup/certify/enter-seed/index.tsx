@@ -1,5 +1,5 @@
 import {
-  Button, ErrorText, SecureTextarea, Text
+  Button, ErrorText, SecureTextarea, Text,
 } from '@components/atoms';
 import { TermsCheckbox, TitleWithDesc } from '@components/molecules';
 import { useEnterSeed } from '@hooks/certify/use-enter-seed';
@@ -12,13 +12,13 @@ import styled from 'styled-components';
 const walletContent = {
   title: 'Import with Seed Phrase',
   desc: 'Import an existing wallet with\na 12 or 24-word seed phrase.',
-  terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.'
+  terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.',
 };
 
 const forgotContent = {
   title: 'Enter Seed Phrase ',
   desc: 'Reset your password with\na 12 or 24-word seed phrase.',
-  terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.'
+  terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.',
 };
 
 export const EnterSeedPhrase = (): JSX.Element => {

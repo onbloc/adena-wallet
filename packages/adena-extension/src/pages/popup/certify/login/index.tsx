@@ -9,7 +9,7 @@ import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
 import { RoutePath } from '@types';
 import React, {
-  type JSX, useCallback, useEffect, useMemo, useRef, useState
+  type JSX, useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 import { useLocation } from 'react-router';
 import styled, { useTheme } from 'styled-components';
@@ -107,7 +107,7 @@ export const Login = (): JSX.Element => {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setPassword(e.target.value);
     },
-    [password]
+    [password],
   );
 
   const onClickUnLockButton = (): Promise<void> => login();

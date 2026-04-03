@@ -10,7 +10,7 @@ import {
   AdenaWallet,
   deserializeAccount,
   LedgerAccount,
-  LedgerKeyring
+  LedgerKeyring,
 } from 'adena-module';
 import { useEffect, useState } from 'react';
 
@@ -47,12 +47,12 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
   const [accountInfos, setAccountInfos] = useState<AccountInfoType[]>([]);
   const indicatorInfo = useIndicatorStep({
     stepMap: { SELECT: 2 },
-    currentState: 'SELECT'
+    currentState: 'SELECT',
   });
   const { data: walletAddressList = [] } = useQuery({
     queryKey: ['walletAddressList', walletAccounts],
     queryFn: async () =>
-      Promise.all(walletAccounts.map(async account => await account.getAddress(addressPrefix)))
+      Promise.all(walletAccounts.map(async account => await account.getAddress(addressPrefix))),
   });
 
   useEffect(() => {
@@ -70,7 +70,7 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
   const onClickSelectButton = (address: string): void => {
     if (selectAccountAddresses.includes(address)) {
       setSelectAccountAddresses(
-        selectAccountAddresses.filter(selectAddress => selectAddress !== address)
+        selectAccountAddresses.filter(selectAddress => selectAddress !== address),
       );
       return;
     }
@@ -81,7 +81,7 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
     setLoadPath(true);
     const accountPaths = Array.from(
       { length: LEDGER_ACCOUNT_LOAD_SIZE },
-      (_, index) => index + lastPath + 1
+      (_, index) => index + lastPath + 1,
     );
     const transport = await AdenaLedgerConnector.openConnected();
     if (!transport) {
@@ -112,7 +112,7 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
     const resultSavedAccounts = savedAccounts
       .map(account => ({
         ...account.toData(),
-        name: `Ledger ${account.hdPath + 1}`
+        name: `Ledger ${account.hdPath + 1}`,
       }))
       .sort(x => x.hdPath ?? 0);
 
@@ -146,13 +146,13 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
       const newWallet = new AdenaWallet({
         accounts: [...resultSavedAccounts],
         keyrings: [keyring.toData()],
-        currentAccountId: resultSavedAccounts[0]?.id
+        currentAccountId: resultSavedAccounts[0]?.id,
       });
       navigate(RoutePath.WebCreatePassword, {
         state: {
           serializedWallet: await newWallet.serialize(''),
-          stepLength: 5
-        }
+          stepLength: 5,
+        },
       });
     }
   };
@@ -167,7 +167,7 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
       address,
       hdPath,
       stored,
-      selected
+      selected,
     };
   };
 
@@ -182,7 +182,7 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
     selectAccountAddresses,
     onClickSelectButton,
     onClickLoadMore,
-    onClickNextButton
+    onClickNextButton,
   };
 };
 

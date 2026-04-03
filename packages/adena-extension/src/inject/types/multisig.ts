@@ -39,7 +39,7 @@ export interface MultisigSignature {
 export enum SignerStatusType {
   SIGNED = 'SIGNED',
   UNSIGNED = 'UNSIGNED',
-  NONE = 'NONE'
+  NONE = 'NONE',
 }
 
 /**

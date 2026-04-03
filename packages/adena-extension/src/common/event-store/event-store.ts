@@ -6,7 +6,7 @@ export interface EventStore<T = unknown> {
     chainId: string,
     rpcUrl: string,
     isDefaultNetwork: boolean,
-    onEmit: (event: Event<T>) => Promise<void>
+    onEmit: (event: Event<T>) => Promise<void>,
   ) => Event<T>;
 
   getEvent: (id: string) => Event<T> | null;

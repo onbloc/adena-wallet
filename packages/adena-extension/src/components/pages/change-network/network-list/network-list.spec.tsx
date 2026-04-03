@@ -18,7 +18,7 @@ describe('NetworkList Component', () => {
       },
       moveEditPage: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -27,7 +27,7 @@ describe('NetworkList Component', () => {
         <ThemeProvider theme={theme}>
           <NetworkList {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

@@ -13,7 +13,7 @@ const WebAnswerButton: React.FC<WebAnswerButtonProps> = ({
   answer,
   correct,
   selected,
-  onClick
+  onClick,
 }) => {
   return correct
     ? (

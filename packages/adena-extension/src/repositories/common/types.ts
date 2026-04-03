@@ -4,7 +4,7 @@ import {
   GRC721MetadataModel,
   GRC721Model,
   NetworkMetainfo,
-  TokenModel
+  TokenModel,
 } from '@types';
 
 import { AppInfoResponse } from './response';
@@ -33,24 +33,24 @@ export interface IGRC721TokenRepository {
   fetchGRC721TokenUriBy: (packagePath: string, address: string) => Promise<string>;
   fetchGRC721TokenMetadataBy: (
     packagePath: string,
-    address: string
+    address: string,
   ) => Promise<GRC721MetadataModel>;
   fetchGRC721BalanceBy: (packagePath: string, address: string) => Promise<number>;
   fetchGRC721TokensBy: (packagePath: string, address: string) => Promise<GRC721Model[]>;
 
   getAccountGRC721CollectionsBy: (
     accountId: string,
-    networkId: string
+    networkId: string,
   ) => Promise<GRC721CollectionModel[]>;
   saveAccountGRC721CollectionsBy: (
     accountId: string,
     networkId: string,
-    collections: GRC721CollectionModel[]
+    collections: GRC721CollectionModel[],
   ) => Promise<boolean>;
   getAccountGRC721PinnedPackagesBy: (accountId: string, networkId: string) => Promise<string[]>;
   saveAccountGRC721PinnedPackagesBy: (
     accountId: string,
     networkId: string,
-    packagePaths: string[]
+    packagePaths: string[],
   ) => Promise<boolean>;
 }

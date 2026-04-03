@@ -29,7 +29,7 @@ const SetupMultisigScreen: React.FC = () => {
     createMultisigAccount,
     createdMultisigAddress,
     resetMultisigConfig,
-    multisigAccountMode
+    multisigAccountMode,
   } = useSetupMultisigScreen();
 
   const topSpacing = useMemo(() => {
@@ -38,7 +38,7 @@ const SetupMultisigScreen: React.FC = () => {
     }
     return {
       default: WEB_TOP_SPACING,
-      responsive: WEB_TOP_SPACING_RESPONSIVE
+      responsive: WEB_TOP_SPACING_RESPONSIVE,
     };
   }, [setupMultisigState]);
 
@@ -46,7 +46,7 @@ const SetupMultisigScreen: React.FC = () => {
     if (setupMultisigState === 'ENTER_MULTISIG_CONFIG') {
       return {
         height: 'auto',
-        paddingBottom: 40
+        paddingBottom: 40,
       };
     }
     return {};

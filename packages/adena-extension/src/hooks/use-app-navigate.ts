@@ -11,7 +11,7 @@ type NavigateProps<key extends keyof RouteParams> = key extends unknown
               state?: RouteParams[key];
               preventScrollReset?: NavigateOptions['preventScrollReset'];
               relative?: NavigateOptions['relative'];
-            }
+            },
     ]
     : [
         screen: key,
@@ -20,7 +20,7 @@ type NavigateProps<key extends keyof RouteParams> = key extends unknown
           state?: RouteParams[key];
           preventScrollReset?: NavigateOptions['preventScrollReset'];
           relative?: NavigateOptions['relative'];
-        }
+        },
       ]
   : never;
 
@@ -58,7 +58,7 @@ const useAppNavigate = <RouteName extends keyof RouteParams>(): {
     navigate,
     params,
     goBack,
-    reload
+    reload,
   };
 };
 

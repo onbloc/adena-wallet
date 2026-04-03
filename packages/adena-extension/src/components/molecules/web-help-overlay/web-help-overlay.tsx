@@ -54,7 +54,7 @@ const WebHelpOverlay: React.FC<WebHelpOverlayProps> = ({ items, onFinish }) => {
             )
           : (
               <React.Fragment key={index} />
-            )
+            ),
       )}
     </WebHelpOverlayWrapper>
   );

@@ -23,7 +23,7 @@ interface DoubleButtonProps extends WrapperStyleProps {
 const Wrapper = styled.div<WrapperStyleProps>`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   gap: 10px;

@@ -6,20 +6,20 @@ import {
   CurrentChainIdModelV013,
   CurrentNetworkIdModelV013,
   NetworksModelV013,
-  StorageModelDataV013
+  StorageModelDataV013,
 } from '../v013/storage-model-v013';
 import {
   CurrentChainIdModelV014,
   CurrentNetworkIdModelV014,
   NetworksModelV014,
-  StorageModelDataV014
+  StorageModelDataV014,
 } from './storage-model-v014';
 
 export class StorageMigration014 implements Migration<StorageModelDataV014> {
   public readonly version = 14;
 
   async up(
-    current: StorageModel<StorageModelDataV013>
+    current: StorageModel<StorageModelDataV013>,
   ): Promise<StorageModel<StorageModelDataV014>> {
     if (!this.validateModelV013(current.data)) {
       throw new Error('Storage Data does not match version V013');
@@ -31,8 +31,8 @@ export class StorageMigration014 implements Migration<StorageModelDataV014> {
         ...previous,
         CURRENT_CHAIN_ID: this.migrateCurrentChainId(previous.CURRENT_CHAIN_ID),
         CURRENT_NETWORK_ID: this.migrateCurrentNetworkId(previous.CURRENT_NETWORK_ID),
-        NETWORKS: this.migrateNetwork(previous.NETWORKS)
-      }
+        NETWORKS: this.migrateNetwork(previous.NETWORKS),
+      },
     };
   }
 
@@ -81,7 +81,7 @@ export class StorageMigration014 implements Migration<StorageModelDataV014> {
   }
 
   private migrateCurrentNetworkId(
-    currentNetworkId: CurrentNetworkIdModelV013
+    currentNetworkId: CurrentNetworkIdModelV013,
   ): CurrentNetworkIdModelV014 {
     if (currentNetworkId === 'test9' || currentNetworkId === 'test9.1') {
       return 'test10';
@@ -100,12 +100,12 @@ export class StorageMigration014 implements Migration<StorageModelDataV014> {
             ...providedNetwork,
             chainName: network.chainName,
             networkName: network.networkName,
-            rpcUrl: network.rpcUrl
+            rpcUrl: network.rpcUrl,
           };
         }
         return {
           ...network,
-          indexerUrl: ''
+          indexerUrl: '',
         };
       });
     return [...defaultNetworks, ...customNetworks];

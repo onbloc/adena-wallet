@@ -1,6 +1,6 @@
 import { stringFromBase64 } from '@common/utils/encoding-util';
 import {
-  type JSX, useEffect, useMemo, useRef
+  type JSX, useEffect, useMemo, useRef,
 } from 'react';
 import styled from 'styled-components';
 

@@ -13,7 +13,7 @@ describe('MainManageTokenButton Component', () => {
     const args: MainManageTokenButtonProps = {
       onClick: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -22,7 +22,7 @@ describe('MainManageTokenButton Component', () => {
         <ThemeProvider theme={theme}>
           <MainManageTokenButton {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

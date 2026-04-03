@@ -18,7 +18,7 @@ interface GoogleLoginRequestProps {
 
 const GoogleLoginRequest: React.FC<GoogleLoginRequestProps> = ({
   requestGoogleLogin,
-  backStep
+  backStep,
 }) => {
   const onClickCancel = useCallback(() => {
     backStep();

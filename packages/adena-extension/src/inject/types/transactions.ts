@@ -9,7 +9,7 @@ export const EMessageType = {
   BANK_MSG_SEND: '/bank.MsgSend',
   VM_CALL: '/vm.m_call',
   VM_ADDPKG: '/vm.m_addpkg',
-  VM_RUN: '/vm.m_run'
+  VM_RUN: '/vm.m_run',
 } as const;
 
 export type EMessageType = (typeof EMessageType)[keyof typeof EMessageType];
@@ -18,7 +18,7 @@ export const FUNCTION_NAME_MAP: Record<EMessageType, string> = {
   [EMessageType.BANK_MSG_SEND]: 'Transfer',
   [EMessageType.VM_ADDPKG]: 'AddPackage',
   [EMessageType.VM_RUN]: 'Run',
-  [EMessageType.VM_CALL]: 'Call'
+  [EMessageType.VM_CALL]: 'Call',
 };
 
 export type TMessage = MsgAddPackage | MsgCall | MsgSend | MsgRun;

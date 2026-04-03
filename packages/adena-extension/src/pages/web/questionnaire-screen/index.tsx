@@ -15,7 +15,7 @@ const QuestionnaireScreen = (): ReactElement<any> => {
     initQuestion,
     nextQuestion,
     completeQuestion,
-    backStep
+    backStep,
   } = useQuestionnaireScreen();
 
   const topSpacing = useMemo(() => {
@@ -24,7 +24,7 @@ const QuestionnaireScreen = (): ReactElement<any> => {
     }
     return {
       default: WEB_TOP_SPACING,
-      responsive: WEB_TOP_SPACING_RESPONSIVE
+      responsive: WEB_TOP_SPACING_RESPONSIVE,
     };
   }, [questionnaireState]);
 

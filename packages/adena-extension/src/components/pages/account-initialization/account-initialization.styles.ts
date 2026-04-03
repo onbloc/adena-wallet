@@ -10,7 +10,7 @@ export const AccountInitializationWrapper = styled(View)`
   .address-wrapper {
     ${mixins.flex({
       align: 'center',
-      justify: 'center'
+      justify: 'center',
     })};
     width: 100%;
     height: 100%;

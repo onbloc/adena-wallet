@@ -1,7 +1,7 @@
 export const makeAccountTransactionsQuery = (
   address: string,
   cursor: string | null,
-  size = 20
+  size = 20,
 ): string => `
   {
     transactions(
@@ -121,7 +121,7 @@ export const makeAccountTransactionsQuery = (
 export const makeNativeTransactionsQuery = (
   address: string,
   cursor: string | null,
-  size = 20
+  size = 20,
 ): string => `
   {
     transactions(
@@ -186,7 +186,7 @@ export const makeGRC20TransferTransactionsQuery = (
   address: string,
   packagePath: string,
   cursor: string | null,
-  size = 20
+  size = 20,
 ): string => `
   {
     transactions(
@@ -438,7 +438,7 @@ export const makeNativeTokenReceivedTransactionsByAddressQuery = (address: strin
  */
 export const makeGRC20ReceivedTransactionsByAddressQueryByPackagePath = (
   address: string,
-  packagePath: string
+  packagePath: string,
 ): string => `
 {
   transactions(filter: {
@@ -483,7 +483,7 @@ export const makeGRC20ReceivedTransactionsByAddressQueryByPackagePath = (
  */
 export const makeGRC20SendTransactionsByAddressQueryByPackagePath = (
   address: string,
-  packagePath: string
+  packagePath: string,
 ): string => `
 {
   transactions(filter: {

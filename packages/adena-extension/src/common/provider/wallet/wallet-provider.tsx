@@ -120,7 +120,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
   }
 
   async function initCurrentNetworkMetainfos(
-    networkMetainfos: NetworkMetainfo[]
+    networkMetainfos: NetworkMetainfo[],
   ): Promise<boolean> {
     const currentNetworkId = await chainService.getCurrentNetworkId();
     const currentNetwork
@@ -155,7 +155,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
         updateWallet,
         initNetworkMetainfos,
         changeNetwork,
-        clearWallet
+        clearWallet,
       }}
     >
       {children}

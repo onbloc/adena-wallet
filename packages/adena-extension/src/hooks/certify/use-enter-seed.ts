@@ -35,7 +35,7 @@ export const useEnterSeed = (): {
       setSeeds(() => patternCheck.toLowerCase());
       setError(false);
     },
-    [seeds]
+    [seeds],
   );
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>): void => {
@@ -56,8 +56,8 @@ export const useEnterSeed = (): {
         navigate(RoutePath.CreatePassword, {
           state: {
             type: 'SEED',
-            seeds
-          }
+            seeds,
+          },
         });
         setError(false);
         return;
@@ -81,15 +81,15 @@ export const useEnterSeed = (): {
       onChange,
       onKeyDown,
       error: error,
-      errorMessage: 'Invalid seed phrase'
+      errorMessage: 'Invalid seed phrase',
     },
     termsState: {
       terms,
-      onChange: handleTermsChange
+      onChange: handleTermsChange,
     },
     buttonState: {
       onClick: handleButtonClick,
-      disabled: seeds !== '' && terms
-    }
+      disabled: seeds !== '' && terms,
+    },
   };
 };

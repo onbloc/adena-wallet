@@ -45,7 +45,7 @@ export const PasswordInput = ({ evaluationResult, ...rest }: PasswordInputProps)
           style={{
             position: 'absolute',
             right: 16,
-            letterSpacing: '-2%'
+            letterSpacing: '-2%',
           }}
           type='body3Reg'
           color={complexityColor}

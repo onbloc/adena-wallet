@@ -27,19 +27,19 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
 
     const storedCollections = await tokenService.getAccountGRC721Collections(
       currentAccount.id,
-      currentNetwork.chainId
+      currentNetwork.chainId,
     );
 
     const addedCollections = collections
       .map(collection => ({
         ...collection,
-        display: true
+        display: true,
       }))
       .filter(
         c1 =>
           !storedCollections.find(
-            c2 => c1.packagePath === c2.packagePath && c1.networkId === c2.networkId
-          )
+            c2 => c1.packagePath === c2.packagePath && c1.networkId === c2.networkId,
+          ),
       );
 
     return tokenService.saveAccountGRC721Collections(currentAccount.id, currentNetwork.chainId, [...storedCollections, ...addedCollections]);
@@ -52,7 +52,7 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
 
     const pinnedCollections = await tokenService.getAccountGRC721PinnedPackages(
       currentAccount.id,
-      currentNetwork.chainId
+      currentNetwork.chainId,
     );
     return tokenService.saveAccountGRC721PinnedPackages(currentAccount.id, currentNetwork.chainId, [...pinnedCollections, packagePath]);
   };
@@ -64,12 +64,12 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
 
     const pinnedCollections = await tokenService.getAccountGRC721PinnedPackages(
       currentAccount.id,
-      currentNetwork.chainId
+      currentNetwork.chainId,
     );
     return tokenService.saveAccountGRC721PinnedPackages(
       currentAccount.id,
       currentNetwork.chainId,
-      pinnedCollections.filter(path => path !== packagePath)
+      pinnedCollections.filter(path => path !== packagePath),
     );
   };
 
@@ -80,7 +80,7 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
 
     const collections = await tokenService.getAccountGRC721Collections(
       currentAccount.id,
-      currentNetwork.chainId
+      currentNetwork.chainId,
     );
     const changedCollections = collections.map((collection) => {
       if (collection.packagePath !== packagePath) {
@@ -88,14 +88,14 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
       }
       return {
         ...collection,
-        display: true
+        display: true,
       };
     });
 
     return tokenService.saveAccountGRC721Collections(
       currentAccount.id,
       currentNetwork.chainId,
-      changedCollections
+      changedCollections,
     );
   };
 
@@ -106,7 +106,7 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
 
     const collections = await tokenService.getAccountGRC721Collections(
       currentAccount.id,
-      currentNetwork.chainId
+      currentNetwork.chainId,
     );
     const changedCollections = collections.map((collection) => {
       if (collection.packagePath !== packagePath) {
@@ -114,14 +114,14 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
       }
       return {
         ...collection,
-        display: false
+        display: false,
       };
     });
 
     return tokenService.saveAccountGRC721Collections(
       currentAccount.id,
       currentNetwork.chainId,
-      changedCollections
+      changedCollections,
     );
   };
 
@@ -130,6 +130,6 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
     pinCollection,
     unpinCollection,
     showCollection,
-    hideCollection
+    hideCollection,
   };
 };

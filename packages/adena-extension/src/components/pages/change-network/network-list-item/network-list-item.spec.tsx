@@ -20,7 +20,7 @@ describe('NetworkListItem Component', () => {
       },
       changeNetwork: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -29,7 +29,7 @@ describe('NetworkListItem Component', () => {
         <ThemeProvider theme={theme}>
           <NetworkListItem {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

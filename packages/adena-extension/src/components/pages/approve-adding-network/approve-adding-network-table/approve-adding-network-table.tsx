@@ -11,7 +11,7 @@ export interface ApproveAddingNetworkTableProps {
 const ApproveAddingNetworkTable: React.FC<ApproveAddingNetworkTableProps> = ({
   name,
   rpcUrl,
-  chainId
+  chainId,
 }) => {
   return (
     <ApproveAddingNetworkTableWrapper>

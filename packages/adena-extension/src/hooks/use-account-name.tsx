@@ -23,7 +23,7 @@ export const useAccountName = (): UseAccountNameReturn => {
     }
     const changedAccountNames = {
       ...accountNames,
-      ...storedAccountNames
+      ...storedAccountNames,
     };
     setAccountNames(changedAccountNames);
     await accountService.updateAccountNames(changedAccountNames);
@@ -32,7 +32,7 @@ export const useAccountName = (): UseAccountNameReturn => {
   const changeAccountName = async (account: Account, name: string): Promise<void> => {
     const changedAccountNames = {
       ...accountNames,
-      [account.id]: name || account.name
+      [account.id]: name || account.name,
     };
     setAccountNames(changedAccountNames);
     await accountService.updateAccountNames(changedAccountNames);
@@ -47,6 +47,6 @@ export const useAccountName = (): UseAccountNameReturn => {
     accountNames,
     initAccountNames,
     changeAccountName,
-    clear
+    clear,
   };
 };

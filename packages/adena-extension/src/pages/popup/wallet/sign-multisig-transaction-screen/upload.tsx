@@ -1,7 +1,7 @@
 import IconHelp from '@assets/help.svg';
 import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
 import {
-  CommonFullContentLayout, Pressable, Text, View
+  CommonFullContentLayout, Pressable, Text, View,
 } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-multisig-transaction-upload-input';
@@ -40,7 +40,7 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
   uploadTransaction,
   rawTransaction,
   signTransaction,
-  reset
+  reset,
 }) => {
   const theme = useTheme();
   const { openLink } = useLink();
@@ -112,7 +112,7 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
                 accountNumber,
                 sequence,
                 setAccountNumber,
-                setSequence
+                setSequence,
               }}
               rawTransaction={rawTransaction}
               transactionInfos={transactionInfos}
@@ -134,13 +134,13 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           disabled: !loadedTransaction,
           text: 'Sign',
-          onClick: onClickSign
+          onClick: onClickSign,
         }}
       />
     </CommonFullContentLayout>

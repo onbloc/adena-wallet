@@ -1,7 +1,7 @@
 import {
   GnoSessionState,
   GnoSessionUpdateType,
-  PopupSessionUpdateMessage
+  PopupSessionUpdateMessage,
 } from '@inject/message/methods/gno-session';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -25,7 +25,7 @@ interface UseGnoSessionUpdatesOptions {
   onParamsChange?: (
     params: Record<string, string>,
     paramName?: string,
-    paramValue?: string
+    paramValue?: string,
   ) => void;
   onModeChange?: (mode: GnoSessionState['mode']) => void;
   onAddressChange?: (address: string) => void;
@@ -50,7 +50,7 @@ const initialUpdates: GnoSessionUpdates = {
   mode: 'secure',
   address: '',
   lastUpdate: null,
-  lastUpdateTime: 0
+  lastUpdateTime: 0,
 };
 
 /**
@@ -93,7 +93,7 @@ function isPopupSessionUpdateMessage(message: unknown): message is PopupSessionU
  * ```
  */
 export function useGnoSessionUpdates(
-  options: UseGnoSessionUpdatesOptions = {}
+  options: UseGnoSessionUpdatesOptions = {},
 ): UseGnoSessionUpdatesResult {
   const {
     sessionId: initialSessionId,
@@ -102,7 +102,7 @@ export function useGnoSessionUpdates(
     onParamsChange,
     onModeChange,
     onAddressChange,
-    loadInitialSession = true
+    loadInitialSession = true,
   } = options;
 
   const [updates, setUpdates] = useState<GnoSessionUpdates>(initialUpdates);
@@ -127,7 +127,7 @@ export function useGnoSessionUpdates(
         // Get specific session by ID
         session = await chrome.runtime.sendMessage({
           type: 'GET_GNO_SESSION',
-          sessionId: activeSessionId
+          sessionId: activeSessionId,
         });
       }
       else if (funcName && pkgPath) {
@@ -135,7 +135,7 @@ export function useGnoSessionUpdates(
         session = await chrome.runtime.sendMessage({
           type: 'GET_ACTIVE_SESSION',
           funcName,
-          pkgPath
+          pkgPath,
         });
       }
 
@@ -152,7 +152,7 @@ export function useGnoSessionUpdates(
           mode: session.mode,
           address: session.address,
           lastUpdate: 'init',
-          lastUpdateTime: Date.now()
+          lastUpdateTime: Date.now(),
         });
 
         // Trigger initial callbacks
@@ -185,7 +185,7 @@ export function useGnoSessionUpdates(
     chrome.runtime
       .sendMessage({
         type: 'REGISTER_POPUP_SESSION',
-        sessionId
+        sessionId,
       });
   }, []);
 
@@ -224,7 +224,7 @@ export function useGnoSessionUpdates(
           chainId: data.chainId,
           rpc: data.rpc,
           lastUpdate: updateType,
-          lastUpdateTime: Date.now()
+          lastUpdateTime: Date.now(),
         };
 
         switch (updateType) {
@@ -252,7 +252,7 @@ export function useGnoSessionUpdates(
         return newUpdates;
       });
     },
-    [activeSessionId, funcName, pkgPath, onParamsChange, onModeChange, onAddressChange]
+    [activeSessionId, funcName, pkgPath, onParamsChange, onModeChange, onAddressChange],
   );
 
   /**
@@ -293,7 +293,7 @@ export function useGnoSessionUpdates(
     isConnected,
     loading,
     registerSession,
-    refresh: loadSession
+    refresh: loadSession,
   };
 }
 
@@ -319,7 +319,7 @@ export function useUpdatedTransactionParams(
   initialParams: Record<string, string>,
   sessionId?: string,
   funcName?: string,
-  pkgPath?: string
+  pkgPath?: string,
 ): {
   params: Record<string, string>;
   hasUpdates: boolean;
@@ -336,14 +336,14 @@ export function useUpdatedTransactionParams(
     onParamsChange: (newParams) => {
       setParams(newParams);
       setUpdateCount(prev => prev + 1);
-    }
+    },
   });
 
   return {
     params,
     hasUpdates: updateCount > 0,
     updateCount,
-    loading
+    loading,
   };
 }
 

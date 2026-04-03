@@ -13,7 +13,7 @@ const BroadcastTransactionScreen: React.FC = () => {
     broadcastTransactionState,
     rawTransaction,
     broadcast,
-    uploadTransaction
+    uploadTransaction,
   } = useBroadcastTransactionScreen();
 
   return (

@@ -25,7 +25,7 @@ describe('ChangeNetwork Component', () => {
       },
       moveBack: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -34,7 +34,7 @@ describe('ChangeNetwork Component', () => {
         <ThemeProvider theme={theme}>
           <ChangeNetwork {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

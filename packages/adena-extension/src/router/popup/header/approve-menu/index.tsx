@@ -2,10 +2,10 @@ import {
   formatAddress,
   formatNickname,
   getSiteName,
-  parseParameters
+  parseParameters,
 } from '@common/utils/client-utils';
 import {
-  CopyTooltip, Row, StatusDot, Text
+  CopyTooltip, Row, StatusDot, Text,
 } from '@components/atoms';
 import { useAccountName } from '@hooks/use-account-name';
 import { useAdenaContext } from '@hooks/use-context';

@@ -3,7 +3,7 @@ import {
   WalletResponseExecuteType,
   WalletResponseFailureType,
   WalletResponseStatus,
-  WalletResponseType
+  WalletResponseType,
 } from '@adena-wallet/sdk';
 import {
   validateChainId,
@@ -11,14 +11,14 @@ import {
   validateMultisigSigners,
   validateMultisigThreshold,
   validateTransactionDocumentFee,
-  validateTransactionDocumentMessages
+  validateTransactionDocumentMessages,
 } from '@common/validation';
 import {
   validateDoContractRequest,
   validateTransactionMessageOfAddPkg,
   validateTransactionMessageOfBankSend,
   validateTransactionMessageOfRun,
-  validateTransactionMessageOfVmCall
+  validateTransactionMessageOfVmCall,
 } from '@common/validation/validation-message';
 import {
   AddEstablishResponse,
@@ -38,7 +38,7 @@ import {
   SignMultisigTransactionResponse,
   SignTxResponse,
   SwitchNetworkResponse,
-  TransactionParams
+  TransactionParams,
 } from '@inject/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -86,7 +86,7 @@ export class AdenaExecutor {
 
   public doContract = (
     params: TransactionParams,
-    options?: ContractOptions
+    options?: ContractOptions,
   ): Promise<DoContractResponse> => {
     const result = this.validateContractMessage(params);
     if (result) {
@@ -98,9 +98,9 @@ export class AdenaExecutor {
       WalletResponseExecuteType.DO_CONTRACT,
       {
         ...params,
-        isVisibleResult
+        isVisibleResult,
       },
-      withNotification
+      withNotification,
     );
     return this.sendEventMessage(eventMessage);
   };
@@ -122,7 +122,7 @@ export class AdenaExecutor {
     }
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.SIGN_AMINO,
-      params
+      params,
     );
     return this.sendEventMessage(eventMessage);
   };
@@ -134,13 +134,13 @@ export class AdenaExecutor {
     }
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.SIGN_TX,
-      params
+      params,
     );
     return this.sendEventMessage(eventMessage);
   };
 
   public createMultisigAccount = (
-    params: CreateMultisigAccountParams
+    params: CreateMultisigAccountParams,
   ): Promise<CreateMultisigAccountResponse> => {
     const result = this.validateCreateMultisigAccount(params);
     if (result) {
@@ -149,7 +149,7 @@ export class AdenaExecutor {
 
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.CREATE_MULTISIG_ACCOUNT,
-      params
+      params,
     );
 
     return this.sendEventMessage(eventMessage);
@@ -157,7 +157,7 @@ export class AdenaExecutor {
 
   public createMultisigTransaction = (
     params: CreateMultisigTransactionParams,
-    withSaveFile = false
+    withSaveFile = false,
   ): Promise<CreateMultisigTransactionResponse> => {
     const result = this.validateCreateMultisigTransaction(params);
     if (result) {
@@ -168,8 +168,8 @@ export class AdenaExecutor {
       WalletResponseExecuteType.CREATE_MULTISIG_TRANSACTION,
       {
         ...params,
-        withSaveFile
-      }
+        withSaveFile,
+      },
     );
 
     return this.sendEventMessage(eventMessage);
@@ -178,7 +178,7 @@ export class AdenaExecutor {
   public signMultisigTransaction = (
     multisigDocument: MultisigTransactionDocument,
     multisigSignatures?: Signature[],
-    withSaveFile = false
+    withSaveFile = false,
   ): Promise<SignMultisigTransactionResponse> => {
     const result = this.validateMultisigTransaction(multisigDocument);
     if (result) {
@@ -190,8 +190,8 @@ export class AdenaExecutor {
       {
         multisigDocument,
         multisigSignatures,
-        withSaveFile
-      }
+        withSaveFile,
+      },
     );
 
     return this.sendEventMessage(eventMessage);
@@ -200,7 +200,7 @@ export class AdenaExecutor {
   public broadcastMultisigTransaction = (
     multisigDocument: MultisigTransactionDocument,
     multisigSignatures?: Signature[],
-    options?: ContractOptions
+    options?: ContractOptions,
   ): Promise<BroadcastMultisigTransactionResponse> => {
     const result = this.validateMultisigTransaction(multisigDocument);
     if (result) {
@@ -213,9 +213,9 @@ export class AdenaExecutor {
       {
         multisigDocument,
         multisigSignatures,
-        isVisibleResult
+        isVisibleResult,
       },
-      withNotification
+      withNotification,
     );
 
     return this.sendEventMessage(eventMessage);
@@ -229,7 +229,7 @@ export class AdenaExecutor {
   public switchNetwork = (chainId: string): Promise<SwitchNetworkResponse> => {
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.SWITCH_NETWORK,
-      { chainId }
+      { chainId },
     );
     return this.sendEventMessage(eventMessage);
   };
@@ -247,7 +247,7 @@ export class AdenaExecutor {
         ? message
         : {
             type: message['@type'],
-            value: message
+            value: message,
           };
       switch (messageData.type) {
         case '/bank.MsgSend':
@@ -285,7 +285,7 @@ export class AdenaExecutor {
    * @returns InjectionMessage on validation failure, undefined on success
    */
   private validateCreateMultisigAccount = (
-    params: CreateMultisigAccountParams
+    params: CreateMultisigAccountParams,
   ): InjectionMessage | undefined => {
     if (!params) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
@@ -310,7 +310,7 @@ export class AdenaExecutor {
    * @returns InjectionMessage on validation failure, undefined on success
    */
   private validateCreateMultisigTransaction = (
-    params: CreateMultisigTransactionParams
+    params: CreateMultisigTransactionParams,
   ): InjectionMessage | undefined => {
     if (!params) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
@@ -336,7 +336,7 @@ export class AdenaExecutor {
    * @returns InjectionMessage on validation failure, undefined on success
    */
   private validateMultisigTransaction = (
-    multisigDocument: MultisigTransactionDocument
+    multisigDocument: MultisigTransactionDocument,
   ): InjectionMessage | undefined => {
     if (!multisigDocument) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'Multisig document is missing.' });
@@ -378,14 +378,14 @@ export class AdenaExecutor {
   };
 
   private sendEventMessage = <T = unknown>(
-    eventMessage: InjectionMessage
+    eventMessage: InjectionMessage,
   ): Promise<WalletResponse<T>> => {
     this.listen();
     this.eventMessage = {
       ...eventMessage,
       protocol: window.location.protocol,
       hostname: window.location.hostname,
-      key: this.eventKey
+      key: this.eventKey,
     };
 
     try {
@@ -396,7 +396,7 @@ export class AdenaExecutor {
     }
     this.messages[this.eventKey] = {
       request: this.eventMessage,
-      response: undefined
+      response: undefined,
     };
 
     return new Promise<WalletResponse<T>>((resolver) => {
@@ -420,7 +420,7 @@ export class AdenaExecutor {
   private static createEventMessage = (
     type: WalletResponseType,
     params?: Params,
-    withNotification?: boolean
+    withNotification?: boolean,
   ): InjectionMessage => {
     return InjectionMessageInstance.request(type, params, undefined, withNotification);
   };
@@ -434,7 +434,7 @@ export class AdenaExecutor {
     const eventData = event.data;
     if (eventData.status) {
       const {
-        key, status, data, code, message, type
+        key, status, data, code, message, type,
       } = eventData;
       if (key === this.eventKey) {
         switch (eventData.status) {
@@ -448,7 +448,7 @@ export class AdenaExecutor {
               data,
               code,
               message,
-              type
+              type,
             });
             break;
           case 'failure':
@@ -459,7 +459,7 @@ export class AdenaExecutor {
               data,
               code,
               message,
-              type
+              type,
             });
             break;
           default:

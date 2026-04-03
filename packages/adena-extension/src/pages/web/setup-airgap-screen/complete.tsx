@@ -1,7 +1,7 @@
 import LottieAccountSynced from '@assets/web/lottie/account-synced.json';
 import IconCheck from '@assets/web/web-check-circle.svg';
 import {
-  Row, View, WebButton, WebImg, WebInput
+  Row, View, WebButton, WebImg, WebInput,
 } from '@components/atoms';
 import Lottie from '@components/atoms/lottie';
 import { WebTitleWithDescription } from '@components/molecules';
@@ -34,7 +34,7 @@ interface SetupAirgapCompleteScreenProps {
 
 const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
   address,
-  addAccount
+  addAccount,
 }) => {
   const onClickNext = useCallback(() => {
     addAccount();
@@ -49,7 +49,7 @@ const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
           visibleSize={120}
           style={{
             marginLeft: -20,
-            marginBottom: -16
+            marginBottom: -16,
           }}
         />
       </View>

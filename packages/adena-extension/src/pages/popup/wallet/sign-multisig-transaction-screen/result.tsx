@@ -14,7 +14,7 @@ interface SignMultisigTransactionResultProps {
 
 const SignMultisigTransactionResult: React.FC<SignMultisigTransactionResultProps> = ({
   status,
-  errorMessage
+  errorMessage,
 }) => {
   const theme = useTheme();
   const { navigate } = useAppNavigate();

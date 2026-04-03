@@ -20,7 +20,7 @@ export class ChainRepository {
 
   public fetchNetworkMetainfos = async (): Promise<NetworkMetainfo[]> => {
     const response = await this.networkInstance.get<ChainMetainfoResponse>(
-      ChainRepository.CHAIN_URI
+      ChainRepository.CHAIN_URI,
     );
     return NetworkMetainfoMapper.fromChainMetainfoResponse(response.data);
   };
@@ -38,12 +38,12 @@ export class ChainRepository {
 
     const defaultNetworks = fetchedNetworks.filter(
       network =>
-        network.default || networks?.find(current => current.id === network.id) === undefined
+        network.default || networks?.find(current => current.id === network.id) === undefined,
     );
     const customNetworks = networks.filter(
       network =>
         network.default === false
-        && defaultNetworks.find(network1 => network.id === network1.id) === undefined
+        && defaultNetworks.find(network1 => network.id === network1.id) === undefined,
     );
     return [...defaultNetworks, ...customNetworks];
   };

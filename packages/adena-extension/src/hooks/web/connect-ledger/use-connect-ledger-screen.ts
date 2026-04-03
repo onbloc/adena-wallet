@@ -2,7 +2,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import useIndicatorStep, { UseIndicatorStepReturn } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { RoutePath } from '@types';
 import {
-  Account, AdenaLedgerConnector, AdenaWallet, serializeAccount, Wallet
+  Account, AdenaLedgerConnector, AdenaWallet, serializeAccount, Wallet,
 } from 'adena-module';
 import { useEffect, useState } from 'react';
 
@@ -32,32 +32,32 @@ export const connectLedgerStep: Record<
 > = {
   INIT: {
     backTo: 'INIT',
-    stepNo: 0
+    stepNo: 0,
   },
   REQUEST: {
     backTo: 'INIT',
-    stepNo: 1
+    stepNo: 1,
   },
   NOT_PERMISSION: {
     backTo: 'REQUEST',
-    stepNo: 1
+    stepNo: 1,
   },
   REQUEST_WALLET: {
     backTo: 'REQUEST',
-    stepNo: 1
+    stepNo: 1,
   },
   REQUEST_WALLET_LOAD: {
     backTo: 'REQUEST_WALLET',
-    stepNo: 1
+    stepNo: 1,
   },
   FAILED: {
     backTo: 'REQUEST_WALLET_LOAD',
-    stepNo: 1
+    stepNo: 1,
   },
   SUCCESS: {
     backTo: 'INIT',
-    stepNo: 2
-  }
+    stepNo: 2,
+  },
 };
 
 export const connectLedgerStepNo: Record<ConnectLedgerStateType, number> = {
@@ -67,7 +67,7 @@ export const connectLedgerStepNo: Record<ConnectLedgerStateType, number> = {
   REQUEST_WALLET: 1,
   REQUEST_WALLET_LOAD: 1,
   FAILED: 1,
-  SUCCESS: 2
+  SUCCESS: 2,
 };
 
 const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
@@ -76,7 +76,7 @@ const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
   const [wallet, setWallet] = useState<Wallet>();
   const indicatorInfo = useIndicatorStep({
     currentState: connectState,
-    stepMap: connectLedgerStepNo
+    stepMap: connectLedgerStepNo,
   });
 
   useEffect(() => {
@@ -88,7 +88,7 @@ const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
     }
     if (connectState === 'SUCCESS' && wallet) {
       const serializedAccounts = wallet.accounts.map((account: Account) =>
-        serializeAccount(account)
+        serializeAccount(account),
       );
       navigate(RoutePath.WebConnectLedgerSelectAccount, { state: { accounts: serializedAccounts } });
     }
@@ -169,7 +169,7 @@ const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
     connectState,
     setConnectState,
     initWallet,
-    requestPermission
+    requestPermission,
   };
 };
 

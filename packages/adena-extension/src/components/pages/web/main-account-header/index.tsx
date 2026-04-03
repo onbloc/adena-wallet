@@ -1,11 +1,11 @@
 import back from '@assets/web/chevron-left.svg';
 import { formatAddress } from '@common/utils/client-utils';
 import {
-  CopyIconButton, Pressable, Row, WebImg, WebText
+  CopyIconButton, Pressable, Row, WebImg, WebText,
 } from '@components/atoms';
 import { Account } from 'adena-module';
 import React, {
-  ReactElement, useEffect, useMemo, useState
+  ReactElement, useEffect, useMemo, useState,
 } from 'react';
 import styled, { useTheme } from 'styled-components';
 
@@ -29,7 +29,7 @@ export type WebMainAccountHeaderProps = {
 
 export const WebMainAccountHeader = ({
   account,
-  onClickGoBack
+  onClickGoBack,
 }: WebMainAccountHeaderProps): ReactElement<any> => {
   const theme = useTheme();
   const [address, setAddress] = useState<string>('');
@@ -54,7 +54,7 @@ export const WebMainAccountHeader = ({
         style={{
           padding: 4,
           backgroundColor: theme.webInput._100,
-          borderRadius: 16
+          borderRadius: 16,
         }}
       >
         <WebImg src={back} size={24} />

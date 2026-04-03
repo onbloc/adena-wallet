@@ -105,13 +105,13 @@ export class AnchorInterceptor implements IInterceptor {
    */
   private defaultHandler = (
     gnoMessageInfo: GnoMessageInfo,
-    context: InterceptorContext
+    context: InterceptorContext,
   ): void => {
     CommandHandler.createContentHandler(
       CommandMessage.command('checkMetadata', {
         gnoMessageInfo,
-        gnoConnectInfo: context.gnoConnectInfo
-      })
+        gnoConnectInfo: context.gnoConnectInfo,
+      }),
     );
   };
 }

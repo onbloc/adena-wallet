@@ -13,8 +13,8 @@ describe('MainTokenBalance Component', () => {
     const args: MainTokenBalanceProps = {
       amount: {
         value: '240,255.241155',
-        denom: 'GNOT'
-      }
+        denom: 'GNOT',
+      },
     };
 
     render(
@@ -23,7 +23,7 @@ describe('MainTokenBalance Component', () => {
         <ThemeProvider theme={theme}>
           <MainTokenBalance {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

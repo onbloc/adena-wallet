@@ -12,7 +12,7 @@ interface TokenBalanceWrapperProps {
 
 export const TokenBalanceWrapper = styled.div.withConfig({
   shouldForwardProp: (prop): boolean =>
-    !['orientation', 'fontColor', 'fontStyleKey', 'minimumFontSize', 'lineHeight', 'maxWidth'].includes(prop)
+    !['orientation', 'fontColor', 'fontStyleKey', 'minimumFontSize', 'lineHeight', 'maxWidth'].includes(prop),
 })<TokenBalanceWrapperProps>`
   display: flex;
   flex-direction: ${({ orientation }): 'column' | 'row' =>

@@ -5,7 +5,7 @@ import {
   MultisigTransactionContext,
   MultisigTransactionContextProps,
   WalletContext,
-  WalletContextProps
+  WalletContextProps,
 } from '@common/provider';
 import { useContext } from 'react';
 

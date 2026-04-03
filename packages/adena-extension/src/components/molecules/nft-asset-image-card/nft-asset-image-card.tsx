@@ -10,7 +10,7 @@ export interface NFTAssetImageCardProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
 }
 
@@ -20,8 +20,8 @@ const NFTAssetImageCard: React.FC<NFTAssetImageCardProps> = ({ asset, queryGRC72
     asset.tokenId,
     {
       enabled: asset.isTokenUri,
-      refetchOnMount: true
-    }
+      refetchOnMount: true,
+    },
   );
 
   const isFetchedTokenUriWithEnabled = useMemo(() => {

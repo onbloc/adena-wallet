@@ -16,7 +16,7 @@ describe('WebPrivateKeyBox Component', () => {
         <ThemeProvider theme={theme}>
           <WebPrivateKeyBox privateKey='privateKey' showBlur />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

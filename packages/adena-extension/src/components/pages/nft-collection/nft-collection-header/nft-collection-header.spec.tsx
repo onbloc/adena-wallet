@@ -17,7 +17,7 @@ describe('NFTCollectionHeader Component', () => {
       openGnoscanCollection: () => {
         return;
       },
-      title: ''
+      title: '',
     };
 
     render(
@@ -26,7 +26,7 @@ describe('NFTCollectionHeader Component', () => {
         <ThemeProvider theme={theme}>
           <NFTCollectionHeader {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

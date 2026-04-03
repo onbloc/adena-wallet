@@ -21,12 +21,12 @@ describe('NFTCollectionAssetCard Component', () => {
         tokenId: '',
         type: 'grc721',
         isMetadata: true,
-        isTokenUri: true
+        isTokenUri: true,
       },
       moveAssetPage: () => {
         return;
       },
-      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>
+      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
     };
 
     render(
@@ -35,7 +35,7 @@ describe('NFTCollectionAssetCard Component', () => {
         <ThemeProvider theme={theme}>
           <NFTCollectionAssetCard {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

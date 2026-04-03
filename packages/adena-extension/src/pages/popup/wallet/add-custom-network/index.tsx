@@ -42,7 +42,7 @@ const AddCustomNetworkContainer: React.FC = () => {
     changeChainId,
     setRPCUrlError,
     setChainIdError,
-    setIndexerUrlError
+    setIndexerUrlError,
   } = useCustomNetworkInput();
 
   const save = useCallback(async () => {

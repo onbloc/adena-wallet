@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const BalanceInputWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: auto;
@@ -13,7 +13,7 @@ export const BalanceInputWrapper = styled.div`
   .input-wrapper {
     ${mixins.flex({
       direction: 'row',
-      justify: 'normal'
+      justify: 'normal',
     })};
     width: 100%;
     min-height: 48px;

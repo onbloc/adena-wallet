@@ -2,7 +2,7 @@ import { DEFAULT_GAS_ADJUSTMENT } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
 import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 import {
-  GasInfo, NetworkFee, NetworkFeeSettingInfo, NetworkFeeSettingType
+  GasInfo, NetworkFee, NetworkFeeSettingInfo, NetworkFeeSettingType,
 } from '@types';
 import { Document } from 'adena-module';
 import BigNumber from 'bignumber.js';
@@ -10,7 +10,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import {
   useGetDefaultEstimateGasInfo,
-  useGetEstimateGasInfo
+  useGetEstimateGasInfo,
 } from './transaction-gas/use-get-estimate-gas-info';
 import { useGetEstimateGasPriceTiers } from './transaction-gas/use-get-estimate-gas-price-tiers';
 
@@ -42,7 +42,7 @@ const defaultSettingType = NetworkFeeSettingType.AVERAGE;
 export const useNetworkFee = (
   document?: Document | null,
   isDefaultGasPrice = false,
-  gasInfo?: GasInfo | null
+  gasInfo?: GasInfo | null,
 ): UseNetworkFeeReturn => {
   const [currentNetworkFeeSettingType, setCurrentNetworkFeeSettingType]
     = useState<NetworkFeeSettingType>(defaultSettingType);
@@ -56,13 +56,13 @@ export const useNetworkFee = (
     = useGetDefaultEstimateGasInfo(document);
   const { data: estimatedGasInfo, isFetched: isFetchedEstimateGasInfo } = useGetEstimateGasInfo(
     document,
-    gasInfo?.gasUsed || defaultEstimatedGasInfo?.gasUsed || 0n
+    gasInfo?.gasUsed || defaultEstimatedGasInfo?.gasUsed || 0n,
   );
 
   const { data: gasPriceTiers, isFetched: isFetchedPriceTiers } = useGetEstimateGasPriceTiers(
     document,
     gasInfo?.gasUsed || estimatedGasInfo?.gasUsed,
-    gasAdjustment
+    gasAdjustment,
   );
 
   const isLoading = useMemo(() => {
@@ -106,7 +106,7 @@ export const useNetworkFee = (
         gasWanted: 0n,
         gasPrice: 0,
         hasError: true,
-        simulateErrorMessage: null
+        simulateErrorMessage: null,
       };
     }
 
@@ -124,7 +124,7 @@ export const useNetworkFee = (
         storageDeposit: 0,
         unlockDeposit: 0,
         storageUsage: 0,
-        releaseStorageUsage: 0
+        releaseStorageUsage: 0,
       };
     }
 
@@ -172,7 +172,7 @@ export const useNetworkFee = (
 
     return {
       amount: networkFeeAmount,
-      denom: GasToken.symbol
+      denom: GasToken.symbol,
     };
   }, [currentGasInfo]);
 
@@ -200,6 +200,6 @@ export const useNetworkFee = (
     gasAdjustment,
     setGasAdjustment,
     networkFee,
-    save
+    save,
   };
 };

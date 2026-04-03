@@ -9,7 +9,7 @@ import {
   EnglishMnemonic,
   Keyring,
   PrivateKeyKeyring,
-  SingleAccount
+  SingleAccount,
 } from 'adena-module';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -66,7 +66,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
   const { ableToSkipQuestionnaire } = useQuestionnaire();
 
   const [step, setStep] = useState<WalletImportStateType>(
-    params?.doneQuestionnaire ? 'SET_SEED_PHRASE' : 'INIT'
+    params?.doneQuestionnaire ? 'SET_SEED_PHRASE' : 'INIT',
   );
 
   const [inputValue, setInputValue] = useState('');
@@ -100,13 +100,13 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
   const walletImportStepNo = {
     INIT: 0,
     SET_SEED_PHRASE: 1,
-    LOADING: 1
+    LOADING: 1,
   };
 
   const indicatorInfo = useIndicatorStep<string>({
     stepMap: walletImportStepNo,
     currentState: step,
-    hasQuestionnaire: true
+    hasQuestionnaire: true,
   });
 
   const extended = useMemo(() => {
@@ -147,7 +147,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
       }
       else {
         let keyring = await PrivateKeyKeyring.fromPrivateKeyStr(decodedInputValue).catch(
-          () => null
+          () => null,
         );
         if (keyring === null) {
           setErrMsg('Invalid private key');
@@ -168,9 +168,9 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
       navigate(RoutePath.WebCreatePassword, {
         state: {
           serializedWallet,
-          stepLength: indicatorInfo.stepLength
+          stepLength: indicatorInfo.stepLength,
         },
-        replace: true
+        replace: true,
       });
     }
   }, [step, inputType, inputValue, ableToSkipQuestionnaire]);
@@ -185,7 +185,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
     setStep,
     indicatorInfo,
     onClickGoBack,
-    onClickNext
+    onClickNext,
   };
 };
 

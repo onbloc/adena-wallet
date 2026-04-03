@@ -18,7 +18,7 @@ describe('Spinner Component', () => {
         <ThemeProvider theme={theme}>
           <Spinner {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

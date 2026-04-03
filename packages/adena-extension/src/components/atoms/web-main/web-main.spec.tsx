@@ -16,7 +16,7 @@ describe('WebMain Component', () => {
         <ThemeProvider theme={theme}>
           <WebMain>Web Main</WebMain>
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

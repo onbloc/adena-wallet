@@ -101,7 +101,7 @@ export const ConnectedApps = (): JSX.Element => {
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   height: 100%;

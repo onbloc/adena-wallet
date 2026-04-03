@@ -20,18 +20,18 @@ export interface UseIndicatorStepReturn {
 const useIndicatorStep = <T extends string>({
   stepMap,
   currentState,
-  hasQuestionnaire = false
+  hasQuestionnaire = false,
 }: UseIndicatorStepProps<T>): UseIndicatorStepReturn => {
   const { walletService } = useAdenaContext();
   const { ableToSkipQuestionnaire } = useQuestionnaire();
   const [webHeaderIndicatorLength, setWebHeaderIndicatorLength] = useRecoilState(
-    CommonState.webHeaderIndicatorLength
+    CommonState.webHeaderIndicatorLength,
   );
 
   if (!stepMap) {
     return {
       stepNo: 0,
-      stepLength: webHeaderIndicatorLength
+      stepLength: webHeaderIndicatorLength,
     };
   }
 
@@ -57,7 +57,7 @@ const useIndicatorStep = <T extends string>({
         }
       }
       return defaultStepLength;
-    }
+    },
   });
 
   const existQuestionnaire = useMemo(() => {
@@ -83,7 +83,7 @@ const useIndicatorStep = <T extends string>({
 
   return {
     stepNo: currentStepNo,
-    stepLength: webHeaderIndicatorLength
+    stepLength: webHeaderIndicatorLength,
   };
 };
 

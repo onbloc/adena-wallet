@@ -3,7 +3,7 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import search from '@assets/search.svg';
 import { searchTextFilter } from '@common/utils/client-utils';
 import {
-  Button, DefaultInput, ListBox, ListHierarchy, Text
+  Button, DefaultInput, ListBox, ListHierarchy, Text,
 } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -98,8 +98,8 @@ export const WalletSearch = (): JSX.Element => {
     navigate(RoutePath.TransferInput, {
       state: {
         isTokenSearch: true,
-        tokenBalance
-      }
+        tokenBalance,
+      },
     });
   };
 
@@ -107,8 +107,8 @@ export const WalletSearch = (): JSX.Element => {
     navigate(RoutePath.Deposit, {
       state: {
         type: 'wallet',
-        token: tokenBalance
-      }
+        token: tokenBalance,
+      },
     });
   };
 
@@ -137,7 +137,7 @@ export const WalletSearch = (): JSX.Element => {
           .filter(
             balance =>
               searchTextFilter(balance.name ?? '', searchText)
-              || searchTextFilter(balance.symbol ?? '', searchText)
+              || searchTextFilter(balance.symbol ?? '', searchText),
           )
           .map((balance, idx) => (
             <ListBox

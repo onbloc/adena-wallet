@@ -4,7 +4,7 @@ import styled from 'styled-components';
 export const ApproveAddingNetworkWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: auto;

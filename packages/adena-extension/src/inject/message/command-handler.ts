@@ -12,7 +12,7 @@ import {
   clearInMemoryKey,
   decryptPassword,
   encryptPassword,
-  getInMemoryKey
+  getInMemoryKey,
 } from './commands/encrypt';
 import { clearPopup } from './commands/popup';
 import {
@@ -20,7 +20,7 @@ import {
   GnoConnectInfo,
   GnoMessageInfo,
   parseGnoConnectInfo,
-  parseGnoMessageInfo
+  parseGnoMessageInfo,
 } from './methods/gno-connect';
 
 export class CommandHandler {
@@ -28,7 +28,7 @@ export class CommandHandler {
     inMemoryProvider: MemoryProvider,
     message: CommandMessageData,
     _: chrome.runtime.MessageSender,
-    sendResponse: (response?: CommandMessageData) => void
+    sendResponse: (response?: CommandMessageData) => void,
   ): Promise<void> => {
     try {
       if (message.code !== 0) {
@@ -84,14 +84,14 @@ export class CommandHandler {
       await clearPopup();
       sendResponse({
         ...message,
-        code: 200
+        code: 200,
       });
       return;
     }
   };
 
   public static createContentHandler = async (
-    message: CommandMessageData<CheckMetadataMessageData>
+    message: CommandMessageData<CheckMetadataMessageData>,
   ): Promise<void> => {
     if (message.code !== 0 || message.command !== 'checkMetadata' || !message.data) {
       return;
@@ -140,7 +140,7 @@ export class CommandHandler {
       const transactionParams = makeTransactionMessage(
         gnoMessageInfo,
         gnoConnectInfo,
-        realmDocument
+        realmDocument,
       );
 
       executor.doContract(transactionParams).then(console.info).catch(console.info);
@@ -155,21 +155,21 @@ function makeSuccessResponse(message: CommandMessageData, data: any = null): Com
   return {
     ...message,
     code: 200,
-    data
+    data,
   };
 }
 
 function makeInternalErrorResponse(message: CommandMessageData): CommandMessageData {
   return {
     ...message,
-    code: 500
+    code: 500,
   };
 }
 
 function makeTransactionMessage(
   gnoMessageInfo: GnoMessageInfo,
   gnoConnectInfo: GnoConnectInfo,
-  realmDocument: GnoDocumentInfo
+  realmDocument: GnoDocumentInfo,
 ): TransactionParams & {
   gasFee: number;
   gasWanted: number;
@@ -190,7 +190,7 @@ function makeTransactionMessage(
         index,
         key: param.name,
         value,
-        type: param.type
+        type: param.type,
       };
     });
 
@@ -207,9 +207,9 @@ function makeTransactionMessage(
         pkg_path: gnoMessageInfo.packagePath,
         func: gnoMessageInfo.functionName,
         args: messageArguments,
-        max_deposit: gnoMessageInfo.maxDeposit
-      }
-    }
+        max_deposit: gnoMessageInfo.maxDeposit,
+      },
+    },
   ];
 
   return {
@@ -218,8 +218,8 @@ function makeTransactionMessage(
     gasWanted: DEFAULT_GAS_WANTED,
     networkInfo: {
       chainId: gnoConnectInfo.chainId,
-      rpcUrl: gnoConnectInfo.rpc
+      rpcUrl: gnoConnectInfo.rpc,
     },
-    arguments: gnoArguments
+    arguments: gnoArguments,
   };
 }

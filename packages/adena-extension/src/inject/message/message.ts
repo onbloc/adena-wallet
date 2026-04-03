@@ -34,7 +34,7 @@ export class InjectionMessageInstance {
     status?: StatusType,
     data?: { [key in string]: any },
     key?: string,
-    withNotification?: boolean
+    withNotification?: boolean,
   ) {
     const { code, message, type } = WalletMessageInfo[messageKey];
     this.key = key ?? '';
@@ -54,7 +54,7 @@ export class InjectionMessageInstance {
       type: this.type,
       message: this.description,
       data: this.data,
-      withNotification: this.withNotification
+      withNotification: this.withNotification,
     };
   }
 
@@ -90,7 +90,7 @@ export class InjectionMessageInstance {
     messageKey: WalletResponseType,
     data?: { [key in string]: any },
     key?: string,
-    withNotification?: boolean
+    withNotification?: boolean,
   ): InjectionMessage => {
     return new InjectionMessageInstance(messageKey, 'request', data, key, withNotification).dataObj;
   };
@@ -99,7 +99,7 @@ export class InjectionMessageInstance {
     messageKey: WalletResponseType,
     data?: { [key in string]: any },
     key?: string,
-    withNotification?: boolean
+    withNotification?: boolean,
   ): InjectionMessage => {
     return new InjectionMessageInstance(messageKey, 'response', data, key, withNotification)
       .dataObj;
@@ -109,7 +109,7 @@ export class InjectionMessageInstance {
     messageKey: WalletResponseType,
     data?: { [key in string]: any },
     key?: string,
-    withNotification?: boolean
+    withNotification?: boolean,
   ): InjectionMessage => {
     return new InjectionMessageInstance(messageKey, 'success', data, key, withNotification).dataObj;
   };
@@ -118,7 +118,7 @@ export class InjectionMessageInstance {
     messageKey: WalletResponseType,
     data?: { [key in string]: any },
     key?: string,
-    withNotification?: boolean
+    withNotification?: boolean,
   ): InjectionMessage => {
     return new InjectionMessageInstance(messageKey, 'failure', data, key, withNotification).dataObj;
   };

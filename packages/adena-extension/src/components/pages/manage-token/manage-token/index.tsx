@@ -20,7 +20,7 @@ const ManageTokenSearch: React.FC<ManageTokenSearchProps> = ({
   onClickClose,
   onClickAdded,
   onChangeKeyword,
-  onToggleActiveItem
+  onToggleActiveItem,
 }) => {
   return (
     <ManageTokenSearchWrapper>

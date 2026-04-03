@@ -19,7 +19,7 @@ describe('RollingNumber Component', () => {
             value={1}
           />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

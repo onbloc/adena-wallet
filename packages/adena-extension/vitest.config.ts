@@ -1,9 +1,9 @@
 import {
   resolve,
-} from 'path'
+} from 'path';
 import {
   defineConfig,
-} from 'vitest/config'
+} from 'vitest/config';
 
 export default defineConfig({
   resolve: {
@@ -36,4 +36,4 @@ export default defineConfig({
       SALT_KEY: 'The CosmJS salt.',
     },
   },
-})
+});

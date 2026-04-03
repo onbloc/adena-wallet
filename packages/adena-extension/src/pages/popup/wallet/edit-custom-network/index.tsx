@@ -30,7 +30,7 @@ const EditCustomNetworkContainer: React.FC = () => {
   const { params, goBack } = useAppNavigate<RoutePath.EditCustomNetwork>();
   const currentNetworkId = params.networkId;
   const {
-    networks, updateNetwork, getDefaultNetworkInfo, deleteNetwork
+    networks, updateNetwork, getDefaultNetworkInfo, deleteNetwork,
   } = useNetwork();
   const {
     name,
@@ -46,7 +46,7 @@ const EditCustomNetworkContainer: React.FC = () => {
     changeChainId,
     setRPCUrlError,
     setIndexerUrlError,
-    setChainIdError
+    setChainIdError,
   } = useCustomNetworkInput();
 
   useEffect(() => {
@@ -132,7 +132,7 @@ const EditCustomNetworkContainer: React.FC = () => {
         chainName: parsedName,
         networkName: parsedName,
         rpcUrl,
-        indexerUrl
+        indexerUrl,
       });
     }
     setRPCUrlError('');

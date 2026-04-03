@@ -18,7 +18,7 @@ describe('HighlightNumber Component', () => {
         <ThemeProvider theme={theme}>
           <HighlightNumber {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

@@ -57,17 +57,17 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   const accountAddStepNo = hasMultiSeedPhrase
     ? {
         INIT: 0,
-        SELECT_SEED_PHRASE: 1
+        SELECT_SEED_PHRASE: 1,
       }
     : {
         INIT: 0,
-        SELECT_SEED_PHRASE: 0
+        SELECT_SEED_PHRASE: 0,
       };
 
   const indicatorInfo = useIndicatorStep<string>({
     stepMap: accountAddStepNo,
     currentState: step,
-    hasQuestionnaire: true
+    hasQuestionnaire: true,
   });
 
   const keyringInfos = useMemo(() => {
@@ -80,7 +80,7 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
     return wallet.keyrings.filter(isHDWalletKeyring).map((keyring, index) => ({
       index,
       keyringId: keyring.id,
-      accountCount: accounts.filter(account => account.keyringId === keyring.id).length
+      accountCount: accounts.filter(account => account.keyringId === keyring.id).length,
     }));
   }, [wallet]);
 
@@ -144,7 +144,7 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
       }
 
       const hdWalletKeyring = wallet.keyrings.find(
-        keyring => keyring.id === keyringId && isHDWalletKeyring(keyring)
+        keyring => keyring.id === keyringId && isHDWalletKeyring(keyring),
       );
       if (!hdWalletKeyring) {
         return false;
@@ -179,7 +179,7 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
     setStep,
     onClickGoBack,
     onClickNext,
-    addAccount
+    addAccount,
   };
 };
 

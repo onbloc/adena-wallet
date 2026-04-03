@@ -19,7 +19,7 @@ const QuestionnaireComplete: React.FC<QuestionnaireCompleteProps> = ({ completeQ
       <View style={{
         width: '100%',
         alignItems: 'center',
-        gap: 40
+        gap: 40,
       }}
       >
         <Lottie

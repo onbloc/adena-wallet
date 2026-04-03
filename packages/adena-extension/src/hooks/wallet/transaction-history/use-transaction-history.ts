@@ -30,7 +30,7 @@ export const useTransactionHistory = ({ enabled }: { enabled: boolean }): {
   const { transactionHistoryService } = useAdenaContext();
   const { tokenMetainfos } = useTokenMetainfo();
   const [fetchedHistoryBlockHeight, setFetchedHistoryBlockHeight] = useRecoilState(
-    CommonState.fetchedHistoryBlockHeight
+    CommonState.fetchedHistoryBlockHeight,
   );
 
   const { data: allTransactions, refetch } = useQuery({
@@ -40,7 +40,7 @@ export const useTransactionHistory = ({ enabled }: { enabled: boolean }): {
       !!currentAddress
       && tokenMetainfos.length > 0
       && transactionHistoryService.supported
-      && enabled
+      && enabled,
   });
 
   const blockIndex = useMemo(() => {
@@ -74,10 +74,10 @@ export const useTransactionHistory = ({ enabled }: { enabled: boolean }): {
   }, [transactions]);
 
   const {
-    data, isFetched, status, isLoading, isFetching
+    data, isFetched, status, isLoading, isFetching,
   } = useMakeTransactionsWithTime(
     `history/common/all/${currentNetwork.chainId}/${firstTransactionHash}`,
-    transactions
+    transactions,
   );
 
   const fetchNextPage = async (): Promise<boolean> => {
@@ -102,6 +102,6 @@ export const useTransactionHistory = ({ enabled }: { enabled: boolean }): {
     isFetching,
     hasNextPage: allTransactions?.transactions.length !== blockIndex,
     fetchNextPage,
-    refetch: refetchTransactions
+    refetch: refetchTransactions,
   };
 };

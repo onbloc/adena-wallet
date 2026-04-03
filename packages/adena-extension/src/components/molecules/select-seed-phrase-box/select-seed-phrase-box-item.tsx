@@ -11,7 +11,7 @@ const SelectSeedPhraseBoxItem: React.FC<{
 }> = ({ seedPhrase, select }) => {
   const theme = useTheme();
   const {
-    index, selected, accountCount, keyringId
+    index, selected, accountCount, keyringId,
   } = seedPhrase;
 
   const title = useMemo(() => {

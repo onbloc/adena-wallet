@@ -14,7 +14,7 @@ export interface BroadcastTransactionUploadInputProps {
 
 const BroadcastTransactionUploadInput: React.FC<BroadcastTransactionUploadInputProps> = ({
   transaction,
-  uploadTransaction
+  uploadTransaction,
 }) => {
   const theme = useTheme();
   const [loading, setLoading] = useState(false);

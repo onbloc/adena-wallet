@@ -1,6 +1,6 @@
 import IconCopy from '@assets/web/icon-copy';
 import React, {
-  CSSProperties, useCallback, useEffect, useMemo, useState
+  CSSProperties, useCallback, useEffect, useMemo, useState,
 } from 'react';
 import styled, { css, RuleSet, useTheme } from 'styled-components';
 
@@ -59,7 +59,7 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
   height = 32,
   copyText,
   clearClipboardTimeout = CLEAR_CLIPBOARD_TIMEOUT,
-  onCopy
+  onCopy,
 }) => {
   const theme = useTheme();
   const [clicked, setClicked] = useState(false);
@@ -117,7 +117,7 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
     <StyledContainer
       style={{
         width,
-        height
+        height,
       }}
       clicked={clicked}
       onMouseDown={onMouseDown}

@@ -4,7 +4,7 @@ import { parseStorageDeposits } from '@common/provider/gno/event-parser';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import {
-  keepPreviousData, useQuery, UseQueryOptions, UseQueryResult
+  keepPreviousData, useQuery, UseQueryOptions, UseQueryResult,
 } from '@tanstack/react-query';
 import { NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 import { Document } from 'adena-module';
@@ -20,7 +20,7 @@ const DefaultStorageDeposits = {
   storageDeposit: 0,
   unlockDeposit: 0,
   storageUsage: 0,
-  releaseStorageUsage: 0
+  releaseStorageUsage: 0,
 };
 
 export const GET_ESTIMATE_GAS_PRICE_TIERS = 'transactionGas/getEstimateGasPriceTiers';
@@ -29,7 +29,7 @@ export const useGetEstimateGasPriceTiers = (
   document: Document | null | undefined,
   gasUsed: bigint | undefined,
   gasAdjustment: string,
-  options?: Omit<UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<NetworkFeeSettingInfo[] | null> => {
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { transactionGasService, transactionService } = useAdenaContext();
@@ -70,7 +70,7 @@ export const useGetEstimateGasPriceTiers = (
             document,
             BigInt(adjustGasUsed),
             adjustedGasPriceBN.toNumber(),
-            !isInitializedAccount
+            !isInitializedAccount,
           );
 
           if (!tx) {
@@ -83,8 +83,8 @@ export const useGetEstimateGasPriceTiers = (
                 gasWanted: BigInt(adjustGasUsed),
                 gasPrice: gasPrice,
                 hasError: true,
-                simulateErrorMessage: 'Failed to simulate transaction'
-              }
+                simulateErrorMessage: 'Failed to simulate transaction',
+              },
             };
           }
 
@@ -95,25 +95,25 @@ export const useGetEstimateGasPriceTiers = (
                 return {
                   gasUsed: 0n,
                   errorMessage: 'Network fee too low',
-                  storageDeposits: DefaultStorageDeposits
+                  storageDeposits: DefaultStorageDeposits,
                 };
               }
 
               const storageDeposits = parseStorageDeposits(
-                simulateResult.response_base?.events ?? []
+                simulateResult.response_base?.events ?? [],
               );
 
               return {
                 gasUsed: BigInt(adjustGasUsed),
                 storageDeposits,
-                errorMessage: null
+                errorMessage: null,
               };
             })
             .catch((e: Error) => {
               return {
                 gasUsed: 0n,
                 errorMessage: e?.message || '',
-                storageDeposits: DefaultStorageDeposits
+                storageDeposits: DefaultStorageDeposits,
               };
             });
 
@@ -127,8 +127,8 @@ export const useGetEstimateGasPriceTiers = (
                 gasWanted: BigInt(adjustGasUsed),
                 gasPrice: gasPrice,
                 hasError: true,
-                simulateErrorMessage: result.errorMessage
-              }
+                simulateErrorMessage: result.errorMessage,
+              },
             };
           }
 
@@ -141,15 +141,15 @@ export const useGetEstimateGasPriceTiers = (
               gasWanted: BigInt(adjustGasUsed),
               gasPrice: gasPrice,
               hasError: result.errorMessage !== null,
-              simulateErrorMessage: result.errorMessage
-            }
+              simulateErrorMessage: result.errorMessage,
+            },
           };
-        })
+        }),
       );
     },
     refetchInterval: REFETCH_INTERVAL,
     placeholderData: keepPreviousData,
     enabled: !!transactionGasService && !!document && !!gasPrice,
-    ...options
+    ...options,
   });
 };

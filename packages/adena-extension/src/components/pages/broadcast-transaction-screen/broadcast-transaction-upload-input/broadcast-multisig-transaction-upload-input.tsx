@@ -9,7 +9,7 @@ import { useTheme } from 'styled-components';
 import {
   StyledHiddenInput,
   StyledInputLabel,
-  StyledWrapper
+  StyledWrapper,
 } from './broadcast-transaction-upload-input.styles';
 
 export interface BroadcastMultisigTransactionUploadInputProps {
@@ -23,7 +23,7 @@ const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransac
   currentAddress,
   transaction,
   uploadTransaction,
-  validatePublicKey = true
+  validatePublicKey = true,
 }) => {
   const theme = useTheme();
   const { multisigService } = useAdenaContext();
@@ -54,7 +54,7 @@ const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransac
         uploadFile(file);
       }
     },
-    [uploadTransaction]
+    [uploadTransaction],
   );
 
   const onChangeFileInput = useCallback(
@@ -65,7 +65,7 @@ const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransac
         uploadFile(file);
       }
     },
-    [uploadTransaction]
+    [uploadTransaction],
   );
 
   const uploadFile = useCallback(
@@ -116,7 +116,7 @@ const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransac
         setLoading(false);
       }
     },
-    [currentAddress, multisigService, uploadTransaction]
+    [currentAddress, multisigService, uploadTransaction],
   );
 
   return (

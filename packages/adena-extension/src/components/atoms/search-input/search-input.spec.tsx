@@ -14,7 +14,7 @@ describe('SearchInput Component', () => {
       keyword: 'as',
       onChangeKeyword: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -23,7 +23,7 @@ describe('SearchInput Component', () => {
         <ThemeProvider theme={theme}>
           <SearchInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

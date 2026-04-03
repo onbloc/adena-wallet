@@ -6,7 +6,7 @@ export const NetworkFeeCustomInputContainer = styled.div`
   ${mixins.flex({
     direction: 'column',
     justify: 'flex-start',
-    align: 'flex-start'
+    align: 'flex-start',
   })};
   width: 100%;
   gap: 4px;
@@ -22,7 +22,7 @@ export const NetworkFeeCustomInputContainer = styled.div`
 export const NetworkFeeCustomInputWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   padding: 14px 16px;

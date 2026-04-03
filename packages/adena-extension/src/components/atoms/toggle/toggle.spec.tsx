@@ -14,7 +14,7 @@ describe('Toggle Component', () => {
       activated: true,
       onToggle: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -23,7 +23,7 @@ describe('Toggle Component', () => {
         <ThemeProvider theme={theme}>
           <Toggle {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

@@ -51,7 +51,7 @@ const defaultData: StorageModelDataV001 = {
   NETWORKS: [],
   ENCRYPTED_STORED_PASSWORD: '',
   SERIALIZED: '',
-  ACCOUNT_TOKEN_METAINFOS: {}
+  ACCOUNT_TOKEN_METAINFOS: {},
 };
 
 const defaultLegacyData: StorageModelDataV017 = {
@@ -69,7 +69,7 @@ const defaultLegacyData: StorageModelDataV017 = {
   WALLET_CREATION_GUIDE_CONFIRM_DATE: null,
   ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null,
   ACCOUNT_GRC721_COLLECTIONS: {},
-  ACCOUNT_GRC721_PINNED_PACKAGES: {}
+  ACCOUNT_GRC721_PINNED_PACKAGES: {},
 };
 
 // Storage interface with set and get methods
@@ -84,7 +84,7 @@ export class StorageMigrator implements Migrator {
 
   constructor(
     private migrations: Migration[], // Array of migration strategies
-    private storage: Storage // Storage interface for data persistence
+    private storage: Storage, // Storage interface for data persistence
   ) {}
 
   // Validates if the data can be saved
@@ -107,7 +107,7 @@ export class StorageMigrator implements Migrator {
 
   // Deserializes a string into the corresponding storage model
   async deserialize(
-    data: string | undefined
+    data: string | undefined,
   ): Promise<
     | StorageModelV017
     | StorageModelV016
@@ -170,7 +170,7 @@ export class StorageMigrator implements Migrator {
 
     return {
       version: 17,
-      data: defaultLegacyData
+      data: defaultLegacyData,
     };
   }
 
@@ -214,7 +214,7 @@ export class StorageMigrator implements Migrator {
   // Maps JSON data to the corresponding storage model version
   private async mappedJson(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    json: any
+    json: any,
   ): Promise<
     | StorageModelV017
     | StorageModelV016
@@ -291,13 +291,13 @@ export class StorageMigrator implements Migrator {
       const data = await this.getLegacyData();
       return {
         version: 1,
-        data
+        data,
       } as StorageModelV001;
     }
 
     return {
       version: 12,
-      data: defaultLegacyData
+      data: defaultLegacyData,
     } as StorageModelV012;
   }
 

@@ -13,7 +13,7 @@ describe('AddCustomNetworkButton Component', () => {
     const args: AddCustomNetworkButtonProps = {
       onClick: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -22,7 +22,7 @@ describe('AddCustomNetworkButton Component', () => {
         <ThemeProvider theme={theme}>
           <AddCustomNetworkButton {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

@@ -8,7 +8,7 @@ import styled from 'styled-components';
 const TransferLedgerRejectLayout = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: 100%;

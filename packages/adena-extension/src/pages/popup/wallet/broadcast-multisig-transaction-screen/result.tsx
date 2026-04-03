@@ -14,7 +14,7 @@ interface BroadcastMultisigTransactionResultProps {
 const BroadcastMultisigTransactionResult: React.FC<BroadcastMultisigTransactionResultProps> = ({
   status,
   txHash,
-  errorMessage
+  errorMessage,
 }) => {
   const { navigate } = useAppNavigate();
   const { openScannerLink } = useLink();

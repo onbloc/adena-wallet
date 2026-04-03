@@ -16,7 +16,7 @@ import {
   StyledTableWrapper,
   StyledTransactionArea,
   StyledTransactionAreaWrapper,
-  StyledWrapper
+  StyledWrapper,
 } from './broadcast-transaction-upload-result.styles';
 
 export interface BroadcastTransactionUploadResultProps {
@@ -34,7 +34,7 @@ export interface BroadcastTransactionUploadResultProps {
 const BroadcastTransactionUploadResult: React.FC<BroadcastTransactionUploadResultProps> = ({
   transactionInfos,
   rawTransaction,
-  signInfo
+  signInfo,
 }) => {
   const theme = useTheme();
   const [visibleInfo, setVisibleInfo] = useState(false);

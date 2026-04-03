@@ -11,7 +11,7 @@ const SelectAccountBoxItem: React.FC<{
 }> = ({ account, select }) => {
   const theme = useTheme();
   const {
-    address, hdPath, index, selected, stored
+    address, hdPath, index, selected, stored,
   } = account;
 
   return (

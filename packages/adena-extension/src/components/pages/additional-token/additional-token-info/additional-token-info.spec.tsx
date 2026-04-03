@@ -14,7 +14,7 @@ describe('AdditionalTokenInfo Component', () => {
       isLoading: false,
       symbol: 'GNOT',
       path: 'gno.land/gnot',
-      decimals: '6'
+      decimals: '6',
     };
 
     render(
@@ -23,7 +23,7 @@ describe('AdditionalTokenInfo Component', () => {
         <ThemeProvider theme={theme}>
           <AdditionalTokenInfo {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

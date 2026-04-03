@@ -13,7 +13,7 @@ describe('TransferLedgerReject Component', () => {
     const args: TransferLedgerRejectProps = {
       onClickClose: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -22,7 +22,7 @@ describe('TransferLedgerReject Component', () => {
         <ThemeProvider theme={theme}>
           <TransferLedgerReject {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

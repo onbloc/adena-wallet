@@ -45,7 +45,7 @@ export class CommandMessage {
       key: this.key,
       status: this.status,
       command: this.command,
-      data: this.data
+      data: this.data,
     };
   }
 

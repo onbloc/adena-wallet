@@ -3,7 +3,7 @@ import { SCANNER_URL } from '@common/constants/resource.constant';
 import { makeQueryString } from '@common/utils/string-utils';
 import { isGRC20TokenModel } from '@common/validation/validation-token';
 import {
-  HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text
+  HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text,
 } from '@components/atoms';
 import { DoubleButton, TransactionHistory } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -22,7 +22,7 @@ import { RoutePath } from '@types';
 import { isAirgapAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import {
-  type JSX, useCallback, useEffect, useMemo, useRef, useState
+  type JSX, useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 import styled, { useTheme } from 'styled-components';
 
@@ -31,7 +31,7 @@ import LoadingTokenDetails from './loading-token-details';
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   height: 100%;
@@ -120,7 +120,7 @@ export const TokenDetails = (): JSX.Element => {
   const commonTransactionHistoryQuery = useTokenTransactions(isNative, tokenPath, { enabled: !isUsedApi });
 
   const {
-    status, isLoading, isFetching, data, isSupported, fetchNextPage
+    status, isLoading, isFetching, data, isSupported, fetchNextPage,
   } = useMemo(() => {
     if (isUsedApi) {
       return pageTransactionHistoryQuery;
@@ -171,7 +171,7 @@ export const TokenDetails = (): JSX.Element => {
         navigate(RoutePath.TransactionDetail, { state: { transactionInfo } });
       }
     },
-    [data, bodyElement]
+    [data, bodyElement],
   );
 
   const handlePrevButtonClick = (): void => navigate(RoutePath.Wallet);
@@ -182,8 +182,8 @@ export const TokenDetails = (): JSX.Element => {
     navigate(RoutePath.Deposit, {
       state: {
         type: 'token',
-        token: tokenBalance
-      }
+        token: tokenBalance,
+      },
     });
   };
 
@@ -223,14 +223,14 @@ export const TokenDetails = (): JSX.Element => {
   }[] => {
     const accountDetailItem = {
       tooltipText: 'View on GnoScan',
-      onClick: () => openLink(getAccountDetailUri())
+      onClick: () => openLink(getAccountDetailUri()),
     };
     if (tokenBalance && !isGRC20TokenModel(tokenBalance)) {
       return [accountDetailItem];
     }
     const realmDetailItem = {
       tooltipText: 'Token Details',
-      onClick: () => openLink(getTokenUri())
+      onClick: () => openLink(getTokenUri()),
     };
     return [accountDetailItem, realmDetailItem];
   };
@@ -259,11 +259,11 @@ export const TokenDetails = (): JSX.Element => {
         margin='20px 0px 25px'
         leftProps={{
           onClick: DepositButtonClick,
-          text: 'Deposit'
+          text: 'Deposit',
         }}
         rightProps={{
           onClick: SendButtonClick,
-          text: 'Send'
+          text: 'Send',
         }}
       />
       {isLoading && isSupported

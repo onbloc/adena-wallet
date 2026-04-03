@@ -23,7 +23,7 @@ export type GoogleLoginStateType = 'INIT' | 'REQUEST_LOGIN' | 'FAILED';
 const googleLoginStepNo: Record<GoogleLoginStateType, number> = {
   INIT: 0,
   REQUEST_LOGIN: 1,
-  FAILED: 1
+  FAILED: 1,
 };
 
 const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
@@ -34,13 +34,13 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
   const { changeCurrentAccount } = useCurrentAccount();
 
   const [googleLoginState, setGoogleLoginState] = useState<GoogleLoginStateType>(
-    params?.doneQuestionnaire ? 'REQUEST_LOGIN' : 'INIT'
+    params?.doneQuestionnaire ? 'REQUEST_LOGIN' : 'INIT',
   );
 
   const indicatorInfo = useIndicatorStep<string>({
     stepMap: googleLoginStepNo,
     currentState: googleLoginState,
-    hasQuestionnaire: true
+    hasQuestionnaire: true,
   });
 
   const initGoogleLogin = useCallback(() => {
@@ -100,7 +100,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
       await updateWallet(clone);
       navigate(RoutePath.WebAccountAddedComplete);
     },
-    [navigate]
+    [navigate],
   );
 
   const _createGoogleAccount = useCallback(
@@ -110,11 +110,11 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
       navigate(RoutePath.WebCreatePassword, {
         state: {
           serializedWallet,
-          stepLength: indicatorInfo.stepLength
-        }
+          stepLength: indicatorInfo.stepLength,
+        },
       });
     },
-    [navigate]
+    [navigate],
   );
 
   const backStep = useCallback(() => {
@@ -135,7 +135,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
     backStep,
     retry,
     initGoogleLogin,
-    requestGoogleLogin
+    requestGoogleLogin,
   };
 };
 

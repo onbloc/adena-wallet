@@ -41,7 +41,7 @@ export const SeedBox = ({
   hasBlurScreen = false,
   hasBlurText = false,
   blurScreenText = '',
-  className = ''
+  className = '',
 }: SeedScrollBoxProps): JSX.Element => {
   return (
     <Wrapper className={className}>

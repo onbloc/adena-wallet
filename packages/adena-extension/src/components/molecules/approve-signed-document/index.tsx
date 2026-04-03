@@ -65,7 +65,7 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   onResponse,
   onClickConfirm,
   onClickCancel,
-  openScannerLink
+  openScannerLink,
 }) => {
   const disabledApprove = useMemo(() => {
     if (isNetworkFeeLoading) {
@@ -176,14 +176,14 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           disabled: disabledApprove,
           text: 'Approve',
           loading: processing,
-          onClick: onClickConfirmButton
+          onClick: onClickConfirmButton,
         }}
       />
     </ApproveSignedDocumentWrapper>

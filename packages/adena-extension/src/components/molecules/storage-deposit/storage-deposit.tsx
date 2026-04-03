@@ -8,7 +8,7 @@ import React, { useMemo } from 'react';
 import {
   StorageDepositContainer,
   StorageDepositItemSkeletonBox,
-  StorageDepositWrapper
+  StorageDepositWrapper,
 } from './storage-deposit.styles';
 
 export interface StorageDepositProps {
@@ -31,7 +31,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
   isLoading = false,
   isError,
   errorMessage,
-  showPlaceholder = false
+  showPlaceholder = false,
 }) => {
   const isEmptyValue = useMemo(() => {
     return storageDeposit.storageDeposit === 0 && storageDeposit.unlockDeposit === 0;
@@ -91,7 +91,7 @@ const StorageDepositAmount: React.FC<{
   isLoading: boolean;
   showPlaceholder?: boolean;
 }> = ({
-  value, isRefundable, isLoading, showPlaceholder = false
+  value, isRefundable, isLoading, showPlaceholder = false,
 }) => {
   const fontColor = isRefundable ? theme.green._5 : theme.neutral._1;
 
@@ -99,7 +99,7 @@ const StorageDepositAmount: React.FC<{
     if (value === 0) {
       return {
         value: '0',
-        denom: GNOT_TOKEN.symbol
+        denom: GNOT_TOKEN.symbol,
       };
     }
 
@@ -109,7 +109,7 @@ const StorageDepositAmount: React.FC<{
 
     return {
       value: valueWithDecimals,
-      denom: GNOT_TOKEN.symbol
+      denom: GNOT_TOKEN.symbol,
     };
   }, [value]);
 

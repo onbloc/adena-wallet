@@ -1,6 +1,6 @@
 import IconLedger from '@assets/web/ledger.svg';
 import {
-  View, WebButton, WebImg, WebMain
+  View, WebButton, WebImg, WebMain,
 } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import SelectAccountBox from '@components/molecules/select-account-box/select-account-box';
@@ -18,7 +18,7 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
     selectAccountAddresses,
     onClickSelectButton,
     onClickLoadMore,
-    onClickNextButton
+    onClickNextButton,
   } = useSelectAccountScreen();
   const { navigate } = useAppNavigate();
 

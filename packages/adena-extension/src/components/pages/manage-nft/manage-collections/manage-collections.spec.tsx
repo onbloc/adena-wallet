@@ -24,7 +24,7 @@ import ManageCollections, { ManageCollectionsProps } from './manage-collections'
       },
       onToggleActiveItem: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -33,7 +33,7 @@ import ManageCollections, { ManageCollectionsProps } from './manage-collections'
         <ThemeProvider theme={theme}>
           <ManageCollections {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

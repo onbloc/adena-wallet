@@ -20,7 +20,7 @@ describe('WebButton Component', () => {
             text='WebButton'
           />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

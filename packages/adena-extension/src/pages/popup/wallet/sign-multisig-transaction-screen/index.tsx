@@ -8,7 +8,7 @@ import {
   RawBankSendMessage,
   RawVmAddPackageMessage,
   RawVmCallMessage,
-  RawVmRunMessage
+  RawVmRunMessage,
 } from 'adena-module';
 import React, { useEffect } from 'react';
 
@@ -27,19 +27,19 @@ const SignMultisigTransactionContent: React.FC = () => {
     updateAccountInfo,
     setAccountNumber,
     setSequence,
-    resetMultisigTransaction
+    resetMultisigTransaction,
   } = useMultisigTransactionContext();
 
   const {
     uploadMultisigTransaction,
     transactionInfos,
-    rawTransaction
+    rawTransaction,
   } = useBroadcastMultisigTransactionScreen();
 
   const {
     signTransaction,
     signTransactionState,
-    errorMessage
+    errorMessage,
   } = useSignMultisigTransactionScreen();
 
   useEffect(() => {

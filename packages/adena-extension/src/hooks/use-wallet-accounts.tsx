@@ -13,6 +13,6 @@ export const useWalletAccounts = (): UseWalletAccountsReturn => {
 
   return {
     accounts: wallet?.accounts ?? [],
-    accountBalances: []
+    accountBalances: [],
   };
 };

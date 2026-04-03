@@ -25,14 +25,14 @@ export async function fetchHealth(url: string): Promise<{
     .catch(() => false);
   return {
     url,
-    healthy
+    healthy,
   };
 }
 
 export function makeRPCRequest({
   id,
   method,
-  params
+  params,
 }: {
   id?: string;
   method: string;
@@ -42,14 +42,14 @@ export function makeRPCRequest({
     id: id || v1().toString(),
     jsonrpc: '2.0',
     method: method,
-    params: params || []
+    params: params || [],
   };
 }
 
 export function makeIndexerRPCRequest({
   id,
   method,
-  params
+  params,
 }: {
   id?: number;
   method: string;
@@ -59,7 +59,7 @@ export function makeIndexerRPCRequest({
     id: id || makeRandId(),
     jsonrpc: '2.0',
     method: method,
-    params: params || []
+    params: params || [],
   };
 }
 

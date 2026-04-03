@@ -9,7 +9,7 @@ import styled, { useTheme } from 'styled-components';
 
 const text = {
   title: 'Forgot Password?',
-  desc: 'Adena cannot recover your password for you. You can only reset your password with your seed phrase.'
+  desc: 'Adena cannot recover your password for you. You can only reset your password with your seed phrase.',
 };
 
 export const ForgotPassword = (): JSX.Element => {
@@ -30,7 +30,7 @@ export const ForgotPassword = (): JSX.Element => {
   const onClickHaveNotSeedPhrase = (): void => {
     navigate(RoutePath.ResetWallet, {
       state: { from: 'forgot-password' },
-      replace: true
+      replace: true,
     });
   };
 

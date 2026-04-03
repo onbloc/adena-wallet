@@ -5,12 +5,12 @@ import {
   validateEqualsChangePassword,
   validateInvalidPassword,
   validateNotMatchConfirmPassword,
-  validatePasswordComplexity
+  validatePasswordComplexity,
 } from '@common/validation';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
 import React, {
-  useCallback, useEffect, useMemo, useRef, useState
+  useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 
 export type UseChangePasswordReturn = {
@@ -49,7 +49,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
   const [inputs, setInputs] = useState({
     currPwd: '',
     newPwd: '',
-    confirmPwd: ''
+    confirmPwd: '',
   });
   const { currPwd, newPwd, confirmPwd } = inputs;
 
@@ -99,10 +99,10 @@ export const useChangePassword = (): UseChangePasswordReturn => {
       const { name, value } = e.target;
       setInputs(inputs => ({
         ...inputs,
-        [name]: value
+        [name]: value,
       }));
     },
-    [currPwd, newPwd, confirmPwd]
+    [currPwd, newPwd, confirmPwd],
   );
 
   const validationCheck = async (): Promise<'FINISH' | 'FAIL'> => {
@@ -160,7 +160,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
         setInputs({
           currPwd: '',
           newPwd: '',
-          confirmPwd: ''
+          confirmPwd: '',
         });
         return 'FINISH';
       }
@@ -183,27 +183,27 @@ export const useChangePassword = (): UseChangePasswordReturn => {
       value: currPwd,
       onChange: onChange,
       error: isCurrPwdError,
-      ref: inputRef
+      ref: inputRef,
     },
     newPwdState: {
       value: newPwd,
       evaluationResult: newPasswordEvaluationResult,
       onChange: onChange,
-      error: isNewPwdError
+      error: isNewPwdError,
     },
     confirmPwdState: {
       value: confirmPwd,
       onChange: onChange,
-      error: isConfirmPwdError
+      error: isConfirmPwdError,
     },
     errorMessage: errorMessage,
     buttonState: {
       onClick: {
         cancel: goBack,
-        save: saveButtonClick
+        save: saveButtonClick,
       },
-      disabled: Object.values(inputs).some(el => el === '')
+      disabled: Object.values(inputs).some(el => el === ''),
     },
-    onKeyDown
+    onKeyDown,
   };
 };

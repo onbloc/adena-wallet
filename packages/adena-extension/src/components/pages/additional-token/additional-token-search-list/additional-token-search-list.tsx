@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 
 import {
   AdditionalTokenSearchListItemWrapper,
-  AdditionalTokenSearchListWrapper
+  AdditionalTokenSearchListWrapper,
 } from './additional-token-search-list.styles';
 
 export interface AdditionalTokenSearchListProps {
@@ -25,7 +25,7 @@ const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = (
   name,
   symbol,
   path,
-  onClickListItem
+  onClickListItem,
 }) => {
   const formattedSymbol = useMemo(() => {
     const SYMBOL_TEXT_LENGTH = 5;
@@ -52,7 +52,7 @@ const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = (
 
 const AdditionalTokenSearchList: React.FC<AdditionalTokenSearchListProps> = ({
   tokenInfos,
-  onClickListItem
+  onClickListItem,
 }) => {
   return (
     <AdditionalTokenSearchListWrapper>

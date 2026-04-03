@@ -24,7 +24,7 @@ const AddressBookListItem: React.FC<AddressBookListItemProps> = ({
   addressBookId,
   name,
   address,
-  onClickItem
+  onClickItem,
 }) => {
   return (
     <AddressBookListItemWrapper onClick={(): void => onClickItem(addressBookId)}>

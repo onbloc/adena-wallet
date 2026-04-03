@@ -29,7 +29,7 @@ export const FullButtonRightIcon = ({
   disabled,
   onClick,
   gap = 12,
-  icon = 'ARROW'
+  icon = 'ARROW',
 }: ButtonProps): JSX.Element => {
   if (disabled) return <></>;
   return (
@@ -70,7 +70,7 @@ const ButtonWrapper = styled.button<ButtonStyleProps>`
   ${defaultIconStyle};
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   flex-shrink: 0;
   width: 100%;

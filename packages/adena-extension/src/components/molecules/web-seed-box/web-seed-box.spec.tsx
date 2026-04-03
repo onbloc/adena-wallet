@@ -16,7 +16,7 @@ describe('WebSeedBox Component', () => {
         <ThemeProvider theme={theme}>
           <WebSeedBox seedString='' />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

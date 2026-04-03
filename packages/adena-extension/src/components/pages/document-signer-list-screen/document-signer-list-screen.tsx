@@ -13,7 +13,7 @@ interface DocumentSignerListProps {
 
 const DocumentSignerListScreen = ({
   signerInfos,
-  onClickBack
+  onClickBack,
 }: DocumentSignerListProps): React.ReactElement<any> => {
   return (
     <S.DocumentSignerListWrapper>
@@ -21,7 +21,7 @@ const DocumentSignerListScreen = ({
         title='Multisig Signers'
         leftElement={{
           onClick: onClickBack,
-          element: <img src={`${ArrowLeftIcon}`} alt='back image' />
+          element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
         }}
       />
 

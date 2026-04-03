@@ -30,6 +30,6 @@ export const useRemoveAccount = (): {
 
   return {
     availRemoveAccount,
-    removeAccount
+    removeAccount,
   };
 };

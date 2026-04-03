@@ -8,7 +8,7 @@ export class WalletAddressBookService {
 
   constructor(
     walletRepository: WalletRepository,
-    walletAddressRepository: WalletAddressRepository
+    walletAddressRepository: WalletAddressRepository,
   ) {
     this.walletRepository = walletRepository;
     this.walletAddressRepository = walletAddressRepository;
@@ -33,10 +33,10 @@ export class WalletAddressBookService {
           id: uuidv4(),
           name: addressBookItem.name,
           address: addressBookItem.address,
-          createdAt: `${new Date().getTime()}`
-        }
+          createdAt: `${new Date().getTime()}`,
+        },
       ],
-      password
+      password,
     );
   };
 
@@ -52,7 +52,7 @@ export class WalletAddressBookService {
         return {
           ...item,
           name: addressBookItem.name,
-          address: addressBookItem.address
+          address: addressBookItem.address,
         };
       }
       return item;
@@ -62,13 +62,13 @@ export class WalletAddressBookService {
 
   public removeAddressBookItemByAccountId = async (
     accountId: string,
-    addressBookId: string
+    addressBookId: string,
   ): Promise<void> => {
     const password = await this.walletRepository.getWalletPassword();
     const addressBook = await this.walletAddressRepository.getAddressBook(password);
 
     const changedAddressBook = addressBook.filter(
-      (item: AddressBookItem) => item.id !== addressBookId
+      (item: AddressBookItem) => item.id !== addressBookId,
     );
     await this.walletAddressRepository.updateAddressBook(changedAddressBook, password);
   };

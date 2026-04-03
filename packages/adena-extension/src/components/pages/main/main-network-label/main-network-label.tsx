@@ -14,7 +14,7 @@ const MainNetworkLabel: React.FC<MainNetworkLabelProps> = ({ networkName }) => {
       <Text
         style={{
           display: 'flex',
-          flexDirection: 'row'
+          flexDirection: 'row',
         }}
         type='light13'
         color={theme.primary._2}

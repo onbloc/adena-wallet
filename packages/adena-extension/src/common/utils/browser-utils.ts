@@ -7,7 +7,7 @@ export const createPopupWindow = async (popupPath: string, state: object = {}): 
     url: chrome.runtime.getURL(`popup.html#${popupPath}`),
     type: 'popup',
     width: POPUP_WIDTH,
-    height: POPUP_HEIGHT
+    height: POPUP_HEIGHT,
   };
   new ChromeSessionStorage().set(POPUP_SESSION_DATA_KEY, JSON.stringify(state)).then(() => {
     chrome.windows.create(popupOption, async (windowResponse) => {

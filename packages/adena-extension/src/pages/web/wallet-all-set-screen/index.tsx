@@ -4,7 +4,7 @@ import IconGnoSwap from '@assets/web/gnoswap.svg';
 import AnimationAllSet from '@assets/web/lottie/you-are-all-set.json';
 import IconPin from '@assets/web/pin.svg';
 import {
-  Row, View, WebButton, WebImg, WebMain, WebText
+  Row, View, WebButton, WebImg, WebMain, WebText,
 } from '@components/atoms';
 import Lottie from '@components/atoms/lottie';
 import useLink from '@hooks/use-link';
@@ -121,7 +121,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   </StyledImgBox>
                   <View style={{
                     width: '100%',
-                    gap: 6
+                    gap: 6,
                   }}
                   >
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
@@ -144,7 +144,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   </StyledImgBox>
                   <View style={{
                     width: '100%',
-                    gap: 6
+                    gap: 6,
                   }}
                   >
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
@@ -168,7 +168,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   </StyledImgBox>
                   <View style={{
                     width: '100%',
-                    gap: 6
+                    gap: 6,
                   }}
                   >
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
@@ -207,7 +207,7 @@ const WalletAllSetScreen = (): JSX.Element => {
         </View>
         <View style={{
           width: 256,
-          gap: 6
+          gap: 6,
         }}
         >
           <WebText type='title3' color={theme.webNeutral._100}>

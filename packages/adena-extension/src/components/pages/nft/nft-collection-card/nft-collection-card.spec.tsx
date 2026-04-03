@@ -22,7 +22,7 @@ describe('NFTCollectionCard Component', () => {
         tokenId: '',
         type: 'grc721',
         isMetadata: true,
-        isTokenUri: true
+        isTokenUri: true,
       },
       pin: () => {
         return;
@@ -35,7 +35,7 @@ describe('NFTCollectionCard Component', () => {
       },
       exitsPinnedCollections: () => false,
       queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
-      queryGRC721Balance: () => ({}) as unknown as UseQueryResult<number | null>
+      queryGRC721Balance: () => ({}) as unknown as UseQueryResult<number | null>,
     };
 
     render(
@@ -44,7 +44,7 @@ describe('NFTCollectionCard Component', () => {
         <ThemeProvider theme={theme}>
           <NFTCollectionCard {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

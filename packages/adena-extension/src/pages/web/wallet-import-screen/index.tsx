@@ -12,7 +12,7 @@ import GetMnemonicStep from './set-mnemonic-step';
 const WalletImportScreen: React.FC = () => {
   const useWalletImportScreenReturn = useWalletImportScreen();
   const {
-    extended, step, onClickGoBack, indicatorInfo, onClickNext
+    extended, step, onClickGoBack, indicatorInfo, onClickNext,
   } = useWalletImportScreenReturn;
 
   const topSpacing = useMemo(() => {
@@ -21,7 +21,7 @@ const WalletImportScreen: React.FC = () => {
     }
     return {
       default: WEB_TOP_SPACING,
-      responsive: WEB_TOP_SPACING_RESPONSIVE
+      responsive: WEB_TOP_SPACING_RESPONSIVE,
     };
   }, [extended]);
 

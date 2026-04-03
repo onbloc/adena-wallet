@@ -13,7 +13,7 @@ const mockStorageData = {
   ACCOUNT_NAMES: {},
   ESTABLISH_SITES: {},
   ADDRESS_BOOK: {},
-  ACCOUNT_TOKEN_METAINFOS: {}
+  ACCOUNT_TOKEN_METAINFOS: {},
 };
 
 describe('serialized wallet migration V002', () => {
@@ -25,7 +25,7 @@ describe('serialized wallet migration V002', () => {
   it('up success', async () => {
     const mockData = {
       version: 1,
-      data: mockStorageData
+      data: mockStorageData,
     };
     const migration = new StorageMigration002();
     const result = await migration.up(mockData);
@@ -36,7 +36,7 @@ describe('serialized wallet migration V002', () => {
     expect(result.data.CURRENT_CHAIN_ID).toBe('');
     expect(result.data.CURRENT_NETWORK_ID).toBe('');
     expect(result.data.SERIALIZED).toBe(
-      'U2FsdGVkX19eI8kOCI/T9o1Ru0b2wdj5rHxmG4QbLQ0yZH4kDa8/gg6Ac2JslvEm'
+      'U2FsdGVkX19eI8kOCI/T9o1Ru0b2wdj5rHxmG4QbLQ0yZH4kDa8/gg6Ac2JslvEm',
     );
     expect(result.data.ENCRYPTED_STORED_PASSWORD).toBe('');
     expect(result.data.CURRENT_ACCOUNT_ID).toBe('');
@@ -48,7 +48,7 @@ describe('serialized wallet migration V002', () => {
   it('up password success', async () => {
     const mockData = {
       version: 1,
-      data: mockStorageData
+      data: mockStorageData,
     };
     const password = '123';
     const migration = new StorageMigration002();
@@ -79,13 +79,13 @@ describe('serialized wallet migration V002', () => {
       version: 1,
       data: {
         ...mockStorageData,
-        SERIALIZED: null
-      }
+        SERIALIZED: null,
+      },
     };
     const migration = new StorageMigration002();
 
     await expect(migration.up(mockData)).rejects.toThrow(
-      'Storage Data does not match version V001'
+      'Storage Data does not match version V001',
     );
   });
 });

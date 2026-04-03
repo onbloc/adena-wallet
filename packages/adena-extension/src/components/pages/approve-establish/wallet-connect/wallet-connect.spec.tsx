@@ -28,7 +28,7 @@ describe('WalletConnect Component', () => {
       },
       onTimeout: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -37,7 +37,7 @@ describe('WalletConnect Component', () => {
         <ThemeProvider theme={theme}>
           <WalletConnect {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

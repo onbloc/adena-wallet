@@ -41,7 +41,7 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
   changeChainId,
   moveBack,
   saveNetwork,
-  clearNetwork
+  clearNetwork,
 }) => {
   const clearButtonText = useMemo(() => {
     if (editType === 'all') {
@@ -72,7 +72,7 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
           title='Edit Network'
           leftElement={{
             element: <img src={LeftArrowIcon} alt='back icon' />,
-            onClick: onClickBack
+            onClick: onClickBack,
           }}
         />
         <div className='form-wrapper'>
@@ -96,13 +96,13 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
       <BottomFixedButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: onClickBack
+          onClick: onClickBack,
         }}
         rightButton={{
           primary: true,
           disabled: !savable,
           text: 'Save',
-          onClick: onClickSave
+          onClick: onClickSave,
         }}
       />
     </EditNetworkWrapper>

@@ -6,7 +6,7 @@ import { GRC721CollectionModel, GRC721Model } from '@types';
 
 export const useGetGRC721Tokens = (
   collection: GRC721CollectionModel | null,
-  options?: Omit<UseQueryOptions<GRC721Model[] | null, Error>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<GRC721Model[] | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<GRC721Model[] | null> => {
   const { tokenService } = useAdenaContext();
   const { currentAddress } = useCurrentAccount();
@@ -29,12 +29,12 @@ export const useGetGRC721Tokens = (
           name: collection.name,
           symbol: collection.symbol,
           isTokenUri: collection.isTokenUri,
-          isMetadata: collection.isMetadata
+          isMetadata: collection.isMetadata,
         }))
         .reverse();
     },
     staleTime: 1_000,
     refetchOnMount: true,
-    ...options
+    ...options,
   });
 };

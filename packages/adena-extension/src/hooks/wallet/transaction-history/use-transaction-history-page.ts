@@ -34,7 +34,7 @@ export const useTransactionHistoryPage = ({ enabled }: { enabled: boolean }): {
     data: allTransactions,
     hasNextPage,
     refetch,
-    fetchNextPage
+    fetchNextPage,
   } = useInfiniteQuery({
     queryKey: ['history/page/all', currentNetwork.networkId, currentAddress || ''],
     initialPageParam: null as string | null,
@@ -51,7 +51,7 @@ export const useTransactionHistoryPage = ({ enabled }: { enabled: boolean }): {
       && transactionHistoryService.supported
       && enabled,
     placeholderData: keepPreviousData,
-    refetchInterval: REFETCH_INTERVAL
+    refetchInterval: REFETCH_INTERVAL,
   });
 
   const transactions = useMemo(() => {
@@ -60,7 +60,7 @@ export const useTransactionHistoryPage = ({ enabled }: { enabled: boolean }): {
     }
 
     return allTransactions.pages.flatMap(
-      (page: unknown) => (page as TransactionWithPageInfo).transactions
+      (page: unknown) => (page as TransactionWithPageInfo).transactions,
     );
   }, [allTransactions?.pages]);
 
@@ -73,10 +73,10 @@ export const useTransactionHistoryPage = ({ enabled }: { enabled: boolean }): {
   }, [transactions]);
 
   const {
-    data, isFetched, status, isLoading, isFetching
+    data, isFetched, status, isLoading, isFetching,
   } = useMakeTransactionsWithTime(
     `history/page/all/${currentNetwork.chainId}/${firstTransactionHash}`,
-    transactions
+    transactions,
   );
 
   const refetchTransactions = (options?: RefetchOptions): void => {
@@ -96,6 +96,6 @@ export const useTransactionHistoryPage = ({ enabled }: { enabled: boolean }): {
         .then(result => !result.error)
         .catch(() => false);
     },
-    refetch: refetchTransactions
+    refetch: refetchTransactions,
   };
 };

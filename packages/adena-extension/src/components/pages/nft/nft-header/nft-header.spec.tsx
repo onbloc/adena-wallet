@@ -16,7 +16,7 @@ describe('NFTHeader Component', () => {
       },
       openGnoscan: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -25,7 +25,7 @@ describe('NFTHeader Component', () => {
         <ThemeProvider theme={theme}>
           <NFTHeader {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

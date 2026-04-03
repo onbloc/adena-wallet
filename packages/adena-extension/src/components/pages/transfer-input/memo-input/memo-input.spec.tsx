@@ -14,7 +14,7 @@ describe('MemoInput Component', () => {
       memo: '132123123123',
       onChangeMemo: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -23,7 +23,7 @@ describe('MemoInput Component', () => {
         <ThemeProvider theme={theme}>
           <MemoInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

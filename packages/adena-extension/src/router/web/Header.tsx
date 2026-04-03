@@ -1,7 +1,7 @@
 import logo from '@assets/web/brand.svg';
 import { ADENA_HELP_PAGE } from '@common/constants/resource.constant';
 import {
-  Pressable, Row, WebImg, WebText
+  Pressable, Row, WebImg, WebText,
 } from '@components/atoms';
 import IconQuestion from '@components/atoms/icon/icon-assets/icon-question';
 import useLink from '@hooks/use-link';
@@ -12,7 +12,7 @@ import styled from 'styled-components';
 const StyledContainer = styled.header`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })}
   padding: 0 74px;
   height: 80px;

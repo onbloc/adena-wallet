@@ -16,7 +16,7 @@ export const NFTCollectionAssetCardWrapper = styled(View)`
     ${mixins.flex({
       direction: 'row',
       align: 'center',
-      justify: 'center'
+      justify: 'center',
     })}
     position: absolute;
     top: 10px;
@@ -44,7 +44,7 @@ export const NFTCollectionAssetCardWrapper = styled(View)`
       ${mixins.flex({
         direction: 'column',
         align: 'flex-end',
-        justify: 'flex-end'
+        justify: 'flex-end',
       })}
       width: auto;
       flex-shrink: 0;

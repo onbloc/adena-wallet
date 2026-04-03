@@ -13,11 +13,11 @@ export interface ManageCollectionsProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   queryGRC721Balance: (
     packagePath: string,
-    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<number | null>;
   onChangeKeyword: (keyword: string) => void;
   onToggleActiveItem: (tokenId: string, activated: boolean) => void;
@@ -30,7 +30,7 @@ const ManageCollections: React.FC<ManageCollectionsProps> = ({
   queryGRC721Balance,
   onClickClose,
   onChangeKeyword,
-  onToggleActiveItem
+  onToggleActiveItem,
 }) => {
   return (
     <ManageCollectionsWrapper>

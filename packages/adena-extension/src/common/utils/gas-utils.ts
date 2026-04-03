@@ -16,7 +16,7 @@ export const convertRawGasAmountToDisplayAmount = (rawAmount: string | number): 
   catch (e) {
     console.warn('[convertRawGasAmountToDisplayAmount] Failed to convert:', {
       rawAmount,
-      error: e
+      error: e,
     });
     return '0';
   }

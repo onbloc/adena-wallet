@@ -2,7 +2,7 @@ import React, { type JSX } from 'react';
 
 const IconHelp = ({
   className,
-  color = '#777777'
+  color = '#777777',
 }: {
   className?: string;
   color?: string;

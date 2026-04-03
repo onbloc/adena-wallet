@@ -5,7 +5,7 @@ import {
   mapReceivedTransactionByBankMsgSend,
   mapReceivedTransactionByMsgCall,
   mapSendTransactionByBankMsgSend,
-  mapVMTransaction
+  mapVMTransaction,
 } from './mapper/transaction-history-query.mapper';
 import {
   makeBlockTimeLegacyQuery,
@@ -15,7 +15,7 @@ import {
   makeGRC20SendTransactionsByAddressQueryByPackagePath,
   makeNativeTokenReceivedTransactionsByAddressQuery,
   makeNativeTokenSendTransactionsByAddressQuery,
-  makeVMTransactionsByAddressQuery
+  makeVMTransactionsByAddressQuery,
 } from './transaction-history-indexer.queries';
 import { ITransactionHistoryIndexerRepository } from './types';
 
@@ -48,9 +48,9 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       return {
         page: {
           hasNext: false,
-          cursor: null
+          cursor: null,
         },
-        transactions: []
+        transactions: [],
       };
     }
 
@@ -62,45 +62,45 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       TransactionHistoryIndexerRepository.postGraphQuery(
         this.axiosInstance,
         this.queryUrl,
-        grc20ReceivedTransactionsQuery
+        grc20ReceivedTransactionsQuery,
       ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions.map(mapReceivedTransactionByMsgCall)
-          : []
+          : [],
       ),
       TransactionHistoryIndexerRepository.postGraphQuery(
         this.axiosInstance,
         this.queryUrl,
-        nativeTokenSendQuery
+        nativeTokenSendQuery,
       ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions.map(mapSendTransactionByBankMsgSend)
-          : []
+          : [],
       ),
       TransactionHistoryIndexerRepository.postGraphQuery(
         this.axiosInstance,
         this.queryUrl,
-        nativeTokenReceivedQuery
+        nativeTokenReceivedQuery,
       ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions.map(mapReceivedTransactionByBankMsgSend)
-          : []
+          : [],
       ),
       TransactionHistoryIndexerRepository.postGraphQuery(
         this.axiosInstance,
         this.queryUrl,
-        vmTransactionsQuery
+        vmTransactionsQuery,
       ).then(result =>
-        result?.data?.transactions ? result?.data?.transactions.map(mapVMTransaction) : []
-      )
+        result?.data?.transactions ? result?.data?.transactions.map(mapVMTransaction) : [],
+      ),
     ])
       .then(results => results.flatMap(result => result))
       .then(txs => ({
         page: {
           hasNext: false,
-          cursor: null
+          cursor: null,
         },
-        transactions: txs
+        transactions: txs,
       }));
   }
 
@@ -112,9 +112,9 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       return {
         page: {
           hasNext: false,
-          cursor: null
+          cursor: null,
         },
-        transactions: []
+        transactions: [],
       };
     }
 
@@ -124,29 +124,29 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       TransactionHistoryIndexerRepository.postGraphQuery(
         this.axiosInstance,
         this.queryUrl,
-        nativeTokenSendQuery
+        nativeTokenSendQuery,
       ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions.map(mapSendTransactionByBankMsgSend)
-          : []
+          : [],
       ),
       TransactionHistoryIndexerRepository.postGraphQuery(
         this.axiosInstance,
         this.queryUrl,
-        nativeTokenReceivedQuery
+        nativeTokenReceivedQuery,
       ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions.map(mapReceivedTransactionByBankMsgSend)
-          : []
-      )
+          : [],
+      ),
     ])
       .then(results => results.flatMap(result => result))
       .then(txs => ({
         page: {
           hasNext: false,
-          cursor: null
+          cursor: null,
         },
-        transactions: txs
+        transactions: txs,
       }));
   }
 
@@ -155,51 +155,51 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
    */
   public async fetchGRC20TransactionHistoryBy(
     address: string,
-    packagePath: string
+    packagePath: string,
   ): Promise<TransactionWithPageInfo> {
     if (!this.queryUrl) {
       return {
         page: {
           hasNext: false,
-          cursor: null
+          cursor: null,
         },
-        transactions: []
+        transactions: [],
       };
     }
 
     const grc20ReceivedTransactionsQuery = makeGRC20ReceivedTransactionsByAddressQueryByPackagePath(
       address,
-      packagePath
+      packagePath,
     );
     const grc20SendTransactionsQuery = makeGRC20SendTransactionsByAddressQueryByPackagePath(
       address,
-      packagePath
+      packagePath,
     );
     return Promise.all([
       TransactionHistoryIndexerRepository.postGraphQuery(
         this.axiosInstance,
         this.queryUrl,
-        grc20ReceivedTransactionsQuery
+        grc20ReceivedTransactionsQuery,
       ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions.map(mapReceivedTransactionByMsgCall)
-          : []
+          : [],
       ),
       TransactionHistoryIndexerRepository.postGraphQuery(
         this.axiosInstance,
         this.queryUrl,
-        grc20SendTransactionsQuery
+        grc20SendTransactionsQuery,
       ).then(result =>
-        result?.data?.transactions ? result?.data?.transactions.map(mapVMTransaction) : []
-      )
+        result?.data?.transactions ? result?.data?.transactions.map(mapVMTransaction) : [],
+      ),
     ])
       .then(results => results.flatMap(result => result))
       .then(txs => ({
         page: {
           hasNext: false,
-          cursor: null
+          cursor: null,
         },
-        transactions: txs
+        transactions: txs,
       }));
   }
 
@@ -215,16 +215,16 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       return TransactionHistoryIndexerRepository.postGraphQuery(
         this.axiosInstance,
         this.queryUrl,
-        makeBlockTimeLegacyQuery(height)
+        makeBlockTimeLegacyQuery(height),
       ).then(result => (result?.data?.blocks?.[0] ? result?.data?.blocks?.[0].time : null));
     }
 
     return TransactionHistoryIndexerRepository.postGraphQuery(
       this.axiosInstance,
       this.queryUrl,
-      makeBlockTimeQuery(height)
+      makeBlockTimeQuery(height),
     ).then(result =>
-      result?.data?.blocks?.edges?.[0] ? result?.data?.blocks.edges?.[0].block.time : null
+      result?.data?.blocks?.edges?.[0] ? result?.data?.blocks.edges?.[0].block.time : null,
     );
   }
 
@@ -232,13 +232,13 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
     axiosInstance: AxiosInstance,
     url: string,
     query: string,
-    header?: { [key in string]: number } | null
+    header?: { [key in string]: number } | null,
   ): Promise<T | null> => {
     return axiosInstance
       .post<T>(
         url,
         { query },
-        { headers: header || {} }
+        { headers: header || {} },
       )
       .then(response => response.data)
       .catch((e) => {

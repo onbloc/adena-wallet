@@ -47,7 +47,7 @@ describe('AdditionalToken Component', () => {
       },
       onClickAdd: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -56,7 +56,7 @@ describe('AdditionalToken Component', () => {
         <ThemeProvider theme={theme}>
           <AdditionalToken {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

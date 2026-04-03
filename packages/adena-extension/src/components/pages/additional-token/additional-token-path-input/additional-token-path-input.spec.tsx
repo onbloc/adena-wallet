@@ -15,7 +15,7 @@ describe('AdditionalTokenPathInput Component', () => {
       onChangeKeyword: () => {
         return;
       },
-      errorMessage: 'error'
+      errorMessage: 'error',
     };
 
     render(
@@ -24,7 +24,7 @@ describe('AdditionalTokenPathInput Component', () => {
         <ThemeProvider theme={theme}>
           <AdditionalTokenPathInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

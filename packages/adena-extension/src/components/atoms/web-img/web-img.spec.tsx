@@ -16,7 +16,7 @@ describe('WebImg Component', () => {
         <ThemeProvider theme={theme}>
           <WebImg src='https://adena.app/assets/images/favicon.svg' />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

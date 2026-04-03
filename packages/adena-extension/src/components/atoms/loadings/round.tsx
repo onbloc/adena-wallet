@@ -26,7 +26,7 @@ export const Round = ({
   bgColor,
   radius,
   margin,
-  children
+  children,
 }: RoundProps): JSX.Element => {
   return (
     <RoundStyle width={width} height={height} bgColor={bgColor} radius={radius} margin={margin}>

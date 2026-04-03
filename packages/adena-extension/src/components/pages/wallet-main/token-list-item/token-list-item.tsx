@@ -13,10 +13,10 @@ export interface TokenListItemProps {
 const TokenListItem: React.FC<TokenListItemProps> = ({
   token,
   completeImageLoading,
-  onClickTokenItem
+  onClickTokenItem,
 }) => {
   const {
-    tokenId, logo, name, balanceAmount
+    tokenId, logo, name, balanceAmount,
   } = token;
 
   const onLoadImage = (): void => {

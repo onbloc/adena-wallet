@@ -19,7 +19,7 @@ const AccountAddScreen = (): ReactElement<any> => {
     if (step === 'INIT') {
       return {
         default: WEB_TOP_SPACING,
-        responsive: WEB_TOP_SPACING
+        responsive: WEB_TOP_SPACING,
       };
     }
     return null;

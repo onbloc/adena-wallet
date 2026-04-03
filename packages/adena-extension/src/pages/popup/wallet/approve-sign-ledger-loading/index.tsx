@@ -55,10 +55,10 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
             WalletResponseSuccessType.SIGN_SUCCESS,
             {
               document,
-              signature
+              signature,
             },
-            requestData?.key
-          )
+            requestData?.key,
+          ),
         );
         return true;
       })
@@ -68,8 +68,8 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
             InjectionMessageInstance.failure(
               WalletResponseRejectType.SIGN_REJECTED,
               {},
-              requestData?.key
-            )
+              requestData?.key,
+            ),
           );
           return true;
         }
@@ -90,8 +90,8 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseRejectType.SIGN_REJECTED,
         requestData.data,
-        requestData.key
-      )
+        requestData.key,
+      ),
     );
   };
 

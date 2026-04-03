@@ -25,7 +25,7 @@ const StyledContainer = styled(Row).withConfig({ shouldForwardProp: forwardConfi
   ${webFonts.body4}
 
   ${({
-    theme, hover, focus, filled
+    theme, hover, focus, filled,
   }): RuleSet | string =>
     hover || focus || filled
       ? css`
@@ -108,7 +108,7 @@ export const WebSeedValidateInputItem: React.FC<WebSeedValidateInputItemProps> =
   index,
   value,
   error,
-  onChange
+  onChange,
 }) => {
   const [hover, setHover] = useState(false);
   const [focus, setFocus] = useState(false);
@@ -126,7 +126,7 @@ export const WebSeedValidateInputItem: React.FC<WebSeedValidateInputItemProps> =
       const value = event.target.value;
       onChange(value);
     },
-    [onChange]
+    [onChange],
   );
 
   return (

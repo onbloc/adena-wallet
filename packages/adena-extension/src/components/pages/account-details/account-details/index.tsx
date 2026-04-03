@@ -28,7 +28,7 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
   reset,
   moveGnoscan,
   moveRevealSeedPhrase,
-  moveExportPrivateKey
+  moveExportPrivateKey,
 }) => {
   const onClickViewOnGnoscan = useCallback(() => {
     moveGnoscan();

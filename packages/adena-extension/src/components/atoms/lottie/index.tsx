@@ -1,6 +1,6 @@
 import LottieWeb, { AnimationConfigWithData, AnimationItem } from 'lottie-web';
 import React, {
-  HTMLAttributes, useEffect, useMemo, useRef, useState
+  HTMLAttributes, useEffect, useMemo, useRef, useState,
 } from 'react';
 import styled, { css, RuleSet } from 'styled-components';
 
@@ -28,7 +28,7 @@ const StyledContainer = styled.div.withConfig({ shouldForwardProp: prop => !['vi
   height: ${({ height }): string => (height ? `${height}px` : 'auto')};
 
   ${({
-    isOverflow, visibleSize, width, height
+    isOverflow, visibleSize, width, height,
   }): RuleSet =>
     isOverflow
       ? css`
@@ -79,7 +79,7 @@ const Lottie: React.FC<LottieProps> = ({
       loop,
       autoplay,
       animationData,
-      rendererSettings: { className: 'lottie-player' }
+      rendererSettings: { className: 'lottie-player' },
     };
 
     const animation = LottieWeb.loadAnimation<'svg'>(animationOptions);

@@ -26,7 +26,7 @@ export class WalletAccountRepository {
 
   public getAccountNames = async (): Promise<{ [x: string]: string }> => {
     const accountNames = await this.localStorage.getToObject<{ [key in string]: string }>(
-      'ACCOUNT_NAMES'
+      'ACCOUNT_NAMES',
     );
     return accountNames;
   };

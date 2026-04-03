@@ -14,17 +14,17 @@ export interface NFTCollectionHeaderProps {
 const NFTCollectionHeader: React.FC<NFTCollectionHeaderProps> = ({
   title,
   moveBack,
-  openGnoscanCollection
+  openGnoscanCollection,
 }) => {
   const dropdownOptions = useMemo(
     () => [
       {
         text: 'View on GnoScan',
         icon: <IconLink />,
-        onClick: openGnoscanCollection
-      }
+        onClick: openGnoscanCollection,
+      },
     ],
-    []
+    [],
   );
 
   return (
@@ -32,7 +32,7 @@ const NFTCollectionHeader: React.FC<NFTCollectionHeaderProps> = ({
       title={title}
       leftElement={{
         element: <img src={LeftArrowIcon} alt='back icon' />,
-        onClick: moveBack
+        onClick: moveBack,
       }}
       rightElement={{
         element: (
@@ -44,7 +44,7 @@ const NFTCollectionHeader: React.FC<NFTCollectionHeaderProps> = ({
         ),
         onClick: (): void => {
           return;
-        }
+        },
       }}
     />
   );

@@ -16,7 +16,7 @@ describe('WebErrorText Component', () => {
         <ThemeProvider theme={theme}>
           <WebErrorText text='WebErrorText' />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

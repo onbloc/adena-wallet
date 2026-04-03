@@ -32,7 +32,7 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
   done,
   changeNetwork,
   cancel,
-  onResponse
+  onResponse,
 }) => {
   const title = useMemo(() => `Switch to ${toChain.name}`, [toChain.name]);
 
@@ -78,14 +78,14 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
       <BottomFixedLoadingButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           loading: processing,
           disabled: changeable === false,
           text: 'Switch',
-          onClick: onClickSwitch
+          onClick: onClickSwitch,
         }}
       />
     </ApproveChangingNetworkWrapper>

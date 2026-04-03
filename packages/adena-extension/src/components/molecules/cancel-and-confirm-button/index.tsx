@@ -22,7 +22,7 @@ const Wrapper = styled.div`
   margin-top: auto;
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   gap: 10px;
@@ -30,7 +30,7 @@ const Wrapper = styled.div`
 
 export const CancelAndConfirmButton = ({
   cancelButtonProps,
-  confirmButtonProps
+  confirmButtonProps,
 }: CancelAndConfirmLocation): ReactElement<any> => {
   return (
     <Wrapper>

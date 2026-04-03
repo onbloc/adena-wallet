@@ -21,7 +21,7 @@ import {
   SignMultisigTransactionResponse,
   SignTxResponse,
   SwitchNetworkResponse,
-  TransactionParams
+  TransactionParams,
 } from './inject/types';
 
 function callbackCustomEvent<T>(event: CustomEvent<T>, callback: (message: T) => void): void {
@@ -39,7 +39,7 @@ const init = (): void => {
     },
     async DoContract(
       message: TransactionParams,
-      options?: ContractOptions | boolean
+      options?: ContractOptions | boolean,
     ): Promise<DoContractResponse> {
       const executor = new AdenaExecutor();
 
@@ -48,13 +48,13 @@ const init = (): void => {
         = typeof options === 'boolean'
           ? {
               withNotification: options,
-              isVisibleResult: options
+              isVisibleResult: options,
             }
           : options;
       const { withNotification = true, isVisibleResult = true } = resolved ?? {};
       const response = await executor.doContract(message, {
         withNotification,
-        isVisibleResult
+        isVisibleResult,
       });
       return response;
     },
@@ -79,7 +79,7 @@ const init = (): void => {
       return response;
     },
     async CreateMultisigAccount(
-      params: CreateMultisigAccountParams
+      params: CreateMultisigAccountParams,
     ): Promise<CreateMultisigAccountResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.createMultisigAccount(params);
@@ -87,7 +87,7 @@ const init = (): void => {
     },
     async CreateMultisigTransaction(
       params: CreateMultisigTransactionParams,
-      withSaveFile = false
+      withSaveFile = false,
     ): Promise<CreateMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.createMultisigTransaction(params, withSaveFile);
@@ -96,26 +96,26 @@ const init = (): void => {
     async SignMultisigTransaction(
       multisigDocument: MultisigTransactionDocument,
       multisigSignatures?: Signature[],
-      withSaveFile = false
+      withSaveFile = false,
     ): Promise<SignMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.signMultisigTransaction(
         multisigDocument,
         multisigSignatures,
-        withSaveFile
+        withSaveFile,
       );
       return response;
     },
     async BroadcastMultisigTransaction(
       multisigDocument: MultisigTransactionDocument,
       multisigSignatures?: Signature[],
-      options?: ContractOptions
+      options?: ContractOptions,
     ): Promise<BroadcastMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.broadcastMultisigTransaction(
         multisigDocument,
         multisigSignatures,
-        options
+        options,
       );
       return response;
     },
@@ -136,14 +136,14 @@ const init = (): void => {
           window.addEventListener<(typeof EVENT_KEYS)[typeof eventName]>(
             EVENT_KEYS[eventName],
             event => callbackCustomEvent<string>(event, callback),
-            true
+            true,
           );
           return true;
         default:
           break;
       }
       return false;
-    }
+    },
   };
 
   window.adena = adena as unknown as AdenaWallet;

@@ -59,8 +59,8 @@ const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
           InjectionMessageInstance.success(
             WalletResponseSuccessType.SIGN_SUCCESS,
             { encodedTransaction },
-            requestData?.key
-          )
+            requestData?.key,
+          ),
         );
         return true;
       })
@@ -70,8 +70,8 @@ const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
             InjectionMessageInstance.failure(
               WalletResponseRejectType.SIGN_REJECTED,
               {},
-              requestData?.key
-            )
+              requestData?.key,
+            ),
           );
           return true;
         }
@@ -92,8 +92,8 @@ const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseRejectType.SIGN_REJECTED,
         requestData.data,
-        requestData.key
-      )
+        requestData.key,
+      ),
     );
   };
 

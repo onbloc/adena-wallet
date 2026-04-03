@@ -1,7 +1,7 @@
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
-  WalletResponseSuccessType
+  WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { ApproveLedgerLoading } from '@components/molecules';
 import { TM2Error } from '@gnolang/tm2-js-client';
@@ -69,10 +69,10 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
               WalletResponseFailureType.TRANSACTION_FAILED,
               {
                 hash,
-                error: null
+                error: null,
               },
-              requestData?.key
-            )
+              requestData?.key,
+            ),
           );
           return true;
         }
@@ -82,10 +82,10 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
               WalletResponseFailureType.TRANSACTION_FAILED,
               {
                 hash,
-                error: response
+                error: response,
               },
-              requestData?.key
-            )
+              requestData?.key,
+            ),
           );
           return true;
         }
@@ -94,8 +94,8 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
           InjectionMessageInstance.success(
             WalletResponseSuccessType.TRANSACTION_SUCCESS,
             response,
-            requestData?.key
-          )
+            requestData?.key,
+          ),
         );
         return true;
       })
@@ -108,8 +108,8 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
             InjectionMessageInstance.failure(
               WalletResponseRejectType.TRANSACTION_REJECTED,
               {},
-              requestData?.key
-            )
+              requestData?.key,
+            ),
           );
         }
         return false;
@@ -126,8 +126,8 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseRejectType.TRANSACTION_REJECTED,
         {},
-        requestData.key
-      )
+        requestData.key,
+      ),
     );
   };
 

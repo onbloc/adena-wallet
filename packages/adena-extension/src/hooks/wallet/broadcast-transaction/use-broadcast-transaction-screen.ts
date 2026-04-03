@@ -11,7 +11,7 @@ import {
   RawVmAddPackageMessage,
   RawVmCallMessage,
   RawVmRunMessage,
-  strToSignedTx
+  strToSignedTx,
 } from 'adena-module';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -28,13 +28,13 @@ function makeTransactionInfo(
   name: string,
   value: string,
   type: 'TEXT' | 'COIN' | 'ADDRESS' = 'TEXT',
-  extra: string | null = null
+  extra: string | null = null,
 ): TransactionDisplayInfo {
   return {
     name,
     value,
     type,
-    extra
+    extra,
   };
 }
 
@@ -222,7 +222,7 @@ const useBroadcastTransactionScreen = (): UseBroadcastTransactionScreenReturn =>
     transactionInfos,
     rawTransaction: rawTransactionStr,
     broadcast,
-    uploadTransaction
+    uploadTransaction,
   };
 };
 

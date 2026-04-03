@@ -27,7 +27,7 @@ describe('AddressInput Component', () => {
       },
       onClickAddressBook: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -36,7 +36,7 @@ describe('AddressInput Component', () => {
         <ThemeProvider theme={theme}>
           <AddressInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

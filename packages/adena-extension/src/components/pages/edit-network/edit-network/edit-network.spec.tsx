@@ -39,7 +39,7 @@ describe('EditNetwork Component', () => {
       },
       moveBack: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -48,7 +48,7 @@ describe('EditNetwork Component', () => {
         <ThemeProvider theme={theme}>
           <EditNetwork {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

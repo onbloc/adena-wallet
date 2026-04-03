@@ -276,7 +276,7 @@ export const WebButton: React.FC<WebButtonProps> = ({
             <Row style={{
               gap: 4,
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
             }}
             >
               {isRightButton && (

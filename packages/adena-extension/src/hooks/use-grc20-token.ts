@@ -16,6 +16,6 @@ export const useGRC20Token = (tokenPath: string, options?: UseGRC20TokenOptions)
   return useQuery<GRC20TokenModel | null, Error>({
     queryKey: ['grc20-token', currentNetwork.networkId, tokenPath],
     queryFn: () => tokenService.fetchGRC20Token(tokenPath),
-    enabled
+    enabled,
   });
 };

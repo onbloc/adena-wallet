@@ -9,7 +9,7 @@ export interface TransferLedgerRejectProps { onClickClose: () => void }
 
 const text = {
   title: 'Transaction Rejected',
-  desc: 'The transaction has been rejected on\nyour ledger device. Please approve the\ntransaction in your wallet to complete\nthe transaction.'
+  desc: 'The transaction has been rejected on\nyour ledger device. Please approve the\ntransaction in your wallet to complete\nthe transaction.',
 };
 
 const TransferLedgerReject: React.FC<TransferLedgerRejectProps> = ({ onClickClose }) => {

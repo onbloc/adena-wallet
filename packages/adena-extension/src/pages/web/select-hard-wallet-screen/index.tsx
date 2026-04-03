@@ -5,7 +5,7 @@ import IconLink from '@assets/web/link.svg';
 import { HARDWARE_WALLET_LEARN_PAGE } from '@common/constants/resource.constant';
 import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 import {
-  Pressable, Row, View, WebImg, WebMain, WebText
+  Pressable, Row, View, WebImg, WebMain, WebText,
 } from '@components/atoms';
 import WebMainButton from '@components/atoms/web-main-button';
 import { WebTitleWithDescription } from '@components/molecules';
@@ -44,7 +44,7 @@ const SelectHardWalletScreen = (): ReactElement<any> => {
       />
       <View style={{
         rowGap: 32,
-        alignItems: 'flex-start'
+        alignItems: 'flex-start',
       }}
       >
         <WebImg src={IconWallet} size={88} />

@@ -27,19 +27,19 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
   const { changeCurrentAccount } = useCurrentAccount();
 
   const [step, setStep] = useState<WalletCreateStateType>(
-    params?.doneQuestionnaire ? 'GET_SEED_PHRASE' : 'INIT'
+    params?.doneQuestionnaire ? 'GET_SEED_PHRASE' : 'INIT',
   );
 
   const walletCreateStepNo = {
     INIT: 0,
     GET_SEED_PHRASE: 1,
-    VALIDATE_MNEMONIC: 2
+    VALIDATE_MNEMONIC: 2,
   };
 
   const indicatorInfo = useIndicatorStep<string>({
     stepMap: walletCreateStepNo,
     currentState: step,
-    hasQuestionnaire: true
+    hasQuestionnaire: true,
   });
 
   const seeds = useMemo(() => {
@@ -79,7 +79,7 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         const account = await SeedAccount.createBy(
           keyring,
           `Account ${wallet.lastAccountIndex + 1}`,
-          0
+          0,
         );
         account.index = wallet.lastAccountIndex + 1;
 
@@ -87,7 +87,7 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         clone.addAccount(account);
         clone.addKeyring(keyring);
         const storedAccount = clone.accounts.find(
-          storedAccount => storedAccount.id === account.id
+          storedAccount => storedAccount.id === account.id,
         );
         if (storedAccount) {
           await changeCurrentAccount(storedAccount);
@@ -104,8 +104,8 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         navigate(RoutePath.WebCreatePassword, {
           state: {
             serializedWallet,
-            stepLength: indicatorInfo.stepLength
-          }
+            stepLength: indicatorInfo.stepLength,
+          },
         });
       }
     }
@@ -117,7 +117,7 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
     indicatorInfo,
     setStep,
     onClickGoBack,
-    onClickNext
+    onClickNext,
   };
 };
 

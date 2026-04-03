@@ -26,6 +26,6 @@ export const useToast = (): UseToastReturn => {
   return {
     message,
     show,
-    clear
+    clear,
   };
 };

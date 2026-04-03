@@ -2,7 +2,7 @@
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
-  WalletResponseSuccessType
+  WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
@@ -11,7 +11,7 @@ import { parseTokenAmount } from '@common/utils/amount-utils';
 import {
   createFaviconByHostname,
   decodeParameter,
-  parseParameters
+  parseParameters,
 } from '@common/utils/client-utils';
 import { fetchHealth } from '@common/utils/fetch-utils';
 import { makeQueryString } from '@common/utils/string-utils';
@@ -28,11 +28,11 @@ import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
 import {
-  Account, isMultisigAccount, MultisigConfig, RawTx
+  Account, isMultisigAccount, MultisigConfig, RawTx,
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
@@ -66,7 +66,7 @@ function makeDefaultNetworkInfo(chainId: string, rpcUrl: string): NetworkMetainf
     default: false,
     gnoUrl: '',
     id: chainId,
-    linkUrl: ''
+    linkUrl: '',
   };
 }
 
@@ -82,12 +82,12 @@ function mappedTransactionData(txDocument: MultisigTransactionDocument): Transac
       return {
         type: message?.['@type'] || '',
         function: message?.['@type'] === '/bank.MsgSend' ? 'Transfer' : message?.func || '',
-        value: message || ''
+        value: message || '',
       };
     }),
     gasWanted: tx.fee.gas_wanted,
     gasFee: tx.fee.gas_fee,
-    memo: tx.memo || ''
+    memo: tx.memo || '',
   };
 }
 
@@ -96,7 +96,7 @@ const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
     const { healthy } = await fetchHealth(rpcUrl);
     if (healthy === false) {
       chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, requestKey)
+        InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, requestKey),
       );
       return;
     }
@@ -152,7 +152,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     if (!multisigDocument?.fee?.gas_fee) {
       return {
         amount: '',
-        denom: ''
+        denom: '',
       };
     }
 
@@ -162,7 +162,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     if (!gasFeeMatch) {
       return {
         amount: '',
-        denom: ''
+        denom: '',
       };
     }
 
@@ -172,7 +172,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
     return {
       amount,
-      denom: GasToken.symbol
+      denom: GasToken.symbol,
     };
   }, [multisigDocument]);
 
@@ -241,13 +241,13 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     const parsedData = decodeParameter(data['data']);
     setRequestData({
       ...parsedData,
-      hostname: data['hostname']
+      hostname: data['hostname'],
     });
   };
 
   const initFavicon = async (): Promise<void> => {
     const faviconData = await createFaviconByHostname(
-      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : ''
+      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : '',
     );
     setFavicon(faviconData);
   };
@@ -301,8 +301,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
           { error: { message: error?.message } },
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
     }
     return false;
@@ -310,7 +310,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
   const validate = async (
     currentAccount: Account,
-    requestData: InjectionMessage
+    requestData: InjectionMessage,
   ): Promise<boolean> => {
     if (!isMultisigAccount(currentAccount)) {
       return false;
@@ -319,7 +319,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
       await currentAccount.getAddress(defaultAddressPrefix),
-      false
+      false,
     );
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
@@ -332,7 +332,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
     const params = {
       ...(scannerParameters || {}),
-      txhash: txHash
+      txhash: txHash,
     };
 
     return `${scannerUrl}/transactions/details?${makeQueryString(params)}`;
@@ -348,8 +348,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
           {},
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
       return false;
     }
@@ -359,8 +359,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
           { error: { message: 'Current account is not a multisig account' } },
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
       return false;
     }
@@ -371,7 +371,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       const combinedTx = await multisigService.combineMultisigSignatures(
         currentAccount,
         multisigDocument,
-        multisigSignatures
+        multisigSignatures,
       );
 
       const broadcastResult = await multisigService.broadcastTxCommit(combinedTx.tx);
@@ -383,11 +383,11 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
           WalletResponseSuccessType.TRANSACTION_SUCCESS,
           {
             broadcastResult,
-            txExplorerUrl
+            txExplorerUrl,
           },
           requestData?.key,
-          requestData?.withNotification
-        )
+          requestData?.withNotification,
+        ),
       );
 
       return true;
@@ -409,8 +409,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
         WalletResponseFailureType.TRANSACTION_FAILED,
         { error: { message: errorMessage } },
         requestData?.key,
-        requestData?.withNotification
-      )
+        requestData?.withNotification,
+      ),
     );
   };
 
@@ -458,8 +458,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseRejectType.TRANSACTION_REJECTED,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   };
 
@@ -482,8 +482,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NETWORK_TIMEOUT,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   }, [requestData]);
 

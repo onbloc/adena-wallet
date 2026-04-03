@@ -8,7 +8,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   StyledHiddenInput,
   StyledSignerListWrapper,
-  StyledWrapper
+  StyledWrapper,
 } from './broadcast-multisig-signature-upload-input.styles';
 
 export interface BroadcastMultisigSignatureUploadInputProps {
@@ -22,7 +22,7 @@ export interface BroadcastMultisigSignatureUploadInputProps {
 const BroadcastMultisigSignatureUploadInput: React.FC<
   BroadcastMultisigSignatureUploadInputProps
 > = ({
-  signatures, uploadSignature, removeSignature, signerPublicKeys, threshold
+  signatures, uploadSignature, removeSignature, signerPublicKeys, threshold,
 }) => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -30,13 +30,13 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
   const signersWithStatus = useMemo(() => {
     return signerPublicKeys.map((signer, index) => {
       const isSigned = signatures.some(
-        signature => signature.pub_key.value === signer.publicKey.value
+        signature => signature.pub_key.value === signer.publicKey.value,
       );
       return {
         index: index + 1,
         address: signer.address,
         publicKey: signer.publicKey.value,
-        isSigned
+        isSigned,
       };
     });
   }, [signerPublicKeys, signatures]);
@@ -127,7 +127,7 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
         setErrorMessage(null);
       }
     },
-    [uploadSignature]
+    [uploadSignature],
   );
 
   const onDropFile = useCallback(
@@ -138,7 +138,7 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
         uploadFiles(files);
       }
     },
-    [uploadFiles]
+    [uploadFiles],
   );
 
   const onChangeFileInput = useCallback(
@@ -149,7 +149,7 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
         uploadFiles(fileArray);
       }
     },
-    [uploadFiles]
+    [uploadFiles],
   );
 
   return (

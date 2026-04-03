@@ -26,18 +26,18 @@ export class FaucetRepository {
     return this.networkInstance
       .post(requestUrl, {
         to: request.to,
-        amount: request.amount
+        amount: request.amount,
       })
       .then((r) => {
         if (r?.data?.result) {
           return {
             success: true,
-            message: 'Tokens successfully received!'
+            message: 'Tokens successfully received!',
           };
         }
         return {
           success: false,
-          message: 'Unexpected Error.'
+          message: 'Unexpected Error.',
         };
       })
       .catch((err) => {
@@ -46,13 +46,13 @@ export class FaucetRepository {
           if (err.response?.status === 401) {
             return {
               success,
-              message: err.response?.data
+              message: err.response?.data,
             };
           }
         }
         return {
           success,
-          message: 'Unexpected Error.'
+          message: 'Unexpected Error.',
         };
       });
   }

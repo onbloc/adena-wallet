@@ -7,7 +7,7 @@ import {
   GRC721Model,
   TokenBalanceType,
   TokenModel,
-  TransactionInfo
+  TransactionInfo,
 } from '@types';
 import { Document } from 'adena-module';
 
@@ -100,7 +100,7 @@ export enum RoutePath {
   WebAccountAddedComplete = '/web/account-added',
   WebQuestionnaire = '/web/questionnaire',
   WebAccountAdd = '/web/account-add',
-  WebAccountImport = '/web/account-import'
+  WebAccountImport = '/web/account-import',
 }
 
 export type RouteParams = {

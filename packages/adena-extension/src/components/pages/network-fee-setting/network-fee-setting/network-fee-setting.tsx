@@ -33,14 +33,14 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   gasAdjustment,
   setGasAdjustment,
   onClickBack,
-  onClickSave
+  onClickSave,
 }) => {
   const settingInfoMap = useMemo(() => {
     if (!networkFeeSettings) {
       return {
         [NetworkFeeSettingType.FAST]: null,
         [NetworkFeeSettingType.AVERAGE]: null,
-        [NetworkFeeSettingType.SLOW]: null
+        [NetworkFeeSettingType.SLOW]: null,
       };
     }
 
@@ -49,14 +49,14 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
         acc[setting.settingType] = setting;
         return acc;
       },
-      {} as Record<NetworkFeeSettingType, NetworkFeeSettingInfo | null>
+      {} as Record<NetworkFeeSettingType, NetworkFeeSettingInfo | null>,
     );
   }, [networkFeeSettings]);
 
   const settingInfos = useMemo(() => {
     return settingTypesOfList.map(settingType => ({
       ...settingInfoMap[settingType],
-      settingType
+      settingType,
     }));
   }, [settingInfoMap]);
 
@@ -75,7 +75,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
     }) => {
       return settingInfo?.settingType === networkFeeSettingType;
     },
-    [networkFeeSettingType]
+    [networkFeeSettingType],
   );
 
   const changeGasAdjustment = useCallback((value: string): string => {
@@ -103,7 +103,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
         title='Network Fee Setting'
         leftElement={{
           onClick: onClickBack,
-          element: <img src={`${ArrowLeftIcon}`} alt='back image' />
+          element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
         }}
       />
 
@@ -122,7 +122,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
                     storageDeposit: 0,
                     unlockDeposit: 0,
                     storageUsage: 0,
-                    releaseStorageUsage: 0
+                    releaseStorageUsage: 0,
                   },
                   gasInfo: {
                     ...(settingInfo.gasInfo || {
@@ -130,9 +130,9 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
                       gasPrice: 0,
                       gasUsed: 0n,
                       gasWanted: 0n,
-                      simulateErrorMessage: null
-                    })
-                  }
+                      simulateErrorMessage: null,
+                    }),
+                  },
                 })}
             />
           ))}

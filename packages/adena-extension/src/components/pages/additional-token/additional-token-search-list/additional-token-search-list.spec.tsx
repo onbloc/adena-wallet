@@ -14,7 +14,7 @@ describe('AdditionalTokenSearchList Component', () => {
       tokenInfos: [],
       onClickListItem: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -23,7 +23,7 @@ describe('AdditionalTokenSearchList Component', () => {
         <ThemeProvider theme={theme}>
           <AdditionalTokenSearchList {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

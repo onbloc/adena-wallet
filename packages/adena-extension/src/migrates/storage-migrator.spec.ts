@@ -1,5 +1,5 @@
 import {
-  beforeAll, describe, expect, it, vi
+  beforeAll, describe, expect, it, vi,
 } from 'vitest';
 
 import { StorageModelV001 } from './migrations/v001/storage-model-v001';
@@ -22,12 +22,12 @@ const mockStorageV001: StorageModelV001 = {
           id: 'address_1',
           address: 'address',
           createdAt: '0',
-          name: 'addressbook 01'
-        }
-      ]
+          name: 'addressbook 01',
+        },
+      ],
     },
-    ACCOUNT_TOKEN_METAINFOS: {}
-  }
+    ACCOUNT_TOKEN_METAINFOS: {},
+  },
 };
 
 const storage = {
@@ -36,7 +36,7 @@ const storage = {
   },
   async get(): Promise<object> {
     return {};
-  }
+  },
 };
 
 describe('StorageMigrator', () => {

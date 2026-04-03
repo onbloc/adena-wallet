@@ -23,8 +23,8 @@ const AddressBook = (): JSX.Element => {
       state: {
         status,
         addressList: addressBook,
-        curr
-      }
+        curr,
+      },
     });
 
   if (loading) {
@@ -71,7 +71,7 @@ const AddressBook = (): JSX.Element => {
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   height: 100%;
@@ -89,7 +89,7 @@ const Wrapper = styled.main`
 const TopSection = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   margin-bottom: 12px;

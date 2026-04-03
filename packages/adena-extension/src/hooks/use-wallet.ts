@@ -28,7 +28,7 @@ export const useWallet = (): UseWalletReturn => {
     queryFn: async () => {
       const existWallet = await walletService.existsWallet().catch(() => false);
       return existWallet;
-    }
+    },
   });
 
   const { data: lockedWallet, isLoading: isLoadingLockedWallet } = useQuery({
@@ -36,7 +36,7 @@ export const useWallet = (): UseWalletReturn => {
     queryFn: async () => {
       const lockedWallet = await walletService.isLocked();
       return lockedWallet;
-    }
+    },
   });
 
   return {
@@ -44,6 +44,6 @@ export const useWallet = (): UseWalletReturn => {
     existWallet,
     isLoadingExistWallet,
     lockedWallet,
-    isLoadingLockedWallet
+    isLoadingLockedWallet,
   };
 };

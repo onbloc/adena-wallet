@@ -21,7 +21,7 @@ export const TitleWithDesc = ({
   title,
   desc,
   isWarningDesc = false,
-  className = ''
+  className = '',
 }: TitleWithDescProps): JSX.Element => {
   const theme = useTheme();
   return (

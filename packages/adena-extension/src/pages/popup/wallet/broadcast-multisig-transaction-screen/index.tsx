@@ -15,7 +15,7 @@ const BroadcastMultisigTransactionContent: React.FC = () => {
     transaction,
     signatures,
     removeSignature,
-    resetMultisigTransaction
+    resetMultisigTransaction,
   } = useMultisigTransactionContext();
 
   const {
@@ -28,7 +28,7 @@ const BroadcastMultisigTransactionContent: React.FC = () => {
     transactionInfos,
     rawTransaction,
     signerPublicKeys,
-    threshold
+    threshold,
   } = useBroadcastMultisigTransactionScreen();
 
   return (

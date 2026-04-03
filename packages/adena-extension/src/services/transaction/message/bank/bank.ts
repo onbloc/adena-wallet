@@ -15,7 +15,7 @@ export const createMessageOfBankSend = (info: {
     value: {
       from_address: info.fromAddress,
       to_address: info.toAddress,
-      amount: info.amount
-    }
+      amount: info.amount,
+    },
   };
 };

@@ -14,5 +14,5 @@ export interface TransferInfo {
 
 export const memorizedTransferInfo = atom<TransferInfo | null>({
   key: 'transfer/transfer-info',
-  default: null
+  default: null,
 });

@@ -21,12 +21,12 @@ describe('NFTTransferSummary Component', () => {
         tokenId: '',
         type: 'grc721',
         isMetadata: true,
-        isTokenUri: true
+        isTokenUri: true,
       },
       toAddress: '',
       networkFee: {
         amount: '0.0048',
-        denom: 'GNOT'
+        denom: 'GNOT',
       },
       memo: '',
       queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
@@ -42,7 +42,7 @@ describe('NFTTransferSummary Component', () => {
       onClickNetworkFeeSetting: () => {
         return;
       },
-      isErrorNetworkFee: false
+      isErrorNetworkFee: false,
     };
 
     render(
@@ -51,7 +51,7 @@ describe('NFTTransferSummary Component', () => {
         <ThemeProvider theme={theme}>
           <NFTTransferSummary {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

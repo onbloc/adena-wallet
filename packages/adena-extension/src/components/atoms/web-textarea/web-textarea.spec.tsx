@@ -16,7 +16,7 @@ describe('WebTextarea Component', () => {
         <ThemeProvider theme={theme}>
           <WebTextarea />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

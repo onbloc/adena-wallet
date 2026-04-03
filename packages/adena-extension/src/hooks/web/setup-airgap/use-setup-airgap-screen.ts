@@ -12,7 +12,7 @@ import {
   AdenaWallet,
   AirgapAccount,
   fromBech32,
-  isAirgapAccount
+  isAirgapAccount,
 } from 'adena-module';
 import { useCallback, useState } from 'react';
 
@@ -34,14 +34,14 @@ export const setupAirgapStepBackTo: Record<SetupAirgapStateType, SetupAirgapStat
   INIT: null,
   ENTER_ADDRESS: 'INIT',
   COMPLETE: 'ENTER_ADDRESS',
-  LOADING: 'ENTER_ADDRESS'
+  LOADING: 'ENTER_ADDRESS',
 };
 
 const setupAirgapStepNo = {
   INIT: 0,
   ENTER_ADDRESS: 1,
   COMPLETE: 2,
-  LOADING: 2
+  LOADING: 2,
 };
 
 const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
@@ -58,7 +58,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
 
   const indicatorInfo = useIndicatorStep<SetupAirgapStateType>({
     stepMap: setupAirgapStepNo,
-    currentState: setupAirgapState
+    currentState: setupAirgapState,
   });
 
   const initSetup = useCallback(() => {
@@ -86,7 +86,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   const _existsAddress = useCallback(async () => {
     const checkAccounts = accounts.filter(account => isAirgapAccount(account));
     return Promise.all(
-      checkAccounts.map(account => account.getAddress(defaultAddressPrefix))
+      checkAccounts.map(account => account.getAddress(defaultAddressPrefix)),
     ).then(addresses => addresses.includes(address));
   }, [accounts, address]);
 
@@ -147,8 +147,8 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
       navigate(RoutePath.WebCreatePassword, {
         state: {
           serializedWallet,
-          stepLength: indicatorInfo.stepLength
-        }
+          stepLength: indicatorInfo.stepLength,
+        },
       });
     }
     setBlockedEvent(false);
@@ -163,7 +163,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
     initSetup,
     changeAddress,
     confirmAddress,
-    addAccount
+    addAccount,
   };
 };
 

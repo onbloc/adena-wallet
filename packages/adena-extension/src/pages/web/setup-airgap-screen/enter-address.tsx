@@ -1,6 +1,6 @@
 import IconAirgap from '@assets/web/airgap-green.svg';
 import {
-  View, WebButton, WebErrorText, WebImg, WebInput
+  View, WebButton, WebErrorText, WebImg, WebInput,
 } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import React, { useCallback, useMemo } from 'react';
@@ -48,7 +48,7 @@ const SetupAirgapEnterAddress: React.FC<SetupAirgapEnterAddressProps> = ({
   address,
   errorMessage,
   changeAddress,
-  confirmAddress
+  confirmAddress,
 }) => {
   const disabledNextButton = useMemo(() => {
     return address === '' || errorMessage !== null;

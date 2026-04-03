@@ -1,5 +1,5 @@
 import {
-  Row, View, WebButton, WebCheckBox, WebText
+  Row, View, WebButton, WebCheckBox, WebText,
 } from '@components/atoms';
 import { WebSeedInput, WebTitleWithDescription } from '@components/molecules';
 import { UseAccountImportReturn } from '@hooks/web/use-account-import-screen';
@@ -13,7 +13,7 @@ const StyledContainer = styled(View)`
 
 const SetMnemonicStep = ({ useAccountImportScreenReturn }: { useAccountImportScreenReturn: UseAccountImportReturn }): ReactElement<any> => {
   const {
-    errMsg, isValidForm, updateInputValue, setInputType, onClickNext
+    errMsg, isValidForm, updateInputValue, setInputType, onClickNext,
   }
     = useAccountImportScreenReturn;
   const theme = useTheme();
@@ -27,7 +27,7 @@ const SetMnemonicStep = ({ useAccountImportScreenReturn }: { useAccountImportScr
       />
       <View style={{
         paddingBottom: 8,
-        marginTop: -6
+        marginTop: -6,
       }}
       >
         <WebSeedInput
@@ -40,7 +40,7 @@ const SetMnemonicStep = ({ useAccountImportScreenReturn }: { useAccountImportScr
       </View>
       <Row style={{
         columnGap: 8,
-        alignItems: 'center'
+        alignItems: 'center',
       }}
       >
         <WebCheckBox

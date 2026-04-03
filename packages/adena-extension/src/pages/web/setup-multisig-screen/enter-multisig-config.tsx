@@ -1,6 +1,6 @@
 import IconAirgap from '@assets/web/airgap-green.svg';
 import {
-  View, WebButton, WebErrorText, WebImg
+  View, WebButton, WebErrorText, WebImg,
 } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import { WebMultisigSignerInput } from '@components/molecules/web-multisig-signer-input';
@@ -31,7 +31,7 @@ const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
   onThresholdChange,
   multisigConfigError,
   onCreateMultisigAccount,
-  multisigAccountMode
+  multisigAccountMode,
 }) => {
   const { signers, threshold } = multisigConfig;
 

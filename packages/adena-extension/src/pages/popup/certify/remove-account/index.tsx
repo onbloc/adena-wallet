@@ -44,7 +44,7 @@ export const RemoveAccount = (): JSX.Element => {
         confirmButtonProps={{
           onClick: removeButtonClick,
           text: 'Remove',
-          hierarchy: 'danger'
+          hierarchy: 'danger',
         }}
       />
     </Wrapper>

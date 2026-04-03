@@ -15,11 +15,11 @@ describe('SelectAccountBoxItem Component', () => {
       address: 'address',
       hdPath: 1,
       stored: false,
-      selected: false
+      selected: false,
     },
     select: (): void => {
       return;
-    }
+    },
   };
 
   it('SelectAccountBoxItem render', () => {
@@ -29,7 +29,7 @@ describe('SelectAccountBoxItem Component', () => {
         <ThemeProvider theme={theme}>
           <SelectAccountBoxItem {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

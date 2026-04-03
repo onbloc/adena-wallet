@@ -14,7 +14,7 @@ export const validateInvalidAddress = (address: string): boolean => {
 export const validateAlreadyAddress = (
   currData: AddressBookItem,
   allData: AddressBookItem[],
-  isAdd: boolean
+  isAdd: boolean,
 ): boolean => {
   let check: boolean;
   if (isAdd) {
@@ -22,7 +22,7 @@ export const validateAlreadyAddress = (
   }
   else {
     const filterData = allData.filter(
-      (v: AddressBookItem) => v.id !== currData.id && v.address === currData.address
+      (v: AddressBookItem) => v.id !== currData.id && v.address === currData.address,
     );
     check = Boolean(filterData.length);
   }
@@ -35,7 +35,7 @@ export const validateAlreadyAddress = (
 export const validateAlreadyAddressByAccounts = async (
   currData: AddressBookItem,
   accounts: Account[],
-  isAdd: boolean
+  isAdd: boolean,
 ): Promise<boolean> => {
   let check: boolean;
   const addresses = await Promise.all(accounts.map(account => account.getAddress('g')));
@@ -55,7 +55,7 @@ export const validateAlreadyAddressByAccounts = async (
 export const validateAlreadyName = (
   currData: AddressBookItem,
   allData: AddressBookItem[],
-  isAdd: boolean
+  isAdd: boolean,
 ): boolean => {
   let check: boolean;
   if (isAdd) {
@@ -63,7 +63,7 @@ export const validateAlreadyName = (
   }
   else {
     const filterData = allData.filter(
-      (v: AddressBookItem) => v.id !== currData.id && v.name === currData.name
+      (v: AddressBookItem) => v.id !== currData.id && v.name === currData.name,
     );
     check = Boolean(filterData.length);
   }

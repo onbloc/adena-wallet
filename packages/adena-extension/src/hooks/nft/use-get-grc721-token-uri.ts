@@ -7,7 +7,7 @@ export const GET_GRC721_TOKEN_URI_QUERY_KEY = 'nft/useGetGRC721TokenUri';
 export const useGetGRC721TokenUri = (
   packagePath: string,
   tokenId: string,
-  options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<string | null> => {
   const { tokenService } = useAdenaContext();
   const { currentNetwork } = useNetwork();
@@ -16,6 +16,6 @@ export const useGetGRC721TokenUri = (
     queryKey: [GET_GRC721_TOKEN_URI_QUERY_KEY, packagePath, tokenId, currentNetwork.chainId],
     queryFn: () => tokenService.fetchGRC721TokenUri(packagePath, tokenId).catch(() => null),
     staleTime: Infinity,
-    ...options
+    ...options,
   });
 };

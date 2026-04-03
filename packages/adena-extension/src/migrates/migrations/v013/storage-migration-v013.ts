@@ -6,20 +6,20 @@ import {
   CurrentChainIdModelV012,
   CurrentNetworkIdModelV012,
   NetworksModelV012,
-  StorageModelDataV012
+  StorageModelDataV012,
 } from '../v012/storage-model-v012';
 import {
   CurrentChainIdModelV013,
   CurrentNetworkIdModelV013,
   NetworksModelV013,
-  StorageModelDataV013
+  StorageModelDataV013,
 } from './storage-model-v013';
 
 export class StorageMigration013 implements Migration<StorageModelDataV013> {
   public readonly version = 13;
 
   async up(
-    current: StorageModel<StorageModelDataV012>
+    current: StorageModel<StorageModelDataV012>,
   ): Promise<StorageModel<StorageModelDataV013>> {
     if (!this.validateModelV012(current.data)) {
       throw new Error('Storage Data does not match version V012');
@@ -31,8 +31,8 @@ export class StorageMigration013 implements Migration<StorageModelDataV013> {
         ...previous,
         CURRENT_CHAIN_ID: this.migrateCurrentChainId(previous.CURRENT_CHAIN_ID),
         CURRENT_NETWORK_ID: this.migrateCurrentNetworkId(previous.CURRENT_NETWORK_ID),
-        NETWORKS: this.migrateNetwork(previous.NETWORKS)
-      }
+        NETWORKS: this.migrateNetwork(previous.NETWORKS),
+      },
     };
   }
 
@@ -81,7 +81,7 @@ export class StorageMigration013 implements Migration<StorageModelDataV013> {
   }
 
   private migrateCurrentNetworkId(
-    currentNetworkId: CurrentNetworkIdModelV012
+    currentNetworkId: CurrentNetworkIdModelV012,
   ): CurrentNetworkIdModelV013 {
     if (currentNetworkId === 'test8' || currentNetworkId === 'test9') {
       return 'test9.1';
@@ -100,12 +100,12 @@ export class StorageMigration013 implements Migration<StorageModelDataV013> {
             ...providedNetwork,
             chainName: network.chainName,
             networkName: network.networkName,
-            rpcUrl: network.rpcUrl
+            rpcUrl: network.rpcUrl,
           };
         }
         return {
           ...network,
-          indexerUrl: ''
+          indexerUrl: '',
         };
       });
     return [...defaultNetworks, ...customNetworks];

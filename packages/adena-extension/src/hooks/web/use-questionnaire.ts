@@ -18,7 +18,7 @@ const useQuestionnaire = (): UseQuestionnaireReturn => {
       }
       const ableToSkipQuestionnaire = await walletService.isSkipQuestionnaire().catch(() => false);
       return ableToSkipQuestionnaire;
-    }
+    },
   });
 
   const doneQuestionnaire = (): Promise<void> => {
@@ -27,7 +27,7 @@ const useQuestionnaire = (): UseQuestionnaireReturn => {
 
   return {
     ableToSkipQuestionnaire,
-    doneQuestionnaire
+    doneQuestionnaire,
   };
 };
 

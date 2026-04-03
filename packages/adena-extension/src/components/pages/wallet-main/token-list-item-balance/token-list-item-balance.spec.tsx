@@ -13,8 +13,8 @@ describe('TokenListItemBalance Component', () => {
     const args: TokenListItemBalanceProps = {
       amount: {
         value: '240,255.241155',
-        denom: 'GNOT'
-      }
+        denom: 'GNOT',
+      },
     };
 
     render(
@@ -23,7 +23,7 @@ describe('TokenListItemBalance Component', () => {
         <ThemeProvider theme={theme}>
           <TokenListItemBalance {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

@@ -7,19 +7,19 @@ import { InjectionMessage, InjectionMessageInstance } from '../message';
 
 export const createMultisigAccount = async (
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): Promise<void> => {
   HandlerMethod.createPopup(
     RoutePath.CreateMultisigAccount,
     requestData,
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
-    sendResponse
+    sendResponse,
   );
 };
 
 export const createMultisigDocument = async (
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): Promise<void> => {
   const validationMessage = validateInjectionData(requestData);
   if (validationMessage) {
@@ -31,13 +31,13 @@ export const createMultisigDocument = async (
     RoutePath.CreateMultisigTransaction,
     requestData,
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
-    sendResponse
+    sendResponse,
   );
 };
 
 export const signMultisigDocument = async (
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): Promise<void> => {
   const validationMessage = validateInjectionData(requestData);
   if (validationMessage) {
@@ -49,13 +49,13 @@ export const signMultisigDocument = async (
     RoutePath.SignMultisigDocument,
     requestData,
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
-    sendResponse
+    sendResponse,
   );
 };
 
 export const broadcastMultisigTransaction = async (
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): Promise<void> => {
   const validationMessage = validateInjectionData(requestData);
   if (validationMessage) {
@@ -67,6 +67,6 @@ export const broadcastMultisigTransaction = async (
     RoutePath.BroadcastMultisigTransaction,
     requestData,
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
-    sendResponse
+    sendResponse,
   );
 };

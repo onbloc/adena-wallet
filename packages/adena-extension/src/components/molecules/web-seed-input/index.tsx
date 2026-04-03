@@ -8,7 +8,7 @@ import { ReactElement, useCallback, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import {
-  Pressable, Row, View, WebImg, WebText
+  Pressable, Row, View, WebImg, WebText,
 } from '../../atoms';
 import { makeFilledSeedPhrase } from './web-seed-input.utils';
 
@@ -66,7 +66,7 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
       const length = _type === '12seeds' ? 12 : 24;
       return makeFilledSeedPhrase(_wordList, length);
     },
-    []
+    [],
   );
 
   const onChangeWord = useCallback(
@@ -77,10 +77,10 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
       setWordList(list);
       onChange({
         type,
-        value: list.join(' ')
+        value: list.join(' '),
       });
     },
-    [type, wordList]
+    [type, wordList],
   );
 
   const onChangeWebSeedInputByWords = useCallback(
@@ -89,10 +89,10 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
       setWordList(words);
       onChange({
         type,
-        value: words.join(' ')
+        value: words.join(' '),
       });
     },
-    [type]
+    [type],
   );
 
   const TypeMenuItem = useCallback(
@@ -108,7 +108,7 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
             const value = _type === 'pKey' ? pKey : _getFilledWordList(_type, wordList).join(' ');
             onChange({
               type: _type,
-              value
+              value,
             });
           }}
           selected={selected}
@@ -119,7 +119,7 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
         </StyledTypeMenuItem>
       );
     },
-    [type, wordList, pKey]
+    [type, wordList, pKey],
   );
 
   return (
@@ -140,7 +140,7 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
                 onChange={({ target: { value } }): void => {
                   onChange({
                     type,
-                    value
+                    value,
                   });
                   setPKey(value);
                 }}
@@ -172,7 +172,7 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
         {!!errorMessage && (
           <Row style={{
             columnGap: 6,
-            alignItems: 'center'
+            alignItems: 'center',
           }}
           >
             <WebImg src={IconAlert} size={20} color={theme.webError._100} />

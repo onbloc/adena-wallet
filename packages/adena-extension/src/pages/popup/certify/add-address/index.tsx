@@ -2,7 +2,7 @@ import add from '@assets/add-symbol.svg';
 import edit from '@assets/edit-symbol.svg';
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
 import {
-  DefaultInput, ErrorText, inputStyle, LeftArrowBtn, Text
+  DefaultInput, ErrorText, inputStyle, LeftArrowBtn, Text,
 } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
 import { useAddressBook } from '@hooks/use-address-book';
@@ -13,13 +13,13 @@ import {
   validateAlreadyAddress,
   validateAlreadyAddressByAccounts,
   validateAlreadyName,
-  validateInvalidAddress
+  validateInvalidAddress,
 } from '@services/index';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
 import React, {
-  type JSX, useEffect, useRef, useState
+  type JSX, useEffect, useRef, useState,
 } from 'react';
 import styled, { useTheme } from 'styled-components';
 
@@ -60,7 +60,7 @@ const AddAddress = (): JSX.Element => {
       id: params.curr?.id ?? '',
       name: name,
       address: address,
-      createdAt: params.curr?.createdAt ?? ''
+      createdAt: params.curr?.createdAt ?? '',
     };
 
     try {
@@ -196,7 +196,7 @@ const AddAddress = (): JSX.Element => {
         confirmButtonProps={{
           onClick: saveButtonClick,
           text: 'Save',
-          props: { disabled: Boolean(!address || !name) }
+          props: { disabled: Boolean(!address || !name) },
         }}
       />
     </Wrapper>

@@ -14,7 +14,7 @@ describe('NetworkFeeCustomInput Component', () => {
       value: '0.0001',
       changeValue: () => {
         return '';
-      }
+      },
     };
 
     render(
@@ -23,7 +23,7 @@ describe('NetworkFeeCustomInput Component', () => {
         <ThemeProvider theme={theme}>
           <NetworkFeeCustomInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

@@ -12,6 +12,6 @@ export const useIsLoadingNFT = (): number => {
         && query.state.data === undefined
         && [GET_GRC721_COLLECTIONS_QUERY_KEY, GET_GRC721_BALANCE_QUERY_KEY, GET_GRC721_TOKEN_URI_QUERY_KEY].includes(query.queryKey[0])
       );
-    }
+    },
   });
 };

@@ -18,7 +18,7 @@ describe('ApproveTransactionLoading Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveTransactionLoading {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

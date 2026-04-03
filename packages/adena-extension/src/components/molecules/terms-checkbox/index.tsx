@@ -22,7 +22,7 @@ interface TermsCheckboxProps {
 const Wrapper = styled.div<{ margin?: string }>`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   margin: ${({ margin }): string => margin ?? '0px 0px 10px'};
@@ -35,7 +35,7 @@ const Label = styled.label<{
 }>`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   position: relative;
   padding-left: 28px;
@@ -84,7 +84,7 @@ export const TermsCheckbox = ({
   className = '',
   margin,
   id = '',
-  color
+  color,
 }: TermsCheckboxProps): JSX.Element => {
   return (
     <Wrapper className={className} margin={margin} color={color}>

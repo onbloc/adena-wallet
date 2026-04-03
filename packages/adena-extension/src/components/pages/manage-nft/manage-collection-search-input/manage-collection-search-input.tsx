@@ -10,7 +10,7 @@ export interface ManageCollectionSearchInputProps {
 
 const ManageCollectionSearchInput: React.FC<ManageCollectionSearchInputProps> = ({
   keyword,
-  onChangeKeyword
+  onChangeKeyword,
 }) => {
   return (
     <ManageCollectionSearchInputWrapper>

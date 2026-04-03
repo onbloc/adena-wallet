@@ -4,7 +4,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 
 export const useGetGRC721PinnedCollections = (
-  options?: Omit<UseQueryOptions<string[], Error>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<string[], Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<string[]> => {
   const { tokenService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
@@ -21,6 +21,6 @@ export const useGetGRC721PinnedCollections = (
         .getAccountGRC721PinnedPackages(currentAccount.id, currentNetwork.chainId)
         .catch(() => []);
     },
-    ...options
+    ...options,
   });
 };

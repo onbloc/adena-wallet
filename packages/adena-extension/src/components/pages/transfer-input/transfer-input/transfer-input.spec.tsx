@@ -20,7 +20,7 @@ describe('TransferInput Component', () => {
         image: '',
         symbol: 'GNOT',
         type: 'gno-native',
-        decimals: 6
+        decimals: 6,
       },
       balanceInput: {
         hasError: false,
@@ -32,7 +32,7 @@ describe('TransferInput Component', () => {
         },
         onClickMax: () => {
           return;
-        }
+        },
       },
       addressInput: {
         opened: false,
@@ -51,13 +51,13 @@ describe('TransferInput Component', () => {
         },
         onClickAddressBook: () => {
           return;
-        }
+        },
       },
       memoInput: {
         memo: '',
         onChangeMemo: () => {
           return;
-        }
+        },
       },
       isNext: true,
       hasBackButton: true,
@@ -69,7 +69,7 @@ describe('TransferInput Component', () => {
       },
       onClickNext: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -78,7 +78,7 @@ describe('TransferInput Component', () => {
         <ThemeProvider theme={theme}>
           <TransferInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

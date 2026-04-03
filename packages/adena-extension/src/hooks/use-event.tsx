@@ -6,7 +6,7 @@ export const useEvent = (): UseEventReturn => {
   function dispatchEvent(message: EventMessageData): void {
     chrome.tabs.query({
       active: true,
-      currentWindow: true
+      currentWindow: true,
     }, (currentTabs) => {
       const currentTab = currentTabs.length > 0 ? currentTabs[0] : null;
       if (!currentTab || !currentTab.id) {

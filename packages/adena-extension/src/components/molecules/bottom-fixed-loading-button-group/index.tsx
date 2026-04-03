@@ -33,7 +33,7 @@ function mapClassName(buttonProps: ButtonProps): string {
 export const BottomFixedLoadingButtonGroup = ({
   leftButton,
   rightButton,
-  filled
+  filled,
 }: BottomFixedLoadingButtonGroupProps): ReactElement<any> => {
   const leftClassName = useMemo(() => {
     return mapClassName(leftButton);
@@ -97,7 +97,7 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
   loading,
   className,
   text,
-  onClick
+  onClick,
 }: LoadingButtonProps) => {
   return (
     <Button className={className} fullWidth onClick={onClick}>
@@ -109,7 +109,7 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
 const ButtonWrap = styled.div<{ $filled?: boolean }>`
   ${mixins.flex({
     direction: 'row',
-    align: 'flex-start'
+    align: 'flex-start',
   })};
   position: fixed;
   left: 0px;

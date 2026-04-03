@@ -20,7 +20,7 @@ const SignatureUploadLabel: React.FC<SignatureUploadLabelProps> = ({
   signedCount,
   threshold,
   hasSignatures,
-  onDrop
+  onDrop,
 }) => {
   const theme = useTheme();
 

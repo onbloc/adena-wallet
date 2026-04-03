@@ -26,12 +26,12 @@ describe('ApproveTransaction Component', () => {
         {
           type: '/vm.m_call',
           function: 'GetBoardIDFromName',
-          value: ''
-        }
+          value: '',
+        },
       ],
       networkFee: {
         amount: '0.0048',
-        denom: 'GNOT'
+        denom: 'GNOT',
       },
       transactionData: '',
       opened: false,
@@ -66,17 +66,17 @@ describe('ApproveTransaction Component', () => {
           gasPrice: 0.00000000048,
           gasUsed: 100000,
           gasWanted: 150000,
-          simulateErrorMessage: null
+          simulateErrorMessage: null,
         },
         currentStorageDeposits: {
           storageDeposit: 0,
           unlockDeposit: 0,
           storageUsage: 0,
-          releaseStorageUsage: 0
+          releaseStorageUsage: 0,
         },
         networkFee: {
           amount: '0.0048',
-          denom: 'GNOT'
+          denom: 'GNOT',
         },
         gasAdjustment: '1.5',
         setGasAdjustment: () => {
@@ -91,8 +91,8 @@ describe('ApproveTransaction Component', () => {
         },
         save: () => {
           return;
-        }
-      }
+        },
+      },
     };
 
     render(
@@ -101,7 +101,7 @@ describe('ApproveTransaction Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveTransaction {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

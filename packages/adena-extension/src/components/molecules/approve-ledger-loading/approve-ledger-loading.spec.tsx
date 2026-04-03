@@ -14,7 +14,7 @@ describe('ApproveLedgerLoading Component', () => {
       document: null,
       onClickCancel: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -23,7 +23,7 @@ describe('ApproveLedgerLoading Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveLedgerLoading {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

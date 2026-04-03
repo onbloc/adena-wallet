@@ -4,7 +4,7 @@ import styled from 'styled-components';
 export const TransactionHistoryWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: auto;
@@ -17,7 +17,7 @@ export const TransactionHistoryWrapper = styled.div`
 export const TransactionHistoryDescriptionWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: auto;

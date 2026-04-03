@@ -10,12 +10,12 @@ interface Message {
 const MESSAGE_TYPES: { [key in EventKeyType]: Message } = {
   changedAccount: {
     code: 0,
-    description: 'Account has been successfully changed.'
+    description: 'Account has been successfully changed.',
   },
   changedNetwork: {
     code: 0,
-    description: 'Network has been successfully changed.'
-  }
+    description: 'Network has been successfully changed.',
+  },
 };
 
 export interface EventMessageData {
@@ -59,7 +59,7 @@ export class EventMessage {
       status: this.status,
       type: this.type,
       message: this.description,
-      data: this.data
+      data: this.data,
     };
   }
 

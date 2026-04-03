@@ -14,7 +14,7 @@ describe('TransferLedgerLoading Component', () => {
       document: null,
       onClickCancel: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -23,7 +23,7 @@ describe('TransferLedgerLoading Component', () => {
         <ThemeProvider theme={theme}>
           <TransferLedgerLoading {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

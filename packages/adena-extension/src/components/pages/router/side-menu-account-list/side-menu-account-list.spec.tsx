@@ -26,7 +26,7 @@ describe('SideMenuAccountList Component', () => {
       },
       moveAccountDetail: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -35,7 +35,7 @@ describe('SideMenuAccountList Component', () => {
         <ThemeProvider theme={theme}>
           <SideMenuAccountList {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

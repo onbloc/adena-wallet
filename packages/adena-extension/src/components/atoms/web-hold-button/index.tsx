@@ -1,8 +1,8 @@
 import React, {
-  CSSProperties, useCallback, useEffect, useState
+  CSSProperties, useCallback, useEffect, useState,
 } from 'react';
 import styled, {
-  css, keyframes, RuleSet, useTheme
+  css, keyframes, RuleSet, useTheme,
 } from 'styled-components';
 
 import { View } from '../base';
@@ -75,7 +75,7 @@ export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
   width = 'fit-content',
   height = 32,
   text = 'Hold to Reveal',
-  onFinishHold
+  onFinishHold,
 }) => {
   const theme = useTheme();
   const [pressed, setPressed] = useState(false);
@@ -131,7 +131,7 @@ export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
     <StyledContainer
       style={{
         width,
-        height
+        height,
       }}
       pressed={pressed}
       finish={finish}

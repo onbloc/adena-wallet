@@ -18,7 +18,7 @@ describe('ApproveChangingNetworkItem Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveChangingNetworkItem {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

@@ -6,7 +6,7 @@ export const NetworkListItemWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: auto;
@@ -23,7 +23,7 @@ export const NetworkListItemWrapper = styled.div`
   .info-wrapper {
     ${mixins.flex({
       align: 'normal',
-      justify: 'normal'
+      justify: 'normal',
     })};
     width: 100%;
     font-size: 12px;
@@ -33,7 +33,7 @@ export const NetworkListItemWrapper = styled.div`
     .name-wrapper {
       ${mixins.flex({
         direction: 'row',
-        justify: 'normal'
+        justify: 'normal',
       })};
 
       .name {
@@ -73,7 +73,7 @@ export const NetworkListItemWrapper = styled.div`
     .description-wrapper {
       ${mixins.flex({
         direction: 'row',
-        justify: 'normal'
+        justify: 'normal',
       })};
 
       .description {

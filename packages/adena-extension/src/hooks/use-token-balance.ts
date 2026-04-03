@@ -29,7 +29,7 @@ export const useTokenBalance = (): {
     currentTokenMetainfos: tokenMetainfos,
     tokenLogoMap,
     updateTokenMetainfos,
-    getTokenAmount
+    getTokenAmount,
   } = useTokenMetainfo();
   const { wallet } = useWalletContext();
   const { balanceService } = useAdenaContext();
@@ -60,12 +60,12 @@ export const useTokenBalance = (): {
         return [];
       }
       return Promise.all(
-        tokenMetainfos.map(tokenModel => fetchBalanceBy(currentAddress, tokenModel))
+        tokenMetainfos.map(tokenModel => fetchBalanceBy(currentAddress, tokenModel)),
       );
     },
     refetchInterval: REFETCH_INTERVAL,
     placeholderData: keepPreviousData,
-    enabled: availableBalanceFetching
+    enabled: availableBalanceFetching,
   });
 
   const { data: accountNativeBalanceMap = {}, refetch: refetchAccountNativeBalanceMap } = useQuery<
@@ -81,18 +81,18 @@ export const useTokenBalance = (): {
         wallet.accounts.map(async (account) => {
           const address = await account.getAddress(currentNetwork.addressPrefix);
           return fetchBalanceBy(address, nativeToken);
-        })
+        }),
       ).then(balances =>
         balances.reduce<Record<string, TokenBalanceType>>((accum, current, index) => {
           if (wallet.accounts[index]?.id) {
             accum[wallet.accounts[index]?.id] = current;
           }
           return accum;
-        }, {})
+        }, {}),
       );
     },
     refetchInterval: REFETCH_INTERVAL,
-    enabled: availableBalanceFetching
+    enabled: availableBalanceFetching,
   });
 
   const currentBalances = useMemo((): TokenBalanceType[] => {
@@ -103,8 +103,8 @@ export const useTokenBalance = (): {
       ...tokenMetainfo,
       amount: balances.find(t => t.tokenId === tokenMetainfo.tokenId)?.amount || {
         value: '',
-        denom: ''
-      }
+        denom: '',
+      },
     }));
   }, [balances, tokenMetainfos]);
 
@@ -128,13 +128,13 @@ export const useTokenBalance = (): {
   async function toggleDisplayOption(
     account: Account,
     token: TokenModel,
-    activated: boolean
+    activated: boolean,
   ): Promise<void> {
     const changedTokenInfos: TokenModel[] = tokenMetainfos.map((tokenMetainfo) => {
       if (token.tokenId === tokenMetainfo.tokenId) {
         return {
           ...tokenMetainfo,
-          display: activated
+          display: activated,
         };
       }
       return tokenMetainfo;
@@ -153,8 +153,8 @@ export const useTokenBalance = (): {
       ...token,
       amount: getTokenAmount({
         value: `${balanceAmount || 0}`,
-        denom: token.symbol
-      })
+        denom: token.symbol,
+      }),
     };
   }
 
@@ -165,6 +165,6 @@ export const useTokenBalance = (): {
     refetchBalances,
     refetchAccountNativeBalanceMap,
     toggleDisplayOption,
-    fetchBalanceBy
+    fetchBalanceBy,
   };
 };

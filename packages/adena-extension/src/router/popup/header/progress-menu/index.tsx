@@ -44,7 +44,7 @@ const Hr = styled.hr<ProgressMenuProps>`
 export const ProgressMenu = ({
   progressLevel,
   showLogo = false,
-  hideArrow = false
+  hideArrow = false,
 }: ProgressMenuProps): JSX.Element => {
   const { goBack } = useAppNavigate();
 

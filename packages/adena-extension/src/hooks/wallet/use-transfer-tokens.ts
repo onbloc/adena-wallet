@@ -12,7 +12,7 @@ export const useTransferTokens = (): UseTransferTokenReturn => {
   const { tokenService } = useAdenaContext();
 
   const fetchTransferTokens = async (
-    address: string
+    address: string,
   ): Promise<{
     grc20Packages: TokenModel[];
     grc721Packages: GRC721CollectionModel[];
@@ -21,7 +21,7 @@ export const useTransferTokens = (): UseTransferTokenReturn => {
       transferEventPackages, deployedGRC20Tokens, deployedCollections]: [
       string[],
       GRC20TokenModel[],
-      GRC721CollectionModel[]
+      GRC721CollectionModel[],
     ] = await Promise.all([tokenService.fetchAllTransferPackagesBy(address), tokenService.fetchGRC20Tokens(), tokenService.fetchGRC721Collections()]).catch(() => [[], [], []]);
 
     const filteredGRC20Packages = (deployedGRC20Tokens || []).filter((grc20Token) => {
@@ -42,7 +42,7 @@ export const useTransferTokens = (): UseTransferTokenReturn => {
 
     return {
       grc20Packages: filteredGRC20Packages,
-      grc721Packages: filteredGRC721Packages
+      grc721Packages: filteredGRC721Packages,
     };
   };
 

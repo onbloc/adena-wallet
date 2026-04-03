@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const AddressBookListWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: auto;
@@ -22,7 +22,7 @@ export const AddressBookListWrapper = styled.div`
 export const AddressBookListItemWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   min-height: 48px;

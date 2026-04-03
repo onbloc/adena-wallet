@@ -9,7 +9,7 @@ import {
   GRC721MetadataModel,
   GRC721Model,
   NetworkMetainfo,
-  TokenModel
+  TokenModel,
 } from '@types';
 
 export class TokenService {
@@ -111,20 +111,20 @@ export class TokenService {
     await this.tokenRepository.updateTokenMetainfos(accountId, [
       ...fetchedTokenMetainfos.map((token1) => {
         const previousInfo = storedTokenMetainfos.find(token2 =>
-          this.equalsToken(token1, token2)
+          this.equalsToken(token1, token2),
         );
         if (previousInfo) {
           return {
             ...token1,
             tokenId: previousInfo.tokenId,
-            display: previousInfo.display
+            display: previousInfo.display,
           };
         }
         return token1;
       }),
       ...storedTokenMetainfos.filter(token1 =>
-        fetchedTokenMetainfos.every(token2 => !this.equalsToken(token1, token2))
-      )
+        fetchedTokenMetainfos.every(token2 => !this.equalsToken(token1, token2)),
+      ),
     ]);
     return true;
   }
@@ -154,7 +154,7 @@ export class TokenService {
     return storedTokenMetainfos.map(token1 => ({
       ...token1,
       image:
-        this.getTokenMetainfos().find(token2 => this.equalsToken(token1, token2))?.image || ''
+        this.getTokenMetainfos().find(token2 => this.equalsToken(token1, token2))?.image || '',
     }));
   }
 
@@ -167,19 +167,19 @@ export class TokenService {
    */
   public async updateTokenMetainfosByAccountId(
     accountId: string,
-    tokenMetainfos: TokenModel[]
+    tokenMetainfos: TokenModel[],
   ): Promise<boolean> {
     const fetchedTokenMetainfos = await this.fetchTokenMetainfos();
     const changedTokenMetaInfos = tokenMetainfos.map((token1) => {
       const tokenMetaInfo = fetchedTokenMetainfos.find(token2 =>
-        this.equalsToken(token1, token2)
+        this.equalsToken(token1, token2),
       );
       if (tokenMetaInfo) {
         const { image, description } = tokenMetaInfo;
         return {
           ...token1,
           image,
-          description
+          description,
         };
       }
       return token1;
@@ -195,12 +195,12 @@ export class TokenService {
    * @returns
    */
   public async updateAccountTokenMetainfos(
-    accountTokenMetainfos: AccountTokenBalance[]
+    accountTokenMetainfos: AccountTokenBalance[],
   ): Promise<boolean> {
     for (const accountTokenMetainfo of accountTokenMetainfos) {
       await this.tokenRepository.updateTokenMetainfos(
         accountTokenMetainfo.accountId,
-        accountTokenMetainfo.tokenBalances
+        accountTokenMetainfo.tokenBalances,
       );
     }
     return true;
@@ -217,14 +217,14 @@ export class TokenService {
   public async changeAccountTokenMetainfoDisplay(
     accountId: string,
     tokenId: string,
-    display: boolean
+    display: boolean,
   ): Promise<boolean> {
     const storedTokenMetainfos = await this.getTokenMetainfosByAccountId(accountId);
     const changedTokenMetainfos = storedTokenMetainfos.map((metainfo) => {
       if (metainfo.tokenId === tokenId) {
         return {
           ...metainfo,
-          display
+          display,
         };
       }
       return metainfo;
@@ -284,7 +284,7 @@ export class TokenService {
    */
   public async fetchGRC721TokenMetadata(
     packagePath: string,
-    tokenId: string
+    tokenId: string,
   ): Promise<GRC721MetadataModel> {
     return this.tokenRepository.fetchGRC721TokenMetadataBy(packagePath, tokenId);
   }
@@ -320,7 +320,7 @@ export class TokenService {
    */
   public async getAccountGRC721Collections(
     accountId: string,
-    networkId: string
+    networkId: string,
   ): Promise<GRC721CollectionModel[]> {
     return this.tokenRepository.getAccountGRC721CollectionsBy(accountId, networkId);
   }
@@ -336,7 +336,7 @@ export class TokenService {
   public async saveAccountGRC721Collections(
     accountId: string,
     networkId: string,
-    collections: GRC721CollectionModel[]
+    collections: GRC721CollectionModel[],
   ): Promise<boolean> {
     return this.tokenRepository.saveAccountGRC721CollectionsBy(accountId, networkId, collections);
   }
@@ -350,7 +350,7 @@ export class TokenService {
    */
   public async getAccountGRC721PinnedPackages(
     accountId: string,
-    networkId: string
+    networkId: string,
   ): Promise<string[]> {
     return this.tokenRepository.getAccountGRC721PinnedPackagesBy(accountId, networkId);
   }
@@ -366,12 +366,12 @@ export class TokenService {
   public async saveAccountGRC721PinnedPackages(
     accountId: string,
     networkId: string,
-    packagePaths: string[]
+    packagePaths: string[],
   ): Promise<boolean> {
     return this.tokenRepository.saveAccountGRC721PinnedPackagesBy(
       accountId,
       networkId,
-      packagePaths
+      packagePaths,
     );
   }
 

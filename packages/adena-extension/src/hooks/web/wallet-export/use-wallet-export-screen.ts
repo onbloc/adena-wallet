@@ -1,6 +1,6 @@
 import {
   WALLET_EXPORT_ACCOUNT_ID,
-  WALLET_EXPORT_TYPE_STORAGE_KEY
+  WALLET_EXPORT_TYPE_STORAGE_KEY,
 } from '@common/constants/storage.constant';
 import { AdenaStorage } from '@common/storage';
 import { encryptWalletPassword } from '@common/utils/crypto-utils';
@@ -36,22 +36,22 @@ export const walletExportStep: Record<
 > = {
   INIT: {
     backTo: null,
-    stepNo: 0
+    stepNo: 0,
   },
   CHECK_PASSWORD: {
     backTo: 'INIT',
-    stepNo: 0
+    stepNo: 0,
   },
   RESULT: {
     backTo: 'INIT',
-    stepNo: 0
-  }
+    stepNo: 0,
+  },
 };
 
 export const walletExportStepNo: Record<WalletExportStateType, number> = {
   INIT: 0,
   CHECK_PASSWORD: 0,
-  RESULT: 0
+  RESULT: 0,
 };
 
 const useWalletExportScreen = (): UseWalletExportReturn => {
@@ -65,7 +65,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
   const indicatorInfo = useIndicatorStep({
     stepMap: walletExportStepNo,
     currentState: walletExportState,
-    hasQuestionnaire: false
+    hasQuestionnaire: false,
   });
 
   const { data: account = null } = useQuery({
@@ -75,7 +75,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
         return currentAccount;
       }
       return wallet?.accounts.find(account => account.id === exportAccountId) || currentAccount;
-    }
+    },
   });
 
   const _initExportType = useCallback(async () => {
@@ -121,7 +121,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
         .then(storedPassword => storedPassword === encryptWalletPassword(password))
         .catch(() => false);
     },
-    [exportType, walletService]
+    [exportType, walletService],
   );
 
   const moveExport = useCallback(
@@ -151,7 +151,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
       }
       setWalletExportState('RESULT');
     },
-    [exportType, account, walletService]
+    [exportType, account, walletService],
   );
 
   useEffect(() => {
@@ -167,7 +167,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
     backStep,
     initWalletExport,
     checkPassword,
-    moveExport
+    moveExport,
   };
 };
 

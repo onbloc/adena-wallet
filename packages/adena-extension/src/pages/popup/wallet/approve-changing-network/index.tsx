@@ -1,7 +1,7 @@
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
-  WalletResponseSuccessType
+  WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import { CommonFullContentLayout } from '@components/atoms';
@@ -11,7 +11,7 @@ import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { RoutePath } from '@types';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
@@ -43,7 +43,7 @@ const ApproveChangingNetworkContainer: React.FC = () => {
     const parsedData = decodeParameter(data['data']);
     setRequestData({
       ...parsedData,
-      hostname: data['hostname']
+      hostname: data['hostname'],
     });
     setChainId(parsedData?.data?.chainId || '');
   };
@@ -55,15 +55,15 @@ const ApproveChangingNetworkContainer: React.FC = () => {
   const onClickChangeNetwork = useCallback(async () => {
     setProcessing(true);
     const network = networks.find(
-      network => network.chainId === chainId && network.deleted !== true
+      network => network.chainId === chainId && network.deleted !== true,
     );
     if (!network) {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNADDED_NETWORK,
           requestData?.data,
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
       return;
     }
@@ -72,8 +72,8 @@ const ApproveChangingNetworkContainer: React.FC = () => {
       InjectionMessageInstance.success(
         WalletResponseSuccessType.SWITCH_NETWORK_SUCCESS,
         requestData?.data,
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
     setDone(true);
   }, [changeNetwork, requestData, chainId, networks]);
@@ -89,8 +89,8 @@ const ApproveChangingNetworkContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NETWORK_TIMEOUT,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   };
 
@@ -99,8 +99,8 @@ const ApproveChangingNetworkContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseRejectType.SWITCH_NETWORK_REJECTED,
         requestData?.data,
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   }, [requestData]);
 

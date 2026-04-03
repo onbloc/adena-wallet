@@ -9,13 +9,13 @@ import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, Signature, SignerInfo } from '@inject/types';
 import { NetworkFee as NetworkFeeType } from '@types';
 import {
-  Account, isMultisigAccount, MultisigConfig, SignerPublicKeyInfo
+  Account, isMultisigAccount, MultisigConfig, SignerPublicKeyInfo,
 } from 'adena-module';
 import React, { useCallback, useEffect, useMemo } from 'react';
 
 import {
   ApproveTransactionNetworkFeeWrapper,
-  ApproveTransactionWrapper
+  ApproveTransactionWrapper,
 } from '../approve-transaction/approve-transaction.styles';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
@@ -79,7 +79,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   onResponse,
   onClickConfirm,
   onClickCancel,
-  openScannerLink
+  openScannerLink,
 }) => {
   const [openedSigners, setOpenedSigners] = React.useState(false);
 
@@ -246,14 +246,14 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           disabled: disabledBroadcast,
           text: 'Broadcast',
           loading: processing,
-          onClick: onClickConfirmButton
+          onClick: onClickConfirmButton,
         }}
       />
     </ApproveTransactionWrapper>

@@ -26,7 +26,7 @@ export const validateWrongPasswordLength = (password: string): boolean => {
 
 export const validateEqualsChangePassword = (
   newPassword: string,
-  originPassword: string
+  originPassword: string,
 ): boolean => {
   if (newPassword === originPassword) {
     throw new PasswordValidationError('EQUAL_CHANGE_PASSWORD');
@@ -36,7 +36,7 @@ export const validateEqualsChangePassword = (
 
 export const validateNotMatchConfirmPassword = (
   password: string,
-  confirmPassword: string
+  confirmPassword: string,
 ): boolean => {
   if (password !== confirmPassword) {
     throw new PasswordValidationError('NOT_MATCH_CONFIRM_PASSWORD');

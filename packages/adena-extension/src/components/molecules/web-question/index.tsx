@@ -13,7 +13,7 @@ export interface WebQuestionProps {
 
 export const WebQuestion: React.FC<WebQuestionProps> = ({
   title,
-  question
+  question,
 }) => {
   const theme = useTheme();
 
@@ -21,7 +21,7 @@ export const WebQuestion: React.FC<WebQuestionProps> = ({
     <StyledContainer
       style={{
         width: '100%',
-        alignItems: 'flex-start'
+        alignItems: 'flex-start',
       }}
     >
       <WebText type='headline2'>

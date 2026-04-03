@@ -1,6 +1,6 @@
 export enum VMQueryType {
   QUERY_DOCUMENT = 'vm/qdoc',
-  QUERY_VALUE = 'vm/qval'
+  QUERY_VALUE = 'vm/qval',
 }
 
 export interface ABCIAccount {
@@ -66,11 +66,11 @@ export interface GnoFunctionParam {
 
 export enum StorageDepositEventType {
   StorageDeposit = '/tm.StorageDepositEvent',
-  UnlockDeposit = '/tm.StorageUnlockEvent'
+  UnlockDeposit = '/tm.StorageUnlockEvent',
 }
 
 export enum StorageDepositAttributeKey {
   Deposit = 'Deposit',
   Storage = 'Storage',
-  ReleaseStorage = 'ReleaseStorage'
+  ReleaseStorage = 'ReleaseStorage',
 }

@@ -7,18 +7,18 @@ import { CommandHandler } from '@inject/message/command-handler';
 import {
   CommandMessage,
   CommandMessageData,
-  isCommandMessageData
+  isCommandMessageData,
 } from '@inject/message/command-message';
 import { clearInMemoryKey } from '@inject/message/commands/encrypt';
 import {
   GnoSessionState,
   GnoSessionUpdateMessage,
-  PopupSessionUpdateMessage
+  PopupSessionUpdateMessage,
 } from '@inject/message/methods/gno-session';
 import {
   addTransactionEvent,
   isTransactionNotification,
-  parseTransactionScannerUrl
+  parseTransactionScannerUrl,
 } from '@inject/message/methods/transaction-event';
 
 import { InjectionMessage, MessageHandler } from './inject/message';
@@ -130,7 +130,7 @@ function isGetAllGnoSessionsMessage(message: unknown): message is GetAllGnoSessi
 
 async function handleRegisterPopupSession(
   message: RegisterPopupSessionMessage,
-  sender: chrome.runtime.MessageSender
+  sender: chrome.runtime.MessageSender,
 ): Promise<{
   success: boolean;
   session?: GnoSessionState;
@@ -164,17 +164,17 @@ async function handleRegisterPopupSession(
 
   return {
     success: true,
-    session
+    session,
   };
 }
 
 function handleGnoSessionUpdate(
   message: GnoSessionUpdateMessage,
-  sender: chrome.runtime.MessageSender
+  sender: chrome.runtime.MessageSender,
 ): void {
   const { data } = message;
   const {
-    sessionId, funcName, pkgPath, chainId, rpc, updateType
+    sessionId, funcName, pkgPath, chainId, rpc, updateType,
   } = data;
   const funcKey = makeFuncKey(pkgPath, funcName);
 
@@ -197,7 +197,7 @@ function handleGnoSessionUpdate(
       address: '',
       mode: 'secure',
       params: {},
-      tabId: sender.tab?.id || 0
+      tabId: sender.tab?.id || 0,
     };
     gnoSessions.set(sessionId, session);
     funcKeyToSessionId.set(funcKey, sessionId);
@@ -228,7 +228,7 @@ function handleGnoSessionUpdate(
     type: 'POPUP_SESSION_UPDATE',
     sessionId,
     updateType,
-    data
+    data,
   };
 
   // Broadcast to all extension pages (including popup)
@@ -252,7 +252,7 @@ function handleGetActiveSession(message: GetActiveSessionMessage): GnoSessionSta
   console.log('[Background] GET_ACTIVE_SESSION:', {
     funcKey,
     sessionId,
-    found: !!session
+    found: !!session,
   });
 
   return session || null;
@@ -264,7 +264,7 @@ function handleGetAllGnoSessions(): Array<{
 }> {
   const allSessions = Array.from(gnoSessions.entries()).map(([id, data]) => ({
     id,
-    data
+    data,
   }));
 
   return allSessions;
@@ -401,8 +401,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
           tabId,
           CommandMessage.command('checkMetadata', {
             gnoMessageInfo: null,
-            gnoConnectInfo: null
-          })
+            gnoConnectInfo: null,
+          }),
         )
         .catch(() => undefined);
     }
@@ -457,7 +457,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   return MessageHandler.createHandler(inMemoryProvider, message, sender, response =>
-    sendResponseWithNotification(response, message, sendResponse)
+    sendResponseWithNotification(response, message, sendResponse),
   );
 });
 
@@ -490,7 +490,7 @@ function initAlarmWithDelay(alarm: {
   setTimeout(
     () =>
       chrome.alarms.create(alarm.key, { periodInMinutes: alarm.periodInMinutes }),
-    alarm.delay
+    alarm.delay,
   );
 }
 
@@ -504,7 +504,7 @@ function initAlarmWithDelay(alarm: {
 async function sendResponseWithNotification(
   response: InjectionMessage | CommandMessageData | any,
   message: any,
-  sendResponse: (response?: any) => void
+  sendResponse: (response?: any) => void,
 ): Promise<void> {
   sendResponse(response);
 

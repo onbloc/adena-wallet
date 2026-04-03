@@ -5,7 +5,7 @@ export const createTransactionLoginPopup = (callback?: () => void): void => {
     height: 600,
     width: 360,
     left: 800,
-    top: 300
+    top: 300,
   };
   chrome.windows.create(popupOption, async (windowResponse) => {
     chrome.tabs.onUpdated.addListener((tabId, info) => {

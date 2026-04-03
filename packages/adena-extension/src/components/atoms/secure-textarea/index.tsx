@@ -37,7 +37,7 @@ export const SecureTextarea = ({
   value,
   onChange,
   onKeyDown,
-  error = false
+  error = false,
 }: SecureTextareaProps): JSX.Element => {
   return (
     <StyledWrapper error={error}>

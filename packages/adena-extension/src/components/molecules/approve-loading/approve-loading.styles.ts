@@ -15,7 +15,7 @@ export const ApproveLoadingWrapper = styled.div`
 export const ApproveLoadingSkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
     align: 'flex-end',
-    justify: 'space-between'
+    justify: 'space-between',
   })}
   width: 80px;
   height: 80px;
@@ -26,7 +26,7 @@ export const ApproveLoadingSkeletonBox = styled(SkeletonBoxStyle)`
 export const ApproveLoadingRoundedBox = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   height: 41px;

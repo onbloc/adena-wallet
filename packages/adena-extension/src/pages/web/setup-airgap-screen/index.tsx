@@ -21,7 +21,7 @@ const SetupAirgapScreen: React.FC = () => {
     initSetup,
     changeAddress,
     confirmAddress,
-    addAccount
+    addAccount,
   } = useSetupAirgapScreen();
   const { navigate } = useAppNavigate();
 
@@ -31,7 +31,7 @@ const SetupAirgapScreen: React.FC = () => {
     }
     return {
       default: WEB_TOP_SPACING,
-      responsive: WEB_TOP_SPACING_RESPONSIVE
+      responsive: WEB_TOP_SPACING_RESPONSIVE,
     };
   }, [setupAirgapState]);
 

@@ -20,7 +20,7 @@ describe('MainHeader Component', () => {
             onClickGoBack={(): void => { return; }}
           />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

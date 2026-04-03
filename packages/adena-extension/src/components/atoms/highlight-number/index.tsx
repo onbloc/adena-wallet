@@ -19,7 +19,7 @@ export const HighlightNumber: React.FC<HighlightNumberProps> = ({
   fontStyleKey = 'header6',
   minimumFontSize = '14px',
   lineHeight,
-  withSign = false
+  withSign = false,
 }) => {
   const hasDecimal = value.includes('.');
   const [integer, decimal] = hasDecimal ? value.split('.') : [value, ''];

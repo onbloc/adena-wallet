@@ -13,7 +13,7 @@ describe('TransferSummaryNetworkFee Component', () => {
     const args: TransferSummaryNetworkFeeProps = {
       value: '0.0048',
       denom: 'GNOT',
-      isError: false
+      isError: false,
     };
 
     render(
@@ -22,7 +22,7 @@ describe('TransferSummaryNetworkFee Component', () => {
         <ThemeProvider theme={theme}>
           <TransferSummaryNetworkFee {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

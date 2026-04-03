@@ -2,7 +2,7 @@
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
-  WalletResponseSuccessType
+  WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
@@ -11,7 +11,7 @@ import { validateMessageArguments } from '@common/utils/argument-validation';
 import {
   createFaviconByHostname,
   decodeParameter,
-  parseParameters
+  parseParameters,
 } from '@common/utils/client-utils';
 import { fetchHealth } from '@common/utils/fetch-utils';
 import { parseSimulateErrors } from '@common/utils/transaction-error-parser';
@@ -21,7 +21,7 @@ import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
   defaultAddressPrefix,
-  TM2Error
+  TM2Error,
 } from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
@@ -35,11 +35,11 @@ import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
 import {
-  Account, Document, isAirgapAccount, isLedgerAccount
+  Account, Document, isAirgapAccount, isLedgerAccount,
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, {
-  useCallback, useEffect, useMemo, useRef, useState
+  useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
@@ -72,7 +72,7 @@ function makeDefaultNetworkInfo(chainId: string, rpcUrl: string): NetworkMetainf
     default: false,
     gnoUrl: '',
     id: chainId,
-    linkUrl: ''
+    linkUrl: '',
   };
 }
 
@@ -83,13 +83,13 @@ function mappedTransactionData(document: Document): TransactionData {
       return {
         type: message?.type || '',
         function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
-        value: message?.value || ''
+        value: message?.value || '',
       };
     }),
     gasWanted: document.fee.gas,
     gasFee: `${document.fee.amount[0].amount}${document.fee.amount[0].denom}`,
     memo: `${document.memo || ''}`,
-    document
+    document,
   };
 }
 
@@ -98,7 +98,7 @@ const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
     const { healthy } = await fetchHealth(rpcUrl);
     if (healthy === false) {
       chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, requestKey)
+        InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, requestKey),
       );
       return;
     }
@@ -177,13 +177,13 @@ const ApproveTransactionContainer: React.FC = () => {
     if (!networkFee) {
       return {
         amount: '',
-        denom: ''
+        denom: '',
       };
     }
 
     return {
       amount: networkFee.amount,
-      denom: GasToken.symbol
+      denom: GasToken.symbol,
     };
   }, [networkFee]);
 
@@ -250,13 +250,13 @@ const ApproveTransactionContainer: React.FC = () => {
     if (firstMessage?.type === '/vm.m_call') {
       return {
         funcName: firstMessage.value?.func || '',
-        pkgPath: firstMessage.value?.pkg_path || ''
+        pkgPath: firstMessage.value?.pkg_path || '',
       };
     }
 
     return {
       funcName: '',
-      pkgPath: ''
+      pkgPath: '',
     };
   }, [requestData?.data?.messages]);
 
@@ -296,16 +296,16 @@ const ApproveTransactionContainer: React.FC = () => {
               ...msg,
               value: {
                 ...msg.value,
-                args: updatedArgs
-              }
+                args: updatedArgs,
+              },
             };
           });
         });
 
         setRequiresHoldConfirmation(true);
       },
-      [argumentInfos]
-    )
+      [argumentInfos],
+    ),
   });
 
   const checkLockWallet = (): void => {
@@ -319,13 +319,13 @@ const ApproveTransactionContainer: React.FC = () => {
     const parsedData = decodeParameter(data['data']);
     setRequestData({
       ...parsedData,
-      hostname: data['hostname']
+      hostname: data['hostname'],
     });
   };
 
   const validate = async (
     currentAccount: Account,
-    requestData: InjectionMessage
+    requestData: InjectionMessage,
   ): Promise<boolean> => {
     const address = await currentAccount.getAddress('g');
     const validationMessage = validateInjectionDataWithAddress(requestData, address);
@@ -338,7 +338,7 @@ const ApproveTransactionContainer: React.FC = () => {
 
   const initFavicon = async (): Promise<void> => {
     const faviconData = await createFaviconByHostname(
-      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : ''
+      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : '',
     );
     setFavicon(faviconData);
   };
@@ -369,7 +369,7 @@ const ApproveTransactionContainer: React.FC = () => {
         requestData?.data?.messages,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
-        requestData?.data?.memo
+        requestData?.data?.memo,
       );
       setDocument(document);
       setTransactionData(mappedTransactionData(document));
@@ -388,8 +388,8 @@ const ApproveTransactionContainer: React.FC = () => {
           InjectionMessageInstance.failure(
             WalletResponseFailureType.TRANSACTION_FAILED,
             { error: { message: error?.message } },
-            requestData?.key
-          )
+            requestData?.key,
+          ),
         );
       }
     }
@@ -413,11 +413,11 @@ const ApproveTransactionContainer: React.FC = () => {
         amount: [
           {
             amount: currentGasFee.toString(),
-            denom: GasToken.denom
-          }
+            denom: GasToken.denom,
+          },
         ],
-        gas: currentGasWanted.toString()
-      }
+        gas: currentGasWanted.toString(),
+      },
     };
 
     setDocument(updatedDocument);
@@ -437,8 +437,8 @@ const ApproveTransactionContainer: React.FC = () => {
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
           {},
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
       return false;
     }
@@ -450,7 +450,7 @@ const ApproveTransactionContainer: React.FC = () => {
       const { signed } = await transactionService.createTransaction(
         walletInstance,
         currentAccount,
-        document
+        document,
       );
 
       const hash = transactionService.createHash(signed);
@@ -473,11 +473,11 @@ const ApproveTransactionContainer: React.FC = () => {
             WalletResponseFailureType.TRANSACTION_FAILED,
             {
               hash,
-              error: null
+              error: null,
             },
             requestData?.key,
-            requestData?.withNotification
-          )
+            requestData?.withNotification,
+          ),
         );
         return true;
       }
@@ -487,11 +487,11 @@ const ApproveTransactionContainer: React.FC = () => {
             WalletResponseFailureType.TRANSACTION_FAILED,
             {
               hash,
-              error: response?.toString()
+              error: response?.toString(),
             },
             requestData?.key,
-            requestData?.withNotification
-          )
+            requestData?.withNotification,
+          ),
         );
         return true;
       }
@@ -501,8 +501,8 @@ const ApproveTransactionContainer: React.FC = () => {
           WalletResponseSuccessType.TRANSACTION_SUCCESS,
           response,
           requestData?.key,
-          requestData?.withNotification
-        )
+          requestData?.withNotification,
+        ),
       );
       return true;
     }
@@ -518,8 +518,8 @@ const ApproveTransactionContainer: React.FC = () => {
           WalletResponseFailureType.TRANSACTION_FAILED,
           {},
           requestData?.key,
-          requestData?.withNotification
-        )
+          requestData?.withNotification,
+        ),
       );
     }
     return false;
@@ -538,8 +538,8 @@ const ApproveTransactionContainer: React.FC = () => {
       navigate(RoutePath.ApproveTransactionLoading, {
         state: {
           document,
-          requestData
-        }
+          requestData,
+        },
       });
       return;
     }
@@ -591,8 +591,8 @@ const ApproveTransactionContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseRejectType.TRANSACTION_REJECTED,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   };
 
@@ -607,8 +607,8 @@ const ApproveTransactionContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NETWORK_TIMEOUT,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   }, [requestData]);
 
@@ -616,7 +616,7 @@ const ApproveTransactionContainer: React.FC = () => {
     if (!useNetworkFeeReturn.isSimulateError || useNetworkFeeReturn.isLoading) {
       return {
         globalErrorMessage: null,
-        messageErrors: []
+        messageErrors: [],
       };
     }
     const rawMessage = useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || null;
@@ -632,12 +632,12 @@ const ApproveTransactionContainer: React.FC = () => {
   const combinedMessageErrors = useMemo(() => {
     const maxLen = Math.max(
       argumentValidationErrors.messageErrors.length,
-      parsedSimulateErrors.messageErrors.length
+      parsedSimulateErrors.messageErrors.length,
     );
     const result: (string | undefined)[] = [];
     for (let i = 0; i < maxLen; i++) {
       result.push(
-        argumentValidationErrors.messageErrors[i] || parsedSimulateErrors.messageErrors[i]
+        argumentValidationErrors.messageErrors[i] || parsedSimulateErrors.messageErrors[i],
       );
     }
     return result;

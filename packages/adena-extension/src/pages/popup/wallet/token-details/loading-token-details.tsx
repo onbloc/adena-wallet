@@ -6,7 +6,7 @@ import styled from 'styled-components';
 const Wrapper = styled.div`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   position: relative;
   width: 100%;
@@ -27,7 +27,7 @@ const ListBoxWrap = styled.div`
 const SkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })}
   width: 100%;
   height: 60px;

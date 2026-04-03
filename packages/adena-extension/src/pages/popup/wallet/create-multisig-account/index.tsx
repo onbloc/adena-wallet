@@ -1,12 +1,12 @@
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
-  WalletResponseSuccessType
+  WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import {
   createFaviconByHostname,
   decodeParameter,
-  parseParameters
+  parseParameters,
 } from '@common/utils/client-utils';
 import { CreateMultisigAccount } from '@components/molecules/create-multisig-account';
 import { useAdenaContext } from '@hooks/use-context';
@@ -15,7 +15,7 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { RoutePath } from '@types';
 import { MultisigConfig } from 'adena-module';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
@@ -56,7 +56,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
     const parsedData = decodeParameter(data['data']);
     setRequestData({
       ...parsedData,
-      hostname: data['hostname']
+      hostname: data['hostname'],
     });
   };
 
@@ -69,7 +69,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
 
   const initFavicon = async (): Promise<void> => {
     const faviconData = await createFaviconByHostname(
-      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : ''
+      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : '',
     );
     setFavicon(faviconData);
   };
@@ -84,7 +84,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
     setMultisigConfig({
       signers,
       threshold,
-      noSort
+      noSort,
     });
     setHostname(requestData?.hostname ?? '');
   };
@@ -95,8 +95,8 @@ const CreateMultisigAccountContainer: React.FC = () => {
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
           {},
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
       return;
     }
@@ -104,7 +104,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
       setProcessType('PROCESSING');
 
       const {
-        multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys
+        multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys,
       }
         = await multisigService.createMultisigAccount(multisigConfig);
 
@@ -116,7 +116,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
         addressBytesArray,
         multisigConfig,
         multisigAddress,
-        signerPublicKeys
+        signerPublicKeys,
       );
 
       await changeCurrentAccount(multisigAccount);
@@ -126,10 +126,10 @@ const CreateMultisigAccountContainer: React.FC = () => {
           WalletResponseSuccessType.CREATE_MULTISIG_ACCOUNT_SUCCESS,
           {
             multisigConfig,
-            multisigAddress
+            multisigAddress,
           },
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
     }
     catch (e) {
@@ -139,8 +139,8 @@ const CreateMultisigAccountContainer: React.FC = () => {
           InjectionMessageInstance.failure(
             WalletResponseFailureType.CREATE_MULTISIG_ACCOUNT_FAILED,
             { error: { message } },
-            requestData?.key
-          )
+            requestData?.key,
+          ),
         );
       }
     }
@@ -161,8 +161,8 @@ const CreateMultisigAccountContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseRejectType.CREATE_MULTISIG_ACCOUNT_REJECTED,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   };
 

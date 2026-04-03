@@ -19,7 +19,7 @@ import { GRC721Model, RoutePath } from '@types';
 import { Document, isLedgerAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
@@ -27,7 +27,7 @@ import styled from 'styled-components';
 const NFTTransferSummaryLayout = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: auto;
@@ -104,10 +104,10 @@ const NFTTransferSummaryContainer: React.FC = () => {
         max_deposit: '',
         pkgPath: grc721Token.packagePath,
         func: 'TransferFrom',
-        args: [fromAddress, toAddress, grc721Token.tokenId]
+        args: [fromAddress, toAddress, grc721Token.tokenId],
       });
     },
-    []
+    [],
   );
 
   const createDocument = useCallback(async () => {
@@ -124,7 +124,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
       [message],
       useNetworkFeeReturn.currentGasInfo?.gasWanted || 0n,
       useNetworkFeeReturn.currentGasFeeRawAmount,
-      memo
+      memo,
     );
 
     return document;
@@ -146,7 +146,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
     const { signed } = await transactionService.createTransaction(
       walletInstance,
       currentAccount,
-      document
+      document,
     );
 
     return transactionService.sendTransaction(walletInstance, currentAccount, signed).catch((e) => {
@@ -182,13 +182,13 @@ const NFTTransferSummaryContainer: React.FC = () => {
       if (txHash) {
         setTransferResult({
           status: 'SUCCESS',
-          hash: txHash
+          hash: txHash,
         });
       }
       else {
         setTransferResult({
           status: 'FAILED',
-          errorMessage: 'Your transaction could not be submitted to the blockchain. Try again.'
+          errorMessage: 'Your transaction could not be submitted to the blockchain. Try again.',
         });
       }
 
@@ -200,7 +200,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       setTransferResult({
         status: 'FAILED',
-        errorMessage
+        errorMessage,
       });
       setScreenState('RESULT');
       setIsSent(false);
@@ -221,7 +221,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
       setMemorizedTransferInfo({
         ...memorizedTransferInfo,
         memo: summaryInfo.memo,
-        toAddress: summaryInfo.toAddress
+        toAddress: summaryInfo.toAddress,
       });
     }
 

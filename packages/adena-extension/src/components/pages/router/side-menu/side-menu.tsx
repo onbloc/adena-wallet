@@ -25,7 +25,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
   openRegister,
   changeAccount,
   lock,
-  close
+  close,
 }) => {
   const moveGnoscan = useCallback(
     (address: string) => {
@@ -34,14 +34,14 @@ const SideMenu: React.FC<SideMenuProps> = ({
         : `${scannerUrl}/account/${address}`;
       openLink(openLinkUrl);
     },
-    [openLink]
+    [openLink],
   );
 
   const moveAccountDetail = useCallback(
     (accountId: string) => {
       movePage(RoutePath.AccountDetails.replace(':accountId', accountId));
     },
-    [movePage]
+    [movePage],
   );
 
   const onClickClose = useCallback(() => {

@@ -7,7 +7,7 @@ import {
   BroadcastTxSyncResult,
   defaultAddressPrefix,
   Tx,
-  uint8ArrayToBase64
+  uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import {
   Account,
@@ -16,7 +16,7 @@ import {
   LedgerAccount,
   LedgerKeyring,
   sha256,
-  Wallet
+  Wallet,
 } from 'adena-module';
 
 import { WalletService } from '..';
@@ -68,7 +68,7 @@ export class TransactionService {
     messages: any[],
     gasWanted?: bigint,
     gasFee?: number,
-    memo?: string | undefined
+    memo?: string | undefined,
   ): Promise<Document> => {
     const provider = this.getGnoProvider();
     const address = await account.getAddress(defaultAddressPrefix);
@@ -81,15 +81,15 @@ export class TransactionService {
         amount: [
           {
             denom: GasToken.denom,
-            amount: (gasFee || DEFAULT_GAS_FEE).toString()
-          }
+            amount: (gasFee || DEFAULT_GAS_FEE).toString(),
+          },
         ],
-        gas: (gasWanted || DEFAULT_GAS_WANTED).toString()
+        gas: (gasWanted || DEFAULT_GAS_WANTED).toString(),
       },
       chain_id: chainId,
       memo: memo || '',
       account_number: accountNumber.toString(),
-      sequence: accountSequence.toString()
+      sequence: accountSequence.toString(),
     };
   };
 
@@ -101,7 +101,7 @@ export class TransactionService {
    */
   public createSignature = async (
     account: Account,
-    document: Document
+    document: Document,
   ): Promise<EncodeTxSignature> => {
     const provider = this.getGnoProvider();
     const wallet = await this.walletService.loadWallet();
@@ -109,9 +109,9 @@ export class TransactionService {
     const signatures = signature.map(s => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
-        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined
+        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
       },
-      signature: uint8ArrayToBase64(s.signature)
+      signature: uint8ArrayToBase64(s.signature),
     }));
     return signatures[0];
   };
@@ -126,7 +126,7 @@ export class TransactionService {
   public createTransaction = async (
     wallet: Wallet,
     account: Account,
-    document: Document
+    document: Document,
   ): Promise<{
     signed: Tx;
     signature: EncodeTxSignature[];
@@ -136,13 +136,13 @@ export class TransactionService {
     const encodedSignature = signature.map(s => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
-        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined
+        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
       },
-      signature: uint8ArrayToBase64(s.signature)
+      signature: uint8ArrayToBase64(s.signature),
     }));
     return {
       signed,
-      signature: encodedSignature
+      signature: encodedSignature,
     };
   };
 
@@ -157,7 +157,7 @@ export class TransactionService {
   public createTransactionWithLedger = async (
     ledgerConnector: AdenaLedgerConnector,
     account: LedgerAccount,
-    document: Document
+    document: Document,
   ): Promise<{
     signed: Tx;
     signature: EncodeTxSignature[];
@@ -168,13 +168,13 @@ export class TransactionService {
     const encodedSignature = signature.map(s => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
-        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined
+        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
       },
-      signature: uint8ArrayToBase64(s.signature)
+      signature: uint8ArrayToBase64(s.signature),
     }));
     return {
       signed,
-      signature: encodedSignature
+      signature: encodedSignature,
     };
   };
 
@@ -191,7 +191,7 @@ export class TransactionService {
     wallet: Wallet,
     account: Account,
     transaction: Tx,
-    commit?: boolean
+    commit?: boolean,
   ): Promise<BroadcastTxCommitResult | BroadcastTxSyncResult> => {
     const provider = this.getGnoProvider();
     const broadcastTx = commit
@@ -215,7 +215,7 @@ export class TransactionService {
     ledgerConnector: AdenaLedgerConnector,
     account: LedgerAccount,
     transaction: Tx,
-    commit?: boolean
+    commit?: boolean,
   ): Promise<BroadcastTxCommitResult | BroadcastTxSyncResult> => {
     const provider = this.getGnoProvider();
     const keyring = await LedgerKeyring.fromLedger(ledgerConnector);

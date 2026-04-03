@@ -14,7 +14,7 @@ import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
 import { isAirgapAccount } from 'adena-module';
 import React, {
-  type JSX, useCallback, useEffect, useMemo, useRef, useState
+  type JSX, useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useRecoilState } from 'recoil';
@@ -53,7 +53,7 @@ export const ApproveLogin = (): JSX.Element => {
     const parsedData = decodeParameter(data['data']);
     setRequestData({
       ...parsedData,
-      hostname: data['hostname']
+      hostname: data['hostname'],
     });
   }, []);
 
@@ -68,7 +68,7 @@ export const ApproveLogin = (): JSX.Element => {
       case 'CREATE':
       case 'FAIL':
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, requestData)
+          InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, requestData),
         );
         break;
       default:
@@ -153,7 +153,7 @@ export const ApproveLogin = (): JSX.Element => {
         return;
       default:
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure(WalletResponseFailureType.UNEXPECTED_ERROR, requestData)
+          InjectionMessageInstance.failure(WalletResponseFailureType.UNEXPECTED_ERROR, requestData),
         );
         return;
     }
@@ -165,7 +165,7 @@ export const ApproveLogin = (): JSX.Element => {
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
-    [password]
+    [password],
   );
 
   const approveButtonClick = (): Promise<void> => tryLoginApprove(password);

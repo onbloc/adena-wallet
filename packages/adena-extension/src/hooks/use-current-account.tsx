@@ -28,7 +28,7 @@ export const useCurrentAccount = (): {
       }
       return await currentAccount.getAddress(prefix ?? 'g');
     },
-    [currentAccount]
+    [currentAccount],
   );
 
   const changeCurrentAccount = async (changedAccount: Account): Promise<boolean> => {
@@ -47,7 +47,7 @@ export const useCurrentAccount = (): {
       const message = EventMessage.event('changedAccount', address);
       dispatchEvent(message);
     },
-    [currentNetwork]
+    [currentNetwork],
   );
 
   const { data: currentAddress } = useQuery<string | null>({
@@ -59,13 +59,13 @@ export const useCurrentAccount = (): {
       const address = await currentAccount.getAddress(currentNetwork.addressPrefix ?? 'g');
       return address;
     },
-    enabled: currentAccount !== null
+    enabled: currentAccount !== null,
   });
 
   return {
     currentAccount,
     currentAddress: currentAddress || null,
     getCurrentAddress,
-    changeCurrentAccount
+    changeCurrentAccount,
   };
 };

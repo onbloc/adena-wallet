@@ -21,7 +21,7 @@ export const convertTextToAmount = (text: string): {
     const denom = balance.length > 1 ? balance[1] : '';
     return {
       value,
-      denom
+      denom,
     };
   }
   catch (_e) {

@@ -1,7 +1,7 @@
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
-  WalletResponseSuccessType
+  WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { getSiteName } from '@common/utils/client-utils';
 import { RoutePath } from '@types';
@@ -13,7 +13,7 @@ import { InjectCore } from './core';
 export const getAccount = async (
   core: InjectCore,
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): Promise<void> => {
   try {
     const inMemoryKey = await core.getInMemoryKey();
@@ -24,8 +24,8 @@ export const getAccount = async (
         InjectionMessageInstance.failure(
           WalletResponseFailureType.WALLET_LOCKED,
           {},
-          requestData.key
-        )
+          requestData.key,
+        ),
       );
       return;
     }
@@ -34,7 +34,7 @@ export const getAccount = async (
     const network = await core.getCurrentNetwork();
     if (!currentAccountAddress || !network) {
       sendResponse(
-        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key)
+        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key),
       );
       return;
     }
@@ -42,17 +42,17 @@ export const getAccount = async (
     const accountInfo = await core.accountService.getAccountInfoByNetwork(
       currentAccountAddress,
       network.rpcUrl,
-      network.chainId
+      network.chainId,
     );
     sendResponse(
       InjectionMessageInstance.success(
         WalletResponseSuccessType.GET_ACCOUNT_SUCCESS,
         {
           ...accountInfo,
-          chainId: network.chainId
+          chainId: network.chainId,
         },
-        requestData.key
-      )
+        requestData.key,
+      ),
     );
   }
   catch (error) {
@@ -60,8 +60,8 @@ export const getAccount = async (
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NO_ACCOUNT,
         { error: error?.toString() },
-        requestData.key
-      )
+        requestData.key,
+      ),
     );
   }
 };
@@ -69,7 +69,7 @@ export const getAccount = async (
 export const getNetwork = async (
   core: InjectCore,
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): Promise<void> => {
   try {
     const inMemoryKey = await core.getInMemoryKey();
@@ -80,8 +80,8 @@ export const getNetwork = async (
         InjectionMessageInstance.failure(
           WalletResponseFailureType.WALLET_LOCKED,
           {},
-          requestData.key
-        )
+          requestData.key,
+        ),
       );
       return;
     }
@@ -90,7 +90,7 @@ export const getNetwork = async (
     const network = await core.getCurrentNetwork();
     if (!currentAccountAddress || !network) {
       sendResponse(
-        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key)
+        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key),
       );
       return;
     }
@@ -103,15 +103,15 @@ export const getNetwork = async (
           networkName: network.networkName,
           addressPrefix: network.addressPrefix,
           rpcUrl: network.rpcUrl,
-          indexerUrl: network.indexerUrl || null
+          indexerUrl: network.indexerUrl || null,
         },
-        requestData.key
-      )
+        requestData.key,
+      ),
     );
   }
   catch (_error) {
     sendResponse(
-      InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key)
+      InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key),
     );
   }
 };
@@ -119,7 +119,7 @@ export const getNetwork = async (
 export const addEstablish = async (
   core: InjectCore,
   message: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): Promise<boolean> => {
   const inMemoryKey = await core.getInMemoryKey();
 
@@ -133,8 +133,8 @@ export const addEstablish = async (
       InjectionMessageInstance.failure(
         WalletResponseFailureType.ALREADY_CONNECTED,
         {},
-        message.key
-      )
+        message.key,
+      ),
     );
     return true;
   }
@@ -143,7 +143,7 @@ export const addEstablish = async (
     RoutePath.ApproveEstablish,
     message,
     InjectionMessageInstance.failure(WalletResponseRejectType.CONNECTION_REJECTED, {}, message.key),
-    sendResponse
+    sendResponse,
   );
   return true;
 };

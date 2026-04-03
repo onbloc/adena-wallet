@@ -14,7 +14,7 @@ describe('RemoveNetworkButton Component', () => {
       text: '',
       clearNetwork: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -23,7 +23,7 @@ describe('RemoveNetworkButton Component', () => {
         <ThemeProvider theme={theme}>
           <RemoveNetworkButton {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

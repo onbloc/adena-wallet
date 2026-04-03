@@ -12,7 +12,7 @@ export const AccountInitializationInitWrapper = styled(View)`
   .image-wrapper {
     ${mixins.flex({
       align: 'center',
-      justify: 'center'
+      justify: 'center',
     })};
     width: 100%;
     height: auto;
@@ -27,7 +27,7 @@ export const AccountInitializationInitWrapper = styled(View)`
     ${mixins.flex({
       direction: 'column',
       align: 'center',
-      justify: 'center'
+      justify: 'center',
     })};
     width: 100%;
     height: auto;
@@ -36,7 +36,7 @@ export const AccountInitializationInitWrapper = styled(View)`
     .address-box {
       ${mixins.flex({
         align: 'center',
-        justify: 'center'
+        justify: 'center',
       })};
       width: 100%;
       min-height: 41px;

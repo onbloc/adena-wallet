@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const MemoInputWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: auto;
@@ -14,7 +14,7 @@ export const MemoInputWrapper = styled.div`
   .memo-input {
     ${mixins.flex({
       direction: 'row',
-      justify: 'normal'
+      justify: 'normal',
     })};
     width: 100%;
     height: auto;
@@ -35,7 +35,7 @@ export const MemoInputWrapper = styled.div`
     ${mixins.flex({
       direction: 'row',
       justify: 'normal',
-      align: 'flex-start'
+      align: 'flex-start',
     })};
     width: 100%;
     border-radius: 8px;

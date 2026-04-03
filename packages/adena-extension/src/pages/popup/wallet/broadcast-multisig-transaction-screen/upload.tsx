@@ -1,7 +1,7 @@
 import IconHelp from '@assets/help.svg';
 import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
 import {
-  CommonFullContentLayout, Pressable, Text, View
+  CommonFullContentLayout, Pressable, Text, View,
 } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import BroadcastMultisigSignatureUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-multisig-signature-upload-input/broadcast-multisig-signature-upload-input';
@@ -11,7 +11,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import {
   SignatureUploadResult,
-  TransactionDisplayInfo
+  TransactionDisplayInfo,
 } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 import { Signature } from '@inject/types';
 import { RawTx, SignerPublicKeyInfo } from 'adena-module';
@@ -45,7 +45,7 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
   broadcast,
   reset,
   signerPublicKeys,
-  threshold
+  threshold,
 }) => {
   const theme = useTheme();
   const { openLink } = useLink();
@@ -54,7 +54,7 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
 
   const validSignatures = React.useMemo(() => {
     return signatures.filter(signature =>
-      signerPublicKeys.some(signer => signer.publicKey.value === signature.pub_key.value)
+      signerPublicKeys.some(signer => signer.publicKey.value === signature.pub_key.value),
     );
   }, [signatures, signerPublicKeys]);
 
@@ -155,13 +155,13 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           disabled: !loadedTransaction || disableBroadcast,
           text: 'Broadcast',
-          onClick: onClickBroadcast
+          onClick: onClickBroadcast,
         }}
       />
     </CommonFullContentLayout>

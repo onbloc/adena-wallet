@@ -11,7 +11,7 @@ export const CreateMultisigAccountDomainWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
     align: 'center',
-    justify: 'center'
+    justify: 'center',
   })};
   width: 100%;
   min-height: 41px;
@@ -39,7 +39,7 @@ export const CreateMultisigAccountContentWrapper = styled.div`
 export const CreateMultisigAccountInfoWrapper = styled.div`
   ${mixins.flex({
     justify: 'flex-start',
-    direction: 'column'
+    direction: 'column',
   })};
   width: 100%;
   gap: 8px;

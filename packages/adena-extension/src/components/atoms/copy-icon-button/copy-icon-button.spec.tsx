@@ -18,7 +18,7 @@ describe('CopyButton Component', () => {
         <ThemeProvider theme={theme}>
           <CopyIconButton {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

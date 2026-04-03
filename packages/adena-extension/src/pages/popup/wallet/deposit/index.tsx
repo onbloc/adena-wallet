@@ -1,6 +1,6 @@
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import {
-  Button, Copy, inputStyle, Text
+  Button, Copy, inputStyle, Text,
 } from '@components/atoms';
 import { useAccountName } from '@hooks/use-account-name';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -11,7 +11,7 @@ import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
 import { QRCodeSVG } from 'qrcode.react';
 import {
-  type JSX, useCallback, useEffect, useState
+  type JSX, useCallback, useEffect, useState,
 } from 'react';
 import styled, { useTheme } from 'styled-components';
 
@@ -33,7 +33,7 @@ const QRCodeBox = styled.div`
 const CopyInputBox = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   ${inputStyle};
   border: 1px solid ${getTheme('neutral', '_7')};

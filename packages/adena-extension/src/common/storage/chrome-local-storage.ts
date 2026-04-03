@@ -93,8 +93,8 @@ export class ChromeLocalStorage implements Storage {
       ...this.current,
       data: {
         ...this.current.data,
-        [key]: value
-      }
+        [key]: value,
+      },
     };
 
     this.current = storageData;

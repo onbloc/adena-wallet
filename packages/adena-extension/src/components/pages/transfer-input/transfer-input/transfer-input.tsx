@@ -59,7 +59,7 @@ const TransferInput: React.FC<TransferInputProps> = ({
   isNext,
   onClickBack,
   onClickCancel,
-  onClickNext
+  onClickNext,
 }) => {
   return (
     <TransferInputWrapper>
@@ -69,7 +69,7 @@ const TransferInput: React.FC<TransferInputProps> = ({
               title={`Send ${tokenMetainfo?.symbol || ''}`}
               leftElement={{
                 element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
-                onClick: onClickBack
+                onClick: onClickBack,
               }}
             />
           )
@@ -92,13 +92,13 @@ const TransferInput: React.FC<TransferInputProps> = ({
       <BottomFixedButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           text: 'Next',
           onClick: onClickNext,
           disabled: !isNext,
-          primary: true
+          primary: true,
         }}
         filled
       />

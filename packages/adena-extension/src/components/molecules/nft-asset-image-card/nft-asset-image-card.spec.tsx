@@ -21,9 +21,9 @@ describe('NFTAssetImageCard Component', () => {
         tokenId: '',
         type: 'grc721',
         isMetadata: true,
-        isTokenUri: true
+        isTokenUri: true,
       },
-      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>
+      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
     };
 
     render(
@@ -32,7 +32,7 @@ describe('NFTAssetImageCard Component', () => {
         <ThemeProvider theme={theme}>
           <NFTAssetImageCard {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

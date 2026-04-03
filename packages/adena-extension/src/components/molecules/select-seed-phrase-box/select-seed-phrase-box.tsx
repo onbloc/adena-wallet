@@ -3,7 +3,7 @@ import React from 'react';
 
 import {
   StyledSelectSeedPhraseBox,
-  StyledSelectSeedPhraseContent
+  StyledSelectSeedPhraseContent,
 } from './select-seed-phrase-box.styles';
 import { SeedPhraseInfo } from './select-seed-phrase-box.types';
 import SelectSeedPhraseBoxItem from './select-seed-phrase-box-item';

@@ -6,7 +6,7 @@ import {
   parseGnoExecFormInfo,
   parseGnoFormInfo,
   shouldInterceptExecForm,
-  shouldInterceptForm
+  shouldInterceptForm,
 } from '../gno-connect';
 import { GnoConnectInfoProvider } from '../gno-connect-info-provider';
 import { IInterceptor, InterceptorContext, InterceptorHandler } from '../gno-interceptor.types';
@@ -133,8 +133,8 @@ export class FormSubmitInterceptor implements IInterceptor {
     CommandHandler.createContentHandler(
       CommandMessage.command('checkMetadata', {
         gnoMessageInfo,
-        gnoConnectInfo: context.gnoConnectInfo
-      })
+        gnoConnectInfo: context.gnoConnectInfo,
+      }),
     );
   };
 }

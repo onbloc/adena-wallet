@@ -23,7 +23,7 @@ const SelectAccountStep = ({ useAccountImportScreenReturn }: { useAccountImportS
     loadAccounts,
     selectAccount,
     selectedAddresses,
-    onClickNext
+    onClickNext,
   } = useAccountImportScreenReturn;
 
   const { data: accountInfos = [] } = useQuery<AccountInfo[]>({
@@ -37,22 +37,22 @@ const SelectAccountStep = ({ useAccountImportScreenReturn }: { useAccountImportS
           index: account.index,
           selected: selectedAddresses.includes(address),
           stored: storedAccounts.some(storedAccount =>
-            arrayContentEquals(storedAccount.publicKey, account.publicKey)
+            arrayContentEquals(storedAccount.publicKey, account.publicKey),
           ),
-          address
+          address,
         };
         accountInfos.push(accountInfo);
       }
 
       return accountInfos;
     },
-    placeholderData: keepPreviousData
+    placeholderData: keepPreviousData,
   });
 
   const accountInfosWithSelection = useMemo(() => {
     return accountInfos.map(accountInfo => ({
       ...accountInfo,
-      selected: selectedAddresses.includes(accountInfo.address)
+      selected: selectedAddresses.includes(accountInfo.address),
     }));
   }, [accountInfos, selectedAddresses]);
 

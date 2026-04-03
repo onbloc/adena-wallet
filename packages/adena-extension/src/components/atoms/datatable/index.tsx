@@ -13,7 +13,7 @@ export interface DatatableProps {
 const StyledContainer = styled.div`
   ${mixins.flex({
     direction: 'column',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   background-color: ${getTheme('neutral', '_9')};
@@ -22,7 +22,7 @@ const StyledContainer = styled.div`
   .row {
     ${mixins.flex({
       direction: 'row',
-      justify: 'space-between'
+      justify: 'space-between',
     })};
     width: 100%;
     padding: 10px 18px;

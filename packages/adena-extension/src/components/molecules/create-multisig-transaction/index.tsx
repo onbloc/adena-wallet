@@ -9,7 +9,7 @@ import { ContractMessage, SignerInfo, SignerStatusType } from '@inject/types';
 import { NetworkFee as NetworkFeeType } from '@types';
 import { MultisigConfig } from 'adena-module';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
@@ -19,7 +19,7 @@ import MultisigThreshold from '../multisig-threshold/multisig-threshold';
 import NetworkFee from '../network-fee/network-fee';
 import {
   CreateMultisigTransactionSignerWrapper,
-  CreateMultisigTransactionWrapper
+  CreateMultisigTransactionWrapper,
 } from './create-multisig-transaction.styles';
 
 export interface CreateMultisigTransactionProps {
@@ -78,7 +78,7 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
   onResponse,
   onClickConfirm,
   onClickCancel,
-  openScannerLink
+  openScannerLink,
 }) => {
   const [openedSigners, setOpenedSigners] = useState(false);
 
@@ -89,7 +89,7 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
   const signerInfos: SignerInfo[] = useMemo(() => {
     return signers.map(address => ({
       address,
-      status: SignerStatusType.NONE
+      status: SignerStatusType.NONE,
     }));
   }, [signers]);
 
@@ -122,7 +122,7 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
       const value = e.target.value;
       changeMemo(value);
     },
-    [hasMemo, changeMemo]
+    [hasMemo, changeMemo],
   );
 
   const onClickConfirmButton = useCallback(() => {
@@ -252,14 +252,14 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           disabled: disabledApprove,
           text: 'Save',
           loading: processing,
-          onClick: onClickConfirmButton
+          onClick: onClickConfirmButton,
         }}
       />
     </CreateMultisigTransactionWrapper>

@@ -13,11 +13,11 @@ export interface NFTCollectionCardProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   queryGRC721Balance: (
     packagePath: string,
-    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<number | null>;
   pin: (collection: GRC721CollectionModel) => void;
   unpin: (collection: GRC721CollectionModel) => void;
@@ -31,12 +31,12 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
   unpin,
   queryGRC721TokenUri,
   queryGRC721Balance,
-  moveCollectionPage
+  moveCollectionPage,
 }) => {
   const { data: tokenUri, isFetched: isFetchedTokenUri } = queryGRC721TokenUri(
     grc721Collection.packagePath,
     grc721Collection.tokenId,
-    { enabled: grc721Collection.isTokenUri }
+    { enabled: grc721Collection.isTokenUri },
   );
 
   const { data: balance } = queryGRC721Balance(grc721Collection.packagePath, { refetchOnMount: true });
@@ -76,7 +76,7 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
 
       pin(grc721Collection);
     },
-    [pinned, pin, unpin]
+    [pinned, pin, unpin],
   );
 
   const onClickCard = useCallback(() => {

@@ -42,7 +42,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   onClickBack,
   onClickCancel,
   onClickSend,
-  onClickNetworkFeeSetting
+  onClickNetworkFeeSetting,
 }) => {
   const disabledSendButton = useMemo(() => {
     if (useNetworkFeeReturn.isLoading) {
@@ -70,7 +70,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         <SubHeader
           leftElement={{
             element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
-            onClick: onClickBack
+            onClick: onClickBack,
           }}
           title={`Sending ${tokenMetainfo.symbol}`}
         />
@@ -114,13 +114,13 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           text: 'Send',
           primary: true,
           onClick: onClickSend,
-          disabled: disabledSendButton
+          disabled: disabledSendButton,
         }}
       />
     </TransferSummaryWrapper>

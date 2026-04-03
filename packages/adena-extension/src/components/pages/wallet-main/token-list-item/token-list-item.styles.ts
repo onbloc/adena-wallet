@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const TokenListItemWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   padding: 13px;
   width: 100%;

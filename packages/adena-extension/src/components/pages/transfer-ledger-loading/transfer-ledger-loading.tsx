@@ -13,12 +13,12 @@ export interface TransferLedgerLoadingProps {
 
 const text = {
   title: 'Requesting Approval\non Hardware Wallet',
-  desc: 'Please approve this transaction on your\nledger device to proceed.'
+  desc: 'Please approve this transaction on your\nledger device to proceed.',
 };
 
 const TransferLedgerLoading: React.FC<TransferLedgerLoadingProps> = ({
   document,
-  onClickCancel
+  onClickCancel,
 }) => {
   const documentData = useMemo(() => {
     if (!document) {
@@ -30,24 +30,24 @@ const TransferLedgerLoading: React.FC<TransferLedgerLoadingProps> = ({
     return [
       {
         key: 'Chain ID',
-        value: document.chain_id
+        value: document.chain_id,
       },
       {
         key: 'Account',
-        value: document.account_number
+        value: document.account_number,
       },
       {
         key: 'Sequence',
-        value: document.sequence
+        value: document.sequence,
       },
       {
         key: 'Gas Fee',
-        value: gasFee
+        value: gasFee,
       },
       {
         key: 'Gas Wanted',
-        value: document.fee.gas
-      }
+        value: document.fee.gas,
+      },
     ];
   }, [document]);
 

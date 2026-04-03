@@ -16,7 +16,7 @@ export function makeGnotAmountByRaw(amountRaw: string): Amount | null {
     value: BigNumber(amount.value)
       .shiftedBy(GNOT_DECIMALS * -1)
       .toFormat(6),
-    denom: GNOT_SYMBOL
+    denom: GNOT_SYMBOL,
   };
   return gnotAmount;
 }

@@ -27,15 +27,15 @@ export const useFaucet = (): UseFaucetReturn => {
 
   const { data: isSupported = false } = useQuery<boolean>({
     queryKey: ['faucet/isSupported', currentNetwork, faucetService],
-    queryFn: () => faucetService.availFaucet(currentNetwork.chainId)
+    queryFn: () => faucetService.availFaucet(currentNetwork.chainId),
   });
 
   const { isPending: isLoading, mutate } = useMutation({
     mutationFn: (to: string) =>
       waitForRun<FaucetResponse>(
         () => faucetService.faucet(currentNetwork.chainId, to, FAUCET_AMOUNT),
-        1000
-      )
+        1000,
+      ),
   });
 
   const faucet = async (): Promise<{
@@ -45,7 +45,7 @@ export const useFaucet = (): UseFaucetReturn => {
     if (!currentAddress) {
       return {
         success: false,
-        message: FAUCET_UNEXPECTED_ERROR_MESSAGES
+        message: FAUCET_UNEXPECTED_ERROR_MESSAGES,
       };
     }
     return new Promise((resolve) => {
@@ -54,8 +54,8 @@ export const useFaucet = (): UseFaucetReturn => {
         onError: () =>
           resolve({
             success: false,
-            message: FAUCET_UNEXPECTED_ERROR_MESSAGES
-          })
+            message: FAUCET_UNEXPECTED_ERROR_MESSAGES,
+          }),
       });
     });
   };
@@ -63,6 +63,6 @@ export const useFaucet = (): UseFaucetReturn => {
   return {
     isSupported,
     isLoading,
-    faucet
+    faucet,
   };
 };

@@ -18,7 +18,7 @@ describe('SideMenuAccountItem Component', () => {
         name: '',
         address: '',
         balance: '',
-        type: 'HD_WALLET'
+        type: 'HD_WALLET',
       },
       focusedAccountId: '',
       focusAccountId: () => {
@@ -32,7 +32,7 @@ describe('SideMenuAccountItem Component', () => {
       },
       moveAccountDetail: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -41,7 +41,7 @@ describe('SideMenuAccountItem Component', () => {
         <ThemeProvider theme={theme}>
           <SideMenuAccountItem {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

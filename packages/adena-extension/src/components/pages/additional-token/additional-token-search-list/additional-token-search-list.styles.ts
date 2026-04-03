@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const AdditionalTokenSearchListWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: auto;
@@ -14,7 +14,7 @@ export const AdditionalTokenSearchListWrapper = styled.div`
   .scroll-wrapper {
     ${mixins.flex({
       align: 'normal',
-      justify: 'normal'
+      justify: 'normal',
     })};
     width: 100%;
     overflow-y: auto;
@@ -35,7 +35,7 @@ export const AdditionalTokenSearchListItemWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
     align: 'normal',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   height: auto;

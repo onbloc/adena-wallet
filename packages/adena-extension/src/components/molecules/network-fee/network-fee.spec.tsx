@@ -12,7 +12,7 @@ describe('NetworkFee Component', () => {
   it('NetworkFee render', () => {
     const args: NetworkFeeProps = {
       value: '0.0048',
-      denom: 'GNOT'
+      denom: 'GNOT',
     };
 
     render(
@@ -21,7 +21,7 @@ describe('NetworkFee Component', () => {
         <ThemeProvider theme={theme}>
           <NetworkFee {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

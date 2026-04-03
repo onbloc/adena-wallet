@@ -6,7 +6,7 @@ import React, { useMemo } from 'react';
 import { TokenBalance } from '../token-balance';
 import {
   NetworkFeeItemSkeletonBox,
-  NetworkFeeSettingItemWrapper
+  NetworkFeeSettingItemWrapper,
 } from './network-fee-setting-item.styles';
 
 export interface NetworkFeeSettingItemProps {
@@ -22,18 +22,18 @@ export interface NetworkFeeSettingItemProps {
 const networkFeeSettingTypeNames: { [key in NetworkFeeSettingType]: string } = {
   [NetworkFeeSettingType.FAST]: 'Fast',
   [NetworkFeeSettingType.AVERAGE]: 'Average',
-  [NetworkFeeSettingType.SLOW]: 'Slow'
+  [NetworkFeeSettingType.SLOW]: 'Slow',
 };
 
 const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
   selected,
   isLoading,
   info,
-  select
+  select,
 }) => {
   const settingTypeName = useMemo(
     () => networkFeeSettingTypeNames[info.settingType],
-    [info.settingType]
+    [info.settingType],
   );
 
   const hasGasInfo = !!info && !!info.gasInfo && !info.gasInfo.hasError;

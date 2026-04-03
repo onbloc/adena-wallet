@@ -9,7 +9,7 @@ import {
   WebHelpTooltipBoxArrowWrapper,
   WebHelpTooltipBoxWrapper,
   WebHelpTooltipEvaluation,
-  WebHelpTooltipWrapper
+  WebHelpTooltipWrapper,
 } from './web-help-tooltip.styles';
 
 export interface WebHelpTooltipProps {
@@ -24,7 +24,7 @@ const WebHelpTooltip: React.FC<PropsWithChildren<WebHelpTooltipProps>> = ({
   convenienceRate,
   confirm,
   position,
-  children
+  children,
 }) => {
   return (
     <WebHelpTooltipWrapper>

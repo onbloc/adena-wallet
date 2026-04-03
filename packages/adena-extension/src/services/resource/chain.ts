@@ -27,7 +27,7 @@ export class ChainService {
     name: string,
     rpcUrl: string,
     chainId: string,
-    indexerUrl: string
+    indexerUrl: string,
   ): Promise<boolean> => {
     const addedNetwork = {
       id: `${Date.now()}`,
@@ -42,7 +42,7 @@ export class ChainService {
       indexerUrl,
       gnoUrl: rpcUrl,
       apiUrl: '',
-      linkUrl: ''
+      linkUrl: '',
     };
     return this.chainRepository.addNetwork(addedNetwork);
   };

@@ -12,14 +12,14 @@ import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
 import { RoutePath } from '@types';
 import React, {
-  useCallback, useEffect, useMemo, useRef, useState
+  useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 import styled from 'styled-components';
 
 const StyledHistoryLayout = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: calc(100vh - 48px - 60px);
@@ -61,7 +61,7 @@ const HistoryContainer: React.FC = () => {
   }, [isUsedApi, commonTransactionHistoryQuery, pageTransactionHistoryQuery]);
 
   const {
-    isSupported, isFetching, isLoading, status, data, hasNextPage, fetchNextPage, refetch
+    isSupported, isFetching, isLoading, status, data, hasNextPage, fetchNextPage, refetch,
   }
     = transactionHistoryQuery;
 
@@ -109,7 +109,7 @@ const HistoryContainer: React.FC = () => {
         navigate(RoutePath.TransactionDetail, { state: { transactionInfo } });
       }
     },
-    [data, bodyElement]
+    [data, bodyElement],
   );
 
   return (

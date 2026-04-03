@@ -70,7 +70,7 @@ export const makeGRC721TransferEventsQuery = (packagePath: string, address: stri
 `;
 export const makeGRC721TransferEventsQueryWithCursor = (
   packagePath: string,
-  address: string
+  address: string,
 ): string => `
 {
   transactions(

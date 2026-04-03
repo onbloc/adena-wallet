@@ -13,7 +13,7 @@ import { createNotification } from './notification';
 export async function addTransactionEvent(
   inMemoryProvider: MemoryProvider,
   transactionEventStore: EventStore<string[]>,
-  message: InjectionMessage | CommandMessageData | any
+  message: InjectionMessage | CommandMessageData | any,
 ): Promise<Event<string[]> | null> {
   if (!message?.withNotification) {
     return null;
@@ -51,7 +51,7 @@ export async function addTransactionEvent(
     transactionHash,
     network.chainId,
     network.rpcUrl,
-    isDefaultNetwork
+    isDefaultNetwork,
   );
 
   return transactionEventStore.addEvent(
@@ -65,9 +65,9 @@ export async function addTransactionEvent(
         transactionHash,
         network.chainId,
         network.rpcUrl,
-        isDefaultNetwork
+        isDefaultNetwork,
       );
-    }
+    },
   );
 }
 
@@ -76,7 +76,7 @@ function createTransactionNotificationId(
   status: EventStatus,
   chainId: string,
   rpcUrl: string,
-  isDefaultNetwork: boolean
+  isDefaultNetwork: boolean,
 ): string {
   const scannerUrl = `${SCANNER_URL}/transactions/details?=txhash=${txHash}`;
   const resultScannerUrl = isDefaultNetwork
@@ -93,14 +93,14 @@ function createTransactionNotification(
   txHash: string,
   chainId: string,
   rpcUrl: string,
-  isDefaultNetwork: boolean
+  isDefaultNetwork: boolean,
 ): void {
   const notificationId = createTransactionNotificationId(
     txHash,
     eventStatus,
     chainId,
     rpcUrl,
-    isDefaultNetwork
+    isDefaultNetwork,
   );
   const notificationTitle = mapEventStatusToNotificationTitle(eventStatus);
   const notificationMessage = mapTransactionInfoToNotificationMessage(eventStatus, txHash);
@@ -142,7 +142,7 @@ export function parseTransactionScannerUrl(notificationId: string): string | nul
 }
 
 export function createNotificationSendMessage(
-  result: BroadcastTxCommitResult | BroadcastTxSyncResult | null
+  result: BroadcastTxCommitResult | BroadcastTxSyncResult | null,
 ): void {
   chrome.runtime
     .sendMessage(
@@ -150,8 +150,8 @@ export function createNotificationSendMessage(
         WalletResponseSuccessType.TRANSACTION_SUCCESS,
         { hash: result?.hash },
         '',
-        true
-      )
+        true,
+      ),
     )
     .catch((error) => {
       console.warn('Failed to send transaction notification:', error);
@@ -165,8 +165,8 @@ export function createNotificationSendMessageByHash(hash: string): void {
         WalletResponseSuccessType.TRANSACTION_SUCCESS,
         { hash },
         '',
-        true
-      )
+        true,
+      ),
     )
     .catch((error) => {
       console.warn('Failed to send transaction notification:', error);

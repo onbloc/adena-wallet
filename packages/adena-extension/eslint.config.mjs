@@ -10,42 +10,41 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config([
   {
     name: 'app/files-to-lint',
-    files: ['**/*.{ts,mts,tsx,js,mjs,jsx}']
+    files: ['**/*.{ts,mts,tsx,js,mjs,jsx}'],
   },
   {
     name: 'app/files-to-ignore',
-    ignores: ['**/dist/**', '**/build/**', '**/coverage/**', '**/public/**', '**/libs/**', '**/*.stories.*', '.storybook/**', 'svgTransformer.js', 'jest.config.js', 'jest.setup.js']
+    ignores: ['**/dist/**', '**/build/**', '**/coverage/**', '**/public/**', '**/libs/**', '**/*.stories.*', '.storybook/**', 'svgTransformer.js', 'jest.config.js', 'jest.setup.js'],
   },
   {
     plugins: {
-      '@stylistic': stylistic
-    }
+      '@stylistic': stylistic,
+    },
   },
   eslint.configs.recommended,
   tseslint.configs.recommended,
   stylistic.configs.customize({
-    semi: true
+    semi: true,
   }),
   {
     plugins: {
       react,
-      'react-hooks': reactHooks
+      'react-hooks': reactHooks,
     },
     settings: {
       react: {
-        version: 'detect'
-      }
+        version: 'detect',
+      },
     },
     rules: {
       'react-hooks/rules-of-hooks': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
       'react/react-in-jsx-scope': 'off',
-      'react/prop-types': 'off'
-    }
+      'react/prop-types': 'off',
+    },
   },
   {
     rules: {
-      '@stylistic/comma-dangle': ['error', 'never'],
       '@stylistic/object-curly-newline': ['error', { multiline: true, consistent: true }],
       '@stylistic/object-property-newline': ['error', { allowAllPropertiesOnSameLine: true }],
       '@stylistic/quote-props': ['error', 'as-needed'],
@@ -62,34 +61,34 @@ export default tseslint.config([
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_'
-        }
+          caughtErrorsIgnorePattern: '^_',
+        },
       ],
       'max-lines': [
         'warn',
         {
           max: 700,
           skipBlankLines: true,
-          skipComments: true
-        }
+          skipComments: true,
+        },
       ],
       'max-lines-per-function': [
         'warn',
         {
           max: 500,
           skipBlankLines: true,
-          skipComments: true
-        }
-      ]
-    }
+          skipComments: true,
+        },
+      ],
+    },
   },
   {
     plugins: {
-      'simple-import-sort': simpleImportSort
+      'simple-import-sort': simpleImportSort,
     },
     rules: {
       'simple-import-sort/imports': 'error',
-      'simple-import-sort/exports': 'error'
-    }
-  }
+      'simple-import-sort/exports': 'error',
+    },
+  },
 ], storybook.configs['flat/recommended']);

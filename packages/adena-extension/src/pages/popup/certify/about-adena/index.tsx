@@ -11,33 +11,33 @@ const menuMakerInfo = [
   {
     title: 'Website',
     navigatePath: 'https://adena.app/',
-    mode: 'DEFAULT'
+    mode: 'DEFAULT',
   },
   {
     title: 'Developer Docs',
     navigatePath: 'https://docs.adena.app/',
-    mode: 'DEFAULT'
+    mode: 'DEFAULT',
   },
   {
     title: 'GitHub',
     navigatePath: 'https://github.com/onbloc/adena-wallet',
-    mode: 'DEFAULT'
+    mode: 'DEFAULT',
   },
   {
     title: 'Help & Support',
     navigatePath: 'https://docs.adena.app/resources/faq',
-    mode: 'DEFAULT'
+    mode: 'DEFAULT',
   },
   {
     title: 'Terms of Use',
     navigatePath: 'https://adena.app/terms',
-    mode: 'DEFAULT'
+    mode: 'DEFAULT',
   },
   {
     title: 'Privacy Policy',
     navigatePath: 'https://adena.app/privacy',
-    mode: 'DEFAULT'
-  }
+    mode: 'DEFAULT',
+  },
 ];
 
 export const AboutAdena = (): JSX.Element => {

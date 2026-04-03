@@ -1,7 +1,7 @@
 import IconHelp from '@assets/help.svg';
 import { ADENA_SETUP_AIRGAP_HELP_PAGE } from '@common/constants/resource.constant';
 import {
-  CommonFullContentLayout, Pressable, Text, View
+  CommonFullContentLayout, Pressable, Text, View,
 } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import BroadcastTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-transaction-upload-input';
@@ -11,7 +11,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import styled, { useTheme } from 'styled-components';
 
@@ -51,7 +51,7 @@ const BroadcastTransactionUpload: React.FC<BroadcastTransactionUploadProps> = ({
   transactionInfos,
   rawTransaction,
   broadcast,
-  uploadTransaction
+  uploadTransaction,
 }) => {
   const theme = useTheme();
   const [isBroadcasting, setIsBroadcasting] = useState(false);
@@ -131,13 +131,13 @@ const BroadcastTransactionUpload: React.FC<BroadcastTransactionUploadProps> = ({
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           disabled: !loadedTransaction,
           text: 'Broadcast',
-          onClick: onClickBroadcast
+          onClick: onClickBroadcast,
         }}
       />
     </CommonFullContentLayout>

@@ -31,6 +31,6 @@ export function evaluatePassword(password: string): EvaluatePasswordResult {
   return {
     valid,
     score,
-    complexity
+    complexity,
   };
 }

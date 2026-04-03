@@ -33,7 +33,7 @@ export const WebPrivateKeyBox = ({
   privateKey,
   showBlur = true,
   readOnly = false,
-  error = false
+  error = false,
 }: WebPrivateKeyBoxProps): JSX.Element => {
   const randomHexString = generateRandomHex();
   const [displayPrivateKey, setDisplayPrivateKey] = useState<string>(randomHexString);

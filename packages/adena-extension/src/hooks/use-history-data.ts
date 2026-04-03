@@ -26,7 +26,7 @@ const useHistoryData = <T>(): UstHistoryDataReturn<T> => {
   function setHistoryDataByPathname(pathname: string, value: T | undefined): void {
     const stateData = {
       ...historyState,
-      [pathname]: value
+      [pathname]: value,
     };
     setHistoryState(stateData);
   }
@@ -42,7 +42,7 @@ const useHistoryData = <T>(): UstHistoryDataReturn<T> => {
   return {
     getHistoryData,
     setHistoryData,
-    clearHistoryData
+    clearHistoryData,
   };
 };
 

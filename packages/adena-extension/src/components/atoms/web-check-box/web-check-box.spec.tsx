@@ -16,7 +16,7 @@ describe('WebCheckBox Component', () => {
         <ThemeProvider theme={theme}>
           <WebCheckBox checked />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

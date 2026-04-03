@@ -16,7 +16,7 @@ export class FaucetService {
     const apiUrl = this.getFaucetApiUrl(chainId);
     return this.faucetRepository.postFaucet(apiUrl, {
       to,
-      amount
+      amount,
     });
   }
 

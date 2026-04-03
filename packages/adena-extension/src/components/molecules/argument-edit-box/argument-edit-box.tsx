@@ -19,7 +19,7 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
   value,
   onChange,
   editRightMargin = -18,
-  editable = true
+  editable = true,
 }) => {
   const [editableValue, setEditableValue] = useState(false);
   const [editValue, setEditValue] = useState(value);

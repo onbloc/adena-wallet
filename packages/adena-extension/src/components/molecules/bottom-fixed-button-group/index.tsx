@@ -24,7 +24,7 @@ function mapClassName(buttonProps: ButtonProps): string {
 export const BottomFixedButtonGroup = ({
   leftButton,
   rightButton,
-  filled
+  filled,
 }: BottomFixedButtonGroupProps): ReactElement<any> => {
   const leftClassName = useMemo(() => {
     return mapClassName(leftButton);
@@ -57,7 +57,7 @@ export const BottomFixedButtonGroup = ({
 const ButtonWrap = styled.div<{ $filled?: boolean }>`
   ${mixins.flex({
     direction: 'row',
-    align: 'flex-start'
+    align: 'flex-start',
   })};
   position: fixed;
   left: 0px;

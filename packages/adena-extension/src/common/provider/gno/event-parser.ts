@@ -6,7 +6,7 @@ import { StorageDepositEventType } from './types';
 import { parseProto } from './utils';
 
 export const parseStorageDeposits = (
-  events: Any[]
+  events: Any[],
 ): {
   storageDeposit: number;
   unlockDeposit: number;
@@ -27,13 +27,13 @@ export const parseStorageDeposits = (
       storageDeposit: 0,
       unlockDeposit: 0,
       storageUsage: 0,
-      releaseStorageUsage: 0
-    }
+      releaseStorageUsage: 0,
+    },
   );
 };
 
 const parseStorageDeposit = (
-  event: Any
+  event: Any,
 ): {
   storageDeposit: number;
   unlockDeposit: number;
@@ -50,7 +50,7 @@ const parseStorageDeposit = (
         storageDeposit: Math.abs(feeDelta),
         storageUsage: Math.abs(bytesDelta),
         unlockDeposit: 0,
-        releaseStorageUsage: 0
+        releaseStorageUsage: 0,
       };
     }
     case StorageDepositEventType.UnlockDeposit: {
@@ -62,7 +62,7 @@ const parseStorageDeposit = (
         storageDeposit: 0,
         storageUsage: 0,
         unlockDeposit: Math.abs(bytesDelta),
-        releaseStorageUsage: Math.abs(feeDelta)
+        releaseStorageUsage: Math.abs(feeDelta),
       };
     }
     default:
@@ -73,6 +73,6 @@ const parseStorageDeposit = (
     storageDeposit: 0,
     unlockDeposit: 0,
     storageUsage: 0,
-    releaseStorageUsage: 0
+    releaseStorageUsage: 0,
   };
 };

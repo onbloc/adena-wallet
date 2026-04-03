@@ -1,6 +1,6 @@
 import WebHelpOverlay, { OverlayItem } from '@components/molecules/web-help-overlay/web-help-overlay';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 
 import { WalletCreationHelpOverlayItem } from './wallet-creation-help-overlay.styles';
@@ -22,7 +22,7 @@ interface TooltipConfig {
 function getTooltipPositionY(
   y: number,
   height: number,
-  windowHeight: number
+  windowHeight: number,
 ): {
   position: 'top' | 'bottom';
   height: number;
@@ -34,13 +34,13 @@ function getTooltipPositionY(
   if (windowHeight === 0 || y + boxHeight + tooltipHeight < windowHeight) {
     return {
       position: 'bottom',
-      height: positionY + boxHeight + 10
+      height: positionY + boxHeight + 10,
     };
   }
 
   return {
     position: 'top',
-    height: positionY - tooltipHeight - 10
+    height: positionY - tooltipHeight - 10,
   };
 }
 
@@ -57,7 +57,7 @@ const TOOLTIP_CONFIGS: Record<string, TooltipConfig> = {
         <b>hardware wallets</b>
         .
       </WalletCreationHelpOverlayItem>
-    )
+    ),
   },
   airgapAccount: {
     securityRate: 3,
@@ -71,7 +71,7 @@ const TOOLTIP_CONFIGS: Record<string, TooltipConfig> = {
         <b>air-gapped environment</b>
         .
       </WalletCreationHelpOverlayItem>
-    )
+    ),
   },
   multisigAccount: {
     securityRate: 3,
@@ -87,7 +87,7 @@ const TOOLTIP_CONFIGS: Record<string, TooltipConfig> = {
           accounts.
         </b>
       </WalletCreationHelpOverlayItem>
-    )
+    ),
   },
   advancedOption: {
     securityRate: 1,
@@ -108,8 +108,8 @@ const TOOLTIP_CONFIGS: Record<string, TooltipConfig> = {
         <b>Google Login</b>
         .
       </WalletCreationHelpOverlayItem>
-    )
-  }
+    ),
+  },
 };
 
 const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
@@ -117,25 +117,25 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
   airgapAccountButtonRef,
   multisigAccountButtonRef,
   advancedOptionButtonRef,
-  onFinish
+  onFinish,
 }) => {
   const [windowSize, setWindowSize] = useState<{
     width: number;
     height: number;
   }>({
     width: 0,
-    height: 0
+    height: 0,
   });
 
   const createHelpItem = useCallback(
     (
       ref: React.RefObject<HTMLButtonElement | null> | undefined,
-      config: TooltipConfig
+      config: TooltipConfig,
     ): OverlayItem | null => {
       if (!ref?.current) return null;
 
       const {
-        x, y, width, height
+        x, y, width, height,
       } = ref.current.getBoundingClientRect();
       const tooltipPositionInfo = getTooltipPositionY(y, height, windowSize.height);
 
@@ -143,10 +143,10 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
         x: x + width / 2,
         y: tooltipPositionInfo.height,
         position: tooltipPositionInfo.position,
-        tooltipInfo: config
+        tooltipInfo: config,
       };
     },
-    [windowSize]
+    [windowSize],
   );
 
   const helpItems = useMemo(() => {
@@ -161,7 +161,7 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
     const handleResize = (): void => {
       setWindowSize({
         width: window.innerWidth,
-        height: window.innerHeight
+        height: window.innerHeight,
       });
     };
 

@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const TransactionHistoryListItemWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: 60px;

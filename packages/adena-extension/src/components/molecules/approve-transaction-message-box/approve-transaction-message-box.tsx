@@ -20,7 +20,7 @@ const ApproveTransactionMessageBox: React.FC<ApproveTransactionMessageBoxProps> 
   changeMessages,
   openScannerLink,
   editable = true,
-  messageErrors
+  messageErrors,
 }) => {
   const argumentKeyMap = useMemo(() => {
     if (!argumentInfos) {
@@ -32,7 +32,7 @@ const ApproveTransactionMessageBox: React.FC<ApproveTransactionMessageBoxProps> 
         acc[info.index] = info.key;
         return acc;
       },
-      {} as Record<number, string>
+      {} as Record<number, string>,
     );
   }, [argumentInfos]);
 

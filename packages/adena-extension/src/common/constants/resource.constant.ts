@@ -14,5 +14,5 @@ export const ADENA_MULTISIG_GUIDE_LINK = {
     'https://docs.adena.app/integrations/transactions/create-a-multisig-transaction',
   SIGN_TRANSACTION: 'https://docs.adena.app/user-guide/wallet/send/multi-sig-accounts',
   BROADCAST_TRANSACTION:
-    'https://docs.adena.app/integrations/transactions/send-a-multisig-transaction'
+    'https://docs.adena.app/integrations/transactions/send-a-multisig-transaction',
 } as const;

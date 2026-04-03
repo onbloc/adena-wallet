@@ -34,20 +34,20 @@ export const setupMultisigStepBackTo: Record<
   INIT: null,
   ENTER_MULTISIG_CONFIG: 'INIT',
   COMPLETE: 'ENTER_MULTISIG_CONFIG',
-  LOADING: 'ENTER_MULTISIG_CONFIG'
+  LOADING: 'ENTER_MULTISIG_CONFIG',
 };
 
 const setupMultisigStepNo = {
   INIT: 0,
   ENTER_MULTISIG_CONFIG: 1,
   COMPLETE: 2,
-  LOADING: 2
+  LOADING: 2,
 };
 
 const DEFAULT_MULTISIG_CONFIG: MultisigConfig = {
   signers: ['', ''],
   threshold: 1,
-  noSort: false
+  noSort: false,
 };
 
 export const MAX_SIGNERS = 7;
@@ -70,7 +70,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
 
   const indicatorInfo = useIndicatorStep<SetupMultisigStateType>({
     stepMap: setupMultisigStepNo,
-    currentState: setupMultisigState
+    currentState: setupMultisigState,
   });
 
   const initSetup = React.useCallback(
@@ -81,7 +81,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
       if (mode === 'CREATE' && currentAddress) {
         setMultisigConfig({
           ...DEFAULT_MULTISIG_CONFIG,
-          signers: [currentAddress, '']
+          signers: [currentAddress, ''],
         });
       }
       else {
@@ -90,7 +90,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
 
       setSetupMultisigState('ENTER_MULTISIG_CONFIG');
     },
-    [currentAddress]
+    [currentAddress],
   );
 
   const updateSigner = React.useCallback((index: number, address: string) => {
@@ -99,7 +99,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
       newSigners[index] = address;
       return {
         ...prev,
-        signers: newSigners
+        signers: newSigners,
       };
     });
     setMultisigConfigError(null);
@@ -113,7 +113,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
 
       return {
         ...prev,
-        signers: [...prev.signers, '']
+        signers: [...prev.signers, ''],
       };
     });
     setMultisigConfigError(null);
@@ -122,7 +122,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
   const removeSigner = React.useCallback((index: number) => {
     setMultisigConfig(prev => ({
       ...prev,
-      signers: prev.signers.filter((_, i) => i !== index)
+      signers: prev.signers.filter((_, i) => i !== index),
     }));
     setMultisigConfigError(null);
   }, []);
@@ -130,7 +130,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
   const updateThreshold = React.useCallback((threshold: number) => {
     setMultisigConfig(prev => ({
       ...prev,
-      threshold
+      threshold,
     }));
     setMultisigConfigError(null);
   }, []);
@@ -146,7 +146,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
 
     if (threshold < 1 || threshold > validSigners.length) {
       setMultisigConfigError(
-        `Threshold must be between 1 and the number of signers (${validSigners.length}).`
+        `Threshold must be between 1 and the number of signers (${validSigners.length}).`,
       );
       return false;
     }
@@ -184,13 +184,13 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
         const isValid = validateAddress(validSigners[i]);
         if (!isValid) {
           throw new Error(
-            `Invalid address format for signer #${i + 1}. Please check and try again.`
+            `Invalid address format for signer #${i + 1}. Please check and try again.`,
           );
         }
       }
 
       const {
-        multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys
+        multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys,
       }
         = await multisigService.createMultisigAccount(multisigConfig);
 
@@ -202,7 +202,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
         addressBytesArray,
         multisigConfig,
         multisigAddress,
-        signerPublicKeys
+        signerPublicKeys,
       );
 
       await changeCurrentAccount(multisigAccount);
@@ -271,7 +271,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
     updateThreshold,
     createMultisigAccount,
     createdMultisigAddress,
-    resetMultisigConfig
+    resetMultisigConfig,
   };
 };
 

@@ -2,7 +2,7 @@ import {
   INSUFFICIENT_COINS_ERROR_TYPE,
   INSUFFICIENT_FUNDS_ERROR_TYPE,
   INVALID_PUBLIC_KEY_ERROR_TYPE,
-  UNKNOWN_ADDRESS_ERROR_TYPE
+  UNKNOWN_ADDRESS_ERROR_TYPE,
 } from '@common/constants/tx-error.constant';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { GnoJSONRPCProvider } from '@gnolang/gno-js-client';
@@ -14,7 +14,7 @@ import {
   parseABCI,
   TransactionEndpoint,
   Tx,
-  uint8ArrayToBase64
+  uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import { ResponseDeliverTx } from '@gnolang/tm2-js-client';
 import { Tm2Client } from '@gnolang/tm2-rpc';
@@ -52,7 +52,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
         path: 'auth/gasprice',
         data: new Uint8Array(),
         height: height ?? 0,
-        prove: false
+        prove: false,
       }));
 
       const abciData = abciResponse.response.ResponseBase.Data;
@@ -79,7 +79,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
 
   public async getAccountInfo(
     address: string,
-    height?: number | undefined
+    height?: number | undefined,
   ): Promise<AccountInfo | null> {
     const inActiveAccount: AccountInfo = {
       address,
@@ -88,7 +88,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
       status: 'IN_ACTIVE',
       publicKey: null,
       accountNumber: '0',
-      sequence: '0'
+      sequence: '0',
     };
 
     const abciAccount = await this.getAccount(address, height).catch((e) => {
@@ -105,7 +105,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
         coins,
         public_key: publicKey,
         account_number: accountNumber,
-        sequence
+        sequence,
       } = abciAccount.BaseAccount;
 
       return {
@@ -115,7 +115,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
         status: 'ACTIVE',
         publicKey,
         accountNumber,
-        sequence
+        sequence,
       };
     }
     catch (e) {
@@ -127,10 +127,10 @@ export class GnoProvider extends GnoJSONRPCProvider {
   public getValueByEvaluateExpression(
     packagePath: string,
     functionName: string,
-    params: (string | number)[]
+    params: (string | number)[],
   ): Promise<string | null> {
     const paramValues = params.map(param =>
-      typeof param === 'number' ? `${param}` : `"${param}"`
+      typeof param === 'number' ? `${param}` : `"${param}"`,
     );
     const expression = `${functionName}(${paramValues.join(',')})`;
 
@@ -172,7 +172,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
       path: '.app/simulate',
       data: new TextEncoder().encode(encodedTx),
       height: 0,
-      prove: false
+      prove: false,
     }));
 
     const responseValue = abciResponse.response.Value;
@@ -222,7 +222,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
         path: VMQueryType.QUERY_DOCUMENT,
         data: new TextEncoder().encode(packagePath),
         height: 0,
-        prove: false
+        prove: false,
       }));
 
       const abciData = abciResponse.response.ResponseBase.Data;

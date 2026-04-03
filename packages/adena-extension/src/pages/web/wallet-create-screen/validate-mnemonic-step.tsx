@@ -4,7 +4,7 @@ import { WebSeedValidateInputItem } from '@components/atoms/web-seed-validate-in
 import { WebTitleWithDescription } from '@components/molecules';
 import { UseWalletCreateReturn } from '@hooks/web/use-wallet-create-screen';
 import {
-  ReactElement, useCallback, useEffect, useMemo, useState
+  ReactElement, useCallback, useEffect, useMemo, useState,
 } from 'react';
 import styled from 'styled-components';
 
@@ -70,7 +70,7 @@ const ValidateMnemonicStep = ({ useWalletCreateScreenReturn }: { useWalletCreate
   }, []);
   useEffect(() => {
     const randomIndexes = Array.from({ length: 2 }, () => Math.floor(Math.random() * 12)).sort(
-      (a, b) => a - b
+      (a, b) => a - b,
     );
     setValidateSeedIndexes(randomIndexes);
   }, []);
@@ -86,7 +86,7 @@ const ValidateMnemonicStep = ({ useWalletCreateScreenReturn }: { useWalletCreate
       {hasValidatedIndexes && (
         <View style={{
           width: '100%',
-          gap: 16
+          gap: 16,
         }}
         >
           <WebSeedValidateInputItem

@@ -31,7 +31,7 @@ describe('NFTAssetHeader Component', () => {
       },
       hideCollection: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -40,7 +40,7 @@ describe('NFTAssetHeader Component', () => {
         <ThemeProvider theme={theme}>
           <NFTAssetHeader {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

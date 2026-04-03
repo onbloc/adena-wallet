@@ -75,7 +75,7 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
         currentAccountInfos.push({
           addressBookId: account.id,
           name: formatNickname(accountNames[account.id], 12),
-          description: `(${formatAddress(address)})`
+          description: `(${formatAddress(address)})`,
         });
       }
     }
@@ -85,7 +85,7 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
         return {
           addressBookId: addressBook.id,
           name: formatNickname(addressBook.name, 12),
-          description: `(${formatAddress(addressBook.address)})`
+          description: `(${formatAddress(addressBook.address)})`,
         };
       });
 
@@ -96,12 +96,12 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
     if (selectedAddressBook === null) {
       return {
         name: '',
-        description: ''
+        description: '',
       };
     }
     return {
       name: formatNickname(selectedAddressBook.name, 12),
-      description: `(${formatAddress(selectedAddressBook.address)})`
+      description: `(${formatAddress(selectedAddressBook.address)})`,
     };
   }, [selectedAddressBook]);
 
@@ -124,7 +124,7 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
         setOpened(!opened);
       }
     },
-    [opened]
+    [opened],
   );
 
   const onChangeAddress = useCallback(
@@ -138,13 +138,13 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
         clearError();
       }
     },
-    [hasError]
+    [hasError],
   );
 
   const onClickAddressBook = useCallback(
     async (addressBookId: string) => {
       const selectedAddressBook = addressBooks.find(
-        addressBook => addressBook.id === addressBookId
+        addressBook => addressBook.id === addressBookId,
       );
       if (selectedAddressBook) {
         clearError();
@@ -163,12 +163,12 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
           id: selectedAccount.id,
           name: selectedAccount.name,
           address,
-          createdAt: `${new Date().getTime()}`
+          createdAt: `${new Date().getTime()}`,
         });
         return;
       }
     },
-    [addressBooks, wallet?.accounts]
+    [addressBooks, wallet?.accounts],
   );
 
   const validateAddressBookInput = useCallback(() => {
@@ -217,6 +217,6 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
     onChangeAddress,
     onClickAddressBook,
     validateAddressBookInput,
-    validateEqualAddress
+    validateEqualAddress,
   };
 };

@@ -7,7 +7,7 @@ import { InjectionMessage, InjectionMessageInstance } from '../message';
 
 export const signAmino = async (
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): Promise<void> => {
   const validationMessage = validateInjectionData(requestData);
   if (validationMessage) {
@@ -19,13 +19,13 @@ export const signAmino = async (
     RoutePath.ApproveSign,
     requestData,
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
-    sendResponse
+    sendResponse,
   );
 };
 
 export const signTransaction = async (
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): Promise<void> => {
   const validationMessage = validateInjectionData(requestData);
   if (validationMessage) {
@@ -37,13 +37,13 @@ export const signTransaction = async (
     RoutePath.ApproveSignTransaction,
     requestData,
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
-    sendResponse
+    sendResponse,
   );
 };
 
 export const doContract = async (
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): Promise<void> => {
   const validationMessage = validateInjectionData(requestData);
   if (validationMessage) {
@@ -57,8 +57,8 @@ export const doContract = async (
     InjectionMessageInstance.failure(
       WalletResponseRejectType.TRANSACTION_REJECTED,
       {},
-      requestData.key
+      requestData.key,
     ),
-    sendResponse
+    sendResponse,
   );
 };

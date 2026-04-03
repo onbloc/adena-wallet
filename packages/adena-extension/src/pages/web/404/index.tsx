@@ -1,5 +1,5 @@
 import {
-  Row, View, WebButton, WebMain, WebText
+  Row, View, WebButton, WebMain, WebText,
 } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { ReactElement } from 'react';
@@ -62,7 +62,7 @@ const NotFoundScreen = (): ReactElement<any> => {
 
         <View style={{
           alignItems: 'center',
-          rowGap: 8
+          rowGap: 8,
         }}
         >
           <WebText type='display5' textCenter>

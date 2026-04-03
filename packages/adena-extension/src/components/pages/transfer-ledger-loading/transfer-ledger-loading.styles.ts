@@ -4,7 +4,7 @@ import styled from 'styled-components';
 export const TransferLedgerLoadingWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   position: relative;
   width: 100%;

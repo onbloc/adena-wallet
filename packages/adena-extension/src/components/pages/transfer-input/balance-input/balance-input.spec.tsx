@@ -20,7 +20,7 @@ describe('BalanceInput Component', () => {
       },
       onClickMax: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -29,7 +29,7 @@ describe('BalanceInput Component', () => {
         <ThemeProvider theme={theme}>
           <BalanceInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

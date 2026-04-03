@@ -15,7 +15,7 @@ const NetworkList: React.FC<NetworkListProps> = ({
   currentNetworkId,
   networkMetainfos,
   changeNetwork,
-  moveEditPage
+  moveEditPage,
 }) => {
   return (
     <NetworkListWrapper>

@@ -49,7 +49,7 @@ const RollingNumber: React.FC<RollingNumberProps> = ({
   type,
   color,
   style,
-  textCenter
+  textCenter,
 }) => {
   const [currentValue, setCurrentValue] = useState(value);
   const [animated, setAnimated] = useState(false);

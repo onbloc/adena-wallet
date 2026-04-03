@@ -7,7 +7,7 @@ import {
   ApproveLoadingBottomRadiusBox,
   ApproveLoadingSkeletonBox,
   ApproveLoadingTopRadiusBox,
-  ApproveLoadingWrapper
+  ApproveLoadingWrapper,
 } from './approve-loading.styles';
 
 export interface ApproveLoadingProps {
@@ -17,7 +17,7 @@ export interface ApproveLoadingProps {
 
 export const ApproveLoading: React.FC<ApproveLoadingProps> = ({
   leftButtonText,
-  rightButtonText
+  rightButtonText,
 }) => {
   return (
     <ApproveLoadingWrapper>

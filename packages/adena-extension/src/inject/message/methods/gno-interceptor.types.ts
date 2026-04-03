@@ -31,5 +31,5 @@ export interface InterceptorContext { gnoConnectInfo: GnoConnectInfo }
  */
 export type InterceptorHandler = (
   gnoMessageInfo: GnoMessageInfo,
-  context: InterceptorContext
+  context: InterceptorContext,
 ) => Promise<void> | void;

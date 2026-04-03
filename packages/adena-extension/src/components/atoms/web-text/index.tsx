@@ -33,7 +33,7 @@ export const WebText = ({
       style={{
         color,
         textAlign: textCenter ? 'center' : 'initial',
-        ...style
+        ...style,
       }}
       {...rest}
     >

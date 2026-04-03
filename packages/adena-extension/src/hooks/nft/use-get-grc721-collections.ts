@@ -2,14 +2,14 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import {
-  keepPreviousData, useQuery, UseQueryOptions, UseQueryResult
+  keepPreviousData, useQuery, UseQueryOptions, UseQueryResult,
 } from '@tanstack/react-query';
 import { GRC721CollectionModel } from '@types';
 
 export const GET_GRC721_COLLECTIONS_QUERY_KEY = 'nft/useGetGRC721Collections';
 
 export const useGetGRC721Collections = (
-  options?: Omit<UseQueryOptions<GRC721CollectionModel[] | null, Error>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<GRC721CollectionModel[] | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<GRC721CollectionModel[] | null> => {
   const { tokenService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
@@ -28,11 +28,11 @@ export const useGetGRC721Collections = (
 
       return collections.map(collection => ({
         ...collection,
-        tokenId: '0'
+        tokenId: '0',
       }));
     },
     staleTime: Infinity,
     placeholderData: keepPreviousData,
-    ...options
+    ...options,
   });
 };

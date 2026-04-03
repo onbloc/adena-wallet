@@ -1,13 +1,13 @@
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
-  WalletResponseSuccessType
+  WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
 import {
   createFaviconByHostname,
   decodeParameter,
-  parseParameters
+  parseParameters,
 } from '@common/utils/client-utils';
 import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 import { validateInjectionDataForMultisig } from '@common/validation/validation-transaction';
@@ -29,10 +29,10 @@ import {
   RawTx,
   RawTxMessageType,
   RawVmAddPackageMessage,
-  RawVmRunMessage
+  RawVmRunMessage,
 } from 'adena-module';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
@@ -81,12 +81,12 @@ function mappedTransactionData(rawTx: RawTx): TransactionData {
       return {
         type: message?.['@type'] || '',
         function: parseFunctionName(message),
-        value: message
+        value: message,
       };
     }),
     gasWanted: fee.gas_wanted,
     gasFee: fee.gas_fee,
-    memo: memo || ''
+    memo: memo || '',
   };
 }
 
@@ -128,7 +128,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
     return {
       amount,
-      denom
+      denom,
     };
   }, [tx?.fee]);
 
@@ -141,7 +141,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
     return {
       amount: networkFeeAmount,
-      denom: GasToken.symbol
+      denom: GasToken.symbol,
     };
   }, [rawNetworkFee]);
 
@@ -149,13 +149,13 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     if (!networkFee) {
       return {
         amount: '',
-        denom: ''
+        denom: '',
       };
     }
 
     return {
       amount: networkFee.amount,
-      denom: GasToken.symbol
+      denom: GasToken.symbol,
     };
   }, [networkFee]);
 
@@ -215,7 +215,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     const parsedData = decodeParameter(data['data']);
     setRequestData({
       ...parsedData,
-      hostname: data['hostname']
+      hostname: data['hostname'],
     });
   };
 
@@ -232,12 +232,12 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
   const validate = async (
     currentAccount: Account,
-    requestData: InjectionMessage
+    requestData: InjectionMessage,
   ): Promise<boolean> => {
     const validationMessage = validateInjectionDataForMultisig(
       requestData,
       currentAccount,
-      await currentAccount.getAddress('g')
+      await currentAccount.getAddress('g'),
     );
 
     if (validationMessage) {
@@ -250,7 +250,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
   const initFavicon = async (): Promise<void> => {
     const faviconData = await createFaviconByHostname(
-      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : ''
+      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : '',
     );
     setFavicon(faviconData);
   };
@@ -273,7 +273,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
         messages,
         requestData.data?.memo || '',
         gas?.gasWanted || '',
-        gas?.gasFee || ''
+        gas?.gasFee || '',
       );
 
       const transactionData = mappedTransactionData(data);
@@ -295,8 +295,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
           InjectionMessageInstance.failure(
             WalletResponseRejectType.SIGN_REJECTED,
             requestData?.data,
-            requestData?.key
-          )
+            requestData?.key,
+          ),
         );
       }
     }
@@ -319,8 +319,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       memo: currentMemo,
       fee: {
         gas_wanted: currentGasWanted.toString(),
-        gas_fee: `${rawNetworkFee.amount}${rawNetworkFee.denom}`
-      }
+        gas_fee: `${rawNetworkFee.amount}${rawNetworkFee.denom}`,
+      },
     };
 
     setTx(updatedTx);
@@ -333,8 +333,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
           {},
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
       return false;
     }
@@ -344,8 +344,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
           { error: { message: 'Please switch to a multisig account and try again.' } },
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
       return false;
     }
@@ -366,8 +366,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
         InjectionMessageInstance.success(
           WalletResponseSuccessType.CREATE_MULTISIG_TRANSACTION_SUCCESS,
           { tx: tx },
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
 
       return true;
@@ -384,8 +384,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
           InjectionMessageInstance.failure(
             WalletResponseFailureType.CREATE_MULTISIG_TRANSACTION_FAILED,
             { error: { message } },
-            requestData?.key
-          )
+            requestData?.key,
+          ),
         );
       }
       else {
@@ -393,8 +393,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
           InjectionMessageInstance.failure(
             WalletResponseFailureType.CREATE_MULTISIG_TRANSACTION_FAILED,
             {},
-            requestData?.key
-          )
+            requestData?.key,
+          ),
         );
       }
       return false;
@@ -426,8 +426,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseRejectType.SIGN_REJECTED,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   };
 
@@ -442,8 +442,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NETWORK_TIMEOUT,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   }, [requestData]);
 

@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const ManageCollectionSearchInputWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   height: 48px;

@@ -14,22 +14,22 @@ interface TransactionHistoryState {
 
 export const wallet = atom<Wallet | null>({
   key: 'wallet/wallet',
-  default: null
+  default: null,
 });
 
 export const state = atom<StateType>({
   key: 'wallet/state',
-  default: 'NONE'
+  default: 'NONE',
 });
 
 export const currentAccount = atom<Account | null>({
   key: 'wallet/currentAccount',
-  default: null
+  default: null,
 });
 
 export const accountNames = atom<{ [key in string]: string }>({
   key: 'wallet/accountNames',
-  default: {}
+  default: {},
 });
 
 export const transactionHistory = atom<TransactionHistoryState>({
@@ -39,8 +39,8 @@ export const transactionHistory = atom<TransactionHistoryState>({
     address: null,
     currentPage: -1,
     isFinish: false,
-    items: []
-  }
+    items: [],
+  },
 });
 
 export const addressBook = atom<{
@@ -52,6 +52,6 @@ export const addressBook = atom<{
   default: {
     init: false,
     loading: false,
-    items: []
-  }
+    items: [],
+  },
 });

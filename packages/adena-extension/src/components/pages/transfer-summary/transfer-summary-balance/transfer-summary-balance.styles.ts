@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const TransferSummaryBalanceWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   height: auto;

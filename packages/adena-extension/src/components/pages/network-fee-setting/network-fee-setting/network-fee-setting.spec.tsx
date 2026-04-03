@@ -28,7 +28,7 @@ describe('NetworkFeeSetting Component', () => {
       },
       onClickSave: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -37,7 +37,7 @@ describe('NetworkFeeSetting Component', () => {
         <ThemeProvider theme={theme}>
           <NetworkFeeSetting {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

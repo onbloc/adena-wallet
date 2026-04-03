@@ -83,7 +83,7 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
   ${mixins.flex({
     direction: 'row',
     align: 'center',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   height: auto;
@@ -96,7 +96,7 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
     ${mixins.flex({
       direction: 'row',
       align: 'center',
-      justify: 'space-between'
+      justify: 'space-between',
     })};
     width: 100%;
     flex-shrink: 0;

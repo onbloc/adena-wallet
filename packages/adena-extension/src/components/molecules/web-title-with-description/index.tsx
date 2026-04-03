@@ -21,7 +21,7 @@ export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = (
   isCenter,
   marginTop = 0,
   marginBottom = 0,
-  descriptionLetterSpacing
+  descriptionLetterSpacing,
 }) => {
   const theme = useTheme();
 
@@ -30,7 +30,7 @@ export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = (
       style={{
         alignItems: isCenter ? 'center' : 'flex-start',
         marginTop,
-        marginBottom
+        marginBottom,
       }}
     >
       <WebText type='headline2' textCenter={isCenter}>

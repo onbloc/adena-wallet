@@ -13,7 +13,7 @@ export interface AdditionalTokenPathInputProps {
 const AdditionalTokenPathInput: React.FC<AdditionalTokenPathInputProps> = ({
   keyword,
   onChangeKeyword,
-  errorMessage
+  errorMessage,
 }) => {
   const hasError = useMemo(() => {
     return !!errorMessage;

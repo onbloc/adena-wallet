@@ -6,7 +6,7 @@ import {
   ApproveTransactionLoadingAllRadiusBox,
   ApproveTransactionLoadingBottomRadiusBox,
   ApproveTransactionLoadingTopRadiusBox,
-  ApproveTransactionLoadingWrapper
+  ApproveTransactionLoadingWrapper,
 } from './approve-transaction-loading.styles';
 
 export interface ApproveTransactionLoadingProps {
@@ -16,7 +16,7 @@ export interface ApproveTransactionLoadingProps {
 
 export const ApproveTransactionLoading: React.FC<ApproveTransactionLoadingProps> = ({
   leftButtonText,
-  rightButtonText
+  rightButtonText,
 }) => {
   return (
     <ApproveTransactionLoadingWrapper>

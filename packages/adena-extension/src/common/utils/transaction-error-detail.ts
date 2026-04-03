@@ -14,7 +14,7 @@ export interface TransactionErrorDetail {
  * Goal: display errors in detail so users understand what went wrong.
  */
 export function getTransactionErrorDetail(
-  response: InjectionMessage
+  response: InjectionMessage,
 ): TransactionErrorDetail | null {
   if (response.status !== 'failure') {
     return null;
@@ -30,7 +30,7 @@ export function getTransactionErrorDetail(
     description: response.message || 'Something went wrong while sending the transaction.',
     rawError:
       serverMessage || (typeof data?.error === 'object' ? JSON.stringify(data.error) : undefined),
-    errorCode: type
+    errorCode: type,
   };
 
   switch (type) {
@@ -46,7 +46,7 @@ export function getTransactionErrorDetail(
           : 'Check your network connection and balance, then try again. If the problem continues, try again later.',
         rawError:
           [serverMessage, hash ? `TxHash: ${hash}` : ''].filter(Boolean).join('\n')
-          || base.rawError
+          || base.rawError,
       };
     case WalletResponseFailureType.NETWORK_TIMEOUT:
       return {
@@ -55,7 +55,7 @@ export function getTransactionErrorDetail(
         description: 'The request took too long. The network or RPC may be slow or unavailable.',
         suggestion:
           'Check your internet connection and try again. If the network is busy, wait a moment and retry.',
-        rawError: serverMessage || base.rawError
+        rawError: serverMessage || base.rawError,
       };
     case WalletResponseFailureType.UNEXPECTED_ERROR:
       return {
@@ -64,14 +64,14 @@ export function getTransactionErrorDetail(
         description: 'An unexpected error occurred while preparing or sending the transaction.',
         suggestion:
           'Try again. If the problem continues, refresh the page and ensure your wallet is unlocked.',
-        rawError: serverMessage || base.rawError
+        rawError: serverMessage || base.rawError,
       };
     default:
       return {
         ...base,
         description: response.message || base.description,
         suggestion: 'Try again or contact support if the problem continues.',
-        rawError: serverMessage || base.rawError
+        rawError: serverMessage || base.rawError,
       };
   }
 }

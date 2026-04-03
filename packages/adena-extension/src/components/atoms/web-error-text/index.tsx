@@ -12,7 +12,7 @@ const StyledText = styled(WebText)`
 
 export const WebErrorText = ({
   text,
-  alignItems = 'center'
+  alignItems = 'center',
 }: {
   text: string;
   alignItems?: React.CSSProperties['alignItems'];
@@ -21,7 +21,7 @@ export const WebErrorText = ({
   return (
     <Row style={{
       gap: 6,
-      alignItems
+      alignItems,
     }}
     >
       <WebImg src={IconError} size={20} />

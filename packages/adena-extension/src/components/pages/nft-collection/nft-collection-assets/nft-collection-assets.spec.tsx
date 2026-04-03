@@ -17,7 +17,7 @@ describe('NFTCollectionAssets Component', () => {
       moveAssetPage: () => {
         return;
       },
-      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>
+      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
     };
 
     render(
@@ -26,7 +26,7 @@ describe('NFTCollectionAssets Component', () => {
         <ThemeProvider theme={theme}>
           <NFTCollectionAssets {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

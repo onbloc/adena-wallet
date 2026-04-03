@@ -14,7 +14,7 @@ const ApproveTransactionResult: React.FC<ApproveTransactionResultProps> = ({
   errorMessage,
   onClickViewHistory,
   onClickViewGnoscan,
-  onClickClose
+  onClickClose,
 }) => {
   return (
     <TransactionResult

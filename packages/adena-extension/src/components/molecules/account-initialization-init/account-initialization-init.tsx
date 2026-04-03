@@ -15,7 +15,7 @@ export interface AccountInitializationInitProps {
 const AccountInitializationInit: React.FC<AccountInitializationInitProps> = ({
   address,
   moveRequest,
-  moveBack
+  moveBack,
 }) => {
   const displayAddress = useMemo(() => {
     return formatAddress(address, 14);
@@ -40,12 +40,12 @@ const AccountInitializationInit: React.FC<AccountInitializationInitProps> = ({
       <BottomFixedButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: moveBack
+          onClick: moveBack,
         }}
         rightButton={{
           text: 'Confirm',
           primary: true,
-          onClick: moveRequest
+          onClick: moveRequest,
         }}
       />
     </AccountInitializationInitWrapper>

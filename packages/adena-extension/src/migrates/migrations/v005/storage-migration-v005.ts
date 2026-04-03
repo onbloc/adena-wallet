@@ -8,7 +8,7 @@ export class StorageMigration005 implements Migration<StorageModelDataV005> {
   public readonly version = 5;
 
   async up(
-    current: StorageModel<StorageModelDataV004>
+    current: StorageModel<StorageModelDataV004>,
   ): Promise<StorageModel<StorageModelDataV005>> {
     if (!this.validateModelV004(current.data)) {
       throw new Error('Storage Data does not match version V004');
@@ -21,8 +21,8 @@ export class StorageMigration005 implements Migration<StorageModelDataV005> {
         QUESTIONNAIRE_EXPIRED_DATE: null,
         ADDRESS_BOOK: this.migrateAddressBook(),
         WALLET_CREATION_GUIDE_CONFIRM_DATE: null,
-        ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null
-      }
+        ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null,
+      },
     };
   }
 

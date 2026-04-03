@@ -17,9 +17,9 @@ const tokens = [
     name: 'Gno.land',
     balance: {
       value: '240,255.241155',
-      denom: 'GNOT'
+      denom: 'GNOT',
     },
-    activated: true
+    activated: true,
   },
   {
     tokenId: 'token2',
@@ -29,10 +29,10 @@ const tokens = [
     name: 'GnoSwap',
     balance: {
       value: '252.844',
-      denom: 'GNS'
+      denom: 'GNS',
     },
-    activated: true
-  }
+    activated: true,
+  },
 ];
 
 describe('ManageTokenList Component', () => {
@@ -41,7 +41,7 @@ describe('ManageTokenList Component', () => {
       tokens,
       onToggleActiveItem: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -50,7 +50,7 @@ describe('ManageTokenList Component', () => {
         <ThemeProvider theme={theme}>
           <ManageTokenList {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

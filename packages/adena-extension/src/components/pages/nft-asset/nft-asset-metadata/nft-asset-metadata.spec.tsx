@@ -22,9 +22,9 @@ describe('NFTAssetMetadata Component', () => {
         tokenId: '',
         type: 'grc721',
         isMetadata: true,
-        isTokenUri: true
+        isTokenUri: true,
       },
-      queryGRC721TokenMetadata: () => ({}) as unknown as UseQueryResult<GRC721MetadataModel | null>
+      queryGRC721TokenMetadata: () => ({}) as unknown as UseQueryResult<GRC721MetadataModel | null>,
     };
 
     render(
@@ -33,7 +33,7 @@ describe('NFTAssetMetadata Component', () => {
         <ThemeProvider theme={theme}>
           <NFTAssetMetadata {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

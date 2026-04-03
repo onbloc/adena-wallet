@@ -16,7 +16,7 @@ const mockStorageData = {
   ACCOUNT_TOKEN_METAINFOS: {},
   QUESTIONNAIRE_EXPIRED_DATE: null,
   WALLET_CREATION_GUIDE_CONFIRM_DATE: null,
-  ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null
+  ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null,
 };
 
 describe('serialized wallet migration V007', () => {
@@ -28,7 +28,7 @@ describe('serialized wallet migration V007', () => {
   it('up success', async () => {
     const mockData = {
       version: 6,
-      data: mockStorageData
+      data: mockStorageData,
     };
     const migration = new StorageMigration007();
     const result = await migration.up(mockData);
@@ -40,7 +40,7 @@ describe('serialized wallet migration V007', () => {
   it('up password success', async () => {
     const mockData = {
       version: 1,
-      data: mockStorageData
+      data: mockStorageData,
     };
     const password = '123';
     const migration = new StorageMigration007();
@@ -64,13 +64,13 @@ describe('serialized wallet migration V007', () => {
       version: 1,
       data: {
         ...mockStorageData,
-        SERIALIZED: null
-      }
+        SERIALIZED: null,
+      },
     };
     const migration = new StorageMigration007();
 
     await expect(migration.up(mockData)).rejects.toThrow(
-      'Storage Data does not match version V006'
+      'Storage Data does not match version V006',
     );
   });
 });

@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const SideMenuAccountItemWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   height: auto;
@@ -24,7 +24,7 @@ export const SideMenuAccountItemWrapper = styled.div`
   .info-wrapper {
     ${mixins.flex({
       align: 'flex-start',
-      justify: 'normal'
+      justify: 'normal',
     })};
 
     .address-wrapper {
@@ -107,7 +107,7 @@ export const SideMenuAccountItemMoreInfoWrapper = styled.div<{
     ${mixins.flex({
       direction: 'row',
       align: 'normal',
-      justify: 'normal'
+      justify: 'normal',
     })};
     padding: 7px 0 7px 12px;
     border-bottom: 1px solid ${getTheme('neutral', '_7')};

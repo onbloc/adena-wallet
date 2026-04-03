@@ -67,7 +67,7 @@ export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolea
     ${mixins.flex({
       direction: 'row',
       align: 'center',
-      justify: 'center'
+      justify: 'center',
     })};
     width: 100%;
     min-height: 41px;
@@ -218,7 +218,7 @@ export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolea
     ${mixins.flex({
       direction: 'column',
       justify: 'flex-start',
-      align: 'stretch'
+      align: 'stretch',
     })};
     width: 100%;
     margin-top: 24px;

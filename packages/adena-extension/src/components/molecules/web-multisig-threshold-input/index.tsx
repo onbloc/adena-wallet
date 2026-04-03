@@ -11,7 +11,7 @@ interface WebMultisigThresholdInputProps {
 export const WebMultisigThresholdInput = ({
   threshold,
   onThresholdChange,
-  multisigConfigError
+  multisigConfigError,
 }: WebMultisigThresholdInputProps): React.ReactElement<any> => {
   const handleChange = (value: string): void => {
     const numericValue = value.replace(/[^0-9]/g, '');

@@ -69,7 +69,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
     chainId: string,
     rpcUrl: string,
     isDefaultNetwork: boolean,
-    onEmit: (event: Event<ResponseDataType>) => Promise<void>
+    onEmit: (event: Event<ResponseDataType>) => Promise<void>,
   ): Event<ResponseDataType> {
     // Return synchronously but queue asynchronous operations internally
     this.lock.acquire().then(() => {
@@ -88,7 +88,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
           isDefaultNetwork,
           data: null,
           requests: 0,
-          onEmit
+          onEmit,
         };
         this.events.set(id, { ...event });
       }
@@ -107,7 +107,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
       isDefaultNetwork,
       data: null,
       requests: 0,
-      onEmit
+      onEmit,
     };
   }
 
@@ -235,7 +235,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
     await this.lock.acquire();
     try {
       pendingEvents = Array.from(this.events.values()).filter(
-        event => event.status === 'PENDING'
+        event => event.status === 'PENDING',
       );
     }
     finally {
@@ -255,11 +255,11 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
               ...event,
               status,
               emitNumber: result?.height || null,
-              data: result?.data || null
+              data: result?.data || null,
             };
           })
-          .catch(() => null)
-      )
+          .catch(() => null),
+      ),
     );
 
     await this.lock.acquire();
@@ -367,7 +367,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
           return {
             height: 0,
             hasError: true,
-            data: []
+            data: [],
           };
         }
 
@@ -380,7 +380,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
         return {
           height,
           hasError,
-          data: []
+          data: [],
         };
       }
 
@@ -389,14 +389,14 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
         return {
           height,
           hasError,
-          data: []
+          data: [],
         };
       }
 
       return {
         height,
         hasError,
-        data: parseABCIValue(responseData)
+        data: parseABCIValue(responseData),
       };
     }
     catch (error) {

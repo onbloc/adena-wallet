@@ -1,7 +1,7 @@
 import IconAlert from '@assets/web/alert-rounded.svg';
 import IconLink from '@assets/web/external-link.svg';
 import {
-  Pressable, Row, View, WebButton, WebImg, WebText
+  Pressable, Row, View, WebButton, WebImg, WebText,
 } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import useLink from '@hooks/use-link';
@@ -24,7 +24,7 @@ export type SensitiveInfoStepProps = {
 export const SensitiveInfoStep = ({
   link,
   desc,
-  onClickNext
+  onClickNext,
 }: SensitiveInfoStepProps): ReactElement<any> => {
   const theme = useTheme();
   const { openLink } = useLink();
@@ -33,7 +33,7 @@ export const SensitiveInfoStep = ({
     <StyledContainer>
       <View style={{
         rowGap: 32,
-        alignItems: 'flex-start'
+        alignItems: 'flex-start',
       }}
       >
         <WebImg src={IconAlert} size={88} />

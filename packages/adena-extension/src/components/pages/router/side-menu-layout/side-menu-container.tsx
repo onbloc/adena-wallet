@@ -14,7 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { RoutePath, SideMenuAccountInfo, TokenBalanceType } from '@types';
 import { Account } from 'adena-module';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -65,7 +65,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
       setOpen(false);
       navigate(link);
     },
-    [navigate, setOpen]
+    [navigate, setOpen],
   );
 
   const onOpenLink = useCallback(
@@ -73,7 +73,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
       setOpen(false);
       openLink(link);
     },
-    [setOpen]
+    [setOpen],
   );
 
   const focusAccountId = useCallback((accountId: string | null) => {
@@ -90,7 +90,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
       await changeCurrentAccount(account);
       navigate(RoutePath.Wallet, { replace: true });
     },
-    [accounts, changeCurrentAccount, setOpen]
+    [accounts, changeCurrentAccount, setOpen],
   );
 
   const lock = useCallback(async () => {
@@ -118,7 +118,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
     queryFn: () => {
       function mapBalance(
         accountNativeBalanceMap: Record<string, TokenBalanceType>,
-        account: Account
+        account: Account,
       ): string {
         const amount = accountNativeBalanceMap[account.id]?.amount;
         if (!amount) {
@@ -133,10 +133,10 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
           name: formatNickname(accountNames[account.id] || account.name, 10),
           address: await account.getAddress(currentNetwork.addressPrefix),
           type: account.type,
-          balance: mapBalance(accountNativeBalanceMap, account)
-        }))
+          balance: mapBalance(accountNativeBalanceMap, account),
+        })),
       );
-    }
+    },
   });
 
   useEffect(() => {

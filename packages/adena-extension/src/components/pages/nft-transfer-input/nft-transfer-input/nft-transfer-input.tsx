@@ -40,7 +40,7 @@ export interface NFTTransferInputProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   onClickBack: () => void;
   onClickCancel: () => void;
@@ -56,7 +56,7 @@ const NFTTransferInput: React.FC<NFTTransferInputProps> = ({
   queryGRC721TokenUri,
   onClickBack,
   onClickCancel,
-  onClickNext
+  onClickNext,
 }) => {
   const title = useMemo(() => {
     return `Send ${grc721Token.name} #${grc721Token.tokenId}`;
@@ -70,7 +70,7 @@ const NFTTransferInput: React.FC<NFTTransferInputProps> = ({
               title={title}
               leftElement={{
                 element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
-                onClick: onClickBack
+                onClick: onClickBack,
               }}
             />
           )
@@ -91,13 +91,13 @@ const NFTTransferInput: React.FC<NFTTransferInputProps> = ({
       <BottomFixedButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           text: 'Next',
           onClick: onClickNext,
           disabled: !isNext,
-          primary: true
+          primary: true,
         }}
         filled
       />

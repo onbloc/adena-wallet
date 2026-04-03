@@ -5,7 +5,7 @@ export function createNotification(id: string, title: string, message: string): 
       type: 'basic',
       iconUrl: chrome.runtime.getURL('/icons/icon128.png'),
       title: title,
-      message: message
+      message: message,
     },
     (notificationId) => {
       if (chrome.runtime.lastError) {
@@ -14,6 +14,6 @@ export function createNotification(id: string, title: string, message: string): 
       else {
         console.log('Notification created:', notificationId);
       }
-    }
+    },
   );
 }

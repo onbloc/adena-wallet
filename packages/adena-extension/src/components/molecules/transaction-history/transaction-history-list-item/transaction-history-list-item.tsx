@@ -25,7 +25,7 @@ export interface TransactionHistoryListItemProps {
   queryGRC721TokenUri?: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   onClickItem: (hash: string) => void;
 }
@@ -42,7 +42,7 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
     amount,
     valueType,
     queryGRC721TokenUri,
-    onClickItem
+    onClickItem,
   } = args;
   const [hasLogoError, setHasLogoError] = useState(false);
   const [isLoadedLogo, setIsLoadedLogo] = useState(false);

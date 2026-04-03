@@ -1,6 +1,6 @@
 import { CommonState } from '@states';
 import {
-  RefObject, useCallback, useLayoutEffect, useState
+  RefObject, useCallback, useLayoutEffect, useState,
 } from 'react';
 import { useLocation } from 'react-router';
 import { useRecoilState } from 'recoil';
@@ -48,15 +48,15 @@ const useScrollHistory = (ref?: RefObject<HTMLDivElement | null>): UseScrollHist
       const scrollTop = scrollY ?? ref?.current?.scrollTop ?? bodyElement?.scrollTop ?? 0;
       setScrollPositions({
         ...scrollPositions,
-        [location.key]: scrollTop
+        [location.key]: scrollTop,
       });
     },
-    [location, bodyElement, ref?.current]
+    [location, bodyElement, ref?.current],
   );
 
   return {
     scrollMove,
-    saveScrollPosition
+    saveScrollPosition,
   };
 };
 

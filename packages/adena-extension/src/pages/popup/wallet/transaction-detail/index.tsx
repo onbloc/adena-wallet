@@ -75,7 +75,7 @@ export const TransactionDetail = (): JSX.Element => {
         amountValue: '0',
         amountDenom: GNOT_TOKEN.denom,
         isRefundable: false,
-        fontColor: theme.neutral._1
+        fontColor: theme.neutral._1,
       };
     }
 
@@ -87,7 +87,7 @@ export const TransactionDetail = (): JSX.Element => {
       amountValue,
       amountDenom: transactionItem.storageDeposit.denom,
       isRefundable,
-      fontColor
+      fontColor,
     };
   }, [transactionItem?.storageDeposit]);
 
@@ -221,7 +221,7 @@ export const TransactionDetail = (): JSX.Element => {
                   <TokenBalance
                     {...convertDenom(
                       transactionItem.networkFee.value,
-                      transactionItem.networkFee.denom
+                      transactionItem.networkFee.denom,
                     )}
                     minimumFontSize='12px'
                     fontStyleKey='body1Reg'
@@ -277,7 +277,7 @@ const Wrapper = styled.main`
 const TokenBox = styled.div<{ color: string }>`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   flex-shrink: 0;
   width: 100%;
@@ -312,7 +312,7 @@ const DataBox = styled.div`
 const DLWrap = styled.dl<DLProps>`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   ${fonts.body1Reg};
   width: 100%;
@@ -329,7 +329,7 @@ const DLWrap = styled.dl<DLProps>`
     color: ${getTheme('neutral', 'a')};
     ${mixins.flex({
       direction: 'row',
-      justify: 'space-between'
+      justify: 'space-between',
     })};
     gap: 4px;
   }
@@ -347,7 +347,7 @@ const DLWrap = styled.dl<DLProps>`
 const StatusInfo = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   .link-icon {
     display: flex;

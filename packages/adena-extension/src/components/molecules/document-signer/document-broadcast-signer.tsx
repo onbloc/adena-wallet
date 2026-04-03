@@ -12,7 +12,7 @@ interface DocumentBroadcastSignerProps {
 const DocumentBroadcastSigner = ({
   signerCount,
   signedCount,
-  onClickSetting
+  onClickSetting,
 }: DocumentBroadcastSignerProps): React.ReactElement<any> => {
   const hasSetting = !!onClickSetting;
   return (

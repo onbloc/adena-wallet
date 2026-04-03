@@ -1,6 +1,6 @@
 import IconInfo from '@assets/web/info.svg';
 import {
-  Row, View, WebButton, WebImg, WebText
+  Row, View, WebButton, WebImg, WebText,
 } from '@components/atoms';
 import RollingNumber from '@components/atoms/rolling-number';
 import WebAnswerButton from '@components/molecules/web-answer-button/web-answer-button';
@@ -9,7 +9,7 @@ import { WebMainHeader } from '@components/pages/web/main-header';
 import { UseIndicatorStepReturn } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { Question } from '@types';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import styled, { useTheme } from 'styled-components';
 
@@ -56,7 +56,7 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
   question,
   indicatorInfo,
   nextQuestion,
-  backStep
+  backStep,
 }) => {
   const theme = useTheme();
   const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(null);
@@ -113,7 +113,7 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
       setSelectedAnswerIndex(index);
       setRetryTime(3);
     },
-    [retryTime]
+    [retryTime],
   );
 
   const onClickNextButton = useCallback(() => {

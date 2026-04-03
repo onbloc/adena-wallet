@@ -6,20 +6,20 @@ import {
   CurrentChainIdModelV005,
   CurrentNetworkIdModelV005,
   NetworksModelV005,
-  StorageModelDataV005
+  StorageModelDataV005,
 } from '../v005/storage-model-v005';
 import {
   CurrentChainIdModelV006,
   CurrentNetworkIdModelV006,
   NetworksModelV006,
-  StorageModelDataV006
+  StorageModelDataV006,
 } from './storage-model-v006';
 
 export class StorageMigration006 implements Migration<StorageModelDataV006> {
   public readonly version = 6;
 
   async up(
-    current: StorageModel<StorageModelDataV005>
+    current: StorageModel<StorageModelDataV005>,
   ): Promise<StorageModel<StorageModelDataV006>> {
     if (!this.validateModelV005(current.data)) {
       throw new Error('Storage Data does not match version V005');
@@ -31,8 +31,8 @@ export class StorageMigration006 implements Migration<StorageModelDataV006> {
         ...previous,
         CURRENT_CHAIN_ID: this.migrateCurrentChainId(previous.CURRENT_CHAIN_ID),
         CURRENT_NETWORK_ID: this.migrateCurrentNetworkId(previous.CURRENT_NETWORK_ID),
-        NETWORKS: this.migrateNetwork(previous.NETWORKS)
-      }
+        NETWORKS: this.migrateNetwork(previous.NETWORKS),
+      },
     };
   }
 
@@ -81,7 +81,7 @@ export class StorageMigration006 implements Migration<StorageModelDataV006> {
   }
 
   private migrateCurrentNetworkId(
-    currentNetworkId: CurrentNetworkIdModelV005
+    currentNetworkId: CurrentNetworkIdModelV005,
   ): CurrentNetworkIdModelV006 {
     if (currentNetworkId === 'test3') {
       return 'test4';
@@ -100,12 +100,12 @@ export class StorageMigration006 implements Migration<StorageModelDataV006> {
             ...providedNetwork,
             chainName: network.chainName,
             networkName: network.networkName,
-            rpcUrl: network.rpcUrl
+            rpcUrl: network.rpcUrl,
           };
         }
         return {
           ...network,
-          indexerUrl: ''
+          indexerUrl: '',
         };
       });
     return [...defaultNetworks, ...customNetworks];

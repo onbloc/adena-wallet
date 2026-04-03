@@ -1,5 +1,5 @@
 export const parseGRC20ByABCIRender = (
-  response: string
+  response: string,
 ): {
   tokenName: string;
   tokenSymbol: string;
@@ -25,7 +25,7 @@ export const parseGRC20ByABCIRender = (
     tokenSymbol: match.groups.tokenSymbol,
     tokenDecimals: parseInt(match.groups.tokenDecimals, 10),
     totalSupply: BigInt(match.groups.totalSupply),
-    knownAccounts: BigInt(match.groups.knownAccounts)
+    knownAccounts: BigInt(match.groups.knownAccounts),
   };
 };
 
@@ -33,7 +33,7 @@ export const parseGRC20ByABCIRender = (
  * realm's path format: {Domain}/{Type}/{Namespace}/{Remain Path...}
  */
 export const parseReamPathItemsByPath = (
-  realmPath: string
+  realmPath: string,
 ): {
   domain: string;
   type: string;
@@ -61,12 +61,12 @@ export const parseReamPathItemsByPath = (
     domain,
     type,
     namespace,
-    remainPath: remainPathItems.join('/')
+    remainPath: remainPathItems.join('/'),
   };
 };
 
 export const parseGRC20ByFileContents = (
-  contents: string
+  contents: string,
 ): {
   tokenName: string;
   tokenSymbol: string;
@@ -92,7 +92,7 @@ export const parseGRC20ByFileContents = (
   return {
     tokenName,
     tokenSymbol,
-    tokenDecimals
+    tokenDecimals,
   };
 };
 
@@ -105,7 +105,7 @@ function checkImport(code: string, importPath: string): boolean {
     line
       .trim()
       .replace(/"/g, '')
-      .replace(/^[a-zA-Z_][a-zA-Z0-9_]*\s+/, '')
+      .replace(/^[a-zA-Z_][a-zA-Z0-9_]*\s+/, ''),
   );
   return imports.includes(importPath);
 }
@@ -121,7 +121,7 @@ function extractMethods(code: string, typeName: string): MethodSignature {
   const methodRegex = new RegExp(
     // eslint-disable-next-line no-useless-escape
     `func\\s+${escapedTypeName}\\.([a-zA-Z0-9_]+)\\s*\$begin:math:text$([^)]*)\\$end:math:text$\\s*([^{}]+)\\{`,
-    'g'
+    'g',
   );
 
   let match: RegExpExecArray | null;
@@ -145,7 +145,7 @@ interface InterfaceCheckResult {
 function checkInterfaceImplementation(
   code: string,
   typeName: string,
-  interfaceDef: { [key: string]: string }
+  interfaceDef: { [key: string]: string },
 ): InterfaceCheckResult {
   const methods = extractMethods(code, typeName);
   const missingMethods: string[] = [];
@@ -158,7 +158,7 @@ function checkInterfaceImplementation(
 
   return {
     implementsInterface: missingMethods.length === 0,
-    missingMethods
+    missingMethods,
   };
 }
 
@@ -189,7 +189,7 @@ function parseGRC721NewFunctions(code: string): GRC721Meta | null {
       name,
       symbol,
       isTokenUri: false,
-      isMetadata: false
+      isMetadata: false,
     };
   }
 
@@ -217,7 +217,7 @@ export function parseGRC721FileContents(contents: string): GRC721Meta | null {
     Approve: 'Approve(approved std.Address, tid TokenID) error',
     SetApprovalForAll: 'SetApprovalForAll(operator std.Address, approved bool) error',
     GetApproved: 'GetApproved(tid TokenID) (std.Address, error)',
-    IsApprovedForAll: 'IsApprovedForAll(owner, operator std.Address) bool'
+    IsApprovedForAll: 'IsApprovedForAll(owner, operator std.Address) bool',
   });
 
   if (!interfaceCheck.implementsInterface) {
@@ -231,6 +231,6 @@ export function parseGRC721FileContents(contents: string): GRC721Meta | null {
   return {
     ...grc721Meta,
     isTokenUri: tokenUriCheck.implementsInterface,
-    isMetadata: metadataCheck.implementsInterface
+    isMetadata: metadataCheck.implementsInterface,
   };
 }

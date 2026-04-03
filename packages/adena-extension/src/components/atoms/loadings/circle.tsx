@@ -17,7 +17,7 @@ const CircleStyle = styled.div<CircleProps>`
 `;
 
 export const Circle = ({
-  width, height, bgColor, margin
+  width, height, bgColor, margin,
 }: CircleProps): JSX.Element => {
   return <CircleStyle width={width} height={height} bgColor={bgColor} margin={margin} />;
 };

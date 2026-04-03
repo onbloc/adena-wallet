@@ -27,16 +27,16 @@ export const questionnaireStep: Record<
 > = {
   INIT: {
     backTo: null,
-    stepNo: 0
+    stepNo: 0,
   },
   QUESTION: {
     backTo: 'INIT',
-    stepNo: 1
+    stepNo: 1,
   },
   COMPLETE: {
     backTo: 'QUESTION',
-    stepNo: 2
-  }
+    stepNo: 2,
+  },
 };
 
 const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
@@ -75,7 +75,7 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
     doneQuestionnaire().then(() => {
       navigate(callbackPath, {
         state: { doneQuestionnaire: true },
-        replace: true
+        replace: true,
       });
     });
   }, [callbackPath]);
@@ -101,14 +101,14 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
   return {
     indicatorInfo: {
       stepNo: 1,
-      stepLength: indicatorInfo.stepLength
+      stepLength: indicatorInfo.stepLength,
     },
     questionnaireState,
     question,
     initQuestion,
     nextQuestion,
     completeQuestion,
-    backStep
+    backStep,
   };
 };
 

@@ -15,7 +15,7 @@ export const SeedViewAndCopy = ({
   showBlurScreen,
   setShowBlurScreen,
   copyStr,
-  toggleText
+  toggleText,
 }: SeedViewAndCopyProps): JSX.Element => {
   const theme = useTheme();
   const blurScreenHandler = useCallback(() => {
@@ -35,7 +35,7 @@ export const SeedViewAndCopy = ({
 const Wrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   margin: 12px auto auto;

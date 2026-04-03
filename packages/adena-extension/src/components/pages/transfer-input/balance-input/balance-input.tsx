@@ -17,7 +17,7 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
   denom,
   description,
   onChangeAmount,
-  onClickMax
+  onClickMax,
 }) => {
   return (
     <BalanceInputWrapper className={hasError ? 'error' : ''}>

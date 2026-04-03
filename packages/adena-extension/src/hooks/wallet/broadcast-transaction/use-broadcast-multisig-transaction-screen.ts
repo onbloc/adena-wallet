@@ -3,7 +3,7 @@ import { MsgEndpoint } from '@gnolang/gno-js-client';
 import {
   useAdenaContext,
   useMultisigTransactionContext,
-  useWalletContext
+  useWalletContext,
 } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { Signature } from '@inject/types';
@@ -14,7 +14,7 @@ import {
   RawVmAddPackageMessage,
   RawVmCallMessage,
   RawVmRunMessage,
-  SignerPublicKeyInfo
+  SignerPublicKeyInfo,
 } from 'adena-module';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -38,13 +38,13 @@ function makeTransactionInfo(
   name: string,
   value: string,
   type: 'TEXT' | 'COIN' | 'ADDRESS' = 'TEXT',
-  extra: string | null = null
+  extra: string | null = null,
 ): TransactionDisplayInfo {
   return {
     name,
     value,
     type,
-    extra
+    extra,
   };
 }
 
@@ -130,7 +130,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
   const { multisigService } = useAdenaContext();
 
   const {
-    transaction, setTransaction, signatures, addSignature
+    transaction, setTransaction, signatures, addSignature,
   } = useMultisigTransactionContext();
 
   const [broadcastTransactionState, setBroadcastTransactionState] = useState<
@@ -208,7 +208,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
         return false;
       }
     },
-    [currentAddress, setTransaction]
+    [currentAddress, setTransaction],
   );
 
   const uploadSignature = useCallback(
@@ -224,19 +224,19 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
         ) {
           return {
             success: false,
-            error: 'INVALID_FORMAT'
+            error: 'INVALID_FORMAT',
           };
         }
 
         const isValidSigner = signerPublicKeys.some(
-          signer => signer.publicKey.value === signature.pub_key?.value
+          signer => signer.publicKey.value === signature.pub_key?.value,
         );
 
         if (!isValidSigner) {
           console.warn('Invalid signer: not in signerPublicKeys');
           return {
             success: false,
-            error: 'INVALID_SIGNER'
+            error: 'INVALID_SIGNER',
           };
         }
 
@@ -246,25 +246,25 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
           console.warn('Duplicate signature');
           return {
             success: false,
-            error: 'DUPLICATE'
+            error: 'DUPLICATE',
           };
         }
 
         addSignature(signature);
         return {
           success: true,
-          error: null
+          error: null,
         };
       }
       catch (error) {
         console.error(error);
         return {
           success: false,
-          error: 'INVALID_FORMAT'
+          error: 'INVALID_FORMAT',
         };
       }
     },
-    [signatures, addSignature, signerPublicKeys]
+    [signatures, addSignature, signerPublicKeys],
   );
 
   const broadcast = useCallback(async () => {
@@ -282,7 +282,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
       const combinedTx = await multisigService.combineMultisigSignatures(
         currentAccount,
         transaction,
-        signatures
+        signatures,
       );
 
       const broadcastResult = await multisigService.broadcastTxCommit(combinedTx.tx);
@@ -323,7 +323,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
     transactionInfos,
     rawTransaction,
     signerPublicKeys,
-    threshold
+    threshold,
   };
 };
 

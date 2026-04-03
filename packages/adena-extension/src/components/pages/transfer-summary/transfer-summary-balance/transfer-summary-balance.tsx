@@ -12,7 +12,7 @@ export interface TransferSummaryBalanceProps {
 const TransferSummaryBalance: React.FC<TransferSummaryBalanceProps> = ({
   tokenImage,
   value,
-  denom
+  denom,
 }) => {
   return (
     <TransferSummaryBalanceWrapper>

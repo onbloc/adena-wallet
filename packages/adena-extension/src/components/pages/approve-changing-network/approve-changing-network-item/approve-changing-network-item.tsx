@@ -10,7 +10,7 @@ export interface ApproveChangingNetworkItemProps {
 
 const ApproveChangingNetworkItem: React.FC<ApproveChangingNetworkItemProps> = ({
   name,
-  logo
+  logo,
 }) => {
   return (
     <ApproveChangingNetworkItemWrapper>

@@ -13,7 +13,7 @@ interface StyleProps {
 
 const StyledContainer = styled(Row).withConfig({
   shouldForwardProp: (prop): boolean =>
-    !['hover', 'focus', 'filled', 'error', 'disabled'].includes(prop)
+    !['hover', 'focus', 'filled', 'error', 'disabled'].includes(prop),
 })<StyleProps>`
   width: 100%;
   height: 40px;
@@ -24,7 +24,7 @@ const StyledContainer = styled(Row).withConfig({
   ${webFonts.body4}
 
   ${({
-    theme, hover, focus, filled
+    theme, hover, focus, filled,
   }): RuleSet | string =>
     hover || focus || filled
       ? css`
@@ -57,7 +57,7 @@ const StyledContainer = styled(Row).withConfig({
 
 const StyledLabel = styled(View).withConfig({
   shouldForwardProp: (prop): boolean =>
-    !['hover', 'focus', 'filled', 'error', 'disabled'].includes(prop)
+    !['hover', 'focus', 'filled', 'error', 'disabled'].includes(prop),
 })<StyleProps>`
   min-width: 106px;
   height: 100%;
@@ -88,7 +88,7 @@ const StyledLabel = styled(View).withConfig({
 
 const StyledInput = styled.input.withConfig({
   shouldForwardProp: (prop): boolean =>
-    !['hover', 'focus', 'filled', 'error', 'disabled'].includes(prop)
+    !['hover', 'focus', 'filled', 'error', 'disabled'].includes(prop),
 })<StyleProps>`
   flex: 1;
   width: 100%;
@@ -127,7 +127,7 @@ export const WebInputWithLabel: React.FC<WebInputWithLabelProps> = ({
   error = false,
   disabled = false,
   onChange,
-  placeholder
+  placeholder,
 }) => {
   const [hover, setHover] = useState(false);
   const [focus, setFocus] = useState(false);

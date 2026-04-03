@@ -1,7 +1,7 @@
 import { ContractMessage, FUNCTION_NAME_MAP } from '@inject/types';
 import {
   AddPackageValue,
-  MsgRunValue
+  MsgRunValue,
 } from '@repositories/transaction/response/transaction-history-query-response';
 import React from 'react';
 
@@ -18,7 +18,7 @@ interface UseMaxDepositMessageReturn {
 export const useMaxDepositMessage = (
   index: number,
   message: ContractMessage,
-  changeMessage: (index: number, messages: ContractMessage) => void
+  changeMessage: (index: number, messages: ContractMessage) => void,
 ): UseMaxDepositMessageReturn => {
   const { type } = message;
   const [isOpen, setIsOpen] = React.useState(true);
@@ -42,8 +42,8 @@ export const useMaxDepositMessage = (
       ...message,
       value: {
         ...message.value,
-        max_deposit: maxDeposit
-      }
+        max_deposit: maxDeposit,
+      },
     });
   };
 
@@ -54,7 +54,7 @@ export const useMaxDepositMessage = (
     maxDeposit,
     functionName,
     title,
-    changeMaxDeposit
+    changeMaxDeposit,
   };
 };
 

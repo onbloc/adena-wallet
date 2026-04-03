@@ -8,7 +8,7 @@ import React, { useCallback, useEffect, useMemo } from 'react';
 const ChangeNetworkContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();
   const {
-    modified, currentNetwork, networks, setModified, changeNetwork
+    modified, currentNetwork, networks, setModified, changeNetwork,
   } = useNetwork();
 
   useEffect(() => {
@@ -33,7 +33,7 @@ const ChangeNetworkContainer: React.FC = () => {
     (networkId: string) => {
       navigate(RoutePath.EditCustomNetwork, { state: { networkId } });
     },
-    [navigate]
+    [navigate],
   );
 
   const changeNetworkAndRoutePage = async (networkId: string): Promise<void> => {

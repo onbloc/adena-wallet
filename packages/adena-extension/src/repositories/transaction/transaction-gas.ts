@@ -14,7 +14,7 @@ export class TransactionGasRepository implements ITransactionGasRepository {
   constructor(
     gnoProvider: GnoProvider | null,
     networkInstance: AxiosInstance,
-    networkMetainfo: NetworkMetainfo | null
+    networkMetainfo: NetworkMetainfo | null,
   ) {
     this.gnoProvider = gnoProvider;
     this.networkInstance = networkInstance;
@@ -62,7 +62,7 @@ export class TransactionGasRepository implements ITransactionGasRepository {
   private static postRPCRequest = <T = any>(
     networkInstance: AxiosInstance,
     url: string,
-    data: any
+    data: any,
   ): Promise<T | null> => {
     return networkInstance
       .post<T>(url, data)

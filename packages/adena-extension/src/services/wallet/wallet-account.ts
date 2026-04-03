@@ -9,10 +9,10 @@ const defaultAccountInfo: AccountInfo = {
   status: 'IN_ACTIVE',
   publicKey: {
     '@type': '',
-    value: ''
+    value: '',
   },
   accountNumber: '',
-  sequence: ''
+  sequence: '',
 };
 
 export class WalletAccountService {
@@ -44,7 +44,7 @@ export class WalletAccountService {
   public getAccountInfoByNetwork = async (
     address: string,
     rpcUrl: string,
-    chainId: string
+    chainId: string,
   ): Promise<AccountInfo> => {
     const gnoProvider = await GnoProvider.create(rpcUrl, chainId);
     return this.getAccountInfoByProvider(address, gnoProvider);
@@ -52,7 +52,7 @@ export class WalletAccountService {
 
   public getAccountInfoByProvider = async (
     address: string,
-    gnoProvider: GnoProvider
+    gnoProvider: GnoProvider,
   ): Promise<AccountInfo> => {
     try {
       const account = await gnoProvider.getAccountInfo(address);
@@ -65,7 +65,7 @@ export class WalletAccountService {
     }
     return {
       ...defaultAccountInfo,
-      address
+      address,
     };
   };
 

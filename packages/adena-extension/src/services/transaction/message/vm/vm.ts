@@ -23,12 +23,12 @@ export const createMessageOfVmAddPackage = (info: {
       ? {
           creator: info.creator,
           package: info.packageInfo,
-          max_deposit: info.max_deposit
+          max_deposit: info.max_deposit,
         }
       : {
           creator: info.creator,
-          max_deposit: info.max_deposit
-        }
+          max_deposit: info.max_deposit,
+        },
   };
 };
 
@@ -58,8 +58,8 @@ export const createMessageOfVmCall = (info: {
       max_deposit: info.max_deposit,
       pkg_path: info.pkgPath,
       func: info.func,
-      args: info.args
-    }
+      args: info.args,
+    },
   };
 };
 
@@ -84,7 +84,7 @@ export const createMessageOfVmRun = (info: {
       caller: info.caller,
       send: info.send,
       max_deposit: info.max_deposit,
-      package: info.packageInfo
-    }
+      package: info.packageInfo,
+    },
   };
 };

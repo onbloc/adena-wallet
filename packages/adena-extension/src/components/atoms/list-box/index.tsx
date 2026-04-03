@@ -6,7 +6,7 @@ import styled, { css, CSSProperties } from 'styled-components';
 export enum ListHierarchy {
   Default = 'default',
   Normal = 'normal',
-  Static = 'static'
+  Static = 'static',
 }
 
 interface ListBoxStyleProps extends React.ComponentPropsWithoutRef<'div'> {
@@ -39,7 +39,7 @@ const modeVariants = {
   `,
   static: css`
     background: ${getTheme('neutral', '_7')};
-  `
+  `,
 };
 
 export const ListBox = ({
@@ -51,7 +51,7 @@ export const ListBox = ({
   onClick,
   className,
   padding,
-  mode
+  mode,
 }: ListBoxProps): ReactElement<any> => {
   return (
     <Wrapper

@@ -18,7 +18,7 @@ describe('ApproveLoading Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveLoading {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

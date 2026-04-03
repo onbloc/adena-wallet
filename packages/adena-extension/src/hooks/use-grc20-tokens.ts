@@ -18,6 +18,6 @@ export const useGRC20Tokens = (options?: Omit<UseQueryOptions<GRC20TokenModel[],
     },
     staleTime: Infinity,
     enabled: !!currentAddress,
-    ...options
+    ...options,
   });
 };

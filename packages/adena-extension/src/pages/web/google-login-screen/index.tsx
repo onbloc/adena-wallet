@@ -11,7 +11,7 @@ import GoogleLoginRequestFail from './request-fail';
 
 const GoogleLoginScreen: React.FC = () => {
   const {
-    googleLoginState, indicatorInfo, backStep, retry, initGoogleLogin, requestGoogleLogin
+    googleLoginState, indicatorInfo, backStep, retry, initGoogleLogin, requestGoogleLogin,
   }
     = useGoogleLoginScreen();
 
@@ -19,7 +19,7 @@ const GoogleLoginScreen: React.FC = () => {
     if (googleLoginState === 'INIT') {
       return {
         default: WEB_TOP_SPACING,
-        responsive: WEB_TOP_SPACING_RESPONSIVE
+        responsive: WEB_TOP_SPACING_RESPONSIVE,
       };
     }
     return null;

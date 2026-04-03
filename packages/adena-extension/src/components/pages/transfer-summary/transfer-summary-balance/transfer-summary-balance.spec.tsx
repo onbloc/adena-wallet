@@ -13,7 +13,7 @@ describe('TransferSummaryBalance Component', () => {
     const args: TransferSummaryBalanceProps = {
       tokenImage: '',
       value: '',
-      denom: ''
+      denom: '',
     };
 
     render(
@@ -22,7 +22,7 @@ describe('TransferSummaryBalance Component', () => {
         <ThemeProvider theme={theme}>
           <TransferSummaryBalance {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

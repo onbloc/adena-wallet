@@ -12,7 +12,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RoutePath, TokenInfo } from '@types';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 
 const ManageTokenAddedContainer: React.FC = () => {
@@ -36,11 +36,11 @@ const ManageTokenAddedContainer: React.FC = () => {
   const {
     debouncedValue: debouncedManualTokenPath,
     setDebouncedValue: setDebouncedManualTokenPath,
-    isLoading: isLoadingDebounce
+    isLoading: isLoadingDebounce,
   } = useDebounce(manualTokenPath, 500);
   const { data: manualGRC20Token, isFetching: isFetchingManualGRC20Token } = useGRC20Token(
     debouncedManualTokenPath,
-    { enabled: manualTokenPath !== '' }
+    { enabled: manualTokenPath !== '' },
   );
 
   /**
@@ -48,7 +48,7 @@ const ManageTokenAddedContainer: React.FC = () => {
    */
   const { data: selectedGRC20Token, isFetching: isFetchingSelectedGRC20Token } = useGRC20Token(
     selectedTokenPath || '',
-    { enabled: selected && !!selectedTokenPath }
+    { enabled: selected && !!selectedTokenPath },
   );
 
   const isValidManualGRC20Token = useMemo(() => {
@@ -132,14 +132,14 @@ const ManageTokenAddedContainer: React.FC = () => {
           !tokenMetainfos.find(
             tokenMetainfo =>
               tokenMetainfo.tokenId === token.tokenId
-              && tokenMetainfo.networkId === token.networkId
-          )
+              && tokenMetainfo.networkId === token.networkId,
+          ),
       )
       .filter(
         token =>
           token?.pkgPath.includes(keyword)
           || token?.symbol.includes(keyword)
-          || token?.name.includes(keyword)
+          || token?.name.includes(keyword),
       )
       .map(token => ({
         tokenId: token?.tokenId,
@@ -148,7 +148,7 @@ const ManageTokenAddedContainer: React.FC = () => {
         path: token?.pkgPath,
         decimals: token?.decimals,
         chainId: token?.networkId,
-        pathInfo: token?.pkgPath.replace('gno.land/', '')
+        pathInfo: token?.pkgPath.replace('gno.land/', ''),
       }));
   }, [grc20Tokens, keyword]);
 
@@ -189,7 +189,7 @@ const ManageTokenAddedContainer: React.FC = () => {
       setSelectedTokenPath(tokenInfo.path);
       setOpened(false);
     },
-    [tokenInfos]
+    [tokenInfos],
   );
 
   const onClickCancel = useCallback(() => {
@@ -243,7 +243,7 @@ const ManageTokenAddedContainer: React.FC = () => {
       path: manualGRC20Token.pkgPath,
       decimals: manualGRC20Token.decimals,
       chainId: manualGRC20Token.networkId,
-      pathInfo: manualGRC20Token.pkgPath.replace('gno.land/', '')
+      pathInfo: manualGRC20Token.pkgPath.replace('gno.land/', ''),
     });
   }, [addingType, manualGRC20Token, isLoadingManualGRC20Token]);
 
@@ -270,7 +270,7 @@ const ManageTokenAddedContainer: React.FC = () => {
       path: selectedGRC20Token.pkgPath,
       decimals: selectedGRC20Token.decimals,
       chainId: selectedGRC20Token.networkId,
-      pathInfo: selectedGRC20Token.pkgPath.replace('gno.land/', '')
+      pathInfo: selectedGRC20Token.pkgPath.replace('gno.land/', ''),
     });
   }, [addingType, selectedGRC20Token, isFetchingSelectedGRC20Token]);
 

@@ -13,7 +13,7 @@ describe('ApproveAddingNetworkTable Component', () => {
     const args: ApproveAddingNetworkTableProps = {
       name: '',
       rpcUrl: '',
-      chainId: ''
+      chainId: '',
     };
 
     render(
@@ -22,7 +22,7 @@ describe('ApproveAddingNetworkTable Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveAddingNetworkTable {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

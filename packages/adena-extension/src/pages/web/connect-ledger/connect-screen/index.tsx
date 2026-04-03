@@ -15,7 +15,7 @@ import ConnectRequestWalletLoad from './connect-request-wallet-load';
 const ConnectLedgerScreen = (): ReactElement<any> => {
   const useConnectLedgerScreenReturn = useConnectLedgerScreen();
   const {
-    indicatorInfo, connectState, initWallet, requestPermission, setConnectState
+    indicatorInfo, connectState, initWallet, requestPermission, setConnectState,
   }
     = useConnectLedgerScreenReturn;
   const { navigate } = useAppNavigate();
@@ -26,7 +26,7 @@ const ConnectLedgerScreen = (): ReactElement<any> => {
     }
     return {
       default: WEB_TOP_SPACING,
-      responsive: WEB_TOP_SPACING_RESPONSIVE
+      responsive: WEB_TOP_SPACING_RESPONSIVE,
     };
   }, [connectState]);
 

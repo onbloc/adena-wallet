@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const ApproveAddingNetworkTableWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: auto;
@@ -14,7 +14,7 @@ export const ApproveAddingNetworkTableWrapper = styled.div`
   .table-row {
     ${mixins.flex({
       align: 'normal',
-      justify: 'normal'
+      justify: 'normal',
     })};
     padding: 8px 16px;
     background-color: ${getTheme('neutral', '_9')};

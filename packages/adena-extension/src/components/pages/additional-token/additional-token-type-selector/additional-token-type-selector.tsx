@@ -2,17 +2,17 @@ import React, { useCallback } from 'react';
 
 import {
   StyledAdditionalTokenTypeSelector,
-  StyledAdditionalTokenTypeSelectorWrapper
+  StyledAdditionalTokenTypeSelectorWrapper,
 } from './additional-token-type-selector.styles';
 
 export enum AddingType {
   SEARCH,
-  MANUAL
+  MANUAL,
 }
 
 const displayTypeNames = {
   [AddingType.SEARCH]: 'Search',
-  [AddingType.MANUAL]: 'Manual'
+  [AddingType.MANUAL]: 'Manual',
 };
 
 export interface AdditionalTokenTypeSelectorProps {
@@ -22,7 +22,7 @@ export interface AdditionalTokenTypeSelectorProps {
 
 const AdditionalTokenTypeSelector: React.FC<AdditionalTokenTypeSelectorProps> = ({
   type,
-  setType
+  setType,
 }) => {
   const types: AddingType[] = [AddingType.SEARCH, AddingType.MANUAL];
 
@@ -33,7 +33,7 @@ const AdditionalTokenTypeSelector: React.FC<AdditionalTokenTypeSelectorProps> = 
       }
       setType(selected);
     },
-    [type]
+    [type],
   );
 
   return (

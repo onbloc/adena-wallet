@@ -29,7 +29,7 @@ export const CustomNetworkInput: React.FC<CustomNetworkInputProps> = ({
   changeName,
   changeRPCUrl,
   changeIndexerUrl,
-  changeChainId
+  changeChainId,
 }) => {
   const readonlyNetworkName = useMemo(() => {
     return editType === 'rpc-only';

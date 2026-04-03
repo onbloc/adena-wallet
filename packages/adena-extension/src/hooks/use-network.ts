@@ -46,7 +46,7 @@ export const useNetwork = (): NetworkResponse => {
         return null;
       }
       return fetchHealth(currentNetwork.rpcUrl).then(({ healthy }) => !healthy);
-    }
+    },
   });
 
   const scannerParameters: { [key in string]: string } | null = useMemo(() => {
@@ -54,7 +54,7 @@ export const useNetwork = (): NetworkResponse => {
       return null;
     }
     const officialNetworkIds = CHAIN_DATA.filter(network => !!network.apiUrl).map(
-      network => network.networkId
+      network => network.networkId,
     );
     const isOfficialNetwork = officialNetworkIds.includes(currentNetwork.networkId);
     const networkParameters: { [key in string]: string } = isOfficialNetwork
@@ -62,14 +62,14 @@ export const useNetwork = (): NetworkResponse => {
       : {
           type: 'custom',
           rpcUrl: currentNetwork.rpcUrl || '',
-          indexerUrl: currentNetwork.indexerUrl || ''
+          indexerUrl: currentNetwork.indexerUrl || '',
         };
     return networkParameters;
   }, [currentNetwork]);
 
   const getDefaultNetworkInfo = useCallback((networkId: string) => {
     const network = CHAIN_DATA.find(
-      current => current.default && current.networkId === networkId
+      current => current.default && current.networkId === networkId,
     );
     if (!network) {
       return null;
@@ -90,7 +90,7 @@ export const useNetwork = (): NetworkResponse => {
       const networkMetainfos = await chainService.getNetworks();
       setNetworkMetainfos(networkMetainfos);
     },
-    [networkMetainfos, chainService]
+    [networkMetainfos, chainService],
   );
 
   const changeNetworkOfProvider = useCallback(
@@ -98,7 +98,7 @@ export const useNetwork = (): NetworkResponse => {
       const changedNetwork = await changeNetworkProvider(network);
       dispatchChangedEvent(changedNetwork);
     },
-    [changeNetworkProvider]
+    [changeNetworkProvider],
   );
 
   const changeNetwork = useCallback(
@@ -116,14 +116,14 @@ export const useNetwork = (): NetworkResponse => {
       await changeNetworkOfProvider(network);
       return true;
     },
-    [networkMetainfos, changeNetworkOfProvider]
+    [networkMetainfos, changeNetworkOfProvider],
   );
 
   const updateNetwork = useCallback(
     async (network: NetworkMetainfo) => {
       setModified(true);
       const changedNetworks = networkMetainfos.map(current =>
-        network.id === current.id ? network : current
+        network.id === current.id ? network : current,
       );
       await chainService.updateNetworks(changedNetworks);
       setNetworkMetainfos(changedNetworks);
@@ -133,7 +133,7 @@ export const useNetwork = (): NetworkResponse => {
       }
       return true;
     },
-    [currentNetwork, networkMetainfos, chainService]
+    [currentNetwork, networkMetainfos, chainService],
   );
 
   const deleteNetwork = useCallback(
@@ -149,9 +149,9 @@ export const useNetwork = (): NetworkResponse => {
               current.id === network.id
                 ? {
                     ...current,
-                    deleted: true
+                    deleted: true,
                   }
-                : current
+                : current,
             )
           : networkMetainfos.filter(current => current.id !== networkId);
       await chainService.updateNetworks(changedNetworks);
@@ -162,7 +162,7 @@ export const useNetwork = (): NetworkResponse => {
       }
       return true;
     },
-    [currentNetwork, networkMetainfos, chainService, currentNetwork]
+    [currentNetwork, networkMetainfos, chainService, currentNetwork],
   );
 
   const dispatchChangedEvent = useCallback(
@@ -170,7 +170,7 @@ export const useNetwork = (): NetworkResponse => {
       const message = EventMessage.event('changedNetwork', network.networkId);
       dispatchEvent(message);
     },
-    [currentNetwork]
+    [currentNetwork],
   );
 
   return {
@@ -185,6 +185,6 @@ export const useNetwork = (): NetworkResponse => {
     updateNetwork,
     addNetwork,
     deleteNetwork,
-    setModified
+    setModified,
   };
 };

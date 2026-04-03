@@ -9,7 +9,7 @@ import { SignerPublicKeyInfo } from 'adena-module';
  */
 export const filterValidSignatures = (
   signatures: Signature[],
-  signerPublicKeys: SignerPublicKeyInfo[]
+  signerPublicKeys: SignerPublicKeyInfo[],
 ): Signature[] => {
   if (!signerPublicKeys || signerPublicKeys.length === 0) {
     return [];
@@ -22,7 +22,7 @@ export const filterValidSignatures = (
   const validPublicKeyValues = new Set(
     signerPublicKeys
       .filter(signer => signer?.publicKey?.value)
-      .map(signer => signer.publicKey.value)
+      .map(signer => signer.publicKey.value),
   );
 
   return signatures.filter((signature) => {
@@ -39,7 +39,7 @@ export const filterValidSignatures = (
  */
 export const createMultisigSignerInfoList = (
   signerPublicKeys: SignerPublicKeyInfo[],
-  signatures: Signature[]
+  signatures: Signature[],
 ): SignerInfo[] => {
   if (!signerPublicKeys || signerPublicKeys.length === 0) {
     return [];
@@ -48,7 +48,7 @@ export const createMultisigSignerInfoList = (
   const signedPublicKeys = new Set(
     (signatures || [])
       .filter(signature => signature?.pub_key?.value)
-      .map(signature => signature.pub_key.value)
+      .map(signature => signature.pub_key.value),
   );
 
   return signerPublicKeys.map(signer => ({
@@ -56,6 +56,6 @@ export const createMultisigSignerInfoList = (
     publicKey: signer.publicKey.value,
     status: signedPublicKeys.has(signer.publicKey.value)
       ? SignerStatusType.SIGNED
-      : SignerStatusType.UNSIGNED
+      : SignerStatusType.UNSIGNED,
   }));
 };

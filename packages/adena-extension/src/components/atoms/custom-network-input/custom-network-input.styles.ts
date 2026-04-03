@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const CustomNetworkInputWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: 100%;
@@ -13,14 +13,14 @@ export const CustomNetworkInputWrapper = styled.div`
   .input-wrapper {
     ${mixins.flex({
       align: 'normal',
-      justify: 'normal'
+      justify: 'normal',
     })};
     width: 100%;
 
     .input-box {
       ${mixins.flex({
         direction: 'row',
-        justify: 'normal'
+        justify: 'normal',
       })};
       width: 100%;
       min-height: 48px;

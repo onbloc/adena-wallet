@@ -15,7 +15,7 @@ describe('SideMenuLink Component', () => {
       icon: '',
       onClick: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -24,7 +24,7 @@ describe('SideMenuLink Component', () => {
         <ThemeProvider theme={theme}>
           <SideMenuLink {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

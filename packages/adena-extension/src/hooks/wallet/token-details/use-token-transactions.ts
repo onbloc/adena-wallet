@@ -10,7 +10,7 @@ import { useMemo, useState } from 'react';
 export const useTokenTransactions = (
   isNative: boolean | undefined,
   tokenPath: string,
-  { enabled }: { enabled: boolean }
+  { enabled }: { enabled: boolean },
 ): {
   data:
     | {
@@ -48,7 +48,7 @@ export const useTokenTransactions = (
       !!currentAddress
       && transactionHistoryService.supported
       && tokenMetainfos.length > 0
-      && enabled
+      && enabled,
   });
 
   const blockIndex = useMemo(() => {
@@ -76,10 +76,10 @@ export const useTokenTransactions = (
   }, [allTransactions, blockIndex]);
 
   const {
-    data, isFetched, status, isLoading, isFetching
+    data, isFetched, status, isLoading, isFetching,
   } = useMakeTransactionsWithTime(
     `token-details/history/${currentNetwork.chainId}/${transactions?.length}/${tokenPath}`,
-    transactions
+    transactions,
   );
 
   const fetchNextPage = async (): Promise<boolean> => {
@@ -104,6 +104,6 @@ export const useTokenTransactions = (
     isFetching,
     hasNextPage: allTransactions?.transactions.length !== blockIndex,
     fetchNextPage,
-    refetch: refetchTransactions
+    refetch: refetchTransactions,
   };
 };

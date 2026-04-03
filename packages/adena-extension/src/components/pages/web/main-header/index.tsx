@@ -1,6 +1,6 @@
 import back from '@assets/web/chevron-left.svg';
 import {
-  Pressable, Row, View, WebImg
+  Pressable, Row, View, WebImg,
 } from '@components/atoms';
 import _ from 'lodash';
 import React, { ReactElement, useMemo } from 'react';
@@ -33,7 +33,7 @@ export type WebMainHeaderProps = {
 export const WebMainHeader = ({
   onClickGoBack,
   currentStep,
-  stepLength
+  stepLength,
 }: WebMainHeaderProps): ReactElement<any> => {
   const theme = useTheme();
 
@@ -48,7 +48,7 @@ export const WebMainHeader = ({
         style={{
           padding: 4,
           backgroundColor: theme.webInput._100,
-          borderRadius: 16
+          borderRadius: 16,
         }}
       >
         <WebImg src={back} size={24} />

@@ -18,7 +18,7 @@ import styled, { useTheme } from 'styled-components';
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   height: fit-content;
@@ -45,7 +45,7 @@ export const NftCollectionAsset = (): JSX.Element => {
   const { openScannerLink } = useLink();
   const { params, navigate, goBack } = useAppNavigate<RoutePath.NftCollectionAsset>();
   const {
-    pinCollection, unpinCollection, showCollection, hideCollection
+    pinCollection, unpinCollection, showCollection, hideCollection,
   }
     = useNFTCollectionHandler();
   const collectionAsset = params.collectionAsset;
@@ -73,7 +73,7 @@ export const NftCollectionAsset = (): JSX.Element => {
     }
 
     const currentCollection = collections.find(
-      collection => collection.packagePath === collectionAsset.packagePath
+      collection => collection.packagePath === collectionAsset.packagePath,
     );
 
     if (!currentCollection) {

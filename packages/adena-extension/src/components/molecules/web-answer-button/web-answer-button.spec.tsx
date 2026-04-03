@@ -21,7 +21,7 @@ describe('WebAnswerButton Component', () => {
             onClick={(): void => { return; }}
           />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

@@ -30,7 +30,7 @@ export const useCustomNetworkInput = (): UseCustomNetworkInputReturn => {
     (name: string) => {
       setName(name);
     },
-    [setName]
+    [setName],
   );
 
   const changeRPCUrl = useCallback(
@@ -38,7 +38,7 @@ export const useCustomNetworkInput = (): UseCustomNetworkInputReturn => {
       setRPCUrl(rpcUrl.trim());
       setRPCUrlError('');
     },
-    [setRPCUrl, setRPCUrlError]
+    [setRPCUrl, setRPCUrlError],
   );
 
   const changeIndexerUrl = useCallback(
@@ -46,7 +46,7 @@ export const useCustomNetworkInput = (): UseCustomNetworkInputReturn => {
       setIndexerUrl(rpcUrl.trim());
       setIndexerUrlError('');
     },
-    [setRPCUrl, setRPCUrlError]
+    [setRPCUrl, setRPCUrlError],
   );
 
   const changeChainId = useCallback(
@@ -54,7 +54,7 @@ export const useCustomNetworkInput = (): UseCustomNetworkInputReturn => {
       setChainId(chainId.trim());
       setChainIdError('');
     },
-    [setChainId]
+    [setChainId],
   );
 
   return {
@@ -71,6 +71,6 @@ export const useCustomNetworkInput = (): UseCustomNetworkInputReturn => {
     changeChainId,
     setRPCUrlError,
     setIndexerUrlError,
-    setChainIdError
+    setChainIdError,
   };
 };

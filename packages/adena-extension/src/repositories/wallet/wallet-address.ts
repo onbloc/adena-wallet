@@ -34,7 +34,7 @@ export class WalletAddressRepository {
 
   public updateAddressBook = async (
     addressBook: AddressBookItem[],
-    password: string
+    password: string,
   ): Promise<void> => {
     const addressBookRaw = JSON.stringify(addressBook);
     const encryptedAddressBook = await encryptAES(addressBookRaw, password);

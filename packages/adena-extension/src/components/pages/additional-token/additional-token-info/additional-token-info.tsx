@@ -3,7 +3,7 @@ import React from 'react';
 import {
   AdditionalTokenInfoItemWrapper,
   AdditionalTokenInfoWrapper,
-  TokenInfoValueLoadingBox
+  TokenInfoValueLoadingBox,
 } from './additional-token-info.styles';
 
 export interface AdditionalTokenInfoProps {
@@ -22,7 +22,7 @@ export interface AdditionalTokenInfoBlockProps {
 const AdditionalTokenInfoBlock: React.FC<AdditionalTokenInfoBlockProps> = ({
   title,
   value,
-  isLoading
+  isLoading,
 }) => {
   return (
     <AdditionalTokenInfoItemWrapper>
@@ -40,7 +40,7 @@ const AdditionalTokenInfo: React.FC<AdditionalTokenInfoProps> = ({
   isLoading,
   symbol,
   path,
-  decimals
+  decimals,
 }) => {
   return (
     <AdditionalTokenInfoWrapper>

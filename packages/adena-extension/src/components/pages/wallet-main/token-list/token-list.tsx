@@ -13,7 +13,7 @@ export interface TokenListProps {
 const TokenList: React.FC<TokenListProps> = ({
   tokens,
   completeImageLoading,
-  onClickTokenItem
+  onClickTokenItem,
 }) => {
   return (
     <TokenListWrapper>

@@ -23,7 +23,7 @@ const useLink = (): UseLinkReturn => {
     const queryString = scannerParameters
       ? makeQueryString({
           ...scannerParameters,
-          ...parameters
+          ...parameters,
         })
       : makeQueryString(parameters);
     const link = `${scannerUrl}${path}?${queryString}`;
@@ -43,7 +43,7 @@ const useLink = (): UseLinkReturn => {
     openLink,
     openScannerLink,
     openRegister,
-    openSecurity
+    openSecurity,
   };
 };
 

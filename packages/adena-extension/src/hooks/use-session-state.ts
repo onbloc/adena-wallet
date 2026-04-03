@@ -21,7 +21,7 @@ const useSessionParams = <RouteName extends keyof RouteParams>(): {
       catch {
         return null;
       }
-    }
+    },
   });
 
   const { data = null, isLoading } = useQuery({
@@ -40,13 +40,13 @@ const useSessionParams = <RouteName extends keyof RouteParams>(): {
       catch {
         return null;
       }
-    }
+    },
   });
 
   return {
     isPopup,
     params: data,
-    isLoading
+    isLoading,
   };
 };
 

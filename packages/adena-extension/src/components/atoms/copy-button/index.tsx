@@ -2,7 +2,7 @@ import { Button, Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import React, {
-  type JSX, useCallback, useEffect, useState
+  type JSX, useCallback, useEffect, useState,
 } from 'react';
 import styled, { useTheme } from 'styled-components';
 
@@ -19,7 +19,7 @@ const CopyButton = styled(Button) <{ isClicked: boolean }>`
 
 export const Copy = ({
   copyStr,
-  tabIndex
+  tabIndex,
 }: {
   copyStr: string;
   tabIndex?: number;

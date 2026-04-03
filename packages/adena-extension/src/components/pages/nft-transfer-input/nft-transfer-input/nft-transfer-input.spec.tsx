@@ -21,7 +21,7 @@ describe('NFTTransferInput Component', () => {
         tokenId: '',
         type: 'grc721',
         isMetadata: true,
-        isTokenUri: true
+        isTokenUri: true,
       },
       queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
       addressInput: {
@@ -41,13 +41,13 @@ describe('NFTTransferInput Component', () => {
         },
         onClickAddressBook: () => {
           return;
-        }
+        },
       },
       memoInput: {
         memo: '',
         onChangeMemo: () => {
           return;
-        }
+        },
       },
       isNext: true,
       hasBackButton: true,
@@ -59,7 +59,7 @@ describe('NFTTransferInput Component', () => {
       },
       onClickNext: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -68,7 +68,7 @@ describe('NFTTransferInput Component', () => {
         <ThemeProvider theme={theme}>
           <NFTTransferInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

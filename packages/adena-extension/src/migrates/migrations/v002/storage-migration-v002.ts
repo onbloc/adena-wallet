@@ -6,13 +6,13 @@ import {
   AccountTokenMetainfoModelV001,
   AddressBookModelV001,
   StorageModelDataV001,
-  WalletModelV001
+  WalletModelV001,
 } from '../v001/storage-model-v001';
 import {
   AccountTokenMetainfoModelV002,
   AddressBookModelV002,
   StorageModelDataV002,
-  WalletModelV002
+  WalletModelV002,
 } from './storage-model-v002';
 
 export class StorageMigration002 implements Migration<StorageModelDataV002> {
@@ -20,7 +20,7 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
 
   async up(
     current: StorageModel<StorageModelDataV001>,
-    password?: string
+    password?: string,
   ): Promise<StorageModel<StorageModelDataV002>> {
     if (!this.validateModelV001(current.data)) {
       throw new Error('Storage Data does not match version V001');
@@ -33,9 +33,9 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
         ADDRESS_BOOK: this.migrateAddressBook(previous.ADDRESS_BOOK),
         SERIALIZED: await this.migrateWallet(previous.SERIALIZED, password),
         ACCOUNT_TOKEN_METAINFOS: this.migrateAccountTokenMetainfos(
-          previous.ACCOUNT_TOKEN_METAINFOS
-        )
-      }
+          previous.ACCOUNT_TOKEN_METAINFOS,
+        ),
+      },
     };
   }
 
@@ -77,11 +77,11 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
 
   private migrateAddressBook(addressBookDataV001: AddressBookModelV001): AddressBookModelV002 {
     const addressBooks = Object.keys(addressBookDataV001).flatMap(
-      key => addressBookDataV001[key]
+      key => addressBookDataV001[key],
     );
     const result = addressBooks.filter(
       (addressBook, index, callback) =>
-        index === callback.findIndex(compare => compare.address === addressBook.address)
+        index === callback.findIndex(compare => compare.address === addressBook.address),
     );
     return result;
   }
@@ -99,7 +99,7 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
   }
 
   private migrateAccountTokenMetainfos(
-    accountTokenMetainfo: AccountTokenMetainfoModelV001
+    accountTokenMetainfo: AccountTokenMetainfoModelV001,
   ): AccountTokenMetainfoModelV002 {
     const changed: AccountTokenMetainfoModelV002 = {};
     for (const accountId of Object.keys(accountTokenMetainfo)) {
@@ -114,7 +114,7 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
           decimals,
           denom,
           minimalDenom,
-          display
+          display,
         } = tokenMetaInfo;
         return {
           main,
@@ -128,7 +128,7 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
           websiteUrl: '',
           image: image ?? '',
           denom: minimalDenom,
-          pkgPath: pkgPath
+          pkgPath: pkgPath,
         };
       });
     }

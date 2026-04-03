@@ -23,7 +23,7 @@ const AccountAddedCompleteScreen = (): JSX.Element => {
     >
       <View style={{
         paddingBottom: 16,
-        marginTop: -80
+        marginTop: -80,
       }}
       >
         <Lottie

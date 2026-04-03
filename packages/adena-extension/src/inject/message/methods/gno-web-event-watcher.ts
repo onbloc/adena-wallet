@@ -94,8 +94,8 @@ export class GnoWebEventWatcher {
         rpc: connectInfo.rpc,
         updateType: 'params',
         allParams: detail.params,
-        send: detail.send
-      }
+        send: detail.send,
+      },
     });
   }
 
@@ -123,8 +123,8 @@ export class GnoWebEventWatcher {
           chainId: connectInfo.chainId,
           rpc: connectInfo.rpc,
           updateType: 'mode',
-          mode
-        }
+          mode,
+        },
       });
     });
   }
@@ -153,8 +153,8 @@ export class GnoWebEventWatcher {
           chainId: connectInfo.chainId,
           rpc: connectInfo.rpc,
           updateType: 'address',
-          address
-        }
+          address,
+        },
       });
     });
   }
@@ -171,7 +171,7 @@ export class GnoWebEventWatcher {
       session = {
         sessionId,
         funcName,
-        pkgPath
+        pkgPath,
       };
       this.sessions.set(key, session);
     }
@@ -189,7 +189,7 @@ export class GnoWebEventWatcher {
     const connectInfo = this.connectInfoProvider.getConnectInfo();
     return {
       chainId: connectInfo?.chainId || '',
-      rpc: connectInfo?.rpc || ''
+      rpc: connectInfo?.rpc || '',
     };
   }
 

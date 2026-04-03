@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const ToggleWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   flex-shrink: 0;
   width: 46px;

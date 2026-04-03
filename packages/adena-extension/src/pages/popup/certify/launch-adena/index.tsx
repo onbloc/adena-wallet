@@ -10,7 +10,7 @@ import styled, { css, CSSProp } from 'styled-components';
 
 const text = {
   title: 'You’re All Set!',
-  desc: 'Click on the Start button to\nlaunch Adena.'
+  desc: 'Click on the Start button to\nlaunch Adena.',
 };
 
 const popupStyle = css`

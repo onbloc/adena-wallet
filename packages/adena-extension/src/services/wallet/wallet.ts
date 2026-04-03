@@ -8,7 +8,7 @@ import {
   MultisigConfig,
   MultisigKeyring,
   SignerPublicKeyInfo,
-  Wallet
+  Wallet,
 } from 'adena-module';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
@@ -43,7 +43,7 @@ export class WalletService {
    */
   public createWallet = async ({
     mnemonic,
-    password
+    password,
   }: {
     mnemonic: string;
     password: string;
@@ -114,7 +114,7 @@ export class WalletService {
    */
   public createWalletByMnemonic = async (
     mnemonic: string,
-    accountPaths?: Array<number>
+    accountPaths?: Array<number>,
   ): Promise<AdenaWallet> => {
     try {
       const wallet = await AdenaWallet.createByMnemonic(mnemonic, accountPaths);
@@ -174,7 +174,7 @@ export class WalletService {
     addressBytes: Uint8Array,
     multisigConfig: MultisigConfig,
     multisigAddress: string,
-    signerPublicKeys: SignerPublicKeyInfo[]
+    signerPublicKeys: SignerPublicKeyInfo[],
   ): Promise<MultisigAccount> => {
     try {
       const wallet = await this.loadWallet();
@@ -191,7 +191,7 @@ export class WalletService {
         addressBytes: Array.from(addressBytes),
         publicKey: Array.from(publicKey),
         multisigConfig,
-        signerPublicKeys
+        signerPublicKeys,
       });
 
       // Get account index and name
@@ -202,7 +202,7 @@ export class WalletService {
       const multisigAccount = await MultisigAccount.createBy(
         multisigKeyring,
         multisigName,
-        addedIndex
+        addedIndex,
       );
 
       multisigAccount.index = addedIndex;

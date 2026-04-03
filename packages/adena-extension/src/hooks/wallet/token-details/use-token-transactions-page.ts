@@ -10,7 +10,7 @@ import { useMemo } from 'react';
 export const useTokenTransactionsPage = (
   isNative: boolean | undefined,
   tokenPath: string,
-  { enabled }: { enabled: boolean }
+  { enabled }: { enabled: boolean },
 ): {
   data:
     | {
@@ -36,7 +36,7 @@ export const useTokenTransactionsPage = (
     data: allTransactions,
     refetch,
     hasNextPage,
-    fetchNextPage
+    fetchNextPage,
   } = useInfiniteQuery({
     queryKey: ['token-details/page/history', currentNetwork.networkId, `${isNative}`, currentAddress, tokenPath],
     initialPageParam: null as string | null,
@@ -55,14 +55,14 @@ export const useTokenTransactionsPage = (
         : transactionHistoryService.fetchGRC20TransactionHistory(
             currentAddress || '',
             tokenPath,
-            cursor
+            cursor,
           );
     },
     enabled:
       !!currentAddress
       && transactionHistoryService.supported
       && tokenMetainfos.length > 0
-      && enabled
+      && enabled,
   });
 
   const transactions = useMemo(() => {
@@ -82,10 +82,10 @@ export const useTokenTransactionsPage = (
   }, [transactions]);
 
   const {
-    data, isFetched, status, isLoading, isFetching
+    data, isFetched, status, isLoading, isFetching,
   } = useMakeTransactionsWithTime(
     `token-details/page/history/${currentNetwork.chainId}/${firstTransactionHash}/${tokenPath}`,
-    transactions
+    transactions,
   );
 
   const refetchTransactions = (options?: RefetchOptions): void => {
@@ -104,6 +104,6 @@ export const useTokenTransactionsPage = (
         .then(() => true)
         .catch(() => false),
     hasNextPage: hasNextPage !== false,
-    refetch: refetchTransactions
+    refetch: refetchTransactions,
   };
 };

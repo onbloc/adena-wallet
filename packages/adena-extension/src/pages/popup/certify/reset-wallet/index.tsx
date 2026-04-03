@@ -37,7 +37,7 @@ export const ResetWallet = (): JSX.Element => {
         confirmButtonProps={{
           onClick: resetButtonClick,
           text: 'Reset',
-          hierarchy: 'danger'
+          hierarchy: 'danger',
         }}
       />
     </Wrapper>

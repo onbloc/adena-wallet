@@ -33,7 +33,7 @@ export const CreateMultisigAccount: React.FC<CreateMultisigAccountProps> = ({
   done,
   onResponse,
   onClickConfirm,
-  onClickCancel
+  onClickCancel,
 }) => {
   const { signerCount, threshold, signerAddresses } = useMemo(() => {
     const signers = multisigConfig?.signers || [];
@@ -41,14 +41,14 @@ export const CreateMultisigAccount: React.FC<CreateMultisigAccountProps> = ({
     return {
       signerCount: signers.length,
       threshold: multisigConfig?.threshold || 0,
-      signerAddresses: signers
+      signerAddresses: signers,
     };
   }, [multisigConfig]);
 
   const signerInfos: SignerInfo[] = useMemo(() => {
     return signerAddresses.map(address => ({
       address,
-      status: SignerStatusType.NONE
+      status: SignerStatusType.NONE,
     }));
   }, [signerAddresses]);
 
@@ -100,14 +100,14 @@ export const CreateMultisigAccount: React.FC<CreateMultisigAccountProps> = ({
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           disabled: disabledApprove,
           text: 'Create',
           loading: processing,
-          onClick: onClickConfirmButton
+          onClick: onClickConfirmButton,
         }}
       />
     </S.CreateMultisigAccountWrapper>

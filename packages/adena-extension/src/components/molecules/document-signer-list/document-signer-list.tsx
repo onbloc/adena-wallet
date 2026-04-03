@@ -22,7 +22,7 @@ const DocumentSignerList = ({ signerInfos }: DocumentSignerListProps): React.Rea
         : `${scannerUrl}/account/${address}`;
       openLink(openLinkUrl);
     },
-    [currentNetwork, scannerParameters, openLink]
+    [currentNetwork, scannerParameters, openLink],
   );
 
   return (

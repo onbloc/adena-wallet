@@ -14,7 +14,7 @@ describe('ApproveAddingNetwork Component', () => {
       networkInfo: {
         name: '',
         rpcUrl: '',
-        chainId: ''
+        chainId: '',
       },
       logo: '',
       approvable: true,
@@ -31,7 +31,7 @@ describe('ApproveAddingNetwork Component', () => {
       },
       onTimeout: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -40,7 +40,7 @@ describe('ApproveAddingNetwork Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveAddingNetwork {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

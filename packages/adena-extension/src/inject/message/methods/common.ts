@@ -8,7 +8,7 @@ export const createPopup = async (
   popupPath: string,
   message: InjectionMessage,
   closeMessage: InjectionMessage,
-  sendResponse: (response: any) => void
+  sendResponse: (response: any) => void,
 ): Promise<void> => {
   const popupOption: chrome.windows.CreateData = {
     url: chrome.runtime.getURL(
@@ -16,13 +16,13 @@ export const createPopup = async (
       + `?key=${message.key}`
       + `&hostname=${message.hostname}`
       + `&protocol=${message.protocol}`
-      + `&data=${encodeParameter(message)}`
+      + `&data=${encodeParameter(message)}`,
     ),
     type: 'popup',
     height: 590,
     width: 380,
     left: 800,
-    top: 300
+    top: 300,
   };
 
   chrome.windows.create(popupOption, async (windowResponse) => {
@@ -49,7 +49,7 @@ export const createPopup = async (
           .sendMessage(tabId, {
             type: message.type,
             data: message,
-            called: tabId
+            called: tabId,
           })
           .catch(() => undefined);
       }
@@ -74,7 +74,7 @@ export const removePopups = async (): Promise<void> => {
 export const checkEstablished = async (
   core: InjectCore,
   requestData: InjectionMessage,
-  sendResponse: (response: any) => void
+  sendResponse: (response: any) => void,
 ): Promise<boolean> => {
   const accountId = await core.getCurrentAccountId();
 
@@ -85,8 +85,8 @@ export const checkEstablished = async (
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NOT_CONNECTED,
         {},
-        requestData.key
-      )
+        requestData.key,
+      ),
     );
     return false;
   }
@@ -97,7 +97,7 @@ const popupMessageListener = (
   popupId: number | undefined,
   requestData: InjectionMessage,
   popupMessage: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): boolean => {
   new Promise((resolve) => {
     if (requestData.key === popupMessage.key) {

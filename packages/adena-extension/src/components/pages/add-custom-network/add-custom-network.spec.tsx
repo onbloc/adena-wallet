@@ -37,7 +37,7 @@ describe('AddCustomNetwork Component', () => {
       },
       moveBack: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -46,7 +46,7 @@ describe('AddCustomNetwork Component', () => {
         <ThemeProvider theme={theme}>
           <AddCustomNetwork {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

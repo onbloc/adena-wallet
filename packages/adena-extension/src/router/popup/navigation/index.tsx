@@ -14,7 +14,7 @@ const Wrapper = styled.nav`
   height: 60px;
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   background-color: ${getTheme('neutral', '_8')};
   filter: drop-shadow(0px -4px 4px rgba(0, 0, 0, 0.25));
@@ -57,25 +57,25 @@ export const Navigation = (): JSX.Element => {
       {
         iconName: 'iconWallet',
         active: !!matchedWallet || !!matchedTokenDetails,
-        routingAddress: RoutePath.Wallet
+        routingAddress: RoutePath.Wallet,
       },
       {
         iconName: 'iconGallery',
         active: !!matchedNft,
-        routingAddress: RoutePath.Nft
+        routingAddress: RoutePath.Nft,
       },
       {
         iconName: 'iconSearch',
         active: !!matchedExplore,
-        routingAddress: RoutePath.Explore
+        routingAddress: RoutePath.Explore,
       },
       {
         iconName: 'iconClock',
         active: !!matchedHistory,
-        routingAddress: RoutePath.History
-      }
+        routingAddress: RoutePath.History,
+      },
     ],
-    [matchedWallet, matchedExplore, matchedNft, matchedHistory, matchedTokenDetails]
+    [matchedWallet, matchedExplore, matchedNft, matchedHistory, matchedTokenDetails],
   );
 
   const visibleNavigation = useMemo(() => {
@@ -108,7 +108,7 @@ export const Navigation = (): JSX.Element => {
 
       navigate(item.routingAddress, { replace: true });
     },
-    [isActiveWallet]
+    [isActiveWallet],
   );
 
   if (!visibleNavigation) {

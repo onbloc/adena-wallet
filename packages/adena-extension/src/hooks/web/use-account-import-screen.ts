@@ -17,7 +17,7 @@ import {
   PrivateKeyKeyring,
   SeedAccount,
   SingleAccount,
-  Wallet
+  Wallet,
 } from 'adena-module';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -67,7 +67,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
 
   const [inputType, setInputType] = useState<ImportWalletType>('12seeds');
   const [step, setStep] = useState<AccountImportStateType>(
-    params?.doneQuestionnaire ? 'SET_MNEMONIC' : 'INIT'
+    params?.doneQuestionnaire ? 'SET_MNEMONIC' : 'INIT',
   );
   const [selectedAddresses, setSelectedAddresses] = useState<string[]>([]);
   const [loadedAccounts, setLoadedAccounts] = useState<Account[]>([]);
@@ -81,20 +81,20 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
   const accountImportStepNo = {
     INIT: 0,
     SET_MNEMONIC: ableToSkipQuestionnaire ? 1 : 2,
-    LOADING: ableToSkipQuestionnaire ? 1 : 2
+    LOADING: ableToSkipQuestionnaire ? 1 : 2,
   };
 
   const accountImportStepNoOfMultiHDWallet = {
     INIT: 0,
     SET_MNEMONIC: ableToSkipQuestionnaire ? 1 : 2,
     LOADING: ableToSkipQuestionnaire ? 1 : 2,
-    SELECT_ACCOUNT: ableToSkipQuestionnaire ? 2 : 3
+    SELECT_ACCOUNT: ableToSkipQuestionnaire ? 2 : 3,
   };
 
   const indicatorInfo = useIndicatorStep<string>({
     stepMap: hasHDWallet ? accountImportStepNoOfMultiHDWallet : accountImportStepNo,
     currentState: step,
-    hasQuestionnaire: true
+    hasQuestionnaire: true,
   });
 
   const isValidForm = useMemo(() => {
@@ -137,7 +137,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     const address = await account.getAddress(defaultAddressPrefix);
     const checkAccounts = wallet.accounts.filter(account => !isAirgapAccount(account));
     const storedAddresses = await Promise.all(
-      checkAccounts.map(account => account.getAddress(defaultAddressPrefix))
+      checkAccounts.map(account => account.getAddress(defaultAddressPrefix)),
     );
     const existAddress = storedAddresses.includes(address);
     if (existAddress) {
@@ -146,7 +146,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     }
     return {
       account,
-      keyring
+      keyring,
     };
   }, [wallet, inputValue]);
 
@@ -262,7 +262,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
   const addAccountWith = async (
     wallet: AdenaWallet,
     keyring: Keyring,
-    account: Account
+    account: Account,
   ): Promise<AdenaWallet> => {
     const index = wallet.getNextAccountIndexBy(keyring);
     const accountNumber = wallet.getNextAccountNumberBy(keyring);
@@ -304,7 +304,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     loadedAccounts,
     loadAccounts,
     onClickGoBack,
-    onClickNext
+    onClickNext,
   };
 };
 

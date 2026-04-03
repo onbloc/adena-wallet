@@ -36,7 +36,7 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
   changeChainId,
   save,
   cancel,
-  moveBack
+  moveBack,
 }) => {
   const isSavable = useMemo(() => {
     if (rpcUrlError) {
@@ -66,7 +66,7 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
         title='Add Custom Network'
         leftElement={{
           element: <img src={LeftArrowIcon} alt='back icon' />,
-          onClick: onClickBack
+          onClick: onClickBack,
         }}
       />
       <WarningBox type='approachNetwork' padding='10px 18px' margin='12px 0px 20px' />
@@ -86,13 +86,13 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
       <BottomFixedButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           disabled: !isSavable,
           text: 'Save',
-          onClick: onClickSave
+          onClick: onClickSave,
         }}
         filled
       />

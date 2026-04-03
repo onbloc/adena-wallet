@@ -67,7 +67,7 @@ export class WalletRepository {
 
       return {
         iv,
-        encryptedPassword
+        encryptedPassword,
       };
     }
     catch (e) {
@@ -75,7 +75,7 @@ export class WalletRepository {
 
       return {
         iv: '',
-        encryptedPassword: ''
+        encryptedPassword: '',
       };
     }
   };

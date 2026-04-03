@@ -14,7 +14,7 @@ export interface NFTCollectionAssetsProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   moveAssetPage: (grc721Token: GRC721Model) => void;
 }
@@ -23,7 +23,7 @@ const NFTCollectionAssets: React.FC<NFTCollectionAssetsProps> = ({
   tokens,
   isFetchedTokens,
   queryGRC721TokenUri,
-  moveAssetPage
+  moveAssetPage,
 }) => {
   const theme = useTheme();
 

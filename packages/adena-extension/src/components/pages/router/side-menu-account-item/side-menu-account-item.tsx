@@ -6,13 +6,13 @@ import { CopyIconButton, Portal } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
 import { SideMenuAccountItemProps } from '@types';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import { useTheme } from 'styled-components';
 
 import {
   SideMenuAccountItemMoreInfoWrapper,
-  SideMenuAccountItemWrapper
+  SideMenuAccountItemWrapper,
 } from './side-menu-account-item.styles';
 
 const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
@@ -22,11 +22,11 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
   changeAccount,
   focusAccountId,
   moveGnoscan,
-  moveAccountDetail
+  moveAccountDetail,
 }) => {
   const theme = useTheme();
   const {
-    accountId, name, address, balance, type
+    accountId, name, address, balance, type,
   } = account;
   const [openedMoreInfo, setOpenedMoreInfo] = useState(false);
   const [positionX, setPositionX] = useState(0);
@@ -60,7 +60,7 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
       changeAccount(accountId);
       focusAccountId(null);
     },
-    [changeAccount, account]
+    [changeAccount, account],
   );
 
   const onClickMore = useCallback(
@@ -72,7 +72,7 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
       setPositionY(y);
       focusAccountId(accountId);
     },
-    [openedMoreInfo]
+    [openedMoreInfo],
   );
 
   useEffect(() => {
@@ -163,7 +163,7 @@ const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = 
   positionX,
   positionY,
   moveGnoscan,
-  moveAccountDetail
+  moveAccountDetail,
 }) => {
   function onHover(event: React.MouseEvent<HTMLDivElement>): void {
     event.preventDefault();
@@ -176,7 +176,7 @@ const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = 
       event.stopPropagation();
       moveAccountDetail(accountId);
     },
-    [moveAccountDetail, accountId]
+    [moveAccountDetail, accountId],
   );
 
   const onClickViewOnGnoscan = useCallback(
@@ -185,7 +185,7 @@ const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = 
       event.stopPropagation();
       moveGnoscan(address);
     },
-    [moveGnoscan, address]
+    [moveGnoscan, address],
   );
 
   return (

@@ -14,11 +14,11 @@ describe('SelectSeedPhraseBoxItem Component', () => {
       index: 1,
       keyringId: 'id',
       accountCount: 1,
-      selected: false
+      selected: false,
     },
     select: (): void => {
       return;
-    }
+    },
   };
 
   it('SelectSeedPhraseBoxItem render', () => {
@@ -28,7 +28,7 @@ describe('SelectSeedPhraseBoxItem Component', () => {
         <ThemeProvider theme={theme}>
           <SelectSeedPhraseBoxItem {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

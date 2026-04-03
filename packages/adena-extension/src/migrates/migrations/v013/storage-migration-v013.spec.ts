@@ -18,7 +18,7 @@ const mockStorageData = {
   WALLET_CREATION_GUIDE_CONFIRM_DATE: null,
   ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null,
   ACCOUNT_GRC721_COLLECTIONS: {},
-  ACCOUNT_GRC721_PINNED_PACKAGES: {}
+  ACCOUNT_GRC721_PINNED_PACKAGES: {},
 };
 
 describe('serialized wallet migration V013', () => {
@@ -30,7 +30,7 @@ describe('serialized wallet migration V013', () => {
   it('up success', async () => {
     const mockData = {
       version: 12,
-      data: mockStorageData
+      data: mockStorageData,
     };
     const migration = new StorageMigration013();
     const result = await migration.up(mockData);
@@ -42,7 +42,7 @@ describe('serialized wallet migration V013', () => {
   it('up password success', async () => {
     const mockData = {
       version: 1,
-      data: mockStorageData
+      data: mockStorageData,
     };
     const password = '123';
     const migration = new StorageMigration013();
@@ -69,13 +69,13 @@ describe('serialized wallet migration V013', () => {
       version: 1,
       data: {
         ...mockStorageData,
-        SERIALIZED: null
-      }
+        SERIALIZED: null,
+      },
     };
     const migration = new StorageMigration013();
 
     await expect(migration.up(mockData)).rejects.toThrow(
-      'Storage Data does not match version V012'
+      'Storage Data does not match version V012',
     );
   });
 });

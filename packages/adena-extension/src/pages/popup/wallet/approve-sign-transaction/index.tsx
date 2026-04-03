@@ -1,7 +1,7 @@
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
-  WalletResponseSuccessType
+  WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
@@ -9,7 +9,7 @@ import { parseTokenAmount } from '@common/utils/amount-utils';
 import {
   createFaviconByHostname,
   decodeParameter,
-  parseParameters
+  parseParameters,
 } from '@common/utils/client-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { ApproveTransaction } from '@components/molecules';
@@ -26,11 +26,11 @@ import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
 import { RoutePath } from '@types';
 import {
-  Account, Document, isAirgapAccount, isLedgerAccount
+  Account, Document, isAirgapAccount, isLedgerAccount,
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
@@ -54,13 +54,13 @@ function mappedTransactionData(document: Document): TransactionData {
       return {
         type: message?.type || '',
         function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
-        value: message?.value || ''
+        value: message?.value || '',
       };
     }),
     gasWanted: document.fee.gas,
     gasFee: `${document.fee.amount[0].amount}${document.fee.amount[0].denom}`,
     memo: `${document.memo || ''}`,
-    document
+    document,
   };
 }
 
@@ -103,13 +103,13 @@ const ApproveSignTransactionContainer: React.FC = () => {
     if (!networkFee) {
       return {
         amount: '',
-        denom: ''
+        denom: '',
       };
     }
 
     return {
       amount: networkFee.amount,
-      denom: GasToken.symbol
+      denom: GasToken.symbol,
     };
   }, [networkFee]);
 
@@ -171,7 +171,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
     const parsedData = decodeParameter(data['data']);
     setRequestData({
       ...parsedData,
-      hostname: data['hostname']
+      hostname: data['hostname'],
     });
   };
 
@@ -193,11 +193,11 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
   const validate = async (
     currentAccount: Account,
-    requestData: InjectionMessage
+    requestData: InjectionMessage,
   ): Promise<boolean> => {
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
-      await currentAccount.getAddress(defaultAddressPrefix)
+      await currentAccount.getAddress(defaultAddressPrefix),
     );
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
@@ -208,7 +208,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
   const initFavicon = async (): Promise<void> => {
     const faviconData = await createFaviconByHostname(
-      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : ''
+      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : '',
     );
     setFavicon(faviconData);
   };
@@ -224,7 +224,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
         requestData?.data?.messages,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
-        requestData?.data?.memo
+        requestData?.data?.memo,
       );
       setDocument(document);
       setTransactionData(mappedTransactionData(document));
@@ -241,8 +241,8 @@ const ApproveSignTransactionContainer: React.FC = () => {
           InjectionMessageInstance.failure(
             WalletResponseRejectType.SIGN_REJECTED,
             requestData?.data,
-            requestData?.key
-          )
+            requestData?.key,
+          ),
         );
       }
     }
@@ -269,11 +269,11 @@ const ApproveSignTransactionContainer: React.FC = () => {
         amount: [
           {
             amount: currentGasPrice.toString(),
-            denom: GasToken.denom
-          }
+            denom: GasToken.denom,
+          },
         ],
-        gas: currentGasWanted.toString()
-      }
+        gas: currentGasWanted.toString(),
+      },
     };
 
     setDocument(updatedDocument);
@@ -286,8 +286,8 @@ const ApproveSignTransactionContainer: React.FC = () => {
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
           {},
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
       return false;
     }
@@ -297,15 +297,15 @@ const ApproveSignTransactionContainer: React.FC = () => {
       const { signed } = await transactionService.createTransaction(
         wallet,
         currentAccount,
-        document
+        document,
       );
       const encodedTransaction = transactionService.encodeTransaction(signed);
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.SIGN_SUCCESS,
           { encodedTransaction },
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
     }
     catch (e) {
@@ -318,16 +318,16 @@ const ApproveSignTransactionContainer: React.FC = () => {
           InjectionMessageInstance.failure(
             WalletResponseFailureType.SIGN_FAILED,
             { error: { message } },
-            requestData?.key
-          )
+            requestData?.key,
+          ),
         );
       }
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.SIGN_FAILED,
           {},
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
     }
     return false;
@@ -345,8 +345,8 @@ const ApproveSignTransactionContainer: React.FC = () => {
       navigate(RoutePath.ApproveSignTransactionLoading, {
         state: {
           document,
-          requestData
-        }
+          requestData,
+        },
       });
       return;
     }
@@ -358,8 +358,8 @@ const ApproveSignTransactionContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseRejectType.SIGN_REJECTED,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   };
 
@@ -374,8 +374,8 @@ const ApproveSignTransactionContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NETWORK_TIMEOUT,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   }, [requestData]);
 

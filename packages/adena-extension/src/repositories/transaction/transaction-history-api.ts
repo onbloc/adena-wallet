@@ -24,14 +24,14 @@ export class TransactionHistoryApiRepository implements ITransactionHistoryRepos
 
   public async fetchAllTransactionHistoryBy(
     address: string,
-    cursor?: string | null
+    cursor?: string | null,
   ): Promise<TransactionWithPageInfo> {
     const path = `${this.apiUrl}/v1/accounts/${address}/transactions`;
     const paramsString = cursor ? `?cursor=${cursor}` : '';
 
     return TransactionHistoryApiRepository.fetch<TransactionHistoryResponse>(
       this.axiosInstance,
-      path + paramsString
+      path + paramsString,
     ).then((result) => {
       return TransactionHistoryMapper.fromResponse(result, address);
     });
@@ -39,14 +39,14 @@ export class TransactionHistoryApiRepository implements ITransactionHistoryRepos
 
   public async fetchNativeTransactionHistoryBy(
     address: string,
-    cursor?: string | null
+    cursor?: string | null,
   ): Promise<TransactionWithPageInfo> {
     const path = `${this.apiUrl}/v1/accounts/${address}/native-coin/transactions`;
     const paramsString = cursor ? `?cursor=${cursor}` : '';
 
     return TransactionHistoryApiRepository.fetch<TransactionHistoryResponse>(
       this.axiosInstance,
-      path + paramsString
+      path + paramsString,
     ).then((result) => {
       return TransactionHistoryMapper.fromResponse(result, address);
     });
@@ -55,7 +55,7 @@ export class TransactionHistoryApiRepository implements ITransactionHistoryRepos
   public async fetchGRC20TransactionHistoryBy(
     address: string,
     packagePath: string,
-    cursor?: string | null
+    cursor?: string | null,
   ): Promise<TransactionWithPageInfo> {
     const encodedPackagePath = encodeURIComponent(packagePath);
     const path = `${this.apiUrl}/v1/accounts/${address}/grc20-token/${encodedPackagePath}/transactions`;
@@ -63,7 +63,7 @@ export class TransactionHistoryApiRepository implements ITransactionHistoryRepos
 
     return TransactionHistoryApiRepository.fetch<TransactionHistoryResponse>(
       this.axiosInstance,
-      path + paramsString
+      path + paramsString,
     ).then((result) => {
       return TransactionHistoryMapper.fromResponse(result, address);
     });

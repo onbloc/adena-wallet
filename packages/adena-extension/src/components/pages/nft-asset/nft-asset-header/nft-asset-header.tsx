@@ -30,27 +30,27 @@ const NFTAssetHeader: React.FC<NFTAssetHeaderProps> = ({
   pinCollection,
   unpinCollection,
   showCollection,
-  hideCollection
+  hideCollection,
 }) => {
   const dropdownOptions = useMemo(
     () => [
       {
         text: 'View on GnoScan',
         icon: <IconLink />,
-        onClick: openGnoscanCollection
+        onClick: openGnoscanCollection,
       },
       {
         text: pinned ? 'Unpin Collection' : 'Pin Collection',
         icon: pinned ? <IconUnpin /> : <IconPin className='icon-dropdown' />,
-        onClick: pinned ? unpinCollection : pinCollection
+        onClick: pinned ? unpinCollection : pinCollection,
       },
       {
         text: visible ? 'Hide Collection' : 'Show Collection',
         icon: visible ? <IconHide className='large' /> : <IconShow className='large' />,
-        onClick: visible ? hideCollection : showCollection
-      }
+        onClick: visible ? hideCollection : showCollection,
+      },
     ],
-    [pinned, visible, openGnoscanCollection]
+    [pinned, visible, openGnoscanCollection],
   );
 
   return (
@@ -58,7 +58,7 @@ const NFTAssetHeader: React.FC<NFTAssetHeaderProps> = ({
       title={title}
       leftElement={{
         element: <img src={LeftArrowIcon} alt='back icon' />,
-        onClick: moveBack
+        onClick: moveBack,
       }}
       rightElement={{
         element: (
@@ -70,7 +70,7 @@ const NFTAssetHeader: React.FC<NFTAssetHeaderProps> = ({
         ),
         onClick: (): void => {
           return;
-        }
+        },
       }}
     />
   );

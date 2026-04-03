@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const ManageTokenListWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: auto;
@@ -14,7 +14,7 @@ export const ManageTokenListWrapper = styled.div`
 export const ManageTokenListItemWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   padding: 10px 14px;
   width: 100%;

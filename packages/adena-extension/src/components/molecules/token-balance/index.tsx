@@ -25,7 +25,7 @@ export const TokenBalance: React.FC<TokenBalanceProps> = ({
   minimumFontSize = '14px',
   lineHeight,
   maxWidth,
-  withSign = false
+  withSign = false,
 }) => {
   return (
     <TokenBalanceWrapper

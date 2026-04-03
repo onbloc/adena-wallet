@@ -23,7 +23,7 @@ export const WebMultisigSignerInput = ({
   onAddSigner,
   onRemoveSigner,
   onSignerChange,
-  multisigConfigError
+  multisigConfigError,
 }: WebMultisigSignerInputProps): React.ReactElement<any> => {
   const isFirstInputDisabled = mode === 'CREATE' && !!currentAddress;
 
@@ -37,7 +37,7 @@ export const WebMultisigSignerInput = ({
     <S.StyledContainer style={{ alignItems: 'center' }}>
       <View style={{
         rowGap: 16,
-        width: '100%'
+        width: '100%',
       }}
       >
         {signers.map((signer, index) => (

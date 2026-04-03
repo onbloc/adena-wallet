@@ -17,7 +17,7 @@ const NetworkListItem: React.FC<NetworkListItemProps> = ({
   selected,
   networkMetainfo,
   moveEditPage,
-  changeNetwork
+  changeNetwork,
 }) => {
   const onClickEditButton = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -25,7 +25,7 @@ const NetworkListItem: React.FC<NetworkListItemProps> = ({
       event.stopPropagation();
       moveEditPage(networkMetainfo.id);
     },
-    [moveEditPage, networkMetainfo.id]
+    [moveEditPage, networkMetainfo.id],
   );
 
   const onClickItem = useCallback(() => {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import {
   NetworkFeeCustomInputContainer,
-  NetworkFeeCustomInputWrapper
+  NetworkFeeCustomInputWrapper,
 } from './network-fee-custom-input.styles';
 
 export interface NetworkFeeCustomInputProps {

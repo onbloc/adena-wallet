@@ -2,7 +2,7 @@ import { Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import React, {
-  type JSX, useCallback, useEffect, useState
+  type JSX, useCallback, useEffect, useState,
 } from 'react';
 import styled from 'styled-components';
 
@@ -52,7 +52,7 @@ export const CopyTooltip = ({
   children,
   copyText,
   className,
-  position = 'bottom'
+  position = 'bottom',
 }: CopyTooltipProps): JSX.Element => {
   const [isClicked, setIsClicked] = useState<boolean>(false);
 

@@ -4,7 +4,7 @@ import {
   createFaviconByHostname,
   decodeParameter,
   getSiteName,
-  parseParameters
+  parseParameters,
 } from '@common/utils/client-utils';
 import { fetchHealth } from '@common/utils/fetch-utils';
 import WalletConnect from '@components/pages/approve-establish/wallet-connect/wallet-connect';
@@ -54,7 +54,7 @@ const ApproveEstablishContainer: React.FC = () => {
   const initRequestSite = async (): Promise<void> => {
     try {
       const {
-        key, hostname, protocol, data
+        key, hostname, protocol, data,
       } = parseParameters(location.search);
       setKey(key);
       setProtocol(protocol);
@@ -81,7 +81,7 @@ const ApproveEstablishContainer: React.FC = () => {
     setLoading(false);
     if (isEstablished) {
       chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure(WalletResponseFailureType.ALREADY_CONNECTED, {}, key)
+        InjectionMessageInstance.failure(WalletResponseFailureType.ALREADY_CONNECTED, {}, key),
       );
       return;
     }
@@ -97,7 +97,7 @@ const ApproveEstablishContainer: React.FC = () => {
     const { url, healthy } = await checkHealth(currentNetwork.rpcUrl);
     if (!healthy || url !== currentNetwork.rpcUrl) {
       setResponse(
-        InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, key)
+        InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, key),
       );
       return;
     }
@@ -109,10 +109,10 @@ const ApproveEstablishContainer: React.FC = () => {
       hostname: siteName,
       accountId,
       appName,
-      favicon
+      favicon,
     });
     setResponse(
-      InjectionMessageInstance.success(WalletResponseSuccessType.CONNECTION_SUCCESS, {}, key)
+      InjectionMessageInstance.success(WalletResponseSuccessType.CONNECTION_SUCCESS, {}, key),
     );
     setDone(true);
   };
@@ -125,7 +125,7 @@ const ApproveEstablishContainer: React.FC = () => {
 
   const onTimeout = (): void => {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, key)
+      InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, key),
     );
   };
 

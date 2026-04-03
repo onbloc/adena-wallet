@@ -12,7 +12,7 @@ export interface TransferSummaryNetworkFeeProps {
 const TransferSummaryNetworkFee: React.FC<TransferSummaryNetworkFeeProps> = ({
   isError,
   value,
-  denom
+  denom,
 }) => {
   return (
     <TransferSummaryNetworkFeeWrapper isError={isError}>

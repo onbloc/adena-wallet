@@ -1,7 +1,7 @@
 import { createPopupWindow } from '@common/utils/browser-utils';
 import { formatAddress, formatNickname, getSiteName } from '@common/utils/client-utils';
 import {
-  CopyTooltip, HamburgerMenuBtn, StatusDot, Text
+  CopyTooltip, HamburgerMenuBtn, StatusDot, Text,
 } from '@components/atoms';
 import { PopWindowButton } from '@components/atoms/pop-window-button';
 import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
@@ -26,7 +26,7 @@ const Wrapper = styled.div`
 const Header = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   height: 100%;
@@ -39,7 +39,7 @@ const Header = styled.div`
 const StyledCenterWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: auto;
   height: 100%;
@@ -52,7 +52,7 @@ const StyledCenterWrapper = styled.div`
 const StyledRightWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 15px;
   height: 100%;
@@ -132,7 +132,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     return new Promise((resolver) => {
       const queryOptions = {
         active: true,
-        lastFocusedWindow: true
+        lastFocusedWindow: true,
       };
       chrome.tabs.query(queryOptions).then((currentTabs) => {
         if (currentTabs.length > 0 && currentTabs[0].url) {

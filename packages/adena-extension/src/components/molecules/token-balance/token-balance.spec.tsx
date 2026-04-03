@@ -12,7 +12,7 @@ describe('TokenBalance Component', () => {
   it('TokenBalance render', () => {
     const args: TokenBalanceProps = {
       value: '123,456,789,123465',
-      denom: 'GNOT'
+      denom: 'GNOT',
     };
 
     render(
@@ -21,14 +21,14 @@ describe('TokenBalance Component', () => {
         <ThemeProvider theme={theme}>
           <TokenBalance {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 
   it('TokenBalance empty value', () => {
     const args: TokenBalanceProps = {
       value: '',
-      denom: ''
+      denom: '',
     };
 
     render(
@@ -37,7 +37,7 @@ describe('TokenBalance Component', () => {
         <ThemeProvider theme={theme}>
           <TokenBalance {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

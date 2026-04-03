@@ -8,7 +8,7 @@ export class StorageMigration003 implements Migration<StorageModelDataV003> {
   public readonly version = 3;
 
   async up(
-    current: StorageModel<StorageModelDataV002>
+    current: StorageModel<StorageModelDataV002>,
   ): Promise<StorageModel<StorageModelDataV003>> {
     if (!this.validateModelV002(current.data)) {
       throw new Error('Storage Data does not match version V002');
@@ -18,8 +18,8 @@ export class StorageMigration003 implements Migration<StorageModelDataV003> {
       version: this.version,
       data: {
         ...previous,
-        NETWORKS: this.migrateNetworks(previous.NETWORKS)
-      }
+        NETWORKS: this.migrateNetworks(previous.NETWORKS),
+      },
     };
   }
 
@@ -65,13 +65,13 @@ export class StorageMigration003 implements Migration<StorageModelDataV003> {
         return {
           ...network,
           id: network.networkId,
-          default: network.main
+          default: network.main,
         };
       }
       return {
         ...network,
         id: network.networkId || Date.now(),
-        default: network.main
+        default: network.main,
       };
     });
     return networks;

@@ -13,7 +13,7 @@ export type AdenaAddNetwork = (network: AddNetworkParams) => Promise<AddNetworkR
 export enum SwitchNetworkResponseType {
   SWITCH_NETWORK_SUCCESS = 'SWITCH_NETWORK_SUCCESS',
   REDUNDANT_CHANGE_REQUEST = 'REDUNDANT_CHANGE_REQUEST',
-  UNADDED_NETWORK = 'UNADDED_NETWORK'
+  UNADDED_NETWORK = 'UNADDED_NETWORK',
 }
 
 interface SwitchNetworkResponseData { chainId: string }

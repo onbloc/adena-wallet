@@ -18,7 +18,7 @@ describe('SubHeader Component', () => {
         <ThemeProvider theme={theme}>
           <SubHeader {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

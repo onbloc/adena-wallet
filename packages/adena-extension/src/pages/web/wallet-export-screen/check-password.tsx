@@ -1,6 +1,6 @@
 import IconWarning from '@assets/web/warning.svg';
 import {
-  Row, View, WebButton, WebErrorText, WebImg, WebInput, WebText
+  Row, View, WebButton, WebErrorText, WebImg, WebInput, WebText,
 } from '@components/atoms';
 import { TermsCheckbox } from '@components/molecules';
 import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
@@ -48,7 +48,7 @@ interface WalletExportCheckPasswordProps {
 const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
   exportType,
   checkPassword,
-  moveExport
+  moveExport,
 }) => {
   const theme = useTheme();
 
@@ -121,7 +121,7 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
         <StyledWarnBox>
           <Row style={{
             gap: 4,
-            alignItems: 'center'
+            alignItems: 'center',
           }}
           >
             <WebImg src={IconWarning} size={20} />

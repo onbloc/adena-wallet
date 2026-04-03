@@ -5,20 +5,20 @@ import {
   AccountTokenMetainfoModelV003,
   EstablishSitesModelV003,
   NetworksModelV003,
-  StorageModelDataV003
+  StorageModelDataV003,
 } from '../v003/storage-model-v003';
 import {
   AccountTokenMetainfoModelV004,
   EstablishSitesModelV004,
   NetworksModelV004,
-  StorageModelDataV004
+  StorageModelDataV004,
 } from './storage-model-v004';
 
 export class StorageMigration004 implements Migration<StorageModelDataV004> {
   public readonly version = 4;
 
   async up(
-    current: StorageModel<StorageModelDataV003>
+    current: StorageModel<StorageModelDataV003>,
   ): Promise<StorageModel<StorageModelDataV004>> {
     if (!this.validateModelV003(current.data)) {
       throw new Error('Storage Data does not match version V003');
@@ -30,8 +30,8 @@ export class StorageMigration004 implements Migration<StorageModelDataV004> {
         ...previous,
         NETWORKS: this.migrateNetworks(previous.NETWORKS),
         ACCOUNT_TOKEN_METAINFOS: this.migrateAccountTokenMetainfo(previous.ACCOUNT_TOKEN_METAINFOS),
-        ESTABLISH_SITES: this.migrateEstablishSites(previous.ESTABLISH_SITES)
-      }
+        ESTABLISH_SITES: this.migrateEstablishSites(previous.ESTABLISH_SITES),
+      },
     };
   }
 
@@ -78,21 +78,21 @@ export class StorageMigration004 implements Migration<StorageModelDataV004> {
           ...network,
           id: network.networkId,
           default: true,
-          main: network.networkId === 'test3'
+          main: network.networkId === 'test3',
         };
       }
       return {
         ...network,
         id: network.networkId || Date.now(),
         default: false,
-        main: false
+        main: false,
       };
     });
     return networks;
   }
 
   private migrateAccountTokenMetainfo(
-    accountTokenMetainfo: AccountTokenMetainfoModelV003
+    accountTokenMetainfo: AccountTokenMetainfoModelV003,
   ): AccountTokenMetainfoModelV004 {
     const changedAccountTokenMetainfo: AccountTokenMetainfoModelV004 = {};
     for (const accountId of Object.keys(accountTokenMetainfo)) {
@@ -101,7 +101,7 @@ export class StorageMigration004 implements Migration<StorageModelDataV004> {
         networkId:
           tokenMetainfo.type === 'gno-native' && tokenMetainfo.symbol === 'GNOT'
             ? 'DEFAULT'
-            : 'test3'
+            : 'test3',
       }));
       changedAccountTokenMetainfo[accountId] = tokenMetainfos;
     }
@@ -114,8 +114,8 @@ export class StorageMigration004 implements Migration<StorageModelDataV004> {
       const establishSitesOfAccount = establishSites[accountId].filter(
         (establishSite, index) =>
           establishSites[accountId].findIndex(
-            current => current.hostname === establishSite.hostname
-          ) === index
+            current => current.hostname === establishSite.hostname,
+          ) === index,
       );
       changedEstablishSites[accountId] = establishSitesOfAccount;
     }

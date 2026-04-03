@@ -18,24 +18,24 @@ const menuMakerInfo: {
 }[] = [
   {
     title: 'Connected Apps',
-    navigatePath: RoutePath.ConnectedApps
+    navigatePath: RoutePath.ConnectedApps,
   },
   {
     title: 'Address Book',
-    navigatePath: RoutePath.AddressBook
+    navigatePath: RoutePath.AddressBook,
   },
   {
     title: 'Change Network',
-    navigatePath: RoutePath.ChangeNetwork
+    navigatePath: RoutePath.ChangeNetwork,
   },
   {
     title: 'Security & Privacy',
-    navigatePath: RoutePath.SecurityPrivacy
+    navigatePath: RoutePath.SecurityPrivacy,
   },
   {
     title: 'About Adena',
-    navigatePath: RoutePath.AboutAdena
-  }
+    navigatePath: RoutePath.AboutAdena,
+  },
 ];
 
 export const Settings = (): JSX.Element => {

@@ -26,7 +26,7 @@ export const createMessageOfVmRegister = (info: {
     max_deposit: '',
     func: 'Register',
     args: [invitor, info.accountName, info.accountProfile],
-    send: send
+    send: send,
   });
 };
 
@@ -49,6 +49,6 @@ export const createMessageOfVmInvite = (info: {
     max_deposit: '',
     func: 'Invite',
     args: [info.invitee],
-    send: ''
+    send: '',
   });
 };

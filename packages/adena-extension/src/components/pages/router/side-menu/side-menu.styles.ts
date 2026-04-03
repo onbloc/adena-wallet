@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const SideMenuWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: 100vh;
@@ -14,7 +14,7 @@ export const SideMenuWrapper = styled.div`
   .header-wrapper {
     ${mixins.flex({
       direction: 'row',
-      justify: 'space-between'
+      justify: 'space-between',
     })};
     height: 50px;
     flex-shrink: 0;
@@ -96,7 +96,7 @@ export const SideMenuWrapper = styled.div`
   .bottom-wrapper {
     ${mixins.flex({
       align: 'normal',
-      justify: 'normal'
+      justify: 'normal',
     })};
     flex-shrink: 0;
     height: fit-content;

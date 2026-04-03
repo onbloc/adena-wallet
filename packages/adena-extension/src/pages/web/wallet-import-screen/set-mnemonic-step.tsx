@@ -1,5 +1,5 @@
 import {
-  Row, View, WebButton, WebCheckBox, WebText
+  Row, View, WebButton, WebCheckBox, WebText,
 } from '@components/atoms';
 import { WebSeedInput, WebTitleWithDescription } from '@components/molecules';
 import { UseWalletImportReturn } from '@hooks/web/use-wallet-import-screen';
@@ -13,7 +13,7 @@ const StyledContainer = styled(View)`
 
 const SetMnemonicStep = ({ useWalletImportScreenReturn }: { useWalletImportScreenReturn: UseWalletImportReturn }): ReactElement<any> => {
   const {
-    setInputType, updateInputValue, onClickNext, errMsg, isValidForm
+    setInputType, updateInputValue, onClickNext, errMsg, isValidForm,
   }
     = useWalletImportScreenReturn;
   const theme = useTheme();
@@ -27,7 +27,7 @@ const SetMnemonicStep = ({ useWalletImportScreenReturn }: { useWalletImportScree
       />
       <View style={{
         paddingBottom: 8,
-        marginTop: -6
+        marginTop: -6,
       }}
       >
         <WebSeedInput
@@ -41,7 +41,7 @@ const SetMnemonicStep = ({ useWalletImportScreenReturn }: { useWalletImportScree
 
       <Row style={{
         columnGap: 8,
-        alignItems: 'center'
+        alignItems: 'center',
       }}
       >
         <WebCheckBox

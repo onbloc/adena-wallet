@@ -8,7 +8,7 @@ import {
   BankSendValue,
   MsgCallValue,
   MsgRunValue,
-  TransactionResponse
+  TransactionResponse,
 } from '../response/transaction-history-query-response';
 
 function mapValueType(success: boolean, received?: boolean): 'DEFAULT' | 'ACTIVE' | 'BLUR' {
@@ -22,7 +22,7 @@ function mapValueType(success: boolean, received?: boolean): 'DEFAULT' | 'ACTIVE
 }
 
 function getDefaultMessage<T = any>(
-  messages: { value: any }[]
+  messages: { value: any }[],
 ): T {
   return messages.sort((m1, m2) => {
     if (m1.value?.func === 'Approve') {
@@ -37,7 +37,7 @@ function getDefaultMessage<T = any>(
 
 export function mapTransactionEdgeByAddress(
   transaction: TransactionResponse<any>,
-  address: string
+  address: string,
 ): TransactionInfo {
   if (!transaction?.messages?.length || transaction?.messages?.length > 1) {
     return mapVMTransaction(transaction);
@@ -67,7 +67,7 @@ export function mapTransactionEdgeByAddress(
 }
 
 export function mapSendTransactionByBankMsgSend(
-  tx: TransactionResponse<BankSendValue>
+  tx: TransactionResponse<BankSendValue>,
 ): TransactionInfo {
   const firstMessage = getDefaultMessage(tx.messages);
   return {
@@ -82,7 +82,7 @@ export function mapSendTransactionByBankMsgSend(
     extraInfo: tx.messages.length > 1 ? `+${tx.messages.length - 1}` : '',
     amount: {
       value: parseTokenAmount(firstMessage.value.amount).toString(),
-      denom: GNOT_TOKEN.denom
+      denom: GNOT_TOKEN.denom,
     },
     valueType: mapValueType(tx.success),
     date: '',
@@ -92,13 +92,13 @@ export function mapSendTransactionByBankMsgSend(
     originTo: firstMessage.value.to_address,
     networkFee: {
       value: tx.gas_fee.amount.toString(),
-      denom: tx.gas_fee.denom
-    }
+      denom: tx.gas_fee.denom,
+    },
   };
 }
 
 export function mapReceivedTransactionByMsgCall(
-  tx: TransactionResponse<MsgCallValue>
+  tx: TransactionResponse<MsgCallValue>,
 ): TransactionInfo {
   const firstMessage = getDefaultMessage(tx.messages);
   if (firstMessage.value.func === 'TransferFrom' && tx.messages.length === 1) {
@@ -114,7 +114,7 @@ export function mapReceivedTransactionByMsgCall(
       extraInfo: tx.messages.length > 1 ? `+${tx.messages.length - 1}` : '',
       amount: {
         value: firstMessage.value.args?.[2] || '0',
-        denom: firstMessage.value.pkg_path || ''
+        denom: firstMessage.value.pkg_path || '',
       },
       to: formatAddress(firstMessage.value.args?.[1] || '', 4),
       from: formatAddress(firstMessage.value.args?.[0] || '', 4),
@@ -124,8 +124,8 @@ export function mapReceivedTransactionByMsgCall(
       date: '',
       networkFee: {
         value: `${tx.gas_fee.amount || '0'}`,
-        denom: `${tx.gas_fee.denom}`
-      }
+        denom: `${tx.gas_fee.denom}`,
+      },
     };
   }
 
@@ -141,7 +141,7 @@ export function mapReceivedTransactionByMsgCall(
     extraInfo: tx.messages.length > 1 ? `+${tx.messages.length - 1}` : '',
     amount: {
       value: firstMessage.value.args?.[1] || '0',
-      denom: firstMessage.value.pkg_path || ''
+      denom: firstMessage.value.pkg_path || '',
     },
     to: formatAddress(firstMessage.value.caller || '', 4),
     from: formatAddress(firstMessage.value.args?.[0] || '', 4),
@@ -151,13 +151,13 @@ export function mapReceivedTransactionByMsgCall(
     date: '',
     networkFee: {
       value: `${tx.gas_fee.amount || '0'}`,
-      denom: `${tx.gas_fee.denom}`
-    }
+      denom: `${tx.gas_fee.denom}`,
+    },
   };
 }
 
 export function mapReceivedTransactionByBankMsgSend(
-  tx: TransactionResponse<BankSendValue>
+  tx: TransactionResponse<BankSendValue>,
 ): TransactionInfo {
   const firstMessage = getDefaultMessage(tx.messages);
   return {
@@ -172,7 +172,7 @@ export function mapReceivedTransactionByBankMsgSend(
     extraInfo: tx.messages.length > 1 ? `+${tx.messages.length - 1}` : '',
     amount: {
       value: parseTokenAmount(firstMessage.value.amount).toString(),
-      denom: GNOT_TOKEN.denom
+      denom: GNOT_TOKEN.denom,
     },
     valueType: mapValueType(tx.success, false),
     date: '',
@@ -182,13 +182,13 @@ export function mapReceivedTransactionByBankMsgSend(
     originTo: firstMessage.value.to_address,
     networkFee: {
       value: tx.gas_fee.amount.toString(),
-      denom: tx.gas_fee.denom
-    }
+      denom: tx.gas_fee.denom,
+    },
   };
 }
 
 export function mapVMTransaction(
-  tx: TransactionResponse<AddPackageValue | MsgRunValue | MsgCallValue>
+  tx: TransactionResponse<AddPackageValue | MsgRunValue | MsgCallValue>,
 ): TransactionInfo {
   const firstMessage = getDefaultMessage(tx.messages);
 
@@ -206,7 +206,7 @@ export function mapVMTransaction(
       extraInfo: `+${tx.messages.length - 1}`,
       amount: {
         value: '',
-        denom: ''
+        denom: '',
       },
       to: undefined,
       from: undefined,
@@ -216,8 +216,8 @@ export function mapVMTransaction(
       date: '',
       networkFee: {
         value: `${tx.gas_fee.amount || '0'}`,
-        denom: `${tx.gas_fee.denom}`
-      }
+        denom: `${tx.gas_fee.denom}`,
+      },
     };
   }
 
@@ -233,14 +233,14 @@ export function mapVMTransaction(
       extraInfo: tx.messages.length > 1 ? `+${tx.messages.length - 1}` : '',
       amount: {
         value: '0',
-        denom: GNOT_TOKEN.denom
+        denom: GNOT_TOKEN.denom,
       },
       valueType: mapValueType(tx.success),
       date: '',
       networkFee: {
         value: `${tx.gas_fee.amount || '0'}`,
-        denom: `${tx.gas_fee.denom}`
-      }
+        denom: `${tx.gas_fee.denom}`,
+      },
     };
   }
 
@@ -265,7 +265,7 @@ export function mapVMTransaction(
         description: `To: ${formatAddress(toAddress)}`,
         amount: {
           value: sendAmount,
-          denom: messageValue.pkg_path || ''
+          denom: messageValue.pkg_path || '',
         },
         valueType: mapValueType(tx.success),
         date: '',
@@ -275,8 +275,8 @@ export function mapVMTransaction(
         originTo: toAddress,
         networkFee: {
           value: tx.gas_fee.amount.toString(),
-          denom: tx.gas_fee.denom
-        }
+          denom: tx.gas_fee.denom,
+        },
       };
     }
 
@@ -295,7 +295,7 @@ export function mapVMTransaction(
         description: `To: ${formatAddress(toAddress)}`,
         amount: {
           value: messageValue.args?.[2] || '0',
-          denom: messageValue.pkg_path || ''
+          denom: messageValue.pkg_path || '',
         },
         valueType: mapValueType(tx.success),
         date: '',
@@ -305,8 +305,8 @@ export function mapVMTransaction(
         originTo: toAddress,
         networkFee: {
           value: tx.gas_fee.amount.toString(),
-          denom: tx.gas_fee.denom
-        }
+          denom: tx.gas_fee.denom,
+        },
       };
     }
 
@@ -320,14 +320,14 @@ export function mapVMTransaction(
       title: messageValue.func || '',
       amount: {
         value: messageValue.send ? parseTokenAmount(messageValue.send).toString() : '0',
-        denom: GNOT_TOKEN.denom
+        denom: GNOT_TOKEN.denom,
       },
       valueType: mapValueType(tx.success),
       date: '',
       networkFee: {
         value: `${tx.gas_fee.amount || '0'}`,
-        denom: `${tx.gas_fee.denom}`
-      }
+        denom: `${tx.gas_fee.denom}`,
+      },
     };
   }
 
@@ -341,14 +341,14 @@ export function mapVMTransaction(
     title: 'Message Run',
     amount: {
       value: '0',
-      denom: GNOT_TOKEN.denom
+      denom: GNOT_TOKEN.denom,
     },
     valueType: mapValueType(tx.success),
     date: '',
     networkFee: {
       value: `${tx.gas_fee.amount || '0'}`,
-      denom: `${tx.gas_fee.denom}`
-    }
+      denom: `${tx.gas_fee.denom}`,
+    },
   };
 }
 

@@ -3,7 +3,7 @@ import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password
 import {
   validateEmptyPassword,
   validateNotMatchConfirmPassword,
-  validatePasswordComplexity
+  validatePasswordComplexity,
 } from '@common/validation';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
@@ -11,7 +11,7 @@ import useIndicatorStep, { UseIndicatorStepReturn } from '@hooks/wallet/broadcas
 import { RoutePath } from '@types';
 import { AdenaWallet } from 'adena-module';
 import {
-  useCallback, useEffect, useMemo, useRef, useState
+  useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 
 export type UseCreatePasswordScreenReturn = {
@@ -51,7 +51,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
   const [terms, setTerms] = useState(false);
   const [isPasswordError, setIsPasswordError] = useState(false);
@@ -133,7 +133,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
   const clearPassword = (): void => {
     setInputs({
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
     });
   };
 
@@ -144,7 +144,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
     await accountService.changeCurrentAccount(wallet.currentAccount);
     await setInputs({
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
     });
   };
 
@@ -153,10 +153,10 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
       const { name, value } = e.target;
       setInputs({
         ...inputs,
-        [name]: value
+        [name]: value,
       });
     },
-    [inputs]
+    [inputs],
   );
 
   const toggleTermState = useCallback((): void => {
@@ -184,7 +184,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
           onClickCreateButton();
         }
       },
-    [disabledCreateButton, onClickCreateButton]
+    [disabledCreateButton, onClickCreateButton],
   );
 
   useEffect(() => {
@@ -208,25 +208,25 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
       onChange: onChangePassword,
       error: isPasswordError,
       errorMessage: passwordErrorMessage,
-      ref: inputRef
+      ref: inputRef,
     },
     confirmPasswordState: {
       value: confirmPassword,
       evaluationResult: confirmPasswordEvaluationResult,
       onChange: onChangePassword,
-      error: isConfirmPasswordError
+      error: isConfirmPasswordError,
     },
     termsState: {
       value: terms,
-      onChange: toggleTermState
+      onChange: toggleTermState,
     },
     errorMessage,
     buttonState: {
       onClick: onClickCreateButton,
-      disabled: disabledCreateButton
+      disabled: disabledCreateButton,
     },
     validateMatchPassword,
     onKeyDown: onKeyDownInput,
-    clearPassword
+    clearPassword,
   };
 };

@@ -1,5 +1,5 @@
 export interface TransactionResponse<
-  T = MsgCallValue | MsgRunValue | AddPackageValue | BankSendValue
+  T = MsgCallValue | MsgRunValue | AddPackageValue | BankSendValue,
 > {
   hash: string;
   index: number;

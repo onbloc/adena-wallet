@@ -26,7 +26,7 @@ const TransactionResult: React.FC<TransactionResultProps> = ({
   onClickClose,
   successIconSrc,
   successButtonText = 'View history',
-  failedButtonText = 'Close'
+  failedButtonText = 'Close',
 }) => {
   const theme = useTheme();
   const isSuccess = status === 'SUCCESS';

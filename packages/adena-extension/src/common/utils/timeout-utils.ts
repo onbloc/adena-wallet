@@ -4,7 +4,7 @@ export const DEFAULT_TIMEOUT = 1500 as const;
 
 export async function waitForRun<T = undefined>(
   promise: () => Promise<T>,
-  milliseconds?: number
+  milliseconds?: number,
 ): Promise<T> {
   milliseconds = milliseconds ?? DEFAULT_TIMEOUT;
   let timer: number | NodeJS.Timeout;
@@ -12,7 +12,7 @@ export async function waitForRun<T = undefined>(
     promise(),
     new Promise<'done'>((resolve) => {
       timer = setTimeout(() => resolve('done'), milliseconds);
-    })
+    }),
   ] as const)
     .catch((e) => {
       console.error(e);

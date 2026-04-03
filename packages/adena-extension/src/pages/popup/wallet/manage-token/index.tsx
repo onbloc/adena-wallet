@@ -8,7 +8,7 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { ManageTokenInfo, RoutePath } from '@types';
 import BigNumber from 'bignumber.js';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 
 const ManageTokenSearchContainer: React.FC = () => {
@@ -40,9 +40,9 @@ const ManageTokenSearchContainer: React.FC = () => {
           type: 'token' as const,
           balance: {
             value: BigNumber(metainfo.amount.value).toFormat(),
-            denom: metainfo.amount.denom
+            denom: metainfo.amount.denom,
           },
-          logo: tokenLogoMap[metainfo.tokenId] || `${UnknownTokenIcon}`
+          logo: tokenLogoMap[metainfo.tokenId] || `${UnknownTokenIcon}`,
         };
       });
     return filteredTokens;
@@ -66,7 +66,7 @@ const ManageTokenSearchContainer: React.FC = () => {
         toggleDisplayOption(currentAccount, changedToken, activated);
       }
     },
-    [currentBalances]
+    [currentBalances],
   );
 
   const onClickClose = useCallback(() => {

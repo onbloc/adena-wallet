@@ -22,7 +22,7 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
     chainId,
     accountNumber,
     sequence,
-    addSignature
+    addSignature,
   } = useMultisigTransactionContext();
 
   const signTransaction = useCallback(async (): Promise<boolean> => {
@@ -39,7 +39,7 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
         chainId,
         transaction,
         accountNumber,
-        sequence
+        sequence,
       );
 
       const fileSaved = await multisigService.saveSignatureToFile(newSignature);
@@ -72,7 +72,7 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
     signTransactionState,
     errorMessage,
     signTransaction,
-    resetSignState
+    resetSignState,
   };
 };
 

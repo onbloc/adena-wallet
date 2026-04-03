@@ -1,5 +1,5 @@
 import {
-  CommonFullContentLayout, Spinner, Text, View
+  CommonFullContentLayout, Spinner, Text, View,
 } from '@components/atoms';
 import React from 'react';
 import styled, { useTheme } from 'styled-components';

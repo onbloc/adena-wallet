@@ -2,13 +2,13 @@ import {
   GNO_CHAIN_ID_META_TAG,
   GNO_CONNECT_PREFIX,
   GNO_PACKAGE_PREFIX,
-  GNO_RPC_META_TAG
+  GNO_RPC_META_TAG,
 } from '@common/constants/metatag.constant';
 import {
   GNO_FUNC_PARAM,
   GNO_HELP_MARKER,
   GNO_MAX_DEPOSIT_PARAM,
-  GNO_SEND_PARAM
+  GNO_SEND_PARAM,
 } from '@common/constants/url.constant';
 import { hasHttpProtocol } from '@common/provider/gno/utils';
 
@@ -48,7 +48,7 @@ export function parseGnoConnectInfo(): GnoConnectInfo | null {
 
   const gnoConnectInfo: GnoConnectInfo = {
     rpc: '',
-    chainId: ''
+    chainId: '',
   };
 
   const metas = document?.querySelectorAll('meta') || [];
@@ -105,7 +105,7 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
     functionName: '',
     send: '',
     maxDeposit: '',
-    args: null
+    args: null,
   };
 
   const [beforeHelp, afterHelp] = pathname.split(GNO_HELP_MARKER);
@@ -142,7 +142,7 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
         args.push({
           index: argumentIndex,
           key,
-          value: decodeURIComponent(value)
+          value: decodeURIComponent(value),
         });
     }
 
@@ -190,7 +190,7 @@ export function parseGnoFormInfo(form: HTMLFormElement): GnoMessageInfo | null {
     functionName: funcName,
     send: '',
     maxDeposit: '',
-    args: null
+    args: null,
   };
 
   // Extract parameters from form inputs
@@ -205,7 +205,7 @@ export function parseGnoFormInfo(form: HTMLFormElement): GnoMessageInfo | null {
       args.push({
         index,
         key: paramName,
-        value: paramValue
+        value: paramValue,
       });
     }
   });
@@ -250,7 +250,7 @@ export function parseGnoExecFormInfo(form: HTMLFormElement): GnoMessageInfo | nu
     functionName: funcName,
     send: '',
     maxDeposit: '',
-    args: null
+    args: null,
   };
 
   // Extract parameters from form inputs
@@ -276,7 +276,7 @@ export function parseGnoExecFormInfo(form: HTMLFormElement): GnoMessageInfo | nu
     args.push({
       index: args.length,
       key: paramName,
-      value: paramValue
+      value: paramValue,
     });
   });
 

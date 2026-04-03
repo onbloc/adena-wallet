@@ -11,7 +11,7 @@ interface WebMainProps {
 export const WebMain = styled.main.withConfig({ shouldForwardProp: (prop): boolean => !['width', 'spacing', 'responsiveSpacing'].includes(prop) })<WebMainProps>`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })}
   width: ${({ width }): React.CSSProperties['width'] => width ?? `${WEB_CONTENT_WIDTH}px`};
   margin: 0 auto 0;

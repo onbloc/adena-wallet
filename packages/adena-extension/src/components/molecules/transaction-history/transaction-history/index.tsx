@@ -8,7 +8,7 @@ import { useTheme } from 'styled-components';
 import LoadingHistory from '../loading-history';
 import {
   TransactionHistoryDescriptionWrapper,
-  TransactionHistoryWrapper
+  TransactionHistoryWrapper,
 } from './transaction-history.styles';
 
 export interface TransactionHistoryProps {
@@ -20,7 +20,7 @@ export interface TransactionHistoryProps {
   queryGRC721TokenUri?: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   onClickItem: (hash: string) => void;
 }
@@ -29,7 +29,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   status,
   transactionInfoLists,
   queryGRC721TokenUri,
-  onClickItem
+  onClickItem,
 }) => {
   const theme = useTheme();
   if (transactionInfoLists.length === 0) {

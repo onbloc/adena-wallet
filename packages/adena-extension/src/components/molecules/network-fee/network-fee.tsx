@@ -5,7 +5,7 @@ import React, { useMemo } from 'react';
 import {
   NetworkFeeContainer,
   NetworkFeeItemSkeletonBox,
-  NetworkFeeWrapper
+  NetworkFeeWrapper,
 } from './network-fee.styles';
 
 export interface NetworkFeeProps {
@@ -23,7 +23,7 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
   isLoading = false,
   isError,
   errorMessage,
-  onClickSetting
+  onClickSetting,
 }) => {
   const hasSetting = !!onClickSetting;
 

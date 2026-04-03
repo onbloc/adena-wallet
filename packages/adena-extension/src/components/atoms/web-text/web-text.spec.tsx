@@ -23,7 +23,7 @@ describe('WebText Component', () => {
             WebText
           </WebText>
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

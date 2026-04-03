@@ -14,7 +14,7 @@ export const NetworkFeeSettingItemWrapper = styled(View)`
   ${mixins.flex({
     direction: 'row',
     align: 'normal',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   display: flex;
   width: 100%;

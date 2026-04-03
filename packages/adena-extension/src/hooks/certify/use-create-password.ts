@@ -3,16 +3,16 @@ import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password
 import {
   validateEmptyPassword,
   validateNotMatchConfirmPassword,
-  validatePasswordComplexity
+  validatePasswordComplexity,
 } from '@common/validation';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
 import {
-  CreateAccountState, GoogleState, LedgerState, RoutePath, SeedState
+  CreateAccountState, GoogleState, LedgerState, RoutePath, SeedState,
 } from '@types';
 import { AdenaWallet } from 'adena-module';
 import {
-  useCallback, useEffect, useMemo, useRef, useState
+  useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 
 export type UseCreatePasswordReturn = {
@@ -46,7 +46,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
     pwd: '',
-    confirmPwd: ''
+    confirmPwd: '',
   });
   const [terms, setTerms] = useState(false);
   const [isPwdError, setIsPwdError] = useState(false);
@@ -105,10 +105,10 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
       const { name, value } = e.target;
       setInputs(input => ({
         ...input,
-        [name]: value
+        [name]: value,
       }));
     },
-    [pwd, confirmPwd]
+    [pwd, confirmPwd],
   );
 
   const validationConfirmPassword = (isValidPassword?: boolean): boolean => {
@@ -174,7 +174,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
     try {
       const wallet = await walletService.createWallet({
         mnemonic: seedState.seeds,
-        password: pwd
+        password: pwd,
       });
       await accountService.changeCurrentAccount(wallet.currentAccount);
       await walletService.changePassword(pwd);
@@ -188,7 +188,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
   };
 
   const createWalletAccountsByGoogle = async (
-    googleState: GoogleState
+    googleState: GoogleState,
   ): Promise<'FAIL' | 'FINISH'> => {
     try {
       const wallet = await AdenaWallet.createByWeb3Auth(googleState.privateKey);
@@ -229,7 +229,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
   const clearPassword = (): void => {
     setInputs({
       pwd: '',
-      confirmPwd: ''
+      confirmPwd: '',
     });
   };
 
@@ -239,22 +239,22 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
       evaluationResult: passwordEvaluationResult,
       onChange: onChange,
       error: isPwdError,
-      ref: inputRef
+      ref: inputRef,
     },
     confirmPwdState: {
       value: confirmPwd,
       onChange: onChange,
-      error: isConfirmPwdError
+      error: isConfirmPwdError,
     },
     termsState: {
       value: terms,
-      onChange: handleTermsChange
+      onChange: handleTermsChange,
     },
     errorMessage: errorMessage,
     buttonState: {
       onClick: nextButtonClick,
-      disabled: terms && pwd && confirmPwd ? false : true
+      disabled: terms && pwd && confirmPwd ? false : true,
     },
-    onKeyDown
+    onKeyDown,
   };
 };

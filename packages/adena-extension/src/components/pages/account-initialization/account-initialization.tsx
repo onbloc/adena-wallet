@@ -13,13 +13,13 @@ const enum AccountInitializationState {
   INIT = 'INIT',
   LOADING = 'LOADING',
   SUCCESS = 'SUCCESS',
-  FAILURE = 'FAILURE'
+  FAILURE = 'FAILURE',
 }
 
 const AccountInitialization: React.FC<AccountInitializationProps> = ({
   address,
   moveBack,
-  initializeAccount
+  initializeAccount,
 }) => {
   const [state, setState] = useState<AccountInitializationState>(AccountInitializationState.INIT);
 

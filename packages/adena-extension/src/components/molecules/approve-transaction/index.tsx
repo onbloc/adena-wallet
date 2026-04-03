@@ -11,7 +11,7 @@ import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
 import { NetworkFee as NetworkFeeType } from '@types';
 import React, {
-  useCallback, useEffect, useMemo, useRef, useState
+  useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
@@ -20,7 +20,7 @@ import NetworkFee from '../network-fee/network-fee';
 import StorageDeposit from '../storage-deposit/storage-deposit';
 import {
   ApproveTransactionNetworkFeeWrapper,
-  ApproveTransactionWrapper
+  ApproveTransactionWrapper,
 } from './approve-transaction.styles';
 
 export interface ApproveTransactionProps {
@@ -99,7 +99,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   onCloseWithResponse,
   simulateErrorBannerMessage,
   messageErrors,
-  hasArgumentValidationError = false
+  hasArgumentValidationError = false,
 }) => {
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
   const [showRawError, setShowRawError] = useState(false);
@@ -163,7 +163,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
       const value = e.target.value;
       changeMemo(value);
     },
-    [hasMemo, changeMemo]
+    [hasMemo, changeMemo],
   );
 
   const onClickNetworkFeeSetting = useCallback(() => {
@@ -199,7 +199,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
       requestAnimationFrame(() => {
         errorBannerRef.current?.scrollIntoView({
           behavior: 'smooth',
-          block: 'center'
+          block: 'center',
         });
       });
     }
@@ -311,7 +311,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         <StorageDeposit
           storageDeposit={{
             storageDeposit: useNetworkFeeReturn.currentStorageDeposits?.storageDeposit || 0,
-            unlockDeposit: useNetworkFeeReturn.currentStorageDeposits?.unlockDeposit || 0
+            unlockDeposit: useNetworkFeeReturn.currentStorageDeposits?.unlockDeposit || 0,
           }}
           isLoading={!hasArgumentValidationError && useNetworkFeeReturn.isLoading}
           isError={isMaxDepositError}
@@ -374,20 +374,20 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={
           requiresHoldConfirmation && onFinishHold
             ? {
                 type: 'hold',
-                onFinishHold
+                onFinishHold,
               }
             : {
                 primary: true,
                 disabled: disabledApprove,
                 text: 'Approve',
                 loading: processing,
-                onClick: onClickConfirmButton
+                onClick: onClickConfirmButton,
               }
         }
       />

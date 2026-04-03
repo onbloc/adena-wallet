@@ -18,7 +18,7 @@ describe('SelectAccountBox Component', () => {
       },
       select: async () => {
         return;
-      }
+      },
     };
 
     render(
@@ -27,7 +27,7 @@ describe('SelectAccountBox Component', () => {
         <ThemeProvider theme={theme}>
           <SelectAccountBox {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

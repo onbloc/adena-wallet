@@ -16,7 +16,7 @@ export const BottomFixedButton = ({
   text = 'Close',
   fill = true,
   disabled = false,
-  onClick
+  onClick,
 }: BottomFixedButtonProps): JSX.Element => {
   const onClickButton = React.useCallback(() => {
     onClick();

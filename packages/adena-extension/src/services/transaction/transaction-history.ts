@@ -1,7 +1,7 @@
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import {
   ITransactionHistoryIndexerRepository,
-  ITransactionHistoryRepository
+  ITransactionHistoryRepository,
 } from '@repositories/transaction/types';
 import { TransactionWithPageInfo } from '@types';
 
@@ -12,7 +12,7 @@ export class TransactionHistoryService {
 
   constructor(
     gnoProvider: GnoProvider | null,
-    transactionHistoryRepository: ITransactionHistoryRepository
+    transactionHistoryRepository: ITransactionHistoryRepository,
   ) {
     this.gnoProvider = gnoProvider;
     this.transactionHistoryRepository = transactionHistoryRepository;
@@ -76,15 +76,15 @@ export class TransactionHistoryService {
    */
   public async fetchAllTransactionHistory(
     address: string,
-    cursor?: string | null
+    cursor?: string | null,
   ): Promise<TransactionWithPageInfo> {
     if (!this.supported) {
       return {
         page: {
           hasNext: false,
-          cursor: null
+          cursor: null,
         },
-        transactions: []
+        transactions: [],
       };
     }
 
@@ -93,15 +93,15 @@ export class TransactionHistoryService {
 
   public async fetchNativeTransactionHistory(
     address: string,
-    cursor?: string | null
+    cursor?: string | null,
   ): Promise<TransactionWithPageInfo> {
     if (!this.supported) {
       return {
         page: {
           hasNext: false,
-          cursor: null
+          cursor: null,
         },
-        transactions: []
+        transactions: [],
       };
     }
 
@@ -111,22 +111,22 @@ export class TransactionHistoryService {
   public async fetchGRC20TransactionHistory(
     address: string,
     packagePath: string,
-    cursor?: string | null
+    cursor?: string | null,
   ): Promise<TransactionWithPageInfo> {
     if (!this.supported) {
       return {
         page: {
           hasNext: false,
-          cursor: null
+          cursor: null,
         },
-        transactions: []
+        transactions: [],
       };
     }
 
     return this.transactionHistoryRepository.fetchGRC20TransactionHistoryBy(
       address,
       packagePath,
-      cursor
+      cursor,
     );
   }
 }

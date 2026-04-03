@@ -5,7 +5,7 @@ import IconThunder from '@assets/web/round-thunder.svg';
 import IconWarning from '@assets/web/warning.svg';
 import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 import {
-  Row, View, WebImg, WebMain, WebText
+  Row, View, WebImg, WebMain, WebText,
 } from '@components/atoms';
 import WebMainButton from '@components/atoms/web-main-button';
 import { WebMainHeader } from '@components/pages/web/main-header';
@@ -64,7 +64,7 @@ const AdvancedOptionScreen = (): ReactElement<any> => {
       <View style={{
         width: '100%',
         rowGap: 16,
-        paddingTop: 8
+        paddingTop: 8,
       }}
       >
         <WebText type='headline2'>Advanced Options</WebText>
@@ -79,7 +79,7 @@ const AdvancedOptionScreen = (): ReactElement<any> => {
 
       <Row style={{
         width: '100%',
-        columnGap: 12
+        columnGap: 12,
       }}
       >
         <WebMainButton

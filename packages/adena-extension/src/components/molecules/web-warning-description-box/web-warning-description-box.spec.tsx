@@ -16,7 +16,7 @@ describe('WebWarningDescriptionBox Component', () => {
         <ThemeProvider theme={theme}>
           <WebWarningDescriptionBox description='description' />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

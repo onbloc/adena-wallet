@@ -24,7 +24,7 @@ const ChangeNetwork: React.FC<ChangeNetworkProps> = ({
   changeNetwork,
   moveAddPage,
   moveEditPage,
-  moveBack
+  moveBack,
 }) => {
   return (
     <ChangeNetworkWrapper>

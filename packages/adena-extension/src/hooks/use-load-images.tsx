@@ -37,6 +37,6 @@ export const useLoadImages = (): UseLoadAccountsReturn => {
     isLoading,
     addLoadingImages,
     completeImageLoading,
-    clear
+    clear,
   };
 };

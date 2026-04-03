@@ -21,7 +21,7 @@ export interface NFTTransferSummaryProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   onClickBack: () => void;
   onClickCancel: () => void;
@@ -39,7 +39,7 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
   onClickBack,
   onClickCancel,
   onClickSend,
-  onClickNetworkFeeSetting
+  onClickNetworkFeeSetting,
 }) => {
   const insufficientNetworkFeeError = new TransactionValidationError('INSUFFICIENT_NETWORK_FEE');
 
@@ -57,7 +57,7 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
         <SubHeader
           leftElement={{
             element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
-            onClick: onClickBack
+            onClick: onClickBack,
           }}
           title={title}
         />
@@ -88,12 +88,12 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
       <BottomFixedButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           text: 'Send',
           onClick: onClickSend,
-          primary: true
+          primary: true,
         }}
         filled
       />

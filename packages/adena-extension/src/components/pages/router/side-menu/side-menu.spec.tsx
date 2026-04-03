@@ -38,7 +38,7 @@ describe('SideMenu Component', () => {
       },
       close: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -47,7 +47,7 @@ describe('SideMenu Component', () => {
         <ThemeProvider theme={theme}>
           <SideMenu {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

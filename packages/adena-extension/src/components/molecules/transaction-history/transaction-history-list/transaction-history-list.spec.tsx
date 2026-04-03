@@ -15,7 +15,7 @@ describe('TransactionHistoryList Component', () => {
       transactions: [],
       onClickItem: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -24,7 +24,7 @@ describe('TransactionHistoryList Component', () => {
         <ThemeProvider theme={theme}>
           <TransactionHistoryList {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

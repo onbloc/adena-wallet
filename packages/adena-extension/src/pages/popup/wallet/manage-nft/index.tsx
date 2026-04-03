@@ -7,7 +7,7 @@ import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { ManageGRC721Info } from '@types';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 
 const ManageNFTContainer: React.FC = () => {
@@ -41,7 +41,7 @@ const ManageNFTContainer: React.FC = () => {
           ...collection,
           type: 'grc721' as const,
           balance: '0',
-          logo: collection.isTokenUri ? collection.packagePath : ''
+          logo: collection.isTokenUri ? collection.packagePath : '',
         };
       });
     return filteredCollections;
@@ -60,7 +60,7 @@ const ManageNFTContainer: React.FC = () => {
         hideCollection(packagePath).then(() => refetchCollections());
       }
     },
-    [showCollection, hideCollection]
+    [showCollection, hideCollection],
   );
 
   const onClickClose = useCallback(() => {

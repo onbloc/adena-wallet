@@ -8,7 +8,7 @@ import { describe, it } from 'vitest';
 
 import AdditionalTokenTypeSelector, {
   AddingType,
-  AdditionalTokenTypeSelectorProps
+  AdditionalTokenTypeSelectorProps,
 } from './additional-token-type-selector';
 
 describe('AdditionalTokenTypeSelector Component', () => {
@@ -17,7 +17,7 @@ describe('AdditionalTokenTypeSelector Component', () => {
       setType: () => {
         return;
       },
-      type: AddingType.MANUAL
+      type: AddingType.MANUAL,
     };
 
     render(
@@ -26,7 +26,7 @@ describe('AdditionalTokenTypeSelector Component', () => {
         <ThemeProvider theme={theme}>
           <AdditionalTokenTypeSelector {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

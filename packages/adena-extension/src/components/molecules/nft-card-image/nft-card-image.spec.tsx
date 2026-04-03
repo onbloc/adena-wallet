@@ -13,7 +13,7 @@ describe('NFTCardImage Component', () => {
     const args: NFTCardImageProps = {
       image: '',
       isFetched: false,
-      hasBadge: false
+      hasBadge: false,
     };
 
     render(
@@ -22,7 +22,7 @@ describe('NFTCardImage Component', () => {
         <ThemeProvider theme={theme}>
           <NFTCardImage {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

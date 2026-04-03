@@ -15,7 +15,7 @@ import {
   ApproveTransactionMessageWrapper,
   MessageErrorText,
   MessageRowWrapper,
-  RealmPathInfoWrapper
+  RealmPathInfoWrapper,
 } from './approve-transaction-message.styles';
 
 const sendTooltipMessage = `The amount of tokens directly sent to
@@ -54,7 +54,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   changeMessage,
   openScannerLink,
   editable,
-  errorMessage
+  errorMessage,
 }) => {
   const { type } = message;
 
@@ -113,7 +113,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   index,
   message,
-  errorMessage
+  errorMessage,
 }) => {
   const { type } = message;
   const [isOpen, setIsOpen] = useState(true);
@@ -156,10 +156,10 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   changeMessage,
   openScannerLink,
   editable,
-  errorMessage
+  errorMessage,
 }) => {
   const {
-    func, pkg_path, args, send, max_deposit
+    func, pkg_path, args, send, max_deposit,
   } = message.value as MsgCallValue;
   const [isOpen, setIsOpen] = useState(true);
 
@@ -178,7 +178,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
         domain: '',
         nameSpace: '',
         namespaceSubPath: '',
-        contract: ''
+        contract: '',
       };
     }
 
@@ -190,7 +190,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
         domain: '',
         nameSpace: '',
         namespaceSubPath: '',
-        contract: pkg_path
+        contract: pkg_path,
       };
     }
 
@@ -204,7 +204,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
       domain,
       nameSpace,
       namespaceSubPath,
-      contract
+      contract,
     };
   }, [pkg_path]);
 
@@ -233,8 +233,8 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
       ...message,
       value: {
         ...message.value,
-        send: sendAmount
-      }
+        send: sendAmount,
+      },
     });
   };
 
@@ -249,20 +249,20 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
       ...message,
       value: {
         ...message.value,
-        args: newArgs
-      }
+        args: newArgs,
+      },
     });
   };
 
   const changeMaxDeposit = (maxDeposit: string): void => {
     const updatedValue: typeof message.value & { max_deposit: string } = {
       ...message.value,
-      max_deposit: maxDeposit
+      max_deposit: maxDeposit,
     };
 
     const updatedMessage: typeof message = {
       ...message,
-      value: updatedValue
+      value: updatedValue,
     };
 
     changeMessage(index, updatedMessage);
@@ -336,10 +336,10 @@ const MsgAddPkgTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   message,
   changeMessage,
   editable,
-  errorMessage
+  errorMessage,
 }) => {
   const {
-    type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit
+    type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit,
   }
     = useMaxDepositMessage(index, message, changeMessage);
 
@@ -382,10 +382,10 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   message,
   changeMessage,
   editable,
-  errorMessage
+  errorMessage,
 }) => {
   const {
-    type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit
+    type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit,
   }
     = useMaxDepositMessage(index, message, changeMessage);
 
@@ -450,7 +450,7 @@ const RealmPathInfo: React.FC<{
   namespaceSubPath: string;
   contract: string;
 }> = ({
-  domain, nameSpace, namespaceSubPath, contract
+  domain, nameSpace, namespaceSubPath, contract,
 }) => {
   const displayDomain = useMemo(() => {
     return reverseString(domain);

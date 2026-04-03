@@ -10,7 +10,7 @@ interface UseTransferInfoReturn {
 
 export const useTransferInfo = (): UseTransferInfoReturn => {
   const [memorizedTransferInfo, setMemorizedTransferInfo] = useRecoilState(
-    TransferState.memorizedTransferInfo
+    TransferState.memorizedTransferInfo,
   );
 
   const clear = (): void => {
@@ -20,6 +20,6 @@ export const useTransferInfo = (): UseTransferInfoReturn => {
   return {
     memorizedTransferInfo,
     setMemorizedTransferInfo,
-    clear
+    clear,
   };
 };

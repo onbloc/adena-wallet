@@ -18,7 +18,7 @@ describe('AccountNameInput Component', () => {
       },
       reset: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -27,7 +27,7 @@ describe('AccountNameInput Component', () => {
         <ThemeProvider theme={theme}>
           <AccountNameInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

@@ -48,13 +48,13 @@ export function dateTimeFormatEn(d: Date | string): {
   const day = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(currDate);
   const time = new Intl.DateTimeFormat('en', {
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   }).format(currDate);
   return {
     year,
     month,
     day,
-    time
+    time,
   };
 }
 
@@ -126,7 +126,7 @@ export function parseTxsEachDate(txs: object[]): any {
           txFunc: txFunc || cur.func,
           txDesc: txDesc,
           txSend: prettier(cur.send),
-          protoType: cur
+          protoType: cur,
         });
       }
     }
@@ -143,9 +143,9 @@ export function parseTxsEachDate(txs: object[]): any {
               txFunc: txFunc || cur.func,
               txDesc: txDesc,
               txSend: prettier(cur.send),
-              protoType: cur
-            }
-          ]
+              protoType: cur,
+            },
+          ],
         };
       }
     }
@@ -200,17 +200,17 @@ export function getStatusStyle(status: string): {
     case 'SUCCESS':
       return {
         color: theme.green._5,
-        statusIcon: success
+        statusIcon: success,
       };
     case 'FAIL':
       return {
         color: theme.red._5,
-        statusIcon: failed
+        statusIcon: failed,
       };
     default:
       return {
         color: theme.red._5,
-        statusIcon: failed
+        statusIcon: failed,
       };
   }
 }
@@ -359,7 +359,7 @@ const fetchFavicon = async (baseUrl: string): Promise<any> => {
   }
 
   response = await fetchArrayData(
-    `https://www.google.com/s2/favicons?domain=${baseUrl.replace('https://', '')}&sz=256`
+    `https://www.google.com/s2/favicons?domain=${baseUrl.replace('https://', '')}&sz=256`,
   );
   if (response?.data) {
     return `https://www.google.com/s2/favicons?domain=${baseUrl.replace('https://', '')}&sz=256`;
@@ -417,7 +417,7 @@ export const dateToLocal = (utcDateStr: string): {
   }
   return {
     value: currentDate.format('YYYY-MM-DD HH:mm:ss'),
-    offsetHours: -timezoneOffset / 60
+    offsetHours: -timezoneOffset / 60,
   };
 };
 

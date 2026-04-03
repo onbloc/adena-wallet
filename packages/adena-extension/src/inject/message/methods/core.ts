@@ -6,7 +6,7 @@ import {
   WalletAccountRepository,
   WalletAddressRepository,
   WalletEstablishRepository,
-  WalletRepository
+  WalletRepository,
 } from '@repositories/wallet';
 import { ChainService, TokenService } from '@services/resource';
 import { TransactionService } from '@services/transaction';
@@ -14,7 +14,7 @@ import {
   WalletAccountService,
   WalletAddressBookService,
   WalletEstablishService,
-  WalletService
+  WalletService,
 } from '@services/wallet';
 import { NetworkMetainfo } from '@types';
 import { Account } from 'adena-module';
@@ -47,7 +47,7 @@ export class InjectCore {
     this.localStorage,
     this.axiosInstance,
     null,
-    this.gnoProvider
+    this.gnoProvider,
   );
 
   public chainService = new ChainService(this.chainRepository);
@@ -60,7 +60,7 @@ export class InjectCore {
 
   public addressBookService = new WalletAddressBookService(
     this.walletRepository,
-    this.addressBookRepository
+    this.addressBookRepository,
   );
 
   public establishService = new WalletEstablishService(this.establishRepository);

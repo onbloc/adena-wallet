@@ -13,7 +13,7 @@ import { useTransferInfo } from '@hooks/use-transfer-info';
 import { GRC721Model, RoutePath } from '@types';
 import BigNumber from 'bignumber.js';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 
 interface HistoryData {
@@ -65,8 +65,8 @@ const NFTTransferInputContainer: React.FC = () => {
       addressInput: {
         selected: addressBookInput.selected,
         selectedAddressBook: addressBookInput.selectedAddressBook,
-        address: addressBookInput.address
-      }
+        address: addressBookInput.address,
+      },
     });
   };
 
@@ -105,10 +105,10 @@ const NFTTransferInputContainer: React.FC = () => {
             value: BigNumber(DEFAULT_NETWORK_FEE)
               .shiftedBy(GNOT_TOKEN.decimals * -1)
               .toString(),
-            denom: GNOT_TOKEN.symbol
+            denom: GNOT_TOKEN.symbol,
           },
-          memo
-        }
+          memo,
+        },
       });
     }
   }, [addressBookInput, isNext]);
@@ -141,7 +141,7 @@ const NFTTransferInputContainer: React.FC = () => {
       memoInput={{
         memo,
         onChangeMemo,
-        memoError
+        memoError,
       }}
       isNext={isNext}
       onClickBack={goBack}

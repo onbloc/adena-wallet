@@ -15,7 +15,7 @@ const AdditionalTokenSelectBox: React.FC<AdditionalTokenSelectBoxProps> = ({
   selectedInfo,
   onChangeKeyword,
   onClickOpenButton,
-  onClickListItem
+  onClickListItem,
 }) => {
   const selectedTokenName = useMemo(() => {
     const name = selectedInfo?.name;

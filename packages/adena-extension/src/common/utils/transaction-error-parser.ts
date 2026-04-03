@@ -15,11 +15,11 @@ export interface ParsedTransactionErrors {
  */
 export function parseSimulateErrors(
   simulateErrorMessage: string | null,
-  messages: ContractMessage[]
+  messages: ContractMessage[],
 ): ParsedTransactionErrors {
   const result: ParsedTransactionErrors = {
     globalErrorMessage: null,
-    messageErrors: new Array(messages.length).fill(undefined)
+    messageErrors: new Array(messages.length).fill(undefined),
   };
 
   if (!simulateErrorMessage) {

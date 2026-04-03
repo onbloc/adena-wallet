@@ -4,33 +4,33 @@ const ERROR_VALUE = {
   EMPTY_PASSWORD: {
     status: 1000,
     type: 'EMPTY_PASSWORD',
-    message: 'Password is empty'
+    message: 'Password is empty',
   },
   WRONG_PASSWORD_LENGTH: {
     status: 1001,
     type: 'WRONG_PASSWORD_LENGTH',
-    message: 'Password must be 8~256 characters'
+    message: 'Password must be 8~256 characters',
   },
   INVALID_PASSWORD: {
     status: 1002,
     type: 'INVALID_PASSWORD',
-    message: 'Invalid password'
+    message: 'Invalid password',
   },
   EQUAL_CHANGE_PASSWORD: {
     status: 1002,
     type: 'EQUAL_CHANGE_PASSWORD',
-    message: 'You can’t use your current password'
+    message: 'You can’t use your current password',
   },
   NOT_MATCH_CONFIRM_PASSWORD: {
     status: 1003,
     type: 'NOT_MATCH_CONFIRM_PASSWORD',
-    message: 'Passwords do not match'
+    message: 'Passwords do not match',
   },
   PASSWORD_TOO_SIMPLE: {
     status: 1004,
     type: 'PASSWORD_TOO_SIMPLE',
-    message: 'Password is too simple.'
-  }
+    message: 'Password is too simple.',
+  },
 };
 
 type ErrorType = keyof typeof ERROR_VALUE;

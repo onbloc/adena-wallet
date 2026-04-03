@@ -14,7 +14,7 @@ import { RoutePath } from '@types';
 import { TokenModel } from '@types';
 import BigNumber from 'bignumber.js';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 
 interface HistoryData {
@@ -40,7 +40,7 @@ const TransferInputContainer: React.FC = () => {
   const {
     isPopup,
     params,
-    isLoading: isLoadingSessionState
+    isLoading: isLoadingSessionState,
   } = useSessionParams<RoutePath.TransferInput>();
   const [isTokenSearch, setIsTokenSearch] = useState(params?.isTokenSearch === true);
   const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel | undefined>(params?.tokenBalance);
@@ -76,8 +76,8 @@ const TransferInputContainer: React.FC = () => {
       addressInput: {
         selected: addressBookInput.selected,
         selectedAddressBook: addressBookInput.selectedAddressBook,
-        address: addressBookInput.address
-      }
+        address: addressBookInput.address,
+      },
     });
   };
 
@@ -122,11 +122,11 @@ const TransferInputContainer: React.FC = () => {
           toAddress: addressBookInput.resultAddress,
           transferAmount: {
             value: balanceInput.amount,
-            denom: balanceInput.denom
+            denom: balanceInput.denom,
           },
           gasInfo: balanceInput.gasInfo,
-          memo
-        }
+          memo,
+        },
       });
     }
   }, [addressBookInput, balanceInput, isNext]);
@@ -178,7 +178,7 @@ const TransferInputContainer: React.FC = () => {
       memoInput={{
         memo,
         onChangeMemo,
-        memoError
+        memoError,
       }}
       isNext={isNext}
       onClickBack={goBack}

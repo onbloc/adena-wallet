@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const AdditionalTokenWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   position: relative;
   width: 100%;
@@ -38,7 +38,7 @@ export const AdditionalTokenWrapper = styled.div`
     ${mixins.flex({
       direction: 'row',
       align: 'normal',
-      justify: 'space-between'
+      justify: 'space-between',
     })};
     position: absolute;
     width: 100%;

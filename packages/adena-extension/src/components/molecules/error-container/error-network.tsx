@@ -11,7 +11,7 @@ const Container = styled.main`
 const Wrapper = styled.div`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   position: relative;
   width: 100%;
@@ -31,7 +31,7 @@ const Wrapper = styled.div`
 
 const text = {
   title: 'Failed to load assets',
-  desc: 'We couldn’t load your assets. Please\ncheck your connection with the network\nand try again.'
+  desc: 'We couldn’t load your assets. Please\ncheck your connection with the network\nand try again.',
 };
 
 export const ErrorNetwork = (): JSX.Element => {

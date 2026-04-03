@@ -44,13 +44,13 @@ export type UseTokenMetainfoReturn = {
     name,
     symbol,
     path,
-    decimals
+    decimals,
   }: GRC20Token) => Promise<boolean>;
   addTokenMetainfos: (tokenMetainfos: TokenModel[]) => Promise<boolean>;
   convertDenom: (
     amount: string,
     denom: string,
-    convertType?: 'COMMON' | 'MINIMAL'
+    convertType?: 'COMMON' | 'MINIMAL',
   ) => {
     value: string;
     denom: string;
@@ -95,20 +95,20 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
         ? grc20Tokens.filter(
             token =>
               !fetchedTokenMetainfos.find(
-                meta => isGRC20TokenModel(meta) && meta?.pkgPath === token?.pkgPath
-              )
+                meta => isGRC20TokenModel(meta) && meta?.pkgPath === token?.pkgPath,
+              ),
           )
         : [];
 
       return [...fetchedTokenMetainfos, ...remainGRC20Tokens];
     },
     staleTime: Infinity,
-    enabled: !!grc20Tokens
+    enabled: !!grc20Tokens,
   });
 
   const currentTokenMetainfos = useMemo(() => {
     return tokenMetainfos.filter(
-      tokenMetainfo => tokenMetainfo.main || tokenMetainfo.networkId === currentNetwork.networkId
+      tokenMetainfo => tokenMetainfo.main || tokenMetainfo.networkId === currentNetwork.networkId,
     );
   }, [tokenMetainfos, currentNetwork]);
 
@@ -166,7 +166,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     const storedGRC20Tokens = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
     const storedCollections = await tokenService.getAccountGRC721Collections(
       currentAccount.id,
-      currentNetwork.chainId
+      currentNetwork.chainId,
     );
 
     const storedGRC20Packages = storedGRC20Tokens
@@ -177,10 +177,10 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       .map(grc721Token => grc721Token.packagePath);
 
     const filteredGRC20Packages = (transferTokens.grc20Packages || []).filter(
-      grc20Token => !storedGRC20Packages.includes(grc20Token.tokenId)
+      grc20Token => !storedGRC20Packages.includes(grc20Token.tokenId),
     );
     const filteredGRC721Packages = (transferTokens.grc721Packages || []).filter(
-      grc721Token => !storedGRC721Packages.includes(grc721Token.packagePath)
+      grc721Token => !storedGRC721Packages.includes(grc721Token.packagePath),
     );
 
     await addTokenMetainfos(filteredGRC20Packages);
@@ -216,7 +216,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     const storedGRC20Tokens = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
     const storedCollections = await tokenService.getAccountGRC721Collections(
       currentAccount.id,
-      currentNetwork.chainId
+      currentNetwork.chainId,
     );
 
     const storedGRC20Packages = storedGRC20Tokens
@@ -227,10 +227,10 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       .map(grc721Token => grc721Token.packagePath);
 
     const filteredGRC20Packages = (transferTokens.grc20Packages || []).filter(
-      grc20Token => !storedGRC20Packages.includes(grc20Token.tokenId)
+      grc20Token => !storedGRC20Packages.includes(grc20Token.tokenId),
     );
     const filteredGRC721Packages = (transferTokens.grc721Packages || []).filter(
-      grc721Token => !storedGRC721Packages.includes(grc721Token.packagePath)
+      grc721Token => !storedGRC721Packages.includes(grc721Token.packagePath),
     );
 
     await addTokenMetainfos(filteredGRC20Packages);
@@ -243,7 +243,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
   const updateTokenMetainfos = async (
     account: Account,
-    tokenMetainfos: TokenModel[]
+    tokenMetainfos: TokenModel[],
   ): Promise<void> => {
     await tokenService.updateTokenMetainfosByAccountId(account.id, tokenMetainfos);
     setTokenMetainfo([...tokenMetainfos]);
@@ -252,7 +252,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const convertDenom = (
     amount: string,
     denom: string,
-    convertType?: 'COMMON' | 'MINIMAL'
+    convertType?: 'COMMON' | 'MINIMAL',
   ): {
     value: string;
     denom: string;
@@ -263,7 +263,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
         .find(
           tokenMetainfo =>
             denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase()
-            || denom.toUpperCase() === tokenMetainfo.denom.toUpperCase()
+            || denom.toUpperCase() === tokenMetainfo.denom.toUpperCase(),
         );
 
       if (tokenMetainfo) {
@@ -273,7 +273,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
     return {
       value: amount,
-      denom
+      denom,
     };
   };
 
@@ -287,7 +287,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
         const paths = amount.denom.split('/');
         return {
           ...amount,
-          denom: paths.length > 0 ? paths[paths.length - 1] : amount.denom
+          denom: paths.length > 0 ? paths[paths.length - 1] : amount.denom,
         };
       }
       const value = BigNumber(amount.value)
@@ -296,10 +296,10 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       const denom = tokenMeta.symbol;
       return {
         value,
-        denom
+        denom,
       };
     },
-    [tokenMetaMap]
+    [tokenMetaMap],
   );
 
   const getTokenImage = useCallback(
@@ -307,7 +307,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       const key = makeTokenKey(token);
       return tokenLogoMap[key] || null;
     },
-    [tokenLogoMap]
+    [tokenLogoMap],
   );
 
   const getTokenImageByDenom = useCallback(
@@ -315,7 +315,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       const key = makeTokenKeyByDenom(denom);
       return tokenLogoMap[key] || null;
     },
-    [tokenLogoMap]
+    [tokenLogoMap],
   );
 
   const getTokenImageByPkgPath = useCallback(
@@ -323,7 +323,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       const key = makeTokenKeyByPackagePath(packagePath);
       return tokenLogoMap[key] || null;
     },
-    [tokenLogoMap]
+    [tokenLogoMap],
   );
 
   const addTokenMetainfo = async (tokenMetainfo: GRC20TokenModel): Promise<boolean> => {
@@ -332,7 +332,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }
     const changedTokenMetainfo = {
       ...tokenMetainfo,
-      image: getTokenImage(tokenMetainfo) ?? ''
+      image: getTokenImage(tokenMetainfo) ?? '',
     };
 
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
@@ -340,7 +340,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       tokenMetainfos.find(
         item =>
           item.tokenId === changedTokenMetainfo.tokenId
-          && item.networkId === changedTokenMetainfo.networkId
+          && item.networkId === changedTokenMetainfo.networkId,
       )
     ) {
       return false;
@@ -348,7 +348,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
     await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [...tokenMetainfos, changedTokenMetainfo]);
     const changedTokenMetainfos = await tokenService.getTokenMetainfosByAccountId(
-      currentAccount.id
+      currentAccount.id,
     );
     setTokenMetainfo(changedTokenMetainfos);
     return true;
@@ -364,21 +364,21 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }
 
     const currentTokenMetainfos = await tokenService.getTokenMetainfosByAccountId(
-      currentAccount.id
+      currentAccount.id,
     );
 
     const newTokenMetainfos = tokenMetainfos
       .filter(
         t1 =>
           !currentTokenMetainfos.find(
-            t2 => t1.tokenId === t2.tokenId && t1.networkId === t2.networkId
-          )
+            t2 => t1.tokenId === t2.tokenId && t1.networkId === t2.networkId,
+          ),
       )
       .map(tokenMetainfo => ({
         ...tokenMetainfo,
         main: false,
         display: true,
-        image: getTokenImage(tokenMetainfo) ?? ''
+        image: getTokenImage(tokenMetainfo) ?? '',
       }));
 
     await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [...currentTokenMetainfos, ...newTokenMetainfos]);
@@ -390,7 +390,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     name,
     symbol,
     path,
-    decimals
+    decimals,
   }: GRC20Token): Promise<boolean> => {
     const tokenMetainfo: GRC20TokenModel = {
       main: false,
@@ -402,7 +402,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       name,
       decimals,
       image: getTokenImageByPkgPath(path) || '',
-      display: true
+      display: true,
     };
     return addTokenMetainfo(tokenMetainfo);
   };
@@ -422,6 +422,6 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     getTokenImage,
     getTokenImageByDenom,
     getTokenImageByPkgPath,
-    updateTokenMetainfos
+    updateTokenMetainfos,
   };
 };

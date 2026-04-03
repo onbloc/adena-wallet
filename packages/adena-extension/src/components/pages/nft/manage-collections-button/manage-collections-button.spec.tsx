@@ -13,7 +13,7 @@ describe('ManageCollectionsButton Component', () => {
     const args: ManageCollectionsButtonProps = {
       onClick: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -22,7 +22,7 @@ describe('ManageCollectionsButton Component', () => {
         <ThemeProvider theme={theme}>
           <ManageCollectionsButton {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

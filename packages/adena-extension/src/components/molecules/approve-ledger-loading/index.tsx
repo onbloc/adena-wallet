@@ -13,7 +13,7 @@ export interface ApproveLedgerLoadingProps {
 
 export const ApproveLedgerLoading: React.FC<ApproveLedgerLoadingProps> = ({
   document,
-  onClickCancel
+  onClickCancel,
 }) => {
   const documentData = useMemo(() => {
     if (!document) {
@@ -25,24 +25,24 @@ export const ApproveLedgerLoading: React.FC<ApproveLedgerLoadingProps> = ({
     return [
       {
         key: 'Chain ID',
-        value: document.chain_id
+        value: document.chain_id,
       },
       {
         key: 'Account',
-        value: document.account_number
+        value: document.account_number,
       },
       {
         key: 'Sequence',
-        value: document.sequence
+        value: document.sequence,
       },
       {
         key: 'Gas Fee',
-        value: gasFee
+        value: gasFee,
       },
       {
         key: 'Gas Wanted',
-        value: document.fee.gas
-      }
+        value: document.fee.gas,
+      },
     ];
   }, [document]);
 

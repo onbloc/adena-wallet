@@ -12,16 +12,16 @@ export interface ITransactionHistoryRepository {
   type: 'api' | 'indexer' | 'none';
   fetchAllTransactionHistoryBy: (
     address: string,
-    cursor?: string | null
+    cursor?: string | null,
   ) => Promise<TransactionWithPageInfo>;
   fetchNativeTransactionHistoryBy: (
     address: string,
-    cursor?: string | null
+    cursor?: string | null,
   ) => Promise<TransactionWithPageInfo>;
   fetchGRC20TransactionHistoryBy: (
     address: string,
     packagePath: string,
-    cursor?: string | null
+    cursor?: string | null,
   ) => Promise<TransactionWithPageInfo>;
 }
 

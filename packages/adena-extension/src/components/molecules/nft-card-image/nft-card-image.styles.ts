@@ -27,7 +27,7 @@ export const NFTCardImageWrapper = styled(View)`
 export const NFTCardImageSkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
     align: 'flex-end',
-    justify: 'space-between'
+    justify: 'space-between',
   })}
   width: 100%;
   flex: 1;

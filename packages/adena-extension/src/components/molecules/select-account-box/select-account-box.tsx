@@ -8,7 +8,7 @@ import {
   StyledLoadingWrapper,
   StyledLoadMore,
   StyledSelectAccountBox,
-  StyledSelectAccountContent
+  StyledSelectAccountContent,
 } from './select-account-box.styles';
 import { AccountInfo } from './select-account-box.types';
 import SelectAccountBoxItem from './select-account-box-item';
@@ -24,7 +24,7 @@ const SelectAccountBox: React.FC<SelectAccountBoxProps> = ({
   accounts,
   isLoading,
   select,
-  loadAccounts
+  loadAccounts,
 }) => {
   const theme = useTheme();
   const hasAccount = accounts.length > 0;

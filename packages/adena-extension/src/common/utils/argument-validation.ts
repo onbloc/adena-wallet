@@ -62,7 +62,7 @@ function validateArgument(value: string, gnoType: string): string | undefined {
  */
 export function validateMessageArguments(
   messages: ContractMessage[],
-  argumentInfos: GnoArgumentInfo[]
+  argumentInfos: GnoArgumentInfo[],
 ): ArgumentValidationResult {
   const messageErrors: (string | undefined)[] = new Array(messages.length).fill(undefined);
 

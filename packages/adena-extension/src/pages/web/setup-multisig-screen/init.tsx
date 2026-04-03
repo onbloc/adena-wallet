@@ -4,7 +4,7 @@ import IconImport from '@assets/web/icon-import';
 import IconLink from '@assets/web/link.svg';
 import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
 import {
-  Pressable, Row, View, WebImg, WebText
+  Pressable, Row, View, WebImg, WebText,
 } from '@components/atoms';
 import WebMainButton from '@components/atoms/web-main-button';
 import { WebTitleWithDescription } from '@components/molecules';
@@ -12,7 +12,7 @@ import WebWarningDescriptionBox from '@components/molecules/web-warning-descript
 import useLink from '@hooks/use-link';
 import { MultisigAccountMode } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
 import {
-  Account, isAirgapAccount, isMultisigAccount, validateAddress
+  Account, isAirgapAccount, isMultisigAccount, validateAddress,
 } from 'adena-module';
 import React from 'react';
 import styled from 'styled-components';
@@ -29,7 +29,7 @@ interface SetupMultisigInitProps {
 const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
   initSetup,
   currentAccount,
-  currentAddress
+  currentAddress,
 }) => {
   const { openLink } = useLink();
 
@@ -66,7 +66,7 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
 
       <Row style={{
         width: '100%',
-        columnGap: 12
+        columnGap: 12,
       }}
       >
         <WebMainButton

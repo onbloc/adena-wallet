@@ -13,7 +13,7 @@ describe('OptionDropdown Component', () => {
     const args: OptionDropdownProps = {
       options: [],
       buttonNode: <></>,
-      hover: false
+      hover: false,
     };
 
     render(
@@ -22,7 +22,7 @@ describe('OptionDropdown Component', () => {
         <ThemeProvider theme={theme}>
           <OptionDropdown {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

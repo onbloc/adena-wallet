@@ -4,7 +4,7 @@ import styled from 'styled-components';
 export const CommonFullContentLayout = styled.section`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   position: relative;
   width: 100%;

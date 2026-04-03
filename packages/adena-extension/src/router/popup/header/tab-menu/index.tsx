@@ -9,7 +9,7 @@ import styled from 'styled-components';
 const Container = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })}
   position: absolute;
   top: 0;

@@ -14,7 +14,7 @@ const AccountNameInput: React.FC<AccountNameInputProps> = ({
   originName,
   name,
   setName,
-  reset
+  reset,
 }) => {
   const [focused, setFocused] = useState(false);
 
@@ -34,7 +34,7 @@ const AccountNameInput: React.FC<AccountNameInputProps> = ({
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setName(event.target.value);
     },
-    [setName]
+    [setName],
   );
 
   const onClickReset = useCallback(() => {

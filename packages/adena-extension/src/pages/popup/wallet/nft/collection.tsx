@@ -14,7 +14,7 @@ import styled from 'styled-components';
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   height: 100%;
@@ -29,7 +29,7 @@ export const NftCollection = (): JSX.Element => {
 
   const { data: grc721Tokens, isFetched: isFetchedGRC721Tokens } = useGetGRC721Tokens(
     params.collection,
-    { refetchOnMount: true }
+    { refetchOnMount: true },
   );
 
   const fetchingCount = useIsLoadingNFT();
@@ -54,7 +54,7 @@ export const NftCollection = (): JSX.Element => {
     (grc721Token: GRC721Model) => {
       navigate(RoutePath.NftCollectionAsset, { state: { collectionAsset: grc721Token } });
     },
-    [navigate]
+    [navigate],
   );
 
   return (

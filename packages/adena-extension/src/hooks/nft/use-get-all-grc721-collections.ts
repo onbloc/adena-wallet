@@ -5,7 +5,7 @@ import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query
 import { GRC721CollectionModel } from '@types';
 
 export const useGetAllGRC721Collections = (
-  options?: Omit<UseQueryOptions<GRC721CollectionModel[] | null, Error>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<GRC721CollectionModel[] | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<GRC721CollectionModel[] | null> => {
   const { tokenService } = useAdenaContext();
   const { currentNetwork } = useNetwork();
@@ -16,6 +16,6 @@ export const useGetAllGRC721Collections = (
     queryFn: () => tokenService.fetchGRC721Collections(),
     staleTime: Infinity,
     enabled: !!currentAccount,
-    ...options
+    ...options,
   });
 };

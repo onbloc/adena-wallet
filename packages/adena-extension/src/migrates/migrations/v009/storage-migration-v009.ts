@@ -2,19 +2,19 @@ import { StorageModel } from '@common/storage';
 import { encryptWalletPassword } from '@common/utils/crypto-utils';
 import { Migration } from '@migrates/migrator';
 import {
-  AdenaWallet, decryptAES, encryptAES, mnemonicToEntropy
+  AdenaWallet, decryptAES, encryptAES, mnemonicToEntropy,
 } from 'adena-module';
 
 import {
   AddressBookModelV008,
   SerializedModelV008,
   StorageModelDataV008,
-  WalletModelV008
+  WalletModelV008,
 } from '../v008/storage-model-v008';
 import {
   AddressBookModelV009,
   SerializedModelV009,
-  StorageModelDataV009
+  StorageModelDataV009,
 } from './storage-model-v009';
 
 export class StorageMigration009 implements Migration<StorageModelDataV009> {
@@ -22,7 +22,7 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
 
   async up(
     current: StorageModel<StorageModelDataV008>,
-    password?: string
+    password?: string,
   ): Promise<StorageModel<StorageModelDataV009>> {
     if (!password) {
       return current;
@@ -39,8 +39,8 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
       data: {
         ...previous,
         ADDRESS_BOOK: addressBook,
-        SERIALIZED: serialized
-      }
+        SERIALIZED: serialized,
+      },
     };
   }
 
@@ -83,7 +83,7 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
 
   private async migrateSerialized(
     serialized: SerializedModelV008,
-    password: string
+    password: string,
   ): Promise<SerializedModelV009> {
     if (!serialized) {
       throw new Error('Serialized data is empty');
@@ -102,7 +102,7 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
           id: keyring.id,
           type: keyring.type,
           seed: keyring.seed,
-          mnemonicEntropy: Array.from(mnemonicToEntropy(keyring.mnemonic))
+          mnemonicEntropy: Array.from(mnemonicToEntropy(keyring.mnemonic)),
         };
       }
 
@@ -112,7 +112,7 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
     let changedWallet = new AdenaWallet({
       accounts: wallet.accounts,
       keyrings: keyrings,
-      currentAccountId: wallet.currentAccountId
+      currentAccountId: wallet.currentAccountId,
     });
 
     const sha256Password = encryptWalletPassword(password);
@@ -122,7 +122,7 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
     keyrings = [];
     wallet = {
       accounts: [],
-      keyrings: []
+      keyrings: [],
     };
     decrypted = '';
     changedWallet = new AdenaWallet();
@@ -132,7 +132,7 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
 
   private async migrateAddressBook(
     addressBook: AddressBookModelV008,
-    password: string
+    password: string,
   ): Promise<AddressBookModelV009> {
     if (!addressBook) {
       return addressBook;

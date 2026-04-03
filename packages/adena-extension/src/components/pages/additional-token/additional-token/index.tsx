@@ -29,7 +29,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   onClickListItem,
   onClickBack,
   onClickCancel,
-  onClickAdd
+  onClickAdd,
 }) => {
   const isSearchType = useMemo(() => {
     return addingType === AddingType.SEARCH;
@@ -63,7 +63,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
 
     return {
       name: token.name,
-      symbol: token.symbol
+      symbol: token.symbol,
     };
   }, [selectedTokenPath, tokenInfos]);
 
@@ -74,7 +74,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
           title='Add Custom Token'
           leftElement={{
             element: <img src={LeftArrowIcon} alt='back icon' />,
-            onClick: onClickBack
+            onClick: onClickBack,
           }}
         />
       </div>

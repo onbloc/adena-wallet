@@ -1,7 +1,7 @@
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import {
   WALLET_EXPORT_ACCOUNT_ID,
-  WALLET_EXPORT_TYPE_STORAGE_KEY
+  WALLET_EXPORT_TYPE_STORAGE_KEY,
 } from '@common/constants/storage.constant';
 import { AdenaStorage } from '@common/storage';
 import { makeQueryString } from '@common/utils/string-utils';
@@ -13,7 +13,7 @@ import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
 import { hasPrivateKeyAccount, isSeedAccount } from 'adena-module';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import { useParams } from 'react-router';
 
@@ -93,7 +93,7 @@ const AccountDetailsContainer: React.FC = () => {
         await changeAccountName(account, text);
       }
     },
-    [account, setName]
+    [account, setName],
   );
 
   useEffect(() => {

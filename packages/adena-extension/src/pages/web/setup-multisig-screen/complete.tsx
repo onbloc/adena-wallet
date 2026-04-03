@@ -1,6 +1,6 @@
 import IconCheck from '@assets/web/web-check-circle.svg';
 import {
-  Row, View, WebButton, WebImg, WebInput
+  Row, View, WebButton, WebImg, WebInput,
 } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import React from 'react';
@@ -13,7 +13,7 @@ interface SetupMultisigCompleteScreenProps {
 
 const SetupMultisigCompleteScreen: React.FC<SetupMultisigCompleteScreenProps> = ({
   address,
-  onNext
+  onNext,
 }) => {
   return (
     <StyledContainer>

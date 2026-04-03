@@ -20,7 +20,7 @@ describe('TransferSummary Component', () => {
         symbol: 'GNOT',
         type: 'gno-native',
         decimals: 6,
-        display: true
+        display: true,
       },
       currentBalance: 1000000,
       useNetworkFeeReturn: {
@@ -44,17 +44,17 @@ describe('TransferSummary Component', () => {
           return;
         },
         isFetchedPriceTiers: false,
-        isFetchedEstimateGasInfo: false
+        isFetchedEstimateGasInfo: false,
       },
       tokenImage: '',
       transferBalance: {
         value: '4,000.123',
-        denom: 'GNOT'
+        denom: 'GNOT',
       },
       toAddress: '',
       networkFee: {
         amount: '0.0048',
-        denom: 'GNOT'
+        denom: 'GNOT',
       },
       memo: '',
       onClickBack: () => {
@@ -69,7 +69,7 @@ describe('TransferSummary Component', () => {
       onClickNetworkFeeSetting: () => {
         return;
       },
-      isErrorNetworkFee: false
+      isErrorNetworkFee: false,
     };
 
     render(
@@ -78,7 +78,7 @@ describe('TransferSummary Component', () => {
         <ThemeProvider theme={theme}>
           <TransferSummary {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

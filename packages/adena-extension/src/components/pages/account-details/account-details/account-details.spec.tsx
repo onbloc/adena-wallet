@@ -30,7 +30,7 @@ describe('AccountDetails Component', () => {
       },
       reset: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -39,7 +39,7 @@ describe('AccountDetails Component', () => {
         <ThemeProvider theme={theme}>
           <AccountDetails {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

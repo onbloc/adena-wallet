@@ -52,7 +52,7 @@ export interface AccountAssetsResponse {
         packagePath: string;
         symbol: string;
         tokenType: string;
-      }
+      },
     ];
   };
 }

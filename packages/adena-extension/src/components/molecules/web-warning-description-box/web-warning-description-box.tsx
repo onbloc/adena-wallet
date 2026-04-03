@@ -14,7 +14,7 @@ const WebWarningDescriptionBox: React.FC<WebWarningDescriptionBoxProps> = ({ des
     <StyledContainer style={{ padding: '12px 8px' }}>
       <Row style={{
         alignItems: 'flex-start',
-        gap: 4
+        gap: 4,
       }}
       >
         <WebImg src={IconInfo} size={20} />
@@ -22,7 +22,7 @@ const WebWarningDescriptionBox: React.FC<WebWarningDescriptionBoxProps> = ({ des
           type='body6'
           style={{
             letterSpacing: '-0.24px',
-            lineHeight: '20px'
+            lineHeight: '20px',
           }}
           color={theme.webWarning._100}
         >

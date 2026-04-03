@@ -13,7 +13,7 @@ export const encryptWalletPassword = (password: string): string => {
 
 // Sends a message to the background script to encrypt a password
 export const encryptPassword = async (
-  password: string
+  password: string,
 ): Promise<{
   encryptedKey: string;
   encryptedPassword: string;
@@ -25,7 +25,7 @@ export const encryptPassword = async (
 
   return {
     encryptedKey: result.data.encryptedKey,
-    encryptedPassword: result.data.encryptedPassword
+    encryptedPassword: result.data.encryptedPassword,
   };
 };
 
@@ -34,8 +34,8 @@ export const decryptPassword = async (iv: string, encryptedPassword: string): Pr
   const result = await sendMessage(
     CommandMessage.command('decryptPassword', {
       iv,
-      encryptedPassword
-    })
+      encryptedPassword,
+    }),
   );
   if (!result || result?.code !== 200 || !result?.data?.password) {
     throw new Error('Encryption key not initialized.');
@@ -49,7 +49,7 @@ export const clearInMemoryKey = async (): Promise<void> => {
 };
 
 async function sendMessage<T = any>(
-  message: CommandMessageData
+  message: CommandMessageData,
 ): Promise<CommandMessageData<T> | null> {
   try {
     return new Promise<CommandMessageData<T> | null>((resolve) => {

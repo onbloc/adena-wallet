@@ -58,8 +58,8 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
         fromAddress: currentAddress,
         toAddress: currentAddress,
         amount: amount,
-        memo: ''
-      })
+        memo: '',
+      }),
     );
   }, [currentNetwork, currentAddress, currentBalance, tokenMetainfo]);
 
@@ -72,7 +72,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
       const convertedBalance = convertDenom(
         currentBalance.amount.value,
         currentBalance.amount.denom,
-        'COMMON'
+        'COMMON',
       );
 
       const maxGasFeeBN = BigNumber(currentGasInfo.gasWanted)
@@ -144,7 +144,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
       setAmount(
         Number(charAtZeroCheck)
           .toFixed(tokenMetainfo?.decimals || 6)
-          .toString()
+          .toString(),
       );
     }
     else {
@@ -184,7 +184,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
     updateCurrentBalance,
     onChangeAmount,
     onClickMax,
-    validateBalanceInput
+    validateBalanceInput,
   };
 };
 
@@ -205,19 +205,19 @@ function makeTransferDocument(params: {
         value: {
           from_address: params.fromAddress,
           to_address: params.toAddress,
-          amount: `1${GNOT_TOKEN.denom}`
-        }
-      }
+          amount: `1${GNOT_TOKEN.denom}`,
+        },
+      },
     ],
     memo: params.memo,
     fee: {
       amount: [
         {
           denom: GasToken.denom,
-          amount: DEFAULT_GAS_FEE.toString()
-        }
+          amount: DEFAULT_GAS_FEE.toString(),
+        },
       ],
-      gas: DEFAULT_GAS_WANTED.toString()
-    }
+      gas: DEFAULT_GAS_WANTED.toString(),
+    },
   };
 }

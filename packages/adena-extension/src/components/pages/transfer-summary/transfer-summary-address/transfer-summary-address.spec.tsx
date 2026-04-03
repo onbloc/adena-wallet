@@ -12,7 +12,7 @@ describe('TransferSummaryAddress Component', () => {
   it('TransferSummaryAddress render', () => {
     const args: TransferSummaryAddressProps = {
       toAddress: '',
-      memo: ''
+      memo: '',
     };
 
     render(
@@ -21,7 +21,7 @@ describe('TransferSummaryAddress Component', () => {
         <ThemeProvider theme={theme}>
           <TransferSummaryAddress {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

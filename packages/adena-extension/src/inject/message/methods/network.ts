@@ -15,7 +15,7 @@ function matchRPCUrl(network: NetworkMetainfo, rpcUrl: string): boolean {
 export const addNetwork = async (
   core: InjectCore,
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): Promise<void> => {
   const inMemoryKey = await core.getInMemoryKey();
 
@@ -30,8 +30,8 @@ export const addNetwork = async (
         InjectionMessageInstance.failure(
           WalletResponseFailureType.INVALID_FORMAT,
           {},
-          requestData.key
-        )
+          requestData.key,
+        ),
       );
       return;
     }
@@ -40,8 +40,8 @@ export const addNetwork = async (
         InjectionMessageInstance.failure(
           WalletResponseFailureType.INVALID_FORMAT,
           {},
-          requestData.key
-        )
+          requestData.key,
+        ),
       );
       return;
     }
@@ -50,15 +50,15 @@ export const addNetwork = async (
       = networks.findIndex(
         current =>
           (matchChainId(current, chainId) || matchRPCUrl(current, rpcUrl))
-          && current.deleted !== true
+          && current.deleted !== true,
       ) > -1;
     if (existNetwork) {
       sendResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.NETWORK_ALREADY_EXISTS,
           {},
-          requestData.key
-        )
+          requestData.key,
+        ),
       );
       return;
     }
@@ -69,9 +69,9 @@ export const addNetwork = async (
       InjectionMessageInstance.failure(
         WalletResponseRejectType.ADD_NETWORK_REJECTED,
         {},
-        requestData.key
+        requestData.key,
       ),
-      sendResponse
+      sendResponse,
     );
   }
   else {
@@ -79,8 +79,8 @@ export const addNetwork = async (
       InjectionMessageInstance.failure(
         WalletResponseFailureType.WALLET_LOCKED,
         {},
-        requestData.key
-      )
+        requestData.key,
+      ),
     );
   }
 };
@@ -88,7 +88,7 @@ export const addNetwork = async (
 export const switchNetwork = async (
   core: InjectCore,
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void
+  sendResponse: (message: any) => void,
 ): Promise<void> => {
   const chainId = requestData.data?.chainId || '';
   if (chainId === '') {
@@ -96,8 +96,8 @@ export const switchNetwork = async (
       InjectionMessageInstance.failure(
         WalletResponseFailureType.INVALID_FORMAT,
         {},
-        requestData.key
-      )
+        requestData.key,
+      ),
     );
     return;
   }
@@ -108,8 +108,8 @@ export const switchNetwork = async (
       InjectionMessageInstance.failure(
         WalletResponseFailureType.REDUNDANT_CHANGE_REQUEST,
         requestData?.data,
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
     return;
   }
@@ -122,8 +122,8 @@ export const switchNetwork = async (
       InjectionMessageInstance.failure(
         WalletResponseFailureType.UNADDED_NETWORK,
         {},
-        requestData.key
-      )
+        requestData.key,
+      ),
     );
     return;
   }
@@ -134,8 +134,8 @@ export const switchNetwork = async (
     InjectionMessageInstance.failure(
       WalletResponseRejectType.SWITCH_NETWORK_REJECTED,
       {},
-      requestData.key
+      requestData.key,
     ),
-    sendResponse
+    sendResponse,
   );
 };

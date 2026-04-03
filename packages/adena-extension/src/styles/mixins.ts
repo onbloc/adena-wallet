@@ -47,7 +47,7 @@ const mixins: MixinsType = {
     position: absolute;
     top: ${top};
     left: 0px;
-  `
+  `,
 } as const;
 
 export default mixins;

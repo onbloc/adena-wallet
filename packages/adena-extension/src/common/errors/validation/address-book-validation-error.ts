@@ -4,18 +4,18 @@ const ERROR_VALUE = {
   INVALID_ADDRESS: {
     status: 1000,
     type: 'INVALID_ADDRESS',
-    message: 'Invalid address'
+    message: 'Invalid address',
   },
   ALREADY_ADDRESS: {
     status: 1001,
     type: 'ALREADY_ADDRESS',
-    message: 'Address already registered'
+    message: 'Address already registered',
   },
   ALREADY_NAME: {
     status: 1002,
     type: 'ALREADY_NAME',
-    message: 'Name already in use'
-  }
+    message: 'Name already in use',
+  },
 };
 
 type ErrorType = keyof typeof ERROR_VALUE;

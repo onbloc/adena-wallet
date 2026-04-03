@@ -32,7 +32,7 @@ const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
   done,
   cancel,
   approve,
-  onResponse
+  onResponse,
 }) => {
   const title = useMemo(() => `Add ${networkInfo.name}`, [networkInfo.name]);
 
@@ -63,14 +63,14 @@ const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: cancel
+          onClick: cancel,
         }}
         rightButton={{
           primary: true,
           loading: processing,
           disabled: approvable === false,
           text: 'Approve',
-          onClick: approve
+          onClick: approve,
         }}
       />
     </ApproveAddingNetworkWrapper>

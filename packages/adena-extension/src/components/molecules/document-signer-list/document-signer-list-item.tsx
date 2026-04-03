@@ -24,7 +24,7 @@ function getStatusStyle(status: SignerStatusType): StatusStyle {
         className: 'signed',
         statusText: 'Signed',
         showLabel: true,
-        showBadge: true
+        showBadge: true,
       };
     case 'UNSIGNED':
       return {
@@ -32,7 +32,7 @@ function getStatusStyle(status: SignerStatusType): StatusStyle {
         className: 'unsigned',
         statusText: 'Unsigned',
         showLabel: true,
-        showBadge: false
+        showBadge: false,
       };
     case 'NONE':
     default:
@@ -41,7 +41,7 @@ function getStatusStyle(status: SignerStatusType): StatusStyle {
         className: 'unsigned',
         statusText: '',
         showLabel: false,
-        showBadge: false
+        showBadge: false,
       };
   }
 }
@@ -57,7 +57,7 @@ const DocumentSignerListItem = ({
   signerAddress,
   order,
   status,
-  onClickAddress
+  onClickAddress,
 }: DocumentSignerListItemProps): React.ReactElement<any> => {
   const displaySignerAddress = useMemo(() => {
     return formatAddress(signerAddress, 8);

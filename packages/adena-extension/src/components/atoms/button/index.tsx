@@ -62,7 +62,7 @@ export const modeVariants = {
       background: ${getTheme('neutral', '_6')};
       color: ${getTheme('neutral', '_5')};
     } */
-  `
+  `,
 };
 
 export type ButtonProps = XOR<
@@ -109,7 +109,7 @@ export const Button = ({
 
 const ButtonWrapper = styled.button.withConfig({
   shouldForwardProp: prop =>
-    !['width', 'height', 'hierarchy', 'margin', 'radius', 'fullWidth', 'bgColor'].includes(prop)
+    !['width', 'height', 'hierarchy', 'margin', 'radius', 'fullWidth', 'bgColor'].includes(prop),
 })<ButtonProps>`
   ${mixins.flex({ direction: 'row' })};
   width: ${({ width, fullWidth }): string => {

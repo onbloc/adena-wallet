@@ -1,14 +1,14 @@
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
-  WalletResponseSuccessType
+  WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
 import { mappedRawTxMessages } from '@common/mapper/transaction-mapper';
 import {
   createFaviconByHostname,
   decodeParameter,
-  parseParameters
+  parseParameters,
 } from '@common/utils/client-utils';
 import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
@@ -24,7 +24,7 @@ import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject
 import { NetworkFee, RoutePath } from '@types';
 import { Account, isAirgapAccount, isLedgerAccount } from 'adena-module';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
@@ -64,12 +64,12 @@ function mappedTransactionData(txDocument: MultisigTransactionDocument): Transac
       return {
         type: messageType,
         function: functionName,
-        value: message || ''
+        value: message || '',
       };
     }),
     gasWanted: tx.fee.gas_wanted,
     gasFee: tx.fee.gas_fee,
-    memo: tx.memo || ''
+    memo: tx.memo || '',
   };
 }
 
@@ -111,7 +111,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
     return {
       amount: match[1],
-      denom: match[2]
+      denom: match[2],
     };
   }, [multisigDocument?.tx?.fee]);
 
@@ -124,7 +124,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
     return {
       amount: networkFeeAmount,
-      denom: GasToken.symbol
+      denom: GasToken.symbol,
     };
   }, [rawNetworkFee]);
 
@@ -132,13 +132,13 @@ const SignMultisigTransactionContainer: React.FC = () => {
     if (!networkFee) {
       return {
         amount: '',
-        denom: ''
+        denom: '',
       };
     }
 
     return {
       amount: networkFee.amount,
-      denom: GasToken.symbol
+      denom: GasToken.symbol,
     };
   }, [networkFee]);
 
@@ -190,7 +190,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
     const parsedData = decodeParameter(data['data']);
     setRequestData({
       ...parsedData,
-      hostname: data['hostname']
+      hostname: data['hostname'],
     });
   };
 
@@ -211,12 +211,12 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
   const validate = async (
     currentAccount: Account,
-    requestData: InjectionMessage
+    requestData: InjectionMessage,
   ): Promise<boolean> => {
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
       await currentAccount.getAddress('g'),
-      true
+      true,
     );
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
@@ -227,7 +227,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
   const initFavicon = async (): Promise<void> => {
     const faviconData = await createFaviconByHostname(
-      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : ''
+      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : '',
     );
     setFavicon(faviconData);
   };
@@ -258,8 +258,8 @@ const SignMultisigTransactionContainer: React.FC = () => {
           InjectionMessageInstance.failure(
             WalletResponseRejectType.SIGN_REJECTED,
             requestData?.data,
-            requestData?.key
-          )
+            requestData?.key,
+          ),
         );
       }
     }
@@ -272,8 +272,8 @@ const SignMultisigTransactionContainer: React.FC = () => {
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
           {},
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
       return false;
     }
@@ -287,7 +287,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
         currentNetwork?.chainId ?? '',
         multisigDocument.tx,
         multisigDocument.accountNumber,
-        multisigDocument.sequence
+        multisigDocument.sequence,
       );
 
       // Save signature to file if enabled
@@ -307,12 +307,12 @@ const SignMultisigTransactionContainer: React.FC = () => {
           {
             result: {
               multisigDocument: multisigDocument,
-              multisigSignatures: updatedSignatures
+              multisigSignatures: updatedSignatures,
             },
-            signature: newSignature
+            signature: newSignature,
           },
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
 
       setProcessType('DONE');
@@ -336,8 +336,8 @@ const SignMultisigTransactionContainer: React.FC = () => {
         InjectionMessageInstance.failure(
           WalletResponseFailureType.SIGN_MULTISIG_TRANSACTION_FAILED,
           { error: { message } },
-          requestData?.key
-        )
+          requestData?.key,
+        ),
       );
       return;
     }
@@ -346,8 +346,8 @@ const SignMultisigTransactionContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseFailureType.SIGN_MULTISIG_TRANSACTION_FAILED,
         { error: { message: 'Unknown error occurred' } },
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   };
 
@@ -375,8 +375,8 @@ const SignMultisigTransactionContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseRejectType.SIGN_REJECTED,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   };
 
@@ -391,8 +391,8 @@ const SignMultisigTransactionContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NETWORK_TIMEOUT,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   }, [requestData]);
 

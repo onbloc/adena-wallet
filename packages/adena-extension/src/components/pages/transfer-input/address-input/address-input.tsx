@@ -34,7 +34,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
   errorMessage,
   onClickInputIcon,
   onChangeAddress,
-  onClickAddressBook
+  onClickAddressBook,
 }) => {
   const addressInputRef = useRef<HTMLTextAreaElement>(null);
 

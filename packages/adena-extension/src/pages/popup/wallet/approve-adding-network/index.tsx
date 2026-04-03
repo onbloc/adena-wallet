@@ -1,7 +1,7 @@
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
-  WalletResponseSuccessType
+  WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import { CommonFullContentLayout } from '@components/atoms';
@@ -33,7 +33,7 @@ const ApproveAddingNetworkContainer: React.FC = () => {
     const parsedData = decodeParameter(data['data']);
     setRequestData({
       ...parsedData,
-      hostname: data['hostname']
+      hostname: data['hostname'],
     });
 
     setChainId(parsedData?.data?.chainId || '');
@@ -48,8 +48,8 @@ const ApproveAddingNetworkContainer: React.FC = () => {
       InjectionMessageInstance.success(
         WalletResponseSuccessType.ADD_NETWORK_SUCCESS,
         requestData?.data,
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
     setDone(true);
   }, [addNetwork, chainName, rpcUrl, chainId, requestData]);
@@ -65,8 +65,8 @@ const ApproveAddingNetworkContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NETWORK_TIMEOUT,
         {},
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   };
 
@@ -75,8 +75,8 @@ const ApproveAddingNetworkContainer: React.FC = () => {
       InjectionMessageInstance.failure(
         WalletResponseRejectType.ADD_NETWORK_REJECTED,
         requestData?.data,
-        requestData?.key
-      )
+        requestData?.key,
+      ),
     );
   }, [requestData]);
 
@@ -86,7 +86,7 @@ const ApproveAddingNetworkContainer: React.FC = () => {
         networkInfo={{
           name: chainName,
           rpcUrl: rpcUrl,
-          chainId: chainId
+          chainId: chainId,
         }}
         logo=''
         approvable={requestData !== undefined}

@@ -7,7 +7,7 @@ export const GET_GRC721_BALANCE_QUERY_KEY = 'nft/useGetGRC721TokenBalance';
 
 export const useGetGRC721Balance = (
   packagePath: string,
-  options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<number | null> => {
   const { tokenService } = useAdenaContext();
   const { currentAddress } = useCurrentAccount();
@@ -23,6 +23,6 @@ export const useGetGRC721Balance = (
       return tokenService.fetchGRC721Balance(packagePath, currentAddress).catch(() => null);
     },
     staleTime: 0,
-    ...options
+    ...options,
   });
 };

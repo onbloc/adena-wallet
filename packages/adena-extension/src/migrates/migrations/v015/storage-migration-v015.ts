@@ -6,13 +6,13 @@ import {
   AccountDataModelV014,
   KeyringDataModelV014,
   StorageModelDataV014,
-  WalletModelV014
+  WalletModelV014,
 } from '../v014/storage-model-v014';
 import {
   AccountDataModelV015,
   KeyringDataModelV015,
   StorageModelDataV015,
-  WalletModelV015
+  WalletModelV015,
 } from './storage-model-v015';
 
 export class StorageMigration015 implements Migration<StorageModelDataV015> {
@@ -20,7 +20,7 @@ export class StorageMigration015 implements Migration<StorageModelDataV015> {
 
   async up(
     current: StorageModel<StorageModelDataV014>,
-    password?: string
+    password?: string,
   ): Promise<StorageModel<StorageModelDataV015>> {
     if (!this.validateModelV014(current.data)) {
       throw new Error('Storage Data does not match version V014');
@@ -30,8 +30,8 @@ export class StorageMigration015 implements Migration<StorageModelDataV015> {
       version: this.version,
       data: {
         ...previous,
-        SERIALIZED: await this.migrateWallet(previous.SERIALIZED, password)
-      }
+        SERIALIZED: await this.migrateWallet(previous.SERIALIZED, password),
+      },
     };
   }
 
@@ -90,7 +90,7 @@ export class StorageMigration015 implements Migration<StorageModelDataV015> {
       const migrated: WalletModelV015 = {
         ...wallet,
         accounts: wallet.accounts.map(account => this.migrateAccount(account)),
-        keyrings: wallet.keyrings.map(keyring => this.migrateKeyring(keyring))
+        keyrings: wallet.keyrings.map(keyring => this.migrateKeyring(keyring)),
       };
 
       const json = JSON.stringify(migrated);

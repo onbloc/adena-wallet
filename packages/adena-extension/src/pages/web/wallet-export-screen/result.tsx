@@ -3,7 +3,7 @@ import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.consta
 import { AdenaStorage } from '@common/storage';
 import { stringFromBase64, stringToBase64 } from '@common/utils/encoding-util';
 import {
-  Row, View, WebButton, WebImg, WebText
+  Row, View, WebButton, WebImg, WebText,
 } from '@components/atoms';
 import { WebCopyButton } from '@components/atoms/web-copy-button';
 import { WebHoldButton } from '@components/atoms/web-hold-button';
@@ -13,7 +13,7 @@ import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { getTheme } from '@styles/theme';
 import { Wallet } from 'adena-module';
 import React, {
-  useCallback, useEffect, useMemo, useState
+  useCallback, useEffect, useMemo, useState,
 } from 'react';
 import styled, { useTheme } from 'styled-components';
 
@@ -169,7 +169,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
         )}
         <Row style={{
           gap: 16,
-          justifyContent: 'center'
+          justifyContent: 'center',
         }}
         >
           <WebHoldButton onFinishHold={onFinishHold} />

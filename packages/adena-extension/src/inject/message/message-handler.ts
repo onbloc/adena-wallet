@@ -12,7 +12,7 @@ export class MessageHandler {
     inMemoryProvider: MemoryProvider,
     message: InjectionMessage | CommandMessageData | any,
     sender: chrome.runtime.MessageSender,
-    sendResponse: (response?: InjectionMessage | CommandMessageData | any) => void
+    sendResponse: (response?: InjectionMessage | CommandMessageData | any) => void,
   ): boolean => {
     try {
       if (message?.status) {
@@ -46,7 +46,7 @@ export class MessageHandler {
     inMemoryProvider: MemoryProvider,
     message: InjectionMessage,
     sender: chrome.runtime.MessageSender,
-    sendResponse: (response?: any) => void
+    sendResponse: (response?: any) => void,
   ): Promise<true | undefined> => {
     const core = new InjectCore(inMemoryProvider);
 
@@ -62,7 +62,7 @@ export class MessageHandler {
 
     if (!existsWallet) {
       sendResponse(
-        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, message.key)
+        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, message.key),
       );
       return;
     }
@@ -92,8 +92,8 @@ export class MessageHandler {
               InjectionMessageInstance.failure(
                 WalletResponseFailureType.UNRESOLVED_TRANSACTION_EXISTS,
                 message,
-                message.key
-              )
+                message.key,
+              ),
             );
           });
         break;
@@ -109,8 +109,8 @@ export class MessageHandler {
               InjectionMessageInstance.failure(
                 WalletResponseFailureType.UNRESOLVED_TRANSACTION_EXISTS,
                 message,
-                message.key
-              )
+                message.key,
+              ),
             );
           });
         break;
@@ -136,8 +136,8 @@ export class MessageHandler {
               InjectionMessageInstance.failure(
                 WalletResponseFailureType.UNEXPECTED_ERROR,
                 message,
-                message.key
-              )
+                message.key,
+              ),
             );
           });
         break;

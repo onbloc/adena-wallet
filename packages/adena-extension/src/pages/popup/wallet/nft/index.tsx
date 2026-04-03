@@ -18,7 +18,7 @@ import styled from 'styled-components';
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   height: auto;
@@ -38,7 +38,7 @@ export const Nft = (): JSX.Element => {
   const {
     data: pinnedCollections,
     isFetched: isFetchedPinnedCollections,
-    refetch: refetchPinnedCollection
+    refetch: refetchPinnedCollection,
   } = useGetGRC721PinnedCollections({ refetchOnMount: true });
 
   const { pinCollection, unpinCollection } = useNFTCollectionHandler();
@@ -54,7 +54,7 @@ export const Nft = (): JSX.Element => {
       await pinCollection(packagePath);
       await refetchPinnedCollection();
     },
-    [pinCollection]
+    [pinCollection],
   );
 
   const unpin = useCallback(
@@ -62,7 +62,7 @@ export const Nft = (): JSX.Element => {
       await unpinCollection(packagePath);
       await refetchPinnedCollection();
     },
-    [unpinCollection]
+    [unpinCollection],
   );
 
   const openGnoscan = useCallback(() => {
@@ -76,8 +76,8 @@ export const Nft = (): JSX.Element => {
     navigate(RoutePath.Deposit, {
       state: {
         token: { symbol: 'NFT' },
-        type: 'token'
-      }
+        type: 'token',
+      },
     });
   }, [navigate]);
 
@@ -85,7 +85,7 @@ export const Nft = (): JSX.Element => {
     (collection: GRC721CollectionModel) => {
       navigate(RoutePath.NftCollection, { state: { collection } });
     },
-    [navigate]
+    [navigate],
   );
 
   const moveManageCollectionsPage = useCallback(() => {

@@ -46,7 +46,7 @@ declare module 'ledger-cosmos-js' {
     publicKey: (path: Array<number>) => Promise<PublicKeyResponse | ErrorResponse>;
     showAddressAndPubKey: (
       path: Array<number>,
-      hrp: string
+      hrp: string,
     ) => Promise<AddressAndPublicKeyResponse | ErrorResponse>;
 
     sign: (path: Array<number>, message: string) => Promise<SignResponse | ErrorResponse>;

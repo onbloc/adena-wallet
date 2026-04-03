@@ -25,7 +25,7 @@ export const NFTAssetMetadataWrapper = styled(View)`
     ${mixins.flex({
       direction: 'column',
       align: 'flex-start',
-      justify: 'flex-start'
+      justify: 'flex-start',
     })};
     gap: 8px;
   }
@@ -38,7 +38,7 @@ export const NFTAssetMetadataWrapper = styled(View)`
     ${mixins.flex({
       direction: 'column',
       align: 'flex-start',
-      justify: 'flex-start'
+      justify: 'flex-start',
     })};
     width: auto;
     max-width: 100%;

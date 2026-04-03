@@ -82,7 +82,7 @@ const Contents = styled.div`
 const BoxContainer = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   background-color: ${getTheme('neutral', '_9')};
   width: 100%;
@@ -96,7 +96,7 @@ const BoxContainer = styled.div`
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   height: 100%;

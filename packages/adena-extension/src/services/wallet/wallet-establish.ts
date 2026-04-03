@@ -11,7 +11,7 @@ export class WalletEstablishService {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
     const accountEstablishedSites = await this.selectEstablishedSitesBy(
       accountId,
-      establishedSites
+      establishedSites,
     );
     return accountEstablishedSites;
   };
@@ -20,7 +20,7 @@ export class WalletEstablishService {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
     const accountEstablishedSites = await this.selectEstablishedSitesBy(
       accountId,
-      establishedSites
+      establishedSites,
     );
     return (
       accountEstablishedSites.findIndex((site: EstablishSite) => site.hostname === hostname) > -1
@@ -35,18 +35,18 @@ export class WalletEstablishService {
       accountId: string;
       appName: string;
       favicon?: string | null;
-    }
+    },
   ): Promise<void> => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
     const accountEstablishedSites = await this.selectEstablishedSitesBy(
       accountId,
-      establishedSites
+      establishedSites,
     );
     const changedEstablishedSites: { [key in string]: Array<EstablishSite> } = {
       ...establishedSites,
       [accountId]: [
         ...accountEstablishedSites.filter(
-          (site: EstablishSite) => site.hostname !== establishedInfo.hostname
+          (site: EstablishSite) => site.hostname !== establishedInfo.hostname,
         ),
         {
           hostname: establishedInfo.hostname,
@@ -54,9 +54,9 @@ export class WalletEstablishService {
           account: establishedInfo.accountId,
           name: establishedInfo.appName,
           favicon: establishedInfo.favicon ?? null,
-          establishedTime: `${new Date().getTime()}`
-        }
-      ]
+          establishedTime: `${new Date().getTime()}`,
+        },
+      ],
     };
     await this.walletEstablishRepository.updateEstablishedSites(changedEstablishedSites);
   };
@@ -65,17 +65,17 @@ export class WalletEstablishService {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
     const accountEstablishedSites = await this.selectEstablishedSitesBy(
       accountId,
-      establishedSites
+      establishedSites,
     );
 
     const changedAccountEstablishedSites = accountEstablishedSites.filter(
-      (site: EstablishSite) => site.hostname !== hostname
+      (site: EstablishSite) => site.hostname !== hostname,
     );
 
     // eslint-disable-next-line prefer-const
     let changedEstablishedSites = {
       ...establishedSites,
-      [accountId]: changedAccountEstablishedSites
+      [accountId]: changedAccountEstablishedSites,
     };
     await this.walletEstablishRepository.updateEstablishedSites(changedEstablishedSites);
   };
@@ -87,7 +87,7 @@ export class WalletEstablishService {
 
   private selectEstablishedSitesBy = async (
     accountId: string,
-    establishedSites: { [key in string]: Array<EstablishSite> }
+    establishedSites: { [key in string]: Array<EstablishSite> },
   ): Promise<EstablishSite[]> => {
     const accountEstablishedSites
       = Object.keys(establishedSites).findIndex(key => key === accountId) > -1

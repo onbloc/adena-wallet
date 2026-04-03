@@ -25,7 +25,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, iconColor }) => {
   const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({});
   const [arrowPosition, setArrowPosition] = useState<ArrowPosition>({
     left: '50%',
-    transform: 'translateX(-50%)'
+    transform: 'translateX(-50%)',
   });
   const containerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -70,12 +70,12 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, iconColor }) => {
     setTooltipPosition({
       left: leftPosition,
       top: containerTop - 14, // 14px gap above container
-      transform: 'translateY(-100%)' // Move tooltip above its natural position
+      transform: 'translateY(-100%)', // Move tooltip above its natural position
     });
 
     setArrowPosition({
       left: `${arrowLeft}%`,
-      transform: 'translateX(-50%)'
+      transform: 'translateX(-50%)',
     });
   };
 

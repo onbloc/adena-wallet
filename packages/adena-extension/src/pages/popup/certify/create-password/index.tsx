@@ -1,5 +1,5 @@
 import {
-  Button, DefaultInput, ErrorText, Text, View
+  Button, DefaultInput, ErrorText, Text, View,
 } from '@components/atoms';
 import { PasswordInput } from '@components/atoms/password-input';
 import { TermsCheckbox, TitleWithDesc } from '@components/molecules';
@@ -13,7 +13,7 @@ import styled, { css, CSSProp } from 'styled-components';
 
 const text = {
   title: 'Create\na Password',
-  desc: 'This will be used to unlock your wallet.'
+  desc: 'This will be used to unlock your wallet.',
 };
 
 const popupStyle = css`
@@ -55,7 +55,7 @@ const FormBox = styled.div`
 export const CreatePassword = (): JSX.Element => {
   const { openLink } = useLink();
   const {
-    pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown
+    pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown,
   }
     = useCreatePassword();
   const { params } = useAppNavigate<RoutePath.CreatePassword>();

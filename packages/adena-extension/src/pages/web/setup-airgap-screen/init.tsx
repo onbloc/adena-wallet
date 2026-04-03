@@ -2,10 +2,10 @@ import IconAirgap from '@assets/web/airgap-green.svg';
 import IconLink from '@assets/web/link.svg';
 import {
   ADENA_SETUP_AIRGAP_HELP_PAGE,
-  GNO_CLI_HELP_PAGE
+  GNO_CLI_HELP_PAGE,
 } from '@common/constants/resource.constant';
 import {
-  Pressable, Row, View, WebButton, WebImg, WebText
+  Pressable, Row, View, WebButton, WebImg, WebText,
 } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';

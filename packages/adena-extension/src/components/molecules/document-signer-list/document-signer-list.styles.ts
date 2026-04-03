@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const DocumentSignerListWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   gap: 12px;
   width: 100%;
@@ -15,7 +15,7 @@ export const DocumentSignerListWrapper = styled.div`
 export const DocumentSignerListItemWrapper = styled.div<{ borderColor: string }>`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   padding: 10px 14px;
   width: 100%;
@@ -36,7 +36,7 @@ export const DocumentSignerListItemWrapper = styled.div<{ borderColor: string }>
       ${mixins.flex({
         direction: 'row',
         justify: 'center',
-        align: 'center'
+        align: 'center',
       })};
       ${fonts.body1Reg};
       width: 100%;
@@ -63,7 +63,7 @@ export const DocumentSignerListItemWrapper = styled.div<{ borderColor: string }>
       ${mixins.flex({
         direction: 'row',
         justify: 'center',
-        align: 'center'
+        align: 'center',
       })};
       ${fonts.body3Bold};
       /* display: inline-flex;
@@ -107,7 +107,7 @@ export const DocumentSignerListItemWrapper = styled.div<{ borderColor: string }>
       ${mixins.flex({
         direction: 'row',
         justify: 'center',
-        align: 'center'
+        align: 'center',
       })};
       ${fonts.body3Reg};
       gap: 5px;

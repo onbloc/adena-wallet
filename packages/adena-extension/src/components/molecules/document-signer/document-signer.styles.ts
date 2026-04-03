@@ -6,7 +6,7 @@ import { styled } from 'styled-components';
 export const DocumentSignersContainer = styled.div`
   ${mixins.flex({
     direction: 'column',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
 `;
@@ -14,7 +14,7 @@ export const DocumentSignersContainer = styled.div`
 export const DocumentSignersWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   padding: 14px 16px;
@@ -31,7 +31,7 @@ export const DocumentSignersWrapper = styled.div`
   & .document-signers-amount-wrapper {
     ${mixins.flex({
       direction: 'row',
-      justify: 'flex-end'
+      justify: 'flex-end',
     })};
     width: 100%;
     gap: 3px;

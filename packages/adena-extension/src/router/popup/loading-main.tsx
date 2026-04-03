@@ -38,7 +38,7 @@ const ListBoxWrap = styled.div`
 const SkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })}
   width: 100%;
   height: 60px;

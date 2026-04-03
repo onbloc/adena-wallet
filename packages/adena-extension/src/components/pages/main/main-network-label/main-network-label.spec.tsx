@@ -18,7 +18,7 @@ describe('MainNetworkLabel Component', () => {
         <ThemeProvider theme={theme}>
           <MainNetworkLabel {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

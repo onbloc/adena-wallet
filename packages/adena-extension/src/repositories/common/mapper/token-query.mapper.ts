@@ -5,7 +5,7 @@ export const GRC20_FUNCTIONS = ['TotalSupply', 'BalanceOf', 'Transfer', 'Allowan
 
 export function mapGRC721CollectionModel(
   networkId: string,
-  message: any
+  message: any,
 ): GRC721CollectionModel | null {
   const packageInfo = message?.value?.package;
   if (!packageInfo) {
@@ -26,7 +26,7 @@ export function mapGRC721CollectionModel(
         symbol: tokenInfo.symbol,
         image: null,
         isMetadata: tokenInfo.isMetadata,
-        isTokenUri: tokenInfo.isTokenUri
+        isTokenUri: tokenInfo.isTokenUri,
       };
     }
   }
@@ -54,7 +54,7 @@ export function mapGRC20TokenModel(networkId: string, message: any): GRC20TokenM
         name: tokenInfo.name,
         symbol: tokenInfo.symbol,
         decimals: tokenInfo.decimals,
-        image: ''
+        image: '',
       };
     }
   }
@@ -103,7 +103,7 @@ function parseGRC20InfoByFile(file: string): {
             name: params[0],
             symbol: params[1],
             decimals: Number(params[2]),
-            owner: ''
+            owner: '',
           };
         }
       }
@@ -127,7 +127,7 @@ function parseGRC20InfoByFile(file: string): {
   }
   return {
     ...grc20Info,
-    owner
+    owner,
   };
 }
 
@@ -149,7 +149,7 @@ function parseBankerGRC20InfoByFile(file: string): {
       ? {
           name: bankerMatch[1],
           symbol: bankerMatch[2],
-          decimals: parseInt(bankerMatch[3], 10)
+          decimals: parseInt(bankerMatch[3], 10),
         }
       : null;
 
@@ -161,7 +161,7 @@ function parseBankerGRC20InfoByFile(file: string): {
       name: bankerInfo.name,
       symbol: bankerInfo.symbol,
       decimals: bankerInfo.decimals,
-      owner: address
+      owner: address,
     };
   }
   catch {

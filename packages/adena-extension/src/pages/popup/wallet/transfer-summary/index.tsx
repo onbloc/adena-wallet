@@ -20,7 +20,7 @@ import { RoutePath } from '@types';
 import { Document, isLedgerAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, {
-  useCallback, useEffect, useMemo, useRef, useState
+  useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
@@ -28,7 +28,7 @@ import styled from 'styled-components';
 const TransferSummaryLayout = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: 100%;
@@ -123,7 +123,7 @@ const TransferSummaryContainer: React.FC = () => {
 
     return {
       value: `${BigNumber(value).toFormat()}`,
-      denom
+      denom,
     };
   }, [summaryInfo]);
 
@@ -141,7 +141,7 @@ const TransferSummaryContainer: React.FC = () => {
     return TransactionMessage.createMessageOfBankSend({
       fromAddress: currentAddress || '',
       toAddress,
-      amount: sendAmount
+      amount: sendAmount,
     });
   }, [summaryInfo, currentAddress]);
 
@@ -161,9 +161,9 @@ const TransferSummaryContainer: React.FC = () => {
       args: [
         toAddress,
         `${Math.round(
-          BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals).toNumber()
-        )}`
-      ]
+          BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals).toNumber(),
+        )}`,
+      ],
     });
   }, [summaryInfo, currentAddress]);
 
@@ -185,7 +185,7 @@ const TransferSummaryContainer: React.FC = () => {
       BigNumber(networkFee?.amount || 0)
         .shiftedBy(GasToken.decimals)
         .toNumber(),
-      memo
+      memo,
     );
 
     return document;
@@ -206,11 +206,11 @@ const TransferSummaryContainer: React.FC = () => {
         amount: [
           {
             denom: GasToken.denom,
-            amount: gasFee.toString()
-          }
+            amount: gasFee.toString(),
+          },
         ],
-        gas: useNetworkFeeReturn.currentGasInfo?.gasWanted.toString() || '0'
-      }
+        gas: useNetworkFeeReturn.currentGasInfo?.gasWanted.toString() || '0',
+      },
     });
   };
 
@@ -230,7 +230,7 @@ const TransferSummaryContainer: React.FC = () => {
     const { signed } = await transactionService.createTransaction(
       walletInstance,
       currentAccount,
-      document
+      document,
     );
 
     return transactionService.sendTransaction(walletInstance, currentAccount, signed).catch((e) => {
@@ -262,13 +262,13 @@ const TransferSummaryContainer: React.FC = () => {
       if (txHash) {
         setTransferResult({
           status: 'SUCCESS',
-          hash: txHash
+          hash: txHash,
         });
       }
       else {
         setTransferResult({
           status: 'FAILED',
-          errorMessage: 'Your transaction could not be submitted to the blockchain. Try again.'
+          errorMessage: 'Your transaction could not be submitted to the blockchain. Try again.',
         });
       }
       setScreenState('RESULT');
@@ -279,7 +279,7 @@ const TransferSummaryContainer: React.FC = () => {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       setTransferResult({
         status: 'FAILED',
-        errorMessage
+        errorMessage,
       });
       setScreenState('RESULT');
       setIsSent(false);
@@ -344,7 +344,7 @@ const TransferSummaryContainer: React.FC = () => {
         if (el) {
           el.scrollTo({
             top: el.scrollHeight,
-            behavior: 'smooth'
+            behavior: 'smooth',
           });
         }
       });

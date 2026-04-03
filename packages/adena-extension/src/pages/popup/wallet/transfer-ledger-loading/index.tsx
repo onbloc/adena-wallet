@@ -7,14 +7,14 @@ import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
 import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
 import {
-  type JSX, useCallback, useEffect, useState
+  type JSX, useCallback, useEffect, useState,
 } from 'react';
 import styled from 'styled-components';
 
 const TransferLedgerLoadingLayout = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: 100%;
@@ -70,7 +70,7 @@ const TransferLedgerLoadingContainer = (): JSX.Element => {
         const response = await transactionService.sendTransactionByLedger(
           ledgerConnector,
           currentAccount,
-          signed
+          signed,
         );
         return response.hash;
       })

@@ -11,7 +11,7 @@ export interface SideMenuLinkProps {
 const SideMenuLink: React.FC<SideMenuLinkProps> = ({
   icon,
   text,
-  onClick
+  onClick,
 }) => {
   return (
     <SideMenuLinkWrapper onClick={onClick}>

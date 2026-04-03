@@ -14,7 +14,7 @@ describe('UnderlineTextButton Component', () => {
       text: '',
       onClick: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -23,7 +23,7 @@ describe('UnderlineTextButton Component', () => {
         <ThemeProvider theme={theme}>
           <UnderlineTextButton {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

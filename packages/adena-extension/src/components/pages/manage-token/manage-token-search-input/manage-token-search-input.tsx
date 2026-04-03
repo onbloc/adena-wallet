@@ -13,7 +13,7 @@ export interface ManageTokenSearchInputProps {
 const ManageTokenSearchInput: React.FC<ManageTokenSearchInputProps> = ({
   keyword,
   onChangeKeyword,
-  onClickAdded
+  onClickAdded,
 }) => {
   return (
     <ManageTokenSearchInputWrapper>

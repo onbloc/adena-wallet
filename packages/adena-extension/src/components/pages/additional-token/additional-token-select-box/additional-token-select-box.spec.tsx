@@ -25,7 +25,7 @@ describe('AdditionalTokenSelectBox Component', () => {
       },
       onClickOpenButton: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -34,7 +34,7 @@ describe('AdditionalTokenSelectBox Component', () => {
         <ThemeProvider theme={theme}>
           <AdditionalTokenSelectBox {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

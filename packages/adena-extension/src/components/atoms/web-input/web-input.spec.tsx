@@ -16,7 +16,7 @@ describe('WebInput Component', () => {
         <ThemeProvider theme={theme}>
           <WebInput />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

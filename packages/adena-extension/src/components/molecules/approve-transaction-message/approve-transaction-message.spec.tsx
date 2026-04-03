@@ -23,9 +23,9 @@ describe('ApproveTransactionMessage Component', () => {
           func: '',
           pkg_path: '',
           max_deposit: '',
-          send: ''
-        }
-      }
+          send: '',
+        },
+      },
     };
 
     render(
@@ -34,7 +34,7 @@ describe('ApproveTransactionMessage Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveTransactionMessage {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

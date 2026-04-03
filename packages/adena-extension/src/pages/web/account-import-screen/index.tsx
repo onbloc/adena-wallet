@@ -17,7 +17,7 @@ import SetMnemonicStep from './set-mnemonic-step';
 const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement<any> => {
   const useAccountImportScreenReturn = useAccountImportScreen({ wallet });
   const {
-    inputType, step, onClickGoBack, indicatorInfo, onClickNext
+    inputType, step, onClickGoBack, indicatorInfo, onClickNext,
   }
     = useAccountImportScreenReturn;
 
@@ -35,7 +35,7 @@ const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement<any> => {
     }
     return {
       default: WEB_TOP_SPACING,
-      responsive: WEB_TOP_SPACING_RESPONSIVE
+      responsive: WEB_TOP_SPACING_RESPONSIVE,
     };
   }, [extended]);
 

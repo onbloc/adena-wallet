@@ -3,17 +3,17 @@ import { TransactionInfo, TransactionWithPageInfo } from '@types';
 
 import {
   TransactionHistoryItem,
-  TransactionHistoryResponse
+  TransactionHistoryResponse,
 } from '../response/transaction-history-response';
 
 function isHistoryItemGRC20Transfer(
-  historyItem: TransactionHistoryItem
+  historyItem: TransactionHistoryItem,
 ): historyItem is TransactionHistoryItem {
   return historyItem.isGRC20Transfer;
 }
 
 function isHistoryItemBankMsgSend(
-  historyItem: TransactionHistoryItem
+  historyItem: TransactionHistoryItem,
 ): historyItem is TransactionHistoryItem {
   if (historyItem.messageCount !== 1) {
     return false;
@@ -23,7 +23,7 @@ function isHistoryItemBankMsgSend(
 }
 
 function isHistoryItemVmMCall(
-  historyItem: TransactionHistoryItem
+  historyItem: TransactionHistoryItem,
 ): historyItem is TransactionHistoryItem {
   if (historyItem.messageCount !== 1) {
     return false;
@@ -33,7 +33,7 @@ function isHistoryItemVmMCall(
 }
 
 function isHistoryItemVmMAddPkg(
-  historyItem: TransactionHistoryItem
+  historyItem: TransactionHistoryItem,
 ): historyItem is TransactionHistoryItem {
   if (historyItem.messageCount !== 1) {
     return false;
@@ -44,7 +44,7 @@ function isHistoryItemVmMAddPkg(
 
 export class TransactionHistoryMapper {
   public static queryToDisplay(
-    transactions: TransactionInfo[]
+    transactions: TransactionInfo[],
   ): {
     title: string;
     transactions: TransactionInfo[];
@@ -64,7 +64,7 @@ export class TransactionHistoryMapper {
         if (accumIndex < 0) {
           accum.push({
             title,
-            transactions: [current]
+            transactions: [current],
           });
         }
         else {
@@ -72,37 +72,37 @@ export class TransactionHistoryMapper {
         }
         return accum;
       },
-      initValue
+      initValue,
     );
   }
 
   public static fromResponse(
     response: TransactionHistoryResponse | null,
-    callerAddress: string
+    callerAddress: string,
   ): TransactionWithPageInfo {
     if (!response) {
       return {
         page: {
           hasNext: false,
-          cursor: null
+          cursor: null,
         },
-        transactions: []
+        transactions: [],
       };
     }
 
     const { page, items } = response;
     const mappedTxs = items.map(item =>
-      TransactionHistoryMapper.mappedHistoryItem(item, callerAddress)
+      TransactionHistoryMapper.mappedHistoryItem(item, callerAddress),
     );
     return {
       page,
-      transactions: mappedTxs
+      transactions: mappedTxs,
     };
   }
 
   private static mappedHistoryItem(
     historyItem: TransactionHistoryItem,
-    callerAddress: string
+    callerAddress: string,
   ): TransactionInfo {
     if (historyItem.messageCount > 1) {
       return TransactionHistoryMapper.mappedHistoryItemMultiCall(historyItem, callerAddress);
@@ -129,7 +129,7 @@ export class TransactionHistoryMapper {
 
   private static mappedHistoryItemMultiCall(
     historyItem: TransactionHistoryItem,
-    callerAddress: string
+    callerAddress: string,
   ): TransactionInfo {
     const isReceived = historyItem.toAddress === callerAddress;
 
@@ -152,7 +152,7 @@ export class TransactionHistoryMapper {
       extraInfo: `+${historyItem.messageCount - 1}`,
       amount: {
         value: '',
-        denom: ''
+        denom: '',
       },
       to:
         !isReceived && historyItem.toAddress
@@ -168,14 +168,14 @@ export class TransactionHistoryMapper {
       date: dateToLocal(historyItem.timestamp).value,
       networkFee: {
         value: `${historyItem.fee.value || '0'}`,
-        denom: `${historyItem.fee.denom}`
-      }
+        denom: `${historyItem.fee.denom}`,
+      },
     };
   }
 
   private static mappedBankMsgSend(
     historyItem: TransactionHistoryItem,
-    callerAddress: string
+    callerAddress: string,
   ): TransactionInfo {
     const isReceived = historyItem.toAddress === callerAddress;
     const functionName = isReceived ? 'Receive' : 'Send';
@@ -204,7 +204,7 @@ export class TransactionHistoryMapper {
       description,
       amount: {
         value: `${amount.value || '0'}`,
-        denom: amount.denom || 'ugnot'
+        denom: amount.denom || 'ugnot',
       },
       to:
         !isReceived && historyItem.toAddress
@@ -220,14 +220,14 @@ export class TransactionHistoryMapper {
       date: dateToLocal(historyItem.timestamp).value,
       networkFee: {
         value: `${historyItem.fee.value || '0'}`,
-        denom: `${historyItem.fee.denom}`
-      }
+        denom: `${historyItem.fee.denom}`,
+      },
     };
   }
 
   private static mappedHistoryItemVmMCall(
     historyItem: TransactionHistoryItem,
-    callerAddress: string
+    callerAddress: string,
   ): TransactionInfo {
     const isTransfer = historyItem.isGRC20Transfer;
     const isReceived = historyItem.toAddress === callerAddress;
@@ -261,7 +261,7 @@ export class TransactionHistoryMapper {
       title: functionName,
       amount: {
         value: `${amount.value || '0'}`,
-        denom: amount.denom || ''
+        denom: amount.denom || '',
       },
       valueType,
       description: isTransfer
@@ -276,8 +276,8 @@ export class TransactionHistoryMapper {
       date: dateToLocal(historyItem.timestamp).value,
       networkFee: {
         value: `${historyItem.fee.value || '0'}`,
-        denom: `${historyItem.fee.denom}`
-      }
+        denom: `${historyItem.fee.denom}`,
+      },
     };
   }
 
@@ -297,14 +297,14 @@ export class TransactionHistoryMapper {
       title: 'AddPkg',
       amount: {
         value: `${historyItem.amountIn.value || '0'}`,
-        denom: historyItem.amountIn.denom || 'ugnot'
+        denom: historyItem.amountIn.denom || 'ugnot',
       },
       valueType,
       date: dateToLocal(historyItem.timestamp).value,
       networkFee: {
         value: `${historyItem.fee.value || '0'}`,
-        denom: `${historyItem.fee.denom}`
-      }
+        denom: `${historyItem.fee.denom}`,
+      },
     };
   }
 
@@ -320,14 +320,14 @@ export class TransactionHistoryMapper {
       title: historyItem.func[0].funcType,
       amount: {
         value: `${historyItem.amountIn.value || '0'}`,
-        denom: historyItem.amountIn.denom || 'ugnot'
+        denom: historyItem.amountIn.denom || 'ugnot',
       },
       valueType,
       date: dateToLocal(historyItem.timestamp).value,
       networkFee: {
         value: `${historyItem.fee.value || '0'}`,
-        denom: `${historyItem.fee.denom}`
-      }
+        denom: `${historyItem.fee.denom}`,
+      },
     };
   }
 }

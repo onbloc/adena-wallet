@@ -7,7 +7,7 @@ export const validateInjectionData = (requestData: InjectionMessage): InjectionM
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.UNSUPPORTED_TYPE,
       {},
-      requestData?.key
+      requestData?.key,
     );
   }
   return null;
@@ -16,13 +16,13 @@ export const validateInjectionData = (requestData: InjectionMessage): InjectionM
 export const validateInjectionDataWithAddressByRawTx = (
   requestData: InjectionMessage,
   address: string,
-  skipCallerCheck?: boolean
+  skipCallerCheck?: boolean,
 ): InjectionMessage | null => {
   if (!validateInjectionTransactionTypeByRawTx(requestData)) {
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.UNSUPPORTED_TYPE,
       { message: 'Unsupported transaction type' },
-      requestData?.key
+      requestData?.key,
     );
   }
 
@@ -31,9 +31,9 @@ export const validateInjectionDataWithAddressByRawTx = (
       WalletResponseFailureType.ACCOUNT_MISMATCH,
       {
         requestData,
-        address
+        address,
       },
-      requestData?.key
+      requestData?.key,
     );
   }
 
@@ -43,13 +43,13 @@ export const validateInjectionDataWithAddressByRawTx = (
 export const validateInjectionDataWithAddress = (
   requestData: InjectionMessage,
   address: string,
-  skipCallerCheck?: boolean
+  skipCallerCheck?: boolean,
 ): InjectionMessage | null => {
   if (!validateInjectionTransactionType(requestData)) {
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.UNSUPPORTED_TYPE,
       {},
-      requestData?.key
+      requestData?.key,
     );
   }
 
@@ -58,9 +58,9 @@ export const validateInjectionDataWithAddress = (
       WalletResponseFailureType.ACCOUNT_MISMATCH,
       {
         requestData,
-        address
+        address,
       },
-      requestData?.key
+      requestData?.key,
     );
   }
 
@@ -71,13 +71,13 @@ export const validateInjectionDataForMultisig = (
   requestData: InjectionMessage,
   currentAccount: Account,
   address: string,
-  skipCallerCheck?: boolean
+  skipCallerCheck?: boolean,
 ): InjectionMessage | null => {
   if (!isMultisigAccount(currentAccount)) {
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.CREATE_MULTISIG_TRANSACTION_FAILED,
       { error: 'The current account is not a multisig account.' },
-      requestData?.key
+      requestData?.key,
     );
   }
 
@@ -101,7 +101,7 @@ export const validateInjectionTransactionTypeByRawTx = (requestData: InjectionMe
 export const validateInjectionTransactionMessageWithAddress = (
   requestData: InjectionMessage,
   address: string,
-  skipCallerCheck?: boolean
+  skipCallerCheck?: boolean,
 ): boolean => {
   const messages
     = requestData.data?.msgs
@@ -138,7 +138,7 @@ export const validateInjectionTransactionMessageWithAddress = (
 const validateCallerAddress = (
   messageAddress: any,
   currentAddress: string,
-  skipCallerCheck?: boolean
+  skipCallerCheck?: boolean,
 ): boolean => {
   if (messageAddress === '') {
     return true;

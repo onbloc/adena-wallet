@@ -6,7 +6,7 @@ import AnimationAddAccount from '@assets/web/lottie/add-account.json';
 import welcomeJson from '@assets/web/lottie/welcome.json';
 import { WEB_LARGE_CONTENT_WIDTH } from '@common/constants/ui.constant';
 import {
-  Row, View, WebMain, WebText
+  Row, View, WebMain, WebText,
 } from '@components/atoms';
 import Lottie from '@components/atoms/lottie';
 import WebMainButton from '@components/atoms/web-main-button';
@@ -16,7 +16,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useQuery } from '@tanstack/react-query';
 import { RoutePath } from '@types';
 import React, {
-  ReactElement, useCallback, useMemo, useRef
+  ReactElement, useCallback, useMemo, useRef,
 } from 'react';
 import styled, { useTheme } from 'styled-components';
 
@@ -38,7 +38,7 @@ const LandingScreen = (): ReactElement<any> => {
 
   const { data: existWallet, isLoading } = useQuery({
     queryKey: ['existWallet', walletService],
-    queryFn: async () => walletService.existsWallet()
+    queryFn: async () => walletService.existsWallet(),
   });
 
   const { data: visibleGuide, refetch: refetchVisibleGuide } = useQuery({
@@ -49,7 +49,7 @@ const LandingScreen = (): ReactElement<any> => {
       }
       const isSkip = await walletService.isSkipWalletGuide(existWallet);
       return isSkip === false;
-    }
+    },
   });
 
   const animationMarginLeftSize = useMemo(() => {
@@ -125,7 +125,7 @@ const LandingScreen = (): ReactElement<any> => {
       <Row style={{
         width: '100%',
         columnGap: 12,
-        marginTop: 8
+        marginTop: 8,
       }}
       >
         <WebMainButton

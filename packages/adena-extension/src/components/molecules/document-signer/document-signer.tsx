@@ -10,7 +10,7 @@ interface DocumentSignerProps {
 
 const DocumentSigner = ({
   signerCount,
-  onClickSetting
+  onClickSetting,
 }: DocumentSignerProps): React.ReactElement<any> => {
   const hasSetting = !!onClickSetting;
   return (

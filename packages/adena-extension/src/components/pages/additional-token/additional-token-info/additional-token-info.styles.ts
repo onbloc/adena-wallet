@@ -6,7 +6,7 @@ import styled from 'styled-components';
 export const AdditionalTokenInfoWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal'
+    justify: 'normal',
   })};
   width: 100%;
   height: auto;
@@ -15,7 +15,7 @@ export const AdditionalTokenInfoWrapper = styled.div`
 export const AdditionalTokenInfoItemWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   height: 48px;

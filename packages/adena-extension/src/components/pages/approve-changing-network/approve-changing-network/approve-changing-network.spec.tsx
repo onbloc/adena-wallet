@@ -27,7 +27,7 @@ describe('ApproveChangingNetwork Component', () => {
       },
       onTimeout: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -36,7 +36,7 @@ describe('ApproveChangingNetwork Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveChangingNetwork {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

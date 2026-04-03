@@ -21,7 +21,7 @@ export interface UseMakeTransactionsWithTimeReturn {
 
 export const useMakeTransactionsWithTime = (
   key: string,
-  transactions: TransactionInfo[] | null | undefined
+  transactions: TransactionInfo[] | null | undefined,
 ): UseMakeTransactionsWithTimeReturn => {
   const { currentNetwork } = useNetwork();
   const { transactionHistoryService } = useAdenaContext();
@@ -33,7 +33,7 @@ export const useMakeTransactionsWithTime = (
   const queryClient = useQueryClient();
 
   const {
-    status, isLoading, isFetched, isFetching, data
+    status, isLoading, isFetched, isFetching, data,
   } = useQuery({
     queryKey: ['useMakeTransactionsWithTime', currentNetwork.chainId, Object.values(tokenLogoMap).length, transactions?.length, key || ''],
     queryFn: () => {
@@ -49,29 +49,29 @@ export const useMakeTransactionsWithTime = (
             time = await queryClient.fetchQuery({
               queryKey: ['blockTime', currentNetwork.networkId, transaction.height || 1],
               queryFn: () => transactionHistoryService.fetchBlockTime(Number(transaction.height || 1)),
-              staleTime: Infinity
+              staleTime: Infinity,
             });
           }
 
           if (transaction.type === 'TRANSFER_GRC721') {
             const amount = transaction.amount;
             const collection = grc721Collections.find(
-              collection => collection.packagePath === amount.denom
+              collection => collection.packagePath === amount.denom,
             );
             return {
               ...transaction,
               amount: {
                 ...amount,
-                denom: collection?.symbol || amount.denom
+                denom: collection?.symbol || amount.denom,
               },
               networkFee: getTokenAmount(
                 transaction.networkFee || {
                   value: '0',
-                  denom: 'GNOT'
-                }
+                  denom: 'GNOT',
+                },
               ),
               logo: collection?.packagePath || '',
-              date: time || ''
+              date: time || '',
             };
           }
           return {
@@ -80,13 +80,13 @@ export const useMakeTransactionsWithTime = (
             networkFee: getTokenAmount(
               transaction.networkFee || {
                 value: '0',
-                denom: 'GNOT'
-              }
+                denom: 'GNOT',
+              },
             ),
             logo: tokenLogoMap?.[transaction.amount.denom] || '',
-            date: time || ''
+            date: time || '',
           };
-        })
+        }),
       );
     },
     select: (data) => {
@@ -103,7 +103,7 @@ export const useMakeTransactionsWithTime = (
       && isFetchedGRC721Collections
       && !!allTokenMetainfos
       && tokenLogoMap !== null,
-    placeholderData: keepPreviousData
+    placeholderData: keepPreviousData,
   });
 
   return {
@@ -111,6 +111,6 @@ export const useMakeTransactionsWithTime = (
     isLoading,
     isFetched,
     isFetching,
-    data
+    data,
   };
 };

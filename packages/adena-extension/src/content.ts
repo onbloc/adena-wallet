@@ -54,13 +54,13 @@ const initExtensionListener = (): void => {
         const result = CommandHandler.createContentHandler(message);
         sendResponse({
           received: true,
-          result
+          result,
         });
         return;
       }
 
       sendResponse({ received: true });
-    }
+    },
   );
 };
 

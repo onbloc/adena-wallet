@@ -34,7 +34,7 @@ const LoadingAddressBook = (): ReactElement<any> => {
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   height: 100%;
@@ -52,7 +52,7 @@ const Wrapper = styled.main`
 const TopSection = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   margin-bottom: 12px;
@@ -61,7 +61,7 @@ const TopSection = styled.div`
 const ListWrapper = styled.div`
   ${mixins.flex({
     direction: 'column',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
   gap: 12px;
@@ -81,7 +81,7 @@ const RoundsBox = styled.div`
 const SkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })}
   width: 100%;
   height: 60px;

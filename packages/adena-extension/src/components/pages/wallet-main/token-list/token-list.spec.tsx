@@ -15,8 +15,8 @@ const tokens = [
     name: 'Gno.land',
     balanceAmount: {
       value: '240,255.241155',
-      denom: 'GNOT'
-    }
+      denom: 'GNOT',
+    },
   },
   {
     tokenId: 'token2',
@@ -24,9 +24,9 @@ const tokens = [
     name: 'GnoSwap',
     balanceAmount: {
       value: '252.844',
-      denom: 'GNS'
-    }
-  }
+      denom: 'GNS',
+    },
+  },
 ];
 
 describe('TokenList Component', () => {
@@ -38,7 +38,7 @@ describe('TokenList Component', () => {
       },
       onClickTokenItem: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -47,7 +47,7 @@ describe('TokenList Component', () => {
         <ThemeProvider theme={theme}>
           <TokenList {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

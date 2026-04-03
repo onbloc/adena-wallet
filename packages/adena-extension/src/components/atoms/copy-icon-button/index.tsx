@@ -17,7 +17,7 @@ export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
   copyText,
   style = {},
   size = 16,
-  onClick
+  onClick,
 }) => {
   const [checked, setChecked] = useState<boolean>(false);
 
@@ -37,7 +37,7 @@ export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
 
       !!onClick && onClick();
     },
-    [copyText, checked, onClick]
+    [copyText, checked, onClick],
   );
 
   return (

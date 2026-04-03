@@ -21,7 +21,7 @@ export interface MultisigTransactionContextProps {
 }
 
 export const MultisigTransactionContext = React.createContext<MultisigTransactionContextProps | null>(
-  null
+  null,
 );
 
 export const MultisigTransactionProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
@@ -65,7 +65,7 @@ export const MultisigTransactionProvider: React.FC<React.PropsWithChildren<unkno
         setSequence(accountInfo.sequence);
       }
     },
-    [accountService]
+    [accountService],
   );
 
   const resetMultisigTransaction = React.useCallback(() => {
@@ -88,7 +88,7 @@ export const MultisigTransactionProvider: React.FC<React.PropsWithChildren<unkno
         addSignature,
         removeSignature,
         clearSignatures,
-        resetMultisigTransaction
+        resetMultisigTransaction,
       }}
     >
       {children}

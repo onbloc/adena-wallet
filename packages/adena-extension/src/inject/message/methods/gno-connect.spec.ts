@@ -17,7 +17,7 @@ describe('parseGnoMessageInfo', () => {
         functionName: 'Register',
         send: '1000000ugnot',
         maxDeposit: '',
-        args: null
+        args: null,
       };
 
       // Verify result
@@ -42,9 +42,9 @@ describe('parseGnoMessageInfo', () => {
           {
             index: 0,
             key: 'pkgpath',
-            value: 'gno.land/r/morgan/home'
-          }
-        ]
+            value: 'gno.land/r/morgan/home',
+          },
+        ],
       };
 
       // Verify result
@@ -71,19 +71,19 @@ describe('parseGnoMessageInfo', () => {
           {
             index: 0,
             key: 'arg1',
-            value: 'value1'
+            value: 'value1',
           },
           {
             index: 1,
             key: 'arg2',
-            value: 'value2'
+            value: 'value2',
           },
           {
             index: 2,
             key: 'arg3',
-            value: 'value3'
-          }
-        ]
+            value: 'value3',
+          },
+        ],
       };
 
       // Verify result
@@ -108,19 +108,19 @@ describe('parseGnoMessageInfo', () => {
           {
             index: 0,
             key: 'pkgpath',
-            value: 'gno.land/r/test/complete'
+            value: 'gno.land/r/test/complete',
           },
           {
             index: 1,
             key: 'param1',
-            value: 'test1'
+            value: 'test1',
           },
           {
             index: 2,
             key: 'param2',
-            value: 'test2'
-          }
-        ]
+            value: 'test2',
+          },
+        ],
       };
 
       // Verify result
@@ -152,29 +152,29 @@ describe('parseGnoMessageInfo', () => {
           {
             index: 0,
             key: 'encoded1',
-            value: 'Hello World'
+            value: 'Hello World',
           },
           {
             index: 1,
             key: 'encoded2',
-            value: '<script>alert(1)</script>'
+            value: '<script>alert(1)</script>',
           },
           {
             index: 2,
             key: 'encoded3',
-            value: 'special@#$%^&*()'
+            value: 'special@#$%^&*()',
           },
           {
             index: 3,
             key: 'encoded4',
-            value: 'path/to/resource'
+            value: 'path/to/resource',
           },
           {
             index: 4,
             key: 'encoded5',
-            value: '✓ Unicode Check'
-          }
-        ]
+            value: '✓ Unicode Check',
+          },
+        ],
       };
 
       // Verify result
@@ -203,19 +203,19 @@ describe('parseGnoMessageInfo', () => {
           {
             index: 0,
             key: 'plain',
-            value: 'simple text'
+            value: 'simple text',
           },
           {
             index: 1,
             key: 'encoded',
-            value: 'complex text with spaces'
+            value: 'complex text with spaces',
           },
           {
             index: 2,
             key: 'mixed',
-            value: 'half encoded+half+plus'
-          }
-        ]
+            value: 'half encoded+half+plus',
+          },
+        ],
       };
 
       // Verify result
@@ -243,19 +243,19 @@ describe('parseGnoMessageInfo', () => {
           {
             index: 0,
             key: 'pkgpath',
-            value: 'gno.land/r/test/package with spaces'
+            value: 'gno.land/r/test/package with spaces',
           },
           {
             index: 1,
             key: 'url',
-            value: 'https://example.com/path?param=value'
+            value: 'https://example.com/path?param=value',
           },
           {
             index: 2,
             key: 'json',
-            value: '{"key":"value"}'
-          }
-        ]
+            value: '{"key":"value"}',
+          },
+        ],
       };
 
       // Verify result

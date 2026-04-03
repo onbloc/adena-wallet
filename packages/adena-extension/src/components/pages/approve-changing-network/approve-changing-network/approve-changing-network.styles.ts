@@ -12,7 +12,7 @@ export const ApproveChangingNetworkWrapper = styled.div`
   .title-container {
     ${mixins.flex({
       align: 'normal',
-      justify: 'normal'
+      justify: 'normal',
     })};
     width: 100%;
     height: 152px;
@@ -40,7 +40,7 @@ export const ApproveChangingNetworkWrapper = styled.div`
     ${mixins.flex({
       direction: 'row',
       align: 'flex-start',
-      justify: 'normal'
+      justify: 'normal',
     })};
     width: fit-content;
 

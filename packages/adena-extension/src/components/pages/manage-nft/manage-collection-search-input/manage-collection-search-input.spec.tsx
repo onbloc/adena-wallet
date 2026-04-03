@@ -14,7 +14,7 @@ describe('ManageCollectionSearchInput Component', () => {
       keyword: 'as',
       onChangeKeyword: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -23,7 +23,7 @@ describe('ManageCollectionSearchInput Component', () => {
         <ThemeProvider theme={theme}>
           <ManageCollectionSearchInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

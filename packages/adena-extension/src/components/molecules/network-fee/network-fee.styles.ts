@@ -6,7 +6,7 @@ import styled from 'styled-components';
 export const NetworkFeeContainer = styled.div`
   ${mixins.flex({
     direction: 'column',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   width: 100%;
 
@@ -24,7 +24,7 @@ export const NetworkFeeContainer = styled.div`
 export const NetworkFeeWrapper = styled.div<{ error?: number }>`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between'
+    justify: 'space-between',
   })};
   width: 100%;
   padding: 14px 16px;
@@ -43,7 +43,7 @@ export const NetworkFeeWrapper = styled.div<{ error?: number }>`
   & .network-fee-amount-wrapper {
     ${mixins.flex({
       direction: 'row',
-      justify: 'flex-end'
+      justify: 'flex-end',
     })};
     width: 100%;
     gap: 3px;

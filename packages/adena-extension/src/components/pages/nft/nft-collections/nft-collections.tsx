@@ -19,11 +19,11 @@ export interface NFTCollectionsProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   queryGRC721Balance: (
     packagePath: string,
-    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<number | null>;
   moveCollectionPage: (collection: GRC721CollectionModel) => void;
   moveManageCollectionsPage: () => void;
@@ -39,7 +39,7 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
   queryGRC721TokenUri,
   queryGRC721Balance,
   moveCollectionPage,
-  moveManageCollectionsPage
+  moveManageCollectionsPage,
 }) => {
   const theme = useTheme();
 
@@ -74,12 +74,12 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
 
     const pinned = pinnedCollections
       .map(packagePath =>
-        displayCollections.find(collection => collection.packagePath === packagePath)
+        displayCollections.find(collection => collection.packagePath === packagePath),
       )
       .filter(collection => !!collection) as GRC721CollectionModel[];
 
     const unpinned = displayCollections.filter(
-      collection => !pinnedCollections.includes(collection.packagePath)
+      collection => !pinnedCollections.includes(collection.packagePath),
     );
 
     return [...pinned, ...unpinned];
@@ -93,7 +93,7 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
 
       return pinnedCollections.findIndex(path => path === collection.packagePath) > -1;
     },
-    [pinnedCollections]
+    [pinnedCollections],
   );
 
   const onClickManageCollectionsButton = useCallback(() => {

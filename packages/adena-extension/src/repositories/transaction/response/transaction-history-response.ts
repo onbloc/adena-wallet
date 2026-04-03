@@ -29,7 +29,7 @@ export interface TransactionHistoryItem {
       funcType: string;
       messageType: string;
       pkgPath: string;
-    }
+    },
   ];
   isGRC20Transfer: boolean;
   isGRC721Transfer: boolean;

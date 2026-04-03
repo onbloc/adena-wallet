@@ -10,7 +10,7 @@ export interface NFTCollectionAssetCardProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   moveAssetPage: (grc721Token: GRC721Model) => void;
 }
@@ -18,12 +18,12 @@ export interface NFTCollectionAssetCardProps {
 const NFTCollectionAssetCard: React.FC<NFTCollectionAssetCardProps> = ({
   grc721Token,
   queryGRC721TokenUri,
-  moveAssetPage
+  moveAssetPage,
 }) => {
   const { data: tokenUri, isFetched: isFetchedTokenUri } = queryGRC721TokenUri(
     grc721Token.packagePath,
     grc721Token.tokenId,
-    { enabled: grc721Token.isTokenUri }
+    { enabled: grc721Token.isTokenUri },
   );
 
   const isFetchedCardTokenUri = useMemo(() => {

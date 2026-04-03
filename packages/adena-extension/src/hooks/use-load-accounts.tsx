@@ -37,6 +37,6 @@ export const useLoadAccounts = (): UseLoadAccountsReturn => {
     state,
     accounts,
     loadAccounts,
-    addAccounts
+    addAccounts,
   };
 };

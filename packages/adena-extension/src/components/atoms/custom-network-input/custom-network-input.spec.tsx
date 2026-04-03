@@ -27,7 +27,7 @@ describe('CustomNetworkInput Component', () => {
       },
       changeChainId: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -36,7 +36,7 @@ describe('CustomNetworkInput Component', () => {
         <ThemeProvider theme={theme}>
           <CustomNetworkInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

@@ -19,7 +19,7 @@ const WalletExportScreen: React.FC = () => {
     backStep,
     initWalletExport,
     checkPassword,
-    moveExport
+    moveExport,
   } = useWalletExportScreen();
 
   const spacing = useMemo(() => {
@@ -37,7 +37,7 @@ const WalletExportScreen: React.FC = () => {
     <WebMain spacing={spacing}>
       <View style={{
         width: '100%',
-        marginBottom: 16
+        marginBottom: 16,
       }}
       >
         {walletExportState === 'INIT' && indicatorInfo.stepLength > 1 && (

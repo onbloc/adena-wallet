@@ -39,7 +39,7 @@ const WebMainButton: React.FC<WebMainButtonProps> = ({
   figure,
   width = '100%',
   disabled = false,
-  onClick
+  onClick,
 }) => {
   return (
     <StyledContainer

@@ -15,20 +15,20 @@ const StyledContainer = styled(View)`
 const SelectSeedPhraseStep = ({
   selectedKeyringId,
   setSelectedKeyringId,
-  useAccountAddScreenReturn
+  useAccountAddScreenReturn,
 }: {
   selectedKeyringId?: string;
   setSelectedKeyringId: (keyringId?: string) => void;
   useAccountAddScreenReturn: UseAccountAddScreenReturn;
 }): ReactElement<any> => {
   const {
-    indicatorInfo, keyringInfos, onClickNext, onClickGoBack
+    indicatorInfo, keyringInfos, onClickNext, onClickGoBack,
   } = useAccountAddScreenReturn;
 
   const seedPhraseInfos = useMemo(() => {
     return keyringInfos.map(keyringInfo => ({
       ...keyringInfo,
-      selected: keyringInfo.keyringId === selectedKeyringId
+      selected: keyringInfo.keyringId === selectedKeyringId,
     }));
   }, [selectedKeyringId, keyringInfos]);
 
@@ -44,7 +44,7 @@ const SelectSeedPhraseStep = ({
       }
       setSelectedKeyringId(keyringId);
     },
-    [selectedKeyringId]
+    [selectedKeyringId],
   );
 
   return (

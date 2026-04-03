@@ -47,7 +47,7 @@ export class WalletBalanceService {
   public async getGRC20TokenBalance(
     address: string,
     packagePath: string,
-    decimals = 6
+    decimals = 6,
   ): Promise<number | null> {
     const gnoProvider = this.getGnoProvider();
     return gnoProvider
@@ -70,11 +70,11 @@ export class WalletBalanceService {
       .getBalance(address, denom)
       .then(value => ({
         value: value.toFixed(),
-        denom
+        denom,
       }))
       .catch(() => ({
         value: '0',
-        denom
+        denom,
       }));
     const tokenBalances: Array<TokenBalanceType> = [];
 
@@ -93,7 +93,7 @@ export class WalletBalanceService {
   public getGRC20TokenBalances = async (
     address: string,
     packagePath: string,
-    symbol: string
+    symbol: string,
   ): Promise<TokenBalanceType[]> => {
     const gnoProvider = this.getGnoProvider();
     const balance = await gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [address]);
@@ -102,10 +102,10 @@ export class WalletBalanceService {
     }
     const balanceAmount = {
       value: balance,
-      denom: symbol.toUpperCase()
+      denom: symbol.toUpperCase(),
     };
     const tokenBalance = this.tokenMetainfos.find(
-      tokenMetainfo => isGRC20TokenModel(tokenMetainfo) && tokenMetainfo.pkgPath === packagePath
+      tokenMetainfo => isGRC20TokenModel(tokenMetainfo) && tokenMetainfo.pkgPath === packagePath,
     );
     if (tokenBalance) {
       return [this.createTokenBalance(balanceAmount, tokenBalance)];
@@ -117,7 +117,7 @@ export class WalletBalanceService {
     value: string,
     denom: string,
     tokenMetainfo: TokenModel,
-    convertType: 'COMMON' | 'MINIMAL' = 'COMMON'
+    convertType: 'COMMON' | 'MINIMAL' = 'COMMON',
   ): {
     value: string;
     denom: string;
@@ -142,7 +142,7 @@ export class WalletBalanceService {
 
     return {
       value: new BigNumber(value).shiftedBy(shift).toString(),
-      denom: convertedDenom
+      denom: convertedDenom,
     };
   };
 
@@ -151,20 +151,20 @@ export class WalletBalanceService {
       value: string;
       denom: string;
     },
-    tokenMetainfo: TokenModel
+    tokenMetainfo: TokenModel,
   ): TokenBalanceType => {
     const { value, denom } = this.convertDenom(
       balance.value,
       balance.denom,
       tokenMetainfo,
-      'COMMON'
+      'COMMON',
     );
     return {
       ...tokenMetainfo,
       amount: {
         value,
-        denom
-      }
+        denom,
+      },
     };
   };
 }

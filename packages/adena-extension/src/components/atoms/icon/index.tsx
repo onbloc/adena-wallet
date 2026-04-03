@@ -15,7 +15,7 @@ import {
   IconSpinnerLoading,
   IconTokenAdded,
   IconWallet,
-  IconWebLink
+  IconWebLink,
 } from './icon-assets';
 
 export type IconName = keyof typeof ICONS;
@@ -40,12 +40,12 @@ const ICONS = {
   iconConnectLoading: IconConnectLoading,
   iconConnectFailed: IconConnectFailed,
   iconTokenAdded: IconTokenAdded,
-  iconSpinnerLoading: IconSpinnerLoading
+  iconSpinnerLoading: IconSpinnerLoading,
 } as const;
 
 export const Icon = ({ name, className = '', ...rest }: IconProps): ReactElement<any> => {
   return React.createElement(ICONS[name], {
     className,
-    ...rest
+    ...rest,
   });
 };

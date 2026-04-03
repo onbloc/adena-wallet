@@ -27,7 +27,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({
   done,
   onClickConnect,
   onClickCancel,
-  onResponse
+  onResponse,
 }) => {
   if (loading) {
     return <ApproveLoading rightButtonText='Connect' />;
@@ -75,13 +75,13 @@ const WalletConnect: React.FC<WalletConnectProps> = ({
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           loading: processing,
           text: 'Connect',
-          onClick: onClickConnect
+          onClick: onClickConnect,
         }}
       />
     </WalletConnectWrapper>

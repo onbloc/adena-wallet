@@ -17,7 +17,7 @@ describe('ManageTokenSearchInput Component', () => {
       },
       onClickAdded: () => {
         return;
-      }
+      },
     };
 
     render(
@@ -26,7 +26,7 @@ describe('ManageTokenSearchInput Component', () => {
         <ThemeProvider theme={theme}>
           <ManageTokenSearchInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

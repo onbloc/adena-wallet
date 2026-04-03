@@ -24,27 +24,27 @@ export const useAddressBook = (): UseAddressBookReturn => {
       addressBookService
         .addAddressBookItem({
           name,
-          address
+          address,
         })
         .then(() => true)
-        .catch(() => false)
+        .catch(() => false),
     );
   };
 
   const editAddressBookItem = async (
     id: string,
     name: string,
-    address: string
+    address: string,
   ): Promise<boolean> => {
     return _update(() =>
       addressBookService
         .updateAddressBookItemById({
           id,
           name,
-          address
+          address,
         })
         .then(() => true)
-        .catch(() => false)
+        .catch(() => false),
     );
   };
 
@@ -53,7 +53,7 @@ export const useAddressBook = (): UseAddressBookReturn => {
       addressBookService
         .removeAddressBookItemByAccountId(currentAccount?.id || '', id)
         .then(() => true)
-        .catch(() => false)
+        .catch(() => false),
     );
   };
 
@@ -64,14 +64,14 @@ export const useAddressBook = (): UseAddressBookReturn => {
   const _update = async (callback?: () => Promise<boolean>): Promise<boolean> => {
     setAddressBook(prev => ({
       ...prev,
-      loading: true
+      loading: true,
     }));
     const result = callback ? await callback() : true;
     const addressBookItems = await addressBookService.getAddressBook();
     setAddressBook({
       init: true,
       loading: false,
-      items: addressBookItems
+      items: addressBookItems,
     });
     return result;
   };
@@ -82,6 +82,6 @@ export const useAddressBook = (): UseAddressBookReturn => {
     initAddressBook,
     addAddressBookItem,
     editAddressBookItem,
-    removeAddressBookItem
+    removeAddressBookItem,
   };
 };

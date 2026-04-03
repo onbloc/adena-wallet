@@ -1,7 +1,7 @@
 export enum NetworkFeeSettingType {
   FAST = 'FAST',
   AVERAGE = 'AVERAGE',
-  SLOW = 'SLOW'
+  SLOW = 'SLOW',
 }
 
 export interface NetworkFeeSettingInfo {

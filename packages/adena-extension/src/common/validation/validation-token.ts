@@ -3,7 +3,7 @@ import {
   IBCNativeTokenModel,
   IBCTokenModel,
   NativeTokenModel,
-  TokenModel
+  TokenModel,
 } from '@types';
 
 export function isNativeTokenModel(model: TokenModel): model is NativeTokenModel {

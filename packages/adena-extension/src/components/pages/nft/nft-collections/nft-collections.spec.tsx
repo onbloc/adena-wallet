@@ -29,7 +29,7 @@ describe('NFTCollections Component', () => {
         return;
       },
       queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
-      queryGRC721Balance: () => ({}) as unknown as UseQueryResult<number | null>
+      queryGRC721Balance: () => ({}) as unknown as UseQueryResult<number | null>,
     };
 
     render(
@@ -38,7 +38,7 @@ describe('NFTCollections Component', () => {
         <ThemeProvider theme={theme}>
           <NFTCollections {...args} />
         </ThemeProvider>
-      </RecoilRoot>
+      </RecoilRoot>,
     );
   });
 });

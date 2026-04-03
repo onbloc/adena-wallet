@@ -19,7 +19,7 @@ export const createMessageOfVmCreateBoard = (info: {
     max_deposit: '',
     func: 'CreateBoard',
     args: [info.boardName],
-    send: ''
+    send: '',
   });
 };
 
@@ -46,7 +46,7 @@ export const createMessageOfVmCreateRepost = (info: {
     max_deposit: '',
     func: 'CreateRepost',
     args: [`${info.boardId}`, `${info.postId}`, info.title, info.body, `${`${info.destinationBoardId}`}`],
-    send: ''
+    send: '',
   });
 };
 
@@ -71,7 +71,7 @@ export const createMessageOfVmCreateThread = (info: {
     max_deposit: '',
     func: 'CreateThread',
     args: [`${info.boardId}`, info.title, info.body],
-    send: ''
+    send: '',
   });
 };
 
@@ -98,7 +98,7 @@ export const createMessageOfVmEditPost = (info: {
     max_deposit: '',
     func: 'EditPost',
     args: [`${info.boardId}`, `${info.threadId}`, `${info.postId}`, info.title, info.body],
-    send: ''
+    send: '',
   });
 };
 
@@ -123,7 +123,7 @@ export const createMessageOfVmDeletePost = (info: {
     max_deposit: '',
     func: 'DeletePost',
     args: [`${info.boardId}`, `${info.postId}`, info.reason],
-    send: ''
+    send: '',
   });
 };
 
@@ -149,6 +149,6 @@ export const createMessageOfVmCreateReply = (info: {
     max_deposit: '',
     func: 'CreateReply',
     args: [`${info.boardId}`, `${info.threadId}`, `${info.postId}`, info.body],
-    send: ''
+    send: '',
   });
 };

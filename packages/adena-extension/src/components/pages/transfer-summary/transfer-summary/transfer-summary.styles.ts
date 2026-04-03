@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const TransferSummaryWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'flex-start'
+    justify: 'flex-start',
   })};
   position: relative;
   padding: 24px 20px 0;
