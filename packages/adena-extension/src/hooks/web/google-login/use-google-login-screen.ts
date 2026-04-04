@@ -4,7 +4,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import useIndicatorStep, { UseIndicatorStepReturn } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { RoutePath } from '@types';
 import { AdenaWallet, SingleAccount, Web3AuthKeyring } from 'adena-module';
-import { GoogleTorusSigner } from 'adena-torus-signin/src';
+import { GoogleTorusSigner } from 'adena-torus-signin';
 import { useCallback, useState } from 'react';
 
 import useQuestionnaire from '../use-questionnaire';
