@@ -2,41 +2,58 @@
   "name": "adena-torus-signin",
   "version": "0.0.1",
   "description": "Adena wallet's torus sign in module",
-  "main": "./dist/index.js",
   "author": "jinoosss",
   "license": "MIT",
   "private": true,
+  "type": "module",
   "dependencies": {
-    "@testing-library/jest-dom": "5.17.0",
-    "@web3auth/auth-adapter": "9.5.3",
-    "@web3auth/base": "9.5.3",
-    "@web3auth/base-provider": "9.5.3",
-    "@web3auth/no-modal": "9.5.3",
+    "@web3auth/auth-adapter": "9.7.0",
+    "@web3auth/base": "9.7.0",
+    "@web3auth/base-provider": "9.7.0",
+    "@web3auth/no-modal": "10.15.0",
     "@web3auth/openlogin-adapter": "8.12.4"
   },
   "devDependencies": {
-    "@babel/core": "7.23.9",
-    "@babel/preset-env": "7.23.9",
-    "@babel/preset-flow": "7.23.3",
-    "@babel/preset-typescript": "7.23.3",
-    "@rollup/plugin-node-resolve": "15.2.3",
-    "@types/jest": "29.5.12",
-    "@typescript-eslint/eslint-plugin": "5.62.0",
-    "@typescript-eslint/parser": "5.62.0",
-    "dotenv": "16.4.5",
+    "@arethetypeswrong/core": "^0.18.2",
+    "@eslint/js": "^10.0.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "@types/bn.js": "5.2.0",
+    "@types/crypto-js": "4.2.2",
+"@types/node": "^25.5.2",
+    "@vitest/coverage-istanbul": "^4.1.2",
+    "eslint": "^10.2.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "tsdown": "^0.21.7",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.0",
+    "vitest": "^4.1.2",
+    "dotenv": "17.4.0",
     "eslint-config-react-app": "7.0.1",
-    "fs": "0.0.1-security",
-    "jest": "29.7.0",
-    "lodash.merge": "4.6.2",
-    "rollup": "4.34.8",
-    "rollup-plugin-dotenv": "0.5.0",
-    "rollup-plugin-polyfill-node": "0.13.0",
-    "rollup-plugin-typescript2": "0.36.0",
-    "typescript": "4.9.5"
+    "fs": "0.0.1-security"
   },
   "scripts": {
-    "dev": "rollup -w -c --environment FORMAT:esm",
-    "build:default": "rollup -c",
-    "build": "tsc"
+    "tsc": "tsc",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "build": "tsc --noEmit && tsdown",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage"
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   }
 }

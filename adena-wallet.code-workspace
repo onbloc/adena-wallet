@@ -24,9 +24,6 @@
       "**/.yarn": true,
       "**/.pnp.*": true
     },
-    "typescript.tsdk": "adena-wallet/.yarn/sdks/typescript/lib",
-    "typescript.enablePromptUseWorkspaceTsdk": true,
-    "jest.disabledWorkspaceFolders": ["adena-extension", "adena-torus-signin"],
     "extensions": {
       "recommendations": ["esbenp.prettier-vscode", "editorconfig.editorconfig"]
     }
