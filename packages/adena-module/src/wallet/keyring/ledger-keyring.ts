@@ -22,6 +22,10 @@ export class LedgerKeyring implements Keyring {
     this.connector = null;
   }
 
+  destroy() {
+    this.connector = null;
+  }
+
   setConnector(connector: LedgerConnector) {
     this.connector = connector;
   }

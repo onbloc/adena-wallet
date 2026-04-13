@@ -52,6 +52,10 @@ export class MultisigKeyring implements Keyring {
     this.signerPublicKeys = keyringData.signerPublicKeys;
   }
 
+  destroy() {
+    // No sensitive key material to clear
+  }
+
   toData(): KeyringData {
     return {
       id: this.id,
