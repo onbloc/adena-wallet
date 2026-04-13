@@ -14,9 +14,18 @@ export class WalletAddressBookService {
     this.walletAddressRepository = walletAddressRepository;
   }
 
-  public getAddressBook = async (): Promise<AddressBookItem[]> => {
+  private getPasswordAndSalt = async (): Promise<{ password: string; salt: Uint8Array }> => {
     const password = await this.walletRepository.getWalletPassword();
-    const addressBook = await this.walletAddressRepository.getAddressBook(password);
+    const salt = await this.walletRepository.getKdfSalt();
+    if (!salt) {
+      throw new Error('KDF salt not found');
+    }
+    return { password, salt };
+  };
+
+  public getAddressBook = async (): Promise<AddressBookItem[]> => {
+    const { password, salt } = await this.getPasswordAndSalt();
+    const addressBook = await this.walletAddressRepository.getAddressBook(password, salt);
     return addressBook;
   };
 
@@ -24,8 +33,8 @@ export class WalletAddressBookService {
     name: string;
     address: string;
   }): Promise<void> => {
-    const password = await this.walletRepository.getWalletPassword();
-    const addressBook = await this.walletAddressRepository.getAddressBook(password);
+    const { password, salt } = await this.getPasswordAndSalt();
+    const addressBook = await this.walletAddressRepository.getAddressBook(password, salt);
     await this.walletAddressRepository.updateAddressBook(
       [
         ...addressBook,
@@ -37,6 +46,7 @@ export class WalletAddressBookService {
         },
       ],
       password,
+      salt,
     );
   };
 
@@ -45,8 +55,8 @@ export class WalletAddressBookService {
     name: string;
     address: string;
   }): Promise<void> => {
-    const password = await this.walletRepository.getWalletPassword();
-    const addressBook = await this.walletAddressRepository.getAddressBook(password);
+    const { password, salt } = await this.getPasswordAndSalt();
+    const addressBook = await this.walletAddressRepository.getAddressBook(password, salt);
     const changedAddressBook = addressBook.map((item) => {
       if (item.id === addressBookItem.id) {
         return {
@@ -57,20 +67,20 @@ export class WalletAddressBookService {
       }
       return item;
     });
-    await this.walletAddressRepository.updateAddressBook(changedAddressBook, password);
+    await this.walletAddressRepository.updateAddressBook(changedAddressBook, password, salt);
   };
 
   public removeAddressBookItemByAccountId = async (
     accountId: string,
     addressBookId: string,
   ): Promise<void> => {
-    const password = await this.walletRepository.getWalletPassword();
-    const addressBook = await this.walletAddressRepository.getAddressBook(password);
+    const { password, salt } = await this.getPasswordAndSalt();
+    const addressBook = await this.walletAddressRepository.getAddressBook(password, salt);
 
     const changedAddressBook = addressBook.filter(
       (item: AddressBookItem) => item.id !== addressBookId,
     );
-    await this.walletAddressRepository.updateAddressBook(changedAddressBook, password);
+    await this.walletAddressRepository.updateAddressBook(changedAddressBook, password, salt);
   };
 
   public clear = async (): Promise<boolean> => {

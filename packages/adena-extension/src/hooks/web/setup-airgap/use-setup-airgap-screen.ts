@@ -130,8 +130,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
 
   const _createAddressAccount = useCallback(async () => {
     const createdWallet = await AdenaWallet.createByAddress(address);
-    const serializedWallet = await createdWallet.serialize('');
-    return serializedWallet;
+    return createdWallet.toJSON();
   }, [address, walletService, indicatorInfo]);
 
   const addAccount = useCallback(async () => {

@@ -159,9 +159,10 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
         keyrings: [keyring.toData()],
         currentAccountId: resultSavedAccounts[0]?.id,
       });
+      const serializedWallet = newWallet.toJSON();
       navigate(RoutePath.WebCreatePassword, {
         state: {
-          serializedWallet: await newWallet.serialize(''),
+          serializedWallet,
           stepLength: 5,
         },
       });

@@ -110,7 +110,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
   const _createGoogleAccount = useCallback(
     async (privateKey: string) => {
       const createdWallet = await AdenaWallet.createByWeb3Auth(privateKey);
-      const serializedWallet = await createdWallet.serialize('');
+      const serializedWallet = createdWallet.toJSON();
       navigate(RoutePath.WebCreatePassword, {
         state: {
           serializedWallet,

@@ -134,7 +134,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
 
   const _saveWalletByPassword = async (password: string): Promise<void> => {
     const { serializedWallet } = params;
-    const wallet = await AdenaWallet.deserialize(serializedWallet, '');
+    const wallet = AdenaWallet.fromJSON(serializedWallet);
     await walletService.saveWallet(wallet, password);
     await accountService.changeCurrentAccount(wallet.currentAccount);
     await setInputs({ password: '', confirmPassword: '' });

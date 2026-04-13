@@ -100,7 +100,7 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         const createdWallet = await AdenaWallet.createByMnemonic(rawSeeds);
         rawSeeds = '';
 
-        const serializedWallet = await createdWallet.serialize('');
+        const serializedWallet = createdWallet.toJSON();
         navigate(RoutePath.WebCreatePassword, {
           state: { serializedWallet, stepLength: indicatorInfo.stepLength },
         });

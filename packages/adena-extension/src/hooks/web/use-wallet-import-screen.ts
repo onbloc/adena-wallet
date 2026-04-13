@@ -45,8 +45,7 @@ const isValidMnemonic = (mnemonic: string): boolean => {
 const createSerializedWalletWithMnemonic = (mnemonic: string): Promise<string | null> => {
   return waitForRun<string>(async () => {
     const createdWallet = await AdenaWallet.createByMnemonic(mnemonic);
-    const serializedWallet = await createdWallet.serialize('');
-    return serializedWallet;
+    return createdWallet.toJSON();
   }).catch(() => null);
 };
 
@@ -58,8 +57,7 @@ const createSerializedWalletWithPrivateKeyKeyring = (keyring: Keyring): Promise<
     createdWallet.addAccount(account);
     createdWallet.addKeyring(keyring);
 
-    const serializedWallet = await createdWallet.serialize('');
-    return serializedWallet;
+    return createdWallet.toJSON();
   }).catch(() => null);
 };
 
