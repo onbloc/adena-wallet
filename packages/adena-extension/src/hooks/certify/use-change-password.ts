@@ -1,5 +1,4 @@
 import { PasswordValidationError } from '@common/errors';
-import { encryptWalletPassword } from '@common/utils/crypto-utils';
 import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
 import {
   validateEqualsChangePassword,
@@ -109,8 +108,10 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     let isValid = true;
     let errorMessage = '';
     try {
-      const encryptedCurrentPassword = encryptWalletPassword(currentPassword);
-      validateInvalidPassword(encryptedCurrentPassword, storedPassword);
+      const isValid = await walletService.equalsPassword(currentPassword);
+      if (!isValid) {
+        throw new PasswordValidationError('INVALID_PASSWORD');
+      }
     } catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {

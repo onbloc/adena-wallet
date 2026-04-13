@@ -5,13 +5,13 @@ import {
   Wallet,
   MultisigConfig,
   SignerPublicKeyInfo,
+  generateKdfSalt,
 } from 'adena-module';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
 
 import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant';
 import { WalletError } from '@common/errors/wallet/wallet-error';
-import { encryptSha256Password, encryptWalletPassword } from '@common/utils/crypto-utils';
 import { WalletRepository } from '@repositories/wallet';
 
 export class WalletService {
@@ -131,10 +131,13 @@ export class WalletService {
    * @param password wallet's password
    */
   public saveWallet = async (wallet: Wallet, password: string): Promise<void> => {
-    const encryptedPassword = encryptWalletPassword(password);
-
-    const serializedWallet = await wallet.serialize(encryptedPassword);
-    await this.walletRepository.updateWalletPassword(encryptedPassword);
+    let salt = await this.walletRepository.getKdfSalt();
+    if (!salt) {
+      salt = await generateKdfSalt();
+      await this.walletRepository.updateKdfSalt(salt);
+    }
+    const serializedWallet = await wallet.serialize(password, salt);
+    await this.walletRepository.updateWalletPassword(password);
     await this.walletRepository.updateSerializedWallet(serializedWallet);
     try {
       chrome?.action?.setPopup({ popup: 'popup.html' });
@@ -144,9 +147,12 @@ export class WalletService {
   };
 
   public updateWallet = async (wallet: Wallet): Promise<void> => {
-    let encryptedWallet = await this.walletRepository.getWalletPassword();
-    const serializedWallet = await wallet.serialize(encryptedWallet);
-    encryptedWallet = '';
+    const password = await this.walletRepository.getWalletPassword();
+    const salt = await this.walletRepository.getKdfSalt();
+    if (!salt) {
+      throw new WalletError('FAILED_TO_LOAD');
+    }
+    const serializedWallet = await wallet.serialize(password, salt);
 
     await this.walletRepository.updateSerializedWallet(serializedWallet);
     try {
@@ -228,8 +234,12 @@ export class WalletService {
   public deserializeWallet = async (password: string): Promise<AdenaWallet> => {
     try {
       const serializedWallet = await this.walletRepository.getSerializedWallet();
+      const salt = await this.walletRepository.getKdfSalt();
+      if (!salt) {
+        throw new WalletError('FAILED_TO_LOAD');
+      }
 
-      const walletInstance = await AdenaWallet.deserialize(serializedWallet, password);
+      const walletInstance = await AdenaWallet.deserialize(serializedWallet, password, salt);
 
       return walletInstance;
     } catch (e) {
@@ -240,6 +250,12 @@ export class WalletService {
 
   public lockWallet = async (): Promise<void> => {
     try {
+      const wallet = await this.loadWallet();
+      wallet.destroy();
+    } catch {
+      // Wallet may not be loadable (e.g. password already cleared)
+    }
+    try {
       await this.walletRepository.deleteWalletPassword();
     } catch (e) {
       throw new WalletError('FAILED_TO_LOAD');
@@ -247,32 +263,18 @@ export class WalletService {
   };
 
   public equalsPassword = async (password: string): Promise<boolean> => {
-    const storedPassword = await this.walletRepository.getEncryptedPassword();
-
     try {
-      if (encryptSha256Password(password) === storedPassword) {
-        await this.walletRepository.migrate(password);
-        return this.updatePassword(password);
-      }
-
-      const encryptedPassword = encryptWalletPassword(password);
-      const wallet = await this.deserializeWallet(encryptedPassword);
-      if (wallet) {
-        return this.updatePassword(password);
-      }
+      // Trigger migration (v018: AES-CBC → XChaCha20) before deserialization
+      await this.walletRepository.updateStoragePassword(password);
+      await this.deserializeWallet(password);
+      return true;
     } catch (e) {
-      console.error(e);
+      return false;
     }
-    return false;
   };
 
   public updatePassword = async (password: string): Promise<boolean> => {
     return this.walletRepository.updateWalletPassword(password);
-  };
-
-  public updatePasswordWithEncrypt = async (password: string): Promise<boolean> => {
-    const encryptedPassword = encryptWalletPassword(password);
-    return this.updatePassword(encryptedPassword);
   };
 
   public changePassword = async (password: string): Promise<boolean> => {

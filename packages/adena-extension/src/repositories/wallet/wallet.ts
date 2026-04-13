@@ -4,10 +4,10 @@ import { clearInMemoryKey, decryptPassword, encryptPassword } from '@common/util
 
 type LocalValueType =
   | 'SERIALIZED'
-  | 'ENCRYPTED_STORED_PASSWORD'
   | 'QUESTIONNAIRE_EXPIRED_DATE'
   | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
-  | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE';
+  | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
+  | 'KDF_SALT';
 type SessionValueType = 'ENCRYPTED_KEY' | 'ENCRYPTED_PASSWORD';
 
 export class WalletRepository {
@@ -37,7 +37,6 @@ export class WalletRepository {
 
   public deleteSerializedWallet = async (): Promise<boolean> => {
     await this.localStorage.remove('SERIALIZED');
-    await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
     await this.localStorage.remove('QUESTIONNAIRE_EXPIRED_DATE');
 
     return true;
@@ -98,18 +97,12 @@ export class WalletRepository {
       const { encryptedKey, encryptedPassword } = await encryptPassword(password);
       await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey);
       await this.sessionStorage.set('ENCRYPTED_PASSWORD', encryptedPassword);
-      await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
     } catch (e) {
       console.warn('Failed to update wallet password', e);
 
       return false;
     }
 
-    return true;
-  };
-
-  public updateStoredPassword = async (encryptedStoredPassword: string): Promise<boolean> => {
-    await this.localStorage.set('ENCRYPTED_STORED_PASSWORD', encryptedStoredPassword);
     return true;
   };
 
@@ -120,11 +113,6 @@ export class WalletRepository {
     await this.sessionStorage.remove('ENCRYPTED_PASSWORD');
 
     return true;
-  };
-
-  public getEncryptedPassword = async (): Promise<string> => {
-    const encryptedPassword = await this.localStorage.get('ENCRYPTED_STORED_PASSWORD');
-    return encryptedPassword;
   };
 
   public updateStoragePassword = async (password: string): Promise<void> => {
@@ -168,6 +156,18 @@ export class WalletRepository {
 
   public updateAddAccountGuideConfirmDate = async (confirmDate: number): Promise<void> => {
     await this.localStorage.set('ADD_ACCOUNT_GUIDE_CONFIRM_DATE', confirmDate);
+  };
+
+  public getKdfSalt = async (): Promise<Uint8Array | null> => {
+    const saltB64 = await this.localStorage.get('KDF_SALT');
+    if (!saltB64) {
+      return null;
+    }
+    return Uint8Array.from(Buffer.from(saltB64, 'base64'));
+  };
+
+  public updateKdfSalt = async (salt: Uint8Array): Promise<void> => {
+    await this.localStorage.set('KDF_SALT', Buffer.from(salt).toString('base64'));
   };
 
   public migrate = async (password: string): Promise<void> => {
