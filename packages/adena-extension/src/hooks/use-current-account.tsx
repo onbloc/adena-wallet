@@ -25,7 +25,7 @@ export const useCurrentAccount = (): {
       if (!currentAccount) {
         return null;
       }
-      return await currentAccount.getAddress(prefix ?? 'g');
+      return await currentAccount.getAddress(prefix ?? currentNetwork.addressPrefix);
     },
     [currentAccount],
   );
@@ -55,7 +55,7 @@ export const useCurrentAccount = (): {
       if (!currentAccount) {
         return null;
       }
-      const address = await currentAccount.getAddress(currentNetwork.addressPrefix ?? 'g');
+      const address = await currentAccount.getAddress(currentNetwork.addressPrefix);
       return address;
     },
     {

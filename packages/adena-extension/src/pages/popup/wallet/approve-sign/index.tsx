@@ -185,7 +185,7 @@ const ApproveSignContainer: React.FC = () => {
   ): Promise<boolean> => {
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
-      await currentAccount.getAddress('g'),
+      await currentAccount.getAddress(currentNetwork.addressPrefix),
     );
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
@@ -210,6 +210,7 @@ const ApproveSignContainer: React.FC = () => {
         currentAccount,
         currentNetwork.networkId,
         requestData?.data?.messages,
+        currentNetwork.addressPrefix,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
         requestData?.data?.memo,

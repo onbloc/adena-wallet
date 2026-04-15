@@ -118,6 +118,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
       currentAccount,
       currentNetwork.networkId,
       [message],
+      currentNetwork.addressPrefix,
       useNetworkFeeReturn.currentGasInfo?.gasWanted || 0,
       useNetworkFeeReturn.currentGasFeeRawAmount,
       memo,

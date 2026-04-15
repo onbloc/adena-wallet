@@ -229,7 +229,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     const validationMessage = validateInjectionDataForMultisig(
       requestData,
       currentAccount,
-      await currentAccount.getAddress('g'),
+      await currentAccount.getAddress(currentNetwork.addressPrefix),
     );
 
     if (validationMessage) {

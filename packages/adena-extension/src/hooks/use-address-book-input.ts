@@ -66,7 +66,7 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
 
   const getAddressBookInfos = useCallback(async () => {
     const currentAccountInfos = [];
-    const addressPrefix = currentNetwork?.addressPrefix || 'g';
+    const addressPrefix = currentNetwork.addressPrefix;
     const currentAddress = await getCurrentAddress(addressPrefix);
     for (const account of wallet?.accounts || []) {
       const address = await account.getAddress(addressPrefix);
@@ -156,7 +156,7 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
         clearError();
         setOpened(false);
         setSelected(true);
-        const address = await selectedAccount.getAddress(currentNetwork?.addressPrefix || 'g');
+        const address = await selectedAccount.getAddress(currentNetwork.addressPrefix);
         setSelectedAddressBook({
           id: selectedAccount.id,
           name: selectedAccount.name,
