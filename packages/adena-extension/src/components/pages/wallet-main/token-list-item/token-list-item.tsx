@@ -1,3 +1,4 @@
+import AssetIcon from '@components/atoms/asset-icon/asset-icon';
 import TokenListItemBalance from '@components/pages/wallet-main/token-list-item-balance/token-list-item-balance';
 import { MainToken } from '@types';
 import React from 'react';
@@ -14,7 +15,7 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   completeImageLoading,
   onClickTokenItem,
 }) => {
-  const { tokenId, logo, name, balanceAmount } = token;
+  const { tokenId, logo, name, balanceAmount, chainIconUrl } = token;
 
   const onLoadImage = (): void => {
     completeImageLoading(logo);
@@ -23,14 +24,11 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   return (
     <TokenListItemWrapper onClick={(): void => onClickTokenItem(tokenId)}>
       <div className='logo-wrapper'>
-        <img
-          className='logo'
-          src={logo}
+        <AssetIcon
+          tokenIconUrl={logo}
+          chainIconUrl={chainIconUrl}
           onLoad={onLoadImage}
           onError={onLoadImage}
-          loading='eager'
-          decoding='sync'
-          alt='token img'
         />
       </div>
 
