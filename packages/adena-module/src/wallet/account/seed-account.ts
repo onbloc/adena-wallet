@@ -4,6 +4,7 @@ import { publicKeyToAddress } from '../../utils/address';
 import { isHDWalletKeyring, Keyring, KeyringType } from '../../wallet/keyring';
 import { Wallet } from '../wallet';
 import { Account, AccountInfo } from './account';
+import { resolveAddressCached } from './address-cache';
 
 export class SeedAccount implements Account {
   public readonly id;
@@ -49,6 +50,11 @@ export class SeedAccount implements Account {
   public getAddress(prefix: string) {
     return publicKeyToAddress(this.publicKey, prefix);
   }
+
+  public resolveAddress(prefix: string): Promise<string> {
+    return resolveAddressCached(this, prefix);
+  }
+
   public toData() {
     return {
       id: this.id,

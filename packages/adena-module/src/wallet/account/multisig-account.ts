@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { toBech32 } from '../../encoding';
 import { MultisigKeyring } from '../keyring/multisig-keyring';
 import { Account, AccountInfo } from './account';
+import { resolveAddressCached } from './address-cache';
 
 export interface MultisigConfig {
   signers: string[];
@@ -105,6 +106,10 @@ export class MultisigAccount implements Account {
    */
   async getAddress(prefix: string): Promise<string> {
     return toBech32(prefix, this.addressBytes);
+  }
+
+  resolveAddress(prefix: string): Promise<string> {
+    return resolveAddressCached(this, prefix);
   }
 
   /**

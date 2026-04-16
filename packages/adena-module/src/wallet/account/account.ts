@@ -13,7 +13,10 @@ export interface Account {
   keyringId: string;
   publicKey: Uint8Array;
   toData: () => AccountInfo;
+  /** Derive address on demand without caching. Use when freshness is required. */
   getAddress: (prefix: string) => Promise<string>;
+  /** Return cached address for the given prefix, deriving and caching on first call. Preferred for multi-chain display loops. */
+  resolveAddress: (prefix: string) => Promise<string>;
 }
 
 export interface AccountInfo {

@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Account, AccountInfo } from './account';
 import { isAddressKeyring, Keyring, KeyringType } from '../keyring';
 import { toBech32 } from '../../encoding';
+import { resolveAddressCached } from './address-cache';
 
 export class AirgapAccount implements Account {
   public readonly id;
@@ -46,6 +47,10 @@ export class AirgapAccount implements Account {
 
   public async getAddress(prefix: string) {
     return toBech32(prefix, this.addressBytes);
+  }
+
+  public resolveAddress(prefix: string): Promise<string> {
+    return resolveAddressCached(this, prefix);
   }
 
   public toData() {
