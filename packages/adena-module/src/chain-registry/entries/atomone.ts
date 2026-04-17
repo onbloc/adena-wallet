@@ -1,12 +1,11 @@
-import { CosmosChainProfile } from '../types';
+import { CosmosChain, CosmosNetworkProfile } from '../types';
 
-const ATOMONE_BASE = {
-  chainType: 'cosmos' as const,
-  chainGroup: 'atomone' as const,
-  bech32Prefix: 'atone' as const,
+export const ATOMONE_CHAIN: CosmosChain = {
+  chainType: 'cosmos',
+  chainGroup: 'atomone',
+  bech32Prefix: 'atone',
   bech32ValPrefix: 'atonevaloper',
-  coinType: 118 as const,
-  chainIconUrl: '/assets/icons/atone.svg',
+  coinType: 118,
   signing: {
     modes: ['SIGN_MODE_DIRECT', 'SIGN_MODE_LEGACY_AMINO_JSON'] as const,
     preferred: 'SIGN_MODE_DIRECT' as const,
@@ -16,11 +15,17 @@ const ATOMONE_BASE = {
     defaultFeeTokenId: 'atomone-1:uphoton',
     feeCurrencyFilter: (): string[] => ['atomone-1:uphoton'],
   },
-  features: ['feemarket', 'photon', 'gov-v1-3option'] as ('feemarket' | 'photon' | 'gov-v1-3option' | 'ibc-go-v7+')[],
+  features: ['feemarket', 'photon', 'gov-v1-3option'],
 };
 
-export const ATOMONE_1: CosmosChainProfile = {
-  ...ATOMONE_BASE,
+const ATOMONE_PROFILE_BASE = {
+  chainType: 'cosmos' as const,
+  chainGroup: 'atomone' as const,
+  chainIconUrl: '/assets/icons/atone.svg',
+};
+
+export const ATOMONE_1: CosmosNetworkProfile = {
+  ...ATOMONE_PROFILE_BASE,
   id: 'atomone-1',
   chainId: 'atomone-1',
   displayName: 'AtomOne',
@@ -31,4 +36,18 @@ export const ATOMONE_1: CosmosChainProfile = {
   linkUrl: 'https://www.mintscan.io/atomone',
 };
 
-export const ATOMONE_CHAINS: CosmosChainProfile[] = [ATOMONE_1];
+export const ATOMONE_TESTNET_1: CosmosNetworkProfile = {
+  ...ATOMONE_PROFILE_BASE,
+  id: 'atomone-testnet-1',
+  chainId: 'atomone-testnet-1',
+  displayName: 'AtomOne Testnet',
+  isMainnet: false,
+  nativeTokenId: 'atomone-testnet-1:uatone',
+  rpcEndpoints: ['https://atomone-testnet-1-rpc.allinbits.services'],
+  restEndpoints: ['https://atomone-testnet-1-api.allinbits.services'],
+};
+
+export const ATOMONE_NETWORK_PROFILES: CosmosNetworkProfile[] = [ATOMONE_1, ATOMONE_TESTNET_1];
+
+/** @deprecated use ATOMONE_NETWORK_PROFILES instead */
+export const ATOMONE_CHAINS = ATOMONE_NETWORK_PROFILES;
