@@ -660,9 +660,17 @@ const ApproveTransactionContainer: React.FC = () => {
     openScannerLink('/transactions/details', { txhash: txHash });
   }, [response, openScannerLink]);
 
-  const onClickCloseResult = useCallback(() => {
+  const onClickCloseResult = useCallback(async () => {
     if (response) {
-      chrome.runtime.sendMessage(response);
+      // Await delivery before closing — otherwise window.close() can sever the
+      // message channel mid-flight, and the background's onRemoved listener
+      // replies to the dapp with TRANSACTION_REJECTED even though the tx
+      // succeeded.
+      try {
+        await chrome.runtime.sendMessage(response);
+      } catch {
+        // Best-effort: if the channel is already gone, nothing to do.
+      }
     } else {
       onTimeoutSendTransaction();
     }
