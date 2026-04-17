@@ -25,7 +25,7 @@ import {
   MultisigConfig,
   SignerPublicKeyInfo,
 } from '../..';
-import { Keyring, KeyringData } from './keyring';
+import { Keyring, KeyringData, SignRawOptions } from './keyring';
 
 /**
  * MultisigKeyring class
@@ -69,6 +69,15 @@ export class MultisigKeyring implements Keyring {
 
   public get signers(): string[] {
     return this.multisigConfig.signers;
+  }
+
+  async signRaw(_bytes: Uint8Array, _opts?: SignRawOptions): Promise<Uint8Array> {
+    // Multisig has no single private key — it is an N-of-M set of signer
+    // addresses. Individual signers sign separately via their own keyrings,
+    // then signatures are combined via combineSignatures().
+    throw new Error(
+      'Multisig accounts cannot sign directly. Use individual signer accounts.',
+    );
   }
 
   /**

@@ -101,4 +101,17 @@ describe('Transaction Sign', () => {
 
     expect(signature.signature).toHaveLength(1);
   });
+
+  it('GOLDEN: fixed mnemonic + document yields known signature bytes', async () => {
+    // Bit-equality regression: this hex was captured from the pre-refactor
+    // tm2 signing pipeline and must stay identical after Phase 2 (signRaw).
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const body = 'package hello\n// golden\n';
+    const document = makeDocument(body);
+    const { signature } = await wallet.sign(mockProvider, document);
+    const hex = Buffer.from(signature[0].signature).toString('hex');
+    expect(hex).toBe(
+      '11a49ee7818d2c7a60cddd35f9b262c2fc80b3d2edd85e584c3ca63ba4e388080bd5d70f07f39fabdbcd8a8e7357f4c662d412a5c1ae6221ad977574df22b393',
+    );
+  });
 });
