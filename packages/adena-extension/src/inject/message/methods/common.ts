@@ -3,6 +3,12 @@ import { encodeParameter, getSiteName } from '@common/utils/client-utils';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
 
+// Tracks popup window ids that were closed programmatically (by the extension
+// itself — removePopups, popupMessageListener cleanup, etc.) so that the
+// onRemoved listener can distinguish "force-closed" from "user closed via X"
+// and respond with UNEXPECTED_ERROR instead of a user-rejection message.
+const programmaticallyClosedPopups = new Set<number>();
+
 export const createPopup = async (
   popupPath: string,
   message: InjectionMessage,
@@ -48,7 +54,20 @@ export const createPopup = async (
 
     const onRemovedListener = (removeWindowId: number): void => {
       if (windowResponse.id !== removeWindowId) return;
-      sendResponseOnce(closeMessage);
+      const wasProgrammatic = programmaticallyClosedPopups.has(removeWindowId);
+      if (wasProgrammatic) {
+        programmaticallyClosedPopups.delete(removeWindowId);
+      }
+      // If the popup was force-closed by the extension itself, the dapp should
+      // not be told "user rejected" — surface an unexpected error instead.
+      const responseMsg = wasProgrammatic
+        ? InjectionMessageInstance.failure(
+            WalletResponseFailureType.UNEXPECTED_ERROR,
+            {},
+            message.key,
+          )
+        : closeMessage;
+      sendResponseOnce(responseMsg);
       cleanup();
     };
 
@@ -85,6 +104,7 @@ export const removePopups = async (): Promise<void> => {
   const windows = await chrome.windows.getAll();
   windows.forEach((window) => {
     if (window.type === 'popup' && window.id) {
+      programmaticallyClosedPopups.add(window.id);
       chrome.windows.remove(window.id);
     }
   });

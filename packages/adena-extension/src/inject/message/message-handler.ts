@@ -6,6 +6,8 @@ import { InjectionMessage, InjectionMessageInstance } from './message';
 import { existsPopups, removePopups } from './methods';
 import { InjectCore } from './methods/core';
 
+const NON_POPUP_REQUEST_TYPES: ReadonlySet<string> = new Set(['GET_ACCOUNT', 'GET_NETWORK']);
+
 export class MessageHandler {
   public static createHandler = (
     inMemoryProvider: MemoryProvider,
@@ -63,9 +65,15 @@ export class MessageHandler {
       return;
     }
 
-    const isPopup = await existsPopups();
-    if (isPopup) {
-      await removePopups();
+    // Data-only queries must not tear down an open approval popup. DApps such
+    // as Gnoswap poll GET_ACCOUNT in the background; calling removePopups for
+    // those requests force-closes the in-flight approval popup and the user
+    // sees a spurious TRANSACTION_REJECTED.
+    if (!NON_POPUP_REQUEST_TYPES.has(message.type)) {
+      const isPopup = await existsPopups();
+      if (isPopup) {
+        await removePopups();
+      }
     }
 
     switch (message.type) {
