@@ -1,4 +1,5 @@
 export * from './chain-registry';
+export * from './cosmos';
 export * from './crypto';
 export * from './encoding';
 export * from './ledger';
