@@ -1,16 +1,11 @@
 import { sha256 } from '@cosmjs/crypto';
 import { toHex } from '@cosmjs/encoding';
+import { SignMode } from 'cosmjs-types/cosmos/tx/signing/v1beta1/signing';
 
 import { Keyring } from '../../wallet/keyring/keyring';
-import {
-  isHDWalletKeyring,
-  isPrivateKeyKeyring,
-  isWeb3AuthKeyring,
-  isLedgerKeyring,
-  isMultisigKeyring,
-} from '../../wallet/keyring/keyring-util';
 import { makeTxRaw } from '../proto/make-tx-raw';
 import { CosmosProvider } from '../providers/cosmos-provider';
+import { resolveAccount, resolvePublicKey } from '../signer-helpers';
 import { CosmosDocument, SignedCosmosTx } from '../types';
 
 import { makeStdSignDoc } from './make-std-sign-doc';
@@ -64,6 +59,7 @@ export async function signCosmosAmino(
     sequence,
     publicKey,
     signature,
+    signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
   });
 
   return {
@@ -71,48 +67,4 @@ export async function signCosmosAmino(
     txHashHex: toHex(sha256(txBytes)).toUpperCase(),
     signDoc,
   };
-}
-
-async function resolveAccount(
-  document: CosmosDocument,
-  cosmosProvider: CosmosProvider,
-): Promise<{ accountNumber: string; sequence: string }> {
-  // Treat empty string as missing so downstream BigInt(sequence) / BigInt(gas)
-  // in make-tx-raw never receives '' (which would throw a cryptic SyntaxError).
-  const docAccountNumber = nonEmpty(document.accountNumber);
-  const docSequence = nonEmpty(document.sequence);
-  if (docAccountNumber !== undefined && docSequence !== undefined) {
-    return { accountNumber: docAccountNumber, sequence: docSequence };
-  }
-
-  const account = await cosmosProvider.getAccount(document.fromAddress);
-  return {
-    accountNumber: docAccountNumber ?? account.accountNumber,
-    sequence: docSequence ?? account.sequence,
-  };
-}
-
-function nonEmpty(v: string | undefined): string | undefined {
-  return v === undefined || v === '' ? undefined : v;
-}
-
-async function resolvePublicKey(
-  keyring: Keyring,
-  hdPath: number | undefined,
-): Promise<Uint8Array> {
-  if (isHDWalletKeyring(keyring)) return keyring.getPublicKey(hdPath ?? 0);
-  if (isPrivateKeyKeyring(keyring)) return keyring.publicKey;
-  if (isWeb3AuthKeyring(keyring)) return keyring.publicKey;
-
-  if (isLedgerKeyring(keyring)) {
-    throw new Error('Cosmos Ledger support is coming in a later phase');
-  }
-
-  if (isMultisigKeyring(keyring)) {
-    throw new Error('Multisig accounts do not support Cosmos chains');
-  }
-
-  throw new Error(
-    `Keyring type ${keyring.type} cannot sign Cosmos transactions`,
-  );
 }

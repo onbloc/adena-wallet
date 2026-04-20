@@ -36,6 +36,7 @@ describe('makeTxRaw', () => {
       sequence: '5',
       publicKey: compressedPubKey,
       signature,
+      signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
     });
 
     const raw = TxRaw.decode(txBytes);
@@ -79,6 +80,7 @@ describe('makeTxRaw', () => {
         sequence: '0',
         publicKey: uncompressed,
         signature,
+        signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
       });
 
       const raw = TxRaw.decode(txBytes);
@@ -97,6 +99,7 @@ describe('makeTxRaw', () => {
       sequence: '0',
       publicKey: compressedPubKey,
       signature,
+      signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
     });
 
     const raw = TxRaw.decode(txBytes);
