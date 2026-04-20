@@ -72,11 +72,11 @@ export const GNO_DEV: GnoNetworkProfile = {
 
 export const GNO_GNOSWAP: GnoNetworkProfile = {
   ...GNO_PROFILE_BASE,
-  id: 'gnoswap',
+  id: 'dev.gnoswap',
   chainId: 'dev.gnoswap',
   displayName: 'GnoSwap Dev',
   isMainnet: false,
-  nativeTokenId: 'gnoswap:ugnot',
+  nativeTokenId: 'dev.gnoswap:ugnot',
   rpcEndpoints: ['https://dev.rpc.gnoswap.io'],
   indexerUrl: 'https://indexer-gnoswap.in.onbloc.xyz',
   gnoUrl: 'https://gno.land',
