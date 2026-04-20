@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import styled, { useTheme } from 'styled-components';
 
-import { Text, CopyTooltip, StatusDot, HamburgerMenuBtn } from '@components/atoms';
+import { Text, StatusDot, HamburgerMenuBtn } from '@components/atoms';
+import IconCopy from '@assets/icon-copy';
 
 import { getTheme } from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -10,7 +11,9 @@ import { formatAddress, formatNickname, getSiteName } from '@common/utils/client
 import { useAdenaContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
 import { useNetwork } from '@hooks/use-network';
+import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
 import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
+import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import mixins from '@styles/mixins';
 import { createPopupWindow } from '@common/utils/browser-utils';
 import useSessionParams from '@hooks/use-session-state';
@@ -49,6 +52,30 @@ const StyledRightWrapper = styled.div`
   height: 100%;
 `;
 
+const StyledCopyIconButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin-left: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: ${getTheme('neutral', '_3')};
+  flex-shrink: 0;
+
+  &:hover {
+    color: ${getTheme('neutral', 'a')};
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+`;
+
 export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const theme = useTheme();
   const { isPopup } = useSessionParams();
@@ -65,6 +92,58 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const [currentAccountName, setCurrentAccountName] = useState('');
   const { accountNames } = useAccountName();
   const { currentNetwork } = useNetwork();
+
+  const copyButtonRef = useRef<HTMLButtonElement>(null);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [popoverX, setPopoverX] = useState(0);
+  const [popoverY, setPopoverY] = useState(0);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chainAddressEntries = useAccountChainAddresses();
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  const scheduleClose = useCallback(() => {
+    closeTimerRef.current = setTimeout(() => setPopoverOpen(false), 120);
+  }, []);
+
+  const cancelClose = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  const handleCopyIconMouseEnter = useCallback(() => {
+    cancelClose();
+    if (copyButtonRef.current) {
+      const rect = copyButtonRef.current.getBoundingClientRect();
+      const POPOVER_WIDTH = 220;
+      const iconCenterX = rect.left + rect.width / 2;
+      const popoverLeft = (window.innerWidth - POPOVER_WIDTH) / 2;
+      setPopoverX(iconCenterX - popoverLeft);
+      setPopoverY(rect.bottom + 4);
+    }
+    setPopoverOpen(true);
+  }, [cancelClose]);
+
+  const handleCopyIconMouseLeave = useCallback(() => {
+    scheduleClose();
+  }, [scheduleClose]);
+
+  useEffect(() => {
+    if (!popoverOpen) return;
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setPopoverOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [popoverOpen]);
 
   useEffect(() => {
     initAccountInfo();
@@ -141,20 +220,34 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
         <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
         <StyledCenterWrapper>
           <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} />
-          <CopyTooltip copyText={currentAddress || ''}>
-            <Text type='body1Bold' display='inline-flex'>
-              {formatNickname(currentAccountName, 12)}
-              <Text type='body1Reg' color={theme.neutral.a}>
-                {` (${formatAddress(currentAddress || '')})`}
-              </Text>
+          <Text type='body1Bold' display='inline-flex'>
+            {formatNickname(currentAccountName, 12)}
+            <Text type='body1Reg' color={theme.neutral.a}>
+              {` (${formatAddress(currentAddress || '')})`}
             </Text>
-          </CopyTooltip>
+          </Text>
+          <StyledCopyIconButton
+            ref={copyButtonRef}
+            type='button'
+            onMouseEnter={handleCopyIconMouseEnter}
+            onMouseLeave={handleCopyIconMouseLeave}
+          >
+            <IconCopy />
+          </StyledCopyIconButton>
         </StyledCenterWrapper>
         <StyledRightWrapper>
           {isPopup ? <div /> : <PopWindowButton onClick={popupWindow} />}
         </StyledRightWrapper>
       </Header>
       <SideMenuLayout open={open} setOpen={setOpen} />
+      <AccountAddressesPopover
+        open={popoverOpen}
+        positionX={popoverX}
+        positionY={popoverY}
+        onMouseEnter={cancelClose}
+        onMouseLeave={scheduleClose}
+        entries={chainAddressEntries}
+      />
     </Wrapper>
   ) : (
     <></>
