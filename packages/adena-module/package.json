@@ -49,6 +49,7 @@
     "@ledgerhq/hw-transport-webusb": "6.29.4",
     "bech32": "2.0.0",
     "bn.js": "5.2.1",
+    "cosmjs-types": "0.10.1",
     "crypto-js": "4.2.0",
     "dotenv": "16.4.5",
     "ledger-cosmos-js": "2.1.8",
