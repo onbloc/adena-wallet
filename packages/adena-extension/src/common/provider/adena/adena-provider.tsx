@@ -175,9 +175,9 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
   );
 
   const transactionService = useMemo(() => {
-    const transactionService = new TransactionService(walletService, gnoProvider);
+    const transactionService = new TransactionService(walletService, gnoProvider, chainRegistry);
     return transactionService;
-  }, [walletService, gnoProvider]);
+  }, [walletService, gnoProvider, chainRegistry]);
 
   const transactionHistoryService = useMemo(
     () => new TransactionHistoryService(gnoProvider, transactionHistoryRepository),
