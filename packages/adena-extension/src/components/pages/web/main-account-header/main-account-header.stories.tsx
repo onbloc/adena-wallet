@@ -24,7 +24,6 @@ const mockAccount: Account = {
     publicKey: [],
   }),
   getAddress: async () => 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
-  resolveAddress: async () => 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
 }
 
 export const Default: StoryObj<typeof WebMainAccountHeader> = {

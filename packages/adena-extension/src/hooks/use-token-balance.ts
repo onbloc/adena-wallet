@@ -1,8 +1,10 @@
 import { QueryObserverResult, useQuery } from '@tanstack/react-query';
 import { Account } from 'adena-module';
 import { useEffect, useMemo } from 'react';
+import { useRecoilValueLoadable } from 'recoil';
 
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import { AccountState } from '@states';
 import { Amount, TokenBalanceType, TokenModel } from '@types';
 
 import { useAdenaContext, useWalletContext } from './use-context';
@@ -71,18 +73,38 @@ export const useTokenBalance = (): {
     },
   );
 
+  // Pre-derive { accountId -> address } once per (wallet, prefix) so the
+  // 3s refetch loop below reuses the memoized map instead of re-deriving on
+  // every tick.
+  const accountAddressesLoadable = useRecoilValueLoadable(
+    AccountState.accountAddressesByPrefix(currentNetwork.addressPrefix),
+  );
+  const accountAddressesByAccountId =
+    accountAddressesLoadable.state === 'hasValue' ? accountAddressesLoadable.contents : null;
+
   const { data: accountNativeBalanceMap = {}, refetch: refetchAccountNativeBalanceMap } = useQuery<
     Record<string, TokenBalanceType>
   >(
-    ['accountNativeBalanceMap', wallet?.accounts, currentNetwork.chainId, isFetchedGRC20Tokens],
+    [
+      'accountNativeBalanceMap',
+      wallet?.accounts,
+      currentNetwork.chainId,
+      currentNetwork.addressPrefix,
+      isFetchedGRC20Tokens,
+    ],
     () => {
-      if (wallet === null || wallet.accounts === null || nativeToken == null) {
+      if (
+        wallet === null ||
+        wallet.accounts === null ||
+        nativeToken == null ||
+        accountAddressesByAccountId === null
+      ) {
         return {};
       }
 
       return Promise.all(
         wallet.accounts.map(async (account) => {
-          const address = await account.getAddress(currentNetwork.addressPrefix);
+          const address = accountAddressesByAccountId[account.id];
           return fetchBalanceBy(address, nativeToken);
         }),
       ).then((balances) =>
@@ -96,7 +118,7 @@ export const useTokenBalance = (): {
     },
     {
       refetchInterval: REFETCH_INTERVAL,
-      enabled: availableBalanceFetching,
+      enabled: availableBalanceFetching && accountAddressesByAccountId !== null,
     },
   );
 

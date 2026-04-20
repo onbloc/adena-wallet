@@ -1,3 +1,4 @@
+export * as AccountState from './account';
 export * as BalanceState from './balance';
 export * as CommonState from './common';
 export * as ExploreState from './explore';

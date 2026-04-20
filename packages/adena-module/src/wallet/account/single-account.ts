@@ -2,7 +2,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Account, AccountInfo } from './account';
 import { isPrivateKeyKeyring, isWeb3AuthKeyring, Keyring, KeyringType } from '../keyring';
 import { publicKeyToAddress } from '../../utils/address';
-import { resolveAddressCached } from './address-cache';
 
 export class SingleAccount implements Account {
   public readonly id;
@@ -44,10 +43,6 @@ export class SingleAccount implements Account {
 
   public getAddress(prefix: string) {
     return publicKeyToAddress(this.publicKey, prefix);
-  }
-
-  public resolveAddress(prefix: string): Promise<string> {
-    return resolveAddressCached(this, prefix);
   }
 
   public toData() {

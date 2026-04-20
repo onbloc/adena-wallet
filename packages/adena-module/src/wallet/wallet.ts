@@ -394,7 +394,7 @@ export class AdenaWallet implements Wallet {
   async hasAddress(address: string): Promise<boolean> {
     const { prefix } = fromBech32(address);
     const addresses = await Promise.all(
-      this._accounts.map((account) => account.resolveAddress(prefix)),
+      this._accounts.map((account) => account.getAddress(prefix)),
     );
     return addresses.includes(address);
   }
