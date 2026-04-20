@@ -1,4 +1,4 @@
-import { isAirgapAccount } from 'adena-module';
+import { isAirgapAccount, isMultisigAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
@@ -92,14 +92,20 @@ export const TokenDetails = (): JSX.Element => {
   const [etcClicked, setEtcClicked] = useState(false);
   const { currentAccount, currentAddress } = useCurrentAccount();
   const tokenBalance = params?.tokenBalance;
-  // TODO(Phase 3): Remove readOnly branch once Cosmos transaction signing is implemented
-  const readOnly = params?.readOnly ?? false;
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
   const { clearHistoryData } = useHistoryData();
   const { currentBalances } = useTokenBalance();
 
   const isNative = tokenBalance && !isGRC20TokenModel(tokenBalance);
+
+  // Multisig × Cosmos = permanent non-support (keyrings are Gno-only).
+  // Disable the Send button with a tooltip instead of hiding the token so
+  // users can still see balances but immediately understand they can't send.
+  const isMultisigCosmosBlocked =
+    tokenBalance?.type === 'cosmos-native' &&
+    !!currentAccount &&
+    isMultisigAccount(currentAccount);
 
   const tokenPath = useMemo(() => {
     if (!tokenBalance || !isGRC20TokenModel(tokenBalance)) {
@@ -253,7 +259,12 @@ export const TokenDetails = (): JSX.Element => {
         rightProps={{
           onClick: SendButtonClick,
           text: 'Send',
-          props: { disabled: readOnly },
+          props: {
+            disabled: isMultisigCosmosBlocked,
+            title: isMultisigCosmosBlocked
+              ? "Multisig accounts don't support Cosmos chains"
+              : undefined,
+          },
         }}
       />
       {isLoading && isSupported ? (

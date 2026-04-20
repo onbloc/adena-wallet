@@ -79,7 +79,15 @@ const TransferInput: React.FC<TransferInputProps> = ({
         <img className='logo' src={tokenMetainfo?.image || UnknownTokenIcon} alt='token image' />
       </div>
       <div className='address-input-wrapper'>
-        <AddressInput {...addressInput} />
+        <AddressInput
+          {...addressInput}
+          maxLength={tokenMetainfo?.type === 'cosmos-native' ? 48 : 40}
+          placeholder={
+            tokenMetainfo?.type === 'cosmos-native'
+              ? 'Recipient’s AtomOne Address'
+              : 'Recipient’s Gno.land Address'
+          }
+        />
       </div>
       <div className='balance-input-wrapper'>
         <BalanceInput {...balanceInput} />

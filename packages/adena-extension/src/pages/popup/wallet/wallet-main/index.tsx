@@ -181,8 +181,6 @@ export const WalletMain = (): JSX.Element => {
             denom: tokenBalance.amount.denom,
           },
           chainIconUrl: isCosmos ? CHAIN_ICON_MAP[tokenBalance.networkId] : undefined,
-          // TODO(Phase 3): Remove once Cosmos signing is implemented — Send is disabled for AtomOne tokens
-          readOnly: isCosmos || undefined,
         };
       });
   }, [currentBalances, getTokenImage, currentNetwork]);
@@ -198,12 +196,11 @@ export const WalletMain = (): JSX.Element => {
         window.alert('Token not found');
         return;
       }
-      const token = tokens.find((t) => t.tokenId === tokenId);
       navigate(RoutePath.TokenDetails, {
-        state: { tokenBalance, readOnly: token?.readOnly },
+        state: { tokenBalance },
       });
     },
-    [navigate, tokens, currentBalances],
+    [navigate, currentBalances],
   );
 
   const onClickManageButton = useCallback(() => {

@@ -1,3 +1,4 @@
+import { validateCosmosAddress } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -5,6 +6,7 @@ import { isNativeTokenModel } from '@common/validation/validation-token';
 import TransferInput from '@components/pages/transfer-input/transfer-input/transfer-input';
 import { useAddressBookInput } from '@hooks/use-address-book-input';
 import { useBalanceInput } from '@hooks/use-balance-input';
+import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useHistoryData from '@hooks/use-history-data';
 import { RoutePath } from '@types';
@@ -44,7 +46,15 @@ const TransferInputContainer: React.FC = () => {
   } = useSessionParams<RoutePath.TransferInput>();
   const [isTokenSearch, setIsTokenSearch] = useState(params?.isTokenSearch === true);
   const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel | undefined>(params?.tokenBalance);
-  const addressBookInput = useAddressBookInput();
+  const { chainRegistry } = useAdenaContext();
+  // For Cosmos-native tokens the recipient/address-book must use the target
+  // chain's bech32 prefix (e.g. 'atone') instead of the current Gno network's.
+  const addressPrefixOverride = useMemo(() => {
+    if (tokenMetainfo?.type !== 'cosmos-native') return undefined;
+    const chain = chainRegistry.getChainByChainId(tokenMetainfo.networkId);
+    return chain?.chainType === 'cosmos' ? chain.bech32Prefix : undefined;
+  }, [tokenMetainfo, chainRegistry]);
+  const addressBookInput = useAddressBookInput(addressPrefixOverride);
   const balanceInput = useBalanceInput(tokenMetainfo);
   const { currentAccount } = useCurrentAccount();
   const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
@@ -102,6 +112,22 @@ const TransferInputContainer: React.FC = () => {
     goBack();
   }, [isTokenSearch]);
 
+  const validateCosmosPrefixIfNeeded = useCallback((): boolean => {
+    if (!tokenMetainfo || tokenMetainfo.type !== 'cosmos-native') {
+      return true;
+    }
+    const chain = chainRegistry.getChainByChainId(tokenMetainfo.networkId);
+    if (!chain || chain.chainType !== 'cosmos') {
+      return true;
+    }
+    const ok = validateCosmosAddress(addressBookInput.resultAddress, chain.bech32Prefix);
+    if (!ok) {
+      // Reuse the generic "Invalid Address" UI state from addressBookInput.
+      addressBookInput.validateAddressBookInput();
+    }
+    return ok;
+  }, [tokenMetainfo, chainRegistry, addressBookInput]);
+
   const onClickNext = useCallback(async () => {
     if (!isNext) {
       return;
@@ -111,6 +137,7 @@ const TransferInputContainer: React.FC = () => {
     }
     const validAddress =
       addressBookInput.validateAddressBookInput() &&
+      validateCosmosPrefixIfNeeded() &&
       (isNativeTokenModel(tokenMetainfo) || (await addressBookInput.validateEqualAddress()));
     const validBalance = balanceInput.validateBalanceInput();
     if (validAddress && validBalance) {
@@ -129,7 +156,7 @@ const TransferInputContainer: React.FC = () => {
         },
       });
     }
-  }, [addressBookInput, balanceInput, isNext]);
+  }, [addressBookInput, balanceInput, isNext, validateCosmosPrefixIfNeeded]);
 
   useEffect(() => {
     if (isLoadingSessionState) {
