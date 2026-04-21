@@ -76,7 +76,7 @@ export class MultisigKeyring implements Keyring {
     // addresses. Individual signers sign separately via their own keyrings,
     // then signatures are combined via combineSignatures().
     throw new Error(
-      'Multisig accounts cannot sign directly. Use individual signer accounts.',
+      `Multisig accounts cannot sign directly. Use individual signer accounts. (keyring ${this.id})`,
     );
   }
 

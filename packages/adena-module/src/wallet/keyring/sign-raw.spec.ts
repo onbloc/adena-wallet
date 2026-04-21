@@ -68,6 +68,26 @@ describe('Keyring.signRaw — private-key keyrings', () => {
     const sig1 = await keyring.signRaw(BYTES, { hdPath: 1 });
     expect(Buffer.from(sig0).equals(Buffer.from(sig1))).toBe(false);
   });
+
+  it('non-HD keyrings ignore hdPath option', async () => {
+    const hd = await HDWalletKeyring.fromMnemonic(MNEMONIC);
+    const privateKey = await hd.getPrivateKey(0);
+    const publicKey = await hd.getPublicKey(0);
+    const pk = new PrivateKeyKeyring({
+      privateKey: Array.from(privateKey),
+      publicKey: Array.from(publicKey),
+    });
+    const web3 = new Web3AuthKeyring({
+      privateKey: Array.from(privateKey),
+      publicKey: Array.from(publicKey),
+    });
+    const pkSig0 = await pk.signRaw(BYTES, { hdPath: 0 });
+    const pkSig99 = await pk.signRaw(BYTES, { hdPath: 99 });
+    expect(Buffer.from(pkSig0).equals(Buffer.from(pkSig99))).toBe(true);
+    const web3Sig0 = await web3.signRaw(BYTES, { hdPath: 0 });
+    const web3Sig99 = await web3.signRaw(BYTES, { hdPath: 99 });
+    expect(Buffer.from(web3Sig0).equals(Buffer.from(web3Sig99))).toBe(true);
+  });
 });
 
 describe('Keyring.signRaw — non-signing keyrings', () => {

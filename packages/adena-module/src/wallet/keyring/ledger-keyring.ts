@@ -45,7 +45,9 @@ export class LedgerKeyring implements Keyring {
     // it can parse and render to the user. Raw opaque bytes would be blind
     // signing, which the device refuses. Phase 7 replaces this stub with a
     // device-friendly path (signAmino/signDirect) alongside Cosmos-app routing.
-    throw new Error('Ledger signRaw is not implemented yet (Phase 7)');
+    throw new Error(
+      `Ledger signRaw is not implemented yet (Phase 7) (keyring ${this.id})`,
+    );
   }
 
   async sign(provider: Provider, document: Document, hdPath: number = 0) {

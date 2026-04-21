@@ -35,7 +35,7 @@ export class AddressKeyring implements Keyring {
     // AIRGAP keyrings intentionally hold no private key. Signing happens on an
     // external air-gapped device; the wallet only stores the address and
     // broadcasts pre-signed transactions.
-    throw new Error('AIRGAP keyring cannot sign');
+    throw new Error(`AIRGAP keyring cannot sign (keyring ${this.id})`);
   }
 
   async sign(

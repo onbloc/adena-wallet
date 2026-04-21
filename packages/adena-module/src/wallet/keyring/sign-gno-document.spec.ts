@@ -3,7 +3,9 @@ import { ABCIAccount, JSONRPCProvider, Provider, Tx, Wallet as Tm2Wallet } from 
 import { makeSignedTx } from '..';
 import { Document } from '../../utils/messages';
 import { HDWalletKeyring } from './hd-wallet-keyring';
+import { PrivateKeyKeyring } from './private-key-keyring';
 import { signGnoDocument } from './sign-gno-document';
+import { Web3AuthKeyring } from './web3-auth-keyring';
 
 const MNEMONIC =
   'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
@@ -76,11 +78,12 @@ describe('signGnoDocument', () => {
     expect(signature[0].signature.length).toBe(64);
   });
 
-  it('produces identical Tx.encode bytes to legacy tm2 signing path', async () => {
+  it('produces identical Tx.encode bytes to legacy tm2 signing path (HDWallet)', async () => {
     // Regression guard: pub_key.value in TxSignature must be the *compressed*
-    // 33-byte secp256k1 key. Keyrings store uncompressed 65-byte keys, so
-    // signGnoDocument must compress before proto-encoding. This caught
-    // "unable to decode tx" on real Gnoland nodes.
+    // 33-byte secp256k1 key. HDWalletKeyring stores uncompressed 65-byte keys
+    // (generateKeyPair -> Secp256k1.makeKeypair), so signGnoDocument must
+    // compress before proto-encoding. This caught "unable to decode tx" on
+    // real Gnoland nodes.
     const doc = makeDocument('package hello\n// parity\n');
     const tm2Wallet = await Tm2Wallet.fromMnemonic(MNEMONIC, { accountIndex: 0 });
     tm2Wallet.connect(mockProvider);
@@ -92,6 +95,47 @@ describe('signGnoDocument', () => {
       keyring,
       { hdPath: 0 },
     );
+    const legacyHex = Buffer.from(Tx.encode(legacySigned).finish()).toString('hex');
+    const newHex = Buffer.from(Tx.encode(newSigned).finish()).toString('hex');
+    expect(newHex).toBe(legacyHex);
+    expect(newSigned.signatures[0].pub_key.value.length).toBe(35);
+  });
+
+  it('produces identical Tx.encode bytes to legacy tm2 signing path (PrivateKey)', async () => {
+    // PrivateKeyKeyring stores the *compressed* 33-byte pubkey (tm2
+    // Wallet.fromPrivateKey compresses before storing). Secp256k1.compressPubkey
+    // is idempotent, so signGnoDocument must still produce identical bytes.
+    const doc = makeDocument('package hello\n// pk parity\n');
+    const hd = await HDWalletKeyring.fromMnemonic(MNEMONIC);
+    const privateKey = await hd.getPrivateKey(0);
+    const tm2Wallet = await Tm2Wallet.fromPrivateKey(privateKey);
+    tm2Wallet.connect(mockProvider);
+    const legacySigned = await makeSignedTx(tm2Wallet, doc);
+    const pkPublicKey = await tm2Wallet.getSigner().getPublicKey();
+    const keyring = new PrivateKeyKeyring({
+      privateKey: Array.from(privateKey),
+      publicKey: Array.from(pkPublicKey),
+    });
+    const { signed: newSigned } = await signGnoDocument(mockProvider, doc, keyring);
+    const legacyHex = Buffer.from(Tx.encode(legacySigned).finish()).toString('hex');
+    const newHex = Buffer.from(Tx.encode(newSigned).finish()).toString('hex');
+    expect(newHex).toBe(legacyHex);
+    expect(newSigned.signatures[0].pub_key.value.length).toBe(35);
+  });
+
+  it('produces identical Tx.encode bytes to legacy tm2 signing path (Web3Auth)', async () => {
+    const doc = makeDocument('package hello\n// web3auth parity\n');
+    const hd = await HDWalletKeyring.fromMnemonic(MNEMONIC);
+    const privateKey = await hd.getPrivateKey(0);
+    const tm2Wallet = await Tm2Wallet.fromPrivateKey(privateKey);
+    tm2Wallet.connect(mockProvider);
+    const legacySigned = await makeSignedTx(tm2Wallet, doc);
+    const pkPublicKey = await tm2Wallet.getSigner().getPublicKey();
+    const keyring = new Web3AuthKeyring({
+      privateKey: Array.from(privateKey),
+      publicKey: Array.from(pkPublicKey),
+    });
+    const { signed: newSigned } = await signGnoDocument(mockProvider, doc, keyring);
     const legacyHex = Buffer.from(Tx.encode(legacySigned).finish()).toString('hex');
     const newHex = Buffer.from(Tx.encode(newSigned).finish()).toString('hex');
     expect(newHex).toBe(legacyHex);
@@ -115,5 +159,21 @@ describe('signGnoDocument', () => {
     expect(mockProvider.getAccount).toHaveBeenCalledWith(
       'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
     );
+  });
+
+  it('uses opts.accountNumber/sequence override and skips provider.getAccount', async () => {
+    const keyring = await HDWalletKeyring.fromMnemonic(MNEMONIC);
+    const doc: Document = {
+      ...makeDocument('package hello\n'),
+      account_number: '',
+      sequence: '',
+    };
+    const { signature } = await signGnoDocument(mockProvider, doc, keyring, {
+      hdPath: 0,
+      accountNumber: '42',
+      sequence: '7',
+    });
+    expect(signature[0].signature.length).toBe(64);
+    expect(mockProvider.getAccount).not.toHaveBeenCalled();
   });
 });

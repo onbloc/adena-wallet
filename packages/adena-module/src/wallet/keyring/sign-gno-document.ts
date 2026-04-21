@@ -16,15 +16,16 @@ import {
 
 import { publicKeyToAddress } from '../../utils/address';
 import { decodeTxMessages, Document, documentToTx } from '../../utils/messages';
-import { Keyring } from './keyring';
+import { Keyring, SignRawOptions } from './keyring';
 import {
   isHDWalletKeyring,
   isPrivateKeyKeyring,
   isWeb3AuthKeyring,
 } from './keyring-util';
 
-export interface SignGnoOptions {
-  hdPath?: number;
+const GNO_ADDRESS_PREFIX = 'g';
+
+export interface SignGnoOptions extends SignRawOptions {
   accountNumber?: string;
   sequence?: string;
 }
@@ -43,16 +44,18 @@ export async function signGnoDocument(
 
   let accountNumber = opts?.accountNumber ?? document.account_number;
   let sequence = opts?.sequence ?? document.sequence;
-  if (!accountNumber || !sequence) {
+  const accountNumberMissing = accountNumber === undefined || accountNumber === '';
+  const sequenceMissing = sequence === undefined || sequence === '';
+  if (accountNumberMissing || sequenceMissing) {
     const publicKey = await getKeyringPublicKey(keyring, opts?.hdPath);
     // Use publicKeyToAddress (via tm2 KeySigner) to match SeedAccount/SingleAccount/
     // LedgerAccount address derivation, which compresses the pubkey before hashing.
-    // secp256k1PubKeyToAddress does NOT compress and would produce a different
-    // address for an uncompressed 65-byte pubkey as returned by generateKeyPair.
-    const address = await publicKeyToAddress(publicKey, 'g');
+    // Gno pipeline fixes addressPrefix to 'g' by design; multichain pipelines
+    // (Cosmos AMINO/DIRECT) will supply their own prefix.
+    const address = await publicKeyToAddress(publicKey, GNO_ADDRESS_PREFIX);
     const account = await provider.getAccount(address);
-    if (!accountNumber) accountNumber = account.BaseAccount.account_number;
-    if (!sequence) sequence = account.BaseAccount.sequence;
+    if (accountNumberMissing) accountNumber = account.BaseAccount.account_number;
+    if (sequenceMissing) sequence = account.BaseAccount.sequence;
   }
 
   const tx = documentToTx(document);
@@ -79,9 +82,10 @@ export async function signGnoDocument(
   const signature = await keyring.signRaw(signBytes, { hdPath: opts?.hdPath });
 
   const publicKey = await getKeyringPublicKey(keyring, opts?.hdPath);
-  // PubKeySecp256k1 proto carries the compressed (33-byte) form. Keyrings store
-  // uncompressed 65-byte keys (generateKeyPair -> Secp256k1.makeKeypair), so we
-  // must compress before encoding, matching tm2 KeySigner.getAddress behavior.
+  // PubKeySecp256k1 proto carries the compressed (33-byte) form. keyring.publicKey
+  // may be compressed (PrivateKey/Web3Auth — tm2 Wallet.fromPrivateKey compresses
+  // before storing) or uncompressed (HDWallet — generateKeyPair returns 65 bytes).
+  // Secp256k1.compressPubkey is idempotent so this normalizes both to 33 bytes.
   const compressedPubKey = Secp256k1.compressPubkey(publicKey);
   const txSignature: TxSignature = {
     pub_key: {
