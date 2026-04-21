@@ -92,6 +92,8 @@ export const TokenDetails = (): JSX.Element => {
   const [etcClicked, setEtcClicked] = useState(false);
   const { currentAccount, currentAddress } = useCurrentAccount();
   const tokenBalance = params?.tokenBalance;
+  // TODO(Phase 3): Remove readOnly branch once Cosmos transaction signing is implemented
+  const readOnly = params?.readOnly ?? false;
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
   const { clearHistoryData } = useHistoryData();
@@ -251,6 +253,7 @@ export const TokenDetails = (): JSX.Element => {
         rightProps={{
           onClick: SendButtonClick,
           text: 'Send',
+          props: { disabled: readOnly },
         }}
       />
       {isLoading && isSupported ? (

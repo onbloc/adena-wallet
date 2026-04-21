@@ -134,11 +134,18 @@ export const WalletSearch = (): JSX.Element => {
       </SearchBox>
       <DataListWrap>
         {currentBalances
-          .filter(
-            (balance) =>
+          .filter((balance) => {
+            // Hide read-only tokens (Cosmos until Phase 3 signing) from the send
+            // flow so users cannot select a token that cannot actually be sent.
+            // Deposit flow keeps them visible — receiving is always available.
+            if (params?.type === 'send' && balance.type === 'cosmos-native') {
+              return false;
+            }
+            return (
               searchTextFilter(balance.name ?? '', searchText) ||
-              searchTextFilter(balance.symbol ?? '', searchText),
-          )
+              searchTextFilter(balance.symbol ?? '', searchText)
+            );
+          })
           .map((balance, idx) => (
             <ListBox
               left={

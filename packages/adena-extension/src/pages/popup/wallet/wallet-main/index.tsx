@@ -5,6 +5,7 @@ import { useRecoilState } from 'recoil';
 import styled from 'styled-components';
 
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import { CHAIN_ICON_MAP, COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
 import { Button, Row, Text } from '@components/atoms';
 import IconThunder from '@components/atoms/icon/icon-assets/icon-thunder';
 import LoadingButton from '@components/atoms/loading-button/loading-button';
@@ -167,17 +168,24 @@ export const WalletMain = (): JSX.Element => {
       .filter((tokenBalance) => tokenBalance.display)
       .filter((tokenBalance) => !BigNumber(tokenBalance.amount.value).isNaN())
       .map((tokenBalance) => {
+        const isCosmos = tokenBalance.networkId !== currentNetwork.networkId;
         return {
           tokenId: tokenBalance.tokenId,
-          logo: getTokenImage(tokenBalance) || `${UnknownTokenIcon}`,
+          logo:
+            getTokenImage(tokenBalance) ||
+            COSMOS_TOKEN_ICON_MAP[tokenBalance.tokenId] ||
+            `${UnknownTokenIcon}`,
           name: tokenBalance.name,
           balanceAmount: {
             value: BigNumber(tokenBalance.amount.value).toFormat(),
             denom: tokenBalance.amount.denom,
           },
+          chainIconUrl: isCosmos ? CHAIN_ICON_MAP[tokenBalance.networkId] : undefined,
+          // TODO(Phase 3): Remove once Cosmos signing is implemented — Send is disabled for AtomOne tokens
+          readOnly: isCosmos || undefined,
         };
       });
-  }, [currentBalances, getTokenImage]);
+  }, [currentBalances, getTokenImage, currentNetwork]);
 
   const tokenImages = useMemo(() => {
     return tokens.map((token) => token.logo);
@@ -190,11 +198,12 @@ export const WalletMain = (): JSX.Element => {
         window.alert('Token not found');
         return;
       }
+      const token = tokens.find((t) => t.tokenId === tokenId);
       navigate(RoutePath.TokenDetails, {
-        state: { tokenBalance },
+        state: { tokenBalance, readOnly: token?.readOnly },
       });
     },
-    [navigate, tokens],
+    [navigate, tokens, currentBalances],
   );
 
   const onClickManageButton = useCallback(() => {
