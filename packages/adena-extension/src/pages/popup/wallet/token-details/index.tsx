@@ -98,14 +98,13 @@ export const TokenDetails = (): JSX.Element => {
   const { currentBalances } = useTokenBalance();
 
   const isNative = tokenBalance && !isGRC20TokenModel(tokenBalance);
+  const isCosmosNative = tokenBalance?.type === 'cosmos-native';
 
   // Multisig × Cosmos = permanent non-support (keyrings are Gno-only).
   // Disable the Send button with a tooltip instead of hiding the token so
   // users can still see balances but immediately understand they can't send.
   const isMultisigCosmosBlocked =
-    tokenBalance?.type === 'cosmos-native' &&
-    !!currentAccount &&
-    isMultisigAccount(currentAccount);
+    isCosmosNative && !!currentAccount && isMultisigAccount(currentAccount);
 
   const tokenPath = useMemo(() => {
     if (!tokenBalance || !isGRC20TokenModel(tokenBalance)) {
@@ -119,10 +118,10 @@ export const TokenDetails = (): JSX.Element => {
   }, [currentNetwork]);
 
   const pageTransactionHistoryQuery = useTokenTransactionsPage(isNative, tokenPath, {
-    enabled: isUsedApi,
+    enabled: isUsedApi && !isCosmosNative,
   });
   const commonTransactionHistoryQuery = useTokenTransactions(isNative, tokenPath, {
-    enabled: !isUsedApi,
+    enabled: !isUsedApi && !isCosmosNative,
   });
 
   const { status, isLoading, isFetching, data, isSupported, fetchNextPage } = useMemo(() => {
@@ -262,12 +261,16 @@ export const TokenDetails = (): JSX.Element => {
           props: {
             disabled: isMultisigCosmosBlocked,
             title: isMultisigCosmosBlocked
-              ? "Multisig accounts don't support Cosmos chains"
+              ? 'Multisig accounts do not support Cosmos chains'
               : undefined,
           },
         }}
       />
-      {isLoading && isSupported ? (
+      {isCosmosNative ? (
+        <Text className='desc' type='body1Reg' color={theme.neutral.a}>
+          Transaction history is not supported yet
+        </Text>
+      ) : isLoading && isSupported ? (
         <LoadingTokenDetails />
       ) : transactions.length > 0 ? (
         <TransactionHistory
