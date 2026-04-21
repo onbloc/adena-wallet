@@ -5,16 +5,20 @@ import { TokenProfile } from 'adena-module';
 import { TokenBalanceType } from '@types';
 
 export class CosmosBalanceService {
-  constructor(private cosmosLcdProvider: CosmosLcdProvider) {}
+  constructor(private cosmosProvider: CosmosLcdProvider | null) {}
 
   async getTokenBalance(address: string, token: TokenProfile): Promise<TokenBalanceType | null> {
+    if (!this.cosmosProvider) {
+      return null;
+    }
+
     const origin = token.origin;
     if (origin.kind !== 'cosmos-native' && origin.kind !== 'cosmos-ibc') {
       return null;
     }
 
     const denom = origin.kind === 'cosmos-native' ? origin.denom : origin.ibcDenom;
-    const rawAmount = await this.cosmosLcdProvider.getBalance(address, denom);
+    const rawAmount = await this.cosmosProvider.getBalance(address, denom);
     if (rawAmount === null) {
       return null;
     }

@@ -91,6 +91,14 @@ describe('CosmosBalanceService', () => {
       expect(result).toBeNull();
     });
 
+    it('returns null when CosmosProvider is not injected', async () => {
+      const noProviderService = new CosmosBalanceService(null);
+
+      const result = await noProviderService.getTokenBalance('atone1abc', UATONE);
+
+      expect(result).toBeNull();
+    });
+
     it('returns null for gno-native tokens', async () => {
       const result = await service.getTokenBalance('g1abc', GNO_TOKEN);
 

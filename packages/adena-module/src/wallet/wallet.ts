@@ -398,8 +398,8 @@ export class AdenaWallet implements Wallet {
   // ─── Cosmos AMINO (Phase 3) ───────────────────────────────────────────
   // Dedicated methods so Gno callers don't encounter union-typed returns.
   // CosmosProvider is injected by the caller (mirrors the Gno `Provider` DI
-  // pattern — TransactionService resolves the profile via ChainRegistry and
-  // constructs the CosmosLcdProvider before calling these methods).
+  // pattern — TransactionService receives the provider as a constructor
+  // dependency from the DI container before calling these methods).
 
   async signCosmosByAccountId(
     accountId: string,

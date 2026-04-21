@@ -43,14 +43,18 @@ export class TransactionService {
   // keep working while the DI container in adena-provider wires it up.
   private chainRegistry: ChainRegistry | null;
 
+  private cosmosProvider: CosmosLcdProvider | null;
+
   constructor(
     walletService: WalletService,
     gnoProvider: GnoProvider | null,
     chainRegistry: ChainRegistry | null = null,
+    cosmosProvider: CosmosLcdProvider | null = null,
   ) {
     this.walletService = walletService;
     this.gnoProvider = gnoProvider;
     this.chainRegistry = chainRegistry;
+    this.cosmosProvider = cosmosProvider;
   }
 
   public getGnoProvider(): GnoProvider {
@@ -77,11 +81,6 @@ export class TransactionService {
       throw new Error(`Cosmos network profile not found for chainId: ${chainId}`);
     }
     return profile as CosmosNetworkProfile;
-  }
-
-  private makeCosmosProvider(chainId: string): CosmosLcdProvider {
-    const profile = this.resolveCosmosProfile(chainId);
-    return new CosmosLcdProvider(profile.restEndpoints[0]);
   }
 
   /**
@@ -258,18 +257,26 @@ export class TransactionService {
     accountId: string,
     document: CosmosDocument,
   ): Promise<SignedCosmosTx> => {
+    if (!this.cosmosProvider) {
+      throw new Error('CosmosProvider not injected');
+    }
+    this.resolveCosmosProfile(document.chainId);
     const wallet = await this.walletService.loadWallet();
-    const cosmosProvider = this.makeCosmosProvider(document.chainId);
-    return wallet.signCosmosByAccountId(accountId, document, cosmosProvider);
+    return wallet.signCosmosByAccountId(accountId, document, this.cosmosProvider);
   };
 
   public broadcastCosmos = async (
     signedTx: SignedCosmosTx,
     chainId: string,
   ): Promise<CosmosTxBroadcastResponse> => {
+    if (!this.cosmosProvider) {
+      throw new Error('CosmosProvider not injected');
+    }
+    this.resolveCosmosProfile(chainId);
     const wallet = await this.walletService.loadWallet();
-    const cosmosProvider = this.makeCosmosProvider(chainId);
-    return wallet.broadcastCosmosTx(signedTx, cosmosProvider);
+    const result = await wallet.broadcastCosmosTx(signedTx, this.cosmosProvider);
+    this.cosmosProvider.invalidate();
+    return result;
   };
 
   /**
