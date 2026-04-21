@@ -77,18 +77,23 @@ async function resolveAccount(
   document: CosmosDocument,
   cosmosProvider: CosmosProvider,
 ): Promise<{ accountNumber: string; sequence: string }> {
-  if (document.accountNumber !== undefined && document.sequence !== undefined) {
-    return {
-      accountNumber: document.accountNumber,
-      sequence: document.sequence,
-    };
+  // Treat empty string as missing so downstream BigInt(sequence) / BigInt(gas)
+  // in make-tx-raw never receives '' (which would throw a cryptic SyntaxError).
+  const docAccountNumber = nonEmpty(document.accountNumber);
+  const docSequence = nonEmpty(document.sequence);
+  if (docAccountNumber !== undefined && docSequence !== undefined) {
+    return { accountNumber: docAccountNumber, sequence: docSequence };
   }
 
   const account = await cosmosProvider.getAccount(document.fromAddress);
   return {
-    accountNumber: document.accountNumber ?? account.accountNumber,
-    sequence: document.sequence ?? account.sequence,
+    accountNumber: docAccountNumber ?? account.accountNumber,
+    sequence: docSequence ?? account.sequence,
   };
+}
+
+function nonEmpty(v: string | undefined): string | undefined {
+  return v === undefined || v === '' ? undefined : v;
 }
 
 async function resolvePublicKey(

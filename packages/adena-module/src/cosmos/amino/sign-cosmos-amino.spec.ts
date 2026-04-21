@@ -110,6 +110,42 @@ describe('signCosmosAmino', () => {
     );
   });
 
+  it('treats empty-string accountNumber/sequence as missing (avoids BigInt crash)', async () => {
+    // Regression: prior behavior passed '' through as-is, causing
+    // BigInt('') → SyntaxError deep in make-tx-raw. resolveAccount now
+    // normalizes empty strings to undefined so the LCD fallback runs.
+    const keyring = await HDWalletKeyring.fromMnemonic(MNEMONIC);
+    const cosmjsWallet = await Secp256k1Wallet.fromKey(
+      await keyring.getPrivateKey(0),
+      'atone',
+    );
+    const [{ address }] = await cosmjsWallet.getAccounts();
+
+    const document = makeDocument({
+      fromAddress: address,
+      accountNumber: '',
+      sequence: '',
+    });
+    document.msgs[0].value.from_address = address;
+
+    const provider = makeMockProvider();
+    provider.getAccount.mockResolvedValue({
+      address,
+      accountNumber: '88',
+      sequence: '4',
+    });
+
+    const signed = await signCosmosAmino({
+      document,
+      keyring,
+      cosmosProvider: provider,
+    });
+
+    expect(provider.getAccount).toHaveBeenCalledWith(address);
+    expect(signed.signDoc.account_number).toBe('88');
+    expect(signed.signDoc.sequence).toBe('4');
+  });
+
   it('fetches accountNumber and sequence from provider when missing from document', async () => {
     const keyring = await HDWalletKeyring.fromMnemonic(MNEMONIC);
     const cosmjsWallet = await Secp256k1Wallet.fromKey(
