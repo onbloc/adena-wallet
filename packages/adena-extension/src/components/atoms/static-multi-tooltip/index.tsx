@@ -5,29 +5,31 @@ import { Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 
-interface TooltipProps {
-  bgColor?: string;
-  posTop?: string;
+interface TooltipStyledProps {
+  $bgColor?: string;
+  $posTop?: string;
 }
 
-interface StaticTooltipProps extends TooltipProps {
+interface StaticTooltipProps {
+  bgColor?: string;
+  posTop?: string;
   items: {
     tooltipText: string;
     onClick: () => void;
   }[];
 }
 
-const Tooltip = styled.div<TooltipProps>`
+const Tooltip = styled.div<TooltipStyledProps>`
   ${mixins.flex()};
   width: 171px;
   height: auto;
   visibility: hidden;
   z-index: 1;
-  background-color: ${({ theme, bgColor }): string => (bgColor ? bgColor : theme.neutral._9)};
+  background-color: ${({ theme, $bgColor }): string => ($bgColor ? $bgColor : theme.neutral._9)};
   border-radius: 13px;
   position: absolute;
   right: 0px;
-  top: ${({ posTop }): string => (posTop ? posTop : '20px')};
+  top: ${({ $posTop }): string => ($posTop ? $posTop : '20px')};
   transform: scale(0.6);
 
   & > * {
@@ -44,7 +46,7 @@ const Tooltip = styled.div<TooltipProps>`
 
 export const StaticMultiTooltip = ({ bgColor, posTop, items }: StaticTooltipProps): JSX.Element => {
   return (
-    <Tooltip className='static-tooltip' bgColor={bgColor} posTop={posTop}>
+    <Tooltip className='static-tooltip' $bgColor={bgColor} $posTop={posTop}>
       {items.map((item, index) => (
         <Text key={index} type='body3Reg' textAlign='center' onClick={item.onClick}>
           {item.tooltipText}
