@@ -1,6 +1,6 @@
 import { CommonError } from '@common/errors/common';
 import { ChainRepository } from '@repositories/common';
-import { NetworkMetainfo } from '@types';
+import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 
 export class ChainService {
   private chainRepository: ChainRepository;
@@ -52,6 +52,40 @@ export class ChainService {
     return true;
   };
 
+  public getAtomoneNetworks = async (): Promise<AtomoneNetworkMetainfo[]> => {
+    return this.chainRepository.getAtomoneNetworks();
+  };
+
+  public addAtomoneNetwork = async (
+    name: string,
+    rpcUrl: string,
+    restUrl: string,
+    chainId: string,
+  ): Promise<boolean> => {
+    const addedNetwork: AtomoneNetworkMetainfo = {
+      id: `${Date.now()}`,
+      default: false,
+      isMainnet: false,
+      chainGroup: 'atomone',
+      chainType: 'cosmos',
+      chainId,
+      chainName: 'AtomOne',
+      networkId: chainId,
+      networkName: name,
+      addressPrefix: 'atone',
+      rpcUrl,
+      restUrl,
+    };
+    return this.chainRepository.addAtomoneNetwork(addedNetwork);
+  };
+
+  public updateAtomoneNetworks = async (
+    networks: Array<AtomoneNetworkMetainfo>,
+  ): Promise<boolean> => {
+    await this.chainRepository.updateAtomoneNetworks(networks);
+    return true;
+  };
+
   public getCurrentNetworkId = async (): Promise<string> => {
     return this.chainRepository.getCurrentNetworkId();
   };
@@ -70,6 +104,7 @@ export class ChainService {
   public clear = async (): Promise<void> => {
     await this.chainRepository.deleteCurrentChainId();
     await this.chainRepository.deleteNetworks();
+    await this.chainRepository.deleteAtomoneNetworks();
     await this.chainRepository.deleteCurrentNetworkId();
   };
 }

@@ -36,6 +36,23 @@ export interface NetworkMetainfo {
   deleted?: boolean;
 }
 
+export interface AtomoneNetworkMetainfo {
+  id: string;
+  default: boolean;
+  isMainnet: boolean;
+  chainGroup: 'atomone';
+  chainType: 'cosmos';
+  chainId: string;
+  chainName: string;
+  networkId: string;
+  networkName: string;
+  addressPrefix: string;
+  rpcUrl: string;
+  restUrl: string;
+  linkUrl?: string;
+  deleted?: boolean;
+}
+
 /**
  * CREATE: When there is no stored serialized wallet value
  * LOGIN: When there is no encrypted password value
