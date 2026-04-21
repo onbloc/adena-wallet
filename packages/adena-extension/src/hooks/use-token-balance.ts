@@ -225,6 +225,30 @@ export const useTokenBalance = (): {
   }
 
   async function fetchBalanceBy(address: string, token: TokenModel): Promise<TokenBalanceType> {
+    // Cosmos branch: the `address` arg is the current (Gno-prefixed) address,
+    // which does not apply to Cosmos chains. Resolve the chain-specific address
+    // from currentAccount + chain.bech32Prefix and query the Cosmos LCD.
+    // Without this branch Send would read 0 for ATONE/PHOTON even when the
+    // wallet-main screen shows a non-zero balance (uses fetchCosmosTokenBalances).
+    if (token.type === 'cosmos-native') {
+      const zeroBalance: TokenBalanceType = {
+        ...token,
+        amount: getTokenAmount({ value: '0', denom: token.symbol }),
+      };
+
+      if (!currentAccount) return zeroBalance;
+
+      const chain = chainRegistry.getChainByChainId(token.networkId);
+      if (!chain || chain.chainType !== 'cosmos') return zeroBalance;
+
+      const cosmosAddress = await currentAccount.resolveAddress(chain.bech32Prefix);
+      const profile = tokenRegistry.get(token.tokenId);
+      if (!profile) return zeroBalance;
+
+      const balance = await cosmosBalanceService.getTokenBalance(cosmosAddress, profile);
+      return balance ?? zeroBalance;
+    }
+
     const balanceAmount = isNativeTokenModel(token)
       ? await balanceService.getGnotTokenBalance(address)
       : isGRC20TokenModel(token)

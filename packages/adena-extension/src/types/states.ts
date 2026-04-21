@@ -2,6 +2,9 @@ import { TokenModel } from './';
 
 export interface TokenBalanceType extends TokenModel {
   amount: Amount;
+  // Present on 'gno-native' / 'cosmos-native' rows — the raw on-chain denom
+  // (e.g. ugnot, uatone, uphoton) used to construct transactions.
+  denom?: string;
 }
 
 export interface Amount {
