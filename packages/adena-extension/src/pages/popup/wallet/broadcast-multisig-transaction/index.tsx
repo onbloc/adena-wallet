@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import { Account, isMultisigAccount, MultisigConfig, RawTx } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -46,9 +45,9 @@ interface TransactionData {
   memo: string;
 }
 
-function makeDefaultNetworkInfo(chainId: string, rpcUrl: string): NetworkMetainfo {
+function makeDefaultNetworkInfo(chainId: string, rpcUrl: string, addressPrefix: string): NetworkMetainfo {
   return {
-    addressPrefix: defaultAddressPrefix,
+    addressPrefix,
     chainId,
     rpcUrl,
     networkId: chainId,
@@ -123,7 +122,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const currentNetwork: NetworkMetainfo = useMemo(() => {
     const networkInfo = requestData?.data?.networkInfo;
     if (!!networkInfo?.chainId && !!networkInfo?.rpcUrl) {
-      return makeDefaultNetworkInfo(networkInfo.chainId, networkInfo.rpcUrl);
+      return makeDefaultNetworkInfo(networkInfo.chainId, networkInfo.rpcUrl, currentWalletNetwork.addressPrefix);
     }
 
     return currentWalletNetwork;
@@ -306,7 +305,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
-      await currentAccount.getAddress(defaultAddressPrefix),
+      await currentAccount.getAddress(currentNetwork.addressPrefix),
       false,
     );
     if (validationMessage) {

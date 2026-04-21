@@ -1,7 +1,6 @@
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  defaultAddressPrefix,
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
@@ -66,12 +65,13 @@ export class TransactionService {
     chainId: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[],
+    addressPrefix: string,
     gasWanted?: number,
     gasFee?: number,
     memo?: string | undefined,
   ): Promise<Document> => {
     const provider = this.getGnoProvider();
-    const address = await account.getAddress(defaultAddressPrefix);
+    const address = await account.getAddress(addressPrefix);
     const accountInfo = await provider.getAccountInfo(address).catch(() => null);
     const accountNumber = accountInfo?.accountNumber ?? 0;
     const accountSequence = accountInfo?.sequence ?? 0;

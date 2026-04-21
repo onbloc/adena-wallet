@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import {
   AirgapAccount,
   AddressKeyring,
@@ -11,6 +10,7 @@ import {
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useNetwork } from '@hooks/use-network';
 import { RoutePath } from '@types';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { waitForRun } from '@common/utils/timeout-utils';
@@ -51,6 +51,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   const { navigate } = useAppNavigate();
   const { updateWallet } = useWalletContext();
   const { walletService } = useAdenaContext();
+  const { currentNetwork } = useNetwork();
   const { accounts } = useLoadAccounts();
   const [setupAirgapState, setSetupAirgapState] = useState<SetupAirgapStateType>('INIT');
   const [address, setAddress] = useState<string>('');
@@ -76,7 +77,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   const _validateAddress = useCallback(() => {
     try {
       const { prefix } = fromBech32(address);
-      if (address && prefix === defaultAddressPrefix) {
+      if (address && prefix === currentNetwork.addressPrefix) {
         return true;
       }
     } catch (e) {
@@ -88,7 +89,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   const _existsAddress = useCallback(async () => {
     const checkAccounts = accounts.filter((account) => isAirgapAccount(account));
     return Promise.all(
-      checkAccounts.map((account) => account.getAddress(defaultAddressPrefix)),
+      checkAccounts.map((account) => account.getAddress(currentNetwork.addressPrefix)),
     ).then((addresses) => addresses.includes(address));
   }, [accounts, address]);
 

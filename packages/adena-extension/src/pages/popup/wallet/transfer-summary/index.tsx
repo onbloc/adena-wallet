@@ -187,6 +187,7 @@ const TransferSummaryContainer: React.FC = () => {
       currentAccount,
       currentNetwork.networkId,
       [message],
+      currentNetwork.addressPrefix,
       gasWanted,
       BigNumber(networkFee?.amount || 0)
         .shiftedBy(GasToken.decimals)

@@ -1,5 +1,6 @@
 import { useAdenaContext, useMultisigTransactionContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useNetwork } from '@hooks/use-network';
 import { useCallback, useState } from 'react';
 
 export type SignTransactionState = 'IDLE' | 'SIGNING' | 'SUCCESS' | 'FAILED';
@@ -17,6 +18,7 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
 
   const { multisigService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentNetwork } = useNetwork();
   const {
     transaction,
     chainId,
@@ -40,6 +42,7 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
         transaction,
         accountNumber,
         sequence,
+        currentNetwork.addressPrefix,
       );
 
       const fileSaved = await multisigService.saveSignatureToFile(newSignature);

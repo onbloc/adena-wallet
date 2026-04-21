@@ -18,7 +18,6 @@ import {
 } from '@common/utils/client-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { ApproveTransaction } from '@components/molecules';
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -186,7 +185,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
   ): Promise<boolean> => {
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
-      await currentAccount.getAddress(defaultAddressPrefix),
+      await currentAccount.getAddress(currentNetwork.addressPrefix),
     );
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
@@ -211,6 +210,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
         currentAccount,
         currentNetwork.networkId,
         requestData?.data?.messages,
+        currentNetwork.addressPrefix,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
         requestData?.data?.memo,

@@ -2,7 +2,6 @@
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  defaultAddressPrefix,
   TM2Error,
 } from '@gnolang/tm2-js-client';
 import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
@@ -51,9 +50,9 @@ interface TransactionData {
   document: Document;
 }
 
-function makeDefaultNetworkInfo(chainId: string, rpcUrl: string): NetworkMetainfo {
+function makeDefaultNetworkInfo(chainId: string, rpcUrl: string, addressPrefix: string): NetworkMetainfo {
   return {
-    addressPrefix: defaultAddressPrefix,
+    addressPrefix,
     chainId,
     rpcUrl,
     networkId: chainId,
@@ -124,7 +123,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const currentNetwork: NetworkMetainfo = useMemo(() => {
     const networkInfo = requestData?.data?.networkInfo;
     if (!!networkInfo?.chainId && !!networkInfo?.rpcUrl) {
-      return makeDefaultNetworkInfo(networkInfo.chainId, networkInfo.rpcUrl);
+      return makeDefaultNetworkInfo(networkInfo.chainId, networkInfo.rpcUrl, currentWalletNetwork.addressPrefix);
     }
 
     return currentWalletNetwork;
@@ -311,7 +310,7 @@ const ApproveTransactionContainer: React.FC = () => {
     currentAccount: Account,
     requestData: InjectionMessage,
   ): Promise<boolean> => {
-    const address = await currentAccount.getAddress('g');
+    const address = await currentAccount.getAddress(currentNetwork.addressPrefix);
     const validationMessage = validateInjectionDataWithAddress(requestData, address);
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
@@ -351,6 +350,7 @@ const ApproveTransactionContainer: React.FC = () => {
         currentAccount,
         currentNetwork.networkId,
         requestData?.data?.messages,
+        currentNetwork.addressPrefix,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
         requestData?.data?.memo,
