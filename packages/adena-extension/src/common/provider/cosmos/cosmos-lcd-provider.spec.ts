@@ -207,6 +207,16 @@ describe('CosmosLcdProvider', () => {
       );
     });
 
+    it('throws a clear error when tx_response is missing from LCD response', async () => {
+      // Regression: prior code accessed r.code without null-checking r,
+      // producing a cryptic "Cannot read properties of undefined" crash.
+      mockPost.mockResolvedValue({ data: {} });
+
+      await expect(provider.broadcastTx(new Uint8Array([1]))).rejects.toThrow(
+        /no tx_response/,
+      );
+    });
+
     it('throws with raw_log when code is non-zero', async () => {
       mockPost.mockResolvedValue({
         data: {

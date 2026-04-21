@@ -109,6 +109,9 @@ export class CosmosLcdProvider implements CosmosProvider {
     }>(`${this.baseUrl}/cosmos/tx/v1beta1/txs`, body);
 
     const r = response.data.tx_response;
+    if (!r) {
+      throw new Error('Cosmos broadcast returned no tx_response');
+    }
     if (r.code !== 0) {
       throw new Error(`Cosmos broadcast failed (code=${r.code}): ${r.raw_log}`);
     }
