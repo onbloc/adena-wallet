@@ -314,15 +314,13 @@ const TransferSummaryContainer: React.FC = () => {
     }
 
     // Cosmos AMINO path (Phase 3) — skips Gno createDocument/gas-simulate flow.
+    // Let errors propagate so transferByCommon's catch surfaces the real
+    // message (broadcast code/raw_log, LCD error, etc.) instead of the
+    // generic "could not be submitted" fallback.
     if (summaryInfo.tokenMetainfo.type === 'cosmos-native') {
-      try {
-        const result = await createCosmosTransaction();
-        if (!result) return null;
-        return { hash: result.txhash };
-      } catch (e) {
-        console.error(e);
-        return null;
-      }
+      const result = await createCosmosTransaction();
+      if (!result) return null;
+      return { hash: result.txhash };
     }
 
     const document = await createDocument();
