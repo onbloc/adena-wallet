@@ -2,8 +2,8 @@ import { AminoMsg, StdFee, StdSignDoc } from '@cosmjs/amino';
 
 /**
  * Minimum shape needed for Cosmos AMINO signing. Distinct from Gno `Document`.
- * When `accountNumber` / `sequence` are omitted, the signer fetches them via
- * `CosmosLcdProvider.getAccount()`.
+ * When `accountNumber` / `sequence` are omitted, the signer fetches them from
+ * the chain through the injected provider.
  */
 export interface CosmosDocument {
   chainId: string;

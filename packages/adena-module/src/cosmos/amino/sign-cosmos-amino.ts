@@ -19,9 +19,9 @@ import { serializeSignDoc } from './serialize-sign-doc';
 export interface SignCosmosAminoParams {
   document: CosmosDocument;
   keyring: Keyring;
-  // Injected by the caller (e.g. adena-extension supplies CosmosLcdProvider).
-  // Mirrors the Gno `Provider` DI pattern so adena-module stays free of
-  // HTTP-client dependencies.
+  // Injected by the caller (adena-extension supplies CosmosLcdProvider,
+  // which implements this interface). Mirrors the Gno `Provider` DI
+  // pattern so adena-module stays free of HTTP-client dependencies.
   cosmosProvider: CosmosProvider;
   hdPath?: number;
 }
