@@ -18,7 +18,7 @@
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/bn.js": "5.2.0",
     "@types/crypto-js": "4.2.2",
-"@types/node": "^25.5.0",
+    "@types/node": "^25.5.0",
     "@vitest/coverage-istanbul": "^4.1.2",
     "eslint": "^10.1.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",

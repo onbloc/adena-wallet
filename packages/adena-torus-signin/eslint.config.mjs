@@ -6,21 +6,21 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config([
   {
     name: 'app/files-to-lint',
-    files: ['**/*.{ts,mts,tsx,js,mjs}', 'eslint.config.mjs']
+    files: ['**/*.{ts,mts,tsx,js,mjs}', 'eslint.config.mjs'],
   },
   {
     name: 'app/files-to-ignore',
-    ignores: ['**/lib/**', '**/dist-ssr/**', '**/dist/**', '**/build/**', '**/coverage/**']
+    ignores: ['**/lib/**', '**/dist-ssr/**', '**/dist/**', '**/build/**', '**/coverage/**'],
   },
   {
     plugins: {
-      '@stylistic': stylistic
-    }
+      '@stylistic': stylistic,
+    },
   },
   eslint.configs.recommended,
   tseslint.configs.recommended,
   stylistic.configs.customize({
-    semi: true
+    semi: true,
   }),
   {
     rules: {
@@ -33,38 +33,37 @@ export default tseslint.config([
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_'
-        }
+          caughtErrorsIgnorePattern: '^_',
+        },
       ],
       'max-lines': [
         'warn',
         {
           max: 700,
           skipBlankLines: true,
-          skipComments: true
-        }
+          skipComments: true,
+        },
       ],
       'max-lines-per-function': [
         'warn',
         {
           max: 500,
           skipBlankLines: true,
-          skipComments: true
-        }
-      ]
-    }
+          skipComments: true,
+        },
+      ],
+    },
   },
   {
     plugins: {
-      'simple-import-sort': simpleImportSort
+      'simple-import-sort': simpleImportSort,
     },
     rules: {
       'simple-import-sort/imports': 'error',
-      'simple-import-sort/exports': 'error'
-    }
+      'simple-import-sort/exports': 'error',
+    },
   },
   {
-    ignores: ['node_modules/*', 'dist/*']
-  }
-]
-);
+    ignores: ['node_modules/*', 'dist/*'],
+  },
+]);

@@ -1,2 +1,2 @@
-export * from "./torus-signer";
-export * from "./google-torus-signer";
+export * from './google-torus-signer'
+export * from './torus-signer'
