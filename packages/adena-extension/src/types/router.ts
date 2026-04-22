@@ -209,9 +209,12 @@ export type RouteParams = {
   [RoutePath.SettingChangePassword]: null;
   [RoutePath.ConnectedApps]: null;
   [RoutePath.ChangeNetwork]: null;
-  [RoutePath.AddCustomNetwork]: null;
+  [RoutePath.AddCustomNetwork]: {
+    chainGroup: 'gno' | 'atomone';
+  } | null;
   [RoutePath.EditCustomNetwork]: {
     networkId: string;
+    chainGroup: 'gno' | 'atomone';
   };
   [RoutePath.AddressBook]: null;
   [RoutePath.AddAddress]: {
