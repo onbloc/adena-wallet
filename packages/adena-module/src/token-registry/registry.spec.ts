@@ -1,5 +1,12 @@
 import { TokenRegistryImpl } from './registry';
-import { ALL_TOKENS, UATONE, UPHOTON, UGNOT } from './entries';
+import {
+  ALL_TOKENS,
+  UATONE,
+  UATONE_TESTNET,
+  UGNOT,
+  UPHOTON,
+  UPHOTON_TESTNET,
+} from './entries';
 
 describe('TokenRegistry', () => {
   let registry: TokenRegistryImpl;
@@ -22,13 +29,19 @@ describe('TokenRegistry', () => {
 
   it('list returns all tokens when no chainProfileId given', () => {
     const tokens = registry.list();
-    expect(tokens).toHaveLength(3);
+    expect(tokens).toHaveLength(ALL_TOKENS.length);
   });
 
   it('list filters by chainProfileId atomone-1', () => {
     const tokens = registry.list('atomone-1');
     expect(tokens).toHaveLength(2);
     expect(tokens).toEqual(expect.arrayContaining([UATONE, UPHOTON]));
+  });
+
+  it('list filters by chainProfileId atomone-testnet-1', () => {
+    const tokens = registry.list('atomone-testnet-1');
+    expect(tokens).toHaveLength(2);
+    expect(tokens).toEqual(expect.arrayContaining([UATONE_TESTNET, UPHOTON_TESTNET]));
   });
 
   it('list filters by chainProfileId gnoland1', () => {

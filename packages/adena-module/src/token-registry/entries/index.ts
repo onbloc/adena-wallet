@@ -36,4 +36,32 @@ export const UPHOTON: TokenProfile = {
   priceId: 'photon',
 };
 
-export const ALL_TOKENS: TokenProfile[] = [UGNOT, UATONE, UPHOTON];
+export const UATONE_TESTNET: TokenProfile = {
+  id: 'atomone-testnet-1:uatone',
+  chainProfileId: 'atomone-testnet-1',
+  symbol: 'ATONE',
+  name: 'AtomOne',
+  decimals: 6,
+  iconUrl: '/assets/icons/atone.svg',
+  origin: { kind: 'cosmos-native', denom: 'uatone' },
+  tags: ['native', 'staking', 'governance'],
+};
+
+export const UPHOTON_TESTNET: TokenProfile = {
+  id: 'atomone-testnet-1:uphoton',
+  chainProfileId: 'atomone-testnet-1',
+  symbol: 'PHOTON',
+  name: 'Photon',
+  decimals: 6,
+  iconUrl: '/assets/icons/photon.svg',
+  origin: { kind: 'cosmos-native', denom: 'uphoton' },
+  tags: ['native', 'fee'],
+};
+
+export const ALL_TOKENS: TokenProfile[] = [
+  UGNOT,
+  UATONE,
+  UPHOTON,
+  UATONE_TESTNET,
+  UPHOTON_TESTNET,
+];
