@@ -41,7 +41,7 @@ export const useTokenBalance = (): {
   } = useTokenMetainfo();
   const { wallet } = useWalletContext();
   const { balanceService, cosmosBalanceService, chainRegistry, tokenRegistry } = useAdenaContext();
-  const { currentNetwork } = useNetwork();
+  const { currentNetwork, currentAtomoneNetwork } = useNetwork();
   const { currentAddress, currentAccount } = useCurrentAccount();
   const { existWallet, lockedWallet } = useWallet();
 
@@ -105,7 +105,13 @@ export const useTokenBalance = (): {
   } = useQuery<TokenBalanceType[]>(
     // Keyed by account id (not the object reference) to avoid spurious refetches
     // when a new Account instance is created from the same underlying data.
-    ['balances', 'cosmos', currentAccount?.id ?? null, currentNetwork.chainId],
+    [
+      'balances',
+      'cosmos',
+      currentAccount?.id ?? null,
+      currentNetwork.chainId,
+      currentAtomoneNetwork?.id ?? null,
+    ],
     () => {
       if (currentAccount === null) return [];
       // No .catch() here — let React Query own the error state. When this query
@@ -116,6 +122,7 @@ export const useTokenBalance = (): {
         cosmosBalanceService,
         chainRegistry,
         tokenRegistry,
+        currentAtomoneNetwork?.id ?? null,
       );
     },
     {

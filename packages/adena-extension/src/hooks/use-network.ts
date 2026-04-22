@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useRecoilState, useResetRecoilState } from 'recoil';
+import { useRecoilState } from 'recoil';
 
 import { fetchHealth } from '@common/utils/fetch-utils';
 import { EventMessage } from '@inject/message';
@@ -7,7 +7,7 @@ import { useAdenaContext, useWalletContext } from './use-context';
 import { useEvent } from './use-event';
 
 import CHAIN_DATA from '@resources/chains/chains.json';
-import { BalanceState, NetworkState, WalletState } from '@states';
+import { NetworkState } from '@states';
 import { useQuery } from '@tanstack/react-query';
 import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 
@@ -70,10 +70,6 @@ export const useNetwork = (): NetworkResponse => {
     NetworkState.selectedProfileByChainGroup,
   );
   const [modified, setModified] = useRecoilState(NetworkState.modified);
-  const [, setState] = useRecoilState(WalletState.state);
-  const resetAccountTokenBalances = useResetRecoilState(BalanceState.accountTokenBalances);
-  const resetAccountNativeBalances = useResetRecoilState(BalanceState.accountNativeBalances);
-  const resetCurrentTokenBalances = useResetRecoilState(BalanceState.currentTokenBalances);
 
   const { data: failedNetwork = null, refetch: refetchNetworkState } = useQuery<boolean | null>(
     ['network/failedNetwork', currentNetwork],
@@ -83,6 +79,7 @@ export const useNetwork = (): NetworkResponse => {
       }
       return fetchHealth(currentNetwork.rpcUrl).then(({ healthy }) => !healthy);
     },
+    { keepPreviousData: true },
   );
 
   const scannerParameters: { [key in string]: string } | null = useMemo(() => {
@@ -171,10 +168,6 @@ export const useNetwork = (): NetworkResponse => {
         setCurrentNetwork(null);
         return false;
       }
-      resetCurrentTokenBalances();
-      resetAccountTokenBalances();
-      resetAccountNativeBalances();
-      setState('LOADING');
       const network = networkMetainfos.find((network) => network.id === id) ?? networkMetainfos[0];
       await chainService.updateCurrentNetworkId(network.id);
       await changeNetworkOfProvider(network);
