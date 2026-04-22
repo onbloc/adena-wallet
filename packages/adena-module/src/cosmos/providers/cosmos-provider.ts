@@ -30,4 +30,6 @@ export interface CosmosProvider {
     txBytes: Uint8Array,
     mode?: CosmosBroadcastMode,
   ): Promise<CosmosTxBroadcastResponse>;
+  simulateTx(txBytes: Uint8Array): Promise<{ gasUsed: number }>;
+  getMinGasPrices(): Promise<{ denom: string; amount: string }[]>;
 }

@@ -173,6 +173,10 @@ describe('Cosmos AMINO Sign via AdenaWallet', () => {
         rawLog: '',
         height: '100',
       }),
+      simulateTx: jest.fn().mockResolvedValue({ gasUsed: 100_000 }),
+      getMinGasPrices: jest
+        .fn()
+        .mockResolvedValue([{ denom: 'uphoton', amount: '0.01' }]),
     };
   }
 
