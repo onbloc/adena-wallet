@@ -1,5 +1,8 @@
 import axios from 'axios';
-import { CosmosQueryClient } from './cosmos-query-client';
+import {
+  CosmosQueryClient,
+  parseMinimumGasPriceString,
+} from './cosmos-query-client';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -217,5 +220,90 @@ describe('CosmosQueryClient', () => {
         client.broadcastTx(ENDPOINT, new Uint8Array([1])),
       ).rejects.toThrow(/no tx_response/);
     });
+  });
+
+  describe('getMinGasPrices', () => {
+    it('parses the comma-joined minimum_gas_price string', async () => {
+      mockGet.mockResolvedValue({
+        data: {
+          minimum_gas_price:
+            '0.022500000000000000uatone,0.225000000000000000uphoton',
+        },
+      });
+
+      const result = await client.getMinGasPrices(ENDPOINT);
+
+      expect(mockGet).toHaveBeenCalledWith(
+        `${ENDPOINT}/cosmos/base/node/v1beta1/config`,
+      );
+      expect(result).toEqual([
+        { denom: 'uatone', amount: '0.022500000000000000' },
+        { denom: 'uphoton', amount: '0.225000000000000000' },
+      ]);
+    });
+
+    it('returns [] when the field is empty or missing', async () => {
+      mockGet.mockResolvedValue({ data: { minimum_gas_price: '' } });
+      expect(await client.getMinGasPrices(ENDPOINT)).toEqual([]);
+
+      mockGet.mockResolvedValue({ data: {} });
+      expect(await client.getMinGasPrices(ENDPOINT)).toEqual([]);
+    });
+  });
+
+  describe('simulateTx', () => {
+    it('returns numeric gas_used on success', async () => {
+      mockPost.mockResolvedValue({
+        data: { gas_info: { gas_used: '135000' } },
+      });
+
+      const result = await client.simulateTx(ENDPOINT, new Uint8Array([1, 2]));
+
+      expect(result).toEqual({ gasUsed: 135_000 });
+      expect(mockPost).toHaveBeenCalledWith(
+        `${ENDPOINT}/cosmos/tx/v1beta1/simulate`,
+        expect.objectContaining({ tx_bytes: expect.any(String) }),
+      );
+    });
+
+    it('throws when gas_info.gas_used is missing or invalid', async () => {
+      mockPost.mockResolvedValueOnce({ data: {} });
+      await expect(
+        client.simulateTx(ENDPOINT, new Uint8Array([1])),
+      ).rejects.toThrow(/no gas_info/);
+
+      mockPost.mockResolvedValueOnce({
+        data: { gas_info: { gas_used: 'abc' } },
+      });
+      await expect(
+        client.simulateTx(ENDPOINT, new Uint8Array([1])),
+      ).rejects.toThrow(/invalid gas_used/);
+    });
+  });
+});
+
+describe('parseMinimumGasPriceString', () => {
+  it('returns an empty array for empty input', () => {
+    expect(parseMinimumGasPriceString('')).toEqual([]);
+  });
+
+  it('parses a single-entry value', () => {
+    expect(parseMinimumGasPriceString('0.025uphoton')).toEqual([
+      { denom: 'uphoton', amount: '0.025' },
+    ]);
+  });
+
+  it('parses a comma-joined multi-entry value and trims whitespace', () => {
+    expect(
+      parseMinimumGasPriceString(' 0.0225uatone , 0.225uphoton '),
+    ).toEqual([
+      { denom: 'uatone', amount: '0.0225' },
+      { denom: 'uphoton', amount: '0.225' },
+    ]);
+  });
+
+  it('throws on a malformed entry', () => {
+    expect(() => parseMinimumGasPriceString('nodenom')).toThrow(/Unparseable/);
+    expect(() => parseMinimumGasPriceString('0.01')).toThrow(/Unparseable/);
   });
 });
