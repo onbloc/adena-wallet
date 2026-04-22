@@ -17,6 +17,7 @@ import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { ApproveSignedDocument } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
@@ -74,6 +75,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const { walletService, multisigService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const location = useLocation();
   const { openScannerLink } = useLink();
 
@@ -203,7 +205,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
   ): Promise<boolean> => {
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
-      await currentAccount.getAddress(currentNetwork.addressPrefix),
+      await currentAccount.getAddress(chain.bech32Prefix),
       true,
     );
     if (validationMessage) {
@@ -275,7 +277,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
         multisigDocument.tx,
         multisigDocument.accountNumber,
         multisigDocument.sequence,
-        currentNetwork.addressPrefix,
+        chain.bech32Prefix,
       );
 
       // Save signature to file if enabled

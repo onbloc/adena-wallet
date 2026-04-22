@@ -10,7 +10,7 @@ import {
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useNetwork } from '@hooks/use-network';
+import { useChain } from '@hooks/use-chain';
 import { RoutePath } from '@types';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { waitForRun } from '@common/utils/timeout-utils';
@@ -51,7 +51,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   const { navigate } = useAppNavigate();
   const { updateWallet } = useWalletContext();
   const { walletService } = useAdenaContext();
-  const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const { accounts } = useLoadAccounts();
   const [setupAirgapState, setSetupAirgapState] = useState<SetupAirgapStateType>('INIT');
   const [address, setAddress] = useState<string>('');
@@ -77,7 +77,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   const _validateAddress = useCallback(() => {
     try {
       const { prefix } = fromBech32(address);
-      if (address && prefix === currentNetwork.addressPrefix) {
+      if (address && prefix === chain.bech32Prefix) {
         return true;
       }
     } catch (e) {
@@ -89,7 +89,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   const _existsAddress = useCallback(async () => {
     const checkAccounts = accounts.filter((account) => isAirgapAccount(account));
     return Promise.all(
-      checkAccounts.map((account) => account.getAddress(currentNetwork.addressPrefix)),
+      checkAccounts.map((account) => account.getAddress(chain.bech32Prefix)),
     ).then((addresses) => addresses.includes(address));
   }, [accounts, address]);
 

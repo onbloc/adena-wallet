@@ -11,6 +11,7 @@ import NFTTransferSummary from '@components/pages/nft-transfer-summary/nft-trans
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useChain } from '@hooks/use-chain';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
@@ -41,6 +42,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
   const { transactionService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const { openScannerLink } = useLink();
   const { memorizedTransferInfo, setMemorizedTransferInfo } = useTransferInfo();
   const [isSent, setIsSent] = useState(false);
@@ -118,7 +120,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
       currentAccount,
       currentNetwork.networkId,
       [message],
-      currentNetwork.addressPrefix,
+      chain.bech32Prefix,
       useNetworkFeeReturn.currentGasInfo?.gasWanted || 0,
       useNetworkFeeReturn.currentGasFeeRawAmount,
       memo,

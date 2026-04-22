@@ -13,8 +13,8 @@ import {
   validateInvalidAddress,
 } from '@services/index';
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
+import { useChain } from '@hooks/use-chain';
 import { useWalletContext } from '@hooks/use-context';
-import { useNetwork } from '@hooks/use-network';
 import mixins from '@styles/mixins';
 import { AddressBookItem } from '@repositories/wallet';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -27,7 +27,7 @@ const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 const AddAddress = (): JSX.Element => {
   const theme = useTheme();
   const { wallet } = useWalletContext();
-  const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const { params, goBack } = useAppNavigate<RoutePath.AddAddress>();
   const isAdd = params.status === 'add';
 
@@ -87,7 +87,7 @@ const AddAddress = (): JSX.Element => {
     }
 
     try {
-      await validateAlreadyAddressByAccounts(currData, wallet?.accounts ?? [], isAdd, currentNetwork.addressPrefix);
+      await validateAlreadyAddressByAccounts(currData, wallet?.accounts ?? [], isAdd, chain.bech32Prefix);
     } catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {

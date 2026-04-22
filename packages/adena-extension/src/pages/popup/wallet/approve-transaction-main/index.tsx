@@ -28,6 +28,7 @@ import { parseSimulateErrors } from '@common/utils/transaction-error-parser';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useGnoSessionUpdates } from '@hooks/use-gno-session-updates';
@@ -110,6 +111,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
   const [document, setDocument] = useState<Document>();
   const { currentNetwork: currentWalletNetwork } = useNetwork();
+  const chain = useChain();
   const [currentBalance, setCurrentBalance] = useState(0);
   const [screenState, setScreenState] = useState<'APPROVE' | 'LOADING' | 'RESULT'>('APPROVE');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
@@ -123,7 +125,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const currentNetwork: NetworkMetainfo = useMemo(() => {
     const networkInfo = requestData?.data?.networkInfo;
     if (!!networkInfo?.chainId && !!networkInfo?.rpcUrl) {
-      return makeDefaultNetworkInfo(networkInfo.chainId, networkInfo.rpcUrl, currentWalletNetwork.addressPrefix);
+      return makeDefaultNetworkInfo(networkInfo.chainId, networkInfo.rpcUrl, chain.bech32Prefix);
     }
 
     return currentWalletNetwork;
@@ -310,7 +312,7 @@ const ApproveTransactionContainer: React.FC = () => {
     currentAccount: Account,
     requestData: InjectionMessage,
   ): Promise<boolean> => {
-    const address = await currentAccount.getAddress(currentNetwork.addressPrefix);
+    const address = await currentAccount.getAddress(chain.bech32Prefix);
     const validationMessage = validateInjectionDataWithAddress(requestData, address);
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
@@ -350,7 +352,7 @@ const ApproveTransactionContainer: React.FC = () => {
         currentAccount,
         currentNetwork.networkId,
         requestData?.data?.messages,
-        currentNetwork.addressPrefix,
+        chain.bech32Prefix,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
         requestData?.data?.memo,
@@ -364,7 +366,8 @@ const ApproveTransactionContainer: React.FC = () => {
     } catch (e) {
       const error: any = e;
       if (error?.message === 'Connection Error') {
-        checkHealth(currentNetwork.rpcUrl, requestData.key);
+        const { rpcUrl } = currentNetwork;
+        checkHealth(rpcUrl, requestData.key);
       }
       if (error?.message === 'Transaction signing request was rejected by the user') {
         chrome.runtime.sendMessage(
@@ -448,7 +451,8 @@ const ApproveTransactionContainer: React.FC = () => {
             resolve(error);
           });
 
-        checkHealth(currentNetwork.rpcUrl, requestData?.key);
+        const { rpcUrl: effectiveRpcUrl } = currentNetwork;
+        checkHealth(effectiveRpcUrl, requestData?.key);
       });
       if (!response) {
         setResponse(
@@ -554,7 +558,7 @@ const ApproveTransactionContainer: React.FC = () => {
           initFavicon();
           initTransactionData();
 
-          currentAccount.getAddress(currentNetwork.addressPrefix).then(initBalance);
+          currentAccount.getAddress(chain.bech32Prefix).then(initBalance);
         }
       });
     }

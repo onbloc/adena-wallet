@@ -6,7 +6,7 @@ import useIndicatorStep, {
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useNetwork } from '@hooks/use-network';
+import { useChain } from '@hooks/use-chain';
 
 export type UseSetupMultisigScreenReturn = {
   setupMultisigState: SetupMultisigStateType;
@@ -58,7 +58,7 @@ export const MAX_SIGNERS = 7;
 const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
   const { multisigService, walletService } = useAdenaContext();
   const { changeCurrentAccount, currentAddress } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
+  const chain = useChain();
 
   const [setupMultisigState, setSetupMultisigState] =
     React.useState<SetupMultisigStateType>('INIT');
@@ -159,7 +159,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
     for (const signer of validSigners) {
       try {
         const { prefix } = fromBech32(signer);
-        if (prefix !== currentNetwork.addressPrefix) {
+        if (prefix !== chain.bech32Prefix) {
           setMultisigConfigError('Invalid address format.');
           return false;
         }
@@ -194,7 +194,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
       }
 
       const { multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys } =
-        await multisigService.createMultisigAccount(multisigConfig, currentNetwork.addressPrefix);
+        await multisigService.createMultisigAccount(multisigConfig, chain.bech32Prefix);
 
       const publicKeyBytesArray = Uint8Array.from(Object.values(multisigPubKey));
       const addressBytesArray = Uint8Array.from(Object.values(multisigAddressBytes));

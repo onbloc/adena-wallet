@@ -19,6 +19,7 @@ import {
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
@@ -64,6 +65,7 @@ const ApproveSignContainer: React.FC = () => {
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
   const [requestData, setRequestData] = useState<InjectionMessage>();
@@ -185,7 +187,7 @@ const ApproveSignContainer: React.FC = () => {
   ): Promise<boolean> => {
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
-      await currentAccount.getAddress(currentNetwork.addressPrefix),
+      await currentAccount.getAddress(chain.bech32Prefix),
     );
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
@@ -210,7 +212,7 @@ const ApproveSignContainer: React.FC = () => {
         currentAccount,
         currentNetwork.networkId,
         requestData?.data?.messages,
-        currentNetwork.addressPrefix,
+        chain.bech32Prefix,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
         requestData?.data?.memo,

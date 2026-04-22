@@ -1,7 +1,7 @@
 import React, { ReactElement, useEffect, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { Account } from 'adena-module';
-import { useNetwork } from '@hooks/use-network';
+import { useChain } from '@hooks/use-chain';
 
 import { CopyIconButton, Pressable, Row, WebImg, WebText } from '@components/atoms';
 import { formatAddress } from '@common/utils/client-utils';
@@ -30,7 +30,7 @@ export const WebMainAccountHeader = ({
   onClickGoBack,
 }: WebMainAccountHeaderProps): ReactElement => {
   const theme = useTheme();
-  const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const [address, setAddress] = useState<string>('');
 
   const addressStr = useMemo(() => {
@@ -42,7 +42,7 @@ export const WebMainAccountHeader = ({
 
   useEffect(() => {
     if (account) {
-      account.getAddress(currentNetwork.addressPrefix).then(setAddress);
+      account.getAddress(chain.bech32Prefix).then(setAddress);
     }
   }, [account]);
 

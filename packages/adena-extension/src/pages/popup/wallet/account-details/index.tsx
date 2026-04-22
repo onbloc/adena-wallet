@@ -12,9 +12,11 @@ import { makeQueryString } from '@common/utils/string-utils';
 import { CommonFullContentLayout } from '@components/atoms';
 import AccountDetails from '@components/pages/account-details/account-details';
 import { useAccountName } from '@hooks/use-account-name';
+import { useChain } from '@hooks/use-chain';
 import useLink from '@hooks/use-link';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
@@ -23,6 +25,8 @@ const AccountDetailsContainer: React.FC = () => {
   const { accountId } = useParams();
   const { accounts } = useLoadAccounts();
   const { currentNetwork, scannerParameters } = useNetwork();
+  const chain = useChain();
+  const profile = useNetworkProfile();
   const { accountNames, changeAccountName } = useAccountName();
   const [originName, setOriginName] = useState('');
   const [name, setName] = useState('');
@@ -61,7 +65,7 @@ const AccountDetailsContainer: React.FC = () => {
   }, [name, originName, account]);
 
   const moveGnoscan = useCallback(() => {
-    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+    const scannerUrl = profile?.linkUrl || SCANNER_URL;
     const openLinkUrl = scannerParameters
       ? `${scannerUrl}/account/${address}?${makeQueryString(scannerParameters)}`
       : `${scannerUrl}/account/${address}`;
@@ -100,7 +104,7 @@ const AccountDetailsContainer: React.FC = () => {
       setAddress('');
       return;
     }
-    account.getAddress(currentNetwork.addressPrefix).then(setAddress);
+    account.getAddress(chain.bech32Prefix).then(setAddress);
   }, [currentNetwork, account]);
 
   return (
