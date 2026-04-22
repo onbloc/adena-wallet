@@ -26,12 +26,6 @@ export const TokenListItemWrapper = styled.div`
     width: 34px;
     height: 34px;
     margin-right: 12px;
-
-    .logo {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-    }
   }
 
   .name-wrapper {

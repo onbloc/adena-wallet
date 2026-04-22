@@ -125,7 +125,11 @@ export class InjectCore {
     if (!currentAccount) {
       return null;
     }
-    return currentAccount.getAddress('g');
+    const network = await this.getCurrentNetwork();
+    if (!network) {
+      return null;
+    }
+    return currentAccount.getAddress(network.addressPrefix);
   }
 
   public async isLockedBy(inMemoryKey: CryptoKey | null): Promise<boolean> {

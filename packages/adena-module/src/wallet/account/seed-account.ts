@@ -49,6 +49,7 @@ export class SeedAccount implements Account {
   public getAddress(prefix: string) {
     return publicKeyToAddress(this.publicKey, prefix);
   }
+
   public toData() {
     return {
       id: this.id,

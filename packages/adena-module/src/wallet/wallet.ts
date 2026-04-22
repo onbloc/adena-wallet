@@ -2,13 +2,13 @@ import { LedgerConnector } from '@cosmjs/ledger-amino';
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  defaultAddressPrefix,
   Provider,
   Tx,
   TxSignature,
 } from '@gnolang/tm2-js-client';
 
 import { Bip39, Random } from '../crypto';
+import { fromBech32 } from '../encoding';
 import { arrayContentEquals, arrayToHex, hexToArray } from '../utils';
 import { Document } from './..';
 import {
@@ -392,8 +392,9 @@ export class AdenaWallet implements Wallet {
    * @returns true if duplicate exists
    */
   async hasAddress(address: string): Promise<boolean> {
+    const { prefix } = fromBech32(address);
     const addresses = await Promise.all(
-      this._accounts.map((account) => account.getAddress(defaultAddressPrefix)),
+      this._accounts.map((account) => account.getAddress(prefix)),
     );
     return addresses.includes(address);
   }

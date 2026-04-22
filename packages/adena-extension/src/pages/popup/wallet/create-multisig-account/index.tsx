@@ -15,6 +15,7 @@ import {
 import { CreateMultisigAccount } from '@components/molecules/create-multisig-account';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { RoutePath } from '@types';
 
@@ -22,6 +23,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { walletService, multisigService } = useAdenaContext();
   const { currentAccount, changeCurrentAccount } = useCurrentAccount();
+  const { currentNetwork } = useNetwork();
   const location = useLocation();
 
   const [hostname, setHostname] = useState('');
@@ -100,7 +102,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
       setProcessType('PROCESSING');
 
       const { multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys } =
-        await multisigService.createMultisigAccount(multisigConfig);
+        await multisigService.createMultisigAccount(multisigConfig, currentNetwork.addressPrefix);
 
       const publicKeyBytesArray = Uint8Array.from(Object.values(multisigPubKey));
       const addressBytesArray = Uint8Array.from(Object.values(multisigAddressBytes));

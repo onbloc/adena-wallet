@@ -203,7 +203,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
   ): Promise<boolean> => {
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
-      await currentAccount.getAddress('g'),
+      await currentAccount.getAddress(currentNetwork.addressPrefix),
       true,
     );
     if (validationMessage) {
@@ -275,6 +275,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
         multisigDocument.tx,
         multisigDocument.accountNumber,
         multisigDocument.sequence,
+        currentNetwork.addressPrefix,
       );
 
       // Save signature to file if enabled

@@ -2,7 +2,6 @@ import {
   BroadcastTransactionMap,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  defaultAddressPrefix,
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
@@ -73,7 +72,10 @@ export class MultisigService {
    * @param config - Multisig configuration (signers and threshold)
    * @returns Multisig account address, addressBytes, and publicKey
    */
-  public createMultisigAccount = async (config: MultisigConfig): Promise<MultisigAccountResult> => {
+  public createMultisigAccount = async (
+    config: MultisigConfig,
+    addressPrefix: string,
+  ): Promise<MultisigAccountResult> => {
     const { signers, threshold, noSort = true } = config;
 
     const signerInfos: SignerInfo[] = await this.fetchSignerInfos(signers);
@@ -86,7 +88,7 @@ export class MultisigService {
         '@type': info.publicKey['@type'],
         value: info.bytes,
       })),
-      defaultAddressPrefix,
+      addressPrefix,
     );
 
     // Extract address bytes from bech32 address
@@ -244,9 +246,10 @@ export class MultisigService {
   public createSignature = async (
     account: Account,
     document: Document,
+    addressPrefix: string,
   ): Promise<EncodeTxSignature> => {
     const provider = this.getGnoProvider();
-    const address = await account.getAddress(defaultAddressPrefix);
+    const address = await account.getAddress(addressPrefix);
     const accountInfo = await provider.getAccountInfo(address);
     const wallet = await this.walletService.loadWallet();
     const { signature } = await wallet.signByAccountId(provider, account.id, document);
@@ -273,6 +276,7 @@ export class MultisigService {
     transaction: RawTx,
     accountNumber: string,
     sequence: string,
+    addressPrefix: string,
   ): Promise<Signature> => {
     try {
       await this.validatePublicKeyExists(address);
@@ -283,7 +287,7 @@ export class MultisigService {
         sequence,
         chainId,
       );
-      const encodedSignature = await this.createSignature(account, aminoDocument);
+      const encodedSignature = await this.createSignature(account, aminoDocument, addressPrefix);
       return {
         pub_key: {
           '@type': '/tm.PubKeySecp256k1',

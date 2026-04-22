@@ -1,10 +1,13 @@
 import { QueryObserverResult, useQuery } from '@tanstack/react-query';
 import { Account } from 'adena-module';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useRecoilValueLoadable } from 'recoil';
 
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import { AccountState } from '@states';
 import { Amount, TokenBalanceType, TokenModel } from '@types';
 
+import { fetchCosmosTokenBalances } from './helpers/fetch-cosmos-balances';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useGRC20Tokens } from './use-grc20-tokens';
@@ -12,7 +15,11 @@ import { useNetwork } from './use-network';
 import { useTokenMetainfo } from './use-token-metainfo';
 import { useWallet } from './use-wallet';
 
-const REFETCH_INTERVAL = 3_000;
+const GNO_REFETCH_INTERVAL = 3_000;
+// Cosmos LCD p95 latency is significantly higher than Gno RPC.
+// A relaxed interval reduces request pressure and retry noise without
+// meaningfully hurting UX — balance changes on AtomOne are less frequent.
+const COSMOS_REFETCH_INTERVAL = 10_000;
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | null;
@@ -33,14 +40,19 @@ export const useTokenBalance = (): {
     getTokenAmount,
   } = useTokenMetainfo();
   const { wallet } = useWalletContext();
-  const { balanceService } = useAdenaContext();
+  const { balanceService, cosmosBalanceService, chainRegistry, tokenRegistry } = useAdenaContext();
   const { currentNetwork } = useNetwork();
-  const { currentAddress } = useCurrentAccount();
+  const { currentAddress, currentAccount } = useCurrentAccount();
   const { existWallet, lockedWallet } = useWallet();
 
   useEffect(() => {
     balanceService.setTokenMetainfos(tokenMetainfos);
   }, [tokenMetainfos, balanceService]);
+
+  // Declared early because it is referenced in the Gno query's `enabled` condition below.
+  const nativeToken = useMemo((): TokenModel | null => {
+    return tokenMetainfos.find((tokenModel) => tokenModel.main) || null;
+  }, [tokenMetainfos]);
 
   const availableBalanceFetching = useMemo(() => {
     if (!existWallet || lockedWallet) {
@@ -54,35 +66,102 @@ export const useTokenBalance = (): {
     return true;
   }, [existWallet, lockedWallet, tokenMetainfos, isFetchedGRC20Tokens]);
 
-  const { data: balances = [], refetch: refetchBalances } = useQuery<TokenBalanceType[]>(
-    ['balances', currentAddress, currentNetwork.chainId, isFetchedGRC20Tokens, tokenLogoMap],
+  // Gno and Cosmos are fetched in two independent queries so that each chain
+  // has its own lifecycle: separate cache, refetch interval, error state, and
+  // loading state. A slow or failing Cosmos LCD never blocks the Gno result
+  // from rendering, and either chain can be invalidated without touching the other.
+  const {
+    data: gnoBalances = [],
+    refetch: refetchGnoBalances,
+  } = useQuery<TokenBalanceType[]>(
+    // 'gno' discriminator keeps this cache entry separate from the Cosmos query
+    // even though both share the 'balances' prefix.
+    ['balances', 'gno', currentAddress, currentNetwork.chainId, isFetchedGRC20Tokens, tokenLogoMap],
     () => {
-      if (currentAddress === null || nativeToken == null) {
-        return [];
-      }
+      if (currentAddress === null || nativeToken == null) return [];
       return Promise.all(
         tokenMetainfos.map((tokenModel) => fetchBalanceBy(currentAddress, tokenModel)),
       );
     },
     {
-      refetchInterval: REFETCH_INTERVAL,
+      refetchInterval: GNO_REFETCH_INTERVAL,
       keepPreviousData: true,
-      enabled: availableBalanceFetching,
+      enabled: availableBalanceFetching && currentAddress !== null && nativeToken !== null,
     },
+  );
+
+  // Pre-derive { accountId -> address } once per (wallet, prefix) so the
+  // 3s refetch loop below reuses the memoized map instead of re-deriving on
+  // every tick.
+  const accountAddressesLoadable = useRecoilValueLoadable(
+    AccountState.accountAddressesByPrefix(currentNetwork.addressPrefix),
+  );
+  const accountAddressesByAccountId =
+    accountAddressesLoadable.state === 'hasValue' ? accountAddressesLoadable.contents : null;
+
+  const {
+    data: cosmosBalances = [],
+    refetch: refetchCosmosBalances,
+  } = useQuery<TokenBalanceType[]>(
+    // Keyed by account id (not the object reference) to avoid spurious refetches
+    // when a new Account instance is created from the same underlying data.
+    ['balances', 'cosmos', currentAccount?.id ?? null, currentNetwork.chainId],
+    () => {
+      if (currentAccount === null) return [];
+      // No .catch() here — let React Query own the error state. When this query
+      // fails, cosmosBalances defaults to [] via the fallback, so Gno balances
+      // continue rendering unaffected.
+      return fetchCosmosTokenBalances(
+        currentAccount,
+        cosmosBalanceService,
+        chainRegistry,
+        tokenRegistry,
+      );
+    },
+    {
+      refetchInterval: COSMOS_REFETCH_INTERVAL,
+      keepPreviousData: true,
+      enabled: availableBalanceFetching && currentAccount !== null,
+      // Default retry (3) causes excessive delay and traffic during LCD outages.
+      retry: 1,
+    },
+  );
+
+  const balances = useMemo<TokenBalanceType[]>(
+    () => [...gnoBalances, ...cosmosBalances],
+    [gnoBalances, cosmosBalances],
+  );
+
+  // Refetch both chains in parallel. Returns the Gno result to satisfy the
+  // existing QueryObserverResult return type; callers discard the return value.
+  const refetchBalances = useCallback(
+    () => Promise.all([refetchGnoBalances(), refetchCosmosBalances()]).then(([gno]) => gno),
+    [refetchGnoBalances, refetchCosmosBalances],
   );
 
   const { data: accountNativeBalanceMap = {}, refetch: refetchAccountNativeBalanceMap } = useQuery<
     Record<string, TokenBalanceType>
   >(
-    ['accountNativeBalanceMap', wallet?.accounts, currentNetwork.chainId, isFetchedGRC20Tokens],
+    [
+      'accountNativeBalanceMap',
+      wallet?.accounts,
+      currentNetwork.chainId,
+      currentNetwork.addressPrefix,
+      isFetchedGRC20Tokens,
+    ],
     () => {
-      if (wallet === null || wallet.accounts === null || nativeToken == null) {
+      if (
+        wallet === null ||
+        wallet.accounts === null ||
+        nativeToken == null ||
+        accountAddressesByAccountId === null
+      ) {
         return {};
       }
 
       return Promise.all(
         wallet.accounts.map(async (account) => {
-          const address = await account.getAddress(currentNetwork.addressPrefix);
+          const address = accountAddressesByAccountId[account.id];
           return fetchBalanceBy(address, nativeToken);
         }),
       ).then((balances) =>
@@ -95,8 +174,8 @@ export const useTokenBalance = (): {
       );
     },
     {
-      refetchInterval: REFETCH_INTERVAL,
-      enabled: availableBalanceFetching,
+      refetchInterval: GNO_REFETCH_INTERVAL,
+      enabled: availableBalanceFetching && accountAddressesByAccountId !== null,
     },
   );
 
@@ -104,18 +183,16 @@ export const useTokenBalance = (): {
     if (balances.length === 0) {
       return [];
     }
-    return tokenMetainfos.map((tokenMetainfo) => ({
+    const gnoTokenBalances = tokenMetainfos.map((tokenMetainfo) => ({
       ...tokenMetainfo,
       amount: balances.find((t) => t.tokenId === tokenMetainfo.tokenId)?.amount || {
         value: '',
         denom: '',
       },
     }));
+    const cosmosTokenBalances = balances.filter((b) => b.type === 'cosmos-native');
+    return [...gnoTokenBalances, ...cosmosTokenBalances];
   }, [balances, tokenMetainfos]);
-
-  const nativeToken = useMemo((): TokenModel | null => {
-    return tokenMetainfos.find((tokenModel) => tokenModel.main) || null;
-  }, [tokenMetainfos]);
 
   const mainTokenBalance = useMemo((): Amount | null => {
     if (nativeToken === null) {

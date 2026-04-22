@@ -36,9 +36,10 @@ export const validateAlreadyAddressByAccounts = async (
   currData: AddressBookItem,
   accounts: Account[],
   isAdd: boolean,
+  addressPrefix: string,
 ): Promise<boolean> => {
   let check: boolean;
-  const addresses = await Promise.all(accounts.map((account) => account.getAddress('g')));
+  const addresses = await Promise.all(accounts.map((account) => account.getAddress(addressPrefix)));
   if (isAdd) {
     check = addresses.some((address) => address === currData.address);
   } else {

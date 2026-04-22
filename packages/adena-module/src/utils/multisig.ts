@@ -1,4 +1,4 @@
-import { Any, defaultAddressPrefix, PubKeySecp256k1 } from '@gnolang/tm2-js-client';
+import { Any, PubKeySecp256k1 } from '@gnolang/tm2-js-client';
 import { PubKeyMultisig } from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
 import Long from 'long';
 import { sha256 } from '../crypto';
@@ -18,7 +18,7 @@ export interface Pubkey {
 export function createMultisigPublicKey(
   threshold: number,
   publicKeys: Pubkey[],
-  addressPrefix: string = defaultAddressPrefix,
+  addressPrefix: string,
 ): { address: string; publicKey: Uint8Array } {
   const publicKeysAny = publicKeys.map((pk) => {
     return Any.create({

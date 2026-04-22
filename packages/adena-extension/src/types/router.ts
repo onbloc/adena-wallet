@@ -142,6 +142,7 @@ export type RouteParams = {
   [RoutePath.Send]: null;
   [RoutePath.TokenDetails]: {
     tokenBalance: TokenBalanceType;
+    readOnly?: boolean;
   };
   [RoutePath.ApproveLogin]: null;
   [RoutePath.ApproveSignFailed]: null;

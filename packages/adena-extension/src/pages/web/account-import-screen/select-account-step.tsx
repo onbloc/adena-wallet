@@ -7,7 +7,7 @@ import { View, WebButton, WebImg } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import { AccountInfo } from '@components/molecules/select-account-box';
 import SelectAccountBox from '@components/molecules/select-account-box/select-account-box';
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
+import { useNetwork } from '@hooks/use-network';
 import { UseAccountImportReturn } from '@hooks/web/use-account-import-screen';
 import { useQuery } from '@tanstack/react-query';
 
@@ -21,6 +21,7 @@ const SelectAccountStep = ({
 }: {
   useAccountImportScreenReturn: UseAccountImportReturn;
 }): JSX.Element => {
+  const { currentNetwork } = useNetwork();
   const {
     isLoadingAccounts,
     loadedAccounts,
@@ -36,7 +37,7 @@ const SelectAccountStep = ({
     async () => {
       const accountInfos: AccountInfo[] = [];
       for (const account of loadedAccounts) {
-        const address = await account.getAddress(defaultAddressPrefix);
+        const address = await account.getAddress(currentNetwork.addressPrefix);
         const accountInfo: AccountInfo = {
           hdPath: account.index,
           index: account.index,

@@ -1,4 +1,3 @@
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
 import { toBech32 } from '../../encoding';
@@ -104,7 +103,7 @@ export class MultisigAccount implements Account {
    * Get the multisig address
    * Converts addressBytes to bech32 format (like AirgapAccount)
    */
-  async getAddress(prefix: string = defaultAddressPrefix): Promise<string> {
+  async getAddress(prefix: string): Promise<string> {
     return toBech32(prefix, this.addressBytes);
   }
 
