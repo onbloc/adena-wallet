@@ -16,10 +16,12 @@ import TransactionResult from '@components/molecules/transaction-result';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 import { useTransferInfo } from '@hooks/use-transfer-info';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
@@ -51,6 +53,12 @@ const TransferSummaryContainer: React.FC = () => {
   const { transactionService, chainRegistry } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const isCosmosToken = params.tokenMetainfo.type === 'cosmos-native';
+  const tokenChainGroup = isCosmosToken
+    ? chainRegistry.getChainByChainId(params.tokenMetainfo.networkId)?.chainGroup ?? 'atomone'
+    : 'gno';
+  const chain = useChain(tokenChainGroup);
+  const tokenProfile = useNetworkProfile(tokenChainGroup);
   const { openScannerLink } = useLink();
   const { setMemorizedTransferInfo } = useTransferInfo();
   const [isSent, setIsSent] = useState(false);
@@ -68,8 +76,6 @@ const TransferSummaryContainer: React.FC = () => {
   const networkFee = useNetworkFeeReturn.networkFee;
 
   const { data: currentBalance } = useGetGnotBalance();
-
-  const isCosmosToken = summaryInfo.tokenMetainfo.type === 'cosmos-native';
 
   const hasNetworkFee = useMemo(() => {
     // Cosmos fee is hardcoded (2000uphoton/gas 200000) for Phase 3 MVP.
@@ -211,7 +217,7 @@ const TransferSummaryContainer: React.FC = () => {
       currentAccount,
       currentNetwork.networkId,
       [message],
-      currentNetwork.addressPrefix,
+      chain.bech32Prefix,
       gasWanted,
       BigNumber(networkFee?.amount || 0)
         .shiftedBy(GasToken.decimals)
@@ -269,19 +275,7 @@ const TransferSummaryContainer: React.FC = () => {
       throw new Error('Cosmos native token is missing denom metadata');
     }
 
-    // Resolve the Cosmos chain via ChainRegistry (not currentNetwork — that
-    // is still the Gno network while the wallet shows cross-chain balances).
-    // tokenMetainfo.networkId matches chainProfileId which equals chainId.
     const cosmosChainId = tokenMetainfo.networkId;
-    const profile = chainRegistry.getNetworkProfileByChainId(cosmosChainId);
-    if (!profile || profile.chainType !== 'cosmos') {
-      throw new Error(`Cosmos profile not found for ${cosmosChainId}`);
-    }
-    const chain = chainRegistry.getChainByChainId(cosmosChainId);
-    if (!chain || chain.chainType !== 'cosmos') {
-      throw new Error(`Cosmos chain not found for ${cosmosChainId}`);
-    }
-
     const fromAddress = await currentAccount.getAddress(chain.bech32Prefix);
     const rawAmount = BigNumber(transferAmount.value)
       .shiftedBy(tokenMetainfo.decimals)
@@ -306,7 +300,7 @@ const TransferSummaryContainer: React.FC = () => {
 
     const signed = await transactionService.signCosmos(currentAccount.id, document);
     return transactionService.broadcastCosmos(signed, cosmosChainId);
-  }, [summaryInfo, currentAccount, chainRegistry, transactionService]);
+  }, [summaryInfo, currentAccount, chain, transactionService]);
 
   const createTransaction = useCallback(async () => {
     if (!currentNetwork || !currentAccount || !wallet) {
@@ -458,24 +452,14 @@ const TransferSummaryContainer: React.FC = () => {
     // Cosmos tx → Mintscan (path-style: /atomone/tx/{hash}).
     // Gno tx → existing gnoscan (query-string: /transactions/details?txhash=...).
     if (isCosmosToken) {
-      const chainId = summaryInfo.tokenMetainfo.networkId;
-      const profile = chainRegistry.getNetworkProfileByChainId(chainId);
-      if (profile?.linkUrl) {
-        window.open(`${profile.linkUrl}/tx/${transferResult.hash}`, '_blank');
-        return;
+      if (tokenProfile?.linkUrl) {
+        window.open(`${tokenProfile.linkUrl}/tx/${transferResult.hash}`, '_blank');
       }
-      // Fallback: no linkUrl registered (e.g. AtomOne testnet). Nothing to open.
       return;
     }
 
     openScannerLink('/transactions/details', { txhash: transferResult.hash });
-  }, [
-    transferResult?.hash,
-    openScannerLink,
-    isCosmosToken,
-    summaryInfo.tokenMetainfo.networkId,
-    chainRegistry,
-  ]);
+  }, [transferResult?.hash, openScannerLink, isCosmosToken, tokenProfile]);
 
   useEffect(() => {
     if (simulateErrorMessage) {

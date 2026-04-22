@@ -1,4 +1,3 @@
-import { validateCosmosAddress } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -47,14 +46,11 @@ const TransferInputContainer: React.FC = () => {
   const [isTokenSearch, setIsTokenSearch] = useState(params?.isTokenSearch === true);
   const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel | undefined>(params?.tokenBalance);
   const { chainRegistry } = useAdenaContext();
-  // For Cosmos-native tokens the recipient/address-book must use the target
-  // chain's bech32 prefix (e.g. 'atone') instead of the current Gno network's.
-  const addressPrefixOverride = useMemo(() => {
-    if (tokenMetainfo?.type !== 'cosmos-native') return undefined;
-    const chain = chainRegistry.getChainByChainId(tokenMetainfo.networkId);
-    return chain?.chainType === 'cosmos' ? chain.bech32Prefix : undefined;
+  const tokenChainGroup = useMemo(() => {
+    if (!tokenMetainfo) return 'gno';
+    return chainRegistry.getChainByChainId(tokenMetainfo.networkId)?.chainGroup ?? 'gno';
   }, [tokenMetainfo, chainRegistry]);
-  const addressBookInput = useAddressBookInput(addressPrefixOverride);
+  const addressBookInput = useAddressBookInput(tokenChainGroup);
   const balanceInput = useBalanceInput(tokenMetainfo);
   const { currentAccount } = useCurrentAccount();
   const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
@@ -112,22 +108,6 @@ const TransferInputContainer: React.FC = () => {
     goBack();
   }, [isTokenSearch]);
 
-  const validateCosmosPrefixIfNeeded = useCallback((): boolean => {
-    if (!tokenMetainfo || tokenMetainfo.type !== 'cosmos-native') {
-      return true;
-    }
-    const chain = chainRegistry.getChainByChainId(tokenMetainfo.networkId);
-    if (!chain || chain.chainType !== 'cosmos') {
-      return true;
-    }
-    const ok = validateCosmosAddress(addressBookInput.resultAddress, chain.bech32Prefix);
-    if (!ok) {
-      // Reuse the generic "Invalid Address" UI state from addressBookInput.
-      addressBookInput.validateAddressBookInput();
-    }
-    return ok;
-  }, [tokenMetainfo, chainRegistry, addressBookInput]);
-
   const onClickNext = useCallback(async () => {
     if (!isNext) {
       return;
@@ -137,7 +117,6 @@ const TransferInputContainer: React.FC = () => {
     }
     const validAddress =
       addressBookInput.validateAddressBookInput() &&
-      validateCosmosPrefixIfNeeded() &&
       (isNativeTokenModel(tokenMetainfo) || (await addressBookInput.validateEqualAddress()));
     const validBalance = balanceInput.validateBalanceInput();
     if (validAddress && validBalance) {
@@ -156,7 +135,7 @@ const TransferInputContainer: React.FC = () => {
         },
       });
     }
-  }, [addressBookInput, balanceInput, isNext, validateCosmosPrefixIfNeeded]);
+  }, [addressBookInput, balanceInput, isNext]);
 
   useEffect(() => {
     if (isLoadingSessionState) {
