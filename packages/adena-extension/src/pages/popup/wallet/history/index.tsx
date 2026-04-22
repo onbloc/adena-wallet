@@ -7,7 +7,7 @@ import { useGetAllGRC721Collections } from '@hooks/nft/use-get-all-grc721-collec
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 import useScrollHistory from '@hooks/use-scroll-history';
 import { useTransactionHistory } from '@hooks/wallet/transaction-history/use-transaction-history';
 import { useTransactionHistoryPage } from '@hooks/wallet/transaction-history/use-transaction-history-page';
@@ -38,13 +38,13 @@ const HistoryContainer: React.FC = () => {
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { saveScrollPosition } = useScrollHistory(scrollRef);
-  const { currentNetwork } = useNetwork();
+  const profile = useNetworkProfile();
 
   useGetAllGRC721Collections({ refetchOnMount: true });
 
   const isUsedApi = useMemo(() => {
-    return !!currentNetwork.apiUrl;
-  }, [currentNetwork]);
+    return profile?.chainType === 'gno' && !!profile.apiUrl;
+  }, [profile]);
 
   const pageTransactionHistoryQuery = useTransactionHistoryPage({ enabled: isUsedApi });
   const commonTransactionHistoryQuery = useTransactionHistory({ enabled: !isUsedApi });

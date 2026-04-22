@@ -61,7 +61,7 @@ export const useNetwork = (): NetworkResponse => {
     NetworkState.atomoneNetworkMetainfos,
   );
   const { chainService } = useAdenaContext();
-  const [currentNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork);
+  const [currentGnoNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork);
   const [currentAtomoneNetwork, setCurrentAtomoneNetwork] = useRecoilState(
     NetworkState.currentAtomoneNetwork,
   );
@@ -72,35 +72,35 @@ export const useNetwork = (): NetworkResponse => {
   const [modified, setModified] = useRecoilState(NetworkState.modified);
 
   const { data: failedNetwork = null, refetch: refetchNetworkState } = useQuery<boolean | null>(
-    ['network/failedNetwork', currentNetwork],
+    ['network/failedNetwork', currentGnoNetwork],
     () => {
-      if (!currentNetwork) {
+      if (!currentGnoNetwork) {
         return null;
       }
-      return fetchHealth(currentNetwork.rpcUrl).then(({ healthy }) => !healthy);
+      return fetchHealth(currentGnoNetwork.rpcUrl).then(({ healthy }) => !healthy);
     },
     { keepPreviousData: true },
   );
 
   const scannerParameters: { [key in string]: string } | null = useMemo(() => {
-    if (!currentNetwork) {
+    if (!currentGnoNetwork) {
       return null;
     }
     const officialNetworkIds = CHAIN_DATA.filter((network) => !!network.apiUrl).map(
       (network) => network.networkId,
     );
-    const isOfficialNetwork = officialNetworkIds.includes(currentNetwork.networkId);
+    const isOfficialNetwork = officialNetworkIds.includes(currentGnoNetwork.networkId);
     const networkParameters: { [key in string]: string } = isOfficialNetwork
       ? {
-          chainId: currentNetwork.networkId,
+          chainId: currentGnoNetwork.networkId,
         }
       : {
           type: 'custom',
-          rpcUrl: currentNetwork.rpcUrl || '',
-          indexerUrl: currentNetwork.indexerUrl || '',
+          rpcUrl: currentGnoNetwork.rpcUrl || '',
+          indexerUrl: currentGnoNetwork.indexerUrl || '',
         };
     return networkParameters;
-  }, [currentNetwork]);
+  }, [currentGnoNetwork]);
 
   const getDefaultNetworkInfo = useCallback((networkId: string) => {
     const network = CHAIN_DATA.find(
@@ -186,7 +186,7 @@ export const useNetwork = (): NetworkResponse => {
       const gnoTarget = networkMetainfos.find(
         (network) => !network.deleted && (network.main === true) === wantsMainnet,
       );
-      if (gnoTarget && gnoTarget.id !== currentNetwork?.id) {
+      if (gnoTarget && gnoTarget.id !== currentGnoNetwork?.id) {
         await chainService.updateCurrentNetworkId(gnoTarget.id);
         await changeNetworkOfProvider(gnoTarget);
         setSelectedProfileByChainGroup((prev) => ({ ...prev, gno: gnoTarget.id }));
@@ -204,7 +204,7 @@ export const useNetwork = (): NetworkResponse => {
     [
       networkMetainfos,
       atomoneNetworks,
-      currentNetwork,
+      currentGnoNetwork,
       currentAtomoneNetwork,
       changeNetworkOfProvider,
     ],
@@ -232,13 +232,13 @@ export const useNetwork = (): NetworkResponse => {
       await chainService.updateNetworks(changedNetworks);
       setNetworkMetainfos(changedNetworks);
 
-      if (network.id === currentNetwork?.id) {
+      if (network.id === currentGnoNetwork?.id) {
         changeNetworkOfProvider(network);
       }
       return true;
     },
     [
-      currentNetwork,
+      currentGnoNetwork,
       currentAtomoneNetwork,
       networkMetainfos,
       atomoneNetworks,
@@ -287,12 +287,12 @@ export const useNetwork = (): NetworkResponse => {
       await chainService.updateNetworks(changedNetworks);
       setNetworkMetainfos(changedNetworks);
 
-      if (networkId === currentNetwork?.id) {
+      if (networkId === currentGnoNetwork?.id) {
         changeNetworkOfProvider(DEFAULT_NETWORK);
       }
       return true;
     },
-    [currentNetwork, currentAtomoneNetwork, networkMetainfos, atomoneNetworks, chainService],
+    [currentGnoNetwork, currentAtomoneNetwork, networkMetainfos, atomoneNetworks, chainService],
   );
 
   const dispatchChangedEvent = useCallback(
@@ -300,11 +300,11 @@ export const useNetwork = (): NetworkResponse => {
       const message = EventMessage.event('changedNetwork', network.networkId);
       dispatchEvent(message);
     },
-    [currentNetwork],
+    [currentGnoNetwork],
   );
 
   return {
-    currentNetwork: currentNetwork || DEFAULT_NETWORK,
+    currentNetwork: currentGnoNetwork || DEFAULT_NETWORK,
     currentAtomoneNetwork,
     networks: networkMetainfos,
     atomoneNetworks,

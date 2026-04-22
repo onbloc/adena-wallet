@@ -11,6 +11,7 @@ import WalletConnect from '@components/pages/approve-establish/wallet-connect/wa
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { RoutePath } from '@types';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -22,6 +23,7 @@ const ApproveEstablishContainer: React.FC = () => {
   const { walletService, establishService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const profile = useNetworkProfile();
   const [key, setKey] = useState<string>('');
   const [appName, setAppName] = useState<string>('');
   const [hostname, setHostname] = useState<string>('');
@@ -91,8 +93,9 @@ const ApproveEstablishContainer: React.FC = () => {
 
   const establish = async (): Promise<void> => {
     setProcessing(true);
-    const { url, healthy } = await checkHealth(currentNetwork.rpcUrl);
-    if (!healthy || url !== currentNetwork.rpcUrl) {
+    const rpcUrl = profile?.chainType === 'gno' ? profile.rpcEndpoints[0] : '';
+    const { url, healthy } = await checkHealth(rpcUrl);
+    if (!healthy || url !== rpcUrl) {
       setResponse(
         InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, key),
       );
