@@ -16,6 +16,10 @@ export interface NetworkFeeSettingItemProps {
     settingType: NetworkFeeSettingType;
     gasInfo?: GasInfo | undefined;
   };
+  // Optional fee-token display overrides. When omitted, falls back to
+  // Gno's `GasToken` (GNOT / 6 decimals). Cosmos callers pass PHOTON, etc.
+  feeSymbol?: string;
+  feeDecimals?: number;
 }
 
 const networkFeeSettingTypeNames: { [key in NetworkFeeSettingType]: string } = {
@@ -29,7 +33,11 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
   isLoading,
   info,
   select,
+  feeSymbol,
+  feeDecimals,
 }) => {
+  const resolvedSymbol = feeSymbol ?? GasToken.symbol;
+  const resolvedDecimals = feeDecimals ?? GasToken.decimals;
   const settingTypeName = useMemo(
     () => networkFeeSettingTypeNames[info.settingType],
     [info.settingType],
@@ -44,20 +52,20 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
 
     return (
       BigNumber(info.gasInfo.gasFee)
-        .shiftedBy(GasToken.decimals * -1)
+        .shiftedBy(resolvedDecimals * -1)
         .toFixed(6, BigNumber.ROUND_UP)
         .toString()
         .replace(/0+$/, '') || ''
     );
-  }, [info.gasInfo]);
+  }, [info.gasInfo, resolvedDecimals]);
 
   const gasInfoDenomination = useMemo(() => {
     if (!hasGasInfo) {
       return '-';
     }
 
-    return GasToken.symbol;
-  }, [info.gasInfo]);
+    return resolvedSymbol;
+  }, [info.gasInfo, resolvedSymbol]);
 
   const onClickItem = (): void => {
     if (!hasGasInfo) {
