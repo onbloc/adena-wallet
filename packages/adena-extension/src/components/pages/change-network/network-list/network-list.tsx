@@ -2,11 +2,12 @@ import React from 'react';
 
 import { NetworkListWrapper } from './network-list.styles';
 import NetworkListItem from '../network-list-item/network-list-item';
-import { NetworkMetainfo } from '@types';
+import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 
 export interface NetworkListProps {
   currentNetworkId: string;
-  networkMetainfos: NetworkMetainfo[];
+  networkMetainfos: Array<NetworkMetainfo | AtomoneNetworkMetainfo>;
+  iconUrl?: string;
   changeNetwork: (networkMetainfoId: string) => void;
   moveEditPage: (networkMetainfoId: string) => void;
 }
@@ -14,6 +15,7 @@ export interface NetworkListProps {
 const NetworkList: React.FC<NetworkListProps> = ({
   currentNetworkId,
   networkMetainfos,
+  iconUrl,
   changeNetwork,
   moveEditPage,
 }) => {
@@ -25,6 +27,7 @@ const NetworkList: React.FC<NetworkListProps> = ({
           selected={networkMetainfo.id === currentNetworkId}
           locked={networkMetainfo.default === true}
           networkMetainfo={networkMetainfo}
+          iconUrl={iconUrl}
           changeNetwork={changeNetwork}
           moveEditPage={moveEditPage}
         />

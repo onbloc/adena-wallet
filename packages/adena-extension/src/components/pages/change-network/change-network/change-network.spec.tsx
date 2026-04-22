@@ -10,15 +10,18 @@ describe('ChangeNetwork Component', () => {
   it('ChangeNetwork render', () => {
     const args: ChangeNetworkProps = {
       loading: false,
-      currentNetworkId: '',
-      networkMetainfos: [],
-      changeNetwork: () => {
+      networkMode: 'mainnet',
+      sections: [],
+      onChangeMode: () => {
         return;
       },
-      moveEditPage: () => {
+      onSelect: () => {
         return;
       },
-      moveAddPage: () => {
+      onEdit: () => {
+        return;
+      },
+      onAdd: () => {
         return;
       },
       moveBack: () => {
