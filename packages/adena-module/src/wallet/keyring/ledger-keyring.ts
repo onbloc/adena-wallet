@@ -9,7 +9,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 import { Document, makeSignedTx, useTm2Wallet } from './../..';
-import { Keyring, KeyringData, KeyringType } from './keyring';
+import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
 
 export class LedgerKeyring implements Keyring {
   public readonly id: string;
@@ -38,6 +38,16 @@ export class LedgerKeyring implements Keyring {
       id: this.id,
       type: this.type,
     };
+  }
+
+  async signRaw(_bytes: Uint8Array, _opts?: SignRawOptions): Promise<Uint8Array> {
+    // Ledger hardware enforces "trust display": the device only signs documents
+    // it can parse and render to the user. Raw opaque bytes would be blind
+    // signing, which the device refuses. Phase 7 replaces this stub with a
+    // device-friendly path (signAmino/signDirect) alongside Cosmos-app routing.
+    throw new Error(
+      `Ledger signRaw is not implemented yet (Phase 7) (keyring ${this.id})`,
+    );
   }
 
   async sign(provider: Provider, document: Document, hdPath: number = 0) {

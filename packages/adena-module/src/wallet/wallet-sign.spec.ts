@@ -46,10 +46,9 @@ describe('Transaction Sign', () => {
 
   beforeEach(() => {
     mockProvider = new JSONRPCProvider('');
-    mockProvider.getStatus = jest.fn().mockResolvedValue('0');
     mockProvider.getStatus = jest.fn().mockResolvedValue({
       node_info: {
-        node_info: 'dev',
+        network: 'dev',
       },
     });
     const mockAccount: ABCIAccount = {
@@ -100,5 +99,19 @@ describe('Transaction Sign', () => {
     const signature = await wallet.sign(mockProvider, document);
 
     expect(signature.signature).toHaveLength(1);
+  });
+
+  it('GOLDEN: fixed mnemonic + document yields known signature bytes', async () => {
+    // Bit-equality regression. If you intentionally change the signing pipeline
+    // (sign payload shape, encodeCharacterSet, etc.), regenerate by temporarily
+    // printing `hex` from this test and pasting the new value here.
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const body = 'package hello\n// golden\n';
+    const document = makeDocument(body);
+    const { signature } = await wallet.sign(mockProvider, document);
+    const hex = Buffer.from(signature[0].signature).toString('hex');
+    expect(hex).toBe(
+      '24e23d2bf56dffe045eaf5915be8c51f24084bd34fdccff9d5172d667cc0debf287c61355458553ae25d31344777c7d646315fec3d2c593016c7916682dc9f35',
+    );
   });
 });
