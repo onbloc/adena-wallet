@@ -12,7 +12,11 @@ type LocalValueType =
   | 'NETWORKS'
   | 'ATOMONE_NETWORKS'
   | 'CURRENT_CHAIN_ID'
-  | 'CURRENT_NETWORK_ID';
+  | 'CURRENT_NETWORK_ID'
+  | 'CURRENT_ATOMONE_NETWORK_ID'
+  | 'NETWORK_MODE';
+
+export type NetworkModeValue = 'mainnet' | 'testnet';
 
 export class ChainRepository {
   private static CHAIN_URI = '/resources/chains/chains.json';
@@ -146,6 +150,42 @@ export class ChainRepository {
 
   public deleteCurrentNetworkId = async (): Promise<boolean> => {
     await this.localStorage.remove('CURRENT_NETWORK_ID');
+    return true;
+  };
+
+  public getCurrentAtomoneNetworkId = async (): Promise<string | null> => {
+    const value = await this.localStorage.get('CURRENT_ATOMONE_NETWORK_ID').catch(() => '');
+    if (!value || value === 'undefined' || value === 'null') {
+      return null;
+    }
+    return value;
+  };
+
+  public updateCurrentAtomoneNetworkId = async (networkId: string): Promise<boolean> => {
+    await this.localStorage.set('CURRENT_ATOMONE_NETWORK_ID', networkId);
+    return true;
+  };
+
+  public deleteCurrentAtomoneNetworkId = async (): Promise<boolean> => {
+    await this.localStorage.remove('CURRENT_ATOMONE_NETWORK_ID');
+    return true;
+  };
+
+  public getNetworkMode = async (): Promise<NetworkModeValue | null> => {
+    const value = await this.localStorage.get('NETWORK_MODE').catch(() => '');
+    if (value === 'mainnet' || value === 'testnet') {
+      return value;
+    }
+    return null;
+  };
+
+  public updateNetworkMode = async (mode: NetworkModeValue): Promise<boolean> => {
+    await this.localStorage.set('NETWORK_MODE', mode);
+    return true;
+  };
+
+  public deleteNetworkMode = async (): Promise<boolean> => {
+    await this.localStorage.remove('NETWORK_MODE');
     return true;
   };
 }

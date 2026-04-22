@@ -8,6 +8,8 @@ describe('ChainService — AtomOne methods', () => {
   let mockDeleteNetworks: jest.Mock;
   let mockDeleteCurrentChainId: jest.Mock;
   let mockDeleteCurrentNetworkId: jest.Mock;
+  let mockDeleteNetworkMode: jest.Mock;
+  let mockDeleteCurrentAtomoneNetworkId: jest.Mock;
   let service: ChainService;
 
   beforeEach(() => {
@@ -16,6 +18,8 @@ describe('ChainService — AtomOne methods', () => {
     mockDeleteNetworks = jest.fn().mockResolvedValue(true);
     mockDeleteCurrentChainId = jest.fn().mockResolvedValue(true);
     mockDeleteCurrentNetworkId = jest.fn().mockResolvedValue(true);
+    mockDeleteNetworkMode = jest.fn().mockResolvedValue(true);
+    mockDeleteCurrentAtomoneNetworkId = jest.fn().mockResolvedValue(true);
 
     const repository = {
       addAtomoneNetwork: mockAddAtomoneNetwork,
@@ -23,6 +27,8 @@ describe('ChainService — AtomOne methods', () => {
       deleteNetworks: mockDeleteNetworks,
       deleteCurrentChainId: mockDeleteCurrentChainId,
       deleteCurrentNetworkId: mockDeleteCurrentNetworkId,
+      deleteNetworkMode: mockDeleteNetworkMode,
+      deleteCurrentAtomoneNetworkId: mockDeleteCurrentAtomoneNetworkId,
     } as unknown as ChainRepository;
 
     service = new ChainService(repository);
@@ -65,6 +71,8 @@ describe('ChainService — AtomOne methods', () => {
       expect(mockDeleteNetworks).toHaveBeenCalled();
       expect(mockDeleteAtomoneNetworks).toHaveBeenCalled();
       expect(mockDeleteCurrentNetworkId).toHaveBeenCalled();
+      expect(mockDeleteNetworkMode).toHaveBeenCalled();
+      expect(mockDeleteCurrentAtomoneNetworkId).toHaveBeenCalled();
     });
   });
 });

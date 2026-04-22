@@ -5,8 +5,11 @@ import { Storage } from '.';
 // Define the valid types of storage keys
 type StorageKeyTypes =
   | 'NETWORKS'
+  | 'ATOMONE_NETWORKS'
+  | 'NETWORK_MODE'
   | 'CURRENT_CHAIN_ID'
   | 'CURRENT_NETWORK_ID'
+  | 'CURRENT_ATOMONE_NETWORK_ID'
   | 'SERIALIZED'
   | 'ENCRYPTED_STORED_PASSWORD'
   | 'CURRENT_ACCOUNT_ID'
@@ -23,8 +26,11 @@ type StorageKeyTypes =
 // List of all available storage keys
 const StorageKeys: StorageKeyTypes[] = [
   'NETWORKS',
+  'ATOMONE_NETWORKS',
+  'NETWORK_MODE',
   'CURRENT_CHAIN_ID',
   'CURRENT_NETWORK_ID',
+  'CURRENT_ATOMONE_NETWORK_ID',
   'SERIALIZED',
   'ENCRYPTED_STORED_PASSWORD',
   'CURRENT_ACCOUNT_ID',
