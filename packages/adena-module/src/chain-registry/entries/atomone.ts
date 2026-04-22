@@ -1,3 +1,4 @@
+import { hasMsgMintPhoton } from '../../cosmos/fee';
 import { CosmosChain, CosmosNetworkProfile } from '../types';
 
 export const ATOMONE_CHAIN: CosmosChain = {
@@ -13,7 +14,19 @@ export const ATOMONE_CHAIN: CosmosChain = {
   fee: {
     model: 'feemarket' as const,
     defaultFeeTokenId: 'atomone-1:uphoton',
-    feeCurrencyFilter: (): string[] => ['atomone-1:uphoton'],
+    feeCurrencyFilter: (msgs): string[] =>
+      hasMsgMintPhoton(msgs)
+        ? ['atomone-1:uatone', 'atomone-1:uphoton']
+        : ['atomone-1:uphoton'],
+    // Used only when the dynamic estimate (node config + simulate) fails.
+    // Sized to cover atomone-1 mainnet's current min_gas_price of
+    // 0.225 uphoton/gas: 0.225 × 200000 = 45_000 uphoton. Testnet currently
+    // requires only 0.025 × 200000 = 5_000, so this overpays on testnet
+    // but is safer than under-paying and bouncing off the node.
+    fallbackFee: {
+      amount: [{ denom: 'uphoton', amount: '45000' }],
+      gas: '200000',
+    },
   },
   features: ['feemarket', 'photon', 'gov-v1-3option'],
 };

@@ -1,3 +1,5 @@
+import type { StdFee } from '@cosmjs/amino';
+
 type GnoSignMode = 'gno-amino-json';
 export type CosmosSignMode =
   | 'SIGN_MODE_DIRECT'
@@ -31,6 +33,12 @@ export interface CosmosChain extends ChainBase {
     model: 'static' | 'feemarket';
     defaultFeeTokenId: string;
     feeCurrencyFilter?: (msgs: unknown[]) => string[];
+    /**
+     * StdFee used when dynamic estimation (feemarket query or simulate)
+     * fails. Expected to be a conservative, proven-working value for the
+     * chain — not an aspirational minimum.
+     */
+    fallbackFee?: StdFee;
   };
   features: ('feemarket' | 'photon' | 'gov-v1-3option' | 'ibc-go-v7+')[];
 }
