@@ -9,21 +9,22 @@ import EditNetwork, { EditNetworkProps } from '.';
 describe('EditNetwork Component', () => {
   it('EditNetwork render', () => {
     const args: EditNetworkProps = {
+      chainGroup: 'gno',
       name: '',
       rpcUrl: '',
       chainId: '',
       rpcUrlError: '',
-      indexerUrl: '',
-      indexerUrlError: '',
+      extraUrl: '',
+      extraUrlError: '',
       savable: true,
-      editType: 'all',
+      isDefault: false,
       changeName: () => {
         return;
       },
       changeRPCUrl: () => {
         return;
       },
-      changeIndexerUrl: () => {
+      changeExtraUrl: () => {
         return;
       },
       changeChainId: () => {

@@ -37,7 +37,7 @@ export const SubHeaderWrapper = styled.div`
   }
 
   .title-wrapper {
-    max-width: calc(100% - 48px - 24px);
+    max-width: calc(100% - 56px);
     text-overflow: ellipsis;
     display: block;
     white-space: nowrap;
