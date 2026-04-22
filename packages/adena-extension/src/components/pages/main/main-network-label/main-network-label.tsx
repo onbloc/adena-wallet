@@ -5,13 +5,14 @@ import { MainNetworkLabelWrapper } from './main-network-label.styles';
 
 export interface MainNetworkLabelProps {
   networkName: string;
+  onClick?: () => void;
 }
 
-const MainNetworkLabel: React.FC<MainNetworkLabelProps> = ({ networkName }) => {
+const MainNetworkLabel: React.FC<MainNetworkLabelProps> = ({ networkName, onClick }) => {
   const theme = useTheme();
 
   return (
-    <MainNetworkLabelWrapper>
+    <MainNetworkLabelWrapper onClick={onClick} $clickable={!!onClick}>
       <Text
         style={{ display: 'flex', flexDirection: 'row' }}
         type='light13'
