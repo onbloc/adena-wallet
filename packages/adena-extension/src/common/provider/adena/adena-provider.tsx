@@ -35,6 +35,7 @@ import { NetworkState } from '@states';
 import {
   ALL_TOKENS,
   ChainRegistry,
+  CosmosNetworkProfile,
   createChainRegistry,
   TokenRegistry,
   TokenRegistryImpl,
@@ -83,14 +84,26 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return registry;
   }, []);
 
-  // PR-C2 will swap the hardcoded chainId for selectedProfileByChainGroup['atomone'].
+  const currentAtomoneNetwork = useRecoilValue(NetworkState.currentAtomoneNetwork);
   const cosmosProvider = useMemo<CosmosLcdProvider | null>(() => {
-    const profile = chainRegistry.getNetworkProfileByChainId('atomone-1');
-    if (!profile || profile.chainType !== 'cosmos') {
+    if (!currentAtomoneNetwork) {
       return null;
     }
+    const profile: CosmosNetworkProfile = {
+      id: currentAtomoneNetwork.id,
+      chainType: 'cosmos',
+      chainGroup: 'atomone',
+      chainId: currentAtomoneNetwork.chainId,
+      displayName: currentAtomoneNetwork.chainName,
+      chainIconUrl: '/assets/icons/atone.svg',
+      nativeTokenId: `${currentAtomoneNetwork.chainId}:uatone`,
+      isMainnet: currentAtomoneNetwork.isMainnet,
+      rpcEndpoints: [currentAtomoneNetwork.rpcUrl],
+      restEndpoints: [currentAtomoneNetwork.restUrl],
+      linkUrl: currentAtomoneNetwork.linkUrl,
+    };
     return new CosmosLcdProvider(profile);
-  }, [chainRegistry]);
+  }, [currentAtomoneNetwork]);
 
   const cosmosBalanceService = useMemo(
     () => new CosmosBalanceService(cosmosProvider),
