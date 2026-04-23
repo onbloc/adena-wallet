@@ -2,6 +2,8 @@ import { Secp256k1Wallet } from '@cosmjs/amino';
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 
 import { HDWalletKeyring } from '../../wallet/keyring/hd-wallet-keyring';
+import type { LedgerConnector } from '@cosmjs/ledger-amino';
+
 import { LedgerKeyring } from '../../wallet/keyring/ledger-keyring';
 import { MultisigKeyring } from '../../wallet/keyring/multisig-keyring';
 import { AddressKeyring } from '../../wallet/keyring/address-keyring';
@@ -193,15 +195,28 @@ describe('signCosmosAmino', () => {
     expect(signed.signDoc.sequence).toBe('3');
   });
 
-  it('throws forward-looking message for Ledger keyring', async () => {
+  it('produces a signed Cosmos tx when the keyring is a Ledger', async () => {
+    // With the Phase 7 stub lifted, a Ledger keyring flows through the same
+    // pipeline as HD/private-key keyrings: signRaw → 64-byte r||s →
+    // makeTxRaw. We mock the connector to stay unit-scope.
+    const pubkey = new Uint8Array(33).fill(0x02);
+    const signature = new Uint8Array(64).fill(0x09);
+    const connector = {
+      sign: jest.fn().mockResolvedValue(signature),
+      getPubkey: jest.fn().mockResolvedValue(pubkey),
+    } as unknown as LedgerConnector;
     const keyring = new LedgerKeyring({});
-    await expect(
-      signCosmosAmino({
-        document: makeDocument(),
-        keyring,
-        cosmosProvider: makeMockProvider(),
-      }),
-    ).rejects.toThrow(/Phase 7/);
+    keyring.setConnector(connector);
+
+    const signed = await signCosmosAmino({
+      document: makeDocument(),
+      keyring,
+      cosmosProvider: makeMockProvider(),
+    });
+
+    expect(connector.sign).toHaveBeenCalledTimes(1);
+    const ourTxRaw = TxRaw.decode(signed.txBytes);
+    expect(Buffer.from(ourTxRaw.signatures[0]).equals(Buffer.from(signature))).toBe(true);
   });
 
   it('throws permanent-unsupport message for Multisig keyring', async () => {
