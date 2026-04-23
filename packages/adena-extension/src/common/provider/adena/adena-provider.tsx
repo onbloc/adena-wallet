@@ -13,6 +13,7 @@ import { TransactionGasRepository } from '@repositories/transaction/transaction-
 import {
   WalletAccountRepository,
   WalletAddressRepository,
+  WalletEstablishAtomOneRepository,
   WalletEstablishRepository,
   WalletRepository,
 } from '@repositories/wallet';
@@ -29,6 +30,7 @@ import {
   WalletAccountService,
   WalletAddressBookService,
   WalletBalanceService,
+  WalletEstablishAtomOneService,
   WalletEstablishService,
   WalletService,
 } from '@services/wallet';
@@ -55,6 +57,7 @@ export interface AdenaContextProps {
   accountService: WalletAccountService;
   addressBookService: WalletAddressBookService;
   establishService: WalletEstablishService;
+  establishAtomOneService: WalletEstablishAtomOneService;
   chainService: ChainService;
   tokenService: TokenService;
   transactionService: TransactionService;
@@ -118,6 +121,11 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     [localStorage],
   );
 
+  const establishAtomOneRepository = useMemo(
+    () => new WalletEstablishAtomOneRepository(localStorage),
+    [localStorage],
+  );
+
   const addressBookRepository = useMemo(
     () => new WalletAddressRepository(localStorage),
     [localStorage],
@@ -174,6 +182,11 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     [establishRepository],
   );
 
+  const establishAtomOneService = useMemo(
+    () => new WalletEstablishAtomOneService(establishAtomOneRepository, chainRegistry),
+    [establishAtomOneRepository, chainRegistry],
+  );
+
   const transactionService = useMemo(() => {
     const transactionService = new TransactionService(
       walletService,
@@ -219,6 +232,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
         accountService,
         addressBookService,
         establishService,
+        establishAtomOneService,
         chainService,
         tokenService,
         transactionService,
