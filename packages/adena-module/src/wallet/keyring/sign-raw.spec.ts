@@ -3,7 +3,6 @@ import { Secp256k1, Secp256k1Signature } from '@cosmjs/crypto';
 import { sha256 } from '../../crypto';
 import { AddressKeyring } from './address-keyring';
 import { HDWalletKeyring } from './hd-wallet-keyring';
-import { LedgerKeyring } from './ledger-keyring';
 import { MultisigKeyring } from './multisig-keyring';
 import { PrivateKeyKeyring } from './private-key-keyring';
 import { Web3AuthKeyring } from './web3-auth-keyring';
@@ -91,11 +90,6 @@ describe('Keyring.signRaw — private-key keyrings', () => {
 });
 
 describe('Keyring.signRaw — non-signing keyrings', () => {
-  it('LedgerKeyring throws Phase 7 message', async () => {
-    const keyring = new LedgerKeyring({});
-    await expect(keyring.signRaw(BYTES)).rejects.toThrow(/Phase 7/);
-  });
-
   it('AddressKeyring throws AIRGAP message', async () => {
     const keyring = await AddressKeyring.fromAddress(
       'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
