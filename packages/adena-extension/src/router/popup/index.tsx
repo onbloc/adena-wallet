@@ -47,6 +47,7 @@ import { Staking } from '@pages/popup/wallet/staking';
 import { TokenDetails } from '@pages/popup/wallet/token-details';
 import { TransactionDetail } from '@pages/popup/wallet/transaction-detail';
 import TransferInput from '@pages/popup/wallet/transfer-input';
+import TransferLedgerCosmosLoading from '@pages/popup/wallet/transfer-ledger-cosmos-loading';
 import TransferLedgerLoading from '@pages/popup/wallet/transfer-ledger-loading';
 import TransferLedgerReject from '@pages/popup/wallet/transfer-ledger-reject';
 import TransferSummary from '@pages/popup/wallet/transfer-summary';
@@ -115,6 +116,10 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.NftTransferSummary} element={<NFTTransferSummary />} />
         <Route path={RoutePath.NftTransferInput} element={<NFTTransferInput />} />
         <Route path={RoutePath.TransferLedgerLoading} element={<TransferLedgerLoading />} />
+        <Route
+          path={RoutePath.TransferLedgerCosmosLoading}
+          element={<TransferLedgerCosmosLoading />}
+        />
         <Route path={RoutePath.TransferLedgerReject} element={<TransferLedgerReject />} />
         <Route path={RoutePath.BroadcastTransaction} element={<BroadcastTransactionScreen />} />
         <Route

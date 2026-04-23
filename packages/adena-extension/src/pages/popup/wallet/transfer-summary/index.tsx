@@ -410,6 +410,9 @@ const TransferSummaryContainer: React.FC = () => {
 
     setIsSent(true);
     if (isLedgerAccount(currentAccount)) {
+      if (isCosmosToken) {
+        return transferByLedgerCosmos();
+      }
       return transferByLedger();
     }
 
@@ -459,10 +462,35 @@ const TransferSummaryContainer: React.FC = () => {
   const transferByLedger = useCallback(async () => {
     const document = await createDocument();
     if (document) {
-      navigate(RoutePath.TransferLedgerLoading, { state: { document } });
+      navigate(RoutePath.TransferLedgerLoading, {
+        state: { document, summary: summaryInfo },
+      });
     }
     return true;
-  }, [createDocument]);
+  }, [createDocument, navigate, summaryInfo]);
+
+  const transferByLedgerCosmos = useCallback(async () => {
+    if (!cosmosDocument) {
+      return false;
+    }
+    const feeAmount = cosmosFee.currentFeeAmount;
+    const feeDenom = cosmosFee.currentFeeDenom;
+    const feeGas = cosmosFee.currentFeeGas;
+    if (!feeAmount || feeAmount === '0' || !feeDenom || !feeGas || feeGas === '0') {
+      return false;
+    }
+    const document: CosmosDocument = {
+      ...cosmosDocument,
+      fee: {
+        amount: [{ denom: feeDenom, amount: feeAmount }],
+        gas: feeGas,
+      },
+    };
+    navigate(RoutePath.TransferLedgerCosmosLoading, {
+      state: { document, summary: summaryInfo },
+    });
+    return true;
+  }, [cosmosDocument, cosmosFee, navigate, summaryInfo]);
 
   const onClickBack = useCallback(() => {
     setMemorizedTransferInfo(summaryInfo);
@@ -529,6 +557,24 @@ const TransferSummaryContainer: React.FC = () => {
       });
     }
   }, [simulateErrorMessage]);
+
+  useEffect(() => {
+    // When a Ledger loading page navigates back after broadcast, it seeds
+    // `params.ledgerResult` — enter the RESULT screen so the Ledger user
+    // gets the same completion UI (View History / View on Scanner / Close)
+    // as HD/PK transfers instead of jumping straight to History.
+    const ledgerResult = summaryInfo.ledgerResult;
+    if (ledgerResult) {
+      setTransferResult({
+        status: ledgerResult.status,
+        hash: ledgerResult.hash ?? null,
+        errorMessage: ledgerResult.errorMessage ?? null,
+      });
+      setScreenState('RESULT');
+    }
+    // One-shot on mount; intentionally no deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     // Cosmos path builds its document inline at broadcast time — skip the

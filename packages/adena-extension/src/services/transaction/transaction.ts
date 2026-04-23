@@ -19,6 +19,7 @@ import {
   LedgerKeyring,
   SignedCosmosTx,
   sha256,
+  signCosmos,
   Wallet,
 } from 'adena-module';
 
@@ -330,6 +331,31 @@ export class TransactionService {
     }
     return chain;
   }
+
+  /**
+   * Sign a Cosmos document with a Ledger keyring. Parallel to `signCosmos` but
+   * bypasses the wallet-owned keyring (whose connector is null after restore)
+   * and uses a keyring freshly bound to an active `AdenaLedgerConnector`.
+   */
+  public signCosmosWithLedger = async (
+    ledgerConnector: AdenaLedgerConnector,
+    account: LedgerAccount,
+    document: CosmosDocument,
+  ): Promise<SignedCosmosTx> => {
+    if (!this.cosmosProvider) {
+      throw new Error('CosmosProvider not injected');
+    }
+    this.resolveCosmosProfile(document.chainId);
+    const signMode = this.resolvePreferredSignMode(document.chainId);
+    const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
+    return signCosmos({
+      document,
+      keyring,
+      cosmosProvider: this.cosmosProvider,
+      hdPath: account.hdPath,
+      signMode,
+    });
+  };
 
   public broadcastCosmos = async (
     signedTx: SignedCosmosTx,
