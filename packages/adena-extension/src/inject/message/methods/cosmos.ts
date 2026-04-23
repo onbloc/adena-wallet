@@ -3,6 +3,7 @@ import {
   WalletResponseRejectType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
+import { Secp256k1 } from '@cosmjs/crypto';
 import { fromBech32 } from '@cosmjs/encoding';
 
 import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
@@ -217,6 +218,16 @@ export const cosmosGetKey = async (
     const bech32Address = await currentAccount.resolveAddress(chain.bech32Prefix);
     const { data: addressBytes } = fromBech32(bech32Address);
 
+    // Cosmos/CosmJS consumers (e.g. SigningStargateClient.simulate) require
+    // the 33-byte compressed secp256k1 pubkey, but HD wallet accounts store
+    // the 65-byte uncompressed form. Compress at the wire boundary so every
+    // downstream surface (flat getKey, OfflineSigner, third-party CosmJS
+    // clients) sees the canonical format.
+    const compressedPubKey =
+      currentAccount.publicKey.length === 65
+        ? Secp256k1.compressPubkey(currentAccount.publicKey)
+        : currentAccount.publicKey;
+
     // Binary fields are emitted as base64 because Uint8Array does not survive
     // `chrome.runtime.sendMessage`'s JSON encoding. Stage 4's inject wrapper
     // reconstitutes them before the dApp observes the Key.
@@ -224,7 +235,7 @@ export const cosmosGetKey = async (
       createCosmosResponse(CosmosResponseExecuteType.GET_COSMOS_KEY, 'success', message.key, {
         name: currentAccount.name,
         algo: 'secp256k1',
-        pubKey: bytesToBase64(Array.from(currentAccount.publicKey)),
+        pubKey: bytesToBase64(Array.from(compressedPubKey)),
         address: bytesToBase64(Array.from(addressBytes)),
         bech32Address,
         isNanoLedger: currentAccount.type === 'LEDGER',
