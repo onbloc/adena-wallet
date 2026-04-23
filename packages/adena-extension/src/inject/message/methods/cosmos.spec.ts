@@ -385,4 +385,152 @@ describe('cosmos handlers', () => {
       );
     });
   });
+
+  describe('error guards', () => {
+    // Each handler must respond with UNEXPECTED_ERROR instead of leaving the
+    // message port open when an internal dependency throws. This mirrors the
+    // pattern already used by the Gno handlers (`wallet.ts:getAccount`). Not
+    // wrapping these paths would leave `sendResponse` uninvoked and produce
+    // Chrome's "message channel closed before a response was received" error.
+
+    it('cosmosEnable answers UNEXPECTED_ERROR when establishAtomOneService throws', async () => {
+      const core = makeCore({
+        establishAtomOneService: {
+          isEstablishedBy: jest.fn().mockRejectedValue(new Error('boom')),
+        },
+      } as never);
+      const send = jest.fn();
+      await cosmosEnable(
+        core as never,
+        makeMessage('ENABLE_COSMOS', { chainIds: ['atomone-1'] }),
+        send,
+      );
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(send.mock.calls[0][0]).toMatchObject({
+        type: 'ENABLE_COSMOS',
+        status: 'failure',
+        message: 'UNEXPECTED_ERROR',
+        data: { error: 'boom' },
+      });
+    });
+
+    it('cosmosGetKey answers UNEXPECTED_ERROR when resolveAddress throws', async () => {
+      const core = makeCore({
+        getCurrentAccount: jest.fn(async () => ({
+          id: 'acc-1',
+          name: 'Account 1',
+          type: 'HD_WALLET',
+          publicKey: new Uint8Array([1, 2, 3, 4]),
+          resolveAddress: async () => {
+            throw new Error('resolve-fail');
+          },
+        })),
+      } as never);
+      const send = jest.fn();
+      await cosmosGetKey(
+        core as never,
+        makeMessage('GET_COSMOS_KEY', { chainId: 'atomone-1' }),
+        send,
+      );
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(send.mock.calls[0][0]).toMatchObject({
+        type: 'GET_COSMOS_KEY',
+        status: 'failure',
+        message: 'UNEXPECTED_ERROR',
+        data: { error: 'resolve-fail' },
+      });
+    });
+
+    it('cosmosSignAmino answers UNEXPECTED_ERROR when the establish gate throws', async () => {
+      const core = makeCore({
+        establishAtomOneService: {
+          isEstablishedBy: jest.fn().mockRejectedValue(new Error('gate-fail')),
+        },
+      } as never);
+      const send = jest.fn();
+      await cosmosSignAmino(
+        core as never,
+        makeMessage('SIGN_COSMOS_AMINO', {
+          chainId: 'atomone-1',
+          signer: 'atone1…',
+          signDoc: {
+            chain_id: 'atomone-1',
+            account_number: '0',
+            sequence: '0',
+            fee: { amount: [], gas: '200000' },
+            msgs: [],
+            memo: '',
+          },
+        }),
+        send,
+      );
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(send.mock.calls[0][0]).toMatchObject({
+        type: 'SIGN_COSMOS_AMINO',
+        status: 'failure',
+        message: 'UNEXPECTED_ERROR',
+        data: { error: 'gate-fail' },
+      });
+    });
+
+    it('cosmosSignDirect answers UNEXPECTED_ERROR when the establish gate throws', async () => {
+      const core = makeCore({
+        establishAtomOneService: {
+          isEstablishedBy: jest.fn().mockRejectedValue(new Error('gate-fail')),
+        },
+      } as never);
+      const send = jest.fn();
+      await cosmosSignDirect(
+        core as never,
+        makeMessage('SIGN_COSMOS_DIRECT', {
+          chainId: 'atomone-1',
+          signer: 'atone1…',
+          signDoc: {
+            bodyBytes: bytesToBase64([1, 2, 3]),
+            authInfoBytes: bytesToBase64([4, 5, 6]),
+            chainId: 'atomone-1',
+            accountNumber: '12',
+          },
+        }),
+        send,
+      );
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(send.mock.calls[0][0]).toMatchObject({
+        type: 'SIGN_COSMOS_DIRECT',
+        status: 'failure',
+        message: 'UNEXPECTED_ERROR',
+        data: { error: 'gate-fail' },
+      });
+    });
+
+    it('cosmosSendTx answers UNEXPECTED_ERROR when the chain registry throws', async () => {
+      const core = makeCore({
+        chainRegistry: {
+          getChainByChainId: jest.fn((id: string) =>
+            id === 'atomone-1' ? ATOMONE_CHAIN : undefined,
+          ),
+          listNetworkProfilesByChain: jest.fn(() => {
+            throw new Error('registry-fail');
+          }),
+        },
+      } as never);
+      const send = jest.fn();
+      await cosmosSendTx(
+        core as never,
+        makeMessage('SEND_COSMOS_TX', {
+          chainId: 'atomone-1',
+          tx: bytesToBase64([9, 8, 7]),
+          mode: 'sync',
+        }),
+        send,
+      );
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(send.mock.calls[0][0]).toMatchObject({
+        type: 'SEND_COSMOS_TX',
+        status: 'failure',
+        message: 'UNEXPECTED_ERROR',
+        data: { error: 'registry-fail' },
+      });
+    });
+  });
 });
