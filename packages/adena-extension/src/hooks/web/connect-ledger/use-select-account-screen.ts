@@ -125,7 +125,14 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
     if (!transport) {
       return;
     }
-    const keyring = await LedgerKeyring.fromLedger(AdenaLedgerConnector.fromTransport(transport));
+    // Reuse the keyringId already baked into the accounts (set during
+    // enumeration via LedgerAccount.createBy). Creating a fresh keyring
+    // here would mint a new UUID that no account references, leaving the
+    // persisted wallet with `account.keyringId` pointing at nothing —
+    // every `keyrings.find(k => k.id === account.keyringId)` would throw.
+    const existingKeyringId = resultSavedAccounts[0]?.keyringId;
+    const keyring = new LedgerKeyring({ id: existingKeyringId });
+    keyring.setConnector(AdenaLedgerConnector.fromTransport(transport));
 
     await transport.close();
 
