@@ -28,7 +28,7 @@ import {
 } from '@inject/types';
 
 import { HandlerMethod } from '..';
-import { InjectionMessage } from '../message';
+import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
 
 // TODO: replace with `InjectionMessageInstance.success/failure` once
@@ -183,6 +183,22 @@ export const cosmosGetKey = async (
     }
 
     const inMemoryKey = await core.getInMemoryKey();
+    const isLocked = await core.isLockedBy(inMemoryKey);
+    if (isLocked) {
+      // WALLET_LOCKED is one of the few failure types already in the SDK's
+      // `WalletMessageInfo` table, so we can use the standard message builder
+      // here and the dApp sees an identical response shape to Gno:
+      // `{ code: 2000, type: 'WALLET_LOCKED', message: 'Adena is Locked.', ... }`.
+      sendResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.WALLET_LOCKED,
+          {},
+          message.key,
+        ),
+      );
+      return;
+    }
+
     const currentAccount = await core.getCurrentAccount(inMemoryKey);
     const chain = core.chainRegistry.getChainByChainId(chainId);
     if (!currentAccount || !chain) {
@@ -258,18 +274,18 @@ export const cosmosSignAmino = async (
       return;
     }
 
-    // TODO(ADN-756 Stage 5): swap this failure for
-    // `HandlerMethod.createPopup(RoutePath.ApproveSignCosmos, ...)`. Stage 3
-    // short-circuits so the wire contract is reachable but no unsigned state
-    // can leak before the approval UI exists.
-    sendResponse(
-      createCosmosResponse(
-        CosmosResponseExecuteType.SIGN_COSMOS_AMINO,
-        'failure',
+    // SIGN_REJECTED is in the SDK's `WalletMessageInfo` table so the standard
+    // builder fills in the human-readable `message` ("The signature has been
+    // rejected by the user.") and Gno-compatible `code: 4000`.
+    HandlerMethod.createPopup(
+      RoutePath.ApproveSignCosmos,
+      message,
+      InjectionMessageInstance.failure(
+        WalletResponseRejectType.SIGN_REJECTED,
+        {},
         message.key,
-        undefined,
-        WalletResponseFailureType.UNSUPPORTED_TYPE,
       ),
+      sendResponse,
     );
   } catch (error) {
     console.warn('[cosmosSignAmino] unexpected error:', error);
@@ -315,21 +331,19 @@ export const cosmosSignDirect = async (
       return;
     }
 
-    // Rehydrate the SignDoc immediately so the wire-format boundary stays
-    // symmetrical with Stage 2's executor; the rebuilt object is what Stage 5
-    // will hand to `signCosmos()`.
+    // Rehydrate to validate the wire format before showing the approval UI;
+    // the popup itself re-deserializes to produce the signing input.
     deserializeSignDoc(params.signDoc);
 
-    // TODO(ADN-756 Stage 5): swap this failure for
-    // `HandlerMethod.createPopup(RoutePath.ApproveSignCosmos, ...)`.
-    sendResponse(
-      createCosmosResponse(
-        CosmosResponseExecuteType.SIGN_COSMOS_DIRECT,
-        'failure',
+    HandlerMethod.createPopup(
+      RoutePath.ApproveSignCosmos,
+      message,
+      InjectionMessageInstance.failure(
+        WalletResponseRejectType.SIGN_REJECTED,
+        {},
         message.key,
-        undefined,
-        WalletResponseFailureType.UNSUPPORTED_TYPE,
       ),
+      sendResponse,
     );
   } catch (error) {
     console.warn('[cosmosSignDirect] unexpected error:', error);

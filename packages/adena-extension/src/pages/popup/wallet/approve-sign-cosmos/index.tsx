@@ -14,7 +14,7 @@ import {
 } from '@common/utils/cosmos-serialize';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { InjectionMessage } from '@inject/message';
+import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import {
   CosmosResponseExecuteType,
   SerializedSignDoc,
@@ -121,17 +121,18 @@ const ApproveSignCosmosContainer: React.FC = () => {
   );
 
   const onClickCancel = useCallback(() => {
+    // SIGN_REJECTED lives in SDK `WalletMessageInfo`, so `InjectionMessage
+    // Instance.failure` fills in the human-readable message and Gno-compatible
+    // `code: 4000` — matching the Gno `Sign()` cancel response.
     chrome.runtime.sendMessage(
-      createCosmosResponse(
-        responseType,
-        'failure',
-        key,
-        undefined,
+      InjectionMessageInstance.failure(
         WalletResponseRejectType.SIGN_REJECTED,
+        {},
+        key,
       ),
     );
     window.close();
-  }, [responseType, key]);
+  }, [key]);
 
   const onClickApprove = useCallback(async () => {
     if (!currentAccount || !mode || !rawSignDoc) {
