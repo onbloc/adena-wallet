@@ -150,6 +150,9 @@ export const ApproveLogin = (): JSX.Element => {
       case 'SIGN_COSMOS_DIRECT':
         navigate(RoutePath.ApproveSignCosmos + location.search, { state: { requestData } });
         return;
+      case 'GET_COSMOS_KEY':
+        navigate(RoutePath.ApproveGetCosmosKey + location.search, { state: { requestData } });
+        return;
       case 'ADD_NETWORK':
         navigate(RoutePath.ApproveAddingNetwork + location.search, { state: { requestData } });
         return;

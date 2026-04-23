@@ -186,16 +186,21 @@ export const cosmosGetKey = async (
     const inMemoryKey = await core.getInMemoryKey();
     const isLocked = await core.isLockedBy(inMemoryKey);
     if (isLocked) {
-      // WALLET_LOCKED is one of the few failure types already in the SDK's
-      // `WalletMessageInfo` table, so we can use the standard message builder
-      // here and the dApp sees an identical response shape to Gno:
-      // `{ code: 2000, type: 'WALLET_LOCKED', message: 'Adena is Locked.', ... }`.
-      sendResponse(
+      // Mirror the sign flow: open a silent popup that redirects through
+      // ApproveLogin. After unlock the popup lands back on
+      // ApproveGetCosmosKey via `ApproveLogin.redirect(GET_COSMOS_KEY)` and
+      // replies with the resolved key. If the user closes the login popup
+      // without unlocking, the close fallback returns WALLET_LOCKED
+      // (`{ code: 2000, message: 'Adena is Locked.' }` — Gno-compatible).
+      HandlerMethod.createPopup(
+        RoutePath.ApproveGetCosmosKey,
+        message,
         InjectionMessageInstance.failure(
           WalletResponseFailureType.WALLET_LOCKED,
           {},
           message.key,
         ),
+        sendResponse,
       );
       return;
     }
