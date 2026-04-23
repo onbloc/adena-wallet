@@ -1,13 +1,22 @@
 import { AdenaWallet, WalletResponse } from '@adena-wallet/sdk';
+import type { StdSignDoc } from '@cosmjs/amino';
+import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 import manifest from '@public/manifest.json';
 
 import { EVENT_KEYS } from '@common/constants/event-key.constant';
+import { deserializeSignDoc } from '@common/utils/cosmos-serialize';
 
+import {
+  createOfflineAminoSigner,
+  createOfflineSigner,
+  decodeCosmosKey,
+} from './inject/cosmos/offline-signer';
 import { AdenaExecutor } from './inject/executor/executor';
 import {
   AddEstablishResponse,
   AddNetworkParams,
   AddNetworkResponse,
+  BroadcastMode,
   BroadcastMultisigTransactionResponse,
   ContractOptions,
   CreateMultisigAccountParams,
@@ -15,9 +24,12 @@ import {
   CreateMultisigTransactionParams,
   CreateMultisigTransactionResponse,
   DoContractResponse,
+  EnableCosmosResponse,
   GetAccountResponse,
   GetNetworkResponse,
   MultisigTransactionDocument,
+  SendCosmosTxResponse,
+  SignCosmosAminoResponse,
   Signature,
   SignMultisigTransactionResponse,
   SignTxResponse,
@@ -138,6 +150,70 @@ const init = (): void => {
           break;
       }
       return false;
+    },
+
+    // TODO: drop the `as unknown as AdenaWallet` cast below once
+    // `@adena-wallet/sdk` is updated to include a `cosmos` field on
+    // `AdenaWallet`.
+    //
+    // The cosmos namespace mirrors Gno's flat API: each method resolves with
+    // the raw `AdenaResponse` wrapper (`{ status, type, code, message, data }`)
+    // — including on failure — so dApps get an identical shape across Gno and
+    // Cosmos. `getKey` and `signDirect` additionally decode `data` binary
+    // fields before handing the wrapper back. `getOfflineSigner` still returns
+    // an unwrapped value / throws, per the CosmJS `OfflineSigner` contract.
+    cosmos: {
+      version: manifest.version,
+
+      async enable(chainIds: string | string[]): Promise<EnableCosmosResponse> {
+        return new AdenaExecutor().enableCosmos(chainIds);
+      },
+
+      async getKey(chainId: string) {
+        const response = await new AdenaExecutor().getCosmosKey(chainId);
+        if (response.status === 'success' && response.data) {
+          return { ...response, data: decodeCosmosKey(response.data) };
+        }
+        return response;
+      },
+
+      async signAmino(
+        chainId: string,
+        signer: string,
+        signDoc: StdSignDoc,
+      ): Promise<SignCosmosAminoResponse> {
+        return new AdenaExecutor().signCosmosAmino(chainId, signer, signDoc);
+      },
+
+      async signDirect(chainId: string, signer: string, signDoc: SignDoc) {
+        const response = await new AdenaExecutor().signCosmosDirect(chainId, signer, signDoc);
+        if (response.status === 'success' && response.data) {
+          return {
+            ...response,
+            data: {
+              signed: deserializeSignDoc(response.data.signed),
+              signature: response.data.signature,
+            },
+          };
+        }
+        return response;
+      },
+
+      async sendTx(
+        chainId: string,
+        tx: Uint8Array,
+        mode: BroadcastMode,
+      ): Promise<SendCosmosTxResponse> {
+        return new AdenaExecutor().sendCosmosTx(chainId, tx, mode);
+      },
+
+      getOfflineSigner(chainId: string) {
+        return createOfflineSigner(chainId);
+      },
+
+      getOfflineSignerOnlyAmino(chainId: string) {
+        return createOfflineAminoSigner(chainId);
+      },
     },
   };
 
