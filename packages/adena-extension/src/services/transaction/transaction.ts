@@ -15,13 +15,28 @@ import {
   CosmosSignMode,
   CosmosTxBroadcastResponse,
   Document,
+  Keyring,
   LedgerAccount,
   LedgerKeyring,
   SignedCosmosTx,
+  hasHDPath,
   sha256,
   signCosmosAmino,
   Wallet,
 } from 'adena-module';
+import type { AminoSignResponse, StdSignDoc } from '@cosmjs/amino';
+import { encodeSecp256k1Pubkey, serializeSignDoc } from '@cosmjs/amino';
+import { Secp256k1 } from '@cosmjs/crypto';
+import type { DirectSignResponse } from '@cosmjs/proto-signing';
+import { makeSignBytes } from '@cosmjs/proto-signing';
+import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
+
+// Cosmos/Keplr conventions use 33-byte compressed secp256k1 pubkeys, but HD
+// wallet accounts in this codebase store the 65-byte uncompressed form
+// (tm2-js-client default). Normalize here so `encodeSecp256k1Pubkey` accepts
+// the result.
+const toCompressedPubkey = (pubkey: Uint8Array): Uint8Array =>
+  pubkey.length === 33 ? pubkey : Secp256k1.compressPubkey(pubkey);
 
 import { GasToken } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
@@ -284,6 +299,71 @@ export class TransactionService {
       this.cosmosProvider,
       signMode,
     );
+  };
+
+  /**
+   * Sign an already-constructed Keplr `StdSignDoc` supplied by an external dApp.
+   * Bypasses CosmosDocument translation — the caller owns signDoc construction
+   * and the returned `signed` field echoes it verbatim (Keplr spec).
+   */
+  public signCosmosAminoDoc = async (
+    accountId: string,
+    signDoc: StdSignDoc,
+  ): Promise<AminoSignResponse> => {
+    const { account, keyring, hdPath } = await this.resolveCosmosSigner(accountId);
+    if (account.type === 'LEDGER') {
+      throw new Error('LEDGER_NOT_SUPPORTED');
+    }
+    const signBytes = serializeSignDoc(signDoc);
+    const signature = await keyring.signRaw(signBytes, { hdPath });
+    return {
+      signed: signDoc,
+      signature: {
+        pub_key: encodeSecp256k1Pubkey(toCompressedPubkey(account.publicKey)),
+        signature: Buffer.from(signature).toString('base64'),
+      },
+    };
+  };
+
+  /**
+   * Direct-mode counterpart of `signCosmosAminoDoc`. `signDoc` is the native
+   * protobuf `SignDoc` (Uint8Array bodyBytes/authInfoBytes, bigint
+   * accountNumber); the inject wrapper re-serializes the echoed `signed`
+   * before handing it back to the dApp.
+   */
+  public signCosmosDirectDoc = async (
+    accountId: string,
+    signDoc: SignDoc,
+  ): Promise<DirectSignResponse> => {
+    const { account, keyring, hdPath } = await this.resolveCosmosSigner(accountId);
+    if (account.type === 'LEDGER') {
+      throw new Error('LEDGER_NOT_SUPPORTED');
+    }
+    const signBytes = makeSignBytes(signDoc);
+    const signature = await keyring.signRaw(signBytes, { hdPath });
+    return {
+      signed: signDoc,
+      signature: {
+        pub_key: encodeSecp256k1Pubkey(toCompressedPubkey(account.publicKey)),
+        signature: Buffer.from(signature).toString('base64'),
+      },
+    };
+  };
+
+  private resolveCosmosSigner = async (
+    accountId: string,
+  ): Promise<{ account: Account; keyring: Keyring; hdPath: number | undefined }> => {
+    const wallet = await this.walletService.loadWallet();
+    const account = wallet.accounts.find((a) => a.id === accountId);
+    if (!account) {
+      throw new Error('ACCOUNT_NOT_FOUND');
+    }
+    const keyring = wallet.keyrings.find((k) => k.id === account.keyringId);
+    if (!keyring) {
+      throw new Error('KEYRING_NOT_FOUND');
+    }
+    const hdPath = hasHDPath(account) ? account.hdPath : undefined;
+    return { account, keyring, hdPath };
   };
 
   public estimateCosmosFee = async (
