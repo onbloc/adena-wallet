@@ -448,14 +448,15 @@ export class AdenaWallet implements Wallet {
     if (!account) {
       throw new Error('Account not found');
     }
-    const keyring = this._keyrings.find((k) => k.id === account.keyringId);
-    if (!keyring) {
-      throw new Error('Keyring not found');
-    }
+    // estimateCosmosFee only needs a public key to populate the simulate tx's
+    // AuthInfo — no signing. Reading publicKey straight from the account
+    // avoids the keyring lookup, which is unnecessary for a read-only gas
+    // query and brittle for Ledger accounts whose persisted keyring id can
+    // drift from account.keyringId (connect-ledger wizard bug).
     const hdPath = hasHDPath(account) ? account.hdPath : undefined;
     return estimateCosmosFee({
       document,
-      keyring,
+      publicKey: account.publicKey,
       cosmosProvider,
       hdPath,
       simulateFee,

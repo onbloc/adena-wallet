@@ -75,7 +75,7 @@ export const makeEstimateGasTransaction = async (
 
   const modifiedDocument = modifyDocument(document, gasWanted, gasFee);
   if (!withSignTransaction) {
-    return documentToDefaultTx(modifiedDocument);
+    return documentToDefaultTx(modifiedDocument, account.publicKey);
   }
 
   const { signed } = await transactionService
@@ -86,7 +86,11 @@ export const makeEstimateGasTransaction = async (
       };
     });
   if (!signed) {
-    return documentToDefaultTx(modifiedDocument);
+    // Fallback path — createTransaction fails for accounts that can't sign
+    // in-process (Ledger without an attached connector, AirGap). Pass the
+    // account's pubkey so gno.land simulate can verify pub_key ↔ address
+    // matching for pre-initialized accounts.
+    return documentToDefaultTx(modifiedDocument, account.publicKey);
   }
 
   return signed;

@@ -1,15 +1,19 @@
 import { StdFee } from '@cosmjs/amino';
 import { SignMode } from 'cosmjs-types/cosmos/tx/signing/v1beta1/signing';
 
-import { Keyring } from '../../wallet/keyring/keyring';
 import { makeTxRaw } from '../proto/make-tx-raw';
 import { CosmosProvider } from '../providers/cosmos-provider';
-import { resolveAccount, resolvePublicKey } from '../signer-helpers';
+import { resolveAccount } from '../signer-helpers';
 import { CosmosDocument } from '../types';
 
 export interface EstimateCosmosFeeParams {
   document: CosmosDocument;
-  keyring: Keyring;
+  // Public key of the signer. Used only to populate the simulate tx's
+  // AuthInfo — no signing happens in this function (we send a zero
+  // signature). Passing the key directly (rather than a Keyring) keeps fee
+  // estimation usable when the persisted wallet keyring is unreachable
+  // (e.g. Ledger accounts whose keyringId drifted from the stored keyring).
+  publicKey: Uint8Array;
   cosmosProvider: CosmosProvider;
   hdPath?: number;
   // Fee stub used inside the simulate tx's AuthInfo. The node ignores its
@@ -46,11 +50,10 @@ const SIMULATE_ZERO_SIGNATURE = new Uint8Array(64);
 export async function estimateCosmosFee(
   params: EstimateCosmosFeeParams,
 ): Promise<CosmosFeeEstimate> {
-  const { document, keyring, cosmosProvider, hdPath, simulateFee, feeDenom } =
+  const { document, publicKey, cosmosProvider, simulateFee, feeDenom } =
     params;
 
   const { sequence } = await resolveAccount(document, cosmosProvider);
-  const publicKey = await resolvePublicKey(keyring, hdPath);
 
   const simulateTxBytes = makeTxRaw({
     msgs: document.msgs,
