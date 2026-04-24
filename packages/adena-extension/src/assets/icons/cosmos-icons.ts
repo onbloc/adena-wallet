@@ -14,6 +14,15 @@ export const CHAIN_ICON_MAP: Record<string, string> = {
 };
 
 /**
+ * Maps chainGroup identifiers to their icon URLs. Lets callers pick an icon
+ * when only the chain group is known (not the specific networkId).
+ */
+export const CHAIN_ICON_BY_GROUP: Record<string, string> = {
+  gno: gnolandChainIcon,
+  atomone: atoneChainIcon,
+};
+
+/**
  * Maps token IDs to their token icon URLs (webpack-processed).
  * Cosmos token icons are sourced here because they are not managed by tokenService.
  */
