@@ -178,8 +178,8 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
   );
 
   const establishService = useMemo(
-    () => new WalletEstablishService(establishRepository),
-    [establishRepository],
+    () => new WalletEstablishService(establishRepository, chainRegistry),
+    [establishRepository, chainRegistry],
   );
 
   const establishAtomOneService = useMemo(

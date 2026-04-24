@@ -1,29 +1,36 @@
+import { ChainRegistry } from 'adena-module';
+
 import { EstablishSite, WalletEstablishRepository } from '@repositories/wallet';
 
 export class WalletEstablishService {
   private walletEstablishRepository: WalletEstablishRepository;
+  private chainRegistry: ChainRegistry;
 
-  constructor(walletEstablishRepository: WalletEstablishRepository) {
+  constructor(walletEstablishRepository: WalletEstablishRepository, chainRegistry: ChainRegistry) {
     this.walletEstablishRepository = walletEstablishRepository;
+    this.chainRegistry = chainRegistry;
   }
 
   public getEstablishedSitesBy = async (accountId: string): Promise<EstablishSite[]> => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
-    const accountEstablishedSites = await this.selectEstablishedSitesBy(
-      accountId,
-      establishedSites,
-    );
-    return accountEstablishedSites;
+    return this.selectEstablishedSitesBy(accountId, establishedSites);
   };
 
-  public isEstablishedBy = async (accountId: string, hostname: string): Promise<boolean> => {
-    const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
-    const accountEstablishedSites = await this.selectEstablishedSitesBy(
-      accountId,
-      establishedSites,
-    );
-    return (
-      accountEstablishedSites.findIndex((site: EstablishSite) => site.hostname === hostname) > -1
+  public isEstablishedBy = async (
+    accountId: string,
+    hostname: string,
+    chainId?: string,
+  ): Promise<boolean> => {
+    const accountSites = await this.getEstablishedSitesBy(accountId);
+    if (chainId === undefined) {
+      // Legacy hostname-only check: any chainGroup connection counts. Used by
+      // header status indicators and other UI gates that pre-date the
+      // chainId-aware paths.
+      return accountSites.some((site) => site.hostname === hostname);
+    }
+    const siblingChainIds = this.resolveSiblingChainIds(chainId);
+    return accountSites.some(
+      (site) => site.hostname === hostname && siblingChainIds.includes(site.chainId),
     );
   };
 
@@ -37,17 +44,22 @@ export class WalletEstablishService {
       favicon?: string | null;
     },
   ): Promise<void> => {
+    const siblingChainIds = this.resolveSiblingChainIds(chainId);
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
-    const accountEstablishedSites = await this.selectEstablishedSitesBy(
-      accountId,
-      establishedSites,
+    const accountSites = this.selectEstablishedSitesBy(accountId, establishedSites);
+
+    // Collapse any existing entry in the same (hostname, chainGroup) bucket so
+    // a single approval covers the whole chainGroup. Mirrors
+    // WalletEstablishAtomOneService.establishBy.
+    const retained = accountSites.filter(
+      (site) =>
+        !(site.hostname === establishedInfo.hostname && siblingChainIds.includes(site.chainId)),
     );
-    const changedEstablishedSites: { [key in string]: Array<EstablishSite> } = {
+
+    const updated: { [key in string]: EstablishSite[] } = {
       ...establishedSites,
       [accountId]: [
-        ...accountEstablishedSites.filter(
-          (site: EstablishSite) => site.hostname !== establishedInfo.hostname,
-        ),
+        ...retained,
         {
           hostname: establishedInfo.hostname,
           chainId,
@@ -58,26 +70,33 @@ export class WalletEstablishService {
         },
       ],
     };
-    await this.walletEstablishRepository.updateEstablishedSites(changedEstablishedSites);
+
+    await this.walletEstablishRepository.updateEstablishedSites(updated);
   };
 
-  public unEstablishBy = async (accountId: string, hostname: string): Promise<void> => {
+  public unEstablishBy = async (
+    accountId: string,
+    hostname: string,
+    chainId?: string,
+  ): Promise<void> => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
-    const accountEstablishedSites = await this.selectEstablishedSitesBy(
-      accountId,
-      establishedSites,
-    );
+    const accountSites = this.selectEstablishedSitesBy(accountId, establishedSites);
 
-    const changedAccountEstablishedSites = accountEstablishedSites.filter(
-      (site: EstablishSite) => site.hostname !== hostname,
-    );
+    const retained = accountSites.filter((site) => {
+      if (chainId === undefined) {
+        // Legacy: revoke every entry for the hostname.
+        return site.hostname !== hostname;
+      }
+      const siblingChainIds = this.resolveSiblingChainIds(chainId);
+      return !(site.hostname === hostname && siblingChainIds.includes(site.chainId));
+    });
 
-    // eslint-disable-next-line prefer-const
-    let changedEstablishedSites = {
+    const updated = {
       ...establishedSites,
-      [accountId]: changedAccountEstablishedSites,
+      [accountId]: retained,
     };
-    await this.walletEstablishRepository.updateEstablishedSites(changedEstablishedSites);
+
+    await this.walletEstablishRepository.updateEstablishedSites(updated);
   };
 
   public clear = async (): Promise<boolean> => {
@@ -85,14 +104,20 @@ export class WalletEstablishService {
     return true;
   };
 
-  private selectEstablishedSitesBy = async (
+  private resolveSiblingChainIds = (chainId: string): string[] => {
+    const chain = this.chainRegistry.getChainByChainId(chainId);
+    if (!chain) {
+      throw new Error(`Unknown chainId: ${chainId}`);
+    }
+    return this.chainRegistry
+      .listNetworkProfilesByChain(chain.chainGroup)
+      .map((profile) => profile.chainId);
+  };
+
+  private selectEstablishedSitesBy = (
     accountId: string,
-    establishedSites: { [key in string]: Array<EstablishSite> },
-  ): Promise<EstablishSite[]> => {
-    const accountEstablishedSites =
-      Object.keys(establishedSites).findIndex((key) => key === accountId) > -1
-        ? establishedSites[accountId]
-        : [];
-    return accountEstablishedSites;
+    establishedSites: { [key in string]: EstablishSite[] },
+  ): EstablishSite[] => {
+    return establishedSites[accountId] ?? [];
   };
 }

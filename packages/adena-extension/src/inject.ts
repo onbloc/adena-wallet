@@ -45,9 +45,12 @@ function callbackCustomEvent<T>(event: CustomEvent<T>, callback: (message: T) =>
 const init = (): void => {
   const adena = {
     version: manifest.version,
-    async AddEstablish(name: string): Promise<AddEstablishResponse> {
+    async AddEstablish(
+      name: string,
+      chainIds?: string | string[],
+    ): Promise<AddEstablishResponse> {
       const executor = new AdenaExecutor();
-      const response = await executor.addEstablish(name);
+      const response = await executor.addEstablish(name, chainIds);
       return response;
     },
     async DoContract(
