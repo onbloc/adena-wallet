@@ -57,6 +57,20 @@ describe('TransferInput Component', () => {
           return;
         },
       },
+      transferMode: 'send',
+      onChangeMode: () => {
+        return;
+      },
+      ibcChainInput: {
+        chainGroup: 'atomone',
+        chainName: 'AtomOne',
+        onChangeChain: () => {
+          return;
+        },
+      },
+      onClickBridgeGuide: () => {
+        return;
+      },
       isNext: true,
       hasBackButton: true,
       onClickBack: () => {

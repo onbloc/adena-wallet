@@ -7,7 +7,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import { fonts, getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
 
-const CHAIN_DISPLAY_NAME: Record<string, string> = {
+export const CHAIN_DISPLAY_NAME: Record<string, string> = {
   gno: 'Gno.land',
   atomone: 'AtomOne',
 };
@@ -23,6 +23,7 @@ interface ChainDropdownProps {
   onChange: (chainGroup: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  excludeChainGroups?: string[];
 }
 
 const Wrapper = styled.div`
@@ -93,7 +94,8 @@ const MenuItem = styled.li`
   cursor: pointer;
   transition: background-color 0.15s ease;
 
-  &:hover {
+  &:hover,
+  &.selected {
     background-color: ${getTheme('neutral', '_7')};
   }
 
@@ -114,17 +116,20 @@ export const ChainDropdown: React.FC<ChainDropdownProps> = ({
   onChange,
   disabled,
   placeholder = 'Chain',
+  excludeChainGroups,
 }) => {
   const { chainRegistry } = useAdenaContext();
   const [opened, setOpened] = useState(false);
 
   const options: ChainOption[] = useMemo(() => {
+    const excluded = new Set(excludeChainGroups ?? []);
     const seen = new Set<string>();
     return chainRegistry
       .list()
       .filter((profile) => {
         if (seen.has(profile.chainGroup)) return false;
         seen.add(profile.chainGroup);
+        if (excluded.has(profile.chainGroup)) return false;
         return true;
       })
       .map((profile) => ({
@@ -132,15 +137,10 @@ export const ChainDropdown: React.FC<ChainDropdownProps> = ({
         name: CHAIN_DISPLAY_NAME[profile.chainGroup] ?? profile.displayName,
         icon: CHAIN_ICON_BY_GROUP[profile.chainGroup] ?? profile.chainIconUrl,
       }));
-  }, [chainRegistry]);
+  }, [chainRegistry, excludeChainGroups]);
 
   const selected = useMemo(
     () => options.find((o) => o.chainGroup === value),
-    [options, value],
-  );
-
-  const otherOptions = useMemo(
-    () => options.filter((o) => o.chainGroup !== value),
     [options, value],
   );
 
@@ -171,11 +171,12 @@ export const ChainDropdown: React.FC<ChainDropdownProps> = ({
         )}
       </Trigger>
 
-      {opened && otherOptions.length > 0 && (
+      {opened && options.length > 0 && (
         <Menu>
-          {otherOptions.map((option) => (
+          {options.map((option) => (
             <MenuItem
               key={option.chainGroup}
+              className={option.chainGroup === value ? 'selected' : ''}
               onClick={(): void => onSelect(option.chainGroup)}
             >
               {option.icon && (
