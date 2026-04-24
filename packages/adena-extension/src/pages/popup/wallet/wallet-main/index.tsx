@@ -5,10 +5,12 @@ import { useRecoilState } from 'recoil';
 import styled from 'styled-components';
 
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import IconDeposit from '@assets/icon-deposit';
+import IconSend from '@assets/icon-send';
+import IconSign from '@assets/icon-sign';
 import { CHAIN_ICON_MAP, COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
-import { Button, Row, Text } from '@components/atoms';
+import { MainActionButton } from '@components/atoms';
 import IconThunder from '@components/atoms/icon/icon-assets/icon-thunder';
-import LoadingButton from '@components/atoms/loading-button/loading-button';
 import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
 import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
@@ -40,12 +42,13 @@ const Wrapper = styled.main`
     top: 48px;
     left: 0;
     background-color: ${({ theme }): string => theme.neutral._8};
+    z-index: 10;
   }
 
   .token-balance-wrapper {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .main-button-wrapper {
@@ -63,13 +66,6 @@ const Wrapper = styled.main`
   }
 `;
 
-const MainButton = styled(Button)`
-  border-radius: 18px;
-`;
-
-const StyledFaucetButtonContent = styled(Row)`
-  gap: 8px;
-`;
 
 export const WalletMain = (): JSX.Element => {
   usePreventHistoryBack();
@@ -230,30 +226,26 @@ export const WalletMain = (): JSX.Element => {
 
       <div className='main-button-wrapper'>
         {supportedFaucet ? (
-          <MainButton
-            hierarchy='dark'
-            as={LoadingButton}
+          <MainActionButton
+            icon={<IconThunder />}
+            label='Faucet'
             loading={isFaucetLoading}
-            fullWidth
             onClick={onClickFaucetButton}
-          >
-            <StyledFaucetButtonContent>
-              <IconThunder />
-              <Text type={'body1Bold'}>Faucet</Text>
-            </StyledFaucetButtonContent>
-          </MainButton>
+          />
         ) : (
-          <MainButton hierarchy='dark' fullWidth onClick={onClickDepositButton}>
-            <Text type={'body1Bold'}>Deposit</Text>
-          </MainButton>
+          <MainActionButton
+            icon={<IconDeposit />}
+            label='Deposit'
+            onClick={onClickDepositButton}
+          />
         )}
-        <MainButton hierarchy='dark' fullWidth onClick={onClickActionButton}>
-          <Text type={'body1Bold'}>{actionButtonText}</Text>
-        </MainButton>
+        <MainActionButton
+          icon={<IconSend />}
+          label={actionButtonText ?? ''}
+          onClick={onClickActionButton}
+        />
         {showSignTxButton && (
-          <MainButton hierarchy='dark' fullWidth onClick={onClickSignButton}>
-            <Text type={'body1Bold'}>Sign</Text>
-          </MainButton>
+          <MainActionButton icon={<IconSign />} label='Sign' onClick={onClickSignButton} />
         )}
       </div>
 
