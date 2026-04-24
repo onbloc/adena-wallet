@@ -60,6 +60,7 @@ export enum RoutePath {
   ApproveGetCosmosKey = '/approve/wallet/get-cosmos-key',
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',
+  Accounts = '/wallet/accounts',
   AccountDetails = '/wallet/accounts/:accountId',
   ManageToken = '/wallet/manage-token',
   ManageNft = '/wallet/manage-nft',
@@ -143,6 +144,7 @@ export type RouteParams = {
     type: 'token' | 'wallet';
     token: {
       symbol: string;
+      networkId?: string;
     };
   };
   [RoutePath.Send]: null;
@@ -183,6 +185,7 @@ export type RouteParams = {
   };
   [RoutePath.ApproveChangingNetwork]: null;
   [RoutePath.ApproveAddingNetwork]: null;
+  [RoutePath.Accounts]: null;
   [RoutePath.AccountDetails]: null;
   [RoutePath.ManageToken]: null;
   [RoutePath.ManageTokenAdded]: null;

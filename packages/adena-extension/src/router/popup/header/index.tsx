@@ -24,7 +24,7 @@ const Wrapper = styled.header`
   background-color: ${getTheme('neutral', '_8')};
   position: sticky;
   top: 0px;
-  z-index: 2;
+  z-index: 20;
 `;
 
 export const Header = (): JSX.Element => {
