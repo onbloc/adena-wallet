@@ -3,6 +3,8 @@ import {
   WalletResponseRejectType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
+import type { StdSignDoc } from '@cosmjs/amino';
+import { isLedgerAccount } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
@@ -138,6 +140,31 @@ const ApproveSignCosmosContainer: React.FC = () => {
     if (!currentAccount || !mode || !rawSignDoc) {
       sendFailure(WalletResponseFailureType.UNEXPECTED_ERROR, 'Sign state not ready');
       window.close();
+      return;
+    }
+
+    // Ledger accounts take a different path: AMINO routes through a
+    // hardware-loading page that owns the `AdenaLedgerConnector` (mirroring
+    // the Gno ApproveSignLoading pattern), and DIRECT is rejected up front
+    // because the Cosmos Ledger app only signs SIGN_MODE_LEGACY_AMINO_JSON.
+    // dApps should have already downgraded via `getOfflineSignerAuto` on the
+    // `isNanoLedger` flag we publish in `cosmosGetKey` — the explicit reject
+    // is a safety net for dApps that bypass it.
+    if (isLedgerAccount(currentAccount)) {
+      if (mode === 'direct') {
+        sendFailure(
+          WalletResponseFailureType.UNSUPPORTED_TYPE,
+          'LEDGER_SIGN_DIRECT_NOT_SUPPORTED',
+        );
+        window.close();
+        return;
+      }
+      navigate(RoutePath.ApproveSignCosmosLedgerLoading, {
+        state: {
+          signDoc: rawSignDoc as StdSignDoc,
+          responseKey: key,
+        },
+      });
       return;
     }
 

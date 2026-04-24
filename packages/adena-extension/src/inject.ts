@@ -9,6 +9,7 @@ import { deserializeSignDoc } from '@common/utils/cosmos-serialize';
 import {
   createOfflineAminoSigner,
   createOfflineSigner,
+  createOfflineSignerAuto,
   decodeCosmosKey,
 } from './inject/cosmos/offline-signer';
 import { AdenaExecutor } from './inject/executor/executor';
@@ -216,6 +217,15 @@ const init = (): void => {
 
       getOfflineSignerOnlyAmino(chainId: string) {
         return createOfflineAminoSigner(chainId);
+      },
+
+      // Keplr-compatible: resolves to an amino-only signer for Ledger accounts
+      // and the full amino+direct signer otherwise. dApps that use
+      // SigningStargateClient (which prefers SIGN_MODE_DIRECT when exposed)
+      // should prefer this over `getOfflineSigner` so Ledger flows succeed via
+      // SIGN_MODE_LEGACY_AMINO_JSON without dApp-side branching.
+      getOfflineSignerAuto(chainId: string) {
+        return createOfflineSignerAuto(chainId);
       },
     },
   };

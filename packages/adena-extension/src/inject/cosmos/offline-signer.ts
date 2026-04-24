@@ -82,3 +82,19 @@ export function createOfflineAminoSigner(chainId: string): OfflineAminoSigner {
   const full = createOfflineSigner(chainId);
   return { getAccounts: full.getAccounts, signAmino: full.signAmino };
 }
+
+// Keplr parity: dApps that want the wallet to pick the right signer type for
+// the active account should `await getOfflineSignerAuto(chainId)`. Ledger
+// accounts get an amino-only signer because the Cosmos Ledger app only signs
+// SIGN_MODE_LEGACY_AMINO_JSON; non-Ledger accounts get the full signer so
+// CosmJS can still prefer SIGN_MODE_DIRECT. We resolve `isNanoLedger` once up
+// front via `getKey` (required for any Cosmos operation anyway) so the
+// returned signer mirrors the account's real capabilities instead of
+// exposing a signDirect that will always fail on Ledger.
+export async function createOfflineSignerAuto(
+  chainId: string,
+): Promise<OfflineAminoSigner | (OfflineAminoSigner & OfflineDirectSigner)> {
+  const wire = await unwrap(new AdenaExecutor().getCosmosKey(chainId));
+  const key = decodeCosmosKey(wire);
+  return key.isNanoLedger ? createOfflineAminoSigner(chainId) : createOfflineSigner(chainId);
+}

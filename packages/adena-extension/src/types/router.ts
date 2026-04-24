@@ -9,6 +9,7 @@ import {
   TokenModel,
   TransactionInfo,
 } from '@types';
+import type { StdSignDoc } from '@cosmjs/amino';
 import { CosmosDocument, Document } from 'adena-module';
 
 export const REGISTER_PATH = 'register.html' as const;
@@ -55,6 +56,7 @@ export enum RoutePath {
   ApproveEstablish = '/approve/wallet/establish',
   ApproveEstablishCosmos = '/approve/wallet/establish-cosmos',
   ApproveSignCosmos = '/approve/wallet/sign-cosmos',
+  ApproveSignCosmosLedgerLoading = '/approve/wallet/sign-cosmos/ledger-loading',
   ApproveGetCosmosKey = '/approve/wallet/get-cosmos-key',
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',
@@ -171,6 +173,10 @@ export type RouteParams = {
   [RoutePath.ApproveEstablishCosmos]: null;
   [RoutePath.ApproveSignCosmos]: {
     requestData?: InjectionMessage;
+  };
+  [RoutePath.ApproveSignCosmosLedgerLoading]: {
+    signDoc: StdSignDoc;
+    responseKey: string | undefined;
   };
   [RoutePath.ApproveGetCosmosKey]: {
     requestData?: InjectionMessage;
