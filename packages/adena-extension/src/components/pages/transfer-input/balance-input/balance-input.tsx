@@ -24,9 +24,21 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
         <input
           className='amount-input'
           type='number'
+          min='0'
           value={amount}
           autoComplete='off'
-          onChange={(event): void => onChangeAmount(event.target.value)}
+          onChange={(event): void => {
+            if (event.target.value.startsWith('-')) {
+              return;
+            }
+            onChangeAmount(event.target.value);
+          }}
+          onKeyDown={(event): void => {
+            if (event.key === '-' || event.key === 'e' || event.key === 'E') {
+              event.preventDefault();
+            }
+          }}
+          onWheel={(event): void => event.currentTarget.blur()}
           placeholder='Amount'
         />
         <span className='denom'>{denom}</span>
