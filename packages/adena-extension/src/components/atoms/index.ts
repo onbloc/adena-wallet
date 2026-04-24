@@ -25,6 +25,7 @@ export * from './hamburger-menu-button';
 export * from './network-icon-button';
 export * from './account-selector-button';
 export * from './main-action-button';
+export * from './chain-dropdown';
 export * from './skeleton-box';
 export * from './secure-textarea';
 export * from './base';

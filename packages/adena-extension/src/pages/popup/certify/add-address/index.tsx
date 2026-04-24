@@ -1,7 +1,14 @@
 import React, { useRef, useState, useEffect } from 'react';
 import styled, { useTheme } from 'styled-components';
 
-import { Text, DefaultInput, inputStyle, ErrorText, LeftArrowBtn } from '@components/atoms';
+import {
+  ChainDropdown,
+  DefaultInput,
+  ErrorText,
+  inputStyle,
+  LeftArrowBtn,
+  Text,
+} from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
 import add from '@assets/add-symbol.svg';
 import edit from '@assets/edit-symbol.svg';
@@ -27,11 +34,12 @@ const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 const AddAddress = (): JSX.Element => {
   const theme = useTheme();
   const { wallet } = useWalletContext();
-  const chain = useChain();
   const { params, goBack } = useAppNavigate<RoutePath.AddAddress>();
   const isAdd = params.status === 'add';
 
   const addressList: AddressBookItem[] = params.addressList;
+  const [chainGroup, setChainGroup] = useState<string>('gno');
+  const chain = useChain(chainGroup);
   const [name, setName] = useState(() => params.curr?.name ?? '');
   const [address, setAddress] = useState(() => params.curr?.address ?? '');
   const [nameError, setNameError] = useState<boolean>(false);
@@ -160,6 +168,7 @@ const AddAddress = (): JSX.Element => {
         src={isAdd ? add : edit}
         alt={isAdd ? 'add icon' : 'edit icon'}
       />
+      <ChainDropdown value={chainGroup} onChange={setChainGroup} disabled={!isAdd} />
       <DefaultInput
         value={name}
         placeholder='Label'
@@ -167,6 +176,7 @@ const AddAddress = (): JSX.Element => {
         type='text'
         error={nameError}
         ref={nameInputRef}
+        margin='12px 0 0'
       />
       <AddressInput
         value={address}
