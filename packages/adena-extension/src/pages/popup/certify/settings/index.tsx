@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import styled from 'styled-components';
 
 import { FullButtonRightIcon } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
+import { CommandMessage } from '@inject/message/command-message';
 import { RoutePath } from '@types';
 import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
-import useAppNavigate from '@hooks/use-app-navigate';
 
 const menuMakerInfo: {
   title: string;
@@ -41,12 +44,28 @@ const menuMakerInfo: {
 
 export const Settings = (): JSX.Element => {
   const { navigate, goBack } = useAppNavigate();
+  const { walletService } = useAdenaContext();
+  const { clearWallet } = useWalletContext();
+  const { loadAccounts } = useLoadAccounts();
+
+  const onClickLockWallet = useCallback(async () => {
+    await walletService.lockWallet();
+    await clearWallet();
+    try {
+      await chrome.runtime.sendMessage(CommandMessage.command('clearPopup'));
+    } catch (error) {
+      console.warn(error);
+    }
+    await loadAccounts();
+    navigate(RoutePath.Login, { replace: true });
+  }, [walletService, clearWallet, loadAccounts, navigate]);
 
   return (
     <Wrapper>
       <div className='title-wrapper'>
         <span className='title'>Settings</span>
       </div>
+      <FullButtonRightIcon title='Lock Wallet' onClick={onClickLockWallet} />
       {menuMakerInfo.map((v, i) => (
         <FullButtonRightIcon
           key={i}
