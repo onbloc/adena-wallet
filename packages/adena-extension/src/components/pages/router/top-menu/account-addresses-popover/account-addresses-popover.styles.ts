@@ -49,9 +49,19 @@ export const ChainRow = styled.div`
   padding: 10px 12px;
   border-bottom: 1px solid ${getTheme('neutral', '_7')};
   gap: 8px;
+  transition: color 0.15s ease;
 
   &:last-child {
     border-bottom: 0;
+  }
+
+  &:hover {
+    .address {
+      color: ${getTheme('neutral', '_1')};
+    }
+    svg path {
+      stroke: ${getTheme('neutral', '_1')};
+    }
   }
 
   .chain-left {
