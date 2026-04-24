@@ -1,4 +1,4 @@
-export { default as IconWallet } from './icon-wallet';
+export { default as IconHome } from './icon-home';
 export { default as IconGallery } from './icon-gallery';
 export { default as IconSearch } from './icon-search';
 export { default as IconClock } from './icon-clock';
