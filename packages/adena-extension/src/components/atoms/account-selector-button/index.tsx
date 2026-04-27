@@ -12,8 +12,8 @@ interface AccountSelectorButtonProps {
 const StyledButton = styled.button`
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 6px;
+  gap: 8px;
+  padding: 4px 0 4px 6px;
   margin: 0;
   background: none;
   border: none;
