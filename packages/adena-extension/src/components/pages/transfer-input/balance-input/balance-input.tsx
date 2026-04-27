@@ -34,7 +34,13 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
             onChangeAmount(event.target.value);
           }}
           onKeyDown={(event): void => {
-            if (event.key === '-' || event.key === 'e' || event.key === 'E') {
+            if (
+              event.key === '-' ||
+              event.key === 'e' ||
+              event.key === 'E' ||
+              event.key === 'ArrowUp' ||
+              event.key === 'ArrowDown'
+            ) {
               event.preventDefault();
             }
           }}
