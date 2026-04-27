@@ -241,7 +241,7 @@ export const useTokenBalance = (): {
       const chain = chainRegistry.getChainByChainId(token.networkId);
       if (!chain || chain.chainType !== 'cosmos') return zeroBalance;
 
-      const cosmosAddress = await currentAccount.resolveAddress(chain.bech32Prefix);
+      const cosmosAddress = await currentAccount.getAddress(chain.bech32Prefix);
       const profile = tokenRegistry.get(token.tokenId);
       if (!profile) return zeroBalance;
 

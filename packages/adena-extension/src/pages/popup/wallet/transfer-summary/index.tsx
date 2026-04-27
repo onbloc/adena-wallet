@@ -282,7 +282,7 @@ const TransferSummaryContainer: React.FC = () => {
       throw new Error(`Cosmos chain not found for ${cosmosChainId}`);
     }
 
-    const fromAddress = await currentAccount.resolveAddress(chain.bech32Prefix);
+    const fromAddress = await currentAccount.getAddress(chain.bech32Prefix);
     const rawAmount = BigNumber(transferAmount.value)
       .shiftedBy(tokenMetainfo.decimals)
       .toFixed(0);
