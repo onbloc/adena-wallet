@@ -105,7 +105,7 @@ export const Deposit = (): JSX.Element => {
 
   useEffect(() => {
     if (depositAddress) {
-      setDisplayAddr(formatAddress(depositAddress, 4));
+      setDisplayAddr(formatAddress(depositAddress, 6));
     }
   }, [depositAddress]);
 
