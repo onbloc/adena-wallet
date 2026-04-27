@@ -50,6 +50,7 @@ export const Default: StoryObj<TransferInputProps> = {
     ibcChainInput: {
       chainGroup: 'atomone',
       chainName: 'AtomOne',
+      chainOptions: [],
       onChangeChain: action('change receiving chain'),
     },
     onClickBridgeGuide: action('click bridge guide'),

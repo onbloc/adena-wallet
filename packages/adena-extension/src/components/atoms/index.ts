@@ -25,7 +25,11 @@ export * from './hamburger-menu-button';
 export * from './network-icon-button';
 export * from './account-selector-button';
 export * from './main-action-button';
-export * from './chain-dropdown';
+// chain-dropdown is intentionally NOT re-exported here: it depends on
+// `@hooks/use-context`, which transitively loads the @adena-wallet/sdk
+// (via the multisig provider). Including it in this atomic barrel pulls
+// the SDK into every test suite that touches `@components/atoms`, which
+// fails under jsdom. Import via `@components/atoms/chain-dropdown` directly.
 export * from './skeleton-box';
 export * from './secure-textarea';
 export * from './base';

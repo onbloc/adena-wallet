@@ -2,7 +2,10 @@ import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { isNativeTokenModel } from '@common/validation/validation-token';
-import { CHAIN_DISPLAY_NAME } from '@components/atoms/chain-dropdown';
+import {
+  CHAIN_DISPLAY_NAME,
+  chainOptionsFromRegistry,
+} from '@components/atoms/chain-dropdown';
 import TransferInput from '@components/pages/transfer-input/transfer-input/transfer-input';
 import { TransferMode } from '@components/pages/transfer-input/transfer-mode-tabs/transfer-mode-tabs';
 import { useAddressBookInput } from '@hooks/use-address-book-input';
@@ -81,6 +84,11 @@ const TransferInputContainer: React.FC = () => {
       receivingChainGroup
     );
   }, [receivingChainGroup, chainRegistry]);
+
+  const receivingChainOptions = useMemo(
+    () => chainOptionsFromRegistry(chainRegistry),
+    [chainRegistry],
+  );
 
   const onChangeMode = useCallback((mode: TransferMode) => {
     setTransferMode(mode);
@@ -232,6 +240,7 @@ const TransferInputContainer: React.FC = () => {
       ibcChainInput={{
         chainGroup: receivingChainGroup,
         chainName: receivingChainName,
+        chainOptions: receivingChainOptions,
         onChangeChain: onChangeReceivingChain,
       }}
       onClickBridgeGuide={onClickBridgeGuide}

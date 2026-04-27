@@ -3,7 +3,8 @@ import React from 'react';
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import IconLink from '@assets/icon-link';
-import { ChainDropdown, SubHeader } from '@components/atoms';
+import { SubHeader } from '@components/atoms';
+import { ChainDropdown, ChainOption } from '@components/atoms/chain-dropdown';
 import AddressInput from '../address-input/address-input';
 import BalanceInput from '../balance-input/balance-input';
 import TransferModeTabs, {
@@ -55,6 +56,7 @@ export interface TransferInputProps {
   ibcChainInput: {
     chainGroup: string;
     chainName: string;
+    chainOptions: ChainOption[];
     onChangeChain: (chainGroup: string) => void;
   };
   onClickBridgeGuide: () => void;
@@ -116,6 +118,7 @@ const TransferInput: React.FC<TransferInputProps> = ({
             placeholder='Receiving Chain:'
             value={ibcChainInput.chainGroup}
             onChange={ibcChainInput.onChangeChain}
+            options={ibcChainInput.chainOptions}
           />
         </div>
       )}

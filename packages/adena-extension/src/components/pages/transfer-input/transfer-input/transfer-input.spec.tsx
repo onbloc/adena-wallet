@@ -64,6 +64,7 @@ describe('TransferInput Component', () => {
       ibcChainInput: {
         chainGroup: 'atomone',
         chainName: 'AtomOne',
+        chainOptions: [],
         onChangeChain: () => {
           return;
         },
