@@ -15,6 +15,28 @@ export type { CosmosAccount, CosmosBroadcastMode, CosmosTxBroadcastResponse };
  * `Z_SYNC_FLUSH` crash in the browser). Extension's webpack picks axios's
  * browser build correctly.
  */
+// Matches a single "<decimal><denom>" entry. Cosmos SDK denom rules allow
+// [a-zA-Z][a-zA-Z0-9/]{2,127}; we accept the looser `[A-Za-z][A-Za-z0-9/]*`
+// since the node itself has already validated the value.
+const MIN_GAS_PRICE_ENTRY_RE = /^([0-9]+(?:\.[0-9]+)?)([A-Za-z][A-Za-z0-9/]*)$/;
+
+export function parseMinimumGasPriceString(
+  raw: string,
+): { denom: string; amount: string }[] {
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const match = part.match(MIN_GAS_PRICE_ENTRY_RE);
+      if (!match) {
+        throw new Error(`Unparseable minimum_gas_price entry: "${part}"`);
+      }
+      return { denom: match[2], amount: match[1] };
+    });
+}
+
 export class CosmosQueryClient {
   private axiosInstance: AxiosInstance;
 
@@ -76,6 +98,49 @@ export class CosmosQueryClient {
       accountNumber: inner.account_number ?? '0',
       sequence: inner.sequence ?? '0',
     };
+  }
+
+  /**
+   * Query the node's enforced `minimum_gas_price` via the standard SDK config
+   * endpoint.
+   *
+   * AtomOne exposes the feemarket module only internally (app-level), not via
+   * REST — `/feemarket/v1/gas_prices` returns 501 Not Implemented on both
+   * mainnet and testnet LCDs. `/cosmos/base/node/v1beta1/config` is the
+   * canonical SDK endpoint that returns the currently-enforced minimum, which
+   * on feemarket-enabled chains already reflects the module's computed price.
+   *
+   * Response shape:
+   *   { "minimum_gas_price": "0.0225uatone,0.225uphoton" }
+   *
+   * The field is a comma-joined list of `<dec><denom>` entries.
+   */
+  async getMinGasPrices(
+    endpoint: string,
+  ): Promise<{ denom: string; amount: string }[]> {
+    const response = await this.axiosInstance.get<{
+      minimum_gas_price?: string;
+    }>(`${endpoint}/cosmos/base/node/v1beta1/config`);
+    return parseMinimumGasPriceString(response.data.minimum_gas_price ?? '');
+  }
+
+  async simulateTx(
+    endpoint: string,
+    txBytes: Uint8Array,
+  ): Promise<{ gasUsed: number }> {
+    const body = { tx_bytes: Buffer.from(txBytes).toString('base64') };
+    const response = await this.axiosInstance.post<{
+      gas_info?: { gas_used?: string };
+    }>(`${endpoint}/cosmos/tx/v1beta1/simulate`, body);
+    const gasUsedRaw = response.data.gas_info?.gas_used;
+    if (!gasUsedRaw) {
+      throw new Error('Cosmos simulate returned no gas_info.gas_used');
+    }
+    const gasUsed = Number(gasUsedRaw);
+    if (!Number.isFinite(gasUsed) || gasUsed <= 0) {
+      throw new Error(`Cosmos simulate returned invalid gas_used=${gasUsedRaw}`);
+    }
+    return { gasUsed };
   }
 
   async broadcastTx(

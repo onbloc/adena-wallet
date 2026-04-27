@@ -21,6 +21,10 @@ export interface NetworkFeeSettingProps {
   networkFeeSettings: NetworkFeeSettingInfo[] | null;
   onClickBack: () => void;
   onClickSave: () => void;
+  // Optional fee-token display overrides (Cosmos uses PHOTON/6, Gno keeps
+  // the default GNOT/6).
+  feeSymbol?: string;
+  feeDecimals?: number;
 }
 
 const settingTypesOfList: NetworkFeeSettingType[] = [
@@ -39,6 +43,8 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   setGasAdjustment,
   onClickBack,
   onClickSave,
+  feeSymbol,
+  feeDecimals,
 }) => {
   const settingInfoMap = useMemo(() => {
     if (!networkFeeSettings) {
@@ -117,6 +123,8 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
               selected={isSelected(settingInfo)}
               isLoading={!isFetchedPriceTiers}
               info={settingInfo}
+              feeSymbol={feeSymbol}
+              feeDecimals={feeDecimals}
               select={(): void =>
                 setNetworkFeeSetting({
                   settingType: settingInfo.settingType,

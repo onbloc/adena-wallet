@@ -16,6 +16,9 @@ export interface TransactionResultProps {
   successIconSrc?: string;
   successButtonText?: string;
   failedButtonText?: string;
+  // Overrides the scanner link label. Defaults to the Gno scanner; Cosmos
+  // flows pass "View on Mintscan" (or whatever their network profile uses).
+  scannerLabel?: string;
 }
 
 const TransactionResult: React.FC<TransactionResultProps> = ({
@@ -27,6 +30,7 @@ const TransactionResult: React.FC<TransactionResultProps> = ({
   successIconSrc,
   successButtonText = 'View history',
   failedButtonText = 'Close',
+  scannerLabel = 'View on GnoScan',
 }) => {
   const theme = useTheme();
   const isSuccess = status === 'SUCCESS';
@@ -66,8 +70,8 @@ const TransactionResult: React.FC<TransactionResultProps> = ({
         )}
         {isSuccess && (
           <StyledScannerButton onClick={onClickViewGnoscan}>
-            <span className='scanner-label'>View on GnoScan</span>
-            <img className='scanner-icon' src={ExternalLinkIcon} alt='open gnoscan' />
+            <span className='scanner-label'>{scannerLabel}</span>
+            <img className='scanner-icon' src={ExternalLinkIcon} alt='open scanner' />
           </StyledScannerButton>
         )}
       </StyledResultWrapper>

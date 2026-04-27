@@ -4,6 +4,7 @@ import {
   MSG_SEND_AMINO_TYPE,
   isLedgerAccount,
 } from 'adena-module';
+import { useQuery } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +24,7 @@ import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useNetworkProfile } from '@hooks/use-network-profile';
 import { useTransferInfo } from '@hooks/use-transfer-info';
+import { useCosmosNetworkFee } from '@hooks/wallet/use-cosmos-network-fee';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import {
@@ -50,7 +52,7 @@ const TransferSummaryContainer: React.FC = () => {
   const { navigate, goBack, params } = useAppNavigate<RoutePath.TransferSummary>();
   const summaryInfo = params;
   const { wallet } = useWalletContext();
-  const { transactionService, chainRegistry } = useAdenaContext();
+  const { transactionService, chainRegistry, cosmosProvider } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const isCosmosToken = params.tokenMetainfo.type === 'cosmos-native';
@@ -77,13 +79,68 @@ const TransferSummaryContainer: React.FC = () => {
 
   const { data: currentBalance } = useGetGnotBalance();
 
+  // ─── Cosmos: async address resolution + reactive document ──────────────
+  const { data: cosmosAddress } = useQuery<string | null>(
+    ['cosmosAddress', currentAccount?.id, chain?.bech32Prefix],
+    async () => {
+      if (!currentAccount || !isCosmosToken || !chain) return null;
+      return currentAccount.getAddress(chain.bech32Prefix);
+    },
+    { enabled: !!currentAccount && isCosmosToken && !!chain },
+  );
+
+  const cosmosDocument = useMemo<CosmosDocument | null>(() => {
+    if (!isCosmosToken || !cosmosAddress) return null;
+    const { tokenMetainfo, toAddress, transferAmount, memo } = summaryInfo;
+    if (tokenMetainfo.type !== 'cosmos-native') return null;
+    const denom = (tokenMetainfo as { denom?: string }).denom;
+    if (!denom) return null;
+    const rawAmount = BigNumber(transferAmount.value)
+      .shiftedBy(tokenMetainfo.decimals)
+      .toFixed(0);
+    const cosmosChain = chainRegistry.getChainByChainId(tokenMetainfo.networkId);
+    const placeholderFee =
+      cosmosChain && cosmosChain.chainType === 'cosmos' && cosmosChain.fee.fallbackFee
+        ? cosmosChain.fee.fallbackFee
+        : { amount: [{ denom, amount: '0' }], gas: '0' };
+    return {
+      chainId: tokenMetainfo.networkId,
+      fromAddress: cosmosAddress,
+      msgs: [
+        {
+          type: MSG_SEND_AMINO_TYPE,
+          value: {
+            from_address: cosmosAddress,
+            to_address: toAddress,
+            amount: [{ denom, amount: rawAmount }],
+          },
+        },
+      ],
+      fee: placeholderFee,
+      memo: memo ?? '',
+    };
+  }, [summaryInfo, cosmosAddress, isCosmosToken, chainRegistry]);
+
+  const cosmosFee = useCosmosNetworkFee(cosmosDocument);
+
+  const { data: photonBalance } = useQuery<string | null>(
+    ['photonBalance', cosmosAddress],
+    async () => {
+      if (!cosmosAddress || !cosmosProvider) return null;
+      return cosmosProvider.getBalance(cosmosAddress, 'uphoton');
+    },
+    { enabled: !!cosmosAddress && !!cosmosProvider && isCosmosToken },
+  );
+
   const hasNetworkFee = useMemo(() => {
-    // Cosmos fee is hardcoded (2000uphoton/gas 200000) for Phase 3 MVP.
-    // Node rejects with a clear error if PHOTON balance is insufficient, so we
-    // defer that check to the broadcast path instead of gating the UI here.
-    // TODO(Phase 6): replace hardcoded fee gate with feemarket dynamic estimation.
     if (isCosmosToken) {
-      return true;
+      // PHOTON balance must cover the feemarket-computed fee amount. Compare
+      // in raw u-units — `cosmosFee.networkFee.amount` is already shifted
+      // for display (e.g. "0.020568"), so use `currentFeeAmount` here.
+      if (photonBalance === undefined || photonBalance === null) return false;
+      const rawFee = cosmosFee.currentFeeAmount;
+      if (!rawFee || !Number(rawFee)) return false;
+      return BigNumber(photonBalance).gte(BigNumber(rawFee));
     }
 
     if (!currentBalance || currentBalance === 0) {
@@ -106,12 +163,21 @@ const TransferSummaryContainer: React.FC = () => {
     }
 
     return true;
-  }, [currentBalance, networkFee?.amount, summaryInfo]);
+  }, [
+    isCosmosToken,
+    photonBalance,
+    cosmosFee.currentFeeAmount,
+    currentBalance,
+    networkFee?.amount,
+    summaryInfo,
+  ]);
 
   const isNetworkFeeError = useMemo(() => {
-    // Cosmos path skips the Gno gas-simulate / balance check entirely.
     if (isCosmosToken) {
-      return false;
+      if (cosmosFee.isLoading) return false;
+      if (cosmosFee.isSimulateError) return false;
+      if (photonBalance === undefined || photonBalance === null) return false;
+      return !hasNetworkFee;
     }
 
     if (useNetworkFeeReturn.isLoading) {
@@ -133,6 +199,9 @@ const TransferSummaryContainer: React.FC = () => {
     return !hasNetworkFee;
   }, [
     isCosmosToken,
+    cosmosFee.isLoading,
+    cosmosFee.isSimulateError,
+    photonBalance,
     currentBalance,
     networkFee?.amount,
     useNetworkFeeReturn.isLoading,
@@ -141,6 +210,11 @@ const TransferSummaryContainer: React.FC = () => {
   ]);
 
   const simulateErrorMessage = useMemo(() => {
+    if (isCosmosToken) {
+      if (cosmosFee.isLoading || !cosmosFee.isSimulateError) return null;
+      return cosmosFee.simulateErrorMessage || 'Failed to estimate Cosmos fee';
+    }
+
     if (!useNetworkFeeReturn.isSimulateError || useNetworkFeeReturn.isLoading) {
       return null;
     }
@@ -149,6 +223,10 @@ const TransferSummaryContainer: React.FC = () => {
       useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || 'Failed to simulate transaction'
     );
   }, [
+    isCosmosToken,
+    cosmosFee.isLoading,
+    cosmosFee.isSimulateError,
+    cosmosFee.simulateErrorMessage,
     useNetworkFeeReturn.isSimulateError,
     useNetworkFeeReturn.isLoading,
     useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
@@ -251,56 +329,30 @@ const TransferSummaryContainer: React.FC = () => {
     });
   };
 
-  // Cosmos (Phase 3): MVP hardcodes fee at 2000uphoton / gas 200000.
-  // Node's minGasPrice is 0.01 uphoton/gas → 0.01 * 200000 = 2000uphoton required.
-  // TODO(Phase 6): replace with feemarket dynamic estimation; move constant to
-  //                common/constants/tx.constant.ts and read denom from chain profile.
-  const COSMOS_DEFAULT_FEE = {
-    amount: [{ denom: 'uphoton', amount: '2000' }],
-    gas: '200000',
-  };
-
   const createCosmosTransaction = useCallback(async () => {
-    if (!currentAccount) {
+    if (!currentAccount || !cosmosDocument) {
       return null;
     }
-
-    const { tokenMetainfo, toAddress, transferAmount, memo } = summaryInfo;
-    if (tokenMetainfo.type !== 'cosmos-native') {
-      return null;
+    // StdFee.amount must be an integer string in u-units (e.g. "17148"),
+    // not the display-shifted value from `networkFee.amount` ("0.017148")
+    // — the node's sdk.Coin parser rejects decimals with "cannot unmarshal
+    // into *big.Int". Use the raw fields from the hook.
+    const feeAmount = cosmosFee.currentFeeAmount;
+    const feeDenom = cosmosFee.currentFeeDenom;
+    const feeGas = cosmosFee.currentFeeGas;
+    if (!feeAmount || feeAmount === '0' || !feeDenom || !feeGas || feeGas === '0') {
+      throw new Error('Cosmos fee estimation has not completed yet');
     }
-
-    const denom = (tokenMetainfo as { denom?: string }).denom;
-    if (!denom) {
-      throw new Error('Cosmos native token is missing denom metadata');
-    }
-
-    const cosmosChainId = tokenMetainfo.networkId;
-    const fromAddress = await currentAccount.getAddress(chain.bech32Prefix);
-    const rawAmount = BigNumber(transferAmount.value)
-      .shiftedBy(tokenMetainfo.decimals)
-      .toFixed(0);
-
     const document: CosmosDocument = {
-      chainId: cosmosChainId,
-      fromAddress,
-      msgs: [
-        {
-          type: MSG_SEND_AMINO_TYPE,
-          value: {
-            from_address: fromAddress,
-            to_address: toAddress,
-            amount: [{ denom, amount: rawAmount }],
-          },
-        },
-      ],
-      fee: COSMOS_DEFAULT_FEE,
-      memo: memo ?? '',
+      ...cosmosDocument,
+      fee: {
+        amount: [{ denom: feeDenom, amount: feeAmount }],
+        gas: feeGas,
+      },
     };
-
     const signed = await transactionService.signCosmos(currentAccount.id, document);
-    return transactionService.broadcastCosmos(signed, cosmosChainId);
-  }, [summaryInfo, currentAccount, chain, transactionService]);
+    return transactionService.broadcastCosmos(signed, cosmosDocument.chainId);
+  }, [currentAccount, cosmosDocument, cosmosFee, transactionService]);
 
   const createTransaction = useCallback(async () => {
     if (!currentNetwork || !currentAccount || !wallet) {
@@ -349,7 +401,9 @@ const TransferSummaryContainer: React.FC = () => {
     if (isSent || !currentAccount) {
       return false;
     }
-    // Cosmos path skips Gno-only preconditions (hasNetworkFee, gas simulate).
+    if (isCosmosToken && (!hasNetworkFee || cosmosFee.isLoading)) {
+      return false;
+    }
     if (!isCosmosToken && (!hasNetworkFee || useNetworkFeeReturn.isLoading)) {
       return false;
     }
@@ -432,9 +486,13 @@ const TransferSummaryContainer: React.FC = () => {
   }, []);
 
   const onClickNetworkFeeSave = useCallback(() => {
-    useNetworkFeeReturn.save();
+    if (isCosmosToken) {
+      cosmosFee.save();
+    } else {
+      useNetworkFeeReturn.save();
+    }
     setOpenedNetworkFeeSetting(false);
-  }, [useNetworkFeeReturn.save]);
+  }, [isCosmosToken, cosmosFee.save, useNetworkFeeReturn.save]);
 
   const onClickViewHistory = useCallback(() => {
     navigate(RoutePath.History);
@@ -509,11 +567,12 @@ const TransferSummaryContainer: React.FC = () => {
           onClickViewHistory={onClickViewHistory}
           onClickViewGnoscan={onClickViewGnoscan}
           onClickClose={onClickCloseResult}
+          scannerLabel={isCosmosToken ? 'View on Mintscan' : 'View on GnoScan'}
         />
       ) : openedNetworkFeeSetting ? (
         <div className='network-fee-setting-wrapper'>
           <NetworkFeeSetting
-            {...useNetworkFeeReturn}
+            {...(isCosmosToken ? cosmosFee : useNetworkFeeReturn)}
             onClickBack={onClickNetworkFeeClose}
             onClickSave={onClickNetworkFeeSave}
           />
@@ -525,15 +584,8 @@ const TransferSummaryContainer: React.FC = () => {
           toAddress={summaryInfo.toAddress}
           transferBalance={getTransferBalance()}
           isErrorNetworkFee={isNetworkFeeError}
-          // TEMP (Phase 3 MVP): Cosmos fee is hardcoded so the Gno gas-simulate
-          // hook stays in its loading state forever (enabled=false when document
-          // is null). Force loading=false and inject the fixed fee here to unblock
-          // the Send button.
-          // TODO(Phase 6): remove this override once feemarket estimation lands.
-          isLoadingNetworkFee={isCosmosToken ? false : useNetworkFeeReturn.isLoading}
-          networkFee={
-            isCosmosToken ? { amount: '0.002', denom: 'PHOTON' } : networkFee
-          }
+          isLoadingNetworkFee={isCosmosToken ? cosmosFee.isLoading : useNetworkFeeReturn.isLoading}
+          networkFee={isCosmosToken ? cosmosFee.networkFee : networkFee}
           memo={summaryInfo.memo}
           currentBalance={currentBalance}
           useNetworkFeeReturn={useNetworkFeeReturn}

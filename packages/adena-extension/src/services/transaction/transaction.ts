@@ -10,6 +10,7 @@ import {
   ChainRegistry,
   CosmosChain,
   CosmosDocument,
+  CosmosFeeEstimate,
   CosmosNetworkProfile,
   CosmosSignMode,
   CosmosTxBroadcastResponse,
@@ -283,6 +284,52 @@ export class TransactionService {
       signMode,
     );
   };
+
+  public estimateCosmosFee = async (
+    accountId: string,
+    document: CosmosDocument,
+  ): Promise<CosmosFeeEstimate> => {
+    if (!this.cosmosProvider) {
+      throw new Error('CosmosProvider not injected');
+    }
+    const chain = this.resolveCosmosChain(document.chainId);
+    const fallbackFee = chain.fee.fallbackFee;
+    if (!fallbackFee) {
+      throw new Error(
+        `CosmosChain ${chain.chainGroup} has no fallbackFee configured`,
+      );
+    }
+    // feeDenom: pick the first token returned by the chain's feeCurrencyFilter
+    // (already scoped to the current msgs), stripping the "<chainId>:" prefix.
+    const filter = chain.fee.feeCurrencyFilter;
+    const allowedTokenIds = filter
+      ? filter(document.msgs)
+      : [chain.fee.defaultFeeTokenId];
+    const firstAllowed = allowedTokenIds[0] ?? chain.fee.defaultFeeTokenId;
+    const feeDenom = firstAllowed.includes(':')
+      ? firstAllowed.split(':')[1]
+      : firstAllowed;
+
+    const wallet = await this.walletService.loadWallet();
+    return wallet.estimateCosmosFeeByAccountId(
+      accountId,
+      document,
+      this.cosmosProvider,
+      fallbackFee,
+      feeDenom,
+    );
+  };
+
+  private resolveCosmosChain(chainId: string): CosmosChain {
+    if (!this.chainRegistry) {
+      throw new Error('ChainRegistry not initialized for Cosmos operations');
+    }
+    const chain = this.chainRegistry.getChainByChainId(chainId);
+    if (!chain || chain.chainType !== 'cosmos') {
+      throw new Error(`Cosmos chain not found for chainId: ${chainId}`);
+    }
+    return chain;
+  }
 
   public broadcastCosmos = async (
     signedTx: SignedCosmosTx,

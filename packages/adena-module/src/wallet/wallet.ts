@@ -11,10 +11,13 @@ import { CosmosSignMode } from '../chain-registry/types';
 import {
   signCosmos,
   CosmosDocument,
+  CosmosFeeEstimate,
   CosmosProvider,
   CosmosTxBroadcastResponse,
   SignedCosmosTx,
+  estimateCosmosFee,
 } from '../cosmos';
+import { StdFee } from '@cosmjs/amino';
 import { Bip39, Random } from '../crypto';
 import { fromBech32 } from '../encoding';
 import { arrayContentEquals, arrayToHex, hexToArray } from '../utils';
@@ -107,6 +110,13 @@ export interface Wallet {
     cosmosProvider: CosmosProvider,
     signMode: CosmosSignMode,
   ) => Promise<SignedCosmosTx>;
+  estimateCosmosFeeByAccountId: (
+    accountId: string,
+    document: CosmosDocument,
+    cosmosProvider: CosmosProvider,
+    simulateFee: StdFee,
+    feeDenom: string,
+  ) => Promise<CosmosFeeEstimate>;
   broadcastCosmosTx: (
     signedTx: SignedCosmosTx,
     cosmosProvider: CosmosProvider,
@@ -424,6 +434,32 @@ export class AdenaWallet implements Wallet {
       cosmosProvider,
       hdPath,
       signMode,
+    });
+  }
+
+  async estimateCosmosFeeByAccountId(
+    accountId: string,
+    document: CosmosDocument,
+    cosmosProvider: CosmosProvider,
+    simulateFee: StdFee,
+    feeDenom: string,
+  ): Promise<CosmosFeeEstimate> {
+    const account = this._accounts.find((a) => a.id === accountId);
+    if (!account) {
+      throw new Error('Account not found');
+    }
+    const keyring = this._keyrings.find((k) => k.id === account.keyringId);
+    if (!keyring) {
+      throw new Error('Keyring not found');
+    }
+    const hdPath = hasHDPath(account) ? account.hdPath : undefined;
+    return estimateCosmosFee({
+      document,
+      keyring,
+      cosmosProvider,
+      hdPath,
+      simulateFee,
+      feeDenom,
     });
   }
 

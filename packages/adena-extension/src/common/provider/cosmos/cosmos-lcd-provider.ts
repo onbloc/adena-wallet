@@ -78,6 +78,18 @@ export class CosmosLcdProvider implements CosmosProvider {
     );
   }
 
+  getMinGasPrices(): Promise<{ denom: string; amount: string }[]> {
+    return this.dedupe('fee:mingasprices', () =>
+      this.client.getMinGasPrices(this.restEndpoint),
+    );
+  }
+
+  simulateTx(txBytes: Uint8Array): Promise<{ gasUsed: number }> {
+    // Intentionally not cached: each simulate reflects the specific tx bytes
+    // passed in, so caching by key would require hashing the payload.
+    return this.client.simulateTx(this.restEndpoint, txBytes);
+  }
+
   broadcastTx(
     txBytes: Uint8Array,
     mode?: CosmosBroadcastMode,
