@@ -8,8 +8,10 @@ import {
   Account,
   AdenaLedgerConnector,
   ChainRegistry,
+  CosmosChain,
   CosmosDocument,
   CosmosNetworkProfile,
+  CosmosSignMode,
   CosmosTxBroadcastResponse,
   Document,
   LedgerAccount,
@@ -81,6 +83,17 @@ export class TransactionService {
       throw new Error(`Cosmos network profile not found for chainId: ${chainId}`);
     }
     return profile as CosmosNetworkProfile;
+  }
+
+  private resolvePreferredSignMode(chainId: string): CosmosSignMode {
+    if (!this.chainRegistry) {
+      throw new Error('ChainRegistry not initialized for Cosmos operations');
+    }
+    const chain = this.chainRegistry.getChainByChainId(chainId);
+    if (!chain || chain.chainType !== 'cosmos') {
+      throw new Error(`Cosmos chain not found for chainId: ${chainId}`);
+    }
+    return (chain as CosmosChain).signing.preferred;
   }
 
   /**
@@ -262,7 +275,13 @@ export class TransactionService {
     }
     this.resolveCosmosProfile(document.chainId);
     const wallet = await this.walletService.loadWallet();
-    return wallet.signCosmosByAccountId(accountId, document, this.cosmosProvider);
+    const signMode = this.resolvePreferredSignMode(document.chainId);
+    return wallet.signCosmosByAccountId(
+      accountId,
+      document,
+      this.cosmosProvider,
+      signMode,
+    );
   };
 
   public broadcastCosmos = async (

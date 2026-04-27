@@ -6242,6 +6242,7 @@ __metadata:
     "@typescript-eslint/parser": 5.62.0
     bech32: 2.0.0
     bn.js: 5.2.1
+    cosmjs-types: 0.10.1
     crypto-js: 4.2.0
     dotenv: 16.4.5
     elliptic: 6.6.1
@@ -8045,7 +8046,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cosmjs-types@npm:^0.10.1":
+"cosmjs-types@npm:0.10.1, cosmjs-types@npm:^0.10.1":
   version: 0.10.1
   resolution: "cosmjs-types@npm:0.10.1"
   checksum: cbb4bbb78e02b1669d65ae99101da9330b7045d9860a6765f76f665caaad632fd223412f409d1653edaa5f6a8b2fec4457d0ccd489b3604812962d9551f49b5d

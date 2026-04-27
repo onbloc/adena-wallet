@@ -24,6 +24,10 @@ export interface MakeTxRawParams {
   sequence: string;
   publicKey: Uint8Array;
   signature: Uint8Array;
+  // Explicit — callers in AMINO/DIRECT pipelines pass the mode they actually
+  // signed under. No default here: a wrong mode silently accepted by the node
+  // would invalidate the signature, so force the choice at every call site.
+  signMode: SignMode;
 }
 
 /**
@@ -35,7 +39,7 @@ export interface MakeTxRawParams {
  *   with "unable to decode tx".
  */
 export function makeTxRaw(params: MakeTxRawParams): Uint8Array {
-  const { msgs, memo, fee, sequence, publicKey, signature } = params;
+  const { msgs, memo, fee, sequence, publicKey, signature, signMode } = params;
 
   const bodyBytes = TxBody.encode(
     TxBody.fromPartial({
@@ -57,7 +61,7 @@ export function makeTxRaw(params: MakeTxRawParams): Uint8Array {
       {
         publicKey: pubKeyAny,
         modeInfo: {
-          single: { mode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON },
+          single: { mode: signMode },
         },
         sequence: BigInt(sequence),
       },

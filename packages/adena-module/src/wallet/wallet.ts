@@ -7,8 +7,9 @@ import {
   TxSignature,
 } from '@gnolang/tm2-js-client';
 
+import { CosmosSignMode } from '../chain-registry/types';
 import {
-  signCosmosAmino,
+  signCosmos,
   CosmosDocument,
   CosmosProvider,
   CosmosTxBroadcastResponse,
@@ -104,6 +105,7 @@ export interface Wallet {
     accountId: string,
     document: CosmosDocument,
     cosmosProvider: CosmosProvider,
+    signMode: CosmosSignMode,
   ) => Promise<SignedCosmosTx>;
   broadcastCosmosTx: (
     signedTx: SignedCosmosTx,
@@ -405,6 +407,7 @@ export class AdenaWallet implements Wallet {
     accountId: string,
     document: CosmosDocument,
     cosmosProvider: CosmosProvider,
+    signMode: CosmosSignMode,
   ): Promise<SignedCosmosTx> {
     const account = this._accounts.find((a) => a.id === accountId);
     if (!account) {
@@ -415,11 +418,12 @@ export class AdenaWallet implements Wallet {
       throw new Error('Keyring not found');
     }
     const hdPath = hasHDPath(account) ? account.hdPath : undefined;
-    return signCosmosAmino({
+    return signCosmos({
       document,
       keyring,
       cosmosProvider,
       hdPath,
+      signMode,
     });
   }
 

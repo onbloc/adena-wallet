@@ -184,6 +184,7 @@ describe('Cosmos AMINO Sign via AdenaWallet', () => {
       wallet.currentAccount.id,
       document,
       makeMockCosmosProvider(),
+      'SIGN_MODE_LEGACY_AMINO_JSON',
     );
 
     // Same GOLDEN locked in src/cosmos/amino/sign-cosmos-amino.spec.ts.
@@ -200,6 +201,7 @@ describe('Cosmos AMINO Sign via AdenaWallet', () => {
       wallet.currentAccount.id,
       document,
       provider,
+      'SIGN_MODE_LEGACY_AMINO_JSON',
     );
 
     const result = await wallet.broadcastCosmosTx(signed, provider);
