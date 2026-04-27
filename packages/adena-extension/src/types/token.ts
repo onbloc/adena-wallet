@@ -114,12 +114,6 @@ export interface MainToken {
     denom: string;
   };
   chainIconUrl?: string;
-  /**
-   * TODO(Phase 3): Remove this flag once Cosmos transaction signing is implemented.
-   * Temporarily disables the Send button for AtomOne tokens because signing is not yet supported.
-   * Delete this field and all readOnly branches when Phase 3 Cosmos signing is added.
-   */
-  readOnly?: boolean;
 }
 
 export interface GRC721CollectionModel {

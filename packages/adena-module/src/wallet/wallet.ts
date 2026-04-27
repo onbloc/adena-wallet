@@ -7,6 +7,13 @@ import {
   TxSignature,
 } from '@gnolang/tm2-js-client';
 
+import {
+  signCosmosAmino,
+  CosmosDocument,
+  CosmosProvider,
+  CosmosTxBroadcastResponse,
+  SignedCosmosTx,
+} from '../cosmos';
 import { Bip39, Random } from '../crypto';
 import { fromBech32 } from '../encoding';
 import { arrayContentEquals, arrayToHex, hexToArray } from '../utils';
@@ -89,6 +96,19 @@ export interface Wallet {
     accountId: string,
     tx: Tx,
   ) => Promise<BroadcastTxCommitResult>;
+  // Cosmos AMINO (Phase 3) — kept as dedicated methods so the Gno path
+  // (sign / signByAccountId / broadcastTx*) stays strictly untouched. The
+  // caller injects a CosmosProvider just like it injects `Provider` for Gno,
+  // keeping adena-module free of HTTP-client deps.
+  signCosmosByAccountId: (
+    accountId: string,
+    document: CosmosDocument,
+    cosmosProvider: CosmosProvider,
+  ) => Promise<SignedCosmosTx>;
+  broadcastCosmosTx: (
+    signedTx: SignedCosmosTx,
+    cosmosProvider: CosmosProvider,
+  ) => Promise<CosmosTxBroadcastResponse>;
   serialize: (password: string) => Promise<string>;
   clone: () => AdenaWallet;
 }
@@ -373,6 +393,41 @@ export class AdenaWallet implements Wallet {
       return keyring.broadcastTxCommit(provider, signedTx, account.hdPath);
     }
     return keyring.broadcastTxCommit(provider, signedTx);
+  }
+
+  // ─── Cosmos AMINO (Phase 3) ───────────────────────────────────────────
+  // Dedicated methods so Gno callers don't encounter union-typed returns.
+  // CosmosProvider is injected by the caller (mirrors the Gno `Provider` DI
+  // pattern — TransactionService resolves the profile via ChainRegistry and
+  // constructs the CosmosLcdProvider before calling these methods).
+
+  async signCosmosByAccountId(
+    accountId: string,
+    document: CosmosDocument,
+    cosmosProvider: CosmosProvider,
+  ): Promise<SignedCosmosTx> {
+    const account = this._accounts.find((a) => a.id === accountId);
+    if (!account) {
+      throw new Error('Account not found');
+    }
+    const keyring = this._keyrings.find((k) => k.id === account.keyringId);
+    if (!keyring) {
+      throw new Error('Keyring not found');
+    }
+    const hdPath = hasHDPath(account) ? account.hdPath : undefined;
+    return signCosmosAmino({
+      document,
+      keyring,
+      cosmosProvider,
+      hdPath,
+    });
+  }
+
+  async broadcastCosmosTx(
+    signedTx: SignedCosmosTx,
+    cosmosProvider: CosmosProvider,
+  ): Promise<CosmosTxBroadcastResponse> {
+    return cosmosProvider.broadcastTx(signedTx.txBytes, 'BROADCAST_MODE_SYNC');
   }
 
   async serialize(password: string) {

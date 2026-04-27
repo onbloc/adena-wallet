@@ -1,4 +1,5 @@
 export * from './address';
+export * from './cosmos-address';
 export { arrayContentEquals, arrayContentStartsWith } from './arrays';
 export { assert, assertDefined, assertDefinedAndNotNull } from './assert';
 export * from './data';

@@ -7,9 +7,14 @@ import {
 import {
   Account,
   AdenaLedgerConnector,
+  ChainRegistry,
+  CosmosDocument,
+  CosmosNetworkProfile,
+  CosmosTxBroadcastResponse,
   Document,
   LedgerAccount,
   LedgerKeyring,
+  SignedCosmosTx,
   sha256,
   Wallet,
 } from 'adena-module';
@@ -17,6 +22,7 @@ import {
 import { GasToken } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
+import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
 
@@ -33,9 +39,18 @@ export class TransactionService {
 
   private gnoProvider: GnoProvider | null;
 
-  constructor(walletService: WalletService, gnoProvider: GnoProvider | null) {
+  // ChainRegistry is optional so older construction sites (inject/message/methods)
+  // keep working while the DI container in adena-provider wires it up.
+  private chainRegistry: ChainRegistry | null;
+
+  constructor(
+    walletService: WalletService,
+    gnoProvider: GnoProvider | null,
+    chainRegistry: ChainRegistry | null = null,
+  ) {
     this.walletService = walletService;
     this.gnoProvider = gnoProvider;
+    this.chainRegistry = chainRegistry;
   }
 
   public getGnoProvider(): GnoProvider {
@@ -47,6 +62,26 @@ export class TransactionService {
 
   public setGnoProvider(gnoProvider: GnoProvider): void {
     this.gnoProvider = gnoProvider;
+  }
+
+  public setChainRegistry(chainRegistry: ChainRegistry): void {
+    this.chainRegistry = chainRegistry;
+  }
+
+  private resolveCosmosProfile(chainId: string): CosmosNetworkProfile {
+    if (!this.chainRegistry) {
+      throw new Error('ChainRegistry not initialized for Cosmos operations');
+    }
+    const profile = this.chainRegistry.getNetworkProfileByChainId(chainId);
+    if (!profile || profile.chainType !== 'cosmos') {
+      throw new Error(`Cosmos network profile not found for chainId: ${chainId}`);
+    }
+    return profile as CosmosNetworkProfile;
+  }
+
+  private makeCosmosProvider(chainId: string): CosmosLcdProvider {
+    const profile = this.resolveCosmosProfile(chainId);
+    return new CosmosLcdProvider(profile.restEndpoints[0]);
   }
 
   /**
@@ -213,6 +248,28 @@ export class TransactionService {
 
     const result = await broadcastTx(provider, transaction, account.hdPath);
     return result;
+  };
+
+  // ─── Cosmos AMINO (Phase 3) ─────────────────────────────────────────
+  // Thin passthrough to AdenaWallet's Cosmos methods. Gno methods above
+  // remain untouched so Gno flows have zero regression risk.
+
+  public signCosmos = async (
+    accountId: string,
+    document: CosmosDocument,
+  ): Promise<SignedCosmosTx> => {
+    const wallet = await this.walletService.loadWallet();
+    const cosmosProvider = this.makeCosmosProvider(document.chainId);
+    return wallet.signCosmosByAccountId(accountId, document, cosmosProvider);
+  };
+
+  public broadcastCosmos = async (
+    signedTx: SignedCosmosTx,
+    chainId: string,
+  ): Promise<CosmosTxBroadcastResponse> => {
+    const wallet = await this.walletService.loadWallet();
+    const cosmosProvider = this.makeCosmosProvider(chainId);
+    return wallet.broadcastCosmosTx(signedTx, cosmosProvider);
   };
 
   /**

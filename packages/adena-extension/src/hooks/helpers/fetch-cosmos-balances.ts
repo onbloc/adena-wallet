@@ -8,9 +8,6 @@ import { TokenBalanceType } from '@types';
  *
  * Each chain is queried in parallel. If a single chain's LCD call fails,
  * that chain returns [] so Gno balances are never affected.
- *
- * TODO(Phase 3): When Cosmos signing is implemented, this function may need
- * to be aware of writable vs. read-only chains.
  */
 export async function fetchCosmosTokenBalances(
   account: Account,

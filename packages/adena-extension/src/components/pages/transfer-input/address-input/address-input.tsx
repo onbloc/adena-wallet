@@ -20,6 +20,10 @@ export interface AddressInputProps {
   onClickInputIcon: (selected: boolean) => void;
   onChangeAddress: (address: string) => void;
   onClickAddressBook: (addressBookId: string) => void;
+  // Cosmos atone1 addresses are 44 chars vs Gno g1 addresses at 40.
+  // Leaving these optional preserves the Gno-only behavior for existing callers.
+  maxLength?: number;
+  placeholder?: string;
 }
 
 const AddressInput: React.FC<AddressInputProps> = ({
@@ -34,6 +38,8 @@ const AddressInput: React.FC<AddressInputProps> = ({
   onClickInputIcon,
   onChangeAddress,
   onClickAddressBook,
+  maxLength = 40,
+  placeholder = 'Recipient’s Gno.land Address',
 }) => {
   const addressInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -58,9 +64,9 @@ const AddressInput: React.FC<AddressInputProps> = ({
             className='address-input'
             value={address}
             onChange={(event): void => onChangeAddress(event.target.value)}
-            placeholder='Recipient’s Gno.land Address'
+            placeholder={placeholder}
             autoComplete='off'
-            maxLength={40}
+            maxLength={maxLength}
             rows={1}
           />
         )}

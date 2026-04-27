@@ -40,25 +40,42 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   memo,
   useNetworkFeeReturn,
   isErrorNetworkFee,
+  isLoadingNetworkFee,
   simulateErrorBannerMessage,
   onClickBack,
   onClickCancel,
   onClickSend,
   onClickNetworkFeeSetting,
 }) => {
+  // TEMP (Phase 3 MVP): when the container supplies an explicit loading override
+  // it is also telling us "I'm providing the fee externally — don't rely on any
+  // of the Gno useNetworkFee hook state (loading, simulate error, etc.)". The
+  // Cosmos path uses this with a hardcoded fee.
+  // TODO(Phase 6): replace with a unified network-fee abstraction once feemarket
+  //                estimation lands.
+  const hasExternalFee = isLoadingNetworkFee !== undefined;
+  const effectiveIsLoading = hasExternalFee
+    ? (isLoadingNetworkFee as boolean)
+    : useNetworkFeeReturn.isLoading;
+
   const disabledSendButton = useMemo(() => {
-    if (useNetworkFeeReturn.isLoading) {
+    if (effectiveIsLoading) {
       return true;
     }
 
-    if (isErrorNetworkFee || useNetworkFeeReturn.isSimulateError) {
+    if (isErrorNetworkFee) {
+      return true;
+    }
+
+    if (!hasExternalFee && useNetworkFeeReturn.isSimulateError) {
       return true;
     }
 
     return Number(networkFee?.amount || 0) <= 0;
   }, [
+    hasExternalFee,
     isErrorNetworkFee,
-    useNetworkFeeReturn.isLoading,
+    effectiveIsLoading,
     useNetworkFeeReturn.isSimulateError,
     networkFee,
   ]);
@@ -102,7 +119,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           isError={isErrorNetworkFee}
-          isLoading={useNetworkFeeReturn.isLoading}
+          isLoading={effectiveIsLoading}
           errorMessage={networkFeeErrorMessage}
           onClickSetting={onClickNetworkFeeSetting}
         />

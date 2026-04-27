@@ -33,7 +33,13 @@ export type UseAddressBookInputHookReturn = {
   validateEqualAddress: () => Promise<boolean>;
 };
 
-export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
+// addressPrefixOverride: when the caller is sending to a non-Gno chain (e.g.
+// AtomOne), the default currentNetwork.addressPrefix ('g') would resolve
+// account/address-book entries as Gno addresses. Pass the target chain's
+// bech32 prefix to have the hook list and return chain-matched addresses.
+export const useAddressBookInput = (
+  addressPrefixOverride?: string,
+): UseAddressBookInputHookReturn => {
   const { addressBookService } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { getCurrentAddress } = useCurrentAccount();
@@ -66,7 +72,7 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
 
   const getAddressBookInfos = useCallback(async () => {
     const currentAccountInfos = [];
-    const addressPrefix = currentNetwork.addressPrefix;
+    const addressPrefix = addressPrefixOverride ?? currentNetwork.addressPrefix;
     const currentAddress = await getCurrentAddress(addressPrefix);
     for (const account of wallet?.accounts || []) {
       const address = await account.getAddress(addressPrefix);
@@ -89,7 +95,7 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
       });
 
     return [...currentAccountInfos, ...addressBookInfos];
-  }, [addressBooks, wallet?.accounts]);
+  }, [addressBooks, wallet?.accounts, addressPrefixOverride, currentNetwork.addressPrefix]);
 
   const getSelectedAddressBookInfos = useCallback(() => {
     if (selectedAddressBook === null) {
@@ -156,7 +162,9 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
         clearError();
         setOpened(false);
         setSelected(true);
-        const address = await selectedAccount.getAddress(currentNetwork.addressPrefix);
+        const address = await selectedAccount.getAddress(
+          addressPrefixOverride ?? currentNetwork.addressPrefix,
+        );
         setSelectedAddressBook({
           id: selectedAccount.id,
           name: selectedAccount.name,
@@ -182,7 +190,9 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
 
   const validateEqualAddress = useCallback(async () => {
     const address = getResultAddress();
-    const currentAddress = await getCurrentAddress(currentNetwork?.addressPrefix);
+    const currentAddress = await getCurrentAddress(
+      addressPrefixOverride ?? currentNetwork?.addressPrefix,
+    );
     if (address === currentAddress) {
       setHasError(true);
       setErrorMessage('You can’t send GRC20 tokens to your own address');

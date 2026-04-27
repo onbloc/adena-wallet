@@ -31,6 +31,10 @@ export class CosmosBalanceService {
       symbol: token.symbol,
       decimals: token.decimals,
       image: token.iconUrl ?? '',
+      // Raw on-chain denom (e.g. uatone / uphoton) required by
+      // createCosmosTransaction to build the MsgSend amount. The amount.denom
+      // below is the display symbol (e.g. ATONE) and cannot be used on-chain.
+      denom,
       amount: {
         value,
         denom: token.symbol,

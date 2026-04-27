@@ -61,6 +61,7 @@ describe('CosmosBalanceService', () => {
         symbol: 'ATONE',
         decimals: 6,
         image: '/assets/icons/atone.svg',
+        denom: 'uatone',
         amount: { value: '1', denom: 'ATONE' },
       });
       expect(mockGetBalance).toHaveBeenCalledWith('atone1abc', 'uatone');
