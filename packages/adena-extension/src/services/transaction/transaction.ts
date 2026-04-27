@@ -19,6 +19,7 @@ import {
   LedgerKeyring,
   SignedCosmosTx,
   sha256,
+  signCosmosAmino,
   Wallet,
 } from 'adena-module';
 
@@ -330,6 +331,34 @@ export class TransactionService {
     }
     return chain;
   }
+
+  /**
+   * Sign a Cosmos document with a Ledger keyring. Parallel to `signCosmos` but
+   * bypasses the wallet-owned keyring (whose connector is null after restore)
+   * and uses a keyring freshly bound to an active `AdenaLedgerConnector`.
+   */
+  public signCosmosWithLedger = async (
+    ledgerConnector: AdenaLedgerConnector,
+    account: LedgerAccount,
+    document: CosmosDocument,
+  ): Promise<SignedCosmosTx> => {
+    if (!this.cosmosProvider) {
+      throw new Error('CosmosProvider not injected');
+    }
+    this.resolveCosmosProfile(document.chainId);
+    // PR #822 (ADN-752) introduces a unified `signCosmos` dispatcher that
+    // routes by `chain.signing.preferred`. Until #822 lands, hardcode the
+    // AMINO pipeline — the Cosmos Ledger app only renders AMINO JSON
+    // anyway, so AMINO is the only mode that produces a usable display
+    // for Ledger users.
+    const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
+    return signCosmosAmino({
+      document,
+      keyring,
+      cosmosProvider: this.cosmosProvider,
+      hdPath: account.hdPath,
+    });
+  };
 
   public broadcastCosmos = async (
     signedTx: SignedCosmosTx,

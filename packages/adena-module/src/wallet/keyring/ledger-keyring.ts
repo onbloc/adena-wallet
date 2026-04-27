@@ -8,6 +8,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
+import { LedgerError, classifyLedgerError } from '../../ledger/ledger-errors';
 import { Document, makeSignedTx, useTm2Wallet } from './../..';
 import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
 
@@ -40,14 +41,20 @@ export class LedgerKeyring implements Keyring {
     };
   }
 
-  async signRaw(_bytes: Uint8Array, _opts?: SignRawOptions): Promise<Uint8Array> {
-    // Ledger hardware enforces "trust display": the device only signs documents
-    // it can parse and render to the user. Raw opaque bytes would be blind
-    // signing, which the device refuses. Phase 7 replaces this stub with a
-    // device-friendly path (signAmino/signDirect) alongside Cosmos-app routing.
-    throw new Error(
-      `Ledger signRaw is not implemented yet (Phase 7) (keyring ${this.id})`,
-    );
+  async signRaw(bytes: Uint8Array, opts?: SignRawOptions): Promise<Uint8Array> {
+    // Cosmos AMINO path: the device signs the UTF-8 JSON sign doc that cosmjs
+    // forwards verbatim to the Ledger Cosmos app. @cosmjs/ledger-amino's
+    // connector.sign() handles the DER → 64-byte r||s conversion and the
+    // verifyCosmosAppIsOpen pre-flight check internally.
+    if (!this.connector) {
+      throw new LedgerError('TransportFailed', 'Ledger connector is not attached');
+    }
+    const hdPath = generateHDPath(opts?.hdPath ?? 0);
+    try {
+      return await this.connector.sign(bytes, hdPath);
+    } catch (err) {
+      throw classifyLedgerError(err);
+    }
   }
 
   async sign(provider: Provider, document: Document, hdPath: number = 0) {

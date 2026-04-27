@@ -9,7 +9,7 @@ import {
   TokenModel,
   TransactionInfo,
 } from '@types';
-import { Document } from 'adena-module';
+import { CosmosDocument, Document } from 'adena-module';
 
 export const REGISTER_PATH = 'register.html' as const;
 export const SECURITY_PATH = 'security.html' as const;
@@ -64,6 +64,7 @@ export enum RoutePath {
   TransferSummary = '/wallet/transfer-summary',
   NftTransferSummary = '/wallet/nft-transfer-summary',
   TransferLedgerLoading = '/wallet/transfer-ledger/loading',
+  TransferLedgerCosmosLoading = '/wallet/transfer-ledger/cosmos-loading',
   TransferLedgerReject = '/wallet/transfer-ledger/reject',
   BroadcastTransaction = '/wallet/broadcast-transaction',
   BroadcastMultisigTransactionScreen = '/wallet/broadcast-multiig-transaction',
@@ -187,6 +188,15 @@ export type RouteParams = {
     };
     gasInfo: GasInfo | null;
     memo: string;
+    // Populated only when a Ledger loading page navigates back after a
+    // successful/failed broadcast — lets TransferSummary enter its RESULT
+    // screen (same UX HD/PK transfers already get) without a dedicated
+    // Ledger completion page.
+    ledgerResult?: {
+      status: 'SUCCESS' | 'FAILED';
+      hash?: string | null;
+      errorMessage?: string | null;
+    };
   };
   [RoutePath.NftTransferSummary]: {
     grc721Token: GRC721Model;
@@ -199,8 +209,21 @@ export type RouteParams = {
   };
   [RoutePath.TransferLedgerLoading]: {
     document: Document;
+    // Original TransferSummary params — carried through so the Ledger
+    // loading page can navigate back to TransferSummary with the broadcast
+    // result and reuse its existing RESULT screen. Optional because NFT
+    // transfers reuse this page but don't have an equivalent result screen
+    // on the NFT summary side.
+    summary?: RouteParams[RoutePath.TransferSummary];
   };
-  [RoutePath.TransferLedgerReject]: null;
+  [RoutePath.TransferLedgerCosmosLoading]: {
+    document: CosmosDocument;
+    summary?: RouteParams[RoutePath.TransferSummary];
+  };
+  [RoutePath.TransferLedgerReject]: {
+    title?: string;
+    desc?: string;
+  } | null;
   [RoutePath.BroadcastTransaction]: null;
   [RoutePath.BroadcastMultisigTransactionScreen]: null;
   [RoutePath.SignMultisigTransactionScreen]: null;
