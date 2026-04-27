@@ -13,8 +13,9 @@ describe('CustomNetworkInput Component', () => {
       rpcUrl: '',
       rpcUrlError: '',
       chainId: '',
-      indexerUrl: '',
-      changeIndexerUrl: () => {
+      extraUrl: '',
+      fieldType: 'indexer',
+      changeExtraUrl: () => {
         return;
       },
       changeName: () => {

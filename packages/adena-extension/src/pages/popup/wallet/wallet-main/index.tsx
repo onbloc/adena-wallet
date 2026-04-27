@@ -214,7 +214,10 @@ export const WalletMain = (): JSX.Element => {
   return (
     <Wrapper>
       <div className='network-label-wrapper'>
-        <MainNetworkLabel networkName={currentNetwork.networkName} />
+        <MainNetworkLabel
+          networkName={currentNetwork.networkName}
+          onClick={(): void => navigate(RoutePath.ChangeNetwork)}
+        />
       </div>
       <div className='token-balance-wrapper'>
         <MainTokenBalance

@@ -5,10 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { formatNickname } from '@common/utils/client-utils';
 import SideMenu from '@components/pages/router/side-menu/side-menu';
 import { useAccountName } from '@hooks/use-account-name';
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 import { useTokenBalance } from '@hooks/use-token-balance';
 
 import { SCANNER_URL } from '@common/constants/resource.constant';
@@ -30,6 +32,8 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const navigate = useNavigate();
   const { changeCurrentAccount } = useCurrentAccount();
   const { currentNetwork, scannerParameters } = useNetwork();
+  const chain = useChain();
+  const profile = useNetworkProfile();
   const { accountNames } = useAccountName();
   const { accounts, loadAccounts } = useLoadAccounts();
   const { accountNativeBalanceMap } = useTokenBalance();
@@ -50,8 +54,8 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   }, [currentAccount]);
 
   const scannerUrl = useMemo(() => {
-    return currentNetwork.linkUrl || SCANNER_URL;
-  }, [currentNetwork]);
+    return profile?.linkUrl || SCANNER_URL;
+  }, [profile]);
 
   const scannerQueryString = useMemo(() => {
     if (scannerParameters) {
@@ -130,7 +134,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
         accounts.map(async (account) => ({
           accountId: account.id,
           name: formatNickname(accountNames[account.id] || account.name, 10),
-          address: await account.getAddress(currentNetwork.addressPrefix),
+          address: await account.getAddress(chain.bech32Prefix),
           type: account.type,
           balance: mapBalance(accountNativeBalanceMap, account),
         })),

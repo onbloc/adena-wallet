@@ -18,6 +18,7 @@ import { makeQueryString } from '@common/utils/string-utils';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 import useSessionParams from '@hooks/use-session-state';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenTransactions } from '@hooks/wallet/token-details/use-token-transactions';
@@ -84,6 +85,7 @@ const EtcIcon = styled.div`
 export const TokenDetails = (): JSX.Element => {
   const theme = useTheme();
   const { currentNetwork, scannerParameters } = useNetwork();
+  const profile = useNetworkProfile();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { saveScrollPosition } = useScrollHistory(scrollRef);
   const { openLink } = useLink();
@@ -98,14 +100,13 @@ export const TokenDetails = (): JSX.Element => {
   const { currentBalances } = useTokenBalance();
 
   const isNative = tokenBalance && !isGRC20TokenModel(tokenBalance);
+  const isCosmosNative = tokenBalance?.type === 'cosmos-native';
 
   // Multisig × Cosmos = permanent non-support (keyrings are Gno-only).
   // Disable the Send button with a tooltip instead of hiding the token so
   // users can still see balances but immediately understand they can't send.
   const isMultisigCosmosBlocked =
-    tokenBalance?.type === 'cosmos-native' &&
-    !!currentAccount &&
-    isMultisigAccount(currentAccount);
+    isCosmosNative && !!currentAccount && isMultisigAccount(currentAccount);
 
   const tokenPath = useMemo(() => {
     if (!tokenBalance || !isGRC20TokenModel(tokenBalance)) {
@@ -115,14 +116,14 @@ export const TokenDetails = (): JSX.Element => {
   }, [tokenBalance]);
 
   const isUsedApi = useMemo(() => {
-    return !!currentNetwork.apiUrl;
-  }, [currentNetwork]);
+    return profile?.chainType === 'gno' && !!profile.apiUrl;
+  }, [profile]);
 
   const pageTransactionHistoryQuery = useTokenTransactionsPage(isNative, tokenPath, {
-    enabled: isUsedApi,
+    enabled: isUsedApi && !isCosmosNative,
   });
   const commonTransactionHistoryQuery = useTokenTransactions(isNative, tokenPath, {
-    enabled: !isUsedApi,
+    enabled: !isUsedApi && !isCosmosNative,
   });
 
   const { status, isLoading, isFetching, data, isSupported, fetchNextPage } = useMemo(() => {
@@ -202,7 +203,7 @@ export const TokenDetails = (): JSX.Element => {
   const etcButtonClick = (): void => setEtcClicked((prev: boolean) => !prev);
 
   const getAccountDetailUri = (): string => {
-    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+    const scannerUrl = profile?.linkUrl || SCANNER_URL;
     return scannerParameters
       ? `${scannerUrl}/account/${currentAddress}?${makeQueryString(scannerParameters)}`
       : `${scannerUrl}/account/${currentAddress}`;
@@ -210,7 +211,7 @@ export const TokenDetails = (): JSX.Element => {
 
   const getTokenUri = (): string => {
     if (tokenBalance && isGRC20TokenModel(tokenBalance)) {
-      const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+      const scannerUrl = profile?.linkUrl || SCANNER_URL;
       return scannerParameters
         ? `${scannerUrl}/tokens/${tokenBalance.pkgPath}?${makeQueryString(scannerParameters)}`
         : `${scannerUrl}/tokens/${tokenBalance.pkgPath}`;
@@ -262,12 +263,16 @@ export const TokenDetails = (): JSX.Element => {
           props: {
             disabled: isMultisigCosmosBlocked,
             title: isMultisigCosmosBlocked
-              ? "Multisig accounts don't support Cosmos chains"
+              ? 'Multisig accounts do not support Cosmos chains'
               : undefined,
           },
         }}
       />
-      {isLoading && isSupported ? (
+      {isCosmosNative ? (
+        <Text className='desc' type='body1Reg' color={theme.neutral.a}>
+          Transaction history is not supported yet
+        </Text>
+      ) : isLoading && isSupported ? (
         <LoadingTokenDetails />
       ) : transactions.length > 0 ? (
         <TransactionHistory

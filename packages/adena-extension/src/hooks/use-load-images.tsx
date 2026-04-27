@@ -15,8 +15,8 @@ export const useLoadImages = (): UseLoadAccountsReturn => {
   const [loadedImageUrls, setLoadedImageUrls] = useRecoilState(CommonState.loadedImageUrls);
 
   const isLoading = useMemo(() => {
-    if (loadedImageUrls.length === 0) {
-      return true;
+    if (loadingImageUrls.length === 0) {
+      return false;
     }
     return loadedImageUrls.length < loadingImageUrls.length;
   }, [loadedImageUrls, loadingImageUrls]);

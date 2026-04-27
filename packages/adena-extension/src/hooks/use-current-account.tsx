@@ -5,6 +5,7 @@ import { Account } from 'adena-module';
 import { useCallback } from 'react';
 import { useRecoilState } from 'recoil';
 import { useAdenaContext, useWalletContext } from './use-context';
+import { useChain } from './use-chain';
 import { useEvent } from './use-event';
 import { useNetwork } from './use-network';
 
@@ -18,6 +19,7 @@ export const useCurrentAccount = (): {
   const { accountService } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const { dispatchEvent } = useEvent();
 
   const getCurrentAddress = useCallback(
@@ -25,7 +27,7 @@ export const useCurrentAccount = (): {
       if (!currentAccount) {
         return null;
       }
-      return await currentAccount.getAddress(prefix ?? currentNetwork.addressPrefix);
+      return await currentAccount.getAddress(prefix ?? chain.bech32Prefix);
     },
     [currentAccount],
   );
@@ -42,7 +44,7 @@ export const useCurrentAccount = (): {
 
   const dispatchChangedEvent = useCallback(
     async (account: Account) => {
-      const address = await account.getAddress(currentNetwork.addressPrefix);
+      const address = await account.getAddress(chain.bech32Prefix);
       const message = EventMessage.event('changedAccount', address);
       dispatchEvent(message);
     },
@@ -55,7 +57,7 @@ export const useCurrentAccount = (): {
       if (!currentAccount) {
         return null;
       }
-      const address = await currentAccount.getAddress(currentNetwork.addressPrefix);
+      const address = await currentAccount.getAddress(chain.bech32Prefix);
       return address;
     },
     {

@@ -9,11 +9,12 @@ import AddCustomNetwork, { AddCustomNetworkProps } from '.';
 describe('AddCustomNetwork Component', () => {
   it('AddCustomNetwork render', () => {
     const args: AddCustomNetworkProps = {
+      chainGroup: 'gno',
       name: '',
       rpcUrl: '',
       rpcUrlError: '',
-      indexerUrl: '',
-      indexerUrlError: '',
+      extraUrl: '',
+      extraUrlError: '',
       chainId: '',
       changeName: () => {
         return;
@@ -21,7 +22,7 @@ describe('AddCustomNetwork Component', () => {
       changeRPCUrl: () => {
         return;
       },
-      changeIndexerUrl: () => {
+      changeExtraUrl: () => {
         return;
       },
       changeChainId: () => {

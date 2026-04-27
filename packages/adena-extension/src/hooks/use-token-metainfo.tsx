@@ -1,6 +1,7 @@
 import { useRecoilState } from 'recoil';
 
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import { useChain } from './use-chain';
 import { useAdenaContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
@@ -75,6 +76,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const [tokenMetainfos, setTokenMetainfo] = useRecoilState(TokenState.tokenMetainfos);
   const { currentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const { fetchTransferTokens } = useTransferTokens();
   const { addCollections } = useNFTCollectionHandler();
   const { data: grc20Tokens } = useGRC20Tokens();
@@ -144,7 +146,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }
 
     await setTokenMetainfo([]);
-    const currentAddress = await currentAccount.getAddress(currentNetwork.addressPrefix);
+    const currentAddress = await currentAccount.getAddress(chain.bech32Prefix);
 
     /**
      * For accounts with no transfer events, initialize the state with the list of stored tokens.
@@ -194,7 +196,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       return;
     }
 
-    const currentAddress = await currentAccount.getAddress(currentNetwork.addressPrefix);
+    const currentAddress = await currentAccount.getAddress(chain.bech32Prefix);
 
     /**
      * For accounts with no transfer events, initialize the state with the list of stored tokens.

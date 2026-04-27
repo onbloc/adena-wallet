@@ -41,7 +41,7 @@ const ApproveAddingNetworkContainer: React.FC = () => {
 
   const onClickApprove = useCallback(async () => {
     setProcessing(true);
-    await addNetwork(chainName, rpcUrl, chainId, '');
+    await addNetwork('gno', chainName, rpcUrl, chainId, { indexerUrl: '' });
     setResponse(
       InjectionMessageInstance.success(
         WalletResponseSuccessType.ADD_NETWORK_SUCCESS,

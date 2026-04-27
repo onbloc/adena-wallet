@@ -10,6 +10,7 @@ import photonTokenIcon from './tokens/photon.svg';
 export const CHAIN_ICON_MAP: Record<string, string> = {
   gnoland1: gnolandChainIcon,
   'atomone-1': atoneChainIcon,
+  'atomone-testnet-1': atoneChainIcon,
 };
 
 /**
@@ -19,4 +20,6 @@ export const CHAIN_ICON_MAP: Record<string, string> = {
 export const COSMOS_TOKEN_ICON_MAP: Record<string, string> = {
   'atomone-1:uatone': atoneTokenIcon,
   'atomone-1:uphoton': photonTokenIcon,
+  'atomone-testnet-1:uatone': atoneTokenIcon,
+  'atomone-testnet-1:uphoton': photonTokenIcon,
 };

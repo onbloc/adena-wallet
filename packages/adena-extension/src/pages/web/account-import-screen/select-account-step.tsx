@@ -7,7 +7,7 @@ import { View, WebButton, WebImg } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import { AccountInfo } from '@components/molecules/select-account-box';
 import SelectAccountBox from '@components/molecules/select-account-box/select-account-box';
-import { useNetwork } from '@hooks/use-network';
+import { useChain } from '@hooks/use-chain';
 import { UseAccountImportReturn } from '@hooks/web/use-account-import-screen';
 import { useQuery } from '@tanstack/react-query';
 
@@ -21,7 +21,7 @@ const SelectAccountStep = ({
 }: {
   useAccountImportScreenReturn: UseAccountImportReturn;
 }): JSX.Element => {
-  const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const {
     isLoadingAccounts,
     loadedAccounts,
@@ -37,7 +37,7 @@ const SelectAccountStep = ({
     async () => {
       const accountInfos: AccountInfo[] = [];
       for (const account of loadedAccounts) {
-        const address = await account.getAddress(currentNetwork.addressPrefix);
+        const address = await account.getAddress(chain.bech32Prefix);
         const accountInfo: AccountInfo = {
           hdPath: account.index,
           index: account.index,

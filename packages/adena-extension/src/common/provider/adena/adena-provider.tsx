@@ -1,5 +1,6 @@
 import { AdenaStorage } from '@common/storage';
 import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
+import { toCosmosNetworkProfile } from '@common/mapper/network-profile-mapper';
 import { useWindowSize } from '@hooks/use-window-size';
 import { ChainRepository } from '@repositories/common';
 import { TokenRepository } from '@repositories/common/token';
@@ -48,7 +49,7 @@ export interface AdenaContextProps {
   walletService: WalletService;
   balanceService: WalletBalanceService;
   cosmosBalanceService: CosmosBalanceService;
-  cosmosLcdProvider: CosmosLcdProvider;
+  cosmosProvider: CosmosLcdProvider | null;
   chainRegistry: ChainRegistry;
   tokenRegistry: TokenRegistry;
   accountService: WalletAccountService;
@@ -66,14 +67,14 @@ export interface AdenaContextProps {
 export const AdenaContext = createContext<AdenaContextProps | null>(null);
 
 export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
-  const currentNetwork = useRecoilValue(NetworkState.currentNetwork);
+  const currentGnoNetwork = useRecoilValue(NetworkState.currentNetwork);
 
   const gnoProvider: GnoProvider | null = useMemo(() => {
-    if (!currentNetwork) {
+    if (!currentGnoNetwork) {
       return null;
     }
-    return new GnoProvider(currentNetwork.rpcUrl, currentNetwork.chainId);
-  }, [currentNetwork]);
+    return new GnoProvider(currentGnoNetwork.rpcUrl, currentGnoNetwork.chainId);
+  }, [currentGnoNetwork]);
 
   const chainRegistry = useMemo(() => createChainRegistry(), []);
 
@@ -83,18 +84,17 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return registry;
   }, []);
 
-  // TODO(Part 7): replace ATOMONE_CHAIN_ID with currentNetworkByChainGroup['atomone']
-  const ATOMONE_CHAIN_ID = 'atomone-1';
-  const cosmosLcdProvider = useMemo(() => {
-    const atomoneProfile = chainRegistry.get(ATOMONE_CHAIN_ID);
-    const lcdUrl =
-      atomoneProfile?.chainType === 'cosmos' ? atomoneProfile.restEndpoints[0] ?? '' : '';
-    return new CosmosLcdProvider(lcdUrl);
-  }, [chainRegistry]);
+  const currentAtomoneNetwork = useRecoilValue(NetworkState.currentAtomoneNetwork);
+  const cosmosProvider = useMemo<CosmosLcdProvider | null>(() => {
+    if (!currentAtomoneNetwork) {
+      return null;
+    }
+    return new CosmosLcdProvider(toCosmosNetworkProfile(currentAtomoneNetwork));
+  }, [currentAtomoneNetwork]);
 
   const cosmosBalanceService = useMemo(
-    () => new CosmosBalanceService(cosmosLcdProvider),
-    [cosmosLcdProvider],
+    () => new CosmosBalanceService(cosmosProvider),
+    [cosmosProvider],
   );
 
   const axiosInstance = useMemo(() => axios.create({ timeout: 20_000 }), []);
@@ -129,25 +129,25 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
   );
 
   const tokenRepository = useMemo(
-    () => new TokenRepository(localStorage, axiosInstance, currentNetwork, gnoProvider),
-    [localStorage, axiosInstance, currentNetwork, gnoProvider],
+    () => new TokenRepository(localStorage, axiosInstance, currentGnoNetwork, gnoProvider),
+    [localStorage, axiosInstance, currentGnoNetwork, gnoProvider],
   );
 
   const transactionHistoryRepository = useMemo(() => {
-    if (currentNetwork?.apiUrl) {
-      return new TransactionHistoryApiRepository(axiosInstance, currentNetwork);
+    if (currentGnoNetwork?.apiUrl) {
+      return new TransactionHistoryApiRepository(axiosInstance, currentGnoNetwork);
     }
 
-    return new TransactionHistoryIndexerRepository(axiosInstance, currentNetwork);
-  }, [axiosInstance, currentNetwork]);
+    return new TransactionHistoryIndexerRepository(axiosInstance, currentGnoNetwork);
+  }, [axiosInstance, currentGnoNetwork]);
 
   const transactionGasRepository = useMemo(() => {
-    if (!currentNetwork) {
+    if (!currentGnoNetwork) {
       return null;
     }
 
-    return new TransactionGasRepository(gnoProvider, axiosInstance, currentNetwork);
-  }, [gnoProvider, transactionHistoryRepository, currentNetwork]);
+    return new TransactionGasRepository(gnoProvider, axiosInstance, currentGnoNetwork);
+  }, [gnoProvider, transactionHistoryRepository, currentGnoNetwork]);
 
   const chainService = useMemo(() => new ChainService(chainRepository), [chainRepository]);
 
@@ -175,9 +175,14 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
   );
 
   const transactionService = useMemo(() => {
-    const transactionService = new TransactionService(walletService, gnoProvider, chainRegistry);
+    const transactionService = new TransactionService(
+      walletService,
+      gnoProvider,
+      chainRegistry,
+      cosmosProvider,
+    );
     return transactionService;
-  }, [walletService, gnoProvider, chainRegistry]);
+  }, [walletService, gnoProvider, chainRegistry, cosmosProvider]);
 
   const transactionHistoryService = useMemo(
     () => new TransactionHistoryService(gnoProvider, transactionHistoryRepository),
@@ -208,7 +213,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
         walletService,
         balanceService,
         cosmosBalanceService,
-        cosmosLcdProvider,
+        cosmosProvider,
         chainRegistry,
         tokenRegistry,
         accountService,

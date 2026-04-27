@@ -1,125 +1,87 @@
 import {
   CosmosAccount,
   CosmosBroadcastMode,
+  CosmosNetworkProfile,
   CosmosProvider,
   CosmosTxBroadcastResponse,
 } from 'adena-module';
-import axios, { AxiosInstance } from 'axios';
 
-// Re-export the module-side types so existing extension import sites keep
-// working against `@common/provider/cosmos/cosmos-lcd-provider`.
-export type {
-  CosmosAccount,
-  CosmosBroadcastMode,
-  CosmosTxBroadcastResponse,
-} from 'adena-module';
+import { CosmosQueryClient } from './cosmos-query-client';
+
+const DEBOUNCE_MS = 5_000;
 
 /**
- * REST LCD implementation of {@link CosmosProvider}. Lives in adena-extension
- * because axios pulls in Node built-ins when bundled via adena-module's rollup
- * config (causes `Z_SYNC_FLUSH` crash in the browser). Extension's webpack
- * correctly picks axios's browser build.
+ * LCD (REST) implementation of the adena-module CosmosProvider interface.
+ * Mirrors the Gno DI pattern: adena-module owns the interface, and this
+ * extension-side class provides the concrete HTTP-backed implementation.
  *
- * Injected into AdenaWallet cosmos methods via the TransactionService, mirroring
- * how GnoProvider is injected for the Gno path.
+ * Wraps CosmosQueryClient with per-call 5-second debounce and a manual
+ * invalidate() trigger. Broadcast is not debounced — each broadcastTx always
+ * hits the network.
+ *
+ * Failover across multiple endpoints is intentionally out of scope for this
+ * PR because the current AtomOne network profiles ship with a single RPC/REST
+ * endpoint each. The array shape is preserved so failover can be added later
+ * without touching callers.
  */
 export class CosmosLcdProvider implements CosmosProvider {
-  private axiosInstance: AxiosInstance;
+  private readonly client: CosmosQueryClient;
+  private readonly debounceCache: Map<
+    string,
+    { at: number; promise: Promise<unknown> }
+  >;
+  private readonly restEndpoint: string;
 
-  constructor(private baseUrl: string) {
-    if (!baseUrl) {
-      console.warn('CosmosLcdProvider: empty baseUrl — all queries will fail');
+  constructor(private readonly profile: CosmosNetworkProfile) {
+    if (!profile.restEndpoints?.length) {
+      throw new Error(
+        `CosmosLcdProvider: restEndpoints empty for ${profile.chainId}`,
+      );
     }
-    this.baseUrl = baseUrl.replace(/\/$/, '');
-    this.axiosInstance = axios.create({ timeout: 10_000 });
+    this.client = new CosmosQueryClient();
+    this.debounceCache = new Map();
+    this.restEndpoint = profile.restEndpoints[0].replace(/\/$/, '');
   }
 
-  // Reserved for future network switching (Phase 7+).
-  setBaseUrl(url: string): void {
-    this.baseUrl = url.replace(/\/$/, '');
+  private async dedupe<T>(key: string, fn: () => Promise<T>): Promise<T> {
+    const now = Date.now();
+    const cached = this.debounceCache.get(key);
+    if (cached && now - cached.at < DEBOUNCE_MS) {
+      return cached.promise as Promise<T>;
+    }
+    const promise = fn();
+    this.debounceCache.set(key, { at: now, promise });
+    return promise;
   }
 
-  async getAllBalances(
+  invalidate(): void {
+    this.debounceCache.clear();
+  }
+
+  getAccount(address: string): Promise<CosmosAccount> {
+    return this.dedupe(`acc:${address}`, () =>
+      this.client.getAccount(this.restEndpoint, address),
+    );
+  }
+
+  getAllBalances(
     address: string,
   ): Promise<{ denom: string; amount: string }[] | null> {
-    try {
-      const response = await this.axiosInstance.get<{
-        balances: { denom: string; amount: string }[];
-      }>(`${this.baseUrl}/cosmos/bank/v1beta1/balances/${address}`);
-      return response.data.balances ?? [];
-    } catch {
-      return null;
-    }
+    return this.dedupe(`bals:${address}`, () =>
+      this.client.getAllBalances(this.restEndpoint, address),
+    );
   }
 
-  async getBalance(address: string, denom: string): Promise<string | null> {
-    try {
-      const response = await this.axiosInstance.get<{
-        balance: { denom: string; amount: string };
-      }>(`${this.baseUrl}/cosmos/bank/v1beta1/balances/${address}/by_denom`, {
-        params: { denom },
-      });
-      return response.data.balance?.amount ?? '0';
-    } catch {
-      return null;
-    }
+  getBalance(address: string, denom: string): Promise<string | null> {
+    return this.dedupe(`bal:${address}:${denom}`, () =>
+      this.client.getBalance(this.restEndpoint, address, denom),
+    );
   }
 
-  async getAccount(address: string): Promise<CosmosAccount> {
-    const response = await this.axiosInstance.get<{
-      account: {
-        '@type': string;
-        address?: string;
-        account_number?: string;
-        sequence?: string;
-        base_account?: {
-          address?: string;
-          account_number?: string;
-          sequence?: string;
-        };
-      };
-    }>(`${this.baseUrl}/cosmos/auth/v1beta1/accounts/${address}`);
-
-    const raw = response.data.account;
-    const inner = raw.base_account ?? raw;
-
-    return {
-      address: inner.address ?? address,
-      accountNumber: inner.account_number ?? '0',
-      sequence: inner.sequence ?? '0',
-    };
-  }
-
-  async broadcastTx(
+  broadcastTx(
     txBytes: Uint8Array,
-    mode: CosmosBroadcastMode = 'BROADCAST_MODE_SYNC',
+    mode?: CosmosBroadcastMode,
   ): Promise<CosmosTxBroadcastResponse> {
-    const body = {
-      tx_bytes: Buffer.from(txBytes).toString('base64'),
-      mode,
-    };
-
-    const response = await this.axiosInstance.post<{
-      tx_response: {
-        txhash: string;
-        code: number;
-        raw_log: string;
-        height: string;
-      };
-    }>(`${this.baseUrl}/cosmos/tx/v1beta1/txs`, body);
-
-    const r = response.data.tx_response;
-    if (!r) {
-      throw new Error('Cosmos broadcast returned no tx_response');
-    }
-    if (r.code !== 0) {
-      throw new Error(`Cosmos broadcast failed (code=${r.code}): ${r.raw_log}`);
-    }
-    return {
-      txhash: r.txhash,
-      code: r.code,
-      rawLog: r.raw_log,
-      height: r.height,
-    };
+    return this.client.broadcastTx(this.restEndpoint, txBytes, mode);
   }
 }

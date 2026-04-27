@@ -2,9 +2,10 @@ import { AdenaWallet, Wallet } from 'adena-module';
 import React, { createContext, useEffect, useState } from 'react';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 
+import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
 import { useAdenaContext } from '@hooks/use-context';
 import { NetworkState, TokenState, WalletState } from '@states';
-import { NetworkMetainfo, StateType, TokenModel } from '@types';
+import { AtomoneNetworkMetainfo, NetworkMetainfo, StateType, TokenModel } from '@types';
 import { GnoProvider } from '../gno/gno-provider';
 
 export interface WalletContextProps {
@@ -37,12 +38,41 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
 
   const setCurrentNetwork = useSetRecoilState(NetworkState.currentNetwork);
 
+  const setNetworkMode = useSetRecoilState(NetworkState.networkMode);
+
+  const setCurrentAtomoneNetwork = useSetRecoilState(NetworkState.currentAtomoneNetwork);
+
   const setCurrentAccount = useSetRecoilState(WalletState.currentAccount);
 
   useEffect(() => {
     initWallet();
     initNetworkMetainfos();
+    initAtomoneNetworkSelection();
   }, []);
+
+  async function initAtomoneNetworkSelection(): Promise<void> {
+    const storedMode = await chainService.getNetworkMode().catch(() => null);
+    const mode = storedMode === 'testnet' ? 'testnet' : 'mainnet';
+    setNetworkMode(mode);
+
+    const storedId = await chainService.getCurrentAtomoneNetworkId().catch(() => null);
+    const profiles = (ATOMONE_CHAIN_DATA as unknown as AtomoneNetworkMetainfo[]).map((network) => ({
+      ...network,
+      deleted: false,
+    }));
+    const wantsMainnet = mode === 'mainnet';
+
+    let selected: AtomoneNetworkMetainfo | null = null;
+    if (storedId) {
+      selected = profiles.find((network) => network.id === storedId) ?? null;
+    }
+    if (!selected || selected.isMainnet !== wantsMainnet) {
+      selected = profiles.find((network) => network.isMainnet === wantsMainnet) ?? null;
+    }
+    if (selected) {
+      setCurrentAtomoneNetwork(selected);
+    }
+  }
 
   useEffect(() => {
     if (wallet && networkMetainfos.length > 0 && tokenMetainfos.length > 0) {

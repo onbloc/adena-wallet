@@ -14,8 +14,15 @@ export async function fetchCosmosTokenBalances(
   cosmosBalanceService: CosmosBalanceService,
   chainRegistry: ChainRegistry,
   tokenRegistry: TokenRegistry,
+  currentAtomoneNetworkId: string | null,
 ): Promise<TokenBalanceType[]> {
-  const cosmosChains = chainRegistry.list().filter((profile) => profile.chainType === 'cosmos');
+  const cosmosChains = chainRegistry.list().filter((profile) => {
+    if (profile.chainType !== 'cosmos') return false;
+    if (profile.chainGroup === 'atomone' && currentAtomoneNetworkId) {
+      return profile.id === currentAtomoneNetworkId;
+    }
+    return true;
+  });
 
   const results = await Promise.all(
     cosmosChains.map(async (profile) => {

@@ -5,9 +5,6 @@ import styled from 'styled-components';
 
 import { Loading, SkeletonBoxStyle } from '@components/atoms';
 import { GhostButtons } from '@components/molecules';
-import { useLoadImages } from '@hooks/use-load-images';
-import { useNetwork } from '@hooks/use-network';
-import { useTokenBalance } from '@hooks/use-token-balance';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
@@ -44,46 +41,19 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
 
 const LoadingMain = (): ReactElement => {
   const [state] = useRecoilState(WalletState.state);
-  const { currentNetwork } = useNetwork();
-  const { failedNetwork } = useNetwork();
   const isApproveHardwarePath = useMatch(RoutePath.WebConnectLedger + '/*');
-  const { currentBalances } = useTokenBalance();
   const isNotMatch = useMatch('/approve/wallet/*');
   const isPopupMatch = useMatch('/popup/*');
-  const { isLoading: isLoadingImage } = useLoadImages();
 
   const loading = useMemo(() => {
     if (isApproveHardwarePath || isNotMatch || isPopupMatch) {
       return false;
     }
-    if (state === 'CREATE' || state === 'LOGIN') {
+    if (state === 'CREATE' || state === 'LOGIN' || state === 'FINISH') {
       return false;
     }
-    if (state === 'FINISH') {
-      // If `failedNetwork` is null, it is loading.
-      if (failedNetwork) {
-        return false;
-      }
-      if (failedNetwork === false) {
-        if (isLoadingImage) {
-          return true;
-        }
-
-        if (currentBalances.length > 0) {
-          return false;
-        }
-      }
-    }
     return true;
-  }, [
-    isPopupMatch,
-    state,
-    currentBalances,
-    failedNetwork,
-    currentNetwork.id,
-    isLoadingImage,
-    useMatch,
-  ]);
+  }, [isPopupMatch, state, isApproveHardwarePath, isNotMatch]);
 
   return loading ? (
     <Wrapper>
