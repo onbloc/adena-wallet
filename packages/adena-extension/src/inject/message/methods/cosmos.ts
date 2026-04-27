@@ -220,7 +220,7 @@ export const cosmosGetKey = async (
       return;
     }
 
-    const bech32Address = await currentAccount.resolveAddress(chain.bech32Prefix);
+    const bech32Address = await currentAccount.getAddress(chain.bech32Prefix);
     const { data: addressBytes } = fromBech32(bech32Address);
 
     // Cosmos/CosmJS consumers (e.g. SigningStargateClient.simulate) require

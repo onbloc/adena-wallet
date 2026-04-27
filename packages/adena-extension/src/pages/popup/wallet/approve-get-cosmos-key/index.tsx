@@ -95,7 +95,7 @@ const ApproveGetCosmosKeyContainer: React.FC = () => {
         // on the account object only needs the prefix — atomone/atone for now.
         // If additional chain groups are added, centralize the mapping.
         const bech32Prefix = chainId.startsWith('atomone') ? 'atone' : 'atone';
-        const bech32Address = await currentAccount.resolveAddress(bech32Prefix);
+        const bech32Address = await currentAccount.getAddress(bech32Prefix);
         const { data: addressBytes } = fromBech32(bech32Address);
 
         const compressedPubKey =
