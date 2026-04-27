@@ -1,30 +1,12 @@
 [
   {
-    "symbol": "AKKADIA",
-    "name": "Akkadia",
-    "description": "A living voxel world anchored on GNO.",
-    "logo": "/resources/apps/images/akkadia.svg",
-    "link": "https://akkadia.land/",
-    "display": true,
-    "order": 1
-  },
-  {
-    "symbol": "MEMBA",
-    "name": "Memba",
-    "description": "Hub for DAOs and multisig wallets.",
-    "logo": "/resources/apps/images/memba.svg",
-    "link": "https://memba.samourai.app/",
-    "display": true,
-    "order": 2
-  },
-  {
     "symbol": "GNOLAND",
     "name": "Gno.land",
     "description": "The official website of Gno.land.",
     "logo": "/resources/apps/images/gnoland.svg",
     "link": "https://gno.land",
     "display": true,
-    "order": 3
+    "order": 1
   },
   {
     "symbol": "PLAYGROUND",
@@ -33,7 +15,7 @@
     "logo": "/resources/apps/images/playground.svg",
     "link": "https://play.gno.land/",
     "display": true,
-    "order": 4
+    "order": 2
   },
   {
     "symbol": "GNODOCS",
@@ -42,7 +24,7 @@
     "logo": "/resources/apps/images/gnodocs.svg",
     "link": "https://docs.gno.land/",
     "display": true,
-    "order": 5
+    "order": 3
   },
   {
     "symbol": "GNOSWAP",
@@ -51,7 +33,7 @@
     "logo": "/resources/apps/images/gnoswap.svg",
     "link": "https://beta.gnoswap.io/",
     "display": true,
-    "order": 6
+    "order": 4
   },
   {
     "symbol": "GNOSTUDIO",
@@ -60,7 +42,7 @@
     "logo": "/resources/apps/images/gnostudio.svg",
     "link": "https://gno.studio/connect",
     "display": true,
-    "order": 7
+    "order": 5
   },
   {
     "symbol": "GNOSCAN",
@@ -68,6 +50,24 @@
     "description": "Making Gno on-chain data intuitive.",
     "logo": "/resources/apps/images/gnoscan.svg",
     "link": "https://gnoscan.io",
+    "display": true,
+    "order": 6
+  },
+  {
+    "symbol": "AKKADIA",
+    "name": "Akkadia",
+    "description": "A living voxel world anchored on Gno.land.",
+    "logo": "/resources/apps/images/akkadia.svg",
+    "link": "https://akkadia.land/",
+    "display": true,
+    "order": 7
+  },
+  {
+    "symbol": "MEMBA",
+    "name": "Memba",
+    "description": "Hub for DAOs and multisig wallets.",
+    "logo": "/resources/apps/images/memba.svg",
+    "link": "https://memba.samourai.app/",
     "display": true,
     "order": 8
   }
