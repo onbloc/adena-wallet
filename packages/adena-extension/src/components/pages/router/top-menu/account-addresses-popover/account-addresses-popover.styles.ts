@@ -8,7 +8,7 @@ export const PopoverWrapper = styled.div<{ $caretX: number; $positionY: number }
   transform: translateX(-50%);
   top: ${({ $positionY }): string => `${$positionY}px`};
   min-width: 220px;
-  background-color: ${getTheme('neutral', '_8')};
+  background-color: ${getTheme('neutral', '_9')};
   border-radius: 8px;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
   z-index: 99;
@@ -18,14 +18,14 @@ export const PopoverWrapper = styled.div<{ $caretX: number; $positionY: number }
   &::after {
     content: '';
     position: absolute;
-    top: -6px;
+    top: -12px;
     left: ${({ $caretX }): string => `${$caretX}px`};
     transform: translateX(-50%);
     width: 0;
     height: 0;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-bottom: 6px solid ${getTheme('neutral', '_8')};
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 12px solid ${getTheme('neutral', '_9')};
   }
 `;
 
@@ -58,7 +58,7 @@ export const ChainRow = styled.div`
   }
 
   .chain-name {
-    ${fonts.captionReg}
+    ${fonts.body3Reg}
     color: ${getTheme('neutral', '_1')};
   }
 
@@ -69,8 +69,8 @@ export const ChainRow = styled.div`
   }
 
   .address {
-    ${fonts.captionReg}
-    color: ${getTheme('neutral', '_3')};
+    ${fonts.body3Reg}
+    color: ${getTheme('neutral', 'a')};
     white-space: nowrap;
   }
 `;
