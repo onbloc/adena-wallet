@@ -10,18 +10,15 @@ import IconSend from '@assets/icon-send';
 import IconSign from '@assets/icon-sign';
 import { CHAIN_ICON_MAP, COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
 import { MainActionButton } from '@components/atoms';
-import IconThunder from '@components/atoms/icon/icon-assets/icon-thunder';
 import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
 import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
 import TokenList from '@components/pages/wallet-main/token-list/token-list';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useFaucet } from '@hooks/use-faucet';
 import { useLoadImages } from '@hooks/use-load-images';
 import { useNetwork } from '@hooks/use-network';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
-import { useToast } from '@hooks/use-toast';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { WalletState } from '@states';
@@ -76,8 +73,6 @@ export const WalletMain = (): JSX.Element => {
   const { mainTokenBalance, currentBalances } = useTokenBalance();
   const { refetchBalances } = useTokenBalance();
   const { updateAllTokenMetainfos, getTokenImage } = useTokenMetainfo();
-  const { isSupported: supportedFaucet, isLoading: isFaucetLoading, faucet } = useFaucet();
-  const { show } = useToast();
 
   const { addLoadingImages, completeImageLoading } = useLoadImages();
 
@@ -86,15 +81,6 @@ export const WalletMain = (): JSX.Element => {
 
     return !isAirgapAccount(currentAccount) && !isMultisigAccount(currentAccount);
   }, [currentAccount]);
-
-  const onClickFaucetButton = (): void => {
-    if (isFaucetLoading) {
-      return;
-    }
-    faucet().then((result) => {
-      show(result.message);
-    });
-  };
 
   const onClickDepositButton = (): void =>
     navigate(RoutePath.WalletSearch, { state: { type: 'deposit' } });
@@ -225,20 +211,11 @@ export const WalletMain = (): JSX.Element => {
       </div>
 
       <div className='main-button-wrapper'>
-        {supportedFaucet ? (
-          <MainActionButton
-            icon={<IconThunder />}
-            label='Faucet'
-            loading={isFaucetLoading}
-            onClick={onClickFaucetButton}
-          />
-        ) : (
-          <MainActionButton
-            icon={<IconDeposit />}
-            label='Deposit'
-            onClick={onClickDepositButton}
-          />
-        )}
+        <MainActionButton
+          icon={<IconDeposit />}
+          label='Deposit'
+          onClick={onClickDepositButton}
+        />
         <MainActionButton
           icon={<IconSend />}
           label={actionButtonText ?? ''}

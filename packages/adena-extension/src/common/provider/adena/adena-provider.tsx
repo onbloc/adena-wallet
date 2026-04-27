@@ -4,7 +4,6 @@ import { toCosmosNetworkProfile } from '@common/mapper/network-profile-mapper';
 import { useWindowSize } from '@hooks/use-window-size';
 import { ChainRepository } from '@repositories/common';
 import { TokenRepository } from '@repositories/common/token';
-import { FaucetRepository } from '@repositories/faucet/faucet';
 import {
   TransactionHistoryApiRepository,
   TransactionHistoryIndexerRepository,
@@ -17,7 +16,6 @@ import {
   WalletEstablishRepository,
   WalletRepository,
 } from '@repositories/wallet';
-import { FaucetService } from '@services/faucet';
 import { ChainService, TokenService } from '@services/resource';
 import {
   TransactionGasService,
@@ -62,7 +60,6 @@ export interface AdenaContextProps {
   tokenService: TokenService;
   transactionService: TransactionService;
   transactionHistoryService: TransactionHistoryService;
-  faucetService: FaucetService;
   transactionGasService: TransactionGasService | null;
   multisigService: MultisigService;
 }
@@ -214,10 +211,6 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return new MultisigService(walletService, gnoProvider);
   }, [walletService, gnoProvider]);
 
-  const faucetRepository = useMemo(() => new FaucetRepository(axios), [axiosInstance]);
-
-  const faucetService = useMemo(() => new FaucetService(faucetRepository), [faucetRepository]);
-
   useWindowSize(true);
 
   return (
@@ -237,7 +230,6 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
         tokenService,
         transactionService,
         transactionHistoryService,
-        faucetService,
         transactionGasService,
         multisigService,
       }}
