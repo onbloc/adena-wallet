@@ -19,7 +19,7 @@ import {
   LedgerKeyring,
   SignedCosmosTx,
   sha256,
-  signCosmos,
+  signCosmosAmino,
   Wallet,
 } from 'adena-module';
 
@@ -346,14 +346,17 @@ export class TransactionService {
       throw new Error('CosmosProvider not injected');
     }
     this.resolveCosmosProfile(document.chainId);
-    const signMode = this.resolvePreferredSignMode(document.chainId);
+    // PR #822 (ADN-752) introduces a unified `signCosmos` dispatcher that
+    // routes by `chain.signing.preferred`. Until #822 lands, hardcode the
+    // AMINO pipeline — the Cosmos Ledger app only renders AMINO JSON
+    // anyway, so AMINO is the only mode that produces a usable display
+    // for Ledger users.
     const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
-    return signCosmos({
+    return signCosmosAmino({
       document,
       keyring,
       cosmosProvider: this.cosmosProvider,
       hdPath: account.hdPath,
-      signMode,
     });
   };
 
