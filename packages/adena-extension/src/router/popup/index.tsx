@@ -18,6 +18,7 @@ import { SecurityPrivacy } from '@pages/popup/certify/security-privacy';
 import { Settings } from '@pages/popup/certify/settings';
 
 import AccountDetailsPage from '@pages/popup/wallet/account-details';
+import Accounts from '@pages/popup/wallet/accounts';
 import AddCustomNetworkPage from '@pages/popup/wallet/add-custom-network';
 import ApproveAddingNetworkPage from '@pages/popup/wallet/approve-adding-network';
 import ApproveChangingNetworkPage from '@pages/popup/wallet/approve-changing-network';
@@ -181,6 +182,7 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.AddCustomNetwork} element={<AddCustomNetworkPage />} />
         <Route path={RoutePath.EditCustomNetwork} element={<EditCustomNetworkPage />} />
         <Route path={RoutePath.ChangeNetwork} element={<ChangeNetwork />} />
+        <Route path={RoutePath.Accounts} element={<Accounts />} />
         <Route path={RoutePath.AccountDetails} element={<AccountDetailsPage />} />
         <Route path={RoutePath.AddressBook} element={<AddressBook />} />
         <Route path={RoutePath.AddAddress} element={<AddAddress />} />

@@ -53,7 +53,7 @@ export const Navigation = (): JSX.Element => {
   const navigationItems = useMemo(
     () => [
       {
-        iconName: 'iconWallet',
+        iconName: 'iconHome',
         active: !!matchedWallet || !!matchedTokenDetails,
         routingAddress: RoutePath.Wallet,
       },

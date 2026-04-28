@@ -9,31 +9,16 @@ export const PopoverWrapper = styled.div<{ $caretX: number; $positionY: number }
   top: ${({ $positionY }): string => `${$positionY}px`};
   min-width: 220px;
   background-color: ${getTheme('neutral', '_8')};
-  border: 1px solid ${getTheme('neutral', '_7')};
   border-radius: 8px;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
   z-index: 99;
   overflow: visible;
 
-  /* Caret border (outer triangle) */
-  &::before {
-    content: '';
-    position: absolute;
-    top: -7px;
-    left: ${({ $caretX }): string => `${$caretX}px`};
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 7px solid transparent;
-    border-right: 7px solid transparent;
-    border-bottom: 7px solid ${getTheme('neutral', '_7')};
-  }
-
-  /* Caret fill (inner triangle, same as background) */
+  /* Caret fill */
   &::after {
     content: '';
     position: absolute;
-    top: -5px;
+    top: -6px;
     left: ${({ $caretX }): string => `${$caretX}px`};
     transform: translateX(-50%);
     width: 0;
@@ -47,13 +32,8 @@ export const PopoverWrapper = styled.div<{ $caretX: number; $positionY: number }
 export const ChainRow = styled.div`
   ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })};
   padding: 10px 12px;
-  border-bottom: 1px solid ${getTheme('neutral', '_7')};
   gap: 8px;
   transition: color 0.15s ease;
-
-  &:last-child {
-    border-bottom: 0;
-  }
 
   &:hover {
     .address {

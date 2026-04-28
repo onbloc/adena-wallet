@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import {
@@ -16,9 +16,9 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
 import { useNetwork } from '@hooks/use-network';
 import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
-import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
 import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import mixins from '@styles/mixins';
+import { RoutePath } from '@types';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -63,12 +63,13 @@ const StyledCopyIconButton = styled.button`
 `;
 
 export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
+  const navigate = useNavigate();
   const { establishService } = useAdenaContext();
-  const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
   const [protocol, setProtocol] = useState('');
   const { currentAccount } = useCurrentAccount();
-  const toggleMenuHandler = (): void => setOpen(!open);
+  const goToAccounts = (): void => navigate(RoutePath.Accounts);
+  const goToSettings = (): void => navigate(RoutePath.Setting);
   const [isEstablish, setIsEstablish] = useState(false);
   const location = useLocation();
   const [currentAccountName, setCurrentAccountName] = useState('');
@@ -179,10 +180,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     });
   };
 
-  const networkTooltip = ((): string => {
-    const host = hostname && hostname.includes('.') ? hostname : 'chrome-extension';
-    return `You are connected to ${host}`;
-  })();
+  const displayHostname = hostname && hostname.includes('.') ? hostname : 'chrome-extension';
 
   return !disabled ? (
     <Wrapper>
@@ -190,7 +188,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
         <StyledSideWrapper>
           <AccountSelectorButton
             name={formatNickname(currentAccountName, 12)}
-            onClick={toggleMenuHandler}
+            onClick={goToAccounts}
           />
           <StyledCopyIconButton
             ref={copyButtonRef}
@@ -203,11 +201,10 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
           </StyledCopyIconButton>
         </StyledSideWrapper>
         <StyledSideWrapper>
-          <NetworkIconButton isConnected={isEstablish} tooltipText={networkTooltip} />
-          <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
+          <NetworkIconButton isConnected={isEstablish} hostname={displayHostname} />
+          <HamburgerMenuBtn type='button' onClick={goToSettings} />
         </StyledSideWrapper>
       </Header>
-      <SideMenuLayout open={open} setOpen={setOpen} />
       <AccountAddressesPopover
         open={popoverOpen}
         positionX={popoverX}
