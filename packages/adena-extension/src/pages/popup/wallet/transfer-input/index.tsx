@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { isNativeTokenModel } from '@common/validation/validation-token';
+import { isGRC20TokenModel } from '@common/validation/validation-token';
 import {
   CHAIN_DISPLAY_NAME,
   chainOptionsFromRegistry,
@@ -250,7 +250,7 @@ const TransferInputContainer: React.FC = () => {
     }
     const validAddress =
       addressBookInput.validateAddressBookInput() &&
-      (isNativeTokenModel(tokenMetainfo) || (await addressBookInput.validateEqualAddress()));
+      (!isGRC20TokenModel(tokenMetainfo) || (await addressBookInput.validateEqualAddress()));
     const validBalance = balanceInput.validateBalanceInput();
     if (validAddress && validBalance) {
       saveHistoryData();

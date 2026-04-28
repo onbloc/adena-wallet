@@ -5,8 +5,7 @@ export const TransferSummaryAddressWrapper = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 0 18px;
-  ${fonts.body1Reg};
+  ${fonts.body2Reg};
   background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
 
@@ -17,6 +16,7 @@ export const TransferSummaryAddressWrapper = styled.div`
     align-items: center;
     width: 100%;
     height: 46px;
+    padding: 0 18px;
     border-top: 1px solid ${getTheme('neutral', '_6')};
   }
 
@@ -41,15 +41,10 @@ export const TransferSummaryAddressWrapper = styled.div`
     min-height: 46px;
     height: auto;
     align-items: flex-start;
-    padding: 11px 0;
-  }
-
-  .memo-row .label {
-    line-height: 24px;
+    padding: 12px 18px;
   }
 
   .memo-row .memo-value {
-    line-height: 24px;
     word-break: break-word;
     white-space: pre-wrap;
   }
