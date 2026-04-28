@@ -153,7 +153,7 @@ export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolea
     background-color: rgba(239, 45, 33, 0.08);
     border: 1px solid ${getTheme('red', '_5')};
     margin-bottom: 8px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 500;
     font-size: 13px;
     line-height: 20px;

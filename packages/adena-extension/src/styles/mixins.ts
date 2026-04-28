@@ -16,6 +16,7 @@ export type MixinsType = {
   posTopCenterRight: (right?: string) => CSSProp;
   posTopCenterLeft: (left?: string) => CSSProp;
   posTopLeft: (top?: string) => CSSProp;
+  tabularNums: () => CSSProp;
 };
 
 const mixins: MixinsType = {
@@ -47,6 +48,9 @@ const mixins: MixinsType = {
     position: absolute;
     top: ${top};
     left: 0px;
+  `,
+  tabularNums: () => css`
+    font-variant-numeric: tabular-nums;
   `,
 } as const;
 
