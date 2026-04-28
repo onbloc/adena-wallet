@@ -1,3 +1,4 @@
+import { Secp256k1 } from '@cosmjs/crypto';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 import { PubKeySecp256k1 } from '@gnolang/tm2-js-client';
 
@@ -56,5 +57,31 @@ describe('documentToDefaultTx', () => {
 
     // Signature stays empty — simulate does not verify the signature itself.
     expect(sig.signature).toEqual(new Uint8Array());
+  });
+
+  // Regression guard: HD wallet accounts store the 65-byte uncompressed form.
+  // Forwarding it as-is breaks gno.land amino-decode (`/std.TxDecodeError`)
+  // — see ADN-755 reintroduction after the ADN-750 fix.
+  it('compresses a 65-byte uncompressed pubkey before wrapping', async () => {
+    // Make a real keypair so the 65-byte input is on-curve and compresses
+    // deterministically — Secp256k1.compressPubkey rejects garbage bytes.
+    const priv = new Uint8Array(32).fill(0x11);
+    const keypair = await Secp256k1.makeKeypair(priv);
+    const uncompressed = Secp256k1.uncompressPubkey(keypair.pubkey);
+    expect(uncompressed.length).toBe(65);
+
+    const tx = documentToDefaultTx(makeDocument(), uncompressed);
+
+    const sig = tx.signatures[0];
+    expect(sig.pub_key?.type_url).toBe('/tm.PubKeySecp256k1');
+
+    const expectedCompressed = Secp256k1.compressPubkey(uncompressed);
+    expect(expectedCompressed.length).toBe(33);
+    const expectedWrapped = PubKeySecp256k1.encode({
+      key: expectedCompressed,
+    }).finish();
+    expect(Buffer.from(sig.pub_key!.value).equals(Buffer.from(expectedWrapped))).toBe(
+      true,
+    );
   });
 });

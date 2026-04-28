@@ -23,20 +23,13 @@ import {
   sha256,
   signCosmosAmino,
   Wallet,
+  compressPubkeyIfNeeded,
 } from 'adena-module';
 import type { AminoSignResponse, StdSignDoc } from '@cosmjs/amino';
 import { encodeSecp256k1Pubkey, serializeSignDoc } from '@cosmjs/amino';
-import { Secp256k1 } from '@cosmjs/crypto';
 import type { DirectSignResponse } from '@cosmjs/proto-signing';
 import { makeSignBytes } from '@cosmjs/proto-signing';
 import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
-
-// Cosmos/Keplr conventions use 33-byte compressed secp256k1 pubkeys, but HD
-// wallet accounts in this codebase store the 65-byte uncompressed form
-// (tm2-js-client default). Normalize here so `encodeSecp256k1Pubkey` accepts
-// the result.
-const toCompressedPubkey = (pubkey: Uint8Array): Uint8Array =>
-  pubkey.length === 33 ? pubkey : Secp256k1.compressPubkey(pubkey);
 
 import { GasToken } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
@@ -319,7 +312,7 @@ export class TransactionService {
     return {
       signed: signDoc,
       signature: {
-        pub_key: encodeSecp256k1Pubkey(toCompressedPubkey(account.publicKey)),
+        pub_key: encodeSecp256k1Pubkey(compressPubkeyIfNeeded(account.publicKey)),
         signature: Buffer.from(signature).toString('base64'),
       },
     };
@@ -344,7 +337,7 @@ export class TransactionService {
     return {
       signed: signDoc,
       signature: {
-        pub_key: encodeSecp256k1Pubkey(toCompressedPubkey(account.publicKey)),
+        pub_key: encodeSecp256k1Pubkey(compressPubkeyIfNeeded(account.publicKey)),
         signature: Buffer.from(signature).toString('base64'),
       },
     };
@@ -432,7 +425,7 @@ export class TransactionService {
     return {
       signed: signDoc,
       signature: {
-        pub_key: encodeSecp256k1Pubkey(toCompressedPubkey(account.publicKey)),
+        pub_key: encodeSecp256k1Pubkey(compressPubkeyIfNeeded(account.publicKey)),
         signature: Buffer.from(signature).toString('base64'),
       },
     };

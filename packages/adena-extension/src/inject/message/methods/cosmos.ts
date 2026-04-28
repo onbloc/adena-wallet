@@ -3,8 +3,8 @@ import {
   WalletResponseRejectType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
-import { Secp256k1 } from '@cosmjs/crypto';
 import { fromBech32 } from '@cosmjs/encoding';
+import { compressPubkeyIfNeeded } from 'adena-module';
 
 import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
 import { bytesToBase64 } from '@common/utils/encoding-util';
@@ -228,10 +228,7 @@ export const cosmosGetKey = async (
     // the 65-byte uncompressed form. Compress at the wire boundary so every
     // downstream surface (flat getKey, OfflineSigner, third-party CosmJS
     // clients) sees the canonical format.
-    const compressedPubKey =
-      currentAccount.publicKey.length === 65
-        ? Secp256k1.compressPubkey(currentAccount.publicKey)
-        : currentAccount.publicKey;
+    const compressedPubKey = compressPubkeyIfNeeded(currentAccount.publicKey);
 
     // Binary fields are emitted as base64 because Uint8Array does not survive
     // `chrome.runtime.sendMessage`'s JSON encoding. Stage 4's inject wrapper

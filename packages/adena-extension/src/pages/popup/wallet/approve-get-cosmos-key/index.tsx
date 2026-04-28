@@ -2,8 +2,8 @@ import {
   WalletResponseFailureType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
-import { Secp256k1 } from '@cosmjs/crypto';
 import { fromBech32 } from '@cosmjs/encoding';
+import { compressPubkeyIfNeeded } from 'adena-module';
 import React, { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
@@ -98,10 +98,7 @@ const ApproveGetCosmosKeyContainer: React.FC = () => {
         const bech32Address = await currentAccount.getAddress(bech32Prefix);
         const { data: addressBytes } = fromBech32(bech32Address);
 
-        const compressedPubKey =
-          currentAccount.publicKey.length === 65
-            ? Secp256k1.compressPubkey(currentAccount.publicKey)
-            : currentAccount.publicKey;
+        const compressedPubKey = compressPubkeyIfNeeded(currentAccount.publicKey);
 
         chrome.runtime.sendMessage(
           createCosmosResponse(
