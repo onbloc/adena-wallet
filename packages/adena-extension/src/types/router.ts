@@ -53,6 +53,7 @@ export enum RoutePath {
   SignMultisigDocument = 'approve/wallet/sign-multisig-document',
   BroadcastMultisigTransaction = 'approve/wallet/broadcast-multisig-transaction',
   ApproveEstablish = '/approve/wallet/establish',
+  ApproveEstablishCosmos = '/approve/wallet/establish-cosmos',
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',
   AccountDetails = '/wallet/accounts/:accountId',
@@ -165,6 +166,7 @@ export type RouteParams = {
     requestData?: InjectionMessage;
   };
   [RoutePath.ApproveEstablish]: null;
+  [RoutePath.ApproveEstablishCosmos]: null;
   [RoutePath.ApproveChangingNetwork]: null;
   [RoutePath.ApproveAddingNetwork]: null;
   [RoutePath.AccountDetails]: null;

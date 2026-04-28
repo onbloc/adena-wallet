@@ -45,7 +45,7 @@ export class InjectCore {
 
   private addressBookRepository = new WalletAddressRepository(this.localStorage);
 
-  private chainRegistry: ChainRegistry = createChainRegistry();
+  public chainRegistry: ChainRegistry = createChainRegistry();
 
   private chainRepository = new ChainRepository(this.localStorage, this.axiosInstance);
 

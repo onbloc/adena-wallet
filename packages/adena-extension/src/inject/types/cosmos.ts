@@ -34,14 +34,26 @@ export interface SerializedDirectSignResponse {
   signature: StdSignature;
 }
 
-// Keplr-style account descriptor returned by `getKey`. Binary fields stay as
-// Uint8Array at the executor surface; the inject.ts wrapper (Stage 4)
-// reconstitutes them from the serialized wire payload.
+// Keplr-style account descriptor surfaced to dApps. Binary fields are
+// Uint8Array at the `window.adena.cosmos` surface; the inject.ts wrapper
+// reconstitutes them from the `SerializedCosmosKey` wire payload.
 export interface CosmosKey {
   name: string;
   algo: string;
   pubKey: Uint8Array;
   address: Uint8Array;
+  bech32Address: string;
+  isNanoLedger: boolean;
+}
+
+// Wire-level counterpart of `CosmosKey`. Binary fields are base64 strings
+// because `chrome.runtime.sendMessage` applies JSON encoding between the
+// background handler and the content script, dropping Uint8Array fidelity.
+export interface SerializedCosmosKey {
+  name: string;
+  algo: string;
+  pubKey: string;
+  address: string;
   bech32Address: string;
   isNanoLedger: boolean;
 }
@@ -73,7 +85,7 @@ export interface SendCosmosTxParams {
 }
 
 export type EnableCosmosResponse = AdenaResponse<void>;
-export type GetCosmosKeyResponse = AdenaResponse<CosmosKey>;
+export type GetCosmosKeyResponse = AdenaResponse<SerializedCosmosKey>;
 export type SignCosmosAminoResponse = AdenaResponse<AminoSignResponse>;
 export type SignCosmosDirectResponse = AdenaResponse<SerializedDirectSignResponse>;
 export type SendCosmosTxResponse = AdenaResponse<string>;

@@ -22,6 +22,7 @@ import AddCustomNetworkPage from '@pages/popup/wallet/add-custom-network';
 import ApproveAddingNetworkPage from '@pages/popup/wallet/approve-adding-network';
 import ApproveChangingNetworkPage from '@pages/popup/wallet/approve-changing-network';
 import ApproveEstablish from '@pages/popup/wallet/approve-establish';
+import ApproveEstablishCosmos from '@pages/popup/wallet/approve-establish-cosmos';
 import { ApproveLogin } from '@pages/popup/wallet/approve-login';
 import ApproveSign from '@pages/popup/wallet/approve-sign';
 import ApproveSignLedgerLoading from '@pages/popup/wallet/approve-sign-ledger-loading';
@@ -164,6 +165,7 @@ export const PopupRouter = (): JSX.Element => {
         />
         <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
+        <Route path={RoutePath.ApproveEstablishCosmos} element={<ApproveEstablishCosmos />} />
         <Route path={RoutePath.ApproveChangingNetwork} element={<ApproveChangingNetworkPage />} />
         <Route path={RoutePath.ApproveAddingNetwork} element={<ApproveAddingNetworkPage />} />
         <Route path={RoutePath.ConnectedApps} element={<ConnectedApps />} />

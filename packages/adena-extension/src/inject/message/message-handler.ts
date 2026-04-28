@@ -68,7 +68,10 @@ export class MessageHandler {
       await removePopups();
     }
 
-    switch (message.type) {
+    // Cast widens to `string` so extension-local Cosmos identifiers (ENABLE_COSMOS
+    // etc., see plans/ADN-756/stage-02b-sdk-update.md) are recognized until the
+    // SDK enum catches up.
+    switch (message.type as string) {
       case 'DO_CONTRACT':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
@@ -182,6 +185,21 @@ export class MessageHandler {
           .catch((e) => {
             console.log(e, 'e');
           });
+        break;
+      case 'ENABLE_COSMOS':
+        HandlerMethod.cosmosEnable(core, message, sendResponse);
+        break;
+      case 'GET_COSMOS_KEY':
+        HandlerMethod.cosmosGetKey(core, message, sendResponse);
+        break;
+      case 'SIGN_COSMOS_AMINO':
+        HandlerMethod.cosmosSignAmino(core, message, sendResponse);
+        break;
+      case 'SIGN_COSMOS_DIRECT':
+        HandlerMethod.cosmosSignDirect(core, message, sendResponse);
+        break;
+      case 'SEND_COSMOS_TX':
+        HandlerMethod.cosmosSendTx(core, message, sendResponse);
         break;
       default:
         break;
