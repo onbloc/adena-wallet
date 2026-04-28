@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
 import { fetchHealth } from '@common/utils/fetch-utils';
 import { EventMessage } from '@inject/message';
@@ -23,6 +23,11 @@ interface AddNetworkExtra {
   restUrl?: string;
 }
 
+export interface UnresponsiveNetworkInfo {
+  id: string;
+  name: string;
+}
+
 interface NetworkResponse {
   networks: NetworkMetainfo[];
   atomoneNetworks: AtomoneNetworkMetainfo[];
@@ -32,6 +37,7 @@ interface NetworkResponse {
   selectedProfileByChainGroup: Record<string, string>;
   modified: boolean;
   failedNetwork: boolean | null;
+  unresponsiveNetworks: UnresponsiveNetworkInfo[];
   scannerParameters: { [key in string]: string } | null;
   getDefaultNetworkInfo: (networkId: string) => NetworkMetainfo | null;
   checkNetworkState: () => Promise<void>;
@@ -85,6 +91,25 @@ export const useNetwork = (): NetworkResponse => {
     },
     { keepPreviousData: true },
   );
+
+  const cosmosUnresponsiveIds = useRecoilValue(NetworkState.cosmosUnresponsiveNetworkIds);
+
+  const unresponsiveNetworks = useMemo<UnresponsiveNetworkInfo[]>(() => {
+    const result: UnresponsiveNetworkInfo[] = [];
+    if (failedNetwork === true && currentGnoNetwork) {
+      result.push({
+        id: currentGnoNetwork.id,
+        name: currentGnoNetwork.chainName ?? currentGnoNetwork.networkName,
+      });
+    }
+    for (const id of cosmosUnresponsiveIds) {
+      const net = atomoneNetworks.find((current) => current.id === id);
+      if (net) {
+        result.push({ id, name: net.chainName ?? net.networkName });
+      }
+    }
+    return result;
+  }, [failedNetwork, currentGnoNetwork, cosmosUnresponsiveIds, atomoneNetworks]);
 
   const scannerParameters: { [key in string]: string } | null = useMemo(() => {
     if (!currentGnoNetwork) {
@@ -382,6 +407,7 @@ export const useNetwork = (): NetworkResponse => {
     selectedProfileByChainGroup,
     modified,
     failedNetwork,
+    unresponsiveNetworks,
     scannerParameters,
     getDefaultNetworkInfo,
     checkNetworkState,
