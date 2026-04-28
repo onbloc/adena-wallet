@@ -35,6 +35,7 @@ export const useTokenBalance = (): {
   const { isFetched: isFetchedGRC20Tokens } = useGRC20Tokens();
   const {
     currentTokenMetainfos: tokenMetainfos,
+    tokenMetainfos: allTokenMetainfos,
     tokenLogoMap,
     updateTokenMetainfos,
     getTokenAmount,
@@ -197,9 +198,22 @@ export const useTokenBalance = (): {
         denom: '',
       },
     }));
-    const cosmosTokenBalances = balances.filter((b) => b.type === 'cosmos-native');
+    // Apply the persisted `display` flag from metainfos to cosmos balances.
+    // Defaults to `true` while the seed effect in useTokenMetainfo is still
+    // in-flight, so newly-discovered cosmos tokens stay visible.
+    const cosmosTokenBalances = balances
+      .filter((b) => b.type === 'cosmos-native')
+      .map((b) => {
+        const meta = allTokenMetainfos.find(
+          (m) => m.tokenId === b.tokenId && m.networkId === b.networkId,
+        );
+        return {
+          ...b,
+          display: meta?.display ?? true,
+        };
+      });
     return [...gnoTokenBalances, ...cosmosTokenBalances];
-  }, [balances, tokenMetainfos]);
+  }, [balances, tokenMetainfos, allTokenMetainfos]);
 
   const mainTokenBalance = useMemo((): Amount | null => {
     if (nativeToken === null) {
@@ -219,8 +233,15 @@ export const useTokenBalance = (): {
     token: TokenModel,
     activated: boolean,
   ): Promise<void> {
-    const changedTokenInfos: TokenModel[] = tokenMetainfos.map((tokenMetainfo) => {
-      if (token.tokenId === tokenMetainfo.tokenId) {
+    // Iterate the full account metainfos (not the network-filtered alias) so
+    // that toggling a token does not wipe entries from other networks. Match
+    // by both tokenId and networkId to disambiguate same-symbol tokens that
+    // exist on multiple chains (e.g. ATONE on mainnet vs testnet).
+    const changedTokenInfos: TokenModel[] = allTokenMetainfos.map((tokenMetainfo) => {
+      if (
+        token.tokenId === tokenMetainfo.tokenId &&
+        token.networkId === tokenMetainfo.networkId
+      ) {
         return {
           ...tokenMetainfo,
           display: activated,

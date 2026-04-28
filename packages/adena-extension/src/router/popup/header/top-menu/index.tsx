@@ -23,7 +23,7 @@ import { RoutePath } from '@types';
 const Wrapper = styled.div`
   width: 100%;
   height: 100%;
-  padding: 0px 20px 0px 12px;
+  padding: 0px 20px;
   border-bottom: 1px solid ${getTheme('neutral', '_7')};
 `;
 
@@ -33,13 +33,21 @@ const Header = styled.div`
   height: 100%;
 `;
 
-const StyledSideWrapper = styled.div`
+const StyledLeftSideWrapper = styled.div`
   ${mixins.flex({ direction: 'row', align: 'center', justify: 'flex-start' })};
   gap: 8px;
   height: 100%;
 `;
 
-const StyledCopyIconButton = styled.button`
+const StyledRightSideWrapper = styled.div`
+  ${mixins.flex({ direction: 'row', align: 'center', justify: 'flex-start' })};
+  gap: 12px;
+  height: 100%;
+`;
+
+const StyledCopyIconButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isActive',
+})<{ isActive?: boolean }>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -49,11 +57,11 @@ const StyledCopyIconButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: ${getTheme('neutral', '_3')};
+  color: ${({ isActive, theme }): string => (isActive ? theme.neutral._1 : theme.neutral.a)};
   flex-shrink: 0;
 
   &:hover {
-    color: ${getTheme('neutral', 'a')};
+    color: ${getTheme('neutral', '_1')};
   }
 
   svg {
@@ -110,7 +118,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
       const iconCenterX = rect.left + rect.width / 2;
       const popoverLeft = (window.innerWidth - POPOVER_WIDTH) / 2;
       setPopoverX(iconCenterX - popoverLeft);
-      setPopoverY(rect.bottom + 4);
+      setPopoverY(rect.bottom + 16);
     }
     setPopoverOpen(true);
   }, [cancelClose]);
@@ -185,7 +193,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   return !disabled ? (
     <Wrapper>
       <Header>
-        <StyledSideWrapper>
+        <StyledLeftSideWrapper>
           <AccountSelectorButton
             name={formatNickname(currentAccountName, 12)}
             onClick={goToAccounts}
@@ -193,17 +201,18 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
           <StyledCopyIconButton
             ref={copyButtonRef}
             type='button'
+            isActive={popoverOpen}
             onMouseEnter={handleCopyIconMouseEnter}
             onMouseLeave={handleCopyIconMouseLeave}
             aria-label='Copy address'
           >
             <IconCopy />
           </StyledCopyIconButton>
-        </StyledSideWrapper>
-        <StyledSideWrapper>
+        </StyledLeftSideWrapper>
+        <StyledRightSideWrapper>
           <NetworkIconButton isConnected={isEstablish} hostname={displayHostname} />
           <HamburgerMenuBtn type='button' onClick={goToSettings} />
-        </StyledSideWrapper>
+        </StyledRightSideWrapper>
       </Header>
       <AccountAddressesPopover
         open={popoverOpen}

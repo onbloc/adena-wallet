@@ -39,8 +39,9 @@ export const SideMenuAccountItemWrapper = styled.div`
         cursor: pointer;
 
         .address {
-          ${fonts.captionReg}
-          color: ${getTheme('neutral', '_5')};
+          ${fonts.body3Reg}
+          line-height: 18px;
+          color: ${getTheme('neutral', 'a')};
           transition: color 0.2s ease;
         }
 
@@ -55,7 +56,7 @@ export const SideMenuAccountItemWrapper = styled.div`
 
           svg path {
             transition: stroke 0.2s ease;
-            stroke: ${getTheme('neutral', '_5')};
+            stroke: ${getTheme('neutral', 'a')};
           }
         }
 

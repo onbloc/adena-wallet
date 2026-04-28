@@ -121,7 +121,7 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
         <div className='address-wrapper'>
           <span className='name'>{displayName}</span>
           <div className='address-copy' onClick={onClickCopy}>
-            <span className='address'>{formatAddress(address, 4)}</span>
+            <span className='address'>{formatAddress(address, 6)}</span>
             <span className='copy-icon'>
               {copied ? <IconCopyCheck /> : <IconCopy />}
             </span>

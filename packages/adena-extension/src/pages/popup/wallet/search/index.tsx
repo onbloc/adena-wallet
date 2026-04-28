@@ -127,6 +127,7 @@ export const WalletSearch = (): JSX.Element => {
       </SearchBox>
       <DataListWrap>
         {currentBalances
+          .filter((balance) => balance.display)
           .filter((balance) => {
             return (
               searchTextFilter(balance.name ?? '', searchText) ||

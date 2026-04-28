@@ -75,7 +75,13 @@ export const IconButtonShell = styled.div`
   height: 28px;
   border-radius: 50%;
   background-color: ${getTheme('neutral', '_6')};
+  cursor: pointer;
   transition: background-color 0.15s ease;
+
+  && svg path {
+    transition: stroke 0.15s ease;
+    stroke: ${getTheme('neutral', '_1')};
+  }
 
   &:hover {
     background-color: ${getTheme('neutral', '_5')};
@@ -95,15 +101,11 @@ export const QRIconButton = styled.button`
 
   svg path {
     transition: stroke 0.15s ease;
-    stroke: ${getTheme('neutral', 'a')};
+    stroke: ${getTheme('neutral', '_1')};
   }
 
   &:hover {
     background-color: ${getTheme('neutral', '_5')};
-
-    svg path {
-      stroke: ${getTheme('neutral', '_1')};
-    }
   }
 `;
 

@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import { CHAIN_ICON_BY_GROUP } from '@assets/icons/cosmos-icons';
 import IconChevronDown from '@assets/icon-chevron-down';
-import { useAdenaContext } from '@hooks/use-context';
+import { ChainRegistry } from 'adena-module';
 import { fonts, getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
 
@@ -12,18 +12,44 @@ export const CHAIN_DISPLAY_NAME: Record<string, string> = {
   atomone: 'AtomOne',
 };
 
-interface ChainOption {
+export interface ChainOption {
   chainGroup: string;
   name: string;
   icon?: string;
 }
 
+// Build ChainOption[] from a ChainRegistry. Hoisted out of the component
+// so callers that already hold a registry (via `useAdenaContext`) can
+// compute options once and pass them in. Keeping the component pure
+// avoids pulling `@hooks/use-context` (and its transitive SDK imports)
+// into every test that imports a parent like `transfer-input`.
+export function chainOptionsFromRegistry(
+  chainRegistry: ChainRegistry,
+  excludeChainGroups?: string[],
+): ChainOption[] {
+  const excluded = new Set(excludeChainGroups ?? []);
+  const seen = new Set<string>();
+  return chainRegistry
+    .list()
+    .filter((profile) => {
+      if (seen.has(profile.chainGroup)) return false;
+      seen.add(profile.chainGroup);
+      if (excluded.has(profile.chainGroup)) return false;
+      return true;
+    })
+    .map((profile) => ({
+      chainGroup: profile.chainGroup,
+      name: CHAIN_DISPLAY_NAME[profile.chainGroup] ?? profile.displayName,
+      icon: CHAIN_ICON_BY_GROUP[profile.chainGroup] ?? profile.chainIconUrl,
+    }));
+}
+
 interface ChainDropdownProps {
   value: string;
   onChange: (chainGroup: string) => void;
+  options: ChainOption[];
   disabled?: boolean;
   placeholder?: string;
-  excludeChainGroups?: string[];
 }
 
 const Wrapper = styled.div`
@@ -114,30 +140,11 @@ const MenuItem = styled.li`
 export const ChainDropdown: React.FC<ChainDropdownProps> = ({
   value,
   onChange,
+  options,
   disabled,
   placeholder = 'Chain',
-  excludeChainGroups,
 }) => {
-  const { chainRegistry } = useAdenaContext();
   const [opened, setOpened] = useState(false);
-
-  const options: ChainOption[] = useMemo(() => {
-    const excluded = new Set(excludeChainGroups ?? []);
-    const seen = new Set<string>();
-    return chainRegistry
-      .list()
-      .filter((profile) => {
-        if (seen.has(profile.chainGroup)) return false;
-        seen.add(profile.chainGroup);
-        if (excluded.has(profile.chainGroup)) return false;
-        return true;
-      })
-      .map((profile) => ({
-        chainGroup: profile.chainGroup,
-        name: CHAIN_DISPLAY_NAME[profile.chainGroup] ?? profile.displayName,
-        icon: CHAIN_ICON_BY_GROUP[profile.chainGroup] ?? profile.chainIconUrl,
-      }));
-  }, [chainRegistry, excludeChainGroups]);
 
   const selected = useMemo(
     () => options.find((o) => o.chainGroup === value),

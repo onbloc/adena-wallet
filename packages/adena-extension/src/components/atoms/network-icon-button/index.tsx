@@ -12,13 +12,14 @@ interface NetworkIconButtonProps {
 const StyledContainer = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== 'isConnected',
 })<{ isConnected: boolean }>`
-  display: ${({ isConnected }): string => (isConnected ? 'inline-flex' : 'none')};
+  display: inline-flex;
   position: relative;
   align-items: center;
   justify-content: center;
   width: 26px;
   height: 26px;
-  color: ${getTheme('neutral', '_1')};
+  color: ${({ isConnected, theme }): string =>
+    isConnected ? theme.neutral._1 : theme.neutral.a};
   cursor: default;
 
   &:hover > .network-tooltip {
@@ -60,11 +61,14 @@ export const NetworkIconButton: React.FC<NetworkIconButtonProps> = ({
   isConnected,
   hostname,
 }) => (
-  <StyledContainer isConnected={isConnected} aria-label={`Connected to ${hostname}`}>
+  <StyledContainer
+    isConnected={isConnected}
+    aria-label={isConnected ? `Connected to ${hostname}` : `Not connected to ${hostname}`}
+  >
     <IconGlobe />
     <StyledTooltip className='network-tooltip'>
       <span className='hostname'>{hostname}</span>
-      <span className='status'>Connected</span>
+      <span className='status'>{isConnected ? 'Connected' : 'Not connected'}</span>
     </StyledTooltip>
   </StyledContainer>
 );
