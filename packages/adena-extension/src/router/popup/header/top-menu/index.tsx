@@ -17,6 +17,7 @@ import { useAccountName } from '@hooks/use-account-name';
 import { useNetwork } from '@hooks/use-network';
 import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
 import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
+import UnresponsiveNetworksIndicator from '@router/popup/header/unresponsive-networks-indicator';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
 
@@ -82,7 +83,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const location = useLocation();
   const [currentAccountName, setCurrentAccountName] = useState('');
   const { accountNames } = useAccountName();
-  const { currentNetwork } = useNetwork();
+  const { currentNetwork, unresponsiveNetworks } = useNetwork();
 
   const copyButtonRef = useRef<HTMLButtonElement>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -210,6 +211,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
           </StyledCopyIconButton>
         </StyledLeftSideWrapper>
         <StyledRightSideWrapper>
+          <UnresponsiveNetworksIndicator networks={unresponsiveNetworks} />
           <NetworkIconButton isConnected={isEstablish} hostname={displayHostname} />
           <HamburgerMenuBtn type='button' onClick={goToSettings} />
         </StyledRightSideWrapper>

@@ -32,6 +32,7 @@ export * from './main-action-button';
 // fails under jsdom. Import via `@components/atoms/chain-dropdown` directly.
 export * from './skeleton-box';
 export * from './secure-textarea';
+export * from './warning-triangle-icon';
 export * from './base';
 // web
 export * from './web-text';

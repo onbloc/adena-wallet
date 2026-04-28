@@ -3,7 +3,6 @@
 // the same deep-import path. Keeping the single source ensures byte-level
 // equivalence with the legacy tm2 signing pipeline.
 import { sortedJsonStringify } from '@cosmjs/amino/build/signdoc';
-import { Secp256k1 } from '@cosmjs/crypto';
 import {
   encodeCharacterSet,
   Provider,
@@ -16,6 +15,7 @@ import {
 
 import { publicKeyToAddress } from '../../utils/address';
 import { decodeTxMessages, Document, documentToTx } from '../../utils/messages';
+import { compressPubkeyIfNeeded } from '../../utils/pubkey';
 import { Keyring, SignRawOptions } from './keyring';
 import {
   isHDWalletKeyring,
@@ -85,8 +85,7 @@ export async function signGnoDocument(
   // PubKeySecp256k1 proto carries the compressed (33-byte) form. keyring.publicKey
   // may be compressed (PrivateKey/Web3Auth — tm2 Wallet.fromPrivateKey compresses
   // before storing) or uncompressed (HDWallet — generateKeyPair returns 65 bytes).
-  // Secp256k1.compressPubkey is idempotent so this normalizes both to 33 bytes.
-  const compressedPubKey = Secp256k1.compressPubkey(publicKey);
+  const compressedPubKey = compressPubkeyIfNeeded(publicKey);
   const txSignature: TxSignature = {
     pub_key: {
       type_url: Secp256k1PubKeyType,

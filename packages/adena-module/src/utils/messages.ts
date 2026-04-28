@@ -13,6 +13,7 @@ import { PubKeyMultisig } from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
 import Long from 'long';
 
 import { fromBase64, toBase64 } from '../encoding';
+import { compressPubkeyIfNeeded } from './pubkey';
 
 export interface Document {
   chain_id: string;
@@ -276,7 +277,9 @@ export function documentToDefaultTx(document: Document, publicKey?: Uint8Array):
     publicKey && publicKey.length > 0
       ? {
           type_url: '/tm.PubKeySecp256k1',
-          value: PubKeySecp256k1.encode({ key: publicKey }).finish(),
+          value: PubKeySecp256k1.encode({
+            key: compressPubkeyIfNeeded(publicKey),
+          }).finish(),
         }
       : {
           type_url: '',

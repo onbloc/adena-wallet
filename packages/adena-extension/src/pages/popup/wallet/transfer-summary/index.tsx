@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import AtomoneChainBadge from '@assets/icons/chains/atomone.svg';
 import { GasToken } from '@common/constants/token.constant';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import TransactionResult from '@components/molecules/transaction-result';
@@ -23,6 +24,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useNetworkProfile } from '@hooks/use-network-profile';
+import { getCosmosOriginDenom } from '@hooks/use-token-metainfo';
 import { useTransferInfo } from '@hooks/use-transfer-info';
 import { useCosmosNetworkFee } from '@hooks/wallet/use-cosmos-network-fee';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
@@ -52,7 +54,7 @@ const TransferSummaryContainer: React.FC = () => {
   const { navigate, goBack, params } = useAppNavigate<RoutePath.TransferSummary>();
   const summaryInfo = params;
   const { wallet } = useWalletContext();
-  const { transactionService, chainRegistry, cosmosProvider } = useAdenaContext();
+  const { transactionService, chainRegistry, tokenRegistry, cosmosProvider } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const isCosmosToken = params.tokenMetainfo.type === 'cosmos-native';
@@ -93,7 +95,12 @@ const TransferSummaryContainer: React.FC = () => {
     if (!isCosmosToken || !cosmosAddress) return null;
     const { tokenMetainfo, toAddress, transferAmount, memo } = summaryInfo;
     if (tokenMetainfo.type !== 'cosmos-native') return null;
-    const denom = (tokenMetainfo as { denom?: string }).denom;
+    // Prefer the persisted metainfo denom; fall back to the registry for
+    // accounts whose stored entries predate the denom-seed fix.
+    const profile = tokenRegistry.get(tokenMetainfo.tokenId);
+    const denom =
+      (tokenMetainfo as { denom?: string }).denom ||
+      (profile ? getCosmosOriginDenom(profile) : '');
     if (!denom) return null;
     const rawAmount = BigNumber(transferAmount.value)
       .shiftedBy(tokenMetainfo.decimals)
@@ -119,9 +126,23 @@ const TransferSummaryContainer: React.FC = () => {
       fee: placeholderFee,
       memo: memo ?? '',
     };
-  }, [summaryInfo, cosmosAddress, isCosmosToken, chainRegistry]);
+  }, [summaryInfo, cosmosAddress, isCosmosToken, chainRegistry, tokenRegistry]);
 
   const cosmosFee = useCosmosNetworkFee(cosmosDocument);
+
+  // Transfer-token denom (e.g. "uatone" or "uphoton") and the chain's fee
+  // denom (always "uphoton" for atomone-1 outside the MintPhoton flow). When
+  // they match, fee + amount must fit inside one balance; when they differ,
+  // each side is checked against its own balance.
+  const transferDenom = useMemo<string | null>(() => {
+    if (!isCosmosToken) return null;
+    const meta = summaryInfo.tokenMetainfo as { denom?: string };
+    if (meta.denom) return meta.denom;
+    const profile = tokenRegistry.get(summaryInfo.tokenMetainfo.tokenId);
+    return profile ? getCosmosOriginDenom(profile) || null : null;
+  }, [isCosmosToken, summaryInfo.tokenMetainfo, tokenRegistry]);
+  const feeDenom = cosmosFee.currentFeeDenom;
+  const sameDenom = !!transferDenom && !!feeDenom && transferDenom === feeDenom;
 
   const { data: photonBalance } = useQuery<string | null>(
     ['photonBalance', cosmosAddress],
@@ -132,15 +153,39 @@ const TransferSummaryContainer: React.FC = () => {
     { enabled: !!cosmosAddress && !!cosmosProvider && isCosmosToken },
   );
 
+  // Only fetched when transferDenom != feeDenom (e.g. ATONE send). For
+  // same-denom sends `photonBalance` already represents the transfer balance.
+  const { data: transferTokenBalance } = useQuery<string | null>(
+    ['cosmosTransferTokenBalance', cosmosAddress, transferDenom],
+    async () => {
+      if (!cosmosAddress || !cosmosProvider || !transferDenom) return null;
+      return cosmosProvider.getBalance(cosmosAddress, transferDenom);
+    },
+    {
+      enabled:
+        !!cosmosAddress && !!cosmosProvider && isCosmosToken && !sameDenom && !!transferDenom,
+    },
+  );
+
   const hasNetworkFee = useMemo(() => {
     if (isCosmosToken) {
-      // PHOTON balance must cover the feemarket-computed fee amount. Compare
-      // in raw u-units — `cosmosFee.networkFee.amount` is already shifted
-      // for display (e.g. "0.020568"), so use `currentFeeAmount` here.
       if (photonBalance === undefined || photonBalance === null) return false;
       const rawFee = cosmosFee.currentFeeAmount;
       if (!rawFee || !Number(rawFee)) return false;
-      return BigNumber(photonBalance).gte(BigNumber(rawFee));
+      const rawTransfer = BigNumber(summaryInfo.transferAmount.value)
+        .shiftedBy(summaryInfo.tokenMetainfo.decimals)
+        .toFixed(0);
+      if (sameDenom) {
+        // PHOTON send: single balance must cover transfer + fee.
+        return BigNumber(photonBalance).gte(BigNumber(rawTransfer).plus(rawFee));
+      }
+      // ATONE (or other) send: transfer balance covers the amount, PHOTON
+      // covers the fee.
+      if (transferTokenBalance === undefined || transferTokenBalance === null) return false;
+      return (
+        BigNumber(photonBalance).gte(rawFee) &&
+        BigNumber(transferTokenBalance).gte(rawTransfer)
+      );
     }
 
     if (!currentBalance || currentBalance === 0) {
@@ -166,6 +211,8 @@ const TransferSummaryContainer: React.FC = () => {
   }, [
     isCosmosToken,
     photonBalance,
+    transferTokenBalance,
+    sameDenom,
     cosmosFee.currentFeeAmount,
     currentBalance,
     networkFee?.amount,
@@ -177,6 +224,11 @@ const TransferSummaryContainer: React.FC = () => {
       if (cosmosFee.isLoading) return false;
       if (cosmosFee.isSimulateError) return false;
       if (photonBalance === undefined || photonBalance === null) return false;
+      // For different-denom sends we also need the transfer-token balance
+      // before we can claim a fee error vs. a still-loading state.
+      if (!sameDenom && (transferTokenBalance === undefined || transferTokenBalance === null)) {
+        return false;
+      }
       return !hasNetworkFee;
     }
 
@@ -202,6 +254,8 @@ const TransferSummaryContainer: React.FC = () => {
     cosmosFee.isLoading,
     cosmosFee.isSimulateError,
     photonBalance,
+    transferTokenBalance,
+    sameDenom,
     currentBalance,
     networkFee?.amount,
     useNetworkFeeReturn.isLoading,
@@ -628,6 +682,8 @@ const TransferSummaryContainer: React.FC = () => {
           tokenMetainfo={summaryInfo.tokenMetainfo}
           tokenImage={summaryInfo.tokenMetainfo.image || `${UnknownTokenIcon}`}
           toAddress={summaryInfo.toAddress}
+          chainName={tokenProfile?.displayName || ''}
+          chainBadgeImage={isCosmosToken ? AtomoneChainBadge : undefined}
           transferBalance={getTransferBalance()}
           isErrorNetworkFee={isNetworkFeeError}
           isLoadingNetworkFee={isCosmosToken ? cosmosFee.isLoading : useNetworkFeeReturn.isLoading}

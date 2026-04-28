@@ -12,6 +12,7 @@ describe('TransferSummaryBalance Component', () => {
       tokenImage: '',
       value: '',
       denom: '',
+      chainName: 'Gno.land',
     };
 
     render(

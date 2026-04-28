@@ -3,7 +3,6 @@ import React, { useMemo } from 'react';
 import { SubHeader } from '@components/atoms';
 
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
 import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
 import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
 import { TransferSummaryWrapper } from './transfer-summary.styles';
@@ -18,6 +17,8 @@ export interface TransferSummaryProps {
   tokenImage: string;
   transferBalance: Amount;
   toAddress: string;
+  chainName: string;
+  chainBadgeImage?: string;
   networkFee: NetworkFeeType | null;
   memo: string;
   currentBalance: number | null | undefined;
@@ -36,6 +37,8 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   tokenImage,
   transferBalance,
   toAddress,
+  chainName,
+  chainBadgeImage,
   networkFee,
   memo,
   useNetworkFeeReturn,
@@ -105,13 +108,11 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           tokenImage={tokenImage}
           value={transferBalance.value}
           denom={transferBalance.denom}
+          chainName={chainName}
+          chainBadgeImage={chainBadgeImage}
         />
 
-        <div className='direction-icon-wrapper'>
-          <img src={`${ArrowDownIcon}`} alt='direction-icon' />
-        </div>
-
-        <TransferSummaryAddress toAddress={toAddress} memo={memo} />
+        <TransferSummaryAddress toAddress={toAddress} network={chainName} memo={memo} />
       </div>
 
       <div className='network-fee-wrapper'>

@@ -51,3 +51,14 @@ export const selectedProfileByChainGroup = atom<Record<string, string>>({
   key: 'network/selectedProfileByChainGroup',
   default: { gno: 'gnoland1', atomone: 'atomone-1' },
 });
+
+/**
+ * NetworkProfile ids of cosmos networks whose latest balance fetch failed.
+ * Published from useTokenBalance and consumed by the header indicator so the
+ * unresponsive-network popover can list every failing chain alongside the
+ * gno failedNetwork signal.
+ */
+export const cosmosUnresponsiveNetworkIds = atom<string[]>({
+  key: 'network/cosmosUnresponsiveNetworkIds',
+  default: [],
+});

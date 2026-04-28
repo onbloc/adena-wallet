@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
 import { fetchHealth } from '@common/utils/fetch-utils';
 import { EventMessage } from '@inject/message';
@@ -10,6 +10,10 @@ import CHAIN_DATA from '@resources/chains/chains.json';
 import { NetworkState } from '@states';
 import { useQuery } from '@tanstack/react-query';
 import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
+import {
+  atomoneNetworkToProfile,
+  atomoneNetworkToTokenProfiles,
+} from './helpers/atomone-to-profile';
 
 export type ChainGroup = 'gno' | 'atomone';
 export type NetworkMode = NetworkState.NetworkMode;
@@ -17,6 +21,11 @@ export type NetworkMode = NetworkState.NetworkMode;
 interface AddNetworkExtra {
   indexerUrl?: string;
   restUrl?: string;
+}
+
+export interface UnresponsiveNetworkInfo {
+  id: string;
+  name: string;
 }
 
 interface NetworkResponse {
@@ -28,6 +37,7 @@ interface NetworkResponse {
   selectedProfileByChainGroup: Record<string, string>;
   modified: boolean;
   failedNetwork: boolean | null;
+  unresponsiveNetworks: UnresponsiveNetworkInfo[];
   scannerParameters: { [key in string]: string } | null;
   getDefaultNetworkInfo: (networkId: string) => NetworkMetainfo | null;
   checkNetworkState: () => Promise<void>;
@@ -60,7 +70,7 @@ export const useNetwork = (): NetworkResponse => {
   const [atomoneNetworks, setAtomoneNetworkMetainfos] = useRecoilState(
     NetworkState.atomoneNetworkMetainfos,
   );
-  const { chainService } = useAdenaContext();
+  const { chainService, chainRegistry, tokenRegistry } = useAdenaContext();
   const [currentGnoNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork);
   const [currentAtomoneNetwork, setCurrentAtomoneNetwork] = useRecoilState(
     NetworkState.currentAtomoneNetwork,
@@ -81,6 +91,25 @@ export const useNetwork = (): NetworkResponse => {
     },
     { keepPreviousData: true },
   );
+
+  const cosmosUnresponsiveIds = useRecoilValue(NetworkState.cosmosUnresponsiveNetworkIds);
+
+  const unresponsiveNetworks = useMemo<UnresponsiveNetworkInfo[]>(() => {
+    const result: UnresponsiveNetworkInfo[] = [];
+    if (failedNetwork === true && currentGnoNetwork) {
+      result.push({
+        id: currentGnoNetwork.id,
+        name: currentGnoNetwork.chainName ?? currentGnoNetwork.networkName,
+      });
+    }
+    for (const id of cosmosUnresponsiveIds) {
+      const net = atomoneNetworks.find((current) => current.id === id);
+      if (net) {
+        result.push({ id, name: net.chainName ?? net.networkName });
+      }
+    }
+    return result;
+  }, [failedNetwork, currentGnoNetwork, cosmosUnresponsiveIds, atomoneNetworks]);
 
   const scannerParameters: { [key in string]: string } | null = useMemo(() => {
     if (!currentGnoNetwork) {
@@ -136,6 +165,17 @@ export const useNetwork = (): NetworkResponse => {
         await chainService.addAtomoneNetwork(parsedName, changedRpcUrl, changedRestUrl, chainId);
         const updatedAtomoneNetworks = await chainService.getAtomoneNetworks();
         setAtomoneNetworkMetainfos(updatedAtomoneNetworks);
+        // Mirror the new networks into chainRegistry + tokenRegistry so
+        // fetchCosmosTokenBalances picks them up and useTokenMetainfo can
+        // seed cosmos rows. Without both registrations, custom networks live
+        // only in the atom and balance/health checks skip them.
+        for (const network of updatedAtomoneNetworks) {
+          if (network.deleted) continue;
+          chainRegistry.register(atomoneNetworkToProfile(network));
+          for (const token of atomoneNetworkToTokenProfiles(network)) {
+            tokenRegistry.register(token);
+          }
+        }
         return;
       }
 
@@ -267,6 +307,14 @@ export const useNetwork = (): NetworkResponse => {
         );
         await chainService.updateAtomoneNetworks(changedNetworks);
         setAtomoneNetworkMetainfos(changedNetworks);
+        // Re-register so changed name/RPC/REST land in chainRegistry +
+        // tokenRegistry; register overwrites by id.
+        if (!network.deleted) {
+          chainRegistry.register(atomoneNetworkToProfile(network));
+          for (const token of atomoneNetworkToTokenProfiles(network)) {
+            tokenRegistry.register(token);
+          }
+        }
         if (network.id === currentAtomoneNetwork?.id) {
           setCurrentAtomoneNetwork(network);
         }
@@ -359,6 +407,7 @@ export const useNetwork = (): NetworkResponse => {
     selectedProfileByChainGroup,
     modified,
     failedNetwork,
+    unresponsiveNetworks,
     scannerParameters,
     getDefaultNetworkInfo,
     checkNetworkState,

@@ -1,10 +1,10 @@
 import { AminoMsg, StdFee } from '@cosmjs/amino';
-import { Secp256k1 } from '@cosmjs/crypto';
 import { PubKey } from 'cosmjs-types/cosmos/crypto/secp256k1/keys';
 import { SignMode } from 'cosmjs-types/cosmos/tx/signing/v1beta1/signing';
 import { AuthInfo, Fee, TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 import { Any } from 'cosmjs-types/google/protobuf/any';
 
+import { compressPubkeyIfNeeded } from '../../utils/pubkey';
 import { getCodecByAminoType } from '../codec/registry';
 
 const COSMOS_SECP256K1_PUBKEY_TYPE_URL = '/cosmos.crypto.secp256k1.PubKey';
@@ -48,8 +48,7 @@ export function makeTxRaw(params: MakeTxRawParams): Uint8Array {
     }),
   ).finish();
 
-  const compressedPubKey =
-    publicKey.length === 33 ? publicKey : Secp256k1.compressPubkey(publicKey);
+  const compressedPubKey = compressPubkeyIfNeeded(publicKey);
 
   const pubKeyAny = Any.fromPartial({
     typeUrl: COSMOS_SECP256K1_PUBKEY_TYPE_URL,
