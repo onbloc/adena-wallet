@@ -27,11 +27,15 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
           min='0'
           value={amount}
           autoComplete='off'
+          // Whitelist digits + a single decimal point. Catches scientific
+          // notation, signs, and other inputs that bypass onKeyDown via paste
+          // or drag-and-drop.
           onChange={(event): void => {
-            if (event.target.value.startsWith('-')) {
+            const value = event.target.value;
+            if (!/^[0-9]*\.?[0-9]*$/.test(value)) {
               return;
             }
-            onChangeAmount(event.target.value);
+            onChangeAmount(value);
           }}
           onKeyDown={(event): void => {
             if (
