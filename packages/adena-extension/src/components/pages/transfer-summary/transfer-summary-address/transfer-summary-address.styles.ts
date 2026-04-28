@@ -3,31 +3,58 @@ import styled from 'styled-components';
 
 export const TransferSummaryAddressWrapper = styled.div`
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   width: 100%;
-  height: auto;
-  padding: 20px;
-  gap: 12px;
-  ${fonts.body2Reg};
+  padding: 0 18px;
+  ${fonts.body1Reg};
   background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
 
-  .address-wrapper {
+  .row {
     display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
     width: 100%;
-    height: auto;
-    word-break: break-all;
-    overflow: hidden;
+    height: 46px;
+    border-top: 1px solid ${getTheme('neutral', '_6')};
   }
 
-  .memo-wrapper {
-    display: block;
-    width: 100%;
-    height: auto;
+  .row:first-child {
+    border-top: none;
+  }
+
+  .row .label {
+    flex-shrink: 0;
     color: ${getTheme('neutral', 'a')};
-    word-break: break-all;
+  }
+
+  .row .value {
+    color: ${getTheme('neutral', '_1')};
+    text-align: right;
+    margin-left: 12px;
     overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    word-break: break-all;
+  }
+
+  .memo-row {
+    min-height: 46px;
+    height: auto;
+    align-items: flex-start;
+    padding: 11px 0;
+  }
+
+  .memo-row .label {
+    line-height: 24px;
+  }
+
+  .memo-row .memo-value {
+    line-height: 24px;
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+
+  .memo-row .memo-empty {
+    color: ${getTheme('neutral', 'a')};
   }
 `;

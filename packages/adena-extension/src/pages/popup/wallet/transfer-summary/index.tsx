@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import AtomoneChainBadge from '@assets/icons/chains/atomone.svg';
 import { GasToken } from '@common/constants/token.constant';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import TransactionResult from '@components/molecules/transaction-result';
@@ -681,6 +682,8 @@ const TransferSummaryContainer: React.FC = () => {
           tokenMetainfo={summaryInfo.tokenMetainfo}
           tokenImage={summaryInfo.tokenMetainfo.image || `${UnknownTokenIcon}`}
           toAddress={summaryInfo.toAddress}
+          chainName={tokenProfile?.displayName || ''}
+          chainBadgeImage={isCosmosToken ? AtomoneChainBadge : undefined}
           transferBalance={getTransferBalance()}
           isErrorNetworkFee={isNetworkFeeError}
           isLoadingNetworkFee={isCosmosToken ? cosmosFee.isLoading : useNetworkFeeReturn.isLoading}

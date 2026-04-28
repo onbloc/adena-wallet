@@ -6,25 +6,35 @@ export interface TransferSummaryBalanceProps {
   tokenImage: string;
   value: string;
   denom: string;
+  chainName: string;
+  chainBadgeImage?: string;
 }
 
 const TransferSummaryBalance: React.FC<TransferSummaryBalanceProps> = ({
   tokenImage,
   value,
   denom,
+  chainName,
+  chainBadgeImage,
 }) => {
   return (
     <TransferSummaryBalanceWrapper>
-      <img className='token-image' src={tokenImage} alt={'token image'} />
-      <span className='balance'>
+      <div className='token-icon-wrapper'>
+        <img className='token-image' src={tokenImage} alt='token image' />
+        {chainBadgeImage && (
+          <img className='chain-badge' src={chainBadgeImage} alt='chain badge' />
+        )}
+      </div>
+      <span className='chain-name'>{chainName}</span>
+      <div className='balance-wrapper'>
         <TokenBalance
           value={value}
           denom={denom}
-          fontStyleKey='header5'
-          minimumFontSize='16px'
+          fontStyleKey='body2Reg'
+          minimumFontSize='11px'
           orientation='HORIZONTAL'
         />
-      </span>
+      </div>
     </TransferSummaryBalanceWrapper>
   );
 };
