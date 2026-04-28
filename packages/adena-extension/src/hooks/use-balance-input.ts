@@ -14,6 +14,11 @@ import { useTokenBalance } from './use-token-balance';
 import { getCosmosOriginDenom, useTokenMetainfo } from './use-token-metainfo';
 import { useNetworkFee } from './wallet/use-network-fee';
 
+// Buffer applied to the simulated cosmos fee when computing the Max amount.
+// Absorbs feemarket base-price drift between Max click and broadcast, plus
+// minor simulation variance from amount-string length changes after Max fills.
+const COSMOS_MAX_FEE_SAFETY_MARGIN = 1.1;
+
 export type UseBalanceInputHookReturn = {
   hasError: boolean;
   amount: string;
@@ -125,7 +130,9 @@ export const useBalanceInput = (
       rawFee &&
       Number(rawFee) > 0
     ) {
-      const feeDisplay = BigNumber(rawFee).shiftedBy(-feeDecimals);
+      const feeDisplay = BigNumber(rawFee)
+        .multipliedBy(COSMOS_MAX_FEE_SAFETY_MARGIN)
+        .shiftedBy(-feeDecimals);
       const avail = balanceDisplay.minus(feeDisplay);
       setAvailAmountNumber(avail.isGreaterThan(0) ? avail : BigNumber(0));
       return;

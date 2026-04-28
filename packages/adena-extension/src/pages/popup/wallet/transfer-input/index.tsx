@@ -65,6 +65,8 @@ const TransferInputContainer: React.FC = () => {
   }, [tokenMetainfo, chainRegistry]);
   const addressBookInput = useAddressBookInput(tokenChainGroup);
   const { currentAccount } = useCurrentAccount();
+  const { memorizedTransferInfo, clear: clearMemorizedTransferInfo } = useTransferInfo();
+  const [memo, setMemo] = useState(memorizedTransferInfo?.memo || '');
 
   // Cosmos: estimate the network fee at the input stage so the Max button
   // can subtract it for same-denom sends (e.g. PHOTON). The summary screen
@@ -94,11 +96,16 @@ const TransferInputContainer: React.FC = () => {
       (tokenMetainfo as { denom?: string }).denom ||
       (profile ? getCosmosOriginDenom(profile) : '');
     if (!denom) return null;
-    // Self-send placeholder with amount=1u — gas estimation for MsgSend is
-    // effectively independent of the amount value, so this is enough to drive
-    // a fee preview before the user has typed a recipient or amount.
+    // Mirror the actual broadcast tx as closely as possible so the simulated
+    // gas matches what summary will charge. Falls back to a self-send +
+    // amount=1u placeholder when the user has not yet entered a recipient,
+    // which is enough to drive an initial fee preview.
     const placeholderFee =
       cosmosChain.fee.fallbackFee ?? { amount: [{ denom, amount: '0' }], gas: '0' };
+    const toAddress =
+      addressBookInput.resultAddress && addressBookInput.resultAddress !== ''
+        ? addressBookInput.resultAddress
+        : cosmosFromAddress;
     return {
       chainId: tokenMetainfo.networkId,
       fromAddress: cosmosFromAddress,
@@ -107,15 +114,23 @@ const TransferInputContainer: React.FC = () => {
           type: MSG_SEND_AMINO_TYPE,
           value: {
             from_address: cosmosFromAddress,
-            to_address: cosmosFromAddress,
+            to_address: toAddress,
             amount: [{ denom, amount: '1' }],
           },
         },
       ],
       fee: placeholderFee,
-      memo: '',
+      memo,
     };
-  }, [isCosmosNative, cosmosFromAddress, cosmosChain, tokenMetainfo, tokenRegistry]);
+  }, [
+    isCosmosNative,
+    cosmosFromAddress,
+    cosmosChain,
+    tokenMetainfo,
+    tokenRegistry,
+    addressBookInput.resultAddress,
+    memo,
+  ]);
   const cosmosFee = useCosmosNetworkFee(cosmosEstimateDoc);
   const balanceInput = useBalanceInput(
     tokenMetainfo,
@@ -131,8 +146,6 @@ const TransferInputContainer: React.FC = () => {
   );
   const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
   const { currentNetwork } = useNetwork();
-  const { memorizedTransferInfo, clear: clearMemorizedTransferInfo } = useTransferInfo();
-  const [memo, setMemo] = useState(memorizedTransferInfo?.memo || '');
   const { openLink } = useLink();
 
   const [transferMode, setTransferMode] = useState<TransferMode>('send');
