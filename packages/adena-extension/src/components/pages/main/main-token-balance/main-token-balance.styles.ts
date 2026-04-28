@@ -1,5 +1,12 @@
-import { View } from '@components/atoms';
+import { SkeletonBoxStyle, View } from '@components/atoms';
 import styled, { css } from 'styled-components';
+
+export const MainTokenBalanceSkeleton = styled(SkeletonBoxStyle)`
+  width: 200px;
+  height: 39px;
+  border-radius: 10px;
+  padding: 0;
+`;
 
 export const MainTokenBalanceWrapper = styled(View).withConfig({
   shouldForwardProp: (prop) => prop !== '$compact',

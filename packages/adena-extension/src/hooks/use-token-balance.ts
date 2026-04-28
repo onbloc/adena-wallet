@@ -1,13 +1,15 @@
 import { QueryObserverResult, useQuery } from '@tanstack/react-query';
 import { Account } from 'adena-module';
 import { useCallback, useEffect, useMemo } from 'react';
-import { useRecoilValueLoadable } from 'recoil';
+import { useRecoilValueLoadable, useSetRecoilState } from 'recoil';
 
+import { COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
-import { AccountState } from '@states';
+import { AccountState, NetworkState } from '@states';
 import { Amount, TokenBalanceType, TokenModel } from '@types';
 
-import { fetchCosmosTokenBalances } from './helpers/fetch-cosmos-balances';
+import { CosmosFetchResult, fetchCosmosTokenBalances } from './helpers/fetch-cosmos-balances';
+import { compareTokenBalances } from './helpers/sort-token-balances';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useGRC20Tokens } from './use-grc20-tokens';
@@ -21,9 +23,15 @@ const GNO_REFETCH_INTERVAL = 3_000;
 // meaningfully hurting UX — balance changes on AtomOne are less frequent.
 const COSMOS_REFETCH_INTERVAL = 10_000;
 
+const EMPTY_AMOUNT: Amount = { value: '', denom: '' };
+
+const tokenKey = (tokenId: string, networkId: string): string => `${tokenId}:${networkId}`;
+
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | null;
   currentBalances: TokenBalanceType[];
+  loadingTokenKeys: Set<string>;
+  errorNetworkIds: Set<string>;
   accountNativeBalanceMap: Record<string, TokenBalanceType>;
   refetchBalances: () => Promise<QueryObserverResult<TokenBalanceType[], unknown>>;
   refetchAccountNativeBalanceMap: () => Promise<
@@ -101,9 +109,9 @@ export const useTokenBalance = (): {
     accountAddressesLoadable.state === 'hasValue' ? accountAddressesLoadable.contents : null;
 
   const {
-    data: cosmosBalances = [],
+    data: cosmosResults = [],
     refetch: refetchCosmosBalances,
-  } = useQuery<TokenBalanceType[]>(
+  } = useQuery<CosmosFetchResult[]>(
     // Keyed by account id (not the object reference) to avoid spurious refetches
     // when a new Account instance is created from the same underlying data.
     [
@@ -115,9 +123,6 @@ export const useTokenBalance = (): {
     ],
     () => {
       if (currentAccount === null) return [];
-      // No .catch() here — let React Query own the error state. When this query
-      // fails, cosmosBalances defaults to [] via the fallback, so Gno balances
-      // continue rendering unaffected.
       return fetchCosmosTokenBalances(
         currentAccount,
         cosmosBalanceService,
@@ -135,17 +140,118 @@ export const useTokenBalance = (): {
     },
   );
 
-  const balances = useMemo<TokenBalanceType[]>(
-    () => [...gnoBalances, ...cosmosBalances],
-    [gnoBalances, cosmosBalances],
-  );
-
   // Refetch both chains in parallel. Returns the Gno result to satisfy the
   // existing QueryObserverResult return type; callers discard the return value.
   const refetchBalances = useCallback(
     () => Promise.all([refetchGnoBalances(), refetchCosmosBalances()]).then(([gno]) => gno),
     [refetchGnoBalances, refetchCosmosBalances],
   );
+
+  const errorNetworkIds = useMemo(
+    () => new Set(cosmosResults.filter((r) => r.error).map((r) => r.networkId)),
+    [cosmosResults],
+  );
+
+  // Stable string key for the effect below. The Set above is rebuilt on every
+  // render where cosmosResults's reference changes (React Query refetches
+  // produce new arrays even when the values are unchanged), so using the Set
+  // directly as a useEffect dep would re-fire the publish on every render and
+  // create an infinite render loop with the atom's subscribers.
+  const errorNetworkIdsKey = useMemo(
+    () => Array.from(errorNetworkIds).sort().join('|'),
+    [errorNetworkIds],
+  );
+
+  // Publish the failing cosmos network ids so the header indicator can list
+  // them alongside gno failedNetwork without re-running the cosmos query.
+  const setCosmosUnresponsiveNetworkIds = useSetRecoilState(
+    NetworkState.cosmosUnresponsiveNetworkIds,
+  );
+  useEffect(() => {
+    const ids = errorNetworkIdsKey === '' ? [] : errorNetworkIdsKey.split('|');
+    setCosmosUnresponsiveNetworkIds((prev) => {
+      if (prev.length === ids.length && prev.every((id, i) => id === ids[i])) {
+        return prev;
+      }
+      return ids;
+    });
+  }, [errorNetworkIdsKey, setCosmosUnresponsiveNetworkIds]);
+
+  const cosmosResultsByNetwork = useMemo(() => {
+    const map = new Map<string, CosmosFetchResult>();
+    for (const result of cosmosResults) {
+      map.set(result.networkId, result);
+    }
+    return map;
+  }, [cosmosResults]);
+
+  // Expected cosmos token rows for the currently active networks. Sourced
+  // from persisted metainfos (not chainRegistry) so the persisted `display`
+  // flag is respected from the first frame — otherwise tokens the user has
+  // hidden via Manage Tokens flicker into view until metainfos hydrate from
+  // storage. The chain filter mirrors fetchCosmosTokenBalances so only rows
+  // that will be queried appear in the shell.
+  const activeCosmosNetworkIds = useMemo<Set<string>>(() => {
+    const profiles = chainRegistry.list().filter((profile) => {
+      if (profile.chainType !== 'cosmos') return false;
+      if (profile.chainGroup === 'atomone' && currentAtomoneNetwork?.id) {
+        return profile.id === currentAtomoneNetwork.id;
+      }
+      return true;
+    });
+    return new Set(profiles.map((profile) => profile.id));
+  }, [chainRegistry, currentAtomoneNetwork]);
+
+  const cosmosShellTokens = useMemo<TokenModel[]>(() => {
+    return allTokenMetainfos
+      .filter(
+        (meta) => meta.type === 'cosmos-native' && activeCosmosNetworkIds.has(meta.networkId),
+      )
+      .map((meta) => ({
+        ...meta,
+        // Persisted metainfo.image is the registry's iconUrl (often empty or a
+        // domain hint that does not match webpack-bundled assets). Normalise
+        // here so every consumer (wallet-main, manage-token, token-details)
+        // receives a usable logo without their own fallback chain.
+        image: COSMOS_TOKEN_ICON_MAP[meta.tokenId] ?? meta.image,
+      }));
+  }, [allTokenMetainfos, activeCosmosNetworkIds]);
+
+  // Build the row shell from token metadata. Each row exists from the first
+  // frame; balances populate row-by-row as queries resolve. Rows whose chain
+  // errored out keep an empty amount and are surfaced via errorNetworkIds.
+  const currentBalances = useMemo<TokenBalanceType[]>(() => {
+    const gnoRows: TokenBalanceType[] = tokenMetainfos.map((meta) => {
+      const found = gnoBalances.find((b) => b.tokenId === meta.tokenId);
+      return {
+        ...meta,
+        amount: found?.amount ?? EMPTY_AMOUNT,
+      };
+    });
+
+    const cosmosRows: TokenBalanceType[] = cosmosShellTokens.map((meta) => {
+      const networkResult = cosmosResultsByNetwork.get(meta.networkId);
+      const found = networkResult?.balances.find(
+        (b) => b.tokenId === meta.tokenId && b.networkId === meta.networkId,
+      );
+      return {
+        ...meta,
+        amount: found?.amount ?? EMPTY_AMOUNT,
+      };
+    });
+
+    return [...gnoRows, ...cosmosRows].sort(compareTokenBalances);
+  }, [tokenMetainfos, gnoBalances, cosmosResultsByNetwork, cosmosShellTokens]);
+
+  const loadingTokenKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const row of currentBalances) {
+      if (row.amount.value !== '') continue;
+      if (errorNetworkIds.has(row.networkId)) continue;
+      keys.add(tokenKey(row.tokenId, row.networkId));
+    }
+    return keys;
+  }, [currentBalances, errorNetworkIds]);
 
   const { data: accountNativeBalanceMap = {}, refetch: refetchAccountNativeBalanceMap } = useQuery<
     Record<string, TokenBalanceType>
@@ -187,41 +293,13 @@ export const useTokenBalance = (): {
     },
   );
 
-  const currentBalances = useMemo((): TokenBalanceType[] => {
-    if (balances.length === 0) {
-      return [];
-    }
-    const gnoTokenBalances = tokenMetainfos.map((tokenMetainfo) => ({
-      ...tokenMetainfo,
-      amount: balances.find((t) => t.tokenId === tokenMetainfo.tokenId)?.amount || {
-        value: '',
-        denom: '',
-      },
-    }));
-    // Apply the persisted `display` flag from metainfos to cosmos balances.
-    // Defaults to `true` while the seed effect in useTokenMetainfo is still
-    // in-flight, so newly-discovered cosmos tokens stay visible.
-    const cosmosTokenBalances = balances
-      .filter((b) => b.type === 'cosmos-native')
-      .map((b) => {
-        const meta = allTokenMetainfos.find(
-          (m) => m.tokenId === b.tokenId && m.networkId === b.networkId,
-        );
-        return {
-          ...b,
-          display: meta?.display ?? true,
-        };
-      });
-    return [...gnoTokenBalances, ...cosmosTokenBalances];
-  }, [balances, tokenMetainfos, allTokenMetainfos]);
-
   const mainTokenBalance = useMemo((): Amount | null => {
     if (nativeToken === null) {
       return null;
     }
 
     const mainToken = currentBalances.find((balance) => balance.tokenId === nativeToken.tokenId);
-    if (!mainToken?.amount) {
+    if (!mainToken?.amount || mainToken.amount.value === '') {
       return null;
     }
 
@@ -295,6 +373,8 @@ export const useTokenBalance = (): {
   return {
     mainTokenBalance,
     currentBalances,
+    loadingTokenKeys,
+    errorNetworkIds,
     accountNativeBalanceMap,
     refetchBalances,
     refetchAccountNativeBalanceMap,

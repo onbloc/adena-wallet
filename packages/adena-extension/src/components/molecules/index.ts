@@ -8,7 +8,6 @@ export * from './bottom-fixed-loading-button-group';
 export * from './cancel-and-confirm-button';
 export * from './close-shadow-button';
 export * from './double-button';
-export * from './error-container';
 export * from './ghost-button';
 export * from './loading-nft';
 export * from './seed-box';

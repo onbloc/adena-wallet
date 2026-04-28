@@ -58,9 +58,6 @@ import TransferLedgerReject from '@pages/popup/wallet/transfer-ledger-reject';
 import TransferSummary from '@pages/popup/wallet/transfer-summary';
 import { WalletMain } from '@pages/popup/wallet/wallet-main';
 
-import { ErrorContainer } from '@components/molecules';
-
-import { useNetwork } from '@hooks/use-network';
 import { CreatePassword } from '@pages/popup/certify/create-password';
 import { LaunchAdena } from '@pages/popup/certify/launch-adena';
 import AccountInitializationPage from '@pages/popup/wallet/account-initialization';
@@ -73,26 +70,16 @@ import { NftCollection } from '@pages/popup/wallet/nft/collection';
 import { NftCollectionAsset } from '@pages/popup/wallet/nft/collection-asset';
 import SignMultisigTransactionScreen from '@pages/popup/wallet/sign-multisig-transaction-screen';
 import { Header } from './header';
-import LoadingMain from './loading-main';
 import { Navigation } from './navigation';
 import ToastContainer from './toast-container';
 
 export const PopupRouter = (): JSX.Element => {
-  const { failedNetwork } = useNetwork();
-
   return (
     <React.Fragment>
       <Header />
       <Routes>
         <Route path={RoutePath.Home} element={<Navigate replace to={RoutePath.Wallet} />} />
-        <Route
-          path={RoutePath.Wallet}
-          element={
-            <ErrorContainer failedNetwork={failedNetwork}>
-              <WalletMain />
-            </ErrorContainer>
-          }
-        />
+        <Route path={RoutePath.Wallet} element={<WalletMain />} />
         <Route path={RoutePath.EnterSeedPhrase} element={<EnterSeedPhrase />} />
         <Route path={RoutePath.Login} element={<Login />} />
         <Route path={RoutePath.ForgotPassword} element={<ForgotPassword />} />
@@ -192,7 +179,6 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.ResetWallet} element={<ResetWallet />} />
       </Routes>
       <Navigation />
-      <LoadingMain />
       <ToastContainer />
     </React.Fragment>
   );
