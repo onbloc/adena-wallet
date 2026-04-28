@@ -1,3 +1,5 @@
+import { CosmosDocument, MSG_SEND_AMINO_TYPE } from 'adena-module';
+import { useQuery } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -14,6 +16,8 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useHistoryData from '@hooks/use-history-data';
 import useLink from '@hooks/use-link';
+import { getCosmosOriginDenom } from '@hooks/use-token-metainfo';
+import { useCosmosNetworkFee } from '@hooks/wallet/use-cosmos-network-fee';
 import { RoutePath } from '@types';
 
 import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
@@ -54,14 +58,77 @@ const TransferInputContainer: React.FC = () => {
   } = useSessionParams<RoutePath.TransferInput>();
   const [isTokenSearch, setIsTokenSearch] = useState(params?.isTokenSearch === true);
   const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel | undefined>(params?.tokenBalance);
-  const { chainRegistry } = useAdenaContext();
+  const { chainRegistry, tokenRegistry } = useAdenaContext();
   const tokenChainGroup = useMemo(() => {
     if (!tokenMetainfo) return 'gno';
     return chainRegistry.getChainByChainId(tokenMetainfo.networkId)?.chainGroup ?? 'gno';
   }, [tokenMetainfo, chainRegistry]);
   const addressBookInput = useAddressBookInput(tokenChainGroup);
-  const balanceInput = useBalanceInput(tokenMetainfo);
   const { currentAccount } = useCurrentAccount();
+
+  // Cosmos: estimate the network fee at the input stage so the Max button
+  // can subtract it for same-denom sends (e.g. PHOTON). The summary screen
+  // re-runs the same query under the same key — react-query shares the cache,
+  // so this does not double the LCD load.
+  const isCosmosNative = tokenMetainfo?.type === 'cosmos-native';
+  const cosmosChain = useMemo(() => {
+    if (!isCosmosNative || !tokenMetainfo) return null;
+    const chain = chainRegistry.getChainByChainId(tokenMetainfo.networkId);
+    return chain && chain.chainType === 'cosmos' ? chain : null;
+  }, [isCosmosNative, tokenMetainfo, chainRegistry]);
+  const { data: cosmosFromAddress } = useQuery<string | null>(
+    ['cosmosFromAddrInput', currentAccount?.id, cosmosChain?.bech32Prefix],
+    async () => {
+      if (!currentAccount || !cosmosChain) return null;
+      return currentAccount.getAddress(cosmosChain.bech32Prefix);
+    },
+    { enabled: !!currentAccount && !!cosmosChain },
+  );
+  const cosmosEstimateDoc = useMemo<CosmosDocument | null>(() => {
+    if (!isCosmosNative || !cosmosFromAddress || !cosmosChain || !tokenMetainfo) return null;
+    if (tokenMetainfo.type !== 'cosmos-native') return null;
+    // Prefer the persisted metainfo denom; fall back to the registry for
+    // accounts whose stored entries predate the denom-seed fix.
+    const profile = tokenRegistry.get(tokenMetainfo.tokenId);
+    const denom =
+      (tokenMetainfo as { denom?: string }).denom ||
+      (profile ? getCosmosOriginDenom(profile) : '');
+    if (!denom) return null;
+    // Self-send placeholder with amount=1u — gas estimation for MsgSend is
+    // effectively independent of the amount value, so this is enough to drive
+    // a fee preview before the user has typed a recipient or amount.
+    const placeholderFee =
+      cosmosChain.fee.fallbackFee ?? { amount: [{ denom, amount: '0' }], gas: '0' };
+    return {
+      chainId: tokenMetainfo.networkId,
+      fromAddress: cosmosFromAddress,
+      msgs: [
+        {
+          type: MSG_SEND_AMINO_TYPE,
+          value: {
+            from_address: cosmosFromAddress,
+            to_address: cosmosFromAddress,
+            amount: [{ denom, amount: '1' }],
+          },
+        },
+      ],
+      fee: placeholderFee,
+      memo: '',
+    };
+  }, [isCosmosNative, cosmosFromAddress, cosmosChain, tokenMetainfo, tokenRegistry]);
+  const cosmosFee = useCosmosNetworkFee(cosmosEstimateDoc);
+  const balanceInput = useBalanceInput(
+    tokenMetainfo,
+    isCosmosNative
+      ? {
+          currentFeeAmount: cosmosFee.currentFeeAmount,
+          currentFeeDenom: cosmosFee.currentFeeDenom,
+          feeDecimals: cosmosFee.feeDecimals,
+          isLoading: cosmosFee.isLoading,
+          isSimulateError: cosmosFee.isSimulateError,
+        }
+      : undefined,
+  );
   const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
   const { currentNetwork } = useNetwork();
   const { memorizedTransferInfo, clear: clearMemorizedTransferInfo } = useTransferInfo();

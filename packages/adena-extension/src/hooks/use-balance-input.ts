@@ -11,7 +11,7 @@ import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
 import { useTokenBalance } from './use-token-balance';
-import { useTokenMetainfo } from './use-token-metainfo';
+import { getCosmosOriginDenom, useTokenMetainfo } from './use-token-metainfo';
 import { useNetworkFee } from './wallet/use-network-fee';
 
 export type UseBalanceInputHookReturn = {
@@ -27,8 +27,19 @@ export type UseBalanceInputHookReturn = {
   validateBalanceInput: () => boolean;
 };
 
-export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHookReturn => {
-  const { balanceService } = useAdenaContext();
+export type CosmosFeeContext = {
+  currentFeeAmount: string;
+  currentFeeDenom: string | null;
+  feeDecimals: number | undefined;
+  isLoading: boolean;
+  isSimulateError: boolean;
+};
+
+export const useBalanceInput = (
+  tokenMetainfo?: TokenModel,
+  cosmosFeeContext?: CosmosFeeContext,
+): UseBalanceInputHookReturn => {
+  const { balanceService, tokenRegistry } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
@@ -64,11 +75,14 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
   }, [currentNetwork, currentAddress, currentBalance, tokenMetainfo]);
 
   useEffect(() => {
-    if (!currentGasInfo || !currentBalance) {
+    if (!currentBalance) {
       return;
     }
 
     if (currentBalance.type === 'gno-native') {
+      if (!currentGasInfo) {
+        return;
+      }
       const convertedBalance = convertDenom(
         currentBalance.amount.value,
         currentBalance.amount.denom,
@@ -86,15 +100,47 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
       } else {
         setAvailAmountNumber(BigNumber(0));
       }
-    } else {
-      const convertedBalanceAmount = BigNumber(currentBalance.amount.value);
-      if (convertedBalanceAmount.isGreaterThan(0)) {
-        setAvailAmountNumber(convertedBalanceAmount);
-      } else {
-        setAvailAmountNumber(BigNumber(0));
-      }
+      return;
     }
-  }, [currentGasInfo, currentBalance]);
+
+    // cosmos-native: balance.amount.value is already display-unit
+    // (CosmosBalanceService.getTokenBalance shifts by -decimals).
+    const balanceDisplay = BigNumber(currentBalance.amount.value);
+    // Prefer the metainfo denom; fall back to tokenRegistry for accounts
+    // whose stored entries predate the denom-seed fix.
+    let transferDenom: string | null =
+      (tokenMetainfo as { denom?: string } | undefined)?.denom ?? null;
+    if (!transferDenom && tokenMetainfo) {
+      const profile = tokenRegistry.get(tokenMetainfo.tokenId);
+      transferDenom = profile ? getCosmosOriginDenom(profile) || null : null;
+    }
+    const feeDenom = cosmosFeeContext?.currentFeeDenom ?? null;
+    const rawFee = cosmosFeeContext?.currentFeeAmount ?? null;
+    const feeDecimals = cosmosFeeContext?.feeDecimals ?? tokenMetainfo?.decimals ?? 6;
+
+    if (
+      transferDenom &&
+      feeDenom &&
+      transferDenom === feeDenom &&
+      rawFee &&
+      Number(rawFee) > 0
+    ) {
+      const feeDisplay = BigNumber(rawFee).shiftedBy(-feeDecimals);
+      const avail = balanceDisplay.minus(feeDisplay);
+      setAvailAmountNumber(avail.isGreaterThan(0) ? avail : BigNumber(0));
+      return;
+    }
+
+    setAvailAmountNumber(balanceDisplay.isGreaterThan(0) ? balanceDisplay : BigNumber(0));
+  }, [
+    currentGasInfo,
+    currentBalance,
+    tokenMetainfo,
+    tokenRegistry,
+    cosmosFeeContext?.currentFeeAmount,
+    cosmosFeeContext?.currentFeeDenom,
+    cosmosFeeContext?.feeDecimals,
+  ]);
 
   const updateCurrentBalance = useCallback(async () => {
     if (!currentAddress) {
@@ -148,12 +194,15 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
   }, []);
 
   const onClickMax = useCallback(() => {
-    if (currentGasInfo) {
-      setAmount(availAmountNumber.toString());
+    // gno: requires gas info to compute the fee-adjusted max — bail until ready.
+    // cosmos: useEffect falls back to the full display balance when the fee
+    // estimate isn't ready, so committing availAmountNumber is safe. The
+    // summary screen's transfer + fee check is the authoritative gate.
+    if (!cosmosFeeContext && !currentGasInfo) {
+      return;
     }
-
     setAmount(availAmountNumber.toString());
-  }, [availAmountNumber, currentGasInfo]);
+  }, [availAmountNumber, currentGasInfo, cosmosFeeContext]);
 
   const validateBalanceInput = useCallback(() => {
     if (
