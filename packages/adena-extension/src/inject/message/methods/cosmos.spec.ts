@@ -105,7 +105,7 @@ function makeCore(overrides?: Partial<FakeCore>): FakeCore {
       name: 'Account 1',
       type: 'HD_WALLET',
       publicKey: new Uint8Array([1, 2, 3, 4]),
-      resolveAddress: async () => SAMPLE_BECH32,
+      getAddress: async () => SAMPLE_BECH32,
     })),
     getInMemoryKey: jest.fn(async () => null),
     isLockedBy: jest.fn(async () => false),
@@ -458,14 +458,14 @@ describe('cosmos handlers', () => {
       });
     });
 
-    it('cosmosGetKey answers UNEXPECTED_ERROR when resolveAddress throws', async () => {
+    it('cosmosGetKey answers UNEXPECTED_ERROR when getAddress throws', async () => {
       const core = makeCore({
         getCurrentAccount: jest.fn(async () => ({
           id: 'acc-1',
           name: 'Account 1',
           type: 'HD_WALLET',
           publicKey: new Uint8Array([1, 2, 3, 4]),
-          resolveAddress: async () => {
+          getAddress: async () => {
             throw new Error('resolve-fail');
           },
         })),

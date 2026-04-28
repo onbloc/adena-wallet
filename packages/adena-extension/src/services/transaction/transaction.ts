@@ -413,6 +413,32 @@ export class TransactionService {
   }
 
   /**
+   * AMINO-mode counterpart of `signCosmosAminoDoc` for Ledger accounts.
+   * Uses a connector-bound LedgerKeyring instead of the wallet-owned one
+   * (whose connector is null after restore) and delegates to the same
+   * `signRaw` path that the Gno sign flow already exercises. Direct mode has
+   * no Ledger counterpart — the Cosmos Ledger app only signs AMINO JSON, so
+   * dApps must use `getOfflineSignerAuto` (which our `isNanoLedger` flag
+   * already steers toward AMINO-only).
+   */
+  public signCosmosAminoDocWithLedger = async (
+    ledgerConnector: AdenaLedgerConnector,
+    account: LedgerAccount,
+    signDoc: StdSignDoc,
+  ): Promise<AminoSignResponse> => {
+    const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
+    const signBytes = serializeSignDoc(signDoc);
+    const signature = await keyring.signRaw(signBytes, { hdPath: account.hdPath });
+    return {
+      signed: signDoc,
+      signature: {
+        pub_key: encodeSecp256k1Pubkey(toCompressedPubkey(account.publicKey)),
+        signature: Buffer.from(signature).toString('base64'),
+      },
+    };
+  };
+
+  /**
    * Sign a Cosmos document with a Ledger keyring. Parallel to `signCosmos` but
    * bypasses the wallet-owned keyring (whose connector is null after restore)
    * and uses a keyring freshly bound to an active `AdenaLedgerConnector`.

@@ -154,6 +154,51 @@ export const useNetwork = (): NetworkResponse => {
     [changeNetworkProvider],
   );
 
+  // If the user picks a network whose mainnet/testnet stance differs from the
+  // current networkMode, flip the mode and drag the *other* chain group onto
+  // the matching pair. Skip the chain group the user just switched — it's
+  // already correct. Keeps `changeNetwork` symmetric with `changeNetworkMode`.
+  const syncModeFromTarget = useCallback(
+    async (isMainnetTarget: boolean, justSwitched: ChainGroup): Promise<void> => {
+      const nextMode: NetworkMode = isMainnetTarget ? 'mainnet' : 'testnet';
+      if (nextMode === mode) {
+        return;
+      }
+      setNetworkMode(nextMode);
+      await chainService.updateNetworkMode(nextMode).catch(() => null);
+
+      if (justSwitched !== 'gno') {
+        const gnoPair = networkMetainfos.find(
+          (network) => !network.deleted && (network.main === true) === isMainnetTarget,
+        );
+        if (gnoPair && gnoPair.id !== currentGnoNetwork?.id) {
+          await chainService.updateCurrentNetworkId(gnoPair.id);
+          await changeNetworkOfProvider(gnoPair);
+          setSelectedProfileByChainGroup((prev) => ({ ...prev, gno: gnoPair.id }));
+        }
+      }
+
+      if (justSwitched !== 'atomone') {
+        const atomonePair = atomoneNetworks.find(
+          (network) => !network.deleted && network.isMainnet === isMainnetTarget,
+        );
+        if (atomonePair && atomonePair.id !== currentAtomoneNetwork?.id) {
+          setCurrentAtomoneNetwork(atomonePair);
+          setSelectedProfileByChainGroup((prev) => ({ ...prev, atomone: atomonePair.id }));
+          await chainService.updateCurrentAtomoneNetworkId(atomonePair.id).catch(() => null);
+        }
+      }
+    },
+    [
+      mode,
+      networkMetainfos,
+      atomoneNetworks,
+      currentGnoNetwork,
+      currentAtomoneNetwork,
+      changeNetworkOfProvider,
+    ],
+  );
+
   const changeNetwork = useCallback(
     async (id: string) => {
       const atomoneTarget = atomoneNetworks.find((network) => network.id === id);
@@ -161,6 +206,7 @@ export const useNetwork = (): NetworkResponse => {
         setCurrentAtomoneNetwork(atomoneTarget);
         setSelectedProfileByChainGroup((prev) => ({ ...prev, atomone: atomoneTarget.id }));
         await chainService.updateCurrentAtomoneNetworkId(atomoneTarget.id).catch(() => null);
+        await syncModeFromTarget(atomoneTarget.isMainnet, 'atomone');
         return true;
       }
 
@@ -172,9 +218,10 @@ export const useNetwork = (): NetworkResponse => {
       await chainService.updateCurrentNetworkId(network.id);
       await changeNetworkOfProvider(network);
       setSelectedProfileByChainGroup((prev) => ({ ...prev, gno: network.id }));
+      await syncModeFromTarget(network.main === true, 'gno');
       return true;
     },
-    [networkMetainfos, atomoneNetworks, changeNetworkOfProvider],
+    [networkMetainfos, atomoneNetworks, changeNetworkOfProvider, syncModeFromTarget],
   );
 
   const changeNetworkMode = useCallback(
