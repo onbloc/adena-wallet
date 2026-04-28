@@ -24,9 +24,31 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
         <input
           className='amount-input'
           type='number'
+          min='0'
           value={amount}
           autoComplete='off'
-          onChange={(event): void => onChangeAmount(event.target.value)}
+          // Whitelist digits + a single decimal point. Catches scientific
+          // notation, signs, and other inputs that bypass onKeyDown via paste
+          // or drag-and-drop.
+          onChange={(event): void => {
+            const value = event.target.value;
+            if (!/^[0-9]*\.?[0-9]*$/.test(value)) {
+              return;
+            }
+            onChangeAmount(value);
+          }}
+          onKeyDown={(event): void => {
+            if (
+              event.key === '-' ||
+              event.key === 'e' ||
+              event.key === 'E' ||
+              event.key === 'ArrowUp' ||
+              event.key === 'ArrowDown'
+            ) {
+              event.preventDefault();
+            }
+          }}
+          onWheel={(event): void => event.currentTarget.blur()}
           placeholder='Amount'
         />
         <span className='denom'>{denom}</span>
