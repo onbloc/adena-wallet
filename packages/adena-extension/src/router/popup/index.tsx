@@ -18,10 +18,15 @@ import { SecurityPrivacy } from '@pages/popup/certify/security-privacy';
 import { Settings } from '@pages/popup/certify/settings';
 
 import AccountDetailsPage from '@pages/popup/wallet/account-details';
+import Accounts from '@pages/popup/wallet/accounts';
 import AddCustomNetworkPage from '@pages/popup/wallet/add-custom-network';
 import ApproveAddingNetworkPage from '@pages/popup/wallet/approve-adding-network';
 import ApproveChangingNetworkPage from '@pages/popup/wallet/approve-changing-network';
 import ApproveEstablish from '@pages/popup/wallet/approve-establish';
+import ApproveEstablishCosmos from '@pages/popup/wallet/approve-establish-cosmos';
+import ApproveGetCosmosKey from '@pages/popup/wallet/approve-get-cosmos-key';
+import ApproveSignCosmos from '@pages/popup/wallet/approve-sign-cosmos';
+import ApproveSignCosmosLedgerLoading from '@pages/popup/wallet/approve-sign-cosmos-ledger-loading';
 import { ApproveLogin } from '@pages/popup/wallet/approve-login';
 import ApproveSign from '@pages/popup/wallet/approve-sign';
 import ApproveSignLedgerLoading from '@pages/popup/wallet/approve-sign-ledger-loading';
@@ -164,12 +169,20 @@ export const PopupRouter = (): JSX.Element => {
         />
         <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
+        <Route path={RoutePath.ApproveEstablishCosmos} element={<ApproveEstablishCosmos />} />
+        <Route path={RoutePath.ApproveSignCosmos} element={<ApproveSignCosmos />} />
+        <Route
+          path={RoutePath.ApproveSignCosmosLedgerLoading}
+          element={<ApproveSignCosmosLedgerLoading />}
+        />
+        <Route path={RoutePath.ApproveGetCosmosKey} element={<ApproveGetCosmosKey />} />
         <Route path={RoutePath.ApproveChangingNetwork} element={<ApproveChangingNetworkPage />} />
         <Route path={RoutePath.ApproveAddingNetwork} element={<ApproveAddingNetworkPage />} />
         <Route path={RoutePath.ConnectedApps} element={<ConnectedApps />} />
         <Route path={RoutePath.AddCustomNetwork} element={<AddCustomNetworkPage />} />
         <Route path={RoutePath.EditCustomNetwork} element={<EditCustomNetworkPage />} />
         <Route path={RoutePath.ChangeNetwork} element={<ChangeNetwork />} />
+        <Route path={RoutePath.Accounts} element={<Accounts />} />
         <Route path={RoutePath.AccountDetails} element={<AccountDetailsPage />} />
         <Route path={RoutePath.AddressBook} element={<AddressBook />} />
         <Route path={RoutePath.AddAddress} element={<AddAddress />} />

@@ -26,7 +26,7 @@ export class CosmosBalanceService {
     const value = new BigNumber(rawAmount).shiftedBy(-token.decimals).toFixed();
 
     return {
-      main: token.tags?.includes('staking') ?? false,
+      main: false,
       tokenId: token.id,
       networkId: token.chainProfileId,
       display: true,

@@ -5,8 +5,13 @@ import {
   WalletResponseStatus,
   WalletResponseType,
 } from '@adena-wallet/sdk';
+import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 import { v4 as uuidv4 } from 'uuid';
 
+import {
+  serializeSignDoc,
+  serializeTxBytes,
+} from '@common/utils/cosmos-serialize';
 import {
   validateChainId,
   validateFee,
@@ -27,21 +32,29 @@ import {
   AddNetworkParams,
   AddNetworkResponse,
   BroadcastMultisigTransactionResponse,
+  BroadcastMode,
   ContractOptions,
+  CosmosResponseExecuteType,
   CreateMultisigAccountParams,
   CreateMultisigAccountResponse,
   CreateMultisigTransactionParams,
   CreateMultisigTransactionResponse,
   DoContractResponse,
+  EnableCosmosResponse,
   GetAccountResponse,
+  GetCosmosKeyResponse,
   GetNetworkResponse,
   MultisigTransactionDocument,
+  SendCosmosTxResponse,
   Signature,
+  SignCosmosAminoResponse,
+  SignCosmosDirectResponse,
   SignMultisigTransactionResponse,
   SignTxResponse,
   SwitchNetworkResponse,
   TransactionParams,
 } from '@inject/types';
+import type { StdSignDoc } from '@cosmjs/amino';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 
 type Params = { [key in string]: any };
@@ -76,9 +89,13 @@ export class AdenaExecutor {
     return AdenaExecutor.instance;
   };
 
-  public addEstablish = (name?: string): Promise<AddEstablishResponse> => {
+  public addEstablish = (
+    name?: string,
+    chainIds?: string | string[],
+  ): Promise<AddEstablishResponse> => {
     const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.ADD_ESTABLISH, {
       name: name ?? 'Unknown',
+      chainIds,
     });
     return this.sendEventMessage<Record<string, never>>(eventMessage);
   };
@@ -219,6 +236,64 @@ export class AdenaExecutor {
       { chainId },
     );
     return this.sendEventMessage(eventMessage);
+  };
+
+  public enableCosmos = (chainIds: string | string[]): Promise<EnableCosmosResponse> => {
+    return this.sendEventMessage(
+      AdenaExecutor.createCosmosEventMessage(CosmosResponseExecuteType.ENABLE_COSMOS, {
+        chainIds,
+      }),
+    );
+  };
+
+  public getCosmosKey = (chainId: string): Promise<GetCosmosKeyResponse> => {
+    return this.sendEventMessage(
+      AdenaExecutor.createCosmosEventMessage(CosmosResponseExecuteType.GET_COSMOS_KEY, {
+        chainId,
+      }),
+    );
+  };
+
+  public signCosmosAmino = (
+    chainId: string,
+    signer: string,
+    signDoc: StdSignDoc,
+  ): Promise<SignCosmosAminoResponse> => {
+    return this.sendEventMessage(
+      AdenaExecutor.createCosmosEventMessage(CosmosResponseExecuteType.SIGN_COSMOS_AMINO, {
+        chainId,
+        signer,
+        signDoc,
+      }),
+    );
+  };
+
+  public signCosmosDirect = (
+    chainId: string,
+    signer: string,
+    signDoc: SignDoc,
+  ): Promise<SignCosmosDirectResponse> => {
+    return this.sendEventMessage(
+      AdenaExecutor.createCosmosEventMessage(CosmosResponseExecuteType.SIGN_COSMOS_DIRECT, {
+        chainId,
+        signer,
+        signDoc: serializeSignDoc(signDoc),
+      }),
+    );
+  };
+
+  public sendCosmosTx = (
+    chainId: string,
+    tx: Uint8Array,
+    mode: BroadcastMode,
+  ): Promise<SendCosmosTxResponse> => {
+    return this.sendEventMessage(
+      AdenaExecutor.createCosmosEventMessage(CosmosResponseExecuteType.SEND_COSMOS_TX, {
+        chainId,
+        tx: serializeTxBytes(tx),
+        mode,
+      }),
+    );
   };
 
   /**
@@ -423,6 +498,25 @@ export class AdenaExecutor {
     withNotification?: boolean,
   ): InjectionMessage => {
     return InjectionMessageInstance.request(type, params, undefined, withNotification);
+  };
+
+  // TODO: fold this into `createEventMessage` once `@adena-wallet/sdk` is
+  // updated to add Cosmos entries to `WalletMessageInfo`. Until then the SDK
+  // lookup table has no row for these request types, so
+  // `InjectionMessageInstance.request` would throw on destructure — we build
+  // the `InjectionMessage` literal directly as a temporary workaround.
+  private static createCosmosEventMessage = (
+    type: CosmosResponseExecuteType,
+    params: Params,
+  ): InjectionMessage => {
+    return {
+      code: 0,
+      type: type as unknown as WalletResponseType,
+      status: 'request',
+      message: '',
+      data: params,
+      withNotification: true,
+    };
   };
 
   private messageHandler = (event: MessageEvent<InjectionMessage>): void => {

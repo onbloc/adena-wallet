@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
+import IconCopy from '@assets/icon-copy';
+import IconCopyCheck from '@assets/icon-copy-check';
 import IconEtc from '@assets/icon-etc';
 import IconLink from '@assets/icon-link';
 import IconQRCode from '@assets/icon-qrcode';
-import { CopyIconButton, Portal } from '@components/atoms';
+import { formatAddress } from '@common/utils/client-utils';
+import { Portal } from '@components/atoms';
 import { SideMenuAccountItemProps } from '@types';
 
 import { GNOT_TOKEN } from '@common/constants/token.constant';
@@ -28,6 +31,24 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
   const [openedMoreInfo, setOpenedMoreInfo] = useState(false);
   const [positionX, setPositionX] = useState(0);
   const [positionY, setPositionY] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  const onClickCopy = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      navigator.clipboard.writeText(address);
+      setCopied(true);
+      focusAccountId(null);
+    },
+    [address, focusAccountId],
+  );
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return (): void => clearTimeout(timer);
+  }, [copied]);
 
   const displayName = useMemo(() => {
     return name;
@@ -99,11 +120,12 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
       <div className='info-wrapper'>
         <div className='address-wrapper'>
           <span className='name'>{displayName}</span>
-          <CopyIconButton
-            className='copy-button'
-            copyText={address}
-            onClick={(): void => focusAccountId(null)}
-          />
+          <div className='address-copy' onClick={onClickCopy}>
+            <span className='address'>{formatAddress(address, 6)}</span>
+            <span className='copy-icon'>
+              {copied ? <IconCopyCheck /> : <IconCopy />}
+            </span>
+          </div>
           {label !== null && <span className='label'>{label}</span>}
         </div>
         <div className='balance-wrapper'>

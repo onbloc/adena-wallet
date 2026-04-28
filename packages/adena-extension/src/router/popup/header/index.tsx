@@ -20,11 +20,11 @@ const Wrapper = styled.header`
   display: flex;
   flex-shrink: 0;
   width: 100%;
-  height: 48px;
+  height: 50px;
   background-color: ${getTheme('neutral', '_8')};
   position: sticky;
   top: 0px;
-  z-index: 2;
+  z-index: 20;
 `;
 
 export const Header = (): JSX.Element => {

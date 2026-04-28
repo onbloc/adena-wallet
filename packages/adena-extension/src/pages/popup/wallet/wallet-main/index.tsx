@@ -5,21 +5,20 @@ import { useRecoilState } from 'recoil';
 import styled from 'styled-components';
 
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import IconDeposit from '@assets/icon-deposit';
+import IconSend from '@assets/icon-send';
+import IconSign from '@assets/icon-sign';
 import { CHAIN_ICON_MAP, COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
-import { Button, Row, Text } from '@components/atoms';
-import IconThunder from '@components/atoms/icon/icon-assets/icon-thunder';
-import LoadingButton from '@components/atoms/loading-button/loading-button';
+import { MainActionButton } from '@components/atoms';
 import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
 import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
 import TokenList from '@components/pages/wallet-main/token-list/token-list';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useFaucet } from '@hooks/use-faucet';
 import { useLoadImages } from '@hooks/use-load-images';
 import { useNetwork } from '@hooks/use-network';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
-import { useToast } from '@hooks/use-toast';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { WalletState } from '@states';
@@ -40,12 +39,13 @@ const Wrapper = styled.main`
     top: 48px;
     left: 0;
     background-color: ${({ theme }): string => theme.neutral._8};
+    z-index: 10;
   }
 
   .token-balance-wrapper {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .main-button-wrapper {
@@ -63,13 +63,6 @@ const Wrapper = styled.main`
   }
 `;
 
-const MainButton = styled(Button)`
-  border-radius: 18px;
-`;
-
-const StyledFaucetButtonContent = styled(Row)`
-  gap: 8px;
-`;
 
 export const WalletMain = (): JSX.Element => {
   usePreventHistoryBack();
@@ -80,8 +73,6 @@ export const WalletMain = (): JSX.Element => {
   const { mainTokenBalance, currentBalances } = useTokenBalance();
   const { refetchBalances } = useTokenBalance();
   const { updateAllTokenMetainfos, getTokenImage } = useTokenMetainfo();
-  const { isSupported: supportedFaucet, isLoading: isFaucetLoading, faucet } = useFaucet();
-  const { show } = useToast();
 
   const { addLoadingImages, completeImageLoading } = useLoadImages();
 
@@ -90,15 +81,6 @@ export const WalletMain = (): JSX.Element => {
 
     return !isAirgapAccount(currentAccount) && !isMultisigAccount(currentAccount);
   }, [currentAccount]);
-
-  const onClickFaucetButton = (): void => {
-    if (isFaucetLoading) {
-      return;
-    }
-    faucet().then((result) => {
-      show(result.message);
-    });
-  };
 
   const onClickDepositButton = (): void =>
     navigate(RoutePath.WalletSearch, { state: { type: 'deposit' } });
@@ -229,31 +211,18 @@ export const WalletMain = (): JSX.Element => {
       </div>
 
       <div className='main-button-wrapper'>
-        {supportedFaucet ? (
-          <MainButton
-            hierarchy='dark'
-            as={LoadingButton}
-            loading={isFaucetLoading}
-            fullWidth
-            onClick={onClickFaucetButton}
-          >
-            <StyledFaucetButtonContent>
-              <IconThunder />
-              <Text type={'body1Bold'}>Faucet</Text>
-            </StyledFaucetButtonContent>
-          </MainButton>
-        ) : (
-          <MainButton hierarchy='dark' fullWidth onClick={onClickDepositButton}>
-            <Text type={'body1Bold'}>Deposit</Text>
-          </MainButton>
-        )}
-        <MainButton hierarchy='dark' fullWidth onClick={onClickActionButton}>
-          <Text type={'body1Bold'}>{actionButtonText}</Text>
-        </MainButton>
+        <MainActionButton
+          icon={<IconDeposit />}
+          label='Deposit'
+          onClick={onClickDepositButton}
+        />
+        <MainActionButton
+          icon={<IconSend />}
+          label={actionButtonText ?? ''}
+          onClick={onClickActionButton}
+        />
         {showSignTxButton && (
-          <MainButton hierarchy='dark' fullWidth onClick={onClickSignButton}>
-            <Text type={'body1Bold'}>Sign</Text>
-          </MainButton>
+          <MainActionButton icon={<IconSign />} label='Sign' onClick={onClickSignButton} />
         )}
       </div>
 

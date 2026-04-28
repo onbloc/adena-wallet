@@ -1,7 +1,17 @@
 import React, { useRef, useState, useEffect } from 'react';
 import styled, { useTheme } from 'styled-components';
 
-import { Text, DefaultInput, inputStyle, ErrorText, LeftArrowBtn } from '@components/atoms';
+import {
+  DefaultInput,
+  ErrorText,
+  inputStyle,
+  LeftArrowBtn,
+  Text,
+} from '@components/atoms';
+import {
+  ChainDropdown,
+  chainOptionsFromRegistry,
+} from '@components/atoms/chain-dropdown';
 import { CancelAndConfirmButton } from '@components/molecules';
 import add from '@assets/add-symbol.svg';
 import edit from '@assets/edit-symbol.svg';
@@ -14,7 +24,7 @@ import {
 } from '@services/index';
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
 import { useChain } from '@hooks/use-chain';
-import { useWalletContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
 import { AddressBookItem } from '@repositories/wallet';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -27,11 +37,17 @@ const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 const AddAddress = (): JSX.Element => {
   const theme = useTheme();
   const { wallet } = useWalletContext();
-  const chain = useChain();
   const { params, goBack } = useAppNavigate<RoutePath.AddAddress>();
   const isAdd = params.status === 'add';
 
   const addressList: AddressBookItem[] = params.addressList;
+  const [chainGroup, setChainGroup] = useState<string>('gno');
+  const chain = useChain(chainGroup);
+  const { chainRegistry } = useAdenaContext();
+  const chainOptions = React.useMemo(
+    () => chainOptionsFromRegistry(chainRegistry),
+    [chainRegistry],
+  );
   const [name, setName] = useState(() => params.curr?.name ?? '');
   const [address, setAddress] = useState(() => params.curr?.address ?? '');
   const [nameError, setNameError] = useState<boolean>(false);
@@ -160,6 +176,12 @@ const AddAddress = (): JSX.Element => {
         src={isAdd ? add : edit}
         alt={isAdd ? 'add icon' : 'edit icon'}
       />
+      <ChainDropdown
+        value={chainGroup}
+        onChange={setChainGroup}
+        options={chainOptions}
+        disabled={!isAdd}
+      />
       <DefaultInput
         value={name}
         placeholder='Label'
@@ -167,6 +189,7 @@ const AddAddress = (): JSX.Element => {
         type='text'
         error={nameError}
         ref={nameInputRef}
+        margin='12px 0 0'
       />
       <AddressInput
         value={address}

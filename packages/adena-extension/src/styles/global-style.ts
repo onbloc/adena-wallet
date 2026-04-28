@@ -34,7 +34,7 @@ export const GlobalPopupStyle = createGlobalStyle`
     height: 100%;
     padding: 0;
     margin: 0;
-    font-family: "Poppins", sans-serif;
+    font-family: "Inter", sans-serif;
     color: #ffffff;
     position: relative;
     background-color: #212128;

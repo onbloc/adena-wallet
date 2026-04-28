@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import {
-  IconWallet,
+  IconHome,
   IconGallery,
   IconSearch,
   IconClock,
@@ -25,7 +25,7 @@ export interface IconProps extends React.SVGProps<SVGSVGElement> {
 }
 
 const ICONS = {
-  iconWallet: IconWallet,
+  iconHome: IconHome,
   iconGallery: IconGallery,
   iconSearch: IconSearch,
   iconClock: IconClock,

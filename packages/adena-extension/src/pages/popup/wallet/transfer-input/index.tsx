@@ -2,12 +2,18 @@ import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { isNativeTokenModel } from '@common/validation/validation-token';
+import {
+  CHAIN_DISPLAY_NAME,
+  chainOptionsFromRegistry,
+} from '@components/atoms/chain-dropdown';
 import TransferInput from '@components/pages/transfer-input/transfer-input/transfer-input';
+import { TransferMode } from '@components/pages/transfer-input/transfer-mode-tabs/transfer-mode-tabs';
 import { useAddressBookInput } from '@hooks/use-address-book-input';
 import { useBalanceInput } from '@hooks/use-balance-input';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useHistoryData from '@hooks/use-history-data';
+import useLink from '@hooks/use-link';
 import { RoutePath } from '@types';
 
 import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
@@ -17,6 +23,9 @@ import { useNetwork } from '@hooks/use-network';
 import useSessionParams from '@hooks/use-session-state';
 import { useTransferInfo } from '@hooks/use-transfer-info';
 import { TokenModel } from '@types';
+
+// TODO(ADN-760 follow-up): replace with the finalized bridging guide URL.
+const BRIDGE_GUIDE_URL = '#';
 
 interface HistoryData {
   isTokenSearch: boolean;
@@ -57,6 +66,41 @@ const TransferInputContainer: React.FC = () => {
   const { currentNetwork } = useNetwork();
   const { memorizedTransferInfo, clear: clearMemorizedTransferInfo } = useTransferInfo();
   const [memo, setMemo] = useState(memorizedTransferInfo?.memo || '');
+  const { openLink } = useLink();
+
+  const [transferMode, setTransferMode] = useState<TransferMode>('send');
+
+  const defaultReceivingChainGroup = useMemo(() => {
+    return chainRegistry.list()[0]?.chainGroup ?? 'atomone';
+  }, [chainRegistry]);
+
+  const [receivingChainGroup, setReceivingChainGroup] =
+    useState<string>(defaultReceivingChainGroup);
+
+  const receivingChainName = useMemo(() => {
+    return (
+      CHAIN_DISPLAY_NAME[receivingChainGroup] ??
+      chainRegistry.getDefault(receivingChainGroup)?.displayName ??
+      receivingChainGroup
+    );
+  }, [receivingChainGroup, chainRegistry]);
+
+  const receivingChainOptions = useMemo(
+    () => chainOptionsFromRegistry(chainRegistry),
+    [chainRegistry],
+  );
+
+  const onChangeMode = useCallback((mode: TransferMode) => {
+    setTransferMode(mode);
+  }, []);
+
+  const onChangeReceivingChain = useCallback((chainGroup: string) => {
+    setReceivingChainGroup(chainGroup);
+  }, []);
+
+  const onClickBridgeGuide = useCallback(() => {
+    openLink(BRIDGE_GUIDE_URL);
+  }, [openLink]);
 
   const memoError = useMemo(() => {
     const size = calculateByteSize(memo);
@@ -88,6 +132,11 @@ const TransferInputContainer: React.FC = () => {
   };
 
   const isNext = useMemo(() => {
+    // TODO(ADN-760 follow-up): enable Next for IBC mode once MsgTransfer
+    // path lands (see plans/cosmos-support/phase-10-bonus-ibc.md).
+    if (transferMode === 'ibc') {
+      return false;
+    }
     if (balanceInput.amount === '' || BigNumber(balanceInput.amount).isLessThanOrEqualTo(0)) {
       return false;
     }
@@ -98,7 +147,7 @@ const TransferInputContainer: React.FC = () => {
       return false;
     }
     return true;
-  }, [addressBookInput, balanceInput, memoError]);
+  }, [addressBookInput, balanceInput, memoError, transferMode]);
 
   const onClickCancel = useCallback(() => {
     if (isTokenSearch) {
@@ -110,6 +159,10 @@ const TransferInputContainer: React.FC = () => {
 
   const onClickNext = useCallback(async () => {
     if (!isNext) {
+      return;
+    }
+    if (transferMode === 'ibc') {
+      // TODO(ADN-760 follow-up): wire IBC MsgTransfer path here.
       return;
     }
     if (!tokenMetainfo) {
@@ -135,7 +188,7 @@ const TransferInputContainer: React.FC = () => {
         },
       });
     }
-  }, [addressBookInput, balanceInput, isNext]);
+  }, [addressBookInput, balanceInput, isNext, transferMode]);
 
   useEffect(() => {
     if (isLoadingSessionState) {
@@ -182,6 +235,15 @@ const TransferInputContainer: React.FC = () => {
       addressInput={addressBookInput}
       balanceInput={balanceInput}
       memoInput={{ memo, onChangeMemo, memoError }}
+      transferMode={transferMode}
+      onChangeMode={onChangeMode}
+      ibcChainInput={{
+        chainGroup: receivingChainGroup,
+        chainName: receivingChainName,
+        chainOptions: receivingChainOptions,
+        onChangeChain: onChangeReceivingChain,
+      }}
+      onClickBridgeGuide={onClickBridgeGuide}
       isNext={isNext}
       onClickBack={goBack}
       onClickCancel={onClickCancel}

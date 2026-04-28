@@ -9,6 +9,7 @@ import {
   TokenModel,
   TransactionInfo,
 } from '@types';
+import type { StdSignDoc } from '@cosmjs/amino';
 import { CosmosDocument, Document } from 'adena-module';
 
 export const REGISTER_PATH = 'register.html' as const;
@@ -53,8 +54,13 @@ export enum RoutePath {
   SignMultisigDocument = 'approve/wallet/sign-multisig-document',
   BroadcastMultisigTransaction = 'approve/wallet/broadcast-multisig-transaction',
   ApproveEstablish = '/approve/wallet/establish',
+  ApproveEstablishCosmos = '/approve/wallet/establish-cosmos',
+  ApproveSignCosmos = '/approve/wallet/sign-cosmos',
+  ApproveSignCosmosLedgerLoading = '/approve/wallet/sign-cosmos/ledger-loading',
+  ApproveGetCosmosKey = '/approve/wallet/get-cosmos-key',
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',
+  Accounts = '/wallet/accounts',
   AccountDetails = '/wallet/accounts/:accountId',
   ManageToken = '/wallet/manage-token',
   ManageNft = '/wallet/manage-nft',
@@ -138,6 +144,7 @@ export type RouteParams = {
     type: 'token' | 'wallet';
     token: {
       symbol: string;
+      networkId?: string;
     };
   };
   [RoutePath.Send]: null;
@@ -165,8 +172,20 @@ export type RouteParams = {
     requestData?: InjectionMessage;
   };
   [RoutePath.ApproveEstablish]: null;
+  [RoutePath.ApproveEstablishCosmos]: null;
+  [RoutePath.ApproveSignCosmos]: {
+    requestData?: InjectionMessage;
+  };
+  [RoutePath.ApproveSignCosmosLedgerLoading]: {
+    signDoc: StdSignDoc;
+    responseKey: string | undefined;
+  };
+  [RoutePath.ApproveGetCosmosKey]: {
+    requestData?: InjectionMessage;
+  };
   [RoutePath.ApproveChangingNetwork]: null;
   [RoutePath.ApproveAddingNetwork]: null;
+  [RoutePath.Accounts]: null;
   [RoutePath.AccountDetails]: null;
   [RoutePath.ManageToken]: null;
   [RoutePath.ManageTokenAdded]: null;

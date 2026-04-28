@@ -1,28 +1,29 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import styled, { useTheme } from 'styled-components';
+import { useLocation, useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
 
-import { Text, StatusDot, HamburgerMenuBtn } from '@components/atoms';
+import {
+  HamburgerMenuBtn,
+  NetworkIconButton,
+  AccountSelectorButton,
+} from '@components/atoms';
 import IconCopy from '@assets/icon-copy';
 
 import { getTheme } from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { formatAddress, formatNickname, getSiteName } from '@common/utils/client-utils';
+import { formatNickname, getSiteName } from '@common/utils/client-utils';
 import { useAdenaContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
 import { useNetwork } from '@hooks/use-network';
 import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
-import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
 import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import mixins from '@styles/mixins';
-import { createPopupWindow } from '@common/utils/browser-utils';
-import useSessionParams from '@hooks/use-session-state';
-import { PopWindowButton } from '@components/atoms/pop-window-button';
+import { RoutePath } from '@types';
 
 const Wrapper = styled.div`
   width: 100%;
   height: 100%;
-  padding: 0px 20px 0px 12px;
+  padding: 0px 20px;
   border-bottom: 1px solid ${getTheme('neutral', '_7')};
 `;
 
@@ -30,44 +31,37 @@ const Header = styled.div`
   ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   height: 100%;
-  position: relative;
-  & > img {
-    ${mixins.positionCenter()}
-  }
 `;
 
-const StyledCenterWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
-  width: auto;
-  height: 100%;
+const StyledLeftSideWrapper = styled.div`
+  ${mixins.flex({ direction: 'row', align: 'center', justify: 'flex-start' })};
   gap: 8px;
-  & > img {
-    ${mixins.positionCenter()}
-  }
-`;
-
-const StyledRightWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
-  width: 15px;
   height: 100%;
 `;
 
-const StyledCopyIconButton = styled.button`
+const StyledRightSideWrapper = styled.div`
+  ${mixins.flex({ direction: 'row', align: 'center', justify: 'flex-start' })};
+  gap: 12px;
+  height: 100%;
+`;
+
+const StyledCopyIconButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isActive',
+})<{ isActive?: boolean }>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 16px;
   height: 16px;
   padding: 0;
-  margin-left: 4px;
   background: none;
   border: none;
   cursor: pointer;
-  color: ${getTheme('neutral', '_3')};
+  color: ${({ isActive, theme }): string => (isActive ? theme.neutral._1 : theme.neutral.a)};
   flex-shrink: 0;
 
   &:hover {
-    color: ${getTheme('neutral', 'a')};
+    color: ${getTheme('neutral', '_1')};
   }
 
   svg {
@@ -77,16 +71,13 @@ const StyledCopyIconButton = styled.button`
 `;
 
 export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
-  const theme = useTheme();
-  const { isPopup } = useSessionParams();
+  const navigate = useNavigate();
   const { establishService } = useAdenaContext();
-  const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
   const [protocol, setProtocol] = useState('');
-  const [, setUrl] = useState('');
-  const { currentAccount, currentAddress } = useCurrentAccount();
-  const toggleMenuHandler = (): void => setOpen(!open);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { currentAccount } = useCurrentAccount();
+  const goToAccounts = (): void => navigate(RoutePath.Accounts);
+  const goToSettings = (): void => navigate(RoutePath.Setting);
   const [isEstablish, setIsEstablish] = useState(false);
   const location = useLocation();
   const [currentAccountName, setCurrentAccountName] = useState('');
@@ -127,7 +118,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
       const iconCenterX = rect.left + rect.width / 2;
       const popoverLeft = (window.innerWidth - POPOVER_WIDTH) / 2;
       setPopoverX(iconCenterX - popoverLeft);
-      setPopoverY(rect.bottom + 4);
+      setPopoverY(rect.bottom + 16);
     }
     setPopoverOpen(true);
   }, [cancelClose]);
@@ -152,11 +143,9 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   useEffect(() => {
     getCurrentUrl().then(async (currentUrl) => {
       const hostname = new URL(currentUrl as string).hostname;
-      const href = new URL(currentUrl as string).href;
       const protocol = new URL(currentUrl as string).protocol;
       if (hostname !== '') {
         setHostname(hostname);
-        setUrl(href);
         setProtocol(protocol);
       }
     });
@@ -188,17 +177,6 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const tooltipTextMaker = (hostname: string, isEstablish: boolean): string => {
-    let currentHostname = hostname;
-    if (!hostname.includes('.')) {
-      currentHostname = 'chrome-extension';
-    }
-    return isEstablish
-      ? `You are connected to ${currentHostname}`
-      : `You are not connected to ${currentHostname}`;
-  };
-
   const getCurrentUrl = (): Promise<unknown> => {
     return new Promise((resolver) => {
       const queryOptions = { active: true, lastFocusedWindow: true };
@@ -210,36 +188,32 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     });
   };
 
-  const popupWindow = (): void => {
-    createPopupWindow(location.pathname, location.state);
-  };
+  const displayHostname = hostname && hostname.includes('.') ? hostname : 'chrome-extension';
 
   return !disabled ? (
     <Wrapper>
       <Header>
-        <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
-        <StyledCenterWrapper>
-          <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} />
-          <Text type='body1Bold' display='inline-flex'>
-            {formatNickname(currentAccountName, 12)}
-            <Text type='body1Reg' color={theme.neutral.a}>
-              {` (${formatAddress(currentAddress || '')})`}
-            </Text>
-          </Text>
+        <StyledLeftSideWrapper>
+          <AccountSelectorButton
+            name={formatNickname(currentAccountName, 12)}
+            onClick={goToAccounts}
+          />
           <StyledCopyIconButton
             ref={copyButtonRef}
             type='button'
+            isActive={popoverOpen}
             onMouseEnter={handleCopyIconMouseEnter}
             onMouseLeave={handleCopyIconMouseLeave}
+            aria-label='Copy address'
           >
             <IconCopy />
           </StyledCopyIconButton>
-        </StyledCenterWrapper>
-        <StyledRightWrapper>
-          {isPopup ? <div /> : <PopWindowButton onClick={popupWindow} />}
-        </StyledRightWrapper>
+        </StyledLeftSideWrapper>
+        <StyledRightSideWrapper>
+          <NetworkIconButton isConnected={isEstablish} hostname={displayHostname} />
+          <HamburgerMenuBtn type='button' onClick={goToSettings} />
+        </StyledRightSideWrapper>
       </Header>
-      <SideMenuLayout open={open} setOpen={setOpen} />
       <AccountAddressesPopover
         open={popoverOpen}
         positionX={popoverX}

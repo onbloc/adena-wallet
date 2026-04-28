@@ -52,7 +52,7 @@ describe('CosmosBalanceService', () => {
 
       expect(result).not.toBeNull();
       expect(result).toEqual({
-        main: true,
+        main: false,
         tokenId: 'atomone-1:uatone',
         networkId: 'atomone-1',
         display: true,
@@ -106,20 +106,14 @@ describe('CosmosBalanceService', () => {
       expect(mockGetBalance).not.toHaveBeenCalled();
     });
 
-    it('sets main=true for tokens with staking tag', async () => {
+    it('sets main=false for cosmos tokens regardless of native/staking tags so they remain toggleable in Manage Tokens', async () => {
       mockGetBalance.mockResolvedValue('500000');
 
-      const result = await service.getTokenBalance('atone1abc', UATONE);
+      const atone = await service.getTokenBalance('atone1abc', UATONE);
+      const photon = await service.getTokenBalance('atone1abc', UPHOTON);
 
-      expect(result?.main).toBe(true);
-    });
-
-    it('sets main=false for tokens without staking tag (e.g. fee-only tokens like PHOTON)', async () => {
-      mockGetBalance.mockResolvedValue('500000');
-
-      const result = await service.getTokenBalance('atone1abc', UPHOTON);
-
-      expect(result?.main).toBe(false);
+      expect(atone?.main).toBe(false);
+      expect(photon?.main).toBe(false);
     });
 
     it('uses empty string when iconUrl is undefined', async () => {

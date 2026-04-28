@@ -8,50 +8,40 @@ export const PopoverWrapper = styled.div<{ $caretX: number; $positionY: number }
   transform: translateX(-50%);
   top: ${({ $positionY }): string => `${$positionY}px`};
   min-width: 220px;
-  background-color: ${getTheme('neutral', '_8')};
-  border: 1px solid ${getTheme('neutral', '_7')};
+  background-color: ${getTheme('neutral', '_9')};
   border-radius: 8px;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
   z-index: 99;
   overflow: visible;
 
-  /* Caret border (outer triangle) */
-  &::before {
-    content: '';
-    position: absolute;
-    top: -7px;
-    left: ${({ $caretX }): string => `${$caretX}px`};
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 7px solid transparent;
-    border-right: 7px solid transparent;
-    border-bottom: 7px solid ${getTheme('neutral', '_7')};
-  }
-
-  /* Caret fill (inner triangle, same as background) */
+  /* Caret fill */
   &::after {
     content: '';
     position: absolute;
-    top: -5px;
+    top: -12px;
     left: ${({ $caretX }): string => `${$caretX}px`};
     transform: translateX(-50%);
     width: 0;
     height: 0;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-bottom: 6px solid ${getTheme('neutral', '_8')};
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 12px solid ${getTheme('neutral', '_9')};
   }
 `;
 
 export const ChainRow = styled.div`
   ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })};
   padding: 10px 12px;
-  border-bottom: 1px solid ${getTheme('neutral', '_7')};
   gap: 8px;
+  transition: color 0.15s ease;
 
-  &:last-child {
-    border-bottom: 0;
+  &:hover {
+    .address {
+      color: ${getTheme('neutral', '_1')};
+    }
+    svg path {
+      stroke: ${getTheme('neutral', '_1')};
+    }
   }
 
   .chain-left {
@@ -68,7 +58,7 @@ export const ChainRow = styled.div`
   }
 
   .chain-name {
-    ${fonts.captionReg}
+    ${fonts.body3Reg}
     color: ${getTheme('neutral', '_1')};
   }
 
@@ -79,8 +69,8 @@ export const ChainRow = styled.div`
   }
 
   .address {
-    ${fonts.captionReg}
-    color: ${getTheme('neutral', '_3')};
+    ${fonts.body3Reg}
+    color: ${getTheme('neutral', 'a')};
     white-space: nowrap;
   }
 `;

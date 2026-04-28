@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { GRC20TokenModel, GRC721CollectionModel, TokenModel } from '@types';
 import { Account } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useNFTCollectionHandler } from './nft/use-collection-handler';
 import { useGRC20Tokens } from './use-grc20-tokens';
 import { useTransferTokens } from './wallet/use-transfer-tokens';
@@ -72,10 +72,10 @@ function makeTokenKey(token: TokenModel): string {
 }
 
 export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
-  const { balanceService, tokenService } = useAdenaContext();
+  const { balanceService, tokenService, tokenRegistry } = useAdenaContext();
   const [tokenMetainfos, setTokenMetainfo] = useRecoilState(TokenState.tokenMetainfos);
   const { currentAccount } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
+  const { currentNetwork, currentAtomoneNetwork } = useNetwork();
   const chain = useChain();
   const { fetchTransferTokens } = useTransferTokens();
   const { addCollections } = useNFTCollectionHandler();
@@ -111,6 +111,59 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       (tokenMetainfo) => tokenMetainfo.main || tokenMetainfo.networkId === currentNetwork.networkId,
     );
   }, [tokenMetainfos, currentNetwork]);
+
+  // Seed cosmos token entries (e.g. ATONE/PHOTON) into the account's stored
+  // metainfos when an AtomOne network is active. Source of truth is
+  // `tokenRegistry`, which already enumerates every supported cosmos token per
+  // chainProfileId. Without this, cosmos tokens have no persisted `display`
+  // flag and the Manage Tokens toggle has nothing to flip.
+  useEffect(() => {
+    if (!currentAccount) return;
+    const atomoneId = currentAtomoneNetwork?.id ?? null;
+    if (!atomoneId) return;
+
+    const cosmosProfiles = tokenRegistry.list(atomoneId);
+    if (cosmosProfiles.length === 0) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      // Read straight from storage to avoid a race with the recoil-state
+      // initializer on first mount, which could overwrite stored entries.
+      const stored = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
+      if (cancelled) return;
+
+      const missing = cosmosProfiles.filter(
+        (profile) =>
+          !stored.find(
+            (m) => m.tokenId === profile.id && m.networkId === profile.chainProfileId,
+          ),
+      );
+      if (missing.length === 0) return;
+
+      const newEntries: TokenModel[] = missing.map((profile) => ({
+        main: false,
+        tokenId: profile.id,
+        networkId: profile.chainProfileId,
+        display: true,
+        type: 'cosmos-native',
+        name: profile.name,
+        symbol: profile.symbol,
+        decimals: profile.decimals,
+        image: profile.iconUrl ?? '',
+      }));
+
+      const merged = [...stored, ...newEntries];
+      await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, merged);
+      if (!cancelled) {
+        setTokenMetainfo(merged);
+      }
+    })();
+
+    return (): void => {
+      cancelled = true;
+    };
+  }, [currentAccount, currentAtomoneNetwork?.id, tokenRegistry, tokenService, setTokenMetainfo]);
 
   const tokenMetaMap = useMemo(() => {
     if (!allTokenMetainfos) {

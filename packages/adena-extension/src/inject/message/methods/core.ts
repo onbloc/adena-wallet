@@ -1,4 +1,4 @@
-import { Account } from 'adena-module';
+import { Account, ChainRegistry, createChainRegistry } from 'adena-module';
 import axios from 'axios';
 
 import { GnoProvider } from '@common/provider/gno/gno-provider';
@@ -8,6 +8,7 @@ import { ChainRepository, TokenRepository } from '@repositories/common';
 import {
   WalletAccountRepository,
   WalletAddressRepository,
+  WalletEstablishAtomOneRepository,
   WalletEstablishRepository,
   WalletRepository,
 } from '@repositories/wallet';
@@ -16,6 +17,7 @@ import { TransactionService } from '@services/transaction';
 import {
   WalletAccountService,
   WalletAddressBookService,
+  WalletEstablishAtomOneService,
   WalletEstablishService,
   WalletService,
 } from '@services/wallet';
@@ -39,7 +41,11 @@ export class InjectCore {
 
   private establishRepository = new WalletEstablishRepository(this.localStorage);
 
+  private establishAtomOneRepository = new WalletEstablishAtomOneRepository(this.localStorage);
+
   private addressBookRepository = new WalletAddressRepository(this.localStorage);
+
+  public chainRegistry: ChainRegistry = createChainRegistry();
 
   private chainRepository = new ChainRepository(this.localStorage, this.axiosInstance);
 
@@ -63,7 +69,15 @@ export class InjectCore {
     this.addressBookRepository,
   );
 
-  public establishService = new WalletEstablishService(this.establishRepository);
+  public establishService = new WalletEstablishService(
+    this.establishRepository,
+    this.chainRegistry,
+  );
+
+  public establishAtomOneService = new WalletEstablishAtomOneService(
+    this.establishAtomOneRepository,
+    this.chainRegistry,
+  );
 
   public transactionService = new TransactionService(this.walletService, this.gnoProvider);
 

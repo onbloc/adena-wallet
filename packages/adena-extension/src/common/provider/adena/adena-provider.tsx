@@ -4,7 +4,6 @@ import { toCosmosNetworkProfile } from '@common/mapper/network-profile-mapper';
 import { useWindowSize } from '@hooks/use-window-size';
 import { ChainRepository } from '@repositories/common';
 import { TokenRepository } from '@repositories/common/token';
-import { FaucetRepository } from '@repositories/faucet/faucet';
 import {
   TransactionHistoryApiRepository,
   TransactionHistoryIndexerRepository,
@@ -13,10 +12,10 @@ import { TransactionGasRepository } from '@repositories/transaction/transaction-
 import {
   WalletAccountRepository,
   WalletAddressRepository,
+  WalletEstablishAtomOneRepository,
   WalletEstablishRepository,
   WalletRepository,
 } from '@repositories/wallet';
-import { FaucetService } from '@services/faucet';
 import { ChainService, TokenService } from '@services/resource';
 import {
   TransactionGasService,
@@ -29,6 +28,7 @@ import {
   WalletAccountService,
   WalletAddressBookService,
   WalletBalanceService,
+  WalletEstablishAtomOneService,
   WalletEstablishService,
   WalletService,
 } from '@services/wallet';
@@ -55,11 +55,11 @@ export interface AdenaContextProps {
   accountService: WalletAccountService;
   addressBookService: WalletAddressBookService;
   establishService: WalletEstablishService;
+  establishAtomOneService: WalletEstablishAtomOneService;
   chainService: ChainService;
   tokenService: TokenService;
   transactionService: TransactionService;
   transactionHistoryService: TransactionHistoryService;
-  faucetService: FaucetService;
   transactionGasService: TransactionGasService | null;
   multisigService: MultisigService;
 }
@@ -118,6 +118,11 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     [localStorage],
   );
 
+  const establishAtomOneRepository = useMemo(
+    () => new WalletEstablishAtomOneRepository(localStorage),
+    [localStorage],
+  );
+
   const addressBookRepository = useMemo(
     () => new WalletAddressRepository(localStorage),
     [localStorage],
@@ -170,8 +175,13 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
   );
 
   const establishService = useMemo(
-    () => new WalletEstablishService(establishRepository),
-    [establishRepository],
+    () => new WalletEstablishService(establishRepository, chainRegistry),
+    [establishRepository, chainRegistry],
+  );
+
+  const establishAtomOneService = useMemo(
+    () => new WalletEstablishAtomOneService(establishAtomOneRepository, chainRegistry),
+    [establishAtomOneRepository, chainRegistry],
   );
 
   const transactionService = useMemo(() => {
@@ -201,10 +211,6 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return new MultisigService(walletService, gnoProvider);
   }, [walletService, gnoProvider]);
 
-  const faucetRepository = useMemo(() => new FaucetRepository(axios), [axiosInstance]);
-
-  const faucetService = useMemo(() => new FaucetService(faucetRepository), [faucetRepository]);
-
   useWindowSize(true);
 
   return (
@@ -219,11 +225,11 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
         accountService,
         addressBookService,
         establishService,
+        establishAtomOneService,
         chainService,
         tokenService,
         transactionService,
         transactionHistoryService,
-        faucetService,
         transactionGasService,
         multisigService,
       }}
