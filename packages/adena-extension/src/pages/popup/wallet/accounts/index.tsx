@@ -6,8 +6,7 @@ import { SCANNER_URL } from '@common/constants/resource.constant';
 import { formatNickname } from '@common/utils/client-utils';
 import { makeQueryString } from '@common/utils/string-utils';
 import IconAddRounded from '@assets/icon-add-rounded';
-import { Button, Text } from '@components/atoms';
-// keep Text import for Close button label
+import { BottomFixedButton } from '@components/molecules';
 import SideMenuAccountList from '@components/pages/router/side-menu-account-list/side-menu-account-list';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAccountName } from '@hooks/use-account-name';
@@ -128,16 +127,14 @@ export const Accounts = (): JSX.Element => {
           moveGnoscan={moveGnoscan}
           moveAccountDetail={moveAccountDetail}
         />
+
+        <AddAccountButton type='button' onClick={onClickAddAccount}>
+          <IconAddRounded />
+          <span>Add Account</span>
+        </AddAccountButton>
       </div>
 
-      <AddAccountButton type='button' onClick={onClickAddAccount}>
-        <IconAddRounded />
-        <span>Add Account</span>
-      </AddAccountButton>
-
-      <Button fullWidth hierarchy='dark' margin='auto 0 0' onClick={onClickClose}>
-        <Text type='body1Bold'>Close</Text>
-      </Button>
+      <BottomFixedButton onClick={onClickClose} />
     </AccountsWrapper>
   );
 };

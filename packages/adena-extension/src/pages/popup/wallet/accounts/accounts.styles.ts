@@ -7,11 +7,14 @@ export const AccountsWrapper = styled.main`
   ${mixins.flex({ direction: 'column', align: 'stretch', justify: 'flex-start' })};
   width: 100%;
   height: 100%;
-  padding-bottom: 24px;
 
   .list {
+    flex: 1 1 auto;
+    min-height: 0;
     width: calc(100% + 40px);
     margin: 0 -20px;
+    padding-bottom: 120px;
+    overflow-y: auto;
   }
 `;
 
