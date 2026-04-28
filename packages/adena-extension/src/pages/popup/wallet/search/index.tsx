@@ -18,6 +18,8 @@ import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { TokenBalanceType } from '@types';
 
+import { DepositList } from './deposit-list';
+
 const Wrapper = styled.main`
   width: 100%;
   height: 100%;
@@ -90,24 +92,11 @@ export const WalletSearch = (): JSX.Element => {
   };
 
   const onClickItem = (tokenBalance: TokenBalanceType): void => {
-    params?.type === 'send' ? moveTransferInput(tokenBalance) : moveDeposit(tokenBalance);
-  };
-
-  const moveTransferInput = (tokenBalance: TokenBalanceType): void => {
     clearHistoryData(RoutePath.TransferInput);
     navigate(RoutePath.TransferInput, {
       state: {
         isTokenSearch: true,
         tokenBalance,
-      },
-    });
-  };
-
-  const moveDeposit = (tokenBalance: TokenBalanceType): void => {
-    navigate(RoutePath.Deposit, {
-      state: {
-        type: 'wallet',
-        token: tokenBalance,
       },
     });
   };
@@ -118,6 +107,10 @@ export const WalletSearch = (): JSX.Element => {
       inputRef.current.focus();
     }
   };
+
+  if (params?.type === 'deposit') {
+    return <DepositList />;
+  }
 
   return (
     <Wrapper>

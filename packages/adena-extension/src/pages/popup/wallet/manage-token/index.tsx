@@ -41,7 +41,7 @@ const ManageTokenSearchContainer: React.FC = () => {
             value: BigNumber(metainfo.amount.value).toFormat(),
             denom: metainfo.amount.denom,
           },
-          logo: tokenLogoMap[metainfo.tokenId] || `${UnknownTokenIcon}`,
+          logo: tokenLogoMap[metainfo.tokenId] || metainfo.image || `${UnknownTokenIcon}`,
         };
       });
     return filteredTokens;
