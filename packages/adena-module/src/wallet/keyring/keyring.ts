@@ -22,10 +22,19 @@ export type KeyringType =
   | 'AIRGAP'
   | 'MULTISIG';
 
+export interface SignRawOptions {
+  // HD-only hint: which derivation index to sign with. Ignored by non-HD keyrings.
+  hdPath?: number;
+}
+
 export interface Keyring {
   id: string;
   type: KeyringType;
   toData: () => KeyringData;
+  // Low-level byte signing. Returns raw ECDSA signature (r || s, 64 bytes).
+  // Decouples keyring from chain-specific serialization rules so that Gno,
+  // Cosmos AMINO, and Cosmos DIRECT pipelines can share one signing primitive.
+  signRaw: (bytes: Uint8Array, opts?: SignRawOptions) => Promise<Uint8Array>;
   sign: (
     provider: Provider,
     document: Document,

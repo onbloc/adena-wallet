@@ -11,5 +11,6 @@ export const Default: StoryObj<TransferSummaryBalanceProps> = {
     tokenImage: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
     value: '4,000.123',
     denom: 'GNOT',
+    chainName: 'Gno.land',
   },
 };

@@ -13,6 +13,7 @@ import {
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
+import { useChain } from '@hooks/use-chain';
 import { useNetwork } from '@hooks/use-network';
 
 const StyledContainer = styled(Row)`
@@ -41,6 +42,7 @@ const ApproveMenu = (): JSX.Element => {
   const [requestData, setRequestData] = useState<any>();
   const { accountNames } = useAccountName();
   const { currentNetwork } = useNetwork();
+  const chain = useChain();
 
   useEffect(() => {
     if (location.search) {
@@ -63,7 +65,7 @@ const ApproveMenu = (): JSX.Element => {
     if (!currentAccount) {
       return;
     }
-    const address = (await getCurrentAddress(currentNetwork.addressPrefix)) || '';
+    const address = (await getCurrentAddress(chain.bech32Prefix)) || '';
     const currentAccountName = accountNames[currentAccount.id] || currentAccount.name;
     setAddress(address);
     setAccountName(currentAccountName);

@@ -26,6 +26,7 @@ import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 import { validateInjectionDataForMultisig } from '@common/validation/validation-transaction';
 import { CreateMultisigTransaction } from '@components/molecules/create-multisig-transaction';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
@@ -93,6 +94,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
   const [requestData, setRequestData] = useState<InjectionMessage>();
@@ -229,7 +231,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     const validationMessage = validateInjectionDataForMultisig(
       requestData,
       currentAccount,
-      await currentAccount.getAddress('g'),
+      await currentAccount.getAddress(chain.bech32Prefix),
     );
 
     if (validationMessage) {

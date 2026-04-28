@@ -6,7 +6,7 @@ export interface TokenModel {
   tokenId: string;
   networkId: string;
   display: boolean;
-  type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens';
+  type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens' | 'cosmos-native';
   name: string;
   symbol: string;
   decimals: number;
@@ -113,6 +113,7 @@ export interface MainToken {
     value: string;
     denom: string;
   };
+  chainIconUrl?: string;
 }
 
 export interface GRC721CollectionModel {

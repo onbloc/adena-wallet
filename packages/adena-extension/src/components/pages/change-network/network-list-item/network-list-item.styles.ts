@@ -3,7 +3,7 @@ import { getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const NetworkListItemWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', align: 'normal', justify: 'normal' })};
+  ${mixins.flex({ direction: 'row', align: 'center', justify: 'normal' })};
   width: 100%;
   height: auto;
   padding: 9px 16px;
@@ -14,6 +14,22 @@ export const NetworkListItemWrapper = styled.div`
 
   &:hover {
     background-color: ${getTheme('neutral', 'b')};
+  }
+
+  .chain-icon-wrapper {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+
+    .chain-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
   }
 
   .info-wrapper {
@@ -28,7 +44,7 @@ export const NetworkListItemWrapper = styled.div`
 
       .name {
         display: block;
-        max-width: 236px;
+        max-width: 192px;
         color: ${getTheme('neutral', '_1')};
 
         overflow: hidden;
@@ -65,7 +81,7 @@ export const NetworkListItemWrapper = styled.div`
 
       .description {
         display: block;
-        max-width: 244px;
+        max-width: 200px;
         color: ${getTheme('neutral', 'a')};
         font-weight: 400;
         white-space: nowrap;

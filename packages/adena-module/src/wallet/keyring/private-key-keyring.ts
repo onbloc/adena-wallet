@@ -1,8 +1,16 @@
-import { Provider, TransactionEndpoint, Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
+import {
+  Provider,
+  TransactionEndpoint,
+  Tx,
+  TxSignature,
+  Wallet as Tm2Wallet,
+} from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Document, makeSignedTx, useTm2Wallet } from './../..';
-import { Keyring, KeyringData, KeyringType } from './keyring';
+import { Document } from './../..';
+import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
+import { signGnoDocument } from './sign-gno-document';
+import { signRawWithPrivateKey } from './sign-raw-util';
 
 export class PrivateKeyKeyring implements Keyring {
   public readonly id: string;
@@ -28,18 +36,15 @@ export class PrivateKeyKeyring implements Keyring {
     };
   }
 
-  async sign(provider: Provider, document: Document) {
-    const wallet = await useTm2Wallet(document).fromPrivateKey(this.privateKey);
-    wallet.connect(provider);
-    return this.signByWallet(wallet, document);
+  async signRaw(bytes: Uint8Array, _opts?: SignRawOptions): Promise<Uint8Array> {
+    return signRawWithPrivateKey(bytes, this.privateKey);
   }
 
-  private async signByWallet(wallet: Tm2Wallet, document: Document) {
-    const signedTx = await makeSignedTx(wallet, document);
-    return {
-      signed: signedTx,
-      signature: signedTx.signatures,
-    };
+  async sign(
+    provider: Provider,
+    document: Document,
+  ): Promise<{ signed: Tx; signature: TxSignature[] }> {
+    return signGnoDocument(provider, document, this);
   }
 
   async broadcastTxSync(provider: Provider, signedTx: Tx) {

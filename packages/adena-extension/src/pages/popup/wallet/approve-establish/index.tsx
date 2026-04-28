@@ -11,22 +11,36 @@ import WalletConnect from '@components/pages/approve-establish/wallet-connect/wa
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { RoutePath } from '@types';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+function normalizeChainIds(value: unknown): string[] {
+  if (typeof value === 'string') {
+    return value.length > 0 ? [value] : [];
+  }
+  if (Array.isArray(value)) {
+    return value.filter((v): v is string => typeof v === 'string' && v.length > 0);
+  }
+  return [];
+}
+
 const ApproveEstablishContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const location = useLocation();
-  const { walletService, establishService } = useAdenaContext();
+  const { walletService, establishService, establishAtomOneService, chainRegistry } =
+    useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const profile = useNetworkProfile();
   const [key, setKey] = useState<string>('');
   const [appName, setAppName] = useState<string>('');
   const [hostname, setHostname] = useState<string>('');
   const [protocol, setProtocol] = useState<string>('');
   const [favicon, setFavicon] = useState<string | null>(null);
+  const [chainIds, setChainIds] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [response, setResponse] = useState<InjectionMessage>();
@@ -43,7 +57,7 @@ const ApproveEstablishContainer: React.FC = () => {
 
   useEffect(() => {
     checkEstablished();
-  }, [key, hostname, currentAccount, currentNetwork]);
+  }, [key, hostname, currentAccount, currentNetwork, chainIds]);
 
   const checkLockWallet = (): void => {
     walletService
@@ -61,11 +75,21 @@ const ApproveEstablishContainer: React.FC = () => {
       if (data) {
         const message = decodeParameter(data);
         setAppName(message?.data?.name ?? 'Unknown');
+        setChainIds(normalizeChainIds(message?.data?.chainIds));
       }
     } catch (e) {
       console.log(e);
     }
   };
+
+  const serviceForChainGroup = useCallback(
+    (chainGroup: string | undefined) => {
+      // AtomOne is the only Cosmos chainGroup wired up today; everything else
+      // (including future Gno-side chainGroups) writes to the Gno service.
+      return chainGroup === 'atomone' ? establishAtomOneService : establishService;
+    },
+    [establishService, establishAtomOneService],
+  );
 
   const checkEstablished = async (): Promise<void> => {
     if (!currentAccount || !key || !hostname) {
@@ -74,7 +98,24 @@ const ApproveEstablishContainer: React.FC = () => {
     }
     const siteName = getSiteName(protocol, hostname);
     const accountId = currentAccount.id ?? '';
-    const isEstablished = await establishService.isEstablishedBy(accountId, siteName);
+    // Multi-chain requests: short-circuit only when every requested chainId is
+    // already established (per the chainId's chainGroup). Legacy single-chain
+    // path keeps the pre-Stage-8 hostname-only check.
+    const isEstablished =
+      chainIds.length > 0
+        ? (
+            await Promise.all(
+              chainIds.map((chainId) => {
+                const chain = chainRegistry.getChainByChainId(chainId);
+                return serviceForChainGroup(chain?.chainGroup).isEstablishedBy(
+                  accountId,
+                  siteName,
+                  chainId,
+                );
+              }),
+            )
+          ).every(Boolean)
+        : await establishService.isEstablishedBy(accountId, siteName);
     setLoading(false);
     if (isEstablished) {
       chrome.runtime.sendMessage(
@@ -91,27 +132,70 @@ const ApproveEstablishContainer: React.FC = () => {
 
   const establish = async (): Promise<void> => {
     setProcessing(true);
-    const { url, healthy } = await checkHealth(currentNetwork.rpcUrl);
-    if (!healthy || url !== currentNetwork.rpcUrl) {
+    const siteName = getSiteName(protocol, hostname);
+    const accountId = currentAccount?.id ?? '';
+
+    if (chainIds.length === 0) {
+      const rpcUrl = profile?.chainType === 'gno' ? profile.rpcEndpoints[0] : '';
+      const { url, healthy } = await checkHealth(rpcUrl);
+      if (!healthy || url !== rpcUrl) {
+        setResponse(
+          InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, key),
+        );
+        return;
+      }
+
+      const networkId = currentNetwork.id ?? '';
+      await establishService.establishBy(accountId, networkId, {
+        hostname: siteName,
+        accountId,
+        appName,
+        favicon,
+      });
       setResponse(
-        InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, key),
+        InjectionMessageInstance.success(WalletResponseSuccessType.CONNECTION_SUCCESS, {}, key),
       );
+      setDone(true);
       return;
     }
 
-    const siteName = getSiteName(protocol, hostname);
-    const accountId = currentAccount?.id ?? '';
-    const networkId = currentNetwork.id ?? '';
-    await establishService.establishBy(accountId, networkId, {
-      hostname: siteName,
-      accountId,
-      appName,
-      favicon,
-    });
-    setResponse(
-      InjectionMessageInstance.success(WalletResponseSuccessType.CONNECTION_SUCCESS, {}, key),
-    );
-    setDone(true);
+    // Multi-chain: route each chainId to the matching service. On partial
+    // failure, undo the entries already persisted so the popup keeps its
+    // all-or-nothing UX contract.
+    const persisted: Array<{ chainId: string; chainGroup: string | undefined }> = [];
+    try {
+      for (const chainId of chainIds) {
+        const chain = chainRegistry.getChainByChainId(chainId);
+        await serviceForChainGroup(chain?.chainGroup).establishBy(accountId, chainId, {
+          hostname: siteName,
+          accountId,
+          appName,
+          favicon,
+        });
+        persisted.push({ chainId, chainGroup: chain?.chainGroup });
+      }
+      setResponse(
+        InjectionMessageInstance.success(WalletResponseSuccessType.CONNECTION_SUCCESS, {}, key),
+      );
+      setDone(true);
+    } catch (error) {
+      // Unwind in reverse order so rollback mirrors the persist sequence.
+      await Promise.allSettled(
+        [...persisted]
+          .reverse()
+          .map(({ chainId, chainGroup }) =>
+            serviceForChainGroup(chainGroup).unEstablishBy(accountId, siteName, chainId),
+          ),
+      );
+      setResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.UNEXPECTED_ERROR,
+          { error: (error as Error)?.message ?? String(error) },
+          key,
+        ),
+      );
+      setDone(true);
+    }
   };
 
   const onResponse = useCallback(() => {

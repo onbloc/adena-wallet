@@ -1,66 +1,75 @@
 import React, { useCallback, useMemo } from 'react';
 import { CustomNetworkInputWrapper } from './custom-network-input.styles';
 
+export type CustomNetworkFieldType = 'indexer' | 'lcd';
+
 export interface CustomNetworkInputProps {
   name: string;
   rpcUrl: string;
   rpcUrlError?: string;
-  indexerUrl: string;
-  indexerUrlError?: string;
+  extraUrl: string;
+  extraUrlError?: string;
   chainId: string;
   chainIdError?: string;
-  editType?: 'rpc-only' | 'all-default' | 'all';
+  fieldType: CustomNetworkFieldType;
+  isDefault?: boolean;
   changeName: (name: string) => void;
   changeRPCUrl: (rpcUrl: string) => void;
-  changeIndexerUrl: (indexerUrl: string) => void;
+  changeExtraUrl: (extraUrl: string) => void;
   changeChainId: (chainId: string) => void;
 }
+
+const EXTRA_URL_PLACEHOLDER: Record<CustomNetworkFieldType, string> = {
+  indexer: 'Indexer URL (Optional)',
+  lcd: 'LCD URL',
+};
 
 export const CustomNetworkInput: React.FC<CustomNetworkInputProps> = ({
   name,
   rpcUrl,
-  indexerUrl,
+  extraUrl,
   chainId,
   rpcUrlError,
-  indexerUrlError,
+  extraUrlError,
   chainIdError,
-  editType,
+  fieldType,
+  isDefault,
   changeName,
   changeRPCUrl,
-  changeIndexerUrl,
+  changeExtraUrl,
   changeChainId,
 }) => {
-  const readonlyNetworkName = useMemo(() => {
-    return editType === 'rpc-only';
-  }, [editType]);
+  const readonlyNetworkName = useMemo(() => !!isDefault, [isDefault]);
+  const readonlyChainId = useMemo(() => !!isDefault, [isDefault]);
+  const extraUrlPlaceholder = useMemo(() => EXTRA_URL_PLACEHOLDER[fieldType], [fieldType]);
 
-  const readonlyRPCUrl = useMemo(() => {
-    return false;
-  }, [editType]);
+  const onChangeName = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      changeName(event.target.value);
+    },
+    [changeName],
+  );
 
-  const readonlyChainId = useMemo(() => {
-    return editType === 'rpc-only';
-  }, [editType]);
+  const onChangeRPCUrl = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      changeRPCUrl(event.target.value.replace(/ /g, ''));
+    },
+    [changeRPCUrl],
+  );
 
-  const readonlyIndexerUrl = useMemo(() => {
-    return editType === 'rpc-only';
-  }, [editType]);
+  const onChangeExtraUrl = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      changeExtraUrl(event.target.value.replace(/ /g, ''));
+    },
+    [changeExtraUrl],
+  );
 
-  const onChangeName = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    changeName(event.target.value);
-  }, []);
-
-  const onChangeRPCUrl = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    changeRPCUrl(event.target.value.replace(/ /g, ''));
-  }, []);
-
-  const onChangeIndexerUrl = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    changeIndexerUrl(event.target.value.replace(/ /g, ''));
-  }, []);
-
-  const onChangeChainId = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    changeChainId(event.target.value.replace(/ /g, ''));
-  }, []);
+  const onChangeChainId = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      changeChainId(event.target.value.replace(/ /g, ''));
+    },
+    [changeChainId],
+  );
 
   return (
     <CustomNetworkInputWrapper>
@@ -82,7 +91,6 @@ export const CustomNetworkInput: React.FC<CustomNetworkInputProps> = ({
             autoComplete='off'
             onChange={onChangeRPCUrl}
             placeholder='RPC URL'
-            readOnly={readonlyRPCUrl}
           />
         </div>
         {rpcUrlError && <span className='error-message'>{rpcUrlError}</span>}
@@ -100,14 +108,13 @@ export const CustomNetworkInput: React.FC<CustomNetworkInputProps> = ({
         <div className='input-box'>
           <input
             type='text'
-            value={indexerUrl}
+            value={extraUrl}
             autoComplete='off'
-            onChange={onChangeIndexerUrl}
-            placeholder='Indexer URL (Optional)'
-            readOnly={readonlyIndexerUrl}
+            onChange={onChangeExtraUrl}
+            placeholder={extraUrlPlaceholder}
           />
         </div>
-        {indexerUrlError && <span className='error-message'>{indexerUrlError}</span>}
+        {extraUrlError && <span className='error-message'>{extraUrlError}</span>}
       </div>
     </CustomNetworkInputWrapper>
   );

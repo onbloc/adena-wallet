@@ -16,6 +16,7 @@ import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import mixins from '@styles/mixins';
 import theme, { fonts, getTheme } from '@styles/theme';
@@ -36,6 +37,7 @@ export const TransactionDetail = (): JSX.Element => {
   const { openLink } = useLink();
   const { convertDenom } = useTokenMetainfo();
   const { currentNetwork, scannerParameters } = useNetwork();
+  const profile = useNetworkProfile();
   const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
 
   const transactionItem = params.transactionInfo;
@@ -103,7 +105,7 @@ export const TransactionDetail = (): JSX.Element => {
   };
 
   const handleLinkClick = (hash: string): void => {
-    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+    const scannerUrl = profile?.linkUrl || SCANNER_URL;
     const openLinkUrl = scannerParameters
       ? `${scannerUrl}/transactions/details?txhash=${hash}&${makeQueryString(scannerParameters)}`
       : `${scannerUrl}/transactions/details?txhash=${hash}`;

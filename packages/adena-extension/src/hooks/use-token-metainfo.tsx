@@ -1,6 +1,7 @@
 import { useRecoilState } from 'recoil';
 
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import { useChain } from './use-chain';
 import { useAdenaContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
@@ -8,9 +9,9 @@ import { useNetwork } from './use-network';
 import { TokenState } from '@states';
 import { useQuery } from '@tanstack/react-query';
 import { GRC20TokenModel, GRC721CollectionModel, TokenModel } from '@types';
-import { Account } from 'adena-module';
+import { Account, TokenProfile } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useNFTCollectionHandler } from './nft/use-collection-handler';
 import { useGRC20Tokens } from './use-grc20-tokens';
 import { useTransferTokens } from './wallet/use-transfer-tokens';
@@ -71,10 +72,11 @@ function makeTokenKey(token: TokenModel): string {
 }
 
 export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
-  const { balanceService, tokenService } = useAdenaContext();
+  const { balanceService, tokenService, tokenRegistry } = useAdenaContext();
   const [tokenMetainfos, setTokenMetainfo] = useRecoilState(TokenState.tokenMetainfos);
   const { currentAccount } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
+  const { currentNetwork, currentAtomoneNetwork } = useNetwork();
+  const chain = useChain();
   const { fetchTransferTokens } = useTransferTokens();
   const { addCollections } = useNFTCollectionHandler();
   const { data: grc20Tokens } = useGRC20Tokens();
@@ -110,6 +112,60 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     );
   }, [tokenMetainfos, currentNetwork]);
 
+  // Seed cosmos token entries (e.g. ATONE/PHOTON) into the account's stored
+  // metainfos when an AtomOne network is active. Source of truth is
+  // `tokenRegistry`, which already enumerates every supported cosmos token per
+  // chainProfileId. Without this, cosmos tokens have no persisted `display`
+  // flag and the Manage Tokens toggle has nothing to flip.
+  useEffect(() => {
+    if (!currentAccount) return;
+    const atomoneId = currentAtomoneNetwork?.id ?? null;
+    if (!atomoneId) return;
+
+    const cosmosProfiles = tokenRegistry.list(atomoneId);
+    if (cosmosProfiles.length === 0) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      // Read straight from storage to avoid a race with the recoil-state
+      // initializer on first mount, which could overwrite stored entries.
+      const stored = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
+      if (cancelled) return;
+
+      const missing = cosmosProfiles.filter(
+        (profile) =>
+          !stored.find(
+            (m) => m.tokenId === profile.id && m.networkId === profile.chainProfileId,
+          ),
+      );
+      if (missing.length === 0) return;
+
+      const newEntries: TokenModel[] = missing.map((profile) => ({
+        main: false,
+        tokenId: profile.id,
+        networkId: profile.chainProfileId,
+        display: true,
+        type: 'cosmos-native',
+        name: profile.name,
+        symbol: profile.symbol,
+        decimals: profile.decimals,
+        image: profile.iconUrl ?? '',
+        denom: getCosmosOriginDenom(profile),
+      }));
+
+      const merged = [...stored, ...newEntries];
+      await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, merged);
+      if (!cancelled) {
+        setTokenMetainfo(merged);
+      }
+    })();
+
+    return (): void => {
+      cancelled = true;
+    };
+  }, [currentAccount, currentAtomoneNetwork?.id, tokenRegistry, tokenService, setTokenMetainfo]);
+
   const tokenMetaMap = useMemo(() => {
     if (!allTokenMetainfos) {
       return {};
@@ -144,7 +200,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }
 
     await setTokenMetainfo([]);
-    const currentAddress = await currentAccount.getAddress(currentNetwork.addressPrefix);
+    const currentAddress = await currentAccount.getAddress(chain.bech32Prefix);
 
     /**
      * For accounts with no transfer events, initialize the state with the list of stored tokens.
@@ -194,7 +250,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       return;
     }
 
-    const currentAddress = await currentAccount.getAddress(currentNetwork.addressPrefix);
+    const currentAddress = await currentAccount.getAddress(chain.bech32Prefix);
 
     /**
      * For accounts with no transfer events, initialize the state with the list of stored tokens.
@@ -243,8 +299,13 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     account: Account,
     tokenMetainfos: TokenModel[],
   ): Promise<void> => {
-    await tokenService.updateTokenMetainfosByAccountId(account.id, tokenMetainfos);
+    // Apply the change to Recoil first so consumers (e.g. wallet-main's
+    // metadata-driven row shell) reflect the new display flag synchronously.
+    // Without this, navigating away from manage-token immediately after a
+    // toggle can race the storage write and briefly re-render the just-hidden
+    // token before the atom catches up.
     setTokenMetainfo([...tokenMetainfos]);
+    await tokenService.updateTokenMetainfosByAccountId(account.id, tokenMetainfos);
   };
 
   const convertDenom = (
@@ -422,4 +483,20 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     getTokenImageByPkgPath,
     updateTokenMetainfos,
   };
+};
+
+// Extracts the raw on-chain denom (e.g. "uphoton") from a TokenProfile's
+// origin discriminated union. Cosmos-native and cosmos-factory expose `denom`
+// directly; cosmos-ibc uses `ibcDenom`. Used when seeding cosmos token
+// metainfos so transfer flows can read `tokenMetainfo.denom` without going
+// back to the registry.
+export const getCosmosOriginDenom = (profile: TokenProfile): string => {
+  const { origin } = profile;
+  if (origin.kind === 'cosmos-native' || origin.kind === 'cosmos-factory') {
+    return origin.denom;
+  }
+  if (origin.kind === 'cosmos-ibc') {
+    return origin.ibcDenom;
+  }
+  return '';
 };

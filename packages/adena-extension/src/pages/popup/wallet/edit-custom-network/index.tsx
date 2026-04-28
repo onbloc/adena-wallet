@@ -2,25 +2,32 @@ import React, { useCallback, useEffect, useMemo } from 'react';
 
 import EditNetwork from '@components/pages/edit-network/edit-network';
 import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
+import type { ChainGroup } from '@hooks/use-network';
 import { useNetwork } from '@hooks/use-network';
 import { CommonFullContentLayout } from '@components/atoms';
 
-import { NetworkMetainfo } from '@types';
+import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 
-function isValidURL(rpcURL: string): boolean {
+function isValidURL(url: string): boolean {
   const regExp = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
-  return regExp.test(rpcURL);
+  return regExp.test(url);
 }
 
-function existsChainId(chainId: string, networks: NetworkMetainfo[]): boolean {
+function existsChainId(
+  chainId: string,
+  networks: Array<NetworkMetainfo | AtomoneNetworkMetainfo>,
+): boolean {
   return (
     networks.findIndex((network) => network.networkId === chainId && network.deleted !== true) > -1
   );
 }
 
-function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]): boolean {
+function existsRPCUrl(
+  rpcUrl: string,
+  networks: Array<NetworkMetainfo | AtomoneNetworkMetainfo>,
+): boolean {
   const currentRPCUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
   return (
     networks.findIndex((network) => network.rpcUrl === currentRPCUrl && network.deleted !== true) >
@@ -31,32 +38,52 @@ function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]): boolean {
 const EditCustomNetworkContainer: React.FC = () => {
   const { params, goBack } = useAppNavigate<RoutePath.EditCustomNetwork>();
   const currentNetworkId = params.networkId;
-  const { networks, updateNetwork, getDefaultNetworkInfo, deleteNetwork } = useNetwork();
+  const chainGroup: ChainGroup = params.chainGroup;
+  const fieldType = chainGroup === 'atomone' ? 'lcd' : 'indexer';
+  const { networks, atomoneNetworks, updateNetwork, deleteNetwork } = useNetwork();
   const {
     name,
     rpcUrl,
-    indexerUrl,
+    extraUrl,
     chainId,
     rpcUrlError,
-    indexerUrlError,
+    extraUrlError,
     chainIdError,
     changeName,
     changeRPCUrl,
-    changeIndexerUrl,
+    changeExtraUrl,
     changeChainId,
     setRPCUrlError,
-    setIndexerUrlError,
+    setExtraUrlError,
     setChainIdError,
-  } = useCustomNetworkInput();
+  } = useCustomNetworkInput(fieldType);
 
-  useEffect(() => {
-    initInput(currentNetworkId);
-  }, [currentNetworkId]);
+  const targetNetworks = useMemo<Array<NetworkMetainfo | AtomoneNetworkMetainfo>>(
+    () => (chainGroup === 'atomone' ? atomoneNetworks : networks),
+    [chainGroup, networks, atomoneNetworks],
+  );
 
   const originNetwork = useMemo(() => {
-    const currentNetwork = networks.find((network) => network.id === currentNetworkId);
-    return currentNetwork;
-  }, [networks, currentNetworkId]);
+    return targetNetworks.find((network) => network.id === currentNetworkId);
+  }, [targetNetworks, currentNetworkId]);
+
+  const originExtraUrl = useMemo(() => {
+    if (!originNetwork) return '';
+    if (chainGroup === 'atomone') {
+      return (originNetwork as AtomoneNetworkMetainfo).restUrl ?? '';
+    }
+    return (originNetwork as NetworkMetainfo).indexerUrl ?? '';
+  }, [originNetwork, chainGroup]);
+
+  useEffect(() => {
+    if (!originNetwork) return;
+    changeName(originNetwork.networkName);
+    changeRPCUrl(originNetwork.rpcUrl);
+    changeExtraUrl(originExtraUrl);
+    changeChainId(originNetwork.chainId);
+  }, [currentNetworkId, originNetwork]);
+
+  const isDefault = useMemo(() => !!originNetwork?.default, [originNetwork]);
 
   const savable = useMemo(() => {
     if (!originNetwork) {
@@ -65,37 +92,16 @@ const EditCustomNetworkContainer: React.FC = () => {
     if (name === '' || rpcUrl === '' || chainId === '') {
       return false;
     }
+    if (chainGroup === 'atomone' && extraUrl === '') {
+      return false;
+    }
     return (
       originNetwork.networkName !== name ||
       originNetwork.rpcUrl !== rpcUrl ||
-      originNetwork.indexerUrl !== indexerUrl ||
+      originExtraUrl !== extraUrl ||
       originNetwork.networkId !== chainId
     );
-  }, [originNetwork, name, rpcUrl, indexerUrl, chainId]);
-
-  const defaultNetworkInfo = useMemo(() => {
-    return getDefaultNetworkInfo(currentNetworkId);
-  }, [currentNetworkId, getDefaultNetworkInfo]);
-
-  const editType: 'rpc-only' | 'all-default' | 'all' = useMemo(() => {
-    if (!defaultNetworkInfo) {
-      return 'all';
-    }
-    if (defaultNetworkInfo.id === 'dev') {
-      return 'all-default';
-    }
-    return 'rpc-only';
-  }, [defaultNetworkInfo]);
-
-  function initInput(networkId: string): void {
-    const network = networks.find((current) => current.id === networkId);
-    if (network) {
-      changeName(network.networkName);
-      changeRPCUrl(network.rpcUrl);
-      changeIndexerUrl(network.indexerUrl);
-      changeChainId(network.chainId);
-    }
-  }
+  }, [originNetwork, originExtraUrl, chainGroup, name, rpcUrl, extraUrl, chainId]);
 
   const saveNetwork = useCallback(async () => {
     let isValid = true;
@@ -103,71 +109,99 @@ const EditCustomNetworkContainer: React.FC = () => {
       isValid = false;
       setRPCUrlError('Invalid URL');
     }
-    if (!!indexerUrl && !isValidURL(indexerUrl)) {
+    if (chainGroup === 'atomone') {
+      if (extraUrl.length === 0 || !isValidURL(extraUrl)) {
+        isValid = false;
+        setExtraUrlError('Invalid URL');
+      }
+    } else if (extraUrl.length > 0 && !isValidURL(extraUrl)) {
       isValid = false;
-      setIndexerUrlError('Invalid URL');
+      setExtraUrlError('Invalid URL');
     }
-    if (existsChainId(chainId, networks)) {
-      if (originNetwork?.chainId !== chainId) {
-        isValid = false;
-        setChainIdError('Chain ID already in use');
-      }
+    if (existsChainId(chainId, targetNetworks) && originNetwork?.chainId !== chainId) {
+      isValid = false;
+      setChainIdError('Chain ID already in use');
     }
-    if (existsRPCUrl(rpcUrl, networks)) {
-      if (originNetwork?.rpcUrl !== rpcUrl) {
-        isValid = false;
-        setRPCUrlError('RPC URL already in use');
-      }
+    if (existsRPCUrl(rpcUrl, targetNetworks) && originNetwork?.rpcUrl !== rpcUrl) {
+      isValid = false;
+      setRPCUrlError('RPC URL already in use');
     }
-    if (!isValid) {
+    if (!isValid || !originNetwork) {
       return;
     }
-    const network = networks.find((current) => current.id === currentNetworkId);
-    if (network) {
-      const parsedName = name.trim();
+    const parsedName = name.trim();
+    if (chainGroup === 'atomone') {
       await updateNetwork({
-        ...network,
-        chainId: chainId,
+        ...(originNetwork as AtomoneNetworkMetainfo),
+        chainId,
         networkId: chainId,
         chainName: parsedName,
         networkName: parsedName,
         rpcUrl,
-        indexerUrl,
+        restUrl: extraUrl,
+      });
+    } else {
+      await updateNetwork({
+        ...(originNetwork as NetworkMetainfo),
+        chainId,
+        networkId: chainId,
+        chainName: parsedName,
+        networkName: parsedName,
+        rpcUrl,
+        indexerUrl: extraUrl,
       });
     }
     setRPCUrlError('');
     setChainIdError('');
     goBack();
-  }, [networks, name, rpcUrl, indexerUrl, chainId, currentNetworkId, originNetwork]);
+  }, [
+    chainGroup,
+    targetNetworks,
+    originNetwork,
+    name,
+    rpcUrl,
+    extraUrl,
+    chainId,
+    updateNetwork,
+    goBack,
+  ]);
 
   const clearNetwork = useCallback(async () => {
-    if (defaultNetworkInfo) {
-      changeName(defaultNetworkInfo.networkName);
-      changeRPCUrl(defaultNetworkInfo.rpcUrl);
-      changeIndexerUrl(defaultNetworkInfo.indexerUrl);
-      changeChainId(defaultNetworkInfo.chainId);
+    if (isDefault && originNetwork) {
+      changeName(originNetwork.networkName);
+      changeRPCUrl(originNetwork.rpcUrl);
+      changeExtraUrl(originExtraUrl);
+      changeChainId(originNetwork.chainId);
       return;
     }
-
-    await deleteNetwork(currentNetworkId);
+    await deleteNetwork(chainGroup, currentNetworkId);
     goBack();
-  }, [currentNetworkId, defaultNetworkInfo]);
+  }, [
+    chainGroup,
+    isDefault,
+    originNetwork,
+    originExtraUrl,
+    currentNetworkId,
+    deleteNetwork,
+    goBack,
+  ]);
 
   return (
     <CommonFullContentLayout>
       <EditNetwork
+        chainGroup={chainGroup}
         name={name}
         rpcUrl={rpcUrl}
-        indexerUrl={indexerUrl}
+        extraUrl={extraUrl}
         chainId={chainId}
         rpcUrlError={rpcUrlError}
-        indexerUrlError={indexerUrlError}
+        extraUrlError={extraUrlError}
         chainIdError={chainIdError}
         savable={savable}
-        editType={editType}
+        isDefault={isDefault}
         changeName={changeName}
         changeRPCUrl={changeRPCUrl}
-        changeIndexerUrl={changeIndexerUrl}
+        changeExtraUrl={changeExtraUrl}
         changeChainId={changeChainId}
         saveNetwork={saveNetwork}
         clearNetwork={clearNetwork}

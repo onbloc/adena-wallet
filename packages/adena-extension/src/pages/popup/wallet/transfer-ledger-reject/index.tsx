@@ -15,7 +15,7 @@ const TransferLedgerRejectLayout = styled.div`
 `;
 
 const TransferLedgerRejectContainer: React.FC = () => {
-  const { navigate } = useAppNavigate();
+  const { navigate, params } = useAppNavigate<RoutePath.TransferLedgerReject>();
 
   const onClickClose = useCallback(() => {
     navigate(RoutePath.Wallet);
@@ -23,7 +23,11 @@ const TransferLedgerRejectContainer: React.FC = () => {
 
   return (
     <TransferLedgerRejectLayout>
-      <TransferLedgerReject onClickClose={onClickClose} />
+      <TransferLedgerReject
+        onClickClose={onClickClose}
+        title={params?.title}
+        desc={params?.desc}
+      />
     </TransferLedgerRejectLayout>
   );
 };

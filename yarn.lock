@@ -1821,7 +1821,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cosmjs/amino@npm:^0.36.0":
+"@cosmjs/amino@npm:0.36.0, @cosmjs/amino@npm:^0.36.0":
   version: 0.36.0
   resolution: "@cosmjs/amino@npm:0.36.0"
   dependencies:
@@ -1878,6 +1878,20 @@ __metadata:
   version: 0.36.0
   resolution: "@cosmjs/math@npm:0.36.0"
   checksum: 11af6cabf8c0aa63445236ac829929f2552d9b35a74d9ce87e30ce78055a1d4ce949e3a5299159e99933ad66529e83203d1fabe1b960f6e14d1f18b9140027a2
+  languageName: node
+  linkType: hard
+
+"@cosmjs/proto-signing@npm:0.36.0":
+  version: 0.36.0
+  resolution: "@cosmjs/proto-signing@npm:0.36.0"
+  dependencies:
+    "@cosmjs/amino": ^0.36.0
+    "@cosmjs/crypto": ^0.36.0
+    "@cosmjs/encoding": ^0.36.0
+    "@cosmjs/math": ^0.36.0
+    "@cosmjs/utils": ^0.36.0
+    cosmjs-types: ^0.10.1
+  checksum: 869ffffb5148e59cef1fd04e662b5f1ae7a71c93f087cbe94013a5b5cf4ce4c09fe761aea3dc7bc11b80bba1102da31cfcac5e12d4d775420790bbb9ea92ac43
   languageName: node
   linkType: hard
 
@@ -6209,7 +6223,9 @@ __metadata:
     "@babel/preset-env": 7.23.9
     "@babel/preset-flow": 7.23.3
     "@babel/preset-typescript": 7.23.3
+    "@cosmjs/amino": 0.36.0
     "@cosmjs/ledger-amino": 0.36.0
+    "@cosmjs/proto-signing": 0.36.0
     "@gnolang/gno-js-client": 1.4.5
     "@gnolang/tm2-js-client": 1.3.3
     "@ledgerhq/hw-transport": 6.31.4
@@ -6226,6 +6242,7 @@ __metadata:
     "@typescript-eslint/parser": 5.62.0
     bech32: 2.0.0
     bn.js: 5.2.1
+    cosmjs-types: 0.10.1
     crypto-js: 4.2.0
     dotenv: 16.4.5
     elliptic: 6.6.1
@@ -8026,6 +8043,13 @@ __metadata:
     typescript:
       optional: true
   checksum: dc339ebea427898c9e03bf01b56ba7afbac07fc7d2a2d5a15d6e9c14de98275a9565da949375aee1809591c152c0a3877bb86dbeaf74d5bd5aaa79955ad9e7a0
+  languageName: node
+  linkType: hard
+
+"cosmjs-types@npm:0.10.1, cosmjs-types@npm:^0.10.1":
+  version: 0.10.1
+  resolution: "cosmjs-types@npm:0.10.1"
+  checksum: cbb4bbb78e02b1669d65ae99101da9330b7045d9860a6765f76f665caaad632fd223412f409d1653edaa5f6a8b2fec4457d0ccd489b3604812962d9551f49b5d
   languageName: node
   linkType: hard
 

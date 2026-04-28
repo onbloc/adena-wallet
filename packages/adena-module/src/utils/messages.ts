@@ -13,6 +13,7 @@ import { PubKeyMultisig } from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
 import Long from 'long';
 
 import { fromBase64, toBase64 } from '../encoding';
+import { compressPubkeyIfNeeded } from './pubkey';
 
 export interface Document {
   chain_id: string;
@@ -264,8 +265,26 @@ export function documentToTx(document: Document): Tx {
   };
 }
 
-export function documentToDefaultTx(document: Document): Tx {
+export function documentToDefaultTx(document: Document, publicKey?: Uint8Array): Tx {
   const messages: Any[] = document.msgs.map(encodeMessageValue);
+  // gno.land /app/simulate skips signature verification but still validates
+  // pub_key ↔ signer-address derivation. When the caller has a pubkey (e.g. a
+  // Ledger account whose signing requires hardware that isn't attached during
+  // gas estimation), include it so simulate accepts the placeholder tx for
+  // pre-initialized accounts. Callers with no pubkey (AirGap) pass undefined
+  // and keep the historical empty placeholder.
+  const pubKey =
+    publicKey && publicKey.length > 0
+      ? {
+          type_url: '/tm.PubKeySecp256k1',
+          value: PubKeySecp256k1.encode({
+            key: compressPubkeyIfNeeded(publicKey),
+          }).finish(),
+        }
+      : {
+          type_url: '',
+          value: new Uint8Array(),
+        };
   return {
     messages,
     fee: TxFee.create({
@@ -276,10 +295,7 @@ export function documentToDefaultTx(document: Document): Tx {
     }),
     signatures: [
       {
-        pub_key: {
-          type_url: '',
-          value: new Uint8Array(),
-        },
+        pub_key: pubKey,
         signature: new Uint8Array(),
       },
     ],

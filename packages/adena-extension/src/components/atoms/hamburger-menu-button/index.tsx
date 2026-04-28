@@ -11,7 +11,7 @@ if (window.location.hash.indexOf('approve') === -1) {
 
 export const HamburgerMenuBtn = styled.button`
   opacity: ${op};
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   background: url(${menu}) no-repeat center center;
 `;

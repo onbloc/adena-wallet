@@ -7,7 +7,10 @@ export enum AddEstablishResponseType {
 
 export type AddEstablishResponse = AdenaResponse<Record<string, never>>;
 
-export type AdenaAddEstablish = (name: string) => Promise<AddEstablishResponse>;
+export type AdenaAddEstablish = (
+  name: string,
+  chainIds?: string | string[],
+) => Promise<AddEstablishResponse>;
 
 enum EAccountStatus {
   ACTIVE = 'ACTIVE',

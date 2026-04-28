@@ -30,18 +30,18 @@
     "linkUrl": "https://gnoscan.io"
   },
   {
-    "id": "test12",
+    "id": "test13",
     "default": true,
     "main": false,
-    "chainId": "test12",
-    "chainName": "Gno.land",
-    "networkId": "test12",
-    "networkName": "Testnet 12",
+    "chainId": "test13",
+    "chainName": "test13",
+    "networkId": "test13",
+    "networkName": "Testnet 13",
     "addressPrefix": "g",
-    "rpcUrl": "https://rpc.test12.testnets.gno.land:443",
-    "indexerUrl": "https://test12.indexer.onbloc.xyz",
-    "gnoUrl": "https://test12.testnets.gno.land",
-    "apiUrl": "",
+    "rpcUrl": "https://rpc.test13.testnets.gno.land:443",
+    "indexerUrl": "https://test13.indexer.onbloc.xyz",
+    "gnoUrl": "https://test13.testnets.gno.land",
+    "apiUrl": "https://test13.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {

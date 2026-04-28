@@ -1,11 +1,13 @@
+import { validateCosmosAddress } from 'adena-module';
 import { useCallback, useEffect, useState } from 'react';
+
+import { formatAddress, formatNickname } from '@common/utils/client-utils';
+import { AddressBookItem } from '@repositories/wallet';
+
+import { useAccountName } from './use-account-name';
+import { useChain } from './use-chain';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
-import { AddressBookItem } from '@repositories/wallet';
-import { formatAddress, formatNickname } from '@common/utils/client-utils';
-import { useNetwork } from './use-network';
-import { addressValidationCheck } from '@common/utils/client-utils';
-import { useAccountName } from './use-account-name';
 
 export type UseAddressBookInputHookReturn = {
   opened: boolean;
@@ -33,11 +35,12 @@ export type UseAddressBookInputHookReturn = {
   validateEqualAddress: () => Promise<boolean>;
 };
 
-export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
+export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHookReturn => {
   const { addressBookService } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { getCurrentAddress } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
+  const chain = useChain(chainGroup);
+  const addressPrefix = chain.bech32Prefix;
   const [opened, setOpened] = useState(false);
   const [selected, setSelected] = useState(false);
   const [selectedAddressBook, setSelectedAddressBook] = useState<AddressBookItem | null>(null);
@@ -66,7 +69,6 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
 
   const getAddressBookInfos = useCallback(async () => {
     const currentAccountInfos = [];
-    const addressPrefix = currentNetwork?.addressPrefix || 'g';
     const currentAddress = await getCurrentAddress(addressPrefix);
     for (const account of wallet?.accounts || []) {
       const address = await account.getAddress(addressPrefix);
@@ -89,7 +91,7 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
       });
 
     return [...currentAccountInfos, ...addressBookInfos];
-  }, [addressBooks, wallet?.accounts]);
+  }, [addressBooks, wallet?.accounts, addressPrefix]);
 
   const getSelectedAddressBookInfos = useCallback(() => {
     if (selectedAddressBook === null) {
@@ -156,7 +158,7 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
         clearError();
         setOpened(false);
         setSelected(true);
-        const address = await selectedAccount.getAddress(currentNetwork?.addressPrefix || 'g');
+        const address = await selectedAccount.getAddress(addressPrefix);
         setSelectedAddressBook({
           id: selectedAccount.id,
           name: selectedAccount.name,
@@ -166,23 +168,23 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
         return;
       }
     },
-    [addressBooks, wallet?.accounts],
+    [addressBooks, wallet?.accounts, addressPrefix],
   );
 
   const validateAddressBookInput = useCallback(() => {
     const address = getResultAddress();
-    if (!addressValidationCheck(address)) {
+    if (!validateCosmosAddress(address, addressPrefix)) {
       setHasError(true);
       setErrorMessage('Invalid Address');
       return false;
     }
     clearError();
     return true;
-  }, [selected, selectedAddressBook, address]);
+  }, [selected, selectedAddressBook, address, addressPrefix]);
 
   const validateEqualAddress = useCallback(async () => {
     const address = getResultAddress();
-    const currentAddress = await getCurrentAddress(currentNetwork?.addressPrefix);
+    const currentAddress = await getCurrentAddress(addressPrefix);
     if (address === currentAddress) {
       setHasError(true);
       setErrorMessage('You can’t send GRC20 tokens to your own address');
@@ -190,7 +192,7 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
     }
     clearError();
     return true;
-  }, [selected, selectedAddressBook, address]);
+  }, [selected, selectedAddressBook, address, addressPrefix]);
 
   useEffect(() => {
     getAddressBookInfos().then(setAddressBookInfos);

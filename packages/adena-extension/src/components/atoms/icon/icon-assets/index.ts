@@ -1,4 +1,4 @@
-export { default as IconWallet } from './icon-wallet';
+export { default as IconHome } from './icon-home';
 export { default as IconGallery } from './icon-gallery';
 export { default as IconSearch } from './icon-search';
 export { default as IconClock } from './icon-clock';
@@ -13,3 +13,9 @@ export { default as IconConnectFailed } from './icon-connect-failed';
 export { default as IconTokenAdded } from './icon-token-added';
 export { default as IconSpinnerLoading } from './icon-spinner-loading';
 export { default as IconButtonLoading } from './icon-button-loading';
+export { default as IconLock } from './icon-lock';
+export { default as IconGlobe } from './icon-globe';
+export { default as IconMapRoute } from './icon-map-route';
+export { default as IconBook } from './icon-book';
+export { default as IconSecurity } from './icon-security';
+export { default as IconAdenaMark } from './icon-adena-mark';

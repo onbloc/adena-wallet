@@ -14,6 +14,7 @@ export const HighlightNumberWrapper = styled.div.withConfig({
     !['fontColor', 'fontStyleKey', 'minimumFontSize', 'lineHeight'].includes(prop),
 })<HighlightNumberWrapperProps>`
   ${mixins.flex({ direction: 'row', align: 'normal', justify: 'normal' })};
+  ${mixins.tabularNums()};
   width: fit-content;
   height: auto;
 

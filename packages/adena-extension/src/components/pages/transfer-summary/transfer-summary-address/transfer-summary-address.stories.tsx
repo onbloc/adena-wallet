@@ -11,6 +11,7 @@ export default {
 export const Default: StoryObj<TransferSummaryAddressProps> = {
   args: {
     toAddress: 'g1fnakf9vrd6uqn8qdmp88yac4p0ngy572answ9f',
+    network: 'Gno.land',
     memo: '',
   },
 };

@@ -51,6 +51,7 @@ describe('TransferSummary Component', () => {
         denom: 'GNOT',
       },
       toAddress: '',
+      chainName: 'Gno.land',
       networkFee: {
         amount: '0.0048',
         denom: 'GNOT',

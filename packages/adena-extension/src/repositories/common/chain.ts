@@ -1,13 +1,26 @@
 import { AxiosInstance } from 'axios';
 
 import { StorageManager } from '@common/storage/storage-manager';
+import {
+  AtomoneMetainfoResponse,
+  AtomoneNetworkMetainfoMapper,
+} from './mapper/atomone-network-metainfo-mapper';
 import { ChainMetainfoResponse, NetworkMetainfoMapper } from './mapper/network-metainfo-mapper';
-import { NetworkMetainfo } from '@types';
+import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 
-type LocalValueType = 'NETWORKS' | 'CURRENT_CHAIN_ID' | 'CURRENT_NETWORK_ID';
+type LocalValueType =
+  | 'NETWORKS'
+  | 'ATOMONE_NETWORKS'
+  | 'CURRENT_CHAIN_ID'
+  | 'CURRENT_NETWORK_ID'
+  | 'CURRENT_ATOMONE_NETWORK_ID'
+  | 'NETWORK_MODE';
+
+export type NetworkModeValue = 'mainnet' | 'testnet';
 
 export class ChainRepository {
   private static CHAIN_URI = '/resources/chains/chains.json';
+  private static ATOMONE_CHAIN_URI = '/resources/chains/atomone-chains.json';
 
   private localStorage: StorageManager<LocalValueType>;
 
@@ -64,6 +77,54 @@ export class ChainRepository {
     return true;
   };
 
+  public fetchAtomoneMetainfos = async (): Promise<AtomoneNetworkMetainfo[]> => {
+    const response = await this.networkInstance.get<AtomoneMetainfoResponse>(
+      ChainRepository.ATOMONE_CHAIN_URI,
+    );
+    return AtomoneNetworkMetainfoMapper.fromResponse(response.data);
+  };
+
+  public getAtomoneNetworks = async (): Promise<AtomoneNetworkMetainfo[]> => {
+    const fetchedNetworks = await this.fetchAtomoneMetainfos();
+    const networks = await this.localStorage
+      .getToObject<Array<AtomoneNetworkMetainfo>>('ATOMONE_NETWORKS')
+      .then((networks) => (Array.isArray(networks) ? networks : []))
+      .catch(() => []);
+    if (networks.length === 0) {
+      await this.updateAtomoneNetworks(fetchedNetworks);
+      return fetchedNetworks;
+    }
+
+    const defaultNetworks = fetchedNetworks.filter(
+      (network) =>
+        network.default || networks?.find((current) => current.id === network.id) === undefined,
+    );
+    const customNetworks = networks.filter(
+      (network) =>
+        network.default === false &&
+        defaultNetworks.find((network1) => network.id === network1.id) === undefined,
+    );
+    return [...defaultNetworks, ...customNetworks];
+  };
+
+  public addAtomoneNetwork = async (network: AtomoneNetworkMetainfo): Promise<boolean> => {
+    const networks = await this.getAtomoneNetworks();
+    await this.updateAtomoneNetworks([...networks, network]);
+    return true;
+  };
+
+  public updateAtomoneNetworks = async (
+    networks: Array<AtomoneNetworkMetainfo>,
+  ): Promise<boolean> => {
+    await this.localStorage.setByObject('ATOMONE_NETWORKS', networks);
+    return true;
+  };
+
+  public deleteAtomoneNetworks = async (): Promise<boolean> => {
+    await this.localStorage.remove('ATOMONE_NETWORKS');
+    return true;
+  };
+
   public getCurrentChainId = (): Promise<string> => {
     return this.localStorage.get('CURRENT_CHAIN_ID');
   };
@@ -89,6 +150,42 @@ export class ChainRepository {
 
   public deleteCurrentNetworkId = async (): Promise<boolean> => {
     await this.localStorage.remove('CURRENT_NETWORK_ID');
+    return true;
+  };
+
+  public getCurrentAtomoneNetworkId = async (): Promise<string | null> => {
+    const value = await this.localStorage.get('CURRENT_ATOMONE_NETWORK_ID').catch(() => '');
+    if (!value || value === 'undefined' || value === 'null') {
+      return null;
+    }
+    return value;
+  };
+
+  public updateCurrentAtomoneNetworkId = async (networkId: string): Promise<boolean> => {
+    await this.localStorage.set('CURRENT_ATOMONE_NETWORK_ID', networkId);
+    return true;
+  };
+
+  public deleteCurrentAtomoneNetworkId = async (): Promise<boolean> => {
+    await this.localStorage.remove('CURRENT_ATOMONE_NETWORK_ID');
+    return true;
+  };
+
+  public getNetworkMode = async (): Promise<NetworkModeValue | null> => {
+    const value = await this.localStorage.get('NETWORK_MODE').catch(() => '');
+    if (value === 'mainnet' || value === 'testnet') {
+      return value;
+    }
+    return null;
+  };
+
+  public updateNetworkMode = async (mode: NetworkModeValue): Promise<boolean> => {
+    await this.localStorage.set('NETWORK_MODE', mode);
+    return true;
+  };
+
+  public deleteNetworkMode = async (): Promise<boolean> => {
+    await this.localStorage.remove('NETWORK_MODE');
     return true;
   };
 }

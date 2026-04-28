@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import { Account, isMultisigAccount, MultisigConfig, RawTx } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -24,10 +23,12 @@ import { makeQueryString } from '@common/utils/string-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { BroadcastMultisigTransaction } from '@components/molecules/broadcast-multisig-transaction';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
@@ -46,9 +47,9 @@ interface TransactionData {
   memo: string;
 }
 
-function makeDefaultNetworkInfo(chainId: string, rpcUrl: string): NetworkMetainfo {
+function makeDefaultNetworkInfo(chainId: string, rpcUrl: string, addressPrefix: string): NetworkMetainfo {
   return {
-    addressPrefix: defaultAddressPrefix,
+    addressPrefix,
     chainId,
     rpcUrl,
     networkId: chainId,
@@ -103,6 +104,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const { currentAccount } = useCurrentAccount();
   const location = useLocation();
   const { currentNetwork: currentWalletNetwork, scannerParameters } = useNetwork();
+  const chain = useChain();
+  const profile = useNetworkProfile();
   const { openScannerLink } = useLink();
 
   const [requestData, setRequestData] = useState<InjectionMessage>();
@@ -123,7 +126,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const currentNetwork: NetworkMetainfo = useMemo(() => {
     const networkInfo = requestData?.data?.networkInfo;
     if (!!networkInfo?.chainId && !!networkInfo?.rpcUrl) {
-      return makeDefaultNetworkInfo(networkInfo.chainId, networkInfo.rpcUrl);
+      return makeDefaultNetworkInfo(networkInfo.chainId, networkInfo.rpcUrl, chain.bech32Prefix);
     }
 
     return currentWalletNetwork;
@@ -283,7 +286,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     } catch (e) {
       const error: any = e;
       if (error?.message === 'Connection Error') {
-        checkHealth(currentNetwork.rpcUrl, requestData.key);
+        const { rpcUrl } = currentNetwork;
+        checkHealth(rpcUrl, requestData.key);
       }
       chrome.runtime.sendMessage(
         InjectionMessageInstance.failure(
@@ -306,7 +310,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
-      await currentAccount.getAddress(defaultAddressPrefix),
+      await currentAccount.getAddress(chain.bech32Prefix),
       false,
     );
     if (validationMessage) {
@@ -317,7 +321,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   };
 
   const createTxExplorerUrl = (txHash: string): string => {
-    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+    const scannerUrl = profile?.linkUrl || SCANNER_URL;
     const params = {
       ...(scannerParameters || {}),
       txhash: txHash,
@@ -432,7 +436,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
           initMultisigDocument();
         }
       });
-      currentAccount.getAddress(currentNetwork.addressPrefix).then(initBalance);
+      currentAccount.getAddress(chain.bech32Prefix).then(initBalance);
     }
   }, [currentAccount, requestData, gnoProvider]);
 

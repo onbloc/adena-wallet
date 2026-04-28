@@ -3,7 +3,6 @@ import React, { useMemo } from 'react';
 import { SubHeader } from '@components/atoms';
 
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
 import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
 import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
 import { TransferSummaryWrapper } from './transfer-summary.styles';
@@ -18,6 +17,8 @@ export interface TransferSummaryProps {
   tokenImage: string;
   transferBalance: Amount;
   toAddress: string;
+  chainName: string;
+  chainBadgeImage?: string;
   networkFee: NetworkFeeType | null;
   memo: string;
   currentBalance: number | null | undefined;
@@ -36,29 +37,48 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   tokenImage,
   transferBalance,
   toAddress,
+  chainName,
+  chainBadgeImage,
   networkFee,
   memo,
   useNetworkFeeReturn,
   isErrorNetworkFee,
+  isLoadingNetworkFee,
   simulateErrorBannerMessage,
   onClickBack,
   onClickCancel,
   onClickSend,
   onClickNetworkFeeSetting,
 }) => {
+  // TEMP (Phase 3 MVP): when the container supplies an explicit loading override
+  // it is also telling us "I'm providing the fee externally — don't rely on any
+  // of the Gno useNetworkFee hook state (loading, simulate error, etc.)". The
+  // Cosmos path uses this with a hardcoded fee.
+  // TODO(Phase 6): replace with a unified network-fee abstraction once feemarket
+  //                estimation lands.
+  const hasExternalFee = isLoadingNetworkFee !== undefined;
+  const effectiveIsLoading = hasExternalFee
+    ? (isLoadingNetworkFee as boolean)
+    : useNetworkFeeReturn.isLoading;
+
   const disabledSendButton = useMemo(() => {
-    if (useNetworkFeeReturn.isLoading) {
+    if (effectiveIsLoading) {
       return true;
     }
 
-    if (isErrorNetworkFee || useNetworkFeeReturn.isSimulateError) {
+    if (isErrorNetworkFee) {
+      return true;
+    }
+
+    if (!hasExternalFee && useNetworkFeeReturn.isSimulateError) {
       return true;
     }
 
     return Number(networkFee?.amount || 0) <= 0;
   }, [
+    hasExternalFee,
     isErrorNetworkFee,
-    useNetworkFeeReturn.isLoading,
+    effectiveIsLoading,
     useNetworkFeeReturn.isSimulateError,
     networkFee,
   ]);
@@ -88,13 +108,11 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           tokenImage={tokenImage}
           value={transferBalance.value}
           denom={transferBalance.denom}
+          chainName={chainName}
+          chainBadgeImage={chainBadgeImage}
         />
 
-        <div className='direction-icon-wrapper'>
-          <img src={`${ArrowDownIcon}`} alt='direction-icon' />
-        </div>
-
-        <TransferSummaryAddress toAddress={toAddress} memo={memo} />
+        <TransferSummaryAddress toAddress={toAddress} network={chainName} memo={memo} />
       </div>
 
       <div className='network-fee-wrapper'>
@@ -102,7 +120,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           isError={isErrorNetworkFee}
-          isLoading={useNetworkFeeReturn.isLoading}
+          isLoading={effectiveIsLoading}
           errorMessage={networkFeeErrorMessage}
           onClickSetting={onClickNetworkFeeSetting}
         />

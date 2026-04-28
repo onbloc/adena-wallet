@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 
 import { DocumentSignerListWrapper } from './document-signer-list.styles';
 import DocumentSignerListItem from './document-signer-list-item';
@@ -14,17 +15,18 @@ interface DocumentSignerListProps {
 
 const DocumentSignerList = ({ signerInfos }: DocumentSignerListProps): React.ReactElement => {
   const { openLink } = useLink();
-  const { currentNetwork, scannerParameters } = useNetwork();
+  const { scannerParameters } = useNetwork();
+  const profile = useNetworkProfile();
 
   const handleLinkClick = useCallback(
     (address: string) => {
-      const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+      const scannerUrl = profile?.linkUrl || SCANNER_URL;
       const openLinkUrl = scannerParameters
         ? `${scannerUrl}/account/${address}?${makeQueryString(scannerParameters)}`
         : `${scannerUrl}/account/${address}`;
       openLink(openLinkUrl);
     },
-    [currentNetwork, scannerParameters, openLink],
+    [profile, scannerParameters, openLink],
   );
 
   return (

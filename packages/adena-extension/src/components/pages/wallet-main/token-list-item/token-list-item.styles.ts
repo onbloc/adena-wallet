@@ -1,8 +1,8 @@
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 
-export const TokenListItemWrapper = styled.div`
+export const TokenListItemWrapper = styled.div<{ $disabled?: boolean }>`
   ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   padding: 13px;
   width: 100%;
@@ -15,10 +15,17 @@ export const TokenListItemWrapper = styled.div`
     margin-top: 12px;
   }
 
-  &:hover {
-    background: ${getTheme('neutral', '_7')};
-    cursor: pointer;
-  }
+  ${({ $disabled }): ReturnType<typeof css> =>
+    $disabled
+      ? css`
+          cursor: default;
+        `
+      : css`
+          &:hover {
+            background: ${getTheme('neutral', '_7')};
+            cursor: pointer;
+          }
+        `}
 
   .logo-wrapper {
     display: inline-flex;
@@ -26,12 +33,6 @@ export const TokenListItemWrapper = styled.div`
     width: 34px;
     height: 34px;
     margin-right: 12px;
-
-    .logo {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-    }
   }
 
   .name-wrapper {

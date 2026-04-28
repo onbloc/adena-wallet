@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import {
-  IconWallet,
+  IconHome,
   IconGallery,
   IconSearch,
   IconClock,
@@ -15,6 +15,12 @@ import {
   IconConnectFailed,
   IconTokenAdded,
   IconSpinnerLoading,
+  IconLock,
+  IconGlobe,
+  IconMapRoute,
+  IconBook,
+  IconSecurity,
+  IconAdenaMark,
 } from './icon-assets';
 
 export type IconName = keyof typeof ICONS;
@@ -25,7 +31,7 @@ export interface IconProps extends React.SVGProps<SVGSVGElement> {
 }
 
 const ICONS = {
-  iconWallet: IconWallet,
+  iconHome: IconHome,
   iconGallery: IconGallery,
   iconSearch: IconSearch,
   iconClock: IconClock,
@@ -40,6 +46,12 @@ const ICONS = {
   iconConnectFailed: IconConnectFailed,
   iconTokenAdded: IconTokenAdded,
   iconSpinnerLoading: IconSpinnerLoading,
+  iconLock: IconLock,
+  iconGlobe: IconGlobe,
+  iconMapRoute: IconMapRoute,
+  iconBook: IconBook,
+  iconSecurity: IconSecurity,
+  iconAdenaMark: IconAdenaMark,
 } as const;
 
 export const Icon = ({ name, className = '', ...rest }: IconProps): ReactElement => {

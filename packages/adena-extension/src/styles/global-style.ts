@@ -34,7 +34,7 @@ export const GlobalPopupStyle = createGlobalStyle`
     height: 100%;
     padding: 0;
     margin: 0;
-    font-family: "Poppins", sans-serif;
+    font-family: "Inter", sans-serif;
     color: #ffffff;
     position: relative;
     background-color: #212128;
@@ -47,6 +47,10 @@ export const GlobalPopupStyle = createGlobalStyle`
     position: relative;
     width: 100%;
     height: 100%;
+    /* The header is position: fixed so it never drifts during scroll or
+       overscroll. Reserve its 50px slot here so flex children (main,
+       routes) start below it instead of overlapping. */
+    padding-top: 50px;
   };
 
   main {

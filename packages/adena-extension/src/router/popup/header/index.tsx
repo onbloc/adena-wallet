@@ -20,11 +20,16 @@ const Wrapper = styled.header`
   display: flex;
   flex-shrink: 0;
   width: 100%;
-  height: 48px;
+  height: 50px;
   background-color: ${getTheme('neutral', '_8')};
-  position: sticky;
+  /* Pinned to the viewport so scroll/overscroll on any nested container
+     never drags the header. Companion: #popup reserves 50px padding-top
+     in global-style.ts so this overlay does not cover page content. */
+  position: fixed;
   top: 0px;
-  z-index: 2;
+  left: 0px;
+  right: 0px;
+  z-index: 20;
 `;
 
 export const Header = (): JSX.Element => {

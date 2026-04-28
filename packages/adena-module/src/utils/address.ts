@@ -4,7 +4,7 @@ import { fromBech32, toBech32 } from '../encoding';
 
 export async function publicKeyToAddress(
   publicKey: Uint8Array,
-  addressPrefix: string = 'g',
+  addressPrefix: string,
 ): Promise<string> {
   return new KeySigner(new Uint8Array(), publicKey, addressPrefix).getAddress();
 }
@@ -32,7 +32,7 @@ export function secp256k1PubKeyToAddressBytes(publicKey: Uint8Array): Uint8Array
  */
 export function secp256k1PubKeyToAddress(
   publicKey: Uint8Array,
-  addressPrefix: string = 'g',
+  addressPrefix: string,
 ): string {
   const addressBytes = secp256k1PubKeyToAddressBytes(publicKey);
   return toBech32(addressPrefix, addressBytes);

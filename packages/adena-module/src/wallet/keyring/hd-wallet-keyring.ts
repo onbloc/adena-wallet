@@ -9,8 +9,10 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 import { Bip39, EnglishMnemonic, entropyToMnemonic, mnemonicToEntropy } from '../../crypto';
-import { Document, makeSignedTx, useTm2Wallet } from './../..';
-import { Keyring, KeyringData, KeyringType } from './keyring';
+import { Document } from './../..';
+import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
+import { signGnoDocument } from './sign-gno-document';
+import { signRawWithPrivateKey } from './sign-raw-util';
 
 export class HDWalletKeyring implements Keyring {
   public readonly id: string;
@@ -55,6 +57,12 @@ export class HDWalletKeyring implements Keyring {
     };
   }
 
+  async signRaw(bytes: Uint8Array, opts?: SignRawOptions): Promise<Uint8Array> {
+    const hdPath = opts?.hdPath ?? 0;
+    const privateKey = await this.getPrivateKey(hdPath);
+    return signRawWithPrivateKey(bytes, privateKey);
+  }
+
   async sign(
     provider: Provider,
     document: Document,
@@ -63,19 +71,7 @@ export class HDWalletKeyring implements Keyring {
     signed: Tx;
     signature: TxSignature[];
   }> {
-    const wallet = await useTm2Wallet(document).fromMnemonic(this.getMnemonic(), {
-      accountIndex: hdPath,
-    });
-    wallet.connect(provider);
-    return this.signByWallet(wallet, document);
-  }
-
-  private async signByWallet(wallet: Tm2Wallet, document: Document) {
-    const signedTx = await makeSignedTx(wallet, document);
-    return {
-      signed: signedTx,
-      signature: signedTx.signatures,
-    };
+    return signGnoDocument(provider, document, this, { hdPath });
   }
 
   async broadcastTxSync(provider: Provider, signedTx: Tx, hdPath: number = 0) {

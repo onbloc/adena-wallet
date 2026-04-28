@@ -14,9 +14,9 @@ import {
 import { useCallback, useMemo, useState } from 'react';
 
 import { waitForRun } from '@common/utils/timeout-utils';
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
+import { useChain } from '@hooks/use-chain';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useWallet } from '@hooks/use-wallet';
 import useIndicatorStep, {
@@ -66,6 +66,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
   const { updateWallet } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
   const { hasHDWallet } = useWallet();
+  const chain = useChain();
 
   const [inputType, setInputType] = useState<ImportWalletType>('12seeds');
   const [step, setStep] = useState<AccountImportStateType>(
@@ -136,10 +137,10 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     }
 
     const account = await SingleAccount.createBy(keyring, wallet.nextAccountName);
-    const address = await account.getAddress(defaultAddressPrefix);
+    const address = await account.getAddress(chain.bech32Prefix);
     const checkAccounts = wallet.accounts.filter((account) => !isAirgapAccount(account));
     const storedAddresses = await Promise.all(
-      checkAccounts.map((account) => account.getAddress(defaultAddressPrefix)),
+      checkAccounts.map((account) => account.getAddress(chain.bech32Prefix)),
     );
     const existAddress = storedAddresses.includes(address);
     if (existAddress) {
@@ -218,7 +219,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
       const keyring = storedKeyring || (await HDWalletKeyring.fromMnemonic(inputValue));
 
       for (const account of loadedAccounts) {
-        const address = await account.getAddress('g');
+        const address = await account.getAddress(chain.bech32Prefix);
         if (selectedAddresses.includes(address)) {
           resultWallet = await addAccountWith(resultWallet, keyring, account);
         }

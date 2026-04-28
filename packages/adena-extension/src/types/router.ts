@@ -9,7 +9,8 @@ import {
   TokenModel,
   TransactionInfo,
 } from '@types';
-import { Document } from 'adena-module';
+import type { StdSignDoc } from '@cosmjs/amino';
+import { CosmosDocument, Document } from 'adena-module';
 
 export const REGISTER_PATH = 'register.html' as const;
 export const SECURITY_PATH = 'security.html' as const;
@@ -53,8 +54,13 @@ export enum RoutePath {
   SignMultisigDocument = 'approve/wallet/sign-multisig-document',
   BroadcastMultisigTransaction = 'approve/wallet/broadcast-multisig-transaction',
   ApproveEstablish = '/approve/wallet/establish',
+  ApproveEstablishCosmos = '/approve/wallet/establish-cosmos',
+  ApproveSignCosmos = '/approve/wallet/sign-cosmos',
+  ApproveSignCosmosLedgerLoading = '/approve/wallet/sign-cosmos/ledger-loading',
+  ApproveGetCosmosKey = '/approve/wallet/get-cosmos-key',
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',
+  Accounts = '/wallet/accounts',
   AccountDetails = '/wallet/accounts/:accountId',
   ManageToken = '/wallet/manage-token',
   ManageNft = '/wallet/manage-nft',
@@ -64,6 +70,7 @@ export enum RoutePath {
   TransferSummary = '/wallet/transfer-summary',
   NftTransferSummary = '/wallet/nft-transfer-summary',
   TransferLedgerLoading = '/wallet/transfer-ledger/loading',
+  TransferLedgerCosmosLoading = '/wallet/transfer-ledger/cosmos-loading',
   TransferLedgerReject = '/wallet/transfer-ledger/reject',
   BroadcastTransaction = '/wallet/broadcast-transaction',
   BroadcastMultisigTransactionScreen = '/wallet/broadcast-multiig-transaction',
@@ -137,6 +144,7 @@ export type RouteParams = {
     type: 'token' | 'wallet';
     token: {
       symbol: string;
+      networkId?: string;
     };
   };
   [RoutePath.Send]: null;
@@ -164,8 +172,20 @@ export type RouteParams = {
     requestData?: InjectionMessage;
   };
   [RoutePath.ApproveEstablish]: null;
+  [RoutePath.ApproveEstablishCosmos]: null;
+  [RoutePath.ApproveSignCosmos]: {
+    requestData?: InjectionMessage;
+  };
+  [RoutePath.ApproveSignCosmosLedgerLoading]: {
+    signDoc: StdSignDoc;
+    responseKey: string | undefined;
+  };
+  [RoutePath.ApproveGetCosmosKey]: {
+    requestData?: InjectionMessage;
+  };
   [RoutePath.ApproveChangingNetwork]: null;
   [RoutePath.ApproveAddingNetwork]: null;
+  [RoutePath.Accounts]: null;
   [RoutePath.AccountDetails]: null;
   [RoutePath.ManageToken]: null;
   [RoutePath.ManageTokenAdded]: null;
@@ -187,6 +207,15 @@ export type RouteParams = {
     };
     gasInfo: GasInfo | null;
     memo: string;
+    // Populated only when a Ledger loading page navigates back after a
+    // successful/failed broadcast — lets TransferSummary enter its RESULT
+    // screen (same UX HD/PK transfers already get) without a dedicated
+    // Ledger completion page.
+    ledgerResult?: {
+      status: 'SUCCESS' | 'FAILED';
+      hash?: string | null;
+      errorMessage?: string | null;
+    };
   };
   [RoutePath.NftTransferSummary]: {
     grc721Token: GRC721Model;
@@ -199,8 +228,21 @@ export type RouteParams = {
   };
   [RoutePath.TransferLedgerLoading]: {
     document: Document;
+    // Original TransferSummary params — carried through so the Ledger
+    // loading page can navigate back to TransferSummary with the broadcast
+    // result and reuse its existing RESULT screen. Optional because NFT
+    // transfers reuse this page but don't have an equivalent result screen
+    // on the NFT summary side.
+    summary?: RouteParams[RoutePath.TransferSummary];
   };
-  [RoutePath.TransferLedgerReject]: null;
+  [RoutePath.TransferLedgerCosmosLoading]: {
+    document: CosmosDocument;
+    summary?: RouteParams[RoutePath.TransferSummary];
+  };
+  [RoutePath.TransferLedgerReject]: {
+    title?: string;
+    desc?: string;
+  } | null;
   [RoutePath.BroadcastTransaction]: null;
   [RoutePath.BroadcastMultisigTransactionScreen]: null;
   [RoutePath.SignMultisigTransactionScreen]: null;
@@ -209,9 +251,12 @@ export type RouteParams = {
   [RoutePath.SettingChangePassword]: null;
   [RoutePath.ConnectedApps]: null;
   [RoutePath.ChangeNetwork]: null;
-  [RoutePath.AddCustomNetwork]: null;
+  [RoutePath.AddCustomNetwork]: {
+    chainGroup: 'gno' | 'atomone';
+  } | null;
   [RoutePath.EditCustomNetwork]: {
     networkId: string;
+    chainGroup: 'gno' | 'atomone';
   };
   [RoutePath.AddressBook]: null;
   [RoutePath.AddAddress]: {

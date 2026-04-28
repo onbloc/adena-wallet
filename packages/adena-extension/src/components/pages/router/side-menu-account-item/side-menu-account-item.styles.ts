@@ -24,14 +24,49 @@ export const SideMenuAccountItemWrapper = styled.div`
     .address-wrapper {
       display: inline-flex;
       flex-direction: row;
+      align-items: center;
 
       .name {
         ${fonts.body2Bold}
         line-height: 18px;
       }
 
-      .copy-button {
-        margin: 0 8px 0 5px;
+      .address-copy {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0 8px 0 6px;
+        cursor: pointer;
+
+        .address {
+          ${fonts.body3Reg}
+          line-height: 18px;
+          color: ${getTheme('neutral', 'a')};
+          transition: color 0.2s ease;
+        }
+
+        .copy-icon {
+          display: inline-flex;
+          align-items: center;
+
+          svg {
+            width: 14px;
+            height: 14px;
+          }
+
+          svg path {
+            transition: stroke 0.2s ease;
+            stroke: ${getTheme('neutral', 'a')};
+          }
+        }
+
+        &:hover .address {
+          color: ${getTheme('neutral', '_1')};
+        }
+
+        &:hover .copy-icon svg path {
+          stroke: ${getTheme('neutral', '_1')};
+        }
       }
 
       .label {

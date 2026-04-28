@@ -1,5 +1,5 @@
 import { validateAddress } from 'adena-module';
-import gnotLogo from '@assets/gnot-logo.svg';
+import gnotLogo from '@assets/icons/tokens/gnot.svg';
 import contractLogo from '@assets/contract.svg';
 import addPkgLogo from '@assets/addpkg.svg';
 import success from '@assets/success.svg';

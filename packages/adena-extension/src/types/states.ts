@@ -2,6 +2,9 @@ import { TokenModel } from './';
 
 export interface TokenBalanceType extends TokenModel {
   amount: Amount;
+  // Present on 'gno-native' / 'cosmos-native' rows — the raw on-chain denom
+  // (e.g. ugnot, uatone, uphoton) used to construct transactions.
+  denom?: string;
 }
 
 export interface Amount {
@@ -30,6 +33,23 @@ export interface NetworkMetainfo {
   gnoUrl: string;
   apiUrl: string;
   linkUrl: string;
+  deleted?: boolean;
+}
+
+export interface AtomoneNetworkMetainfo {
+  id: string;
+  default: boolean;
+  isMainnet: boolean;
+  chainGroup: 'atomone';
+  chainType: 'cosmos';
+  chainId: string;
+  chainName: string;
+  networkId: string;
+  networkName: string;
+  addressPrefix: string;
+  rpcUrl: string;
+  restUrl: string;
+  linkUrl?: string;
   deleted?: boolean;
 }
 

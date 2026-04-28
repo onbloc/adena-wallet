@@ -1,7 +1,17 @@
 import React, { useRef, useState, useEffect } from 'react';
 import styled, { useTheme } from 'styled-components';
 
-import { Text, DefaultInput, inputStyle, ErrorText, LeftArrowBtn } from '@components/atoms';
+import {
+  DefaultInput,
+  ErrorText,
+  inputStyle,
+  LeftArrowBtn,
+  Text,
+} from '@components/atoms';
+import {
+  ChainDropdown,
+  chainOptionsFromRegistry,
+} from '@components/atoms/chain-dropdown';
 import { CancelAndConfirmButton } from '@components/molecules';
 import add from '@assets/add-symbol.svg';
 import edit from '@assets/edit-symbol.svg';
@@ -13,7 +23,8 @@ import {
   validateInvalidAddress,
 } from '@services/index';
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
-import { useWalletContext } from '@hooks/use-context';
+import { useChain } from '@hooks/use-chain';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
 import { AddressBookItem } from '@repositories/wallet';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -30,6 +41,13 @@ const AddAddress = (): JSX.Element => {
   const isAdd = params.status === 'add';
 
   const addressList: AddressBookItem[] = params.addressList;
+  const [chainGroup, setChainGroup] = useState<string>('gno');
+  const chain = useChain(chainGroup);
+  const { chainRegistry } = useAdenaContext();
+  const chainOptions = React.useMemo(
+    () => chainOptionsFromRegistry(chainRegistry),
+    [chainRegistry],
+  );
   const [name, setName] = useState(() => params.curr?.name ?? '');
   const [address, setAddress] = useState(() => params.curr?.address ?? '');
   const [nameError, setNameError] = useState<boolean>(false);
@@ -85,7 +103,7 @@ const AddAddress = (): JSX.Element => {
     }
 
     try {
-      await validateAlreadyAddressByAccounts(currData, wallet?.accounts ?? [], isAdd);
+      await validateAlreadyAddressByAccounts(currData, wallet?.accounts ?? [], isAdd, chain.bech32Prefix);
     } catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {
@@ -158,6 +176,12 @@ const AddAddress = (): JSX.Element => {
         src={isAdd ? add : edit}
         alt={isAdd ? 'add icon' : 'edit icon'}
       />
+      <ChainDropdown
+        value={chainGroup}
+        onChange={setChainGroup}
+        options={chainOptions}
+        disabled={!isAdd}
+      />
       <DefaultInput
         value={name}
         placeholder='Label'
@@ -165,6 +189,7 @@ const AddAddress = (): JSX.Element => {
         type='text'
         error={nameError}
         ref={nameInputRef}
+        margin='12px 0 0'
       />
       <AddressInput
         value={address}

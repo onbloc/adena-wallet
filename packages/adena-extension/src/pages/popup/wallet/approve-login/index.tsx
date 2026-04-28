@@ -1,4 +1,4 @@
-import { WalletResponseFailureType, WalletResponseType } from '@adena-wallet/sdk';
+import { WalletResponseFailureType } from '@adena-wallet/sdk';
 import { isAirgapAccount } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -115,7 +115,10 @@ export const ApproveLogin = (): JSX.Element => {
   };
 
   const redirect = (): void => {
-    switch (requestData?.type as WalletResponseType | undefined) {
+    // Widen to `string` so extension-local Cosmos identifiers (e.g.
+    // ENABLE_COSMOS) are recognized until `@adena-wallet/sdk` ships Cosmos
+    // enum entries.
+    switch (requestData?.type as string | undefined) {
       case 'DO_CONTRACT':
         if (currentAccount === null || isAirgapAccount(currentAccount)) {
           navigate(RoutePath.ApproveSignFailed);
@@ -139,6 +142,16 @@ export const ApproveLogin = (): JSX.Element => {
         return;
       case 'ADD_ESTABLISH':
         navigate(RoutePath.ApproveEstablish + location.search, { state: { requestData } });
+        return;
+      case 'ENABLE_COSMOS':
+        navigate(RoutePath.ApproveEstablishCosmos + location.search, { state: { requestData } });
+        return;
+      case 'SIGN_COSMOS_AMINO':
+      case 'SIGN_COSMOS_DIRECT':
+        navigate(RoutePath.ApproveSignCosmos + location.search, { state: { requestData } });
+        return;
+      case 'GET_COSMOS_KEY':
+        navigate(RoutePath.ApproveGetCosmosKey + location.search, { state: { requestData } });
         return;
       case 'ADD_NETWORK':
         navigate(RoutePath.ApproveAddingNetwork + location.search, { state: { requestData } });

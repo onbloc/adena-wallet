@@ -8,7 +8,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 import { Document, fromBech32 } from '../..';
-import { Keyring, KeyringData, KeyringType } from './keyring';
+import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
 
 export class AddressKeyring implements Keyring {
   public readonly id: string;
@@ -29,6 +29,13 @@ export class AddressKeyring implements Keyring {
       type: this.type,
       addressBytes: Array.from(this.addressBytes),
     };
+  }
+
+  async signRaw(_bytes: Uint8Array, _opts?: SignRawOptions): Promise<Uint8Array> {
+    // AIRGAP keyrings intentionally hold no private key. Signing happens on an
+    // external air-gapped device; the wallet only stores the address and
+    // broadcasts pre-signed transactions.
+    throw new Error(`AIRGAP keyring cannot sign (keyring ${this.id})`);
   }
 
   async sign(

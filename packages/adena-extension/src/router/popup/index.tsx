@@ -18,10 +18,15 @@ import { SecurityPrivacy } from '@pages/popup/certify/security-privacy';
 import { Settings } from '@pages/popup/certify/settings';
 
 import AccountDetailsPage from '@pages/popup/wallet/account-details';
+import Accounts from '@pages/popup/wallet/accounts';
 import AddCustomNetworkPage from '@pages/popup/wallet/add-custom-network';
 import ApproveAddingNetworkPage from '@pages/popup/wallet/approve-adding-network';
 import ApproveChangingNetworkPage from '@pages/popup/wallet/approve-changing-network';
 import ApproveEstablish from '@pages/popup/wallet/approve-establish';
+import ApproveEstablishCosmos from '@pages/popup/wallet/approve-establish-cosmos';
+import ApproveGetCosmosKey from '@pages/popup/wallet/approve-get-cosmos-key';
+import ApproveSignCosmos from '@pages/popup/wallet/approve-sign-cosmos';
+import ApproveSignCosmosLedgerLoading from '@pages/popup/wallet/approve-sign-cosmos-ledger-loading';
 import { ApproveLogin } from '@pages/popup/wallet/approve-login';
 import ApproveSign from '@pages/popup/wallet/approve-sign';
 import ApproveSignLedgerLoading from '@pages/popup/wallet/approve-sign-ledger-loading';
@@ -47,14 +52,12 @@ import { Staking } from '@pages/popup/wallet/staking';
 import { TokenDetails } from '@pages/popup/wallet/token-details';
 import { TransactionDetail } from '@pages/popup/wallet/transaction-detail';
 import TransferInput from '@pages/popup/wallet/transfer-input';
+import TransferLedgerCosmosLoading from '@pages/popup/wallet/transfer-ledger-cosmos-loading';
 import TransferLedgerLoading from '@pages/popup/wallet/transfer-ledger-loading';
 import TransferLedgerReject from '@pages/popup/wallet/transfer-ledger-reject';
 import TransferSummary from '@pages/popup/wallet/transfer-summary';
 import { WalletMain } from '@pages/popup/wallet/wallet-main';
 
-import { ErrorContainer } from '@components/molecules';
-
-import { useNetwork } from '@hooks/use-network';
 import { CreatePassword } from '@pages/popup/certify/create-password';
 import { LaunchAdena } from '@pages/popup/certify/launch-adena';
 import AccountInitializationPage from '@pages/popup/wallet/account-initialization';
@@ -67,26 +70,16 @@ import { NftCollection } from '@pages/popup/wallet/nft/collection';
 import { NftCollectionAsset } from '@pages/popup/wallet/nft/collection-asset';
 import SignMultisigTransactionScreen from '@pages/popup/wallet/sign-multisig-transaction-screen';
 import { Header } from './header';
-import LoadingMain from './loading-main';
 import { Navigation } from './navigation';
 import ToastContainer from './toast-container';
 
 export const PopupRouter = (): JSX.Element => {
-  const { failedNetwork } = useNetwork();
-
   return (
     <React.Fragment>
       <Header />
       <Routes>
         <Route path={RoutePath.Home} element={<Navigate replace to={RoutePath.Wallet} />} />
-        <Route
-          path={RoutePath.Wallet}
-          element={
-            <ErrorContainer failedNetwork={failedNetwork}>
-              <WalletMain />
-            </ErrorContainer>
-          }
-        />
+        <Route path={RoutePath.Wallet} element={<WalletMain />} />
         <Route path={RoutePath.EnterSeedPhrase} element={<EnterSeedPhrase />} />
         <Route path={RoutePath.Login} element={<Login />} />
         <Route path={RoutePath.ForgotPassword} element={<ForgotPassword />} />
@@ -115,6 +108,10 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.NftTransferSummary} element={<NFTTransferSummary />} />
         <Route path={RoutePath.NftTransferInput} element={<NFTTransferInput />} />
         <Route path={RoutePath.TransferLedgerLoading} element={<TransferLedgerLoading />} />
+        <Route
+          path={RoutePath.TransferLedgerCosmosLoading}
+          element={<TransferLedgerCosmosLoading />}
+        />
         <Route path={RoutePath.TransferLedgerReject} element={<TransferLedgerReject />} />
         <Route path={RoutePath.BroadcastTransaction} element={<BroadcastTransactionScreen />} />
         <Route
@@ -159,12 +156,20 @@ export const PopupRouter = (): JSX.Element => {
         />
         <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
+        <Route path={RoutePath.ApproveEstablishCosmos} element={<ApproveEstablishCosmos />} />
+        <Route path={RoutePath.ApproveSignCosmos} element={<ApproveSignCosmos />} />
+        <Route
+          path={RoutePath.ApproveSignCosmosLedgerLoading}
+          element={<ApproveSignCosmosLedgerLoading />}
+        />
+        <Route path={RoutePath.ApproveGetCosmosKey} element={<ApproveGetCosmosKey />} />
         <Route path={RoutePath.ApproveChangingNetwork} element={<ApproveChangingNetworkPage />} />
         <Route path={RoutePath.ApproveAddingNetwork} element={<ApproveAddingNetworkPage />} />
         <Route path={RoutePath.ConnectedApps} element={<ConnectedApps />} />
         <Route path={RoutePath.AddCustomNetwork} element={<AddCustomNetworkPage />} />
         <Route path={RoutePath.EditCustomNetwork} element={<EditCustomNetworkPage />} />
         <Route path={RoutePath.ChangeNetwork} element={<ChangeNetwork />} />
+        <Route path={RoutePath.Accounts} element={<Accounts />} />
         <Route path={RoutePath.AccountDetails} element={<AccountDetailsPage />} />
         <Route path={RoutePath.AddressBook} element={<AddressBook />} />
         <Route path={RoutePath.AddAddress} element={<AddAddress />} />
@@ -174,7 +179,6 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.ResetWallet} element={<ResetWallet />} />
       </Routes>
       <Navigation />
-      <LoadingMain />
       <ToastContainer />
     </React.Fragment>
   );

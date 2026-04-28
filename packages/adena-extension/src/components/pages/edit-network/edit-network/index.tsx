@@ -4,52 +4,66 @@ import { SubHeader, CustomNetworkInput } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import { EditNetworkWrapper } from './edit-network.styles';
 import LeftArrowIcon from '@assets/arrowL-left.svg';
+import type { ChainGroup } from '@hooks/use-network';
 
 import RemoveNetworkButton from '../remove-network-button/remove-network-button';
 
+type FieldType = 'indexer' | 'lcd';
+
 export interface EditNetworkProps {
+  chainGroup: ChainGroup;
   name: string;
   rpcUrl: string;
   rpcUrlError?: string;
-  indexerUrl: string;
-  indexerUrlError?: string;
+  extraUrl: string;
+  extraUrlError?: string;
   chainIdError?: string;
   chainId: string;
   savable: boolean;
-  editType: 'rpc-only' | 'all-default' | 'all';
+  isDefault: boolean;
   changeName: (name: string) => void;
   changeRPCUrl: (rpcUrl: string) => void;
-  changeIndexerUrl: (indexerUrl: string) => void;
+  changeExtraUrl: (extraUrl: string) => void;
   changeChainId: (chainId: string) => void;
   clearNetwork: () => void;
   saveNetwork: () => void;
   moveBack: () => void;
 }
 
+const FIELD_TYPES: Record<ChainGroup, FieldType> = {
+  gno: 'indexer',
+  atomone: 'lcd',
+};
+
+const CHAIN_GROUP_DISPLAY_NAMES: Record<ChainGroup, string> = {
+  gno: 'Gno.land',
+  atomone: 'AtomOne',
+};
+
 const EditNetwork: React.FC<EditNetworkProps> = ({
+  chainGroup,
   name,
   rpcUrl,
-  indexerUrl,
+  extraUrl,
   chainId,
   rpcUrlError,
-  indexerUrlError,
+  extraUrlError,
   chainIdError,
   savable,
-  editType,
+  isDefault,
   changeName,
   changeRPCUrl,
-  changeIndexerUrl,
+  changeExtraUrl,
   changeChainId,
   moveBack,
   saveNetwork,
   clearNetwork,
 }) => {
+  const fieldType = FIELD_TYPES[chainGroup];
+  const chainGroupDisplayName = CHAIN_GROUP_DISPLAY_NAMES[chainGroup];
   const clearButtonText = useMemo(() => {
-    if (editType === 'all') {
-      return 'Remove Network';
-    }
-    return 'Reset to Default';
-  }, [editType]);
+    return isDefault ? 'Reset to Default' : 'Remove Network';
+  }, [isDefault]);
 
   const onClickBack = useCallback(() => {
     moveBack();
@@ -77,19 +91,21 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
           }}
         />
         <div className='form-wrapper'>
+          <div className='chain-group-label'>{chainGroupDisplayName}</div>
           <CustomNetworkInput
             name={name}
             rpcUrl={rpcUrl}
-            indexerUrl={indexerUrl}
+            extraUrl={extraUrl}
             chainId={chainId}
             rpcUrlError={rpcUrlError}
-            indexerUrlError={indexerUrlError}
+            extraUrlError={extraUrlError}
             chainIdError={chainIdError}
             changeName={changeName}
             changeRPCUrl={changeRPCUrl}
-            changeIndexerUrl={changeIndexerUrl}
+            changeExtraUrl={changeExtraUrl}
             changeChainId={changeChainId}
-            editType={editType}
+            fieldType={fieldType}
+            isDefault={isDefault}
           />
         </div>
         <RemoveNetworkButton text={clearButtonText} clearNetwork={onClickRemoveButton} />

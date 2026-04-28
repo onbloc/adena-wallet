@@ -9,8 +9,8 @@ import {
 } from 'adena-module';
 
 import { RoutePath } from '@types';
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useNetwork } from '@hooks/use-network';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useQuery } from '@tanstack/react-query';
 import useIndicatorStep, {
@@ -38,7 +38,7 @@ export type useSelectAccountScreenReturn = {
 const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
   const { wallet, updateWallet } = useWalletContext();
   const { accountService } = useAdenaContext();
-  const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const { params, navigate } = useAppNavigate<RoutePath.WebConnectLedgerSelectAccount>();
   const [selectAccountAddresses, setSelectAccountAddresses] = useState<Array<string>>([]);
   const [lastPath, setLastPath] = useState(-1);
@@ -46,7 +46,7 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
   const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
   const LEDGER_ACCOUNT_LOAD_SIZE = 5;
   const walletAccounts = wallet?.accounts ?? [];
-  const addressPrefix = currentNetwork.addressPrefix;
+  const addressPrefix = chain.bech32Prefix;
   const [accountInfos, setAccountInfos] = useState<AccountInfoType[]>([]);
   const indicatorInfo = useIndicatorStep({
     stepMap: {
@@ -125,7 +125,14 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
     if (!transport) {
       return;
     }
-    const keyring = await LedgerKeyring.fromLedger(AdenaLedgerConnector.fromTransport(transport));
+    // Reuse the keyringId already baked into the accounts (set during
+    // enumeration via LedgerAccount.createBy). Creating a fresh keyring
+    // here would mint a new UUID that no account references, leaving the
+    // persisted wallet with `account.keyringId` pointing at nothing —
+    // every `keyrings.find(k => k.id === account.keyringId)` would throw.
+    const existingKeyringId = resultSavedAccounts[0]?.keyringId;
+    const keyring = new LedgerKeyring({ id: existingKeyringId });
+    keyring.setConnector(AdenaLedgerConnector.fromTransport(transport));
 
     await transport.close();
 

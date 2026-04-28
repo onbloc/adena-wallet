@@ -2,13 +2,24 @@ import { LedgerConnector } from '@cosmjs/ledger-amino';
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  defaultAddressPrefix,
   Provider,
   Tx,
   TxSignature,
 } from '@gnolang/tm2-js-client';
 
+import { CosmosSignMode } from '../chain-registry/types';
+import {
+  signCosmos,
+  CosmosDocument,
+  CosmosFeeEstimate,
+  CosmosProvider,
+  CosmosTxBroadcastResponse,
+  SignedCosmosTx,
+  estimateCosmosFee,
+} from '../cosmos';
+import { StdFee } from '@cosmjs/amino';
 import { Bip39, Random } from '../crypto';
+import { fromBech32 } from '../encoding';
 import { arrayContentEquals, arrayToHex, hexToArray } from '../utils';
 import { Document } from './..';
 import {
@@ -89,6 +100,27 @@ export interface Wallet {
     accountId: string,
     tx: Tx,
   ) => Promise<BroadcastTxCommitResult>;
+  // Cosmos AMINO (Phase 3) — kept as dedicated methods so the Gno path
+  // (sign / signByAccountId / broadcastTx*) stays strictly untouched. The
+  // caller injects a CosmosProvider just like it injects `Provider` for Gno,
+  // keeping adena-module free of HTTP-client deps.
+  signCosmosByAccountId: (
+    accountId: string,
+    document: CosmosDocument,
+    cosmosProvider: CosmosProvider,
+    signMode: CosmosSignMode,
+  ) => Promise<SignedCosmosTx>;
+  estimateCosmosFeeByAccountId: (
+    accountId: string,
+    document: CosmosDocument,
+    cosmosProvider: CosmosProvider,
+    simulateFee: StdFee,
+    feeDenom: string,
+  ) => Promise<CosmosFeeEstimate>;
+  broadcastCosmosTx: (
+    signedTx: SignedCosmosTx,
+    cosmosProvider: CosmosProvider,
+  ) => Promise<CosmosTxBroadcastResponse>;
   serialize: (password: string) => Promise<string>;
   clone: () => AdenaWallet;
 }
@@ -375,6 +407,70 @@ export class AdenaWallet implements Wallet {
     return keyring.broadcastTxCommit(provider, signedTx);
   }
 
+  // ─── Cosmos AMINO (Phase 3) ───────────────────────────────────────────
+  // Dedicated methods so Gno callers don't encounter union-typed returns.
+  // CosmosProvider is injected by the caller (mirrors the Gno `Provider` DI
+  // pattern — TransactionService receives the provider as a constructor
+  // dependency from the DI container before calling these methods).
+
+  async signCosmosByAccountId(
+    accountId: string,
+    document: CosmosDocument,
+    cosmosProvider: CosmosProvider,
+    signMode: CosmosSignMode,
+  ): Promise<SignedCosmosTx> {
+    const account = this._accounts.find((a) => a.id === accountId);
+    if (!account) {
+      throw new Error('Account not found');
+    }
+    const keyring = this._keyrings.find((k) => k.id === account.keyringId);
+    if (!keyring) {
+      throw new Error('Keyring not found');
+    }
+    const hdPath = hasHDPath(account) ? account.hdPath : undefined;
+    return signCosmos({
+      document,
+      keyring,
+      cosmosProvider,
+      hdPath,
+      signMode,
+    });
+  }
+
+  async estimateCosmosFeeByAccountId(
+    accountId: string,
+    document: CosmosDocument,
+    cosmosProvider: CosmosProvider,
+    simulateFee: StdFee,
+    feeDenom: string,
+  ): Promise<CosmosFeeEstimate> {
+    const account = this._accounts.find((a) => a.id === accountId);
+    if (!account) {
+      throw new Error('Account not found');
+    }
+    // estimateCosmosFee only needs a public key to populate the simulate tx's
+    // AuthInfo — no signing. Reading publicKey straight from the account
+    // avoids the keyring lookup, which is unnecessary for a read-only gas
+    // query and brittle for Ledger accounts whose persisted keyring id can
+    // drift from account.keyringId (connect-ledger wizard bug).
+    const hdPath = hasHDPath(account) ? account.hdPath : undefined;
+    return estimateCosmosFee({
+      document,
+      publicKey: account.publicKey,
+      cosmosProvider,
+      hdPath,
+      simulateFee,
+      feeDenom,
+    });
+  }
+
+  async broadcastCosmosTx(
+    signedTx: SignedCosmosTx,
+    cosmosProvider: CosmosProvider,
+  ): Promise<CosmosTxBroadcastResponse> {
+    return cosmosProvider.broadcastTx(signedTx.txBytes, 'BROADCAST_MODE_SYNC');
+  }
+
   async serialize(password: string) {
     const plain: WalletData = {
       currentAccountId: this._currentAccountId,
@@ -392,8 +488,9 @@ export class AdenaWallet implements Wallet {
    * @returns true if duplicate exists
    */
   async hasAddress(address: string): Promise<boolean> {
+    const { prefix } = fromBech32(address);
     const addresses = await Promise.all(
-      this._accounts.map((account) => account.getAddress(defaultAddressPrefix)),
+      this._accounts.map((account) => account.getAddress(prefix)),
     );
     return addresses.includes(address);
   }

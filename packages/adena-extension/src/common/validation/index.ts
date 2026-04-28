@@ -1,4 +1,5 @@
 export * from './validation-address-book';
+export * from './validation-cosmos';
 export * from './validation-message';
 export * from './validation-password';
 export * from './validation-token';

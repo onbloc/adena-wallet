@@ -54,39 +54,21 @@
     "order": 6
   },
   {
-    "symbol": "GNOCHESS",
-    "name": "GnoChess",
-    "description": "A user-friendly chess game in Gno.",
-    "logo": "/resources/apps/images/gnochess.svg",
-    "link": "https://gnochess.com/",
+    "symbol": "AKKADIA",
+    "name": "Akkadia",
+    "description": "A living voxel world anchored on Gno.land.",
+    "logo": "/resources/apps/images/akkadia.svg",
+    "link": "https://akkadia.land/",
     "display": true,
     "order": 7
   },
   {
-    "symbol": "TERITORI",
-    "name": "Teritori",
-    "description": "A hub for Web3 DAO communities.",
-    "logo": "/resources/apps/images/teritori.svg",
-    "link": "https://teritori.com",
+    "symbol": "MEMBA",
+    "name": "Memba",
+    "description": "Hub for DAOs and multisig wallets.",
+    "logo": "/resources/apps/images/memba.svg",
+    "link": "https://memba.samourai.app/",
     "display": true,
     "order": 8
-  },
-  {
-    "symbol": "FLIPPANDO",
-    "name": "Flippando",
-    "description": "An on-chain memory game in Gno.",
-    "logo": "/resources/apps/images/flippando.svg",
-    "link": "https://gno.flippando.xyz/flip",
-    "display": true,
-    "order": 9
-  },
-  {
-    "symbol": "ZENTASKTIC",
-    "name": "ZenTasktic",
-    "description": "A project management solution in Gno.",
-    "logo": "/resources/apps/images/zentasktic.svg",
-    "link": "https://gno.zentasktic.com/",
-    "display": true,
-    "order": 10
   }
 ]
