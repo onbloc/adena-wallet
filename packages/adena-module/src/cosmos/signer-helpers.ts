@@ -42,7 +42,7 @@ export async function resolvePublicKey(
   if (isWeb3AuthKeyring(keyring)) return keyring.publicKey;
 
   if (isLedgerKeyring(keyring)) {
-    throw new Error('Cosmos Ledger signing is not implemented yet (Phase 7)');
+    return keyring.getPublicKey(hdPath ?? 0);
   }
 
   if (isMultisigKeyring(keyring)) {

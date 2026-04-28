@@ -1,5 +1,6 @@
 import { DirectSecp256k1Wallet } from '@cosmjs/proto-signing';
 import { SignDoc, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
+import type { LedgerConnector } from '@cosmjs/ledger-amino';
 
 import { AddressKeyring } from '../../wallet/keyring/address-keyring';
 import { HDWalletKeyring } from '../../wallet/keyring/hd-wallet-keyring';
@@ -191,15 +192,28 @@ describe('signCosmosDirect', () => {
     expect(signed.signDoc.accountNumber).toBe(99n);
   });
 
-  it('throws forward-looking message for Ledger keyring', async () => {
+  it('produces a signed Cosmos tx when the keyring is a Ledger', async () => {
+    // With the Phase 7 stub lifted, a Ledger keyring flows through the same
+    // pipeline as HD/private-key keyrings: resolvePublicKey → makeDirectSignDoc
+    // → signRaw → TxRaw. We mock the connector to stay unit-scope.
+    const pubkey = new Uint8Array(33).fill(0x02);
+    const signature = new Uint8Array(64).fill(0x09);
+    const connector = {
+      sign: jest.fn().mockResolvedValue(signature),
+      getPubkey: jest.fn().mockResolvedValue(pubkey),
+    } as unknown as LedgerConnector;
     const keyring = new LedgerKeyring({});
-    await expect(
-      signCosmosDirect({
-        document: makeDocument(),
-        keyring,
-        cosmosProvider: makeMockProvider(),
-      }),
-    ).rejects.toThrow(/Phase 7/);
+    keyring.setConnector(connector);
+
+    const signed = await signCosmosDirect({
+      document: makeDocument(),
+      keyring,
+      cosmosProvider: makeMockProvider(),
+    });
+
+    expect(connector.sign).toHaveBeenCalledTimes(1);
+    const ourTxRaw = TxRaw.decode(signed.txBytes);
+    expect(Buffer.from(ourTxRaw.signatures[0]).equals(Buffer.from(signature))).toBe(true);
   });
 
   it('throws permanent-unsupport message for Multisig keyring', async () => {
