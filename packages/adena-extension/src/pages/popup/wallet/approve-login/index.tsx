@@ -146,6 +146,10 @@ export const ApproveLogin = (): JSX.Element => {
       case 'ENABLE_COSMOS':
         navigate(RoutePath.ApproveEstablishCosmos + location.search, { state: { requestData } });
         return;
+      case 'SIGN_COSMOS_AMINO':
+      case 'SIGN_COSMOS_DIRECT':
+        navigate(RoutePath.ApproveSignCosmos + location.search, { state: { requestData } });
+        return;
       case 'ADD_NETWORK':
         navigate(RoutePath.ApproveAddingNetwork + location.search, { state: { requestData } });
         return;

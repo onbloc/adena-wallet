@@ -10,9 +10,25 @@ jest.mock('@adena-wallet/sdk', () => ({
     UNEXPECTED_ERROR: 'UNEXPECTED_ERROR',
     NETWORK_TIMEOUT: 'NETWORK_TIMEOUT',
     TRANSACTION_FAILED: 'TRANSACTION_FAILED',
+    WALLET_LOCKED: 'WALLET_LOCKED',
   },
   WalletResponseRejectType: {
     CONNECTION_REJECTED: 'CONNECTION_REJECTED',
+    SIGN_REJECTED: 'SIGN_REJECTED',
+  },
+  WalletMessageInfo: {
+    WALLET_LOCKED: {
+      code: 2000,
+      status: 'failure',
+      type: 'WALLET_LOCKED',
+      message: 'Adena is Locked.',
+    },
+    SIGN_REJECTED: {
+      code: 4000,
+      status: 'failure',
+      type: 'SIGN_REJECTED',
+      message: 'The signature has been rejected by the user.',
+    },
   },
 }));
 
@@ -54,6 +70,7 @@ type FakeCore = {
   getCurrentAccountId: jest.Mock;
   getCurrentAccount: jest.Mock;
   getInMemoryKey: jest.Mock;
+  isLockedBy: jest.Mock;
 };
 
 const ATOMONE_CHAIN = { chainGroup: 'atomone', bech32Prefix: 'atone' };
@@ -91,6 +108,7 @@ function makeCore(overrides?: Partial<FakeCore>): FakeCore {
       resolveAddress: async () => SAMPLE_BECH32,
     })),
     getInMemoryKey: jest.fn(async () => null),
+    isLockedBy: jest.fn(async () => false),
     ...overrides,
   };
   return core;
@@ -186,6 +204,26 @@ describe('cosmos handlers', () => {
       );
     });
 
+    it('fails with the Gno-compatible WALLET_LOCKED payload when wallet is locked', async () => {
+      const core = makeCore({
+        isLockedBy: jest.fn(async () => true),
+      } as never);
+      const send = jest.fn();
+      await cosmosGetKey(
+        core as never,
+        makeMessage('GET_COSMOS_KEY', { chainId: 'atomone-1' }),
+        send,
+      );
+      expect(send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'failure',
+          code: 2000,
+          type: 'WALLET_LOCKED',
+          message: 'Adena is Locked.',
+        }),
+      );
+    });
+
     it('fails with NOT_CONNECTED when site is not established', async () => {
       const core = makeCore({
         establishAtomOneService: { isEstablishedBy: jest.fn(async () => false) },
@@ -248,7 +286,7 @@ describe('cosmos handlers', () => {
       );
     });
 
-    it('fails with UNSUPPORTED_TYPE when Stage 5 popup is not yet implemented', async () => {
+    it('routes to the sign popup when inputs are valid', async () => {
       const core = makeCore();
       const send = jest.fn();
       await cosmosSignAmino(
@@ -260,13 +298,16 @@ describe('cosmos handlers', () => {
         }),
         send,
       );
-      expect(send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'SIGN_COSMOS_AMINO',
-          status: 'failure',
-          message: 'UNSUPPORTED_TYPE',
-        }),
-      );
+      expect(mockCreatePopup).toHaveBeenCalledTimes(1);
+      expect(mockCreatePopup.mock.calls[0][0]).toBe('/approve/wallet/sign-cosmos');
+      // Cancel/close message uses the SDK's WalletMessageInfo entry so the
+      // dApp sees Gno-compatible code/message on rejection.
+      expect(mockCreatePopup.mock.calls[0][2]).toMatchObject({
+        status: 'failure',
+        type: 'SIGN_REJECTED',
+        code: 4000,
+        message: 'The signature has been rejected by the user.',
+      });
     });
   });
 
@@ -295,7 +336,7 @@ describe('cosmos handlers', () => {
       );
     });
 
-    it('falls through to UNSUPPORTED_TYPE stub when all inputs valid', async () => {
+    it('routes to the sign popup when inputs are valid', async () => {
       const core = makeCore();
       const send = jest.fn();
       await cosmosSignDirect(
@@ -307,13 +348,14 @@ describe('cosmos handlers', () => {
         }),
         send,
       );
-      expect(send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'SIGN_COSMOS_DIRECT',
-          status: 'failure',
-          message: 'UNSUPPORTED_TYPE',
-        }),
-      );
+      expect(mockCreatePopup).toHaveBeenCalledTimes(1);
+      expect(mockCreatePopup.mock.calls[0][0]).toBe('/approve/wallet/sign-cosmos');
+      expect(mockCreatePopup.mock.calls[0][2]).toMatchObject({
+        status: 'failure',
+        type: 'SIGN_REJECTED',
+        code: 4000,
+        message: 'The signature has been rejected by the user.',
+      });
     });
   });
 
