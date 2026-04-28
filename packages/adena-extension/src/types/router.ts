@@ -55,6 +55,7 @@ export enum RoutePath {
   ApproveEstablish = '/approve/wallet/establish',
   ApproveEstablishCosmos = '/approve/wallet/establish-cosmos',
   ApproveSignCosmos = '/approve/wallet/sign-cosmos',
+  ApproveGetCosmosKey = '/approve/wallet/get-cosmos-key',
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',
   AccountDetails = '/wallet/accounts/:accountId',
@@ -169,6 +170,9 @@ export type RouteParams = {
   [RoutePath.ApproveEstablish]: null;
   [RoutePath.ApproveEstablishCosmos]: null;
   [RoutePath.ApproveSignCosmos]: {
+    requestData?: InjectionMessage;
+  };
+  [RoutePath.ApproveGetCosmosKey]: {
     requestData?: InjectionMessage;
   };
   [RoutePath.ApproveChangingNetwork]: null;

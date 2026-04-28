@@ -204,7 +204,7 @@ describe('cosmos handlers', () => {
       );
     });
 
-    it('fails with the Gno-compatible WALLET_LOCKED payload when wallet is locked', async () => {
+    it('routes to the silent unlock popup when wallet is locked', async () => {
       const core = makeCore({
         isLockedBy: jest.fn(async () => true),
       } as never);
@@ -214,14 +214,16 @@ describe('cosmos handlers', () => {
         makeMessage('GET_COSMOS_KEY', { chainId: 'atomone-1' }),
         send,
       );
-      expect(send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: 'failure',
-          code: 2000,
-          type: 'WALLET_LOCKED',
-          message: 'Adena is Locked.',
-        }),
-      );
+      expect(mockCreatePopup).toHaveBeenCalledTimes(1);
+      expect(mockCreatePopup.mock.calls[0][0]).toBe('/approve/wallet/get-cosmos-key');
+      // Close fallback still carries Gno-compatible WALLET_LOCKED shape so
+      // closing the login popup without unlocking yields a clean failure.
+      expect(mockCreatePopup.mock.calls[0][2]).toMatchObject({
+        status: 'failure',
+        code: 2000,
+        type: 'WALLET_LOCKED',
+        message: 'Adena is Locked.',
+      });
     });
 
     it('fails with NOT_CONNECTED when site is not established', async () => {

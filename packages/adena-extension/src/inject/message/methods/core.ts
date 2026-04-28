@@ -69,7 +69,10 @@ export class InjectCore {
     this.addressBookRepository,
   );
 
-  public establishService = new WalletEstablishService(this.establishRepository);
+  public establishService = new WalletEstablishService(
+    this.establishRepository,
+    this.chainRegistry,
+  );
 
   public establishAtomOneService = new WalletEstablishAtomOneService(
     this.establishAtomOneRepository,

@@ -89,9 +89,13 @@ export class AdenaExecutor {
     return AdenaExecutor.instance;
   };
 
-  public addEstablish = (name?: string): Promise<AddEstablishResponse> => {
+  public addEstablish = (
+    name?: string,
+    chainIds?: string | string[],
+  ): Promise<AddEstablishResponse> => {
     const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.ADD_ESTABLISH, {
       name: name ?? 'Unknown',
+      chainIds,
     });
     return this.sendEventMessage<Record<string, never>>(eventMessage);
   };
