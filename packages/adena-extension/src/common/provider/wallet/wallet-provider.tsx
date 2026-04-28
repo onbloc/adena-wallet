@@ -4,6 +4,10 @@ import { useRecoilState, useSetRecoilState } from 'recoil';
 
 import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
 import { useAdenaContext } from '@hooks/use-context';
+import {
+  atomoneNetworkToProfile,
+  atomoneNetworkToTokenProfiles,
+} from '@hooks/helpers/atomone-to-profile';
 import { NetworkState, TokenState, WalletState } from '@states';
 import { AtomoneNetworkMetainfo, NetworkMetainfo, StateType, TokenModel } from '@types';
 import { GnoProvider } from '../gno/gno-provider';
@@ -24,7 +28,8 @@ export interface WalletContextProps {
 export const WalletContext = createContext<WalletContextProps | null>(null);
 
 export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
-  const { walletService, accountService, chainService } = useAdenaContext();
+  const { walletService, accountService, chainService, chainRegistry, tokenRegistry } =
+    useAdenaContext();
 
   const [gnoProvider, setGnoProvider] = useState<GnoProvider>();
 
@@ -42,32 +47,65 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
 
   const setCurrentAtomoneNetwork = useSetRecoilState(NetworkState.currentAtomoneNetwork);
 
+  const setAtomoneNetworkMetainfos = useSetRecoilState(NetworkState.atomoneNetworkMetainfos);
+
   const setCurrentAccount = useSetRecoilState(WalletState.currentAccount);
 
   useEffect(() => {
     initWallet();
     initNetworkMetainfos();
-    initAtomoneNetworkSelection();
+    initAtomoneNetworkChain();
   }, []);
 
-  async function initAtomoneNetworkSelection(): Promise<void> {
+  // Pull every persisted AtomOne network (defaults + user-added customs) into
+  // the recoil atom plus chainRegistry/tokenRegistry, then restore the
+  // previously selected one. Without this, the atom keeps its hardcoded
+  // default and the registries never learn about custom profiles, so
+  // changeNetwork(custom) silently no-ops the cosmos balance fetch and
+  // useTokenMetainfo cannot seed cosmos rows. Selection lookup runs against
+  // the hydrated list (defaults + customs) — falling back to the static json
+  // would erase a user-selected custom on every reload.
+  async function initAtomoneNetworkChain(): Promise<void> {
+    let networks: AtomoneNetworkMetainfo[];
+    try {
+      networks = await chainService.getAtomoneNetworks();
+    } catch (e) {
+      console.error(e);
+      networks = (ATOMONE_CHAIN_DATA as unknown as AtomoneNetworkMetainfo[]).map((network) => ({
+        ...network,
+        deleted: false,
+      }));
+    }
+
+    setAtomoneNetworkMetainfos(networks);
+    for (const network of networks) {
+      if (network.deleted) continue;
+      chainRegistry.register(atomoneNetworkToProfile(network));
+      for (const token of atomoneNetworkToTokenProfiles(network)) {
+        tokenRegistry.register(token);
+      }
+    }
+
     const storedMode = await chainService.getNetworkMode().catch(() => null);
     const mode = storedMode === 'testnet' ? 'testnet' : 'mainnet';
     setNetworkMode(mode);
 
     const storedId = await chainService.getCurrentAtomoneNetworkId().catch(() => null);
-    const profiles = (ATOMONE_CHAIN_DATA as unknown as AtomoneNetworkMetainfo[]).map((network) => ({
-      ...network,
-      deleted: false,
-    }));
     const wantsMainnet = mode === 'mainnet';
+    const candidates = networks.filter((network) => !network.deleted);
 
     let selected: AtomoneNetworkMetainfo | null = null;
     if (storedId) {
-      selected = profiles.find((network) => network.id === storedId) ?? null;
+      selected = candidates.find((network) => network.id === storedId) ?? null;
     }
-    if (!selected || selected.isMainnet !== wantsMainnet) {
-      selected = profiles.find((network) => network.isMainnet === wantsMainnet) ?? null;
+    // Only fall back to a default mainnet/testnet entry when the stored
+    // selection is missing or stale. A user-added custom network whose mode
+    // matches the active mode must be kept as-is.
+    if (!selected) {
+      selected = candidates.find((network) => network.isMainnet === wantsMainnet) ?? null;
+    } else if (selected.isMainnet !== wantsMainnet) {
+      selected =
+        candidates.find((network) => network.isMainnet === wantsMainnet) ?? selected;
     }
     if (selected) {
       setCurrentAtomoneNetwork(selected);
