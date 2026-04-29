@@ -43,6 +43,8 @@ const AddAddress = (): JSX.Element => {
   const addressList: AddressBookItem[] = params.addressList;
   const [chainGroup, setChainGroup] = useState<string>('gno');
   const chain = useChain(chainGroup);
+  // Bech32 length: prefix + "1" separator + 32 data chars + 6 checksum chars.
+  const addressMaxLength = chain.bech32Prefix.length + 39;
   const { chainRegistry } = useAdenaContext();
   const chainOptions = React.useMemo(
     () => chainOptionsFromRegistry(chainRegistry),
@@ -197,7 +199,7 @@ const AddAddress = (): JSX.Element => {
         onChange={onChangeAddress}
         onKeyDown={onKeyDown}
         rows={1}
-        maxLength={40}
+        maxLength={addressMaxLength}
         autoComplete='off'
         error={addressError}
       />
