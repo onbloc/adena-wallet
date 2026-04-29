@@ -41,6 +41,10 @@ export class StorageMigration018 implements Migration<StorageModelDataV018> {
           password,
           salt,
         ),
+        // Clear the previously cached session password. The cipher pipeline
+        // changed under this migration, so force the user to re-authenticate
+        // through the new Argon2id + XChaCha20 path.
+        ENCRYPTED_STORED_PASSWORD: '',
         KDF_SALT: saltBase64,
       },
     };

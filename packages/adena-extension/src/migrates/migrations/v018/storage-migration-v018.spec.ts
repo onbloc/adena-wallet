@@ -20,12 +20,16 @@ const ADDRESS_BOOK_JSON = JSON.stringify([
   { id: 'addr1', name: 'Test', address: 'g1abc', createdAt: '0' },
 ]);
 
-const createMockData = (serialized: string, addressBook = '') => ({
+const createMockData = (
+  serialized: string,
+  addressBook = '',
+  encryptedStoredPassword = '',
+) => ({
   NETWORKS: [],
   CURRENT_CHAIN_ID: 'test9.1',
   CURRENT_NETWORK_ID: 'test9.1',
   SERIALIZED: serialized,
-  ENCRYPTED_STORED_PASSWORD: '',
+  ENCRYPTED_STORED_PASSWORD: encryptedStoredPassword,
   CURRENT_ACCOUNT_ID: '',
   ACCOUNT_NAMES: {},
   ESTABLISH_SITES: {},
@@ -212,6 +216,34 @@ describe('storage migration V018', () => {
     const wallet = JSON.parse(decrypted);
     expect(wallet).toHaveProperty('accounts');
     expect(wallet).toHaveProperty('keyrings');
+  });
+
+  it('clears ENCRYPTED_STORED_PASSWORD after successful migration', async () => {
+    // The cipher pipeline changed under v018; the cached session password is
+    // forced to clear so the user re-authenticates through the new path.
+    const mockData = {
+      version: 17,
+      data: createMockData(
+        encryptedSerialized,
+        encryptedAddressBook,
+        'previously-cached-session-token',
+      ),
+    };
+    const migration = new StorageMigration018();
+    const result = await migration.up(mockData, RAW_PASSWORD);
+
+    expect(result.data.ENCRYPTED_STORED_PASSWORD).toBe('');
+  });
+
+  it('clears ENCRYPTED_STORED_PASSWORD on fresh-install migration too', async () => {
+    const mockData = {
+      version: 17,
+      data: createMockData('', '', 'leftover-from-v017'),
+    };
+    const migration = new StorageMigration018();
+    const result = await migration.up(mockData);
+
+    expect(result.data.ENCRYPTED_STORED_PASSWORD).toBe('');
   });
 
   it('up fails with invalid data structure', async () => {

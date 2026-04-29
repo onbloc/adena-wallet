@@ -405,6 +405,13 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Reject messages that did not originate from this extension's own contexts
+  // (background, popup, options, content scripts). External extensions must
+  // use chrome.runtime.onMessageExternal instead.
+  if (sender.id !== chrome.runtime.id) {
+    return;
+  }
+
   // Handle ping from content script for connection check
   if (message?.type === 'ping') {
     sendResponse({ status: 'pong' });

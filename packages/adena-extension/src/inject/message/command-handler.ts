@@ -124,7 +124,8 @@ export class CommandHandler {
     const switchNetworkResponse = await executor.switchNetwork(gnoConnectInfo.chainId);
     if (
       switchNetworkResponse.type !== WalletResponseSuccessType.SWITCH_NETWORK_SUCCESS &&
-      switchNetworkResponse.type !== WalletResponseFailureType.REDUNDANT_CHANGE_REQUEST
+      switchNetworkResponse.type !== WalletResponseFailureType.REDUNDANT_CHANGE_REQUEST &&
+      switchNetworkResponse.type !== WalletResponseFailureType.UNADDED_NETWORK
     ) {
       console.info('response: ', switchNetworkResponse);
       return;
