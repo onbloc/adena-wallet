@@ -115,11 +115,17 @@ export class StorageMigration018 implements Migration<StorageModelDataV018> {
       );
     }
 
-    const plaintext = await decryptAES(serialized, oldPassword);
+    // Wrong password surfaces in two shapes from decryptAES: an empty string
+    // when PKCS#7 padding happens to validate but produces no plaintext, or a
+    // CryptoJS "Malformed UTF-8 data" throw when the bytes cannot be decoded.
+    // Normalize both into a single error so the migrator preserves v017 state.
+    let plaintext: string;
+    try {
+      plaintext = await decryptAES(serialized, oldPassword);
+    } catch {
+      throw new Error('V018 migration failed: cannot decrypt SERIALIZED with given password');
+    }
     if (!plaintext || plaintext.trim() === '') {
-      // Wrong password — decryptAES returns empty string when PKCS#7 padding
-      // check fails. Throw so the migrator preserves the original v017 data
-      // and the version is not bumped to 18.
       throw new Error('V018 migration failed: cannot decrypt SERIALIZED with given password');
     }
 
@@ -144,7 +150,12 @@ export class StorageMigration018 implements Migration<StorageModelDataV018> {
       );
     }
 
-    const plaintext = await decryptAES(addressBook, oldPassword);
+    let plaintext: string;
+    try {
+      plaintext = await decryptAES(addressBook, oldPassword);
+    } catch {
+      throw new Error('V018 migration failed: cannot decrypt ADDRESS_BOOK with given password');
+    }
     if (!plaintext || plaintext.trim() === '') {
       throw new Error('V018 migration failed: cannot decrypt ADDRESS_BOOK with given password');
     }
