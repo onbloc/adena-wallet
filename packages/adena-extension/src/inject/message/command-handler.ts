@@ -18,6 +18,7 @@ import {
   GnoArgumentInfo,
   GnoConnectInfo,
   GnoMessageInfo,
+  isAllowedGnoConnectOrigin,
   parseGnoConnectInfo,
   parseGnoMessageInfo,
 } from './methods/gno-connect';
@@ -95,6 +96,11 @@ export class CommandHandler {
     }
 
     const currentUrl = window?.location?.href || '';
+    const currentOrigin = window?.location?.origin || '';
+    if (!isAllowedGnoConnectOrigin(currentOrigin)) {
+      return;
+    }
+
     const gnoMessageInfo = message.data.gnoMessageInfo || parseGnoMessageInfo(currentUrl);
     const gnoConnectInfo = message.data.gnoConnectInfo || parseGnoConnectInfo();
 
@@ -118,8 +124,7 @@ export class CommandHandler {
     const switchNetworkResponse = await executor.switchNetwork(gnoConnectInfo.chainId);
     if (
       switchNetworkResponse.type !== WalletResponseSuccessType.SWITCH_NETWORK_SUCCESS &&
-      switchNetworkResponse.type !== WalletResponseFailureType.REDUNDANT_CHANGE_REQUEST &&
-      switchNetworkResponse.type !== WalletResponseFailureType.UNADDED_NETWORK
+      switchNetworkResponse.type !== WalletResponseFailureType.REDUNDANT_CHANGE_REQUEST
     ) {
       console.info('response: ', switchNetworkResponse);
       return;

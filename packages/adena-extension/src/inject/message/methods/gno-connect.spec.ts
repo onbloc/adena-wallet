@@ -1,4 +1,8 @@
-import { GnoMessageInfo, parseGnoMessageInfo } from './gno-connect';
+import {
+  GnoMessageInfo,
+  isAllowedGnoConnectOrigin,
+  parseGnoMessageInfo,
+} from './gno-connect';
 
 describe('parseGnoMessageInfo', () => {
   describe('URL parsing tests', () => {
@@ -223,5 +227,35 @@ describe('parseGnoMessageInfo', () => {
       const result = parseGnoMessageInfo(url);
       console.log(result, 'result');
     });
+  });
+});
+
+describe('isAllowedGnoConnectOrigin', () => {
+  it('returns true for registered gno.land origins', () => {
+    expect(isAllowedGnoConnectOrigin('https://gno.land')).toBe(true);
+    expect(isAllowedGnoConnectOrigin('https://betanet.testnets.gno.land')).toBe(true);
+    expect(isAllowedGnoConnectOrigin('https://staging.gno.land')).toBe(true);
+    expect(isAllowedGnoConnectOrigin('https://test13.testnets.gno.land')).toBe(true);
+  });
+
+  it('returns false for unregistered origins', () => {
+    expect(isAllowedGnoConnectOrigin('https://attacker.example')).toBe(false);
+    expect(isAllowedGnoConnectOrigin('https://evil.gno.land.attacker.example')).toBe(false);
+  });
+
+  it('rejects scheme mismatches', () => {
+    expect(isAllowedGnoConnectOrigin('http://gno.land')).toBe(false);
+  });
+
+  it('rejects origins with explicit non-default port', () => {
+    expect(isAllowedGnoConnectOrigin('https://gno.land:8443')).toBe(false);
+  });
+
+  it('rejects empty origin', () => {
+    expect(isAllowedGnoConnectOrigin('')).toBe(false);
+  });
+
+  it('rejects subdomain takeover patterns', () => {
+    expect(isAllowedGnoConnectOrigin('https://malicious.gno.land')).toBe(false);
   });
 });
