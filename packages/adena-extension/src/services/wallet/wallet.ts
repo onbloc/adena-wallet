@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant';
 import { WalletError } from '@common/errors/wallet/wallet-error';
+import { CommandMessage } from '@inject/message/command-message';
 import { WalletRepository } from '@repositories/wallet';
 
 export class WalletService {
@@ -315,6 +316,21 @@ export class WalletService {
       ? this.walletRepository.updateAddAccountGuideConfirmDate.bind(this.walletRepository)
       : this.walletRepository.updateWalletCreationGuideConfirmDate.bind(this.walletRepository);
     await updateGuideConfirmDate(confirmDate);
+  };
+
+  public getAutoLockTimeoutMinutes = async (): Promise<number> => {
+    return this.walletRepository.getAutoLockTimeoutMinutes();
+  };
+
+  public updateAutoLockTimeoutMinutes = async (minutes: number): Promise<void> => {
+    await this.walletRepository.updateAutoLockTimeoutMinutes(minutes);
+    try {
+      await chrome.runtime.sendMessage(
+        CommandMessage.command('updateAutoLockTimer', { minutes }),
+      );
+    } catch (e) {
+      console.warn('Failed to notify background of auto-lock timer update', e);
+    }
   };
 
   public clear = async (): Promise<boolean> => {
