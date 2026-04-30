@@ -7,7 +7,11 @@ type LocalValueType =
   | 'QUESTIONNAIRE_EXPIRED_DATE'
   | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
   | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
-  | 'KDF_SALT';
+  | 'KDF_SALT'
+  | 'AUTO_LOCK_TIMEOUT_MINUTES';
+
+export const DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES = 5;
+export const MAX_AUTO_LOCK_TIMEOUT_MINUTES = 1440;
 type SessionValueType = 'ENCRYPTED_KEY' | 'ENCRYPTED_PASSWORD';
 
 export class WalletRepository {
@@ -156,6 +160,22 @@ export class WalletRepository {
 
   public updateAddAccountGuideConfirmDate = async (confirmDate: number): Promise<void> => {
     await this.localStorage.set('ADD_ACCOUNT_GUIDE_CONFIRM_DATE', confirmDate);
+  };
+
+  public getAutoLockTimeoutMinutes = async (): Promise<number> => {
+    const value = await this.localStorage.get('AUTO_LOCK_TIMEOUT_MINUTES');
+    if (value === null || value === undefined || value === '') {
+      return DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES;
+    }
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES;
+    }
+    return parsed;
+  };
+
+  public updateAutoLockTimeoutMinutes = async (minutes: number): Promise<void> => {
+    await this.localStorage.set('AUTO_LOCK_TIMEOUT_MINUTES', minutes);
   };
 
   public getKdfSalt = async (): Promise<Uint8Array | null> => {
