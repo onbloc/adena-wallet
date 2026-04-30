@@ -71,6 +71,9 @@ type FakeCore = {
   getCurrentAccount: jest.Mock;
   getInMemoryKey: jest.Mock;
   isLockedBy: jest.Mock;
+  accountService: {
+    getAccountNames: jest.Mock;
+  };
 };
 
 const ATOMONE_CHAIN = { chainGroup: 'atomone', bech32Prefix: 'atone' };
@@ -109,6 +112,9 @@ function makeCore(overrides?: Partial<FakeCore>): FakeCore {
     })),
     getInMemoryKey: jest.fn(async () => null),
     isLockedBy: jest.fn(async () => false),
+    accountService: {
+      getAccountNames: jest.fn(async () => ({})),
+    },
     ...overrides,
   };
   return core;
