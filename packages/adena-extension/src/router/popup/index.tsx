@@ -6,6 +6,7 @@ import { RoutePath } from '../../types/router';
 import { AboutAdena } from '@pages/popup/certify/about-adena';
 import AddAddress from '@pages/popup/certify/add-address';
 import AddressBook from '@pages/popup/certify/address-book';
+import { AutoLockTimer } from '@pages/popup/certify/auto-lock-timer';
 import ChangeNetwork from '@pages/popup/certify/change-network';
 import { ChangePassword } from '@pages/popup/certify/change-password';
 import { ConnectedApps } from '@pages/popup/certify/connected-apps';
@@ -174,6 +175,7 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.AddressBook} element={<AddressBook />} />
         <Route path={RoutePath.AddAddress} element={<AddAddress />} />
         <Route path={RoutePath.SecurityPrivacy} element={<SecurityPrivacy />} />
+        <Route path={RoutePath.SettingAutoLockTimer} element={<AutoLockTimer />} />
         <Route path={RoutePath.AboutAdena} element={<AboutAdena />} />
         <Route path={RoutePath.RemoveAccount} element={<RemoveAccount />} />
         <Route path={RoutePath.ResetWallet} element={<ResetWallet />} />
