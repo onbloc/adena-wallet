@@ -40,6 +40,9 @@ export const Header = (): JSX.Element => {
   const approveSign = useMatch(RoutePath.ApproveSign);
   const approveTransaction = useMatch(RoutePath.ApproveTransaction);
   const approveSignFailed = useMatch(RoutePath.ApproveSignFailed);
+  const approveEstablishCosmos = useMatch(RoutePath.ApproveEstablishCosmos);
+  const approveSignCosmos = useMatch(RoutePath.ApproveSignCosmos);
+  const approveGetCosmosKey = useMatch(RoutePath.ApproveGetCosmosKey);
   const wallet = useMatch('/wallet/*');
   const nft = useMatch(RoutePath.Nft);
 
@@ -73,7 +76,15 @@ export const Header = (): JSX.Element => {
       }
       return <ProgressMenu progressLevel={'first'} />;
     }
-    if (approveEstablish || approveTransaction || approveSign || approveSignFailed) {
+    if (
+      approveEstablish ||
+      approveTransaction ||
+      approveSign ||
+      approveSignFailed ||
+      approveEstablishCosmos ||
+      approveSignCosmos ||
+      approveGetCosmosKey
+    ) {
       return <ApproveMenu />;
     }
     if (createPassword) {
