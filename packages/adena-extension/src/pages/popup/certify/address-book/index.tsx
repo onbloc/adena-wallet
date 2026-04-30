@@ -11,12 +11,8 @@ import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { AddressBookItem } from '@repositories/wallet';
 import { useAddressBook } from '@hooks/use-address-book';
+import { inferChainGroup } from '@common/utils/address-chain';
 import LoadingAddressBook from './loading-address-book';
-
-function inferChainGroup(address: string): string {
-  if (address.startsWith('atone1')) return 'atomone';
-  return 'gno';
-}
 
 type navigateStatus = 'add' | 'edit';
 
