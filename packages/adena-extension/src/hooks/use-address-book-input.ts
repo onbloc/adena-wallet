@@ -1,6 +1,7 @@
 import { validateCosmosAddress } from 'adena-module';
 import { useCallback, useEffect, useState } from 'react';
 
+import { inferChainGroup } from '@common/utils/address-chain';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { AddressBookItem } from '@repositories/wallet';
 
@@ -75,13 +76,14 @@ export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHook
       if (address !== currentAddress) {
         currentAccountInfos.push({
           addressBookId: account.id,
-          name: formatNickname(accountNames[account.id], 12),
+          name: formatNickname(accountNames[account.id] || account.name, 12),
           description: `(${formatAddress(address)})`,
         });
       }
     }
     const addressBookInfos = addressBooks
       .filter((addressBook) => addressBook.address !== currentAddress)
+      .filter((addressBook) => inferChainGroup(addressBook.address) === chainGroup)
       .map((addressBook) => {
         return {
           addressBookId: addressBook.id,
@@ -91,7 +93,7 @@ export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHook
       });
 
     return [...currentAccountInfos, ...addressBookInfos];
-  }, [addressBooks, wallet?.accounts, addressPrefix]);
+  }, [addressBooks, wallet?.accounts, addressPrefix, chainGroup, accountNames]);
 
   const getSelectedAddressBookInfos = useCallback(() => {
     if (selectedAddressBook === null) {
@@ -161,14 +163,14 @@ export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHook
         const address = await selectedAccount.getAddress(addressPrefix);
         setSelectedAddressBook({
           id: selectedAccount.id,
-          name: selectedAccount.name,
+          name: accountNames[selectedAccount.id] || selectedAccount.name,
           address,
           createdAt: `${new Date().getTime()}`,
         });
         return;
       }
     },
-    [addressBooks, wallet?.accounts, addressPrefix],
+    [addressBooks, wallet?.accounts, addressPrefix, accountNames],
   );
 
   const validateAddressBookInput = useCallback(() => {
