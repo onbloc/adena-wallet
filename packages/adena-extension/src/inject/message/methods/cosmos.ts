@@ -230,17 +230,11 @@ export const cosmosGetKey = async (
     // clients) sees the canonical format.
     const compressedPubKey = compressPubkeyIfNeeded(currentAccount.publicKey);
 
-    // Mirror the popup-side display: prefer the user-edited nickname stored
-    // in the account-name map and fall back to the auto-generated default.
-    const accountNames = await core.accountService.getAccountNames();
-    const displayName = accountNames[currentAccount.id] || currentAccount.name;
-
     // Binary fields are emitted as base64 because Uint8Array does not survive
     // `chrome.runtime.sendMessage`'s JSON encoding. Stage 4's inject wrapper
     // reconstitutes them before the dApp observes the Key.
     sendResponse(
       createCosmosResponse(CosmosResponseExecuteType.GET_COSMOS_KEY, 'success', message.key, {
-        name: displayName,
         algo: 'secp256k1',
         pubKey: bytesToBase64(Array.from(compressedPubKey)),
         address: bytesToBase64(Array.from(addressBytes)),
