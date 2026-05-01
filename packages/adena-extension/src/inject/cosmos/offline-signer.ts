@@ -18,7 +18,6 @@ import { AdenaExecutor } from '../executor/executor';
 
 export function decodeCosmosKey(wire: SerializedCosmosKey): CosmosKey {
   return {
-    name: wire.name,
     algo: wire.algo,
     bech32Address: wire.bech32Address,
     isNanoLedger: wire.isNanoLedger,

@@ -39,7 +39,6 @@ beforeEach(() => {
 describe('decodeCosmosKey', () => {
   it('decodes base64 pubKey and address back to Uint8Array', () => {
     const wire: SerializedCosmosKey = {
-      name: 'account',
       algo: 'secp256k1',
       pubKey: bytesToBase64([1, 2, 3]),
       address: bytesToBase64([4, 5]),
@@ -66,7 +65,6 @@ describe('createOfflineSigner', () => {
     mockExecutorInstance.getCosmosKey.mockResolvedValue({
       status: 'success',
       data: {
-        name: 'account',
         algo: 'secp256k1',
         pubKey: bytesToBase64([7, 8, 9]),
         address: bytesToBase64([10, 11]),

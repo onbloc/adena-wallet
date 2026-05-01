@@ -46,7 +46,7 @@ function createCosmosResponse(
 const ApproveGetCosmosKeyContainer: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { walletService, accountService } = useAdenaContext();
+  const { walletService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const sentRef = useRef(false);
 
@@ -100,18 +100,12 @@ const ApproveGetCosmosKeyContainer: React.FC = () => {
 
         const compressedPubKey = compressPubkeyIfNeeded(currentAccount.publicKey);
 
-        // Mirror the popup display: prefer the user-edited nickname stored in
-        // the account-name map and fall back to the auto-generated default.
-        const accountNames = await accountService.getAccountNames();
-        const displayName = accountNames[currentAccount.id] || currentAccount.name;
-
         chrome.runtime.sendMessage(
           createCosmosResponse(
             CosmosResponseExecuteType.GET_COSMOS_KEY,
             'success',
             key,
             {
-              name: displayName,
               algo: 'secp256k1',
               pubKey: bytesToBase64(Array.from(compressedPubKey)),
               address: bytesToBase64(Array.from(addressBytes)),
