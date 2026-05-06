@@ -37,7 +37,7 @@ export type UseAddressBookInputHookReturn = {
 };
 
 export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHookReturn => {
-  const { addressBookService } = useAdenaContext();
+  const { addressBookService, chainRegistry } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { getCurrentAddress } = useCurrentAccount();
   const chain = useChain(chainGroup);
@@ -83,7 +83,7 @@ export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHook
     }
     const addressBookInfos = addressBooks
       .filter((addressBook) => addressBook.address !== currentAddress)
-      .filter((addressBook) => inferChainGroup(addressBook.address) === chainGroup)
+      .filter((addressBook) => inferChainGroup(addressBook.address, chainRegistry) === chainGroup)
       .map((addressBook) => {
         return {
           addressBookId: addressBook.id,

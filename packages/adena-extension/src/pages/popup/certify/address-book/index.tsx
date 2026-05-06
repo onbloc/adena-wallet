@@ -11,6 +11,7 @@ import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { AddressBookItem } from '@repositories/wallet';
 import { useAddressBook } from '@hooks/use-address-book';
+import { useAdenaContext } from '@hooks/use-context';
 import { inferChainGroup } from '@common/utils/address-chain';
 import LoadingAddressBook from './loading-address-book';
 
@@ -20,6 +21,7 @@ const AddressBook = (): JSX.Element => {
   const theme = useTheme();
   const { navigate, goBack } = useAppNavigate();
   const { loading, addressBook } = useAddressBook();
+  const { chainRegistry } = useAdenaContext();
   const addAddressHandler = (status: navigateStatus, curr?: AddressBookItem): void =>
     navigate<RoutePath.AddAddress>(RoutePath.AddAddress, {
       state: {
@@ -42,7 +44,7 @@ const AddressBook = (): JSX.Element => {
       <>
         {addressBook.length > 0 ? (
           addressBook.map((item, i) => {
-            const chainGroup = inferChainGroup(item.address);
+            const chainGroup = inferChainGroup(item.address, chainRegistry);
             const chainIcon = CHAIN_ICON_BY_GROUP[chainGroup];
             return (
               <ListBox

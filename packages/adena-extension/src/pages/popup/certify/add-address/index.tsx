@@ -42,11 +42,11 @@ const AddAddress = (): JSX.Element => {
   const isAdd = params.status === 'add';
 
   const addressList: AddressBookItem[] = params.addressList;
+  const { chainRegistry } = useAdenaContext();
   const [chainGroup, setChainGroup] = useState<string>(() =>
-    inferChainGroup(params.curr?.address ?? ''),
+    inferChainGroup(params.curr?.address ?? '', chainRegistry),
   );
   const chain = useChain(chainGroup);
-  const { chainRegistry } = useAdenaContext();
   const chainOptions = React.useMemo(
     () => chainOptionsFromRegistry(chainRegistry),
     [chainRegistry],
@@ -164,8 +164,8 @@ const AddAddress = (): JSX.Element => {
   useEffect(() => {
     setAddressError(false);
     setErrorMsg('');
-    setChainGroup(inferChainGroup(address));
-  }, [address]);
+    setChainGroup(inferChainGroup(address, chainRegistry));
+  }, [address, chainRegistry]);
 
   useEffect(() => {
     setNameError(false);
