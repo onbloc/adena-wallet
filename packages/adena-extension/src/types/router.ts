@@ -280,10 +280,7 @@ export type RouteParams = {
   [RoutePath.WebSelectHardWallet]: null;
   [RoutePath.WebConnectLedger]: null;
   [RoutePath.WebAdvancedOption]: null;
-  [RoutePath.WebCreatePassword]: {
-    serializedWallet: string;
-    stepLength: number;
-  };
+  [RoutePath.WebCreatePassword]: null;
   [RoutePath.WebGoogleLogin]: {
     doneQuestionnaire: boolean;
   } | null;

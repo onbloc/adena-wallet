@@ -5,6 +5,7 @@ import { GoogleTorusSigner } from 'adena-torus-signin/src';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
 import { RoutePath } from '@types';
 import useQuestionnaire from '../use-questionnaire';
 import useIndicatorStep, {
@@ -110,13 +111,8 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
   const _createGoogleAccount = useCallback(
     async (privateKey: string) => {
       const createdWallet = await AdenaWallet.createByWeb3Auth(privateKey);
-      const serializedWallet = createdWallet.toJSON();
-      navigate(RoutePath.WebCreatePassword, {
-        state: {
-          serializedWallet,
-          stepLength: indicatorInfo.stepLength,
-        },
-      });
+      pendingWalletStore.set(createdWallet);
+      navigate(RoutePath.WebCreatePassword);
     },
     [navigate],
   );

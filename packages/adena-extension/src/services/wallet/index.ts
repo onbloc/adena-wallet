@@ -1,4 +1,5 @@
 export * from './wallet';
+export * from './pending-wallet-store';
 export * from './wallet-account';
 export * from './wallet-establish';
 export * from './wallet-establish-atomone';

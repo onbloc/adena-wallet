@@ -1,4 +1,3 @@
-import { AdenaWallet } from 'adena-module';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { PasswordValidationError } from '@common/errors';
@@ -13,6 +12,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
 import { RoutePath } from '@types';
 
 export type UseCreatePasswordScreenReturn = {
@@ -48,8 +48,9 @@ export type UseCreatePasswordScreenReturn = {
 export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
   const { walletService, accountService } = useAdenaContext();
   const indicatorInfo = useIndicatorStep({});
-  const { navigate, params } = useAppNavigate<RoutePath.WebCreatePassword>();
+  const { navigate } = useAppNavigate<RoutePath.WebCreatePassword>();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const consumedRef = useRef(false);
   const [inputs, setInputs] = useState({
     password: '',
     confirmPassword: '',
@@ -132,18 +133,23 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
     setInputs({ password: '', confirmPassword: '' });
   };
 
-  const _saveWalletByPassword = async (password: string): Promise<void> => {
-    const { serializedWallet } = params;
-    const wallet = AdenaWallet.fromJSON(serializedWallet);
-    await walletService.saveWallet(wallet, password);
-    await accountService.changeCurrentAccount(wallet.currentAccount);
-    await setInputs({ password: '', confirmPassword: '' });
-
-    // Clear the wallet payload from history.state so the plaintext keyring
-    // JSON does not linger in the back-stack after it has been committed to
-    // encrypted storage. Receiver-side cleanup covers all flows that reach
-    // this screen (create / import / google-login / airgap / ledger).
-    window.history.replaceState({}, '');
+  const _saveWalletByPassword = async (password: string): Promise<boolean> => {
+    const wallet = pendingWalletStore.consume();
+    if (!wallet) {
+      navigate(RoutePath.WebWalletCreate, { replace: true });
+      return false;
+    }
+    consumedRef.current = true;
+    try {
+      await walletService.saveWallet(wallet, password);
+      await accountService.changeCurrentAccount(wallet.currentAccount);
+      return true;
+    } finally {
+      // Zeroize Uint8Array seed/entropy/privateKey buffers via sodium.memzero,
+      // covering both success and failure paths.
+      wallet.destroy();
+      setInputs({ password: '', confirmPassword: '' });
+    }
   };
 
   const onChangePassword = useCallback(
@@ -164,8 +170,10 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
       return;
     }
 
-    _saveWalletByPassword(password).then(() => {
-      navigate(RoutePath.WebWalletAllSet);
+    _saveWalletByPassword(password).then((saved) => {
+      if (saved) {
+        navigate(RoutePath.WebWalletAllSet);
+      }
     });
   };
 
@@ -194,6 +202,26 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
       inputRef.current.focus();
     }
   }, [inputRef]);
+
+  // Guard against direct entry / refresh: if the entry hook has not parked a
+  // wallet in the store, redirect to the start of the create flow rather than
+  // rendering an unsavable password form.
+  useEffect(() => {
+    if (!pendingWalletStore.has()) {
+      navigate(RoutePath.WebWalletCreate, { replace: true });
+    }
+  }, []);
+
+  // Wipe on unmount when the user leaves without committing — covers back
+  // navigation, manual route change, and tab close. Skipped if save already
+  // consumed the wallet (destroy ran in the finally block).
+  useEffect(() => {
+    return (): void => {
+      if (!consumedRef.current) {
+        pendingWalletStore.clear();
+      }
+    };
+  }, []);
 
   return {
     indicatorInfo,

@@ -8,6 +8,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
 import { RoutePath } from '@types';
 import useQuestionnaire from './use-questionnaire';
 
@@ -100,10 +101,8 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         const createdWallet = await AdenaWallet.createByMnemonic(rawSeeds);
         rawSeeds = '';
 
-        const serializedWallet = createdWallet.toJSON();
-        navigate(RoutePath.WebCreatePassword, {
-          state: { serializedWallet, stepLength: indicatorInfo.stepLength },
-        });
+        pendingWalletStore.set(createdWallet);
+        navigate(RoutePath.WebCreatePassword);
       }
     }
   }, [step, ableToSkipQuestionnaire, wallet, indicatorInfo]);
