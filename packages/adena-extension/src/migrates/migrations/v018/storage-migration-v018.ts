@@ -134,6 +134,7 @@ export class StorageMigration018 implements Migration<StorageModelDataV018> {
     }
 
     const encrypted = await encryptXChacha20(plaintext, newPassword, salt);
+    plaintext = '';
     return JSON.stringify(encrypted);
   }
 
@@ -165,6 +166,7 @@ export class StorageMigration018 implements Migration<StorageModelDataV018> {
     }
 
     const encrypted = await encryptXChacha20(plaintext, newPassword, salt);
+    plaintext = '';
     return JSON.stringify(encrypted);
   }
 }
