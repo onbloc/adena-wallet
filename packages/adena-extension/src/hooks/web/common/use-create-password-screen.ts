@@ -138,6 +138,12 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
     await walletService.saveWallet(wallet, password);
     await accountService.changeCurrentAccount(wallet.currentAccount);
     await setInputs({ password: '', confirmPassword: '' });
+
+    // Clear the wallet payload from history.state so the plaintext keyring
+    // JSON does not linger in the back-stack after it has been committed to
+    // encrypted storage. Receiver-side cleanup covers all flows that reach
+    // this screen (create / import / google-login / airgap / ledger).
+    window.history.replaceState({}, '');
   };
 
   const onChangePassword = useCallback(
