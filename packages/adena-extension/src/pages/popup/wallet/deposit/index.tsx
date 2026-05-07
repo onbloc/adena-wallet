@@ -126,7 +126,7 @@ export const Deposit = (): JSX.Element => {
       <CopyInputBox>
         {currentAccount && (
           <Text type='body2Reg' display='inline-flex'>
-            {formatNickname(accountNames[currentAccount.id], 12)}
+            {formatNickname(accountNames[currentAccount.id] || currentAccount.name, 12)}
             <Text type='body2Reg' color={theme.neutral.a}>
               {` (${displayAddr})`}
             </Text>
