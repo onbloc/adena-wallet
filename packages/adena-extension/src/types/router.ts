@@ -89,6 +89,7 @@ export enum RoutePath {
   AboutAdena = '/settings/about-adena',
   RemoveAccount = '/settings/security-privacy/remove-account',
   ResetWallet = '/settings/security-privacy/reset-wallet',
+  SettingAutoLockTimer = '/settings/security-privacy/auto-lock-timer',
 
   // web
   WebNotFound = '/web/not-found',
@@ -270,6 +271,7 @@ export type RouteParams = {
   [RoutePath.ResetWallet]: {
     from: 'forgot-password';
   } | null;
+  [RoutePath.SettingAutoLockTimer]: null;
 
   [RoutePath.WebNotFound]: null;
   [RoutePath.WebConnectLedger]: null;

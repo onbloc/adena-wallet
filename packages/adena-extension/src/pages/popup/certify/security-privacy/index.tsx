@@ -18,6 +18,7 @@ import {
 
 type MenuType =
   | RoutePath.SettingChangePassword
+  | RoutePath.SettingAutoLockTimer
   | RoutePath.RemoveAccount
   | RoutePath.ResetWallet
   | 'EXPORT_SEED_PHRASE'
@@ -35,6 +36,12 @@ const getMenuMakerInfo = (
   {
     title: 'Change Password',
     navigatePath: RoutePath.SettingChangePassword,
+    mode: 'DEFAULT',
+    disabled: false,
+  },
+  {
+    title: 'Auto-Lock Timer',
+    navigatePath: RoutePath.SettingAutoLockTimer,
     mode: 'DEFAULT',
     disabled: false,
   },

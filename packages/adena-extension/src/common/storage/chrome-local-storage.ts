@@ -22,7 +22,8 @@ type StorageKeyTypes =
   | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
   | 'ACCOUNT_GRC721_COLLECTIONS'
   | 'ACCOUNT_GRC721_PINNED_PACKAGES'
-  | 'KDF_SALT';
+  | 'KDF_SALT'
+  | 'AUTO_LOCK_TIMEOUT_MINUTES';
 
 // List of all available storage keys
 const StorageKeys: StorageKeyTypes[] = [
@@ -45,6 +46,7 @@ const StorageKeys: StorageKeyTypes[] = [
   'ACCOUNT_GRC721_COLLECTIONS',
   'ACCOUNT_GRC721_PINNED_PACKAGES',
   'KDF_SALT',
+  'AUTO_LOCK_TIMEOUT_MINUTES',
 ];
 
 // Function to validate if a given key is a valid storage key
