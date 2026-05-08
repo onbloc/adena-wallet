@@ -21,11 +21,10 @@ import { RoutePath } from '@types';
 import LoadingApproveTransaction from './loading-approve-transaction';
 
 const text = 'Enter\nYour Password';
-const Wrapper = styled.div`
-  ${mixins.flex({ justify: 'flex-start' })};
-  max-width: 100%;
-  min-height: 100%;
-  padding: 29px 20px 72px;
+const Wrapper = styled.main`
+  ${mixins.flex({ justify: 'stretch' })}
+  width: 100%;
+  height: 100%;
 `;
 
 export const ApproveLogin = (): JSX.Element => {
