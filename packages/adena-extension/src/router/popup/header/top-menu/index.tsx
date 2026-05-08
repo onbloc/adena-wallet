@@ -16,6 +16,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
 import { useNetwork } from '@hooks/use-network';
 import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import UnresponsiveNetworksIndicator from '@router/popup/header/unresponsive-networks-indicator';
 import mixins from '@styles/mixins';
@@ -73,14 +74,41 @@ const StyledCopyIconButton = styled.button.withConfig({
 
 export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const navigate = useNavigate();
+  const { goBack } = useAppNavigate();
   const { establishService } = useAdenaContext();
   const [hostname, setHostname] = useState('');
   const [protocol, setProtocol] = useState('');
   const { currentAccount } = useCurrentAccount();
-  const goToAccounts = (): void => navigate(RoutePath.Accounts);
-  const goToSettings = (): void => navigate(RoutePath.Setting);
   const [isEstablish, setIsEstablish] = useState(false);
   const location = useLocation();
+
+  const matchesArea = (path: string, base: string): boolean =>
+    path === base || path.startsWith(`${base}/`);
+  const isOnSettings = matchesArea(location.pathname, RoutePath.Setting);
+  const isOnAccounts = matchesArea(location.pathname, RoutePath.Accounts);
+
+  const goToAccounts = (): void => {
+    if (isOnAccounts) {
+      goBack();
+      return;
+    }
+    if (isOnSettings) {
+      navigate(RoutePath.Accounts, { replace: true });
+      return;
+    }
+    navigate(RoutePath.Accounts);
+  };
+  const goToSettings = (): void => {
+    if (isOnSettings) {
+      goBack();
+      return;
+    }
+    if (isOnAccounts) {
+      navigate(RoutePath.Setting, { replace: true });
+      return;
+    }
+    navigate(RoutePath.Setting);
+  };
   const [currentAccountName, setCurrentAccountName] = useState('');
   const { accountNames } = useAccountName();
   const { currentNetwork, unresponsiveNetworks } = useNetwork();
