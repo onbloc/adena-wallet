@@ -142,19 +142,30 @@ const ApproveEstablishContainer: React.FC = () => {
         setResponse(
           InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, key),
         );
+        setDone(true);
         return;
       }
 
-      const networkId = currentNetwork.id ?? '';
-      await establishService.establishBy(accountId, networkId, {
-        hostname: siteName,
-        accountId,
-        appName,
-        favicon,
-      });
-      setResponse(
-        InjectionMessageInstance.success(WalletResponseSuccessType.CONNECTION_SUCCESS, {}, key),
-      );
+      try {
+        const chainId = currentNetwork.chainId ?? '';
+        await establishService.establishBy(accountId, chainId, {
+          hostname: siteName,
+          accountId,
+          appName,
+          favicon,
+        });
+        setResponse(
+          InjectionMessageInstance.success(WalletResponseSuccessType.CONNECTION_SUCCESS, {}, key),
+        );
+      } catch (error) {
+        setResponse(
+          InjectionMessageInstance.failure(
+            WalletResponseFailureType.UNEXPECTED_ERROR,
+            { error: (error as Error)?.message ?? String(error) },
+            key,
+          ),
+        );
+      }
       setDone(true);
       return;
     }

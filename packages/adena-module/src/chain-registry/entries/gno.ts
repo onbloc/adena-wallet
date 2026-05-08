@@ -72,7 +72,7 @@ export const GNO_DEV: GnoNetworkProfile = {
 
 export const GNO_GNOSWAP: GnoNetworkProfile = {
   ...GNO_PROFILE_BASE,
-  id: 'dev.gnoswap',
+  id: 'gnoswap',
   chainId: 'dev.gnoswap',
   displayName: 'GnoSwap Dev',
   isMainnet: false,
