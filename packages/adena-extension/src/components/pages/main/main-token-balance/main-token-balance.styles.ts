@@ -41,4 +41,16 @@ export const MainTokenBalanceWrapper = styled(View).withConfig({
     left: 0;
     white-space: nowrap;
   }
+
+  /* Force natural font sizes on the clone so scrollWidth stays a stable
+     reference width regardless of the current $compact state. */
+  .measure-clone .value.integer,
+  .measure-clone .denom {
+    font-size: 32px !important;
+    line-height: 39px !important;
+  }
+  .measure-clone .value.decimal {
+    font-size: 24px !important;
+    line-height: 39px !important;
+  }
 `;
