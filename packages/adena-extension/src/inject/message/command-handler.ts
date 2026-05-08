@@ -4,6 +4,7 @@ import { GnoDocumentInfo } from '@common/provider/gno';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { isInterRealmParameter } from '@common/provider/gno/utils';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
+import { clearAutoLockAlarm, resetAutoLockAlarm } from '@common/utils/auto-lock-timer';
 import { AdenaExecutor } from '@inject/executor';
 import { ContractMessage, TransactionParams } from '@inject/types';
 import { CheckMetadataMessageData, CommandMessageData } from './command-message';
@@ -18,6 +19,7 @@ import {
   GnoArgumentInfo,
   GnoConnectInfo,
   GnoMessageInfo,
+  isAllowedGnoConnectOrigin,
   parseGnoConnectInfo,
   parseGnoMessageInfo,
 } from './methods/gno-connect';
@@ -74,6 +76,20 @@ export class CommandHandler {
         sendResponse(makeSuccessResponse(message));
         return;
       }
+
+      if (message.command === 'resetAutoLockTimer') {
+        await resetAutoLockAlarm();
+        sendResponse(makeSuccessResponse(message));
+        return;
+      }
+
+      if (message.command === 'updateAutoLockTimer') {
+        // The new duration is already persisted by the service layer; the
+        // helper re-reads from storage so we don't need to trust the payload.
+        await resetAutoLockAlarm();
+        sendResponse(makeSuccessResponse(message));
+        return;
+      }
     } catch (error) {
       console.info(error);
       sendResponse(makeInternalErrorResponse(message));
@@ -81,6 +97,7 @@ export class CommandHandler {
 
     if (message.command === 'clearPopup') {
       await clearInMemoryKey(inMemoryProvider);
+      await clearAutoLockAlarm();
       await clearPopup();
       sendResponse({ ...message, code: 200 });
       return;
@@ -95,6 +112,11 @@ export class CommandHandler {
     }
 
     const currentUrl = window?.location?.href || '';
+    const currentOrigin = window?.location?.origin || '';
+    if (!isAllowedGnoConnectOrigin(currentOrigin)) {
+      return;
+    }
+
     const gnoMessageInfo = message.data.gnoMessageInfo || parseGnoMessageInfo(currentUrl);
     const gnoConnectInfo = message.data.gnoConnectInfo || parseGnoConnectInfo();
 

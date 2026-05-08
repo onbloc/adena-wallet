@@ -106,7 +106,6 @@ const ApproveGetCosmosKeyContainer: React.FC = () => {
             'success',
             key,
             {
-              name: currentAccount.name,
               algo: 'secp256k1',
               pubKey: bytesToBase64(Array.from(compressedPubKey)),
               address: bytesToBase64(Array.from(addressBytes)),

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 
 import { View, WebMain } from '@components/atoms';
 import useWalletExportScreen from '@hooks/web/wallet-export/use-wallet-export-screen';
+import { useAccountName } from '@hooks/use-account-name';
 import WalletExportCheckPassword from './check-password';
 import WalletExportResult from './result';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
@@ -21,10 +22,16 @@ const WalletExportScreen: React.FC = () => {
     checkPassword,
     moveExport,
   } = useWalletExportScreen();
+  const { accountNames } = useAccountName();
 
   const spacing = useMemo(() => {
     return null;
   }, [])
+
+  const currentAccountDisplayName = useMemo(() => {
+    if (!currentAccount) return '';
+    return accountNames[currentAccount.id] || currentAccount.name;
+  }, [accountNames, currentAccount]);
 
   const description = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
@@ -47,6 +54,7 @@ const WalletExportScreen: React.FC = () => {
         {walletExportState !== 'INIT' && (
           <WebMainAccountHeader
             account={currentAccount}
+            displayName={currentAccountDisplayName}
             onClickGoBack={backStep}
           />
         )}

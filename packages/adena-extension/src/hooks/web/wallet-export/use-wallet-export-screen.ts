@@ -6,7 +6,6 @@ import {
   WALLET_EXPORT_TYPE_STORAGE_KEY,
 } from '@common/constants/storage.constant';
 import { AdenaStorage } from '@common/storage';
-import { encryptWalletPassword } from '@common/utils/crypto-utils';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useIndicatorStep, {
@@ -120,10 +119,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
         return false;
       }
 
-      return walletService
-        .loadWalletPassword()
-        .then((storedPassword) => storedPassword === encryptWalletPassword(password))
-        .catch(() => false);
+      return walletService.equalsPassword(password).catch(() => false);
     },
     [exportType, walletService],
   );
@@ -133,9 +129,8 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
       if (exportType === 'NONE' || !account) {
         return;
       }
-      const encryptedWalletPassword = encryptWalletPassword(password);
       const wallet = await walletService
-        .loadWalletWithPassword(encryptedWalletPassword)
+        .loadWalletWithPassword(password)
         .catch((e) => {
           console.warn(e);
           return null;

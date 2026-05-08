@@ -235,7 +235,6 @@ export const cosmosGetKey = async (
     // reconstitutes them before the dApp observes the Key.
     sendResponse(
       createCosmosResponse(CosmosResponseExecuteType.GET_COSMOS_KEY, 'success', message.key, {
-        name: currentAccount.name,
         algo: 'secp256k1',
         pubKey: bytesToBase64(Array.from(compressedPubKey)),
         address: bytesToBase64(Array.from(addressBytes)),

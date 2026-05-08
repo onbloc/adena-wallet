@@ -38,7 +38,6 @@ export interface SerializedDirectSignResponse {
 // Uint8Array at the `window.adena.cosmos` surface; the inject.ts wrapper
 // reconstitutes them from the `SerializedCosmosKey` wire payload.
 export interface CosmosKey {
-  name: string;
   algo: string;
   pubKey: Uint8Array;
   address: Uint8Array;
@@ -50,7 +49,6 @@ export interface CosmosKey {
 // because `chrome.runtime.sendMessage` applies JSON encoding between the
 // background handler and the content script, dropping Uint8Array fidelity.
 export interface SerializedCosmosKey {
-  name: string;
   algo: string;
   pubKey: string;
   address: string;

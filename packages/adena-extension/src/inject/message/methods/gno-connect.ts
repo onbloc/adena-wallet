@@ -1,3 +1,4 @@
+import { GNO_CONNECT_ALLOWED_ORIGINS } from '@common/constants/gno-connect-allowlist.constant';
 import {
   GNO_CHAIN_ID_META_TAG,
   GNO_CONNECT_PREFIX,
@@ -355,6 +356,14 @@ export function shouldInterceptExecForm(target: EventTarget | null): boolean {
   }
 
   return false;
+}
+
+/**
+ * Checks whether the given dApp origin is allowed to declare RPC/chainId via
+ * gnoconnect meta tags. Strict equality on the full origin (scheme + host + port).
+ */
+export function isAllowedGnoConnectOrigin(origin: string): boolean {
+  return GNO_CONNECT_ALLOWED_ORIGINS.includes(origin);
 }
 
 export function getUrlPathWithoutProtocol(url: string): string {

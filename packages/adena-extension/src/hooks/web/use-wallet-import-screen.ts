@@ -13,6 +13,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
 import { ImportWalletType, RoutePath } from '@types';
 
 import { stringFromBase64, stringToBase64 } from '@common/utils/encoding-util';
@@ -42,24 +43,21 @@ const isValidMnemonic = (mnemonic: string): boolean => {
   return true;
 };
 
-const createSerializedWalletWithMnemonic = (mnemonic: string): Promise<string | null> => {
-  return waitForRun<string>(async () => {
-    const createdWallet = await AdenaWallet.createByMnemonic(mnemonic);
-    const serializedWallet = await createdWallet.serialize('');
-    return serializedWallet;
+const createWalletWithMnemonic = (mnemonic: string): Promise<AdenaWallet | null> => {
+  return waitForRun<AdenaWallet>(async () => {
+    return AdenaWallet.createByMnemonic(mnemonic);
   }).catch(() => null);
 };
 
-const createSerializedWalletWithPrivateKeyKeyring = (keyring: Keyring): Promise<string | null> => {
-  return waitForRun<string>(async () => {
+const createWalletWithPrivateKeyKeyring = (keyring: Keyring): Promise<AdenaWallet | null> => {
+  return waitForRun<AdenaWallet>(async () => {
     const account = await SingleAccount.createBy(keyring, 'Account');
-    const createdWallet = await new AdenaWallet();
+    const createdWallet = new AdenaWallet();
     createdWallet.currentAccountId = account.id;
     createdWallet.addAccount(account);
     createdWallet.addKeyring(keyring);
 
-    const serializedWallet = await createdWallet.serialize('');
-    return serializedWallet;
+    return createdWallet;
   }).catch(() => null);
 };
 
@@ -133,7 +131,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
         });
       }
     } else if (step === 'SET_SEED_PHRASE') {
-      let serializedWallet: string | null = '';
+      let createdWallet: AdenaWallet | null = null;
 
       const isSeed = inputType === '12seeds' || inputType === '24seeds';
       if (isSeed) {
@@ -143,7 +141,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
         }
 
         setStep('LOADING');
-        serializedWallet = await createSerializedWalletWithMnemonic(decodedInputValue);
+        createdWallet = await createWalletWithMnemonic(decodedInputValue);
         setInputValue('');
       } else {
         let keyring = await PrivateKeyKeyring.fromPrivateKeyStr(decodedInputValue).catch(
@@ -155,20 +153,18 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
         }
 
         setStep('LOADING');
-        serializedWallet = await createSerializedWalletWithPrivateKeyKeyring(keyring);
+        createdWallet = await createWalletWithPrivateKeyKeyring(keyring);
         keyring = null;
         setInputValue('');
       }
 
-      if (!serializedWallet) {
+      if (!createdWallet) {
         navigate(RoutePath.WebNotFound);
         return;
       }
 
-      navigate(RoutePath.WebCreatePassword, {
-        state: { serializedWallet, stepLength: indicatorInfo.stepLength },
-        replace: true,
-      });
+      pendingWalletStore.set(createdWallet);
+      navigate(RoutePath.WebCreatePassword, { replace: true });
     }
   }, [step, inputType, inputValue, ableToSkipQuestionnaire]);
 

@@ -12,6 +12,7 @@ import { RoutePath } from '@types';
 import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
 import { useQuery } from '@tanstack/react-query';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
@@ -159,12 +160,8 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
         keyrings: [keyring.toData()],
         currentAccountId: resultSavedAccounts[0]?.id,
       });
-      navigate(RoutePath.WebCreatePassword, {
-        state: {
-          serializedWallet: await newWallet.serialize(''),
-          stepLength: 5,
-        },
-      });
+      pendingWalletStore.set(newWallet);
+      navigate(RoutePath.WebCreatePassword);
     }
   };
 

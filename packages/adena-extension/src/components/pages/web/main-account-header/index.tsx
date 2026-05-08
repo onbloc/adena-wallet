@@ -22,11 +22,13 @@ const StyledBlank = styled(Row)`
 
 export type WebMainAccountHeaderProps = {
   account: Account | null;
+  displayName?: string;
   onClickGoBack: () => void;
 };
 
 export const WebMainAccountHeader = ({
   account,
+  displayName,
   onClickGoBack,
 }: WebMainAccountHeaderProps): ReactElement => {
   const theme = useTheme();
@@ -59,7 +61,7 @@ export const WebMainAccountHeader = ({
           <WebText
             type='title4'
           >
-            {account.name}
+            {displayName || account.name}
           </WebText>
           <WebText
             type='body4'

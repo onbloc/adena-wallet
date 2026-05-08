@@ -11,7 +11,6 @@ type StorageKeyTypes =
   | 'CURRENT_NETWORK_ID'
   | 'CURRENT_ATOMONE_NETWORK_ID'
   | 'SERIALIZED'
-  | 'ENCRYPTED_STORED_PASSWORD'
   | 'CURRENT_ACCOUNT_ID'
   | 'ACCOUNT_NAMES'
   | 'ESTABLISH_SITES'
@@ -22,7 +21,9 @@ type StorageKeyTypes =
   | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
   | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
   | 'ACCOUNT_GRC721_COLLECTIONS'
-  | 'ACCOUNT_GRC721_PINNED_PACKAGES';
+  | 'ACCOUNT_GRC721_PINNED_PACKAGES'
+  | 'KDF_SALT'
+  | 'AUTO_LOCK_TIMEOUT_MINUTES';
 
 // List of all available storage keys
 const StorageKeys: StorageKeyTypes[] = [
@@ -33,7 +34,6 @@ const StorageKeys: StorageKeyTypes[] = [
   'CURRENT_NETWORK_ID',
   'CURRENT_ATOMONE_NETWORK_ID',
   'SERIALIZED',
-  'ENCRYPTED_STORED_PASSWORD',
   'CURRENT_ACCOUNT_ID',
   'ACCOUNT_NAMES',
   'ESTABLISH_SITES',
@@ -45,6 +45,8 @@ const StorageKeys: StorageKeyTypes[] = [
   'ADD_ACCOUNT_GUIDE_CONFIRM_DATE',
   'ACCOUNT_GRC721_COLLECTIONS',
   'ACCOUNT_GRC721_PINNED_PACKAGES',
+  'KDF_SALT',
+  'AUTO_LOCK_TIMEOUT_MINUTES',
 ];
 
 // Function to validate if a given key is a valid storage key
@@ -96,6 +98,11 @@ export class ChromeLocalStorage implements Storage {
   public updatePassword = async (password: string): Promise<StorageModelLatest | null> => {
     const current = await this.migrator.getCurrent();
     this.current = await this.migrator.migrate(current, password);
+    if (this.current) {
+      await this.storage.set({
+        [ChromeLocalStorage.StorageKey]: JSON.stringify(this.current),
+      });
+    }
     return this.current;
   };
 

@@ -48,7 +48,13 @@ import {
   makeKeyring,
   Web3AuthKeyring,
 } from './keyring';
-import { decryptAES, encryptAES } from './wallet-crypto-util';
+import {
+  decryptAES,
+  decryptXChacha20,
+  encryptAES,
+  EncryptedData,
+  encryptXChacha20,
+} from './wallet-crypto-util';
 
 export interface Wallet {
   accounts: Account[];
@@ -121,7 +127,8 @@ export interface Wallet {
     signedTx: SignedCosmosTx,
     cosmosProvider: CosmosProvider,
   ) => Promise<CosmosTxBroadcastResponse>;
-  serialize: (password: string) => Promise<string>;
+  serialize: (password: string, salt: Uint8Array) => Promise<string>;
+  destroy: () => void;
   clone: () => AdenaWallet;
 }
 export interface WalletData {
@@ -471,15 +478,15 @@ export class AdenaWallet implements Wallet {
     return cosmosProvider.broadcastTx(signedTx.txBytes, 'BROADCAST_MODE_SYNC');
   }
 
-  async serialize(password: string) {
+  async serialize(password: string, salt: Uint8Array) {
     const plain: WalletData = {
       currentAccountId: this._currentAccountId,
       accounts: this._accounts.map((account) => account.toData()),
       keyrings: this._keyrings.map((keyring) => keyring.toData()),
     };
     const serialized = JSON.stringify(plain);
-    const encryptedSerialize = await encryptAES(serialized, password);
-    return encryptedSerialize;
+    const encrypted = await encryptXChacha20(serialized, password, salt);
+    return JSON.stringify(encrypted);
   }
 
   /**
@@ -495,6 +502,29 @@ export class AdenaWallet implements Wallet {
     return addresses.includes(address);
   }
 
+  destroy() {
+    for (const keyring of this._keyrings) {
+      keyring.destroy();
+    }
+    this._keyrings = [];
+    this._accounts = [];
+    this._currentAccountId = undefined;
+  }
+
+  toJSON(): string {
+    const plain: WalletData = {
+      currentAccountId: this._currentAccountId,
+      accounts: this._accounts.map((account) => account.toData()),
+      keyrings: this._keyrings.map((keyring) => keyring.toData()),
+    };
+    return JSON.stringify(plain);
+  }
+
+  static fromJSON(json: string): AdenaWallet {
+    const plain: WalletData = JSON.parse(json);
+    return new AdenaWallet(plain);
+  }
+
   clone() {
     return new AdenaWallet({
       accounts: this._accounts.map((account) => account.toData()),
@@ -503,8 +533,9 @@ export class AdenaWallet implements Wallet {
     });
   }
 
-  public static async deserialize(encryptedSerialize: string, password: string) {
-    const serialized = await decryptAES(encryptedSerialize, password);
+  public static async deserialize(encryptedSerialize: string, password: string, salt: Uint8Array) {
+    const encryptedData: EncryptedData = JSON.parse(encryptedSerialize);
+    const serialized = await decryptXChacha20(encryptedData, password, salt);
     const plain: WalletData = JSON.parse(serialized);
     return new AdenaWallet(plain);
   }

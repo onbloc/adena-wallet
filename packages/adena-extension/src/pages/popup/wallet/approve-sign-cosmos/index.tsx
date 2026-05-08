@@ -9,11 +9,21 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { decodeParameter, getSiteName, parseParameters } from '@common/utils/client-utils';
+import UnknownLogo from '@assets/common-unknown-logo.svg';
+import { Text } from '@components/atoms';
+import { BottomFixedLoadingButtonGroup } from '@components/molecules';
+import {
+  createFaviconByHostname,
+  decodeParameter,
+  getSiteName,
+  parseParameters,
+} from '@common/utils/client-utils';
 import {
   deserializeSignDoc,
   serializeSignDoc,
 } from '@common/utils/cosmos-serialize';
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
@@ -56,6 +66,7 @@ const ApproveSignCosmosContainer: React.FC = () => {
   const [key, setKey] = useState<string>('');
   const [hostname, setHostname] = useState<string>('');
   const [protocol, setProtocol] = useState<string>('');
+  const [favicon, setFavicon] = useState<string | null>(null);
   const [mode, setMode] = useState<CosmosSignMode | null>(null);
   const [chainId, setChainId] = useState<string>('');
   const [signer, setSigner] = useState<string>('');
@@ -98,6 +109,13 @@ const ApproveSignCosmosContainer: React.FC = () => {
     }
   }, [location]);
 
+  useEffect(() => {
+    if (!hostname) return;
+    createFaviconByHostname(`${protocol}//${hostname}`)
+      .then(setFavicon)
+      .catch(() => setFavicon(null));
+  }, [hostname, protocol]);
+
   const siteName = useMemo(() => getSiteName(protocol, hostname), [protocol, hostname]);
   const responseType = useMemo<CosmosResponseExecuteType>(
     () =>
@@ -106,6 +124,12 @@ const ApproveSignCosmosContainer: React.FC = () => {
         : CosmosResponseExecuteType.SIGN_COSMOS_AMINO,
     [mode],
   );
+
+  const modeLabel = useMemo(() => {
+    if (mode === 'direct') return 'SIGN_MODE_DIRECT';
+    if (mode === 'amino') return 'SIGN_MODE_LEGACY_AMINO_JSON';
+    return '—';
+  }, [mode]);
 
   const sendFailure = useCallback(
     (failureType: string, detail?: string) => {
@@ -215,37 +239,61 @@ const ApproveSignCosmosContainer: React.FC = () => {
     }
   }, [rawSignDoc]);
 
+  const approveDisabled = processing || !mode || !currentAccount;
+
   return (
     <Wrapper>
-      <Header>
-        <Title>Sign Cosmos Transaction</Title>
-        <SiteLine>{siteName || hostname}</SiteLine>
-      </Header>
-      <Section>
-        <Label>Mode</Label>
-        <Value>{mode === 'direct' ? 'SIGN_MODE_DIRECT' : mode === 'amino' ? 'SIGN_MODE_LEGACY_AMINO_JSON' : '—'}</Value>
-      </Section>
-      <Section>
-        <Label>Chain</Label>
-        <Value>{chainId || '—'}</Value>
-      </Section>
-      <Section>
-        <Label>Signer</Label>
-        <Value>{signer || '—'}</Value>
-      </Section>
-      <Section>
-        <Label>SignDoc (raw)</Label>
-        <Pre>{prettySignDoc}</Pre>
-      </Section>
-      {errorMessage && <ErrorBox>{errorMessage}</ErrorBox>}
-      <Actions>
-        <ActionButton onClick={onClickCancel} disabled={processing}>
-          Cancel
-        </ActionButton>
-        <ActionButton primary onClick={onClickApprove} disabled={processing || !mode || !currentAccount}>
-          {processing ? 'Signing…' : 'Approve'}
-        </ActionButton>
-      </Actions>
+      <Text className='main-title' type='header4'>
+        Sign Cosmos Transaction
+      </Text>
+
+      <div className='domain-wrapper'>
+        <img className='logo' src={favicon || UnknownLogo} alt='logo img' />
+        <span>{siteName || hostname}</span>
+      </div>
+
+      <div className='info-table'>
+        <div className='row'>
+          <span className='key'>Mode</span>
+          <span className='value'>{modeLabel}</span>
+        </div>
+        <div className='row'>
+          <span className='key'>Chain</span>
+          <span className='value'>{chainId || '—'}</span>
+        </div>
+      </div>
+
+      <div className='block'>
+        <span className='block-key'>Signer</span>
+        <span className='block-value'>{signer || '—'}</span>
+      </div>
+
+      <div className='block'>
+        <span className='block-key'>SignDoc (raw)</span>
+        <pre className='raw-pre'>{prettySignDoc}</pre>
+      </div>
+
+      {errorMessage && (
+        <div className='error-banner'>
+          <span className='error-label'>ERROR:&nbsp;</span>
+          <span className='error-text'>{errorMessage}</span>
+        </div>
+      )}
+
+      <BottomFixedLoadingButtonGroup
+        filled
+        leftButton={{
+          text: 'Cancel',
+          onClick: onClickCancel,
+        }}
+        rightButton={{
+          primary: true,
+          text: 'Approve',
+          loading: processing,
+          disabled: approveDisabled,
+          onClick: onClickApprove,
+        }}
+      />
     </Wrapper>
   );
 };
@@ -253,88 +301,131 @@ const ApproveSignCosmosContainer: React.FC = () => {
 export default ApproveSignCosmosContainer;
 
 const Wrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  overflow-y: auto;
-  max-height: 100vh;
-`;
+  ${mixins.flex({ justify: 'flex-start' })};
+  width: 100%;
+  padding: 0 20px 96px 20px;
+  align-self: center;
 
-const Header = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-`;
+  .main-title {
+    text-overflow: ellipsis;
+    margin-top: 24px;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 100%;
+    text-align: center;
+  }
 
-const Title = styled.h2`
-  font-size: 16px;
-  margin: 0;
-`;
+  .domain-wrapper {
+    ${mixins.flex({ direction: 'row', align: 'center', justify: 'center' })};
+    width: 100%;
+    min-height: 41px;
+    border-radius: 24px;
+    padding: 10px 18px;
+    margin: 24px auto 12px auto;
+    gap: 7px;
+    background-color: ${getTheme('neutral', '_9')};
+    ${fonts.body2Reg};
 
-const SiteLine = styled.span`
-  font-size: 12px;
-  opacity: 0.7;
-`;
+    .logo {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+  }
 
-const Section = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
+  .info-table {
+    width: 100%;
+    height: auto;
+    border-radius: 18px;
+    margin-bottom: 8px;
+    background-color: ${getTheme('neutral', '_9')};
+  }
 
-const Label = styled.span`
-  font-size: 11px;
-  opacity: 0.6;
-  text-transform: uppercase;
-`;
+  .row {
+    ${mixins.flex({ direction: 'row' })};
+    position: relative;
+    padding: 10px 18px;
+    justify-content: space-between;
+    border-bottom: 2px solid ${getTheme('neutral', '_8')};
+    ${fonts.body1Reg};
 
-const Value = styled.span`
-  font-size: 13px;
-  word-break: break-all;
-`;
+    &:last-child {
+      border-bottom: none;
+    }
 
-const Pre = styled.pre`
-  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace;
-  font-size: 11px;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 8px;
-  border-radius: 6px;
-  white-space: pre-wrap;
-  word-break: break-all;
-  max-height: 240px;
-  overflow-y: auto;
-  margin: 0;
-`;
+    .key {
+      display: inline-flex;
+      width: fit-content;
+      flex-shrink: 0;
+      color: ${getTheme('neutral', 'a')};
+    }
 
-const ErrorBox = styled.div`
-  font-size: 12px;
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.08);
-  padding: 8px;
-  border-radius: 6px;
-  word-break: break-all;
-`;
+    .value {
+      display: block;
+      max-width: 204px;
+      text-align: right;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+  }
 
-const Actions = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-top: auto;
-`;
+  .block {
+    ${mixins.flex({ direction: 'column', align: 'flex-start' })};
+    width: 100%;
+    padding: 12px 18px;
+    border-radius: 18px;
+    background-color: ${getTheme('neutral', '_9')};
+    margin-bottom: 8px;
+    gap: 6px;
 
-const ActionButton = styled.button<{ primary?: boolean }>`
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  background: ${({ primary }) => (primary ? '#3b82f6' : 'rgba(255,255,255,0.08)')};
-  color: #fff;
-  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
-  &:disabled {
-    cursor: not-allowed;
+    .block-key {
+      ${fonts.body2Reg};
+      color: ${getTheme('neutral', 'a')};
+    }
+
+    .block-value {
+      ${fonts.body2Reg};
+      width: 100%;
+      word-break: break-all;
+      color: ${getTheme('neutral', '_1')};
+    }
+
+    .raw-pre {
+      width: 100%;
+      max-height: 240px;
+      overflow-y: auto;
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background-color: ${getTheme('neutral', '_8')};
+      border: 1px solid ${getTheme('neutral', '_7')};
+      font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      font-size: 11px;
+      line-height: 16px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: ${getTheme('neutral', '_1')};
+    }
+  }
+
+  .error-banner {
+    width: 100%;
+    min-height: 40px;
+    padding: 10px 16px;
+    border-radius: 18px;
+    background-color: rgba(239, 45, 33, 0.08);
+    border: 1px solid ${getTheme('red', '_5')};
+    margin-bottom: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 20px;
+    color: ${getTheme('red', '_5')};
+    word-break: break-word;
+
+    .error-label {
+      font-weight: 700;
+    }
   }
 `;

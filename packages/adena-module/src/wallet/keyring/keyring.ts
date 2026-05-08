@@ -35,6 +35,11 @@ export interface Keyring {
   // Decouples keyring from chain-specific serialization rules so that Gno,
   // Cosmos AMINO, and Cosmos DIRECT pipelines can share one signing primitive.
   signRaw: (bytes: Uint8Array, opts?: SignRawOptions) => Promise<Uint8Array>;
+  // Zeroes any sensitive key material held by the keyring so it cannot be
+  // recovered from the JS heap after the wallet is locked. Implementations
+  // must call sodium.memzero on every Uint8Array holding keys, seeds, or
+  // mnemonic entropy.
+  destroy: () => void;
   sign: (
     provider: Provider,
     document: Document,

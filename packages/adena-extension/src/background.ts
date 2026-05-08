@@ -1,8 +1,8 @@
 import { AlarmKey, SCHEDULE_ALARMS } from '@common/constants/alarm-key.constant';
-import { ADENA_WALLET_EXTENSION_ID } from '@common/constants/storage.constant';
 import { TransactionEventStore } from '@common/event-store';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { ChromeLocalStorage } from '@common/storage';
+import { AUTO_LOCK_TRIGGERED_MESSAGE } from '@common/utils/auto-lock-timer';
 import { CommandHandler } from '@inject/message/command-handler';
 import {
   CommandMessage,
@@ -329,42 +329,22 @@ chrome.action.onClicked.addListener(async () => {
   });
 });
 
-chrome.runtime.onConnect.addListener(async (port) => {
-  if (port.name !== ADENA_WALLET_EXTENSION_ID) {
-    return;
-  }
-
-  inMemoryProvider.addConnection();
-  inMemoryProvider.updateExpiredTimeBy(null);
-
-  port.onDisconnect.addListener(async () => {
-    inMemoryProvider.removeConnection();
-
-    if (!inMemoryProvider.isActive()) {
-      const expiredTime = new Date().getTime() + inMemoryProvider.getExpiredPasswordDurationTime();
-      inMemoryProvider.updateExpiredTimeBy(expiredTime);
-
-      console.info('Password Expired time:', new Date(expiredTime));
-    }
-  });
-});
-
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   try {
     const currentTime = new Date().getTime();
     chrome.storage.local.set({ SESSION: currentTime });
 
     switch (alarm?.name) {
-      case AlarmKey.EXPIRED_PASSWORD:
-        if (!inMemoryProvider.isExpired(currentTime)) {
-          return;
-        }
-
+      case AlarmKey.AUTO_LOCK_TIMER:
         await chrome.storage.session.clear();
         await clearInMemoryKey(inMemoryProvider);
-
-        inMemoryProvider.updateExpiredTimeBy(null);
-        console.info('Password Expired');
+        // Tell any open UI surface that auto-lock just fired so it can
+        // invalidate cached lock state and route to Login immediately.
+        // The send rejects when no UI is listening — that's expected.
+        chrome.runtime
+          .sendMessage({ type: AUTO_LOCK_TRIGGERED_MESSAGE })
+          .catch(() => undefined);
+        console.info('Auto-lock fired');
         break;
       default:
         break;
@@ -405,6 +385,13 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Reject messages that did not originate from this extension's own contexts
+  // (background, popup, options, content scripts). External extensions must
+  // use chrome.runtime.onMessageExternal instead.
+  if (sender.id !== chrome.runtime.id) {
+    return;
+  }
+
   // Handle ping from content script for connection check
   if (message?.type === 'ping') {
     sendResponse({ status: 'pong' });

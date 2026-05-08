@@ -11,6 +11,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useChain } from '@hooks/use-chain';
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
 import { RoutePath } from '@types';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { waitForRun } from '@common/utils/timeout-utils';
@@ -129,10 +130,8 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   }, [address, walletService]);
 
   const _createAddressAccount = useCallback(async () => {
-    const createdWallet = await AdenaWallet.createByAddress(address);
-    const serializedWallet = await createdWallet.serialize('');
-    return serializedWallet;
-  }, [address, walletService, indicatorInfo]);
+    return AdenaWallet.createByAddress(address);
+  }, [address]);
 
   const addAccount = useCallback(async () => {
     if (blockedEvent) {
@@ -145,13 +144,9 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
       navigate(RoutePath.WebAccountAddedComplete);
     } else {
       setSetupAirgapState('LOADING');
-      const serializedWallet = await waitForRun<string>(_createAddressAccount);
-      navigate(RoutePath.WebCreatePassword, {
-        state: {
-          serializedWallet,
-          stepLength: indicatorInfo.stepLength,
-        },
-      });
+      const createdWallet = await waitForRun<AdenaWallet>(_createAddressAccount);
+      pendingWalletStore.set(createdWallet);
+      navigate(RoutePath.WebCreatePassword);
     }
     setBlockedEvent(false);
   }, [blockedEvent, walletService, _addAddressAccount, _createAddressAccount]);

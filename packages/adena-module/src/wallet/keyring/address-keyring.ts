@@ -23,6 +23,10 @@ export class AddressKeyring implements Keyring {
     this.addressBytes = Uint8Array.from(addressBytes);
   }
 
+  destroy() {
+    // No sensitive key material to clear
+  }
+
   toData() {
     return {
       id: this.id,

@@ -30,6 +30,7 @@ import { AddressBookItem } from '@repositories/wallet';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 import { useAddressBook } from '@hooks/use-address-book';
+import { inferChainGroup } from '@common/utils/address-chain';
 
 const specialPatternCheck = /\W|\s/g;
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
@@ -41,13 +42,24 @@ const AddAddress = (): JSX.Element => {
   const isAdd = params.status === 'add';
 
   const addressList: AddressBookItem[] = params.addressList;
-  const [chainGroup, setChainGroup] = useState<string>('gno');
-  const chain = useChain(chainGroup);
   const { chainRegistry } = useAdenaContext();
+  const [chainGroup, setChainGroup] = useState<string>(() =>
+    inferChainGroup(params.curr?.address ?? '', chainRegistry),
+  );
+  const chain = useChain(chainGroup);
   const chainOptions = React.useMemo(
     () => chainOptionsFromRegistry(chainRegistry),
     [chainRegistry],
   );
+  // Bech32 length: prefix + "1" separator + 32 data chars + 6 checksum chars.
+  // Use the longest registered prefix so pasting an address whose chain
+  // differs from the current selection isn't truncated before useEffect
+  // re-syncs chainGroup from the new prefix.
+  const addressMaxLength = React.useMemo(() => {
+    const prefixes = chainRegistry.listChains().map((c) => c.bech32Prefix.length);
+    const maxPrefix = prefixes.length > 0 ? Math.max(...prefixes) : chain.bech32Prefix.length;
+    return maxPrefix + 39;
+  }, [chainRegistry, chain.bech32Prefix.length]);
   const [name, setName] = useState(() => params.curr?.name ?? '');
   const [address, setAddress] = useState(() => params.curr?.address ?? '');
   const [nameError, setNameError] = useState<boolean>(false);
@@ -152,7 +164,8 @@ const AddAddress = (): JSX.Element => {
   useEffect(() => {
     setAddressError(false);
     setErrorMsg('');
-  }, [address]);
+    setChainGroup(inferChainGroup(address, chainRegistry));
+  }, [address, chainRegistry]);
 
   useEffect(() => {
     setNameError(false);
@@ -171,44 +184,46 @@ const AddAddress = (): JSX.Element => {
         <LeftArrowBtn onClick={goBack} />
         <Text type='header4'>{isAdd ? 'Add Address' : 'Edit Address'}</Text>
       </TopSection>
-      <img
-        className='symbol-image'
-        src={isAdd ? add : edit}
-        alt={isAdd ? 'add icon' : 'edit icon'}
-      />
-      <ChainDropdown
-        value={chainGroup}
-        onChange={setChainGroup}
-        options={chainOptions}
-        disabled={!isAdd}
-      />
-      <DefaultInput
-        value={name}
-        placeholder='Label'
-        onChange={onChangeName}
-        type='text'
-        error={nameError}
-        ref={nameInputRef}
-        margin='12px 0 0'
-      />
-      <AddressInput
-        value={address}
-        placeholder='Address'
-        onChange={onChangeAddress}
-        onKeyDown={onKeyDown}
-        rows={1}
-        maxLength={40}
-        autoComplete='off'
-        error={addressError}
-      />
-      <ErrorText text={errorMsg} />
-      {!isAdd && (
-        <RemoveAddressBtn error={Boolean(errorMsg)} onClick={removeHandler}>
-          <Text type='body1Reg' color={theme.neutral.a}>
-            Remove Address
-          </Text>
-        </RemoveAddressBtn>
-      )}
+      <ScrollableContent>
+        <img
+          className='symbol-image'
+          src={isAdd ? add : edit}
+          alt={isAdd ? 'add icon' : 'edit icon'}
+        />
+        <ChainDropdown
+          value={chainGroup}
+          onChange={setChainGroup}
+          options={chainOptions}
+          disabled={!isAdd}
+        />
+        <DefaultInput
+          value={name}
+          placeholder='Label'
+          onChange={onChangeName}
+          type='text'
+          error={nameError}
+          ref={nameInputRef}
+          margin='12px 0 0'
+        />
+        <AddressInput
+          value={address}
+          placeholder='Address'
+          onChange={onChangeAddress}
+          onKeyDown={onKeyDown}
+          rows={1}
+          maxLength={addressMaxLength}
+          autoComplete='off'
+          error={addressError}
+        />
+        <ErrorText text={errorMsg} />
+        {!isAdd && (
+          <RemoveAddressBtn error={Boolean(errorMsg)} onClick={removeHandler}>
+            <Text type='body1Reg' color={theme.neutral.a}>
+              Remove Address
+            </Text>
+          </RemoveAddressBtn>
+        )}
+      </ScrollableContent>
       <CancelAndConfirmButton
         cancelButtonProps={{ onClick: goBack }}
         confirmButtonProps={{
@@ -226,15 +241,18 @@ const RemoveAddressBtn = styled.button<{ error: boolean }>`
   text-underline-offset: 2px;
   text-decoration-thickness: 1px;
   text-decoration-color: ${getTheme('neutral', 'a')};
-  position: absolute;
-  bottom: 91px;
+  align-self: center;
+  margin-top: ${({ error }): string => (error ? '8px' : '16px')};
+  margin-bottom: 24px;
 `;
 
 const AddressInput = styled.textarea<{ error: boolean }>`
   ${inputStyle};
-  height: 70px;
+  min-height: 70px;
+  height: auto;
   overflow: hidden;
   resize: none;
+  word-break: break-all;
   border: 1px solid ${({ error, theme }): string => (error ? theme.red._5 : theme.neutral._7)};
   margin-top: 12px;
 `;
@@ -244,10 +262,20 @@ const Wrapper = styled.main`
   padding-top: 24px;
   width: 100%;
   height: 100%;
+  overflow: hidden;
   .symbol-image {
     margin: 24px auto;
     display: block;
   }
+`;
+
+const ScrollableContent = styled.div`
+  ${mixins.flex({ justify: 'flex-start' })};
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 16px;
 `;
 
 const TopSection = styled.div`
