@@ -8,12 +8,13 @@ import { useEvent } from './use-event';
 
 import CHAIN_DATA from '@resources/chains/chains.json';
 import { NetworkState } from '@states';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 import {
   atomoneNetworkToProfile,
   atomoneNetworkToTokenProfiles,
 } from './helpers/atomone-to-profile';
+import { toGnoNetworkProfile } from '@common/mapper/network-profile-mapper';
 
 export type ChainGroup = 'gno' | 'atomone';
 export type NetworkMode = NetworkState.NetworkMode;
@@ -81,6 +82,8 @@ export const useNetwork = (): NetworkResponse => {
     NetworkState.selectedProfileByChainGroup,
   );
   const [modified, setModified] = useRecoilState(NetworkState.modified);
+
+  const queryClient = useQueryClient();
 
   const { data: failedNetwork = null, refetch: refetchNetworkState } = useQuery<boolean | null>(
     ['network/failedNetwork', currentGnoNetwork],
@@ -318,6 +321,9 @@ export const useNetwork = (): NetworkResponse => {
         }
         if (network.id === currentAtomoneNetwork?.id) {
           setCurrentAtomoneNetwork(network);
+          // Drop the stale cosmos balance cache so the new rpcUrl/restUrl is
+          // hit immediately instead of waiting for the next refetch interval.
+          queryClient.invalidateQueries({ queryKey: ['balances', 'cosmos'] });
         }
         return true;
       }
@@ -328,8 +334,15 @@ export const useNetwork = (): NetworkResponse => {
       await chainService.updateNetworks(changedNetworks);
       setNetworkMetainfos(changedNetworks);
 
+      if (!network.deleted) {
+        chainRegistry.register(toGnoNetworkProfile(network));
+      }
+
       if (network.id === currentGnoNetwork?.id) {
-        changeNetworkOfProvider(network);
+        await changeNetworkOfProvider(network);
+        // Drop the stale gno balance cache so the new rpcUrl/chainId is hit
+        // immediately instead of waiting for the next refetch interval.
+        queryClient.invalidateQueries({ queryKey: ['balances', 'gno'] });
       }
       return true;
     },
@@ -339,6 +352,9 @@ export const useNetwork = (): NetworkResponse => {
       networkMetainfos,
       atomoneNetworks,
       chainService,
+      chainRegistry,
+      queryClient,
+      changeNetworkOfProvider,
     ],
   );
 
