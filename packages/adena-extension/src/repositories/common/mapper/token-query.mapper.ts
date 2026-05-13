@@ -1,5 +1,5 @@
 import { parseGRC721FileContents } from '@common/utils/parse-utils';
-import { GRC20TokenModel, GRC721CollectionModel } from '@types';
+import { GRC20RegisterEvent, GRC20TokenModel, GRC721CollectionModel } from '@types';
 
 export const GRC20_FUNCTIONS = [
   'TotalSupply',
@@ -9,6 +9,92 @@ export const GRC20_FUNCTIONS = [
   'Approve',
   'TransferFrom',
 ];
+
+/** Must stay in sync with `makeGetGRC20RegisterEventsQuery` indexer filter. */
+const GRC20_REGISTER_EVENT_TYPE = 'register';
+const GRC20_REGISTER_REGISTRY_PKG_PATH = 'gno.land/r/demo/defi/grc20reg';
+
+type GnoEventAttr = { key: string; value: string };
+
+type GnoGraphQueryEvent = {
+  type?: string;
+  pkg_path?: string;
+  attrs?: GnoEventAttr[];
+};
+
+export type GRC20RegisterTransactionsQueryResult = {
+  data?: {
+    getTransactions?: Array<{
+      response?: { events?: unknown[] };
+    }>;
+  };
+};
+
+function isGnoGraphQueryEvent(ev: unknown): ev is GnoGraphQueryEvent {
+  return (
+    typeof ev === 'object' &&
+    ev !== null &&
+    'type' in ev &&
+    typeof (ev as GnoGraphQueryEvent).type === 'string' &&
+    'pkg_path' in ev &&
+    typeof (ev as GnoGraphQueryEvent).pkg_path === 'string'
+  );
+}
+
+function parseGRC20RegisterAttrs(attrs: GnoEventAttr[] | undefined): GRC20RegisterEvent | null {
+  if (!attrs?.length) {
+    return null;
+  }
+  const byKey: Record<string, string> = {};
+  for (const { key, value } of attrs) {
+    byKey[key.toLowerCase()] = value;
+  }
+  const packagePath = byKey.pkgpath;
+  if (!packagePath) {
+    return null;
+  }
+  return {
+    packagePath,
+    slug: byKey.slug ?? '',
+  };
+}
+
+/**
+ * Maps `getGRC20RegisterEvents` GraphQL response: one {@link GRC20RegisterEvent}
+ * per matching Gno event (`register` on grc20reg), derived from event attrs.
+ */
+export function mapGRC20RegisterEvent(
+  queryResult: GRC20RegisterTransactionsQueryResult | null | undefined,
+): GRC20RegisterEvent[] {
+  const transactions = queryResult?.data?.getTransactions;
+  if (!transactions?.length) {
+    return [];
+  }
+
+  const events: GRC20RegisterEvent[] = [];
+  for (const tx of transactions) {
+    const rawEvents = tx?.response?.events;
+    if (!rawEvents?.length) {
+      continue;
+    }
+    for (const ev of rawEvents) {
+      if (!isGnoGraphQueryEvent(ev)) {
+        continue;
+      }
+      if (
+        ev.type !== GRC20_REGISTER_EVENT_TYPE ||
+        ev.pkg_path !== GRC20_REGISTER_REGISTRY_PKG_PATH
+      ) {
+        continue;
+      }
+      const mapped = parseGRC20RegisterAttrs(ev.attrs);
+      if (mapped) {
+        events.push(mapped);
+      }
+    }
+  }
+  return events;
+}
 
 export function mapGRC721CollectionModel(
   networkId: string,
@@ -69,7 +155,9 @@ export function mapGRC20TokenModel(networkId: string, message: any): GRC20TokenM
   return null;
 }
 
-function parseGRC20InfoByFile(file: string): {
+function parseGRC20InfoByFile(
+  file: string,
+): {
   name: string;
   symbol: string;
   decimals: number;
@@ -135,7 +223,9 @@ function parseGRC20InfoByFile(file: string): {
   return { ...grc20Info, owner };
 }
 
-function parseBankerGRC20InfoByFile(file: string): {
+function parseBankerGRC20InfoByFile(
+  file: string,
+): {
   name: string;
   symbol: string;
   decimals: number;
