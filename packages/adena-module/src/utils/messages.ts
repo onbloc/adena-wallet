@@ -255,7 +255,7 @@ export function documentToTx(document: Document): Tx {
   return {
     messages,
     fee: TxFee.create({
-      gas_wanted: document.fee.gas,
+      gas_wanted: BigInt(document.fee.gas),
       gas_fee: document.fee.amount
         .map((feeAmount) => `${feeAmount.amount}${feeAmount.denom}`)
         .join(','),
@@ -288,7 +288,7 @@ export function documentToDefaultTx(document: Document, publicKey?: Uint8Array):
   return {
     messages,
     fee: TxFee.create({
-      gas_wanted: document.fee.gas,
+      gas_wanted: BigInt(document.fee.gas),
       gas_fee: document.fee.amount
         .map((feeAmount) => `${feeAmount.amount}${feeAmount.denom}`)
         .join(','),
@@ -412,7 +412,7 @@ export const rawTxToTx = (rawTx: RawTx): Tx | null => {
       messages,
 
       fee: TxFee.create({
-        gas_wanted: document.fee.gas_wanted,
+        gas_wanted: BigInt(document.fee.gas_wanted),
         gas_fee: document.fee.gas_fee,
       }),
       signatures: (document.signatures || []).map(rawSignatureToTxSignature),
