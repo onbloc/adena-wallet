@@ -25,6 +25,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
 import axios from 'axios';
+import { formatGnoArg, GnoArg } from './qeval';
 import { AccountInfo, GnoDocumentInfo, VMQueryType } from './types';
 import {
   fetchABCIResponse,
@@ -164,6 +165,63 @@ export class GnoProvider extends GnoJSONRPCProvider {
         return null;
       })
       .catch(() => null);
+  }
+
+  /**
+   * Build a Gno IIFE expression that runs multi-statement logic inside a single
+   * `vm/qeval` call and returns a typed value. Mirrors the pattern:
+   *
+   *   (func() <returnType> { <statements>; <call>; return <returnExpression> })()
+   *
+   * `statements` are emitted first, so any variable defined there is in scope
+   * for the `call` shorthand and the `returnExpression`. Each entry must be a
+   * complete Gno statement without a trailing semicolon.
+   *
+   * `call` is a shorthand for the most common shape: invoke a package function,
+   * capture `(value, err)`, panic on error, and return an expression derived
+   * from `value`. Arguments are escaped with `gnoLiteral`; pass `gnoRaw(expr)`
+   * when an argument should be inlined verbatim (e.g. a variable from
+   * `statements`).
+   */
+  public static buildIIFEExpression(params: {
+    returnType: string;
+    returnExpression: string;
+    statements?: string[];
+    call?: {
+      name: string;
+      args?: GnoArg[];
+      resultVar?: string;
+      errorVar?: string;
+    };
+  }): string {
+    const { returnType, returnExpression, statements = [], call } = params;
+
+    const callStmts: string[] = [];
+    if (call) {
+      const resultVar = call.resultVar ?? 'result';
+      const errorVar = call.errorVar ?? 'err';
+      const args = (call.args ?? []).map(formatGnoArg).join(', ');
+      callStmts.push(`${resultVar}, ${errorVar} := ${call.name}(${args})`);
+      callStmts.push(`if ${errorVar} != nil { panic(${errorVar}) }`);
+    }
+
+    const body = [...statements, ...callStmts, `return ${returnExpression}`].join('; ');
+    return `(func() ${returnType} { ${body} })()`;
+  }
+
+  /**
+   * Execute a Gno IIFE expression via `vm/qeval` and return the raw response
+   * string produced by the node (e.g. `("foo" string)` or `(42 int64)`).
+   * Decoding the payload into a typed value is left to the caller — combine
+   * with `parseQEvalResult` / `decodeQEvalString` / `decodeQEvalInt` etc.
+   */
+  public evaluateIIFE(
+    packagePath: string,
+    params: Parameters<typeof GnoProvider.buildIIFEExpression>[0],
+    height?: number,
+  ): Promise<string> {
+    const expression = GnoProvider.buildIIFEExpression(params);
+    return this.evaluateExpression(packagePath, expression, height);
   }
 
   public async sendTransactionSync(tx: string): Promise<BroadcastTxSyncResult> {
