@@ -51,6 +51,7 @@ interface NetworkResponse {
   changeNetwork: (networkId: string) => Promise<boolean>;
   changeNetworkMode: (mode: NetworkMode) => Promise<void>;
   updateNetwork: (network: NetworkMetainfo | AtomoneNetworkMetainfo) => Promise<boolean>;
+  resetNetworkToDefault: (chainGroup: ChainGroup, networkId: string) => Promise<boolean>;
   deleteNetwork: (chainGroup: ChainGroup, networkId: string) => Promise<boolean>;
   setModified: (modified: boolean) => void;
 }
@@ -341,6 +342,28 @@ export const useNetwork = (): NetworkResponse => {
     ],
   );
 
+  const resetNetworkToDefault = useCallback(
+    async (chainGroup: ChainGroup, networkId: string): Promise<boolean> => {
+      if (chainGroup === 'atomone') {
+        const fetched = await chainService.fetchDefaultAtomoneNetworks().catch(() => []);
+        const factory = fetched.find((network) => network.id === networkId);
+        if (!factory) {
+          console.warn('resetNetworkToDefault: no factory entry for atomone id', networkId);
+          return false;
+        }
+        return updateNetwork(factory);
+      }
+      const fetched = await chainService.fetchDefaultNetworks().catch(() => []);
+      const factory = fetched.find((network) => network.id === networkId);
+      if (!factory) {
+        console.warn('resetNetworkToDefault: no factory entry for gno id', networkId);
+        return false;
+      }
+      return updateNetwork(factory);
+    },
+    [chainService, updateNetwork],
+  );
+
   const deleteNetwork = useCallback(
     async (chainGroup: ChainGroup, networkId: string) => {
       if (chainGroup === 'atomone') {
@@ -414,6 +437,7 @@ export const useNetwork = (): NetworkResponse => {
     changeNetwork,
     changeNetworkMode,
     updateNetwork,
+    resetNetworkToDefault,
     addNetwork,
     deleteNetwork,
     setModified,

@@ -23,6 +23,14 @@ export class ChainService {
     return fetchedNetworks;
   };
 
+  public fetchDefaultNetworks = async (): Promise<NetworkMetainfo[]> => {
+    return this.chainRepository.fetchNetworkMetainfos();
+  };
+
+  public fetchDefaultAtomoneNetworks = async (): Promise<AtomoneNetworkMetainfo[]> => {
+    return this.chainRepository.fetchAtomoneMetainfos();
+  };
+
   public addGnoNetwork = async (
     name: string,
     rpcUrl: string,

@@ -40,7 +40,8 @@ const EditCustomNetworkContainer: React.FC = () => {
   const currentNetworkId = params.networkId;
   const chainGroup: ChainGroup = params.chainGroup;
   const fieldType = chainGroup === 'atomone' ? 'lcd' : 'indexer';
-  const { networks, atomoneNetworks, updateNetwork, deleteNetwork } = useNetwork();
+  const { networks, atomoneNetworks, updateNetwork, resetNetworkToDefault, deleteNetwork } =
+    useNetwork();
   const {
     name,
     rpcUrl,
@@ -168,10 +169,8 @@ const EditCustomNetworkContainer: React.FC = () => {
 
   const clearNetwork = useCallback(async () => {
     if (isDefault && originNetwork) {
-      changeName(originNetwork.networkName);
-      changeRPCUrl(originNetwork.rpcUrl);
-      changeExtraUrl(originExtraUrl);
-      changeChainId(originNetwork.chainId);
+      await resetNetworkToDefault(chainGroup, currentNetworkId);
+      goBack();
       return;
     }
     await deleteNetwork(chainGroup, currentNetworkId);
@@ -180,8 +179,8 @@ const EditCustomNetworkContainer: React.FC = () => {
     chainGroup,
     isDefault,
     originNetwork,
-    originExtraUrl,
     currentNetworkId,
+    resetNetworkToDefault,
     deleteNetwork,
     goBack,
   ]);

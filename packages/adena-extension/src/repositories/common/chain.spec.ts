@@ -107,7 +107,7 @@ describe('ChainRepository — AtomOne methods', () => {
       ]);
     });
 
-    it('preserves deleted flag on stored entries', async () => {
+    it('preserves the deleted flag on stored default entries', async () => {
       const deletedDefault = {
         ...ATOMONE_DEFAULTS[1],
         deleted: true,
@@ -122,9 +122,22 @@ describe('ChainRepository — AtomOne methods', () => {
 
       const testnet = result.find((network) => network.id === 'atomone-testnet-1');
       expect(testnet).toBeDefined();
-      // default entry comes from fetched defaults (always fresh) — stored deleted=true
-      // is not carried over, matching the existing Gno getNetworks behavior.
-      expect(testnet?.deleted).toBe(false);
+      expect(testnet?.deleted).toBe(true);
+    });
+
+    it('preserves user-edited rpc/rest urls on stored default entries', async () => {
+      const editedMainnet = {
+        ...ATOMONE_DEFAULTS[0],
+        rpcUrl: 'https://my-node.example/rpc',
+        restUrl: 'https://my-node.example/rest',
+      };
+      storedValue = [editedMainnet, ATOMONE_DEFAULTS[1]];
+
+      const result = await repository.getAtomoneNetworks();
+
+      const mainnet = result.find((network) => network.id === 'atomone-1');
+      expect(mainnet?.rpcUrl).toBe('https://my-node.example/rpc');
+      expect(mainnet?.restUrl).toBe('https://my-node.example/rest');
     });
 
     it('does not duplicate defaults when custom shares an id with a default', async () => {
@@ -137,6 +150,15 @@ describe('ChainRepository — AtomOne methods', () => {
       const result = await repository.getAtomoneNetworks();
 
       expect(result.filter((network) => network.id === 'atomone-1')).toHaveLength(1);
+    });
+
+    it('adds fetched defaults that have no stored counterpart', async () => {
+      // Storage was populated before a new default shipped in atomone-chains.json.
+      storedValue = [{ ...ATOMONE_DEFAULTS[0], deleted: false }];
+
+      const result = await repository.getAtomoneNetworks();
+
+      expect(result.map((network) => network.id)).toEqual(['atomone-1', 'atomone-testnet-1']);
     });
   });
 
