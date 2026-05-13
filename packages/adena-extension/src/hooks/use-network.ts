@@ -397,11 +397,17 @@ export const useNetwork = (): NetworkResponse => {
         setAtomoneNetworkMetainfos(changedNetworks);
 
         if (networkId === currentAtomoneNetwork?.id) {
+          const isMainnet = mode === 'mainnet';
           const fallback =
-            changedNetworks.find((current) => !current.deleted && current.isMainnet) ?? null;
+            changedNetworks.find(
+              (current) => !current.deleted && current.isMainnet === isMainnet,
+            ) ??
+            changedNetworks.find((current) => !current.deleted) ??
+            null;
           setCurrentAtomoneNetwork(fallback);
           if (fallback) {
             setSelectedProfileByChainGroup((prev) => ({ ...prev, atomone: fallback.id }));
+            await chainService.updateCurrentAtomoneNetworkId(fallback.id).catch(() => null);
           }
         }
         return true;
@@ -422,11 +428,35 @@ export const useNetwork = (): NetworkResponse => {
       setNetworkMetainfos(changedNetworks);
 
       if (networkId === currentGnoNetwork?.id) {
-        changeNetworkOfProvider(DEFAULT_NETWORK);
+        const isMainnet = mode === 'mainnet';
+        const fallback =
+          changedNetworks.find(
+            (current) => !current.deleted && (current.main === true) === isMainnet,
+          ) ??
+          changedNetworks.find((current) => !current.deleted) ??
+          null;
+        if (fallback) {
+          await chainService.updateCurrentNetworkId(fallback.id);
+          await changeNetworkOfProvider(fallback);
+          setSelectedProfileByChainGroup((prev) => ({ ...prev, gno: fallback.id }));
+        } else {
+          setCurrentNetwork(null);
+        }
       }
       return true;
     },
-    [currentGnoNetwork, currentAtomoneNetwork, networkMetainfos, atomoneNetworks, chainService],
+    [
+      currentGnoNetwork,
+      currentAtomoneNetwork,
+      networkMetainfos,
+      atomoneNetworks,
+      chainService,
+      mode,
+      changeNetworkOfProvider,
+      setCurrentNetwork,
+      setCurrentAtomoneNetwork,
+      setSelectedProfileByChainGroup,
+    ],
   );
 
   const dispatchChangedEvent = useCallback(
