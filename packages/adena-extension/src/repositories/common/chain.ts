@@ -49,14 +49,16 @@ export class ChainRepository {
       return fetchedNetworks;
     }
 
-    const defaultNetworks = fetchedNetworks.filter(
-      (network) =>
-        network.default || networks?.find((current) => current.id === network.id) === undefined,
+    // Prefer the locally stored entry when it shares an id with a fetched default
+    // so user edits and the deleted flag survive a restart. Fall back to fetched
+    // when no local copy exists (newly introduced defaults).
+    const localById = new Map(networks.map((network) => [network.id, network]));
+    const fetchedIds = new Set(fetchedNetworks.map((network) => network.id));
+    const defaultNetworks = fetchedNetworks.map(
+      (fetched) => localById.get(fetched.id) ?? fetched,
     );
     const customNetworks = networks.filter(
-      (network) =>
-        network.default === false &&
-        defaultNetworks.find((network1) => network.id === network1.id) === undefined,
+      (network) => network.default === false && !fetchedIds.has(network.id),
     );
     return [...defaultNetworks, ...customNetworks];
   };
@@ -95,14 +97,13 @@ export class ChainRepository {
       return fetchedNetworks;
     }
 
-    const defaultNetworks = fetchedNetworks.filter(
-      (network) =>
-        network.default || networks?.find((current) => current.id === network.id) === undefined,
+    const localById = new Map(networks.map((network) => [network.id, network]));
+    const fetchedIds = new Set(fetchedNetworks.map((network) => network.id));
+    const defaultNetworks = fetchedNetworks.map(
+      (fetched) => localById.get(fetched.id) ?? fetched,
     );
     const customNetworks = networks.filter(
-      (network) =>
-        network.default === false &&
-        defaultNetworks.find((network1) => network.id === network1.id) === undefined,
+      (network) => network.default === false && !fetchedIds.has(network.id),
     );
     return [...defaultNetworks, ...customNetworks];
   };

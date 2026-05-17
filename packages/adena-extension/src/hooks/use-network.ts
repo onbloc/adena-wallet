@@ -8,12 +8,13 @@ import { useEvent } from './use-event';
 
 import CHAIN_DATA from '@resources/chains/chains.json';
 import { NetworkState } from '@states';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 import {
   atomoneNetworkToProfile,
   atomoneNetworkToTokenProfiles,
 } from './helpers/atomone-to-profile';
+import { toGnoNetworkProfile } from '@common/mapper/network-profile-mapper';
 
 export type ChainGroup = 'gno' | 'atomone';
 export type NetworkMode = NetworkState.NetworkMode;
@@ -51,6 +52,7 @@ interface NetworkResponse {
   changeNetwork: (networkId: string) => Promise<boolean>;
   changeNetworkMode: (mode: NetworkMode) => Promise<void>;
   updateNetwork: (network: NetworkMetainfo | AtomoneNetworkMetainfo) => Promise<boolean>;
+  resetNetworkToDefault: (chainGroup: ChainGroup, networkId: string) => Promise<boolean>;
   deleteNetwork: (chainGroup: ChainGroup, networkId: string) => Promise<boolean>;
   setModified: (modified: boolean) => void;
 }
@@ -80,6 +82,8 @@ export const useNetwork = (): NetworkResponse => {
     NetworkState.selectedProfileByChainGroup,
   );
   const [modified, setModified] = useRecoilState(NetworkState.modified);
+
+  const queryClient = useQueryClient();
 
   const { data: failedNetwork = null, refetch: refetchNetworkState } = useQuery<boolean | null>(
     ['network/failedNetwork', currentGnoNetwork],
@@ -317,6 +321,9 @@ export const useNetwork = (): NetworkResponse => {
         }
         if (network.id === currentAtomoneNetwork?.id) {
           setCurrentAtomoneNetwork(network);
+          // Drop the stale cosmos balance cache so the new rpcUrl/restUrl is
+          // hit immediately instead of waiting for the next refetch interval.
+          queryClient.invalidateQueries({ queryKey: ['balances', 'cosmos'] });
         }
         return true;
       }
@@ -327,8 +334,15 @@ export const useNetwork = (): NetworkResponse => {
       await chainService.updateNetworks(changedNetworks);
       setNetworkMetainfos(changedNetworks);
 
+      if (!network.deleted) {
+        chainRegistry.register(toGnoNetworkProfile(network));
+      }
+
       if (network.id === currentGnoNetwork?.id) {
-        changeNetworkOfProvider(network);
+        await changeNetworkOfProvider(network);
+        // Drop the stale gno balance cache so the new rpcUrl/chainId is hit
+        // immediately instead of waiting for the next refetch interval.
+        queryClient.invalidateQueries({ queryKey: ['balances', 'gno'] });
       }
       return true;
     },
@@ -338,7 +352,32 @@ export const useNetwork = (): NetworkResponse => {
       networkMetainfos,
       atomoneNetworks,
       chainService,
+      chainRegistry,
+      queryClient,
+      changeNetworkOfProvider,
     ],
+  );
+
+  const resetNetworkToDefault = useCallback(
+    async (chainGroup: ChainGroup, networkId: string): Promise<boolean> => {
+      if (chainGroup === 'atomone') {
+        const fetched = await chainService.fetchDefaultAtomoneNetworks().catch(() => []);
+        const factory = fetched.find((network) => network.id === networkId);
+        if (!factory) {
+          console.warn('resetNetworkToDefault: no factory entry for atomone id', networkId);
+          return false;
+        }
+        return updateNetwork(factory);
+      }
+      const fetched = await chainService.fetchDefaultNetworks().catch(() => []);
+      const factory = fetched.find((network) => network.id === networkId);
+      if (!factory) {
+        console.warn('resetNetworkToDefault: no factory entry for gno id', networkId);
+        return false;
+      }
+      return updateNetwork(factory);
+    },
+    [chainService, updateNetwork],
   );
 
   const deleteNetwork = useCallback(
@@ -358,11 +397,17 @@ export const useNetwork = (): NetworkResponse => {
         setAtomoneNetworkMetainfos(changedNetworks);
 
         if (networkId === currentAtomoneNetwork?.id) {
+          const isMainnet = mode === 'mainnet';
           const fallback =
-            changedNetworks.find((current) => !current.deleted && current.isMainnet) ?? null;
+            changedNetworks.find(
+              (current) => !current.deleted && current.isMainnet === isMainnet,
+            ) ??
+            changedNetworks.find((current) => !current.deleted) ??
+            null;
           setCurrentAtomoneNetwork(fallback);
           if (fallback) {
             setSelectedProfileByChainGroup((prev) => ({ ...prev, atomone: fallback.id }));
+            await chainService.updateCurrentAtomoneNetworkId(fallback.id).catch(() => null);
           }
         }
         return true;
@@ -383,11 +428,35 @@ export const useNetwork = (): NetworkResponse => {
       setNetworkMetainfos(changedNetworks);
 
       if (networkId === currentGnoNetwork?.id) {
-        changeNetworkOfProvider(DEFAULT_NETWORK);
+        const isMainnet = mode === 'mainnet';
+        const fallback =
+          changedNetworks.find(
+            (current) => !current.deleted && (current.main === true) === isMainnet,
+          ) ??
+          changedNetworks.find((current) => !current.deleted) ??
+          null;
+        if (fallback) {
+          await chainService.updateCurrentNetworkId(fallback.id);
+          await changeNetworkOfProvider(fallback);
+          setSelectedProfileByChainGroup((prev) => ({ ...prev, gno: fallback.id }));
+        } else {
+          setCurrentNetwork(null);
+        }
       }
       return true;
     },
-    [currentGnoNetwork, currentAtomoneNetwork, networkMetainfos, atomoneNetworks, chainService],
+    [
+      currentGnoNetwork,
+      currentAtomoneNetwork,
+      networkMetainfos,
+      atomoneNetworks,
+      chainService,
+      mode,
+      changeNetworkOfProvider,
+      setCurrentNetwork,
+      setCurrentAtomoneNetwork,
+      setSelectedProfileByChainGroup,
+    ],
   );
 
   const dispatchChangedEvent = useCallback(
@@ -414,6 +483,7 @@ export const useNetwork = (): NetworkResponse => {
     changeNetwork,
     changeNetworkMode,
     updateNetwork,
+    resetNetworkToDefault,
     addNetwork,
     deleteNetwork,
     setModified,
