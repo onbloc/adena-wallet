@@ -108,7 +108,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           tokenImage={tokenImage}
           value={transferBalance.value}
           denom={transferBalance.denom}
-          chainName={chainName}
+          tokenName={tokenMetainfo.name}
           chainBadgeImage={chainBadgeImage}
         />
 
