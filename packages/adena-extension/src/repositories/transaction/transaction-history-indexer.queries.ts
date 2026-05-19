@@ -1,524 +1,181 @@
-export const makeAccountTransactionsQuery = (
-  address: string,
-  cursor: string | null,
-  size = 20,
-): string => `
-  {
-    transactions(
-      filter: {
-        message: [
+/**
+ * Selection set shared by every transaction query — keeps the existing
+ * `TransactionResponse` shape consumed by the mappers
+ * (transaction-history-query.mapper.ts) intact.
+ */
+const TRANSACTION_FIELDS = `
+  hash
+  index
+  success
+  block_height
+  gas_wanted
+  gas_used
+  gas_fee {
+    amount
+    denom
+  }
+  messages {
+    typeUrl
+    value {
+      ... on BankMsgSend {
+        from_address
+        to_address
+        amount
+      }
+      ... on MsgCall {
+        caller
+        send
+        max_deposit
+        pkg_path
+        func
+        args
+      }
+      ... on MsgAddPackage {
+        creator
+        send
+        max_deposit
+        package {
+          path
+        }
+      }
+      ... on MsgRun {
+        caller
+        send
+        max_deposit
+        package {
+          path
+        }
+      }
+    }
+  }
+`;
+
+/**
+ * All transaction history for an address: native sends/receives, GRC20/GRC721
+ * receives (by Transfer/TransferFrom args), and any VM message the address
+ * caused (caller/creator).
+ */
+export const makeAllTransactionHistoryQuery = (address: string): string => `
+query getAllTransactionHistory {
+  getTransactions(
+    where: {
+      success: { eq: true }
+      messages: {
+        _or: [
           {
-            type_url: send
-            bank_param: {
-              send: {
-                from_address: "${address}"
+            value: {
+              BankMsgSend: {
+                from_address: { eq: "${address}" }
               }
             }
           }
           {
-            type_url: send
-            bank_param: {
-              send: {
-                to_address: "${address}"
+            value: {
+              BankMsgSend: {
+                to_address: { eq: "${address}" }
               }
             }
           }
           {
-            type_url: exec
-            vm_param: {
-              exec: {
-                caller: "${address}"
-              }
-              add_package: {
-                creator: "${address}"
-              }
-              run: {
-                caller: "${address}"
+            value: {
+              MsgCall: {
+                caller: { eq: "${address}" }
               }
             }
           }
           {
-            type_url: exec
-            vm_param: {
-              exec: {
-                func: "Transfer"
-                args: ["${address}"]
+            value: {
+              MsgCall: {
+                func: { eq: "Transfer" }
+                args: { eq: "${address}" }
               }
             }
           }
           {
-            type_url: exec
-            vm_param: {
-              exec: {
-                func: "TransferFrom"
-                args: ["", "${address}"]
+            value: {
+              MsgCall: {
+                func: { eq: "TransferFrom" }
+                args: { eq: "${address}" }
+              }
+            }
+          }
+          {
+            value: {
+              MsgAddPackage: {
+                creator: { eq: "${address}" }
+              }
+            }
+          }
+          {
+            value: {
+              MsgRun: {
+                caller: { eq: "${address}" }
               }
             }
           }
         ]
       }
-      size: ${size}
-      ascending: false
-      after: ${cursor ? `"${cursor}"` : 'null'}
-    ) {
-      pageInfo {
-        last
-        hasNext
-      }
-      edges {
-        cursor
-        transaction {
-          hash
-          index
-          success
-          block_height
-          gas_wanted
-          gas_used
-          gas_fee {
-            amount
-            denom
-          }
-          messages {
-            typeUrl
-            value {
-              ... on BankMsgSend {
-                from_address
-                to_address
-                amount
-              }
-              ... on MsgCall {
-                caller
-                send
-                func
-                max_deposit
-                pkg_path
-                args
-              }
-              ... on MsgAddPackage {
-                creator
-                send
-                max_deposit
-                package {
-                  path
-                }
-              }
-              ... on MsgRun {
-                caller
-                send
-                max_deposit
-                package {
-                  path
-                }
-              }
-            }
-          }
-        }
-      }
     }
+    order: { heightAndIndex: DESC }
+  ) {
+    ${TRANSACTION_FIELDS}
   }
+}
 `;
 
-export const makeNativeTransactionsQuery = (
-  address: string,
-  cursor: string | null,
-  size = 20,
-): string => `
-  {
-    transactions(
-      filter: {
-        message: [
-          {
-            type_url: send
-            bank_param: {
-              send: {
-                from_address: "${address}"
-              }
-            }
-          }
-          {
-            type_url: send
-            bank_param: {
-              send: {
-                to_address: "${address}"
-              }
-            }
-          }
-        ]
-      }
-      size: ${size}
-      ascending: false
-      after: ${cursor ? `"${cursor}"` : 'null'}
-    ) {
-      pageInfo {
-        last
-        hasNext
-      }
-      edges {
-        cursor
-        transaction {
-          hash
-          index
-          success
-          block_height
-          gas_wanted
-          gas_used
-          gas_fee {
-            amount
-            denom
-          }
-          messages {
-            typeUrl
-            value {
-              ... on BankMsgSend {
-                from_address
-                to_address
-                amount
-              }
-            }
+/** Native (BankMsgSend) sends and receives for an address. */
+export const makeNativeTransactionHistoryQuery = (address: string): string => `
+query getNativeTransactionHistory {
+  getTransactions(
+    where: {
+      success: { eq: true }
+      messages: {
+        value: {
+          BankMsgSend: {
+            _or: [
+              { from_address: { eq: "${address}" } }
+              { to_address: { eq: "${address}" } }
+            ]
           }
         }
       }
     }
-  }
-`;
-
-export const makeGRC20TransferTransactionsQuery = (
-  address: string,
-  packagePath: string,
-  cursor: string | null,
-  size = 20,
-): string => `
-  {
-    transactions(
-      filter: {
-        message: [
-          {
-            type_url: exec
-            vm_param: {
-              exec: {
-                pkg_path: "${packagePath}"
-                func: "Transfer"
-                caller: "${address}"
-              }
-            }
-          }
-          {
-            type_url: exec
-            vm_param: {
-              exec: {
-                pkg_path: "${packagePath}"
-                func: "Transfer"
-                args: ["${address}"]
-              }
-            }
-          }
-        ]
-      }
-      size: ${size}
-      ascending: false
-      after: ${cursor ? `"${cursor}"` : 'null'}
-    ) {
-      pageInfo {
-        last
-        hasNext
-      }
-      edges {
-        cursor
-        transaction {
-          hash
-          index
-          success
-          block_height
-          gas_wanted
-          gas_used
-          gas_fee {
-            amount
-            denom
-          }
-          messages {
-            typeUrl
-            value {
-              ...on MsgCall {
-                caller
-                send
-                max_deposit
-                pkg_path
-                func
-                args
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`;
-
-/**
- * XXX: The fix is required after the indexer's pagination update.
- */
-export const makeGRC20ReceivedTransactionsByAddressQuery = (address: string): string => `
-{
-  transactions(filter: {
-    message: {
-      type_url: exec
-      vm_param: {
-        exec: {
-          func: "Transfer"
-          args: ["${address}"]
-        }
-      }
-    }
-  }) {
-    hash
-    index
-    success
-    block_height
-    gas_wanted
-    gas_used
-    gas_fee {
-      amount
-      denom
-    }
-    messages {
-      value {
-        ...on MsgCall {
-          caller
-          send
-          pkg_path
-          func
-          args
-        }
-      }
-    }
+    order: { heightAndIndex: DESC }
+  ) {
+    ${TRANSACTION_FIELDS}
   }
 }
 `;
 
 /**
- * XXX: The fix is required after the indexer's pagination update.
+ * GRC20 transfers (sent or received) for an address, scoped to a single
+ * token package. `caller eq address` catches sends; `args eq address`
+ * catches the recipient slot of `Transfer(to, amount)`.
  */
-export const makeVMTransactionsByAddressQuery = (address: string): string => `
-{
-  transactions(filter: {
-    message: {
-      route: vm
-      vm_param: {
-        exec: {
-          caller: "${address}"
-        }
-        add_package: {
-          creator: "${address}"
-        }
-        run: {
-          caller: "${address}"
-        }
-      }
-    }
-  }) {
-    hash
-    index
-    success
-    block_height
-    gas_wanted
-    gas_used
-    gas_fee {
-      amount
-      denom
-    }
-    messages {
-      value {
-        ... on BankMsgSend {
-          from_address
-          to_address
-          amount
-        }
-        ... on MsgCall {
-          caller
-          send
-          max_deposit
-          func
-          pkg_path
-          args
-        }
-        ... on MsgAddPackage {
-          creator
-          package {
-            path
-          }
-        }
-        ... on MsgRun {
-          caller
-          send
-          package {
-            path
-          }
-        }
-      }
-    }
-  }
-}
-`;
-
-export const makeNativeTokenSendTransactionsByAddressQuery = (address: string): string => `
-{
-  transactions(filter: {
-    message: {
-      type_url: send
-      bank_param: {
-        send: {
-          from_address: "${address}"
-        }
-      }
-    }
-  }) {
-    hash
-    index
-    success
-    block_height
-    gas_wanted
-    gas_used
-    gas_fee {
-      amount
-      denom
-    }
-    messages {
-      value {
-        ...on BankMsgSend{
-          from_address
-          to_address
-          amount
-        }
-      }
-    }
-  }
-}
-`;
-
-/**
- * XXX: The fix is required after the indexer's pagination update.
- */
-export const makeNativeTokenReceivedTransactionsByAddressQuery = (address: string): string => `
-{
-  transactions(filter: {
-    message: {
-      type_url: send
-      bank_param: {
-        send: {
-          to_address: "${address}"
-        }
-      }
-    }
-  }) {
-    hash
-    index
-    success
-    block_height
-    gas_wanted
-    gas_used
-    gas_fee {
-      amount
-      denom
-    }
-    messages {
-      value {
-        ...on BankMsgSend{
-          from_address
-          to_address
-          amount
-        }
-      }
-    }
-  }
-}
-`;
-
-/**
- * XXX: The fix is required after the indexer's pagination update.
- */
-export const makeGRC20ReceivedTransactionsByAddressQueryByPackagePath = (
+export const makeGRC20TransactionHistoryQuery = (
   address: string,
   packagePath: string,
 ): string => `
-{
-  transactions(filter: {
-    message: {
-      type_url: exec
-      vm_param: {
-        exec: {
-          func: "Transfer"
-          pkg_path: "${packagePath}"
-          args: ["${address}"]
+query getGRC20TransactionHistory {
+  getTransactions(
+    where: {
+      success: { eq: true }
+      messages: {
+        value: {
+          MsgCall: {
+            pkg_path: { eq: "${packagePath}" }
+            func: { eq: "Transfer" }
+            _or: [
+              { caller: { eq: "${address}" } }
+              { args: { eq: "${address}" } }
+            ]
+          }
         }
       }
     }
-  }) {
-    hash
-    index
-    success
-    block_height
-    gas_wanted
-    gas_used
-    gas_fee {
-      amount
-      denom
-    }
-    messages {
-      value {
-        ...on MsgCall {
-          caller
-          send
-          pkg_path
-          func
-          args
-        }
-      }
-    }
-  }
-}
-`;
-
-/**
- * XXX: The fix is required after the indexer's pagination update.
- */
-export const makeGRC20SendTransactionsByAddressQueryByPackagePath = (
-  address: string,
-  packagePath: string,
-): string => `
-{
-  transactions(filter: {
-    message: {
-      type_url: exec
-      vm_param: {
-        exec: {
-          pkg_path: "${packagePath}"
-          caller: "${address}"
-        }
-      }
-    }
-  }) {
-    hash
-    index
-    success
-    block_height
-    gas_wanted
-    gas_used
-    gas_fee {
-      amount
-      denom
-    }
-    messages {
-      value {
-        ... on MsgCall {
-          caller
-          send
-          max_deposit
-          func
-          pkg_path
-          args
-        }
-      }
-    }
+    order: { heightAndIndex: DESC }
+  ) {
+    ${TRANSACTION_FIELDS}
   }
 }
 `;

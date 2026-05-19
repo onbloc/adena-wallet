@@ -13,6 +13,7 @@ import {
 
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { decodeGnoString, gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
 import {
   parseGRC20ByABCIRender,
   parseGRC20ByFileContents,
@@ -30,13 +31,13 @@ import {
   TokenModel,
 } from '@types';
 import BigNumber from 'bignumber.js';
-import { mapGRC20TokenModel, mapGRC721CollectionModel } from './mapper/token-query.mapper';
+import { mapGRC20RegisterEvent, mapGRC721CollectionModel } from './mapper/token-query.mapper';
 import { AppInfoResponse } from './response';
 import {
-  makeAllRealmsQuery,
   makeAllTransferEventsQueryBy,
+  makeGetGRC20RegisterEventsQuery,
+  makeGetGRC721AddPackagePathsQuery,
   makeGRC721TransferEventsQuery,
-  makeGRC721TransferEventsQueryWithCursor,
 } from './token.queries';
 import { ITokenRepository } from './types';
 
@@ -48,6 +49,8 @@ enum LocalValueType {
 }
 
 const DEFAULT_TOKEN_NETWORK_ID = '';
+
+const GRC20_REGISTRY_PKG_PATH = 'gno.land/r/demo/defi/grc20reg';
 
 const DEFAULT_TOKEN_METAINFOS: NativeTokenModel[] = [
   {
@@ -136,9 +139,11 @@ export class TokenRepository implements ITokenRepository {
   };
 
   public getAccountTokenMetainfos = async (accountId: string): Promise<TokenModel[]> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<{
-      [key in string]: TokenModel[];
-    }>(LocalValueType.AccountTokenMetainfos);
+    const accountTokenMetainfos = await this.localStorage.getToObject<
+      {
+        [key in string]: TokenModel[];
+      }
+    >(LocalValueType.AccountTokenMetainfos);
 
     return (
       accountTokenMetainfos[accountId] ??
@@ -150,9 +155,11 @@ export class TokenRepository implements ITokenRepository {
     accountId: string,
     tokenMetainfos: TokenModel[],
   ): Promise<boolean> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<{
-      [key in string]: TokenModel[];
-    }>(LocalValueType.AccountTokenMetainfos);
+    const accountTokenMetainfos = await this.localStorage.getToObject<
+      {
+        [key in string]: TokenModel[];
+      }
+    >(LocalValueType.AccountTokenMetainfos);
 
     const isUnique = function (token0: TokenModel, token1: TokenModel): boolean {
       return token0.tokenId === token1.tokenId && token0.networkId === token1.networkId;
@@ -175,9 +182,11 @@ export class TokenRepository implements ITokenRepository {
   };
 
   public deleteTokenMetainfos = async (accountId: string): Promise<boolean> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<{
-      [key in string]: TokenModel[];
-    }>(LocalValueType.AccountTokenMetainfos);
+    const accountTokenMetainfos = await this.localStorage.getToObject<
+      {
+        [key in string]: TokenModel[];
+      }
+    >(LocalValueType.AccountTokenMetainfos);
 
     const changedAccountTokenMetainfos = {
       ...accountTokenMetainfos,
@@ -246,23 +255,89 @@ export class TokenRepository implements ITokenRepository {
       }));
     }
 
-    if (!this.queryUrl) {
+    if (!this.queryUrl || !this.gnoProvider) {
       return [];
     }
 
-    const allRealmsQuery = makeAllRealmsQuery();
-    return TokenRepository.postGraphQuery(this.networkInstance, this.queryUrl, allRealmsQuery).then(
-      (result) =>
-        result?.data?.transactions
-          ? result?.data?.transactions
-              .flatMap((tx: any) => tx.messages)
-              .map((message: any) =>
-                mapGRC20TokenModel(this.networkMetainfo?.networkId || '', message),
-              )
-              .filter((tokenInfo: GRC20TokenModel | null) => !!tokenInfo)
-          : [],
+    const getGRC20RegisterEventsQuery = makeGetGRC20RegisterEventsQuery();
+    const events = await TokenRepository.postGraphQuery(
+      this.networkInstance,
+      this.queryUrl,
+      getGRC20RegisterEventsQuery,
+    ).then(mapGRC20RegisterEvent);
+
+    const networkId = this.networkId;
+    const tokens = await Promise.all(
+      events.map((event) => this.fetchGRC20TokenInfoFromRegistry(event, networkId)),
     );
+
+    console.log(tokens);
+
+    return tokens.filter((token): token is GRC20TokenModel => token !== null);
   };
+
+  private async fetchGRC20TokenInfoFromRegistry(
+    event: { packagePath: string; slug: string },
+    networkId: string,
+  ): Promise<GRC20TokenModel | null> {
+    if (!this.gnoProvider) {
+      return null;
+    }
+
+    const registryKey = event.slug ? `${event.packagePath}.${event.slug}` : event.packagePath;
+
+    let response: string;
+    try {
+      response = await this.gnoProvider.evaluateIIFE(GRC20_REGISTRY_PKG_PATH, {
+        returnType: '(string, string, int)',
+        statements: [
+          `token := Get(${gnoLiteral(registryKey)})`,
+          'if token == nil { return "", "", 0 }',
+        ],
+        returnExpression: 'token.GetName(), token.GetSymbol(), token.GetDecimals()',
+      });
+    } catch (e) {
+      console.warn('fetchGRC20TokenInfoFromRegistry: evaluateIIFE failed', registryKey, e);
+      return null;
+    }
+
+    if (!response) {
+      console.warn('fetchGRC20TokenInfoFromRegistry: empty response', registryKey);
+      return null;
+    }
+
+    const tuples = parseQEvalResult(response);
+    if (tuples.length < 3) {
+      console.warn(
+        'fetchGRC20TokenInfoFromRegistry: unexpected tuple count',
+        registryKey,
+        response,
+      );
+      return null;
+    }
+
+    const name = decodeGnoString(tuples[0].value);
+    const symbol = decodeGnoString(tuples[1].value);
+    const decimals = Number(tuples[2].value);
+
+    if (!name || !symbol || !Number.isFinite(decimals)) {
+      // Nil token (Get returned nil) — sentinel "","" ,0
+      return null;
+    }
+
+    return {
+      main: false,
+      tokenId: event.packagePath,
+      pkgPath: event.packagePath,
+      networkId,
+      display: false,
+      type: 'grc20',
+      name,
+      symbol,
+      decimals,
+      image: '',
+    };
+  }
 
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
     if (this.apiUrl) {
@@ -290,7 +365,7 @@ export class TokenRepository implements ITokenRepository {
       return [];
     }
 
-    const allRealmsQuery = makeAllRealmsQuery();
+    const allRealmsQuery = makeGetGRC721AddPackagePathsQuery();
     return TokenRepository.postGraphQuery(this.networkInstance, this.queryUrl, allRealmsQuery).then(
       (result) =>
         result?.data?.transactions
@@ -443,10 +518,7 @@ export class TokenRepository implements ITokenRepository {
     }[] = [];
 
     if (this.apiUrl) {
-      const grc721TransferEventsQuery = makeGRC721TransferEventsQueryWithCursor(
-        packagePath,
-        address,
-      );
+      const grc721TransferEventsQuery = makeGRC721TransferEventsQuery(packagePath, address);
       const resultEvents: {
         type: string;
         pkg_path: string;
@@ -537,9 +609,11 @@ export class TokenRepository implements ITokenRepository {
     accountId: string,
     networkId: string,
   ): Promise<GRC721CollectionModel[]> {
-    const accountGRC721CollectionsMap = await this.localStorage.getToObject<{
-      [key in string]: { [key in string]: GRC721CollectionModel[] };
-    }>(LocalValueType.AccountGRC721Collections);
+    const accountGRC721CollectionsMap = await this.localStorage.getToObject<
+      {
+        [key in string]: { [key in string]: GRC721CollectionModel[] };
+      }
+    >(LocalValueType.AccountGRC721Collections);
 
     if (!accountGRC721CollectionsMap?.[accountId]?.[networkId]) {
       return [];
@@ -554,9 +628,11 @@ export class TokenRepository implements ITokenRepository {
     collections: GRC721CollectionModel[],
   ): Promise<boolean> {
     const accountGRC721CollectionsMap =
-      (await this.localStorage.getToObject<{
-        [key in string]: { [key in string]: GRC721CollectionModel[] };
-      }>(LocalValueType.AccountGRC721Collections)) || {};
+      (await this.localStorage.getToObject<
+        {
+          [key in string]: { [key in string]: GRC721CollectionModel[] };
+        }
+      >(LocalValueType.AccountGRC721Collections)) || {};
 
     const currentAccountCollections = accountGRC721CollectionsMap?.[accountId] || {};
 
@@ -575,9 +651,11 @@ export class TokenRepository implements ITokenRepository {
     accountId: string,
     networkId: string,
   ): Promise<string[]> {
-    const accountGRC721PinnedPackagesMap = await this.localStorage.getToObject<{
-      [key in string]: { [key in string]: string[] };
-    }>(LocalValueType.AccountGRC721PinnedPackages);
+    const accountGRC721PinnedPackagesMap = await this.localStorage.getToObject<
+      {
+        [key in string]: { [key in string]: string[] };
+      }
+    >(LocalValueType.AccountGRC721PinnedPackages);
 
     if (!accountGRC721PinnedPackagesMap?.[accountId]?.[networkId]) {
       return [];
@@ -592,9 +670,11 @@ export class TokenRepository implements ITokenRepository {
     packagePaths: string[],
   ): Promise<boolean> {
     const accountGRC721PinnedPackagesMap =
-      (await this.localStorage.getToObject<{
-        [key in string]: { [key in string]: string[] };
-      }>(LocalValueType.AccountGRC721PinnedPackages)) || {};
+      (await this.localStorage.getToObject<
+        {
+          [key in string]: { [key in string]: string[] };
+        }
+      >(LocalValueType.AccountGRC721PinnedPackages)) || {};
 
     const currentAccountPinnedPackages = accountGRC721PinnedPackagesMap?.[accountId] || {};
 
