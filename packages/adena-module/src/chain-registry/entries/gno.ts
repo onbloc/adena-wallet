@@ -45,16 +45,16 @@ export const GNO_STAGING: GnoNetworkProfile = {
   linkUrl: 'https://gnoscan.io',
 };
 
-export const GNO_TEST12: GnoNetworkProfile = {
+export const GNO_TEST13: GnoNetworkProfile = {
   ...GNO_PROFILE_BASE,
-  id: 'test12',
-  chainId: 'test12',
-  displayName: 'Gno.land Testnet 12',
+  id: 'test-13',
+  chainId: 'test-13',
+  displayName: 'Gno.land Testnet 13',
   isMainnet: false,
-  nativeTokenId: 'test12:ugnot',
-  rpcEndpoints: ['https://rpc.test12.testnets.gno.land:443'],
-  indexerUrl: 'https://test12.indexer.onbloc.xyz',
-  gnoUrl: 'https://test12.testnets.gno.land',
+  nativeTokenId: 'test-13:ugnot',
+  rpcEndpoints: ['https://rpc.test-13-aeddi-1.gnoland.network:443'],
+  indexerUrl: 'https://indexer.test-13.gnoland.network:443',
+  gnoUrl: 'https://gnoweb.test-13.gnoland.network',
   linkUrl: 'https://gnoscan.io',
 };
 
@@ -86,7 +86,7 @@ export const GNO_GNOSWAP: GnoNetworkProfile = {
 export const GNO_NETWORK_PROFILES: GnoNetworkProfile[] = [
   GNOLAND1,
   GNO_STAGING,
-  GNO_TEST12,
+  GNO_TEST13,
   GNO_DEV,
   GNO_GNOSWAP,
 ];
