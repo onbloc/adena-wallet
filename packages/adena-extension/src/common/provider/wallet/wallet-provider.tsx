@@ -8,9 +8,16 @@ import {
   atomoneNetworkToProfile,
   atomoneNetworkToTokenProfiles,
 } from '@hooks/helpers/atomone-to-profile';
+import {
+  normalizeStoredId,
+  pickDefaultByMode,
+  resolveNetworkMode,
+} from '@common/utils/network-default';
 import { NetworkState, TokenState, WalletState } from '@states';
 import { AtomoneNetworkMetainfo, NetworkMetainfo, StateType, TokenModel } from '@types';
 import { GnoProvider } from '../gno/gno-provider';
+
+type NetworkMode = NetworkState.NetworkMode;
 
 export interface WalletContextProps {
   wallet: Wallet | null;
@@ -54,18 +61,12 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
   useEffect(() => {
     initWallet();
     initNetworkMetainfos();
-    initAtomoneNetworkChain();
   }, []);
 
   // Pull every persisted AtomOne network (defaults + user-added customs) into
-  // the recoil atom plus chainRegistry/tokenRegistry, then restore the
-  // previously selected one. Without this, the atom keeps its hardcoded
-  // default and the registries never learn about custom profiles, so
-  // changeNetwork(custom) silently no-ops the cosmos balance fetch and
-  // useTokenMetainfo cannot seed cosmos rows. Selection lookup runs against
-  // the hydrated list (defaults + customs) — falling back to the static json
-  // would erase a user-selected custom on every reload.
-  async function initAtomoneNetworkChain(): Promise<void> {
+  // the recoil atom plus chainRegistry/tokenRegistry. Returns the hydrated
+  // list so the caller can pick the active one once the mode is resolved.
+  async function loadAtomoneNetworks(): Promise<AtomoneNetworkMetainfo[]> {
     let networks: AtomoneNetworkMetainfo[];
     try {
       networks = await chainService.getAtomoneNetworks();
@@ -85,11 +86,13 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
         tokenRegistry.register(token);
       }
     }
+    return networks;
+  }
 
-    const storedMode = await chainService.getNetworkMode().catch(() => null);
-    const mode = storedMode === 'testnet' ? 'testnet' : 'mainnet';
-    setNetworkMode(mode);
-
+  async function initCurrentAtomoneNetwork(
+    networks: AtomoneNetworkMetainfo[],
+    mode: NetworkMode,
+  ): Promise<void> {
     const storedId = await chainService.getCurrentAtomoneNetworkId().catch(() => null);
     const wantsMainnet = mode === 'mainnet';
     const candidates = networks.filter((network) => !network.deleted);
@@ -175,6 +178,11 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     return true;
   }
 
+  // Orchestrates the full network bootstrap. Loads gno + AtomOne networks,
+  // resolves the active mode using storage precedence (see resolveNetworkMode),
+  // then picks the matching current network on each chain group. The order
+  // matters: mode must be known before the current-network fallback can pick
+  // a sensible default for fresh installs.
   async function initNetworkMetainfos(): Promise<boolean> {
     const networkMetainfos = await chainService.getNetworks();
     if (networkMetainfos.length === 0) {
@@ -182,20 +190,33 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     }
 
     setNetworkMetainfos(networkMetainfos);
-
     chainService.updateNetworks(networkMetainfos);
-    await initCurrentNetworkMetainfos(networkMetainfos);
+
+    const atomoneNetworks = await loadAtomoneNetworks();
+
+    const storedMode = await chainService.getNetworkMode().catch(() => null);
+    const storedCurrentId = normalizeStoredId(
+      await chainService.getCurrentNetworkId().catch(() => ''),
+    );
+    const mode = resolveNetworkMode(storedMode, storedCurrentId, networkMetainfos);
+    setNetworkMode(mode);
+
+    await initCurrentNetworkMetainfos(networkMetainfos, storedCurrentId, mode);
+    await initCurrentAtomoneNetwork(atomoneNetworks, mode);
 
     return true;
   }
 
   async function initCurrentNetworkMetainfos(
     networkMetainfos: NetworkMetainfo[],
+    storedCurrentId: string | null,
+    mode: NetworkMode,
   ): Promise<boolean> {
-    const currentNetworkId = await chainService.getCurrentNetworkId();
+    const storedNetwork = storedCurrentId
+      ? networkMetainfos.find((network) => network.id === storedCurrentId)
+      : undefined;
     const currentNetwork =
-      networkMetainfos.find((networkMetainfo) => networkMetainfo.id === currentNetworkId) ??
-      networkMetainfos[0];
+      storedNetwork ?? pickDefaultByMode(networkMetainfos, mode) ?? networkMetainfos[0];
 
     await chainService.updateCurrentNetworkId(currentNetwork.id);
     await changeNetwork(currentNetwork);
