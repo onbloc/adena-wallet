@@ -15,21 +15,6 @@
     "linkUrl": "https://gnoscan.io"
   },
   {
-    "id": "staging",
-    "default": true,
-    "main": false,
-    "chainId": "staging",
-    "chainName": "Gno.land",
-    "networkId": "staging",
-    "networkName": "Staging",
-    "addressPrefix": "g",
-    "rpcUrl": "https://rpc.staging.gno.land:443",
-    "indexerUrl": "https://staging.indexer.onbloc.xyz",
-    "gnoUrl": "https://staging.gno.land",
-    "apiUrl": "https://staging.api.onbloc.xyz",
-    "linkUrl": "https://gnoscan.io"
-  },
-  {
     "id": "test-13",
     "default": true,
     "main": false,
@@ -42,6 +27,21 @@
     "indexerUrl": "https://indexer.test-13.gnoland.network:443",
     "gnoUrl": "https://gnoweb.test-13.gnoland.network",
     "apiUrl": "",
+    "linkUrl": "https://gnoscan.io"
+  },
+  {
+    "id": "staging",
+    "default": true,
+    "main": false,
+    "chainId": "staging",
+    "chainName": "Gno.land",
+    "networkId": "staging",
+    "networkName": "Staging",
+    "addressPrefix": "g",
+    "rpcUrl": "https://rpc.staging.gno.land:443",
+    "indexerUrl": "https://staging.indexer.onbloc.xyz",
+    "gnoUrl": "https://staging.gno.land",
+    "apiUrl": "https://staging.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {

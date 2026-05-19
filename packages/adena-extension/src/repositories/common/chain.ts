@@ -140,8 +140,14 @@ export class ChainRepository {
     return true;
   };
 
-  public getCurrentNetworkId = (): Promise<string> => {
-    return this.localStorage.get('CURRENT_NETWORK_ID');
+  public getCurrentNetworkId = async (): Promise<string> => {
+    // StorageManager.get stringifies undefined as the literal "undefined".
+    // Mirror getCurrentAtomoneNetworkId and treat those sentinels as missing.
+    const value = await this.localStorage.get('CURRENT_NETWORK_ID').catch(() => '');
+    if (!value || value === 'undefined' || value === 'null') {
+      return '';
+    }
+    return value;
   };
 
   public updateCurrentNetworkId = async (networkId: string): Promise<boolean> => {

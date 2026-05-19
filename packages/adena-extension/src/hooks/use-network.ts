@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
 import { fetchHealth } from '@common/utils/fetch-utils';
+import { pickDefaultByMode } from '@common/utils/network-default';
 import { EventMessage } from '@inject/message';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useEvent } from './use-event';
@@ -57,7 +58,10 @@ interface NetworkResponse {
   setModified: (modified: boolean) => void;
 }
 
-const DEFAULT_NETWORK: NetworkMetainfo = CHAIN_DATA[0];
+const DEFAULT_TESTNET_NETWORK: NetworkMetainfo =
+  CHAIN_DATA.find((network) => network.id === 'test-13') ?? CHAIN_DATA[0];
+const DEFAULT_MAINNET_NETWORK: NetworkMetainfo =
+  CHAIN_DATA.find((network) => network.id === 'gnoland1') ?? CHAIN_DATA[0];
 
 function isAtomoneNetwork(
   network: NetworkMetainfo | AtomoneNetworkMetainfo,
@@ -274,9 +278,7 @@ export const useNetwork = (): NetworkResponse => {
       await chainService.updateNetworkMode(nextMode).catch(() => null);
       const wantsMainnet = nextMode === 'mainnet';
 
-      const gnoTarget = networkMetainfos.find(
-        (network) => !network.deleted && (network.main === true) === wantsMainnet,
-      );
+      const gnoTarget = pickDefaultByMode(networkMetainfos, nextMode);
       if (gnoTarget && gnoTarget.id !== currentGnoNetwork?.id) {
         await chainService.updateCurrentNetworkId(gnoTarget.id);
         await changeNetworkOfProvider(gnoTarget);
@@ -467,8 +469,11 @@ export const useNetwork = (): NetworkResponse => {
     [currentGnoNetwork],
   );
 
+  const fallbackNetwork: NetworkMetainfo =
+    mode === 'testnet' ? DEFAULT_TESTNET_NETWORK : DEFAULT_MAINNET_NETWORK;
+
   return {
-    currentNetwork: currentGnoNetwork || DEFAULT_NETWORK,
+    currentNetwork: currentGnoNetwork || fallbackNetwork,
     currentAtomoneNetwork,
     networks: networkMetainfos,
     atomoneNetworks,

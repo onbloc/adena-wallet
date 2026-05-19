@@ -193,3 +193,28 @@ describe('ChainRepository — AtomOne methods', () => {
     });
   });
 });
+
+describe('ChainRepository — getCurrentNetworkId', () => {
+  function makeRepository(getValue: string): ChainRepository {
+    const localStorage = {
+      get: jest.fn().mockResolvedValue(getValue),
+    } as unknown as StorageManager;
+    const networkInstance = {} as AxiosInstance;
+    return new ChainRepository(localStorage, networkInstance);
+  }
+
+  it('returns an empty string when storage holds the literal "undefined"', async () => {
+    const repository = makeRepository('undefined');
+    expect(await repository.getCurrentNetworkId()).toBe('');
+  });
+
+  it('returns an empty string when storage holds "null"', async () => {
+    const repository = makeRepository('null');
+    expect(await repository.getCurrentNetworkId()).toBe('');
+  });
+
+  it('returns the stored id verbatim for legitimate values', async () => {
+    const repository = makeRepository('test-13');
+    expect(await repository.getCurrentNetworkId()).toBe('test-13');
+  });
+});

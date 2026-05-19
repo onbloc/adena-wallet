@@ -9,9 +9,6 @@ const ATOMONE_DEFAULT_NETWORKS: AtomoneNetworkMetainfo[] = (
   ATOMONE_CHAIN_DATA as unknown as AtomoneNetworkMetainfo[]
 ).map((network) => ({ ...network, deleted: false }));
 
-const DEFAULT_ATOMONE_MAINNET: AtomoneNetworkMetainfo | null =
-  ATOMONE_DEFAULT_NETWORKS.find((network) => network.default && network.isMainnet) ?? null;
-
 export const networkMetainfos = atom<NetworkMetainfo[]>({
   key: 'network/networkMetainfos',
   default: [],
@@ -32,9 +29,12 @@ export const atomoneNetworkMetainfos = atom<AtomoneNetworkMetainfo[]>({
   default: ATOMONE_DEFAULT_NETWORKS,
 });
 
+// Stay null until WalletProvider hydrates this from storage; the provider
+// resolves the mode and picks the matching AtomOne network. Defaulting to a
+// mainnet entry caused a first-render flash for users who land on testnet.
 export const currentAtomoneNetwork = atom<AtomoneNetworkMetainfo | null>({
   key: 'network/current-atomone-network',
-  default: DEFAULT_ATOMONE_MAINNET,
+  default: null,
 });
 
 export const networkMode = atom<NetworkMode>({
