@@ -96,8 +96,8 @@ describe('ChainRegistry', () => {
     expect(profile?.isMainnet).toBe(true);
   });
 
-  it('test12 has isMainnet false', () => {
-    const profile = registry.get('test12');
+  it('test-13 has isMainnet false', () => {
+    const profile = registry.get('test-13');
     expect(profile?.isMainnet).toBe(false);
   });
 

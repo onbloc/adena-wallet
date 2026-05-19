@@ -8,7 +8,7 @@ const HOSTNAME = 'dapp.example';
 const GNO_PROFILES = [
   { chainGroup: 'gno', chainId: 'gnoland1' },
   { chainGroup: 'gno', chainId: 'staging' },
-  { chainGroup: 'gno', chainId: 'test12' },
+  { chainGroup: 'gno', chainId: 'test-13' },
 ];
 
 function makeChainRegistry(): ChainRegistry {
