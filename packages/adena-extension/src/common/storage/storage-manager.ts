@@ -12,6 +12,9 @@ export class StorageManager<T extends string = string> {
 
   get = async (valueType: T): Promise<string> => {
     const value = await this.storage.get(valueType);
+    if (value === undefined || value === null) {
+      return '';
+    }
     return `${value}`;
   };
 

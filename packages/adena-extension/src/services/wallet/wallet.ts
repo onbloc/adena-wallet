@@ -336,6 +336,7 @@ export class WalletService {
   public clear = async (): Promise<boolean> => {
     await this.walletRepository.deleteSerializedWallet();
     await this.walletRepository.deleteWalletPassword();
+    await this.walletRepository.deleteKdfSalt();
     try {
       chrome?.action?.setPopup({ popup: '' });
     } catch (e) {
