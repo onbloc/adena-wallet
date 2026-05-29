@@ -17,6 +17,10 @@ export interface SessionFilteredTransactionsResult {
   isFetching: boolean;
 }
 
+interface UseSessionFilteredTransactionsOptions {
+  fallbackSessionHashes?: ReadonlySet<string>;
+}
+
 function getSessionMasterAddress(account: Account | null): string | null {
   if (!account || !isSessionAccount(account)) {
     return null;
@@ -26,6 +30,7 @@ function getSessionMasterAddress(account: Account | null): string | null {
 
 export const useSessionFilteredTransactions = (
   transactions: TransactionInfo[] | null,
+  options: UseSessionFilteredTransactionsOptions = {},
 ): SessionFilteredTransactionsResult => {
   const { currentNetwork } = useNetwork();
   const { currentAccount, currentAddress } = useCurrentAccount();
@@ -42,6 +47,10 @@ export const useSessionFilteredTransactions = (
     () => transactions?.map((transaction) => transaction.hash).join('|') ?? '',
     [transactions],
   );
+  const fallbackHashKey = useMemo(
+    () => Array.from(options.fallbackSessionHashes ?? []).sort().join('|'),
+    [options.fallbackSessionHashes],
+  );
 
   const { data, isLoading, isFetching } = useQuery(
     [
@@ -50,6 +59,7 @@ export const useSessionFilteredTransactions = (
       currentAccount?.id || '',
       currentAddress || '',
       hashKey,
+      fallbackHashKey,
     ],
     () => {
       if (!transactions || !masterAddress) {
@@ -73,6 +83,7 @@ export const useSessionFilteredTransactions = (
         transactions,
         masterAddress,
         sessionAddress: currentAddress,
+        fallbackSessionHashes: options.fallbackSessionHashes,
         fetchSessionAddressByHash: (hash) =>
           transactionHistoryService.fetchTransactionSessionAddress(hash),
       });

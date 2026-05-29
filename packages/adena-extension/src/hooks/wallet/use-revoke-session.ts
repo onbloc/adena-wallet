@@ -9,6 +9,7 @@ import {
 } from 'adena-module';
 
 import { isSessionMasterAccount } from '@common/utils/account-session';
+import { SESSION_ADMIN_GAS_WANTED_FALLBACK } from '@common/utils/session-admin-gas';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
 import { useSessions } from '@hooks/use-sessions';
@@ -18,8 +19,8 @@ import {
   createMessageOfRevokeSession,
 } from '@services/transaction/message/auth/auth';
 
-export const REVOKE_GAS_WANTED_DEFAULT = 200_000;
-export const REVOKE_GAS_FEE_UGNOT_DEFAULT = 1_000_000;
+export const REVOKE_GAS_WANTED_DEFAULT = SESSION_ADMIN_GAS_WANTED_FALLBACK;
+export const REVOKE_GAS_FEE_UGNOT_DEFAULT = 2_000;
 const GNO_PREFIX = 'g';
 
 interface RevokeOptions {
