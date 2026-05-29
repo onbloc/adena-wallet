@@ -1,0 +1,278 @@
+import { useCallback, useState } from 'react';
+import {
+  Account,
+  AdenaLedgerConnector,
+  Document,
+  isLedgerAccount,
+  isSessionAccount,
+  LedgerAccount,
+} from 'adena-module';
+
+import { isSessionMasterAccount } from '@common/utils/account-session';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useNetwork } from '@hooks/use-network';
+import { useSessions } from '@hooks/use-sessions';
+import { useConvertSessionAccounts } from '@hooks/wallet/use-convert-session-accounts';
+import {
+  createMessageOfRevokeAllSessions,
+  createMessageOfRevokeSession,
+} from '@services/transaction/message/auth/auth';
+
+export const REVOKE_GAS_WANTED_DEFAULT = 200_000;
+export const REVOKE_GAS_FEE_UGNOT_DEFAULT = 1_000_000;
+const GNO_PREFIX = 'g';
+
+interface RevokeOptions {
+  gasWanted?: number;
+  gasFeeUgnot?: number;
+  memo?: string;
+  document?: Document;
+}
+
+interface RevokeOneArgs {
+  masterAddress: string;
+  sessionAddr: string;
+  sessionPublicKey: Uint8Array;
+  opts?: RevokeOptions;
+}
+
+type RevokeResult =
+  | { ok: true; hash: string | null }
+  | { ok: false; error: string };
+
+interface UseRevokeSessionReturn {
+  isPending: boolean;
+  errorMessage: string | null;
+  revokeOne: (args: RevokeOneArgs) => Promise<RevokeResult>;
+  revokeAll: (masterAddress: string, opts?: RevokeOptions) => Promise<RevokeResult>;
+  resetError: () => void;
+}
+
+// Revokes one or all sessions belonging to a master account. The session's
+// publicKey is passed in by the caller (sourced from the chain via
+// useMasterSessions) so that revoke works even for sessions that have not
+// been imported into this wallet. The master account must be present in the
+// wallet because it is the signer.
+export const useRevokeSession = (): UseRevokeSessionReturn => {
+  const { wallet } = useWalletContext();
+  const { sessionRepository, transactionService } = useAdenaContext();
+  const { currentNetwork } = useNetwork();
+  const { refetch } = useSessions();
+  const { convertBySessionAddresses } = useConvertSessionAccounts();
+  const [isPending, setIsPending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const resetError = useCallback(() => setErrorMessage(null), []);
+
+  const resolveMaster = useCallback(
+    async (masterAddress: string): Promise<Account | null> => {
+      if (!wallet) return null;
+      for (const account of wallet.accounts) {
+        if (isSessionAccount(account)) continue;
+        const addr = await account.getAddress(GNO_PREFIX);
+        if (addr === masterAddress) return account;
+      }
+      return null;
+    },
+    [wallet],
+  );
+
+  const runLedgerRevoke = useCallback(
+    async (masterAccount: LedgerAccount, document: Document): Promise<string | null> => {
+      const connected = await AdenaLedgerConnector.openConnected();
+      if (!connected) {
+        throw new Error('Ledger not connected');
+      }
+      try {
+        const ledgerConnector = AdenaLedgerConnector.fromTransport(connected);
+        const { signed } = await transactionService.createTransactionWithLedger(
+          ledgerConnector,
+          masterAccount,
+          document,
+        );
+        const result = await transactionService.sendTransactionByLedger(
+          ledgerConnector,
+          masterAccount,
+          signed,
+          true,
+        );
+        return (result as { hash?: string | null })?.hash ?? null;
+      } finally {
+        await connected.close().catch(() => undefined);
+      }
+    },
+    [transactionService],
+  );
+
+  const runRevoke = useCallback(
+    async (
+      masterAccount: Account,
+      message: { type: string; value: object },
+      opts: RevokeOptions,
+    ): Promise<string | null> => {
+      const gasWanted = opts.gasWanted ?? REVOKE_GAS_WANTED_DEFAULT;
+      const gasFeeUgnot = opts.gasFeeUgnot ?? REVOKE_GAS_FEE_UGNOT_DEFAULT;
+      const memo = opts.memo ?? '';
+
+      const document =
+        opts.document ??
+        (await transactionService.createDocument(
+          masterAccount,
+          currentNetwork.chainId,
+          [message],
+          GNO_PREFIX,
+          gasWanted,
+          gasFeeUgnot,
+          memo,
+        ));
+
+      if (isLedgerAccount(masterAccount)) {
+        return runLedgerRevoke(masterAccount, document);
+      }
+
+      if (!wallet) {
+        throw new Error('Wallet not available');
+      }
+      const { signed } = await transactionService.createTransaction(
+        wallet,
+        masterAccount,
+        document,
+      );
+      const result = await transactionService.sendTransaction(
+        wallet,
+        masterAccount,
+        signed,
+        true,
+      );
+      return (result as { hash?: string | null })?.hash ?? null;
+    },
+    [transactionService, currentNetwork.chainId, wallet, runLedgerRevoke],
+  );
+
+  const cleanupSessionLocally = useCallback(
+    async (sessionAddr: string): Promise<void> => {
+      // Mark non-imported cached rows as REVOKED, then convert an imported
+      // SessionAccount into a normal PRIVATE_KEY account. The session private
+      // key is still a valid standalone account key after revoke.
+      const existing = await sessionRepository.get(sessionAddr);
+      if (existing) {
+        await sessionRepository.setStatus(sessionAddr, 'REVOKED');
+      }
+      await convertBySessionAddresses([sessionAddr]);
+    },
+    [sessionRepository, convertBySessionAddresses],
+  );
+
+  const cleanupMasterSessionsLocally = useCallback(
+    async (masterAddress: string, sessionAddrs: string[]): Promise<void> => {
+      const targetSessionAddrs = new Set(sessionAddrs);
+      const storedSessions = await sessionRepository.getAll();
+      for (const [sessionAddr, metadata] of Object.entries(storedSessions)) {
+        if (metadata.masterAddress !== masterAddress) continue;
+        if (metadata.chainId !== currentNetwork.chainId) continue;
+        targetSessionAddrs.add(sessionAddr);
+      }
+
+      const targets = Array.from(targetSessionAddrs);
+      for (const sessionAddr of targets) {
+        const existing = await sessionRepository.get(sessionAddr);
+        if (existing) {
+          await sessionRepository.setStatus(sessionAddr, 'REVOKED');
+        }
+      }
+      await convertBySessionAddresses(targets);
+    },
+    [sessionRepository, currentNetwork.chainId, convertBySessionAddresses],
+  );
+
+  const revokeOne = useCallback(
+    async ({
+      masterAddress,
+      sessionAddr,
+      sessionPublicKey,
+      opts = {},
+    }: RevokeOneArgs): Promise<RevokeResult> => {
+      setErrorMessage(null);
+      if (!wallet) return { ok: false, error: 'Wallet not available' };
+
+      const masterAccount = await resolveMaster(masterAddress);
+      if (!masterAccount) {
+        const error = 'Master account not found in this wallet';
+        setErrorMessage(error);
+        return { ok: false, error };
+      }
+      if (!isSessionMasterAccount(masterAccount)) {
+        const error = `${masterAccount.type} master is not supported for revoke yet`;
+        setErrorMessage(error);
+        return { ok: false, error };
+      }
+
+      setIsPending(true);
+      try {
+        const message = createMessageOfRevokeSession({
+          creator: masterAddress,
+          sessionPublicKey,
+        });
+        const hash = await runRevoke(masterAccount, message, opts);
+        await cleanupSessionLocally(sessionAddr);
+        await refetch();
+        return { ok: true, hash };
+      } catch (e) {
+        const error = (e as Error)?.message ?? 'Revoke failed';
+        setErrorMessage(error);
+        return { ok: false, error };
+      } finally {
+        setIsPending(false);
+      }
+    },
+    [wallet, resolveMaster, runRevoke, cleanupSessionLocally, refetch],
+  );
+
+  const revokeAll = useCallback(
+    async (masterAddress: string, opts: RevokeOptions = {}): Promise<RevokeResult> => {
+      setErrorMessage(null);
+      if (!wallet) return { ok: false, error: 'Wallet not available' };
+
+      const masterAccount = await resolveMaster(masterAddress);
+      if (!masterAccount) {
+        const error = 'Master account not found in this wallet';
+        setErrorMessage(error);
+        return { ok: false, error };
+      }
+      if (!isSessionMasterAccount(masterAccount)) {
+        const error = `${masterAccount.type} master is not supported for revoke yet`;
+        setErrorMessage(error);
+        return { ok: false, error };
+      }
+
+      // Snapshot the session addresses (in this wallet) belonging to the
+      // master BEFORE broadcasting so the local cleanup loop is deterministic
+      // even if the sessionRepository is mutated concurrently elsewhere.
+      const localSessionAddrs: string[] = [];
+      for (const account of wallet.accounts) {
+        if (!isSessionAccount(account)) continue;
+        if (account.sessionConfig.masterAddress !== masterAddress) continue;
+        const addr = await account.getAddress(GNO_PREFIX);
+        localSessionAddrs.push(addr);
+      }
+
+      setIsPending(true);
+      try {
+        const message = createMessageOfRevokeAllSessions({ creator: masterAddress });
+        const hash = await runRevoke(masterAccount, message, opts);
+        await cleanupMasterSessionsLocally(masterAddress, localSessionAddrs);
+        await refetch();
+        return { ok: true, hash };
+      } catch (e) {
+        const error = (e as Error)?.message ?? 'Revoke failed';
+        setErrorMessage(error);
+        return { ok: false, error };
+      } finally {
+        setIsPending(false);
+      }
+    },
+    [wallet, resolveMaster, runRevoke, cleanupMasterSessionsLocally, refetch],
+  );
+
+  return { isPending, errorMessage, revokeOne, revokeAll, resetError };
+};

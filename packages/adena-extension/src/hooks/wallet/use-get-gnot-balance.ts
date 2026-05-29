@@ -10,17 +10,19 @@ export const useGetGnotBalance = (
   options?: UseQueryOptions<number | null, Error>,
 ): UseQueryResult<number | null> => {
   const { gnoProvider } = useWalletContext();
-  const { currentAddress } = useCurrentAccount();
+  const { currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
 
   return useQuery<number | null, Error>({
-    queryKey: [GET_GNOT_BALANCE_QUERY_KEY, currentAddress || '', currentNetwork.chainId],
+    // SessionAccount uses the master address for funding flows: the session
+    // address never holds GNOT, every session-signed tx spends master funds.
+    queryKey: [GET_GNOT_BALANCE_QUERY_KEY, currentFundingAddress || '', currentNetwork.chainId],
     queryFn: async () => {
-      if (!gnoProvider || !currentAddress) {
+      if (!gnoProvider || !currentFundingAddress) {
         return null;
       }
 
-      return gnoProvider.getBalance(currentAddress, GNOT_TOKEN.denom).catch(() => 0);
+      return gnoProvider.getBalance(currentFundingAddress, GNOT_TOKEN.denom).catch(() => 0);
     },
     keepPreviousData: true,
     ...options,

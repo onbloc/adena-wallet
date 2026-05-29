@@ -4,13 +4,14 @@ import { useAdenaContext } from '@hooks/use-context';
 
 export type UseQuestionnaireReturn = {
   ableToSkipQuestionnaire: boolean;
+  isQuestionnaireLoading: boolean;
   doneQuestionnaire: () => Promise<void>;
 };
 
 const useQuestionnaire = (): UseQuestionnaireReturn => {
   const { walletService } = useAdenaContext();
 
-  const { data: ableToSkipQuestionnaire = false } = useQuery(
+  const { data: ableToSkipQuestionnaire = false, isLoading: isQuestionnaireLoading } = useQuery(
     ['questionnaire', walletService],
     async () => {
       const existWallet = await walletService.existsWallet();
@@ -29,6 +30,7 @@ const useQuestionnaire = (): UseQuestionnaireReturn => {
 
   return {
     ableToSkipQuestionnaire,
+    isQuestionnaireLoading,
     doneQuestionnaire,
   };
 };
