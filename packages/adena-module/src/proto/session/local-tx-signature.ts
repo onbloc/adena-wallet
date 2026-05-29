@@ -1,6 +1,6 @@
 import { TxSignature } from '@gnolang/tm2-js-client';
 import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
-import type { Any } from '@gnolang/tm2-js-client/bin/proto/google/protobuf/any';
+import type { Any } from '@gnolang/tm2-js-client';
 
 // Extends TxSignature with session_addr (field 3 from gno PR #5307 std.proto).
 // Structurally compatible with TxSignature so it can be stored in TxSignature[].

@@ -2,15 +2,11 @@ import {
   BroadcastTransactionMap,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
+  CompactBitArray,
+  Multisignature,
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
-import {
-  CompactBitArray,
-  compactBitArraySetIndex,
-  createCompactBitArray,
-  Multisignature,
-} from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
 
 import { GnoProvider } from '@common/provider/gno';
 import { EncodeTxSignature, WalletService } from '..';
@@ -21,7 +17,9 @@ import { MemPackage, MsgAddPackage, MsgCall, MsgRun, MsgSend } from '@gnolang/gn
 import {
   Account,
   combineMultisigPublicKey,
+  compactBitArraySetIndex,
   createMultisigPublicKey,
+  createCompactBitArray,
   Document,
   fromBase64,
   fromBech32,

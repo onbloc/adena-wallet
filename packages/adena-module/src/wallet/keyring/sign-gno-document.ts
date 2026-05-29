@@ -1,8 +1,3 @@
-// sortedJsonStringify is not a public export of @cosmjs/amino but both
-// @cosmjs/amino's serializeSignDoc and tm2 wallet.signTransaction use it via
-// the same deep-import path. Keeping the single source ensures byte-level
-// equivalence with the legacy tm2 signing pipeline.
-import { sortedJsonStringify } from '@cosmjs/amino/build/signdoc';
 import {
   encodeCharacterSet,
   Provider,
@@ -28,6 +23,28 @@ import { SignGnoOptions } from './sign-gno-options';
 export type { SignGnoOptions } from './sign-gno-options';
 
 const GNO_ADDRESS_PREFIX = 'g';
+
+function sortJsonValue(value: unknown): unknown {
+  if (typeof value !== 'object' || value === null) {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map(sortJsonValue);
+  }
+
+  const record = value as Record<string, unknown>;
+  const sorted: Record<string, unknown> = {};
+  Object.keys(record)
+    .sort()
+    .forEach((key) => {
+      sorted[key] = sortJsonValue(record[key]);
+    });
+  return sorted;
+}
+
+function sortedJsonStringify(value: unknown): string {
+  return JSON.stringify(sortJsonValue(value));
+}
 
 // Gno transaction signing on top of Keyring.signRaw.
 // Byte pipeline mirrors tm2 wallet.signTransaction (wallet.js L185-250) exactly
@@ -76,17 +93,15 @@ export async function signGnoDocument(
 
   const signJsonString = sortedJsonStringify(signPayload);
   // eslint-disable-next-line no-console
-  console.log('[sign-gno] signPayload JSON (this is what gets hashed):');
-  // eslint-disable-next-line no-console
-  console.log(signJsonString);
+  console.info('[approve-tx] G-sign-json ' + signJsonString);
   const signBytes = stringToUTF8(encodeCharacterSet(signJsonString));
 
   const signature = await keyring.signRaw(signBytes, { hdPath: opts?.hdPath });
 
   const publicKey = await getKeyringPublicKey(keyring, opts?.hdPath);
   // PubKeySecp256k1 proto carries the compressed (33-byte) form. keyring.publicKey
-  // may be compressed (PrivateKey/Web3Auth — tm2 Wallet.fromPrivateKey compresses
-  // before storing) or uncompressed (HDWallet — generateKeyPair returns 65 bytes).
+  // may be compressed (PrivateKey/Web3Auth, tm2 Wallet.fromPrivateKey compresses
+  // before storing) or uncompressed (HDWallet, generateKeyPair returns 65 bytes).
   const compressedPubKey = compressPubkeyIfNeeded(publicKey);
   const pubKeyAny = {
     type_url: Secp256k1PubKeyType,

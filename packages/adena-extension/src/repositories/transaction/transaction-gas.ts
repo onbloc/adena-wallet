@@ -1,6 +1,5 @@
 import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { Tx } from '@gnolang/tm2-js-client';
-import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
+import { ResponseDeliverTx, Tx } from '@gnolang/tm2-js-client';
 import { NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
 import { ITransactionGasRepository } from './types';
@@ -55,7 +54,7 @@ export class TransactionGasRepository implements ITransactionGasRepository {
     }
 
     const simulateResult = await this.gnoProvider.simulateTx(tx);
-    return simulateResult.gas_used.toNumber();
+    return Number(simulateResult.gas_used);
   }
 
   private static postRPCRequest = <T = any>(

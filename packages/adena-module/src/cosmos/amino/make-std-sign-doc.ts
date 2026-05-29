@@ -10,10 +10,10 @@ export interface MakeStdSignDocParams {
 }
 
 /**
- * Thin wrapper over @cosmjs/amino's `makeSignDoc` — normalizes defaults
+ * Thin wrapper over @cosmjs/amino's `makeSignDoc`: normalizes defaults
  * (empty memo) and keeps the shape of optional callers consistent.
  *
- * @cosmjs/amino reference: node_modules/@cosmjs/amino/build/signdoc.js:30-39
+ * @cosmjs/amino reference: makeSignDoc in the package signdoc implementation.
  */
 export function makeStdSignDoc(params: MakeStdSignDocParams): StdSignDoc {
   return makeSignDoc(
