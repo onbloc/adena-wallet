@@ -63,7 +63,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
 
   return (
     <StorageDepositContainer>
-      <StorageDepositWrapper error={hasError ? 1 : 0}>
+      <StorageDepositWrapper $error={hasError ? 1 : 0}>
         <span className='key'>
           {'Storage Deposit'}
 

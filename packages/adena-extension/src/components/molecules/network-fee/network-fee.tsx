@@ -47,7 +47,7 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
 
   return (
     <NetworkFeeContainer>
-      <NetworkFeeWrapper error={hasError && !isEmptyValue ? 1 : 0}>
+      <NetworkFeeWrapper $error={hasError && !isEmptyValue ? 1 : 0}>
         <span className='key'>{'Network Fee'}</span>
 
         <div className='network-fee-amount-wrapper'>

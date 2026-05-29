@@ -9,6 +9,10 @@ import { Document } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useIsInitializedAccount } from '../use-get-account-info';
 import { makeEstimateGasTransaction } from './use-get-estimate-gas-info';
+import {
+  isStaticSessionAdminFeeDocument,
+  makeStaticSessionAdminFeeSettings,
+} from './session-admin-static-fee';
 import { useGetGasPrice } from './use-get-gas-price';
 
 const REFETCH_INTERVAL = 5_000;
@@ -50,6 +54,11 @@ export const useGetEstimateGasPriceTiers = (
       isInitializedAccount,
     ],
     queryFn: async (): Promise<NetworkFeeSettingInfo[] | null> => {
+      const staticFeeSettings = makeStaticSessionAdminFeeSettings(document);
+      if (staticFeeSettings) {
+        return staticFeeSettings;
+      }
+
       if (
         !transactionService ||
         !transactionGasService ||
@@ -101,7 +110,7 @@ export const useGetEstimateGasPriceTiers = (
           const result = await transactionGasService
             .simulateTx(tx)
             .then((simulateResult) => {
-              if (simulateResult.gas_used.toNumber() > Number(adjustGasUsed)) {
+              if (Number(simulateResult.gas_used) > Number(adjustGasUsed)) {
                 return {
                   gasUsed: 0,
                   errorMessage: 'Network fee too low',
@@ -159,7 +168,9 @@ export const useGetEstimateGasPriceTiers = (
     },
     refetchInterval: REFETCH_INTERVAL,
     keepPreviousData: true,
-    enabled: !!transactionGasService && !!document && !!gasPrice,
+    enabled:
+      isStaticSessionAdminFeeDocument(document) ||
+      (!!transactionGasService && !!document && !!gasPrice),
     ...options,
   });
 };
