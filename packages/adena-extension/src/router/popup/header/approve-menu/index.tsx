@@ -1,14 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useRecoilValue } from 'recoil';
 import styled from 'styled-components';
 
 import { RoutePath } from '@types';
 import { getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
-import {
-  AccountSelectorButton,
-  NetworkIconButton,
-} from '@components/atoms';
+import { AccountSelectorButton, NetworkIconButton } from '@components/atoms';
 import IconCopy from '@assets/icon-copy';
 import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import {
@@ -22,6 +20,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
 import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
 import { useNetwork } from '@hooks/use-network';
+import { EstablishState } from '@states';
 
 const COSMOS_APPROVE_PATHS: string[] = [
   RoutePath.ApproveEstablishCosmos,
@@ -108,6 +107,7 @@ const ApproveMenu = (): JSX.Element => {
   const [popoverY, setPopoverY] = useState(0);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chainAddressEntries = useAccountChainAddresses();
+  const establishRevision = useRecoilValue(EstablishState.establishRevisionState);
 
   useEffect(() => {
     if (location.search) {
@@ -120,7 +120,7 @@ const ApproveMenu = (): JSX.Element => {
     if (requestData) {
       updateEstablishState();
     }
-  }, [requestData, currentAccount, currentNetwork]);
+  }, [requestData, currentAccount, currentNetwork, establishRevision]);
 
   useEffect(() => {
     if (!currentAccount) return;

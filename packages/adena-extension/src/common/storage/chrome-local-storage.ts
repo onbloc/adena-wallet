@@ -71,6 +71,14 @@ export class ChromeLocalStorage implements Storage {
     }
     this.storage = chrome.storage.local;
     this.migrator = new StorageMigrator(StorageMigrator.migrations(), this.storage);
+
+    if (chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'local' && changes[ChromeLocalStorage.StorageKey]) {
+          this.current = null;
+        }
+      });
+    }
   }
 
   public get = async (key: string): Promise<any> => {
