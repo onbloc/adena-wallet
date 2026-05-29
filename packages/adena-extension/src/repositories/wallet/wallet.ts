@@ -183,11 +183,23 @@ export class WalletRepository {
     if (!saltB64) {
       return null;
     }
-    return Uint8Array.from(Buffer.from(saltB64, 'base64'));
+    const salt = Uint8Array.from(Buffer.from(saltB64, 'base64'));
+    // Argon2id requires exactly 16-byte salts. Treat any other length
+    // (including corrupted base64 like the literal "undefined" string)
+    // as missing so saveWallet generates a fresh salt.
+    if (salt.length !== 16) {
+      return null;
+    }
+    return salt;
   };
 
   public updateKdfSalt = async (salt: Uint8Array): Promise<void> => {
     await this.localStorage.set('KDF_SALT', Buffer.from(salt).toString('base64'));
+  };
+
+  public deleteKdfSalt = async (): Promise<boolean> => {
+    await this.localStorage.remove('KDF_SALT');
+    return true;
   };
 
   public migrate = async (password: string): Promise<void> => {
