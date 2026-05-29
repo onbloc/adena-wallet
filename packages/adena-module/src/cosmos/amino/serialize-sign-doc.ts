@@ -3,5 +3,5 @@
 // the escape / sortedJsonStringify contract.
 //
 // serializeSignDoc = sortedJsonStringify + escapeCharacters(<,>,&) + UTF-8.
-// Reference: node_modules/@cosmjs/amino/build/signdoc.js:61-64
+// Reference: serializeSignDoc in the package signdoc implementation.
 export { serializeSignDoc } from '@cosmjs/amino';

@@ -27,9 +27,11 @@ import { WebPrivateKeyBox } from '@components/molecules/web-private-key-box';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { useSessionImportScreen } from '@hooks/web/use-session-import-screen';
 import useQuestionnaire from '@hooks/web/use-questionnaire';
+import { resolveSessionAdminGasInfo } from '@common/utils/session-admin-gas';
 import { RoutePath } from '@types';
 import {
   Account,
@@ -943,15 +945,48 @@ interface CreateTabProps {
   onComplete: () => void;
 }
 
-// MsgCreateSession consumed ~408k gas in test-13 (chain log "gasUsed:
-// 408380"). 1M leaves a comfortable headroom for store-write variance and
-// any future field additions.
-const CREATE_GAS_WANTED = 1_000_000;
-const CREATE_GAS_FEE_UGNOT = 5_000_000;
+const SESSION_CREATE_CONFIRMATION_DELAYS_MS = [0, 1_500, 3_000, 5_000] as const;
 const GNO_PREFIX = 'g';
 const SESSION_ADD_TOP_SPACING = 220;
 const SESSION_ADD_TOP_SPACING_RESPONSIVE = 120;
 const SESSION_ADD_FORM_MIN_TOP_PADDING = 80;
+
+const wait = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+const waitForCreatedSessionOnChain = async (
+  gnoProvider:
+    | {
+        getSession?: (masterAddr: string, sessionAddr: string) => Promise<unknown>;
+      }
+    | null
+    | undefined,
+  masterAddr: string,
+  sessionAddr: string,
+): Promise<boolean> => {
+  if (!gnoProvider?.getSession) {
+    return false;
+  }
+
+  for (const delayMs of SESSION_CREATE_CONFIRMATION_DELAYS_MS) {
+    if (delayMs > 0) {
+      await wait(delayMs);
+    }
+
+    const session = await gnoProvider.getSession(masterAddr, sessionAddr).catch((error) => {
+      // eslint-disable-next-line no-console
+      console.warn('[create-session] chain confirmation query failed:', error);
+      return null;
+    });
+    if (session) {
+      return true;
+    }
+  }
+
+  return false;
+};
 
 const hexToBytes = (hex: string): Uint8Array => {
   const clean = hex.trim().toLowerCase().replace(/^0x/, '');
@@ -978,6 +1013,7 @@ const approveSessionViaPopup = (
   gasFeeUgnot: number,
   chainId: string,
   rpcUrl: string,
+  signerAccountId: string,
 ): Promise<{ ok: true; hash?: string } | { ok: false; reason: string }> => {
   const requestKey =
     typeof crypto.randomUUID === 'function'
@@ -990,6 +1026,7 @@ const approveSessionViaPopup = (
     type: 'DO_CONTRACT',
     status: 'request',
     message: '',
+    withNotification: false,
     hostname: 'adena-wallet',
     protocol: 'extension',
     data: {
@@ -998,10 +1035,19 @@ const approveSessionViaPopup = (
       gasWanted,
       gasFee: gasFeeUgnot,
       networkInfo: { chainId, rpcUrl },
+      signerAccountId,
+      commit: true,
     },
   };
 
   const encoded = encodeParameter(injectionMessage);
+  if (!encoded) {
+    return Promise.resolve({
+      ok: false,
+      reason: 'Failed to encode session approval request.',
+    });
+  }
+
   const popupPath = '/approve/wallet/transaction';
   const url = chrome.runtime.getURL(
     `popup.html#${popupPath}?key=${requestKey}` +
@@ -1029,13 +1075,18 @@ const approveSessionViaPopup = (
       key?: string;
       status?: string;
       message?: string;
-      data?: { hash?: string };
+      data?: { hash?: string; error?: string; log?: string };
     }): void => {
       if (!msg || msg.key !== requestKey) return;
       if (msg.status === 'success') {
         settle({ ok: true, hash: msg.data?.hash });
       } else {
-        settle({ ok: false, reason: msg.message || msg.status || 'popup_rejected' });
+        const reason =
+          msg.data?.log || msg.data?.error || msg.message || msg.status || 'popup_rejected';
+        settle({
+          ok: false,
+          reason,
+        });
       }
     };
 
@@ -1095,8 +1146,14 @@ const CreateTab = ({
   currentChainId,
   onComplete,
 }: CreateTabProps): ReactElement => {
-  const { sessionRepository, accountService } = useAdenaContext();
+  const {
+    sessionRepository,
+    accountService,
+    transactionService,
+    transactionGasService,
+  } = useAdenaContext();
   const { wallet, updateWallet, gnoProvider } = useWalletContext();
+  const { changeCurrentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const [sessionPrivKey] = useState<string>(generateSessionPrivateKeyHex);
   const [blurSessionKey, setBlurSessionKey] = useState(true);
@@ -1412,10 +1469,12 @@ const CreateTab = ({
     acknowledged;
 
   const onClickCreate = useCallback(async () => {
-    // eslint-disable-next-line no-console
-    console.log('[create-session] 1. onClickCreate entered. wallet?', !!wallet);
     if (!wallet) return;
     setSubmitError('');
+    if (!isOnTest13 || currentNetwork?.chainId !== TEST13_CHAIN_ID) {
+      setSubmitError('Session accounts are only supported on Testnet 13.');
+      return;
+    }
     const realmPathsOk = await validateAllRealmPaths();
     if (!realmPathsOk) {
       return;
@@ -1424,16 +1483,12 @@ const CreateTab = ({
     try {
       const masterAccount = masterCandidates.find((a) => a.id === selectedMasterId);
       if (!masterAccount) throw new Error('Master account not found.');
-      // eslint-disable-next-line no-console
-      console.log('[create-session] 2. master account resolved:', masterAccount.id, masterAccount.type);
 
       const sessionPrivKeyBytes = hexToBytes(sessionPrivKey);
       const sessionTm2 = await Tm2Wallet.fromPrivateKey(sessionPrivKeyBytes);
       const sessionPublicKey = await sessionTm2.getSigner().getPublicKey();
       const masterAddress = await masterAccount.getAddress(GNO_PREFIX);
       const sessionAddr = await publicKeyToAddress(sessionPublicKey, GNO_PREFIX);
-      // eslint-disable-next-line no-console
-      console.log('[create-session] 3. addrs:', { masterAddress, sessionAddr });
 
       const trimmedRealmPaths = realmPaths
         .slice(0, maxRealmPaths)
@@ -1455,13 +1510,6 @@ const CreateTab = ({
       const expiresAtSec = Math.floor(Date.now() / 1000) + expiresDays * SECONDS_PER_DAY;
       const spendLimitCoin = toSpendLimitCoin(spendLimit);
       const spendPeriodSec = spendPeriodSecondsNum;
-      // eslint-disable-next-line no-console
-      console.log('[create-session] 4. params:', {
-        allowPaths,
-        expiresAtSec,
-        spendLimitCoin,
-        spendPeriodSec,
-      });
 
       const message = createMessageOfCreateSession({
         creator: masterAddress,
@@ -1471,8 +1519,6 @@ const CreateTab = ({
         spendLimit: spendLimitCoin,
         spendPeriod: spendPeriodSec,
       });
-      // eslint-disable-next-line no-console
-      console.log('[create-session] 5. message built. type:', message.type);
 
       // Switch currentAccount to the selected master so the popup signs
       // with it. ApproveTransaction uses useCurrentAccount + validates
@@ -1481,26 +1527,62 @@ const CreateTab = ({
         await accountService.changeCurrentAccount(masterAccount);
       }
 
+      const createGasInfo = await resolveSessionAdminGasInfo({
+        gnoProvider,
+        transactionService,
+        transactionGasService,
+        masterAccount,
+        chainId: currentChainId,
+        message,
+      });
       // eslint-disable-next-line no-console
-      console.log('[create-session] 6. opening approve-transaction popup');
-
+      console.info('[create-session] gas info.', createGasInfo);
       const popupResult = await approveSessionViaPopup(
         message,
-        CREATE_GAS_WANTED,
-        CREATE_GAS_FEE_UGNOT,
+        createGasInfo.gasWanted,
+        createGasInfo.gasFeeUgnot,
         currentChainId,
         currentNetwork?.rpcUrl ?? '',
+        masterAccount.id,
       );
-      // eslint-disable-next-line no-console
-      console.log('[create-session] 7. popup returned:', popupResult);
 
       if (!popupResult.ok) {
         setSubmitError(popupResult.reason);
         return;
       }
 
+      // eslint-disable-next-line no-console
+      console.info('[create-session] confirm. checking chain session.', {
+        masterAddress,
+        sessionAddr,
+        txHash: popupResult.hash,
+      });
+      const sessionFoundOnChain = await waitForCreatedSessionOnChain(
+        gnoProvider,
+        masterAddress,
+        sessionAddr,
+      );
+      if (!sessionFoundOnChain) {
+        // eslint-disable-next-line no-console
+        console.error('[create-session] confirm failed. session not found on chain.', {
+          masterAddress,
+          sessionAddr,
+          txHash: popupResult.hash,
+        });
+        setSubmitError(
+          'Session creation was broadcast, but the session was not found on chain. Please try again or import it after the chain shows the session.',
+        );
+        return;
+      }
+      // eslint-disable-next-line no-console
+      console.info('[create-session] confirm. session found on chain.', {
+        masterAddress,
+        sessionAddr,
+        txHash: popupResult.hash,
+      });
+
       // Commit: build SessionKeyring/SessionAccount and persist now that
-      // the chain accepted MsgCreateSession. Failure here is "broadcast OK,
+      // the chain committed MsgCreateSession. Failure here is "chain OK,
       // wallet save NOT OK"; surface the session private key so the user
       // can recover via the Import tab.
       const sessionKeyring = new SessionKeyring({
@@ -1522,25 +1604,30 @@ const CreateTab = ({
         wallet.nextSessionAccountName,
         sessionConfig,
       );
-      const cloned = wallet.clone();
-      cloned.addKeyring(sessionKeyring);
-      cloned.addAccount(sessionAccount);
-      await updateWallet(cloned);
-
-      await sessionRepository.set(sessionAddr, {
+      const sessionMetadata = {
         masterAddress,
         chainId: currentChainId,
         allowPaths,
         spendLimit: spendLimitCoin,
         spendPeriod: spendPeriodSec,
         expiresAt: expiresAtSec,
-        status: 'ACTIVE',
+        status: 'ACTIVE' as const,
         createdAt: Math.floor(Date.now() / 1000),
         txHash: popupResult.hash,
-      });
+      };
+      const cloned = wallet.clone();
+      cloned.addKeyring(sessionKeyring);
+      cloned.addAccount(sessionAccount);
+      cloned.currentAccountId = sessionAccount.id;
+      await sessionRepository.set(sessionAddr, sessionMetadata);
+      try {
+        await updateWallet(cloned);
+      } catch (e) {
+        await sessionRepository.remove(sessionAddr).catch(() => undefined);
+        throw e;
+      }
+      await changeCurrentAccount(sessionAccount);
 
-      // eslint-disable-next-line no-console
-      console.log('[create-session] 8. wallet/sessionRepo persisted. complete.');
       onComplete();
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -1560,8 +1647,6 @@ const CreateTab = ({
           ?? 'Failed to create session account.',
       );
     } finally {
-      // eslint-disable-next-line no-console
-      console.log('[create-session] finally. submitting=false.');
       setSubmitting(false);
     }
   }, [
@@ -1569,6 +1654,10 @@ const CreateTab = ({
     updateWallet,
     accountService,
     sessionRepository,
+    transactionService,
+    transactionGasService,
+    changeCurrentAccount,
+    gnoProvider,
     masterCandidates,
     selectedMasterId,
     sessionPrivKey,
@@ -1580,6 +1669,7 @@ const CreateTab = ({
     spendPeriodSecondsNum,
     validateAllRealmPaths,
     currentChainId,
+    currentNetwork?.chainId,
     currentNetwork?.rpcUrl,
     onComplete,
   ]);
@@ -1936,16 +2026,6 @@ const CreateTab = ({
           text='Create Session Account'
           disabled={!canSubmit}
           onClick={(): void => {
-            // eslint-disable-next-line no-console
-            console.log('[create-session] 0. button clicked. canSubmit=', canSubmit, 'gates=', {
-              isOnTest13,
-              selectedMasterId,
-              expirationValid,
-              spendLimitValid,
-              spendPeriodValid,
-              realmsValid,
-              acknowledged,
-            });
             onClickCreate();
           }}
         />

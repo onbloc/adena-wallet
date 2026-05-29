@@ -58,6 +58,38 @@ describe('filterTransactionsBySessionAddress', () => {
 
     expect(result).toEqual([]);
   });
+
+  it('keeps session source transactions when the signer cannot be resolved', async () => {
+    const transaction = makeTransaction('hash-a');
+    const result = await filterTransactionsBySessionAddress({
+      transactions: [transaction],
+      masterAddress: 'g1master',
+      sessionAddress: 'g1session',
+      fallbackSessionHashes: new Set(['hash-a']),
+      fetchSessionAddressByHash: async () => null,
+    });
+
+    expect(result).toEqual([
+      {
+        ...transaction,
+        signedBySession: true,
+        masterAddress: 'g1master',
+        sessionAddress: 'g1session',
+      },
+    ]);
+  });
+
+  it('does not use fallback when the resolved signer is another session', async () => {
+    const result = await filterTransactionsBySessionAddress({
+      transactions: [makeTransaction('hash-a')],
+      masterAddress: 'g1master',
+      sessionAddress: 'g1session',
+      fallbackSessionHashes: new Set(['hash-a']),
+      fetchSessionAddressByHash: async () => 'g1other',
+    });
+
+    expect(result).toEqual([]);
+  });
 });
 
 describe('annotateTransactionsWithSessionAddress', () => {

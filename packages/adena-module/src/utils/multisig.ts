@@ -1,6 +1,4 @@
-import { Any, PubKeySecp256k1 } from '@gnolang/tm2-js-client';
-import { PubKeyMultisig } from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
-import Long from 'long';
+import { Any, PubKeyMultisig, PubKeySecp256k1 } from '@gnolang/tm2-js-client';
 import { sha256 } from '../crypto';
 import { toBech32 } from '../encoding';
 
@@ -62,7 +60,7 @@ function encodeMultisigPubKey(threshold: number, pubkeys: Any[]): Uint8Array {
   });
 
   const multisigValue = PubKeyMultisig.encode({
-    k: Long.fromNumber(threshold),
+    k: BigInt(threshold),
     pub_keys: pubKeysEncoded,
   }).finish();
 

@@ -1,5 +1,4 @@
-import { Tx } from '@gnolang/tm2-js-client';
-import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
+import { ResponseDeliverTx, Tx } from '@gnolang/tm2-js-client';
 import { TransactionWithPageInfo } from '@types';
 
 export interface ITransactionGasRepository {

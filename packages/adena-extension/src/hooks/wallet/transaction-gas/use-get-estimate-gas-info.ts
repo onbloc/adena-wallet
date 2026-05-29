@@ -17,6 +17,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionService } from '@services/index';
 import { GasInfo } from '@types';
 
+import { makeStaticSessionAdminGasInfo } from './session-admin-static-fee';
 import { useGetGasPrice } from './use-get-gas-price';
 
 export const GET_ESTIMATE_GAS_INFO_KEY = 'transactionGas/useGetSingleEstimateGas';
@@ -84,7 +85,7 @@ export const makeEstimateGasTransaction = async (
   // placeholder Tx carries session_addr. encodeGnoTx in GnoProvider.simulateTx
   // then emits std.proto Signature field 3, which routes the node ante's
   // pubkey-address derivation against the session address instead of the
-  // master caller — without this, simulate would reject the placeholder for
+  // master caller. Without this, simulate would reject the placeholder for
   // pubkey-address mismatch (master caller + session pubkey).
   const sessionAddr = isSessionAccount(account)
     ? await account.getAddress('g')
@@ -151,24 +152,23 @@ export const useGetEstimateGasInfo = (
       gasPrice || 0,
     ],
     queryFn: async (): Promise<GasInfo | null> => {
+      const staticGasInfo = makeStaticSessionAdminGasInfo(document);
+      if (staticGasInfo) {
+        return staticGasInfo;
+      }
+
       if (!transactionGasService || !gasPrice) {
         return null;
       }
 
       const tx = await makeTransaction(document);
       if (!tx) {
-        // eslint-disable-next-line no-console
-        console.log('[estimate-gas] makeTransaction returned null. abort.');
         return null;
       }
-      // eslint-disable-next-line no-console
-      console.log('[estimate-gas] simulate starting. msgs:', tx.messages.length);
 
       const resultGasUsed = await transactionGasService
         .estimateGas(tx)
         .then((gasUsed) => {
-          // eslint-disable-next-line no-console
-          console.log('[estimate-gas] simulate ok. gasUsed:', gasUsed);
           return { gasUsed, errorMessage: null };
         })
         .catch((e) => {

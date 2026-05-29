@@ -29,9 +29,9 @@ export const ApproveLoadingRoundedBox = styled.div`
   padding: 0px 18px;
 `;
 
-export const ApproveLoadingAllRadiusBox = styled(ApproveLoadingRoundedBox)<{ align?: string }>`
+export const ApproveLoadingAllRadiusBox = styled(ApproveLoadingRoundedBox)<{ $align?: string }>`
   border-radius: 24px;
-  justify-content: ${({ align }): string | undefined => align && align};
+  justify-content: ${({ $align }): string | undefined => $align && $align};
 `;
 
 export const ApproveLoadingTopRadiusBox = styled(ApproveLoadingRoundedBox)`

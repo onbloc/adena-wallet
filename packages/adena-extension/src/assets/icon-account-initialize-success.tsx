@@ -8,7 +8,7 @@ const IconAccountInitializeSuccess = (): JSX.Element => (
     viewBox='0 0 100 100'
     fill='none'
   >
-    <rect width='100' height='100' rx='50' fill='#0DBE89' fill-opacity='0.2' />
+    <rect width='100' height='100' rx='50' fill='#0DBE89' fillOpacity='0.2' />
     <circle cx='50' cy='50' r='32' fill='#0DBE89' />
     <rect
       x='44.3359'

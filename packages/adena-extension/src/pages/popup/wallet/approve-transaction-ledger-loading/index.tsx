@@ -1,6 +1,6 @@
 import { TM2Error } from '@gnolang/tm2-js-client';
-import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
-import React, { useEffect, useState } from 'react';
+import { Account, AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import {
   WalletResponseFailureType,
@@ -23,12 +23,23 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
   const { currentAccount } = useCurrentAccount();
   const [completed, setCompleted] = useState(false);
   const { currentNetwork } = useNetwork();
+  const requestedSignerAccountId = useMemo(() => {
+    const value = requestData?.data?.signerAccountId;
+    return typeof value === 'string' && value.length > 0 ? value : null;
+  }, [requestData?.data?.signerAccountId]);
+  const shouldBroadcastCommit = requestData?.data?.commit === true;
+  const signingAccount = useMemo<Account | null>(() => {
+    if (requestedSignerAccountId) {
+      return wallet?.accounts.find((account) => account.id === requestedSignerAccountId) ?? null;
+    }
+    return currentAccount;
+  }, [currentAccount, requestedSignerAccountId, wallet]);
 
   useEffect(() => {
-    if (currentAccount) {
+    if (signingAccount) {
       requestTransaction();
     }
-  }, [currentAccount]);
+  }, [signingAccount]);
 
   const requestTransaction = async (): Promise<void> => {
     if (completed) {
@@ -40,10 +51,10 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
   };
 
   const createLedgerTransaction = async (): Promise<boolean> => {
-    if (!currentAccount || !document || !currentNetwork || !wallet) {
+    if (!signingAccount || !document || !currentNetwork || !wallet) {
       return false;
     }
-    if (!isLedgerAccount(currentAccount)) {
+    if (!isLedgerAccount(signingAccount)) {
       return false;
     }
 
@@ -55,11 +66,11 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
     const ledgerConnector = AdenaLedgerConnector.fromTransport(connected);
 
     const result = await transactionService
-      .createTransactionWithLedger(ledgerConnector, currentAccount, document)
+      .createTransactionWithLedger(ledgerConnector, signingAccount, document)
       .then(async ({ signed }) => {
         const hash = transactionService.createHash(signed);
         const response = await transactionService
-          .sendTransactionByLedger(ledgerConnector, currentAccount, signed)
+          .sendTransactionByLedger(ledgerConnector, signingAccount, signed, shouldBroadcastCommit)
           .catch((error: TM2Error | Error) => {
             return error;
           });
@@ -73,6 +84,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
                 error: null,
               },
               requestData?.key,
+              requestData?.withNotification,
             ),
           );
           return true;
@@ -86,6 +98,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
                 error: response,
               },
               requestData?.key,
+              requestData?.withNotification,
             ),
           );
           return true;
@@ -96,6 +109,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
             WalletResponseSuccessType.TRANSACTION_SUCCESS,
             response,
             requestData?.key,
+            requestData?.withNotification,
           ),
         );
         return true;
@@ -110,6 +124,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
               WalletResponseRejectType.TRANSACTION_REJECTED,
               {},
               requestData?.key,
+              requestData?.withNotification,
             ),
           );
         }

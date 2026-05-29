@@ -4,7 +4,7 @@ import { sha256 } from '../../crypto';
 
 // Shared signing primitive for private-key-holding keyrings.
 // Matches tm2 KeySigner.signData byte-for-byte so that Gno regression stays bit-equal.
-// See: node_modules/@gnolang/tm2-js-client/bin/wallet/key/key.js:80-90
+// See tm2-js-client KeySigner.signData for the reference flow.
 export async function signRawWithPrivateKey(
   bytes: Uint8Array,
   privateKey: Uint8Array,
