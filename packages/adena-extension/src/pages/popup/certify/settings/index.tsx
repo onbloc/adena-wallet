@@ -1,8 +1,9 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
-import { FullButtonRightIcon } from '@components/atoms';
+import { FullButtonRightIcon, Text } from '@components/atoms';
 import { IconName } from '@components/atoms/icon';
+import Toggle from '@components/atoms/toggle';
 import { BottomFixedButton } from '@components/molecules';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -54,6 +55,49 @@ export const Settings = (): JSX.Element => {
   const { walletService } = useAdenaContext();
   const { clearWallet } = useWalletContext();
   const { loadAccounts } = useLoadAccounts();
+  const [isSidePanelOn, setIsSidePanelOn] = useState(false);
+  const [supportsSidePanel] = useState(
+    () => typeof chrome !== 'undefined' && Boolean(chrome.sidePanel?.getPanelBehavior),
+  );
+  const [activeTabId, setActiveTabId] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!supportsSidePanel || !chrome.sidePanel?.getPanelBehavior) return;
+    chrome.sidePanel
+      .getPanelBehavior()
+      .then((behavior) => {
+        setIsSidePanelOn(behavior.openPanelOnActionClick ?? false);
+      })
+      .catch(() => undefined);
+  }, [supportsSidePanel]);
+
+  useEffect(() => {
+    if (!supportsSidePanel) return;
+    chrome.tabs
+      .query({ active: true, lastFocusedWindow: true })
+      .then((tabs) => {
+        if (tabs[0]?.id !== undefined) setActiveTabId(tabs[0].id);
+      })
+      .catch(() => undefined);
+  }, [supportsSidePanel]);
+
+  const onToggleSidePanel = useCallback(
+    (activated: boolean) => {
+      setIsSidePanelOn(activated);
+
+      if (activated && activeTabId !== undefined && chrome.sidePanel?.open) {
+        chrome.sidePanel.open({ tabId: activeTabId }).catch(() => undefined);
+      }
+
+      chrome.runtime
+        .sendMessage({ type: 'SET_SIDE_PANEL_MODE', enabled: activated })
+        .catch(() => undefined)
+        .finally(() => {
+          window.close();
+        });
+    },
+    [activeTabId],
+  );
 
   const onClickLockWallet = useCallback(async () => {
     await walletService.lockWallet();
@@ -79,6 +123,14 @@ export const Settings = (): JSX.Element => {
         onClick={onClickLockWallet}
       />
       <Divider />
+      {supportsSidePanel && (
+        <SidePanelRow>
+          <SidePanelLabel>
+            <Text type='body1Bold'>Use Side Panel</Text>
+          </SidePanelLabel>
+          <Toggle activated={isSidePanelOn} onToggle={onToggleSidePanel} />
+        </SidePanelRow>
+      )}
       {menuMakerInfo.map((v, i) => (
         <FullButtonRightIcon
           key={i}
@@ -115,4 +167,18 @@ const Divider = styled.div`
   height: 1px;
   background-color: ${getTheme('neutral', 'b')};
   margin: 12px 0;
+`;
+
+const SidePanelRow = styled.div`
+  ${mixins.flex({ direction: 'row', justify: 'space-between', align: 'center' })};
+  width: 100%;
+  height: 54px;
+  padding: 0px 24px 0px 20px;
+  border-radius: 18px;
+  background-color: ${getTheme('neutral', '_7')};
+  margin-bottom: 12px;
+`;
+
+const SidePanelLabel = styled.div`
+  ${mixins.flex({ direction: 'row', align: 'center' })};
 `;
