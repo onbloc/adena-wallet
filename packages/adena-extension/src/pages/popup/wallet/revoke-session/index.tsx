@@ -9,6 +9,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useMasterSessions } from '@hooks/wallet/use-master-sessions';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { useRevokeSession } from '@hooks/wallet/use-revoke-session';
+import { resolveSessionAdminGasInfo } from '@common/utils/session-admin-gas';
 import { WarningBox } from '@components/atoms/warning-box';
 import { BottomFixedButtonGroup } from '@components/molecules/bottom-fixed-button-group';
 import { ApproveLedgerLoading } from '@components/molecules/approve-ledger-loading';
@@ -64,8 +65,8 @@ type RevokeResult = {
 const RevokeSessionPage = (): ReactElement => {
   const { params, navigate, goBack } = useAppNavigate<RoutePath.RevokeSession>();
   const { openScannerLink } = useLink();
-  const { wallet } = useWalletContext();
-  const { transactionService } = useAdenaContext();
+  const { wallet, gnoProvider } = useWalletContext();
+  const { transactionService, transactionGasService } = useAdenaContext();
   const { currentNetwork } = useNetwork();
   const { revokeOne, isPending, errorMessage } = useRevokeSession();
 
@@ -117,16 +118,24 @@ const RevokeSessionPage = (): ReactElement => {
         creator: entry.masterAddress,
         sessionPublicKey: entry.publicKey,
       });
-      const gasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
-      const gasFee = useNetworkFeeReturn.currentGasFeeRawAmount;
       try {
+        const gasInfo = await resolveSessionAdminGasInfo({
+          gnoProvider,
+          transactionService,
+          transactionGasService,
+          masterAccount: signer,
+          chainId: currentNetwork.chainId,
+          message,
+        });
+        // eslint-disable-next-line no-console
+        console.info('[revoke-session] gas info.', gasInfo);
         const doc = await transactionService.createDocument(
           signer,
           currentNetwork.chainId,
           [message],
           GNO_PREFIX,
-          gasWanted,
-          gasFee,
+          gasInfo.gasWanted,
+          gasInfo.gasFeeUgnot,
           '',
         );
         if (!cancelled) setDocument(doc);
@@ -140,10 +149,10 @@ const RevokeSessionPage = (): ReactElement => {
   }, [
     entry,
     wallet,
+    gnoProvider,
     transactionService,
+    transactionGasService,
     currentNetwork.chainId,
-    useNetworkFeeReturn.currentGasInfo?.gasWanted,
-    useNetworkFeeReturn.currentGasFeeRawAmount,
   ]);
 
   const handleOpenAccount = useCallback(

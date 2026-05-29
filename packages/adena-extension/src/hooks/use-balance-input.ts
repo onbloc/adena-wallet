@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
+import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 import type { SessionMetadataV020 } from '@migrates/migrations/v020/storage-model-v020';
 import { parseCoins } from '@services/transaction/session-spend';
@@ -99,8 +100,16 @@ export const useBalanceInput = (
           return stored;
         }
         if (!record) {
-          await convertBySessionAddresses([sessionAddr]);
-          return null;
+          const shouldConvert = await shouldConvertMissingSession(
+            stored,
+            async () =>
+              !!(await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr)),
+          );
+          if (shouldConvert) {
+            await convertBySessionAddresses([sessionAddr]);
+            return null;
+          }
+          return stored;
         }
 
         const base = record.BaseSessionAccount;
