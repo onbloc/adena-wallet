@@ -12,7 +12,6 @@ import {
 import { MsgCallValue } from '@repositories/transaction/response/transaction-history-query-response';
 import { PubKeySecp256k1 } from '@gnolang/tm2-js-client';
 import { publicKeyToAddress } from 'adena-module';
-import Long from 'long';
 
 import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
 import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
@@ -38,6 +37,8 @@ storage usage. You can leave this field
 empty as the network will automatically
 determine the actual amount required
 for storage.`;
+
+const TWO_32 = BigInt('4294967296');
 
 const isMsgCall = (type: string): boolean => type === EMessageType.VM_CALL;
 const isMsgAddPkg = (type: string): boolean => type === EMessageType.VM_ADDPKG;
@@ -181,7 +182,7 @@ const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 
   return (
     <>
-      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
         <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
         {isOpen && (
@@ -215,7 +216,7 @@ const MsgCreateSessionTransactionMessage: React.FC<ApproveTransactionMessageProp
 
   return (
     <>
-      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
         <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
         {isOpen && (
@@ -247,7 +248,7 @@ const MsgRevokeSessionTransactionMessage: React.FC<ApproveTransactionMessageProp
 
   return (
     <>
-      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
         <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
         {isOpen && (
@@ -274,7 +275,7 @@ const MsgRevokeAllSessionsTransactionMessage: React.FC<ApproveTransactionMessage
 
   return (
     <>
-      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
         <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
         {isOpen && (
@@ -415,7 +416,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 
   return (
     <>
-      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
         <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
         {isOpen && (
@@ -488,7 +489,7 @@ const MsgAddPkgTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 
   return (
     <>
-      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
         <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
         {isOpen && (
@@ -532,7 +533,7 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 
   return (
     <>
-      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
         <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
         {isOpen && (
@@ -728,16 +729,21 @@ function formatLongLikeValue(value: unknown): string | null {
   const high = value.high;
   const unsigned = value.unsigned;
 
-  if (!Number.isInteger(low) || !Number.isInteger(high)) {
+  if (
+    typeof low !== 'number' ||
+    typeof high !== 'number' ||
+    !Number.isInteger(low) ||
+    !Number.isInteger(high)
+  ) {
     return null;
   }
 
   try {
-    return Long.fromValue({
-      low: low as number,
-      high: high as number,
-      unsigned: unsigned === true,
-    }).toString();
+    const lowBig = BigInt(low >>> 0);
+    const highBig = unsigned === true
+      ? BigInt(high >>> 0)
+      : BigInt(high);
+    return (highBig * TWO_32 + lowBig).toString();
   } catch {
     return null;
   }

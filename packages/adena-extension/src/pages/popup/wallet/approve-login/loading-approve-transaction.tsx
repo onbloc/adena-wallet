@@ -20,7 +20,7 @@ const LoadingApproveTransaction = ({
     <Wrapper>
       <Loading.Round width='163px' height='14px' radius='24px' />
       <SkeletonBox />
-      <AllRadiusBox align='center'>
+      <AllRadiusBox $align='center'>
         <Loading.Round width='100px' height='10px' radius='24px' />
       </AllRadiusBox>
       <TopRadiusBox>
@@ -70,9 +70,9 @@ const RoundedBox = styled.div`
   padding: 0px 18px;
 `;
 
-const AllRadiusBox = styled(RoundedBox)<{ align?: string }>`
+const AllRadiusBox = styled(RoundedBox)<{ $align?: string }>`
   border-radius: 24px;
-  justify-content: ${({ align }): string | undefined => align && align};
+  justify-content: ${({ $align }): string | undefined => $align && $align};
 `;
 
 const TopRadiusBox = styled(RoundedBox)`

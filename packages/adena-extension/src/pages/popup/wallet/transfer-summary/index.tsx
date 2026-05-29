@@ -14,6 +14,7 @@ import styled from 'styled-components';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import AtomoneChainBadge from '@assets/icons/chains/atomone.svg';
 import { GasToken } from '@common/constants/token.constant';
+import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import TransactionResult from '@components/molecules/transaction-result';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
@@ -467,7 +468,8 @@ const TransferSummaryContainer: React.FC = () => {
       return;
     }
 
-    const previousSpendUsed = (await sessionRepository.get(sessionAddr))?.spendUsed ?? '';
+    const storedSession = await sessionRepository.get(sessionAddr);
+    const previousSpendUsed = storedSession?.spendUsed ?? '';
 
     for (const delayMs of [0, 1_500, 4_000]) {
       if (delayMs > 0) {
@@ -481,7 +483,14 @@ const TransferSummaryContainer: React.FC = () => {
         continue;
       }
       if (!record) {
-        await convertBySessionAddresses([sessionAddr]);
+        const shouldConvert = await shouldConvertMissingSession(
+          storedSession,
+          async () =>
+            !!(await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr)),
+        );
+        if (shouldConvert) {
+          await convertBySessionAddresses([sessionAddr]);
+        }
         break;
       }
 

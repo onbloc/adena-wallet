@@ -37,10 +37,10 @@ export const ApproveTransactionLoadingRoundedBox = styled.div`
 `;
 
 export const ApproveTransactionLoadingAllRadiusBox = styled(ApproveTransactionLoadingRoundedBox)<{
-  align?: string;
+  $align?: string;
 }>`
   border-radius: 24px;
-  justify-content: ${({ align }): string | undefined => align && align};
+  justify-content: ${({ $align }): string | undefined => $align && $align};
 `;
 
 export const ApproveTransactionLoadingTopRadiusBox = styled(ApproveTransactionLoadingRoundedBox)`
