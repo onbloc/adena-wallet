@@ -70,7 +70,7 @@ describe('StorageMigrator', () => {
     const migrated = await migrator.migrate(current, '123');
 
     expect(migrated).not.toBeNull();
-    expect(migrated?.version).toBe(19);
+    expect(migrated?.version).toBe(20);
     expect(migrated?.data).not.toBeNull();
     expect(migrated?.data.NETWORKS).toHaveLength(4);
     expect(migrated?.data.CURRENT_CHAIN_ID).toBe('');
@@ -79,6 +79,7 @@ describe('StorageMigrator', () => {
     expect(migrated?.data.ACCOUNT_NAMES).toEqual({});
     expect(migrated?.data.ESTABLISH_SITES).toEqual({});
     expect(migrated?.data.ADDRESS_BOOK).toBe('');
+    expect(migrated?.data.SESSIONS).toEqual({});
   });
 
   it('migrate with password success', async () => {
@@ -87,9 +88,10 @@ describe('StorageMigrator', () => {
     const migrated = await migrator.migrate(current, '123');
 
     expect(migrated).not.toBeNull();
-    expect(migrated?.version).toBe(19);
+    expect(migrated?.version).toBe(20);
     expect(migrated?.data).not.toBeNull();
     expect(migrated?.data.SERIALIZED).not.toBe('');
     expect(migrated?.data.ADDRESS_BOOK).toBe('');
+    expect(migrated?.data.SESSIONS).toEqual({});
   });
 });
