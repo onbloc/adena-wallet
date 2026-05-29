@@ -14,7 +14,7 @@ describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
     return result;
   };
 
-  it('production build trusts only https chains.json origins', () => {
+  it('production build trusts https chains.json origins and local gnoweb', () => {
     process.env.NODE_ENV = 'production';
     const result = loadAllowlist();
 
@@ -24,9 +24,10 @@ describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
         'https://betanet.testnets.gno.land',
         'https://staging.gno.land',
         'https://gnoweb.test-13.gnoland.network',
+        'http://127.0.0.1:8888',
       ]),
     );
-    expect(result.some((url) => url.startsWith('http://'))).toBe(false);
+    expect(result.filter((url) => url.startsWith('http://'))).toEqual(['http://127.0.0.1:8888']);
   });
 
   it('development build also trusts loopback origins from chains.json', () => {

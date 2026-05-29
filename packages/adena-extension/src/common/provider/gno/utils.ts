@@ -1,6 +1,8 @@
 import { BinaryReader } from '@bufbuild/protobuf/wire';
 import { ABCIResponse, RPCRequest, RPCResponse } from '@gnolang/tm2-js-client';
 
+import { FlatSessionAccount, GnoSessionAccountResponse } from './types';
+
 const HTTP_PROTOCOL = 'http';
 const HTTPS_PROTOCOL = 'https';
 const HTTP_PROTOCOL_PREFIX = `${HTTP_PROTOCOL}://`;
@@ -89,4 +91,24 @@ export const isHttpProtocol = (domain: string): boolean => {
 
 export const isInterRealmParameter = (name: string, type: string): boolean => {
   return type === 'realm';
+};
+
+export const flattenSessionAccount = (
+  res: GnoSessionAccountResponse,
+): FlatSessionAccount => {
+  const base = res.BaseSessionAccount;
+  return {
+    address: base.BaseAccount.address,
+    masterAddress: base.master_address,
+    publicKey: base.BaseAccount.public_key,
+    coins: base.BaseAccount.coins,
+    accountNumber: base.BaseAccount.account_number,
+    sequence: base.BaseAccount.sequence,
+    expiresAt: base.expires_at,
+    spendLimit: base.spend_limit ?? '',
+    spendPeriod: base.spend_period ?? '0',
+    spendUsed: base.spend_used ?? '',
+    spendReset: base.spend_reset ?? '0',
+    allowPaths: res.allow_paths ?? [],
+  };
 };

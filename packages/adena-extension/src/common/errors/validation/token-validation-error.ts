@@ -4,7 +4,7 @@ const ERROR_VALUE = {
   INVALID_REALM_PATH: {
     status: 4000,
     type: 'INVALID_REALM_PATH',
-    message: 'Invalid realm path',
+    message: 'Invalid path',
   },
   ALREADY_ADDED: {
     status: 4000,
