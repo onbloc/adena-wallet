@@ -10,15 +10,19 @@ import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import { CommonFullContentLayout } from '@components/atoms';
 import ApproveChangingNetwork from '@components/pages/approve-changing-network/approve-changing-network/approve-changing-network';
 import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { RoutePath } from '@types';
+import { isSessionAccount } from 'adena-module';
 
 const ApproveChangingNetworkContainer: React.FC = () => {
   const { search } = useLocation();
   const navigate = useNavigate();
   const { currentNetwork, networks, changeNetwork } = useNetwork();
   const { walletService } = useAdenaContext();
+  const { currentAccount } = useCurrentAccount();
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [chainId, setChainId] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -36,6 +40,16 @@ const ApproveChangingNetworkContainer: React.FC = () => {
       initRequestData();
     }
   }, [search]);
+
+  useEffect(() => {
+    if (!currentAccount || !requestData) {
+      return;
+    }
+    if (isSessionAccount(currentAccount)) {
+      chrome.runtime.sendMessage(createSessionAccountUnsupportedResponse(requestData.key));
+      window.close();
+    }
+  }, [currentAccount, requestData]);
 
   const initRequestData = (): void => {
     const data = parseParameters(search);
@@ -63,7 +77,11 @@ const ApproveChangingNetworkContainer: React.FC = () => {
       );
       return;
     }
-    await changeNetwork(network.id);
+    const changed = await changeNetwork(network.id);
+    if (!changed) {
+      setProcessing(false);
+      return;
+    }
     setResponse(
       InjectionMessageInstance.success(
         WalletResponseSuccessType.SWITCH_NETWORK_SUCCESS,

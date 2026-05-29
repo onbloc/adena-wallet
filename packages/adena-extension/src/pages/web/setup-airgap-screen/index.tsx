@@ -41,12 +41,12 @@ const SetupAirgapScreen: React.FC = () => {
   const onClickBack = useCallback(() => {
     const backTo = setupAirgapStepBackTo[setupAirgapState];
     if (backTo === null) {
-      navigate(RoutePath.Home);
+      navigate(RoutePath.WebAdvancedSetup);
       return;
     }
     changeAddress('');
     setSetupAirgapState(backTo);
-  }, [setupAirgapState]);
+  }, [changeAddress, navigate, setSetupAirgapState, setupAirgapState]);
 
   return (
     <WebMain

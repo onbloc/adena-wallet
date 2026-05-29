@@ -53,6 +53,9 @@ export const Header = (): JSX.Element => {
   const changeNetwork = useMatch(RoutePath.ChangeNetwork);
 
   const accountDetails = useMatch(RoutePath.AccountDetails);
+  const manageSessions = useMatch(RoutePath.ManageSessions);
+  const revokeSession = useMatch(RoutePath.RevokeSession);
+  const revokeAllSessions = useMatch(RoutePath.RevokeAllSessions);
   const enterSeedPhrase = useMatch(RoutePath.EnterSeedPhrase);
   const createPassword = useMatch(RoutePath.CreatePassword);
   const launchAdena = useMatch(RoutePath.LaunchAdena);
@@ -109,6 +112,14 @@ export const Header = (): JSX.Element => {
 
     if (accountDetails) {
       return <CloseTitleMenu title='Account Details' />;
+    }
+
+    if (revokeSession || revokeAllSessions) {
+      return <ArrowTitleMenu title='Revoking Session' />;
+    }
+
+    if (manageSessions) {
+      return <ArrowTitleMenu title='Session Accounts' />;
     }
 
     if (

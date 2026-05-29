@@ -1,4 +1,4 @@
-import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
+import { Account, Document, isAirgapAccount, isLedgerAccount, isSessionAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -11,6 +11,7 @@ import {
 import { GasToken } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
 import { parseTokenAmount } from '@common/utils/amount-utils';
+import { getDappVisibleAddress } from '@common/utils/account-address';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -25,10 +26,17 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
+import { useConvertSessionAccounts } from '@hooks/wallet/use-convert-session-accounts';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
+import { SessionMetadataV020 } from '@migrates/migrations/v020/storage-model-v020';
+import {
+  evaluateSessionSigningGuard,
+  SessionSigningFailReason,
+  SessionSigningGuardDecision,
+} from '@services/transaction/session-signing-guard';
 import { RoutePath } from '@types';
 
 interface TransactionData {
@@ -38,6 +46,35 @@ interface TransactionData {
   gasFee: string;
   memo: string;
   document: Document;
+}
+
+// Maps internal SessionSigningFailReason to a user-facing Korean string.
+// Phase 8 will polish copy and styling; this is the minimal banner text.
+function mapSessionGuardReasonToMessage(reason: SessionSigningFailReason): string {
+  switch (reason) {
+    case 'wallet_locked':
+      return '지갑이 잠겨 있어 세션 서명을 할 수 없습니다. 잠금을 해제하세요.';
+    case 'not_session_account':
+      return '세션 계정이 아니어서 세션 서명을 할 수 없습니다.';
+    case 'session_admin_msg':
+      return '세션 생성/취소 메시지는 세션 계정으로 서명할 수 없습니다. master 계정으로 전환하세요.';
+    case 'session_metadata_missing':
+      return '세션 정보를 찾을 수 없습니다. master 계정으로 전환한 뒤 다시 시도하세요.';
+    case 'session_inactive':
+      return '세션이 활성 상태가 아닙니다.';
+    case 'chain_mismatch':
+      return '현재 네트워크가 세션이 발급된 네트워크와 다릅니다.';
+    case 'session_expired':
+      return '세션이 만료되어 서명할 수 없습니다. master 계정으로 전환한 뒤 다시 시도하세요.';
+    case 'unsupported_msg_type':
+      return '이 트랜잭션 종류는 세션으로 서명할 수 없습니다.';
+    case 'allowpaths_violation':
+      return '세션 허용 경로에 포함되지 않은 호출입니다.';
+    case 'spendlimit_exceeded':
+      return '세션 사용 한도를 초과합니다.';
+    default:
+      return '세션 서명 조건을 만족하지 않아 서명할 수 없습니다.';
+  }
 }
 
 function mappedTransactionData(document: Document): TransactionData {
@@ -61,8 +98,9 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { wallet, gnoProvider } = useWalletContext();
   const { navigate } = useAppNavigate();
-  const { walletService, transactionService } = useAdenaContext();
+  const { walletService, transactionService, sessionRepository } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
+  const { convertBySessionAddresses } = useConvertSessionAccounts();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
   const chain = useChain();
@@ -76,6 +114,8 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
+  const [sessionGuardDecision, setSessionGuardDecision] =
+    useState<SessionSigningGuardDecision | null>(null);
   const { openScannerLink } = useLink();
   const { data: currentBalance = null } = useGetGnotBalance();
 
@@ -143,6 +183,13 @@ const ApproveSignTransactionContainer: React.FC = () => {
     return requestData?.data?.arguments || [];
   }, [requestData?.data?.arguments]);
 
+  const sessionGuardBannerMessage = useMemo<string | null>(() => {
+    if (!sessionGuardDecision || sessionGuardDecision.ok) {
+      return null;
+    }
+    return mapSessionGuardReasonToMessage(sessionGuardDecision.reason);
+  }, [sessionGuardDecision]);
+
   useEffect(() => {
     checkLockWallet();
   }, [walletService]);
@@ -185,9 +232,10 @@ const ApproveSignTransactionContainer: React.FC = () => {
     currentAccount: Account,
     requestData: InjectionMessage,
   ): Promise<boolean> => {
+    const visibleAddress = await getDappVisibleAddress(currentAccount, chain.bech32Prefix);
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
-      await currentAccount.getAddress(chain.bech32Prefix),
+      visibleAddress,
     );
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
@@ -226,6 +274,25 @@ const ApproveSignTransactionContainer: React.FC = () => {
     } catch (e) {
       console.error(e);
       const error: any = e;
+      if (
+        currentAccount &&
+        isSessionAccount(currentAccount) &&
+        error?.message?.startsWith('Session not found:')
+      ) {
+        const sessionAddr = await currentAccount.getAddress(chain.bech32Prefix).catch(() => null);
+        if (sessionAddr) {
+          await convertBySessionAddresses([sessionAddr]);
+        }
+        setSessionGuardDecision({ ok: false, reason: 'session_inactive' });
+        setResponse(
+          InjectionMessageInstance.failure(
+            WalletResponseFailureType.SIGN_FAILED,
+            { error: { message: 'Session was revoked and converted to a regular account.' } },
+            requestData?.key,
+          ),
+        );
+        return false;
+      }
       if (error?.message === 'Transaction signing request was rejected by the user') {
         chrome.runtime.sendMessage(
           InjectionMessageInstance.failure(
@@ -282,6 +349,50 @@ const ApproveSignTransactionContainer: React.FC = () => {
       return false;
     }
 
+    // Session race-condition re-check: between popup load and confirm
+    // click, the session may have expired or another tab may have pushed
+    // spendUsed over the limit. Re-evaluate the guard right before signing
+    // and abort if it no longer passes.
+    if (isSessionAccount(currentAccount) && currentNetwork) {
+      try {
+        const sessionAddr = await currentAccount.getAddress(chain.bech32Prefix);
+        const metadata = await sessionRepository.get(sessionAddr);
+        const walletLocked = await walletService.isLocked();
+        const decision = evaluateSessionSigningGuard({
+          currentAccount,
+          sessionMetadata: metadata,
+          walletLocked,
+          nowSeconds: Math.floor(Date.now() / 1000),
+          currentChainId: currentNetwork.chainId,
+          decodedMessages: document.msgs as { type: string; value: any }[],
+          txFee: {
+            amount: document.fee.amount[0]?.amount ?? '0',
+            denom: document.fee.amount[0]?.denom ?? GasToken.denom,
+          },
+        });
+        if (decision.ok === false) {
+          setSessionGuardDecision(decision);
+          setResponse(
+            InjectionMessageInstance.failure(
+              WalletResponseRejectType.SIGN_REJECTED,
+              { sessionGuardReason: decision.reason },
+              requestData?.key,
+            ),
+          );
+          return false;
+        }
+      } catch {
+        setResponse(
+          InjectionMessageInstance.failure(
+            WalletResponseRejectType.SIGN_REJECTED,
+            { sessionGuardReason: 'session_metadata_missing' as SessionSigningFailReason },
+            requestData?.key,
+          ),
+        );
+        return false;
+      }
+    }
+
     try {
       setProcessType('PROCESSING');
       const { signed } = await transactionService.createTransaction(
@@ -328,6 +439,25 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
   const onClickConfirm = (): void => {
     if (!currentAccount) {
+      return;
+    }
+    // SessionAccount: refuse to sign if the guard rejected this request.
+    // The popup banner displays the reason; clicking confirm in that state
+    // is treated as a fast SIGN_REJECTED to the dApp (no fallback to master
+    // key per Phase 5 policy).
+    if (
+      isSessionAccount(currentAccount) &&
+      sessionGuardDecision &&
+      sessionGuardDecision.ok === false
+    ) {
+      setResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseRejectType.SIGN_REJECTED,
+          { sessionGuardReason: sessionGuardDecision.reason },
+          requestData?.key,
+        ),
+      );
+      setProcessType('DONE');
       return;
     }
     if (isLedgerAccount(currentAccount)) {
@@ -381,6 +511,62 @@ const ApproveSignTransactionContainer: React.FC = () => {
     useNetworkFeeReturn.currentGasFeeRawAmount,
   ]);
 
+  // SessionAccount guard: evaluate once document + sessionMetadata + chainId
+  // are ready. For non-session accounts the existing popup flow stays
+  // unchanged; only sessions go through the guard.
+  useEffect(() => {
+    if (!currentAccount || !document || !currentNetwork) {
+      return;
+    }
+    if (!isSessionAccount(currentAccount)) {
+      setSessionGuardDecision(null);
+      return;
+    }
+
+    let cancelled = false;
+    const evaluate = async (): Promise<void> => {
+      const sessionAddr = await currentAccount.getAddress(chain.bech32Prefix);
+      const metadata: SessionMetadataV020 | null = await sessionRepository.get(sessionAddr);
+      const walletLocked = await walletService.isLocked();
+      const decision = evaluateSessionSigningGuard({
+        currentAccount,
+        sessionMetadata: metadata,
+        walletLocked,
+        nowSeconds: Math.floor(Date.now() / 1000),
+        currentChainId: currentNetwork.chainId,
+        decodedMessages: document.msgs as {
+          type: string;
+          value: any;
+        }[],
+        txFee: {
+          amount: document.fee.amount[0]?.amount ?? '0',
+          denom: document.fee.amount[0]?.denom ?? GasToken.denom,
+        },
+      });
+      if (!cancelled) {
+        setSessionGuardDecision(decision);
+      }
+    };
+
+    evaluate().catch(() => {
+      // On evaluation failure we conservatively block the session path.
+      if (!cancelled) {
+        setSessionGuardDecision({ ok: false, reason: 'session_metadata_missing' });
+      }
+    });
+
+    return (): void => {
+      cancelled = true;
+    };
+  }, [
+    currentAccount,
+    document,
+    currentNetwork,
+    chain.bech32Prefix,
+    sessionRepository,
+    walletService,
+  ]);
+
   return (
     <ApproveTransaction
       title='Sign Transaction'
@@ -408,6 +594,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
       openScannerLink={openScannerLink}
       opened={visibleTransactionInfo}
       transactionData={JSON.stringify(document, null, 2)}
+      sessionGuardBannerMessage={sessionGuardBannerMessage}
     />
   );
 };

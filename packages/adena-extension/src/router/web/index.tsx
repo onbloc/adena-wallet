@@ -3,11 +3,14 @@ import { Route, Routes } from 'react-router-dom';
 
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
+import { getRegisterInitialRoute } from '@common/utils/register-url';
 
 import AccountAddScreen from '@pages/web/account-add-screen';
 import AccountAddedCompleteScreen from '@pages/web/account-added-complete-screen';
 import AccountImportScreen from '@pages/web/account-import-screen';
+import SessionAddScreen from '@pages/web/session-add-screen';
 import AdvancedOptionScreen from '@pages/web/advanced-option-screen';
+import AdvancedSetupScreen from '@pages/web/advanced-setup-screen';
 import { ConnectLedgerScreen, ConnectLedgerSelectAccount } from '@pages/web/connect-ledger';
 import CreatePasswordScreen from '@pages/web/create-password-screen';
 import GoogleLoginScreen from '@pages/web/google-login-screen';
@@ -39,11 +42,17 @@ export const WebRouter = (): JSX.Element => {
   }, [existWallet, lockedWallet]);
 
   useEffect(() => {
+    const initialRoute = isRegister ? getRegisterInitialRoute(window.location.search) : null;
     const preventGoBack = (): void => {
       history.pushState(null, '', location.href);
       navigate(RoutePath.Home);
     };
-    preventGoBack();
+    history.pushState(null, '', location.href);
+    if (initialRoute === RoutePath.WebAccountAdd) {
+      navigate(RoutePath.WebAccountAdd);
+    } else {
+      navigate(RoutePath.Home);
+    }
     window.addEventListener('popstate', preventGoBack);
     return () => window.removeEventListener('popstate', preventGoBack);
   }, []);
@@ -61,6 +70,7 @@ export const WebRouter = (): JSX.Element => {
             element={<ConnectLedgerSelectAccount />}
           />
           <Route path={RoutePath.WebAdvancedOption} element={<AdvancedOptionScreen />} />
+          <Route path={RoutePath.WebAdvancedSetup} element={<AdvancedSetupScreen />} />
           <Route path={RoutePath.WebCreatePassword} element={<CreatePasswordScreen />} />
           <Route path={RoutePath.WebGoogleLogin} element={<GoogleLoginScreen />} />
           <Route path={RoutePath.WebSetupAirgap} element={<SetupAirgapScreen />} />
@@ -68,6 +78,7 @@ export const WebRouter = (): JSX.Element => {
           <Route path={RoutePath.WebWalletCreate} element={<WalletCreateScreen />} />
           <Route path={RoutePath.WebAccountAdd} element={<AccountAddScreen />} />
           <Route path={RoutePath.WebAccountImport} element={<AccountImportScreen />} />
+          <Route path={RoutePath.WebSessionAdd} element={<SessionAddScreen />} />
           <Route path={RoutePath.WebWalletImport} element={<WalletImportScreen />} />
           <Route path={RoutePath.WebWalletAllSet} element={<WalletAllSetScreen />} />
           <Route

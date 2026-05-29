@@ -5,18 +5,19 @@ import AddPackageIcon from '@assets/addpkg.svg';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import ContractIcon from '@assets/contract.svg';
 import IconShare from '@assets/icon-share';
-import { SCANNER_URL } from '@common/constants/resource.constant';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
-import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
-import { makeQueryString } from '@common/utils/string-utils';
+import {
+  formatAddress,
+  formatHash,
+  getDateTimeText,
+  getStatusStyle,
+} from '@common/utils/client-utils';
 import { Button, CopyIconButton, Text } from '@components/atoms';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
 import { TokenBalance } from '@components/molecules';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
-import { useNetwork } from '@hooks/use-network';
-import { useNetworkProfile } from '@hooks/use-network-profile';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import mixins from '@styles/mixins';
 import theme, { fonts, getTheme } from '@styles/theme';
@@ -34,13 +35,15 @@ export const TransactionDetail = (): JSX.Element => {
   const [hasLogoError, setHasLogoError] = useState(false);
   const [isLoadedLogo, setIsLoadedLogo] = useState(false);
 
-  const { openLink } = useLink();
+  const { openScannerLink } = useLink();
   const { convertDenom } = useTokenMetainfo();
-  const { currentNetwork, scannerParameters } = useNetwork();
-  const profile = useNetworkProfile();
   const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
 
   const transactionItem = params.transactionInfo;
+  const isSessionTransaction =
+    transactionItem?.signedBySession &&
+    !!transactionItem.masterAddress &&
+    !!transactionItem.sessionAddress;
   const tokenUriQuery =
     transactionItem?.type === 'TRANSFER_GRC721'
       ? useGetGRC721TokenUri(transactionItem.logo, '0')
@@ -105,11 +108,7 @@ export const TransactionDetail = (): JSX.Element => {
   };
 
   const handleLinkClick = (hash: string): void => {
-    const scannerUrl = profile?.linkUrl || SCANNER_URL;
-    const openLinkUrl = scannerParameters
-      ? `${scannerUrl}/transactions/details?txhash=${hash}&${makeQueryString(scannerParameters)}`
-      : `${scannerUrl}/transactions/details?txhash=${hash}`;
-    openLink(openLinkUrl);
+    openScannerLink('/transactions/details', { txhash: hash });
   };
 
   return transactionItem ? (
@@ -232,6 +231,30 @@ export const TransactionDetail = (): JSX.Element => {
               />
             </dd>
           </DLWrap>
+        )}
+        {isSessionTransaction && (
+          <>
+            <DLWrap>
+              <dt>Master Acc.</dt>
+              <dd>
+                {formatAddress(transactionItem.masterAddress || '')}
+                <CopyIconButton
+                  className='copy-button'
+                  copyText={transactionItem.masterAddress || ''}
+                />
+              </dd>
+            </DLWrap>
+            <DLWrap>
+              <dt>Session Acc.</dt>
+              <dd>
+                {formatAddress(transactionItem.sessionAddress || '')}
+                <CopyIconButton
+                  className='copy-button'
+                  copyText={transactionItem.sessionAddress || ''}
+                />
+              </dd>
+            </DLWrap>
+          </>
         )}
       </DataBox>
       <div className='button-wrapper'>

@@ -3,7 +3,7 @@ import {
   WalletResponseType,
 } from '@adena-wallet/sdk';
 import { fromBech32 } from '@cosmjs/encoding';
-import { compressPubkeyIfNeeded } from 'adena-module';
+import { compressPubkeyIfNeeded, isSessionAccount } from 'adena-module';
 import React, { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
@@ -13,6 +13,7 @@ import { bytesToBase64 } from '@common/utils/encoding-util';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { CosmosResponseExecuteType } from '@inject/types';
 import { RoutePath } from '@types';
 
@@ -80,6 +81,15 @@ const ApproveGetCosmosKeyContainer: React.FC = () => {
 
     const run = async (): Promise<void> => {
       try {
+        // SessionAccount must be rejected before any address derivation or key
+        // serialization. Mirrors the `checkNotSessionAccountForCosmos` guard in
+        // the background handler for the unlocked path.
+        if (isSessionAccount(currentAccount)) {
+          chrome.runtime.sendMessage(createSessionAccountUnsupportedResponse(key));
+          window.close();
+          return;
+        }
+
         const message = params.data
           ? (decodeParameter(params.data) as InjectionMessage | null)
           : null;

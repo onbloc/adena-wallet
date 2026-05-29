@@ -23,6 +23,7 @@ import { useNetwork } from '@hooks/use-network';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import { useIsCurrentSessionRevoked } from '@hooks/wallet/use-current-session-revoked';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
@@ -99,6 +100,8 @@ export const WalletMain = (): JSX.Element => {
   const { updateAllTokenMetainfos, getTokenImage } = useTokenMetainfo();
 
   const networkUnresponsive = failedNetwork === true;
+  const sessionRevoked = useIsCurrentSessionRevoked();
+  const actionsDisabled = networkUnresponsive || sessionRevoked;
 
   const { addLoadingImages, completeImageLoading } = useLoadImages();
 
@@ -289,20 +292,20 @@ export const WalletMain = (): JSX.Element => {
           icon={<IconDeposit />}
           label='Deposit'
           onClick={onClickDepositButton}
-          disabled={networkUnresponsive}
+          disabled={actionsDisabled}
         />
         <MainActionButton
           icon={<IconSend />}
           label={actionButtonText ?? ''}
           onClick={onClickActionButton}
-          disabled={networkUnresponsive}
+          disabled={actionsDisabled}
         />
         {showSignTxButton && (
           <MainActionButton
             icon={<IconSign />}
             label='Sign'
             onClick={onClickSignButton}
-            disabled={networkUnresponsive}
+            disabled={actionsDisabled}
           />
         )}
       </div>
@@ -312,13 +315,14 @@ export const WalletMain = (): JSX.Element => {
           tokens={tokens}
           itemStateByTokenId={itemStateByTokenId}
           placeholderCount={cachedRowCountRef.current}
+          disabled={actionsDisabled}
           completeImageLoading={completeImageLoading}
           onClickTokenItem={onClickTokenListItem}
         />
       </div>
 
       <div className='manage-token-button-wrapper'>
-        <MainManageTokenButton onClick={onClickManageButton} disabled={networkUnresponsive} />
+        <MainManageTokenButton onClick={onClickManageButton} disabled={actionsDisabled} />
       </div>
     </Wrapper>
   );
