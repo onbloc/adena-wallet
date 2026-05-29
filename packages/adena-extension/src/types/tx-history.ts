@@ -34,4 +34,7 @@ export interface TransactionInfo {
     value: string;
     denom: string;
   };
+  signedBySession?: boolean;
+  masterAddress?: string;
+  sessionAddress?: string;
 }

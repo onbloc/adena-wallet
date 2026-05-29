@@ -20,15 +20,24 @@ export const SideMenuAccountItemWrapper = styled.div`
 
   .info-wrapper {
     ${mixins.flex({ align: 'flex-start', justify: 'normal' })};
+    flex: 1;
+    min-width: 0;
 
     .address-wrapper {
-      display: inline-flex;
+      display: flex;
       flex-direction: row;
       align-items: center;
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
 
       .name {
         ${fonts.body2Bold}
         line-height: 18px;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .address-copy {
@@ -37,6 +46,7 @@ export const SideMenuAccountItemWrapper = styled.div`
         gap: 4px;
         margin: 0 8px 0 6px;
         cursor: pointer;
+        flex-shrink: 0;
 
         .address {
           ${fonts.body3Reg}
@@ -77,7 +87,12 @@ export const SideMenuAccountItemWrapper = styled.div`
         background: #191920;
         justify-content: center;
         align-items: center;
+        flex-shrink: 0;
         ${fonts.captionReg}
+      }
+
+      .label + .label {
+        margin-left: 4px;
       }
     }
 
@@ -98,6 +113,8 @@ export const SideMenuAccountItemWrapper = styled.div`
     display: flex;
     width: 16px;
     height: 16px;
+    flex-shrink: 0;
+    margin-left: 8px;
     cursor: pointer;
 
     & > svg {

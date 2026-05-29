@@ -13,6 +13,7 @@ export interface TokenListProps {
   tokens: Array<MainToken>;
   itemStateByTokenId?: Record<string, TokenListItemState>;
   placeholderCount?: number;
+  disabled?: boolean;
   completeImageLoading: (imageUrl: string) => void;
   onClickTokenItem: (tokenId: string) => void;
 }
@@ -21,6 +22,7 @@ const TokenList: React.FC<TokenListProps> = ({
   tokens,
   itemStateByTokenId,
   placeholderCount = 0,
+  disabled = false,
   completeImageLoading,
   onClickTokenItem,
 }) => {
@@ -44,6 +46,7 @@ const TokenList: React.FC<TokenListProps> = ({
             token={token}
             loading={state?.loading}
             error={state?.error}
+            disabled={disabled}
             completeImageLoading={completeImageLoading}
             onClickTokenItem={onClickTokenItem}
           />

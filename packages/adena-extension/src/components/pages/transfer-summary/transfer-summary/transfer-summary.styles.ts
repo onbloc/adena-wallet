@@ -23,6 +23,17 @@ export const TransferSummaryWrapper = styled.div`
     margin-top: 25px;
   }
 
+  .session-signing-badge {
+    align-self: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background-color: ${getTheme('neutral', '_9')};
+    color: ${getTheme('neutral', 'a')};
+    ${fonts.captionReg};
+    font-size: 11px;
+    line-height: 16px;
+  }
+
   .network-fee-wrapper {
     width: 100%;
     margin-top: 20px;

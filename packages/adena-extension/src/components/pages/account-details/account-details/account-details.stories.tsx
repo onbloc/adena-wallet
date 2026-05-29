@@ -10,11 +10,15 @@ export default {
 export const Default: StoryObj<AccountDetailsProps> = {
   args: {
     hasPrivateKey: true,
+    hasSeedPhrase: true,
+    hasSessions: false,
     originName: '',
     name: '',
     address: '',
     moveGnoscan: () => action('moveGnoscan'),
+    moveRevealSeedPhrase: () => action('moveRevealSeedPhrase'),
     moveExportPrivateKey: () => action('moveExportPrivateKey'),
+    moveManageSessions: () => action('moveManageSessions'),
     setName: () => action('setName'),
     reset: () => action('reset'),
   },

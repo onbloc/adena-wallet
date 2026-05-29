@@ -1,24 +1,20 @@
-import { Account } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { formatNickname } from '@common/utils/client-utils';
 import SideMenu from '@components/pages/router/side-menu/side-menu';
-import { useAccountName } from '@hooks/use-account-name';
-import { useChain } from '@hooks/use-chain';
+import { useAccountListInfos } from '@hooks/use-account-list-infos';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
+import { useVisibleAccounts } from '@hooks/use-visible-accounts';
 import { useNetworkProfile } from '@hooks/use-network-profile';
-import { useTokenBalance } from '@hooks/use-token-balance';
 
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { makeQueryString } from '@common/utils/string-utils';
 import useLink from '@hooks/use-link';
 import { CommandMessage } from '@inject/message/command-message';
-import { useQuery } from '@tanstack/react-query';
-import { RoutePath, SideMenuAccountInfo, TokenBalanceType } from '@types';
+import { RoutePath, SideMenuAccountInfo } from '@types';
 
 interface SideMenuContainerProps {
   open: boolean;
@@ -31,12 +27,10 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const { clearWallet } = useWalletContext();
   const navigate = useNavigate();
   const { changeCurrentAccount } = useCurrentAccount();
-  const { currentNetwork, scannerParameters } = useNetwork();
-  const chain = useChain();
+  const { scannerParameters } = useNetwork();
   const profile = useNetworkProfile();
-  const { accountNames } = useAccountName();
-  const { accounts, loadAccounts } = useLoadAccounts();
-  const { accountNativeBalanceMap } = useTokenBalance();
+  const { loadAccounts } = useLoadAccounts();
+  const accounts = useVisibleAccounts();
   const [locked, setLocked] = useState(true);
   const { currentAccount } = useCurrentAccount();
   const [latestAccountInfos, setLatestAccountInfos] = useState<SideMenuAccountInfo[]>([]);
@@ -116,31 +110,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
     setOpen(false);
   }, []);
 
-  const { data: sideMenuAccounts = [] } = useQuery<SideMenuAccountInfo[]>(
-    ['sideMenuAccounts', accountNames, accounts, accountNativeBalanceMap, currentNetwork],
-    () => {
-      function mapBalance(
-        accountNativeBalanceMap: Record<string, TokenBalanceType>,
-        account: Account,
-      ): string {
-        const amount = accountNativeBalanceMap[account.id]?.amount;
-        if (!amount) {
-          return '-';
-        }
-        return `${amount.value}`;
-      }
-
-      return Promise.all(
-        accounts.map(async (account) => ({
-          accountId: account.id,
-          name: formatNickname(accountNames[account.id] || account.name, 10),
-          address: await account.getAddress(chain.bech32Prefix),
-          type: account.type,
-          balance: mapBalance(accountNativeBalanceMap, account),
-        })),
-      );
-    },
-  );
+  const { data: sideMenuAccounts = [] } = useAccountListInfos(accounts);
 
   useEffect(() => {
     if (sideMenuAccounts.length > 0) {
