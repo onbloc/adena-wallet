@@ -4,7 +4,7 @@ import {
   WalletResponseType,
 } from '@adena-wallet/sdk';
 import { fromBech32 } from '@cosmjs/encoding';
-import { compressPubkeyIfNeeded } from 'adena-module';
+import { compressPubkeyIfNeeded, isSessionAccount } from 'adena-module';
 
 import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
 import { bytesToBase64 } from '@common/utils/encoding-util';
@@ -30,6 +30,7 @@ import {
 
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
+import { createSessionAccountUnsupportedResponse } from '../session-account-response';
 import { InjectCore } from './core';
 
 // TODO: replace with `InjectionMessageInstance.success/failure` once
@@ -70,6 +71,14 @@ export const cosmosEnable = async (
   sendResponse: (response: any) => void,
 ): Promise<void> => {
   try {
+    const proceed = await checkNotSessionAccountForCosmos(
+      core,
+      message,
+      sendResponse,
+    );
+    if (!proceed) {
+      return;
+    }
     const params = (message.data ?? {}) as EnableCosmosParams;
     const chainIds = normalizeChainIds(params.chainIds);
     if (!chainIds) {
@@ -149,6 +158,14 @@ export const cosmosGetKey = async (
   sendResponse: (response: any) => void,
 ): Promise<void> => {
   try {
+    const proceed = await checkNotSessionAccountForCosmos(
+      core,
+      message,
+      sendResponse,
+    );
+    if (!proceed) {
+      return;
+    }
     const { chainId } = (message.data ?? {}) as GetCosmosKeyParams;
     if (!validateCosmosChainId(chainId, core.chainRegistry)) {
       sendResponse(
@@ -262,6 +279,14 @@ export const cosmosSignAmino = async (
   sendResponse: (response: any) => void,
 ): Promise<void> => {
   try {
+    const proceed = await checkNotSessionAccountForCosmos(
+      core,
+      message,
+      sendResponse,
+    );
+    if (!proceed) {
+      return;
+    }
     const params = (message.data ?? {}) as SignCosmosAminoParams;
     if (
       typeof params.chainId !== 'string' ||
@@ -319,6 +344,14 @@ export const cosmosSignDirect = async (
   sendResponse: (response: any) => void,
 ): Promise<void> => {
   try {
+    const proceed = await checkNotSessionAccountForCosmos(
+      core,
+      message,
+      sendResponse,
+    );
+    if (!proceed) {
+      return;
+    }
     const params = (message.data ?? {}) as SignCosmosDirectParams;
     if (
       typeof params.chainId !== 'string' ||
@@ -377,6 +410,14 @@ export const cosmosSendTx = async (
   sendResponse: (response: any) => void,
 ): Promise<void> => {
   try {
+    const proceed = await checkNotSessionAccountForCosmos(
+      core,
+      message,
+      sendResponse,
+    );
+    if (!proceed) {
+      return;
+    }
     const params = (message.data ?? {}) as SendCosmosTxParams;
     if (
       typeof params.chainId !== 'string' ||
@@ -455,6 +496,25 @@ export const cosmosSendTx = async (
 };
 
 // ---------------------------------------------------------------------------
+
+// SessionAccount is a Gno-only sub-key. Cosmos handlers must reject it
+// outright so the session secp256k1 key never surfaces as a Cosmos identity.
+// Returns true when the caller may proceed, false after a failure response
+// has already been emitted. Callers are expected to invoke this before any
+// other check (isEstablished, isLocked, popup hand-off, etc.).
+async function checkNotSessionAccountForCosmos(
+  core: InjectCore,
+  message: InjectionMessage,
+  sendResponse: (response: any) => void,
+): Promise<boolean> {
+  const inMemoryKey = await core.getInMemoryKey();
+  const currentAccount = await core.getCurrentAccount(inMemoryKey);
+  if (currentAccount && isSessionAccount(currentAccount)) {
+    sendResponse(createSessionAccountUnsupportedResponse(message.key));
+    return false;
+  }
+  return true;
+}
 
 async function ensureAtomOneEstablished(
   core: InjectCore,
