@@ -6,10 +6,14 @@ import {
 } from '@common/constants/tx-error.constant';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { GnoJSONRPCProvider } from '@gnolang/gno-js-client';
+import type { SessionAccountInfo } from '@gnolang/gno-js-client';
+import { HttpClient, Tm2Client } from '@gnolang/tm2-rpc';
 import {
   ABCIEndpoint,
+  ABCIErrorKey,
   ABCIResponse,
   Any,
+  BroadcastTransactionMap,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
   CommonEndpoint,
@@ -19,11 +23,12 @@ import {
   RPCResponse,
   Status,
   stringToBase64,
+  TM2Error,
   TransactionEndpoint,
   Tx,
   uint8ArrayToBase64,
+  ResponseDeliverTx,
 } from '@gnolang/tm2-js-client';
-import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
 import { encodeGnoTx, extractSessionAddressFromGnoTxBase64 } from 'adena-module';
 import axios from 'axios';
 import { formatGnoArg, GnoArg } from './qeval';
@@ -42,11 +47,60 @@ function isBase64JSONNull(data: string): boolean {
   return data === BASE64_JSON_NULL;
 }
 
+function base64ToUpperHex(b64: string): string {
+  if (!b64) {
+    return '';
+  }
+  const bin = atob(b64);
+  let hex = '';
+  for (let i = 0; i < bin.length; i++) {
+    hex += bin.charCodeAt(i).toString(16).padStart(2, '0');
+  }
+  return hex.toUpperCase();
+}
+
+type Tm2ClientConstructor = new (client: HttpClient) => Tm2Client;
+type GnoSessionAccountInfoResponse = GnoSessionAccountResponse & SessionAccountInfo;
+
+function createTm2Client(baseURL: string): Tm2Client {
+  return new (Tm2Client as unknown as Tm2ClientConstructor)(new HttpClient(baseURL));
+}
+
+function toNumberOrUndefined(value: string | undefined): number | undefined {
+  if (value === undefined || value === '') {
+    return undefined;
+  }
+  return Number(value);
+}
+
+function withSessionAccountInfo(
+  res: GnoSessionAccountResponse,
+): GnoSessionAccountInfoResponse {
+  const session = res.BaseSessionAccount;
+  const base = session.BaseAccount;
+
+  return Object.assign(res, {
+    address: base.address,
+    public_key: base.public_key ?? undefined,
+    account_number: base.account_number,
+    sequence: base.sequence,
+    master_address: session.master_address,
+    expires_at: toNumberOrUndefined(session.expires_at),
+    spend_limit: session.spend_limit,
+    spend_period: toNumberOrUndefined(session.spend_period),
+    spend_used: session.spend_used,
+    spend_reset: toNumberOrUndefined(session.spend_reset),
+    allow_paths: res.allow_paths,
+  });
+}
+
 export class GnoProvider extends GnoJSONRPCProvider {
   private chainId?: string;
+  private readonly baseURL: string;
 
   constructor(baseURL: string, chainId?: string) {
-    super(baseURL);
+    super(createTm2Client(baseURL));
+    this.baseURL = baseURL;
     this.chainId = chainId;
   }
 
@@ -156,7 +210,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
   public async getSessions(
     masterAddr: string,
     height?: number | undefined,
-  ): Promise<GnoSessionAccountResponse[]> {
+  ): Promise<GnoSessionAccountInfoResponse[]> {
     const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
       `auth/accounts/${masterAddr}/sessions`,
       '',
@@ -171,7 +225,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
     }
 
     const parsed = parseABCI<GnoSessionAccountResponse[] | null>(abciData);
-    return parsed ?? [];
+    return (parsed ?? []).map(withSessionAccountInfo);
   }
 
   // Returns a single session for (master, session) or null if not found.
@@ -184,7 +238,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
     masterAddr: string,
     sessionAddr: string,
     height?: number | undefined,
-  ): Promise<GnoSessionAccountResponse | null> {
+  ): Promise<GnoSessionAccountInfoResponse> {
     const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
       `auth/accounts/${masterAddr}/session/${sessionAddr}`,
       '',
@@ -195,14 +249,28 @@ export class GnoProvider extends GnoJSONRPCProvider {
     const abciResponse = await postABCIResponse(this.baseURL, requestBody);
     const abciData = abciResponse?.result?.response.ResponseBase.Data;
     if (!abciData) {
-      return null;
+      return null as unknown as GnoSessionAccountInfoResponse;
     }
 
-    return parseABCI<GnoSessionAccountResponse>(abciData);
+    return withSessionAccountInfo(parseABCI<GnoSessionAccountResponse>(abciData));
   }
 
   public async getTransactionSessionAddress(hash: string): Promise<string | null> {
-    return this.getTransaction(hash)
+    // The indexer returns tx hashes base64-encoded, but tm2's getTransaction
+    // parses its argument as hex (splitting into byte pairs via parseInt(_, 16)).
+    // Passing the base64 hash directly yields garbage bytes, the /tx lookup
+    // fails, and every signer resolves to null. For session accounts that drops
+    // the entire history, so convert to hex before querying.
+    let hexHash: string;
+    try {
+      hexHash = base64ToUpperHex(hash);
+    } catch {
+      return null;
+    }
+    if (!hexHash) {
+      return null;
+    }
+    return this.getTransaction(hexHash)
       .then((result) => {
         if (!result?.tx) {
           return null;
@@ -300,9 +368,67 @@ export class GnoProvider extends GnoJSONRPCProvider {
     return this.evaluateExpression(packagePath, expression, height);
   }
 
+  // Workaround for tm2-rpc@1.0.0: its decodeBroadcastTxSync expects a wrapper
+  // shape { ResponseBase, GasWanted, GasUsed, hash }, but a Gno node returns
+  // the CheckTx fields flat ({ error, data, log, hash }) under result. The
+  // library decoder throws "Cannot read properties of undefined (reading
+  // 'Error')". We bypass it by routing BROADCAST_TX_SYNC through a direct
+  // JSON-RPC call. BROADCAST_TX_COMMIT delegates to super because the commit
+  // response does include ResponseBase inside check_tx/deliver_tx and the
+  // library decoder handles it correctly.
+  public async sendTransaction<K extends keyof BroadcastTransactionMap>(
+    tx: string,
+    endpoint: K,
+  ): Promise<BroadcastTransactionMap[K]['result']> {
+    if (endpoint === TransactionEndpoint.BROADCAST_TX_SYNC) {
+      const result = await this.sendTransactionSync(tx);
+      return result as BroadcastTransactionMap[K]['result'];
+    }
+    return super.sendTransaction(tx, endpoint);
+  }
+
   public async sendTransactionSync(tx: string): Promise<BroadcastTxSyncResult> {
-    const response = this.sendTransaction(tx, TransactionEndpoint.BROADCAST_TX_SYNC);
-    return response;
+    type RawSyncResult = {
+      error: { [key: string]: string } | null;
+      data: string | null;
+      log: string;
+      hash: string;
+    };
+
+    const rpcResponse = await axios.post<RPCResponse<RawSyncResult>>(this.baseURL, {
+      jsonrpc: '2.0',
+      id: 1,
+      method: TransactionEndpoint.BROADCAST_TX_SYNC,
+      params: [tx],
+    });
+
+    if (rpcResponse.data.error) {
+      throw new Error(rpcResponse.data.error.message ?? 'broadcast_tx_sync failed');
+    }
+
+    const result = rpcResponse.data.result;
+    if (!result) {
+      throw new Error('broadcast_tx_sync returned no result');
+    }
+
+    const log = result.log ?? '';
+    if (result.error) {
+      // Match the library's broadcastTxSync semantics: on CheckTx failure,
+      // throw a TM2Error carrying the chain log so callers can use
+      // `instanceof TM2Error` and surface `.log` for diagnostics.
+      const errType = result.error[ABCIErrorKey];
+      throw new TM2Error(
+        errType ? `broadcast_tx_sync failed: ${errType}` : 'broadcast_tx_sync failed',
+        log,
+      );
+    }
+
+    return {
+      error: null,
+      data: result.data ?? null,
+      Log: log,
+      hash: base64ToUpperHex(result.hash),
+    };
   }
 
   public async sendTransactionCommit(tx: string): Promise<BroadcastTxCommitResult> {
