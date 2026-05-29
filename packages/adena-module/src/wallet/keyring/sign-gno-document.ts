@@ -15,20 +15,19 @@ import {
 
 import { publicKeyToAddress } from '../../utils/address';
 import { decodeTxMessages, Document, documentToTx } from '../../utils/messages';
+import { LocalTxSignature } from '../../proto/session/local-tx-signature';
 import { compressPubkeyIfNeeded } from '../../utils/pubkey';
-import { Keyring, SignRawOptions } from './keyring';
+import { Keyring } from './keyring';
 import {
   isHDWalletKeyring,
   isPrivateKeyKeyring,
   isWeb3AuthKeyring,
 } from './keyring-util';
+import { SignGnoOptions } from './sign-gno-options';
+
+export type { SignGnoOptions } from './sign-gno-options';
 
 const GNO_ADDRESS_PREFIX = 'g';
-
-export interface SignGnoOptions extends SignRawOptions {
-  accountNumber?: string;
-  sequence?: string;
-}
 
 // Gno transaction signing on top of Keyring.signRaw.
 // Byte pipeline mirrors tm2 wallet.signTransaction (wallet.js L185-250) exactly
@@ -75,9 +74,12 @@ export async function signGnoDocument(
     memo: tx.memo,
   };
 
-  const signBytes = stringToUTF8(
-    encodeCharacterSet(sortedJsonStringify(signPayload)),
-  );
+  const signJsonString = sortedJsonStringify(signPayload);
+  // eslint-disable-next-line no-console
+  console.log('[sign-gno] signPayload JSON (this is what gets hashed):');
+  // eslint-disable-next-line no-console
+  console.log(signJsonString);
+  const signBytes = stringToUTF8(encodeCharacterSet(signJsonString));
 
   const signature = await keyring.signRaw(signBytes, { hdPath: opts?.hdPath });
 
@@ -86,13 +88,23 @@ export async function signGnoDocument(
   // may be compressed (PrivateKey/Web3Auth — tm2 Wallet.fromPrivateKey compresses
   // before storing) or uncompressed (HDWallet — generateKeyPair returns 65 bytes).
   const compressedPubKey = compressPubkeyIfNeeded(publicKey);
-  const txSignature: TxSignature = {
-    pub_key: {
-      type_url: Secp256k1PubKeyType,
-      value: PubKeySecp256k1.encode({ key: compressedPubKey }).finish(),
-    },
-    signature,
+  const pubKeyAny = {
+    type_url: Secp256k1PubKeyType,
+    value: PubKeySecp256k1.encode({ key: compressedPubKey }).finish(),
   };
+
+  const sessionAddr = opts?.sessionAddr;
+  let txSignature: TxSignature;
+  if (sessionAddr) {
+    const localSig: LocalTxSignature = {
+      pub_key: pubKeyAny,
+      signature,
+      session_addr: sessionAddr,
+    };
+    txSignature = localSig;
+  } else {
+    txSignature = { pub_key: pubKeyAny, signature };
+  }
 
   const signedTx: Tx = {
     ...tx,
@@ -108,6 +120,10 @@ async function getKeyringPublicKey(
   if (isHDWalletKeyring(keyring)) return keyring.getPublicKey(hdPath ?? 0);
   if (isPrivateKeyKeyring(keyring)) return keyring.publicKey;
   if (isWeb3AuthKeyring(keyring)) return keyring.publicKey;
+  // SESSION keyring holds a publicKey field like PrivateKeyKeyring. Avoid importing
+  // isSessionKeyring here to prevent a circular dependency cycle:
+  // session-keyring -> sign-gno-document -> keyring-util -> session-keyring
+  if (keyring.type === 'SESSION') return (keyring as unknown as { publicKey: Uint8Array }).publicKey;
   throw new Error(
     `Keyring type ${keyring.type} cannot provide a public key for signing`,
   );

@@ -6,3 +6,4 @@ export * from './web3-auth-keyring';
 export * from './private-key-keyring';
 export * from './address-keyring';
 export * from './multisig-keyring';
+export * from './session-keyring';

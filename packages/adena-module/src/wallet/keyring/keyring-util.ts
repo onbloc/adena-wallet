@@ -8,6 +8,7 @@ import { LedgerKeyring } from './ledger-keyring';
 import { PrivateKeyKeyring } from './private-key-keyring';
 import { Web3AuthKeyring } from './web3-auth-keyring';
 import { MultisigKeyring } from './multisig-keyring';
+import { SessionKeyring } from './session-keyring';
 
 export function isHDWalletKeyring(keyring: Keyring): keyring is HDWalletKeyring {
   return keyring.type === 'HD_WALLET';
@@ -33,9 +34,13 @@ export function isMultisigKeyring(keyring: Keyring): keyring is MultisigKeyring 
   return keyring.type === 'MULTISIG';
 }
 
+export function isSessionKeyring(keyring: Keyring): keyring is SessionKeyring {
+  return keyring.type === 'SESSION';
+}
+
 export function hasPrivateKey(
   keyring: Keyring,
-): keyring is HDWalletKeyring | PrivateKeyKeyring | Web3AuthKeyring {
+): keyring is HDWalletKeyring | PrivateKeyKeyring | Web3AuthKeyring | SessionKeyring {
   if (isHDWalletKeyring(keyring)) {
     return true;
   }
@@ -43,6 +48,9 @@ export function hasPrivateKey(
     return true;
   }
   if (isWeb3AuthKeyring(keyring)) {
+    return true;
+  }
+  if (isSessionKeyring(keyring)) {
     return true;
   }
   return false;

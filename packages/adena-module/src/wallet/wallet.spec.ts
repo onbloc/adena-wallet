@@ -1,4 +1,6 @@
 import { MockLedgerConnector } from './../test-utils/mock-ledgerconnector';
+import { SessionAccount } from './account/session-account';
+import { SessionKeyring } from './keyring/session-keyring';
 import { AdenaWallet } from './wallet';
 import { generateKdfSalt } from './wallet-crypto-util';
 
@@ -151,6 +153,84 @@ describe('toJSON / fromJSON', () => {
 
   it('fromJSON with invalid JSON throws', () => {
     expect(() => AdenaWallet.fromJSON('invalid')).toThrow();
+  });
+});
+
+describe('nextSessionAccountName', () => {
+  const baseSessionConfig = {
+    masterAddress: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+    chainId: 'test-13',
+    status: 'ACTIVE' as const,
+    expiresAt: 1_900_000_000,
+    allowPaths: ['vm/exec:gno.land/r/demo/foo'],
+    spendLimit: '1000000ugnot',
+    spendPeriod: 86_400,
+  };
+
+  it('returns Session 1 when no session accounts exist', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+
+    expect(wallet.nextSessionAccountName).toBe('Session 1');
+  });
+
+  const addSession = async (wallet: AdenaWallet, name: string): Promise<SessionAccount> => {
+    const keyring = await SessionKeyring.generate(baseSessionConfig.masterAddress);
+    const session = SessionAccount.createBy(keyring, name, baseSessionConfig);
+    wallet.addKeyring(keyring);
+    wallet.addAccount(session);
+    return session;
+  };
+
+  it('uses the highest existing Session number plus one', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    await addSession(wallet, 'Session 1');
+    await addSession(wallet, 'Session 2');
+
+    expect(wallet.nextSessionAccountName).toBe('Session 3');
+  });
+
+  it('ignores session accounts with custom (non "Session N") names', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    await addSession(wallet, 'Existing Name');
+    await addSession(wallet, 'Another Name');
+
+    expect(wallet.nextSessionAccountName).toBe('Session 1');
+  });
+
+  it('does not reuse a number after a session is deleted', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    await addSession(wallet, 'Session 1');
+    const session2 = await addSession(wallet, 'Session 2');
+    await addSession(wallet, 'Session 3');
+
+    wallet.removeAccount(session2);
+
+    expect(wallet.nextSessionAccountName).toBe('Session 4');
+  });
+
+  it('does not count session accounts toward lastAccountIndex', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const beforeIndex = wallet.lastAccountIndex;
+
+    const keyring = await SessionKeyring.generate(baseSessionConfig.masterAddress);
+    const session = SessionAccount.createBy(keyring, 'Session 1', baseSessionConfig);
+    wallet.addKeyring(keyring);
+    wallet.addAccount(session);
+
+    expect(wallet.lastAccountIndex).toBe(beforeIndex);
+  });
+
+  it('exports the current session account private key', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const keyring = await SessionKeyring.generate(baseSessionConfig.masterAddress);
+    const session = SessionAccount.createBy(keyring, 'Session 1', baseSessionConfig);
+    wallet.addKeyring(keyring);
+    wallet.addAccount(session);
+    wallet.currentAccountId = session.id;
+
+    await expect(wallet.getPrivateKeyStr()).resolves.toBe(
+      Buffer.from(keyring.privateKey).toString('hex'),
+    );
   });
 });
 
