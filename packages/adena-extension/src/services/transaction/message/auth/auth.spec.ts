@@ -32,6 +32,19 @@ describe('createMessageOfCreateSession allow_paths validation', () => {
     expect(message.value.allow_paths).toEqual(allowPaths);
   });
 
+  it('returns JSON-safe session integer fields', () => {
+    const message = createMessageOfCreateSession({
+      ...baseInfo,
+      expiresAt: BigInt('1779436464'),
+      spendPeriod: BigInt(60),
+      allowPaths: ['bank/send'],
+    });
+
+    expect(message.value.expires_at).toBe('1779436464');
+    expect(message.value.spend_period).toBe('60');
+    expect(() => JSON.stringify(message)).not.toThrow();
+  });
+
   it('rejects bare routes and unknown route/type entries', () => {
     expect(() => createWithAllowPaths(['vm'])).toThrow(
       'must be one of *, vm/exec, vm/run, bank/send, bank/multisend',

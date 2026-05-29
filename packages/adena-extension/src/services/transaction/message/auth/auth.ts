@@ -1,6 +1,4 @@
-import { PubKeySecp256k1, Secp256k1PubKeyType } from '@gnolang/tm2-js-client';
-import { Any } from '@gnolang/tm2-js-client/bin/proto/google/protobuf/any';
-import Long from 'long';
+import { Any, PubKeySecp256k1, Secp256k1PubKeyType } from '@gnolang/tm2-js-client';
 import {
   compressPubkeyIfNeeded,
   MSG_CREATE_SESSION_ENDPOINT,
@@ -13,6 +11,9 @@ import {
 // "*" or <route>/<type>[:<path>].
 const MAX_ALLOW_PATHS = 8;
 const MAX_SPEND_PERIOD_SECONDS = 2_592_000; // 30 days
+const ZERO_BIGINT = BigInt(0);
+const TWO_32 = BigInt('4294967296');
+const MAX_SPEND_PERIOD_SECONDS_BIGINT = BigInt(MAX_SPEND_PERIOD_SECONDS);
 const ALLOW_PATHS_WILDCARD = '*';
 const PATH_BEARING_ROUTE_TYPE = 'vm/exec';
 const VALID_SESSION_ROUTE_TYPES = new Set([
@@ -31,11 +32,22 @@ const COIN_ENTRY_REGEX = /^([0-9]+)\s*([a-z/][a-z0-9_.:/]{2,})$/;
 interface CreateSessionMessageInfo {
   creator: string;
   sessionPublicKey: Uint8Array;
-  expiresAt: number | string | Long;
+  expiresAt: SessionInteger;
   allowPaths: string[];
   spendLimit: string;
-  spendPeriod: number | string | Long;
+  spendPeriod: SessionInteger;
 }
+
+type SessionInteger =
+  | number
+  | string
+  | bigint
+  | {
+      low?: number;
+      high?: number;
+      unsigned?: boolean;
+      toString?: () => string;
+    };
 
 interface RevokeSessionMessageInfo {
   creator: string;
@@ -103,28 +115,56 @@ const validateAllowPaths = (allowPaths: string[]): void => {
   });
 };
 
-const toLong = (value: number | string | Long): Long => {
-  if (Long.isLong(value)) {
-    return value as Long;
+const toBigInt = (value: SessionInteger): bigint => {
+  if (typeof value === 'bigint') {
+    return value;
   }
-  return Long.fromValue(value as number | string);
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || !Number.isInteger(value)) {
+      throw new Error(`invalid integer value: ${value}`);
+    }
+    return BigInt(value);
+  }
+  if (typeof value === 'string') {
+    return BigInt(value);
+  }
+
+  const low = value.low;
+  const high = value.high;
+  if (
+    typeof low === 'number' &&
+    typeof high === 'number' &&
+    Number.isInteger(low) &&
+    Number.isInteger(high)
+  ) {
+    const lowBig = BigInt(low >>> 0);
+    const highBig = value.unsigned === true
+      ? BigInt(high >>> 0)
+      : BigInt(high);
+    return highBig * TWO_32 + lowBig;
+  }
+  if (typeof value.toString === 'function') {
+    return BigInt(value.toString());
+  }
+
+  throw new Error('invalid integer value');
 };
 
-const validateSpendPeriod = (spendPeriod: number | string | Long): void => {
-  const value = toLong(spendPeriod);
-  if (value.isNegative()) {
+const validateSpendPeriod = (spendPeriod: SessionInteger): void => {
+  const value = toBigInt(spendPeriod);
+  if (value < ZERO_BIGINT) {
     throw new Error('spend_period must be non-negative.');
   }
-  if (value.greaterThan(MAX_SPEND_PERIOD_SECONDS)) {
+  if (value > MAX_SPEND_PERIOD_SECONDS_BIGINT) {
     throw new Error(
       `spend_period exceeds maximum of ${MAX_SPEND_PERIOD_SECONDS} seconds (30 days).`,
     );
   }
 };
 
-const validateExpiresAt = (expiresAt: number | string | Long): void => {
-  const value = toLong(expiresAt);
-  if (value.isNegative()) {
+const validateExpiresAt = (expiresAt: SessionInteger): void => {
+  const value = toBigInt(expiresAt);
+  if (value < ZERO_BIGINT) {
     throw new Error('expires_at must be non-negative (0 means no expiry).');
   }
 };
@@ -170,10 +210,10 @@ export const createMessageOfCreateSession = (
   value: {
     creator: string;
     session_key: Any;
-    expires_at: Long;
+    expires_at: string;
     allow_paths: string[];
     spend_limit: string;
-    spend_period: Long;
+    spend_period: string;
   };
 } => {
   validateAllowPaths(info.allowPaths);
@@ -186,10 +226,10 @@ export const createMessageOfCreateSession = (
     value: {
       creator: info.creator,
       session_key: wrapSessionPubKey(info.sessionPublicKey),
-      expires_at: toLong(info.expiresAt),
+      expires_at: toBigInt(info.expiresAt).toString(),
       allow_paths: info.allowPaths,
       spend_limit: info.spendLimit,
-      spend_period: toLong(info.spendPeriod),
+      spend_period: toBigInt(info.spendPeriod).toString(),
     },
   };
 };
