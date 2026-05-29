@@ -91,6 +91,14 @@ export class TransactionHistoryService {
     return this.transactionHistoryRepository.fetchAllTransactionHistoryBy(address, cursor);
   }
 
+  public async fetchTransactionSessionAddress(hash: string): Promise<string | null> {
+    if (!this.gnoProvider) {
+      return null;
+    }
+
+    return this.gnoProvider.getTransactionSessionAddress(hash);
+  }
+
   public async fetchNativeTransactionHistory(
     address: string,
     cursor?: string | null,
