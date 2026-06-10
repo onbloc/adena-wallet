@@ -3,6 +3,7 @@ import { useRecoilState, useRecoilValue } from 'recoil';
 
 import { fetchHealth } from '@common/utils/fetch-utils';
 import { pickDefaultByMode } from '@common/utils/network-default';
+import { makeScannerParameters, toScannerNetworkInfo } from '@common/utils/scanner-utils';
 import { EventMessage } from '@inject/message';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useEvent } from './use-event';
@@ -123,20 +124,7 @@ export const useNetwork = (): NetworkResponse => {
     if (!currentGnoNetwork) {
       return null;
     }
-    const officialNetworkIds = CHAIN_DATA.filter((network) => !!network.apiUrl).map(
-      (network) => network.networkId,
-    );
-    const isOfficialNetwork = officialNetworkIds.includes(currentGnoNetwork.networkId);
-    const networkParameters: { [key in string]: string } = isOfficialNetwork
-      ? {
-          chainId: currentGnoNetwork.networkId,
-        }
-      : {
-          type: 'custom',
-          rpcUrl: currentGnoNetwork.rpcUrl || '',
-          indexerUrl: currentGnoNetwork.indexerUrl || '',
-        };
-    return networkParameters;
+    return makeScannerParameters(toScannerNetworkInfo(currentGnoNetwork));
   }, [currentGnoNetwork]);
 
   const getDefaultNetworkInfo = useCallback((networkId: string) => {

@@ -19,7 +19,7 @@ import {
   parseParameters,
 } from '@common/utils/client-utils';
 import { fetchHealth } from '@common/utils/fetch-utils';
-import { makeQueryString } from '@common/utils/string-utils';
+import { makeTransactionScannerUrl, toScannerNetworkInfo } from '@common/utils/scanner-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { BroadcastMultisigTransaction } from '@components/molecules/broadcast-multisig-transaction';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -103,7 +103,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const { walletService, multisigService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const location = useLocation();
-  const { currentNetwork: currentWalletNetwork, scannerParameters } = useNetwork();
+  const { currentNetwork: currentWalletNetwork } = useNetwork();
   const chain = useChain();
   const profile = useNetworkProfile();
   const { openScannerLink } = useLink();
@@ -321,13 +321,11 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   };
 
   const createTxExplorerUrl = (txHash: string): string => {
-    const scannerUrl = profile?.linkUrl || SCANNER_URL;
-    const params = {
-      ...(scannerParameters || {}),
-      txhash: txHash,
-    };
-
-    return `${scannerUrl}/transactions/details?${makeQueryString(params)}`;
+    return makeTransactionScannerUrl(
+      toScannerNetworkInfo(currentNetwork),
+      txHash,
+      profile?.linkUrl || SCANNER_URL,
+    );
   };
 
   const broadcastMultisigTransaction = async (): Promise<boolean> => {
