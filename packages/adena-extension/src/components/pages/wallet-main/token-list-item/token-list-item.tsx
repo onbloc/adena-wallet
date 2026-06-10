@@ -8,6 +8,7 @@ export interface TokenListItemProps {
   token: MainToken;
   loading?: boolean;
   error?: boolean;
+  disabled?: boolean;
   completeImageLoading: (imageUrl: string) => void;
   onClickTokenItem: (tokenId: string) => void;
 }
@@ -16,6 +17,7 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   token,
   loading = false,
   error = false,
+  disabled = false,
   completeImageLoading,
   onClickTokenItem,
 }) => {
@@ -27,14 +29,15 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
 
   // Block navigation into token-details when the row's network is unreachable
   // — there is no balance/history to show, and entering would just stack
-  // another empty/error screen.
+  // another empty/error screen. Also block when the wallet-level disable flag
+  // is on (network outage or revoked-session current account).
   const handleClick = (): void => {
-    if (error) return;
+    if (error || disabled) return;
     onClickTokenItem(tokenId);
   };
 
   return (
-    <TokenListItemWrapper $disabled={error} onClick={handleClick}>
+    <TokenListItemWrapper $disabled={error || disabled} onClick={handleClick}>
       <div className='logo-wrapper'>
         <AssetIcon
           tokenIconUrl={logo}

@@ -2,14 +2,16 @@ import type { StdSignDoc } from '@cosmjs/amino';
 import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 
 // Stub out `@adena-wallet/sdk` to avoid pulling in @web3auth's native crypto at
-// import time — jsdom's globals fail noble-hashes' Uint8Array instance check.
-// The cosmos executor methods build their request messages directly and do
-// not consume SDK enum values at runtime.
+// import time. jsdom's globals fail noble-hashes' Uint8Array instance check.
+// Most cosmos executor methods build their request messages directly; doContract
+// needs the SDK metadata for request construction.
 jest.mock('@adena-wallet/sdk', () => ({
-  WalletResponseExecuteType: {},
+  WalletResponseExecuteType: { DO_CONTRACT: 'DO_CONTRACT' },
   WalletResponseFailureType: {},
   WalletResponseStatus: { SUCCESS: 'success', FAILURE: 'failure' },
-  WalletMessageInfo: {},
+  WalletMessageInfo: {
+    DO_CONTRACT: { code: 0, message: '', type: 'DO_CONTRACT' },
+  },
 }));
 
 import {
@@ -70,7 +72,7 @@ function setupPostMessageSpy(): {
   };
 }
 
-describe('AdenaExecutor — Cosmos methods', () => {
+describe('AdenaExecutor - Cosmos methods', () => {
   let spy: ReturnType<typeof setupPostMessageSpy>;
 
   beforeEach(() => {
@@ -79,6 +81,43 @@ describe('AdenaExecutor — Cosmos methods', () => {
 
   afterEach(() => {
     spy.restore();
+  });
+
+  describe('doContract', () => {
+    it('posts MsgCreateSession requests instead of rejecting them as unsupported', async () => {
+      const executor = new AdenaExecutor();
+      const message = {
+        type: '/auth.m_create_session' as const,
+        value: {
+          creator: 'g1creator',
+          session_key: {
+            type_url: '/tm.PubKeySecp256k1',
+            value: [10, 33, 3],
+          },
+          expires_at: { low: 1, high: 0, unsigned: false },
+          allow_paths: ['*'],
+          spend_limit: '1000000ugnot',
+          spend_period: { low: 0, high: 0, unsigned: false },
+        },
+      };
+
+      const promise = executor.doContract({
+        messages: [message],
+        memo: '',
+        networkInfo: {
+          chainId: 'test-13',
+          rpcUrl: 'https://rpc.test-13-aeddi-1.gnoland.network:443',
+        },
+      });
+
+      const last = spy.getLast();
+      expect(last.type).toBe('DO_CONTRACT');
+      expect(last.status).toBe('request');
+      expect(last.data.messages).toEqual([message]);
+
+      spy.respondSuccess({ hash: 'tx-hash' });
+      await expect(promise).resolves.toMatchObject({ status: 'success' });
+    });
   });
 
   describe('enableCosmos', () => {

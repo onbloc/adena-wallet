@@ -4,6 +4,7 @@ import { LedgerAccount } from './ledger-account';
 import { SingleAccount } from './single-account';
 import { AirgapAccount } from './airgap-account';
 import { MultisigAccount } from './multisig-account';
+import { hasPrivateKeyAccount } from './account-util';
 import { secp256k1PubKeyToAddressBytes } from '../../utils/address';
 
 // Fixed compressed secp256k1 public key for deterministic tests
@@ -54,6 +55,19 @@ const BASE_MULTISIG_INFO = {
     { address: 'g1aaa', publicKey: { '@type': '/cosmos.crypto.secp256k1.PubKey', value: 'abc' } },
     { address: 'g1bbb', publicKey: { '@type': '/cosmos.crypto.secp256k1.PubKey', value: 'def' } },
   ],
+};
+
+const BASE_SESSION_INFO = {
+  index: 0,
+  type: 'SESSION' as const,
+  name: 'Session 1',
+  keyringId: 'keyring-session',
+  publicKey: TEST_PUBLIC_KEY,
+  sessionConfig: {
+    masterAddress: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+    chainId: 'test-13',
+    status: 'ACTIVE' as const,
+  },
 };
 
 describe('SeedAccount.getAddress', () => {
@@ -111,5 +125,11 @@ describe('makeAccount', () => {
     const account = makeAccount(BASE_SEED_INFO);
     const address = await account.getAddress('g');
     expect(address).toMatch(/^g1/);
+  });
+});
+
+describe('hasPrivateKeyAccount', () => {
+  it('treats session accounts as private key exportable', () => {
+    expect(hasPrivateKeyAccount(makeAccount(BASE_SESSION_INFO))).toBe(true);
   });
 });

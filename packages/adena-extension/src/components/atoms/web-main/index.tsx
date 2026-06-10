@@ -20,12 +20,12 @@ export const WebMain = styled.main.withConfig({
   ${({ spacing }): RuleSet =>
     spacing
       ? css`
-          height: calc(100vh - 80px);
+          min-height: calc(100vh - 80px);
           padding-top: ${`${spacing - 80}px`};
           justify-content: flex-start;
         `
       : css`
-          height: 100vh;
+          min-height: 100vh;
           margin-top: -80px;
           justify-content: center;
         `}
@@ -34,7 +34,7 @@ export const WebMain = styled.main.withConfig({
     responsiveSpacing
       ? css`
           @media (max-height: 850px) {
-            height: calc(100vh - 80px);
+            min-height: calc(100vh - 80px);
             padding-top: ${`${responsiveSpacing - 80}px`};
             justify-content: flex-start;
           }

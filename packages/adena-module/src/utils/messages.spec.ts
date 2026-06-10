@@ -1,8 +1,17 @@
 import { Secp256k1 } from '@cosmjs/crypto';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 import { PubKeySecp256k1 } from '@gnolang/tm2-js-client';
+import { Any } from '@gnolang/tm2-js-client/bin/proto/google/protobuf/any';
+import Long from 'long';
 
-import { Document, documentToDefaultTx } from './messages';
+import { MsgCreateSession } from '../proto';
+import {
+  decodeTxMessages,
+  Document,
+  documentToDefaultTx,
+  documentToTx,
+} from './messages';
+import { MSG_CREATE_SESSION_ENDPOINT } from './session-message-endpoints';
 
 function makeDocument(): Document {
   return {
@@ -82,6 +91,76 @@ describe('documentToDefaultTx', () => {
     }).finish();
     expect(Buffer.from(sig.pub_key!.value).equals(Buffer.from(expectedWrapped))).toBe(
       true,
+    );
+  });
+});
+
+describe('session messages', () => {
+  function makeSessionKey(): Any {
+    return Any.create({
+      type_url: '/tm.PubKeySecp256k1',
+      value: PubKeySecp256k1.encode({ key: new Uint8Array(33).fill(0x02) }).finish(),
+    });
+  }
+
+  it('decodes MsgCreateSession without delegating nested Any.decode', () => {
+    const msg = MsgCreateSession.create({
+      creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+      session_key: makeSessionKey(),
+      expires_at: Long.fromNumber(1779436464),
+      allow_paths: ['bank/send'],
+      spend_limit: '1000000ugnot',
+      spend_period: Long.ONE,
+    });
+    const encoded = MsgCreateSession.encode(msg).finish();
+    const decodeSpy = jest.spyOn(Any, 'decode').mockImplementation(() => {
+      throw new Error('nested Any.decode must not be called');
+    });
+
+    try {
+      const decoded = MsgCreateSession.decode(encoded);
+      expect(decoded.session_key?.type_url).toBe('/tm.PubKeySecp256k1');
+      expect(decoded.session_key?.value).toEqual(makeSessionKey().value);
+    } finally {
+      decodeSpy.mockRestore();
+    }
+  });
+
+  it('round trips create session messages through documentToTx and decodeTxMessages', () => {
+    const msg = {
+      type: MSG_CREATE_SESSION_ENDPOINT,
+      value: {
+        creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+        session_key: makeSessionKey(),
+        expires_at: Long.fromNumber(1779436464),
+        allow_paths: ['bank/send'],
+        spend_limit: '1000000ugnot',
+        spend_period: Long.ONE,
+      },
+    };
+    const document: Document = {
+      msgs: [msg],
+      fee: {
+        gas: '200000',
+        amount: [{ denom: 'ugnot', amount: '1000000' }],
+      },
+      memo: '',
+      chain_id: 'test-13',
+      account_number: '2701052',
+      sequence: '0',
+    };
+
+    const decoded = decodeTxMessages(documentToTx(document).messages);
+
+    expect(decoded[0]).toMatchObject({
+      '@type': MSG_CREATE_SESSION_ENDPOINT,
+      creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+      allow_paths: ['bank/send'],
+      spend_limit: '1000000ugnot',
+      spend_period: '1',
+    });
+    expect(decoded[0].session_key.value).toBe(
+      Buffer.from(makeSessionKey().value).toString('base64'),
     );
   });
 });

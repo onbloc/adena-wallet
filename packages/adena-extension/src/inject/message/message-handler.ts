@@ -132,6 +132,9 @@ export class MessageHandler {
         });
         break;
       case 'SWITCH_NETWORK':
+        if (await HandlerMethod.rejectSessionAccountUnsupported(core, message, sendResponse)) {
+          break;
+        }
         HandlerMethod.checkEstablished(core, message, sendResponse)
           .then((isEstablished) => {
             if (isEstablished) {
@@ -163,37 +166,54 @@ export class MessageHandler {
         });
         break;
       case 'CREATE_MULTISIG_ACCOUNT':
+        if (await HandlerMethod.rejectSessionAccountUnsupported(core, message, sendResponse)) {
+          break;
+        }
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.createMultisigAccount(message, sendResponse);
+            HandlerMethod.createMultisigAccount(core, message, sendResponse);
           }
         });
         break;
       case 'CREATE_MULTISIG_TRANSACTION':
+        if (await HandlerMethod.rejectSessionAccountUnsupported(core, message, sendResponse)) {
+          break;
+        }
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.createMultisigDocument(message, sendResponse);
+            HandlerMethod.createMultisigDocument(core, message, sendResponse);
           }
         });
         break;
       case 'SIGN_MULTISIG_TRANSACTION':
+        if (await HandlerMethod.rejectSessionAccountUnsupported(core, message, sendResponse)) {
+          break;
+        }
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.signMultisigDocument(message, sendResponse);
+            HandlerMethod.signMultisigDocument(core, message, sendResponse);
           }
         });
         break;
       case 'BROADCAST_MULTISIG_TRANSACTION':
+        if (await HandlerMethod.rejectSessionAccountUnsupported(core, message, sendResponse)) {
+          break;
+        }
         HandlerMethod.checkEstablished(core, message, sendResponse)
           .then((isEstablished) => {
             if (isEstablished) {
-              HandlerMethod.broadcastMultisigTransaction(message, sendResponse);
+              HandlerMethod.broadcastMultisigTransaction(core, message, sendResponse);
             }
           })
           .catch((e) => {
             console.log(e, 'e');
           });
         break;
+      // Every cosmos.* handler must invoke `checkNotSessionAccountForCosmos`
+      // at entry and the matching popup component must apply the same guard
+      // after unlock. SessionAccount is a Gno-only sub-key, so any Cosmos
+      // response would either leak the session key or fabricate a master
+      // identity. New cosmos cases added below MUST follow the same pattern.
       case 'ENABLE_COSMOS':
         HandlerMethod.cosmosEnable(core, message, sendResponse);
         break;

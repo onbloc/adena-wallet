@@ -24,9 +24,10 @@ import {
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
+import { encodeGnoTx, extractSessionAddressFromGnoTxBase64 } from 'adena-module';
 import axios from 'axios';
 import { formatGnoArg, GnoArg } from './qeval';
-import { AccountInfo, GnoDocumentInfo, VMQueryType } from './types';
+import { AccountInfo, GnoDocumentInfo, GnoSessionAccountResponse, VMQueryType } from './types';
 import {
   fetchABCIResponse,
   isHttpsAvailable,
@@ -34,6 +35,12 @@ import {
   parseProto,
   postABCIResponse,
 } from './utils';
+
+const BASE64_JSON_NULL = stringToBase64('null');
+
+function isBase64JSONNull(data: string): boolean {
+  return data === BASE64_JSON_NULL;
+}
 
 export class GnoProvider extends GnoJSONRPCProvider {
   private chainId?: string;
@@ -136,6 +143,75 @@ export class GnoProvider extends GnoJSONRPCProvider {
     }
   }
 
+  // Lists all sessions for a master account.
+  //
+  // ABCI path: auth/accounts/{masterAddr}/sessions
+  // Response: amino JSON array of GnoSessionAccountResponse (wrapper with
+  // BaseSessionAccount.BaseAccount nested + allow_paths).
+  //
+  // Error policy:
+  //   - empty session list (ABCI Data is empty bytes or JSON null) -> []
+  //   - parse failure on non-empty Data → throw (do not mask schema drift)
+  //   - network/RPC error → throw (do not mask endpoint changes)
+  public async getSessions(
+    masterAddr: string,
+    height?: number | undefined,
+  ): Promise<GnoSessionAccountResponse[]> {
+    const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
+      `auth/accounts/${masterAddr}/sessions`,
+      '',
+      `${height ?? 0}`,
+      false,
+    ]);
+
+    const abciResponse = await postABCIResponse(this.baseURL, requestBody);
+    const abciData = abciResponse?.result?.response.ResponseBase.Data;
+    if (!abciData || isBase64JSONNull(abciData)) {
+      return [];
+    }
+
+    const parsed = parseABCI<GnoSessionAccountResponse[] | null>(abciData);
+    return parsed ?? [];
+  }
+
+  // Returns a single session for (master, session) or null if not found.
+  //
+  // ABCI path: auth/accounts/{masterAddr}/session/{sessionAddr}
+  //
+  // Error policy: same as getSessions. "Not found" is signaled by an empty
+  // ABCI Data and returns null; parse and network errors throw.
+  public async getSession(
+    masterAddr: string,
+    sessionAddr: string,
+    height?: number | undefined,
+  ): Promise<GnoSessionAccountResponse | null> {
+    const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
+      `auth/accounts/${masterAddr}/session/${sessionAddr}`,
+      '',
+      `${height ?? 0}`,
+      false,
+    ]);
+
+    const abciResponse = await postABCIResponse(this.baseURL, requestBody);
+    const abciData = abciResponse?.result?.response.ResponseBase.Data;
+    if (!abciData) {
+      return null;
+    }
+
+    return parseABCI<GnoSessionAccountResponse>(abciData);
+  }
+
+  public async getTransactionSessionAddress(hash: string): Promise<string | null> {
+    return this.getTransaction(hash)
+      .then((result) => {
+        if (!result?.tx) {
+          return null;
+        }
+        return extractSessionAddressFromGnoTxBase64(result.tx);
+      })
+      .catch(() => null);
+  }
+
   public getValueByEvaluateExpression(
     packagePath: string,
     functionName: string,
@@ -212,7 +288,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
   /**
    * Execute a Gno IIFE expression via `vm/qeval` and return the raw response
    * string produced by the node (e.g. `("foo" string)` or `(42 int64)`).
-   * Decoding the payload into a typed value is left to the caller — combine
+   * Decoding the payload into a typed value is left to the caller. Combine
    * with `parseQEvalResult` / `decodeQEvalString` / `decodeQEvalInt` etc.
    */
   public evaluateIIFE(
@@ -235,7 +311,13 @@ export class GnoProvider extends GnoJSONRPCProvider {
   }
 
   async simulateTx(tx: Tx): Promise<ResponseDeliverTx> {
-    const encodedTx = uint8ArrayToBase64(Tx.encode(tx).finish());
+    // encodeGnoTx falls back to tm2 Tx.encode when no signature carries
+    // session_addr, so byte equality with the legacy path is preserved for
+    // non-session simulates. For SessionAccount simulates the placeholder
+    // LocalTxSignature emitted by documentToDefaultTx (with sessionAddr)
+    // reaches the node, which routes the simulate as a session signature
+    // and skips the master pubkey-address derivation check.
+    const encodedTx = uint8ArrayToBase64(encodeGnoTx(tx));
     const params = {
       request: newRequest(ABCIEndpoint.ABCI_QUERY, ['.app/simulate', `${encodedTx}`, '0', false]),
     };

@@ -3,6 +3,8 @@ import { SCANNER_URL } from '@common/constants/resource.constant';
 import { Event, EventStatus, EventStore } from '@common/event-store';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { fromBase64, toBase64 } from '@common/utils/client-utils';
+import { getGnoscanChainId, isGnoscanChainIdSupported } from '@common/utils/gnoscan-url';
+import { makeQueryString } from '@common/utils/string-utils';
 import { BroadcastTxCommitResult, BroadcastTxSyncResult } from '@gnolang/tm2-js-client';
 import { CommandMessageData } from '@inject/message/command-message';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message/message';
@@ -43,12 +45,14 @@ export async function addTransactionEvent(
     return null;
   }
 
-  const isDefaultNetwork = !!network.apiUrl;
+  const scannerNetworkId = network.networkId || network.chainId;
+  const scannerChainId = getGnoscanChainId(scannerNetworkId);
+  const isDefaultNetwork = !!network.apiUrl || isGnoscanChainIdSupported(scannerNetworkId);
 
   createTransactionNotification(
     'PENDING',
     transactionHash,
-    network.chainId,
+    scannerChainId,
     network.rpcUrl,
     isDefaultNetwork,
   );
@@ -62,7 +66,7 @@ export async function addTransactionEvent(
       createTransactionNotification(
         eventResult.status,
         transactionHash,
-        network.chainId,
+        scannerChainId,
         network.rpcUrl,
         isDefaultNetwork,
       );
@@ -77,10 +81,10 @@ function createTransactionNotificationId(
   rpcUrl: string,
   isDefaultNetwork: boolean,
 ): string {
-  const scannerUrl = `${SCANNER_URL}/transactions/details?=txhash=${txHash}`;
-  const resultScannerUrl = isDefaultNetwork
-    ? `${scannerUrl}&chainId=${chainId}`
-    : `${scannerUrl}&type=custom&rpcUrl=${rpcUrl}`;
+  const params: { [key in string]: string } = isDefaultNetwork
+    ? { chainId, txhash: txHash }
+    : { type: 'custom', rpcUrl, txhash: txHash };
+  const resultScannerUrl = `${SCANNER_URL}/transactions/details?${makeQueryString(params)}`;
 
   const encodedResultScannerUrl = toBase64(resultScannerUrl);
 

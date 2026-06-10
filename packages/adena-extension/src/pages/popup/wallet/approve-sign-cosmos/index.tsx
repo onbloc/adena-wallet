@@ -4,7 +4,7 @@ import {
   WalletResponseType,
 } from '@adena-wallet/sdk';
 import type { StdSignDoc } from '@cosmjs/amino';
-import { isLedgerAccount } from 'adena-module';
+import { isLedgerAccount, isSessionAccount } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
@@ -27,6 +27,7 @@ import { fonts, getTheme } from '@styles/theme';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import {
   CosmosResponseExecuteType,
   SerializedSignDoc,
@@ -79,6 +80,17 @@ const ApproveSignCosmosContainer: React.FC = () => {
       .isLocked()
       .then((locked) => locked && navigate(RoutePath.ApproveLogin + location.search));
   }, [walletService]);
+
+  // SessionAccount is a Gno-only sub-key. Block any Cosmos signing as soon as
+  // the post-unlock `currentAccount` and the request mode are both known, so
+  // the popup never reaches `transactionService.signCosmos*Doc`.
+  useEffect(() => {
+    if (!currentAccount || !mode || !key) return;
+    if (isSessionAccount(currentAccount)) {
+      chrome.runtime.sendMessage(createSessionAccountUnsupportedResponse(key));
+      window.close();
+    }
+  }, [currentAccount, mode, key]);
 
   useEffect(() => {
     try {

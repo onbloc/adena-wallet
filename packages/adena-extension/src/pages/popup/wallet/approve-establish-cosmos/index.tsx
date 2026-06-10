@@ -9,6 +9,7 @@ import WalletConnect from '@components/pages/approve-establish/wallet-connect/wa
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage } from '@inject/message';
+import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import {
   CosmosResponseExecuteType,
   EnableCosmosParams,
@@ -19,6 +20,7 @@ import {
   WalletResponseRejectType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
+import { isSessionAccount } from 'adena-module';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -73,6 +75,17 @@ const ApproveEstablishCosmosContainer: React.FC = () => {
   useEffect(() => {
     checkLockWallet();
   }, [walletService]);
+
+  // SessionAccount is a Gno-only sub-key. Reject the cosmos.enable request as
+  // soon as the post-unlock `currentAccount` is loaded so the popup never
+  // stores an establish record for the session id.
+  useEffect(() => {
+    if (!currentAccount || !key) return;
+    if (isSessionAccount(currentAccount)) {
+      chrome.runtime.sendMessage(createSessionAccountUnsupportedResponse(key));
+      window.close();
+    }
+  }, [currentAccount, key]);
 
   useEffect(() => {
     initRequest();

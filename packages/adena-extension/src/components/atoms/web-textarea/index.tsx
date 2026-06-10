@@ -7,7 +7,9 @@ interface InputProps {
   error?: boolean;
 }
 
-export const WebTextarea = styled.textarea<InputProps>`
+export const WebTextarea = styled.textarea.withConfig({
+  shouldForwardProp: (prop): boolean => prop !== 'error' && prop !== 'width',
+})<InputProps>`
   ${webFonts.body5};
   width: ${({ width }): string => width ?? 'auto'};
   color: ${getTheme('webNeutral', '_100')};

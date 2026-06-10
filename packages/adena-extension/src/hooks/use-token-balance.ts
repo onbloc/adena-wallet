@@ -1,5 +1,5 @@
 import { QueryObserverResult, useQuery } from '@tanstack/react-query';
-import { Account } from 'adena-module';
+import { Account, isSessionAccount } from 'adena-module';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useRecoilValueLoadable, useSetRecoilState } from 'recoil';
 
@@ -51,7 +51,7 @@ export const useTokenBalance = (): {
   const { wallet } = useWalletContext();
   const { balanceService, cosmosBalanceService, chainRegistry, tokenRegistry } = useAdenaContext();
   const { currentNetwork, currentAtomoneNetwork } = useNetwork();
-  const { currentAddress, currentAccount } = useCurrentAccount();
+  const { currentAddress, currentAccount, currentFundingAddress } = useCurrentAccount();
   const { existWallet, lockedWallet } = useWallet();
 
   useEffect(() => {
@@ -85,17 +85,28 @@ export const useTokenBalance = (): {
   } = useQuery<TokenBalanceType[]>(
     // 'gno' discriminator keeps this cache entry separate from the Cosmos query
     // even though both share the 'balances' prefix.
-    ['balances', 'gno', currentAddress, currentNetwork.chainId, isFetchedGRC20Tokens, tokenLogoMap],
+    // For SessionAccount, currentFundingAddress resolves to the master Gno
+    // address: session keys never hold balances, every session-signed tx
+    // spends master funds, so we always display master balances.
+    [
+      'balances',
+      'gno',
+      currentFundingAddress,
+      currentNetwork.chainId,
+      isFetchedGRC20Tokens,
+      tokenLogoMap,
+    ],
     () => {
-      if (currentAddress === null || nativeToken == null) return [];
+      if (currentFundingAddress === null || nativeToken == null) return [];
       return Promise.all(
-        tokenMetainfos.map((tokenModel) => fetchBalanceBy(currentAddress, tokenModel)),
+        tokenMetainfos.map((tokenModel) => fetchBalanceBy(currentFundingAddress, tokenModel)),
       );
     },
     {
       refetchInterval: GNO_REFETCH_INTERVAL,
       keepPreviousData: true,
-      enabled: availableBalanceFetching && currentAddress !== null && nativeToken !== null,
+      enabled:
+        availableBalanceFetching && currentFundingAddress !== null && nativeToken !== null,
     },
   );
 
@@ -134,7 +145,13 @@ export const useTokenBalance = (): {
     {
       refetchInterval: COSMOS_REFETCH_INTERVAL,
       keepPreviousData: true,
-      enabled: availableBalanceFetching && currentAccount !== null,
+      // SessionAccount is a Gno-only key; deriving and querying Cosmos
+      // addresses for it is meaningless and wastes LCD bandwidth. Skip the
+      // query entirely so the Cosmos token rows stay empty in this mode.
+      enabled:
+        availableBalanceFetching &&
+        currentAccount !== null &&
+        !isSessionAccount(currentAccount),
       // Default retry (3) causes excessive delay and traffic during LCD outages.
       retry: 1,
     },
@@ -203,6 +220,12 @@ export const useTokenBalance = (): {
   }, [chainRegistry, currentAtomoneNetwork]);
 
   const cosmosShellTokens = useMemo<TokenModel[]>(() => {
+    // SessionAccount is a Gno-only key. Skip the entire Cosmos row shell so
+    // wallet-main/search/deposit lists never surface Cosmos tokens in this
+    // mode. The Cosmos query above is already disabled for SessionAccount.
+    if (currentAccount && isSessionAccount(currentAccount)) {
+      return [];
+    }
     return allTokenMetainfos
       .filter(
         (meta) => meta.type === 'cosmos-native' && activeCosmosNetworkIds.has(meta.networkId),
@@ -215,7 +238,7 @@ export const useTokenBalance = (): {
         // receives a usable logo without their own fallback chain.
         image: COSMOS_TOKEN_ICON_MAP[meta.tokenId] ?? meta.image,
       }));
-  }, [allTokenMetainfos, activeCosmosNetworkIds]);
+  }, [allTokenMetainfos, activeCosmosNetworkIds, currentAccount]);
 
   // Build the row shell from token metadata. Each row exists from the first
   // frame; balances populate row-by-row as queries resolve. Rows whose chain
@@ -275,7 +298,12 @@ export const useTokenBalance = (): {
 
       return Promise.all(
         wallet.accounts.map(async (account) => {
-          const address = accountAddressesByAccountId[account.id];
+          // SessionAccount rows in the side menu must show the master's GNOT
+          // balance, not the (always-empty) session address balance, so swap
+          // in the master address for funding lookups.
+          const address = isSessionAccount(account)
+            ? account.getMasterAddress()
+            : accountAddressesByAccountId[account.id];
           return fetchBalanceBy(address, nativeToken);
         }),
       ).then((balances) =>

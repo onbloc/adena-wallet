@@ -29,6 +29,12 @@ jest.mock('@adena-wallet/sdk', () => ({
       type: 'SIGN_REJECTED',
       message: 'The signature has been rejected by the user.',
     },
+    UNSUPPORTED_TYPE: {
+      code: 4005,
+      status: 'failure',
+      type: 'UNSUPPORTED_TYPE',
+      message: 'Adena does not support the requested transaction type.',
+    },
   },
 }));
 
@@ -136,6 +142,85 @@ describe('cosmos handlers', () => {
   beforeEach(() => {
     mockCreatePopup.mockReset();
     mockBroadcastTx.mockReset();
+  });
+
+  describe('session account guard', () => {
+    function makeSessionCore(): FakeCore {
+      return makeCore({
+        getCurrentAccount: jest.fn(async () => ({
+          id: 'session-1',
+          type: 'SESSION',
+        })),
+      } as never);
+    }
+
+    it.each([
+      [
+        'ENABLE_COSMOS',
+        (core: FakeCore, message: InjectionMessage, send: jest.Mock) =>
+          cosmosEnable(core as never, message, send),
+        { chainIds: 'atomone-1' },
+      ],
+      [
+        'GET_COSMOS_KEY',
+        (core: FakeCore, message: InjectionMessage, send: jest.Mock) =>
+          cosmosGetKey(core as never, message, send),
+        { chainId: 'atomone-1' },
+      ],
+      [
+        'SIGN_COSMOS_AMINO',
+        (core: FakeCore, message: InjectionMessage, send: jest.Mock) =>
+          cosmosSignAmino(core as never, message, send),
+        {
+          chainId: 'atomone-1',
+          signer: 'atone1sample',
+          signDoc: {
+            chain_id: 'atomone-1',
+            account_number: '0',
+            sequence: '0',
+            fee: { amount: [], gas: '200000' },
+            msgs: [],
+            memo: '',
+          },
+        },
+      ],
+      [
+        'SIGN_COSMOS_DIRECT',
+        (core: FakeCore, message: InjectionMessage, send: jest.Mock) =>
+          cosmosSignDirect(core as never, message, send),
+        {
+          chainId: 'atomone-1',
+          signer: 'atone1sample',
+          signDoc: {
+            bodyBytes: bytesToBase64([1]),
+            authInfoBytes: bytesToBase64([2]),
+            chainId: 'atomone-1',
+            accountNumber: '1',
+          },
+        },
+      ],
+      [
+        'SEND_COSMOS_TX',
+        (core: FakeCore, message: InjectionMessage, send: jest.Mock) =>
+          cosmosSendTx(core as never, message, send),
+        { chainId: 'atomone-1', tx: bytesToBase64([1]), mode: 'sync' },
+      ],
+    ])('returns UNSUPPORTED_TYPE for %s', async (type, run, data) => {
+      const core = makeSessionCore();
+      const send = jest.fn();
+      await run(core, makeMessage(type, data), send);
+
+      expect(send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'failure',
+          type: 'UNSUPPORTED_TYPE',
+          code: 4005,
+          message: 'Adena does not support the requested transaction type.',
+        }),
+      );
+      expect(mockCreatePopup).not.toHaveBeenCalled();
+      expect(core.establishAtomOneService.isEstablishedBy).not.toHaveBeenCalled();
+    });
   });
 
   describe('cosmosEnable', () => {

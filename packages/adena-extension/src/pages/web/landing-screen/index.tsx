@@ -1,25 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
-import React, { ReactElement, useCallback, useMemo, useRef } from 'react';
-import styled, { useTheme } from 'styled-components';
+import React, { ReactElement } from 'react';
+import styled from 'styled-components';
 
 import { useAdenaContext } from '@hooks/use-context';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
-import { WEB_LARGE_CONTENT_WIDTH } from '@common/constants/ui.constant';
 
-import { Row, View, WebMain, WebText } from '@components/atoms';
-import IconAirgap from '@assets/icon-airgap';
-import IconMultisig from '@assets/icon-multisig';
-import IconHardwareWallet from '@assets/icon-hardware-wallet';
-import IconThunder from '@assets/icon-thunder';
+import { View, WebMain } from '@components/atoms';
+import WebMainButton from '@components/atoms/web-main-button';
+import IconStandardWallet from '@assets/icon-standard-wallet';
+import IconUsb from '@assets/icon-usb';
+import IconAdvancedSetup from '@assets/icon-advanced-setup';
 import AnimationAddAccount from '@assets/web/lottie/add-account.json';
 import welcomeJson from '@assets/web/lottie/welcome.json';
 import Lottie from '@components/atoms/lottie';
-import WebMainButton from '@components/atoms/web-main-button';
-import WalletCreationHelpOverlay from '@components/pages/web/wallet-creation-help-overlay/wallet-creation-help-overlay';
+import { WebText } from '@components/atoms/web-text';
 
 const StyledAnimationWrapper = styled.div`
   display: block;
+  width: 100%;
   height: 88px;
   margin-bottom: 4px;
   overflow: visible;
@@ -28,11 +27,6 @@ const StyledAnimationWrapper = styled.div`
 const LandingScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const { walletService } = useAdenaContext();
-  const theme = useTheme();
-  const hardwareWalletButtonRef = useRef<HTMLButtonElement>(null);
-  const airgapAccountButtonRef = useRef<HTMLButtonElement>(null);
-  const multisigAccountButtonRef = useRef<HTMLButtonElement>(null);
-  const advancedOptionButtonRef = useRef<HTMLButtonElement>(null);
 
   const { data: existWallet, isLoading } = useQuery(
     ['existWallet', walletService],
@@ -40,122 +34,67 @@ const LandingScreen = (): ReactElement => {
     {},
   );
 
-  const { data: visibleGuide, refetch: refetchVisibleGuide } = useQuery(
-    ['landingScreen/visibleGuide', existWallet],
-    async () => {
-      if (existWallet === undefined) {
-        return false;
-      }
-      const isSkip = await walletService.isSkipWalletGuide(existWallet);
-      return isSkip === false;
-    },
-    {},
-  );
-
-  const animationMarginLeftSize = useMemo(() => {
-    if (existWallet) {
-      return -10;
-    }
-    return -50;
-  }, [existWallet]);
-
-  const moveSetupAirgapScreen = useCallback(() => {
-    navigate(RoutePath.WebSetupAirgap);
-  }, []);
-
-  const moveSetupMultisigScreen = useCallback(() => {
-    navigate(RoutePath.WebSetupMultisig);
-  }, []);
-
-  const confirmWalletGuide = useCallback(() => {
-    if (existWallet === undefined) {
-      return;
-    }
-    walletService.updateWalletGuideConfirmDate(existWallet).finally(refetchVisibleGuide);
-  }, [walletService, existWallet]);
-
   if (isLoading) {
     return <WebMain />;
   }
 
   return (
-    <WebMain width={`${WEB_LARGE_CONTENT_WIDTH}px`}>
-      {existWallet ? (
-        <React.Fragment>
-          <StyledAnimationWrapper>
-            <Lottie speed={1} height={88} animationData={AnimationAddAccount} visibleSize={264} />
-          </StyledAnimationWrapper>
-          <View style={{ rowGap: 16 }}>
-            <WebText type='headline1'>{'Add Account'}</WebText>
-            <WebText type='body2' color={theme.webNeutral._500} style={{ whiteSpace: 'nowrap' }}>
-              {'Select a method to add a new account to Adena.'}
-            </WebText>
-          </View>
-        </React.Fragment>
-      ) : (
-        <React.Fragment>
+    <WebMain width='360px'>
+      <View style={{ rowGap: 40, width: '100%' }}>
+        <View style={{ rowGap: 24 }}>
           <StyledAnimationWrapper>
             <Lottie
-              style={{ marginLeft: animationMarginLeftSize }}
               speed={1}
               height={88}
-              animationData={welcomeJson}
+              animationData={existWallet ? AnimationAddAccount : welcomeJson}
               visibleSize={264}
             />
           </StyledAnimationWrapper>
-          <View style={{ rowGap: 16 }}>
-            <WebText type='headline1'>{'Welcome to Adena!'}</WebText>
-            <WebText type='body2' color={theme.webNeutral._500} style={{ whiteSpace: 'nowrap' }}>
-              {'The only wallet you need for Gno.land with unparalleled security.'}
+          <View style={{ rowGap: 8 }}>
+            <WebText type='headline4'>
+              {existWallet ? 'Add Account' : 'Welcome to Adena'}
+            </WebText>
+            <WebText type='body4' color='#8D9199'>
+              {existWallet
+                ? 'Select a method to add a new account to Adena.'
+                : 'The only wallet you need for Gnoland with unparalleled security'}
             </WebText>
           </View>
-        </React.Fragment>
-      )}
+        </View>
 
-      <Row style={{ width: '100%', columnGap: 12, marginTop: 8 }}>
-        <WebMainButton
-          buttonRef={hardwareWalletButtonRef}
-          figure='primary'
-          iconElement={<IconHardwareWallet />}
-          text='Hardware Wallet'
-          onClick={(): void => {
-            navigate(RoutePath.WebSelectHardWallet);
-          }}
-        />
-        <WebMainButton
-          buttonRef={airgapAccountButtonRef}
-          figure='secondary'
-          iconElement={<IconAirgap />}
-          text='Airgap Account'
-          onClick={moveSetupAirgapScreen}
-        />
-        <WebMainButton
-          buttonRef={multisigAccountButtonRef}
-          figure='quinary'
-          iconElement={<IconMultisig />}
-          text='Multi-sig Account'
-          onClick={moveSetupMultisigScreen}
-        />
-        <WebMainButton
-          buttonRef={advancedOptionButtonRef}
-          figure='tertiary'
-          iconElement={<IconThunder />}
-          text='Advanced Options'
-          onClick={(): void => {
-            navigate(RoutePath.WebAdvancedOption);
-          }}
-        />
-      </Row>
-
-      {visibleGuide && (
-        <WalletCreationHelpOverlay
-          hardwareWalletButtonRef={hardwareWalletButtonRef}
-          airgapAccountButtonRef={airgapAccountButtonRef}
-          multisigAccountButtonRef={multisigAccountButtonRef}
-          advancedOptionButtonRef={advancedOptionButtonRef}
-          onFinish={confirmWalletGuide}
-        />
-      )}
+        <View style={{ rowGap: 16, width: '100%' }}>
+          <WebMainButton
+            layout='list'
+            figure='primary'
+            iconElement={<IconStandardWallet />}
+            text='Standard Wallets'
+            description='Create or import accounts with a seed phrase, private key, or Google login.'
+            onClick={(): void => {
+              navigate(RoutePath.WebAdvancedOption);
+            }}
+          />
+          <WebMainButton
+            layout='list'
+            figure='secondary'
+            iconElement={<IconUsb />}
+            text='Hardware Wallets'
+            description='Connect your accounts from hardware wallets like Ledger.'
+            onClick={(): void => {
+              navigate(RoutePath.WebSelectHardWallet);
+            }}
+          />
+          <WebMainButton
+            layout='list'
+            figure='tertiary'
+            iconElement={<IconAdvancedSetup />}
+            text='Advanced Setup'
+            description='Session, Airgap, and Multi-sig accounts for advanced key management.'
+            onClick={(): void => {
+              navigate(RoutePath.WebAdvancedSetup);
+            }}
+          />
+        </View>
+      </View>
     </WebMain>
   );
 };

@@ -27,7 +27,7 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
   moveAccountDetail,
 }) => {
   const theme = useTheme();
-  const { accountId, name, address, balance, type } = account;
+  const { accountId, name, address, balance, type, badgeLabel } = account;
   const [openedMoreInfo, setOpenedMoreInfo] = useState(false);
   const [positionX, setPositionX] = useState(0);
   const [positionY, setPositionY] = useState(0);
@@ -54,22 +54,29 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
     return name;
   }, [name]);
 
-  const label = useMemo(() => {
-    switch (type) {
-      case 'AIRGAP':
-        return 'Airgap';
-      case 'WEB3_AUTH':
-        return 'Google';
-      case 'PRIVATE_KEY':
-        return 'Imported';
-      case 'LEDGER':
-        return 'Ledger';
-      case 'MULTISIG':
-        return 'Multsig';
-      default:
-        return null;
-    }
-  }, [type]);
+  const labels = useMemo(() => {
+    const typeLabel = ((): string | null => {
+      switch (type) {
+        case 'AIRGAP':
+          return 'Airgap';
+        case 'WEB3_AUTH':
+          return 'Google';
+        case 'PRIVATE_KEY':
+          return 'Imported';
+        case 'LEDGER':
+          return 'Ledger';
+        case 'MULTISIG':
+          return 'Multsig';
+        case 'SESSION':
+          return 'Session';
+        default:
+          return null;
+      }
+    })();
+
+    // Master badge (if any) comes first, followed by the account type chip.
+    return [badgeLabel, typeLabel].filter((value): value is string => Boolean(value));
+  }, [badgeLabel, type]);
 
   const onClickItem = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -122,11 +129,13 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
           <span className='name'>{displayName}</span>
           <div className='address-copy' onClick={onClickCopy}>
             <span className='address'>{formatAddress(address, 6)}</span>
-            <span className='copy-icon'>
-              {copied ? <IconCopyCheck /> : <IconCopy />}
-            </span>
+            <span className='copy-icon'>{copied ? <IconCopyCheck /> : <IconCopy />}</span>
           </div>
-          {label !== null && <span className='label'>{label}</span>}
+          {labels.map((text) => (
+            <span key={text} className='label'>
+              {text}
+            </span>
+          ))}
         </div>
         <div className='balance-wrapper'>
           {balance === '-' ? (

@@ -3,6 +3,7 @@ import { NetworkMetainfo, RoutePath } from '@types';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
+import { rejectSessionAccountUnsupported } from './session-account-guard';
 
 function matchChainId(network: NetworkMetainfo, chainId: string): boolean {
   return network.chainId === chainId;
@@ -88,6 +89,10 @@ export const switchNetwork = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
+  if (await rejectSessionAccountUnsupported(core, requestData, sendResponse)) {
+    return;
+  }
+
   const chainId = requestData.data?.chainId || '';
   if (chainId === '') {
     sendResponse(

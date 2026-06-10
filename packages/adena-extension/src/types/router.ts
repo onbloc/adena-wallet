@@ -87,6 +87,9 @@ export enum RoutePath {
   AddAddress = '/settings/add-address',
   SecurityPrivacy = '/settings/security-privacy',
   AboutAdena = '/settings/about-adena',
+  ManageSessions = '/settings/manage-sessions',
+  RevokeSession = '/settings/manage-sessions/revoke',
+  RevokeAllSessions = '/settings/manage-sessions/revoke-all',
   RemoveAccount = '/settings/security-privacy/remove-account',
   ResetWallet = '/settings/security-privacy/reset-wallet',
   SettingAutoLockTimer = '/settings/security-privacy/auto-lock-timer',
@@ -109,6 +112,8 @@ export enum RoutePath {
   WebQuestionnaire = '/web/questionnaire',
   WebAccountAdd = '/web/account-add',
   WebAccountImport = '/web/account-import',
+  WebSessionAdd = '/web/session-add',
+  WebAdvancedSetup = '/web/advanced-setup',
 }
 
 export type RouteParams = {
@@ -267,6 +272,16 @@ export type RouteParams = {
   };
   [RoutePath.SecurityPrivacy]: null;
   [RoutePath.AboutAdena]: null;
+  [RoutePath.ManageSessions]: {
+    masterAddress: string;
+  } | null;
+  [RoutePath.RevokeSession]: {
+    sessionAddr: string;
+    masterAddress: string;
+  };
+  [RoutePath.RevokeAllSessions]: {
+    masterAddress: string;
+  };
   [RoutePath.RemoveAccount]: null;
   [RoutePath.ResetWallet]: {
     from: 'forgot-password';
@@ -297,6 +312,10 @@ export type RouteParams = {
   [RoutePath.WebAccountImport]: {
     doneQuestionnaire: boolean;
   } | null;
+  [RoutePath.WebSessionAdd]: {
+    doneQuestionnaire: boolean;
+  } | null;
+  [RoutePath.WebAdvancedSetup]: null;
   [RoutePath.WebWalletImport]: {
     doneQuestionnaire: boolean;
   } | null;
@@ -312,6 +331,7 @@ export type RouteParams = {
       | RoutePath.WebAccountAdd
       | RoutePath.WebWalletExport
       | RoutePath.WebWalletImport
-      | RoutePath.WebAccountImport;
+      | RoutePath.WebAccountImport
+      | RoutePath.WebSessionAdd;
   };
 };

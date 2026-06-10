@@ -1,7 +1,8 @@
-import { validateCosmosAddress } from 'adena-module';
+import { isSessionAccount, validateCosmosAddress } from 'adena-module';
 import { useCallback, useEffect, useState } from 'react';
 
 import { inferChainGroup } from '@common/utils/address-chain';
+import { getWalletFundingAddress } from '@common/utils/account-address';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { AddressBookItem } from '@repositories/wallet';
 
@@ -39,7 +40,7 @@ export type UseAddressBookInputHookReturn = {
 export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHookReturn => {
   const { addressBookService, chainRegistry } = useAdenaContext();
   const { wallet } = useWalletContext();
-  const { getCurrentAddress } = useCurrentAccount();
+  const { currentAccount, getCurrentAddress } = useCurrentAccount();
   const chain = useChain(chainGroup);
   const addressPrefix = chain.bech32Prefix;
   const [opened, setOpened] = useState(false);
@@ -72,6 +73,11 @@ export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHook
     const currentAccountInfos = [];
     const currentAddress = await getCurrentAddress(addressPrefix);
     for (const account of wallet?.accounts || []) {
+      // Session addresses are wallet-internal and must never appear as a send
+      // target: they hold no funds and any transfer to them would freeze.
+      if (isSessionAccount(account)) {
+        continue;
+      }
       const address = await account.getAddress(addressPrefix);
       if (address !== currentAddress) {
         currentAccountInfos.push({
@@ -186,15 +192,21 @@ export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHook
 
   const validateEqualAddress = useCallback(async () => {
     const address = getResultAddress();
-    const currentAddress = await getCurrentAddress(addressPrefix);
-    if (address === currentAddress) {
+    // SessionAccount must compare against the master address: from_address in
+    // the actual transaction is master, not the session address, so the
+    // "self-send" check makes sense only against master. For non-session
+    // accounts this resolves to the regular derived address.
+    const compareAddress = currentAccount
+      ? await getWalletFundingAddress(currentAccount, addressPrefix)
+      : await getCurrentAddress(addressPrefix);
+    if (address === compareAddress) {
       setHasError(true);
       setErrorMessage('You can’t send GRC20 tokens to your own address');
       return false;
     }
     clearError();
     return true;
-  }, [selected, selectedAddressBook, address, addressPrefix]);
+  }, [selected, selectedAddressBook, address, addressPrefix, currentAccount]);
 
   useEffect(() => {
     getAddressBookInfos().then(setAddressBookInfos);

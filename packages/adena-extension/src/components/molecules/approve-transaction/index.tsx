@@ -61,6 +61,8 @@ export interface ApproveTransactionProps {
   onCloseWithResponse?: () => void;
   /** Global error banner message shown between fee section and transaction data (from simulate error) */
   simulateErrorBannerMessage?: string | null;
+  /** Session signing guard rejection banner (Phase 5). Shown when SessionAccount cannot sign this request */
+  sessionGuardBannerMessage?: string | null;
   /** Per-message validation errors - array aligned with transactionMessages */
   messageErrors?: (string | undefined)[];
   /** Whether argument type validation failed (disables Approve) */
@@ -97,6 +99,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   errorDetail = null,
   onCloseWithResponse,
   simulateErrorBannerMessage,
+  sessionGuardBannerMessage,
   messageErrors,
   hasArgumentValidationError = false,
 }) => {
@@ -332,6 +335,13 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         <div ref={errorBannerRef} className='simulate-error-banner'>
           <span className='error-label'>ERROR:&nbsp;</span>
           <span className='error-text'>{simulateErrorBannerMessage}</span>
+        </div>
+      )}
+
+      {sessionGuardBannerMessage && (
+        <div className='simulate-error-banner'>
+          <span className='error-label'>SESSION:&nbsp;</span>
+          <span className='error-text'>{sessionGuardBannerMessage}</span>
         </div>
       )}
 

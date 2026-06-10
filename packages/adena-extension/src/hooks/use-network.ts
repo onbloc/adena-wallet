@@ -1,16 +1,21 @@
+import { Account, isSessionAccount } from 'adena-module';
 import { useCallback, useMemo } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
+import { getDappVisibleAddress } from '@common/utils/account-address';
 import { fetchHealth } from '@common/utils/fetch-utils';
+import { getGnoscanChainParameters } from '@common/utils/gnoscan-url';
 import { pickDefaultByMode } from '@common/utils/network-default';
+import { createRegisterUrl } from '@common/utils/register-url';
 import { EventMessage } from '@inject/message';
+import { NetworkState, WalletState } from '@states';
 import { useAdenaContext, useWalletContext } from './use-context';
+import { useChain } from './use-chain';
 import { useEvent } from './use-event';
 
 import CHAIN_DATA from '@resources/chains/chains.json';
-import { NetworkState } from '@states';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
+import { AtomoneNetworkMetainfo, NetworkMetainfo, RoutePath } from '@types';
 import {
   atomoneNetworkToProfile,
   atomoneNetworkToTokenProfiles,
@@ -71,12 +76,15 @@ function isAtomoneNetwork(
 
 export const useNetwork = (): NetworkResponse => {
   const { dispatchEvent } = useEvent();
-  const { changeNetwork: changeNetworkProvider } = useWalletContext();
+  const chain = useChain();
+  const { changeNetwork: changeNetworkProvider, wallet } = useWalletContext();
   const [networkMetainfos, setNetworkMetainfos] = useRecoilState(NetworkState.networkMetainfos);
   const [atomoneNetworks, setAtomoneNetworkMetainfos] = useRecoilState(
     NetworkState.atomoneNetworkMetainfos,
   );
-  const { chainService, chainRegistry, tokenRegistry } = useAdenaContext();
+  const { accountService, chainService, chainRegistry, tokenRegistry, sessionRepository } =
+    useAdenaContext();
+  const [currentAccount, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
   const [currentGnoNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork);
   const [currentAtomoneNetwork, setCurrentAtomoneNetwork] = useRecoilState(
     NetworkState.currentAtomoneNetwork,
@@ -123,6 +131,11 @@ export const useNetwork = (): NetworkResponse => {
     if (!currentGnoNetwork) {
       return null;
     }
+    const gnoscanChainParameters = getGnoscanChainParameters(currentGnoNetwork.networkId);
+    if (gnoscanChainParameters) {
+      return gnoscanChainParameters;
+    }
+
     const officialNetworkIds = CHAIN_DATA.filter((network) => !!network.apiUrl).map(
       (network) => network.networkId,
     );
@@ -204,7 +217,7 @@ export const useNetwork = (): NetworkResponse => {
 
   // If the user picks a network whose mainnet/testnet stance differs from the
   // current networkMode, flip the mode and drag the *other* chain group onto
-  // the matching pair. Skip the chain group the user just switched — it's
+  // the matching pair. Skip the chain group the user just switched: it's
   // already correct. Keeps `changeNetwork` symmetric with `changeNetworkMode`.
   const syncModeFromTarget = useCallback(
     async (isMainnetTarget: boolean, justSwitched: ChainGroup): Promise<void> => {
@@ -247,10 +260,80 @@ export const useNetwork = (): NetworkResponse => {
     ],
   );
 
+  const findSessionMasterAccount = useCallback(async (): Promise<Account | null> => {
+    if (!wallet || !currentAccount || !isSessionAccount(currentAccount)) {
+      return null;
+    }
+
+    const masterAddress = currentAccount.getMasterAddress();
+    for (const account of wallet.accounts) {
+      if (isSessionAccount(account)) {
+        continue;
+      }
+      const accountAddress = await account.getAddress(chain.bech32Prefix).catch(() => null);
+      if (accountAddress === masterAddress) {
+        return account;
+      }
+    }
+
+    return wallet.accounts.find((account) => !isSessionAccount(account)) ?? null;
+  }, [wallet, currentAccount, chain.bech32Prefix]);
+
+  const fallbackToMasterAccount = useCallback(async (): Promise<boolean> => {
+    const nextAccount = await findSessionMasterAccount();
+    if (!nextAccount) {
+      window.open(createRegisterUrl(RoutePath.WebAccountAdd), '_blank');
+      window.close();
+      return false;
+    }
+
+    const prevAccount = currentAccount;
+    await accountService.changeCurrentAccount(nextAccount);
+    setCurrentAccount(nextAccount);
+
+    const nextAddress = await getDappVisibleAddress(nextAccount, chain.bech32Prefix);
+    const prevAddress = prevAccount
+      ? await getDappVisibleAddress(prevAccount, chain.bech32Prefix)
+      : null;
+    if (prevAddress !== nextAddress) {
+      dispatchEvent(EventMessage.event('changedAccount', nextAddress));
+    }
+    return true;
+  }, [
+    accountService,
+    chain.bech32Prefix,
+    currentAccount,
+    dispatchEvent,
+    findSessionMasterAccount,
+    setCurrentAccount,
+    wallet,
+  ]);
+
+  const ensureSessionCanSwitchNetwork = useCallback(
+    async (targetChainId: string): Promise<boolean> => {
+      if (!currentAccount || !isSessionAccount(currentAccount)) {
+        return true;
+      }
+      const sessionAddr = await currentAccount.getAddress('g').catch(() => null);
+      if (!sessionAddr) {
+        return true;
+      }
+      const metadata = await sessionRepository.get(sessionAddr);
+      if (!metadata || metadata.chainId === targetChainId) {
+        return true;
+      }
+      return fallbackToMasterAccount();
+    },
+    [currentAccount, fallbackToMasterAccount, sessionRepository],
+  );
+
   const changeNetwork = useCallback(
     async (id: string) => {
       const atomoneTarget = atomoneNetworks.find((network) => network.id === id);
       if (atomoneTarget) {
+        if (!(await ensureSessionCanSwitchNetwork(atomoneTarget.chainId))) {
+          return false;
+        }
         setCurrentAtomoneNetwork(atomoneTarget);
         setSelectedProfileByChainGroup((prev) => ({ ...prev, atomone: atomoneTarget.id }));
         await chainService.updateCurrentAtomoneNetworkId(atomoneTarget.id).catch(() => null);
@@ -263,31 +346,51 @@ export const useNetwork = (): NetworkResponse => {
         return false;
       }
       const network = networkMetainfos.find((network) => network.id === id) ?? networkMetainfos[0];
+      if (!(await ensureSessionCanSwitchNetwork(network.chainId))) {
+        return false;
+      }
       await chainService.updateCurrentNetworkId(network.id);
       await changeNetworkOfProvider(network);
       setSelectedProfileByChainGroup((prev) => ({ ...prev, gno: network.id }));
       await syncModeFromTarget(network.main === true, 'gno');
       return true;
     },
-    [networkMetainfos, atomoneNetworks, changeNetworkOfProvider, syncModeFromTarget],
+    [
+      networkMetainfos,
+      atomoneNetworks,
+      changeNetworkOfProvider,
+      syncModeFromTarget,
+      ensureSessionCanSwitchNetwork,
+    ],
   );
 
   const changeNetworkMode = useCallback(
     async (nextMode: NetworkMode): Promise<void> => {
+      const wantsMainnet = nextMode === 'mainnet';
+      const gnoTarget = pickDefaultByMode(networkMetainfos, nextMode);
+      const atomoneTarget = atomoneNetworks.find(
+        (network) => !network.deleted && network.isMainnet === wantsMainnet,
+      );
+      const targetChainId =
+        gnoTarget && gnoTarget.id !== currentGnoNetwork?.id
+          ? gnoTarget.chainId
+          : atomoneTarget && atomoneTarget.id !== currentAtomoneNetwork?.id
+            ? atomoneTarget.chainId
+            : null;
+
+      if (targetChainId && !(await ensureSessionCanSwitchNetwork(targetChainId))) {
+        return;
+      }
+
       setNetworkMode(nextMode);
       await chainService.updateNetworkMode(nextMode).catch(() => null);
-      const wantsMainnet = nextMode === 'mainnet';
 
-      const gnoTarget = pickDefaultByMode(networkMetainfos, nextMode);
       if (gnoTarget && gnoTarget.id !== currentGnoNetwork?.id) {
         await chainService.updateCurrentNetworkId(gnoTarget.id);
         await changeNetworkOfProvider(gnoTarget);
         setSelectedProfileByChainGroup((prev) => ({ ...prev, gno: gnoTarget.id }));
       }
 
-      const atomoneTarget = atomoneNetworks.find(
-        (network) => !network.deleted && network.isMainnet === wantsMainnet,
-      );
       if (atomoneTarget && atomoneTarget.id !== currentAtomoneNetwork?.id) {
         setCurrentAtomoneNetwork(atomoneTarget);
         setSelectedProfileByChainGroup((prev) => ({ ...prev, atomone: atomoneTarget.id }));
@@ -300,6 +403,7 @@ export const useNetwork = (): NetworkResponse => {
       currentGnoNetwork,
       currentAtomoneNetwork,
       changeNetworkOfProvider,
+      ensureSessionCanSwitchNetwork,
     ],
   );
 

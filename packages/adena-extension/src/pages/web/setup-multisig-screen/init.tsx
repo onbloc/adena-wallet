@@ -9,7 +9,7 @@ import { Pressable, Row, View, WebImg, WebText } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';
 import WebMainButton from '@components/atoms/web-main-button';
-import IconAirgap from '@assets/web/airgap-green.svg';
+import IconAdvancedSetup from '@assets/web/advanced-setup-rounded.svg';
 import IconCreate from '@assets/web/icon-create';
 import IconImport from '@assets/web/icon-import';
 import IconLink from '@assets/web/link.svg';
@@ -51,7 +51,7 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
   return (
     <StyledContainer>
       <View style={{ marginBottom: 8 }}>
-        <WebImg src={IconAirgap} size={88} />
+        <WebImg src={IconAdvancedSetup} size={88} />
       </View>
 
       <WebTitleWithDescription

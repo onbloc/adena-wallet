@@ -2,6 +2,7 @@ import { Account, AccountInfo } from './account';
 import { LedgerAccount } from './ledger-account';
 import { SeedAccount } from './seed-account';
 import { SingleAccount } from './single-account';
+import { SessionAccount } from './session-account';
 
 export function isSeedAccount(account: Account): account is SeedAccount {
   return account.type === 'HD_WALLET';
@@ -19,8 +20,12 @@ export function isAirgapAccount(account: Account): account is SingleAccount {
   return account.type === 'AIRGAP';
 }
 
+export function isSessionAccount(account: Account): account is SessionAccount {
+  return account.type === 'SESSION';
+}
+
 export function hasPrivateKeyAccount(account: Account): boolean {
-  return isSeedAccount(account) || isSingleAccount(account);
+  return isSeedAccount(account) || isSingleAccount(account) || isSessionAccount(account);
 }
 
 export function hasHDPath(account: Account): account is SeedAccount | LedgerAccount {
@@ -41,6 +46,9 @@ export function deserializeAccount(plain: string) {
   }
   if (accountInfo.type === 'PRIVATE_KEY' || accountInfo.type === 'WEB3_AUTH') {
     return SingleAccount.fromData(accountInfo);
+  }
+  if (accountInfo.type === 'SESSION') {
+    return SessionAccount.fromData(accountInfo);
   }
   throw new Error('Invalid account type');
 }

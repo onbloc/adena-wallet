@@ -13,7 +13,7 @@ interface WebPrivateKeyBoxProps {
   error?: boolean;
 }
 
-const StyledContainer = styled(View)<{ showBlur: boolean }>`
+const StyledContainer = styled(View)`
   position: relative;
   overflow: hidden;
   height: 80px;
@@ -54,7 +54,7 @@ export const WebPrivateKeyBox = ({
   }, []);
 
   return (
-    <StyledContainer showBlur={showBlur}>
+    <StyledContainer>
       <WebTextarea
         value={displayPrivateKey}
         placeholder='Private Key'

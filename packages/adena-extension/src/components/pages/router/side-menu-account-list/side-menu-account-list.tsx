@@ -15,9 +15,9 @@ const SideMenuAccountList: React.FC<SideMenuAccountListProps> = ({
 }) => {
   return (
     <SideMenuAccountListWrapper>
-      {accounts.map((account, index) => (
+      {accounts.map((account) => (
         <SideMenuAccountItem
-          key={index}
+          key={account.accountId}
           selected={account.accountId === currentAccountId}
           account={account}
           focusedAccountId={focusedAccountId}

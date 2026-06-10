@@ -4,6 +4,9 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { RoutePath } from '../../types/router';
 
 import { AboutAdena } from '@pages/popup/certify/about-adena';
+import ManageSessions from '@pages/popup/wallet/manage-sessions';
+import RevokeSession from '@pages/popup/wallet/revoke-session';
+import RevokeAllSessions from '@pages/popup/wallet/revoke-all-sessions';
 import AddAddress from '@pages/popup/certify/add-address';
 import AddressBook from '@pages/popup/certify/address-book';
 import { AutoLockTimer } from '@pages/popup/certify/auto-lock-timer';
@@ -177,6 +180,9 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.SecurityPrivacy} element={<SecurityPrivacy />} />
         <Route path={RoutePath.SettingAutoLockTimer} element={<AutoLockTimer />} />
         <Route path={RoutePath.AboutAdena} element={<AboutAdena />} />
+        <Route path={RoutePath.ManageSessions} element={<ManageSessions />} />
+        <Route path={RoutePath.RevokeSession} element={<RevokeSession />} />
+        <Route path={RoutePath.RevokeAllSessions} element={<RevokeAllSessions />} />
         <Route path={RoutePath.RemoveAccount} element={<RemoveAccount />} />
         <Route path={RoutePath.ResetWallet} element={<ResetWallet />} />
       </Routes>

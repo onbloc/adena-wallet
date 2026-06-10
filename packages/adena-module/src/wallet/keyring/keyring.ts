@@ -13,6 +13,7 @@ import { LedgerKeyring } from './ledger-keyring';
 import { PrivateKeyKeyring } from './private-key-keyring';
 import { Web3AuthKeyring } from './web3-auth-keyring';
 import { MultisigKeyring } from './multisig-keyring';
+import { SessionKeyring } from './session-keyring';
 
 export type KeyringType =
   | 'HD_WALLET'
@@ -20,7 +21,8 @@ export type KeyringType =
   | 'LEDGER'
   | 'WEB3_AUTH'
   | 'AIRGAP'
-  | 'MULTISIG';
+  | 'MULTISIG'
+  | 'SESSION';
 
 export interface SignRawOptions {
   // HD-only hint: which derivation index to sign with. Ignored by non-HD keyrings.
@@ -70,6 +72,7 @@ export interface KeyringData {
   addressBytes?: number[];
   multisigConfig?: MultisigConfig;
   signerPublicKeys?: SignerPublicKeyInfo[];
+  masterAddress?: string;
 }
 
 export function makeKeyring(keyringData: KeyringData) {
@@ -86,6 +89,8 @@ export function makeKeyring(keyringData: KeyringData) {
       return new AddressKeyring(keyringData);
     case 'MULTISIG':
       return new MultisigKeyring(keyringData);
+    case 'SESSION':
+      return new SessionKeyring(keyringData);
     default:
       throw new Error('Invalid Account type');
   }

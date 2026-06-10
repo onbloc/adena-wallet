@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { isSessionAccount } from 'adena-module';
 import { useRecoilState } from 'recoil';
 
 import { useAdenaContext } from '@hooks/use-context';
@@ -9,6 +10,7 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { CommonState } from '@states';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
+import { useSessionFilteredTransactions } from './use-session-filtered-transactions';
 
 export const useTransactionHistory = ({
   enabled,
@@ -31,46 +33,59 @@ export const useTransactionHistory = ({
   refetch: (options?: RefetchOptions) => void;
 } => {
   const { currentNetwork } = useNetwork();
-  const { currentAddress } = useCurrentAccount();
+  const { currentAccount, currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();
   const { tokenMetainfos } = useTokenMetainfo();
   const [fetchedHistoryBlockHeight, setFetchedHistoryBlockHeight] = useRecoilState(
     CommonState.fetchedHistoryBlockHeight,
   );
 
+  const historyAddress = useMemo(() => {
+    if (currentAccount && isSessionAccount(currentAccount)) {
+      return currentAccount.getMasterAddress();
+    }
+    return currentAddress;
+  }, [currentAccount, currentAddress]);
+
   const { data: allTransactions, refetch } = useQuery(
-    ['history/common/all', currentNetwork.networkId, currentAddress],
-    () => transactionHistoryService.fetchAllTransactionHistory(currentAddress || ''),
+    ['history/common/all', currentNetwork.networkId, historyAddress],
+    () => transactionHistoryService.fetchAllTransactionHistory(historyAddress || ''),
     {
       enabled:
-        !!currentAddress &&
+        !!historyAddress &&
         tokenMetainfos.length > 0 &&
         transactionHistoryService.supported &&
         enabled,
     },
   );
 
+  const fetchedTransactions = useMemo(() => {
+    return allTransactions?.transactions ?? null;
+  }, [allTransactions]);
+
+  const {
+    transactions: sessionFilteredTransactions,
+    isLoading: isSessionFilterLoading,
+    isFetching: isSessionFilterFetching,
+  } = useSessionFilteredTransactions(fetchedTransactions);
+
   const blockIndex = useMemo(() => {
-    if (!allTransactions) {
+    if (!sessionFilteredTransactions) {
       return null;
     }
     if (!fetchedHistoryBlockHeight) {
-      return allTransactions.transactions.length < 20 ? allTransactions.transactions.length : 20;
+      return sessionFilteredTransactions.length < 20 ? sessionFilteredTransactions.length : 20;
     }
     return fetchedHistoryBlockHeight;
-  }, [allTransactions, fetchedHistoryBlockHeight]);
+  }, [sessionFilteredTransactions, fetchedHistoryBlockHeight]);
 
   const transactions = useMemo(() => {
-    if (!allTransactions) {
+    if (!sessionFilteredTransactions || blockIndex === null) {
       return null;
     }
 
-    if (blockIndex === null) {
-      return null;
-    }
-
-    return allTransactions.transactions.slice(0, blockIndex || 0);
-  }, [allTransactions, blockIndex]);
+    return sessionFilteredTransactions.slice(0, blockIndex || 0);
+  }, [sessionFilteredTransactions, blockIndex]);
 
   const firstTransactionHash = useMemo(() => {
     if (!transactions || transactions.length === 0) {
@@ -86,7 +101,7 @@ export const useTransactionHistory = ({
   );
 
   const fetchNextPage = async (): Promise<boolean> => {
-    const transactionSize = allTransactions?.transactions.length || 0;
+    const transactionSize = sessionFilteredTransactions?.length || 0;
     const endIndex = blockIndex || 20;
     const nextBlockIndex = endIndex >= transactionSize ? transactionSize : endIndex + 20;
 
@@ -102,10 +117,12 @@ export const useTransactionHistory = ({
     data: data || null,
     isSupported: transactionHistoryService.supported && enabled,
     isFetched: isFetched,
-    status,
-    isLoading,
-    isFetching,
-    hasNextPage: allTransactions?.transactions.length !== blockIndex,
+    status: isSessionFilterLoading ? 'loading' : status,
+    isLoading: isSessionFilterLoading || isLoading,
+    isFetching: isSessionFilterFetching || isFetching,
+    hasNextPage: sessionFilteredTransactions
+      ? sessionFilteredTransactions.length !== blockIndex
+      : false,
     fetchNextPage,
     refetch: refetchTransactions,
   };

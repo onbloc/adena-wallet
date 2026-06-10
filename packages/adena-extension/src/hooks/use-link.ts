@@ -1,13 +1,14 @@
 import { SCANNER_URL } from '@common/constants/resource.constant';
+import { createRegisterUrl } from '@common/utils/register-url';
 import { makeQueryString } from '@common/utils/string-utils';
-import { REGISTER_PATH, SECURITY_PATH } from '@types';
+import { RoutePath, SECURITY_PATH } from '@types';
 import { useNetwork } from './use-network';
 import { useNetworkProfile } from './use-network-profile';
 
 export type UseLinkReturn = {
   openLink: (link: string) => void;
   openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
-  openRegister: () => void;
+  openRegister: (route?: RoutePath) => void;
   openSecurity: () => void;
 };
 
@@ -29,8 +30,8 @@ const useLink = (): UseLinkReturn => {
     openLink(link);
   };
 
-  const openRegister = (): void => {
-    window.open(REGISTER_PATH, '_blank');
+  const openRegister = (route?: RoutePath): void => {
+    window.open(createRegisterUrl(route), '_blank');
   };
 
   const openSecurity = (): void => {

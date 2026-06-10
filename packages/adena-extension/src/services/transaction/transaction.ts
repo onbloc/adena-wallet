@@ -15,6 +15,8 @@ import {
   CosmosSignMode,
   CosmosTxBroadcastResponse,
   Document,
+  encodeGnoTx,
+  isSessionAccount,
   Keyring,
   LedgerAccount,
   LedgerKeyring,
@@ -128,12 +130,54 @@ export class TransactionService {
     memo?: string | undefined,
   ): Promise<Document> => {
     const provider = this.getGnoProvider();
-    const address = await account.getAddress(addressPrefix);
-    const accountInfo = await provider.getAccountInfo(address).catch(() => null);
-    const accountNumber = accountInfo?.accountNumber ?? 0;
-    const accountSequence = accountInfo?.sequence ?? 0;
+
+    let accountNumber: string;
+    let accountSequence: string;
+    let callerAddress: string;
+
+    if (isSessionAccount(account)) {
+      // Session sign bytes require the session's OWN account_number/sequence
+      // (NOT the master's; see gno tm2/pkg/sdk/auth/ante.go). The session
+      // record lives under auth/accounts/{master}/session/{session}, so we
+      // can't reuse the standard getAccountInfo() path which queries
+      // auth/accounts/{address}.
+      //
+      // caller / from_address however must be the master address: sessions
+      // act on the master account's behalf and the chain credits state
+      // changes to it.
+      const master = account.getMasterAddress();
+      const sessionAddr = await account.getAddress(addressPrefix);
+      // getSession() returns null only for "not found" and throws on
+      // network/parse/endpoint errors (see GnoProvider.getSession docs).
+      // We do NOT catch here: catching would let a parse failure leak as
+      // accountNumber=0 into the sign bytes and surface as an unrelated
+      // sequence-mismatch error downstream.
+      const res = await provider.getSession(master, sessionAddr);
+      if (!res) {
+        throw new Error(
+          `Session not found: master=${master} session=${sessionAddr}`,
+        );
+      }
+      accountNumber = res.BaseSessionAccount.BaseAccount.account_number;
+      accountSequence = res.BaseSessionAccount.BaseAccount.sequence;
+      callerAddress = master;
+    } else {
+      const address = await account.getAddress(addressPrefix);
+      const accountInfo = await provider.getAccountInfo(address).catch(() => null);
+      accountNumber = (accountInfo?.accountNumber ?? 0).toString();
+      accountSequence = (accountInfo?.sequence ?? 0).toString();
+      callerAddress = address;
+    }
+
     return {
-      msgs: mappedDocumentMessagesWithCaller(messages, address),
+      // SessionAccount must force from_address/caller to master because UI
+      // call sites may have populated it with the session address before
+      // reaching here. Other accounts keep the existing fallback semantics.
+      msgs: mappedDocumentMessagesWithCaller(
+        messages,
+        callerAddress,
+        isSessionAccount(account),
+      ),
       fee: {
         amount: [
           {
@@ -145,8 +189,8 @@ export class TransactionService {
       },
       chain_id: chainId,
       memo: memo || '',
-      account_number: accountNumber.toString(),
-      sequence: accountSequence.toString(),
+      account_number: accountNumber,
+      sequence: accountSequence,
     };
   };
 
@@ -272,7 +316,7 @@ export class TransactionService {
     return result;
   };
 
-  // ─── Cosmos AMINO (Phase 3) ─────────────────────────────────────────
+  // Cosmos AMINO (Phase 3)
   // Thin passthrough to AdenaWallet's Cosmos methods. Gno methods above
   // remain untouched so Gno flows have zero regression risk.
 
@@ -296,7 +340,7 @@ export class TransactionService {
 
   /**
    * Sign an already-constructed Keplr `StdSignDoc` supplied by an external dApp.
-   * Bypasses CosmosDocument translation — the caller owns signDoc construction
+   * Bypasses CosmosDocument translation: the caller owns signDoc construction
    * and the returned `signed` field echoes it verbatim (Keplr spec).
    */
   public signCosmosAminoDoc = async (
@@ -410,7 +454,7 @@ export class TransactionService {
    * Uses a connector-bound LedgerKeyring instead of the wallet-owned one
    * (whose connector is null after restore) and delegates to the same
    * `signRaw` path that the Gno sign flow already exercises. Direct mode has
-   * no Ledger counterpart — the Cosmos Ledger app only signs AMINO JSON, so
+   * no Ledger counterpart: the Cosmos Ledger app only signs AMINO JSON, so
    * dApps must use `getOfflineSignerAuto` (which our `isNanoLedger` flag
    * already steers toward AMINO-only).
    */
@@ -447,7 +491,7 @@ export class TransactionService {
     this.resolveCosmosProfile(document.chainId);
     // PR #822 (ADN-752) introduces a unified `signCosmos` dispatcher that
     // routes by `chain.signing.preferred`. Until #822 lands, hardcode the
-    // AMINO pipeline — the Cosmos Ledger app only renders AMINO JSON
+    // AMINO pipeline: the Cosmos Ledger app only renders AMINO JSON
     // anyway, so AMINO is the only mode that produces a usable display
     // for Ledger users.
     const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
@@ -480,7 +524,7 @@ export class TransactionService {
    * @returns
    */
   public createHash(transaction: Tx): string {
-    const hash = sha256(Tx.encode(transaction).finish());
+    const hash = sha256(encodeGnoTx(transaction));
     return Buffer.from(hash).toString('base64');
   }
 
@@ -491,6 +535,6 @@ export class TransactionService {
    * @returns
    */
   public encodeTransaction(transaction: Tx): string {
-    return uint8ArrayToBase64(Tx.encode(transaction).finish());
+    return uint8ArrayToBase64(encodeGnoTx(transaction));
   }
 }
