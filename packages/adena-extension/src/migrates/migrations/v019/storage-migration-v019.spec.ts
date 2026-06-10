@@ -48,7 +48,7 @@ describe('StorageMigration019', () => {
     const result = await new StorageMigration019().up(makeInput({ NETWORKS: [] }));
     const test13 = result.data.NETWORKS.find((n) => n.chainId === 'test-13');
     expect(test13).toBeDefined();
-    expect(test13?.rpcUrl).toBe('https://rpc.test-13-aeddi-1.gnoland.network:443');
+    expect(test13?.rpcUrl).toBe('https://test13.rpc.onbloc.xyz:443');
     expect(test13?.indexerUrl).toBe('https://indexer.test-13.gnoland.network:443');
   });
 
