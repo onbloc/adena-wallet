@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useRecoilValue } from 'recoil';
 import styled from 'styled-components';
 
 import {
@@ -19,6 +20,7 @@ import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import UnresponsiveNetworksIndicator from '@router/popup/header/unresponsive-networks-indicator';
+import { EstablishState } from '@states';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
 
@@ -112,6 +114,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const [currentAccountName, setCurrentAccountName] = useState('');
   const { accountNames } = useAccountName();
   const { currentNetwork, unresponsiveNetworks } = useNetwork();
+  const establishRevision = useRecoilValue(EstablishState.establishRevisionState);
 
   const copyButtonRef = useRef<HTMLButtonElement>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -167,7 +170,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
 
   useEffect(() => {
     initAccountInfo();
-  }, [currentAccount, hostname, accountNames]);
+  }, [currentAccount, hostname, accountNames, establishRevision]);
 
   useEffect(() => {
     getCurrentUrl().then(async (currentUrl) => {
@@ -182,7 +185,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
 
   useEffect(() => {
     updateEstablished();
-  }, [location.pathname, hostname, currentAccount, currentNetwork]);
+  }, [location.pathname, hostname, currentAccount, currentNetwork, establishRevision]);
 
   const initAccountInfo = async (): Promise<void> => {
     if (!currentAccount) {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 import styled, { useTheme } from 'styled-components';
 
 import disconnected from '@assets/disconnected.svg';
@@ -10,7 +10,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { EstablishSite } from '@repositories/wallet';
-import { WalletState } from '@states';
+import { EstablishState, WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 
@@ -26,21 +26,18 @@ export const ConnectedApps = (): JSX.Element => {
   const { goBack } = useAppNavigate();
   const [state] = useRecoilState(WalletState.state);
   const [data, setData] = useState<EnrichedSite[]>([]);
+  const establishRevision = useRecoilValue(EstablishState.establishRevisionState);
 
   useEffect(() => {
     updateData();
-  }, []);
+  }, [establishRevision]);
 
   const onClickDisconnect = async (item: EnrichedSite): Promise<void> => {
     if (!currentAccount) {
       return;
     }
     if (item.source === 'cosmos') {
-      await establishAtomOneService.unEstablishBy(
-        currentAccount.id,
-        item.hostname,
-        item.chainId,
-      );
+      await establishAtomOneService.unEstablishBy(currentAccount.id, item.hostname, item.chainId);
     } else {
       await establishService.unEstablishBy(currentAccount.id, item.hostname);
     }

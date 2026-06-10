@@ -105,6 +105,20 @@ interface GetAllGnoSessionsMessage {
   type: 'GET_ALL_GNO_SESSIONS';
 }
 
+interface SetSidePanelModeMessage {
+  type: 'SET_SIDE_PANEL_MODE';
+  enabled: boolean;
+}
+
+function isSetSidePanelModeMessage(message: unknown): message is SetSidePanelModeMessage {
+  return (
+    typeof message === 'object' &&
+    message !== null &&
+    (message as SetSidePanelModeMessage).type === 'SET_SIDE_PANEL_MODE' &&
+    typeof (message as SetSidePanelModeMessage).enabled === 'boolean'
+  );
+}
+
 function isGetGnoSessionMessage(message: unknown): message is GetGnoSessionMessage {
   return (
     typeof message === 'object' &&
@@ -294,10 +308,33 @@ function existsWallet(): Promise<boolean> {
     .catch(() => false);
 }
 
-function setupPopup(existWallet: boolean): boolean {
+async function handleSetSidePanelMode({
+  enabled,
+}: SetSidePanelModeMessage): Promise<{ success: boolean }> {
+  if (!chrome.sidePanel) return { success: false };
+
+  await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: enabled });
+
+  if (enabled) {
+    chrome.action.setPopup({ popup: '' });
+  } else {
+    const exist = await existsWallet();
+    chrome.action.setPopup({ popup: exist ? 'popup.html' : '' });
+  }
+
+  return { success: true };
+}
+
+async function isSidePanelModeActive(): Promise<boolean> {
+  if (!chrome.sidePanel?.getPanelBehavior) return false;
+  const behavior = await chrome.sidePanel.getPanelBehavior();
+  return behavior.openPanelOnActionClick === true;
+}
+
+async function setupPopup(existWallet: boolean): Promise<void> {
+  if (await isSidePanelModeActive()) return;
   const popupUri = existWallet ? 'popup.html' : '';
   chrome.action.setPopup({ popup: popupUri });
-  return true;
 }
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -306,27 +343,22 @@ chrome.runtime.onInstalled.addListener((details) => {
       url: chrome.runtime.getURL('/register.html'),
     });
   } else if (details.reason === 'update') {
-    existsWallet().then((existWallet) => {
-      setupPopup(existWallet);
-    });
+    existsWallet().then(setupPopup).catch(console.warn);
   }
 });
 
 chrome.tabs.onCreated.addListener(() => {
-  existsWallet().then((existWallet) => {
-    setupPopup(existWallet);
-  });
+  existsWallet().then(setupPopup).catch(console.warn);
 });
 
 chrome.action.onClicked.addListener(async () => {
-  existsWallet().then((existWallet) => {
-    setupPopup(existWallet);
-    if (!existWallet) {
-      chrome.tabs.create({
-        url: chrome.runtime.getURL('/register.html'),
-      });
-    }
-  });
+  const existWallet = await existsWallet();
+  await setupPopup(existWallet);
+  if (!existWallet) {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL('/register.html'),
+    });
+  }
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
@@ -340,10 +372,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         await clearInMemoryKey(inMemoryProvider);
         // Tell any open UI surface that auto-lock just fired so it can
         // invalidate cached lock state and route to Login immediately.
-        // The send rejects when no UI is listening — that's expected.
-        chrome.runtime
-          .sendMessage({ type: AUTO_LOCK_TRIGGERED_MESSAGE })
-          .catch(() => undefined);
+        // The send rejects when no UI is listening, which is expected.
+        chrome.runtime.sendMessage({ type: AUTO_LOCK_TRIGGERED_MESSAGE }).catch(() => undefined);
         console.info('Auto-lock fired');
         break;
       default:
@@ -427,6 +457,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (isGetAllGnoSessionsMessage(message)) {
     const sessions = handleGetAllGnoSessions();
     sendResponse(sessions);
+    return true;
+  }
+
+  if (isSetSidePanelModeMessage(message)) {
+    handleSetSidePanelMode(message).then(sendResponse).catch(console.warn);
     return true;
   }
 

@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect } from 'react';
 import { useIdleTimer } from 'react-idle-timer';
 import { useLocation } from 'react-router-dom';
+import { useSetRecoilState } from 'recoil';
 
 import { isAutoLockTriggeredMessage } from '@common/utils/auto-lock-timer';
 import { CommandMessage } from '@inject/message/command-message';
@@ -12,6 +13,7 @@ import { useNetwork } from '@hooks/use-network';
 import useScrollHistory from '@hooks/use-scroll-history';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useWallet } from '@hooks/use-wallet';
+import { EstablishState } from '@states';
 
 const useApp = (): void => {
   const { wallet } = useWalletContext();
@@ -23,10 +25,11 @@ const useApp = (): void => {
   const { scrollMove } = useScrollHistory();
   const { lockedWallet } = useWallet();
   const queryClient = useQueryClient();
+  const setEstablishRevision = useSetRecoilState(EstablishState.establishRevisionState);
 
   // Listen for the AUTO_LOCK_TRIGGERED broadcast from background. Without
   // this, the popup keeps rendering the unlocked screen until the next user
-  // interaction nudges react-query to refetch — invalidating the cached
+  // interaction nudges react-query to refetch. Invalidating the cached
   // `wallet/locked` query forces an immediate re-evaluation, which the
   // existing routing logic in use-init-wallet picks up.
   useEffect(() => {
@@ -41,10 +44,24 @@ const useApp = (): void => {
     };
   }, [queryClient]);
 
+  useEffect(() => {
+    if (!chrome.storage?.onChanged) return;
+    const listener = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      areaName: string,
+    ): void => {
+      if (areaName === 'local' && changes.ADENA_DATA) {
+        setEstablishRevision((value) => value + 1);
+      }
+    };
+    chrome.storage.onChanged.addListener(listener);
+    return (): void => {
+      chrome.storage.onChanged.removeListener(listener);
+    };
+  }, [setEstablishRevision]);
+
   const sendActivityPing = useCallback(() => {
-    chrome.runtime
-      .sendMessage(CommandMessage.command('resetAutoLockTimer'))
-      .catch(() => undefined);
+    chrome.runtime.sendMessage(CommandMessage.command('resetAutoLockTimer')).catch(() => undefined);
   }, []);
 
   // Send an activity ping whenever a real user input is detected. The throttle
@@ -57,7 +74,7 @@ const useApp = (): void => {
   });
 
   // Mounting any UI surface (popup, separate window, web page) counts as
-  // activity, so reset the timer on first render too — otherwise a user who
+  // activity, so reset the timer on first render too. Otherwise a user who
   // opens the popup without moving the mouse would see no reset event.
   useEffect(() => {
     if (lockedWallet === false) {

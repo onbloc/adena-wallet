@@ -12,6 +12,7 @@ const config = {
   entry: {
     web: path.join(__dirname, './src/web.tsx'),
     popup: path.join(__dirname, './src/popup.tsx'),
+    sidepanel: path.join(__dirname, './src/sidepanel.tsx'),
     content: path.join(__dirname, './src/content.ts'),
     background: path.join(__dirname, './src/background.ts'),
     inject: path.join(__dirname, './src/inject.ts'),
@@ -120,6 +121,11 @@ const config = {
       template: './public/popup.html',
       chunks: ['popup'],
       filename: 'popup.html',
+    }),
+    new HtmlWebPackPlugin({
+      template: './public/sidepanel.html',
+      chunks: ['sidepanel'],
+      filename: 'sidepanel.html',
     }),
     new NodePolyfillPlugin(),
     new ProvidePlugin({
