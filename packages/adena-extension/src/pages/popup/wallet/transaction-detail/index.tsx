@@ -8,7 +8,7 @@ import IconShare from '@assets/icon-share';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
-import { makeQueryString } from '@common/utils/string-utils';
+import { makeTransactionScannerUrl, toScannerNetworkInfo } from '@common/utils/scanner-utils';
 import { Button, CopyIconButton, Text } from '@components/atoms';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
 import { TokenBalance } from '@components/molecules';
@@ -36,7 +36,7 @@ export const TransactionDetail = (): JSX.Element => {
 
   const { openLink } = useLink();
   const { convertDenom } = useTokenMetainfo();
-  const { currentNetwork, scannerParameters } = useNetwork();
+  const { currentNetwork } = useNetwork();
   const profile = useNetworkProfile();
   const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
 
@@ -105,11 +105,13 @@ export const TransactionDetail = (): JSX.Element => {
   };
 
   const handleLinkClick = (hash: string): void => {
-    const scannerUrl = profile?.linkUrl || SCANNER_URL;
-    const openLinkUrl = scannerParameters
-      ? `${scannerUrl}/transactions/details?txhash=${hash}&${makeQueryString(scannerParameters)}`
-      : `${scannerUrl}/transactions/details?txhash=${hash}`;
-    openLink(openLinkUrl);
+    openLink(
+      makeTransactionScannerUrl(
+        toScannerNetworkInfo(currentNetwork),
+        hash,
+        profile?.linkUrl || SCANNER_URL,
+      ),
+    );
   };
 
   return transactionItem ? (

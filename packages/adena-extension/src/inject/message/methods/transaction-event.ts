@@ -1,8 +1,8 @@
 import { WalletResponseFailureType, WalletResponseSuccessType } from '@adena-wallet/sdk';
-import { SCANNER_URL } from '@common/constants/resource.constant';
 import { Event, EventStatus, EventStore } from '@common/event-store';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { fromBase64, toBase64 } from '@common/utils/client-utils';
+import { makeTransactionScannerUrl } from '@common/utils/scanner-utils';
 import { BroadcastTxCommitResult, BroadcastTxSyncResult } from '@gnolang/tm2-js-client';
 import { CommandMessageData } from '@inject/message/command-message';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message/message';
@@ -77,10 +77,16 @@ function createTransactionNotificationId(
   rpcUrl: string,
   isDefaultNetwork: boolean,
 ): string {
-  const scannerUrl = `${SCANNER_URL}/transactions/details?=txhash=${txHash}`;
-  const resultScannerUrl = isDefaultNetwork
-    ? `${scannerUrl}&chainId=${chainId}`
-    : `${scannerUrl}&type=custom&rpcUrl=${rpcUrl}`;
+  // indexerUrl is unavailable in this context; leaving it undefined makes the
+  // builder omit it (matching the previous `type=custom&rpcUrl=...` form).
+  const resultScannerUrl = makeTransactionScannerUrl(
+    {
+      chainId,
+      isOfficial: isDefaultNetwork,
+      rpcUrl,
+    },
+    txHash,
+  );
 
   const encodedResultScannerUrl = toBase64(resultScannerUrl);
 

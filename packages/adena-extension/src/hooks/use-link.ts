@@ -1,5 +1,5 @@
 import { SCANNER_URL } from '@common/constants/resource.constant';
-import { makeQueryString } from '@common/utils/string-utils';
+import { makeScannerUrl } from '@common/utils/scanner-utils';
 import { REGISTER_PATH, SECURITY_PATH } from '@types';
 import { useNetwork } from './use-network';
 import { useNetworkProfile } from './use-network-profile';
@@ -21,10 +21,10 @@ const useLink = (): UseLinkReturn => {
 
   const openScannerLink = (path: string, parameters: { [key in string]: string } = {}): void => {
     const scannerUrl = profile?.linkUrl || SCANNER_URL;
-    const queryString = scannerParameters
-      ? makeQueryString({ ...scannerParameters, ...parameters })
-      : makeQueryString(parameters);
-    const link = `${scannerUrl}${path}?${queryString}`;
+    const mergedParameters = scannerParameters
+      ? { ...scannerParameters, ...parameters }
+      : parameters;
+    const link = makeScannerUrl(scannerUrl, path, mergedParameters);
 
     openLink(link);
   };
