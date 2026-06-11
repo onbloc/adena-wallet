@@ -41,6 +41,22 @@ function isHistoryItemVmMAddPkg(
   return historyItem.func?.[0].messageType === '/vm.m_addpkg';
 }
 
+const SESSION_MESSAGE_TYPES = [
+  '/auth.m_create_session',
+  '/auth.m_revoke_session',
+  '/auth.m_revoke_all_sessions',
+];
+
+function isHistoryItemSession(
+  historyItem: TransactionHistoryItem,
+): historyItem is TransactionHistoryItem {
+  if (historyItem.messageCount !== 1) {
+    return false;
+  }
+
+  return SESSION_MESSAGE_TYPES.includes(historyItem.func?.[0].messageType);
+}
+
 export class TransactionHistoryMapper {
   public static queryToDisplay(
     transactions: TransactionInfo[],
@@ -111,6 +127,10 @@ export class TransactionHistoryMapper {
 
     if (isHistoryItemVmMAddPkg(historyItem)) {
       return TransactionHistoryMapper.mappedHistoryItemVmMAddPkg(historyItem);
+    }
+
+    if (isHistoryItemSession(historyItem)) {
+      return TransactionHistoryMapper.mappedHistoryItemSession(historyItem);
     }
 
     return TransactionHistoryMapper.mappedHistoryItemDefault(historyItem);
@@ -287,6 +307,38 @@ export class TransactionHistoryMapper {
       amount: {
         value: `${historyItem.amountIn.value || '0'}`,
         denom: historyItem.amountIn.denom || 'ugnot',
+      },
+      valueType,
+      date: dateToLocal(historyItem.timestamp).value,
+      networkFee: {
+        value: `${historyItem.fee.value || '0'}`,
+        denom: `${historyItem.fee.denom}`,
+      },
+    };
+  }
+
+  private static mappedHistoryItemSession(historyItem: TransactionHistoryItem): TransactionInfo {
+    const valueType = historyItem.successYn ? 'DEFAULT' : 'BLUR';
+
+    const sessionTitleMap: Record<string, string> = {
+      '/auth.m_create_session': 'Create Session',
+      '/auth.m_revoke_session': 'Revoke Session',
+      '/auth.m_revoke_all_sessions': 'Revoke All Sessions',
+    };
+    const messageType = historyItem.func[0].messageType;
+    const title = sessionTitleMap[messageType] ?? historyItem.func[0].funcType;
+
+    return {
+      hash: historyItem.txHash,
+      logo: '',
+      type: 'CONTRACT_CALL',
+      status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
+      typeName: 'Session Account',
+      storageDeposit: historyItem.storageDeposit,
+      title,
+      amount: {
+        value: '0',
+        denom: 'ugnot',
       },
       valueType,
       date: dateToLocal(historyItem.timestamp).value,
