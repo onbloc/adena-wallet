@@ -35,9 +35,9 @@ import { StorageModelV017 } from './migrations/v017/storage-model-v017';
 import { StorageMigration018 } from './migrations/v018/storage-migration-v018';
 import { StorageModelV018 } from './migrations/v018/storage-model-v018';
 import { StorageMigration019 } from './migrations/v019/storage-migration-v019';
-import { StorageModelDataV019, StorageModelV019 } from './migrations/v019/storage-model-v019';
+import { StorageModelV019 } from './migrations/v019/storage-model-v019';
 import { StorageMigration020 } from './migrations/v020/storage-migration-v020';
-import { StorageModelV020 } from './migrations/v020/storage-model-v020';
+import { StorageModelDataV020, StorageModelV020 } from './migrations/v020/storage-model-v020';
 import { Migration, Migrator } from './migrator';
 
 const LegacyStorageKeys = [
@@ -69,7 +69,7 @@ const defaultData: StorageModelDataV001 = {
   ACCOUNT_TOKEN_METAINFOS: {},
 };
 
-const defaultLegacyData: StorageModelDataV019 = {
+const defaultLegacyData: StorageModelDataV020 = {
   NETWORKS: [],
   CURRENT_CHAIN_ID: '',
   CURRENT_NETWORK_ID: '',
@@ -230,6 +230,31 @@ export class StorageMigrator implements Migrator {
     await this.storage.set({ [backupStorageKey]: savedData });
   }
 
+  // Reconciles a stored version label that contradicts the data shape.
+  //
+  // A prior fallback bug could persist already-migrated data (XChaCha20
+  // SERIALIZED, populated KDF_SALT) under a stale low version label such as 12.
+  // Re-running migrations on it makes v015/v018 try to AES-decrypt XChaCha20
+  // ciphertext, which throws "cannot decrypt SERIALIZED" and locks the wallet.
+  //
+  // KDF_SALT is only ever written by v018, so a non-empty KDF_SALT proves the
+  // data already reached at least v018. When the label claims an earlier
+  // version, we trust the data shape and bump the label to 19 (its structure:
+  // GRC721 maps present, ADDRESS_BOOK as string) so only v020 runs afterwards.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private reconcileVersion(json: any): any {
+    if (!json || typeof json !== 'object') {
+      return json;
+    }
+
+    const hasKdfSalt = typeof json.data?.KDF_SALT === 'string' && json.data.KDF_SALT !== '';
+    if (hasKdfSalt && typeof json.version === 'number' && json.version < 18) {
+      return { ...json, version: 19 };
+    }
+
+    return json;
+  }
+
   // Maps JSON data to the corresponding storage model version
   private async mappedJson(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -256,6 +281,8 @@ export class StorageMigrator implements Migrator {
     | StorageModelV002
     | StorageModelV001
   > {
+    json = this.reconcileVersion(json);
+
     if (json?.version === 20) {
       return json as StorageModelV020;
     }
@@ -327,9 +354,9 @@ export class StorageMigrator implements Migrator {
     }
 
     return {
-      version: 12,
+      version: 20,
       data: defaultLegacyData,
-    } as StorageModelV012;
+    } as StorageModelV020;
   }
 
   private async getLegacyData(): Promise<StorageModelDataV001> {

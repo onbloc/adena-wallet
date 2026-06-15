@@ -22,25 +22,12 @@ export class StorageMigration018 implements Migration<StorageModelDataV018> {
     const previous: StorageModelDataV017 = current.data;
     const salt = await generateKdfSalt();
     const saltBase64 = Buffer.from(salt).toString('base64');
-    // After v009, SERIALIZED is encrypted with SHA256(LEGACY_SALT + rawPassword)
-    // We decrypt with the hashed password but re-encrypt with raw password for the new system
-    const hashedPassword = password ? legacyHashPassword(password) : undefined;
     return {
       version: this.version,
       data: {
         ...previous,
-        SERIALIZED: await this.migrateSerialized(
-          previous.SERIALIZED,
-          hashedPassword,
-          password,
-          salt,
-        ),
-        ADDRESS_BOOK: await this.migrateAddressBook(
-          previous.ADDRESS_BOOK,
-          hashedPassword,
-          password,
-          salt,
-        ),
+        SERIALIZED: await this.migrateSerialized(previous.SERIALIZED, password, salt),
+        ADDRESS_BOOK: await this.migrateAddressBook(previous.ADDRESS_BOOK, password, salt),
         // Clear the previously cached session password. The cipher pipeline
         // changed under this migration, so force the user to re-authenticate
         // through the new Argon2id + XChaCha20 path.
@@ -101,8 +88,7 @@ export class StorageMigration018 implements Migration<StorageModelDataV018> {
 
   private async migrateSerialized(
     serialized: string,
-    oldPassword: string | undefined,
-    newPassword: string | undefined,
+    password: string | undefined,
     salt: Uint8Array,
   ): Promise<string> {
     // Empty SERIALIZED means there is no wallet to migrate (fresh install).
@@ -113,35 +99,24 @@ export class StorageMigration018 implements Migration<StorageModelDataV018> {
     // Existing wallet exists but caller did not supply a password — refuse
     // to bump version. Throwing propagates to StorageMigrator.migrate which
     // backs up and returns null, so chrome.storage stays at v017 untouched.
-    if (!oldPassword || !newPassword) {
+    if (!password) {
       throw new Error(
         'V018 migration requires a password to re-encrypt existing SERIALIZED data',
       );
     }
 
-    // Wrong password surfaces in two shapes from decryptAES: an empty string
-    // when PKCS#7 padding happens to validate but produces no plaintext, or a
-    // CryptoJS "Malformed UTF-8 data" throw when the bytes cannot be decoded.
-    // Normalize both into a single error so the migrator preserves v017 state.
-    let plaintext: string;
-    try {
-      plaintext = await decryptAES(serialized, oldPassword);
-    } catch {
-      throw new Error('V018 migration failed: cannot decrypt SERIALIZED with given password');
-    }
-    if (!plaintext || plaintext.trim() === '') {
+    const plaintext = await this.decryptLegacy(serialized, password);
+    if (plaintext === null) {
       throw new Error('V018 migration failed: cannot decrypt SERIALIZED with given password');
     }
 
-    const encrypted = await encryptXChacha20(plaintext, newPassword, salt);
-    plaintext = '';
+    const encrypted = await encryptXChacha20(plaintext, password, salt);
     return JSON.stringify(encrypted);
   }
 
   private async migrateAddressBook(
     addressBook: string,
-    oldPassword: string | undefined,
-    newPassword: string | undefined,
+    password: string | undefined,
     salt: Uint8Array,
   ): Promise<string> {
     // ADDRESS_BOOK is optional — no entries means nothing to migrate.
@@ -149,24 +124,40 @@ export class StorageMigration018 implements Migration<StorageModelDataV018> {
       return addressBook;
     }
 
-    if (!oldPassword || !newPassword) {
+    if (!password) {
       throw new Error(
         'V018 migration requires a password to re-encrypt existing ADDRESS_BOOK data',
       );
     }
 
-    let plaintext: string;
-    try {
-      plaintext = await decryptAES(addressBook, oldPassword);
-    } catch {
-      throw new Error('V018 migration failed: cannot decrypt ADDRESS_BOOK with given password');
-    }
-    if (!plaintext || plaintext.trim() === '') {
+    const plaintext = await this.decryptLegacy(addressBook, password);
+    if (plaintext === null) {
       throw new Error('V018 migration failed: cannot decrypt ADDRESS_BOOK with given password');
     }
 
-    const encrypted = await encryptXChacha20(plaintext, newPassword, salt);
-    plaintext = '';
+    const encrypted = await encryptXChacha20(plaintext, password, salt);
     return JSON.stringify(encrypted);
+  }
+
+  // The AES key used for legacy ciphertext is ambiguous across versions:
+  // v009 re-encrypted SERIALIZED with the hashed password (SHA256(LEGACY_SALT +
+  // rawPassword)), while v015 later re-encrypted it with the raw password. We
+  // therefore try the hashed password first, then fall back to the raw one.
+  // Wrong keys surface either as a CryptoJS "Malformed UTF-8 data" throw or as
+  // an empty string, so both shapes are treated as a failed attempt. Returns
+  // the plaintext on success, or null when neither key decrypts the value.
+  private async decryptLegacy(value: string, password: string): Promise<string | null> {
+    const candidates = [legacyHashPassword(password), password];
+    for (const key of candidates) {
+      try {
+        const plaintext = await decryptAES(value, key);
+        if (plaintext && plaintext.trim() !== '') {
+          return plaintext;
+        }
+      } catch {
+        // Try the next candidate key.
+      }
+    }
+    return null;
   }
 }

@@ -93,3 +93,62 @@ describe('StorageMigrator', () => {
     expect(migrated?.data.ADDRESS_BOOK).toBe('');
   });
 });
+
+describe('StorageMigrator version reconciliation', () => {
+  // Regression: a prior fallback bug persisted already-migrated data
+  // (XChaCha20 SERIALIZED + populated KDF_SALT) under a stale low version label
+  // such as 12. Re-running migrations made v018 AES-decrypt XChaCha20
+  // ciphertext, throwing "cannot decrypt SERIALIZED" and locking the wallet.
+  const xchachaSerialized = JSON.stringify({ ciphertext: 'abc', nonce: 'xyz' });
+  const staleData = {
+    version: 12,
+    data: {
+      NETWORKS: [],
+      CURRENT_CHAIN_ID: '',
+      CURRENT_NETWORK_ID: 'test-13',
+      SERIALIZED: xchachaSerialized,
+      ENCRYPTED_STORED_PASSWORD: '',
+      CURRENT_ACCOUNT_ID: 'd9bef3bd',
+      ACCOUNT_NAMES: { d9bef3bd: 'Account 1' },
+      ESTABLISH_SITES: {},
+      ADDRESS_BOOK: '',
+      ACCOUNT_TOKEN_METAINFOS: {},
+      QUESTIONNAIRE_EXPIRED_DATE: '1784117519',
+      WALLET_CREATION_GUIDE_CONFIRM_DATE: '1781525514',
+      ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null,
+      ACCOUNT_GRC721_COLLECTIONS: {},
+      ACCOUNT_GRC721_PINNED_PACKAGES: {},
+      KDF_SALT: 'MRWNtRD3p0//pPAUCzQmcA==',
+    },
+  };
+
+  const staleStorage = {
+    async set(): Promise<void> {
+      return;
+    },
+    async get(keys?: unknown): Promise<object> {
+      if (keys === 'ADENA_DATA') {
+        return { ADENA_DATA: JSON.stringify(staleData) };
+      }
+      return {};
+    },
+  };
+
+  it('getCurrent bumps a stale version label to 19 when KDF_SALT is present', async () => {
+    const migrator = new StorageMigrator(StorageMigrator.migrations(), staleStorage);
+    const current = await migrator.getCurrent();
+
+    expect(current.version).toBe(19);
+  });
+
+  it('migrate no longer re-decrypts XChaCha20 SERIALIZED and reaches v20', async () => {
+    const migrator = new StorageMigrator(StorageMigrator.migrations(), staleStorage);
+    const current = await migrator.getCurrent();
+    const migrated = await migrator.migrate(current, '123');
+
+    expect(migrated).not.toBeNull();
+    expect(migrated?.version).toBe(20);
+    // SERIALIZED must be left untouched (no AES re-decrypt attempt).
+    expect(migrated?.data.SERIALIZED).toBe(xchachaSerialized);
+  });
+});
