@@ -25,7 +25,7 @@
     "addressPrefix": "g",
     "rpcUrl": "https://test13.rpc.onbloc.xyz:443",
     "indexerUrl": "https://indexer.test-13.gnoland.network:443",
-    "gnoUrl": "https://test13.testnets.gno.land/",
+    "gnoUrl": "https://test13.testnets.gno.land",
     "apiUrl": "https://test13.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
