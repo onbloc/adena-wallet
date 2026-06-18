@@ -23,7 +23,7 @@ describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
         'https://gno.land',
         'https://betanet.testnets.gno.land',
         'https://staging.gno.land',
-        'https://gnoweb.test-13.gnoland.network',
+        'https://test13.testnets.gno.land/',
       ]),
     );
     expect(result.some((url) => url.startsWith('http://'))).toBe(false);
