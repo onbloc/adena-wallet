@@ -6,7 +6,7 @@ export const MINIMUM_GAS_PRICE = 0.001 as const;
 
 // Adena default gas used
 // When the gas used is not set, the default value is 10,000,000
-export const DEFAULT_GAS_USED = 10_000_000 as const;
+export const DEFAULT_GAS_USED = 2_000_000_000 as const;
 
 // Default gas price step
 // Slow = 0.001, Average = 0.0025, Fast = 0.004

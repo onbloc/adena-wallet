@@ -4,7 +4,7 @@ import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 import { GasInfo, NetworkFee, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 import { Document } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   useGetDefaultEstimateGasInfo,
   useGetEstimateGasInfo,
@@ -41,24 +41,60 @@ export const useNetworkFee = (
   isDefaultGasPrice = false,
   gasInfo?: GasInfo | null,
 ): UseNetworkFeeReturn => {
-  const [currentNetworkFeeSettingType, setCurrentNetworkFeeSettingType] =
-    useState<NetworkFeeSettingType>(defaultSettingType);
-  const [networkFeeSettingType, setNetworkFeeSettingType] =
-    useState<NetworkFeeSettingType>(defaultSettingType);
+  const [currentNetworkFeeSettingType, setCurrentNetworkFeeSettingType] = useState<
+    NetworkFeeSettingType
+  >(defaultSettingType);
+  const [networkFeeSettingType, setNetworkFeeSettingType] = useState<NetworkFeeSettingType>(
+    defaultSettingType,
+  );
 
   const [selectedTier, setSelectedTier] = useState(!isDefaultGasPrice);
   const [gasAdjustment, setGasAdjustment] = useState<string>(DEFAULT_GAS_ADJUSTMENT.toString());
 
-  const { data: defaultEstimatedGasInfo, isFetched: isFetchedDefaultEstimatedGasInfo } =
-    useGetDefaultEstimateGasInfo(document);
+  const {
+    data: defaultEstimatedGasInfo,
+    isFetched: isFetchedDefaultEstimatedGasInfo,
+  } = useGetDefaultEstimateGasInfo(document);
   const { data: estimatedGasInfo, isFetched: isFetchedEstimateGasInfo } = useGetEstimateGasInfo(
     document,
     gasInfo?.gasUsed || defaultEstimatedGasInfo?.gasUsed || 0,
   );
 
+  // gno.land's simulate is non-deterministic: the same tx returns gas_used in
+  // two clusters (cheaper read path vs. more expensive storage-write path). Keep
+  // the highest gas_used seen for the current tx so the estimate settles on the
+  // safe value instead of oscillating, and never under-funds the tx at broadcast
+  // time. The watermark is derived in the render flow (not inside a query fn) and
+  // resets when the tx content changes.
+  const txKey = useMemo(
+    () =>
+      JSON.stringify([
+        document?.msgs || '',
+        document?.memo || '',
+        document?.account_number,
+        document?.sequence,
+      ]),
+    [document?.msgs, document?.memo, document?.account_number, document?.sequence],
+  );
+  const txKeyRef = useRef(txKey);
+  const [gasUsedWatermark, setGasUsedWatermark] = useState(0);
+
+  useEffect(() => {
+    const estimatedGasUsed = estimatedGasInfo?.gasUsed || 0;
+    if (txKeyRef.current !== txKey) {
+      // New tx: drop the previous watermark entirely.
+      txKeyRef.current = txKey;
+      setGasUsedWatermark(estimatedGasUsed);
+      return;
+    }
+    setGasUsedWatermark((prev) => Math.max(prev, estimatedGasUsed));
+  }, [txKey, estimatedGasInfo?.gasUsed]);
+
+  const stableEstimatedGasUsed = Math.max(gasUsedWatermark, estimatedGasInfo?.gasUsed || 0);
+
   const { data: gasPriceTiers, isFetched: isFetchedPriceTiers } = useGetEstimateGasPriceTiers(
     document,
-    gasInfo?.gasUsed || estimatedGasInfo?.gasUsed,
+    gasInfo?.gasUsed || stableEstimatedGasUsed,
     gasAdjustment,
   );
 
