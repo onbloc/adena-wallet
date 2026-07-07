@@ -23,6 +23,29 @@ import {
 export const REVOKE_GAS_WANTED_DEFAULT = SESSION_ADMIN_GAS_WANTED_FALLBACK;
 export const REVOKE_GAS_FEE_UGNOT_DEFAULT = 2_000;
 
+type CommitResultLike = {
+  check_tx?: { ResponseBase?: { Error?: unknown; Log?: string } };
+  deliver_tx?: { ResponseBase?: { Error?: unknown; Log?: string } };
+};
+
+// A BROADCAST_TX_COMMIT result carries a hash even when the tx committed but
+// FAILED (ante/authorization error, out of gas, etc.). Revoke must not treat
+// that as success — otherwise cleanupSessionLocally would convert the session
+// while the on-chain delegation is still fully active. Throw so the caller's
+// catch surfaces the failure and skips local cleanup.
+const assertRevokeCommitted = (result: unknown): void => {
+  const commit = result as CommitResultLike | null;
+  const failed =
+    !!commit?.check_tx?.ResponseBase?.Error || !!commit?.deliver_tx?.ResponseBase?.Error;
+  if (failed) {
+    throw new Error(
+      commit?.deliver_tx?.ResponseBase?.Log ||
+        commit?.check_tx?.ResponseBase?.Log ||
+        'Revoke transaction failed on chain',
+    );
+  }
+};
+
 interface RevokeOptions {
   gasWanted?: number;
   gasFeeUgnot?: number;
@@ -97,6 +120,7 @@ export const useRevokeSession = (): UseRevokeSessionReturn => {
           signed,
           true,
         );
+        assertRevokeCommitted(result);
         return (result as { hash?: string | null })?.hash ?? null;
       } finally {
         await connected.close().catch(() => undefined);
@@ -145,6 +169,7 @@ export const useRevokeSession = (): UseRevokeSessionReturn => {
         signed,
         true,
       );
+      assertRevokeCommitted(result);
       return (result as { hash?: string | null })?.hash ?? null;
     },
     [transactionService, currentNetwork.chainId, wallet, runLedgerRevoke],
