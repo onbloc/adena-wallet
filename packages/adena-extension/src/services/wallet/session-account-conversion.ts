@@ -9,7 +9,7 @@ import {
   Wallet,
 } from 'adena-module';
 
-const DEFAULT_GNO_PREFIX = 'g';
+import { GNO_ADDRESS_PREFIX as DEFAULT_GNO_PREFIX } from '@common/constants/chain.constant';
 
 export interface SessionAccountConversionResult {
   wallet: AdenaWallet;

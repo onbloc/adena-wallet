@@ -2,12 +2,12 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Account, isSessionAccount } from 'adena-module';
 
+import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
 import { GnoSessionAccountResponse } from '@common/provider/gno/types';
 import { isSessionSupportedNetwork } from '@common/utils/account-session';
 import { useWalletContext } from './use-context';
 import { useNetwork } from './use-network';
 
-const GNO_PREFIX = 'g';
 const MASTER_BADGE_REFETCH_INTERVAL = 30_000;
 
 export const useMasterAccountBadgeMap = (accounts: Account[]): Record<string, boolean> => {

@@ -2,6 +2,7 @@ import {
   AdenaWallet,
   ChainRegistry,
   fromBase64,
+  fromHex,
   publicKeyToAddress,
   SessionAccount,
   SessionConfig,
@@ -543,7 +544,7 @@ export class WalletSessionService {
       throw new SessionImportError('session_pubkey_mismatch');
     }
 
-    const privateKeyBytes = hexToBytes(normalizedPrivKey);
+    const privateKeyBytes = fromHex(normalizedPrivKey);
     const keyring = new SessionKeyring({
       publicKey: Array.from(publicKey),
       privateKey: Array.from(privateKeyBytes),
@@ -612,7 +613,7 @@ export class WalletSessionService {
     privKeyHex: string,
     addressPrefix: string,
   ): Promise<{ publicKey: Uint8Array; sessionAddr: string }> => {
-    const privateKeyBytes = hexToBytes(privKeyHex);
+    const privateKeyBytes = fromHex(privKeyHex);
     const tmWallet = await Tm2Wallet.fromPrivateKey(privateKeyBytes);
     const publicKey = await tmWallet.getSigner().getPublicKey();
     const sessionAddr = await publicKeyToAddress(publicKey, addressPrefix);
@@ -620,15 +621,6 @@ export class WalletSessionService {
     privateKeyBytes.fill(0);
     return { publicKey, sessionAddr };
   };
-}
-
-function hexToBytes(hex: string): Uint8Array {
-  const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
-  const bytes = new Uint8Array(clean.length / 2);
-  for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(clean.substr(i * 2, 2), 16);
-  }
-  return bytes;
 }
 
 function arraysEqual(a: Uint8Array, b: Uint8Array): boolean {

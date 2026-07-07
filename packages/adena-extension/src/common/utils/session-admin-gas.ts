@@ -1,10 +1,10 @@
+import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
 import { MINIMUM_GAS_PRICE, GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
 import { Account, Document, documentToDefaultTx } from 'adena-module';
 
 export const SESSION_ADMIN_GAS_ESTIMATE_LIMIT = 10_000_000;
 export const SESSION_ADMIN_GAS_WANTED_FALLBACK = 2_000_000;
 export const SESSION_ADMIN_GAS_FEE_FLOOR_UGNOT = 1_000;
-const GNO_PREFIX = 'g';
 
 export interface SessionAdminGasInfo {
   gasWanted: number;

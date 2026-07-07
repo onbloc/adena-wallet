@@ -8,6 +8,7 @@ import {
   LedgerAccount,
 } from 'adena-module';
 
+import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
 import { isSessionMasterAccount } from '@common/utils/account-session';
 import { SESSION_ADMIN_GAS_WANTED_FALLBACK } from '@common/utils/session-admin-gas';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
@@ -21,7 +22,6 @@ import {
 
 export const REVOKE_GAS_WANTED_DEFAULT = SESSION_ADMIN_GAS_WANTED_FALLBACK;
 export const REVOKE_GAS_FEE_UGNOT_DEFAULT = 2_000;
-const GNO_PREFIX = 'g';
 
 interface RevokeOptions {
   gasWanted?: number;

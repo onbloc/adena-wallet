@@ -3,11 +3,10 @@ import { fromBase64 } from '@cosmjs/encoding';
 import { isSessionAccount } from 'adena-module';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { SESSIONS_QUERY_KEY } from '@hooks/use-sessions';
 import { flattenSessionAccount } from '@common/provider/gno/utils';
-
-const GNO_PREFIX = 'g';
 
 export interface MasterSessionEntry {
   sessionAddr: string;

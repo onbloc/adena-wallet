@@ -32,9 +32,14 @@ import { useNetwork } from '@hooks/use-network';
 import { useSessionImportScreen } from '@hooks/web/use-session-import-screen';
 import useQuestionnaire from '@hooks/web/use-questionnaire';
 import { resolveSessionAdminGasInfo } from '@common/utils/session-admin-gas';
+import {
+  GNO_ADDRESS_PREFIX as GNO_PREFIX,
+  SESSION_SUPPORTED_CHAIN_ID as TEST13_CHAIN_ID,
+} from '@common/constants/chain.constant';
 import { RoutePath } from '@types';
 import {
   Account,
+  fromHex,
   publicKeyToAddress,
   SessionAccount,
   SessionKeyring,
@@ -640,7 +645,6 @@ const ImportSessionAddress = styled.span`
   white-space: nowrap;
 `;
 
-const TEST13_CHAIN_ID = 'test-13';
 const MAX_REALM_PATHS_GAS_ONLY = 8;
 const MAX_REALM_PATHS_TRANSFER_ENABLED = 6;
 const MAX_EXPIRES_DAYS = 30;
@@ -946,7 +950,6 @@ interface CreateTabProps {
 }
 
 const SESSION_CREATE_CONFIRMATION_DELAYS_MS = [0, 1_500, 3_000, 5_000] as const;
-const GNO_PREFIX = 'g';
 const SESSION_ADD_TOP_SPACING = 220;
 const SESSION_ADD_TOP_SPACING_RESPONSIVE = 120;
 const SESSION_ADD_FORM_MIN_TOP_PADDING = 80;
@@ -989,14 +992,12 @@ const waitForCreatedSessionOnChain = async (
 
 const hexToBytes = (hex: string): Uint8Array => {
   const clean = hex.trim().toLowerCase().replace(/^0x/, '');
+  // Session private keys are 32 bytes; enforce that before delegating the
+  // decode to adena-module's validated fromHex helper.
   if (clean.length !== 64 || !/^[0-9a-f]+$/.test(clean)) {
     throw new Error('invalid_private_key');
   }
-  const bytes = new Uint8Array(32);
-  for (let i = 0; i < 32; i++) {
-    bytes[i] = parseInt(clean.substr(i * 2, 2), 16);
-  }
-  return bytes;
+  return fromHex(clean);
 };
 
 // Spawn approve-transaction popup from the web tab and wait for its
