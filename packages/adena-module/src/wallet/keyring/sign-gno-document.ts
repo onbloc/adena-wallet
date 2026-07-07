@@ -92,8 +92,6 @@ export async function signGnoDocument(
   };
 
   const signJsonString = sortedJsonStringify(signPayload);
-  // eslint-disable-next-line no-console
-  console.info('[approve-tx] G-sign-json ' + signJsonString);
   const signBytes = stringToUTF8(encodeCharacterSet(signJsonString));
 
   const signature = await keyring.signRaw(signBytes, { hdPath: opts?.hdPath });

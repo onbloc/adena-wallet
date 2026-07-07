@@ -1,7 +1,6 @@
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  PubKeySecp256k1,
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
@@ -27,7 +26,6 @@ import {
   signCosmosAmino,
   Wallet,
   compressPubkeyIfNeeded,
-  publicKeyToAddress,
 } from 'adena-module';
 import type { AminoSignResponse, StdSignDoc } from '@cosmjs/amino';
 import { encodeSecp256k1Pubkey, serializeSignDoc } from '@cosmjs/amino';
@@ -99,26 +97,8 @@ export class TransactionService {
       const sessionAddress = await account.getAddress('g');
       const session = await provider.getSession(masterAddress, sessionAddress);
       if (!session) {
-        // eslint-disable-next-line no-console
-        console.warn('[approve-tx] H-refresh. session account was not found.', {
-          accountId: account.id,
-          masterAddress,
-          sessionAddress,
-          documentAccountNumber: document.account_number,
-          documentSequence: document.sequence,
-        });
         return document;
       }
-      // eslint-disable-next-line no-console
-      console.info('[approve-tx] H-refresh. using session account state.', {
-        accountId: account.id,
-        masterAddress,
-        sessionAddress,
-        documentAccountNumber: document.account_number,
-        documentSequence: document.sequence,
-        refreshedAccountNumber: session.BaseSessionAccount.BaseAccount.account_number,
-        refreshedSequence: session.BaseSessionAccount.BaseAccount.sequence,
-      });
       return {
         ...document,
         account_number: session.BaseSessionAccount.BaseAccount.account_number,
@@ -129,28 +109,8 @@ export class TransactionService {
     const address = await account.getAddress('g');
     const accountInfo = await provider.getAccountInfo(address);
     if (!accountInfo || accountInfo.status !== 'ACTIVE') {
-      // eslint-disable-next-line no-console
-      console.warn('[approve-tx] H-refresh. signer account is not active.', {
-        accountId: account.id,
-        accountType: account.type,
-        address,
-        status: accountInfo?.status,
-        documentAccountNumber: document.account_number,
-        documentSequence: document.sequence,
-      });
       return document;
     }
-
-    // eslint-disable-next-line no-console
-    console.info('[approve-tx] H-refresh. using signer account state.', {
-      accountId: account.id,
-      accountType: account.type,
-      address,
-      documentAccountNumber: document.account_number,
-      documentSequence: document.sequence,
-      refreshedAccountNumber: accountInfo.accountNumber,
-      refreshedSequence: accountInfo.sequence,
-    });
 
     return {
       ...document,
@@ -303,86 +263,12 @@ export class TransactionService {
     document: Document,
   ): Promise<{ signed: Tx; signature: EncodeTxSignature[] }> => {
     const provider = this.getGnoProvider();
-    const status =
-      typeof provider.getStatus === 'function'
-        ? await provider.getStatus().catch(() => null)
-        : null;
-    const accountAddress = await account.getAddress('g').catch(() => null);
     const signingDocument = await this.refreshGnoSigningDocument(account, document);
-    const signingContext = {
-      accountId: account.id,
-      accountType: account.type,
-      isSessionAccount: isSessionAccount(account),
-      accountAddress,
-      masterAddress: isSessionAccount(account) ? account.getMasterAddress() : null,
-      providerChainId: status?.node_info?.network,
-      documentChainId: document.chain_id,
-      signingDocumentChainId: signingDocument.chain_id,
-      documentAccountNumber: document.account_number,
-      documentSequence: document.sequence,
-      signingAccountNumber: signingDocument.account_number,
-      signingSequence: signingDocument.sequence,
-      messageTypes: signingDocument.msgs.map((msg) => msg.type),
-      fee: signingDocument.fee,
-      memo: signingDocument.memo,
-    };
-    // eslint-disable-next-line no-console
-    console.info('[approve-tx] H-sign. signing document context.', signingContext);
-    // eslint-disable-next-line no-console
-    console.info('[approve-tx] H-sign-json ' + JSON.stringify(signingContext));
     const { signed, signature } = await wallet.signByAccountId(
       provider,
       account.id,
       signingDocument,
     );
-    const signedTxEncoding = (() => {
-      try {
-        return {
-          txHash: this.createHash(signed),
-          encodedTxSize: encodeGnoTx(signed).length,
-        };
-      } catch (e) {
-        return {
-          txHash: null,
-          encodedTxSize: null,
-          encodingError: e instanceof Error ? e.message : String(e),
-        };
-      }
-    })();
-    const signatureContexts = await Promise.all(
-      signed.signatures.map(async (sig) => {
-        let rawPubKey: Uint8Array | null = null;
-        try {
-          rawPubKey = sig.pub_key?.value
-            ? PubKeySecp256k1.decode(sig.pub_key.value).key
-            : null;
-        } catch {
-          rawPubKey = null;
-        }
-        const addressFromPubKey = rawPubKey
-          ? await publicKeyToAddress(rawPubKey, 'g').catch(() => null)
-          : null;
-        return {
-          pubKeyTypeUrl: sig.pub_key?.type_url,
-          pubKeyValueSize: sig.pub_key?.value?.length ?? 0,
-          rawPubKeySize: rawPubKey?.length ?? 0,
-          rawPubKeyBase64: rawPubKey ? uint8ArrayToBase64(rawPubKey) : null,
-          addressFromPubKey,
-          signatureSize: sig.signature.length,
-          sessionAddress: (sig as { session_addr?: string }).session_addr ?? null,
-        };
-      }),
-    );
-    const signedContext = {
-      accountId: account.id,
-      ...signedTxEncoding,
-      signatureCount: signed.signatures.length,
-      signatures: signatureContexts,
-    };
-    // eslint-disable-next-line no-console
-    console.info('[approve-tx] H-sign. signed tx context.', signedContext);
-    // eslint-disable-next-line no-console
-    console.info('[approve-tx] H-signed-json ' + JSON.stringify(signedContext));
     const encodedSignature = signature.map((s) => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,

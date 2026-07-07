@@ -132,8 +132,6 @@ const RevokeAllSessionsPage = (): ReactElement => {
           chainId: currentNetwork.chainId,
           message,
         });
-        // eslint-disable-next-line no-console
-        console.info('[revoke-all-sessions] gas info.', gasInfo);
         const doc = await transactionService.createDocument(
           signer,
           currentNetwork.chainId,

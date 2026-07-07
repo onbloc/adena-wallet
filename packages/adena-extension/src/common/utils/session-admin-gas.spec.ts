@@ -74,7 +74,6 @@ describe('session-admin-gas', () => {
   });
 
   it('falls back when estimate fails', async () => {
-    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     const gasInfo = await resolveSessionAdminGasInfo({
       gnoProvider: null,
       transactionService: {
@@ -92,9 +91,5 @@ describe('session-admin-gas', () => {
       gasUsed: null,
       estimated: false,
     });
-    expect(console.warn).toHaveBeenCalledWith(
-      '[session-admin-gas] estimate failed. using fallback gas.',
-      expect.any(Error),
-    );
   });
 });

@@ -99,9 +99,8 @@ export const resolveSessionAdminGasInfo = async ({
       gasUsed,
       estimated: true,
     };
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.warn('[session-admin-gas] estimate failed. using fallback gas.', error);
+  } catch {
+    // Gas estimation is best-effort; fall back to static gas on any failure.
     return fallbackGasInfo;
   }
 };

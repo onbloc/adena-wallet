@@ -975,9 +975,8 @@ const waitForCreatedSessionOnChain = async (
       await wait(delayMs);
     }
 
-    const session = await gnoProvider.getSession(masterAddr, sessionAddr).catch((error) => {
-      // eslint-disable-next-line no-console
-      console.warn('[create-session] chain confirmation query failed:', error);
+    const session = await gnoProvider.getSession(masterAddr, sessionAddr).catch(() => {
+      // Confirmation polling is best-effort; treat query failures as "not yet".
       return null;
     });
     if (session) {
@@ -1535,8 +1534,6 @@ const CreateTab = ({
         chainId: currentChainId,
         message,
       });
-      // eslint-disable-next-line no-console
-      console.info('[create-session] gas info.', createGasInfo);
       const popupResult = await approveSessionViaPopup(
         message,
         createGasInfo.gasWanted,
@@ -1551,35 +1548,17 @@ const CreateTab = ({
         return;
       }
 
-      // eslint-disable-next-line no-console
-      console.info('[create-session] confirm. checking chain session.', {
-        masterAddress,
-        sessionAddr,
-        txHash: popupResult.hash,
-      });
       const sessionFoundOnChain = await waitForCreatedSessionOnChain(
         gnoProvider,
         masterAddress,
         sessionAddr,
       );
       if (!sessionFoundOnChain) {
-        // eslint-disable-next-line no-console
-        console.error('[create-session] confirm failed. session not found on chain.', {
-          masterAddress,
-          sessionAddr,
-          txHash: popupResult.hash,
-        });
         setSubmitError(
           'Session creation was broadcast, but the session was not found on chain. Please try again or import it after the chain shows the session.',
         );
         return;
       }
-      // eslint-disable-next-line no-console
-      console.info('[create-session] confirm. session found on chain.', {
-        masterAddress,
-        sessionAddr,
-        txHash: popupResult.hash,
-      });
 
       // Commit: build SessionKeyring/SessionAccount and persist now that
       // the chain committed MsgCreateSession. Failure here is "chain OK,
@@ -1630,18 +1609,12 @@ const CreateTab = ({
 
       onComplete();
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('[create-session] CAUGHT ERROR:', e);
       // Surface chain's full diagnostic Log. tm2-js-client puts it on
       // err.log (separate from err.message which is just the static
       // category like "unknown request error"). Without this, errors
       // from chain handlers (e.g. baseapp.go:657, auth/handler.go:38)
       // are indistinguishable in the UI.
       const err = e as { message?: string; log?: string };
-      if (err.log) {
-        // eslint-disable-next-line no-console
-        console.error('[create-session broadcast] chain log:\n' + err.log);
-      }
       setSubmitError(
         (err.log ? `${err.message ?? 'broadcast failed'}\n${err.log}` : err.message)
           ?? 'Failed to create session account.',

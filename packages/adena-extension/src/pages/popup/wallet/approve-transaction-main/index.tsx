@@ -417,8 +417,6 @@ const ApproveTransactionContainer: React.FC = () => {
     const address = await getDappVisibleAddress(currentAccount, chain.bech32Prefix);
     const validationMessage = validateInjectionDataWithAddress(requestData, address);
     if (validationMessage) {
-      // eslint-disable-next-line no-console
-      console.error('[approve-tx] B-fail. validation rejected:', validationMessage);
       chrome.runtime.sendMessage(validationMessage);
       return false;
     }
@@ -442,8 +440,8 @@ const ApproveTransactionContainer: React.FC = () => {
       .then((balance) => {
         setCurrentBalance(balance);
       })
-      .catch((error) => {
-        console.log(error);
+      .catch(() => {
+        // Balance is best-effort; ignore fetch failures.
       });
   };
 
@@ -468,13 +466,6 @@ const ApproveTransactionContainer: React.FC = () => {
       setTransactionMessages(mappedTransactionMessages(document.msgs));
       return true;
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('[approve-tx] C-fail. createDocument threw:', e);
-      const err = e as { message?: string; log?: string };
-      if (err?.log) {
-        // eslint-disable-next-line no-console
-        console.error('[approve-tx] C-fail chain log:\n' + err.log);
-      }
       const error: any = e;
       if (error?.message === 'Connection Error') {
         const { rpcUrl } = currentNetwork;
@@ -527,18 +518,12 @@ const ApproveTransactionContainer: React.FC = () => {
 
   const sendTransaction = async (): Promise<boolean> => {
     if (!isRequestedNetworkReady || approvalBlocked) {
-      // eslint-disable-next-line no-console
-      console.warn('[approve-tx] D-skip. network is not ready or approval is blocked.');
       return false;
     }
     if (isErrorNetworkFee) {
-      // eslint-disable-next-line no-console
-      console.warn('[approve-tx] D-skip. isErrorNetworkFee true. aborting send.');
       return false;
     }
     if (!document || !currentNetwork || !signingAccount || !wallet) {
-      // eslint-disable-next-line no-console
-      console.error('[approve-tx] D-skip. missing piece. document?', !!document, 'network?', !!currentNetwork, 'account?', !!signingAccount, 'wallet?', !!wallet);
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
@@ -553,41 +538,6 @@ const ApproveTransactionContainer: React.FC = () => {
       const walletInstance = wallet.clone();
       walletInstance.currentAccountId = signingAccount.id;
       const shouldBroadcastCommit = requestData?.data?.commit === true;
-      const approvalContext = {
-        requestKey: requestData?.key,
-        requestedSignerAccountId,
-        signingAccountId: signingAccount.id,
-        signingAccountType: signingAccount.type,
-        broadcastCommit: shouldBroadcastCommit,
-        currentAccountId: currentAccount?.id,
-        requestedNetworkInfo: requestData?.data?.networkInfo ?? null,
-        currentNetwork: {
-          id: currentNetwork.id,
-          chainId: currentNetwork.chainId,
-          networkId: currentNetwork.networkId,
-          rpcUrl: currentNetwork.rpcUrl,
-        },
-        walletNetwork: currentWalletNetwork
-          ? {
-              id: currentWalletNetwork.id,
-              chainId: currentWalletNetwork.chainId,
-              networkId: currentWalletNetwork.networkId,
-              rpcUrl: currentWalletNetwork.rpcUrl,
-            }
-          : null,
-        document: {
-          chainId: document.chain_id,
-          accountNumber: document.account_number,
-          sequence: document.sequence,
-          fee: document.fee,
-          memo: document.memo,
-          messageTypes: document.msgs.map((msg) => msg.type),
-        },
-      };
-      // eslint-disable-next-line no-console
-      console.info('[approve-tx] E-send. approval context.', approvalContext);
-      // eslint-disable-next-line no-console
-      console.info('[approve-tx] E-send-json ' + JSON.stringify(approvalContext));
 
       const { signed } = await transactionService.createTransaction(
         walletInstance,
@@ -606,13 +556,6 @@ const ApproveTransactionContainer: React.FC = () => {
             resolve(r);
           })
           .catch((error: TM2Error | Error) => {
-            // eslint-disable-next-line no-console
-            console.error('[approve-tx] I-fail. broadcast threw:', error);
-            const errAny = error as TM2Error & { log?: string };
-            if (errAny.log) {
-              // eslint-disable-next-line no-console
-              console.error('[approve-tx] I-fail chain log:\n' + errAny.log);
-            }
             resolve(error);
           });
 
@@ -643,10 +586,6 @@ const ApproveTransactionContainer: React.FC = () => {
           response instanceof TM2Error
             ? (response as TM2Error & { log?: string }).log
             : undefined;
-        if (chainLog) {
-          // eslint-disable-next-line no-console
-          console.error('[approve-transaction] chain log:\n' + chainLog);
-        }
         setResponse(
           InjectionMessageInstance.failure(
             WalletResponseFailureType.TRANSACTION_FAILED,
@@ -673,8 +612,6 @@ const ApproveTransactionContainer: React.FC = () => {
       return true;
     } catch (e) {
       if (e instanceof Error) {
-        // eslint-disable-next-line no-console
-        console.error('[approve-tx] Z-fail. send flow threw:', e);
         const message = e.message;
         if (message.includes('Ledger')) {
           return false;
@@ -704,8 +641,6 @@ const ApproveTransactionContainer: React.FC = () => {
       !isRequestedNetworkReady ||
       approvalBlocked
     ) {
-      // eslint-disable-next-line no-console
-      console.warn('[approve-tx] X-skip. preconditions not met.');
       return;
     }
 
