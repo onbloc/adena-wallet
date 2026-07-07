@@ -30,14 +30,21 @@ export const useConvertSessionAccounts = (): {
         return result;
       }
 
-      for (const sessionAddr of result.convertedSessionAddrs) {
-        await sessionRepository.remove(sessionAddr);
-      }
+      // Persist the wallet (the source of truth) FIRST. If this throws, the
+      // SESSIONS metadata rows are left intact, so we never end up with a
+      // serialized SessionAccount that has no metadata (a dead, un-revokable
+      // session). Only after the vault is saved do we drop the now-orphaned
+      // metadata rows; a failure there merely leaves a harmless stale row that
+      // the next chain sync reconciles, with no live account referencing it.
+      await updateWallet(result.wallet);
 
       if (result.nextCurrentAccount) {
         await changeCurrentAccount(result.nextCurrentAccount);
       }
-      await updateWallet(result.wallet);
+
+      for (const sessionAddr of result.convertedSessionAddrs) {
+        await sessionRepository.remove(sessionAddr).catch(() => undefined);
+      }
       await queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
 
       return result;
