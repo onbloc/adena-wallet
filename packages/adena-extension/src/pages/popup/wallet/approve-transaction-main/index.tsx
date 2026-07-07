@@ -37,6 +37,10 @@ import {
 import { fetchHealth } from '@common/utils/fetch-utils';
 import { parseSimulateErrors } from '@common/utils/transaction-error-parser';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
+import {
+  evaluateSessionSigningGuard,
+  SessionSigningGuardDecision,
+} from '@services/transaction/session-signing-guard';
 import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useChain } from '@hooks/use-chain';
@@ -129,7 +133,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const nomarlNavigate = useNavigate();
   const { navigate } = useAppNavigate();
   const { gnoProvider, changeNetwork } = useWalletContext();
-  const { walletService, transactionService } = useAdenaContext();
+  const { walletService, transactionService, sessionRepository } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const [hostname, setHostname] = useState('');
@@ -532,6 +536,44 @@ const ApproveTransactionContainer: React.FC = () => {
         ),
       );
       return false;
+    }
+
+    // SessionAccount: apply the same spend/allow-path/expiry guard the Sign
+    // flow enforces, right before signing+broadcasting. Without it the primary
+    // DoContract path would build and broadcast (paying gas) txs the chain will
+    // reject, and skip the client-side session protections entirely. Fail
+    // closed on any evaluation error.
+    if (isSessionAccount(signingAccount)) {
+      let decision: SessionSigningGuardDecision;
+      try {
+        const sessionAddr = await signingAccount.getAddress(chain.bech32Prefix);
+        const metadata = await sessionRepository.get(sessionAddr);
+        const walletLocked = await walletService.isLocked();
+        decision = evaluateSessionSigningGuard({
+          currentAccount: signingAccount,
+          sessionMetadata: metadata,
+          walletLocked,
+          nowSeconds: Math.floor(Date.now() / 1000),
+          currentChainId: currentNetwork.chainId,
+          decodedMessages: document.msgs as { type: string; value: any }[],
+          txFee: {
+            amount: document.fee.amount[0]?.amount ?? '0',
+            denom: document.fee.amount[0]?.denom ?? GasToken.denom,
+          },
+        });
+      } catch {
+        decision = { ok: false, reason: 'session_metadata_missing' };
+      }
+      if (decision.ok === false) {
+        setResponse(
+          InjectionMessageInstance.failure(
+            WalletResponseRejectType.TRANSACTION_REJECTED,
+            { sessionGuardReason: decision.reason },
+            requestData?.key,
+          ),
+        );
+        return false;
+      }
     }
 
     try {
