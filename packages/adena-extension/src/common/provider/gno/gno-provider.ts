@@ -29,7 +29,7 @@ import {
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import { HttpClient, Tm2Client } from '@gnolang/tm2-rpc';
-import { encodeGnoTx, extractSessionAddressFromGnoTxBase64 } from 'adena-module';
+import { encodeGnoTx } from 'adena-module';
 import axios from 'axios';
 import { formatGnoArg, GnoArg } from './qeval';
 import { AccountInfo, GnoDocumentInfo, GnoSessionAccountResponse, VMQueryType } from './types';
@@ -258,31 +258,6 @@ export class GnoProvider extends GnoJSONRPCProvider {
     }
 
     return withSessionAccountInfo(parseABCI<GnoSessionAccountResponse>(abciData));
-  }
-
-  public async getTransactionSessionAddress(hash: string): Promise<string | null> {
-    // The indexer returns tx hashes base64-encoded, but tm2's getTransaction
-    // parses its argument as hex (splitting into byte pairs via parseInt(_, 16)).
-    // Passing the base64 hash directly yields garbage bytes, the /tx lookup
-    // fails, and every signer resolves to null. For session accounts that drops
-    // the entire history, so convert to hex before querying.
-    let hexHash: string;
-    try {
-      hexHash = base64ToUpperHex(hash);
-    } catch {
-      return null;
-    }
-    if (!hexHash) {
-      return null;
-    }
-    return this.getTransaction(hexHash)
-      .then((result) => {
-        if (!result?.tx) {
-          return null;
-        }
-        return extractSessionAddressFromGnoTxBase64(result.tx);
-      })
-      .catch(() => null);
   }
 
   public getValueByEvaluateExpression(

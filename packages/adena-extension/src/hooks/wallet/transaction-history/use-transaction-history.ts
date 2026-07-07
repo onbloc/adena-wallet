@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { isSessionAccount } from 'adena-module';
 import { useRecoilState } from 'recoil';
 
 import { useAdenaContext } from '@hooks/use-context';
@@ -10,12 +9,12 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { CommonState } from '@states';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
-import {
-  EMPTY_TRANSACTION_HISTORY,
-  mergeSessionTransactionHistories,
-} from './session-history-source';
-import { useSessionFilteredTransactions } from './use-session-filtered-transactions';
+import { dedupeAndSortTransactions } from './session-history-source';
 
+// Indexer-backed (block-index paged) transaction history, used only when the
+// network has no API URL. Session accounts always run on API-backed networks,
+// so this path queries `currentAddress` uniformly with no session-specific
+// handling.
 export const useTransactionHistory = ({
   enabled,
 }: {
@@ -37,91 +36,49 @@ export const useTransactionHistory = ({
   refetch: (options?: RefetchOptions) => void;
 } => {
   const { currentNetwork } = useNetwork();
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();
   const { tokenMetainfos } = useTokenMetainfo();
   const [fetchedHistoryBlockHeight, setFetchedHistoryBlockHeight] = useRecoilState(
     CommonState.fetchedHistoryBlockHeight,
   );
 
-  const historySource = useMemo(() => {
-    if (currentAccount && isSessionAccount(currentAccount)) {
-      return {
-        primaryAddress: currentAccount.getMasterAddress(),
-        sessionAddress: currentAddress,
-      };
-    }
-    return {
-      primaryAddress: currentAddress,
-      sessionAddress: null,
-    };
-  }, [currentAccount, currentAddress]);
-
-  const { data: allTransactions, refetch } = useQuery(
-    [
-      'history/common/all',
-      currentNetwork.networkId,
-      historySource.primaryAddress,
-      historySource.sessionAddress,
-    ],
+  const { data: fetchedTransactions, refetch } = useQuery(
+    ['history/common/all', currentNetwork.networkId, currentAddress],
     async () => {
-      if (!historySource.primaryAddress) {
-        return mergeSessionTransactionHistories(EMPTY_TRANSACTION_HISTORY, null);
+      if (!currentAddress) {
+        return [];
       }
 
-      const primaryHistory = await transactionHistoryService.fetchAllTransactionHistory(
-        historySource.primaryAddress,
-      );
-      const shouldFetchSessionHistory =
-        !!historySource.sessionAddress &&
-        historySource.sessionAddress !== historySource.primaryAddress;
-      const sessionHistory = shouldFetchSessionHistory
-        ? await transactionHistoryService
-            .fetchAllTransactionHistory(historySource.sessionAddress || '')
-            .catch(() => null)
-        : null;
-
-      return mergeSessionTransactionHistories(primaryHistory, sessionHistory);
+      const history = await transactionHistoryService.fetchAllTransactionHistory(currentAddress);
+      return dedupeAndSortTransactions(history.transactions);
     },
     {
       enabled:
-        !!historySource.primaryAddress &&
+        !!currentAddress &&
         tokenMetainfos.length > 0 &&
         transactionHistoryService.supported &&
         enabled,
     },
   );
 
-  const fetchedTransactions = useMemo(() => {
-    return allTransactions?.transactions ?? null;
-  }, [allTransactions]);
-  const fallbackSessionHashes = useMemo(() => {
-    return new Set(allTransactions?.sessionSourceHashes ?? []);
-  }, [allTransactions?.sessionSourceHashes]);
-
-  const {
-    transactions: sessionFilteredTransactions,
-    isLoading: isSessionFilterLoading,
-    isFetching: isSessionFilterFetching,
-  } = useSessionFilteredTransactions(fetchedTransactions, { fallbackSessionHashes });
-
   const blockIndex = useMemo(() => {
-    if (!sessionFilteredTransactions) {
+    if (!fetchedTransactions) {
       return null;
     }
     if (!fetchedHistoryBlockHeight) {
-      return sessionFilteredTransactions.length < 20 ? sessionFilteredTransactions.length : 20;
+      return fetchedTransactions.length < 20 ? fetchedTransactions.length : 20;
     }
     return fetchedHistoryBlockHeight;
-  }, [sessionFilteredTransactions, fetchedHistoryBlockHeight]);
+  }, [fetchedTransactions, fetchedHistoryBlockHeight]);
 
   const transactions = useMemo(() => {
-    if (!sessionFilteredTransactions || blockIndex === null) {
+    if (!fetchedTransactions || blockIndex === null) {
       return null;
     }
 
-    return sessionFilteredTransactions.slice(0, blockIndex || 0);
-  }, [sessionFilteredTransactions, blockIndex]);
+    return fetchedTransactions.slice(0, blockIndex || 0);
+  }, [fetchedTransactions, blockIndex]);
 
   const firstTransactionHash = useMemo(() => {
     if (!transactions || transactions.length === 0) {
@@ -137,7 +94,7 @@ export const useTransactionHistory = ({
   );
 
   const fetchNextPage = async (): Promise<boolean> => {
-    const transactionSize = sessionFilteredTransactions?.length || 0;
+    const transactionSize = fetchedTransactions?.length || 0;
     const endIndex = blockIndex || 20;
     const nextBlockIndex = endIndex >= transactionSize ? transactionSize : endIndex + 20;
 
@@ -153,12 +110,10 @@ export const useTransactionHistory = ({
     data: data || null,
     isSupported: transactionHistoryService.supported && enabled,
     isFetched: isFetched,
-    status: isSessionFilterLoading ? 'loading' : status,
-    isLoading: isSessionFilterLoading || isLoading,
-    isFetching: isSessionFilterFetching || isFetching,
-    hasNextPage: sessionFilteredTransactions
-      ? sessionFilteredTransactions.length !== blockIndex
-      : false,
+    status,
+    isLoading,
+    isFetching,
+    hasNextPage: transactions ? transactions.length !== blockIndex : false,
     fetchNextPage,
     refetch: refetchTransactions,
   };
