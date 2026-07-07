@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { useAdenaContext } from './use-context';
-import { SessionMetadataV020 } from '@migrates/migrations/v020/storage-model-v020';
+import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
 
-export type SessionListItem = SessionMetadataV020 & { sessionAddr: string };
+export type SessionListItem = SessionMetadataV021 & { sessionAddr: string };
 
 export const SESSIONS_QUERY_KEY = 'sessions/all';
 

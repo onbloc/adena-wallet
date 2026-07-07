@@ -1,13 +1,13 @@
 import { StorageManager } from '@common/storage/storage-manager';
-import { SessionMetadataV020 } from '@migrates/migrations/v020/storage-model-v020';
+import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
 
 type LocalValueType = 'SESSIONS';
 
-type SessionsMap = Record<string, SessionMetadataV020>;
+type SessionsMap = Record<string, SessionMetadataV021>;
 
 // Read/write helper for the SESSIONS storage key introduced in v020.
 //
-// Storage shape: { [sessionAddr: string]: SessionMetadataV020 } flat map,
+// Storage shape: { [sessionAddr: string]: SessionMetadataV021 } flat map,
 // origin-agnostic (a session is not tied to a dApp; see Phase 4 doc).
 //
 // Source-of-truth policy: spendUsed / spendReset / status are authoritative
@@ -21,7 +21,7 @@ export class SessionRepository {
     this.localStorage = localStorage;
   }
 
-  public async get(sessionAddr: string): Promise<SessionMetadataV020 | null> {
+  public async get(sessionAddr: string): Promise<SessionMetadataV021 | null> {
     const sessions = await this.getAll();
     return sessions[sessionAddr] ?? null;
   }
@@ -39,14 +39,14 @@ export class SessionRepository {
     }
   }
 
-  public async set(sessionAddr: string, metadata: SessionMetadataV020): Promise<void> {
+  public async set(sessionAddr: string, metadata: SessionMetadataV021): Promise<void> {
     const sessions = await this.getAll();
     sessions[sessionAddr] = metadata;
     await this.persist(sessions);
   }
 
   public async setMany(
-    entries: Array<{ sessionAddr: string; metadata: SessionMetadataV020 }>,
+    entries: Array<{ sessionAddr: string; metadata: SessionMetadataV021 }>,
   ): Promise<void> {
     if (entries.length === 0) {
       return;
@@ -65,7 +65,7 @@ export class SessionRepository {
   // expiresAt, createdAt, txHash) are immutable once created.
   public async syncFromChain(
     sessionAddr: string,
-    partial: Pick<SessionMetadataV020, 'spendUsed' | 'spendReset' | 'status'>,
+    partial: Pick<SessionMetadataV021, 'spendUsed' | 'spendReset' | 'status'>,
   ): Promise<void> {
     const sessions = await this.getAll();
     const existing = sessions[sessionAddr];
@@ -83,7 +83,7 @@ export class SessionRepository {
 
   public async setStatus(
     sessionAddr: string,
-    status: SessionMetadataV020['status'],
+    status: SessionMetadataV021['status'],
   ): Promise<void> {
     const sessions = await this.getAll();
     const existing = sessions[sessionAddr];

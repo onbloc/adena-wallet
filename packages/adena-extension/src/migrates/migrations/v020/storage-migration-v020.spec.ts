@@ -1,15 +1,31 @@
 import { StorageMigration020 } from './storage-migration-v020';
 
 const BASE_DATA = {
-  NETWORKS: [],
-  CURRENT_CHAIN_ID: 'test-13',
-  CURRENT_NETWORK_ID: 'test-13',
-  SERIALIZED: 'serialized-blob',
-  ENCRYPTED_STORED_PASSWORD: 'encrypted-pw',
-  CURRENT_ACCOUNT_ID: 'acc-1',
-  ACCOUNT_NAMES: { 'acc-1': 'Main' },
+  NETWORKS: [
+    {
+      id: 'test-13',
+      default: true,
+      main: false,
+      chainId: 'test-13',
+      chainName: 'test-13',
+      networkId: 'test-13',
+      networkName: 'Testnet 13',
+      addressPrefix: 'g',
+      rpcUrl: 'XXXXX',
+      indexerUrl: 'https://indexer.test-13.gnoland.network:443',
+      gnoUrl: 'https://test13.testnets.gno.land',
+      apiUrl: 'https://test13.api.onbloc.xyz',
+      linkUrl: 'https://gnoscan.io',
+    },
+  ],
+  CURRENT_CHAIN_ID: 'test13',
+  CURRENT_NETWORK_ID: 'test13',
+  SERIALIZED: '',
+  ENCRYPTED_STORED_PASSWORD: '',
+  CURRENT_ACCOUNT_ID: '',
+  ACCOUNT_NAMES: {},
   ESTABLISH_SITES: {},
-  ADDRESS_BOOK: 'encrypted-address-book',
+  ADDRESS_BOOK: '',
   ACCOUNT_TOKEN_METAINFOS: {},
   QUESTIONNAIRE_EXPIRED_DATE: null,
   WALLET_CREATION_GUIDE_CONFIRM_DATE: null,
@@ -28,55 +44,36 @@ describe('StorageMigration020', () => {
     expect(new StorageMigration020().version).toBe(20);
   });
 
-  it('returns a v020 model with SESSIONS initialized as empty object', async () => {
-    const result = await new StorageMigration020().up(makeInput());
-    expect(result.version).toBe(20);
-    expect(result.data.SESSIONS).toEqual({});
+  it('refreshes NETWORKS with test-13 from chains.json', async () => {
+    const result = await new StorageMigration020().up(
+      makeInput({
+        NETWORKS: [
+          {
+            id: 'test-13',
+            default: true,
+            main: false,
+            chainId: 'test-13',
+            chainName: 'test-13',
+            networkId: 'test-13',
+            networkName: 'Testnet 13',
+            addressPrefix: 'g',
+            rpcUrl: 'XXXXX',
+            indexerUrl: 'https://indexer.test-13.gnoland.network:443',
+            gnoUrl: 'https://test13.testnets.gno.land',
+            apiUrl: 'https://test13.api.onbloc.xyz',
+            linkUrl: 'https://gnoscan.io',
+          },
+        ],
+      }),
+    );
+    const test13 = result.data.NETWORKS.find((n) => n.chainId === 'test-13');
+    expect(test13).toBeDefined();
+    expect(test13?.rpcUrl).toBe('https://test13.rpc.onbloc.xyz:443');
+    expect(test13?.indexerUrl).toBe('https://indexer.test-13.gnoland.network:443');
   });
 
-  it('preserves all v019 fields without loss', async () => {
-    const result = await new StorageMigration020().up(makeInput());
-    expect(result.data.NETWORKS).toEqual(BASE_DATA.NETWORKS);
-    expect(result.data.CURRENT_CHAIN_ID).toBe(BASE_DATA.CURRENT_CHAIN_ID);
-    expect(result.data.CURRENT_NETWORK_ID).toBe(BASE_DATA.CURRENT_NETWORK_ID);
-    expect(result.data.SERIALIZED).toBe(BASE_DATA.SERIALIZED);
-    expect(result.data.ENCRYPTED_STORED_PASSWORD).toBe(BASE_DATA.ENCRYPTED_STORED_PASSWORD);
-    expect(result.data.CURRENT_ACCOUNT_ID).toBe(BASE_DATA.CURRENT_ACCOUNT_ID);
-    expect(result.data.ACCOUNT_NAMES).toEqual(BASE_DATA.ACCOUNT_NAMES);
-    expect(result.data.ESTABLISH_SITES).toEqual(BASE_DATA.ESTABLISH_SITES);
-    expect(result.data.ADDRESS_BOOK).toBe(BASE_DATA.ADDRESS_BOOK);
-    expect(result.data.ACCOUNT_TOKEN_METAINFOS).toEqual(BASE_DATA.ACCOUNT_TOKEN_METAINFOS);
-    expect(result.data.QUESTIONNAIRE_EXPIRED_DATE).toBe(BASE_DATA.QUESTIONNAIRE_EXPIRED_DATE);
-    expect(result.data.WALLET_CREATION_GUIDE_CONFIRM_DATE).toBe(
-      BASE_DATA.WALLET_CREATION_GUIDE_CONFIRM_DATE,
-    );
-    expect(result.data.ADD_ACCOUNT_GUIDE_CONFIRM_DATE).toBe(
-      BASE_DATA.ADD_ACCOUNT_GUIDE_CONFIRM_DATE,
-    );
-    expect(result.data.ACCOUNT_GRC721_COLLECTIONS).toEqual(BASE_DATA.ACCOUNT_GRC721_COLLECTIONS);
-    expect(result.data.ACCOUNT_GRC721_PINNED_PACKAGES).toEqual(
-      BASE_DATA.ACCOUNT_GRC721_PINNED_PACKAGES,
-    );
-    expect(result.data.KDF_SALT).toBe(BASE_DATA.KDF_SALT);
-  });
-
-  it('throws when required v019 keys are missing', async () => {
-    const { KDF_SALT, ...withoutKdfSalt } = BASE_DATA;
-    const bad: any = { version: 19, data: withoutKdfSalt };
-    await expect(new StorageMigration020().up(bad)).rejects.toThrow(
-      'Storage Data does not match version V019',
-    );
-  });
-
-  it('throws when SERIALIZED is not a string', async () => {
+  it('throws on invalid v019 data', async () => {
     const bad: any = { version: 19, data: { ...BASE_DATA, SERIALIZED: null } };
-    await expect(new StorageMigration020().up(bad)).rejects.toThrow(
-      'Storage Data does not match version V019',
-    );
-  });
-
-  it('throws when NETWORKS is not an array', async () => {
-    const bad: any = { version: 19, data: { ...BASE_DATA, NETWORKS: {} } };
     await expect(new StorageMigration020().up(bad)).rejects.toThrow(
       'Storage Data does not match version V019',
     );

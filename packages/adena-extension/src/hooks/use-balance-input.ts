@@ -7,7 +7,7 @@ import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
-import type { SessionMetadataV020 } from '@migrates/migrations/v020/storage-model-v020';
+import type { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
 import { parseCoins } from '@services/transaction/session-spend';
 import { GasInfo, TokenBalanceType, TokenModel } from '@types';
 import { Document, isSessionAccount } from 'adena-module';
@@ -76,7 +76,7 @@ export const useBalanceInput = (
     tokenMetainfo?.type === 'gno-native';
 
   const { data: currentSessionMetadata = null, isLoading: isLoadingCurrentSessionMetadata } =
-    useQuery<SessionMetadataV020 | null>(
+    useQuery<SessionMetadataV021 | null>(
       ['sessionMetadataForBalanceInput', currentAccount?.id, currentNetwork.chainId],
       async () => {
         if (!currentAccount || !isSessionAccount(currentAccount)) {
@@ -115,7 +115,7 @@ export const useBalanceInput = (
         const base = record.BaseSessionAccount;
         const nowSeconds = Math.floor(Date.now() / 1000);
         const expiresAt = Number(base.expires_at ?? stored?.expiresAt ?? 0);
-        const status: SessionMetadataV020['status'] =
+        const status: SessionMetadataV021['status'] =
           stored?.status === 'REVOKED'
             ? 'REVOKED'
             : expiresAt > 0 && nowSeconds >= expiresAt

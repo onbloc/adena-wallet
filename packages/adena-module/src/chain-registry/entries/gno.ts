@@ -52,9 +52,9 @@ export const GNO_TEST13: GnoNetworkProfile = {
   displayName: 'Gno.land Testnet 13',
   isMainnet: false,
   nativeTokenId: 'test-13:ugnot',
-  rpcEndpoints: ['https://rpc.test-13-aeddi-1.gnoland.network:443'],
+  rpcEndpoints: ['https://test13.rpc.onbloc.xyz:443'],
   indexerUrl: 'https://indexer.test-13.gnoland.network:443',
-  gnoUrl: 'https://gnoweb.test-13.gnoland.network',
+  gnoUrl: 'https://test13.testnets.gno.land',
   linkUrl: 'https://gnoscan.io',
 };
 

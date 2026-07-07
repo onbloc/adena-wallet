@@ -20,7 +20,6 @@ export type StorageModelDataV020 = {
   ACCOUNT_GRC721_COLLECTIONS: AccountGRC721CollectionsV020;
   ACCOUNT_GRC721_PINNED_PACKAGES: AccountGRC721PinnedPackagesV020;
   KDF_SALT: KdfSaltModelV020;
-  SESSIONS: SessionsModelV020;
 };
 
 export type KdfSaltModelV020 = string;
@@ -87,7 +86,6 @@ export type CurrentAccountIdModelV020 = string;
 
 type AccountId = string;
 type NetworkId = string;
-type SessionAddr = string;
 
 export type AccountNamesModelV020 = { [key in AccountId]: string };
 
@@ -147,22 +145,4 @@ export type AccountGRC721CollectionsV020 = {
 
 export type AccountGRC721PinnedPackagesV020 = {
   [key in AccountId]: { [key in NetworkId]: string[] };
-};
-
-export type SessionMetadataV020 = {
-  masterAddress: string;
-  chainId: string;
-  allowPaths: string[];
-  spendLimit: string;
-  spendPeriod: number;
-  spendUsed?: string;
-  spendReset?: number;
-  expiresAt: number;
-  status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
-  createdAt: number;
-  txHash?: string;
-};
-
-export type SessionsModelV020 = {
-  [key in SessionAddr]: SessionMetadataV020;
 };

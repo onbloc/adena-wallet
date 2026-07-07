@@ -12,7 +12,7 @@ import { Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { GnoSessionAccountResponse } from '@common/provider/gno/types';
-import { SessionMetadataV020 } from '@migrates/migrations/v020/storage-model-v020';
+import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
 import { SessionRepository } from '@repositories/session';
 import { NetworkMetainfo } from '@types';
 
@@ -47,7 +47,7 @@ export interface SessionImportPreview {
   sessionAddr: string;
   chainId: string;
   addressPrefix: string;
-  metadata: SessionMetadataV020;
+  metadata: SessionMetadataV021;
   display: {
     expiresAt: number;
     allowPaths: string[];
@@ -69,7 +69,7 @@ export interface SessionImportRequest {
 
 export interface SessionPostSaveMetadata {
   sessionAddr: string;
-  metadata: SessionMetadataV020;
+  metadata: SessionMetadataV021;
 }
 
 const PRIVKEY_HEX_REGEX = /^(0x)?[0-9a-fA-F]{64}$/;
@@ -288,7 +288,7 @@ export class WalletSessionService {
   ): Promise<{
     wallet: AdenaWallet;
     sessionAddr: string;
-    metadata: SessionMetadataV020;
+    metadata: SessionMetadataV021;
   }> => {
     const preview = await this.previewSessionImport(
       sessionPrivKeyHex,
@@ -475,7 +475,7 @@ export class WalletSessionService {
     const allowPaths = res.allow_paths ?? [];
     const status = this.isActiveSessionRecord(res) ? 'ACTIVE' : 'EXPIRED';
 
-    const metadata: SessionMetadataV020 = {
+    const metadata: SessionMetadataV021 = {
       masterAddress,
       chainId: currentNetwork.chainId,
       allowPaths,

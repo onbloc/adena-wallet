@@ -7,7 +7,7 @@ import { Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { GnoSessionAccountResponse } from '@common/provider/gno/types';
-import { SessionMetadataV020 } from '@migrates/migrations/v020/storage-model-v020';
+import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
 import { SessionRepository } from '@repositories/session';
 import { NetworkMetainfo } from '@types';
 
@@ -54,18 +54,18 @@ function makeChainRegistry(): ChainRegistry {
 }
 
 function makeSessionRepository(): SessionRepository & {
-  sessions: Record<string, SessionMetadataV020>;
+  sessions: Record<string, SessionMetadataV021>;
 } {
-  const sessions: Record<string, SessionMetadataV020> = {};
+  const sessions: Record<string, SessionMetadataV021> = {};
   return {
     sessions,
     get: jest.fn(async (sessionAddr: string) => sessions[sessionAddr] ?? null),
     getAll: jest.fn(async () => ({ ...sessions })),
-    set: jest.fn(async (sessionAddr: string, metadata: SessionMetadataV020) => {
+    set: jest.fn(async (sessionAddr: string, metadata: SessionMetadataV021) => {
       sessions[sessionAddr] = metadata;
     }),
     setMany: jest.fn(
-      async (entries: Array<{ sessionAddr: string; metadata: SessionMetadataV020 }>) => {
+      async (entries: Array<{ sessionAddr: string; metadata: SessionMetadataV021 }>) => {
         for (const entry of entries) {
           sessions[entry.sessionAddr] = entry.metadata;
         }
@@ -75,7 +75,7 @@ function makeSessionRepository(): SessionRepository & {
       delete sessions[sessionAddr];
     }),
   } as unknown as SessionRepository & {
-    sessions: Record<string, SessionMetadataV020>;
+    sessions: Record<string, SessionMetadataV021>;
   };
 }
 
@@ -98,7 +98,7 @@ function makeWalletService(wallet: AdenaWallet): WalletService & {
   };
 }
 
-function makeMetadata(): SessionMetadataV020 {
+function makeMetadata(): SessionMetadataV021 {
   return {
     masterAddress: MASTER_ADDRESS,
     chainId: network.chainId,

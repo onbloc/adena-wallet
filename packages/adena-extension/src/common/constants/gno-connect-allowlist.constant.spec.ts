@@ -23,8 +23,7 @@ describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
         'https://gno.land',
         'https://betanet.testnets.gno.land',
         'https://staging.gno.land',
-        'https://gnoweb.test-13.gnoland.network',
-        'http://127.0.0.1:8888',
+        'https://test13.testnets.gno.land',
       ]),
     );
     expect(result.filter((url) => url.startsWith('http://'))).toEqual(['http://127.0.0.1:8888']);

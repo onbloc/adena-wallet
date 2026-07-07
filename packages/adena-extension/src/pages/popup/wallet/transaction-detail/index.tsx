@@ -5,6 +5,7 @@ import AddPackageIcon from '@assets/addpkg.svg';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import ContractIcon from '@assets/contract.svg';
 import IconShare from '@assets/icon-share';
+import { SCANNER_URL } from '@common/constants/resource.constant';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import {
   formatAddress,
@@ -12,12 +13,15 @@ import {
   getDateTimeText,
   getStatusStyle,
 } from '@common/utils/client-utils';
+import { makeTransactionScannerUrl, toScannerNetworkInfo } from '@common/utils/scanner-utils';
 import { Button, CopyIconButton, Text } from '@components/atoms';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
 import { TokenBalance } from '@components/molecules';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
+import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import mixins from '@styles/mixins';
 import theme, { fonts, getTheme } from '@styles/theme';
@@ -35,8 +39,10 @@ export const TransactionDetail = (): JSX.Element => {
   const [hasLogoError, setHasLogoError] = useState(false);
   const [isLoadedLogo, setIsLoadedLogo] = useState(false);
 
-  const { openScannerLink } = useLink();
+  const { openLink } = useLink();
   const { convertDenom } = useTokenMetainfo();
+  const { currentNetwork } = useNetwork();
+  const profile = useNetworkProfile();
   const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
 
   const transactionItem = params.transactionInfo;
@@ -108,7 +114,13 @@ export const TransactionDetail = (): JSX.Element => {
   };
 
   const handleLinkClick = (hash: string): void => {
-    openScannerLink('/transactions/details', { txhash: hash });
+    openLink(
+      makeTransactionScannerUrl(
+        toScannerNetworkInfo(currentNetwork),
+        hash,
+        profile?.linkUrl || SCANNER_URL,
+      ),
+    );
   };
 
   return transactionItem ? (

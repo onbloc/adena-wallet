@@ -1,6 +1,6 @@
 import { AdenaWallet } from 'adena-module';
 
-import { SessionMetadataV020 } from '@migrates/migrations/v020/storage-model-v020';
+import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
 
 // Single-shot in-memory handoff for an unencrypted wallet between an onboarding
 // entry flow and the create-password screen. The wallet is never serialized to
@@ -16,7 +16,7 @@ import { SessionMetadataV020 } from '@migrates/migrations/v020/storage-model-v02
 export interface PendingPostSave {
   sessions: Array<{
     sessionAddr: string;
-    metadata: SessionMetadataV020;
+    metadata: SessionMetadataV021;
   }>;
 }
 

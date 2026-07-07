@@ -1,7 +1,7 @@
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { normalizeGnoscanTxHash } from '@common/utils/gnoscan-url';
 import { createRegisterUrl } from '@common/utils/register-url';
-import { makeQueryString } from '@common/utils/string-utils';
+import { makeScannerUrl } from '@common/utils/scanner-utils';
 import { RoutePath, SECURITY_PATH } from '@types';
 import { useNetwork } from './use-network';
 import { useNetworkProfile } from './use-network-profile';
@@ -27,10 +27,10 @@ const useLink = (): UseLinkReturn => {
     const normalizedParameters = parameters.txhash
       ? { ...parameters, txhash: normalizeGnoscanTxHash(parameters.txhash) }
       : parameters;
-    const queryString = scannerParameters
-      ? makeQueryString({ ...scannerParameters, ...normalizedParameters })
-      : makeQueryString(normalizedParameters);
-    const link = `${scannerUrl}${path}?${queryString}`;
+    const mergedParameters = scannerParameters
+      ? { ...scannerParameters, ...normalizedParameters }
+      : normalizedParameters;
+    const link = makeScannerUrl(scannerUrl, path, mergedParameters);
 
     openLink(link);
   };

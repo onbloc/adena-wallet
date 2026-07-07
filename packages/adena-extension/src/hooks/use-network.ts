@@ -4,15 +4,16 @@ import { useRecoilState, useRecoilValue } from 'recoil';
 
 import { getDappVisibleAddress } from '@common/utils/account-address';
 import { fetchHealth } from '@common/utils/fetch-utils';
-import { getGnoscanChainParameters } from '@common/utils/gnoscan-url';
 import { pickDefaultByMode } from '@common/utils/network-default';
 import { createRegisterUrl } from '@common/utils/register-url';
 import { EventMessage } from '@inject/message';
 import { NetworkState, WalletState } from '@states';
-import { useAdenaContext, useWalletContext } from './use-context';
 import { useChain } from './use-chain';
+import { useAdenaContext, useWalletContext } from './use-context';
 import { useEvent } from './use-event';
 
+import { toGnoNetworkProfile } from '@common/mapper/network-profile-mapper';
+import { makeScannerParameters, toScannerNetworkInfo } from '@common/utils/scanner-utils';
 import CHAIN_DATA from '@resources/chains/chains.json';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AtomoneNetworkMetainfo, NetworkMetainfo, RoutePath } from '@types';
@@ -20,7 +21,6 @@ import {
   atomoneNetworkToProfile,
   atomoneNetworkToTokenProfiles,
 } from './helpers/atomone-to-profile';
-import { toGnoNetworkProfile } from '@common/mapper/network-profile-mapper';
 
 export type ChainGroup = 'gno' | 'atomone';
 export type NetworkMode = NetworkState.NetworkMode;
@@ -82,8 +82,13 @@ export const useNetwork = (): NetworkResponse => {
   const [atomoneNetworks, setAtomoneNetworkMetainfos] = useRecoilState(
     NetworkState.atomoneNetworkMetainfos,
   );
-  const { accountService, chainService, chainRegistry, tokenRegistry, sessionRepository } =
-    useAdenaContext();
+  const {
+    accountService,
+    chainService,
+    chainRegistry,
+    tokenRegistry,
+    sessionRepository,
+  } = useAdenaContext();
   const [currentAccount, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
   const [currentGnoNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork);
   const [currentAtomoneNetwork, setCurrentAtomoneNetwork] = useRecoilState(
@@ -131,25 +136,7 @@ export const useNetwork = (): NetworkResponse => {
     if (!currentGnoNetwork) {
       return null;
     }
-    const gnoscanChainParameters = getGnoscanChainParameters(currentGnoNetwork.networkId);
-    if (gnoscanChainParameters) {
-      return gnoscanChainParameters;
-    }
-
-    const officialNetworkIds = CHAIN_DATA.filter((network) => !!network.apiUrl).map(
-      (network) => network.networkId,
-    );
-    const isOfficialNetwork = officialNetworkIds.includes(currentGnoNetwork.networkId);
-    const networkParameters: { [key in string]: string } = isOfficialNetwork
-      ? {
-          chainId: currentGnoNetwork.networkId,
-        }
-      : {
-          type: 'custom',
-          rpcUrl: currentGnoNetwork.rpcUrl || '',
-          indexerUrl: currentGnoNetwork.indexerUrl || '',
-        };
-    return networkParameters;
+    return makeScannerParameters(toScannerNetworkInfo(currentGnoNetwork));
   }, [currentGnoNetwork]);
 
   const getDefaultNetworkInfo = useCallback((networkId: string) => {
@@ -375,8 +362,8 @@ export const useNetwork = (): NetworkResponse => {
         gnoTarget && gnoTarget.id !== currentGnoNetwork?.id
           ? gnoTarget.chainId
           : atomoneTarget && atomoneTarget.id !== currentAtomoneNetwork?.id
-            ? atomoneTarget.chainId
-            : null;
+          ? atomoneTarget.chainId
+          : null;
 
       if (targetChainId && !(await ensureSessionCanSwitchNetwork(targetChainId))) {
         return;

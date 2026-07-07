@@ -1,3 +1,4 @@
+import type { StdSignDoc } from '@cosmjs/amino';
 import { InjectionMessage } from '@inject/message';
 import { AddressBookItem } from '@repositories/wallet';
 import {
@@ -9,7 +10,6 @@ import {
   TokenModel,
   TransactionInfo,
 } from '@types';
-import type { StdSignDoc } from '@cosmjs/amino';
 import { CosmosDocument, Document } from 'adena-module';
 
 export const REGISTER_PATH = 'register.html' as const;

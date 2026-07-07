@@ -43,13 +43,20 @@ const createMockData = (
 });
 
 describe('storage migration V018', () => {
-  // encryptAES uses Argon2id KDF internally, so we prepare test data with it
+  // encryptAES uses Argon2id KDF internally, so we prepare test data with it.
+  // v009 re-encrypted SERIALIZED with the hashed password, while v015 later
+  // re-encrypted it with the raw password — so both legacy shapes can reach
+  // v018 and both must migrate.
   let encryptedSerialized: string;
   let encryptedAddressBook: string;
+  let rawEncryptedSerialized: string;
+  let rawEncryptedAddressBook: string;
 
   beforeAll(async () => {
     encryptedSerialized = await encryptAES(WALLET_JSON, HASHED_PASSWORD);
     encryptedAddressBook = await encryptAES(ADDRESS_BOOK_JSON, HASHED_PASSWORD);
+    rawEncryptedSerialized = await encryptAES(WALLET_JSON, RAW_PASSWORD);
+    rawEncryptedAddressBook = await encryptAES(ADDRESS_BOOK_JSON, RAW_PASSWORD);
   });
 
   it('version', () => {
@@ -106,6 +113,32 @@ describe('storage migration V018', () => {
     const wallet = JSON.parse(decrypted);
     expect(wallet).toHaveProperty('accounts');
     expect(wallet).toHaveProperty('keyrings');
+  });
+
+  it('up migrates SERIALIZED that v015 re-encrypted with the raw password', async () => {
+    // Regression: v015 re-encrypts SERIALIZED with the raw password, so a
+    // wallet that passed through v015 reaches v018 as raw-password AES data.
+    // v018 must fall back from the hashed key to the raw key to decrypt it,
+    // otherwise migration fails with "cannot decrypt SERIALIZED".
+    const mockData = {
+      version: 17,
+      data: createMockData(rawEncryptedSerialized, rawEncryptedAddressBook),
+    };
+    const migration = new StorageMigration018();
+    const result = await migration.up(mockData, RAW_PASSWORD);
+
+    expect(result.version).toBe(18);
+
+    await sodium.ready;
+    const salt = Uint8Array.from(Buffer.from(result.data.KDF_SALT, 'base64'));
+
+    const parsedSerialized = JSON.parse(result.data.SERIALIZED);
+    const decryptedWallet = await decryptXChacha20(parsedSerialized, RAW_PASSWORD, salt);
+    expect(JSON.parse(decryptedWallet)).toHaveProperty('keyrings');
+
+    const parsedAddressBook = JSON.parse(result.data.ADDRESS_BOOK);
+    const decryptedAddressBook = await decryptXChacha20(parsedAddressBook, RAW_PASSWORD, salt);
+    expect(JSON.parse(decryptedAddressBook)).toHaveLength(1);
   });
 
   it('migrated data cannot be decrypted with hashed password', async () => {

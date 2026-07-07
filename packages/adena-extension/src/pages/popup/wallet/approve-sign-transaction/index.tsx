@@ -32,7 +32,7 @@ import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
-import { SessionMetadataV020 } from '@migrates/migrations/v020/storage-model-v020';
+import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
 import {
   evaluateSessionSigningGuard,
   SessionSigningFailReason,
@@ -543,7 +543,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
     let cancelled = false;
     const evaluate = async (): Promise<void> => {
       const sessionAddr = await currentAccount.getAddress(chain.bech32Prefix);
-      const metadata: SessionMetadataV020 | null = await sessionRepository.get(sessionAddr);
+      const metadata: SessionMetadataV021 | null = await sessionRepository.get(sessionAddr);
       const walletLocked = await walletService.isLocked();
       const decision = evaluateSessionSigningGuard({
         currentAccount,

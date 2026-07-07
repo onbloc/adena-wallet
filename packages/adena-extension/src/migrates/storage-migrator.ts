@@ -31,13 +31,15 @@ import { StorageModelV015 } from './migrations/v015/storage-model-v015';
 import { StorageMigration016 } from './migrations/v016/storage-migration-v016';
 import { StorageModelV016 } from './migrations/v016/storage-model-v016';
 import { StorageMigration017 } from './migrations/v017/storage-migration-v017';
-import { StorageModelDataV017, StorageModelV017 } from './migrations/v017/storage-model-v017';
+import { StorageModelV017 } from './migrations/v017/storage-model-v017';
 import { StorageMigration018 } from './migrations/v018/storage-migration-v018';
-import { StorageModelDataV018, StorageModelV018 } from './migrations/v018/storage-model-v018';
+import { StorageModelV018 } from './migrations/v018/storage-model-v018';
 import { StorageMigration019 } from './migrations/v019/storage-migration-v019';
 import { StorageModelV019 } from './migrations/v019/storage-model-v019';
 import { StorageMigration020 } from './migrations/v020/storage-migration-v020';
-import { StorageModelDataV020, StorageModelV020 } from './migrations/v020/storage-model-v020';
+import { StorageModelV020 } from './migrations/v020/storage-model-v020';
+import { StorageMigration021 } from './migrations/v021/storage-migration-v021';
+import { StorageModelDataV021, StorageModelV021 } from './migrations/v021/storage-model-v021';
 import { Migration, Migrator } from './migrator';
 
 const LegacyStorageKeys = [
@@ -53,7 +55,7 @@ const LegacyStorageKeys = [
 ];
 
 // The latest storage model type
-export type StorageModelLatest = StorageModelV020;
+export type StorageModelLatest = StorageModelV021;
 
 // Default data structure for version 1 storage model
 const defaultData: StorageModelDataV001 = {
@@ -69,7 +71,7 @@ const defaultData: StorageModelDataV001 = {
   ACCOUNT_TOKEN_METAINFOS: {},
 };
 
-const defaultLegacyData: StorageModelDataV020 = {
+const defaultLegacyData: StorageModelDataV021 = {
   NETWORKS: [],
   CURRENT_CHAIN_ID: '',
   CURRENT_NETWORK_ID: '',
@@ -126,6 +128,7 @@ export class StorageMigrator implements Migrator {
   async deserialize(
     data: string | undefined,
   ): Promise<
+    | StorageModelV021
     | StorageModelV020
     | StorageModelV019
     | StorageModelV018
@@ -160,6 +163,7 @@ export class StorageMigrator implements Migrator {
 
   // Retrieves the current storage data, performing deserialization
   async getCurrent(): Promise<
+    | StorageModelV021
     | StorageModelV020
     | StorageModelV019
     | StorageModelV018
@@ -188,13 +192,13 @@ export class StorageMigrator implements Migrator {
     }
 
     return {
-      version: 20,
+      version: 21,
       data: defaultLegacyData,
     };
   }
 
   // Migrates storage data to the latest version
-  async migrate(current: StorageModel, password: string): Promise<StorageModelV020 | null> {
+  async migrate(current: StorageModel, password: string): Promise<StorageModelV021 | null> {
     let latest = current;
     try {
       const currentVersion = current.version || 1;
@@ -231,11 +235,37 @@ export class StorageMigrator implements Migrator {
     await this.storage.set({ [backupStorageKey]: savedData });
   }
 
+  // Reconciles a stored version label that contradicts the data shape.
+  //
+  // A prior fallback bug could persist already-migrated data (XChaCha20
+  // SERIALIZED, populated KDF_SALT) under a stale low version label such as 12.
+  // Re-running migrations on it makes v015/v018 try to AES-decrypt XChaCha20
+  // ciphertext, which throws "cannot decrypt SERIALIZED" and locks the wallet.
+  //
+  // KDF_SALT is only ever written by v018, so a non-empty KDF_SALT proves the
+  // data already reached at least v018. When the label claims an earlier
+  // version, we trust the data shape and bump the label to 19 (its structure:
+  // GRC721 maps present, ADDRESS_BOOK as string) so only v020 runs afterwards.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private reconcileVersion(json: any): any {
+    if (!json || typeof json !== 'object') {
+      return json;
+    }
+
+    const hasKdfSalt = typeof json.data?.KDF_SALT === 'string' && json.data.KDF_SALT !== '';
+    if (hasKdfSalt && typeof json.version === 'number' && json.version < 18) {
+      return { ...json, version: 19 };
+    }
+
+    return json;
+  }
+
   // Maps JSON data to the corresponding storage model version
   private async mappedJson(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     json: any,
   ): Promise<
+    | StorageModelV021
     | StorageModelV020
     | StorageModelV019
     | StorageModelV018
@@ -257,6 +287,11 @@ export class StorageMigrator implements Migrator {
     | StorageModelV002
     | StorageModelV001
   > {
+    json = this.reconcileVersion(json);
+
+    if (json?.version === 21) {
+      return json as StorageModelV021;
+    }
     if (json?.version === 20) {
       return json as StorageModelV020;
     }
@@ -328,9 +363,9 @@ export class StorageMigrator implements Migrator {
     }
 
     return {
-      version: 12,
+      version: 21,
       data: defaultLegacyData,
-    } as StorageModelV012;
+    } as StorageModelV021;
   }
 
   private async getLegacyData(): Promise<StorageModelDataV001> {
@@ -365,6 +400,7 @@ export class StorageMigrator implements Migrator {
       new StorageMigration018(),
       new StorageMigration019(),
       new StorageMigration020(),
+      new StorageMigration021(),
     ];
   }
 }

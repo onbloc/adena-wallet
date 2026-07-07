@@ -1,6 +1,6 @@
 import { Account } from 'adena-module';
 
-import { SessionMetadataV020 } from '@migrates/migrations/v020/storage-model-v020';
+import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
 
 import { evaluateSessionSigningGuard } from './session-signing-guard';
 
@@ -34,7 +34,7 @@ function masterAccountMock(): Account {
   } as unknown as Account;
 }
 
-function baseMetadata(overrides: Partial<SessionMetadataV020> = {}): SessionMetadataV020 {
+function baseMetadata(overrides: Partial<SessionMetadataV021> = {}): SessionMetadataV021 {
   return {
     masterAddress: masterAddr,
     chainId: 'test-13',

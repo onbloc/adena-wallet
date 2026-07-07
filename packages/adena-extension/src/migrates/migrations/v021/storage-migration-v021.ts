@@ -1,29 +1,27 @@
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
-import CHAIN_DATA from '@resources/chains/chains.json';
-import { StorageModelDataV019 } from '../v019/storage-model-v019';
-import { NetworksModelV020, StorageModelDataV020 } from './storage-model-v020';
+import { StorageModelDataV020 } from '../v020/storage-model-v020';
+import { StorageModelDataV021 } from './storage-model-v021';
 
-export class StorageMigration020 implements Migration<StorageModelDataV020> {
-  public readonly version = 20;
+export class StorageMigration021 implements Migration<StorageModelDataV021> {
+  public readonly version = 21;
 
   async up(
-    current: StorageModel<StorageModelDataV019>,
-  ): Promise<StorageModel<StorageModelDataV020>> {
-    if (!this.validateModelV019(current.data)) {
-      throw new Error('Storage Data does not match version V019');
+    current: StorageModel<StorageModelDataV020>,
+  ): Promise<StorageModel<StorageModelDataV021>> {
+    if (!this.validateModelV020(current.data)) {
+      throw new Error('Storage Data does not match version V020');
     }
-    const previous: StorageModelDataV019 = current.data;
     return {
       version: this.version,
       data: {
-        ...previous,
-        NETWORKS: this.migrateNetworks(previous.NETWORKS),
+        ...current.data,
+        SESSIONS: {},
       },
     };
   }
 
-  private validateModelV019(currentData: StorageModelDataV019): boolean {
+  private validateModelV020(currentData: StorageModelDataV020): boolean {
     const storageDataKeys = [
       'NETWORKS',
       'CURRENT_CHAIN_ID',
@@ -68,24 +66,5 @@ export class StorageMigration020 implements Migration<StorageModelDataV020> {
       return false;
     }
     return true;
-  }
-
-  private migrateNetworks(networks: StorageModelDataV019['NETWORKS']): NetworksModelV020 {
-    const migrateChainId = 'test-13';
-
-    const changedNetworks = networks.map((network) => {
-      if (network.chainId !== migrateChainId) {
-        return network;
-      }
-
-      const migrateNetwork = CHAIN_DATA.find((chain) => chain.chainId === migrateChainId);
-      if (!migrateNetwork) {
-        return network;
-      }
-
-      return migrateNetwork;
-    });
-
-    return changedNetworks;
   }
 }

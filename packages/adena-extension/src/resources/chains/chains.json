@@ -23,10 +23,10 @@
     "networkId": "test-13",
     "networkName": "Testnet 13",
     "addressPrefix": "g",
-    "rpcUrl": "https://rpc.test-13-aeddi-1.gnoland.network:443",
+    "rpcUrl": "https://test13.rpc.onbloc.xyz:443",
     "indexerUrl": "https://indexer.test-13.gnoland.network:443",
-    "gnoUrl": "https://gnoweb.test-13.gnoland.network",
-    "apiUrl": "",
+    "gnoUrl": "https://test13.testnets.gno.land",
+    "apiUrl": "https://test13.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {
