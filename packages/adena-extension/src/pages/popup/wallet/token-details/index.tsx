@@ -92,7 +92,7 @@ export const TokenDetails = (): JSX.Element => {
   const { navigate } = useAppNavigate<RoutePath.TokenDetails>();
   const { params } = useSessionParams<RoutePath.TokenDetails>();
   const [etcClicked, setEtcClicked] = useState(false);
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const tokenBalance = params?.tokenBalance;
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
@@ -205,8 +205,8 @@ export const TokenDetails = (): JSX.Element => {
   const getAccountDetailUri = (): string => {
     const scannerUrl = profile?.linkUrl || SCANNER_URL;
     return scannerParameters
-      ? `${scannerUrl}/account/${currentAddress}?${makeQueryString(scannerParameters)}`
-      : `${scannerUrl}/account/${currentAddress}`;
+      ? `${scannerUrl}/account/${currentFundingAddress}?${makeQueryString(scannerParameters)}`
+      : `${scannerUrl}/account/${currentFundingAddress}`;
   };
 
   const getTokenUri = (): string => {

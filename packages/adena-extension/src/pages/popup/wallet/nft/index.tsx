@@ -28,7 +28,7 @@ const Wrapper = styled.main`
 `;
 
 export const Nft = (): JSX.Element => {
-  const { currentAddress } = useCurrentAccount();
+  const { currentFundingAddress } = useCurrentAccount();
   const { navigate } = useAppNavigate();
   const { openScannerLink } = useLink();
 
@@ -68,11 +68,11 @@ export const Nft = (): JSX.Element => {
   );
 
   const openGnoscan = useCallback(() => {
-    if (!currentAddress) {
+    if (!currentFundingAddress) {
       return;
     }
-    openScannerLink('/account/' + currentAddress);
-  }, [currentAddress, openScannerLink]);
+    openScannerLink('/account/' + currentFundingAddress);
+  }, [currentFundingAddress, openScannerLink]);
 
   const moveDepositPage = useCallback(() => {
     navigate(RoutePath.Deposit, {

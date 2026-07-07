@@ -10,17 +10,17 @@ export const useGetGRC721Balance = (
   options?: UseQueryOptions<number | null, Error>,
 ): UseQueryResult<number | null> => {
   const { tokenService } = useAdenaContext();
-  const { currentAddress } = useCurrentAccount();
+  const { currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
 
   return useQuery<number | null, Error>({
-    queryKey: [GET_GRC721_BALANCE_QUERY_KEY, packagePath, currentAddress, currentNetwork.chainId],
+    queryKey: [GET_GRC721_BALANCE_QUERY_KEY, packagePath, currentFundingAddress, currentNetwork.chainId],
     queryFn: () => {
-      if (!currentAddress) {
+      if (!currentFundingAddress) {
         return null;
       }
 
-      return tokenService.fetchGRC721Balance(packagePath, currentAddress).catch(() => null);
+      return tokenService.fetchGRC721Balance(packagePath, currentFundingAddress).catch(() => null);
     },
     staleTime: 0,
     ...options,

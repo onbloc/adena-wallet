@@ -1,5 +1,6 @@
 import { useRecoilState } from 'recoil';
 
+import { getWalletFundingAddress } from '@common/utils/account-address';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { useChain } from './use-chain';
 import { useAdenaContext } from './use-context';
@@ -127,7 +128,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
     let cancelled = false;
 
-    void (async () => {
+    void (async (): Promise<void> => {
       // Read straight from storage to avoid a race with the recoil-state
       // initializer on first mount, which could overwrite stored entries.
       const stored = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
@@ -200,7 +201,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }
 
     await setTokenMetainfo([]);
-    const currentAddress = await currentAccount.getAddress(chain.bech32Prefix);
+    const currentAddress = await getWalletFundingAddress(currentAccount, chain.bech32Prefix);
 
     /**
      * For accounts with no transfer events, initialize the state with the list of stored tokens.
@@ -250,7 +251,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       return;
     }
 
-    const currentAddress = await currentAccount.getAddress(chain.bech32Prefix);
+    const currentAddress = await getWalletFundingAddress(currentAccount, chain.bech32Prefix);
 
     /**
      * For accounts with no transfer events, initialize the state with the list of stored tokens.

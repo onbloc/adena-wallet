@@ -9,23 +9,23 @@ export const useGetGRC721Tokens = (
   options?: UseQueryOptions<GRC721Model[] | null, Error>,
 ): UseQueryResult<GRC721Model[] | null> => {
   const { tokenService } = useAdenaContext();
-  const { currentAddress } = useCurrentAccount();
+  const { currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
 
   return useQuery<GRC721Model[] | null, Error>({
     queryKey: [
       'nft/useGetGRC721Tokens',
-      currentAddress || '',
+      currentFundingAddress || '',
       currentNetwork.chainId,
       collection?.packagePath,
     ],
     queryFn: async () => {
-      if (!currentAddress || !collection) {
+      if (!currentFundingAddress || !collection) {
         return null;
       }
 
       const tokens = await tokenService
-        .fetchGRC721Tokens(collection.packagePath, currentAddress)
+        .fetchGRC721Tokens(collection.packagePath, currentFundingAddress)
         .catch(() => []);
 
       return tokens
