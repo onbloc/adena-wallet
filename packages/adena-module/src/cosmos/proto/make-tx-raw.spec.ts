@@ -48,12 +48,8 @@ describe('makeTxRaw', () => {
     expect(body.messages[0].typeUrl).toBe(MSG_SEND_TYPE_URL);
 
     const signerInfo = authInfo.signerInfos[0];
-    expect(signerInfo.modeInfo?.single?.mode).toBe(
-      SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
-    );
-    expect(signerInfo.publicKey?.typeUrl).toBe(
-      '/cosmos.crypto.secp256k1.PubKey',
-    );
+    expect(signerInfo.modeInfo?.single?.mode).toBe(SignMode.SIGN_MODE_LEGACY_AMINO_JSON);
+    expect(signerInfo.publicKey?.typeUrl).toBe('/cosmos.crypto.secp256k1.PubKey');
     expect(signerInfo.sequence).toBe(5n);
 
     expect(authInfo.fee?.gasLimit).toBe(200000n);
@@ -67,28 +63,27 @@ describe('makeTxRaw', () => {
     // Derive a real 33-byte compressed key, then decompress to 65 bytes to feed in.
     // We emulate what could happen if an upstream keyring supplied uncompressed form.
     const priv = new Uint8Array(32).fill(9);
-    // Secp256k1.makeKeypair returns compressed publicKey; decompress via Secp256k1.uncompressPubkey.
-    return Secp256k1.makeKeypair(priv).then((kp) => {
-      const compressed = Secp256k1.compressPubkey(kp.pubkey);
-      const uncompressed = kp.pubkey; // already 65 bytes
-      expect(uncompressed.length).toBe(65);
+    // Secp256k1.makeKeypair returns a compressed publicKey (33 bytes); uncompress it to 65 bytes.
+    const kp = Secp256k1.makeKeypair(priv);
+    const compressed = Secp256k1.compressPubkey(kp.pubkey);
+    const uncompressed = Secp256k1.uncompressPubkey(kp.pubkey);
+    expect(uncompressed.length).toBe(65);
 
-      const txBytes = makeTxRaw({
-        msgs: [aminoMsg],
-        memo: '',
-        fee,
-        sequence: '0',
-        publicKey: uncompressed,
-        signature,
-        signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
-      });
-
-      const raw = TxRaw.decode(txBytes);
-      const authInfo = AuthInfo.decode(raw.authInfoBytes);
-      const pub = PubKey.decode(authInfo.signerInfos[0].publicKey!.value);
-      expect(pub.key.length).toBe(33);
-      expect(Array.from(pub.key)).toEqual(Array.from(compressed));
+    const txBytes = makeTxRaw({
+      msgs: [aminoMsg],
+      memo: '',
+      fee,
+      sequence: '0',
+      publicKey: uncompressed,
+      signature,
+      signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
     });
+
+    const raw = TxRaw.decode(txBytes);
+    const authInfo = AuthInfo.decode(raw.authInfoBytes);
+    const pub = PubKey.decode(authInfo.signerInfos[0].publicKey!.value);
+    expect(pub.key.length).toBe(33);
+    expect(Array.from(pub.key)).toEqual(Array.from(compressed));
   });
 
   it('passes compressed pubkey through unchanged', () => {
@@ -109,7 +104,8 @@ describe('makeTxRaw', () => {
   });
 
   it('aminoMsgsToAnys throws on unknown amino type', () => {
-    expect(() => aminoMsgsToAnys([{ type: 'cosmos-sdk/Unknown', value: {} }]))
-      .toThrow(/Unknown amino message type/);
+    expect(() => aminoMsgsToAnys([{ type: 'cosmos-sdk/Unknown', value: {} }])).toThrow(
+      /Unknown amino message type/,
+    );
   });
 });
