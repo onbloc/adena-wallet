@@ -249,6 +249,10 @@ export class GnoProvider extends GnoJSONRPCProvider {
     const abciResponse = await postABCIResponse(this.baseURL, requestBody);
     const abciData = abciResponse?.result?.response.ResponseBase.Data;
     if (!abciData) {
+      // "Not found". The base GnoJSONRPCProvider.getSession signature (gno-js-
+      // client v2) is non-nullable, so we can't widen the return type to
+      // `| null` without breaking the override. All call sites already treat
+      // the result as nullable; keep the cast as the intentional bridge.
       return null as unknown as GnoSessionAccountInfoResponse;
     }
 

@@ -241,10 +241,10 @@ export class AdenaWallet implements Wallet {
   }
 
   get lastSessionAccountIndex() {
-    const indices = this.accounts.filter(isSessionAccount).map((account) => {
-      const match = /^Session (\d+)$/.exec(account.name);
-      return match ? Number(match[1]) : 0;
-    });
+    // Derive from the account's numeric index (assigned at create/import),
+    // not from the "Session N" name — a user rename would otherwise corrupt
+    // the counter and yield duplicate names/indices.
+    const indices = this.accounts.filter(isSessionAccount).map((account) => account.index);
     return Math.max(0, ...indices);
   }
 

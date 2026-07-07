@@ -76,7 +76,9 @@ export class SessionRepository {
       ...existing,
       spendUsed: partial.spendUsed ?? existing.spendUsed,
       spendReset: partial.spendReset ?? existing.spendReset,
-      status: partial.status,
+      // Guard like the other fields: a nullish status must not clobber a valid
+      // cached ACTIVE/REVOKED with undefined.
+      status: partial.status ?? existing.status,
     };
     await this.persist(sessions);
   }

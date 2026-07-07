@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { fromBase64 } from '@cosmjs/encoding';
 import { isSessionAccount } from 'adena-module';
 import { useQueryClient } from '@tanstack/react-query';
@@ -47,22 +47,19 @@ export const useMasterSessions = (masterAddress: string | undefined): UseMasterS
   const [entries, setEntries] = useState<MasterSessionEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
 
-  const refetch = async (): Promise<void> => {
-    setTick((n) => n + 1);
-  };
-
-  useEffect(() => {
-    if (!masterAddress || !gnoProvider) {
-      setEntries([]);
-      return;
-    }
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-
-    (async (): Promise<void> => {
+  // Single fetch implementation shared by the mount effect and refetch().
+  // `signal.cancelled` lets an unmounted/superseded run bail out of state
+  // updates. Returning the promise makes `await refetch()` actually wait for
+  // the fresh data (callers rely on this after a revoke).
+  const load = useCallback(
+    async (signal?: { cancelled: boolean }): Promise<void> => {
+      if (!masterAddress || !gnoProvider) {
+        setEntries([]);
+        return;
+      }
+      setIsLoading(true);
+      setError(null);
       try {
         const responses = await gnoProvider.getSessions(masterAddress);
         const localMap = await sessionRepository.getAll();
@@ -79,7 +76,7 @@ export const useMasterSessions = (masterAddress: string | undefined): UseMasterS
             walletSessionNameByAddr.set(addr, account.name);
           }
         }
-        if (cancelled) return;
+        if (signal?.cancelled) return;
 
         const nowSec = Math.floor(Date.now() / 1000);
         const result: MasterSessionEntry[] = responses.map((res, idx) => {
@@ -118,26 +115,33 @@ export const useMasterSessions = (masterAddress: string | undefined): UseMasterS
           };
         });
 
-        if (!cancelled) {
+        if (!signal?.cancelled) {
           setEntries(result);
           // Keep the local cache in sync so other surfaces (Session Overview
           // popover, etc.) reflect the latest values pulled from chain.
           void queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
         }
       } catch (e) {
-        if (!cancelled) {
+        if (!signal?.cancelled) {
           setError((e as Error)?.message ?? 'Failed to load sessions');
           setEntries([]);
         }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!signal?.cancelled) setIsLoading(false);
       }
-    })();
+    },
+    [masterAddress, gnoProvider, wallet, sessionRepository, queryClient],
+  );
 
+  useEffect(() => {
+    const signal = { cancelled: false };
+    void load(signal);
     return (): void => {
-      cancelled = true;
+      signal.cancelled = true;
     };
-  }, [masterAddress, gnoProvider, wallet, sessionRepository, queryClient, tick]);
+  }, [load]);
+
+  const refetch = useCallback((): Promise<void> => load(), [load]);
 
   return { entries, isLoading, error, refetch };
 };

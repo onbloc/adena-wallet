@@ -173,9 +173,12 @@ describe('nextSessionAccountName', () => {
     expect(wallet.nextSessionAccountName).toBe('Session 1');
   });
 
+  // Mirrors the production import/create flow, which assigns each session a
+  // numeric index (lastSessionAccountIndex + 1) before adding it.
   const addSession = async (wallet: AdenaWallet, name: string): Promise<SessionAccount> => {
     const keyring = await SessionKeyring.generate(baseSessionConfig.masterAddress);
     const session = SessionAccount.createBy(keyring, name, baseSessionConfig);
+    session.index = wallet.lastSessionAccountIndex + 1;
     wallet.addKeyring(keyring);
     wallet.addAccount(session);
     return session;
@@ -189,12 +192,14 @@ describe('nextSessionAccountName', () => {
     expect(wallet.nextSessionAccountName).toBe('Session 3');
   });
 
-  it('ignores session accounts with custom (non "Session N") names', async () => {
+  it('keeps the counter stable when a session is renamed', async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
-    await addSession(wallet, 'Existing Name');
-    await addSession(wallet, 'Another Name');
+    const session = await addSession(wallet, 'Session 1');
 
-    expect(wallet.nextSessionAccountName).toBe('Session 1');
+    // Renaming must not free the index or the next name would collide with it.
+    session.name = 'My Custom Session';
+
+    expect(wallet.nextSessionAccountName).toBe('Session 2');
   });
 
   it('does not reuse a number after a session is deleted', async () => {
