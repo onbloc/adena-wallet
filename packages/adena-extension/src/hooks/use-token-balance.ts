@@ -4,7 +4,11 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useRecoilValueLoadable, useSetRecoilState } from 'recoil';
 
 import { COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
-import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import {
+  isCosmosNativeTokenModel,
+  isGRC20TokenModel,
+  isNativeTokenModel,
+} from '@common/validation/validation-token';
 import { AccountState, NetworkState } from '@states';
 import { Amount, TokenBalanceType, TokenModel } from '@types';
 
@@ -51,7 +55,7 @@ export const useTokenBalance = (): {
   const { wallet } = useWalletContext();
   const { balanceService, cosmosBalanceService, chainRegistry, tokenRegistry } = useAdenaContext();
   const { currentNetwork, currentAtomoneNetwork } = useNetwork();
-  const { currentAddress, currentAccount, currentFundingAddress } = useCurrentAccount();
+  const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const { existWallet, lockedWallet } = useWallet();
 
   useEffect(() => {
@@ -228,7 +232,7 @@ export const useTokenBalance = (): {
     }
     return allTokenMetainfos
       .filter(
-        (meta) => meta.type === 'cosmos-native' && activeCosmosNetworkIds.has(meta.networkId),
+        (meta) => isCosmosNativeTokenModel(meta) && activeCosmosNetworkIds.has(meta.networkId),
       )
       .map((meta) => ({
         ...meta,
@@ -364,7 +368,7 @@ export const useTokenBalance = (): {
     // from currentAccount + chain.bech32Prefix and query the Cosmos LCD.
     // Without this branch Send would read 0 for ATONE/PHOTON even when the
     // wallet-main screen shows a non-zero balance (uses fetchCosmosTokenBalances).
-    if (token.type === 'cosmos-native') {
+    if (isCosmosNativeTokenModel(token)) {
       const zeroBalance: TokenBalanceType = {
         ...token,
         amount: getTokenAmount({ value: '0', denom: token.symbol }),

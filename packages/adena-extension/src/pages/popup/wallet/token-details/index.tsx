@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import etc from '@assets/etc.svg';
-import { isGRC20TokenModel } from '@common/validation/validation-token';
+import { isCosmosNativeTokenModel, isGRC20TokenModel } from '@common/validation/validation-token';
 import { HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text } from '@components/atoms';
 import { DoubleButton, TransactionHistory } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -84,7 +84,7 @@ const EtcIcon = styled.div`
 
 export const TokenDetails = (): JSX.Element => {
   const theme = useTheme();
-  const { currentNetwork, scannerParameters } = useNetwork();
+  const { scannerParameters } = useNetwork();
   const profile = useNetworkProfile();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { saveScrollPosition } = useScrollHistory(scrollRef);
@@ -100,7 +100,7 @@ export const TokenDetails = (): JSX.Element => {
   const { currentBalances } = useTokenBalance();
 
   const isNative = tokenBalance && !isGRC20TokenModel(tokenBalance);
-  const isCosmosNative = tokenBalance?.type === 'cosmos-native';
+  const isCosmosNative = !!tokenBalance && isCosmosNativeTokenModel(tokenBalance);
 
   // Multisig × Cosmos = permanent non-support (keyrings are Gno-only).
   // Disable the Send button with a tooltip instead of hiding the token so

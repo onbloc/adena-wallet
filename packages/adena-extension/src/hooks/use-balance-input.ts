@@ -1,11 +1,12 @@
-import BigNumber from 'bignumber.js';
 import { useQuery } from '@tanstack/react-query';
+import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
+import { isNativeTokenModel } from '@common/validation/validation-token';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 import type { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
 import { parseCoins } from '@services/transaction/session-spend';
@@ -14,9 +15,9 @@ import { Document, isSessionAccount } from 'adena-module';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
-import { useConvertSessionAccounts } from './wallet/use-convert-session-accounts';
 import { useTokenBalance } from './use-token-balance';
 import { getCosmosOriginDenom, useTokenMetainfo } from './use-token-metainfo';
+import { useConvertSessionAccounts } from './wallet/use-convert-session-accounts';
 import { useNetworkFee } from './wallet/use-network-fee';
 
 // Buffer applied to the simulated cosmos fee when computing the Max amount.
@@ -73,91 +74,89 @@ export const useBalanceInput = (
   const isSessionNativeTransfer =
     currentAccount !== null &&
     isSessionAccount(currentAccount) &&
-    tokenMetainfo?.type === 'gno-native';
+    !!tokenMetainfo &&
+    isNativeTokenModel(tokenMetainfo);
 
-  const { data: currentSessionMetadata = null, isLoading: isLoadingCurrentSessionMetadata } =
-    useQuery<SessionMetadataV021 | null>(
-      ['sessionMetadataForBalanceInput', currentAccount?.id, currentNetwork.chainId],
-      async () => {
-        if (!currentAccount || !isSessionAccount(currentAccount)) {
+  const {
+    data: currentSessionMetadata = null,
+    isLoading: isLoadingCurrentSessionMetadata,
+  } = useQuery<SessionMetadataV021 | null>(
+    ['sessionMetadataForBalanceInput', currentAccount?.id, currentNetwork.chainId],
+    async () => {
+      if (!currentAccount || !isSessionAccount(currentAccount)) {
+        return null;
+      }
+
+      const sessionAddr = await currentAccount.getAddress('g').catch(() => null);
+      if (!sessionAddr) {
+        return null;
+      }
+
+      const stored = await sessionRepository.get(sessionAddr);
+      if (!gnoProvider) {
+        return stored;
+      }
+
+      let record;
+      try {
+        record = await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr);
+      } catch {
+        return stored;
+      }
+      if (!record) {
+        const shouldConvert = await shouldConvertMissingSession(
+          stored,
+          async () =>
+            !!(await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr)),
+        );
+        if (shouldConvert) {
+          await convertBySessionAddresses([sessionAddr]);
           return null;
         }
+        return stored;
+      }
 
-        const sessionAddr = await currentAccount.getAddress('g').catch(() => null);
-        if (!sessionAddr) {
-          return null;
-        }
+      const base = record.BaseSessionAccount;
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const expiresAt = Number(base.expires_at ?? stored?.expiresAt ?? 0);
+      const status: SessionMetadataV021['status'] =
+        stored?.status === 'REVOKED'
+          ? 'REVOKED'
+          : expiresAt > 0 && nowSeconds >= expiresAt
+          ? 'EXPIRED'
+          : 'ACTIVE';
+      const spendUsed = base.spend_used === '' ? undefined : base.spend_used;
+      const spendReset =
+        base.spend_reset != null && base.spend_reset !== '' ? Number(base.spend_reset) : undefined;
 
-        const stored = await sessionRepository.get(sessionAddr);
-        if (!gnoProvider) {
-          return stored;
-        }
+      if (stored) {
+        await sessionRepository
+          .syncFromChain(sessionAddr, { spendUsed, spendReset, status })
+          .catch(() => undefined);
+      }
 
-        let record;
-        try {
-          record = await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr);
-        } catch {
-          return stored;
-        }
-        if (!record) {
-          const shouldConvert = await shouldConvertMissingSession(
-            stored,
-            async () =>
-              !!(await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr)),
-          );
-          if (shouldConvert) {
-            await convertBySessionAddresses([sessionAddr]);
-            return null;
-          }
-          return stored;
-        }
-
-        const base = record.BaseSessionAccount;
-        const nowSeconds = Math.floor(Date.now() / 1000);
-        const expiresAt = Number(base.expires_at ?? stored?.expiresAt ?? 0);
-        const status: SessionMetadataV021['status'] =
-          stored?.status === 'REVOKED'
-            ? 'REVOKED'
-            : expiresAt > 0 && nowSeconds >= expiresAt
-              ? 'EXPIRED'
-              : 'ACTIVE';
-        const spendUsed = base.spend_used === '' ? undefined : base.spend_used;
-        const spendReset =
-          base.spend_reset != null && base.spend_reset !== ''
-            ? Number(base.spend_reset)
-            : undefined;
-
-        if (stored) {
-          await sessionRepository
-            .syncFromChain(sessionAddr, { spendUsed, spendReset, status })
-            .catch(() => undefined);
-        }
-
-        return {
-          masterAddress: stored?.masterAddress ?? currentAccount.getMasterAddress(),
-          chainId: stored?.chainId ?? currentAccount.sessionConfig.chainId,
-          allowPaths: stored?.allowPaths ?? currentAccount.sessionConfig.allowPaths ?? [],
-          spendLimit:
-            base.spend_limit ?? stored?.spendLimit ?? currentAccount.sessionConfig.spendLimit ?? '',
-          spendPeriod: Number(
-            base.spend_period ??
-              stored?.spendPeriod ??
-              currentAccount.sessionConfig.spendPeriod ??
-              0,
-          ),
-          spendUsed,
-          spendReset,
-          expiresAt,
-          status,
-          createdAt: stored?.createdAt ?? nowSeconds,
-          txHash: stored?.txHash,
-        };
-      },
-      {
-        enabled: currentAccount !== null && isSessionAccount(currentAccount),
-        refetchInterval: 30_000,
-      },
-    );
+      return {
+        masterAddress: stored?.masterAddress ?? currentAccount.getMasterAddress(),
+        chainId: stored?.chainId ?? currentAccount.sessionConfig.chainId,
+        allowPaths: stored?.allowPaths ?? currentAccount.sessionConfig.allowPaths ?? [],
+        spendLimit:
+          base.spend_limit ?? stored?.spendLimit ?? currentAccount.sessionConfig.spendLimit ?? '',
+        spendPeriod: Number(
+          base.spend_period ?? stored?.spendPeriod ?? currentAccount.sessionConfig.spendPeriod ?? 0,
+        ),
+        spendUsed,
+        spendReset,
+        expiresAt,
+        status,
+        createdAt: stored?.createdAt ?? nowSeconds,
+        txHash: stored?.txHash,
+      };
+    },
+    {
+      enabled: currentAccount !== null && isSessionAccount(currentAccount),
+      refetchInterval: 30_000,
+    },
+  );
 
   const sessionSpendConfig = useMemo<SessionSpendConfig | null>(() => {
     if (!currentAccount || !isSessionAccount(currentAccount)) {
@@ -209,7 +208,7 @@ export const useBalanceInput = (
       return;
     }
 
-    if (currentBalance.type === 'gno-native') {
+    if (isNativeTokenModel(currentBalance)) {
       if (!currentGasInfo) {
         return;
       }

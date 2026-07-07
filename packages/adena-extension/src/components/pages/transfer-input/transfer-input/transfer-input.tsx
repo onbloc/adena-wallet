@@ -13,6 +13,7 @@ import TransferModeTabs, {
 import { TransferInputWrapper } from './transfer-input.styles';
 
 import { BaseError } from '@common/errors';
+import { isCosmosNativeTokenModel } from '@common/validation/validation-token';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import { TokenModel } from '@types';
 import MemoInput from '../memo-input/memo-input';
@@ -83,7 +84,7 @@ const TransferInput: React.FC<TransferInputProps> = ({
   onClickNext,
 }) => {
   const isIbc = transferMode === 'ibc';
-  const isCosmosNative = tokenMetainfo?.type === 'cosmos-native';
+  const isCosmosNative = !!tokenMetainfo && isCosmosNativeTokenModel(tokenMetainfo);
   const addressPlaceholder = isIbc
     ? `Recipient’s ${ibcChainInput.chainName} Address`
     : isCosmosNative

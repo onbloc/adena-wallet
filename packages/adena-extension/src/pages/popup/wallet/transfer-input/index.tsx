@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { isGRC20TokenModel } from '@common/validation/validation-token';
+import { isCosmosNativeTokenModel, isGRC20TokenModel } from '@common/validation/validation-token';
 import {
   CHAIN_DISPLAY_NAME,
   chainOptionsFromRegistry,
@@ -72,7 +72,7 @@ const TransferInputContainer: React.FC = () => {
   // can subtract it for same-denom sends (e.g. PHOTON). The summary screen
   // re-runs the same query under the same key — react-query shares the cache,
   // so this does not double the LCD load.
-  const isCosmosNative = tokenMetainfo?.type === 'cosmos-native';
+  const isCosmosNative = !!tokenMetainfo && isCosmosNativeTokenModel(tokenMetainfo);
   const cosmosChain = useMemo(() => {
     if (!isCosmosNative || !tokenMetainfo) return null;
     const chain = chainRegistry.getChainByChainId(tokenMetainfo.networkId);

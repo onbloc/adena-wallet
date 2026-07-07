@@ -15,7 +15,11 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import AtomoneChainBadge from '@assets/icons/chains/atomone.svg';
 import { GasToken } from '@common/constants/token.constant';
 import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
-import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import {
+  isCosmosNativeTokenModel,
+  isGRC20TokenModel,
+  isNativeTokenModel,
+} from '@common/validation/validation-token';
 import TransactionResult from '@components/molecules/transaction-result';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
@@ -62,7 +66,7 @@ const TransferSummaryContainer: React.FC = () => {
   const queryClient = useQueryClient();
   const { currentAccount, currentAddress, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
-  const isCosmosToken = params.tokenMetainfo.type === 'cosmos-native';
+  const isCosmosToken = isCosmosNativeTokenModel(params.tokenMetainfo);
   const tokenChainGroup = isCosmosToken
     ? chainRegistry.getChainByChainId(params.tokenMetainfo.networkId)?.chainGroup ?? 'atomone'
     : 'gno';
@@ -200,7 +204,7 @@ const TransferSummaryContainer: React.FC = () => {
 
     let leastUsedAmount = BigNumber(networkFee.amount);
 
-    if (summaryInfo.tokenMetainfo.type === 'gno-native') {
+    if (isNativeTokenModel(summaryInfo.tokenMetainfo)) {
       leastUsedAmount = leastUsedAmount.plus(BigNumber(summaryInfo.transferAmount.value));
     }
 
@@ -344,8 +348,9 @@ const TransferSummaryContainer: React.FC = () => {
 
     const { tokenMetainfo, memo } = summaryInfo;
     const gasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
-    const message =
-      tokenMetainfo.type === 'gno-native' ? getNativeTransferMessage() : getGRC20TransferMessage();
+    const message = isNativeTokenModel(tokenMetainfo)
+      ? getNativeTransferMessage()
+      : getGRC20TransferMessage();
 
     const document = await transactionService.createDocument(
       currentAccount,
@@ -419,7 +424,7 @@ const TransferSummaryContainer: React.FC = () => {
     // Let errors propagate so transferByCommon's catch surfaces the real
     // message (broadcast code/raw_log, LCD error, etc.) instead of the
     // generic "could not be submitted" fallback.
-    if (summaryInfo.tokenMetainfo.type === 'cosmos-native') {
+    if (isCosmosNativeTokenModel(summaryInfo.tokenMetainfo)) {
       const result = await createCosmosTransaction();
       if (!result) return null;
       return { hash: result.txhash };
