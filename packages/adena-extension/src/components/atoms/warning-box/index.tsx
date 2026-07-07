@@ -1,4 +1,3 @@
-import React from 'react';
 import styled, { CSSProperties, useTheme } from 'styled-components';
 
 import { Text } from '@components/atoms';
@@ -115,15 +114,14 @@ export const WarningBox = ({ type, margin, padding }: WarningBoxProps): JSX.Elem
           {warningType[type].title}
         </Text>
       )}
-      {warningType[type].subTitle && (
-        isSessionRevoke ? (
+      {warningType[type].subTitle &&
+        (isSessionRevoke ? (
           <SessionRevokeText>{warningType[type].subTitle}</SessionRevokeText>
         ) : (
           <Text type='body2Reg' color={bodyColor}>
             {warningType[type].subTitle}
           </Text>
-        )
-      )}
+        ))}
     </Wrapper>
   );
 };

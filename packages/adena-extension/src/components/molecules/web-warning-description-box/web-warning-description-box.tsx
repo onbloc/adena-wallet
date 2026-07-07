@@ -1,8 +1,8 @@
 import React from 'react';
 import { useTheme } from 'styled-components';
 
-import { Row, WebText, WebImg } from '@components/atoms';
 import IconInfo from '@assets/web/info.svg';
+import { Row, WebImg, WebText } from '@components/atoms';
 
 import { StyledContainer } from './web-warning-description-box.styles';
 
@@ -10,9 +10,7 @@ export interface WebWarningDescriptionBoxProps {
   description: string;
 }
 
-const WebWarningDescriptionBox: React.FC<WebWarningDescriptionBoxProps> = ({
-  description,
-}) => {
+const WebWarningDescriptionBox: React.FC<WebWarningDescriptionBoxProps> = ({ description }) => {
   const theme = useTheme();
 
   return (

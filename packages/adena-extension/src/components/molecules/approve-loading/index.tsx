@@ -1,4 +1,6 @@
+import { Loading } from '@components/atoms';
 import React from 'react';
+import { GhostButtons } from '../ghost-button';
 import {
   ApproveLoadingAllRadiusBox,
   ApproveLoadingBottomRadiusBox,
@@ -6,8 +8,6 @@ import {
   ApproveLoadingTopRadiusBox,
   ApproveLoadingWrapper,
 } from './approve-loading.styles';
-import { Loading } from '@components/atoms';
-import { GhostButtons } from '../ghost-button';
 
 export interface ApproveLoadingProps {
   leftButtonText?: string;

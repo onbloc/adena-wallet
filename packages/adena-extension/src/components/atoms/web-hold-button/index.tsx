@@ -37,11 +37,8 @@ const StyledContainer = styled(View)<{ $pressed: boolean; $finish: boolean }>`
   ${({ $pressed, $finish }): RuleSet =>
     $pressed || $finish
       ? css`
-          box-shadow:
-            0 0 0 1px #1e3c71 inset,
-            0px 2px 16px 4px rgba(0, 89, 255, 0.24),
-            0px 1px 3px 0px rgba(0, 0, 0, 0.1),
-            0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+          box-shadow: 0 0 0 1px #1e3c71 inset, 0px 2px 16px 4px rgba(0, 89, 255, 0.24),
+            0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
           background: ${$finish ? '#0059ff52' : 'transparent'};
           ::before {
             content: '';

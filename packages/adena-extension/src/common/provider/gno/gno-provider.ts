@@ -5,9 +5,8 @@ import {
   UNKNOWN_ADDRESS_ERROR_TYPE,
 } from '@common/constants/tx-error.constant';
 import { parseTokenAmount } from '@common/utils/amount-utils';
-import { GnoJSONRPCProvider } from '@gnolang/gno-js-client';
 import type { SessionAccountInfo } from '@gnolang/gno-js-client';
-import { HttpClient, Tm2Client } from '@gnolang/tm2-rpc';
+import { GnoJSONRPCProvider } from '@gnolang/gno-js-client';
 import {
   ABCIEndpoint,
   ABCIErrorKey,
@@ -19,6 +18,7 @@ import {
   CommonEndpoint,
   newRequest,
   parseABCI,
+  ResponseDeliverTx,
   RestService,
   RPCResponse,
   Status,
@@ -27,8 +27,8 @@ import {
   TransactionEndpoint,
   Tx,
   uint8ArrayToBase64,
-  ResponseDeliverTx,
 } from '@gnolang/tm2-js-client';
+import { HttpClient, Tm2Client } from '@gnolang/tm2-rpc';
 import { encodeGnoTx, extractSessionAddressFromGnoTxBase64 } from 'adena-module';
 import axios from 'axios';
 import { formatGnoArg, GnoArg } from './qeval';
@@ -51,11 +51,14 @@ function base64ToUpperHex(b64: string): string {
   if (!b64) {
     return '';
   }
-  const bin = atob(b64);
+
   let hex = '';
+
+  const bin = atob(b64);
   for (let i = 0; i < bin.length; i++) {
     hex += bin.charCodeAt(i).toString(16).padStart(2, '0');
   }
+
   return hex.toUpperCase();
 }
 
@@ -63,7 +66,7 @@ type Tm2ClientConstructor = new (client: HttpClient) => Tm2Client;
 type GnoSessionAccountInfoResponse = GnoSessionAccountResponse & SessionAccountInfo;
 
 function createTm2Client(baseURL: string): Tm2Client {
-  return new (Tm2Client as unknown as Tm2ClientConstructor)(new HttpClient(baseURL));
+  return new ((Tm2Client as unknown) as Tm2ClientConstructor)(new HttpClient(baseURL));
 }
 
 function toNumberOrUndefined(value: string | undefined): number | undefined {
@@ -73,9 +76,7 @@ function toNumberOrUndefined(value: string | undefined): number | undefined {
   return Number(value);
 }
 
-function withSessionAccountInfo(
-  res: GnoSessionAccountResponse,
-): GnoSessionAccountInfoResponse {
+function withSessionAccountInfo(res: GnoSessionAccountResponse): GnoSessionAccountInfoResponse {
   const session = res.BaseSessionAccount;
   const base = session.BaseAccount;
 
@@ -253,7 +254,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
       // client v2) is non-nullable, so we can't widen the return type to
       // `| null` without breaking the override. All call sites already treat
       // the result as nullable; keep the cast as the intentional bridge.
-      return null as unknown as GnoSessionAccountInfoResponse;
+      return (null as unknown) as GnoSessionAccountInfoResponse;
     }
 
     return withSessionAccountInfo(parseABCI<GnoSessionAccountResponse>(abciData));

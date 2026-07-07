@@ -1,14 +1,13 @@
-import React from 'react';
+import { PubKeySecp256k1 } from '@gnolang/tm2-js-client';
+import { EMessageType } from '@inject/types';
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render, screen } from '@testing-library/react';
 import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
-import { render, screen } from '@testing-library/react';
-import theme from '@styles/theme';
-import { GlobalPopupStyle } from '@styles/global-style';
 import ApproveTransactionMessage, {
   ApproveTransactionMessageProps,
 } from './approve-transaction-message';
-import { PubKeySecp256k1 } from '@gnolang/tm2-js-client';
-import { EMessageType } from '@inject/types';
 
 describe('ApproveTransactionMessage Component', () => {
   const renderMessage = (args: ApproveTransactionMessageProps): void => {
@@ -124,6 +123,37 @@ describe('ApproveTransactionMessage Component', () => {
 });
 
 const TEST_SESSION_PUBLIC_KEY = Uint8Array.from([
-  2, 49, 65, 231, 113, 29, 144, 188, 105, 187, 89, 154, 214, 202, 15, 207, 212, 82, 155, 163, 91,
-  48, 144, 178, 84, 87, 160, 241, 228, 131, 137, 198, 30,
+  2,
+  49,
+  65,
+  231,
+  113,
+  29,
+  144,
+  188,
+  105,
+  187,
+  89,
+  154,
+  214,
+  202,
+  15,
+  207,
+  212,
+  82,
+  155,
+  163,
+  91,
+  48,
+  144,
+  178,
+  84,
+  87,
+  160,
+  241,
+  228,
+  131,
+  137,
+  198,
+  30,
 ]);

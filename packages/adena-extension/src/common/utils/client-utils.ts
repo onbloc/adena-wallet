@@ -1,10 +1,10 @@
-import { validateAddress } from 'adena-module';
-import gnotLogo from '@assets/icons/tokens/gnot.svg';
-import contractLogo from '@assets/contract.svg';
 import addPkgLogo from '@assets/addpkg.svg';
-import success from '@assets/success.svg';
+import contractLogo from '@assets/contract.svg';
 import failed from '@assets/failed.svg';
+import gnotLogo from '@assets/icons/tokens/gnot.svg';
+import success from '@assets/success.svg';
 import theme from '@styles/theme';
+import { validateAddress } from 'adena-module';
 import axios, { AxiosResponse } from 'axios';
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
@@ -36,7 +36,9 @@ export function getDateDiff(d: Date | string): number {
   return new Date().getDate() - new Date(d).getDate();
 }
 
-export function dateTimeFormatEn(d: Date | string): {
+export function dateTimeFormatEn(
+  d: Date | string,
+): {
   year: string;
   month: string;
   day: string;

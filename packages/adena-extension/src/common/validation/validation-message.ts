@@ -11,9 +11,11 @@ export const validateDoContractRequest = (requestData: any): boolean => {
   return true;
 };
 
-export const validateTransactionMessageOfBankSend = (message: {
-  [key in string]: any;
-}): boolean => {
+export const validateTransactionMessageOfBankSend = (
+  message: {
+    [key in string]: any;
+  },
+): boolean => {
   if (!message.type || !message.value) {
     return false;
   }
@@ -128,9 +130,11 @@ export const validateTransactionMessageOfRun = (message: { [key in string]: any 
   return true;
 };
 
-export const validateTransactionMessageOfCreateSession = (message: {
-  [key in string]: any;
-}): boolean => {
+export const validateTransactionMessageOfCreateSession = (
+  message: {
+    [key in string]: any;
+  },
+): boolean => {
   if (!isMessageWithValue(message, MSG_CREATE_SESSION_ENDPOINT)) {
     return false;
   }
@@ -158,9 +162,11 @@ export const validateTransactionMessageOfCreateSession = (message: {
   return true;
 };
 
-export const validateTransactionMessageOfRevokeSession = (message: {
-  [key in string]: any;
-}): boolean => {
+export const validateTransactionMessageOfRevokeSession = (
+  message: {
+    [key in string]: any;
+  },
+): boolean => {
   if (!isMessageWithValue(message, MSG_REVOKE_SESSION_ENDPOINT)) {
     return false;
   }
@@ -182,9 +188,11 @@ export const validateTransactionMessageOfRevokeSession = (message: {
   return true;
 };
 
-export const validateTransactionMessageOfRevokeAllSessions = (message: {
-  [key in string]: any;
-}): boolean => {
+export const validateTransactionMessageOfRevokeAllSessions = (
+  message: {
+    [key in string]: any;
+  },
+): boolean => {
   if (!isMessageWithValue(message, MSG_REVOKE_ALL_SESSIONS_ENDPOINT)) {
     return false;
   }

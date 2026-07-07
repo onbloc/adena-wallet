@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
+import React, { useEffect, useMemo, useState } from 'react';
 
-import { formatAddress } from '@common/utils/client-utils';
-import IconShare from '@assets/icon-share';
-import IconClock from '@assets/icon-clock';
 import IconCircleExclamation from '@assets/icon-circle-exclamation';
+import IconClock from '@assets/icon-clock';
+import IconShare from '@assets/icon-share';
+import { formatAddress } from '@common/utils/client-utils';
 
 import {
   CardContainer,
@@ -145,10 +145,7 @@ export const SessionDetailCard: React.FC<SessionDetailCardProps> = ({
     return (): void => clearInterval(id);
   }, []);
 
-  const expiryChip = useMemo(
-    () => resolveExpiryChip(expiresAt, nowSec),
-    [expiresAt, nowSec],
-  );
+  const expiryChip = useMemo(() => resolveExpiryChip(expiresAt, nowSec), [expiresAt, nowSec]);
   const expiresAtDate = useMemo(() => formatExpiresAtDate(expiresAt), [expiresAt]);
 
   const spendLimitBn = useMemo(

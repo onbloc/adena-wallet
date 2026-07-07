@@ -1,8 +1,8 @@
-import React, { ReactElement, useCallback, useMemo } from 'react';
-import styled from 'styled-components';
-import { Text, Button } from '@components/atoms';
+import { Button, Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import { ReactElement, useCallback, useMemo } from 'react';
+import styled from 'styled-components';
 
 interface ButtonProps {
   primary?: boolean;

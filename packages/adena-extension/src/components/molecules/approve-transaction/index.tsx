@@ -263,9 +263,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
               >
                 {showRawError ? 'Hide' : 'Show'} error details
               </Button>
-              {showRawError && (
-                <div className='error-detail-raw-box'>{errorDetail.rawError}</div>
-              )}
+              {showRawError && <div className='error-detail-raw-box'>{errorDetail.rawError}</div>}
             </>
           )}
         </div>

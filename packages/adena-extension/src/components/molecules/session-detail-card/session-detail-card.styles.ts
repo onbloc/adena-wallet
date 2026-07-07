@@ -44,8 +44,7 @@ export const RowValue = styled.span<{ $fontSize?: number }>`
   ${fonts.body2Reg};
   color: ${getTheme('neutral', '_1')};
   word-break: break-all;
-  ${({ $fontSize }): string =>
-    $fontSize ? `font-size: ${$fontSize}px; line-height: 22px;` : ''}
+  ${({ $fontSize }): string => ($fontSize ? `font-size: ${$fontSize}px; line-height: 22px;` : '')}
 `;
 
 export const RowMuted = styled.span`
@@ -60,8 +59,7 @@ export const Chip = styled.span<{ $variant: 'info' | 'danger' }>`
   padding: 0 10px;
   border-radius: 11px;
   gap: 4px;
-  color: ${({ $variant, theme }): string =>
-    $variant === 'danger' ? '#EB545E' : theme.primary._4};
+  color: ${({ $variant, theme }): string => ($variant === 'danger' ? '#EB545E' : theme.primary._4)};
   background: ${({ $variant }): string =>
     $variant === 'danger' ? 'rgba(239, 45, 33, 0.18)' : 'rgba(55, 125, 255, 0.18)'};
   flex-shrink: 0;

@@ -27,9 +27,7 @@ export const isGnoscanChainIdSupported = (networkId: string): boolean => {
   return GNOSCAN_CHAIN_IDS.has(networkId);
 };
 
-export const getGnoscanChainParameters = (
-  networkId: string,
-): { chainId: string } | null => {
+export const getGnoscanChainParameters = (networkId: string): { chainId: string } | null => {
   if (!isGnoscanChainIdSupported(networkId)) {
     return null;
   }

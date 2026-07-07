@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { formatAddress } from '@common/utils/client-utils';
 import { isBech32Address, reverseString } from '@common/utils/string-utils';
 import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box';
+import { PubKeySecp256k1 } from '@gnolang/tm2-js-client';
 import {
   ContractMessage,
   EMessageType,
@@ -10,7 +11,6 @@ import {
   SessionAdminMessage,
 } from '@inject/types';
 import { MsgCallValue } from '@repositories/transaction/response/transaction-history-query-response';
-import { PubKeySecp256k1 } from '@gnolang/tm2-js-client';
 import { publicKeyToAddress } from 'adena-module';
 
 import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
@@ -484,8 +484,15 @@ const MsgAddPkgTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   editable,
   errorMessage,
 }) => {
-  const { type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit } =
-    useMaxDepositMessage(index, message, changeMessage);
+  const {
+    type,
+    isOpen,
+    setIsOpen,
+    maxDeposit,
+    functionName,
+    title,
+    changeMaxDeposit,
+  } = useMaxDepositMessage(index, message, changeMessage);
 
   return (
     <>
@@ -528,8 +535,15 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   editable,
   errorMessage,
 }) => {
-  const { type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit } =
-    useMaxDepositMessage(index, message, changeMessage);
+  const {
+    type,
+    isOpen,
+    setIsOpen,
+    maxDeposit,
+    functionName,
+    title,
+    changeMaxDeposit,
+  } = useMaxDepositMessage(index, message, changeMessage);
 
   return (
     <>
@@ -740,9 +754,7 @@ function formatLongLikeValue(value: unknown): string | null {
 
   try {
     const lowBig = BigInt(low >>> 0);
-    const highBig = unsigned === true
-      ? BigInt(high >>> 0)
-      : BigInt(high);
+    const highBig = unsigned === true ? BigInt(high >>> 0) : BigInt(high);
     return (highBig * TWO_32 + lowBig).toString();
   } catch {
     return null;

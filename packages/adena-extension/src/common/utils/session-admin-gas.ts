@@ -1,5 +1,5 @@
 import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
-import { MINIMUM_GAS_PRICE, GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
+import { GAS_FEE_SAFETY_MARGIN, MINIMUM_GAS_PRICE } from '@common/constants/gas.constant';
 import { Account, Document, documentToDefaultTx } from 'adena-module';
 
 export const SESSION_ADMIN_GAS_ESTIMATE_LIMIT = 10_000_000;
