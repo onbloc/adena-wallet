@@ -78,7 +78,6 @@ export interface DecodedMessageForSpend {
   value: {
     // bank
     from_address?: string;
-    inputs?: { address: string; coins: string }[];
     amount?: string; // bank/MsgSend amount
     // vm
     send?: string;
@@ -115,16 +114,6 @@ function spendForSigner(message: DecodedMessageForSpend, signerAddress: string):
     case '/bank.MsgSend': {
       if (message.value.from_address !== signerAddress) return [];
       return safeParse(message.value.amount);
-    }
-    case '/bank.MsgMultiSend': {
-      const inputs = message.value.inputs ?? [];
-      let acc: Coins = [];
-      for (const inp of inputs) {
-        if (inp.address === signerAddress) {
-          acc = addCoins(acc, safeParse(inp.coins));
-        }
-      }
-      return acc;
     }
     case '/vm.m_call':
     case '/vm.m_run': {

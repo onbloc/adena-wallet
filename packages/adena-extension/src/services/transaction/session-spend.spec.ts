@@ -82,19 +82,14 @@ describe('estimateSessionSpend', () => {
     expect(coinsToString(result)).toBe('60ugnot');
   });
 
-  it('MsgMultiSend sums only signer inputs', () => {
+  it('ignores unsupported message types (e.g. MsgMultiSend has no proto encoder)', () => {
     const msg = {
       type: '/bank.MsgMultiSend',
-      value: {
-        inputs: [
-          { address: masterAddr, coins: '40ugnot' },
-          { address: 'g1other', coins: '99ugnot' },
-          { address: masterAddr, coins: '5uatom' },
-        ],
-      },
+      value: {},
     };
+    // Fee still counts; the unsupported message contributes nothing.
     const result = estimateSessionSpend([msg], fee, masterAddr);
-    expect(coinsToString(result)).toBe('5uatom,50ugnot');
+    expect(coinsToString(result)).toBe('10ugnot');
   });
 });
 

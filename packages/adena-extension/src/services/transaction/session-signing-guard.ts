@@ -23,11 +23,13 @@ const SESSION_ADMIN_MSG_TYPES = new Set([
   '/auth.m_revoke_all_sessions',
 ]);
 
+// MsgMultiSend is intentionally excluded: the wallet has no proto encoder for
+// it, so mappedDocumentMessagesWithCaller rejects it before signing. Listing it
+// here would falsely advertise support the pipeline cannot honor.
 const SUPPORTED_SESSION_MSG_TYPES = new Set([
   '/vm.m_call',
   '/vm.m_run',
   '/bank.MsgSend',
-  '/bank.MsgMultiSend',
 ]);
 
 export type SessionSigningFailReason =

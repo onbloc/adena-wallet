@@ -14,7 +14,7 @@ describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
     return result;
   };
 
-  it('production build trusts https chains.json origins and local gnoweb', () => {
+  it('production build trusts only https chains.json origins, never loopback', () => {
     process.env.NODE_ENV = 'production';
     const result = loadAllowlist();
 
@@ -26,7 +26,9 @@ describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
         'https://test13.testnets.gno.land',
       ]),
     );
-    expect(result.filter((url) => url.startsWith('http://'))).toEqual(['http://127.0.0.1:8888']);
+    // In production no loopback origin is trusted: any local process holding the
+    // port could otherwise inject RPC endpoints into the wallet flow.
+    expect(result.filter((url) => url.startsWith('http://'))).toEqual([]);
   });
 
   it('development build also trusts loopback origins from chains.json', () => {

@@ -549,6 +549,9 @@ export class WalletSessionService {
       privateKey: Array.from(privateKeyBytes),
       masterAddress: preview.metadata.masterAddress,
     });
+    // The keyring holds its own copy (Array.from above); wipe the transient
+    // buffer so the raw private key does not linger in memory longer than needed.
+    privateKeyBytes.fill(0);
     const sessionConfig: SessionConfig = {
       masterAddress: preview.metadata.masterAddress,
       chainId: preview.chainId,
@@ -613,6 +616,8 @@ export class WalletSessionService {
     const tmWallet = await Tm2Wallet.fromPrivateKey(privateKeyBytes);
     const publicKey = await tmWallet.getSigner().getPublicKey();
     const sessionAddr = await publicKeyToAddress(publicKey, addressPrefix);
+    // Wipe the transient buffer; only the derived public key / address escape.
+    privateKeyBytes.fill(0);
     return { publicKey, sessionAddr };
   };
 }

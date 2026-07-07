@@ -9,6 +9,10 @@ const msgSend = { type: '/bank.MsgSend', value: {} };
 const msgMultiSend = { type: '/bank.MsgMultiSend', value: {} };
 const msgRun = { type: '/vm.m_run', value: {} };
 
+// MsgMultiSend has no proto encoder in the wallet, so it is unsupported across
+// the session layer (guard/spend/allow-paths). Both the message type and the
+// "bank/multisend" entry are therefore treated as non-matching.
+
 describe('matchesAllowPaths', () => {
   it('empty allowPaths does not match any message', () => {
     expect(matchesAllowPaths(msgCall('gno.land/r/demo'), [])).toBe(false);
@@ -28,8 +32,9 @@ describe('matchesAllowPaths', () => {
     expect(matchesAllowPaths(msgCall('gno.land/r/demo'), ['bank/send'])).toBe(false);
   });
 
-  it('"bank/multisend" matches MsgMultiSend', () => {
-    expect(matchesAllowPaths(msgMultiSend, ['bank/multisend'])).toBe(true);
+  it('"bank/multisend" is unsupported and never matches MsgMultiSend', () => {
+    expect(matchesAllowPaths(msgMultiSend, ['bank/multisend'])).toBe(false);
+    expect(matchesAllowPaths(msgMultiSend, ['*'])).toBe(true);
   });
 
   it('"vm/exec:<path>" matches MsgCall with exact pkg_path', () => {

@@ -86,65 +86,69 @@ export function mappedDocumentMessagesWithCaller(
   const pick = (existing: string | undefined): string =>
     overwrite ? currentAddress : existing || currentAddress;
 
-  return messages
-    .map<NullableContractMessage>((message) => {
-      if (!isTransactionDocumentMessageInput(message)) {
-        return null;
-      }
+  // Unmappable messages must NOT be silently dropped: this output becomes the
+  // signed document, so dropping a message the dApp requested would sign a
+  // different (smaller) transaction than intended — a signing-integrity bug.
+  // Unsupported types (e.g. /bank.MsgMultiSend, which has no proto encoder)
+  // therefore fail closed here.
+  return messages.map<ContractMessage>((message, index) => {
+    if (!isTransactionDocumentMessageInput(message)) {
+      throw new Error(`Unsupported transaction message shape at index ${index}`);
+    }
 
-      const type = message.type;
-      switch (type) {
-        case '/bank.MsgSend':
-          return {
-            type: '/bank.MsgSend',
-            value: {
-              ...message.value,
-              from_address: pick(toOptionalString(message.value.from_address)),
-            } as ContractMessage['value'],
-          };
-        case '/vm.m_call':
-          return {
-            type: '/vm.m_call',
-            value: {
-              ...message.value,
-              caller: pick(toOptionalString(message.value.caller)),
-            } as ContractMessage['value'],
-          };
-        case '/vm.m_addpkg':
-          return {
-            type: '/vm.m_addpkg',
-            value: {
-              ...message.value,
-              creator: pick(toOptionalString(message.value.creator)),
-            } as ContractMessage['value'],
-          };
-        case '/vm.m_run':
-          return {
-            type: '/vm.m_run',
-            value: {
-              ...message.value,
-              caller: pick(toOptionalString(message.value.caller)),
-            } as ContractMessage['value'],
-          };
-        // Session admin messages all carry `creator` (master address).
-        // SessionAccount can never sign these. Issuance/revocation is
-        // master-only, so overwrite=true would only ever clobber with
-        // the same master address. Keep the same pick() shape for
-        // consistency with the spend/call branches.
-        case MSG_CREATE_SESSION_ENDPOINT:
-        case MSG_REVOKE_SESSION_ENDPOINT:
-        case MSG_REVOKE_ALL_SESSIONS_ENDPOINT:
-          return {
-            type: type as ContractMessage['type'],
-            value: {
-              ...message.value,
-              creator: pick(toOptionalString(message.value.creator)),
-            } as ContractMessage['value'],
-          };
-      }
-      return null;
-    })
-    .filter(isContractMessage);
+    const type = message.type;
+    switch (type) {
+      case '/bank.MsgSend':
+        return {
+          type: '/bank.MsgSend',
+          value: {
+            ...message.value,
+            from_address: pick(toOptionalString(message.value.from_address)),
+          } as ContractMessage['value'],
+        };
+      case '/vm.m_call':
+        return {
+          type: '/vm.m_call',
+          value: {
+            ...message.value,
+            caller: pick(toOptionalString(message.value.caller)),
+          } as ContractMessage['value'],
+        };
+      case '/vm.m_addpkg':
+        return {
+          type: '/vm.m_addpkg',
+          value: {
+            ...message.value,
+            creator: pick(toOptionalString(message.value.creator)),
+          } as ContractMessage['value'],
+        };
+      case '/vm.m_run':
+        return {
+          type: '/vm.m_run',
+          value: {
+            ...message.value,
+            caller: pick(toOptionalString(message.value.caller)),
+          } as ContractMessage['value'],
+        };
+      // Session admin messages all carry `creator` (master address).
+      // SessionAccount can never sign these. Issuance/revocation is
+      // master-only, so overwrite=true would only ever clobber with
+      // the same master address. Keep the same pick() shape for
+      // consistency with the spend/call branches.
+      case MSG_CREATE_SESSION_ENDPOINT:
+      case MSG_REVOKE_SESSION_ENDPOINT:
+      case MSG_REVOKE_ALL_SESSIONS_ENDPOINT:
+        return {
+          type: type as ContractMessage['type'],
+          value: {
+            ...message.value,
+            creator: pick(toOptionalString(message.value.creator)),
+          } as ContractMessage['value'],
+        };
+      default:
+        throw new Error(`Unsupported transaction message type "${type}"`);
+    }
+  });
 }
 
 export function mappedRawTxMessages(messages: RawTxMessageType[]): ContractMessage[] {

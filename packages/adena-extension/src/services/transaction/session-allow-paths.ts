@@ -8,7 +8,6 @@ const VALID_SESSION_ROUTE_TYPES = new Set([
   'vm/exec',
   'vm/run',
   'bank/send',
-  'bank/multisend',
 ]);
 
 // Maps proto endpoint -> chain route/type used in allow_paths entries.
@@ -18,7 +17,6 @@ const PROTO_TO_ROUTE_TYPE: Record<string, RouteType> = {
   '/vm.m_call': { route: 'vm', type: 'exec' },
   '/vm.m_run': { route: 'vm', type: 'run' },
   '/bank.MsgSend': { route: 'bank', type: 'send' },
-  '/bank.MsgMultiSend': { route: 'bank', type: 'multisend' },
 };
 
 export interface DecodedMessageForGuard {
