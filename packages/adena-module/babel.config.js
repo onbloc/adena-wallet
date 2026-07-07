@@ -3,6 +3,9 @@ module.exports = {
     [
       '@babel/preset-env',
       {
+        targets: {
+          node: 'current',
+        },
         useBuiltIns: 'entry',
         corejs: '3.22',
       },

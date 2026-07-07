@@ -242,10 +242,12 @@ export const parseParameters = (url: string): { [x: string]: string } => {
   const params: { [key in string]: string } = {};
   for (const hashValue of hash) {
     for (const parameterValue of hashValue.split('&')) {
-      const values = parameterValue.split('=');
-      if (values.length > 1) {
-        const key = values[0];
-        const value = values[1];
+      // Split on the first '=' only so base64 '=' padding inside the value
+      // is preserved verbatim.
+      const eqIdx = parameterValue.indexOf('=');
+      if (eqIdx > 0) {
+        const key = parameterValue.slice(0, eqIdx);
+        const value = parameterValue.slice(eqIdx + 1);
         params[key] = value;
       }
     }
@@ -254,10 +256,21 @@ export const parseParameters = (url: string): { [x: string]: string } => {
   return params;
 };
 
+// Swap '+' and '/' for URL-safe alternatives so the base64 payload survives
+// being embedded in a URL query string (where '+' may be decoded as space and
+// '/' has its own meaning). '=' padding is preserved as-is and is handled by
+// parseParameters' first-'=' boundary rule.
+const toUrlSafeBase64 = (value: string): string => value.replace(/\+/g, '-').replace(/\//g, '_');
+const fromUrlSafeBase64 = (value: string): string => value.replace(/-/g, '+').replace(/_/g, '/');
+
+const encodeParameterReplacer = (_key: string, value: unknown): unknown => {
+  return typeof value === 'bigint' ? value.toString() : value;
+};
+
 export const encodeParameter = (data: { [key in string]: any }): string => {
   try {
-    const encodedValue = encodeURI(JSON.stringify(data));
-    return toBase64(encodedValue);
+    const encodedValue = encodeURI(JSON.stringify(data, encodeParameterReplacer));
+    return toUrlSafeBase64(toBase64(encodedValue));
   } catch (error) {
     console.log(error);
   }
@@ -265,8 +278,17 @@ export const encodeParameter = (data: { [key in string]: any }): string => {
 };
 
 export const decodeParameter = (data: string): any => {
+  if (!data) {
+    return {};
+  }
+
   try {
-    const decodedValue = JSON.parse(decodeURI(fromBase64(data)));
+    const decodedString = fromBase64(fromUrlSafeBase64(data));
+    if (!decodedString) {
+      return {};
+    }
+
+    const decodedValue = JSON.parse(decodeURI(decodedString));
     return decodedValue;
   } catch (error) {
     console.log(error);
@@ -305,6 +327,10 @@ export const createImageByURI = async (uri: string): Promise<string | null> => {
 };
 
 export const createFaviconByHostname = async (baseUrl: string): Promise<string | null> => {
+  if (!/^https?:\/\//.test(baseUrl)) {
+    return null;
+  }
+
   try {
     const faviconData = await fetchFavicon(baseUrl);
     return faviconData;

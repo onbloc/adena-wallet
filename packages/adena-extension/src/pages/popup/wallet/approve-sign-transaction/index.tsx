@@ -12,6 +12,7 @@ import { GasToken } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { getDappVisibleAddress } from '@common/utils/account-address';
+import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -279,15 +280,31 @@ const ApproveSignTransactionContainer: React.FC = () => {
         isSessionAccount(currentAccount) &&
         error?.message?.startsWith('Session not found:')
       ) {
+        let converted = false;
         const sessionAddr = await currentAccount.getAddress(chain.bech32Prefix).catch(() => null);
         if (sessionAddr) {
-          await convertBySessionAddresses([sessionAddr]);
+          const storedSession = await sessionRepository.get(sessionAddr).catch(() => null);
+          const shouldConvert = await shouldConvertMissingSession(
+            storedSession,
+            async () =>
+              !!(await gnoProvider?.getSession(currentAccount.getMasterAddress(), sessionAddr)),
+          );
+          if (shouldConvert) {
+            await convertBySessionAddresses([sessionAddr]);
+            converted = true;
+          }
         }
         setSessionGuardDecision({ ok: false, reason: 'session_inactive' });
         setResponse(
           InjectionMessageInstance.failure(
             WalletResponseFailureType.SIGN_FAILED,
-            { error: { message: 'Session was revoked and converted to a regular account.' } },
+            {
+              error: {
+                message: converted
+                  ? 'Session was revoked and converted to a regular account.'
+                  : 'Session is not visible on chain yet. Please try again shortly.',
+              },
+            },
             requestData?.key,
           ),
         );

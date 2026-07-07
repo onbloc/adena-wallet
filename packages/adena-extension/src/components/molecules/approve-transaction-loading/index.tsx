@@ -20,7 +20,7 @@ export const ApproveTransactionLoading: React.FC<ApproveTransactionLoadingProps>
   return (
     <ApproveTransactionLoadingWrapper>
       <Loading.Round width='163px' height='14px' radius='24px' />
-      <ApproveTransactionLoadingAllRadiusBox align='center' className='domain-skeleton'>
+      <ApproveTransactionLoadingAllRadiusBox $align='center' className='domain-skeleton'>
         <Loading.Round width='100px' height='10px' radius='24px' />
       </ApproveTransactionLoadingAllRadiusBox>
       <ApproveTransactionLoadingTopRadiusBox>

@@ -10,6 +10,10 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { CommonState } from '@states';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
+import {
+  EMPTY_TRANSACTION_HISTORY,
+  mergeSessionTransactionHistories,
+} from './session-history-source';
 import { useSessionFilteredTransactions } from './use-session-filtered-transactions';
 
 export const useTransactionHistory = ({
@@ -40,19 +44,48 @@ export const useTransactionHistory = ({
     CommonState.fetchedHistoryBlockHeight,
   );
 
-  const historyAddress = useMemo(() => {
+  const historySource = useMemo(() => {
     if (currentAccount && isSessionAccount(currentAccount)) {
-      return currentAccount.getMasterAddress();
+      return {
+        primaryAddress: currentAccount.getMasterAddress(),
+        sessionAddress: currentAddress,
+      };
     }
-    return currentAddress;
+    return {
+      primaryAddress: currentAddress,
+      sessionAddress: null,
+    };
   }, [currentAccount, currentAddress]);
 
   const { data: allTransactions, refetch } = useQuery(
-    ['history/common/all', currentNetwork.networkId, historyAddress],
-    () => transactionHistoryService.fetchAllTransactionHistory(historyAddress || ''),
+    [
+      'history/common/all',
+      currentNetwork.networkId,
+      historySource.primaryAddress,
+      historySource.sessionAddress,
+    ],
+    async () => {
+      if (!historySource.primaryAddress) {
+        return mergeSessionTransactionHistories(EMPTY_TRANSACTION_HISTORY, null);
+      }
+
+      const primaryHistory = await transactionHistoryService.fetchAllTransactionHistory(
+        historySource.primaryAddress,
+      );
+      const shouldFetchSessionHistory =
+        !!historySource.sessionAddress &&
+        historySource.sessionAddress !== historySource.primaryAddress;
+      const sessionHistory = shouldFetchSessionHistory
+        ? await transactionHistoryService
+            .fetchAllTransactionHistory(historySource.sessionAddress || '')
+            .catch(() => null)
+        : null;
+
+      return mergeSessionTransactionHistories(primaryHistory, sessionHistory);
+    },
     {
       enabled:
-        !!historyAddress &&
+        !!historySource.primaryAddress &&
         tokenMetainfos.length > 0 &&
         transactionHistoryService.supported &&
         enabled,
@@ -62,12 +95,15 @@ export const useTransactionHistory = ({
   const fetchedTransactions = useMemo(() => {
     return allTransactions?.transactions ?? null;
   }, [allTransactions]);
+  const fallbackSessionHashes = useMemo(() => {
+    return new Set(allTransactions?.sessionSourceHashes ?? []);
+  }, [allTransactions?.sessionSourceHashes]);
 
   const {
     transactions: sessionFilteredTransactions,
     isLoading: isSessionFilterLoading,
     isFetching: isSessionFilterFetching,
-  } = useSessionFilteredTransactions(fetchedTransactions);
+  } = useSessionFilteredTransactions(fetchedTransactions, { fallbackSessionHashes });
 
   const blockIndex = useMemo(() => {
     if (!sessionFilteredTransactions) {

@@ -7,7 +7,15 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { TransactionInfo, TransactionWithPageInfo } from '@types';
+import { TransactionInfo } from '@types';
+import {
+  EMPTY_TRANSACTION_HISTORY,
+  HistoryPageParam,
+  SessionMergedTransactionHistory,
+  buildNextHistoryPageParam,
+  dedupeAndSortTransactions,
+  mergeSessionTransactionHistories,
+} from './session-history-source';
 import { useSessionFilteredTransactions } from './use-session-filtered-transactions';
 
 const REFETCH_INTERVAL = 3_000;
@@ -37,11 +45,17 @@ export const useTransactionHistoryPage = ({
   const { transactionHistoryService } = useAdenaContext();
   const { tokenMetainfos } = useTokenMetainfo();
 
-  const historyAddress = useMemo(() => {
+  const historySource = useMemo(() => {
     if (currentAccount && isSessionAccount(currentAccount)) {
-      return currentAccount.getMasterAddress();
+      return {
+        primaryAddress: currentAccount.getMasterAddress(),
+        sessionAddress: currentAddress,
+      };
     }
-    return currentAddress;
+    return {
+      primaryAddress: currentAddress,
+      sessionAddress: null,
+    };
   }, [currentAccount, currentAddress]);
 
   const {
@@ -49,28 +63,57 @@ export const useTransactionHistoryPage = ({
     hasNextPage,
     refetch,
     fetchNextPage,
-  } = useInfiniteQuery<TransactionWithPageInfo, Error, unknown, any>(
+  } = useInfiniteQuery<SessionMergedTransactionHistory, Error, unknown, any>(
     {
-      queryKey: ['history/page/all', currentNetwork.networkId, historyAddress || ''],
-      getNextPageParam: (lastPage?: TransactionWithPageInfo): string | boolean | null => {
-        return lastPage?.page.cursor || null;
+      queryKey: [
+        'history/page/all',
+        currentNetwork.networkId,
+        historySource.primaryAddress || '',
+        historySource.sessionAddress || '',
+      ],
+      getNextPageParam: (
+        lastPage?: SessionMergedTransactionHistory,
+      ): HistoryPageParam | null => {
+        return lastPage?.nextPageParam ?? null;
       },
-      queryFn: (context: any) => {
-        if (context?.pageParam === false) {
+      queryFn: async (context: any) => {
+        const pageParam = context?.pageParam as HistoryPageParam | undefined;
+        if (!historySource.primaryAddress) {
           return {
-            hasNext: false,
-            cursor: null,
-            transactions: [],
+            ...mergeSessionTransactionHistories(EMPTY_TRANSACTION_HISTORY, null),
+            nextPageParam: null,
           };
         }
 
-        const cursor = context?.pageParam || null;
-        return transactionHistoryService.fetchAllTransactionHistory(historyAddress || '', cursor);
+        const primaryHistory =
+          pageParam?.primaryDone === true
+            ? EMPTY_TRANSACTION_HISTORY
+            : await transactionHistoryService.fetchAllTransactionHistory(
+                historySource.primaryAddress,
+                pageParam?.primaryCursor ?? null,
+              );
+        const shouldFetchSessionHistory =
+          !!historySource.sessionAddress &&
+          historySource.sessionAddress !== historySource.primaryAddress &&
+          pageParam?.sessionDone !== true;
+        const sessionHistory = shouldFetchSessionHistory
+          ? await transactionHistoryService
+              .fetchAllTransactionHistory(
+                historySource.sessionAddress || '',
+                pageParam?.sessionCursor ?? null,
+              )
+              .catch(() => null)
+          : null;
+
+        return {
+          ...mergeSessionTransactionHistories(primaryHistory, sessionHistory),
+          nextPageParam: buildNextHistoryPageParam(primaryHistory, sessionHistory, pageParam),
+        };
       },
     },
     {
       enabled:
-        !!historyAddress &&
+        !!historySource.primaryAddress &&
         tokenMetainfos.length > 0 &&
         transactionHistoryService.supported &&
         enabled,
@@ -84,16 +127,24 @@ export const useTransactionHistoryPage = ({
       return null;
     }
 
-    return allTransactions.pages.flatMap(
-      (page: unknown) => (page as TransactionWithPageInfo).transactions,
+    const pageTransactions = allTransactions.pages.flatMap(
+      (page: unknown) => (page as SessionMergedTransactionHistory).transactions,
     );
+    return dedupeAndSortTransactions(pageTransactions);
+  }, [allTransactions?.pages]);
+  const fallbackSessionHashes = useMemo(() => {
+    const hashes =
+      allTransactions?.pages.flatMap(
+        (page: unknown) => (page as SessionMergedTransactionHistory).sessionSourceHashes,
+      ) ?? [];
+    return new Set(hashes);
   }, [allTransactions?.pages]);
 
   const {
     transactions: sessionFilteredTransactions,
     isLoading: isSessionFilterLoading,
     isFetching: isSessionFilterFetching,
-  } = useSessionFilteredTransactions(transactions);
+  } = useSessionFilteredTransactions(transactions, { fallbackSessionHashes });
 
   const firstTransactionHash = useMemo(() => {
     if (!sessionFilteredTransactions || sessionFilteredTransactions.length === 0) {

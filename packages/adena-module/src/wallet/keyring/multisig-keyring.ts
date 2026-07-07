@@ -6,15 +6,10 @@ import {
   Tx,
   TxSignature,
   uint8ArrayToBase64,
-} from '@gnolang/tm2-js-client';
-import {
-  createCompactBitArray,
-  compactBitArraySetIndex,
   Multisignature,
   PubKeyMultisig,
-} from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
-import { PubKeySecp256k1 } from '@gnolang/tm2-js-client/bin/proto/tm2/tx';
-import Long from 'long';
+  PubKeySecp256k1,
+} from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
@@ -22,6 +17,8 @@ import {
   Document,
   documentToTx,
   fromBech32,
+  compactBitArraySetIndex,
+  createCompactBitArray,
   MultisigConfig,
   SignerPublicKeyInfo,
 } from '../..';
@@ -76,7 +73,7 @@ export class MultisigKeyring implements Keyring {
   }
 
   async signRaw(_bytes: Uint8Array, _opts?: SignRawOptions): Promise<Uint8Array> {
-    // Multisig has no single private key — it is an N-of-M set of signer
+    // Multisig has no single private key, it is an N-of-M set of signer
     // addresses. Individual signers sign separately via their own keyrings,
     // then signatures are combined via combineSignatures().
     throw new Error(
@@ -189,7 +186,7 @@ export class MultisigKeyring implements Keyring {
 
     // 5. Create PubKeyMultisig
     const multisigPubkey = PubKeyMultisig.create({
-      k: Long.fromNumber(this.threshold),
+      k: BigInt(this.threshold),
       pub_keys: signerData.map(({ pubkey }) => ({
         type_url: '/tm.PubKeySecp256k1',
         value: PubKeySecp256k1.encode({ key: pubkey }).finish(),

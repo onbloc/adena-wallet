@@ -1,9 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import { Account, isSessionAccount } from 'adena-module';
 
+import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
 import { useLoadAccounts } from './use-load-accounts';
 import { useNetwork } from './use-network';
-import { useWalletContext } from './use-context';
+import { useAdenaContext, useWalletContext } from './use-context';
 import { useConvertSessionAccounts } from './wallet/use-convert-session-accounts';
 
 // Hides SessionAccount entries that were issued on a chainId other than the
@@ -13,6 +14,7 @@ import { useConvertSessionAccounts } from './wallet/use-convert-session-accounts
 // a final safety net for any state desync.
 export const useVisibleAccounts = (): Account[] => {
   const { accounts } = useLoadAccounts();
+  const { sessionRepository } = useAdenaContext();
   const { gnoProvider } = useWalletContext();
   const { currentNetwork } = useNetwork();
   const { convertBySessionAddresses } = useConvertSessionAccounts();
@@ -37,11 +39,25 @@ export const useVisibleAccounts = (): Account[] => {
         if (!sessionAddr) continue;
 
         try {
+          const cached = await sessionRepository.get(sessionAddr).catch(() => null);
           const record = await gnoProvider.getSession(
             account.getMasterAddress(),
             sessionAddr,
           );
-          if (!record) {
+
+          if (record) {
+            continue;
+          }
+
+          const shouldConvert = await shouldConvertMissingSession(
+            cached,
+            async () =>
+              !!(await gnoProvider.getSession(account.getMasterAddress(), sessionAddr)),
+          );
+          if (cancelled) {
+            return;
+          }
+          if (shouldConvert) {
             revokedSessionAddrs.push(sessionAddr);
           }
         } catch {
@@ -59,7 +75,14 @@ export const useVisibleAccounts = (): Account[] => {
     return (): void => {
       cancelled = true;
     };
-  }, [accounts, currentChainId, currentNetwork, gnoProvider, convertBySessionAddresses]);
+  }, [
+    accounts,
+    currentChainId,
+    currentNetwork,
+    gnoProvider,
+    sessionRepository,
+    convertBySessionAddresses,
+  ]);
 
   return useMemo(() => {
     if (!currentChainId) {

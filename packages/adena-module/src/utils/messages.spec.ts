@@ -1,8 +1,7 @@
 import { Secp256k1 } from '@cosmjs/crypto';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 import { PubKeySecp256k1 } from '@gnolang/tm2-js-client';
-import { Any } from '@gnolang/tm2-js-client/bin/proto/google/protobuf/any';
-import Long from 'long';
+import { Any } from '@gnolang/tm2-js-client';
 
 import { MsgCreateSession } from '../proto';
 import {
@@ -64,16 +63,16 @@ describe('documentToDefaultTx', () => {
     const wrapped = PubKeySecp256k1.encode({ key: pubkey }).finish();
     expect(Buffer.from(sig.pub_key!.value).equals(Buffer.from(wrapped))).toBe(true);
 
-    // Signature stays empty — simulate does not verify the signature itself.
+    // Signature stays empty, simulate does not verify the signature itself.
     expect(sig.signature).toEqual(new Uint8Array());
   });
 
   // Regression guard: HD wallet accounts store the 65-byte uncompressed form.
   // Forwarding it as-is breaks gno.land amino-decode (`/std.TxDecodeError`)
-  // — see ADN-755 reintroduction after the ADN-750 fix.
+  // See ADN-755 reintroduction after the ADN-750 fix.
   it('compresses a 65-byte uncompressed pubkey before wrapping', async () => {
     // Make a real keypair so the 65-byte input is on-curve and compresses
-    // deterministically — Secp256k1.compressPubkey rejects garbage bytes.
+    // deterministically, Secp256k1.compressPubkey rejects garbage bytes.
     const priv = new Uint8Array(32).fill(0x11);
     const keypair = await Secp256k1.makeKeypair(priv);
     const uncompressed = Secp256k1.uncompressPubkey(keypair.pubkey);
@@ -107,10 +106,10 @@ describe('session messages', () => {
     const msg = MsgCreateSession.create({
       creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
       session_key: makeSessionKey(),
-      expires_at: Long.fromNumber(1779436464),
+      expires_at: BigInt(1779436464),
       allow_paths: ['bank/send'],
       spend_limit: '1000000ugnot',
-      spend_period: Long.ONE,
+      spend_period: BigInt(1),
     });
     const encoded = MsgCreateSession.encode(msg).finish();
     const decodeSpy = jest.spyOn(Any, 'decode').mockImplementation(() => {
@@ -132,10 +131,10 @@ describe('session messages', () => {
       value: {
         creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
         session_key: makeSessionKey(),
-        expires_at: Long.fromNumber(1779436464),
+        expires_at: BigInt(1779436464),
         allow_paths: ['bank/send'],
         spend_limit: '1000000ugnot',
-        spend_period: Long.ONE,
+        spend_period: BigInt(1),
       },
     };
     const document: Document = {
@@ -160,7 +159,83 @@ describe('session messages', () => {
       spend_period: '1',
     });
     expect(decoded[0].session_key.value).toBe(
-      Buffer.from(makeSessionKey().value).toString('base64'),
+      Buffer.from(new Uint8Array(33).fill(0x02)).toString('base64'),
     );
+  });
+
+  it('round trips JSON-safe create session messages through documentToTx', () => {
+    const msg = {
+      type: MSG_CREATE_SESSION_ENDPOINT,
+      value: {
+        creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+        session_key: makeSessionKey(),
+        expires_at: '1779436464',
+        allow_paths: ['bank/send'],
+        spend_limit: '1000000ugnot',
+        spend_period: '1',
+      },
+    };
+    const jsonSafeMsg = JSON.parse(JSON.stringify(msg));
+    const document: Document = {
+      msgs: [jsonSafeMsg],
+      fee: {
+        gas: '200000',
+        amount: [{ denom: 'ugnot', amount: '1000000' }],
+      },
+      memo: '',
+      chain_id: 'test-13',
+      account_number: '2701052',
+      sequence: '0',
+    };
+
+    const decoded = decodeTxMessages(documentToTx(document).messages);
+
+    expect(decoded[0]).toMatchObject({
+      '@type': MSG_CREATE_SESSION_ENDPOINT,
+      creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+      expires_at: '1779436464',
+      allow_paths: ['bank/send'],
+      spend_limit: '1000000ugnot',
+      spend_period: '1',
+    });
+    expect(decoded[0].session_key.value).toBe(
+      Buffer.from(new Uint8Array(33).fill(0x02)).toString('base64'),
+    );
+  });
+
+  it('omits create session zero values that Go amino JSON omits', () => {
+    const msg = {
+      type: MSG_CREATE_SESSION_ENDPOINT,
+      value: {
+        creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+        session_key: makeSessionKey(),
+        expires_at: BigInt(0),
+        allow_paths: ['bank/send'],
+        spend_limit: '',
+        spend_period: BigInt(0),
+      },
+    };
+    const document: Document = {
+      msgs: [msg],
+      fee: {
+        gas: '200000',
+        amount: [{ denom: 'ugnot', amount: '1000000' }],
+      },
+      memo: '',
+      chain_id: 'test-13',
+      account_number: '2701052',
+      sequence: '0',
+    };
+
+    const decoded = decodeTxMessages(documentToTx(document).messages);
+
+    expect(decoded[0]).toMatchObject({
+      '@type': MSG_CREATE_SESSION_ENDPOINT,
+      creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+      expires_at: '0',
+      allow_paths: ['bank/send'],
+    });
+    expect(decoded[0]).not.toHaveProperty('spend_limit');
+    expect(decoded[0]).not.toHaveProperty('spend_period');
   });
 });

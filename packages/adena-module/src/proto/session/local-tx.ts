@@ -1,13 +1,35 @@
 import {
+  Any,
   Tx,
-  TxFee,
   TxSignature,
   base64ToUint8Array,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
-import { Any } from '@gnolang/tm2-js-client/bin/proto/google/protobuf/any';
 import { isLocalTxSignature, LocalTxSignature } from './local-tx-signature';
+
+function encodeAny(message: Any, writer: BinaryWriter): BinaryWriter {
+  if (message.type_url !== '') {
+    writer.uint32(10).string(message.type_url);
+  }
+  if (message.value.length !== 0) {
+    writer.uint32(18).bytes(message.value);
+  }
+  return writer;
+}
+
+function encodeTxFee(message: Tx['fee'], writer: BinaryWriter): BinaryWriter {
+  if (message === undefined) {
+    return writer;
+  }
+  if (message.gas_wanted !== BigInt(0)) {
+    writer.uint32(8).sint64(message.gas_wanted);
+  }
+  if (message.gas_fee !== '') {
+    writer.uint32(18).string(message.gas_fee);
+  }
+  return writer;
+}
 
 // encodeGnoTx is a drop-in replacement for Tx.encode(tx).finish() that also
 // handles session signatures. When no signature has session_addr set it falls
@@ -21,10 +43,10 @@ export function encodeGnoTx(tx: Tx): Uint8Array {
   const writer = new BinaryWriter();
 
   for (const v of tx.messages) {
-    Any.encode(v, writer.uint32(10).fork()).join();
+    encodeAny(v, writer.uint32(10).fork()).join();
   }
   if (tx.fee !== undefined) {
-    TxFee.encode(tx.fee, writer.uint32(18).fork()).join();
+    encodeTxFee(tx.fee, writer.uint32(18).fork()).join();
   }
   for (const v of tx.signatures) {
     LocalTxSignature.encode(v as LocalTxSignature, writer.uint32(26).fork()).join();

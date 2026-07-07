@@ -4,7 +4,16 @@ import {
   BroadcastTxSyncResult,
   TM2Error,
 } from '@gnolang/tm2-js-client';
-import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
+import {
+  Account,
+  Document,
+  isAirgapAccount,
+  isLedgerAccount,
+  isSessionAccount,
+  MSG_CREATE_SESSION_ENDPOINT,
+  MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
+  MSG_REVOKE_SESSION_ENDPOINT,
+} from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -17,6 +26,7 @@ import {
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
 import { getDappVisibleAddress, getWalletFundingAddress } from '@common/utils/account-address';
+import { isSessionSupportedNetwork } from '@common/utils/account-session';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { validateMessageArguments } from '@common/utils/argument-validation';
 import {
@@ -97,9 +107,24 @@ const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
     }
   }, 5000);
 
+const SESSION_ADMIN_MESSAGE_TYPES = new Set<string>([
+  MSG_CREATE_SESSION_ENDPOINT,
+  MSG_REVOKE_SESSION_ENDPOINT,
+  MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
+]);
+
+const getMessageType = (message: any): string | undefined => {
+  const type = message?.type ?? message?.['@type'] ?? message?.type_url ?? message?.typeUrl;
+  return typeof type === 'string' ? type : undefined;
+};
+
+const hasSessionAdminMessage = (messages: readonly any[] | undefined): boolean => {
+  return (messages ?? []).some((message) =>
+    SESSION_ADMIN_MESSAGE_TYPES.has(getMessageType(message) ?? ''),
+  );
+};
+
 const ApproveTransactionContainer: React.FC = () => {
-  // eslint-disable-next-line no-console
-  console.log('[approve-tx] @. ApproveTransactionContainer render');
   const { wallet } = useWalletContext();
   const nomarlNavigate = useNavigate();
   const { navigate } = useAppNavigate();
@@ -125,6 +150,22 @@ const ApproveTransactionContainer: React.FC = () => {
   const isInitialRenderRef = useRef(true);
   const isAutoClosedResultRef = useRef(false);
 
+  const requestedSignerAccountId = useMemo(() => {
+    const value = requestData?.data?.signerAccountId;
+    return typeof value === 'string' && value.length > 0 ? value : null;
+  }, [requestData?.data?.signerAccountId]);
+
+  const signingAccount = useMemo<Account | null>(() => {
+    if (requestedSignerAccountId) {
+      return wallet?.accounts.find((account) => account.id === requestedSignerAccountId) ?? null;
+    }
+    return currentAccount;
+  }, [currentAccount, requestedSignerAccountId, wallet]);
+
+  const signingAccountMissing = useMemo(() => {
+    return !!requestedSignerAccountId && !!wallet && !signingAccount;
+  }, [requestedSignerAccountId, signingAccount, wallet]);
+
   const currentNetwork: NetworkMetainfo = useMemo(() => {
     const networkInfo = requestData?.data?.networkInfo;
     if (!!networkInfo?.chainId && !!networkInfo?.rpcUrl) {
@@ -135,8 +176,65 @@ const ApproveTransactionContainer: React.FC = () => {
   }, [currentWalletNetwork, requestData]);
 
   useEffect(() => {
+    if (
+      currentWalletNetwork?.chainId === currentNetwork.chainId &&
+      currentWalletNetwork?.rpcUrl === currentNetwork.rpcUrl
+    ) {
+      return;
+    }
+
     changeNetwork(currentNetwork);
-  }, [currentNetwork.chainId]);
+  }, [
+    changeNetwork,
+    currentNetwork.chainId,
+    currentNetwork.rpcUrl,
+    currentWalletNetwork?.chainId,
+    currentWalletNetwork?.rpcUrl,
+  ]);
+
+  const isRequestedNetworkReady = useMemo(() => {
+    const networkInfo = requestData?.data?.networkInfo;
+    if (!networkInfo?.chainId || !networkInfo?.rpcUrl) {
+      return true;
+    }
+
+    return (
+      currentWalletNetwork?.chainId === networkInfo.chainId &&
+      currentWalletNetwork?.rpcUrl === networkInfo.rpcUrl
+    );
+  }, [
+    currentWalletNetwork?.chainId,
+    currentWalletNetwork?.rpcUrl,
+    requestData?.data?.networkInfo,
+  ]);
+
+  const isSessionAdminNetworkUnsupported = useMemo(() => {
+    return (
+      hasSessionAdminMessage(requestData?.data?.messages) &&
+      !isSessionSupportedNetwork(currentNetwork)
+    );
+  }, [currentNetwork, requestData?.data?.messages]);
+  const sessionAdminNetworkUnsupportedMessage = isSessionAdminNetworkUnsupported
+    ? 'Session accounts are only supported on Testnet 13.'
+    : null;
+
+  const isSessionAdminSigningAccountUnsupported = useMemo(() => {
+    return (
+      hasSessionAdminMessage(requestData?.data?.messages) &&
+      !!signingAccount &&
+      isSessionAccount(signingAccount)
+    );
+  }, [requestData?.data?.messages, signingAccount]);
+  const sessionAdminSigningAccountUnsupportedMessage = isSessionAdminSigningAccountUnsupported
+    ? 'Session account management must be signed by the master account.'
+    : null;
+  const signingAccountMissingMessage = signingAccountMissing
+    ? 'Requested signing account was not found.'
+    : null;
+  const approvalBlocked =
+    isSessionAdminNetworkUnsupported ||
+    isSessionAdminSigningAccountUnsupported ||
+    signingAccountMissing;
 
   const hasMemo = useMemo(() => {
     if (!requestData?.data?.memo) {
@@ -158,9 +256,10 @@ const ApproveTransactionContainer: React.FC = () => {
   }, [argumentValidationErrors]);
 
   const simulateDocument = useMemo(() => {
+    if (!isRequestedNetworkReady) return null;
     if (hasArgumentValidationError) return null;
     return document;
-  }, [document, hasArgumentValidationError]);
+  }, [document, hasArgumentValidationError, isRequestedNetworkReady]);
 
   const useNetworkFeeReturn = useNetworkFee(simulateDocument, true);
   const networkFee = useNetworkFeeReturn.networkFee;
@@ -308,17 +407,6 @@ const ApproveTransactionContainer: React.FC = () => {
   const initRequestData = (): void => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
-    // eslint-disable-next-line no-console
-    console.log('[approve-tx] A. requestData parsed:', {
-      key: parsedData?.key,
-      type: parsedData?.type,
-      hostname: data['hostname'],
-      msgCount: parsedData?.data?.messages?.length,
-      firstMsgType: parsedData?.data?.messages?.[0]?.type,
-      gasWanted: parsedData?.data?.gasWanted,
-      gasFee: parsedData?.data?.gasFee,
-      networkInfo: parsedData?.data?.networkInfo,
-    });
     setRequestData({ ...parsedData, hostname: data['hostname'] });
   };
 
@@ -327,8 +415,6 @@ const ApproveTransactionContainer: React.FC = () => {
     requestData: InjectionMessage,
   ): Promise<boolean> => {
     const address = await getDappVisibleAddress(currentAccount, chain.bech32Prefix);
-    // eslint-disable-next-line no-console
-    console.log('[approve-tx] B. validate. currentAccount:', currentAccount.id, currentAccount.type, 'address:', address);
     const validationMessage = validateInjectionDataWithAddress(requestData, address);
     if (validationMessage) {
       // eslint-disable-next-line no-console
@@ -336,8 +422,6 @@ const ApproveTransactionContainer: React.FC = () => {
       chrome.runtime.sendMessage(validationMessage);
       return false;
     }
-    // eslint-disable-next-line no-console
-    console.log('[approve-tx] B-ok. validation passed.');
     return true;
   };
 
@@ -364,16 +448,12 @@ const ApproveTransactionContainer: React.FC = () => {
   };
 
   const initTransactionData = async (): Promise<boolean> => {
-    if (!currentNetwork || !currentAccount || !requestData) {
-      // eslint-disable-next-line no-console
-      console.log('[approve-tx] C-skip. missing input. network?', !!currentNetwork, 'account?', !!currentAccount, 'requestData?', !!requestData);
+    if (!currentNetwork || !signingAccount || !requestData) {
       return false;
     }
     try {
-      // eslint-disable-next-line no-console
-      console.log('[approve-tx] C. createDocument starting. chainId:', currentNetwork.networkId, 'account:', currentAccount.id);
       const document = await transactionService.createDocument(
-        currentAccount,
+        signingAccount,
         currentNetwork.networkId,
         requestData?.data?.messages,
         chain.bech32Prefix,
@@ -381,8 +461,6 @@ const ApproveTransactionContainer: React.FC = () => {
         requestData?.data?.gasFee,
         requestData?.data?.memo,
       );
-      // eslint-disable-next-line no-console
-      console.log('[approve-tx] C-ok. document created. msgs:', document.msgs.length, 'accNum:', document.account_number, 'seq:', document.sequence);
       setDocument(document);
       setTransactionData(mappedTransactionData(document));
       setHostname(requestData?.hostname ?? '');
@@ -448,16 +526,19 @@ const ApproveTransactionContainer: React.FC = () => {
   };
 
   const sendTransaction = async (): Promise<boolean> => {
-    // eslint-disable-next-line no-console
-    console.log('[approve-tx] D. sendTransaction called. errorNetworkFee?', isErrorNetworkFee);
+    if (!isRequestedNetworkReady || approvalBlocked) {
+      // eslint-disable-next-line no-console
+      console.warn('[approve-tx] D-skip. network is not ready or approval is blocked.');
+      return false;
+    }
     if (isErrorNetworkFee) {
       // eslint-disable-next-line no-console
       console.warn('[approve-tx] D-skip. isErrorNetworkFee true. aborting send.');
       return false;
     }
-    if (!document || !currentNetwork || !currentAccount || !wallet) {
+    if (!document || !currentNetwork || !signingAccount || !wallet) {
       // eslint-disable-next-line no-console
-      console.error('[approve-tx] D-skip. missing piece. document?', !!document, 'network?', !!currentNetwork, 'account?', !!currentAccount, 'wallet?', !!wallet);
+      console.error('[approve-tx] D-skip. missing piece. document?', !!document, 'network?', !!currentNetwork, 'account?', !!signingAccount, 'wallet?', !!wallet);
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
@@ -470,32 +551,58 @@ const ApproveTransactionContainer: React.FC = () => {
 
     try {
       const walletInstance = wallet.clone();
-      walletInstance.currentAccountId = currentAccount.id;
+      walletInstance.currentAccountId = signingAccount.id;
+      const shouldBroadcastCommit = requestData?.data?.commit === true;
+      const approvalContext = {
+        requestKey: requestData?.key,
+        requestedSignerAccountId,
+        signingAccountId: signingAccount.id,
+        signingAccountType: signingAccount.type,
+        broadcastCommit: shouldBroadcastCommit,
+        currentAccountId: currentAccount?.id,
+        requestedNetworkInfo: requestData?.data?.networkInfo ?? null,
+        currentNetwork: {
+          id: currentNetwork.id,
+          chainId: currentNetwork.chainId,
+          networkId: currentNetwork.networkId,
+          rpcUrl: currentNetwork.rpcUrl,
+        },
+        walletNetwork: currentWalletNetwork
+          ? {
+              id: currentWalletNetwork.id,
+              chainId: currentWalletNetwork.chainId,
+              networkId: currentWalletNetwork.networkId,
+              rpcUrl: currentWalletNetwork.rpcUrl,
+            }
+          : null,
+        document: {
+          chainId: document.chain_id,
+          accountNumber: document.account_number,
+          sequence: document.sequence,
+          fee: document.fee,
+          memo: document.memo,
+          messageTypes: document.msgs.map((msg) => msg.type),
+        },
+      };
       // eslint-disable-next-line no-console
-      console.log('[approve-tx] E. about to createTransaction (sign). account.id:', currentAccount.id, 'msgs:', document.msgs.length);
+      console.info('[approve-tx] E-send. approval context.', approvalContext);
+      // eslint-disable-next-line no-console
+      console.info('[approve-tx] E-send-json ' + JSON.stringify(approvalContext));
 
       const { signed } = await transactionService.createTransaction(
         walletInstance,
-        currentAccount,
+        signingAccount,
         document,
       );
-      // eslint-disable-next-line no-console
-      console.log('[approve-tx] F. signed. signatures:', signed.signatures.length, 'msgs:', signed.messages.length);
 
       const hash = transactionService.createHash(signed);
-      // eslint-disable-next-line no-console
-      console.log('[approve-tx] G. tx hash:', hash);
 
       const response = await new Promise<
         BroadcastTxCommitResult | BroadcastTxSyncResult | TM2Error | null
       >((resolve) => {
-        // eslint-disable-next-line no-console
-        console.log('[approve-tx] H. broadcastTxSync starting (commit=false)');
         transactionService
-          .sendTransaction(walletInstance, currentAccount, signed, false)
+          .sendTransaction(walletInstance, signingAccount, signed, shouldBroadcastCommit)
           .then((r) => {
-            // eslint-disable-next-line no-console
-            console.log('[approve-tx] I. broadcast resolved:', r);
             resolve(r);
           })
           .catch((error: TM2Error | Error) => {
@@ -566,6 +673,8 @@ const ApproveTransactionContainer: React.FC = () => {
       return true;
     } catch (e) {
       if (e instanceof Error) {
+        // eslint-disable-next-line no-console
+        console.error('[approve-tx] Z-fail. send flow threw:', e);
         const message = e.message;
         if (message.includes('Ledger')) {
           return false;
@@ -588,15 +697,19 @@ const ApproveTransactionContainer: React.FC = () => {
   };
 
   const onClickConfirm = (): void => {
-    // eslint-disable-next-line no-console
-    console.log('[approve-tx] X. onClickConfirm. currentAccount?', !!currentAccount, 'errorFee?', isErrorNetworkFee, 'requiresHold?', requiresHoldConfirmation);
-    if (!currentAccount || isErrorNetworkFee || requiresHoldConfirmation) {
+    if (
+      !signingAccount ||
+      isErrorNetworkFee ||
+      requiresHoldConfirmation ||
+      !isRequestedNetworkReady ||
+      approvalBlocked
+    ) {
       // eslint-disable-next-line no-console
       console.warn('[approve-tx] X-skip. preconditions not met.');
       return;
     }
 
-    if (isLedgerAccount(currentAccount)) {
+    if (isLedgerAccount(signingAccount)) {
       navigate(RoutePath.ApproveTransactionLoading, {
         state: {
           document,
@@ -609,8 +722,6 @@ const ApproveTransactionContainer: React.FC = () => {
     setScreenState('LOADING');
     isAutoClosedResultRef.current = false;
     sendTransaction().finally(() => {
-      // eslint-disable-next-line no-console
-      console.log('[approve-tx] Z. sendTransaction finally. → RESULT screen.');
       setScreenState('RESULT');
     });
   };
@@ -626,21 +737,29 @@ const ApproveTransactionContainer: React.FC = () => {
   }, [location]);
 
   useEffect(() => {
-    if (currentAccount && requestData && gnoProvider) {
-      if (isAirgapAccount(currentAccount)) {
+    if (signingAccount && requestData && gnoProvider && isRequestedNetworkReady) {
+      if (isAirgapAccount(signingAccount)) {
         navigate(RoutePath.ApproveSignFailed);
         return;
       }
-      validate(currentAccount, requestData).then((validated) => {
+      validate(signingAccount, requestData).then((validated) => {
         if (validated) {
           initFavicon();
           initTransactionData();
 
-          getWalletFundingAddress(currentAccount, chain.bech32Prefix).then(initBalance);
+          getWalletFundingAddress(signingAccount, chain.bech32Prefix).then(initBalance);
         }
       });
     }
-  }, [currentAccount, requestData, gnoProvider]);
+  }, [
+    signingAccount,
+    requestData,
+    gnoProvider,
+    isRequestedNetworkReady,
+    transactionService,
+    currentNetwork.chainId,
+    currentNetwork.rpcUrl,
+  ]);
 
   useEffect(() => {
     if (transactionMessages.length === 0) {
@@ -744,7 +863,7 @@ const ApproveTransactionContainer: React.FC = () => {
 
   const onClickCloseResult = useCallback(async () => {
     if (response) {
-      // Await delivery before closing — otherwise window.close() can sever the
+      // Await delivery before closing. Otherwise window.close() can sever the
       // message channel mid-flight, and the background's onRemoved listener
       // replies to the dapp with TRANSACTION_REJECTED even though the tx
       // succeeded.
@@ -821,7 +940,7 @@ const ApproveTransactionContainer: React.FC = () => {
       contracts={transactionData?.contracts || []}
       memo={memo}
       hasMemo={hasMemo}
-      loading={transactionData === undefined}
+      loading={transactionData === undefined || !isRequestedNetworkReady}
       processing={false}
       done={false}
       logo={favicon}
@@ -842,9 +961,16 @@ const ApproveTransactionContainer: React.FC = () => {
       opened={visibleTransactionInfo}
       argumentInfos={argumentInfos}
       transactionData={JSON.stringify(document, null, 2)}
-      requiresHoldConfirmation={requiresHoldConfirmation}
+      requiresHoldConfirmation={
+        requiresHoldConfirmation || approvalBlocked
+      }
       onFinishHold={handleFinishHold}
       simulateErrorBannerMessage={parsedSimulateErrors.globalErrorMessage}
+      sessionGuardBannerMessage={
+        sessionAdminNetworkUnsupportedMessage ||
+        signingAccountMissingMessage ||
+        sessionAdminSigningAccountUnsupportedMessage
+      }
       messageErrors={combinedMessageErrors}
       hasArgumentValidationError={hasArgumentValidationError}
     />

@@ -22,7 +22,7 @@ export const ApproveLoading: React.FC<ApproveLoadingProps> = ({
     <ApproveLoadingWrapper>
       <Loading.Round width='163px' height='14px' radius='24px' />
       <ApproveLoadingSkeletonBox />
-      <ApproveLoadingAllRadiusBox align='center'>
+      <ApproveLoadingAllRadiusBox $align='center'>
         <Loading.Round width='100px' height='10px' radius='24px' />
       </ApproveLoadingAllRadiusBox>
       <ApproveLoadingTopRadiusBox>

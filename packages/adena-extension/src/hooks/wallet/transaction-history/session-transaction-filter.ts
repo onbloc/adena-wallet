@@ -5,6 +5,7 @@ interface FilterTransactionsBySessionAddressParams {
   masterAddress: string;
   sessionAddress: string;
   fetchSessionAddressByHash: (hash: string) => Promise<string | null>;
+  fallbackSessionHashes?: ReadonlySet<string>;
 }
 
 interface AnnotateTransactionsWithSessionAddressParams {
@@ -40,11 +41,17 @@ export async function filterTransactionsBySessionAddress({
   masterAddress,
   sessionAddress,
   fetchSessionAddressByHash,
+  fallbackSessionHashes,
 }: FilterTransactionsBySessionAddressParams): Promise<TransactionInfo[]> {
   const results: Array<TransactionInfo | null> = await Promise.all(
     transactions.map(async (transaction): Promise<TransactionInfo | null> => {
       const signerSessionAddress = await fetchSessionAddressByHash(transaction.hash);
-      if (signerSessionAddress !== sessionAddress) {
+      const fallbackSessionAddress =
+        !signerSessionAddress && fallbackSessionHashes?.has(transaction.hash)
+          ? sessionAddress
+          : null;
+      const resolvedSessionAddress = signerSessionAddress || fallbackSessionAddress;
+      if (resolvedSessionAddress !== sessionAddress) {
         return null;
       }
 
@@ -52,7 +59,7 @@ export async function filterTransactionsBySessionAddress({
         ...transaction,
         signedBySession: true,
         masterAddress,
-        sessionAddress,
+        sessionAddress: resolvedSessionAddress,
       };
     }),
   );
