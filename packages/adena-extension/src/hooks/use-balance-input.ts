@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -15,6 +15,7 @@ import { Document, isSessionAccount } from 'adena-module';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
+import { SESSIONS_QUERY_KEY } from './use-sessions';
 import { useTokenBalance } from './use-token-balance';
 import { getCosmosOriginDenom, useTokenMetainfo } from './use-token-metainfo';
 import { useNetworkFee } from './wallet/use-network-fee';
@@ -58,6 +59,7 @@ export const useBalanceInput = (
   const { wallet, gnoProvider } = useWalletContext();
   const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const queryClient = useQueryClient();
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [amount, setAmount] = useState('');
@@ -109,6 +111,9 @@ export const useBalanceInput = (
         );
         if (revoked && stored) {
           await sessionRepository.setStatus(sessionAddr, 'REVOKED').catch(() => undefined);
+          // Without this the dim, the popover and the balance address only catch
+          // up on the next SESSIONS refetch.
+          await queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
           return { ...stored, status: 'REVOKED' };
         }
         return stored;

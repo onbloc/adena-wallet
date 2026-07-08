@@ -33,8 +33,12 @@ export const useAccountChainAddresses = (): ChainAddressEntry[] => {
     .map((g) => chainRegistry.getDefault(g))
     .filter((p): p is ChainProfile => p !== undefined);
 
+  // `profiles` is derived from the registry, which is re-registered on network
+  // change. It must be part of the key or a stale entry list survives the switch.
+  const profilesKey = profiles.map((profile) => profile.id).join('|');
+
   const { data: entries = [] } = useQuery<ChainAddressEntry[]>(
-    ['accountChainAddresses', currentAccount?.id],
+    ['accountChainAddresses', currentAccount?.id, profilesKey],
     async () => {
       if (!currentAccount) return [];
 
