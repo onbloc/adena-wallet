@@ -9,7 +9,7 @@ const sessionAddr = 'g1session';
 
 function sessionAccountMock(): Account {
   // Minimum surface used by the guard; isSessionAccount checks `type`.
-  return {
+  return ({
     id: 'sess-1',
     index: 0,
     type: 'SESSION',
@@ -18,11 +18,11 @@ function sessionAccountMock(): Account {
     publicKey: new Uint8Array(),
     toData: (): any => ({}),
     getAddress: async (): Promise<string> => sessionAddr,
-  } as unknown as Account;
+  } as unknown) as Account;
 }
 
 function masterAccountMock(): Account {
-  return {
+  return ({
     id: 'master-1',
     index: 0,
     type: 'HD_WALLET',
@@ -31,7 +31,7 @@ function masterAccountMock(): Account {
     publicKey: new Uint8Array(),
     toData: (): any => ({}),
     getAddress: async (): Promise<string> => masterAddr,
-  } as unknown as Account;
+  } as unknown) as Account;
 }
 
 function baseMetadata(overrides: Partial<SessionMetadataV021> = {}): SessionMetadataV021 {
@@ -173,6 +173,22 @@ describe('evaluateSessionSigningGuard', () => {
       nowSeconds: 0,
       currentChainId: 'test-13',
       decodedMessages: [{ type: '/vm.m_addpkg', value: {} }],
+      txFee: baseFee,
+    });
+    expect(decision).toEqual({ ok: false, reason: 'unsupported_msg_type' });
+  });
+
+  // The wallet has no MsgMultiSend proto encoder, so the guard must reject it
+  // even though "bank/multisend" is a legal allow_paths entry the create flow
+  // grants (session-allow-paths parses it; only signability is refused here).
+  it('unsupported_msg_type rejects MsgMultiSend even when allow_paths permits it', () => {
+    const decision = evaluateSessionSigningGuard({
+      currentAccount: sessionAccountMock(),
+      sessionMetadata: { ...baseMetadata(), allowPaths: ['bank/multisend'] },
+      walletLocked: false,
+      nowSeconds: 0,
+      currentChainId: 'test-13',
+      decodedMessages: [{ type: '/bank.MsgMultiSend', value: {} }],
       txFee: baseFee,
     });
     expect(decision).toEqual({ ok: false, reason: 'unsupported_msg_type' });

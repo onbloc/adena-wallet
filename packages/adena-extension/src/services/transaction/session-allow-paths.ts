@@ -4,11 +4,7 @@
 
 const ALLOW_PATHS_WILDCARD = '*';
 const PATH_BEARING_ROUTE_TYPE = 'vm/exec';
-const VALID_SESSION_ROUTE_TYPES = new Set([
-  'vm/exec',
-  'vm/run',
-  'bank/send',
-]);
+const VALID_SESSION_ROUTE_TYPES = new Set(['vm/exec', 'vm/run', 'bank/send', 'bank/multisend']);
 
 // Maps proto endpoint -> chain route/type used in allow_paths entries.
 // Stays in sync with gno msg Route() / Type() implementations.
@@ -17,6 +13,7 @@ const PROTO_TO_ROUTE_TYPE: Record<string, RouteType> = {
   '/vm.m_call': { route: 'vm', type: 'exec' },
   '/vm.m_run': { route: 'vm', type: 'run' },
   '/bank.MsgSend': { route: 'bank', type: 'send' },
+  '/bank.MsgMultiSend': { route: 'bank', type: 'multisend' },
 };
 
 export interface DecodedMessageForGuard {
@@ -89,10 +86,7 @@ function entryMatchesMsg(entry: AllowPathsEntry, message: DecodedMessageForGuard
 }
 
 // True iff at least one entry in allowPaths accepts the message.
-export function matchesAllowPaths(
-  message: DecodedMessageForGuard,
-  allowPaths: string[],
-): boolean {
+export function matchesAllowPaths(message: DecodedMessageForGuard, allowPaths: string[]): boolean {
   for (const raw of allowPaths) {
     const entry = parseAllowPathsEntry(raw);
     if (!entry) continue;

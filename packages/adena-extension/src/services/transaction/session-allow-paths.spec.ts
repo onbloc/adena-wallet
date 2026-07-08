@@ -9,9 +9,10 @@ const msgSend = { type: '/bank.MsgSend', value: {} };
 const msgMultiSend = { type: '/bank.MsgMultiSend', value: {} };
 const msgRun = { type: '/vm.m_run', value: {} };
 
-// MsgMultiSend has no proto encoder in the wallet, so it is unsupported across
-// the session layer (guard/spend/allow-paths). Both the message type and the
-// "bank/multisend" entry are therefore treated as non-matching.
+// "bank/multisend" is a legal on-chain allow_paths entry (the create flow grants
+// it), so this matcher must parse and match it. Signability is a separate
+// concern: session-signing-guard rejects MsgMultiSend because the wallet has no
+// proto encoder for it.
 
 describe('matchesAllowPaths', () => {
   it('empty allowPaths does not match any message', () => {
@@ -32,27 +33,22 @@ describe('matchesAllowPaths', () => {
     expect(matchesAllowPaths(msgCall('gno.land/r/demo'), ['bank/send'])).toBe(false);
   });
 
-  it('"bank/multisend" is unsupported and never matches MsgMultiSend', () => {
-    expect(matchesAllowPaths(msgMultiSend, ['bank/multisend'])).toBe(false);
-    expect(matchesAllowPaths(msgMultiSend, ['*'])).toBe(true);
+  it('"bank/multisend" matches MsgMultiSend', () => {
+    expect(matchesAllowPaths(msgMultiSend, ['bank/multisend'])).toBe(true);
   });
 
   it('"vm/exec:<path>" matches MsgCall with exact pkg_path', () => {
-    expect(
-      matchesAllowPaths(msgCall('gno.land/r/demo'), ['vm/exec:gno.land/r/demo']),
-    ).toBe(true);
+    expect(matchesAllowPaths(msgCall('gno.land/r/demo'), ['vm/exec:gno.land/r/demo'])).toBe(true);
   });
 
   it('"vm/exec:<path>" matches MsgCall with sub-path under it', () => {
-    expect(
-      matchesAllowPaths(msgCall('gno.land/r/demo/sub'), ['vm/exec:gno.land/r/demo']),
-    ).toBe(true);
+    expect(matchesAllowPaths(msgCall('gno.land/r/demo/sub'), ['vm/exec:gno.land/r/demo'])).toBe(
+      true,
+    );
   });
 
   it('"vm/exec:<path>" rejects prefix attack', () => {
-    expect(
-      matchesAllowPaths(msgCall('gno.land/r/demoX'), ['vm/exec:gno.land/r/demo']),
-    ).toBe(false);
+    expect(matchesAllowPaths(msgCall('gno.land/r/demoX'), ['vm/exec:gno.land/r/demo'])).toBe(false);
   });
 
   it('"vm/exec:<path>" does not match MsgRun', () => {
@@ -64,12 +60,10 @@ describe('matchesAllowPaths', () => {
   });
 
   it('allMessagesMatchAllowPaths requires every message to match', () => {
-    expect(
-      allMessagesMatchAllowPaths([msgSend, msgCall('gno.land/r/demo')], ['bank/send']),
-    ).toBe(false);
-    expect(
-      allMessagesMatchAllowPaths([msgSend, msgCall('gno.land/r/demo')], ['*']),
-    ).toBe(true);
+    expect(allMessagesMatchAllowPaths([msgSend, msgCall('gno.land/r/demo')], ['bank/send'])).toBe(
+      false,
+    );
+    expect(allMessagesMatchAllowPaths([msgSend, msgCall('gno.land/r/demo')], ['*'])).toBe(true);
     expect(
       allMessagesMatchAllowPaths(
         [msgSend, msgCall('gno.land/r/demo')],
