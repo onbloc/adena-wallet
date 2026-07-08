@@ -5,6 +5,7 @@ import { useRecoilState } from 'recoil';
 import removeIcon from '@assets/icon-remove-blur.svg';
 import { Text } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
+import { useClear } from '@hooks/use-clear';
 import { useRemoveAccount } from '@hooks/use-remove-account';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@types';
@@ -19,7 +20,8 @@ export const RemoveAccount = (): JSX.Element => {
   const theme = useTheme();
   const { navigate, goBack } = useAppNavigate();
   const { currentAccount } = useCurrentAccount();
-  const { removeAccount } = useRemoveAccount();
+  const { availRemoveAccount, removeAccount } = useRemoveAccount();
+  const { clear } = useClear();
   const [, setState] = useRecoilState(WalletState.state);
 
   const removeButtonClick = async (): Promise<void> => {
@@ -27,6 +29,16 @@ export const RemoveAccount = (): JSX.Element => {
       return;
     }
     setState('LOADING');
+
+    // Removing the only account leaves no wallet to return to, so the wallet is
+    // reset instead. This is the exit path for a revoked session account that
+    // was imported on its own.
+    if (!(await availRemoveAccount())) {
+      await clear();
+      navigate(RoutePath.Home);
+      return;
+    }
+
     await removeAccount(currentAccount);
     navigate(RoutePath.Wallet);
   };
