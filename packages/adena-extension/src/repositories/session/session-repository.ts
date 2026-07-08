@@ -1,5 +1,6 @@
 import { StorageManager } from '@common/storage/storage-manager';
 import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
+import { SessionMetadata } from '@services/index';
 
 type LocalValueType = 'SESSIONS';
 
@@ -72,7 +73,7 @@ export class SessionRepository {
   // expiresAt, createdAt, txHash) are immutable once created.
   public async syncFromChain(
     sessionAddr: string,
-    partial: Pick<SessionMetadataV021, 'spendUsed' | 'spendReset' | 'status'>,
+    partial: Pick<SessionMetadata, 'spendUsed' | 'spendReset' | 'status'>,
   ): Promise<void> {
     return this.mutate((sessions) => {
       const existing = sessions[sessionAddr];
@@ -90,10 +91,7 @@ export class SessionRepository {
     });
   }
 
-  public async setStatus(
-    sessionAddr: string,
-    status: SessionMetadataV021['status'],
-  ): Promise<void> {
+  public async setStatus(sessionAddr: string, status: SessionMetadata['status']): Promise<void> {
     return this.mutate((sessions) => {
       const existing = sessions[sessionAddr];
       if (!existing) {
