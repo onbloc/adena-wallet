@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { Account } from 'adena-module';
+import { useMemo } from 'react';
 
+import { getWalletFundingAddress } from '@common/utils/account-address';
 import { formatNickname } from '@common/utils/client-utils';
 import { SideMenuAccountInfo, TokenBalanceType } from '@types';
 
@@ -31,7 +32,10 @@ const buildAccountListInfos = async (
     accounts.map(async (account) => ({
       accountId: account.id,
       name: formatNickname(accountNames[account.id] || account.name, 10),
-      address: await account.getAddress(addressPrefix),
+      // A SessionAccount row shows the master address — the one that holds the
+      // balance rendered next to it, and the only address worth copying or
+      // opening on GnoScan. Its own session address stays internal.
+      address: await getWalletFundingAddress(account, addressPrefix),
       type: account.type,
       balance: mapBalance(account),
       badgeLabel: masterAccountBadgeMap[account.id] ? 'Master' : undefined,
@@ -47,10 +51,7 @@ export const useAccountListInfos = (
   const { accountNativeBalanceMap } = useTokenBalance();
   const masterAccountBadgeMap = useMasterAccountBadgeMap(accounts);
 
-  const accountIdsKey = useMemo(
-    () => accounts.map((account) => account.id).join('|'),
-    [accounts],
-  );
+  const accountIdsKey = useMemo(() => accounts.map((account) => account.id).join('|'), [accounts]);
 
   return useQuery<SideMenuAccountInfo[]>(
     [
