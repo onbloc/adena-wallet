@@ -13,6 +13,7 @@ import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { getDappVisibleAddress } from '@common/utils/account-address';
 import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
+import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -366,20 +367,43 @@ const ApproveSignTransactionContainer: React.FC = () => {
       return false;
     }
 
-    // Session race-condition re-check: between popup load and confirm
-    // click, the session may have expired or another tab may have pushed
-    // spendUsed over the limit. Re-evaluate the guard right before signing
-    // and abort if it no longer passes.
+    // Session race-condition re-check: between popup load and confirm click the
+    // session may have expired, been revoked, or had spendUsed pushed over the
+    // limit by another tab/device. spendUsed/spendReset/status are chain-
+    // authoritative, so re-fetch the session from chain and evaluate the guard
+    // against fresh state right before signing (fall back to cache only when the
+    // provider is unavailable). A session missing on chain yields null metadata,
+    // which the guard rejects (fail closed).
     if (isSessionAccount(currentAccount) && currentNetwork) {
       try {
         const sessionAddr = await currentAccount.getAddress(chain.bech32Prefix);
-        const metadata = await sessionRepository.get(sessionAddr);
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        const cached = await sessionRepository.get(sessionAddr);
+        const metadata = gnoProvider
+          ? await refreshSessionMetadataFromChain(
+              gnoProvider,
+              currentAccount.getMasterAddress(),
+              sessionAddr,
+              currentNetwork.chainId,
+              cached,
+              nowSeconds,
+            )
+          : cached;
+        if (metadata) {
+          await sessionRepository
+            .syncFromChain(sessionAddr, {
+              spendUsed: metadata.spendUsed,
+              spendReset: metadata.spendReset,
+              status: metadata.status,
+            })
+            .catch(() => undefined);
+        }
         const walletLocked = await walletService.isLocked();
         const decision = evaluateSessionSigningGuard({
           currentAccount,
           sessionMetadata: metadata,
           walletLocked,
-          nowSeconds: Math.floor(Date.now() / 1000),
+          nowSeconds,
           currentChainId: currentNetwork.chainId,
           decodedMessages: document.msgs as { type: string; value: any }[],
           txFee: {

@@ -27,6 +27,7 @@ import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
 import { getDappVisibleAddress, getWalletFundingAddress } from '@common/utils/account-address';
 import { isSessionSupportedNetwork } from '@common/utils/account-session';
+import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { validateMessageArguments } from '@common/utils/argument-validation';
 import {
@@ -547,13 +548,35 @@ const ApproveTransactionContainer: React.FC = () => {
       let decision: SessionSigningGuardDecision;
       try {
         const sessionAddr = await signingAccount.getAddress(chain.bech32Prefix);
-        const metadata = await sessionRepository.get(sessionAddr);
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        const cached = await sessionRepository.get(sessionAddr);
+        // spendUsed/status/expiry are chain-authoritative; evaluate against
+        // fresh chain state (fall back to cache only if the provider is null).
+        const metadata = gnoProvider
+          ? await refreshSessionMetadataFromChain(
+              gnoProvider,
+              signingAccount.getMasterAddress(),
+              sessionAddr,
+              currentNetwork.chainId,
+              cached,
+              nowSeconds,
+            )
+          : cached;
+        if (metadata) {
+          await sessionRepository
+            .syncFromChain(sessionAddr, {
+              spendUsed: metadata.spendUsed,
+              spendReset: metadata.spendReset,
+              status: metadata.status,
+            })
+            .catch(() => undefined);
+        }
         const walletLocked = await walletService.isLocked();
         decision = evaluateSessionSigningGuard({
           currentAccount: signingAccount,
           sessionMetadata: metadata,
           walletLocked,
-          nowSeconds: Math.floor(Date.now() / 1000),
+          nowSeconds,
           currentChainId: currentNetwork.chainId,
           decodedMessages: document.msgs as { type: string; value: any }[],
           txFee: {
