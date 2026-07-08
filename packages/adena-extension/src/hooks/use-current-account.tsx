@@ -16,6 +16,7 @@ export const useCurrentAccount = (): {
   currentAccount: Account | null;
   currentAddress: string | null;
   currentFundingAddress: string | null;
+  currentBalanceAddress: string | null;
   getCurrentAddress: (prefix?: string) => Promise<string | null>;
   changeCurrentAccount: (changedAccount: Account) => Promise<boolean>;
 } => {
@@ -86,21 +87,18 @@ export const useCurrentAccount = (): {
 
   const sessionRevoked = isRevokedSessionAccount(currentAccount, currentAddress, sessions);
 
-  // Address that wallet funding flows must use: balance queries, send
-  // from_address/caller, deposit/QR. For SessionAccount this resolves to the
+  // Address that wallet funding flows must use: send from_address/caller,
+  // deposit/QR, copy-to-clipboard. For SessionAccount this resolves to the
   // master address; for other accounts it equals `currentAddress`.
   //
-  // Once a session is revoked it can no longer spend the master's funds, so it
-  // falls back to its own address — the balance shown then belongs to the
-  // session key itself.
+  // This stays the master address even while revoked: the master is still the
+  // account a deposit belongs to, and the sign path forces caller=master
+  // regardless of what the UI passes in.
   const { data: currentFundingAddress } = useQuery<string | null>(
-    ['currentFundingAddress', currentAccount, currentNetwork, sessionRevoked],
+    ['currentFundingAddress', currentAccount, currentNetwork],
     async () => {
       if (!currentAccount) {
         return null;
-      }
-      if (sessionRevoked) {
-        return currentAccount.getAddress(chain.bech32Prefix);
       }
       return getWalletFundingAddress(currentAccount, chain.bech32Prefix);
     },
@@ -109,10 +107,19 @@ export const useCurrentAccount = (): {
     },
   );
 
+  // Address whose balance the wallet displays. Identical to the funding address
+  // except for a REVOKED session: it can no longer spend the master's funds, so
+  // showing the master balance would misrepresent what the account controls.
+  // The balance then belongs to the session key the user is asked to export.
+  const currentBalanceAddress = sessionRevoked
+    ? currentAddress ?? null
+    : currentFundingAddress ?? null;
+
   return {
     currentAccount,
     currentAddress: currentAddress || null,
     currentFundingAddress: currentFundingAddress || null,
+    currentBalanceAddress,
     getCurrentAddress,
     changeCurrentAccount,
   };

@@ -55,7 +55,7 @@ export const useTokenBalance = (): {
   const { wallet } = useWalletContext();
   const { balanceService, cosmosBalanceService, chainRegistry, tokenRegistry } = useAdenaContext();
   const { currentNetwork, currentAtomoneNetwork } = useNetwork();
-  const { currentAccount, currentFundingAddress } = useCurrentAccount();
+  const { currentAccount, currentBalanceAddress } = useCurrentAccount();
   const { existWallet, lockedWallet } = useWallet();
 
   useEffect(() => {
@@ -89,28 +89,29 @@ export const useTokenBalance = (): {
   } = useQuery<TokenBalanceType[]>(
     // 'gno' discriminator keeps this cache entry separate from the Cosmos query
     // even though both share the 'balances' prefix.
-    // For SessionAccount, currentFundingAddress resolves to the master Gno
-    // address: session keys never hold balances, every session-signed tx
-    // spends master funds, so we always display master balances.
+    // For an ACTIVE SessionAccount, currentBalanceAddress resolves to the master
+    // Gno address: session keys never hold balances, every session-signed tx
+    // spends master funds. Once revoked it resolves to the session's own
+    // address, whose balance is all the account still controls.
     [
       'balances',
       'gno',
-      currentFundingAddress,
+      currentBalanceAddress,
       currentNetwork.chainId,
       isFetchedGRC20Tokens,
       tokenLogoMap,
     ],
     () => {
-      if (currentFundingAddress === null || nativeToken == null) return [];
+      if (currentBalanceAddress === null || nativeToken == null) return [];
       return Promise.all(
-        tokenMetainfos.map((tokenModel) => fetchBalanceBy(currentFundingAddress, tokenModel)),
+        tokenMetainfos.map((tokenModel) => fetchBalanceBy(currentBalanceAddress, tokenModel)),
       );
     },
     {
       refetchInterval: GNO_REFETCH_INTERVAL,
       keepPreviousData: true,
       enabled:
-        availableBalanceFetching && currentFundingAddress !== null && nativeToken !== null,
+        availableBalanceFetching && currentBalanceAddress !== null && nativeToken !== null,
     },
   );
 
