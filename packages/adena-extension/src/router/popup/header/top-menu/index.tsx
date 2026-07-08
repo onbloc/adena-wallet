@@ -1,33 +1,29 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { isSessionAccount, SessionAccount } from 'adena-module';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { isSessionAccount, SessionAccount } from 'adena-module';
 
-import {
-  HamburgerMenuBtn,
-  NetworkIconButton,
-  AccountSelectorButton,
-} from '@components/atoms';
 import IconCopy from '@assets/icon-copy';
 import IconThunder from '@assets/icon-thunder';
+import { AccountSelectorButton, HamburgerMenuBtn, NetworkIconButton } from '@components/atoms';
 
-import { getTheme } from '@styles/theme';
-import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatNickname, getSiteName } from '@common/utils/client-utils';
-import { useAdenaContext } from '@hooks/use-context';
-import { useAccountName } from '@hooks/use-account-name';
-import { useAccountListInfos } from '@hooks/use-account-list-infos';
-import { useNetwork } from '@hooks/use-network';
-import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
-import { useSessions } from '@hooks/use-sessions';
-import { useCurrentSessionChainData } from '@hooks/wallet/use-current-session-chain-data';
-import { useVisibleAccounts } from '@hooks/use-visible-accounts';
-import useLink from '@hooks/use-link';
-import useAppNavigate from '@hooks/use-app-navigate';
 import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import { SessionOverviewPopover } from '@components/pages/router/top-menu/session-overview-popover';
+import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
+import { useAccountListInfos } from '@hooks/use-account-list-infos';
+import { useAccountName } from '@hooks/use-account-name';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import useLink from '@hooks/use-link';
+import { useNetwork } from '@hooks/use-network';
+import { useSessions } from '@hooks/use-sessions';
+import { useVisibleAccounts } from '@hooks/use-visible-accounts';
+import { useCurrentSessionChainData } from '@hooks/wallet/use-current-session-chain-data';
 import UnresponsiveNetworksIndicator from '@router/popup/header/unresponsive-networks-indicator';
 import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
 
 import { useHoverPopover } from './use-hover-popover';
@@ -148,7 +144,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const [copyPosition, setCopyPosition] = useState({ x: 0, y: 0 });
   const [sessionPosition, setSessionPosition] = useState({ caretRight: 0, y: 0 });
 
-  const chainAddressEntries = useAccountChainAddresses({ sessionAddressMode: 'session' });
+  const chainAddressEntries = useAccountChainAddresses();
 
   const handleCopyIconMouseEnter = useCallback(() => {
     copyPopover.cancelClose();

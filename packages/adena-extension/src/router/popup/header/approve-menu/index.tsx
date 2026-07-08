@@ -1,27 +1,24 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { RoutePath } from '@types';
-import { getTheme } from '@styles/theme';
-import mixins from '@styles/mixins';
-import {
-  AccountSelectorButton,
-  NetworkIconButton,
-} from '@components/atoms';
 import IconCopy from '@assets/icon-copy';
-import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import {
   decodeParameter,
   formatNickname,
   getSiteName,
   parseParameters,
 } from '@common/utils/client-utils';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useAdenaContext } from '@hooks/use-context';
-import { useAccountName } from '@hooks/use-account-name';
+import { AccountSelectorButton, NetworkIconButton } from '@components/atoms';
+import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
+import { useAccountName } from '@hooks/use-account-name';
+import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
 
 const COSMOS_APPROVE_PATHS: string[] = [
   RoutePath.ApproveEstablishCosmos,
@@ -107,7 +104,7 @@ const ApproveMenu = (): JSX.Element => {
   const [popoverX, setPopoverX] = useState(0);
   const [popoverY, setPopoverY] = useState(0);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const chainAddressEntries = useAccountChainAddresses({ sessionAddressMode: 'session' });
+  const chainAddressEntries = useAccountChainAddresses();
 
   useEffect(() => {
     if (location.search) {
@@ -144,10 +141,9 @@ const ApproveMenu = (): JSX.Element => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [popoverOpen]);
 
-  const isCosmosApproveRoute = useMemo(
-    () => COSMOS_APPROVE_PATHS.includes(location.pathname),
-    [location.pathname],
-  );
+  const isCosmosApproveRoute = useMemo(() => COSMOS_APPROVE_PATHS.includes(location.pathname), [
+    location.pathname,
+  ]);
 
   const updateEstablishState = async (): Promise<void> => {
     if (!requestData?.hostname) return;
