@@ -22,6 +22,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useSessions } from '@hooks/use-sessions';
 import { useVisibleAccounts } from '@hooks/use-visible-accounts';
 import { useCurrentSessionChainData } from '@hooks/wallet/use-current-session-chain-data';
+import { useSessionRevocationWatcher } from '@hooks/wallet/use-session-revocation-watcher';
 import UnresponsiveNetworksIndicator from '@router/popup/header/unresponsive-networks-indicator';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
@@ -139,6 +140,9 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const { sessions } = useSessions();
   const accountListPrefetchAccounts = useVisibleAccounts();
   useAccountListInfos(accountListPrefetchAccounts);
+  // Header renders on every wallet screen, so this is the single mount point
+  // for the 5s chain poll that flags a revoked SessionAccount.
+  useSessionRevocationWatcher();
 
   const copyPopover = useHoverPopover<HTMLButtonElement>();
   const sessionPopover = useHoverPopover<HTMLButtonElement>();

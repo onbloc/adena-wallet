@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
+import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
 import { isNativeTokenModel } from '@common/validation/validation-token';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 import type { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
@@ -17,7 +17,6 @@ import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
 import { useTokenBalance } from './use-token-balance';
 import { getCosmosOriginDenom, useTokenMetainfo } from './use-token-metainfo';
-import { useConvertSessionAccounts } from './wallet/use-convert-session-accounts';
 import { useNetworkFee } from './wallet/use-network-fee';
 
 // Buffer applied to the simulated cosmos fee when computing the Max amount.
@@ -57,7 +56,6 @@ export const useBalanceInput = (
 ): UseBalanceInputHookReturn => {
   const { balanceService, tokenRegistry, sessionRepository } = useAdenaContext();
   const { wallet, gnoProvider } = useWalletContext();
-  const { convertBySessionAddresses } = useConvertSessionAccounts();
   const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const [hasError, setHasError] = useState(false);
@@ -104,14 +102,14 @@ export const useBalanceInput = (
         return stored;
       }
       if (!record) {
-        const shouldConvert = await shouldConvertMissingSession(
+        const revoked = await shouldMarkSessionRevoked(
           stored,
           async () =>
             !!(await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr)),
         );
-        if (shouldConvert) {
-          await convertBySessionAddresses([sessionAddr]);
-          return null;
+        if (revoked && stored) {
+          await sessionRepository.setStatus(sessionAddr, 'REVOKED').catch(() => undefined);
+          return { ...stored, status: 'REVOKED' };
         }
         return stored;
       }
