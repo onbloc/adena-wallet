@@ -1,4 +1,8 @@
-import { getDappVisibleAddress, getWalletFundingAddress } from '@common/utils/account-address';
+import {
+  getDappVisibleAddress,
+  getWalletFundingAddress,
+  selectBalanceAddress,
+} from '@common/utils/account-address';
 import { isRevokedSessionAccount } from '@common/utils/account-session';
 import { EventMessage } from '@inject/message/event-message';
 import { WalletState } from '@states';
@@ -107,13 +111,13 @@ export const useCurrentAccount = (): {
     },
   );
 
-  // Address whose balance the wallet displays. Identical to the funding address
-  // except for a REVOKED session: it can no longer spend the master's funds, so
-  // showing the master balance would misrepresent what the account controls.
-  // The balance then belongs to the session key the user is asked to export.
-  const currentBalanceAddress = sessionRevoked
-    ? currentAddress ?? null
-    : currentFundingAddress ?? null;
+  // Address whose balance the wallet displays. See `selectBalanceAddress` for
+  // the policy; the account list applies the same one.
+  const currentBalanceAddress = selectBalanceAddress(
+    currentAddress ?? null,
+    currentFundingAddress ?? null,
+    sessionRevoked,
+  );
 
   return {
     currentAccount,

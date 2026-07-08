@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useRecoilValueLoadable, useSetRecoilState } from 'recoil';
 
 import { COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
+import { selectBalanceAddress } from '@common/utils/account-address';
+import { isRevokedSessionAccount } from '@common/utils/account-session';
 import {
   isCosmosNativeTokenModel,
   isGRC20TokenModel,
@@ -18,6 +20,7 @@ import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useGRC20Tokens } from './use-grc20-tokens';
 import { useNetwork } from './use-network';
+import { useSessions } from './use-sessions';
 import { useTokenMetainfo } from './use-token-metainfo';
 import { useWallet } from './use-wallet';
 
@@ -56,6 +59,7 @@ export const useTokenBalance = (): {
   const { balanceService, cosmosBalanceService, chainRegistry, tokenRegistry } = useAdenaContext();
   const { currentNetwork, currentAtomoneNetwork } = useNetwork();
   const { currentAccount, currentBalanceAddress } = useCurrentAccount();
+  const { sessions } = useSessions();
   const { existWallet, lockedWallet } = useWallet();
 
   useEffect(() => {
@@ -123,6 +127,16 @@ export const useTokenBalance = (): {
   );
   const accountAddressesByAccountId =
     accountAddressesLoadable.state === 'hasValue' ? accountAddressesLoadable.contents : null;
+
+  const revokedSessionAddrsKey = useMemo(
+    () =>
+      sessions
+        .filter((session) => session.status === 'REVOKED')
+        .map((session) => session.sessionAddr)
+        .sort()
+        .join('|'),
+    [sessions],
+  );
 
   const {
     data: cosmosResults = [],
@@ -290,6 +304,8 @@ export const useTokenBalance = (): {
       currentNetwork.chainId,
       currentNetwork.addressPrefix,
       isFetchedGRC20Tokens,
+      // A revoke moves a session row onto its own balance, so the map must refetch.
+      revokedSessionAddrsKey,
     ],
     () => {
       if (
@@ -303,12 +319,18 @@ export const useTokenBalance = (): {
 
       return Promise.all(
         wallet.accounts.map(async (account) => {
-          // SessionAccount rows in the side menu must show the master's GNOT
-          // balance, not the (always-empty) session address balance, so swap
-          // in the master address for funding lookups.
-          const address = isSessionAccount(account)
+          // Same policy as the main screen: an ACTIVE session spends master
+          // funds so its row shows the master's GNOT balance; a revoked one
+          // shows the balance of the session key it still holds.
+          const ownAddress = accountAddressesByAccountId[account.id];
+          const fundingAddress = isSessionAccount(account)
             ? account.getMasterAddress()
-            : accountAddressesByAccountId[account.id];
+            : ownAddress;
+          const address = selectBalanceAddress(
+            ownAddress,
+            fundingAddress,
+            isRevokedSessionAccount(account, ownAddress, sessions),
+          );
           return fetchBalanceBy(address, nativeToken);
         }),
       ).then((balances) =>

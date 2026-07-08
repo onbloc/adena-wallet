@@ -1,6 +1,10 @@
 import { Account } from 'adena-module';
 
-import { getDappVisibleAddress, getWalletFundingAddress } from './account-address';
+import {
+  getDappVisibleAddress,
+  getWalletFundingAddress,
+  selectBalanceAddress,
+} from './account-address';
 
 const masterAddress = 'g1masteraddress';
 const sessionAddress = 'g1sessionaddress';
@@ -46,5 +50,23 @@ describe('account address helpers', () => {
 
     await expect(getDappVisibleAddress(account, 'g')).resolves.toBe(regularAddress);
     await expect(getWalletFundingAddress(account, 'g')).resolves.toBe(regularAddress);
+  });
+
+  describe('selectBalanceAddress', () => {
+    it('shows the funding balance while the session is active', () => {
+      expect(selectBalanceAddress(sessionAddress, masterAddress, false)).toBe(masterAddress);
+    });
+
+    it('shows the session key balance once revoked', () => {
+      expect(selectBalanceAddress(sessionAddress, masterAddress, true)).toBe(sessionAddress);
+    });
+
+    it('is a no-op for accounts whose addresses coincide', () => {
+      expect(selectBalanceAddress(regularAddress, regularAddress, false)).toBe(regularAddress);
+    });
+
+    it('propagates a null address', () => {
+      expect(selectBalanceAddress(null, null, true)).toBeNull();
+    });
   });
 });
