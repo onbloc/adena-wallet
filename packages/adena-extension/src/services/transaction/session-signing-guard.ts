@@ -1,11 +1,7 @@
 import { Account, isSessionAccount } from 'adena-module';
+import { SessionMetadata } from '..';
 
-import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
-
-import {
-  allMessagesMatchAllowPaths,
-  DecodedMessageForGuard,
-} from './session-allow-paths';
+import { allMessagesMatchAllowPaths, DecodedMessageForGuard } from './session-allow-paths';
 import {
   addCoins,
   Coins,
@@ -26,11 +22,7 @@ const SESSION_ADMIN_MSG_TYPES = new Set([
 // MsgMultiSend is intentionally excluded: the wallet has no proto encoder for
 // it, so mappedDocumentMessagesWithCaller rejects it before signing. Listing it
 // here would falsely advertise support the pipeline cannot honor.
-const SUPPORTED_SESSION_MSG_TYPES = new Set([
-  '/vm.m_call',
-  '/vm.m_run',
-  '/bank.MsgSend',
-]);
+const SUPPORTED_SESSION_MSG_TYPES = new Set(['/vm.m_call', '/vm.m_run', '/bank.MsgSend']);
 
 export type SessionSigningFailReason =
   | 'wallet_locked'
@@ -50,7 +42,7 @@ export type SessionSigningGuardDecision =
 
 export interface SessionSigningGuardInput {
   currentAccount: Account;
-  sessionMetadata: SessionMetadataV021 | null;
+  sessionMetadata: SessionMetadata | null;
   walletLocked: boolean;
   nowSeconds: number;
   currentChainId: string;
@@ -133,11 +125,7 @@ export function evaluateSessionSigningGuard(
         sessionMetadata.spendPeriod,
         nowSeconds,
       );
-      const projected = estimateSessionSpend(
-        decodedMessages,
-        txFee,
-        sessionMetadata.masterAddress,
-      );
+      const projected = estimateSessionSpend(decodedMessages, txFee, sessionMetadata.masterAddress);
       const next: Coins = addCoins(used, projected);
       if (!isAllGTE(limit, next)) {
         return { ok: false, reason: 'spendlimit_exceeded' };
