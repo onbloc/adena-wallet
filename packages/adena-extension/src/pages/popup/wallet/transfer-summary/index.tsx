@@ -39,7 +39,6 @@ import {
   createNotificationSendMessage,
   createNotificationSendMessageByHash,
 } from '@inject/message/methods/transaction-event';
-import type { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
 import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading';
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
@@ -507,19 +506,12 @@ const TransferSummaryContainer: React.FC = () => {
       const spendReset =
         base.spend_reset != null && base.spend_reset !== '' ? Number(base.spend_reset) : undefined;
 
-      // REVOKED is terminal — never let a chain read (which can still return a
-      // record for a re-created session, or race the revoke) resurrect ACTIVE.
-      const status: SessionMetadataV021['status'] =
-        storedSession?.status === 'REVOKED'
-          ? 'REVOKED'
-          : expiresAt > 0 && nowSeconds >= expiresAt
-          ? 'EXPIRED'
-          : 'ACTIVE';
-
+      // A REVOKED row is preserved by syncFromChain itself, so this loop may
+      // report the chain-derived status without re-reading the stored one.
       await sessionRepository.syncFromChain(sessionAddr, {
         spendUsed,
         spendReset,
-        status,
+        status: expiresAt > 0 && nowSeconds >= expiresAt ? 'EXPIRED' : 'ACTIVE',
       });
 
       queryClient.invalidateQueries({ queryKey: ['sessionMetadataForBalanceInput'] });

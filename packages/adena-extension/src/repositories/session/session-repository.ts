@@ -1,6 +1,8 @@
 import { StorageManager } from '@common/storage/storage-manager';
 import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
-import { SessionMetadata } from '@services/index';
+// Imported from the leaf module, not the `@services` barrel: the barrel pulls
+// in services/wallet, which imports back into @repositories.
+import type { SessionMetadata } from '@services/transaction/types';
 
 type LocalValueType = 'SESSIONS';
 
@@ -84,9 +86,11 @@ export class SessionRepository {
         ...existing,
         spendUsed: partial.spendUsed ?? existing.spendUsed,
         spendReset: partial.spendReset ?? existing.spendReset,
-        // Guard like the other fields: a nullish status must not clobber a valid
-        // cached ACTIVE/REVOKED with undefined.
-        status: partial.status ?? existing.status,
+        // REVOKED is terminal. A chain read can still return a record while the
+        // revoke is being committed, and callers may hold a stale snapshot, so
+        // no chain-derived status may resurrect a revoked session. A nullish
+        // status must also not clobber a valid cached value with undefined.
+        status: existing.status === 'REVOKED' ? 'REVOKED' : partial.status ?? existing.status,
       };
     });
   }
