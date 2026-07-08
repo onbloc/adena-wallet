@@ -11,12 +11,14 @@ import { useIsLoadingNFT } from '@hooks/nft/use-is-loading-nft';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
+import { useIsCurrentSessionRevoked } from '@hooks/wallet/use-current-session-revoked';
 import mixins from '@styles/mixins';
+import { revokedDimStyle } from '@styles/session-revoked';
 import { getTheme } from '@styles/theme';
 import { GRC721CollectionModel, RoutePath } from '@types';
 import { useCallback, useMemo } from 'react';
 
-const Wrapper = styled.main`
+const Wrapper = styled.main<{ $dimmed: boolean }>`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   width: 100%;
   height: auto;
@@ -25,12 +27,15 @@ const Wrapper = styled.main`
   padding-bottom: 96px;
   gap: 12px;
   background-color: ${getTheme('neutral', '_8')};
+
+  ${revokedDimStyle}
 `;
 
 export const Nft = (): JSX.Element => {
   const { currentFundingAddress } = useCurrentAccount();
   const { navigate } = useAppNavigate();
   const { openScannerLink } = useLink();
+  const sessionRevoked = useIsCurrentSessionRevoked();
 
   const { data: collections, isFetched: isFetchedCollections } = useGetGRC721Collections({
     refetchOnMount: true,
@@ -97,7 +102,7 @@ export const Nft = (): JSX.Element => {
   }, [navigate]);
 
   return (
-    <Wrapper>
+    <Wrapper $dimmed={sessionRevoked}>
       <NFTHeader openGnoscan={openGnoscan} moveDepositPage={moveDepositPage} />
       <NFTCollections
         collections={collections}

@@ -26,6 +26,7 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useIsCurrentSessionRevoked } from '@hooks/wallet/use-current-session-revoked';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
+import { revokedDimStyle } from '@styles/session-revoked';
 import { RoutePath } from '@types';
 
 const REFETCH_INTERVAL = 3_000;
@@ -46,23 +47,12 @@ function readCachedRowCount(): number {
   }
 }
 
-// `$dimmed` fades and inerts the main content while the current session
-// account is revoked. It is applied to the children rather than to `<main>`
-// itself so the scroll container stays interactive (a revoked account can still
-// scroll its token list) and so the header/footer — siblings of `<main>` — keep
-// their normal appearance and click targets.
 const Wrapper = styled.main<{ $dimmed: boolean }>`
   padding-top: 37px;
   text-align: center;
   overflow: auto;
 
-  ${({ $dimmed }): string =>
-    $dimmed
-      ? `& > * {
-    opacity: 0.5;
-    pointer-events: none;
-  }`
-      : ''}
+  ${revokedDimStyle}
 
   .network-label-wrapper {
     position: fixed;
