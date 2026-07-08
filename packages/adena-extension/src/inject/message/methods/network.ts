@@ -17,6 +17,11 @@ export const addNetwork = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
+  // Network mutations are master-account operations, exactly as in switchNetwork.
+  if (await rejectSessionAccountUnsupported(core, requestData, sendResponse)) {
+    return;
+  }
+
   const inMemoryKey = await core.getInMemoryKey();
 
   const isLocked = await core.isLockedBy(inMemoryKey);

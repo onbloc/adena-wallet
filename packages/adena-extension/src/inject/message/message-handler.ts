@@ -125,6 +125,9 @@ export class MessageHandler {
         HandlerMethod.addEstablish(core, message, sendResponse);
         break;
       case 'ADD_NETWORK':
+        if (await HandlerMethod.rejectSessionAccountUnsupported(core, message, sendResponse)) {
+          break;
+        }
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
             HandlerMethod.addNetwork(core, message, sendResponse);
