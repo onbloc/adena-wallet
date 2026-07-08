@@ -9,7 +9,12 @@ import { SESSIONS_QUERY_KEY } from '@hooks/use-sessions';
 
 export const SESSION_REVOCATION_POLL_INTERVAL = 5_000;
 
-type WatchResult = 'not-session' | 'revoked' | 'present' | 'unknown';
+type WatchResult = 'not-session' | 'no-metadata' | 'revoked' | 'present' | 'unknown';
+
+// Terminal results: no later observation can change them, so the hook stops
+// polling rather than spending an RPC round-trip every 5s forever.
+const isTerminalResult = (result: WatchResult | undefined): boolean =>
+  result === 'not-session' || result === 'no-metadata' || result === 'revoked';
 
 // Polls the chain for the CURRENT SessionAccount and flags it REVOKED locally
 // once it disappears from the master's session store.
@@ -20,6 +25,11 @@ type WatchResult = 'not-session' | 'revoked' | 'present' | 'unknown';
 // a revoke. A revoked session is KEPT in the wallet (it is not converted into a
 // regular account); the REVOKED status in SESSIONS is what every revoked-state
 // surface reads, via `useIsCurrentSessionRevoked`.
+//
+// Only SESSION-type accounts are watched. A key that was imported from a session
+// private key is an ordinary PRIVATE_KEY account with no delegation to revoke,
+// and so is a SessionAccount whose SESSIONS row is gone: without metadata there
+// is nothing to flag (`setStatus` would no-op), so the watch ends there.
 //
 // Mounted once in the popup header so it runs on every wallet screen.
 export const useSessionRevocationWatcher = (): void => {
@@ -37,18 +47,23 @@ export const useSessionRevocationWatcher = (): void => {
         return 'not-session';
       }
 
-      const masterAddress = currentAccount.getMasterAddress();
       const sessionAddr = await currentAccount.getAddress(GNO_ADDRESS_PREFIX).catch(() => null);
       if (!sessionAddr) {
         return 'unknown';
       }
 
       const cached = await sessionRepository.get(sessionAddr).catch(() => null);
+      // No metadata means this wallet does not manage the session; there is
+      // nothing to flag and nothing to learn from the chain.
+      if (!cached) {
+        return 'no-metadata';
+      }
       // Revocation is terminal: once flagged, stop paying for the RPC.
-      if (cached?.status === 'REVOKED') {
+      if (cached.status === 'REVOKED') {
         return 'revoked';
       }
 
+      const masterAddress = currentAccount.getMasterAddress();
       let record;
       try {
         record = await gnoProvider.getSession(masterAddress, sessionAddr);
@@ -76,8 +91,8 @@ export const useSessionRevocationWatcher = (): void => {
     },
     {
       enabled: isSession && !!gnoProvider,
-      refetchInterval: SESSION_REVOCATION_POLL_INTERVAL,
-      refetchOnWindowFocus: true,
+      refetchInterval: (data) => (isTerminalResult(data) ? false : SESSION_REVOCATION_POLL_INTERVAL),
+      refetchOnWindowFocus: (query) => !isTerminalResult(query.state.data as WatchResult),
     },
   );
 };
