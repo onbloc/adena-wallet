@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import IconCopy from '@assets/icon-copy';
+import IconCopyCheck from '@assets/icon-copy-check';
 import IconThunder from '@assets/icon-thunder';
 import { AccountSelectorButton, HamburgerMenuBtn, NetworkIconButton } from '@components/atoms';
 
@@ -100,7 +101,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const { establishService } = useAdenaContext();
   const [hostname, setHostname] = useState('');
   const [protocol, setProtocol] = useState('');
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentAccount, currentAddress, currentFundingAddress } = useCurrentAccount();
   const [isEstablish, setIsEstablish] = useState(false);
   const location = useLocation();
 
@@ -145,6 +146,25 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const [sessionPosition, setSessionPosition] = useState({ caretRight: 0, y: 0 });
 
   const chainAddressEntries = useAccountChainAddresses();
+  const [addressCopied, setAddressCopied] = useState(false);
+
+  // The funding address is the one that can actually receive tokens: the master
+  // address for a SessionAccount, the account's own Gno address otherwise.
+  const handleCopyIconClick = useCallback(() => {
+    if (!currentFundingAddress) {
+      return;
+    }
+    navigator.clipboard.writeText(currentFundingAddress);
+    setAddressCopied(true);
+  }, [currentFundingAddress]);
+
+  useEffect(() => {
+    if (!addressCopied) {
+      return;
+    }
+    const timer = setTimeout(() => setAddressCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [addressCopied]);
 
   const handleCopyIconMouseEnter = useCallback(() => {
     copyPopover.cancelClose();
@@ -262,11 +282,12 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
             ref={copyPopover.anchorRef}
             type='button'
             isActive={copyPopover.open}
+            onClick={handleCopyIconClick}
             onMouseEnter={handleCopyIconMouseEnter}
             onMouseLeave={copyPopover.onAnchorMouseLeave}
             aria-label='Copy address'
           >
-            <IconCopy />
+            {addressCopied ? <IconCopyCheck /> : <IconCopy />}
           </StyledCopyIconButton>
         </StyledLeftSideWrapper>
         <StyledRightSideWrapper>

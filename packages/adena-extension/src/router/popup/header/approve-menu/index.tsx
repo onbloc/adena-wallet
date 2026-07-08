@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
 import IconCopy from '@assets/icon-copy';
+import IconCopyCheck from '@assets/icon-copy-check';
 import {
   decodeParameter,
   formatNickname,
@@ -91,7 +92,7 @@ const StyledCopyIconButton = styled.button.withConfig({
 
 const ApproveMenu = (): JSX.Element => {
   const { establishService, establishAtomOneService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const [accountName, setAccountName] = useState('');
   const [isEstablished, setIsEstablished] = useState(false);
   const location = useLocation();
@@ -105,6 +106,25 @@ const ApproveMenu = (): JSX.Element => {
   const [popoverY, setPopoverY] = useState(0);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chainAddressEntries = useAccountChainAddresses();
+  const [addressCopied, setAddressCopied] = useState(false);
+
+  // The funding address is the one that can actually receive tokens: the master
+  // address for a SessionAccount, the account's own Gno address otherwise.
+  const handleCopyIconClick = useCallback(() => {
+    if (!currentFundingAddress) {
+      return;
+    }
+    navigator.clipboard.writeText(currentFundingAddress);
+    setAddressCopied(true);
+  }, [currentFundingAddress]);
+
+  useEffect(() => {
+    if (!addressCopied) {
+      return;
+    }
+    const timer = setTimeout(() => setAddressCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [addressCopied]);
 
   useEffect(() => {
     if (location.search) {
@@ -141,9 +161,10 @@ const ApproveMenu = (): JSX.Element => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [popoverOpen]);
 
-  const isCosmosApproveRoute = useMemo(() => COSMOS_APPROVE_PATHS.includes(location.pathname), [
-    location.pathname,
-  ]);
+  const isCosmosApproveRoute = useMemo(
+    () => COSMOS_APPROVE_PATHS.includes(location.pathname),
+    [location.pathname],
+  );
 
   const updateEstablishState = async (): Promise<void> => {
     if (!requestData?.hostname) return;
@@ -214,11 +235,12 @@ const ApproveMenu = (): JSX.Element => {
             ref={copyButtonRef}
             type='button'
             isActive={popoverOpen}
+            onClick={handleCopyIconClick}
             onMouseEnter={handleCopyIconMouseEnter}
             onMouseLeave={handleCopyIconMouseLeave}
             aria-label='Copy address'
           >
-            <IconCopy />
+            {addressCopied ? <IconCopyCheck /> : <IconCopy />}
           </StyledCopyIconButton>
         </StyledLeftSideWrapper>
         <StyledRightSideWrapper>
