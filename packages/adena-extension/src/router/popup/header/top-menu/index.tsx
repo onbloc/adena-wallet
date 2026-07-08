@@ -8,6 +8,12 @@ import IconCopyCheck from '@assets/icon-copy-check';
 import IconThunder from '@assets/icon-thunder';
 import { AccountSelectorButton, HamburgerMenuBtn, NetworkIconButton } from '@components/atoms';
 
+import {
+  WALLET_EXPORT_ACCOUNT_ID,
+  WALLET_EXPORT_TYPE_STORAGE_KEY,
+} from '@common/constants/storage.constant';
+import { AdenaStorage } from '@common/storage';
+import { isRevokedSessionAccount } from '@common/utils/account-session';
 import { formatNickname, getSiteName } from '@common/utils/client-utils';
 import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import { SessionOverviewPopover } from '@components/pages/router/top-menu/session-overview-popover';
@@ -136,7 +142,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const [currentAccountName, setCurrentAccountName] = useState('');
   const { accountNames } = useAccountName();
   const { currentNetwork, unresponsiveNetworks } = useNetwork();
-  const { openScannerLink } = useLink();
+  const { openScannerLink, openSecurity } = useLink();
   const { sessions } = useSessions();
   const accountListPrefetchAccounts = useVisibleAccounts();
   useAccountListInfos(accountListPrefetchAccounts);
@@ -260,6 +266,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
       ? sessions.find((s) => s.sessionAddr === currentAddress)
       : undefined;
   const sessionConfig = isSession ? (currentAccount as SessionAccount).sessionConfig : null;
+  const sessionRevoked = isRevokedSessionAccount(currentAccount, currentAddress, sessions);
   const sessionChainData = useCurrentSessionChainData(
     sessionConfig?.masterAddress,
     isSession ? currentAddress ?? undefined : undefined,
@@ -273,6 +280,25 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     (path: string) => openScannerLink('/realms/details', { path }),
     [openScannerLink],
   );
+
+  const handleRemoveRevokedAccount = useCallback(() => {
+    sessionPopover.setOpen(false);
+    navigate(RoutePath.RemoveAccount);
+  }, [navigate, sessionPopover]);
+
+  // A revoked session key can still hold a balance, so the user must be able to
+  // export it before removing the account. The export flow lives in the
+  // security page, which runs in its own tab.
+  const handleExportRevokedKey = useCallback(async () => {
+    if (!currentAccount) {
+      return;
+    }
+    sessionPopover.setOpen(false);
+    const sessionStorage = AdenaStorage.session();
+    await sessionStorage.set(WALLET_EXPORT_TYPE_STORAGE_KEY, 'PRIVATE_KEY');
+    await sessionStorage.set(WALLET_EXPORT_ACCOUNT_ID, currentAccount.id);
+    openSecurity();
+  }, [currentAccount, openSecurity, sessionPopover]);
 
   return !disabled ? (
     <Wrapper>
@@ -342,6 +368,9 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
           }
           spendUsedUgnot={sessionChainData?.spendUsed ?? sessionMetadata?.spendUsed}
           spendReset={sessionChainData?.spendReset ?? sessionMetadata?.spendReset}
+          revoked={sessionRevoked}
+          onRemoveAccount={handleRemoveRevokedAccount}
+          onExportKey={handleExportRevokedKey}
           onOpenAccount={handleOpenAccount}
           onOpenRealm={handleOpenRealm}
         />
