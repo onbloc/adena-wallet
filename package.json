@@ -17,7 +17,7 @@
   },
   "resolutions": {
     "@storybook/react-docgen-typescript-plugin": "npm:react-docgen-typescript-plugin@1.0.5",
-    "ws": "8.18.0"
+    "ws": "8.20.0"
   },
   "devDependencies": {
     "@babel/core": "7.23.9",

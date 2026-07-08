@@ -5,7 +5,7 @@ import { Pressable, Row, View, WebButton, WebImg, WebText } from '@components/at
 import { WebTitleWithDescription } from '@components/molecules';
 import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';
 
-import IconAirgap from '@assets/web/airgap-green.svg';
+import IconAdvancedSetup from '@assets/web/advanced-setup-rounded.svg';
 import IconLink from '@assets/web/link.svg';
 import {
   ADENA_SETUP_AIRGAP_HELP_PAGE,
@@ -53,7 +53,7 @@ const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({ initSetup }) => {
   return (
     <StyledContainer>
       <View style={{ marginBottom: 8 }}>
-        <WebImg src={IconAirgap} size={88} />
+        <WebImg src={IconAdvancedSetup} size={88} />
       </View>
 
       <WebTitleWithDescription

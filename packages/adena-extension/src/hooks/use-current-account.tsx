@@ -1,3 +1,4 @@
+import { getDappVisibleAddress, getWalletFundingAddress } from '@common/utils/account-address';
 import { EventMessage } from '@inject/message/event-message';
 import { WalletState } from '@states';
 import { useQuery } from '@tanstack/react-query';
@@ -12,6 +13,7 @@ import { useNetwork } from './use-network';
 export const useCurrentAccount = (): {
   currentAccount: Account | null;
   currentAddress: string | null;
+  currentFundingAddress: string | null;
   getCurrentAddress: (prefix?: string) => Promise<string | null>;
   changeCurrentAccount: (changedAccount: Account) => Promise<boolean>;
 } => {
@@ -36,19 +38,33 @@ export const useCurrentAccount = (): {
     if (!wallet) {
       return false;
     }
+    // Capture the previous account before mutating Recoil state so the emit
+    // guard compares stable values, not whatever React decides to flush after
+    // setCurrentAccount.
+    const prevAccount = currentAccount;
     await accountService.changeCurrentAccount(changedAccount);
     setCurrentAccount(changedAccount);
-    dispatchChangedEvent(changedAccount);
+    dispatchChangedEvent(prevAccount, changedAccount);
     return true;
   };
 
   const dispatchChangedEvent = useCallback(
-    async (account: Account) => {
-      const address = await account.getAddress(chain.bech32Prefix);
-      const message = EventMessage.event('changedAccount', address);
+    async (prevAccount: Account | null, nextAccount: Account) => {
+      const nextAddress = await getDappVisibleAddress(nextAccount, chain.bech32Prefix);
+      // Skip emit when the dApp-visible address has not changed (e.g. toggling
+      // between a master account and one of its own SessionAccounts). dApps
+      // treat `changedAccount` as a hard signal to refetch state, so emitting
+      // a no-op forces wasted work.
+      if (prevAccount) {
+        const prevAddress = await getDappVisibleAddress(prevAccount, chain.bech32Prefix);
+        if (prevAddress === nextAddress) {
+          return;
+        }
+      }
+      const message = EventMessage.event('changedAccount', nextAddress);
       dispatchEvent(message);
     },
-    [currentNetwork],
+    [chain.bech32Prefix, dispatchEvent],
   );
 
   const { data: currentAddress } = useQuery<string | null>(
@@ -65,9 +81,26 @@ export const useCurrentAccount = (): {
     },
   );
 
+  // Address that wallet funding flows must use: balance queries, send
+  // from_address/caller, deposit/QR. For SessionAccount this resolves to the
+  // master address; for other accounts it equals `currentAddress`.
+  const { data: currentFundingAddress } = useQuery<string | null>(
+    ['currentFundingAddress', currentAccount, currentNetwork],
+    async () => {
+      if (!currentAccount) {
+        return null;
+      }
+      return getWalletFundingAddress(currentAccount, chain.bech32Prefix);
+    },
+    {
+      enabled: currentAccount !== null,
+    },
+  );
+
   return {
     currentAccount,
     currentAddress: currentAddress || null,
+    currentFundingAddress: currentFundingAddress || null,
     getCurrentAddress,
     changeCurrentAccount,
   };

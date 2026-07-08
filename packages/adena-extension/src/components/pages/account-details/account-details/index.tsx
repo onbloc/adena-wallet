@@ -7,12 +7,14 @@ import { AccountDetailsWrapper } from './account-details.styles';
 export interface AccountDetailsProps {
   hasPrivateKey: boolean;
   hasSeedPhrase: boolean;
+  hasSessions: boolean;
   originName: string;
   name: string;
   address: string;
   moveGnoscan: () => void;
   moveRevealSeedPhrase: () => void;
   moveExportPrivateKey: () => void;
+  moveManageSessions: () => void;
   setName: (name: string) => void;
   reset: () => void;
 }
@@ -20,6 +22,7 @@ export interface AccountDetailsProps {
 const AccountDetails: React.FC<AccountDetailsProps> = ({
   hasPrivateKey,
   hasSeedPhrase,
+  hasSessions,
   originName,
   name,
   address,
@@ -28,6 +31,7 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
   moveGnoscan,
   moveRevealSeedPhrase,
   moveExportPrivateKey,
+  moveManageSessions,
 }) => {
   const onClickViewOnGnoscan = useCallback(() => {
     moveGnoscan();
@@ -69,6 +73,9 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
           title={'View on GnoScan'}
           onClick={onClickViewOnGnoscan}
         />
+        {hasSessions && (
+          <FullButtonRightIcon title={'Session Accounts'} onClick={moveManageSessions} />
+        )}
         <FullButtonRightIcon
           disabled={!hasPrivateKey}
           title={'Export Private Key'}

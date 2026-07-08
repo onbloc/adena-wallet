@@ -1,5 +1,4 @@
-import { MsgAddPackage, MsgCall, MsgSend } from '@gnolang/gno-js-client';
-import { MsgRun } from '@gnolang/gno-js-client/bin/proto/gno/vm';
+import { MsgAddPackage, MsgCall, MsgRun, MsgSend } from '@gnolang/gno-js-client';
 import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 
@@ -10,6 +9,9 @@ export const EMessageType = {
   VM_CALL: '/vm.m_call',
   VM_ADDPKG: '/vm.m_addpkg',
   VM_RUN: '/vm.m_run',
+  AUTH_CREATE_SESSION: '/auth.m_create_session',
+  AUTH_REVOKE_SESSION: '/auth.m_revoke_session',
+  AUTH_REVOKE_ALL_SESSIONS: '/auth.m_revoke_all_sessions',
 } as const;
 
 export type EMessageType = (typeof EMessageType)[keyof typeof EMessageType];
@@ -19,9 +21,21 @@ export const FUNCTION_NAME_MAP: Record<EMessageType, string> = {
   [EMessageType.VM_ADDPKG]: 'AddPackage',
   [EMessageType.VM_RUN]: 'Run',
   [EMessageType.VM_CALL]: 'Call',
+  [EMessageType.AUTH_CREATE_SESSION]: 'Create Session',
+  [EMessageType.AUTH_REVOKE_SESSION]: 'Revoke Session',
+  [EMessageType.AUTH_REVOKE_ALL_SESSIONS]: 'Revoke All Sessions',
 };
 
-export type TMessage = MsgAddPackage | MsgCall | MsgSend | MsgRun;
+export type SessionAdminMessage = {
+  creator?: string;
+  session_key?: unknown;
+  expires_at?: unknown;
+  allow_paths?: string[];
+  spend_limit?: string;
+  spend_period?: unknown;
+};
+
+export type TMessage = MsgAddPackage | MsgCall | MsgSend | MsgRun | SessionAdminMessage;
 
 export type ContractMessage = {
   type: EMessageType;
@@ -60,7 +74,7 @@ export interface Fee {
 export interface BaseDocument {
   chain_id: string;
   fee: Fee;
-  msgs: any[];
+  msgs: unknown[];
 }
 
 // TODO: BroadcastTxCommitResult isn't correct in case of a VM call

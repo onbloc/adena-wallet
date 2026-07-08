@@ -3,8 +3,9 @@ import {
   Document,
   MSG_SEND_AMINO_TYPE,
   isLedgerAccount,
+  isSessionAccount,
 } from 'adena-module';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +14,12 @@ import styled from 'styled-components';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import AtomoneChainBadge from '@assets/icons/chains/atomone.svg';
 import { GasToken } from '@common/constants/token.constant';
-import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
+import {
+  isCosmosNativeTokenModel,
+  isGRC20TokenModel,
+  isNativeTokenModel,
+} from '@common/validation/validation-token';
 import TransactionResult from '@components/molecules/transaction-result';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
@@ -27,6 +33,7 @@ import { useNetworkProfile } from '@hooks/use-network-profile';
 import { getCosmosOriginDenom } from '@hooks/use-token-metainfo';
 import { useTransferInfo } from '@hooks/use-transfer-info';
 import { useCosmosNetworkFee } from '@hooks/wallet/use-cosmos-network-fee';
+import { useConvertSessionAccounts } from '@hooks/wallet/use-convert-session-accounts';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import {
@@ -53,17 +60,20 @@ const TransferSummaryContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate, goBack, params } = useAppNavigate<RoutePath.TransferSummary>();
   const summaryInfo = params;
-  const { wallet } = useWalletContext();
-  const { transactionService, chainRegistry, tokenRegistry, cosmosProvider } = useAdenaContext();
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { wallet, gnoProvider } = useWalletContext();
+  const { transactionService, chainRegistry, tokenRegistry, cosmosProvider, sessionRepository } =
+    useAdenaContext();
+  const queryClient = useQueryClient();
+  const { currentAccount, currentAddress, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
-  const isCosmosToken = params.tokenMetainfo.type === 'cosmos-native';
+  const isCosmosToken = isCosmosNativeTokenModel(params.tokenMetainfo);
   const tokenChainGroup = isCosmosToken
     ? chainRegistry.getChainByChainId(params.tokenMetainfo.networkId)?.chainGroup ?? 'atomone'
     : 'gno';
   const chain = useChain(tokenChainGroup);
   const tokenProfile = useNetworkProfile(tokenChainGroup);
   const { openScannerLink } = useLink();
+  const { convertBySessionAddresses } = useConvertSessionAccounts();
   const { setMemorizedTransferInfo } = useTransferInfo();
   const [isSent, setIsSent] = useState(false);
   const [screenState, setScreenState] = useState<'SUMMARY' | 'LOADING' | 'RESULT'>('SUMMARY');
@@ -99,12 +109,9 @@ const TransferSummaryContainer: React.FC = () => {
     // accounts whose stored entries predate the denom-seed fix.
     const profile = tokenRegistry.get(tokenMetainfo.tokenId);
     const denom =
-      (tokenMetainfo as { denom?: string }).denom ||
-      (profile ? getCosmosOriginDenom(profile) : '');
+      (tokenMetainfo as { denom?: string }).denom || (profile ? getCosmosOriginDenom(profile) : '');
     if (!denom) return null;
-    const rawAmount = BigNumber(transferAmount.value)
-      .shiftedBy(tokenMetainfo.decimals)
-      .toFixed(0);
+    const rawAmount = BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals).toFixed(0);
     const cosmosChain = chainRegistry.getChainByChainId(tokenMetainfo.networkId);
     const placeholderFee =
       cosmosChain && cosmosChain.chainType === 'cosmos' && cosmosChain.fee.fallbackFee
@@ -183,8 +190,7 @@ const TransferSummaryContainer: React.FC = () => {
       // covers the fee.
       if (transferTokenBalance === undefined || transferTokenBalance === null) return false;
       return (
-        BigNumber(photonBalance).gte(rawFee) &&
-        BigNumber(transferTokenBalance).gte(rawTransfer)
+        BigNumber(photonBalance).gte(rawFee) && BigNumber(transferTokenBalance).gte(rawTransfer)
       );
     }
 
@@ -198,7 +204,7 @@ const TransferSummaryContainer: React.FC = () => {
 
     let leastUsedAmount = BigNumber(networkFee.amount);
 
-    if (summaryInfo.tokenMetainfo.type === 'gno-native') {
+    if (isNativeTokenModel(summaryInfo.tokenMetainfo)) {
       leastUsedAmount = leastUsedAmount.plus(BigNumber(summaryInfo.transferAmount.value));
     }
 
@@ -307,11 +313,11 @@ const TransferSummaryContainer: React.FC = () => {
     }`;
 
     return TransactionMessage.createMessageOfBankSend({
-      fromAddress: currentAddress || '',
+      fromAddress: currentFundingAddress || '',
       toAddress,
       amount: sendAmount,
     });
-  }, [summaryInfo, currentAddress]);
+  }, [summaryInfo, currentFundingAddress]);
 
   const getGRC20TransferMessage = useCallback(() => {
     const { tokenMetainfo, toAddress, transferAmount } = summaryInfo;
@@ -321,7 +327,7 @@ const TransferSummaryContainer: React.FC = () => {
     }
 
     return TransactionMessage.createMessageOfVmCall({
-      caller: currentAddress || '',
+      caller: currentFundingAddress || '',
       send: '',
       pkgPath: tokenMetainfo.pkgPath,
       max_deposit: '',
@@ -333,7 +339,7 @@ const TransferSummaryContainer: React.FC = () => {
         )}`,
       ],
     });
-  }, [summaryInfo, currentAddress]);
+  }, [summaryInfo, currentFundingAddress]);
 
   const createDocument = async (): Promise<Document | null> => {
     if (!currentNetwork || !currentAccount || !currentAddress) {
@@ -342,8 +348,9 @@ const TransferSummaryContainer: React.FC = () => {
 
     const { tokenMetainfo, memo } = summaryInfo;
     const gasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
-    const message =
-      tokenMetainfo.type === 'gno-native' ? getNativeTransferMessage() : getGRC20TransferMessage();
+    const message = isNativeTokenModel(tokenMetainfo)
+      ? getNativeTransferMessage()
+      : getGRC20TransferMessage();
 
     const document = await transactionService.createDocument(
       currentAccount,
@@ -389,7 +396,7 @@ const TransferSummaryContainer: React.FC = () => {
     }
     // StdFee.amount must be an integer string in u-units (e.g. "17148"),
     // not the display-shifted value from `networkFee.amount` ("0.017148")
-    // — the node's sdk.Coin parser rejects decimals with "cannot unmarshal
+    // because the node's sdk.Coin parser rejects decimals with "cannot unmarshal
     // into *big.Int". Use the raw fields from the hook.
     const feeAmount = cosmosFee.currentFeeAmount;
     const feeDenom = cosmosFee.currentFeeDenom;
@@ -413,11 +420,11 @@ const TransferSummaryContainer: React.FC = () => {
       return null;
     }
 
-    // Cosmos AMINO path (Phase 3) — skips Gno createDocument/gas-simulate flow.
+    // Cosmos AMINO path (Phase 3): skips Gno createDocument/gas-simulate flow.
     // Let errors propagate so transferByCommon's catch surfaces the real
     // message (broadcast code/raw_log, LCD error, etc.) instead of the
     // generic "could not be submitted" fallback.
-    if (summaryInfo.tokenMetainfo.type === 'cosmos-native') {
+    if (isCosmosNativeTokenModel(summaryInfo.tokenMetainfo)) {
       const result = await createCosmosTransaction();
       if (!result) return null;
       return { hash: result.txhash };
@@ -449,6 +456,76 @@ const TransferSummaryContainer: React.FC = () => {
     useNetworkFeeReturn.currentGasFeeRawAmount,
     useNetworkFeeReturn.currentGasInfo,
     createCosmosTransaction,
+  ]);
+
+  const refreshCurrentSessionMetadataAfterTransfer = useCallback(async (): Promise<void> => {
+    queryClient.invalidateQueries({ queryKey: ['sessionMetadataForBalanceInput'] });
+    queryClient.invalidateQueries({ queryKey: ['sessions/all'] });
+
+    if (!currentAccount || !isSessionAccount(currentAccount) || !currentNetwork || !gnoProvider) {
+      return;
+    }
+
+    const sessionAddr = await currentAccount
+      .getAddress(currentNetwork.addressPrefix)
+      .catch(() => null);
+    if (!sessionAddr) {
+      return;
+    }
+
+    const storedSession = await sessionRepository.get(sessionAddr);
+    const previousSpendUsed = storedSession?.spendUsed ?? '';
+
+    for (const delayMs of [0, 1_500, 4_000]) {
+      if (delayMs > 0) {
+        await wait(delayMs);
+      }
+
+      let record;
+      try {
+        record = await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr);
+      } catch {
+        continue;
+      }
+      if (!record) {
+        const shouldConvert = await shouldConvertMissingSession(
+          storedSession,
+          async () =>
+            !!(await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr)),
+        );
+        if (shouldConvert) {
+          await convertBySessionAddresses([sessionAddr]);
+        }
+        break;
+      }
+
+      const base = record.BaseSessionAccount;
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const expiresAt = Number(base.expires_at ?? 0);
+      const spendUsed = base.spend_used === '' ? undefined : base.spend_used;
+      const spendReset =
+        base.spend_reset != null && base.spend_reset !== '' ? Number(base.spend_reset) : undefined;
+
+      await sessionRepository.syncFromChain(sessionAddr, {
+        spendUsed,
+        spendReset,
+        status: expiresAt > 0 && nowSeconds >= expiresAt ? 'EXPIRED' : 'ACTIVE',
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['sessionMetadataForBalanceInput'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions/all'] });
+
+      if ((spendUsed ?? '') !== previousSpendUsed) {
+        break;
+      }
+    }
+  }, [
+    currentAccount,
+    currentNetwork,
+    gnoProvider,
+    queryClient,
+    sessionRepository,
+    convertBySessionAddresses,
   ]);
 
   const transfer = async (): Promise<boolean> => {
@@ -488,6 +565,7 @@ const TransferSummaryContainer: React.FC = () => {
       }
 
       if (txHash) {
+        void refreshCurrentSessionMetadataAfterTransfer();
         setTransferResult({
           status: 'SUCCESS',
           hash: txHash,
@@ -511,7 +589,12 @@ const TransferSummaryContainer: React.FC = () => {
       setIsSent(false);
       return false;
     }
-  }, [createTransaction]);
+  }, [
+    createTransaction,
+    isCosmosToken,
+    refreshCurrentSessionMetadataAfterTransfer,
+    transactionService,
+  ]);
 
   const transferByLedger = useCallback(async () => {
     const document = await createDocument();
@@ -614,7 +697,7 @@ const TransferSummaryContainer: React.FC = () => {
 
   useEffect(() => {
     // When a Ledger loading page navigates back after broadcast, it seeds
-    // `params.ledgerResult` — enter the RESULT screen so the Ledger user
+    // `params.ledgerResult`, enter the RESULT screen so the Ledger user
     // gets the same completion UI (View History / View on Scanner / Close)
     // as HD/PK transfers instead of jumping straight to History.
     const ledgerResult = summaryInfo.ledgerResult;
@@ -626,12 +709,10 @@ const TransferSummaryContainer: React.FC = () => {
       });
       setScreenState('RESULT');
     }
-    // One-shot on mount; intentionally no deps.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    // Cosmos path builds its document inline at broadcast time — skip the
+    // Cosmos path builds its document inline at broadcast time, skip the
     // Gno-only createDocument pre-warm which calls GnoProvider.getAccountInfo.
     if (isCosmosToken) {
       return;
@@ -687,6 +768,7 @@ const TransferSummaryContainer: React.FC = () => {
           transferBalance={getTransferBalance()}
           isErrorNetworkFee={isNetworkFeeError}
           isLoadingNetworkFee={isCosmosToken ? cosmosFee.isLoading : useNetworkFeeReturn.isLoading}
+          isSessionSigning={!!currentAccount && isSessionAccount(currentAccount)}
           networkFee={isCosmosToken ? cosmosFee.networkFee : networkFee}
           memo={summaryInfo.memo}
           currentBalance={currentBalance}
@@ -701,5 +783,9 @@ const TransferSummaryContainer: React.FC = () => {
     </TransferSummaryLayout>
   );
 };
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export default TransferSummaryContainer;

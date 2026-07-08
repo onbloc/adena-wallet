@@ -10,11 +10,11 @@ interface SecureTextareaProps {
   error: boolean;
 }
 
-const StyledWrapper = styled.div<{ error: boolean }>`
+const StyledWrapper = styled.div<{ $error: boolean }>`
   position: relative;
   width: 100%;
   height: 140px;
-  border: 1px solid ${({ error, theme }): string => (error ? theme.red._5 : theme.neutral._7)};
+  border: 1px solid ${({ $error, theme }): string => ($error ? theme.red._5 : theme.neutral._7)};
   background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
   overflow-y: auto;
@@ -41,7 +41,7 @@ export const SecureTextarea = ({
   error = false,
 }: SecureTextareaProps): JSX.Element => {
   return (
-    <StyledWrapper error={error}>
+    <StyledWrapper $error={error}>
       <StyledTextarea rows={5} value={value} onChange={onChange} onKeyDown={onKeyDown} autoFocus />
     </StyledWrapper>
   );

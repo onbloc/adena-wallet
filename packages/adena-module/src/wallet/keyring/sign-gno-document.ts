@@ -1,8 +1,3 @@
-// sortedJsonStringify is not a public export of @cosmjs/amino but both
-// @cosmjs/amino's serializeSignDoc and tm2 wallet.signTransaction use it via
-// the same deep-import path. Keeping the single source ensures byte-level
-// equivalence with the legacy tm2 signing pipeline.
-import { sortedJsonStringify } from '@cosmjs/amino/build/signdoc';
 import {
   encodeCharacterSet,
   Provider,
@@ -15,19 +10,40 @@ import {
 
 import { publicKeyToAddress } from '../../utils/address';
 import { decodeTxMessages, Document, documentToTx } from '../../utils/messages';
+import { LocalTxSignature } from '../../proto/session/local-tx-signature';
 import { compressPubkeyIfNeeded } from '../../utils/pubkey';
-import { Keyring, SignRawOptions } from './keyring';
+import { Keyring } from './keyring';
 import {
   isHDWalletKeyring,
   isPrivateKeyKeyring,
   isWeb3AuthKeyring,
 } from './keyring-util';
+import { SignGnoOptions } from './sign-gno-options';
+
+export type { SignGnoOptions } from './sign-gno-options';
 
 const GNO_ADDRESS_PREFIX = 'g';
 
-export interface SignGnoOptions extends SignRawOptions {
-  accountNumber?: string;
-  sequence?: string;
+function sortJsonValue(value: unknown): unknown {
+  if (typeof value !== 'object' || value === null) {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map(sortJsonValue);
+  }
+
+  const record = value as Record<string, unknown>;
+  const sorted: Record<string, unknown> = {};
+  Object.keys(record)
+    .sort()
+    .forEach((key) => {
+      sorted[key] = sortJsonValue(record[key]);
+    });
+  return sorted;
+}
+
+function sortedJsonStringify(value: unknown): string {
+  return JSON.stringify(sortJsonValue(value));
 }
 
 // Gno transaction signing on top of Keyring.signRaw.
@@ -75,24 +91,33 @@ export async function signGnoDocument(
     memo: tx.memo,
   };
 
-  const signBytes = stringToUTF8(
-    encodeCharacterSet(sortedJsonStringify(signPayload)),
-  );
+  const signJsonString = sortedJsonStringify(signPayload);
+  const signBytes = stringToUTF8(encodeCharacterSet(signJsonString));
 
   const signature = await keyring.signRaw(signBytes, { hdPath: opts?.hdPath });
 
   const publicKey = await getKeyringPublicKey(keyring, opts?.hdPath);
   // PubKeySecp256k1 proto carries the compressed (33-byte) form. keyring.publicKey
-  // may be compressed (PrivateKey/Web3Auth — tm2 Wallet.fromPrivateKey compresses
-  // before storing) or uncompressed (HDWallet — generateKeyPair returns 65 bytes).
+  // may be compressed (PrivateKey/Web3Auth, tm2 Wallet.fromPrivateKey compresses
+  // before storing) or uncompressed (HDWallet, generateKeyPair returns 65 bytes).
   const compressedPubKey = compressPubkeyIfNeeded(publicKey);
-  const txSignature: TxSignature = {
-    pub_key: {
-      type_url: Secp256k1PubKeyType,
-      value: PubKeySecp256k1.encode({ key: compressedPubKey }).finish(),
-    },
-    signature,
+  const pubKeyAny = {
+    type_url: Secp256k1PubKeyType,
+    value: PubKeySecp256k1.encode({ key: compressedPubKey }).finish(),
   };
+
+  const sessionAddr = opts?.sessionAddr;
+  let txSignature: TxSignature;
+  if (sessionAddr) {
+    const localSig: LocalTxSignature = {
+      pub_key: pubKeyAny,
+      signature,
+      session_addr: sessionAddr,
+    };
+    txSignature = localSig;
+  } else {
+    txSignature = { pub_key: pubKeyAny, signature };
+  }
 
   const signedTx: Tx = {
     ...tx,
@@ -108,6 +133,10 @@ async function getKeyringPublicKey(
   if (isHDWalletKeyring(keyring)) return keyring.getPublicKey(hdPath ?? 0);
   if (isPrivateKeyKeyring(keyring)) return keyring.publicKey;
   if (isWeb3AuthKeyring(keyring)) return keyring.publicKey;
+  // SESSION keyring holds a publicKey field like PrivateKeyKeyring. Avoid importing
+  // isSessionKeyring here to prevent a circular dependency cycle:
+  // session-keyring -> sign-gno-document -> keyring-util -> session-keyring
+  if (keyring.type === 'SESSION') return (keyring as unknown as { publicKey: Uint8Array }).publicKey;
   throw new Error(
     `Keyring type ${keyring.type} cannot provide a public key for signing`,
   );

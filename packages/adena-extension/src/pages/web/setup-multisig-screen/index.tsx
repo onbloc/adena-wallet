@@ -59,7 +59,7 @@ const SetupMultisigScreen: React.FC = () => {
   const onClickBack = useCallback(() => {
     const backTo = setupMultisigStepBackTo[setupMultisigState];
     if (backTo === null) {
-      navigate(RoutePath.Home);
+      navigate(RoutePath.WebAdvancedSetup);
       return;
     }
     resetMultisigConfig();

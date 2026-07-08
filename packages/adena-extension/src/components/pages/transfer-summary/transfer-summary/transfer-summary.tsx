@@ -25,6 +25,7 @@ export interface TransferSummaryProps {
   useNetworkFeeReturn: UseNetworkFeeReturn;
   isErrorNetworkFee?: boolean;
   isLoadingNetworkFee?: boolean;
+  isSessionSigning?: boolean;
   simulateErrorBannerMessage?: string | null;
   onClickBack: () => void;
   onClickCancel: () => void;
@@ -44,6 +45,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   useNetworkFeeReturn,
   isErrorNetworkFee,
   isLoadingNetworkFee,
+  isSessionSigning,
   simulateErrorBannerMessage,
   onClickBack,
   onClickCancel,
@@ -113,6 +115,10 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         />
 
         <TransferSummaryAddress toAddress={toAddress} network={chainName} memo={memo} />
+
+        {isSessionSigning && (
+          <div className='session-signing-badge'>Signed with Session</div>
+        )}
       </div>
 
       <div className='network-fee-wrapper'>

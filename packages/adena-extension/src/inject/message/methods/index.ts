@@ -4,3 +4,4 @@ export * from './wallet';
 export * from './transaction';
 export * from './network';
 export * from './multisig';
+export * from './session-account-guard';

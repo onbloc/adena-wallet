@@ -2,6 +2,7 @@ import { WalletResponseFailureType, WalletResponseSuccessType } from '@adena-wal
 import { Event, EventStatus, EventStore } from '@common/event-store';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { fromBase64, toBase64 } from '@common/utils/client-utils';
+import { getGnoscanChainId, isGnoscanChainIdSupported } from '@common/utils/gnoscan-url';
 import { makeTransactionScannerUrl } from '@common/utils/scanner-utils';
 import { BroadcastTxCommitResult, BroadcastTxSyncResult } from '@gnolang/tm2-js-client';
 import { CommandMessageData } from '@inject/message/command-message';
@@ -43,12 +44,14 @@ export async function addTransactionEvent(
     return null;
   }
 
-  const isDefaultNetwork = !!network.apiUrl;
+  const scannerNetworkId = network.networkId || network.chainId;
+  const scannerChainId = getGnoscanChainId(scannerNetworkId);
+  const isDefaultNetwork = !!network.apiUrl || isGnoscanChainIdSupported(scannerNetworkId);
 
   createTransactionNotification(
     'PENDING',
     transactionHash,
-    network.chainId,
+    scannerChainId,
     network.rpcUrl,
     isDefaultNetwork,
   );
@@ -62,7 +65,7 @@ export async function addTransactionEvent(
       createTransactionNotification(
         eventResult.status,
         transactionHash,
-        network.chainId,
+        scannerChainId,
         network.rpcUrl,
         isDefaultNetwork,
       );

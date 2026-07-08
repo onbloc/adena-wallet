@@ -1,11 +1,12 @@
-import React, { ReactElement, useCallback, useMemo } from 'react';
-import styled from 'styled-components';
-import { Text, Button } from '@components/atoms';
+import { Button, Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import { ReactElement, useCallback, useMemo } from 'react';
+import styled from 'styled-components';
 
 interface ButtonProps {
   primary?: boolean;
+  danger?: boolean;
   disabled?: boolean;
   text: string;
   onClick: () => void;
@@ -18,7 +19,11 @@ interface BottomFixedButtonGroupProps {
 }
 
 function mapClassName(buttonProps: ButtonProps): string {
-  return `${buttonProps.primary && 'primary'} ${buttonProps.disabled && 'disabled'}`;
+  const parts: string[] = [];
+  if (buttonProps.primary) parts.push('primary');
+  if (buttonProps.danger) parts.push('danger');
+  if (buttonProps.disabled) parts.push('disabled');
+  return parts.join(' ');
 }
 
 export const BottomFixedButtonGroup = ({
@@ -85,6 +90,14 @@ const ButtonWrap = styled.div<{ $filled?: boolean }>`
 
       &:hover:not(.disabled) {
         background-color: ${getTheme('primary', '_7')};
+      }
+    }
+
+    &.danger {
+      background-color: ${getTheme('red', 'a')};
+
+      &:hover:not(.disabled) {
+        background-color: ${getTheme('red', 'b')};
       }
     }
   }

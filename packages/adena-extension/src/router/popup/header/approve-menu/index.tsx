@@ -107,7 +107,7 @@ const ApproveMenu = (): JSX.Element => {
   const [popoverX, setPopoverX] = useState(0);
   const [popoverY, setPopoverY] = useState(0);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const chainAddressEntries = useAccountChainAddresses();
+  const chainAddressEntries = useAccountChainAddresses({ sessionAddressMode: 'session' });
 
   useEffect(() => {
     if (location.search) {

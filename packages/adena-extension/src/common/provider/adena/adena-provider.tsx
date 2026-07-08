@@ -9,6 +9,7 @@ import {
   TransactionHistoryIndexerRepository,
 } from '@repositories/transaction';
 import { TransactionGasRepository } from '@repositories/transaction/transaction-gas';
+import { SessionRepository } from '@repositories/session';
 import {
   WalletAccountRepository,
   WalletAddressRepository,
@@ -31,6 +32,7 @@ import {
   WalletEstablishAtomOneService,
   WalletEstablishService,
   WalletService,
+  WalletSessionService,
 } from '@services/wallet';
 import { NetworkState } from '@states';
 import {
@@ -62,6 +64,8 @@ export interface AdenaContextProps {
   transactionHistoryService: TransactionHistoryService;
   transactionGasService: TransactionGasService | null;
   multisigService: MultisigService;
+  sessionRepository: SessionRepository;
+  walletSessionService: WalletSessionService;
 }
 
 export const AdenaContext = createContext<AdenaContextProps | null>(null);
@@ -125,6 +129,11 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const addressBookRepository = useMemo(
     () => new WalletAddressRepository(localStorage),
+    [localStorage],
+  );
+
+  const sessionRepository = useMemo(
+    () => new SessionRepository(localStorage),
     [localStorage],
   );
 
@@ -211,6 +220,15 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return new MultisigService(walletService, gnoProvider);
   }, [walletService, gnoProvider]);
 
+  const walletSessionService = useMemo(() => {
+    return new WalletSessionService(
+      walletService,
+      sessionRepository,
+      gnoProvider,
+      chainRegistry,
+    );
+  }, [walletService, sessionRepository, gnoProvider, chainRegistry]);
+
   useWindowSize(true);
 
   return (
@@ -232,6 +250,8 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
         transactionHistoryService,
         transactionGasService,
         multisigService,
+        sessionRepository,
+        walletSessionService,
       }}
     >
       {children}

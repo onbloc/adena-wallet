@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Account, isMultisigAccount, MultisigConfig, RawTx } from 'adena-module';
+import { Account, isMultisigAccount, isSessionAccount, MultisigConfig, RawTx } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -31,6 +31,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useNetworkProfile } from '@hooks/use-network-profile';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
 
@@ -424,6 +425,11 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
+      if (isSessionAccount(currentAccount)) {
+        chrome.runtime.sendMessage(createSessionAccountUnsupportedResponse(requestData.key));
+        window.close();
+        return;
+      }
       if (!isMultisigAccount(currentAccount)) {
         navigate(RoutePath.ApproveSignFailed);
         return;

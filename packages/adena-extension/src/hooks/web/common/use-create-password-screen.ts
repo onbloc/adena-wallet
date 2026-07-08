@@ -46,7 +46,7 @@ export type UseCreatePasswordScreenReturn = {
 };
 
 export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
-  const { walletService, accountService } = useAdenaContext();
+  const { walletService, accountService, sessionRepository } = useAdenaContext();
   const indicatorInfo = useIndicatorStep({});
   const { navigate } = useAppNavigate<RoutePath.WebCreatePassword>();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -135,6 +135,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
 
   const _saveWalletByPassword = async (password: string): Promise<boolean> => {
     const wallet = pendingWalletStore.consume();
+    const postSave = pendingWalletStore.consumePostSave();
     if (!wallet) {
       navigate(RoutePath.WebWalletCreate, { replace: true });
       return false;
@@ -143,6 +144,12 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
     try {
       await walletService.saveWallet(wallet, password);
       await accountService.changeCurrentAccount(wallet.currentAccount);
+      if (postSave) {
+        // Session-import bootstrap: SESSIONS entry is paired with the new
+        // vault. A failure here leaves the vault intact without metadata;
+        // the user can re-import via the regular commit path after unlock.
+        await sessionRepository.setMany(postSave.sessions);
+      }
       return true;
     } finally {
       // Zeroize Uint8Array seed/entropy/privateKey buffers via sodium.memzero,
@@ -212,7 +219,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
     }
   }, []);
 
-  // Wipe on unmount when the user leaves without committing — covers back
+  // Wipe on unmount when the user leaves without committing, covers back
   // navigation, manual route change, and tab close. Skipped if save already
   // consumed the wallet (destroy ran in the finally block).
   useEffect(() => {

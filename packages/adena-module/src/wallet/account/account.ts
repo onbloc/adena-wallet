@@ -4,6 +4,17 @@ import { LedgerAccount } from './ledger-account';
 import { SeedAccount } from './seed-account';
 import { SingleAccount } from './single-account';
 import { MultisigAccount, MultisigConfig, SignerPublicKeyInfo } from './multisig-account';
+import { SessionAccount } from './session-account';
+
+export interface SessionConfig {
+  masterAddress: string;
+  chainId: string;
+  status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
+  expiresAt?: number;
+  allowPaths?: string[];
+  spendLimit?: string;
+  spendPeriod?: number;
+}
 
 export interface Account {
   id: string;
@@ -27,6 +38,7 @@ export interface AccountInfo {
   addressBytes?: number[];
   multisigConfig?: MultisigConfig;
   signerPublicKeys?: SignerPublicKeyInfo[];
+  sessionConfig?: SessionConfig;
 }
 
 export function makeAccount(accountData: AccountInfo) {
@@ -42,6 +54,8 @@ export function makeAccount(accountData: AccountInfo) {
       return new AirgapAccount(accountData);
     case 'MULTISIG':
       return new MultisigAccount(accountData);
+    case 'SESSION':
+      return new SessionAccount(accountData);
     default:
       throw new Error('Invalid account type');
   }

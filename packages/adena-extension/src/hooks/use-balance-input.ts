@@ -1,17 +1,23 @@
+import { useQuery } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
+import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
+import { isNativeTokenModel } from '@common/validation/validation-token';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
+import type { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
+import { parseCoins } from '@services/transaction/session-spend';
 import { GasInfo, TokenBalanceType, TokenModel } from '@types';
-import { Document } from 'adena-module';
+import { Document, isSessionAccount } from 'adena-module';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
 import { useTokenBalance } from './use-token-balance';
 import { getCosmosOriginDenom, useTokenMetainfo } from './use-token-metainfo';
+import { useConvertSessionAccounts } from './wallet/use-convert-session-accounts';
 import { useNetworkFee } from './wallet/use-network-fee';
 
 // Buffer applied to the simulated cosmos fee when computing the Max amount.
@@ -40,13 +46,19 @@ export type CosmosFeeContext = {
   isSimulateError: boolean;
 };
 
+type SessionSpendConfig = {
+  spendLimit?: string;
+  spendUsed?: string;
+};
+
 export const useBalanceInput = (
   tokenMetainfo?: TokenModel,
   cosmosFeeContext?: CosmosFeeContext,
 ): UseBalanceInputHookReturn => {
-  const { balanceService, tokenRegistry } = useAdenaContext();
-  const { wallet } = useWalletContext();
-  const { currentAddress } = useCurrentAccount();
+  const { balanceService, tokenRegistry, sessionRepository } = useAdenaContext();
+  const { wallet, gnoProvider } = useWalletContext();
+  const { convertBySessionAddresses } = useConvertSessionAccounts();
+  const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -59,8 +71,118 @@ export const useBalanceInput = (
   const [document, setDocument] = useState<Document | null>(null);
   const { currentGasInfo } = useNetworkFee(document);
 
+  const isSessionNativeTransfer =
+    currentAccount !== null &&
+    isSessionAccount(currentAccount) &&
+    !!tokenMetainfo &&
+    isNativeTokenModel(tokenMetainfo);
+
+  const {
+    data: currentSessionMetadata = null,
+    isLoading: isLoadingCurrentSessionMetadata,
+  } = useQuery<SessionMetadataV021 | null>(
+    ['sessionMetadataForBalanceInput', currentAccount?.id, currentNetwork.chainId],
+    async () => {
+      if (!currentAccount || !isSessionAccount(currentAccount)) {
+        return null;
+      }
+
+      const sessionAddr = await currentAccount.getAddress('g').catch(() => null);
+      if (!sessionAddr) {
+        return null;
+      }
+
+      const stored = await sessionRepository.get(sessionAddr);
+      if (!gnoProvider) {
+        return stored;
+      }
+
+      let record;
+      try {
+        record = await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr);
+      } catch {
+        return stored;
+      }
+      if (!record) {
+        const shouldConvert = await shouldConvertMissingSession(
+          stored,
+          async () =>
+            !!(await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr)),
+        );
+        if (shouldConvert) {
+          await convertBySessionAddresses([sessionAddr]);
+          return null;
+        }
+        return stored;
+      }
+
+      const base = record.BaseSessionAccount;
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const expiresAt = Number(base.expires_at ?? stored?.expiresAt ?? 0);
+      const status: SessionMetadataV021['status'] =
+        stored?.status === 'REVOKED'
+          ? 'REVOKED'
+          : expiresAt > 0 && nowSeconds >= expiresAt
+          ? 'EXPIRED'
+          : 'ACTIVE';
+      const spendUsed = base.spend_used === '' ? undefined : base.spend_used;
+      const spendReset =
+        base.spend_reset != null && base.spend_reset !== '' ? Number(base.spend_reset) : undefined;
+
+      if (stored) {
+        await sessionRepository
+          .syncFromChain(sessionAddr, { spendUsed, spendReset, status })
+          .catch(() => undefined);
+      }
+
+      return {
+        masterAddress: stored?.masterAddress ?? currentAccount.getMasterAddress(),
+        chainId: stored?.chainId ?? currentAccount.sessionConfig.chainId,
+        allowPaths: stored?.allowPaths ?? currentAccount.sessionConfig.allowPaths ?? [],
+        spendLimit:
+          base.spend_limit ?? stored?.spendLimit ?? currentAccount.sessionConfig.spendLimit ?? '',
+        spendPeriod: Number(
+          base.spend_period ?? stored?.spendPeriod ?? currentAccount.sessionConfig.spendPeriod ?? 0,
+        ),
+        spendUsed,
+        spendReset,
+        expiresAt,
+        status,
+        createdAt: stored?.createdAt ?? nowSeconds,
+        txHash: stored?.txHash,
+      };
+    },
+    {
+      enabled: currentAccount !== null && isSessionAccount(currentAccount),
+      refetchInterval: 30_000,
+    },
+  );
+
+  const sessionSpendConfig = useMemo<SessionSpendConfig | null>(() => {
+    if (!currentAccount || !isSessionAccount(currentAccount)) {
+      return null;
+    }
+
+    return {
+      spendLimit: currentSessionMetadata?.spendLimit ?? currentAccount.sessionConfig.spendLimit,
+      spendUsed: currentSessionMetadata?.spendUsed,
+    };
+  }, [currentAccount, currentSessionMetadata]);
+
+  const sessionSpendableAmount = useMemo(() => {
+    if (!isSessionNativeTransfer) {
+      return null;
+    }
+
+    if (isLoadingCurrentSessionMetadata) {
+      return BigNumber(0);
+    }
+
+    return getSessionSpendableAmount(sessionSpendConfig, tokenMetainfo);
+  }, [isLoadingCurrentSessionMetadata, isSessionNativeTransfer, sessionSpendConfig, tokenMetainfo]);
+
   useEffect(() => {
-    if (!currentAddress || !currentBalance || !tokenMetainfo) {
+    if (!currentFundingAddress || !currentBalance || !tokenMetainfo) {
       return;
     }
 
@@ -71,20 +193,22 @@ export const useBalanceInput = (
     setDocument(
       makeTransferDocument({
         chainId: currentNetwork.networkId,
-        fromAddress: currentAddress,
-        toAddress: currentAddress,
+        // Max-amount simulate document must use the funding (master) address so
+        // that gas estimation reflects the account that will actually pay.
+        fromAddress: currentFundingAddress,
+        toAddress: currentFundingAddress,
         amount: amount,
         memo: '',
       }),
     );
-  }, [currentNetwork, currentAddress, currentBalance, tokenMetainfo]);
+  }, [currentNetwork, currentFundingAddress, currentBalance, tokenMetainfo]);
 
   useEffect(() => {
     if (!currentBalance) {
       return;
     }
 
-    if (currentBalance.type === 'gno-native') {
+    if (isNativeTokenModel(currentBalance)) {
       if (!currentGasInfo) {
         return;
       }
@@ -93,18 +217,17 @@ export const useBalanceInput = (
         currentBalance.amount.denom,
         'COMMON',
       );
+      const balanceAmountNumber = BigNumber(convertedBalance.value);
 
       const maxGasFeeBN = BigNumber(currentGasInfo.gasWanted)
         .multipliedBy(currentGasInfo.gasPrice * GAS_FEE_SAFETY_MARGIN)
         .shiftedBy(GasToken.decimals * -1)
         .toFixed(GasToken.decimals, BigNumber.ROUND_UP);
 
-      const availAmountNumber = BigNumber(convertedBalance.value).minus(maxGasFeeBN);
-      if (availAmountNumber.isGreaterThan(0)) {
-        setAvailAmountNumber(availAmountNumber);
-      } else {
-        setAvailAmountNumber(BigNumber(0));
-      }
+      const limitAmountNumber = getLimitedAmount(balanceAmountNumber, sessionSpendableAmount).minus(
+        maxGasFeeBN,
+      );
+      setAvailAmountNumber(toNonNegativeBigNumber(limitAmountNumber));
       return;
     }
 
@@ -123,13 +246,7 @@ export const useBalanceInput = (
     const rawFee = cosmosFeeContext?.currentFeeAmount ?? null;
     const feeDecimals = cosmosFeeContext?.feeDecimals ?? tokenMetainfo?.decimals ?? 6;
 
-    if (
-      transferDenom &&
-      feeDenom &&
-      transferDenom === feeDenom &&
-      rawFee &&
-      Number(rawFee) > 0
-    ) {
+    if (transferDenom && feeDenom && transferDenom === feeDenom && rawFee && Number(rawFee) > 0) {
       const feeDisplay = BigNumber(rawFee)
         .multipliedBy(COSMOS_MAX_FEE_SAFETY_MARGIN)
         .shiftedBy(-feeDecimals);
@@ -144,13 +261,14 @@ export const useBalanceInput = (
     currentBalance,
     tokenMetainfo,
     tokenRegistry,
+    sessionSpendableAmount,
     cosmosFeeContext?.currentFeeAmount,
     cosmosFeeContext?.currentFeeDenom,
     cosmosFeeContext?.feeDecimals,
   ]);
 
   const updateCurrentBalance = useCallback(async () => {
-    if (!currentAddress) {
+    if (!currentFundingAddress) {
       return false;
     }
 
@@ -158,10 +276,10 @@ export const useBalanceInput = (
       return false;
     }
 
-    const currentBalance = await fetchBalanceBy(currentAddress, tokenMetainfo);
+    const currentBalance = await fetchBalanceBy(currentFundingAddress, tokenMetainfo);
     setCurrentBalance(currentBalance);
     return true;
-  }, [wallet, balanceService, currentAddress, tokenMetainfo]);
+  }, [wallet, balanceService, currentFundingAddress, tokenMetainfo]);
 
   const clearError = useCallback(() => {
     setHasError(false);
@@ -172,10 +290,21 @@ export const useBalanceInput = (
     if (hasError || !tokenMetainfo) {
       return errorMessage;
     }
-    return `Balance: ${BigNumber(currentBalance?.amount.value || 0).toFormat()} ${
-      tokenMetainfo.symbol
-    }`;
-  }, [currentBalance, hasError, errorMessage, tokenMetainfo]);
+    const label = isSessionNativeTransfer ? 'Spendable' : 'Balance';
+    const balanceAmount = BigNumber(currentBalance?.amount.value || 0);
+    const descriptionAmount = isSessionNativeTransfer
+      ? availAmountNumber
+      : getLimitedAmount(balanceAmount, sessionSpendableAmount);
+    return `${label}: ${descriptionAmount.toFormat()} ${tokenMetainfo.symbol}`;
+  }, [
+    availAmountNumber,
+    currentBalance,
+    errorMessage,
+    hasError,
+    isSessionNativeTransfer,
+    sessionSpendableAmount,
+    tokenMetainfo,
+  ]);
 
   const onChangeAmount = useCallback((amount: string) => {
     const charAtFirst = amount.charAt(0);
@@ -201,7 +330,7 @@ export const useBalanceInput = (
   }, []);
 
   const onClickMax = useCallback(() => {
-    // gno: requires gas info to compute the fee-adjusted max — bail until ready.
+    // gno: requires gas info to compute the fee-adjusted max, so bail until ready.
     // cosmos: useEffect falls back to the full display balance when the fee
     // estimate isn't ready, so committing availAmountNumber is safe. The
     // summary screen's transfer + fee check is the authoritative gate.
@@ -212,8 +341,16 @@ export const useBalanceInput = (
   }, [availAmountNumber, currentGasInfo, cosmosFeeContext]);
 
   const validateBalanceInput = useCallback(() => {
+    const balanceAmount = BigNumber(currentBalance?.amount.value || 0);
+    const limitedBalanceAmount = getLimitedAmount(balanceAmount, sessionSpendableAmount);
+    const maxInputAmount = isSessionNativeTransfer
+      ? currentGasInfo
+        ? availAmountNumber
+        : BigNumber(0)
+      : limitedBalanceAmount;
+
     if (
-      BigNumber(amount || 0).isGreaterThan(currentBalance?.amount.value || 0) ||
+      BigNumber(amount || 0).isGreaterThan(maxInputAmount) ||
       BigNumber(amount || 0).isLessThanOrEqualTo(0)
     ) {
       setHasError(true);
@@ -222,7 +359,14 @@ export const useBalanceInput = (
     }
     clearError();
     return true;
-  }, [currentBalance, amount]);
+  }, [
+    amount,
+    availAmountNumber,
+    currentBalance,
+    currentGasInfo,
+    isSessionNativeTransfer,
+    sessionSpendableAmount,
+  ]);
 
   return {
     hasError,
@@ -270,4 +414,44 @@ function makeTransferDocument(params: {
       gas: DEFAULT_GAS_WANTED.toString(),
     },
   };
+}
+
+function getSessionSpendableAmount(
+  sessionSpendConfig: SessionSpendConfig | null,
+  tokenMetainfo?: TokenModel,
+): BigNumber | null {
+  if (!sessionSpendConfig?.spendLimit || !tokenMetainfo || tokenMetainfo.type !== 'gno-native') {
+    return null;
+  }
+
+  try {
+    const denom = getNativeTokenMinimalDenom(tokenMetainfo);
+    const spendLimitAmount = getCoinAmount(parseCoins(sessionSpendConfig.spendLimit), denom);
+    const spendUsedAmount = getCoinAmount(parseCoins(sessionSpendConfig.spendUsed ?? ''), denom);
+    const remainingAmount =
+      spendLimitAmount > spendUsedAmount ? spendLimitAmount - spendUsedAmount : BigInt(0);
+    const decimals = tokenMetainfo.decimals ?? GNOT_TOKEN.decimals;
+    return BigNumber(remainingAmount.toString()).shiftedBy(-decimals);
+  } catch {
+    return BigNumber(0);
+  }
+}
+
+function getNativeTokenMinimalDenom(tokenMetainfo: TokenModel): string {
+  return (tokenMetainfo as { denom?: string }).denom ?? GNOT_TOKEN.denom;
+}
+
+function getCoinAmount(coins: ReturnType<typeof parseCoins>, denom: string): bigint {
+  return coins.find((coin) => coin.denom === denom)?.amount ?? BigInt(0);
+}
+
+function getLimitedAmount(amount: BigNumber, limit: BigNumber | null): BigNumber {
+  if (limit === null) {
+    return amount;
+  }
+  return amount.isLessThan(limit) ? amount : limit;
+}
+
+function toNonNegativeBigNumber(amount: BigNumber): BigNumber {
+  return amount.isGreaterThan(0) ? amount : BigNumber(0);
 }

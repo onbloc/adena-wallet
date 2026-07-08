@@ -56,12 +56,51 @@ describe('pendingWalletStore', () => {
     expect(pendingWalletStore.has()).toBe(false);
   });
 
-  it('consume does not call destroy — caller owns the lifetime', () => {
+  it('consume does not call destroy, caller owns the lifetime', () => {
     const { wallet, destroy } = makeWalletStub();
     pendingWalletStore.set(wallet);
 
     pendingWalletStore.consume();
 
     expect(destroy).not.toHaveBeenCalled();
+  });
+
+  it('stores post-save metadata for multiple session accounts', () => {
+    const { wallet } = makeWalletStub();
+    const postSave = {
+      sessions: [
+        {
+          sessionAddr: 'g1session1',
+          metadata: {
+            masterAddress: 'g1master',
+            chainId: 'test-13',
+            allowPaths: ['bank/send'],
+            spendLimit: '100ugnot',
+            spendPeriod: 0,
+            expiresAt: 0,
+            status: 'ACTIVE' as const,
+            createdAt: 1,
+          },
+        },
+        {
+          sessionAddr: 'g1session2',
+          metadata: {
+            masterAddress: 'g1master',
+            chainId: 'test-13',
+            allowPaths: ['bank/send'],
+            spendLimit: '200ugnot',
+            spendPeriod: 0,
+            expiresAt: 0,
+            status: 'ACTIVE' as const,
+            createdAt: 1,
+          },
+        },
+      ],
+    };
+
+    pendingWalletStore.set(wallet, postSave);
+
+    expect(pendingWalletStore.consumePostSave()).toEqual(postSave);
+    expect(pendingWalletStore.consumePostSave()).toBeNull();
   });
 });

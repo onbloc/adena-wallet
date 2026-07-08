@@ -1,6 +1,12 @@
 import { Tx } from '@gnolang/tm2-js-client';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { Account, Document, documentToDefaultTx, Wallet } from 'adena-module';
+import {
+  Account,
+  Document,
+  documentToDefaultTx,
+  isSessionAccount,
+  Wallet,
+} from 'adena-module';
 import BigNumber from 'bignumber.js';
 
 import { MINIMUM_GAS_PRICE } from '@common/constants/gas.constant';
@@ -11,6 +17,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionService } from '@services/index';
 import { GasInfo } from '@types';
 
+import { makeStaticSessionAdminGasInfo } from './session-admin-static-fee';
 import { useGetGasPrice } from './use-get-gas-price';
 
 export const GET_ESTIMATE_GAS_INFO_KEY = 'transactionGas/useGetSingleEstimateGas';
@@ -74,8 +81,17 @@ export const makeEstimateGasTransaction = async (
   }
 
   const modifiedDocument = modifyDocument(document, gasWanted, gasFee);
+  // SessionAccount: derive its own (session) address and pass it so the
+  // placeholder Tx carries session_addr. encodeGnoTx in GnoProvider.simulateTx
+  // then emits std.proto Signature field 3, which routes the node ante's
+  // pubkey-address derivation against the session address instead of the
+  // master caller. Without this, simulate would reject the placeholder for
+  // pubkey-address mismatch (master caller + session pubkey).
+  const sessionAddr = isSessionAccount(account)
+    ? await account.getAddress('g')
+    : undefined;
   if (!withSignTransaction) {
-    return documentToDefaultTx(modifiedDocument, account.publicKey);
+    return documentToDefaultTx(modifiedDocument, account.publicKey, sessionAddr);
   }
 
   const { signed } = await transactionService
@@ -86,11 +102,11 @@ export const makeEstimateGasTransaction = async (
       };
     });
   if (!signed) {
-    // Fallback path — createTransaction fails for accounts that can't sign
+    // Fallback path: createTransaction fails for accounts that can't sign
     // in-process (Ledger without an attached connector, AirGap). Pass the
     // account's pubkey so gno.land simulate can verify pub_key ↔ address
     // matching for pre-initialized accounts.
-    return documentToDefaultTx(modifiedDocument, account.publicKey);
+    return documentToDefaultTx(modifiedDocument, account.publicKey, sessionAddr);
   }
 
   return signed;
@@ -136,6 +152,11 @@ export const useGetEstimateGasInfo = (
       gasPrice || 0,
     ],
     queryFn: async (): Promise<GasInfo | null> => {
+      const staticGasInfo = makeStaticSessionAdminGasInfo(document);
+      if (staticGasInfo) {
+        return staticGasInfo;
+      }
+
       if (!transactionGasService || !gasPrice) {
         return null;
       }
@@ -147,11 +168,19 @@ export const useGetEstimateGasInfo = (
 
       const resultGasUsed = await transactionGasService
         .estimateGas(tx)
-        .then((gasUsed) => ({
-          gasUsed,
-          errorMessage: null,
-        }))
-        .catch(() => null);
+        .then((gasUsed) => {
+          return { gasUsed, errorMessage: null };
+        })
+        .catch((e) => {
+          // eslint-disable-next-line no-console
+          console.error('[estimate-gas] simulate failed:', e);
+          const err = e as { message?: string; log?: string };
+          if (err?.log) {
+            // eslint-disable-next-line no-console
+            console.error('[estimate-gas] simulate chain log:\n' + err.log);
+          }
+          return null;
+        });
 
       if (!resultGasUsed) {
         return {

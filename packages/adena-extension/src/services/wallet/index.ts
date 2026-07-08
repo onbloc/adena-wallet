@@ -5,4 +5,5 @@ export * from './wallet-establish';
 export * from './wallet-establish-atomone';
 export * from './wallet-address-book';
 export * from './wallet-balance';
+export * from './wallet-session';
 export * from './cosmos-balance';

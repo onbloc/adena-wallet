@@ -13,7 +13,7 @@
     ],
     "noImplicitAny": true,
     "module": "esnext",
-    "target": "es5",
+    "target": "es2020",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "esModuleInterop": true,
@@ -23,7 +23,7 @@
     "strict": true,
     "allowJs": true,
     "downlevelIteration": true,
-    "lib": ["dom", "es5", "es6"],
+    "lib": ["dom", "ES2020"],
     "baseUrl": "./",
     "paths": {
       "@types": ["src/types"],

@@ -3,7 +3,7 @@ module.exports = {
   testEnvironment: "node",
   moduleFileExtensions: ['js', 'json', 'jsx', 'ts', 'tsx', 'json'],
   transform: {
-    '^.+\\.ts?$': 'babel-jest',
+    '^.+\\.[jt]sx?$': 'babel-jest',
   },
   testEnvironment: 'node',
   rootDir: '.',
@@ -11,6 +11,8 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testMatch: ['<rootDir>/**/*.spec.(js|jsx|ts|tsx)'],
-  transformIgnorePatterns: ['<rootDir>/node_modules/'],
+  transformIgnorePatterns: [
+    '/node_modules/(?!(@cosmjs/(amino|crypto|encoding)|@gnolang/(gno-js-client|tm2-js-client|tm2-rpc)|@noble/(curves|hashes)|@scure/base|uuid)/)',
+  ],
   setupFiles: ['<rootDir>/.jest/environment.js'],
 };

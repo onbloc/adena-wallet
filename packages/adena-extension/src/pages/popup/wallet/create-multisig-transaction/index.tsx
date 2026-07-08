@@ -1,11 +1,13 @@
 import {
   Account,
   isMultisigAccount,
+  isSessionAccount,
   MultisigConfig,
   RawBankSendMessage,
   RawTx,
   RawTxMessageType,
   RawVmAddPackageMessage,
+  RawVmCallMessage,
   RawVmRunMessage,
 } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -33,6 +35,7 @@ import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { ContractMessage } from '@inject/types';
 import { NetworkFee, RoutePath } from '@types';
 
@@ -56,6 +59,10 @@ function isRunMessage(message: RawTxMessageType): message is RawVmRunMessage {
   return message['@type'] === '/vm.m_run';
 }
 
+function isVmCallMessage(message: RawTxMessageType): message is RawVmCallMessage {
+  return message['@type'] === '/vm.m_call';
+}
+
 function parseFunctionName(message: RawTxMessageType): string {
   if (isBankSendMessage(message)) {
     return 'Transfer';
@@ -66,7 +73,12 @@ function parseFunctionName(message: RawTxMessageType): string {
   if (isRunMessage(message)) {
     return 'Run';
   }
-  return message.func;
+  if (isVmCallMessage(message)) {
+    return message.func;
+  }
+  // Session message types (create/revoke session) are not expected in a
+  // multisig flow; fall back to the raw @type for display.
+  return message['@type'];
 }
 
 function mappedTransactionData(rawTx: RawTx): TransactionData {
@@ -215,6 +227,11 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
+      if (isSessionAccount(currentAccount)) {
+        chrome.runtime.sendMessage(createSessionAccountUnsupportedResponse(requestData.key));
+        window.close();
+        return;
+      }
       validate(currentAccount, requestData).then((validated) => {
         if (validated) {
           initFavicon();

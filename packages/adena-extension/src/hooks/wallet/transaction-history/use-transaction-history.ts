@@ -9,7 +9,12 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { CommonState } from '@states';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
+import { dedupeAndSortTransactions } from './session-history-source';
 
+// Indexer-backed (block-index paged) transaction history, used only when the
+// network has no API URL. Session accounts always run on API-backed networks,
+// so this path queries `currentAddress` uniformly with no session-specific
+// handling.
 export const useTransactionHistory = ({
   enabled,
 }: {
@@ -38,9 +43,16 @@ export const useTransactionHistory = ({
     CommonState.fetchedHistoryBlockHeight,
   );
 
-  const { data: allTransactions, refetch } = useQuery(
+  const { data: fetchedTransactions, refetch } = useQuery(
     ['history/common/all', currentNetwork.networkId, currentAddress],
-    () => transactionHistoryService.fetchAllTransactionHistory(currentAddress || ''),
+    async () => {
+      if (!currentAddress) {
+        return [];
+      }
+
+      const history = await transactionHistoryService.fetchAllTransactionHistory(currentAddress);
+      return dedupeAndSortTransactions(history.transactions);
+    },
     {
       enabled:
         !!currentAddress &&
@@ -51,26 +63,22 @@ export const useTransactionHistory = ({
   );
 
   const blockIndex = useMemo(() => {
-    if (!allTransactions) {
+    if (!fetchedTransactions) {
       return null;
     }
     if (!fetchedHistoryBlockHeight) {
-      return allTransactions.transactions.length < 20 ? allTransactions.transactions.length : 20;
+      return fetchedTransactions.length < 20 ? fetchedTransactions.length : 20;
     }
     return fetchedHistoryBlockHeight;
-  }, [allTransactions, fetchedHistoryBlockHeight]);
+  }, [fetchedTransactions, fetchedHistoryBlockHeight]);
 
   const transactions = useMemo(() => {
-    if (!allTransactions) {
+    if (!fetchedTransactions || blockIndex === null) {
       return null;
     }
 
-    if (blockIndex === null) {
-      return null;
-    }
-
-    return allTransactions.transactions.slice(0, blockIndex || 0);
-  }, [allTransactions, blockIndex]);
+    return fetchedTransactions.slice(0, blockIndex || 0);
+  }, [fetchedTransactions, blockIndex]);
 
   const firstTransactionHash = useMemo(() => {
     if (!transactions || transactions.length === 0) {
@@ -86,7 +94,7 @@ export const useTransactionHistory = ({
   );
 
   const fetchNextPage = async (): Promise<boolean> => {
-    const transactionSize = allTransactions?.transactions.length || 0;
+    const transactionSize = fetchedTransactions?.length || 0;
     const endIndex = blockIndex || 20;
     const nextBlockIndex = endIndex >= transactionSize ? transactionSize : endIndex + 20;
 
@@ -105,7 +113,7 @@ export const useTransactionHistory = ({
     status,
     isLoading,
     isFetching,
-    hasNextPage: allTransactions?.transactions.length !== blockIndex,
+    hasNextPage: transactions ? transactions.length !== blockIndex : false,
     fetchNextPage,
     refetch: refetchTransactions,
   };

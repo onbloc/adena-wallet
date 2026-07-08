@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import etc from '@assets/etc.svg';
-import { isGRC20TokenModel } from '@common/validation/validation-token';
+import { isCosmosNativeTokenModel, isGRC20TokenModel } from '@common/validation/validation-token';
 import { HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text } from '@components/atoms';
 import { DoubleButton, TransactionHistory } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -84,7 +84,7 @@ const EtcIcon = styled.div`
 
 export const TokenDetails = (): JSX.Element => {
   const theme = useTheme();
-  const { currentNetwork, scannerParameters } = useNetwork();
+  const { scannerParameters } = useNetwork();
   const profile = useNetworkProfile();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { saveScrollPosition } = useScrollHistory(scrollRef);
@@ -92,7 +92,7 @@ export const TokenDetails = (): JSX.Element => {
   const { navigate } = useAppNavigate<RoutePath.TokenDetails>();
   const { params } = useSessionParams<RoutePath.TokenDetails>();
   const [etcClicked, setEtcClicked] = useState(false);
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const tokenBalance = params?.tokenBalance;
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
@@ -100,7 +100,7 @@ export const TokenDetails = (): JSX.Element => {
   const { currentBalances } = useTokenBalance();
 
   const isNative = tokenBalance && !isGRC20TokenModel(tokenBalance);
-  const isCosmosNative = tokenBalance?.type === 'cosmos-native';
+  const isCosmosNative = !!tokenBalance && isCosmosNativeTokenModel(tokenBalance);
 
   // Multisig × Cosmos = permanent non-support (keyrings are Gno-only).
   // Disable the Send button with a tooltip instead of hiding the token so
@@ -205,8 +205,8 @@ export const TokenDetails = (): JSX.Element => {
   const getAccountDetailUri = (): string => {
     const scannerUrl = profile?.linkUrl || SCANNER_URL;
     return scannerParameters
-      ? `${scannerUrl}/account/${currentAddress}?${makeQueryString(scannerParameters)}`
-      : `${scannerUrl}/account/${currentAddress}`;
+      ? `${scannerUrl}/account/${currentFundingAddress}?${makeQueryString(scannerParameters)}`
+      : `${scannerUrl}/account/${currentFundingAddress}`;
   };
 
   const getTokenUri = (): string => {

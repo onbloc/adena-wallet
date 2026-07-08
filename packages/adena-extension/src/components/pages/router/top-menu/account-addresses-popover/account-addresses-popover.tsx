@@ -37,8 +37,8 @@ export const AccountAddressesPopover: React.FC<AccountAddressesPopoverProps> = (
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
       >
-        {entries.map(({ chain, address }) => (
-          <ChainRow key={chain.id}>
+        {entries.map(({ chain, address, id, label }) => (
+          <ChainRow key={id ?? chain.id}>
             <div className='chain-left'>
               <img
                 className='chain-icon'
@@ -46,7 +46,7 @@ export const AccountAddressesPopover: React.FC<AccountAddressesPopoverProps> = (
                 alt={chain.displayName}
               />
               <span className='chain-name'>
-                {CHAIN_SHORT_NAME[chain.chainGroup] ?? chain.displayName}
+                {label ?? CHAIN_SHORT_NAME[chain.chainGroup] ?? chain.displayName}
               </span>
             </div>
             <div className='chain-right'>

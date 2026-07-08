@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { MultisigConfig } from 'adena-module';
+import { isSessionAccount, MultisigConfig } from 'adena-module';
 
 import {
   WalletResponseFailureType,
@@ -17,6 +17,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useChain } from '@hooks/use-chain';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { RoutePath } from '@types';
 
 const CreateMultisigAccountContainer: React.FC = () => {
@@ -60,6 +61,11 @@ const CreateMultisigAccountContainer: React.FC = () => {
 
   useEffect(() => {
     if (currentAccount && requestData) {
+      if (isSessionAccount(currentAccount)) {
+        chrome.runtime.sendMessage(createSessionAccountUnsupportedResponse(requestData.key));
+        window.close();
+        return;
+      }
       initFavicon();
       initMultisigConfig();
     }

@@ -1,4 +1,4 @@
-import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
+import { Account, Document, isAirgapAccount, isLedgerAccount, isSessionAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -16,7 +16,9 @@ import {
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
+import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
+import { evaluateSessionSigningGuard } from '@services/transaction/session-signing-guard';
 import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useChain } from '@hooks/use-chain';
@@ -61,7 +63,7 @@ const ApproveSignContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
-  const { walletService, transactionService } = useAdenaContext();
+  const { walletService, transactionService, sessionRepository } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
@@ -280,6 +282,57 @@ const ApproveSignContainer: React.FC = () => {
         ),
       );
       return false;
+    }
+
+    // SessionAccount: SIGN_AMINO produces a session-key signature the dApp can
+    // broadcast, so it must pass the same fail-closed guard the SIGN_TX /
+    // DO_CONTRACT flows apply — evaluated against fresh chain state right before
+    // signing. Without this a dApp could obtain a session signature bypassing
+    // allowPaths / spendLimit / expiry / status / chain / unsupported-msg checks.
+    if (isSessionAccount(currentAccount) && currentNetwork && gnoProvider) {
+      const sessionAddr = await currentAccount.getAddress(chain.bech32Prefix);
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const cached = await sessionRepository.get(sessionAddr);
+      const metadata = await refreshSessionMetadataFromChain(
+        gnoProvider,
+        currentAccount.getMasterAddress(),
+        sessionAddr,
+        currentNetwork.chainId,
+        cached,
+        nowSeconds,
+      ).catch(() => null);
+      if (metadata) {
+        await sessionRepository
+          .syncFromChain(sessionAddr, {
+            spendUsed: metadata.spendUsed,
+            spendReset: metadata.spendReset,
+            status: metadata.status,
+          })
+          .catch(() => undefined);
+      }
+      const walletLocked = await walletService.isLocked();
+      const decision = evaluateSessionSigningGuard({
+        currentAccount,
+        sessionMetadata: metadata,
+        walletLocked,
+        nowSeconds,
+        currentChainId: currentNetwork.chainId,
+        decodedMessages: document.msgs as { type: string; value: any }[],
+        txFee: {
+          amount: document.fee.amount[0]?.amount ?? '0',
+          denom: document.fee.amount[0]?.denom ?? GasToken.denom,
+        },
+      });
+      if (decision.ok === false) {
+        setResponse(
+          InjectionMessageInstance.failure(
+            WalletResponseRejectType.SIGN_REJECTED,
+            { sessionGuardReason: decision.reason },
+            requestData?.key,
+          ),
+        );
+        return false;
+      }
     }
 
     try {

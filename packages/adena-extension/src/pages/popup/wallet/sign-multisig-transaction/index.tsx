@@ -24,9 +24,10 @@ import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkFee, RoutePath } from '@types';
-import { Account, isAirgapAccount, isLedgerAccount } from 'adena-module';
+import { Account, isAirgapAccount, isLedgerAccount, isSessionAccount } from 'adena-module';
 
 interface SignMultisigTransactionRequestData {
   multisigDocument: MultisigTransactionDocument;
@@ -186,6 +187,11 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
+      if (isSessionAccount(currentAccount)) {
+        chrome.runtime.sendMessage(createSessionAccountUnsupportedResponse(requestData.key));
+        window.close();
+        return;
+      }
       if (isAirgapAccount(currentAccount)) {
         navigate(RoutePath.ApproveSignFailed);
         return;

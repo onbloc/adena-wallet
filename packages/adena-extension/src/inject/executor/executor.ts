@@ -22,11 +22,19 @@ import {
 } from '@common/validation';
 import {
   validateDoContractRequest,
+  validateTransactionMessageOfCreateSession,
   validateTransactionMessageOfAddPkg,
   validateTransactionMessageOfBankSend,
+  validateTransactionMessageOfRevokeAllSessions,
+  validateTransactionMessageOfRevokeSession,
   validateTransactionMessageOfRun,
   validateTransactionMessageOfVmCall,
 } from '@common/validation/validation-message';
+import {
+  MSG_CREATE_SESSION_ENDPOINT,
+  MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
+  MSG_REVOKE_SESSION_ENDPOINT,
+} from 'adena-module';
 import {
   AddEstablishResponse,
   AddNetworkParams,
@@ -332,6 +340,21 @@ export class AdenaExecutor {
             return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
           }
           break;
+        case MSG_CREATE_SESSION_ENDPOINT:
+          if (!validateTransactionMessageOfCreateSession(messageData)) {
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+          }
+          break;
+        case MSG_REVOKE_SESSION_ENDPOINT:
+          if (!validateTransactionMessageOfRevokeSession(messageData)) {
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+          }
+          break;
+        case MSG_REVOKE_ALL_SESSIONS_ENDPOINT:
+          if (!validateTransactionMessageOfRevokeAllSessions(messageData)) {
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+          }
+          break;
         default:
           return InjectionMessageInstance.failure(WalletResponseFailureType.UNSUPPORTED_TYPE);
       }
@@ -503,7 +526,7 @@ export class AdenaExecutor {
   // TODO: fold this into `createEventMessage` once `@adena-wallet/sdk` is
   // updated to add Cosmos entries to `WalletMessageInfo`. Until then the SDK
   // lookup table has no row for these request types, so
-  // `InjectionMessageInstance.request` would throw on destructure — we build
+  // `InjectionMessageInstance.request` would throw on destructure, so we build
   // the `InjectionMessage` literal directly as a temporary workaround.
   private static createCosmosEventMessage = (
     type: CosmosResponseExecuteType,

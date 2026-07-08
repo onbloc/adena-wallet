@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { isSessionAccount } from 'adena-module';
 import styled from 'styled-components';
 
 import AddPackageIcon from '@assets/addpkg.svg';
@@ -7,13 +8,19 @@ import ContractIcon from '@assets/contract.svg';
 import IconShare from '@assets/icon-share';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
-import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
+import {
+  formatAddress,
+  formatHash,
+  getDateTimeText,
+  getStatusStyle,
+} from '@common/utils/client-utils';
 import { makeTransactionScannerUrl, toScannerNetworkInfo } from '@common/utils/scanner-utils';
 import { Button, CopyIconButton, Text } from '@components/atoms';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
 import { TokenBalance } from '@components/molecules';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useNetworkProfile } from '@hooks/use-network-profile';
@@ -39,8 +46,23 @@ export const TransactionDetail = (): JSX.Element => {
   const { currentNetwork } = useNetwork();
   const profile = useNetworkProfile();
   const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
+  const { currentAccount, currentAddress } = useCurrentAccount();
 
   const transactionItem = params.transactionInfo;
+  // History for a SessionAccount is queried by (and attributed to) its session
+  // address, so every transaction in it was signed by the current session.
+  // Derive the master/session pair from the account context instead of a
+  // per-transaction lookup.
+  const sessionInfo = useMemo(() => {
+    if (!currentAccount || !isSessionAccount(currentAccount) || !currentAddress) {
+      return null;
+    }
+    return {
+      masterAddress: currentAccount.getMasterAddress(),
+      sessionAddress: currentAddress,
+    };
+  }, [currentAccount, currentAddress]);
+  const isSessionTransaction = sessionInfo !== null;
   const tokenUriQuery =
     transactionItem?.type === 'TRANSFER_GRC721'
       ? useGetGRC721TokenUri(transactionItem.logo, '0')
@@ -234,6 +256,24 @@ export const TransactionDetail = (): JSX.Element => {
               />
             </dd>
           </DLWrap>
+        )}
+        {isSessionTransaction && sessionInfo && (
+          <>
+            <DLWrap>
+              <dt>Master Acc.</dt>
+              <dd>
+                {formatAddress(sessionInfo.masterAddress)}
+                <CopyIconButton className='copy-button' copyText={sessionInfo.masterAddress} />
+              </dd>
+            </DLWrap>
+            <DLWrap>
+              <dt>Session Acc.</dt>
+              <dd>
+                {formatAddress(sessionInfo.sessionAddress)}
+                <CopyIconButton className='copy-button' copyText={sessionInfo.sessionAddress} />
+              </dd>
+            </DLWrap>
+          </>
         )}
       </DataBox>
       <div className='button-wrapper'>

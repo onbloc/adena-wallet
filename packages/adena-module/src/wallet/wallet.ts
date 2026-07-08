@@ -30,6 +30,7 @@ import {
   isLedgerAccount,
   isMultisigAccount,
   isSeedAccount,
+  isSessionAccount,
   LedgerAccount,
   makeAccount,
   SeedAccount,
@@ -65,9 +66,11 @@ export interface Wallet {
   nextAccountName: string;
   nextLedgerAccountName: string;
   nextMultisigAccountName: string;
+  nextSessionAccountName: string;
   lastAccountIndex: number;
   lastLedgerAccountIndex: number;
   lastMultisigAccountIndex: number;
+  lastSessionAccountIndex: number;
 
   addAccount: (account: Account) => number;
   removeAccount: (account: Account) => boolean;
@@ -205,6 +208,11 @@ export class AdenaWallet implements Wallet {
     return `Multisig ${nextIndex}`;
   }
 
+  get nextSessionAccountName() {
+    const nextIndex = this.lastSessionAccountIndex + 1;
+    return `Session ${nextIndex}`;
+  }
+
   set currentAccountId(currentAccountId: string) {
     this._currentAccountId = currentAccountId;
   }
@@ -215,7 +223,10 @@ export class AdenaWallet implements Wallet {
 
   get lastAccountIndex() {
     const indices = this.accounts
-      .filter((account) => !isLedgerAccount(account) && !isMultisigAccount(account))
+      .filter(
+        (account) =>
+          !isLedgerAccount(account) && !isMultisigAccount(account) && !isSessionAccount(account),
+      )
       .map((account) => account.index);
     return Math.max(0, ...indices);
   }
@@ -227,6 +238,14 @@ export class AdenaWallet implements Wallet {
 
   get lastMultisigAccountIndex() {
     return this.accounts.filter(isMultisigAccount).length;
+  }
+
+  get lastSessionAccountIndex() {
+    // Derive from the account's numeric index (assigned at create/import),
+    // not from the "Session N" name — a user rename would otherwise corrupt
+    // the counter and yield duplicate names/indices.
+    const indices = this.accounts.filter(isSessionAccount).map((account) => account.index);
+    return Math.max(0, ...indices);
   }
 
   isEmpty() {

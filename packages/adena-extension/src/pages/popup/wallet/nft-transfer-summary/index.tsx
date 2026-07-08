@@ -40,7 +40,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
   const summaryInfo = params;
   const { wallet } = useWalletContext();
   const { transactionService } = useAdenaContext();
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const chain = useChain();
   const { openScannerLink } = useLink();
@@ -109,12 +109,12 @@ const NFTTransferSummaryContainer: React.FC = () => {
   );
 
   const createDocument = useCallback(async () => {
-    if (!currentNetwork || !currentAccount || !currentAddress) {
+    if (!currentNetwork || !currentAccount || !currentFundingAddress) {
       return null;
     }
 
     const { grc721Token, toAddress, memo } = summaryInfo;
-    const message = makeGRC721TransferMessage(grc721Token, currentAddress, toAddress);
+    const message = makeGRC721TransferMessage(grc721Token, currentFundingAddress, toAddress);
 
     const document = await transactionService.createDocument(
       currentAccount,

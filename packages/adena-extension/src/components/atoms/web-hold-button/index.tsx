@@ -20,7 +20,7 @@ const fill = keyframes`
   }
 `;
 
-const StyledContainer = styled(View)<{ pressed: boolean; finish: boolean }>`
+const StyledContainer = styled(View)<{ $pressed: boolean; $finish: boolean }>`
   position: relative;
   overflow: hidden;
   display: flex;
@@ -34,15 +34,12 @@ const StyledContainer = styled(View)<{ pressed: boolean; finish: boolean }>`
   user-select: none;
   box-shadow: 0 0 0 1px #212429 inset;
 
-  ${({ pressed, finish }): RuleSet =>
-    pressed || finish
+  ${({ $pressed, $finish }): RuleSet =>
+    $pressed || $finish
       ? css`
-          box-shadow:
-            0 0 0 1px #1e3c71 inset,
-            0px 2px 16px 4px rgba(0, 89, 255, 0.24),
-            0px 1px 3px 0px rgba(0, 0, 0, 0.1),
-            0px 1px 2px 0px rgba(0, 0, 0, 0.06);
-          background: ${finish ? '#0059ff52' : 'transparent'};
+          box-shadow: 0 0 0 1px #1e3c71 inset, 0px 2px 16px 4px rgba(0, 89, 255, 0.24),
+            0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+          background: ${$finish ? '#0059ff52' : 'transparent'};
           ::before {
             content: '';
             z-index: -1;
@@ -50,10 +47,10 @@ const StyledContainer = styled(View)<{ pressed: boolean; finish: boolean }>`
             top: 0px;
             left: 0px;
             height: 100%;
-            background: ${finish ? 'transparent' : '#0059ff52'};
+            background: ${$finish ? 'transparent' : '#0059ff52'};
             border-radius: 8px;
             animation: ${fill} 3s forwards;
-            box-shadow: ${finish ? 'none' : '0 0 0 1px #1E3C71 inset'};
+            box-shadow: ${$finish ? 'none' : '0 0 0 1px #1E3C71 inset'};
           }
         `
       : css`
@@ -126,8 +123,8 @@ export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
         width,
         height,
       }}
-      pressed={pressed}
-      finish={finish}
+      $pressed={pressed}
+      $finish={finish}
       onMouseDown={onMouseDown}
       onMouseUp={onMouseUp}
       onMouseOver={onMouseOver}

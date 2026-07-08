@@ -21,3 +21,10 @@ export function isIBCNativeTokenModel(model: TokenModel): model is IBCNativeToke
 export function isIBCTokenModel(model: TokenModel): model is IBCTokenModel {
   return model.type === 'ibc-tokens';
 }
+
+// No dedicated CosmosNativeTokenModel interface exists yet, so this is a plain
+// boolean predicate rather than a narrowing type guard. It still gives the
+// 'cosmos-native' discriminator a single home instead of scattering the literal.
+export function isCosmosNativeTokenModel(model: TokenModel): boolean {
+  return model.type === 'cosmos-native';
+}

@@ -4,6 +4,7 @@ export * from './crypto';
 export * from './encoding';
 export * from './ledger';
 export * from './math';
+export * from './proto';
 export * from './token-registry';
 export * from './utils';
 export * from './wallet';

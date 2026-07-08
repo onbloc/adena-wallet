@@ -3,6 +3,7 @@ import {
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
+import { getDappVisibleAddress } from '@common/utils/account-address';
 import { getSiteName } from '@common/utils/client-utils';
 import { RoutePath } from '@types';
 import { HandlerMethod } from '..';
@@ -29,17 +30,20 @@ export const getAccount = async (
       return;
     }
 
-    const currentAccountAddress = await core.getCurrentAddress(inMemoryKey);
+    const currentAccount = await core.getCurrentAccount(inMemoryKey);
     const network = await core.getCurrentNetwork();
-    if (!currentAccountAddress || !network) {
+    if (!currentAccount || !network) {
       sendResponse(
         InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key),
       );
       return;
     }
 
+    // dApps must observe the master address even when the wallet currently has
+    // a SessionAccount selected. The session address is wallet-internal only.
+    const targetAddress = await getDappVisibleAddress(currentAccount, network.addressPrefix);
     const accountInfo = await core.accountService.getAccountInfoByNetwork(
-      currentAccountAddress,
+      targetAddress,
       network.rpcUrl,
       network.chainId,
     );

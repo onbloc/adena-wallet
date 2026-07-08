@@ -7,9 +7,15 @@ import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-t
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { TransactionInfo, TransactionWithPageInfo } from '@types';
+import { dedupeAndSortTransactions } from './session-history-source';
 
 const REFETCH_INTERVAL = 3_000;
 
+// API-backed (cursor paginated) transaction history. `currentAddress` already
+// resolves to the SESSION address for SessionAccount, and the API attributes
+// session-signed transactions to that address, so a session account queries by
+// its session address exactly like any other account queries by its own —
+// no local master-merge or per-tx session_addr resolution is needed.
 export const useTransactionHistoryPage = ({
   enabled,
 }: {
@@ -43,20 +49,18 @@ export const useTransactionHistoryPage = ({
   } = useInfiniteQuery<TransactionWithPageInfo, Error, unknown, any>(
     {
       queryKey: ['history/page/all', currentNetwork.networkId, currentAddress || ''],
-      getNextPageParam: (lastPage?: TransactionWithPageInfo): string | boolean | null => {
-        return lastPage?.page.cursor || null;
-      },
-      queryFn: (context: any) => {
-        if (context?.pageParam === false) {
-          return {
-            hasNext: false,
-            cursor: null,
-            transactions: [],
-          };
+      getNextPageParam: (lastPage?: TransactionWithPageInfo): string | null => {
+        if (!lastPage || !lastPage.page.hasNext) {
+          return null;
         }
-
-        const cursor = context?.pageParam || null;
-        return transactionHistoryService.fetchAllTransactionHistory(currentAddress || '', cursor);
+        return lastPage.page.cursor;
+      },
+      queryFn: async (context: any): Promise<TransactionWithPageInfo> => {
+        const cursor = (context?.pageParam as string | undefined) ?? null;
+        if (!currentAddress) {
+          return { page: { hasNext: false, cursor: null }, transactions: [] };
+        }
+        return transactionHistoryService.fetchAllTransactionHistory(currentAddress, cursor);
       },
     },
     {
@@ -75,9 +79,10 @@ export const useTransactionHistoryPage = ({
       return null;
     }
 
-    return allTransactions.pages.flatMap(
+    const pageTransactions = allTransactions.pages.flatMap(
       (page: unknown) => (page as TransactionWithPageInfo).transactions,
     );
+    return dedupeAndSortTransactions(pageTransactions);
   }, [allTransactions?.pages]);
 
   const firstTransactionHash = useMemo(() => {

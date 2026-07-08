@@ -15,6 +15,7 @@ export const useClear = (): UseClearReturn => {
     addressBookService,
     chainService,
     establishService,
+    sessionRepository,
     tokenService,
   } = useAdenaContext();
   const queryClient = useQueryClient();
@@ -44,6 +45,7 @@ export const useClear = (): UseClearReturn => {
     await addressBookService.clear();
     await chainService.clear();
     await establishService.clear();
+    await sessionRepository.clear();
     await tokenService.clear();
     queryClient.clear();
     return true;

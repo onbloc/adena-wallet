@@ -10,6 +10,10 @@ import {
   useGetEstimateGasInfo,
 } from './transaction-gas/use-get-estimate-gas-info';
 import { useGetEstimateGasPriceTiers } from './transaction-gas/use-get-estimate-gas-price-tiers';
+import {
+  isStaticSessionAdminFeeDocument,
+  makeStaticSessionAdminFeeSettings,
+} from './transaction-gas/session-admin-static-fee';
 
 export interface UseNetworkFeeReturn {
   isLoading: boolean;
@@ -48,21 +52,39 @@ export const useNetworkFee = (
 
   const [selectedTier, setSelectedTier] = useState(!isDefaultGasPrice);
   const [gasAdjustment, setGasAdjustment] = useState<string>(DEFAULT_GAS_ADJUSTMENT.toString());
+  const isStaticSessionAdminFee = isStaticSessionAdminFeeDocument(document);
+  const disabledQueryOptions = useMemo(
+    () => (isStaticSessionAdminFee ? { enabled: false } : undefined),
+    [isStaticSessionAdminFee],
+  );
 
   const { data: defaultEstimatedGasInfo, isFetched: isFetchedDefaultEstimatedGasInfo } =
-    useGetDefaultEstimateGasInfo(document);
+    useGetDefaultEstimateGasInfo(document, disabledQueryOptions);
   const { data: estimatedGasInfo, isFetched: isFetchedEstimateGasInfo } = useGetEstimateGasInfo(
     document,
     gasInfo?.gasUsed || defaultEstimatedGasInfo?.gasUsed || 0,
+    disabledQueryOptions,
   );
 
-  const { data: gasPriceTiers, isFetched: isFetchedPriceTiers } = useGetEstimateGasPriceTiers(
-    document,
-    gasInfo?.gasUsed || estimatedGasInfo?.gasUsed,
-    gasAdjustment,
+  const { data: estimatedGasPriceTiers, isFetched: isFetchedPriceTiers } =
+    useGetEstimateGasPriceTiers(
+      document,
+      gasInfo?.gasUsed || estimatedGasInfo?.gasUsed,
+      gasAdjustment,
+      disabledQueryOptions,
+    );
+
+  const staticGasPriceTiers = useMemo(
+    () => makeStaticSessionAdminFeeSettings(document),
+    [document],
   );
+  const gasPriceTiers = staticGasPriceTiers ?? estimatedGasPriceTiers;
 
   const isLoading = useMemo(() => {
+    if (staticGasPriceTiers) {
+      return false;
+    }
+
     if (gasPriceTiers === undefined) {
       return true;
     }
@@ -73,6 +95,7 @@ export const useNetworkFee = (
 
     return false;
   }, [
+    staticGasPriceTiers,
     gasPriceTiers,
     isFetchedDefaultEstimatedGasInfo,
     isFetchedEstimateGasInfo,
@@ -134,6 +157,10 @@ export const useNetworkFee = (
   }, [gasPriceTiers, currentSettingType]);
 
   const isSimulateError = useMemo(() => {
+    if (staticGasPriceTiers) {
+      return false;
+    }
+
     if (currentGasInfo?.hasError) {
       return true;
     }
@@ -143,7 +170,12 @@ export const useNetworkFee = (
     }
 
     return false;
-  }, [isFetchedDefaultEstimatedGasInfo, defaultEstimatedGasInfo, currentGasInfo]);
+  }, [
+    staticGasPriceTiers,
+    isFetchedDefaultEstimatedGasInfo,
+    defaultEstimatedGasInfo,
+    currentGasInfo,
+  ]);
 
   const changedGasInfo = useMemo(() => {
     if (!gasPriceTiers) {
@@ -189,8 +221,10 @@ export const useNetworkFee = (
 
   return {
     isLoading,
-    isFetchedEstimateGasInfo,
-    isFetchedPriceTiers: isFetchedEstimateGasInfo && isFetchedPriceTiers,
+    isFetchedEstimateGasInfo: staticGasPriceTiers ? true : isFetchedEstimateGasInfo,
+    isFetchedPriceTiers: staticGasPriceTiers
+      ? true
+      : isFetchedEstimateGasInfo && isFetchedPriceTiers,
     isSimulateError,
     currentGasInfo,
     currentStorageDeposits,
