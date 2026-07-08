@@ -85,7 +85,15 @@ export const useSessionRevocationWatcher = (): void => {
         return 'unknown';
       }
 
-      await sessionRepository.setStatus(sessionAddr, 'REVOKED').catch(() => undefined);
+      // 'revoked' is terminal and stops the poll, so it may only be returned
+      // once the status is durably persisted. A failed write keeps the result
+      // non-terminal and the next tick retries; otherwise the poll would stop
+      // while the SESSIONS row still says ACTIVE and no surface would dim.
+      try {
+        await sessionRepository.setStatus(sessionAddr, 'REVOKED');
+      } catch {
+        return 'unknown';
+      }
       await queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
       return 'revoked';
     },

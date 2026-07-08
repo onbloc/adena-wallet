@@ -22,13 +22,15 @@ const MASTER_ADDR = 'g1master';
 // createdAt far in the past so the creation grace never applies.
 const ACTIVE_METADATA = { status: 'ACTIVE', createdAt: 1 };
 
-const makeWrapper = (): React.FC<PropsWithChildren> => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+const WATCH_QUERY_KEY = ['session/revocation-watch', 'session-1'];
+
+const makeWrapper = (): { wrapper: React.FC<PropsWithChildren>; client: QueryClient } => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const Wrapper = ({ children }: PropsWithChildren): JSX.Element => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
   Wrapper.displayName = 'TestWrapper';
-  return Wrapper;
+  return { wrapper: Wrapper, client };
 };
 
 describe('useSessionRevocationWatcher', () => {
@@ -58,7 +60,7 @@ describe('useSessionRevocationWatcher', () => {
     get.mockResolvedValue(ACTIVE_METADATA);
     getSession.mockResolvedValue(null);
 
-    renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper() });
+    renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper().wrapper });
 
     await waitFor(() => expect(setStatus).toHaveBeenCalledWith(SESSION_ADDR, 'REVOKED'), {
       timeout: REVOKE_WAIT_TIMEOUT,
@@ -70,7 +72,7 @@ describe('useSessionRevocationWatcher', () => {
     get.mockResolvedValue(ACTIVE_METADATA);
     getSession.mockResolvedValue({ BaseSessionAccount: {} });
 
-    renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper() });
+    renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper().wrapper });
 
     await waitFor(() => expect(getSession).toHaveBeenCalled());
     expect(setStatus).not.toHaveBeenCalled();
@@ -81,7 +83,7 @@ describe('useSessionRevocationWatcher', () => {
     get.mockResolvedValue(ACTIVE_METADATA);
     getSession.mockRejectedValue(new Error('network down'));
 
-    renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper() });
+    renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper().wrapper });
 
     await waitFor(() => expect(getSession).toHaveBeenCalled());
     expect(setStatus).not.toHaveBeenCalled();
@@ -93,18 +95,36 @@ describe('useSessionRevocationWatcher', () => {
     mockSessionAccount();
     get.mockResolvedValue(null);
 
-    renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper() });
+    renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper().wrapper });
 
     await waitFor(() => expect(get).toHaveBeenCalled());
     expect(getSession).not.toHaveBeenCalled();
     expect(setStatus).not.toHaveBeenCalled();
   });
 
+  // 'revoked' stops the poll, so it must not be reported while the durable row
+  // still says ACTIVE — the next tick has to retry the write.
+  it('keeps polling when persisting the revoked status fails', async () => {
+    mockSessionAccount();
+    get.mockResolvedValue(ACTIVE_METADATA);
+    getSession.mockResolvedValue(null);
+    setStatus.mockRejectedValueOnce(new Error('storage unavailable'));
+
+    const { wrapper, client } = makeWrapper();
+    renderHook(() => useSessionRevocationWatcher(), { wrapper });
+
+    await waitFor(() => expect(setStatus).toHaveBeenCalled(), { timeout: REVOKE_WAIT_TIMEOUT });
+    // Non-terminal, so refetchInterval keeps the poll alive for the retry.
+    await waitFor(() => expect(client.getQueryData(WATCH_QUERY_KEY)).toBe('unknown'), {
+      timeout: REVOKE_WAIT_TIMEOUT,
+    });
+  });
+
   it('never queries the chain once already flagged REVOKED', async () => {
     mockSessionAccount();
     get.mockResolvedValue({ status: 'REVOKED', createdAt: 1 });
 
-    renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper() });
+    renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper().wrapper });
 
     await waitFor(() => expect(get).toHaveBeenCalled());
     expect(getSession).not.toHaveBeenCalled();
@@ -117,7 +137,7 @@ describe('useSessionRevocationWatcher', () => {
       currentAccount: { id: 'pk-1', type: 'PRIVATE_KEY', getAddress: jest.fn() },
     });
 
-    renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper() });
+    renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper().wrapper });
 
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(get).not.toHaveBeenCalled();
