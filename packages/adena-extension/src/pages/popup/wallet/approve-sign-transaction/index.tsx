@@ -50,32 +50,32 @@ interface TransactionData {
   document: Document;
 }
 
-// Maps internal SessionSigningFailReason to a user-facing Korean string.
+// Maps internal SessionSigningFailReason to a user-facing string.
 // Phase 8 will polish copy and styling; this is the minimal banner text.
 function mapSessionGuardReasonToMessage(reason: SessionSigningFailReason): string {
   switch (reason) {
     case 'wallet_locked':
-      return '지갑이 잠겨 있어 세션 서명을 할 수 없습니다. 잠금을 해제하세요.';
+      return 'Wallet is locked. Unlock it to sign with this session.';
     case 'not_session_account':
-      return '세션 계정이 아니어서 세션 서명을 할 수 없습니다.';
+      return 'This account is not a session account.';
     case 'session_admin_msg':
-      return '세션 생성/취소 메시지는 세션 계정으로 서명할 수 없습니다. master 계정으로 전환하세요.';
+      return 'Session create/revoke messages cannot be signed with a session account. Switch to the master account.';
     case 'session_metadata_missing':
-      return '세션 정보를 찾을 수 없습니다. master 계정으로 전환한 뒤 다시 시도하세요.';
+      return 'Session information not found. Switch to the master account and try again.';
     case 'session_inactive':
-      return '세션이 활성 상태가 아닙니다.';
+      return 'This session is not active.';
     case 'chain_mismatch':
-      return '현재 네트워크가 세션이 발급된 네트워크와 다릅니다.';
+      return 'The current network does not match the network where this session was issued.';
     case 'session_expired':
-      return '세션이 만료되어 서명할 수 없습니다. master 계정으로 전환한 뒤 다시 시도하세요.';
+      return 'This session has expired. Switch to the master account and try again.';
     case 'unsupported_msg_type':
-      return '이 트랜잭션 종류는 세션으로 서명할 수 없습니다.';
+      return 'This transaction type cannot be signed with a session.';
     case 'allowpaths_violation':
-      return '세션 허용 경로에 포함되지 않은 호출입니다.';
+      return 'This call is not allowed by the session allowed paths.';
     case 'spendlimit_exceeded':
-      return '세션 사용 한도를 초과합니다.';
+      return 'This transaction exceeds the session spend limit.';
     default:
-      return '세션 서명 조건을 만족하지 않아 서명할 수 없습니다.';
+      return 'Cannot sign: session signing conditions are not met.';
   }
 }
 
