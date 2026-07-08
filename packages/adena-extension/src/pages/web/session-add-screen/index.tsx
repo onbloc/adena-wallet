@@ -3,11 +3,11 @@ import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 
 
 import IconError from '@assets/web/error.svg';
 import {
-  GNO_ADDRESS_PREFIX as GNO_PREFIX, SESSION_UNSUPPORTED_CHAIN_IDS
+  GNO_ADDRESS_PREFIX as GNO_PREFIX
 } from '@common/constants/chain.constant';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
-import { isSessionMasterAccount } from '@common/utils/account-session';
+import { isSessionMasterAccount, isSessionSupportedChainId } from '@common/utils/account-session';
 import { encodeParameter } from '@common/utils/client-utils';
 import { stringToBase64 } from '@common/utils/encoding-util';
 import { resolveSessionAdminGasInfo } from '@common/utils/session-admin-gas';
@@ -97,10 +97,6 @@ const REALM_VALIDATION_ERROR = 'Unable to validate realm. Try again.';
 
 type SpendPeriodUnit = 'days' | 'hours';
 type RealmValidationResult = { ok: true } | { ok: false; error: string };
-
-const isSessionSupportedChainId = (chainId: string): boolean => {
-  return !SESSION_UNSUPPORTED_CHAIN_IDS.includes(chainId);
-};
 
 const isRealmPathFormatValid = (path: string): boolean => {
   return (

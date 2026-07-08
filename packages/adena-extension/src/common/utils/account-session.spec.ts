@@ -3,6 +3,7 @@ import { Account } from 'adena-module';
 import {
   isRevokedSessionAccount,
   isSessionMasterAccount,
+  isSessionSupportedChainId,
   isSessionSupportedNetwork,
 } from './account-session';
 
@@ -33,9 +34,22 @@ describe('account session utils', () => {
     },
   );
 
-  it('keeps session support limited to deployed chain ids', () => {
+  // Denylist, not allowlist: a chain opts out explicitly, so custom and future
+  // networks are supported by default.
+  it('supports every chain except the denylisted ones', () => {
     expect(isSessionSupportedNetwork({ chainId: 'test-13' } as never)).toBe(true);
-    expect(isSessionSupportedNetwork({ chainId: 'portal-loop' } as never)).toBe(false);
+    expect(isSessionSupportedNetwork({ chainId: 'portal-loop' } as never)).toBe(true);
+    expect(isSessionSupportedNetwork({ chainId: 'gnoland1' } as never)).toBe(false);
+  });
+
+  it('treats a missing network as unsupported', () => {
+    expect(isSessionSupportedNetwork(null)).toBe(false);
+    expect(isSessionSupportedNetwork(undefined)).toBe(false);
+  });
+
+  it('exposes the same rule for a bare chain id', () => {
+    expect(isSessionSupportedChainId('test-13')).toBe(true);
+    expect(isSessionSupportedChainId('gnoland1')).toBe(false);
   });
 
   describe('isRevokedSessionAccount', () => {
