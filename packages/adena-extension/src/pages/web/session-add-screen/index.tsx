@@ -3,7 +3,7 @@ import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 
 
 import IconError from '@assets/web/error.svg';
 import {
-  GNO_ADDRESS_PREFIX as GNO_PREFIX
+  GNO_ADDRESS_PREFIX as GNO_PREFIX,
 } from '@common/constants/chain.constant';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
@@ -18,7 +18,7 @@ import {
   WebCheckBox,
   WebImg,
   WebMain,
-  WebText
+  WebText,
 } from '@components/atoms';
 import Toggle from '@components/atoms/toggle';
 import { WebCopyButton } from '@components/atoms/web-copy-button';
@@ -42,7 +42,7 @@ import type {
   SessionImportCandidate,
   SessionImportErrorReason,
   SessionImportPreview,
-  SessionImportRequest
+  SessionImportRequest,
 } from '@services/wallet/wallet-session';
 import { RoutePath } from '@types';
 import {
@@ -52,14 +52,14 @@ import {
   SessionAccount,
   SessionKeyring,
   validateAddress,
-  type SessionConfig
+  type SessionConfig,
 } from 'adena-module';
 import {
   MASTER_ADDRESS_FORMAT_ERROR,
   MASTER_ADDRESS_LENGTH,
   NO_SESSION_FOUND_ERROR,
   sanitizeMasterAddressInput,
-  sanitizeSessionPrivateKeyInput
+  sanitizeSessionPrivateKeyInput,
 } from './session-import-utils';
 
 import {
@@ -70,7 +70,7 @@ import {
   MasterLabelInfoIcon, MasterTooltipBox, MinusIcon, PlusIcon, RealmInputBox,
   RealmInputInner, SelectField, SelectMenu,
   SelectOption, SelectTrigger, SessionCard, SessionCardBody, SessionCardHeader, SessionRows, SpendPeriodInput, SpendPeriodInputWrapper, Spinner, TabButton, TabRow, TooltipBox,
-  TooltipBoxAbove, TooltipWrapper, UnitToggle
+  TooltipBoxAbove, TooltipWrapper, UnitToggle,
 } from './session-add-screen.styles';
 
 const MAX_REALM_PATHS_GAS_ONLY = 8;
