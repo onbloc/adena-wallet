@@ -81,6 +81,7 @@ export interface DecodedMessageForSpend {
     amount?: string; // bank/MsgSend amount
     // vm
     send?: string;
+    max_deposit?: string; // vm storage deposit — counts toward session spend
     caller?: string;
   };
 }
@@ -117,11 +118,12 @@ function spendForSigner(message: DecodedMessageForSpend, signerAddress: string):
     }
     case '/vm.m_call':
     case '/vm.m_run': {
-      // vm caller carries gas fee separately; send is the coin outflow
-      // attributed to the signer. caller != signer means a different signer
-      // is paying — we still treat the send as the caller's outflow because
-      // the gno ante computes SpendForSigner on the signer position.
-      return safeParse(message.value.send);
+      // vm caller carries gas fee separately;
+      // `send` is the coin outflow and `max_deposit` is the storage deposit.
+      // The chain counts BOTH against the session spend limit
+      // (ADR-001: lockStorageDeposit calls CheckAndDeductSessionSpend),
+      // so a session must not be able to pass this check with send='' and a large max_deposit.
+      return addCoins(safeParse(message.value.send), safeParse(message.value.max_deposit));
     }
     default:
       return [];

@@ -82,6 +82,28 @@ describe('estimateSessionSpend', () => {
     expect(coinsToString(result)).toBe('60ugnot');
   });
 
+  it('MsgCall.max_deposit (storage deposit) counts toward spend', () => {
+    // The chain deducts storage deposits from the session spend limit, so a
+    // large max_deposit with send='' must not slip past the wallet pre-check.
+    const msg = {
+      type: '/vm.m_call',
+      value: { send: '', max_deposit: '1000000ugnot' },
+    };
+    const result = estimateSessionSpend([msg], fee, masterAddr);
+    // fee 10 + max_deposit 1_000_000
+    expect(coinsToString(result)).toBe('1000010ugnot');
+  });
+
+  it('MsgRun sums send + max_deposit', () => {
+    const msg = {
+      type: '/vm.m_run',
+      value: { send: '50ugnot', max_deposit: '200ugnot' },
+    };
+    const result = estimateSessionSpend([msg], fee, masterAddr);
+    // fee 10 + send 50 + max_deposit 200
+    expect(coinsToString(result)).toBe('260ugnot');
+  });
+
   it('ignores unsupported message types (e.g. MsgMultiSend has no proto encoder)', () => {
     const msg = {
       type: '/bank.MsgMultiSend',
