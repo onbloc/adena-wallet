@@ -1,4 +1,5 @@
 import { getDappVisibleAddress, getWalletFundingAddress } from '@common/utils/account-address';
+import { isRevokedSessionAccount } from '@common/utils/account-session';
 import { EventMessage } from '@inject/message/event-message';
 import { WalletState } from '@states';
 import { useQuery } from '@tanstack/react-query';
@@ -9,6 +10,7 @@ import { useAdenaContext, useWalletContext } from './use-context';
 import { useChain } from './use-chain';
 import { useEvent } from './use-event';
 import { useNetwork } from './use-network';
+import { useSessions } from './use-sessions';
 
 export const useCurrentAccount = (): {
   currentAccount: Account | null;
@@ -23,6 +25,7 @@ export const useCurrentAccount = (): {
   const { currentNetwork } = useNetwork();
   const chain = useChain();
   const { dispatchEvent } = useEvent();
+  const { sessions } = useSessions();
 
   const getCurrentAddress = useCallback(
     async (prefix?: string) => {
@@ -81,14 +84,23 @@ export const useCurrentAccount = (): {
     },
   );
 
+  const sessionRevoked = isRevokedSessionAccount(currentAccount, currentAddress, sessions);
+
   // Address that wallet funding flows must use: balance queries, send
   // from_address/caller, deposit/QR. For SessionAccount this resolves to the
   // master address; for other accounts it equals `currentAddress`.
+  //
+  // Once a session is revoked it can no longer spend the master's funds, so it
+  // falls back to its own address — the balance shown then belongs to the
+  // session key itself.
   const { data: currentFundingAddress } = useQuery<string | null>(
-    ['currentFundingAddress', currentAccount, currentNetwork],
+    ['currentFundingAddress', currentAccount, currentNetwork, sessionRevoked],
     async () => {
       if (!currentAccount) {
         return null;
+      }
+      if (sessionRevoked) {
+        return currentAccount.getAddress(chain.bech32Prefix);
       }
       return getWalletFundingAddress(currentAccount, chain.bech32Prefix);
     },
