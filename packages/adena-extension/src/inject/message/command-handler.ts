@@ -21,6 +21,7 @@ import {
   GnoConnectInfo,
   GnoMessageInfo,
   isAllowedGnoConnectOrigin,
+  isLoopbackGnoConnectTrusted,
   parseGnoConnectInfo,
   parseGnoMessageInfo,
 } from './methods/gno-connect';
@@ -145,17 +146,20 @@ export class CommandHandler {
     }
 
     // Runtime trust gate for loopback origins: only honor a local node's
-    // gnoconnect declarations when the wallet is currently on the matching
-    // network. Prevents an arbitrary process holding the local port from driving
-    // the wallet flow when the user is on another network.
+    // gnoconnect declarations when the meta-declared chainId matches the one the
+    // origin is permitted to act as AND that chainId is the wallet's active network.
+    // This prevents an arbitrary process holding the local port from
+    // switching the wallet to a foreign network or driving the flow while the
+    // user is on another network.
     if (isLoopbackOrigin) {
       const networkResponse = await executor.getNetwork();
       const activeChainId =
         networkResponse.type === WalletResponseSuccessType.GET_NETWORK_SUCCESS
           ? networkResponse.data?.chainId
           : undefined;
-      if (activeChainId !== loopbackChainId) {
-        console.info('Loopback gnoconnect origin is not the active network; ignoring');
+
+      if (!isLoopbackGnoConnectTrusted(loopbackChainId, gnoConnectInfo.chainId, activeChainId)) {
+        console.info('Loopback gnoconnect origin is not trusted for the active network; ignoring');
         return;
       }
     }

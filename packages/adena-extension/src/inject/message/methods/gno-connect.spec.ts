@@ -2,6 +2,7 @@ import {
   getLoopbackGnoConnectChainId,
   GnoMessageInfo,
   isAllowedGnoConnectOrigin,
+  isLoopbackGnoConnectTrusted,
   normalizeGnoConnectRpc,
   parseGnoMessageInfo,
 } from './gno-connect';
@@ -275,6 +276,33 @@ describe('getLoopbackGnoConnectChainId', () => {
   it('returns null for non-loopback or unknown origins', () => {
     expect(getLoopbackGnoConnectChainId('https://gno.land')).toBeNull();
     expect(getLoopbackGnoConnectChainId('http://127.0.0.1:9999')).toBeNull();
+  });
+});
+
+describe('isLoopbackGnoConnectTrusted', () => {
+  const LOOPBACK_CHAIN_ID = 'dev';
+
+  it('trusts a loopback origin when both the meta chainId and the active network match', () => {
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'dev', 'dev')).toBe(true);
+  });
+
+  it('rejects a foreign meta chainId even when the active network matches the origin', () => {
+    // Regression: a page served from http://127.0.0.1:8888 (origin -> dev) while
+    // the wallet is already on dev must not be allowed to declare a different
+    // chainId (e.g. gnoland1) and switch/sign against a foreign network.
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'gnoland1', 'dev')).toBe(false);
+  });
+
+  it('rejects when the active network is not the loopback chainId', () => {
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'dev', 'gnoland1')).toBe(false);
+  });
+
+  it('rejects when the active network is unavailable (e.g. wallet locked)', () => {
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'dev', undefined)).toBe(false);
+  });
+
+  it('rejects when neither the meta chainId nor the active network match', () => {
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'gnoland1', 'gnoland1')).toBe(false);
   });
 });
 

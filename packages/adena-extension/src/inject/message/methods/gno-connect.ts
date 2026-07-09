@@ -385,6 +385,29 @@ export function getLoopbackGnoConnectChainId(origin: string): string | null {
 }
 
 /**
+ * Runtime trust decision for a loopback gnoconnect origin.
+ *
+ * A loopback origin (e.g. a local dev node) is honored only when BOTH hold:
+ * - the meta-declared chainId equals the chainId chains.json maps the origin to
+ *   (the meta tag is attacker-controllable, so it must not act as a foreign
+ *   chain), and
+ * - that same chainId is the wallet's currently active network (so an arbitrary
+ *   process holding the local port cannot drive the flow while the user is
+ *   elsewhere).
+ *
+ * @param loopbackChainId chainId the origin is permitted to act as (from chains.json)
+ * @param metaChainId chainId the page declares via gnoconnect meta tag
+ * @param activeChainId chainId of the wallet's active network (undefined if unavailable/locked)
+ */
+export function isLoopbackGnoConnectTrusted(
+  loopbackChainId: string,
+  metaChainId: string,
+  activeChainId: string | undefined,
+): boolean {
+  return metaChainId === loopbackChainId && activeChainId === loopbackChainId;
+}
+
+/**
  * Normalizes a gnoconnect RPC endpoint (declared via meta tag) into a fetchable
  * http(s) URL.
  *
