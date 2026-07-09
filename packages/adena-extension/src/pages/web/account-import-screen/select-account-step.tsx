@@ -1,5 +1,5 @@
-import { arrayContentEquals } from 'adena-module';
-import { useMemo } from 'react';
+import { arrayContentEquals, hasHDPath } from 'adena-module';
+import { useCallback, useMemo, useState } from 'react';
 import styled from 'styled-components';
 
 import IconSelectAccount from '@assets/web/select-account.svg';
@@ -7,6 +7,7 @@ import { View, WebButton, WebImg } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import { AccountInfo } from '@components/molecules/select-account-box';
 import SelectAccountBox from '@components/molecules/select-account-box/select-account-box';
+import { DerivationPathValue } from '@components/molecules/hd-derivation-path-box';
 import { useChain } from '@hooks/use-chain';
 import { UseAccountImportReturn } from '@hooks/web/use-account-import-screen';
 import { useQuery } from '@tanstack/react-query';
@@ -29,8 +30,13 @@ const SelectAccountStep = ({
     loadAccounts,
     selectAccount,
     selectedAddresses,
+    deriveAddressByPath,
+    addAccountByPath,
     onClickNext,
   } = useAccountImportScreenReturn;
+
+  const [derivationMode, setDerivationMode] = useState(false);
+  const [derivationPath, setDerivationPath] = useState<DerivationPathValue | null>(null);
 
   const { data: accountInfos = [] } = useQuery<AccountInfo[]>(
     ['accountImportSelectAccounts', loadedAccounts],
@@ -39,7 +45,9 @@ const SelectAccountStep = ({
       for (const account of loadedAccounts) {
         const address = await account.getAddress(chain.bech32Prefix);
         const accountInfo: AccountInfo = {
-          hdPath: account.index,
+          hdPath: hasHDPath(account) ? account.hdPath : account.index,
+          accountIndex: hasHDPath(account) ? account.accountIndex : undefined,
+          changeIndex: hasHDPath(account) ? account.changeIndex : undefined,
           index: account.index,
           selected: selectedAddresses.includes(address),
           stored: storedAccounts.some((storedAccount) =>
@@ -71,8 +79,21 @@ const SelectAccountStep = ({
   }, [isLoadingAccounts, accountInfosWithSelection]);
 
   const disabledButton = useMemo(() => {
+    if (derivationMode) {
+      return derivationPath === null;
+    }
     return isLoading || selectedAddresses.length === 0;
-  }, [isLoadingAccounts, selectedAddresses.length]);
+  }, [derivationMode, derivationPath, isLoading, selectedAddresses.length]);
+
+  const onClickNextButton = useCallback(() => {
+    if (derivationMode) {
+      if (derivationPath) {
+        addAccountByPath(derivationPath.account, derivationPath.change, derivationPath.addressIndex);
+      }
+      return;
+    }
+    onClickNext();
+  }, [derivationMode, derivationPath, addAccountByPath, onClickNext]);
 
   return (
     <StyledContainer>
@@ -90,12 +111,21 @@ const SelectAccountStep = ({
         isLoading={isLoading}
         loadAccounts={loadAccounts}
         select={selectAccount}
+        derivation={{
+          active: derivationMode,
+          onToggle: (): void => {
+            setDerivationPath(null);
+            setDerivationMode((prev) => !prev);
+          },
+          deriveAddress: deriveAddressByPath,
+          onChange: setDerivationPath,
+        }}
       />
       <WebButton
         figure='primary'
         size='full'
         disabled={disabledButton}
-        onClick={onClickNext}
+        onClick={onClickNextButton}
         text='Next'
         rightIcon='chevronRight'
       />

@@ -27,6 +27,26 @@ export const StyledLoadMore = styled(Row)<{ disabled: boolean }>`
   }
 `;
 
+export const StyledActionRow = styled(Row)`
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+`;
+
+export const StyledTextButton = styled.button`
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+`;
+
 export const KeyframeRotate = keyframes`
   from {
     -webkit-transform: rotate(0deg);

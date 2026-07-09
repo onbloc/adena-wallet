@@ -1,6 +1,9 @@
+import { useCallback, useState } from 'react';
+
 import IconLedger from '@assets/web/ledger.svg';
 import { View, WebButton, WebImg, WebMain } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
+import { DerivationPathValue } from '@components/molecules/hd-derivation-path-box';
 import SelectAccountBox from '@components/molecules/select-account-box/select-account-box';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -16,8 +19,27 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
     onClickSelectButton,
     onClickLoadMore,
     onClickNextButton,
+    deriveAddressByPath,
+    addAccountByPath,
   } = useSelectAccountScreen();
   const { navigate } = useAppNavigate();
+
+  const [derivationMode, setDerivationMode] = useState(false);
+  const [derivationPath, setDerivationPath] = useState<DerivationPathValue | null>(null);
+
+  const disabledNext = derivationMode
+    ? derivationPath === null
+    : loadPath || selectAccountAddresses.length === 0;
+
+  const onClickNext = useCallback((): void => {
+    if (derivationMode) {
+      if (derivationPath) {
+        addAccountByPath(derivationPath.account, derivationPath.change, derivationPath.addressIndex);
+      }
+      return;
+    }
+    onClickNextButton();
+  }, [derivationMode, derivationPath, addAccountByPath, onClickNextButton]);
 
   return (
     <WebMain>
@@ -42,12 +64,21 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
         isLoading={loadPath}
         loadAccounts={onClickLoadMore}
         select={onClickSelectButton}
+        derivation={{
+          active: derivationMode,
+          onToggle: (): void => {
+            setDerivationPath(null);
+            setDerivationMode((prev) => !prev);
+          },
+          deriveAddress: deriveAddressByPath,
+          onChange: setDerivationPath,
+        }}
       />
       <WebButton
         figure='primary'
         size='full'
-        disabled={loadPath || selectAccountAddresses.length === 0}
-        onClick={onClickNextButton}
+        disabled={disabledNext}
+        onClick={onClickNext}
         text='Next'
         rightIcon='chevronRight'
       />

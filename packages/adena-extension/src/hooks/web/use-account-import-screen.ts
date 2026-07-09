@@ -32,6 +32,8 @@ export type UseAccountImportReturn = {
   storedAccounts: Account[];
   loadedAccounts: Account[];
   loadAccounts: () => Promise<void>;
+  deriveAddressByPath: (account: number, change: number, addressIndex: number) => Promise<string>;
+  addAccountByPath: (account: number, change: number, addressIndex: number) => Promise<void>;
   selectedAddresses: string[];
   selectAccount: (address: string) => void;
   errMsg: string;
@@ -255,8 +257,8 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
       const range = Array.from({ length: 5 }, (_, index) => index + startIndex);
 
       const accounts: Account[] = [];
-      for (const hdPath of range) {
-        const account = await SeedAccount.createBy(keyring, 'Account', hdPath, hdPath);
+      for (const addressIndex of range) {
+        const account = await SeedAccount.createBy(keyring, 'Account', addressIndex, addressIndex);
         accounts.push(account);
       }
 
@@ -266,6 +268,25 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
       setIsLoadingAccounts(false);
       setLoadedAccounts(currentAccounts);
     });
+  };
+
+  // Derives the address for an exact path, used for the "Address" preview in the
+  // Set Derivation Path editor.
+  const deriveAddressByPath = async (
+    account: number,
+    change: number,
+    addressIndex: number,
+  ): Promise<string> => {
+    if (!generatedKeyring || !isHDWalletKeyring(generatedKeyring)) {
+      return '';
+    }
+    const seedAccount = await SeedAccount.createBy(
+      generatedKeyring,
+      'Account',
+      { account, change, addressIndex },
+      addressIndex,
+    );
+    return seedAccount.getAddress(chain.bech32Prefix);
   };
 
   const addAccountWith = async (
@@ -294,6 +315,46 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     return clone;
   };
 
+  // Adds a single account at the exact user-entered derivation path (used by the
+  // "Set Derivation Path" flow instead of the checkbox selection).
+  const addAccountByPath = async (
+    account: number,
+    change: number,
+    addressIndex: number,
+  ): Promise<void> => {
+    if (!generatedKeyring || !isHDWalletKeyring(generatedKeyring)) {
+      return;
+    }
+
+    const entropy = mnemonicToEntropy(inputValue);
+    const baseWallet = wallet.clone();
+    const storedKeyring = baseWallet.keyrings
+      .filter(isHDWalletKeyring)
+      .find((keyring) => keyring.mnemonicEntropy === entropy);
+    const keyring = storedKeyring || (await HDWalletKeyring.fromMnemonic(inputValue));
+
+    const seedAccount = await SeedAccount.createBy(
+      keyring,
+      'Account',
+      { account, change, addressIndex },
+      addressIndex,
+    );
+
+    const derivedAddress = await seedAccount.getAddress(chain.bech32Prefix);
+    const alreadyStored = await Promise.all(
+      wallet.accounts.map((stored) => stored.getAddress(chain.bech32Prefix)),
+    ).then((addresses) => addresses.includes(derivedAddress));
+    if (alreadyStored) {
+      setErrMsg('Account already registered');
+      return;
+    }
+
+    const resultWallet = await addAccountWith(baseWallet, keyring, seedAccount);
+    await updateWallet(resultWallet);
+    setInputValue('');
+    navigate(RoutePath.WebAccountAddedComplete);
+  };
+
   return {
     indicatorInfo,
     isValidForm,
@@ -312,6 +373,8 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     selectAccount,
     loadedAccounts,
     loadAccounts,
+    deriveAddressByPath,
+    addAccountByPath,
     onClickGoBack,
     onClickNext,
   };

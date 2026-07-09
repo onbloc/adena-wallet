@@ -22,6 +22,8 @@ export type AccountInfoType = {
   index: number;
   address: string;
   hdPath: number;
+  accountIndex?: number;
+  changeIndex?: number;
   stored: boolean;
   selected: boolean;
 };
@@ -34,6 +36,8 @@ export type useSelectAccountScreenReturn = {
   onClickSelectButton: (address: string) => void;
   onClickLoadMore: () => Promise<void>;
   onClickNextButton: () => Promise<void>;
+  deriveAddressByPath: (account: number, change: number, addressIndex: number) => Promise<string>;
+  addAccountByPath: (account: number, change: number, addressIndex: number) => Promise<void>;
 };
 
 const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
@@ -106,6 +110,31 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
     setLoadPath(false);
   };
 
+  // Derives the address for an exact path via the device, for the live preview.
+  const deriveAddressByPath = async (
+    account: number,
+    change: number,
+    addressIndex: number,
+  ): Promise<string> => {
+    const transport = await AdenaLedgerConnector.openConnected();
+    if (!transport) {
+      return '';
+    }
+    try {
+      const keyring = await LedgerKeyring.fromLedger(AdenaLedgerConnector.fromTransport(transport));
+      const ledgerAccount = await LedgerAccount.createBy(keyring, 'Ledger', {
+        account,
+        change,
+        addressIndex,
+      });
+      return await ledgerAccount.getAddress(addressPrefix);
+    } catch {
+      return '';
+    } finally {
+      await transport.close();
+    }
+  };
+
   const onClickNextButton = async (): Promise<void> => {
     const savedAccounts: Array<LedgerAccount> = [];
     for (const account of accounts) {
@@ -165,15 +194,60 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
     }
   };
 
+  // Adds a single Ledger account at the exact user-entered derivation path (used
+  // by the "Set Derivation Path" flow instead of the checkbox selection).
+  const addAccountByPath = async (
+    account: number,
+    change: number,
+    addressIndex: number,
+  ): Promise<void> => {
+    const transport = await AdenaLedgerConnector.openConnected();
+    if (!transport) {
+      return;
+    }
+    const keyring = await LedgerKeyring.fromLedger(AdenaLedgerConnector.fromTransport(transport));
+    const ledgerAccount = await LedgerAccount.createBy(keyring, `Ledger ${addressIndex + 1}`, {
+      account,
+      change,
+      addressIndex,
+    });
+    const accountData = {
+      ...ledgerAccount.toData(),
+      name: `Ledger ${addressIndex + 1}`,
+    };
+    await transport.close();
+
+    if (wallet) {
+      const cloneWallet = wallet.clone();
+      cloneWallet.addKeyring(keyring);
+      const addedAccount = LedgerAccount.fromData(accountData);
+      cloneWallet.addAccount(addedAccount);
+      await accountService.changeCurrentAccount(addedAccount);
+      await updateWallet(cloneWallet);
+      navigate(RoutePath.WebAccountAddedComplete);
+    } else {
+      const newWallet = new AdenaWallet({
+        accounts: [accountData],
+        keyrings: [keyring.toData()],
+        currentAccountId: accountData.id,
+      });
+      pendingWalletStore.set(newWallet);
+      navigate(RoutePath.WebCreatePassword);
+    }
+  };
+
   const mapAccountInfo = async (account: Account, index: number): Promise<AccountInfoType> => {
     const address = await account.getAddress(addressPrefix);
-    const hdPath = account.toData().hdPath ?? 0;
+    const data = account.toData();
+    const hdPath = data.hdPath ?? 0;
     const stored = walletAddressList.includes(address);
     const selected = selectAccountAddresses.includes(address);
     return {
       index,
       address,
       hdPath,
+      accountIndex: data.accountIndex,
+      changeIndex: data.changeIndex,
       stored,
       selected,
     };
@@ -191,6 +265,8 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
     onClickSelectButton,
     onClickLoadMore,
     onClickNextButton,
+    deriveAddressByPath,
+    addAccountByPath,
   };
 };
 
