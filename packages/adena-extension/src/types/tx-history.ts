@@ -30,6 +30,8 @@ export interface TransactionInfo {
   originFrom?: string;
   to?: string;
   originTo?: string;
+  callerAddress?: string;
+  sessionAddress?: string;
   networkFee?: {
     value: string;
     denom: string;

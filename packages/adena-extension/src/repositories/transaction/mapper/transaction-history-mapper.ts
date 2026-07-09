@@ -109,6 +109,23 @@ export class TransactionHistoryMapper {
     historyItem: TransactionHistoryItem,
     callerAddress: string,
   ): TransactionInfo {
+    const mapped = TransactionHistoryMapper.mappedHistoryItemByType(historyItem, callerAddress);
+
+    // Session attribution is carried by the transaction itself, so it holds
+    // regardless of which account is currently selected — a session-signed tx
+    // shows its master (callerAddress) / session (sessionAddress) pair even when
+    // viewed from the master account's history.
+    return {
+      ...mapped,
+      callerAddress: historyItem.callerAddress || '',
+      sessionAddress: historyItem.sessionAddress || '',
+    };
+  }
+
+  private static mappedHistoryItemByType(
+    historyItem: TransactionHistoryItem,
+    callerAddress: string,
+  ): TransactionInfo {
     if (historyItem.messageCount > 1) {
       return TransactionHistoryMapper.mappedHistoryItemMultiCall(historyItem, callerAddress);
     }
