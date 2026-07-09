@@ -1,4 +1,5 @@
 import {
+  getLoopbackGnoConnectChainId,
   GnoMessageInfo,
   isAllowedGnoConnectOrigin,
   normalizeGnoConnectRpc,
@@ -258,6 +259,22 @@ describe('isAllowedGnoConnectOrigin', () => {
 
   it('rejects subdomain takeover patterns', () => {
     expect(isAllowedGnoConnectOrigin('https://malicious.gno.land')).toBe(false);
+  });
+
+  it('never statically trusts loopback origins', () => {
+    expect(isAllowedGnoConnectOrigin('http://127.0.0.1:8888')).toBe(false);
+    expect(isAllowedGnoConnectOrigin('http://localhost:8888')).toBe(false);
+  });
+});
+
+describe('getLoopbackGnoConnectChainId', () => {
+  it('returns the chainId a known loopback origin may act as', () => {
+    expect(getLoopbackGnoConnectChainId('http://127.0.0.1:8888')).toBe('dev');
+  });
+
+  it('returns null for non-loopback or unknown origins', () => {
+    expect(getLoopbackGnoConnectChainId('https://gno.land')).toBeNull();
+    expect(getLoopbackGnoConnectChainId('http://127.0.0.1:9999')).toBeNull();
   });
 });
 

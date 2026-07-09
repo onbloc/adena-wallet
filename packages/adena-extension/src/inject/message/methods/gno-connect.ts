@@ -1,4 +1,5 @@
 import {
+  getLoopbackOriginChainId,
   GNO_CONNECT_ALLOWED_ORIGINS,
   LOOPBACK_LOCAL_HOST_PATTERN,
 } from '@common/constants/gno-connect-allowlist.constant';
@@ -362,11 +363,25 @@ export function shouldInterceptExecForm(target: EventTarget | null): boolean {
 }
 
 /**
- * Checks whether the given dApp origin is allowed to declare RPC/chainId via
- * gnoconnect meta tags. Strict equality on the full origin (scheme + host + port).
+ * Checks whether the given dApp origin is unconditionally allowed to declare
+ * RPC/chainId via gnoconnect meta tags. Only remote (https) gno origins qualify;
+ * strict equality on the full origin (scheme + host + port). Loopback origins are
+ * never statically trusted — use getLoopbackGnoConnectChainId with a runtime
+ * active-network check instead.
  */
 export function isAllowedGnoConnectOrigin(origin: string): boolean {
   return GNO_CONNECT_ALLOWED_ORIGINS.includes(origin);
+}
+
+/**
+ * For a loopback gno origin (e.g. a local dev node), returns the chainId it is
+ * permitted to act as, per chains.json, or null if the origin is not a known
+ * loopback gno origin. Callers MUST additionally verify this chainId is the
+ * wallet's active network before honoring the origin's gnoconnect declarations,
+ * so an arbitrary local process holding the port cannot drive the wallet.
+ */
+export function getLoopbackGnoConnectChainId(origin: string): string | null {
+  return getLoopbackOriginChainId(origin);
 }
 
 /**
