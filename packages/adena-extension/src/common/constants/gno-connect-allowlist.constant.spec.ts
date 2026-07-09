@@ -14,8 +14,7 @@ describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
     return result;
   };
 
-  it('production build trusts only https chains.json origins, never loopback', () => {
-    process.env.NODE_ENV = 'production';
+  it('trusts exactly the gnoUrl origins declared in chains.json', () => {
     const result = loadAllowlist();
 
     expect(result).toEqual(
@@ -24,29 +23,23 @@ describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
         'https://betanet.testnets.gno.land',
         'https://staging.gno.land',
         'https://test13.testnets.gno.land',
+        'http://127.0.0.1:8888',
       ]),
     );
-    // In production no loopback origin is trusted: any local process holding the
-    // port could otherwise inject RPC endpoints into the wallet flow.
-    expect(result.filter((url) => url.startsWith('http://'))).toEqual([]);
   });
 
-  it('development build also trusts loopback origins from chains.json', () => {
+  it('trusts the local (loopback) origin regardless of build mode', () => {
+    // The Local network must support gnoconnect txlinks even in production builds.
+    process.env.NODE_ENV = 'production';
+    const prodResult = loadAllowlist();
     process.env.NODE_ENV = 'development';
-    const result = loadAllowlist();
+    const devResult = loadAllowlist();
 
-    expect(result).toEqual(expect.arrayContaining(['https://gno.land', 'http://127.0.0.1:8888']));
-  });
-
-  it('test environment behaves like development (non-production)', () => {
-    process.env.NODE_ENV = 'test';
-    const result = loadAllowlist();
-
-    expect(result).toContain('http://127.0.0.1:8888');
+    expect(prodResult).toContain('http://127.0.0.1:8888');
+    expect(new Set(prodResult)).toEqual(new Set(devResult));
   });
 
   it('contains no duplicates', () => {
-    process.env.NODE_ENV = 'production';
     const result = loadAllowlist();
 
     expect(new Set(result).size).toBe(result.length);

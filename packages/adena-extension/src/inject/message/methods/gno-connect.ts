@@ -1,4 +1,7 @@
-import { GNO_CONNECT_ALLOWED_ORIGINS } from '@common/constants/gno-connect-allowlist.constant';
+import {
+  GNO_CONNECT_ALLOWED_ORIGINS,
+  LOOPBACK_LOCAL_HOST_PATTERN,
+} from '@common/constants/gno-connect-allowlist.constant';
 import {
   GNO_CHAIN_ID_META_TAG,
   GNO_CONNECT_PREFIX,
@@ -64,7 +67,7 @@ export function parseGnoConnectInfo(): GnoConnectInfo | null {
 
     switch (name) {
       case GNO_RPC_META_TAG:
-        gnoConnectInfo.rpc = getUrlPathWithoutProtocol(content);
+        gnoConnectInfo.rpc = normalizeGnoConnectRpc(content);
         break;
       case GNO_CHAIN_ID_META_TAG:
         gnoConnectInfo.chainId = content;
@@ -366,12 +369,26 @@ export function isAllowedGnoConnectOrigin(origin: string): boolean {
   return GNO_CONNECT_ALLOWED_ORIGINS.includes(origin);
 }
 
-export function getUrlPathWithoutProtocol(url: string): string {
+/**
+ * Normalizes a gnoconnect RPC endpoint (declared via meta tag) into a fetchable
+ * http(s) URL.
+ *
+ * gnoweb may declare the RPC with an http(s) scheme (kept as-is), a non-http
+ * scheme such as `tcp://` (as local gno nodes commonly do), or no scheme at all.
+ * Downstream RPC clients (tm2-rpc HttpClient, fetch, axios) reject anything
+ * without an http(s) protocol, so any non-http input has its scheme replaced:
+ * loopback hosts map to http://, all others to https://.
+ */
+export function normalizeGnoConnectRpc(url: string): string {
   const trimmedUrl = url.trim();
 
-  if (hasHttpProtocol(trimmedUrl)) {
+  if (trimmedUrl === '' || hasHttpProtocol(trimmedUrl)) {
     return trimmedUrl;
   }
 
-  return trimmedUrl.replace(/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//, '');
+  const withoutScheme = trimmedUrl.replace(/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//, '');
+  const host = withoutScheme.split('/')[0];
+  const protocol = LOOPBACK_LOCAL_HOST_PATTERN.test(host) ? 'http://' : 'https://';
+
+  return `${protocol}${withoutScheme}`;
 }
