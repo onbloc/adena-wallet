@@ -1,3 +1,4 @@
+import { HdPathLike } from '../wallet/keyring/hd-path';
 import { Keyring } from '../wallet/keyring/keyring';
 import {
   isHDWalletKeyring,
@@ -35,7 +36,7 @@ function nonEmpty(v: string | undefined): string | undefined {
 
 export async function resolvePublicKey(
   keyring: Keyring,
-  hdPath: number | undefined,
+  hdPath: HdPathLike | undefined,
 ): Promise<Uint8Array> {
   if (isHDWalletKeyring(keyring)) return keyring.getPublicKey(hdPath ?? 0);
   if (isPrivateKeyKeyring(keyring)) return keyring.publicKey;
@@ -49,7 +50,5 @@ export async function resolvePublicKey(
     throw new Error('Multisig accounts do not support Cosmos chains');
   }
 
-  throw new Error(
-    `Keyring type ${keyring.type} cannot sign Cosmos transactions`,
-  );
+  throw new Error(`Keyring type ${keyring.type} cannot sign Cosmos transactions`);
 }

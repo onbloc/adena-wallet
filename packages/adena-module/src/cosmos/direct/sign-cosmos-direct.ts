@@ -2,6 +2,7 @@ import { sha256 } from '@cosmjs/crypto';
 import { toHex } from '@cosmjs/encoding';
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 
+import { HdPathLike } from '../../wallet/keyring/hd-path';
 import { Keyring } from '../../wallet/keyring/keyring';
 import { CosmosProvider } from '../providers/cosmos-provider';
 import { resolveAccount, resolvePublicKey } from '../signer-helpers';
@@ -13,7 +14,7 @@ export interface SignCosmosDirectParams {
   document: CosmosDocument;
   keyring: Keyring;
   cosmosProvider: CosmosProvider;
-  hdPath?: number;
+  hdPath?: HdPathLike;
 }
 
 /**
@@ -27,15 +28,10 @@ export interface SignCosmosDirectParams {
  *     → keyring.signRaw(signBytes) → 64-byte r‖s signature
  *     → TxRaw.encode(bodyBytes, authInfoBytes, [signature]) → protobuf bytes
  */
-export async function signCosmosDirect(
-  params: SignCosmosDirectParams,
-): Promise<SignedCosmosTx> {
+export async function signCosmosDirect(params: SignCosmosDirectParams): Promise<SignedCosmosTx> {
   const { document, keyring, cosmosProvider, hdPath } = params;
 
-  const { accountNumber, sequence } = await resolveAccount(
-    document,
-    cosmosProvider,
-  );
+  const { accountNumber, sequence } = await resolveAccount(document, cosmosProvider);
 
   const publicKey = await resolvePublicKey(keyring, hdPath);
 
