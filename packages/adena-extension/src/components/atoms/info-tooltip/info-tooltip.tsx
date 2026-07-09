@@ -1,11 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import IconHelp from '@assets/icon-help';
-import { InfoTooltipContainer, InfoTooltipTooltipBoxWrapper } from './info-tooltip.styles';
+import {
+  InfoTooltipContainer,
+  InfoTooltipTooltipBoxWrapper,
+  InfoTooltipVariant,
+} from './info-tooltip.styles';
 
 export interface InfoTooltipProps {
   content: React.ReactNode;
   iconColor?: string;
+  // 'popover' matches the header hover popups; defaults to the original tooltip.
+  variant?: InfoTooltipVariant;
 }
 
 interface TooltipPosition {
@@ -20,7 +26,7 @@ interface ArrowPosition {
   transform: string;
 }
 
-const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, iconColor }) => {
+const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, iconColor, variant = 'default' }) => {
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({});
   const [arrowPosition, setArrowPosition] = useState<ArrowPosition>({
@@ -42,12 +48,18 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, iconColor }) => {
     const containerRect = containerRef.current.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
 
-    const tooltipWidth = 300;
+    // The popover variant matches Figma: a 320px box centered on the screen
+    // (symmetric side margins) with the caret offset to point at the icon. The
+    // default variant centers the box on the icon instead.
+    const tooltipWidth = variant === 'popover' ? 320 : 300;
     const margin = 8;
     const containerCenterX = containerRect.left + containerRect.width / 2;
     const containerTop = containerRect.top;
 
-    let leftPosition = containerCenterX - tooltipWidth / 2;
+    let leftPosition =
+      variant === 'popover'
+        ? (viewportWidth - tooltipWidth) / 2
+        : containerCenterX - tooltipWidth / 2;
 
     const containerRelativeToTooltip = containerCenterX - leftPosition;
     let arrowLeft = (containerRelativeToTooltip / tooltipWidth) * 100;
@@ -90,6 +102,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, iconColor }) => {
           ref={tooltipRef}
           $position={tooltipPosition}
           $arrowPosition={arrowPosition}
+          $variant={variant}
         >
           {content}
         </InfoTooltipTooltipBoxWrapper>

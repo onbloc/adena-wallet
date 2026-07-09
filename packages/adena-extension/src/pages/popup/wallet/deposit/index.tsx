@@ -7,6 +7,7 @@ import { CHAIN_ICON_BY_GROUP } from '@assets/icons/cosmos-icons';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { Button, Copy, inputStyle, Text } from '@components/atoms';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
+import { InfoTooltipStrong } from '@components/atoms/info-tooltip/info-tooltip.styles';
 import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
 import { useAccountName } from '@hooks/use-account-name';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -27,8 +28,9 @@ const CHAIN_DISPLAY_NAME: Record<string, string> = {
 // address the QR encodes.
 const MASTER_DEPOSIT_TOOLTIP = (
   <>
-    This is the address of the <b>Master Account</b> of this session. Tokens sent to this address
-    will arrive in your master account.
+    This is the address of the <InfoTooltipStrong>Master Account</InfoTooltipStrong> of this
+    session. Tokens sent to this address will arrive in your{' '}
+    <InfoTooltipStrong>Master Account</InfoTooltipStrong>.
   </>
 );
 
@@ -152,7 +154,7 @@ export const Deposit = (): JSX.Element => {
             {isSession ? (
               <MasterLabel>
                 Master
-                <InfoTooltip content={MASTER_DEPOSIT_TOOLTIP} />
+                <InfoTooltip content={MASTER_DEPOSIT_TOOLTIP} variant='popover' />
               </MasterLabel>
             ) : (
               formatNickname(accountNames[currentAccount.id] || currentAccount.name, 12)
