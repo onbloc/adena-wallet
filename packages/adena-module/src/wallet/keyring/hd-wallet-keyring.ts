@@ -1,5 +1,4 @@
 import {
-  generateKeyPair,
   Provider,
   TransactionEndpoint,
   Tx,
@@ -11,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { Bip39, EnglishMnemonic, entropyToMnemonic, mnemonicToEntropy } from '../../crypto';
 import { Document } from './../..';
+import { generateKeyPairByHdPath, getAddressIndex, HdPathLike } from './hd-path';
 import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
 import { signGnoDocument } from './sign-gno-document';
 import { signRawWithPrivateKey } from './sign-raw-util';
@@ -34,17 +34,17 @@ export class HDWalletKeyring implements Keyring {
     return entropyToMnemonic(this.mnemonicEntropy);
   }
 
-  async getKeypair(hdPath: number) {
-    const { privateKey, publicKey } = await generateKeyPair(this.getMnemonic(), hdPath);
+  async getKeypair(hdPath: HdPathLike) {
+    const { privateKey, publicKey } = await generateKeyPairByHdPath(this.getMnemonic(), hdPath);
     return { privateKey, publicKey: publicKey };
   }
 
-  async getPrivateKey(hdPath: number) {
+  async getPrivateKey(hdPath: HdPathLike) {
     const { privateKey } = await this.getKeypair(hdPath);
     return privateKey;
   }
 
-  async getPublicKey(hdPath: number) {
+  async getPublicKey(hdPath: HdPathLike) {
     const { publicKey } = await this.getKeypair(hdPath);
     return publicKey;
   }
@@ -64,7 +64,7 @@ export class HDWalletKeyring implements Keyring {
   }
 
   async signRaw(bytes: Uint8Array, opts?: SignRawOptions): Promise<Uint8Array> {
-    const hdPath = opts?.hdPath ?? 0;
+    const hdPath: HdPathLike = opts?.hdPath ?? 0;
     const privateKey = await this.getPrivateKey(hdPath);
     try {
       return await signRawWithPrivateKey(bytes, privateKey);
@@ -78,7 +78,7 @@ export class HDWalletKeyring implements Keyring {
   async sign(
     provider: Provider,
     document: Document,
-    hdPath: number = 0,
+    hdPath: HdPathLike = 0,
   ): Promise<{
     signed: Tx;
     signature: TxSignature[];
@@ -86,14 +86,20 @@ export class HDWalletKeyring implements Keyring {
     return signGnoDocument(provider, document, this, { hdPath });
   }
 
-  async broadcastTxSync(provider: Provider, signedTx: Tx, hdPath: number = 0) {
-    const wallet = await Tm2Wallet.fromMnemonic(this.getMnemonic(), { accountIndex: hdPath });
+  async broadcastTxSync(provider: Provider, signedTx: Tx, hdPath: HdPathLike = 0) {
+    // Broadcasting an already-signed tx does not use the derived key; only the
+    // provider connection matters. accountIndex is passed for parity but is inert.
+    const wallet = await Tm2Wallet.fromMnemonic(this.getMnemonic(), {
+      accountIndex: getAddressIndex(hdPath),
+    });
     wallet.connect(provider);
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_SYNC);
   }
 
-  async broadcastTxCommit(provider: Provider, signedTx: Tx, hdPath: number = 0) {
-    const wallet = await Tm2Wallet.fromMnemonic(this.getMnemonic(), { accountIndex: hdPath });
+  async broadcastTxCommit(provider: Provider, signedTx: Tx, hdPath: HdPathLike = 0) {
+    const wallet = await Tm2Wallet.fromMnemonic(this.getMnemonic(), {
+      accountIndex: getAddressIndex(hdPath),
+    });
     wallet.connect(provider);
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);
   }

@@ -1,16 +1,12 @@
 import { LedgerConnector } from '@cosmjs/ledger-amino';
-import {
-  generateHDPath,
-  Provider,
-  TransactionEndpoint,
-  Tx,
-  Wallet as Tm2Wallet,
-} from '@gnolang/tm2-js-client';
+import { Provider, TransactionEndpoint, Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
-import { LedgerError, classifyLedgerError } from '../../ledger/ledger-errors';
-import { Document, makeSignedTx, useTm2Wallet } from './../..';
+import { classifyLedgerError, LedgerError } from '../../ledger/ledger-errors';
+import { Document, makeSignedTx } from './../..';
+import { getAddressIndex, HdPathLike, toSlip10Path } from './hd-path';
 import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
+import { FullPathLedgerSigner } from './ledger-signer';
 
 export class LedgerKeyring implements Keyring {
   public readonly id: string;
@@ -30,11 +26,11 @@ export class LedgerKeyring implements Keyring {
     this.connector = connector;
   }
 
-  getPublicKey(hdPath: number) {
+  getPublicKey(hdPath: HdPathLike) {
     if (!this.connector) {
       throw new Error('Ledger connector does not found');
     }
-    const gnoHdPath = generateHDPath(hdPath);
+    const gnoHdPath = toSlip10Path(hdPath);
     return this.connector.getPubkey(gnoHdPath);
   }
 
@@ -53,7 +49,7 @@ export class LedgerKeyring implements Keyring {
     if (!this.connector) {
       throw new LedgerError('TransportFailed', 'Ledger connector is not attached');
     }
-    const hdPath = generateHDPath(opts?.hdPath ?? 0);
+    const hdPath = toSlip10Path(opts?.hdPath ?? 0);
     try {
       return await this.connector.sign(bytes, hdPath);
     } catch (err) {
@@ -61,13 +57,15 @@ export class LedgerKeyring implements Keyring {
     }
   }
 
-  async sign(provider: Provider, document: Document, hdPath: number = 0) {
+  async sign(provider: Provider, document: Document, hdPath: HdPathLike = 0) {
     if (!this.connector) {
       throw new Error('Ledger connector does not found');
     }
-    const wallet = await useTm2Wallet(document).fromLedger(this.connector as any, {
-      accountIndex: hdPath,
-    });
+    // tm2's Wallet.fromLedger only accepts an address index (account'/change fixed
+    // to 0). Inject a full-path signer via Wallet.fromSigner so the device can sign
+    // at any Adena path, keeping tm2's exact byte pipeline.
+    const signer = new FullPathLedgerSigner(this.connector, hdPath);
+    const wallet = await Tm2Wallet.fromSigner(signer);
     wallet.connect(provider);
     return this.signByWallet(wallet, document);
   }
@@ -80,23 +78,24 @@ export class LedgerKeyring implements Keyring {
     };
   }
 
-  async broadcastTxSync(provider: Provider, signedTx: Tx, hdPath: number = 0) {
+  async broadcastTxSync(provider: Provider, signedTx: Tx, hdPath: HdPathLike = 0) {
     if (!this.connector) {
       throw new Error('Ledger connector does not found');
     }
+    // Broadcasting an already-signed tx does not derive a key; accountIndex is inert.
     const wallet = Tm2Wallet.fromLedger(this.connector, {
-      accountIndex: hdPath,
+      accountIndex: getAddressIndex(hdPath),
     });
     wallet.connect(provider);
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_SYNC);
   }
 
-  async broadcastTxCommit(provider: Provider, signedTx: Tx, hdPath: number = 0) {
+  async broadcastTxCommit(provider: Provider, signedTx: Tx, hdPath: HdPathLike = 0) {
     if (!this.connector) {
       throw new Error('Ledger connector does not found');
     }
     const wallet = Tm2Wallet.fromLedger(this.connector, {
-      accountIndex: hdPath,
+      accountIndex: getAddressIndex(hdPath),
     });
     wallet.connect(provider);
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);
