@@ -267,9 +267,11 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
       : undefined;
   const sessionConfig = isSession ? (currentAccount as SessionAccount).sessionConfig : null;
   const sessionRevoked = isRevokedSessionAccount(currentAccount, currentAddress, sessions);
+  // Stop polling once revoked: the popover then shows the revoked variant and
+  // no longer reads the chain overview, so there is nothing to keep current.
   const sessionChainData = useCurrentSessionChainData(
     sessionConfig?.masterAddress,
-    isSession ? currentAddress ?? undefined : undefined,
+    isSession && !sessionRevoked ? currentAddress ?? undefined : undefined,
   );
 
   const handleOpenAccount = useCallback(
