@@ -1,10 +1,10 @@
 import { KeyringType } from '../keyring/keyring';
 import { AirgapAccount } from './airgap-account';
 import { LedgerAccount } from './ledger-account';
-import { SeedAccount } from './seed-account';
-import { SingleAccount } from './single-account';
 import { MultisigAccount, MultisigConfig, SignerPublicKeyInfo } from './multisig-account';
+import { SeedAccount } from './seed-account';
 import { SessionAccount } from './session-account';
+import { SingleAccount } from './single-account';
 
 export interface SessionConfig {
   masterAddress: string;
@@ -33,7 +33,11 @@ export interface AccountInfo {
   type: KeyringType;
   name: string;
   keyringId: string;
+  // hdPath is the BIP44 address index. account'/change default to 0 when the
+  // optional fields below are absent, preserving pre-custom-path accounts.
   hdPath?: number;
+  accountIndex?: number;
+  changeIndex?: number;
   publicKey: number[];
   addressBytes?: number[];
   multisigConfig?: MultisigConfig;

@@ -1,7 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Account, AccountInfo } from './account';
-import { isLedgerKeyring, Keyring, KeyringType } from '../../wallet/keyring';
+import {
+  HdPath,
+  HdPathLike,
+  isLedgerKeyring,
+  Keyring,
+  KeyringType,
+  toHdPath,
+} from '../../wallet/keyring';
 import { publicKeyToAddress } from './../../utils/address';
+import { Account, AccountInfo } from './account';
 
 export class LedgerAccount implements Account {
   public readonly id;
@@ -12,20 +19,41 @@ export class LedgerAccount implements Account {
 
   public readonly hdPath: number;
 
+  public readonly accountIndex: number;
+
+  public readonly changeIndex: number;
+
   public readonly publicKey: Uint8Array;
 
   private _index: number;
 
   private _name: string;
 
-  constructor({ id, index, keyringId, type, publicKey, name, hdPath }: AccountInfo) {
+  constructor({
+    id,
+    index,
+    keyringId,
+    type,
+    publicKey,
+    name,
+    hdPath,
+    accountIndex,
+    changeIndex,
+  }: AccountInfo) {
     this.id = id || uuidv4();
     this._index = index;
     this.keyringId = keyringId;
     this.type = type;
     this.hdPath = hdPath ?? 0;
+    this.accountIndex = accountIndex ?? 0;
+    this.changeIndex = changeIndex ?? 0;
     this.publicKey = Uint8Array.from(publicKey);
     this._name = name;
+  }
+
+  // The full BIP44 derivation path (account'/change/addressIndex).
+  public get derivationPath(): HdPath {
+    return { account: this.accountIndex, change: this.changeIndex, addressIndex: this.hdPath };
   }
 
   public get index() {
@@ -55,17 +83,20 @@ export class LedgerAccount implements Account {
       type: this.type,
       keyringId: this.keyringId,
       hdPath: this.hdPath,
+      accountIndex: this.accountIndex,
+      changeIndex: this.changeIndex,
       publicKey: Array.from(this.publicKey),
       name: this._name,
     };
   }
 
-  public static async createBy(keyring: Keyring, name: string, hdPath: number) {
+  public static async createBy(keyring: Keyring, name: string, hdPath: HdPathLike) {
     if (!isLedgerKeyring(keyring)) {
       throw new Error('Invalid account type');
     }
 
     const publicKey = await keyring.getPublicKey(hdPath);
+    const { account, change, addressIndex } = toHdPath(hdPath);
     const { id: keyringId, type } = keyring;
     return new LedgerAccount({
       keyringId,
@@ -73,7 +104,9 @@ export class LedgerAccount implements Account {
       type,
       publicKey: Array.from(publicKey),
       name,
-      hdPath,
+      hdPath: addressIndex,
+      accountIndex: account,
+      changeIndex: change,
     });
   }
 
@@ -84,6 +117,8 @@ export class LedgerAccount implements Account {
       type: accountInfo.type,
       keyringId: accountInfo.keyringId,
       hdPath: accountInfo.hdPath,
+      accountIndex: accountInfo.accountIndex,
+      changeIndex: accountInfo.changeIndex,
       publicKey: accountInfo.publicKey,
       name: accountInfo.name,
     });

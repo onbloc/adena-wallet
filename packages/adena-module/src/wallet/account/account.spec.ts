@@ -133,3 +133,42 @@ describe('hasPrivateKeyAccount', () => {
     expect(hasPrivateKeyAccount(makeAccount(BASE_SESSION_INFO))).toBe(true);
   });
 });
+
+describe('derivation path (account/change/addressIndex)', () => {
+  it('defaults account/change to 0 for pre-custom-path accounts (backward compat)', () => {
+    // BASE_SEED_INFO has no accountIndex/changeIndex, mirroring stored data.
+    const seed = new SeedAccount({ ...BASE_SEED_INFO, hdPath: 3 });
+    expect(seed.accountIndex).toBe(0);
+    expect(seed.changeIndex).toBe(0);
+    expect(seed.derivationPath).toEqual({ account: 0, change: 0, addressIndex: 3 });
+  });
+
+  it('exposes a custom derivation path and round-trips through toData/fromData', () => {
+    const seed = new SeedAccount({
+      ...BASE_SEED_INFO,
+      hdPath: 4,
+      accountIndex: 2,
+      changeIndex: 1,
+    });
+    expect(seed.derivationPath).toEqual({ account: 2, change: 1, addressIndex: 4 });
+
+    const restored = SeedAccount.fromData(seed.toData());
+    expect(restored.derivationPath).toEqual({ account: 2, change: 1, addressIndex: 4 });
+    expect(restored.toData()).toMatchObject({ hdPath: 4, accountIndex: 2, changeIndex: 1 });
+  });
+
+  it('applies the same rules to Ledger accounts', () => {
+    const ledger = new LedgerAccount({
+      ...BASE_LEDGER_INFO,
+      hdPath: 7,
+      accountIndex: 5,
+      changeIndex: 0,
+    });
+    expect(ledger.derivationPath).toEqual({ account: 5, change: 0, addressIndex: 7 });
+    expect(LedgerAccount.fromData(ledger.toData()).derivationPath).toEqual({
+      account: 5,
+      change: 0,
+      addressIndex: 7,
+    });
+  });
+});
