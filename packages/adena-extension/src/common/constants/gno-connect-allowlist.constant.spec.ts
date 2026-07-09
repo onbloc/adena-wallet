@@ -1,24 +1,12 @@
+import {
+  getLoopbackOriginChainId,
+  GNO_CONNECT_ALLOWED_ORIGINS,
+  isLoopbackOrigin,
+} from './gno-connect-allowlist.constant';
+
 describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
-  const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
-
-  afterEach(() => {
-    process.env.NODE_ENV = ORIGINAL_NODE_ENV;
-  });
-
-  const loadAllowlist = (): readonly string[] => {
-    let result: readonly string[] = [];
-    jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      result = require('./gno-connect-allowlist.constant').GNO_CONNECT_ALLOWED_ORIGINS;
-    });
-    return result;
-  };
-
-  it('production build trusts only https chains.json origins, never loopback', () => {
-    process.env.NODE_ENV = 'production';
-    const result = loadAllowlist();
-
-    expect(result).toEqual(
+  it('statically trusts every https gnoUrl origin declared in chains.json', () => {
+    expect(GNO_CONNECT_ALLOWED_ORIGINS).toEqual(
       expect.arrayContaining([
         'https://gno.land',
         'https://betanet.testnets.gno.land',
@@ -26,29 +14,44 @@ describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
         'https://test13.testnets.gno.land',
       ]),
     );
-    // In production no loopback origin is trusted: any local process holding the
-    // port could otherwise inject RPC endpoints into the wallet flow.
-    expect(result.filter((url) => url.startsWith('http://'))).toEqual([]);
   });
 
-  it('development build also trusts loopback origins from chains.json', () => {
-    process.env.NODE_ENV = 'development';
-    const result = loadAllowlist();
-
-    expect(result).toEqual(expect.arrayContaining(['https://gno.land', 'http://127.0.0.1:8888']));
-  });
-
-  it('test environment behaves like development (non-production)', () => {
-    process.env.NODE_ENV = 'test';
-    const result = loadAllowlist();
-
-    expect(result).toContain('http://127.0.0.1:8888');
+  it('never statically trusts a loopback origin', () => {
+    // Loopback origins are gated at runtime against the wallet's active network,
+    // so they must not appear in the unconditional allowlist.
+    expect(GNO_CONNECT_ALLOWED_ORIGINS.some((origin) => isLoopbackOrigin(origin))).toBe(false);
+    expect(GNO_CONNECT_ALLOWED_ORIGINS).not.toContain('http://127.0.0.1:8888');
   });
 
   it('contains no duplicates', () => {
-    process.env.NODE_ENV = 'production';
-    const result = loadAllowlist();
+    expect(new Set(GNO_CONNECT_ALLOWED_ORIGINS).size).toBe(GNO_CONNECT_ALLOWED_ORIGINS.length);
+  });
+});
 
-    expect(new Set(result).size).toBe(result.length);
+describe('isLoopbackOrigin', () => {
+  it('recognizes plain-http loopback origins', () => {
+    expect(isLoopbackOrigin('http://127.0.0.1:8888')).toBe(true);
+    expect(isLoopbackOrigin('http://localhost:8888')).toBe(true);
+    expect(isLoopbackOrigin('http://127.0.0.1')).toBe(true);
+  });
+
+  it('rejects non-loopback and https origins', () => {
+    expect(isLoopbackOrigin('https://gno.land')).toBe(false);
+    expect(isLoopbackOrigin('https://127.0.0.1:8888')).toBe(false);
+    expect(isLoopbackOrigin('http://evil.example')).toBe(false);
+    // A loopback host embedded in a larger hostname must not match.
+    expect(isLoopbackOrigin('http://127.0.0.1.evil.example')).toBe(false);
+  });
+});
+
+describe('getLoopbackOriginChainId', () => {
+  it('maps a known loopback origin to the chainId that declares it', () => {
+    expect(getLoopbackOriginChainId('http://127.0.0.1:8888')).toBe('dev');
+  });
+
+  it('returns null for https origins and unknown loopback origins', () => {
+    expect(getLoopbackOriginChainId('https://gno.land')).toBeNull();
+    expect(getLoopbackOriginChainId('http://127.0.0.1:9999')).toBeNull();
+    expect(getLoopbackOriginChainId('http://localhost:8888')).toBeNull();
   });
 });

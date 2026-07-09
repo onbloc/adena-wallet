@@ -1,4 +1,8 @@
-import { GNO_CONNECT_ALLOWED_ORIGINS } from '@common/constants/gno-connect-allowlist.constant';
+import {
+  getLoopbackOriginChainId,
+  GNO_CONNECT_ALLOWED_ORIGINS,
+  LOOPBACK_LOCAL_HOST_PATTERN,
+} from '@common/constants/gno-connect-allowlist.constant';
 import {
   GNO_CHAIN_ID_META_TAG,
   GNO_CONNECT_PREFIX,
@@ -64,7 +68,7 @@ export function parseGnoConnectInfo(): GnoConnectInfo | null {
 
     switch (name) {
       case GNO_RPC_META_TAG:
-        gnoConnectInfo.rpc = getUrlPathWithoutProtocol(content);
+        gnoConnectInfo.rpc = normalizeGnoConnectRpc(content);
         break;
       case GNO_CHAIN_ID_META_TAG:
         gnoConnectInfo.chainId = content;
@@ -359,19 +363,70 @@ export function shouldInterceptExecForm(target: EventTarget | null): boolean {
 }
 
 /**
- * Checks whether the given dApp origin is allowed to declare RPC/chainId via
- * gnoconnect meta tags. Strict equality on the full origin (scheme + host + port).
+ * Checks whether the given dApp origin is unconditionally allowed to declare
+ * RPC/chainId via gnoconnect meta tags. Only remote (https) gno origins qualify;
+ * strict equality on the full origin (scheme + host + port). Loopback origins are
+ * never statically trusted — use getLoopbackGnoConnectChainId with a runtime
+ * active-network check instead.
  */
 export function isAllowedGnoConnectOrigin(origin: string): boolean {
   return GNO_CONNECT_ALLOWED_ORIGINS.includes(origin);
 }
 
-export function getUrlPathWithoutProtocol(url: string): string {
+/**
+ * For a loopback gno origin (e.g. a local dev node), returns the chainId it is
+ * permitted to act as, per chains.json, or null if the origin is not a known
+ * loopback gno origin. Callers MUST additionally verify this chainId is the
+ * wallet's active network before honoring the origin's gnoconnect declarations,
+ * so an arbitrary local process holding the port cannot drive the wallet.
+ */
+export function getLoopbackGnoConnectChainId(origin: string): string | null {
+  return getLoopbackOriginChainId(origin);
+}
+
+/**
+ * Runtime trust decision for a loopback gnoconnect origin.
+ *
+ * A loopback origin (e.g. a local dev node) is honored only when BOTH hold:
+ * - the meta-declared chainId equals the chainId chains.json maps the origin to
+ *   (the meta tag is attacker-controllable, so it must not act as a foreign
+ *   chain), and
+ * - that same chainId is the wallet's currently active network (so an arbitrary
+ *   process holding the local port cannot drive the flow while the user is
+ *   elsewhere).
+ *
+ * @param loopbackChainId chainId the origin is permitted to act as (from chains.json)
+ * @param metaChainId chainId the page declares via gnoconnect meta tag
+ * @param activeChainId chainId of the wallet's active network (undefined if unavailable/locked)
+ */
+export function isLoopbackGnoConnectTrusted(
+  loopbackChainId: string,
+  metaChainId: string,
+  activeChainId: string | undefined,
+): boolean {
+  return metaChainId === loopbackChainId && activeChainId === loopbackChainId;
+}
+
+/**
+ * Normalizes a gnoconnect RPC endpoint (declared via meta tag) into a fetchable
+ * http(s) URL.
+ *
+ * gnoweb may declare the RPC with an http(s) scheme (kept as-is), a non-http
+ * scheme such as `tcp://` (as local gno nodes commonly do), or no scheme at all.
+ * Downstream RPC clients (tm2-rpc HttpClient, fetch, axios) reject anything
+ * without an http(s) protocol, so any non-http input has its scheme replaced:
+ * loopback hosts map to http://, all others to https://.
+ */
+export function normalizeGnoConnectRpc(url: string): string {
   const trimmedUrl = url.trim();
 
-  if (hasHttpProtocol(trimmedUrl)) {
+  if (trimmedUrl === '' || hasHttpProtocol(trimmedUrl)) {
     return trimmedUrl;
   }
 
-  return trimmedUrl.replace(/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//, '');
+  const withoutScheme = trimmedUrl.replace(/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//, '');
+  const host = withoutScheme.split('/')[0];
+  const protocol = LOOPBACK_LOCAL_HOST_PATTERN.test(host) ? 'http://' : 'https://';
+
+  return `${protocol}${withoutScheme}`;
 }

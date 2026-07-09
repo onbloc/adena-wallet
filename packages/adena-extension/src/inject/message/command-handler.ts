@@ -16,10 +16,12 @@ import {
 } from './commands/encrypt';
 import { clearPopup } from './commands/popup';
 import {
+  getLoopbackGnoConnectChainId,
   GnoArgumentInfo,
   GnoConnectInfo,
   GnoMessageInfo,
   isAllowedGnoConnectOrigin,
+  isLoopbackGnoConnectTrusted,
   parseGnoConnectInfo,
   parseGnoMessageInfo,
 } from './methods/gno-connect';
@@ -113,7 +115,13 @@ export class CommandHandler {
 
     const currentUrl = window?.location?.href || '';
     const currentOrigin = window?.location?.origin || '';
-    if (!isAllowedGnoConnectOrigin(currentOrigin)) {
+
+    // Remote (https) gno origins are trusted statically. Loopback origins (local
+    // dev nodes) are trusted only after the runtime gate below confirms the
+    // wallet's active network is the one that declares this origin.
+    const loopbackChainId = getLoopbackGnoConnectChainId(currentOrigin);
+    const isLoopbackOrigin = loopbackChainId !== null;
+    if (!isAllowedGnoConnectOrigin(currentOrigin) && !isLoopbackOrigin) {
       return;
     }
 
@@ -135,6 +143,25 @@ export class CommandHandler {
     ) {
       console.info('response: ', addEstablishResponse);
       return;
+    }
+
+    // Runtime trust gate for loopback origins: only honor a local node's
+    // gnoconnect declarations when the meta-declared chainId matches the one the
+    // origin is permitted to act as AND that chainId is the wallet's active network.
+    // This prevents an arbitrary process holding the local port from
+    // switching the wallet to a foreign network or driving the flow while the
+    // user is on another network.
+    if (isLoopbackOrigin) {
+      const networkResponse = await executor.getNetwork();
+      const activeChainId =
+        networkResponse.type === WalletResponseSuccessType.GET_NETWORK_SUCCESS
+          ? networkResponse.data?.chainId
+          : undefined;
+
+      if (!isLoopbackGnoConnectTrusted(loopbackChainId, gnoConnectInfo.chainId, activeChainId)) {
+        console.info('Loopback gnoconnect origin is not trusted for the active network; ignoring');
+        return;
+      }
     }
 
     const switchNetworkResponse = await executor.switchNetwork(gnoConnectInfo.chainId);
