@@ -54,6 +54,7 @@ type SessionSpendConfig = {
 export const useBalanceInput = (
   tokenMetainfo?: TokenModel,
   cosmosFeeContext?: CosmosFeeContext,
+  toAddress?: string,
 ): UseBalanceInputHookReturn => {
   const { balanceService, tokenRegistry, sessionRepository } = useAdenaContext();
   const { wallet, gnoProvider } = useWalletContext();
@@ -199,12 +200,19 @@ export const useBalanceInput = (
         // Max-amount simulate document must use the funding (master) address so
         // that gas estimation reflects the account that will actually pay.
         fromAddress: currentFundingAddress,
-        toAddress: currentFundingAddress,
+        // Estimate against the real recipient when known: sending to a
+        // not-yet-initialized account costs extra gas (account creation), so a
+        // self-send proxy underestimates the fee. For a session transfer that
+        // gap can push MAX (limit − used − fee) over the on-chain spend limit,
+        // which counts fee + amount, and the broadcast is rejected. Mirrors the
+        // cosmos estimate document. Falls back to a self-send before a recipient
+        // is entered, which is enough for the initial fee preview.
+        toAddress: toAddress || currentFundingAddress,
         amount: amount,
         memo: '',
       }),
     );
-  }, [currentNetwork, currentFundingAddress, currentBalance, tokenMetainfo]);
+  }, [currentNetwork, currentFundingAddress, toAddress, currentBalance, tokenMetainfo]);
 
   useEffect(() => {
     if (!currentBalance) {
