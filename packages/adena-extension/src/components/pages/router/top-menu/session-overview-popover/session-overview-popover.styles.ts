@@ -53,3 +53,60 @@ export const Title = styled.h3`
   padding: 0 18px 12px;
   margin: 0;
 `;
+
+export const RevokedContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 18px;
+`;
+
+export const RevokedChip = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 14px;
+  background: rgba(235, 84, 94, 0.1);
+  color: ${getTheme('webError', '_100')};
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 18px;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+
+  svg {
+    display: block;
+    width: 12px;
+    height: 12px;
+  }
+`;
+
+export const RevokedDescription = styled.p`
+  ${fonts.body3Reg};
+  line-height: 18px;
+  color: ${getTheme('neutral', '_1')};
+  margin: 0;
+  word-break: break-word;
+
+  /* The design separates the two sentences by a blank line. */
+  & + & {
+    margin-top: 18px;
+  }
+`;
+
+// Sits inline inside the sentence, so it inherits the paragraph's font and
+// baseline instead of looking like a standalone button.
+export const RevokedInlineButton = styled.button`
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-position: from-font;
+  cursor: pointer;
+`;

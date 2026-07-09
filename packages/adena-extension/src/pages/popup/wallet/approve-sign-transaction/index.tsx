@@ -12,7 +12,7 @@ import { GasToken } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { getDappVisibleAddress } from '@common/utils/account-address';
-import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
+import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
 import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
 import {
   createFaviconByHostname,
@@ -28,7 +28,6 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
-import { useConvertSessionAccounts } from '@hooks/wallet/use-convert-session-accounts';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
@@ -102,7 +101,6 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const { navigate } = useAppNavigate();
   const { walletService, transactionService, sessionRepository } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
-  const { convertBySessionAddresses } = useConvertSessionAccounts();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
   const chain = useChain();
@@ -281,18 +279,17 @@ const ApproveSignTransactionContainer: React.FC = () => {
         isSessionAccount(currentAccount) &&
         error?.message?.startsWith('Session not found:')
       ) {
-        let converted = false;
+        let revoked = false;
         const sessionAddr = await currentAccount.getAddress(chain.bech32Prefix).catch(() => null);
         if (sessionAddr) {
           const storedSession = await sessionRepository.get(sessionAddr).catch(() => null);
-          const shouldConvert = await shouldConvertMissingSession(
+          revoked = await shouldMarkSessionRevoked(
             storedSession,
             async () =>
               !!(await gnoProvider?.getSession(currentAccount.getMasterAddress(), sessionAddr)),
           );
-          if (shouldConvert) {
-            await convertBySessionAddresses([sessionAddr]);
-            converted = true;
+          if (revoked) {
+            await sessionRepository.setStatus(sessionAddr, 'REVOKED').catch(() => undefined);
           }
         }
         setSessionGuardDecision({ ok: false, reason: 'session_inactive' });
@@ -301,8 +298,8 @@ const ApproveSignTransactionContainer: React.FC = () => {
             WalletResponseFailureType.SIGN_FAILED,
             {
               error: {
-                message: converted
-                  ? 'Session was revoked and converted to a regular account.'
+                message: revoked
+                  ? 'This session account has been revoked and can no longer sign transactions.'
                   : 'Session is not visible on chain yet. Please try again shortly.',
               },
             },

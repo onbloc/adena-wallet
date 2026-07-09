@@ -1,3 +1,4 @@
+import { isSessionAccount } from 'adena-module';
 import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
@@ -5,6 +6,8 @@ import styled, { useTheme } from 'styled-components';
 import { CHAIN_ICON_BY_GROUP } from '@assets/icons/cosmos-icons';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { Button, Copy, inputStyle, Text } from '@components/atoms';
+import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
+import { InfoTooltipStrong } from '@components/atoms/info-tooltip/info-tooltip.styles';
 import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
 import { useAccountName } from '@hooks/use-account-name';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -19,6 +22,17 @@ const CHAIN_DISPLAY_NAME: Record<string, string> = {
   gno: 'Gno.land',
   atomone: 'AtomOne',
 };
+
+// A SessionAccount address can never receive deposits, so the Deposit screen
+// shows the master address. Label it explicitly so the user understands whose
+// address the QR encodes.
+const MASTER_DEPOSIT_TOOLTIP = (
+  <>
+    This is the address of the <InfoTooltipStrong>Master Account</InfoTooltipStrong> of this
+    session. Tokens sent to this address will arrive in your{' '}
+    <InfoTooltipStrong>Master Account</InfoTooltipStrong>.
+  </>
+);
 
 const Wrapper = styled.main`
   ${mixins.flex({ justify: 'stretch' })};
@@ -47,11 +61,18 @@ const CopyInputBox = styled.div`
   margin-bottom: 8px;
 `;
 
+const MasterLabel = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+`;
+
 const ChainNoticeText = styled.p`
   ${fonts.captionReg};
   color: ${getTheme('neutral', 'a')};
   text-align: left;
   margin: 0;
+  padding: 0 16px;
   width: 100%;
 
   .chain-group {
@@ -82,6 +103,10 @@ export const Deposit = (): JSX.Element => {
   const { accountNames } = useAccountName();
   const { currentNetwork } = useNetwork();
   const chainAddressEntries = useAccountChainAddresses();
+
+  const isSession = useMemo(() => (currentAccount ? isSessionAccount(currentAccount) : false), [
+    currentAccount,
+  ]);
 
   const chainGroup = useMemo(() => {
     const lookupNetworkId = params?.token?.networkId ?? currentNetwork.networkId;
@@ -126,7 +151,14 @@ export const Deposit = (): JSX.Element => {
       <CopyInputBox>
         {currentAccount && (
           <Text type='body2Reg' display='inline-flex'>
-            {formatNickname(accountNames[currentAccount.id] || currentAccount.name, 12)}
+            {isSession ? (
+              <MasterLabel>
+                Master
+                <InfoTooltip content={MASTER_DEPOSIT_TOOLTIP} variant='popover' />
+              </MasterLabel>
+            ) : (
+              formatNickname(accountNames[currentAccount.id] || currentAccount.name, 12)
+            )}
             <Text type='body2Reg' color={theme.neutral.a}>
               {` (${displayAddr})`}
             </Text>

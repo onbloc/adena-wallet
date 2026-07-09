@@ -1,33 +1,37 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { isSessionAccount, SessionAccount } from 'adena-module';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { isSessionAccount, SessionAccount } from 'adena-module';
+
+import IconCopy from '@assets/icon-copy';
+import IconCopyCheck from '@assets/icon-copy-check';
+import IconThunder from '@assets/icon-thunder';
+import { AccountSelectorButton, HamburgerMenuBtn, NetworkIconButton } from '@components/atoms';
 
 import {
-  HamburgerMenuBtn,
-  NetworkIconButton,
-  AccountSelectorButton,
-} from '@components/atoms';
-import IconCopy from '@assets/icon-copy';
-import IconThunder from '@assets/icon-thunder';
-
-import { getTheme } from '@styles/theme';
-import { useCurrentAccount } from '@hooks/use-current-account';
+  WALLET_EXPORT_ACCOUNT_ID,
+  WALLET_EXPORT_TYPE_STORAGE_KEY,
+} from '@common/constants/storage.constant';
+import { AdenaStorage } from '@common/storage';
+import { isRevokedSessionAccount } from '@common/utils/account-session';
 import { formatNickname, getSiteName } from '@common/utils/client-utils';
-import { useAdenaContext } from '@hooks/use-context';
-import { useAccountName } from '@hooks/use-account-name';
-import { useAccountListInfos } from '@hooks/use-account-list-infos';
-import { useNetwork } from '@hooks/use-network';
-import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
-import { useSessions } from '@hooks/use-sessions';
-import { useCurrentSessionChainData } from '@hooks/wallet/use-current-session-chain-data';
-import { useVisibleAccounts } from '@hooks/use-visible-accounts';
-import useLink from '@hooks/use-link';
-import useAppNavigate from '@hooks/use-app-navigate';
 import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import { SessionOverviewPopover } from '@components/pages/router/top-menu/session-overview-popover';
+import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
+import { useAccountListInfos } from '@hooks/use-account-list-infos';
+import { useAccountName } from '@hooks/use-account-name';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import useLink from '@hooks/use-link';
+import { useNetwork } from '@hooks/use-network';
+import { useSessions } from '@hooks/use-sessions';
+import { useVisibleAccounts } from '@hooks/use-visible-accounts';
+import { useCurrentSessionChainData } from '@hooks/wallet/use-current-session-chain-data';
+import { useSessionRevocationWatcher } from '@hooks/wallet/use-session-revocation-watcher';
 import UnresponsiveNetworksIndicator from '@router/popup/header/unresponsive-networks-indicator';
 import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
 
 import { useHoverPopover } from './use-hover-popover';
@@ -104,7 +108,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const { establishService } = useAdenaContext();
   const [hostname, setHostname] = useState('');
   const [protocol, setProtocol] = useState('');
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentAccount, currentAddress, currentFundingAddress } = useCurrentAccount();
   const [isEstablish, setIsEstablish] = useState(false);
   const location = useLocation();
 
@@ -138,17 +142,39 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const [currentAccountName, setCurrentAccountName] = useState('');
   const { accountNames } = useAccountName();
   const { currentNetwork, unresponsiveNetworks } = useNetwork();
-  const { openScannerLink } = useLink();
+  const { openScannerLink, openSecurity } = useLink();
   const { sessions } = useSessions();
   const accountListPrefetchAccounts = useVisibleAccounts();
   useAccountListInfos(accountListPrefetchAccounts);
+  // Header renders on every wallet screen, so this is the single mount point
+  // for the 5s chain poll that flags a revoked SessionAccount.
+  useSessionRevocationWatcher();
 
   const copyPopover = useHoverPopover<HTMLButtonElement>();
   const sessionPopover = useHoverPopover<HTMLButtonElement>();
   const [copyPosition, setCopyPosition] = useState({ x: 0, y: 0 });
   const [sessionPosition, setSessionPosition] = useState({ caretRight: 0, y: 0 });
 
-  const chainAddressEntries = useAccountChainAddresses({ sessionAddressMode: 'session' });
+  const chainAddressEntries = useAccountChainAddresses();
+  const [addressCopied, setAddressCopied] = useState(false);
+
+  // The funding address is the one that can actually receive tokens: the master
+  // address for a SessionAccount, the account's own Gno address otherwise.
+  const handleCopyIconClick = useCallback(() => {
+    if (!currentFundingAddress) {
+      return;
+    }
+    navigator.clipboard.writeText(currentFundingAddress);
+    setAddressCopied(true);
+  }, [currentFundingAddress]);
+
+  useEffect(() => {
+    if (!addressCopied) {
+      return;
+    }
+    const timer = setTimeout(() => setAddressCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [addressCopied]);
 
   const handleCopyIconMouseEnter = useCallback(() => {
     copyPopover.cancelClose();
@@ -240,9 +266,12 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
       ? sessions.find((s) => s.sessionAddr === currentAddress)
       : undefined;
   const sessionConfig = isSession ? (currentAccount as SessionAccount).sessionConfig : null;
+  const sessionRevoked = isRevokedSessionAccount(currentAccount, currentAddress, sessions);
+  // Stop polling once revoked: the popover then shows the revoked variant and
+  // no longer reads the chain overview, so there is nothing to keep current.
   const sessionChainData = useCurrentSessionChainData(
     sessionConfig?.masterAddress,
-    isSession ? currentAddress ?? undefined : undefined,
+    isSession && !sessionRevoked ? currentAddress ?? undefined : undefined,
   );
 
   const handleOpenAccount = useCallback(
@@ -253,6 +282,25 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     (path: string) => openScannerLink('/realms/details', { path }),
     [openScannerLink],
   );
+
+  const handleRemoveRevokedAccount = useCallback(() => {
+    sessionPopover.setOpen(false);
+    navigate(RoutePath.RemoveAccount);
+  }, [navigate, sessionPopover]);
+
+  // A revoked session key can still hold a balance, so the user must be able to
+  // export it before removing the account. The export flow lives in the
+  // security page, which runs in its own tab.
+  const handleExportRevokedKey = useCallback(async () => {
+    if (!currentAccount) {
+      return;
+    }
+    sessionPopover.setOpen(false);
+    const sessionStorage = AdenaStorage.session();
+    await sessionStorage.set(WALLET_EXPORT_TYPE_STORAGE_KEY, 'PRIVATE_KEY');
+    await sessionStorage.set(WALLET_EXPORT_ACCOUNT_ID, currentAccount.id);
+    openSecurity();
+  }, [currentAccount, openSecurity, sessionPopover]);
 
   return !disabled ? (
     <Wrapper>
@@ -266,11 +314,12 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
             ref={copyPopover.anchorRef}
             type='button'
             isActive={copyPopover.open}
+            onClick={handleCopyIconClick}
             onMouseEnter={handleCopyIconMouseEnter}
             onMouseLeave={copyPopover.onAnchorMouseLeave}
             aria-label='Copy address'
           >
-            <IconCopy />
+            {addressCopied ? <IconCopyCheck /> : <IconCopy />}
           </StyledCopyIconButton>
         </StyledLeftSideWrapper>
         <StyledRightSideWrapper>
@@ -321,6 +370,9 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
           }
           spendUsedUgnot={sessionChainData?.spendUsed ?? sessionMetadata?.spendUsed}
           spendReset={sessionChainData?.spendReset ?? sessionMetadata?.spendReset}
+          revoked={sessionRevoked}
+          onRemoveAccount={handleRemoveRevokedAccount}
+          onExportKey={handleExportRevokedKey}
           onOpenAccount={handleOpenAccount}
           onOpenRealm={handleOpenRealm}
         />

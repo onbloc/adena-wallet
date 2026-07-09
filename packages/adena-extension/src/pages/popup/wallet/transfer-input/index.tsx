@@ -143,6 +143,9 @@ const TransferInputContainer: React.FC = () => {
           isSimulateError: cosmosFee.isSimulateError,
         }
       : undefined,
+    // Real recipient for the gno fee estimate so MAX subtracts the fee that will
+    // actually be charged (account-creation gas for a new recipient included).
+    addressBookInput.resultAddress || undefined,
   );
   const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
   const { currentNetwork } = useNetwork();

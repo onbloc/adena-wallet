@@ -4,9 +4,11 @@ jest.mock('@adena-wallet/sdk', () => ({
     REDUNDANT_CHANGE_REQUEST: 'REDUNDANT_CHANGE_REQUEST',
     UNADDED_NETWORK: 'UNADDED_NETWORK',
     UNSUPPORTED_TYPE: 'UNSUPPORTED_TYPE',
+    NETWORK_ALREADY_EXISTS: 'NETWORK_ALREADY_EXISTS',
   },
   WalletResponseRejectType: {
     SWITCH_NETWORK_REJECTED: 'SWITCH_NETWORK_REJECTED',
+    ADD_NETWORK_REJECTED: 'ADD_NETWORK_REJECTED',
   },
   WalletMessageInfo: {
     INVALID_FORMAT: {
@@ -39,6 +41,18 @@ jest.mock('@adena-wallet/sdk', () => ({
       type: 'SWITCH_NETWORK_REJECTED',
       message: 'Switch network rejected.',
     },
+    ADD_NETWORK_REJECTED: {
+      code: 4000,
+      status: 'failure',
+      type: 'ADD_NETWORK_REJECTED',
+      message: 'Add network rejected.',
+    },
+    NETWORK_ALREADY_EXISTS: {
+      code: 4003,
+      status: 'failure',
+      type: 'NETWORK_ALREADY_EXISTS',
+      message: 'Network already exists.',
+    },
   },
 }));
 
@@ -50,7 +64,7 @@ jest.mock('..', () => ({
 }));
 
 import { InjectionMessage } from '../message';
-import { switchNetwork } from './network';
+import { addNetwork, switchNetwork } from './network';
 
 type FakeCore = {
   chainService: {
@@ -59,6 +73,7 @@ type FakeCore = {
   };
   getInMemoryKey: jest.Mock;
   getCurrentAccount: jest.Mock;
+  isLockedBy: jest.Mock;
 };
 
 function makeCore(overrides?: Partial<FakeCore>): FakeCore {
@@ -78,6 +93,7 @@ function makeCore(overrides?: Partial<FakeCore>): FakeCore {
       id: 'account-1',
       type: 'HD_WALLET',
     })),
+    isLockedBy: jest.fn(async () => false),
     ...overrides,
   };
 }
@@ -134,5 +150,52 @@ describe('switchNetwork handler', () => {
     expect(send).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: 'UNSUPPORTED_TYPE' }),
     );
+  });
+});
+
+describe('addNetwork handler', () => {
+  beforeEach(() => {
+    mockCreatePopup.mockReset();
+  });
+
+  // Adding a network mutates wallet-wide state, exactly like switching one, so a
+  // dApp must not be able to drive it while a SessionAccount is selected.
+  it('returns UNSUPPORTED_TYPE for SessionAccount before other checks', async () => {
+    const core = makeCore({
+      getCurrentAccount: jest.fn(async () => ({
+        id: 'session-1',
+        type: 'SESSION',
+      })),
+    });
+    const send = jest.fn();
+
+    await addNetwork(
+      core as never,
+      makeMessage({ chainId: 'test-2', chainName: 'Test 2', rpcUrl: 'https://rpc.example' }),
+      send,
+    );
+
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'failure',
+        type: 'UNSUPPORTED_TYPE',
+        code: 4005,
+      }),
+    );
+    expect(core.isLockedBy).not.toHaveBeenCalled();
+    expect(mockCreatePopup).not.toHaveBeenCalled();
+  });
+
+  it('keeps the existing popup flow for non-session accounts', async () => {
+    const core = makeCore();
+    const send = jest.fn();
+
+    await addNetwork(
+      core as never,
+      makeMessage({ chainId: 'test-2', chainName: 'Test 2', rpcUrl: 'https://rpc.example' }),
+      send,
+    );
+
+    expect(mockCreatePopup).toHaveBeenCalled();
   });
 });

@@ -1,12 +1,14 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, RenderResult, screen } from '@testing-library/react';
 import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 
 import theme from '@styles/theme';
 import { SessionOverviewPopover } from './session-overview-popover';
 
-const renderPopover = (overrides: Partial<React.ComponentProps<typeof SessionOverviewPopover>> = {}) => {
+const renderPopover = (
+  overrides: Partial<React.ComponentProps<typeof SessionOverviewPopover>> = {},
+): RenderResult => {
   const props: React.ComponentProps<typeof SessionOverviewPopover> = {
     open: true,
     positionY: 50,
@@ -56,5 +58,27 @@ describe('SessionOverviewPopover', () => {
     });
 
     expect(screen.getByText('Every 1 day')).toBeTruthy();
+  });
+
+  describe('revoked', () => {
+    it('replaces the overview with the revoked guidance', () => {
+      renderPopover({ revoked: true, spendLimitUgnot: '1000000ugnot', spendPeriod: 86_400 });
+
+      expect(screen.getByText('REVOKED')).toBeTruthy();
+      expect(screen.queryByText('Session Overview')).toBeNull();
+      expect(screen.queryByText('Every 1 day')).toBeNull();
+    });
+
+    it('invokes the recovery handlers', () => {
+      const onRemoveAccount = jest.fn();
+      const onExportKey = jest.fn();
+      renderPopover({ revoked: true, onRemoveAccount, onExportKey });
+
+      fireEvent.click(screen.getByText('remove this account'));
+      fireEvent.click(screen.getByText('export your key'));
+
+      expect(onRemoveAccount).toHaveBeenCalledTimes(1);
+      expect(onExportKey).toHaveBeenCalledTimes(1);
+    });
   });
 });

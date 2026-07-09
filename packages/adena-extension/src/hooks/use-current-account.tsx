@@ -1,4 +1,9 @@
-import { getDappVisibleAddress, getWalletFundingAddress } from '@common/utils/account-address';
+import {
+  getDappVisibleAddress,
+  getWalletFundingAddress,
+  selectBalanceAddress,
+} from '@common/utils/account-address';
+import { isRevokedSessionAccount } from '@common/utils/account-session';
 import { EventMessage } from '@inject/message/event-message';
 import { WalletState } from '@states';
 import { useQuery } from '@tanstack/react-query';
@@ -9,11 +14,13 @@ import { useAdenaContext, useWalletContext } from './use-context';
 import { useChain } from './use-chain';
 import { useEvent } from './use-event';
 import { useNetwork } from './use-network';
+import { useSessions } from './use-sessions';
 
 export const useCurrentAccount = (): {
   currentAccount: Account | null;
   currentAddress: string | null;
   currentFundingAddress: string | null;
+  currentBalanceAddress: string | null;
   getCurrentAddress: (prefix?: string) => Promise<string | null>;
   changeCurrentAccount: (changedAccount: Account) => Promise<boolean>;
 } => {
@@ -23,6 +30,7 @@ export const useCurrentAccount = (): {
   const { currentNetwork } = useNetwork();
   const chain = useChain();
   const { dispatchEvent } = useEvent();
+  const { sessions } = useSessions();
 
   const getCurrentAddress = useCallback(
     async (prefix?: string) => {
@@ -81,9 +89,15 @@ export const useCurrentAccount = (): {
     },
   );
 
-  // Address that wallet funding flows must use: balance queries, send
-  // from_address/caller, deposit/QR. For SessionAccount this resolves to the
+  const sessionRevoked = isRevokedSessionAccount(currentAccount, currentAddress, sessions);
+
+  // Address that wallet funding flows must use: send from_address/caller,
+  // deposit/QR, copy-to-clipboard. For SessionAccount this resolves to the
   // master address; for other accounts it equals `currentAddress`.
+  //
+  // This stays the master address even while revoked: the master is still the
+  // account a deposit belongs to, and the sign path forces caller=master
+  // regardless of what the UI passes in.
   const { data: currentFundingAddress } = useQuery<string | null>(
     ['currentFundingAddress', currentAccount, currentNetwork],
     async () => {
@@ -97,10 +111,19 @@ export const useCurrentAccount = (): {
     },
   );
 
+  // Address whose balance the wallet displays. See `selectBalanceAddress` for
+  // the policy; the account list applies the same one.
+  const currentBalanceAddress = selectBalanceAddress(
+    currentAddress ?? null,
+    currentFundingAddress ?? null,
+    sessionRevoked,
+  );
+
   return {
     currentAccount,
     currentAddress: currentAddress || null,
     currentFundingAddress: currentFundingAddress || null,
+    currentBalanceAddress,
     getCurrentAddress,
     changeCurrentAccount,
   };

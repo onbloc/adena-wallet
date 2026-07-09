@@ -1,11 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
+import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
 import { isNativeTokenModel } from '@common/validation/validation-token';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 import type { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
@@ -15,9 +15,9 @@ import { Document, isSessionAccount } from 'adena-module';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
+import { SESSIONS_QUERY_KEY } from './use-sessions';
 import { useTokenBalance } from './use-token-balance';
 import { getCosmosOriginDenom, useTokenMetainfo } from './use-token-metainfo';
-import { useConvertSessionAccounts } from './wallet/use-convert-session-accounts';
 import { useNetworkFee } from './wallet/use-network-fee';
 
 // Buffer applied to the simulated cosmos fee when computing the Max amount.
@@ -54,12 +54,13 @@ type SessionSpendConfig = {
 export const useBalanceInput = (
   tokenMetainfo?: TokenModel,
   cosmosFeeContext?: CosmosFeeContext,
+  toAddress?: string,
 ): UseBalanceInputHookReturn => {
   const { balanceService, tokenRegistry, sessionRepository } = useAdenaContext();
   const { wallet, gnoProvider } = useWalletContext();
-  const { convertBySessionAddresses } = useConvertSessionAccounts();
   const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const queryClient = useQueryClient();
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [amount, setAmount] = useState('');
@@ -104,14 +105,17 @@ export const useBalanceInput = (
         return stored;
       }
       if (!record) {
-        const shouldConvert = await shouldConvertMissingSession(
+        const revoked = await shouldMarkSessionRevoked(
           stored,
           async () =>
             !!(await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr)),
         );
-        if (shouldConvert) {
-          await convertBySessionAddresses([sessionAddr]);
-          return null;
+        if (revoked && stored) {
+          await sessionRepository.setStatus(sessionAddr, 'REVOKED').catch(() => undefined);
+          // Without this the dim, the popover and the balance address only catch
+          // up on the next SESSIONS refetch.
+          await queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
+          return { ...stored, status: 'REVOKED' };
         }
         return stored;
       }
@@ -196,12 +200,19 @@ export const useBalanceInput = (
         // Max-amount simulate document must use the funding (master) address so
         // that gas estimation reflects the account that will actually pay.
         fromAddress: currentFundingAddress,
-        toAddress: currentFundingAddress,
+        // Estimate against the real recipient when known: sending to a
+        // not-yet-initialized account costs extra gas (account creation), so a
+        // self-send proxy underestimates the fee. For a session transfer that
+        // gap can push MAX (limit − used − fee) over the on-chain spend limit,
+        // which counts fee + amount, and the broadcast is rejected. Mirrors the
+        // cosmos estimate document. Falls back to a self-send before a recipient
+        // is entered, which is enough for the initial fee preview.
+        toAddress: toAddress || currentFundingAddress,
         amount: amount,
         memo: '',
       }),
     );
-  }, [currentNetwork, currentFundingAddress, currentBalance, tokenMetainfo]);
+  }, [currentNetwork, currentFundingAddress, toAddress, currentBalance, tokenMetainfo]);
 
   useEffect(() => {
     if (!currentBalance) {

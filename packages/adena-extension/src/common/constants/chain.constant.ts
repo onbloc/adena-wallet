@@ -2,7 +2,9 @@
 // Shared so session/address helpers don't each redefine the literal 'g'.
 export const GNO_ADDRESS_PREFIX = 'g';
 
-// Chain id on which the account-session feature is currently enabled during
-// rollout. Kept in one place so it is easy to widen (or move into chains.json
-// as a per-chain capability flag) when the feature ships to more networks.
-export const SESSION_SUPPORTED_CHAIN_ID = 'test-13';
+// Chains where the account-session feature must stay off. Everything else is
+// treated as supported, so a newly added (or custom) gno chain opts in by
+// default. Single source of truth: `isSessionSupportedNetwork` and
+// `isSessionSupportedChainId` in @common/utils/account-session are the only
+// readers.
+export const SESSION_UNSUPPORTED_CHAIN_IDS: readonly string[] = ['gnoland1'];

@@ -14,7 +14,6 @@ import { SESSION_ADMIN_GAS_WANTED_FALLBACK } from '@common/utils/session-admin-g
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
 import { useSessions } from '@hooks/use-sessions';
-import { useConvertSessionAccounts } from '@hooks/wallet/use-convert-session-accounts';
 import {
   createMessageOfRevokeAllSessions,
   createMessageOfRevokeSession,
@@ -30,9 +29,9 @@ type CommitResultLike = {
 
 // A BROADCAST_TX_COMMIT result carries a hash even when the tx committed but
 // FAILED (ante/authorization error, out of gas, etc.). Revoke must not treat
-// that as success — otherwise cleanupSessionLocally would convert the session
-// while the on-chain delegation is still fully active. Throw so the caller's
-// catch surfaces the failure and skips local cleanup.
+// that as success — otherwise cleanupSessionLocally would flag the session
+// REVOKED while the on-chain delegation is still fully active. Throw so the
+// caller's catch surfaces the failure and skips local cleanup.
 const assertRevokeCommitted = (result: unknown): void => {
   const commit = result as CommitResultLike | null;
   const failed =
@@ -82,7 +81,6 @@ export const useRevokeSession = (): UseRevokeSessionReturn => {
   const { sessionRepository, transactionService } = useAdenaContext();
   const { currentNetwork } = useNetwork();
   const { refetch } = useSessions();
-  const { convertBySessionAddresses } = useConvertSessionAccounts();
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -177,16 +175,15 @@ export const useRevokeSession = (): UseRevokeSessionReturn => {
 
   const cleanupSessionLocally = useCallback(
     async (sessionAddr: string): Promise<void> => {
-      // Mark non-imported cached rows as REVOKED, then convert an imported
-      // SessionAccount into a normal PRIVATE_KEY account. The session private
-      // key is still a valid standalone account key after revoke.
+      // Flag the row REVOKED and keep the SessionAccount. It is no longer
+      // signable (session-signing-guard blocks status !== 'ACTIVE'); the UI
+      // surfaces the revoked state and guides the user to remove the account.
       const existing = await sessionRepository.get(sessionAddr);
       if (existing) {
         await sessionRepository.setStatus(sessionAddr, 'REVOKED');
       }
-      await convertBySessionAddresses([sessionAddr]);
     },
-    [sessionRepository, convertBySessionAddresses],
+    [sessionRepository],
   );
 
   const cleanupMasterSessionsLocally = useCallback(
@@ -206,9 +203,8 @@ export const useRevokeSession = (): UseRevokeSessionReturn => {
           await sessionRepository.setStatus(sessionAddr, 'REVOKED');
         }
       }
-      await convertBySessionAddresses(targets);
     },
-    [sessionRepository, currentNetwork.chainId, convertBySessionAddresses],
+    [sessionRepository, currentNetwork.chainId],
   );
 
   const revokeOne = useCallback(

@@ -26,6 +26,12 @@ export const useRemoveAccount = (): {
     const clone = wallet.clone();
     clone.removeAccount(account);
     const nextAccount = clone.accounts[clone.accounts.length - 1];
+    // Removing the wallet's last account leaves nothing to switch to. Callers
+    // must reset the wallet instead (see `availRemoveAccount`); bail out rather
+    // than dereference an undefined account.
+    if (!nextAccount) {
+      return false;
+    }
     clone.currentAccountId = nextAccount.id;
     await changeCurrentAccount(nextAccount);
     await updateWallet(clone);

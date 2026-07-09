@@ -1,11 +1,16 @@
 import BigNumber from 'bignumber.js';
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { GNOT_TOKEN } from '@common/constants/token.constant';
+import IconError from '@assets/web/error.svg';
+import {
+  GNO_ADDRESS_PREFIX as GNO_PREFIX,
+} from '@common/constants/chain.constant';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
-import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
+import { GNOT_TOKEN } from '@common/constants/token.constant';
+import { isSessionMasterAccount, isSessionSupportedChainId } from '@common/utils/account-session';
 import { encodeParameter } from '@common/utils/client-utils';
 import { stringToBase64 } from '@common/utils/encoding-util';
+import { resolveSessionAdminGasInfo } from '@common/utils/session-admin-gas';
 import {
   Row,
   View,
@@ -15,26 +20,30 @@ import {
   WebMain,
   WebText,
 } from '@components/atoms';
-import { WebTextarea } from '@components/atoms/web-textarea';
 import Toggle from '@components/atoms/toggle';
-import IconError from '@assets/web/error.svg';
-import { WebHoldButton } from '@components/atoms/web-hold-button';
 import { WebCopyButton } from '@components/atoms/web-copy-button';
+import { WebHoldButton } from '@components/atoms/web-hold-button';
+import { WebTextarea } from '@components/atoms/web-textarea';
 import { WebTitleWithDescription } from '@components/molecules';
-import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';
 import { WebPrivateKeyBox } from '@components/molecules/web-private-key-box';
+import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';
 import { WebMainHeader } from '@components/pages/web/main-header';
+import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
+import { Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
-import { useSessionImportScreen } from '@hooks/web/use-session-import-screen';
 import useQuestionnaire from '@hooks/web/use-questionnaire';
-import { resolveSessionAdminGasInfo } from '@common/utils/session-admin-gas';
-import {
-  GNO_ADDRESS_PREFIX as GNO_PREFIX,
-  SESSION_SUPPORTED_CHAIN_ID as TEST13_CHAIN_ID,
-} from '@common/constants/chain.constant';
+import { useSessionImportScreen } from '@hooks/web/use-session-import-screen';
+import { createMessageOfCreateSession } from '@services/transaction/message/auth/auth';
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
+import type {
+  SessionImportCandidate,
+  SessionImportErrorReason,
+  SessionImportPreview,
+  SessionImportRequest,
+} from '@services/wallet/wallet-session';
 import { RoutePath } from '@types';
 import {
   Account,
@@ -45,16 +54,6 @@ import {
   validateAddress,
   type SessionConfig,
 } from 'adena-module';
-import { Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
-import { createMessageOfCreateSession } from '@services/transaction/message/auth/auth';
-import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
-import { isSessionMasterAccount } from '@common/utils/account-session';
-import type {
-  SessionImportCandidate,
-  SessionImportErrorReason,
-  SessionImportPreview,
-  SessionImportRequest,
-} from '@services/wallet/wallet-session';
 import {
   MASTER_ADDRESS_FORMAT_ERROR,
   MASTER_ADDRESS_LENGTH,
@@ -64,50 +63,14 @@ import {
 } from './session-import-utils';
 
 import {
-  TabRow,
-  TabButton,
-  Card,
-  Field,
-  ConfigureCard,
-  ErrorBanner,
-  InlineErrorRow,
-  SelectField,
-  MasterLabelCell,
-  MasterLabelInfoIcon,
-  SelectTrigger,
-  SelectMenu,
-  SelectOption,
-  SpendPeriodInputWrapper,
-  SpendPeriodInput,
-  AmountInputWrapper,
-  AmountInput,
-  UnitToggle,
-  RealmInputBox,
-  RealmInputInner,
-  IconButton,
-  TooltipWrapper,
-  TooltipBox,
-  TooltipBoxAbove,
-  DisableTransferToggleWrapper,
-  KeyActionRow,
-  DropdownChevronIcon,
-  ChangeUnitIcon,
-  PlusIcon,
-  MinusIcon,
-  Spinner,
-  SessionRows,
-  ImportErrorList,
-  ImportErrorRow,
-  MasterInputRow,
-  MasterLabelArea,
-  MasterInfoIcon,
-  MasterInputField,
-  MasterAddressWrapper,
-  MasterTooltipBox,
-  SessionCard,
-  SessionCardHeader,
-  SessionCardBody,
-  ImportSessionAddress,
+  AmountInput, AmountInputWrapper, Card, ChangeUnitIcon, ConfigureCard, DisableTransferToggleWrapper, DropdownChevronIcon, ErrorBanner, Field, IconButton, ImportErrorList,
+  ImportErrorRow, ImportSessionAddress, InlineErrorRow, KeyActionRow, MasterAddressWrapper, MasterInfoIcon,
+  MasterInputField, MasterInputRow,
+  MasterLabelArea, MasterLabelCell,
+  MasterLabelInfoIcon, MasterTooltipBox, MinusIcon, PlusIcon, RealmInputBox,
+  RealmInputInner, SelectField, SelectMenu,
+  SelectOption, SelectTrigger, SessionCard, SessionCardBody, SessionCardHeader, SessionRows, SpendPeriodInput, SpendPeriodInputWrapper, Spinner, TabButton, TabRow, TooltipBox,
+  TooltipBoxAbove, TooltipWrapper, UnitToggle,
 } from './session-add-screen.styles';
 
 const MAX_REALM_PATHS_GAS_ONLY = 8;
@@ -665,7 +628,7 @@ const CreateTab = ({
   const realmPathsRef = useRef<string[]>(realmPaths);
   const realmValidationCacheRef = useRef<Map<string, RealmValidationResult>>(new Map());
 
-  const isOnTest13 = currentChainId === TEST13_CHAIN_ID;
+  const isSupportedSessionAccount = useMemo(() => isSessionSupportedChainId(currentChainId), [currentChainId]);
 
   const selectedMaster = useMemo(
     () => masterCandidates.find((a) => a.id === selectedMasterId),
@@ -923,7 +886,7 @@ const CreateTab = ({
   const hasValidatingRealms = Object.keys(validatingRealmIndexes).length > 0;
 
   const canSubmit =
-    isOnTest13 &&
+    isSupportedSessionAccount &&
     !!selectedMasterId &&
     expirationValid &&
     spendLimitValid &&
@@ -936,8 +899,8 @@ const CreateTab = ({
   const onClickCreate = useCallback(async () => {
     if (!wallet) return;
     setSubmitError('');
-    if (!isOnTest13 || currentNetwork?.chainId !== TEST13_CHAIN_ID) {
-      setSubmitError('Session accounts are only supported on Testnet 13.');
+    if (!isSupportedSessionAccount) {
+      setSubmitError('Session accounts are not supported on this network.');
       return;
     }
     const realmPathsOk = await validateAllRealmPaths();
@@ -1044,11 +1007,16 @@ const CreateTab = ({
         spendLimit: spendLimitCoin,
         spendPeriod: spendPeriodSec,
       };
+      const nextSessionAccountIndex = wallet.lastSessionAccountIndex + 1;
       const sessionAccount = SessionAccount.createBy(
         sessionKeyring,
         wallet.nextSessionAccountName,
         sessionConfig,
       );
+      // createBy defaults index to 0; assign the real index so the next created
+      // session increments its "Session N" number (lastSessionAccountIndex reads
+      // account.index). Mirrors commitSessionImports in wallet-session.ts.
+      sessionAccount.index = nextSessionAccountIndex;
       const sessionMetadata = {
         masterAddress,
         chainId: currentChainId,
@@ -1118,8 +1086,8 @@ const CreateTab = ({
 
   return (
     <Card>
-      {!isOnTest13 && (
-        <WebWarningDescriptionBox description='Session creation is only available on the test-13 network. Please switch networks.' />
+      {!isSupportedSessionAccount && (
+        <WebWarningDescriptionBox description='Session creation is not supported on this network. Please switch to a supported network.' />
       )}
 
       <SelectField ref={masterSelectRef}>

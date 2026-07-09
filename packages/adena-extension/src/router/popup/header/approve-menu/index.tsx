@@ -1,27 +1,25 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { RoutePath } from '@types';
-import { getTheme } from '@styles/theme';
-import mixins from '@styles/mixins';
-import {
-  AccountSelectorButton,
-  NetworkIconButton,
-} from '@components/atoms';
 import IconCopy from '@assets/icon-copy';
-import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
+import IconCopyCheck from '@assets/icon-copy-check';
 import {
   decodeParameter,
   formatNickname,
   getSiteName,
   parseParameters,
 } from '@common/utils/client-utils';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useAdenaContext } from '@hooks/use-context';
-import { useAccountName } from '@hooks/use-account-name';
+import { AccountSelectorButton, NetworkIconButton } from '@components/atoms';
+import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
+import { useAccountName } from '@hooks/use-account-name';
+import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
 
 const COSMOS_APPROVE_PATHS: string[] = [
   RoutePath.ApproveEstablishCosmos,
@@ -94,7 +92,7 @@ const StyledCopyIconButton = styled.button.withConfig({
 
 const ApproveMenu = (): JSX.Element => {
   const { establishService, establishAtomOneService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const [accountName, setAccountName] = useState('');
   const [isEstablished, setIsEstablished] = useState(false);
   const location = useLocation();
@@ -107,7 +105,26 @@ const ApproveMenu = (): JSX.Element => {
   const [popoverX, setPopoverX] = useState(0);
   const [popoverY, setPopoverY] = useState(0);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const chainAddressEntries = useAccountChainAddresses({ sessionAddressMode: 'session' });
+  const chainAddressEntries = useAccountChainAddresses();
+  const [addressCopied, setAddressCopied] = useState(false);
+
+  // The funding address is the one that can actually receive tokens: the master
+  // address for a SessionAccount, the account's own Gno address otherwise.
+  const handleCopyIconClick = useCallback(() => {
+    if (!currentFundingAddress) {
+      return;
+    }
+    navigator.clipboard.writeText(currentFundingAddress);
+    setAddressCopied(true);
+  }, [currentFundingAddress]);
+
+  useEffect(() => {
+    if (!addressCopied) {
+      return;
+    }
+    const timer = setTimeout(() => setAddressCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [addressCopied]);
 
   useEffect(() => {
     if (location.search) {
@@ -218,11 +235,12 @@ const ApproveMenu = (): JSX.Element => {
             ref={copyButtonRef}
             type='button'
             isActive={popoverOpen}
+            onClick={handleCopyIconClick}
             onMouseEnter={handleCopyIconMouseEnter}
             onMouseLeave={handleCopyIconMouseLeave}
             aria-label='Copy address'
           >
-            <IconCopy />
+            {addressCopied ? <IconCopyCheck /> : <IconCopy />}
           </StyledCopyIconButton>
         </StyledLeftSideWrapper>
         <StyledRightSideWrapper>

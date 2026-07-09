@@ -14,7 +14,7 @@ import styled from 'styled-components';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import AtomoneChainBadge from '@assets/icons/chains/atomone.svg';
 import { GasToken } from '@common/constants/token.constant';
-import { shouldConvertMissingSession } from '@common/utils/session-chain-visibility';
+import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
 import {
   isCosmosNativeTokenModel,
   isGRC20TokenModel,
@@ -33,7 +33,6 @@ import { useNetworkProfile } from '@hooks/use-network-profile';
 import { getCosmosOriginDenom } from '@hooks/use-token-metainfo';
 import { useTransferInfo } from '@hooks/use-transfer-info';
 import { useCosmosNetworkFee } from '@hooks/wallet/use-cosmos-network-fee';
-import { useConvertSessionAccounts } from '@hooks/wallet/use-convert-session-accounts';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import {
@@ -73,7 +72,6 @@ const TransferSummaryContainer: React.FC = () => {
   const chain = useChain(tokenChainGroup);
   const tokenProfile = useNetworkProfile(tokenChainGroup);
   const { openScannerLink } = useLink();
-  const { convertBySessionAddresses } = useConvertSessionAccounts();
   const { setMemorizedTransferInfo } = useTransferInfo();
   const [isSent, setIsSent] = useState(false);
   const [screenState, setScreenState] = useState<'SUMMARY' | 'LOADING' | 'RESULT'>('SUMMARY');
@@ -488,13 +486,15 @@ const TransferSummaryContainer: React.FC = () => {
         continue;
       }
       if (!record) {
-        const shouldConvert = await shouldConvertMissingSession(
+        const revoked = await shouldMarkSessionRevoked(
           storedSession,
           async () =>
             !!(await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr)),
         );
-        if (shouldConvert) {
-          await convertBySessionAddresses([sessionAddr]);
+        if (revoked) {
+          await sessionRepository.setStatus(sessionAddr, 'REVOKED').catch(() => undefined);
+          queryClient.invalidateQueries({ queryKey: ['sessionMetadataForBalanceInput'] });
+          queryClient.invalidateQueries({ queryKey: ['sessions/all'] });
         }
         break;
       }
@@ -506,6 +506,8 @@ const TransferSummaryContainer: React.FC = () => {
       const spendReset =
         base.spend_reset != null && base.spend_reset !== '' ? Number(base.spend_reset) : undefined;
 
+      // A REVOKED row is preserved by syncFromChain itself, so this loop may
+      // report the chain-derived status without re-reading the stored one.
       await sessionRepository.syncFromChain(sessionAddr, {
         spendUsed,
         spendReset,
@@ -525,7 +527,6 @@ const TransferSummaryContainer: React.FC = () => {
     gnoProvider,
     queryClient,
     sessionRepository,
-    convertBySessionAddresses,
   ]);
 
   const transfer = async (): Promise<boolean> => {

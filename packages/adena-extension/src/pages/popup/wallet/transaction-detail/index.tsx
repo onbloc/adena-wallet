@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { isSessionAccount } from 'adena-module';
 import styled from 'styled-components';
 
 import AddPackageIcon from '@assets/addpkg.svg';
@@ -20,7 +19,6 @@ import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
 import { TokenBalance } from '@components/molecules';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useNetworkProfile } from '@hooks/use-network-profile';
@@ -46,22 +44,23 @@ export const TransactionDetail = (): JSX.Element => {
   const { currentNetwork } = useNetwork();
   const profile = useNetworkProfile();
   const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
-  const { currentAccount, currentAddress } = useCurrentAccount();
 
   const transactionItem = params.transactionInfo;
-  // History for a SessionAccount is queried by (and attributed to) its session
-  // address, so every transaction in it was signed by the current session.
-  // Derive the master/session pair from the account context instead of a
-  // per-transaction lookup.
+  // Session attribution comes from the transaction itself (the backend reports
+  // the session signer and the on-chain caller), not from the current account.
+  // A session-signed tx therefore shows its master/session pair whether it is
+  // opened from the session account's history or the master account's — the
+  // master's history is where session sends surface, since the chain records the
+  // master as the caller.
   const sessionInfo = useMemo(() => {
-    if (!currentAccount || !isSessionAccount(currentAccount) || !currentAddress) {
+    if (!transactionItem?.sessionAddress) {
       return null;
     }
     return {
-      masterAddress: currentAccount.getMasterAddress(),
-      sessionAddress: currentAddress,
+      masterAddress: transactionItem.callerAddress || '',
+      sessionAddress: transactionItem.sessionAddress,
     };
-  }, [currentAccount, currentAddress]);
+  }, [transactionItem?.callerAddress, transactionItem?.sessionAddress]);
   const isSessionTransaction = sessionInfo !== null;
   const tokenUriQuery =
     transactionItem?.type === 'TRANSFER_GRC721'

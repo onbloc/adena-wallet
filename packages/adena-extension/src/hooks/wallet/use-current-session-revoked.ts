@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { isSessionAccount } from 'adena-module';
 
+import { isRevokedSessionAccount } from '@common/utils/account-session';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useSessions } from '@hooks/use-sessions';
 
@@ -12,10 +12,8 @@ export const useIsCurrentSessionRevoked = (): boolean => {
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { sessions } = useSessions();
 
-  return useMemo(() => {
-    if (!currentAccount || !isSessionAccount(currentAccount)) return false;
-    if (!currentAddress) return false;
-    const match = sessions.find((s) => s.sessionAddr === currentAddress);
-    return match?.status === 'REVOKED';
-  }, [currentAccount, currentAddress, sessions]);
+  return useMemo(
+    () => isRevokedSessionAccount(currentAccount, currentAddress, sessions),
+    [currentAccount, currentAddress, sessions],
+  );
 };

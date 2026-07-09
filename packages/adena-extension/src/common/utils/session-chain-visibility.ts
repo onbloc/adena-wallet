@@ -20,7 +20,11 @@ export const isSessionInCreationGrace = (
   return nowMs - metadata.createdAt * 1000 < SESSION_CREATION_GRACE_MS;
 };
 
-export const shouldConvertMissingSession = async (
+// A session that is absent from chain has been revoked (the chain drops the
+// record on MsgRevokeSession). Guard against two false positives before saying
+// so: a session created moments ago may not be queryable yet (creation grace),
+// and a single missing read may be a transient node hiccup (recheck).
+export const shouldMarkSessionRevoked = async (
   metadata: SessionCreationMetadata | null | undefined,
   recheck: () => Promise<boolean>,
 ): Promise<boolean> => {
