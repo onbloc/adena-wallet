@@ -10,35 +10,35 @@ import {
   isStaticSessionAdminFeeDocument,
   makeStaticSessionAdminFeeSettings,
 } from './transaction-gas/session-admin-static-fee';
-import {
-  useGetDefaultEstimateGasInfo,
-  useGetEstimateGasInfo,
-} from './transaction-gas/use-get-estimate-gas-info';
-import { useGetEstimateGasPriceTiers } from './transaction-gas/use-get-estimate-gas-price-tiers';
+import { useGetEstimateGas } from './transaction-gas/use-get-estimate-gas';
+import { useGetGasPrice } from './transaction-gas/use-get-gas-price';
 import { useNetworkFee } from './use-network-fee';
 
-jest.mock('./transaction-gas/use-get-estimate-gas-info', () => ({
-  useGetDefaultEstimateGasInfo: jest.fn(),
-  useGetEstimateGasInfo: jest.fn(),
+jest.mock('./transaction-gas/use-get-estimate-gas', () => ({
+  useGetEstimateGas: jest.fn(),
 }));
 
-jest.mock('./transaction-gas/use-get-estimate-gas-price-tiers', () => ({
-  useGetEstimateGasPriceTiers: jest.fn(),
+jest.mock('./transaction-gas/use-get-gas-price', () => ({
+  useGetGasPrice: jest.fn(),
 }));
 
-const useGetDefaultEstimateGasInfoMock = useGetDefaultEstimateGasInfo as jest.Mock;
-const useGetEstimateGasInfoMock = useGetEstimateGasInfo as jest.Mock;
-const useGetEstimateGasPriceTiersMock = useGetEstimateGasPriceTiers as jest.Mock;
+const useGetEstimateGasMock = useGetEstimateGas as jest.Mock;
+const useGetGasPriceMock = useGetGasPrice as jest.Mock;
+
+const EMPTY_STORAGE_DEPOSITS = {
+  storageDeposit: 0,
+  unlockDeposit: 0,
+  storageUsage: 0,
+  releaseStorageUsage: 0,
+};
 
 describe('useNetworkFee', () => {
   beforeEach(() => {
-    useGetDefaultEstimateGasInfoMock.mockReset();
-    useGetEstimateGasInfoMock.mockReset();
-    useGetEstimateGasPriceTiersMock.mockReset();
+    useGetEstimateGasMock.mockReset();
+    useGetGasPriceMock.mockReset();
 
-    useGetDefaultEstimateGasInfoMock.mockReturnValue({ data: undefined, isFetched: false });
-    useGetEstimateGasInfoMock.mockReturnValue({ data: undefined, isFetched: false });
-    useGetEstimateGasPriceTiersMock.mockReturnValue({ data: undefined, isFetched: false });
+    useGetEstimateGasMock.mockReturnValue({ data: undefined, isFetched: false });
+    useGetGasPriceMock.mockReturnValue({ data: null, isFetched: false });
   });
 
   it('builds static fee settings for session admin messages', () => {
@@ -82,24 +82,13 @@ describe('useNetworkFee', () => {
     expect(isStaticSessionAdminFeeDocument(document)).toBe(true);
   });
 
-  it('disables estimate queries and uses document fee for session admin messages', () => {
+  it('disables the estimate query and uses document fee for session admin messages', () => {
     const document = makeDocument([MSG_CREATE_SESSION_ENDPOINT]);
 
     const { result } = renderHook(() => useNetworkFee(document));
 
-    expect(useGetDefaultEstimateGasInfoMock).toHaveBeenCalledWith(
+    expect(useGetEstimateGasMock).toHaveBeenCalledWith(
       document,
-      expect.objectContaining({ enabled: false }),
-    );
-    expect(useGetEstimateGasInfoMock).toHaveBeenCalledWith(
-      document,
-      0,
-      expect.objectContaining({ enabled: false }),
-    );
-    expect(useGetEstimateGasPriceTiersMock).toHaveBeenCalledWith(
-      document,
-      undefined,
-      expect.any(String),
       expect.objectContaining({ enabled: false }),
     );
     expect(result.current.isLoading).toBe(false);
@@ -115,46 +104,53 @@ describe('useNetworkFee', () => {
     expect(result.current.currentGasFeeRawAmount).toBe(5_000_000);
   });
 
-  it('keeps normal estimate queries enabled by hook defaults for other messages', () => {
+  it('derives tiers arithmetically from a single simulate result for other messages', () => {
     const document = makeDocument(['/bank.MsgSend']);
-    const gasInfo = {
-      gasFee: 123,
-      gasPrice: 1,
-      gasUsed: 123,
-      gasWanted: 123,
-      hasError: false,
-      simulateErrorMessage: null,
-    };
-    useGetDefaultEstimateGasInfoMock.mockReturnValue({ data: gasInfo, isFetched: true });
-    useGetEstimateGasInfoMock.mockReturnValue({ data: gasInfo, isFetched: true });
-    useGetEstimateGasPriceTiersMock.mockReturnValue({
-      data: [
-        {
-          settingType: NetworkFeeSettingType.AVERAGE,
-          gasInfo,
-          storageDeposits: {
-            storageDeposit: 0,
-            unlockDeposit: 0,
-            storageUsage: 0,
-            releaseStorageUsage: 0,
-          },
-        },
-      ],
+    useGetEstimateGasMock.mockReturnValue({
+      data: {
+        gasUsed: 123,
+        storageDeposits: EMPTY_STORAGE_DEPOSITS,
+        hasError: false,
+        simulateErrorMessage: null,
+      },
       isFetched: true,
     });
+    useGetGasPriceMock.mockReturnValue({ data: 1, isFetched: true });
 
     const { result } = renderHook(() => useNetworkFee(document));
 
-    expect(useGetDefaultEstimateGasInfoMock).toHaveBeenCalledWith(document, undefined);
-    expect(useGetEstimateGasInfoMock).toHaveBeenCalledWith(document, 123, undefined);
-    expect(useGetEstimateGasPriceTiersMock).toHaveBeenCalledWith(
-      document,
-      123,
-      expect.any(String),
-      undefined,
-    );
-    expect(result.current.currentGasInfo).toEqual(gasInfo);
+    expect(useGetEstimateGasMock).toHaveBeenCalledWith(document, undefined);
+    // AVERAGE tier: floor(123 * 1.1 * 1) = 135, gasFee = ceil(1 * 135) = 135
+    expect(result.current.currentGasInfo).toEqual({
+      gasFee: 135,
+      gasUsed: 135,
+      gasWanted: 135,
+      gasPrice: 1,
+      hasError: false,
+      simulateErrorMessage: null,
+    });
     expect(result.current.isSimulateError).toBe(false);
+    expect(result.current.networkFeeSettings).toHaveLength(3);
+  });
+
+  it('flags simulate errors coming from the estimate result', () => {
+    const document = makeDocument(['/bank.MsgSend']);
+    useGetEstimateGasMock.mockReturnValue({
+      data: {
+        gasUsed: 0,
+        storageDeposits: EMPTY_STORAGE_DEPOSITS,
+        hasError: true,
+        simulateErrorMessage: 'simulate failed',
+      },
+      isFetched: true,
+    });
+    useGetGasPriceMock.mockReturnValue({ data: 1, isFetched: true });
+
+    const { result } = renderHook(() => useNetworkFee(document));
+
+    expect(result.current.isSimulateError).toBe(true);
+    expect(result.current.currentGasInfo?.hasError).toBe(true);
+    expect(result.current.currentGasInfo?.simulateErrorMessage).toBe('simulate failed');
   });
 });
 
