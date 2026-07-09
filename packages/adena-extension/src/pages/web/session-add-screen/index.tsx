@@ -1007,11 +1007,16 @@ const CreateTab = ({
         spendLimit: spendLimitCoin,
         spendPeriod: spendPeriodSec,
       };
+      const nextSessionAccountIndex = wallet.lastSessionAccountIndex + 1;
       const sessionAccount = SessionAccount.createBy(
         sessionKeyring,
         wallet.nextSessionAccountName,
         sessionConfig,
       );
+      // createBy defaults index to 0; assign the real index so the next created
+      // session increments its "Session N" number (lastSessionAccountIndex reads
+      // account.index). Mirrors commitSessionImports in wallet-session.ts.
+      sessionAccount.index = nextSessionAccountIndex;
       const sessionMetadata = {
         masterAddress,
         chainId: currentChainId,
