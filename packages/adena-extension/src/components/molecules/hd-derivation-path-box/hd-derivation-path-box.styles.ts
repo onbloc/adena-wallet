@@ -1,7 +1,6 @@
 import styled from 'styled-components';
 
 import { WebInput } from '@components/atoms';
-import { getTheme } from '@styles/theme';
 
 export const StyledHDDerivationPathBox = styled.div`
   display: flex;
@@ -11,8 +10,8 @@ export const StyledHDDerivationPathBox = styled.div`
   width: 100%;
   padding: 20px 20px 16px;
   border-radius: 14px;
-  border: 1px solid ${getTheme('webNeutral', '_800')};
-  background-color: ${getTheme('webNeutral', '_900')};
+  border: 1px solid #212429;
+  background-color: #16181c;
 `;
 
 export const StyledHeader = styled.div`
@@ -43,4 +42,12 @@ export const StyledSegmentInput = styled(WebInput)`
   border-radius: 10px;
   padding: 12px;
   text-align: left;
+`;
+
+export const StyledAddressGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  width: 100%;
 `;
