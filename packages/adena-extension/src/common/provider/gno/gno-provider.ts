@@ -47,21 +47,6 @@ function isBase64JSONNull(data: string): boolean {
   return data === BASE64_JSON_NULL;
 }
 
-function base64ToUpperHex(b64: string): string {
-  if (!b64) {
-    return '';
-  }
-
-  let hex = '';
-
-  const bin = atob(b64);
-  for (let i = 0; i < bin.length; i++) {
-    hex += bin.charCodeAt(i).toString(16).padStart(2, '0');
-  }
-
-  return hex.toUpperCase();
-}
-
 type Tm2ClientConstructor = new (client: HttpClient) => Tm2Client;
 type GnoSessionAccountInfoResponse = GnoSessionAccountResponse & SessionAccountInfo;
 
@@ -407,7 +392,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
       error: null,
       data: result.data ?? null,
       Log: log,
-      hash: base64ToUpperHex(result.hash),
+      hash: result.hash,
     };
   }
 
