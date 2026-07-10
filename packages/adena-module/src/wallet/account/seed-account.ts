@@ -1,7 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import { publicKeyToAddress } from '../../utils/address';
-import { isHDWalletKeyring, Keyring, KeyringType } from '../../wallet/keyring';
+import {
+  HdPath,
+  HdPathLike,
+  isHDWalletKeyring,
+  Keyring,
+  KeyringType,
+  toHdPath,
+} from '../../wallet/keyring';
 import { Wallet } from '../wallet';
 import { Account, AccountInfo } from './account';
 
@@ -14,20 +21,41 @@ export class SeedAccount implements Account {
 
   public readonly hdPath: number;
 
+  public readonly accountIndex: number;
+
+  public readonly changeIndex: number;
+
   public readonly publicKey: Uint8Array;
 
   private _index: number;
 
   private _name: string;
 
-  constructor({ id, index, keyringId, publicKey, type, name, hdPath }: AccountInfo) {
+  constructor({
+    id,
+    index,
+    keyringId,
+    publicKey,
+    type,
+    name,
+    hdPath,
+    accountIndex,
+    changeIndex,
+  }: AccountInfo) {
     this.id = id ?? uuidv4();
     this._index = index;
     this.type = type;
     this.keyringId = keyringId;
     this.hdPath = hdPath ?? 0;
+    this.accountIndex = accountIndex ?? 0;
+    this.changeIndex = changeIndex ?? 0;
     this.publicKey = Uint8Array.from(publicKey);
     this._name = name;
+  }
+
+  // The full BIP44 derivation path (account'/change/addressIndex).
+  public get derivationPath(): HdPath {
+    return { account: this.accountIndex, change: this.changeIndex, addressIndex: this.hdPath };
   }
 
   public get index() {
@@ -57,17 +85,20 @@ export class SeedAccount implements Account {
       type: this.type,
       keyringId: this.keyringId,
       hdPath: this.hdPath,
+      accountIndex: this.accountIndex,
+      changeIndex: this.changeIndex,
       publicKey: Array.from(this.publicKey),
       name: this._name,
     };
   }
 
-  public static async createBy(keyring: Keyring, name: string, hdPath: number, index = 1) {
+  public static async createBy(keyring: Keyring, name: string, hdPath: HdPathLike, index = 1) {
     if (!isHDWalletKeyring(keyring)) {
       throw new Error('Invalid account type');
     }
     const publicKey = await keyring.getPublicKey(hdPath);
 
+    const { account, change, addressIndex } = toHdPath(hdPath);
     const { id: keyringId, type: type } = keyring;
     return new SeedAccount({
       keyringId,
@@ -75,7 +106,9 @@ export class SeedAccount implements Account {
       type,
       publicKey: Array.from(publicKey),
       name,
-      hdPath,
+      hdPath: addressIndex,
+      accountIndex: account,
+      changeIndex: change,
     });
   }
 
@@ -94,6 +127,8 @@ export class SeedAccount implements Account {
       type: accountInfo.type,
       keyringId: accountInfo.keyringId,
       hdPath: accountInfo.hdPath,
+      accountIndex: accountInfo.accountIndex,
+      changeIndex: accountInfo.changeIndex,
       publicKey: accountInfo.publicKey,
       name: accountInfo.name,
     });

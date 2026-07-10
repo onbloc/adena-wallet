@@ -12,6 +12,7 @@ import { publicKeyToAddress } from '../../utils/address';
 import { decodeTxMessages, Document, documentToTx } from '../../utils/messages';
 import { LocalTxSignature } from '../../proto/session/local-tx-signature';
 import { compressPubkeyIfNeeded } from '../../utils/pubkey';
+import { HdPathLike } from './hd-path';
 import { Keyring } from './keyring';
 import {
   isHDWalletKeyring,
@@ -128,7 +129,7 @@ export async function signGnoDocument(
 
 async function getKeyringPublicKey(
   keyring: Keyring,
-  hdPath: number | undefined,
+  hdPath: HdPathLike | undefined,
 ): Promise<Uint8Array> {
   if (isHDWalletKeyring(keyring)) return keyring.getPublicKey(hdPath ?? 0);
   if (isPrivateKeyKeyring(keyring)) return keyring.publicKey;

@@ -2,6 +2,7 @@ import { sha256 } from '@cosmjs/crypto';
 import { toHex } from '@cosmjs/encoding';
 import { SignMode } from 'cosmjs-types/cosmos/tx/signing/v1beta1/signing';
 
+import { HdPathLike } from '../../wallet/keyring/hd-path';
 import { Keyring } from '../../wallet/keyring/keyring';
 import { makeTxRaw } from '../proto/make-tx-raw';
 import { CosmosProvider } from '../providers/cosmos-provider';
@@ -18,7 +19,7 @@ export interface SignCosmosAminoParams {
   // which implements this interface). Mirrors the Gno `Provider` DI
   // pattern so adena-module stays free of HTTP-client dependencies.
   cosmosProvider: CosmosProvider;
-  hdPath?: number;
+  hdPath?: HdPathLike;
 }
 
 /**
@@ -31,9 +32,7 @@ export interface SignCosmosAminoParams {
  *     → keyring.signRaw(signBytes) → 64-byte r‖s signature
  *     → makeTxRaw(msgs, signature, pubkey, fee, sequence) → TxRaw protobuf bytes
  */
-export async function signCosmosAmino(
-  params: SignCosmosAminoParams,
-): Promise<SignedCosmosTx> {
+export async function signCosmosAmino(params: SignCosmosAminoParams): Promise<SignedCosmosTx> {
   const { document, keyring, cosmosProvider, hdPath } = params;
 
   const { accountNumber, sequence } = await resolveAccount(document, cosmosProvider);

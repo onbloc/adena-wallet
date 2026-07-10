@@ -1,6 +1,7 @@
 import { StdFee } from '@cosmjs/amino';
 import { SignMode } from 'cosmjs-types/cosmos/tx/signing/v1beta1/signing';
 
+import { HdPathLike } from '../../wallet/keyring/hd-path';
 import { makeTxRaw } from '../proto/make-tx-raw';
 import { CosmosProvider } from '../providers/cosmos-provider';
 import { resolveAccount } from '../signer-helpers';
@@ -15,7 +16,7 @@ export interface EstimateCosmosFeeParams {
   // (e.g. Ledger accounts whose keyringId drifted from the stored keyring).
   publicKey: Uint8Array;
   cosmosProvider: CosmosProvider;
-  hdPath?: number;
+  hdPath?: HdPathLike;
   // Fee stub used inside the simulate tx's AuthInfo. The node ignores its
   // amount for gas estimation, but the structure must still be valid — so
   // we pass the chain's proven-working fallbackFee.
@@ -50,8 +51,7 @@ const SIMULATE_ZERO_SIGNATURE = new Uint8Array(64);
 export async function estimateCosmosFee(
   params: EstimateCosmosFeeParams,
 ): Promise<CosmosFeeEstimate> {
-  const { document, publicKey, cosmosProvider, simulateFee, feeDenom } =
-    params;
+  const { document, publicKey, cosmosProvider, simulateFee, feeDenom } = params;
 
   const { sequence } = await resolveAccount(document, cosmosProvider);
 
@@ -72,9 +72,7 @@ export async function estimateCosmosFee(
 
   const match = prices.find((p) => p.denom === feeDenom);
   if (!match) {
-    throw new Error(
-      `min_gas_price has no entry for denom="${feeDenom}"`,
-    );
+    throw new Error(`min_gas_price has no entry for denom="${feeDenom}"`);
   }
 
   return {

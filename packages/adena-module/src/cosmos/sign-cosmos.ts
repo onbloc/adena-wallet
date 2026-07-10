@@ -1,4 +1,5 @@
 import { CosmosSignMode } from '../chain-registry/types';
+import { HdPathLike } from '../wallet/keyring/hd-path';
 import { Keyring } from '../wallet/keyring/keyring';
 
 import { signCosmosAmino } from './amino/sign-cosmos-amino';
@@ -10,7 +11,7 @@ export interface SignCosmosParams {
   document: CosmosDocument;
   keyring: Keyring;
   cosmosProvider: CosmosProvider;
-  hdPath?: number;
+  hdPath?: HdPathLike;
   signMode: CosmosSignMode;
 }
 
@@ -20,9 +21,7 @@ export interface SignCosmosParams {
  * chain registry and pass it in explicitly — this module has no chain-registry
  * dependency so it can be unit tested in isolation.
  */
-export async function signCosmos(
-  params: SignCosmosParams,
-): Promise<SignedCosmosTx> {
+export async function signCosmos(params: SignCosmosParams): Promise<SignedCosmosTx> {
   const { document, keyring, cosmosProvider, hdPath, signMode } = params;
 
   switch (signMode) {

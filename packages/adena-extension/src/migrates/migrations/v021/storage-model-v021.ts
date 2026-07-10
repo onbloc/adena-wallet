@@ -66,7 +66,11 @@ export type AccountDataModelV021 = {
   type: 'HD_WALLET' | 'PRIVATE_KEY' | 'LEDGER' | 'WEB3_AUTH' | 'AIRGAP';
   name: string;
   keyringId: string;
+  // hdPath is the BIP44 address index. account'/change are the upper path
+  // segments (default 0 when absent, matching pre-custom-path accounts).
   hdPath?: number;
+  accountIndex?: number;
+  changeIndex?: number;
   publicKey: number[];
   addressBytes?: number[];
 };

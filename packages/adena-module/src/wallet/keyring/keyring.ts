@@ -8,12 +8,13 @@ import {
 
 import { Document, MultisigConfig, SignerPublicKeyInfo } from './../..';
 import { AddressKeyring } from './address-keyring';
+import { HdPathLike } from './hd-path';
 import { HDWalletKeyring } from './hd-wallet-keyring';
 import { LedgerKeyring } from './ledger-keyring';
-import { PrivateKeyKeyring } from './private-key-keyring';
-import { Web3AuthKeyring } from './web3-auth-keyring';
 import { MultisigKeyring } from './multisig-keyring';
+import { PrivateKeyKeyring } from './private-key-keyring';
 import { SessionKeyring } from './session-keyring';
+import { Web3AuthKeyring } from './web3-auth-keyring';
 
 export type KeyringType =
   | 'HD_WALLET'
@@ -25,8 +26,9 @@ export type KeyringType =
   | 'SESSION';
 
 export interface SignRawOptions {
-  // HD-only hint: which derivation index to sign with. Ignored by non-HD keyrings.
-  hdPath?: number;
+  // HD-only hint: which derivation path (or bare address index) to sign with.
+  // Ignored by non-HD keyrings.
+  hdPath?: HdPathLike;
 }
 
 export interface Keyring {
@@ -45,7 +47,7 @@ export interface Keyring {
   sign: (
     provider: Provider,
     document: Document,
-    hdPath?: number,
+    hdPath?: HdPathLike,
   ) => Promise<{
     signed: Tx;
     signature: TxSignature[];
@@ -53,12 +55,12 @@ export interface Keyring {
   broadcastTxSync: (
     provider: Provider,
     signedTx: Tx,
-    hdPath?: number,
+    hdPath?: HdPathLike,
   ) => Promise<BroadcastTxSyncResult>;
   broadcastTxCommit: (
     provider: Provider,
     signedTx: Tx,
-    hdPath?: number,
+    hdPath?: HdPathLike,
   ) => Promise<BroadcastTxCommitResult>;
 }
 

@@ -7,17 +7,17 @@ import {
   TxSignature,
 } from '@gnolang/tm2-js-client';
 
+import { StdFee } from '@cosmjs/amino';
 import { CosmosSignMode } from '../chain-registry/types';
 import {
-  signCosmos,
   CosmosDocument,
   CosmosFeeEstimate,
   CosmosProvider,
   CosmosTxBroadcastResponse,
-  SignedCosmosTx,
   estimateCosmosFee,
+  signCosmos,
+  SignedCosmosTx,
 } from '../cosmos';
-import { StdFee } from '@cosmjs/amino';
 import { Bip39, Random } from '../crypto';
 import { fromBech32 } from '../encoding';
 import { arrayContentEquals, arrayToHex, hexToArray } from '../utils';
@@ -49,13 +49,7 @@ import {
   makeKeyring,
   Web3AuthKeyring,
 } from './keyring';
-import {
-  decryptAES,
-  decryptXChacha20,
-  encryptAES,
-  EncryptedData,
-  encryptXChacha20,
-} from './wallet-crypto-util';
+import { decryptXChacha20, EncryptedData, encryptXChacha20 } from './wallet-crypto-util';
 
 export interface Wallet {
   accounts: Account[];
@@ -377,7 +371,7 @@ export class AdenaWallet implements Wallet {
     }
     if (isHDWalletKeyring(this.currentKeyring)) {
       if (this.currentAccount instanceof SeedAccount) {
-        return this.currentKeyring.getPrivateKey(this.currentAccount.hdPath);
+        return this.currentKeyring.getPrivateKey(this.currentAccount.derivationPath);
       }
       throw new Error('Problems with account types');
     }
@@ -398,7 +392,7 @@ export class AdenaWallet implements Wallet {
       throw new Error('Keyring not found');
     }
     if (hasHDPath(account)) {
-      return keyring.sign(provider, document, account.hdPath);
+      return keyring.sign(provider, document, account.derivationPath);
     }
     return keyring.sign(provider, document);
   }
@@ -413,7 +407,7 @@ export class AdenaWallet implements Wallet {
       throw new Error('Keyring not found');
     }
     if (hasHDPath(account)) {
-      return keyring.broadcastTxSync(provider, signedTx, account.hdPath);
+      return keyring.broadcastTxSync(provider, signedTx, account.derivationPath);
     }
     return keyring.broadcastTxSync(provider, signedTx);
   }
@@ -428,7 +422,7 @@ export class AdenaWallet implements Wallet {
       throw new Error('Keyring not found');
     }
     if (hasHDPath(account)) {
-      return keyring.broadcastTxCommit(provider, signedTx, account.hdPath);
+      return keyring.broadcastTxCommit(provider, signedTx, account.derivationPath);
     }
     return keyring.broadcastTxCommit(provider, signedTx);
   }
@@ -453,7 +447,7 @@ export class AdenaWallet implements Wallet {
     if (!keyring) {
       throw new Error('Keyring not found');
     }
-    const hdPath = hasHDPath(account) ? account.hdPath : undefined;
+    const hdPath = hasHDPath(account) ? account.derivationPath : undefined;
     return signCosmos({
       document,
       keyring,
@@ -479,7 +473,7 @@ export class AdenaWallet implements Wallet {
     // avoids the keyring lookup, which is unnecessary for a read-only gas
     // query and brittle for Ledger accounts whose persisted keyring id can
     // drift from account.keyringId (connect-ledger wizard bug).
-    const hdPath = hasHDPath(account) ? account.hdPath : undefined;
+    const hdPath = hasHDPath(account) ? account.derivationPath : undefined;
     return estimateCosmosFee({
       document,
       publicKey: account.publicKey,
