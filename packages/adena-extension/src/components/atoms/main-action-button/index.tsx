@@ -28,7 +28,7 @@ const StyledButton = styled.button`
   cursor: pointer;
   transition: background 0.2s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: ${getTheme('neutral', '_6')};
   }
 
