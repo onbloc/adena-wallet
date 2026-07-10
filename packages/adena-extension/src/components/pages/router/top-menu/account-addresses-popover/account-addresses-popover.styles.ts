@@ -35,7 +35,8 @@ export const ChainRow = styled.div`
   gap: 8px;
   transition: color 0.15s ease;
 
-  &:hover {
+  &:hover .chain-right,
+  .chain-right.copied {
     .address {
       color: ${getTheme('neutral', '_1')};
     }
@@ -66,6 +67,20 @@ export const ChainRow = styled.div`
     ${mixins.flex({ direction: 'row', align: 'center', justify: 'flex-end' })};
     gap: 6px;
     flex-shrink: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+
+    svg {
+      width: 14px;
+      height: 14px;
+
+      path {
+        transition: stroke 0.2s;
+        stroke: ${getTheme('neutral', 'a')};
+      }
+    }
   }
 
   .address {
