@@ -1,4 +1,4 @@
-import { isAirgapAccount, isMultisigAccount } from 'adena-module';
+import { isAirgapAccount, isMultisigAccount, isSessionAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRecoilState } from 'recoil';
@@ -105,6 +105,12 @@ export const WalletMain = (): JSX.Element => {
   const networkUnresponsive = failedNetwork === true;
   const sessionRevoked = useIsCurrentSessionRevoked();
   const actionsDisabled = networkUnresponsive || sessionRevoked;
+  // A SessionAccount address can never receive tokens, so depositing to it is
+  // blocked; users deposit to the Master Account instead.
+  const isSession = useMemo(
+    () => (currentAccount ? isSessionAccount(currentAccount) : false),
+    [currentAccount],
+  );
 
   const { addLoadingImages, completeImageLoading } = useLoadImages();
 
@@ -295,7 +301,7 @@ export const WalletMain = (): JSX.Element => {
           icon={<IconDeposit />}
           label='Deposit'
           onClick={onClickDepositButton}
-          disabled={actionsDisabled}
+          disabled={actionsDisabled || isSession}
         />
         <MainActionButton
           icon={<IconSend />}

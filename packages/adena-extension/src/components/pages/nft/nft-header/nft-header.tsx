@@ -9,24 +9,36 @@ import { NFTHeaderWrapper } from './nft-header.styles';
 export interface NFTHeaderProps {
   openGnoscan: () => void;
   moveDepositPage: () => void;
+  isSessionAccount?: boolean;
 }
 
-const NFTHeader: React.FC<NFTHeaderProps> = ({ openGnoscan, moveDepositPage }) => {
-  const dropdownOptions = useMemo(
-    () => [
+const NFTHeader: React.FC<NFTHeaderProps> = ({
+  openGnoscan,
+  moveDepositPage,
+  isSessionAccount = false,
+}) => {
+  const dropdownOptions = useMemo(() => {
+    const gnoscanOption = {
+      text: 'View on GnoScan',
+      icon: <IconLink />,
+      onClick: openGnoscan,
+    };
+
+    // A SessionAccount address can never receive tokens, so the deposit entry
+    // point is hidden; users deposit NFTs to the Master Account instead.
+    if (isSessionAccount) {
+      return [gnoscanOption];
+    }
+
+    return [
       {
         text: 'Deposit NFT',
         icon: <IconQRCode />,
         onClick: moveDepositPage,
       },
-      {
-        text: 'View on GnoScan',
-        icon: <IconLink />,
-        onClick: openGnoscan,
-      },
-    ],
-    [openGnoscan, moveDepositPage],
-  );
+      gnoscanOption,
+    ];
+  }, [openGnoscan, moveDepositPage, isSessionAccount]);
 
   return (
     <NFTHeaderWrapper>

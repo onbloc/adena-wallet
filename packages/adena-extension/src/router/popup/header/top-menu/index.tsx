@@ -16,6 +16,7 @@ import { AdenaStorage } from '@common/storage';
 import { isRevokedSessionAccount } from '@common/utils/account-session';
 import { formatNickname, getSiteName } from '@common/utils/client-utils';
 import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
+import { SessionAddressWarningPopover } from '@components/pages/router/top-menu/session-address-warning-popover';
 import { SessionOverviewPopover } from '@components/pages/router/top-menu/session-overview-popover';
 import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
 import { useAccountListInfos } from '@hooks/use-account-list-infos';
@@ -100,6 +101,7 @@ const StyledCopyIconButton = styled.button.withConfig({
 `;
 
 const COPY_POPOVER_WIDTH = 220;
+const SESSION_WARNING_POPOVER_WIDTH = 320;
 const SESSION_POPOVER_RIGHT_MARGIN = 16;
 
 export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
@@ -157,16 +159,18 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
 
   const chainAddressEntries = useAccountChainAddresses();
   const [addressCopied, setAddressCopied] = useState(false);
+  const isSession = currentAccount !== null && isSessionAccount(currentAccount);
 
-  // The funding address is the one that can actually receive tokens: the master
-  // address for a SessionAccount, the account's own Gno address otherwise.
+  // A SessionAccount address can never receive tokens, so copying it is disabled;
+  // hovering the icon shows a warning to use the Master Account instead. For every
+  // other account the funding address is the one that can actually receive tokens.
   const handleCopyIconClick = useCallback(() => {
-    if (!currentFundingAddress) {
+    if (isSession || !currentFundingAddress) {
       return;
     }
     navigator.clipboard.writeText(currentFundingAddress);
     setAddressCopied(true);
-  }, [currentFundingAddress]);
+  }, [isSession, currentFundingAddress]);
 
   useEffect(() => {
     if (!addressCopied) {
@@ -182,11 +186,14 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     if (anchor) {
       const rect = anchor.getBoundingClientRect();
       const iconCenterX = rect.left + rect.width / 2;
-      const popoverLeft = (window.innerWidth - COPY_POPOVER_WIDTH) / 2;
+      // Both popovers are centered on screen (left: 50% + translateX(-50%)), so the
+      // caret offset must be measured against each popover's own width.
+      const popoverWidth = isSession ? SESSION_WARNING_POPOVER_WIDTH : COPY_POPOVER_WIDTH;
+      const popoverLeft = (window.innerWidth - popoverWidth) / 2;
       setCopyPosition({ x: iconCenterX - popoverLeft, y: rect.bottom + 16 });
     }
     copyPopover.setOpen(true);
-  }, [copyPopover]);
+  }, [copyPopover, isSession]);
 
   const handleSessionIconMouseEnter = useCallback(() => {
     sessionPopover.cancelClose();
@@ -260,7 +267,6 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   };
 
   const displayHostname = hostname && hostname.includes('.') ? hostname : 'chrome-extension';
-  const isSession = currentAccount !== null && isSessionAccount(currentAccount);
   const sessionMetadata =
     isSession && currentAddress
       ? sessions.find((s) => s.sessionAddr === currentAddress)
@@ -317,9 +323,9 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
             onClick={handleCopyIconClick}
             onMouseEnter={handleCopyIconMouseEnter}
             onMouseLeave={copyPopover.onAnchorMouseLeave}
-            aria-label='Copy address'
+            aria-label={isSession ? 'Session account address info' : 'Copy address'}
           >
-            {addressCopied ? <IconCopyCheck /> : <IconCopy />}
+            {addressCopied && !isSession ? <IconCopyCheck /> : <IconCopy />}
           </StyledCopyIconButton>
         </StyledLeftSideWrapper>
         <StyledRightSideWrapper>
@@ -339,14 +345,24 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
           <HamburgerMenuBtn type='button' onClick={goToSettings} />
         </StyledRightSideWrapper>
       </Header>
-      <AccountAddressesPopover
-        open={copyPopover.open}
-        positionX={copyPosition.x}
-        positionY={copyPosition.y}
-        onMouseEnter={copyPopover.onPopoverMouseEnter}
-        onMouseLeave={copyPopover.onPopoverMouseLeave}
-        entries={chainAddressEntries}
-      />
+      {isSession ? (
+        <SessionAddressWarningPopover
+          open={copyPopover.open}
+          positionX={copyPosition.x}
+          positionY={copyPosition.y}
+          onMouseEnter={copyPopover.onPopoverMouseEnter}
+          onMouseLeave={copyPopover.onPopoverMouseLeave}
+        />
+      ) : (
+        <AccountAddressesPopover
+          open={copyPopover.open}
+          positionX={copyPosition.x}
+          positionY={copyPosition.y}
+          onMouseEnter={copyPopover.onPopoverMouseEnter}
+          onMouseLeave={copyPopover.onPopoverMouseLeave}
+          entries={chainAddressEntries}
+        />
+      )}
       {sessionConfig && (
         <SessionOverviewPopover
           open={sessionPopover.open}

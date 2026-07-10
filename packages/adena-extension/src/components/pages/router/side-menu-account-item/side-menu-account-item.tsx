@@ -54,6 +54,10 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
     return name;
   }, [name]);
 
+  // A SessionAccount address can never receive tokens, so it is hidden in the
+  // account list to avoid users copying it as a deposit destination.
+  const isSession = type === 'SESSION';
+
   const labels = useMemo(() => {
     const typeLabel = ((): string | null => {
       switch (type) {
@@ -127,10 +131,12 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
       <div className='info-wrapper'>
         <div className='address-wrapper'>
           <span className='name'>{displayName}</span>
-          <div className='address-copy' onClick={onClickCopy}>
-            <span className='address'>{formatAddress(address, 6)}</span>
-            <span className='copy-icon'>{copied ? <IconCopyCheck /> : <IconCopy />}</span>
-          </div>
+          {!isSession && (
+            <div className='address-copy' onClick={onClickCopy}>
+              <span className='address'>{formatAddress(address, 6)}</span>
+              <span className='copy-icon'>{copied ? <IconCopyCheck /> : <IconCopy />}</span>
+            </div>
+          )}
           {labels.map((text) => (
             <span key={text} className='label'>
               {text}
