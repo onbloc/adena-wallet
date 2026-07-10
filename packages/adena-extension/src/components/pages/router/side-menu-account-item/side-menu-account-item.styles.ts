@@ -79,6 +79,12 @@ export const SideMenuAccountItemWrapper = styled.div`
         }
       }
 
+      /* Session accounts hide the address block, so the type chip sits directly
+         after the name and needs its own left spacing. */
+      .name + .label {
+        margin-left: 8px;
+      }
+
       .label {
         display: flex;
         height: 16px;

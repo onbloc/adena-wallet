@@ -1,4 +1,4 @@
-import { isAirgapAccount, isMultisigAccount } from 'adena-module';
+import { isAirgapAccount, isMultisigAccount, isSessionAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
@@ -107,6 +107,10 @@ export const TokenDetails = (): JSX.Element => {
   // users can still see balances but immediately understand they can't send.
   const isMultisigCosmosBlocked =
     isCosmosNative && !!currentAccount && isMultisigAccount(currentAccount);
+
+  // A SessionAccount address can never receive tokens, so depositing to it is
+  // blocked; users deposit to the Master Account instead.
+  const isSession = !!currentAccount && isSessionAccount(currentAccount);
 
   const tokenPath = useMemo(() => {
     if (!tokenBalance || !isGRC20TokenModel(tokenBalance)) {
@@ -256,7 +260,11 @@ export const TokenDetails = (): JSX.Element => {
 
       <DoubleButton
         margin='20px 0px 25px'
-        leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
+        leftProps={{
+          onClick: DepositButtonClick,
+          text: 'Deposit',
+          props: { disabled: isSession },
+        }}
         rightProps={{
           onClick: SendButtonClick,
           text: 'Send',
