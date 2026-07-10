@@ -1,13 +1,13 @@
 import { arrayContentEquals, hasHDPath } from 'adena-module';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 
 import IconSelectAccount from '@assets/web/select-account.svg';
 import { View, WebButton, WebImg } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
+import { DerivationPathValue, HDDerivationPathBox } from '@components/molecules/hd-derivation-path-box';
 import { AccountInfo } from '@components/molecules/select-account-box';
 import SelectAccountBox from '@components/molecules/select-account-box/select-account-box';
-import { DerivationPathValue } from '@components/molecules/hd-derivation-path-box';
 import { useChain } from '@hooks/use-chain';
 import { UseAccountImportReturn } from '@hooks/web/use-account-import-screen';
 import { useQuery } from '@tanstack/react-query';
@@ -31,12 +31,35 @@ const SelectAccountStep = ({
     selectAccount,
     selectedAddresses,
     deriveAddressByPath,
-    addAccountByPath,
-    onClickNext,
+    submitSelectedAccounts,
   } = useAccountImportScreenReturn;
 
-  const [derivationMode, setDerivationMode] = useState(false);
-  const [derivationPath, setDerivationPath] = useState<DerivationPathValue | null>(null);
+  const [showDerivationPath, setShowDerivationPath] = useState(false);
+  const [derivationValue, setDerivationValue] = useState<DerivationPathValue | null>(null);
+
+  // Addresses already registered in the wallet — used for the duplicate check.
+  const { data: storedAddresses = [] } = useQuery<string[]>(
+    ['accountImportStoredAddresses', storedAccounts],
+    () => Promise.all(storedAccounts.map((account) => account.getAddress(chain.bech32Prefix))),
+  );
+
+  const derivationError = useMemo(() => {
+    if (!derivationValue) {
+      return null;
+    }
+    return storedAddresses.includes(derivationValue.address) ? 'Account already exists' : null;
+  }, [derivationValue, storedAddresses]);
+
+  const derivationAddress = derivationError ? null : derivationValue?.address ?? null;
+
+  // Stable reference so the editor's derivation effect doesn't re-run every render.
+  const deriveRef = useRef(deriveAddressByPath);
+  deriveRef.current = deriveAddressByPath;
+  const deriveAddress = useCallback(
+    (account: number, change: number, addressIndex: number): Promise<string> =>
+      deriveRef.current(account, change, addressIndex),
+    [],
+  );
 
   const { data: accountInfos = [] } = useQuery<AccountInfo[]>(
     ['accountImportSelectAccounts', loadedAccounts],
@@ -63,12 +86,18 @@ const SelectAccountStep = ({
     { keepPreviousData: true },
   );
 
+  // Reflect the current selection: checkbox selections plus the derivation-path
+  // account (which shows checked + locked when it appears in the list).
   const accountInfosWithSelection = useMemo(() => {
-    return accountInfos.map((accountInfo) => ({
-      ...accountInfo,
-      selected: selectedAddresses.includes(accountInfo.address),
-    }));
-  }, [accountInfos, selectedAddresses]);
+    return accountInfos.map((accountInfo) => {
+      const locked = derivationAddress === accountInfo.address;
+      return {
+        ...accountInfo,
+        locked,
+        selected: locked || selectedAddresses.includes(accountInfo.address),
+      };
+    });
+  }, [accountInfos, selectedAddresses, derivationAddress]);
 
   const isLoading = useMemo(() => {
     if (accountInfosWithSelection.length === 0) {
@@ -79,21 +108,28 @@ const SelectAccountStep = ({
   }, [isLoadingAccounts, accountInfosWithSelection]);
 
   const disabledButton = useMemo(() => {
-    if (derivationMode) {
-      return derivationPath === null;
+    if (isLoading) {
+      return true;
     }
-    return isLoading || selectedAddresses.length === 0;
-  }, [derivationMode, derivationPath, isLoading, selectedAddresses.length]);
+    return selectedAddresses.length === 0 && derivationAddress === null;
+  }, [isLoading, selectedAddresses.length, derivationAddress]);
 
-  const onClickNextButton = useCallback(() => {
-    if (derivationMode) {
-      if (derivationPath) {
-        addAccountByPath(derivationPath.account, derivationPath.change, derivationPath.addressIndex);
-      }
-      return;
-    }
-    onClickNext();
-  }, [derivationMode, derivationPath, addAccountByPath, onClickNext]);
+  const onToggleDerivationPath = useCallback(() => {
+    setDerivationValue(null);
+    setShowDerivationPath((prev) => !prev);
+  }, []);
+
+  const onClickNext = useCallback(() => {
+    submitSelectedAccounts(
+      derivationAddress && derivationValue
+        ? {
+            account: derivationValue.account,
+            change: derivationValue.change,
+            addressIndex: derivationValue.addressIndex,
+          }
+        : null,
+    );
+  }, [submitSelectedAccounts, derivationAddress, derivationValue]);
 
   return (
     <StyledContainer>
@@ -111,21 +147,21 @@ const SelectAccountStep = ({
         isLoading={isLoading}
         loadAccounts={loadAccounts}
         select={selectAccount}
-        derivation={{
-          active: derivationMode,
-          onToggle: (): void => {
-            setDerivationPath(null);
-            setDerivationMode((prev) => !prev);
-          },
-          deriveAddress: deriveAddressByPath,
-          onChange: setDerivationPath,
-        }}
+        onToggleDerivationPath={onToggleDerivationPath}
       />
+      {showDerivationPath && (
+        <HDDerivationPathBox
+          deriveAddress={deriveAddress}
+          error={derivationError}
+          onChange={setDerivationValue}
+          onClose={onToggleDerivationPath}
+        />
+      )}
       <WebButton
         figure='primary'
         size='full'
         disabled={disabledButton}
-        onClick={onClickNextButton}
+        onClick={onClickNext}
         text='Next'
         rightIcon='chevronRight'
       />

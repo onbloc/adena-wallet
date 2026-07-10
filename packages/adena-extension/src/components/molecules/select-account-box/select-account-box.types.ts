@@ -7,4 +7,6 @@ export type AccountInfo = {
   changeIndex?: number;
   stored: boolean;
   selected: boolean;
+  // Selected via the derivation-path editor: checked but cannot be toggled here.
+  locked?: boolean;
 };

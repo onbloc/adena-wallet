@@ -35,9 +35,11 @@ export type useSelectAccountScreenReturn = {
   selectAccountAddresses: Array<string>;
   onClickSelectButton: (address: string) => void;
   onClickLoadMore: () => Promise<void>;
-  onClickNextButton: () => Promise<void>;
   deriveAddressByPath: (account: number, change: number, addressIndex: number) => Promise<string>;
-  addAccountByPath: (account: number, change: number, addressIndex: number) => Promise<void>;
+  submitSelectedAccounts: (
+    derivationPath: { account: number; change: number; addressIndex: number } | null,
+  ) => Promise<void>;
+  storedAddresses: string[];
 };
 
 const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
@@ -135,101 +137,88 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
     }
   };
 
-  const onClickNextButton = async (): Promise<void> => {
-    const savedAccounts: Array<LedgerAccount> = [];
+  // Adds the checkbox-selected accounts plus the optional derivation-path account,
+  // deduplicated by address and ordered by (account', change, addressIndex). All
+  // added accounts share a single keyring so account.keyringId stays resolvable.
+  const submitSelectedAccounts = async (
+    derivationPath: { account: number; change: number; addressIndex: number } | null,
+  ): Promise<void> => {
+    const selected: LedgerAccount[] = [];
     for (const account of accounts) {
       const address = await account.getAddress(addressPrefix);
       if (selectAccountAddresses.includes(address)) {
-        savedAccounts.push(account);
+        selected.push(account);
       }
     }
-
-    const resultSavedAccounts = savedAccounts
-      .map((account) => ({
-        ...account.toData(),
-        name: `Ledger ${account.hdPath + 1}`,
-      }))
-      .sort((x) => x.hdPath ?? 0);
 
     const transport = await AdenaLedgerConnector.openConnected();
     if (!transport) {
       return;
     }
-    // Reuse the keyringId already baked into the accounts (set during
-    // enumeration via LedgerAccount.createBy). Creating a fresh keyring
-    // here would mint a new UUID that no account references, leaving the
-    // persisted wallet with `account.keyringId` pointing at nothing —
-    // every `keyrings.find(k => k.id === account.keyringId)` would throw.
-    const existingKeyringId = resultSavedAccounts[0]?.keyringId;
-    const keyring = new LedgerKeyring({ id: existingKeyringId });
-    keyring.setConnector(AdenaLedgerConnector.fromTransport(transport));
-
+    const keyring = await LedgerKeyring.fromLedger(AdenaLedgerConnector.fromTransport(transport));
+    const candidates: LedgerAccount[] = [...selected];
+    if (derivationPath) {
+      candidates.push(
+        await LedgerAccount.createBy(
+          keyring,
+          `Ledger ${derivationPath.addressIndex + 1}`,
+          derivationPath,
+        ),
+      );
+    }
     await transport.close();
+
+    if (candidates.length === 0) {
+      return;
+    }
+
+    const withAddress = await Promise.all(
+      candidates.map(async (account) => ({
+        account,
+        address: await account.getAddress(addressPrefix),
+      })),
+    );
+    withAddress.sort(
+      (a, b) =>
+        a.account.accountIndex - b.account.accountIndex ||
+        a.account.changeIndex - b.account.changeIndex ||
+        a.account.hdPath - b.account.hdPath,
+    );
+
+    // Rebuild each account's data under the single keyring id.
+    const seen = new Set<string>();
+    const orderedData = [];
+    for (const { account, address } of withAddress) {
+      if (seen.has(address)) {
+        continue;
+      }
+      seen.add(address);
+      orderedData.push({
+        ...account.toData(),
+        keyringId: keyring.id,
+        name: `Ledger ${account.hdPath + 1}`,
+      });
+    }
 
     if (wallet) {
       const cloneWallet = wallet.clone();
       cloneWallet.addKeyring(keyring);
-
       let currentAccount = null;
-      resultSavedAccounts.forEach((accountInfo) => {
-        const account = LedgerAccount.fromData(accountInfo);
+      orderedData.forEach((data) => {
+        const account = LedgerAccount.fromData(data);
         cloneWallet.addAccount(account);
         currentAccount = account;
       });
       if (currentAccount) {
         await accountService.changeCurrentAccount(currentAccount);
       }
-
-      await updateWallet(cloneWallet);
-
-      navigate(RoutePath.WebAccountAddedComplete);
-    } else {
-      const newWallet = new AdenaWallet({
-        accounts: [...resultSavedAccounts],
-        keyrings: [keyring.toData()],
-        currentAccountId: resultSavedAccounts[0]?.id,
-      });
-      pendingWalletStore.set(newWallet);
-      navigate(RoutePath.WebCreatePassword);
-    }
-  };
-
-  // Adds a single Ledger account at the exact user-entered derivation path (used
-  // by the "Set Derivation Path" flow instead of the checkbox selection).
-  const addAccountByPath = async (
-    account: number,
-    change: number,
-    addressIndex: number,
-  ): Promise<void> => {
-    const transport = await AdenaLedgerConnector.openConnected();
-    if (!transport) {
-      return;
-    }
-    const keyring = await LedgerKeyring.fromLedger(AdenaLedgerConnector.fromTransport(transport));
-    const ledgerAccount = await LedgerAccount.createBy(keyring, `Ledger ${addressIndex + 1}`, {
-      account,
-      change,
-      addressIndex,
-    });
-    const accountData = {
-      ...ledgerAccount.toData(),
-      name: `Ledger ${addressIndex + 1}`,
-    };
-    await transport.close();
-
-    if (wallet) {
-      const cloneWallet = wallet.clone();
-      cloneWallet.addKeyring(keyring);
-      const addedAccount = LedgerAccount.fromData(accountData);
-      cloneWallet.addAccount(addedAccount);
-      await accountService.changeCurrentAccount(addedAccount);
       await updateWallet(cloneWallet);
       navigate(RoutePath.WebAccountAddedComplete);
     } else {
       const newWallet = new AdenaWallet({
-        accounts: [accountData],
+        accounts: [...orderedData],
         keyrings: [keyring.toData()],
-        currentAccountId: accountData.id,
+        currentAccountId: orderedData[0]?.id,
       });
       pendingWalletStore.set(newWallet);
       navigate(RoutePath.WebCreatePassword);
@@ -264,9 +253,9 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
     selectAccountAddresses,
     onClickSelectButton,
     onClickLoadMore,
-    onClickNextButton,
     deriveAddressByPath,
-    addAccountByPath,
+    submitSelectedAccounts,
+    storedAddresses: walletAddressList,
   };
 };
 
