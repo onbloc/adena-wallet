@@ -185,27 +185,40 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
         a.account.hdPath - b.account.hdPath,
     );
 
-    // Rebuild each account's data under the single keyring id.
-    const seen = new Set<string>();
+    // Skip addresses already registered in the wallet (defense in depth against a
+    // stale UI selection/path), then dedup while preserving the sorted order. Each
+    // account's data is rebuilt under the single keyring id.
+    const storedAddresses = await Promise.all(
+      (wallet?.accounts ?? []).map((account) => account.getAddress(addressPrefix)),
+    );
+    const seen = new Set<string>(storedAddresses);
     const orderedData = [];
     for (const { account, address } of withAddress) {
       if (seen.has(address)) {
         continue;
       }
       seen.add(address);
-      orderedData.push({
-        ...account.toData(),
-        keyringId: keyring.id,
-        name: `Ledger ${account.hdPath + 1}`,
-      });
+      orderedData.push({ ...account.toData(), keyringId: keyring.id });
+    }
+
+    if (orderedData.length === 0) {
+      return;
     }
 
     if (wallet) {
       const cloneWallet = wallet.clone();
       cloneWallet.addKeyring(keyring);
+      // Continue the wallet's Ledger numbering so names/indices stay unique
+      // regardless of each account's derivation path.
+      let nextIndex = cloneWallet.lastLedgerAccountIndex;
       let currentAccount = null;
       orderedData.forEach((data) => {
-        const account = LedgerAccount.fromData(data);
+        nextIndex += 1;
+        const account = LedgerAccount.fromData({
+          ...data,
+          index: nextIndex,
+          name: `Ledger ${nextIndex}`,
+        });
         cloneWallet.addAccount(account);
         currentAccount = account;
       });
@@ -215,10 +228,15 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
       await updateWallet(cloneWallet);
       navigate(RoutePath.WebAccountAddedComplete);
     } else {
+      const namedAccounts = orderedData.map((data, index) => ({
+        ...data,
+        index: index + 1,
+        name: `Ledger ${index + 1}`,
+      }));
       const newWallet = new AdenaWallet({
-        accounts: [...orderedData],
+        accounts: namedAccounts,
         keyrings: [keyring.toData()],
-        currentAccountId: orderedData[0]?.id,
+        currentAccountId: namedAccounts[0]?.id,
       });
       pendingWalletStore.set(newWallet);
       navigate(RoutePath.WebCreatePassword);

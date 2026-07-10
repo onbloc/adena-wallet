@@ -1,6 +1,7 @@
 import {
   Account,
   AdenaWallet,
+  arrayContentEquals,
   HDWalletKeyring,
   isAirgapAccount,
   isHDWalletKeyring,
@@ -212,26 +213,6 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
           setStep('SELECT_ACCOUNT');
         });
       }
-    } else if (step === 'SELECT_ACCOUNT') {
-      let resultWallet = wallet.clone();
-
-      const entropy = mnemonicToEntropy(inputValue);
-
-      const storedKeyring = resultWallet.keyrings
-        .filter(isHDWalletKeyring)
-        .find((keyring) => keyring.mnemonicEntropy === entropy);
-      const keyring = storedKeyring || (await HDWalletKeyring.fromMnemonic(inputValue));
-
-      for (const account of loadedAccounts) {
-        const address = await account.getAddress(chain.bech32Prefix);
-        if (selectedAddresses.includes(address)) {
-          resultWallet = await addAccountWith(resultWallet, keyring, account);
-        }
-      }
-
-      await updateWallet(resultWallet);
-      setInputValue('');
-      navigate(RoutePath.WebAccountAddedComplete);
     }
   }, [
     step,
@@ -326,7 +307,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     let resultWallet = wallet.clone();
     const storedKeyring = resultWallet.keyrings
       .filter(isHDWalletKeyring)
-      .find((keyring) => keyring.mnemonicEntropy === entropy);
+      .find((keyring) => arrayContentEquals(keyring.mnemonicEntropy, entropy));
     const keyring = storedKeyring || (await HDWalletKeyring.fromMnemonic(inputValue));
 
     const candidates: SeedAccount[] = [];
@@ -345,6 +326,12 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
       );
     }
 
+    // Addresses already registered — never add a duplicate even if a stale
+    // selection or path slips through the UI guard.
+    const storedAddresses = await Promise.all(
+      wallet.accounts.map((account) => account.getAddress(chain.bech32Prefix)),
+    );
+
     const withAddress = await Promise.all(
       candidates.map(async (account) => ({
         account,
@@ -358,16 +345,18 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
         a.account.hdPath - b.account.hdPath,
     );
 
-    const seen = new Set<string>();
+    const seen = new Set<string>(storedAddresses);
+    let addedCount = 0;
     for (const { account, address } of withAddress) {
       if (seen.has(address)) {
         continue;
       }
       seen.add(address);
       resultWallet = await addAccountWith(resultWallet, keyring, account);
+      addedCount += 1;
     }
 
-    if (seen.size === 0) {
+    if (addedCount === 0) {
       return;
     }
 
