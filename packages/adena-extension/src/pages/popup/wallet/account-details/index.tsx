@@ -60,6 +60,11 @@ const AccountDetailsContainer: React.FC = () => {
     return !isSessionAccount(account);
   }, [account]);
 
+  const isSession = useMemo(() => {
+    if (!account) return false;
+    return isSessionAccount(account);
+  }, [account]);
+
   const masterAddress = useMemo(() => {
     if (!isMasterAccount) return undefined;
     if (!address) return undefined;
@@ -149,6 +154,7 @@ const AccountDetailsContainer: React.FC = () => {
         moveManageSessions={moveManageSessions}
         setName={changeName}
         reset={reset}
+        isSessionAccount={isSession}
       />
     </CommonFullContentLayout>
   );

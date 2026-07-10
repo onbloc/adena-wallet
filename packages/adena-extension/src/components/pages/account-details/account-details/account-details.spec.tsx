@@ -14,6 +14,7 @@ describe('AccountDetails Component', () => {
     originName: '',
     name: '',
     address: '',
+    isSessionAccount: false,
     moveGnoscan: () => {
       return;
     },

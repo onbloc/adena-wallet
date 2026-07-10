@@ -11,6 +11,7 @@ export interface AccountDetailsProps {
   originName: string;
   name: string;
   address: string;
+  isSessionAccount: boolean;
   moveGnoscan: () => void;
   moveRevealSeedPhrase: () => void;
   moveExportPrivateKey: () => void;
@@ -26,6 +27,7 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
   originName,
   name,
   address,
+  isSessionAccount,
   setName,
   reset,
   moveGnoscan,
@@ -57,15 +59,17 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
         <AccountNameInput originName={originName} name={name} setName={setName} reset={reset} />
       </div>
 
-      <div className='qrcode-wrapper'>
-        <div className='qrcode-background'>
-          <QRCodeSVG value={address} size={150} />
+      {!isSessionAccount && (
+        <div className='qrcode-wrapper'>
+          <div className='qrcode-background'>
+            <QRCodeSVG value={address} size={150} />
+          </div>
+          <div className='qrcode-address-wrapper'>
+            <span className='address'>{address}</span>
+            <CopyIconButton copyText={address} />
+          </div>
         </div>
-        <div className='qrcode-address-wrapper'>
-          <span className='address'>{address}</span>
-          <CopyIconButton copyText={address} />
-        </div>
-      </div>
+      )}
 
       <div className='button-group-wrapper'>
         <FullButtonRightIcon

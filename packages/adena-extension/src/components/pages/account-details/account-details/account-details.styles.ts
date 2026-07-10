@@ -16,7 +16,7 @@ export const AccountDetailsWrapper = styled.div`
   .qrcode-wrapper {
     ${mixins.flex()};
     width: 100%;
-    padding: 12px 0;
+    padding: 12px 0 0 0;
 
     .qrcode-background {
       display: flex;
@@ -43,5 +43,9 @@ export const AccountDetailsWrapper = styled.div`
         text-overflow: ellipsis;
       }
     }
+  }
+
+  .button-group-wrapper {
+    padding: 12px 0 0 0;
   }
 `;
