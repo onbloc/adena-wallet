@@ -96,6 +96,7 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
         loadAccounts={onClickLoadMore}
         select={onClickSelectButton}
         onToggleDerivationPath={onToggleDerivationPath}
+        derivationActive={showDerivationPath}
       />
       {showDerivationPath && (
         <HDDerivationPathBox

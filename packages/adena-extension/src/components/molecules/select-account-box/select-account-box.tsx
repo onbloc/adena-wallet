@@ -1,18 +1,16 @@
 import React, { useCallback } from 'react';
 
-import IconArrowDown from '@assets/arrowS-down-gray.svg';
 import IconLoadingCircle from '@assets/web/loading-circle.svg';
 import { WebImg, WebText } from '@components/atoms';
 
-import { useTheme } from 'styled-components';
 import SelectAccountBoxItem from './select-account-box-item';
 import {
+  StyledActionButton,
+  StyledActionLabel,
   StyledActionRow,
   StyledLoadingWrapper,
-  StyledLoadMore,
   StyledSelectAccountBox,
   StyledSelectAccountContent,
-  StyledTextButton,
 } from './select-account-box.styles';
 import { AccountInfo } from './select-account-box.types';
 
@@ -21,9 +19,8 @@ export interface SelectAccountBoxProps {
   accounts: AccountInfo[];
   select: (address: string) => void;
   loadAccounts: () => Promise<void>;
-  // When provided, a "Set Derivation Path" action toggles the inline editor
-  // (rendered by the parent). The account list stays fully interactive.
   onToggleDerivationPath?: () => void;
+  derivationActive?: boolean;
 }
 
 const SelectAccountBox: React.FC<SelectAccountBoxProps> = ({
@@ -32,17 +29,20 @@ const SelectAccountBox: React.FC<SelectAccountBoxProps> = ({
   select,
   loadAccounts,
   onToggleDerivationPath,
+  derivationActive = false,
 }) => {
-  const theme = useTheme();
   const hasAccount = accounts.length > 0;
+  // Load more stays clickable while the derivation-path editor is open; only the
+  // "Set Derivation Path" toggle is disabled then.
+  const loadMoreDisabled = isLoading;
 
   const onClickLoadMore = useCallback(() => {
-    if (isLoading) {
+    if (loadMoreDisabled) {
       return;
     }
 
     return loadAccounts();
-  }, [isLoading, loadAccounts]);
+  }, [loadMoreDisabled, loadAccounts]);
 
   return (
     <StyledSelectAccountBox>
@@ -57,25 +57,29 @@ const SelectAccountBox: React.FC<SelectAccountBoxProps> = ({
       </StyledSelectAccountContent>
 
       <StyledActionRow>
-        <StyledLoadMore onClick={onClickLoadMore} disabled={isLoading}>
-          <WebText color={theme.webNeutral._500} type='body5'>
-            {isLoading ? 'Loading' : 'Load more accounts'}
-          </WebText>
-          {!isLoading ? (
-            <WebImg src={IconArrowDown} />
-          ) : (
+        <StyledActionButton
+          type='button'
+          onClick={onClickLoadMore}
+          disabled={loadMoreDisabled}
+          $width={146}
+        >
+          <StyledActionLabel>{isLoading ? 'Loading' : 'Load more accounts'}</StyledActionLabel>
+          {isLoading && (
             <StyledLoadingWrapper>
               <WebImg src={IconLoadingCircle} />
             </StyledLoadingWrapper>
           )}
-        </StyledLoadMore>
+        </StyledActionButton>
 
         {onToggleDerivationPath && (
-          <StyledTextButton type='button' onClick={onToggleDerivationPath}>
-            <WebText color={theme.webNeutral._500} type='body5'>
-              Set Derivation Path
-            </WebText>
-          </StyledTextButton>
+          <StyledActionButton
+            type='button'
+            onClick={onToggleDerivationPath}
+            disabled={derivationActive}
+            $width={140}
+          >
+            <StyledActionLabel>Set Derivation Path</StyledActionLabel>
+          </StyledActionButton>
         )}
       </StyledActionRow>
     </StyledSelectAccountBox>

@@ -148,6 +148,7 @@ const SelectAccountStep = ({
         loadAccounts={loadAccounts}
         select={selectAccount}
         onToggleDerivationPath={onToggleDerivationPath}
+        derivationActive={showDerivationPath}
       />
       {showDerivationPath && (
         <HDDerivationPathBox
