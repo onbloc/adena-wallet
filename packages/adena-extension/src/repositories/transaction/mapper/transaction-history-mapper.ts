@@ -212,10 +212,12 @@ export class TransactionHistoryMapper {
       valueType = isReceived ? 'ACTIVE' : 'DEFAULT';
     }
 
-    const description =
-      historyItem.func[0].messageType === '/bank.MsgSend'
-        ? `To: ${formatAddress(historyItem.toAddress, 4)}`
-        : `From: ${formatAddress(historyItem.fromAddress, 4)}`;
+    // Show the counterparty: on a Send the recipient (To), on a Receive the
+    // sender (From). Direction is derived from the queried account, so keying the
+    // label off isReceived keeps it correct for both bank sends and GRC20 transfers.
+    const description = isReceived
+      ? `From: ${formatAddress(historyItem.fromAddress, 4)}`
+      : `To: ${formatAddress(historyItem.toAddress, 4)}`;
 
     const amount = isReceived ? historyItem.amountIn : historyItem.amountOut;
 

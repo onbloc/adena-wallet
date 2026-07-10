@@ -18,13 +18,18 @@ const baseItem = (overrides: Partial<TransactionHistoryItem> = {}): TransactionH
   ...overrides,
 });
 
-const mapOne = (item: TransactionHistoryItem): ReturnType<
-  typeof TransactionHistoryMapper.fromResponse
->['transactions'][number] =>
+const mapWith = (
+  item: TransactionHistoryItem,
+  accountAddress: string,
+): ReturnType<typeof TransactionHistoryMapper.fromResponse>['transactions'][number] =>
   TransactionHistoryMapper.fromResponse(
     { page: { cursor: '', hasNext: false }, items: [item] },
-    'g1master',
+    accountAddress,
   ).transactions[0];
+
+const mapOne = (item: TransactionHistoryItem): ReturnType<
+  typeof TransactionHistoryMapper.fromResponse
+>['transactions'][number] => mapWith(item, 'g1master');
 
 describe('TransactionHistoryMapper session attribution', () => {
   // The rows must come from the transaction, not the current account, so a
@@ -50,5 +55,53 @@ describe('TransactionHistoryMapper session attribution', () => {
 
     expect(mapped.callerAddress).toBe('');
     expect(mapped.sessionAddress).toBe('');
+  });
+});
+
+describe('TransactionHistoryMapper transfer counterparty (To/From)', () => {
+  // Direction is decided relative to the queried account: to === account means a
+  // Receive (show the sender), otherwise a Send (show the recipient).
+  const transferItem = { fromAddress: 'g1sender', toAddress: 'g1recipient' };
+
+  it('shows the recipient (To) for a sent bank.MsgSend', () => {
+    const mapped = mapWith(baseItem(transferItem), 'g1sender');
+
+    expect(mapped.typeName).toBe('Send');
+    expect(mapped.description).toBe('To: g1recipient');
+  });
+
+  it('shows the sender (From) for a received bank.MsgSend', () => {
+    const mapped = mapWith(baseItem(transferItem), 'g1recipient');
+
+    expect(mapped.typeName).toBe('Receive');
+    expect(mapped.description).toBe('From: g1sender');
+  });
+
+  it('shows the recipient (To) for a sent GRC20 transfer', () => {
+    const mapped = mapWith(
+      baseItem({
+        ...transferItem,
+        isGRC20Transfer: true,
+        func: [{ funcType: 'Transfer', messageType: '/vm.m_call', pkgPath: '' }],
+      }),
+      'g1sender',
+    );
+
+    expect(mapped.typeName).toBe('Send');
+    expect(mapped.description).toBe('To: g1recipient');
+  });
+
+  it('shows the sender (From) for a received GRC20 transfer', () => {
+    const mapped = mapWith(
+      baseItem({
+        ...transferItem,
+        isGRC20Transfer: true,
+        func: [{ funcType: 'Transfer', messageType: '/vm.m_call', pkgPath: '' }],
+      }),
+      'g1recipient',
+    );
+
+    expect(mapped.typeName).toBe('Receive');
+    expect(mapped.description).toBe('From: g1sender');
   });
 });
