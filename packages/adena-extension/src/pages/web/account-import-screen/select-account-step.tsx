@@ -120,15 +120,20 @@ const SelectAccountStep = ({
   }, []);
 
   const onClickNext = useCallback(() => {
-    submitSelectedAccounts(
+    const path =
       derivationAddress && derivationValue
         ? {
             account: derivationValue.account,
             change: derivationValue.change,
             addressIndex: derivationValue.addressIndex,
           }
-        : null,
-    );
+        : null;
+    // Clear the editor state before submitting so the post-update re-render (the
+    // just-added address now appears in storedAddresses) doesn't flash the
+    // "Account already exists" error before navigation completes.
+    setDerivationValue(null);
+    setShowDerivationPath(false);
+    submitSelectedAccounts(path);
   }, [submitSelectedAccounts, derivationAddress, derivationValue]);
 
   return (
