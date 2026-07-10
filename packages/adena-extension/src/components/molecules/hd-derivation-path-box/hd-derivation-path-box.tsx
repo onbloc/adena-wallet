@@ -71,7 +71,9 @@ const HDDerivationPathBox: React.FC<HDDerivationPathBoxProps> = ({
   const [addressIndexValue, setAddressIndexValue] = useState('');
   const [address, setAddress] = useState('');
 
-  const hasInput = accountValue !== '' || changeValue !== '' || addressIndexValue !== '';
+  // Only derive/select once every segment has a value (empty fields mean the
+  // path is not fully entered yet).
+  const allFilled = accountValue !== '' && changeValue !== '' && addressIndexValue !== '';
   const account = toNumber(accountValue);
   const change = toNumber(changeValue);
   const addressIndex = toNumber(addressIndexValue);
@@ -79,7 +81,7 @@ const HDDerivationPathBox: React.FC<HDDerivationPathBoxProps> = ({
   // Derive the address for the entered path (debounced) and report it upward so
   // the parent can run the duplicate check and include it in the selection.
   useEffect(() => {
-    if (!hasInput) {
+    if (!allFilled) {
       setAddress('');
       onChange(null);
       return;
@@ -97,24 +99,29 @@ const HDDerivationPathBox: React.FC<HDDerivationPathBoxProps> = ({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [hasInput, account, change, addressIndex, deriveAddress, onChange]);
+  }, [allFilled, account, change, addressIndex, deriveAddress, onChange]);
 
   const onChangeSegment = useCallback(
-    (setter: (value: string) => void, max: number) =>
-      (event: React.ChangeEvent<HTMLInputElement>): void => {
-        setter(sanitizeSegment(event.target.value, max));
-      },
+    (setter: (value: string) => void, max: number) => (
+      event: React.ChangeEvent<HTMLInputElement>,
+    ): void => {
+      setter(sanitizeSegment(event.target.value, max));
+    },
     [],
   );
 
   const hasError = Boolean(error);
-  const addressValue = useMemo(() => (hasInput ? address : ''), [hasInput, address]);
+  const addressValue = useMemo(() => (allFilled ? address : ''), [allFilled, address]);
 
   return (
     <StyledHDDerivationPathBox>
       <StyledHeader>
         <WebText type='title6'>HD Derivation Path</WebText>
-        <StyledCloseButton type='button' onClick={onClose} aria-label='Close derivation path editor'>
+        <StyledCloseButton
+          type='button'
+          onClick={onClose}
+          aria-label='Close derivation path editor'
+        >
           <WebImg src={IconCancel} size={16} />
         </StyledCloseButton>
       </StyledHeader>
