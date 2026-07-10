@@ -4,8 +4,6 @@ import { WarningPopoverWrapper } from './session-address-warning-popover.styles'
 
 // A SessionAccount address can never receive tokens, so the header copy affordance
 // is replaced by this warning instead of copying an address on hover.
-const SESSION_DEPOSIT_WARNING = `Do not send tokens to your Session Account. Use the <b>Master Account’s</b> address to receive tokens.`;
-
 interface SessionAddressWarningPopoverProps {
   open: boolean;
   positionX: number;

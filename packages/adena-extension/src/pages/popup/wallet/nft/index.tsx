@@ -1,3 +1,4 @@
+import { isSessionAccount } from 'adena-module';
 import styled from 'styled-components';
 
 import NFTCollections from '@components/pages/nft/nft-collections/nft-collections';
@@ -32,10 +33,17 @@ const Wrapper = styled.main<{ $dimmed: boolean }>`
 `;
 
 export const Nft = (): JSX.Element => {
-  const { currentFundingAddress } = useCurrentAccount();
+  const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const { navigate } = useAppNavigate();
   const { openScannerLink } = useLink();
   const sessionRevoked = useIsCurrentSessionRevoked();
+
+  // A SessionAccount address can never receive tokens, so the NFT deposit entry
+  // point is hidden and navigation to the Deposit page is blocked.
+  const isSession = useMemo(
+    () => (currentAccount ? isSessionAccount(currentAccount) : false),
+    [currentAccount],
+  );
 
   const { data: collections, isFetched: isFetchedCollections } = useGetGRC721Collections({
     refetchOnMount: true,
@@ -80,6 +88,9 @@ export const Nft = (): JSX.Element => {
   }, [currentFundingAddress, openScannerLink]);
 
   const moveDepositPage = useCallback(() => {
+    if (isSession) {
+      return;
+    }
     navigate(RoutePath.Deposit, {
       state: {
         token: {
@@ -88,7 +99,7 @@ export const Nft = (): JSX.Element => {
         type: 'token',
       },
     });
-  }, [navigate]);
+  }, [navigate, isSession]);
 
   const moveCollectionPage = useCallback(
     (collection: GRC721CollectionModel) => {
@@ -103,7 +114,11 @@ export const Nft = (): JSX.Element => {
 
   return (
     <Wrapper $dimmed={sessionRevoked}>
-      <NFTHeader openGnoscan={openGnoscan} moveDepositPage={moveDepositPage} />
+      <NFTHeader
+        openGnoscan={openGnoscan}
+        moveDepositPage={moveDepositPage}
+        isSessionAccount={isSession}
+      />
       <NFTCollections
         collections={collections}
         isFetchedCollections={isFinishFetchedCollections}

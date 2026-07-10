@@ -1,3 +1,4 @@
+import { isSessionAccount } from 'adena-module';
 import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
@@ -109,6 +110,15 @@ export const Deposit = (): JSX.Element => {
       setDisplayAddr(formatAddress(depositAddress, 6));
     }
   }, [depositAddress]);
+
+  // Defense in depth: a SessionAccount address can never receive tokens, so the
+  // Deposit page must not be reachable in a session context even if some entry
+  // point is missed. Redirect back to the wallet if we get here.
+  useEffect(() => {
+    if (currentAccount && isSessionAccount(currentAccount)) {
+      navigate(RoutePath.Wallet);
+    }
+  }, [currentAccount, navigate]);
 
   const closeButtonClick = useCallback(() => {
     if (params?.type === 'wallet') {
