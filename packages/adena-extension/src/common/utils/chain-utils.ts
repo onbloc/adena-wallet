@@ -3,6 +3,9 @@ import { CosmosChain, CosmosNetworkProfile, GnoChain, GnoNetworkProfile } from '
 
 export const MSG_MINT_PHOTON_TYPE_URL = '/atomone.photon.v1.MsgMintPhoton';
 
+const UGNOT_DENOM = 'ugnot';
+const UATOMONE_DENOM = 'uatone';
+
 const defaultGnoNetworkProfileBase = {
   chainType: 'gno' as const,
   chainGroup: 'gno' as const,
@@ -54,8 +57,8 @@ export const ATOMONE_CHAIN: CosmosChain = {
   features: ['feemarket', 'photon', 'gov-v1-3option'],
 };
 
-function makeNativeTokenId(chainId: string): string {
-  return `${chainId}:ugnot`;
+function makeNativeTokenId(chainId: string, denom: string): string {
+  return `${chainId}:${denom}`;
 }
 
 export function makeGnoNetworkProfiles(resources: NetworkMetainfo[]): GnoNetworkProfile[] {
@@ -66,7 +69,7 @@ export function makeGnoNetworkProfiles(resources: NetworkMetainfo[]): GnoNetwork
       chainId: resource.chainId,
       displayName: resource.networkName,
       isMainnet: resource.main ?? false,
-      nativeTokenId: makeNativeTokenId(resource.chainId),
+      nativeTokenId: makeNativeTokenId(resource.chainId, UGNOT_DENOM),
       rpcEndpoints: resource.rpcUrl ? [resource.rpcUrl] : [],
       indexerUrl: resource.indexerUrl,
       gnoUrl: resource.gnoUrl,
@@ -84,7 +87,7 @@ export function makeAtomOneNetworkProfiles(resources: NetworkMetainfo[]): Cosmos
       chainId: resource.chainId,
       displayName: resource.networkName,
       isMainnet: resource.main ?? false,
-      nativeTokenId: makeNativeTokenId(resource.chainId),
+      nativeTokenId: makeNativeTokenId(resource.chainId, UATOMONE_DENOM),
       rpcEndpoints: resource.rpcUrl ? [resource.rpcUrl] : [],
       restEndpoints: resource.apiUrl ? [resource.apiUrl] : [],
       linkUrl: resource.linkUrl,
