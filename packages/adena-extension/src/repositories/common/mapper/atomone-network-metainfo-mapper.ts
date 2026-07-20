@@ -1,3 +1,4 @@
+import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
 import { AtomoneNetworkMetainfo } from '@types';
 
 export type AtomoneMetainfoResponse = AtomoneMetainfoItem[];
@@ -27,6 +28,18 @@ export interface AtomoneMetainfoItem {
 export class AtomoneNetworkMetainfoMapper {
   public static fromResponse(response: AtomoneMetainfoResponse): AtomoneNetworkMetainfo[] {
     return response.map(AtomoneNetworkMetainfoMapper.mappedMetainfo);
+  }
+
+  /**
+   * Loads the bundled atomone-chains.json into the metainfo shape. Callers that
+   * import the resource directly (recoil defaults, offline fallbacks) must use
+   * this instead of casting the raw JSON, which would leave `isMainnet` and
+   * `restUrl` undefined at runtime.
+   */
+  public static fromResource(): AtomoneNetworkMetainfo[] {
+    return AtomoneNetworkMetainfoMapper.fromResponse(
+      ATOMONE_CHAIN_DATA as AtomoneMetainfoResponse,
+    );
   }
 
   private static mappedMetainfo(item: AtomoneMetainfoItem): AtomoneNetworkMetainfo {

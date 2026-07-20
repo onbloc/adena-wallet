@@ -73,4 +73,19 @@ describe('AtomoneNetworkMetainfoMapper', () => {
       expect(metainfo.rpcUrl).toBeTruthy();
     }
   });
+
+  // fromResource() backs the recoil defaults and the offline fallback, which
+  // previously cast the raw JSON and produced undefined isMainnet/restUrl.
+  it('fromResource loads the shipped resource in the mapped shape', () => {
+    const metainfos = AtomoneNetworkMetainfoMapper.fromResource();
+
+    expect(metainfos).toEqual(
+      AtomoneNetworkMetainfoMapper.fromResponse(ATOMONE_CHAIN_DATA as AtomoneMetainfoResponse),
+    );
+    expect(metainfos.some((metainfo) => metainfo.isMainnet)).toBe(true);
+    for (const metainfo of metainfos) {
+      expect(metainfo.restUrl).toBeTruthy();
+      expect(metainfo.deleted).toBe(false);
+    }
+  });
 });

@@ -1,13 +1,12 @@
 import { atom } from 'recoil';
 
-import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
+import { AtomoneNetworkMetainfoMapper } from '@repositories/common/mapper/atomone-network-metainfo-mapper';
 import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 
 export type NetworkMode = 'mainnet' | 'testnet';
 
-const ATOMONE_DEFAULT_NETWORKS: AtomoneNetworkMetainfo[] = (
-  ATOMONE_CHAIN_DATA as unknown as AtomoneNetworkMetainfo[]
-).map((network) => ({ ...network, deleted: false }));
+const ATOMONE_DEFAULT_NETWORKS: AtomoneNetworkMetainfo[] =
+  AtomoneNetworkMetainfoMapper.fromResource();
 
 export const networkMetainfos = atom<NetworkMetainfo[]>({
   key: 'network/networkMetainfos',
