@@ -4,8 +4,11 @@ import { NetworkMetainfo } from '@types';
 
 type NetworkMode = NetworkState.NetworkMode;
 
-const PRIMARY_TESTNET_ID = 'test-13';
-const PRIMARY_MAINNET_ID = 'gnoland1';
+// Canonical network ids, exported so tests can assert they still resolve
+// against chains.json. A rename there that misses these constants would
+// otherwise silently degrade pickDefaultByMode to its generic fallback.
+export const PRIMARY_TESTNET_ID = 'topaz-1';
+export const PRIMARY_MAINNET_ID = 'gnoland1';
 
 // StorageManager.get coerces undefined to the string "undefined" because it
 // wraps the value with a template literal. Treat those sentinel strings, plus
@@ -41,7 +44,7 @@ export function resolveNetworkMode(
 }
 
 // Pick the default network for a given mode. Prefers the canonical id
-// (test-13 for testnet, gnoland1 for mainnet) so the result is stable even if
+// (topaz for testnet, gnoland1 for mainnet) so the result is stable even if
 // chains.json ordering changes, then falls back to any matching default, and
 // finally to the first non-deleted network.
 export function pickDefaultByMode(
@@ -50,15 +53,12 @@ export function pickDefaultByMode(
 ): NetworkMetainfo | undefined {
   const wantsMainnet = mode === 'mainnet';
   const preferredId = wantsMainnet ? PRIMARY_MAINNET_ID : PRIMARY_TESTNET_ID;
-  const preferred = networks.find(
-    (network) => !network.deleted && network.id === preferredId,
-  );
+  const preferred = networks.find((network) => !network.deleted && network.id === preferredId);
   if (preferred) {
     return preferred;
   }
   const generic = networks.find(
-    (network) =>
-      !network.deleted && (network.main === true) === wantsMainnet && network.default,
+    (network) => !network.deleted && (network.main === true) === wantsMainnet && network.default,
   );
   if (generic) {
     return generic;

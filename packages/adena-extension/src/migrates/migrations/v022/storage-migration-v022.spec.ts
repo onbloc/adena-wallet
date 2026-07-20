@@ -29,15 +29,15 @@ describe('StorageMigration022', () => {
     expect(new StorageMigration022().version).toBe(22);
   });
 
-  it('migrates CURRENT_CHAIN_ID from test-13 to topaz', async () => {
+  it('migrates CURRENT_CHAIN_ID from test-13 to topaz-1', async () => {
     const result = await new StorageMigration022().up(makeInput());
     expect(result.version).toBe(22);
-    expect(result.data.CURRENT_CHAIN_ID).toBe('topaz');
+    expect(result.data.CURRENT_CHAIN_ID).toBe('topaz-1');
   });
 
-  it('migrates CURRENT_NETWORK_ID from test-13 to topaz', async () => {
+  it('migrates CURRENT_NETWORK_ID from test-13 to topaz-1', async () => {
     const result = await new StorageMigration022().up(makeInput());
-    expect(result.data.CURRENT_NETWORK_ID).toBe('topaz');
+    expect(result.data.CURRENT_NETWORK_ID).toBe('topaz-1');
   });
 
   it('does not change CURRENT_CHAIN_ID if it is not test-13', async () => {
@@ -45,9 +45,9 @@ describe('StorageMigration022', () => {
     expect(result.data.CURRENT_CHAIN_ID).toBe('gnoland1');
   });
 
-  it('refreshes NETWORKS with topaz from chains.json', async () => {
+  it('refreshes NETWORKS with topaz-1 from chains.json', async () => {
     const result = await new StorageMigration022().up(makeInput({ NETWORKS: [] }));
-    const topaz = result.data.NETWORKS.find((n) => n.chainId === 'topaz');
+    const topaz = result.data.NETWORKS.find((n) => n.chainId === 'topaz-1');
     expect(topaz).toBeDefined();
     expect(topaz?.rpcUrl).toBe('https://topaz.rpc.onbloc.xyz:443');
     expect(topaz?.indexerUrl).toBe('https://indexer.topaz.gnoland.network:443');

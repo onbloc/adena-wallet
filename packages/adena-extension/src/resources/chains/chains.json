@@ -15,12 +15,12 @@
     "linkUrl": "https://gnoscan.io"
   },
   {
-    "id": "topaz",
+    "id": "topaz-1",
     "default": true,
     "main": false,
-    "chainId": "topaz",
-    "chainName": "topaz",
-    "networkId": "topaz",
+    "chainId": "topaz-1",
+    "chainName": "Gno.land",
+    "networkId": "topaz-1",
     "networkName": "Topaz",
     "addressPrefix": "g",
     "rpcUrl": "https://topaz.rpc.onbloc.xyz:443",

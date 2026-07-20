@@ -44,9 +44,9 @@ describe('StorageMigration019', () => {
     expect(result.data.CURRENT_CHAIN_ID).toBe('gnoland1');
   });
 
-  it('refreshes NETWORKS with topaz from chains.json', async () => {
+  it('refreshes NETWORKS with topaz-1 from chains.json', async () => {
     const result = await new StorageMigration019().up(makeInput({ NETWORKS: [] }));
-    const topaz = result.data.NETWORKS.find((n) => n.chainId === 'topaz');
+    const topaz = result.data.NETWORKS.find((n) => n.chainId === 'topaz-1');
     expect(topaz).toBeDefined();
     expect(topaz?.rpcUrl).toBe('https://topaz.rpc.onbloc.xyz:443');
     expect(topaz?.indexerUrl).toBe('https://indexer.topaz.gnoland.network:443');

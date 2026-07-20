@@ -4,7 +4,11 @@ import { useRecoilState, useRecoilValue } from 'recoil';
 
 import { getDappVisibleAddress } from '@common/utils/account-address';
 import { fetchHealth } from '@common/utils/fetch-utils';
-import { pickDefaultByMode } from '@common/utils/network-default';
+import {
+  pickDefaultByMode,
+  PRIMARY_MAINNET_ID,
+  PRIMARY_TESTNET_ID,
+} from '@common/utils/network-default';
 import { createRegisterUrl } from '@common/utils/register-url';
 import { EventMessage } from '@inject/message';
 import { NetworkState, WalletState } from '@states';
@@ -64,9 +68,9 @@ interface NetworkResponse {
 }
 
 const DEFAULT_TESTNET_NETWORK: NetworkMetainfo =
-  CHAIN_DATA.find((network) => network.id === 'test-13') ?? CHAIN_DATA[0];
+  CHAIN_DATA.find((network) => network.id === PRIMARY_TESTNET_ID) ?? CHAIN_DATA[0];
 const DEFAULT_MAINNET_NETWORK: NetworkMetainfo =
-  CHAIN_DATA.find((network) => network.id === 'gnoland1') ?? CHAIN_DATA[0];
+  CHAIN_DATA.find((network) => network.id === PRIMARY_MAINNET_ID) ?? CHAIN_DATA[0];
 
 function isAtomoneNetwork(
   network: NetworkMetainfo | AtomoneNetworkMetainfo,

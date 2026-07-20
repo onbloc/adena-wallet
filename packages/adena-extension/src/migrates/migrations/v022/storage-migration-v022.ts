@@ -13,7 +13,7 @@ import {
 } from './storage-model-v022';
 
 const OLD_CHAIN_ID = 'test-13';
-const NEW_CHAIN_ID = 'topaz';
+const NEW_CHAIN_ID = 'topaz-1';
 
 export class StorageMigration022 implements Migration<StorageModelDataV022> {
   public readonly version = 22;
@@ -34,7 +34,9 @@ export class StorageMigration022 implements Migration<StorageModelDataV022> {
         CURRENT_NETWORK_ID: this.migrateChainId(previous.CURRENT_NETWORK_ID),
         NETWORKS: this.migrateNetworks(previous.NETWORKS),
         ESTABLISH_SITES: this.removeOldChainEstablishSites(previous.ESTABLISH_SITES),
-        ACCOUNT_TOKEN_METAINFOS: this.removeOldChainTokenMetainfos(previous.ACCOUNT_TOKEN_METAINFOS),
+        ACCOUNT_TOKEN_METAINFOS: this.removeOldChainTokenMetainfos(
+          previous.ACCOUNT_TOKEN_METAINFOS,
+        ),
         SESSIONS: this.removeOldChainSessions(previous.SESSIONS),
         ACCOUNT_GRC721_COLLECTIONS: this.migrateGrc721Collections(
           previous.ACCOUNT_GRC721_COLLECTIONS,
