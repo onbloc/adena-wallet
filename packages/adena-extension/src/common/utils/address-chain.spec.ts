@@ -1,8 +1,20 @@
+import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
+import GNO_CHAIN_DATA from '@resources/chains/chains.json';
 import { createChainRegistry } from 'adena-module';
 import { inferChainGroup } from './address-chain';
+import {
+  ATOMONE_CHAIN,
+  GNO_CHAIN,
+  makeAtomOneNetworkProfiles,
+  makeGnoNetworkProfiles,
+} from './chain-utils';
 
 describe('inferChainGroup', () => {
-  const registry = createChainRegistry();
+  const registry = createChainRegistry({
+    chains: [GNO_CHAIN, ATOMONE_CHAIN],
+    gnoNetworkProfiles: makeGnoNetworkProfiles(GNO_CHAIN_DATA),
+    atomoneNetworkProfiles: makeAtomOneNetworkProfiles(ATOMONE_CHAIN_DATA),
+  });
 
   it('returns "gno" for a gno bech32 address (g1...)', () => {
     expect(inferChainGroup('g1abc1234567890abcdefghijklmnopqr', registry)).toBe('gno');

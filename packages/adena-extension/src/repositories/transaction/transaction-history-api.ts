@@ -18,7 +18,7 @@ export class TransactionHistoryApiRepository implements ITransactionHistoryRepos
   }
 
   public get apiUrl(): string | null {
-    return this.network.apiUrl;
+    return this.network.apiUrl ?? null;
   }
 
   public async fetchAllTransactionHistoryBy(

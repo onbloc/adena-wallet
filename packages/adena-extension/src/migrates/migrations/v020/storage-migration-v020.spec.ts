@@ -44,7 +44,10 @@ describe('StorageMigration020', () => {
     expect(new StorageMigration020().version).toBe(20);
   });
 
-  it('refreshes NETWORKS with test-13 from chains.json', async () => {
+  // test-13 was renamed to topaz in v022 and no longer exists in chains.json,
+  // so this migration can no longer find a replacement and leaves the entry
+  // untouched. v022 is what removes the stale test-13 network.
+  it('leaves test-13 NETWORKS untouched once it is gone from chains.json', async () => {
     const result = await new StorageMigration020().up(
       makeInput({
         NETWORKS: [
@@ -68,7 +71,7 @@ describe('StorageMigration020', () => {
     );
     const test13 = result.data.NETWORKS.find((n) => n.chainId === 'test-13');
     expect(test13).toBeDefined();
-    expect(test13?.rpcUrl).toBe('https://test13.rpc.onbloc.xyz:443');
+    expect(test13?.rpcUrl).toBe('XXXXX');
     expect(test13?.indexerUrl).toBe('https://indexer.test-13.gnoland.network:443');
   });
 

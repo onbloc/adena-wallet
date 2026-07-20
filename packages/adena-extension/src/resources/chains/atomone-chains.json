@@ -2,7 +2,7 @@
   {
     "id": "atomone-1",
     "default": true,
-    "isMainnet": true,
+    "main": true,
     "chainGroup": "atomone",
     "chainType": "cosmos",
     "chainId": "atomone-1",
@@ -11,13 +11,13 @@
     "networkName": "Mainnet",
     "addressPrefix": "atone",
     "rpcUrl": "https://atomone-rpc.allinbits.com",
-    "restUrl": "https://atomone-api.allinbits.com",
+    "apiUrl": "https://atomone-api.allinbits.com",
     "linkUrl": "https://www.mintscan.io/atomone"
   },
   {
     "id": "atomone-testnet-1",
     "default": true,
-    "isMainnet": false,
+    "main": false,
     "chainGroup": "atomone",
     "chainType": "cosmos",
     "chainId": "atomone-testnet-1",
@@ -26,6 +26,6 @@
     "networkName": "Testnet",
     "addressPrefix": "atone",
     "rpcUrl": "https://atomone-testnet-1-rpc.allinbits.services",
-    "restUrl": "https://atomone-testnet-1-api.allinbits.services"
+    "apiUrl": "https://atomone-testnet-1-api.allinbits.services"
   }
 ]

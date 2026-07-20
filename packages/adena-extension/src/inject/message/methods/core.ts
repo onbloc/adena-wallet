@@ -4,6 +4,12 @@ import axios from 'axios';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { AdenaStorage } from '@common/storage';
+import {
+  ATOMONE_CHAIN,
+  GNO_CHAIN,
+  makeAtomOneNetworkProfiles,
+  makeGnoNetworkProfiles,
+} from '@common/utils/chain-utils';
 import { ChainRepository, TokenRepository } from '@repositories/common';
 import {
   WalletAccountRepository,
@@ -23,6 +29,9 @@ import {
 } from '@services/wallet';
 import { NetworkMetainfo } from '@types';
 import { decryptPassword, getInMemoryKey } from '../commands/encrypt';
+
+import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
+import GNO_CHAIN_DATA from '@resources/chains/chains.json';
 
 export class InjectCore {
   private inMemoryProvider: MemoryProvider;
@@ -45,7 +54,11 @@ export class InjectCore {
 
   private addressBookRepository = new WalletAddressRepository(this.localStorage);
 
-  public chainRegistry: ChainRegistry = createChainRegistry();
+  public chainRegistry: ChainRegistry = createChainRegistry({
+    chains: [GNO_CHAIN, ATOMONE_CHAIN],
+    gnoNetworkProfiles: makeGnoNetworkProfiles(GNO_CHAIN_DATA),
+    atomoneNetworkProfiles: makeAtomOneNetworkProfiles(ATOMONE_CHAIN_DATA),
+  });
 
   private chainRepository = new ChainRepository(this.localStorage, this.axiosInstance);
 
