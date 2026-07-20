@@ -6,9 +6,9 @@ import {
 } from './gnoscan-url';
 
 describe('gnoscan url helpers', () => {
-  it('maps internal test-13 network id to Gnoscan testnet-13 chain id', () => {
-    expect(getGnoscanChainId('test-13')).toBe('testnet-13');
-    expect(getGnoscanChainParameters('test-13')).toEqual({ chainId: 'testnet-13' });
+  it('maps internal topaz-1 network id to Gnoscan topaz-1 chain id', () => {
+    expect(getGnoscanChainId('topaz-1')).toBe('topaz-1');
+    expect(getGnoscanChainParameters('topaz-1')).toEqual({ chainId: 'topaz-1' });
   });
 
   it('keeps supported Gnoscan chain ids unchanged when no alias is needed', () => {
@@ -24,17 +24,13 @@ describe('gnoscan url helpers', () => {
   describe('normalizeGnoscanTxHash', () => {
     it('converts an uppercase hex tx hash from a broadcast response to base64', () => {
       expect(
-        normalizeGnoscanTxHash(
-          '98C592D248A40F047012B075BD560F439CE3ED9295CDBEA62C873E20BBD0BD0B',
-        ),
+        normalizeGnoscanTxHash('98C592D248A40F047012B075BD560F439CE3ED9295CDBEA62C873E20BBD0BD0B'),
       ).toBe('mMWS0kikDwRwErB1vVYPQ5zj7ZKVzb6mLIc+ILvQvQs=');
     });
 
     it('handles lowercase hex tx hashes', () => {
       expect(
-        normalizeGnoscanTxHash(
-          'c58d41a26e4a0bf47e88dccba8abc29e821ae3a8db245bb9bcbc0796edb87a47',
-        ),
+        normalizeGnoscanTxHash('c58d41a26e4a0bf47e88dccba8abc29e821ae3a8db245bb9bcbc0796edb87a47'),
       ).toBe('xY1Bom5KC/R+iNzLqKvCnoIa46jbJFu5vLwHlu24ekc=');
     });
 

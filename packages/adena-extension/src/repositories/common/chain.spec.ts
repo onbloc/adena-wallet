@@ -3,12 +3,19 @@ import { AxiosInstance } from 'axios';
 import { StorageManager } from '@common/storage/storage-manager';
 import { AtomoneNetworkMetainfo } from '@types';
 import { ChainRepository } from './chain';
+import {
+  AtomoneMetainfoItem,
+  AtomoneNetworkMetainfoMapper,
+} from './mapper/atomone-network-metainfo-mapper';
 
-const ATOMONE_DEFAULTS: AtomoneNetworkMetainfo[] = [
+// Raw atomone-chains.json entries, as returned by the mocked HTTP fetch. The
+// repository maps these into AtomoneNetworkMetainfo (main -> isMainnet,
+// apiUrl -> restUrl) before returning or persisting them.
+const ATOMONE_RESPONSE: AtomoneMetainfoItem[] = [
   {
     id: 'atomone-1',
     default: true,
-    isMainnet: true,
+    main: true,
     chainGroup: 'atomone',
     chainType: 'cosmos',
     chainId: 'atomone-1',
@@ -17,13 +24,13 @@ const ATOMONE_DEFAULTS: AtomoneNetworkMetainfo[] = [
     networkName: 'Mainnet',
     addressPrefix: 'atone',
     rpcUrl: 'https://atomone-rpc.allinbits.com',
-    restUrl: 'https://atomone-api.allinbits.com',
+    apiUrl: 'https://atomone-api.allinbits.com',
     linkUrl: 'https://www.mintscan.io/atomone',
   },
   {
     id: 'atomone-testnet-1',
     default: true,
-    isMainnet: false,
+    main: false,
     chainGroup: 'atomone',
     chainType: 'cosmos',
     chainId: 'atomone-testnet-1',
@@ -32,9 +39,12 @@ const ATOMONE_DEFAULTS: AtomoneNetworkMetainfo[] = [
     networkName: 'Testnet',
     addressPrefix: 'atone',
     rpcUrl: 'https://atomone-testnet-1-rpc.allinbits.services',
-    restUrl: 'https://atomone-testnet-1-api.allinbits.services',
+    apiUrl: 'https://atomone-testnet-1-api.allinbits.services',
   },
 ];
+
+const ATOMONE_DEFAULTS: AtomoneNetworkMetainfo[] =
+  AtomoneNetworkMetainfoMapper.fromResponse(ATOMONE_RESPONSE);
 
 const CUSTOM_NETWORK: AtomoneNetworkMetainfo = {
   id: 'custom-1',
@@ -71,7 +81,7 @@ describe('ChainRepository — AtomOne methods', () => {
     } as unknown as StorageManager;
 
     networkInstance = {
-      get: jest.fn().mockResolvedValue({ data: ATOMONE_DEFAULTS }),
+      get: jest.fn().mockResolvedValue({ data: ATOMONE_RESPONSE }),
     } as unknown as AxiosInstance;
 
     repository = new ChainRepository(localStorage, networkInstance);
@@ -85,10 +95,7 @@ describe('ChainRepository — AtomOne methods', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].id).toBe('atomone-1');
-      expect(localStorage.setByObject).toHaveBeenCalledWith(
-        'ATOMONE_NETWORKS',
-        ATOMONE_DEFAULTS.map((network) => ({ ...network, deleted: false })),
-      );
+      expect(localStorage.setByObject).toHaveBeenCalledWith('ATOMONE_NETWORKS', ATOMONE_DEFAULTS);
     });
 
     it('merges fetched defaults with stored customs', async () => {

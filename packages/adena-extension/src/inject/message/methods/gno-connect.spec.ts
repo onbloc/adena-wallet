@@ -238,7 +238,7 @@ describe('isAllowedGnoConnectOrigin', () => {
     expect(isAllowedGnoConnectOrigin('https://gno.land')).toBe(true);
     expect(isAllowedGnoConnectOrigin('https://betanet.testnets.gno.land')).toBe(true);
     expect(isAllowedGnoConnectOrigin('https://staging.gno.land')).toBe(true);
-    expect(isAllowedGnoConnectOrigin('https://test13.testnets.gno.land')).toBe(true);
+    expect(isAllowedGnoConnectOrigin('https://topaz.testnets.gno.land')).toBe(true);
   });
 
   it('returns false for unregistered origins', () => {

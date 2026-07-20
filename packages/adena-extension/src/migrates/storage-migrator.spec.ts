@@ -70,7 +70,7 @@ describe('StorageMigrator', () => {
     const migrated = await migrator.migrate(current, '123');
 
     expect(migrated).not.toBeNull();
-    expect(migrated?.version).toBe(21);
+    expect(migrated?.version).toBe(22);
     expect(migrated?.data).not.toBeNull();
     expect(migrated?.data.NETWORKS).toHaveLength(4);
     expect(migrated?.data.CURRENT_CHAIN_ID).toBe('');
@@ -88,7 +88,7 @@ describe('StorageMigrator', () => {
     const migrated = await migrator.migrate(current, '123');
 
     expect(migrated).not.toBeNull();
-    expect(migrated?.version).toBe(21);
+    expect(migrated?.version).toBe(22);
     expect(migrated?.data).not.toBeNull();
     expect(migrated?.data.SERIALIZED).not.toBe('');
     expect(migrated?.data.ADDRESS_BOOK).toBe('');
@@ -143,13 +143,13 @@ describe('StorageMigrator version reconciliation', () => {
     expect(current.version).toBe(19);
   });
 
-  it('migrate no longer re-decrypts XChaCha20 SERIALIZED and reaches v21', async () => {
+  it('migrate no longer re-decrypts XChaCha20 SERIALIZED and reaches v22', async () => {
     const migrator = new StorageMigrator(StorageMigrator.migrations(), staleStorage);
     const current = await migrator.getCurrent();
     const migrated = await migrator.migrate(current, '123');
 
     expect(migrated).not.toBeNull();
-    expect(migrated?.version).toBe(21);
+    expect(migrated?.version).toBe(22);
     // SERIALIZED must be left untouched (no AES re-decrypt attempt).
     expect(migrated?.data.SERIALIZED).toBe(xchachaSerialized);
   });

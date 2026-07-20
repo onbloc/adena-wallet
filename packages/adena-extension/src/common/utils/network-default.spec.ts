@@ -1,11 +1,16 @@
+import CHAIN_DATA from '@resources/chains/chains.json';
 import { NetworkMetainfo } from '@types';
 import {
   normalizeStoredId,
   pickDefaultByMode,
+  PRIMARY_MAINNET_ID,
+  PRIMARY_TESTNET_ID,
   resolveNetworkMode,
 } from './network-default';
 
-function makeNetwork(overrides: Partial<NetworkMetainfo> & Pick<NetworkMetainfo, 'id'>): NetworkMetainfo {
+function makeNetwork(
+  overrides: Partial<NetworkMetainfo> & Pick<NetworkMetainfo, 'id'>,
+): NetworkMetainfo {
   return {
     default: true,
     main: false,
@@ -25,10 +30,10 @@ function makeNetwork(overrides: Partial<NetworkMetainfo> & Pick<NetworkMetainfo,
 }
 
 const GNOLAND1 = makeNetwork({ id: 'gnoland1', main: true });
-const TEST_13 = makeNetwork({ id: 'test-13', main: false });
+const TOPAZ = makeNetwork({ id: 'topaz-1', main: false });
 const STAGING = makeNetwork({ id: 'staging', main: false });
 const DEV = makeNetwork({ id: 'dev', main: false });
-const NETWORKS: NetworkMetainfo[] = [GNOLAND1, TEST_13, STAGING, DEV];
+const NETWORKS: NetworkMetainfo[] = [GNOLAND1, TOPAZ, STAGING, DEV];
 
 describe('normalizeStoredId', () => {
   it('returns null for empty / undefined / null / sentinel strings', () => {
@@ -41,19 +46,19 @@ describe('normalizeStoredId', () => {
 
   it('returns the raw id for legitimate values', () => {
     expect(normalizeStoredId('gnoland1')).toBe('gnoland1');
-    expect(normalizeStoredId('test-13')).toBe('test-13');
+    expect(normalizeStoredId('topaz')).toBe('topaz');
   });
 });
 
 describe('resolveNetworkMode', () => {
   it('uses explicit stored mode regardless of stored network', () => {
-    expect(resolveNetworkMode('mainnet', 'test-13', NETWORKS)).toBe('mainnet');
+    expect(resolveNetworkMode('mainnet', 'topaz', NETWORKS)).toBe('mainnet');
     expect(resolveNetworkMode('testnet', 'gnoland1', NETWORKS)).toBe('testnet');
   });
 
   it('derives mode from the stored networks main flag when stored mode is missing', () => {
     expect(resolveNetworkMode(null, 'gnoland1', NETWORKS)).toBe('mainnet');
-    expect(resolveNetworkMode(null, 'test-13', NETWORKS)).toBe('testnet');
+    expect(resolveNetworkMode(null, 'topaz', NETWORKS)).toBe('testnet');
     expect(resolveNetworkMode(null, 'staging', NETWORKS)).toBe('testnet');
   });
 
@@ -67,24 +72,34 @@ describe('resolveNetworkMode', () => {
 });
 
 describe('pickDefaultByMode', () => {
-  it('prefers test-13 for testnet mode', () => {
-    expect(pickDefaultByMode(NETWORKS, 'testnet')?.id).toBe('test-13');
+  // The canonical ids are hardcoded in network-default.ts while the networks
+  // themselves live in chains.json. If a network is renamed there without
+  // updating the constant, the preferred lookup silently falls through to the
+  // generic match, so assert both ids still exist in the shipped resource.
+  it('keeps the canonical ids in sync with chains.json', () => {
+    const ids = CHAIN_DATA.map((network) => network.id);
+    expect(ids).toContain(PRIMARY_TESTNET_ID);
+    expect(ids).toContain(PRIMARY_MAINNET_ID);
+  });
+
+  it('prefers topaz for testnet mode', () => {
+    expect(pickDefaultByMode(NETWORKS, 'testnet')?.id).toBe('topaz-1');
   });
 
   it('prefers gnoland1 for mainnet mode', () => {
     expect(pickDefaultByMode(NETWORKS, 'mainnet')?.id).toBe('gnoland1');
   });
 
-  it('falls back to a generic testnet default when test-13 is missing', () => {
-    const withoutTest13 = NETWORKS.filter((network) => network.id !== 'test-13');
-    expect(pickDefaultByMode(withoutTest13, 'testnet')?.id).toBe('staging');
+  it('falls back to a generic testnet default when topaz is missing', () => {
+    const withoutTopaz = NETWORKS.filter((network) => network.id !== 'topaz-1');
+    expect(pickDefaultByMode(withoutTopaz, 'testnet')?.id).toBe('staging');
   });
 
   it('skips deleted networks when picking', () => {
-    const withDeletedTest13 = NETWORKS.map((network) =>
-      network.id === 'test-13' ? { ...network, deleted: true } : network,
+    const withDeletedTopaz = NETWORKS.map((network) =>
+      network.id === 'topaz-1' ? { ...network, deleted: true } : network,
     );
-    expect(pickDefaultByMode(withDeletedTest13, 'testnet')?.id).toBe('staging');
+    expect(pickDefaultByMode(withDeletedTopaz, 'testnet')?.id).toBe('staging');
   });
 
   it('returns the first non-deleted network when no testnet default exists', () => {

@@ -2,7 +2,7 @@ import { AdenaWallet, Wallet } from 'adena-module';
 import React, { createContext, useEffect, useState } from 'react';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 
-import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
+import { AtomoneNetworkMetainfoMapper } from '@repositories/common/mapper/atomone-network-metainfo-mapper';
 import { useAdenaContext } from '@hooks/use-context';
 import {
   atomoneNetworkToProfile,
@@ -72,10 +72,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
       networks = await chainService.getAtomoneNetworks();
     } catch (e) {
       console.error(e);
-      networks = (ATOMONE_CHAIN_DATA as unknown as AtomoneNetworkMetainfo[]).map((network) => ({
-        ...network,
-        deleted: false,
-      }));
+      networks = AtomoneNetworkMetainfoMapper.fromResource();
     }
 
     setAtomoneNetworkMetainfos(networks);

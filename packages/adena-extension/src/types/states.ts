@@ -29,10 +29,10 @@ export interface NetworkMetainfo {
   networkName: string;
   addressPrefix: string;
   rpcUrl: string;
-  indexerUrl: string;
-  gnoUrl: string;
-  apiUrl: string;
-  linkUrl: string;
+  indexerUrl?: string;
+  gnoUrl?: string;
+  apiUrl?: string;
+  linkUrl?: string;
   deleted?: boolean;
 }
 

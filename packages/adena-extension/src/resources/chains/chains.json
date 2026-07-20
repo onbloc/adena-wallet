@@ -15,18 +15,18 @@
     "linkUrl": "https://gnoscan.io"
   },
   {
-    "id": "test-13",
+    "id": "topaz-1",
     "default": true,
     "main": false,
-    "chainId": "test-13",
-    "chainName": "test-13",
-    "networkId": "test-13",
-    "networkName": "Testnet 13",
+    "chainId": "topaz-1",
+    "chainName": "Gno.land",
+    "networkId": "topaz-1",
+    "networkName": "Topaz",
     "addressPrefix": "g",
-    "rpcUrl": "https://test13.rpc.onbloc.xyz:443",
-    "indexerUrl": "https://indexer.test-13.gnoland.network:443",
-    "gnoUrl": "https://test13.testnets.gno.land",
-    "apiUrl": "https://test13.api.onbloc.xyz",
+    "rpcUrl": "https://topaz.rpc.onbloc.xyz:443",
+    "indexerUrl": "https://indexer.topaz.gnoland.network:443",
+    "gnoUrl": "https://topaz.testnets.gno.land",
+    "apiUrl": "https://topaz.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {
