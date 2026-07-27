@@ -1,6 +1,7 @@
 import { Account, ChainRegistry, createChainRegistry } from 'adena-module';
 import axios from 'axios';
 
+import { toGnoNetworkProfile } from '@common/mapper/network-profile-mapper';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { AdenaStorage } from '@common/storage';
@@ -10,6 +11,7 @@ import {
   makeAtomOneNetworkProfiles,
   makeGnoNetworkProfiles,
 } from '@common/utils/chain-utils';
+import { atomoneNetworkToProfile } from '@hooks/helpers/atomone-to-profile';
 import { ChainRepository, TokenRepository } from '@repositories/common';
 import {
   WalletAccountRepository,
@@ -100,6 +102,28 @@ export class InjectCore {
 
   public async getInMemoryKey(): Promise<CryptoKey | null> {
     return getInMemoryKey(this.inMemoryProvider);
+  }
+
+  public async hydrateChainRegistry(): Promise<void> {
+    try {
+      const gnoNetworks = await this.chainService.getNetworks();
+      for (const network of gnoNetworks) {
+        if (network.deleted) continue;
+        this.chainRegistry.register(toGnoNetworkProfile(network));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    try {
+      const atomoneNetworks = await this.chainService.getAtomoneNetworks();
+      for (const network of atomoneNetworks) {
+        if (network.deleted) continue;
+        this.chainRegistry.register(atomoneNetworkToProfile(network));
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   public async initGnoProvider(): Promise<boolean> {
