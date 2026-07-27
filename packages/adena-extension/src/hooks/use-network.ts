@@ -194,6 +194,11 @@ export const useNetwork = (): NetworkResponse => {
       await chainService.addGnoNetwork(parsedName, changedRpcUrl, chainId, extra.indexerUrl ?? '');
       const updatedNetworks = await chainService.getNetworks();
       setNetworkMetainfos(updatedNetworks);
+
+      for (const network of updatedNetworks) {
+        if (network.deleted) continue;
+        chainRegistry.register(toGnoNetworkProfile(network));
+      }
     },
     [networkMetainfos, atomoneNetworks, chainService],
   );

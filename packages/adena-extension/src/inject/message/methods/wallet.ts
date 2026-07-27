@@ -141,6 +141,10 @@ export const addEstablish = async (
 
   const isLocked = await core.isLockedBy(inMemoryKey);
 
+  // Merge user-added custom networks into the registry so getChainByChainId resolves them below.
+  // Without this the multi-chain path rejects a network the user already added with UNADDED_NETWORK.
+  await core.hydrateChainRegistry();
+
   const accountId = await core.getCurrentAccountId();
   const siteName = getSiteName(message.protocol, message.hostname);
 

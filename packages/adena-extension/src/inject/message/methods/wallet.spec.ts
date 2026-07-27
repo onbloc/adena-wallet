@@ -79,6 +79,7 @@ type FakeCore = {
   getCurrentAccountId: jest.Mock;
   getInMemoryKey: jest.Mock;
   isLockedBy: jest.Mock;
+  hydrateChainRegistry: jest.Mock;
 };
 
 function makeCore(overrides?: Partial<FakeCore>): FakeCore {
@@ -100,6 +101,7 @@ function makeCore(overrides?: Partial<FakeCore>): FakeCore {
     getCurrentAccountId: jest.fn(async () => 'acc-1'),
     getInMemoryKey: jest.fn(async () => null),
     isLockedBy: jest.fn(async () => false),
+    hydrateChainRegistry: jest.fn(async () => undefined),
     ...overrides,
   };
 }

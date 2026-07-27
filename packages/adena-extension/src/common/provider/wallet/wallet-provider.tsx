@@ -2,17 +2,18 @@ import { AdenaWallet, Wallet } from 'adena-module';
 import React, { createContext, useEffect, useState } from 'react';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 
-import { AtomoneNetworkMetainfoMapper } from '@repositories/common/mapper/atomone-network-metainfo-mapper';
-import { useAdenaContext } from '@hooks/use-context';
-import {
-  atomoneNetworkToProfile,
-  atomoneNetworkToTokenProfiles,
-} from '@hooks/helpers/atomone-to-profile';
+import { toGnoNetworkProfile } from '@common/mapper/network-profile-mapper';
 import {
   normalizeStoredId,
   pickDefaultByMode,
   resolveNetworkMode,
 } from '@common/utils/network-default';
+import {
+  atomoneNetworkToProfile,
+  atomoneNetworkToTokenProfiles,
+} from '@hooks/helpers/atomone-to-profile';
+import { useAdenaContext } from '@hooks/use-context';
+import { AtomoneNetworkMetainfoMapper } from '@repositories/common/mapper/atomone-network-metainfo-mapper';
 import { NetworkState, TokenState, WalletState } from '@states';
 import { AtomoneNetworkMetainfo, NetworkMetainfo, StateType, TokenModel } from '@types';
 import { GnoProvider } from '../gno/gno-provider';
@@ -35,8 +36,13 @@ export interface WalletContextProps {
 export const WalletContext = createContext<WalletContextProps | null>(null);
 
 export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
-  const { walletService, accountService, chainService, chainRegistry, tokenRegistry } =
-    useAdenaContext();
+  const {
+    walletService,
+    accountService,
+    chainService,
+    chainRegistry,
+    tokenRegistry,
+  } = useAdenaContext();
 
   const [gnoProvider, setGnoProvider] = useState<GnoProvider>();
 
@@ -104,8 +110,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     if (!selected) {
       selected = candidates.find((network) => network.isMainnet === wantsMainnet) ?? null;
     } else if (selected.isMainnet !== wantsMainnet) {
-      selected =
-        candidates.find((network) => network.isMainnet === wantsMainnet) ?? selected;
+      selected = candidates.find((network) => network.isMainnet === wantsMainnet) ?? selected;
     }
     if (selected) {
       setCurrentAtomoneNetwork(selected);
@@ -188,6 +193,12 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
 
     setNetworkMetainfos(networkMetainfos);
     chainService.updateNetworks(networkMetainfos);
+
+    // Mirror every persisted gno network (defaults + user-added customs) into chainRegistry.
+    for (const network of networkMetainfos) {
+      if (network.deleted) continue;
+      chainRegistry.register(toGnoNetworkProfile(network));
+    }
 
     const atomoneNetworks = await loadAtomoneNetworks();
 
