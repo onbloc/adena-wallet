@@ -14,6 +14,9 @@ import styled from 'styled-components';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import AtomoneChainBadge from '@assets/icons/chains/atomone.svg';
 import { GasToken } from '@common/constants/token.constant';
+import { gnoLiteral } from '@common/provider/gno/qeval';
+import { toRegistryKey } from '@common/utils/grc20-token-path';
+import { getGrc20RegConfig } from '@common/utils/grc20reg-config';
 import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
 import {
   isCosmosNativeTokenModel,
@@ -324,20 +327,59 @@ const TransferSummaryContainer: React.FC = () => {
       return;
     }
 
-    return TransactionMessage.createMessageOfVmCall({
-      caller: currentFundingAddress || '',
+    const caller = currentFundingAddress || '';
+    const amount = `${Math.round(
+      BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals).toNumber(),
+    )}`;
+
+    const cfg = getGrc20RegConfig(currentNetwork?.chainId);
+    // GRC20 identity is the token path; on-chain calls key by the registry
+    // fqname `{packagePath}.{symbol}`.
+    const registryKey = toRegistryKey(tokenMetainfo.tokenId) ?? tokenMetainfo.pkgPath;
+
+    // Preferred path: the chain's GRC20 helper realm exposes
+    // Transfer(tokenKey, to, amount) — invoke it via MsgCall.
+    if (cfg.helperPath) {
+      return TransactionMessage.createMessageOfVmCall({
+        caller,
+        send: '',
+        pkgPath: cfg.helperPath,
+        max_deposit: '',
+        func: 'Transfer',
+        args: [registryKey, toAddress, amount],
+      });
+    }
+
+    // Fallback (no helper configured yet): run an ephemeral package that
+    // resolves the token through grc20reg and transfers from the caller. The
+    // node requires the package name to be "main" and auto-assigns the reserved
+    // run path when Package.Path is left empty.
+    const runBody = [
+      'package main',
+      '',
+      'import (',
+      `\tgrc20reg ${gnoLiteral(cfg.registryPath)}`,
+      ')',
+      '',
+      'func main(cur realm) {',
+      `\tgrc20reg.MustGet(${gnoLiteral(
+        registryKey,
+      )}).CallerTeller().Transfer(0, cur, ${gnoLiteral(toAddress)}, ${amount})`,
+      '}',
+      '',
+    ].join('\n');
+
+    return TransactionMessage.createMessageOfVmRun({
+      caller,
       send: '',
-      pkgPath: tokenMetainfo.pkgPath,
       max_deposit: '',
-      func: 'Transfer',
-      args: [
-        toAddress,
-        `${Math.round(
-          BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals).toNumber(),
-        )}`,
-      ],
+      packageInfo: {
+        name: 'main',
+        path: '',
+        files: [{ name: 'main.gno', body: runBody }],
+      },
     });
-  }, [summaryInfo, currentFundingAddress]);
+  }, [summaryInfo, currentFundingAddress, currentNetwork?.chainId]);
 
   const createDocument = async (): Promise<Document | null> => {
     if (!currentNetwork || !currentAccount || !currentAddress) {
