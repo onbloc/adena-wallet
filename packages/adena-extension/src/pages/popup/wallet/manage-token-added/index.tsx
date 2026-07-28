@@ -187,7 +187,9 @@ const ManageTokenAddedContainer: React.FC = () => {
       }
 
       setSelected(true);
-      setSelectedTokenPath(tokenInfo.path);
+      // Re-fetch by the exact token path (tokenId) so a realm with multiple
+      // symbols resolves to the selected token rather than the first one.
+      setSelectedTokenPath(tokenInfo.tokenId);
       setOpened(false);
     },
     [tokenInfos],

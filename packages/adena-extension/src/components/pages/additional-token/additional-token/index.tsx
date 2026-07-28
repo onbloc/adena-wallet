@@ -60,7 +60,8 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   }, [selectedTokenInfo, errorManualGRC20Token]);
 
   const displaySelectedTokenPath = useMemo(() => {
-    const token = tokenInfos.find((token) => token.path === selectedTokenPath);
+    // selectedTokenPath is the selected token's token path (tokenId).
+    const token = tokenInfos.find((token) => token.tokenId === selectedTokenPath);
     if (!token) {
       return null;
     }
