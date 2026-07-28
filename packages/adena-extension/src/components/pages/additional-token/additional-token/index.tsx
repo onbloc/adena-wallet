@@ -31,6 +31,9 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   onClickBack,
   onClickCancel,
   onClickAdd,
+  onEndReached,
+  hasMore,
+  loadingMore,
 }) => {
   const isSearchType = useMemo(() => {
     return addingType === AddingType.SEARCH;
@@ -95,6 +98,9 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
             onChangeKeyword={onChangeKeyword}
             onClickOpenButton={onClickOpenButton}
             onClickListItem={onClickListItem}
+            onEndReached={onEndReached}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
           />
         ) : (
           <AdditionalTokenPathInput

@@ -9,7 +9,7 @@ import { ManageTokenLayout } from '@components/pages/manage-token-layout';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useDebounce } from '@hooks/use-debounce';
 import { useGRC20Token } from '@hooks/use-grc20-token';
-import { useGRC20Tokens } from '@hooks/use-grc20-tokens';
+import { useGRC20TokensInfinite } from '@hooks/use-grc20-tokens-infinite';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RoutePath, TokenInfo } from '@types';
@@ -27,7 +27,13 @@ const ManageTokenAddedContainer: React.FC = () => {
   const [addingType, setAddingType] = useState(AddingType.SEARCH);
   const [manualTokenPath, setManualTokenPath] = useState('');
 
-  const { data: grc20Tokens, refetch: refetchGRC20Tokens } = useGRC20Tokens();
+  const {
+    tokens: grc20Tokens,
+    refetch: refetchGRC20Tokens,
+    fetchNextPage: fetchNextGRC20Tokens,
+    hasNextPage: hasMoreGRC20Tokens,
+    isFetchingNextPage: isFetchingNextGRC20Tokens,
+  } = useGRC20TokensInfinite();
 
   /**
    * Manual GRC20 Token Query
@@ -96,20 +102,17 @@ const ManageTokenAddedContainer: React.FC = () => {
       return new TokenValidationError('INVALID_REALM_PATH');
     }
 
-    const isRegistered = tokenMetainfos.some((tokenMetaInfo) => {
-      if (
-        tokenMetaInfo.tokenId !== manualTokenPath ||
-        tokenMetaInfo.networkId !== currentNetwork.networkId
-      ) {
-        return false;
-      }
-
-      if (isGRC20TokenModel(tokenMetaInfo)) {
-        return tokenMetaInfo.pkgPath === manualTokenPath;
-      }
-
-      return false;
-    });
+    // The manual input is a realm (package) path; the resolved token carries the
+    // token path in tokenId. Compare against that so a realm with multiple
+    // symbols is matched by the exact token the user is adding.
+    const isRegistered =
+      !!manualGRC20Token &&
+      tokenMetainfos.some(
+        (tokenMetaInfo) =>
+          isGRC20TokenModel(tokenMetaInfo) &&
+          tokenMetaInfo.networkId === currentNetwork.networkId &&
+          tokenMetaInfo.tokenId === manualGRC20Token.tokenId,
+      );
 
     if (isRegistered) {
       return new TokenValidationError('ALREADY_ADDED');
@@ -298,6 +301,11 @@ const ManageTokenAddedContainer: React.FC = () => {
         onClickBack={goBack}
         onClickCancel={onClickCancel}
         onClickAdd={onClickAdd}
+        onEndReached={(): void => {
+          fetchNextGRC20Tokens();
+        }}
+        hasMore={hasMoreGRC20Tokens}
+        loadingMore={isFetchingNextGRC20Tokens}
       />
     </ManageTokenLayout>
   );
