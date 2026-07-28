@@ -85,7 +85,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const { data: allTokenMetainfos = null } = useQuery<TokenModel[]>(
     [
       'useTokenMetainfo/allTokenMetainfos',
-      grc20Tokens?.map((token) => token.pkgPath),
+      grc20Tokens?.map((token) => token.tokenId),
       currentNetwork.networkId,
     ],
     async (): Promise<TokenModel[]> => {
@@ -94,7 +94,9 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
         ? grc20Tokens.filter(
             (token) =>
               !fetchedTokenMetainfos.find(
-                (meta) => isGRC20TokenModel(meta) && meta?.pkgPath === token?.pkgPath,
+                // Dedupe by token path (`{packagePath}:{symbol}`), not pkgPath, so
+                // two tokens from the same realm are treated as distinct.
+                (meta) => isGRC20TokenModel(meta) && meta?.tokenId === token?.tokenId,
               ),
           )
         : [];

@@ -58,6 +58,17 @@ export class TokenService {
   }
 
   /**
+   * Fetch a single page of GRC20 tokens from the on-chain registry, with the
+   * registry's total size for pagination.
+   */
+  public async fetchGRC20TokensPaged(params: {
+    offset: number;
+    limit: number;
+  }): Promise<{ items: GRC20TokenModel[]; totalCount: number }> {
+    return this.tokenRepository.fetchGRC20Tokens(params);
+  }
+
+  /**
    * Fetch GRC20 token
    *
    * @param tokenPath
@@ -390,7 +401,10 @@ export class TokenService {
       return token1.symbol === token2.symbol;
     }
     if (isGRC20TokenModel(token1) && isGRC20TokenModel(token2)) {
-      return token1.pkgPath === token2.pkgPath;
+      // GRC20 identity is the token path `{packagePath}:{symbol}`, carried in
+      // tokenId. Two tokens from the same realm but different symbols must not
+      // collapse into one, so compare tokenId rather than pkgPath.
+      return token1.tokenId === token2.tokenId;
     }
     return false;
   }
