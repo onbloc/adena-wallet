@@ -1,11 +1,11 @@
 {
-  "gnoland1": {
-    "registryPath": "gno.land/r/demo/defi/grc20reg",
-    "helperPath": ""
-  },
   "topaz-1": {
     "registryPath": "gno.land/r/demo/defi/grc20reg",
-    "helperPath": ""
+    "helperPath": "gno.land/r/onbloc/utils/grc20helper"
+  },
+  "gnoland1": {
+    "registryPath": "gno.land/r/demo/defi/grc20reg",
+    "helperPath": "gno.land/r/g12vx7dn3dqq89mz550zwunvg4qw6epq73d9csay/utils/grc20helper"
   },
   "staging": {
     "registryPath": "gno.land/r/demo/defi/grc20reg",
