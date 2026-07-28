@@ -17,23 +17,32 @@ export const useTransferTokens = (): UseTransferTokenReturn => {
     grc20Packages: TokenModel[];
     grc721Packages: GRC721CollectionModel[];
   }> => {
-    const [transferEventPackages, deployedGRC20Tokens, deployedCollections]: [
+    const [transferEventPackages, accountGRC20Tokens, deployedCollections]: [
       string[],
-      GRC20TokenModel[],
+      GRC20TokenModel[] | null,
       GRC721CollectionModel[],
     ] = await Promise.all([
       tokenService.fetchAllTransferPackagesBy(address),
-      tokenService.fetchGRC20Tokens(),
+      // API-backed networks return the held GRC20 tokens directly (identity as a
+      // token path); null means no API URL, so fall back to registry discovery.
+      tokenService.fetchAccountGRC20Tokens(address),
       tokenService.fetchGRC721Collections(),
-    ]).catch(() => [[], [], []]);
+    ]).catch(() => [[], null, []]);
 
-    const filteredGRC20Packages = (deployedGRC20Tokens || []).filter((grc20Token) => {
-      if (!transferEventPackages || transferEventPackages.length === 0) {
-        return false;
-      }
-
-      return transferEventPackages.includes(grc20Token.pkgPath);
-    });
+    let filteredGRC20Packages: TokenModel[];
+    if (accountGRC20Tokens) {
+      // Precise, self-contained: exactly the tokens the account holds.
+      filteredGRC20Packages = accountGRC20Tokens;
+    } else {
+      // Indexer path: cross-reference the on-chain registry list by packagePath.
+      const deployedGRC20Tokens = await tokenService.fetchGRC20Tokens().catch(() => []);
+      filteredGRC20Packages = (deployedGRC20Tokens || []).filter((grc20Token) => {
+        if (!transferEventPackages || transferEventPackages.length === 0) {
+          return false;
+        }
+        return transferEventPackages.includes(grc20Token.pkgPath);
+      });
+    }
 
     const filteredGRC721Packages = (deployedCollections || []).filter((grc721Token) => {
       if (!transferEventPackages || transferEventPackages.length === 0) {

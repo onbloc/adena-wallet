@@ -14,7 +14,12 @@ import {
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { decodeGnoString, gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
-import { parseRegistryKey, toTokenPath } from '@common/utils/grc20-token-path';
+import {
+  isTokenPath,
+  parseRegistryKey,
+  registryKeyToTokenPath,
+  toTokenPath,
+} from '@common/utils/grc20-token-path';
 import { getGrc20RegConfig, Grc20RegConfig } from '@common/utils/grc20reg-config';
 import {
   parseGRC20ByABCIRender,
@@ -470,6 +475,58 @@ export class TokenRepository implements ITokenRepository {
               .filter((collection: GRC721CollectionModel | null) => !!collection)
           : [],
     );
+  }
+
+  /**
+   * GRC20 tokens the account currently holds, sourced from the API
+   * `/v1/accounts/{address}` assets. Each asset already carries its identity,
+   * so we map it straight to a GRC20TokenModel (tokenId = token path) without
+   * cross-referencing the on-chain registry — this both avoids the heavy
+   * registry scan and keeps sibling symbols from the same realm distinct.
+   *
+   * Returns null when no API URL is configured so callers can fall back to the
+   * indexer-based discovery path.
+   */
+  public async fetchAccountGRC20Tokens(address: string): Promise<GRC20TokenModel[] | null> {
+    if (!this.apiUrl) {
+      return null;
+    }
+
+    const assets = await TokenRepository.fetch<AccountAssetsResponse>(
+      this.networkInstance,
+      this.apiUrl + '/v1/accounts/' + address,
+    )
+      .then((data) => data?.data?.assets ?? null)
+      .catch(() => null);
+
+    if (!assets) {
+      return null;
+    }
+
+    return assets
+      .filter((asset) => (asset.tokenType ?? '').toUpperCase() === 'GRC20' && !!asset.packagePath)
+      .map((asset) => {
+        // The API returns the identity in `tokenId` as the registry fqname
+        // `{packagePath}.{symbol}`; normalize it to the wallet token path
+        // `{packagePath}:{symbol}`. Tolerate an already-colon value or a missing
+        // tokenId by rebuilding from packagePath + symbol.
+        const tokenId =
+          (isTokenPath(asset.tokenId) ? asset.tokenId : registryKeyToTokenPath(asset.tokenId)) ??
+          toTokenPath(asset.packagePath, asset.symbol);
+
+        return {
+          main: false,
+          tokenId,
+          pkgPath: asset.packagePath,
+          networkId: this.networkId,
+          display: false,
+          type: 'grc20',
+          name: asset.name,
+          symbol: asset.symbol,
+          decimals: asset.decimals,
+          image: asset.logoUrl ?? '',
+        };
+      });
   }
 
   public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {

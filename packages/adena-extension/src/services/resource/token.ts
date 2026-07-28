@@ -101,6 +101,14 @@ export class TokenService {
   }
 
   /**
+   * GRC20 tokens the account holds, mapped from the API account-assets endpoint
+   * (tokenId = token path). Returns null when the network has no API URL.
+   */
+  public async fetchAccountGRC20Tokens(address: string): Promise<GRC20TokenModel[] | null> {
+    return this.tokenRepository.fetchAccountGRC20Tokens(address);
+  }
+
+  /**
    * Fetch Apps information
    *
    * @returns
