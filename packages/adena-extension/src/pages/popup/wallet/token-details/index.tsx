@@ -216,9 +216,12 @@ export const TokenDetails = (): JSX.Element => {
   const getTokenUri = (): string => {
     if (tokenBalance && isGRC20TokenModel(tokenBalance)) {
       const scannerUrl = profile?.linkUrl || SCANNER_URL;
+      // Link the scanner by the token path `{packagePath}:{symbol}` (tokenId) so
+      // a realm registering multiple symbols resolves to the exact token.
+      const tokenPath = tokenBalance.tokenId;
       return scannerParameters
-        ? `${scannerUrl}/tokens/${tokenBalance.pkgPath}?${makeQueryString(scannerParameters)}`
-        : `${scannerUrl}/tokens/${tokenBalance.pkgPath}`;
+        ? `${scannerUrl}/tokens/${tokenPath}?${makeQueryString(scannerParameters)}`
+        : `${scannerUrl}/tokens/${tokenPath}`;
     }
     return '';
   };
