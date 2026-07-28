@@ -1,3 +1,4 @@
+import { packagePathOfTokenPath } from '@common/utils/grc20-token-path';
 import { NetworkMetainfo, TransactionWithPageInfo } from '@types';
 import { AxiosInstance } from 'axios';
 import { TransactionHistoryMapper } from './mapper/transaction-history-mapper';
@@ -53,9 +54,11 @@ export class TransactionHistoryApiRepository implements ITransactionHistoryRepos
 
   public async fetchGRC20TransactionHistoryBy(
     address: string,
-    packagePath: string,
+    tokenPath: string,
     cursor?: string | null,
   ): Promise<TransactionWithPageInfo> {
+    // The endpoint is keyed by the realm path; derive it from the token path.
+    const packagePath = packagePathOfTokenPath(tokenPath);
     const encodedPackagePath = encodeURIComponent(packagePath);
     const path = `${this.apiUrl}/v1/accounts/${address}/grc20-token/${encodedPackagePath}/transactions`;
     const paramsString = cursor ? `?cursor=${cursor}` : '';

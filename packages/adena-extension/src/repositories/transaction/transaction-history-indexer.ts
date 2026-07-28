@@ -1,3 +1,4 @@
+import { packagePathOfTokenPath, toRegistryKey } from '@common/utils/grc20-token-path';
 import { getGrc20RegConfig } from '@common/utils/grc20reg-config';
 import { NetworkMetainfo, TransactionWithPageInfo } from '@types';
 import { AxiosInstance } from 'axios';
@@ -106,15 +107,26 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
 
   public async fetchGRC20TransactionHistoryBy(
     address: string,
-    packagePath: string,
+    tokenPath: string,
   ): Promise<TransactionWithPageInfo> {
     if (!this.queryUrl) {
       return EMPTY_PAGE;
     }
 
+    // `tokenPath` is the wallet token path `{packagePath}:{symbol}`. Derive the
+    // realm path for direct transfers and the registry key for helper-routed
+    // transfers (matched against the helper's Transfer args[0]).
+    const packagePath = packagePathOfTokenPath(tokenPath);
+    const tokenKey = toRegistryKey(tokenPath) ?? undefined;
+    const helperPath = this.grc20HelperPath;
+
     const result = await TransactionHistoryIndexerRepository.postGraphQuery<
       TransactionsQueryResult
-    >(this.axiosInstance, this.queryUrl, makeGRC20TransactionHistoryQuery(address, packagePath));
+    >(
+      this.axiosInstance,
+      this.queryUrl,
+      makeGRC20TransactionHistoryQuery(address, packagePath, { helperPath, tokenKey }),
+    );
 
     const transactions = (result?.data?.getTransactions ?? []).map((tx) => {
       const callTx = tx as TransactionResponse<MsgCallValue>;

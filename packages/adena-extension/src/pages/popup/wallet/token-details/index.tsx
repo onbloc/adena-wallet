@@ -116,7 +116,9 @@ export const TokenDetails = (): JSX.Element => {
     if (!tokenBalance || !isGRC20TokenModel(tokenBalance)) {
       return '';
     }
-    return tokenBalance.pkgPath;
+    // Pass the token path (tokenId) so the history query can match both direct
+    // token transfers and helper-routed transfers by the token key.
+    return tokenBalance.tokenId;
   }, [tokenBalance]);
 
   const isUsedApi = useMemo(() => {
