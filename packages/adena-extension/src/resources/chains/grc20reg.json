@@ -17,6 +17,6 @@
   },
   "dev.gnoswap": {
     "registryPath": "gno.land/r/demo/defi/grc20reg",
-    "helperPath": ""
+    "helperPath": "gno.land/r/gnoswap/common"
   }
 }
