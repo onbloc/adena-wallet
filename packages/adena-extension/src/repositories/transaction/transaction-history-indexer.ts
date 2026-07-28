@@ -128,7 +128,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       makeGRC20TransactionHistoryQuery(address, packagePath, { helperPath, tokenKey }),
     );
 
-    const transactions = (result?.data?.getTransactions ?? []).map((tx) => {
+    const mapped = (result?.data?.getTransactions ?? []).map((tx) => {
       const callTx = tx as TransactionResponse<MsgCallValue>;
       const firstMessage = callTx.messages?.[0];
       const isCallerSelf = firstMessage?.value?.caller === address;
@@ -136,6 +136,15 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         ? mapVMTransaction(callTx, this.grc20HelperPath)
         : mapReceivedTransactionByMsgCall(callTx, this.grc20HelperPath);
     });
+
+    // The direct branch fetches every Transfer on the realm (pkg_path ==
+    // packagePath), so a realm with multiple symbols leaks sibling tokens (e.g.
+    // BAR transfers into FOO's history). Scope to the selected token: keep rows
+    // whose mapped denom is the token path (event-decoded) or, when no event was
+    // available, the realm path (fallback can't disambiguate symbols).
+    const transactions = mapped.filter(
+      (tx) => tx.amount?.denom === tokenPath || tx.amount?.denom === packagePath,
+    );
 
     return {
       page: { hasNext: false, cursor: null },
