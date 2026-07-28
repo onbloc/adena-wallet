@@ -1,3 +1,4 @@
+import { getGrc20RegConfig } from '@common/utils/grc20reg-config';
 import { NetworkMetainfo, TransactionWithPageInfo } from '@types';
 import { AxiosInstance } from 'axios';
 import {
@@ -53,6 +54,13 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
     return this.networkMetainfo.indexerUrl + '/graphql/query';
   }
 
+  // The chain's GRC20 helper realm (if any). GRC20 transfers routed through the
+  // helper appear as helperPath.Transfer(tokenKey, to, amount) in history; the
+  // mapper uses this to identify the token from the first arg.
+  private get grc20HelperPath(): string | undefined {
+    return getGrc20RegConfig(this.networkMetainfo?.chainId).helperPath || undefined;
+  }
+
   public async fetchAllTransactionHistoryBy(address: string): Promise<TransactionWithPageInfo> {
     if (!this.queryUrl) {
       return EMPTY_PAGE;
@@ -63,7 +71,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
     >(this.axiosInstance, this.queryUrl, makeAllTransactionHistoryQuery(address));
 
     const transactions = (result?.data?.getTransactions ?? []).map((tx) =>
-      mapTransactionEdgeByAddress(tx, address),
+      mapTransactionEdgeByAddress(tx, address, this.grc20HelperPath),
     );
 
     return {
@@ -112,7 +120,9 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       const callTx = tx as TransactionResponse<MsgCallValue>;
       const firstMessage = callTx.messages?.[0];
       const isCallerSelf = firstMessage?.value?.caller === address;
-      return isCallerSelf ? mapVMTransaction(callTx) : mapReceivedTransactionByMsgCall(callTx);
+      return isCallerSelf
+        ? mapVMTransaction(callTx, this.grc20HelperPath)
+        : mapReceivedTransactionByMsgCall(callTx, this.grc20HelperPath);
     });
 
     return {
