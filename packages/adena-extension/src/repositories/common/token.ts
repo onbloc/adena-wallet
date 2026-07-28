@@ -609,6 +609,51 @@ export class TokenRepository implements ITokenRepository {
     });
   }
 
+  /**
+   * GRC20 token paths the account has transferred/received, derived from the
+   * indexer's Transfer events. Each grc20 Transfer emits a `token` attribute
+   * equal to `Token.ID()` = `{packagePath}.{symbol}.{sequence}`; the registry
+   * keys by `{packagePath}.{symbol}`, so the trailing `.{sequence}` is stripped
+   * before converting to the wallet token path. Unlike `fetchAllTransferPackagesBy`
+   * (packagePath only), this keeps sibling symbols from the same realm distinct.
+   */
+  public async fetchAllTransferGRC20TokenPathsBy(address: string): Promise<string[]> {
+    if (!this.queryUrl) {
+      return [];
+    }
+
+    const transferEventsQuery = makeAllTransferEventsQueryBy(address);
+    return TokenRepository.postGraphQuery(
+      this.networkInstance,
+      this.queryUrl,
+      transferEventsQuery,
+    ).then((result) => {
+      const transactions = result?.data?.transactions;
+      if (!transactions) {
+        return [];
+      }
+
+      const tokenPaths: string[] = transactions
+        .flatMap((transaction: any) => transaction?.response?.events || [])
+        .map((event: any) => {
+          const attrs = event?.attrs || [];
+          const hasParty = attrs.some((a: any) => a.key === 'to' || a.key === 'from');
+          const tokenAttr = attrs.find((a: any) => a.key === 'token');
+          if (!hasParty || !tokenAttr?.value) {
+            return null;
+          }
+
+          // token attr = `{packagePath}.{symbol}.{sequence}`; drop the sequence.
+          const id: string = tokenAttr.value;
+          const registryKey = id.slice(0, id.lastIndexOf('.'));
+          return registryKeyToTokenPath(registryKey) ?? registryKeyToTokenPath(id);
+        })
+        .filter((tokenPath: string | null): tokenPath is string => !!tokenPath);
+
+      return [...new Set(tokenPaths)];
+    });
+  }
+
   public async fetchGRC721CollectionByPackagePath(
     packagePath: string,
   ): Promise<GRC721CollectionModel> {

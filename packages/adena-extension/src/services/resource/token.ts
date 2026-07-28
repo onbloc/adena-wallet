@@ -103,6 +103,15 @@ export class TokenService {
   }
 
   /**
+   * GRC20 token paths the account has transferred, derived from indexer Transfer
+   * events (token id parsed to the token path). Used by the indexer fallback to
+   * match held GRC20 tokens precisely per symbol.
+   */
+  public async fetchAllTransferGRC20TokenPathsBy(address: string): Promise<string[]> {
+    return this.tokenRepository.fetchAllTransferGRC20TokenPathsBy(address);
+  }
+
+  /**
    * GRC20 tokens the account holds, mapped from the API account-assets endpoint
    * (tokenId = token path). Returns null when the network has no API URL.
    */

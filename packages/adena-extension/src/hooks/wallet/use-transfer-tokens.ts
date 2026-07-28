@@ -34,14 +34,16 @@ export const useTransferTokens = (): UseTransferTokenReturn => {
       // Precise, self-contained: exactly the tokens the account holds.
       filteredGRC20Packages = accountGRC20Tokens;
     } else {
-      // Indexer path: cross-reference the on-chain registry list by packagePath.
-      const deployedGRC20Tokens = await tokenService.fetchGRC20Tokens().catch(() => []);
-      filteredGRC20Packages = (deployedGRC20Tokens || []).filter((grc20Token) => {
-        if (!transferEventPackages || transferEventPackages.length === 0) {
-          return false;
-        }
-        return transferEventPackages.includes(grc20Token.pkgPath);
-      });
+      // Indexer path: cross-reference the on-chain registry list by token path.
+      // Transfer events carry the token id `{packagePath}.{symbol}.{sequence}`,
+      // parsed to the token path, so sibling symbols in one realm stay distinct.
+      const [deployedGRC20Tokens, transferTokenPaths] = await Promise.all([
+        tokenService.fetchGRC20Tokens().catch((): GRC20TokenModel[] => []),
+        tokenService.fetchAllTransferGRC20TokenPathsBy(address).catch((): string[] => []),
+      ]);
+      filteredGRC20Packages = deployedGRC20Tokens.filter((grc20Token) =>
+        transferTokenPaths.includes(grc20Token.tokenId),
+      );
     }
 
     const filteredGRC721Packages = (deployedCollections || []).filter((grc721Token) => {
