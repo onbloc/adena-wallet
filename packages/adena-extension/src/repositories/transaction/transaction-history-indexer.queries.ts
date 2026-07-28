@@ -48,6 +48,18 @@ const TRANSACTION_FIELDS = `
       }
     }
   }
+  response {
+    events {
+      ... on GnoEvent {
+        type
+        pkg_path
+        attrs {
+          key
+          value
+        }
+      }
+    }
+  }
 `;
 
 /**
