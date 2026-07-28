@@ -1,0 +1,22 @@
+{
+  "gnoland1": {
+    "registryPath": "gno.land/r/demo/defi/grc20reg",
+    "helperPath": ""
+  },
+  "topaz-1": {
+    "registryPath": "gno.land/r/demo/defi/grc20reg",
+    "helperPath": ""
+  },
+  "staging": {
+    "registryPath": "gno.land/r/demo/defi/grc20reg",
+    "helperPath": ""
+  },
+  "dev": {
+    "registryPath": "gno.land/r/demo/defi/grc20reg",
+    "helperPath": ""
+  },
+  "dev.gnoswap": {
+    "registryPath": "gno.land/r/demo/defi/grc20reg",
+    "helperPath": ""
+  }
+}
