@@ -18,14 +18,11 @@ import {
   isTokenPath,
   parseRegistryKey,
   registryKeyToTokenPath,
+  toRegistryKey,
   toTokenPath,
 } from '@common/utils/grc20-token-path';
 import { getGrc20RegConfig, Grc20RegConfig } from '@common/utils/grc20reg-config';
-import {
-  parseGRC20ByABCIRender,
-  parseGRC20ByFileContents,
-  parseGRC721FileContents,
-} from '@common/utils/parse-utils';
+import { parseGRC721FileContents } from '@common/utils/parse-utils';
 import {
   GRC20TokenModel,
   GRC721CollectionModel,
@@ -226,33 +223,70 @@ export class TokenRepository implements ITokenRepository {
     return true;
   };
 
-  public async fetchGRC20TokenByPackagePath(packagePath: string): Promise<GRC20TokenModel> {
+  /**
+   * Look up a single GRC20 token via the grc20reg registry. Accepts either a
+   * token path `{packagePath}:{symbol}` (resolved directly) or a bare realm
+   * packagePath (resolved to the first token registered under that realm). No
+   * qrender/qfile source parsing — the registry is the sole source of truth.
+   */
+  public async fetchGRC20TokenByPackagePath(pathOrTokenPath: string): Promise<GRC20TokenModel> {
     if (!this.gnoProvider) {
       throw new Error('Gno provider not initialized.');
     }
 
-    const fileContents = await this.gnoProvider.getFileContent(packagePath).catch(() => null);
-    const fileNames = fileContents?.split('\n') || [];
+    const registryKey = isTokenPath(pathOrTokenPath)
+      ? toRegistryKey(pathOrTokenPath)
+      : await this.findRegistryKeyByPackagePath(pathOrTokenPath);
 
-    if (fileContents === null || fileNames.length === 0) {
-      throw new Error('Not available realm');
+    if (!registryKey) {
+      throw new Error('Realm is not a registered GRC20 token');
     }
 
-    const renderTokenInfo = await this.fetchGRC20TokenInfoQueryRender(packagePath).catch(
-      () => null,
-    );
-    if (renderTokenInfo) {
-      return renderTokenInfo;
+    const [token] = await this.fetchGRC20TokensByKeys([registryKey]);
+    if (!token) {
+      throw new Error('Realm is not a registered GRC20 token');
+    }
+    return token;
+  }
+
+  /**
+   * Resolve the first grc20reg registry key registered under a realm, for
+   * callers that only know the packagePath. Keys are the fqname
+   * `{packagePath}.{symbol}` and stored sorted, so an in-order scan starting at
+   * `{packagePath}.` surfaces this realm's tokens first; the prefix is
+   * re-checked to reject a neighbouring realm when this one has none.
+   */
+  private async findRegistryKeyByPackagePath(packagePath: string): Promise<string | null> {
+    if (!this.gnoProvider) {
+      return null;
     }
 
-    const fileTokenInfo = await this.fetchGRC20TokenInfoQueryFiles(packagePath, fileNames).catch(
-      () => null,
-    );
-    if (fileTokenInfo) {
-      return fileTokenInfo;
+    const registryPath = this.grc20RegConfig.registryPath;
+    const start = `${packagePath}.`;
+
+    let response: string;
+    try {
+      response = await this.gnoProvider.evaluateIIFE(registryPath, {
+        returnType: 'string',
+        statements: [
+          'res := ""',
+          `GetRegistry().Iterate(${gnoLiteral(
+            start,
+          )}, "", func(key string, value any) bool { res = key; return true })`,
+        ],
+        returnExpression: 'res',
+      });
+    } catch (e) {
+      console.warn('findRegistryKeyByPackagePath: evaluateIIFE failed', packagePath, e);
+      return null;
     }
 
-    throw new Error('Realm is not GRC20');
+    const tuples = parseQEvalResult(response);
+    const key = tuples[0] ? decodeGnoString(tuples[0].value) : '';
+    if (!key || !key.startsWith(start)) {
+      return null;
+    }
+    return key;
   }
 
   /**
@@ -875,67 +909,6 @@ export class TokenRepository implements ITokenRepository {
       .then((response) => TokenMapper.fromIBCTokenMetainfos(this.networkId, response.data))
       .catch(() => []);
   };
-
-  private async fetchGRC20TokenInfoQueryRender(
-    packagePath: string,
-  ): Promise<GRC20TokenModel | null> {
-    if (!this.gnoProvider) {
-      throw new Error('Gno provider not initialized.');
-    }
-
-    const { tokenName, tokenSymbol, tokenDecimals } = await this.gnoProvider
-      .getRenderOutput(packagePath, '')
-      .then(parseGRC20ByABCIRender);
-
-    return {
-      main: false,
-      tokenId: toTokenPath(packagePath, tokenSymbol),
-      pkgPath: packagePath,
-      networkId: this.networkId,
-      display: false,
-      type: 'grc20',
-      name: tokenName,
-      symbol: tokenSymbol,
-      decimals: tokenDecimals,
-      image: '',
-    };
-  }
-
-  private async fetchGRC20TokenInfoQueryFiles(
-    packagePath: string,
-    fileNames: string[],
-  ): Promise<GRC20TokenModel | null> {
-    if (!this.gnoProvider) {
-      throw new Error('Gno provider not initialized.');
-    }
-
-    for (const fileName of fileNames) {
-      const filePath = [packagePath, fileName].join('/');
-      const contents = await this.gnoProvider.getFileContent(filePath).catch(() => null);
-      if (!contents) {
-        continue;
-      }
-
-      const tokenInfo = parseGRC20ByFileContents(contents);
-
-      if (tokenInfo) {
-        return {
-          main: false,
-          tokenId: toTokenPath(packagePath, tokenInfo.tokenSymbol),
-          pkgPath: packagePath,
-          networkId: this.networkId,
-          display: false,
-          type: 'grc20',
-          name: tokenInfo.tokenName,
-          symbol: tokenInfo.tokenSymbol,
-          decimals: tokenInfo.tokenDecimals,
-          image: '',
-        };
-      }
-    }
-
-    return null;
-  }
 
   private async fetchGRC721CollectionQueryFiles(
     packagePath: string,
