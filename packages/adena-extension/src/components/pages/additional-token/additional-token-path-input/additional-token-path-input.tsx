@@ -24,7 +24,7 @@ const AdditionalTokenPathInput: React.FC<AdditionalTokenPathInputProps> = ({
         className={hasError ? 'search-input error' : 'search-input'}
         value={keyword}
         onChange={(event): void => onChangeKeyword(event.target.value)}
-        placeholder='gno.land/r/demo/token:SYMBOL'
+        placeholder='gno.land/r/demo/token.SYMBOL'
       />
 
       {hasError && (

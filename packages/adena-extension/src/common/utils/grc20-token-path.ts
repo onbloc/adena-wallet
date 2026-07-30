@@ -2,12 +2,12 @@
  * GRC20 token-path helpers.
  *
  * The wallet identifies a GRC20 token by its **token path**
- * `` `${packagePath}:${symbol}` `` (colon separator). On-chain, the `grc20reg`
+ * `` `${packagePath}.${symbol}` `` (colon separator). On-chain, the `grc20reg`
  * registry keys the same token by the canonical fqname
  * `` `${packagePath}.${symbol}` `` (dot separator, see
  * `fqname.Construct(rlmPath, symbol)`), one token per realm+symbol.
  *
- * A gno package path uses slashes and never contains a `:`; only the trailing
+ * A gno package path uses slashes and never contains a `.`; only the trailing
  * `.symbol` segment carries a dot after the last slash. That makes the
  * conversion between the two representations deterministic.
  */
