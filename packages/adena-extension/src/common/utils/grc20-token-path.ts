@@ -89,3 +89,26 @@ export function registryKeyToTokenPath(key: string): string | null {
   }
   return toTokenPath(parsed.packagePath, parsed.symbol);
 }
+
+/**
+ * Parse a full token identifier that may be either a wallet token path
+ * `{packagePath}:{symbol}` (colon) or a registry fqname `{packagePath}.{symbol}`
+ * (dot) into its parts. Returns null for a bare packagePath (no symbol), so
+ * callers can require the symbol component.
+ */
+export function parseTokenIdentifier(value: string): ParsedTokenPath | null {
+  return parseTokenPath(value) ?? parseRegistryKey(value);
+}
+
+/**
+ * Resolve a full token identifier (colon token path or dot fqname) to the
+ * on-chain grc20reg registry key `{packagePath}.{symbol}`. Returns null when the
+ * input has no symbol — a bare packagePath is never resolved.
+ */
+export function tokenIdentifierToRegistryKey(value: string): string | null {
+  const parsed = parseTokenIdentifier(value);
+  if (!parsed) {
+    return null;
+  }
+  return `${parsed.packagePath}${REGISTRY_KEY_SEPARATOR}${parsed.symbol}`;
+}

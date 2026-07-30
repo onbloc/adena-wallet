@@ -18,8 +18,8 @@ import {
   isTokenPath,
   parseRegistryKey,
   registryKeyToTokenPath,
-  toRegistryKey,
   toTokenPath,
+  tokenIdentifierToRegistryKey,
 } from '@common/utils/grc20-token-path';
 import { getGrc20RegConfig, Grc20RegConfig } from '@common/utils/grc20reg-config';
 import { parseGRC721FileContents } from '@common/utils/parse-utils';
@@ -224,69 +224,27 @@ export class TokenRepository implements ITokenRepository {
   };
 
   /**
-   * Look up a single GRC20 token via the grc20reg registry. Accepts either a
-   * token path `{packagePath}:{symbol}` (resolved directly) or a bare realm
-   * packagePath (resolved to the first token registered under that realm). No
-   * qrender/qfile source parsing — the registry is the sole source of truth.
+   * Look up a single GRC20 token via the grc20reg registry, strictly by its full
+   * token path. Accepts a wallet token path `{packagePath}:{symbol}` (colon) or
+   * a registry fqname `{packagePath}.{symbol}` (dot); a bare packagePath is
+   * rejected — the symbol is required so multi-symbol realms are unambiguous.
+   * The registry is the sole source of truth (no qrender/qfile parsing).
    */
-  public async fetchGRC20TokenByPackagePath(pathOrTokenPath: string): Promise<GRC20TokenModel> {
+  public async fetchGRC20TokenByPackagePath(tokenPath: string): Promise<GRC20TokenModel> {
     if (!this.gnoProvider) {
       throw new Error('Gno provider not initialized.');
     }
 
-    const registryKey = isTokenPath(pathOrTokenPath)
-      ? toRegistryKey(pathOrTokenPath)
-      : await this.findRegistryKeyByPackagePath(pathOrTokenPath);
-
+    const registryKey = tokenIdentifierToRegistryKey(tokenPath);
     if (!registryKey) {
-      throw new Error('Realm is not a registered GRC20 token');
+      throw new Error('A full token path ({packagePath}:{symbol}) is required');
     }
 
     const [token] = await this.fetchGRC20TokensByKeys([registryKey]);
     if (!token) {
-      throw new Error('Realm is not a registered GRC20 token');
+      throw new Error('Token is not registered in grc20reg');
     }
     return token;
-  }
-
-  /**
-   * Resolve the first grc20reg registry key registered under a realm, for
-   * callers that only know the packagePath. Keys are the fqname
-   * `{packagePath}.{symbol}` and stored sorted, so an in-order scan starting at
-   * `{packagePath}.` surfaces this realm's tokens first; the prefix is
-   * re-checked to reject a neighbouring realm when this one has none.
-   */
-  private async findRegistryKeyByPackagePath(packagePath: string): Promise<string | null> {
-    if (!this.gnoProvider) {
-      return null;
-    }
-
-    const registryPath = this.grc20RegConfig.registryPath;
-    const start = `${packagePath}.`;
-
-    let response: string;
-    try {
-      response = await this.gnoProvider.evaluateIIFE(registryPath, {
-        returnType: 'string',
-        statements: [
-          'res := ""',
-          `GetRegistry().Iterate(${gnoLiteral(
-            start,
-          )}, "", func(key string, value any) bool { res = key; return true })`,
-        ],
-        returnExpression: 'res',
-      });
-    } catch (e) {
-      console.warn('findRegistryKeyByPackagePath: evaluateIIFE failed', packagePath, e);
-      return null;
-    }
-
-    const tuples = parseQEvalResult(response);
-    const key = tuples[0] ? decodeGnoString(tuples[0].value) : '';
-    if (!key || !key.startsWith(start)) {
-      return null;
-    }
-    return key;
   }
 
   /**

@@ -1,4 +1,4 @@
-import { packagePathOfTokenPath } from '@common/utils/grc20-token-path';
+import { parseTokenIdentifier } from '@common/utils/grc20-token-path';
 import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { AppInfoResponse } from '@repositories/common/response';
@@ -75,20 +75,27 @@ export class TokenService {
    * @param tokenPath
    * @returns
    */
-  public async fetchGRC20Token(pathOrTokenPath: string): Promise<GRC20TokenModel | null> {
-    if (!pathOrTokenPath) {
+  public async fetchGRC20Token(tokenPath: string): Promise<GRC20TokenModel | null> {
+    if (!tokenPath) {
       return null;
     }
 
-    // Accept either a token path `{packagePath}:{symbol}` or a bare realm path.
-    // Validate the realm (packagePath) component only.
+    // Require a full token path — either `{packagePath}:{symbol}` (colon) or the
+    // registry fqname `{packagePath}.{symbol}` (dot). A bare packagePath (no
+    // symbol) is rejected; grc20reg is always queried by the token path.
+    const parsed = parseTokenIdentifier(tokenPath);
+    if (!parsed) {
+      return null;
+    }
+
+    // Validate the realm (packagePath) component.
     try {
-      parseReamPathItemsByPath(packagePathOfTokenPath(pathOrTokenPath));
+      parseReamPathItemsByPath(parsed.packagePath);
     } catch {
       return null;
     }
 
-    return this.tokenRepository.fetchGRC20TokenByPackagePath(pathOrTokenPath).catch(() => null);
+    return this.tokenRepository.fetchGRC20TokenByPackagePath(tokenPath).catch(() => null);
   }
 
   /**
@@ -165,7 +172,9 @@ export class TokenService {
    * @param accountId
    * @returns
    */
-  public async getTokenMetainfosByAccountId(accountId: string): Promise<
+  public async getTokenMetainfosByAccountId(
+    accountId: string,
+  ): Promise<
     {
       image: string;
       main: boolean;

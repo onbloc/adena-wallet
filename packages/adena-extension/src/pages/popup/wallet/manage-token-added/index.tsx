@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { TokenValidationError } from '@common/errors';
+import { parseTokenIdentifier } from '@common/utils/grc20-token-path';
 import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
 import { isGRC20TokenModel } from '@common/validation';
 import AdditionalToken from '@components/pages/additional-token/additional-token';
@@ -61,8 +62,16 @@ const ManageTokenAddedContainer: React.FC = () => {
       return true;
     }
 
+    // Require a full token path `{packagePath}:{symbol}` (or the fqname
+    // `{packagePath}.{symbol}`) — a bare packagePath is not accepted, so
+    // grc20reg is always queried by the exact token.
+    const parsed = parseTokenIdentifier(manualTokenPath);
+    if (!parsed) {
+      return false;
+    }
+
     try {
-      parseReamPathItemsByPath(manualTokenPath);
+      parseReamPathItemsByPath(parsed.packagePath);
       return true;
     } catch {
       return false;

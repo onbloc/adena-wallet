@@ -2,10 +2,12 @@ import {
   isTokenPath,
   packagePathOfTokenPath,
   parseRegistryKey,
+  parseTokenIdentifier,
   parseTokenPath,
   registryKeyToTokenPath,
   toRegistryKey,
   toTokenPath,
+  tokenIdentifierToRegistryKey,
 } from './grc20-token-path';
 
 const PKG = 'gno.land/r/demo/foo20';
@@ -56,6 +58,28 @@ describe('grc20-token-path', () => {
   it('registryKeyToTokenPath round-trips with toRegistryKey', () => {
     expect(registryKeyToTokenPath(REGISTRY_KEY)).toBe(TOKEN_PATH);
     expect(toRegistryKey(registryKeyToTokenPath(REGISTRY_KEY) as string)).toBe(REGISTRY_KEY);
+  });
+
+  it('parseTokenIdentifier accepts both colon token paths and dot fqnames', () => {
+    expect(parseTokenIdentifier(TOKEN_PATH)).toEqual({ packagePath: PKG, symbol: SYMBOL });
+    expect(parseTokenIdentifier(REGISTRY_KEY)).toEqual({ packagePath: PKG, symbol: SYMBOL });
+  });
+
+  it('parseTokenIdentifier rejects a bare packagePath (no symbol)', () => {
+    expect(parseTokenIdentifier(PKG)).toBeNull();
+  });
+
+  it('tokenIdentifierToRegistryKey normalizes colon and dot inputs to the registry key', () => {
+    expect(tokenIdentifierToRegistryKey(TOKEN_PATH)).toBe(REGISTRY_KEY);
+    expect(tokenIdentifierToRegistryKey(REGISTRY_KEY)).toBe(REGISTRY_KEY);
+    expect(tokenIdentifierToRegistryKey(PKG)).toBeNull();
+  });
+
+  it('tokenIdentifierToRegistryKey handles nested realm paths (ucs03_zkgm.SepoliaETH)', () => {
+    const pkg = 'gno.land/r/onbloc/ibc/union/apps/ucs03_zkgm';
+    expect(tokenIdentifierToRegistryKey(`${pkg}.SepoliaETH`)).toBe(`${pkg}.SepoliaETH`);
+    expect(tokenIdentifierToRegistryKey(`${pkg}:SepoliaETH`)).toBe(`${pkg}.SepoliaETH`);
+    expect(tokenIdentifierToRegistryKey(pkg)).toBeNull();
   });
 
   it('handles symbols with digits and case', () => {
