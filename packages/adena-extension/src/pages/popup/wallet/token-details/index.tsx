@@ -14,6 +14,7 @@ import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
 
 import { SCANNER_URL } from '@common/constants/resource.constant';
+import { toRegistryKey } from '@common/utils/grc20-token-path';
 import { makeQueryString } from '@common/utils/string-utils';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
@@ -218,9 +219,9 @@ export const TokenDetails = (): JSX.Element => {
   const getTokenUri = (): string => {
     if (tokenBalance && isGRC20TokenModel(tokenBalance)) {
       const scannerUrl = profile?.linkUrl || SCANNER_URL;
-      // Link the scanner by the token path `{packagePath}:{symbol}` (tokenId) so
-      // a realm registering multiple symbols resolves to the exact token.
-      const tokenPath = tokenBalance.tokenId;
+      // The scanner identifies a GRC20 token by its registry fqname
+      // `{packagePath}.{symbol}` (token path), not the wallet's colon form.
+      const tokenPath = toRegistryKey(tokenBalance.tokenId) ?? tokenBalance.pkgPath;
       return scannerParameters
         ? `${scannerUrl}/tokens/${tokenPath}?${makeQueryString(scannerParameters)}`
         : `${scannerUrl}/tokens/${tokenPath}`;
