@@ -113,9 +113,9 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       return EMPTY_PAGE;
     }
 
-    // `tokenPath` is the wallet token path `{packagePath}:{symbol}`. Derive the
-    // realm path for direct transfers and the registry key for helper-routed
-    // transfers (matched against the helper's Transfer args[0]).
+    // `tokenPath` is the token key `{packagePath}.{symbol}`. Derive the realm
+    // path for direct transfers and the registry key (== token key) for
+    // helper-routed transfers (matched against the helper's Transfer args[0]).
     const packagePath = packagePathOfTokenPath(tokenPath);
     const tokenKey = toRegistryKey(tokenPath) ?? undefined;
     const helperPath = this.grc20HelperPath;

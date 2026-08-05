@@ -220,7 +220,8 @@ export const TokenDetails = (): JSX.Element => {
     if (tokenBalance && isGRC20TokenModel(tokenBalance)) {
       const scannerUrl = profile?.linkUrl || SCANNER_URL;
       // The scanner identifies a GRC20 token by its registry fqname
-      // `{packagePath}.{symbol}` (token path), not the wallet's colon form.
+      // `{packagePath}.{symbol}` — the same token key the wallet uses. Fall back
+      // to the bare pkgPath for a legacy value with no symbol.
       const tokenPath = toRegistryKey(tokenBalance.tokenId) ?? tokenBalance.pkgPath;
       return scannerParameters
         ? `${scannerUrl}/tokens/${tokenPath}?${makeQueryString(scannerParameters)}`

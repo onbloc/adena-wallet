@@ -80,9 +80,9 @@ export class TokenService {
       return null;
     }
 
-    // Require a full token path — either `{packagePath}:{symbol}` (colon) or the
-    // registry fqname `{packagePath}.{symbol}` (dot). A bare packagePath (no
-    // symbol) is rejected; grc20reg is always queried by the token path.
+    // Require a full token key `{packagePath}.{symbol}` (the legacy colon form
+    // `{packagePath}:{symbol}` is also accepted). A bare packagePath (no
+    // symbol) is rejected; grc20reg is always queried by the token key.
     const parsed = parseTokenIdentifier(tokenPath);
     if (!parsed) {
       return null;
@@ -429,7 +429,7 @@ export class TokenService {
       return token1.symbol === token2.symbol;
     }
     if (isGRC20TokenModel(token1) && isGRC20TokenModel(token2)) {
-      // GRC20 identity is the token path `{packagePath}:{symbol}`, carried in
+      // GRC20 identity is the token key `{packagePath}.{symbol}`, carried in
       // tokenId. Two tokens from the same realm but different symbols must not
       // collapse into one, so compare tokenId rather than pkgPath.
       return token1.tokenId === token2.tokenId;

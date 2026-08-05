@@ -62,9 +62,9 @@ const ManageTokenAddedContainer: React.FC = () => {
       return true;
     }
 
-    // Require a full token path `{packagePath}:{symbol}` (or the fqname
-    // `{packagePath}.{symbol}`) — a bare packagePath is not accepted, so
-    // grc20reg is always queried by the exact token.
+    // Require a full token key `{packagePath}.{symbol}` (the legacy colon form
+    // `{packagePath}:{symbol}` is also accepted) — a bare packagePath is not
+    // accepted, so grc20reg is always queried by the exact token.
     const parsed = parseTokenIdentifier(manualTokenPath);
     if (!parsed) {
       return false;

@@ -97,7 +97,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
         ? grc20Tokens.filter(
             (token) =>
               !fetchedTokenMetainfos.find(
-                // Dedupe by token path (`{packagePath}:{symbol}`), not pkgPath, so
+                // Dedupe by token key (`{packagePath}.{symbol}`), not pkgPath, so
                 // two tokens from the same realm are treated as distinct.
                 (meta) => isGRC20TokenModel(meta) && meta?.tokenId === token?.tokenId,
               ),

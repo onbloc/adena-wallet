@@ -333,8 +333,8 @@ const TransferSummaryContainer: React.FC = () => {
     )}`;
 
     const cfg = getGrc20RegConfig(currentNetwork?.chainId);
-    // GRC20 identity is the token path; on-chain calls key by the registry
-    // fqname `{packagePath}.{symbol}`.
+    // GRC20 identity is the token key `{packagePath}.{symbol}`, which is also
+    // the registry fqname on-chain calls key by.
     const registryKey = toRegistryKey(tokenMetainfo.tokenId) ?? tokenMetainfo.pkgPath;
 
     // Preferred path: the chain's GRC20 helper realm exposes

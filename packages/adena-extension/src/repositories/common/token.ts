@@ -225,8 +225,8 @@ export class TokenRepository implements ITokenRepository {
 
   /**
    * Look up a single GRC20 token via the grc20reg registry, strictly by its full
-   * token path. Accepts a wallet token path `{packagePath}:{symbol}` (colon) or
-   * a registry fqname `{packagePath}.{symbol}` (dot); a bare packagePath is
+   * token key. Accepts the canonical token key `{packagePath}.{symbol}` (dot) or
+   * the legacy colon form `{packagePath}:{symbol}`; a bare packagePath is
    * rejected — the symbol is required so multi-symbol realms are unambiguous.
    * The registry is the sole source of truth (no qrender/qfile parsing).
    */
@@ -237,7 +237,7 @@ export class TokenRepository implements ITokenRepository {
 
     const registryKey = tokenIdentifierToRegistryKey(tokenPath);
     if (!registryKey) {
-      throw new Error('A full token path ({packagePath}:{symbol}) is required');
+      throw new Error('A full token key ({packagePath}.{symbol}) is required');
     }
 
     const [token] = await this.fetchGRC20TokensByKeys([registryKey]);
@@ -408,7 +408,7 @@ export class TokenRepository implements ITokenRepository {
 
         const parsed = parseRegistryKey(key);
         const packagePath = parsed?.packagePath ?? key;
-        // Identity keys off the registry fqname: tokenId = `packagePath:symbol`.
+        // Identity is the registry fqname itself: tokenId = `packagePath.symbol`.
         const tokenId = parsed ? toTokenPath(parsed.packagePath, parsed.symbol) : key;
 
         results.push({
@@ -498,10 +498,9 @@ export class TokenRepository implements ITokenRepository {
     return assets
       .filter((asset) => (asset.tokenType ?? '').toUpperCase() === 'GRC20' && !!asset.packagePath)
       .map((asset) => {
-        // The API returns the identity in `tokenId` as the registry fqname
-        // `{packagePath}.{symbol}`; normalize it to the wallet token path
-        // `{packagePath}:{symbol}`. Tolerate an already-colon value or a missing
-        // tokenId by rebuilding from packagePath + symbol.
+        // The API returns the identity in `tokenId` as the token key
+        // `{packagePath}.{symbol}` — the wallet's canonical form. Fall back to
+        // rebuilding it from packagePath + symbol when the field is missing.
         const tokenId =
           (isTokenPath(asset.tokenId) ? asset.tokenId : registryKeyToTokenPath(asset.tokenId)) ??
           toTokenPath(asset.packagePath, asset.symbol);
@@ -568,12 +567,12 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
-   * GRC20 token paths the account has transferred/received, derived from the
+   * GRC20 token keys the account has transferred/received, derived from the
    * indexer's Transfer events. Each grc20 Transfer emits a `token` attribute
-   * equal to `Token.ID()` = `{packagePath}.{symbol}.{sequence}`; the registry
-   * keys by `{packagePath}.{symbol}`, so the trailing `.{sequence}` is stripped
-   * before converting to the wallet token path. Unlike `fetchAllTransferPackagesBy`
-   * (packagePath only), this keeps sibling symbols from the same realm distinct.
+   * equal to `Token.ID()` = `{packagePath}.{symbol}.{sequence}`; the token key is
+   * `{packagePath}.{symbol}`, so the trailing `.{sequence}` is stripped to obtain
+   * it. Unlike `fetchAllTransferPackagesBy` (packagePath only), this keeps
+   * sibling symbols from the same realm distinct.
    */
   public async fetchAllTransferGRC20TokenPathsBy(address: string): Promise<string[]> {
     if (!this.queryUrl) {

@@ -57,7 +57,7 @@ export interface AccountAssetsResponse {
       packagePath: string;
       symbol: string;
       tokenType: string;
-      // Token path `{packagePath}:{symbol}` — maps directly to the wallet tokenId.
+      // Token key `{packagePath}.{symbol}` — maps directly to the wallet tokenId.
       tokenId: string;
     }[];
   };

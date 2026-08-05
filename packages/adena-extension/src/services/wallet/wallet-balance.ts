@@ -61,7 +61,7 @@ export class WalletBalanceService {
   }
 
   /**
-   * GRC20 balance of `address` for a token path (`{packagePath}:{symbol}`),
+   * GRC20 balance of `address` for a token key (`{packagePath}.{symbol}`),
    * shifted by decimals. Resolves the token through the grc20reg registry
    * (`Get(registryKey).BalanceOf(address)`); a nil token yields 0.
    */
