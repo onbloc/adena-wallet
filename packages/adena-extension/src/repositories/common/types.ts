@@ -17,7 +17,13 @@ export interface ITokenRepository extends IGRC721TokenRepository {
   fetchTokenMetainfos: () => Promise<TokenModel[]>;
   fetchAppInfos: () => Promise<AppInfoResponse[]>;
   fetchAllGRC20Tokens: () => Promise<GRC20TokenModel[]>;
+  fetchGRC20Tokens: (params?: {
+    offset?: number;
+    limit?: number;
+  }) => Promise<{ items: GRC20TokenModel[]; totalCount: number }>;
   fetchAllTransferPackagesBy: (address: string, fromBlockHeight: number) => Promise<string[]>;
+  fetchAllTransferGRC20TokenPathsBy: (address: string) => Promise<string[]>;
+  fetchAccountGRC20Tokens: (address: string) => Promise<GRC20TokenModel[] | null>;
   fetchGRC20TokenByPackagePath: (packagePath: string) => Promise<GRC20TokenModel>;
 
   getAccountTokenMetainfos: (accountId: string) => Promise<TokenModel[]>;

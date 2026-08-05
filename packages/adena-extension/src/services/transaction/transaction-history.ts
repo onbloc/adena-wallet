@@ -110,7 +110,7 @@ export class TransactionHistoryService {
 
   public async fetchGRC20TransactionHistory(
     address: string,
-    packagePath: string,
+    tokenPath: string,
     cursor?: string | null,
   ): Promise<TransactionWithPageInfo> {
     if (!this.supported) {
@@ -125,7 +125,7 @@ export class TransactionHistoryService {
 
     return this.transactionHistoryRepository.fetchGRC20TransactionHistoryBy(
       address,
-      packagePath,
+      tokenPath,
       cursor,
     );
   }

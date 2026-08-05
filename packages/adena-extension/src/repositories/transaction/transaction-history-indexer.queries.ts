@@ -48,6 +48,18 @@ const TRANSACTION_FIELDS = `
       }
     }
   }
+  response {
+    events {
+      ... on GnoEvent {
+        type
+        pkg_path
+        attrs {
+          key
+          value
+        }
+      }
+    }
+  }
 `;
 
 /**
@@ -155,23 +167,65 @@ query getNativeTransactionHistory {
 export const makeGRC20TransactionHistoryQuery = (
   address: string,
   packagePath: string,
-): string => `
-query getGRC20TransactionHistory {
-  getTransactions(
-    where: {
-      success: { eq: true }
-      messages: {
+  options?: { helperPath?: string; tokenKey?: string },
+): string => {
+  const partyFilter = `_or: [
+              { caller: { eq: "${address}" } }
+              { args: { eq: "${address}" } }
+            ]`;
+
+  // Direct token transfer: pkg_path is the token realm, func Transfer.
+  const directBranch = `{
+          value: {
+            MsgCall: {
+              pkg_path: { eq: "${packagePath}" }
+              func: { eq: "Transfer" }
+              ${partyFilter}
+            }
+          }
+        }`;
+
+  // Helper-routed transfer: helperPath.Transfer(tokenKey, to, amount). Match by
+  // the helper realm and the token key carried in args[0].
+  const helperPath = options?.helperPath;
+  const tokenKey = options?.tokenKey;
+  const helperBranch =
+    helperPath && tokenKey
+      ? `{
+          value: {
+            MsgCall: {
+              pkg_path: { eq: "${helperPath}" }
+              func: { eq: "Transfer" }
+              args: { eq: "${tokenKey}" }
+              ${partyFilter}
+            }
+          }
+        }`
+      : null;
+
+  const messagesFilter = helperBranch
+    ? `messages: {
+        _or: [
+          ${directBranch}
+          ${helperBranch}
+        ]
+      }`
+    : `messages: {
         value: {
           MsgCall: {
             pkg_path: { eq: "${packagePath}" }
             func: { eq: "Transfer" }
-            _or: [
-              { caller: { eq: "${address}" } }
-              { args: { eq: "${address}" } }
-            ]
+            ${partyFilter}
           }
         }
-      }
+      }`;
+
+  return `
+query getGRC20TransactionHistory {
+  getTransactions(
+    where: {
+      success: { eq: true }
+      ${messagesFilter}
     }
     order: { heightAndIndex: DESC }
   ) {
@@ -179,6 +233,7 @@ query getGRC20TransactionHistory {
   }
 }
 `;
+};
 
 export const makeBlockTimeQuery = (blockHeight: number): string => `
 {

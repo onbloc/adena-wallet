@@ -89,6 +89,10 @@ export interface AdditionalTokenProps {
   onClickBack: () => void;
   onClickCancel: () => void;
   onClickAdd: () => void;
+  // Optional infinite-scroll pagination for the search list.
+  onEndReached?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
 }
 
 export interface AdditionalTokenSelectBoxProps {
@@ -103,6 +107,10 @@ export interface AdditionalTokenSelectBoxProps {
   onChangeKeyword: (keyword: string) => void;
   onClickOpenButton: (opened: boolean) => void;
   onClickListItem: (tokenId: string) => void;
+  // Optional infinite-scroll pagination for the search list.
+  onEndReached?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
 }
 
 export interface MainToken {

@@ -1,3 +1,5 @@
+import { packagePathOfTokenPath, toRegistryKey } from '@common/utils/grc20-token-path';
+import { getGrc20RegConfig } from '@common/utils/grc20reg-config';
 import { NetworkMetainfo, TransactionWithPageInfo } from '@types';
 import { AxiosInstance } from 'axios';
 import {
@@ -53,6 +55,13 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
     return this.networkMetainfo.indexerUrl + '/graphql/query';
   }
 
+  // The chain's GRC20 helper realm (if any). GRC20 transfers routed through the
+  // helper appear as helperPath.Transfer(tokenKey, to, amount) in history; the
+  // mapper uses this to identify the token from the first arg.
+  private get grc20HelperPath(): string | undefined {
+    return getGrc20RegConfig(this.networkMetainfo?.chainId).helperPath || undefined;
+  }
+
   public async fetchAllTransactionHistoryBy(address: string): Promise<TransactionWithPageInfo> {
     if (!this.queryUrl) {
       return EMPTY_PAGE;
@@ -63,7 +72,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
     >(this.axiosInstance, this.queryUrl, makeAllTransactionHistoryQuery(address));
 
     const transactions = (result?.data?.getTransactions ?? []).map((tx) =>
-      mapTransactionEdgeByAddress(tx, address),
+      mapTransactionEdgeByAddress(tx, address, this.grc20HelperPath),
     );
 
     return {
@@ -98,22 +107,44 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
 
   public async fetchGRC20TransactionHistoryBy(
     address: string,
-    packagePath: string,
+    tokenPath: string,
   ): Promise<TransactionWithPageInfo> {
     if (!this.queryUrl) {
       return EMPTY_PAGE;
     }
 
+    // `tokenPath` is the token key `{packagePath}.{symbol}`. Derive the realm
+    // path for direct transfers and the registry key (== token key) for
+    // helper-routed transfers (matched against the helper's Transfer args[0]).
+    const packagePath = packagePathOfTokenPath(tokenPath);
+    const tokenKey = toRegistryKey(tokenPath) ?? undefined;
+    const helperPath = this.grc20HelperPath;
+
     const result = await TransactionHistoryIndexerRepository.postGraphQuery<
       TransactionsQueryResult
-    >(this.axiosInstance, this.queryUrl, makeGRC20TransactionHistoryQuery(address, packagePath));
+    >(
+      this.axiosInstance,
+      this.queryUrl,
+      makeGRC20TransactionHistoryQuery(address, packagePath, { helperPath, tokenKey }),
+    );
 
-    const transactions = (result?.data?.getTransactions ?? []).map((tx) => {
+    const mapped = (result?.data?.getTransactions ?? []).map((tx) => {
       const callTx = tx as TransactionResponse<MsgCallValue>;
       const firstMessage = callTx.messages?.[0];
       const isCallerSelf = firstMessage?.value?.caller === address;
-      return isCallerSelf ? mapVMTransaction(callTx) : mapReceivedTransactionByMsgCall(callTx);
+      return isCallerSelf
+        ? mapVMTransaction(callTx, this.grc20HelperPath)
+        : mapReceivedTransactionByMsgCall(callTx, this.grc20HelperPath);
     });
+
+    // The direct branch fetches every Transfer on the realm (pkg_path ==
+    // packagePath), so a realm with multiple symbols leaks sibling tokens (e.g.
+    // BAR transfers into FOO's history). Scope to the selected token: keep rows
+    // whose mapped denom is the token path (event-decoded) or, when no event was
+    // available, the realm path (fallback can't disambiguate symbols).
+    const transactions = mapped.filter(
+      (tx) => tx.amount?.denom === tokenPath || tx.amount?.denom === packagePath,
+    );
 
     return {
       page: { hasNext: false, cursor: null },

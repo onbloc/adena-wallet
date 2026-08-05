@@ -16,6 +16,9 @@ export interface TransactionResponse<
     typeUrl?: string;
     value: T;
   }[];
+  response?: {
+    events?: Event[] | null;
+  } | null;
 }
 
 export interface Amount {

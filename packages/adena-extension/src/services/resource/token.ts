@@ -1,3 +1,4 @@
+import { parseTokenIdentifier } from '@common/utils/grc20-token-path';
 import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { AppInfoResponse } from '@repositories/common/response';
@@ -58,6 +59,17 @@ export class TokenService {
   }
 
   /**
+   * Fetch a single page of GRC20 tokens from the on-chain registry, with the
+   * registry's total size for pagination.
+   */
+  public async fetchGRC20TokensPaged(params: {
+    offset: number;
+    limit: number;
+  }): Promise<{ items: GRC20TokenModel[]; totalCount: number }> {
+    return this.tokenRepository.fetchGRC20Tokens(params);
+  }
+
+  /**
    * Fetch GRC20 token
    *
    * @param tokenPath
@@ -68,9 +80,17 @@ export class TokenService {
       return null;
     }
 
-    // validate realm path
+    // Require a full token key `{packagePath}.{symbol}` (the legacy colon form
+    // `{packagePath}:{symbol}` is also accepted). A bare packagePath (no
+    // symbol) is rejected; grc20reg is always queried by the token key.
+    const parsed = parseTokenIdentifier(tokenPath);
+    if (!parsed) {
+      return null;
+    }
+
+    // Validate the realm (packagePath) component.
     try {
-      parseReamPathItemsByPath(tokenPath);
+      parseReamPathItemsByPath(parsed.packagePath);
     } catch {
       return null;
     }
@@ -87,6 +107,23 @@ export class TokenService {
   public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
     const transferPackages = await this.tokenRepository.fetchAllTransferPackagesBy(address, 1);
     return transferPackages;
+  }
+
+  /**
+   * GRC20 token paths the account has transferred, derived from indexer Transfer
+   * events (token id parsed to the token path). Used by the indexer fallback to
+   * match held GRC20 tokens precisely per symbol.
+   */
+  public async fetchAllTransferGRC20TokenPathsBy(address: string): Promise<string[]> {
+    return this.tokenRepository.fetchAllTransferGRC20TokenPathsBy(address);
+  }
+
+  /**
+   * GRC20 tokens the account holds, mapped from the API account-assets endpoint
+   * (tokenId = token path). Returns null when the network has no API URL.
+   */
+  public async fetchAccountGRC20Tokens(address: string): Promise<GRC20TokenModel[] | null> {
+    return this.tokenRepository.fetchAccountGRC20Tokens(address);
   }
 
   /**
@@ -135,7 +172,9 @@ export class TokenService {
    * @param accountId
    * @returns
    */
-  public async getTokenMetainfosByAccountId(accountId: string): Promise<
+  public async getTokenMetainfosByAccountId(
+    accountId: string,
+  ): Promise<
     {
       image: string;
       main: boolean;
@@ -390,7 +429,10 @@ export class TokenService {
       return token1.symbol === token2.symbol;
     }
     if (isGRC20TokenModel(token1) && isGRC20TokenModel(token2)) {
-      return token1.pkgPath === token2.pkgPath;
+      // GRC20 identity is the token key `{packagePath}.{symbol}`, carried in
+      // tokenId. Two tokens from the same realm but different symbols must not
+      // collapse into one, so compare tokenId rather than pkgPath.
+      return token1.tokenId === token2.tokenId;
     }
     return false;
   }

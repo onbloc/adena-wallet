@@ -15,10 +15,14 @@ import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { decodeGnoString, gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
 import {
-  parseGRC20ByABCIRender,
-  parseGRC20ByFileContents,
-  parseGRC721FileContents,
-} from '@common/utils/parse-utils';
+  isTokenPath,
+  parseRegistryKey,
+  registryKeyToTokenPath,
+  toTokenPath,
+  tokenIdentifierToRegistryKey,
+} from '@common/utils/grc20-token-path';
+import { getGrc20RegConfig, Grc20RegConfig } from '@common/utils/grc20reg-config';
+import { parseGRC721FileContents } from '@common/utils/parse-utils';
 import {
   GRC20TokenModel,
   GRC721CollectionModel,
@@ -31,11 +35,10 @@ import {
   TokenModel,
 } from '@types';
 import BigNumber from 'bignumber.js';
-import { mapGRC20RegisterEvent, mapGRC721CollectionModel } from './mapper/token-query.mapper';
+import { mapGRC721CollectionModel } from './mapper/token-query.mapper';
 import { AppInfoResponse } from './response';
 import {
   makeAllTransferEventsQueryBy,
-  makeGetGRC20RegisterEventsQuery,
   makeGetGRC721AddPackagePathsQuery,
   makeGRC721TransferEventsQuery,
 } from './token.queries';
@@ -50,7 +53,13 @@ enum LocalValueType {
 
 const DEFAULT_TOKEN_NETWORK_ID = '';
 
-const GRC20_REGISTRY_PKG_PATH = 'gno.land/r/demo/defi/grc20reg';
+// Default page size for on-chain grc20reg registry pagination. Keeps a single
+// qeval response (keys page + batched metadata) within a comfortable size.
+const GRC20_REGISTRY_PAGE_SIZE = 50;
+
+// Hard cap on how many registry entries fetchAllGRC20Tokens will page through,
+// so a very large registry can never spin the loop unbounded.
+const GRC20_REGISTRY_MAX_ITEMS = 1000;
 
 const DEFAULT_TOKEN_METAINFOS: NativeTokenModel[] = [
   {
@@ -114,6 +123,15 @@ export class TokenRepository implements ITokenRepository {
       return null;
     }
     return this.networkMetainfo.indexerUrl + '/graphql/query';
+  }
+
+  private get chainId(): string {
+    return this.networkMetainfo?.chainId || '';
+  }
+
+  // Per-chain grc20reg registry/helper paths (bundled resource, see grc20reg.json).
+  private get grc20RegConfig(): Grc20RegConfig {
+    return getGrc20RegConfig(this.chainId);
   }
 
   public setNetworkMetainfo(networkMetainfo: NetworkMetainfo): void {
@@ -205,138 +223,210 @@ export class TokenRepository implements ITokenRepository {
     return true;
   };
 
-  public async fetchGRC20TokenByPackagePath(packagePath: string): Promise<GRC20TokenModel> {
+  /**
+   * Look up a single GRC20 token via the grc20reg registry, strictly by its full
+   * token key. Accepts the canonical token key `{packagePath}.{symbol}` (dot) or
+   * the legacy colon form `{packagePath}:{symbol}`; a bare packagePath is
+   * rejected — the symbol is required so multi-symbol realms are unambiguous.
+   * The registry is the sole source of truth (no qrender/qfile parsing).
+   */
+  public async fetchGRC20TokenByPackagePath(tokenPath: string): Promise<GRC20TokenModel> {
     if (!this.gnoProvider) {
       throw new Error('Gno provider not initialized.');
     }
 
-    const fileContents = await this.gnoProvider.getFileContent(packagePath).catch(() => null);
-    const fileNames = fileContents?.split('\n') || [];
-
-    if (fileContents === null || fileNames.length === 0) {
-      throw new Error('Not available realm');
+    const registryKey = tokenIdentifierToRegistryKey(tokenPath);
+    if (!registryKey) {
+      throw new Error('A full token key ({packagePath}.{symbol}) is required');
     }
 
-    const renderTokenInfo = await this.fetchGRC20TokenInfoQueryRender(packagePath).catch(
-      () => null,
-    );
-    if (renderTokenInfo) {
-      return renderTokenInfo;
+    const [token] = await this.fetchGRC20TokensByKeys([registryKey]);
+    if (!token) {
+      throw new Error('Token is not registered in grc20reg');
     }
-
-    const fileTokenInfo = await this.fetchGRC20TokenInfoQueryFiles(packagePath, fileNames).catch(
-      () => null,
-    );
-    if (fileTokenInfo) {
-      return fileTokenInfo;
-    }
-
-    throw new Error('Realm is not GRC20');
+    return token;
   }
 
-  public fetchAllGRC20Tokens = async (): Promise<GRC20TokenModel[]> => {
-    if (this.apiUrl) {
-      const tokens = await TokenRepository.fetch<TokenMetaResponse>(
-        this.networkInstance,
-        this.apiUrl + '/v1/tokens?limit=100',
-      ).then((data) => data?.items || []);
+  /**
+   * Fetch a single page of GRC20 tokens directly from the on-chain `grc20reg`
+   * registry (AVL tree), together with the registry's total size. The list is
+   * sourced entirely on-chain — the previous API-server (`/v1/tokens`) and
+   * indexer (register events) paths are gone.
+   */
+  public fetchGRC20Tokens = async (params?: {
+    offset?: number;
+    limit?: number;
+  }): Promise<{ items: GRC20TokenModel[]; totalCount: number }> => {
+    const offset = Math.max(0, params?.offset ?? 0);
+    const limit = Math.max(1, params?.limit ?? GRC20_REGISTRY_PAGE_SIZE);
 
-      return tokens.map((token) => ({
-        main: false,
-        tokenId: token.path,
-        pkgPath: token.path,
-        networkId: this.networkId,
-        display: false,
-        type: 'grc20',
-        name: token.name,
-        symbol: token.symbol,
-        decimals: token.decimals,
-        image: token.logoUrl ?? '',
-      }));
-    }
-
-    if (!this.queryUrl || !this.gnoProvider) {
-      return [];
-    }
-
-    const getGRC20RegisterEventsQuery = makeGetGRC20RegisterEventsQuery();
-    const events = await TokenRepository.postGraphQuery(
-      this.networkInstance,
-      this.queryUrl,
-      getGRC20RegisterEventsQuery,
-    ).then(mapGRC20RegisterEvent);
-
-    const networkId = this.networkId;
-    const tokens = await Promise.all(
-      events.map((event) => this.fetchGRC20TokenInfoFromRegistry(event, networkId)),
-    );
-
-    console.log(tokens);
-
-    return tokens.filter((token): token is GRC20TokenModel => token !== null);
+    const { keys, totalCount } = await this.fetchGRC20RegistryKeyPage(offset, limit);
+    const items = await this.fetchGRC20TokensByKeys(keys);
+    return { items, totalCount };
   };
 
-  private async fetchGRC20TokenInfoFromRegistry(
-    event: { packagePath: string; slug: string },
-    networkId: string,
-  ): Promise<GRC20TokenModel | null> {
-    if (!this.gnoProvider) {
-      return null;
+  /**
+   * Collect every GRC20 token in the registry by paging through it. Bounded by
+   * GRC20_REGISTRY_MAX_ITEMS so a very large registry can never loop unbounded.
+   * Kept for consumers that cross-reference the full set (e.g. transfer picker).
+   */
+  public fetchAllGRC20Tokens = async (): Promise<GRC20TokenModel[]> => {
+    const all: GRC20TokenModel[] = [];
+    let offset = 0;
+
+    for (;;) {
+      const { keys, totalCount } = await this.fetchGRC20RegistryKeyPage(
+        offset,
+        GRC20_REGISTRY_PAGE_SIZE,
+      );
+      if (keys.length === 0) {
+        break;
+      }
+
+      const items = await this.fetchGRC20TokensByKeys(keys);
+      all.push(...items);
+      // Advance by registry position (keys.length), not items.length: nil/invalid
+      // entries are filtered out of items but still consume a registry slot.
+      offset += keys.length;
+      if (offset >= totalCount || offset >= GRC20_REGISTRY_MAX_ITEMS) {
+        break;
+      }
     }
 
-    const registryKey = event.slug ? `${event.packagePath}.${event.slug}` : event.packagePath;
+    return all;
+  };
+
+  /**
+   * Read one page of registry keys (`{packagePath}.{symbol}` fqname form) plus
+   * the total registry size in a single qeval, using
+   * `GetRegistry().IterateByOffset(offset, limit, ...)` and `.Size()`. Keys are
+   * comma-joined on-chain; a fqname key never contains a comma.
+   */
+  private async fetchGRC20RegistryKeyPage(
+    offset: number,
+    limit: number,
+  ): Promise<{ keys: string[]; totalCount: number }> {
+    if (!this.gnoProvider) {
+      return { keys: [], totalCount: 0 };
+    }
+
+    const registryPath = this.grc20RegConfig.registryPath;
 
     let response: string;
     try {
-      response = await this.gnoProvider.evaluateIIFE(GRC20_REGISTRY_PKG_PATH, {
-        returnType: '(string, string, int)',
+      response = await this.gnoProvider.evaluateIIFE(registryPath, {
+        returnType: '(int, string)',
         statements: [
-          `token := Get(${gnoLiteral(registryKey)})`,
-          'if token == nil { return "", "", 0 }',
+          'reg := GetRegistry()',
+          's := ""',
+          `reg.IterateByOffset(${offset}, ${limit}, func(key string, value any) bool { s += key + ","; return false })`,
         ],
-        returnExpression: 'token.GetName(), token.GetSymbol(), token.GetDecimals()',
+        returnExpression: 'reg.Size(), s',
       });
     } catch (e) {
-      console.warn('fetchGRC20TokenInfoFromRegistry: evaluateIIFE failed', registryKey, e);
-      return null;
+      console.warn('fetchGRC20RegistryKeyPage: evaluateIIFE failed', offset, limit, e);
+      return { keys: [], totalCount: 0 };
     }
 
     if (!response) {
-      console.warn('fetchGRC20TokenInfoFromRegistry: empty response', registryKey);
-      return null;
+      return { keys: [], totalCount: 0 };
     }
 
     const tuples = parseQEvalResult(response);
-    if (tuples.length < 3) {
-      console.warn(
-        'fetchGRC20TokenInfoFromRegistry: unexpected tuple count',
-        registryKey,
-        response,
-      );
-      return null;
+    if (tuples.length < 2) {
+      console.warn('fetchGRC20RegistryKeyPage: unexpected tuple count', response);
+      return { keys: [], totalCount: 0 };
     }
 
-    const name = decodeGnoString(tuples[0].value);
-    const symbol = decodeGnoString(tuples[1].value);
-    const decimals = Number(tuples[2].value);
+    const totalCount = Number(tuples[0].value);
+    const joined = decodeGnoString(tuples[1].value);
+    const keys = joined.split(',').filter((key) => key.length > 0);
 
-    if (!name || !symbol || !Number.isFinite(decimals)) {
-      // Nil token (Get returned nil) — sentinel "","" ,0
-      return null;
+    return { keys, totalCount: Number.isFinite(totalCount) ? totalCount : 0 };
+  }
+
+  /**
+   * Fetch metadata (name, symbol, decimals) for a set of registry keys via the
+   * grc20reg object receiver (`Get(key).GetName()/GetSymbol()/GetDecimals()`),
+   * batched into a single qeval per chunk to cut round-trips. `Get` returning
+   * nil yields the sentinel ("", "", 0) and is dropped.
+   */
+  private async fetchGRC20TokensByKeys(keys: string[]): Promise<GRC20TokenModel[]> {
+    if (!this.gnoProvider || keys.length === 0) {
+      return [];
     }
 
-    return {
-      main: false,
-      tokenId: event.packagePath,
-      pkgPath: event.packagePath,
-      networkId,
-      display: false,
-      type: 'grc20',
-      name,
-      symbol,
-      decimals,
-      image: '',
-    };
+    const registryPath = this.grc20RegConfig.registryPath;
+    const networkId = this.networkId;
+    const results: GRC20TokenModel[] = [];
+
+    for (let start = 0; start < keys.length; start += GRC20_REGISTRY_PAGE_SIZE) {
+      const chunk = keys.slice(start, start + GRC20_REGISTRY_PAGE_SIZE);
+
+      const statements: string[] = [];
+      const returnParts: string[] = [];
+      const returnTypes: string[] = [];
+      chunk.forEach((key, i) => {
+        statements.push(`n${i} := ""; s${i} := ""; d${i} := 0`);
+        statements.push(
+          `{ t := Get(${gnoLiteral(
+            key,
+          )}); if t != nil { n${i} = t.GetName(); s${i} = t.GetSymbol(); d${i} = t.GetDecimals() } }`,
+        );
+        returnParts.push(`n${i}, s${i}, d${i}`);
+        returnTypes.push('string, string, int');
+      });
+
+      let response: string;
+      try {
+        response = await this.gnoProvider.evaluateIIFE(registryPath, {
+          returnType: `(${returnTypes.join(', ')})`,
+          statements,
+          returnExpression: returnParts.join(', '),
+        });
+      } catch (e) {
+        console.warn('fetchGRC20TokensByKeys: evaluateIIFE failed', chunk, e);
+        continue;
+      }
+
+      const tuples = parseQEvalResult(response);
+      chunk.forEach((key, i) => {
+        const nameTuple = tuples[i * 3];
+        const symbolTuple = tuples[i * 3 + 1];
+        const decimalsTuple = tuples[i * 3 + 2];
+        if (!nameTuple || !symbolTuple || !decimalsTuple) {
+          return;
+        }
+
+        const name = decodeGnoString(nameTuple.value);
+        const symbol = decodeGnoString(symbolTuple.value);
+        const decimals = Number(decimalsTuple.value);
+        if (!name || !symbol || !Number.isFinite(decimals)) {
+          // Nil token (Get returned nil) — sentinel ("", "", 0).
+          return;
+        }
+
+        const parsed = parseRegistryKey(key);
+        const packagePath = parsed?.packagePath ?? key;
+        // Identity is the registry fqname itself: tokenId = `packagePath.symbol`.
+        const tokenId = parsed ? toTokenPath(parsed.packagePath, parsed.symbol) : key;
+
+        results.push({
+          main: false,
+          tokenId,
+          pkgPath: packagePath,
+          networkId,
+          display: false,
+          type: 'grc20',
+          name,
+          symbol,
+          decimals,
+          image: '',
+        });
+      });
+    }
+
+    return results;
   }
 
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
@@ -377,6 +467,57 @@ export class TokenRepository implements ITokenRepository {
               .filter((collection: GRC721CollectionModel | null) => !!collection)
           : [],
     );
+  }
+
+  /**
+   * GRC20 tokens the account currently holds, sourced from the API
+   * `/v1/accounts/{address}` assets. Each asset already carries its identity,
+   * so we map it straight to a GRC20TokenModel (tokenId = token path) without
+   * cross-referencing the on-chain registry — this both avoids the heavy
+   * registry scan and keeps sibling symbols from the same realm distinct.
+   *
+   * Returns null when no API URL is configured so callers can fall back to the
+   * indexer-based discovery path.
+   */
+  public async fetchAccountGRC20Tokens(address: string): Promise<GRC20TokenModel[] | null> {
+    if (!this.apiUrl) {
+      return null;
+    }
+
+    const assets = await TokenRepository.fetch<AccountAssetsResponse>(
+      this.networkInstance,
+      this.apiUrl + '/v1/accounts/' + address,
+    )
+      .then((data) => data?.data?.assets ?? null)
+      .catch(() => null);
+
+    if (!assets) {
+      return null;
+    }
+
+    return assets
+      .filter((asset) => (asset.tokenType ?? '').toUpperCase() === 'GRC20' && !!asset.packagePath)
+      .map((asset) => {
+        // The API returns the identity in `tokenId` as the token key
+        // `{packagePath}.{symbol}` — the wallet's canonical form. Fall back to
+        // rebuilding it from packagePath + symbol when the field is missing.
+        const tokenId =
+          (isTokenPath(asset.tokenId) ? asset.tokenId : registryKeyToTokenPath(asset.tokenId)) ??
+          toTokenPath(asset.packagePath, asset.symbol);
+
+        return {
+          main: false,
+          tokenId,
+          pkgPath: asset.packagePath,
+          networkId: this.networkId,
+          display: false,
+          type: 'grc20',
+          name: asset.name,
+          symbol: asset.symbol,
+          decimals: asset.decimals,
+          image: asset.logoUrl ?? '',
+        };
+      });
   }
 
   public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
@@ -422,6 +563,51 @@ export class TokenRepository implements ITokenRepository {
         .map((event: any) => event?.pkg_path || '');
 
       return [...new Set(packagePaths)];
+    });
+  }
+
+  /**
+   * GRC20 token keys the account has transferred/received, derived from the
+   * indexer's Transfer events. Each grc20 Transfer emits a `token` attribute
+   * equal to `Token.ID()` = `{packagePath}.{symbol}.{sequence}`; the token key is
+   * `{packagePath}.{symbol}`, so the trailing `.{sequence}` is stripped to obtain
+   * it. Unlike `fetchAllTransferPackagesBy` (packagePath only), this keeps
+   * sibling symbols from the same realm distinct.
+   */
+  public async fetchAllTransferGRC20TokenPathsBy(address: string): Promise<string[]> {
+    if (!this.queryUrl) {
+      return [];
+    }
+
+    const transferEventsQuery = makeAllTransferEventsQueryBy(address);
+    return TokenRepository.postGraphQuery(
+      this.networkInstance,
+      this.queryUrl,
+      transferEventsQuery,
+    ).then((result) => {
+      const transactions = result?.data?.transactions;
+      if (!transactions) {
+        return [];
+      }
+
+      const tokenPaths: string[] = transactions
+        .flatMap((transaction: any) => transaction?.response?.events || [])
+        .map((event: any) => {
+          const attrs = event?.attrs || [];
+          const hasParty = attrs.some((a: any) => a.key === 'to' || a.key === 'from');
+          const tokenAttr = attrs.find((a: any) => a.key === 'token');
+          if (!hasParty || !tokenAttr?.value) {
+            return null;
+          }
+
+          // token attr = `{packagePath}.{symbol}.{sequence}`; drop the sequence.
+          const id: string = tokenAttr.value;
+          const registryKey = id.slice(0, id.lastIndexOf('.'));
+          return registryKeyToTokenPath(registryKey) ?? registryKeyToTokenPath(id);
+        })
+        .filter((tokenPath: string | null): tokenPath is string => !!tokenPath);
+
+      return [...new Set(tokenPaths)];
     });
   }
 
@@ -725,67 +911,6 @@ export class TokenRepository implements ITokenRepository {
       .then((response) => TokenMapper.fromIBCTokenMetainfos(this.networkId, response.data))
       .catch(() => []);
   };
-
-  private async fetchGRC20TokenInfoQueryRender(
-    packagePath: string,
-  ): Promise<GRC20TokenModel | null> {
-    if (!this.gnoProvider) {
-      throw new Error('Gno provider not initialized.');
-    }
-
-    const { tokenName, tokenSymbol, tokenDecimals } = await this.gnoProvider
-      .getRenderOutput(packagePath, '')
-      .then(parseGRC20ByABCIRender);
-
-    return {
-      main: false,
-      tokenId: packagePath,
-      pkgPath: packagePath,
-      networkId: this.networkId,
-      display: false,
-      type: 'grc20',
-      name: tokenName,
-      symbol: tokenSymbol,
-      decimals: tokenDecimals,
-      image: '',
-    };
-  }
-
-  private async fetchGRC20TokenInfoQueryFiles(
-    packagePath: string,
-    fileNames: string[],
-  ): Promise<GRC20TokenModel | null> {
-    if (!this.gnoProvider) {
-      throw new Error('Gno provider not initialized.');
-    }
-
-    for (const fileName of fileNames) {
-      const filePath = [packagePath, fileName].join('/');
-      const contents = await this.gnoProvider.getFileContent(filePath).catch(() => null);
-      if (!contents) {
-        continue;
-      }
-
-      const tokenInfo = parseGRC20ByFileContents(contents);
-
-      if (tokenInfo) {
-        return {
-          main: false,
-          tokenId: packagePath,
-          pkgPath: packagePath,
-          networkId: this.networkId,
-          display: false,
-          type: 'grc20',
-          name: tokenInfo.tokenName,
-          symbol: tokenInfo.tokenSymbol,
-          decimals: tokenInfo.tokenDecimals,
-          image: '',
-        };
-      }
-    }
-
-    return null;
-  }
 
   private async fetchGRC721CollectionQueryFiles(
     packagePath: string,

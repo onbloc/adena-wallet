@@ -15,6 +15,9 @@ const AdditionalTokenSelectBox: React.FC<AdditionalTokenSelectBoxProps> = ({
   onChangeKeyword,
   onClickOpenButton,
   onClickListItem,
+  onEndReached,
+  hasMore,
+  loadingMore,
 }) => {
   const selectedTokenName = useMemo(() => {
     const name = selectedInfo?.name;
@@ -67,7 +70,13 @@ const AdditionalTokenSelectBox: React.FC<AdditionalTokenSelectBoxProps> = ({
             <div className='search-input-wrapper'>
               <SearchInput keyword={keyword} onChangeKeyword={onChangeKeyword} />
             </div>
-            <AdditionalTokenSearchList tokenInfos={tokenInfos} onClickListItem={onClickListItem} />
+            <AdditionalTokenSearchList
+              tokenInfos={tokenInfos}
+              onClickListItem={onClickListItem}
+              onEndReached={onEndReached}
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+            />
           </div>
         )}
       </div>

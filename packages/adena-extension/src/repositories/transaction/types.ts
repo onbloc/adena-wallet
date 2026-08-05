@@ -19,7 +19,7 @@ export interface ITransactionHistoryRepository {
   ) => Promise<TransactionWithPageInfo>;
   fetchGRC20TransactionHistoryBy: (
     address: string,
-    packagePath: string,
+    tokenPath: string,
     cursor?: string | null,
   ) => Promise<TransactionWithPageInfo>;
 }

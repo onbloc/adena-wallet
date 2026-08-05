@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   AdditionalTokenSearchListItemWrapper,
   AdditionalTokenSearchListWrapper,
@@ -9,7 +9,13 @@ import { makeDisplayPackagePath } from '@common/utils/string-utils';
 export interface AdditionalTokenSearchListProps {
   tokenInfos: TokenInfo[];
   onClickListItem: (tokenId: string) => void;
+  onEndReached?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
 }
+
+// Distance from the bottom (px) at which the next page is requested.
+const LOAD_MORE_THRESHOLD = 48;
 
 interface AdditionalTokenSearchListItem {
   tokenId: string;
@@ -52,10 +58,26 @@ const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = (
 const AdditionalTokenSearchList: React.FC<AdditionalTokenSearchListProps> = ({
   tokenInfos,
   onClickListItem,
+  onEndReached,
+  hasMore,
+  loadingMore,
 }) => {
+  const handleScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      if (!onEndReached || !hasMore || loadingMore) {
+        return;
+      }
+      const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+      if (scrollHeight - scrollTop - clientHeight <= LOAD_MORE_THRESHOLD) {
+        onEndReached();
+      }
+    },
+    [onEndReached, hasMore, loadingMore],
+  );
+
   return (
     <AdditionalTokenSearchListWrapper>
-      <div className='scroll-wrapper'>
+      <div className='scroll-wrapper' onScroll={handleScroll}>
         {tokenInfos.length === 0 ? (
           <span className='no-content'>No Tokens to Search</span>
         ) : (

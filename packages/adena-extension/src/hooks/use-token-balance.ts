@@ -1,5 +1,6 @@
 import { QueryObserverResult, useQuery } from '@tanstack/react-query';
 import { Account, isSessionAccount } from 'adena-module';
+import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useRecoilValueLoadable, useSetRecoilState } from 'recoil';
 
@@ -12,7 +13,7 @@ import {
   isNativeTokenModel,
 } from '@common/validation/validation-token';
 import { AccountState, NetworkState } from '@states';
-import { Amount, TokenBalanceType, TokenModel } from '@types';
+import { Amount, GRC20TokenModel, TokenBalanceType, TokenModel } from '@types';
 
 import { CosmosFetchResult, fetchCosmosTokenBalances } from './helpers/fetch-cosmos-balances';
 import { compareTokenBalances } from './helpers/sort-token-balances';
@@ -107,9 +108,7 @@ export const useTokenBalance = (): {
     ],
     () => {
       if (currentBalanceAddress === null || nativeToken == null) return [];
-      return Promise.all(
-        tokenMetainfos.map((tokenModel) => fetchBalanceBy(currentBalanceAddress, tokenModel)),
-      );
+      return fetchBalances(currentBalanceAddress, tokenMetainfos);
     },
     {
       refetchInterval: GNO_REFETCH_INTERVAL,
@@ -413,7 +412,7 @@ export const useTokenBalance = (): {
     const balanceAmount = isNativeTokenModel(token)
       ? await balanceService.getGnotTokenBalance(address)
       : isGRC20TokenModel(token)
-        ? await balanceService.getGRC20TokenBalance(address, token.pkgPath, token.decimals)
+        ? await balanceService.getGRC20TokenBalance(address, token.tokenId, token.decimals)
         : null;
 
     return {
@@ -423,6 +422,42 @@ export const useTokenBalance = (): {
         denom: token.symbol,
       }),
     };
+  }
+
+  /**
+   * Load balances for a set of tokens, batching GRC20 balances into a single
+   * grc20reg qeval (see WalletBalanceService.getGRC20TokenBalanceMap) instead of
+   * one round-trip per token. Native / cosmos tokens still resolve individually
+   * via fetchBalanceBy.
+   */
+  async function fetchBalances(
+    address: string,
+    tokens: TokenModel[],
+  ): Promise<TokenBalanceType[]> {
+    const grc20TokenPaths = tokens
+      .filter((token): token is GRC20TokenModel => isGRC20TokenModel(token))
+      .map((token) => token.tokenId);
+
+    const grc20BalanceMap = grc20TokenPaths.length
+      ? await balanceService
+          .getGRC20TokenBalanceMap(address, grc20TokenPaths)
+          .catch(() => ({} as Record<string, bigint>))
+      : ({} as Record<string, bigint>);
+
+    return Promise.all(
+      tokens.map((token) => {
+        if (isGRC20TokenModel(token) && token.tokenId in grc20BalanceMap) {
+          const value = new BigNumber(grc20BalanceMap[token.tokenId].toString())
+            .shiftedBy(token.decimals * -1)
+            .toNumber();
+          return {
+            ...token,
+            amount: getTokenAmount({ value: `${value || 0}`, denom: token.symbol }),
+          } as TokenBalanceType;
+        }
+        return fetchBalanceBy(address, token);
+      }),
+    );
   }
 
   return {

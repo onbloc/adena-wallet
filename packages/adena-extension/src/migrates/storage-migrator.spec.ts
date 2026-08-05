@@ -70,7 +70,7 @@ describe('StorageMigrator', () => {
     const migrated = await migrator.migrate(current, '123');
 
     expect(migrated).not.toBeNull();
-    expect(migrated?.version).toBe(22);
+    expect(migrated?.version).toBe(23);
     expect(migrated?.data).not.toBeNull();
     expect(migrated?.data.NETWORKS).toHaveLength(4);
     expect(migrated?.data.CURRENT_CHAIN_ID).toBe('');
@@ -88,7 +88,7 @@ describe('StorageMigrator', () => {
     const migrated = await migrator.migrate(current, '123');
 
     expect(migrated).not.toBeNull();
-    expect(migrated?.version).toBe(22);
+    expect(migrated?.version).toBe(23);
     expect(migrated?.data).not.toBeNull();
     expect(migrated?.data.SERIALIZED).not.toBe('');
     expect(migrated?.data.ADDRESS_BOOK).toBe('');
@@ -149,7 +149,7 @@ describe('StorageMigrator version reconciliation', () => {
     const migrated = await migrator.migrate(current, '123');
 
     expect(migrated).not.toBeNull();
-    expect(migrated?.version).toBe(22);
+    expect(migrated?.version).toBe(23);
     // SERIALIZED must be left untouched (no AES re-decrypt attempt).
     expect(migrated?.data.SERIALIZED).toBe(xchachaSerialized);
   });

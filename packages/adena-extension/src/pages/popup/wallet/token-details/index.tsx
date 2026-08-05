@@ -14,6 +14,7 @@ import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
 
 import { SCANNER_URL } from '@common/constants/resource.constant';
+import { toRegistryKey } from '@common/utils/grc20-token-path';
 import { makeQueryString } from '@common/utils/string-utils';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
@@ -116,7 +117,9 @@ export const TokenDetails = (): JSX.Element => {
     if (!tokenBalance || !isGRC20TokenModel(tokenBalance)) {
       return '';
     }
-    return tokenBalance.pkgPath;
+    // Pass the token path (tokenId) so the history query can match both direct
+    // token transfers and helper-routed transfers by the token key.
+    return tokenBalance.tokenId;
   }, [tokenBalance]);
 
   const isUsedApi = useMemo(() => {
@@ -216,9 +219,13 @@ export const TokenDetails = (): JSX.Element => {
   const getTokenUri = (): string => {
     if (tokenBalance && isGRC20TokenModel(tokenBalance)) {
       const scannerUrl = profile?.linkUrl || SCANNER_URL;
+      // The scanner identifies a GRC20 token by its registry fqname
+      // `{packagePath}.{symbol}` — the same token key the wallet uses. Fall back
+      // to the bare pkgPath for a legacy value with no symbol.
+      const tokenPath = toRegistryKey(tokenBalance.tokenId) ?? tokenBalance.pkgPath;
       return scannerParameters
-        ? `${scannerUrl}/tokens/${tokenBalance.pkgPath}?${makeQueryString(scannerParameters)}`
-        : `${scannerUrl}/tokens/${tokenBalance.pkgPath}`;
+        ? `${scannerUrl}/tokens/${tokenPath}?${makeQueryString(scannerParameters)}`
+        : `${scannerUrl}/tokens/${tokenPath}`;
     }
     return '';
   };

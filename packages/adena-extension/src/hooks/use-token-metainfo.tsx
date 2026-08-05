@@ -67,7 +67,10 @@ function makeTokenKey(token: TokenModel): string {
     return makeTokenKeyByDenom(token.denom);
   }
   if (isGRC20TokenModel(token)) {
-    return makeTokenKeyByPackagePath(token.pkgPath);
+    // GRC20 identity is the token path so two symbols in the same realm don't
+    // share a key. A packagePath-only fallback key is added at map build time
+    // for transaction history, which carries only the realm path.
+    return token.tokenId;
   }
   return `${token.symbol}`;
 }
@@ -85,7 +88,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const { data: allTokenMetainfos = null } = useQuery<TokenModel[]>(
     [
       'useTokenMetainfo/allTokenMetainfos',
-      grc20Tokens?.map((token) => token.pkgPath),
+      grc20Tokens?.map((token) => token.tokenId),
       currentNetwork.networkId,
     ],
     async (): Promise<TokenModel[]> => {
@@ -94,7 +97,9 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
         ? grc20Tokens.filter(
             (token) =>
               !fetchedTokenMetainfos.find(
-                (meta) => isGRC20TokenModel(meta) && meta?.pkgPath === token?.pkgPath,
+                // Dedupe by token key (`{packagePath}.{symbol}`), not pkgPath, so
+                // two tokens from the same realm are treated as distinct.
+                (meta) => isGRC20TokenModel(meta) && meta?.tokenId === token?.tokenId,
               ),
           )
         : [];
@@ -177,7 +182,14 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
         acc[current.denom] = current;
       }
       if (isGRC20TokenModel(current)) {
-        acc[current.pkgPath] = current;
+        // Primary key: token path (exact identity). Secondary key: packagePath,
+        // because transaction history only carries the realm path in
+        // amount.denom. First occurrence wins so a displayed token is not
+        // overwritten by a sibling symbol from the same realm.
+        acc[current.tokenId] = current;
+        if (!(current.pkgPath in acc)) {
+          acc[current.pkgPath] = current;
+        }
       }
       return acc;
     }, {});
@@ -189,8 +201,17 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }
 
     return allTokenMetainfos.reduce<Record<string, string | null>>((accum, current) => {
-      const key = makeTokenKey(current);
-      accum[key] = current.image || null;
+      const image = current.image || null;
+      if (isGRC20TokenModel(current)) {
+        // Key by token path (exact) plus a packagePath fallback for history.
+        accum[current.tokenId] = image;
+        const pkgKey = makeTokenKeyByPackagePath(current.pkgPath);
+        if (!(pkgKey in accum)) {
+          accum[pkgKey] = image;
+        }
+        return accum;
+      }
+      accum[makeTokenKey(current)] = image;
       return accum;
     }, {});
   }, [allTokenMetainfos]);

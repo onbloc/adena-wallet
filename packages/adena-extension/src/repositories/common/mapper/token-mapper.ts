@@ -17,6 +17,8 @@ import {
   TokenModel,
 } from '@types';
 
+import { toTokenPath } from '@common/utils/grc20-token-path';
+
 export class TokenMapper {
   private static IMAGE_BASE_URI =
     'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
@@ -54,7 +56,8 @@ export class TokenMapper {
       return {
         main: false,
         display: false,
-        tokenId: pkg_path,
+        // Identity is the token key `{packagePath}.{symbol}`, not the bare pkgPath.
+        tokenId: toTokenPath(pkg_path, symbol),
         networkId,
         type: 'grc20',
         name,
@@ -135,7 +138,7 @@ export class TokenMapper {
       name,
       symbol,
       decimals,
-      tokenId: pkgPath,
+      tokenId: toTokenPath(pkgPath, symbol),
       path: pkgPath,
     };
   }
@@ -145,12 +148,13 @@ export class TokenMapper {
     searchToken: SearchGRC20Token,
     tokenInfos?: TokenModel[],
   ): GRC20TokenModel {
-    const token = tokenInfos && tokenInfos.find((t) => t.tokenId === pkgPath);
     const { decimals, name, pkg_path: pkgPath, symbol } = searchToken;
+    const tokenId = toTokenPath(pkgPath, symbol);
+    const token = tokenInfos && tokenInfos.find((t) => t.tokenId === tokenId);
     return {
       main: false,
       display: false,
-      tokenId: pkgPath,
+      tokenId,
       networkId,
       pkgPath,
       symbol,
