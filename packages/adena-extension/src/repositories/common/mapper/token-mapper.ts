@@ -56,7 +56,7 @@ export class TokenMapper {
       return {
         main: false,
         display: false,
-        // Identity is the token path `{packagePath}:{symbol}`, not the bare pkgPath.
+        // Identity is the token key `{packagePath}.{symbol}`, not the bare pkgPath.
         tokenId: toTokenPath(pkg_path, symbol),
         networkId,
         type: 'grc20',

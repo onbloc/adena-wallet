@@ -12,16 +12,18 @@ import {
 
 const PKG = 'gno.land/r/demo/foo20';
 const SYMBOL = 'FOO';
-const TOKEN_PATH = 'gno.land/r/demo/foo20:FOO';
-const REGISTRY_KEY = 'gno.land/r/demo/foo20.FOO';
+// The canonical token key is the dot fqname `{packagePath}.{symbol}`.
+const TOKEN_KEY = 'gno.land/r/demo/foo20.FOO';
+// Legacy colon form, still accepted on input (e.g. hand-typed paths).
+const LEGACY_COLON = 'gno.land/r/demo/foo20:FOO';
 
 describe('grc20-token-path', () => {
-  it('toTokenPath joins packagePath and symbol with a colon', () => {
-    expect(toTokenPath(PKG, SYMBOL)).toBe(TOKEN_PATH);
+  it('toTokenPath joins packagePath and symbol with a dot', () => {
+    expect(toTokenPath(PKG, SYMBOL)).toBe(TOKEN_KEY);
   });
 
-  it('parseTokenPath splits on the last colon', () => {
-    expect(parseTokenPath(TOKEN_PATH)).toEqual({ packagePath: PKG, symbol: SYMBOL });
+  it('parseTokenPath splits on the first dot after the last slash (ignores gno.land dots)', () => {
+    expect(parseTokenPath(TOKEN_KEY)).toEqual({ packagePath: PKG, symbol: SYMBOL });
   });
 
   it('parseTokenPath returns null for a bare packagePath', () => {
@@ -29,49 +31,49 @@ describe('grc20-token-path', () => {
   });
 
   it('parseTokenPath returns null when the symbol is empty', () => {
-    expect(parseTokenPath(`${PKG}:`)).toBeNull();
+    expect(parseTokenPath(`${PKG}.`)).toBeNull();
   });
 
-  it('isTokenPath distinguishes token paths from bare packagePaths', () => {
-    expect(isTokenPath(TOKEN_PATH)).toBe(true);
+  it('isTokenPath distinguishes token keys from bare packagePaths', () => {
+    expect(isTokenPath(TOKEN_KEY)).toBe(true);
     expect(isTokenPath(PKG)).toBe(false);
   });
 
   it('packagePathOfTokenPath extracts the packagePath and falls back to the input', () => {
-    expect(packagePathOfTokenPath(TOKEN_PATH)).toBe(PKG);
+    expect(packagePathOfTokenPath(TOKEN_KEY)).toBe(PKG);
     expect(packagePathOfTokenPath(PKG)).toBe(PKG);
   });
 
-  it('toRegistryKey converts a token path to the dot-notation fqname key', () => {
-    expect(toRegistryKey(TOKEN_PATH)).toBe(REGISTRY_KEY);
+  it('toRegistryKey passes a token key through and rejects a bare packagePath', () => {
+    expect(toRegistryKey(TOKEN_KEY)).toBe(TOKEN_KEY);
     expect(toRegistryKey(PKG)).toBeNull();
   });
 
   it('parseRegistryKey splits on the first dot after the last slash (ignores gno.land dots)', () => {
-    expect(parseRegistryKey(REGISTRY_KEY)).toEqual({ packagePath: PKG, symbol: SYMBOL });
+    expect(parseRegistryKey(TOKEN_KEY)).toEqual({ packagePath: PKG, symbol: SYMBOL });
   });
 
   it('parseRegistryKey returns null when there is no symbol', () => {
     expect(parseRegistryKey(PKG)).toBeNull();
   });
 
-  it('registryKeyToTokenPath round-trips with toRegistryKey', () => {
-    expect(registryKeyToTokenPath(REGISTRY_KEY)).toBe(TOKEN_PATH);
-    expect(toRegistryKey(registryKeyToTokenPath(REGISTRY_KEY) as string)).toBe(REGISTRY_KEY);
+  it('registryKeyToTokenPath passes the token key through', () => {
+    expect(registryKeyToTokenPath(TOKEN_KEY)).toBe(TOKEN_KEY);
+    expect(registryKeyToTokenPath(PKG)).toBeNull();
   });
 
-  it('parseTokenIdentifier accepts both colon token paths and dot fqnames', () => {
-    expect(parseTokenIdentifier(TOKEN_PATH)).toEqual({ packagePath: PKG, symbol: SYMBOL });
-    expect(parseTokenIdentifier(REGISTRY_KEY)).toEqual({ packagePath: PKG, symbol: SYMBOL });
+  it('parseTokenIdentifier accepts both the dot key and the legacy colon form', () => {
+    expect(parseTokenIdentifier(TOKEN_KEY)).toEqual({ packagePath: PKG, symbol: SYMBOL });
+    expect(parseTokenIdentifier(LEGACY_COLON)).toEqual({ packagePath: PKG, symbol: SYMBOL });
   });
 
   it('parseTokenIdentifier rejects a bare packagePath (no symbol)', () => {
     expect(parseTokenIdentifier(PKG)).toBeNull();
   });
 
-  it('tokenIdentifierToRegistryKey normalizes colon and dot inputs to the registry key', () => {
-    expect(tokenIdentifierToRegistryKey(TOKEN_PATH)).toBe(REGISTRY_KEY);
-    expect(tokenIdentifierToRegistryKey(REGISTRY_KEY)).toBe(REGISTRY_KEY);
+  it('tokenIdentifierToRegistryKey normalizes dot and legacy colon inputs to the token key', () => {
+    expect(tokenIdentifierToRegistryKey(TOKEN_KEY)).toBe(TOKEN_KEY);
+    expect(tokenIdentifierToRegistryKey(LEGACY_COLON)).toBe(TOKEN_KEY);
     expect(tokenIdentifierToRegistryKey(PKG)).toBeNull();
   });
 
@@ -84,6 +86,7 @@ describe('grc20-token-path', () => {
 
   it('handles symbols with digits and case', () => {
     const tp = toTokenPath('gno.land/r/gnoswap/v1/gns', 'GNS');
+    expect(tp).toBe('gno.land/r/gnoswap/v1/gns.GNS');
     expect(toRegistryKey(tp)).toBe('gno.land/r/gnoswap/v1/gns.GNS');
     expect(registryKeyToTokenPath('gno.land/r/gnoswap/v1/gns.GNS')).toBe(tp);
   });

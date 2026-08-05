@@ -11,10 +11,10 @@ import { StorageModelDataV023 } from './storage-model-v023';
  * v023 — re-key GRC20 tokens by token path.
  *
  * GRC20 tokens used to be identified by their bare packagePath (tokenId ===
- * pkgPath). The wallet now identifies a GRC20 token by its token path
- * `{packagePath}:{symbol}` so that a realm registering multiple symbols yields
+ * pkgPath). The wallet now identifies a GRC20 token by its token key
+ * `{packagePath}.{symbol}` so that a realm registering multiple symbols yields
  * distinct tokens. This migration rewrites the tokenId of every stored GRC20
- * token from `pkgPath` to `pkgPath:symbol`; all other fields (and non-GRC20
+ * token from `pkgPath` to `pkgPath.symbol`; all other fields (and non-GRC20
  * tokens) are left untouched. The storage shape is unchanged.
  */
 export class StorageMigration023 implements Migration<StorageModelDataV023> {

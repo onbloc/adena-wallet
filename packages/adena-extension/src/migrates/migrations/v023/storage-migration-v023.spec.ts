@@ -60,12 +60,12 @@ describe('StorageMigration023', () => {
     expect(result.version).toBe(23);
   });
 
-  it('re-keys a GRC20 tokenId to the token path `{pkgPath}:{symbol}`', async () => {
+  it('re-keys a GRC20 tokenId to the token key `{pkgPath}.{symbol}`', async () => {
     const result = await new StorageMigration023().up(
       makeInput({ ACCOUNT_TOKEN_METAINFOS: { 'acc-1': [{ ...GRC20_TOKEN }] } }),
     );
     const token = result.data.ACCOUNT_TOKEN_METAINFOS['acc-1'][0];
-    expect(token.tokenId).toBe('gno.land/r/demo/foo20:FOO');
+    expect(token.tokenId).toBe('gno.land/r/demo/foo20.FOO');
     // pkgPath and every other field are preserved.
     expect(token.pkgPath).toBe('gno.land/r/demo/foo20');
     expect(token.symbol).toBe('FOO');
@@ -97,9 +97,9 @@ describe('StorageMigration023', () => {
     );
     expect(result.data.ACCOUNT_TOKEN_METAINFOS['acc-1'][0].tokenId).toBe('ugnot');
     expect(result.data.ACCOUNT_TOKEN_METAINFOS['acc-1'][1].tokenId).toBe(
-      'gno.land/r/demo/foo20:FOO',
+      'gno.land/r/demo/foo20.FOO',
     );
-    expect(result.data.ACCOUNT_TOKEN_METAINFOS['acc-2'][0].tokenId).toBe('gno.land/r/demo/bar:BAR');
+    expect(result.data.ACCOUNT_TOKEN_METAINFOS['acc-2'][0].tokenId).toBe('gno.land/r/demo/bar.BAR');
   });
 
   it('is idempotent-safe when pkgPath or symbol is missing', async () => {
