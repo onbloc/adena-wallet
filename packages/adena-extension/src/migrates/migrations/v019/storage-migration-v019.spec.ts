@@ -48,7 +48,7 @@ describe('StorageMigration019', () => {
     const result = await new StorageMigration019().up(makeInput({ NETWORKS: [] }));
     const sapphire = result.data.NETWORKS.find((n) => n.chainId === 'sapphire-1');
     expect(sapphire).toBeDefined();
-    expect(sapphire?.rpcUrl).toBe('https://rpc.sapphire.testnets.gno.land:443');
+    expect(sapphire?.rpcUrl).toBe('https://sapphire.rpc.onbloc.xyz:443');
   });
 
   it('migrates ESTABLISH_SITES chainId from test13 to test-13', async () => {

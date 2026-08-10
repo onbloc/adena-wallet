@@ -49,7 +49,7 @@ describe('StorageMigration024', () => {
     const result = await new StorageMigration024().up(makeInput({ NETWORKS: [] }));
     const sapphire = result.data.NETWORKS.find((n) => n.chainId === 'sapphire-1');
     expect(sapphire).toBeDefined();
-    expect(sapphire?.rpcUrl).toBe('https://rpc.sapphire.testnets.gno.land:443');
+    expect(sapphire?.rpcUrl).toBe('https://sapphire.rpc.onbloc.xyz:443');
     expect(result.data.NETWORKS.find((n) => n.chainId === 'topaz-1')).toBeUndefined();
   });
 
