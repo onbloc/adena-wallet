@@ -63,6 +63,32 @@ const LegacyStorageKeys = [
 // The latest storage model type
 export type StorageModelLatest = StorageModelV024;
 
+type StorageModelDataType =
+  | StorageModelV024
+  | StorageModelV023
+  | StorageModelV022
+  | StorageModelV021
+  | StorageModelV020
+  | StorageModelV019
+  | StorageModelV018
+  | StorageModelV017
+  | StorageModelV016
+  | StorageModelV015
+  | StorageModelV014
+  | StorageModelV013
+  | StorageModelV012
+  | StorageModelV011
+  | StorageModelV010
+  | StorageModelV009
+  | StorageModelV008
+  | StorageModelV007
+  | StorageModelV006
+  | StorageModelV005
+  | StorageModelV004
+  | StorageModelV003
+  | StorageModelV002
+  | StorageModelV001;
+
 // Default data structure for version 1 storage model
 const defaultData: StorageModelDataV001 = {
   ACCOUNT_NAMES: {},
@@ -131,34 +157,7 @@ export class StorageMigrator implements Migrator {
   }
 
   // Deserializes a string into the corresponding storage model
-  async deserialize(
-    data: string | undefined,
-  ): Promise<
-    | StorageModelV023
-    | StorageModelV024
-    | StorageModelV022
-    | StorageModelV021
-    | StorageModelV020
-    | StorageModelV019
-    | StorageModelV018
-    | StorageModelV017
-    | StorageModelV016
-    | StorageModelV015
-    | StorageModelV014
-    | StorageModelV013
-    | StorageModelV012
-    | StorageModelV011
-    | StorageModelV010
-    | StorageModelV009
-    | StorageModelV008
-    | StorageModelV007
-    | StorageModelV006
-    | StorageModelV005
-    | StorageModelV004
-    | StorageModelV003
-    | StorageModelV002
-    | StorageModelV001
-  > {
+  async deserialize(data: string | undefined): Promise<StorageModelDataType> {
     let jsonData = null;
     if (data) {
       try {
@@ -171,32 +170,7 @@ export class StorageMigrator implements Migrator {
   }
 
   // Retrieves the current storage data, performing deserialization
-  async getCurrent(): Promise<
-    | StorageModelV023
-    | StorageModelV024
-    | StorageModelV022
-    | StorageModelV021
-    | StorageModelV020
-    | StorageModelV019
-    | StorageModelV018
-    | StorageModelV017
-    | StorageModelV016
-    | StorageModelV015
-    | StorageModelV014
-    | StorageModelV013
-    | StorageModelV012
-    | StorageModelV011
-    | StorageModelV010
-    | StorageModelV009
-    | StorageModelV008
-    | StorageModelV007
-    | StorageModelV006
-    | StorageModelV005
-    | StorageModelV004
-    | StorageModelV003
-    | StorageModelV002
-    | { version: number; data: StorageModelDataV001 }
-  > {
+  async getCurrent(): Promise<StorageModelDataType> {
     const storedValues = await this.storage.get(StorageMigrator.StorageKey);
     const data = await this.deserialize(storedValues[StorageMigrator.StorageKey]);
     if (data) {
@@ -276,32 +250,7 @@ export class StorageMigrator implements Migrator {
   private async mappedJson(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     json: any,
-  ): Promise<
-    | StorageModelV023
-    | StorageModelV024
-    | StorageModelV022
-    | StorageModelV021
-    | StorageModelV020
-    | StorageModelV019
-    | StorageModelV018
-    | StorageModelV017
-    | StorageModelV016
-    | StorageModelV015
-    | StorageModelV014
-    | StorageModelV013
-    | StorageModelV012
-    | StorageModelV011
-    | StorageModelV010
-    | StorageModelV009
-    | StorageModelV008
-    | StorageModelV007
-    | StorageModelV006
-    | StorageModelV005
-    | StorageModelV004
-    | StorageModelV003
-    | StorageModelV002
-    | StorageModelV001
-  > {
+  ): Promise<StorageModelDataType> {
     json = this.reconcileVersion(json);
 
     if (json?.version === 24) {
