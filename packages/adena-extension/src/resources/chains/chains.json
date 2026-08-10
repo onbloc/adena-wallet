@@ -15,18 +15,18 @@
     "linkUrl": "https://gnoscan.io"
   },
   {
-    "id": "topaz-1",
+    "id": "sapphire-1",
     "default": true,
     "main": false,
-    "chainId": "topaz-1",
+    "chainId": "sapphire-1",
     "chainName": "Gno.land",
-    "networkId": "topaz-1",
-    "networkName": "Topaz",
+    "networkId": "sapphire-1",
+    "networkName": "Sapphire",
     "addressPrefix": "g",
-    "rpcUrl": "https://topaz.rpc.onbloc.xyz:443",
-    "indexerUrl": "https://indexer.topaz.gnoland.network:443",
-    "gnoUrl": "https://topaz.testnets.gno.land",
-    "apiUrl": "https://topaz.api.onbloc.xyz",
+    "rpcUrl": "https://sapphire.rpc.onbloc.xyz:443",
+    "indexerUrl": "https://sapphire.indexer.onbloc.xyz",
+    "gnoUrl": "https://sapphire.testnets.gno.land",
+    "apiUrl": "https://sapphire.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {

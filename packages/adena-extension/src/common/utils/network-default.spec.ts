@@ -30,10 +30,10 @@ function makeNetwork(
 }
 
 const GNOLAND1 = makeNetwork({ id: 'gnoland1', main: true });
-const TOPAZ = makeNetwork({ id: 'topaz-1', main: false });
+const SAPPHIRE = makeNetwork({ id: 'sapphire-1', main: false });
 const STAGING = makeNetwork({ id: 'staging', main: false });
 const DEV = makeNetwork({ id: 'dev', main: false });
-const NETWORKS: NetworkMetainfo[] = [GNOLAND1, TOPAZ, STAGING, DEV];
+const NETWORKS: NetworkMetainfo[] = [GNOLAND1, SAPPHIRE, STAGING, DEV];
 
 describe('normalizeStoredId', () => {
   it('returns null for empty / undefined / null / sentinel strings', () => {
@@ -46,19 +46,19 @@ describe('normalizeStoredId', () => {
 
   it('returns the raw id for legitimate values', () => {
     expect(normalizeStoredId('gnoland1')).toBe('gnoland1');
-    expect(normalizeStoredId('topaz')).toBe('topaz');
+    expect(normalizeStoredId('sapphire')).toBe('sapphire');
   });
 });
 
 describe('resolveNetworkMode', () => {
   it('uses explicit stored mode regardless of stored network', () => {
-    expect(resolveNetworkMode('mainnet', 'topaz', NETWORKS)).toBe('mainnet');
+    expect(resolveNetworkMode('mainnet', 'sapphire-1', NETWORKS)).toBe('mainnet');
     expect(resolveNetworkMode('testnet', 'gnoland1', NETWORKS)).toBe('testnet');
   });
 
   it('derives mode from the stored networks main flag when stored mode is missing', () => {
     expect(resolveNetworkMode(null, 'gnoland1', NETWORKS)).toBe('mainnet');
-    expect(resolveNetworkMode(null, 'topaz', NETWORKS)).toBe('testnet');
+    expect(resolveNetworkMode(null, 'sapphire-1', NETWORKS)).toBe('testnet');
     expect(resolveNetworkMode(null, 'staging', NETWORKS)).toBe('testnet');
   });
 
@@ -82,24 +82,24 @@ describe('pickDefaultByMode', () => {
     expect(ids).toContain(PRIMARY_MAINNET_ID);
   });
 
-  it('prefers topaz for testnet mode', () => {
-    expect(pickDefaultByMode(NETWORKS, 'testnet')?.id).toBe('topaz-1');
+  it('prefers sapphire for testnet mode', () => {
+    expect(pickDefaultByMode(NETWORKS, 'testnet')?.id).toBe('sapphire-1');
   });
 
   it('prefers gnoland1 for mainnet mode', () => {
     expect(pickDefaultByMode(NETWORKS, 'mainnet')?.id).toBe('gnoland1');
   });
 
-  it('falls back to a generic testnet default when topaz is missing', () => {
-    const withoutTopaz = NETWORKS.filter((network) => network.id !== 'topaz-1');
-    expect(pickDefaultByMode(withoutTopaz, 'testnet')?.id).toBe('staging');
+  it('falls back to a generic testnet default when sapphire is missing', () => {
+    const withoutSapphire = NETWORKS.filter((network) => network.id !== 'sapphire-1');
+    expect(pickDefaultByMode(withoutSapphire, 'testnet')?.id).toBe('staging');
   });
 
   it('skips deleted networks when picking', () => {
-    const withDeletedTopaz = NETWORKS.map((network) =>
-      network.id === 'topaz-1' ? { ...network, deleted: true } : network,
+    const withDeletedSapphire = NETWORKS.map((network) =>
+      network.id === 'sapphire-1' ? { ...network, deleted: true } : network,
     );
-    expect(pickDefaultByMode(withDeletedTopaz, 'testnet')?.id).toBe('staging');
+    expect(pickDefaultByMode(withDeletedSapphire, 'testnet')?.id).toBe('staging');
   });
 
   it('returns the first non-deleted network when no testnet default exists', () => {
