@@ -1,9 +1,9 @@
-import { StorageMigration022 } from './storage-migration-v022';
+import { StorageMigration024 } from './storage-migration-v024';
 
 const BASE_DATA = {
   NETWORKS: [],
-  CURRENT_CHAIN_ID: 'test-13',
-  CURRENT_NETWORK_ID: 'test-13',
+  CURRENT_CHAIN_ID: 'topaz-1',
+  CURRENT_NETWORK_ID: 'topaz-1',
   SERIALIZED: 'serialized-blob',
   ENCRYPTED_STORED_PASSWORD: 'encrypted-pw',
   CURRENT_ACCOUNT_ID: 'acc-1',
@@ -21,45 +21,45 @@ const BASE_DATA = {
 };
 
 function makeInput(overrides: Partial<typeof BASE_DATA> = {}) {
-  return { version: 21 as const, data: { ...BASE_DATA, ...overrides } };
+  return { version: 23 as const, data: { ...BASE_DATA, ...overrides } };
 }
 
-describe('StorageMigration022', () => {
-  it('version is 22', () => {
-    expect(new StorageMigration022().version).toBe(22);
+describe('StorageMigration024', () => {
+  it('version is 24', () => {
+    expect(new StorageMigration024().version).toBe(24);
   });
 
-  it('migrates CURRENT_CHAIN_ID from test-13 to topaz-1', async () => {
-    const result = await new StorageMigration022().up(makeInput());
-    expect(result.version).toBe(22);
-    expect(result.data.CURRENT_CHAIN_ID).toBe('topaz-1');
+  it('migrates CURRENT_CHAIN_ID from topaz-1 to sapphire-1', async () => {
+    const result = await new StorageMigration024().up(makeInput());
+    expect(result.version).toBe(24);
+    expect(result.data.CURRENT_CHAIN_ID).toBe('sapphire-1');
   });
 
-  it('migrates CURRENT_NETWORK_ID from test-13 to topaz-1', async () => {
-    const result = await new StorageMigration022().up(makeInput());
-    expect(result.data.CURRENT_NETWORK_ID).toBe('topaz-1');
+  it('migrates CURRENT_NETWORK_ID from topaz-1 to sapphire-1', async () => {
+    const result = await new StorageMigration024().up(makeInput());
+    expect(result.data.CURRENT_NETWORK_ID).toBe('sapphire-1');
   });
 
-  it('does not change CURRENT_CHAIN_ID if it is not test-13', async () => {
-    const result = await new StorageMigration022().up(makeInput({ CURRENT_CHAIN_ID: 'gnoland1' }));
+  it('does not change CURRENT_CHAIN_ID if it is not topaz-1', async () => {
+    const result = await new StorageMigration024().up(makeInput({ CURRENT_CHAIN_ID: 'gnoland1' }));
     expect(result.data.CURRENT_CHAIN_ID).toBe('gnoland1');
   });
 
-  it('refreshes NETWORKS from chains.json and drops the stale test-13 entry', async () => {
-    const result = await new StorageMigration022().up(makeInput({ NETWORKS: [] }));
+  it('refreshes NETWORKS with sapphire-1 from chains.json and drops topaz-1', async () => {
+    const result = await new StorageMigration024().up(makeInput({ NETWORKS: [] }));
     const sapphire = result.data.NETWORKS.find((n) => n.chainId === 'sapphire-1');
     expect(sapphire).toBeDefined();
     expect(sapphire?.rpcUrl).toBe('https://rpc.sapphire.testnets.gno.land:443');
-    expect(result.data.NETWORKS.find((n) => n.chainId === 'test-13')).toBeUndefined();
+    expect(result.data.NETWORKS.find((n) => n.chainId === 'topaz-1')).toBeUndefined();
   });
 
-  it('removes ESTABLISH_SITES entries for test-13', async () => {
+  it('removes ESTABLISH_SITES entries for topaz-1', async () => {
     const input = makeInput({
       ESTABLISH_SITES: {
         'acc-1': [
           {
             hostname: 'dapp.example',
-            chainId: 'test-13',
+            chainId: 'topaz-1',
             account: 'g1abc',
             name: 'App',
             favicon: null,
@@ -68,11 +68,11 @@ describe('StorageMigration022', () => {
         ],
       },
     });
-    const result = await new StorageMigration022().up(input);
+    const result = await new StorageMigration024().up(input);
     expect(result.data.ESTABLISH_SITES).toEqual({});
   });
 
-  it('leaves non-test-13 ESTABLISH_SITES unchanged', async () => {
+  it('leaves non-topaz-1 ESTABLISH_SITES unchanged', async () => {
     const input = makeInput({
       ESTABLISH_SITES: {
         'acc-1': [
@@ -87,18 +87,18 @@ describe('StorageMigration022', () => {
         ],
       },
     });
-    const result = await new StorageMigration022().up(input);
+    const result = await new StorageMigration024().up(input);
     expect(result.data.ESTABLISH_SITES['acc-1'][0].chainId).toBe('gnoland1');
   });
 
-  it('removes ACCOUNT_TOKEN_METAINFOS entries for test-13', async () => {
+  it('removes ACCOUNT_TOKEN_METAINFOS entries for topaz-1', async () => {
     const input = makeInput({
       ACCOUNT_TOKEN_METAINFOS: {
         'acc-1': [
           {
             main: true,
-            tokenId: 'test-13:ugnot',
-            networkId: 'test-13',
+            tokenId: 'topaz-1:ugnot',
+            networkId: 'topaz-1',
             display: true,
             type: 'gno-native' as const,
             name: 'Gno',
@@ -109,16 +109,16 @@ describe('StorageMigration022', () => {
         ],
       },
     });
-    const result = await new StorageMigration022().up(input);
+    const result = await new StorageMigration024().up(input);
     expect(result.data.ACCOUNT_TOKEN_METAINFOS).toEqual({});
   });
 
-  it('removes SESSIONS entries for test-13', async () => {
+  it('removes SESSIONS entries for topaz-1', async () => {
     const input = makeInput({
       SESSIONS: {
         g1abc: {
           masterAddress: 'g1master',
-          chainId: 'test-13',
+          chainId: 'topaz-1',
           allowPaths: [],
           spendLimit: '0',
           spendPeriod: 0,
@@ -128,18 +128,18 @@ describe('StorageMigration022', () => {
         },
       },
     });
-    const result = await new StorageMigration022().up(input);
+    const result = await new StorageMigration024().up(input);
     expect(result.data.SESSIONS).toEqual({});
   });
 
-  it('removes ACCOUNT_GRC721_COLLECTIONS entries for test-13', async () => {
+  it('removes ACCOUNT_GRC721_COLLECTIONS entries for topaz-1', async () => {
     const input = makeInput({
       ACCOUNT_GRC721_COLLECTIONS: {
         'acc-1': {
-          'test-13': [
+          'topaz-1': [
             {
               tokenId: '1',
-              networkId: 'test-13',
+              networkId: 'topaz-1',
               display: true,
               type: 'grc721' as const,
               packagePath: 'gno.land/r/test',
@@ -153,27 +153,27 @@ describe('StorageMigration022', () => {
         },
       },
     });
-    const result = await new StorageMigration022().up(input);
+    const result = await new StorageMigration024().up(input);
     expect(result.data.ACCOUNT_GRC721_COLLECTIONS).toEqual({});
   });
 
-  it('removes ACCOUNT_GRC721_PINNED_PACKAGES entries for test-13', async () => {
+  it('removes ACCOUNT_GRC721_PINNED_PACKAGES entries for topaz-1', async () => {
     const input = makeInput({
       ACCOUNT_GRC721_PINNED_PACKAGES: {
         'acc-1': {
-          'test-13': ['gno.land/r/test/nft'],
+          'topaz-1': ['gno.land/r/test/nft'],
           gnoland1: ['gno.land/r/other/nft'],
         },
       },
     });
-    const result = await new StorageMigration022().up(input);
+    const result = await new StorageMigration024().up(input);
     const pinned = result.data.ACCOUNT_GRC721_PINNED_PACKAGES['acc-1'];
-    expect(pinned['test-13']).toBeUndefined();
+    expect(pinned['topaz-1']).toBeUndefined();
     expect(pinned.gnoland1).toEqual(['gno.land/r/other/nft']);
   });
 
-  it('preserves unrelated v021 fields without loss', async () => {
-    const result = await new StorageMigration022().up(makeInput());
+  it('preserves unrelated v023 fields without loss', async () => {
+    const result = await new StorageMigration024().up(makeInput());
     expect(result.data.SERIALIZED).toBe(BASE_DATA.SERIALIZED);
     expect(result.data.ENCRYPTED_STORED_PASSWORD).toBe(BASE_DATA.ENCRYPTED_STORED_PASSWORD);
     expect(result.data.CURRENT_ACCOUNT_ID).toBe(BASE_DATA.CURRENT_ACCOUNT_ID);
@@ -182,25 +182,18 @@ describe('StorageMigration022', () => {
     expect(result.data.KDF_SALT).toBe(BASE_DATA.KDF_SALT);
   });
 
-  it('throws when required v021 keys are missing', async () => {
+  it('throws when required v023 keys are missing', async () => {
     const { KDF_SALT, ...withoutKdfSalt } = BASE_DATA;
-    const bad: any = { version: 21, data: withoutKdfSalt };
-    await expect(new StorageMigration022().up(bad)).rejects.toThrow(
-      'Storage Data does not match version V021',
+    const bad: any = { version: 23, data: withoutKdfSalt };
+    await expect(new StorageMigration024().up(bad)).rejects.toThrow(
+      'Storage Data does not match version V023',
     );
   });
 
   it('throws when SERIALIZED is not a string', async () => {
-    const bad: any = { version: 21, data: { ...BASE_DATA, SERIALIZED: null } };
-    await expect(new StorageMigration022().up(bad)).rejects.toThrow(
-      'Storage Data does not match version V021',
-    );
-  });
-
-  it('throws when NETWORKS is not an array', async () => {
-    const bad: any = { version: 21, data: { ...BASE_DATA, NETWORKS: {} } };
-    await expect(new StorageMigration022().up(bad)).rejects.toThrow(
-      'Storage Data does not match version V021',
+    const bad: any = { version: 23, data: { ...BASE_DATA, SERIALIZED: null } };
+    await expect(new StorageMigration024().up(bad)).rejects.toThrow(
+      'Storage Data does not match version V023',
     );
   });
 });

@@ -44,7 +44,8 @@ describe('StorageMigration020', () => {
     expect(new StorageMigration020().version).toBe(20);
   });
 
-  // test-13 was renamed to topaz-1 in v022 and no longer exists in chains.json,
+  // test-13 was replaced by the current testnet in v022/v024 and no longer
+  // exists in chains.json,
   // so this migration can no longer find a replacement and leaves the entry
   // untouched. v022 is what removes the stale test-13 network.
   it('leaves test-13 NETWORKS untouched once it is gone from chains.json', async () => {
