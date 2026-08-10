@@ -1,7 +1,7 @@
 {
   "sapphire-1": {
     "registryPath": "gno.land/r/demo/defi/grc20reg",
-    "helperPath": ""
+    "helperPath": "gno.land/r/demo/defi/grc20reg"
   },
   "gnoland1": {
     "registryPath": "gno.land/r/demo/defi/grc20reg",
