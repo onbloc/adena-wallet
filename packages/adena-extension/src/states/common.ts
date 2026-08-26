@@ -58,3 +58,12 @@ export const loadedImageUrls = atom<string[]>({
   key: 'common/loadedImageUrls',
   default: [],
 });
+
+// Number of mounted surfaces that currently need the per-account native balance
+// map (the side menu and the accounts screen). The map costs one RPC round-trip
+// per account, so it is only queried while at least one of them is on screen —
+// see `useAccountListInfos`.
+export const accountBalanceMapDemand = atom<number>({
+  key: 'common/accountBalanceMapDemand',
+  default: 0,
+});

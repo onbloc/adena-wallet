@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { Account } from 'adena-module';
 import React, { PropsWithChildren } from 'react';
+import { RecoilRoot } from 'recoil';
 
 import { useAccountListInfos } from './use-account-list-infos';
 import { useAccountName } from './use-account-name';
@@ -16,8 +17,13 @@ jest.mock('./use-token-balance', () => ({ useTokenBalance: jest.fn() }));
 
 const makeWrapper = (): React.FC<PropsWithChildren> => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // RecoilRoot is required: the hook registers demand for the per-account
+  // balance map in a Recoil atom so the query stays disabled while no surface
+  // renders it.
   const Wrapper = ({ children }: PropsWithChildren): JSX.Element => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <RecoilRoot>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </RecoilRoot>
   );
   Wrapper.displayName = 'QueryWrapper';
   return Wrapper;

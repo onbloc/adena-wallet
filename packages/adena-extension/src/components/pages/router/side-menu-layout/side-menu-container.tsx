@@ -15,6 +15,10 @@ import { makeQueryString } from '@common/utils/string-utils';
 import useLink from '@hooks/use-link';
 import { CommandMessage } from '@inject/message/command-message';
 import { RoutePath, SideMenuAccountInfo } from '@types';
+import { Account } from 'adena-module';
+
+// Stable identity so the memo below does not produce a new array every render.
+const EMPTY_ACCOUNTS: Account[] = [];
 
 interface SideMenuContainerProps {
   open: boolean;
@@ -110,7 +114,11 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
     setOpen(false);
   }, []);
 
-  const { data: sideMenuAccounts = [] } = useAccountListInfos(accounts);
+  // Only ask for the account list — and with it the per-account balance RPC
+  // fan-out — while the menu is actually open. `latestAccountInfos` keeps the
+  // last rendered rows so closing the menu never blanks it.
+  const listAccounts = useMemo(() => (open ? accounts : EMPTY_ACCOUNTS), [open, accounts]);
+  const { data: sideMenuAccounts = [] } = useAccountListInfos(listAccounts);
 
   useEffect(() => {
     if (sideMenuAccounts.length > 0) {

@@ -6,6 +6,7 @@ import { getWalletFundingAddress } from '@common/utils/account-address';
 import { formatNickname } from '@common/utils/client-utils';
 import { SideMenuAccountInfo, TokenBalanceType } from '@types';
 
+import { useAccountBalanceMapDemand } from './use-account-balance-map-demand';
 import { useAccountName } from './use-account-name';
 import { useChain } from './use-chain';
 import { useMasterAccountBadgeMap } from './use-master-account-badge-map';
@@ -43,11 +44,18 @@ const buildAccountListInfos = async (
   );
 };
 
+// Callers pass an empty array to opt out entirely (e.g. the side menu while it
+// is closed). That both disables this query and, more importantly, withdraws the
+// demand for the per-account balance map and the master-badge map below — the
+// two account-count-proportional RPC fan-outs in the wallet.
 export const useAccountListInfos = (
   accounts: Account[],
 ): UseQueryResult<SideMenuAccountInfo[], unknown> => {
   const { accountNames } = useAccountName();
   const chain = useChain();
+
+  useAccountBalanceMapDemand(accounts.length > 0);
+
   const { accountNativeBalanceMap } = useTokenBalance();
   const masterAccountBadgeMap = useMasterAccountBadgeMap(accounts);
 

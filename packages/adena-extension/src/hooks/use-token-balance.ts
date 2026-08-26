@@ -17,6 +17,7 @@ import { Amount, GRC20TokenModel, TokenBalanceType, TokenModel } from '@types';
 
 import { CosmosFetchResult, fetchCosmosTokenBalances } from './helpers/fetch-cosmos-balances';
 import { compareTokenBalances } from './helpers/sort-token-balances';
+import { useHasAccountBalanceMapDemand } from './use-account-balance-map-demand';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useGRC20Tokens } from './use-grc20-tokens';
@@ -25,11 +26,14 @@ import { useSessions } from './use-sessions';
 import { useTokenMetainfo } from './use-token-metainfo';
 import { useWallet } from './use-wallet';
 
-const GNO_REFETCH_INTERVAL = 3_000;
+const GNO_REFETCH_INTERVAL = 5_000;
 // Cosmos LCD p95 latency is significantly higher than Gno RPC.
 // A relaxed interval reduces request pressure and retry noise without
 // meaningfully hurting UX — balance changes on AtomOne are less frequent.
 const COSMOS_REFETCH_INTERVAL = 10_000;
+// The per-account native balance map is fetched on demand rather than polled;
+// this window keeps a close/reopen of the side menu from re-issuing it.
+const ACCOUNT_BALANCE_MAP_STALE_TIME = 5_000;
 
 const EMPTY_AMOUNT: Amount = { value: '', denom: '' };
 
@@ -62,6 +66,7 @@ export const useTokenBalance = (): {
   const { currentAccount, currentBalanceAddress } = useCurrentAccount();
   const { sessions } = useSessions();
   const { existWallet, lockedWallet } = useWallet();
+  const hasAccountBalanceMapDemand = useHasAccountBalanceMapDemand();
 
   useEffect(() => {
     balanceService.setTokenMetainfos(tokenMetainfos);
@@ -119,8 +124,8 @@ export const useTokenBalance = (): {
   );
 
   // Pre-derive { accountId -> address } once per (wallet, prefix) so the
-  // 3s refetch loop below reuses the memoized map instead of re-deriving on
-  // every tick.
+  // account balance map below reuses the memoized map instead of re-deriving on
+  // every fetch.
   const accountAddressesLoadable = useRecoilValueLoadable(
     AccountState.accountAddressesByPrefix(currentNetwork.addressPrefix),
   );
@@ -342,8 +347,16 @@ export const useTokenBalance = (): {
       );
     },
     {
-      refetchInterval: GNO_REFETCH_INTERVAL,
-      enabled: availableBalanceFetching && accountAddressesByAccountId !== null,
+      // No refetchInterval: this query costs one RPC round-trip per account, so
+      // it must not run in the background. It is enabled only while a surface
+      // that renders it (side menu, accounts screen) is on screen, and the
+      // staleTime keeps a quick close/reopen from re-issuing the whole fan-out.
+      staleTime: ACCOUNT_BALANCE_MAP_STALE_TIME,
+      keepPreviousData: true,
+      enabled:
+        availableBalanceFetching &&
+        accountAddressesByAccountId !== null &&
+        hasAccountBalanceMapDemand,
     },
   );
 
@@ -430,10 +443,7 @@ export const useTokenBalance = (): {
    * one round-trip per token. Native / cosmos tokens still resolve individually
    * via fetchBalanceBy.
    */
-  async function fetchBalances(
-    address: string,
-    tokens: TokenModel[],
-  ): Promise<TokenBalanceType[]> {
+  async function fetchBalances(address: string, tokens: TokenModel[]): Promise<TokenBalanceType[]> {
     const grc20TokenPaths = tokens
       .filter((token): token is GRC20TokenModel => isGRC20TokenModel(token))
       .map((token) => token.tokenId);
@@ -441,7 +451,7 @@ export const useTokenBalance = (): {
     const grc20BalanceMap = grc20TokenPaths.length
       ? await balanceService
           .getGRC20TokenBalanceMap(address, grc20TokenPaths)
-          .catch(() => ({} as Record<string, bigint>))
+          .catch(() => ({}) as Record<string, bigint>)
       : ({} as Record<string, bigint>);
 
     return Promise.all(
