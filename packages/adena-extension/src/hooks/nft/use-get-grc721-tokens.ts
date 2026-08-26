@@ -4,6 +4,8 @@ import { useNetwork } from '@hooks/use-network';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721CollectionModel, GRC721Model } from '@types';
 
+const GRC721_TOKENS_STALE_TIME = 30_000;
+
 export const useGetGRC721Tokens = (
   collection: GRC721CollectionModel | null,
   options?: UseQueryOptions<GRC721Model[] | null, Error>,
@@ -38,7 +40,10 @@ export const useGetGRC721Tokens = (
         }))
         .reverse();
     },
-    staleTime: 1_000,
+    // One indexer query per collection. A 1s window meant every remount of an
+    // NFT screen replayed them all; the token set of a collection the user holds
+    // does not change on that timescale.
+    staleTime: GRC721_TOKENS_STALE_TIME,
     keepPreviousData: false,
     refetchOnMount: true,
     ...options,
