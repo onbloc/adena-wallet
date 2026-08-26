@@ -6,6 +6,8 @@ import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query
 
 export const GET_GNOT_BALANCE_QUERY_KEY = 'wallet/useGetGnotBalance';
 
+const GNOT_BALANCE_STALE_TIME = 5_000;
+
 export const useGetGnotBalance = (
   options?: UseQueryOptions<number | null, Error>,
 ): UseQueryResult<number | null> => {
@@ -25,6 +27,10 @@ export const useGetGnotBalance = (
       return gnoProvider.getBalance(currentFundingAddress, GNOT_TOKEN.denom).catch(() => 0);
     },
     keepPreviousData: true,
+    // Fee/summary screens mount this on entry, and it reads the same GNOT
+    // balance the wallet already polls under its own key. The window keeps a
+    // Send -> Summary -> Confirm walk from issuing one balance query per step.
+    staleTime: GNOT_BALANCE_STALE_TIME,
     ...options,
   });
 };

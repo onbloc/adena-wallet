@@ -6,8 +6,15 @@ import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { SESSIONS_QUERY_KEY } from '@hooks/use-sessions';
+import {
+  fetchSessionRecord,
+  sessionRecordQueryKey,
+} from '@hooks/wallet/use-current-session-record';
 
 export const SESSION_REVOCATION_POLL_INTERVAL = 5_000;
+// Slightly under the poll interval so a cached record is reused within a tick
+// but never carried across two of them.
+const SESSION_RECORD_SHARE_WINDOW = SESSION_REVOCATION_POLL_INTERVAL - 500;
 
 type WatchResult = 'not-session' | 'no-metadata' | 'revoked' | 'present' | 'unknown';
 
@@ -66,7 +73,15 @@ export const useSessionRevocationWatcher = (): void => {
       const masterAddress = currentAccount.getMasterAddress();
       let record;
       try {
-        record = await gnoProvider.getSession(masterAddress, sessionAddr);
+        // Read through the shared session-record cache. The Session Overview
+        // polls the same (master, session) pair on the same interval, so the
+        // staleTime below lets whichever poller ticks first serve both and the
+        // header costs one ABCI query per interval instead of two.
+        record = await queryClient.fetchQuery(
+          sessionRecordQueryKey(masterAddress, sessionAddr),
+          () => fetchSessionRecord(gnoProvider, masterAddress, sessionAddr),
+          { staleTime: SESSION_RECORD_SHARE_WINDOW },
+        );
       } catch {
         // Network / parse failures are not a revoke signal.
         return 'unknown';
@@ -75,11 +90,13 @@ export const useSessionRevocationWatcher = (): void => {
         return 'present';
       }
 
-      const revoked = await shouldMarkSessionRevoked(cached, () =>
-        gnoProvider
-          .getSession(masterAddress, sessionAddr)
-          .then((res) => !!res)
-          .catch(() => true), // treat a failed recheck as "still there"
+      const revoked = await shouldMarkSessionRevoked(
+        cached,
+        () =>
+          gnoProvider
+            .getSession(masterAddress, sessionAddr)
+            .then((res) => !!res)
+            .catch(() => true), // treat a failed recheck as "still there"
       );
       if (!revoked) {
         return 'unknown';
@@ -99,7 +116,8 @@ export const useSessionRevocationWatcher = (): void => {
     },
     {
       enabled: isSession && !!gnoProvider,
-      refetchInterval: (data) => (isTerminalResult(data) ? false : SESSION_REVOCATION_POLL_INTERVAL),
+      refetchInterval: (data) =>
+        isTerminalResult(data) ? false : SESSION_REVOCATION_POLL_INTERVAL,
       refetchOnWindowFocus: (query) => !isTerminalResult(query.state.data as WatchResult),
     },
   );
