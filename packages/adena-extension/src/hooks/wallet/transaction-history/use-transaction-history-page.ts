@@ -1,5 +1,5 @@
 import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -8,8 +8,6 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { TransactionInfo, TransactionWithPageInfo } from '@types';
 import { dedupeAndSortTransactions } from './session-history-source';
-
-const REFETCH_INTERVAL = 3_000;
 
 // API-backed (cursor paginated) transaction history. `currentAddress` already
 // resolves to the SESSION address for SessionAccount, and the API attributes
@@ -70,7 +68,10 @@ export const useTransactionHistoryPage = ({
         transactionHistoryService.supported &&
         enabled,
       keepPreviousData: true,
-      refetchInterval: REFETCH_INTERVAL,
+      // No refetchInterval. An infinite query refetches EVERY loaded page on
+      // each tick, so polling here cost one request per page the user had
+      // scrolled through. The history screen drives a single poll instead, and
+      // `refetchTransactions` below narrows it to the first page.
     },
   );
 
@@ -98,9 +99,18 @@ export const useTransactionHistoryPage = ({
     transactions,
   );
 
-  const refetchTransactions = (options?: RefetchOptions): void => {
-    refetch(options);
-  };
+  // Only the newest page can gain transactions, so a poll refetches page 0 and
+  // leaves the older pages the user scrolled into alone. `fetchNextPage` still
+  // appends normally, and an explicit caller can override `refetchPage`.
+  const refetchTransactions = useCallback(
+    (options?: RefetchOptions): void => {
+      refetch({
+        refetchPage: (_page: unknown, index: number): boolean => index === 0,
+        ...options,
+      });
+    },
+    [refetch],
+  );
 
   return {
     data: data || null,

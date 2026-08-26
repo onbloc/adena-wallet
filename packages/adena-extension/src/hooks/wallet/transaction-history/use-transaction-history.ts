@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useRecoilState } from 'recoil';
 
 import { useAdenaContext } from '@hooks/use-context';
@@ -102,9 +102,12 @@ export const useTransactionHistory = ({
     return true;
   };
 
-  const refetchTransactions = (options?: RefetchOptions): void => {
-    refetch(options);
-  };
+  const refetchTransactions = useCallback(
+    (options?: RefetchOptions): void => {
+      refetch(options);
+    },
+    [refetch],
+  );
 
   return {
     data: data || null,

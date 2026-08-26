@@ -75,14 +75,20 @@ const HistoryContainer: React.FC = () => {
     }
   }, [document.getElementsByTagName('body')]);
 
+  // The single poller for this screen. The API-backed query no longer sets its
+  // own refetchInterval, so this is one request per tick (first page only) on
+  // both the API and indexer paths instead of one per loaded page from two
+  // competing timers.
   useEffect(() => {
-    if (currentAddress) {
-      const historyFetchTimer = setInterval(() => {
-        refetch();
-      }, HISTORY_FETCH_INTERVAL_TIME);
-      return (): void => clearInterval(historyFetchTimer);
+    if (!currentAddress) {
+      return;
     }
-  }, [currentAddress]);
+
+    const historyFetchTimer = setInterval(() => {
+      refetch();
+    }, HISTORY_FETCH_INTERVAL_TIME);
+    return (): void => clearInterval(historyFetchTimer);
+  }, [currentAddress, refetch]);
 
   const onScrollListener = (): void => {
     if (bodyElement && scrollRef.current) {
