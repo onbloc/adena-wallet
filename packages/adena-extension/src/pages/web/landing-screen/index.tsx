@@ -28,10 +28,14 @@ const LandingScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const { walletService } = useAdenaContext();
 
+  // networkMode 'always': this reads chrome.storage, never the network.
+  // react-query's default 'online' PAUSES a query while the browser reports
+  // offline — it never runs, never errors, and status stays 'loading' — so this
+  // screen rendered an empty <WebMain /> under the header for the whole session.
   const { data: existWallet, isLoading } = useQuery(
-    ['existWallet', walletService],
+    ['existWallet', walletService.id],
     async () => walletService.existsWallet(),
-    {},
+    { networkMode: 'always' },
   );
 
   if (isLoading) {

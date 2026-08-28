@@ -22,13 +22,16 @@ export const useWallet = (): UseWalletReturn => {
     return wallet.hasHDWallet();
   }, [wallet]);
 
+  // networkMode: 'always' — see landing-screen. Both of these read
+  // chrome.storage; paused offline they leave the POPUP blank, because
+  // App/popup returns <></> while isLoadingLockedWallet is true.
   const { data: existWallet, isLoading: isLoadingExistWallet } = useQuery(
     ['wallet/existWallet', walletService.id],
     async () => {
       const existWallet = await walletService.existsWallet().catch(() => false);
       return existWallet;
     },
-    {},
+    { networkMode: 'always' },
   );
 
   const { data: lockedWallet, isLoading: isLoadingLockedWallet } = useQuery(
@@ -37,7 +40,7 @@ export const useWallet = (): UseWalletReturn => {
       const lockedWallet = await walletService.isLocked();
       return lockedWallet;
     },
-    {},
+    { networkMode: 'always' },
   );
 
   return {
