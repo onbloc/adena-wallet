@@ -6,10 +6,10 @@ import { getWalletFundingAddress } from '@common/utils/account-address';
 import { formatNickname } from '@common/utils/client-utils';
 import { SideMenuAccountInfo, TokenBalanceType } from '@types';
 
+import { useAccountNativeBalanceMap } from './use-account-native-balance-map';
 import { useAccountName } from './use-account-name';
 import { useChain } from './use-chain';
 import { useMasterAccountBadgeMap } from './use-master-account-badge-map';
-import { useTokenBalance } from './use-token-balance';
 
 const ACCOUNT_LIST_INFOS_STALE_TIME = 3_000;
 
@@ -43,12 +43,15 @@ const buildAccountListInfos = async (
   );
 };
 
+// An empty `accounts` opts out entirely, so the per-account balance map and the
+// master-badge fan-out are not fetched either.
 export const useAccountListInfos = (
   accounts: Account[],
 ): UseQueryResult<SideMenuAccountInfo[], unknown> => {
   const { accountNames } = useAccountName();
   const chain = useChain();
-  const { accountNativeBalanceMap } = useTokenBalance();
+
+  const accountNativeBalanceMap = useAccountNativeBalanceMap(accounts.length > 0);
   const masterAccountBadgeMap = useMasterAccountBadgeMap(accounts);
 
   const accountIdsKey = useMemo(() => accounts.map((account) => account.id).join('|'), [accounts]);

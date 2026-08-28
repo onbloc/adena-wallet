@@ -4,6 +4,8 @@ import { useNetwork } from '@hooks/use-network';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721CollectionModel, GRC721Model } from '@types';
 
+const GRC721_TOKENS_STALE_TIME = 30_000;
+
 export const useGetGRC721Tokens = (
   collection: GRC721CollectionModel | null,
   options?: UseQueryOptions<GRC721Model[] | null, Error>,
@@ -38,7 +40,8 @@ export const useGetGRC721Tokens = (
         }))
         .reverse();
     },
-    staleTime: 1_000,
+    // One indexer query per collection, replayed on every remount without this.
+    staleTime: GRC721_TOKENS_STALE_TIME,
     keepPreviousData: false,
     refetchOnMount: true,
     ...options,

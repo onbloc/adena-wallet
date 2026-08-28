@@ -19,7 +19,6 @@ import { AccountAddressesPopover } from '@components/pages/router/top-menu/accou
 import { SessionAddressWarningPopover } from '@components/pages/router/top-menu/session-address-warning-popover';
 import { SessionOverviewPopover } from '@components/pages/router/top-menu/session-overview-popover';
 import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
-import { useAccountListInfos } from '@hooks/use-account-list-infos';
 import { useAccountName } from '@hooks/use-account-name';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
@@ -27,7 +26,6 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useSessions } from '@hooks/use-sessions';
-import { useVisibleAccounts } from '@hooks/use-visible-accounts';
 import { useCurrentSessionChainData } from '@hooks/wallet/use-current-session-chain-data';
 import { useSessionRevocationWatcher } from '@hooks/wallet/use-session-revocation-watcher';
 import UnresponsiveNetworksIndicator from '@router/popup/header/unresponsive-networks-indicator';
@@ -146,8 +144,9 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const { currentNetwork, unresponsiveNetworks } = useNetwork();
   const { openScannerLink, openSecurity } = useLink();
   const { sessions } = useSessions();
-  const accountListPrefetchAccounts = useVisibleAccounts();
-  useAccountListInfos(accountListPrefetchAccounts);
+  // The account list is deliberately NOT prefetched here. This header is mounted
+  // on every wallet screen, so a prefetch polls one balance RPC per account for
+  // the life of the popup; the side menu and accounts screen request it instead.
   // Header renders on every wallet screen, so this is the single mount point
   // for the 5s chain poll that flags a revoked SessionAccount.
   useSessionRevocationWatcher();

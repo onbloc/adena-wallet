@@ -2,6 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 
 import { flattenSessionAccount } from '@common/provider/gno/utils';
 import { useWalletContext } from '@hooks/use-context';
+import {
+  fetchSessionRecord,
+  sessionRecordQueryKey,
+} from '@hooks/wallet/use-current-session-record';
 import { SESSION_REVOCATION_POLL_INTERVAL } from '@hooks/wallet/use-session-revocation-watcher';
 
 export interface CurrentSessionChainData {
@@ -27,28 +31,32 @@ export const useCurrentSessionChainData = (
 ): CurrentSessionChainData | undefined => {
   const { gnoProvider } = useWalletContext();
 
-  const { data } = useQuery<CurrentSessionChainData | null>(
-    ['session/chain-data', masterAddress ?? '', sessionAddress ?? ''],
+  // Owns the poll for the shared session record; the revocation watcher reads
+  // through the same key rather than issuing a second identical query.
+  const { data } = useQuery(
+    sessionRecordQueryKey(masterAddress ?? '', sessionAddress ?? ''),
     async () => {
       if (!gnoProvider || !masterAddress || !sessionAddress) {
         return null;
       }
 
-      const res = await gnoProvider.getSession(masterAddress, sessionAddress);
-      if (!res) {
-        return null;
-      }
-
-      const flat = flattenSessionAccount(res);
-      return {
-        allowPaths: flat.allowPaths,
-        spendPeriod: Number(flat.spendPeriod || '0'),
-        spendReset: Number(flat.spendReset || '0'),
-        spendUsed: flat.spendUsed,
-        spendLimit: flat.spendLimit,
-      };
+      return fetchSessionRecord(gnoProvider, masterAddress, sessionAddress);
     },
     {
+      select: (res): CurrentSessionChainData | null => {
+        if (!res) {
+          return null;
+        }
+
+        const flat = flattenSessionAccount(res);
+        return {
+          allowPaths: flat.allowPaths,
+          spendPeriod: Number(flat.spendPeriod || '0'),
+          spendReset: Number(flat.spendReset || '0'),
+          spendUsed: flat.spendUsed,
+          spendLimit: flat.spendLimit,
+        };
+      },
       enabled: !!gnoProvider && !!masterAddress && !!sessionAddress,
       refetchInterval: SESSION_REVOCATION_POLL_INTERVAL,
       refetchOnWindowFocus: true,

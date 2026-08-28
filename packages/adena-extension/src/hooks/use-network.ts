@@ -67,6 +67,12 @@ interface NetworkResponse {
   setModified: (modified: boolean) => void;
 }
 
+const NETWORK_HEALTH_STALE_TIME = 15_000;
+
+const NETWORK_HEALTH_QUERY_KEY = (
+  network: NetworkMetainfo | null,
+): [string, NetworkMetainfo | null] => ['network/failedNetwork', network];
+
 const DEFAULT_TESTNET_NETWORK: NetworkMetainfo =
   CHAIN_DATA.find((network) => network.id === PRIMARY_TESTNET_ID) ?? CHAIN_DATA[0];
 const DEFAULT_MAINNET_NETWORK: NetworkMetainfo =
@@ -106,15 +112,15 @@ export const useNetwork = (): NetworkResponse => {
 
   const queryClient = useQueryClient();
 
-  const { data: failedNetwork = null, refetch: refetchNetworkState } = useQuery<boolean | null>(
-    ['network/failedNetwork', currentGnoNetwork],
+  const { data: failedNetwork = null } = useQuery<boolean | null>(
+    NETWORK_HEALTH_QUERY_KEY(currentGnoNetwork),
     () => {
       if (!currentGnoNetwork) {
         return null;
       }
       return fetchHealth(currentGnoNetwork.rpcUrl).then(({ healthy }) => !healthy);
     },
-    { keepPreviousData: true },
+    { keepPreviousData: true, staleTime: NETWORK_HEALTH_STALE_TIME },
   );
 
   const cosmosUnresponsiveIds = useRecoilValue(NetworkState.cosmosUnresponsiveNetworkIds);
@@ -153,8 +159,13 @@ export const useNetwork = (): NetworkResponse => {
     return network;
   }, []);
 
+  // Called on every route change, and a plain refetch() ignores staleTime, so
+  // `stale: true` is what keeps navigation from probing on every step.
   const checkNetworkState = async (): Promise<void> => {
-    await refetchNetworkState();
+    await queryClient.refetchQueries({
+      queryKey: NETWORK_HEALTH_QUERY_KEY(currentGnoNetwork),
+      stale: true,
+    });
   };
 
   const addNetwork = useCallback(

@@ -45,20 +45,22 @@ export interface TokenMetaResponse {
   }[];
 }
 
+export interface AccountAsset {
+  address: string;
+  amount: string;
+  decimals: number;
+  logoUrl: string | null;
+  name: string;
+  packagePath: string;
+  symbol: string;
+  tokenType: string;
+  // Token key `{packagePath}.{symbol}` — maps directly to the wallet tokenId.
+  tokenId: string;
+}
+
 export interface AccountAssetsResponse {
   data: {
     address: string;
-    assets: {
-      address: string;
-      amount: string;
-      decimals: number;
-      logoUrl: string | null;
-      name: string;
-      packagePath: string;
-      symbol: string;
-      tokenType: string;
-      // Token key `{packagePath}.{symbol}` — maps directly to the wallet tokenId.
-      tokenId: string;
-    }[];
+    assets: AccountAsset[];
   };
 }

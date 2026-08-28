@@ -37,10 +37,15 @@ const GNO_TOKEN: TokenProfile = {
 describe('CosmosBalanceService', () => {
   let service: CosmosBalanceService;
   let mockGetBalance: jest.Mock;
+  let mockGetAllBalances: jest.Mock;
 
   beforeEach(() => {
     mockGetBalance = jest.fn();
-    const mockProvider = { getBalance: mockGetBalance } as unknown as CosmosLcdProvider;
+    mockGetAllBalances = jest.fn();
+    const mockProvider = {
+      getBalance: mockGetBalance,
+      getAllBalances: mockGetAllBalances,
+    } as unknown as CosmosLcdProvider;
     service = new CosmosBalanceService(mockProvider);
   });
 
@@ -130,40 +135,54 @@ describe('CosmosBalanceService', () => {
   });
 
   describe('getTokenBalances', () => {
-    it('returns balances for multiple cosmos tokens', async () => {
-      mockGetBalance
-        .mockResolvedValueOnce('1000000')
-        .mockResolvedValueOnce('2000000');
+    it('returns balances for multiple cosmos tokens in a single request', async () => {
+      mockGetAllBalances.mockResolvedValue([
+        { denom: 'uatone', amount: '1000000' },
+        { denom: 'uphoton', amount: '2000000' },
+      ]);
 
       const results = await service.getTokenBalances('atone1abc', [UATONE, UPHOTON]);
 
       expect(results).toHaveLength(2);
       expect(results[0].symbol).toBe('ATONE');
+      expect(results[0].amount.value).toBe('1');
       expect(results[1].symbol).toBe('PHOTON');
+      expect(results[1].amount.value).toBe('2');
+      expect(mockGetAllBalances).toHaveBeenCalledTimes(1);
+      expect(mockGetAllBalances).toHaveBeenCalledWith('atone1abc');
+      expect(mockGetBalance).not.toHaveBeenCalled();
     });
 
-    it('filters out tokens that fail to fetch', async () => {
-      mockGetBalance
-        .mockResolvedValueOnce('1000000')
-        .mockResolvedValueOnce(null);
+    it('reports a denom missing from the bank response as a zero balance', async () => {
+      mockGetAllBalances.mockResolvedValue([{ denom: 'uatone', amount: '1000000' }]);
 
       const results = await service.getTokenBalances('atone1abc', [UATONE, UPHOTON]);
 
-      expect(results).toHaveLength(1);
-      expect(results[0].symbol).toBe('ATONE');
+      expect(results).toHaveLength(2);
+      expect(results[0].amount.value).toBe('1');
+      expect(results[1].symbol).toBe('PHOTON');
+      expect(results[1].amount.value).toBe('0');
     });
 
     it('filters out non-cosmos tokens', async () => {
       const results = await service.getTokenBalances('g1abc', [GNO_TOKEN]);
 
       expect(results).toHaveLength(0);
-      expect(mockGetBalance).not.toHaveBeenCalled();
+      expect(mockGetAllBalances).not.toHaveBeenCalled();
     });
 
-    it('returns empty array when all fetches fail', async () => {
-      mockGetBalance.mockResolvedValue(null);
+    it('returns empty array when the request fails so the chain reads as unreachable', async () => {
+      mockGetAllBalances.mockResolvedValue(null);
 
       const results = await service.getTokenBalances('atone1abc', [UATONE, UPHOTON]);
+
+      expect(results).toHaveLength(0);
+    });
+
+    it('returns empty array when CosmosProvider is not injected', async () => {
+      const noProviderService = new CosmosBalanceService(null);
+
+      const results = await noProviderService.getTokenBalances('atone1abc', [UATONE]);
 
       expect(results).toHaveLength(0);
     });

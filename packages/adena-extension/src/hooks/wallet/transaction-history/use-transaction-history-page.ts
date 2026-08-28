@@ -1,5 +1,5 @@
 import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -8,8 +8,6 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { TransactionInfo, TransactionWithPageInfo } from '@types';
 import { dedupeAndSortTransactions } from './session-history-source';
-
-const REFETCH_INTERVAL = 3_000;
 
 // API-backed (cursor paginated) transaction history. `currentAddress` already
 // resolves to the SESSION address for SessionAccount, and the API attributes
@@ -70,7 +68,7 @@ export const useTransactionHistoryPage = ({
         transactionHistoryService.supported &&
         enabled,
       keepPreviousData: true,
-      refetchInterval: REFETCH_INTERVAL,
+      // No refetchInterval here: the history screen owns the single poll timer.
     },
   );
 
@@ -98,9 +96,18 @@ export const useTransactionHistoryPage = ({
     transactions,
   );
 
-  const refetchTransactions = (options?: RefetchOptions): void => {
-    refetch(options);
-  };
+  // Must refetch EVERY loaded page. Narrowing to page 0 looks safe — only the
+  // newest page can gain transactions — but page 0's cursor is the boundary into
+  // page 1, and a new transaction shifts it: refreshed page 0 ends one item
+  // earlier while cached page 1 still starts at the old boundary, so the item
+  // between them is never fetched again. A full refetch re-derives each cursor
+  // from the previous page's fresh result and keeps the chain contiguous.
+  const refetchTransactions = useCallback(
+    (options?: RefetchOptions): void => {
+      refetch(options);
+    },
+    [refetch],
+  );
 
   return {
     data: data || null,

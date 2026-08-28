@@ -75,14 +75,19 @@ const HistoryContainer: React.FC = () => {
     }
   }, [document.getElementsByTagName('body')]);
 
+  // The single poller for this screen. A tick refetches every loaded page —
+  // cursor pagination requires it, see `refetchTransactions` — so an unscrolled
+  // list costs one request.
   useEffect(() => {
-    if (currentAddress) {
-      const historyFetchTimer = setInterval(() => {
-        refetch();
-      }, HISTORY_FETCH_INTERVAL_TIME);
-      return (): void => clearInterval(historyFetchTimer);
+    if (!currentAddress) {
+      return;
     }
-  }, [currentAddress]);
+
+    const historyFetchTimer = setInterval(() => {
+      refetch();
+    }, HISTORY_FETCH_INTERVAL_TIME);
+    return (): void => clearInterval(historyFetchTimer);
+  }, [currentAddress, refetch]);
 
   const onScrollListener = (): void => {
     if (bodyElement && scrollRef.current) {

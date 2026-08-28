@@ -13,9 +13,7 @@ import { MainActionButton } from '@components/atoms';
 import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
 import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
-import TokenList, {
-  TokenListItemState,
-} from '@components/pages/wallet-main/token-list/token-list';
+import TokenList, { TokenListItemState } from '@components/pages/wallet-main/token-list/token-list';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLoadImages } from '@hooks/use-load-images';
@@ -29,7 +27,11 @@ import mixins from '@styles/mixins';
 import { revokedDimStyle } from '@styles/session-revoked';
 import { RoutePath } from '@types';
 
-const REFETCH_INTERVAL = 3_000;
+// `updateAllTokenMetainfos` walks the account's full transfer history to find
+// tokens the wallet has never seen — expensive, and not a balance read. The
+// initial pass runs in `initTokenMetainfos` on every account/network change;
+// this is only the safety net for a token arriving while the wallet sits open.
+const TOKEN_DISCOVERY_INTERVAL = 60_000;
 const ROW_COUNT_CACHE_KEY = 'walletMain.tokenRowCount';
 
 // Read the last known visible token row count synchronously so the first
@@ -85,20 +87,14 @@ const Wrapper = styled.main<{ $dimmed: boolean }>`
   }
 `;
 
-
 export const WalletMain = (): JSX.Element => {
   usePreventHistoryBack();
   const { navigate } = useAppNavigate();
   const [state] = useRecoilState(WalletState.state);
   const { currentNetwork } = useNetwork();
   const { currentAccount } = useCurrentAccount();
-  const {
-    mainTokenBalance,
-    currentBalances,
-    loadingTokenKeys,
-    errorNetworkIds,
-    refetchBalances,
-  } = useTokenBalance();
+  const { mainTokenBalance, currentBalances, loadingTokenKeys, errorNetworkIds } =
+    useTokenBalance();
   const { failedNetwork } = useNetwork();
   const { updateAllTokenMetainfos, getTokenImage } = useTokenMetainfo();
 
@@ -170,20 +166,16 @@ export const WalletMain = (): JSX.Element => {
   }, [state]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null;
-
-    if (currentAccount?.id && currentNetwork.chainId) {
-      interval = setInterval(() => {
-        updateAllTokenMetainfos().then(() => {
-          refetchBalances();
-        });
-      }, REFETCH_INTERVAL);
+    if (!currentAccount?.id || !currentNetwork.chainId) {
+      return;
     }
 
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
+    const interval = setInterval(() => {
+      updateAllTokenMetainfos();
+    }, TOKEN_DISCOVERY_INTERVAL);
+
+    return (): void => {
+      clearInterval(interval);
     };
   }, [currentAccount?.id, currentNetwork.chainId]);
 
@@ -196,11 +188,7 @@ export const WalletMain = (): JSX.Element => {
         const parsed = hasAmount ? BigNumber(tokenBalance.amount.value) : null;
         // Treat non-finite values as a load failure — a malformed balance
         // string would otherwise stringify to "NaN" and leak into the row.
-        const displayValue = !parsed
-          ? ''
-          : parsed.isFinite()
-            ? parsed.toFormat()
-            : '-';
+        const displayValue = !parsed ? '' : parsed.isFinite() ? parsed.toFormat() : '-';
         return {
           tokenId: tokenBalance.tokenId,
           logo:

@@ -3,6 +3,7 @@ import { AxiosInstance } from 'axios';
 import { StorageManager } from '@common/storage/storage-manager';
 import { TokenMapper } from './mapper/token-mapper';
 import {
+  AccountAsset,
   AccountAssetsResponse,
   GRC20TokenResponse,
   IBCNativeTokenResponse,
@@ -90,6 +91,10 @@ export class TokenRepository implements ITokenRepository {
   private networkMetainfo: NetworkMetainfo | null;
 
   private gnoProvider: GnoProvider | null = null;
+
+  // In-flight `/v1/accounts/{address}` requests. Token discovery asks for the
+  // same document twice in one Promise.all, so the pending promise is shared.
+  private accountAssetsInFlight: Map<string, Promise<AccountAsset[] | null>> = new Map();
 
   constructor(
     localStorage: StorageManager,
@@ -470,6 +475,38 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
+   * The account document from `/v1/accounts/{address}`, deduplicated per address
+   * while in flight. Null means no API URL or a failed request — callers read
+   * that as "take the fallback path".
+   */
+  private fetchAccountAssets(address: string): Promise<AccountAsset[] | null> {
+    if (!this.apiUrl) {
+      return Promise.resolve(null);
+    }
+
+    const inFlight = this.accountAssetsInFlight.get(address);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    const request = TokenRepository.fetch<AccountAssetsResponse>(
+      this.networkInstance,
+      this.apiUrl + '/v1/accounts/' + address,
+    )
+      .then((data) => data?.data?.assets ?? null)
+      .catch(() => null);
+
+    this.accountAssetsInFlight.set(address, request);
+    request.finally(() => {
+      if (this.accountAssetsInFlight.get(address) === request) {
+        this.accountAssetsInFlight.delete(address);
+      }
+    });
+
+    return request;
+  }
+
+  /**
    * GRC20 tokens the account currently holds, sourced from the API
    * `/v1/accounts/{address}` assets. Each asset already carries its identity,
    * so we map it straight to a GRC20TokenModel (tokenId = token path) without
@@ -484,12 +521,7 @@ export class TokenRepository implements ITokenRepository {
       return null;
     }
 
-    const assets = await TokenRepository.fetch<AccountAssetsResponse>(
-      this.networkInstance,
-      this.apiUrl + '/v1/accounts/' + address,
-    )
-      .then((data) => data?.data?.assets ?? null)
-      .catch(() => null);
+    const assets = await this.fetchAccountAssets(address);
 
     if (!assets) {
       return null;
@@ -522,14 +554,8 @@ export class TokenRepository implements ITokenRepository {
 
   public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
     if (this.apiUrl) {
-      const packages = await TokenRepository.fetch<AccountAssetsResponse>(
-        this.networkInstance,
-        this.apiUrl + '/v1/accounts/' + address,
-      )
-        .then((data) => data?.data?.assets || [])
-        .then((assets) => [...new Set(assets.map((asset) => asset.packagePath))]);
-
-      return packages;
+      const assets = (await this.fetchAccountAssets(address)) ?? [];
+      return [...new Set(assets.map((asset) => asset.packagePath))];
     }
 
     if (!this.queryUrl) {
@@ -795,11 +821,9 @@ export class TokenRepository implements ITokenRepository {
     accountId: string,
     networkId: string,
   ): Promise<GRC721CollectionModel[]> {
-    const accountGRC721CollectionsMap = await this.localStorage.getToObject<
-      {
-        [key in string]: { [key in string]: GRC721CollectionModel[] };
-      }
-    >(LocalValueType.AccountGRC721Collections);
+    const accountGRC721CollectionsMap = await this.localStorage.getToObject<{
+      [key in string]: { [key in string]: GRC721CollectionModel[] };
+    }>(LocalValueType.AccountGRC721Collections);
 
     if (!accountGRC721CollectionsMap?.[accountId]?.[networkId]) {
       return [];
@@ -814,11 +838,9 @@ export class TokenRepository implements ITokenRepository {
     collections: GRC721CollectionModel[],
   ): Promise<boolean> {
     const accountGRC721CollectionsMap =
-      (await this.localStorage.getToObject<
-        {
-          [key in string]: { [key in string]: GRC721CollectionModel[] };
-        }
-      >(LocalValueType.AccountGRC721Collections)) || {};
+      (await this.localStorage.getToObject<{
+        [key in string]: { [key in string]: GRC721CollectionModel[] };
+      }>(LocalValueType.AccountGRC721Collections)) || {};
 
     const currentAccountCollections = accountGRC721CollectionsMap?.[accountId] || {};
 
@@ -837,11 +859,9 @@ export class TokenRepository implements ITokenRepository {
     accountId: string,
     networkId: string,
   ): Promise<string[]> {
-    const accountGRC721PinnedPackagesMap = await this.localStorage.getToObject<
-      {
-        [key in string]: { [key in string]: string[] };
-      }
-    >(LocalValueType.AccountGRC721PinnedPackages);
+    const accountGRC721PinnedPackagesMap = await this.localStorage.getToObject<{
+      [key in string]: { [key in string]: string[] };
+    }>(LocalValueType.AccountGRC721PinnedPackages);
 
     if (!accountGRC721PinnedPackagesMap?.[accountId]?.[networkId]) {
       return [];
@@ -856,11 +876,9 @@ export class TokenRepository implements ITokenRepository {
     packagePaths: string[],
   ): Promise<boolean> {
     const accountGRC721PinnedPackagesMap =
-      (await this.localStorage.getToObject<
-        {
-          [key in string]: { [key in string]: string[] };
-        }
-      >(LocalValueType.AccountGRC721PinnedPackages)) || {};
+      (await this.localStorage.getToObject<{
+        [key in string]: { [key in string]: string[] };
+      }>(LocalValueType.AccountGRC721PinnedPackages)) || {};
 
     const currentAccountPinnedPackages = accountGRC721PinnedPackagesMap?.[accountId] || {};
 
