@@ -40,9 +40,7 @@ export const useGetGRC721Tokens = (
         }))
         .reverse();
     },
-    // One indexer query per collection. A 1s window meant every remount of an
-    // NFT screen replayed them all; the token set of a collection the user holds
-    // does not change on that timescale.
+    // One indexer query per collection, replayed on every remount without this.
     staleTime: GRC721_TOKENS_STALE_TIME,
     keepPreviousData: false,
     refetchOnMount: true,

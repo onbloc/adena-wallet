@@ -27,16 +27,10 @@ import mixins from '@styles/mixins';
 import { revokedDimStyle } from '@styles/session-revoked';
 import { RoutePath } from '@types';
 
-// Token discovery (`updateAllTokenMetainfos`) walks the account's full transfer
-// history on the indexer/API to find tokens the wallet does not know about yet.
-// It used to run every 3s, and each pass also called `refetchBalances()`, which
-// duplicated the balance query's own interval.
-//
-// Discovery answers "did something entirely new arrive", not "what is my
-// balance": the initial pass happens in `initTokenMetainfos` whenever the
-// account or network changes, and this interval is only the safety net that
-// catches a token arriving while the wallet sits open. Balances keep their own
-// faster polling inside useTokenBalance.
+// `updateAllTokenMetainfos` walks the account's full transfer history to find
+// tokens the wallet has never seen — expensive, and not a balance read. The
+// initial pass runs in `initTokenMetainfos` on every account/network change;
+// this is only the safety net for a token arriving while the wallet sits open.
 const TOKEN_DISCOVERY_INTERVAL = 60_000;
 const ROW_COUNT_CACHE_KEY = 'walletMain.tokenRowCount';
 

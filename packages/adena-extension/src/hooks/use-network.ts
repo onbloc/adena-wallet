@@ -67,7 +67,6 @@ interface NetworkResponse {
   setModified: (modified: boolean) => void;
 }
 
-// Health probes age out on their own schedule; see `checkNetworkState`.
 const NETWORK_HEALTH_STALE_TIME = 15_000;
 
 const NETWORK_HEALTH_QUERY_KEY = (
@@ -160,9 +159,8 @@ export const useNetwork = (): NetworkResponse => {
     return network;
   }, []);
 
-  // Called on every route change. An unconditional refetch() ignores staleTime,
-  // so walking between screens used to issue one /health request per navigation;
-  // `stale: true` limits it to a probe that has actually aged out.
+  // Called on every route change, and a plain refetch() ignores staleTime, so
+  // `stale: true` is what keeps navigation from probing on every step.
   const checkNetworkState = async (): Promise<void> => {
     await queryClient.refetchQueries({
       queryKey: NETWORK_HEALTH_QUERY_KEY(currentGnoNetwork),

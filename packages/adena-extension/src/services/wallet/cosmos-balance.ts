@@ -4,10 +4,7 @@ import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
 import { TokenProfile } from 'adena-module';
 import { TokenBalanceType } from '@types';
 
-/**
- * On-chain denom a cosmos token is held as, or null for a token that does not
- * live on a cosmos chain (e.g. a gno-native profile).
- */
+/** On-chain denom, or null for a token that does not live on a cosmos chain. */
 function cosmosDenomOf(token: TokenProfile): string | null {
   const origin = token.origin;
   if (origin.kind === 'cosmos-native') {
@@ -41,17 +38,12 @@ export class CosmosBalanceService {
   }
 
   /**
-   * Balances for many tokens on one chain in a single LCD round-trip.
+   * Balances for many tokens on one chain in a single LCD round-trip. A denom the
+   * account holds nothing of is absent from the response and reported as zero,
+   * matching what a per-denom query returns.
    *
-   * Previously this issued one `balances/{address}/by_denom` request per token,
-   * so the wallet's balance poll scaled with the number of registered cosmos
-   * tokens. `getAllBalances` returns the whole bank balance in one request; a
-   * denom the account holds nothing of is simply absent from the response and is
-   * reported as zero, matching what `by_denom` used to return.
-   *
-   * A null response means the request itself failed. The empty result is what
-   * callers use to flag the chain as unreachable, so it is deliberately not
-   * conflated with "the account holds none of these tokens".
+   * A failed request yields an empty array, which callers read as "chain
+   * unreachable" — deliberately distinct from a zero balance.
    */
   async getTokenBalances(address: string, tokens: TokenProfile[]): Promise<TokenBalanceType[]> {
     if (!this.cosmosProvider) {

@@ -12,8 +12,7 @@ import {
 } from '@hooks/wallet/use-current-session-record';
 
 export const SESSION_REVOCATION_POLL_INTERVAL = 5_000;
-// Slightly under the poll interval so a cached record is reused within a tick
-// but never carried across two of them.
+// Under the poll interval, so a record is shared within a tick but never across two.
 const SESSION_RECORD_SHARE_WINDOW = SESSION_REVOCATION_POLL_INTERVAL - 500;
 
 type WatchResult = 'not-session' | 'no-metadata' | 'revoked' | 'present' | 'unknown';
@@ -73,10 +72,8 @@ export const useSessionRevocationWatcher = (): void => {
       const masterAddress = currentAccount.getMasterAddress();
       let record;
       try {
-        // Read through the shared session-record cache. The Session Overview
-        // polls the same (master, session) pair on the same interval, so the
-        // staleTime below lets whichever poller ticks first serve both and the
-        // header costs one ABCI query per interval instead of two.
+        // Shared with the Session Overview poll on the same pair, so whichever
+        // ticks first serves both.
         record = await queryClient.fetchQuery(
           sessionRecordQueryKey(masterAddress, sessionAddr),
           () => fetchSessionRecord(gnoProvider, masterAddress, sessionAddr),

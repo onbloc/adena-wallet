@@ -144,10 +144,9 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const { currentNetwork, unresponsiveNetworks } = useNetwork();
   const { openScannerLink, openSecurity } = useLink();
   const { sessions } = useSessions();
-  // The account list (and the per-account balance RPC fan-out behind it) is no
-  // longer prefetched here: the header is mounted on every wallet screen, so a
-  // prefetch meant polling one balance request per account forever. The side
-  // menu and the accounts screen now request it when they open.
+  // The account list is deliberately NOT prefetched here. This header is mounted
+  // on every wallet screen, so a prefetch polls one balance RPC per account for
+  // the life of the popup; the side menu and accounts screen request it instead.
   // Header renders on every wallet screen, so this is the single mount point
   // for the 5s chain poll that flags a revoked SessionAccount.
   useSessionRevocationWatcher();

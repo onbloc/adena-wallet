@@ -7,15 +7,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 
-// Global query defaults. Without them every query runs with `staleTime: 0`,
-// which makes each mount refetch: navigating between screens re-issues the whole
-// screen's RPC set even when the data is milliseconds old. The default retry of
-// 3 also triples the traffic exactly when a node is already struggling.
-//
-// `refetchOnMount` is deliberately left at its default (refetch when stale) so
-// genuinely outdated data still refreshes; the staleTime window is what collapses
-// the burst. Queries that need tighter freshness set their own staleTime or
-// refetchInterval and are unaffected.
+// Without these, `staleTime: 0` makes every mount refetch, so navigating between
+// screens re-issues the whole screen's RPC set. `refetchOnMount` stays at its
+// default so stale data still refreshes; the window is what collapses the burst.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

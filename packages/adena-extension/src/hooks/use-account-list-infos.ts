@@ -44,10 +44,8 @@ const buildAccountListInfos = async (
   );
 };
 
-// Callers pass an empty array to opt out entirely (e.g. the side menu while it
-// is closed). That both disables this query and, more importantly, withdraws the
-// demand for the per-account balance map and the master-badge map below — the
-// two account-count-proportional RPC fan-outs in the wallet.
+// An empty `accounts` opts out entirely, withdrawing the per-account balance map
+// and master-badge fan-outs along with this query.
 export const useAccountListInfos = (
   accounts: Account[],
 ): UseQueryResult<SideMenuAccountInfo[], unknown> => {

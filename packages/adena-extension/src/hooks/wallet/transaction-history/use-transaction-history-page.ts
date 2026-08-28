@@ -69,8 +69,6 @@ export const useTransactionHistoryPage = ({
         enabled,
       keepPreviousData: true,
       // No refetchInterval here: the history screen owns the single poll timer.
-      // Two pollers used to run against this query at once, and an infinite
-      // query refetches every loaded page per tick, so the cost was doubled.
     },
   );
 
@@ -98,16 +96,12 @@ export const useTransactionHistoryPage = ({
     transactions,
   );
 
-  // Refetches every loaded page, which is what cursor pagination requires.
-  //
-  // Narrowing this to page 0 looks safe — only the newest page can gain
-  // transactions — but it silently drops data: page 0's cursor marks a boundary
-  // into page 1, and a new transaction shifts it. Refreshed page 0 then ends one
-  // item earlier while the cached page 1 still starts where the old boundary
-  // was, so the item in between disappears from the merged list. Nothing refetches
-  // it, and `dedupeAndSortTransactions` can only dedupe what was fetched, not
-  // recover what was skipped. React Query re-derives each page's cursor from the
-  // previous page's fresh result, so a full refetch keeps the chain contiguous.
+  // Must refetch EVERY loaded page. Narrowing to page 0 looks safe — only the
+  // newest page can gain transactions — but page 0's cursor is the boundary into
+  // page 1, and a new transaction shifts it: refreshed page 0 ends one item
+  // earlier while cached page 1 still starts at the old boundary, so the item
+  // between them is never fetched again. A full refetch re-derives each cursor
+  // from the previous page's fresh result and keeps the chain contiguous.
   const refetchTransactions = useCallback(
     (options?: RefetchOptions): void => {
       refetch(options);

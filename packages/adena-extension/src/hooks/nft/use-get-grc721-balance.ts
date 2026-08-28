@@ -29,10 +29,8 @@ export const useGetGRC721Balance = (
 
       return tokenService.fetchGRC721Balance(packagePath, currentFundingAddress).catch(() => null);
     },
-    // Each call is a `BalanceOf` qeval against the collection's realm, and the
-    // NFT screens mount one per collection card. With staleTime 0 every mount
-    // (and every `refetchOnMount` caller) re-issued the whole fan-out; an NFT
-    // count changes rarely enough that a cache window costs nothing.
+    // One `BalanceOf` qeval per collection card, so an uncached mount replays the
+    // whole fan-out.
     staleTime: GRC721_BALANCE_STALE_TIME,
     ...options,
   });

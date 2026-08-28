@@ -75,11 +75,9 @@ const HistoryContainer: React.FC = () => {
     }
   }, [document.getElementsByTagName('body')]);
 
-  // The single poller for this screen. The API-backed query no longer sets its
-  // own refetchInterval, so the two timers that used to race here are now one.
-  // A tick still refetches every loaded page — cursor pagination requires it,
-  // see `refetchTransactions` — so it costs one request for an unscrolled list
-  // and grows only as the user pages further back.
+  // The single poller for this screen. A tick refetches every loaded page —
+  // cursor pagination requires it, see `refetchTransactions` — so an unscrolled
+  // list costs one request.
   useEffect(() => {
     if (!currentAddress) {
       return;

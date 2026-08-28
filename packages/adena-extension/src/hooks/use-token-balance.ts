@@ -31,8 +31,8 @@ const GNO_REFETCH_INTERVAL = 5_000;
 // A relaxed interval reduces request pressure and retry noise without
 // meaningfully hurting UX — balance changes on AtomOne are less frequent.
 const COSMOS_REFETCH_INTERVAL = 10_000;
-// The per-account native balance map is fetched on demand rather than polled;
-// this window keeps a close/reopen of the side menu from re-issuing it.
+// The account balance map is fetched on demand, not polled; this window keeps a
+// close/reopen of the side menu from re-issuing it.
 const ACCOUNT_BALANCE_MAP_STALE_TIME = 5_000;
 
 const EMPTY_AMOUNT: Amount = { value: '', denom: '' };
@@ -123,9 +123,8 @@ export const useTokenBalance = (): {
     },
   );
 
-  // Pre-derive { accountId -> address } once per (wallet, prefix) so the
-  // account balance map below reuses the memoized map instead of re-deriving on
-  // every fetch.
+  // Pre-derive { accountId -> address } once per (wallet, prefix) so the account
+  // balance map below reuses it instead of re-deriving on every fetch.
   const accountAddressesLoadable = useRecoilValueLoadable(
     AccountState.accountAddressesByPrefix(currentNetwork.addressPrefix),
   );
@@ -347,10 +346,8 @@ export const useTokenBalance = (): {
       );
     },
     {
-      // No refetchInterval: this query costs one RPC round-trip per account, so
-      // it must not run in the background. It is enabled only while a surface
-      // that renders it (side menu, accounts screen) is on screen, and the
-      // staleTime keeps a quick close/reopen from re-issuing the whole fan-out.
+      // No refetchInterval: one RPC round-trip per account is too expensive to
+      // run in the background, so this is gated on demand instead.
       staleTime: ACCOUNT_BALANCE_MAP_STALE_TIME,
       keepPreviousData: true,
       enabled:

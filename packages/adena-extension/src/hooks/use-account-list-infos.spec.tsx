@@ -17,9 +17,7 @@ jest.mock('./use-token-balance', () => ({ useTokenBalance: jest.fn() }));
 
 const makeWrapper = (): React.FC<PropsWithChildren> => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  // RecoilRoot is required: the hook registers demand for the per-account
-  // balance map in a Recoil atom so the query stays disabled while no surface
-  // renders it.
+  // RecoilRoot is required: the hook registers balance-map demand in an atom.
   const Wrapper = ({ children }: PropsWithChildren): JSX.Element => (
     <RecoilRoot>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

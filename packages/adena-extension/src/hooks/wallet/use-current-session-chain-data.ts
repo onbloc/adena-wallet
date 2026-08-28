@@ -31,9 +31,8 @@ export const useCurrentSessionChainData = (
 ): CurrentSessionChainData | undefined => {
   const { gnoProvider } = useWalletContext();
 
-  // Reads through the shared session-record cache so the revocation watcher's
-  // poll on the same (master, session) pair is served from the same fetch
-  // instead of issuing a second identical ABCI query every 5s.
+  // Owns the poll for the shared session record; the revocation watcher reads
+  // through the same key rather than issuing a second identical query.
   const { data } = useQuery(
     sessionRecordQueryKey(masterAddress ?? '', sessionAddress ?? ''),
     async () => {

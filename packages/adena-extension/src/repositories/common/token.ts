@@ -92,10 +92,8 @@ export class TokenRepository implements ITokenRepository {
 
   private gnoProvider: GnoProvider | null = null;
 
-  // In-flight `/v1/accounts/{address}` requests, keyed by address. The token
-  // discovery pass asks for the same account document twice in one Promise.all
-  // (once for the held GRC20 tokens, once for the transferred package paths);
-  // sharing the pending promise turns that into a single round-trip.
+  // In-flight `/v1/accounts/{address}` requests. Token discovery asks for the
+  // same document twice in one Promise.all, so the pending promise is shared.
   private accountAssetsInFlight: Map<string, Promise<AccountAsset[] | null>> = new Map();
 
   constructor(
@@ -478,8 +476,8 @@ export class TokenRepository implements ITokenRepository {
 
   /**
    * The account document from `/v1/accounts/{address}`, deduplicated per address
-   * while a request is in flight. Returns null when the network has no API URL
-   * or the request failed, which callers use to pick their fallback path.
+   * while in flight. Null means no API URL or a failed request — callers read
+   * that as "take the fallback path".
    */
   private fetchAccountAssets(address: string): Promise<AccountAsset[] | null> {
     if (!this.apiUrl) {

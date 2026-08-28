@@ -27,9 +27,8 @@ export const useGetGnotBalance = (
       return gnoProvider.getBalance(currentFundingAddress, GNOT_TOKEN.denom).catch(() => 0);
     },
     keepPreviousData: true,
-    // Fee/summary screens mount this on entry, and it reads the same GNOT
-    // balance the wallet already polls under its own key. The window keeps a
-    // Send -> Summary -> Confirm walk from issuing one balance query per step.
+    // Reads the same GNOT balance the wallet already polls elsewhere; the window
+    // keeps a Send -> Summary -> Confirm walk from querying once per step.
     staleTime: GNOT_BALANCE_STALE_TIME,
     ...options,
   });
