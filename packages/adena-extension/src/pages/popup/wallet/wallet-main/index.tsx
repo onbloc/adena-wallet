@@ -94,8 +94,13 @@ export const WalletMain = (): JSX.Element => {
   const [state] = useRecoilState(WalletState.state);
   const { currentNetwork } = useNetwork();
   const { currentAccount } = useCurrentAccount();
-  const { mainTokenBalance, currentBalances, loadingTokenKeys, errorNetworkIds } =
-    useTokenBalance();
+  const {
+    mainTokenBalance,
+    mainTokenUnavailable,
+    currentBalances,
+    loadingTokenKeys,
+    errorNetworkIds,
+  } = useTokenBalance();
   const { failedNetwork } = useNetwork();
   const { updateAllTokenMetainfos, getTokenImage } = useTokenMetainfo();
 
@@ -269,7 +274,7 @@ export const WalletMain = (): JSX.Element => {
   // Zero is exactly where this matters most. An account with no record on chain
   // and an account whose balance could not be fetched both render "0", and only
   // one of those is a fact.
-  const gnoBalanceUnavailable = errorNetworkIds.has(currentNetwork.networkId);
+  const gnoBalanceUnavailable = mainTokenUnavailable;
   const isMainBalanceLoading = mainTokenBalance === null && !gnoBalanceUnavailable;
   // Same NaN guard as the row mapping above — a malformed numeric string
   // would otherwise render as the literal "NaN" in the headline balance.

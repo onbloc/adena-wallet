@@ -37,6 +37,15 @@ export const useTokenBalance = (): {
   currentBalances: TokenBalanceType[];
   loadingTokenKeys: Set<string>;
   errorNetworkIds: Set<string>;
+  /**
+   * The native token's balance could not be established. Derived from the same
+   * nativeToken the headline balance reads, because the native token is
+   * admitted to the metainfo list by its `main` flag and keeps whatever
+   * networkId it was registered under — asking errorNetworkIds about
+   * currentNetwork.networkId answers a different question and matches only by
+   * coincidence.
+   */
+  mainTokenUnavailable: boolean;
   refetchBalances: () => Promise<QueryObserverResult<TokenBalanceType[], unknown>>;
   fetchBalanceBy: (address: string, token: TokenModel) => Promise<TokenBalanceType>;
   toggleDisplayOption: (account: Account, token: TokenModel, activated: boolean) => void;
@@ -183,6 +192,13 @@ export const useTokenBalance = (): {
       // networkId it was registered under; keying on the current network marks
       // every Gno row except the one that matters.
       for (const meta of tokenMetainfos) {
+        // Gno rows only. currentTokenMetainfos and cosmosShellTokens are drawn
+        // from the same metainfo list by different predicates and are disjoint
+        // today; skipping Cosmos models explicitly means a Gno outage can never
+        // flag a Cosmos row if that ever stops being true.
+        if (isCosmosNativeTokenModel(meta)) {
+          continue;
+        }
         ids.add(meta.networkId);
       }
     }
@@ -312,6 +328,13 @@ export const useTokenBalance = (): {
     return keys;
   }, [currentBalances, errorNetworkIds]);
 
+  const mainTokenUnavailable = useMemo((): boolean => {
+    if (nativeToken === null) {
+      return false;
+    }
+    return errorNetworkIds.has(nativeToken.networkId);
+  }, [errorNetworkIds, nativeToken]);
+
   const mainTokenBalance = useMemo((): Amount | null => {
     if (nativeToken === null) {
       return null;
@@ -424,6 +447,7 @@ export const useTokenBalance = (): {
 
   return {
     mainTokenBalance,
+    mainTokenUnavailable,
     currentBalances,
     loadingTokenKeys,
     errorNetworkIds,
