@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
 import { WebRouter } from '@router/web/index';
+import OfflineBanner from '@components/atoms/offline-banner';
 
 import AppProvider from './app-provider';
 import useApp from './use-app';
@@ -8,7 +9,12 @@ import { MemoryRouter } from 'react-router-dom';
 
 const RunApp = (): ReactElement => {
   useApp();
-  return <WebRouter />;
+  return (
+    <>
+      <OfflineBanner />
+      <WebRouter />
+    </>
+  );
 };
 
 const App = (): ReactElement => {
