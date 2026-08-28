@@ -2,26 +2,22 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { Account } from 'adena-module';
 import React, { PropsWithChildren } from 'react';
-import { RecoilRoot } from 'recoil';
 
 import { useAccountListInfos } from './use-account-list-infos';
 import { useAccountName } from './use-account-name';
 import { useChain } from './use-chain';
 import { useMasterAccountBadgeMap } from './use-master-account-badge-map';
-import { useTokenBalance } from './use-token-balance';
+import { useAccountNativeBalanceMap } from './use-account-native-balance-map';
 
 jest.mock('./use-account-name', () => ({ useAccountName: jest.fn() }));
 jest.mock('./use-chain', () => ({ useChain: jest.fn() }));
 jest.mock('./use-master-account-badge-map', () => ({ useMasterAccountBadgeMap: jest.fn() }));
-jest.mock('./use-token-balance', () => ({ useTokenBalance: jest.fn() }));
+jest.mock('./use-account-native-balance-map', () => ({ useAccountNativeBalanceMap: jest.fn() }));
 
 const makeWrapper = (): React.FC<PropsWithChildren> => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  // RecoilRoot is required: the hook registers balance-map demand in an atom.
   const Wrapper = ({ children }: PropsWithChildren): JSX.Element => (
-    <RecoilRoot>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </RecoilRoot>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
   Wrapper.displayName = 'QueryWrapper';
   return Wrapper;
@@ -33,7 +29,7 @@ describe('useAccountListInfos', () => {
     (useAccountName as jest.Mock).mockReturnValue({ accountNames: {} });
     (useChain as jest.Mock).mockReturnValue({ bech32Prefix: 'g' });
     (useMasterAccountBadgeMap as jest.Mock).mockReturnValue({});
-    (useTokenBalance as jest.Mock).mockReturnValue({ accountNativeBalanceMap: {} });
+    (useAccountNativeBalanceMap as jest.Mock).mockReturnValue({});
   });
 
   it('lists a regular account under its own address', async () => {

@@ -2,27 +2,23 @@ import { QueryObserverResult, useQuery } from '@tanstack/react-query';
 import { Account, isSessionAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo } from 'react';
-import { useRecoilValueLoadable, useSetRecoilState } from 'recoil';
+import { useSetRecoilState } from 'recoil';
 
 import { COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
-import { selectBalanceAddress } from '@common/utils/account-address';
-import { isRevokedSessionAccount } from '@common/utils/account-session';
 import {
   isCosmosNativeTokenModel,
   isGRC20TokenModel,
   isNativeTokenModel,
 } from '@common/validation/validation-token';
-import { AccountState, NetworkState } from '@states';
+import { NetworkState } from '@states';
 import { Amount, GRC20TokenModel, TokenBalanceType, TokenModel } from '@types';
 
 import { CosmosFetchResult, fetchCosmosTokenBalances } from './helpers/fetch-cosmos-balances';
 import { compareTokenBalances } from './helpers/sort-token-balances';
-import { useHasAccountBalanceMapDemand } from './use-account-balance-map-demand';
-import { useAdenaContext, useWalletContext } from './use-context';
+import { useAdenaContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useGRC20Tokens } from './use-grc20-tokens';
 import { useNetwork } from './use-network';
-import { useSessions } from './use-sessions';
 import { useTokenMetainfo } from './use-token-metainfo';
 import { useWallet } from './use-wallet';
 
@@ -31,9 +27,6 @@ const GNO_REFETCH_INTERVAL = 5_000;
 // A relaxed interval reduces request pressure and retry noise without
 // meaningfully hurting UX — balance changes on AtomOne are less frequent.
 const COSMOS_REFETCH_INTERVAL = 10_000;
-// The account balance map is fetched on demand, not polled; this window keeps a
-// close/reopen of the side menu from re-issuing it.
-const ACCOUNT_BALANCE_MAP_STALE_TIME = 5_000;
 
 const EMPTY_AMOUNT: Amount = { value: '', denom: '' };
 
@@ -44,11 +37,7 @@ export const useTokenBalance = (): {
   currentBalances: TokenBalanceType[];
   loadingTokenKeys: Set<string>;
   errorNetworkIds: Set<string>;
-  accountNativeBalanceMap: Record<string, TokenBalanceType>;
   refetchBalances: () => Promise<QueryObserverResult<TokenBalanceType[], unknown>>;
-  refetchAccountNativeBalanceMap: () => Promise<
-    QueryObserverResult<Record<string, TokenBalanceType>, unknown>
-  >;
   fetchBalanceBy: (address: string, token: TokenModel) => Promise<TokenBalanceType>;
   toggleDisplayOption: (account: Account, token: TokenModel, activated: boolean) => void;
 } => {
@@ -60,13 +49,10 @@ export const useTokenBalance = (): {
     updateTokenMetainfos,
     getTokenAmount,
   } = useTokenMetainfo();
-  const { wallet } = useWalletContext();
   const { balanceService, cosmosBalanceService, chainRegistry, tokenRegistry } = useAdenaContext();
   const { currentNetwork, currentAtomoneNetwork } = useNetwork();
   const { currentAccount, currentBalanceAddress } = useCurrentAccount();
-  const { sessions } = useSessions();
   const { existWallet, lockedWallet } = useWallet();
-  const hasAccountBalanceMapDemand = useHasAccountBalanceMapDemand();
 
   useEffect(() => {
     balanceService.setTokenMetainfos(tokenMetainfos);
@@ -121,24 +107,6 @@ export const useTokenBalance = (): {
       enabled:
         availableBalanceFetching && currentBalanceAddress !== null && nativeToken !== null,
     },
-  );
-
-  // Pre-derive { accountId -> address } once per (wallet, prefix) so the account
-  // balance map below reuses it instead of re-deriving on every fetch.
-  const accountAddressesLoadable = useRecoilValueLoadable(
-    AccountState.accountAddressesByPrefix(currentNetwork.addressPrefix),
-  );
-  const accountAddressesByAccountId =
-    accountAddressesLoadable.state === 'hasValue' ? accountAddressesLoadable.contents : null;
-
-  const revokedSessionAddrsKey = useMemo(
-    () =>
-      sessions
-        .filter((session) => session.status === 'REVOKED')
-        .map((session) => session.sessionAddr)
-        .sort()
-        .join('|'),
-    [sessions],
   );
 
   const {
@@ -298,65 +266,6 @@ export const useTokenBalance = (): {
     return keys;
   }, [currentBalances, errorNetworkIds]);
 
-  const { data: accountNativeBalanceMap = {}, refetch: refetchAccountNativeBalanceMap } = useQuery<
-    Record<string, TokenBalanceType>
-  >(
-    [
-      'accountNativeBalanceMap',
-      wallet?.accounts,
-      currentNetwork.chainId,
-      currentNetwork.addressPrefix,
-      isFetchedGRC20Tokens,
-      // A revoke moves a session row onto its own balance, so the map must refetch.
-      revokedSessionAddrsKey,
-    ],
-    () => {
-      if (
-        wallet === null ||
-        wallet.accounts === null ||
-        nativeToken == null ||
-        accountAddressesByAccountId === null
-      ) {
-        return {};
-      }
-
-      return Promise.all(
-        wallet.accounts.map(async (account) => {
-          // Same policy as the main screen: an ACTIVE session spends master
-          // funds so its row shows the master's GNOT balance; a revoked one
-          // shows the balance of the session key it still holds.
-          const ownAddress = accountAddressesByAccountId[account.id];
-          const fundingAddress = isSessionAccount(account)
-            ? account.getMasterAddress()
-            : ownAddress;
-          const address = selectBalanceAddress(
-            ownAddress,
-            fundingAddress,
-            isRevokedSessionAccount(account, ownAddress, sessions),
-          );
-          return fetchBalanceBy(address, nativeToken);
-        }),
-      ).then((balances) =>
-        balances.reduce<Record<string, TokenBalanceType>>((accum, current, index) => {
-          if (wallet.accounts[index]?.id) {
-            accum[wallet.accounts[index]?.id] = current;
-          }
-          return accum;
-        }, {}),
-      );
-    },
-    {
-      // No refetchInterval: one RPC round-trip per account is too expensive to
-      // run in the background, so this is gated on demand instead.
-      staleTime: ACCOUNT_BALANCE_MAP_STALE_TIME,
-      keepPreviousData: true,
-      enabled:
-        availableBalanceFetching &&
-        accountAddressesByAccountId !== null &&
-        hasAccountBalanceMapDemand,
-    },
-  );
-
   const mainTokenBalance = useMemo((): Amount | null => {
     if (nativeToken === null) {
       return null;
@@ -472,9 +381,7 @@ export const useTokenBalance = (): {
     currentBalances,
     loadingTokenKeys,
     errorNetworkIds,
-    accountNativeBalanceMap,
     refetchBalances,
-    refetchAccountNativeBalanceMap,
     toggleDisplayOption,
     fetchBalanceBy,
   };
