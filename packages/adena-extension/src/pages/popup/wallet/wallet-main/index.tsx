@@ -14,6 +14,7 @@ import MainManageTokenButton from '@components/pages/main/main-manage-token-butt
 import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
 import TokenList, { TokenListItemState } from '@components/pages/wallet-main/token-list/token-list';
+import OfflineBanner from '@components/atoms/offline-banner';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLoadImages } from '@hooks/use-load-images';
@@ -257,17 +258,31 @@ export const WalletMain = (): JSX.Element => {
     }
   }, [tokens.length]);
 
-  const isMainBalanceLoading = mainTokenBalance === null;
+  // A STALE BALANCE MUST NOT LOOK LIKE A FRESH ONE. The Gno query sets
+  // keepPreviousData, so when a fetch fails or is paused the last good figure
+  // stays on screen — rendered identically to one just confirmed. Offline that
+  // produced the wallet's worst asymmetry: ATONE showed "-" because its fetch
+  // reported an error, while GNOT showed a confident number nobody could
+  // currently verify. The token ROW already respects errorNetworkIds; this
+  // headline read straight from the cached amount and bypassed it.
+  //
+  // Zero is exactly where this matters most. An account with no record on chain
+  // and an account whose balance could not be fetched both render "0", and only
+  // one of those is a fact.
+  const gnoBalanceUnavailable = errorNetworkIds.has(currentNetwork.networkId);
+  const isMainBalanceLoading = mainTokenBalance === null && !gnoBalanceUnavailable;
   // Same NaN guard as the row mapping above — a malformed numeric string
   // would otherwise render as the literal "NaN" in the headline balance.
   const mainBalanceValue = ((): string => {
-    if (isMainBalanceLoading) return '';
+    if (gnoBalanceUnavailable) return '-';
+    if (mainTokenBalance === null) return '';
     const parsed = BigNumber(mainTokenBalance.value);
     return parsed.isFinite() ? parsed.toFormat() : '-';
   })();
 
   return (
     <Wrapper $dimmed={sessionRevoked}>
+      <OfflineBanner />
       <div className='network-label-wrapper'>
         <MainNetworkLabel
           networkName={currentNetwork.networkName}
@@ -278,7 +293,7 @@ export const WalletMain = (): JSX.Element => {
         <MainTokenBalance
           amount={{
             value: mainBalanceValue,
-            denom: isMainBalanceLoading ? '' : mainTokenBalance.denom,
+            denom: mainTokenBalance === null ? '' : mainTokenBalance.denom,
           }}
           loading={isMainBalanceLoading}
         />

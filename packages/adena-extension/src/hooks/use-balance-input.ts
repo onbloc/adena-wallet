@@ -287,7 +287,14 @@ export const useBalanceInput = (
       return false;
     }
 
-    const currentBalance = await fetchBalanceBy(currentFundingAddress, tokenMetainfo);
+    // getGnotTokenBalance now rejects on a transport failure instead of
+    // resolving null, so this call can throw where it previously could not.
+    // Leave the balance undefined rather than propagating: the amount field
+    // already renders `currentBalance?.amount.value || 0`, and an unhandled
+    // rejection here would break the send screen outright.
+    const currentBalance = await fetchBalanceBy(currentFundingAddress, tokenMetainfo).catch(
+      () => undefined,
+    );
     setCurrentBalance(currentBalance);
     return true;
   }, [wallet, balanceService, currentFundingAddress, tokenMetainfo]);

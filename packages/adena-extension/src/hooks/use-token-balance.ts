@@ -1,4 +1,4 @@
-import { QueryObserverResult, useQuery } from '@tanstack/react-query';
+import { onlineManager, QueryObserverResult, useQuery } from '@tanstack/react-query';
 import { Account, isSessionAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo } from 'react';
@@ -82,6 +82,8 @@ export const useTokenBalance = (): {
   const {
     data: gnoBalances = [],
     refetch: refetchGnoBalances,
+    isError: isGnoBalanceError,
+    fetchStatus: gnoFetchStatus,
   } = useQuery<TokenBalanceType[]>(
     // 'gno' discriminator keeps this cache entry separate from the Cosmos query
     // even though both share the 'balances' prefix.
@@ -112,6 +114,7 @@ export const useTokenBalance = (): {
   const {
     data: cosmosResults = [],
     refetch: refetchCosmosBalances,
+    fetchStatus: cosmosFetchStatus,
   } = useQuery<CosmosFetchResult[]>(
     // Keyed by account id (not the object reference) to avoid spurious refetches
     // when a new Account instance is created from the same underlying data.
@@ -154,10 +157,53 @@ export const useTokenBalance = (): {
     [refetchGnoBalances, refetchCosmosBalances],
   );
 
-  const errorNetworkIds = useMemo(
-    () => new Set(cosmosResults.filter((r) => r.error).map((r) => r.networkId)),
-    [cosmosResults],
-  );
+  // Networks whose balances could not be established, so the UI can show "-"
+  // and a warning rather than a figure it cannot vouch for.
+  //
+  // Cosmos has always reported this through CosmosFetchResult.error. Gno had no
+  // equivalent, so a failed Gno fetch left its rows at EMPTY_AMOUNT with no
+  // network here, which loadingTokenKeys reads as "still loading" — the native
+  // token then rendered 0 indefinitely while the same outage showed ATONE
+  // honestly as unknown.
+  //
+  // A PAUSED query counts as well as an errored one: react-query's default
+  // networkMode pauses rather than fails while the browser reports offline, so
+  // there is no error to observe. It counts only while we still believe we are
+  // offline — the two chains resume at different intervals, and marking any
+  // paused query would flag whichever had not resumed yet, which is a race
+  // rather than an outage.
+  const errorNetworkIds = useMemo(() => {
+    const ids = new Set(cosmosResults.filter((r) => r.error).map((r) => r.networkId));
+    const believedOffline = !onlineManager.isOnline();
+
+    if (isGnoBalanceError || (believedOffline && gnoFetchStatus === 'paused')) {
+      // The ids the ROWS carry, not currentNetwork.networkId. gnoRows is built
+      // by mapping tokenMetainfos, and use-token-metainfo admits the native
+      // token by its `main` flag regardless of network, so it keeps whatever
+      // networkId it was registered under; keying on the current network marks
+      // every Gno row except the one that matters.
+      for (const meta of tokenMetainfos) {
+        ids.add(meta.networkId);
+      }
+    }
+
+    // Cosmos rows come from the retained results (keepPreviousData), which
+    // carry exactly the networks on screen. cosmosShellTokens is declared later
+    // in this hook and cannot be read here.
+    if (believedOffline && cosmosFetchStatus === 'paused') {
+      for (const r of cosmosResults) {
+        ids.add(r.networkId);
+      }
+    }
+
+    return ids;
+  }, [
+    cosmosResults,
+    cosmosFetchStatus,
+    isGnoBalanceError,
+    gnoFetchStatus,
+    tokenMetainfos,
+  ]);
 
   // Stable string key for the effect below. The Set above is rebuilt on every
   // render where cosmosResults's reference changes (React Query refetches
