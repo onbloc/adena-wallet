@@ -53,3 +53,15 @@ const LOOPBACK_ORIGIN_CHAIN_IDS: ReadonlyMap<string, string> = new Map(
 // before honoring the origin's gnoconnect data.
 export const getLoopbackOriginChainId = (origin: string): string | null =>
   LOOPBACK_ORIGIN_CHAIN_IDS.get(origin) ?? null;
+
+// chainId -> the label the network picker shows for it ("dev" is "Local").
+// Diagnostics only: it lets a message name the network the way the user sees it
+// in the UI, instead of quoting a chainId they would have to translate.
+const CHAIN_NETWORK_NAMES: ReadonlyMap<string, string> = new Map(
+  CHAIN_DATA.map((chain) => [chain.chainId, chain.networkName] as const),
+);
+
+// Returns the network picker's label for a chainId, or null when the chainId is
+// not one of the bundled chains (a network the user added by hand).
+export const getChainNetworkName = (chainId: string): string | null =>
+  CHAIN_NETWORK_NAMES.get(chainId) ?? null;

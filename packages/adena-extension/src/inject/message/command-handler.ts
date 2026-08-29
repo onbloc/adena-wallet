@@ -17,14 +17,15 @@ import {
 import { clearPopup } from './commands/popup';
 import {
   getLoopbackGnoConnectChainId,
+  getLoopbackGnoConnectRejection,
   GnoArgumentInfo,
   GnoConnectInfo,
   GnoMessageInfo,
   isAllowedGnoConnectOrigin,
-  isLoopbackGnoConnectTrusted,
   parseGnoConnectInfo,
   parseGnoMessageInfo,
 } from './methods/gno-connect';
+import { describeLoopbackRejection, showGnoConnectNotice } from './methods/gno-connect-notice';
 
 export class CommandHandler {
   public static createHandler = async (
@@ -153,13 +154,31 @@ export class CommandHandler {
     // user is on another network.
     if (isLoopbackOrigin) {
       const networkResponse = await executor.getNetwork();
-      const activeChainId =
-        networkResponse.type === WalletResponseSuccessType.GET_NETWORK_SUCCESS
-          ? networkResponse.data?.chainId
-          : undefined;
+      const isNetworkKnown =
+        networkResponse.type === WalletResponseSuccessType.GET_NETWORK_SUCCESS;
+      const activeChainId = isNetworkKnown ? networkResponse.data?.chainId : undefined;
 
-      if (!isLoopbackGnoConnectTrusted(loopbackChainId, gnoConnectInfo.chainId, activeChainId)) {
-        console.info('Loopback gnoconnect origin is not trusted for the active network; ignoring');
+      // The gate is unchanged; only its silence is. A rejection used to end here
+      // as a bare console.info, which is easy to miss in the page's console and
+      // leaves the user with a link that does nothing and no way to tell whether
+      // their wallet is locked, on another network, or too old to support
+      // loopback TxLinks at all.
+      const rejection = getLoopbackGnoConnectRejection(
+        loopbackChainId,
+        gnoConnectInfo.chainId,
+        activeChainId,
+      );
+
+      if (rejection !== null) {
+        const notice = describeLoopbackRejection(rejection, {
+          requiredChainId: loopbackChainId,
+          metaChainId: gnoConnectInfo.chainId,
+          activeChainId,
+          activeNetworkName: isNetworkKnown ? networkResponse.data?.networkName : undefined,
+        });
+
+        console.warn(`[Adena] ${notice.title}: ${notice.body} (${rejection})`);
+        showGnoConnectNotice(notice);
         return;
       }
     }
