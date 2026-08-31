@@ -17,7 +17,7 @@ export type CodeMessageGasType = 'ADD_PACKAGE' | 'MSG_RUN' | 'MSG_RUN_GRC20_TRAN
 /** Conservative `gasUsed` per message type; the fee is derived from it. */
 export const STATIC_CODE_MESSAGE_GAS_USED: Record<CodeMessageGasType, number> = {
   ADD_PACKAGE: 1_000_000_000,
-  MSG_RUN: 100_000_000,
+  MSG_RUN: 1_000_000_000,
   MSG_RUN_GRC20_TRANSFER: 50_000_000,
 };
 
