@@ -3,6 +3,7 @@ import { useCallback, useEffect } from 'react';
 import { useIdleTimer } from 'react-idle-timer';
 import { useLocation } from 'react-router-dom';
 
+import { WALLET_LOCKED_QUERY_KEY } from '@common/constants/query-key.constant';
 import { isAutoLockTriggeredMessage } from '@common/utils/auto-lock-timer';
 import { CommandMessage } from '@inject/message/command-message';
 import { useAccountName } from '@hooks/use-account-name';
@@ -32,7 +33,7 @@ const useApp = (): void => {
   useEffect(() => {
     const handler = (message: unknown): void => {
       if (isAutoLockTriggeredMessage(message)) {
-        queryClient.invalidateQueries({ queryKey: ['wallet/locked'] });
+        queryClient.invalidateQueries({ queryKey: [WALLET_LOCKED_QUERY_KEY] });
       }
     };
     chrome.runtime.onMessage.addListener(handler);

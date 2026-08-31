@@ -1,7 +1,12 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { AdenaWallet, Wallet } from 'adena-module';
-import React, { createContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useState } from 'react';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 
+import {
+  makeWalletExistsQueryKey,
+  makeWalletLockedQueryKey,
+} from '@common/constants/query-key.constant';
 import { toGnoNetworkProfile } from '@common/mapper/network-profile-mapper';
 import {
   normalizeStoredId,
@@ -43,6 +48,8 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     chainRegistry,
     tokenRegistry,
   } = useAdenaContext();
+
+  const queryClient = useQueryClient();
 
   const [gnoProvider, setGnoProvider] = useState<GnoProvider>();
 
@@ -123,15 +130,36 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     }
   }, [wallet, networkMetainfos, tokenMetainfos]);
 
+  // `useWallet` serves `existWallet` / `lockedWallet` from react-query, which
+  // caches with the app-wide 10s staleTime and never refetches on window focus.
+  // `initWallet` runs on every lock and unlock and has just read the
+  // authoritative values from storage, so write them straight into the cache.
+  //
+  // Without this, unlocking after an auto-lock leaves `lockedWallet` stuck at
+  // `true`: the auto-lock broadcast invalidated it to `true` and the unlock
+  // path never re-reads it. Everything gated on `!lockedWallet` — the balance
+  // pollers in use-token-balance / use-account-native-balance-map, and the
+  // auto-lock activity ping in use-app — then stays disabled, so the main
+  // screen keeps rendering balance skeletons forever.
+  const syncWalletLockQueries = useCallback(
+    (existWallet: boolean, isLocked: boolean): void => {
+      queryClient.setQueryData(makeWalletExistsQueryKey(walletService.id), existWallet);
+      queryClient.setQueryData(makeWalletLockedQueryKey(walletService.id), isLocked);
+    },
+    [queryClient, walletService],
+  );
+
   async function initWallet(): Promise<boolean> {
     const existWallet = await walletService.existsWallet();
     if (!existWallet) {
+      syncWalletLockQueries(false, true);
       setWallet(null);
       setWalletStatus('CREATE');
       return true;
     }
 
     const isLocked = await walletService.isLocked();
+    syncWalletLockQueries(true, isLocked);
     if (isLocked) {
       setWallet(null);
       setWalletStatus('LOGIN');
