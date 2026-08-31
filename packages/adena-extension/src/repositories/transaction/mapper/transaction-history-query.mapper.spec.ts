@@ -8,6 +8,18 @@ function makeTransferEvent(attrs: { key: string; value: string }[]): unknown {
   return { type: 'Transfer', pkg_path: 'gno.land/p/demo/tokens/grc20', attrs };
 }
 
+function makeMsgCallTransferTransaction(events: unknown[]): any {
+  return {
+    ...makeMsgRunTransaction(events),
+    messages: [
+      {
+        typeUrl: 'exec',
+        value: { caller: SENDER, pkg_path: 'gno.land/r/gnoland/wugnot', func: 'Transfer' },
+      },
+    ],
+  };
+}
+
 // A GRC20 transfer routed through grc20reg: MsgRun carries no func/args, so the
 // Transfer event is the only description of what moved.
 function makeMsgRunTransaction(events: unknown[]): any {
@@ -102,6 +114,31 @@ describe('mapTransactionEdgeByAddress: MsgRun GRC20 transfer', () => {
       title: 'Send',
       typeName: 'Send',
       valueType: 'DEFAULT',
+    });
+  });
+
+  it('picks the viewer transfer on the exec receive path too', () => {
+    const OTHER = 'g1v9kxjcm9ta047h6lta047h6lta047h6lzd40gh';
+    const execTx = makeMsgCallTransferTransaction([
+      makeTransferEvent([
+        { key: 'token', value: 'gno.land/r/demo/defi/foo20.FOO.0' },
+        { key: 'from', value: SENDER },
+        { key: 'to', value: OTHER },
+        { key: 'value', value: '7' },
+      ]),
+      makeTransferEvent([
+        { key: 'token', value: `${TOKEN_PATH}.0` },
+        { key: 'from', value: SENDER },
+        { key: 'to', value: RECIPIENT },
+        { key: 'value', value: '1000' },
+      ]),
+    ]);
+
+    expect(mapTransactionEdgeByAddress(execTx, RECIPIENT)).toMatchObject({
+      title: 'Receive',
+      originFrom: SENDER,
+      originTo: RECIPIENT,
+      amount: { value: '1000', denom: TOKEN_PATH },
     });
   });
 

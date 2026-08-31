@@ -153,7 +153,7 @@ export function mapTransactionEdgeByAddress(
         ['Transfer', 'TransferFrom'].includes(message.value.func) &&
         message.value.caller !== address
       ) {
-        return mapReceivedTransactionByMsgCall(transaction, helperPath);
+        return mapReceivedTransactionByMsgCall(transaction, helperPath, undefined, address);
       }
       return mapVMTransaction(transaction, helperPath, undefined, address);
     default:
@@ -196,6 +196,7 @@ export function mapReceivedTransactionByMsgCall(
   tx: TransactionResponse<MsgCallValue>,
   helperPath?: string,
   tokenKey?: string,
+  viewerAddress?: string,
 ): TransactionInfo {
   const firstMessage = getDefaultMessage(tx.messages);
   if (firstMessage.value.func === 'TransferFrom' && tx.messages.length === 1) {
@@ -228,7 +229,7 @@ export function mapReceivedTransactionByMsgCall(
 
   // Prefer the GRC20 Transfer event (token/from/to/value); fall back to parsing
   // message args (with the helper arg offset) when it is absent.
-  const eventInfo = getGRC20TransferFromEvent(tx, { tokenKey });
+  const eventInfo = getGRC20TransferFromEvent(tx, { tokenKey, viewerAddress });
   const { tokenPath, argOffset } = resolveTransferShape(firstMessage.value, helperPath);
   const senderAddress = eventInfo?.from || firstMessage.value.caller || '';
   const receiveAmount = eventInfo?.value || firstMessage.value.args?.[argOffset + 1] || '0';
