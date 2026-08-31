@@ -42,7 +42,7 @@
     "@cosmjs/amino": "0.38.1",
     "@cosmjs/ledger-amino": "0.38.1",
     "@cosmjs/proto-signing": "0.38.1",
-    "@gnolang/gno-js-client": "2.0.3",
+    "@gnolang/gno-js-client": "2.0.4",
     "@gnolang/tm2-js-client": "2.0.4",
     "@ledgerhq/hw-transport": "6.31.4",
     "@ledgerhq/hw-transport-mocker": "6.29.4",
