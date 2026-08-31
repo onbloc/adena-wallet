@@ -1,8 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useIdleTimer } from 'react-idle-timer';
 import { useLocation } from 'react-router-dom';
 
+import { WALLET_LOCKED_QUERY_KEY } from '@common/constants/query-key.constant';
 import { isAutoLockTriggeredMessage } from '@common/utils/auto-lock-timer';
 import { CommandMessage } from '@inject/message/command-message';
 import { useAccountName } from '@hooks/use-account-name';
@@ -14,7 +15,7 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useWallet } from '@hooks/use-wallet';
 
 const useApp = (): void => {
-  const { wallet } = useWalletContext();
+  const { wallet, clearWallet, initWallet } = useWalletContext();
   const { initAccountNames } = useAccountName();
   const { currentAccount } = useCurrentAccount();
   const { currentNetwork, checkNetworkState } = useNetwork();
@@ -24,22 +25,42 @@ const useApp = (): void => {
   const { lockedWallet } = useWallet();
   const queryClient = useQueryClient();
 
-  // Listen for the AUTO_LOCK_TRIGGERED broadcast from background. Without
-  // this, the popup keeps rendering the unlocked screen until the next user
-  // interaction nudges react-query to refetch — invalidating the cached
-  // `wallet/locked` query forces an immediate re-evaluation, which the
-  // existing routing logic in use-init-wallet picks up.
+  // Auto-lock only clears the background's session storage. Everything the
+  // popup holds — the deserialized wallet, the selected account, the cached
+  // `wallet/locked` query — survives untouched, so tear it down here the same
+  // way the manual Lock action does. `initWallet` then re-reads the (now
+  // locked) state, which routes to Login via use-init-wallet and refreshes the
+  // cached lock query.
+  const handleAutoLock = useCallback(async (): Promise<void> => {
+    try {
+      await clearWallet();
+      await initWallet();
+    } finally {
+      // Runs even if initWallet threw, so the lock screen still appears.
+      await queryClient.invalidateQueries({ queryKey: [WALLET_LOCKED_QUERY_KEY] });
+    }
+  }, [clearWallet, initWallet, queryClient]);
+
+  // Held in a ref so the chrome listener is registered exactly once: the
+  // provider hands back fresh `clearWallet` / `initWallet` identities on every
+  // render, which would otherwise re-subscribe on each one.
+  const handleAutoLockRef = useRef(handleAutoLock);
+
+  useEffect(() => {
+    handleAutoLockRef.current = handleAutoLock;
+  }, [handleAutoLock]);
+
   useEffect(() => {
     const handler = (message: unknown): void => {
       if (isAutoLockTriggeredMessage(message)) {
-        queryClient.invalidateQueries({ queryKey: ['wallet/locked'] });
+        handleAutoLockRef.current().catch((error) => console.warn(error));
       }
     };
     chrome.runtime.onMessage.addListener(handler);
     return (): void => {
       chrome.runtime.onMessage.removeListener(handler);
     };
-  }, [queryClient]);
+  }, []);
 
   const sendActivityPing = useCallback(() => {
     chrome.runtime
