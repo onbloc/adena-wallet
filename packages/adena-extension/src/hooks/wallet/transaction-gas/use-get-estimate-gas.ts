@@ -12,6 +12,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionService } from '@services/index';
 
 import { useIsInitializedAccount } from '../use-get-account-info';
+import { canSignInProcess, resolveStaticCodeMessageGasUsed } from './code-message-static-gas';
 import { useGetGasPrice } from './use-get-gas-price';
 
 export const GET_ESTIMATE_GAS_KEY = 'transactionGas/useGetEstimateGas';
@@ -83,10 +84,21 @@ function modifyDocument(document: Document, gasWanted: number, gasFee: number): 
   };
 }
 
+// The chain verifies signatures on the simulate path for code-bearing messages
+// (gnolang/gno#6088 wires the ante's RequireSigForSimulate to txCarriesCode), so
+// a placeholder tx carrying one is rejected with `/std.UnauthorizedError`.
+function requiresRealSignature(document: Document): boolean {
+  return resolveStaticCodeMessageGasUsed(document) !== null;
+}
+
 /**
  * Builds a placeholder/signed Tx used only for simulation. The fee amount does
  * not affect the simulated `gas_used` (gasWanted is always DEFAULT_GAS_WANTED),
  * so callers can pass any `gasUsed`/`gasPrice` that yields a valid document.
+ *
+ * `withSignTransaction` forces signing for accounts the node cannot validate
+ * from a pubkey alone; a document carrying a code-bearing message forces it
+ * too, regardless of that flag.
  */
 export const makeEstimateGasTransaction = async (
   wallet: Wallet | null,
@@ -114,7 +126,7 @@ export const makeEstimateGasTransaction = async (
   // master caller. Without this, simulate would reject the placeholder for
   // pubkey-address mismatch (master caller + session pubkey).
   const sessionAddr = isSessionAccount(account) ? await account.getAddress('g') : undefined;
-  if (!withSignTransaction) {
+  if (!withSignTransaction && !requiresRealSignature(modifiedDocument)) {
     return documentToDefaultTx(modifiedDocument, account.publicKey, sessionAddr);
   }
 
@@ -176,6 +188,19 @@ export const useGetEstimateGas = (
         return null;
       }
 
+      // Ledger/AirGap cannot sign while the fee is calculated, and the chain
+      // refuses an unsigned simulate for code-bearing messages, so use the
+      // static table instead of a request that can only fail.
+      const staticGasUsed = resolveStaticCodeMessageGasUsed(document);
+      if (staticGasUsed !== null && !canSignInProcess(currentAccount)) {
+        return {
+          gasUsed: staticGasUsed,
+          storageDeposits: EMPTY_STORAGE_DEPOSITS,
+          hasError: false,
+          simulateErrorMessage: null,
+        };
+      }
+
       const tx = await makeEstimateGasTransaction(
         wallet,
         currentAccount,
@@ -191,26 +216,22 @@ export const useGetEstimateGas = (
 
       const nextResult = await transactionGasService
         .simulateTx(tx)
-        .then(
-          (simulateResult): EstimateGasResult => {
-            return {
-              gasUsed: Number(simulateResult.gas_used),
-              storageDeposits: parseStorageDeposits(simulateResult.response_base?.events ?? []),
-              hasError: false,
-              simulateErrorMessage: null,
-            };
-          },
-        )
-        .catch(
-          (e: Error): EstimateGasResult => {
-            // eslint-disable-next-line no-console
-            console.error('[estimate-gas] simulate failed:', e);
-            return {
-              ...ERROR_ESTIMATE_GAS_RESULT,
-              simulateErrorMessage: e?.message || '',
-            };
-          },
-        );
+        .then((simulateResult): EstimateGasResult => {
+          return {
+            gasUsed: Number(simulateResult.gas_used),
+            storageDeposits: parseStorageDeposits(simulateResult.response_base?.events ?? []),
+            hasError: false,
+            simulateErrorMessage: null,
+          };
+        })
+        .catch((e: Error): EstimateGasResult => {
+          // eslint-disable-next-line no-console
+          console.error('[estimate-gas] simulate failed:', e);
+          return {
+            ...ERROR_ESTIMATE_GAS_RESULT,
+            simulateErrorMessage: e?.message || '',
+          };
+        });
 
       // Keep the higher gasUsed across refetches for the same transaction.
       // Treats an errored/zero response as the lowest value, so a transient

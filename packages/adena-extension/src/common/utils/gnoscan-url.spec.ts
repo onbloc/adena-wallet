@@ -6,9 +6,9 @@ import {
 } from './gnoscan-url';
 
 describe('gnoscan url helpers', () => {
-  it('maps internal sapphire-1 network id to Gnoscan sapphire-1 chain id', () => {
-    expect(getGnoscanChainId('sapphire-1')).toBe('sapphire-1');
-    expect(getGnoscanChainParameters('sapphire-1')).toEqual({ chainId: 'sapphire-1' });
+  it('maps internal pearl-1 network id to Gnoscan pearl-1 chain id', () => {
+    expect(getGnoscanChainId('pearl-1')).toBe('pearl-1');
+    expect(getGnoscanChainParameters('pearl-1')).toEqual({ chainId: 'pearl-1' });
   });
 
   it('keeps supported Gnoscan chain ids unchanged when no alias is needed', () => {

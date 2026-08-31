@@ -45,7 +45,9 @@ import { StorageModelV022 } from './migrations/v022/storage-model-v022';
 import { StorageMigration023 } from './migrations/v023/storage-migration-v023';
 import { StorageModelV023 } from './migrations/v023/storage-model-v023';
 import { StorageMigration024 } from './migrations/v024/storage-migration-v024';
-import { StorageModelDataV024, StorageModelV024 } from './migrations/v024/storage-model-v024';
+import { StorageModelV024 } from './migrations/v024/storage-model-v024';
+import { StorageMigration025 } from './migrations/v025/storage-migration-v025';
+import { StorageModelDataV025, StorageModelV025 } from './migrations/v025/storage-model-v025';
 import { Migration, Migrator } from './migrator';
 
 const LegacyStorageKeys = [
@@ -61,9 +63,10 @@ const LegacyStorageKeys = [
 ];
 
 // The latest storage model type
-export type StorageModelLatest = StorageModelV024;
+export type StorageModelLatest = StorageModelV025;
 
 type StorageModelDataType =
+  | StorageModelV025
   | StorageModelV024
   | StorageModelV023
   | StorageModelV022
@@ -103,7 +106,7 @@ const defaultData: StorageModelDataV001 = {
   ACCOUNT_TOKEN_METAINFOS: {},
 };
 
-const defaultLegacyData: StorageModelDataV024 = {
+const defaultLegacyData: StorageModelDataV025 = {
   NETWORKS: [],
   CURRENT_CHAIN_ID: '',
   CURRENT_NETWORK_ID: '',
@@ -178,13 +181,13 @@ export class StorageMigrator implements Migrator {
     }
 
     return {
-      version: 24,
+      version: 25,
       data: defaultLegacyData,
     };
   }
 
   // Migrates storage data to the latest version
-  async migrate(current: StorageModel, password: string): Promise<StorageModelV024 | null> {
+  async migrate(current: StorageModel, password: string): Promise<StorageModelV025 | null> {
     let latest = current;
     try {
       const currentVersion = current.version || 1;
@@ -253,6 +256,9 @@ export class StorageMigrator implements Migrator {
   ): Promise<StorageModelDataType> {
     json = this.reconcileVersion(json);
 
+    if (json?.version === 25) {
+      return json as StorageModelV025;
+    }
     if (json?.version === 24) {
       return json as StorageModelV024;
     }
@@ -336,9 +342,9 @@ export class StorageMigrator implements Migrator {
     }
 
     return {
-      version: 24,
+      version: 25,
       data: defaultLegacyData,
-    } as StorageModelV024;
+    } as StorageModelV025;
   }
 
   private async getLegacyData(): Promise<StorageModelDataV001> {
@@ -377,6 +383,7 @@ export class StorageMigrator implements Migrator {
       new StorageMigration022(),
       new StorageMigration023(),
       new StorageMigration024(),
+      new StorageMigration025(),
     ];
   }
 }

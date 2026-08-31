@@ -44,11 +44,11 @@ describe('StorageMigration019', () => {
     expect(result.data.CURRENT_CHAIN_ID).toBe('gnoland1');
   });
 
-  it('refreshes NETWORKS with sapphire-1 from chains.json', async () => {
+  it('refreshes NETWORKS with pearl-1 from chains.json', async () => {
     const result = await new StorageMigration019().up(makeInput({ NETWORKS: [] }));
-    const sapphire = result.data.NETWORKS.find((n) => n.chainId === 'sapphire-1');
-    expect(sapphire).toBeDefined();
-    expect(sapphire?.rpcUrl).toBe('https://sapphire.rpc.onbloc.xyz:443');
+    const pearl = result.data.NETWORKS.find((n) => n.chainId === 'pearl-1');
+    expect(pearl).toBeDefined();
+    expect(pearl?.rpcUrl).toBe('https://pearl.rpc.onbloc.xyz:443');
   });
 
   it('migrates ESTABLISH_SITES chainId from test13 to test-13', async () => {

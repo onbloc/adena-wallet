@@ -15,18 +15,18 @@
     "linkUrl": "https://gnoscan.io"
   },
   {
-    "id": "sapphire-1",
+    "id": "pearl-1",
     "default": true,
     "main": false,
-    "chainId": "sapphire-1",
+    "chainId": "pearl-1",
     "chainName": "Gno.land",
-    "networkId": "sapphire-1",
-    "networkName": "Sapphire",
+    "networkId": "pearl-1",
+    "networkName": "Pearl",
     "addressPrefix": "g",
-    "rpcUrl": "https://sapphire.rpc.onbloc.xyz:443",
-    "indexerUrl": "https://sapphire.indexer.onbloc.xyz",
-    "gnoUrl": "https://sapphire.testnets.gno.land",
-    "apiUrl": "https://sapphire.api.onbloc.xyz",
+    "rpcUrl": "https://pearl.rpc.onbloc.xyz:443",
+    "indexerUrl": "https://pearl.indexer.onbloc.xyz",
+    "gnoUrl": "https://pearl.testnets.gno.land",
+    "apiUrl": "https://pearl.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {
