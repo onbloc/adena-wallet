@@ -1814,14 +1814,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bufbuild/protobuf@npm:2.12.0, @bufbuild/protobuf@npm:^2.11.0":
-  version: 2.12.0
-  resolution: "@bufbuild/protobuf@npm:2.12.0"
-  checksum: f905c34ffbf0a05ee3fd6281a13f5daa5b43c215682d4900b23629691c1ee7fe0d96fefbbad84055ba0547ef089fb2d488a68c4e8383abf5b7dc56a9207c44ea
-  languageName: node
-  linkType: hard
-
-"@bufbuild/protobuf@npm:^2.13.0":
+"@bufbuild/protobuf@npm:2.14.0":
   version: 2.14.0
   resolution: "@bufbuild/protobuf@npm:2.14.0"
   checksum: 904533ce3054c76aa43520c35e12d3cafa5594f9a652ccd8d34c547156fc73c5a62bb8d77fb6f416adf8e357bd8e26f311e478a5df3ccb19e6310c827c518c9a
@@ -6310,7 +6303,7 @@ __metadata:
     "@babel/preset-env": 7.23.9
     "@babel/preset-react": 7.23.3
     "@babel/preset-typescript": 7.23.3
-    "@bufbuild/protobuf": 2.12.0
+    "@bufbuild/protobuf": 2.14.0
     "@gnolang/gno-js-client": 2.0.4
     "@gnolang/tm2-js-client": 2.0.4
     "@gnolang/tm2-rpc": 1.0.0
@@ -6397,7 +6390,7 @@ __metadata:
     "@babel/preset-env": 7.23.9
     "@babel/preset-flow": 7.23.3
     "@babel/preset-typescript": 7.23.3
-    "@bufbuild/protobuf": 2.12.0
+    "@bufbuild/protobuf": 2.14.0
     "@cosmjs/amino": 0.38.1
     "@cosmjs/ledger-amino": 0.38.1
     "@cosmjs/proto-signing": 0.38.1
