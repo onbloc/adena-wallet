@@ -113,7 +113,7 @@ export function mapTransactionEdgeByAddress(
   helperPath?: string,
 ): TransactionInfo {
   if (!transaction?.messages?.length || transaction?.messages?.length > 1) {
-    return mapVMTransaction(transaction, helperPath);
+    return mapVMTransaction(transaction, helperPath, undefined, address);
   }
 
   const message = transaction.messages[0];
@@ -133,9 +133,9 @@ export function mapTransactionEdgeByAddress(
       ) {
         return mapReceivedTransactionByMsgCall(transaction, helperPath);
       }
-      return mapVMTransaction(transaction, helperPath);
+      return mapVMTransaction(transaction, helperPath, undefined, address);
     default:
-      return mapVMTransaction(transaction, helperPath);
+      return mapVMTransaction(transaction, helperPath, undefined, address);
   }
 }
 
@@ -274,6 +274,7 @@ export function mapVMTransaction(
   tx: TransactionResponse<AddPackageValue | MsgRunValue | MsgCallValue>,
   helperPath?: string,
   tokenKey?: string,
+  viewerAddress?: string,
 ): TransactionInfo {
   const firstMessage = getDefaultMessage(tx.messages);
 
@@ -428,6 +429,10 @@ export function mapVMTransaction(
   const runTransfer = getGRC20TransferFromEvent(tx, tokenKey);
   if (runTransfer?.tokenPath) {
     const fromAddress = runTransfer.from || (firstMessage.value as MsgRunValue).caller || '';
+    // The event names both parties, so the direction is only known once the
+    // viewer is: the same transaction is a send for one side and a receive for
+    // the other.
+    const isReceive = !!viewerAddress && runTransfer.to === viewerAddress;
 
     return {
       hash: tx.hash,
@@ -435,14 +440,16 @@ export function mapVMTransaction(
       logo: runTransfer.tokenPath,
       type: 'TRANSFER',
       status: tx.success ? 'SUCCESS' : 'FAIL',
-      typeName: 'Send',
-      title: 'Send',
-      description: `To: ${formatAddress(runTransfer.to)}`,
+      typeName: isReceive ? 'Receive' : 'Send',
+      title: isReceive ? 'Receive' : 'Send',
+      description: isReceive
+        ? `From: ${formatAddress(fromAddress)}`
+        : `To: ${formatAddress(runTransfer.to)}`,
       amount: {
         value: runTransfer.value || '0',
         denom: runTransfer.tokenPath,
       },
-      valueType: mapValueType(tx.success),
+      valueType: mapValueType(tx.success, isReceive),
       date: '',
       from: formatAddress(fromAddress),
       originFrom: fromAddress,
