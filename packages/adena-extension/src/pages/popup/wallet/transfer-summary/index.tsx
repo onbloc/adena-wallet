@@ -1,3 +1,4 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CosmosDocument,
   Document,
@@ -5,7 +6,6 @@ import {
   isLedgerAccount,
   isSessionAccount,
 } from 'adena-module';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -63,8 +63,13 @@ const TransferSummaryContainer: React.FC = () => {
   const { navigate, goBack, params } = useAppNavigate<RoutePath.TransferSummary>();
   const summaryInfo = params;
   const { wallet, gnoProvider } = useWalletContext();
-  const { transactionService, chainRegistry, tokenRegistry, cosmosProvider, sessionRepository } =
-    useAdenaContext();
+  const {
+    transactionService,
+    chainRegistry,
+    tokenRegistry,
+    cosmosProvider,
+    sessionRepository,
+  } = useAdenaContext();
   const queryClient = useQueryClient();
   const { currentAccount, currentAddress, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
@@ -351,9 +356,9 @@ const TransferSummaryContainer: React.FC = () => {
     }
 
     // Fallback (no helper configured yet): run an ephemeral package that
-    // resolves the token through grc20reg and transfers from the caller. The
-    // node requires the package name to be "main" and auto-assigns the reserved
-    // run path when Package.Path is left empty.
+    // transfers the token through the registry's own write wrapper. The node
+    // requires the package name to be "main" and auto-assigns the reserved run
+    // path when Package.Path is left empty.
     const runBody = [
       'package main',
       '',
@@ -362,9 +367,9 @@ const TransferSummaryContainer: React.FC = () => {
       ')',
       '',
       'func main(cur realm) {',
-      `\tgrc20reg.MustGet(${gnoLiteral(
-        registryKey,
-      )}).CallerTeller().Transfer(0, cur, ${gnoLiteral(toAddress)}, ${amount})`,
+      `\tgrc20reg.Transfer(0, cur, ${gnoLiteral(registryKey)}, address(${gnoLiteral(
+        toAddress,
+      )}), ${amount})`,
       '}',
       '',
     ].join('\n');
@@ -563,13 +568,7 @@ const TransferSummaryContainer: React.FC = () => {
         break;
       }
     }
-  }, [
-    currentAccount,
-    currentNetwork,
-    gnoProvider,
-    queryClient,
-    sessionRepository,
-  ]);
+  }, [currentAccount, currentNetwork, gnoProvider, queryClient, sessionRepository]);
 
   const transfer = async (): Promise<boolean> => {
     if (isSent || !currentAccount) {

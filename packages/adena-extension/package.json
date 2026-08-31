@@ -78,7 +78,7 @@
   "dependencies": {
     "@adena-wallet/sdk": "0.0.14",
     "@bufbuild/protobuf": "2.12.0",
-    "@gnolang/gno-js-client": "2.0.3",
+    "@gnolang/gno-js-client": "2.0.4",
     "@gnolang/tm2-js-client": "2.0.4",
     "@gnolang/tm2-rpc": "1.0.0",
     "@tanstack/react-query": "4.36.1",

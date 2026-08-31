@@ -83,10 +83,26 @@ function modifyDocument(document: Document, gasWanted: number, gasFee: number): 
   };
 }
 
+// Messages the chain authorizes from their signer, and therefore verifies the
+// signature of even on the simulate path (gnolang/gno#6088 wires the ante's
+// RequireSigForSimulate to txCarriesCode). A placeholder tx carrying one of
+// these is rejected with `/std.UnauthorizedError: signature verification
+// failed`, so gas estimation has to sign for real. Keep in sync with
+// txCarriesCode in gno.land/pkg/gnoland/app.go.
+const SIGN_REQUIRED_MESSAGE_TYPES = ['/vm.m_run', '/vm.m_addpkg'];
+
+function requiresRealSignature(document: Document): boolean {
+  return (document.msgs ?? []).some((msg) => SIGN_REQUIRED_MESSAGE_TYPES.includes(msg.type));
+}
+
 /**
  * Builds a placeholder/signed Tx used only for simulation. The fee amount does
  * not affect the simulated `gas_used` (gasWanted is always DEFAULT_GAS_WANTED),
  * so callers can pass any `gasUsed`/`gasPrice` that yields a valid document.
+ *
+ * `withSignTransaction` forces signing for accounts the node cannot validate
+ * from a pubkey alone; a document carrying a code-bearing message forces it
+ * too, regardless of that flag.
  */
 export const makeEstimateGasTransaction = async (
   wallet: Wallet | null,
@@ -114,7 +130,7 @@ export const makeEstimateGasTransaction = async (
   // master caller. Without this, simulate would reject the placeholder for
   // pubkey-address mismatch (master caller + session pubkey).
   const sessionAddr = isSessionAccount(account) ? await account.getAddress('g') : undefined;
-  if (!withSignTransaction) {
+  if (!withSignTransaction && !requiresRealSignature(modifiedDocument)) {
     return documentToDefaultTx(modifiedDocument, account.publicKey, sessionAddr);
   }
 

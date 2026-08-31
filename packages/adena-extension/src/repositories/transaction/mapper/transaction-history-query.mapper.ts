@@ -404,6 +404,40 @@ export function mapVMTransaction(
     };
   }
 
+  // MsgRun: a GRC20 transfer routed through the registry's non-crossing
+  // `Transfer(0, cur, tokenKey, to, amount)` wrapper (the path taken when the
+  // chain has no GRC20 helper realm) carries no func/args, so the emitted
+  // Transfer event is the only description of what moved.
+  const runTransfer = getGRC20TransferFromEvent(tx);
+  if (runTransfer?.tokenPath) {
+    const fromAddress = runTransfer.from || (firstMessage.value as MsgRunValue).caller || '';
+
+    return {
+      hash: tx.hash,
+      height: tx.block_height,
+      logo: runTransfer.tokenPath,
+      type: 'TRANSFER',
+      status: tx.success ? 'SUCCESS' : 'FAIL',
+      typeName: 'Send',
+      title: 'Send',
+      description: `To: ${formatAddress(runTransfer.to)}`,
+      amount: {
+        value: runTransfer.value || '0',
+        denom: runTransfer.tokenPath,
+      },
+      valueType: mapValueType(tx.success),
+      date: '',
+      from: formatAddress(fromAddress),
+      originFrom: fromAddress,
+      to: formatAddress(runTransfer.to),
+      originTo: runTransfer.to,
+      networkFee: {
+        value: `${tx.gas_fee.amount || '0'}`,
+        denom: `${tx.gas_fee.denom}`,
+      },
+    };
+  }
+
   return {
     hash: tx.hash,
     height: tx.block_height,
