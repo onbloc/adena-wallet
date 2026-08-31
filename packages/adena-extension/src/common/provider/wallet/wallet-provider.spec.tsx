@@ -1,11 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, waitFor } from '@testing-library/react';
 import React, { PropsWithChildren } from 'react';
-import { RecoilRoot } from 'recoil';
+import { RecoilRoot, useRecoilValue } from 'recoil';
 
 import { makeWalletLockedQueryKey } from '@common/constants/query-key.constant';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useWallet } from '@hooks/use-wallet';
+import { WalletState } from '@states';
 
 import { WalletProvider } from './wallet-provider';
 
@@ -31,10 +32,13 @@ jest.mock('../gno/gno-provider', () => ({
 
 const WALLET_SERVICE_ID = 'wallet-service-id';
 
-const makeAdenaContext = (walletService: Record<string, unknown>): Record<string, unknown> => ({
+const makeAdenaContext = (
+  walletService: Record<string, unknown>,
+  currentAccountId: string | null = null,
+): Record<string, unknown> => ({
   walletService: { id: WALLET_SERVICE_ID, ...walletService },
   accountService: {
-    getCurrentAccountId: jest.fn().mockResolvedValue(null),
+    getCurrentAccountId: jest.fn().mockResolvedValue(currentAccountId),
     changeCurrentAccount: jest.fn().mockResolvedValue(true),
   },
   // An empty network list makes `initNetworkMetainfos` bail out early, so the
@@ -45,10 +49,17 @@ const makeAdenaContext = (walletService: Record<string, unknown>): Record<string
 });
 
 let initWallet: () => Promise<boolean>;
+let clearWallet: () => Promise<void>;
 let lockedWallet: boolean | undefined;
+let wallet: unknown;
+let currentAccount: unknown;
 
 const Probe = (): JSX.Element => {
-  initWallet = useWalletContext().initWallet;
+  const context = useWalletContext();
+  initWallet = context.initWallet;
+  clearWallet = context.clearWallet;
+  wallet = context.wallet;
+  currentAccount = useRecoilValue(WalletState.currentAccount);
   lockedWallet = useWallet().lockedWallet;
   return <div />;
 };
@@ -74,7 +85,10 @@ describe('WalletProvider lock-state cache', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     initWallet = jest.fn();
+    clearWallet = jest.fn();
     lockedWallet = undefined;
+    wallet = undefined;
+    currentAccount = undefined;
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { staleTime: 10_000, refetchOnWindowFocus: false, retry: false },
@@ -131,5 +145,36 @@ describe('WalletProvider lock-state cache', () => {
     );
 
     await waitFor(() => expect(lockedWallet).toBe(true));
+  });
+
+  it('drops the in-memory wallet and current account when the wallet is cleared', async () => {
+    const account = { id: 'account-1' };
+    const walletService = {
+      existsWallet: jest.fn().mockResolvedValue(true),
+      isLocked: jest.fn().mockResolvedValue(false),
+      loadWallet: jest.fn().mockResolvedValue({
+        accounts: [account],
+        currentAccountId: null,
+        hasHDWallet: () => false,
+      }),
+    };
+    (useAdenaContext as jest.Mock).mockReturnValue(makeAdenaContext(walletService, account.id));
+
+    const Wrapper = makeWrapper(queryClient);
+    render(
+      <Wrapper>
+        <Probe />
+      </Wrapper>,
+    );
+
+    await waitFor(() => expect(currentAccount).toEqual(account));
+    expect(wallet).not.toBeNull();
+
+    await act(async () => {
+      await clearWallet();
+    });
+
+    expect(wallet).toBeNull();
+    expect(currentAccount).toBeNull();
   });
 });

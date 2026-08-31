@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { AdenaWallet, Wallet } from 'adena-module';
+import { Wallet } from 'adena-module';
 import React, { createContext, useCallback, useEffect, useState } from 'react';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 
@@ -188,13 +188,13 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     return true;
   }
 
+  // Drops the popup's references to the deserialized wallet and the selected
+  // account. The previous implementation passed *functions* to `Promise.all`
+  // instead of promises, so neither setter ever ran and a locked wallet kept
+  // both in memory.
   async function clearWallet(): Promise<void> {
-    await setWallet(new AdenaWallet());
-
-    await Promise.all([
-      async (): Promise<void> => await setWallet(null),
-      async (): Promise<void> => await setCurrentAccount(null),
-    ]);
+    setWallet(null);
+    setCurrentAccount(null);
   }
 
   async function initCurrentAccount(wallet: Wallet): Promise<boolean> {
