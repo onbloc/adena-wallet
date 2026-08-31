@@ -7,7 +7,7 @@ type NetworkMode = NetworkState.NetworkMode;
 // Canonical network ids, exported so tests can assert they still resolve
 // against chains.json. A rename there that misses these constants would
 // otherwise silently degrade pickDefaultByMode to its generic fallback.
-export const PRIMARY_TESTNET_ID = 'sapphire-1';
+export const PRIMARY_TESTNET_ID = 'pearl-1';
 export const PRIMARY_MAINNET_ID = 'gnoland1';
 
 // StorageManager.get coerces undefined to the string "undefined" because it
@@ -44,7 +44,7 @@ export function resolveNetworkMode(
 }
 
 // Pick the default network for a given mode. Prefers the canonical id
-// (sapphire for testnet, gnoland1 for mainnet) so the result is stable even if
+// (pearl for testnet, gnoland1 for mainnet) so the result is stable even if
 // chains.json ordering changes, then falls back to any matching default, and
 // finally to the first non-deleted network.
 export function pickDefaultByMode(

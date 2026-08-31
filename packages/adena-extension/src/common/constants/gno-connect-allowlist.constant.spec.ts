@@ -11,7 +11,7 @@ describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
         'https://gno.land',
         'https://betanet.testnets.gno.land',
         'https://staging.gno.land',
-        'https://sapphire.testnets.gno.land',
+        'https://pearl.testnets.gno.land',
       ]),
     );
   });
