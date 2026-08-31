@@ -18,6 +18,7 @@ import {
   makeAllTransactionHistoryQuery,
   makeBlockTimeLegacyQuery,
   makeBlockTimeQuery,
+  makeGRC20ReceivedTransactionHistoryQuery,
   makeGRC20TransactionHistoryQuery,
   makeNativeTransactionHistoryQuery,
 } from './transaction-history-indexer.queries';
@@ -33,6 +34,20 @@ const EMPTY_PAGE: TransactionWithPageInfo = {
   page: { hasNext: false, cursor: null },
   transactions: [],
 };
+
+// Two queries can return the same transaction; keep one row per hash and
+// restore the indexer's newest-first order.
+function mergeTransactionsByHash(...groups: TransactionResponse[][]): TransactionResponse[] {
+  const byHash = new Map<string, TransactionResponse>();
+  for (const group of groups) {
+    for (const tx of group) {
+      if (!byHash.has(tx.hash)) {
+        byHash.set(tx.hash, tx);
+      }
+    }
+  }
+  return [...byHash.values()].sort((a, b) => b.block_height - a.block_height || b.index - a.index);
+}
 
 export class TransactionHistoryIndexerRepository implements ITransactionHistoryIndexerRepository {
   private axiosInstance: AxiosInstance;
@@ -67,16 +82,25 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       return EMPTY_PAGE;
     }
 
-    const result =
-      await TransactionHistoryIndexerRepository.postGraphQuery<TransactionsQueryResult>(
+    // Second query: a MsgRun-routed transfer only names its sender in the
+    // message, so the recipient is reachable through the Transfer event alone.
+    const [result, receivedResult] = await Promise.all([
+      TransactionHistoryIndexerRepository.postGraphQuery<TransactionsQueryResult>(
         this.axiosInstance,
         this.queryUrl,
         makeAllTransactionHistoryQuery(address),
-      );
+      ),
+      TransactionHistoryIndexerRepository.postGraphQuery<TransactionsQueryResult>(
+        this.axiosInstance,
+        this.queryUrl,
+        makeGRC20ReceivedTransactionHistoryQuery(address),
+      ),
+    ]);
 
-    const transactions = (result?.data?.getTransactions ?? []).map((tx) =>
-      mapTransactionEdgeByAddress(tx, address, this.grc20HelperPath),
-    );
+    const transactions = mergeTransactionsByHash(
+      result?.data?.getTransactions ?? [],
+      receivedResult?.data?.getTransactions ?? [],
+    ).map((tx) => mapTransactionEdgeByAddress(tx, address, this.grc20HelperPath));
 
     return {
       page: { hasNext: false, cursor: null },
@@ -136,8 +160,8 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       const firstMessage = callTx.messages?.[0];
       const isCallerSelf = firstMessage?.value?.caller === address;
       return isCallerSelf
-        ? mapVMTransaction(callTx, this.grc20HelperPath)
-        : mapReceivedTransactionByMsgCall(callTx, this.grc20HelperPath);
+        ? mapVMTransaction(callTx, this.grc20HelperPath, tokenKey)
+        : mapReceivedTransactionByMsgCall(callTx, this.grc20HelperPath, tokenKey);
     });
 
     // A transaction can carry several Transfer events (e.g. a swap); the mapper

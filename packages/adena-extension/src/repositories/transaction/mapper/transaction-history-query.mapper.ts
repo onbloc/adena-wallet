@@ -63,19 +63,34 @@ function resolveTransferShape(
 // `Transfer` event carrying `token` (Token.ID() = `{packagePath}.{symbol}.{sequence}`),
 // `from`, `to`, and `value`. Reading the token identity and amount from the
 // event is invocation-independent, so prefer it over parsing message args.
+//
+// GRC721 emits a `Transfer` carrying `token` too, but describes the item with
+// `tokenId` instead of `value`, so `value` is what separates the two. When
+// `tokenKey` is given, pick that token's event: one transaction can emit
+// several (e.g. a swap) and the first is not necessarily the requested one.
 function getGRC20TransferFromEvent(
   tx: TransactionResponse<any>,
+  tokenKey?: string,
 ): { tokenPath: string | null; from: string; to: string; value: string } | null {
   const events: Event[] = tx?.response?.events || [];
-  const transferEvent = events.find(
-    (event) => event?.type === 'Transfer' && (event?.attrs || []).some((a) => a.key === 'token'),
-  );
+  const attrOf = (event: Event, key: string): string =>
+    (event.attrs || []).find((a) => a.key === key)?.value || '';
+
+  const transferEvent = events.find((event) => {
+    if (event?.type !== 'Transfer') {
+      return false;
+    }
+    const token = attrOf(event, 'token');
+    if (!token || !(event.attrs || []).some((a) => a.key === 'value')) {
+      return false;
+    }
+    return !tokenKey || token.startsWith(`${tokenKey}.`);
+  });
   if (!transferEvent) {
     return null;
   }
 
-  const attr = (key: string): string =>
-    (transferEvent.attrs || []).find((a) => a.key === key)?.value || '';
+  const attr = (key: string): string => attrOf(transferEvent, key);
 
   const tokenId = attr('token');
   if (!tokenId) {
@@ -158,6 +173,7 @@ export function mapSendTransactionByBankMsgSend(
 export function mapReceivedTransactionByMsgCall(
   tx: TransactionResponse<MsgCallValue>,
   helperPath?: string,
+  tokenKey?: string,
 ): TransactionInfo {
   const firstMessage = getDefaultMessage(tx.messages);
   if (firstMessage.value.func === 'TransferFrom' && tx.messages.length === 1) {
@@ -190,7 +206,7 @@ export function mapReceivedTransactionByMsgCall(
 
   // Prefer the GRC20 Transfer event (token/from/to/value); fall back to parsing
   // message args (with the helper arg offset) when it is absent.
-  const eventInfo = getGRC20TransferFromEvent(tx);
+  const eventInfo = getGRC20TransferFromEvent(tx, tokenKey);
   const { tokenPath, argOffset } = resolveTransferShape(firstMessage.value, helperPath);
   const senderAddress = eventInfo?.from || firstMessage.value.caller || '';
   const receiveAmount = eventInfo?.value || firstMessage.value.args?.[argOffset + 1] || '0';
@@ -257,6 +273,7 @@ export function mapReceivedTransactionByBankMsgSend(
 export function mapVMTransaction(
   tx: TransactionResponse<AddPackageValue | MsgRunValue | MsgCallValue>,
   helperPath?: string,
+  tokenKey?: string,
 ): TransactionInfo {
   const firstMessage = getDefaultMessage(tx.messages);
 
@@ -320,7 +337,7 @@ export function mapVMTransaction(
     if (isTransfer) {
       // Prefer the GRC20 Transfer event (token/from/to/value); fall back to
       // parsing message args (with the helper arg offset) when it is absent.
-      const eventInfo = getGRC20TransferFromEvent(tx);
+      const eventInfo = getGRC20TransferFromEvent(tx, tokenKey);
       const { tokenPath, argOffset } = resolveTransferShape(messageValue, helperPath);
       const fromAddress = eventInfo?.from || messageValue.caller || '';
       const toAddress = eventInfo?.to || messageValue.args?.[argOffset] || '';
@@ -408,7 +425,7 @@ export function mapVMTransaction(
   // `Transfer(0, cur, tokenKey, to, amount)` wrapper (the path taken when the
   // chain has no GRC20 helper realm) carries no func/args, so the emitted
   // Transfer event is the only description of what moved.
-  const runTransfer = getGRC20TransferFromEvent(tx);
+  const runTransfer = getGRC20TransferFromEvent(tx, tokenKey);
   if (runTransfer?.tokenPath) {
     const fromAddress = runTransfer.from || (firstMessage.value as MsgRunValue).caller || '';
 

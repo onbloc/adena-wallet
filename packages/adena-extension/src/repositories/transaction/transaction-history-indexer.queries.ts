@@ -135,6 +135,36 @@ query getAllTransactionHistory {
 }
 `;
 
+/**
+ * GRC20 transfers received through a MsgRun, which the message-shape filter in
+ * `makeAllTransactionHistoryQuery` cannot see: the run body is not indexed, so
+ * only the sender is matched there (by `MsgRun.caller`). Merged into the
+ * all-transactions result by the repository.
+ */
+export const makeGRC20ReceivedTransactionHistoryQuery = (address: string): string => `
+query getGRC20ReceivedTransactionHistory {
+  getTransactions(
+    where: {
+      success: { eq: true }
+      response: {
+        events: {
+          GnoEvent: {
+            type: { eq: "Transfer" }
+            attrs: {
+              key: { eq: "to" }
+              value: { eq: "${address}" }
+            }
+          }
+        }
+      }
+    }
+    order: { heightAndIndex: DESC }
+  ) {
+    ${TRANSACTION_FIELDS}
+  }
+}
+`;
+
 /** Native (BankMsgSend) sends and receives for an address. */
 export const makeNativeTransactionHistoryQuery = (address: string): string => `
 query getNativeTransactionHistory {
