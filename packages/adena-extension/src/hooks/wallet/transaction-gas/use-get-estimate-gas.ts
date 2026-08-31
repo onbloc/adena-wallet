@@ -12,6 +12,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionService } from '@services/index';
 
 import { useIsInitializedAccount } from '../use-get-account-info';
+import { canSignInProcess, resolveStaticCodeMessageGasUsed } from './code-message-static-gas';
 import { useGetGasPrice } from './use-get-gas-price';
 
 export const GET_ESTIMATE_GAS_KEY = 'transactionGas/useGetEstimateGas';
@@ -83,16 +84,11 @@ function modifyDocument(document: Document, gasWanted: number, gasFee: number): 
   };
 }
 
-// Messages the chain authorizes from their signer, and therefore verifies the
-// signature of even on the simulate path (gnolang/gno#6088 wires the ante's
-// RequireSigForSimulate to txCarriesCode). A placeholder tx carrying one of
-// these is rejected with `/std.UnauthorizedError: signature verification
-// failed`, so gas estimation has to sign for real. Keep in sync with
-// txCarriesCode in gno.land/pkg/gnoland/app.go.
-const SIGN_REQUIRED_MESSAGE_TYPES = ['/vm.m_run', '/vm.m_addpkg'];
-
+// The chain verifies signatures on the simulate path for code-bearing messages
+// (gnolang/gno#6088 wires the ante's RequireSigForSimulate to txCarriesCode), so
+// a placeholder tx carrying one is rejected with `/std.UnauthorizedError`.
 function requiresRealSignature(document: Document): boolean {
-  return (document.msgs ?? []).some((msg) => SIGN_REQUIRED_MESSAGE_TYPES.includes(msg.type));
+  return resolveStaticCodeMessageGasUsed(document) !== null;
 }
 
 /**
@@ -192,6 +188,19 @@ export const useGetEstimateGas = (
         return null;
       }
 
+      // Ledger/AirGap cannot sign while the fee is calculated, and the chain
+      // refuses an unsigned simulate for code-bearing messages, so use the
+      // static table instead of a request that can only fail.
+      const staticGasUsed = resolveStaticCodeMessageGasUsed(document);
+      if (staticGasUsed !== null && !canSignInProcess(currentAccount)) {
+        return {
+          gasUsed: staticGasUsed,
+          storageDeposits: EMPTY_STORAGE_DEPOSITS,
+          hasError: false,
+          simulateErrorMessage: null,
+        };
+      }
+
       const tx = await makeEstimateGasTransaction(
         wallet,
         currentAccount,
@@ -207,26 +216,22 @@ export const useGetEstimateGas = (
 
       const nextResult = await transactionGasService
         .simulateTx(tx)
-        .then(
-          (simulateResult): EstimateGasResult => {
-            return {
-              gasUsed: Number(simulateResult.gas_used),
-              storageDeposits: parseStorageDeposits(simulateResult.response_base?.events ?? []),
-              hasError: false,
-              simulateErrorMessage: null,
-            };
-          },
-        )
-        .catch(
-          (e: Error): EstimateGasResult => {
-            // eslint-disable-next-line no-console
-            console.error('[estimate-gas] simulate failed:', e);
-            return {
-              ...ERROR_ESTIMATE_GAS_RESULT,
-              simulateErrorMessage: e?.message || '',
-            };
-          },
-        );
+        .then((simulateResult): EstimateGasResult => {
+          return {
+            gasUsed: Number(simulateResult.gas_used),
+            storageDeposits: parseStorageDeposits(simulateResult.response_base?.events ?? []),
+            hasError: false,
+            simulateErrorMessage: null,
+          };
+        })
+        .catch((e: Error): EstimateGasResult => {
+          // eslint-disable-next-line no-console
+          console.error('[estimate-gas] simulate failed:', e);
+          return {
+            ...ERROR_ESTIMATE_GAS_RESULT,
+            simulateErrorMessage: e?.message || '',
+          };
+        });
 
       // Keep the higher gasUsed across refetches for the same transaction.
       // Treats an errored/zero response as the lowest value, so a transient
