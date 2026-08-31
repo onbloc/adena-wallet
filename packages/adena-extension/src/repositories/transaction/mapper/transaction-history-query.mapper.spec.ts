@@ -61,6 +61,50 @@ describe('mapTransactionEdgeByAddress: MsgRun GRC20 transfer', () => {
     });
   });
 
+  it('picks the transfer the viewer took part in when several are emitted', () => {
+    const OTHER = 'g1v9kxjcm9ta047h6lta047h6lta047h6lzd40gh';
+    const OTHER_TOKEN = 'gno.land/r/demo/defi/foo20.FOO';
+    const multiTx = makeMsgRunTransaction([
+      makeTransferEvent([
+        { key: 'token', value: `${OTHER_TOKEN}.0` },
+        { key: 'from', value: SENDER },
+        { key: 'to', value: OTHER },
+        { key: 'value', value: '7' },
+      ]),
+      makeTransferEvent([
+        { key: 'token', value: `${TOKEN_PATH}.0` },
+        { key: 'from', value: OTHER },
+        { key: 'to', value: RECIPIENT },
+        { key: 'value', value: '1000' },
+      ]),
+    ]);
+
+    expect(mapTransactionEdgeByAddress(multiTx, RECIPIENT)).toMatchObject({
+      title: 'Receive',
+      originFrom: OTHER,
+      originTo: RECIPIENT,
+      amount: { value: '1000', denom: TOKEN_PATH },
+    });
+  });
+
+  // The initiating side wins, as it does for bank.MsgSend and MsgCall.
+  it('renders a self-transfer as a send', () => {
+    const selfTx = makeMsgRunTransaction([
+      makeTransferEvent([
+        { key: 'token', value: `${TOKEN_PATH}.0` },
+        { key: 'from', value: SENDER },
+        { key: 'to', value: SENDER },
+        { key: 'value', value: '1000' },
+      ]),
+    ]);
+
+    expect(mapTransactionEdgeByAddress(selfTx, SENDER)).toMatchObject({
+      title: 'Send',
+      typeName: 'Send',
+      valueType: 'DEFAULT',
+    });
+  });
+
   // GRC721 emits Transfer with `tokenId` instead of `value`.
   it('leaves a GRC721 transfer as a contract interaction', () => {
     const nftTx = makeMsgRunTransaction([

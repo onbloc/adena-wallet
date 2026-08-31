@@ -65,27 +65,49 @@ function resolveTransferShape(
 // event is invocation-independent, so prefer it over parsing message args.
 //
 // GRC721 emits a `Transfer` carrying `token` too, but describes the item with
-// `tokenId` instead of `value`, so `value` is what separates the two. When
-// `tokenKey` is given, pick that token's event: one transaction can emit
-// several (e.g. a swap) and the first is not necessarily the requested one.
+// `tokenId` instead of `value`, so `value` is what separates the two.
+//
+// One transaction can emit several transfers (e.g. a swap), so the first is not
+// necessarily the interesting one: `tokenKey` picks the token whose history is
+// being read, and `viewerAddress` picks the transfer the account took part in.
+function attrOf(event: Event, key: string): string {
+  return (event.attrs || []).find((a) => a.key === key)?.value || '';
+}
+
+function isGRC20TransferEvent(event: Event): boolean {
+  return (
+    event?.type === 'Transfer' &&
+    !!attrOf(event, 'token') &&
+    (event.attrs || []).some((a) => a.key === 'value')
+  );
+}
+
+/** True when the transaction moves a GRC20 token to `address`. */
+export function hasGRC20TransferTo(tx: TransactionResponse<any>, address: string): boolean {
+  const events: Event[] = tx?.response?.events || [];
+  return events.some((event) => isGRC20TransferEvent(event) && attrOf(event, 'to') === address);
+}
+
 function getGRC20TransferFromEvent(
   tx: TransactionResponse<any>,
-  tokenKey?: string,
+  options?: { tokenKey?: string; viewerAddress?: string },
 ): { tokenPath: string | null; from: string; to: string; value: string } | null {
   const events: Event[] = tx?.response?.events || [];
-  const attrOf = (event: Event, key: string): string =>
-    (event.attrs || []).find((a) => a.key === key)?.value || '';
+  const grc20Events = events.filter(isGRC20TransferEvent);
 
-  const transferEvent = events.find((event) => {
-    if (event?.type !== 'Transfer') {
-      return false;
-    }
-    const token = attrOf(event, 'token');
-    if (!token || !(event.attrs || []).some((a) => a.key === 'value')) {
-      return false;
-    }
-    return !tokenKey || token.startsWith(`${tokenKey}.`);
-  });
+  const tokenKey = options?.tokenKey;
+  const viewerAddress = options?.viewerAddress;
+  const transferEvent =
+    (tokenKey
+      ? grc20Events.find((event) => attrOf(event, 'token').startsWith(`${tokenKey}.`))
+      : undefined) ??
+    (viewerAddress
+      ? grc20Events.find(
+          (event) =>
+            attrOf(event, 'from') === viewerAddress || attrOf(event, 'to') === viewerAddress,
+        )
+      : undefined) ??
+    (!tokenKey ? grc20Events[0] : undefined);
   if (!transferEvent) {
     return null;
   }
@@ -206,7 +228,7 @@ export function mapReceivedTransactionByMsgCall(
 
   // Prefer the GRC20 Transfer event (token/from/to/value); fall back to parsing
   // message args (with the helper arg offset) when it is absent.
-  const eventInfo = getGRC20TransferFromEvent(tx, tokenKey);
+  const eventInfo = getGRC20TransferFromEvent(tx, { tokenKey });
   const { tokenPath, argOffset } = resolveTransferShape(firstMessage.value, helperPath);
   const senderAddress = eventInfo?.from || firstMessage.value.caller || '';
   const receiveAmount = eventInfo?.value || firstMessage.value.args?.[argOffset + 1] || '0';
@@ -338,7 +360,7 @@ export function mapVMTransaction(
     if (isTransfer) {
       // Prefer the GRC20 Transfer event (token/from/to/value); fall back to
       // parsing message args (with the helper arg offset) when it is absent.
-      const eventInfo = getGRC20TransferFromEvent(tx, tokenKey);
+      const eventInfo = getGRC20TransferFromEvent(tx, { tokenKey, viewerAddress });
       const { tokenPath, argOffset } = resolveTransferShape(messageValue, helperPath);
       const fromAddress = eventInfo?.from || messageValue.caller || '';
       const toAddress = eventInfo?.to || messageValue.args?.[argOffset] || '';
@@ -426,13 +448,14 @@ export function mapVMTransaction(
   // `Transfer(0, cur, tokenKey, to, amount)` wrapper (the path taken when the
   // chain has no GRC20 helper realm) carries no func/args, so the emitted
   // Transfer event is the only description of what moved.
-  const runTransfer = getGRC20TransferFromEvent(tx, tokenKey);
+  const runTransfer = getGRC20TransferFromEvent(tx, { tokenKey, viewerAddress });
   if (runTransfer?.tokenPath) {
     const fromAddress = runTransfer.from || (firstMessage.value as MsgRunValue).caller || '';
     // The event names both parties, so the direction is only known once the
     // viewer is: the same transaction is a send for one side and a receive for
     // the other.
-    const isReceive = !!viewerAddress && runTransfer.to === viewerAddress;
+    const isReceive =
+      !!viewerAddress && runTransfer.to === viewerAddress && runTransfer.from !== viewerAddress;
 
     return {
       hash: tx.hash,

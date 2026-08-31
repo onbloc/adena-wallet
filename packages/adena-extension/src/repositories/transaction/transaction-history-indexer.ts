@@ -3,6 +3,7 @@ import { getGrc20RegConfig } from '@common/utils/grc20reg-config';
 import { NetworkMetainfo, TransactionWithPageInfo } from '@types';
 import { AxiosInstance } from 'axios';
 import {
+  hasGRC20TransferTo,
   mapReceivedTransactionByBankMsgSend,
   mapReceivedTransactionByMsgCall,
   mapSendTransactionByBankMsgSend,
@@ -97,10 +98,16 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       ),
     ]);
 
-    const transactions = mergeTransactionsByHash(
-      result?.data?.getTransactions ?? [],
-      receivedResult?.data?.getTransactions ?? [],
-    ).map((tx) => mapTransactionEdgeByAddress(tx, address, this.grc20HelperPath));
+    // The received query matches any `Transfer` event, and GRC721 emits one too
+    // (with `tokenId` in place of `value`), so keep only the GRC20 receives it
+    // was meant to add.
+    const received = (receivedResult?.data?.getTransactions ?? []).filter((tx) =>
+      hasGRC20TransferTo(tx, address),
+    );
+
+    const transactions = mergeTransactionsByHash(result?.data?.getTransactions ?? [], received).map(
+      (tx) => mapTransactionEdgeByAddress(tx, address, this.grc20HelperPath),
+    );
 
     return {
       page: { hasNext: false, cursor: null },
