@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { WebRouter } from '@router/web/index';
-import OfflineBanner from '@components/atoms/offline-banner';
+import { OfflineBanner } from '@components/atoms';
 
 import AppProvider from './app-provider';
 import useApp from './use-app';

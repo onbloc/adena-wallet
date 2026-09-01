@@ -9,12 +9,11 @@ import IconDeposit from '@assets/icon-deposit';
 import IconSend from '@assets/icon-send';
 import IconSign from '@assets/icon-sign';
 import { CHAIN_ICON_MAP, COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
-import { MainActionButton } from '@components/atoms';
+import { MainActionButton, OfflineBanner } from '@components/atoms';
 import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
 import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
 import TokenList, { TokenListItemState } from '@components/pages/wallet-main/token-list/token-list';
-import OfflineBanner from '@components/atoms/offline-banner';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLoadImages } from '@hooks/use-load-images';
@@ -50,12 +49,43 @@ function readCachedRowCount(): number {
   }
 }
 
+// The network label is position: fixed, so the flow reserves its slot with
+// padding instead. Named because the offline banner sticks to the bottom of
+// that same slot and the two must not drift apart.
+const NETWORK_LABEL_SLOT_HEIGHT = 37;
+// `main` gets `padding: 0 20px` from GlobalPopupStyle; full-bleed children
+// cancel it.
+const MAIN_SIDE_PADDING = 20;
+
 const Wrapper = styled.main<{ $dimmed: boolean }>`
-  padding-top: 37px;
+  padding-top: ${NETWORK_LABEL_SLOT_HEIGHT}px;
   text-align: center;
   overflow: auto;
 
   ${revokedDimStyle}
+
+  .offline-banner-slot {
+    /* Full-bleed, because a warning bar that stops short of both edges reads as
+       a card rather than a bar, and its bottom border stops working as a
+       divider. The negative margins exactly cancel the global main padding, so
+       the slot spans the scrollport without overflowing it.
+
+       Sticky with top: 0 pins it at the top of this element's own flow
+       position — the bottom of the slot reserved above — so nothing moves at
+       rest and the warning survives scrolling the token list. A positive
+       offset would push it down by that much instead, opening a gap for
+       content to scroll through. Below the label (z-index 10) and the header
+       (20), above the scrolling content. */
+    position: sticky;
+    top: 0;
+    z-index: 9;
+    margin: 0 -${MAIN_SIDE_PADDING}px 12px;
+  }
+
+  /* Online, the banner renders null. Collapse the slot so it costs no space. */
+  .offline-banner-slot:empty {
+    display: none;
+  }
 
   .network-label-wrapper {
     position: fixed;
@@ -287,7 +317,9 @@ export const WalletMain = (): JSX.Element => {
 
   return (
     <Wrapper $dimmed={sessionRevoked}>
-      <OfflineBanner />
+      <div className='offline-banner-slot'>
+        <OfflineBanner />
+      </div>
       <div className='network-label-wrapper'>
         <MainNetworkLabel
           networkName={currentNetwork.networkName}

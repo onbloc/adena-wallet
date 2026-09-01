@@ -102,16 +102,17 @@ export const OfflineBanner = (): ReactElement | null => {
         {overridden ? <Spinner size={SPINNER_SIZE} /> : <WarningTriangleIcon size={SPINNER_SIZE} />}
       </span>
       <span className='message'>
+        {/* Kept to roughly one line: the popup is 360px wide and every wrapped
+            line costs 21px of a 540px screen. The long form ran to four. */}
         {overridden ? (
           <>
             <span className='headline'>Retrying anyway.</span> Your browser still reports no
-            connection. Chain requests are being sent regardless — if they fail, that signal was
-            right.
+            connection.
           </>
         ) : (
           <>
-            <span className='headline'>No network connection.</span> Your accounts and addresses are
-            shown from local storage; balances and chain data are paused until you reconnect.
+            <span className='headline'>No network connection.</span> Balances and chain data are
+            paused until you reconnect.
           </>
         )}
       </span>
