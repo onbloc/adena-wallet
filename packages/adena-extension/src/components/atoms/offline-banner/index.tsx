@@ -1,37 +1,13 @@
 import { onlineManager, useQueryClient } from '@tanstack/react-query';
-import { ReactElement, useCallback, useEffect, useState } from 'react';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 
-const SPIN_STYLE_ID = 'adena-offline-spin';
+import { Button } from '@components/atoms/button';
+import { Spinner } from '@components/atoms/spinner';
+import { WarningTriangleIcon } from '@components/atoms/warning-triangle-icon';
 
-/** Injected once: @keyframes cannot be expressed in an inline style attribute. */
-const ensureSpinKeyframes = (): void => {
-  if (typeof document === 'undefined' || document.getElementById(SPIN_STYLE_ID)) {
-    return;
-  }
-  const el = document.createElement('style');
-  el.id = SPIN_STYLE_ID;
-  el.textContent =
-    '@keyframes adena-offline-spin{to{transform:rotate(360deg)}}' +
-    '@media (prefers-reduced-motion: reduce){' +
-    '.adena-offline-spinner{animation:none!important;opacity:.6}}';
-  document.head.appendChild(el);
-};
+import { OfflineBannerWrapper } from './offline-banner.styles';
 
-const Spinner = (): ReactElement => (
-  <span
-    className='adena-offline-spinner'
-    aria-hidden='true'
-    style={{
-      width: 12,
-      height: 12,
-      flex: '0 0 auto',
-      borderRadius: '50%',
-      border: '2px solid rgba(245, 200, 106, 0.3)',
-      borderTopColor: '#f5c86a',
-      animation: 'adena-offline-spin 0.8s linear infinite',
-    }}
-  />
-);
+const SPINNER_SIZE = 14;
 
 /**
  * A TOP-LEVEL BAR FOR THE OFFLINE CASE, because Adena had no offline UI at all.
@@ -58,6 +34,10 @@ const Spinner = (): ReactElement => (
  * proceed regardless. A user who can see their connection working should not be
  * blocked by a signal they can observe to be false; but they should also be told,
  * for as long as it lasts, that they are running against the browser's claim.
+ *
+ * The bar carries no positioning of its own: hosts differ (the popup pins a
+ * fixed header and network label above it, the web pages do not), so each one
+ * places it. See wallet-main for the popup slot.
  */
 
 const isBrowserOffline = (): boolean =>
@@ -67,8 +47,6 @@ export const OfflineBanner = (): ReactElement | null => {
   const queryClient = useQueryClient();
   const [offline, setOffline] = useState(isBrowserOffline);
   const [overridden, setOverridden] = useState(false);
-
-  useEffect(ensureSpinKeyframes, []);
 
   useEffect(() => {
     const onOnline = (): void => {
@@ -119,56 +97,34 @@ export const OfflineBanner = (): ReactElement | null => {
   }
 
   return (
-    <div
-      role='status'
-      style={{
-        // STICKY, NOT STATIC, and in its own stacking context. In flow it was
-        // drawn under the "You are on <network>" label, which is also in flow
-        // and paints later.
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '8px 12px',
-        background: '#3a2f1a',
-        borderBottom: '1px solid #6b5426',
-        color: '#f5c86a',
-        fontSize: 12,
-        lineHeight: 1.4,
-      }}
-    >
-      {overridden ? <Spinner /> : null}
-      <span style={{ flex: 1 }}>
+    <OfflineBannerWrapper role='status'>
+      <span className='indicator'>
+        {overridden ? <Spinner size={SPINNER_SIZE} /> : <WarningTriangleIcon size={SPINNER_SIZE} />}
+      </span>
+      <span className='message'>
         {overridden ? (
           <>
-            <strong style={{ fontWeight: 600 }}>Retrying anyway.</strong> Your
-            browser still reports no connection. Chain requests are being sent
-            regardless — if they fail, that signal was right.
+            <span className='headline'>Retrying anyway.</span> Your browser still reports no
+            connection. Chain requests are being sent regardless — if they fail, that signal was
+            right.
           </>
         ) : (
           <>
-            <strong style={{ fontWeight: 600 }}>No network connection.</strong>{' '}
-            Your accounts and addresses are shown from local storage; balances
-            and chain data are paused until you reconnect.
+            <span className='headline'>No network connection.</span> Your accounts and addresses are
+            shown from local storage; balances and chain data are paused until you reconnect.
           </>
         )}
       </span>
-      <button
-        type='button'
+      <Button
+        className='action-button'
+        hierarchy='ghost'
+        height='26px'
+        radius='6px'
         onClick={overridden ? stop : retry}
-        style={{
-          flex: '0 0 auto',
-          padding: '5px 12px',
-          borderRadius: 5,
-          border: '1px solid #6b5426',
-          background: 'transparent',
-          color: '#f5c86a',
-          cursor: 'pointer',
-          fontSize: 12,
-        }}
       >
         {overridden ? 'Stop' : 'Retry'}
-      </button>
-    </div>
+      </Button>
+    </OfflineBannerWrapper>
   );
 };
 
