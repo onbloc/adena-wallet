@@ -47,9 +47,9 @@ describe('StorageMigration022', () => {
 
   it('refreshes NETWORKS from chains.json and drops the stale test-13 entry', async () => {
     const result = await new StorageMigration022().up(makeInput({ NETWORKS: [] }));
-    const sapphire = result.data.NETWORKS.find((n) => n.chainId === 'sapphire-1');
-    expect(sapphire).toBeDefined();
-    expect(sapphire?.rpcUrl).toBe('https://sapphire.rpc.onbloc.xyz:443');
+    const pearl = result.data.NETWORKS.find((n) => n.chainId === 'pearl-1');
+    expect(pearl).toBeDefined();
+    expect(pearl?.rpcUrl).toBe('https://pearl.rpc.onbloc.xyz:443');
     expect(result.data.NETWORKS.find((n) => n.chainId === 'test-13')).toBeUndefined();
   });
 

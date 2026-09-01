@@ -44,7 +44,7 @@ describe('StorageMigration020', () => {
     expect(new StorageMigration020().version).toBe(20);
   });
 
-  // test-13 was replaced by the current testnet in v022/v024 and no longer
+  // test-13 was replaced by the current testnet in v022/v024/v025 and no longer
   // exists in chains.json,
   // so this migration can no longer find a replacement and leaves the entry
   // untouched. v022 is what removes the stale test-13 network.

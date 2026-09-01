@@ -1,5 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
+
+import {
+  makeWalletExistsQueryKey,
+  makeWalletLockedQueryKey,
+} from '@common/constants/query-key.constant';
 import { useAdenaContext, useWalletContext } from './use-context';
 
 export interface UseWalletReturn {
@@ -26,7 +31,7 @@ export const useWallet = (): UseWalletReturn => {
   // chrome.storage; paused offline they leave the POPUP blank, because
   // App/popup returns <></> while isLoadingLockedWallet is true.
   const { data: existWallet, isLoading: isLoadingExistWallet } = useQuery(
-    ['wallet/existWallet', walletService.id],
+    makeWalletExistsQueryKey(walletService.id),
     async () => {
       const existWallet = await walletService.existsWallet().catch(() => false);
       return existWallet;
@@ -35,7 +40,7 @@ export const useWallet = (): UseWalletReturn => {
   );
 
   const { data: lockedWallet, isLoading: isLoadingLockedWallet } = useQuery(
-    ['wallet/locked', walletService.id],
+    makeWalletLockedQueryKey(walletService.id),
     async () => {
       const lockedWallet = await walletService.isLocked();
       return lockedWallet;

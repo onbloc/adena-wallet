@@ -1,6 +1,6 @@
 {
   "name": "adena-wallet",
-  "version": "1.20.3",
+  "version": "1.20.4",
   "description": "Adena Wallet",
   "license": "Adena License",
   "private": true,
@@ -17,7 +17,8 @@
   },
   "resolutions": {
     "@storybook/react-docgen-typescript-plugin": "npm:react-docgen-typescript-plugin@1.0.5",
-    "ws": "8.20.0"
+    "ws": "8.20.0",
+    "@bufbuild/protobuf": "2.14.0"
   },
   "devDependencies": {
     "@babel/core": "7.23.9",
