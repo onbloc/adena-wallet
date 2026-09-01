@@ -38,7 +38,7 @@
     "typescript": "4.9.5"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "2.12.0",
+    "@bufbuild/protobuf": "2.14.0",
     "@cosmjs/amino": "0.38.1",
     "@cosmjs/ledger-amino": "0.38.1",
     "@cosmjs/proto-signing": "0.38.1",
