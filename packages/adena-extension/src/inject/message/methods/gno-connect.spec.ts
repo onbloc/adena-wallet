@@ -2,6 +2,7 @@ import {
   getLoopbackGnoConnectChainId,
   GnoMessageInfo,
   isAllowedGnoConnectOrigin,
+  getLoopbackGnoConnectRejection,
   isLoopbackGnoConnectTrusted,
   normalizeGnoConnectRpc,
   parseGnoMessageInfo,
@@ -303,6 +304,64 @@ describe('isLoopbackGnoConnectTrusted', () => {
 
   it('rejects when neither the meta chainId nor the active network match', () => {
     expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'gnoland1', 'gnoland1')).toBe(false);
+  });
+});
+
+describe('getLoopbackGnoConnectRejection', () => {
+  const LOOPBACK_CHAIN_ID = 'dev';
+
+  it('reports no rejection exactly when the origin is trusted', () => {
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'dev', 'dev')).toBeNull();
+  });
+
+  it('names a foreign meta chainId as the origin mismatch', () => {
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'gnoland1', 'dev')).toBe(
+      'ORIGIN_CHAIN_MISMATCH',
+    );
+  });
+
+  it('names an absent active network as the wallet being unavailable', () => {
+    // What a locked wallet looks like from the gate: getNetwork answers
+    // WALLET_LOCKED, so the caller has no chainId to hand over.
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'dev', undefined)).toBe(
+      'WALLET_UNAVAILABLE',
+    );
+  });
+
+  it('names a different active network as the network mismatch', () => {
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'dev', 'gnoland1')).toBe(
+      'ACTIVE_NETWORK_MISMATCH',
+    );
+  });
+
+  it('prefers the origin mismatch, which holds regardless of wallet state', () => {
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'gnoland1', undefined)).toBe(
+      'ORIGIN_CHAIN_MISMATCH',
+    );
+  });
+
+  it('agrees with the trust decision over every combination', () => {
+    // The reason exists to be reported, never to be acted on. Pinning the two
+    // together means a future edit cannot let the message and the decision drift
+    // — the case that would tell a user their wallet is fine while it refuses.
+    const chainIds: (string | undefined)[] = [undefined, 'dev', 'gnoland1', ''];
+
+    for (const metaChainId of chainIds) {
+      for (const activeChainId of chainIds) {
+        if (metaChainId === undefined) {
+          continue;
+        }
+
+        const trusted = isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, metaChainId, activeChainId);
+        const rejection = getLoopbackGnoConnectRejection(
+          LOOPBACK_CHAIN_ID,
+          metaChainId,
+          activeChainId,
+        );
+
+        expect(rejection === null).toBe(trusted);
+      }
+    }
   });
 });
 

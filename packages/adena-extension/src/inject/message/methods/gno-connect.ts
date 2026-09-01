@@ -404,7 +404,47 @@ export function isLoopbackGnoConnectTrusted(
   metaChainId: string,
   activeChainId: string | undefined,
 ): boolean {
-  return metaChainId === loopbackChainId && activeChainId === loopbackChainId;
+  return getLoopbackGnoConnectRejection(loopbackChainId, metaChainId, activeChainId) === null;
+}
+
+/**
+ * Why the gate above refused, or null when it did not refuse.
+ *
+ * This is the primitive and isLoopbackGnoConnectTrusted is derived from it, so a
+ * caller can never report a reason the decision did not actually take. The three
+ * outcomes partition exactly the cases the boolean rejects:
+ *
+ * - ORIGIN_CHAIN_MISMATCH: the page declared a chainId the origin may not act
+ *   as. The only reason driven by page-controlled input.
+ * - WALLET_UNAVAILABLE: the wallet reported no active network at all, which is
+ *   what a locked wallet looks like from here (getNetwork answers WALLET_LOCKED,
+ *   so the caller has no chainId to pass). Split out of the mismatch case below
+ *   only so the user can be told to unlock rather than to switch networks.
+ * - ACTIVE_NETWORK_MISMATCH: the wallet is on some other network.
+ */
+export type LoopbackTrustRejection =
+  | 'ORIGIN_CHAIN_MISMATCH'
+  | 'WALLET_UNAVAILABLE'
+  | 'ACTIVE_NETWORK_MISMATCH';
+
+export function getLoopbackGnoConnectRejection(
+  loopbackChainId: string,
+  metaChainId: string,
+  activeChainId: string | undefined,
+): LoopbackTrustRejection | null {
+  if (metaChainId !== loopbackChainId) {
+    return 'ORIGIN_CHAIN_MISMATCH';
+  }
+
+  if (activeChainId === undefined) {
+    return 'WALLET_UNAVAILABLE';
+  }
+
+  if (activeChainId !== loopbackChainId) {
+    return 'ACTIVE_NETWORK_MISMATCH';
+  }
+
+  return null;
 }
 
 /**
