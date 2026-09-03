@@ -49,12 +49,9 @@ function readCachedRowCount(): number {
   }
 }
 
-// The network label is position: fixed, so the flow reserves its slot with
-// padding instead. Named because the offline banner sticks to the bottom of
-// that same slot and the two must not drift apart.
+// The network label is position: fixed, so the flow reserves its slot with padding.
 const NETWORK_LABEL_SLOT_HEIGHT = 37;
-// `main` gets `padding: 0 20px` from GlobalPopupStyle; full-bleed children
-// cancel it.
+// `main` gets `padding: 0 20px` from GlobalPopupStyle; full-bleed children cancel it.
 const MAIN_SIDE_PADDING = 20;
 
 const Wrapper = styled.main<{ $dimmed: boolean }>`
@@ -64,25 +61,18 @@ const Wrapper = styled.main<{ $dimmed: boolean }>`
 
   ${revokedDimStyle}
 
+  /* Negative margins cancel the global main padding so the bar spans the
+     scrollport. top: 0 holds it at its own flow position (the bottom of the
+     reserved slot); a positive offset would push it down and open a gap for
+     content to scroll through. z-index stays under the label (10). */
   .offline-banner-slot {
-    /* Full-bleed, because a warning bar that stops short of both edges reads as
-       a card rather than a bar, and its bottom border stops working as a
-       divider. The negative margins exactly cancel the global main padding, so
-       the slot spans the scrollport without overflowing it.
-
-       Sticky with top: 0 pins it at the top of this element's own flow
-       position — the bottom of the slot reserved above — so nothing moves at
-       rest and the warning survives scrolling the token list. A positive
-       offset would push it down by that much instead, opening a gap for
-       content to scroll through. Below the label (z-index 10) and the header
-       (20), above the scrolling content. */
     position: sticky;
     top: 0;
     z-index: 9;
     margin: 0 -${MAIN_SIDE_PADDING}px 12px;
   }
 
-  /* Online, the banner renders null. Collapse the slot so it costs no space. */
+  /* The banner renders null when online. */
   .offline-banner-slot:empty {
     display: none;
   }
@@ -293,17 +283,9 @@ export const WalletMain = (): JSX.Element => {
     }
   }, [tokens.length]);
 
-  // A STALE BALANCE MUST NOT LOOK LIKE A FRESH ONE. The Gno query sets
-  // keepPreviousData, so when a fetch fails or is paused the last good figure
-  // stays on screen — rendered identically to one just confirmed. Offline that
-  // produced the wallet's worst asymmetry: ATONE showed "-" because its fetch
-  // reported an error, while GNOT showed a confident number nobody could
-  // currently verify. The token ROW already respects errorNetworkIds; this
-  // headline read straight from the cached amount and bypassed it.
-  //
-  // Zero is exactly where this matters most. An account with no record on chain
-  // and an account whose balance could not be fetched both render "0", and only
-  // one of those is a fact.
+  // keepPreviousData keeps the last good figure on screen when a fetch fails or
+  // pauses, rendered identically to a confirmed one. The token rows already
+  // respect errorNetworkIds; this headline read the cached amount directly.
   const gnoBalanceUnavailable = mainTokenUnavailable;
   const isMainBalanceLoading = mainTokenBalance === null && !gnoBalanceUnavailable;
   // Same NaN guard as the row mapping above — a malformed numeric string

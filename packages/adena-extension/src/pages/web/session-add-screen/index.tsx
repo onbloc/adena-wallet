@@ -337,11 +337,8 @@ const SessionAddScreen = (): ReactElement => {
         paddingBottom: 80,
       }}
     >
-      {/* The only web route that talks to the chain: reading the session back
-          off it, and broadcasting the transaction that creates it. Everywhere
-          else in the register flow — mnemonic, import, password, Ledger,
-          export — is local and finishes offline, so the bar lives here rather
-          than over the whole app. */}
+      {/* The only web route that talks to the chain; the rest of the register
+          flow is local and finishes offline. */}
       <OfflineBanner />
 
       <WebMainHeader

@@ -290,11 +290,8 @@ export const useBalanceInput = (
       return false;
     }
 
-    // getGnotTokenBalance now rejects on a transport failure instead of
-    // resolving null, so this call can throw where it previously could not.
-    // Leave the balance undefined rather than propagating: the amount field
-    // already renders `currentBalance?.amount.value || 0`, and an unhandled
-    // rejection here would break the send screen outright.
+    // getGnotTokenBalance now rejects on a transport failure, so leave the
+    // balance undefined rather than letting the rejection break the screen.
     const currentBalance = await fetchBalanceBy(currentFundingAddress, tokenMetainfo).catch(
       () => undefined,
     );
@@ -313,11 +310,7 @@ export const useBalanceInput = (
     }
     const label = isSessionNativeTransfer ? 'Spendable' : 'Balance';
 
-    // A balance that could not be read is not a zero balance. updateCurrentBalance
-    // leaves this undefined when the fetch rejects, and `undefined || 0` used to
-    // format as a confident "0" — the same lie this branch removes from the main
-    // screen. Undefined before the first fetch resolves reads the same way, and
-    // "-" is honest there too.
+    // A balance that could not be read is not a zero balance.
     if (!currentBalance) {
       return `${label}: - ${tokenMetainfo.symbol}`;
     }

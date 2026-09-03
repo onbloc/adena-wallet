@@ -28,10 +28,8 @@ const LandingScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const { walletService } = useAdenaContext();
 
-  // networkMode 'always': this reads chrome.storage, never the network.
-  // react-query's default 'online' PAUSES a query while the browser reports
-  // offline — it never runs, never errors, and status stays 'loading' — so this
-  // screen rendered an empty <WebMain /> under the header for the whole session.
+  // networkMode 'always': this reads chrome.storage, never the network. The
+  // default 'online' pauses offline, leaving isLoading true for the session.
   const { data: existWallet, isLoading } = useQuery(
     ['existWallet', walletService.id],
     async () => walletService.existsWallet(),
@@ -55,9 +53,7 @@ const LandingScreen = (): ReactElement => {
             />
           </StyledAnimationWrapper>
           <View style={{ rowGap: 8 }}>
-            <WebText type='headline4'>
-              {existWallet ? 'Add Account' : 'Welcome to Adena'}
-            </WebText>
+            <WebText type='headline4'>{existWallet ? 'Add Account' : 'Welcome to Adena'}</WebText>
             <WebText type='body4' color='#8D9199'>
               {existWallet
                 ? 'Select a method to add a new account to Adena.'

@@ -24,8 +24,7 @@ const Wrapper = ({ children }: PropsWithChildren): JSX.Element => {
 
 describe('OfflineBanner', () => {
   afterEach(() => {
-    // onlineManager is a module-level singleton; hand the decision back to the
-    // browser signal so one test's override cannot leak into the next.
+    // onlineManager is a module-level singleton; reset it between tests.
     onlineManager.setOnline(undefined);
     setBrowserOnline(true);
   });
@@ -53,7 +52,6 @@ describe('OfflineBanner', () => {
     render(<OfflineBanner />, { wrapper: Wrapper });
     fireEvent.click(screen.getByRole('button'));
 
-    // Visibility follows the browser, not the override: still offline, still shown.
     expect(screen.getByRole('status').textContent).toContain('Retrying anyway.');
     expect(screen.getByRole('button').textContent).toContain('Stop');
     expect(onlineManager.isOnline()).toBe(true);

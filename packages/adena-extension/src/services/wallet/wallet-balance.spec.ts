@@ -2,16 +2,8 @@ import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletBalanceService } from './wallet-balance';
 
 /**
- * A TRANSPORT FAILURE IS NOT A ZERO BALANCE.
- *
- * getGnotTokenBalance used to end `.catch(() => null)`, and its callers render
- * `${balanceAmount || 0}`. A failed RPC call therefore reached the UI as a
- * confident "0 GNOT" — indistinguishable from an account that genuinely holds
- * nothing, and produced while offline, when no balance had been read at all.
- *
- * What these pin:
- *   - the request fails      -> reject, so the query errors and the UI can warn
- *   - the response is absurd -> null, a real answer this method cannot convert
+ * A transport failure is not a zero balance: a failed request must reject so the
+ * query errors, and null is reserved for a response that is not an integer.
  */
 const serviceWith = (getBalance: jest.Mock): WalletBalanceService => {
   const service = new WalletBalanceService();

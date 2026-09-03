@@ -37,14 +37,7 @@ export const useTokenBalance = (): {
   currentBalances: TokenBalanceType[];
   loadingTokenKeys: Set<string>;
   errorNetworkIds: Set<string>;
-  /**
-   * The native token's balance could not be established. Derived from the same
-   * nativeToken the headline balance reads, because the native token is
-   * admitted to the metainfo list by its `main` flag and keeps whatever
-   * networkId it was registered under — asking errorNetworkIds about
-   * currentNetwork.networkId answers a different question and matches only by
-   * coincidence.
-   */
+  /** The native token's balance could not be established. */
   mainTokenUnavailable: boolean;
   refetchBalances: () => Promise<QueryObserverResult<TokenBalanceType[], unknown>>;
   fetchBalanceBy: (address: string, token: TokenModel) => Promise<TokenBalanceType>;
@@ -115,8 +108,7 @@ export const useTokenBalance = (): {
     {
       refetchInterval: GNO_REFETCH_INTERVAL,
       keepPreviousData: true,
-      enabled:
-        availableBalanceFetching && currentBalanceAddress !== null && nativeToken !== null,
+      enabled: availableBalanceFetching && currentBalanceAddress !== null && nativeToken !== null,
     },
   );
 
@@ -151,9 +143,7 @@ export const useTokenBalance = (): {
       // addresses for it is meaningless and wastes LCD bandwidth. Skip the
       // query entirely so the Cosmos token rows stay empty in this mode.
       enabled:
-        availableBalanceFetching &&
-        currentAccount !== null &&
-        !isSessionAccount(currentAccount),
+        availableBalanceFetching && currentAccount !== null && !isSessionAccount(currentAccount),
       // Default retry (3) causes excessive delay and traffic during LCD outages.
       retry: 1,
     },
@@ -166,36 +156,20 @@ export const useTokenBalance = (): {
     [refetchGnoBalances, refetchCosmosBalances],
   );
 
-  // Networks whose balances could not be established, so the UI can show "-"
-  // and a warning rather than a figure it cannot vouch for.
-  //
-  // Cosmos has always reported this through CosmosFetchResult.error. Gno had no
-  // equivalent, so a failed Gno fetch left its rows at EMPTY_AMOUNT with no
-  // network here, which loadingTokenKeys reads as "still loading" — the native
-  // token then rendered 0 indefinitely while the same outage showed ATONE
-  // honestly as unknown.
-  //
-  // A PAUSED query counts as well as an errored one: react-query's default
-  // networkMode pauses rather than fails while the browser reports offline, so
-  // there is no error to observe. It counts only while we still believe we are
-  // offline — the two chains resume at different intervals, and marking any
-  // paused query would flag whichever had not resumed yet, which is a race
-  // rather than an outage.
+  // Networks whose balances could not be established, so the UI can show "-".
+  // Cosmos reports this through CosmosFetchResult.error; Gno had no equivalent.
+  // A paused query counts too — react-query's default networkMode pauses rather
+  // than fails while offline, so there is no error to observe. Only while we
+  // still believe we are offline: the two chains resume on different intervals.
   const errorNetworkIds = useMemo(() => {
     const ids = new Set(cosmosResults.filter((r) => r.error).map((r) => r.networkId));
     const believedOffline = !onlineManager.isOnline();
 
     if (isGnoBalanceError || (believedOffline && gnoFetchStatus === 'paused')) {
-      // The ids the ROWS carry, not currentNetwork.networkId. gnoRows is built
-      // by mapping tokenMetainfos, and use-token-metainfo admits the native
-      // token by its `main` flag regardless of network, so it keeps whatever
-      // networkId it was registered under; keying on the current network marks
-      // every Gno row except the one that matters.
+      // The ids the rows carry, not currentNetwork.networkId: the native token
+      // is admitted by its `main` flag and keeps the networkId it was
+      // registered under, so keying on the current network misses it.
       for (const meta of tokenMetainfos) {
-        // Gno rows only. currentTokenMetainfos and cosmosShellTokens are drawn
-        // from the same metainfo list by different predicates and are disjoint
-        // today; skipping Cosmos models explicitly means a Gno outage can never
-        // flag a Cosmos row if that ever stops being true.
         if (isCosmosNativeTokenModel(meta)) {
           continue;
         }
@@ -203,9 +177,8 @@ export const useTokenBalance = (): {
       }
     }
 
-    // Cosmos rows come from the retained results (keepPreviousData), which
-    // carry exactly the networks on screen. cosmosShellTokens is declared later
-    // in this hook and cannot be read here.
+    // Retained results (keepPreviousData) carry exactly the networks on screen;
+    // cosmosShellTokens is declared later and cannot be read here.
     if (believedOffline && cosmosFetchStatus === 'paused') {
       for (const r of cosmosResults) {
         ids.add(r.networkId);
@@ -213,13 +186,7 @@ export const useTokenBalance = (): {
     }
 
     return ids;
-  }, [
-    cosmosResults,
-    cosmosFetchStatus,
-    isGnoBalanceError,
-    gnoFetchStatus,
-    tokenMetainfos,
-  ]);
+  }, [cosmosResults, cosmosFetchStatus, isGnoBalanceError, gnoFetchStatus, tokenMetainfos]);
 
   // Stable string key for the effect below. The Set above is rebuilt on every
   // render where cosmosResults's reference changes (React Query refetches
@@ -358,10 +325,7 @@ export const useTokenBalance = (): {
     // by both tokenId and networkId to disambiguate same-symbol tokens that
     // exist on multiple chains (e.g. ATONE on mainnet vs testnet).
     const changedTokenInfos: TokenModel[] = allTokenMetainfos.map((tokenMetainfo) => {
-      if (
-        token.tokenId === tokenMetainfo.tokenId &&
-        token.networkId === tokenMetainfo.networkId
-      ) {
+      if (token.tokenId === tokenMetainfo.tokenId && token.networkId === tokenMetainfo.networkId) {
         return {
           ...tokenMetainfo,
           display: activated,

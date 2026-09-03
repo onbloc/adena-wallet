@@ -16,8 +16,7 @@ export const OfflineBannerWrapper = styled.div`
     ${mixins.flex({ direction: 'row' })};
     flex: 0 0 auto;
 
-    /* The shared spinner icon animates itself. Hold it still for viewers who
-       ask for reduced motion, but keep it on screen as a state indicator. */
+    /* The shared spinner icon animates itself. */
     @media (prefers-reduced-motion: reduce) {
       svg {
         animation: none;
