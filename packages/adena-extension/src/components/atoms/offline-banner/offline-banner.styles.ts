@@ -6,10 +6,7 @@ import { fonts, getTheme } from '@styles/theme';
 export const OfflineBannerWrapper = styled.div`
   ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   width: 100%;
-  /* Hosts differ by an order of magnitude in width: the popup is 360px with a
-     20px gutter, the web pages run full-screen behind a header with a 74px one.
-     Track whichever it is instead of leaving a 12px gutter under a 74px header. */
-  padding: 8px clamp(12px, 4vw, 74px);
+  padding: 8px 12px;
   gap: 8px;
   background: ${getTheme('neutral', '_9')};
   border-bottom: 1px solid ${getTheme('neutral', '_7')};

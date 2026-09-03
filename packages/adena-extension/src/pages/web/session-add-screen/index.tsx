@@ -2,9 +2,7 @@ import BigNumber from 'bignumber.js';
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import IconError from '@assets/web/error.svg';
-import {
-  GNO_ADDRESS_PREFIX as GNO_PREFIX,
-} from '@common/constants/chain.constant';
+import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { isSessionMasterAccount, isSessionSupportedChainId } from '@common/utils/account-session';
@@ -12,6 +10,7 @@ import { encodeParameter } from '@common/utils/client-utils';
 import { stringToBase64 } from '@common/utils/encoding-util';
 import { resolveSessionAdminGasInfo } from '@common/utils/session-admin-gas';
 import {
+  OfflineBanner,
   Row,
   View,
   WebButton,
@@ -63,14 +62,50 @@ import {
 } from './session-import-utils';
 
 import {
-  AmountInput, AmountInputWrapper, Card, ChangeUnitIcon, ConfigureCard, DisableTransferToggleWrapper, DropdownChevronIcon, ErrorBanner, Field, IconButton, ImportErrorList,
-  ImportErrorRow, ImportSessionAddress, InlineErrorRow, KeyActionRow, MasterAddressWrapper, MasterInfoIcon,
-  MasterInputField, MasterInputRow,
-  MasterLabelArea, MasterLabelCell,
-  MasterLabelInfoIcon, MasterTooltipBox, MinusIcon, PlusIcon, RealmInputBox,
-  RealmInputInner, SelectField, SelectMenu,
-  SelectOption, SelectTrigger, SessionCard, SessionCardBody, SessionCardHeader, SessionRows, SpendPeriodInput, SpendPeriodInputWrapper, Spinner, TabButton, TabRow, TooltipBox,
-  TooltipBoxAbove, TooltipWrapper, UnitToggle,
+  AmountInput,
+  AmountInputWrapper,
+  Card,
+  ChangeUnitIcon,
+  ConfigureCard,
+  DisableTransferToggleWrapper,
+  DropdownChevronIcon,
+  ErrorBanner,
+  Field,
+  IconButton,
+  ImportErrorList,
+  ImportErrorRow,
+  ImportSessionAddress,
+  InlineErrorRow,
+  KeyActionRow,
+  MasterAddressWrapper,
+  MasterInfoIcon,
+  MasterInputField,
+  MasterInputRow,
+  MasterLabelArea,
+  MasterLabelCell,
+  MasterLabelInfoIcon,
+  MasterTooltipBox,
+  MinusIcon,
+  PlusIcon,
+  RealmInputBox,
+  RealmInputInner,
+  SelectField,
+  SelectMenu,
+  SelectOption,
+  SelectTrigger,
+  SessionCard,
+  SessionCardBody,
+  SessionCardHeader,
+  SessionRows,
+  SpendPeriodInput,
+  SpendPeriodInputWrapper,
+  Spinner,
+  TabButton,
+  TabRow,
+  TooltipBox,
+  TooltipBoxAbove,
+  TooltipWrapper,
+  UnitToggle,
 } from './session-add-screen.styles';
 
 const MAX_REALM_PATHS_GAS_ONLY = 8;
@@ -207,12 +242,7 @@ const SessionAddScreen = (): ReactElement => {
         return { ok: false, error: errorMessageOf(reason) };
       }
     },
-    [
-      currentNetwork,
-      walletSessionService,
-      errorMessageOf,
-      getSessionImportErrorReason,
-    ],
+    [currentNetwork, walletSessionService, errorMessageOf, getSessionImportErrorReason],
   );
 
   // Import handler that branches on wallet presence:
@@ -224,8 +254,7 @@ const SessionAddScreen = (): ReactElement => {
       requests: SessionImportRequest[],
       masterAddress: string,
     ): Promise<
-      | { ok: true }
-      | { ok: false; error: string; errorBySessionAddr?: Record<string, string> }
+      { ok: true } | { ok: false; error: string; errorBySessionAddr?: Record<string, string> }
     > => {
       if (!currentNetwork) {
         return { ok: false, error: errorMessageOf('unsupported_network') };
@@ -308,6 +337,13 @@ const SessionAddScreen = (): ReactElement => {
         paddingBottom: 80,
       }}
     >
+      {/* The only web route that talks to the chain: reading the session back
+          off it, and broadcasting the transaction that creates it. Everywhere
+          else in the register flow — mnemonic, import, password, Ledger,
+          export — is local and finishes offline, so the bar lives here rather
+          than over the whole app. */}
+      <OfflineBanner />
+
       <WebMainHeader
         stepLength={0}
         onClickGoBack={
@@ -336,10 +372,7 @@ const SessionAddScreen = (): ReactElement => {
 
           {hasMasterCandidate && (
             <TabRow>
-              <TabButton
-                $active={activeTab === 'create'}
-                onClick={(): void => setTab('create')}
-              >
+              <TabButton $active={activeTab === 'create'} onClick={(): void => setTab('create')}>
                 Create New Session
               </TabButton>
               <TabButton $active={activeTab === 'import'} onClick={(): void => setTab('import')}>
@@ -486,9 +519,7 @@ const approveSessionViaPopup = (
     let resolved = false;
     let popupId: number | undefined;
 
-    const settle = (
-      result: { ok: true; hash?: string } | { ok: false; reason: string },
-    ): void => {
+    const settle = (result: { ok: true; hash?: string } | { ok: false; reason: string }): void => {
       if (resolved) return;
       resolved = true;
       chrome.runtime.onMessage.removeListener(messageListener);
@@ -574,12 +605,8 @@ const CreateTab = ({
   currentChainId,
   onComplete,
 }: CreateTabProps): ReactElement => {
-  const {
-    sessionRepository,
-    accountService,
-    transactionService,
-    transactionGasService,
-  } = useAdenaContext();
+  const { sessionRepository, accountService, transactionService, transactionGasService } =
+    useAdenaContext();
   const { wallet, updateWallet, gnoProvider } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
@@ -628,7 +655,10 @@ const CreateTab = ({
   const realmPathsRef = useRef<string[]>(realmPaths);
   const realmValidationCacheRef = useRef<Map<string, RealmValidationResult>>(new Map());
 
-  const isSupportedSessionAccount = useMemo(() => isSessionSupportedChainId(currentChainId), [currentChainId]);
+  const isSupportedSessionAccount = useMemo(
+    () => isSessionSupportedChainId(currentChainId),
+    [currentChainId],
+  );
 
   const selectedMaster = useMemo(
     () => masterCandidates.find((a) => a.id === selectedMasterId),
@@ -1050,8 +1080,8 @@ const CreateTab = ({
       // are indistinguishable in the UI.
       const err = e as { message?: string; log?: string };
       setSubmitError(
-        (err.log ? `${err.message ?? 'broadcast failed'}\n${err.log}` : err.message)
-          ?? 'Failed to create session account.',
+        (err.log ? `${err.message ?? 'broadcast failed'}\n${err.log}` : err.message) ??
+          'Failed to create session account.',
       );
     } finally {
       setSubmitting(false);
@@ -1112,13 +1142,7 @@ const CreateTab = ({
                 strokeLinejoin='round'
               />
               <circle cx='8' cy='6' r='0.5' fill='currentColor' />
-              <circle
-                cx='8'
-                cy='8'
-                r='5'
-                stroke='currentColor'
-                strokeWidth='1.25'
-              />
+              <circle cx='8' cy='8' r='5' stroke='currentColor' strokeWidth='1.25' />
             </svg>
           </MasterLabelInfoIcon>
         </MasterLabelCell>
@@ -1127,10 +1151,7 @@ const CreateTab = ({
             The Session Account will control this account with limited scope and time.
           </MasterTooltipBox>
         )}
-        <SelectTrigger
-          type='button'
-          onClick={(): void => setMasterMenuOpen((v) => !v)}
-        >
+        <SelectTrigger type='button' onClick={(): void => setMasterMenuOpen((v) => !v)}>
           {selectedMaster ? (
             <Row style={{ columnGap: 6, alignItems: 'center' }}>
               <span style={{ fontWeight: 600 }}>{selectedMaster.name}</span>
@@ -1182,10 +1203,7 @@ const CreateTab = ({
             This session will be active for
           </WebText>
           <SelectField ref={expiresSelectRef}>
-            <SelectTrigger
-              type='button'
-              onClick={(): void => setExpiresMenuOpen((v) => !v)}
-            >
+            <SelectTrigger type='button' onClick={(): void => setExpiresMenuOpen((v) => !v)}>
               <Row style={{ columnGap: 6, alignItems: 'center' }}>
                 <span>{`${expiresDays} ${expiresDays === 1 ? 'day' : 'days'}`}</span>
                 <span style={{ color: '#51555c' }}>{`(${formatExpiryLabel(expiresDays)})`}</span>
@@ -1293,12 +1311,7 @@ const CreateTab = ({
                 style={{ color: '#878D99' }}
               >
                 <circle cx='8' cy='8' r='6' stroke='currentColor' strokeWidth='1.25' />
-                <path
-                  d='M8 7.5V11'
-                  stroke='currentColor'
-                  strokeWidth='1.5'
-                  strokeLinecap='round'
-                />
+                <path d='M8 7.5V11' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
                 <circle cx='8' cy='5.25' r='0.6' fill='currentColor' />
               </svg>
               {showSpendTooltip && (
@@ -1319,10 +1332,7 @@ const CreateTab = ({
               }}
               placeholder='Enter a time period. Leave this empty for a one-time limit.'
             />
-            <UnitToggle
-              type='button'
-              onClick={(): void => setSpendPeriodUnit(otherUnit)}
-            >
+            <UnitToggle type='button' onClick={(): void => setSpendPeriodUnit(otherUnit)}>
               <span>{unitLabel}</span>
               <ChangeUnitIcon />
             </UnitToggle>
@@ -1398,13 +1408,9 @@ const CreateTab = ({
       </Field>
 
       <Row style={{ columnGap: 8, alignItems: 'center' }}>
-        <WebCheckBox
-          checked={acknowledged}
-          onClick={(): void => setAcknowledged(!acknowledged)}
-        />
+        <WebCheckBox checked={acknowledged} onClick={(): void => setAcknowledged(!acknowledged)} />
         <WebText type='body5' color='#878D99'>
-          Your session key will only be stored on this device. Adena can&apos;t recover it for
-          you.
+          Your session key will only be stored on this device. Adena can&apos;t recover it for you.
         </WebText>
       </Row>
 
@@ -1452,8 +1458,7 @@ interface ImportTabProps {
     requests: SessionImportRequest[],
     masterAddress: string,
   ) => Promise<
-    | { ok: true }
-    | { ok: false; error: string; errorBySessionAddr?: Record<string, string> }
+    { ok: true } | { ok: false; error: string; errorBySessionAddr?: Record<string, string> }
   >;
 }
 
@@ -1487,10 +1492,31 @@ const MasterAddressInput = ({
             onMouseEnter={(): void => setShowTooltip(true)}
             onMouseLeave={(): void => setShowTooltip(false)}
           >
-            <svg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'>
-              <path d='M10 10.834V12.5007' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' />
-              <path d='M10.4173 7.50065C10.4173 7.73077 10.2308 7.91732 10.0007 7.91732C9.77053 7.91732 9.58398 7.73077 9.58398 7.50065C9.58398 7.27053 9.77053 7.08398 10.0007 7.08398C10.2308 7.08398 10.4173 7.27053 10.4173 7.50065Z' stroke='currentColor' />
-              <path d='M16.0423 10.0007C16.0423 13.3374 13.3374 16.0423 10.0007 16.0423C6.66393 16.0423 3.95898 13.3374 3.95898 10.0007C3.95898 6.66393 6.66393 3.95898 10.0007 3.95898C13.3374 3.95898 16.0423 6.66393 16.0423 10.0007Z' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
+            <svg
+              width='20'
+              height='20'
+              viewBox='0 0 20 20'
+              fill='none'
+              xmlns='http://www.w3.org/2000/svg'
+            >
+              <path
+                d='M10 10.834V12.5007'
+                stroke='currentColor'
+                strokeWidth='2'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+              />
+              <path
+                d='M10.4173 7.50065C10.4173 7.73077 10.2308 7.91732 10.0007 7.91732C9.77053 7.91732 9.58398 7.73077 9.58398 7.50065C9.58398 7.27053 9.77053 7.08398 10.0007 7.08398C10.2308 7.08398 10.4173 7.27053 10.4173 7.50065Z'
+                stroke='currentColor'
+              />
+              <path
+                d='M16.0423 10.0007C16.0423 13.3374 13.3374 16.0423 10.0007 16.0423C6.66393 16.0423 3.95898 13.3374 3.95898 10.0007C3.95898 6.66393 6.66393 3.95898 10.0007 3.95898C13.3374 3.95898 16.0423 6.66393 16.0423 10.0007Z'
+                stroke='currentColor'
+                strokeWidth='1.5'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+              />
             </svg>
           </MasterInfoIcon>
         </MasterLabelArea>
@@ -1594,12 +1620,7 @@ const ImportTab = ({
 
   const selectedRequests = useMemo<SessionImportRequest[]>(() => {
     return rows
-      .filter(
-        (row) =>
-          row.selected &&
-          !row.alreadyImported &&
-          row.privKey.trim().length > 0,
-      )
+      .filter((row) => row.selected && !row.alreadyImported && row.privKey.trim().length > 0)
       .map((row) => ({
         sessionAddr: row.sessionAddr,
         privKey: row.privKey,
@@ -1622,9 +1643,7 @@ const ImportTab = ({
     const sanitized = sanitizeSessionPrivateKeyInput(value);
     setRows((prev) =>
       prev.map((row) =>
-        row.sessionAddr === sessionAddr
-          ? { ...row, privKey: sanitized, error: '' }
-          : row,
+        row.sessionAddr === sessionAddr ? { ...row, privKey: sanitized, error: '' } : row,
       ),
     );
   }, []);
