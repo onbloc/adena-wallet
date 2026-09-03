@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { EventStore } from './event-store';
 import { Event, EventStatus } from './types';
-import { makeHexByBase64, parseABCIValue } from './utility';
+import { makeRpcHashParam, parseABCIValue } from './utility';
 
 type ResponseDataType = string[];
 
@@ -348,7 +348,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
 
     try {
       const networkClient = axios.create({ baseURL: event.rpcUrl });
-      const result = await networkClient.get('/tx?hash=' + makeHexByBase64(id));
+      const result = await networkClient.get('/tx?hash=' + makeRpcHashParam(id));
 
       const height = Number(result.data?.result?.height || 0);
       if (!height) {

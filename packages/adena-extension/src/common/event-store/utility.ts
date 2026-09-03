@@ -1,10 +1,11 @@
+import { toHexHash } from '@common/utils/hash-utils';
+
 /**
- * Converts a base64-encoded hash to hex.
- * Use when calling the tx endpoint of an RPC.
+ * Builds the `hash` query value for an RPC `/tx` lookup, which expects a
+ * `0x`-prefixed hex hash.
  */
-export function makeHexByBase64(base64Hash: string): string {
-  const buffer = Buffer.from(base64Hash, 'base64');
-  return '0x' + buffer.toString('hex');
+export function makeRpcHashParam(hash: string): string {
+  return '0x' + toHexHash(hash);
 }
 
 export function parseABCIValue(str: string): string[] {
