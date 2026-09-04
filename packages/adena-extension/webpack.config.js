@@ -16,7 +16,7 @@ const config = {
     background: path.join(__dirname, './src/background.ts'),
     inject: path.join(__dirname, './src/inject.ts'),
   },
-  output: { path: path.join(__dirname, '/dist'), filename: '[name].js' },
+  output: { path: path.join(__dirname, '/dist'), filename: '[name].js', publicPath: '' },
   module: {
     rules: [
       {
@@ -88,42 +88,35 @@ const config = {
               JSON.stringify({
                 icons: {
                   16: 'icons/icon16.png',
-                  32: 'icons/icon32.png',
                   48: 'icons/icon48.png',
                   128: 'icons/icon128.png',
                 },
+                description: packageInfo.description,
+                version: packageInfo.version,
                 ...JSON.parse(content.toString()),
               }),
             ),
         },
         {
-          from: './public/icon/*',
-          to: './icons/[name][ext]',
-        },
-        {
-          from: './src/resources',
-          to: './resources',
+          from: './public/icons/*',
+          to: 'icons/[name][ext]',
         },
       ],
     }),
     new HtmlWebPackPlugin({
-      template: './public/web.html',
-      chunks: ['web'],
-      filename: 'register.html',
-    }),
-    new HtmlWebPackPlugin({
-      template: './public/web.html',
-      chunks: ['web'],
-      filename: 'security.html',
-    }),
-    new HtmlWebPackPlugin({
-      template: './public/popup.html',
-      chunks: ['popup'],
+      template: './src/popup.html',
       filename: 'popup.html',
+      chunks: ['popup'],
+    }),
+    new HtmlWebPackPlugin({
+      template: './src/popup.html',
+      filename: 'web.html',
+      chunks: ['web'],
     }),
     new NodePolyfillPlugin(),
     new ProvidePlugin({
-      process: 'process/browser.js',
+      React: 'react',
+      Buffer: ['buffer', 'Buffer'],
     }),
   ],
 };
