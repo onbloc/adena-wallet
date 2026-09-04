@@ -56,8 +56,7 @@ export class WalletBalanceService {
             .toNumber();
         }
         return null;
-      })
-      .catch(() => null);
+      });
   }
 
   /**
