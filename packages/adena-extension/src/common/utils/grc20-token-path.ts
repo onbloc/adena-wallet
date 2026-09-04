@@ -2,11 +2,11 @@
  * GRC20 token-key helpers.
  *
  * The wallet identifies a GRC20 token by a single canonical **token key**
- * `` `${packagePath}.${symbol}` `` (dot separator). This is the same value the
+ * `` `${packagePath}.${symbol}` `` (dot separator) — the same value the
  * on-chain `grc20reg` registry uses (the fqname `fqname.Construct(rlmPath,
- * symbol)`) and the same identity the API returns (`tokenId`/`tokenKey`), so the
- * wallet, the registry, and the API all speak one form — no colon/dot
- * conversion. One token per realm+symbol.
+ * symbol)`) and the same identity the API returns in `tokenKey`. The API's
+ * `tokenId` is a different, opaque value and must never be parsed as one.
+ * One token per realm+symbol.
  *
  * A gno package path uses slashes and never contains a `.` in its trailing
  * segment; only the appended `.symbol` carries a dot after the last slash. So

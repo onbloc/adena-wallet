@@ -16,7 +16,6 @@ import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { decodeGnoString, gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
 import {
-  isTokenPath,
   parseRegistryKey,
   registryKeyToTokenPath,
   toTokenPath,
@@ -530,11 +529,11 @@ export class TokenRepository implements ITokenRepository {
     return assets
       .filter((asset) => (asset.tokenType ?? '').toUpperCase() === 'GRC20' && !!asset.packagePath)
       .map((asset) => {
-        // The API returns the identity in `tokenId` as the token key
-        // `{packagePath}.{symbol}` — the wallet's canonical form. Fall back to
-        // rebuilding it from packagePath + symbol when the field is missing.
+        // tokenKey is the wallet's canonical identity; tokenId is opaque and
+        // must never be used, even as a fallback. Rebuild from packagePath +
+        // symbol when tokenKey is absent (older API versions).
         const tokenId =
-          (isTokenPath(asset.tokenId) ? asset.tokenId : registryKeyToTokenPath(asset.tokenId)) ??
+          (asset.tokenKey ? tokenIdentifierToRegistryKey(asset.tokenKey) : null) ??
           toTokenPath(asset.packagePath, asset.symbol);
 
         return {

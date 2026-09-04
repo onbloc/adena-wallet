@@ -54,8 +54,10 @@ export interface AccountAsset {
   packagePath: string;
   symbol: string;
   tokenType: string;
-  // Token key `{packagePath}.{symbol}` — maps directly to the wallet tokenId.
+  // Opaque on-chain value (`{packagePath}.{symbol}.{sequence}`) — not the wallet's tokenId.
   tokenId: string;
+  // Canonical `{packagePath}.{symbol}` key, maps to the wallet tokenId. Absent on older API versions.
+  tokenKey?: string;
 }
 
 export interface AccountAssetsResponse {

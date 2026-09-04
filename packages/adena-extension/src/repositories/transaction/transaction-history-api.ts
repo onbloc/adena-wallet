@@ -57,9 +57,8 @@ export class TransactionHistoryApiRepository implements ITransactionHistoryRepos
     tokenPath: string,
     cursor?: string | null,
   ): Promise<TransactionWithPageInfo> {
-    // The endpoint is keyed by the full token key `{packagePath}.{symbol}`
-    // (the same identity the API returns as tokenId/tokenKey); fall back to the
-    // raw input for a legacy bare packagePath.
+    // Keyed by the token key `{packagePath}.{symbol}` (same as the API's
+    // `tokenKey`); fall back to the raw input for a legacy bare packagePath.
     const tokenKey = toRegistryKey(tokenPath) ?? tokenPath;
     const encodedTokenKey = encodeURIComponent(tokenKey);
     const path = `${this.apiUrl}/v1/accounts/${address}/grc20-token/${encodedTokenKey}/transactions`;
