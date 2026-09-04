@@ -1,6 +1,7 @@
 export interface TransactionResponse<
   T = MsgCallValue | MsgRunValue | AddPackageValue | BankSendValue,
 > {
+  // The tm2 GraphQL indexer returns the tx hash base64-encoded.
   hash: string;
   index: number;
   success: boolean;

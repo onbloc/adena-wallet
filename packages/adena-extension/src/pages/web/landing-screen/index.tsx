@@ -28,10 +28,12 @@ const LandingScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const { walletService } = useAdenaContext();
 
+  // networkMode 'always': this reads chrome.storage, never the network. The
+  // default 'online' pauses offline, leaving isLoading true for the session.
   const { data: existWallet, isLoading } = useQuery(
-    ['existWallet', walletService],
+    ['existWallet', walletService.id],
     async () => walletService.existsWallet(),
-    {},
+    { networkMode: 'always' },
   );
 
   if (isLoading) {
@@ -51,9 +53,7 @@ const LandingScreen = (): ReactElement => {
             />
           </StyledAnimationWrapper>
           <View style={{ rowGap: 8 }}>
-            <WebText type='headline4'>
-              {existWallet ? 'Add Account' : 'Welcome to Adena'}
-            </WebText>
+            <WebText type='headline4'>{existWallet ? 'Add Account' : 'Welcome to Adena'}</WebText>
             <WebText type='body4' color='#8D9199'>
               {existWallet
                 ? 'Select a method to add a new account to Adena.'

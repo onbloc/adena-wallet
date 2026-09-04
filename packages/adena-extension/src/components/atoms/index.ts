@@ -33,6 +33,7 @@ export * from './main-action-button';
 export * from './skeleton-box';
 export * from './secure-textarea';
 export * from './warning-triangle-icon';
+export * from './offline-banner';
 export * from './base';
 // web
 export * from './web-text';

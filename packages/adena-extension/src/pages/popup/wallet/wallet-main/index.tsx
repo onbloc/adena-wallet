@@ -9,7 +9,7 @@ import IconDeposit from '@assets/icon-deposit';
 import IconSend from '@assets/icon-send';
 import IconSign from '@assets/icon-sign';
 import { CHAIN_ICON_MAP, COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
-import { MainActionButton } from '@components/atoms';
+import { MainActionButton, OfflineBanner } from '@components/atoms';
 import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
 import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
@@ -49,12 +49,33 @@ function readCachedRowCount(): number {
   }
 }
 
+// The network label is position: fixed, so the flow reserves its slot with padding.
+const NETWORK_LABEL_SLOT_HEIGHT = 37;
+// `main` gets `padding: 0 20px` from GlobalPopupStyle; full-bleed children cancel it.
+const MAIN_SIDE_PADDING = 20;
+
 const Wrapper = styled.main<{ $dimmed: boolean }>`
-  padding-top: 37px;
+  padding-top: ${NETWORK_LABEL_SLOT_HEIGHT}px;
   text-align: center;
   overflow: auto;
 
   ${revokedDimStyle}
+
+  /* Negative margins cancel the global main padding so the bar spans the
+     scrollport. top: 0 holds it at its own flow position (the bottom of the
+     reserved slot); a positive offset would push it down and open a gap for
+     content to scroll through. z-index stays under the label (10). */
+  .offline-banner-slot {
+    position: sticky;
+    top: 0;
+    z-index: 9;
+    margin: 0 -${MAIN_SIDE_PADDING}px 12px;
+  }
+
+  /* The banner renders null when online. */
+  .offline-banner-slot:empty {
+    display: none;
+  }
 
   .network-label-wrapper {
     position: fixed;
@@ -93,8 +114,13 @@ export const WalletMain = (): JSX.Element => {
   const [state] = useRecoilState(WalletState.state);
   const { currentNetwork } = useNetwork();
   const { currentAccount } = useCurrentAccount();
-  const { mainTokenBalance, currentBalances, loadingTokenKeys, errorNetworkIds } =
-    useTokenBalance();
+  const {
+    mainTokenBalance,
+    mainTokenUnavailable,
+    currentBalances,
+    loadingTokenKeys,
+    errorNetworkIds,
+  } = useTokenBalance();
   const { failedNetwork } = useNetwork();
   const { updateAllTokenMetainfos, getTokenImage } = useTokenMetainfo();
 
@@ -257,17 +283,25 @@ export const WalletMain = (): JSX.Element => {
     }
   }, [tokens.length]);
 
-  const isMainBalanceLoading = mainTokenBalance === null;
+  // keepPreviousData keeps the last good figure on screen when a fetch fails or
+  // pauses, rendered identically to a confirmed one. The token rows already
+  // respect errorNetworkIds; this headline read the cached amount directly.
+  const gnoBalanceUnavailable = mainTokenUnavailable;
+  const isMainBalanceLoading = mainTokenBalance === null && !gnoBalanceUnavailable;
   // Same NaN guard as the row mapping above — a malformed numeric string
   // would otherwise render as the literal "NaN" in the headline balance.
   const mainBalanceValue = ((): string => {
-    if (isMainBalanceLoading) return '';
+    if (gnoBalanceUnavailable) return '-';
+    if (mainTokenBalance === null) return '';
     const parsed = BigNumber(mainTokenBalance.value);
     return parsed.isFinite() ? parsed.toFormat() : '-';
   })();
 
   return (
     <Wrapper $dimmed={sessionRevoked}>
+      <div className='offline-banner-slot'>
+        <OfflineBanner />
+      </div>
       <div className='network-label-wrapper'>
         <MainNetworkLabel
           networkName={currentNetwork.networkName}
@@ -278,7 +312,7 @@ export const WalletMain = (): JSX.Element => {
         <MainTokenBalance
           amount={{
             value: mainBalanceValue,
-            denom: isMainBalanceLoading ? '' : mainTokenBalance.denom,
+            denom: mainTokenBalance === null ? '' : mainTokenBalance.denom,
           }}
           loading={isMainBalanceLoading}
         />

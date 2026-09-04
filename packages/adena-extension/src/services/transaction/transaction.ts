@@ -557,14 +557,14 @@ export class TransactionService {
   };
 
   /**
-   * create a transaction hash
+   * create a hex-encoded transaction hash
    *
    * @param transaction
    * @returns
    */
   public createHash(transaction: Tx): string {
     const hash = sha256(encodeGnoTx(transaction));
-    return Buffer.from(hash).toString('base64');
+    return Buffer.from(hash).toString('hex');
   }
 
   /**

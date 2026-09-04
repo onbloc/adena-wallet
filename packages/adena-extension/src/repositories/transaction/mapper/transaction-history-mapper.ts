@@ -1,4 +1,5 @@
 import { dateToLocal, formatAddress, getDateText } from '@common/utils/client-utils';
+import { toHexHash } from '@common/utils/hash-utils';
 import { TransactionInfo, TransactionWithPageInfo } from '@types';
 import {
   TransactionHistoryItem,
@@ -168,7 +169,7 @@ export class TransactionHistoryMapper {
     const message = historyItem.func?.[0];
 
     return {
-      hash: historyItem.txHash,
+      hash: toHexHash(historyItem.txHash),
       logo: '',
       type: 'MULTI_CONTRACT_CALL',
       status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
@@ -222,7 +223,7 @@ export class TransactionHistoryMapper {
     const amount = isReceived ? historyItem.amountIn : historyItem.amountOut;
 
     return {
-      hash: historyItem.txHash,
+      hash: toHexHash(historyItem.txHash),
       logo: '',
       type: 'TRANSFER',
       typeName: functionName,
@@ -280,7 +281,7 @@ export class TransactionHistoryMapper {
     const amount = isTransfer && isReceived ? historyItem.amountIn : historyItem.amountOut;
 
     return {
-      hash: historyItem.txHash,
+      hash: toHexHash(historyItem.txHash),
       logo: '',
       type: transactionType,
       typeName: 'Contract Interaction',
@@ -316,7 +317,7 @@ export class TransactionHistoryMapper {
       valueType = 'DEFAULT';
     }
     return {
-      hash: historyItem.txHash,
+      hash: toHexHash(historyItem.txHash),
       logo: '',
       type: 'ADD_PACKAGE',
       status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
@@ -348,7 +349,7 @@ export class TransactionHistoryMapper {
     const title = sessionTitleMap[messageType] ?? historyItem.func[0].funcType;
 
     return {
-      hash: historyItem.txHash,
+      hash: toHexHash(historyItem.txHash),
       logo: '',
       type: 'CONTRACT_CALL',
       status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
@@ -371,7 +372,7 @@ export class TransactionHistoryMapper {
   private static mappedHistoryItemDefault(historyItem: TransactionHistoryItem): TransactionInfo {
     const valueType = historyItem.successYn ? 'DEFAULT' : 'BLUR';
     return {
-      hash: historyItem.txHash,
+      hash: toHexHash(historyItem.txHash),
       logo: '',
       type: 'CONTRACT_CALL',
       typeName: 'Contract Interaction',

@@ -78,89 +78,92 @@ export const useBalanceInput = (
     !!tokenMetainfo &&
     isNativeTokenModel(tokenMetainfo);
 
-  const {
-    data: currentSessionMetadata = null,
-    isLoading: isLoadingCurrentSessionMetadata,
-  } = useQuery<SessionMetadataV021 | null>(
-    ['sessionMetadataForBalanceInput', currentAccount?.id, currentNetwork.chainId],
-    async () => {
-      if (!currentAccount || !isSessionAccount(currentAccount)) {
-        return null;
-      }
-
-      const sessionAddr = await currentAccount.getAddress('g').catch(() => null);
-      if (!sessionAddr) {
-        return null;
-      }
-
-      const stored = await sessionRepository.get(sessionAddr);
-      if (!gnoProvider) {
-        return stored;
-      }
-
-      let record;
-      try {
-        record = await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr);
-      } catch {
-        return stored;
-      }
-      if (!record) {
-        const revoked = await shouldMarkSessionRevoked(
-          stored,
-          async () =>
-            !!(await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr)),
-        );
-        if (revoked && stored) {
-          await sessionRepository.setStatus(sessionAddr, 'REVOKED').catch(() => undefined);
-          // Without this the dim, the popover and the balance address only catch
-          // up on the next SESSIONS refetch.
-          await queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
-          return { ...stored, status: 'REVOKED' };
+  const { data: currentSessionMetadata = null, isLoading: isLoadingCurrentSessionMetadata } =
+    useQuery<SessionMetadataV021 | null>(
+      ['sessionMetadataForBalanceInput', currentAccount?.id, currentNetwork.chainId],
+      async () => {
+        if (!currentAccount || !isSessionAccount(currentAccount)) {
+          return null;
         }
-        return stored;
-      }
 
-      const base = record.BaseSessionAccount;
-      const nowSeconds = Math.floor(Date.now() / 1000);
-      const expiresAt = Number(base.expires_at ?? stored?.expiresAt ?? 0);
-      const status: SessionMetadataV021['status'] =
-        stored?.status === 'REVOKED'
-          ? 'REVOKED'
-          : expiresAt > 0 && nowSeconds >= expiresAt
-          ? 'EXPIRED'
-          : 'ACTIVE';
-      const spendUsed = base.spend_used === '' ? undefined : base.spend_used;
-      const spendReset =
-        base.spend_reset != null && base.spend_reset !== '' ? Number(base.spend_reset) : undefined;
+        const sessionAddr = await currentAccount.getAddress('g').catch(() => null);
+        if (!sessionAddr) {
+          return null;
+        }
 
-      if (stored) {
-        await sessionRepository
-          .syncFromChain(sessionAddr, { spendUsed, spendReset, status })
-          .catch(() => undefined);
-      }
+        const stored = await sessionRepository.get(sessionAddr);
+        if (!gnoProvider) {
+          return stored;
+        }
 
-      return {
-        masterAddress: stored?.masterAddress ?? currentAccount.getMasterAddress(),
-        chainId: stored?.chainId ?? currentAccount.sessionConfig.chainId,
-        allowPaths: stored?.allowPaths ?? currentAccount.sessionConfig.allowPaths ?? [],
-        spendLimit:
-          base.spend_limit ?? stored?.spendLimit ?? currentAccount.sessionConfig.spendLimit ?? '',
-        spendPeriod: Number(
-          base.spend_period ?? stored?.spendPeriod ?? currentAccount.sessionConfig.spendPeriod ?? 0,
-        ),
-        spendUsed,
-        spendReset,
-        expiresAt,
-        status,
-        createdAt: stored?.createdAt ?? nowSeconds,
-        txHash: stored?.txHash,
-      };
-    },
-    {
-      enabled: currentAccount !== null && isSessionAccount(currentAccount),
-      refetchInterval: 30_000,
-    },
-  );
+        let record;
+        try {
+          record = await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr);
+        } catch {
+          return stored;
+        }
+        if (!record) {
+          const revoked = await shouldMarkSessionRevoked(
+            stored,
+            async () =>
+              !!(await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr)),
+          );
+          if (revoked && stored) {
+            await sessionRepository.setStatus(sessionAddr, 'REVOKED').catch(() => undefined);
+            // Without this the dim, the popover and the balance address only catch
+            // up on the next SESSIONS refetch.
+            await queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
+            return { ...stored, status: 'REVOKED' };
+          }
+          return stored;
+        }
+
+        const base = record.BaseSessionAccount;
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        const expiresAt = Number(base.expires_at ?? stored?.expiresAt ?? 0);
+        const status: SessionMetadataV021['status'] =
+          stored?.status === 'REVOKED'
+            ? 'REVOKED'
+            : expiresAt > 0 && nowSeconds >= expiresAt
+              ? 'EXPIRED'
+              : 'ACTIVE';
+        const spendUsed = base.spend_used === '' ? undefined : base.spend_used;
+        const spendReset =
+          base.spend_reset != null && base.spend_reset !== ''
+            ? Number(base.spend_reset)
+            : undefined;
+
+        if (stored) {
+          await sessionRepository
+            .syncFromChain(sessionAddr, { spendUsed, spendReset, status })
+            .catch(() => undefined);
+        }
+
+        return {
+          masterAddress: stored?.masterAddress ?? currentAccount.getMasterAddress(),
+          chainId: stored?.chainId ?? currentAccount.sessionConfig.chainId,
+          allowPaths: stored?.allowPaths ?? currentAccount.sessionConfig.allowPaths ?? [],
+          spendLimit:
+            base.spend_limit ?? stored?.spendLimit ?? currentAccount.sessionConfig.spendLimit ?? '',
+          spendPeriod: Number(
+            base.spend_period ??
+              stored?.spendPeriod ??
+              currentAccount.sessionConfig.spendPeriod ??
+              0,
+          ),
+          spendUsed,
+          spendReset,
+          expiresAt,
+          status,
+          createdAt: stored?.createdAt ?? nowSeconds,
+          txHash: stored?.txHash,
+        };
+      },
+      {
+        enabled: currentAccount !== null && isSessionAccount(currentAccount),
+        refetchInterval: 30_000,
+      },
+    );
 
   const sessionSpendConfig = useMemo<SessionSpendConfig | null>(() => {
     if (!currentAccount || !isSessionAccount(currentAccount)) {
@@ -287,7 +290,11 @@ export const useBalanceInput = (
       return false;
     }
 
-    const currentBalance = await fetchBalanceBy(currentFundingAddress, tokenMetainfo);
+    // getGnotTokenBalance now rejects on a transport failure, so leave the
+    // balance undefined rather than letting the rejection break the screen.
+    const currentBalance = await fetchBalanceBy(currentFundingAddress, tokenMetainfo).catch(
+      () => undefined,
+    );
     setCurrentBalance(currentBalance);
     return true;
   }, [wallet, balanceService, currentFundingAddress, tokenMetainfo]);
@@ -302,7 +309,13 @@ export const useBalanceInput = (
       return errorMessage;
     }
     const label = isSessionNativeTransfer ? 'Spendable' : 'Balance';
-    const balanceAmount = BigNumber(currentBalance?.amount.value || 0);
+
+    // A balance that could not be read is not a zero balance.
+    if (!currentBalance) {
+      return `${label}: - ${tokenMetainfo.symbol}`;
+    }
+
+    const balanceAmount = BigNumber(currentBalance.amount.value || 0);
     const descriptionAmount = isSessionNativeTransfer
       ? availAmountNumber
       : getLimitedAmount(balanceAmount, sessionSpendableAmount);

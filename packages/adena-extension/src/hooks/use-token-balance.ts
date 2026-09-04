@@ -1,4 +1,4 @@
-import { QueryObserverResult, useQuery } from '@tanstack/react-query';
+import { onlineManager, QueryObserverResult, useQuery } from '@tanstack/react-query';
 import { Account, isSessionAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo } from 'react';
@@ -37,6 +37,8 @@ export const useTokenBalance = (): {
   currentBalances: TokenBalanceType[];
   loadingTokenKeys: Set<string>;
   errorNetworkIds: Set<string>;
+  /** The native token's balance could not be established. */
+  mainTokenUnavailable: boolean;
   refetchBalances: () => Promise<QueryObserverResult<TokenBalanceType[], unknown>>;
   fetchBalanceBy: (address: string, token: TokenModel) => Promise<TokenBalanceType>;
   toggleDisplayOption: (account: Account, token: TokenModel, activated: boolean) => void;
@@ -82,6 +84,8 @@ export const useTokenBalance = (): {
   const {
     data: gnoBalances = [],
     refetch: refetchGnoBalances,
+    isError: isGnoBalanceError,
+    fetchStatus: gnoFetchStatus,
   } = useQuery<TokenBalanceType[]>(
     // 'gno' discriminator keeps this cache entry separate from the Cosmos query
     // even though both share the 'balances' prefix.
@@ -104,14 +108,14 @@ export const useTokenBalance = (): {
     {
       refetchInterval: GNO_REFETCH_INTERVAL,
       keepPreviousData: true,
-      enabled:
-        availableBalanceFetching && currentBalanceAddress !== null && nativeToken !== null,
+      enabled: availableBalanceFetching && currentBalanceAddress !== null && nativeToken !== null,
     },
   );
 
   const {
     data: cosmosResults = [],
     refetch: refetchCosmosBalances,
+    fetchStatus: cosmosFetchStatus,
   } = useQuery<CosmosFetchResult[]>(
     // Keyed by account id (not the object reference) to avoid spurious refetches
     // when a new Account instance is created from the same underlying data.
@@ -139,9 +143,7 @@ export const useTokenBalance = (): {
       // addresses for it is meaningless and wastes LCD bandwidth. Skip the
       // query entirely so the Cosmos token rows stay empty in this mode.
       enabled:
-        availableBalanceFetching &&
-        currentAccount !== null &&
-        !isSessionAccount(currentAccount),
+        availableBalanceFetching && currentAccount !== null && !isSessionAccount(currentAccount),
       // Default retry (3) causes excessive delay and traffic during LCD outages.
       retry: 1,
     },
@@ -154,10 +156,37 @@ export const useTokenBalance = (): {
     [refetchGnoBalances, refetchCosmosBalances],
   );
 
-  const errorNetworkIds = useMemo(
-    () => new Set(cosmosResults.filter((r) => r.error).map((r) => r.networkId)),
-    [cosmosResults],
-  );
+  // Networks whose balances could not be established, so the UI can show "-".
+  // Cosmos reports this through CosmosFetchResult.error; Gno had no equivalent.
+  // A paused query counts too — react-query's default networkMode pauses rather
+  // than fails while offline, so there is no error to observe. Only while we
+  // still believe we are offline: the two chains resume on different intervals.
+  const errorNetworkIds = useMemo(() => {
+    const ids = new Set(cosmosResults.filter((r) => r.error).map((r) => r.networkId));
+    const believedOffline = !onlineManager.isOnline();
+
+    if (isGnoBalanceError || (believedOffline && gnoFetchStatus === 'paused')) {
+      // The ids the rows carry, not currentNetwork.networkId: the native token
+      // is admitted by its `main` flag and keeps the networkId it was
+      // registered under, so keying on the current network misses it.
+      for (const meta of tokenMetainfos) {
+        if (isCosmosNativeTokenModel(meta)) {
+          continue;
+        }
+        ids.add(meta.networkId);
+      }
+    }
+
+    // Retained results (keepPreviousData) carry exactly the networks on screen;
+    // cosmosShellTokens is declared later and cannot be read here.
+    if (believedOffline && cosmosFetchStatus === 'paused') {
+      for (const r of cosmosResults) {
+        ids.add(r.networkId);
+      }
+    }
+
+    return ids;
+  }, [cosmosResults, cosmosFetchStatus, isGnoBalanceError, gnoFetchStatus, tokenMetainfos]);
 
   // Stable string key for the effect below. The Set above is rebuilt on every
   // render where cosmosResults's reference changes (React Query refetches
@@ -266,6 +295,13 @@ export const useTokenBalance = (): {
     return keys;
   }, [currentBalances, errorNetworkIds]);
 
+  const mainTokenUnavailable = useMemo((): boolean => {
+    if (nativeToken === null) {
+      return false;
+    }
+    return errorNetworkIds.has(nativeToken.networkId);
+  }, [errorNetworkIds, nativeToken]);
+
   const mainTokenBalance = useMemo((): Amount | null => {
     if (nativeToken === null) {
       return null;
@@ -289,10 +325,7 @@ export const useTokenBalance = (): {
     // by both tokenId and networkId to disambiguate same-symbol tokens that
     // exist on multiple chains (e.g. ATONE on mainnet vs testnet).
     const changedTokenInfos: TokenModel[] = allTokenMetainfos.map((tokenMetainfo) => {
-      if (
-        token.tokenId === tokenMetainfo.tokenId &&
-        token.networkId === tokenMetainfo.networkId
-      ) {
+      if (token.tokenId === tokenMetainfo.tokenId && token.networkId === tokenMetainfo.networkId) {
         return {
           ...tokenMetainfo,
           display: activated,
@@ -378,6 +411,7 @@ export const useTokenBalance = (): {
 
   return {
     mainTokenBalance,
+    mainTokenUnavailable,
     currentBalances,
     loadingTokenKeys,
     errorNetworkIds,
