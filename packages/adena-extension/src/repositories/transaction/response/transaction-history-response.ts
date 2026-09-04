@@ -43,5 +43,6 @@ export interface TransactionHistoryItem {
   callerAddress?: string;
   // Session account that signed the tx, or "" for a master-key signature.
   sessionAddress?: string;
+  // Hex-encoded since onbloc-api-v3#213; older deployments still answer base64.
   txHash: string;
 }

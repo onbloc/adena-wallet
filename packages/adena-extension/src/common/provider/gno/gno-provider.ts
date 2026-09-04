@@ -5,6 +5,7 @@ import {
   UNKNOWN_ADDRESS_ERROR_TYPE,
 } from '@common/constants/tx-error.constant';
 import { parseTokenAmount } from '@common/utils/amount-utils';
+import { toHexHash } from '@common/utils/hash-utils';
 import type { SessionAccountInfo } from '@gnolang/gno-js-client';
 import { GnoJSONRPCProvider } from '@gnolang/gno-js-client';
 import {
@@ -349,7 +350,17 @@ export class GnoProvider extends GnoJSONRPCProvider {
       const result = await this.sendTransactionSync(tx);
       return result as BroadcastTransactionMap[K]['result'];
     }
-    return super.sendTransaction(tx, endpoint);
+
+    const result = await super.sendTransaction(tx, endpoint);
+    if (!result?.hash) {
+      return result;
+    }
+
+    // The node returns the tx hash base64-encoded; the wallet uses hex.
+    return {
+      ...result,
+      hash: toHexHash(result.hash),
+    };
   }
 
   public async sendTransactionSync(tx: string): Promise<BroadcastTxSyncResult> {
@@ -392,7 +403,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
       error: null,
       data: result.data ?? null,
       Log: log,
-      hash: result.hash,
+      hash: toHexHash(result.hash),
     };
   }
 

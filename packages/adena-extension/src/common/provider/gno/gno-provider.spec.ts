@@ -20,11 +20,10 @@ describe('GnoProvider', () => {
   });
 
   describe('sendTransactionSync', () => {
-    it('returns the broadcast tx hash as canonical base64, not uppercase hex', async () => {
-      // Regression guard: sendTransactionSync must hand dApps the same base64 hash
-      // the tm2-js-client path produced. A direct broadcast previously ran the hash
-      // through base64->hex, which changed the value returned to callers.
+    it('returns the broadcast tx hash as lowercase hex', async () => {
+      // The node answers with a base64 hash; the wallet uses hex.
       const base64Hash = '2dD/aBpjSdCTwYdaF64b+bekuBdenwWbYezWfn3JHWE=';
+      const hexHash = 'd9d0ff681a6349d093c1875a17ae1bf9b7a4b8175e9f059b61ecd67e7dc91d61';
       axiosPostMock.mockResolvedValue({
         data: { result: { error: null, data: null, log: '', hash: base64Hash } },
       });
@@ -32,8 +31,7 @@ describe('GnoProvider', () => {
       const provider = new GnoProvider('https://rpc.example', 'test-13');
       const result = await provider.sendTransactionSync('encoded-tx');
 
-      expect(result.hash).toBe(base64Hash);
-      expect(result.hash).not.toMatch(/^[0-9A-Fa-f]{64}$/);
+      expect(result.hash).toBe(hexHash);
     });
   });
 

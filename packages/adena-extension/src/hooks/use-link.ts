@@ -1,5 +1,5 @@
 import { SCANNER_URL } from '@common/constants/resource.constant';
-import { normalizeGnoscanTxHash } from '@common/utils/gnoscan-url';
+import { toHexHash } from '@common/utils/hash-utils';
 import { createRegisterUrl } from '@common/utils/register-url';
 import { makeScannerUrl } from '@common/utils/scanner-utils';
 import { RoutePath, SECURITY_PATH } from '@types';
@@ -23,9 +23,9 @@ const useLink = (): UseLinkReturn => {
 
   const openScannerLink = (path: string, parameters: { [key in string]: string } = {}): void => {
     const scannerUrl = profile?.linkUrl || SCANNER_URL;
-    // Broadcast results pass a hex tx hash; the scanner expects the base64 hash.
+    // Gnoscan keys transactions by their hex hash.
     const normalizedParameters = parameters.txhash
-      ? { ...parameters, txhash: normalizeGnoscanTxHash(parameters.txhash) }
+      ? { ...parameters, txhash: toHexHash(parameters.txhash) }
       : parameters;
     const mergedParameters = scannerParameters
       ? { ...scannerParameters, ...normalizedParameters }

@@ -2,6 +2,7 @@ import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { formatAddress } from '@common/utils/client-utils';
 import { registryKeyToTokenPath } from '@common/utils/grc20-token-path';
+import { toHexHash } from '@common/utils/hash-utils';
 import { TransactionInfo } from '@types';
 import {
   AddPackageValue,
@@ -166,7 +167,7 @@ export function mapSendTransactionByBankMsgSend(
 ): TransactionInfo {
   const firstMessage = getDefaultMessage(tx.messages);
   return {
-    hash: tx.hash,
+    hash: toHexHash(tx.hash),
     height: tx.block_height,
     logo: GNOT_TOKEN.denom,
     type: tx.messages.length === 1 ? 'TRANSFER' : 'MULTI_CONTRACT_CALL',
@@ -201,7 +202,7 @@ export function mapReceivedTransactionByMsgCall(
   const firstMessage = getDefaultMessage(tx.messages);
   if (firstMessage.value.func === 'TransferFrom' && tx.messages.length === 1) {
     return {
-      hash: tx.hash,
+      hash: toHexHash(tx.hash),
       height: tx.block_height,
       logo: firstMessage.value.pkg_path || '',
       type: 'TRANSFER_GRC721',
@@ -236,7 +237,7 @@ export function mapReceivedTransactionByMsgCall(
   const denom = eventInfo?.tokenPath ?? tokenPath ?? (firstMessage.value.pkg_path || '');
 
   return {
-    hash: tx.hash,
+    hash: toHexHash(tx.hash),
     height: tx.block_height,
     logo: denom,
     type: tx.messages.length === 1 ? 'TRANSFER' : 'MULTI_CONTRACT_CALL',
@@ -267,7 +268,7 @@ export function mapReceivedTransactionByBankMsgSend(
 ): TransactionInfo {
   const firstMessage = getDefaultMessage(tx.messages);
   return {
-    hash: tx.hash,
+    hash: toHexHash(tx.hash),
     height: tx.block_height,
     logo: GNOT_TOKEN.denom,
     type: tx.messages.length === 1 ? 'TRANSFER' : 'MULTI_CONTRACT_CALL',
@@ -305,7 +306,7 @@ export function mapVMTransaction(
     const isAddPackage = isAddPackageValue(firstMessage.value);
     const messageValue: any = firstMessage.value;
     return {
-      hash: tx.hash,
+      hash: toHexHash(tx.hash),
       height: tx.block_height,
       logo: '',
       type: 'MULTI_CONTRACT_CALL',
@@ -332,7 +333,7 @@ export function mapVMTransaction(
 
   if (firstMessage.value === 'MsgAddPackage') {
     return {
-      hash: tx.hash,
+      hash: toHexHash(tx.hash),
       height: tx.block_height,
       logo: '',
       type: 'ADD_PACKAGE',
@@ -369,7 +370,7 @@ export function mapVMTransaction(
       const denom = eventInfo?.tokenPath ?? tokenPath ?? (messageValue.pkg_path || '');
 
       return {
-        hash: tx.hash,
+        hash: toHexHash(tx.hash),
         height: tx.block_height,
         logo: denom,
         type: 'TRANSFER',
@@ -399,7 +400,7 @@ export function mapVMTransaction(
       const toAddress = messageValue.args?.[1] || '';
 
       return {
-        hash: tx.hash,
+        hash: toHexHash(tx.hash),
         height: tx.block_height,
         logo: firstMessage.value.pkg_path || '',
         type: 'TRANSFER_GRC721',
@@ -425,7 +426,7 @@ export function mapVMTransaction(
     }
 
     return {
-      hash: tx.hash,
+      hash: toHexHash(tx.hash),
       height: tx.block_height,
       logo: '',
       type: 'CONTRACT_CALL',
@@ -459,7 +460,7 @@ export function mapVMTransaction(
       !!viewerAddress && runTransfer.to === viewerAddress && runTransfer.from !== viewerAddress;
 
     return {
-      hash: tx.hash,
+      hash: toHexHash(tx.hash),
       height: tx.block_height,
       logo: runTransfer.tokenPath,
       type: 'TRANSFER',
@@ -487,7 +488,7 @@ export function mapVMTransaction(
   }
 
   return {
-    hash: tx.hash,
+    hash: toHexHash(tx.hash),
     height: tx.block_height,
     logo: '',
     type: 'CONTRACT_CALL',
