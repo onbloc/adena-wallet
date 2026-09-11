@@ -124,11 +124,6 @@ export interface MainToken {
   chainIconUrl?: string;
 }
 
-export interface GRC20RegisterEvent {
-  packagePath: string;
-  slug: string;
-}
-
 export interface GRC721CollectionModel {
   tokenId: string;
   networkId: string;

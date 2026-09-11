@@ -2,9 +2,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CosmosDocument,
   Document,
-  MSG_SEND_AMINO_TYPE,
   isLedgerAccount,
   isSessionAccount,
+  MSG_SEND_AMINO_TYPE,
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -359,17 +359,27 @@ const TransferSummaryContainer: React.FC = () => {
     // transfers the token through the registry's own write wrapper. The node
     // requires the package name to be "main" and auto-assigns the reserved run
     // path when Package.Path is left empty.
+    const registryAliases = cfg.registries.map((registry, index) => ({
+      alias: `grc20reg${index}`,
+      path: registry.path,
+    }));
     const runBody = [
       'package main',
       '',
       'import (',
-      `\tgrc20reg ${gnoLiteral(cfg.registryPath)}`,
+      ...registryAliases.map(({ alias, path }) => `\t${alias} ${gnoLiteral(path)}`),
       ')',
       '',
       'func main(cur realm) {',
-      `\tgrc20reg.Transfer(0, cur, ${gnoLiteral(registryKey)}, address(${gnoLiteral(
-        toAddress,
-      )}), ${amount})`,
+      ...registryAliases.map(
+        ({ alias }) =>
+          `\tif ${alias}.Get(${gnoLiteral(
+            registryKey,
+          )}) != nil { ${alias}.Transfer(0, cur, ${gnoLiteral(registryKey)}, address(${gnoLiteral(
+            toAddress,
+          )}), ${amount}); return }`,
+      ),
+      `\tpanic("token is not registered: " + ${gnoLiteral(registryKey)})`,
       '}',
       '',
     ].join('\n');

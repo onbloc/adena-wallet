@@ -1,8 +1,9 @@
 import { packagePathOfTokenPath, toRegistryKey } from '@common/utils/grc20-token-path';
-import { getGrc20RegConfig } from '@common/utils/grc20reg-config';
+import { getGrc20RegConfig, Grc20RegConfig } from '@common/utils/grc20reg-config';
 import { NetworkMetainfo, TransactionWithPageInfo } from '@types';
 import { AxiosInstance } from 'axios';
 import {
+  Grc20MapperContext,
   hasGRC20TransferTo,
   mapReceivedTransactionByBankMsgSend,
   mapReceivedTransactionByMsgCall,
@@ -71,11 +72,16 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
     return this.networkMetainfo.indexerUrl + '/graphql/query';
   }
 
-  // The chain's GRC20 helper realm (if any). GRC20 transfers routed through the
-  // helper appear as helperPath.Transfer(tokenKey, to, amount) in history; the
-  // mapper uses this to identify the token from the first arg.
-  private get grc20HelperPath(): string | undefined {
-    return getGrc20RegConfig(this.networkMetainfo?.chainId).helperPath || undefined;
+  // The chain's GRC20 helper realm (if any) and grc20 packages. GRC20 transfers
+  // routed through the helper appear as helperPath.Transfer(tokenKey, to, amount)
+  // in history; the mapper uses this to identify the token from the first arg.
+  private get grc20Config(): Grc20RegConfig {
+    return getGrc20RegConfig(this.networkMetainfo?.chainId);
+  }
+
+  private get grc20MapperContext(): Grc20MapperContext {
+    const { helperPath, tokenPackages } = this.grc20Config;
+    return { helperPath: helperPath || undefined, tokenPackages };
   }
 
   public async fetchAllTransactionHistoryBy(address: string): Promise<TransactionWithPageInfo> {
@@ -94,20 +100,22 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       TransactionHistoryIndexerRepository.postGraphQuery<TransactionsQueryResult>(
         this.axiosInstance,
         this.queryUrl,
-        makeGRC20ReceivedTransactionHistoryQuery(address),
+        makeGRC20ReceivedTransactionHistoryQuery(address, this.grc20Config.tokenPackages),
       ),
     ]);
 
     // The received query matches any `Transfer` event, and GRC721 emits one too
     // (with `tokenId` in place of `value`), so keep only the GRC20 receives it
     // was meant to add.
+    const { tokenPackages } = this.grc20Config;
     const received = (receivedResult?.data?.getTransactions ?? []).filter((tx) =>
-      hasGRC20TransferTo(tx, address),
+      hasGRC20TransferTo(tx, address, tokenPackages),
     );
 
-    const transactions = mergeTransactionsByHash(result?.data?.getTransactions ?? [], received).map(
-      (tx) => mapTransactionEdgeByAddress(tx, address, this.grc20HelperPath),
-    );
+    const transactions = mergeTransactionsByHash(
+      result?.data?.getTransactions ?? [],
+      received,
+    ).map((tx) => mapTransactionEdgeByAddress(tx, address, this.grc20MapperContext));
 
     return {
       page: { hasNext: false, cursor: null },
@@ -120,12 +128,9 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       return EMPTY_PAGE;
     }
 
-    const result =
-      await TransactionHistoryIndexerRepository.postGraphQuery<TransactionsQueryResult>(
-        this.axiosInstance,
-        this.queryUrl,
-        makeNativeTransactionHistoryQuery(address),
-      );
+    const result = await TransactionHistoryIndexerRepository.postGraphQuery<
+      TransactionsQueryResult
+    >(this.axiosInstance, this.queryUrl, makeNativeTransactionHistoryQuery(address));
 
     const transactions = (result?.data?.getTransactions ?? []).map((tx) => {
       const bankTx = tx as TransactionResponse<BankSendValue>;
@@ -155,20 +160,21 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
     const packagePath = packagePathOfTokenPath(tokenPath);
     const tokenKey = toRegistryKey(tokenPath) ?? tokenPath;
 
-    const result =
-      await TransactionHistoryIndexerRepository.postGraphQuery<TransactionsQueryResult>(
-        this.axiosInstance,
-        this.queryUrl,
-        makeGRC20TransactionHistoryQuery(address, tokenKey),
-      );
+    const result = await TransactionHistoryIndexerRepository.postGraphQuery<
+      TransactionsQueryResult
+    >(
+      this.axiosInstance,
+      this.queryUrl,
+      makeGRC20TransactionHistoryQuery(address, tokenKey, this.grc20Config.tokenPackages),
+    );
 
     const mapped = (result?.data?.getTransactions ?? []).map((tx) => {
       const callTx = tx as TransactionResponse<MsgCallValue>;
       const firstMessage = callTx.messages?.[0];
       const isCallerSelf = firstMessage?.value?.caller === address;
       return isCallerSelf
-        ? mapVMTransaction(callTx, this.grc20HelperPath, tokenKey)
-        : mapReceivedTransactionByMsgCall(callTx, this.grc20HelperPath, tokenKey);
+        ? mapVMTransaction(callTx, this.grc20MapperContext, tokenKey)
+        : mapReceivedTransactionByMsgCall(callTx, this.grc20MapperContext, tokenKey);
     });
 
     // A transaction can carry several Transfer events (e.g. a swap); the mapper

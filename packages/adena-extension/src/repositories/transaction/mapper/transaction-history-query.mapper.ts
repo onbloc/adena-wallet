@@ -2,6 +2,7 @@ import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { formatAddress } from '@common/utils/client-utils';
 import { registryKeyToTokenPath } from '@common/utils/grc20-token-path';
+import { Grc20TokenPackage, resolveGrc20TransferEvent } from '@common/utils/grc20reg-config';
 import { toHexHash } from '@common/utils/hash-utils';
 import { TransactionInfo } from '@types';
 import {
@@ -39,6 +40,13 @@ function getDefaultMessage<T = any>(
   })[0] as T;
 }
 
+// Per-chain GRC20 context: the helper realm (if any) and the grc20 packages
+// with the transfer-event shape each of them emits.
+export interface Grc20MapperContext {
+  helperPath?: string;
+  tokenPackages?: Grc20TokenPackage[];
+}
+
 // A GRC20 helper `Transfer(tokenKey, to, amount)` call (pkg_path === helperPath)
 // shifts the transfer args by one versus a direct token `Transfer(to, amount)`.
 // Detect it and expose the token path (from args[0]) plus the arg offset so the
@@ -62,8 +70,9 @@ function resolveTransferShape(
 
 // Every GRC20 transfer — direct, helper-routed, or MsgRun — emits the same
 // `Transfer` event carrying `token` (Token.ID() = `{packagePath}.{symbol}.{sequence}`),
-// `from`, `to`, and `value`. Reading the token identity and amount from the
-// event is invocation-independent, so prefer it over parsing message args.
+// `from`, `to`, and `value` (attribute keys per emitting package version).
+// Reading the token identity and amount from the event is invocation-independent,
+// so prefer it over parsing message args.
 //
 // GRC721 emits a `Transfer` carrying `token` too, but describes the item with
 // `tokenId` instead of `value`, so `value` is what separates the two.
@@ -75,68 +84,85 @@ function attrOf(event: Event, key: string): string {
   return (event.attrs || []).find((a) => a.key === key)?.value || '';
 }
 
-function isGRC20TransferEvent(event: Event): boolean {
-  return (
-    event?.type === 'Transfer' &&
-    !!attrOf(event, 'token') &&
-    (event.attrs || []).some((a) => a.key === 'value')
-  );
+interface DecodedGRC20Transfer {
+  tokenId: string;
+  from: string;
+  to: string;
+  value: string;
+}
+
+function decodeGRC20TransferEvent(
+  event: Event,
+  tokenPackages?: Grc20TokenPackage[],
+): DecodedGRC20Transfer | null {
+  const schema = resolveGrc20TransferEvent(event?.pkg_path, tokenPackages);
+  if (event?.type !== schema.type) {
+    return null;
+  }
+  const tokenId = attrOf(event, schema.tokenAttr);
+  const hasValue = (event.attrs || []).some((a) => a.key === schema.valueAttr);
+  if (!tokenId || !hasValue) {
+    return null;
+  }
+  return {
+    tokenId,
+    from: attrOf(event, schema.fromAttr),
+    to: attrOf(event, schema.toAttr),
+    value: attrOf(event, schema.valueAttr),
+  };
 }
 
 /** True when the transaction moves a GRC20 token to `address`. */
-export function hasGRC20TransferTo(tx: TransactionResponse<any>, address: string): boolean {
+export function hasGRC20TransferTo(
+  tx: TransactionResponse<any>,
+  address: string,
+  tokenPackages?: Grc20TokenPackage[],
+): boolean {
   const events: Event[] = tx?.response?.events || [];
-  return events.some((event) => isGRC20TransferEvent(event) && attrOf(event, 'to') === address);
+  return events.some((event) => decodeGRC20TransferEvent(event, tokenPackages)?.to === address);
 }
 
 function getGRC20TransferFromEvent(
   tx: TransactionResponse<any>,
-  options?: { tokenKey?: string; viewerAddress?: string },
+  options?: { tokenKey?: string; viewerAddress?: string; tokenPackages?: Grc20TokenPackage[] },
 ): { tokenPath: string | null; from: string; to: string; value: string } | null {
   const events: Event[] = tx?.response?.events || [];
-  const grc20Events = events.filter(isGRC20TransferEvent);
+  const grc20Events = events
+    .map((event) => decodeGRC20TransferEvent(event, options?.tokenPackages))
+    .filter((decoded): decoded is DecodedGRC20Transfer => decoded !== null);
 
   const tokenKey = options?.tokenKey;
   const viewerAddress = options?.viewerAddress;
   const transferEvent =
     (tokenKey
-      ? grc20Events.find((event) => attrOf(event, 'token').startsWith(`${tokenKey}.`))
+      ? grc20Events.find((event) => event.tokenId.startsWith(`${tokenKey}.`))
       : undefined) ??
     (viewerAddress
-      ? grc20Events.find(
-          (event) =>
-            attrOf(event, 'from') === viewerAddress || attrOf(event, 'to') === viewerAddress,
-        )
+      ? grc20Events.find((event) => event.from === viewerAddress || event.to === viewerAddress)
       : undefined) ??
     (!tokenKey ? grc20Events[0] : undefined);
   if (!transferEvent) {
     return null;
   }
 
-  const attr = (key: string): string => attrOf(transferEvent, key);
-
-  const tokenId = attr('token');
-  if (!tokenId) {
-    return null;
-  }
-
   // token = `{packagePath}.{symbol}.{sequence}`; drop the trailing `.{sequence}`.
+  const { tokenId } = transferEvent;
   const registryKey = tokenId.slice(0, tokenId.lastIndexOf('.'));
   return {
     tokenPath: registryKeyToTokenPath(registryKey) ?? registryKeyToTokenPath(tokenId),
-    from: attr('from'),
-    to: attr('to'),
-    value: attr('value'),
+    from: transferEvent.from,
+    to: transferEvent.to,
+    value: transferEvent.value,
   };
 }
 
 export function mapTransactionEdgeByAddress(
   transaction: TransactionResponse<any>,
   address: string,
-  helperPath?: string,
+  grc20?: Grc20MapperContext,
 ): TransactionInfo {
   if (!transaction?.messages?.length || transaction?.messages?.length > 1) {
-    return mapVMTransaction(transaction, helperPath, undefined, address);
+    return mapVMTransaction(transaction, grc20, undefined, address);
   }
 
   const message = transaction.messages[0];
@@ -154,11 +180,11 @@ export function mapTransactionEdgeByAddress(
         ['Transfer', 'TransferFrom'].includes(message.value.func) &&
         message.value.caller !== address
       ) {
-        return mapReceivedTransactionByMsgCall(transaction, helperPath, undefined, address);
+        return mapReceivedTransactionByMsgCall(transaction, grc20, undefined, address);
       }
-      return mapVMTransaction(transaction, helperPath, undefined, address);
+      return mapVMTransaction(transaction, grc20, undefined, address);
     default:
-      return mapVMTransaction(transaction, helperPath, undefined, address);
+      return mapVMTransaction(transaction, grc20, undefined, address);
   }
 }
 
@@ -195,7 +221,7 @@ export function mapSendTransactionByBankMsgSend(
 
 export function mapReceivedTransactionByMsgCall(
   tx: TransactionResponse<MsgCallValue>,
-  helperPath?: string,
+  grc20?: Grc20MapperContext,
   tokenKey?: string,
   viewerAddress?: string,
 ): TransactionInfo {
@@ -230,8 +256,12 @@ export function mapReceivedTransactionByMsgCall(
 
   // Prefer the GRC20 Transfer event (token/from/to/value); fall back to parsing
   // message args (with the helper arg offset) when it is absent.
-  const eventInfo = getGRC20TransferFromEvent(tx, { tokenKey, viewerAddress });
-  const { tokenPath, argOffset } = resolveTransferShape(firstMessage.value, helperPath);
+  const eventInfo = getGRC20TransferFromEvent(tx, {
+    tokenKey,
+    viewerAddress,
+    tokenPackages: grc20?.tokenPackages,
+  });
+  const { tokenPath, argOffset } = resolveTransferShape(firstMessage.value, grc20?.helperPath);
   const senderAddress = eventInfo?.from || firstMessage.value.caller || '';
   const receiveAmount = eventInfo?.value || firstMessage.value.args?.[argOffset + 1] || '0';
   const denom = eventInfo?.tokenPath ?? tokenPath ?? (firstMessage.value.pkg_path || '');
@@ -296,7 +326,7 @@ export function mapReceivedTransactionByBankMsgSend(
 
 export function mapVMTransaction(
   tx: TransactionResponse<AddPackageValue | MsgRunValue | MsgCallValue>,
-  helperPath?: string,
+  grc20?: Grc20MapperContext,
   tokenKey?: string,
   viewerAddress?: string,
 ): TransactionInfo {
@@ -362,8 +392,12 @@ export function mapVMTransaction(
     if (isTransfer) {
       // Prefer the GRC20 Transfer event (token/from/to/value); fall back to
       // parsing message args (with the helper arg offset) when it is absent.
-      const eventInfo = getGRC20TransferFromEvent(tx, { tokenKey, viewerAddress });
-      const { tokenPath, argOffset } = resolveTransferShape(messageValue, helperPath);
+      const eventInfo = getGRC20TransferFromEvent(tx, {
+        tokenKey,
+        viewerAddress,
+        tokenPackages: grc20?.tokenPackages,
+      });
+      const { tokenPath, argOffset } = resolveTransferShape(messageValue, grc20?.helperPath);
       const fromAddress = eventInfo?.from || messageValue.caller || '';
       const toAddress = eventInfo?.to || messageValue.args?.[argOffset] || '';
       const sendAmount = eventInfo?.value || messageValue.args?.[argOffset + 1] || '0';

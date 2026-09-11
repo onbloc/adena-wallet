@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { decodeQEvalInt, gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
+import { gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
 import { parseTokenPath, toRegistryKey } from '@common/utils/grc20-token-path';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 
@@ -17,17 +17,17 @@ export class WalletBalanceService {
 
   private gnoProvider: GnoProvider | null = null;
 
-  // grc20reg realm used to resolve GRC20 token objects for balance queries.
-  // Empty string falls back to calling BalanceOf on the token realm directly.
-  private registryPath = '';
+  // grc20reg realms used to resolve GRC20 token objects for balance queries.
+  // An empty list falls back to calling BalanceOf on the token realm directly.
+  private registryPaths: string[] = [];
 
   constructor(gnoProvider?: GnoProvider | null) {
     this.tokenMetainfos = [];
     this.gnoProvider = gnoProvider || null;
   }
 
-  public setRegistryPath(registryPath: string): void {
-    this.registryPath = registryPath || '';
+  public setRegistryPaths(registryPaths: string[]): void {
+    this.registryPaths = registryPaths.filter((registryPath) => !!registryPath);
   }
 
   public getGnoProvider(): GnoProvider {
@@ -47,16 +47,14 @@ export class WalletBalanceService {
 
   public async getGnotTokenBalance(address: string): Promise<number | null> {
     const gnoProvider = this.getGnoProvider();
-    return gnoProvider
-      .getBalance(address, GNOT_TOKEN.denom)
-      .then((result) => {
-        if (BigNumber(result).isInteger()) {
-          return BigNumber(result)
-            .shiftedBy(GNOT_TOKEN.decimals * -1)
-            .toNumber();
-        }
-        return null;
-      });
+    return gnoProvider.getBalance(address, GNOT_TOKEN.denom).then((result) => {
+      if (BigNumber(result).isInteger()) {
+        return BigNumber(result)
+          .shiftedBy(GNOT_TOKEN.decimals * -1)
+          .toNumber();
+      }
+      return null;
+    });
   }
 
   /**
@@ -81,26 +79,31 @@ export class WalletBalanceService {
   /**
    * Raw (undecimalized) GRC20 balance as a bigint. Prefers the grc20reg
    * registry object receiver; falls back to calling BalanceOf on the token
-   * realm directly when no registry path is configured or the token path has no
+   * realm directly when no registry holds it or the token path has no
    * symbol (legacy pkgPath-only input).
    */
   private async getGRC20RawBalance(address: string, tokenPath: string): Promise<bigint | null> {
     const gnoProvider = this.getGnoProvider();
     const registryKey = toRegistryKey(tokenPath);
 
-    if (this.registryPath && registryKey) {
-      try {
-        const response = await gnoProvider.evaluateIIFE(this.registryPath, {
-          returnType: 'int64',
-          statements: [
-            `token := Get(${gnoLiteral(registryKey)})`,
-            'if token == nil { return 0 }',
-          ],
-          returnExpression: `token.BalanceOf(${gnoLiteral(address)})`,
-        });
-        return decodeQEvalInt(response);
-      } catch {
-        // Fall through to the direct-realm path below.
+    if (registryKey) {
+      for (const registryPath of this.registryPaths) {
+        try {
+          const response = await gnoProvider.evaluateIIFE(registryPath, {
+            returnType: '(bool, int64)',
+            statements: [
+              `token := Get(${gnoLiteral(registryKey)})`,
+              'if token == nil { return false, 0 }',
+            ],
+            returnExpression: `true, token.BalanceOf(${gnoLiteral(address)})`,
+          });
+          const [found, balance] = parseQEvalResult(response);
+          if (found?.value === 'true' && balance && /^-?\d+$/.test(balance.value)) {
+            return BigInt(balance.value);
+          }
+        } catch {
+          // Fall through to the next registry / the direct-realm path below.
+        }
       }
     }
 
@@ -116,11 +119,12 @@ export class WalletBalanceService {
 
   /**
    * Batch GRC20 balances for many token paths in as few qeval calls as
-   * possible: one `grc20reg` IIFE per chunk that returns an int64 per token
-   * (`Get(key).BalanceOf(addr)`, nil → 0). Returns raw (undecimalized) balances
-   * keyed by token path; callers apply each token's decimals. Used by the
-   * wallet-main balance load to cut per-token round-trips. Falls back to
-   * per-token queries when no registry path is configured.
+   * possible: one `grc20reg` IIFE per chunk that returns a (found, int64) pair
+   * per token (`Get(key).BalanceOf(addr)`), tried against each registry in
+   * turn. Returns raw (undecimalized) balances keyed by token path; callers
+   * apply each token's decimals. Used by the wallet-main balance load to cut
+   * per-token round-trips. Falls back to per-token queries when no registry
+   * path is configured.
    */
   public async getGRC20TokenBalanceMap(
     address: string,
@@ -130,7 +134,7 @@ export class WalletBalanceService {
     const result: Record<string, bigint> = {};
 
     const batchable = tokenPaths.filter((tokenPath) => toRegistryKey(tokenPath) !== null);
-    if (!this.registryPath || batchable.length === 0) {
+    if (this.registryPaths.length === 0 || batchable.length === 0) {
       for (const tokenPath of tokenPaths) {
         const raw = await this.getGRC20RawBalance(address, tokenPath).catch(() => null);
         if (raw !== null) {
@@ -140,43 +144,72 @@ export class WalletBalanceService {
       return result;
     }
 
-    for (let start = 0; start < batchable.length; start += GRC20_BALANCE_BATCH_SIZE) {
-      const chunk = batchable.slice(start, start + GRC20_BALANCE_BATCH_SIZE);
+    let pending = batchable;
+    for (const registryPath of this.registryPaths) {
+      if (pending.length === 0) {
+        break;
+      }
+      const resolved = await this.batchGRC20BalancesFrom(
+        gnoProvider,
+        registryPath,
+        address,
+        pending,
+      );
+      Object.assign(result, resolved);
+      pending = pending.filter((tokenPath) => !(tokenPath in resolved));
+    }
+
+    for (const tokenPath of pending) {
+      const raw = await this.getGRC20RawBalance(address, tokenPath).catch(() => null);
+      if (raw !== null) {
+        result[tokenPath] = raw;
+      }
+    }
+
+    return result;
+  }
+
+  // Batched balances from one registry; only the tokens it holds are returned.
+  private async batchGRC20BalancesFrom(
+    gnoProvider: GnoProvider,
+    registryPath: string,
+    address: string,
+    tokenPaths: string[],
+  ): Promise<Record<string, bigint>> {
+    const result: Record<string, bigint> = {};
+
+    for (let start = 0; start < tokenPaths.length; start += GRC20_BALANCE_BATCH_SIZE) {
+      const chunk = tokenPaths.slice(start, start + GRC20_BALANCE_BATCH_SIZE);
 
       const statements: string[] = [];
       const returnParts: string[] = [];
       const returnTypes: string[] = [];
       chunk.forEach((tokenPath, i) => {
         const key = toRegistryKey(tokenPath) as string;
-        statements.push(`v${i} := int64(0)`);
+        statements.push(`f${i} := false; v${i} := int64(0)`);
         statements.push(
-          `{ t := Get(${gnoLiteral(key)}); if t != nil { v${i} = t.BalanceOf(${gnoLiteral(address)}) } }`,
+          `{ t := Get(${gnoLiteral(key)}); if t != nil { f${i} = true; v${i} = t.BalanceOf(${gnoLiteral(address)}) } }`,
         );
-        returnParts.push(`v${i}`);
-        returnTypes.push('int64');
+        returnParts.push(`f${i}, v${i}`);
+        returnTypes.push('bool, int64');
       });
 
       try {
-        const response = await gnoProvider.evaluateIIFE(this.registryPath, {
+        const response = await gnoProvider.evaluateIIFE(registryPath, {
           returnType: `(${returnTypes.join(', ')})`,
           statements,
           returnExpression: returnParts.join(', '),
         });
         const tuples = parseQEvalResult(response);
         chunk.forEach((tokenPath, i) => {
-          const tuple = tuples[i];
-          if (tuple && /^-?\d+$/.test(tuple.value)) {
-            result[tokenPath] = BigInt(tuple.value);
+          const found = tuples[i * 2];
+          const balance = tuples[i * 2 + 1];
+          if (found?.value === 'true' && balance && /^-?\d+$/.test(balance.value)) {
+            result[tokenPath] = BigInt(balance.value);
           }
         });
       } catch {
-        // Batch failed — fall back to per-token for this chunk.
-        for (const tokenPath of chunk) {
-          const raw = await this.getGRC20RawBalance(address, tokenPath).catch(() => null);
-          if (raw !== null) {
-            result[tokenPath] = raw;
-          }
-        }
+        // Batch failed — the chunk falls back to the next registry / per-token.
       }
     }
 

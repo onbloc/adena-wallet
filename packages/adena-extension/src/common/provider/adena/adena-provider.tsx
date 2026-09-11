@@ -7,7 +7,7 @@ import {
   makeAtomOneNetworkProfiles,
   makeGnoNetworkProfiles,
 } from '@common/utils/chain-utils';
-import { getGrc20RegistryPath } from '@common/utils/grc20reg-config';
+import { getGrc20RegistryPaths } from '@common/utils/grc20reg-config';
 import { useWindowSize } from '@hooks/use-window-size';
 import { ChainRepository } from '@repositories/common';
 import { TokenRepository } from '@repositories/common/token';
@@ -181,7 +181,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const balanceService: WalletBalanceService = useMemo(() => {
     const service = new WalletBalanceService(gnoProvider);
-    service.setRegistryPath(getGrc20RegistryPath(currentGnoNetwork?.chainId));
+    service.setRegistryPaths(getGrc20RegistryPaths(currentGnoNetwork?.chainId));
     return service;
   }, [gnoProvider, currentGnoNetwork?.chainId]);
 
