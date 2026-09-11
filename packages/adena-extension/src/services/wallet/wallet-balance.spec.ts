@@ -41,7 +41,7 @@ describe('WalletBalanceService.getGnotTokenBalance', () => {
 describe('WalletBalanceService.getGRC20TokenBalanceMap across registry versions', () => {
   const ADDRESS = 'g1abc';
   const V1_REGISTRY = 'gno.land/r/demo/defi/grc20reg/v1';
-  const V0_REGISTRY = 'gno.land/r/demo/defi/grc20reg';
+  const V0_REGISTRY = 'gno.land/r/nt/grc20reg/v0';
   const NEW_TOKEN = 'gno.land/r/x/new.NEW';
   const OLD_TOKEN = 'gno.land/r/x/old.OLD';
 

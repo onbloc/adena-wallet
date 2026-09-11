@@ -3,7 +3,7 @@
     "helperPath": "",
     "registries": [
       { "path": "gno.land/r/demo/defi/grc20reg/v1" },
-      { "path": "gno.land/r/demo/defi/grc20reg" }
+      { "path": "gno.land/r/nt/grc20reg/v0" }
     ],
     "tokenPackages": [
       {
@@ -22,7 +22,7 @@
     "helperPath": "",
     "registries": [
       { "path": "gno.land/r/demo/defi/grc20reg/v1" },
-      { "path": "gno.land/r/demo/defi/grc20reg" }
+      { "path": "gno.land/r/nt/grc20reg/v0" }
     ],
     "tokenPackages": [
       {
@@ -41,7 +41,7 @@
     "helperPath": "",
     "registries": [
       { "path": "gno.land/r/demo/defi/grc20reg/v1" },
-      { "path": "gno.land/r/demo/defi/grc20reg" }
+      { "path": "gno.land/r/nt/grc20reg/v0" }
     ],
     "tokenPackages": [
       {
@@ -60,7 +60,7 @@
     "helperPath": "",
     "registries": [
       { "path": "gno.land/r/demo/defi/grc20reg/v1" },
-      { "path": "gno.land/r/demo/defi/grc20reg" }
+      { "path": "gno.land/r/nt/grc20reg/v0" }
     ],
     "tokenPackages": [
       {

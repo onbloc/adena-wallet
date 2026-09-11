@@ -50,9 +50,9 @@ describe('makeGetGRC20RegisterEventsQuery', () => {
   it('matches register events from every configured registry version', () => {
     const query = makeGetGRC20RegisterEventsQuery([
       'gno.land/r/demo/defi/grc20reg/v1',
-      'gno.land/r/demo/defi/grc20reg',
+      'gno.land/r/nt/grc20reg/v0',
     ]);
     expect(query).toContain('pkg_path: { eq: "gno.land/r/demo/defi/grc20reg/v1" }');
-    expect(query).toContain('pkg_path: { eq: "gno.land/r/demo/defi/grc20reg" }');
+    expect(query).toContain('pkg_path: { eq: "gno.land/r/nt/grc20reg/v0" }');
   });
 });

@@ -18,7 +18,7 @@ describe('grc20reg-config', () => {
   it('lists registries newest first so the v1 registry is preferred', () => {
     expect(getGrc20RegistryPaths('gnoland-1')).toEqual([
       'gno.land/r/demo/defi/grc20reg/v1',
-      'gno.land/r/demo/defi/grc20reg',
+      'gno.land/r/nt/grc20reg/v0',
     ]);
   });
 
@@ -37,11 +37,11 @@ describe('grc20reg-config', () => {
     expect(getGrc20RegConfig('dev.gnoswap').helperPath).toBe('');
   });
 
-  it('falls back to the historical paths for an unknown chain', () => {
+  it('falls back to the default paths for an unknown chain', () => {
     const config = getGrc20RegConfig('custom-chain');
-    expect(config.registries).toEqual([{ path: 'gno.land/r/demo/defi/grc20reg' }]);
+    expect(config.registries).toEqual([{ path: 'gno.land/r/nt/grc20reg/v0' }]);
     expect(config.tokenPackages).toEqual([
-      { path: 'gno.land/p/demo/tokens/grc20', transferEvent: DEFAULT_GRC20_TRANSFER_EVENT },
+      { path: 'gno.land/p/nt/grc20/v0', transferEvent: DEFAULT_GRC20_TRANSFER_EVENT },
     ]);
     expect(config.helperPath).toBe('');
   });

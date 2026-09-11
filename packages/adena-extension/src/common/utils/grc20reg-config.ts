@@ -43,11 +43,10 @@ export const DEFAULT_GRC20_TRANSFER_EVENT: Grc20TransferEventSchema = {
   valueAttr: 'value',
 };
 
-// Historical hardcoded defaults (see the previous GRC20_REGISTRY_PKG_PATH
-// constant). Used when a chain has no grc20reg.json entry.
-const DEFAULT_REGISTRIES: Grc20Registry[] = [{ path: 'gno.land/r/demo/defi/grc20reg' }];
+// Defaults used when a chain has no grc20reg.json entry.
+const DEFAULT_REGISTRIES: Grc20Registry[] = [{ path: 'gno.land/r/nt/grc20reg/v0' }];
 const DEFAULT_TOKEN_PACKAGES: Grc20TokenPackage[] = [
-  { path: 'gno.land/p/demo/tokens/grc20', transferEvent: DEFAULT_GRC20_TRANSFER_EVENT },
+  { path: 'gno.land/p/nt/grc20/v0', transferEvent: DEFAULT_GRC20_TRANSFER_EVENT },
 ];
 
 type RawTransferEvent = Partial<Grc20TransferEventSchema>;
