@@ -6,7 +6,7 @@ const ACCOUNT = 'acc-1';
 const HOSTNAME = 'dapp.example';
 
 const GNO_PROFILES = [
-  { chainGroup: 'gno', chainId: 'gnoland1' },
+  { chainGroup: 'gno', chainId: 'gnoland-1' },
   { chainGroup: 'gno', chainId: 'staging' },
   { chainGroup: 'gno', chainId: 'test-13' },
 ];
@@ -45,7 +45,7 @@ function makeRepo(initial: { [key: string]: EstablishSite[] } = {}) {
 function site(overrides: Partial<EstablishSite>): EstablishSite {
   return {
     hostname: HOSTNAME,
-    chainId: 'gnoland1',
+    chainId: 'gnoland-1',
     account: ACCOUNT,
     name: 'Test dApp',
     favicon: null,
@@ -67,7 +67,7 @@ describe('WalletEstablishService (Stage 8 — sibling-aware)', () => {
   describe('establishBy', () => {
     it('collapses existing entry in the same chainGroup for the hostname (sibling upsert)', async () => {
       const { service, repo } = makeService({
-        [ACCOUNT]: [site({ chainId: 'gnoland1', establishedTime: '100' })],
+        [ACCOUNT]: [site({ chainId: 'gnoland-1', establishedTime: '100' })],
       });
 
       await service.establishBy(ACCOUNT, 'staging', {
@@ -83,10 +83,10 @@ describe('WalletEstablishService (Stage 8 — sibling-aware)', () => {
 
     it('keeps entries for other hostnames untouched', async () => {
       const { service, repo } = makeService({
-        [ACCOUNT]: [site({ hostname: 'other.example', chainId: 'gnoland1' })],
+        [ACCOUNT]: [site({ hostname: 'other.example', chainId: 'gnoland-1' })],
       });
 
-      await service.establishBy(ACCOUNT, 'gnoland1', {
+      await service.establishBy(ACCOUNT, 'gnoland-1', {
         hostname: HOSTNAME,
         accountId: ACCOUNT,
         appName: 'Test dApp',
@@ -99,7 +99,7 @@ describe('WalletEstablishService (Stage 8 — sibling-aware)', () => {
     it('inserts a fresh entry when the account has no prior establishment', async () => {
       const { service, repo } = makeService();
 
-      await service.establishBy(ACCOUNT, 'gnoland1', {
+      await service.establishBy(ACCOUNT, 'gnoland-1', {
         hostname: HOSTNAME,
         accountId: ACCOUNT,
         appName: 'Test dApp',
@@ -107,14 +107,14 @@ describe('WalletEstablishService (Stage 8 — sibling-aware)', () => {
 
       const entries = repo.snapshot()[ACCOUNT];
       expect(entries).toHaveLength(1);
-      expect(entries[0].chainId).toBe('gnoland1');
+      expect(entries[0].chainId).toBe('gnoland-1');
     });
   });
 
   describe('isEstablishedBy', () => {
     it('returns true via hostname-only check when chainId is omitted (legacy gate)', async () => {
       const { service } = makeService({
-        [ACCOUNT]: [site({ chainId: 'gnoland1' })],
+        [ACCOUNT]: [site({ chainId: 'gnoland-1' })],
       });
 
       expect(await service.isEstablishedBy(ACCOUNT, HOSTNAME)).toBe(true);
@@ -122,17 +122,17 @@ describe('WalletEstablishService (Stage 8 — sibling-aware)', () => {
 
     it('returns true for a sibling chainId in the same chainGroup', async () => {
       const { service } = makeService({
-        [ACCOUNT]: [site({ chainId: 'gnoland1' })],
+        [ACCOUNT]: [site({ chainId: 'gnoland-1' })],
       });
 
-      // gnoland1 already established — staging is a sibling, should resolve true.
+      // gnoland-1 already established — staging is a sibling, should resolve true.
       expect(await service.isEstablishedBy(ACCOUNT, HOSTNAME, 'staging')).toBe(true);
     });
 
     it('returns false when no entry exists for the hostname/chainGroup', async () => {
       const { service } = makeService({});
 
-      expect(await service.isEstablishedBy(ACCOUNT, HOSTNAME, 'gnoland1')).toBe(false);
+      expect(await service.isEstablishedBy(ACCOUNT, HOSTNAME, 'gnoland-1')).toBe(false);
     });
   });
 
@@ -140,8 +140,8 @@ describe('WalletEstablishService (Stage 8 — sibling-aware)', () => {
     it('removes every hostname entry when chainId is omitted (legacy revoke)', async () => {
       const { service, repo } = makeService({
         [ACCOUNT]: [
-          site({ chainId: 'gnoland1' }),
-          site({ hostname: 'other.example', chainId: 'gnoland1' }),
+          site({ chainId: 'gnoland-1' }),
+          site({ hostname: 'other.example', chainId: 'gnoland-1' }),
         ],
       });
 
@@ -157,8 +157,8 @@ describe('WalletEstablishService (Stage 8 — sibling-aware)', () => {
         [ACCOUNT]: [site({ chainId: 'staging' })],
       });
 
-      // gnoland1 is a sibling of staging within 'gno' chainGroup.
-      await service.unEstablishBy(ACCOUNT, HOSTNAME, 'gnoland1');
+      // gnoland-1 is a sibling of staging within 'gno' chainGroup.
+      await service.unEstablishBy(ACCOUNT, HOSTNAME, 'gnoland-1');
 
       const entries = repo.snapshot()[ACCOUNT];
       expect(entries).toHaveLength(0);

@@ -50,9 +50,9 @@ describe('StorageMigration024', () => {
   // v025 is what moves a sapphire-1 user onto pearl-1.
   it('refreshes NETWORKS from chains.json and drops the stale topaz-1 entry', async () => {
     const result = await new StorageMigration024().up(makeInput({ NETWORKS: [] }));
-    const pearl = result.data.NETWORKS.find((n) => n.chainId === 'pearl-1');
-    expect(pearl).toBeDefined();
-    expect(pearl?.rpcUrl).toBe('https://pearl.rpc.onbloc.xyz:443');
+    const mainnet = result.data.NETWORKS.find((n) => n.chainId === 'gnoland-1');
+    expect(mainnet).toBeDefined();
+    expect(mainnet?.rpcUrl).toBe('https://rpc.gno.land:443');
     expect(result.data.NETWORKS.find((n) => n.chainId === 'topaz-1')).toBeUndefined();
   });
 

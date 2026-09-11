@@ -39,7 +39,7 @@ describe('account session utils', () => {
   it('supports every chain except the denylisted ones', () => {
     expect(isSessionSupportedNetwork({ chainId: 'test-13' } as never)).toBe(true);
     expect(isSessionSupportedNetwork({ chainId: 'portal-loop' } as never)).toBe(true);
-    expect(isSessionSupportedNetwork({ chainId: 'gnoland1' } as never)).toBe(false);
+    expect(isSessionSupportedNetwork({ chainId: 'gnoland-1' } as never)).toBe(true);
   });
 
   it('treats a missing network as unsupported', () => {
@@ -49,7 +49,7 @@ describe('account session utils', () => {
 
   it('exposes the same rule for a bare chain id', () => {
     expect(isSessionSupportedChainId('test-13')).toBe(true);
-    expect(isSessionSupportedChainId('gnoland1')).toBe(false);
+    expect(isSessionSupportedChainId('gnoland-1')).toBe(true);
   });
 
   describe('isRevokedSessionAccount', () => {

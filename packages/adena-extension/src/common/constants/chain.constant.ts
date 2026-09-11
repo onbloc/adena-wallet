@@ -7,4 +7,4 @@ export const GNO_ADDRESS_PREFIX = 'g';
 // default. Single source of truth: `isSessionSupportedNetwork` and
 // `isSessionSupportedChainId` in @common/utils/account-session are the only
 // readers.
-export const SESSION_UNSUPPORTED_CHAIN_IDS: readonly string[] = ['gnoland1'];
+export const SESSION_UNSUPPORTED_CHAIN_IDS: readonly string[] = [];

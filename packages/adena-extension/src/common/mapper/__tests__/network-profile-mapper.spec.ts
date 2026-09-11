@@ -1,18 +1,15 @@
 import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
-import {
-  toCosmosNetworkProfile,
-  toGnoNetworkProfile,
-} from '../network-profile-mapper';
+import { toCosmosNetworkProfile, toGnoNetworkProfile } from '../network-profile-mapper';
 
 describe('toGnoNetworkProfile', () => {
   it('maps mainnet metainfo with all Gno-specific fields', () => {
     const metainfo: NetworkMetainfo = {
-      id: 'gnoland1',
+      id: 'gnoland-1',
       default: true,
       main: true,
-      chainId: 'gnoland1',
+      chainId: 'gnoland-1',
       chainName: 'Gno.land',
-      networkId: 'gnoland1',
+      networkId: 'gnoland-1',
       networkName: 'Gno.land',
       addressPrefix: 'g',
       rpcUrl: 'https://rpc.example.com',
@@ -25,13 +22,13 @@ describe('toGnoNetworkProfile', () => {
     const profile = toGnoNetworkProfile(metainfo);
 
     expect(profile).toEqual({
-      id: 'gnoland1',
+      id: 'gnoland-1',
       chainType: 'gno',
       chainGroup: 'gno',
-      chainId: 'gnoland1',
+      chainId: 'gnoland-1',
       displayName: 'Gno.land',
       chainIconUrl: '/assets/icons/gnoland.svg',
-      nativeTokenId: 'gnoland1:ugnot',
+      nativeTokenId: 'gnoland-1:ugnot',
       isMainnet: true,
       rpcEndpoints: ['https://rpc.example.com'],
       indexerUrl: 'https://indexer.example.com',

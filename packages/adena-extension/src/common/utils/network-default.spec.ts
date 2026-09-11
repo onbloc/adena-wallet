@@ -29,11 +29,10 @@ function makeNetwork(
   } as NetworkMetainfo;
 }
 
-const GNOLAND1 = makeNetwork({ id: 'gnoland1', main: true });
-const PEARL = makeNetwork({ id: 'pearl-1', main: false });
+const MAINNET = makeNetwork({ id: 'gnoland-1', main: true });
 const STAGING = makeNetwork({ id: 'staging', main: false });
 const DEV = makeNetwork({ id: 'dev', main: false });
-const NETWORKS: NetworkMetainfo[] = [GNOLAND1, PEARL, STAGING, DEV];
+const NETWORKS: NetworkMetainfo[] = [MAINNET, STAGING, DEV];
 
 describe('normalizeStoredId', () => {
   it('returns null for empty / undefined / null / sentinel strings', () => {
@@ -45,29 +44,29 @@ describe('normalizeStoredId', () => {
   });
 
   it('returns the raw id for legitimate values', () => {
-    expect(normalizeStoredId('gnoland1')).toBe('gnoland1');
-    expect(normalizeStoredId('pearl')).toBe('pearl');
+    expect(normalizeStoredId('gnoland-1')).toBe('gnoland-1');
+    expect(normalizeStoredId('staging')).toBe('staging');
   });
 });
 
 describe('resolveNetworkMode', () => {
   it('uses explicit stored mode regardless of stored network', () => {
-    expect(resolveNetworkMode('mainnet', 'pearl-1', NETWORKS)).toBe('mainnet');
-    expect(resolveNetworkMode('testnet', 'gnoland1', NETWORKS)).toBe('testnet');
+    expect(resolveNetworkMode('mainnet', 'staging', NETWORKS)).toBe('mainnet');
+    expect(resolveNetworkMode('testnet', 'gnoland-1', NETWORKS)).toBe('testnet');
   });
 
   it('derives mode from the stored networks main flag when stored mode is missing', () => {
-    expect(resolveNetworkMode(null, 'gnoland1', NETWORKS)).toBe('mainnet');
-    expect(resolveNetworkMode(null, 'pearl-1', NETWORKS)).toBe('testnet');
+    expect(resolveNetworkMode(null, 'gnoland-1', NETWORKS)).toBe('mainnet');
     expect(resolveNetworkMode(null, 'staging', NETWORKS)).toBe('testnet');
+    expect(resolveNetworkMode(null, 'dev', NETWORKS)).toBe('testnet');
   });
 
-  it('defaults to testnet for a fresh install (no stored values)', () => {
-    expect(resolveNetworkMode(null, null, NETWORKS)).toBe('testnet');
+  it('defaults to mainnet for a fresh install (no stored values)', () => {
+    expect(resolveNetworkMode(null, null, NETWORKS)).toBe('mainnet');
   });
 
-  it('falls back to testnet when the stored id does not match any known network', () => {
-    expect(resolveNetworkMode(null, 'unknown-id', NETWORKS)).toBe('testnet');
+  it('falls back to mainnet when the stored id does not match any known network', () => {
+    expect(resolveNetworkMode(null, 'unknown-id', NETWORKS)).toBe('mainnet');
   });
 });
 
@@ -82,29 +81,29 @@ describe('pickDefaultByMode', () => {
     expect(ids).toContain(PRIMARY_MAINNET_ID);
   });
 
-  it('prefers pearl for testnet mode', () => {
-    expect(pickDefaultByMode(NETWORKS, 'testnet')?.id).toBe('pearl-1');
+  it('prefers staging for testnet mode', () => {
+    expect(pickDefaultByMode(NETWORKS, 'testnet')?.id).toBe('staging');
   });
 
-  it('prefers gnoland1 for mainnet mode', () => {
-    expect(pickDefaultByMode(NETWORKS, 'mainnet')?.id).toBe('gnoland1');
+  it('prefers gnoland-1 for mainnet mode', () => {
+    expect(pickDefaultByMode(NETWORKS, 'mainnet')?.id).toBe('gnoland-1');
   });
 
-  it('falls back to a generic testnet default when pearl is missing', () => {
-    const withoutPearl = NETWORKS.filter((network) => network.id !== 'pearl-1');
-    expect(pickDefaultByMode(withoutPearl, 'testnet')?.id).toBe('staging');
+  it('falls back to a generic testnet default when staging is missing', () => {
+    const withoutStaging = NETWORKS.filter((network) => network.id !== 'staging');
+    expect(pickDefaultByMode(withoutStaging, 'testnet')?.id).toBe('dev');
   });
 
   it('skips deleted networks when picking', () => {
-    const withDeletedPearl = NETWORKS.map((network) =>
-      network.id === 'pearl-1' ? { ...network, deleted: true } : network,
+    const withDeletedStaging = NETWORKS.map((network) =>
+      network.id === 'staging' ? { ...network, deleted: true } : network,
     );
-    expect(pickDefaultByMode(withDeletedPearl, 'testnet')?.id).toBe('staging');
+    expect(pickDefaultByMode(withDeletedStaging, 'testnet')?.id).toBe('dev');
   });
 
   it('returns the first non-deleted network when no testnet default exists', () => {
-    const onlyMainnet: NetworkMetainfo[] = [GNOLAND1];
-    expect(pickDefaultByMode(onlyMainnet, 'testnet')?.id).toBe('gnoland1');
+    const onlyMainnet: NetworkMetainfo[] = [MAINNET];
+    expect(pickDefaultByMode(onlyMainnet, 'testnet')?.id).toBe('gnoland-1');
   });
 
   it('returns undefined when every network is deleted', () => {

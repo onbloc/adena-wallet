@@ -11,7 +11,7 @@ function makeDocument(msgs: Document['msgs']): Document {
     msgs,
     fee: { gas: '200000', amount: [{ denom: 'ugnot', amount: '1000' }] },
     memo: '',
-    chain_id: 'pearl-1',
+    chain_id: 'staging',
     account_number: '0',
     sequence: '0',
   };

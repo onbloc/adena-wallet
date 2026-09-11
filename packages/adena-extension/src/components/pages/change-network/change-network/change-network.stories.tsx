@@ -17,13 +17,13 @@ export const Default: StoryObj<ChangeNetworkProps> = {
         displayName: 'Gno.land',
         networks: [
           {
-            id: 'gnoland1',
+            id: 'gnoland-1',
             default: true,
             main: true,
-            chainId: 'gnoland1',
+            chainId: 'gnoland-1',
             chainName: 'Gno.land',
-            networkId: 'gnoland1',
-            networkName: 'Mainnet Beta',
+            networkId: 'gnoland-1',
+            networkName: 'Mainnet',
             addressPrefix: 'g',
             rpcUrl: 'https://rpc.gno.land',
             indexerUrl: '',
@@ -32,7 +32,7 @@ export const Default: StoryObj<ChangeNetworkProps> = {
             linkUrl: '',
           },
         ],
-        selectedNetworkId: 'gnoland1',
+        selectedNetworkId: 'gnoland-1',
         canAdd: false,
       },
       {

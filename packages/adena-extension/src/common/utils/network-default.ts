@@ -7,8 +7,8 @@ type NetworkMode = NetworkState.NetworkMode;
 // Canonical network ids, exported so tests can assert they still resolve
 // against chains.json. A rename there that misses these constants would
 // otherwise silently degrade pickDefaultByMode to its generic fallback.
-export const PRIMARY_TESTNET_ID = 'pearl-1';
-export const PRIMARY_MAINNET_ID = 'gnoland1';
+export const PRIMARY_TESTNET_ID = 'staging';
+export const PRIMARY_MAINNET_ID = 'gnoland-1';
 
 // StorageManager.get coerces undefined to the string "undefined" because it
 // wraps the value with a template literal. Treat those sentinel strings, plus
@@ -25,7 +25,7 @@ export function normalizeStoredId(raw: string | null | undefined): string | null
 // 2. If only a current network id is stored, derive mode from that network's
 //    `main` flag so a user who has only ever used Mainnet stays on Mainnet
 //    after ADN-780 changes the default for genuinely new installs.
-// 3. With neither stored, treat as a fresh install and default to testnet.
+// 3. With neither stored, treat as a fresh install and default to mainnet.
 export function resolveNetworkMode(
   storedMode: NetworkModeValue | null,
   storedCurrentId: string | null,
@@ -40,11 +40,11 @@ export function resolveNetworkMode(
       return storedNetwork.main === true ? 'mainnet' : 'testnet';
     }
   }
-  return 'testnet';
+  return 'mainnet';
 }
 
 // Pick the default network for a given mode. Prefers the canonical id
-// (pearl for testnet, gnoland1 for mainnet) so the result is stable even if
+// (staging for testnet, gnoland-1 for mainnet) so the result is stable even if
 // chains.json ordering changes, then falls back to any matching default, and
 // finally to the first non-deleted network.
 export function pickDefaultByMode(

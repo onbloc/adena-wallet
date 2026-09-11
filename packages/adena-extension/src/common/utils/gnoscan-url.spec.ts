@@ -5,14 +5,14 @@ import {
 } from './gnoscan-url';
 
 describe('gnoscan url helpers', () => {
-  it('maps internal pearl-1 network id to Gnoscan pearl-1 chain id', () => {
-    expect(getGnoscanChainId('pearl-1')).toBe('pearl-1');
-    expect(getGnoscanChainParameters('pearl-1')).toEqual({ chainId: 'pearl-1' });
+  it('maps internal staging network id to Gnoscan staging chain id', () => {
+    expect(getGnoscanChainId('staging')).toBe('staging');
+    expect(getGnoscanChainParameters('staging')).toEqual({ chainId: 'staging' });
   });
 
   it('keeps supported Gnoscan chain ids unchanged when no alias is needed', () => {
-    expect(getGnoscanChainId('gnoland1')).toBe('gnoland1');
-    expect(getGnoscanChainParameters('gnoland1')).toEqual({ chainId: 'gnoland1' });
+    expect(getGnoscanChainId('gnoland-1')).toBe('gnoland-1');
+    expect(getGnoscanChainParameters('gnoland-1')).toEqual({ chainId: 'gnoland-1' });
   });
 
   it('does not treat custom networks as supported Gnoscan chain ids', () => {
