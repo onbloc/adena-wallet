@@ -14,7 +14,7 @@ jest.mock('@hooks/use-current-account', () => ({
 }));
 
 const GNO_PROFILE = {
-  id: 'gnoland1',
+  id: 'gnoland-1',
   chainGroup: 'gno',
   displayName: 'Gno.land',
   chainIconUrl: '',
@@ -28,8 +28,7 @@ const ATOMONE_PROFILE = {
 
 const chainRegistry = {
   list: (): unknown[] => [GNO_PROFILE, ATOMONE_PROFILE],
-  getDefault: (group: string): unknown =>
-    group === 'gno' ? GNO_PROFILE : ATOMONE_PROFILE,
+  getDefault: (group: string): unknown => (group === 'gno' ? GNO_PROFILE : ATOMONE_PROFILE),
   getChain: (group: string): unknown =>
     group === 'gno' ? { bech32Prefix: 'g' } : { bech32Prefix: 'atone' },
 };

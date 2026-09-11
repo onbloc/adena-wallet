@@ -86,7 +86,7 @@ function makeCore(overrides?: Partial<FakeCore>): FakeCore {
   return {
     chainRegistry: {
       getChainByChainId: jest.fn((id: string) => {
-        if (id === 'gnoland1' || id === 'staging') return GNO_CHAIN;
+        if (id === 'gnoland-1' || id === 'staging') return GNO_CHAIN;
         if (id === 'atomone-1') return ATOMONE_CHAIN;
         if (id === 'cosmoshub-4') return COSMOSHUB_CHAIN;
         return undefined;
@@ -162,7 +162,7 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
       const send = jest.fn();
       await addEstablish(
         core as never,
-        makeMessage({ chainIds: ['gnoland1', 'unknown-chain'] }),
+        makeMessage({ chainIds: ['gnoland-1', 'unknown-chain'] }),
         send,
       );
       expect(send).toHaveBeenCalledWith(
@@ -176,7 +176,7 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
       const send = jest.fn();
       await addEstablish(
         core as never,
-        makeMessage({ chainIds: ['gnoland1', 'cosmoshub-4'] }),
+        makeMessage({ chainIds: ['gnoland-1', 'cosmoshub-4'] }),
         send,
       );
       expect(send).toHaveBeenCalledWith(
@@ -190,7 +190,7 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
       const send = jest.fn();
       await addEstablish(
         core as never,
-        makeMessage({ chainIds: ['gnoland1', 'atomone-1'] }),
+        makeMessage({ chainIds: ['gnoland-1', 'atomone-1'] }),
         send,
       );
       expect(mockCreatePopup).toHaveBeenCalledTimes(1);
@@ -205,7 +205,7 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
       const send = jest.fn();
       await addEstablish(
         core as never,
-        makeMessage({ chainIds: ['gnoland1', 'atomone-1'] }),
+        makeMessage({ chainIds: ['gnoland-1', 'atomone-1'] }),
         send,
       );
       expect(send).toHaveBeenCalledWith(
@@ -224,7 +224,7 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
       const send = jest.fn();
       await addEstablish(
         core as never,
-        makeMessage({ chainIds: ['gnoland1', 'atomone-1'] }),
+        makeMessage({ chainIds: ['gnoland-1', 'atomone-1'] }),
         send,
       );
       expect(mockCreatePopup).toHaveBeenCalledTimes(1);
@@ -236,11 +236,7 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
     it('routes per chainGroup when checking ALREADY_CONNECTED — atomone chainId hits AtomOne service', async () => {
       const core = makeCore();
       const send = jest.fn();
-      await addEstablish(
-        core as never,
-        makeMessage({ chainIds: ['atomone-1'] }),
-        send,
-      );
+      await addEstablish(core as never, makeMessage({ chainIds: ['atomone-1'] }), send);
       expect(core.establishAtomOneService.isEstablishedBy).toHaveBeenCalledWith(
         'acc-1',
         expect.any(String),

@@ -237,9 +237,7 @@ describe('parseGnoMessageInfo', () => {
 describe('isAllowedGnoConnectOrigin', () => {
   it('returns true for registered gno.land origins', () => {
     expect(isAllowedGnoConnectOrigin('https://gno.land')).toBe(true);
-    expect(isAllowedGnoConnectOrigin('https://betanet.testnets.gno.land')).toBe(true);
     expect(isAllowedGnoConnectOrigin('https://staging.gno.land')).toBe(true);
-    expect(isAllowedGnoConnectOrigin('https://pearl.testnets.gno.land')).toBe(true);
   });
 
   it('returns false for unregistered origins', () => {
@@ -290,12 +288,12 @@ describe('isLoopbackGnoConnectTrusted', () => {
   it('rejects a foreign meta chainId even when the active network matches the origin', () => {
     // Regression: a page served from http://127.0.0.1:8888 (origin -> dev) while
     // the wallet is already on dev must not be allowed to declare a different
-    // chainId (e.g. gnoland1) and switch/sign against a foreign network.
-    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'gnoland1', 'dev')).toBe(false);
+    // chainId (e.g. gnoland-1) and switch/sign against a foreign network.
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'gnoland-1', 'dev')).toBe(false);
   });
 
   it('rejects when the active network is not the loopback chainId', () => {
-    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'dev', 'gnoland1')).toBe(false);
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'dev', 'gnoland-1')).toBe(false);
   });
 
   it('rejects when the active network is unavailable (e.g. wallet locked)', () => {
@@ -303,7 +301,7 @@ describe('isLoopbackGnoConnectTrusted', () => {
   });
 
   it('rejects when neither the meta chainId nor the active network match', () => {
-    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'gnoland1', 'gnoland1')).toBe(false);
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'gnoland-1', 'gnoland-1')).toBe(false);
   });
 });
 
@@ -315,7 +313,7 @@ describe('getLoopbackGnoConnectRejection', () => {
   });
 
   it('names a foreign meta chainId as the origin mismatch', () => {
-    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'gnoland1', 'dev')).toBe(
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'gnoland-1', 'dev')).toBe(
       'ORIGIN_CHAIN_MISMATCH',
     );
   });
@@ -329,13 +327,13 @@ describe('getLoopbackGnoConnectRejection', () => {
   });
 
   it('names a different active network as the network mismatch', () => {
-    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'dev', 'gnoland1')).toBe(
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'dev', 'gnoland-1')).toBe(
       'ACTIVE_NETWORK_MISMATCH',
     );
   });
 
   it('prefers the origin mismatch, which holds regardless of wallet state', () => {
-    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'gnoland1', undefined)).toBe(
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'gnoland-1', undefined)).toBe(
       'ORIGIN_CHAIN_MISMATCH',
     );
   });
@@ -344,7 +342,7 @@ describe('getLoopbackGnoConnectRejection', () => {
     // The reason exists to be reported, never to be acted on. Pinning the two
     // together means a future edit cannot let the message and the decision drift
     // — the case that would tell a user their wallet is fine while it refuses.
-    const chainIds: (string | undefined)[] = [undefined, 'dev', 'gnoland1', ''];
+    const chainIds: (string | undefined)[] = [undefined, 'dev', 'gnoland-1', ''];
 
     for (const metaChainId of chainIds) {
       for (const activeChainId of chainIds) {

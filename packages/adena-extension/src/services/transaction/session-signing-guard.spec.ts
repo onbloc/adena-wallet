@@ -9,7 +9,7 @@ const sessionAddr = 'g1session';
 
 function sessionAccountMock(): Account {
   // Minimum surface used by the guard; isSessionAccount checks `type`.
-  return ({
+  return {
     id: 'sess-1',
     index: 0,
     type: 'SESSION',
@@ -18,11 +18,11 @@ function sessionAccountMock(): Account {
     publicKey: new Uint8Array(),
     toData: (): any => ({}),
     getAddress: async (): Promise<string> => sessionAddr,
-  } as unknown) as Account;
+  } as unknown as Account;
 }
 
 function masterAccountMock(): Account {
-  return ({
+  return {
     id: 'master-1',
     index: 0,
     type: 'HD_WALLET',
@@ -31,7 +31,7 @@ function masterAccountMock(): Account {
     publicKey: new Uint8Array(),
     toData: (): any => ({}),
     getAddress: async (): Promise<string> => masterAddr,
-  } as unknown) as Account;
+  } as unknown as Account;
 }
 
 function baseMetadata(overrides: Partial<SessionMetadataV021> = {}): SessionMetadataV021 {
@@ -145,7 +145,7 @@ describe('evaluateSessionSigningGuard', () => {
       sessionMetadata: baseMetadata({ chainId: 'test-13' }),
       walletLocked: false,
       nowSeconds: 0,
-      currentChainId: 'gnoland1',
+      currentChainId: 'gnoland-1',
       decodedMessages: [],
       txFee: baseFee,
     });

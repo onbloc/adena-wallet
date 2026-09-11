@@ -8,7 +8,7 @@ import photonTokenIcon from './tokens/photon.svg';
  * Add new entries here when registering additional chains.
  */
 export const CHAIN_ICON_MAP: Record<string, string> = {
-  gnoland1: gnolandChainIcon,
+  'gnoland-1': gnolandChainIcon,
   'atomone-1': atoneChainIcon,
   'atomone-testnet-1': atoneChainIcon,
 };

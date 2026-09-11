@@ -44,11 +44,11 @@ export const networkMode = atom<NetworkMode>({
 /**
  * Stores the selected NetworkProfile id per chainGroup.
  * Supports simultaneous multi-chain activation (one active network per chain).
- * Example: { gno: 'gnoland1', atomone: 'atomone-1' }
+ * Example: { gno: 'gnoland-1', atomone: 'atomone-1' }
  */
 export const selectedProfileByChainGroup = atom<Record<string, string>>({
   key: 'network/selectedProfileByChainGroup',
-  default: { gno: 'gnoland1', atomone: 'atomone-1' },
+  default: { gno: 'gnoland-1', atomone: 'atomone-1' },
 });
 
 /**

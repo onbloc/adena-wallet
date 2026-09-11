@@ -41,11 +41,11 @@ describe('describeLoopbackRejection', () => {
   it('quotes what the page declared for the origin mismatch', () => {
     const notice = describeLoopbackRejection('ORIGIN_CHAIN_MISMATCH', {
       requiredChainId: REQUIRED,
-      metaChainId: 'gnoland1',
+      metaChainId: 'gnoland-1',
       activeChainId: 'dev',
     });
 
-    expect(notice.body).toContain('gnoland1');
+    expect(notice.body).toContain('gnoland-1');
     expect(notice.body).toContain('Local (dev)');
   });
 

@@ -25,8 +25,8 @@ const UPHOTON: TokenProfile = {
 };
 
 const GNO_TOKEN: TokenProfile = {
-  id: 'gnoland1:ugnot',
-  chainProfileId: 'gnoland1',
+  id: 'gnoland-1:ugnot',
+  chainProfileId: 'gnoland-1',
   symbol: 'GNOT',
   name: 'Gno',
   decimals: 6,
