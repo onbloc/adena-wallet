@@ -12,7 +12,6 @@ export const GRC20_FUNCTIONS = [
 
 /** Must stay in sync with `makeGetGRC20RegisterEventsQuery` indexer filter. */
 const GRC20_REGISTER_EVENT_TYPE = 'register';
-const GRC20_REGISTER_REGISTRY_PKG_PATH = 'gno.land/r/demo/defi/grc20reg';
 
 type GnoEventAttr = { key: string; value: string };
 
@@ -65,6 +64,7 @@ function parseGRC20RegisterAttrs(attrs: GnoEventAttr[] | undefined): GRC20Regist
  */
 export function mapGRC20RegisterEvent(
   queryResult: GRC20RegisterTransactionsQueryResult | null | undefined,
+  registryPaths: string[],
 ): GRC20RegisterEvent[] {
   const transactions = queryResult?.data?.getTransactions;
   if (!transactions?.length) {
@@ -81,10 +81,7 @@ export function mapGRC20RegisterEvent(
       if (!isGnoGraphQueryEvent(ev)) {
         continue;
       }
-      if (
-        ev.type !== GRC20_REGISTER_EVENT_TYPE ||
-        ev.pkg_path !== GRC20_REGISTER_REGISTRY_PKG_PATH
-      ) {
+      if (ev.type !== GRC20_REGISTER_EVENT_TYPE || !registryPaths.includes(ev.pkg_path ?? '')) {
         continue;
       }
       const mapped = parseGRC20RegisterAttrs(ev.attrs);

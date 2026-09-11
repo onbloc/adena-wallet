@@ -21,7 +21,11 @@ import {
   toTokenPath,
   tokenIdentifierToRegistryKey,
 } from '@common/utils/grc20-token-path';
-import { getGrc20RegConfig, Grc20RegConfig } from '@common/utils/grc20reg-config';
+import {
+  getGrc20RegConfig,
+  Grc20RegConfig,
+  resolveGrc20TransferEvent,
+} from '@common/utils/grc20reg-config';
 import { parseGRC721FileContents } from '@common/utils/parse-utils';
 import {
   GRC20TokenModel,
@@ -161,11 +165,9 @@ export class TokenRepository implements ITokenRepository {
   };
 
   public getAccountTokenMetainfos = async (accountId: string): Promise<TokenModel[]> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      {
-        [key in string]: TokenModel[];
-      }
-    >(LocalValueType.AccountTokenMetainfos);
+    const accountTokenMetainfos = await this.localStorage.getToObject<{
+      [key in string]: TokenModel[];
+    }>(LocalValueType.AccountTokenMetainfos);
 
     return (
       accountTokenMetainfos[accountId] ??
@@ -177,11 +179,9 @@ export class TokenRepository implements ITokenRepository {
     accountId: string,
     tokenMetainfos: TokenModel[],
   ): Promise<boolean> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      {
-        [key in string]: TokenModel[];
-      }
-    >(LocalValueType.AccountTokenMetainfos);
+    const accountTokenMetainfos = await this.localStorage.getToObject<{
+      [key in string]: TokenModel[];
+    }>(LocalValueType.AccountTokenMetainfos);
 
     const isUnique = function (token0: TokenModel, token1: TokenModel): boolean {
       return token0.tokenId === token1.tokenId && token0.networkId === token1.networkId;
@@ -204,11 +204,9 @@ export class TokenRepository implements ITokenRepository {
   };
 
   public deleteTokenMetainfos = async (accountId: string): Promise<boolean> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      {
-        [key in string]: TokenModel[];
-      }
-    >(LocalValueType.AccountTokenMetainfos);
+    const accountTokenMetainfos = await this.localStorage.getToObject<{
+      [key in string]: TokenModel[];
+    }>(LocalValueType.AccountTokenMetainfos);
 
     const changedAccountTokenMetainfos = {
       ...accountTokenMetainfos,
@@ -297,24 +295,67 @@ export class TokenRepository implements ITokenRepository {
       }
     }
 
-    return all;
+    const seen = new Set<string>();
+    return all.filter((token) => {
+      if (seen.has(token.tokenId)) {
+        return false;
+      }
+      seen.add(token.tokenId);
+      return true;
+    });
   };
 
   /**
    * Read one page of registry keys (`{packagePath}.{symbol}` fqname form) plus
-   * the total registry size in a single qeval, using
-   * `GetRegistry().IterateByOffset(offset, limit, ...)` and `.Size()`. Keys are
-   * comma-joined on-chain; a fqname key never contains a comma.
+   * the total size across the configured registries, paged as one list in
+   * configuration order.
    */
   private async fetchGRC20RegistryKeyPage(
+    offset: number,
+    limit: number,
+  ): Promise<{ keys: string[]; totalCount: number }> {
+    const keys: string[] = [];
+    let totalCount = 0;
+    let remainingOffset = offset;
+    let remainingLimit = limit;
+
+    for (const registry of this.grc20RegConfig.registries) {
+      const page = await this.fetchRegistryKeyPageFrom(
+        registry.path,
+        remainingOffset,
+        Math.max(remainingLimit, 1),
+      );
+      totalCount += page.totalCount;
+
+      if (remainingLimit <= 0) {
+        continue;
+      }
+      if (remainingOffset >= page.totalCount) {
+        remainingOffset -= page.totalCount;
+        continue;
+      }
+      keys.push(...page.keys);
+      remainingLimit -= page.keys.length;
+      remainingOffset = 0;
+    }
+
+    return { keys, totalCount };
+  }
+
+  /**
+   * Read one page of keys plus the total size of a single registry in a single
+   * qeval, using `GetRegistry().IterateByOffset(offset, limit, ...)` and
+   * `.Size()`. Keys are comma-joined on-chain; a fqname key never contains a
+   * comma.
+   */
+  private async fetchRegistryKeyPageFrom(
+    registryPath: string,
     offset: number,
     limit: number,
   ): Promise<{ keys: string[]; totalCount: number }> {
     if (!this.gnoProvider) {
       return { keys: [], totalCount: 0 };
     }
-
-    const registryPath = this.grc20RegConfig.registryPath;
 
     let response: string;
     try {
@@ -328,7 +369,7 @@ export class TokenRepository implements ITokenRepository {
         returnExpression: 'reg.Size(), s',
       });
     } catch (e) {
-      console.warn('fetchGRC20RegistryKeyPage: evaluateIIFE failed', offset, limit, e);
+      console.warn('fetchRegistryKeyPageFrom: evaluateIIFE failed', registryPath, offset, limit, e);
       return { keys: [], totalCount: 0 };
     }
 
@@ -338,7 +379,7 @@ export class TokenRepository implements ITokenRepository {
 
     const tuples = parseQEvalResult(response);
     if (tuples.length < 2) {
-      console.warn('fetchGRC20RegistryKeyPage: unexpected tuple count', response);
+      console.warn('fetchRegistryKeyPageFrom: unexpected tuple count', registryPath, response);
       return { keys: [], totalCount: 0 };
     }
 
@@ -350,19 +391,47 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
-   * Fetch metadata (name, symbol, decimals) for a set of registry keys via the
-   * grc20reg object receiver (`Get(key).GetName()/GetSymbol()/GetDecimals()`),
-   * batched into a single qeval per chunk to cut round-trips. `Get` returning
-   * nil yields the sentinel ("", "", 0) and is dropped.
+   * Fetch metadata (name, symbol, decimals) for a set of registry keys; a key
+   * is resolved by the first configured registry that holds it.
    */
   private async fetchGRC20TokensByKeys(keys: string[]): Promise<GRC20TokenModel[]> {
     if (!this.gnoProvider || keys.length === 0) {
       return [];
     }
 
-    const registryPath = this.grc20RegConfig.registryPath;
+    const resolved = new Map<string, GRC20TokenModel>();
+    let unresolved = keys;
+
+    for (const registry of this.grc20RegConfig.registries) {
+      if (unresolved.length === 0) {
+        break;
+      }
+      const found = await this.fetchGRC20TokensByKeysFrom(registry.path, unresolved);
+      found.forEach((token, key) => resolved.set(key, token));
+      unresolved = unresolved.filter((key) => !resolved.has(key));
+    }
+
+    return keys
+      .map((key) => resolved.get(key))
+      .filter((token): token is GRC20TokenModel => token !== undefined);
+  }
+
+  /**
+   * Fetch metadata for a set of registry keys via one registry's object
+   * receiver (`Get(key).GetName()/GetSymbol()/GetDecimals()`), batched into a
+   * single qeval per chunk to cut round-trips. `Get` returning nil yields the
+   * sentinel ("", "", 0) and is dropped.
+   */
+  private async fetchGRC20TokensByKeysFrom(
+    registryPath: string,
+    keys: string[],
+  ): Promise<Map<string, GRC20TokenModel>> {
+    const results = new Map<string, GRC20TokenModel>();
+    if (!this.gnoProvider || keys.length === 0) {
+      return results;
+    }
+
     const networkId = this.networkId;
-    const results: GRC20TokenModel[] = [];
 
     for (let start = 0; start < keys.length; start += GRC20_REGISTRY_PAGE_SIZE) {
       const chunk = keys.slice(start, start + GRC20_REGISTRY_PAGE_SIZE);
@@ -389,7 +458,7 @@ export class TokenRepository implements ITokenRepository {
           returnExpression: returnParts.join(', '),
         });
       } catch (e) {
-        console.warn('fetchGRC20TokensByKeys: evaluateIIFE failed', chunk, e);
+        console.warn('fetchGRC20TokensByKeysFrom: evaluateIIFE failed', registryPath, chunk, e);
         continue;
       }
 
@@ -415,7 +484,7 @@ export class TokenRepository implements ITokenRepository {
         // Identity is the registry fqname itself: tokenId = `packagePath.symbol`.
         const tokenId = parsed ? toTokenPath(parsed.packagePath, parsed.symbol) : key;
 
-        results.push({
+        results.set(key, {
           main: false,
           tokenId,
           pkgPath: packagePath,
@@ -561,7 +630,8 @@ export class TokenRepository implements ITokenRepository {
       return [];
     }
 
-    const transferEventsQuery = makeAllTransferEventsQueryBy(address);
+    const { tokenPackages } = this.grc20RegConfig;
+    const transferEventsQuery = makeAllTransferEventsQueryBy(address, tokenPackages);
     return TokenRepository.postGraphQuery(
       this.networkInstance,
       this.queryUrl,
@@ -577,7 +647,10 @@ export class TokenRepository implements ITokenRepository {
         .filter((event: any) => {
           const eventType = event?.type;
           const eventAttributes = event?.attrs || [];
-          const eventToAttribute = eventAttributes.find((attribute: any) => attribute.key === 'to');
+          const { toAttr } = resolveGrc20TransferEvent(event?.pkg_path, tokenPackages);
+          const eventToAttribute = eventAttributes.find(
+            (attribute: any) => attribute.key === toAttr || attribute.key === 'to',
+          );
 
           if (!eventType || !eventToAttribute) {
             return false;
@@ -604,7 +677,8 @@ export class TokenRepository implements ITokenRepository {
       return [];
     }
 
-    const transferEventsQuery = makeAllTransferEventsQueryBy(address);
+    const { tokenPackages } = this.grc20RegConfig;
+    const transferEventsQuery = makeAllTransferEventsQueryBy(address, tokenPackages);
     return TokenRepository.postGraphQuery(
       this.networkInstance,
       this.queryUrl,
@@ -618,9 +692,15 @@ export class TokenRepository implements ITokenRepository {
       const tokenPaths: string[] = transactions
         .flatMap((transaction: any) => transaction?.response?.events || [])
         .map((event: any) => {
+          const schema = resolveGrc20TransferEvent(event?.pkg_path, tokenPackages);
+          if (event?.type !== schema.type) {
+            return null;
+          }
           const attrs = event?.attrs || [];
-          const hasParty = attrs.some((a: any) => a.key === 'to' || a.key === 'from');
-          const tokenAttr = attrs.find((a: any) => a.key === 'token');
+          const hasParty = attrs.some(
+            (a: any) => a.key === schema.toAttr || a.key === schema.fromAttr,
+          );
+          const tokenAttr = attrs.find((a: any) => a.key === schema.tokenAttr);
           if (!hasParty || !tokenAttr?.value) {
             return null;
           }

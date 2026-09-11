@@ -1,14 +1,27 @@
-export const makeGetGRC20RegisterEventsQuery = (): string => `
+import { Grc20TokenPackage } from '@common/utils/grc20reg-config';
+
+const makeRegisterEventBranches = (registryPaths: string[]): string =>
+  registryPaths
+    .map(
+      (registryPath) => `
+            {
+              GnoEvent: {
+                type: { eq: "register" }
+                pkg_path: { eq: "${registryPath}" }
+              }
+            }`,
+    )
+    .join('');
+
+export const makeGetGRC20RegisterEventsQuery = (registryPaths: string[]): string => `
 query getGRC20RegisterEvents {
   getTransactions(
     where: {
       success: {eq: true}, 
       response: {
         events: {
-          GnoEvent: {
-            type: { eq: "register" }
-            pkg_path: { eq: "gno.land/r/demo/defi/grc20reg" }
-          }
+          _or: [${makeRegisterEventBranches(registryPaths)}
+          ]
         }
       }
     }
@@ -221,33 +234,38 @@ query getGRC721TransferEvents {
   }
 }`;
 
-export const makeAllTransferEventsQueryBy = (address: string): string => `
+const makeGRC20TransferEventBranches = (
+  address: string,
+  tokenPackages: Grc20TokenPackage[],
+): string =>
+  tokenPackages
+    .flatMap(({ path, transferEvent }) =>
+      [transferEvent.toAttr, transferEvent.fromAttr].map(
+        (partyAttr) => `
+            {
+              GnoEvent: {
+                pkg_path: { eq: "${path}" }
+                type: { eq: "${transferEvent.type}" } 
+                attrs: {
+                  key: { eq: "${partyAttr}" }
+                  value: { eq: "${address}" }
+                }
+              }
+            }`,
+      ),
+    )
+    .join('');
+
+export const makeAllTransferEventsQueryBy = (
+  address: string,
+  tokenPackages: Grc20TokenPackage[],
+): string => `
 query getTokenTransferEvents {
   getTransactions(
     where: {
       response: {
         events: {
-          _or: [
-            {
-              GnoEvent: {
-                pkg_path: { eq: "gno.land/p/demo/tokens/grc20" }
-                type: { eq: "Transfer" } 
-                attrs: {
-                  key: { eq: "to" }
-                  value: { eq: "${address}" }
-                }
-              }
-            }
-            {
-              GnoEvent: {
-                pkg_path: { eq: "gno.land/p/demo/tokens/grc20" }
-                type: { eq: "Transfer" } 
-                attrs: {
-                  key: { eq: "from" }
-                  value: { eq: "${address}" }
-                }
-              }
-            }
+          _or: [${makeGRC20TransferEventBranches(address, tokenPackages)}
             {
               GnoEvent: {
                 pkg_path: { eq: "gno.land/p/demo/tokens/grc721" }

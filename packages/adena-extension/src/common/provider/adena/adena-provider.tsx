@@ -7,7 +7,7 @@ import {
   makeAtomOneNetworkProfiles,
   makeGnoNetworkProfiles,
 } from '@common/utils/chain-utils';
-import { getGrc20RegistryPath } from '@common/utils/grc20reg-config';
+import { getGrc20RegistryPaths } from '@common/utils/grc20reg-config';
 import { useWindowSize } from '@hooks/use-window-size';
 import { ChainRepository } from '@repositories/common';
 import { TokenRepository } from '@repositories/common/token';
@@ -113,9 +113,10 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return new CosmosLcdProvider(toCosmosNetworkProfile(currentAtomoneNetwork));
   }, [currentAtomoneNetwork]);
 
-  const cosmosBalanceService = useMemo(() => new CosmosBalanceService(cosmosProvider), [
-    cosmosProvider,
-  ]);
+  const cosmosBalanceService = useMemo(
+    () => new CosmosBalanceService(cosmosProvider),
+    [cosmosProvider],
+  );
 
   const axiosInstance = useMemo(() => axios.create({ timeout: 20_000 }), []);
 
@@ -123,34 +124,37 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const sessionStorage = AdenaStorage.session();
 
-  const walletRepository = useMemo(() => new WalletRepository(localStorage, sessionStorage), [
-    localStorage,
-    sessionStorage,
-  ]);
+  const walletRepository = useMemo(
+    () => new WalletRepository(localStorage, sessionStorage),
+    [localStorage, sessionStorage],
+  );
 
-  const accountRepository = useMemo(() => new WalletAccountRepository(localStorage), [
-    localStorage,
-  ]);
+  const accountRepository = useMemo(
+    () => new WalletAccountRepository(localStorage),
+    [localStorage],
+  );
 
-  const establishRepository = useMemo(() => new WalletEstablishRepository(localStorage), [
-    localStorage,
-  ]);
+  const establishRepository = useMemo(
+    () => new WalletEstablishRepository(localStorage),
+    [localStorage],
+  );
 
   const establishAtomOneRepository = useMemo(
     () => new WalletEstablishAtomOneRepository(localStorage),
     [localStorage],
   );
 
-  const addressBookRepository = useMemo(() => new WalletAddressRepository(localStorage), [
-    localStorage,
-  ]);
+  const addressBookRepository = useMemo(
+    () => new WalletAddressRepository(localStorage),
+    [localStorage],
+  );
 
   const sessionRepository = useMemo(() => new SessionRepository(localStorage), [localStorage]);
 
-  const chainRepository = useMemo(() => new ChainRepository(localStorage, axiosInstance), [
-    localStorage,
-    axiosInstance,
-  ]);
+  const chainRepository = useMemo(
+    () => new ChainRepository(localStorage, axiosInstance),
+    [localStorage, axiosInstance],
+  );
 
   const tokenRepository = useMemo(
     () => new TokenRepository(localStorage, axiosInstance, currentGnoNetwork, gnoProvider),
@@ -181,14 +185,14 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const balanceService: WalletBalanceService = useMemo(() => {
     const service = new WalletBalanceService(gnoProvider);
-    service.setRegistryPath(getGrc20RegistryPath(currentGnoNetwork?.chainId));
+    service.setRegistryPaths(getGrc20RegistryPaths(currentGnoNetwork?.chainId));
     return service;
   }, [gnoProvider, currentGnoNetwork?.chainId]);
 
-  const accountService = useMemo(() => new WalletAccountService(accountRepository, gnoProvider), [
-    accountRepository,
-    gnoProvider,
-  ]);
+  const accountService = useMemo(
+    () => new WalletAccountService(accountRepository, gnoProvider),
+    [accountRepository, gnoProvider],
+  );
 
   const addressBookService = useMemo(
     () => new WalletAddressBookService(walletRepository, addressBookRepository),

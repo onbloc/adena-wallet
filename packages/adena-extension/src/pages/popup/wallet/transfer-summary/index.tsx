@@ -63,13 +63,8 @@ const TransferSummaryContainer: React.FC = () => {
   const { navigate, goBack, params } = useAppNavigate<RoutePath.TransferSummary>();
   const summaryInfo = params;
   const { wallet, gnoProvider } = useWalletContext();
-  const {
-    transactionService,
-    chainRegistry,
-    tokenRegistry,
-    cosmosProvider,
-    sessionRepository,
-  } = useAdenaContext();
+  const { transactionService, chainRegistry, tokenRegistry, cosmosProvider, sessionRepository } =
+    useAdenaContext();
   const queryClient = useQueryClient();
   const { currentAccount, currentAddress, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
@@ -359,17 +354,25 @@ const TransferSummaryContainer: React.FC = () => {
     // transfers the token through the registry's own write wrapper. The node
     // requires the package name to be "main" and auto-assigns the reserved run
     // path when Package.Path is left empty.
+    const registryAliases = cfg.registries.map((registry, index) => ({
+      alias: `grc20reg${index}`,
+      path: registry.path,
+    }));
     const runBody = [
       'package main',
       '',
       'import (',
-      `\tgrc20reg ${gnoLiteral(cfg.registryPath)}`,
+      ...registryAliases.map(({ alias, path }) => `\t${alias} ${gnoLiteral(path)}`),
       ')',
       '',
       'func main(cur realm) {',
-      `\tgrc20reg.Transfer(0, cur, ${gnoLiteral(registryKey)}, address(${gnoLiteral(
-        toAddress,
-      )}), ${amount})`,
+      ...registryAliases.map(
+        ({ alias }) =>
+          `\tif ${alias}.Get(${gnoLiteral(registryKey)}) != nil { ${alias}.Transfer(0, cur, ${gnoLiteral(
+            registryKey,
+          )}, address(${gnoLiteral(toAddress)}), ${amount}); return }`,
+      ),
+      `\tpanic("token is not registered: " + ${gnoLiteral(registryKey)})`,
       '}',
       '',
     ].join('\n');

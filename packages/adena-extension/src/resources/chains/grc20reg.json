@@ -1,18 +1,78 @@
 {
   "gnoland-1": {
-    "registryPath": "gno.land/r/demo/defi/grc20reg/v1",
-    "helperPath": ""
+    "helperPath": "",
+    "registries": [
+      { "path": "gno.land/r/demo/defi/grc20reg/v1" },
+      { "path": "gno.land/r/demo/defi/grc20reg" }
+    ],
+    "tokenPackages": [
+      {
+        "path": "gno.land/p/nt/grc20/v0",
+        "transferEvent": {
+          "type": "Transfer",
+          "tokenAttr": "token",
+          "fromAttr": "from",
+          "toAttr": "to",
+          "valueAttr": "value"
+        }
+      }
+    ]
   },
   "staging": {
-    "registryPath": "gno.land/r/demo/defi/grc20reg/v1",
-    "helperPath": ""
+    "helperPath": "",
+    "registries": [
+      { "path": "gno.land/r/demo/defi/grc20reg/v1" },
+      { "path": "gno.land/r/demo/defi/grc20reg" }
+    ],
+    "tokenPackages": [
+      {
+        "path": "gno.land/p/nt/grc20/v0",
+        "transferEvent": {
+          "type": "Transfer",
+          "tokenAttr": "token",
+          "fromAttr": "from",
+          "toAttr": "to",
+          "valueAttr": "value"
+        }
+      }
+    ]
   },
   "dev": {
-    "registryPath": "gno.land/r/demo/defi/grc20reg/v1",
-    "helperPath": ""
+    "helperPath": "",
+    "registries": [
+      { "path": "gno.land/r/demo/defi/grc20reg/v1" },
+      { "path": "gno.land/r/demo/defi/grc20reg" }
+    ],
+    "tokenPackages": [
+      {
+        "path": "gno.land/p/nt/grc20/v0",
+        "transferEvent": {
+          "type": "Transfer",
+          "tokenAttr": "token",
+          "fromAttr": "from",
+          "toAttr": "to",
+          "valueAttr": "value"
+        }
+      }
+    ]
   },
   "dev.gnoswap": {
-    "registryPath": "gno.land/r/demo/defi/grc20reg/v1",
-    "helperPath": "gno.land/r/gnoswap/common"
+    "helperPath": "",
+    "registries": [
+      { "path": "gno.land/r/demo/defi/grc20reg/v1" },
+      { "path": "gno.land/r/demo/defi/grc20reg" }
+    ],
+    "tokenPackages": [
+      {
+        "path": "gno.land/p/nt/grc20/v0",
+        "transferEvent": {
+          "type": "Transfer",
+          "tokenAttr": "token",
+          "fromAttr": "from",
+          "toAttr": "to",
+          "valueAttr": "value"
+        }
+      }
+    ]
   }
 }

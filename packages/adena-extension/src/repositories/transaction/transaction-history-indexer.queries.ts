@@ -1,3 +1,5 @@
+import { Grc20TokenPackage } from '@common/utils/grc20reg-config';
+
 /**
  * Selection set shared by every transaction query — keeps the existing
  * `TransactionResponse` shape consumed by the mappers
@@ -141,20 +143,35 @@ query getAllTransactionHistory {
  * only the sender is matched there (by `MsgRun.caller`). Merged into the
  * all-transactions result by the repository.
  */
-export const makeGRC20ReceivedTransactionHistoryQuery = (address: string): string => `
+export const makeGRC20ReceivedTransactionHistoryQuery = (
+  address: string,
+  tokenPackages: Grc20TokenPackage[],
+): string => {
+  const branches = tokenPackages
+    .map(
+      ({ path, transferEvent }) => `
+            {
+              GnoEvent: {
+                pkg_path: { eq: "${path}" }
+                type: { eq: "${transferEvent.type}" }
+                attrs: {
+                  key: { eq: "${transferEvent.toAttr}" }
+                  value: { eq: "${address}" }
+                }
+              }
+            }`,
+    )
+    .join('');
+
+  return `
 query getGRC20ReceivedTransactionHistory {
   getTransactions(
     where: {
       success: { eq: true }
       response: {
         events: {
-          GnoEvent: {
-            type: { eq: "Transfer" }
-            attrs: {
-              key: { eq: "to" }
-              value: { eq: "${address}" }
-            }
-          }
+          _or: [${branches}
+          ]
         }
       }
     }
@@ -164,6 +181,7 @@ query getGRC20ReceivedTransactionHistory {
   }
 }
 `;
+};
 
 /** Native (BankMsgSend) sends and receives for an address. */
 export const makeNativeTransactionHistoryQuery = (address: string): string => `
@@ -205,28 +223,40 @@ query getNativeTransactionHistory {
  * trailing sequence is not part of the wallet's token identity, so the token is
  * matched by the `{tokenKey}.` prefix instead of an exact value.
  */
-export const makeGRC20TransactionHistoryQuery = (address: string, tokenKey: string): string => {
+export const makeGRC20TransactionHistoryQuery = (
+  address: string,
+  tokenKey: string,
+  tokenPackages: Grc20TokenPackage[],
+): string => {
   // `attrs` is an OR list, so the token and the party constraint each need to be
   // their own `_and` entry rather than sibling attrs of one filter.
-  const partyBranch = (partyKey: 'from' | 'to'): string => `{
+  const branches = tokenPackages
+    .flatMap(({ path, transferEvent }) =>
+      [transferEvent.fromAttr, transferEvent.toAttr].map(
+        (partyAttr) => `
+            {
               GnoEvent: {
-                type: { eq: "Transfer" }
+                pkg_path: { eq: "${path}" }
+                type: { eq: "${transferEvent.type}" }
                 _and: [
                   {
                     attrs: {
-                      key: { eq: "token" }
+                      key: { eq: "${transferEvent.tokenAttr}" }
                       value: { like: "${tokenKey}." }
                     }
                   }
                   {
                     attrs: {
-                      key: { eq: "${partyKey}" }
+                      key: { eq: "${partyAttr}" }
                       value: { eq: "${address}" }
                     }
                   }
                 ]
               }
-            }`;
+            }`,
+      ),
+    )
+    .join('');
 
   return `
 query getGRC20TransactionHistory {
@@ -235,9 +265,7 @@ query getGRC20TransactionHistory {
       success: { eq: true }
       response: {
         events: {
-          _or: [
-            ${partyBranch('from')}
-            ${partyBranch('to')}
+          _or: [${branches}
           ]
         }
       }
