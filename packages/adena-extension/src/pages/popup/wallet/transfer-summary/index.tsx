@@ -2,9 +2,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CosmosDocument,
   Document,
-  MSG_SEND_AMINO_TYPE,
   isLedgerAccount,
   isSessionAccount,
+  MSG_SEND_AMINO_TYPE,
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -63,8 +63,13 @@ const TransferSummaryContainer: React.FC = () => {
   const { navigate, goBack, params } = useAppNavigate<RoutePath.TransferSummary>();
   const summaryInfo = params;
   const { wallet, gnoProvider } = useWalletContext();
-  const { transactionService, chainRegistry, tokenRegistry, cosmosProvider, sessionRepository } =
-    useAdenaContext();
+  const {
+    transactionService,
+    chainRegistry,
+    tokenRegistry,
+    cosmosProvider,
+    sessionRepository,
+  } = useAdenaContext();
   const queryClient = useQueryClient();
   const { currentAccount, currentAddress, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
@@ -368,9 +373,11 @@ const TransferSummaryContainer: React.FC = () => {
       'func main(cur realm) {',
       ...registryAliases.map(
         ({ alias }) =>
-          `\tif ${alias}.Get(${gnoLiteral(registryKey)}) != nil { ${alias}.Transfer(0, cur, ${gnoLiteral(
+          `\tif ${alias}.Get(${gnoLiteral(
             registryKey,
-          )}, address(${gnoLiteral(toAddress)}), ${amount}); return }`,
+          )}) != nil { ${alias}.Transfer(0, cur, ${gnoLiteral(registryKey)}, address(${gnoLiteral(
+            toAddress,
+          )}), ${amount}); return }`,
       ),
       `\tpanic("token is not registered: " + ${gnoLiteral(registryKey)})`,
       '}',

@@ -1,144 +1,7 @@
 import { Grc20TokenPackage } from '@common/utils/grc20reg-config';
 
-const makeRegisterEventBranches = (registryPaths: string[]): string =>
-  registryPaths
-    .map(
-      (registryPath) => `
-            {
-              GnoEvent: {
-                type: { eq: "register" }
-                pkg_path: { eq: "${registryPath}" }
-              }
-            }`,
-    )
-    .join('');
-
-export const makeGetGRC20RegisterEventsQuery = (registryPaths: string[]): string => `
-query getGRC20RegisterEvents {
-  getTransactions(
-    where: {
-      success: {eq: true}, 
-      response: {
-        events: {
-          _or: [${makeRegisterEventBranches(registryPaths)}
-          ]
-        }
-      }
-    }
-  ) {
-    response {
-      events {
-        ... on GnoEvent {
-          type
-          pkg_path
-          attrs {
-            key
-            value
-          }
-        }
-      }
-    }
-  }
-}`;
-
-export const makeGetGRC721AddPackagePathsQuery = (): string => `
-query getGRC721AddPackagePaths {
-  getTransactions(
-    where: {
-      success: {eq: true}, 
-      messages: {
-        value: {
-          MsgAddPackage: {
-            package: {
-              path: {
-                like: "gno.land/r/"
-              }
-              files: {
-                _and: [
-                  {
-                    body: {
-                      like: "gno.land/p/demo/tokens/grc721"
-                    }
-                  }
-                  {
-                    body: {
-                      like: "func BalanceOf\\("
-                    }
-                  }
-                  {
-                    body: {
-                      like: "func OwnerOf\\("
-                    }
-                  }
-                  {
-                    body: {
-                      like: "func TransferFrom\\("
-                    }
-                  }
-                  {
-                    body: {
-                      like: "func Approve\\("
-                    }
-                  }
-                  {
-                    body: {
-                      like: "func SetApprovalForAll\\("
-                    }
-                  }
-                  {
-                    body: {
-                      like: "func GetApproved\\("
-                    }
-                  }
-                  {
-                    body: {
-                      like: "func IsApprovedForAll\\("
-                    }
-                  }
-                  {
-                    body: {
-                      like: "func SafeTransferFrom\\("
-                    }
-                  }
-                  {
-                    body: {
-                      like: "func Name\\("
-                    }
-                  }
-                  {
-                    body: {
-                      like: "func Symbol\\("
-                    }
-                  }
-                  {
-                    body: {
-                      like: "func TokenURI\\("
-                    }
-                  }
-                  {
-                    body: {
-                      like: "func SetTokenURI\\("
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        }
-      }
-    }
-  ) {
-    messages {
-      value {
-        ...on MsgAddPackage {
-          package {
-            path
-          }
-        }
-      }
-    }
-  }
-}`;
+/** The grc721 package whose Mint/Transfer events identify GRC721 activity. */
+export const GRC721_PACKAGE_PATH = 'gno.land/p/nt/grc721/v0';
 
 export const makeGRC721TransferEventsQuery = (packagePath: string, address: string): string => `
 query getGRC721TransferEvents {
@@ -149,7 +12,7 @@ query getGRC721TransferEvents {
           _or: [
             {
               GnoEvent: {
-                pkg_path: { eq: "gno.land/p/demo/tokens/grc721" }
+                pkg_path: { eq: "${GRC721_PACKAGE_PATH}" }
                 type: { eq: "Mint" } 
                 _and: [
                   {
@@ -169,7 +32,7 @@ query getGRC721TransferEvents {
             }
             {
               GnoEvent: {
-                pkg_path: { eq: "gno.land/p/demo/tokens/grc721" }
+                pkg_path: { eq: "${GRC721_PACKAGE_PATH}" }
                 type: { eq: "Transfer" } 
                 _and: [
                   {
@@ -189,7 +52,7 @@ query getGRC721TransferEvents {
             }
             {
               GnoEvent: {
-                pkg_path: { eq: "gno.land/p/demo/tokens/grc721" }
+                pkg_path: { eq: "${GRC721_PACKAGE_PATH}" }
                 type: { eq: "Transfer" } 
                 _and: [
                   {
@@ -268,7 +131,7 @@ query getTokenTransferEvents {
           _or: [${makeGRC20TransferEventBranches(address, tokenPackages)}
             {
               GnoEvent: {
-                pkg_path: { eq: "gno.land/p/demo/tokens/grc721" }
+                pkg_path: { eq: "${GRC721_PACKAGE_PATH}" }
                 type: { eq: "Mint" } 
                 attrs: {
                   key: { eq: "to" }
@@ -278,7 +141,7 @@ query getTokenTransferEvents {
             }
             {
               GnoEvent: {
-                pkg_path: { eq: "gno.land/p/demo/tokens/grc721" }
+                pkg_path: { eq: "${GRC721_PACKAGE_PATH}" }
                 type: { eq: "Transfer" } 
                 attrs: {
                   key: { eq: "to" }
@@ -288,7 +151,7 @@ query getTokenTransferEvents {
             }
             {
               GnoEvent: {
-                pkg_path: { eq: "gno.land/p/demo/tokens/grc721" }
+                pkg_path: { eq: "${GRC721_PACKAGE_PATH}" }
                 type: { eq: "Transfer" } 
                 attrs: {
                   key: { eq: "from" }

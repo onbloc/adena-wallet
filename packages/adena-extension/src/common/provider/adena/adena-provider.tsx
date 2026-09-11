@@ -113,10 +113,9 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return new CosmosLcdProvider(toCosmosNetworkProfile(currentAtomoneNetwork));
   }, [currentAtomoneNetwork]);
 
-  const cosmosBalanceService = useMemo(
-    () => new CosmosBalanceService(cosmosProvider),
-    [cosmosProvider],
-  );
+  const cosmosBalanceService = useMemo(() => new CosmosBalanceService(cosmosProvider), [
+    cosmosProvider,
+  ]);
 
   const axiosInstance = useMemo(() => axios.create({ timeout: 20_000 }), []);
 
@@ -124,37 +123,34 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const sessionStorage = AdenaStorage.session();
 
-  const walletRepository = useMemo(
-    () => new WalletRepository(localStorage, sessionStorage),
-    [localStorage, sessionStorage],
-  );
+  const walletRepository = useMemo(() => new WalletRepository(localStorage, sessionStorage), [
+    localStorage,
+    sessionStorage,
+  ]);
 
-  const accountRepository = useMemo(
-    () => new WalletAccountRepository(localStorage),
-    [localStorage],
-  );
+  const accountRepository = useMemo(() => new WalletAccountRepository(localStorage), [
+    localStorage,
+  ]);
 
-  const establishRepository = useMemo(
-    () => new WalletEstablishRepository(localStorage),
-    [localStorage],
-  );
+  const establishRepository = useMemo(() => new WalletEstablishRepository(localStorage), [
+    localStorage,
+  ]);
 
   const establishAtomOneRepository = useMemo(
     () => new WalletEstablishAtomOneRepository(localStorage),
     [localStorage],
   );
 
-  const addressBookRepository = useMemo(
-    () => new WalletAddressRepository(localStorage),
-    [localStorage],
-  );
+  const addressBookRepository = useMemo(() => new WalletAddressRepository(localStorage), [
+    localStorage,
+  ]);
 
   const sessionRepository = useMemo(() => new SessionRepository(localStorage), [localStorage]);
 
-  const chainRepository = useMemo(
-    () => new ChainRepository(localStorage, axiosInstance),
-    [localStorage, axiosInstance],
-  );
+  const chainRepository = useMemo(() => new ChainRepository(localStorage, axiosInstance), [
+    localStorage,
+    axiosInstance,
+  ]);
 
   const tokenRepository = useMemo(
     () => new TokenRepository(localStorage, axiosInstance, currentGnoNetwork, gnoProvider),
@@ -189,10 +185,10 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return service;
   }, [gnoProvider, currentGnoNetwork?.chainId]);
 
-  const accountService = useMemo(
-    () => new WalletAccountService(accountRepository, gnoProvider),
-    [accountRepository, gnoProvider],
-  );
+  const accountService = useMemo(() => new WalletAccountService(accountRepository, gnoProvider), [
+    accountRepository,
+    gnoProvider,
+  ]);
 
   const addressBookService = useMemo(
     () => new WalletAddressBookService(walletRepository, addressBookRepository),

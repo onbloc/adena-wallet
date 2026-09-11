@@ -1,5 +1,5 @@
 import { Grc20TokenPackage } from '@common/utils/grc20reg-config';
-import { makeAllTransferEventsQueryBy, makeGetGRC20RegisterEventsQuery } from './token.queries';
+import { makeAllTransferEventsQueryBy } from './token.queries';
 
 const V0: Grc20TokenPackage = {
   path: 'gno.land/p/nt/grc20/v0',
@@ -41,18 +41,7 @@ describe('makeAllTransferEventsQueryBy', () => {
 
   it('keeps the GRC721 branches independent of the grc20 versions', () => {
     const query = makeAllTransferEventsQueryBy('g1abc', [V1]);
-    expect(query).toContain('pkg_path: { eq: "gno.land/p/demo/tokens/grc721" }');
+    expect(query).toContain('pkg_path: { eq: "gno.land/p/nt/grc721/v0" }');
     expect(query).toContain('type: { eq: "Mint" }');
-  });
-});
-
-describe('makeGetGRC20RegisterEventsQuery', () => {
-  it('matches register events from every configured registry version', () => {
-    const query = makeGetGRC20RegisterEventsQuery([
-      'gno.land/r/demo/defi/grc20reg/v1',
-      'gno.land/r/nt/grc20reg/v0',
-    ]);
-    expect(query).toContain('pkg_path: { eq: "gno.land/r/demo/defi/grc20reg/v1" }');
-    expect(query).toContain('pkg_path: { eq: "gno.land/r/nt/grc20reg/v0" }');
   });
 });

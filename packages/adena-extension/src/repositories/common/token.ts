@@ -18,8 +18,8 @@ import { decodeGnoString, gnoLiteral, parseQEvalResult } from '@common/provider/
 import {
   parseRegistryKey,
   registryKeyToTokenPath,
-  toTokenPath,
   tokenIdentifierToRegistryKey,
+  toTokenPath,
 } from '@common/utils/grc20-token-path';
 import {
   getGrc20RegConfig,
@@ -39,13 +39,8 @@ import {
   TokenModel,
 } from '@types';
 import BigNumber from 'bignumber.js';
-import { mapGRC721CollectionModel } from './mapper/token-query.mapper';
 import { AppInfoResponse } from './response';
-import {
-  makeAllTransferEventsQueryBy,
-  makeGetGRC721AddPackagePathsQuery,
-  makeGRC721TransferEventsQuery,
-} from './token.queries';
+import { makeAllTransferEventsQueryBy, makeGRC721TransferEventsQuery } from './token.queries';
 import { ITokenRepository } from './types';
 
 enum LocalValueType {
@@ -165,9 +160,11 @@ export class TokenRepository implements ITokenRepository {
   };
 
   public getAccountTokenMetainfos = async (accountId: string): Promise<TokenModel[]> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<{
-      [key in string]: TokenModel[];
-    }>(LocalValueType.AccountTokenMetainfos);
+    const accountTokenMetainfos = await this.localStorage.getToObject<
+      {
+        [key in string]: TokenModel[];
+      }
+    >(LocalValueType.AccountTokenMetainfos);
 
     return (
       accountTokenMetainfos[accountId] ??
@@ -179,9 +176,11 @@ export class TokenRepository implements ITokenRepository {
     accountId: string,
     tokenMetainfos: TokenModel[],
   ): Promise<boolean> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<{
-      [key in string]: TokenModel[];
-    }>(LocalValueType.AccountTokenMetainfos);
+    const accountTokenMetainfos = await this.localStorage.getToObject<
+      {
+        [key in string]: TokenModel[];
+      }
+    >(LocalValueType.AccountTokenMetainfos);
 
     const isUnique = function (token0: TokenModel, token1: TokenModel): boolean {
       return token0.tokenId === token1.tokenId && token0.networkId === token1.networkId;
@@ -204,9 +203,11 @@ export class TokenRepository implements ITokenRepository {
   };
 
   public deleteTokenMetainfos = async (accountId: string): Promise<boolean> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<{
-      [key in string]: TokenModel[];
-    }>(LocalValueType.AccountTokenMetainfos);
+    const accountTokenMetainfos = await this.localStorage.getToObject<
+      {
+        [key in string]: TokenModel[];
+      }
+    >(LocalValueType.AccountTokenMetainfos);
 
     const changedAccountTokenMetainfos = {
       ...accountTokenMetainfos,
@@ -524,22 +525,7 @@ export class TokenRepository implements ITokenRepository {
           isMetadata: false,
         }));
     }
-    if (!this.queryUrl) {
-      return [];
-    }
-
-    const allRealmsQuery = makeGetGRC721AddPackagePathsQuery();
-    return TokenRepository.postGraphQuery(this.networkInstance, this.queryUrl, allRealmsQuery).then(
-      (result) =>
-        result?.data?.transactions
-          ? result?.data?.transactions
-              .flatMap((tx: any) => tx.messages)
-              .map((message: any) =>
-                mapGRC721CollectionModel(this.networkMetainfo?.networkId || '', message),
-              )
-              .filter((collection: GRC721CollectionModel | null) => !!collection)
-          : [],
-    );
+    return [];
   }
 
   /**
@@ -900,9 +886,11 @@ export class TokenRepository implements ITokenRepository {
     accountId: string,
     networkId: string,
   ): Promise<GRC721CollectionModel[]> {
-    const accountGRC721CollectionsMap = await this.localStorage.getToObject<{
-      [key in string]: { [key in string]: GRC721CollectionModel[] };
-    }>(LocalValueType.AccountGRC721Collections);
+    const accountGRC721CollectionsMap = await this.localStorage.getToObject<
+      {
+        [key in string]: { [key in string]: GRC721CollectionModel[] };
+      }
+    >(LocalValueType.AccountGRC721Collections);
 
     if (!accountGRC721CollectionsMap?.[accountId]?.[networkId]) {
       return [];
@@ -917,9 +905,11 @@ export class TokenRepository implements ITokenRepository {
     collections: GRC721CollectionModel[],
   ): Promise<boolean> {
     const accountGRC721CollectionsMap =
-      (await this.localStorage.getToObject<{
-        [key in string]: { [key in string]: GRC721CollectionModel[] };
-      }>(LocalValueType.AccountGRC721Collections)) || {};
+      (await this.localStorage.getToObject<
+        {
+          [key in string]: { [key in string]: GRC721CollectionModel[] };
+        }
+      >(LocalValueType.AccountGRC721Collections)) || {};
 
     const currentAccountCollections = accountGRC721CollectionsMap?.[accountId] || {};
 
@@ -938,9 +928,11 @@ export class TokenRepository implements ITokenRepository {
     accountId: string,
     networkId: string,
   ): Promise<string[]> {
-    const accountGRC721PinnedPackagesMap = await this.localStorage.getToObject<{
-      [key in string]: { [key in string]: string[] };
-    }>(LocalValueType.AccountGRC721PinnedPackages);
+    const accountGRC721PinnedPackagesMap = await this.localStorage.getToObject<
+      {
+        [key in string]: { [key in string]: string[] };
+      }
+    >(LocalValueType.AccountGRC721PinnedPackages);
 
     if (!accountGRC721PinnedPackagesMap?.[accountId]?.[networkId]) {
       return [];
@@ -955,9 +947,11 @@ export class TokenRepository implements ITokenRepository {
     packagePaths: string[],
   ): Promise<boolean> {
     const accountGRC721PinnedPackagesMap =
-      (await this.localStorage.getToObject<{
-        [key in string]: { [key in string]: string[] };
-      }>(LocalValueType.AccountGRC721PinnedPackages)) || {};
+      (await this.localStorage.getToObject<
+        {
+          [key in string]: { [key in string]: string[] };
+        }
+      >(LocalValueType.AccountGRC721PinnedPackages)) || {};
 
     const currentAccountPinnedPackages = accountGRC721PinnedPackagesMap?.[accountId] || {};
 

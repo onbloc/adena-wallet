@@ -112,9 +112,10 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       hasGRC20TransferTo(tx, address, tokenPackages),
     );
 
-    const transactions = mergeTransactionsByHash(result?.data?.getTransactions ?? [], received).map(
-      (tx) => mapTransactionEdgeByAddress(tx, address, this.grc20MapperContext),
-    );
+    const transactions = mergeTransactionsByHash(
+      result?.data?.getTransactions ?? [],
+      received,
+    ).map((tx) => mapTransactionEdgeByAddress(tx, address, this.grc20MapperContext));
 
     return {
       page: { hasNext: false, cursor: null },
@@ -127,12 +128,9 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       return EMPTY_PAGE;
     }
 
-    const result =
-      await TransactionHistoryIndexerRepository.postGraphQuery<TransactionsQueryResult>(
-        this.axiosInstance,
-        this.queryUrl,
-        makeNativeTransactionHistoryQuery(address),
-      );
+    const result = await TransactionHistoryIndexerRepository.postGraphQuery<
+      TransactionsQueryResult
+    >(this.axiosInstance, this.queryUrl, makeNativeTransactionHistoryQuery(address));
 
     const transactions = (result?.data?.getTransactions ?? []).map((tx) => {
       const bankTx = tx as TransactionResponse<BankSendValue>;
@@ -162,12 +160,13 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
     const packagePath = packagePathOfTokenPath(tokenPath);
     const tokenKey = toRegistryKey(tokenPath) ?? tokenPath;
 
-    const result =
-      await TransactionHistoryIndexerRepository.postGraphQuery<TransactionsQueryResult>(
-        this.axiosInstance,
-        this.queryUrl,
-        makeGRC20TransactionHistoryQuery(address, tokenKey, this.grc20Config.tokenPackages),
-      );
+    const result = await TransactionHistoryIndexerRepository.postGraphQuery<
+      TransactionsQueryResult
+    >(
+      this.axiosInstance,
+      this.queryUrl,
+      makeGRC20TransactionHistoryQuery(address, tokenKey, this.grc20Config.tokenPackages),
+    );
 
     const mapped = (result?.data?.getTransactions ?? []).map((tx) => {
       const callTx = tx as TransactionResponse<MsgCallValue>;
