@@ -4,6 +4,7 @@ import {
   BroadcastTxSyncResult,
   CompactBitArray,
   Multisignature,
+  parseSignCoin,
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
@@ -662,15 +663,13 @@ export class MultisigService {
     sequence: string,
     chainId: string,
   ): Document {
-    const { amount, denom } = this.parseGasFee(rawTx.fee.gas_fee);
-
     return {
       msgs: rawTx.msg.map((rawMessage) => ({
         type: rawMessage['@type'],
         value: rawMessage,
       })),
       fee: {
-        amount: [{ amount, denom }],
+        amount: parseSignCoin(rawTx.fee.gas_fee),
         gas: rawTx.fee.gas_wanted,
       },
       chain_id: chainId,
@@ -704,14 +703,6 @@ export class MultisigService {
     if (!rawTx.msg || rawTx.msg.length === 0) {
       throw new Error('At least one message is required');
     }
-  }
-
-  private parseGasFee(gasFeeString: string): { amount: string; denom: string } {
-    const match = gasFeeString.match(/^(\d+)(\w+)$/);
-    if (!match) {
-      throw new Error(`Invalid gas fee format: ${gasFeeString}`);
-    }
-    return { amount: match[1], denom: match[2] };
   }
 }
 
