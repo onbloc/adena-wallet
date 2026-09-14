@@ -5,7 +5,9 @@ import {
   MsgAddPackage,
   MsgCall,
   MsgCreateSession,
+  MsgEnablePackage,
   MsgEndpoint,
+  MsgRejectPackage,
   MsgRevokeAllSessions,
   MsgRevokeSession,
   MsgRun,
@@ -86,6 +88,22 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
       case MsgEndpoint.MSG_RUN: {
         const decodedMessage = MsgRun.decode(m.value);
         const messageJson = MsgRun.toJSON(decodedMessage) as any;
+        return {
+          '@type': m.type_url,
+          ...messageJson,
+        };
+      }
+      case MsgEndpoint.MSG_ENABLE_PKG: {
+        const decodedMessage = MsgEnablePackage.decode(m.value);
+        const messageJson = MsgEnablePackage.toJSON(decodedMessage) as any;
+        return {
+          '@type': m.type_url,
+          ...messageJson,
+        };
+      }
+      case MsgEndpoint.MSG_REJECT_PKG: {
+        const decodedMessage = MsgRejectPackage.decode(m.value);
+        const messageJson = MsgRejectPackage.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
           ...messageJson,
@@ -318,6 +336,30 @@ function encodeMessageValue(message: { type: string; value: any }) {
       return Any.create({
         type_url: MsgEndpoint.MSG_RUN,
         value: MsgRun.encode(msgRun).finish(),
+      });
+    }
+    case MsgEndpoint.MSG_ENABLE_PKG: {
+      const value = message.value;
+      const msg = MsgEnablePackage.create({
+        approver: value.approver,
+        pkg_path: value.pkg_path,
+        pkg_hash: value.pkg_hash || '',
+        pkg_height: toProtoBigInt(value.pkg_height),
+      });
+      return Any.create({
+        type_url: MsgEndpoint.MSG_ENABLE_PKG,
+        value: MsgEnablePackage.encode(msg).finish(),
+      });
+    }
+    case MsgEndpoint.MSG_REJECT_PKG: {
+      const value = message.value;
+      const msg = MsgRejectPackage.create({
+        sender: value.sender,
+        pkg_path: value.pkg_path,
+      });
+      return Any.create({
+        type_url: MsgEndpoint.MSG_REJECT_PKG,
+        value: MsgRejectPackage.encode(msg).finish(),
       });
     }
     case MSG_CREATE_SESSION_ENDPOINT: {
@@ -593,6 +635,20 @@ export interface RawMsgRevokeAllSessions {
   creator: string;
 }
 
+export interface RawMsgEnablePackage {
+  '@type': string;
+  approver: string;
+  pkg_path: string;
+  pkg_hash: string;
+  pkg_height: string;
+}
+
+export interface RawMsgRejectPackage {
+  '@type': string;
+  sender: string;
+  pkg_path: string;
+}
+
 export type RawTxMessageType =
   | RawBankSendMessage
   | RawVmCallMessage
@@ -600,7 +656,9 @@ export type RawTxMessageType =
   | RawVmRunMessage
   | RawMsgCreateSession
   | RawMsgRevokeSession
-  | RawMsgRevokeAllSessions;
+  | RawMsgRevokeAllSessions
+  | RawMsgEnablePackage
+  | RawMsgRejectPackage;
 
 export interface RawTx {
   msg: RawTxMessageType[];

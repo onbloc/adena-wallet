@@ -2,6 +2,8 @@ import { MsgEndpoint } from '@gnolang/gno-js-client';
 import { Tx } from '@gnolang/tm2-js-client';
 import {
   RawBankSendMessage,
+  RawMsgEnablePackage,
+  RawMsgRejectPackage,
   RawTx,
   RawVmAddPackageMessage,
   RawVmCallMessage,
@@ -50,9 +52,26 @@ function makeTypeName(rawTx: RawTx): string {
       return 'Add Package';
     case MsgEndpoint.MSG_RUN:
       return 'Run Transaction';
+    case MsgEndpoint.MSG_ENABLE_PKG:
+      return 'Enable Package';
+    case MsgEndpoint.MSG_REJECT_PKG:
+      return 'Reject Package';
     default:
       return 'Contract Interaction';
   }
+}
+
+function mapPackageApprovalTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
+  const message = rawTx.msg[0] as any;
+  const networkFee = makeGnotAmountByRaw(rawTx.fee.gas_fee);
+  const networkFeeStr = `${networkFee?.value} ${networkFee?.denom}`;
+  const extraInfo = rawTx.msg.length > 1 ? `${rawTx.msg.length}` : '';
+
+  return [
+    makeTransactionInfo('Type', makeTypeName(rawTx), 'TEXT', extraInfo),
+    makeTransactionInfo('Path', message.pkg_path),
+    makeTransactionInfo('Network Fee', networkFeeStr),
+  ];
 }
 
 function mapBankSendTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
@@ -110,6 +129,12 @@ function mapTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
   if (messages[0]['@type'] === MsgEndpoint.MSG_CALL) {
     return mapVmCallTransactionInfo(rawTx);
   }
+  if (
+    messages[0]['@type'] === MsgEndpoint.MSG_ENABLE_PKG ||
+    messages[0]['@type'] === MsgEndpoint.MSG_REJECT_PKG
+  ) {
+    return mapPackageApprovalTransactionInfo(rawTx);
+  }
   return mapVmCallTransactionInfo(rawTx);
 }
 
@@ -144,6 +169,20 @@ function matchTransactionCaller(rawTx: RawTx, caller: string): boolean {
           return true;
         }
         return current.caller !== caller;
+      }
+      case MsgEndpoint.MSG_ENABLE_PKG: {
+        const current = message as RawMsgEnablePackage;
+        if (!current?.approver) {
+          return true;
+        }
+        return current.approver !== caller;
+      }
+      case MsgEndpoint.MSG_REJECT_PKG: {
+        const current = message as RawMsgRejectPackage;
+        if (!current?.sender) {
+          return true;
+        }
+        return current.sender !== caller;
       }
       default: {
         return true;

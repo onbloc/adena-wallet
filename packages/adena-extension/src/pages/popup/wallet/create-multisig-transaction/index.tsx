@@ -76,6 +76,12 @@ function parseFunctionName(message: RawTxMessageType): string {
   if (isVmCallMessage(message)) {
     return message.func;
   }
+  if (message['@type'] === '/vm.m_enable_pkg') {
+    return 'EnablePackage';
+  }
+  if (message['@type'] === '/vm.m_reject_pkg') {
+    return 'RejectPackage';
+  }
   // Session message types (create/revoke session) are not expected in a
   // multisig flow; fall back to the raw @type for display.
   return message['@type'];

@@ -2279,19 +2279,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@gnolang/gno-js-client@npm:2.0.4":
-  version: 2.0.4
-  resolution: "@gnolang/gno-js-client@npm:2.0.4"
+"@gnolang/gno-js-client@npm:2.2.0":
+  version: 2.2.0
+  resolution: "@gnolang/gno-js-client@npm:2.2.0"
   dependencies:
     "@bufbuild/protobuf": ^2.13.0
     "@cosmjs/ledger-amino": 0.38.1
-    "@gnolang/tm2-js-client": ^2.0.4
+    "@gnolang/tm2-js-client": ^2.1.0
     "@gnolang/tm2-rpc": ^1.0.0
     protobufjs: ^8.7.1
     yargs: ^18.1.0
   bin:
     gno-gen-module: ./dist/generate-module.cjs
-  checksum: 7b1e752d5e6fe6c8cb736dc08ba9f5994d438e60ba92bedacd82f26db963bf0d9e97126936dad6fef52fae6802257a660b7e3c91eb2eedba567a1beba8ce5da8
+  checksum: 24c58be88543e28aca1fb85a69e7bda5744b5f9655531c800584ea200f5eda15fab9f9462aa709a59358eadc61d39423e7ca859a3023e7ea5e55c1b56546d1c7
   languageName: node
   linkType: hard
 
@@ -2312,7 +2312,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@gnolang/tm2-js-client@npm:2.1.0, @gnolang/tm2-js-client@npm:^2.0.4":
+"@gnolang/tm2-js-client@npm:2.1.0, @gnolang/tm2-js-client@npm:^2.1.0":
   version: 2.1.0
   resolution: "@gnolang/tm2-js-client@npm:2.1.0"
   dependencies:
@@ -6304,7 +6304,7 @@ __metadata:
     "@babel/preset-react": 7.23.3
     "@babel/preset-typescript": 7.23.3
     "@bufbuild/protobuf": 2.14.0
-    "@gnolang/gno-js-client": 2.0.4
+    "@gnolang/gno-js-client": 2.2.0
     "@gnolang/tm2-js-client": 2.1.0
     "@gnolang/tm2-rpc": 1.0.0
     "@jest/globals": 29.7.0
@@ -6394,7 +6394,7 @@ __metadata:
     "@cosmjs/amino": 0.38.1
     "@cosmjs/ledger-amino": 0.38.1
     "@cosmjs/proto-signing": 0.38.1
-    "@gnolang/gno-js-client": 2.0.4
+    "@gnolang/gno-js-client": 2.2.0
     "@gnolang/tm2-js-client": 2.1.0
     "@ledgerhq/hw-transport": 6.31.4
     "@ledgerhq/hw-transport-mocker": 6.29.4

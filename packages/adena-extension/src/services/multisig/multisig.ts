@@ -13,7 +13,15 @@ import { EncodeTxSignature, WalletService } from '..';
 
 import { ContractMessage, MultisigAccountResult, Signature } from '@inject/types';
 
-import { MemPackage, MsgAddPackage, MsgCall, MsgRun, MsgSend } from '@gnolang/gno-js-client';
+import {
+  MemPackage,
+  MsgAddPackage,
+  MsgCall,
+  MsgEnablePackage,
+  MsgRejectPackage,
+  MsgRun,
+  MsgSend,
+} from '@gnolang/gno-js-client';
 import {
   Account,
   combineMultisigPublicKey,
@@ -773,6 +781,24 @@ function mapRawTransactionMessage(message: ContractMessage): RawTxMessageType {
         from_address: sendMessage.from_address,
         to_address: sendMessage.to_address,
         amount: sendMessage.amount,
+      };
+    }
+    case '/vm.m_enable_pkg': {
+      const enableMessage = message.value as MsgEnablePackage;
+      return {
+        '@type': message.type,
+        approver: enableMessage.approver,
+        pkg_path: enableMessage.pkg_path,
+        pkg_hash: enableMessage.pkg_hash,
+        pkg_height: String(enableMessage.pkg_height ?? '0'),
+      };
+    }
+    case '/vm.m_reject_pkg': {
+      const rejectMessage = message.value as MsgRejectPackage;
+      return {
+        '@type': message.type,
+        sender: rejectMessage.sender,
+        pkg_path: rejectMessage.pkg_path,
       };
     }
   }

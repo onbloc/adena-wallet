@@ -9,6 +9,8 @@ export const EMessageType = {
   VM_CALL: '/vm.m_call',
   VM_ADDPKG: '/vm.m_addpkg',
   VM_RUN: '/vm.m_run',
+  VM_ENABLE_PKG: '/vm.m_enable_pkg',
+  VM_REJECT_PKG: '/vm.m_reject_pkg',
   AUTH_CREATE_SESSION: '/auth.m_create_session',
   AUTH_REVOKE_SESSION: '/auth.m_revoke_session',
   AUTH_REVOKE_ALL_SESSIONS: '/auth.m_revoke_all_sessions',
@@ -21,6 +23,8 @@ export const FUNCTION_NAME_MAP: Record<EMessageType, string> = {
   [EMessageType.VM_ADDPKG]: 'AddPackage',
   [EMessageType.VM_RUN]: 'Run',
   [EMessageType.VM_CALL]: 'Call',
+  [EMessageType.VM_ENABLE_PKG]: 'Enable Package',
+  [EMessageType.VM_REJECT_PKG]: 'Reject Package',
   [EMessageType.AUTH_CREATE_SESSION]: 'Create Session',
   [EMessageType.AUTH_REVOKE_SESSION]: 'Revoke Session',
   [EMessageType.AUTH_REVOKE_ALL_SESSIONS]: 'Revoke All Sessions',
@@ -35,7 +39,21 @@ export type SessionAdminMessage = {
   spend_period?: unknown;
 };
 
-export type TMessage = MsgAddPackage | MsgCall | MsgSend | MsgRun | SessionAdminMessage;
+export type PackageApprovalMessage = {
+  approver?: string;
+  sender?: string;
+  pkg_path?: string;
+  pkg_hash?: string;
+  pkg_height?: unknown;
+};
+
+export type TMessage =
+  | MsgAddPackage
+  | MsgCall
+  | MsgSend
+  | MsgRun
+  | SessionAdminMessage
+  | PackageApprovalMessage;
 
 export type ContractMessage = {
   type: EMessageType;

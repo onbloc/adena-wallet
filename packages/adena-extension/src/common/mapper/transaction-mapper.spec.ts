@@ -15,6 +15,26 @@ describe('mappedDocumentMessagesWithCaller', () => {
     ]);
   });
 
+  it('injects approver/sender for package approval messages', () => {
+    const result = mappedDocumentMessagesWithCaller(
+      [
+        { type: EMessageType.VM_ENABLE_PKG, value: { pkg_path: 'gno.land/r/demo/foo' } },
+        { type: EMessageType.VM_REJECT_PKG, value: { pkg_path: 'gno.land/r/demo/foo' } },
+      ],
+      'g1master',
+    );
+    expect(result).toEqual([
+      {
+        type: EMessageType.VM_ENABLE_PKG,
+        value: { pkg_path: 'gno.land/r/demo/foo', approver: 'g1master' },
+      },
+      {
+        type: EMessageType.VM_REJECT_PKG,
+        value: { pkg_path: 'gno.land/r/demo/foo', sender: 'g1master' },
+      },
+    ]);
+  });
+
   it('throws instead of silently dropping unsupported message types', () => {
     // Dropping would sign a smaller tx than the dApp requested. /bank.MsgMultiSend
     // has no proto encoder, so it must fail closed here.
