@@ -120,8 +120,8 @@ export const makeEstimateGasTransaction = async (
 
   const modifiedDocument = modifyDocument(document, gasWanted, gasFee);
   // SessionAccount: derive its own (session) address and pass it so the
-  // placeholder Tx carries session_addr. encodeGnoTx in GnoProvider.simulateTx
-  // then emits std.proto Signature field 3, which routes the node ante's
+  // placeholder Tx carries session_addr (std.proto Signature field 3), which
+  // routes the node ante's
   // pubkey-address derivation against the session address instead of the
   // master caller. Without this, simulate would reject the placeholder for
   // pubkey-address mismatch (master caller + session pubkey).

@@ -10,7 +10,6 @@ import {
 
 import { publicKeyToAddress } from '../../utils/address';
 import { decodeTxMessages, Document, documentToTx } from '../../utils/messages';
-import { LocalTxSignature } from '../../proto/session/local-tx-signature';
 import { compressPubkeyIfNeeded } from '../../utils/pubkey';
 import { HdPathLike } from './hd-path';
 import { Keyring } from './keyring';
@@ -107,18 +106,11 @@ export async function signGnoDocument(
     value: PubKeySecp256k1.encode({ key: compressedPubKey }).finish(),
   };
 
-  const sessionAddr = opts?.sessionAddr;
-  let txSignature: TxSignature;
-  if (sessionAddr) {
-    const localSig: LocalTxSignature = {
-      pub_key: pubKeyAny,
-      signature,
-      session_addr: sessionAddr,
-    };
-    txSignature = localSig;
-  } else {
-    txSignature = { pub_key: pubKeyAny, signature };
-  }
+  const txSignature: TxSignature = {
+    pub_key: pubKeyAny,
+    signature,
+    session_addr: opts?.sessionAddr ?? '',
+  };
 
   const signedTx: Tx = {
     ...tx,

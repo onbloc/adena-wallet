@@ -14,7 +14,6 @@ import {
 import { PubKeyMultisig, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
 
 import { fromBase64, toBase64 } from '../encoding';
-import { LocalTxSignature } from '../proto/session/local-tx-signature';
 import { compressPubkeyIfNeeded } from './pubkey';
 import {
   MSG_CREATE_SESSION_ENDPOINT,
@@ -480,10 +479,9 @@ export function documentToDefaultTx(
   // and keep the historical empty placeholder.
   //
   // SessionAccount path supplies sessionAddr so the placeholder signature
-  // carries session_addr; the encodeGnoTx wire encoder will emit field 3 and
-  // the node's ante handler routes the simulate as a session signature
-  // (pubkey to session address) instead of failing the master pubkey-address
-  // derivation check.
+  // carries session_addr (std.Signature field 3); the node's ante handler then
+  // routes the simulate as a session signature (pubkey to session address)
+  // instead of failing the master pubkey-address derivation check.
   const pubKey =
     publicKey && publicKey.length > 0
       ? {
@@ -496,17 +494,11 @@ export function documentToDefaultTx(
           type_url: '',
           value: new Uint8Array(),
         };
-  const signature: TxSignature =
-    sessionAddr !== undefined && sessionAddr !== ''
-      ? ({
-          pub_key: pubKey,
-          signature: new Uint8Array(),
-          session_addr: sessionAddr,
-        } as LocalTxSignature as TxSignature)
-      : {
-          pub_key: pubKey,
-          signature: new Uint8Array(),
-        };
+  const signature: TxSignature = {
+    pub_key: pubKey,
+    signature: new Uint8Array(),
+    session_addr: sessionAddr ?? '',
+  };
   return {
     messages,
     fee: TxFee.create({

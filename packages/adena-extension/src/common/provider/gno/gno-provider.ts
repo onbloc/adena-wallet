@@ -30,7 +30,6 @@ import {
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import { HttpClient, Tm2Client } from '@gnolang/tm2-rpc';
-import { encodeGnoTx } from 'adena-module';
 import axios from 'axios';
 import { formatGnoArg, GnoArg } from './qeval';
 import { AccountInfo, GnoDocumentInfo, GnoSessionAccountResponse, VMQueryType } from './types';
@@ -413,13 +412,11 @@ export class GnoProvider extends GnoJSONRPCProvider {
   }
 
   async simulateTx(tx: Tx): Promise<ResponseDeliverTx> {
-    // encodeGnoTx falls back to tm2 Tx.encode when no signature carries
-    // session_addr, so byte equality with the legacy path is preserved for
-    // non-session simulates. For SessionAccount simulates the placeholder
-    // LocalTxSignature emitted by documentToDefaultTx (with sessionAddr)
-    // reaches the node, which routes the simulate as a session signature
-    // and skips the master pubkey-address derivation check.
-    const encodedTx = uint8ArrayToBase64(encodeGnoTx(tx));
+    // For SessionAccount simulates the placeholder signature emitted by
+    // documentToDefaultTx carries session_addr, so the node routes the
+    // simulate as a session signature and skips the master pubkey-address
+    // derivation check.
+    const encodedTx = uint8ArrayToBase64(Tx.encode(tx).finish());
     const params = {
       request: newRequest(ABCIEndpoint.ABCI_QUERY, ['.app/simulate', `${encodedTx}`, '0', false]),
     };

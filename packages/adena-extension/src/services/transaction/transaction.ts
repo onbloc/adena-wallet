@@ -15,7 +15,6 @@ import {
   CosmosSignMode,
   CosmosTxBroadcastResponse,
   Document,
-  encodeGnoTx,
   isSessionAccount,
   Keyring,
   LedgerAccount,
@@ -563,7 +562,7 @@ export class TransactionService {
    * @returns
    */
   public createHash(transaction: Tx): string {
-    const hash = sha256(encodeGnoTx(transaction));
+    const hash = sha256(Tx.encode(transaction).finish());
     return Buffer.from(hash).toString('hex');
   }
 
@@ -574,6 +573,6 @@ export class TransactionService {
    * @returns
    */
   public encodeTransaction(transaction: Tx): string {
-    return uint8ArrayToBase64(encodeGnoTx(transaction));
+    return uint8ArrayToBase64(Tx.encode(transaction).finish());
   }
 }

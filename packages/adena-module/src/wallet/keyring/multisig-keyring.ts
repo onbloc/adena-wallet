@@ -203,6 +203,7 @@ export class MultisigKeyring implements Keyring {
             value: PubKeyMultisig.encode(multisigPubkey).finish(),
           },
           signature: Multisignature.encode(multisig).finish(),
+          session_addr: '',
         },
       ],
     };
