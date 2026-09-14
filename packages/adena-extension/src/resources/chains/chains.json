@@ -8,7 +8,7 @@
     "networkId": "gnoland-1",
     "networkName": "Mainnet",
     "addressPrefix": "g",
-    "rpcUrl": "https://rpc.gno.land:443",
+    "rpcUrl": "https://rpc.onbloc.xyz:443",
     "indexerUrl": "https://indexer.onbloc.xyz",
     "gnoUrl": "https://gno.land",
     "apiUrl": "https://api.onbloc.xyz",
