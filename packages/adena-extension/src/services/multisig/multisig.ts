@@ -4,6 +4,7 @@ import {
   BroadcastTxSyncResult,
   CompactBitArray,
   Multisignature,
+  parseSignCoin,
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
@@ -13,7 +14,15 @@ import { EncodeTxSignature, WalletService } from '..';
 
 import { ContractMessage, MultisigAccountResult, Signature } from '@inject/types';
 
-import { MemPackage, MsgAddPackage, MsgCall, MsgRun, MsgSend } from '@gnolang/gno-js-client';
+import {
+  MemPackage,
+  MsgAddPackage,
+  MsgCall,
+  MsgEnablePackage,
+  MsgRejectPackage,
+  MsgRun,
+  MsgSend,
+} from '@gnolang/gno-js-client';
 import {
   Account,
   combineMultisigPublicKey,
@@ -654,15 +663,13 @@ export class MultisigService {
     sequence: string,
     chainId: string,
   ): Document {
-    const { amount, denom } = this.parseGasFee(rawTx.fee.gas_fee);
-
     return {
       msgs: rawTx.msg.map((rawMessage) => ({
         type: rawMessage['@type'],
         value: rawMessage,
       })),
       fee: {
-        amount: [{ amount, denom }],
+        amount: parseSignCoin(rawTx.fee.gas_fee),
         gas: rawTx.fee.gas_wanted,
       },
       chain_id: chainId,
@@ -696,14 +703,6 @@ export class MultisigService {
     if (!rawTx.msg || rawTx.msg.length === 0) {
       throw new Error('At least one message is required');
     }
-  }
-
-  private parseGasFee(gasFeeString: string): { amount: string; denom: string } {
-    const match = gasFeeString.match(/^(\d+)(\w+)$/);
-    if (!match) {
-      throw new Error(`Invalid gas fee format: ${gasFeeString}`);
-    }
-    return { amount: match[1], denom: match[2] };
   }
 }
 
@@ -773,6 +772,24 @@ function mapRawTransactionMessage(message: ContractMessage): RawTxMessageType {
         from_address: sendMessage.from_address,
         to_address: sendMessage.to_address,
         amount: sendMessage.amount,
+      };
+    }
+    case '/vm.m_enable_pkg': {
+      const enableMessage = message.value as MsgEnablePackage;
+      return {
+        '@type': message.type,
+        approver: enableMessage.approver,
+        pkg_path: enableMessage.pkg_path,
+        pkg_hash: enableMessage.pkg_hash,
+        pkg_height: String(enableMessage.pkg_height ?? '0'),
+      };
+    }
+    case '/vm.m_reject_pkg': {
+      const rejectMessage = message.value as MsgRejectPackage;
+      return {
+        '@type': message.type,
+        sender: rejectMessage.sender,
+        pkg_path: rejectMessage.pkg_path,
       };
     }
   }

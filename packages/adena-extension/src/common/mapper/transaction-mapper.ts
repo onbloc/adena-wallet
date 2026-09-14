@@ -1,3 +1,4 @@
+import { MsgEndpoint } from '@gnolang/gno-js-client';
 import { ContractMessage } from '@inject/types';
 import {
   MSG_CREATE_SESSION_ENDPOINT,
@@ -46,6 +47,8 @@ export function mappedTransactionMessages(messages: unknown[]): ContractMessage[
             type: '/vm.m_run',
             value: message.value as ContractMessage['value'],
           };
+        case MsgEndpoint.MSG_ENABLE_PKG:
+        case MsgEndpoint.MSG_REJECT_PKG:
         case MSG_CREATE_SESSION_ENDPOINT:
         case MSG_REVOKE_SESSION_ENDPOINT:
         case MSG_REVOKE_ALL_SESSIONS_ENDPOINT:
@@ -130,6 +133,22 @@ export function mappedDocumentMessagesWithCaller(
             caller: pick(toOptionalString(message.value.caller)),
           } as ContractMessage['value'],
         };
+      case MsgEndpoint.MSG_ENABLE_PKG:
+        return {
+          type: MsgEndpoint.MSG_ENABLE_PKG,
+          value: {
+            ...message.value,
+            approver: pick(toOptionalString(message.value.approver)),
+          } as ContractMessage['value'],
+        };
+      case MsgEndpoint.MSG_REJECT_PKG:
+        return {
+          type: MsgEndpoint.MSG_REJECT_PKG,
+          value: {
+            ...message.value,
+            sender: pick(toOptionalString(message.value.sender)),
+          } as ContractMessage['value'],
+        };
       // Session admin messages all carry `creator` (master address).
       // SessionAccount can never sign these. Issuance/revocation is
       // master-only, so overwrite=true would only ever clobber with
@@ -180,6 +199,8 @@ export function mappedRawTxMessages(messages: RawTxMessageType[]): ContractMessa
             type: '/vm.m_run',
             value: message as ContractMessage['value'],
           };
+        case MsgEndpoint.MSG_ENABLE_PKG:
+        case MsgEndpoint.MSG_REJECT_PKG:
         case MSG_CREATE_SESSION_ENDPOINT:
         case MSG_REVOKE_SESSION_ENDPOINT:
         case MSG_REVOKE_ALL_SESSIONS_ENDPOINT:

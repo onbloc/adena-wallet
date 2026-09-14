@@ -1,3 +1,4 @@
+import { MsgEndpoint } from '@gnolang/gno-js-client';
 import {
   MSG_CREATE_SESSION_ENDPOINT,
   MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
@@ -200,6 +201,45 @@ export const validateTransactionMessageOfRevokeAllSessions = (
   return typeof message.value.creator === 'string' && message.value.creator !== '';
 };
 
+export const validateTransactionMessageOfEnablePackage = (
+  message: {
+    [key in string]: any;
+  },
+): boolean => {
+  if (!isMessageWithValue(message, MsgEndpoint.MSG_ENABLE_PKG)) {
+    return false;
+  }
+
+  const value = message.value;
+  if (!isNonEmptyString(value.approver)) {
+    return false;
+  }
+  if (!isNonEmptyString(value.pkg_path)) {
+    return false;
+  }
+  if (!isNonEmptyString(value.pkg_hash)) {
+    return false;
+  }
+  if (!isIntegerLike(value.pkg_height)) {
+    return false;
+  }
+
+  return true;
+};
+
+export const validateTransactionMessageOfRejectPackage = (
+  message: {
+    [key in string]: any;
+  },
+): boolean => {
+  if (!isMessageWithValue(message, MsgEndpoint.MSG_REJECT_PKG)) {
+    return false;
+  }
+
+  const value = message.value;
+  return isNonEmptyString(value.sender) && isNonEmptyString(value.pkg_path);
+};
+
 const isMessageWithValue = (message: { [key in string]: any }, type: string): boolean => {
   if (!message.type || !message.value) {
     return false;
@@ -220,4 +260,14 @@ const hasValue = (value: Record<string, unknown>, key: string): boolean => {
 
 const isNonEmptyString = (value: unknown): value is string => {
   return typeof value === 'string' && value !== '';
+};
+
+const isIntegerLike = (value: unknown): boolean => {
+  if (typeof value === 'bigint') {
+    return true;
+  }
+  if (typeof value === 'number') {
+    return Number.isInteger(value);
+  }
+  return typeof value === 'string' && /^\d+$/.test(value);
 };

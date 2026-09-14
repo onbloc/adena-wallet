@@ -121,7 +121,7 @@ describe('Transaction Sign', () => {
     const { signature } = await wallet.sign(mockProvider, document);
     const hex = Buffer.from(signature[0].signature).toString('hex');
     expect(hex).toBe(
-      '24e23d2bf56dffe045eaf5915be8c51f24084bd34fdccff9d5172d667cc0debf287c61355458553ae25d31344777c7d646315fec3d2c593016c7916682dc9f35',
+      '8aa543afa625c049f1ed09cdee68ebf779404b8f7f9d641af1903e8023591a9453a18c768cce515802cf51451942f32576f0bfc428a1ac812e754e651a6841e4',
     );
   });
 });

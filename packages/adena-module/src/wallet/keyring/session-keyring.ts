@@ -1,8 +1,14 @@
-import { Provider, TransactionEndpoint, Tx, TxSignature, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
+import {
+  Provider,
+  TransactionEndpoint,
+  Tx,
+  TxSignature,
+  uint8ArrayToBase64,
+  Wallet as Tm2Wallet,
+} from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Random } from '../../crypto/random';
-import { encodeGnoTxToBase64 } from '../../proto/session/local-tx';
 import { Document } from './../..';
 import { publicKeyToAddress } from '../../utils/address';
 import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
@@ -86,11 +92,17 @@ export class SessionKeyring implements Keyring {
   }
 
   async broadcastTxSync(provider: Provider, signedTx: Tx) {
-    return provider.sendTransaction(encodeGnoTxToBase64(signedTx), TransactionEndpoint.BROADCAST_TX_SYNC);
+    return provider.sendTransaction(
+      uint8ArrayToBase64(Tx.encode(signedTx).finish()),
+      TransactionEndpoint.BROADCAST_TX_SYNC,
+    );
   }
 
   async broadcastTxCommit(provider: Provider, signedTx: Tx) {
-    return provider.sendTransaction(encodeGnoTxToBase64(signedTx), TransactionEndpoint.BROADCAST_TX_COMMIT);
+    return provider.sendTransaction(
+      uint8ArrayToBase64(Tx.encode(signedTx).finish()),
+      TransactionEndpoint.BROADCAST_TX_COMMIT,
+    );
   }
 
   public static async generate(masterAddress: string): Promise<SessionKeyring> {

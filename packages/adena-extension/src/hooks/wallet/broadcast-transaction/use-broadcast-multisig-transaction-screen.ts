@@ -13,6 +13,8 @@ import { Signature } from '@inject/types';
 import {
   isMultisigAccount,
   RawBankSendMessage,
+  RawMsgEnablePackage,
+  RawMsgRejectPackage,
   RawTx,
   RawVmAddPackageMessage,
   RawVmCallMessage,
@@ -60,6 +62,10 @@ function makeTypeName(msgType: string): string {
       return 'Add Package';
     case MsgEndpoint.MSG_RUN:
       return 'Run Transaction';
+    case MsgEndpoint.MSG_ENABLE_PKG:
+      return 'Enable Package';
+    case MsgEndpoint.MSG_REJECT_PKG:
+      return 'Reject Package';
     default:
       return 'Contract Interaction';
   }
@@ -102,6 +108,12 @@ function mapMultisigTransactionInfo(transaction: RawTx): TransactionDisplayInfo[
         infos.push(makeTransactionInfo('Path', pkg.path));
         infos.push(makeTransactionInfo('Name', pkg.name));
       }
+      break;
+    }
+    case MsgEndpoint.MSG_ENABLE_PKG:
+    case MsgEndpoint.MSG_REJECT_PKG: {
+      const { pkg_path } = firstMessage as RawMsgEnablePackage | RawMsgRejectPackage;
+      infos.push(makeTransactionInfo('Path', pkg_path));
       break;
     }
   }
@@ -191,7 +203,9 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
             msgType === MsgEndpoint.MSG_SEND ||
             msgType === MsgEndpoint.MSG_CALL ||
             msgType === MsgEndpoint.MSG_ADD_PKG ||
-            msgType === MsgEndpoint.MSG_RUN
+            msgType === MsgEndpoint.MSG_RUN ||
+            msgType === MsgEndpoint.MSG_ENABLE_PKG ||
+            msgType === MsgEndpoint.MSG_REJECT_PKG
           );
         });
 

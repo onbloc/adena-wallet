@@ -1,4 +1,5 @@
 import { WalletResponseFailureType } from '@adena-wallet/sdk';
+import { MsgEndpoint } from '@gnolang/gno-js-client';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import {
   Account,
@@ -91,6 +92,8 @@ export const validateInjectionTransactionType = (requestData: InjectionMessage):
     '/vm.m_call',
     '/vm.m_addpkg',
     '/vm.m_run',
+    MsgEndpoint.MSG_ENABLE_PKG,
+    MsgEndpoint.MSG_REJECT_PKG,
     // Session admin messages flow through approve-transaction popup when
     // initiated from the wallet's web UI (Add Session Account screen).
     MSG_CREATE_SESSION_ENDPOINT,
@@ -103,7 +106,14 @@ export const validateInjectionTransactionType = (requestData: InjectionMessage):
 };
 
 export const validateInjectionTransactionTypeByRawTx = (requestData: InjectionMessage): any => {
-  const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg', '/vm.m_run'];
+  const messageTypes = [
+    '/bank.MsgSend',
+    '/vm.m_call',
+    '/vm.m_addpkg',
+    '/vm.m_run',
+    MsgEndpoint.MSG_ENABLE_PKG,
+    MsgEndpoint.MSG_REJECT_PKG,
+  ];
 
   const msgs = requestData.data?.msg || [];
   return msgs.every((message: RawTxMessageType) => messageTypes.includes(message['@type']));
@@ -133,6 +143,12 @@ export const validateInjectionTransactionMessageWithAddress = (
         break;
       case '/vm.m_run':
         messageAddress = message.value.caller;
+        break;
+      case MsgEndpoint.MSG_ENABLE_PKG:
+        messageAddress = message.value.approver;
+        break;
+      case MsgEndpoint.MSG_REJECT_PKG:
+        messageAddress = message.value.sender;
         break;
       case MSG_CREATE_SESSION_ENDPOINT:
       case MSG_REVOKE_SESSION_ENDPOINT:

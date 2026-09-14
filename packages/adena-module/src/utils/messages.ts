@@ -5,7 +5,9 @@ import {
   MsgAddPackage,
   MsgCall,
   MsgCreateSession,
+  MsgEnablePackage,
   MsgEndpoint,
+  MsgRejectPackage,
   MsgRevokeAllSessions,
   MsgRevokeSession,
   MsgRun,
@@ -14,7 +16,6 @@ import {
 import { PubKeyMultisig, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
 
 import { fromBase64, toBase64 } from '../encoding';
-import { LocalTxSignature } from '../proto/session/local-tx-signature';
 import { compressPubkeyIfNeeded } from './pubkey';
 import {
   MSG_CREATE_SESSION_ENDPOINT,
@@ -87,6 +88,22 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
       case MsgEndpoint.MSG_RUN: {
         const decodedMessage = MsgRun.decode(m.value);
         const messageJson = MsgRun.toJSON(decodedMessage) as any;
+        return {
+          '@type': m.type_url,
+          ...messageJson,
+        };
+      }
+      case MsgEndpoint.MSG_ENABLE_PKG: {
+        const decodedMessage = MsgEnablePackage.decode(m.value);
+        const messageJson = MsgEnablePackage.toJSON(decodedMessage) as any;
+        return {
+          '@type': m.type_url,
+          ...messageJson,
+        };
+      }
+      case MsgEndpoint.MSG_REJECT_PKG: {
+        const decodedMessage = MsgRejectPackage.decode(m.value);
+        const messageJson = MsgRejectPackage.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
           ...messageJson,
@@ -321,6 +338,30 @@ function encodeMessageValue(message: { type: string; value: any }) {
         value: MsgRun.encode(msgRun).finish(),
       });
     }
+    case MsgEndpoint.MSG_ENABLE_PKG: {
+      const value = message.value;
+      const msg = MsgEnablePackage.create({
+        approver: value.approver,
+        pkg_path: value.pkg_path,
+        pkg_hash: value.pkg_hash || '',
+        pkg_height: toProtoBigInt(value.pkg_height),
+      });
+      return Any.create({
+        type_url: MsgEndpoint.MSG_ENABLE_PKG,
+        value: MsgEnablePackage.encode(msg).finish(),
+      });
+    }
+    case MsgEndpoint.MSG_REJECT_PKG: {
+      const value = message.value;
+      const msg = MsgRejectPackage.create({
+        sender: value.sender,
+        pkg_path: value.pkg_path,
+      });
+      return Any.create({
+        type_url: MsgEndpoint.MSG_REJECT_PKG,
+        value: MsgRejectPackage.encode(msg).finish(),
+      });
+    }
     case MSG_CREATE_SESSION_ENDPOINT: {
       const value = message.value;
       const msg = MsgCreateSession.create({
@@ -480,10 +521,9 @@ export function documentToDefaultTx(
   // and keep the historical empty placeholder.
   //
   // SessionAccount path supplies sessionAddr so the placeholder signature
-  // carries session_addr; the encodeGnoTx wire encoder will emit field 3 and
-  // the node's ante handler routes the simulate as a session signature
-  // (pubkey to session address) instead of failing the master pubkey-address
-  // derivation check.
+  // carries session_addr (std.Signature field 3); the node's ante handler then
+  // routes the simulate as a session signature (pubkey to session address)
+  // instead of failing the master pubkey-address derivation check.
   const pubKey =
     publicKey && publicKey.length > 0
       ? {
@@ -496,17 +536,11 @@ export function documentToDefaultTx(
           type_url: '',
           value: new Uint8Array(),
         };
-  const signature: TxSignature =
-    sessionAddr !== undefined && sessionAddr !== ''
-      ? ({
-          pub_key: pubKey,
-          signature: new Uint8Array(),
-          session_addr: sessionAddr,
-        } as LocalTxSignature as TxSignature)
-      : {
-          pub_key: pubKey,
-          signature: new Uint8Array(),
-        };
+  const signature: TxSignature = {
+    pub_key: pubKey,
+    signature: new Uint8Array(),
+    session_addr: sessionAddr ?? '',
+  };
   return {
     messages,
     fee: TxFee.create({
@@ -601,6 +635,20 @@ export interface RawMsgRevokeAllSessions {
   creator: string;
 }
 
+export interface RawMsgEnablePackage {
+  '@type': string;
+  approver: string;
+  pkg_path: string;
+  pkg_hash: string;
+  pkg_height: string;
+}
+
+export interface RawMsgRejectPackage {
+  '@type': string;
+  sender: string;
+  pkg_path: string;
+}
+
 export type RawTxMessageType =
   | RawBankSendMessage
   | RawVmCallMessage
@@ -608,7 +656,9 @@ export type RawTxMessageType =
   | RawVmRunMessage
   | RawMsgCreateSession
   | RawMsgRevokeSession
-  | RawMsgRevokeAllSessions;
+  | RawMsgRevokeAllSessions
+  | RawMsgEnablePackage
+  | RawMsgRejectPackage;
 
 export interface RawTx {
   msg: RawTxMessageType[];

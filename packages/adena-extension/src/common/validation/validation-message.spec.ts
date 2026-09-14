@@ -5,6 +5,8 @@ import {
 } from 'adena-module';
 import {
   validateTransactionMessageOfCreateSession,
+  validateTransactionMessageOfEnablePackage,
+  validateTransactionMessageOfRejectPackage,
   validateTransactionMessageOfRevokeAllSessions,
   validateTransactionMessageOfRevokeSession,
 } from './validation-message';
@@ -64,5 +66,48 @@ describe('session admin transaction message validation', () => {
         },
       }),
     ).toBe(true);
+  });
+});
+
+describe('package approval transaction message validation', () => {
+  it('accepts MsgEnablePackage payloads', () => {
+    expect(
+      validateTransactionMessageOfEnablePackage({
+        type: '/vm.m_enable_pkg',
+        value: {
+          approver: 'g1approver',
+          pkg_path: 'gno.land/r/demo/foo',
+          pkg_hash: 'abc123',
+          pkg_height: '42',
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it('rejects MsgEnablePackage payloads with missing fields', () => {
+    expect(
+      validateTransactionMessageOfEnablePackage({
+        type: '/vm.m_enable_pkg',
+        value: { approver: 'g1approver', pkg_path: 'gno.land/r/demo/foo' },
+      }),
+    ).toBe(false);
+  });
+
+  it('accepts MsgRejectPackage payloads', () => {
+    expect(
+      validateTransactionMessageOfRejectPackage({
+        type: '/vm.m_reject_pkg',
+        value: { sender: 'g1sender', pkg_path: 'gno.land/r/demo/foo' },
+      }),
+    ).toBe(true);
+  });
+
+  it('rejects MsgRejectPackage payloads without a sender', () => {
+    expect(
+      validateTransactionMessageOfRejectPackage({
+        type: '/vm.m_reject_pkg',
+        value: { pkg_path: 'gno.land/r/demo/foo' },
+      }),
+    ).toBe(false);
   });
 });

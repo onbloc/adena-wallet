@@ -1,16 +1,18 @@
 import {
   encodeCharacterSet,
+  parseSignCoin,
   Provider,
   PubKeySecp256k1,
   Secp256k1PubKeyType,
+  sortedJsonStringify,
   stringToUTF8,
   Tx,
   TxSignature,
+  TxSignPayload,
 } from '@gnolang/tm2-js-client';
 
 import { publicKeyToAddress } from '../../utils/address';
 import { decodeTxMessages, Document, documentToTx } from '../../utils/messages';
-import { LocalTxSignature } from '../../proto/session/local-tx-signature';
 import { compressPubkeyIfNeeded } from '../../utils/pubkey';
 import { HdPathLike } from './hd-path';
 import { Keyring } from './keyring';
@@ -24,28 +26,6 @@ import { SignGnoOptions } from './sign-gno-options';
 export type { SignGnoOptions } from './sign-gno-options';
 
 const GNO_ADDRESS_PREFIX = 'g';
-
-function sortJsonValue(value: unknown): unknown {
-  if (typeof value !== 'object' || value === null) {
-    return value;
-  }
-  if (Array.isArray(value)) {
-    return value.map(sortJsonValue);
-  }
-
-  const record = value as Record<string, unknown>;
-  const sorted: Record<string, unknown> = {};
-  Object.keys(record)
-    .sort()
-    .forEach((key) => {
-      sorted[key] = sortJsonValue(record[key]);
-    });
-  return sorted;
-}
-
-function sortedJsonStringify(value: unknown): string {
-  return JSON.stringify(sortJsonValue(value));
-}
 
 // Gno transaction signing on top of Keyring.signRaw.
 // Byte pipeline mirrors tm2 wallet.signTransaction (wallet.js L185-250) exactly
@@ -80,13 +60,13 @@ export async function signGnoDocument(
     throw new Error('invalid transaction fee provided');
   }
 
-  const signPayload = {
+  const signPayload: TxSignPayload = {
     chain_id: chainID,
     account_number: accountNumber,
     sequence: sequence,
     fee: {
-      gas_fee: tx.fee.gas_fee,
-      gas_wanted: tx.fee.gas_wanted.toString(10),
+      amount: parseSignCoin(tx.fee.gas_fee),
+      gas: tx.fee.gas_wanted.toString(10),
     },
     msgs: decodeTxMessages(tx.messages),
     memo: tx.memo,
@@ -107,18 +87,11 @@ export async function signGnoDocument(
     value: PubKeySecp256k1.encode({ key: compressedPubKey }).finish(),
   };
 
-  const sessionAddr = opts?.sessionAddr;
-  let txSignature: TxSignature;
-  if (sessionAddr) {
-    const localSig: LocalTxSignature = {
-      pub_key: pubKeyAny,
-      signature,
-      session_addr: sessionAddr,
-    };
-    txSignature = localSig;
-  } else {
-    txSignature = { pub_key: pubKeyAny, signature };
-  }
+  const txSignature: TxSignature = {
+    pub_key: pubKeyAny,
+    signature,
+    session_addr: opts?.sessionAddr ?? '',
+  };
 
   const signedTx: Tx = {
     ...tx,

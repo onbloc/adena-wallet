@@ -8,6 +8,7 @@ import {
   ContractMessage,
   EMessageType,
   FUNCTION_NAME_MAP,
+  PackageApprovalMessage,
   SessionAdminMessage,
 } from '@inject/types';
 import { MsgCallValue } from '@repositories/transaction/response/transaction-history-query-response';
@@ -43,6 +44,8 @@ const TWO_32 = BigInt('4294967296');
 const isMsgCall = (type: string): boolean => type === EMessageType.VM_CALL;
 const isMsgAddPkg = (type: string): boolean => type === EMessageType.VM_ADDPKG;
 const isMsgRun = (type: string): boolean => type === EMessageType.VM_RUN;
+const isMsgEnablePkg = (type: string): boolean => type === EMessageType.VM_ENABLE_PKG;
+const isMsgRejectPkg = (type: string): boolean => type === EMessageType.VM_REJECT_PKG;
 const isMsgCreateSession = (type: string): boolean => type === EMessageType.AUTH_CREATE_SESSION;
 const isMsgRevokeSession = (type: string): boolean => type === EMessageType.AUTH_REVOKE_SESSION;
 const isMsgRevokeAllSessions = (type: string): boolean =>
@@ -110,6 +113,18 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
         editable={editable}
         errorMessage={errorMessage}
       />
+    );
+  }
+
+  if (isMsgEnablePkg(type)) {
+    return (
+      <MsgEnablePackageTransactionMessage index={index} message={message} errorMessage={errorMessage} />
+    );
+  }
+
+  if (isMsgRejectPkg(type)) {
+    return (
+      <MsgRejectPackageTransactionMessage index={index} message={message} errorMessage={errorMessage} />
     );
   }
 
@@ -282,6 +297,58 @@ const MsgRevokeAllSessionsTransactionMessage: React.FC<ApproveTransactionMessage
           <MessageRowWrapper>
             <SessionMessageRow label='type' value='MsgRevokeAllSessions' />
             <SessionMessageRow label='creator' value={formatSessionAddress(value.creator)} />
+          </MessageRowWrapper>
+        )}
+      </ApproveTransactionMessageWrapper>
+      {errorMessage && <MessageErrorText>{errorMessage}</MessageErrorText>}
+    </>
+  );
+};
+
+const MsgEnablePackageTransactionMessage: React.FC<
+  Pick<ApproveTransactionMessageProps, 'index' | 'message' | 'errorMessage'>
+> = ({ index, message, errorMessage }) => {
+  const [isOpen, setIsOpen] = useState(true);
+  const value = message.value as PackageApprovalMessage;
+  const title = useMemo(() => makeTitle(index, 'Enable Package'), [index]);
+
+  return (
+    <>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
+        <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+
+        {isOpen && (
+          <MessageRowWrapper>
+            <SessionMessageRow label='type' value='MsgEnablePackage' />
+            <SessionMessageRow label='approver' value={formatSessionAddress(value.approver)} />
+            <SessionMessageRow label='pkg_path' value={value.pkg_path ?? ''} />
+            <SessionMessageRow label='pkg_hash' value={value.pkg_hash ?? ''} />
+            <SessionMessageRow label='pkg_height' value={String(value.pkg_height ?? '')} />
+          </MessageRowWrapper>
+        )}
+      </ApproveTransactionMessageWrapper>
+      {errorMessage && <MessageErrorText>{errorMessage}</MessageErrorText>}
+    </>
+  );
+};
+
+const MsgRejectPackageTransactionMessage: React.FC<
+  Pick<ApproveTransactionMessageProps, 'index' | 'message' | 'errorMessage'>
+> = ({ index, message, errorMessage }) => {
+  const [isOpen, setIsOpen] = useState(true);
+  const value = message.value as PackageApprovalMessage;
+  const title = useMemo(() => makeTitle(index, 'Reject Package'), [index]);
+
+  return (
+    <>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
+        <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+
+        {isOpen && (
+          <MessageRowWrapper>
+            <SessionMessageRow label='type' value='MsgRejectPackage' />
+            <SessionMessageRow label='sender' value={formatSessionAddress(value.sender)} />
+            <SessionMessageRow label='pkg_path' value={value.pkg_path ?? ''} />
           </MessageRowWrapper>
         )}
       </ApproveTransactionMessageWrapper>

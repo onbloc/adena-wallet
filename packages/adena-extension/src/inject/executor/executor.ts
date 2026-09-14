@@ -5,6 +5,7 @@ import {
   WalletResponseStatus,
   WalletResponseType,
 } from '@adena-wallet/sdk';
+import { MsgEndpoint } from '@gnolang/gno-js-client';
 import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -22,9 +23,11 @@ import {
 } from '@common/validation';
 import {
   validateDoContractRequest,
-  validateTransactionMessageOfCreateSession,
   validateTransactionMessageOfAddPkg,
   validateTransactionMessageOfBankSend,
+  validateTransactionMessageOfCreateSession,
+  validateTransactionMessageOfEnablePackage,
+  validateTransactionMessageOfRejectPackage,
   validateTransactionMessageOfRevokeAllSessions,
   validateTransactionMessageOfRevokeSession,
   validateTransactionMessageOfRun,
@@ -337,6 +340,16 @@ export class AdenaExecutor {
           break;
         case '/vm.m_run':
           if (!validateTransactionMessageOfRun(messageData)) {
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+          }
+          break;
+        case MsgEndpoint.MSG_ENABLE_PKG:
+          if (!validateTransactionMessageOfEnablePackage(messageData)) {
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+          }
+          break;
+        case MsgEndpoint.MSG_REJECT_PKG:
+          if (!validateTransactionMessageOfRejectPackage(messageData)) {
             return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
           }
           break;
