@@ -27,7 +27,7 @@ const grc20TransferRun = {
       files: [
         {
           name: 'main.gno',
-          body: 'package main\n\nfunc main(cur realm) {\n\tgrc20reg.Transfer(0, cur, "k", address("g1"), 1)\n}\n',
+          body: 'package main\n\nfunc main(cur realm) {\n\tif grc20reg0.Get("k") != nil { grc20reg0.Transfer(0, cur, "k", address("g1"), 1); return }\n}\n',
         },
       ],
     },

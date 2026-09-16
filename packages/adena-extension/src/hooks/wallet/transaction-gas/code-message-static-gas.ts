@@ -24,16 +24,16 @@ export const STATIC_CODE_MESSAGE_GAS_USED: Record<CodeMessageGasType, number> = 
 const MSG_ADD_PACKAGE_TYPE = '/vm.m_addpkg';
 const MSG_RUN_TYPE = '/vm.m_run';
 
-// The GRC20 transfer run body is generated in transfer-summary with the
-// registry imported as `grc20reg`, so this marker identifies it regardless of
-// which chain's registry path was used.
-const GRC20_TRANSFER_MARKER = 'grc20reg.Transfer(';
+// The GRC20 transfer run body is generated in transfer-summary with each
+// registry imported as `grc20reg<index>` (e.g. `grc20reg0`), so this pattern
+// identifies it regardless of which chain's registry paths were used.
+const GRC20_TRANSFER_PATTERN = /\bgrc20reg\d*\.Transfer\(/;
 
 type DocumentMessage = Document['msgs'][number];
 
 function isGRC20TransferRun(message: DocumentMessage): boolean {
   const files: { body?: string }[] = message.value?.package?.files ?? [];
-  return files.some((file) => (file?.body ?? '').includes(GRC20_TRANSFER_MARKER));
+  return files.some((file) => GRC20_TRANSFER_PATTERN.test(file?.body ?? ''));
 }
 
 /** The gas bucket a message falls into, or null when it needs no fallback. */
