@@ -15,11 +15,10 @@ describe('grc20reg-config', () => {
     });
   });
 
-  it('lists registries newest first so the v1 registry is preferred', () => {
-    expect(getGrc20RegistryPaths('gnoland-1')).toEqual([
-      'gno.land/r/demo/defi/grc20reg/v1',
-      'gno.land/r/nt/grc20reg/v0',
-    ]);
+  it('uses the unified nt grc20reg v0 registry for every bundled chain', () => {
+    CHAIN_DATA.forEach((chain) => {
+      expect(getGrc20RegistryPaths(chain.chainId)).toEqual(['gno.land/r/nt/grc20reg/v0']);
+    });
   });
 
   it('describes every token package version with its event shape', () => {

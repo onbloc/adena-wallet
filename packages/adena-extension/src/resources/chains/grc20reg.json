@@ -2,7 +2,6 @@
   "gnoland-1": {
     "helperPath": "",
     "registries": [
-      { "path": "gno.land/r/demo/defi/grc20reg/v1" },
       { "path": "gno.land/r/nt/grc20reg/v0" }
     ],
     "tokenPackages": [
@@ -21,7 +20,6 @@
   "staging": {
     "helperPath": "",
     "registries": [
-      { "path": "gno.land/r/demo/defi/grc20reg/v1" },
       { "path": "gno.land/r/nt/grc20reg/v0" }
     ],
     "tokenPackages": [
@@ -40,7 +38,6 @@
   "dev": {
     "helperPath": "",
     "registries": [
-      { "path": "gno.land/r/demo/defi/grc20reg/v1" },
       { "path": "gno.land/r/nt/grc20reg/v0" }
     ],
     "tokenPackages": [
@@ -59,7 +56,6 @@
   "dev.gnoswap": {
     "helperPath": "",
     "registries": [
-      { "path": "gno.land/r/demo/defi/grc20reg/v1" },
       { "path": "gno.land/r/nt/grc20reg/v0" }
     ],
     "tokenPackages": [
