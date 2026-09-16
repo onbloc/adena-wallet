@@ -58,6 +58,80 @@ function isHistoryItemSession(
   return SESSION_MESSAGE_TYPES.includes(historyItem.func?.[0].messageType);
 }
 
+// Package approval messages (gno.land package parking). The API maps them to
+// `/vm.m_enable_package` / `/vm.m_reject_package`; older API deployments and the
+// per-token GRC20 history endpoint still return the raw stored message type with
+// an empty funcType, so both spellings are recognised.
+const PACKAGE_APPROVAL_TITLE_MAP: Record<string, string> = {
+  '/vm.m_enable_package': 'Enable Package',
+  enable_package: 'Enable Package',
+  '/vm.m_reject_package': 'Reject Package',
+  reject_package: 'Reject Package',
+};
+
+function isHistoryItemPackageApproval(
+  historyItem: TransactionHistoryItem,
+): historyItem is TransactionHistoryItem {
+  if (historyItem.messageCount !== 1) {
+    return false;
+  }
+
+  return historyItem.func?.[0].messageType in PACKAGE_APPROVAL_TITLE_MAP;
+}
+
+function isHistoryItemVmMRun(
+  historyItem: TransactionHistoryItem,
+): historyItem is TransactionHistoryItem {
+  if (historyItem.messageCount !== 1) {
+    return false;
+  }
+
+  return historyItem.func?.[0].messageType === '/vm.m_run';
+}
+
+/**
+ * Human-readable title derived from a raw message type, used when the API
+ * returns an empty funcType (unknown or not-yet-mapped message kinds).
+ * `/vm.m_enable_package` -> `Enable Package`, `enable_package` -> `Enable Package`,
+ * `/bank.MsgSend` -> `MsgSend`. Falls back to `Contract Interaction`.
+ */
+function titleFromMessageType(messageType: string | undefined): string {
+  if (!messageType) {
+    return 'Contract Interaction';
+  }
+
+  const lastSegment = messageType.split(/[./]/).filter(Boolean).pop() ?? '';
+  const withoutPrefix = lastSegment.replace(/^m_/, '');
+  if (!withoutPrefix) {
+    return 'Contract Interaction';
+  }
+
+  return withoutPrefix
+    .split('_')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+// The per-token GRC20 history endpoint denominates amounts in the API's full
+// on-chain token ID `{packagePath}.{symbol}.{sequence}` (e.g.
+// `gno.land/r/gnoswap/gns.GNS.0000000`), while the wallet identifies a token by
+// the registry key `{packagePath}.{symbol}`. Strip the numeric sequence so the
+// amount resolves to the wallet's token metadata (decimals, symbol, logo).
+// Native denoms (`ugnot`) and bare package paths carry no such suffix and pass
+// through unchanged.
+const TOKEN_ID_SEQUENCE_SUFFIX = /^(.+\/[^/]+\.[^./]+)\.\d+$/;
+
+export function normalizeTokenDenom(denom: string): string {
+  const matched = TOKEN_ID_SEQUENCE_SUFFIX.exec(denom);
+  return matched ? matched[1] : denom;
+}
+
+function functionTitle(historyItem: TransactionHistoryItem): string {
+  const message = historyItem.func?.[0];
+  return message?.funcType || titleFromMessageType(message?.messageType);
+}
+
 export class TransactionHistoryMapper {
   public static queryToDisplay(
     transactions: TransactionInfo[],
@@ -118,6 +192,10 @@ export class TransactionHistoryMapper {
     // viewed from the master account's history.
     return {
       ...mapped,
+      amount: {
+        ...mapped.amount,
+        denom: normalizeTokenDenom(mapped.amount.denom),
+      },
       callerAddress: historyItem.callerAddress || '',
       sessionAddress: historyItem.sessionAddress || '',
     };
@@ -151,6 +229,14 @@ export class TransactionHistoryMapper {
       return TransactionHistoryMapper.mappedHistoryItemSession(historyItem);
     }
 
+    if (isHistoryItemPackageApproval(historyItem)) {
+      return TransactionHistoryMapper.mappedHistoryItemPackageApproval(historyItem);
+    }
+
+    if (isHistoryItemVmMRun(historyItem)) {
+      return TransactionHistoryMapper.mappedHistoryItemVmMRun(historyItem);
+    }
+
     return TransactionHistoryMapper.mappedHistoryItemDefault(historyItem);
   }
 
@@ -173,9 +259,9 @@ export class TransactionHistoryMapper {
       logo: '',
       type: 'MULTI_CONTRACT_CALL',
       status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
-      typeName: message.funcType,
+      typeName: message.funcType || titleFromMessageType(message.messageType),
       storageDeposit: historyItem.storageDeposit,
-      title: message.funcType,
+      title: functionTitle(historyItem),
       extraInfo: `+${historyItem.messageCount - 1}`,
       amount: {
         value: '',
@@ -264,7 +350,7 @@ export class TransactionHistoryMapper {
       ? isReceived
         ? 'Receive'
         : 'Send'
-      : historyItem.func?.[0]?.funcType || '';
+      : functionTitle(historyItem);
 
     let valueType: 'BLUR' | 'DEFAULT' | 'ACTIVE' = 'BLUR';
 
@@ -369,6 +455,57 @@ export class TransactionHistoryMapper {
     };
   }
 
+  private static mappedHistoryItemPackageApproval(
+    historyItem: TransactionHistoryItem,
+  ): TransactionInfo {
+    const valueType = historyItem.successYn ? 'DEFAULT' : 'BLUR';
+    const messageType = historyItem.func[0].messageType;
+
+    return {
+      hash: toHexHash(historyItem.txHash),
+      logo: '',
+      type: 'CONTRACT_CALL',
+      typeName: 'Package Approval',
+      storageDeposit: historyItem.storageDeposit,
+      status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
+      title: PACKAGE_APPROVAL_TITLE_MAP[messageType],
+      amount: {
+        value: `${historyItem.amountIn.value || '0'}`,
+        denom: historyItem.amountIn.denom || 'ugnot',
+      },
+      valueType,
+      date: dateToLocal(historyItem.timestamp).value,
+      networkFee: {
+        value: `${historyItem.fee.value || '0'}`,
+        denom: `${historyItem.fee.denom}`,
+      },
+    };
+  }
+
+  private static mappedHistoryItemVmMRun(historyItem: TransactionHistoryItem): TransactionInfo {
+    const valueType = historyItem.successYn ? 'DEFAULT' : 'BLUR';
+
+    return {
+      hash: toHexHash(historyItem.txHash),
+      logo: '',
+      type: 'CONTRACT_CALL',
+      typeName: 'Contract Interaction',
+      storageDeposit: historyItem.storageDeposit,
+      status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
+      title: 'Run',
+      amount: {
+        value: `${historyItem.amountOut.value || '0'}`,
+        denom: historyItem.amountOut.denom || 'ugnot',
+      },
+      valueType,
+      date: dateToLocal(historyItem.timestamp).value,
+      networkFee: {
+        value: `${historyItem.fee.value || '0'}`,
+        denom: `${historyItem.fee.denom}`,
+      },
+    };
+  }
+
   private static mappedHistoryItemDefault(historyItem: TransactionHistoryItem): TransactionInfo {
     const valueType = historyItem.successYn ? 'DEFAULT' : 'BLUR';
     return {
@@ -378,7 +515,7 @@ export class TransactionHistoryMapper {
       typeName: 'Contract Interaction',
       storageDeposit: historyItem.storageDeposit,
       status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
-      title: historyItem.func[0].funcType,
+      title: functionTitle(historyItem),
       amount: {
         value: `${historyItem.amountIn.value || '0'}`,
         denom: historyItem.amountIn.denom || 'ugnot',
