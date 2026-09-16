@@ -113,6 +113,20 @@ function titleFromMessageType(messageType: string | undefined): string {
     .join(' ');
 }
 
+// The per-token GRC20 history endpoint denominates amounts in the API's full
+// on-chain token ID `{packagePath}.{symbol}.{sequence}` (e.g.
+// `gno.land/r/gnoswap/gns.GNS.0000000`), while the wallet identifies a token by
+// the registry key `{packagePath}.{symbol}`. Strip the numeric sequence so the
+// amount resolves to the wallet's token metadata (decimals, symbol, logo).
+// Native denoms (`ugnot`) and bare package paths carry no such suffix and pass
+// through unchanged.
+const TOKEN_ID_SEQUENCE_SUFFIX = /^(.+\/[^/]+\.[^./]+)\.\d+$/;
+
+export function normalizeTokenDenom(denom: string): string {
+  const matched = TOKEN_ID_SEQUENCE_SUFFIX.exec(denom);
+  return matched ? matched[1] : denom;
+}
+
 function functionTitle(historyItem: TransactionHistoryItem): string {
   const message = historyItem.func?.[0];
   return message?.funcType || titleFromMessageType(message?.messageType);
@@ -178,6 +192,10 @@ export class TransactionHistoryMapper {
     // viewed from the master account's history.
     return {
       ...mapped,
+      amount: {
+        ...mapped.amount,
+        denom: normalizeTokenDenom(mapped.amount.denom),
+      },
       callerAddress: historyItem.callerAddress || '',
       sessionAddress: historyItem.sessionAddress || '',
     };

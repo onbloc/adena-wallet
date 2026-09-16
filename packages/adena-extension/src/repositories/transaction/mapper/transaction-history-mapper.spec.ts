@@ -1,5 +1,5 @@
 import { TransactionHistoryItem } from '../response/transaction-history-response';
-import { TransactionHistoryMapper } from './transaction-history-mapper';
+import { TransactionHistoryMapper, normalizeTokenDenom } from './transaction-history-mapper';
 
 const baseItem = (overrides: Partial<TransactionHistoryItem> = {}): TransactionHistoryItem => ({
   amountIn: { denom: 'ugnot', value: '0' },
@@ -174,5 +174,40 @@ describe('TransactionHistoryMapper package approval and unknown message types', 
     );
 
     expect(mapped.title).toBe('Call');
+  });
+});
+
+describe('TransactionHistoryMapper GRC20 token-ID denom normalization', () => {
+  it('strips the numeric sequence suffix from a full token ID denom', () => {
+    expect(normalizeTokenDenom('gno.land/r/gnoswap/gns.GNS.0000000')).toBe(
+      'gno.land/r/gnoswap/gns.GNS',
+    );
+  });
+
+  it('leaves token keys, package paths and native denoms untouched', () => {
+    expect(normalizeTokenDenom('gno.land/r/gnoswap/gns.GNS')).toBe('gno.land/r/gnoswap/gns.GNS');
+    expect(normalizeTokenDenom('gno.land/r/gnoswap/gns')).toBe('gno.land/r/gnoswap/gns');
+    expect(normalizeTokenDenom('ugnot')).toBe('ugnot');
+  });
+
+  // The per-token GRC20 history endpoint reports amounts in the API token ID;
+  // the wallet's token metadata is keyed by `{packagePath}.{symbol}`.
+  it('normalizes the amount denom of a per-token GRC20 transfer row', () => {
+    const mapped = mapWith(
+      baseItem({
+        amountIn: { denom: 'gno.land/r/gnoswap/gns.GNS.0000000', value: '0' },
+        amountOut: { denom: 'gno.land/r/gnoswap/gns.GNS.0000000', value: '1000000' },
+        func: [
+          { funcType: 'Transfer', messageType: '/vm.m_call', pkgPath: 'gno.land/r/gnoswap/gns' },
+        ],
+        isGRC20Transfer: true,
+        fromAddress: 'g1master',
+        toAddress: 'g1recipient',
+      }),
+      'g1master',
+    );
+
+    expect(mapped.title).toBe('Send');
+    expect(mapped.amount).toEqual({ value: '1000000', denom: 'gno.land/r/gnoswap/gns.GNS' });
   });
 });
