@@ -53,6 +53,24 @@ describe('GnoProvider', () => {
 
       expect(sessions).toEqual([]);
     });
+
+    it('retries on the fallback endpoint when the primary one is unreachable', async () => {
+      postABCIResponseMock.mockImplementation(async (url: string) => {
+        if (url === 'https://rpc.example') {
+          throw new TypeError('Failed to fetch');
+        }
+        return makeABCIResponse(stringToBase64('[]'));
+      });
+
+      const provider = new GnoProvider('https://rpc.example', 'test-13', 'https://rpc.fallback');
+      const sessions = await provider.getSessions('g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5');
+
+      expect(sessions).toEqual([]);
+      expect(postABCIResponseMock.mock.calls.map(([url]) => url)).toEqual([
+        'https://rpc.example',
+        'https://rpc.fallback',
+      ]);
+    });
   });
 });
 

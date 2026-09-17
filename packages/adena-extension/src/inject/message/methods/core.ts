@@ -130,7 +130,7 @@ export class InjectCore {
     try {
       const network = await this.chainService.getCurrentNetwork();
       this.tokenService.setNetworkMetainfo(network);
-      this.gnoProvider = new GnoProvider(network.rpcUrl, network.networkId);
+      this.gnoProvider = new GnoProvider(network.rpcUrl, network.networkId, network.fallbackRPCUrl);
       this.accountService.setGnoProvider(this.gnoProvider);
       this.transactionService.setGnoProvider(this.gnoProvider);
     } catch (e) {

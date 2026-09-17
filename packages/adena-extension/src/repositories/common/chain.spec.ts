@@ -1,12 +1,13 @@
 import { AxiosInstance } from 'axios';
 
 import { StorageManager } from '@common/storage/storage-manager';
-import { AtomoneNetworkMetainfo } from '@types';
+import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 import { ChainRepository } from './chain';
 import {
   AtomoneMetainfoItem,
   AtomoneNetworkMetainfoMapper,
 } from './mapper/atomone-network-metainfo-mapper';
+import { ChainMetainfoItem, NetworkMetainfoMapper } from './mapper/network-metainfo-mapper';
 
 // Raw atomone-chains.json entries, as returned by the mocked HTTP fetch. The
 // repository maps these into AtomoneNetworkMetainfo (main -> isMainnet,
@@ -223,5 +224,68 @@ describe('ChainRepository — getCurrentNetworkId', () => {
   it('returns the stored id verbatim for legitimate values', async () => {
     const repository = makeRepository('test-13');
     expect(await repository.getCurrentNetworkId()).toBe('test-13');
+  });
+});
+
+describe('ChainRepository — getNetworks fallbackRPCUrl', () => {
+  const GNO_RESPONSE: ChainMetainfoItem[] = [
+    {
+      id: 'gnoland-1',
+      default: true,
+      main: true,
+      chainId: 'gnoland-1',
+      chainName: 'Gno.land',
+      networkId: 'gnoland-1',
+      networkName: 'Mainnet',
+      addressPrefix: 'g',
+      rpcUrl: 'https://rpc.onbloc.xyz:443',
+      fallbackRPCUrl: 'https://rpc.gno.land:443',
+      indexerUrl: 'https://indexer.onbloc.xyz',
+      gnoUrl: 'https://gno.land',
+      apiUrl: 'https://api.onbloc.xyz',
+      linkUrl: 'https://gnoscan.io',
+    },
+  ];
+
+  const GNO_DEFAULTS = NetworkMetainfoMapper.fromChainMetainfoResponse(GNO_RESPONSE);
+
+  let storedValue: NetworkMetainfo[] | undefined;
+  let repository: ChainRepository;
+
+  beforeEach(() => {
+    storedValue = undefined;
+
+    const localStorage = {
+      getToObject: jest.fn().mockImplementation(async () => storedValue),
+      setByObject: jest.fn().mockImplementation(async (_key, value) => {
+        storedValue = value as NetworkMetainfo[];
+      }),
+      remove: jest.fn(),
+    } as unknown as StorageManager;
+
+    const networkInstance = {
+      get: jest.fn().mockResolvedValue({ data: GNO_RESPONSE }),
+    } as unknown as AxiosInstance;
+
+    repository = new ChainRepository(localStorage, networkInstance);
+  });
+
+  it('grafts the bundled fallback onto a stored entry that predates the field', async () => {
+    const storedBeforeFallback: NetworkMetainfo = { ...GNO_DEFAULTS[0] };
+    delete storedBeforeFallback.fallbackRPCUrl;
+    storedValue = [storedBeforeFallback];
+
+    const [mainnet] = await repository.getNetworks();
+
+    expect(mainnet.fallbackRPCUrl).toBe('https://rpc.gno.land:443');
+  });
+
+  it('drops the fallback once the user repoints the network at their own node', async () => {
+    storedValue = [{ ...GNO_DEFAULTS[0], rpcUrl: 'http://127.0.0.1:26657' }];
+
+    const [mainnet] = await repository.getNetworks();
+
+    expect(mainnet.rpcUrl).toBe('http://127.0.0.1:26657');
+    expect(mainnet.fallbackRPCUrl).toBeUndefined();
   });
 });

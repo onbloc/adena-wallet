@@ -45,8 +45,9 @@ export class WalletAccountService {
     address: string,
     rpcUrl: string,
     chainId: string,
+    fallbackRPCUrl?: string,
   ): Promise<AccountInfo> => {
-    const gnoProvider = new GnoProvider(rpcUrl, chainId);
+    const gnoProvider = new GnoProvider(rpcUrl, chainId, fallbackRPCUrl);
     return this.getAccountInfoByProvider(address, gnoProvider);
   };
 
