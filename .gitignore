@@ -48,3 +48,6 @@ node_modules/
 result.info
 deploy/*
 deploy-latest/*
+deploy-firefox/*
+deploy-firefox-latest/*
+deploy-firefox-signed/*

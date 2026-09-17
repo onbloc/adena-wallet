@@ -31,6 +31,29 @@ extension bundle.)
   then sign the resulting XPI (`npx web-ext sign --channel=unlisted`) or use a Firefox
   build that allows unsigned extensions (`xpinstall.signatures.required=false`).
 
+## Releasing
+
+`.github/workflows/build-firefox-xpi.yml` runs on `v*.*.*` tags (the same trigger as
+the Chrome build and deploy in `build-deploy.yml`) and:
+
+1. builds the Firefox bundle (`yarn build:firefox`);
+2. packages it into an XPI with `scripts/build-firefox-xpi.sh` (the Firefox
+   counterpart of `build-qa.sh`), producing
+   `deploy-firefox/adena-extension-firefox-<tag>.xpi` plus a version-named copy in
+   `deploy-firefox-latest/`;
+3. uploads the XPI as a workflow artifact and attaches it to the GitHub release for
+   the tag (creating the release if it does not exist yet).
+
+Optional secrets:
+
+- `AMO_API_KEY` + `AMO_API_SECRET`: when both are set, the XPI is signed through
+  addons.mozilla.org (`--channel=unlisted`) so it installs in release Firefox.
+  Without them the unsigned XPI is still published, for manual signing or for use in
+  unbranded builds with `xpinstall.signatures.required=false`.
+- `PRIVATE_ACCESS_TOKEN`: only needed to build against the private
+  `adena-torus-signin` repository; without it the checked-in mock is used, so the
+  workflow runs in forks too (enable Actions in the fork first).
+
 ## What differs from the Chrome build
 
 | | Chrome build | Firefox build |
