@@ -262,7 +262,11 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
 
   async function changeNetwork(networkMetainfo: NetworkMetainfo): Promise<NetworkMetainfo> {
     const rpcUrl = networkMetainfo.rpcUrl;
-    const gnoProvider = new GnoProvider(rpcUrl, networkMetainfo.networkId);
+    const gnoProvider = new GnoProvider(
+      rpcUrl,
+      networkMetainfo.networkId,
+      networkMetainfo.fallbackRPCUrl,
+    );
 
     setCurrentNetwork(networkMetainfo);
     setGnoProvider(gnoProvider);

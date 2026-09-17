@@ -54,9 +54,17 @@ export class ChainRepository {
     // when no local copy exists (newly introduced defaults).
     const localById = new Map(networks.map((network) => [network.id, network]));
     const fetchedIds = new Set(fetchedNetworks.map((network) => network.id));
-    const defaultNetworks = fetchedNetworks.map(
-      (fetched) => localById.get(fetched.id) ?? fetched,
-    );
+    const defaultNetworks = fetchedNetworks.map((fetched) => {
+      const local = localById.get(fetched.id);
+      if (!local) {
+        return fetched;
+      }
+
+      // fallbackRPCUrl is bundled config, not a user field, and only applies
+      // while the stored rpcUrl still matches the bundled one.
+      const fallbackRPCUrl = local.rpcUrl === fetched.rpcUrl ? fetched.fallbackRPCUrl : undefined;
+      return { ...local, fallbackRPCUrl };
+    });
     const customNetworks = networks.filter(
       (network) => network.default === false && !fetchedIds.has(network.id),
     );

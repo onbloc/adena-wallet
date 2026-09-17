@@ -29,9 +29,10 @@ import {
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
-import { HttpClient, Tm2Client } from '@gnolang/tm2-rpc';
+import { HttpClient, RpcClient, Tm2Client } from '@gnolang/tm2-rpc';
 import axios from 'axios';
 import { formatGnoArg, GnoArg } from './qeval';
+import { RpcEndpointSelector } from './rpc-endpoint-selector';
 import { AccountInfo, GnoDocumentInfo, GnoSessionAccountResponse, VMQueryType } from './types';
 import {
   fetchABCIResponse,
@@ -47,11 +48,39 @@ function isBase64JSONNull(data: string): boolean {
   return data === BASE64_JSON_NULL;
 }
 
-type Tm2ClientConstructor = new (client: HttpClient) => Tm2Client;
+type Tm2ClientConstructor = new (client: RpcClient) => Tm2Client;
 type GnoSessionAccountInfoResponse = GnoSessionAccountResponse & SessionAccountInfo;
+type RpcRequest = Parameters<HttpClient['execute']>[0];
+type RpcSuccessResponse = Awaited<ReturnType<HttpClient['execute']>>;
 
-function createTm2Client(baseURL: string): Tm2Client {
-  return new ((Tm2Client as unknown) as Tm2ClientConstructor)(new HttpClient(baseURL));
+// Routes the base GnoJSONRPCProvider's JSON-RPC calls through the endpoint
+// selector, so they fail over alongside the requests issued here directly.
+class FallbackRpcClient implements RpcClient {
+  private readonly clients = new Map<string, HttpClient>();
+
+  private readonly endpoints: RpcEndpointSelector;
+
+  constructor(endpoints: RpcEndpointSelector) {
+    this.endpoints = endpoints;
+  }
+
+  public execute = (request: RpcRequest): Promise<RpcSuccessResponse> => {
+    return this.endpoints.run((endpoint) => this.clientFor(endpoint).execute(request));
+  };
+
+  public disconnect = (): void => {
+    this.clients.forEach((client) => client.disconnect());
+  };
+
+  private clientFor(endpoint: string): HttpClient {
+    const client = this.clients.get(endpoint) ?? new HttpClient(endpoint);
+    this.clients.set(endpoint, client);
+    return client;
+  }
+}
+
+function createTm2Client(endpoints: RpcEndpointSelector): Tm2Client {
+  return new ((Tm2Client as unknown) as Tm2ClientConstructor)(new FallbackRpcClient(endpoints));
 }
 
 function toNumberOrUndefined(value: string | undefined): number | undefined {
@@ -82,18 +111,21 @@ function withSessionAccountInfo(res: GnoSessionAccountResponse): GnoSessionAccou
 
 export class GnoProvider extends GnoJSONRPCProvider {
   private chainId?: string;
-  private readonly baseURL: string;
+  private readonly endpoints: RpcEndpointSelector;
 
-  constructor(baseURL: string, chainId?: string) {
-    super(createTm2Client(baseURL));
-    this.baseURL = baseURL;
+  constructor(baseURL: string, chainId?: string, fallbackRPCUrl?: string) {
+    const endpoints = new RpcEndpointSelector(baseURL, fallbackRPCUrl);
+    super(createTm2Client(endpoints));
+    this.endpoints = endpoints;
     this.chainId = chainId;
   }
 
   public async getStatus(): Promise<Status> {
-    return await RestService.post<Status>(this.baseURL, {
-      request: newRequest(CommonEndpoint.STATUS, ['0']),
-    });
+    return this.endpoints.run((baseURL) =>
+      RestService.post<Status>(baseURL, {
+        request: newRequest(CommonEndpoint.STATUS, ['0']),
+      }),
+    );
   }
 
   public async getAccountNumber(address: string, height?: number | undefined): Promise<number> {
@@ -116,7 +148,9 @@ export class GnoProvider extends GnoJSONRPCProvider {
       false,
     ]);
 
-    const abciResponse = await postABCIResponse(this.baseURL, requestBody).catch(() => null);
+    const abciResponse = await this.endpoints
+      .run((baseURL) => postABCIResponse(baseURL, requestBody))
+      .catch(() => null);
 
     const abciData = abciResponse?.result?.response.ResponseBase.Data;
     // Make sure the response is initialized
@@ -204,7 +238,9 @@ export class GnoProvider extends GnoJSONRPCProvider {
       false,
     ]);
 
-    const abciResponse = await postABCIResponse(this.baseURL, requestBody);
+    const abciResponse = await this.endpoints.run((baseURL) =>
+      postABCIResponse(baseURL, requestBody),
+    );
     const abciData = abciResponse?.result?.response.ResponseBase.Data;
     if (!abciData || isBase64JSONNull(abciData)) {
       return [];
@@ -232,7 +268,9 @@ export class GnoProvider extends GnoJSONRPCProvider {
       false,
     ]);
 
-    const abciResponse = await postABCIResponse(this.baseURL, requestBody);
+    const abciResponse = await this.endpoints.run((baseURL) =>
+      postABCIResponse(baseURL, requestBody),
+    );
     const abciData = abciResponse?.result?.response.ResponseBase.Data;
     if (!abciData) {
       // "Not found". The base GnoJSONRPCProvider.getSession signature (gno-js-
@@ -370,12 +408,14 @@ export class GnoProvider extends GnoJSONRPCProvider {
       hash: string;
     };
 
-    const rpcResponse = await axios.post<RPCResponse<RawSyncResult>>(this.baseURL, {
-      jsonrpc: '2.0',
-      id: 1,
-      method: TransactionEndpoint.BROADCAST_TX_SYNC,
-      params: [tx],
-    });
+    const rpcResponse = await this.endpoints.run((baseURL) =>
+      axios.post<RPCResponse<RawSyncResult>>(baseURL, {
+        jsonrpc: '2.0',
+        id: 1,
+        method: TransactionEndpoint.BROADCAST_TX_SYNC,
+        params: [tx],
+      }),
+    );
 
     if (rpcResponse.data.error) {
       throw new Error(rpcResponse.data.error.message ?? 'broadcast_tx_sync failed');
@@ -421,10 +461,8 @@ export class GnoProvider extends GnoJSONRPCProvider {
       request: newRequest(ABCIEndpoint.ABCI_QUERY, ['.app/simulate', `${encodedTx}`, '0', false]),
     };
 
-    const abciResponse = await axios.post<RPCResponse<ABCIResponse>>(
-      this.baseURL,
-      params.request,
-      {},
+    const abciResponse = await this.endpoints.run((baseURL) =>
+      axios.post<RPCResponse<ABCIResponse>>(baseURL, params.request, {}),
     );
 
     const responseValue = abciResponse.data.result?.response.Value;
@@ -471,10 +509,12 @@ export class GnoProvider extends GnoJSONRPCProvider {
   public async getRealmDocument(packagePath: string): Promise<GnoDocumentInfo | null> {
     const query = VMQueryType.QUERY_DOCUMENT;
     const base64PackagePath = stringToBase64(packagePath);
-    const requestQuery = await this.getRequestQueryPath(query, base64PackagePath);
 
     try {
-      const abciResponse = await fetchABCIResponse(requestQuery, false);
+      const abciResponse = await this.endpoints.run(async (baseURL) => {
+        const requestQuery = await getRequestQueryPath(baseURL, query, base64PackagePath);
+        return fetchABCIResponse(requestQuery, false);
+      });
       const abciData = abciResponse?.result?.response.ResponseBase.Data;
       if (!abciData) {
         return null;
@@ -487,9 +527,9 @@ export class GnoProvider extends GnoJSONRPCProvider {
 
     return null;
   }
+}
 
-  private async getRequestQueryPath(path: string, data: string): Promise<string> {
-    const ssl = await isHttpsAvailable(this.baseURL);
-    return makeRequestQueryPath(this.baseURL, path, data, ssl);
-  }
+async function getRequestQueryPath(baseURL: string, path: string, data: string): Promise<string> {
+  const ssl = await isHttpsAvailable(baseURL);
+  return makeRequestQueryPath(baseURL, path, data, ssl);
 }

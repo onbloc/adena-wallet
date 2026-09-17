@@ -29,6 +29,12 @@ export interface NetworkMetainfo {
   networkName: string;
   addressPrefix: string;
   rpcUrl: string;
+  /**
+   * Optional secondary RPC endpoint, managed in `chains.json`. When a request
+   * against `rpcUrl` fails at the transport level the provider switches here
+   * and keeps using it for the rest of its lifetime.
+   */
+  fallbackRPCUrl?: string;
   indexerUrl?: string;
   gnoUrl?: string;
   apiUrl?: string;

@@ -118,7 +118,9 @@ export const useNetwork = (): NetworkResponse => {
       if (!currentGnoNetwork) {
         return null;
       }
-      return fetchHealth(currentGnoNetwork.rpcUrl).then(({ healthy }) => !healthy);
+      return fetchHealth(currentGnoNetwork.rpcUrl, currentGnoNetwork.fallbackRPCUrl).then(
+        ({ healthy }) => !healthy,
+      );
     },
     { keepPreviousData: true, staleTime: NETWORK_HEALTH_STALE_TIME },
   );

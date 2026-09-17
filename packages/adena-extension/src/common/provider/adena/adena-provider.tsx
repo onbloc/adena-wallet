@@ -86,7 +86,11 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     if (!currentGnoNetwork) {
       return null;
     }
-    return new GnoProvider(currentGnoNetwork.rpcUrl, currentGnoNetwork.chainId);
+    return new GnoProvider(
+      currentGnoNetwork.rpcUrl,
+      currentGnoNetwork.chainId,
+      currentGnoNetwork.fallbackRPCUrl,
+    );
   }, [currentGnoNetwork]);
 
   const chainRegistry = useMemo(
