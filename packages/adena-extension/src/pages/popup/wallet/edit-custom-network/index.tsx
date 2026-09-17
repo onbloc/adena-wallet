@@ -142,17 +142,13 @@ const EditCustomNetworkContainer: React.FC = () => {
         restUrl: extraUrl,
       });
     } else {
-      const gnoOrigin = originNetwork as NetworkMetainfo;
       await updateNetwork({
-        ...gnoOrigin,
+        ...(originNetwork as NetworkMetainfo),
         chainId,
         networkId: chainId,
         chainName: parsedName,
         networkName: parsedName,
         rpcUrl,
-        // Repointing the RPC drops the bundled fallback, so an edited network is
-        // never failed over to an endpoint the user did not choose.
-        fallbackRPCUrl: rpcUrl === gnoOrigin.rpcUrl ? gnoOrigin.fallbackRPCUrl : undefined,
         indexerUrl: extraUrl,
       });
     }

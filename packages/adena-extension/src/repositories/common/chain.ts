@@ -60,10 +60,9 @@ export class ChainRepository {
         return fetched;
       }
 
-      // fallbackRPCUrl is bundled config, not a user field, and only applies
-      // while the stored rpcUrl still matches the bundled one.
-      const fallbackRPCUrl = local.rpcUrl === fetched.rpcUrl ? fetched.fallbackRPCUrl : undefined;
-      return { ...local, fallbackRPCUrl };
+      // fallbackRPCUrl is bundled config, not a user field, so it always comes
+      // from chains.json rather than from the stored copy.
+      return { ...local, fallbackRPCUrl: fetched.fallbackRPCUrl };
     });
     const customNetworks = networks.filter(
       (network) => network.default === false && !fetchedIds.has(network.id),
