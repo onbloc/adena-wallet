@@ -10,6 +10,7 @@
     "build": "yarn build:module && yarn build:service && yarn",
     "build:module": "yarn workspaces foreach -ptR --from '{adena-module,adena-torus-signin}' run build",
     "build:service": "yarn workspace adena-extension build",
+    "build:firefox": "yarn build:module && yarn workspace adena-extension build:firefox",
     "version:qa": "sh scripts/update-build-version.sh",
     "version:package": "sh scripts/update-package-version.sh",
     "tag": "sh scripts/create-tag.sh",

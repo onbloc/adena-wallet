@@ -66,7 +66,7 @@ To set up a local environment, clone this repository and run the following comma
 ```
 
 ​
-This will store the extension's build output in `packages/adena-extension/dist`.
+This will store the extension's build output in `packages/adena-extension/dist`. For a Firefox build, see [FIREFOX.md](FIREFOX.md).
 ​
 
 ## Documentation

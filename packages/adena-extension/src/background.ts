@@ -364,6 +364,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
         !tab?.url ||
         tab.url.startsWith('chrome://') ||
         tab.url.startsWith('chrome-extension://') ||
+        tab.url.startsWith('moz-extension://') ||
         tab.url.startsWith('about:')
       ) {
         return;

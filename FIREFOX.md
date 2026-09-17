@@ -1,0 +1,91 @@
+# Adena on Firefox
+
+This fork builds Adena as a Manifest V3 extension that also runs on Firefox. The default
+build targets Chrome/Chromium; the Firefox target is a separate `--env browser=firefox`
+webpack pass that emits `packages/adena-extension/dist-firefox`.
+
+## Building
+
+```
+yarn install
+
+yarn build            # chrome dist  -> packages/adena-extension/dist
+yarn build:firefox    # firefox dist -> packages/adena-extension/dist-firefox
+```
+
+(`yarn build:firefox` rebuilds `adena-module` / `adena-torus-signin` first, then the
+extension bundle.)
+
+## Loading it in Firefox
+
+- Quick test: open `about:debugging#/runtime/this-firefox` → "Load Temporary Add-on…"
+  and pick `packages/adena-extension/dist-firefox/manifest.json`. (Temporary add-ons are
+  removed when Firefox exits.)
+- Dev loop: `npx web-ext run --source-dir packages/adena-extension/dist-firefox`.
+  - On Ubuntu where Firefox is the **snap** package, pass
+    `--firefox-profile=<dir>` pointing at a *non-hidden* directory inside `$HOME`
+    (e.g. `~/adena-ff-profile`). The snap confinement blocks profiles under `~/.cache`
+    or `/tmp`; Firefox then never starts its debugger server and web-ext fails with
+    `connect ECONNREFUSED`.
+- Permanent install (optional): `npx web-ext build -s packages/adena-extension/dist-firefox`
+  then sign the resulting XPI (`npx web-ext sign --channel=unlisted`) or use a Firefox
+  build that allows unsigned extensions (`xpinstall.signatures.required=false`).
+
+## What differs from the Chrome build
+
+| | Chrome build | Firefox build |
+|---|---|---|
+| Manifest source | `public/manifest.json` | `public/manifest.firefox.json` |
+| Background | `background.service_worker` (service worker) | `background.scripts` (non-persistent event page — Firefox does not support extension service workers) |
+| Add-on id | none needed | `browser_specific_settings.gecko.id = adena-wallet@gnomore.dev`, `strict_min_version: 115.0` (needed for `storage.session`) |
+| Output dir | `dist/` | `dist-firefox/` |
+
+Both builds share the manifest transform in `webpack.config.js`, which merges in the
+icon set and the version from `packages/adena-extension/package.json` (so
+`manifest.firefox.json` does not drift when the release scripts bump versions).
+
+## Source changes for Firefox
+
+- `webpack.config.js`
+  - **`output.publicPath: ''`** — webpack's default `'auto'` public path throws
+    `Automatic publicPath is not supported in this browser` inside Firefox content
+    scripts (no `document.currentScript` in that execution context). The exception
+    killed `content.js` before it could inject `inject.js`, so the whole dApp bridge
+    (and `window.adena`) silently never worked on Firefox. Relative URLs are correct
+    for the root-level extension pages that load assets. Applies to both build targets.
+  - `--env browser=firefox` selects `public/manifest.firefox.json` and the
+    `dist-firefox` output directory.
+- `background.ts`: the tab-update handler also skips `moz-extension://` URLs
+  (alongside `chrome://` / `chrome-extension://` / `about:`).
+- `adena-module/ledger-connector.ts`: `AdenaLedgerConnector.isSupported()` plus guards so
+  the Ledger helpers return `null`/`[]` instead of throwing `navigator.usb is undefined`
+  when the browser has neither WebHID nor WebUSB.
+- `select-hard-wallet-screen`: the "Continue with Ledger" button is disabled when Ledger
+  support is unavailable.
+- Popup header screens label `moz-extension` request origins as `moz-extension` (the
+  fallback label previously said `chrome-extension` everywhere).
+
+## Known limitations on Firefox
+
+- **Ledger hardware wallets are unavailable.** Firefox implements neither WebHID nor
+  WebUSB, which the Ledger transport requires. All other wallet features (seed/Google
+  accounts, dApp connect, signing, sessions, transfers) use standard extension APIs.
+- `web-ext lint` reports two `FILE_TOO_LARGE` errors because `popup.js` / `web.js`
+  exceed the linter's JS parser size limit. This only stops the linter from reading
+  those files; the extension itself runs fine.
+- `MISSING_DATA_COLLECTION_PERMISSIONS` is a lint warning, not an error — the
+  `browser_specific_settings.gecko.data_collection_permissions` key would need to be
+  set before submitting to addons.mozilla.org.
+
+## Verification performed
+
+Firefox 156 (Ubuntu snap, headless) and Chromium 152 against the built dist:
+
+- `npx web-ext lint --source-dir packages/adena-extension/dist-firefox` — no manifest
+  errors (only the items listed above).
+- `web-ext run` installs the extension as a temporary add-on; the background event page
+  starts and opens `register.html` on first install (visible in the profile's
+  `sessionstore` and `extensions.json`).
+- A local test page confirms: content script runs, `inject.js` is injected, `window.adena`
+  exists in the page, and a full `window.adena.GetAccount()` call round-trips through
+  content script → background and returns a wallet response.
