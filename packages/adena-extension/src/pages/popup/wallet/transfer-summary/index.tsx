@@ -52,7 +52,7 @@ import {
 import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading';
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
-import { RoutePath } from '@types';
+import { Grc20RouteFunc, RoutePath } from '@types';
 
 const TransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -76,7 +76,7 @@ const TransferSummaryContainer: React.FC = () => {
   const { currentAccount, currentAddress, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   // Per-token MsgCall shapes from gno-token-resource.
-  const { data: grc20Routes } = useGRC20Routes();
+  const { data: grc20Routes, isFetched: isGrc20RoutesFetched } = useGRC20Routes();
   const isCosmosToken = isCosmosNativeTokenModel(params.tokenMetainfo);
   const tokenChainGroup = isCosmosToken
     ? chainRegistry.getChainByChainId(params.tokenMetainfo.networkId)?.chainGroup ?? 'atomone'
@@ -95,8 +95,25 @@ const TransferSummaryContainer: React.FC = () => {
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
   const [document, setDocument] = useState<Document | null>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
+  // Route the pre-warmed document was built from, to detect a later change.
+  const documentRouteFuncRef = useRef<Grc20RouteFunc | null>(null);
 
   const useNetworkFeeReturn = useNetworkFee(document, false);
+
+  // GRC20 identity is the token key `{packagePath}.{symbol}`, which is also the
+  // registry fqname on-chain calls key by. Null for non-GRC20 tokens.
+  const grc20RegistryKey = useMemo(() => {
+    const { tokenMetainfo } = params;
+    if (!isGRC20TokenModel(tokenMetainfo)) {
+      return null;
+    }
+    return toRegistryKey(tokenMetainfo.tokenId) ?? tokenMetainfo.pkgPath;
+  }, [params]);
+
+  const grc20TransferRouteFunc = useMemo(
+    () => getGrc20RouteFunc(getGrc20Route(grc20Routes, grc20RegistryKey), GRC20_ROUTE_OP.TRANSFER),
+    [grc20Routes, grc20RegistryKey],
+  );
   const networkFee = useNetworkFeeReturn.networkFee;
 
   const { data: currentBalance } = useGetGnotBalance();
@@ -342,17 +359,12 @@ const TransferSummaryContainer: React.FC = () => {
     )}`;
 
     const cfg = getGrc20RegConfig(currentNetwork?.chainId);
-    // GRC20 identity is the token key `{packagePath}.{symbol}`, which is also
-    // the registry fqname on-chain calls key by.
-    const registryKey = toRegistryKey(tokenMetainfo.tokenId) ?? tokenMetainfo.pkgPath;
+    const registryKey = grc20RegistryKey ?? tokenMetainfo.pkgPath;
 
     // Preferred path: the token publishes a `routes` entry, so call its own
     // realm directly. grc20reg can never carry a user transfer, and this path
     // does not depend on a helper realm existing on the chain.
-    const routeFunc = getGrc20RouteFunc(
-      getGrc20Route(grc20Routes, registryKey),
-      GRC20_ROUTE_OP.TRANSFER,
-    );
+    const routeFunc = grc20TransferRouteFunc;
     if (routeFunc) {
       // Skip rather than send a blank argument; the fallbacks below still apply.
       const args = resolveGrc20RouteArgs(routeFunc, { to: toAddress, amount });
@@ -420,7 +432,13 @@ const TransferSummaryContainer: React.FC = () => {
         files: [{ name: 'main.gno', body: runBody }],
       },
     });
-  }, [summaryInfo, currentFundingAddress, currentNetwork?.chainId, grc20Routes]);
+  }, [
+    summaryInfo,
+    currentFundingAddress,
+    currentNetwork?.chainId,
+    grc20RegistryKey,
+    grc20TransferRouteFunc,
+  ]);
 
   const createDocument = async (): Promise<Document | null> => {
     if (!currentNetwork || !currentAccount || !currentAddress) {
@@ -795,7 +813,19 @@ const TransferSummaryContainer: React.FC = () => {
     if (isCosmosToken) {
       return;
     }
-    if (!document) {
+    // A GRC20 transfer picks its message shape from the published route, so
+    // building the document before the route query settles would simulate the
+    // fallback and later sign the direct MsgCall. A settled query with no route
+    // still uses the fallback.
+    if (grc20RegistryKey && !isGrc20RoutesFetched) {
+      return;
+    }
+
+    // updateDocument only patches memo and fee, so a route that arrives (or
+    // changes with the network) has to rebuild the document rather than reuse
+    // gas simulated for a different message.
+    if (!document || documentRouteFuncRef.current !== grc20TransferRouteFunc) {
+      documentRouteFuncRef.current = grc20TransferRouteFunc;
       createDocument().then((doc) => {
         if (!doc) {
           return;
@@ -813,6 +843,9 @@ const TransferSummaryContainer: React.FC = () => {
     currentNetwork,
     useNetworkFeeReturn.currentGasFeeRawAmount,
     isCosmosToken,
+    isGrc20RoutesFetched,
+    grc20RegistryKey,
+    grc20TransferRouteFunc,
   ]);
 
   return (
