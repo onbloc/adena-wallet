@@ -280,14 +280,12 @@ describe('ChainRepository — getNetworks fallbackRPCUrl', () => {
     expect(mainnet.fallbackRPCUrl).toBe('https://rpc.gno.land:443');
   });
 
-  it('keeps the bundled fallback when the user edits the rpcUrl', async () => {
-    const storedWithoutFallback: NetworkMetainfo = { ...GNO_DEFAULTS[0] };
-    delete storedWithoutFallback.fallbackRPCUrl;
-    storedValue = [{ ...storedWithoutFallback, rpcUrl: 'http://127.0.0.1:26657' }];
+  it('drops the fallback once the user repoints the network at their own node', async () => {
+    storedValue = [{ ...GNO_DEFAULTS[0], rpcUrl: 'http://127.0.0.1:26657' }];
 
     const [mainnet] = await repository.getNetworks();
 
     expect(mainnet.rpcUrl).toBe('http://127.0.0.1:26657');
-    expect(mainnet.fallbackRPCUrl).toBe('https://rpc.gno.land:443');
+    expect(mainnet.fallbackRPCUrl).toBeUndefined();
   });
 });
