@@ -2,20 +2,11 @@ import {
   SearchGRC20Token,
   SearchGRC20TokenResponse,
 } from '../response/search-grc20-token-response';
-import {
-  GRC20TokenResponse,
-  IBCNativeTokenResponse,
-  IBCTokenResponse,
-  NativeTokenResponse,
-} from '../response/token-asset-response';
+import { GRC20TokenResponse, NativeTokenResponse } from '../response/token-asset-response';
 
-import {
-  GRC20TokenModel,
-  IBCNativeTokenModel,
-  IBCTokenModel,
-  NativeTokenModel,
-  TokenModel,
-} from '@types';
+import { GRC20TokenModel, Grc20RouteMap, NativeTokenModel, TokenModel } from '@types';
+
+import { parseGrc20Route } from '@common/utils/grc20-route';
 
 import { toTokenPath } from '@common/utils/grc20-token-path';
 
@@ -71,48 +62,16 @@ export class TokenMapper {
     });
   }
 
-  public static fromIBCNativeMetainfos(
-    networkId: string,
-    response: IBCNativeTokenResponse,
-  ): IBCNativeTokenModel[] {
-    return response.map((token) => {
-      const { decimals, denom, image, name, symbol, description, website_url } = token;
-      return {
-        main: false,
-        display: false,
-        tokenId: symbol,
-        networkId,
-        type: 'ibc-native',
-        name,
-        denom,
-        symbol,
-        decimals,
-        description,
-        websiteUrl: website_url,
-        image: image ? TokenMapper.IMAGE_BASE_URI + image : '',
-      };
-    });
-  }
-
-  public static fromIBCTokenMetainfos(
-    networkId: string,
-    response: IBCTokenResponse,
-  ): IBCTokenModel[] {
-    return response.map((token) => {
-      const { website_url, origin_chain, origin_denom, origin_type, symbol } = token;
-      return {
-        main: false,
-        display: false,
-        tokenId: symbol,
-        networkId,
-        websiteUrl: website_url,
-        type: 'ibc-tokens',
-        originChain: origin_chain,
-        originDenom: origin_denom,
-        originType: origin_type,
-        ...token,
-      };
-    });
+  // Registry key -> route. Entries without `routes` are omitted, which is what
+  // makes a consumer fall back to MsgRun.
+  public static toGrc20RouteMap(response: GRC20TokenResponse): Grc20RouteMap {
+    return response.reduce<Grc20RouteMap>((routes, token) => {
+      const route = parseGrc20Route(token.routes);
+      if (!route) {
+        return routes;
+      }
+      return { ...routes, [toTokenPath(token.pkg_path, token.symbol)]: route };
+    }, {});
   }
 
   public static fromSearchTokensResponse(

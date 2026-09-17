@@ -6,7 +6,7 @@ export interface TokenModel {
   tokenId: string;
   networkId: string;
   display: boolean;
-  type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens' | 'cosmos-native';
+  type: 'gno-native' | 'grc20' | 'cosmos-native';
   name: string;
   symbol: string;
   decimals: number;
@@ -21,20 +21,6 @@ export interface NativeTokenModel extends TokenModel {
 
 export interface GRC20TokenModel extends TokenModel {
   pkgPath: string;
-}
-
-export interface IBCNativeTokenModel extends TokenModel {
-  denom: string;
-}
-
-export interface IBCTokenModel extends TokenModel {
-  denom: string;
-  originChain: string;
-  originDenom: string;
-  originType: string;
-  path: string;
-  channel: string;
-  port: string;
 }
 
 export interface ManageTokenInfo {

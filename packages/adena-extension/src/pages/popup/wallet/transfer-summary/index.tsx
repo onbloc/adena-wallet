@@ -15,6 +15,12 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import AtomoneChainBadge from '@assets/icons/chains/atomone.svg';
 import { GasToken } from '@common/constants/token.constant';
 import { gnoLiteral } from '@common/provider/gno/qeval';
+import {
+  getGrc20Route,
+  getGrc20RouteFunc,
+  GRC20_ROUTE_OP,
+  resolveGrc20RouteArgs,
+} from '@common/utils/grc20-route';
 import { toRegistryKey } from '@common/utils/grc20-token-path';
 import { getGrc20RegConfig } from '@common/utils/grc20reg-config';
 import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
@@ -30,6 +36,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useGRC20Routes } from '@hooks/use-grc20-routes';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useNetworkProfile } from '@hooks/use-network-profile';
@@ -63,16 +70,13 @@ const TransferSummaryContainer: React.FC = () => {
   const { navigate, goBack, params } = useAppNavigate<RoutePath.TransferSummary>();
   const summaryInfo = params;
   const { wallet, gnoProvider } = useWalletContext();
-  const {
-    transactionService,
-    chainRegistry,
-    tokenRegistry,
-    cosmosProvider,
-    sessionRepository,
-  } = useAdenaContext();
+  const { transactionService, chainRegistry, tokenRegistry, cosmosProvider, sessionRepository } =
+    useAdenaContext();
   const queryClient = useQueryClient();
   const { currentAccount, currentAddress, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  // Per-token MsgCall shapes from gno-token-resource.
+  const { data: grc20Routes } = useGRC20Routes();
   const isCosmosToken = isCosmosNativeTokenModel(params.tokenMetainfo);
   const tokenChainGroup = isCosmosToken
     ? chainRegistry.getChainByChainId(params.tokenMetainfo.networkId)?.chainGroup ?? 'atomone'
@@ -342,7 +346,29 @@ const TransferSummaryContainer: React.FC = () => {
     // the registry fqname on-chain calls key by.
     const registryKey = toRegistryKey(tokenMetainfo.tokenId) ?? tokenMetainfo.pkgPath;
 
-    // Preferred path: the chain's GRC20 helper realm exposes
+    // Preferred path: the token publishes a `routes` entry, so call its own
+    // realm directly. grc20reg can never carry a user transfer, and this path
+    // does not depend on a helper realm existing on the chain.
+    const routeFunc = getGrc20RouteFunc(
+      getGrc20Route(grc20Routes, registryKey),
+      GRC20_ROUTE_OP.TRANSFER,
+    );
+    if (routeFunc) {
+      // Skip rather than send a blank argument; the fallbacks below still apply.
+      const args = resolveGrc20RouteArgs(routeFunc, { to: toAddress, amount });
+      if (args) {
+        return TransactionMessage.createMessageOfVmCall({
+          caller,
+          send: '',
+          pkgPath: tokenMetainfo.pkgPath,
+          max_deposit: '',
+          func: routeFunc.name,
+          args,
+        });
+      }
+    }
+
+    // Next: the chain's GRC20 helper realm exposes
     // Transfer(tokenKey, to, amount) — invoke it via MsgCall.
     if (cfg.helperPath) {
       return TransactionMessage.createMessageOfVmCall({
@@ -355,10 +381,10 @@ const TransferSummaryContainer: React.FC = () => {
       });
     }
 
-    // Fallback (no helper configured yet): run an ephemeral package that
-    // transfers the token through the registry's own write wrapper. The node
-    // requires the package name to be "main" and auto-assigns the reserved run
-    // path when Package.Path is left empty.
+    // Fallback (no route and no helper configured): run an ephemeral package
+    // that transfers the token through the registry's own write wrapper. The
+    // node requires the package name to be "main" and auto-assigns the reserved
+    // run path when Package.Path is left empty.
     const registryAliases = cfg.registries.map((registry, index) => ({
       alias: `grc20reg${index}`,
       path: registry.path,
@@ -394,7 +420,7 @@ const TransferSummaryContainer: React.FC = () => {
         files: [{ name: 'main.gno', body: runBody }],
       },
     });
-  }, [summaryInfo, currentFundingAddress, currentNetwork?.chainId]);
+  }, [summaryInfo, currentFundingAddress, currentNetwork?.chainId, grc20Routes]);
 
   const createDocument = async (): Promise<Document | null> => {
     if (!currentNetwork || !currentAccount || !currentAddress) {

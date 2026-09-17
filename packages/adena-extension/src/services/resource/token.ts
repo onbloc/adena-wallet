@@ -7,6 +7,7 @@ import { ITokenRepository } from '@repositories/common/types';
 import {
   AccountTokenBalance,
   GRC20TokenModel,
+  Grc20RouteMap,
   GRC721CollectionModel,
   GRC721MetadataModel,
   GRC721Model,
@@ -45,6 +46,14 @@ export class TokenService {
     const tokenMetaInfos = await this.tokenRepository.fetchTokenMetainfos();
     this.tokenMetaInfos = tokenMetaInfos;
     return this.tokenMetaInfos;
+  }
+
+  /**
+   * GRC20 `routes` for the current network, keyed by registry key. Not cached
+   * here; the caller caches it.
+   */
+  public async fetchGrc20Routes(): Promise<Grc20RouteMap> {
+    return this.tokenRepository.fetchGrc20Routes();
   }
 
   /**
@@ -172,16 +181,14 @@ export class TokenService {
    * @param accountId
    * @returns
    */
-  public async getTokenMetainfosByAccountId(
-    accountId: string,
-  ): Promise<
+  public async getTokenMetainfosByAccountId(accountId: string): Promise<
     {
       image: string;
       main: boolean;
       tokenId: string;
       networkId: string;
       display: boolean;
-      type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens' | 'cosmos-native';
+      type: 'gno-native' | 'grc20' | 'cosmos-native';
       name: string;
       symbol: string;
       decimals: number;
