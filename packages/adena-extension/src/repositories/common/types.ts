@@ -1,5 +1,6 @@
 import {
   GRC20TokenModel,
+  Grc20RouteMap,
   GRC721CollectionModel,
   GRC721MetadataModel,
   GRC721Model,
@@ -15,6 +16,7 @@ export interface ITokenRepository extends IGRC721TokenRepository {
 
   setNetworkMetainfo: (networkMetainfo: NetworkMetainfo) => void;
   fetchTokenMetainfos: () => Promise<TokenModel[]>;
+  fetchGrc20Routes: () => Promise<Grc20RouteMap>;
   fetchAppInfos: () => Promise<AppInfoResponse[]>;
   fetchAllGRC20Tokens: () => Promise<GRC20TokenModel[]>;
   fetchGRC20Tokens: (params?: {

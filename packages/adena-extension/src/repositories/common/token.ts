@@ -6,8 +6,6 @@ import {
   AccountAsset,
   AccountAssetsResponse,
   GRC20TokenResponse,
-  IBCNativeTokenResponse,
-  IBCTokenResponse,
   NativeTokenResponse,
   TokenMetaResponse,
 } from './response/token-asset-response';
@@ -32,8 +30,7 @@ import {
   GRC721CollectionModel,
   GRC721MetadataModel,
   GRC721Model,
-  IBCNativeTokenModel,
-  IBCTokenModel,
+  Grc20RouteMap,
   NativeTokenModel,
   NetworkMetainfo,
   TokenModel,
@@ -146,12 +143,9 @@ export class TokenRepository implements ITokenRepository {
       return [];
     }
 
-    return Promise.all([
-      this.fetchNativeTokenAssets(),
-      this.fetchGRC20TokenAssets(),
-      // this.fetchIBCNativeTokenAssets(),
-      // this.fetchIBCTokenAssets(),
-    ]).then((data) => data.flat());
+    return Promise.all([this.fetchNativeTokenAssets(), this.fetchGRC20TokenAssets()]).then((data) =>
+      data.flat(),
+    );
   };
 
   public fetchAppInfos = async (): Promise<Array<AppInfoResponse>> => {
@@ -160,11 +154,9 @@ export class TokenRepository implements ITokenRepository {
   };
 
   public getAccountTokenMetainfos = async (accountId: string): Promise<TokenModel[]> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      {
-        [key in string]: TokenModel[];
-      }
-    >(LocalValueType.AccountTokenMetainfos);
+    const accountTokenMetainfos = await this.localStorage.getToObject<{
+      [key in string]: TokenModel[];
+    }>(LocalValueType.AccountTokenMetainfos);
 
     return (
       accountTokenMetainfos[accountId] ??
@@ -176,11 +168,9 @@ export class TokenRepository implements ITokenRepository {
     accountId: string,
     tokenMetainfos: TokenModel[],
   ): Promise<boolean> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      {
-        [key in string]: TokenModel[];
-      }
-    >(LocalValueType.AccountTokenMetainfos);
+    const accountTokenMetainfos = await this.localStorage.getToObject<{
+      [key in string]: TokenModel[];
+    }>(LocalValueType.AccountTokenMetainfos);
 
     const isUnique = function (token0: TokenModel, token1: TokenModel): boolean {
       return token0.tokenId === token1.tokenId && token0.networkId === token1.networkId;
@@ -203,11 +193,9 @@ export class TokenRepository implements ITokenRepository {
   };
 
   public deleteTokenMetainfos = async (accountId: string): Promise<boolean> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      {
-        [key in string]: TokenModel[];
-      }
-    >(LocalValueType.AccountTokenMetainfos);
+    const accountTokenMetainfos = await this.localStorage.getToObject<{
+      [key in string]: TokenModel[];
+    }>(LocalValueType.AccountTokenMetainfos);
 
     const changedAccountTokenMetainfos = {
       ...accountTokenMetainfos,
@@ -886,11 +874,9 @@ export class TokenRepository implements ITokenRepository {
     accountId: string,
     networkId: string,
   ): Promise<GRC721CollectionModel[]> {
-    const accountGRC721CollectionsMap = await this.localStorage.getToObject<
-      {
-        [key in string]: { [key in string]: GRC721CollectionModel[] };
-      }
-    >(LocalValueType.AccountGRC721Collections);
+    const accountGRC721CollectionsMap = await this.localStorage.getToObject<{
+      [key in string]: { [key in string]: GRC721CollectionModel[] };
+    }>(LocalValueType.AccountGRC721Collections);
 
     if (!accountGRC721CollectionsMap?.[accountId]?.[networkId]) {
       return [];
@@ -905,11 +891,9 @@ export class TokenRepository implements ITokenRepository {
     collections: GRC721CollectionModel[],
   ): Promise<boolean> {
     const accountGRC721CollectionsMap =
-      (await this.localStorage.getToObject<
-        {
-          [key in string]: { [key in string]: GRC721CollectionModel[] };
-        }
-      >(LocalValueType.AccountGRC721Collections)) || {};
+      (await this.localStorage.getToObject<{
+        [key in string]: { [key in string]: GRC721CollectionModel[] };
+      }>(LocalValueType.AccountGRC721Collections)) || {};
 
     const currentAccountCollections = accountGRC721CollectionsMap?.[accountId] || {};
 
@@ -928,11 +912,9 @@ export class TokenRepository implements ITokenRepository {
     accountId: string,
     networkId: string,
   ): Promise<string[]> {
-    const accountGRC721PinnedPackagesMap = await this.localStorage.getToObject<
-      {
-        [key in string]: { [key in string]: string[] };
-      }
-    >(LocalValueType.AccountGRC721PinnedPackages);
+    const accountGRC721PinnedPackagesMap = await this.localStorage.getToObject<{
+      [key in string]: { [key in string]: string[] };
+    }>(LocalValueType.AccountGRC721PinnedPackages);
 
     if (!accountGRC721PinnedPackagesMap?.[accountId]?.[networkId]) {
       return [];
@@ -947,11 +929,9 @@ export class TokenRepository implements ITokenRepository {
     packagePaths: string[],
   ): Promise<boolean> {
     const accountGRC721PinnedPackagesMap =
-      (await this.localStorage.getToObject<
-        {
-          [key in string]: { [key in string]: string[] };
-        }
-      >(LocalValueType.AccountGRC721PinnedPackages)) || {};
+      (await this.localStorage.getToObject<{
+        [key in string]: { [key in string]: string[] };
+      }>(LocalValueType.AccountGRC721PinnedPackages)) || {};
 
     const currentAccountPinnedPackages = accountGRC721PinnedPackagesMap?.[accountId] || {};
 
@@ -985,22 +965,21 @@ export class TokenRepository implements ITokenRepository {
       .catch(() => []);
   };
 
-  private fetchIBCNativeTokenAssets = async (): Promise<IBCNativeTokenModel[]> => {
-    const requestUri =
-      TokenRepository.GNO_TOKEN_RESOURCE_URI + `/ibc-native/${this.networkId}.json`;
-    return this.networkInstance
-      .get<IBCNativeTokenResponse>(requestUri)
-      .then((response) => TokenMapper.fromIBCNativeMetainfos(this.networkId, response.data))
-      .catch(() => []);
-  };
+  /**
+   * GRC20 `routes` for this network, keyed by registry key. Kept out of the
+   * stored token model on purpose: metainfos are persisted per account and can
+   * predate this field. A token absent here falls back to MsgRun.
+   */
+  public fetchGrc20Routes = async (): Promise<Grc20RouteMap> => {
+    if (!this.networkId) {
+      return {};
+    }
 
-  private fetchIBCTokenAssets = async (): Promise<IBCTokenModel[]> => {
-    const requestUri =
-      TokenRepository.GNO_TOKEN_RESOURCE_URI + `/ibc-tokens/${this.networkId}.json`;
+    const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + `/grc20/${this.networkId}.json`;
     return this.networkInstance
-      .get<IBCTokenResponse>(requestUri)
-      .then((response) => TokenMapper.fromIBCTokenMetainfos(this.networkId, response.data))
-      .catch(() => []);
+      .get<GRC20TokenResponse>(requestUri)
+      .then((response) => TokenMapper.toGrc20RouteMap(response.data))
+      .catch(() => ({}));
   };
 
   private async fetchGRC721CollectionQueryFiles(
