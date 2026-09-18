@@ -9,7 +9,6 @@
     "networkName": "Mainnet",
     "addressPrefix": "g",
     "rpcUrl": "https://rpc.gno.land:443",
-    "fallbackRPCUrl": "https://rpc.onbloc.xyz:443",
     "indexerUrl": "https://indexer.onbloc.xyz",
     "gnoUrl": "https://gno.land",
     "apiUrl": "https://api.onbloc.xyz",
