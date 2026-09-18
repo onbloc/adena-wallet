@@ -1,7 +1,6 @@
 import { WalletResponseFailureType, WalletResponseSuccessType } from '@adena-wallet/sdk';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { GnoDocumentInfo } from '@common/provider/gno';
-import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { isInterRealmParameter } from '@common/provider/gno/utils';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { clearAutoLockAlarm, resetAutoLockAlarm } from '@common/utils/auto-lock-timer';
@@ -26,6 +25,7 @@ import {
   parseGnoMessageInfo,
 } from './methods/gno-connect';
 import { describeLoopbackRejection, showGnoConnectNotice } from './methods/gno-connect-notice';
+import type { FetchRealmDocumentMessage } from './methods/gno-realm-document';
 
 export class CommandHandler {
   public static createHandler = async (
@@ -193,8 +193,11 @@ export class CommandHandler {
       return;
     }
 
-    const gnoProvider = new GnoProvider(gnoConnectInfo.rpc, gnoConnectInfo.chainId);
-    const realmDocument = await gnoProvider.getRealmDocument(gnoMessageInfo.packagePath);
+    const realmDocument = await fetchRealmDocument({
+      rpc: gnoConnectInfo.rpc,
+      chainId: gnoConnectInfo.chainId,
+      packagePath: gnoMessageInfo.packagePath,
+    });
     if (!realmDocument) {
       console.info('Realm document not found');
       return;
@@ -213,6 +216,35 @@ export class CommandHandler {
       console.info(error);
     }
   };
+}
+
+/**
+ * Ask the background for the realm document. Content scripts must not fetch the
+ * RPC endpoint directly: Firefox runs them under an expanded principal, so their
+ * requests are subject to the page's CSP as well, and gnoweb pages ship a
+ * restrictive `connect-src` that excludes the RPC host - which silently killed
+ * TxLinks there. The background performs the request instead (extension CSP:
+ * `connect-src https: ...`).
+ */
+function fetchRealmDocument(params: {
+  rpc: string;
+  chainId: string;
+  packagePath: string;
+}): Promise<GnoDocumentInfo | null> {
+  return new Promise((resolve) => {
+    const message: FetchRealmDocumentMessage = { type: 'FETCH_REALM_DOCUMENT', data: params };
+    chrome.runtime.sendMessage(
+      message,
+      (response?: { document?: GnoDocumentInfo | null } | null) => {
+        if (chrome.runtime.lastError) {
+          console.info(chrome.runtime.lastError.message);
+          resolve(null);
+          return;
+        }
+        resolve(response?.document ?? null);
+      },
+    );
+  });
 }
 
 function makeSuccessResponse(message: CommandMessageData, data: any = null): CommandMessageData {

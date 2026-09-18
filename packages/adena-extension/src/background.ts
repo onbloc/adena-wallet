@@ -20,6 +20,10 @@ import {
   isTransactionNotification,
   parseTransactionScannerUrl,
 } from '@inject/message/methods/transaction-event';
+import {
+  handleFetchRealmDocument,
+  isFetchRealmDocumentMessage,
+} from '@inject/message/methods/gno-realm-document';
 import { InjectionMessage, MessageHandler } from './inject/message';
 
 const inMemoryProvider = new MemoryProvider();
@@ -428,6 +432,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (isGetAllGnoSessionsMessage(message)) {
     const sessions = handleGetAllGnoSessions();
     sendResponse(sessions);
+    return true;
+  }
+
+  // Fetch realm documents on behalf of content scripts. Firefox subjects
+  // content-script fetches to the page's CSP (expanded principal), and gnoweb's
+  // connect-src blocks the RPC request there, which broke TxLinks.
+  if (isFetchRealmDocumentMessage(message)) {
+    handleFetchRealmDocument(message).then(sendResponse).catch(console.warn);
     return true;
   }
 

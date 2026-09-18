@@ -87,6 +87,18 @@ icon set and the version from `packages/adena-extension/package.json` (so
   support is unavailable.
 - Popup header screens label `moz-extension` request origins as `moz-extension` (the
   fallback label previously said `chrome-extension` everywhere).
+- **TxLink realm-document fetch is relayed through the background.** Firefox runs content
+  scripts under an *expanded principal* (page + extension), so their `fetch()` calls are
+  subject to the **page's CSP** in addition to the extension's. Gnoweb pages ship a
+  restrictive `connect-src` that does not include the RPC host, so the realm-document
+  query backing a TxLink was blocked with
+  `Content-Security-Policy: The page's settings blocked the loading of a resource (connect-src) …`
+  and clicking a TxLink died silently — no dialog, no navigation. `command-handler.ts`
+  now requests the document from the background (`FETCH_REALM_DOCUMENT`, handled in
+  `background.ts` through `inject/message/methods/gno-realm-document.ts`); the background
+  is bound only by the extension CSP (`connect-src 'self' https: http://127.0.0.1:26657`).
+  Chrome does not apply the page CSP to content scripts, which is why the same flow kept
+  working there.
 
 ## Known limitations on Firefox
 
