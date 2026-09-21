@@ -54,3 +54,10 @@ export const MainTokenBalanceWrapper = styled(View).withConfig({
     line-height: 39px !important;
   }
 `;
+
+// Hugs the rendered figure so the vesting popover only opens when the pointer
+// is actually over the balance, not over the wrapper's empty trailing space.
+export const MainTokenBalanceHoverAnchor = styled.span`
+  display: inline-flex;
+  width: fit-content;
+`;

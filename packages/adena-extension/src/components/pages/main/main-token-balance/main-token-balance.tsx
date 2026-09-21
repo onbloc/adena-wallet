@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { TokenBalance } from '@components/molecules';
 import {
+  MainTokenBalanceHoverAnchor,
   MainTokenBalanceSkeleton,
   MainTokenBalanceWrapper,
 } from './main-token-balance.styles';
@@ -11,9 +12,20 @@ export interface MainTokenBalanceProps {
     denom: string;
   };
   loading?: boolean;
+  // Hover target for the vesting popover. It hugs the rendered figure rather
+  // than the 80px-tall wrapper, so the popover only opens over the number.
+  hoverAnchorRef?: React.Ref<HTMLSpanElement>;
+  onHoverEnter?: () => void;
+  onHoverLeave?: () => void;
 }
 
-const MainTokenBalance: React.FC<MainTokenBalanceProps> = ({ amount, loading = false }) => {
+const MainTokenBalance: React.FC<MainTokenBalanceProps> = ({
+  amount,
+  loading = false,
+  hoverAnchorRef,
+  onHoverEnter,
+  onHoverLeave,
+}) => {
   const { value, denom } = amount;
   const wrapperRef = useRef<HTMLDivElement>(null);
   const cloneRef = useRef<HTMLDivElement>(null);
@@ -56,15 +68,21 @@ const MainTokenBalance: React.FC<MainTokenBalanceProps> = ({ amount, loading = f
               lineHeight='39px'
             />
           </div>
-          <TokenBalance
-            value={value}
-            denom={denom}
-            orientation='HORIZONTAL'
-            fontColor='white'
-            fontStyleKey='header2'
-            minimumFontSize='24px'
-            lineHeight='39px'
-          />
+          <MainTokenBalanceHoverAnchor
+            ref={hoverAnchorRef}
+            onMouseEnter={onHoverEnter}
+            onMouseLeave={onHoverLeave}
+          >
+            <TokenBalance
+              value={value}
+              denom={denom}
+              orientation='HORIZONTAL'
+              fontColor='white'
+              fontStyleKey='header2'
+              minimumFontSize='24px'
+              lineHeight='39px'
+            />
+          </MainTokenBalanceHoverAnchor>
         </>
       )}
     </MainTokenBalanceWrapper>

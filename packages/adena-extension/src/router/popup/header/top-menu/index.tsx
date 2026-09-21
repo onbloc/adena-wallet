@@ -23,6 +23,7 @@ import { useAccountName } from '@hooks/use-account-name';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useHoverPopover } from '@hooks/use-hover-popover';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useSessions } from '@hooks/use-sessions';
@@ -32,8 +33,6 @@ import UnresponsiveNetworksIndicator from '@router/popup/header/unresponsive-net
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
-
-import { useHoverPopover } from './use-hover-popover';
 
 const Wrapper = styled.div`
   width: 100%;

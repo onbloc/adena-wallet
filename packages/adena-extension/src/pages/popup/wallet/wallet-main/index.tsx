@@ -1,6 +1,6 @@
 import { isAirgapAccount, isMultisigAccount, isSessionAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import styled from 'styled-components';
 
@@ -13,15 +13,18 @@ import { MainActionButton, OfflineBanner } from '@components/atoms';
 import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
 import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
+import { MainVestingPopover } from '@components/pages/main/main-vesting-popover';
 import TokenList, { TokenListItemState } from '@components/pages/wallet-main/token-list/token-list';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useHoverPopover } from '@hooks/use-hover-popover';
 import { useLoadImages } from '@hooks/use-load-images';
 import { useNetwork } from '@hooks/use-network';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useIsCurrentSessionRevoked } from '@hooks/wallet/use-current-session-revoked';
+import { useVestingInfo } from '@hooks/wallet/use-vesting-info';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { revokedDimStyle } from '@styles/session-revoked';
@@ -33,6 +36,14 @@ import { RoutePath } from '@types';
 // this is only the safety net for a token arriving while the wallet sits open.
 const TOKEN_DISCOVERY_INTERVAL = 60_000;
 const ROW_COUNT_CACHE_KEY = 'walletMain.tokenRowCount';
+// Keep in sync with PopoverWrapper's width in main-vesting-popover.styles.ts:
+// the caret offset is measured against the popover's own left edge.
+const VESTING_POPOVER_WIDTH = 280;
+// Clears the caret so it does not overlap the balance's descenders.
+const VESTING_POPOVER_GAP = 16;
+// Keeps the caret clear of the popover's rounded corners when the balance is
+// short enough that its centre sits near the popover's edge.
+const VESTING_CARET_MIN_INSET = 16;
 
 // Read the last known visible token row count synchronously so the first
 // frame can reserve N placeholder rows. This keeps the list height stable
@@ -135,6 +146,45 @@ export const WalletMain = (): JSX.Element => {
   );
 
   const { addLoadingImages, completeImageLoading } = useLoadImages();
+
+  // Only accounts that actually carry a vesting grant get the hover affordance;
+  // for every other account `vestingInfo` stays null and nothing changes.
+  const { vestingInfo } = useVestingInfo();
+  const vestingPopover = useHoverPopover<HTMLSpanElement>();
+  const [vestingPosition, setVestingPosition] = useState({ caretX: 0, y: 0 });
+  const { setOpen: setVestingPopoverOpen } = vestingPopover;
+
+  const onVestingAnchorMouseEnter = useCallback(() => {
+    if (!vestingInfo) {
+      return;
+    }
+
+    vestingPopover.cancelClose();
+
+    const anchor = vestingPopover.anchorRef.current;
+    if (anchor) {
+      const rect = anchor.getBoundingClientRect();
+      const anchorCenterX = rect.left + rect.width / 2;
+      // The popover is centered on screen (left: 50% + translateX(-50%)), so the
+      // caret offset is measured from the popover's own left edge.
+      const popoverLeft = (window.innerWidth - VESTING_POPOVER_WIDTH) / 2;
+      const caretX = Math.min(
+        VESTING_POPOVER_WIDTH - VESTING_CARET_MIN_INSET,
+        Math.max(VESTING_CARET_MIN_INSET, anchorCenterX - popoverLeft),
+      );
+      setVestingPosition({ caretX, y: rect.bottom + VESTING_POPOVER_GAP });
+    }
+
+    vestingPopover.setOpen(true);
+  }, [vestingInfo, vestingPopover]);
+
+  // Switching to an account without a grant while the popover is open would
+  // otherwise leave it stranded on screen.
+  useEffect(() => {
+    if (!vestingInfo) {
+      setVestingPopoverOpen(false);
+    }
+  }, [vestingInfo, setVestingPopoverOpen]);
 
   // Captured once on first render — never updates so the placeholder count
   // can't shift while metainfos hydrate.
@@ -315,7 +365,21 @@ export const WalletMain = (): JSX.Element => {
             denom: mainTokenBalance === null ? '' : mainTokenBalance.denom,
           }}
           loading={isMainBalanceLoading}
+          hoverAnchorRef={vestingPopover.anchorRef}
+          onHoverEnter={onVestingAnchorMouseEnter}
+          onHoverLeave={vestingPopover.onAnchorMouseLeave}
         />
+        {vestingInfo && (
+          <MainVestingPopover
+            open={vestingPopover.open}
+            positionX={vestingPosition.caretX}
+            positionY={vestingPosition.y}
+            schedule={vestingInfo.schedule}
+            coins={vestingInfo.coins}
+            onMouseEnter={vestingPopover.onPopoverMouseEnter}
+            onMouseLeave={vestingPopover.onPopoverMouseLeave}
+          />
+        )}
       </div>
 
       <div className='main-button-wrapper'>
