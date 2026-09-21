@@ -143,3 +143,7 @@ Firefox 156 (Ubuntu snap, headless) and Chromium 152 against the built dist:
   and the tab stays open — the reported dead button; after `closeCurrentSurface()` the
   tab closes on Start. The same `window.close()` *does* close the tab in Chromium
   (verified over CDP against the Chrome dist), which is why the breakage is Firefox-only.
+- The add-wallet landing screen was inspected with the rebuilt add-on in a fresh profile:
+  the "Hardware Wallets" entry renders disabled with "Hardware wallets like Ledger are
+  not supported in Firefox." and clicking it does not navigate, while "Standard Wallets"
+  and "Advanced Setup" stay enabled.
