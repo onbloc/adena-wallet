@@ -1,4 +1,5 @@
 import {
+  canHandleGnoConnectOrigin,
   getLoopbackGnoConnectChainId,
   GnoMessageInfo,
   isAllowedGnoConnectOrigin,
@@ -264,6 +265,35 @@ describe('isAllowedGnoConnectOrigin', () => {
   it('never statically trusts loopback origins', () => {
     expect(isAllowedGnoConnectOrigin('http://127.0.0.1:8888')).toBe(false);
     expect(isAllowedGnoConnectOrigin('http://localhost:8888')).toBe(false);
+  });
+});
+
+describe('canHandleGnoConnectOrigin', () => {
+  it('handles the origins chains.json declares over https', () => {
+    expect(canHandleGnoConnectOrigin('https://gno.land')).toBe(true);
+    expect(canHandleGnoConnectOrigin('https://staging.gno.land')).toBe(true);
+  });
+
+  it('handles loopback origins, whose trust is decided later at runtime', () => {
+    expect(canHandleGnoConnectOrigin('http://127.0.0.1:8888')).toBe(true);
+  });
+
+  it('never handles an origin no bundled chain declares', () => {
+    // Retiring a chain from chains.json (as upstream did for pearl-1) drops its
+    // gnoUrl from the allowlist. Anchors and forms on such an origin must fall
+    // through to the page instead of being swallowed by an interceptor that has
+    // nothing to do with the click.
+    expect(canHandleGnoConnectOrigin('https://example.com')).toBe(false);
+    expect(canHandleGnoConnectOrigin('https://pearl.testnets.gno.land')).toBe(false);
+    expect(canHandleGnoConnectOrigin('http://127.0.0.1:9999')).toBe(false);
+    expect(canHandleGnoConnectOrigin('')).toBe(false);
+  });
+
+  it('agrees with isAllowedGnoConnectOrigin for every remote origin it handles', () => {
+    const remoteHandled = ['https://gno.land', 'https://staging.gno.land', 'https://example.com'];
+    remoteHandled.forEach((origin) => {
+      expect(canHandleGnoConnectOrigin(origin)).toBe(isAllowedGnoConnectOrigin(origin));
+    });
   });
 });
 

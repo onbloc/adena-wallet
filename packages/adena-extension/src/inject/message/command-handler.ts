@@ -15,12 +15,12 @@ import {
 } from './commands/encrypt';
 import { clearPopup } from './commands/popup';
 import {
+  canHandleGnoConnectOrigin,
   getLoopbackGnoConnectChainId,
   getLoopbackGnoConnectRejection,
   GnoArgumentInfo,
   GnoConnectInfo,
   GnoMessageInfo,
-  isAllowedGnoConnectOrigin,
   parseGnoConnectInfo,
   parseGnoMessageInfo,
 } from './methods/gno-connect';
@@ -122,7 +122,9 @@ export class CommandHandler {
     // wallet's active network is the one that declares this origin.
     const loopbackChainId = getLoopbackGnoConnectChainId(currentOrigin);
     const isLoopbackOrigin = loopbackChainId !== null;
-    if (!isAllowedGnoConnectOrigin(currentOrigin) && !isLoopbackOrigin) {
+    // Same helper the interceptors consult before swallowing a click/submit, so
+    // "we handle this origin" has exactly one definition.
+    if (!canHandleGnoConnectOrigin(currentOrigin)) {
       return;
     }
 

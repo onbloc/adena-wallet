@@ -374,6 +374,23 @@ export function isAllowedGnoConnectOrigin(origin: string): boolean {
 }
 
 /**
+ * Whether Adena may act on a gnoconnect surface at this origin at all.
+ *
+ * Loopback origins are included: their runtime trust decision (meta chainId vs
+ * the wallet's active network) happens later in CommandHandler and always ends
+ * with a user-visible notice, so the origin itself is "handled".
+ *
+ * Callers that swallow the browser's default behaviour (the anchor and form
+ * interceptors) MUST consult this first: for an origin Adena will never act on,
+ * the page's own navigation is strictly more useful than a click that does
+ * nothing. The gate in CommandHandler stays authoritative — this is only the
+ * pre-flight answer the interceptors need before deciding to preventDefault.
+ */
+export function canHandleGnoConnectOrigin(origin: string): boolean {
+  return isAllowedGnoConnectOrigin(origin) || getLoopbackGnoConnectChainId(origin) !== null;
+}
+
+/**
  * For a loopback gno origin (e.g. a local dev node), returns the chainId it is
  * permitted to act as, per chains.json, or null if the origin is not a known
  * loopback gno origin. Callers MUST additionally verify this chainId is the
