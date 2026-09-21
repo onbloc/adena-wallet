@@ -1,8 +1,12 @@
-import { AdenaLedgerConnector, Document, isLedgerAccount } from 'adena-module';
+import { AdenaLedgerConnector, Document, isLedgerAccount, LedgerError } from 'adena-module';
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import { WalletResponseRejectType, WalletResponseSuccessType } from '@adena-wallet/sdk';
+import {
+  WalletResponseFailureType,
+  WalletResponseRejectType,
+  WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
 import { ApproveLedgerLoading } from '@components/molecules';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -66,6 +70,18 @@ const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
         return true;
       })
       .catch((error: Error) => {
+        // A device holding a different seed never succeeds on retry, so answer
+        // the request instead of re-prompting the device every second.
+        if (error instanceof LedgerError && error.kind === 'AccountMismatch') {
+          chrome.runtime.sendMessage(
+            InjectionMessageInstance.failure(
+              WalletResponseFailureType.ACCOUNT_MISMATCH,
+              {},
+              requestData?.key,
+            ),
+          );
+          return true;
+        }
         if (error.message === 'Transaction signing request was rejected by the user') {
           chrome.runtime.sendMessage(
             InjectionMessageInstance.failure(

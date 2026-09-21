@@ -1,3 +1,4 @@
+import { Slip10RawIndex } from '@cosmjs/crypto';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
 import { generateHDPath } from '@gnolang/tm2-js-client';
 
@@ -76,5 +77,65 @@ describe('LedgerKeyring.signRaw', () => {
     const keyring = await attachConnector(sign);
 
     await expect(keyring.signRaw(BYTES)).rejects.toBe(original);
+  });
+});
+
+describe('LedgerKeyring.assertPublicKey', () => {
+  const PUBLIC_KEY = new Uint8Array(33).fill(0x02);
+
+  function attachPubkeyConnector(getPubkey: jest.Mock): LedgerKeyring {
+    const keyring = new LedgerKeyring({});
+    keyring.setConnector({ sign: jest.fn(), getPubkey } as unknown as LedgerConnector);
+    return keyring;
+  }
+
+  it('resolves when the connected device derives the account public key', async () => {
+    const getPubkey = jest.fn().mockResolvedValue(Uint8Array.from(PUBLIC_KEY));
+    const keyring = attachPubkeyConnector(getPubkey);
+
+    await expect(keyring.assertPublicKey(PUBLIC_KEY, 1)).resolves.toBeUndefined();
+    expect(getPubkey.mock.calls[0][0]).toEqual(generateHDPath(1));
+  });
+
+  it('derives at the full account/change path', async () => {
+    const getPubkey = jest.fn().mockResolvedValue(Uint8Array.from(PUBLIC_KEY));
+    const keyring = attachPubkeyConnector(getPubkey);
+
+    await keyring.assertPublicKey(PUBLIC_KEY, { account: 1, change: 0, addressIndex: 2 });
+
+    expect(getPubkey.mock.calls[0][0]).toEqual([
+      Slip10RawIndex.hardened(44),
+      Slip10RawIndex.hardened(118),
+      Slip10RawIndex.hardened(1),
+      Slip10RawIndex.normal(0),
+      Slip10RawIndex.normal(2),
+    ]);
+  });
+
+  it('throws LedgerError(AccountMismatch) when another device is connected', async () => {
+    const getPubkey = jest.fn().mockResolvedValue(new Uint8Array(33).fill(0x03));
+    const keyring = attachPubkeyConnector(getPubkey);
+
+    await expect(keyring.assertPublicKey(PUBLIC_KEY)).rejects.toMatchObject({
+      name: 'LedgerError',
+      kind: 'AccountMismatch',
+    });
+  });
+
+  it('classifies connector failures like the signing path', async () => {
+    const getPubkey = jest.fn().mockRejectedValue({ return_code: 0x6b0c, error_message: 'locked' });
+    const keyring = attachPubkeyConnector(getPubkey);
+
+    await expect(keyring.assertPublicKey(PUBLIC_KEY)).rejects.toMatchObject({
+      kind: 'DeviceLocked',
+    });
+  });
+
+  it('throws LedgerError(TransportFailed) when the connector is not attached', async () => {
+    const keyring = new LedgerKeyring({});
+
+    await expect(keyring.assertPublicKey(PUBLIC_KEY)).rejects.toMatchObject({
+      kind: 'TransportFailed',
+    });
   });
 });
