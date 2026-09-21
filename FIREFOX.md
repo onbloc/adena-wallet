@@ -99,6 +99,16 @@ icon set and the version from `packages/adena-extension/package.json` (so
   is bound only by the extension CSP (`connect-src 'self' https: http://127.0.0.1:26657`).
   Chrome does not apply the page CSP to content scripts, which is why the same flow kept
   working there.
+- **Web pages dismiss their own tab through `closeCurrentSurface()`.**
+  `window.close()` only works for surfaces a script opened (popup windows, the toolbar
+  popup panel). Firefox refuses it for tabs even when the extension created the tab
+  itself — it logs `Scripts may only close windows that were opened by a script.` and
+  the tab stays open (Chrome does allow closing a tab with no session history), so the
+  onboarding "Start" button, the locked-wallet guard on `register.html`, "Account
+  Added!" and the wallet-export Done button silently did nothing. The helper
+  (`common/utils/browser-utils.ts`) keeps `window.close()` and, if the document is
+  still alive 100 ms later, removes its own tab via `chrome.tabs.getCurrent` +
+  `chrome.tabs.remove` (guarded so it can only ever close this very page).
 
 ## Known limitations on Firefox
 
@@ -124,3 +134,10 @@ Firefox 156 (Ubuntu snap, headless) and Chromium 152 against the built dist:
 - A local test page confirms: content script runs, `inject.js` is injected, `window.adena`
   exists in the page, and a full `window.adena.GetAccount()` call round-trips through
   content script → background and returns a wallet response.
+- The onboarding flow was driven end to end in headless Firefox (temporary add-on →
+  import a seed phrase → questionnaire → password → "You're All Set!" → Start). In the
+  `register.html` tab the raw `window.close()` is refused with
+  `Scripts may only close windows that were opened by a script.` (DOM Window pageError)
+  and the tab stays open — the reported dead button; after `closeCurrentSurface()` the
+  tab closes on Start. The same `window.close()` *does* close the tab in Chromium
+  (verified over CDP against the Chrome dist), which is why the breakage is Firefox-only.

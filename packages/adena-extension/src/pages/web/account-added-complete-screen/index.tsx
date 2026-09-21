@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 
+import { closeCurrentSurface } from '@common/utils/browser-utils';
 import { WebMain, View, WebButton } from '@components/atoms';
 
 import AnimationAddAccount from '@assets/web/lottie/account-added.json';
@@ -14,7 +15,7 @@ const StyledContainer = styled(View)`
 
 const AccountAddedCompleteScreen = (): JSX.Element => {
   const onClickDoneButton = async (): Promise<void> => {
-    window.close();
+    closeCurrentSurface();
   };
 
   return (
