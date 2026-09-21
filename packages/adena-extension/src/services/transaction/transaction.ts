@@ -293,8 +293,13 @@ export class TransactionService {
   ): Promise<{ signed: Tx; signature: EncodeTxSignature[] }> => {
     const provider = this.getGnoProvider();
     const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
+    await keyring.assertPublicKey(account.publicKey, account.derivationPath);
     const signingDocument = await this.refreshGnoSigningDocument(account, document);
-    const { signed, signature } = await keyring.sign(provider, signingDocument, account.hdPath);
+    const { signed, signature } = await keyring.sign(
+      provider,
+      signingDocument,
+      account.derivationPath,
+    );
     const encodedSignature = signature.map((s) => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
@@ -502,8 +507,9 @@ export class TransactionService {
     signDoc: StdSignDoc,
   ): Promise<AminoSignResponse> => {
     const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
+    await keyring.assertPublicKey(account.publicKey, account.derivationPath);
     const signBytes = serializeSignDoc(signDoc);
-    const signature = await keyring.signRaw(signBytes, { hdPath: account.hdPath });
+    const signature = await keyring.signRaw(signBytes, { hdPath: account.derivationPath });
     return {
       signed: signDoc,
       signature: {
@@ -533,11 +539,12 @@ export class TransactionService {
     // anyway, so AMINO is the only mode that produces a usable display
     // for Ledger users.
     const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
+    await keyring.assertPublicKey(account.publicKey, account.derivationPath);
     return signCosmosAmino({
       document,
       keyring,
       cosmosProvider: this.cosmosProvider,
-      hdPath: account.hdPath,
+      hdPath: account.derivationPath,
     });
   };
 

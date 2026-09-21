@@ -2,6 +2,7 @@ export type LedgerErrorKind =
   | 'DeviceLocked'
   | 'AppNotOpen'
   | 'UserRejected'
+  | 'AccountMismatch'
   | 'Timeout'
   | 'TransportFailed'
   | 'Unknown';

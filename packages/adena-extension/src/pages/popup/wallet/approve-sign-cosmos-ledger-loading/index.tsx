@@ -3,7 +3,7 @@ import {
   WalletResponseRejectType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
-import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
+import { AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { ApproveLedgerLoading } from '@components/molecules';
@@ -107,6 +107,21 @@ const ApproveSignCosmosLedgerLoadingContainer: React.FC = () => {
             responseKey,
             undefined,
             WalletResponseRejectType.SIGN_REJECTED,
+          ),
+        );
+        window.close();
+        return true;
+      }
+      // A device holding a different seed never succeeds on retry, so answer
+      // the request instead of re-prompting the device every second.
+      if (error instanceof LedgerError && error.kind === 'AccountMismatch') {
+        chrome.runtime.sendMessage(
+          createCosmosResponse(
+            CosmosResponseExecuteType.SIGN_COSMOS_AMINO,
+            'failure',
+            responseKey,
+            undefined,
+            WalletResponseFailureType.ACCOUNT_MISMATCH,
           ),
         );
         window.close();
