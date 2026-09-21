@@ -1,4 +1,4 @@
-import { closeCurrentSurface } from './browser-utils';
+import { closeCurrentSurface, isFirefox } from './browser-utils';
 
 type TabStub = { id?: number; url?: string };
 
@@ -71,5 +71,39 @@ describe('closeCurrentSurface', () => {
       closeCurrentSurface();
       jest.advanceTimersByTime(100);
     }).not.toThrow();
+  });
+});
+
+const setUserAgent = (value: string): void => {
+  Object.defineProperty(window.navigator, 'userAgent', { value, configurable: true });
+};
+
+describe('isFirefox', () => {
+  const originalUserAgent = window.navigator.userAgent;
+
+  afterEach(() => {
+    delete (globalThis as unknown as { browser?: unknown }).browser;
+    setUserAgent(originalUserAgent);
+  });
+
+  it('reports Firefox when the promise-based browser namespace is present', () => {
+    (globalThis as unknown as { browser: unknown }).browser = {};
+    setUserAgent('Mozilla/5.0 (X11; Linux x86_64) Chrome/151.0.0.0 Safari/537.36');
+
+    expect(isFirefox()).toBe(true);
+  });
+
+  it('reports Firefox from the user agent when extension APIs are unavailable', () => {
+    setUserAgent('Mozilla/5.0 (X11; Linux x86_64; rv:156.0) Gecko/20100101 Firefox/156.0');
+
+    expect(isFirefox()).toBe(true);
+  });
+
+  it('reports Chromium when neither signal is present', () => {
+    setUserAgent(
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36',
+    );
+
+    expect(isFirefox()).toBe(false);
   });
 });

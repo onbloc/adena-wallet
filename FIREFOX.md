@@ -113,7 +113,9 @@ icon set and the version from `packages/adena-extension/package.json` (so
 ## Known limitations on Firefox
 
 - **Ledger hardware wallets are unavailable.** Firefox implements neither WebHID nor
-  WebUSB, which the Ledger transport requires. All other wallet features (seed/Google
+  WebUSB, which the Ledger transport requires, so the "Hardware Wallets" entry on the
+  add-wallet landing screen is disabled there and says why (Chrome keeps it enabled).
+  All other wallet features (seed/Google
   accounts, dApp connect, signing, sessions, transfers) use standard extension APIs.
 - `web-ext lint` reports two `FILE_TOO_LARGE` errors because `popup.js` / `web.js`
   exceed the linter's JS parser size limit. This only stops the linter from reading

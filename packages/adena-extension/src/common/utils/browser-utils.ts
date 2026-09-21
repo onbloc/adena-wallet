@@ -35,6 +35,22 @@ export const isSeparatePopupWindow = (): boolean => {
 };
 
 /**
+ * Whether this build is running inside Firefox.
+ *
+ * Firefox is the only browser Adena targets that exposes the promise-based
+ * `browser` namespace (`chrome` is kept as an alias for compatibility);
+ * Chromium exposes `chrome` only. The user-agent check is the fallback for
+ * surfaces without extension APIs and for tests, which set it directly.
+ */
+export const isFirefox = (): boolean => {
+  if (typeof (globalThis as { browser?: unknown }).browser !== 'undefined') {
+    return true;
+  }
+
+  return typeof navigator !== 'undefined' && /firefox/i.test(navigator.userAgent);
+};
+
+/**
  * Closes the browser surface hosting this extension page.
  *
  * `window.close()` only covers surfaces a script opened: popup windows created
