@@ -42,6 +42,16 @@ describe('TokenListItemBalance Component', () => {
     expect(screen.getByLabelText('Failed to load balance')).not.toBeNull();
   });
 
+  it('leads with the USD value and demotes the balance when quoted', () => {
+    renderBalance({
+      amount: { value: '640,315.512321', denom: 'PHOTON' },
+      tokenValue: { usdValue: 2120252.239, change24h: 3.29 },
+    });
+
+    expect(screen.getByText('$2,120,252.23')).not.toBeNull();
+    expect(screen.getByText('640,315.512321 PHOTON')).not.toBeNull();
+  });
+
   it('prefers error over loading when both flags are set', () => {
     renderBalance({
       amount: { value: '', denom: '' },

@@ -23,3 +23,16 @@ export const Default: StoryObj<TokenListItemProps> = {
     onClickTokenItem: action('token item click'),
   },
 };
+
+export const WithPrice: StoryObj<TokenListItemProps> = {
+  args: {
+    token: {
+      ...token,
+      tokenValue: {
+        usdValue: 2120252.23,
+        change24h: 3.29,
+      },
+    },
+    onClickTokenItem: action('token item click'),
+  },
+};

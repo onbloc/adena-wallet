@@ -27,6 +27,7 @@ import {
 import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
 import GNO_CHAIN_DATA from '@resources/chains/chains.json';
 import { MultisigService } from '@services/multisig';
+import { TokenPriceService } from '@services/price';
 import { ChainService, TokenService } from '@services/resource';
 import {
   TransactionGasService,
@@ -73,6 +74,7 @@ export interface AdenaContextProps {
   transactionHistoryService: TransactionHistoryService;
   transactionGasService: TransactionGasService | null;
   multisigService: MultisigService;
+  tokenPriceService: TokenPriceService;
   sessionRepository: SessionRepository;
   walletSessionService: WalletSessionService;
 }
@@ -240,6 +242,9 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return new WalletSessionService(walletService, sessionRepository, gnoProvider, chainRegistry);
   }, [walletService, sessionRepository, gnoProvider, chainRegistry]);
 
+  // Chain-agnostic: holds no provider, never rebuilt on network change.
+  const tokenPriceService = useMemo(() => new TokenPriceService(), []);
+
   useWindowSize(true);
 
   return (
@@ -261,6 +266,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
         transactionHistoryService,
         transactionGasService,
         multisigService,
+        tokenPriceService,
         sessionRepository,
         walletSessionService,
       }}

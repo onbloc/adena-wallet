@@ -2,7 +2,7 @@ import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled, { css } from 'styled-components';
 
-export const TokenListItemWrapper = styled.div<{ $disabled?: boolean }>`
+export const TokenListItemWrapper = styled.div<{ $disabled?: boolean; $withPrice?: boolean }>`
   ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   padding: 13px;
   width: 100%;
@@ -58,4 +58,27 @@ export const TokenListItemWrapper = styled.div<{ $disabled?: boolean }>`
     align-items: flex-start;
     justify-content: flex-end;
   }
+
+  /* Priced rows stack two lines per side and match the icon's full height. */
+  ${({ $withPrice }): ReturnType<typeof css> | false =>
+    !!$withPrice &&
+    css`
+      .name-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: space-between;
+        height: 34px;
+
+        .name {
+          display: block;
+          ${fonts.body2Bold};
+          line-height: 15px;
+        }
+      }
+
+      .balance-wrapper {
+        height: 34px;
+        align-items: flex-end;
+      }
+    `}
 `;

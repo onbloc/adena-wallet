@@ -9,10 +9,17 @@ import IconDeposit from '@assets/icon-deposit';
 import IconSend from '@assets/icon-send';
 import IconSign from '@assets/icon-sign';
 import { CHAIN_ICON_MAP, COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
+import {
+  aggregateTokenValues,
+  getTokenPriceKey,
+  makeTokenValue,
+  PortfolioValue,
+} from '@common/utils/price-utils';
 import { MainActionButton, OfflineBanner } from '@components/atoms';
 import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
 import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
+import MainTotalPrice from '@components/pages/main/main-total-price/main-total-price';
 import TokenList, { TokenListItemState } from '@components/pages/wallet-main/token-list/token-list';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -21,11 +28,12 @@ import { useNetwork } from '@hooks/use-network';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import { useTokenPrices } from '@hooks/use-token-prices';
 import { useIsCurrentSessionRevoked } from '@hooks/wallet/use-current-session-revoked';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { revokedDimStyle } from '@styles/session-revoked';
-import { RoutePath } from '@types';
+import { MainToken, RoutePath, TokenPriceRequest, TokenValue } from '@types';
 
 // `updateAllTokenMetainfos` walks the account's full transfer history to find
 // tokens the wallet has never seen — expensive, and not a balance read. The
@@ -205,34 +213,63 @@ export const WalletMain = (): JSX.Element => {
     };
   }, [currentAccount?.id, currentNetwork.chainId]);
 
-  const tokens = useMemo(() => {
-    return currentBalances
-      .filter((tokenBalance) => tokenBalance.display)
-      .map((tokenBalance) => {
-        const isCosmos = tokenBalance.networkId !== currentNetwork.networkId;
-        const hasAmount = tokenBalance.amount.value !== '';
-        const parsed = hasAmount ? BigNumber(tokenBalance.amount.value) : null;
-        // Treat non-finite values as a load failure — a malformed balance
-        // string would otherwise stringify to "NaN" and leak into the row.
-        const displayValue = !parsed ? '' : parsed.isFinite() ? parsed.toFormat() : '-';
-        return {
-          tokenId: tokenBalance.tokenId,
-          logo:
-            getTokenImage(tokenBalance) ||
-            COSMOS_TOKEN_ICON_MAP[tokenBalance.tokenId] ||
-            `${UnknownTokenIcon}`,
-          name: tokenBalance.name,
-          balanceAmount: {
-            value: displayValue,
-            // When fetch errored the row's amount is EMPTY_AMOUNT (denom='').
-            // Fall back to the token's own symbol so the error state can read
-            // "⚠ - ATONE" instead of dropping the unit entirely.
-            denom: tokenBalance.amount.denom || tokenBalance.symbol,
-          },
-          chainIconUrl: isCosmos ? CHAIN_ICON_MAP[tokenBalance.networkId] : undefined,
-        };
-      });
-  }, [currentBalances, getTokenImage, currentNetwork]);
+  const displayedBalances = useMemo(
+    () => currentBalances.filter((tokenBalance) => tokenBalance.display),
+    [currentBalances],
+  );
+
+  // Only rows on screen are quoted; hidden tokens are not part of the total.
+  const priceRequests = useMemo<TokenPriceRequest[]>(
+    () =>
+      displayedBalances.map(({ tokenId, networkId, symbol }) => ({ tokenId, networkId, symbol })),
+    [displayedBalances],
+  );
+
+  const { tokenPrices } = useTokenPrices(priceRequests);
+
+  const tokens = useMemo<MainToken[]>(() => {
+    return displayedBalances.map((tokenBalance) => {
+      const isCosmos = tokenBalance.networkId !== currentNetwork.networkId;
+      const hasAmount = tokenBalance.amount.value !== '';
+      const parsed = hasAmount ? BigNumber(tokenBalance.amount.value) : null;
+      // Treat non-finite values as a load failure — a malformed balance
+      // string would otherwise stringify to "NaN" and leak into the row.
+      const displayValue = !parsed ? '' : parsed.isFinite() ? parsed.toFormat() : '-';
+      // No usable balance means no USD value either.
+      const tokenValue = parsed?.isFinite()
+        ? makeTokenValue(
+            displayValue,
+            tokenPrices[getTokenPriceKey(tokenBalance.tokenId, tokenBalance.networkId)],
+          )
+        : null;
+      return {
+        tokenId: tokenBalance.tokenId,
+        logo:
+          getTokenImage(tokenBalance) ||
+          COSMOS_TOKEN_ICON_MAP[tokenBalance.tokenId] ||
+          `${UnknownTokenIcon}`,
+        name: tokenBalance.name,
+        balanceAmount: {
+          value: displayValue,
+          // When fetch errored the row's amount is EMPTY_AMOUNT (denom='').
+          // Fall back to the token's own symbol so the error state can read
+          // "⚠ - ATONE" instead of dropping the unit entirely.
+          denom: tokenBalance.amount.denom || tokenBalance.symbol,
+        },
+        chainIconUrl: isCosmos ? CHAIN_ICON_MAP[tokenBalance.networkId] : undefined,
+        tokenValue,
+      };
+    });
+  }, [displayedBalances, tokenPrices, getTokenImage, currentNetwork]);
+
+  // Null when nothing on screen is quoted: keep the native-balance headline.
+  const portfolioValue = useMemo<PortfolioValue | null>(() => {
+    const values = tokens
+      .map((token) => token.tokenValue)
+      .filter((tokenValue): tokenValue is TokenValue => !!tokenValue);
+
+    return values.length === 0 ? null : aggregateTokenValues(values);
+  }, [tokens]);
 
   const itemStateByTokenId = useMemo<Record<string, TokenListItemState>>(() => {
     const map: Record<string, TokenListItemState> = {};
@@ -309,13 +346,17 @@ export const WalletMain = (): JSX.Element => {
         />
       </div>
       <div className='token-balance-wrapper'>
-        <MainTokenBalance
-          amount={{
-            value: mainBalanceValue,
-            denom: mainTokenBalance === null ? '' : mainTokenBalance.denom,
-          }}
-          loading={isMainBalanceLoading}
-        />
+        {portfolioValue ? (
+          <MainTotalPrice value={portfolioValue} loading={isMainBalanceLoading} />
+        ) : (
+          <MainTokenBalance
+            amount={{
+              value: mainBalanceValue,
+              denom: mainTokenBalance === null ? '' : mainTokenBalance.denom,
+            }}
+            loading={isMainBalanceLoading}
+          />
+        )}
       </div>
 
       <div className='main-button-wrapper'>
