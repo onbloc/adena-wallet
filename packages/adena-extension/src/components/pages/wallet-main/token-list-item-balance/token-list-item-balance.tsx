@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import IconLockSmall from '@assets/icon-lock-small';
+import IconLockOutline from '@assets/icon-lock-outline';
 import { formatUSD } from '@common/utils/price-utils';
 import { SkeletonBoxStyle, WarningTriangleIcon } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
@@ -60,11 +60,13 @@ const ValuedBalance = styled.span`
   }
 `;
 
-// Keeps the padlock on the same baseline as the amount it qualifies.
+// Keeps the padlock on the same baseline as the amount it qualifies. The icon
+// draws in `currentColor`, so it picks up the muted amount colour here.
 const LockedAmount = styled.span`
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  color: ${getTheme('neutral', 'a')};
 
   svg {
     display: block;
@@ -110,7 +112,7 @@ const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
         <span className='usd-value'>{tokenValue ? formatUSD(tokenValue.usdValue) : '-'}</span>
         {locked ? (
           <LockedAmount>
-            <IconLockSmall />
+            <IconLockOutline />
             <span className='token-amount'>{amountText}</span>
           </LockedAmount>
         ) : (
@@ -134,7 +136,7 @@ const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
   // Unpriced rows keep their single line; the padlock simply precedes it.
   return locked ? (
     <LockedAmount>
-      <IconLockSmall />
+      <IconLockOutline />
       {balance}
     </LockedAmount>
   ) : (

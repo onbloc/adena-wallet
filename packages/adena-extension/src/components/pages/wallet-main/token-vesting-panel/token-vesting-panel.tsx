@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 import React, { useEffect, useMemo, useState } from 'react';
 
+import IconLockOutline from '@assets/icon-lock-outline';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { getVestingBreakdown, VestingInfo } from '@common/utils/vesting-utils';
 
@@ -10,10 +11,12 @@ import {
   PanelClip,
   PanelCollapse,
   ProgressFill,
+  ProgressRow,
   ProgressTrack,
   Row,
   RowLabel,
   RowValue,
+  StatusDot,
 } from './token-vesting-panel.styles';
 
 // Spendable moves continuously — for a two-year grant the sixth decimal turns
@@ -53,36 +56,47 @@ export const TokenVestingPanel: React.FC<TokenVestingPanelProps> = ({ open, vest
   );
 
   const percent = useMemo(
-    () => Math.min(100, Math.max(0, Math.round(breakdown.progress * 1000) / 10)),
+    () => Math.min(100, Math.max(0, breakdown.progress * 100)),
     [breakdown.progress],
   );
 
-  // A cliff has no start to render, so it reads as a single unlock date.
-  const periodLabel = schedule.type === 'delayed' ? 'Unlocks On' : 'Vesting Period';
-  const periodValue =
+  // The design's "Auto-release every block" describes the default linear curve,
+  // which vests on every block's timestamp. A cliff releases nothing until its
+  // end time, so it gets that date instead of a claim that would be false.
+  const releaseLabel =
     schedule.type === 'delayed'
-      ? formatDate(schedule.endTime)
-      : `${formatDate(schedule.startTime)} ~ ${formatDate(schedule.endTime)}`;
+      ? `Unlocks on ${formatDate(schedule.endTime)}`
+      : 'Auto-release every block';
 
   return (
     <PanelCollapse $open={open} aria-hidden={!open}>
       <PanelClip>
         <PanelBody>
-          <ProgressTrack $open={open}>
-            <ProgressFill $open={open} $percent={percent} />
-          </ProgressTrack>
-
           <Row $open={open} $index={0}>
             <RowLabel>Spendable</RowLabel>
-            <RowValue $emphasized>{formatGnot(breakdown.available)}</RowValue>
+            <RowValue $tone='primary'>{formatGnot(breakdown.available)}</RowValue>
           </Row>
+
           <Row $open={open} $index={1}>
-            <RowLabel>Locked</RowLabel>
-            <RowValue>{formatGnot(breakdown.locked)}</RowValue>
+            <RowLabel>
+              <IconLockOutline />
+              Locked · Vesting
+            </RowLabel>
+            <RowValue $tone='muted'>{formatGnot(breakdown.locked)}</RowValue>
           </Row>
-          <Row $open={open} $index={2}>
-            <RowLabel>{periodLabel}</RowLabel>
-            <RowValue>{periodValue}</RowValue>
+
+          <ProgressRow $open={open} $index={2}>
+            <ProgressTrack>
+              <ProgressFill $open={open} $percent={percent} />
+            </ProgressTrack>
+          </ProgressRow>
+
+          <Row $open={open} $index={3}>
+            <RowLabel>
+              <StatusDot />
+              {releaseLabel}
+            </RowLabel>
+            <RowValue $tone='vested'>{`${percent.toFixed(1)}% Vested`}</RowValue>
           </Row>
         </PanelBody>
       </PanelClip>

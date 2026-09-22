@@ -1,7 +1,13 @@
 import styled, { css } from 'styled-components';
 
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import { fonts } from '@styles/theme';
+
+// Design tokens local to the vesting panel — none of these exist in the theme
+// palette, and rounding them to the nearest token visibly shifts the design.
+const LABEL_COLOR = '#9BA0A8';
+const TRACK_COLOR = '#33363C';
+const VESTED_COLOR = '#3EDB9C';
 
 // Opening animates `grid-template-rows` from 0fr to 1fr, which transitions to
 // the content's natural height without hard-coding one — `height: auto` is not
@@ -26,10 +32,8 @@ export const PanelClip = styled.div`
 export const PanelBody = styled.div`
   ${mixins.flex({ direction: 'column', align: 'stretch', justify: 'flex-start' })};
   width: 100%;
-  gap: 10px;
-  padding: 14px 3px 3px;
-  margin-top: 11px;
-  border-top: 1px solid ${getTheme('neutral', '_7')};
+  gap: 9px;
+  margin-top: 16px;
 `;
 
 // Each row fades in and slides from its own edge — labels from the left, values
@@ -38,11 +42,7 @@ export const PanelBody = styled.div`
 const REVEAL_BASE_DELAY = 180;
 const REVEAL_STAGGER = 55;
 
-export const Row = styled.div<{ $open: boolean; $index: number }>`
-  ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })};
-  width: 100%;
-  gap: 8px;
-
+const revealMotion = css<{ $open: boolean; $index: number }>`
   > * {
     transition:
       opacity 220ms ease,
@@ -79,26 +79,55 @@ export const Row = styled.div<{ $open: boolean; $index: number }>`
   }
 `;
 
+export const Row = styled.div<{ $open: boolean; $index: number }>`
+  ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })};
+  width: 100%;
+  gap: 8px;
+  ${revealMotion};
+`;
+
+// Label side of a row: an optional leading mark (padlock, status dot) sitting
+// on the same baseline as the text.
 export const RowLabel = styled.span`
   ${fonts.captionReg};
-  line-height: 15px;
-  color: ${getTheme('neutral', 'a')};
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 13px;
+  color: ${LABEL_COLOR};
   white-space: nowrap;
+
+  svg {
+    display: block;
+    flex-shrink: 0;
+  }
 `;
 
-export const RowValue = styled.span<{ $emphasized?: boolean }>`
+export const RowValue = styled.span<{ $tone: 'primary' | 'muted' | 'vested' }>`
   ${fonts.captionReg};
-  line-height: 15px;
-  color: ${({ $emphasized, theme }): string => ($emphasized ? theme.neutral._1 : theme.neutral._2)};
+  line-height: 13px;
   text-align: right;
   white-space: nowrap;
+  color: ${({ $tone, theme }): string => {
+    if ($tone === 'muted') return theme.neutral.a;
+    if ($tone === 'vested') return VESTED_COLOR;
+    return theme.neutral._1;
+  }};
 `;
 
-export const ProgressTrack = styled.div<{ $open: boolean }>`
+export const StatusDot = styled.span`
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: ${VESTED_COLOR};
+  flex-shrink: 0;
+`;
+
+export const ProgressTrack = styled.div`
   width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background-color: ${getTheme('neutral', '_7')};
+  height: 6px;
+  border-radius: 3px;
+  background-color: ${TRACK_COLOR};
   overflow: hidden;
 `;
 
@@ -107,12 +136,32 @@ export const ProgressTrack = styled.div<{ $open: boolean }>`
 export const ProgressFill = styled.div<{ $open: boolean; $percent: number }>`
   width: ${({ $open, $percent }): string => ($open ? `${$percent}%` : '0%')};
   height: 100%;
-  border-radius: 2px;
-  background-color: ${getTheme('primary', '_6')};
+  border-radius: 3px;
+  background-color: ${VESTED_COLOR};
   transition: width 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
   transition-delay: ${({ $open }): string => ($open ? '200ms' : '0ms')};
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
   }
+`;
+
+// The bar is one element in the reveal sequence, so it gets the same motion as
+// a row but without the two-sided label/value split.
+export const ProgressRow = styled.div<{ $open: boolean; $index: number }>`
+  width: 100%;
+  ${revealMotion};
+
+  > * {
+    transform-origin: left center;
+  }
+
+  ${({ $open }): ReturnType<typeof css> | false =>
+    !$open &&
+    css`
+      > *:first-child {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+    `}
 `;

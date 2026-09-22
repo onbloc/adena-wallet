@@ -64,6 +64,8 @@ describe('TokenVestingPanel', () => {
 
     expect(screen.getByText('3,734.549738 GNOT')).not.toBeNull();
     expect(screen.getByText('106,560 GNOT')).not.toBeNull();
+    expect(screen.getByText('Locked · Vesting')).not.toBeNull();
+    expect(screen.getByText('0.0% Vested')).not.toBeNull();
   });
 
   it('locks nothing once the schedule has ended', () => {
@@ -73,6 +75,8 @@ describe('TokenVestingPanel', () => {
 
     expect(screen.getByText('110,294.549738 GNOT')).not.toBeNull();
     expect(screen.getByText('0 GNOT')).not.toBeNull();
+    expect(screen.getByText('100.0% Vested')).not.toBeNull();
+    expect(screen.getByText('Auto-release every block')).not.toBeNull();
   });
 
   // The whole point of the 1s clock: the figure has to move without the account
@@ -120,7 +124,7 @@ describe('TokenVestingPanel', () => {
       },
     });
 
-    expect(screen.getByText('Unlocks On')).not.toBeNull();
-    expect(screen.queryByText('Vesting Period')).toBeNull();
+    expect(screen.getByText(/^Unlocks on /)).not.toBeNull();
+    expect(screen.queryByText('Auto-release every block')).toBeNull();
   });
 });
