@@ -18,27 +18,24 @@ const TextSkeleton = styled(SkeletonBoxStyle)`
   padding: 0;
 `;
 
-const PlaceholderWrapper = styled(TokenListItemWrapper)`
-  cursor: default;
-
-  &:hover {
-    background: ${({ theme }): string => theme.neutral._9};
-    cursor: default;
-  }
-`;
-
+// Mirrors TokenListItem's structure: the wrapper is a column that holds the
+// row, so the skeleton pieces have to sit inside `.item-row` to lay out
+// horizontally. `$disabled` drops the hover highlight and the pointer cursor,
+// which a placeholder has no use for.
 const TokenListItemPlaceholder: React.FC = () => (
-  <PlaceholderWrapper>
-    <div className='logo-wrapper'>
-      <LogoSkeleton aria-hidden />
+  <TokenListItemWrapper $disabled>
+    <div className='item-row'>
+      <div className='logo-wrapper'>
+        <LogoSkeleton aria-hidden />
+      </div>
+      <div className='name-wrapper'>
+        <TextSkeleton aria-hidden />
+      </div>
+      <div className='balance-wrapper'>
+        <TextSkeleton aria-hidden />
+      </div>
     </div>
-    <div className='name-wrapper'>
-      <TextSkeleton aria-hidden />
-    </div>
-    <div className='balance-wrapper'>
-      <TextSkeleton aria-hidden />
-    </div>
-  </PlaceholderWrapper>
+  </TokenListItemWrapper>
 );
 
 export default TokenListItemPlaceholder;
