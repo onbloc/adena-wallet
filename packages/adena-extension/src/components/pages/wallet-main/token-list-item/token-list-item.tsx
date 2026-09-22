@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 
+import IconChevronDown from '@assets/icon-chevron-down';
 import AssetIcon from '@components/atoms/asset-icon/asset-icon';
 import { TokenChangeRate } from '@components/molecules';
 import TokenListItemBalance from '@components/pages/wallet-main/token-list-item-balance/token-list-item-balance';
+import { TokenVestingPanel } from '@components/pages/wallet-main/token-vesting-panel';
 import { MainToken } from '@types';
-import { TokenListItemWrapper } from './token-list-item.styles';
+import { TokenListItemWrapper, VestingToggleButton } from './token-list-item.styles';
 
 export interface TokenListItemProps {
   token: MainToken;
@@ -26,10 +28,14 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   completeImageLoading,
   onClickTokenItem,
 }) => {
-  const { tokenId, logo, name, balanceAmount, chainIconUrl, tokenValue } = token;
+  const { tokenId, logo, name, balanceAmount, chainIconUrl, tokenValue, vesting } = token;
+  const [expanded, setExpanded] = useState(false);
 
   // While loading or errored the row keeps its single-line shape.
   const withPrice = usdDisplay && !loading && !error;
+  // An unreadable balance makes the vesting split meaningless, so the affordance
+  // only appears once the row has a figure to break down.
+  const withVesting = !!vesting && !loading && !error;
 
   const onLoadImage = (): void => {
     completeImageLoading(logo);
@@ -44,37 +50,57 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
     onClickTokenItem(tokenId);
   };
 
-  return (
-    <TokenListItemWrapper
-      $disabled={error || disabled}
-      $withPrice={withPrice}
-      onClick={handleClick}
-    >
-      <div className='logo-wrapper'>
-        <AssetIcon
-          tokenIconUrl={logo}
-          chainIconUrl={chainIconUrl}
-          onLoad={onLoadImage}
-          onError={onLoadImage}
-        />
-      </div>
+  // The chevron sits inside the row's click target, so expanding must not also
+  // navigate into token-details.
+  const handleToggle = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setExpanded((prev) => !prev);
+  }, []);
 
-      <div className='name-wrapper'>
-        <span className='name'>{name}</span>
-        {withPrice && tokenValue?.change24h != null && (
-          <TokenChangeRate rate={tokenValue.change24h} />
+  return (
+    <TokenListItemWrapper $disabled={error || disabled} $withPrice={withPrice}>
+      <div className='item-row' onClick={handleClick}>
+        <div className='logo-wrapper'>
+          <AssetIcon
+            tokenIconUrl={logo}
+            chainIconUrl={chainIconUrl}
+            onLoad={onLoadImage}
+            onError={onLoadImage}
+          />
+        </div>
+
+        <div className='name-wrapper'>
+          <span className='name'>{name}</span>
+          {withPrice && tokenValue?.change24h != null && (
+            <TokenChangeRate rate={tokenValue.change24h} />
+          )}
+        </div>
+
+        <div className='balance-wrapper'>
+          <TokenListItemBalance
+            amount={balanceAmount}
+            usdDisplay={withPrice}
+            tokenValue={tokenValue}
+            loading={loading}
+            error={error}
+            locked={withVesting}
+          />
+        </div>
+
+        {withVesting && (
+          <VestingToggleButton
+            type='button'
+            $expanded={expanded}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Hide vesting details' : 'Show vesting details'}
+            onClick={handleToggle}
+          >
+            <IconChevronDown />
+          </VestingToggleButton>
         )}
       </div>
 
-      <div className='balance-wrapper'>
-        <TokenListItemBalance
-          amount={balanceAmount}
-          usdDisplay={withPrice}
-          tokenValue={tokenValue}
-          loading={loading}
-          error={error}
-        />
-      </div>
+      {withVesting && <TokenVestingPanel open={expanded} vesting={vesting} />}
     </TokenListItemWrapper>
   );
 };

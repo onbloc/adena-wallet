@@ -31,6 +31,7 @@ import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useTokenPrices } from '@hooks/use-token-prices';
 import { useIsCurrentSessionRevoked } from '@hooks/wallet/use-current-session-revoked';
+import { useVestingInfo } from '@hooks/wallet/use-vesting-info';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { revokedDimStyle } from '@styles/session-revoked';
@@ -145,6 +146,10 @@ export const WalletMain = (): JSX.Element => {
 
   const { addLoadingImages, completeImageLoading } = useLoadImages();
 
+  // Null for every account without a grant, which is all but a handful; the
+  // native token row reveals the padlock and expander only when it is set.
+  const { vestingInfo } = useVestingInfo();
+
   // Captured once on first render — never updates so the placeholder count
   // can't shift while metainfos hydrate.
   const cachedRowCountRef = useRef<number>(readCachedRowCount());
@@ -258,9 +263,11 @@ export const WalletMain = (): JSX.Element => {
         },
         chainIconUrl: isCosmos ? CHAIN_ICON_MAP[tokenBalance.networkId] : undefined,
         tokenValue,
+        // A grant lives on the Gno account, so only the native row can show it.
+        vesting: !isCosmos && tokenBalance.main ? vestingInfo : null,
       };
     });
-  }, [displayedBalances, tokenPrices, getTokenImage, currentNetwork]);
+  }, [displayedBalances, tokenPrices, getTokenImage, currentNetwork, vestingInfo]);
 
   // Null when nothing on screen is quoted: keep the native-balance headline.
   const portfolioValue = useMemo<PortfolioValue | null>(() => {
