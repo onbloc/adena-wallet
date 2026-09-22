@@ -18,6 +18,15 @@ export const parseProto = <T>(
   return protoData;
 };
 
+// Mirrors the message tm2-rpc's HttpClient raises for a bad HTTP status, so
+// RpcEndpointSelector sees a dead endpoint rather than a JSON parse error.
+const assertOkStatus = (response: Response): Response => {
+  if (response.status >= 400) {
+    throw new Error(`Bad status on response: ${response.status}`);
+  }
+  return response;
+};
+
 export const fetchABCIResponse = async (
   url: string,
   withCache?: boolean,
@@ -25,7 +34,7 @@ export const fetchABCIResponse = async (
   const response = await fetch(url, {
     cache: withCache ? 'force-cache' : 'default',
   });
-  const data = await response.json();
+  const data = await assertOkStatus(response).json();
   return data;
 };
 
@@ -40,7 +49,7 @@ export const postABCIResponse = async (
     },
     body: JSON.stringify(body),
   });
-  const data = await response.json();
+  const data = await assertOkStatus(response).json();
   return data;
 };
 

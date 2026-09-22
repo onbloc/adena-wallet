@@ -62,6 +62,10 @@ const LEDGER_ERROR_COPY: Record<LedgerErrorKind, RejectScreenCopy> = {
     title: 'Transaction Rejected',
     desc: 'The transaction has been rejected on\nyour ledger device. Please approve the\ntransaction in your wallet to complete\nthe transaction.',
   },
+  AccountMismatch: {
+    title: 'Wrong Ledger Device',
+    desc: 'The connected Ledger device does not\nmatch this account. Connect the device\nthis account was added with and try\nagain.',
+  },
   Timeout: {
     title: 'Ledger Timed Out',
     desc: 'No response from your Ledger device.\nPlease try the transaction again.',

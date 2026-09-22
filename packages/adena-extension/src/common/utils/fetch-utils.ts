@@ -15,15 +15,28 @@ export interface IndexerRPCRequest {
   params: any[];
 }
 
-export async function fetchHealth(url: string): Promise<{ url: string; healthy: boolean }> {
-  const healthy = await axios
+// With a fallbackUrl the network only counts as unresponsive once neither
+// endpoint answers, matching the provider's failover.
+export async function fetchHealth(
+  url: string,
+  fallbackUrl?: string,
+): Promise<{ url: string; healthy: boolean }> {
+  const healthy = await isEndpointHealthy(url);
+  if (healthy || !fallbackUrl || fallbackUrl === url) {
+    return { url, healthy };
+  }
+
+  return {
+    url: fallbackUrl,
+    healthy: await isEndpointHealthy(fallbackUrl),
+  };
+}
+
+async function isEndpointHealthy(url: string): Promise<boolean> {
+  return axios
     .get(url + '/health', { timeout: 5000 })
     .then((response) => response.status === 200)
     .catch(() => false);
-  return {
-    url,
-    healthy,
-  };
 }
 
 export function makeRPCRequest({

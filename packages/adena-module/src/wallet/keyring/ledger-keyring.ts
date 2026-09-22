@@ -3,10 +3,20 @@ import { Provider, TransactionEndpoint, Tx, Wallet as Tm2Wallet } from '@gnolang
 import { v4 as uuidv4 } from 'uuid';
 
 import { classifyLedgerError, LedgerError } from '../../ledger/ledger-errors';
+import { compressPubkeyIfNeeded } from '../../utils/pubkey';
 import { Document, makeSignedTx } from './../..';
 import { getAddressIndex, HdPathLike, toSlip10Path } from './hd-path';
 import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
 import { FullPathLedgerSigner } from './ledger-signer';
+
+function isSamePublicKey(left: Uint8Array, right: Uint8Array): boolean {
+  const compressedLeft = compressPubkeyIfNeeded(left);
+  const compressedRight = compressPubkeyIfNeeded(right);
+  return (
+    compressedLeft.length === compressedRight.length &&
+    compressedLeft.every((byte, index) => byte === compressedRight[index])
+  );
+}
 
 export class LedgerKeyring implements Keyring {
   public readonly id: string;
@@ -32,6 +42,26 @@ export class LedgerKeyring implements Keyring {
     }
     const gnoHdPath = toSlip10Path(hdPath);
     return this.connector.getPubkey(gnoHdPath);
+  }
+
+  // Reading a public key needs no on-device approval, so a device holding a
+  // different seed can be rejected before the user is asked to sign anything.
+  async assertPublicKey(publicKey: Uint8Array, hdPath: HdPathLike = 0): Promise<void> {
+    if (!this.connector) {
+      throw new LedgerError('TransportFailed', 'Ledger connector is not attached');
+    }
+    let devicePublicKey: Uint8Array;
+    try {
+      devicePublicKey = await this.connector.getPubkey(toSlip10Path(hdPath));
+    } catch (err) {
+      throw classifyLedgerError(err);
+    }
+    if (!isSamePublicKey(devicePublicKey, publicKey)) {
+      throw new LedgerError(
+        'AccountMismatch',
+        'Connected Ledger device does not match the signing account',
+      );
+    }
   }
 
   toData() {

@@ -1,5 +1,5 @@
 import { TM2Error } from '@gnolang/tm2-js-client';
-import { Account, AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
+import { Account, AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import {
@@ -115,6 +115,19 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
         return true;
       })
       .catch((error: Error) => {
+        // A device holding a different seed never succeeds on retry, so answer
+        // the request instead of re-prompting the device every second.
+        if (error instanceof LedgerError && error.kind === 'AccountMismatch') {
+          chrome.runtime.sendMessage(
+            InjectionMessageInstance.failure(
+              WalletResponseFailureType.ACCOUNT_MISMATCH,
+              {},
+              requestData?.key,
+              requestData?.withNotification,
+            ),
+          );
+          return true;
+        }
         if (error.message.includes('Ledger')) {
           return false;
         }

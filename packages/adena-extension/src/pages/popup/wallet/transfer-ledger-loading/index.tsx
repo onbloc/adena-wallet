@@ -8,7 +8,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { createNotificationSendMessageByHash } from '@inject/message/methods/transaction-event';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
-import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
+import { AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
 
 const TransferLedgerLoadingLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -16,6 +16,11 @@ const TransferLedgerLoadingLayout = styled.div`
   height: 100%;
   padding: 24px 20px 120px 20px;
 `;
+
+const ACCOUNT_MISMATCH_COPY = {
+  title: 'Wrong Ledger Device',
+  desc: 'The connected Ledger device does not\nmatch this account. Connect the device\nthis account was added with and try\nagain.',
+};
 
 const TransferLedgerLoadingContainer = (): JSX.Element => {
   const { wallet } = useWalletContext();
@@ -97,6 +102,12 @@ const TransferLedgerLoadingContainer = (): JSX.Element => {
         connected.close();
         if (error.message === 'Transaction signing request was rejected by the user') {
           navigate(RoutePath.TransferLedgerReject);
+          return null;
+        }
+        // A device holding a different seed never succeeds on retry, so break
+        // out of the loop instead of re-prompting the device every second.
+        if (error instanceof LedgerError && error.kind === 'AccountMismatch') {
+          navigate(RoutePath.TransferLedgerReject, { state: ACCOUNT_MISMATCH_COPY });
         }
         return null;
       });

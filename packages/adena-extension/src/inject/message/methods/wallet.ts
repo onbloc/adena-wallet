@@ -46,6 +46,7 @@ export const getAccount = async (
       targetAddress,
       network.rpcUrl,
       network.chainId,
+      network.fallbackRPCUrl,
     );
     sendResponse(
       InjectionMessageInstance.success(
