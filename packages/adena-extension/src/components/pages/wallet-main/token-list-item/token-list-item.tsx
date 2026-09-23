@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 
 import IconChevronDown from '@assets/icon-chevron-down';
 import AssetIcon from '@components/atoms/asset-icon/asset-icon';
@@ -15,8 +15,13 @@ export interface TokenListItemProps {
   loading?: boolean;
   error?: boolean;
   disabled?: boolean;
+  /** Whether this row's vesting panel is open; owned by the screen. */
+  vestingExpanded?: boolean;
+  /** Chain block time for the vesting split; see TokenVestingPanel. */
+  blockTimeSec?: number | null;
   completeImageLoading: (imageUrl: string) => void;
   onClickTokenItem: (tokenId: string) => void;
+  onToggleVesting?: (tokenId: string) => void;
 }
 
 const TokenListItem: React.FC<TokenListItemProps> = ({
@@ -25,11 +30,13 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   loading = false,
   error = false,
   disabled = false,
+  vestingExpanded = false,
+  blockTimeSec = null,
   completeImageLoading,
   onClickTokenItem,
+  onToggleVesting,
 }) => {
   const { tokenId, logo, name, balanceAmount, chainIconUrl, tokenValue, vesting } = token;
-  const [expanded, setExpanded] = useState(false);
 
   // While loading or errored the row keeps its single-line shape.
   const withPrice = usdDisplay && !loading && !error;
@@ -52,10 +59,13 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
 
   // The chevron sits inside the row's click target, so expanding must not also
   // navigate into token-details.
-  const handleToggle = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    setExpanded((prev) => !prev);
-  }, []);
+  const handleToggle = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      onToggleVesting?.(tokenId);
+    },
+    [onToggleVesting, tokenId],
+  );
 
   return (
     <TokenListItemWrapper $disabled={error || disabled} $withPrice={withPrice}>
@@ -90,9 +100,9 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
         {withVesting && (
           <VestingToggleButton
             type='button'
-            $expanded={expanded}
-            aria-expanded={expanded}
-            aria-label={expanded ? 'Hide vesting details' : 'Show vesting details'}
+            $expanded={vestingExpanded}
+            aria-expanded={vestingExpanded}
+            aria-label={vestingExpanded ? 'Hide vesting details' : 'Show vesting details'}
             onClick={handleToggle}
           >
             <IconChevronDown />
@@ -100,7 +110,9 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
         )}
       </div>
 
-      {withVesting && <TokenVestingPanel open={expanded} vesting={vesting} />}
+      {withVesting && (
+        <TokenVestingPanel open={vestingExpanded} vesting={vesting} blockTimeSec={blockTimeSec} />
+      )}
     </TokenListItemWrapper>
   );
 };

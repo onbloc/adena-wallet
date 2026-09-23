@@ -23,10 +23,25 @@ export const useVestingInfo = (): {
 
   const { data: accountInfo, isLoading } = useGetAccountInfo(currentBalanceAddress, {
     refetchInterval: (data) => (data?.vesting ? VESTING_REFETCH_INTERVAL : false),
+    // `useGetAccountInfo` keeps previous data by default. Here that would hand
+    // back the PREVIOUS account's schedule and coins while the newly selected
+    // account's request is still in flight — and with `isLoading` false, so
+    // nothing downstream could tell. The main balance is fetched separately
+    // and switches immediately, so the panel would be splitting one account's
+    // balance by another's grant. A refetch on an unchanged key still keeps
+    // its own data on screen; only the cross-account carry-over is dropped.
+    keepPreviousData: false,
   });
 
   const vestingInfo = useMemo<VestingInfo | null>(() => {
     if (!accountInfo) {
+      return null;
+    }
+
+    // Belt-and-braces against the same carry-over: whatever the cache hands
+    // back, only ever break down the account actually on screen. `address` is
+    // echoed by the provider from the query it answered.
+    if (accountInfo.address !== currentBalanceAddress) {
       return null;
     }
 
@@ -36,7 +51,7 @@ export const useVestingInfo = (): {
     }
 
     return { schedule, coins: accountInfo.coins };
-  }, [accountInfo]);
+  }, [accountInfo, currentBalanceAddress]);
 
   return { vestingInfo, isLoading };
 };

@@ -122,13 +122,26 @@ describe('TokenListItem Component', () => {
       expect(screen.getByLabelText('Show vesting details')).not.toBeNull();
     });
 
-    it('toggles the panel without navigating into token details', () => {
+    it('reports the toggle without navigating into token details', () => {
       const onClickTokenItem = jest.fn();
-      renderTokenListItem({ ...baseArgs, token: vestingToken, onClickTokenItem });
+      const onToggleVesting = jest.fn();
+      renderTokenListItem({
+        ...baseArgs,
+        token: vestingToken,
+        onClickTokenItem,
+        onToggleVesting,
+      });
 
       fireEvent.click(screen.getByLabelText('Show vesting details'));
 
       expect(onClickTokenItem).not.toHaveBeenCalled();
+      expect(onToggleVesting).toHaveBeenCalledWith(vestingToken.tokenId);
+    });
+
+    // The screen owns the open panel, so the label follows the prop.
+    it('reflects the expanded state supplied by the screen', () => {
+      renderTokenListItem({ ...baseArgs, token: vestingToken, vestingExpanded: true });
+
       expect(screen.getByLabelText('Hide vesting details')).not.toBeNull();
     });
 

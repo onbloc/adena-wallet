@@ -1,4 +1,4 @@
-import { act, render, RenderResult, screen, within } from '@testing-library/react';
+import { render, RenderResult, screen, within } from '@testing-library/react';
 import React from 'react';
 import { ThemeProvider } from 'styled-components';
 
@@ -26,10 +26,18 @@ const CONTINUOUS_SCHEDULE = requireSchedule({
   end_time: `${END_TIME}`,
 });
 
+const CLIFF_SCHEDULE = requireSchedule({
+  original_vesting: '106560000000ugnot',
+  end_time: `${END_TIME}`,
+  type: 'delayed',
+});
+
+const COINS = '110294549738ugnot';
+
 // Spendable and Locked both end in "GNOT"; reach the one under test through
 // its own row rather than by matching the unit.
-const readSpendable = (): string | null =>
-  within(screen.getByText('Spendable').parentElement as HTMLElement).getAllByText(/GNOT$/)[0]
+const readRow = (label: string): string | null =>
+  within(screen.getByText(label).parentElement as HTMLElement).getAllByText(/GNOT$|^-$/)[0]
     .textContent;
 
 const renderPanel = (
@@ -37,7 +45,8 @@ const renderPanel = (
 ): RenderResult => {
   const props: React.ComponentProps<typeof TokenVestingPanel> = {
     open: true,
-    vesting: { schedule: CONTINUOUS_SCHEDULE, coins: '110294549738ugnot' },
+    vesting: { schedule: CONTINUOUS_SCHEDULE, coins: COINS },
+    blockTimeSec: START_TIME,
     ...overrides,
   };
 
@@ -49,18 +58,8 @@ const renderPanel = (
 };
 
 describe('TokenVestingPanel', () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
   it('splits the balance into spendable and locked before vesting starts', () => {
-    jest.setSystemTime((START_TIME - 1) * 1000);
-
-    renderPanel();
+    renderPanel({ blockTimeSec: START_TIME - 1 });
 
     expect(screen.getByText('3,734.549738 GNOT')).not.toBeNull();
     expect(screen.getByText('106,560 GNOT')).not.toBeNull();
@@ -69,9 +68,7 @@ describe('TokenVestingPanel', () => {
   });
 
   it('locks nothing once the schedule has ended', () => {
-    jest.setSystemTime(END_TIME * 1000);
-
-    renderPanel();
+    renderPanel({ blockTimeSec: END_TIME });
 
     expect(screen.getByText('110,294.549738 GNOT')).not.toBeNull();
     expect(screen.getByText('0 GNOT')).not.toBeNull();
@@ -79,50 +76,51 @@ describe('TokenVestingPanel', () => {
     expect(screen.getByText('Auto-release every block')).not.toBeNull();
   });
 
-  // The whole point of the 1s clock: the figure has to move without the account
-  // query returning anything new.
-  it('recomputes spendable every second while open', () => {
-    const oneDayIn = START_TIME + 86_400;
-    jest.setSystemTime(oneDayIn * 1000);
+  it('tracks block time as it advances', () => {
+    const { rerender } = renderPanel({ blockTimeSec: START_TIME + 86_400 });
+    const before = readRow('Spendable');
 
-    renderPanel();
+    rerender(
+      <ThemeProvider theme={theme}>
+        <TokenVestingPanel
+          open
+          vesting={{ schedule: CONTINUOUS_SCHEDULE, coins: COINS }}
+          blockTimeSec={START_TIME + 86_401}
+        />
+      </ThemeProvider>,
+    );
 
-    const before = readSpendable();
-
-    act(() => {
-      jest.advanceTimersByTime(1_000);
-    });
-
-    expect(readSpendable()).not.toEqual(before);
+    expect(readRow('Spendable')).not.toEqual(before);
   });
 
-  it('does not run the clock while collapsed', () => {
-    jest.setSystemTime((START_TIME + 86_400) * 1000);
+  // The device clock must not release funds the chain still holds: a cliff
+  // ending at END_TIME stays fully locked while block time reads END_TIME - 1,
+  // however far ahead the local clock happens to be.
+  it('keeps a cliff locked while block time is still short of its end', () => {
+    jest.useFakeTimers();
+    jest.setSystemTime((END_TIME + 3_600) * 1000);
 
-    renderPanel({ open: false });
-
-    const before = readSpendable();
-
-    act(() => {
-      jest.advanceTimersByTime(5_000);
+    renderPanel({
+      vesting: { schedule: CLIFF_SCHEDULE, coins: COINS },
+      blockTimeSec: END_TIME - 1,
     });
 
-    expect(readSpendable()).toEqual(before);
+    expect(readRow('Spendable')).toEqual('3,734.549738 GNOT');
+    expect(readRow('Locked · Vesting')).toEqual('106,560 GNOT');
+    expect(screen.getByText('0.0% Vested')).not.toBeNull();
+
+    jest.useRealTimers();
+  });
+
+  it('shows no figures until the chain clock has been read', () => {
+    renderPanel({ blockTimeSec: null });
+
+    expect(readRow('Spendable')).toEqual('-');
+    expect(readRow('Locked · Vesting')).toEqual('-');
   });
 
   it('shows a single unlock date for a cliff schedule', () => {
-    jest.setSystemTime(START_TIME * 1000);
-
-    renderPanel({
-      vesting: {
-        schedule: requireSchedule({
-          original_vesting: '106560000000ugnot',
-          end_time: `${END_TIME}`,
-          type: 'delayed',
-        }),
-        coins: '110294549738ugnot',
-      },
-    });
+    renderPanel({ vesting: { schedule: CLIFF_SCHEDULE, coins: COINS } });
 
     expect(screen.getByText(/^Unlocks on /)).not.toBeNull();
     expect(screen.queryByText('Auto-release every block')).toBeNull();
