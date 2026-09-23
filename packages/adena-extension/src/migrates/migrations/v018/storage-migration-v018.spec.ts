@@ -1,10 +1,17 @@
 /**
  * @jest-environment node
  */
-import { decryptXChacha20, encryptAES } from 'adena-module';
+import { decryptAES, decryptXChacha20, encryptAES } from 'adena-module';
 import CryptoJS from 'crypto-js';
 import sodium from 'libsodium-wrappers-sumo';
 import { StorageMigration018 } from './storage-migration-v018';
+
+// Only decryptAES is stubbed, and it defaults to the real implementation — the
+// wrong-key test below drives a single call to reproduce a false accept.
+jest.mock('adena-module', () => {
+  const actual = jest.requireActual('adena-module');
+  return { ...actual, decryptAES: jest.fn(actual.decryptAES) };
+});
 
 const LEGACY_SALT = 'W9+fs3FJ9p5KdR1XzQy2A6ZT4vjN8LvM9J8pVZmN9rU=';
 const RAW_PASSWORD = '123';
@@ -139,6 +146,44 @@ describe('storage migration V018', () => {
     const parsedAddressBook = JSON.parse(result.data.ADDRESS_BOOK);
     const decryptedAddressBook = await decryptXChacha20(parsedAddressBook, RAW_PASSWORD, salt);
     expect(JSON.parse(decryptedAddressBook)).toHaveLength(1);
+  });
+
+  // AES-CBC has no authentication tag, so the hashed-password attempt on
+  // raw-password data does not reliably fail: about 1 attempt in 250 it decodes
+  // to non-empty valid UTF-8. Accepting that garbage re-encrypts shredded bytes
+  // over the wallet, which is unrecoverable — so a candidate key only counts
+  // when its plaintext is the JSON container the field actually holds.
+  it('rejects a wrong key whose garbage plaintext is non-empty valid UTF-8', async () => {
+    (decryptAES as jest.Mock).mockResolvedValueOnce('C\u9661?');
+
+    const mockData = {
+      version: 17,
+      data: createMockData(rawEncryptedSerialized, rawEncryptedAddressBook),
+    };
+    const migration = new StorageMigration018();
+    const result = await migration.up(mockData, RAW_PASSWORD);
+
+    await sodium.ready;
+    const salt = Uint8Array.from(Buffer.from(result.data.KDF_SALT, 'base64'));
+    const decryptedWallet = await decryptXChacha20(
+      JSON.parse(result.data.SERIALIZED),
+      RAW_PASSWORD,
+      salt,
+    );
+
+    expect(JSON.parse(decryptedWallet)).toHaveProperty('keyrings');
+  });
+
+  it('still refuses a password that decrypts nothing', async () => {
+    (decryptAES as jest.Mock).mockResolvedValueOnce('C\u9661?');
+
+    const mockData = {
+      version: 17,
+      data: createMockData(rawEncryptedSerialized),
+    };
+    const migration = new StorageMigration018();
+
+    await expect(migration.up(mockData, 'wrong-password')).rejects.toThrow(/cannot decrypt/);
   });
 
   it('migrated data cannot be decrypted with hashed password', async () => {
