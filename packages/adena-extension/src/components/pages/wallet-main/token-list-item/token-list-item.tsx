@@ -1,11 +1,15 @@
+import React from 'react';
+
 import AssetIcon from '@components/atoms/asset-icon/asset-icon';
+import { TokenChangeRate } from '@components/molecules';
 import TokenListItemBalance from '@components/pages/wallet-main/token-list-item-balance/token-list-item-balance';
 import { MainToken } from '@types';
-import React from 'react';
 import { TokenListItemWrapper } from './token-list-item.styles';
 
 export interface TokenListItemProps {
   token: MainToken;
+  /** Screen-wide USD display mode; see TokenListItemBalance. */
+  usdDisplay?: boolean;
   loading?: boolean;
   error?: boolean;
   disabled?: boolean;
@@ -15,13 +19,17 @@ export interface TokenListItemProps {
 
 const TokenListItem: React.FC<TokenListItemProps> = ({
   token,
+  usdDisplay = false,
   loading = false,
   error = false,
   disabled = false,
   completeImageLoading,
   onClickTokenItem,
 }) => {
-  const { tokenId, logo, name, balanceAmount, chainIconUrl } = token;
+  const { tokenId, logo, name, balanceAmount, chainIconUrl, tokenValue } = token;
+
+  // While loading or errored the row keeps its single-line shape.
+  const withPrice = usdDisplay && !loading && !error;
 
   const onLoadImage = (): void => {
     completeImageLoading(logo);
@@ -37,7 +45,11 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   };
 
   return (
-    <TokenListItemWrapper $disabled={error || disabled} onClick={handleClick}>
+    <TokenListItemWrapper
+      $disabled={error || disabled}
+      $withPrice={withPrice}
+      onClick={handleClick}
+    >
       <div className='logo-wrapper'>
         <AssetIcon
           tokenIconUrl={logo}
@@ -49,10 +61,19 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
 
       <div className='name-wrapper'>
         <span className='name'>{name}</span>
+        {withPrice && tokenValue?.change24h != null && (
+          <TokenChangeRate rate={tokenValue.change24h} />
+        )}
       </div>
 
       <div className='balance-wrapper'>
-        <TokenListItemBalance amount={balanceAmount} loading={loading} error={error} />
+        <TokenListItemBalance
+          amount={balanceAmount}
+          usdDisplay={withPrice}
+          tokenValue={tokenValue}
+          loading={loading}
+          error={error}
+        />
       </div>
     </TokenListItemWrapper>
   );
