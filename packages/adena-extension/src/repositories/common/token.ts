@@ -62,6 +62,9 @@ const DEFAULT_TOKEN_NETWORK_ID = '';
 // What identifies a realm as a GRC721 collection when looked up by path.
 const GRC721_REALM_READ_FUNCTIONS = ['Name', 'Symbol', 'BalanceOf', 'OwnerOf'];
 
+/** How qeval prints a nil `error` — the whole tuple, type token included. */
+const QEVAL_NIL = '(undefined)';
+
 // Membership is one `BalanceOf` per candidate collection, and ownership one
 // `OwnerOf` per candidate token unrolled into a single qeval. Candidates are
 // never truncated — dropping one hides an NFT the account owns — so these bound
@@ -1074,13 +1077,20 @@ export class TokenRepository implements ITokenRepository {
       throw new Error('Gno provider not initialized.');
     }
 
-    const value = await this.gnoProvider.getValueByEvaluateExpression(
-      packagePath,
-      functionName,
-      args,
-    );
+    const parsed = await this.gnoProvider.evaluateFunction(packagePath, functionName, args);
+    if (!parsed) {
+      return '';
+    }
 
-    return value ?? '';
+    // One result (`TokenURI(tid) string`): the value stands on its own. Two
+    // (`TokenURI(tid) (string, error)`): the realm reports "no uri" as an empty
+    // string *and* an error, so a non-nil error invalidates the value even when
+    // the realm also filled one in.
+    if (parsed.rest !== '' && parsed.rest !== QEVAL_NIL) {
+      return '';
+    }
+
+    return parsed.value;
   }
 
   /** Flatten the matched transactions into their events, keeping query order. */

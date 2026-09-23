@@ -31,7 +31,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import { HttpClient, RpcClient, Tm2Client } from '@gnolang/tm2-rpc';
 import axios from 'axios';
-import { formatGnoArg, GnoArg } from './qeval';
+import { decodeQEvalTupleValue, formatGnoArg, GnoArg, parseFirstQEvalTuple } from './qeval';
 import { RpcEndpointSelector } from './rpc-endpoint-selector';
 import { AccountInfo, GnoDocumentInfo, GnoSessionAccountResponse, VMQueryType } from './types';
 import {
@@ -283,35 +283,42 @@ export class GnoProvider extends GnoJSONRPCProvider {
     return withSessionAccountInfo(parseABCI<GnoSessionAccountResponse>(abciData));
   }
 
+  /**
+   * Evaluate `functionName(args...)` and return its first return value, decoded.
+   *
+   * A Gno function may declare one result (`TokenURI(tid) string`) or two
+   * (`TokenURI(tid) (string, error)`), so the trailing tuples are handed back
+   * untouched in `rest` — `(undefined)` for a nil error, a struct literal
+   * otherwise — and it is the caller's job to decide what a non-nil error
+   * means for the value it asked for.
+   */
+  public evaluateFunction(
+    packagePath: string,
+    functionName: string,
+    params: GnoArg[] = [],
+  ): Promise<{ value: string; rest: string } | null> {
+    const expression = `${functionName}(${params.map(formatGnoArg).join(', ')})`;
+
+    return this.evaluateExpression(packagePath, expression)
+      .then((result) => {
+        const parsed = parseFirstQEvalTuple(result);
+        if (!parsed) {
+          return null;
+        }
+
+        return { value: decodeQEvalTupleValue(parsed.tuple), rest: parsed.rest };
+      })
+      .catch(() => null);
+  }
+
   public getValueByEvaluateExpression(
     packagePath: string,
     functionName: string,
     params: (string | number)[],
   ): Promise<string | null> {
-    const paramValues = params.map((param) =>
-      typeof param === 'number' ? `${param}` : `"${param}"`,
+    return this.evaluateFunction(packagePath, functionName, params).then(
+      (parsed) => parsed?.value ?? null,
     );
-    const expression = `${functionName}(${paramValues.join(',')})`;
-
-    return this.evaluateExpression(packagePath, expression)
-      .then((result) => {
-        const regex = /\((?:"((?:\\.|[^"\\])*)"|(\S+))\s+\w+\)/g;
-        const matches = result.matchAll(regex);
-
-        for (const match of matches) {
-          if (match?.[1] !== undefined) {
-            const unescaped = match[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-            return unescaped;
-          }
-
-          if (match?.[2] !== undefined) {
-            return `${match[2]}`;
-          }
-        }
-
-        return null;
-      })
-      .catch(() => null);
   }
 
   /**

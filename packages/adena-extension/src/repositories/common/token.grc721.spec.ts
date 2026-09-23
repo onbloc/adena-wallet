@@ -48,6 +48,8 @@ interface ChainState {
   owners?: Record<string, string>;
   balances?: Record<string, number>;
   funcs?: { name: string; results: { name: string; type: string }[] }[];
+  /** Raw `evaluateFunction` replies, keyed by function name. */
+  evaluations?: Record<string, { value: string; rest: string }>;
 }
 
 function makeRepository(
@@ -56,6 +58,7 @@ function makeRepository(
 ): {
   repository: TokenRepository;
   evaluateIIFE: jest.Mock;
+  evaluateFunction: jest.Mock;
   getValueByEvaluateExpression: jest.Mock;
 } {
   const axiosInstance = {
@@ -91,8 +94,16 @@ function makeRepository(
     },
   );
 
+  const evaluateFunction = jest.fn(
+    async (
+      _packagePath: string,
+      functionName: string,
+    ): Promise<{ value: string; rest: string } | null> => chain.evaluations?.[functionName] ?? null,
+  );
+
   const gnoProvider = {
     evaluateIIFE,
+    evaluateFunction,
     getValueByEvaluateExpression,
     getRealmDocument: jest.fn(async () => ({ funcs: chain.funcs ?? [] })),
   } as unknown as GnoProvider;
@@ -104,8 +115,71 @@ function makeRepository(
     gnoProvider,
   );
 
-  return { repository, evaluateIIFE, getValueByEvaluateExpression };
+  return { repository, evaluateIIFE, evaluateFunction, getValueByEvaluateExpression };
 }
+
+describe('fetchGRC721TokenUriBy', () => {
+  // `TokenURI(tid) string` — the realm declares a single result, so there is no
+  // error tuple to weigh.
+  it('accepts a uri from a realm that returns a bare string', async () => {
+    const { repository } = makeRepository([], {
+      evaluations: { TokenURI: { value: 'ipfs://cid/1.png', rest: '' } },
+    });
+
+    await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe(
+      'ipfs://cid/1.png',
+    );
+  });
+
+  // `TokenURI(tid) (string, error)` with a nil error, which prints as
+  // `(undefined)`.
+  it('accepts a uri returned alongside a nil error', async () => {
+    const { repository } = makeRepository([], {
+      evaluations: {
+        TokenURI: { value: 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=', rest: '(undefined)' },
+      },
+    });
+
+    await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe(
+      'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=',
+    );
+  });
+
+  it('rejects a uri returned alongside a non-nil error', async () => {
+    const { repository } = makeRepository([], {
+      evaluations: {
+        TokenURI: {
+          value: 'ipfs://stale',
+          rest: '(&(struct{("token has no uri" string)} errors.errorString) *errors.errorString)',
+        },
+      },
+    });
+
+    await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).rejects.toThrow(
+      'not found token uri',
+    );
+  });
+
+  it('rejects an empty uri', async () => {
+    const { repository } = makeRepository([], {
+      evaluations: { TokenURI: { value: '', rest: '(undefined)' } },
+    });
+
+    await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).rejects.toThrow(
+      'not found token uri',
+    );
+  });
+
+  it('passes the token id through as the sole argument', async () => {
+    const { repository, evaluateFunction } = makeRepository([], {
+      evaluations: { TokenURI: { value: 'ipfs://cid/7.png', rest: '(undefined)' } },
+    });
+
+    await repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '7');
+
+    expect(evaluateFunction).toHaveBeenCalledWith(PACKAGE_PATH, 'TokenURI', ['7']);
+  });
+});
 
 describe('fetchGRC721Collections', () => {
   it('lists the collections announced by NewToken', async () => {

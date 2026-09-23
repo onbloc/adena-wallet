@@ -27,7 +27,8 @@ import { GRC721Model, RoutePath } from '@types';
 const NFTTransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
-  height: auto;
+  height: 100%;
+  overflow-y: auto;
 
   & .network-fee-setting-wrapper {
     padding: 24px 20px;
@@ -52,7 +53,6 @@ const NFTTransferSummaryContainer: React.FC = () => {
     hash?: string | null;
     errorMessage?: string | null;
   } | null>(null);
-  const [isErrorNetworkFee, setIsErrorNetworkFee] = useState(false);
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
   const [document, setDocument] = useState<Document | null>(null);
 
@@ -83,6 +83,12 @@ const NFTTransferSummaryContainer: React.FC = () => {
       return false;
     }
 
+    // A failed simulate zeroes the estimated fee, which would otherwise read as
+    // "insufficient balance". The banner below reports the real reason.
+    if (useNetworkFeeReturn.isSimulateError) {
+      return false;
+    }
+
     if (currentBalance === null || currentBalance === undefined) {
       return false;
     }
@@ -92,7 +98,27 @@ const NFTTransferSummaryContainer: React.FC = () => {
     }
 
     return !hasNetworkFee;
-  }, [currentBalance, networkFee?.amount, useNetworkFeeReturn.isLoading, hasNetworkFee]);
+  }, [
+    currentBalance,
+    networkFee?.amount,
+    useNetworkFeeReturn.isLoading,
+    useNetworkFeeReturn.isSimulateError,
+    hasNetworkFee,
+  ]);
+
+  const simulateErrorMessage = useMemo(() => {
+    if (!useNetworkFeeReturn.isSimulateError || useNetworkFeeReturn.isLoading) {
+      return null;
+    }
+
+    return (
+      useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || 'Failed to simulate transaction'
+    );
+  }, [
+    useNetworkFeeReturn.isSimulateError,
+    useNetworkFeeReturn.isLoading,
+    useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
+  ]);
 
   const makeGRC721TransferMessage = useCallback(
     (grc721Token: GRC721Model, fromAddress: string, toAddress: string) => {
@@ -108,7 +134,11 @@ const NFTTransferSummaryContainer: React.FC = () => {
     [],
   );
 
-  const createDocument = useCallback(async () => {
+  // Deliberately not memoized: the gas budget and fee only exist after the
+  // simulate resolves, and a useCallback keyed on [summaryInfo, currentAccount]
+  // kept handing back the first render's closure — so both the re-estimated
+  // document and the tx that gets signed were stuck at gasWanted 0.
+  const createDocument = async (): Promise<Document | null> => {
     if (!currentNetwork || !currentAccount || !currentFundingAddress) {
       return null;
     }
@@ -127,7 +157,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
     );
 
     return document;
-  }, [summaryInfo, currentAccount]);
+  };
 
   const createTransaction = useCallback(async () => {
     if (!currentNetwork || !currentAccount || !wallet) {
@@ -152,15 +182,21 @@ const NFTTransferSummaryContainer: React.FC = () => {
       console.error(e);
       return null;
     });
-  }, [summaryInfo, currentAccount, currentNetwork, networkFee]);
+  }, [
+    summaryInfo,
+    currentAccount,
+    currentNetwork,
+    networkFee,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
+    useNetworkFeeReturn.currentGasInfo,
+  ]);
 
   const transfer = async (): Promise<boolean> => {
     if (isSent || !currentAccount || !hasNetworkFee || useNetworkFeeReturn.isLoading) {
       return false;
     }
 
-    if (isNetworkFeeError) {
-      setIsErrorNetworkFee(true);
+    if (isNetworkFeeError || useNetworkFeeReturn.isSimulateError) {
       return false;
     }
 
@@ -239,7 +275,6 @@ const NFTTransferSummaryContainer: React.FC = () => {
 
   const onClickNetworkFeeSave = useCallback(() => {
     useNetworkFeeReturn.save();
-    setIsErrorNetworkFee(false);
     setOpenedNetworkFeeSetting(false);
   }, [useNetworkFeeReturn.save]);
 
@@ -299,7 +334,10 @@ const NFTTransferSummaryContainer: React.FC = () => {
         <NFTTransferSummary
           grc721Token={summaryInfo.grc721Token}
           toAddress={summaryInfo.toAddress}
-          isErrorNetworkFee={isErrorNetworkFee}
+          isErrorNetworkFee={isNetworkFeeError}
+          isLoadingNetworkFee={useNetworkFeeReturn.isLoading}
+          isSimulateError={useNetworkFeeReturn.isSimulateError}
+          simulateErrorBannerMessage={simulateErrorMessage}
           networkFee={networkFee}
           memo={summaryInfo.memo}
           queryGRC721TokenUri={useGetGRC721TokenUri}

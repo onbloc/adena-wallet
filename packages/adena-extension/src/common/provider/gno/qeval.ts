@@ -92,6 +92,91 @@ export interface QEvalTuple {
 }
 
 /**
+ * Read the tuple starting at `offset`, returning it with the offset just past
+ * its closing `)`. Throws when the text there is not a well-formed tuple.
+ */
+const readQEvalTuple = (response: string, offset: number): { tuple: QEvalTuple; next: number } => {
+  let i = offset;
+  if (response[i] !== '(') {
+    throw new Error(`parseQEvalResult: expected "(" at offset ${i} in ${JSON.stringify(response)}`);
+  }
+  const start = i;
+  i++; // consume '('
+
+  // Value token: either a quoted string or a bare token up to whitespace.
+  let value: string;
+  if (response[i] === '"') {
+    const quoteStart = i;
+    i++;
+    while (i < response.length) {
+      if (response[i] === '\\') {
+        i += 2;
+        continue;
+      }
+      if (response[i] === '"') {
+        i++;
+        break;
+      }
+      i++;
+    }
+    value = response.slice(quoteStart, i);
+  } else {
+    const tokenStart = i;
+    while (i < response.length && !/\s/.test(response[i]) && response[i] !== ')') i++;
+    value = response.slice(tokenStart, i);
+  }
+
+  // Skip whitespace between value and type.
+  while (i < response.length && /\s/.test(response[i])) i++;
+
+  // Type token: read until the closing ')'. A bare value with no type (a nil
+  // interface prints as `(undefined)`) leaves this empty.
+  const typeStart = i;
+  let depth = 0;
+  while (i < response.length) {
+    const ch = response[i];
+    if (ch === '(') depth++;
+    else if (ch === ')') {
+      if (depth === 0) break;
+      depth--;
+    }
+    i++;
+  }
+  const type = response.slice(typeStart, i).trim();
+
+  if (response[i] !== ')') {
+    throw new Error(`parseQEvalResult: unterminated tuple starting at offset ${start}`);
+  }
+  i++; // consume ')'
+
+  return { tuple: { raw: response.slice(start, i), value, type }, next: i };
+};
+
+/**
+ * Read only the first `(value type)` tuple and hand back the untouched
+ * remainder.
+ *
+ * Prefer this over {@link parseQEvalResult} when only the leading value is
+ * needed: a trailing value that does not round-trip through the tuple grammar
+ * (a non-nil `error` prints as a nested struct literal, e.g.
+ * `(&(struct{("boom" string)} errors.errorString) *errors.errorString)`) would
+ * otherwise make the whole response unparseable. Returns null for an empty
+ * response.
+ */
+export const parseFirstQEvalTuple = (
+  response: string,
+): { tuple: QEvalTuple; rest: string } | null => {
+  let i = 0;
+  while (i < response.length && /\s/.test(response[i])) i++;
+  if (i >= response.length) {
+    return null;
+  }
+
+  const { tuple, next } = readQEvalTuple(response, i);
+  return { tuple, rest: response.slice(next).trim() };
+};
+
+/**
  * Split a qeval response into its `(value type)` tuples. Each tuple keeps the
  * raw value token (still quoted/escaped if it is a string) and the trailing
  * type name, so callers can dispatch on type and decode the value safely.
@@ -103,60 +188,24 @@ export const parseQEvalResult = (response: string): QEvalTuple[] => {
     // Skip whitespace and tuple separators.
     while (i < response.length && /\s/.test(response[i])) i++;
     if (i >= response.length) break;
-    if (response[i] !== '(') {
-      throw new Error(`parseQEvalResult: expected "(" at offset ${i} in ${JSON.stringify(response)}`);
-    }
-    const start = i;
-    i++; // consume '('
 
-    // Value token: either a quoted string or a bare token up to whitespace.
-    let value: string;
-    if (response[i] === '"') {
-      const quoteStart = i;
-      i++;
-      while (i < response.length) {
-        if (response[i] === '\\') {
-          i += 2;
-          continue;
-        }
-        if (response[i] === '"') {
-          i++;
-          break;
-        }
-        i++;
-      }
-      value = response.slice(quoteStart, i);
-    } else {
-      const tokenStart = i;
-      while (i < response.length && !/\s/.test(response[i]) && response[i] !== ')') i++;
-      value = response.slice(tokenStart, i);
-    }
-
-    // Skip whitespace between value and type.
-    while (i < response.length && /\s/.test(response[i])) i++;
-
-    // Type token: read until the closing ')'.
-    const typeStart = i;
-    let depth = 0;
-    while (i < response.length) {
-      const ch = response[i];
-      if (ch === '(') depth++;
-      else if (ch === ')') {
-        if (depth === 0) break;
-        depth--;
-      }
-      i++;
-    }
-    const type = response.slice(typeStart, i).trim();
-
-    if (response[i] !== ')') {
-      throw new Error(`parseQEvalResult: unterminated tuple starting at offset ${start}`);
-    }
-    i++; // consume ')'
-
-    tuples.push({ raw: response.slice(start, i), value, type });
+    const { tuple, next } = readQEvalTuple(response, i);
+    tuples.push(tuple);
+    i = next;
   }
   return tuples;
+};
+
+/**
+ * Decode a tuple's value token: a quoted string is unescaped, any other token
+ * (numeric, boolean, `undefined`) is returned verbatim.
+ */
+export const decodeQEvalTupleValue = (tuple: QEvalTuple): string => {
+  if (tuple.value.startsWith('"')) {
+    return decodeGnoString(tuple.value);
+  }
+
+  return tuple.value;
 };
 
 /**
