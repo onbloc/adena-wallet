@@ -11,6 +11,17 @@ import {
 
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { AdenaStorage } from '@common/storage';
+import {
+  emptyCursor,
+  GRC721_SYNC_CACHE_KEY,
+  GRC721CollectionCandidate,
+  GRC721SyncCache,
+  GRC721SyncCacheValueType,
+  GRC721SyncCursor,
+  GRC721TokenCandidate,
+  NetworkGRC721Sync,
+} from './token.grc721-sync';
 import { GnoFunction } from '@common/provider/gno/types';
 import { decodeGnoString, gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
 import {
@@ -54,7 +65,6 @@ enum LocalValueType {
   AccountTokenMetainfos = 'ACCOUNT_TOKEN_METAINFOS',
   AccountGRC721Collections = 'ACCOUNT_GRC721_COLLECTIONS',
   AccountGRC721PinnedPackages = 'ACCOUNT_GRC721_PINNED_PACKAGES',
-  AccountTransferEventBlockHeight = 'ACCOUNT_TRANSFER_EVENT_BLOCK_HEIGHT',
 }
 
 const DEFAULT_TOKEN_NETWORK_ID = '';
@@ -62,17 +72,15 @@ const DEFAULT_TOKEN_NETWORK_ID = '';
 // What identifies a realm as a GRC721 collection when looked up by path.
 const GRC721_REALM_READ_FUNCTIONS = ['Name', 'Symbol', 'BalanceOf', 'OwnerOf'];
 
+/** How qeval prints a nil `error` — the whole tuple, type token included. */
+const QEVAL_NIL = '(undefined)';
+
 // Membership is one `BalanceOf` per candidate collection, and ownership one
 // `OwnerOf` per candidate token unrolled into a single qeval. Candidates are
 // never truncated — dropping one hides an NFT the account owns — so these bound
 // how many run at once and how large a generated expression gets, nothing else.
 const GRC721_BALANCE_SCAN_BATCH_SIZE = 10;
 const GRC721_OWNER_SCAN_BATCH_SIZE = 50;
-
-interface GRC721TokenCandidate {
-  tokenId: string;
-  collectionId: string;
-}
 
 interface IndexedGnoEvent {
   type?: string;
@@ -82,8 +90,21 @@ interface IndexedGnoEvent {
 
 interface IndexedTransactionsResponse {
   data?: {
-    getTransactions?: { response?: { events?: IndexedGnoEvent[] } }[];
+    latestBlockHeight?: number;
+    getTransactions?: { block_height?: number; response?: { events?: IndexedGnoEvent[] } }[];
   };
+}
+
+/**
+ * One indexer walk: the matched events plus the heights needed to move a
+ * cursor — how far this batch reached, and how far the indexer itself has.
+ */
+interface IndexedEventPage {
+  events: IndexedGnoEvent[];
+  /** Highest block height among the matched transactions; 0 when none matched. */
+  maxBlockHeight: number;
+  /** The indexer's own tip; 0 when it did not report one. */
+  latestBlockHeight: number;
 }
 
 // Default page size for on-chain grc20reg registry pagination. Keeps a single
@@ -128,16 +149,25 @@ export class TokenRepository implements ITokenRepository {
   // same document twice in one Promise.all, so the pending promise is shared.
   private accountAssetsInFlight: Map<string, Promise<AccountAsset[] | null>> = new Map();
 
+  // GRC721 indexer cursors. Resolved lazily from AdenaStorage.cache, or
+  // injected in tests; see the `syncCache` getter.
+  private syncCacheStorage: StorageManager<GRC721SyncCacheValueType> | null = null;
+
+  // Serialises cursor writes; see writeGRC721SyncStore.
+  private syncWriteQueue: Promise<void> = Promise.resolve();
+
   constructor(
     localStorage: StorageManager,
     networkInstance: AxiosInstance,
     networkMetainfo: NetworkMetainfo | null,
     gnoProvider: GnoProvider | null,
+    syncCacheStorage?: StorageManager<GRC721SyncCacheValueType>,
   ) {
     this.localStorage = localStorage;
     this.networkInstance = networkInstance;
     this.networkMetainfo = networkMetainfo;
     this.gnoProvider = gnoProvider;
+    this.syncCacheStorage = syncCacheStorage ?? null;
   }
 
   private get networkId(): string {
@@ -540,19 +570,69 @@ export class TokenRepository implements ITokenRepository {
     return [...collections.values()];
   }
 
-  /** The catalog plus the ids it rejected, which callers must not resurrect. */
+  /**
+   * The catalog plus the ids it rejected, which callers must not resurrect.
+   *
+   * `NewToken` is announced once per collection and never retracted, so the
+   * walk resumes from the stored height and only folds in newly announced
+   * collections. Order matters: the candidates are kept oldest-first so a
+   * collection id announced twice is still detected as ambiguous by the same
+   * first-wins rule, whichever walk each announcement arrived in.
+   */
   private async fetchGRC721Catalog(): Promise<{
     collections: Map<string, GRC721CollectionModel>;
     ambiguous: Set<string>;
   }> {
-    const events = await this.fetchEventsByQuery(
-      makeGRC721NewTokenEventsQuery(GRC721_TOKEN_PACKAGES),
-    );
+    const candidates = await this.fetchGRC721CatalogCandidates();
 
     const collections = new Map<string, GRC721CollectionModel>();
     const ambiguous = new Set<string>();
 
-    for (const event of events) {
+    for (const candidate of candidates) {
+      const parsed = parseGrc721CollectionId(candidate.collectionId);
+      if (!parsed) {
+        continue;
+      }
+
+      if (collections.has(candidate.collectionId)) {
+        ambiguous.add(candidate.collectionId);
+        continue;
+      }
+
+      collections.set(candidate.collectionId, {
+        tokenId: '',
+        collectionId: candidate.collectionId,
+        networkId: this.networkId,
+        display: false,
+        type: 'grc721',
+        packagePath: parsed.packagePath,
+        name: candidate.name || parsed.symbol,
+        symbol: candidate.symbol || parsed.symbol,
+        image: '',
+        isTokenUri: false,
+        isMetadata: false,
+      });
+    }
+
+    ambiguous.forEach((collectionId) => collections.delete(collectionId));
+
+    return { collections, ambiguous };
+  }
+
+  /** Every collection ever announced, oldest first, resumed from the cursor. */
+  private async fetchGRC721CatalogCandidates(): Promise<GRC721CollectionCandidate[]> {
+    const network = await this.readGRC721SyncNetwork();
+    const cursor = network.catalog || emptyCursor<GRC721CollectionCandidate>();
+
+    const { page, previousItems, previousBlockHeight, storable } = await this.walkIndexedEvents(
+      cursor,
+      (fromBlockHeight) => makeGRC721NewTokenEventsQuery(GRC721_TOKEN_PACKAGES, fromBlockHeight),
+    );
+
+    // The query orders ASC, so appending keeps the whole list oldest-first.
+    const merged = [...previousItems];
+
+    for (const event of page.events) {
       const schema = resolveGrc721Events(event.pkg_path, GRC721_TOKEN_PACKAGES);
       if (!isGrc721Package(event.pkg_path, GRC721_TOKEN_PACKAGES)) {
         continue;
@@ -563,34 +643,31 @@ export class TokenRepository implements ITokenRepository {
 
       const attrs = TokenRepository.toAttributeMap(event.attrs);
       const collectionId = attrs[schema.tokenAttr] || '';
-      const parsed = parseGrc721CollectionId(collectionId);
-      if (!parsed) {
+      if (!parseGrc721CollectionId(collectionId)) {
         continue;
       }
 
-      if (collections.has(collectionId)) {
-        ambiguous.add(collectionId);
-        continue;
-      }
-
-      collections.set(collectionId, {
-        tokenId: '',
+      // A second announcement of the same id is what makes it ambiguous, so
+      // duplicates are kept rather than deduplicated away.
+      merged.push({
         collectionId,
-        networkId: this.networkId,
-        display: false,
-        type: 'grc721',
-        packagePath: parsed.packagePath,
-        name: attrs[schema.nameAttr] || parsed.symbol,
-        symbol: attrs[schema.symbolAttr] || parsed.symbol,
-        image: '',
-        isTokenUri: false,
-        isMetadata: false,
+        name: attrs[schema.nameAttr] || '',
+        symbol: attrs[schema.symbolAttr] || '',
       });
     }
 
-    ambiguous.forEach((collectionId) => collections.delete(collectionId));
+    if (TokenRepository.shouldStoreWalk(page, previousBlockHeight, storable)) {
+      await this.writeGRC721SyncStore((stored) => ({
+        ...stored,
+        catalog: {
+          blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
+          latestBlockHeight: page.latestBlockHeight,
+          items: merged,
+        },
+      }));
+    }
 
-    return { collections, ambiguous };
+    return merged;
   }
 
   /**
@@ -647,16 +724,28 @@ export class TokenRepository implements ITokenRepository {
     );
   }
 
-  /** Collection ids the address ever received a token of, newest first. */
+  /**
+   * Collection ids the address ever received a token of, newest first, resumed
+   * from the cursor stored for this address on this network.
+   *
+   * Receiving is append-only — a later send does not un-receive — and
+   * membership is decided afterwards by `BalanceOf`, so a resumed walk can
+   * never report a collection the account no longer holds.
+   */
   private async fetchGRC721ReceivedCollectionIds(address: string): Promise<string[]> {
-    const events = await this.fetchEventsByQuery(
-      makeGRC721ReceivedCollectionsQuery(address, GRC721_TOKEN_PACKAGES),
+    const network = await this.readGRC721SyncNetwork();
+    const cursor = network.collections?.[address] || emptyCursor<string>();
+
+    const { page, previousItems, previousBlockHeight, storable } = await this.walkIndexedEvents(
+      cursor,
+      (fromBlockHeight) =>
+        makeGRC721ReceivedCollectionsQuery(address, GRC721_TOKEN_PACKAGES, fromBlockHeight),
     );
 
-    const collectionIds: string[] = [];
-    const seen = new Set<string>();
+    const seen = new Set(previousItems);
+    const received: string[] = [];
 
-    for (const event of events) {
+    for (const event of page.events) {
       const schema = resolveGrc721Events(event.pkg_path, GRC721_TOKEN_PACKAGES);
       if (!isGrc721Package(event.pkg_path, GRC721_TOKEN_PACKAGES)) {
         continue;
@@ -675,10 +764,27 @@ export class TokenRepository implements ITokenRepository {
       }
 
       seen.add(collectionId);
-      collectionIds.push(collectionId);
+      received.push(collectionId);
     }
 
-    return collectionIds;
+    // The query orders DESC, so this batch is newer than everything stored.
+    const merged = [...received, ...previousItems];
+
+    if (TokenRepository.shouldStoreWalk(page, previousBlockHeight, storable)) {
+      await this.writeGRC721SyncStore((stored) => ({
+        ...stored,
+        collections: {
+          ...stored.collections,
+          [address]: {
+            blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
+            latestBlockHeight: page.latestBlockHeight,
+            items: merged,
+          },
+        },
+      }));
+    }
+
+    return merged;
   }
 
   /**
@@ -937,19 +1043,30 @@ export class TokenRepository implements ITokenRepository {
     }));
   }
 
-  /** Candidates only: ids the address received, newest first, deduplicated. */
+  /**
+   * Candidates only: ids the address received, newest first, deduplicated and
+   * resumed from the cursor stored for this address and realm on this network.
+   *
+   * Ownership is re-decided by `OwnerOf` on every read, so a candidate the
+   * account has since sent away costs one RPC check and nothing else.
+   */
   private async fetchGRC721ReceivedTokenIds(
     packagePath: string,
     address: string,
   ): Promise<GRC721TokenCandidate[]> {
-    const events = await this.fetchEventsByQuery(
-      makeGRC721ReceivedTokensQuery(packagePath, address, GRC721_TOKEN_PACKAGES),
+    const network = await this.readGRC721SyncNetwork();
+    const cursor = network.tokens?.[address]?.[packagePath] || emptyCursor<GRC721TokenCandidate>();
+
+    const { page, previousItems, previousBlockHeight, storable } = await this.walkIndexedEvents(
+      cursor,
+      (fromBlockHeight) =>
+        makeGRC721ReceivedTokensQuery(packagePath, address, GRC721_TOKEN_PACKAGES, fromBlockHeight),
     );
 
     const candidates: GRC721TokenCandidate[] = [];
-    const seen = new Set<string>();
+    const seen = new Set(previousItems.map((candidate) => candidate.tokenId));
 
-    for (const event of events) {
+    for (const event of page.events) {
       const schema = resolveGrc721Events(event.pkg_path, GRC721_TOKEN_PACKAGES);
       if (!isGrc721Package(event.pkg_path, GRC721_TOKEN_PACKAGES)) {
         continue;
@@ -979,7 +1096,27 @@ export class TokenRepository implements ITokenRepository {
       candidates.push({ tokenId, collectionId });
     }
 
-    return candidates;
+    // The query orders DESC, so this batch is newer than everything stored.
+    const merged = [...candidates, ...previousItems];
+
+    if (TokenRepository.shouldStoreWalk(page, previousBlockHeight, storable)) {
+      await this.writeGRC721SyncStore((stored) => ({
+        ...stored,
+        tokens: {
+          ...stored.tokens,
+          [address]: {
+            ...stored.tokens?.[address],
+            [packagePath]: {
+              blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
+              latestBlockHeight: page.latestBlockHeight,
+              items: merged,
+            },
+          },
+        },
+      }));
+    }
+
+    return merged;
   }
 
   /**
@@ -1064,7 +1201,24 @@ export class TokenRepository implements ITokenRepository {
     };
   }
 
-  /** Evaluate a realm function returning `(string, error)`. */
+  /**
+   * Evaluate a realm function whose first result is a `string`.
+   *
+   * The realm decides its own arity: `TokenURI(tid) string` returns the value
+   * alone, while the grc721 extensions declare `(string, error)` and report
+   * "no uri" as an empty string *and* an error, so the error has to invalidate
+   * the value even when the realm also filled one in.
+   *
+   * The error is read off the *trailing* result, because that is where Go puts
+   * it, so a realm declaring `(string, int, error)` with a nil error still gets
+   * its string read. The remaining assumption is that a realm whose last result
+   * is a string returns an error there at all: one declaring `(string, bool)`
+   * would have its value discarded whenever the flag is true. No grc721
+   * extension declares that shape — the standard is `(string, error)` — and
+   * telling the two apart from the response alone is not possible, so the
+   * conservative reading wins: a value the realm may have flagged as invalid is
+   * dropped rather than shown.
+   */
   private async evaluateGRC721String(
     packagePath: string,
     functionName: string,
@@ -1074,19 +1228,46 @@ export class TokenRepository implements ITokenRepository {
       throw new Error('Gno provider not initialized.');
     }
 
-    const value = await this.gnoProvider.getValueByEvaluateExpression(
-      packagePath,
-      functionName,
-      args,
-    );
+    const parsed = await this.gnoProvider.evaluateFunction(packagePath, functionName, args);
+    if (!parsed) {
+      return '';
+    }
 
-    return value ?? '';
+    if (TokenRepository.reportsError(parsed.rest)) {
+      return '';
+    }
+
+    return parsed.value;
+  }
+
+  /**
+   * Whether the tuples following a value carry a non-nil error.
+   *
+   * A nil interface prints as the bare `(undefined)` tuple, so a remainder that
+   * is empty or ends with it reported no error. A non-nil error prints as a
+   * struct literal, which is why the remainder is matched rather than parsed:
+   * `(&(struct{("boom" string)} errors.errorString) *errors.errorString)` does
+   * not round-trip through the tuple grammar.
+   */
+  private static reportsError(rest: string): boolean {
+    if (rest === '') {
+      return false;
+    }
+
+    return !rest.endsWith(QEVAL_NIL);
   }
 
   /** Flatten the matched transactions into their events, keeping query order. */
   private async fetchEventsByQuery(query: string): Promise<IndexedGnoEvent[]> {
+    const { events } = await this.fetchEventPageByQuery(query);
+    return events;
+  }
+
+  /** As {@link fetchEventsByQuery}, but also reports the heights a cursor needs. */
+  private async fetchEventPageByQuery(query: string): Promise<IndexedEventPage> {
+    const empty: IndexedEventPage = { events: [], maxBlockHeight: 0, latestBlockHeight: 0 };
     if (!this.queryUrl) {
-      return [];
+      return empty;
     }
 
     const result = await TokenRepository.postGraphQuery<IndexedTransactionsResponse>(
@@ -1095,12 +1276,212 @@ export class TokenRepository implements ITokenRepository {
       query,
     );
 
+    const latestBlockHeight = Number(result?.data?.latestBlockHeight) || 0;
     const transactions = result?.data?.getTransactions;
     if (!Array.isArray(transactions)) {
-      return [];
+      return { ...empty, latestBlockHeight };
     }
 
-    return transactions.flatMap((transaction) => transaction?.response?.events || []);
+    const maxBlockHeight = transactions.reduce(
+      (highest, transaction) => Math.max(highest, Number(transaction?.block_height) || 0),
+      0,
+    );
+
+    return {
+      events: transactions.flatMap((transaction) => transaction?.response?.events || []),
+      maxBlockHeight,
+      latestBlockHeight,
+    };
+  }
+
+  /**
+   * Whether the indexer has gone backwards since this cursor was written.
+   *
+   * A reset testnet or a re-index restarts the tip from zero, and resuming
+   * above a height that now belongs to a different chain hides every token
+   * below it — permanently, since the cursor never rewinds on its own.
+   *
+   * The signal is the *tip* dropping. Comparing a fresh tip against the
+   * cursor's `blockHeight` does not work: that is the newest block matching
+   * this query, typically far below the tip, so the check would only hold for
+   * the brief window before the new chain grew past it. Cursors written before
+   * the tip was recorded fall back to that weaker comparison rather than never
+   * rewinding at all.
+   */
+  private static hasIndexerRewound<T>(
+    cursor: GRC721SyncCursor<T>,
+    page: IndexedEventPage,
+  ): boolean {
+    if (page.latestBlockHeight <= 0) {
+      return false;
+    }
+
+    const previousTip = cursor.latestBlockHeight ?? cursor.blockHeight;
+
+    return previousTip > 0 && page.latestBlockHeight < previousTip;
+  }
+
+  /**
+   * Run an indexer walk that resumes from `cursor.blockHeight`.
+   *
+   * The indexer is an append-only event log, so everything at or below the
+   * stored height was already folded into `cursor.items` and only newer blocks
+   * have to travel. When {@link hasIndexerRewound} says that no longer holds,
+   * redo the walk from genesis with the cached items dropped.
+   */
+  private async walkIndexedEvents<T>(
+    cursor: GRC721SyncCursor<T>,
+    makeQuery: (fromBlockHeight: number) => string,
+  ): Promise<{
+    page: IndexedEventPage;
+    previousItems: T[];
+    previousBlockHeight: number;
+    /** False when the result must not be folded back into the cursor. */
+    storable: boolean;
+  }> {
+    const page = await this.fetchEventPageByQuery(makeQuery(cursor.blockHeight));
+
+    if (!TokenRepository.hasIndexerRewound(cursor, page)) {
+      return {
+        page,
+        previousItems: cursor.items,
+        previousBlockHeight: cursor.blockHeight,
+        storable: TokenRepository.isStorablePage(page),
+      };
+    }
+
+    console.info('[grc721-sync] indexer rewound, re-walking from genesis', {
+      storedBlockHeight: cursor.blockHeight,
+      storedLatestBlockHeight: cursor.latestBlockHeight,
+      latestBlockHeight: page.latestBlockHeight,
+    });
+
+    const rewalked = await this.fetchEventPageByQuery(makeQuery(0));
+
+    return {
+      page: rewalked,
+      previousItems: [],
+      previousBlockHeight: 0,
+      storable: TokenRepository.isStorablePage(rewalked),
+    };
+  }
+
+  /**
+   * Whether a page can be folded back into a cursor.
+   *
+   * Events with no usable block height would advance nothing while still
+   * merging their candidates, so the next walk would replay the same range and
+   * append them a second time. For the catalog that is fatal rather than
+   * merely wasteful: a repeated collection id *is* the ambiguity signal, so
+   * every collection would be marked ambiguous and dropped, leaving the NFT
+   * list permanently empty. Treat such a page as unusable and keep the cursor
+   * where it was.
+   */
+  private static isStorablePage(page: IndexedEventPage): boolean {
+    return page.events.length === 0 || page.maxBlockHeight > 0;
+  }
+
+  /**
+   * Whether a completed walk is worth persisting.
+   *
+   * A walk that matched nothing and moved no height would rewrite the whole
+   * candidate list — which for the chain-wide catalog is every collection ever
+   * announced — byte for byte. Every NFT screen load did that.
+   */
+  private static shouldStoreWalk(
+    page: IndexedEventPage,
+    previousBlockHeight: number,
+    storable: boolean,
+  ): boolean {
+    if (!storable) {
+      return false;
+    }
+
+    return page.events.length > 0 || page.maxBlockHeight > previousBlockHeight;
+  }
+
+  /**
+   * Cache storage, built on first use so a caller that never touches NFTs does
+   * not need the chrome API present.
+   */
+  private get syncCache(): StorageManager<GRC721SyncCacheValueType> | null {
+    if (!this.syncCacheStorage) {
+      try {
+        this.syncCacheStorage = AdenaStorage.cache<GRC721SyncCacheValueType>();
+      } catch {
+        // No cache available: every walk starts from genesis, as before.
+        return null;
+      }
+    }
+
+    return this.syncCacheStorage;
+  }
+
+  /** The whole cursor store, or an empty map when nothing has been walked yet. */
+  private async readGRC721SyncStore(): Promise<GRC721SyncCache> {
+    const store = await this.syncCache
+      ?.getToObject<GRC721SyncCache>(GRC721_SYNC_CACHE_KEY)
+      .catch(() => null);
+
+    return store || {};
+  }
+
+  /**
+   * Apply `update` to the stored cursors, one writer at a time.
+   *
+   * Every cursor shares one cache document, and refreshing an account's NFTs
+   * fans out over its collections with `Promise.all` — so an unserialised
+   * read-modify-write has all of them read the same snapshot and each write
+   * discard the entries the others just added. Only the last collection kept a
+   * cursor, and every other one re-walked from genesis on the next refresh,
+   * which is the whole point of the cache.
+   *
+   * Chaining the writes makes each one read the document after the previous
+   * writer finished, so sibling cursors survive. Reads outside the chain are
+   * left alone: a walk merges into the snapshot it started from and only ever
+   * writes its own sub-key.
+   */
+  private writeGRC721SyncStore(
+    update: (network: NetworkGRC721Sync) => NetworkGRC721Sync,
+  ): Promise<void> {
+    const chainId = this.chainId;
+
+    const write = this.syncWriteQueue.then(async () => {
+      const store = await this.readGRC721SyncStore();
+
+      await this.syncCache?.setByObject(GRC721_SYNC_CACHE_KEY, {
+        ...store,
+        [chainId]: update(store[chainId] || {}),
+      });
+    });
+
+    // A cursor that cannot be stored only costs the next walk its resume point;
+    // the data itself is already in hand. Keep the queue alive either way.
+    this.syncWriteQueue = write.catch(() => undefined);
+
+    return write.catch((error) => {
+      console.warn('[grc721-sync] failed to store cursor', error);
+    });
+  }
+
+  private async readGRC721SyncNetwork(): Promise<NetworkGRC721Sync> {
+    const store = await this.readGRC721SyncStore();
+    return store[this.chainId] || {};
+  }
+
+  /**
+   * Drop every stored cursor.
+   *
+   * The cursors are keyed by account address, so without this a wallet reset
+   * would leave the addresses the user held — and the collections and token ids
+   * behind them — sitting in storage after the wallet that owned them is gone.
+   */
+  public async deleteGRC721SyncCache(): Promise<boolean> {
+    await this.syncCache?.remove(GRC721_SYNC_CACHE_KEY).catch((error) => {
+      console.warn('[grc721-sync] failed to clear cursors', error);
+    });
+
+    return true;
   }
 
   private static toAttributeMap(
@@ -1261,7 +1642,18 @@ export class TokenRepository implements ITokenRepository {
           headers: header || {},
         },
       )
-      .then((response) => response.data)
+      .then((response) => {
+        // A schema mismatch comes back as HTTP 200 with `errors` and a null
+        // `data`, which otherwise reads exactly like "the query matched
+        // nothing" — an indexer that does not support a field would silently
+        // empty the NFT list rather than say so.
+        const errors = (response.data as { errors?: unknown[] } | null)?.errors;
+        if (Array.isArray(errors) && errors.length > 0) {
+          console.warn('[graphql] query rejected by the indexer', url, errors);
+        }
+
+        return response.data;
+      })
       .catch((e) => {
         console.log(e);
         return null;

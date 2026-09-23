@@ -3,6 +3,7 @@ import { StorageManager } from '@common/storage/storage-manager';
 import { GRC721_TOKEN_PACKAGES } from '@common/utils/grc721-config';
 import { NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
+import { GRC721_SYNC_CACHE_KEY } from './token.grc721-sync';
 import { TokenRepository } from './token';
 
 const GRC721_PACKAGE = GRC721_TOKEN_PACKAGES[0].path;
@@ -48,25 +49,73 @@ interface ChainState {
   owners?: Record<string, string>;
   balances?: Record<string, number>;
   funcs?: { name: string; results: { name: string; type: string }[] }[];
+  /** Raw `evaluateFunction` replies, keyed by function name. */
+  evaluations?: Record<string, { value: string; rest: string }>;
 }
 
+/** Enough of StorageManager for the GRC721 sync cursors, kept in memory. */
+function makeSyncCache(): { storage: StorageManager; values: Record<string, unknown> } {
+  const values: Record<string, unknown> = {};
+  const storage = {
+    getToObject: jest.fn(async (key: string) => values[key]),
+    setByObject: jest.fn(async (key: string, value: unknown) => {
+      values[key] = value;
+      values.__writes = ((values.__writes as number) ?? 0) + 1;
+    }),
+    remove: jest.fn(async (key: string) => {
+      delete values[key];
+    }),
+  } as unknown as StorageManager;
+
+  return { storage, values };
+}
+
+/**
+ * One indexer reply per call, so a test can hand the first walk its history and
+ * the next walk only what arrived after it. The last reply repeats once the
+ * list runs out.
+ */
 function makeRepository(
   transactionEvents: unknown[][],
   chain: ChainState = {},
+  options: {
+    laterPages?: unknown[][][];
+    latestBlockHeight?: number;
+    blockHeight?: number;
+    /** null drops the cursor cache, as when the chrome API is unavailable. */
+    syncCache?: null;
+  } = {},
 ): {
   repository: TokenRepository;
   evaluateIIFE: jest.Mock;
+  evaluateFunction: jest.Mock;
   getValueByEvaluateExpression: jest.Mock;
+  post: jest.Mock;
+  syncCacheValues: Record<string, unknown>;
 } {
-  const axiosInstance = {
-    post: jest.fn().mockResolvedValue({
+  const pages = [transactionEvents, ...(options.laterPages ?? [])];
+  const latestBlockHeight = options.latestBlockHeight ?? 500;
+  const blockHeight = options.blockHeight ?? 100;
+  let call = 0;
+
+  const post = jest.fn(async () => {
+    const page = pages[Math.min(call, pages.length - 1)];
+    call += 1;
+    return {
       data: {
         data: {
-          getTransactions: transactionEvents.map((events) => ({ response: { events } })),
+          latestBlockHeight,
+          getTransactions: page.map((events) => ({
+            block_height: blockHeight,
+            response: { events },
+          })),
         },
       },
-    }),
-  } as unknown as AxiosInstance;
+    };
+  });
+
+  const axiosInstance = { post } as unknown as AxiosInstance;
+  const { storage: syncCache, values: syncCacheValues } = makeSyncCache();
 
   const owners = chain.owners ?? {};
 
@@ -91,8 +140,16 @@ function makeRepository(
     },
   );
 
+  const evaluateFunction = jest.fn(
+    async (
+      _packagePath: string,
+      functionName: string,
+    ): Promise<{ value: string; rest: string } | null> => chain.evaluations?.[functionName] ?? null,
+  );
+
   const gnoProvider = {
     evaluateIIFE,
+    evaluateFunction,
     getValueByEvaluateExpression,
     getRealmDocument: jest.fn(async () => ({ funcs: chain.funcs ?? [] })),
   } as unknown as GnoProvider;
@@ -102,10 +159,364 @@ function makeRepository(
     axiosInstance,
     NETWORK,
     gnoProvider,
+    options.syncCache === null ? undefined : syncCache,
   );
 
-  return { repository, evaluateIIFE, getValueByEvaluateExpression };
+  return {
+    repository,
+    evaluateIIFE,
+    evaluateFunction,
+    getValueByEvaluateExpression,
+    post,
+    syncCacheValues,
+  };
 }
+
+/** The GraphQL document sent on the nth indexer call. */
+const queryOf = (post: jest.Mock, call: number): string => post.mock.calls[call][1].query;
+
+/**
+ * The resume height in a query's `where` clause, or null when it walks from
+ * genesis. `block_height` also names a selected field, so match the filter.
+ */
+const resumeHeightOf = (post: jest.Mock, call: number): number | null => {
+  const matched = queryOf(post, call).match(/block_height: \{ gt: (\d+) \}/);
+  return matched ? Number(matched[1]) : null;
+};
+
+describe('indexer sync cursor', () => {
+  it('walks from genesis first, then resumes above the height it reached', async () => {
+    const { repository, post, syncCacheValues } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120, laterPages: [[[received(ADDRESS, '8')]]] },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    expect(resumeHeightOf(post, 0)).toBeNull();
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    expect(resumeHeightOf(post, 1)).toBe(120);
+
+    // Cursors live in the cache store, not in the migrated wallet blob.
+    const cursor = (syncCacheValues[GRC721_SYNC_CACHE_KEY] as Record<string, never>)[
+      NETWORK.chainId
+    ];
+    expect(cursor).toBeTruthy();
+  });
+
+  it('keeps the tokens of an earlier walk when the next one adds nothing', async () => {
+    const { repository } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120, laterPages: [[]] },
+    );
+
+    await expect(repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS)).resolves.toHaveLength(1);
+    // Second walk returns no transactions; the stored candidate must survive.
+    await expect(repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS)).resolves.toHaveLength(1);
+  });
+
+  it('puts a newly received token ahead of the stored ones', async () => {
+    const { repository } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS, '8': ADDRESS } },
+      { blockHeight: 120, laterPages: [[[received(ADDRESS, '8')]]] },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(tokens.map((token) => token.tokenId)).toEqual(['8', '7']);
+  });
+
+  // Two accounts on one network must not resume from each other's height.
+  it('keeps a separate cursor per address', async () => {
+    const { repository, post } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120 },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, OTHER_ADDRESS);
+
+    expect(resumeHeightOf(post, 1)).toBeNull();
+  });
+
+  it('keeps a separate cursor per realm', async () => {
+    const { repository, post } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120 },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    await repository.fetchGRC721TokensBy('gno.land/r/demo/nft', ADDRESS);
+
+    expect(resumeHeightOf(post, 1)).toBeNull();
+  });
+
+  // A reset testnet or a re-index restarts the tip from zero. The signal is the
+  // tip dropping, not the tip falling below the matched-event height: an
+  // account's newest matching block sits far below the tip, so the latter only
+  // holds for the brief window before the new chain grows past it.
+  it('re-walks from genesis when the indexer tip has gone backwards', async () => {
+    const { repository, post } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 400, latestBlockHeight: 4_000_000 },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    // Reset chain: the tip is far below what was seen, but still well above the
+    // stored event height of 400 — the old check would have missed this.
+    post.mockImplementation(async () => ({
+      data: {
+        data: {
+          latestBlockHeight: 900,
+          getTransactions: [{ block_height: 5, response: { events: [received(ADDRESS, '7')] } }],
+        },
+      },
+    }));
+
+    const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(resumeHeightOf(post, 1)).toBe(400);
+    expect(resumeHeightOf(post, 2)).toBeNull();
+    expect(tokens.map((token) => token.tokenId)).toEqual(['7']);
+  });
+
+  it('keeps resuming while the indexer tip only grows', async () => {
+    const { repository, post } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 400, latestBlockHeight: 4_000_000 },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    post.mockImplementation(async () => ({
+      data: { data: { latestBlockHeight: 4_000_100, getTransactions: [] } },
+    }));
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(resumeHeightOf(post, 1)).toBe(400);
+    // Still resuming — no genesis re-walk was issued.
+    expect(post).toHaveBeenCalledTimes(2);
+  });
+
+  // The wallet's own network record id is local bookkeeping and survives a user
+  // re-pointing that network at a different chain; the chain id does not.
+  it('keys cursors by chain id', async () => {
+    const { repository, syncCacheValues } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120 },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(Object.keys(syncCacheValues[GRC721_SYNC_CACHE_KEY] as object)).toEqual([
+      NETWORK.chainId,
+    ]);
+  });
+
+  // The cache is a convenience, not a dependency: without it (no chrome API,
+  // a storage failure) every walk simply starts from genesis as it used to.
+  it('still walks when no cursor cache is available', async () => {
+    const { repository, post } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120, syncCache: null },
+    );
+
+    await expect(repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS)).resolves.toHaveLength(1);
+    await expect(repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS)).resolves.toHaveLength(1);
+
+    expect(resumeHeightOf(post, 0)).toBeNull();
+    expect(resumeHeightOf(post, 1)).toBeNull();
+  });
+
+  // The cursors are keyed by account address, so a wallet reset must take them
+  // with it rather than leave the addresses the user held behind in storage.
+  it('drops every cursor when the cache is cleared', async () => {
+    const { repository, post, syncCacheValues } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120 },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    expect(syncCacheValues[GRC721_SYNC_CACHE_KEY]).toBeTruthy();
+
+    await repository.deleteGRC721SyncCache();
+
+    expect(syncCacheValues[GRC721_SYNC_CACHE_KEY]).toBeUndefined();
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    expect(resumeHeightOf(post, 1)).toBeNull();
+  });
+
+  // Refreshing an account fans out over its collections with Promise.all. An
+  // unserialised read-modify-write on the shared cache document had every walk
+  // read the same snapshot and every write but the last discard its siblings.
+  it('keeps every cursor when walks run concurrently', async () => {
+    const { repository, syncCacheValues } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120 },
+    );
+
+    await Promise.all([
+      repository.fetchGRC721TokensBy('gno.land/r/demo/a', ADDRESS),
+      repository.fetchGRC721TokensBy('gno.land/r/demo/b', ADDRESS),
+      repository.fetchGRC721TokensBy('gno.land/r/demo/c', ADDRESS),
+    ]);
+
+    const cache = syncCacheValues[GRC721_SYNC_CACHE_KEY] as {
+      [networkId: string]: { tokens?: { [address: string]: Record<string, unknown> } };
+    };
+
+    expect(Object.keys(cache[NETWORK.chainId].tokens?.[ADDRESS] || {}).sort()).toEqual([
+      'gno.land/r/demo/a',
+      'gno.land/r/demo/b',
+      'gno.land/r/demo/c',
+    ]);
+  });
+
+  // A page whose transactions carry no usable height cannot advance the cursor.
+  // Merging it anyway would replay the same range next walk and append the same
+  // candidates again — and for the catalog a repeated collection id *is* the
+  // ambiguity signal, so every collection would be dropped and the NFT list
+  // would go permanently empty.
+  it('does not fold in a page that carries no block height', async () => {
+    const { repository, syncCacheValues, post } = makeRepository([[received(ADDRESS, '7')]], {
+      owners: { '7': ADDRESS },
+    });
+
+    post.mockImplementation(async () => ({
+      data: {
+        data: {
+          latestBlockHeight: 500,
+          getTransactions: [{ response: { events: [received(ADDRESS, '7')] } }],
+        },
+      },
+    }));
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(syncCacheValues[GRC721_SYNC_CACHE_KEY]).toBeUndefined();
+  });
+
+  it('leaves the stored cursor untouched when a walk matches nothing new', async () => {
+    const { repository, syncCacheValues } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120, laterPages: [[]] },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    const afterFirst = JSON.stringify(syncCacheValues[GRC721_SYNC_CACHE_KEY]);
+    const writesAfterFirst = (syncCacheValues.__writes as number) ?? 0;
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(JSON.stringify(syncCacheValues[GRC721_SYNC_CACHE_KEY])).toBe(afterFirst);
+    expect((syncCacheValues.__writes as number) ?? 0).toBe(writesAfterFirst);
+  });
+
+  it('resumes the collection walk too', async () => {
+    const { repository, post } = makeRepository(
+      [[newToken(COLLECTION_ID, 'GNOSWAP NFT', 'GNFT')], [received(ADDRESS, '7')]],
+      { balances: { [PACKAGE_PATH]: 1 }, owners: { '7': ADDRESS } },
+      { blockHeight: 300 },
+    );
+
+    await repository.fetchAccountGRC721CollectionsBy(ADDRESS);
+    post.mockClear();
+    await repository.fetchAccountGRC721CollectionsBy(ADDRESS);
+
+    post.mock.calls.forEach((_call, index) => {
+      expect(resumeHeightOf(post, index)).toBe(300);
+    });
+  });
+});
+
+describe('fetchGRC721TokenUriBy', () => {
+  // `TokenURI(tid) string` — the realm declares a single result, so there is no
+  // error tuple to weigh.
+  it('accepts a uri from a realm that returns a bare string', async () => {
+    const { repository } = makeRepository([], {
+      evaluations: { TokenURI: { value: 'ipfs://cid/1.png', rest: '' } },
+    });
+
+    await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe(
+      'ipfs://cid/1.png',
+    );
+  });
+
+  // `TokenURI(tid) (string, error)` with a nil error, which prints as
+  // `(undefined)`.
+  it('accepts a uri returned alongside a nil error', async () => {
+    const { repository } = makeRepository([], {
+      evaluations: {
+        TokenURI: { value: 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=', rest: '(undefined)' },
+      },
+    });
+
+    await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe(
+      'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=',
+    );
+  });
+
+  // Go puts the error last, so a value before other results is still readable.
+  it('accepts a uri from a realm with an extra result and a nil error', async () => {
+    const { repository } = makeRepository([], {
+      evaluations: { TokenURI: { value: 'ipfs://cid/1.png', rest: '(3 int64)\n(undefined)' } },
+    });
+
+    await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe(
+      'ipfs://cid/1.png',
+    );
+  });
+
+  it('rejects a uri returned alongside a non-nil error', async () => {
+    const { repository } = makeRepository([], {
+      evaluations: {
+        TokenURI: {
+          value: 'ipfs://stale',
+          rest: '(&(struct{("token has no uri" string)} errors.errorString) *errors.errorString)',
+        },
+      },
+    });
+
+    await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).rejects.toThrow(
+      'not found token uri',
+    );
+  });
+
+  it('rejects an empty uri', async () => {
+    const { repository } = makeRepository([], {
+      evaluations: { TokenURI: { value: '', rest: '(undefined)' } },
+    });
+
+    await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).rejects.toThrow(
+      'not found token uri',
+    );
+  });
+
+  it('passes the token id through as the sole argument', async () => {
+    const { repository, evaluateFunction } = makeRepository([], {
+      evaluations: { TokenURI: { value: 'ipfs://cid/7.png', rest: '(undefined)' } },
+    });
+
+    await repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '7');
+
+    expect(evaluateFunction).toHaveBeenCalledWith(PACKAGE_PATH, 'TokenURI', ['7']);
+  });
+});
 
 describe('fetchGRC721Collections', () => {
   it('lists the collections announced by NewToken', async () => {

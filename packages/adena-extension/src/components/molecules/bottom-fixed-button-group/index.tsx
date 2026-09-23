@@ -39,20 +39,39 @@ export const BottomFixedButtonGroup = ({
     return mapClassName(rightButton);
   }, [rightButton]);
 
+  // `disabled` used to only add a CSS class: the button still fired on click and
+  // on Enter, so every caller that greyed a button out was relying on its own
+  // handler to re-check the same condition. Honour it here instead.
   const onClickLeftButton = useCallback(() => {
+    if (leftButton.disabled) {
+      return;
+    }
     leftButton.onClick();
   }, [leftButton]);
 
   const onClickRightButton = useCallback(() => {
+    if (rightButton.disabled) {
+      return;
+    }
     rightButton.onClick();
   }, [rightButton]);
 
   return (
     <ButtonWrap $filled={filled}>
-      <Button className={leftClassName} fullWidth onClick={onClickLeftButton}>
+      <Button
+        className={leftClassName}
+        fullWidth
+        disabled={leftButton.disabled}
+        onClick={onClickLeftButton}
+      >
         <Text type='body1Bold'>{leftButton.text}</Text>
       </Button>
-      <Button className={rightClassName} fullWidth onClick={onClickRightButton}>
+      <Button
+        className={rightClassName}
+        fullWidth
+        disabled={rightButton.disabled}
+        onClick={onClickRightButton}
+      >
         <Text type='body1Bold'>{rightButton.text}</Text>
       </Button>
     </ButtonWrap>

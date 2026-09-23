@@ -12,17 +12,26 @@ export const NFTCollectionCardWrapper = styled(View)`
   border-radius: 8px;
   cursor: pointer;
 
+  /*
+   * Pinned into a slot inset from both card edges, with the auto margins doing
+   * the centring. Centring it by its own width instead — a fixed 132px, or the
+   * flex static position — puts the pill outside the card the moment its
+   * content is wider than the card, and the card's overflow:hidden then eats
+   * the *start* of the label, leaving a name that reads as truncated from the
+   * left. Inside this slot the pill simply cannot start before 10px.
+   */
   .info-static-wrapper {
-    ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })}
+    ${mixins.flex({ direction: 'row', align: 'center', justify: 'center' })}
     position: absolute;
     top: 10px;
-    width: 132px;
-    flex-shrink: 0;
+    left: 10px;
+    right: 10px;
+    margin: 0 auto;
+    width: max-content;
+    max-width: calc(100% - 20px);
     height: 20px;
     padding: 0 5px 0 8px;
     gap: 4px;
-    flex-shrink: 0;
-    align-self: center;
     border-radius: 10px;
     background-color: ${getTheme('neutral', '_9')};
     cursor: default;
@@ -48,12 +57,13 @@ export const NFTCollectionCardWrapper = styled(View)`
       }
     }
 
+    /* min-width:0 lets the name shrink past its text width, so a long
+       collection name ellipsizes instead of pushing the row wider. */
     .name-wrapper {
-      display: inline-block;
-      width: 100%;
+      min-width: 0;
+      flex: 0 1 auto;
       ${fonts.captionBold}
       text-align: center;
-      word-break: break-all;
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;

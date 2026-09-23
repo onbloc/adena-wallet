@@ -36,8 +36,23 @@ export const SubHeaderWrapper = styled.div`
     }
   }
 
+  /*
+   * The popup sizes itself to its content, and a percentage max-width is
+   * ignored while that width is still being worked out — so a nowrap title
+   * contributed its full text width and stretched the whole popup (an NFT name
+   * long enough took it from 360px to ~990px).
+   *
+   * A zero flex basis contributes nothing to that calculation: the title takes
+   * whatever the header has and ellipsizes inside it. The padding keeps the
+   * text clear of the 24px icons the wrapper positions at either edge, which is
+   * what the old calc(100% - 56px) was reserving.
+   */
   .title-wrapper {
-    max-width: calc(100% - 56px);
+    flex: 1 1 0;
+    min-width: 0;
+    width: 0;
+    padding: 0 28px;
+    text-align: center;
     text-overflow: ellipsis;
     display: block;
     white-space: nowrap;

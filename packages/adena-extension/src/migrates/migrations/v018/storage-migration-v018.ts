@@ -143,15 +143,14 @@ export class StorageMigration018 implements Migration<StorageModelDataV018> {
   // v009 re-encrypted SERIALIZED with the hashed password (SHA256(LEGACY_SALT +
   // rawPassword)), while v015 later re-encrypted it with the raw password. We
   // therefore try the hashed password first, then fall back to the raw one.
-  // Wrong keys surface either as a CryptoJS "Malformed UTF-8 data" throw or as
-  // an empty string, so both shapes are treated as a failed attempt. Returns
-  // the plaintext on success, or null when neither key decrypts the value.
+  // Returns the plaintext on success, or null when neither key decrypts the
+  // value.
   private async decryptLegacy(value: string, password: string): Promise<string | null> {
     const candidates = [legacyHashPassword(password), password];
     for (const key of candidates) {
       try {
         const plaintext = await decryptAES(value, key);
-        if (plaintext && plaintext.trim() !== '') {
+        if (isLegacyPlaintext(plaintext)) {
           return plaintext;
         }
       } catch {
@@ -159,5 +158,33 @@ export class StorageMigration018 implements Migration<StorageModelDataV018> {
       }
     }
     return null;
+  }
+}
+
+/**
+ * Whether a candidate key actually decrypted the value.
+ *
+ * AES-CBC carries no authentication tag, so a wrong key is only *usually*
+ * rejected — CryptoJS throws "Malformed UTF-8 data" or yields an empty string.
+ * Roughly 1 attempt in 250 the garbage plaintext happens to be non-empty valid
+ * UTF-8, and a "not empty" test then accepts it: the migration re-encrypts
+ * shredded bytes over the user's wallet, and the real plaintext is gone.
+ *
+ * Both legacy values are JSON containers — SERIALIZED is the wallet object
+ * (v015 parses it as one before re-encrypting) and ADDRESS_BOOK is an array —
+ * so requiring a JSON object or array separates a real decrypt from a lucky
+ * one. Over 400k wrong-key attempts this rejected every garbage plaintext,
+ * while a scalar-tolerant `JSON.parse` check still let a few through.
+ */
+function isLegacyPlaintext(plaintext: string): boolean {
+  if (!plaintext || plaintext.trim() === '') {
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(plaintext);
+    return typeof parsed === 'object' && parsed !== null;
+  } catch {
+    return false;
   }
 }

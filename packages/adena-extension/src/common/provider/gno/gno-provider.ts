@@ -31,7 +31,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import { HttpClient, RpcClient, Tm2Client } from '@gnolang/tm2-rpc';
 import axios from 'axios';
-import { formatGnoArg, GnoArg } from './qeval';
+import { decodeQEvalTupleValue, formatGnoArg, GnoArg, parseFirstQEvalTuple } from './qeval';
 import { RpcEndpointSelector } from './rpc-endpoint-selector';
 import {
   ABCIAccount,
@@ -86,7 +86,7 @@ class FallbackRpcClient implements RpcClient {
 }
 
 function createTm2Client(endpoints: RpcEndpointSelector): Tm2Client {
-  return new ((Tm2Client as unknown) as Tm2ClientConstructor)(new FallbackRpcClient(endpoints));
+  return new (Tm2Client as unknown as Tm2ClientConstructor)(new FallbackRpcClient(endpoints));
 }
 
 function toNumberOrUndefined(value: string | undefined): number | undefined {
@@ -287,10 +287,38 @@ export class GnoProvider extends GnoJSONRPCProvider {
       // client v2) is non-nullable, so we can't widen the return type to
       // `| null` without breaking the override. All call sites already treat
       // the result as nullable; keep the cast as the intentional bridge.
-      return (null as unknown) as GnoSessionAccountInfoResponse;
+      return null as unknown as GnoSessionAccountInfoResponse;
     }
 
     return withSessionAccountInfo(parseABCI<GnoSessionAccountResponse>(abciData));
+  }
+
+  /**
+   * Evaluate `functionName(args...)` and return its first return value, decoded.
+   *
+   * A Gno function may declare one result (`TokenURI(tid) string`) or two
+   * (`TokenURI(tid) (string, error)`), so the trailing tuples are handed back
+   * untouched in `rest` — `(undefined)` for a nil error, a struct literal
+   * otherwise — and it is the caller's job to decide what a non-nil error
+   * means for the value it asked for.
+   */
+  public evaluateFunction(
+    packagePath: string,
+    functionName: string,
+    params: GnoArg[] = [],
+  ): Promise<{ value: string; rest: string } | null> {
+    const expression = `${functionName}(${params.map(formatGnoArg).join(', ')})`;
+
+    return this.evaluateExpression(packagePath, expression)
+      .then((result) => {
+        const parsed = parseFirstQEvalTuple(result);
+        if (!parsed) {
+          return null;
+        }
+
+        return { value: decodeQEvalTupleValue(parsed.tuple), rest: parsed.rest };
+      })
+      .catch(() => null);
   }
 
   public getValueByEvaluateExpression(
@@ -298,30 +326,20 @@ export class GnoProvider extends GnoJSONRPCProvider {
     functionName: string,
     params: (string | number)[],
   ): Promise<string | null> {
-    const paramValues = params.map((param) =>
-      typeof param === 'number' ? `${param}` : `"${param}"`,
-    );
-    const expression = `${functionName}(${paramValues.join(',')})`;
-
-    return this.evaluateExpression(packagePath, expression)
-      .then((result) => {
-        const regex = /\((?:"((?:\\.|[^"\\])*)"|(\S+))\s+\w+\)/g;
-        const matches = result.matchAll(regex);
-
-        for (const match of matches) {
-          if (match?.[1] !== undefined) {
-            const unescaped = match[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-            return unescaped;
-          }
-
-          if (match?.[2] !== undefined) {
-            return `${match[2]}`;
-          }
-        }
-
+    return this.evaluateFunction(packagePath, functionName, params).then((parsed) => {
+      if (!parsed) {
         return null;
-      })
-      .catch(() => null);
+      }
+
+      // A nil interface prints as the bare `(undefined)` tuple. Handing back
+      // the token verbatim would make callers treat the string "undefined" as
+      // a value; null is what "there was nothing here" already means to them.
+      if (parsed.value === 'undefined') {
+        return null;
+      }
+
+      return parsed.value;
+    });
   }
 
   /**

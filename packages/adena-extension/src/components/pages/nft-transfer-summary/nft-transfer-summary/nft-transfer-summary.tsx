@@ -20,6 +20,11 @@ export interface NFTTransferSummaryProps {
   networkFee: NetworkFeeType | null;
   memo: string;
   isErrorNetworkFee?: boolean;
+  isLoadingNetworkFee?: boolean;
+  isSimulateError?: boolean;
+  /** The GNOT balance the fee is paid from is still unknown. */
+  isBalanceUnknown?: boolean;
+  simulateErrorBannerMessage?: string | null;
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
@@ -37,21 +42,55 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
   networkFee,
   memo,
   isErrorNetworkFee,
+  isLoadingNetworkFee,
+  isSimulateError,
+  isBalanceUnknown,
+  simulateErrorBannerMessage,
   queryGRC721TokenUri,
   onClickBack,
   onClickCancel,
   onClickSend,
   onClickNetworkFeeSetting,
 }) => {
-  const insufficientNetworkFeeError = new TransactionValidationError('INSUFFICIENT_NETWORK_FEE');
-
   const title = useMemo(() => {
     return `Sending ${grc721Token.name} #${grc721Token.tokenId}`;
   }, [grc721Token]);
 
-  const errorMessage = useMemo(() => {
-    return insufficientNetworkFeeError.message;
-  }, []);
+  // Only an actual insufficient-fee state may carry a message: NetworkFee reads
+  // a non-empty `errorMessage` as "this row is in error", so passing it
+  // unconditionally painted every successful estimate red.
+  const networkFeeErrorMessage = useMemo(() => {
+    if (!isErrorNetworkFee) {
+      return '';
+    }
+
+    return new TransactionValidationError('INSUFFICIENT_NETWORK_FEE').message;
+  }, [isErrorNetworkFee]);
+
+  const disabledSendButton = useMemo(() => {
+    if (isLoadingNetworkFee) {
+      return true;
+    }
+
+    if (isErrorNetworkFee || isSimulateError) {
+      return true;
+    }
+
+    // Without a balance the container cannot tell "enough" from "not enough",
+    // so it reports no fee error — but its own send guard still refuses. Left
+    // enabled, the button would swallow the tap silently.
+    if (isBalanceUnknown) {
+      return true;
+    }
+
+    return Number(networkFee?.amount || 0) <= 0;
+  }, [
+    isLoadingNetworkFee,
+    isErrorNetworkFee,
+    isSimulateError,
+    isBalanceUnknown,
+    networkFee?.amount,
+  ]);
 
   return (
     <NFTTransferSummaryWrapper>
@@ -80,12 +119,22 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
       <div className='network-fee-wrapper'>
         <NetworkFee
           isError={isErrorNetworkFee}
+          isLoading={isLoadingNetworkFee}
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
-          errorMessage={errorMessage}
+          errorMessage={networkFeeErrorMessage}
           onClickSetting={onClickNetworkFeeSetting}
         />
       </div>
+
+      {simulateErrorBannerMessage && (
+        <div className='simulate-error-banner'>
+          <span className='error-label'>ERROR:&nbsp;</span>
+          <span className='error-text'>{simulateErrorBannerMessage}</span>
+        </div>
+      )}
+
+      <div className='bottom-spacer' />
 
       <BottomFixedButtonGroup
         leftButton={{
@@ -95,6 +144,7 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
         rightButton={{
           text: 'Send',
           onClick: onClickSend,
+          disabled: disabledSendButton,
           primary: true,
         }}
         filled
