@@ -319,6 +319,33 @@ describe('indexer sync cursor', () => {
     expect(resumeHeightOf(post, 1)).toBeNull();
   });
 
+  // Refreshing an account fans out over its collections with Promise.all. An
+  // unserialised read-modify-write on the shared cache document had every walk
+  // read the same snapshot and every write but the last discard its siblings.
+  it('keeps every cursor when walks run concurrently', async () => {
+    const { repository, syncCacheValues } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120 },
+    );
+
+    await Promise.all([
+      repository.fetchGRC721TokensBy('gno.land/r/demo/a', ADDRESS),
+      repository.fetchGRC721TokensBy('gno.land/r/demo/b', ADDRESS),
+      repository.fetchGRC721TokensBy('gno.land/r/demo/c', ADDRESS),
+    ]);
+
+    const cache = syncCacheValues[GRC721_SYNC_CACHE_KEY] as {
+      [networkId: string]: { tokens?: { [address: string]: Record<string, unknown> } };
+    };
+
+    expect(Object.keys(cache[NETWORK.networkId].tokens?.[ADDRESS] || {}).sort()).toEqual([
+      'gno.land/r/demo/a',
+      'gno.land/r/demo/b',
+      'gno.land/r/demo/c',
+    ]);
+  });
+
   it('resumes the collection walk too', async () => {
     const { repository, post } = makeRepository(
       [[newToken(COLLECTION_ID, 'GNOSWAP NFT', 'GNFT')], [received(ADDRESS, '7')]],

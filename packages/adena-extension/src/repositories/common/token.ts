@@ -153,6 +153,9 @@ export class TokenRepository implements ITokenRepository {
   // injected in tests; see the `syncCache` getter.
   private syncCacheStorage: StorageManager<GRC721SyncCacheValueType> | null = null;
 
+  // Serialises cursor writes; see writeGRC721SyncStore.
+  private syncWriteQueue: Promise<void> = Promise.resolve();
+
   constructor(
     localStorage: StorageManager,
     networkInstance: AxiosInstance,
@@ -1314,22 +1317,42 @@ export class TokenRepository implements ITokenRepository {
     return store || {};
   }
 
-  private async writeGRC721SyncStore(
+  /**
+   * Apply `update` to the stored cursors, one writer at a time.
+   *
+   * Every cursor shares one cache document, and refreshing an account's NFTs
+   * fans out over its collections with `Promise.all` — so an unserialised
+   * read-modify-write has all of them read the same snapshot and each write
+   * discard the entries the others just added. Only the last collection kept a
+   * cursor, and every other one re-walked from genesis on the next refresh,
+   * which is the whole point of the cache.
+   *
+   * Chaining the writes makes each one read the document after the previous
+   * writer finished, so sibling cursors survive. Reads outside the chain are
+   * left alone: a walk merges into the snapshot it started from and only ever
+   * writes its own sub-key.
+   */
+  private writeGRC721SyncStore(
     update: (network: NetworkGRC721Sync) => NetworkGRC721Sync,
   ): Promise<void> {
-    const store = await this.readGRC721SyncStore();
     const networkId = this.networkId;
 
-    await this.syncCache
-      ?.setByObject(GRC721_SYNC_CACHE_KEY, {
+    const write = this.syncWriteQueue.then(async () => {
+      const store = await this.readGRC721SyncStore();
+
+      await this.syncCache?.setByObject(GRC721_SYNC_CACHE_KEY, {
         ...store,
         [networkId]: update(store[networkId] || {}),
-      })
-      .catch((error) => {
-        // A cursor that cannot be stored only costs the next walk its resume
-        // point; the data itself is already in hand.
-        console.warn('[grc721-sync] failed to store cursor', error);
       });
+    });
+
+    // A cursor that cannot be stored only costs the next walk its resume point;
+    // the data itself is already in hand. Keep the queue alive either way.
+    this.syncWriteQueue = write.catch(() => undefined);
+
+    return write.catch((error) => {
+      console.warn('[grc721-sync] failed to store cursor', error);
+    });
   }
 
   private async readGRC721SyncNetwork(): Promise<NetworkGRC721Sync> {
