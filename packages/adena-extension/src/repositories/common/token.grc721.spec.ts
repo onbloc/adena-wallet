@@ -209,6 +209,19 @@ describe('fetchGRC721TokensBy', () => {
     expect(tokens.map((token) => token.tokenId)).toEqual(['7']);
   });
 
+  it('checks every received id, however many, so an old one is not hidden', async () => {
+    const tokenIds = Array.from({ length: 501 }, (_, index) => `${index + 1}`);
+    const { repository } = makeRepository(
+      // Newest received first, so the only owned id is the last one checked.
+      [...tokenIds].reverse().map((tokenId) => [received(ADDRESS, tokenId)]),
+      { owners: { '1': ADDRESS } },
+    );
+
+    const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(tokens.map((token) => token.tokenId)).toEqual(['1']);
+  });
+
   it('never calls the realm when nothing was received', async () => {
     const { repository, evaluateIIFE } = makeRepository([[received(OTHER_ADDRESS, '7')]]);
 
@@ -263,6 +276,43 @@ describe('fetchAccountGRC721CollectionsBy', () => {
       ([, functionName]) => functionName === 'BalanceOf',
     );
     expect(balanceCalls.map(([packagePath]) => packagePath)).toEqual([PACKAGE_PATH]);
+  });
+
+  it('checks every received collection, however many', async () => {
+    const collectionIds = Array.from(
+      { length: 51 },
+      (_, index) => `gno.land/r/demo/nft${index}.ITEM.0000000`,
+    );
+    const heldId = collectionIds[0];
+    const { repository } = makeRepository(
+      [
+        ...collectionIds.map((collectionId) => [
+          newToken(collectionId, `Item ${collectionId}`, 'ITEM'),
+        ]),
+        // Newest received first, so the held collection is the last candidate.
+        ...[...collectionIds]
+          .reverse()
+          .map((collectionId) => [received(ADDRESS, '1', collectionId)]),
+      ],
+      { balances: { 'gno.land/r/demo/nft0': 1 }, owners: { '1': ADDRESS } },
+    );
+
+    const collections = await repository.fetchAccountGRC721CollectionsBy(ADDRESS);
+
+    expect(collections.map((collection) => collection.collectionId)).toEqual([heldId]);
+  });
+
+  it('does not resurrect a collection id the catalog rejected as ambiguous', async () => {
+    const { repository } = makeRepository(
+      [
+        [newToken(COLLECTION_ID, 'GNOSWAP NFT', 'GNFT')],
+        [newToken(COLLECTION_ID, 'Impostor', 'GNFT')],
+        [received(ADDRESS, '7')],
+      ],
+      { balances: { [PACKAGE_PATH]: 1 }, owners: { '7': ADDRESS } },
+    );
+
+    await expect(repository.fetchAccountGRC721CollectionsBy(ADDRESS)).resolves.toEqual([]);
   });
 
   it('drops a collection the realm reports a zero balance for', async () => {

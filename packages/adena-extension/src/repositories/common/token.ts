@@ -62,13 +62,11 @@ const DEFAULT_TOKEN_NETWORK_ID = '';
 // What identifies a realm as a GRC721 collection when looked up by path.
 const GRC721_REALM_READ_FUNCTIONS = ['Name', 'Symbol', 'BalanceOf', 'OwnerOf'];
 
-// Membership is one `BalanceOf` per candidate collection; bound the fan-out.
-const GRC721_BALANCE_SCAN_MAX_COLLECTIONS = 50;
+// Membership is one `BalanceOf` per candidate collection, and ownership one
+// `OwnerOf` per candidate token unrolled into a single qeval. Candidates are
+// never truncated — dropping one hides an NFT the account owns — so these bound
+// how many run at once and how large a generated expression gets, nothing else.
 const GRC721_BALANCE_SCAN_BATCH_SIZE = 10;
-
-// One `OwnerOf` call per candidate is unrolled into a single qeval, so the
-// batch size also bounds the generated expression.
-const GRC721_OWNER_SCAN_MAX_TOKENS = 500;
 const GRC721_OWNER_SCAN_BATCH_SIZE = 50;
 
 interface GRC721TokenCandidate {
@@ -538,6 +536,15 @@ export class TokenRepository implements ITokenRepository {
    * package documents it as one to ignore wholesale.
    */
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
+    const { collections } = await this.fetchGRC721Catalog();
+    return [...collections.values()];
+  }
+
+  /** The catalog plus the ids it rejected, which callers must not resurrect. */
+  private async fetchGRC721Catalog(): Promise<{
+    collections: Map<string, GRC721CollectionModel>;
+    ambiguous: Set<string>;
+  }> {
     const events = await this.fetchEventsByQuery(
       makeGRC721NewTokenEventsQuery(GRC721_TOKEN_PACKAGES),
     );
@@ -583,7 +590,7 @@ export class TokenRepository implements ITokenRepository {
 
     ambiguous.forEach((collectionId) => collections.delete(collectionId));
 
-    return [...collections.values()];
+    return { collections, ambiguous };
   }
 
   /**
@@ -600,17 +607,12 @@ export class TokenRepository implements ITokenRepository {
       return [];
     }
 
-    const catalog = new Map(
-      (await this.fetchGRC721Collections()).map((collection) => [
-        collection.collectionId || '',
-        collection,
-      ]),
-    );
+    const { collections: catalog, ambiguous } = await this.fetchGRC721Catalog();
 
     const candidates = candidateIds
+      .filter((collectionId) => !ambiguous.has(collectionId))
       .map((collectionId) => catalog.get(collectionId) || this.toGRC721Collection(collectionId))
-      .filter((collection): collection is GRC721CollectionModel => collection !== null)
-      .slice(0, GRC721_BALANCE_SCAN_MAX_COLLECTIONS);
+      .filter((collection): collection is GRC721CollectionModel => collection !== null);
 
     const held: GRC721CollectionModel[] = [];
     for (let start = 0; start < candidates.length; start += GRC721_BALANCE_SCAN_BATCH_SIZE) {
@@ -682,7 +684,8 @@ export class TokenRepository implements ITokenRepository {
   /**
    * A collection the catalog does not cover — an older grc721 version, or a
    * `NewToken` the indexer has not caught up with. The id still carries the
-   * realm and symbol, which is enough to list and query it.
+   * realm and symbol, which is enough to list and query it. Ids the catalog
+   * rejected as ambiguous are filtered out before this is reached.
    */
   private toGRC721Collection(collectionId: string): GRC721CollectionModel | null {
     const parsed = parseGrc721CollectionId(collectionId);
@@ -976,7 +979,7 @@ export class TokenRepository implements ITokenRepository {
       candidates.push({ tokenId, collectionId });
     }
 
-    return candidates.slice(0, GRC721_OWNER_SCAN_MAX_TOKENS);
+    return candidates;
   }
 
   /**
