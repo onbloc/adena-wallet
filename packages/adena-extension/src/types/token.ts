@@ -111,7 +111,10 @@ export interface MainToken {
 }
 
 export interface GRC721CollectionModel {
+  /** A token the account owns, used as the collection thumbnail. */
   tokenId: string;
+  /** grc721 `Token.ID()`; absent on collections stored by earlier versions. */
+  collectionId?: string;
   networkId: string;
   display: boolean;
   type: 'grc721';

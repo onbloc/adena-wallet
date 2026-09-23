@@ -108,17 +108,6 @@ export class TokenService {
   }
 
   /**
-   * Fetch GRC20 token balance
-   *
-   * @param address
-   * @returns
-   */
-  public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
-    const transferPackages = await this.tokenRepository.fetchAllTransferPackagesBy(address, 1);
-    return transferPackages;
-  }
-
-  /**
    * GRC20 token paths the account has transferred, derived from indexer Transfer
    * events (token id parsed to the token path). Used by the indexer fallback to
    * match held GRC20 tokens precisely per symbol.
@@ -292,12 +281,22 @@ export class TokenService {
   }
 
   /**
-   * Fetch GRC721 collections
+   * Fetch every GRC721 collection on the chain
    *
    * @returns
    */
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
     return this.tokenRepository.fetchGRC721Collections();
+  }
+
+  /**
+   * Fetch the GRC721 collections an account currently holds a token of
+   *
+   * @param address
+   * @returns
+   */
+  public async fetchAccountGRC721Collections(address: string): Promise<GRC721CollectionModel[]> {
+    return this.tokenRepository.fetchAccountGRC721CollectionsBy(address);
   }
 
   /**

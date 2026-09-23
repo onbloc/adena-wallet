@@ -7,11 +7,11 @@ import {
   AccountAssetsResponse,
   GRC20TokenResponse,
   NativeTokenResponse,
-  TokenMetaResponse,
 } from './response/token-asset-response';
 
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { GnoFunction } from '@common/provider/gno/types';
 import { decodeGnoString, gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
 import {
   parseRegistryKey,
@@ -24,7 +24,12 @@ import {
   Grc20RegConfig,
   resolveGrc20TransferEvent,
 } from '@common/utils/grc20reg-config';
-import { parseGRC721FileContents } from '@common/utils/parse-utils';
+import {
+  GRC721_TOKEN_PACKAGES,
+  isGrc721Package,
+  resolveGrc721Events,
+} from '@common/utils/grc721-config';
+import { parseGrc721CollectionId } from '@common/utils/grc721-token-id';
 import {
   GRC20TokenModel,
   GRC721CollectionModel,
@@ -37,7 +42,12 @@ import {
 } from '@types';
 import BigNumber from 'bignumber.js';
 import { AppInfoResponse } from './response';
-import { makeAllTransferEventsQueryBy, makeGRC721TransferEventsQuery } from './token.queries';
+import {
+  makeAllTransferEventsQueryBy,
+  makeGRC721NewTokenEventsQuery,
+  makeGRC721ReceivedCollectionsQuery,
+  makeGRC721ReceivedTokensQuery,
+} from './token.queries';
 import { ITokenRepository } from './types';
 
 enum LocalValueType {
@@ -48,6 +58,33 @@ enum LocalValueType {
 }
 
 const DEFAULT_TOKEN_NETWORK_ID = '';
+
+// What identifies a realm as a GRC721 collection when looked up by path.
+const GRC721_REALM_READ_FUNCTIONS = ['Name', 'Symbol', 'BalanceOf', 'OwnerOf'];
+
+// Membership is one `BalanceOf` per candidate collection, and ownership one
+// `OwnerOf` per candidate token unrolled into a single qeval. Candidates are
+// never truncated — dropping one hides an NFT the account owns — so these bound
+// how many run at once and how large a generated expression gets, nothing else.
+const GRC721_BALANCE_SCAN_BATCH_SIZE = 10;
+const GRC721_OWNER_SCAN_BATCH_SIZE = 50;
+
+interface GRC721TokenCandidate {
+  tokenId: string;
+  collectionId: string;
+}
+
+interface IndexedGnoEvent {
+  type?: string;
+  pkg_path?: string;
+  attrs?: { key: string; value: string }[];
+}
+
+interface IndexedTransactionsResponse {
+  data?: {
+    getTransactions?: { response?: { events?: IndexedGnoEvent[] } }[];
+  };
+}
 
 // Default page size for on-chain grc20reg registry pagination. Keeps a single
 // qeval response (keys page + batched metadata) within a comfortable size.
@@ -491,29 +528,184 @@ export class TokenRepository implements ITokenRepository {
     return results;
   }
 
+  /**
+   * Every GRC721 collection on the chain, from the grc721 package's `NewToken`
+   * events — there is no registry (unlike grc20's `grc20reg`) and no API to
+   * read instead. A collection id announced twice means the realm built two
+   * ledgers behind one identifier, making its later events ambiguous, so the
+   * package documents it as one to ignore wholesale.
+   */
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
-    if (this.apiUrl) {
-      const tokens = await TokenRepository.fetch<TokenMetaResponse>(
-        this.networkInstance,
-        this.apiUrl + '/v1/token-meta',
-      ).then((data) => data?.items || []);
+    const { collections } = await this.fetchGRC721Catalog();
+    return [...collections.values()];
+  }
 
-      return tokens
-        .filter((token) => token.tokenType === 'GRC721')
-        .map((token) => ({
-          tokenId: token.path,
-          networkId: this.networkId,
-          display: false,
-          type: 'grc721',
-          packagePath: token.path,
-          name: token.name,
-          symbol: token.symbol,
-          image: token.logoUrl ?? '',
-          isTokenUri: false,
-          isMetadata: false,
-        }));
+  /** The catalog plus the ids it rejected, which callers must not resurrect. */
+  private async fetchGRC721Catalog(): Promise<{
+    collections: Map<string, GRC721CollectionModel>;
+    ambiguous: Set<string>;
+  }> {
+    const events = await this.fetchEventsByQuery(
+      makeGRC721NewTokenEventsQuery(GRC721_TOKEN_PACKAGES),
+    );
+
+    const collections = new Map<string, GRC721CollectionModel>();
+    const ambiguous = new Set<string>();
+
+    for (const event of events) {
+      const schema = resolveGrc721Events(event.pkg_path, GRC721_TOKEN_PACKAGES);
+      if (!isGrc721Package(event.pkg_path, GRC721_TOKEN_PACKAGES)) {
+        continue;
+      }
+      if (event.type !== schema.newTokenType) {
+        continue;
+      }
+
+      const attrs = TokenRepository.toAttributeMap(event.attrs);
+      const collectionId = attrs[schema.tokenAttr] || '';
+      const parsed = parseGrc721CollectionId(collectionId);
+      if (!parsed) {
+        continue;
+      }
+
+      if (collections.has(collectionId)) {
+        ambiguous.add(collectionId);
+        continue;
+      }
+
+      collections.set(collectionId, {
+        tokenId: '',
+        collectionId,
+        networkId: this.networkId,
+        display: false,
+        type: 'grc721',
+        packagePath: parsed.packagePath,
+        name: attrs[schema.nameAttr] || parsed.symbol,
+        symbol: attrs[schema.symbolAttr] || parsed.symbol,
+        image: '',
+        isTokenUri: false,
+        isMetadata: false,
+      });
     }
-    return [];
+
+    ambiguous.forEach((collectionId) => collections.delete(collectionId));
+
+    return { collections, ambiguous };
+  }
+
+  /**
+   * The GRC721 collections an account holds at least one token of.
+   *
+   * The `Transfer` events into the address narrow the chain-wide catalog to the
+   * collections the account has ever touched, so the RPC fan-out scales with
+   * the account rather than with the chain. Membership is then decided by
+   * `BalanceOf`, so a stale event log cannot add or drop a collection here.
+   */
+  public async fetchAccountGRC721CollectionsBy(address: string): Promise<GRC721CollectionModel[]> {
+    const candidateIds = await this.fetchGRC721ReceivedCollectionIds(address);
+    if (candidateIds.length === 0) {
+      return [];
+    }
+
+    const { collections: catalog, ambiguous } = await this.fetchGRC721Catalog();
+
+    const candidates = candidateIds
+      .filter((collectionId) => !ambiguous.has(collectionId))
+      .map((collectionId) => catalog.get(collectionId) || this.toGRC721Collection(collectionId))
+      .filter((collection): collection is GRC721CollectionModel => collection !== null);
+
+    const held: GRC721CollectionModel[] = [];
+    for (let start = 0; start < candidates.length; start += GRC721_BALANCE_SCAN_BATCH_SIZE) {
+      const batch = candidates.slice(start, start + GRC721_BALANCE_SCAN_BATCH_SIZE);
+      const balances = await Promise.all(
+        batch.map((collection) =>
+          this.fetchGRC721BalanceBy(collection.packagePath, address).catch(() => 0),
+        ),
+      );
+
+      batch.forEach((collection, index) => {
+        if (balances[index] > 0) {
+          held.push(collection);
+        }
+      });
+    }
+
+    return Promise.all(
+      held.map(async (collection) => {
+        const [capabilities, tokens] = await Promise.all([
+          this.fetchGRC721Capabilities(collection.packagePath),
+          this.fetchGRC721TokensBy(collection.packagePath, address).catch(() => []),
+        ]);
+
+        return {
+          ...collection,
+          ...capabilities,
+          // Newest owned token: the collection thumbnail.
+          tokenId: tokens[0]?.tokenId ?? '',
+        };
+      }),
+    );
+  }
+
+  /** Collection ids the address ever received a token of, newest first. */
+  private async fetchGRC721ReceivedCollectionIds(address: string): Promise<string[]> {
+    const events = await this.fetchEventsByQuery(
+      makeGRC721ReceivedCollectionsQuery(address, GRC721_TOKEN_PACKAGES),
+    );
+
+    const collectionIds: string[] = [];
+    const seen = new Set<string>();
+
+    for (const event of events) {
+      const schema = resolveGrc721Events(event.pkg_path, GRC721_TOKEN_PACKAGES);
+      if (!isGrc721Package(event.pkg_path, GRC721_TOKEN_PACKAGES)) {
+        continue;
+      }
+      if (event.type !== schema.transferType) {
+        continue;
+      }
+
+      const attrs = TokenRepository.toAttributeMap(event.attrs);
+      const collectionId = attrs[schema.tokenAttr] || '';
+      if (attrs[schema.toAttr] !== address || seen.has(collectionId)) {
+        continue;
+      }
+      if (!parseGrc721CollectionId(collectionId)) {
+        continue;
+      }
+
+      seen.add(collectionId);
+      collectionIds.push(collectionId);
+    }
+
+    return collectionIds;
+  }
+
+  /**
+   * A collection the catalog does not cover — an older grc721 version, or a
+   * `NewToken` the indexer has not caught up with. The id still carries the
+   * realm and symbol, which is enough to list and query it. Ids the catalog
+   * rejected as ambiguous are filtered out before this is reached.
+   */
+  private toGRC721Collection(collectionId: string): GRC721CollectionModel | null {
+    const parsed = parseGrc721CollectionId(collectionId);
+    if (!parsed) {
+      return null;
+    }
+
+    return {
+      tokenId: '',
+      collectionId,
+      networkId: this.networkId,
+      display: false,
+      type: 'grc721',
+      packagePath: parsed.packagePath,
+      name: parsed.symbol,
+      symbol: parsed.symbol,
+      image: '',
+      isTokenUri: false,
+      isMetadata: false,
+    };
   }
 
   /**
@@ -585,7 +777,7 @@ export class TokenRepository implements ITokenRepository {
           pkgPath: asset.packagePath,
           networkId: this.networkId,
           display: false,
-          type: 'grc20',
+          type: 'grc20' as const,
           name: asset.name,
           symbol: asset.symbol,
           decimals: asset.decimals,
@@ -594,57 +786,12 @@ export class TokenRepository implements ITokenRepository {
       });
   }
 
-  public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
-    if (this.apiUrl) {
-      const assets = (await this.fetchAccountAssets(address)) ?? [];
-      return [...new Set(assets.map((asset) => asset.packagePath))];
-    }
-
-    if (!this.queryUrl) {
-      return [];
-    }
-
-    const { tokenPackages } = this.grc20RegConfig;
-    const transferEventsQuery = makeAllTransferEventsQueryBy(address, tokenPackages);
-    return TokenRepository.postGraphQuery(
-      this.networkInstance,
-      this.queryUrl,
-      transferEventsQuery,
-    ).then((result) => {
-      const transactions = result?.data?.transactions;
-      if (!transactions) {
-        return [];
-      }
-
-      const packagePaths: string[] = transactions
-        .flatMap((transaction: any) => transaction?.response?.events || [])
-        .filter((event: any) => {
-          const eventType = event?.type;
-          const eventAttributes = event?.attrs || [];
-          const { toAttr } = resolveGrc20TransferEvent(event?.pkg_path, tokenPackages);
-          const eventToAttribute = eventAttributes.find(
-            (attribute: any) => attribute.key === toAttr || attribute.key === 'to',
-          );
-
-          if (!eventType || !eventToAttribute) {
-            return false;
-          }
-
-          return true;
-        })
-        .map((event: any) => event?.pkg_path || '');
-
-      return [...new Set(packagePaths)];
-    });
-  }
-
   /**
    * GRC20 token keys the account has transferred/received, derived from the
    * indexer's Transfer events. Each grc20 Transfer emits a `token` attribute
    * equal to `Token.ID()` = `{packagePath}.{symbol}.{sequence}`; the token key is
    * `{packagePath}.{symbol}`, so the trailing `.{sequence}` is stripped to obtain
-   * it. Unlike `fetchAllTransferPackagesBy` (packagePath only), this keeps
-   * sibling symbols from the same realm distinct.
+   * it, which keeps sibling symbols from the same realm distinct.
    */
   public async fetchAllTransferGRC20TokenPathsBy(address: string): Promise<string[]> {
     if (!this.queryUrl) {
@@ -652,44 +799,37 @@ export class TokenRepository implements ITokenRepository {
     }
 
     const { tokenPackages } = this.grc20RegConfig;
-    const transferEventsQuery = makeAllTransferEventsQueryBy(address, tokenPackages);
-    return TokenRepository.postGraphQuery(
-      this.networkInstance,
-      this.queryUrl,
-      transferEventsQuery,
-    ).then((result) => {
-      const transactions = result?.data?.transactions;
-      if (!transactions) {
-        return [];
-      }
+    const events = await this.fetchEventsByQuery(
+      makeAllTransferEventsQueryBy(address, tokenPackages),
+    );
 
-      const tokenPaths: string[] = transactions
-        .flatMap((transaction: any) => transaction?.response?.events || [])
-        .map((event: any) => {
-          const schema = resolveGrc20TransferEvent(event?.pkg_path, tokenPackages);
-          if (event?.type !== schema.type) {
-            return null;
-          }
-          const attrs = event?.attrs || [];
-          const hasParty = attrs.some(
-            (a: any) => a.key === schema.toAttr || a.key === schema.fromAttr,
-          );
-          const tokenAttr = attrs.find((a: any) => a.key === schema.tokenAttr);
-          if (!hasParty || !tokenAttr?.value) {
-            return null;
-          }
+    const tokenPaths: string[] = events
+      .map((event) => {
+        const schema = resolveGrc20TransferEvent(event?.pkg_path, tokenPackages);
+        if (event?.type !== schema.type) {
+          return null;
+        }
+        const attrs = event?.attrs || [];
+        const hasParty = attrs.some((a) => a.key === schema.toAttr || a.key === schema.fromAttr);
+        const tokenAttr = attrs.find((a) => a.key === schema.tokenAttr);
+        if (!hasParty || !tokenAttr?.value) {
+          return null;
+        }
 
-          // token attr = `{packagePath}.{symbol}.{sequence}`; drop the sequence.
-          const id: string = tokenAttr.value;
-          const registryKey = id.slice(0, id.lastIndexOf('.'));
-          return registryKeyToTokenPath(registryKey) ?? registryKeyToTokenPath(id);
-        })
-        .filter((tokenPath: string | null): tokenPath is string => !!tokenPath);
+        // token attr = `{packagePath}.{symbol}.{sequence}`; drop the sequence.
+        const id: string = tokenAttr.value;
+        const registryKey = id.slice(0, id.lastIndexOf('.'));
+        return registryKeyToTokenPath(registryKey) ?? registryKeyToTokenPath(id);
+      })
+      .filter((tokenPath: string | null): tokenPath is string => !!tokenPath);
 
-      return [...new Set(tokenPaths)];
-    });
+    return [...new Set(tokenPaths)];
   }
 
+  /**
+   * Read a single collection straight from its realm over RPC. The collection
+   * id is left unset because only the grc721 package's events carry it.
+   */
   public async fetchGRC721CollectionByPackagePath(
     packagePath: string,
   ): Promise<GRC721CollectionModel> {
@@ -697,61 +837,62 @@ export class TokenRepository implements ITokenRepository {
       throw new Error('Gno provider not initialized.');
     }
 
-    const fileContents = await this.gnoProvider.getFileContent(packagePath).catch(() => null);
-    const fileNames = fileContents?.split('\n') || [];
-
-    if (fileContents === null || fileNames.length === 0) {
+    const document = await this.gnoProvider.getRealmDocument(packagePath).catch(() => null);
+    if (!document) {
       throw new Error('Not available realm');
     }
 
-    const fileTokenInfo = await this.fetchGRC721CollectionQueryFiles(packagePath, fileNames).catch(
-      () => null,
+    const funcs = document.funcs || [];
+    const isGRC721 = GRC721_REALM_READ_FUNCTIONS.every((name) =>
+      funcs.some((func) => func.name === name),
     );
-    if (fileTokenInfo) {
-      return fileTokenInfo;
+    if (!isGRC721) {
+      throw new Error('Realm is not GRC721');
     }
 
-    throw new Error('Realm is not GRC721');
-  }
-
-  public async fetchGRC721TokenUriBy(packagePath: string, tokenId: string): Promise<string> {
-    if (!this.gnoProvider) {
-      throw new Error('Gno provider not initialized.');
-    }
-
-    const response = await this.gnoProvider.getValueByEvaluateExpression(packagePath, 'TokenURI', [
-      tokenId,
+    const [name, symbol] = await Promise.all([
+      this.evaluateGRC721String(packagePath, 'Name').catch(() => ''),
+      this.evaluateGRC721String(packagePath, 'Symbol').catch(() => ''),
     ]);
 
-    if (!response) {
+    return {
+      tokenId: '',
+      networkId: this.networkId,
+      display: false,
+      type: 'grc721',
+      packagePath,
+      name: name || symbol || packagePath,
+      symbol,
+      image: '',
+      ...TokenRepository.readGRC721Capabilities(funcs),
+    };
+  }
+
+  /** `TokenURI(tokenId)`; the realm's error tuple comes back as an empty URI. */
+  public async fetchGRC721TokenUriBy(packagePath: string, tokenId: string): Promise<string> {
+    const uri = await this.evaluateGRC721String(packagePath, 'TokenURI', tokenId);
+    if (!uri) {
       throw new Error('not found token uri');
     }
 
-    return response.replace(/"/g, '');
+    return uri;
   }
 
+  /**
+   * `TokenMetadata(tokenId)`, for realms publishing it as a JSON string. The
+   * `grc721/metadata` extension returns a `Data` struct instead, which qeval
+   * renders as a Gno literal; the capability probe filters those out.
+   */
   public async fetchGRC721TokenMetadataBy(
     packagePath: string,
     tokenId: string,
   ): Promise<GRC721MetadataModel> {
-    if (!this.gnoProvider) {
-      throw new Error('Gno provider not initialized.');
-    }
-
-    const response = await this.gnoProvider.getValueByEvaluateExpression(
-      packagePath,
-      'TokenMetadata',
-      [tokenId],
-    );
-
+    const response = await this.evaluateGRC721String(packagePath, 'TokenMetadata', tokenId);
     if (!response) {
-      throw new Error('not found token uri');
+      throw new Error('not found token metadata');
     }
 
-    const jsonStr = response.replace(/\\"/g, '"');
-
-    const metadata: GRC721MetadataModel = JSON.parse(jsonStr);
-    return metadata;
+    return JSON.parse(response) as GRC721MetadataModel;
   }
 
   public async fetchGRC721BalanceBy(packagePath: string, address: string): Promise<number> {
@@ -764,110 +905,213 @@ export class TokenRepository implements ITokenRepository {
     ]);
 
     if (!response || BigNumber(response).isNaN()) {
-      throw new Error('not found token uri');
+      throw new Error('not found grc721 balance');
     }
 
     return BigNumber(response).toNumber();
   }
 
+  /**
+   * The tokens of one collection the account currently owns, newest first. The
+   * indexer supplies the ids the address ever received — GRC721 publishes no
+   * enumeration function — and `OwnerOf` over RPC decides which it still owns.
+   */
   public async fetchGRC721TokensBy(packagePath: string, address: string): Promise<GRC721Model[]> {
-    if (!this.apiUrl && !this.queryUrl) {
+    const received = await this.fetchGRC721ReceivedTokenIds(packagePath, address);
+    if (received.length === 0) {
       return [];
     }
 
-    const events: {
-      type: string;
-      pkg_path: string;
-      func: string;
-      attrs: { [key in string]: string }[];
-    }[] = [];
+    const owned = await this.filterGRC721OwnedTokenIds(packagePath, address, received);
 
-    if (this.apiUrl) {
-      const grc721TransferEventsQuery = makeGRC721TransferEventsQuery(packagePath, address);
-      const resultEvents: {
-        type: string;
-        pkg_path: string;
-        func: string;
-        attrs: { [key in string]: string }[];
-      }[] = await TokenRepository.postGraphQuery(
-        this.networkInstance,
-        this.queryUrl || this.apiUrl,
-        grc721TransferEventsQuery,
-      ).then((result) =>
-        result?.data?.transactions
-          ? result?.data?.transactions?.edges.flatMap(
-              (edge: any) => edge.transaction.response.events,
-            )
-          : [],
-      );
+    return owned.map(({ tokenId, collectionId }) => ({
+      tokenId,
+      networkId: this.networkId,
+      type: 'grc721' as const,
+      packagePath,
+      name: '',
+      symbol: parseGrc721CollectionId(collectionId)?.symbol || '',
+      isTokenUri: false,
+      isMetadata: false,
+      metadata: null,
+    }));
+  }
 
-      events.push(...resultEvents);
-    } else {
-      const grc721TransferEventsQuery = makeGRC721TransferEventsQuery(packagePath, address);
-      const resultEvents: {
-        type: string;
-        pkg_path: string;
-        func: string;
-        attrs: { [key in string]: string }[];
-      }[] = await TokenRepository.postGraphQuery(
-        this.networkInstance,
-        this.queryUrl || '',
-        grc721TransferEventsQuery,
-      ).then((result) =>
-        result?.data?.transactions
-          ? result?.data?.transactions?.flatMap((transaction: any) => transaction?.response?.events)
-          : [],
-      );
+  /** Candidates only: ids the address received, newest first, deduplicated. */
+  private async fetchGRC721ReceivedTokenIds(
+    packagePath: string,
+    address: string,
+  ): Promise<GRC721TokenCandidate[]> {
+    const events = await this.fetchEventsByQuery(
+      makeGRC721ReceivedTokensQuery(packagePath, address, GRC721_TOKEN_PACKAGES),
+    );
 
-      events.push(...resultEvents);
-    }
-
-    const receivedTokenIds: string[] = [];
-    const sendedTokenIds: string[] = [];
-    const tokens: GRC721Model[] = [];
+    const candidates: GRC721TokenCandidate[] = [];
+    const seen = new Set<string>();
 
     for (const event of events) {
-      if (event.pkg_path !== packagePath || event.type !== 'Transfer') {
+      const schema = resolveGrc721Events(event.pkg_path, GRC721_TOKEN_PACKAGES);
+      if (!isGrc721Package(event.pkg_path, GRC721_TOKEN_PACKAGES)) {
+        continue;
+      }
+      if (event.type !== schema.transferType) {
         continue;
       }
 
-      const tokenIdValue = event.attrs.find((attr) => attr.key === 'tid')?.value;
-      const toValue = event.attrs.find((attr) => attr.key === 'to')?.value;
-      const fromValue = event.attrs.find((attr) => attr.key === 'from')?.value;
+      const attrs = TokenRepository.toAttributeMap(event.attrs);
+      const collectionId = attrs[schema.tokenAttr] || '';
+      const tokenId = attrs[schema.tokenIdAttr];
+      const parsed = parseGrc721CollectionId(collectionId);
 
-      if (tokenIdValue === undefined || toValue === undefined || fromValue === undefined) {
+      // The query matches whole transactions, so a batch (e.g. a swap) also
+      // carries transfers of other realms and between third parties.
+      if (!tokenId || !parsed || parsed.packagePath !== packagePath) {
+        continue;
+      }
+      if (attrs[schema.toAttr] !== address) {
+        continue;
+      }
+      if (seen.has(tokenId)) {
         continue;
       }
 
-      if (toValue !== address && fromValue !== address) {
+      seen.add(tokenId);
+      candidates.push({ tokenId, collectionId });
+    }
+
+    return candidates;
+  }
+
+  /**
+   * Keep the candidates the realm still reports as owned by the address.
+   *
+   * `OwnerOf` is unrolled into one call per id rather than looped, because a
+   * qeval expression has no imports in scope and so cannot build the realm's
+   * `grc721.TokenID` from a computed value. The reply is a positional `1`/`0`
+   * flag per candidate; an id whose `OwnerOf` errors reads as `0`.
+   */
+  private async filterGRC721OwnedTokenIds(
+    packagePath: string,
+    address: string,
+    candidates: GRC721TokenCandidate[],
+  ): Promise<GRC721TokenCandidate[]> {
+    if (!this.gnoProvider) {
+      return [];
+    }
+
+    const owned: GRC721TokenCandidate[] = [];
+
+    for (let start = 0; start < candidates.length; start += GRC721_OWNER_SCAN_BATCH_SIZE) {
+      const batch = candidates.slice(start, start + GRC721_OWNER_SCAN_BATCH_SIZE);
+      const statements = batch.map(
+        ({ tokenId }, index) =>
+          `{ owner${index}, err${index} := OwnerOf(${gnoLiteral(tokenId)}); ` +
+          `if err${index} == nil && owner${index}.String() == ${gnoLiteral(address)} ` +
+          '{ flags += "1" } else { flags += "0" } }',
+      );
+
+      let response: string;
+      try {
+        response = await this.gnoProvider.evaluateIIFE(packagePath, {
+          returnType: 'string',
+          statements: ['flags := ""', ...statements],
+          returnExpression: 'flags',
+        });
+      } catch (e) {
+        console.warn('filterGRC721OwnedTokenIds: evaluateIIFE failed', packagePath, e);
         continue;
       }
 
-      if (receivedTokenIds.includes(tokenIdValue) || sendedTokenIds.includes(tokenIdValue)) {
+      const [tuple] = parseQEvalResult(response);
+      if (!tuple) {
         continue;
       }
 
-      const isSended = fromValue === address;
-      if (isSended) {
-        sendedTokenIds.push(tokenIdValue);
-        continue;
-      }
-
-      receivedTokenIds.push(tokenIdValue);
-      tokens.push({
-        tokenId: tokenIdValue,
-        networkId: this.networkId,
-        type: 'grc721',
-        packagePath,
-        name: '',
-        symbol: '',
-        isTokenUri: false,
-        isMetadata: false,
-        metadata: null,
+      const flags = decodeGnoString(tuple.value);
+      batch.forEach((candidate, index) => {
+        if (flags[index] === '1') {
+          owned.push(candidate);
+        }
       });
     }
 
-    return tokens;
+    return owned;
+  }
+
+  /**
+   * Which optional read functions a realm publishes. `TokenURI` and
+   * `TokenMetadata` live in stackable extensions, so only the realm's own
+   * document says whether the wallet may ask for an image or metadata.
+   */
+  private async fetchGRC721Capabilities(
+    packagePath: string,
+  ): Promise<{ isTokenUri: boolean; isMetadata: boolean }> {
+    const document = await this.gnoProvider?.getRealmDocument(packagePath).catch(() => null);
+    return TokenRepository.readGRC721Capabilities(document?.funcs || []);
+  }
+
+  private static readGRC721Capabilities(funcs: GnoFunction[]): {
+    isTokenUri: boolean;
+    isMetadata: boolean;
+  } {
+    // Only a `string` first result is readable over qeval.
+    const returnsString = (name: string): boolean =>
+      funcs.some((func) => func.name === name && func.results?.[0]?.type === 'string');
+
+    return {
+      isTokenUri: returnsString('TokenURI'),
+      isMetadata: returnsString('TokenMetadata'),
+    };
+  }
+
+  /** Evaluate a realm function returning `(string, error)`. */
+  private async evaluateGRC721String(
+    packagePath: string,
+    functionName: string,
+    ...args: string[]
+  ): Promise<string> {
+    if (!this.gnoProvider) {
+      throw new Error('Gno provider not initialized.');
+    }
+
+    const value = await this.gnoProvider.getValueByEvaluateExpression(
+      packagePath,
+      functionName,
+      args,
+    );
+
+    return value ?? '';
+  }
+
+  /** Flatten the matched transactions into their events, keeping query order. */
+  private async fetchEventsByQuery(query: string): Promise<IndexedGnoEvent[]> {
+    if (!this.queryUrl) {
+      return [];
+    }
+
+    const result = await TokenRepository.postGraphQuery<IndexedTransactionsResponse>(
+      this.networkInstance,
+      this.queryUrl,
+      query,
+    );
+
+    const transactions = result?.data?.getTransactions;
+    if (!Array.isArray(transactions)) {
+      return [];
+    }
+
+    return transactions.flatMap((transaction) => transaction?.response?.events || []);
+  }
+
+  private static toAttributeMap(
+    attrs: { key: string; value: string }[] | undefined,
+  ): Record<string, string> {
+    return (attrs || []).reduce<Record<string, string>>((accumulated, attr) => {
+      if (attr?.key !== undefined && !(attr.key in accumulated)) {
+        accumulated[attr.key] = attr.value;
+      }
+      return accumulated;
+    }, {});
   }
 
   public async getAccountGRC721CollectionsBy(
@@ -981,42 +1225,6 @@ export class TokenRepository implements ITokenRepository {
       .then((response) => TokenMapper.toGrc20RouteMap(response.data))
       .catch(() => ({}));
   };
-
-  private async fetchGRC721CollectionQueryFiles(
-    packagePath: string,
-    fileNames: string[],
-  ): Promise<GRC721CollectionModel | null> {
-    if (!this.gnoProvider) {
-      throw new Error('Gno provider not initialized.');
-    }
-
-    for (const fileName of fileNames) {
-      const filePath = [packagePath, fileName].join('/');
-      const contents = await this.gnoProvider.getFileContent(filePath).catch(() => null);
-      if (!contents) {
-        continue;
-      }
-
-      const tokenInfo = parseGRC721FileContents(contents);
-
-      if (tokenInfo) {
-        return {
-          tokenId: packagePath,
-          packagePath: packagePath,
-          networkId: this.networkId,
-          display: false,
-          type: 'grc721',
-          name: tokenInfo.name,
-          symbol: tokenInfo.symbol,
-          image: null,
-          isMetadata: tokenInfo.isMetadata,
-          isTokenUri: tokenInfo.isTokenUri,
-        };
-      }
-    }
-
-    return null;
-  }
 
   private static fetch = <T = any>(
     axiosInstance: AxiosInstance,
