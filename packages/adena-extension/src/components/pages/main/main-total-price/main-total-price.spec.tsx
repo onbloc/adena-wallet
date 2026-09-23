@@ -48,6 +48,18 @@ describe('MainTotalPrice Component', () => {
     expect(screen.queryByText('$0.00')).toBeNull();
   });
 
+  it('withholds the total when a balance feeding it could not be refreshed', () => {
+    renderTotalPrice({
+      value: { totalUSDValue: 200, changeUSDValue: 10, changeRate: 5 },
+      unavailable: true,
+    });
+
+    expect(screen.queryByText('$200.00')).toBeNull();
+    expect(screen.queryByText('+$10.00')).toBeNull();
+    expect(screen.queryByText('+5.00%')).toBeNull();
+    expect(screen.getAllByText('-').length).toBeGreaterThan(0);
+  });
+
   it('renders skeleton when loading', () => {
     renderTotalPrice({
       value: { totalUSDValue: 0, changeUSDValue: 0, changeRate: 0 },

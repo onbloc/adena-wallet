@@ -23,6 +23,7 @@ import MainTotalPrice from '@components/pages/main/main-total-price/main-total-p
 import TokenList, { TokenListItemState } from '@components/pages/wallet-main/token-list/token-list';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { getPortfolioBalanceState } from '@hooks/helpers/portfolio-balance-state';
 import { useLoadImages } from '@hooks/use-load-images';
 import { useNetwork } from '@hooks/use-network';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
@@ -270,6 +271,16 @@ export const WalletMain = (): JSX.Element => {
     return values.length === 0 ? null : aggregateTokenValues(values);
   }, [tokens]);
 
+  // What the headline can honestly claim about the balances feeding it: a
+  // failed refresh makes the total stale, and a balance that has not arrived
+  // makes it partial. The row-level "-" and skeleton already say which holding
+  // is affected; this says whether the total itself can be trusted.
+  const { unavailable: portfolioUnavailable, incomplete: portfolioIncomplete } = useMemo(
+    () =>
+      getPortfolioBalanceState(displayedBalances, tokenPrices, errorNetworkIds, loadingTokenKeys),
+    [displayedBalances, tokenPrices, errorNetworkIds, loadingTokenKeys],
+  );
+
   // One quoted token switches the whole screen into USD display mode. The list
   // must not mix two row shapes, so unquoted rows keep the USD layout and read
   // "-" where their value would be.
@@ -351,7 +362,11 @@ export const WalletMain = (): JSX.Element => {
       </div>
       <div className='token-balance-wrapper'>
         {portfolioValue ? (
-          <MainTotalPrice value={portfolioValue} loading={isMainBalanceLoading} />
+          <MainTotalPrice
+            value={portfolioValue}
+            unavailable={portfolioUnavailable}
+            loading={portfolioIncomplete}
+          />
         ) : (
           <MainTokenBalance
             amount={{

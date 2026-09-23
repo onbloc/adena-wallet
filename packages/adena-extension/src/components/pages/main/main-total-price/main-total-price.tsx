@@ -11,21 +11,32 @@ import { MainTotalPriceSkeleton, MainTotalPriceWrapper } from './main-total-pric
 
 export interface MainTotalPriceProps {
   value: PortfolioValue;
+  /**
+   * A balance feeding this total could not be refreshed. The figure would be
+   * derived from retained amounts, so it is withheld rather than presented as
+   * a current value.
+   */
+  unavailable?: boolean;
   loading?: boolean;
 }
 
 /** Total USD value with the 24h delta beneath it. */
-const MainTotalPrice: React.FC<MainTotalPriceProps> = ({ value, loading = false }) => {
+const MainTotalPrice: React.FC<MainTotalPriceProps> = ({
+  value,
+  unavailable = false,
+  loading = false,
+}) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const cloneRef = useRef<HTMLSpanElement>(null);
   const [compact, setCompact] = useState(false);
 
-  const totalText = formatUSD(value.totalUSDValue);
-  // No quoted token reports a 24h change yet — the delta row is omitted
-  // rather than shown as a flat "$0.00 / 0.00%", which would be a claim.
+  const totalText = unavailable ? '-' : formatUSD(value.totalUSDValue);
+  // Omitted when no quoted token reports a 24h change, rather than shown as a
+  // flat "$0.00 / 0.00%" — and omitted when the total itself is withheld,
+  // since a delta on a figure that is not shown says nothing.
   const changeRate = value.changeRate;
   const changeUSDValue = value.changeUSDValue;
-  const hasChange = changeRate !== null && changeUSDValue !== null;
+  const hasChange = !unavailable && changeRate !== null && changeUSDValue !== null;
 
   useLayoutEffect(() => {
     if (loading) return;
