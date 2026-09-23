@@ -61,6 +61,9 @@ function makeSyncCache(): { storage: StorageManager; values: Record<string, unkn
     setByObject: jest.fn(async (key: string, value: unknown) => {
       values[key] = value;
     }),
+    remove: jest.fn(async (key: string) => {
+      delete values[key];
+    }),
   } as unknown as StorageManager;
 
   return { storage, values };
@@ -294,6 +297,25 @@ describe('indexer sync cursor', () => {
     await expect(repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS)).resolves.toHaveLength(1);
 
     expect(resumeHeightOf(post, 0)).toBeNull();
+    expect(resumeHeightOf(post, 1)).toBeNull();
+  });
+
+  // The cursors are keyed by account address, so a wallet reset must take them
+  // with it rather than leave the addresses the user held behind in storage.
+  it('drops every cursor when the cache is cleared', async () => {
+    const { repository, post, syncCacheValues } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120 },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    expect(syncCacheValues[GRC721_SYNC_CACHE_KEY]).toBeTruthy();
+
+    await repository.deleteGRC721SyncCache();
+
+    expect(syncCacheValues[GRC721_SYNC_CACHE_KEY]).toBeUndefined();
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
     expect(resumeHeightOf(post, 1)).toBeNull();
   });
 

@@ -1,6 +1,17 @@
 import { CommonError } from '@common/errors/common';
 import { Storage } from '.';
 
+/** Where each GRC721 indexer walk left off; see `token.grc721-sync.ts`. */
+export const GRC721_SYNC_CACHE_KEY = 'GRC721_SYNC';
+
+export type CacheValueType = typeof GRC721_SYNC_CACHE_KEY;
+
+/**
+ * Every key this storage owns. `clear()` walks this list instead of calling
+ * `chrome.storage.local.clear()`, which would take the wallet blob with it.
+ */
+const CACHE_STORAGE_KEYS: CacheValueType[] = [GRC721_SYNC_CACHE_KEY];
+
 /**
  * Plain `chrome.storage.local` under its own top-level keys.
  *
@@ -35,7 +46,15 @@ export class ChromeCacheStorage implements Storage {
     await this.storage.remove(key);
   };
 
+  /**
+   * Drops only this storage's own keys.
+   *
+   * `chrome.storage.local` is shared with the wallet blob `ADENA_DATA`, so the
+   * area-wide `clear()` the Storage interface suggests would destroy the
+   * encrypted seed — a caller reaching for "clear the caches" must not be able
+   * to do that.
+   */
   public clear = async (): Promise<void> => {
-    await this.storage.clear();
+    await this.storage.remove(CACHE_STORAGE_KEYS);
   };
 }

@@ -421,12 +421,13 @@ export class TokenService {
   }
 
   /**
-   * Clear token metainfos
+   * Clear token metainfos and the GRC721 indexer cursors
    *
    * @returns
    */
   public clear = async (): Promise<boolean> => {
     await this.tokenRepository.deleteAllTokenMetainfo();
+    await this.tokenRepository.deleteGRC721SyncCache();
     return true;
   };
 

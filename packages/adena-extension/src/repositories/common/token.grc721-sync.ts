@@ -8,10 +8,12 @@
  * migrated wallet blob — see `ChromeCacheStorage`.
  */
 
-/** Cache key; plain `chrome.storage.local`, not part of `ADENA_DATA`. */
-export const GRC721_SYNC_CACHE_KEY = 'GRC721_SYNC';
+import { CacheValueType, GRC721_SYNC_CACHE_KEY } from '@common/storage';
 
-export type GRC721SyncCacheValueType = typeof GRC721_SYNC_CACHE_KEY;
+/** Cache key; plain `chrome.storage.local`, not part of `ADENA_DATA`. */
+export { GRC721_SYNC_CACHE_KEY };
+
+export type GRC721SyncCacheValueType = CacheValueType;
 
 export interface GRC721SyncCursor<T> {
   /** Highest block height already folded into `items`. */

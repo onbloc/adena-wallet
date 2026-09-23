@@ -31,6 +31,8 @@ export interface ITokenRepository extends IGRC721TokenRepository {
   updateTokenMetainfos: (accountId: string, tokenMetainfos: TokenModel[]) => Promise<boolean>;
   deleteTokenMetainfos: (accountId: string) => Promise<boolean>;
   deleteAllTokenMetainfo: () => Promise<boolean>;
+
+  deleteGRC721SyncCache: () => Promise<boolean>;
 }
 
 export interface IGRC721TokenRepository {

@@ -1337,6 +1337,21 @@ export class TokenRepository implements ITokenRepository {
     return store[this.networkId] || {};
   }
 
+  /**
+   * Drop every stored cursor.
+   *
+   * The cursors are keyed by account address, so without this a wallet reset
+   * would leave the addresses the user held — and the collections and token ids
+   * behind them — sitting in storage after the wallet that owned them is gone.
+   */
+  public async deleteGRC721SyncCache(): Promise<boolean> {
+    await this.syncCache?.remove(GRC721_SYNC_CACHE_KEY).catch((error) => {
+      console.warn('[grc721-sync] failed to clear cursors', error);
+    });
+
+    return true;
+  }
+
   private static toAttributeMap(
     attrs: { key: string; value: string }[] | undefined,
   ): Record<string, string> {
