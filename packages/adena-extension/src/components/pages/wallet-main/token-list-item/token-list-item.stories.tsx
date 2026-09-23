@@ -26,6 +26,7 @@ export const Default: StoryObj<TokenListItemProps> = {
 
 export const WithPrice: StoryObj<TokenListItemProps> = {
   args: {
+    usdDisplay: true,
     token: {
       ...token,
       tokenValue: {
@@ -33,6 +34,14 @@ export const WithPrice: StoryObj<TokenListItemProps> = {
         change24h: 3.29,
       },
     },
+    onClickTokenItem: action('token item click'),
+  },
+};
+
+export const UnquotedInUSDMode: StoryObj<TokenListItemProps> = {
+  args: {
+    usdDisplay: true,
+    token,
     onClickTokenItem: action('token item click'),
   },
 };

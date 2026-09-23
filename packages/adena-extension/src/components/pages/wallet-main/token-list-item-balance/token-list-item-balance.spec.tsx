@@ -45,10 +45,21 @@ describe('TokenListItemBalance Component', () => {
   it('leads with the USD value and demotes the balance when quoted', () => {
     renderBalance({
       amount: { value: '640,315.512321', denom: 'PHOTON' },
+      usdDisplay: true,
       tokenValue: { usdValue: 2120252.239, change24h: 3.29 },
     });
 
     expect(screen.getByText('$2,120,252.23')).not.toBeNull();
+    expect(screen.getByText('640,315.512321 PHOTON')).not.toBeNull();
+  });
+
+  it('reads "-" in USD display mode when the token has no quote', () => {
+    renderBalance({
+      amount: { value: '640,315.512321', denom: 'PHOTON' },
+      usdDisplay: true,
+    });
+
+    expect(screen.getByText('-')).not.toBeNull();
     expect(screen.getByText('640,315.512321 PHOTON')).not.toBeNull();
   });
 

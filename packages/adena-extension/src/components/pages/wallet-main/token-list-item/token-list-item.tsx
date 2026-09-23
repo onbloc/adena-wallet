@@ -8,6 +8,8 @@ import { TokenListItemWrapper } from './token-list-item.styles';
 
 export interface TokenListItemProps {
   token: MainToken;
+  /** Screen-wide USD display mode; see TokenListItemBalance. */
+  usdDisplay?: boolean;
   loading?: boolean;
   error?: boolean;
   disabled?: boolean;
@@ -17,6 +19,7 @@ export interface TokenListItemProps {
 
 const TokenListItem: React.FC<TokenListItemProps> = ({
   token,
+  usdDisplay = false,
   loading = false,
   error = false,
   disabled = false,
@@ -26,7 +29,7 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   const { tokenId, logo, name, balanceAmount, chainIconUrl, tokenValue } = token;
 
   // While loading or errored the row keeps its single-line shape.
-  const withPrice = !!tokenValue && !loading && !error;
+  const withPrice = usdDisplay && !loading && !error;
 
   const onLoadImage = (): void => {
     completeImageLoading(logo);
@@ -58,7 +61,7 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
 
       <div className='name-wrapper'>
         <span className='name'>{name}</span>
-        {withPrice && tokenValue.change24h !== null && (
+        {withPrice && tokenValue?.change24h != null && (
           <TokenChangeRate rate={tokenValue.change24h} />
         )}
       </div>
@@ -66,7 +69,8 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
       <div className='balance-wrapper'>
         <TokenListItemBalance
           amount={balanceAmount}
-          tokenValue={withPrice ? tokenValue : null}
+          usdDisplay={withPrice}
+          tokenValue={tokenValue}
           loading={loading}
           error={error}
         />

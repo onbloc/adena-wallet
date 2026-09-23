@@ -12,7 +12,12 @@ export interface TokenListItemBalanceProps {
     value: string;
     denom: string;
   };
-  /** When present the row leads with the USD value and demotes the balance. */
+  /**
+   * Screen-wide USD display mode. When on, the row leads with the USD value
+   * and demotes the balance to a secondary line — including rows this wallet
+   * has no quote for, which read "-" rather than dropping to a second layout.
+   */
+  usdDisplay?: boolean;
   tokenValue?: TokenValue | null;
   loading?: boolean;
   error?: boolean;
@@ -54,6 +59,7 @@ const ValuedBalance = styled.span`
 
 const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
   amount,
+  usdDisplay = false,
   tokenValue = null,
   loading = false,
   error = false,
@@ -80,10 +86,10 @@ const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
 
   const { value, denom } = amount;
 
-  if (tokenValue) {
+  if (usdDisplay) {
     return (
       <ValuedBalance>
-        <span className='usd-value'>{formatUSD(tokenValue.usdValue)}</span>
+        <span className='usd-value'>{tokenValue ? formatUSD(tokenValue.usdValue) : '-'}</span>
         <span className='token-amount'>{`${value} ${denom}`}</span>
       </ValuedBalance>
     );

@@ -270,6 +270,11 @@ export const WalletMain = (): JSX.Element => {
     return values.length === 0 ? null : aggregateTokenValues(values);
   }, [tokens]);
 
+  // One quoted token switches the whole screen into USD display mode. The list
+  // must not mix two row shapes, so unquoted rows keep the USD layout and read
+  // "-" where their value would be.
+  const usdDisplayMode = portfolioValue !== null;
+
   const itemStateByTokenId = useMemo<Record<string, TokenListItemState>>(() => {
     const map: Record<string, TokenListItemState> = {};
     for (const tokenBalance of currentBalances) {
@@ -384,6 +389,7 @@ export const WalletMain = (): JSX.Element => {
       <div className='token-list-wrapper'>
         <TokenList
           tokens={tokens}
+          usdDisplay={usdDisplayMode}
           itemStateByTokenId={itemStateByTokenId}
           placeholderCount={cachedRowCountRef.current}
           disabled={actionsDisabled}

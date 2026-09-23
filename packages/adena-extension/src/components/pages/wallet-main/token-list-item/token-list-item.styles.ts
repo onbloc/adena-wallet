@@ -40,6 +40,7 @@ export const TokenListItemWrapper = styled.div<{ $disabled?: boolean; $withPrice
     width: 100%;
     flex-shrink: 1;
     align-items: center;
+    justify-content: space-between;
     height: 21px;
 
     .name {
@@ -66,7 +67,7 @@ export const TokenListItemWrapper = styled.div<{ $disabled?: boolean; $withPrice
       .name-wrapper {
         flex-direction: column;
         align-items: flex-start;
-        justify-content: space-between;
+        justify-content: center;
         height: 34px;
 
         .name {

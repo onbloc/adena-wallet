@@ -45,6 +45,7 @@ describe('TokenListItem Component', () => {
   it('leads with the USD value and its 24h change when the token is quoted', () => {
     renderTokenListItem({
       ...baseArgs,
+      usdDisplay: true,
       token: { ...token, tokenValue: { usdValue: 2120252.239, change24h: 3.2941 } },
     });
 
@@ -56,6 +57,7 @@ describe('TokenListItem Component', () => {
   it('shows the USD value without a change rate when the feed has no day-old price', () => {
     renderTokenListItem({
       ...baseArgs,
+      usdDisplay: true,
       token: { ...token, tokenValue: { usdValue: 2120252.239, change24h: null } },
     });
 
@@ -67,11 +69,30 @@ describe('TokenListItem Component', () => {
   it('keeps the single-line layout while the quoted row is still loading', () => {
     renderTokenListItem({
       ...baseArgs,
+      usdDisplay: true,
       token: { ...token, tokenValue: { usdValue: 2120252.239, change24h: 3.2941 } },
       loading: true,
     });
 
     expect(screen.queryByText('$2,120,252.23')).toBeNull();
     expect(screen.getByLabelText('Loading balance')).not.toBeNull();
+  });
+
+  it('keeps the USD layout and reads "-" for an unquoted row in USD display mode', () => {
+    renderTokenListItem({ ...baseArgs, usdDisplay: true });
+
+    expect(screen.getByText('-')).not.toBeNull();
+    expect(screen.getByText('240,255.241155 GNOT')).not.toBeNull();
+    expect(screen.queryByText('0.00%')).toBeNull();
+  });
+
+  it('keeps the balance-only layout while USD display mode is off', () => {
+    renderTokenListItem({
+      ...baseArgs,
+      token: { ...token, tokenValue: { usdValue: 2120252.239, change24h: 3.2941 } },
+    });
+
+    expect(screen.queryByText('$2,120,252.23')).toBeNull();
+    expect(screen.queryByText('+3.29%')).toBeNull();
   });
 });
