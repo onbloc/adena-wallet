@@ -60,6 +60,7 @@ function makeSyncCache(): { storage: StorageManager; values: Record<string, unkn
     getToObject: jest.fn(async (key: string) => values[key]),
     setByObject: jest.fn(async (key: string, value: unknown) => {
       values[key] = value;
+      values.__writes = ((values.__writes as number) ?? 0) + 1;
     }),
     remove: jest.fn(async (key: string) => {
       delete values[key];
@@ -383,6 +384,47 @@ describe('indexer sync cursor', () => {
       'gno.land/r/demo/b',
       'gno.land/r/demo/c',
     ]);
+  });
+
+  // A page whose transactions carry no usable height cannot advance the cursor.
+  // Merging it anyway would replay the same range next walk and append the same
+  // candidates again — and for the catalog a repeated collection id *is* the
+  // ambiguity signal, so every collection would be dropped and the NFT list
+  // would go permanently empty.
+  it('does not fold in a page that carries no block height', async () => {
+    const { repository, syncCacheValues, post } = makeRepository([[received(ADDRESS, '7')]], {
+      owners: { '7': ADDRESS },
+    });
+
+    post.mockImplementation(async () => ({
+      data: {
+        data: {
+          latestBlockHeight: 500,
+          getTransactions: [{ response: { events: [received(ADDRESS, '7')] } }],
+        },
+      },
+    }));
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(syncCacheValues[GRC721_SYNC_CACHE_KEY]).toBeUndefined();
+  });
+
+  it('leaves the stored cursor untouched when a walk matches nothing new', async () => {
+    const { repository, syncCacheValues, post } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120, laterPages: [[]] },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    const afterFirst = JSON.stringify(syncCacheValues[GRC721_SYNC_CACHE_KEY]);
+    const writesAfterFirst = (syncCacheValues.__writes as number) ?? 0;
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(JSON.stringify(syncCacheValues[GRC721_SYNC_CACHE_KEY])).toBe(afterFirst);
+    expect((syncCacheValues.__writes as number) ?? 0).toBe(writesAfterFirst);
   });
 
   it('resumes the collection walk too', async () => {

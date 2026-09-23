@@ -624,7 +624,7 @@ export class TokenRepository implements ITokenRepository {
     const network = await this.readGRC721SyncNetwork();
     const cursor = network.catalog || emptyCursor<GRC721CollectionCandidate>();
 
-    const { page, previousItems, previousBlockHeight } = await this.walkIndexedEvents(
+    const { page, previousItems, previousBlockHeight, storable } = await this.walkIndexedEvents(
       cursor,
       (fromBlockHeight) => makeGRC721NewTokenEventsQuery(GRC721_TOKEN_PACKAGES, fromBlockHeight),
     );
@@ -656,14 +656,16 @@ export class TokenRepository implements ITokenRepository {
       });
     }
 
-    await this.writeGRC721SyncStore((stored) => ({
-      ...stored,
-      catalog: {
-        blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
-        latestBlockHeight: page.latestBlockHeight,
-        items: merged,
-      },
-    }));
+    if (TokenRepository.shouldStoreWalk(page, previousBlockHeight, storable)) {
+      await this.writeGRC721SyncStore((stored) => ({
+        ...stored,
+        catalog: {
+          blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
+          latestBlockHeight: page.latestBlockHeight,
+          items: merged,
+        },
+      }));
+    }
 
     return merged;
   }
@@ -734,7 +736,7 @@ export class TokenRepository implements ITokenRepository {
     const network = await this.readGRC721SyncNetwork();
     const cursor = network.collections?.[address] || emptyCursor<string>();
 
-    const { page, previousItems, previousBlockHeight } = await this.walkIndexedEvents(
+    const { page, previousItems, previousBlockHeight, storable } = await this.walkIndexedEvents(
       cursor,
       (fromBlockHeight) =>
         makeGRC721ReceivedCollectionsQuery(address, GRC721_TOKEN_PACKAGES, fromBlockHeight),
@@ -768,17 +770,19 @@ export class TokenRepository implements ITokenRepository {
     // The query orders DESC, so this batch is newer than everything stored.
     const merged = [...received, ...previousItems];
 
-    await this.writeGRC721SyncStore((stored) => ({
-      ...stored,
-      collections: {
-        ...stored.collections,
-        [address]: {
-          blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
-          latestBlockHeight: page.latestBlockHeight,
-          items: merged,
+    if (TokenRepository.shouldStoreWalk(page, previousBlockHeight, storable)) {
+      await this.writeGRC721SyncStore((stored) => ({
+        ...stored,
+        collections: {
+          ...stored.collections,
+          [address]: {
+            blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
+            latestBlockHeight: page.latestBlockHeight,
+            items: merged,
+          },
         },
-      },
-    }));
+      }));
+    }
 
     return merged;
   }
@@ -1053,7 +1057,7 @@ export class TokenRepository implements ITokenRepository {
     const network = await this.readGRC721SyncNetwork();
     const cursor = network.tokens?.[address]?.[packagePath] || emptyCursor<GRC721TokenCandidate>();
 
-    const { page, previousItems, previousBlockHeight } = await this.walkIndexedEvents(
+    const { page, previousItems, previousBlockHeight, storable } = await this.walkIndexedEvents(
       cursor,
       (fromBlockHeight) =>
         makeGRC721ReceivedTokensQuery(packagePath, address, GRC721_TOKEN_PACKAGES, fromBlockHeight),
@@ -1095,20 +1099,22 @@ export class TokenRepository implements ITokenRepository {
     // The query orders DESC, so this batch is newer than everything stored.
     const merged = [...candidates, ...previousItems];
 
-    await this.writeGRC721SyncStore((stored) => ({
-      ...stored,
-      tokens: {
-        ...stored.tokens,
-        [address]: {
-          ...stored.tokens?.[address],
-          [packagePath]: {
-            blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
-            latestBlockHeight: page.latestBlockHeight,
-            items: merged,
+    if (TokenRepository.shouldStoreWalk(page, previousBlockHeight, storable)) {
+      await this.writeGRC721SyncStore((stored) => ({
+        ...stored,
+        tokens: {
+          ...stored.tokens,
+          [address]: {
+            ...stored.tokens?.[address],
+            [packagePath]: {
+              blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
+              latestBlockHeight: page.latestBlockHeight,
+              items: merged,
+            },
           },
         },
-      },
-    }));
+      }));
+    }
 
     return merged;
   }
@@ -1300,11 +1306,18 @@ export class TokenRepository implements ITokenRepository {
     page: IndexedEventPage;
     previousItems: T[];
     previousBlockHeight: number;
+    /** False when the result must not be folded back into the cursor. */
+    storable: boolean;
   }> {
     const page = await this.fetchEventPageByQuery(makeQuery(cursor.blockHeight));
 
     if (!TokenRepository.hasIndexerRewound(cursor, page)) {
-      return { page, previousItems: cursor.items, previousBlockHeight: cursor.blockHeight };
+      return {
+        page,
+        previousItems: cursor.items,
+        previousBlockHeight: cursor.blockHeight,
+        storable: TokenRepository.isStorablePage(page),
+      };
     }
 
     console.info('[grc721-sync] indexer rewound, re-walking from genesis', {
@@ -1313,11 +1326,48 @@ export class TokenRepository implements ITokenRepository {
       latestBlockHeight: page.latestBlockHeight,
     });
 
+    const rewalked = await this.fetchEventPageByQuery(makeQuery(0));
+
     return {
-      page: await this.fetchEventPageByQuery(makeQuery(0)),
+      page: rewalked,
       previousItems: [],
       previousBlockHeight: 0,
+      storable: TokenRepository.isStorablePage(rewalked),
     };
+  }
+
+  /**
+   * Whether a page can be folded back into a cursor.
+   *
+   * Events with no usable block height would advance nothing while still
+   * merging their candidates, so the next walk would replay the same range and
+   * append them a second time. For the catalog that is fatal rather than
+   * merely wasteful: a repeated collection id *is* the ambiguity signal, so
+   * every collection would be marked ambiguous and dropped, leaving the NFT
+   * list permanently empty. Treat such a page as unusable and keep the cursor
+   * where it was.
+   */
+  private static isStorablePage(page: IndexedEventPage): boolean {
+    return page.events.length === 0 || page.maxBlockHeight > 0;
+  }
+
+  /**
+   * Whether a completed walk is worth persisting.
+   *
+   * A walk that matched nothing and moved no height would rewrite the whole
+   * candidate list — which for the chain-wide catalog is every collection ever
+   * announced — byte for byte. Every NFT screen load did that.
+   */
+  private static shouldStoreWalk(
+    page: IndexedEventPage,
+    previousBlockHeight: number,
+    storable: boolean,
+  ): boolean {
+    if (!storable) {
+      return false;
+    }
+
+    return page.events.length > 0 || page.maxBlockHeight > previousBlockHeight;
   }
 
   /**
