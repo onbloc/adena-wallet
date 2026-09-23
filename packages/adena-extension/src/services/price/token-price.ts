@@ -18,6 +18,15 @@ export class TokenPriceService {
     this.tokenPriceRepository = tokenPriceRepository;
   }
 
+  /**
+   * Identity of the endpoint these quotes come from. A network switch rebuilds
+   * this service against another API, and quotes are not interchangeable
+   * between the two; empty when the network has no price API at all.
+   */
+  public get sourceId(): string {
+    return this.tokenPriceRepository.apiUrl ?? '';
+  }
+
   public async getTokenPrices(requests: TokenPriceRequest[]): Promise<TokenPriceMap> {
     if (requests.length === 0) {
       return {};
