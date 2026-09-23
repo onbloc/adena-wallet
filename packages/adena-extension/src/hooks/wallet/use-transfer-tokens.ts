@@ -17,17 +17,18 @@ export const useTransferTokens = (): UseTransferTokenReturn => {
     grc20Packages: TokenModel[];
     grc721Packages: GRC721CollectionModel[];
   }> => {
-    const [transferEventPackages, accountGRC20Tokens, deployedCollections]: [
-      string[],
+    const [accountGRC20Tokens, grc721Collections]: [
       GRC20TokenModel[] | null,
       GRC721CollectionModel[],
     ] = await Promise.all([
-      tokenService.fetchAllTransferPackagesBy(address),
       // API-backed networks return the held GRC20 tokens directly (identity as a
       // token path); null means no API URL, so fall back to registry discovery.
       tokenService.fetchAccountGRC20Tokens(address),
-      tokenService.fetchGRC721Collections(),
-    ]).catch(() => [[], null, []]);
+      // GRC721 is indexer/RPC-only: the collections an account holds are
+      // replayed from the grc721 package's Transfer events, so no intersection
+      // with a separately-sourced collection list is needed.
+      tokenService.fetchAccountGRC721Collections(address).catch(() => []),
+    ]).catch(() => [null, []]);
 
     let filteredGRC20Packages: TokenModel[];
     if (accountGRC20Tokens) {
@@ -46,17 +47,9 @@ export const useTransferTokens = (): UseTransferTokenReturn => {
       );
     }
 
-    const filteredGRC721Packages = (deployedCollections || []).filter((grc721Token) => {
-      if (!transferEventPackages || transferEventPackages.length === 0) {
-        return false;
-      }
-
-      return transferEventPackages.includes(grc721Token.packagePath);
-    });
-
     return {
       grc20Packages: filteredGRC20Packages,
-      grc721Packages: filteredGRC721Packages,
+      grc721Packages: grc721Collections,
     };
   };
 
