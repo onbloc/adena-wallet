@@ -29,11 +29,9 @@ export const NFTCollectionCardWrapper = styled(View)`
     margin: 0 auto;
     width: max-content;
     max-width: calc(100% - 20px);
-    flex-shrink: 0;
     height: 20px;
     padding: 0 5px 0 8px;
     gap: 4px;
-    flex-shrink: 0;
     border-radius: 10px;
     background-color: ${getTheme('neutral', '_9')};
     cursor: default;

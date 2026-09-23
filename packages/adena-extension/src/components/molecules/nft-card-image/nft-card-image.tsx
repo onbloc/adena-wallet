@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import IconEmptyImage from '@assets/icon-empty-image.svg';
 import { Loading } from '@components/atoms';
@@ -12,6 +12,12 @@ export interface NFTCardImageProps {
 
 const NFTCardImage: React.FC<NFTCardImageProps> = ({ isFetched, image, hasBadge = false }) => {
   const [hasError, setHasError] = useState(false);
+
+  // One failed load used to pin the card to the empty placeholder for the rest
+  // of its life, so a refetch that returned a working uri still showed nothing.
+  useEffect(() => {
+    setHasError(false);
+  }, [image]);
 
   const handleError = (): void => {
     setHasError(true);
