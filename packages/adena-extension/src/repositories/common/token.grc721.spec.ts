@@ -199,7 +199,7 @@ describe('indexer sync cursor', () => {
 
     // Cursors live in the cache store, not in the migrated wallet blob.
     const cursor = (syncCacheValues[GRC721_SYNC_CACHE_KEY] as Record<string, never>)[
-      NETWORK.networkId
+      NETWORK.chainId
     ];
     expect(cursor).toBeTruthy();
   });
@@ -256,22 +256,25 @@ describe('indexer sync cursor', () => {
     expect(resumeHeightOf(post, 1)).toBeNull();
   });
 
-  // A reset testnet or a re-index leaves the indexer below the stored height;
-  // resuming there would hide every token the account owns.
-  it('re-walks from genesis when the indexer has rewound below the cursor', async () => {
+  // A reset testnet or a re-index restarts the tip from zero. The signal is the
+  // tip dropping, not the tip falling below the matched-event height: an
+  // account's newest matching block sits far below the tip, so the latter only
+  // holds for the brief window before the new chain grows past it.
+  it('re-walks from genesis when the indexer tip has gone backwards', async () => {
     const { repository, post } = makeRepository(
       [[received(ADDRESS, '7')]],
       { owners: { '7': ADDRESS } },
-      { blockHeight: 400, latestBlockHeight: 500 },
+      { blockHeight: 400, latestBlockHeight: 4_000_000 },
     );
 
     await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
 
-    // The indexer now reports a tip below the stored height.
+    // Reset chain: the tip is far below what was seen, but still well above the
+    // stored event height of 400 — the old check would have missed this.
     post.mockImplementation(async () => ({
       data: {
         data: {
-          latestBlockHeight: 10,
+          latestBlockHeight: 900,
           getTransactions: [{ block_height: 5, response: { events: [received(ADDRESS, '7')] } }],
         },
       },
@@ -282,6 +285,42 @@ describe('indexer sync cursor', () => {
     expect(resumeHeightOf(post, 1)).toBe(400);
     expect(resumeHeightOf(post, 2)).toBeNull();
     expect(tokens.map((token) => token.tokenId)).toEqual(['7']);
+  });
+
+  it('keeps resuming while the indexer tip only grows', async () => {
+    const { repository, post } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 400, latestBlockHeight: 4_000_000 },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    post.mockImplementation(async () => ({
+      data: { data: { latestBlockHeight: 4_000_100, getTransactions: [] } },
+    }));
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(resumeHeightOf(post, 1)).toBe(400);
+    // Still resuming — no genesis re-walk was issued.
+    expect(post).toHaveBeenCalledTimes(2);
+  });
+
+  // The wallet's own network record id is local bookkeeping and survives a user
+  // re-pointing that network at a different chain; the chain id does not.
+  it('keys cursors by chain id', async () => {
+    const { repository, syncCacheValues } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120 },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(Object.keys(syncCacheValues[GRC721_SYNC_CACHE_KEY] as object)).toEqual([
+      NETWORK.chainId,
+    ]);
   });
 
   // The cache is a convenience, not a dependency: without it (no chrome API,
@@ -339,7 +378,7 @@ describe('indexer sync cursor', () => {
       [networkId: string]: { tokens?: { [address: string]: Record<string, unknown> } };
     };
 
-    expect(Object.keys(cache[NETWORK.networkId].tokens?.[ADDRESS] || {}).sort()).toEqual([
+    expect(Object.keys(cache[NETWORK.chainId].tokens?.[ADDRESS] || {}).sort()).toEqual([
       'gno.land/r/demo/a',
       'gno.land/r/demo/b',
       'gno.land/r/demo/c',

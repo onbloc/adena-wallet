@@ -660,6 +660,7 @@ export class TokenRepository implements ITokenRepository {
       ...stored,
       catalog: {
         blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
+        latestBlockHeight: page.latestBlockHeight,
         items: merged,
       },
     }));
@@ -773,6 +774,7 @@ export class TokenRepository implements ITokenRepository {
         ...stored.collections,
         [address]: {
           blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
+          latestBlockHeight: page.latestBlockHeight,
           items: merged,
         },
       },
@@ -1101,6 +1103,7 @@ export class TokenRepository implements ITokenRepository {
           ...stored.tokens?.[address],
           [packagePath]: {
             blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
+            latestBlockHeight: page.latestBlockHeight,
             items: merged,
           },
         },
@@ -1256,31 +1259,57 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
+   * Whether the indexer has gone backwards since this cursor was written.
+   *
+   * A reset testnet or a re-index restarts the tip from zero, and resuming
+   * above a height that now belongs to a different chain hides every token
+   * below it — permanently, since the cursor never rewinds on its own.
+   *
+   * The signal is the *tip* dropping. Comparing a fresh tip against the
+   * cursor's `blockHeight` does not work: that is the newest block matching
+   * this query, typically far below the tip, so the check would only hold for
+   * the brief window before the new chain grew past it. Cursors written before
+   * the tip was recorded fall back to that weaker comparison rather than never
+   * rewinding at all.
+   */
+  private static hasIndexerRewound<T>(
+    cursor: GRC721SyncCursor<T>,
+    page: IndexedEventPage,
+  ): boolean {
+    if (page.latestBlockHeight <= 0) {
+      return false;
+    }
+
+    const previousTip = cursor.latestBlockHeight ?? cursor.blockHeight;
+
+    return previousTip > 0 && page.latestBlockHeight < previousTip;
+  }
+
+  /**
    * Run an indexer walk that resumes from `cursor.blockHeight`.
    *
    * The indexer is an append-only event log, so everything at or below the
    * stored height was already folded into `cursor.items` and only newer blocks
-   * have to travel. The one case that breaks the assumption is an indexer that
-   * rewound (a reset testnet, a re-index): its tip is then *below* the stored
-   * height, and resuming would silently hide every token. Detect that and redo
-   * the walk from genesis with the cached items dropped.
+   * have to travel. When {@link hasIndexerRewound} says that no longer holds,
+   * redo the walk from genesis with the cached items dropped.
    */
   private async walkIndexedEvents<T>(
     cursor: GRC721SyncCursor<T>,
     makeQuery: (fromBlockHeight: number) => string,
-  ): Promise<{ page: IndexedEventPage; previousItems: T[]; previousBlockHeight: number }> {
+  ): Promise<{
+    page: IndexedEventPage;
+    previousItems: T[];
+    previousBlockHeight: number;
+  }> {
     const page = await this.fetchEventPageByQuery(makeQuery(cursor.blockHeight));
 
-    const rewound =
-      cursor.blockHeight > 0 &&
-      page.latestBlockHeight > 0 &&
-      page.latestBlockHeight < cursor.blockHeight;
-    if (!rewound) {
+    if (!TokenRepository.hasIndexerRewound(cursor, page)) {
       return { page, previousItems: cursor.items, previousBlockHeight: cursor.blockHeight };
     }
 
     console.info('[grc721-sync] indexer rewound, re-walking from genesis', {
       storedBlockHeight: cursor.blockHeight,
+      storedLatestBlockHeight: cursor.latestBlockHeight,
       latestBlockHeight: page.latestBlockHeight,
     });
 
@@ -1335,14 +1364,14 @@ export class TokenRepository implements ITokenRepository {
   private writeGRC721SyncStore(
     update: (network: NetworkGRC721Sync) => NetworkGRC721Sync,
   ): Promise<void> {
-    const networkId = this.networkId;
+    const chainId = this.chainId;
 
     const write = this.syncWriteQueue.then(async () => {
       const store = await this.readGRC721SyncStore();
 
       await this.syncCache?.setByObject(GRC721_SYNC_CACHE_KEY, {
         ...store,
-        [networkId]: update(store[networkId] || {}),
+        [chainId]: update(store[chainId] || {}),
       });
     });
 
@@ -1357,7 +1386,7 @@ export class TokenRepository implements ITokenRepository {
 
   private async readGRC721SyncNetwork(): Promise<NetworkGRC721Sync> {
     const store = await this.readGRC721SyncStore();
-    return store[this.networkId] || {};
+    return store[this.chainId] || {};
   }
 
   /**
