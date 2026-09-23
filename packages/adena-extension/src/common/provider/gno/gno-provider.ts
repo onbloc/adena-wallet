@@ -33,7 +33,13 @@ import { HttpClient, RpcClient, Tm2Client } from '@gnolang/tm2-rpc';
 import axios from 'axios';
 import { formatGnoArg, GnoArg } from './qeval';
 import { RpcEndpointSelector } from './rpc-endpoint-selector';
-import { AccountInfo, GnoDocumentInfo, GnoSessionAccountResponse, VMQueryType } from './types';
+import {
+  ABCIAccount,
+  AccountInfo,
+  GnoDocumentInfo,
+  GnoSessionAccountResponse,
+  VMQueryType,
+} from './types';
 import {
   fetchABCIResponse,
   isHttpsAvailable,
@@ -200,7 +206,10 @@ export class GnoProvider extends GnoJSONRPCProvider {
         public_key: publicKey,
         account_number: accountNumber,
         sequence,
-      } = abciAccount.BaseAccount;
+        // The tm2-js-client ABCIAccount type predates the vesting field, so the
+        // local ABCIAccount declaration is the one that describes the wire shape.
+        vesting,
+      } = abciAccount.BaseAccount as ABCIAccount['BaseAccount'];
 
       return {
         address,
@@ -210,6 +219,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
         publicKey,
         accountNumber,
         sequence,
+        vesting,
       };
     } catch (e) {
       console.info(e);

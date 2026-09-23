@@ -1,6 +1,6 @@
 import { isAirgapAccount, isMultisigAccount, isSessionAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import styled from 'styled-components';
 
@@ -30,7 +30,9 @@ import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useTokenPrices } from '@hooks/use-token-prices';
+import { useChainBlockTime } from '@hooks/wallet/use-chain-block-time';
 import { useIsCurrentSessionRevoked } from '@hooks/wallet/use-current-session-revoked';
+import { useVestingInfo } from '@hooks/wallet/use-vesting-info';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { revokedDimStyle } from '@styles/session-revoked';
@@ -42,6 +44,11 @@ import { MainToken, RoutePath, TokenPriceRequest, TokenValue } from '@types';
 // this is only the safety net for a token arriving while the wallet sits open.
 const TOKEN_DISCOVERY_INTERVAL = 60_000;
 const ROW_COUNT_CACHE_KEY = 'walletMain.tokenRowCount';
+// The vesting panel needs the chain's clock, not the device's. It is polled
+// once a second while a panel is open so Spendable keeps moving, and slowly the
+// rest of the time so opening a panel finds a value already cached.
+const VESTING_BLOCK_TIME_OPEN_INTERVAL = 1_000;
+const VESTING_BLOCK_TIME_IDLE_INTERVAL = 30_000;
 
 // Read the last known visible token row count synchronously so the first
 // frame can reserve N placeholder rows. This keeps the list height stable
@@ -144,6 +151,30 @@ export const WalletMain = (): JSX.Element => {
   );
 
   const { addLoadingImages, completeImageLoading } = useLoadImages();
+
+  // Null for every account without a grant, which is all but a handful; the
+  // native token row reveals the padlock and expander only when it is set.
+  const { vestingInfo } = useVestingInfo();
+  // The open panel lives here rather than inside the row so the block-time poll
+  // can follow it, and so the rows stay presentational.
+  const [expandedVestingTokenId, setExpandedVestingTokenId] = useState<string | null>(null);
+  const blockTimeSec = useChainBlockTime(
+    !!vestingInfo,
+    expandedVestingTokenId === null
+      ? VESTING_BLOCK_TIME_IDLE_INTERVAL
+      : VESTING_BLOCK_TIME_OPEN_INTERVAL,
+  );
+
+  const onToggleVesting = useCallback((tokenId: string) => {
+    setExpandedVestingTokenId((prev) => (prev === tokenId ? null : tokenId));
+  }, []);
+
+  // An account with no grant has no panel to keep open.
+  useEffect(() => {
+    if (!vestingInfo) {
+      setExpandedVestingTokenId(null);
+    }
+  }, [vestingInfo]);
 
   // Captured once on first render — never updates so the placeholder count
   // can't shift while metainfos hydrate.
@@ -258,9 +289,11 @@ export const WalletMain = (): JSX.Element => {
         },
         chainIconUrl: isCosmos ? CHAIN_ICON_MAP[tokenBalance.networkId] : undefined,
         tokenValue,
+        // A grant lives on the Gno account, so only the native row can show it.
+        vesting: !isCosmos && tokenBalance.main ? vestingInfo : null,
       };
     });
-  }, [displayedBalances, tokenPrices, getTokenImage, currentNetwork]);
+  }, [displayedBalances, tokenPrices, getTokenImage, currentNetwork, vestingInfo]);
 
   // Null when nothing on screen is quoted: keep the native-balance headline.
   const portfolioValue = useMemo<PortfolioValue | null>(() => {
@@ -406,6 +439,9 @@ export const WalletMain = (): JSX.Element => {
           tokens={tokens}
           usdDisplay={usdDisplayMode}
           itemStateByTokenId={itemStateByTokenId}
+          expandedVestingTokenId={expandedVestingTokenId}
+          blockTimeSec={blockTimeSec}
+          onToggleVesting={onToggleVesting}
           placeholderCount={cachedRowCountRef.current}
           disabled={actionsDisabled}
           completeImageLoading={completeImageLoading}

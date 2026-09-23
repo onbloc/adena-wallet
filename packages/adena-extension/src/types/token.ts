@@ -1,4 +1,5 @@
 import { BaseError } from '@common/errors';
+import { VestingInfo } from '@common/utils/vesting-utils';
 import { AddingType } from '@components/pages/additional-token/additional-token-type-selector';
 import { TokenValue } from './price';
 
@@ -114,6 +115,12 @@ export interface MainToken {
    * layout differs between the two cases, so this doubles as the switch.
    */
   tokenValue?: TokenValue | null;
+  /**
+   * Vesting schedule for this row's balance, or null when the account has no
+   * grant — which is every account but a handful. Only the native token can
+   * carry one; its presence is what reveals the padlock and the expander.
+   */
+  vesting?: VestingInfo | null;
 }
 
 export interface GRC721CollectionModel {

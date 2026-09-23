@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
+import IconLockOutline from '@assets/icon-lock-outline';
 import { formatUSD } from '@common/utils/price-utils';
 import { SkeletonBoxStyle, WarningTriangleIcon } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
@@ -21,6 +22,8 @@ export interface TokenListItemBalanceProps {
   tokenValue?: TokenValue | null;
   loading?: boolean;
   error?: boolean;
+  /** Marks the amount as partly vesting-locked with a padlock. */
+  locked?: boolean;
 }
 
 const BalanceSkeleton = styled(SkeletonBoxStyle)`
@@ -57,12 +60,27 @@ const ValuedBalance = styled.span`
   }
 `;
 
+// Keeps the padlock on the same baseline as the amount it qualifies. The icon
+// draws in `currentColor`, so it picks up the muted amount colour here.
+const LockedAmount = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: ${getTheme('neutral', 'a')};
+
+  svg {
+    display: block;
+    flex-shrink: 0;
+  }
+`;
+
 const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
   amount,
   usdDisplay = false,
   tokenValue = null,
   loading = false,
   error = false,
+  locked = false,
 }) => {
   if (error) {
     return (
@@ -86,16 +104,25 @@ const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
 
   const { value, denom } = amount;
 
+  const amountText = `${value} ${denom}`;
+
   if (usdDisplay) {
     return (
       <ValuedBalance>
         <span className='usd-value'>{tokenValue ? formatUSD(tokenValue.usdValue) : '-'}</span>
-        <span className='token-amount'>{`${value} ${denom}`}</span>
+        {locked ? (
+          <LockedAmount>
+            <IconLockOutline />
+            <span className='token-amount'>{amountText}</span>
+          </LockedAmount>
+        ) : (
+          <span className='token-amount'>{amountText}</span>
+        )}
       </ValuedBalance>
     );
   }
 
-  return (
+  const balance = (
     <TokenBalance
       value={value}
       denom={denom}
@@ -104,6 +131,16 @@ const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
       fontStyleKey='body2Reg'
       minimumFontSize='11px'
     />
+  );
+
+  // Unpriced rows keep their single line; the padlock simply precedes it.
+  return locked ? (
+    <LockedAmount>
+      <IconLockOutline />
+      {balance}
+    </LockedAmount>
+  ) : (
+    balance
   );
 };
 

@@ -16,8 +16,13 @@ export interface TokenListProps {
   itemStateByTokenId?: Record<string, TokenListItemState>;
   placeholderCount?: number;
   disabled?: boolean;
+  /** tokenId of the row whose vesting panel is open, if any. */
+  expandedVestingTokenId?: string | null;
+  /** Chain block time for the vesting split; see TokenVestingPanel. */
+  blockTimeSec?: number | null;
   completeImageLoading: (imageUrl: string) => void;
   onClickTokenItem: (tokenId: string) => void;
+  onToggleVesting?: (tokenId: string) => void;
 }
 
 const TokenList: React.FC<TokenListProps> = ({
@@ -26,8 +31,11 @@ const TokenList: React.FC<TokenListProps> = ({
   itemStateByTokenId,
   placeholderCount = 0,
   disabled = false,
+  expandedVestingTokenId = null,
+  blockTimeSec = null,
   completeImageLoading,
   onClickTokenItem,
+  onToggleVesting,
 }) => {
   if (tokens.length === 0 && placeholderCount > 0) {
     return (
@@ -51,8 +59,11 @@ const TokenList: React.FC<TokenListProps> = ({
             loading={state?.loading}
             error={state?.error}
             disabled={disabled}
+            vestingExpanded={expandedVestingTokenId === token.tokenId}
+            blockTimeSec={blockTimeSec}
             completeImageLoading={completeImageLoading}
             onClickTokenItem={onClickTokenItem}
+            onToggleVesting={onToggleVesting}
           />
         );
       })}
