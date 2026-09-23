@@ -30,8 +30,6 @@ export const useGetGRC721Tokens = (
         .fetchGRC721Tokens(collection.packagePath, currentFundingAddress)
         .catch(() => []);
 
-      // The repository returns the owned tokens newest-received first, which is
-      // the order the grid renders them in.
       return tokens.map((token) => ({
         ...token,
         name: collection.name,

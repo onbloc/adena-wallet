@@ -45,21 +45,19 @@ function newToken(token: string, name: string, symbol: string): unknown {
 }
 
 interface ChainState {
-  /** Token ids the realm still attributes to ADDRESS. */
   owners?: Record<string, string>;
   balances?: Record<string, number>;
   funcs?: { name: string; results: { name: string; type: string }[] }[];
 }
 
-/**
- * The indexer returns whole transactions under `getTransactions`; `where`
- * selects transactions, not events, so each transaction carries every event it
- * emitted.
- */
 function makeRepository(
   transactionEvents: unknown[][],
   chain: ChainState = {},
-): { repository: TokenRepository; evaluateIIFE: jest.Mock } {
+): {
+  repository: TokenRepository;
+  evaluateIIFE: jest.Mock;
+  getValueByEvaluateExpression: jest.Mock;
+} {
   const axiosInstance = {
     post: jest.fn().mockResolvedValue({
       data: {
@@ -72,8 +70,7 @@ function makeRepository(
 
   const owners = chain.owners ?? {};
 
-  // `filterGRC721OwnedTokenIds` unrolls one OwnerOf call per candidate and asks
-  // the realm for a positional 1/0 flag string; replay that here.
+  // Replay the positional 1/0 flag string the unrolled OwnerOf qeval returns.
   const evaluateIIFE = jest.fn(
     async (_packagePath: string, params: { statements?: string[] }): Promise<string> => {
       const flags = (params.statements || [])
@@ -85,16 +82,18 @@ function makeRepository(
     },
   );
 
+  const getValueByEvaluateExpression = jest.fn(
+    async (packagePath: string, functionName: string): Promise<string | null> => {
+      if (functionName === 'BalanceOf') {
+        return `${chain.balances?.[packagePath] ?? 0}`;
+      }
+      return null;
+    },
+  );
+
   const gnoProvider = {
     evaluateIIFE,
-    getValueByEvaluateExpression: jest.fn(
-      async (packagePath: string, functionName: string): Promise<string | null> => {
-        if (functionName === 'BalanceOf') {
-          return `${chain.balances?.[packagePath] ?? 0}`;
-        }
-        return null;
-      },
-    ),
+    getValueByEvaluateExpression,
     getRealmDocument: jest.fn(async () => ({ funcs: chain.funcs ?? [] })),
   } as unknown as GnoProvider;
 
@@ -105,7 +104,7 @@ function makeRepository(
     gnoProvider,
   );
 
-  return { repository, evaluateIIFE };
+  return { repository, evaluateIIFE, getValueByEvaluateExpression };
 }
 
 describe('fetchGRC721Collections', () => {
@@ -173,7 +172,7 @@ describe('fetchGRC721TokensBy', () => {
   it('keeps only the received ids the realm still attributes to the address', async () => {
     const { repository } = makeRepository(
       [[received(ADDRESS, '7')], [received(ADDRESS, '3')], [received(ADDRESS, '1')]],
-      // `3` was sent on, `1` was burned: OwnerOf no longer answers with ADDRESS.
+      // `3` was sent on, `1` was burned.
       { owners: { '7': ADDRESS, '3': OTHER_ADDRESS } },
     );
 
@@ -245,6 +244,25 @@ describe('fetchAccountGRC721CollectionsBy', () => {
         isMetadata: false,
       }),
     ]);
+  });
+
+  it('never asks the realm about a collection the account has not received', async () => {
+    const { repository, getValueByEvaluateExpression } = makeRepository(
+      [
+        [newToken(COLLECTION_ID, 'GNOSWAP NFT', 'GNFT')],
+        [newToken('gno.land/r/demo/nft.ITEM.0000000', 'Item', 'ITEM')],
+        [received(ADDRESS, '7')],
+      ],
+      { balances: { [PACKAGE_PATH]: 1 }, owners: { '7': ADDRESS }, funcs: [TOKEN_URI_FUNC] },
+    );
+
+    const collections = await repository.fetchAccountGRC721CollectionsBy(ADDRESS);
+
+    expect(collections.map((collection) => collection.collectionId)).toEqual([COLLECTION_ID]);
+    const balanceCalls = getValueByEvaluateExpression.mock.calls.filter(
+      ([, functionName]) => functionName === 'BalanceOf',
+    );
+    expect(balanceCalls.map(([packagePath]) => packagePath)).toEqual([PACKAGE_PATH]);
   });
 
   it('drops a collection the realm reports a zero balance for', async () => {

@@ -24,9 +24,8 @@ export const useTransferTokens = (): UseTransferTokenReturn => {
       // API-backed networks return the held GRC20 tokens directly (identity as a
       // token path); null means no API URL, so fall back to registry discovery.
       tokenService.fetchAccountGRC20Tokens(address),
-      // GRC721 is indexer/RPC-only: the collections an account holds are
-      // replayed from the grc721 package's Transfer events, so no intersection
-      // with a separately-sourced collection list is needed.
+      // GRC721 is indexer/RPC-only and self-contained: exactly the collections
+      // the account holds.
       tokenService.fetchAccountGRC721Collections(address).catch(() => []),
     ]).catch(() => [null, []]);
 

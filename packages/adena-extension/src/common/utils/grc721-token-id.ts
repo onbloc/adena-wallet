@@ -1,19 +1,10 @@
 /**
- * GRC721 collection-identity helpers.
- *
- * `gno.land/p/nt/grc721/v0` stamps every collection with an unforgeable
+ * GRC721 collection identity. grc721 stamps every collection with a
  * `Token.ID()` = `` `${packagePath}.${symbol}.${sequence}` `` (e.g.
  * `gno.land/r/gnoswap/gnft.GNFT.0000000`) and carries it in the `token`
- * attribute of every `NewToken` / `Transfer` / `Approval` event.
- *
- * That id is the only collection identity an indexer can rely on: the events
- * are emitted by the shared `/p/` package, so an event's `pkg_path` is always
- * the grc721 package path and never the collection's own realm.
- *
- * The wallet keys storage, RPC and transaction messages by the realm
- * `packagePath`, so these helpers split the collection id back into its parts.
- * The shape matches GRC20's `Token.ID()` (`{packagePath}.{symbol}.{sequence}`),
- * hence the reuse of {@link parseTokenPath}.
+ * attribute of its events. The wallet keys storage, RPC and transaction
+ * messages by the realm `packagePath`, so these split the id back into parts.
+ * The shape matches GRC20's, hence the reuse of {@link parseTokenPath}.
  */
 import { parseTokenPath } from './grc20-token-path';
 
@@ -24,9 +15,8 @@ export interface ParsedGrc721CollectionId {
 }
 
 /**
- * Split a grc721 `Token.ID()` into its parts. The symbol charset excludes `.`
- * (see `grc721.validSymbol`), so the last dot always separates the sequence.
- * Returns null when the value is not a full collection id.
+ * The symbol charset excludes `.` (see `grc721.validSymbol`), so the last dot
+ * always separates the sequence. Null when the value is not a full id.
  */
 export function parseGrc721CollectionId(collectionId: string): ParsedGrc721CollectionId | null {
   const sequenceIdx = collectionId.lastIndexOf('.');
@@ -46,7 +36,7 @@ export function parseGrc721CollectionId(collectionId: string): ParsedGrc721Colle
   };
 }
 
-/** Realm path of a grc721 collection id, or null when it does not parse. */
+/** Realm path of a collection id, or null when it does not parse. */
 export function packagePathOfGrc721CollectionId(collectionId: string): string | null {
   return parseGrc721CollectionId(collectionId)?.packagePath ?? null;
 }

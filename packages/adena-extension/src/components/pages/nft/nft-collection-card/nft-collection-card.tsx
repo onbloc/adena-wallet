@@ -36,8 +36,6 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
     grc721Collection.packagePath,
     grc721Collection.tokenId,
     {
-      // `tokenId` is a token the account holds in this collection; without one
-      // there is no image to render.
       enabled: grc721Collection.isTokenUri && !!grc721Collection.tokenId,
     },
   );

@@ -1,12 +1,8 @@
 import { Grc20TokenPackage } from '@common/utils/grc20reg-config';
 import { Grc721TokenPackage } from '@common/utils/grc721-config';
 
-/**
- * Event selection set shared by the token discovery queries. The indexer
- * returns the matched transactions under `getTransactions`, each carrying *all*
- * of its events — the `where` clause selects transactions, not events — so
- * every caller still has to filter the event list itself.
- */
+// `where` selects transactions, not events, so each match carries all of its
+// events and callers still filter the list themselves.
 const EVENT_TRANSACTION_FIELDS = `
   block_height
   response {
@@ -70,11 +66,8 @@ query getTokenTransferEvents {
 }`;
 
 /**
- * Every GRC721 collection ever created on the chain.
- *
- * `NewToken` is emitted by `grc721.NewToken`, the only constructor of a
- * `Token`, so the event stream is the complete collection list — there is no
- * on-chain grc721 registry to read instead.
+ * Every GRC721 collection on the chain. `NewToken` is emitted by the only
+ * constructor of a `Token`, and there is no grc721 registry to read instead.
  */
 export const makeGRC721NewTokenEventsQuery = (tokenPackages: Grc721TokenPackage[]): string => {
   const branches = tokenPackages
@@ -111,27 +104,63 @@ query getGRC721NewTokenEvents {
 };
 
 /**
+ * Every GRC721 collection an address has ever received a token of. Narrows the
+ * chain-wide catalog to the account before any per-collection RPC call.
+ */
+export const makeGRC721ReceivedCollectionsQuery = (
+  address: string,
+  tokenPackages: Grc721TokenPackage[],
+): string => {
+  const branches = tokenPackages
+    .map(
+      ({ path, events }) => `
+            {
+              GnoEvent: {
+                pkg_path: { eq: "${path}" }
+                type: { eq: "${events.transferType}" }
+                attrs: {
+                  key: { eq: "${events.toAttr}" }
+                  value: { eq: "${address}" }
+                }
+              }
+            }`,
+    )
+    .join('');
+
+  return `
+query getGRC721ReceivedCollections {
+  getTransactions(
+    where: {
+      success: { eq: true }
+      response: {
+        events: {
+          _or: [${branches}
+          ]
+        }
+      }
+    }
+    order: {
+      heightAndIndex: DESC
+    }
+  ) {
+    ${EVENT_TRANSACTION_FIELDS}
+  }
+}`;
+};
+
+/**
  * The GRC721 tokens of one realm an address has ever *received*, newest first.
- *
- * Only the receiving side is matched on purpose. GRC721 publishes no
- * enumeration function, so the event log is the only way to learn which token
- * ids to ask about — but it does not have to be the authority on ownership: a
- * token the account owns must have been received at least once, and whether it
- * still owns it is settled by an `OwnerOf` RPC call afterwards. That keeps the
- * indexer out of the ownership decision entirely, so no replay ordering, send
- * or burn handling is needed here.
- *
- * `token` is matched by the `{packagePath}.` prefix rather than by an exact
- * collection id, so a realm hosting several collections is covered by one
- * query.
+ * Only the receiving side: an owned token was received at least once, and
+ * `OwnerOf` decides afterwards, so sends and burns need no handling here.
+ * `token` matches by `{packagePath}.` prefix to cover every collection of a
+ * realm in one query.
  */
 export const makeGRC721ReceivedTokensQuery = (
   packagePath: string,
   address: string,
   tokenPackages: Grc721TokenPackage[],
 ): string => {
-  // `attrs` is an OR list, so the token and the recipient constraint each need
-  // their own `_and` entry rather than sibling attrs of one filter.
+  // `attrs` is an OR list, so each constraint needs its own `_and` entry.
   const branches = tokenPackages
     .map(
       ({ path, events }) => `

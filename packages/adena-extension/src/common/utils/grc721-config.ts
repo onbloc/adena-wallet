@@ -1,19 +1,7 @@
 /**
- * GRC721 package configuration.
- *
- * Every GRC721 movement is announced by the grc721 `/p/` package, not by the
- * collection's realm, so discovery and holdings are read from that package's
- * events. `gno.land/p/nt/grc721/v0` emits:
- *
- * - `NewToken` — `token` (`Token.ID()`), `name`, `symbol`. Emitted once per
- *   collection in `NewToken`, which is the only way a `Token` can be created,
- *   so it is a complete list of the chain's collections.
- * - `Transfer` — `token`, `from`, `to`, `tokenId`. Mint emits an empty `from`
- *   and burn an empty `to` (EIP-721), so replaying `Transfer` alone
- *   reconstructs ownership.
- *
- * The list is queried as OR-branches, so adding a package here is how a chain
- * running more than one grc721 version stays fully covered.
+ * GRC721 event configuration. Every movement is announced by the grc721 `/p/`
+ * package, not by the collection's realm, so an event's `pkg_path` is the
+ * package path and the collection lives in the `token` attribute.
  */
 export interface Grc721EventSchema {
   newTokenType: string;
@@ -42,14 +30,13 @@ export const DEFAULT_GRC721_EVENTS: Grc721EventSchema = {
   tokenIdAttr: 'tokenId',
 };
 
+// Queried as OR-branches, so a chain running several versions is covered by
+// adding them here.
 export const GRC721_TOKEN_PACKAGES: Grc721TokenPackage[] = [
   { path: 'gno.land/p/nt/grc721/v0', events: DEFAULT_GRC721_EVENTS },
 ];
 
-/**
- * Event shape of the package that emitted an event; the shared default when the
- * package is not a configured version.
- */
+/** Event shape of the emitting package; the default when it is not configured. */
 export function resolveGrc721Events(
   pkgPath: string | undefined,
   tokenPackages: Grc721TokenPackage[] | undefined,
@@ -60,7 +47,6 @@ export function resolveGrc721Events(
   return matched?.events ?? DEFAULT_GRC721_EVENTS;
 }
 
-/** True when the event was emitted by one of the configured grc721 packages. */
 export function isGrc721Package(
   pkgPath: string | undefined,
   tokenPackages: Grc721TokenPackage[] | undefined,

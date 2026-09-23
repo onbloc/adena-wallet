@@ -111,17 +111,9 @@ export interface MainToken {
 }
 
 export interface GRC721CollectionModel {
-  /**
-   * A token id the account owns in this collection, used as the collection
-   * thumbnail (`TokenURI(tokenId)`). Empty when no token is known — the
-   * collection itself is identified by `packagePath` / `collectionId`.
-   */
+  /** A token the account owns, used as the collection thumbnail. */
   tokenId: string;
-  /**
-   * grc721 `Token.ID()` = `{packagePath}.{symbol}.{sequence}`, the identity
-   * every grc721 event carries. Absent on collections stored before the
-   * indexer-based discovery landed.
-   */
+  /** grc721 `Token.ID()`; absent on collections stored by earlier versions. */
   collectionId?: string;
   networkId: string;
   display: boolean;

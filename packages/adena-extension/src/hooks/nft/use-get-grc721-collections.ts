@@ -20,8 +20,6 @@ export const useGetGRC721Collections = (
         return null;
       }
 
-      // Stored as discovered: each collection carries a thumbnail token id the
-      // account owned at discovery time, refreshed on the next discovery run.
       return tokenService
         .getAccountGRC721Collections(currentAccount.id, currentNetwork.chainId)
         .catch(() => []);

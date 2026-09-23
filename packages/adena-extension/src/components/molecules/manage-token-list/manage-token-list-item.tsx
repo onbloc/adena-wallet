@@ -39,8 +39,6 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
   const tokenUriResponse =
     !isTokenInfo && token.isTokenUri && queryGRC721TokenUri
       ? queryGRC721TokenUri(token.packagePath, token.tokenId, {
-          // `tokenId` is a token the account holds; there is no collection-wide
-          // image to fall back on when it is unknown.
           enabled: !!token.isTokenUri && !!token.tokenId,
         })
       : null;

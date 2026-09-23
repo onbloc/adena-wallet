@@ -45,6 +45,7 @@ import { AppInfoResponse } from './response';
 import {
   makeAllTransferEventsQueryBy,
   makeGRC721NewTokenEventsQuery,
+  makeGRC721ReceivedCollectionsQuery,
   makeGRC721ReceivedTokensQuery,
 } from './token.queries';
 import { ITokenRepository } from './types';
@@ -58,21 +59,18 @@ enum LocalValueType {
 
 const DEFAULT_TOKEN_NETWORK_ID = '';
 
-// The read functions every GRC721 facade publishes. GRC721 has no registry, so
-// this is what identifies a realm as a collection when it is looked up by path.
+// What identifies a realm as a GRC721 collection when looked up by path.
 const GRC721_REALM_READ_FUNCTIONS = ['Name', 'Symbol', 'BalanceOf', 'OwnerOf'];
 
-// Collection membership is a `BalanceOf` per collection on the chain. The cap
-// bounds that fan-out; the batch size bounds how many run at once.
-const GRC721_BALANCE_SCAN_MAX_COLLECTIONS = 200;
+// Membership is one `BalanceOf` per candidate collection; bound the fan-out.
+const GRC721_BALANCE_SCAN_MAX_COLLECTIONS = 50;
 const GRC721_BALANCE_SCAN_BATCH_SIZE = 10;
 
-// Ownership confirmation unrolls one `OwnerOf` call per candidate into a single
-// qeval, so the batch size also bounds the generated expression.
+// One `OwnerOf` call per candidate is unrolled into a single qeval, so the
+// batch size also bounds the generated expression.
 const GRC721_OWNER_SCAN_MAX_TOKENS = 500;
 const GRC721_OWNER_SCAN_BATCH_SIZE = 50;
 
-/** A token id the address received, kept with the collection id it came from. */
 interface GRC721TokenCandidate {
   tokenId: string;
   collectionId: string;
@@ -533,18 +531,11 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
-   * Every GRC721 collection on the chain, read from the grc721 package's
-   * `NewToken` events.
-   *
-   * Indexer-only by design: the collections have no on-chain registry to read
-   * (unlike grc20's `grc20reg`), and no wallet API exposes them, so the event
-   * stream emitted by `grc721.NewToken` — the only constructor of a `Token` —
-   * is the complete list.
-   *
-   * A collection id announced more than once means the realm built two ledgers
-   * behind one identifier, which makes every later event carrying that id
-   * ambiguous; the package documents such a realm as one to ignore wholesale,
-   * so it is dropped here rather than shown.
+   * Every GRC721 collection on the chain, from the grc721 package's `NewToken`
+   * events — there is no registry (unlike grc20's `grc20reg`) and no API to
+   * read instead. A collection id announced twice means the realm built two
+   * ledgers behind one identifier, making its later events ambiguous, so the
+   * package documents it as one to ignore wholesale.
    */
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
     const events = await this.fetchEventsByQuery(
@@ -596,26 +587,34 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
-   * The GRC721 collections an account currently holds at least one token of.
+   * The GRC721 collections an account holds at least one token of.
    *
-   * The catalog comes from the indexer (`NewToken`), but membership is decided
-   * over RPC: `BalanceOf(address)` on each collection's realm is the chain's
-   * own answer, so a stale or incomplete event log cannot add or drop a
-   * collection here. Held collections are then enriched with the realm's
-   * optional read surface and a thumbnail token id.
-   *
-   * The fan-out is one `BalanceOf` per collection on the chain, so it is capped
-   * and run in bounded batches.
+   * The `Transfer` events into the address narrow the chain-wide catalog to the
+   * collections the account has ever touched, so the RPC fan-out scales with
+   * the account rather than with the chain. Membership is then decided by
+   * `BalanceOf`, so a stale event log cannot add or drop a collection here.
    */
   public async fetchAccountGRC721CollectionsBy(address: string): Promise<GRC721CollectionModel[]> {
-    const collections = (await this.fetchGRC721Collections()).slice(
-      0,
-      GRC721_BALANCE_SCAN_MAX_COLLECTIONS,
+    const candidateIds = await this.fetchGRC721ReceivedCollectionIds(address);
+    if (candidateIds.length === 0) {
+      return [];
+    }
+
+    const catalog = new Map(
+      (await this.fetchGRC721Collections()).map((collection) => [
+        collection.collectionId || '',
+        collection,
+      ]),
     );
 
+    const candidates = candidateIds
+      .map((collectionId) => catalog.get(collectionId) || this.toGRC721Collection(collectionId))
+      .filter((collection): collection is GRC721CollectionModel => collection !== null)
+      .slice(0, GRC721_BALANCE_SCAN_MAX_COLLECTIONS);
+
     const held: GRC721CollectionModel[] = [];
-    for (let start = 0; start < collections.length; start += GRC721_BALANCE_SCAN_BATCH_SIZE) {
-      const batch = collections.slice(start, start + GRC721_BALANCE_SCAN_BATCH_SIZE);
+    for (let start = 0; start < candidates.length; start += GRC721_BALANCE_SCAN_BATCH_SIZE) {
+      const batch = candidates.slice(start, start + GRC721_BALANCE_SCAN_BATCH_SIZE);
       const balances = await Promise.all(
         batch.map((collection) =>
           this.fetchGRC721BalanceBy(collection.packagePath, address).catch(() => 0),
@@ -644,6 +643,66 @@ export class TokenRepository implements ITokenRepository {
         };
       }),
     );
+  }
+
+  /** Collection ids the address ever received a token of, newest first. */
+  private async fetchGRC721ReceivedCollectionIds(address: string): Promise<string[]> {
+    const events = await this.fetchEventsByQuery(
+      makeGRC721ReceivedCollectionsQuery(address, GRC721_TOKEN_PACKAGES),
+    );
+
+    const collectionIds: string[] = [];
+    const seen = new Set<string>();
+
+    for (const event of events) {
+      const schema = resolveGrc721Events(event.pkg_path, GRC721_TOKEN_PACKAGES);
+      if (!isGrc721Package(event.pkg_path, GRC721_TOKEN_PACKAGES)) {
+        continue;
+      }
+      if (event.type !== schema.transferType) {
+        continue;
+      }
+
+      const attrs = TokenRepository.toAttributeMap(event.attrs);
+      const collectionId = attrs[schema.tokenAttr] || '';
+      if (attrs[schema.toAttr] !== address || seen.has(collectionId)) {
+        continue;
+      }
+      if (!parseGrc721CollectionId(collectionId)) {
+        continue;
+      }
+
+      seen.add(collectionId);
+      collectionIds.push(collectionId);
+    }
+
+    return collectionIds;
+  }
+
+  /**
+   * A collection the catalog does not cover — an older grc721 version, or a
+   * `NewToken` the indexer has not caught up with. The id still carries the
+   * realm and symbol, which is enough to list and query it.
+   */
+  private toGRC721Collection(collectionId: string): GRC721CollectionModel | null {
+    const parsed = parseGrc721CollectionId(collectionId);
+    if (!parsed) {
+      return null;
+    }
+
+    return {
+      tokenId: '',
+      collectionId,
+      networkId: this.networkId,
+      display: false,
+      type: 'grc721',
+      packagePath: parsed.packagePath,
+      name: parsed.symbol,
+      symbol: parsed.symbol,
+      image: '',
+      isTokenUri: false,
+      isMetadata: false,
+    };
   }
 
   /**
@@ -765,12 +824,8 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
-   * Read a single collection straight from its realm, for a package path the
-   * account does not (yet) hold a token of.
-   *
-   * RPC-only: `vm/qdoc` proves the realm exposes the GRC721 read surface, and
-   * `Name()` / `Symbol()` supply the display fields. The collection id is left
-   * unset because only the grc721 package's events carry it.
+   * Read a single collection straight from its realm over RPC. The collection
+   * id is left unset because only the grc721 package's events carry it.
    */
   public async fetchGRC721CollectionByPackagePath(
     packagePath: string,
@@ -810,12 +865,7 @@ export class TokenRepository implements ITokenRepository {
     };
   }
 
-  /**
-   * `TokenURI(tokenId)` of one token.
-   *
-   * The realm returns `(string, error)`; an error tuple comes back with an
-   * empty URI, which is reported as a miss rather than as an empty image.
-   */
+  /** `TokenURI(tokenId)`; the realm's error tuple comes back as an empty URI. */
   public async fetchGRC721TokenUriBy(packagePath: string, tokenId: string): Promise<string> {
     const uri = await this.evaluateGRC721String(packagePath, 'TokenURI', tokenId);
     if (!uri) {
@@ -826,13 +876,9 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
-   * `TokenMetadata(tokenId)` of one token.
-   *
-   * Only realms that publish the metadata as a JSON string are supported: the
-   * `grc721/metadata` extension returns a `Data` struct, which `vm/qeval`
-   * renders as a Gno literal rather than something parseable. The capability
-   * probe only flags a realm as metadata-capable when the first return value is
-   * a `string`, so this is never reached for a struct-returning realm.
+   * `TokenMetadata(tokenId)`, for realms publishing it as a JSON string. The
+   * `grc721/metadata` extension returns a `Data` struct instead, which qeval
+   * renders as a Gno literal; the capability probe filters those out.
    */
   public async fetchGRC721TokenMetadataBy(
     packagePath: string,
@@ -846,7 +892,6 @@ export class TokenRepository implements ITokenRepository {
     return JSON.parse(response) as GRC721MetadataModel;
   }
 
-  /** `BalanceOf(address)` — how many tokens of the collection the account owns. */
   public async fetchGRC721BalanceBy(packagePath: string, address: string): Promise<number> {
     if (!this.gnoProvider) {
       throw new Error('Gno provider not initialized.');
@@ -864,14 +909,9 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
-   * The tokens of one collection the account currently owns, newest first.
-   *
-   * Two steps, and only the second one decides: the indexer supplies the token
-   * ids the address has ever *received* (GRC721 publishes no enumeration
-   * function, so there is no other way to learn which ids to ask about), then
-   * `OwnerOf` is evaluated over RPC for each of them and only the ids the chain
-   * still attributes to the address survive. Tokens that were sent on or burned
-   * drop out without the wallet having to replay sends.
+   * The tokens of one collection the account currently owns, newest first. The
+   * indexer supplies the ids the address ever received — GRC721 publishes no
+   * enumeration function — and `OwnerOf` over RPC decides which it still owns.
    */
   public async fetchGRC721TokensBy(packagePath: string, address: string): Promise<GRC721Model[]> {
     const received = await this.fetchGRC721ReceivedTokenIds(packagePath, address);
@@ -894,10 +934,7 @@ export class TokenRepository implements ITokenRepository {
     }));
   }
 
-  /**
-   * Token ids of a realm the address has ever received, newest first and
-   * deduplicated. Candidates only — ownership is settled over RPC.
-   */
+  /** Candidates only: ids the address received, newest first, deduplicated. */
   private async fetchGRC721ReceivedTokenIds(
     packagePath: string,
     address: string,
@@ -945,12 +982,10 @@ export class TokenRepository implements ITokenRepository {
   /**
    * Keep the candidates the realm still reports as owned by the address.
    *
-   * `OwnerOf` is unrolled into a single qeval per batch — one call per token id
-   * with the id inlined as a literal, because a `vm/qeval` expression has no
-   * imports in scope and so cannot build the realm's `grc721.TokenID` from a
-   * computed value. The result is a positional `1`/`0` flag per candidate, so
-   * nothing has to be parsed back out of a delimited list; an id whose
-   * `OwnerOf` errors (burned, never minted) reads as `0`.
+   * `OwnerOf` is unrolled into one call per id rather than looped, because a
+   * qeval expression has no imports in scope and so cannot build the realm's
+   * `grc721.TokenID` from a computed value. The reply is a positional `1`/`0`
+   * flag per candidate; an id whose `OwnerOf` errors reads as `0`.
    */
   private async filterGRC721OwnedTokenIds(
     packagePath: string,
@@ -1001,10 +1036,9 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
-   * Which optional read functions a collection's realm publishes. GRC721 has no
-   * mandated facade — `TokenURI` and `TokenMetadata` live in stackable
-   * extensions — so the realm's own document is what decides whether the wallet
-   * may ask for an image or metadata.
+   * Which optional read functions a realm publishes. `TokenURI` and
+   * `TokenMetadata` live in stackable extensions, so only the realm's own
+   * document says whether the wallet may ask for an image or metadata.
    */
   private async fetchGRC721Capabilities(
     packagePath: string,
@@ -1017,8 +1051,7 @@ export class TokenRepository implements ITokenRepository {
     isTokenUri: boolean;
     isMetadata: boolean;
   } {
-    // Only a `string` first result is readable over qeval; a struct result (the
-    // `grc721/metadata` `Data`) comes back as a Gno literal.
+    // Only a `string` first result is readable over qeval.
     const returnsString = (name: string): boolean =>
       funcs.some((func) => func.name === name && func.results?.[0]?.type === 'string');
 
@@ -1028,7 +1061,7 @@ export class TokenRepository implements ITokenRepository {
     };
   }
 
-  /** Evaluate a realm function returning `(string, error)` and decode the string. */
+  /** Evaluate a realm function returning `(string, error)`. */
   private async evaluateGRC721String(
     packagePath: string,
     functionName: string,
@@ -1047,10 +1080,7 @@ export class TokenRepository implements ITokenRepository {
     return value ?? '';
   }
 
-  /**
-   * Run an event query against the indexer and flatten the matched
-   * transactions into their events, preserving the query's ordering.
-   */
+  /** Flatten the matched transactions into their events, keeping query order. */
   private async fetchEventsByQuery(query: string): Promise<IndexedGnoEvent[]> {
     if (!this.queryUrl) {
       return [];

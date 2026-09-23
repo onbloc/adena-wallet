@@ -33,10 +33,8 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
     const isSameCollection = (a: GRC721CollectionModel, b: GRC721CollectionModel): boolean =>
       a.packagePath === b.packagePath && a.networkId === b.networkId;
 
-    // Refresh what the chain owns (identity, display fields, read surface) on
-    // collections that are already stored, so an entry discovered by an older
-    // version of the wallet does not keep stale capability flags forever. The
-    // user-owned `display` flag is preserved.
+    // Refresh stored entries from the chain so capability flags cannot go
+    // stale; the user-owned `display` flag is preserved.
     const refreshedCollections = storedCollections.map((stored) => {
       const fetched = collections.find((collection) => isSameCollection(collection, stored));
       if (!fetched) {
