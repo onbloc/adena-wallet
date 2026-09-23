@@ -411,7 +411,7 @@ describe('indexer sync cursor', () => {
   });
 
   it('leaves the stored cursor untouched when a walk matches nothing new', async () => {
-    const { repository, syncCacheValues, post } = makeRepository(
+    const { repository, syncCacheValues } = makeRepository(
       [[received(ADDRESS, '7')]],
       { owners: { '7': ADDRESS } },
       { blockHeight: 120, laterPages: [[]] },
@@ -468,6 +468,17 @@ describe('fetchGRC721TokenUriBy', () => {
 
     await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe(
       'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=',
+    );
+  });
+
+  // Go puts the error last, so a value before other results is still readable.
+  it('accepts a uri from a realm with an extra result and a nil error', async () => {
+    const { repository } = makeRepository([], {
+      evaluations: { TokenURI: { value: 'ipfs://cid/1.png', rest: '(3 int64)\n(undefined)' } },
+    });
+
+    await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe(
+      'ipfs://cid/1.png',
     );
   });
 

@@ -1201,7 +1201,24 @@ export class TokenRepository implements ITokenRepository {
     };
   }
 
-  /** Evaluate a realm function returning `(string, error)`. */
+  /**
+   * Evaluate a realm function whose first result is a `string`.
+   *
+   * The realm decides its own arity: `TokenURI(tid) string` returns the value
+   * alone, while the grc721 extensions declare `(string, error)` and report
+   * "no uri" as an empty string *and* an error, so the error has to invalidate
+   * the value even when the realm also filled one in.
+   *
+   * The error is read off the *trailing* result, because that is where Go puts
+   * it, so a realm declaring `(string, int, error)` with a nil error still gets
+   * its string read. The remaining assumption is that a realm whose last result
+   * is a string returns an error there at all: one declaring `(string, bool)`
+   * would have its value discarded whenever the flag is true. No grc721
+   * extension declares that shape — the standard is `(string, error)` — and
+   * telling the two apart from the response alone is not possible, so the
+   * conservative reading wins: a value the realm may have flagged as invalid is
+   * dropped rather than shown.
+   */
   private async evaluateGRC721String(
     packagePath: string,
     functionName: string,
@@ -1216,15 +1233,28 @@ export class TokenRepository implements ITokenRepository {
       return '';
     }
 
-    // One result (`TokenURI(tid) string`): the value stands on its own. Two
-    // (`TokenURI(tid) (string, error)`): the realm reports "no uri" as an empty
-    // string *and* an error, so a non-nil error invalidates the value even when
-    // the realm also filled one in.
-    if (parsed.rest !== '' && parsed.rest !== QEVAL_NIL) {
+    if (TokenRepository.reportsError(parsed.rest)) {
       return '';
     }
 
     return parsed.value;
+  }
+
+  /**
+   * Whether the tuples following a value carry a non-nil error.
+   *
+   * A nil interface prints as the bare `(undefined)` tuple, so a remainder that
+   * is empty or ends with it reported no error. A non-nil error prints as a
+   * struct literal, which is why the remainder is matched rather than parsed:
+   * `(&(struct{("boom" string)} errors.errorString) *errors.errorString)` does
+   * not round-trip through the tuple grammar.
+   */
+  private static reportsError(rest: string): boolean {
+    if (rest === '') {
+      return false;
+    }
+
+    return !rest.endsWith(QEVAL_NIL);
   }
 
   /** Flatten the matched transactions into their events, keeping query order. */
@@ -1612,7 +1642,18 @@ export class TokenRepository implements ITokenRepository {
           headers: header || {},
         },
       )
-      .then((response) => response.data)
+      .then((response) => {
+        // A schema mismatch comes back as HTTP 200 with `errors` and a null
+        // `data`, which otherwise reads exactly like "the query matched
+        // nothing" — an indexer that does not support a field would silently
+        // empty the NFT list rather than say so.
+        const errors = (response.data as { errors?: unknown[] } | null)?.errors;
+        if (Array.isArray(errors) && errors.length > 0) {
+          console.warn('[graphql] query rejected by the indexer', url, errors);
+        }
+
+        return response.data;
+      })
       .catch((e) => {
         console.log(e);
         return null;

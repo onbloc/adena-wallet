@@ -136,6 +136,14 @@ describe('GnoProvider', () => {
       );
     });
 
+    it('reads a nil result as null rather than the string "undefined"', async () => {
+      const provider = makeProvider('(undefined)');
+
+      await expect(
+        provider.getValueByEvaluateExpression('gno.land/r/gnoswap/gnft', 'OwnerOf', ['1']),
+      ).resolves.toBeNull();
+    });
+
     it('returns null when the node call fails', async () => {
       const provider = new GnoProvider('https://rpc.example', 'test-13');
       jest.spyOn(provider, 'evaluateExpression').mockRejectedValue(new Error('boom'));

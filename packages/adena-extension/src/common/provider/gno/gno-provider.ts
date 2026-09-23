@@ -86,7 +86,7 @@ class FallbackRpcClient implements RpcClient {
 }
 
 function createTm2Client(endpoints: RpcEndpointSelector): Tm2Client {
-  return new ((Tm2Client as unknown) as Tm2ClientConstructor)(new FallbackRpcClient(endpoints));
+  return new (Tm2Client as unknown as Tm2ClientConstructor)(new FallbackRpcClient(endpoints));
 }
 
 function toNumberOrUndefined(value: string | undefined): number | undefined {
@@ -287,7 +287,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
       // client v2) is non-nullable, so we can't widen the return type to
       // `| null` without breaking the override. All call sites already treat
       // the result as nullable; keep the cast as the intentional bridge.
-      return (null as unknown) as GnoSessionAccountInfoResponse;
+      return null as unknown as GnoSessionAccountInfoResponse;
     }
 
     return withSessionAccountInfo(parseABCI<GnoSessionAccountResponse>(abciData));
@@ -326,9 +326,20 @@ export class GnoProvider extends GnoJSONRPCProvider {
     functionName: string,
     params: (string | number)[],
   ): Promise<string | null> {
-    return this.evaluateFunction(packagePath, functionName, params).then(
-      (parsed) => parsed?.value ?? null,
-    );
+    return this.evaluateFunction(packagePath, functionName, params).then((parsed) => {
+      if (!parsed) {
+        return null;
+      }
+
+      // A nil interface prints as the bare `(undefined)` tuple. Handing back
+      // the token verbatim would make callers treat the string "undefined" as
+      // a value; null is what "there was nothing here" already means to them.
+      if (parsed.value === 'undefined') {
+        return null;
+      }
+
+      return parsed.value;
+    });
   }
 
   /**
