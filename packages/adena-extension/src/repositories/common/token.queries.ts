@@ -19,6 +19,14 @@ const EVENT_TRANSACTION_FIELDS = `
   }
 `;
 
+/**
+ * `block_height: { gt: N }` clause for resuming a walk, or nothing when
+ * starting from genesis. The indexer applies it server-side, so a resumed walk
+ * transfers only the blocks added since the last one.
+ */
+const makeFromBlockHeightClause = (fromBlockHeight?: number): string =>
+  fromBlockHeight && fromBlockHeight > 0 ? `block_height: { gt: ${fromBlockHeight} }` : '';
+
 const makeGRC20TransferEventBranches = (
   address: string,
   tokenPackages: Grc20TokenPackage[],
@@ -69,7 +77,10 @@ query getTokenTransferEvents {
  * Every GRC721 collection on the chain. `NewToken` is emitted by the only
  * constructor of a `Token`, and there is no grc721 registry to read instead.
  */
-export const makeGRC721NewTokenEventsQuery = (tokenPackages: Grc721TokenPackage[]): string => {
+export const makeGRC721NewTokenEventsQuery = (
+  tokenPackages: Grc721TokenPackage[],
+  fromBlockHeight?: number,
+): string => {
   const branches = tokenPackages
     .map(
       ({ path, events }) => `
@@ -84,9 +95,11 @@ export const makeGRC721NewTokenEventsQuery = (tokenPackages: Grc721TokenPackage[
 
   return `
 query getGRC721NewTokenEvents {
+  latestBlockHeight
   getTransactions(
     where: {
       success: { eq: true }
+      ${makeFromBlockHeightClause(fromBlockHeight)}
       response: {
         events: {
           _or: [${branches}
@@ -110,6 +123,7 @@ query getGRC721NewTokenEvents {
 export const makeGRC721ReceivedCollectionsQuery = (
   address: string,
   tokenPackages: Grc721TokenPackage[],
+  fromBlockHeight?: number,
 ): string => {
   const branches = tokenPackages
     .map(
@@ -129,9 +143,11 @@ export const makeGRC721ReceivedCollectionsQuery = (
 
   return `
 query getGRC721ReceivedCollections {
+  latestBlockHeight
   getTransactions(
     where: {
       success: { eq: true }
+      ${makeFromBlockHeightClause(fromBlockHeight)}
       response: {
         events: {
           _or: [${branches}
@@ -159,6 +175,7 @@ export const makeGRC721ReceivedTokensQuery = (
   packagePath: string,
   address: string,
   tokenPackages: Grc721TokenPackage[],
+  fromBlockHeight?: number,
 ): string => {
   // `attrs` is an OR list, so each constraint needs its own `_and` entry.
   const branches = tokenPackages
@@ -189,9 +206,11 @@ export const makeGRC721ReceivedTokensQuery = (
 
   return `
 query getGRC721ReceivedTokens {
+  latestBlockHeight
   getTransactions(
     where: {
       success: { eq: true }
+      ${makeFromBlockHeightClause(fromBlockHeight)}
       response: {
         events: {
           _or: [${branches}

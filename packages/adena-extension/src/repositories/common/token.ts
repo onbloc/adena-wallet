@@ -11,6 +11,12 @@ import {
 
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
+import {
+  AccountGRC721SyncModelV028,
+  GRC721CollectionCandidateModelV028,
+  GRC721SyncCursorModelV028,
+  GRC721TokenCandidateModelV028,
+} from '@migrates/migrations/v028/storage-model-v028';
 import { GnoFunction } from '@common/provider/gno/types';
 import { decodeGnoString, gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
 import {
@@ -54,7 +60,7 @@ enum LocalValueType {
   AccountTokenMetainfos = 'ACCOUNT_TOKEN_METAINFOS',
   AccountGRC721Collections = 'ACCOUNT_GRC721_COLLECTIONS',
   AccountGRC721PinnedPackages = 'ACCOUNT_GRC721_PINNED_PACKAGES',
-  AccountTransferEventBlockHeight = 'ACCOUNT_TRANSFER_EVENT_BLOCK_HEIGHT',
+  AccountGRC721Sync = 'ACCOUNT_GRC721_SYNC',
 }
 
 const DEFAULT_TOKEN_NETWORK_ID = '';
@@ -72,10 +78,8 @@ const QEVAL_NIL = '(undefined)';
 const GRC721_BALANCE_SCAN_BATCH_SIZE = 10;
 const GRC721_OWNER_SCAN_BATCH_SIZE = 50;
 
-interface GRC721TokenCandidate {
-  tokenId: string;
-  collectionId: string;
-}
+type GRC721TokenCandidate = GRC721TokenCandidateModelV028;
+type GRC721CollectionCandidate = GRC721CollectionCandidateModelV028;
 
 interface IndexedGnoEvent {
   type?: string;
@@ -85,8 +89,29 @@ interface IndexedGnoEvent {
 
 interface IndexedTransactionsResponse {
   data?: {
-    getTransactions?: { response?: { events?: IndexedGnoEvent[] } }[];
+    latestBlockHeight?: number;
+    getTransactions?: { block_height?: number; response?: { events?: IndexedGnoEvent[] } }[];
   };
+}
+
+/** Cursor shapes live in the storage model; these are the local spellings. */
+type GRC721SyncCursor<T> = GRC721SyncCursorModelV028<T>;
+type AccountGRC721SyncModel = AccountGRC721SyncModelV028;
+type NetworkGRC721Sync = AccountGRC721SyncModel[string];
+
+/** A cursor that has never been walked. */
+const emptyCursor = <T>(): GRC721SyncCursor<T> => ({ blockHeight: 0, items: [] });
+
+/**
+ * One indexer walk: the matched events plus the heights needed to move a
+ * cursor — how far this batch reached, and how far the indexer itself has.
+ */
+interface IndexedEventPage {
+  events: IndexedGnoEvent[];
+  /** Highest block height among the matched transactions; 0 when none matched. */
+  maxBlockHeight: number;
+  /** The indexer's own tip; 0 when it did not report one. */
+  latestBlockHeight: number;
 }
 
 // Default page size for on-chain grc20reg registry pagination. Keeps a single
@@ -543,19 +568,69 @@ export class TokenRepository implements ITokenRepository {
     return [...collections.values()];
   }
 
-  /** The catalog plus the ids it rejected, which callers must not resurrect. */
+  /**
+   * The catalog plus the ids it rejected, which callers must not resurrect.
+   *
+   * `NewToken` is announced once per collection and never retracted, so the
+   * walk resumes from the stored height and only folds in newly announced
+   * collections. Order matters: the candidates are kept oldest-first so a
+   * collection id announced twice is still detected as ambiguous by the same
+   * first-wins rule, whichever walk each announcement arrived in.
+   */
   private async fetchGRC721Catalog(): Promise<{
     collections: Map<string, GRC721CollectionModel>;
     ambiguous: Set<string>;
   }> {
-    const events = await this.fetchEventsByQuery(
-      makeGRC721NewTokenEventsQuery(GRC721_TOKEN_PACKAGES),
-    );
+    const candidates = await this.fetchGRC721CatalogCandidates();
 
     const collections = new Map<string, GRC721CollectionModel>();
     const ambiguous = new Set<string>();
 
-    for (const event of events) {
+    for (const candidate of candidates) {
+      const parsed = parseGrc721CollectionId(candidate.collectionId);
+      if (!parsed) {
+        continue;
+      }
+
+      if (collections.has(candidate.collectionId)) {
+        ambiguous.add(candidate.collectionId);
+        continue;
+      }
+
+      collections.set(candidate.collectionId, {
+        tokenId: '',
+        collectionId: candidate.collectionId,
+        networkId: this.networkId,
+        display: false,
+        type: 'grc721',
+        packagePath: parsed.packagePath,
+        name: candidate.name || parsed.symbol,
+        symbol: candidate.symbol || parsed.symbol,
+        image: '',
+        isTokenUri: false,
+        isMetadata: false,
+      });
+    }
+
+    ambiguous.forEach((collectionId) => collections.delete(collectionId));
+
+    return { collections, ambiguous };
+  }
+
+  /** Every collection ever announced, oldest first, resumed from the cursor. */
+  private async fetchGRC721CatalogCandidates(): Promise<GRC721CollectionCandidate[]> {
+    const network = await this.readGRC721SyncNetwork();
+    const cursor = network.catalog || emptyCursor<GRC721CollectionCandidate>();
+
+    const { page, previousItems, previousBlockHeight } = await this.walkIndexedEvents(
+      cursor,
+      (fromBlockHeight) => makeGRC721NewTokenEventsQuery(GRC721_TOKEN_PACKAGES, fromBlockHeight),
+    );
+
+    // The query orders ASC, so appending keeps the whole list oldest-first.
+    const merged = [...previousItems];
+
+    for (const event of page.events) {
       const schema = resolveGrc721Events(event.pkg_path, GRC721_TOKEN_PACKAGES);
       if (!isGrc721Package(event.pkg_path, GRC721_TOKEN_PACKAGES)) {
         continue;
@@ -566,34 +641,28 @@ export class TokenRepository implements ITokenRepository {
 
       const attrs = TokenRepository.toAttributeMap(event.attrs);
       const collectionId = attrs[schema.tokenAttr] || '';
-      const parsed = parseGrc721CollectionId(collectionId);
-      if (!parsed) {
+      if (!parseGrc721CollectionId(collectionId)) {
         continue;
       }
 
-      if (collections.has(collectionId)) {
-        ambiguous.add(collectionId);
-        continue;
-      }
-
-      collections.set(collectionId, {
-        tokenId: '',
+      // A second announcement of the same id is what makes it ambiguous, so
+      // duplicates are kept rather than deduplicated away.
+      merged.push({
         collectionId,
-        networkId: this.networkId,
-        display: false,
-        type: 'grc721',
-        packagePath: parsed.packagePath,
-        name: attrs[schema.nameAttr] || parsed.symbol,
-        symbol: attrs[schema.symbolAttr] || parsed.symbol,
-        image: '',
-        isTokenUri: false,
-        isMetadata: false,
+        name: attrs[schema.nameAttr] || '',
+        symbol: attrs[schema.symbolAttr] || '',
       });
     }
 
-    ambiguous.forEach((collectionId) => collections.delete(collectionId));
+    await this.writeGRC721SyncStore((stored) => ({
+      ...stored,
+      catalog: {
+        blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
+        items: merged,
+      },
+    }));
 
-    return { collections, ambiguous };
+    return merged;
   }
 
   /**
@@ -650,16 +719,28 @@ export class TokenRepository implements ITokenRepository {
     );
   }
 
-  /** Collection ids the address ever received a token of, newest first. */
+  /**
+   * Collection ids the address ever received a token of, newest first, resumed
+   * from the cursor stored for this address on this network.
+   *
+   * Receiving is append-only — a later send does not un-receive — and
+   * membership is decided afterwards by `BalanceOf`, so a resumed walk can
+   * never report a collection the account no longer holds.
+   */
   private async fetchGRC721ReceivedCollectionIds(address: string): Promise<string[]> {
-    const events = await this.fetchEventsByQuery(
-      makeGRC721ReceivedCollectionsQuery(address, GRC721_TOKEN_PACKAGES),
+    const network = await this.readGRC721SyncNetwork();
+    const cursor = network.collections?.[address] || emptyCursor<string>();
+
+    const { page, previousItems, previousBlockHeight } = await this.walkIndexedEvents(
+      cursor,
+      (fromBlockHeight) =>
+        makeGRC721ReceivedCollectionsQuery(address, GRC721_TOKEN_PACKAGES, fromBlockHeight),
     );
 
-    const collectionIds: string[] = [];
-    const seen = new Set<string>();
+    const seen = new Set(previousItems);
+    const received: string[] = [];
 
-    for (const event of events) {
+    for (const event of page.events) {
       const schema = resolveGrc721Events(event.pkg_path, GRC721_TOKEN_PACKAGES);
       if (!isGrc721Package(event.pkg_path, GRC721_TOKEN_PACKAGES)) {
         continue;
@@ -678,10 +759,24 @@ export class TokenRepository implements ITokenRepository {
       }
 
       seen.add(collectionId);
-      collectionIds.push(collectionId);
+      received.push(collectionId);
     }
 
-    return collectionIds;
+    // The query orders DESC, so this batch is newer than everything stored.
+    const merged = [...received, ...previousItems];
+
+    await this.writeGRC721SyncStore((stored) => ({
+      ...stored,
+      collections: {
+        ...stored.collections,
+        [address]: {
+          blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
+          items: merged,
+        },
+      },
+    }));
+
+    return merged;
   }
 
   /**
@@ -940,19 +1035,30 @@ export class TokenRepository implements ITokenRepository {
     }));
   }
 
-  /** Candidates only: ids the address received, newest first, deduplicated. */
+  /**
+   * Candidates only: ids the address received, newest first, deduplicated and
+   * resumed from the cursor stored for this address and realm on this network.
+   *
+   * Ownership is re-decided by `OwnerOf` on every read, so a candidate the
+   * account has since sent away costs one RPC check and nothing else.
+   */
   private async fetchGRC721ReceivedTokenIds(
     packagePath: string,
     address: string,
   ): Promise<GRC721TokenCandidate[]> {
-    const events = await this.fetchEventsByQuery(
-      makeGRC721ReceivedTokensQuery(packagePath, address, GRC721_TOKEN_PACKAGES),
+    const network = await this.readGRC721SyncNetwork();
+    const cursor = network.tokens?.[address]?.[packagePath] || emptyCursor<GRC721TokenCandidate>();
+
+    const { page, previousItems, previousBlockHeight } = await this.walkIndexedEvents(
+      cursor,
+      (fromBlockHeight) =>
+        makeGRC721ReceivedTokensQuery(packagePath, address, GRC721_TOKEN_PACKAGES, fromBlockHeight),
     );
 
     const candidates: GRC721TokenCandidate[] = [];
-    const seen = new Set<string>();
+    const seen = new Set(previousItems.map((candidate) => candidate.tokenId));
 
-    for (const event of events) {
+    for (const event of page.events) {
       const schema = resolveGrc721Events(event.pkg_path, GRC721_TOKEN_PACKAGES);
       if (!isGrc721Package(event.pkg_path, GRC721_TOKEN_PACKAGES)) {
         continue;
@@ -982,7 +1088,24 @@ export class TokenRepository implements ITokenRepository {
       candidates.push({ tokenId, collectionId });
     }
 
-    return candidates;
+    // The query orders DESC, so this batch is newer than everything stored.
+    const merged = [...candidates, ...previousItems];
+
+    await this.writeGRC721SyncStore((stored) => ({
+      ...stored,
+      tokens: {
+        ...stored.tokens,
+        [address]: {
+          ...stored.tokens?.[address],
+          [packagePath]: {
+            blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
+            items: merged,
+          },
+        },
+      },
+    }));
+
+    return merged;
   }
 
   /**
@@ -1095,8 +1218,15 @@ export class TokenRepository implements ITokenRepository {
 
   /** Flatten the matched transactions into their events, keeping query order. */
   private async fetchEventsByQuery(query: string): Promise<IndexedGnoEvent[]> {
+    const { events } = await this.fetchEventPageByQuery(query);
+    return events;
+  }
+
+  /** As {@link fetchEventsByQuery}, but also reports the heights a cursor needs. */
+  private async fetchEventPageByQuery(query: string): Promise<IndexedEventPage> {
+    const empty: IndexedEventPage = { events: [], maxBlockHeight: 0, latestBlockHeight: 0 };
     if (!this.queryUrl) {
-      return [];
+      return empty;
     }
 
     const result = await TokenRepository.postGraphQuery<IndexedTransactionsResponse>(
@@ -1105,12 +1235,90 @@ export class TokenRepository implements ITokenRepository {
       query,
     );
 
+    const latestBlockHeight = Number(result?.data?.latestBlockHeight) || 0;
     const transactions = result?.data?.getTransactions;
     if (!Array.isArray(transactions)) {
-      return [];
+      return { ...empty, latestBlockHeight };
     }
 
-    return transactions.flatMap((transaction) => transaction?.response?.events || []);
+    const maxBlockHeight = transactions.reduce(
+      (highest, transaction) => Math.max(highest, Number(transaction?.block_height) || 0),
+      0,
+    );
+
+    return {
+      events: transactions.flatMap((transaction) => transaction?.response?.events || []),
+      maxBlockHeight,
+      latestBlockHeight,
+    };
+  }
+
+  /**
+   * Run an indexer walk that resumes from `cursor.blockHeight`.
+   *
+   * The indexer is an append-only event log, so everything at or below the
+   * stored height was already folded into `cursor.items` and only newer blocks
+   * have to travel. The one case that breaks the assumption is an indexer that
+   * rewound (a reset testnet, a re-index): its tip is then *below* the stored
+   * height, and resuming would silently hide every token. Detect that and redo
+   * the walk from genesis with the cached items dropped.
+   */
+  private async walkIndexedEvents<T>(
+    cursor: GRC721SyncCursor<T>,
+    makeQuery: (fromBlockHeight: number) => string,
+  ): Promise<{ page: IndexedEventPage; previousItems: T[]; previousBlockHeight: number }> {
+    const page = await this.fetchEventPageByQuery(makeQuery(cursor.blockHeight));
+
+    const rewound =
+      cursor.blockHeight > 0 &&
+      page.latestBlockHeight > 0 &&
+      page.latestBlockHeight < cursor.blockHeight;
+    if (!rewound) {
+      return { page, previousItems: cursor.items, previousBlockHeight: cursor.blockHeight };
+    }
+
+    console.info('[grc721-sync] indexer rewound, re-walking from genesis', {
+      storedBlockHeight: cursor.blockHeight,
+      latestBlockHeight: page.latestBlockHeight,
+    });
+
+    return {
+      page: await this.fetchEventPageByQuery(makeQuery(0)),
+      previousItems: [],
+      previousBlockHeight: 0,
+    };
+  }
+
+  /** The whole cursor store, or an empty map when nothing has been walked yet. */
+  private async readGRC721SyncStore(): Promise<AccountGRC721SyncModel> {
+    const store = await this.localStorage
+      .getToObject<AccountGRC721SyncModel>(LocalValueType.AccountGRC721Sync)
+      .catch(() => null);
+
+    return store || {};
+  }
+
+  private async writeGRC721SyncStore(
+    update: (network: NetworkGRC721Sync) => NetworkGRC721Sync,
+  ): Promise<void> {
+    const store = await this.readGRC721SyncStore();
+    const networkId = this.networkId;
+
+    await this.localStorage
+      .setByObject(LocalValueType.AccountGRC721Sync, {
+        ...store,
+        [networkId]: update(store[networkId] || {}),
+      })
+      .catch((error) => {
+        // A cursor that cannot be stored only costs the next walk its resume
+        // point; the data itself is already in hand.
+        console.warn('[grc721-sync] failed to store cursor', error);
+      });
+  }
+
+  private async readGRC721SyncNetwork(): Promise<NetworkGRC721Sync> {
+    const store = await this.readGRC721SyncStore();
+    return store[this.networkId] || {};
   }
 
   private static toAttributeMap(

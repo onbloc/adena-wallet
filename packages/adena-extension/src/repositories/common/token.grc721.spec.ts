@@ -52,24 +52,59 @@ interface ChainState {
   evaluations?: Record<string, { value: string; rest: string }>;
 }
 
+/** Enough of StorageManager for the GRC721 sync cursors, kept in memory. */
+function makeStorage(): { storage: StorageManager; values: Record<string, unknown> } {
+  const values: Record<string, unknown> = {};
+  const storage = {
+    getToObject: jest.fn(async (key: string) => values[key]),
+    setByObject: jest.fn(async (key: string, value: unknown) => {
+      values[key] = value;
+    }),
+  } as unknown as StorageManager;
+
+  return { storage, values };
+}
+
+/**
+ * One indexer reply per call, so a test can hand the first walk its history and
+ * the next walk only what arrived after it. The last reply repeats once the
+ * list runs out.
+ */
 function makeRepository(
   transactionEvents: unknown[][],
   chain: ChainState = {},
+  options: { laterPages?: unknown[][][]; latestBlockHeight?: number; blockHeight?: number } = {},
 ): {
   repository: TokenRepository;
   evaluateIIFE: jest.Mock;
   evaluateFunction: jest.Mock;
   getValueByEvaluateExpression: jest.Mock;
+  post: jest.Mock;
+  storageValues: Record<string, unknown>;
 } {
-  const axiosInstance = {
-    post: jest.fn().mockResolvedValue({
+  const pages = [transactionEvents, ...(options.laterPages ?? [])];
+  const latestBlockHeight = options.latestBlockHeight ?? 500;
+  const blockHeight = options.blockHeight ?? 100;
+  let call = 0;
+
+  const post = jest.fn(async () => {
+    const page = pages[Math.min(call, pages.length - 1)];
+    call += 1;
+    return {
       data: {
         data: {
-          getTransactions: transactionEvents.map((events) => ({ response: { events } })),
+          latestBlockHeight,
+          getTransactions: page.map((events) => ({
+            block_height: blockHeight,
+            response: { events },
+          })),
         },
       },
-    }),
-  } as unknown as AxiosInstance;
+    };
+  });
+
+  const axiosInstance = { post } as unknown as AxiosInstance;
+  const { storage, values: storageValues } = makeStorage();
 
   const owners = chain.owners ?? {};
 
@@ -108,15 +143,146 @@ function makeRepository(
     getRealmDocument: jest.fn(async () => ({ funcs: chain.funcs ?? [] })),
   } as unknown as GnoProvider;
 
-  const repository = new TokenRepository(
-    {} as unknown as StorageManager,
-    axiosInstance,
-    NETWORK,
-    gnoProvider,
-  );
+  const repository = new TokenRepository(storage, axiosInstance, NETWORK, gnoProvider);
 
-  return { repository, evaluateIIFE, evaluateFunction, getValueByEvaluateExpression };
+  return {
+    repository,
+    evaluateIIFE,
+    evaluateFunction,
+    getValueByEvaluateExpression,
+    post,
+    storageValues,
+  };
 }
+
+/** The GraphQL document sent on the nth indexer call. */
+const queryOf = (post: jest.Mock, call: number): string => post.mock.calls[call][1].query;
+
+/**
+ * The resume height in a query's `where` clause, or null when it walks from
+ * genesis. `block_height` also names a selected field, so match the filter.
+ */
+const resumeHeightOf = (post: jest.Mock, call: number): number | null => {
+  const matched = queryOf(post, call).match(/block_height: \{ gt: (\d+) \}/);
+  return matched ? Number(matched[1]) : null;
+};
+
+describe('indexer sync cursor', () => {
+  it('walks from genesis first, then resumes above the height it reached', async () => {
+    const { repository, post, storageValues } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120, laterPages: [[[received(ADDRESS, '8')]]] },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    expect(resumeHeightOf(post, 0)).toBeNull();
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    expect(resumeHeightOf(post, 1)).toBe(120);
+
+    const cursor = (storageValues['ACCOUNT_GRC721_SYNC'] as Record<string, never>)[
+      NETWORK.networkId
+    ];
+    expect(cursor).toBeTruthy();
+  });
+
+  it('keeps the tokens of an earlier walk when the next one adds nothing', async () => {
+    const { repository } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120, laterPages: [[]] },
+    );
+
+    await expect(repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS)).resolves.toHaveLength(1);
+    // Second walk returns no transactions; the stored candidate must survive.
+    await expect(repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS)).resolves.toHaveLength(1);
+  });
+
+  it('puts a newly received token ahead of the stored ones', async () => {
+    const { repository } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS, '8': ADDRESS } },
+      { blockHeight: 120, laterPages: [[[received(ADDRESS, '8')]]] },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(tokens.map((token) => token.tokenId)).toEqual(['8', '7']);
+  });
+
+  // Two accounts on one network must not resume from each other's height.
+  it('keeps a separate cursor per address', async () => {
+    const { repository, post } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120 },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, OTHER_ADDRESS);
+
+    expect(resumeHeightOf(post, 1)).toBeNull();
+  });
+
+  it('keeps a separate cursor per realm', async () => {
+    const { repository, post } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120 },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    await repository.fetchGRC721TokensBy('gno.land/r/demo/nft', ADDRESS);
+
+    expect(resumeHeightOf(post, 1)).toBeNull();
+  });
+
+  // A reset testnet or a re-index leaves the indexer below the stored height;
+  // resuming there would hide every token the account owns.
+  it('re-walks from genesis when the indexer has rewound below the cursor', async () => {
+    const { repository, post } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 400, latestBlockHeight: 500 },
+    );
+
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    // The indexer now reports a tip below the stored height.
+    post.mockImplementation(async () => ({
+      data: {
+        data: {
+          latestBlockHeight: 10,
+          getTransactions: [{ block_height: 5, response: { events: [received(ADDRESS, '7')] } }],
+        },
+      },
+    }));
+
+    const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(resumeHeightOf(post, 1)).toBe(400);
+    expect(resumeHeightOf(post, 2)).toBeNull();
+    expect(tokens.map((token) => token.tokenId)).toEqual(['7']);
+  });
+
+  it('resumes the collection walk too', async () => {
+    const { repository, post } = makeRepository(
+      [[newToken(COLLECTION_ID, 'GNOSWAP NFT', 'GNFT')], [received(ADDRESS, '7')]],
+      { balances: { [PACKAGE_PATH]: 1 }, owners: { '7': ADDRESS } },
+      { blockHeight: 300 },
+    );
+
+    await repository.fetchAccountGRC721CollectionsBy(ADDRESS);
+    post.mockClear();
+    await repository.fetchAccountGRC721CollectionsBy(ADDRESS);
+
+    post.mock.calls.forEach((_call, index) => {
+      expect(resumeHeightOf(post, index)).toBe(300);
+    });
+  });
+});
 
 describe('fetchGRC721TokenUriBy', () => {
   // `TokenURI(tid) string` — the realm declares a single result, so there is no
