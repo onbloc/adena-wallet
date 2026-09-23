@@ -36,7 +36,7 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
     grc721Collection.packagePath,
     grc721Collection.tokenId,
     {
-      enabled: grc721Collection.isTokenUri,
+      enabled: grc721Collection.isTokenUri && !!grc721Collection.tokenId,
     },
   );
 
@@ -45,7 +45,7 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
   });
 
   const isFetchedCardTokenUri = useMemo(() => {
-    if (!grc721Collection.isTokenUri) {
+    if (!grc721Collection.isTokenUri || !grc721Collection.tokenId) {
       return true;
     }
 
