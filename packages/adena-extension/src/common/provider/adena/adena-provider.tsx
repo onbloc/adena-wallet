@@ -11,6 +11,7 @@ import { getGrc20RegistryPaths } from '@common/utils/grc20reg-config';
 import { useWindowSize } from '@hooks/use-window-size';
 import { ChainRepository } from '@repositories/common';
 import { TokenRepository } from '@repositories/common/token';
+import { TokenPriceRepository } from '@repositories/price';
 import { SessionRepository } from '@repositories/session';
 import {
   TransactionHistoryApiRepository,
@@ -27,6 +28,7 @@ import {
 import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
 import GNO_CHAIN_DATA from '@resources/chains/chains.json';
 import { MultisigService } from '@services/multisig';
+import { TokenPriceService } from '@services/price';
 import { ChainService, TokenService } from '@services/resource';
 import {
   TransactionGasService,
@@ -73,6 +75,7 @@ export interface AdenaContextProps {
   transactionHistoryService: TransactionHistoryService;
   transactionGasService: TransactionGasService | null;
   multisigService: MultisigService;
+  tokenPriceService: TokenPriceService;
   sessionRepository: SessionRepository;
   walletSessionService: WalletSessionService;
 }
@@ -161,6 +164,11 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     [localStorage, axiosInstance, currentGnoNetwork, gnoProvider],
   );
 
+  const tokenPriceRepository = useMemo(
+    () => new TokenPriceRepository(axiosInstance, currentGnoNetwork),
+    [axiosInstance, currentGnoNetwork],
+  );
+
   const transactionHistoryRepository = useMemo(() => {
     if (currentGnoNetwork?.apiUrl) {
       return new TransactionHistoryApiRepository(axiosInstance, currentGnoNetwork);
@@ -240,6 +248,10 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return new WalletSessionService(walletService, sessionRepository, gnoProvider, chainRegistry);
   }, [walletService, sessionRepository, gnoProvider, chainRegistry]);
 
+  const tokenPriceService = useMemo(() => new TokenPriceService(tokenPriceRepository), [
+    tokenPriceRepository,
+  ]);
+
   useWindowSize(true);
 
   return (
@@ -261,6 +273,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
         transactionHistoryService,
         transactionGasService,
         multisigService,
+        tokenPriceService,
         sessionRepository,
         walletSessionService,
       }}

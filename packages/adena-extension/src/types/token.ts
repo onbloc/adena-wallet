@@ -1,5 +1,6 @@
 import { BaseError } from '@common/errors';
 import { AddingType } from '@components/pages/additional-token/additional-token-type-selector';
+import { TokenValue } from './price';
 
 export interface TokenModel {
   main: boolean;
@@ -108,6 +109,11 @@ export interface MainToken {
     denom: string;
   };
   chainIconUrl?: string;
+  /**
+   * USD figures for this row, or null when the token has no quote. The row
+   * layout differs between the two cases, so this doubles as the switch.
+   */
+  tokenValue?: TokenValue | null;
 }
 
 export interface GRC721CollectionModel {

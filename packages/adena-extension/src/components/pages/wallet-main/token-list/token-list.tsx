@@ -11,6 +11,8 @@ export interface TokenListItemState {
 
 export interface TokenListProps {
   tokens: Array<MainToken>;
+  /** Screen-wide USD display mode; see TokenListItemBalance. */
+  usdDisplay?: boolean;
   itemStateByTokenId?: Record<string, TokenListItemState>;
   placeholderCount?: number;
   disabled?: boolean;
@@ -20,6 +22,7 @@ export interface TokenListProps {
 
 const TokenList: React.FC<TokenListProps> = ({
   tokens,
+  usdDisplay = false,
   itemStateByTokenId,
   placeholderCount = 0,
   disabled = false,
@@ -44,6 +47,7 @@ const TokenList: React.FC<TokenListProps> = ({
           <TokenListItem
             key={index}
             token={token}
+            usdDisplay={usdDisplay}
             loading={state?.loading}
             error={state?.error}
             disabled={disabled}

@@ -13,7 +13,6 @@ import { GRC20TokenModel, TokenModel } from '@types';
 import { Account, TokenProfile } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo } from 'react';
-import { useNFTCollectionHandler } from './nft/use-collection-handler';
 import { useGRC20Tokens } from './use-grc20-tokens';
 import { useTransferTokens } from './wallet/use-transfer-tokens';
 
@@ -82,7 +81,6 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const { currentNetwork, currentAtomoneNetwork } = useNetwork();
   const chain = useChain();
   const { fetchTransferTokens } = useTransferTokens();
-  const { addCollections } = useNFTCollectionHandler();
   const { data: grc20Tokens } = useGRC20Tokens();
 
   const { data: allTokenMetainfos = null } = useQuery<TokenModel[]>(
@@ -248,9 +246,6 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     );
 
     await addTokenMetainfos(filteredGRC20Packages);
-    // The full discovered list: addCollections dedupes new entries and refreshes
-    // the ones already stored.
-    await addCollections(transferTokens.grc721Packages || []);
 
     await tokenService.initAccountTokenMetainfos(currentAccount.id);
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
@@ -290,9 +285,6 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     );
 
     await addTokenMetainfos(filteredGRC20Packages);
-    // The full discovered list: addCollections dedupes new entries and refreshes
-    // the ones already stored.
-    await addCollections(transferTokens.grc721Packages || []);
 
     await tokenService.initAccountTokenMetainfos(currentAccount.id);
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
