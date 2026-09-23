@@ -1,13 +1,23 @@
-import { TokenPrice, TokenPriceMap, TokenPriceRequest } from '@types';
+import { AssetPrice, TokenPrice, TokenPriceMap, TokenPriceRequest } from '@types';
 
+import { getTokenAssetId } from '@common/constants/token-price.constant';
 import { getTokenPriceKey } from '@common/utils/price-utils';
-import { MOCK_RESPONSE_DELAY, MOCK_TOKEN_PRICES } from './mock-token-prices';
+import { ITokenPriceRepository } from '@repositories/price';
 
 /**
- * Fiat quotes for the tokens the wallet displays. Currently backed by
- * MOCK_TOKEN_PRICES; only `fetchPrices` changes once the API is ready.
+ * Fiat quotes for the tokens the wallet displays.
+ *
+ * The price API quotes market assets, not chain tokens, so a wallet token is
+ * bridged to a quote through the static TOKEN_ASSET_IDS map. A token with no
+ * mapping simply has no quote, and its row keeps the balance-only layout.
  */
 export class TokenPriceService {
+  private tokenPriceRepository: ITokenPriceRepository;
+
+  constructor(tokenPriceRepository: ITokenPriceRepository) {
+    this.tokenPriceRepository = tokenPriceRepository;
+  }
+
   public async getTokenPrices(requests: TokenPriceRequest[]): Promise<TokenPriceMap> {
     if (requests.length === 0) {
       return {};
@@ -18,10 +28,20 @@ export class TokenPriceService {
 
   // Batched on purpose: one call for every token on screen, never one per row.
   private async fetchPrices(requests: TokenPriceRequest[]): Promise<TokenPriceMap> {
-    await new Promise((resolve) => setTimeout(resolve, MOCK_RESPONSE_DELAY));
+    const assetPrices = await this.tokenPriceRepository.fetchAssetPrices();
+    if (assetPrices.length === 0) {
+      return {};
+    }
+
+    const pricesByAssetId = TokenPriceService.indexByAssetId(assetPrices);
 
     return requests.reduce<TokenPriceMap>((prices, request) => {
-      const quote = MOCK_TOKEN_PRICES[request.symbol.toUpperCase()];
+      const assetId = getTokenAssetId(request.tokenId, request.networkId);
+      if (!assetId) {
+        return prices;
+      }
+
+      const quote = pricesByAssetId.get(assetId);
       if (!quote) {
         return prices;
       }
@@ -35,5 +55,9 @@ export class TokenPriceService {
       prices[getTokenPriceKey(request.tokenId, request.networkId)] = price;
       return prices;
     }, {});
+  }
+
+  private static indexByAssetId(assetPrices: AssetPrice[]): Map<string, AssetPrice> {
+    return new Map(assetPrices.map((assetPrice) => [assetPrice.assetId, assetPrice]));
   }
 }

@@ -27,7 +27,7 @@ export const useTokenPrices = (
   const requestKey = useMemo(
     () =>
       requests
-        .map((request) => `${request.tokenId}:${request.networkId}:${request.symbol}`)
+        .map((request) => `${request.tokenId}:${request.networkId}`)
         .sort()
         .join('|'),
     [requests],

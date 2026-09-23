@@ -21,7 +21,11 @@ const MainTotalPrice: React.FC<MainTotalPriceProps> = ({ value, loading = false 
   const [compact, setCompact] = useState(false);
 
   const totalText = formatUSD(value.totalUSDValue);
-  const tone = getChangeTone(value.changeRate);
+  // No quoted token reports a 24h change yet — the delta row is omitted
+  // rather than shown as a flat "$0.00 / 0.00%", which would be a claim.
+  const changeRate = value.changeRate;
+  const changeUSDValue = value.changeUSDValue;
+  const hasChange = changeRate !== null && changeUSDValue !== null;
 
   useLayoutEffect(() => {
     if (loading) return;
@@ -49,10 +53,14 @@ const MainTotalPrice: React.FC<MainTotalPriceProps> = ({ value, loading = false 
             <span className='total-value'>{totalText}</span>
           </span>
           <span className='total-value'>{totalText}</span>
-          <div className='change-wrapper'>
-            <span className={`change-value ${tone}`}>{formatUSDChange(value.changeUSDValue)}</span>
-            <TokenChangeRate rate={value.changeRate} variant='badge' />
-          </div>
+          {hasChange && (
+            <div className='change-wrapper'>
+              <span className={`change-value ${getChangeTone(changeRate)}`}>
+                {formatUSDChange(changeUSDValue)}
+              </span>
+              <TokenChangeRate rate={changeRate} variant='badge' />
+            </div>
+          )}
         </>
       )}
     </MainTotalPriceWrapper>

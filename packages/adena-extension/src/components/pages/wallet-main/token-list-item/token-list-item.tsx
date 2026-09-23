@@ -58,7 +58,9 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
 
       <div className='name-wrapper'>
         <span className='name'>{name}</span>
-        {withPrice && <TokenChangeRate rate={tokenValue.change24h} />}
+        {withPrice && tokenValue.change24h !== null && (
+          <TokenChangeRate rate={tokenValue.change24h} />
+        )}
       </div>
 
       <div className='balance-wrapper'>

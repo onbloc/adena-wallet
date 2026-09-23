@@ -11,6 +11,7 @@ import { getGrc20RegistryPaths } from '@common/utils/grc20reg-config';
 import { useWindowSize } from '@hooks/use-window-size';
 import { ChainRepository } from '@repositories/common';
 import { TokenRepository } from '@repositories/common/token';
+import { TokenPriceRepository } from '@repositories/price';
 import { SessionRepository } from '@repositories/session';
 import {
   TransactionHistoryApiRepository,
@@ -163,6 +164,11 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     [localStorage, axiosInstance, currentGnoNetwork, gnoProvider],
   );
 
+  const tokenPriceRepository = useMemo(
+    () => new TokenPriceRepository(axiosInstance, currentGnoNetwork),
+    [axiosInstance, currentGnoNetwork],
+  );
+
   const transactionHistoryRepository = useMemo(() => {
     if (currentGnoNetwork?.apiUrl) {
       return new TransactionHistoryApiRepository(axiosInstance, currentGnoNetwork);
@@ -242,8 +248,9 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return new WalletSessionService(walletService, sessionRepository, gnoProvider, chainRegistry);
   }, [walletService, sessionRepository, gnoProvider, chainRegistry]);
 
-  // Chain-agnostic: holds no provider, never rebuilt on network change.
-  const tokenPriceService = useMemo(() => new TokenPriceService(), []);
+  const tokenPriceService = useMemo(() => new TokenPriceService(tokenPriceRepository), [
+    tokenPriceRepository,
+  ]);
 
   useWindowSize(true);
 

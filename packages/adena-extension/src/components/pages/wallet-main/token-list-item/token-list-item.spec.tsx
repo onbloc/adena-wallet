@@ -53,6 +53,17 @@ describe('TokenListItem Component', () => {
     expect(screen.getByText('240,255.241155 GNOT')).not.toBeNull();
   });
 
+  it('shows the USD value without a change rate when the feed has no day-old price', () => {
+    renderTokenListItem({
+      ...baseArgs,
+      token: { ...token, tokenValue: { usdValue: 2120252.239, change24h: null } },
+    });
+
+    expect(screen.getByText('$2,120,252.23')).not.toBeNull();
+    expect(screen.queryByText('0.00%')).toBeNull();
+    expect(screen.getByText('240,255.241155 GNOT')).not.toBeNull();
+  });
+
   it('keeps the single-line layout while the quoted row is still loading', () => {
     renderTokenListItem({
       ...baseArgs,

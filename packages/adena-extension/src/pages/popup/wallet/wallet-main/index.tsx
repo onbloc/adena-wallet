@@ -220,8 +220,7 @@ export const WalletMain = (): JSX.Element => {
 
   // Only rows on screen are quoted; hidden tokens are not part of the total.
   const priceRequests = useMemo<TokenPriceRequest[]>(
-    () =>
-      displayedBalances.map(({ tokenId, networkId, symbol }) => ({ tokenId, networkId, symbol })),
+    () => displayedBalances.map(({ tokenId, networkId }) => ({ tokenId, networkId })),
     [displayedBalances],
   );
 

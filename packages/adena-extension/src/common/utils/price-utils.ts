@@ -111,18 +111,24 @@ export function getChangeTone(rate: number): ChangeTone {
 
 export interface PortfolioValue {
   totalUSDValue: number;
-  changeUSDValue: number;
-  changeRate: number;
+  /** Null when no quoted token reports a 24h change: unknown, not flat. */
+  changeUSDValue: number | null;
+  changeRate: number | null;
 }
 
 /**
  * The 24h delta is derived per token from its own change rate:
  * `value - value / (1 + rate/100)`. A rate of exactly -100% would divide by
  * zero, so such a token contributes its full current value.
+ *
+ * A token whose change rate is unknown still counts toward the total but not
+ * toward the delta — its value is carried over unchanged, as if flat, which is
+ * the only assumption that leaves the rest of the portfolio's delta intact.
  */
 export function aggregateTokenValues(values: TokenValue[]): PortfolioValue {
   let total = BigNumber(0);
   let previousTotal = BigNumber(0);
+  let hasKnownChange = false;
 
   for (const { usdValue, change24h } of values) {
     const current = BigNumber(usdValue);
@@ -132,10 +138,25 @@ export function aggregateTokenValues(values: TokenValue[]): PortfolioValue {
 
     total = total.plus(current);
 
+    if (change24h === null) {
+      previousTotal = previousTotal.plus(current);
+      continue;
+    }
+
+    hasKnownChange = true;
+
     const factor = BigNumber(change24h).dividedBy(100).plus(1);
     previousTotal = previousTotal.plus(
       factor.isZero() || !factor.isFinite() ? current : current.dividedBy(factor),
     );
+  }
+
+  if (!hasKnownChange) {
+    return {
+      totalUSDValue: total.toNumber(),
+      changeUSDValue: null,
+      changeRate: null,
+    };
   }
 
   const change = total.minus(previousTotal);

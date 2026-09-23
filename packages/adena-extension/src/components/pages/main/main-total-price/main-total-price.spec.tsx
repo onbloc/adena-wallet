@@ -38,6 +38,16 @@ describe('MainTotalPrice Component', () => {
     expect(screen.getByText('0.00%')).not.toBeNull();
   });
 
+  it('omits the delta row when no quoted token reports a change', () => {
+    renderTotalPrice({
+      value: { totalUSDValue: 50, changeUSDValue: null, changeRate: null },
+    });
+
+    expect(screen.getAllByText('$50.00')).toHaveLength(2);
+    expect(screen.queryByText('0.00%')).toBeNull();
+    expect(screen.queryByText('$0.00')).toBeNull();
+  });
+
   it('renders skeleton when loading', () => {
     renderTotalPrice({
       value: { totalUSDValue: 0, changeUSDValue: 0, changeRate: 0 },

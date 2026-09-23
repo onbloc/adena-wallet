@@ -97,11 +97,32 @@ describe('aggregateTokenValues', () => {
     });
   });
 
-  it('returns zeroes for an empty portfolio', () => {
+  it('reports an unknown delta for an empty portfolio', () => {
     expect(aggregateTokenValues([])).toEqual({
       totalUSDValue: 0,
-      changeUSDValue: 0,
-      changeRate: 0,
+      changeUSDValue: null,
+      changeRate: null,
+    });
+  });
+
+  it('counts an unquoted-change token toward the total but not the delta', () => {
+    expect(
+      aggregateTokenValues([
+        { usdValue: 100, change24h: null },
+        { usdValue: 110, change24h: 10 },
+      ]),
+    ).toEqual({
+      totalUSDValue: 210,
+      changeUSDValue: 10,
+      changeRate: 5,
+    });
+  });
+
+  it('reports no delta when no token reports a change rate', () => {
+    expect(aggregateTokenValues([{ usdValue: 100, change24h: null }])).toEqual({
+      totalUSDValue: 100,
+      changeUSDValue: null,
+      changeRate: null,
     });
   });
 });
