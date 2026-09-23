@@ -93,6 +93,15 @@ describe('NFTTransferSummary Component', () => {
     expect(isSendDisabled()).toBe(true);
   });
 
+  // The container reports no fee error while the balance is unknown — it cannot
+  // tell "enough" from "not enough" — but its own send guard still refuses, so
+  // an enabled button would swallow the tap.
+  it('disables Send while the GNOT balance is unknown', () => {
+    renderSummary(makeProps({ isBalanceUnknown: true }));
+
+    expect(isSendDisabled()).toBe(true);
+  });
+
   it('disables Send while the fee is still being estimated', () => {
     renderSummary(makeProps({ isLoadingNetworkFee: true, networkFee: null }));
 

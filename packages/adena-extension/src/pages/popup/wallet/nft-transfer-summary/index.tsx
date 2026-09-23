@@ -182,11 +182,15 @@ const NFTTransferSummaryContainer: React.FC = () => {
       console.error(e);
       return null;
     });
+    // createDocument is rebuilt every render (it has to read the latest gas
+    // info), so listing it here makes this memo a no-op — which is the honest
+    // outcome: without it the memo would keep signing with an older document.
   }, [
     summaryInfo,
     currentAccount,
     currentNetwork,
     networkFee,
+    createDocument,
     useNetworkFeeReturn.currentGasFeeRawAmount,
     useNetworkFeeReturn.currentGasInfo,
   ]);
@@ -308,6 +312,9 @@ const NFTTransferSummaryContainer: React.FC = () => {
     currentAccount,
     currentNetwork,
     useNetworkFeeReturn.currentGasFeeRawAmount,
+    // The fee stays 0 while the gas price is 0, so the budget has to be watched
+    // separately or the stored document keeps gasWanted 0.
+    useNetworkFeeReturn.currentGasInfo?.gasWanted,
   ]);
 
   return (
@@ -337,6 +344,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
           isErrorNetworkFee={isNetworkFeeError}
           isLoadingNetworkFee={useNetworkFeeReturn.isLoading}
           isSimulateError={useNetworkFeeReturn.isSimulateError}
+          isBalanceUnknown={currentBalance === null || currentBalance === undefined}
           simulateErrorBannerMessage={simulateErrorMessage}
           networkFee={networkFee}
           memo={summaryInfo.memo}

@@ -22,6 +22,8 @@ export interface NFTTransferSummaryProps {
   isErrorNetworkFee?: boolean;
   isLoadingNetworkFee?: boolean;
   isSimulateError?: boolean;
+  /** The GNOT balance the fee is paid from is still unknown. */
+  isBalanceUnknown?: boolean;
   simulateErrorBannerMessage?: string | null;
   queryGRC721TokenUri: (
     packagePath: string,
@@ -42,6 +44,7 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
   isErrorNetworkFee,
   isLoadingNetworkFee,
   isSimulateError,
+  isBalanceUnknown,
   simulateErrorBannerMessage,
   queryGRC721TokenUri,
   onClickBack,
@@ -73,8 +76,21 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
       return true;
     }
 
+    // Without a balance the container cannot tell "enough" from "not enough",
+    // so it reports no fee error — but its own send guard still refuses. Left
+    // enabled, the button would swallow the tap silently.
+    if (isBalanceUnknown) {
+      return true;
+    }
+
     return Number(networkFee?.amount || 0) <= 0;
-  }, [isLoadingNetworkFee, isErrorNetworkFee, isSimulateError, networkFee?.amount]);
+  }, [
+    isLoadingNetworkFee,
+    isErrorNetworkFee,
+    isSimulateError,
+    isBalanceUnknown,
+    networkFee?.amount,
+  ]);
 
   return (
     <NFTTransferSummaryWrapper>
