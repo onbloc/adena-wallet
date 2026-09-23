@@ -9,6 +9,7 @@ import { useGetGRC721Collections } from '@hooks/nft/use-get-grc721-collections';
 import { useGetGRC721PinnedCollections } from '@hooks/nft/use-get-grc721-pinned-collections';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import { useIsLoadingNFT } from '@hooks/nft/use-is-loading-nft';
+import { useSyncGRC721Collections } from '@hooks/nft/use-sync-grc721-collections';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
@@ -55,6 +56,9 @@ export const Nft = (): JSX.Element => {
   } = useGetGRC721PinnedCollections({
     refetchOnMount: true,
   });
+
+  // Discovery runs here rather than on the main screen, which never shows NFTs.
+  useSyncGRC721Collections();
 
   const { pinCollection, unpinCollection } = useNFTCollectionHandler();
 
