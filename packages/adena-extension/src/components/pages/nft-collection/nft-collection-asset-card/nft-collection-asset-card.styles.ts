@@ -12,21 +12,28 @@ export const NFTCollectionAssetCardWrapper = styled(View)`
   border-radius: 8px;
   cursor: pointer;
 
-  /* Sized by its content rather than pinned to 132px: at the 2-column grid's
-     card width that fixed pill already ran edge to edge, and any narrower card
-     made it overflow and clip the label at both ends. */
+  /*
+   * Pinned into a slot inset from both card edges, with the auto margins doing
+   * the centring. Centring it by its own width instead — a fixed 132px, or the
+   * flex static position — puts the pill outside the card the moment its
+   * content is wider than the card, and the card's overflow:hidden then eats
+   * the *start* of the label, leaving a name that reads as truncated from the
+   * left. Inside this slot the pill simply cannot start before 10px.
+   */
   .info-static-wrapper {
     ${mixins.flex({ direction: 'row', align: 'center', justify: 'center' })}
     position: absolute;
     top: 10px;
-    width: auto;
+    left: 10px;
+    right: 10px;
+    margin: 0 auto;
+    width: max-content;
     max-width: calc(100% - 20px);
     flex-shrink: 0;
     height: 20px;
     padding: 0 7px;
     gap: 2px;
     flex-shrink: 0;
-    align-self: center;
     border-radius: 10px;
     background-color: ${getTheme('neutral', '_9')};
 
