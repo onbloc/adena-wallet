@@ -11,12 +11,17 @@ import {
 
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { AdenaStorage } from '@common/storage';
 import {
-  AccountGRC721SyncModelV028,
-  GRC721CollectionCandidateModelV028,
-  GRC721SyncCursorModelV028,
-  GRC721TokenCandidateModelV028,
-} from '@migrates/migrations/v028/storage-model-v028';
+  emptyCursor,
+  GRC721_SYNC_CACHE_KEY,
+  GRC721CollectionCandidate,
+  GRC721SyncCache,
+  GRC721SyncCacheValueType,
+  GRC721SyncCursor,
+  GRC721TokenCandidate,
+  NetworkGRC721Sync,
+} from './token.grc721-sync';
 import { GnoFunction } from '@common/provider/gno/types';
 import { decodeGnoString, gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
 import {
@@ -60,7 +65,6 @@ enum LocalValueType {
   AccountTokenMetainfos = 'ACCOUNT_TOKEN_METAINFOS',
   AccountGRC721Collections = 'ACCOUNT_GRC721_COLLECTIONS',
   AccountGRC721PinnedPackages = 'ACCOUNT_GRC721_PINNED_PACKAGES',
-  AccountGRC721Sync = 'ACCOUNT_GRC721_SYNC',
 }
 
 const DEFAULT_TOKEN_NETWORK_ID = '';
@@ -78,9 +82,6 @@ const QEVAL_NIL = '(undefined)';
 const GRC721_BALANCE_SCAN_BATCH_SIZE = 10;
 const GRC721_OWNER_SCAN_BATCH_SIZE = 50;
 
-type GRC721TokenCandidate = GRC721TokenCandidateModelV028;
-type GRC721CollectionCandidate = GRC721CollectionCandidateModelV028;
-
 interface IndexedGnoEvent {
   type?: string;
   pkg_path?: string;
@@ -93,14 +94,6 @@ interface IndexedTransactionsResponse {
     getTransactions?: { block_height?: number; response?: { events?: IndexedGnoEvent[] } }[];
   };
 }
-
-/** Cursor shapes live in the storage model; these are the local spellings. */
-type GRC721SyncCursor<T> = GRC721SyncCursorModelV028<T>;
-type AccountGRC721SyncModel = AccountGRC721SyncModelV028;
-type NetworkGRC721Sync = AccountGRC721SyncModel[string];
-
-/** A cursor that has never been walked. */
-const emptyCursor = <T>(): GRC721SyncCursor<T> => ({ blockHeight: 0, items: [] });
 
 /**
  * One indexer walk: the matched events plus the heights needed to move a
@@ -156,16 +149,22 @@ export class TokenRepository implements ITokenRepository {
   // same document twice in one Promise.all, so the pending promise is shared.
   private accountAssetsInFlight: Map<string, Promise<AccountAsset[] | null>> = new Map();
 
+  // GRC721 indexer cursors. Resolved lazily from AdenaStorage.cache, or
+  // injected in tests; see the `syncCache` getter.
+  private syncCacheStorage: StorageManager<GRC721SyncCacheValueType> | null = null;
+
   constructor(
     localStorage: StorageManager,
     networkInstance: AxiosInstance,
     networkMetainfo: NetworkMetainfo | null,
     gnoProvider: GnoProvider | null,
+    syncCacheStorage?: StorageManager<GRC721SyncCacheValueType>,
   ) {
     this.localStorage = localStorage;
     this.networkInstance = networkInstance;
     this.networkMetainfo = networkMetainfo;
     this.gnoProvider = gnoProvider;
+    this.syncCacheStorage = syncCacheStorage ?? null;
   }
 
   private get networkId(): string {
@@ -1289,10 +1288,27 @@ export class TokenRepository implements ITokenRepository {
     };
   }
 
+  /**
+   * Cache storage, built on first use so a caller that never touches NFTs does
+   * not need the chrome API present.
+   */
+  private get syncCache(): StorageManager<GRC721SyncCacheValueType> | null {
+    if (!this.syncCacheStorage) {
+      try {
+        this.syncCacheStorage = AdenaStorage.cache<GRC721SyncCacheValueType>();
+      } catch {
+        // No cache available: every walk starts from genesis, as before.
+        return null;
+      }
+    }
+
+    return this.syncCacheStorage;
+  }
+
   /** The whole cursor store, or an empty map when nothing has been walked yet. */
-  private async readGRC721SyncStore(): Promise<AccountGRC721SyncModel> {
-    const store = await this.localStorage
-      .getToObject<AccountGRC721SyncModel>(LocalValueType.AccountGRC721Sync)
+  private async readGRC721SyncStore(): Promise<GRC721SyncCache> {
+    const store = await this.syncCache
+      ?.getToObject<GRC721SyncCache>(GRC721_SYNC_CACHE_KEY)
       .catch(() => null);
 
     return store || {};
@@ -1304,8 +1320,8 @@ export class TokenRepository implements ITokenRepository {
     const store = await this.readGRC721SyncStore();
     const networkId = this.networkId;
 
-    await this.localStorage
-      .setByObject(LocalValueType.AccountGRC721Sync, {
+    await this.syncCache
+      ?.setByObject(GRC721_SYNC_CACHE_KEY, {
         ...store,
         [networkId]: update(store[networkId] || {}),
       })

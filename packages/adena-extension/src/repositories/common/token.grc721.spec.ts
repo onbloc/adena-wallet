@@ -3,6 +3,7 @@ import { StorageManager } from '@common/storage/storage-manager';
 import { GRC721_TOKEN_PACKAGES } from '@common/utils/grc721-config';
 import { NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
+import { GRC721_SYNC_CACHE_KEY } from './token.grc721-sync';
 import { TokenRepository } from './token';
 
 const GRC721_PACKAGE = GRC721_TOKEN_PACKAGES[0].path;
@@ -53,7 +54,7 @@ interface ChainState {
 }
 
 /** Enough of StorageManager for the GRC721 sync cursors, kept in memory. */
-function makeStorage(): { storage: StorageManager; values: Record<string, unknown> } {
+function makeSyncCache(): { storage: StorageManager; values: Record<string, unknown> } {
   const values: Record<string, unknown> = {};
   const storage = {
     getToObject: jest.fn(async (key: string) => values[key]),
@@ -73,14 +74,20 @@ function makeStorage(): { storage: StorageManager; values: Record<string, unknow
 function makeRepository(
   transactionEvents: unknown[][],
   chain: ChainState = {},
-  options: { laterPages?: unknown[][][]; latestBlockHeight?: number; blockHeight?: number } = {},
+  options: {
+    laterPages?: unknown[][][];
+    latestBlockHeight?: number;
+    blockHeight?: number;
+    /** null drops the cursor cache, as when the chrome API is unavailable. */
+    syncCache?: null;
+  } = {},
 ): {
   repository: TokenRepository;
   evaluateIIFE: jest.Mock;
   evaluateFunction: jest.Mock;
   getValueByEvaluateExpression: jest.Mock;
   post: jest.Mock;
-  storageValues: Record<string, unknown>;
+  syncCacheValues: Record<string, unknown>;
 } {
   const pages = [transactionEvents, ...(options.laterPages ?? [])];
   const latestBlockHeight = options.latestBlockHeight ?? 500;
@@ -104,7 +111,7 @@ function makeRepository(
   });
 
   const axiosInstance = { post } as unknown as AxiosInstance;
-  const { storage, values: storageValues } = makeStorage();
+  const { storage: syncCache, values: syncCacheValues } = makeSyncCache();
 
   const owners = chain.owners ?? {};
 
@@ -143,7 +150,13 @@ function makeRepository(
     getRealmDocument: jest.fn(async () => ({ funcs: chain.funcs ?? [] })),
   } as unknown as GnoProvider;
 
-  const repository = new TokenRepository(storage, axiosInstance, NETWORK, gnoProvider);
+  const repository = new TokenRepository(
+    {} as unknown as StorageManager,
+    axiosInstance,
+    NETWORK,
+    gnoProvider,
+    options.syncCache === null ? undefined : syncCache,
+  );
 
   return {
     repository,
@@ -151,7 +164,7 @@ function makeRepository(
     evaluateFunction,
     getValueByEvaluateExpression,
     post,
-    storageValues,
+    syncCacheValues,
   };
 }
 
@@ -169,7 +182,7 @@ const resumeHeightOf = (post: jest.Mock, call: number): number | null => {
 
 describe('indexer sync cursor', () => {
   it('walks from genesis first, then resumes above the height it reached', async () => {
-    const { repository, post, storageValues } = makeRepository(
+    const { repository, post, syncCacheValues } = makeRepository(
       [[received(ADDRESS, '7')]],
       { owners: { '7': ADDRESS } },
       { blockHeight: 120, laterPages: [[[received(ADDRESS, '8')]]] },
@@ -181,7 +194,8 @@ describe('indexer sync cursor', () => {
     await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
     expect(resumeHeightOf(post, 1)).toBe(120);
 
-    const cursor = (storageValues['ACCOUNT_GRC721_SYNC'] as Record<string, never>)[
+    // Cursors live in the cache store, not in the migrated wallet blob.
+    const cursor = (syncCacheValues[GRC721_SYNC_CACHE_KEY] as Record<string, never>)[
       NETWORK.networkId
     ];
     expect(cursor).toBeTruthy();
@@ -265,6 +279,22 @@ describe('indexer sync cursor', () => {
     expect(resumeHeightOf(post, 1)).toBe(400);
     expect(resumeHeightOf(post, 2)).toBeNull();
     expect(tokens.map((token) => token.tokenId)).toEqual(['7']);
+  });
+
+  // The cache is a convenience, not a dependency: without it (no chrome API,
+  // a storage failure) every walk simply starts from genesis as it used to.
+  it('still walks when no cursor cache is available', async () => {
+    const { repository, post } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120, syncCache: null },
+    );
+
+    await expect(repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS)).resolves.toHaveLength(1);
+    await expect(repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS)).resolves.toHaveLength(1);
+
+    expect(resumeHeightOf(post, 0)).toBeNull();
+    expect(resumeHeightOf(post, 1)).toBeNull();
   });
 
   it('resumes the collection walk too', async () => {
