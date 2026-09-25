@@ -381,7 +381,9 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }
     const changedTokenMetainfo = {
       ...tokenMetainfo,
-      image: getTokenImage(tokenMetainfo) ?? '',
+      // Resource logo first, the token's own contract data behind it — never
+      // blank, which would discard an image only the chain knows about.
+      image: getTokenImage(tokenMetainfo) || tokenMetainfo.image,
     };
 
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
@@ -430,7 +432,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
         ...tokenMetainfo,
         main: false,
         display: true,
-        image: getTokenImage(tokenMetainfo) ?? '',
+        image: getTokenImage(tokenMetainfo) || tokenMetainfo.image,
       }));
 
     await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [

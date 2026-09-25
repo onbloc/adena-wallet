@@ -285,6 +285,10 @@ export const WalletMain = (): JSX.Element => {
         logo:
           getTokenImage(tokenBalance) ||
           COSMOS_TOKEN_ICON_MAP[tokenBalance.tokenId] ||
+          // Last resort before the placeholder: whatever the token's own
+          // contract data carried, since gno-token-resource describes only the
+          // tokens someone has curated.
+          tokenBalance.image ||
           `${UnknownTokenIcon}`,
         name: tokenBalance.name,
         balanceAmount: {

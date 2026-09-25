@@ -165,32 +165,19 @@ export class TokenService {
   }
 
   /**
-   * Get token metainfos by account id
+   * Get token metainfos by account id, with the gno-token-resource document
+   * laid over each stored token.
    *
    * @param accountId
    * @returns
    */
-  public async getTokenMetainfosByAccountId(accountId: string): Promise<
-    {
-      image: string;
-      main: boolean;
-      tokenId: string;
-      networkId: string;
-      display: boolean;
-      type: 'gno-native' | 'grc20' | 'cosmos-native';
-      name: string;
-      symbol: string;
-      decimals: number;
-      description?: string | undefined;
-      websiteUrl?: string | undefined;
-    }[]
-  > {
+  public async getTokenMetainfosByAccountId(accountId: string): Promise<TokenModel[]> {
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
-    return storedTokenMetainfos.map((token1) => ({
-      ...token1,
-      image:
-        this.getTokenMetainfos().find((token2) => this.equalsToken(token1, token2))?.image || '',
-    }));
+    const resourceTokenMetainfos = await this.fetchResourceTokenMetainfos();
+
+    return storedTokenMetainfos.map((token) =>
+      this.overlayResourceMetainfo(token, resourceTokenMetainfos),
+    );
   }
 
   /**
@@ -204,21 +191,10 @@ export class TokenService {
     accountId: string,
     tokenMetainfos: TokenModel[],
   ): Promise<boolean> {
-    const fetchedTokenMetainfos = await this.fetchTokenMetainfos();
-    const changedTokenMetaInfos = tokenMetainfos.map((token1) => {
-      const tokenMetaInfo = fetchedTokenMetainfos.find((token2) =>
-        this.equalsToken(token1, token2),
-      );
-      if (tokenMetaInfo) {
-        const { image, description } = tokenMetaInfo;
-        return {
-          ...token1,
-          image,
-          description,
-        };
-      }
-      return token1;
-    });
+    const resourceTokenMetainfos = await this.fetchResourceTokenMetainfos();
+    const changedTokenMetaInfos = tokenMetainfos.map((token) =>
+      this.overlayResourceMetainfo(token, resourceTokenMetainfos),
+    );
     await this.tokenRepository.updateTokenMetainfos(accountId, changedTokenMetaInfos);
     return true;
   }
@@ -430,6 +406,45 @@ export class TokenService {
     await this.tokenRepository.deleteGRC721SyncCache();
     return true;
   };
+
+  /**
+   * The gno-token-resource documents for the current network, or whatever was
+   * last read when the fetch fails. A curated list the wallet could not reach is
+   * a missing overlay, not a reason for a screen that only wanted its stored
+   * tokens to fail.
+   */
+  private async fetchResourceTokenMetainfos(): Promise<TokenModel[]> {
+    return this.fetchTokenMetainfos().catch(() => this.tokenMetaInfos);
+  }
+
+  /**
+   * One stored token with its gno-token-resource document laid over it.
+   *
+   * Two sources describe the same token: the curated gno-token-resource
+   * documents, and the contract data discovery read off chain or from the API.
+   * The resource wins field by field — it carries the display name, logo and
+   * copy a user recognises, while a realm is free to publish anything — and
+   * contract data fills in every field the resource leaves empty, so a token
+   * with no document at all keeps exactly what the chain says about it.
+   */
+  private overlayResourceMetainfo(token: TokenModel, resourceTokens: TokenModel[]): TokenModel {
+    const resource = resourceTokens.find((candidate) => this.equalsToken(token, candidate));
+    if (!resource) {
+      return token;
+    }
+
+    return {
+      ...token,
+      name: resource.name || token.name,
+      symbol: resource.symbol || token.symbol,
+      // Only a number overrides: a document that omits `decimals` decodes as
+      // undefined, and treating that as 0 would shift every balance it touches.
+      decimals: typeof resource.decimals === 'number' ? resource.decimals : token.decimals,
+      description: resource.description || token.description,
+      websiteUrl: resource.websiteUrl || token.websiteUrl,
+      image: resource.image || token.image,
+    };
+  }
 
   private equalsToken(token1: TokenModel, token2: TokenModel): boolean {
     if (isNativeTokenModel(token1)) {
