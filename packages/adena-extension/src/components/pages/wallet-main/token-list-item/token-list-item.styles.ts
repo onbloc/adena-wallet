@@ -80,6 +80,7 @@ export const TokenListItemWrapper = styled.div<{ $disabled?: boolean; $withPrice
         flex-direction: column;
         align-items: flex-start;
         justify-content: center;
+        gap: 4px;
         height: 34px;
 
         .name {
@@ -106,7 +107,6 @@ export const VestingToggleButton = styled.button<{ $expanded: boolean }>`
   flex-shrink: 0;
   width: 16px;
   height: 15px;
-  margin-left: 4px;
   padding: 0;
   border: none;
   background: none;
