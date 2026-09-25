@@ -519,6 +519,59 @@ describe('indexer sync cursor', () => {
     expect(syncCacheValues[GRC721_SYNC_CACHE_KEY]).toBeUndefined();
   });
 
+  // Reading an account's collections is staged — collections, then the catalog,
+  // then each collection's tokens — and a reset can land between two stages. The
+  // later stages are still working from what the earlier ones read before the
+  // reset, so the whole read has to be invalidated, not just the walks that had
+  // already loaded a cursor.
+  it('does not restore the cursors when a wallet reset lands between read stages', async () => {
+    const { repository, post, syncCacheValues } = makeRepository([], {
+      balances: { [PACKAGE_PATH]: 1 },
+      owners: { '7': ADDRESS },
+    });
+
+    let release = (): void => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    let reachCatalog = (): void => undefined;
+    const reachedCatalog = new Promise<void>((resolve) => {
+      reachCatalog = resolve;
+    });
+
+    const reply = (events: unknown[]): unknown => ({
+      data: {
+        data: {
+          latestBlockHeight: 500,
+          getTransactions: [{ block_height: 120, response: { events } }],
+        },
+      },
+    });
+
+    // The catalog stage is held open; the token walk below it only starts once
+    // it is released, which by then is after the reset.
+    post.mockImplementation(async (_url: string, body: { query: string }) => {
+      if (body.query.includes('getGRC721NewTokenEvents')) {
+        reachCatalog();
+        await held;
+        return reply([newToken(COLLECTION_ID, 'GNOSWAP NFT', 'GNFT')]);
+      }
+
+      return reply([received(ADDRESS, '7')]);
+    });
+
+    const read = repository.fetchAccountGRC721CollectionsBy(ADDRESS);
+    await reachedCatalog;
+
+    await repository.deleteGRC721SyncCache();
+
+    release();
+    await expect(read).resolves.toHaveLength(1);
+
+    expect(syncCacheValues[GRC721_SYNC_CACHE_KEY]).toBeUndefined();
+  });
+
   // The invalidation is scoped to the walks the reset interrupted: a read that
   // starts afterwards has to keep its cursor as usual.
   it('stores the cursor again for a walk started after the reset', async () => {

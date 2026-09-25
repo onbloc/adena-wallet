@@ -174,9 +174,9 @@ export class TokenRepository implements ITokenRepository {
   // repository, and a new one is built whenever the network or provider changes.
   private static syncWriteQueue: Promise<void> = Promise.resolve();
 
-  // Bumped by deleteGRC721SyncCache. A walk records this before it reads the
-  // cursors and its write is dropped when the value has moved on, so a read
-  // still in flight during a wallet reset cannot put the cursors back.
+  // Bumped by deleteGRC721SyncCache. An NFT read records this when it starts
+  // and its writes are dropped once the value has moved on, so a read still in
+  // flight during a wallet reset cannot put the cursors back.
   private static syncCacheEpoch = 0;
 
   constructor(
@@ -589,7 +589,7 @@ export class TokenRepository implements ITokenRepository {
    * package documents it as one to ignore wholesale.
    */
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
-    const { collections } = await this.fetchGRC721Catalog();
+    const { collections } = await this.fetchGRC721Catalog(TokenRepository.beginGRC721Read());
     return [...collections.values()];
   }
 
@@ -602,11 +602,11 @@ export class TokenRepository implements ITokenRepository {
    * collection id announced twice is still detected as ambiguous by the same
    * first-wins rule, whichever walk each announcement arrived in.
    */
-  private async fetchGRC721Catalog(): Promise<{
+  private async fetchGRC721Catalog(epoch: number): Promise<{
     collections: Map<string, GRC721CollectionModel>;
     ambiguous: Set<string>;
   }> {
-    const candidates = await this.fetchGRC721CatalogCandidates();
+    const candidates = await this.fetchGRC721CatalogCandidates(epoch);
 
     const collections = new Map<string, GRC721CollectionModel>();
     const ambiguous = new Set<string>();
@@ -643,8 +643,8 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /** Every collection ever announced, oldest first, resumed from the cursor. */
-  private async fetchGRC721CatalogCandidates(): Promise<GRC721CollectionCandidate[]> {
-    const { epoch, network } = await this.readGRC721SyncNetwork();
+  private async fetchGRC721CatalogCandidates(epoch: number): Promise<GRC721CollectionCandidate[]> {
+    const network = await this.readGRC721SyncNetwork();
     const cursor = network.catalog || emptyCursor<GRC721CollectionCandidate>();
 
     const walk = await this.walkIndexedEvents(cursor, (fromBlockHeight) =>
@@ -698,12 +698,14 @@ export class TokenRepository implements ITokenRepository {
    * `BalanceOf`, so a stale event log cannot add or drop a collection here.
    */
   public async fetchAccountGRC721CollectionsBy(address: string): Promise<GRC721CollectionModel[]> {
-    const candidateIds = await this.fetchGRC721ReceivedCollectionIds(address);
+    const epoch = TokenRepository.beginGRC721Read();
+
+    const candidateIds = await this.fetchGRC721ReceivedCollectionIds(address, epoch);
     if (candidateIds.length === 0) {
       return [];
     }
 
-    const { collections: catalog, ambiguous } = await this.fetchGRC721Catalog();
+    const { collections: catalog, ambiguous } = await this.fetchGRC721Catalog(epoch);
 
     const candidates = candidateIds
       .filter((collectionId) => !ambiguous.has(collectionId))
@@ -730,7 +732,7 @@ export class TokenRepository implements ITokenRepository {
       held.map(async (collection) => {
         const [capabilities, tokens] = await Promise.all([
           this.fetchGRC721Capabilities(collection.packagePath),
-          this.fetchGRC721TokensBy(collection.packagePath, address).catch(() => []),
+          this.readGRC721TokensBy(collection.packagePath, address, epoch).catch(() => []),
         ]);
 
         return {
@@ -751,8 +753,11 @@ export class TokenRepository implements ITokenRepository {
    * membership is decided afterwards by `BalanceOf`, so a resumed walk can
    * never report a collection the account no longer holds.
    */
-  private async fetchGRC721ReceivedCollectionIds(address: string): Promise<string[]> {
-    const { epoch, network } = await this.readGRC721SyncNetwork();
+  private async fetchGRC721ReceivedCollectionIds(
+    address: string,
+    epoch: number,
+  ): Promise<string[]> {
+    const network = await this.readGRC721SyncNetwork();
     const cursor = network.collections?.[address] || emptyCursor<string>();
 
     const walk = await this.walkIndexedEvents(cursor, (fromBlockHeight) =>
@@ -1037,7 +1042,16 @@ export class TokenRepository implements ITokenRepository {
    * enumeration function — and `OwnerOf` over RPC decides which it still owns.
    */
   public async fetchGRC721TokensBy(packagePath: string, address: string): Promise<GRC721Model[]> {
-    const received = await this.fetchGRC721ReceivedTokenIds(packagePath, address);
+    return this.readGRC721TokensBy(packagePath, address, TokenRepository.beginGRC721Read());
+  }
+
+  /** As {@link fetchGRC721TokensBy}, for a read that has already begun. */
+  private async readGRC721TokensBy(
+    packagePath: string,
+    address: string,
+    epoch: number,
+  ): Promise<GRC721Model[]> {
+    const received = await this.fetchGRC721ReceivedTokenIds(packagePath, address, epoch);
     if (received.length === 0) {
       return [];
     }
@@ -1067,8 +1081,9 @@ export class TokenRepository implements ITokenRepository {
   private async fetchGRC721ReceivedTokenIds(
     packagePath: string,
     address: string,
+    epoch: number,
   ): Promise<GRC721TokenCandidate[]> {
-    const { epoch, network } = await this.readGRC721SyncNetwork();
+    const network = await this.readGRC721SyncNetwork();
     const cursor = network.tokens?.[address]?.[packagePath] || emptyCursor<GRC721TokenCandidate>();
 
     const walk = await this.walkIndexedEvents(cursor, (fromBlockHeight) =>
@@ -1495,6 +1510,22 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
+   * Open one NFT read and return the cache epoch it runs under.
+   *
+   * Taken once per read, at its public entry point, and handed down to every
+   * cursor read and write beneath it. Per-cursor capture is not enough: a read
+   * like {@link fetchAccountGRC721CollectionsBy} walks the account's
+   * collections, then the catalog, then each collection's tokens, and a wallet
+   * reset can land between those stages. A later stage that took a fresh epoch
+   * of its own would pass the write guard and put the account the reset had
+   * just removed back into a new document, even though every input it is
+   * working from was read before the reset.
+   */
+  private static beginGRC721Read(): number {
+    return TokenRepository.syncCacheEpoch;
+  }
+
+  /**
    * Apply `update` to the stored cursors, one writer at a time.
    *
    * Every cursor shares one cache document, and refreshing an account's NFTs
@@ -1509,10 +1540,10 @@ export class TokenRepository implements ITokenRepository {
    * left alone: a walk merges into the snapshot it started from and only ever
    * writes its own sub-key.
    *
-   * `epoch` is what the caller read before it loaded its cursor. A wallet reset
-   * moves the epoch on, so a walk that started before the reset lands here with
-   * a stale one and is dropped rather than restoring the cursors — addresses
-   * included — after the wallet that owned them is gone.
+   * `epoch` is the one the whole read opened with; see {@link beginGRC721Read}.
+   * A wallet reset moves the epoch on, so a read that started before the reset
+   * lands here with a stale one and is dropped rather than restoring the
+   * cursors — addresses included — after the wallet that owned them is gone.
    */
   private writeGRC721SyncStore(
     epoch: number,
@@ -1542,20 +1573,10 @@ export class TokenRepository implements ITokenRepository {
     });
   }
 
-  /**
-   * The stored cursors for this chain, with the epoch they were read at.
-   *
-   * The epoch is taken before the read, not after: a reset that lands while the
-   * read is in flight has to invalidate the walk built on it too.
-   */
-  private async readGRC721SyncNetwork(): Promise<{
-    epoch: number;
-    network: NetworkGRC721Sync;
-  }> {
-    const epoch = TokenRepository.syncCacheEpoch;
+  /** The stored cursors for this chain. */
+  private async readGRC721SyncNetwork(): Promise<NetworkGRC721Sync> {
     const store = await this.readGRC721SyncStore();
-
-    return { epoch, network: store[this.chainId] || {} };
+    return store[this.chainId] || {};
   }
 
   /**
@@ -1568,8 +1589,8 @@ export class TokenRepository implements ITokenRepository {
    * Removing the key is not enough on its own. An NFT read started before the
    * reset carries no abort signal, so it comes back afterwards and writes its
    * cursors — the previous address among them — into a fresh document. Moving
-   * the epoch on first invalidates every such walk, whether its write is already
-   * queued or has not been enqueued yet, and queueing the removal behind the
+   * the epoch on first invalidates every read opened before this point, down to
+   * the walks it has not even started yet, and queueing the removal behind the
    * writes already running lets them finish before the key goes.
    */
   public async deleteGRC721SyncCache(): Promise<boolean> {
