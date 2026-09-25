@@ -3,7 +3,7 @@ import { StorageManager } from '@common/storage/storage-manager';
 import { GRC721_TOKEN_PACKAGES } from '@common/utils/grc721-config';
 import { NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
-import { GRC721_SYNC_CACHE_KEY } from './token.grc721-sync';
+import { GRC721_RECONCILE_INTERVAL_MS, GRC721_SYNC_CACHE_KEY } from './token.grc721-sync';
 import { TokenRepository } from './token';
 
 const GRC721_PACKAGE = GRC721_TOKEN_PACKAGES[0].path;
@@ -185,6 +185,12 @@ const resumeHeightOf = (post: jest.Mock, call: number): number | null => {
 };
 
 describe('indexer sync cursor', () => {
+  // Reconciliation is driven by the clock, so a test that moves it has to put
+  // it back for the ones after it.
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('walks from genesis first, then resumes above the height it reached', async () => {
     const { repository, post, syncCacheValues } = makeRepository(
       [[received(ADDRESS, '7')]],
@@ -425,6 +431,107 @@ describe('indexer sync cursor', () => {
 
     expect(JSON.stringify(syncCacheValues[GRC721_SYNC_CACHE_KEY])).toBe(afterFirst);
     expect((syncCacheValues.__writes as number) ?? 0).toBe(writesAfterFirst);
+  });
+
+  // An indexer is only append-only from its own side: a re-index can repair a
+  // transaction at an older height while the tip keeps advancing, so a receipt
+  // can appear *below* the cursor. Nothing else recovers it — the tip never
+  // drops, and `OwnerOf` only re-checks candidates a walk already found — so the
+  // cursor is re-read in full once it is old enough.
+  it('picks up a receipt backfilled below the cursor once the cursor is due', async () => {
+    const { repository, post } = makeRepository([], { owners: { '7': ADDRESS, '8': ADDRESS } });
+
+    // `#8` at height 120 is there from the start; `#7` at 100 arrives later.
+    const receipts = [{ height: 120, tokenId: '8' }];
+
+    // The indexer answers each query from its current state, newest first.
+    post.mockImplementation(async (_url: string, body: { query: string }) => {
+      const matched = body.query.match(/block_height: \{ gt: (\d+) \}/);
+      const fromBlockHeight = matched ? Number(matched[1]) : 0;
+
+      return {
+        data: {
+          data: {
+            latestBlockHeight: 4_000_000,
+            getTransactions: receipts
+              .filter((receipt) => receipt.height > fromBlockHeight)
+              .sort((left, right) => right.height - left.height)
+              .map((receipt) => ({
+                block_height: receipt.height,
+                response: { events: [received(ADDRESS, receipt.tokenId)] },
+              })),
+          },
+        },
+      };
+    });
+
+    const walked = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    expect(walked.map((token) => token.tokenId)).toEqual(['8']);
+
+    // The indexer repairs the transaction it had missed, below the cursor.
+    receipts.push({ height: 100, tokenId: '7' });
+
+    const resumed = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    expect(resumed.map((token) => token.tokenId)).toEqual(['8']);
+
+    const now = Date.now();
+    jest.spyOn(Date, 'now').mockReturnValue(now + GRC721_RECONCILE_INTERVAL_MS);
+
+    const reconciled = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    expect(reconciled.map((token) => token.tokenId)).toEqual(['8', '7']);
+  });
+
+  // A walk started before a wallet reset carries no abort signal, so it comes
+  // back afterwards and would write its cursors — the previous address among
+  // them — into a fresh document.
+  it('does not restore the cursors when a wallet reset lands mid-walk', async () => {
+    const { repository, post, syncCacheValues } = makeRepository([], {
+      owners: { '7': ADDRESS },
+    });
+
+    let release = (): void => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    post.mockImplementation(async () => {
+      await held;
+      return {
+        data: {
+          data: {
+            latestBlockHeight: 500,
+            getTransactions: [
+              { block_height: 120, response: { events: [received(ADDRESS, '7')] } },
+            ],
+          },
+        },
+      };
+    });
+
+    const walk = repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    await repository.deleteGRC721SyncCache();
+
+    release();
+    // The read itself still answers; only its cursor write is thrown away.
+    await expect(walk).resolves.toHaveLength(1);
+
+    expect(syncCacheValues[GRC721_SYNC_CACHE_KEY]).toBeUndefined();
+  });
+
+  // The invalidation is scoped to the walks the reset interrupted: a read that
+  // starts afterwards has to keep its cursor as usual.
+  it('stores the cursor again for a walk started after the reset', async () => {
+    const { repository, syncCacheValues } = makeRepository(
+      [[received(ADDRESS, '7')]],
+      { owners: { '7': ADDRESS } },
+      { blockHeight: 120 },
+    );
+
+    await repository.deleteGRC721SyncCache();
+    await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(syncCacheValues[GRC721_SYNC_CACHE_KEY]).toBeTruthy();
   });
 
   it('resumes the collection walk too', async () => {
