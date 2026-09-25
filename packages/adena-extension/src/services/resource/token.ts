@@ -449,9 +449,18 @@ export class TokenService {
    * copy a user recognises, while a realm is free to publish anything — and
    * contract data fills in every field the resource leaves empty, so a token
    * with no document at all keeps exactly what the chain says about it.
+   *
+   * The match is scoped to the network the document describes. The documents
+   * are fetched per network, while the account's stored tokens span every
+   * network it has held one on, and {@link equalsToken} compares a denom or a
+   * token key — both of which testnets share with mainnet. Without the network
+   * in the match, a mainnet document would describe a staging token of the same
+   * identity, and the update path would then persist that over it.
    */
   private overlayResourceMetainfo<T extends TokenModel>(token: T, resourceTokens: TokenModel[]): T {
-    const resource = resourceTokens.find((candidate) => this.equalsToken(token, candidate));
+    const resource = resourceTokens.find(
+      (candidate) => candidate.networkId === token.networkId && this.equalsToken(token, candidate),
+    );
     if (!resource) {
       return token;
     }

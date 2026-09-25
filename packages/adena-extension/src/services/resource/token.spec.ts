@@ -177,6 +177,33 @@ describe('TokenService resource metadata priority', () => {
     expect(token).toEqual({ ...contractWugnot, image: 'https://indexer.example/wugnot.png' });
   });
 
+  // The documents are fetched for the selected network, while the stored tokens
+  // are account-wide, and a testnet shares both its denoms and its realm paths
+  // with mainnet — so identity alone would let one network's document describe
+  // another network's token.
+  it('leaves a stored token of another network untouched', async () => {
+    const stagingWugnot: GRC20TokenModel = { ...contractWugnot, networkId: 'staging' };
+    const { repository } = makeRepository([contractWugnot, stagingWugnot], [resourceWugnot]);
+
+    const [mainnet, staging] = await new TokenService(repository).getTokenMetainfosByAccountId(
+      ACCOUNT_ID,
+    );
+
+    expect(mainnet.name).toBe('wGNOT');
+    expect(staging).toEqual(stagingWugnot);
+  });
+
+  // The overlay is written back, so an overlay that crossed networks would not
+  // just be displayed — it would replace what the wallet stored for that token.
+  it('does not persist another network`s document over a stored token', async () => {
+    const stagingWugnot: GRC20TokenModel = { ...contractWugnot, networkId: 'staging' };
+    const { repository, updateTokenMetainfos } = makeRepository([], [resourceWugnot]);
+
+    await new TokenService(repository).updateTokenMetainfosByAccountId(ACCOUNT_ID, [stagingWugnot]);
+
+    expect(updateTokenMetainfos).toHaveBeenCalledWith(ACCOUNT_ID, [stagingWugnot]);
+  });
+
   it('degrades to contract data when the resource cannot be fetched', async () => {
     const { repository } = makeRepository([contractWugnot], new Error('offline'));
 
