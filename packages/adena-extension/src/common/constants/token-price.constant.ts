@@ -25,10 +25,11 @@ export interface TokenAssetBinding {
   /** The price API asset id to read this token's quote from. */
   assetId: string;
   /**
-   * Decimals the quoted asset's price is per one unit of, set only when that
-   * differs from the token's own decimals. Leaving it unset means the quote is
-   * already per one whole token, which is the case for every token quoted under
-   * its own asset.
+   * Decimals the quoted asset's price is per one unit of, so the quote can be
+   * restated in whatever decimals this token's own metadata declares. Needed
+   * only by a token quoted as some other asset; leaving it unset means the quote
+   * is already per one whole token, which holds for every token quoted under its
+   * own asset.
    */
   quoteDecimals?: number;
 }
@@ -61,9 +62,11 @@ const TOKEN_ASSET_BINDINGS: Readonly<Record<string, TokenAssetBinding>> = {
    * `gno.land/r/gnoland/wugnot.wugnot`, which tracks a single pool and would
    * let the wrapper drift from the coin it is redeemable for.
    *
-   * The wrapper's own `decimals` is 0, so one whole wugnot is one ugnot: a
-   * millionth of the GNOT that the `gno-land` quote is per. Hence quoteDecimals
-   * — without it a wugnot row would read a million times its worth.
+   * `gno-land` is priced per GNOT, which is 10^6 ugnot, while the wrapper counts
+   * in units of its own `decimals` — the one token whose curated decimals differ
+   * from what its contract reports. quoteDecimals is what restates the quote in
+   * whichever of the two the wallet ends up reading, instead of assuming the
+   * wrapper counts the same way GNOT does.
    */
   [getTokenPriceKey('gno.land/r/gnoland/wugnot.wugnot', 'gnoland-1')]: {
     assetId: 'gno-land',

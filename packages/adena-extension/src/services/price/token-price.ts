@@ -77,9 +77,10 @@ export class TokenPriceService {
 
   /**
    * The quote restated as the price of one whole token, or null when it cannot
-   * be: a binding that names `quoteDecimals` prices an asset in a unit that is
-   * not this token's, and the shift between the two needs the token's own
-   * decimals. Reporting nothing beats reporting a figure off by a power of ten.
+   * be: a binding that names `quoteDecimals` prices an asset in a unit the token
+   * may not share, and the shift between the two needs the token's own decimals
+   * — which come from its metadata, so the curated value drives this. Reporting
+   * nothing beats reporting a figure off by a power of ten.
    */
   private static toWholeTokenPrice(
     usd: number,

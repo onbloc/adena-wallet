@@ -62,9 +62,14 @@ export class TokenService {
    * @returns
    */
   public async fetchGRC20Tokens(): Promise<GRC20TokenModel[]> {
-    return this.tokenRepository
-      .fetchAllGRC20Tokens()
-      .then((tokens) => tokens.filter((token) => !!token));
+    const [tokens, resourceTokens] = await Promise.all([
+      this.tokenRepository.fetchAllGRC20Tokens(),
+      this.fetchResourceTokenMetainfos(),
+    ]);
+
+    return tokens
+      .filter((token) => !!token)
+      .map((token) => this.overlayResourceMetainfo(token, resourceTokens));
   }
 
   /**
@@ -75,7 +80,15 @@ export class TokenService {
     offset: number;
     limit: number;
   }): Promise<{ items: GRC20TokenModel[]; totalCount: number }> {
-    return this.tokenRepository.fetchGRC20Tokens(params);
+    const [page, resourceTokens] = await Promise.all([
+      this.tokenRepository.fetchGRC20Tokens(params),
+      this.fetchResourceTokenMetainfos(),
+    ]);
+
+    return {
+      ...page,
+      items: page.items.map((token) => this.overlayResourceMetainfo(token, resourceTokens)),
+    };
   }
 
   /**
@@ -104,7 +117,12 @@ export class TokenService {
       return null;
     }
 
-    return this.tokenRepository.fetchGRC20TokenByPackagePath(tokenPath).catch(() => null);
+    const [token, resourceTokens] = await Promise.all([
+      this.tokenRepository.fetchGRC20TokenByPackagePath(tokenPath).catch(() => null),
+      this.fetchResourceTokenMetainfos(),
+    ]);
+
+    return token ? this.overlayResourceMetainfo(token, resourceTokens) : null;
   }
 
   /**
@@ -121,7 +139,12 @@ export class TokenService {
    * (tokenId = token path). Returns null when the network has no API URL.
    */
   public async fetchAccountGRC20Tokens(address: string): Promise<GRC20TokenModel[] | null> {
-    return this.tokenRepository.fetchAccountGRC20Tokens(address);
+    const [tokens, resourceTokens] = await Promise.all([
+      this.tokenRepository.fetchAccountGRC20Tokens(address),
+      this.fetchResourceTokenMetainfos(),
+    ]);
+
+    return tokens?.map((token) => this.overlayResourceMetainfo(token, resourceTokens)) ?? null;
   }
 
   /**
@@ -427,7 +450,7 @@ export class TokenService {
    * contract data fills in every field the resource leaves empty, so a token
    * with no document at all keeps exactly what the chain says about it.
    */
-  private overlayResourceMetainfo(token: TokenModel, resourceTokens: TokenModel[]): TokenModel {
+  private overlayResourceMetainfo<T extends TokenModel>(token: T, resourceTokens: TokenModel[]): T {
     const resource = resourceTokens.find((candidate) => this.equalsToken(token, candidate));
     if (!resource) {
       return token;
@@ -437,8 +460,15 @@ export class TokenService {
       ...token,
       name: resource.name || token.name,
       symbol: resource.symbol || token.symbol,
-      // Only a number overrides: a document that omits `decimals` decodes as
-      // undefined, and treating that as 0 would shift every balance it touches.
+      /**
+       * `decimals` follows the same priority as the rest, and it is the field
+       * that priority exists for: wugnot is the one token whose curated decimals
+       * differ from what its contract reports, and the resource is what says how
+       * many places the wallet should read the balance in.
+       *
+       * Only a number overrides — a document that omits the field decodes as
+       * undefined, and reading that as 0 would shift every balance it touches.
+       */
       decimals: typeof resource.decimals === 'number' ? resource.decimals : token.decimals,
       description: resource.description || token.description,
       websiteUrl: resource.websiteUrl || token.websiteUrl,
