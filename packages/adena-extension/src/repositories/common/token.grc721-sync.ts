@@ -29,6 +29,16 @@ export interface GRC721SyncCursor<T> {
    * before this was stored.
    */
   latestBlockHeight?: number;
+  /**
+   * When the range below `blockHeight` was last read in full.
+   *
+   * Resuming assumes the indexer only ever appends, and it does not: a
+   * re-index can repair a transaction at an older height while the tip keeps
+   * advancing, so a receipt can appear *below* the cursor. Recording when the
+   * whole range was last read lets a walk redo it on a timer and pick those up.
+   * Absent on cursors written before this was stored, which reconcile once.
+   */
+  reconciledAt?: number;
   /** Candidates gathered up to `blockHeight`, in the query's own order. */
   items: T[];
 }
@@ -73,6 +83,13 @@ export interface NetworkGRC721Sync {
 export interface GRC721SyncCache {
   [chainId: string]: NetworkGRC721Sync;
 }
+
+/**
+ * How long a cursor may keep resuming before the next walk re-reads its whole
+ * range from genesis. Bounds how long a receipt backfilled below the cursor can
+ * stay invisible, and costs one extra query per cursor per interval.
+ */
+export const GRC721_RECONCILE_INTERVAL_MS = 10 * 60 * 1000;
 
 /** A cursor that has never been walked. */
 export const emptyCursor = <T>(): GRC721SyncCursor<T> => ({ blockHeight: 0, items: [] });

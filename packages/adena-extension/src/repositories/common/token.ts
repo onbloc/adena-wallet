@@ -14,6 +14,7 @@ import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { AdenaStorage } from '@common/storage';
 import {
   emptyCursor,
+  GRC721_RECONCILE_INTERVAL_MS,
   GRC721_SYNC_CACHE_KEY,
   GRC721CollectionCandidate,
   GRC721SyncCache,
@@ -107,6 +108,21 @@ interface IndexedEventPage {
   latestBlockHeight: number;
 }
 
+/** A finished walk: the page it fetched, and what the next cursor needs. */
+interface IndexedEventWalk<T> {
+  page: IndexedEventPage;
+  /** Candidates carried over from the cursor; empty when walked from genesis. */
+  previousItems: T[];
+  /** Height those candidates reached; 0 when walked from genesis. */
+  previousBlockHeight: number;
+  /** False when the page must not be folded back into the cursor. */
+  storable: boolean;
+  /** The reconciliation time the next cursor should carry. */
+  reconciledAt: number;
+  /** Whether this walk read the whole range rather than resuming. */
+  reconciled: boolean;
+}
+
 // Default page size for on-chain grc20reg registry pagination. Keeps a single
 // qeval response (keys page + batched metadata) within a comfortable size.
 const GRC20_REGISTRY_PAGE_SIZE = 50;
@@ -153,8 +169,15 @@ export class TokenRepository implements ITokenRepository {
   // injected in tests; see the `syncCache` getter.
   private syncCacheStorage: StorageManager<GRC721SyncCacheValueType> | null = null;
 
-  // Serialises cursor writes; see writeGRC721SyncStore.
-  private syncWriteQueue: Promise<void> = Promise.resolve();
+  // Serialises cursor writes and the reset deletion; see writeGRC721SyncStore.
+  // Static because the cursors live in one cache document shared by every
+  // repository, and a new one is built whenever the network or provider changes.
+  private static syncWriteQueue: Promise<void> = Promise.resolve();
+
+  // Bumped by deleteGRC721SyncCache. An NFT read records this when it starts
+  // and its writes are dropped once the value has moved on, so a read still in
+  // flight during a wallet reset cannot put the cursors back.
+  private static syncCacheEpoch = 0;
 
   constructor(
     localStorage: StorageManager,
@@ -566,7 +589,7 @@ export class TokenRepository implements ITokenRepository {
    * package documents it as one to ignore wholesale.
    */
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
-    const { collections } = await this.fetchGRC721Catalog();
+    const { collections } = await this.fetchGRC721Catalog(TokenRepository.beginGRC721Read());
     return [...collections.values()];
   }
 
@@ -579,11 +602,11 @@ export class TokenRepository implements ITokenRepository {
    * collection id announced twice is still detected as ambiguous by the same
    * first-wins rule, whichever walk each announcement arrived in.
    */
-  private async fetchGRC721Catalog(): Promise<{
+  private async fetchGRC721Catalog(epoch: number): Promise<{
     collections: Map<string, GRC721CollectionModel>;
     ambiguous: Set<string>;
   }> {
-    const candidates = await this.fetchGRC721CatalogCandidates();
+    const candidates = await this.fetchGRC721CatalogCandidates(epoch);
 
     const collections = new Map<string, GRC721CollectionModel>();
     const ambiguous = new Set<string>();
@@ -620,14 +643,14 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /** Every collection ever announced, oldest first, resumed from the cursor. */
-  private async fetchGRC721CatalogCandidates(): Promise<GRC721CollectionCandidate[]> {
+  private async fetchGRC721CatalogCandidates(epoch: number): Promise<GRC721CollectionCandidate[]> {
     const network = await this.readGRC721SyncNetwork();
     const cursor = network.catalog || emptyCursor<GRC721CollectionCandidate>();
 
-    const { page, previousItems, previousBlockHeight, storable } = await this.walkIndexedEvents(
-      cursor,
-      (fromBlockHeight) => makeGRC721NewTokenEventsQuery(GRC721_TOKEN_PACKAGES, fromBlockHeight),
+    const walk = await this.walkIndexedEvents(cursor, (fromBlockHeight) =>
+      makeGRC721NewTokenEventsQuery(GRC721_TOKEN_PACKAGES, fromBlockHeight),
     );
+    const { page, previousItems } = walk;
 
     // The query orders ASC, so appending keeps the whole list oldest-first.
     const merged = [...previousItems];
@@ -656,14 +679,10 @@ export class TokenRepository implements ITokenRepository {
       });
     }
 
-    if (TokenRepository.shouldStoreWalk(page, previousBlockHeight, storable)) {
-      await this.writeGRC721SyncStore((stored) => ({
+    if (TokenRepository.shouldStoreWalk(walk)) {
+      await this.writeGRC721SyncStore(epoch, (stored) => ({
         ...stored,
-        catalog: {
-          blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
-          latestBlockHeight: page.latestBlockHeight,
-          items: merged,
-        },
+        catalog: TokenRepository.nextCursor(walk, merged),
       }));
     }
 
@@ -679,12 +698,14 @@ export class TokenRepository implements ITokenRepository {
    * `BalanceOf`, so a stale event log cannot add or drop a collection here.
    */
   public async fetchAccountGRC721CollectionsBy(address: string): Promise<GRC721CollectionModel[]> {
-    const candidateIds = await this.fetchGRC721ReceivedCollectionIds(address);
+    const epoch = TokenRepository.beginGRC721Read();
+
+    const candidateIds = await this.fetchGRC721ReceivedCollectionIds(address, epoch);
     if (candidateIds.length === 0) {
       return [];
     }
 
-    const { collections: catalog, ambiguous } = await this.fetchGRC721Catalog();
+    const { collections: catalog, ambiguous } = await this.fetchGRC721Catalog(epoch);
 
     const candidates = candidateIds
       .filter((collectionId) => !ambiguous.has(collectionId))
@@ -711,7 +732,7 @@ export class TokenRepository implements ITokenRepository {
       held.map(async (collection) => {
         const [capabilities, tokens] = await Promise.all([
           this.fetchGRC721Capabilities(collection.packagePath),
-          this.fetchGRC721TokensBy(collection.packagePath, address).catch(() => []),
+          this.readGRC721TokensBy(collection.packagePath, address, epoch).catch(() => []),
         ]);
 
         return {
@@ -732,15 +753,17 @@ export class TokenRepository implements ITokenRepository {
    * membership is decided afterwards by `BalanceOf`, so a resumed walk can
    * never report a collection the account no longer holds.
    */
-  private async fetchGRC721ReceivedCollectionIds(address: string): Promise<string[]> {
+  private async fetchGRC721ReceivedCollectionIds(
+    address: string,
+    epoch: number,
+  ): Promise<string[]> {
     const network = await this.readGRC721SyncNetwork();
     const cursor = network.collections?.[address] || emptyCursor<string>();
 
-    const { page, previousItems, previousBlockHeight, storable } = await this.walkIndexedEvents(
-      cursor,
-      (fromBlockHeight) =>
-        makeGRC721ReceivedCollectionsQuery(address, GRC721_TOKEN_PACKAGES, fromBlockHeight),
+    const walk = await this.walkIndexedEvents(cursor, (fromBlockHeight) =>
+      makeGRC721ReceivedCollectionsQuery(address, GRC721_TOKEN_PACKAGES, fromBlockHeight),
     );
+    const { page, previousItems } = walk;
 
     const seen = new Set(previousItems);
     const received: string[] = [];
@@ -770,16 +793,12 @@ export class TokenRepository implements ITokenRepository {
     // The query orders DESC, so this batch is newer than everything stored.
     const merged = [...received, ...previousItems];
 
-    if (TokenRepository.shouldStoreWalk(page, previousBlockHeight, storable)) {
-      await this.writeGRC721SyncStore((stored) => ({
+    if (TokenRepository.shouldStoreWalk(walk)) {
+      await this.writeGRC721SyncStore(epoch, (stored) => ({
         ...stored,
         collections: {
           ...stored.collections,
-          [address]: {
-            blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
-            latestBlockHeight: page.latestBlockHeight,
-            items: merged,
-          },
+          [address]: TokenRepository.nextCursor(walk, merged),
         },
       }));
     }
@@ -1023,7 +1042,16 @@ export class TokenRepository implements ITokenRepository {
    * enumeration function — and `OwnerOf` over RPC decides which it still owns.
    */
   public async fetchGRC721TokensBy(packagePath: string, address: string): Promise<GRC721Model[]> {
-    const received = await this.fetchGRC721ReceivedTokenIds(packagePath, address);
+    return this.readGRC721TokensBy(packagePath, address, TokenRepository.beginGRC721Read());
+  }
+
+  /** As {@link fetchGRC721TokensBy}, for a read that has already begun. */
+  private async readGRC721TokensBy(
+    packagePath: string,
+    address: string,
+    epoch: number,
+  ): Promise<GRC721Model[]> {
+    const received = await this.fetchGRC721ReceivedTokenIds(packagePath, address, epoch);
     if (received.length === 0) {
       return [];
     }
@@ -1053,15 +1081,15 @@ export class TokenRepository implements ITokenRepository {
   private async fetchGRC721ReceivedTokenIds(
     packagePath: string,
     address: string,
+    epoch: number,
   ): Promise<GRC721TokenCandidate[]> {
     const network = await this.readGRC721SyncNetwork();
     const cursor = network.tokens?.[address]?.[packagePath] || emptyCursor<GRC721TokenCandidate>();
 
-    const { page, previousItems, previousBlockHeight, storable } = await this.walkIndexedEvents(
-      cursor,
-      (fromBlockHeight) =>
-        makeGRC721ReceivedTokensQuery(packagePath, address, GRC721_TOKEN_PACKAGES, fromBlockHeight),
+    const walk = await this.walkIndexedEvents(cursor, (fromBlockHeight) =>
+      makeGRC721ReceivedTokensQuery(packagePath, address, GRC721_TOKEN_PACKAGES, fromBlockHeight),
     );
+    const { page, previousItems } = walk;
 
     const candidates: GRC721TokenCandidate[] = [];
     const seen = new Set(previousItems.map((candidate) => candidate.tokenId));
@@ -1099,18 +1127,14 @@ export class TokenRepository implements ITokenRepository {
     // The query orders DESC, so this batch is newer than everything stored.
     const merged = [...candidates, ...previousItems];
 
-    if (TokenRepository.shouldStoreWalk(page, previousBlockHeight, storable)) {
-      await this.writeGRC721SyncStore((stored) => ({
+    if (TokenRepository.shouldStoreWalk(walk)) {
+      await this.writeGRC721SyncStore(epoch, (stored) => ({
         ...stored,
         tokens: {
           ...stored.tokens,
           [address]: {
             ...stored.tokens?.[address],
-            [packagePath]: {
-              blockHeight: Math.max(previousBlockHeight, page.maxBlockHeight),
-              latestBlockHeight: page.latestBlockHeight,
-              items: merged,
-            },
+            [packagePath]: TokenRepository.nextCursor(walk, merged),
           },
         },
       }));
@@ -1322,23 +1346,56 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
+   * Whether this cursor has resumed long enough to be read in full again.
+   *
+   * Resuming treats the indexer as append-only, and from the client it is not:
+   * a re-index can repair a transaction at an older height without the tip ever
+   * moving backwards, so a receipt can appear *below* the cursor. Nothing else
+   * recovers it — {@link hasIndexerRewound} only sees the tip drop, and
+   * `OwnerOf` only re-checks candidates a walk already found, so the token
+   * stays invisible for as long as the cursor lives. Re-reading the whole range
+   * on a timer bounds that window to one interval.
+   *
+   * A cursor stored before this field existed carries no reconciliation time
+   * and is re-read on the first walk after the upgrade.
+   */
+  private static needsReconciliation<T>(cursor: GRC721SyncCursor<T>, now: number): boolean {
+    if (cursor.reconciledAt === undefined) {
+      return true;
+    }
+
+    return now - cursor.reconciledAt >= GRC721_RECONCILE_INTERVAL_MS;
+  }
+
+  /**
    * Run an indexer walk that resumes from `cursor.blockHeight`.
    *
-   * The indexer is an append-only event log, so everything at or below the
-   * stored height was already folded into `cursor.items` and only newer blocks
-   * have to travel. When {@link hasIndexerRewound} says that no longer holds,
-   * redo the walk from genesis with the cached items dropped.
+   * Everything at or below the stored height was already folded into
+   * `cursor.items`, so only newer blocks have to travel. Two things end that:
+   * {@link hasIndexerRewound}, when the resume height no longer belongs to this
+   * chain, and {@link needsReconciliation}, when the range below it is due to be
+   * re-read. Either way the walk redoes the range from genesis with the cached
+   * items dropped.
    */
   private async walkIndexedEvents<T>(
     cursor: GRC721SyncCursor<T>,
     makeQuery: (fromBlockHeight: number) => string,
-  ): Promise<{
-    page: IndexedEventPage;
-    previousItems: T[];
-    previousBlockHeight: number;
-    /** False when the result must not be folded back into the cursor. */
-    storable: boolean;
-  }> {
+  ): Promise<IndexedEventWalk<T>> {
+    const now = Date.now();
+    // A cursor that has walked nothing yet already reads the whole range, so it
+    // reconciles itself — and must record that, or the walk after it would
+    // redo from genesis for no reason.
+    const unwalked = cursor.blockHeight <= 0 && cursor.items.length === 0;
+
+    if (!unwalked && TokenRepository.needsReconciliation(cursor, now)) {
+      console.info('[grc721-sync] cursor due for reconciliation, re-walking from genesis', {
+        storedBlockHeight: cursor.blockHeight,
+        reconciledAt: cursor.reconciledAt,
+      });
+
+      return this.walkIndexedEventsFromGenesis(makeQuery, now);
+    }
+
     const page = await this.fetchEventPageByQuery(makeQuery(cursor.blockHeight));
 
     if (!TokenRepository.hasIndexerRewound(cursor, page)) {
@@ -1347,6 +1404,8 @@ export class TokenRepository implements ITokenRepository {
         previousItems: cursor.items,
         previousBlockHeight: cursor.blockHeight,
         storable: TokenRepository.isStorablePage(page),
+        reconciledAt: unwalked ? now : cursor.reconciledAt ?? now,
+        reconciled: unwalked,
       };
     }
 
@@ -1356,13 +1415,23 @@ export class TokenRepository implements ITokenRepository {
       latestBlockHeight: page.latestBlockHeight,
     });
 
-    const rewalked = await this.fetchEventPageByQuery(makeQuery(0));
+    return this.walkIndexedEventsFromGenesis(makeQuery, now);
+  }
+
+  /** Read the whole range, dropping whatever a cursor had cached for it. */
+  private async walkIndexedEventsFromGenesis<T>(
+    makeQuery: (fromBlockHeight: number) => string,
+    now: number,
+  ): Promise<IndexedEventWalk<T>> {
+    const page = await this.fetchEventPageByQuery(makeQuery(0));
 
     return {
-      page: rewalked,
+      page,
       previousItems: [],
       previousBlockHeight: 0,
-      storable: TokenRepository.isStorablePage(rewalked),
+      storable: TokenRepository.isStorablePage(page),
+      reconciledAt: now,
+      reconciled: true,
     };
   }
 
@@ -1387,17 +1456,31 @@ export class TokenRepository implements ITokenRepository {
    * A walk that matched nothing and moved no height would rewrite the whole
    * candidate list — which for the chain-wide catalog is every collection ever
    * announced — byte for byte. Every NFT screen load did that.
+   *
+   * A reconciled walk is the exception: its new reconciliation time is the only
+   * thing that stops the next read from walking from genesis again, so it is
+   * stored even when the range came back unchanged.
    */
-  private static shouldStoreWalk(
-    page: IndexedEventPage,
-    previousBlockHeight: number,
-    storable: boolean,
-  ): boolean {
-    if (!storable) {
+  private static shouldStoreWalk<T>(walk: IndexedEventWalk<T>): boolean {
+    if (!walk.storable) {
       return false;
     }
 
-    return page.events.length > 0 || page.maxBlockHeight > previousBlockHeight;
+    if (walk.reconciled) {
+      return true;
+    }
+
+    return walk.page.events.length > 0 || walk.page.maxBlockHeight > walk.previousBlockHeight;
+  }
+
+  /** The cursor a finished walk leaves behind, over the candidates it merged. */
+  private static nextCursor<T>(walk: IndexedEventWalk<T>, items: T[]): GRC721SyncCursor<T> {
+    return {
+      blockHeight: Math.max(walk.previousBlockHeight, walk.page.maxBlockHeight),
+      latestBlockHeight: walk.page.latestBlockHeight,
+      reconciledAt: walk.reconciledAt,
+      items,
+    };
   }
 
   /**
@@ -1427,6 +1510,22 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
+   * Open one NFT read and return the cache epoch it runs under.
+   *
+   * Taken once per read, at its public entry point, and handed down to every
+   * cursor read and write beneath it. Per-cursor capture is not enough: a read
+   * like {@link fetchAccountGRC721CollectionsBy} walks the account's
+   * collections, then the catalog, then each collection's tokens, and a wallet
+   * reset can land between those stages. A later stage that took a fresh epoch
+   * of its own would pass the write guard and put the account the reset had
+   * just removed back into a new document, even though every input it is
+   * working from was read before the reset.
+   */
+  private static beginGRC721Read(): number {
+    return TokenRepository.syncCacheEpoch;
+  }
+
+  /**
    * Apply `update` to the stored cursors, one writer at a time.
    *
    * Every cursor shares one cache document, and refreshing an account's NFTs
@@ -1440,13 +1539,23 @@ export class TokenRepository implements ITokenRepository {
    * writer finished, so sibling cursors survive. Reads outside the chain are
    * left alone: a walk merges into the snapshot it started from and only ever
    * writes its own sub-key.
+   *
+   * `epoch` is the one the whole read opened with; see {@link beginGRC721Read}.
+   * A wallet reset moves the epoch on, so a read that started before the reset
+   * lands here with a stale one and is dropped rather than restoring the
+   * cursors — addresses included — after the wallet that owned them is gone.
    */
   private writeGRC721SyncStore(
+    epoch: number,
     update: (network: NetworkGRC721Sync) => NetworkGRC721Sync,
   ): Promise<void> {
     const chainId = this.chainId;
 
-    const write = this.syncWriteQueue.then(async () => {
+    const write = TokenRepository.syncWriteQueue.then(async () => {
+      if (epoch !== TokenRepository.syncCacheEpoch) {
+        return;
+      }
+
       const store = await this.readGRC721SyncStore();
 
       await this.syncCache?.setByObject(GRC721_SYNC_CACHE_KEY, {
@@ -1457,13 +1566,14 @@ export class TokenRepository implements ITokenRepository {
 
     // A cursor that cannot be stored only costs the next walk its resume point;
     // the data itself is already in hand. Keep the queue alive either way.
-    this.syncWriteQueue = write.catch(() => undefined);
+    TokenRepository.syncWriteQueue = write.catch(() => undefined);
 
     return write.catch((error) => {
       console.warn('[grc721-sync] failed to store cursor', error);
     });
   }
 
+  /** The stored cursors for this chain. */
   private async readGRC721SyncNetwork(): Promise<NetworkGRC721Sync> {
     const store = await this.readGRC721SyncStore();
     return store[this.chainId] || {};
@@ -1475,9 +1585,27 @@ export class TokenRepository implements ITokenRepository {
    * The cursors are keyed by account address, so without this a wallet reset
    * would leave the addresses the user held — and the collections and token ids
    * behind them — sitting in storage after the wallet that owned them is gone.
+   *
+   * Removing the key is not enough on its own. An NFT read started before the
+   * reset carries no abort signal, so it comes back afterwards and writes its
+   * cursors — the previous address among them — into a fresh document. Moving
+   * the epoch on first invalidates every read opened before this point, down to
+   * the walks it has not even started yet, and queueing the removal behind the
+   * writes already running lets them finish before the key goes.
    */
   public async deleteGRC721SyncCache(): Promise<boolean> {
-    await this.syncCache?.remove(GRC721_SYNC_CACHE_KEY).catch((error) => {
+    TokenRepository.syncCacheEpoch += 1;
+
+    const remove = TokenRepository.syncWriteQueue.then(() =>
+      this.syncCache?.remove(GRC721_SYNC_CACHE_KEY),
+    );
+
+    TokenRepository.syncWriteQueue = remove.then(
+      () => undefined,
+      () => undefined,
+    );
+
+    await remove.catch((error) => {
       console.warn('[grc721-sync] failed to clear cursors', error);
     });
 
