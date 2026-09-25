@@ -251,8 +251,15 @@ export const WalletMain = (): JSX.Element => {
   );
 
   // Only rows on screen are quoted; hidden tokens are not part of the total.
+  // `decimals` rides along because a token quoted under another asset (wugnot
+  // under GNOT) needs it to restate that asset's price in its own unit.
   const priceRequests = useMemo<TokenPriceRequest[]>(
-    () => displayedBalances.map(({ tokenId, networkId }) => ({ tokenId, networkId })),
+    () =>
+      displayedBalances.map(({ tokenId, networkId, decimals }) => ({
+        tokenId,
+        networkId,
+        decimals,
+      })),
     [displayedBalances],
   );
 

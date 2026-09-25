@@ -56,6 +56,9 @@ export class AssetPriceMapper {
 
     return {
       assetId: item.assetId,
+      // Carried through rather than resolved here: which provider wins is a
+      // choice about the wallet's tokens, not about decoding the payload.
+      provider: item.provider ?? '',
       usd: usd.toNumber(),
       change24h: AssetPriceMapper.toChangeRate(item.changeRateOneDay),
     };
