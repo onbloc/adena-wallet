@@ -1,3 +1,4 @@
+import CHAIN_DATA from '@resources/chains/chains.json';
 import {
   getLoopbackOriginChainId,
   GNO_CONNECT_ALLOWED_ORIGINS,
@@ -20,6 +21,18 @@ describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
 
   it('contains no duplicates', () => {
     expect(new Set(GNO_CONNECT_ALLOWED_ORIGINS).size).toBe(GNO_CONNECT_ALLOWED_ORIGINS.length);
+  });
+
+  it('stays derived from chains.json, so every bundled remote gnoUrl is trusted', () => {
+    // The list is a projection of chains.json: editing that file is the only way
+    // to add or remove a trusted dApp origin. Retiring pearl-1 there (#895) is
+    // exactly why pearl.testnets.gno.land TxLinks stopped reaching the wallet.
+    const bundledRemoteOrigins = CHAIN_DATA.map((chain: { gnoUrl?: string }) => chain.gnoUrl)
+      .filter((origin: string | undefined): origin is string => Boolean(origin))
+      .filter((origin: string) => !isLoopbackOrigin(origin));
+
+    expect(bundledRemoteOrigins.length).toBeGreaterThan(0);
+    expect(GNO_CONNECT_ALLOWED_ORIGINS).toEqual(expect.arrayContaining(bundledRemoteOrigins));
   });
 });
 

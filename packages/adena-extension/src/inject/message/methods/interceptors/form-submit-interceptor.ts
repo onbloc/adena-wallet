@@ -2,6 +2,7 @@ import { CommandHandler } from '@inject/message/command-handler';
 import { CommandMessage } from '@inject/message/command-message';
 import {
   GnoMessageInfo,
+  canHandleGnoConnectOrigin,
   parseGnoExecFormInfo,
   parseGnoFormInfo,
   shouldInterceptExecForm,
@@ -77,14 +78,23 @@ export class FormSubmitInterceptor implements IInterceptor {
         return;
       }
 
-      // Gnoweb form detected - prevent default submission
-      e.preventDefault();
-      e.stopPropagation();
-
+      // Gnoweb form detected - only take over the submission when Adena can
+      // actually act for this origin. For an origin it will never handle, the
+      // form's own submission is strictly more useful than swallowing it.
       const context = this.createContext();
       if (!context) {
         return;
       }
+
+      if (!canHandleGnoConnectOrigin(location.origin)) {
+        console.info(
+          `[Adena] ${location.origin} is not a supported Gno origin; leaving the form submission to the page.`,
+        );
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
 
       this.handler(gnoMessageInfo, context);
     } catch (error) {

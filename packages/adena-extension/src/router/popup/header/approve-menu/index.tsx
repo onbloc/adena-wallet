@@ -220,6 +220,9 @@ const ApproveMenu = (): JSX.Element => {
 
   const displayHostname = useMemo(() => {
     const h = requestData?.hostname ?? '';
+    if (h.startsWith('moz-extension')) {
+      return 'moz-extension';
+    }
     if (!h || h.startsWith('chrome-extension') || !h.includes('.')) {
       return 'chrome-extension';
     }

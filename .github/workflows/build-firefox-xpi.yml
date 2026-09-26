@@ -1,0 +1,88 @@
+name: Build Firefox XPI
+
+# Builds the Firefox XPI for release tags, in parallel to the Chrome build and
+# deploy in build-deploy.yml. The XPI is uploaded as a workflow artifact and
+# attached to the GitHub release for the tag.
+#
+# When AMO signing secrets are configured (AMO_API_KEY / AMO_API_SECRET), the
+# XPI is also signed through addons.mozilla.org (unlisted channel) so it can be
+# installed in release Firefox; otherwise the unsigned XPI is still published
+# for manual signing / development use.
+
+on:
+  push:
+    tags:
+      - v*.*.*
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  firefox-xpi:
+    runs-on: ubuntu-latest
+    env:
+      # Only available in the upstream repository; forks fall back to the
+      # checked-in adena-torus-signin mock repository.
+      PRIVATE_ACCESS_TOKEN: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
+      # Optional: set both to sign the XPI via addons.mozilla.org (unlisted).
+      AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
+      AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Remove adena-torus-signin mock repository
+        if: env.PRIVATE_ACCESS_TOKEN != ''
+        run: |
+          rm -rf packages/adena-torus-signin
+
+      - name: Clone adena-torus-signin repository
+        if: env.PRIVATE_ACCESS_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
+          repository: onbloc/adena-torus-signin
+          path: 'packages/adena-torus-signin'
+
+      - name: Build project
+        run: |
+          yarn
+          yarn build:firefox
+
+      - name: Package XPI
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: sh scripts/build-firefox-xpi.sh "$TAG_NAME"
+
+      - name: Sign XPI (AMO, unlisted)
+        if: env.AMO_API_KEY != '' && env.AMO_API_SECRET != ''
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          npx --yes web-ext@10 sign \
+            --source-dir packages/adena-extension/dist-firefox \
+            --artifacts-dir deploy-firefox-signed \
+            --channel unlisted \
+            --api-key "$AMO_API_KEY" \
+            --api-secret "$AMO_API_SECRET"
+          cp deploy-firefox-signed/*.xpi "deploy-firefox/adena-extension-firefox-${TAG_NAME}.xpi"
+
+      - name: Upload XPI as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adena-firefox-${{ github.ref_name }}
+          path: deploy-firefox/*.xpi
+
+      - name: Attach XPI to GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          gh release view "$TAG_NAME" >/dev/null 2>&1 || \
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --generate-notes
+          gh release upload "$TAG_NAME" deploy-firefox/*.xpi --clobber

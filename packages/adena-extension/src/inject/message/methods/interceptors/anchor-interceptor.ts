@@ -1,7 +1,7 @@
 import { CommandHandler } from '@inject/message/command-handler';
 import { CommandMessage } from '@inject/message/command-message';
 import { GnoConnectInfoProvider } from '../gno-connect-info-provider';
-import { GnoMessageInfo, parseGnoMessageInfo, shouldIntercept } from '../gno-connect';
+import { GnoMessageInfo, canHandleGnoConnectOrigin, parseGnoMessageInfo, shouldIntercept } from '../gno-connect';
 import { IInterceptor, InterceptorContext, InterceptorHandler } from '../gno-interceptor.types';
 
 /**
@@ -73,12 +73,22 @@ export class AnchorInterceptor implements IInterceptor {
         return;
       }
 
-      e.preventDefault();
-
       const context = this.createContext();
       if (!context) {
         return;
       }
+
+      // An origin Adena cannot act on must not lose its click: leaving the event
+      // alone lets gnoweb's own $help&func= link do what it normally does. The
+      // CommandHandler gate remains authoritative for everything after this.
+      if (!canHandleGnoConnectOrigin(location.origin)) {
+        console.info(
+          `[Adena] ${location.origin} is not a supported Gno origin; leaving the click to the page.`,
+        );
+        return;
+      }
+
+      e.preventDefault();
 
       this.handler(gnoMessageInfo, context);
     } catch (error) {
