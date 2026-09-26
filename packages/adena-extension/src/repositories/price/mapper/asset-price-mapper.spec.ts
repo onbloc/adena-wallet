@@ -24,7 +24,19 @@ function makeItem(
 describe('AssetPriceMapper', () => {
   it('maps a quote, keeping the decimal price exact', () => {
     expect(AssetPriceMapper.fromResponse({ items: [makeItem({ price: '0.086' })] })).toEqual([
-      { assetId: 'gno-land', usd: 0.086, change24h: 25 },
+      { assetId: 'gno-land', provider: 'CMC', usd: 0.086, change24h: 25 },
+    ]);
+  });
+
+  it('carries the publishing provider, which decides who wins for an asset', () => {
+    expect(
+      AssetPriceMapper.fromResponse({
+        items: [
+          makeItem({ assetId: 'gno.land/r/gnoswap/gns.GNS', provider: 'gnoswap', price: '0.029' }),
+        ],
+      }),
+    ).toEqual([
+      { assetId: 'gno.land/r/gnoswap/gns.GNS', provider: 'gnoswap', usd: 0.029, change24h: 25 },
     ]);
   });
 

@@ -251,8 +251,15 @@ export const WalletMain = (): JSX.Element => {
   );
 
   // Only rows on screen are quoted; hidden tokens are not part of the total.
+  // `decimals` rides along because a token quoted under another asset (wugnot
+  // under GNOT) needs it to restate that asset's price in its own unit.
   const priceRequests = useMemo<TokenPriceRequest[]>(
-    () => displayedBalances.map(({ tokenId, networkId }) => ({ tokenId, networkId })),
+    () =>
+      displayedBalances.map(({ tokenId, networkId, decimals }) => ({
+        tokenId,
+        networkId,
+        decimals,
+      })),
     [displayedBalances],
   );
 
@@ -278,6 +285,10 @@ export const WalletMain = (): JSX.Element => {
         logo:
           getTokenImage(tokenBalance) ||
           COSMOS_TOKEN_ICON_MAP[tokenBalance.tokenId] ||
+          // Last resort before the placeholder: whatever the token's own
+          // contract data carried, since gno-token-resource describes only the
+          // tokens someone has curated.
+          tokenBalance.image ||
           `${UnknownTokenIcon}`,
         name: tokenBalance.name,
         balanceAmount: {

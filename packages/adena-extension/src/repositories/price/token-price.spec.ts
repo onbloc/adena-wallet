@@ -49,7 +49,7 @@ describe('TokenPriceRepository', () => {
     const repository = new TokenPriceRepository(makeAxios(get), network);
 
     await expect(repository.fetchAssetPrices()).resolves.toEqual([
-      { assetId: 'gno-land', usd: 1.25, change24h: 25 },
+      { assetId: 'gno-land', provider: 'CMC', usd: 1.25, change24h: 25 },
     ]);
     expect(get).toHaveBeenCalledWith('https://api.onbloc.xyz/v1/prices');
   });

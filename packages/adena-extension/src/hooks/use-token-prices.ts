@@ -43,7 +43,10 @@ export const useTokenPrices = (
   const requestKey = useMemo(
     () =>
       requests
-        .map((request) => `${request.tokenId}:${request.networkId}`)
+        // Decimals are part of the identity: they decide how a quote in another
+        // asset's unit is restated, so a row whose metadata arrived late must
+        // re-ask rather than keep a price computed without them.
+        .map((request) => `${request.tokenId}:${request.networkId}:${request.decimals ?? ''}`)
         .sort()
         .join('|'),
     [requests],

@@ -8,12 +8,16 @@ export interface AssetPricesResponse {
 }
 
 export interface AssetPriceItem {
-  /** Feed asset id: a CoinMarketCap slug (`gno-land`), not a ticker. */
+  /**
+   * Feed asset id. Market assets use a CoinMarketCap slug (`gno-land`), not a
+   * ticker; GRC20 assets use the on-chain registry key `{packagePath}.{symbol}`.
+   */
   assetId: string;
   name: string;
   symbol: string;
   providerAssetId: number;
   quoteCurrency: string;
+  /** Publisher of the quote: `CMC` for market data, `gnoswap` for pool prices. */
   provider: string;
   price: string;
   /** `fresh` | `stale` | `unavailable`. */
