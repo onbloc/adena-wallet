@@ -4,13 +4,16 @@ import { Storage } from '.';
 /** Where each GRC721 indexer walk left off; see `token.grc721-sync.ts`. */
 export const GRC721_SYNC_CACHE_KEY = 'GRC721_SYNC';
 
-export type CacheValueType = typeof GRC721_SYNC_CACHE_KEY;
+/** The order the token rows last settled in; see `token-order-cache.ts`. */
+export const TOKEN_ORDER_CACHE_KEY = 'TOKEN_ORDER';
+
+export type CacheValueType = typeof GRC721_SYNC_CACHE_KEY | typeof TOKEN_ORDER_CACHE_KEY;
 
 /**
  * Every key this storage owns. `clear()` walks this list instead of calling
  * `chrome.storage.local.clear()`, which would take the wallet blob with it.
  */
-const CACHE_STORAGE_KEYS: CacheValueType[] = [GRC721_SYNC_CACHE_KEY];
+const CACHE_STORAGE_KEYS: CacheValueType[] = [GRC721_SYNC_CACHE_KEY, TOKEN_ORDER_CACHE_KEY];
 
 /**
  * Plain `chrome.storage.local` under its own top-level keys.

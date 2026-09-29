@@ -1,6 +1,7 @@
 import { BalanceState, CommonState, NetworkState, WalletState } from '@states';
 import { useQueryClient } from '@tanstack/react-query';
 import { useResetRecoilState, useSetRecoilState } from 'recoil';
+import { clearTokenOrderCache } from './helpers/token-order-cache';
 import { useAdenaContext } from './use-context';
 import useExtensionWindowManager from './use-extension-window-manager';
 
@@ -47,6 +48,8 @@ export const useClear = (): UseClearReturn => {
     await establishService.clear();
     await sessionRepository.clear();
     await tokenService.clear();
+    // Keyed by account id, so the ids outlive the wallet unless dropped here.
+    await clearTokenOrderCache();
     queryClient.clear();
     return true;
   };

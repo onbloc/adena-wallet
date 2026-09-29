@@ -1,0 +1,85 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
+
+import { TokenBalanceType } from '@types';
+
+import {
+  buildTokenOrderCacheKey,
+  readTokenOrder,
+  tokenRowKey,
+  writeTokenOrder,
+} from './helpers/token-order-cache';
+import { useCurrentAccount } from './use-current-account';
+import { useNetwork } from './use-network';
+
+const TOKEN_ORDER_QUERY_KEY = 'token-order';
+
+/**
+ * The token order remembered for the current account and chain.
+ *
+ * Kept in the query cache so the screens that each mount `useTokenBalance`
+ * share one read of `chrome.storage` and one view of the order, instead of
+ * racing their own reads.
+ */
+export const useTokenOrder = (): {
+  /** The last settled order, or `null` before it is read / when none is stored. */
+  storedOrder: string[] | null;
+  /** Record the order these rows are in now, when it differs from the stored one. */
+  persistOrder: (rows: TokenBalanceType[]) => void;
+} => {
+  const { currentAccount } = useCurrentAccount();
+  const { currentNetwork, currentAtomoneNetwork } = useNetwork();
+  const queryClient = useQueryClient();
+
+  const cacheKey = useMemo(() => {
+    if (!currentAccount) {
+      return null;
+    }
+    return buildTokenOrderCacheKey(
+      currentAccount.id,
+      currentNetwork.networkId,
+      currentAtomoneNetwork?.id,
+    );
+  }, [currentAccount?.id, currentNetwork.networkId, currentAtomoneNetwork?.id]);
+
+  const { data: storedOrder = null } = useQuery<string[] | null>(
+    [TOKEN_ORDER_QUERY_KEY, cacheKey],
+    () => (cacheKey === null ? null : readTokenOrder(cacheKey)),
+    {
+      enabled: cacheKey !== null,
+      // Storage is only ever written through persistOrder below, which updates
+      // this entry itself, so there is nothing for a refetch to pick up.
+      staleTime: Infinity,
+      cacheTime: Infinity,
+    },
+  );
+
+  const persistOrder = useCallback(
+    (rows: TokenBalanceType[]): void => {
+      if (cacheKey === null || rows.length === 0) {
+        return;
+      }
+
+      const order = rows.map((row) => tokenRowKey(row.tokenId, row.networkId));
+      const queryKey = [TOKEN_ORDER_QUERY_KEY, cacheKey];
+      const stored = queryClient.getQueryData<string[] | null>(queryKey);
+
+      if (stored && isSameOrder(stored, order)) {
+        return;
+      }
+
+      // Publish before the write so every other mounted screen sees the new
+      // order immediately, and so a second caller arriving while the write is
+      // still in flight sees it as already stored rather than writing it again.
+      queryClient.setQueryData(queryKey, order);
+      void writeTokenOrder(cacheKey, order);
+    },
+    [cacheKey, queryClient],
+  );
+
+  return { storedOrder, persistOrder };
+};
+
+function isSameOrder(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((key, index) => key === b[index]);
+}
