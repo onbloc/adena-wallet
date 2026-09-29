@@ -76,6 +76,19 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     initNetworkMetainfos();
   }, []);
 
+  // This context keeps the deserialized wallet for the whole unlocked session,
+  // so hand it to the service layer: signing paths and the session poller then
+  // reuse it instead of re-running the Argon2id KDF on every call. Registering a
+  // resolver rather than the instance keeps `wallet` the single source of truth
+  // — once it is cleared (lock, auto-lock) the service falls back to storage.
+  useEffect(() => {
+    walletService.setCurrentWalletResolver(() => wallet);
+
+    return () => {
+      walletService.setCurrentWalletResolver(null);
+    };
+  }, [walletService, wallet]);
+
   // Pull every persisted AtomOne network (defaults + user-added customs) into
   // the recoil atom plus chainRegistry/tokenRegistry. Returns the hydrated
   // list so the caller can pick the active one once the mode is resolved.

@@ -88,6 +88,7 @@ function makeWalletService(wallet: AdenaWallet): WalletService & {
     existsWallet: jest.fn(async () => true),
     isLocked: jest.fn(async () => false),
     loadWallet: jest.fn(async () => wallet),
+    getCurrentWallet: jest.fn(async () => wallet),
     updateWallet: jest.fn(async (nextWallet: AdenaWallet) => {
       service.savedWallet = nextWallet;
     }),

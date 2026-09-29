@@ -18,6 +18,7 @@ import { WalletRepository } from '@repositories/wallet';
 export class WalletService {
   private _id: string;
   private walletRepository: WalletRepository;
+  private currentWalletResolver: (() => Wallet | null) | null = null;
 
   constructor(walletRepository: WalletRepository) {
     this._id = uuidv4();
@@ -27,6 +28,18 @@ export class WalletService {
   public get id(): string {
     return this._id;
   }
+
+  /**
+   * Registers the already-unlocked wallet instance held by the caller's context,
+   * so `getCurrentWallet` can hand it out instead of deserializing again.
+   *
+   * Only UI contexts set this — the popup and the web pages keep the wallet for
+   * the whole unlocked session anyway. The background service worker never
+   * registers a resolver, so it keeps reading from storage.
+   */
+  public setCurrentWalletResolver = (resolver: (() => Wallet | null) | null): void => {
+    this.currentWalletResolver = resolver;
+  };
 
   public existsWallet = (): Promise<boolean> => {
     return this.walletRepository
@@ -68,6 +81,28 @@ export class WalletService {
     const password = await this.walletRepository.getWalletPassword();
     const walletInstance = await this.deserializeWallet(password);
     return walletInstance;
+  };
+
+  /**
+   * Returns the wallet of the unlocked session, reusing the instance the caller's
+   * context already holds when one is registered.
+   *
+   * Prefer this over `loadWallet` for signing and for reads that only need the
+   * current accounts and keyrings: `loadWallet` re-reads storage and re-runs the
+   * Argon2id KDF every time (~160ms), which signing paths and pollers were
+   * paying on every single call. Keep using `loadWallet` where the authoritative
+   * on-disk state is the point, such as initializing or re-initializing a
+   * context after a lock.
+   *
+   * @returns Wallet
+   */
+  public getCurrentWallet = async (): Promise<Wallet> => {
+    const currentWallet = this.currentWalletResolver?.() ?? null;
+    if (currentWallet) {
+      return currentWallet;
+    }
+
+    return this.loadWallet();
   };
 
   /**
@@ -240,12 +275,17 @@ export class WalletService {
   };
 
   public lockWallet = async (): Promise<void> => {
-    try {
-      const wallet = await this.loadWallet();
-      wallet.destroy();
-    } catch {
-      // Wallet may not be loadable (e.g. password already cleared)
-    }
+    // This used to deserialize the wallet just to call `destroy()` on it, which
+    // cost an Argon2id derivation to wipe a throwaway copy — the instance the UI
+    // holds was never the one being destroyed. Dropping the session password is
+    // what actually locks the wallet; the caller drops its own reference right
+    // after (see the lock flows in settings / side-menu-container).
+    //
+    // Drop the resolver in the same breath so a call that lands between this and
+    // the caller's teardown cannot be served the still-referenced wallet. The
+    // provider re-registers it on the next unlock.
+    this.currentWalletResolver = null;
+
     try {
       await this.walletRepository.deleteWalletPassword();
     } catch (e) {
@@ -324,6 +364,7 @@ export class WalletService {
   };
 
   public clear = async (): Promise<boolean> => {
+    this.currentWalletResolver = null;
     await this.walletRepository.deleteSerializedWallet();
     await this.walletRepository.deleteWalletPassword();
     await this.walletRepository.deleteKdfSalt();
