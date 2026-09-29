@@ -15,11 +15,13 @@ export const NFTCardImageWrapper = styled(View)`
     height: auto;
   }
 
+  /* An auto-sized replaced element keeps its intrinsic size, so a token image
+     larger than the card (e.g. the 135px GNFT SVG in a 100px transfer
+     thumbnail) overflowed and was cropped by the wrapper. Pin it to the card
+     and let object-fit do the scaling. */
   .nft-image {
-    width: auto;
-    height: auto;
-    min-width: 100%;
-    min-height: 100%;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
   }
 `;

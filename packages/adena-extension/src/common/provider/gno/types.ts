@@ -3,6 +3,20 @@ export enum VMQueryType {
   QUERY_VALUE = 'vm/qval',
 }
 
+// Vesting schedule carried by every BaseAccount. Accounts without a grant
+// omit the field entirely (Go `omitempty`), which is equivalent to a zero
+// schedule that locks nothing.
+//
+// Proto source: gno tm2/pkg/std/vesting.go (VestingSchedule).
+export interface ABCIAccountVesting {
+  original_vesting: string;
+  // Only linear ('' / continuous) schedules have a start; a cliff omits it.
+  start_time?: string;
+  end_time?: string;
+  // '' (omitted) = continuous, 'delayed' = cliff.
+  type?: string;
+}
+
 export interface ABCIAccount {
   BaseAccount: {
     address: string;
@@ -13,6 +27,7 @@ export interface ABCIAccount {
     } | null;
     account_number: string;
     sequence: string;
+    vesting?: ABCIAccountVesting;
   };
 }
 
@@ -27,6 +42,8 @@ export interface AccountInfo {
   } | null;
   accountNumber: string;
   sequence: string;
+  // Absent for the overwhelming majority of accounts, which have no grant.
+  vesting?: ABCIAccountVesting;
 }
 
 // Amino JSON wrapper returned by ABCI:

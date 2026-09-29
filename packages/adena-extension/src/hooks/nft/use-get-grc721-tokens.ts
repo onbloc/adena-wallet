@@ -30,15 +30,13 @@ export const useGetGRC721Tokens = (
         .fetchGRC721Tokens(collection.packagePath, currentFundingAddress)
         .catch(() => []);
 
-      return tokens
-        .map((token) => ({
-          ...token,
-          name: collection.name,
-          symbol: collection.symbol,
-          isTokenUri: collection.isTokenUri,
-          isMetadata: collection.isMetadata,
-        }))
-        .reverse();
+      return tokens.map((token) => ({
+        ...token,
+        name: collection.name,
+        symbol: collection.symbol,
+        isTokenUri: collection.isTokenUri,
+        isMetadata: collection.isMetadata,
+      }));
     },
     // One indexer query per collection, replayed on every remount without this.
     staleTime: GRC721_TOKENS_STALE_TIME,

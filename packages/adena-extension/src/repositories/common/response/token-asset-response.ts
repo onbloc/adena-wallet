@@ -20,17 +20,6 @@ interface GRC20TokenInfo extends TokenInfo {
   routes?: unknown;
 }
 
-export interface TokenMetaResponse {
-  items: {
-    tokenType?: string;
-    path: string;
-    name: string;
-    symbol: string;
-    decimals: number;
-    logoUrl: string | null;
-  }[];
-}
-
 export interface AccountAsset {
   address: string;
   amount: string;

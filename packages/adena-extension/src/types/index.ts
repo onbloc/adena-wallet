@@ -1,5 +1,6 @@
 export * from './gas';
 export * from './grc20-route';
+export * from './price';
 export * from './question';
 export * from './router';
 export * from './side-menu';

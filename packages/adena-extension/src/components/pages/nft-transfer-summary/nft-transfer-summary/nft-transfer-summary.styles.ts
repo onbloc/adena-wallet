@@ -5,9 +5,13 @@ import styled from 'styled-components';
 export const NFTTransferSummaryWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'flex-start' })};
   position: relative;
+  /* The page is mounted in a plain <div>, so it gets none of the global <main>
+     padding — without this the address card and the network fee row run into
+     the popup edges. Mirrors the GRC20 transfer summary. */
+  padding: 24px 20px 0;
   width: 100%;
   height: 100%;
-  min-height: auto;
+  min-height: 444px;
   align-items: center;
 
   .sub-header-wrapper {
@@ -32,7 +36,6 @@ export const NFTTransferSummaryWrapper = styled.div`
 
   .network-fee-wrapper {
     width: 100%;
-    height: 100%;
     margin-top: 12px;
 
     .error-message {
@@ -45,36 +48,30 @@ export const NFTTransferSummaryWrapper = styled.div`
     }
   }
 
-  .button-group {
-    position: absolute;
-    display: flex;
+  .simulate-error-banner {
     width: 100%;
-    bottom: 0;
-    justify-content: space-between;
+    padding: 10px 16px;
+    border-radius: 18px;
+    background-color: rgba(239, 45, 33, 0.08);
+    border: 1px solid ${getTheme('red', '_5')};
+    margin-top: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 20px;
+    color: ${getTheme('red', '_5')};
+    word-break: break-word;
+    overflow-wrap: break-word;
 
-    button {
-      width: 100%;
-      height: 48px;
-      border-radius: 30px;
-      ${fonts.body1Bold};
-      background-color: ${getTheme('neutral', '_5')};
-      transition: 0.2s;
-
-      &:hover {
-        background-color: ${getTheme('neutral', '_6')};
-      }
-
-      &:last-child {
-        margin-left: 10px;
-      }
-
-      &.send {
-        background-color: ${getTheme('primary', '_6')};
-
-        &:hover {
-          background-color: ${getTheme('primary', '_7')};
-        }
-      }
+    .error-label {
+      font-weight: 700;
     }
+  }
+
+  /* Reserves room under the content for the fixed bottom button group. */
+  .bottom-spacer {
+    width: 100%;
+    height: 116px;
+    flex-shrink: 0;
   }
 `;

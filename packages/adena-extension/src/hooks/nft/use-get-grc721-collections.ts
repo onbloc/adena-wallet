@@ -20,11 +20,9 @@ export const useGetGRC721Collections = (
         return null;
       }
 
-      const collections = await tokenService
+      return tokenService
         .getAccountGRC721Collections(currentAccount.id, currentNetwork.chainId)
         .catch(() => []);
-
-      return collections.map((collection) => ({ ...collection, tokenId: '0' }));
     },
     staleTime: Infinity,
     keepPreviousData: true,

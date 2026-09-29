@@ -9,11 +9,10 @@ import { useNetwork } from './use-network';
 
 import { TokenState } from '@states';
 import { useQuery } from '@tanstack/react-query';
-import { GRC20TokenModel, GRC721CollectionModel, TokenModel } from '@types';
+import { GRC20TokenModel, TokenModel } from '@types';
 import { Account, TokenProfile } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo } from 'react';
-import { useNFTCollectionHandler } from './nft/use-collection-handler';
 import { useGRC20Tokens } from './use-grc20-tokens';
 import { useTransferTokens } from './wallet/use-transfer-tokens';
 
@@ -82,7 +81,6 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const { currentNetwork, currentAtomoneNetwork } = useNetwork();
   const chain = useChain();
   const { fetchTransferTokens } = useTransferTokens();
-  const { addCollections } = useNFTCollectionHandler();
   const { data: grc20Tokens } = useGRC20Tokens();
 
   const { data: allTokenMetainfos = null } = useQuery<TokenModel[]>(
@@ -141,9 +139,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
       const missing = cosmosProfiles.filter(
         (profile) =>
-          !stored.find(
-            (m) => m.tokenId === profile.id && m.networkId === profile.chainProfileId,
-          ),
+          !stored.find((m) => m.tokenId === profile.id && m.networkId === profile.chainProfileId),
       );
       if (missing.length === 0) return;
 
@@ -240,27 +236,16 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
      * The new tokens are added to the account's token information.
      */
     const storedGRC20Tokens = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-    const storedCollections = await tokenService.getAccountGRC721Collections(
-      currentAccount.id,
-      currentNetwork.chainId,
-    );
 
     const storedGRC20Packages = storedGRC20Tokens
       .filter((token: TokenModel) => token.networkId === currentNetwork.networkId)
       .map((grc20Token) => grc20Token.tokenId);
-    const storedGRC721Packages = storedCollections
-      .filter((token: GRC721CollectionModel) => token.networkId === currentNetwork.networkId)
-      .map((grc721Token) => grc721Token.packagePath);
 
     const filteredGRC20Packages = (transferTokens.grc20Packages || []).filter(
       (grc20Token) => !storedGRC20Packages.includes(grc20Token.tokenId),
     );
-    const filteredGRC721Packages = (transferTokens.grc721Packages || []).filter(
-      (grc721Token) => !storedGRC721Packages.includes(grc721Token.packagePath),
-    );
 
     await addTokenMetainfos(filteredGRC20Packages);
-    await addCollections(filteredGRC721Packages);
 
     await tokenService.initAccountTokenMetainfos(currentAccount.id);
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
@@ -290,27 +275,16 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
      * The new tokens are added to the account's token information.
      */
     const storedGRC20Tokens = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-    const storedCollections = await tokenService.getAccountGRC721Collections(
-      currentAccount.id,
-      currentNetwork.chainId,
-    );
 
     const storedGRC20Packages = storedGRC20Tokens
       .filter((token: TokenModel) => token.networkId === currentNetwork.networkId)
       .map((grc20Token) => grc20Token.tokenId);
-    const storedGRC721Packages = storedCollections
-      .filter((token: GRC721CollectionModel) => token.networkId === currentNetwork.networkId)
-      .map((grc721Token) => grc721Token.packagePath);
 
     const filteredGRC20Packages = (transferTokens.grc20Packages || []).filter(
       (grc20Token) => !storedGRC20Packages.includes(grc20Token.tokenId),
     );
-    const filteredGRC721Packages = (transferTokens.grc721Packages || []).filter(
-      (grc721Token) => !storedGRC721Packages.includes(grc721Token.packagePath),
-    );
 
     await addTokenMetainfos(filteredGRC20Packages);
-    await addCollections(filteredGRC721Packages);
 
     await tokenService.initAccountTokenMetainfos(currentAccount.id);
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
@@ -407,7 +381,9 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }
     const changedTokenMetainfo = {
       ...tokenMetainfo,
-      image: getTokenImage(tokenMetainfo) ?? '',
+      // Resource logo first, the token's own contract data behind it — never
+      // blank, which would discard an image only the chain knows about.
+      image: getTokenImage(tokenMetainfo) || tokenMetainfo.image,
     };
 
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
@@ -456,7 +432,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
         ...tokenMetainfo,
         main: false,
         display: true,
-        image: getTokenImage(tokenMetainfo) ?? '',
+        image: getTokenImage(tokenMetainfo) || tokenMetainfo.image,
       }));
 
     await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [

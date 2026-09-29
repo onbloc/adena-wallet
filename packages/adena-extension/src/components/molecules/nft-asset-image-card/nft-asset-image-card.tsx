@@ -14,22 +14,27 @@ export interface NFTAssetImageCardProps {
 }
 
 const NFTAssetImageCard: React.FC<NFTAssetImageCardProps> = ({ asset, queryGRC721TokenUri }) => {
+  const isQueryEnabled = !!asset.isTokenUri && !!asset.packagePath && !!asset.tokenId;
+
   const { data: tokenUri, isFetched: isFetchedTokenUri } = queryGRC721TokenUri(
     asset.packagePath,
     asset.tokenId,
     {
-      enabled: asset.isTokenUri,
+      enabled: isQueryEnabled,
       refetchOnMount: true,
     },
   );
 
+  // A disabled query never reports `isFetched`, so without this the card would
+  // render its loading skeleton forever for a realm that publishes no
+  // `TokenURI`. Nothing is coming — show the empty-image placeholder instead.
   const isFetchedTokenUriWithEnabled = useMemo(() => {
-    if (asset.isTokenUri) {
+    if (!isQueryEnabled) {
       return true;
     }
 
     return isFetchedTokenUri;
-  }, [asset, isFetchedTokenUri]);
+  }, [isQueryEnabled, isFetchedTokenUri]);
 
   return (
     <NFTAssetImageCardWrapper>

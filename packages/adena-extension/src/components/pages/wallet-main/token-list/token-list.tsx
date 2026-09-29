@@ -11,20 +11,31 @@ export interface TokenListItemState {
 
 export interface TokenListProps {
   tokens: Array<MainToken>;
+  /** Screen-wide USD display mode; see TokenListItemBalance. */
+  usdDisplay?: boolean;
   itemStateByTokenId?: Record<string, TokenListItemState>;
   placeholderCount?: number;
   disabled?: boolean;
+  /** tokenId of the row whose vesting panel is open, if any. */
+  expandedVestingTokenId?: string | null;
+  /** Chain block time for the vesting split; see TokenVestingPanel. */
+  blockTimeSec?: number | null;
   completeImageLoading: (imageUrl: string) => void;
   onClickTokenItem: (tokenId: string) => void;
+  onToggleVesting?: (tokenId: string) => void;
 }
 
 const TokenList: React.FC<TokenListProps> = ({
   tokens,
+  usdDisplay = false,
   itemStateByTokenId,
   placeholderCount = 0,
   disabled = false,
+  expandedVestingTokenId = null,
+  blockTimeSec = null,
   completeImageLoading,
   onClickTokenItem,
+  onToggleVesting,
 }) => {
   if (tokens.length === 0 && placeholderCount > 0) {
     return (
@@ -44,11 +55,15 @@ const TokenList: React.FC<TokenListProps> = ({
           <TokenListItem
             key={index}
             token={token}
+            usdDisplay={usdDisplay}
             loading={state?.loading}
             error={state?.error}
             disabled={disabled}
+            vestingExpanded={expandedVestingTokenId === token.tokenId}
+            blockTimeSec={blockTimeSec}
             completeImageLoading={completeImageLoading}
             onClickTokenItem={onClickTokenItem}
+            onToggleVesting={onToggleVesting}
           />
         );
       })}

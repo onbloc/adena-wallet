@@ -23,7 +23,6 @@ export interface ITokenRepository extends IGRC721TokenRepository {
     offset?: number;
     limit?: number;
   }) => Promise<{ items: GRC20TokenModel[]; totalCount: number }>;
-  fetchAllTransferPackagesBy: (address: string, fromBlockHeight: number) => Promise<string[]>;
   fetchAllTransferGRC20TokenPathsBy: (address: string) => Promise<string[]>;
   fetchAccountGRC20Tokens: (address: string) => Promise<GRC20TokenModel[] | null>;
   fetchGRC20TokenByPackagePath: (packagePath: string) => Promise<GRC20TokenModel>;
@@ -32,15 +31,18 @@ export interface ITokenRepository extends IGRC721TokenRepository {
   updateTokenMetainfos: (accountId: string, tokenMetainfos: TokenModel[]) => Promise<boolean>;
   deleteTokenMetainfos: (accountId: string) => Promise<boolean>;
   deleteAllTokenMetainfo: () => Promise<boolean>;
+
+  deleteGRC721SyncCache: () => Promise<boolean>;
 }
 
 export interface IGRC721TokenRepository {
   fetchGRC721Collections: () => Promise<GRC721CollectionModel[]>;
+  fetchAccountGRC721CollectionsBy: (address: string) => Promise<GRC721CollectionModel[]>;
   fetchGRC721CollectionByPackagePath: (packagePath: string) => Promise<GRC721CollectionModel>;
-  fetchGRC721TokenUriBy: (packagePath: string, address: string) => Promise<string>;
+  fetchGRC721TokenUriBy: (packagePath: string, tokenId: string) => Promise<string>;
   fetchGRC721TokenMetadataBy: (
     packagePath: string,
-    address: string,
+    tokenId: string,
   ) => Promise<GRC721MetadataModel>;
   fetchGRC721BalanceBy: (packagePath: string, address: string) => Promise<number>;
   fetchGRC721TokensBy: (packagePath: string, address: string) => Promise<GRC721Model[]>;

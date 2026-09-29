@@ -15,6 +15,7 @@ export * from './seed-view-and-copy';
 export * from './terms-checkbox';
 export * from './title-with-desc';
 export * from './token-balance';
+export * from './token-change-rate';
 export * from './transaction-history';
 export * from './underline-text-button';
 // web

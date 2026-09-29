@@ -1,6 +1,6 @@
 import { isAirgapAccount, isMultisigAccount, isSessionAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import styled from 'styled-components';
 
@@ -9,23 +9,34 @@ import IconDeposit from '@assets/icon-deposit';
 import IconSend from '@assets/icon-send';
 import IconSign from '@assets/icon-sign';
 import { CHAIN_ICON_MAP, COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
+import {
+  aggregateTokenValues,
+  getTokenPriceKey,
+  makeTokenValue,
+  PortfolioValue,
+} from '@common/utils/price-utils';
 import { MainActionButton, OfflineBanner } from '@components/atoms';
 import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
 import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
+import MainTotalPrice from '@components/pages/main/main-total-price/main-total-price';
 import TokenList, { TokenListItemState } from '@components/pages/wallet-main/token-list/token-list';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { getPortfolioBalanceState } from '@hooks/helpers/portfolio-balance-state';
 import { useLoadImages } from '@hooks/use-load-images';
 import { useNetwork } from '@hooks/use-network';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import { useTokenPrices } from '@hooks/use-token-prices';
+import { useChainBlockTime } from '@hooks/wallet/use-chain-block-time';
 import { useIsCurrentSessionRevoked } from '@hooks/wallet/use-current-session-revoked';
+import { useVestingInfo } from '@hooks/wallet/use-vesting-info';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { revokedDimStyle } from '@styles/session-revoked';
-import { RoutePath } from '@types';
+import { MainToken, RoutePath, TokenPriceRequest, TokenValue } from '@types';
 
 // `updateAllTokenMetainfos` walks the account's full transfer history to find
 // tokens the wallet has never seen — expensive, and not a balance read. The
@@ -33,6 +44,11 @@ import { RoutePath } from '@types';
 // this is only the safety net for a token arriving while the wallet sits open.
 const TOKEN_DISCOVERY_INTERVAL = 60_000;
 const ROW_COUNT_CACHE_KEY = 'walletMain.tokenRowCount';
+// The vesting panel needs the chain's clock, not the device's. It is polled
+// once a second while a panel is open so Spendable keeps moving, and slowly the
+// rest of the time so opening a panel finds a value already cached.
+const VESTING_BLOCK_TIME_OPEN_INTERVAL = 1_000;
+const VESTING_BLOCK_TIME_IDLE_INTERVAL = 30_000;
 
 // Read the last known visible token row count synchronously so the first
 // frame can reserve N placeholder rows. This keeps the list height stable
@@ -136,6 +152,30 @@ export const WalletMain = (): JSX.Element => {
 
   const { addLoadingImages, completeImageLoading } = useLoadImages();
 
+  // Null for every account without a grant, which is all but a handful; the
+  // native token row reveals the padlock and expander only when it is set.
+  const { vestingInfo } = useVestingInfo();
+  // The open panel lives here rather than inside the row so the block-time poll
+  // can follow it, and so the rows stay presentational.
+  const [expandedVestingTokenId, setExpandedVestingTokenId] = useState<string | null>(null);
+  const blockTimeSec = useChainBlockTime(
+    !!vestingInfo,
+    expandedVestingTokenId === null
+      ? VESTING_BLOCK_TIME_IDLE_INTERVAL
+      : VESTING_BLOCK_TIME_OPEN_INTERVAL,
+  );
+
+  const onToggleVesting = useCallback((tokenId: string) => {
+    setExpandedVestingTokenId((prev) => (prev === tokenId ? null : tokenId));
+  }, []);
+
+  // An account with no grant has no panel to keep open.
+  useEffect(() => {
+    if (!vestingInfo) {
+      setExpandedVestingTokenId(null);
+    }
+  }, [vestingInfo]);
+
   // Captured once on first render — never updates so the placeholder count
   // can't shift while metainfos hydrate.
   const cachedRowCountRef = useRef<number>(readCachedRowCount());
@@ -205,34 +245,90 @@ export const WalletMain = (): JSX.Element => {
     };
   }, [currentAccount?.id, currentNetwork.chainId]);
 
-  const tokens = useMemo(() => {
-    return currentBalances
-      .filter((tokenBalance) => tokenBalance.display)
-      .map((tokenBalance) => {
-        const isCosmos = tokenBalance.networkId !== currentNetwork.networkId;
-        const hasAmount = tokenBalance.amount.value !== '';
-        const parsed = hasAmount ? BigNumber(tokenBalance.amount.value) : null;
-        // Treat non-finite values as a load failure — a malformed balance
-        // string would otherwise stringify to "NaN" and leak into the row.
-        const displayValue = !parsed ? '' : parsed.isFinite() ? parsed.toFormat() : '-';
-        return {
-          tokenId: tokenBalance.tokenId,
-          logo:
-            getTokenImage(tokenBalance) ||
-            COSMOS_TOKEN_ICON_MAP[tokenBalance.tokenId] ||
-            `${UnknownTokenIcon}`,
-          name: tokenBalance.name,
-          balanceAmount: {
-            value: displayValue,
-            // When fetch errored the row's amount is EMPTY_AMOUNT (denom='').
-            // Fall back to the token's own symbol so the error state can read
-            // "⚠ - ATONE" instead of dropping the unit entirely.
-            denom: tokenBalance.amount.denom || tokenBalance.symbol,
-          },
-          chainIconUrl: isCosmos ? CHAIN_ICON_MAP[tokenBalance.networkId] : undefined,
-        };
-      });
-  }, [currentBalances, getTokenImage, currentNetwork]);
+  const displayedBalances = useMemo(
+    () => currentBalances.filter((tokenBalance) => tokenBalance.display),
+    [currentBalances],
+  );
+
+  // Only rows on screen are quoted; hidden tokens are not part of the total.
+  // `decimals` rides along because a token quoted under another asset (wugnot
+  // under GNOT) needs it to restate that asset's price in its own unit.
+  const priceRequests = useMemo<TokenPriceRequest[]>(
+    () =>
+      displayedBalances.map(({ tokenId, networkId, decimals }) => ({
+        tokenId,
+        networkId,
+        decimals,
+      })),
+    [displayedBalances],
+  );
+
+  const { tokenPrices } = useTokenPrices(priceRequests);
+
+  const tokens = useMemo<MainToken[]>(() => {
+    return displayedBalances.map((tokenBalance) => {
+      const isCosmos = tokenBalance.networkId !== currentNetwork.networkId;
+      const hasAmount = tokenBalance.amount.value !== '';
+      const parsed = hasAmount ? BigNumber(tokenBalance.amount.value) : null;
+      // Treat non-finite values as a load failure — a malformed balance
+      // string would otherwise stringify to "NaN" and leak into the row.
+      const displayValue = !parsed ? '' : parsed.isFinite() ? parsed.toFormat() : '-';
+      // No usable balance means no USD value either.
+      const tokenValue = parsed?.isFinite()
+        ? makeTokenValue(
+            displayValue,
+            tokenPrices[getTokenPriceKey(tokenBalance.tokenId, tokenBalance.networkId)],
+          )
+        : null;
+      return {
+        tokenId: tokenBalance.tokenId,
+        logo:
+          getTokenImage(tokenBalance) ||
+          COSMOS_TOKEN_ICON_MAP[tokenBalance.tokenId] ||
+          // Last resort before the placeholder: whatever the token's own
+          // contract data carried, since gno-token-resource describes only the
+          // tokens someone has curated.
+          tokenBalance.image ||
+          `${UnknownTokenIcon}`,
+        name: tokenBalance.name,
+        balanceAmount: {
+          value: displayValue,
+          // When fetch errored the row's amount is EMPTY_AMOUNT (denom='').
+          // Fall back to the token's own symbol so the error state can read
+          // "⚠ - ATONE" instead of dropping the unit entirely.
+          denom: tokenBalance.amount.denom || tokenBalance.symbol,
+        },
+        chainIconUrl: isCosmos ? CHAIN_ICON_MAP[tokenBalance.networkId] : undefined,
+        tokenValue,
+        // A grant lives on the Gno account, so only the native row can show it.
+        vesting: !isCosmos && tokenBalance.main ? vestingInfo : null,
+      };
+    });
+  }, [displayedBalances, tokenPrices, getTokenImage, currentNetwork, vestingInfo]);
+
+  // Null when nothing on screen is quoted: keep the native-balance headline.
+  const portfolioValue = useMemo<PortfolioValue | null>(() => {
+    const values = tokens
+      .map((token) => token.tokenValue)
+      .filter((tokenValue): tokenValue is TokenValue => !!tokenValue);
+
+    return values.length === 0 ? null : aggregateTokenValues(values);
+  }, [tokens]);
+
+  // What the headline can honestly claim about the balances feeding it: a
+  // failed refresh makes the total stale, and a balance that has not arrived
+  // makes it partial. The row-level "-" and skeleton already say which holding
+  // is affected; this says whether the total itself can be trusted.
+  const { unavailable: portfolioUnavailable, incomplete: portfolioIncomplete } = useMemo(
+    () =>
+      getPortfolioBalanceState(displayedBalances, tokenPrices, errorNetworkIds, loadingTokenKeys),
+    [displayedBalances, tokenPrices, errorNetworkIds, loadingTokenKeys],
+  );
+
+  // One quoted token switches the whole screen into USD display mode. The list
+  // must not mix two row shapes, so unquoted rows keep the USD layout and read
+  // "-" where their value would be.
+  const usdDisplayMode = portfolioValue !== null;
 
   const itemStateByTokenId = useMemo<Record<string, TokenListItemState>>(() => {
     const map: Record<string, TokenListItemState> = {};
@@ -309,13 +405,21 @@ export const WalletMain = (): JSX.Element => {
         />
       </div>
       <div className='token-balance-wrapper'>
-        <MainTokenBalance
-          amount={{
-            value: mainBalanceValue,
-            denom: mainTokenBalance === null ? '' : mainTokenBalance.denom,
-          }}
-          loading={isMainBalanceLoading}
-        />
+        {portfolioValue ? (
+          <MainTotalPrice
+            value={portfolioValue}
+            unavailable={portfolioUnavailable}
+            loading={portfolioIncomplete}
+          />
+        ) : (
+          <MainTokenBalance
+            amount={{
+              value: mainBalanceValue,
+              denom: mainTokenBalance === null ? '' : mainTokenBalance.denom,
+            }}
+            loading={isMainBalanceLoading}
+          />
+        )}
       </div>
 
       <div className='main-button-wrapper'>
@@ -344,7 +448,11 @@ export const WalletMain = (): JSX.Element => {
       <div className='token-list-wrapper'>
         <TokenList
           tokens={tokens}
+          usdDisplay={usdDisplayMode}
           itemStateByTokenId={itemStateByTokenId}
+          expandedVestingTokenId={expandedVestingTokenId}
+          blockTimeSec={blockTimeSec}
+          onToggleVesting={onToggleVesting}
           placeholderCount={cachedRowCountRef.current}
           disabled={actionsDisabled}
           completeImageLoading={completeImageLoading}
