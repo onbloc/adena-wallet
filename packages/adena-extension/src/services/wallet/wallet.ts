@@ -140,11 +140,6 @@ export class WalletService {
     const serializedWallet = await wallet.serialize(password, salt);
     await this.walletRepository.updateWalletPassword(password);
     await this.walletRepository.updateSerializedWallet(serializedWallet);
-    try {
-      chrome?.action?.setPopup({ popup: 'popup.html' });
-    } catch (e) {
-      console.error(e);
-    }
   };
 
   public updateWallet = async (wallet: Wallet): Promise<void> => {
@@ -156,11 +151,6 @@ export class WalletService {
     const serializedWallet = await wallet.serialize(password, salt);
 
     await this.walletRepository.updateSerializedWallet(serializedWallet);
-    try {
-      chrome?.action?.setPopup({ popup: 'popup.html' });
-    } catch (e) {
-      console.error(e);
-    }
   };
 
   /**
@@ -337,11 +327,6 @@ export class WalletService {
     await this.walletRepository.deleteSerializedWallet();
     await this.walletRepository.deleteWalletPassword();
     await this.walletRepository.deleteKdfSalt();
-    try {
-      chrome?.action?.setPopup({ popup: '' });
-    } catch (e) {
-      console.error(e);
-    }
     return true;
   };
 }
