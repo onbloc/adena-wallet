@@ -201,7 +201,12 @@ export class WalletSessionService {
       throw new SessionImportError('network_error', 'Gno provider not initialized');
     }
 
-    const wallet = await this.walletService.getCurrentWallet();
+    // Read-modify-write: the clone below is persisted through the service-level
+    // `updateWallet`, which does not refresh the instance the web document holds.
+    // Reusing that instance would make a second import in the same mounted
+    // document clone a pre-import snapshot and overwrite the first import, so
+    // this one read has to be authoritative even though it costs a KDF.
+    const wallet = await this.walletService.loadWallet();
     const existingWalletSessionAddrs = await this.getWalletSessionAddresses(
       wallet,
       currentNetwork.addressPrefix,

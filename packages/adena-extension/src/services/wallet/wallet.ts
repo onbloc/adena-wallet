@@ -85,24 +85,39 @@ export class WalletService {
 
   /**
    * Returns the wallet of the unlocked session, reusing the instance the caller's
-   * context already holds when one is registered.
+   * context already holds when one is registered and the wallet is still
+   * unlocked.
    *
    * Prefer this over `loadWallet` for signing and for reads that only need the
    * current accounts and keyrings: `loadWallet` re-reads storage and re-runs the
    * Argon2id KDF every time (~160ms), which signing paths and pollers were
-   * paying on every single call. Keep using `loadWallet` where the authoritative
-   * on-disk state is the point, such as initializing or re-initializing a
-   * context after a lock.
+   * paying on every single call.
+   *
+   * Keep using `loadWallet` where the authoritative on-disk state is the point:
+   * initializing a context, and any read-modify-write of the wallet — a
+   * service-level `updateWallet` does not refresh the instance a UI context
+   * holds, so a second modification would be built on a pre-write snapshot.
    *
    * @returns Wallet
    */
   public getCurrentWallet = async (): Promise<Wallet> => {
     const currentWallet = this.currentWalletResolver?.() ?? null;
-    if (currentWallet) {
-      return currentWallet;
+    if (!currentWallet) {
+      return this.loadWallet();
     }
 
-    return this.loadWallet();
+    // The session password is shared by every document, the resolver is not:
+    // each popup window and each web page builds its own WalletService. Locking
+    // in one document clears only that service's resolver, so without checking
+    // the shared state here a document that was already open would keep signing
+    // with its cached keyrings after the wallet had been locked elsewhere.
+    // Falling through to `loadWallet` reproduces the pre-reuse behaviour: it
+    // throws once the password is gone.
+    if (await this.isLocked()) {
+      return this.loadWallet();
+    }
+
+    return currentWallet;
   };
 
   /**
