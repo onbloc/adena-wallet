@@ -5,16 +5,56 @@
     <meta charset="utf-8" />
     <link href="/resources/fonts/inter.css" rel="stylesheet" type="text/css" />
     <style>
+      /* Mirrors GlobalPopupStyle. That style is injected by styled-components
+         once popup.js has been parsed and evaluated, so without these the
+         document has no size while the bundle loads and Chrome opens the action
+         popup as a collapsed frame. Keep the two in sync. */
       html,
       body {
+        width: 100%;
+        height: 100%;
+        min-width: 360px;
+        min-height: 540px;
+        margin: 0;
+        padding: 0;
         background-color: #212128;
         overflow-y: auto;
         scroll-behavior: auto;
+      }
+
+      /* Painted before any script runs, so the popup shows it is working instead
+         of an empty panel. Removed by popup.tsx right before React mounts. */
+      #boot {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        width: 100%;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #boot::after {
+        content: '';
+        width: 28px;
+        height: 28px;
+        border: 3px solid #39394e;
+        border-top-color: #a3a3b5;
+        border-radius: 50%;
+        animation: boot-spin 0.8s linear infinite;
+      }
+
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
     </style>
   </head>
 
   <body>
+    <div id="boot"></div>
     <div id="popup"></div>
     <div id="portal-root">
       <div id="portal-popup"></div>

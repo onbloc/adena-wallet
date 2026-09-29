@@ -258,7 +258,7 @@ export class MultisigService {
     const provider = this.getGnoProvider();
     const address = await account.getAddress(addressPrefix);
     const accountInfo = await provider.getAccountInfo(address);
-    const wallet = await this.walletService.loadWallet();
+    const wallet = await this.walletService.getCurrentWallet();
     const { signature } = await wallet.signByAccountId(provider, account.id, document);
     const signatures = signature.map((s) => ({
       pubKey: {

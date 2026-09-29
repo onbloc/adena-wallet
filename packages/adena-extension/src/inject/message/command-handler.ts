@@ -34,8 +34,24 @@ export class CommandHandler {
     _: chrome.runtime.MessageSender,
     sendResponse: (response?: CommandMessageData) => void,
   ): Promise<void> => {
+    // background.ts holds the message channel open for every command message
+    // (`return true`), so an exit that does not answer leaves the caller's
+    // promise pending forever — the popup then waits on `isLocked()` and never
+    // renders. Route every exit through `respond`, and let the `finally` answer
+    // the paths no branch above handled.
+    let responded = false;
+    const respond = (response: CommandMessageData): void => {
+      if (responded) {
+        return;
+      }
+
+      responded = true;
+      sendResponse(response);
+    };
+
     try {
       if (message.code !== 0) {
+        respond(makeInternalErrorResponse(message));
         return;
       }
 
@@ -52,7 +68,7 @@ export class CommandHandler {
         const password = message.data.password;
         const responseData = await encryptPassword(key, password);
 
-        sendResponse(makeSuccessResponse(message, responseData));
+        respond(makeSuccessResponse(message, responseData));
         return;
       }
 
@@ -70,19 +86,19 @@ export class CommandHandler {
           password: decryptedPassword,
         };
 
-        sendResponse(makeSuccessResponse(message, responseData));
+        respond(makeSuccessResponse(message, responseData));
         return;
       }
 
       if (message.command === 'clearEncryptKey') {
         await clearInMemoryKey(inMemoryProvider);
-        sendResponse(makeSuccessResponse(message));
+        respond(makeSuccessResponse(message));
         return;
       }
 
       if (message.command === 'resetAutoLockTimer') {
         await resetAutoLockAlarm();
-        sendResponse(makeSuccessResponse(message));
+        respond(makeSuccessResponse(message));
         return;
       }
 
@@ -90,20 +106,23 @@ export class CommandHandler {
         // The new duration is already persisted by the service layer; the
         // helper re-reads from storage so we don't need to trust the payload.
         await resetAutoLockAlarm();
-        sendResponse(makeSuccessResponse(message));
+        respond(makeSuccessResponse(message));
+        return;
+      }
+
+      if (message.command === 'clearPopup') {
+        await clearInMemoryKey(inMemoryProvider);
+        await clearAutoLockAlarm();
+        await clearPopup();
+        respond(makeSuccessResponse(message));
         return;
       }
     } catch (error) {
       console.info(error);
-      sendResponse(makeInternalErrorResponse(message));
-    }
-
-    if (message.command === 'clearPopup') {
-      await clearInMemoryKey(inMemoryProvider);
-      await clearAutoLockAlarm();
-      await clearPopup();
-      sendResponse({ ...message, code: 200 });
-      return;
+      respond(makeInternalErrorResponse(message));
+    } finally {
+      // No-op once a branch has answered.
+      respond(makeInternalErrorResponse(message));
     }
   };
 

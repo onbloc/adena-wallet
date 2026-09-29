@@ -83,12 +83,22 @@ function makeWalletService(wallet: AdenaWallet): WalletService & {
   savedWallet: AdenaWallet | null;
   updateWallet: jest.Mock;
 } {
+  // Held outside the object literal: reading it back through `service` inside
+  // `loadWallet` would make the literal's type depend on itself.
+  let persisted: AdenaWallet | null = null;
   const service = {
     savedWallet: null as AdenaWallet | null,
     existsWallet: jest.fn(async () => true),
     isLocked: jest.fn(async () => false),
-    loadWallet: jest.fn(async () => wallet),
+    // Authoritative read: reflects whatever was persisted last, the way storage
+    // does.
+    loadWallet: jest.fn(async () => persisted ?? wallet),
+    // The instance a mounted document holds. A service-level `updateWallet`
+    // never refreshes it, so it stays at the state the document mounted with —
+    // which is exactly why a read-modify-write must not use it.
+    getCurrentWallet: jest.fn(async () => wallet),
     updateWallet: jest.fn(async (nextWallet: AdenaWallet) => {
+      persisted = nextWallet;
       service.savedWallet = nextWallet;
     }),
   };
@@ -334,6 +344,44 @@ describe('WalletSessionService bulk import', () => {
       'Session 1',
       'Session 2',
     ]);
+  });
+
+  it('keeps the first import when a second one runs in the same document', async () => {
+    const first = await makeSessionRecord(PRIV_KEY_1);
+    const second = await makeSessionRecord(PRIV_KEY_2);
+    const records = {
+      [first.sessionAddr]: first.record,
+      [second.sessionAddr]: second.record,
+    };
+    const provider = {
+      getSession: jest.fn(async (_master: string, sessionAddr: string) => records[sessionAddr]),
+    } as unknown as GnoProvider;
+    const repository = makeSessionRepository();
+    const walletService = makeWalletService(new AdenaWallet());
+    const service = makeService(provider, repository, walletService);
+
+    const importOne = async (privateKey: string, sessionAddr: string): Promise<void> => {
+      const preview = await service.previewSessionImportForAddress(
+        privateKey,
+        MASTER_ADDRESS,
+        sessionAddr,
+        network,
+      );
+      await service.commitSessionImports([preview], network, { [sessionAddr]: privateKey });
+    };
+
+    await importOne(PRIV_KEY_1, first.sessionAddr);
+    await importOne(PRIV_KEY_2, second.sessionAddr);
+
+    // The web app keeps one mounted document across routes, so the second import
+    // must still be built on the persisted result of the first one.
+    expect(walletService.savedWallet?.accounts).toHaveLength(2);
+    expect(walletService.savedWallet?.accounts.map((account) => account.name)).toEqual([
+      'Session 1',
+      'Session 2',
+    ]);
+    expect(repository.sessions[first.sessionAddr]).toBeDefined();
+    expect(repository.sessions[second.sessionAddr]).toBeDefined();
   });
 
   it('bootstraps imported sessions with session names for a fresh wallet', async () => {

@@ -36,7 +36,9 @@ const makeAdenaContext = (
   walletService: Record<string, unknown>,
   currentAccountId: string | null = null,
 ): Record<string, unknown> => ({
-  walletService: { id: WALLET_SERVICE_ID, ...walletService },
+  // `setCurrentWalletResolver` is registered by the provider on mount, so every
+  // walletService stub needs it even when the test does not care about it.
+  walletService: { id: WALLET_SERVICE_ID, setCurrentWalletResolver: jest.fn(), ...walletService },
   accountService: {
     getCurrentAccountId: jest.fn().mockResolvedValue(currentAccountId),
     changeCurrentAccount: jest.fn().mockResolvedValue(true),

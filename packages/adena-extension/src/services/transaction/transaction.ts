@@ -237,7 +237,7 @@ export class TransactionService {
     document: Document,
   ): Promise<EncodeTxSignature> => {
     const provider = this.getGnoProvider();
-    const wallet = await this.walletService.loadWallet();
+    const wallet = await this.walletService.getCurrentWallet();
     const { signature } = await wallet.signByAccountId(provider, account.id, document);
     const signatures = signature.map((s) => ({
       pubKey: {
@@ -371,7 +371,7 @@ export class TransactionService {
       throw new Error('CosmosProvider not injected');
     }
     this.resolveCosmosProfile(document.chainId);
-    const wallet = await this.walletService.loadWallet();
+    const wallet = await this.walletService.getCurrentWallet();
     const signMode = this.resolvePreferredSignMode(document.chainId);
     return wallet.signCosmosByAccountId(
       accountId,
@@ -433,7 +433,7 @@ export class TransactionService {
   private resolveCosmosSigner = async (
     accountId: string,
   ): Promise<{ account: Account; keyring: Keyring; hdPath: number | undefined }> => {
-    const wallet = await this.walletService.loadWallet();
+    const wallet = await this.walletService.getCurrentWallet();
     const account = wallet.accounts.find((a) => a.id === accountId);
     if (!account) {
       throw new Error('ACCOUNT_NOT_FOUND');
@@ -471,7 +471,7 @@ export class TransactionService {
       ? firstAllowed.split(':')[1]
       : firstAllowed;
 
-    const wallet = await this.walletService.loadWallet();
+    const wallet = await this.walletService.getCurrentWallet();
     return wallet.estimateCosmosFeeByAccountId(
       accountId,
       document,
@@ -556,7 +556,7 @@ export class TransactionService {
       throw new Error('CosmosProvider not injected');
     }
     this.resolveCosmosProfile(chainId);
-    const wallet = await this.walletService.loadWallet();
+    const wallet = await this.walletService.getCurrentWallet();
     const result = await wallet.broadcastCosmosTx(signedTx, this.cosmosProvider);
     this.cosmosProvider.invalidate();
     return result;
