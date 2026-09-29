@@ -58,7 +58,7 @@ export const useTokenBalance = (): {
   const { currentNetwork, currentAtomoneNetwork } = useNetwork();
   const { currentAccount, currentBalanceAddress } = useCurrentAccount();
   const { existWallet, lockedWallet } = useWallet();
-  const { storedOrder, persistOrder } = useTokenOrder();
+  const { storedOrder, isOrderResolved, persistOrder } = useTokenOrder();
 
   useEffect(() => {
     balanceService.setTokenMetainfos(tokenMetainfos);
@@ -90,6 +90,7 @@ export const useTokenBalance = (): {
     refetch: refetchGnoBalances,
     isError: isGnoBalanceError,
     fetchStatus: gnoFetchStatus,
+    isPreviousData: isGnoBalancePrevious,
   } = useQuery<TokenBalanceType[]>(
     // 'gno' discriminator keeps this cache entry separate from the Cosmos query
     // even though both share the 'balances' prefix.
@@ -120,6 +121,7 @@ export const useTokenBalance = (): {
     data: cosmosResults = [],
     refetch: refetchCosmosBalances,
     fetchStatus: cosmosFetchStatus,
+    isPreviousData: isCosmosBalancePrevious,
   } = useQuery<CosmosFetchResult[]>(
     // Keyed by account id (not the object reference) to avoid spurious refetches
     // when a new Account instance is created from the same underlying data.
@@ -277,6 +279,13 @@ export const useTokenBalance = (): {
     currentBalances: TokenBalanceType[];
     balancesSettled: boolean;
   }>(() => {
+    // Nothing may be ordered until the stored order is known. Rendering rows
+    // in balance order first and rearranging them once the read returns is the
+    // same reshuffle, just sourced from storage latency instead of the network.
+    if (!isOrderResolved) {
+      return { currentBalances: [], balancesSettled: false };
+    }
+
     const gnoRows: TokenBalanceType[] = tokenMetainfos.map((meta) => {
       const found = gnoBalances.find((b) => b.tokenId === meta.tokenId);
       return {
@@ -297,7 +306,13 @@ export const useTokenBalance = (): {
     });
 
     const rows = [...gnoRows, ...cosmosRows];
+    // Amounts alone do not mean these balances are this account's. Both queries
+    // keep the previous account's data on a switch (keepPreviousData), which
+    // would otherwise read as settled and persist the old account's ranking
+    // under the new account's key.
+    const showingPreviousBalances = isGnoBalancePrevious || isCosmosBalancePrevious;
     const settled =
+      !showingPreviousBalances &&
       rows.length > 0 &&
       rows.every((row) => row.amount.value !== '' || errorNetworkIds.has(row.networkId));
 
@@ -316,6 +331,9 @@ export const useTokenBalance = (): {
     cosmosShellTokens,
     errorNetworkIds,
     storedOrder,
+    isOrderResolved,
+    isGnoBalancePrevious,
+    isCosmosBalancePrevious,
   ]);
 
   // Remember where the rows settled, and keep remembering: a refetch that

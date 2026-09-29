@@ -1,5 +1,5 @@
 /**
- * The order the token rows were last seen in, per account and chain.
+ * The order the token rows were last seen in, per account and network.
  *
  * The wallet-main list is ordered by balance (see `sort-token-balances.ts`),
  * and balances arrive row by row: on a cold start every row begins with an
@@ -10,12 +10,14 @@
  * to render until the balances are all in. This is derived state — losing it
  * costs one reshuffled load and nothing else — so it lives outside the
  * migrated wallet blob in `ChromeCacheStorage`: no version bump, no migration.
+ *
+ * Each scope is stored under its own key, so a write never has to merge a map
+ * that another extension window may be writing at the same time.
  */
 
-import { AdenaStorage, CacheValueType, TOKEN_ORDER_CACHE_KEY } from '@common/storage';
-import { StorageManager } from '@common/storage/storage-manager';
+import { ChromeCacheStorage, TOKEN_ORDER_CACHE_KEY_PREFIX } from '@common/storage';
 
-export { TOKEN_ORDER_CACHE_KEY };
+export { TOKEN_ORDER_CACHE_KEY_PREFIX };
 
 interface TokenOrderEntry {
   /** Row keys (see {@link tokenRowKey}) in the order they last settled. */
@@ -24,30 +26,25 @@ interface TokenOrderEntry {
   updatedAt: number;
 }
 
-type TokenOrderCache = Record<string, TokenOrderEntry>;
-
 /**
- * How many account/chain entries to keep.
+ * How many account/network scopes to keep.
  *
- * One entry per account per chain would otherwise grow without bound as
+ * One entry per account per network would otherwise grow without bound as
  * accounts are added and networks switched, and nothing else prunes it —
  * an account removed from the wallet leaves its entry behind. Dropping the
- * stalest entry costs that account one reshuffled load when it comes back.
+ * stalest entry costs that scope one reshuffled load when it comes back.
  */
 const MAX_CACHE_ENTRIES = 32;
 
-let cacheStorage: StorageManager<CacheValueType> | null = null;
+let cacheStorage: ChromeCacheStorage | null = null;
 
-/** Serialises writes so concurrent callers do not overwrite each other. */
-let writeQueue: Promise<void> = Promise.resolve();
-
-function getCacheStorage(): StorageManager<CacheValueType> | null {
+function getCacheStorage(): ChromeCacheStorage | null {
   if (cacheStorage) {
     return cacheStorage;
   }
 
   try {
-    cacheStorage = AdenaStorage.cache<CacheValueType>();
+    cacheStorage = new ChromeCacheStorage();
   } catch {
     // No chrome.storage available: the list falls back to balance order.
     return null;
@@ -82,28 +79,22 @@ export function buildTokenOrderCacheKey(
   networkId: string,
   cosmosNetworkId?: string | null,
 ): string {
-  return `${accountId}:${networkId}:${cosmosNetworkId ?? 'none'}`;
-}
-
-/** The whole store, or an empty map when nothing has been stored yet. */
-async function readTokenOrderStore(): Promise<TokenOrderCache> {
-  const store = await getCacheStorage()
-    ?.getToObject<TokenOrderCache>(TOKEN_ORDER_CACHE_KEY)
-    .catch(() => null);
-
-  return store || {};
+  return `${TOKEN_ORDER_CACHE_KEY_PREFIX}${accountId}:${networkId}:${cosmosNetworkId ?? 'none'}`;
 }
 
 /**
- * The stored order for one account/chain, or `null` when there is none.
+ * The stored order for one scope, or `null` when there is none.
  *
  * Malformed values read back as `null` rather than throwing: the caller simply
  * orders by balance instead, which is what it would do on a cold cache.
  */
 export async function readTokenOrder(cacheKey: string): Promise<string[] | null> {
-  const store = await readTokenOrderStore();
-  const order = store[cacheKey]?.order;
+  const entry: TokenOrderEntry | null =
+    (await getCacheStorage()
+      ?.get(cacheKey)
+      .catch(() => null)) ?? null;
 
+  const order = entry?.order;
   if (!Array.isArray(order)) {
     return null;
   }
@@ -114,12 +105,11 @@ export async function readTokenOrder(cacheKey: string): Promise<string[] | null>
 /**
  * Record the order the rows are in now.
  *
- * Writes are chained rather than fired in parallel: several screens mount
- * `useTokenBalance` at once, and an unserialised read-modify-write would have
- * each of them save over the entries the others just added.
+ * Writes its own key and nothing else, so two windows saving different scopes
+ * at the same time cannot overwrite each other.
  *
- * A failed write only costs the next load its stable order, so it is swallowed
- * and the queue is kept alive.
+ * A failed write only costs the next load its stable order, so it is logged
+ * and swallowed.
  */
 export async function writeTokenOrder(cacheKey: string, order: string[]): Promise<void> {
   const storage = getCacheStorage();
@@ -127,21 +117,13 @@ export async function writeTokenOrder(cacheKey: string, order: string[]): Promis
     return;
   }
 
-  const write = writeQueue.then(async () => {
-    const store = await readTokenOrderStore();
-    const updated: TokenOrderCache = {
-      ...store,
-      [cacheKey]: { order, updatedAt: Date.now() },
-    };
-
-    await storage.setByObject(TOKEN_ORDER_CACHE_KEY, evictStaleEntries(updated, cacheKey));
-  });
-
-  writeQueue = write.catch(() => undefined);
-
-  return write.catch((error) => {
+  try {
+    const entry: TokenOrderEntry = { order, updatedAt: Date.now() };
+    await storage.set(cacheKey, entry);
+    await evictStaleEntries(storage, cacheKey);
+  } catch (error) {
     console.warn('[token-order] failed to store order', error);
-  });
+  }
 }
 
 /** Drop every stored order; the account ids in the keys go with them. */
@@ -151,40 +133,37 @@ export async function clearTokenOrderCache(): Promise<void> {
     return;
   }
 
-  const remove = writeQueue.then(() => storage.remove(TOKEN_ORDER_CACHE_KEY));
-
-  writeQueue = remove.then(
-    () => undefined,
-    () => undefined,
-  );
-
-  await remove.catch((error) => {
+  try {
+    const entries = await storage.getByPrefix(TOKEN_ORDER_CACHE_KEY_PREFIX);
+    await Promise.all(Object.keys(entries).map((key) => storage.remove(key)));
+  } catch (error) {
     console.warn('[token-order] failed to clear orders', error);
-  });
+  }
 }
 
 /**
- * Keeps the newest {@link MAX_CACHE_ENTRIES} entries, dropping the rest.
+ * Prune the scopes past {@link MAX_CACHE_ENTRIES}, newest kept.
  *
  * `keptKey` — the entry just written — is held back from the ranking rather
  * than ranked with the others: entries written within the same millisecond
  * carry the same `updatedAt`, and a stable sort would then order them by
  * insertion and evict the newest one of the group, which is the entry the
  * caller is using right now.
+ *
+ * Removing a key is idempotent, so two windows pruning at once is harmless.
  */
-function evictStaleEntries(store: TokenOrderCache, keptKey: string): TokenOrderCache {
-  const keys = Object.keys(store);
+async function evictStaleEntries(storage: ChromeCacheStorage, keptKey: string): Promise<void> {
+  const entries = await storage.getByPrefix<TokenOrderEntry>(TOKEN_ORDER_CACHE_KEY_PREFIX);
+
+  const keys = Object.keys(entries);
   if (keys.length <= MAX_CACHE_ENTRIES) {
-    return store;
+    return;
   }
 
-  const survivors = keys
+  const stale = keys
     .filter((key) => key !== keptKey)
-    .sort((a, b) => (store[b]?.updatedAt ?? 0) - (store[a]?.updatedAt ?? 0))
-    .slice(0, MAX_CACHE_ENTRIES - 1);
+    .sort((a, b) => (entries[b]?.updatedAt ?? 0) - (entries[a]?.updatedAt ?? 0))
+    .slice(MAX_CACHE_ENTRIES - 1);
 
-  return [keptKey, ...survivors].reduce<TokenOrderCache>((acc, key) => {
-    acc[key] = store[key];
-    return acc;
-  }, {});
+  await Promise.all(stale.map((key) => storage.remove(key)));
 }
