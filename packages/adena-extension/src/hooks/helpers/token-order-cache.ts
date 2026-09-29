@@ -38,6 +38,21 @@ const MAX_CACHE_ENTRIES = 32;
 
 let cacheStorage: ChromeCacheStorage | null = null;
 
+/**
+ * The writes that have been asked for but may not have landed yet.
+ *
+ * Only a reset reads this: it has to wait for an in-flight `storage.set`
+ * before it can know which keys are there to remove.
+ */
+let pendingWrites: Promise<void> = Promise.resolve();
+
+/**
+ * Bumped by {@link clearTokenOrderCache}. A write records this when it is
+ * asked for and re-checks it when it runs, so a write from before a wallet
+ * reset cannot land after it.
+ */
+let cacheEpoch = 0;
+
 function getCacheStorage(): ChromeCacheStorage | null {
   if (cacheStorage) {
     return cacheStorage;
@@ -108,8 +123,15 @@ export async function readTokenOrder(cacheKey: string): Promise<string[] | null>
  * Writes its own key and nothing else, so two windows saving different scopes
  * at the same time cannot overwrite each other.
  *
+ * Chained onto {@link pendingWrites} — not to serialise the scopes, which the
+ * separate keys already take care of, but so a reset can tell what is still in
+ * flight and wait for it. `epoch` is taken when the caller asks for the write
+ * and checked again when it runs: a reset moves the epoch on, and a write
+ * still queued behind it is dropped rather than restoring an order for a
+ * wallet that no longer exists.
+ *
  * A failed write only costs the next load its stable order, so it is logged
- * and swallowed.
+ * and swallowed, and the chain is kept alive either way.
  */
 export async function writeTokenOrder(cacheKey: string, order: string[]): Promise<void> {
   const storage = getCacheStorage();
@@ -117,28 +139,56 @@ export async function writeTokenOrder(cacheKey: string, order: string[]): Promis
     return;
   }
 
-  try {
+  const epoch = cacheEpoch;
+
+  const write = pendingWrites.then(async () => {
+    if (epoch !== cacheEpoch) {
+      return;
+    }
+
     const entry: TokenOrderEntry = { order, updatedAt: Date.now() };
     await storage.set(cacheKey, entry);
     await evictStaleEntries(storage, cacheKey);
-  } catch (error) {
+  });
+
+  pendingWrites = write.catch(() => undefined);
+
+  return write.catch((error) => {
     console.warn('[token-order] failed to store order', error);
-  }
+  });
 }
 
-/** Drop every stored order; the account ids in the keys go with them. */
+/**
+ * Drop every stored order; the account ids in the keys go with them.
+ *
+ * Scanning for keys is not enough on its own. A write that has already called
+ * `storage.set` has not necessarily landed, so the scan can come up empty and
+ * the set can complete afterwards — putting the old account's key back after
+ * the wallet that owned it is gone. Moving the epoch on first invalidates
+ * every write that has not run yet, and queueing the removal behind the writes
+ * already running lets those finish so the scan can see what they wrote.
+ */
 export async function clearTokenOrderCache(): Promise<void> {
+  cacheEpoch += 1;
+
   const storage = getCacheStorage();
   if (!storage) {
     return;
   }
 
-  try {
+  const remove = pendingWrites.then(async () => {
     const entries = await storage.getByPrefix(TOKEN_ORDER_CACHE_KEY_PREFIX);
     await Promise.all(Object.keys(entries).map((key) => storage.remove(key)));
-  } catch (error) {
+  });
+
+  pendingWrites = remove.then(
+    () => undefined,
+    () => undefined,
+  );
+
+  await remove.catch((error) => {
     console.warn('[token-order] failed to clear orders', error);
-  }
+  });
 }
 
 /**

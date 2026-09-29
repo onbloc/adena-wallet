@@ -9,6 +9,9 @@ import {
 /** Stands in for the whole `chrome.storage.local` area. */
 const mockArea: Record<string, unknown> = {};
 
+/** When set, holds every `storage.set` open until it resolves. */
+let mockSetGate: Promise<void> | null = null;
+
 jest.mock('@common/storage', () => {
   const actual = jest.requireActual('@common/storage');
 
@@ -16,6 +19,9 @@ jest.mock('@common/storage', () => {
     get = jest.fn(async (key: string) => mockArea[key]);
 
     set = jest.fn(async (key: string, value: unknown) => {
+      if (mockSetGate) {
+        await mockSetGate;
+      }
       mockArea[key] = value;
     });
 
@@ -40,8 +46,21 @@ describe('token order cache', () => {
     for (const key of Object.keys(mockArea)) {
       delete mockArea[key];
     }
+    mockSetGate = null;
     jest.clearAllMocks();
   });
+
+  /** Holds every `storage.set` open until the returned function is called. */
+  function holdWrites(): () => void {
+    let release: () => void = () => undefined;
+    mockSetGate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    return () => {
+      mockSetGate = null;
+      release();
+    };
+  }
 
   it('reads back the order it stored', async () => {
     const key = buildTokenOrderCacheKey('account-1', 'gnoland-1', 'atomone-1');
@@ -141,6 +160,47 @@ describe('token order cache', () => {
     });
 
     expect(await readTokenOrder(key)).toBeNull();
+  });
+
+  it('removes an order whose write was still in flight when the reset ran', async () => {
+    const key = buildTokenOrderCacheKey('account-1', 'gnoland-1', 'atomone-1');
+    const release = holdWrites();
+
+    // The write has called `storage.set`, which has not landed yet — a bare
+    // prefix scan would see nothing and let the set restore the key afterwards.
+    const writing = writeTokenOrder(key, ['a:gnoland-1']);
+    const clearing = clearTokenOrderCache();
+    release();
+    await Promise.all([writing, clearing]);
+
+    expect(await readTokenOrder(key)).toBeNull();
+    expect(scopedKeys()).toEqual([]);
+  });
+
+  it('drops a write still queued behind the reset', async () => {
+    const first = buildTokenOrderCacheKey('account-1', 'gnoland-1', 'atomone-1');
+    const second = buildTokenOrderCacheKey('account-2', 'gnoland-1', 'atomone-1');
+    const release = holdWrites();
+
+    const writingFirst = writeTokenOrder(first, ['a:gnoland-1']);
+    const writingSecond = writeTokenOrder(second, ['b:gnoland-1']);
+    const clearing = clearTokenOrderCache();
+    release();
+    await Promise.all([writingFirst, writingSecond, clearing]);
+
+    // The first landed and was removed; the second never ran at all.
+    expect(await readTokenOrder(first)).toBeNull();
+    expect(await readTokenOrder(second)).toBeNull();
+    expect(scopedKeys()).toEqual([]);
+  });
+
+  it('stores again normally once the reset is done', async () => {
+    await clearTokenOrderCache();
+
+    const key = buildTokenOrderCacheKey('new-account', 'gnoland-1', 'atomone-1');
+    await writeTokenOrder(key, ['a:gnoland-1']);
+
+    expect(await readTokenOrder(key)).toEqual(['a:gnoland-1']);
   });
 
   it('drops every stored order on clear, and only those', async () => {
