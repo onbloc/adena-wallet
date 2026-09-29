@@ -34,7 +34,7 @@ function makeWrapper(): React.FC<React.PropsWithChildren<unknown>> {
 describe('useTokenOrder', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedReadTokenOrder.mockResolvedValue({ order: null, epoch: 7 });
+    mockedReadTokenOrder.mockResolvedValue(null);
     mockedWriteTokenOrder.mockResolvedValue(undefined);
     (useCurrentAccount as jest.Mock).mockReturnValue({ currentAccount: { id: 'account-1' } });
     (useNetwork as jest.Mock).mockReturnValue({
@@ -44,7 +44,7 @@ describe('useTokenOrder', () => {
   });
 
   it('reads the order stored for the current account and networks', async () => {
-    mockedReadTokenOrder.mockResolvedValue({ order: ['gnot:gnoland-1'], epoch: 7 });
+    mockedReadTokenOrder.mockResolvedValue(['gnot:gnoland-1']);
 
     const { result } = renderHook(() => useTokenOrder(), { wrapper: makeWrapper() });
 
@@ -53,21 +53,17 @@ describe('useTokenOrder', () => {
   });
 
   it('records an order that differs from the stored one', async () => {
-    mockedReadTokenOrder.mockResolvedValue({
-      order: ['gnot:gnoland-1', 'foo:gnoland-1'],
-      epoch: 7,
-    });
+    mockedReadTokenOrder.mockResolvedValue(['gnot:gnoland-1', 'foo:gnoland-1']);
 
     const { result } = renderHook(() => useTokenOrder(), { wrapper: makeWrapper() });
     await waitFor(() => expect(result.current.storedOrder).not.toBeNull());
 
     act(() => result.current.persistOrder([row('foo'), row('gnot')]));
 
-    expect(mockedWriteTokenOrder).toHaveBeenCalledWith(
-      'account-1:gnoland-1:atomone-1',
-      ['foo:gnoland-1', 'gnot:gnoland-1'],
-      7,
-    );
+    expect(mockedWriteTokenOrder).toHaveBeenCalledWith('account-1:gnoland-1:atomone-1', [
+      'foo:gnoland-1',
+      'gnot:gnoland-1',
+    ]);
     // The new order is visible to every other screen without re-reading storage.
     await waitFor(() =>
       expect(result.current.storedOrder).toEqual(['foo:gnoland-1', 'gnot:gnoland-1']),
@@ -75,10 +71,7 @@ describe('useTokenOrder', () => {
   });
 
   it('does not write when the rows have not moved', async () => {
-    mockedReadTokenOrder.mockResolvedValue({
-      order: ['gnot:gnoland-1', 'foo:gnoland-1'],
-      epoch: 7,
-    });
+    mockedReadTokenOrder.mockResolvedValue(['gnot:gnoland-1', 'foo:gnoland-1']);
 
     const { result } = renderHook(() => useTokenOrder(), { wrapper: makeWrapper() });
     await waitFor(() => expect(result.current.storedOrder).not.toBeNull());
@@ -94,11 +87,9 @@ describe('useTokenOrder', () => {
 
     act(() => result.current.persistOrder([row('gnot')]));
 
-    expect(mockedWriteTokenOrder).toHaveBeenCalledWith(
-      'account-1:gnoland-1:atomone-1',
-      ['gnot:gnoland-1'],
-      7,
-    );
+    expect(mockedWriteTokenOrder).toHaveBeenCalledWith('account-1:gnoland-1:atomone-1', [
+      'gnot:gnoland-1',
+    ]);
   });
 
   it('scopes the order to the active AtomOne network too', async () => {
@@ -115,9 +106,9 @@ describe('useTokenOrder', () => {
   });
 
   it('reports the order unresolved until the read returns', async () => {
-    let release: (value: { order: string[] | null; epoch: number }) => void = () => undefined;
+    let release: (value: string[] | null) => void = () => undefined;
     mockedReadTokenOrder.mockReturnValue(
-      new Promise<{ order: string[] | null; epoch: number }>((resolve) => {
+      new Promise<string[] | null>((resolve) => {
         release = resolve;
       }),
     );
@@ -128,7 +119,7 @@ describe('useTokenOrder', () => {
     // order that the stored one then rearranges.
     expect(result.current.isOrderResolved).toBe(false);
 
-    act(() => release({ order: ['gnot:gnoland-1'], epoch: 7 }));
+    act(() => release(['gnot:gnoland-1']));
 
     await waitFor(() => expect(result.current.isOrderResolved).toBe(true));
     expect(result.current.storedOrder).toEqual(['gnot:gnoland-1']);

@@ -6,7 +6,6 @@ import { TokenBalanceType } from '@types';
 import {
   buildTokenOrderScope,
   readTokenOrder,
-  StoredTokenOrder,
   tokenRowKey,
   writeTokenOrder,
 } from './helpers/token-order-cache';
@@ -50,11 +49,9 @@ export const useTokenOrder = (): {
     );
   }, [currentAccount?.id, currentNetwork.networkId, currentAtomoneNetwork?.id]);
 
-  // The generation rides along with the order: it is what `persistOrder` hands
-  // back so a save is pinned to the wallet these rows were read from.
-  const { data, isFetched } = useQuery<StoredTokenOrder>(
+  const { data: storedOrder = null, isFetched } = useQuery<string[] | null>(
     [TOKEN_ORDER_QUERY_KEY, scope],
-    () => (scope === null ? { order: null, epoch: 0 } : readTokenOrder(scope)),
+    () => (scope === null ? null : readTokenOrder(scope)),
     {
       enabled: scope !== null,
       // Storage is only ever written through persistOrder below, which updates
@@ -63,8 +60,6 @@ export const useTokenOrder = (): {
       cacheTime: Infinity,
     },
   );
-
-  const storedOrder = data?.order ?? null;
 
   // With no account there is nothing to scope an order to, and the query stays
   // disabled — so it never fetches and `isFetched` never flips. That is still a
@@ -77,25 +72,19 @@ export const useTokenOrder = (): {
         return;
       }
 
-      const queryKey = [TOKEN_ORDER_QUERY_KEY, scope];
-      const stored = queryClient.getQueryData<StoredTokenOrder>(queryKey);
-
-      // Nothing has been read yet, so there is no generation to save against.
-      // Waiting costs nothing: the rows are re-published on every settle.
-      if (!stored) {
-        return;
-      }
-
       const order = rows.map((row) => tokenRowKey(row.tokenId, row.networkId));
-      if (stored.order && isSameOrder(stored.order, order)) {
+      const queryKey = [TOKEN_ORDER_QUERY_KEY, scope];
+      const stored = queryClient.getQueryData<string[] | null>(queryKey);
+
+      if (stored && isSameOrder(stored, order)) {
         return;
       }
 
       // Publish before the write so every other mounted screen sees the new
       // order immediately, and so a second caller arriving while the write is
       // still in flight sees it as already stored rather than writing it again.
-      queryClient.setQueryData(queryKey, { order, epoch: stored.epoch });
-      void writeTokenOrder(scope, order, stored.epoch);
+      queryClient.setQueryData(queryKey, order);
+      void writeTokenOrder(scope, order);
     },
     [scope, queryClient],
   );
