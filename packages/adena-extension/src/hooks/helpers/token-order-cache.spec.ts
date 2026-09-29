@@ -13,11 +13,39 @@ const mockArea: Record<string, unknown> = {};
 /** When set, holds entry writes open until it resolves. */
 let mockSetGate: Promise<void> | null = null;
 
+/** When set, holds reads of the generation open until it resolves. */
+let mockEpochReadGate: Promise<void> | null = null;
+
+/** Subscribers registered through the mocked `chrome.storage.onChanged`. */
+const mockChangeListeners: ((changes: Record<string, unknown>, areaName: string) => void)[] = [];
+
+(global as unknown as { chrome: unknown }).chrome = {
+  storage: {
+    onChanged: {
+      addListener: (listener: (changes: Record<string, unknown>, area: string) => void): void => {
+        mockChangeListeners.push(listener);
+      },
+    },
+  },
+};
+
+/** Delivers the event Chrome would raise when a reset changes the generation. */
+function announceReset(): void {
+  for (const listener of [...mockChangeListeners]) {
+    listener({ TOKEN_ORDER_EPOCH: { newValue: 1 } }, 'local');
+  }
+}
+
 jest.mock('@common/storage', () => {
   const actual = jest.requireActual('@common/storage');
 
   class MockChromeCacheStorage {
-    get = jest.fn(async (key: string) => mockArea[key]);
+    get = jest.fn(async (key: string) => {
+      if (mockEpochReadGate && key === 'TOKEN_ORDER_EPOCH') {
+        await mockEpochReadGate;
+      }
+      return mockArea[key];
+    });
 
     set = jest.fn(async (key: string, value: unknown) => {
       // Entry writes only: gating the epoch write too would deadlock a reset
@@ -92,8 +120,21 @@ describe('token order cache', () => {
       delete mockArea[key];
     }
     mockSetGate = null;
+    mockEpochReadGate = null;
     jest.clearAllMocks();
   });
+
+  /** Holds reads of the generation open until the returned function is called. */
+  function holdEpochReads(): () => void {
+    let release: () => void = () => undefined;
+    mockEpochReadGate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    return () => {
+      mockEpochReadGate = null;
+      release();
+    };
+  }
 
   it('reads back the order it stored', async () => {
     await readThenWrite(SCOPE_A, ['gnot:gnoland-1', 'gno.land/r/demo/foo:gnoland-1']);
@@ -253,6 +294,53 @@ describe('token order cache', () => {
 
       expect(await orderOf(SCOPE_A)).toBeNull();
       expect(await otherWindow.readTokenOrder(SCOPE_A).then((read) => read.order)).toBeNull();
+      expect(entryKeys()).toEqual([]);
+    });
+
+    it('drops a write whose read was overtaken by the reset', async () => {
+      const otherWindow = loadInAnotherWindow();
+      const release = holdEpochReads();
+
+      // Window B starts reading and parks in `readEpoch`; window A resets, so
+      // B's read comes back holding the generation that replaced the wallet.
+      const readingInB = otherWindow.readTokenOrder(SCOPE_A);
+      mockEpochReadGate = null;
+      await clearTokenOrderCache();
+      announceReset();
+      release();
+      const { epoch } = await readingInB;
+
+      await otherWindow.writeTokenOrder(SCOPE_A, ['a:gnoland-1'], epoch);
+
+      expect(await orderOf(SCOPE_A)).toBeNull();
+      expect(entryKeys()).toEqual([]);
+    });
+
+    it('drops a write asked for before a reset it did not read across', async () => {
+      const otherWindow = loadInAnotherWindow();
+      const { epoch } = await otherWindow.readTokenOrder(SCOPE_A);
+
+      await clearTokenOrderCache();
+      announceReset();
+
+      await otherWindow.writeTokenOrder(SCOPE_A, ['a:gnoland-1'], epoch);
+
+      expect(entryKeys()).toEqual([]);
+    });
+
+    it('removes a stranded entry on any later read, not just the first', async () => {
+      await readThenWrite(SCOPE_A, ['a:gnoland-1']);
+      await clearTokenOrderCache();
+      await readTokenOrder(SCOPE_B);
+
+      // A late set from another window lands only now, after the first sweep.
+      mockArea[`${TOKEN_ORDER_CACHE_KEY_PREFIX}0:${SCOPE_A}`] = {
+        order: ['a:gnoland-1'],
+        updatedAt: Date.now(),
+      };
+
+      await readTokenOrder(SCOPE_B);
+
       expect(entryKeys()).toEqual([]);
     });
 

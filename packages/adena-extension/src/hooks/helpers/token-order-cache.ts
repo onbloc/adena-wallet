@@ -63,10 +63,25 @@ let cacheStorage: ChromeCacheStorage | null = null;
 let pendingWrites: Promise<void> = Promise.resolve();
 
 /**
- * The generation this context has already swept superseded entries for, so a
- * read does not rescan the area every time it is called.
+ * Counts resets this context has been told about, by any window.
+ *
+ * A read is only trustworthy if this has not moved while it was in flight:
+ * `chrome.storage.local.get` is asynchronous, so a read that starts before a
+ * reset can finish after it and come back holding the new generation. The
+ * generation alone cannot tell those apart — a counter taken either side of
+ * the read can.
  */
-let sweptEpoch: number | null = null;
+let resetSignal = 0;
+
+/** Whether the `storage.onChanged` subscription is in place. */
+let watchingForReset = false;
+
+/**
+ * The generation handed back for a read that a reset overtook.
+ *
+ * Never equal to a real generation, so a write carrying it is always dropped.
+ */
+const STALE_EPOCH = -1;
 
 function getCacheStorage(): ChromeCacheStorage | null {
   if (cacheStorage) {
@@ -80,7 +95,35 @@ function getCacheStorage(): ChromeCacheStorage | null {
     return null;
   }
 
+  watchForReset();
+
   return cacheStorage;
+}
+
+/**
+ * Listen for the generation changing, wherever it is changed from.
+ *
+ * This is the only way one extension window learns that another has reset the
+ * wallet; everything else here is state that context cannot see. Without the
+ * event API the generation comparison still stands on its own, just without
+ * the mid-read protection.
+ */
+function watchForReset(): void {
+  if (watchingForReset) {
+    return;
+  }
+  watchingForReset = true;
+
+  try {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName !== 'local' || !(TOKEN_ORDER_EPOCH_CACHE_KEY in changes)) {
+        return;
+      }
+      resetSignal += 1;
+    });
+  } catch {
+    watchingForReset = false;
+  }
 }
 
 /**
@@ -163,11 +206,20 @@ export async function readTokenOrder(scope: string): Promise<StoredTokenOrder> {
     return { order: null, epoch: INITIAL_EPOCH };
   }
 
+  const signalAtStart = resetSignal;
+
   const epoch = await readEpoch(storage);
   await sweepSupersededEntries(storage, epoch);
 
   const entry: TokenOrderEntry | null =
     (await storage.get(entryKey(epoch, scope)).catch(() => null)) ?? null;
+
+  if (resetSignal !== signalAtStart) {
+    // A reset landed while this read was in flight, so `epoch` may already be
+    // the generation that replaced the wallet these rows belong to. Hand back
+    // a generation no write can match instead of one that looks current.
+    return { order: null, epoch: STALE_EPOCH };
+  }
 
   const order = entry?.order;
 
@@ -206,9 +258,11 @@ export async function writeTokenOrder(
     return;
   }
 
+  const signalAtRequest = resetSignal;
+
   const write = pendingWrites.then(async () => {
     const liveEpoch = await readEpoch(storage);
-    if (liveEpoch !== epoch) {
+    if (resetSignal !== signalAtRequest || liveEpoch !== epoch) {
       // A reset happened after these rows were read: the wallet they describe
       // is gone, so there is nothing worth saving.
       return;
@@ -247,7 +301,6 @@ export async function clearTokenOrderCache(): Promise<void> {
   const remove = pendingWrites.then(async () => {
     const epoch = await readEpoch(storage);
     await storage.set(TOKEN_ORDER_EPOCH_CACHE_KEY, epoch + 1);
-    sweptEpoch = null;
 
     await removeAllEntries(storage);
 
@@ -282,23 +335,26 @@ async function removeAllEntries(storage: ChromeCacheStorage): Promise<void> {
  * These are the writes a reset could not call back — already inside
  * `storage.set` in another window when the generation moved on. Nothing reads
  * them, but their keys still name accounts the wallet no longer has, so they
- * are deleted rather than left to sit. Done once per generation per context;
- * a failure just leaves it to the next read.
+ * are deleted rather than left to sit.
+ *
+ * Runs on every read rather than once per generation: a stranded write can
+ * land at any point, including after a one-time sweep has been and gone, and
+ * a read is the only thing guaranteed to follow it. Reads happen per scope and
+ * are cached for the session, so this is a handful of scans; a failure just
+ * leaves the keys to the next one.
  */
 async function sweepSupersededEntries(storage: ChromeCacheStorage, epoch: number): Promise<void> {
-  if (sweptEpoch === epoch) {
-    return;
-  }
-  sweptEpoch = epoch;
-
   try {
     const entries = await storage.getByPrefix(TOKEN_ORDER_CACHE_KEY_PREFIX);
     const livePrefix = epochPrefix(epoch);
     const superseded = Object.keys(entries).filter((key) => !key.startsWith(livePrefix));
 
+    if (superseded.length === 0) {
+      return;
+    }
+
     await Promise.all(superseded.map((key) => storage.remove(key)));
   } catch (error) {
-    sweptEpoch = null;
     console.warn('[token-order] failed to sweep superseded orders', error);
   }
 }
