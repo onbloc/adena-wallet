@@ -1,14 +1,16 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import { TokenBalanceType } from '@types';
 
 import {
   buildTokenOrderScope,
   readTokenOrder,
+  sweepTokenOrders,
   tokenRowKey,
   writeTokenOrder,
 } from './helpers/token-order-cache';
+import { useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
 
@@ -36,7 +38,31 @@ export const useTokenOrder = (): {
 } => {
   const { currentAccount } = useCurrentAccount();
   const { currentNetwork, currentAtomoneNetwork } = useNetwork();
+  const { wallet } = useWalletContext();
   const queryClient = useQueryClient();
+
+  // Stored orders are keyed by account, and an account can disappear — removed
+  // from the wallet, or taken with the whole wallet by a reset. Comparing what
+  // is stored against the accounts the wallet actually has removes those keys
+  // without having to catch the moment they went away.
+  //
+  // Skipped while the wallet is locked or still loading: no account list is
+  // not the same as an empty one, and acting on it would drop every order.
+  const liveAccountIdsKey = useMemo(
+    () =>
+      wallet?.accounts
+        .map((account) => account.id)
+        .sort()
+        .join('|') ?? '',
+    [wallet?.accounts],
+  );
+
+  useEffect(() => {
+    if (liveAccountIdsKey === '') {
+      return;
+    }
+    void sweepTokenOrders(liveAccountIdsKey.split('|'));
+  }, [liveAccountIdsKey]);
 
   const scope = useMemo(() => {
     if (!currentAccount) {

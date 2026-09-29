@@ -2,8 +2,8 @@ import {
   buildTokenOrderScope,
   clearTokenOrderCache,
   readTokenOrder,
+  sweepTokenOrders,
   TOKEN_ORDER_CACHE_KEY_PREFIX,
-  TOKEN_ORDER_EPOCH_CACHE_KEY,
   writeTokenOrder,
 } from './token-order-cache';
 
@@ -20,9 +20,7 @@ jest.mock('@common/storage', () => {
     get = jest.fn(async (key: string) => mockArea[key]);
 
     set = jest.fn(async (key: string, value: unknown) => {
-      // Entry writes only: gating the generation write too would deadlock a
-      // reset against the very write it is waiting to observe.
-      if (mockSetGate && key.startsWith('TOKEN_ORDER:')) {
+      if (mockSetGate) {
         await mockSetGate;
       }
       mockArea[key] = value;
@@ -69,8 +67,6 @@ function holdWrites(): () => void {
     release();
   };
 }
-
-const LONGER_THAN_TTL_MS = 31 * 24 * 60 * 60 * 1000;
 
 const SCOPE_A = buildTokenOrderScope('account-1', 'gnoland-1', 'atomone-1');
 const SCOPE_B = buildTokenOrderScope('account-2', 'gnoland-1', 'atomone-1');
@@ -132,7 +128,7 @@ describe('token order cache', () => {
   it('treats a malformed stored value as no order at all', async () => {
     await writeTokenOrder(SCOPE_A, ['a:gnoland-1']);
     const [key] = entryKeys();
-    mockArea[key] = { order: 'not-an-array', updatedAt: Date.now() };
+    mockArea[key] = { order: 'not-an-array' };
 
     expect(await readTokenOrder(SCOPE_A)).toBeNull();
   });
@@ -151,22 +147,44 @@ describe('token order cache', () => {
     expect(await readTokenOrder(SCOPE_A)).toBeNull();
   });
 
-  it('drops an entry nothing has touched for a long time', async () => {
-    await writeTokenOrder(SCOPE_A, ['a:gnoland-1']);
-    const [key] = entryKeys();
-    mockArea[key] = { order: ['a:gnoland-1'], updatedAt: Date.now() - LONGER_THAN_TTL_MS };
+  describe('sweeping by account', () => {
+    it('removes orders for accounts the wallet no longer has', async () => {
+      await writeTokenOrder(SCOPE_A, ['a:gnoland-1']);
+      await writeTokenOrder(SCOPE_B, ['b:gnoland-1']);
 
-    expect(await readTokenOrder(SCOPE_A)).toBeNull();
-    expect(entryKeys()).toEqual([]);
-  });
+      await sweepTokenOrders(['account-1']);
 
-  it('keeps entries that are still in use', async () => {
-    await writeTokenOrder(SCOPE_A, ['a:gnoland-1']);
-    await writeTokenOrder(SCOPE_B, ['b:gnoland-1']);
+      expect(await readTokenOrder(SCOPE_A)).toEqual(['a:gnoland-1']);
+      expect(await readTokenOrder(SCOPE_B)).toBeNull();
+    });
 
-    await readTokenOrder(SCOPE_A);
+    it('keeps every network and cosmos scope an account still has', async () => {
+      await writeTokenOrder(SCOPE_A, ['a:gnoland-1']);
+      await writeTokenOrder(buildTokenOrderScope('account-1', 'test5', null), ['b:test5']);
 
-    expect(entryKeys().length).toBe(2);
+      await sweepTokenOrders(['account-1']);
+
+      expect(entryKeys().length).toBe(2);
+    });
+
+    it('does nothing when the account list is unknown', async () => {
+      await writeTokenOrder(SCOPE_A, ['a:gnoland-1']);
+
+      // Locked or still loading: no list is not the same as an empty one.
+      await sweepTokenOrders([]);
+
+      expect(await readTokenOrder(SCOPE_A)).toEqual(['a:gnoland-1']);
+    });
+
+    it('leaves other cache keys alone', async () => {
+      mockArea['GRC721_SYNC'] = { untouched: true };
+      await writeTokenOrder(SCOPE_A, ['a:gnoland-1']);
+
+      await sweepTokenOrders(['account-9']);
+
+      expect(entryKeys()).toEqual([]);
+      expect(mockArea['GRC721_SYNC']).toEqual({ untouched: true });
+    });
   });
 
   describe('wallet reset', () => {
@@ -195,50 +213,32 @@ describe('token order cache', () => {
       expect(entryKeys()).toEqual([]);
     });
 
-    it('removes what another window stranded, on the next read', async () => {
+    it('removes what another window stranded after the reset swept', async () => {
       const otherWindow = loadInAnotherWindow();
       const release = holdWrites();
 
       // Window B is inside `storage.set` and cannot be called back; window A
-      // resets. B's write lands afterwards, under the superseded generation.
+      // resets. B's write lands afterwards, so the reset cannot have removed it.
       const writingInB = otherWindow.writeTokenOrder(SCOPE_A, ['a:gnoland-1']);
       const clearing = clearTokenOrderCache();
       release();
       await Promise.all([writingInB, clearing]);
 
-      // A read is enough; nothing has to be written for the key to go.
-      expect(await readTokenOrder(SCOPE_A)).toBeNull();
+      // The rebuilt wallet's accounts do not include the one that key names.
+      await sweepTokenOrders(['rebuilt-account']);
+
       expect(entryKeys()).toEqual([]);
     });
 
-    it('removes a stranded entry on any later read, not just the first', async () => {
+    it('removes a stranded entry however late it lands', async () => {
       await writeTokenOrder(SCOPE_A, ['a:gnoland-1']);
       await clearTokenOrderCache();
-      await readTokenOrder(SCOPE_B);
+      await sweepTokenOrders(['rebuilt-account']);
 
-      // A late set from another window lands only now, after the first sweep.
-      mockArea[`${TOKEN_ORDER_CACHE_KEY_PREFIX}0:${SCOPE_A}`] = {
-        order: ['a:gnoland-1'],
-        updatedAt: Date.now(),
-      };
+      // A late set from another window lands only now, after that sweep.
+      mockArea[`${TOKEN_ORDER_CACHE_KEY_PREFIX}${SCOPE_A}`] = { order: ['a:gnoland-1'] };
 
-      await readTokenOrder(SCOPE_B);
-
-      expect(entryKeys()).toEqual([]);
-    });
-
-    it('expires an entry a race left in the live generation', async () => {
-      await clearTokenOrderCache();
-
-      // What a write whose own generation read raced the reset leaves behind:
-      // the deleted account, under the live generation, where the generation
-      // check cannot tell it apart. The age check is the backstop.
-      mockArea[`${TOKEN_ORDER_CACHE_KEY_PREFIX}1:${SCOPE_A}`] = {
-        order: ['a:gnoland-1'],
-        updatedAt: Date.now() - LONGER_THAN_TTL_MS,
-      };
-
-      await readTokenOrder(SCOPE_B);
+      await sweepTokenOrders(['rebuilt-account']);
 
       expect(entryKeys()).toEqual([]);
     });
@@ -251,7 +251,6 @@ describe('token order cache', () => {
       await writeTokenOrder(fresh, ['c:gnoland-1']);
 
       expect(await readTokenOrder(fresh)).toEqual(['c:gnoland-1']);
-      expect(mockArea[TOKEN_ORDER_EPOCH_CACHE_KEY]).toBe(1);
     });
   });
 });

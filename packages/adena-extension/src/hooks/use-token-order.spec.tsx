@@ -3,21 +3,25 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
 
 import { TokenBalanceType } from '@types';
-import { readTokenOrder, writeTokenOrder } from './helpers/token-order-cache';
+import { readTokenOrder, sweepTokenOrders, writeTokenOrder } from './helpers/token-order-cache';
+import { useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
 import { useTokenOrder } from './use-token-order';
 
 jest.mock('./use-current-account', () => ({ useCurrentAccount: jest.fn() }));
+jest.mock('./use-context', () => ({ useWalletContext: jest.fn() }));
 jest.mock('./use-network', () => ({ useNetwork: jest.fn() }));
 jest.mock('./helpers/token-order-cache', () => ({
   ...jest.requireActual('./helpers/token-order-cache'),
   readTokenOrder: jest.fn(),
   writeTokenOrder: jest.fn(),
+  sweepTokenOrders: jest.fn(),
 }));
 
 const mockedReadTokenOrder = readTokenOrder as jest.Mock;
 const mockedWriteTokenOrder = writeTokenOrder as jest.Mock;
+const mockedSweepTokenOrders = sweepTokenOrders as jest.Mock;
 
 function row(tokenId: string, networkId = 'gnoland-1'): TokenBalanceType {
   return { tokenId, networkId } as TokenBalanceType;
@@ -36,7 +40,11 @@ describe('useTokenOrder', () => {
     jest.clearAllMocks();
     mockedReadTokenOrder.mockResolvedValue(null);
     mockedWriteTokenOrder.mockResolvedValue(undefined);
+    mockedSweepTokenOrders.mockResolvedValue(undefined);
     (useCurrentAccount as jest.Mock).mockReturnValue({ currentAccount: { id: 'account-1' } });
+    (useWalletContext as jest.Mock).mockReturnValue({
+      wallet: { accounts: [{ id: 'account-1' }, { id: 'account-2' }] },
+    });
     (useNetwork as jest.Mock).mockReturnValue({
       currentNetwork: { networkId: 'gnoland-1' },
       currentAtomoneNetwork: { id: 'atomone-1' },
@@ -132,6 +140,25 @@ describe('useTokenOrder', () => {
 
     expect(result.current.isOrderResolved).toBe(true);
     expect(result.current.storedOrder).toBeNull();
+  });
+
+  it('sweeps orders belonging to accounts the wallet no longer has', async () => {
+    renderHook(() => useTokenOrder(), { wrapper: makeWrapper() });
+
+    await waitFor(() =>
+      expect(mockedSweepTokenOrders).toHaveBeenCalledWith(['account-1', 'account-2']),
+    );
+  });
+
+  it('does not sweep while the wallet is locked or still loading', async () => {
+    (useWalletContext as jest.Mock).mockReturnValue({ wallet: null });
+
+    renderHook(() => useTokenOrder(), { wrapper: makeWrapper() });
+    await waitFor(() => expect(mockedReadTokenOrder).toHaveBeenCalled());
+
+    // An unknown account list is not an empty one; acting on it would drop
+    // every stored order.
+    expect(mockedSweepTokenOrders).not.toHaveBeenCalled();
   });
 
   it('stores nothing while there is no account to scope it to', async () => {
