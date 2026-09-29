@@ -11,13 +11,26 @@
  * costs one reshuffled load and nothing else — so it lives outside the
  * migrated wallet blob in `ChromeCacheStorage`: no version bump, no migration.
  *
- * Each scope is stored under its own key, so a write never has to merge a map
- * that another extension window may be writing at the same time.
+ * Two properties of the storage layout do the coordination work, because every
+ * extension window runs its own JavaScript context and shares only
+ * `chrome.storage.local`:
+ *
+ * - One key per scope, so a write never merges a map another window is also
+ *   holding, and two windows saving different scopes cannot clobber each other.
+ * - The live generation is recorded in storage and stamped into every key, so
+ *   a write from before a wallet reset — including one already in flight in
+ *   another window — is never read afterwards, and is swept up by the next
+ *   write or reset. Module-local state cannot invalidate a write from a
+ *   context it does not share; the stored generation can.
  */
 
-import { ChromeCacheStorage, TOKEN_ORDER_CACHE_KEY_PREFIX } from '@common/storage';
+import {
+  ChromeCacheStorage,
+  TOKEN_ORDER_CACHE_KEY_PREFIX,
+  TOKEN_ORDER_EPOCH_CACHE_KEY,
+} from '@common/storage';
 
-export { TOKEN_ORDER_CACHE_KEY_PREFIX };
+export { TOKEN_ORDER_CACHE_KEY_PREFIX, TOKEN_ORDER_EPOCH_CACHE_KEY };
 
 interface TokenOrderEntry {
   /** Row keys (see {@link tokenRowKey}) in the order they last settled. */
@@ -39,19 +52,12 @@ const MAX_CACHE_ENTRIES = 32;
 let cacheStorage: ChromeCacheStorage | null = null;
 
 /**
- * The writes that have been asked for but may not have landed yet.
+ * The writes this context has asked for but may not have landed yet.
  *
- * Only a reset reads this: it has to wait for an in-flight `storage.set`
- * before it can know which keys are there to remove.
+ * A reset waits on it so its sweep can see what those writes wrote. It says
+ * nothing about other windows — the stored generation covers those.
  */
 let pendingWrites: Promise<void> = Promise.resolve();
-
-/**
- * Bumped by {@link clearTokenOrderCache}. A write records this when it is
- * asked for and re-checks it when it runs, so a write from before a wallet
- * reset cannot land after it.
- */
-let cacheEpoch = 0;
 
 function getCacheStorage(): ChromeCacheStorage | null {
   if (cacheStorage) {
@@ -89,25 +95,53 @@ export function tokenRowKey(tokenId: string, networkId: string): string {
  * sink to the bottom, and reshuffle on the way back up — the very thing the
  * order is here to prevent.
  */
-export function buildTokenOrderCacheKey(
+export function buildTokenOrderScope(
   accountId: string,
   networkId: string,
   cosmosNetworkId?: string | null,
 ): string {
-  return `${TOKEN_ORDER_CACHE_KEY_PREFIX}${accountId}:${networkId}:${cosmosNetworkId ?? 'none'}`;
+  return `${accountId}:${networkId}:${cosmosNetworkId ?? 'none'}`;
+}
+
+/** The storage key one scope occupies in a given generation. */
+function entryKey(epoch: number, scope: string): string {
+  return `${TOKEN_ORDER_CACHE_KEY_PREFIX}${epoch}:${scope}`;
+}
+
+/** Prefix every entry of one generation shares. */
+function epochPrefix(epoch: number): string {
+  return `${TOKEN_ORDER_CACHE_KEY_PREFIX}${epoch}:`;
+}
+
+/**
+ * The live generation. Absent or malformed reads as 0, which is also what a
+ * wallet that has never been reset stores nothing for.
+ */
+async function readEpoch(storage: ChromeCacheStorage): Promise<number> {
+  const stored = await storage.get(TOKEN_ORDER_EPOCH_CACHE_KEY).catch(() => null);
+  const epoch = Number(stored);
+
+  return Number.isSafeInteger(epoch) && epoch >= 0 ? epoch : 0;
 }
 
 /**
  * The stored order for one scope, or `null` when there is none.
  *
+ * Only ever looks at the live generation, so an entry left behind by a write
+ * that landed after a reset is invisible here however it got there.
+ *
  * Malformed values read back as `null` rather than throwing: the caller simply
  * orders by balance instead, which is what it would do on a cold cache.
  */
-export async function readTokenOrder(cacheKey: string): Promise<string[] | null> {
+export async function readTokenOrder(scope: string): Promise<string[] | null> {
+  const storage = getCacheStorage();
+  if (!storage) {
+    return null;
+  }
+
+  const epoch = await readEpoch(storage);
   const entry: TokenOrderEntry | null =
-    (await getCacheStorage()
-      ?.get(cacheKey)
-      .catch(() => null)) ?? null;
+    (await storage.get(entryKey(epoch, scope)).catch(() => null)) ?? null;
 
   const order = entry?.order;
   if (!Array.isArray(order)) {
@@ -123,32 +157,33 @@ export async function readTokenOrder(cacheKey: string): Promise<string[] | null>
  * Writes its own key and nothing else, so two windows saving different scopes
  * at the same time cannot overwrite each other.
  *
- * Chained onto {@link pendingWrites} — not to serialise the scopes, which the
- * separate keys already take care of, but so a reset can tell what is still in
- * flight and wait for it. `epoch` is taken when the caller asks for the write
- * and checked again when it runs: a reset moves the epoch on, and a write
- * still queued behind it is dropped rather than restoring an order for a
- * wallet that no longer exists.
+ * The generation is read when the caller asks for the write and re-read when
+ * it runs: a reset in between — in this window or any other — means the rows
+ * being saved belong to a wallet that is gone, so the write is dropped instead
+ * of landing under the new generation.
  *
  * A failed write only costs the next load its stable order, so it is logged
  * and swallowed, and the chain is kept alive either way.
  */
-export async function writeTokenOrder(cacheKey: string, order: string[]): Promise<void> {
+export async function writeTokenOrder(scope: string, order: string[]): Promise<void> {
   const storage = getCacheStorage();
   if (!storage) {
     return;
   }
 
-  const epoch = cacheEpoch;
+  const requestedEpoch = await readEpoch(storage);
 
   const write = pendingWrites.then(async () => {
-    if (epoch !== cacheEpoch) {
+    const epoch = await readEpoch(storage);
+    if (epoch !== requestedEpoch) {
       return;
     }
 
+    const key = entryKey(epoch, scope);
     const entry: TokenOrderEntry = { order, updatedAt: Date.now() };
-    await storage.set(cacheKey, entry);
-    await evictStaleEntries(storage, cacheKey);
+
+    await storage.set(key, entry);
+    await pruneEntries(storage, epoch, key);
   });
 
   pendingWrites = write.catch(() => undefined);
@@ -161,22 +196,23 @@ export async function writeTokenOrder(cacheKey: string, order: string[]): Promis
 /**
  * Drop every stored order; the account ids in the keys go with them.
  *
- * Scanning for keys is not enough on its own. A write that has already called
- * `storage.set` has not necessarily landed, so the scan can come up empty and
- * the set can complete afterwards — putting the old account's key back after
- * the wallet that owned it is gone. Moving the epoch on first invalidates
- * every write that has not run yet, and queueing the removal behind the writes
- * already running lets those finish so the scan can see what they wrote.
+ * Moving the generation on is what makes this hold against other windows: a
+ * write already inside `storage.set` over there cannot be called back, but it
+ * carries the old generation, so nothing reads it and the next write or reset
+ * sweeps it away. Queueing behind this window's own pending writes lets those
+ * land first so the sweep below can see them, and `useClear` closes the other
+ * windows before calling this, which stops new writes from starting there.
  */
 export async function clearTokenOrderCache(): Promise<void> {
-  cacheEpoch += 1;
-
   const storage = getCacheStorage();
   if (!storage) {
     return;
   }
 
   const remove = pendingWrites.then(async () => {
+    const epoch = await readEpoch(storage);
+    await storage.set(TOKEN_ORDER_EPOCH_CACHE_KEY, epoch + 1);
+
     const entries = await storage.getByPrefix(TOKEN_ORDER_CACHE_KEY_PREFIX);
     await Promise.all(Object.keys(entries).map((key) => storage.remove(key)));
   });
@@ -192,7 +228,11 @@ export async function clearTokenOrderCache(): Promise<void> {
 }
 
 /**
- * Prune the scopes past {@link MAX_CACHE_ENTRIES}, newest kept.
+ * Drop superseded generations, then the scopes past {@link MAX_CACHE_ENTRIES}.
+ *
+ * Entries from an older generation are the ones a reset could not call back —
+ * a write another window had already started. Nothing reads them, and this is
+ * what eventually removes them.
  *
  * `keptKey` — the entry just written — is held back from the ranking rather
  * than ranked with the others: entries written within the same millisecond
@@ -202,18 +242,24 @@ export async function clearTokenOrderCache(): Promise<void> {
  *
  * Removing a key is idempotent, so two windows pruning at once is harmless.
  */
-async function evictStaleEntries(storage: ChromeCacheStorage, keptKey: string): Promise<void> {
+async function pruneEntries(
+  storage: ChromeCacheStorage,
+  epoch: number,
+  keptKey: string,
+): Promise<void> {
   const entries = await storage.getByPrefix<TokenOrderEntry>(TOKEN_ORDER_CACHE_KEY_PREFIX);
+  const livePrefix = epochPrefix(epoch);
 
-  const keys = Object.keys(entries);
-  if (keys.length <= MAX_CACHE_ENTRIES) {
-    return;
-  }
+  const superseded = Object.keys(entries).filter((key) => !key.startsWith(livePrefix));
 
-  const stale = keys
-    .filter((key) => key !== keptKey)
-    .sort((a, b) => (entries[b]?.updatedAt ?? 0) - (entries[a]?.updatedAt ?? 0))
-    .slice(MAX_CACHE_ENTRIES - 1);
+  const live = Object.keys(entries).filter((key) => key.startsWith(livePrefix));
+  const overflowing =
+    live.length > MAX_CACHE_ENTRIES
+      ? live
+          .filter((key) => key !== keptKey)
+          .sort((a, b) => (entries[b]?.updatedAt ?? 0) - (entries[a]?.updatedAt ?? 0))
+          .slice(MAX_CACHE_ENTRIES - 1)
+      : [];
 
-  await Promise.all(stale.map((key) => storage.remove(key)));
+  await Promise.all([...superseded, ...overflowing].map((key) => storage.remove(key)));
 }

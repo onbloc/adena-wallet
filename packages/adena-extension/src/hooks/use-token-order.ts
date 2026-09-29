@@ -4,7 +4,7 @@ import { useCallback, useMemo } from 'react';
 import { TokenBalanceType } from '@types';
 
 import {
-  buildTokenOrderCacheKey,
+  buildTokenOrderScope,
   readTokenOrder,
   tokenRowKey,
   writeTokenOrder,
@@ -38,11 +38,11 @@ export const useTokenOrder = (): {
   const { currentNetwork, currentAtomoneNetwork } = useNetwork();
   const queryClient = useQueryClient();
 
-  const cacheKey = useMemo(() => {
+  const scope = useMemo(() => {
     if (!currentAccount) {
       return null;
     }
-    return buildTokenOrderCacheKey(
+    return buildTokenOrderScope(
       currentAccount.id,
       currentNetwork.networkId,
       currentAtomoneNetwork?.id,
@@ -50,10 +50,10 @@ export const useTokenOrder = (): {
   }, [currentAccount?.id, currentNetwork.networkId, currentAtomoneNetwork?.id]);
 
   const { data: storedOrder = null, isFetched } = useQuery<string[] | null>(
-    [TOKEN_ORDER_QUERY_KEY, cacheKey],
-    () => (cacheKey === null ? null : readTokenOrder(cacheKey)),
+    [TOKEN_ORDER_QUERY_KEY, scope],
+    () => (scope === null ? null : readTokenOrder(scope)),
     {
-      enabled: cacheKey !== null,
+      enabled: scope !== null,
       // Storage is only ever written through persistOrder below, which updates
       // this entry itself, so there is nothing for a refetch to pick up.
       staleTime: Infinity,
@@ -64,16 +64,16 @@ export const useTokenOrder = (): {
   // With no account there is nothing to scope an order to, and the query stays
   // disabled — so it never fetches and `isFetched` never flips. That is still a
   // resolved state: the answer is "no stored order", and callers may proceed.
-  const isOrderResolved = cacheKey === null || isFetched;
+  const isOrderResolved = scope === null || isFetched;
 
   const persistOrder = useCallback(
     (rows: TokenBalanceType[]): void => {
-      if (cacheKey === null || rows.length === 0) {
+      if (scope === null || rows.length === 0) {
         return;
       }
 
       const order = rows.map((row) => tokenRowKey(row.tokenId, row.networkId));
-      const queryKey = [TOKEN_ORDER_QUERY_KEY, cacheKey];
+      const queryKey = [TOKEN_ORDER_QUERY_KEY, scope];
       const stored = queryClient.getQueryData<string[] | null>(queryKey);
 
       if (stored && isSameOrder(stored, order)) {
@@ -84,9 +84,9 @@ export const useTokenOrder = (): {
       // order immediately, and so a second caller arriving while the write is
       // still in flight sees it as already stored rather than writing it again.
       queryClient.setQueryData(queryKey, order);
-      void writeTokenOrder(cacheKey, order);
+      void writeTokenOrder(scope, order);
     },
-    [cacheKey, queryClient],
+    [scope, queryClient],
   );
 
   return { storedOrder, isOrderResolved, persistOrder };

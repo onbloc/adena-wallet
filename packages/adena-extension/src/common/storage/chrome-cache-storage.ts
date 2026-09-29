@@ -15,13 +15,23 @@ export const GRC721_SYNC_CACHE_KEY = 'GRC721_SYNC';
  */
 export const TOKEN_ORDER_CACHE_KEY_PREFIX = 'TOKEN_ORDER:';
 
-export type CacheValueType = typeof GRC721_SYNC_CACHE_KEY;
+/**
+ * Which generation of token order entries is the live one.
+ *
+ * A wallet reset moves it on, and entry keys carry the generation they were
+ * written under, so an order written by another extension window that lands
+ * after the reset is simply never read — module-local state cannot invalidate
+ * a write from a context it does not share. See `token-order-cache.ts`.
+ */
+export const TOKEN_ORDER_EPOCH_CACHE_KEY = 'TOKEN_ORDER_EPOCH';
+
+export type CacheValueType = typeof GRC721_SYNC_CACHE_KEY | typeof TOKEN_ORDER_EPOCH_CACHE_KEY;
 
 /**
  * Every key this storage owns. `clear()` walks this list instead of calling
  * `chrome.storage.local.clear()`, which would take the wallet blob with it.
  */
-const CACHE_STORAGE_KEYS: CacheValueType[] = [GRC721_SYNC_CACHE_KEY];
+const CACHE_STORAGE_KEYS: CacheValueType[] = [GRC721_SYNC_CACHE_KEY, TOKEN_ORDER_EPOCH_CACHE_KEY];
 
 /**
  * Plain `chrome.storage.local` under its own top-level keys.

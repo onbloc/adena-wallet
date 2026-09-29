@@ -40,7 +40,10 @@ export const useClear = (): UseClearReturn => {
     clearAccountTokenBalances();
     clearCurrentNetwork();
     clearAddressBook();
-    closeAllExtensionWindows();
+    // Awaited: the other windows run their own JavaScript contexts, and a
+    // token order write started in one of them would otherwise be free to
+    // land after the caches below are cleared.
+    await closeAllExtensionWindows();
     await walletService.clear();
     await accountService.clear();
     await addressBookService.clear();

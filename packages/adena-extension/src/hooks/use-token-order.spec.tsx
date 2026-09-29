@@ -49,7 +49,7 @@ describe('useTokenOrder', () => {
     const { result } = renderHook(() => useTokenOrder(), { wrapper: makeWrapper() });
 
     await waitFor(() => expect(result.current.storedOrder).toEqual(['gnot:gnoland-1']));
-    expect(mockedReadTokenOrder).toHaveBeenCalledWith('TOKEN_ORDER:account-1:gnoland-1:atomone-1');
+    expect(mockedReadTokenOrder).toHaveBeenCalledWith('account-1:gnoland-1:atomone-1');
   });
 
   it('records an order that differs from the stored one', async () => {
@@ -60,10 +60,10 @@ describe('useTokenOrder', () => {
 
     act(() => result.current.persistOrder([row('foo'), row('gnot')]));
 
-    expect(mockedWriteTokenOrder).toHaveBeenCalledWith(
-      'TOKEN_ORDER:account-1:gnoland-1:atomone-1',
-      ['foo:gnoland-1', 'gnot:gnoland-1'],
-    );
+    expect(mockedWriteTokenOrder).toHaveBeenCalledWith('account-1:gnoland-1:atomone-1', [
+      'foo:gnoland-1',
+      'gnot:gnoland-1',
+    ]);
     // The new order is visible to every other screen without re-reading storage.
     await waitFor(() =>
       expect(result.current.storedOrder).toEqual(['foo:gnoland-1', 'gnot:gnoland-1']),
@@ -87,10 +87,9 @@ describe('useTokenOrder', () => {
 
     act(() => result.current.persistOrder([row('gnot')]));
 
-    expect(mockedWriteTokenOrder).toHaveBeenCalledWith(
-      'TOKEN_ORDER:account-1:gnoland-1:atomone-1',
-      ['gnot:gnoland-1'],
-    );
+    expect(mockedWriteTokenOrder).toHaveBeenCalledWith('account-1:gnoland-1:atomone-1', [
+      'gnot:gnoland-1',
+    ]);
   });
 
   it('scopes the order to the active AtomOne network too', async () => {
@@ -102,9 +101,7 @@ describe('useTokenOrder', () => {
     renderHook(() => useTokenOrder(), { wrapper: makeWrapper() });
 
     await waitFor(() =>
-      expect(mockedReadTokenOrder).toHaveBeenCalledWith(
-        'TOKEN_ORDER:account-1:gnoland-1:atomone-test',
-      ),
+      expect(mockedReadTokenOrder).toHaveBeenCalledWith('account-1:gnoland-1:atomone-test'),
     );
   });
 
