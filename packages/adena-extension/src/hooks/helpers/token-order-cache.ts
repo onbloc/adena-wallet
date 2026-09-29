@@ -49,6 +49,9 @@ interface TokenOrderEntry {
  */
 const MAX_CACHE_ENTRIES = 32;
 
+/** The generation a wallet that has never been reset writes under. */
+const INITIAL_EPOCH = 0;
+
 let cacheStorage: ChromeCacheStorage | null = null;
 
 /**
@@ -58,6 +61,12 @@ let cacheStorage: ChromeCacheStorage | null = null;
  * nothing about other windows — the stored generation covers those.
  */
 let pendingWrites: Promise<void> = Promise.resolve();
+
+/**
+ * The generation this context has already swept superseded entries for, so a
+ * read does not rescan the area every time it is called.
+ */
+let sweptEpoch: number | null = null;
 
 function getCacheStorage(): ChromeCacheStorage | null {
   if (cacheStorage) {
@@ -121,61 +130,87 @@ async function readEpoch(storage: ChromeCacheStorage): Promise<number> {
   const stored = await storage.get(TOKEN_ORDER_EPOCH_CACHE_KEY).catch(() => null);
   const epoch = Number(stored);
 
-  return Number.isSafeInteger(epoch) && epoch >= 0 ? epoch : 0;
+  return Number.isSafeInteger(epoch) && epoch >= 0 ? epoch : INITIAL_EPOCH;
 }
 
 /**
- * The stored order for one scope, or `null` when there is none.
+ * A stored order, with the generation it was read under.
+ *
+ * The generation goes back to {@link writeTokenOrder} when the rows are saved,
+ * which is what pins a write to the wallet the rows came from.
+ */
+export interface StoredTokenOrder {
+  /** Row keys in the order they last settled, or `null` when none is stored. */
+  order: string[] | null;
+  /** Hand this back to {@link writeTokenOrder} for the rows read under it. */
+  epoch: number;
+}
+
+/**
+ * The stored order for one scope, and the generation it belongs to.
  *
  * Only ever looks at the live generation, so an entry left behind by a write
- * that landed after a reset is invisible here however it got there.
+ * that landed after a reset is invisible here however it got there. Superseded
+ * entries are also removed on the way past — hiding them is not enough, since
+ * their keys name accounts the wallet no longer has.
  *
  * Malformed values read back as `null` rather than throwing: the caller simply
  * orders by balance instead, which is what it would do on a cold cache.
  */
-export async function readTokenOrder(scope: string): Promise<string[] | null> {
+export async function readTokenOrder(scope: string): Promise<StoredTokenOrder> {
   const storage = getCacheStorage();
   if (!storage) {
-    return null;
+    return { order: null, epoch: INITIAL_EPOCH };
   }
 
   const epoch = await readEpoch(storage);
+  await sweepSupersededEntries(storage, epoch);
+
   const entry: TokenOrderEntry | null =
     (await storage.get(entryKey(epoch, scope)).catch(() => null)) ?? null;
 
   const order = entry?.order;
-  if (!Array.isArray(order)) {
-    return null;
-  }
 
-  return order.filter((key): key is string => typeof key === 'string');
+  return {
+    epoch,
+    order: Array.isArray(order)
+      ? order.filter((key): key is string => typeof key === 'string')
+      : null,
+  };
 }
 
 /**
- * Record the order the rows are in now.
+ * Record the order the rows are in now, as of the generation they came from.
  *
  * Writes its own key and nothing else, so two windows saving different scopes
  * at the same time cannot overwrite each other.
  *
- * The generation is read when the caller asks for the write and re-read when
- * it runs: a reset in between — in this window or any other — means the rows
- * being saved belong to a wallet that is gone, so the write is dropped instead
- * of landing under the new generation.
+ * `epoch` is the one {@link readTokenOrder} handed back when these rows were
+ * loaded — deliberately not read here. Reading it at save time leaves a window
+ * where a reset can land while the read is in flight: the read then returns
+ * the *new* generation, every check downstream agrees with it, and rows from
+ * the deleted wallet are written into the generation that replaced it. Taking
+ * the generation from when the rows were read closes that window, because that
+ * read provably happened before the reset.
  *
  * A failed write only costs the next load its stable order, so it is logged
  * and swallowed, and the chain is kept alive either way.
  */
-export async function writeTokenOrder(scope: string, order: string[]): Promise<void> {
+export async function writeTokenOrder(
+  scope: string,
+  order: string[],
+  epoch: number,
+): Promise<void> {
   const storage = getCacheStorage();
   if (!storage) {
     return;
   }
 
-  const requestedEpoch = await readEpoch(storage);
-
   const write = pendingWrites.then(async () => {
-    const epoch = await readEpoch(storage);
-    if (epoch !== requestedEpoch) {
+    const liveEpoch = await readEpoch(storage);
+    if (liveEpoch !== epoch) {
+      // A reset happened after these rows were read: the wallet they describe
+      // is gone, so there is nothing worth saving.
       return;
     }
 
@@ -212,9 +247,17 @@ export async function clearTokenOrderCache(): Promise<void> {
   const remove = pendingWrites.then(async () => {
     const epoch = await readEpoch(storage);
     await storage.set(TOKEN_ORDER_EPOCH_CACHE_KEY, epoch + 1);
+    sweptEpoch = null;
 
-    const entries = await storage.getByPrefix(TOKEN_ORDER_CACHE_KEY_PREFIX);
-    await Promise.all(Object.keys(entries).map((key) => storage.remove(key)));
+    await removeAllEntries(storage);
+
+    // A write another window had already handed to `storage.set` cannot be
+    // called back, and may land after the sweep above. Yield once so those
+    // land, then take the area again. Anything later still is caught by the
+    // sweep on the next read, which is what makes the keys go rather than
+    // merely stop being read.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await removeAllEntries(storage);
   });
 
   pendingWrites = remove.then(
@@ -225,6 +268,39 @@ export async function clearTokenOrderCache(): Promise<void> {
   await remove.catch((error) => {
     console.warn('[token-order] failed to clear orders', error);
   });
+}
+
+/** Remove every token order entry, whatever generation it belongs to. */
+async function removeAllEntries(storage: ChromeCacheStorage): Promise<void> {
+  const entries = await storage.getByPrefix(TOKEN_ORDER_CACHE_KEY_PREFIX);
+  await Promise.all(Object.keys(entries).map((key) => storage.remove(key)));
+}
+
+/**
+ * Remove entries left behind by generations that are no longer live.
+ *
+ * These are the writes a reset could not call back — already inside
+ * `storage.set` in another window when the generation moved on. Nothing reads
+ * them, but their keys still name accounts the wallet no longer has, so they
+ * are deleted rather than left to sit. Done once per generation per context;
+ * a failure just leaves it to the next read.
+ */
+async function sweepSupersededEntries(storage: ChromeCacheStorage, epoch: number): Promise<void> {
+  if (sweptEpoch === epoch) {
+    return;
+  }
+  sweptEpoch = epoch;
+
+  try {
+    const entries = await storage.getByPrefix(TOKEN_ORDER_CACHE_KEY_PREFIX);
+    const livePrefix = epochPrefix(epoch);
+    const superseded = Object.keys(entries).filter((key) => !key.startsWith(livePrefix));
+
+    await Promise.all(superseded.map((key) => storage.remove(key)));
+  } catch (error) {
+    sweptEpoch = null;
+    console.warn('[token-order] failed to sweep superseded orders', error);
+  }
 }
 
 /**
