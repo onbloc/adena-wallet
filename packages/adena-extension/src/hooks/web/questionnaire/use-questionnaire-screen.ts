@@ -50,7 +50,7 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
   const indicatorInfo = useIndicatorStep({});
 
   const questions: Question[] = QuestionData;
-  const { callbackPath } = params;
+  const { callbackPath, callbackState } = params;
 
   const question = useMemo(() => {
     const question = questions.find((question) => question.index === questionIndex);
@@ -75,13 +75,16 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
 
   const completeQuestion = useCallback(() => {
     doneQuestionnaire().then(() => {
-      navigate(callbackPath, { state: { doneQuestionnaire: true }, replace: true });
+      navigate(callbackPath, {
+        state: { ...callbackState, doneQuestionnaire: true },
+        replace: true,
+      });
     });
-  }, [callbackPath]);
+  }, [callbackPath, callbackState]);
 
   const backStep = useCallback(() => {
     if (questionnaireState === 'INIT') {
-      navigate(callbackPath, { state: { doneQuestionnaire: false } });
+      navigate(callbackPath, { state: { ...callbackState, doneQuestionnaire: false } });
       return;
     }
     if (questionnaireState === 'QUESTION') {
@@ -94,7 +97,7 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
     }
     setQuestionIndex(1);
     setQuestionnaireState('INIT');
-  }, [callbackPath, questionnaireState, questionIndex]);
+  }, [callbackPath, callbackState, questionnaireState, questionIndex]);
 
   return {
     indicatorInfo: {
