@@ -1,12 +1,18 @@
 import { ReactElement, useCallback } from 'react';
 import styled from 'styled-components';
 
+import BackIcon from '@assets/web/chevron-left.svg';
 import IconCreate from '@assets/web/icon-create';
+import IconEmail from '@assets/web/icon-email.svg';
 import IconGoogle from '@assets/web/icon-google';
 import IconImport from '@assets/web/icon-import';
+import IconX from '@assets/web/icon-x.svg';
 import IconWallet from '@assets/web/wallet-rounded.svg';
-import BackIcon from '@assets/web/chevron-left.svg';
-import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import {
+  WEB_BOTTOM_SPACING,
+  WEB_TOP_SPACING,
+  WEB_TOP_SPACING_RESPONSIVE,
+} from '@common/constants/ui.constant';
 import { Pressable, View, WebImg, WebMain, WebText } from '@components/atoms';
 import WebMainButton from '@components/atoms/web-main-button';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -18,6 +24,7 @@ const StyledWrapper = styled(View)`
   width: 100%;
   align-items: flex-start;
   row-gap: 24px;
+  padding-bottom: ${WEB_BOTTOM_SPACING}px;
 `;
 
 const StyledBackButton = styled.div`
@@ -48,6 +55,14 @@ const AdvancedOptionScreen = (): ReactElement => {
 
   const onClickSignInWithGoogle = useCallback(() => {
     navigate(RoutePath.WebGoogleLogin);
+  }, []);
+
+  const onClickSignInWithEmail = useCallback(() => {
+    navigate(RoutePath.WebEmailLogin);
+  }, []);
+
+  const onClickSignInWithX = useCallback(() => {
+    navigate(RoutePath.WebXLogin);
   }, []);
 
   return (
@@ -92,6 +107,22 @@ const AdvancedOptionScreen = (): ReactElement => {
             text='Sign In With Google'
             description='Use your Google account to access your wallet.'
             onClick={onClickSignInWithGoogle}
+          />
+          <WebMainButton
+            layout='list'
+            figure='tertiary'
+            iconElement={<WebImg src={IconEmail} size={24} />}
+            text='Sign In With Email'
+            description='Use your email account to access your wallet.'
+            onClick={onClickSignInWithEmail}
+          />
+          <WebMainButton
+            layout='list'
+            figure='tertiary'
+            iconElement={<WebImg src={IconX} size={24} />}
+            text='Sign In With X'
+            description='Use your X account to access your wallet.'
+            onClick={onClickSignInWithX}
           />
         </View>
       </StyledWrapper>
