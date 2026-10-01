@@ -4,6 +4,17 @@ import { Storage } from '.';
 /** Where each GRC721 indexer walk left off; see `token.grc721-sync.ts`. */
 export const GRC721_SYNC_CACHE_KEY = 'GRC721_SYNC';
 
+/**
+ * Prefix for the per-scope token order entries; see `token-order-cache.ts`.
+ *
+ * One key per account/network scope rather than a single map of them all.
+ * Extension windows each run their own JavaScript context, so a shared map
+ * would have two windows read the same value and each write it back, dropping
+ * whichever scope the other had just saved. Separate keys remove the
+ * read-modify-write entirely: a write only ever touches its own scope.
+ */
+export const TOKEN_ORDER_CACHE_KEY_PREFIX = 'TOKEN_ORDER:';
+
 export type CacheValueType = typeof GRC721_SYNC_CACHE_KEY;
 
 /**
@@ -55,6 +66,23 @@ export class ChromeCacheStorage implements Storage {
    * to do that.
    */
   public clear = async (): Promise<void> => {
-    await this.storage.remove(CACHE_STORAGE_KEYS);
+    const scopedKeys = Object.keys(await this.getByPrefix(TOKEN_ORDER_CACHE_KEY_PREFIX));
+    await this.storage.remove([...CACHE_STORAGE_KEYS, ...scopedKeys]);
+  };
+
+  /**
+   * Every entry this storage owns whose key starts with `prefix`.
+   *
+   * Needed by the key families that are written one key per scope: their key
+   * names are not known ahead of time, so neither pruning them nor clearing
+   * them can work from a fixed list. Reads the area in one call and filters,
+   * rather than reading each key in turn.
+   */
+  public getByPrefix = async <T = unknown>(prefix: string): Promise<Record<string, T>> => {
+    const values = await this.storage.get(null);
+
+    return Object.fromEntries(
+      Object.entries(values ?? {}).filter(([key]) => key.startsWith(prefix)),
+    );
   };
 }

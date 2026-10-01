@@ -8,6 +8,7 @@ import {
   SessionConfig,
   SessionKeyring,
   validateAddress,
+  Wallet,
 } from 'adena-module';
 import { Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 
@@ -200,6 +201,11 @@ export class WalletSessionService {
       throw new SessionImportError('network_error', 'Gno provider not initialized');
     }
 
+    // Read-modify-write: the clone below is persisted through the service-level
+    // `updateWallet`, which does not refresh the instance the web document holds.
+    // Reusing that instance would make a second import in the same mounted
+    // document clone a pre-import snapshot and overwrite the first import, so
+    // this one read has to be authoritative even though it costs a KDF.
     const wallet = await this.walletService.loadWallet();
     const existingWalletSessionAddrs = await this.getWalletSessionAddresses(
       wallet,
@@ -567,8 +573,10 @@ export class WalletSessionService {
     return { keyring, account, publicKey };
   };
 
+  // Reads `accounts` only, so the caller may pass either the instance held by an
+  // unlocked context or a freshly deserialized one.
   private getWalletSessionAddresses = async (
-    wallet: AdenaWallet,
+    wallet: Wallet,
     addressPrefix: string,
   ): Promise<Set<string>> => {
     const addrs = new Set<string>();
@@ -591,7 +599,7 @@ export class WalletSessionService {
       return null;
     }
     try {
-      const wallet = await this.walletService.loadWallet();
+      const wallet = await this.walletService.getCurrentWallet();
       return this.getWalletSessionAddresses(wallet, addressPrefix);
     } catch {
       return null;

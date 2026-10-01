@@ -14,12 +14,17 @@ import { NetworkState } from '@states';
 import { Amount, GRC20TokenModel, TokenBalanceType, TokenModel } from '@types';
 
 import { CosmosFetchResult, fetchCosmosTokenBalances } from './helpers/fetch-cosmos-balances';
-import { compareTokenBalances } from './helpers/sort-token-balances';
+import {
+  compareTokenBalances,
+  sortTokenBalancesByStoredOrder,
+} from './helpers/sort-token-balances';
+import { tokenRowKey } from './helpers/token-order-cache';
 import { useAdenaContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useGRC20Tokens } from './use-grc20-tokens';
 import { useNetwork } from './use-network';
 import { useTokenMetainfo } from './use-token-metainfo';
+import { useTokenOrder } from './use-token-order';
 import { useWallet } from './use-wallet';
 
 const GNO_REFETCH_INTERVAL = 5_000;
@@ -29,8 +34,6 @@ const GNO_REFETCH_INTERVAL = 5_000;
 const COSMOS_REFETCH_INTERVAL = 10_000;
 
 const EMPTY_AMOUNT: Amount = { value: '', denom: '' };
-
-const tokenKey = (tokenId: string, networkId: string): string => `${tokenId}:${networkId}`;
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | null;
@@ -55,6 +58,7 @@ export const useTokenBalance = (): {
   const { currentNetwork, currentAtomoneNetwork } = useNetwork();
   const { currentAccount, currentBalanceAddress } = useCurrentAccount();
   const { existWallet, lockedWallet } = useWallet();
+  const { storedOrder, isOrderResolved, persistOrder } = useTokenOrder();
 
   useEffect(() => {
     balanceService.setTokenMetainfos(tokenMetainfos);
@@ -86,6 +90,7 @@ export const useTokenBalance = (): {
     refetch: refetchGnoBalances,
     isError: isGnoBalanceError,
     fetchStatus: gnoFetchStatus,
+    isPreviousData: isGnoBalancePrevious,
   } = useQuery<TokenBalanceType[]>(
     // 'gno' discriminator keeps this cache entry separate from the Cosmos query
     // even though both share the 'balances' prefix.
@@ -116,6 +121,7 @@ export const useTokenBalance = (): {
     data: cosmosResults = [],
     refetch: refetchCosmosBalances,
     fetchStatus: cosmosFetchStatus,
+    isPreviousData: isCosmosBalancePrevious,
   } = useQuery<CosmosFetchResult[]>(
     // Keyed by account id (not the object reference) to avoid spurious refetches
     // when a new Account instance is created from the same underlying data.
@@ -262,7 +268,24 @@ export const useTokenBalance = (): {
   // Build the row shell from token metadata. Each row exists from the first
   // frame; balances populate row-by-row as queries resolve. Rows whose chain
   // errored out keep an empty amount and are surfaced via errorNetworkIds.
-  const currentBalances = useMemo<TokenBalanceType[]>(() => {
+  //
+  // Ordering depends on whether the balances are in. Once every row has an
+  // amount (or its chain is known to have failed) the comparator ranks them by
+  // what they hold. Until then it would be ranking them by which query
+  // happened to resolve first — every empty amount sorts to the bottom and
+  // jumps up on arrival — so the list replays the order it last settled in and
+  // only re-sorts when there is something real to sort by.
+  const { currentBalances, balancesSettled } = useMemo<{
+    currentBalances: TokenBalanceType[];
+    balancesSettled: boolean;
+  }>(() => {
+    // Nothing may be ordered until the stored order is known. Rendering rows
+    // in balance order first and rearranging them once the read returns is the
+    // same reshuffle, just sourced from storage latency instead of the network.
+    if (!isOrderResolved) {
+      return { currentBalances: [], balancesSettled: false };
+    }
+
     const gnoRows: TokenBalanceType[] = tokenMetainfos.map((meta) => {
       const found = gnoBalances.find((b) => b.tokenId === meta.tokenId);
       return {
@@ -282,15 +305,53 @@ export const useTokenBalance = (): {
       };
     });
 
-    return [...gnoRows, ...cosmosRows].sort(compareTokenBalances);
-  }, [tokenMetainfos, gnoBalances, cosmosResultsByNetwork, cosmosShellTokens]);
+    const rows = [...gnoRows, ...cosmosRows];
+    // Amounts alone do not mean these balances are this account's. Both queries
+    // keep the previous account's data on a switch (keepPreviousData), which
+    // would otherwise read as settled and persist the old account's ranking
+    // under the new account's key.
+    const showingPreviousBalances = isGnoBalancePrevious || isCosmosBalancePrevious;
+    const settled =
+      !showingPreviousBalances &&
+      rows.length > 0 &&
+      rows.every((row) => row.amount.value !== '' || errorNetworkIds.has(row.networkId));
+
+    if (settled || !storedOrder?.length) {
+      return { currentBalances: rows.sort(compareTokenBalances), balancesSettled: settled };
+    }
+
+    return {
+      currentBalances: sortTokenBalancesByStoredOrder(rows, storedOrder),
+      balancesSettled: settled,
+    };
+  }, [
+    tokenMetainfos,
+    gnoBalances,
+    cosmosResultsByNetwork,
+    cosmosShellTokens,
+    errorNetworkIds,
+    storedOrder,
+    isOrderResolved,
+    isGnoBalancePrevious,
+    isCosmosBalancePrevious,
+  ]);
+
+  // Remember where the rows settled, and keep remembering: a refetch that
+  // changes a balance re-sorts the list, and that new order is what the next
+  // load should start from. persistOrder is a no-op when nothing moved.
+  useEffect(() => {
+    if (!balancesSettled) {
+      return;
+    }
+    persistOrder(currentBalances);
+  }, [balancesSettled, currentBalances, persistOrder]);
 
   const loadingTokenKeys = useMemo(() => {
     const keys = new Set<string>();
     for (const row of currentBalances) {
       if (row.amount.value !== '') continue;
       if (errorNetworkIds.has(row.networkId)) continue;
-      keys.add(tokenKey(row.tokenId, row.networkId));
+      keys.add(tokenRowKey(row.tokenId, row.networkId));
     }
     return keys;
   }, [currentBalances, errorNetworkIds]);

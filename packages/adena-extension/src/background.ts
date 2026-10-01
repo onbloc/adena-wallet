@@ -1,7 +1,6 @@
 import { AlarmKey, SCHEDULE_ALARMS } from '@common/constants/alarm-key.constant';
 import { TransactionEventStore } from '@common/event-store';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
-import { ChromeLocalStorage } from '@common/storage';
 import { AUTO_LOCK_TRIGGERED_MESSAGE } from '@common/utils/auto-lock-timer';
 import { CommandHandler } from '@inject/message/command-handler';
 import {
@@ -286,47 +285,23 @@ chrome.windows.onRemoved.addListener((windowId) => {
 
 initAlarms();
 
-function existsWallet(): Promise<boolean> {
-  const storage = new ChromeLocalStorage();
-  return storage
-    .get('SERIALIZED')
-    .then(async (serialized) => typeof serialized === 'string' && serialized.length !== 0)
-    .catch(() => false);
-}
-
-function setupPopup(existWallet: boolean): boolean {
-  const popupUri = existWallet ? 'popup.html' : '';
-  chrome.action.setPopup({ popup: popupUri });
-  return true;
-}
-
+// The popup is declared statically in the manifest (`action.default_popup`), so
+// clicking the icon always opens it — even on the very first click of a browser
+// session. It used to be registered at runtime with `chrome.action.setPopup`,
+// which is dynamic action state: it is dropped whenever the browser restarts or
+// the extension reloads, and nothing restored it on `chrome.runtime.onStartup`.
+// The icon then had no popup, so the click fell through to `action.onClicked`,
+// which only re-registered the popup without opening it — the first click after
+// every browser start did nothing at all.
+//
+// The wallet-less case is handled inside the popup: App/popup sees
+// `existWallet === false`, opens the register tab and closes itself.
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     chrome.tabs.create({
       url: chrome.runtime.getURL('/register.html'),
     });
-  } else if (details.reason === 'update') {
-    existsWallet().then((existWallet) => {
-      setupPopup(existWallet);
-    });
   }
-});
-
-chrome.tabs.onCreated.addListener(() => {
-  existsWallet().then((existWallet) => {
-    setupPopup(existWallet);
-  });
-});
-
-chrome.action.onClicked.addListener(async () => {
-  existsWallet().then((existWallet) => {
-    setupPopup(existWallet);
-    if (!existWallet) {
-      chrome.tabs.create({
-        url: chrome.runtime.getURL('/register.html'),
-      });
-    }
-  });
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
