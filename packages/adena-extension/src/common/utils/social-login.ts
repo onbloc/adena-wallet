@@ -11,32 +11,39 @@ import { NetworkMetainfo } from '@types';
 
 const SOCIAL_LOGIN_APP_NAME = 'Adena';
 
-const REQUIRED_VERIFIER_FIELDS: (keyof Web3AuthVerifier)[] = [
-  'web3AuthClientId',
-  'verifier',
-  'authClientId',
-];
+export type SocialProvider = 'GOOGLE' | 'EMAIL' | 'X';
 
-function getMissingVerifierFields(verifier: Web3AuthVerifier): (keyof Web3AuthVerifier)[] {
-  const missingFields = REQUIRED_VERIFIER_FIELDS.filter((field) => !verifier[field]);
-  // X reaches Web3Auth through an Auth0 JWT verifier, so it needs the domain too.
-  if (verifier.domain !== undefined && !verifier.domain) {
-    return [...missingFields, 'domain'];
-  }
-  return missingFields;
+// Google sends googleClientId as the login client id, and X sends authClientId
+// plus the Auth0 domain through jwtParameters. The SDK's email_passwordless
+// path sends neither - only the Web3Auth client id and the verifier - so email
+// must not demand Auth0 values it never uses.
+const REQUIRED_VERIFIER_FIELDS: Record<SocialProvider, (keyof Web3AuthVerifier)[]> = {
+  GOOGLE: ['web3AuthClientId', 'verifier', 'authClientId'],
+  EMAIL: ['web3AuthClientId', 'verifier'],
+  X: ['web3AuthClientId', 'verifier', 'authClientId', 'domain'],
+};
+
+function getMissingVerifierFields(
+  verifier: Web3AuthVerifier,
+  provider: SocialProvider,
+): (keyof Web3AuthVerifier)[] {
+  return REQUIRED_VERIFIER_FIELDS[provider].filter((field) => !verifier[field]);
 }
 
 /**
  * Verifier values arrive from CI secrets at build time, so an unconfigured
- * provider is a normal state. Screens check this up front and go straight to the
- * failure step instead of walking the user through the flow first.
+ * provider is a normal state. Screens check this up front and keep the entry
+ * point disabled instead of walking the user into a dead end.
  */
-export function isVerifierConfigured(verifier: Web3AuthVerifier): boolean {
-  return getMissingVerifierFields(verifier).length === 0;
+export function isVerifierConfigured(
+  verifier: Web3AuthVerifier,
+  provider: SocialProvider,
+): boolean {
+  return getMissingVerifierFields(verifier, provider).length === 0;
 }
 
-function assertConfigured(verifier: Web3AuthVerifier, provider: string): void {
-  const missingFields = getMissingVerifierFields(verifier);
+function assertConfigured(verifier: Web3AuthVerifier, provider: SocialProvider): void {
+  const missingFields = getMissingVerifierFields(verifier, provider);
   if (missingFields.length > 0) {
     throw new Error(
       `Incomplete ${provider} Web3Auth verifier. Missing values: ${missingFields.join(', ')}.`,
@@ -62,12 +69,12 @@ export function createGoogleLoginConfig(
   verifier: Web3AuthVerifier,
   network: NetworkMetainfo,
 ): SocialGoogleConfigure {
-  assertConfigured(verifier, 'Google');
+  assertConfigured(verifier, 'GOOGLE');
   return {
     ...createBaseConfig(verifier, network),
     verifier: verifier.verifier,
-    authClientId: verifier.authClientId,
-    googleClientId: verifier.authClientId,
+    authClientId: verifier.authClientId || '',
+    googleClientId: verifier.authClientId || '',
   };
 }
 
@@ -76,12 +83,13 @@ export function createEmailLoginConfig(
   network: NetworkMetainfo,
   email: string,
 ): SocialEmailPasswordlessConfigure {
-  assertConfigured(verifier, 'Email');
+  assertConfigured(verifier, 'EMAIL');
   return {
     ...createBaseConfig(verifier, network),
     verifier: verifier.verifier,
-    authClientId: verifier.authClientId,
-    domain: verifier.domain || '',
+    // Required by the SDK type but unused on its email_passwordless path.
+    authClientId: '',
+    domain: '',
     email,
   };
 }
@@ -94,7 +102,7 @@ export function createXLoginConfig(
   return {
     ...createBaseConfig(verifier, network),
     verifier: verifier.verifier,
-    authClientId: verifier.authClientId,
+    authClientId: verifier.authClientId || '',
     domain: verifier.domain || '',
   };
 }

@@ -11,8 +11,8 @@ export interface Web3AuthVerifier {
   /** Name of the custom verifier registered on that network. */
   verifier: string;
   /** Client id of the identity provider behind the verifier (Google OAuth, Auth0, ...). */
-  authClientId: string;
-  /** Auth0 domain, required by the providers Web3Auth reaches through a JWT verifier. */
+  authClientId?: string;
+  /** Auth0 domain, used by the providers Web3Auth reaches through a JWT verifier. */
   domain?: string;
 }
 
@@ -41,13 +41,13 @@ export const GOOGLE_VERIFIERS: Record<GoogleKeySetType, Web3AuthVerifier> = {
 };
 
 // Email and X share one Web3Auth project today, hence the shared client id.
+// The SDK's email_passwordless path sends only the Web3Auth client id and the
+// verifier, so there are no Auth0 values to configure here.
 export const EMAIL_VERIFIER: Web3AuthVerifier = {
   web3AuthClientId:
     process.env.WEB3_AUTH_EMAIL_CLIENT_ID || process.env.WEB3_AUTH_X_CLIENT_ID || '',
   web3AuthNetwork: 'mainnet',
   verifier: process.env.EMAIL_VERIFIER_NAME || '',
-  authClientId: process.env.EMAIL_CLIENT_ID || '',
-  domain: process.env.EMAIL_AUTH0_DOMAIN || '',
 };
 
 // TODO: fill in the X verifier. Web3Auth reaches X through an Auth0 JWT

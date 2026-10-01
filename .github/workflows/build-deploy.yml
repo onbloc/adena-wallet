@@ -35,8 +35,6 @@ jobs:
           GOOGLE_PRODUCTION_CLIENT_ID: ${{ secrets.GOOGLE_PRODUCTION_CLIENT_ID }}
           WEB3_AUTH_EMAIL_CLIENT_ID: ${{ secrets.WEB3_AUTH_EMAIL_CLIENT_ID }}
           EMAIL_VERIFIER_NAME: ${{ secrets.EMAIL_VERIFIER_NAME }}
-          EMAIL_CLIENT_ID: ${{ secrets.EMAIL_CLIENT_ID }}
-          EMAIL_AUTH0_DOMAIN: ${{ secrets.EMAIL_AUTH0_DOMAIN }}
           WEB3_AUTH_X_CLIENT_ID: ${{ secrets.WEB3_AUTH_X_CLIENT_ID }}
           X_VERIFIER_NAME: ${{ secrets.X_VERIFIER_NAME }}
           X_CLIENT_ID: ${{ secrets.X_CLIENT_ID }}

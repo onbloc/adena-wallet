@@ -23,8 +23,6 @@ const WEB3AUTH_ENV_KEYS = [
   'GOOGLE_PRODUCTION_CLIENT_ID',
   'WEB3_AUTH_EMAIL_CLIENT_ID',
   'EMAIL_VERIFIER_NAME',
-  'EMAIL_CLIENT_ID',
-  'EMAIL_AUTH0_DOMAIN',
   // X is reached through an Auth0 JWT verifier, hence the extra domain.
   'WEB3_AUTH_X_CLIENT_ID',
   'X_VERIFIER_NAME',
