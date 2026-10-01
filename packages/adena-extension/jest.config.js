@@ -34,7 +34,7 @@ const jestConfig = {
     prefix: '<rootDir>/',
   }),
   transformIgnorePatterns: [
-    '/node_modules/(?!(@cosmjs/(amino|crypto|encoding)|@gnolang/(gno-js-client|tm2-js-client|tm2-rpc)|@noble/(curves|hashes)|@scure/base|uuid)/)',
+    '/node_modules/(?!(@cosmjs/(amino|crypto|encoding|math|utils)|@gnolang/(gno-js-client|tm2-js-client|tm2-rpc)|@noble/(ciphers|curves|hashes)|@scure/(base|bip39)|uuid)/)',
   ],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jest-environment-jsdom',

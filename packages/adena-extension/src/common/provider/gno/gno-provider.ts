@@ -146,7 +146,12 @@ export class GnoProvider extends GnoJSONRPCProvider {
       .catch(() => 0);
   }
 
-  public async getGasPrice(height?: number | undefined): Promise<number> {
+  /**
+   * Price of a single unit of gas, derived from the chain's gas price.
+   * Named apart from the base provider's getGasPrice(), which returns the
+   * raw { gas, price } pair rather than the ratio Adena works with.
+   */
+  public async getGasPriceRatio(height?: number | undefined): Promise<number> {
     const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
       'auth/gasprice',
       '',
