@@ -33,6 +33,7 @@ export type UseSocialLoginAccountReturn = {
   connectWithProvider: (
     provider: GnoSocialWalletProvider,
     keyringType: Web3AuthKeyringType,
+    isCurrentRequest: () => boolean,
   ) => Promise<void>;
 };
 
@@ -97,8 +98,20 @@ const useSocialLoginAccount = (): UseSocialLoginAccountReturn => {
   );
 
   const connectWithProvider = useCallback(
-    async (provider: GnoSocialWalletProvider, keyringType: Web3AuthKeyringType) => {
+    async (
+      provider: GnoSocialWalletProvider,
+      keyringType: Web3AuthKeyringType,
+      isCurrentRequest: () => boolean,
+    ) => {
       const connected = await provider.connect();
+
+      // The popup outlives the screen that opened it, so a request the user
+      // canceled - or one superseded by a retry - must not commit an account.
+      if (!isCurrentRequest()) {
+        await provider.disconnect().catch(() => false);
+        return;
+      }
+
       if (!connected) {
         throw new Error('Failed to connect the social login provider.');
       }
@@ -109,6 +122,10 @@ const useSocialLoginAccount = (): UseSocialLoginAccountReturn => {
       } finally {
         // The key now lives in the wallet's vault; the session is not kept.
         await provider.disconnect().catch(() => false);
+      }
+
+      if (!isCurrentRequest()) {
+        return;
       }
 
       await connectAccount(privateKey, keyringType);

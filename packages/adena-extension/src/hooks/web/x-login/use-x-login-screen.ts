@@ -1,5 +1,5 @@
 import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { X_VERIFIER } from '@common/constants/web3auth.constant';
 import { createXLoginConfig, isVerifierConfigured } from '@common/utils/social-login';
@@ -39,10 +39,13 @@ const useXLoginScreen = (): UseXLoginReturn => {
   const { connectWithProvider } = useSocialLoginAccount();
   const [failType, setFailType] = useState<SocialLoginFailType>('DEFAULT');
   const { currentNetwork } = useNetwork();
+  // Identifies the login attempt that owns the popup, so a canceled or
+  // superseded one cannot commit an account when it finally resolves.
+  const requestIdRef = useRef(0);
 
   const [xLoginState, setXLoginState] = useState<XLoginStateType>(() => {
     // Nothing to log in against when the verifier is unconfigured.
-    if (!isVerifierConfigured(X_VERIFIER)) {
+    if (!isVerifierConfigured(X_VERIFIER, 'X')) {
       return 'FAILED';
     }
     return params?.doneQuestionnaire ? 'REQUEST_LOGIN' : 'INIT';
@@ -67,20 +70,29 @@ const useXLoginScreen = (): UseXLoginReturn => {
   }, [ableToSkipQuestionnaire, navigate]);
 
   const requestXLogin = async (): Promise<void> => {
+    const requestId = (requestIdRef.current += 1);
+    const isCurrentRequest = (): boolean => requestIdRef.current === requestId;
+
     try {
       const provider = await GnoSocialWalletProvider.createTwitter(
         createXLoginConfig(X_VERIFIER, currentNetwork),
       );
-      await connectWithProvider(provider, 'WEB3_AUTH_X');
+      await connectWithProvider(provider, 'WEB3_AUTH_X', isCurrentRequest);
     } catch (e) {
       console.error(e);
+      if (!isCurrentRequest()) {
+        return;
+      }
       setFailType(toSocialLoginFailType(e));
       setXLoginState('FAILED');
     }
   };
 
   const backStep = useCallback(() => {
-    if (xLoginState === 'INIT') {
+    // Abandons whatever popup is still open.
+    requestIdRef.current += 1;
+
+    if (xLoginState === 'INIT' || !isVerifierConfigured(X_VERIFIER, 'X')) {
       navigate(RoutePath.WebAdvancedOption);
       return;
     }
@@ -88,7 +100,7 @@ const useXLoginScreen = (): UseXLoginReturn => {
   }, [xLoginState, navigate]);
 
   const retry = useCallback(() => {
-    if (!isVerifierConfigured(X_VERIFIER)) {
+    if (!isVerifierConfigured(X_VERIFIER, 'X')) {
       return;
     }
     setFailType('DEFAULT');
