@@ -1,3 +1,4 @@
+import { isWeb3AuthKeyringType } from '../keyring';
 import { Account, AccountInfo } from './account';
 import { LedgerAccount } from './ledger-account';
 import { SeedAccount } from './seed-account';
@@ -13,7 +14,7 @@ export function isLedgerAccount(account: Account): account is LedgerAccount {
 }
 
 export function isSingleAccount(account: Account): account is SingleAccount {
-  return account.type === 'WEB3_AUTH' || account.type === 'PRIVATE_KEY';
+  return isWeb3AuthKeyringType(account.type) || account.type === 'PRIVATE_KEY';
 }
 
 export function isAirgapAccount(account: Account): account is SingleAccount {
@@ -44,7 +45,7 @@ export function deserializeAccount(plain: string) {
   if (accountInfo.type === 'LEDGER') {
     return LedgerAccount.fromData(accountInfo);
   }
-  if (accountInfo.type === 'PRIVATE_KEY' || accountInfo.type === 'WEB3_AUTH') {
+  if (accountInfo.type === 'PRIVATE_KEY' || isWeb3AuthKeyringType(accountInfo.type)) {
     return SingleAccount.fromData(accountInfo);
   }
   if (accountInfo.type === 'SESSION') {
