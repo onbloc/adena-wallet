@@ -15,10 +15,16 @@ const StyledContainer = styled(View)`
 `;
 
 interface GoogleLoginSelectKeySetProps {
+  ableToSelectProduction: boolean;
+  ableToSelectLegacy: boolean;
   selectKeySetType: (keySetType: GoogleKeySetType) => void;
 }
 
-const GoogleLoginSelectKeySet: React.FC<GoogleLoginSelectKeySetProps> = ({ selectKeySetType }) => {
+const GoogleLoginSelectKeySet: React.FC<GoogleLoginSelectKeySetProps> = ({
+  ableToSelectProduction,
+  ableToSelectLegacy,
+  selectKeySetType,
+}) => {
   const onClickProduction = useCallback(() => {
     selectKeySetType('PRODUCTION');
   }, [selectKeySetType]);
@@ -40,6 +46,7 @@ const GoogleLoginSelectKeySet: React.FC<GoogleLoginSelectKeySetProps> = ({ selec
           layout='list'
           figure='primary'
           iconElement={<IconGoogle />}
+          disabled={!ableToSelectProduction}
           text='Google Account'
           description='Sign in with the current verifier. Use this for a new account.'
           onClick={onClickProduction}
@@ -48,6 +55,7 @@ const GoogleLoginSelectKeySet: React.FC<GoogleLoginSelectKeySetProps> = ({ selec
           layout='list'
           figure='secondary'
           iconElement={<IconImport />}
+          disabled={!ableToSelectLegacy}
           text='Legacy Google Account'
           description='Sign in with the previous verifier to access an account created with it.'
           onClick={onClickLegacy}

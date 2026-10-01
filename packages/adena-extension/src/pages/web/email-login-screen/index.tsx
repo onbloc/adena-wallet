@@ -28,7 +28,7 @@ const EmailLoginScreen: React.FC = () => {
   } = useEmailLoginScreen();
 
   const topSpacing = useMemo(() => {
-    if (emailLoginState === 'INIT' || emailLoginState === 'ENTER_EMAIL') {
+    if (emailLoginState !== 'REQUEST_LOGIN') {
       return {
         default: WEB_TOP_SPACING,
         responsive: WEB_TOP_SPACING_RESPONSIVE,
@@ -46,7 +46,7 @@ const EmailLoginScreen: React.FC = () => {
       spacing={topSpacing?.default || null}
       responsiveSpacing={topSpacing?.responsive || null}
     >
-      {(emailLoginState === 'INIT' || emailLoginState === 'ENTER_EMAIL') && (
+      {emailLoginState !== 'REQUEST_LOGIN' && (
         <WebMainHeader
           stepLength={indicatorInfo.stepLength}
           currentStep={indicatorInfo.stepNo}

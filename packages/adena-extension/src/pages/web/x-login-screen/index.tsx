@@ -15,7 +15,7 @@ const XLoginScreen: React.FC = () => {
     useXLoginScreen();
 
   const topSpacing = useMemo(() => {
-    if (xLoginState === 'INIT') {
+    if (xLoginState !== 'REQUEST_LOGIN') {
       return {
         default: WEB_TOP_SPACING,
         responsive: WEB_TOP_SPACING_RESPONSIVE,
@@ -33,21 +33,21 @@ const XLoginScreen: React.FC = () => {
       spacing={topSpacing?.default || null}
       responsiveSpacing={topSpacing?.responsive || null}
     >
+      {xLoginState !== 'REQUEST_LOGIN' && (
+        <WebMainHeader
+          stepLength={indicatorInfo.stepLength}
+          currentStep={indicatorInfo.stepNo}
+          onClickGoBack={onClickGoBack}
+        />
+      )}
       {xLoginState === 'INIT' && (
-        <>
-          <WebMainHeader
-            stepLength={indicatorInfo.stepLength}
-            currentStep={indicatorInfo.stepNo}
-            onClickGoBack={onClickGoBack}
-          />
-          <SensitiveInfoStep
-            desc={
-              'You are about to construct a private key on your device using Web3Auth,\na third party service provider. This account will be accessible with your\nsocial logins.'
-            }
-            onClickNext={initXLogin}
-            link={`${ADENA_DOCS_PAGE}/user-guide/sign-in/sign-in-with-google`}
-          />
-        </>
+        <SensitiveInfoStep
+          desc={
+            'You are about to construct a private key on your device using Web3Auth,\na third party service provider. This account will be accessible with your\nsocial logins.'
+          }
+          onClickNext={initXLogin}
+          link={`${ADENA_DOCS_PAGE}/user-guide/sign-in/sign-in-with-google`}
+        />
       )}
       {xLoginState === 'REQUEST_LOGIN' && (
         <SocialLoginRequest

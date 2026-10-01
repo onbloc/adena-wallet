@@ -16,6 +16,8 @@ const GoogleLoginScreen: React.FC = () => {
   const {
     googleLoginState,
     failType,
+    ableToSelectProduction,
+    ableToSelectLegacy,
     keySetType,
     indicatorInfo,
     backStep,
@@ -26,7 +28,7 @@ const GoogleLoginScreen: React.FC = () => {
   } = useGoogleLoginScreen();
 
   const topSpacing = useMemo(() => {
-    if (googleLoginState === 'SELECT_KEY_SET' || googleLoginState === 'INIT') {
+    if (googleLoginState !== 'REQUEST_LOGIN') {
       return {
         default: WEB_TOP_SPACING,
         responsive: WEB_TOP_SPACING_RESPONSIVE,
@@ -51,7 +53,7 @@ const GoogleLoginScreen: React.FC = () => {
       spacing={topSpacing?.default || null}
       responsiveSpacing={topSpacing?.responsive || null}
     >
-      {(googleLoginState === 'SELECT_KEY_SET' || googleLoginState === 'INIT') && (
+      {googleLoginState !== 'REQUEST_LOGIN' && (
         <WebMainHeader
           stepLength={indicatorInfo.stepLength}
           currentStep={indicatorInfo.stepNo}
@@ -59,7 +61,11 @@ const GoogleLoginScreen: React.FC = () => {
         />
       )}
       {googleLoginState === 'SELECT_KEY_SET' && (
-        <GoogleLoginSelectKeySet selectKeySetType={selectKeySetType} />
+        <GoogleLoginSelectKeySet
+          ableToSelectProduction={ableToSelectProduction}
+          ableToSelectLegacy={ableToSelectLegacy}
+          selectKeySetType={selectKeySetType}
+        />
       )}
       {googleLoginState === 'INIT' && (
         <SensitiveInfoStep
