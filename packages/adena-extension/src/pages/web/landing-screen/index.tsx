@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { useAdenaContext } from '@hooks/use-context';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
-import { isFirefox } from '@common/utils/browser-utils';
+import { isLedgerSupportedBrowser } from '@common/utils/browser-utils';
 
 import { View, WebMain } from '@components/atoms';
 import WebMainButton from '@components/atoms/web-main-button';
@@ -33,7 +33,7 @@ const LandingScreen = (): ReactElement => {
   // expose to extensions, so the flow cannot work there. Keep the entry visible
   // — users should see the feature exists — but disable it and say why, instead
   // of navigating into a Ledger connection that can only fail.
-  const hardwareWalletsSupported = !isFirefox();
+  const hardwareWalletsSupported = isLedgerSupportedBrowser();
 
   // networkMode 'always': this reads chrome.storage, never the network. The
   // default 'online' pauses offline, leaving isLoading true for the session.

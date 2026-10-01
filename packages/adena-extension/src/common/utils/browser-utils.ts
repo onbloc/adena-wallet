@@ -26,6 +26,22 @@ export const isExtensionPopup = (): boolean => {
   return views.length > 0 && views[0] === window;
 };
 
+/**
+ * Whether this document is the toolbar popup panel rather than a separate popup
+ * window. Both share `popup.html` but size differently.
+ *
+ * Answers "not the panel" when `chrome.extension.getViews` is unavailable or
+ * throws, so callers stay on the layout Chrome has always used.
+ */
+export const isToolbarPanel = (): boolean => {
+  try {
+    const views = chrome?.extension?.getViews?.({ type: 'popup' });
+    return !!views && views.length > 0 && views[0] === window;
+  } catch {
+    return false;
+  }
+};
+
 export const isSeparatePopupWindow = (): boolean => {
   if (isExtensionPopup()) {
     return false;
@@ -49,6 +65,16 @@ export const isFirefox = (): boolean => {
 
   return typeof navigator !== 'undefined' && /firefox/i.test(navigator.userAgent);
 };
+
+/**
+ * Whether Ledger accounts can be created here. Firefox has neither WebHID nor
+ * WebUSB, which the Ledger transport needs.
+ *
+ * Gates on the browser, not on `navigator.hid` / `navigator.usb`: a probe that
+ * comes back false for an unrelated reason must never take the Ledger entry
+ * away from a Chrome user. Single definition for every entry-point screen.
+ */
+export const isLedgerSupportedBrowser = (): boolean => !isFirefox();
 
 /**
  * Closes the browser surface hosting this extension page.

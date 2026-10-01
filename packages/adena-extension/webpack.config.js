@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const packageInfo = require('./package.json');
 
@@ -15,11 +16,21 @@ const { ProvidePlugin } = require('webpack');
  *   support background service workers) and a Gecko add-on id, output in `./dist-firefox`.
  *
  * Usage: `webpack --mode production --env browser=firefox`
+ *
+ * Both targets are generated from `public/manifest.json`;
+ * `public/manifest.firefox.json` holds only the keys Firefox needs differently.
+ * Keeping it a delta rather than a full copy is what stops the two from drifting
+ * — as a full copy had, missing the `img-src data:` NFT images rely on.
  */
 const buildConfig = (env = {}) => {
   const isFirefox = env.browser === 'firefox';
-  const manifestPath = isFirefox ? './public/manifest.firefox.json' : './public/manifest.json';
   const outputPath = path.join(__dirname, isFirefox ? 'dist-firefox' : 'dist');
+
+  // Shallow merge: a delta key replaces the base wholesale, which is what
+  // `background` needs (`scripts` instead of `service_worker`).
+  const firefoxOverrides = isFirefox
+    ? JSON.parse(fs.readFileSync(path.join(__dirname, 'public/manifest.firefox.json'), 'utf8'))
+    : {};
 
   const config = {
     devtool: 'cheap-module-source-map',
@@ -105,7 +116,7 @@ const buildConfig = (env = {}) => {
       new CopyWebPackPlugin({
         patterns: [
           {
-            from: manifestPath,
+            from: './public/manifest.json',
             to: 'manifest.json',
             transform: (content) =>
               Buffer.from(
@@ -117,8 +128,9 @@ const buildConfig = (env = {}) => {
                     128: 'icons/icon128.png',
                   },
                   ...JSON.parse(content.toString()),
-                  // Keep the packaged manifest version in sync with the extension package
-                  // (works for both manifest.json and manifest.firefox.json).
+                  // Empty for the Chrome target; the Firefox-only keys otherwise.
+                  ...firefoxOverrides,
+                  // Keep the packaged manifest version in sync with the extension package.
                   version: packageInfo.version,
                 }),
               ),
