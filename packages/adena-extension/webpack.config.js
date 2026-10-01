@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const packageInfo = require('./package.json');
 
@@ -5,7 +6,59 @@ const HtmlWebPackPlugin = require('html-webpack-plugin');
 const CopyWebPackPlugin = require('copy-webpack-plugin');
 const CleanWebPackPlugin = require('clean-webpack-plugin').CleanWebpackPlugin;
 const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
-const { ProvidePlugin } = require('webpack');
+const { DefinePlugin, ProvidePlugin } = require('webpack');
+
+// The social-login key sets in src/common/constants/web3auth.constant.ts read
+// their values from process.env, which webpack does not substitute on its own.
+// Without these definitions every lookup is undefined at runtime and only the
+// hardcoded legacy fallbacks survive.
+const WEB3AUTH_ENV_KEYS = [
+  // Google keeps two verifiers: accounts created before the production one can
+  // only be reached through the legacy one.
+  'WEB3_AUTH_LEGACY_CLIENT_ID',
+  'GOOGLE_LEGACY_VERIFIER',
+  'GOOGLE_LEGACY_CLIENT_ID',
+  'WEB3_AUTH_PRODUCTION_CLIENT_ID',
+  'GOOGLE_PRODUCTION_VERIFIER',
+  'GOOGLE_PRODUCTION_CLIENT_ID',
+  'WEB3_AUTH_EMAIL_CLIENT_ID',
+  'EMAIL_VERIFIER_NAME',
+  'EMAIL_CLIENT_ID',
+  'EMAIL_AUTH0_DOMAIN',
+  // X is reached through an Auth0 JWT verifier, hence the extra domain.
+  'WEB3_AUTH_X_CLIENT_ID',
+  'X_VERIFIER_NAME',
+  'X_CLIENT_ID',
+  'X_AUTH0_DOMAIN',
+];
+
+const parseEnvFile = (filePath) => {
+  if (!fs.existsSync(filePath)) {
+    return {};
+  }
+  return fs
+    .readFileSync(filePath, 'utf8')
+    .split(/\r?\n/)
+    .reduce((values, line) => {
+      const matched = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
+      if (!matched) {
+        return values;
+      }
+      const [, key, rawValue] = matched;
+      values[key] = rawValue.trim().replace(/^["']|["']$/g, '');
+      return values;
+    }, {});
+};
+
+const envFile = parseEnvFile(path.join(__dirname, '.env'));
+
+// Real environment variables (CI secrets) take precedence over the local
+// .env file.
+const web3authEnvDefinitions = WEB3AUTH_ENV_KEYS.reduce((definitions, key) => {
+  const value = process.env[key] || envFile[key] || '';
+  definitions[`process.env.${key}`] = JSON.stringify(value);
+  return definitions;
+}, {});
 
 const config = {
   devtool: 'cheap-module-source-map',
@@ -121,6 +174,7 @@ const config = {
       chunks: ['popup'],
       filename: 'popup.html',
     }),
+    new DefinePlugin(web3authEnvDefinitions),
     new NodePolyfillPlugin(),
     new ProvidePlugin({
       process: 'process/browser.js',
