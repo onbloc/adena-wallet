@@ -13,10 +13,8 @@ const SOCIAL_LOGIN_APP_NAME = 'Adena';
 
 export type SocialProvider = 'GOOGLE' | 'EMAIL' | 'X';
 
-// Google sends googleClientId as the login client id, and X sends authClientId
-// plus the Auth0 domain through jwtParameters. The SDK's email_passwordless
-// path sends neither - only the Web3Auth client id and the verifier - so email
-// must not demand Auth0 values it never uses.
+// The SDK's email path sends neither authClientId nor domain, so email must not
+// demand them.
 const REQUIRED_VERIFIER_FIELDS: Record<SocialProvider, (keyof Web3AuthVerifier)[]> = {
   GOOGLE: ['web3AuthClientId', 'verifier', 'authClientId'],
   EMAIL: ['web3AuthClientId', 'verifier'],
@@ -30,11 +28,7 @@ function getMissingVerifierFields(
   return REQUIRED_VERIFIER_FIELDS[provider].filter((field) => !verifier[field]);
 }
 
-/**
- * Verifier values arrive from CI secrets at build time, so an unconfigured
- * provider is a normal state. Screens check this up front and keep the entry
- * point disabled instead of walking the user into a dead end.
- */
+/** Values come from build-time secrets, so screens disable unconfigured providers. */
 export function isVerifierConfigured(
   verifier: Web3AuthVerifier,
   provider: SocialProvider,
@@ -107,11 +101,7 @@ export function createXLoginConfig(
   };
 }
 
-/**
- * Adena stores the derived key in its own vault instead of keeping the Web3Auth
- * session alive. The SDK keeps `requestPrivateKey()` internal, but the wallet it
- * builds exposes the same key through the signer.
- */
+/** The SDK keeps requestPrivateKey() internal; the wallet exposes the same key. */
 export async function requestSocialPrivateKey(provider: GnoSocialWalletProvider): Promise<string> {
   const wallet = provider.getWallet();
   if (!wallet) {

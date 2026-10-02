@@ -39,9 +39,7 @@ const AdvancedOptionScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const { wallet } = useWalletContext();
 
-  // Verifier values ship from build-time secrets, so a provider can be absent
-  // in a given build. Keep its entry point disabled rather than letting the
-  // user walk into a screen that can only fail.
+  // A provider can be absent from a build, so its entry point stays disabled.
   const ableToSignInWithGoogle =
     isVerifierConfigured(GOOGLE_VERIFIERS.PRODUCTION, 'GOOGLE') ||
     isVerifierConfigured(GOOGLE_VERIFIERS.LEGACY, 'GOOGLE');

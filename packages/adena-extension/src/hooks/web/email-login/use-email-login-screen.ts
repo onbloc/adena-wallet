@@ -55,7 +55,11 @@ const useEmailLoginScreen = (): UseEmailLoginReturn => {
     if (!isVerifierConfigured(EMAIL_VERIFIER, 'EMAIL')) {
       return 'FAILED';
     }
-    return params?.doneQuestionnaire ? 'REQUEST_LOGIN' : 'INIT';
+    if (!params?.doneQuestionnaire) {
+      return 'INIT';
+    }
+    // The address is the login hint, so never open the popup without one.
+    return params.email ? 'REQUEST_LOGIN' : 'ENTER_EMAIL';
   });
 
   // Restored from the route state after the questionnaire round trip, which

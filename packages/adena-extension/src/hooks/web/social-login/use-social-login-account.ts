@@ -40,12 +40,8 @@ export type UseSocialLoginAccountReturn = {
   ) => Promise<void>;
 };
 
-// Turns the key a social provider derived into an Adena account. What happens
-// after the key arrives is the same for every provider.
-//
 // Every await here can outlive the screen that started it, so the attempt is
-// re-checked after each one: an abandoned login must not write to the wallet,
-// stage a pending wallet or navigate.
+// re-checked after each one.
 const useSocialLoginAccount = (): UseSocialLoginAccountReturn => {
   const { walletService } = useAdenaContext();
   const { navigate } = useAppNavigate();
@@ -70,8 +66,7 @@ const useSocialLoginAccount = (): UseSocialLoginAccountReturn => {
         return;
       }
 
-      // A social account always derives the same key, so signing in again would
-      // add a second entry for one address.
+      // The same social account always derives the same key.
       const publicKey = arrayToHex(account.publicKey);
       const alreadyAdded = clone.accounts.some(
         (storedAccount) => arrayToHex(storedAccount.publicKey) === publicKey,
@@ -90,9 +85,7 @@ const useSocialLoginAccount = (): UseSocialLoginAccountReturn => {
       }
       await updateWallet(clone);
 
-      // Switching happens after the save so the current account never points at
-      // one the wallet has not stored - and a cancellation here leaves nothing
-      // half-applied to undo.
+      // Switching after the save keeps the current account off an unsaved one.
       const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
       if (storedAccount) {
         await changeCurrentAccount(storedAccount);

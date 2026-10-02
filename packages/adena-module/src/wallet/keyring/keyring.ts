@@ -27,15 +27,10 @@ export type KeyringType =
   | 'MULTISIG'
   | 'SESSION';
 
-/**
- * Every social login produces the same kind of keyring - a single secp256k1 key
- * derived by Web3Auth. The provider is kept in the type so an account can be
- * labelled by where it came from. 'WEB3_AUTH' is the Google-era value and stays
- * as-is, so accounts stored before the other providers existed keep working.
- */
+/** Provider is kept in the type for labelling. 'WEB3_AUTH' is the Google-era value. */
 export type Web3AuthKeyringType = 'WEB3_AUTH' | 'WEB3_AUTH_EMAIL' | 'WEB3_AUTH_X';
 
-export const WEB3_AUTH_KEYRING_TYPES: readonly KeyringType[] = [
+const WEB3_AUTH_KEYRING_TYPES: readonly KeyringType[] = [
   'WEB3_AUTH',
   'WEB3_AUTH_EMAIL',
   'WEB3_AUTH_X',

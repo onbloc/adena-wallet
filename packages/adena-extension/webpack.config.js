@@ -8,10 +8,8 @@ const CleanWebPackPlugin = require('clean-webpack-plugin').CleanWebpackPlugin;
 const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 const { DefinePlugin, ProvidePlugin } = require('webpack');
 
-// The social-login key sets in src/common/constants/web3auth.constant.ts read
-// their values from process.env, which webpack does not substitute on its own.
-// Without these definitions every lookup is undefined at runtime and only the
-// hardcoded legacy fallbacks survive.
+// web3auth.constant.ts reads these from process.env, which webpack does not
+// substitute on its own.
 const WEB3AUTH_ENV_KEYS = [
   // Google keeps two verifiers: accounts created before the production one can
   // only be reached through the legacy one.

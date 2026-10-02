@@ -1,7 +1,5 @@
-// The same account resolves to a different key - and so a different address -
-// on a different verifier. These values are public identifiers that ship inside
-// the bundle; access is gated by the allowed origins on the Web3Auth, Google and
-// Auth0 dashboards.
+// Public identifiers: they ship in the bundle, and access is gated by the allowed
+// origins on the Web3Auth, Google and Auth0 dashboards.
 
 export interface Web3AuthVerifier {
   /** Client id issued by the Web3Auth dashboard project that owns the verifier. */
@@ -16,8 +14,7 @@ export interface Web3AuthVerifier {
   domain?: string;
 }
 
-// Accounts created before the production verifier can only be reached through
-// the legacy one, so both stay selectable.
+// Accounts predating the production verifier are only reachable through legacy.
 export type GoogleKeySetType = 'LEGACY' | 'PRODUCTION';
 
 export const DEFAULT_GOOGLE_KEY_SET_TYPE: GoogleKeySetType = 'PRODUCTION';
@@ -40,9 +37,8 @@ export const GOOGLE_VERIFIERS: Record<GoogleKeySetType, Web3AuthVerifier> = {
   },
 };
 
-// Email and X share one Web3Auth project today, hence the shared client id.
-// The SDK's email_passwordless path sends only the Web3Auth client id and the
-// verifier, so there are no Auth0 values to configure here.
+// Email and X share one Web3Auth project, and the SDK's email path sends no
+// Auth0 values.
 export const EMAIL_VERIFIER: Web3AuthVerifier = {
   web3AuthClientId:
     process.env.WEB3_AUTH_EMAIL_CLIENT_ID || process.env.WEB3_AUTH_X_CLIENT_ID || '',
