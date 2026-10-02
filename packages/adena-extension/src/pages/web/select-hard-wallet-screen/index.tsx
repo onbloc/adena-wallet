@@ -1,6 +1,5 @@
 import { ReactElement, useCallback } from 'react';
 import styled from 'styled-components';
-import { AdenaLedgerConnector } from 'adena-module';
 
 import { Pressable, View, WebImg, WebMain, WebText } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -12,6 +11,7 @@ import IconLedger from '@assets/web/ledger-xs.svg';
 import IconKeystone from '@assets/web/keystone-xs.svg';
 import WebMainButton from '@components/atoms/web-main-button';
 import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import { isLedgerSupportedBrowser } from '@common/utils/browser-utils';
 
 const StyledWrapper = styled(View)`
   position: relative;
@@ -28,8 +28,8 @@ const StyledBackButton = styled.div`
 
 const SelectHardWalletScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
-  // Firefox has neither WebHID nor WebUSB, so the Ledger flow is unavailable there.
-  const isLedgerSupported = AdenaLedgerConnector.isSupported();
+  // Same helper the add-wallet landing screen gates its entry on.
+  const isLedgerSupported = isLedgerSupportedBrowser();
 
   const onClickLedger = useCallback(() => {
     navigate(RoutePath.WebConnectLedger);
@@ -62,6 +62,7 @@ const SelectHardWalletScreen = (): ReactElement => {
             figure='primary'
             iconElement={<WebImg src={IconLedger} size={24} />}
             text='Continue with Ledger'
+            description={isLedgerSupported ? undefined : 'Ledger is not supported in Firefox.'}
             disabled={!isLedgerSupported}
             onClick={onClickLedger}
           />
