@@ -323,20 +323,22 @@ export const useBalanceInput = (
     }
     // A grant makes part of the balance untransferable, so the figure stops
     // being the account's balance and reads as spendable, like a session's.
-    const label = isSessionNativeTransfer || vestingLockedAmount !== null ? 'Spendable' : 'Balance';
+    const isCappedTransfer = isSessionNativeTransfer || vestingLockedAmount !== null;
+    const label = isCappedTransfer ? 'Spendable' : 'Balance';
 
     // A balance that could not be read is not a zero balance.
     if (!currentBalance) {
       return `${label}: - ${tokenMetainfo.symbol}`;
     }
 
+    // A capped transfer shows the figure the field will actually accept — fee
+    // reserved and all. Anything else would advertise an amount that validation
+    // rejects on the next keystroke, since a capped send is checked against
+    // that same limit rather than the lenient balance.
     const balanceAmount = BigNumber(currentBalance.amount.value || 0);
-    const descriptionAmount = isSessionNativeTransfer
+    const descriptionAmount = isCappedTransfer
       ? availAmountNumber
-      : getLimitedAmount(
-          getLimitedAmount(balanceAmount, sessionSpendableAmount),
-          getVestingLimitedAmount(balanceAmount, vestingLockedAmount),
-        );
+      : getLimitedAmount(balanceAmount, sessionSpendableAmount);
     return `${label}: ${descriptionAmount.toFormat()} ${tokenMetainfo.symbol}`;
   }, [
     availAmountNumber,
@@ -503,24 +505,6 @@ function getNativeTokenMinimalDenom(tokenMetainfo: TokenModel): string {
 
 function getCoinAmount(coins: ReturnType<typeof parseCoins>, denom: string): bigint {
   return coins.find((coin) => coin.denom === denom)?.amount ?? BigInt(0);
-}
-
-/**
- * The most of `amount` a vesting grant leaves transferable.
- *
- * The lock is subtracted from the caller's own balance snapshot rather than
- * from one the grant query carried along, so the figure can never describe a
- * balance the screen is not actually spending.
- */
-function getVestingLimitedAmount(amount: BigNumber, locked: BigNumber | null): BigNumber | null {
-  if (locked === null) {
-    return null;
-  }
-
-  // Fees may be paid out of locked coins, so a balance can fall under its own
-  // lock. Nothing is spendable then, which is not the same as owing it.
-  const unlocked = amount.minus(locked);
-  return unlocked.isGreaterThan(0) ? unlocked : BigNumber(0);
 }
 
 function getLimitedAmount(amount: BigNumber, limit: BigNumber | null): BigNumber {

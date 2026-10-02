@@ -36,7 +36,13 @@ export const useVestingInfo = (
   const targetAddress = address === undefined ? currentBalanceAddress : address;
 
   const { data: accountInfo, isLoading } = useGetAccountInfo(targetAddress, {
-    refetchInterval: (data) => (data?.vesting ? VESTING_REFETCH_INTERVAL : false),
+    // Poll a grant, because its split moves every block — but also poll an
+    // account that could not be read. `getAccountInfo` answers a failed RPC
+    // with an IN_ACTIVE placeholder rather than rejecting, so that answer is
+    // not an answer: without a retry a caller that holds back on "unknown"
+    // would hold back for as long as the screen stays open.
+    refetchInterval: (data) =>
+      data?.vesting || (data && data.status !== 'ACTIVE') ? VESTING_REFETCH_INTERVAL : false,
     // `useGetAccountInfo` keeps previous data by default. Here that would hand
     // back the PREVIOUS account's schedule and coins while the newly selected
     // account's request is still in flight — and with `isLoading` false, so

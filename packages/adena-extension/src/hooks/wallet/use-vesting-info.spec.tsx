@@ -141,6 +141,37 @@ describe('useVestingInfo', () => {
     expect(result.current.isResolved).toBe(true);
   });
 
+  // A caller that holds a transfer back on "cap unknown" needs the query to
+  // keep asking, or one failed read strands the screen until it remounts.
+  describe('refetch policy', () => {
+    const refetchIntervalFor = (data: AccountInfo | null): number | false => {
+      setCurrentAddress(ACCOUNT_A);
+      setAccountInfo(data);
+      renderHook(() => useVestingInfo());
+
+      const options = mockedUseGetAccountInfo.mock.calls[0][1];
+      const refetchInterval = options?.refetchInterval as (
+        data: AccountInfo | null,
+      ) => number | false;
+
+      return refetchInterval(data);
+    };
+
+    it('polls a grant, whose split moves every block', () => {
+      expect(refetchIntervalFor(accountInfo(ACCOUNT_A, true))).toBe(5_000);
+    });
+
+    it('polls an account that could not be read', () => {
+      expect(
+        refetchIntervalFor({ ...accountInfo(ACCOUNT_A, false), status: 'IN_ACTIVE', coins: '' }),
+      ).toBe(5_000);
+    });
+
+    it('goes quiet for a read account with no grant', () => {
+      expect(refetchIntervalFor(accountInfo(ACCOUNT_A, false))).toBe(false);
+    });
+  });
+
   it('returns null before any account is selected', () => {
     setCurrentAddress(null);
     setAccountInfo(null);
