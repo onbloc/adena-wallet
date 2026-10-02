@@ -37,9 +37,7 @@ const GoogleLoginSelectKeySet: React.FC<GoogleLoginSelectKeySetProps> = ({
     <StyledContainer>
       <WebTitleWithDescription
         title='Select Your Account Type'
-        description={
-          'Your private key is derived from the Web3Auth verifier used at sign-in.\nAccounts created on the previous verifier can only be accessed through it,\nso pick the type that matches your account.'
-        }
+        description='Your private key depends on the verifier used at sign-in, so pick the type that matches your account.'
       />
       <View style={{ rowGap: 16, width: '100%' }}>
         <WebMainButton

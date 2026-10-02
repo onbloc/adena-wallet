@@ -6,7 +6,11 @@ import { WebMainHeader } from '@components/pages/web/main-header';
 import useGoogleLoginScreen from '@hooks/web/google-login/use-google-login-screen';
 
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
-import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import {
+  WEB_SELECT_CONTENT_WIDTH,
+  WEB_TOP_SPACING,
+  WEB_TOP_SPACING_RESPONSIVE,
+} from '@common/constants/ui.constant';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import SocialLoginFail from '@components/pages/web/social-login-fail';
 import SocialLoginRequest from '@components/pages/web/social-login-request';
@@ -26,6 +30,12 @@ const GoogleLoginScreen: React.FC = () => {
     initGoogleLogin,
     requestGoogleLogin,
   } = useGoogleLoginScreen();
+
+  // The key-set step is a provider picker like the other option lists, so it
+  // keeps their narrower column instead of the wider one the later steps use.
+  const contentWidth = useMemo(() => {
+    return googleLoginState === 'SELECT_KEY_SET' ? WEB_SELECT_CONTENT_WIDTH : undefined;
+  }, [googleLoginState]);
 
   const topSpacing = useMemo(() => {
     if (googleLoginState !== 'REQUEST_LOGIN') {
@@ -50,6 +60,7 @@ const GoogleLoginScreen: React.FC = () => {
 
   return (
     <WebMain
+      width={contentWidth}
       spacing={topSpacing?.default || null}
       responsiveSpacing={topSpacing?.responsive || null}
     >
