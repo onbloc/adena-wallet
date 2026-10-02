@@ -32,9 +32,7 @@ describe('closeCurrentSurface', () => {
   });
 
   it('removes this page’s own tab when the browser refused window.close()', () => {
-    const { remove } = mockChromeTabs((callback) =>
-      callback({ id: 7, url: window.location.href }),
-    );
+    const { remove } = mockChromeTabs((callback) => callback({ id: 7, url: window.location.href }));
 
     closeCurrentSurface();
     jest.advanceTimersByTime(100);
@@ -78,19 +76,35 @@ const setUserAgent = (value: string): void => {
   Object.defineProperty(window.navigator, 'userAgent', { value, configurable: true });
 };
 
+const mockExtensionUrl = (url: string): void => {
+  (globalThis as unknown as { chrome: unknown }).chrome = {
+    runtime: { getURL: (path: string) => `${url}${path}` },
+  };
+};
+
 describe('isFirefox', () => {
   const originalUserAgent = window.navigator.userAgent;
 
   afterEach(() => {
     delete (globalThis as unknown as { browser?: unknown }).browser;
+    delete (globalThis as unknown as { chrome?: unknown }).chrome;
     setUserAgent(originalUserAgent);
   });
 
-  it('reports Firefox when the promise-based browser namespace is present', () => {
-    (globalThis as unknown as { browser: unknown }).browser = {};
+  it('reports Firefox from the moz-extension:// origin', () => {
+    mockExtensionUrl('moz-extension://3f1c0a2b-0000-4000-8000-abcdef012345/');
     setUserAgent('Mozilla/5.0 (X11; Linux x86_64) Chrome/151.0.0.0 Safari/537.36');
 
     expect(isFirefox()).toBe(true);
+  });
+
+  it('reports Chromium from the chrome-extension:// origin even when `browser` exists', () => {
+    // Chromium exposes a `browser` alias too, so its presence says nothing about
+    // the engine. Treating it as a Firefox signal disabled Ledger on Chrome.
+    (globalThis as unknown as { browser: unknown }).browser = {};
+    mockExtensionUrl('chrome-extension://oekbamjlocgajkopocljlpnnhmdjnmfa/');
+
+    expect(isFirefox()).toBe(false);
   });
 
   it('reports Firefox from the user agent when extension APIs are unavailable', () => {

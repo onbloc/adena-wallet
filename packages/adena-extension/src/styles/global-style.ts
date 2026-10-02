@@ -1,6 +1,19 @@
-import { createGlobalStyle } from 'styled-components';
+import { createGlobalStyle, css } from 'styled-components';
 import mixins from './mixins';
 import { fonts } from './theme';
+
+/** Hides a scrollbar in every engine; Gecko ignores ::-webkit-scrollbar. */
+const hiddenScrollbar = css`
+  scrollbar-width: none;
+
+  ::-webkit-scrollbar {
+    width: 0;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+`;
 
 export const GlobalWebStyle = createGlobalStyle`
   * {
@@ -22,16 +35,36 @@ export const GlobalWebStyle = createGlobalStyle`
     background: radial-gradient(100% 100% at 50% 0%, rgba(16, 18, 20, 0.00) 48.83%, rgba(0, 89, 255, 0.24) 100%);
     overflow: auto;
   }
+
+  /* Gecko has no ::-webkit- spin-button, so drop the steppers the standard way. */
+  input[type='number'] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 `;
 
-export const GlobalPopupStyle = createGlobalStyle`
+export const GlobalPopupStyle = createGlobalStyle<{ $pinPanelSize?: boolean }>`
   html, body {
-    width: 100%;
-    height: 100%;
+    ${({ $pinPanelSize }): ReturnType<typeof css> =>
+      $pinPanelSize
+        ? css`
+            /* Firefox measures the panel from the document, so a percentage
+               height is circular there. Pin it and scroll inside instead. */
+            width: 360px;
+            height: 540px;
+          `
+        : css`
+            width: 100%;
+            height: 100%;
+          `}
     min-width: 360px;
     min-height: 540px;
-    width: 100%;
-    height: 100%;
     padding: 0;
     margin: 0;
     font-family: "Inter", sans-serif;
@@ -94,24 +127,25 @@ export const GlobalPopupStyle = createGlobalStyle`
     };
   };
 
+  /* Gecko has no ::-webkit- spin-button, so drop the steppers the standard way. */
+  input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  };
+
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
   };
 
-  ::-webkit-scrollbar {
-    width: 0;
+  /* Matches the universal reach of the ::-webkit-scrollbar rule. Components that
+     want a visible scrollbar set scrollbar-width on their class, outranking this. */
+  * {
+    scrollbar-width: none;
   };
 
-  ::-webkit-scrollbar-track {
-    background-color: transparent;
-  };
-
-  ::-webkit-scrollbar-thumb {
-    /* background-color: rgba(255, 255, 255, 0.7);
-    border-radius: 10px; */
-  };
+  ${hiddenScrollbar};
 
   html, body, div, span, h1, h2, h3, h4, h5, h6, p, a, em, img, small, b, u, i, ul, li, dl, dd, dt, form, label, footer, header, nav, section, input, textarea {
     margin: 0;

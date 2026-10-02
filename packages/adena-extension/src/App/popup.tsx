@@ -1,6 +1,7 @@
 import { PopupRouter } from '@router/popup/index';
 import { ReactElement, useEffect, useRef } from 'react';
 
+import { isFirefox, isToolbarPanel } from '@common/utils/browser-utils';
 import { Spinner } from '@components/atoms';
 import { useInitWallet } from '@hooks/use-init-wallet';
 import useLink from '@hooks/use-link';
@@ -53,9 +54,13 @@ const RunApp = (): ReactElement => {
 };
 
 const App = (): ReactElement => {
+  // Firefox sizes the toolbar panel from the document, so a percentage layout
+  // lets every route resize it. Popup windows and Chrome are unaffected.
+  const pinPanelSize = isFirefox() && isToolbarPanel();
+
   return (
     <AppProvider>
-      <GlobalPopupStyle />
+      <GlobalPopupStyle $pinPanelSize={pinPanelSize} />
       <HashRouter>
         <RunApp />
       </HashRouter>
