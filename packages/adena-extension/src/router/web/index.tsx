@@ -5,6 +5,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 import { getRegisterInitialRoute } from '@common/utils/register-url';
 
+import { closeCurrentSurface } from '@common/utils/browser-utils';
 import AccountAddScreen from '@pages/web/account-add-screen';
 import AccountAddedCompleteScreen from '@pages/web/account-added-complete-screen';
 import AccountImportScreen from '@pages/web/account-import-screen';
@@ -37,7 +38,7 @@ export const WebRouter = (): JSX.Element => {
 
   useEffect(() => {
     if (existWallet && lockedWallet) {
-      window.close();
+      closeCurrentSurface();
     }
   }, [existWallet, lockedWallet]);
 

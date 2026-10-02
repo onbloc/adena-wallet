@@ -12,6 +12,8 @@
     "test:ci": "jest --ci",
     "build": "webpack --mode production",
     "build:dev": "webpack --mode=development --watch",
+    "build:firefox": "webpack --mode production --env browser=firefox",
+    "build:firefox:dev": "webpack --mode=development --watch --env browser=firefox",
     "build:storybook": "storybook build"
   },
   "keywords": [],
