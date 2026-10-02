@@ -16,13 +16,16 @@ const { ProvidePlugin } = require('webpack');
  *
  * Usage: `webpack --mode production --env browser=firefox`
  */
-const buildConfig = (env = {}) => {
+const buildConfig = (env = {}, argv = {}) => {
   const isFirefox = env.browser === 'firefox';
   const manifestPath = isFirefox ? './public/manifest.firefox.json' : './public/manifest.json';
   const outputPath = path.join(__dirname, isFirefox ? 'dist-firefox' : 'dist');
 
   const config = {
-    devtool: 'cheap-module-source-map',
+    // Source maps carry the original TypeScript in `sourcesContent`, so a shipped
+    // map hands out readable sources — comments, names and all — for a wallet.
+    // Dev builds keep them; production emits none, and no sourceMappingURL.
+    devtool: argv.mode === 'production' ? false : 'cheap-module-source-map',
     entry: {
       web: path.join(__dirname, './src/web.tsx'),
       popup: path.join(__dirname, './src/popup.tsx'),
