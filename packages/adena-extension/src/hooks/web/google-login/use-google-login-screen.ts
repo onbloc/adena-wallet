@@ -52,6 +52,13 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
   const ableToSelectLegacy = isVerifierConfigured(GOOGLE_VERIFIERS.LEGACY, 'GOOGLE');
   // Only worth asking when both are available.
   const ableToSelectKeySet = ableToSelectProduction && ableToSelectLegacy;
+  // A build may ship only one of the two, so the flow starts on whichever can
+  // actually sign in rather than on the default.
+  const availableKeySetType: GoogleKeySetType | null = ableToSelectProduction
+    ? 'PRODUCTION'
+    : ableToSelectLegacy
+      ? 'LEGACY'
+      : null;
   // Identifies the login attempt that owns the popup, so a canceled or
   // superseded one cannot commit an account when it finally resolves.
   const requestIdRef = useRef(0);
@@ -60,8 +67,11 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
 
   const [googleLoginState, setGoogleLoginState] = useState<GoogleLoginStateType>(() => {
     if (!params?.doneQuestionnaire) {
-      // Nothing to choose between when the legacy verifier is not configured.
-      return ableToSelectKeySet ? 'SELECT_KEY_SET' : 'INIT';
+      if (ableToSelectKeySet) {
+        return 'SELECT_KEY_SET';
+      }
+      // Nothing to choose between: go straight in on the one that works.
+      return availableKeySetType ? 'INIT' : 'FAILED';
     }
     // Fail before reopening the popup when the key set is unconfigured.
     return isVerifierConfigured(
@@ -75,7 +85,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
   // Restored from the route state after the questionnaire round trip, which
   // remounts this screen and would otherwise reset the selection.
   const [keySetType, setKeySetType] = useState<GoogleKeySetType>(
-    params?.keySetType || DEFAULT_GOOGLE_KEY_SET_TYPE,
+    params?.keySetType || availableKeySetType || DEFAULT_GOOGLE_KEY_SET_TYPE,
   );
 
   const indicatorInfo = useIndicatorStep<string>({
