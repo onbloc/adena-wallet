@@ -34,6 +34,8 @@ yarn-error.log*
 # build * dist
 dist
 dist/
+dist-firefox
+dist-firefox/
 
 # setup
 package-lock.json
@@ -46,3 +48,6 @@ node_modules/
 result.info
 deploy/*
 deploy-latest/*
+deploy-firefox/*
+deploy-firefox-latest/*
+deploy-firefox-signed/*

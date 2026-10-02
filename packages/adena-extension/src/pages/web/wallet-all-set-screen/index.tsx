@@ -5,6 +5,7 @@ import IconGnoSwap from '@assets/web/gnoswap.svg';
 import IconGnoScan from '@assets/web/gnoscan.svg';
 import AnimationAllSet from '@assets/web/lottie/you-are-all-set.json';
 
+import { closeCurrentSurface } from '@common/utils/browser-utils';
 import { View, WebButton, WebMain, WebText, WebImg, Row } from '@components/atoms';
 import useLink from '@hooks/use-link';
 import Lottie from '@components/atoms/lottie';
@@ -86,7 +87,7 @@ const WalletAllSetScreen = (): JSX.Element => {
   const { openLink } = useLink();
 
   const onClickDone = (): void => {
-    window.close();
+    closeCurrentSurface();
   };
 
   return (
