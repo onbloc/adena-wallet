@@ -15,26 +15,30 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
 
-      - name: Remove adena-torus-signin mock repository
-        run: |
-          rm -rf packages/adena-torus-signin
-
       - name: Branch info
         id: branch-info
         run: |
           echo ::set-output name=BRANCH_TAG::${GITHUB_REF#refs/tags/}
 
-      - name: Clone adena-torus-signin repository
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
-          repository: onbloc/adena-torus-signin
-          path: 'packages/adena-torus-signin'
-
       - name: Build project
         run: |
           yarn
           yarn build
+        # Web3Auth verifier values are substituted into the bundle at build time.
+        # A provider whose secret is unset is skipped at runtime.
+        env:
+          WEB3_AUTH_LEGACY_CLIENT_ID: ${{ secrets.WEB3_AUTH_LEGACY_CLIENT_ID }}
+          GOOGLE_LEGACY_VERIFIER: ${{ secrets.GOOGLE_LEGACY_VERIFIER }}
+          GOOGLE_LEGACY_CLIENT_ID: ${{ secrets.GOOGLE_LEGACY_CLIENT_ID }}
+          WEB3_AUTH_PRODUCTION_CLIENT_ID: ${{ secrets.WEB3_AUTH_PRODUCTION_CLIENT_ID }}
+          GOOGLE_PRODUCTION_VERIFIER: ${{ secrets.GOOGLE_PRODUCTION_VERIFIER }}
+          GOOGLE_PRODUCTION_CLIENT_ID: ${{ secrets.GOOGLE_PRODUCTION_CLIENT_ID }}
+          WEB3_AUTH_EMAIL_CLIENT_ID: ${{ secrets.WEB3_AUTH_EMAIL_CLIENT_ID }}
+          EMAIL_VERIFIER_NAME: ${{ secrets.EMAIL_VERIFIER_NAME }}
+          WEB3_AUTH_X_CLIENT_ID: ${{ secrets.WEB3_AUTH_X_CLIENT_ID }}
+          X_VERIFIER_NAME: ${{ secrets.X_VERIFIER_NAME }}
+          X_CLIENT_ID: ${{ secrets.X_CLIENT_ID }}
+          X_AUTH0_DOMAIN: ${{ secrets.X_AUTH0_DOMAIN }}
 
       - name: Make build files
         run: |
@@ -48,8 +52,8 @@ jobs:
           aws_key_id: ${{ secrets.AWS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
           aws_bucket: ${{ secrets.AWS_BUCKET }}
-          source_dir: 'deploy'
-          destination_dir: '.'
+          source_dir: "deploy"
+          destination_dir: "."
 
       - name: Deploy AWS S3 (Latest)
         uses: shallwefootball/s3-upload-action@master
@@ -57,15 +61,15 @@ jobs:
           aws_key_id: ${{ secrets.AWS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
           aws_bucket: ${{ secrets.AWS_BUCKET }}
-          source_dir: 'deploy-latest'
-          destination_dir: '.'
+          source_dir: "deploy-latest"
+          destination_dir: "."
 
       - name: Run notification scripts
         env:
           RESOURCE_URI: ${{ secrets.RESOURCE_URI }}
           HOOK_URI: ${{ secrets.HOOK_URI }}
         run: |
-          bash scripts/notification-success.sh "$RESOURCE_URI" "$HOOK_URI"
+          bash scripts/notification-success.sh "$RESOURCE_URI" "$HOOK_URI" "Chrome"
 
   # TODO: Discuss and decide to adopt Chromatic UI
   # chromatic-deployment:

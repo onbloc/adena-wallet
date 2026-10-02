@@ -4,6 +4,7 @@ import styled, { useTheme } from 'styled-components';
 import IconWarning from '@assets/web/warning.svg';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
 import { AdenaStorage } from '@common/storage';
+import { closeCurrentSurface } from '@common/utils/browser-utils';
 import { stringFromBase64, stringToBase64 } from '@common/utils/encoding-util';
 import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
 import { WebCopyButton } from '@components/atoms/web-copy-button';
@@ -91,7 +92,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
     AdenaStorage.session()
       .remove(WALLET_EXPORT_TYPE_STORAGE_KEY)
       .then(() => {
-        window.close();
+        closeCurrentSurface();
       });
   };
 

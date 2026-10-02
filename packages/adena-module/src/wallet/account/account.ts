@@ -53,6 +53,8 @@ export function makeAccount(accountData: AccountInfo) {
       return new LedgerAccount(accountData);
     case 'PRIVATE_KEY':
     case 'WEB3_AUTH':
+    case 'WEB3_AUTH_EMAIL':
+    case 'WEB3_AUTH_X':
       return new SingleAccount(accountData);
     case 'AIRGAP':
       return new AirgapAccount(accountData);

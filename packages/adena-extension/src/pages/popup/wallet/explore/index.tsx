@@ -29,7 +29,7 @@ export const Explore = (): JSX.Element => {
   async function initExploreSties(): Promise<void> {
     try {
       const response = await tokenService.getAppInfos();
-      const exploreSites = response.filter((site) => site.display).sort((site) => site.order);
+      const exploreSites = response.filter((site) => site.display).sort((a, b) => a.order - b.order);
       Promise.all([...exploreSites]).then(setExploreSites);
     } catch (error) {
       console.error(error);

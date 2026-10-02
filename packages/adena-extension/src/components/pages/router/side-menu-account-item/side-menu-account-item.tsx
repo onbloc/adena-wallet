@@ -65,6 +65,10 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
           return 'Airgap';
         case 'WEB3_AUTH':
           return 'Google';
+        case 'WEB3_AUTH_EMAIL':
+          return 'Email';
+        case 'WEB3_AUTH_X':
+          return 'X';
         case 'PRIVATE_KEY':
           return 'Imported';
         case 'LEDGER':

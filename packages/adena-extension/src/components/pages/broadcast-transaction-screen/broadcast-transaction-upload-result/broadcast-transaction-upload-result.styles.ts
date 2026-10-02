@@ -76,6 +76,10 @@ export const StyledTransactionArea = styled.textarea`
   ${fonts.body2Reg};
   resize: none;
 
+  /* Gecko ignores ::-webkit-scrollbar. */
+  scrollbar-width: thin;
+  scrollbar-color: darkgrey transparent;
+
   &::-webkit-scrollbar {
     width: 2px;
     padding: 1px 1px 1px 0px;

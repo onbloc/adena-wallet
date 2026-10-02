@@ -5,6 +5,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 import { getRegisterInitialRoute } from '@common/utils/register-url';
 
+import { closeCurrentSurface } from '@common/utils/browser-utils';
 import AccountAddScreen from '@pages/web/account-add-screen';
 import AccountAddedCompleteScreen from '@pages/web/account-added-complete-screen';
 import AccountImportScreen from '@pages/web/account-import-screen';
@@ -14,6 +15,8 @@ import AdvancedSetupScreen from '@pages/web/advanced-setup-screen';
 import { ConnectLedgerScreen, ConnectLedgerSelectAccount } from '@pages/web/connect-ledger';
 import CreatePasswordScreen from '@pages/web/create-password-screen';
 import GoogleLoginScreen from '@pages/web/google-login-screen';
+import EmailLoginScreen from '@pages/web/email-login-screen';
+import XLoginScreen from '@pages/web/x-login-screen';
 import LandingScreen from '@pages/web/landing-screen';
 import QuestionnaireScreen from '@pages/web/questionnaire-screen';
 import SelectHardWalletScreen from '@pages/web/select-hard-wallet-screen';
@@ -37,7 +40,7 @@ export const WebRouter = (): JSX.Element => {
 
   useEffect(() => {
     if (existWallet && lockedWallet) {
-      window.close();
+      closeCurrentSurface();
     }
   }, [existWallet, lockedWallet]);
 
@@ -73,6 +76,8 @@ export const WebRouter = (): JSX.Element => {
           <Route path={RoutePath.WebAdvancedSetup} element={<AdvancedSetupScreen />} />
           <Route path={RoutePath.WebCreatePassword} element={<CreatePasswordScreen />} />
           <Route path={RoutePath.WebGoogleLogin} element={<GoogleLoginScreen />} />
+          <Route path={RoutePath.WebEmailLogin} element={<EmailLoginScreen />} />
+          <Route path={RoutePath.WebXLogin} element={<XLoginScreen />} />
           <Route path={RoutePath.WebSetupAirgap} element={<SetupAirgapScreen />} />
           <Route path={RoutePath.WebSetupMultisig} element={<SetupMultisigScreen />} />
           <Route path={RoutePath.WebWalletCreate} element={<WalletCreateScreen />} />

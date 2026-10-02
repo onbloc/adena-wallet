@@ -3,7 +3,7 @@ import { Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 import { decodeTxMessages, Document, documentToTx } from './../../utils/messages';
 import { AddressKeyring } from './address-keyring';
 import { HDWalletKeyring } from './hd-wallet-keyring';
-import { Keyring } from './keyring';
+import { Keyring, isWeb3AuthKeyringType } from './keyring';
 import { LedgerKeyring } from './ledger-keyring';
 import { PrivateKeyKeyring } from './private-key-keyring';
 import { Web3AuthKeyring } from './web3-auth-keyring';
@@ -23,7 +23,7 @@ export function isPrivateKeyKeyring(keyring: Keyring): keyring is PrivateKeyKeyr
 }
 
 export function isWeb3AuthKeyring(keyring: Keyring): keyring is Web3AuthKeyring {
-  return keyring.type === 'WEB3_AUTH';
+  return isWeb3AuthKeyringType(keyring.type);
 }
 
 export function isAddressKeyring(keyring: Keyring): keyring is AddressKeyring {

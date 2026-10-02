@@ -48,6 +48,7 @@ import {
   LedgerKeyring,
   makeKeyring,
   Web3AuthKeyring,
+  Web3AuthKeyringType,
 } from './keyring';
 import { decryptXChacha20, EncryptedData, encryptXChacha20 } from './wallet-crypto-util';
 
@@ -577,10 +578,13 @@ export class AdenaWallet implements Wallet {
     return wallet;
   }
 
-  public static async createByWeb3Auth(privateKeyStr: string) {
+  public static async createByWeb3Auth(
+    privateKeyStr: string,
+    type: Web3AuthKeyringType = 'WEB3_AUTH',
+  ) {
     const privateKey = hexToArray(privateKeyStr);
     const wallet = new AdenaWallet();
-    const keyring = await Web3AuthKeyring.fromPrivateKey(privateKey);
+    const keyring = await Web3AuthKeyring.fromPrivateKey(privateKey, type);
     const account = await SingleAccount.createBy(keyring, wallet.nextAccountName);
     wallet.currentAccountId = account.id;
     wallet.addAccount(account);

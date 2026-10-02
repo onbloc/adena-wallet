@@ -1,0 +1,131 @@
+name: Build Firefox XPI
+
+# Builds the Firefox XPI for release tags, in parallel to the Chrome build and
+# deploy in build-deploy.yml. The XPI is uploaded as a workflow artifact and
+# attached to the GitHub release for the tag.
+#
+# When AMO signing secrets are configured (AMO_API_KEY / AMO_API_SECRET), the
+# XPI is also signed through addons.mozilla.org (unlisted channel) so it can be
+# installed in release Firefox; otherwise the unsigned XPI is still published
+# for manual signing / development use.
+
+on:
+  push:
+    tags:
+      - v*.*.*
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  firefox-xpi:
+    runs-on: ubuntu-latest
+    env:
+      # Optional: set both to sign the XPI via addons.mozilla.org (unlisted).
+      AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
+      AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+      # Same bucket and Slack hook the Chrome build uses; absent in forks, where
+      # the S3 and Slack steps are skipped.
+      AWS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
+      HOOK_URI: ${{ secrets.HOOK_URI }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build project
+        run: |
+          yarn
+          yarn build:firefox
+        # Web3Auth verifier values are substituted into the bundle at build time.
+        env:
+          WEB3_AUTH_LEGACY_CLIENT_ID: ${{ secrets.WEB3_AUTH_LEGACY_CLIENT_ID }}
+          GOOGLE_LEGACY_VERIFIER: ${{ secrets.GOOGLE_LEGACY_VERIFIER }}
+          GOOGLE_LEGACY_CLIENT_ID: ${{ secrets.GOOGLE_LEGACY_CLIENT_ID }}
+          WEB3_AUTH_PRODUCTION_CLIENT_ID: ${{ secrets.WEB3_AUTH_PRODUCTION_CLIENT_ID }}
+          GOOGLE_PRODUCTION_VERIFIER: ${{ secrets.GOOGLE_PRODUCTION_VERIFIER }}
+          GOOGLE_PRODUCTION_CLIENT_ID: ${{ secrets.GOOGLE_PRODUCTION_CLIENT_ID }}
+          WEB3_AUTH_EMAIL_CLIENT_ID: ${{ secrets.WEB3_AUTH_EMAIL_CLIENT_ID }}
+          EMAIL_VERIFIER_NAME: ${{ secrets.EMAIL_VERIFIER_NAME }}
+          WEB3_AUTH_X_CLIENT_ID: ${{ secrets.WEB3_AUTH_X_CLIENT_ID }}
+          X_VERIFIER_NAME: ${{ secrets.X_VERIFIER_NAME }}
+          X_CLIENT_ID: ${{ secrets.X_CLIENT_ID }}
+          X_AUTH0_DOMAIN: ${{ secrets.X_AUTH0_DOMAIN }}
+
+      - name: Package XPI
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: sh scripts/build-firefox-xpi.sh "$TAG_NAME"
+
+      - name: Sign XPI (AMO, unlisted)
+        if: env.AMO_API_KEY != '' && env.AMO_API_SECRET != ''
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          npx --yes web-ext@10 sign \
+            --source-dir packages/adena-extension/dist-firefox \
+            --artifacts-dir deploy-firefox-signed \
+            --channel unlisted \
+            --api-key "$AMO_API_KEY" \
+            --api-secret "$AMO_API_SECRET"
+          signed=$(ls deploy-firefox-signed/*.xpi)
+          current=$(awk -F: '/^DEPLOY_CURRENT:/{ print $2 }' scripts/result.info)
+          latest=$(awk -F: '/^DEPLOY_LATEST:/{ print $2 }' scripts/result.info)
+          # Both upload dirs must carry the signed build; they share a bucket root.
+          cp "$signed" "deploy-firefox/${current}"
+          cp "$signed" "deploy-firefox-latest/${latest}"
+
+      - name: Upload XPI as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adena-firefox-${{ github.ref_name }}
+          path: deploy-firefox/*.xpi
+
+      - name: Attach XPI to GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          gh release view "$TAG_NAME" >/dev/null 2>&1 || \
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --generate-notes
+          gh release upload "$TAG_NAME" deploy-firefox/*.xpi --clobber
+
+      # From here on, mirrors build-deploy.yml so the XPI lands in the same
+      # bucket as the Chrome zip and QA gets it from the same Slack channel.
+      # Tags only, so a manual dispatch does not publish or notify.
+      - name: Deploy AWS S3 (QA)
+        if: startsWith(github.ref, 'refs/tags/') && env.AWS_KEY_ID != ''
+        uses: shallwefootball/s3-upload-action@master
+        with:
+          aws_key_id: ${{ secrets.AWS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+          aws_bucket: ${{ secrets.AWS_BUCKET }}
+          source_dir: 'deploy-firefox'
+          destination_dir: '.'
+
+      - name: Deploy AWS S3 (Latest)
+        if: startsWith(github.ref, 'refs/tags/') && env.AWS_KEY_ID != ''
+        uses: shallwefootball/s3-upload-action@master
+        with:
+          aws_key_id: ${{ secrets.AWS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+          aws_bucket: ${{ secrets.AWS_BUCKET }}
+          source_dir: 'deploy-firefox-latest'
+          destination_dir: '.'
+
+      - name: Run notification scripts
+        if: startsWith(github.ref, 'refs/tags/') && env.HOOK_URI != ''
+        env:
+          RESOURCE_URI: ${{ secrets.RESOURCE_URI }}
+          HOOK_URI: ${{ secrets.HOOK_URI }}
+        run: |
+          if [ -n "$AMO_API_KEY" ] && [ -n "$AMO_API_SECRET" ]; then
+            note="*Signed by addons.mozilla.org — installs directly in Firefox.*"
+          else
+            note="*Unsigned — load via about:debugging, or set xpinstall.signatures.required=false.*"
+          fi
+          bash scripts/notification-success.sh "$RESOURCE_URI" "$HOOK_URI" "Firefox" "$note"

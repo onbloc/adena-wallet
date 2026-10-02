@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const packageInfo = require('./package.json');
 
@@ -5,127 +6,219 @@ const HtmlWebPackPlugin = require('html-webpack-plugin');
 const CopyWebPackPlugin = require('copy-webpack-plugin');
 const CleanWebPackPlugin = require('clean-webpack-plugin').CleanWebpackPlugin;
 const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
-const { ProvidePlugin } = require('webpack');
+const { DefinePlugin, ProvidePlugin } = require('webpack');
 
-const config = {
-  devtool: 'cheap-module-source-map',
-  entry: {
-    web: path.join(__dirname, './src/web.tsx'),
-    popup: path.join(__dirname, './src/popup.tsx'),
-    content: path.join(__dirname, './src/content.ts'),
-    background: path.join(__dirname, './src/background.ts'),
-    inject: path.join(__dirname, './src/inject.ts'),
-  },
-  output: { path: path.join(__dirname, '/dist'), filename: '[name].js' },
-  module: {
-    rules: [
-      {
-        test: /\.(js|jsx)$/,
-        use: 'babel-loader',
-        exclude: /node_modules/,
-      },
-      {
-        test: /\.(ts|tsx)?$/,
-        loader: 'ts-loader',
-        exclude: /node_modules/,
-      },
-      {
-        test: /\.css$/,
-        use: [
-          'style-loader',
-          {
-            loader: 'css-loader',
-            options: {
-              importLoaders: 1,
-              modules: true,
-            },
-          },
-        ],
-        include: /\.module\.css$/,
-      },
-      {
-        test: /\.(png|jpe?g|svg|gif)$/,
-        loader: 'file-loader',
-        options: {
-          name: 'assets/[name].[ext]',
-        },
-        exclude: /node_modules/,
-      },
-    ],
-  },
-  resolve: {
-    modules: ['node_modules'],
-    extensions: ['.js', '.jsx', '.tsx', '.ts'],
-    alias: {
-      '@types': path.resolve(__dirname, 'src/types'),
-      '@hooks': path.resolve(__dirname, 'src/hooks'),
-      '@ui': path.resolve(__dirname, 'src/ui'),
-      '@pages': path.resolve(__dirname, 'src/pages'),
-      '@router': path.resolve(__dirname, 'src/router'),
-      '@services': path.resolve(__dirname, 'src/services'),
-      '@styles': path.resolve(__dirname, 'src/styles'),
-      '@components': path.resolve(__dirname, 'src/components'),
-      '@states': path.resolve(__dirname, 'src/states'),
-      '@common': path.resolve(__dirname, 'src/common'),
-      '@inject': path.resolve(__dirname, 'src/inject'),
-      '@assets': path.resolve(__dirname, 'src/assets'),
-      '@repositories': path.resolve(__dirname, 'src/repositories'),
-      '@resources': path.resolve(__dirname, 'src/resources'),
-      '@migrates': path.resolve(__dirname, 'src/migrates'),
-      '@models': path.resolve(__dirname, 'src/models'),
-      '@public': path.resolve(__dirname, 'public/'),
-      'lottie-web': path.resolve('libs/lottie_light.min.js'),
-    },
-  },
-  plugins: [
-    new CleanWebPackPlugin(),
-    new CopyWebPackPlugin({
-      patterns: [
-        {
-          from: './public/manifest.json',
-          transform: (content, path) =>
-            Buffer.from(
-              JSON.stringify({
-                icons: {
-                  16: 'icons/icon16.png',
-                  32: 'icons/icon32.png',
-                  48: 'icons/icon48.png',
-                  128: 'icons/icon128.png',
-                },
-                ...JSON.parse(content.toString()),
-              }),
-            ),
-        },
-        {
-          from: './public/icon/*',
-          to: './icons/[name][ext]',
-        },
-        {
-          from: './src/resources',
-          to: './resources',
-        },
-      ],
-    }),
-    new HtmlWebPackPlugin({
-      template: './public/web.html',
-      chunks: ['web'],
-      filename: 'register.html',
-    }),
-    new HtmlWebPackPlugin({
-      template: './public/web.html',
-      chunks: ['web'],
-      filename: 'security.html',
-    }),
-    new HtmlWebPackPlugin({
-      template: './public/popup.html',
-      chunks: ['popup'],
-      filename: 'popup.html',
-    }),
-    new NodePolyfillPlugin(),
-    new ProvidePlugin({
-      process: 'process/browser.js',
-    }),
-  ],
+// web3auth.constant.ts reads these from process.env, which webpack does not
+// substitute on its own.
+const WEB3AUTH_ENV_KEYS = [
+  // Google keeps two verifiers: accounts created before the production one can
+  // only be reached through the legacy one.
+  'WEB3_AUTH_LEGACY_CLIENT_ID',
+  'GOOGLE_LEGACY_VERIFIER',
+  'GOOGLE_LEGACY_CLIENT_ID',
+  'WEB3_AUTH_PRODUCTION_CLIENT_ID',
+  'GOOGLE_PRODUCTION_VERIFIER',
+  'GOOGLE_PRODUCTION_CLIENT_ID',
+  'WEB3_AUTH_EMAIL_CLIENT_ID',
+  'EMAIL_VERIFIER_NAME',
+  // X is reached through an Auth0 JWT verifier, hence the extra domain.
+  'WEB3_AUTH_X_CLIENT_ID',
+  'X_VERIFIER_NAME',
+  'X_CLIENT_ID',
+  'X_AUTH0_DOMAIN',
+];
+
+const parseEnvFile = (filePath) => {
+  if (!fs.existsSync(filePath)) {
+    return {};
+  }
+  return fs
+    .readFileSync(filePath, 'utf8')
+    .split(/\r?\n/)
+    .reduce((values, line) => {
+      const matched = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
+      if (!matched) {
+        return values;
+      }
+      const [, key, rawValue] = matched;
+      values[key] = rawValue.trim().replace(/^["']|["']$/g, '');
+      return values;
+    }, {});
 };
 
-module.exports = config;
+const envFile = parseEnvFile(path.join(__dirname, '.env'));
+
+// Real environment variables (CI secrets) take precedence over the local
+// .env file.
+const web3authEnvDefinitions = WEB3AUTH_ENV_KEYS.reduce((definitions, key) => {
+  const value = process.env[key] || envFile[key] || '';
+  definitions[`process.env.${key}`] = JSON.stringify(value);
+  return definitions;
+}, {});
+
+/**
+ * Resolves the build target from the webpack CLI environment.
+ *
+ * - `chrome` (default): Manifest V3 with a background service worker, output in `./dist`.
+ * - `firefox`: Manifest V3 with a non-persistent background event page (Firefox does not
+ *   support background service workers) and a Gecko add-on id, output in `./dist-firefox`.
+ *
+ * Usage: `webpack --mode production --env browser=firefox`
+ *
+ * Both targets are generated from `public/manifest.json`;
+ * `public/manifest.firefox.json` holds only the keys Firefox needs differently.
+ * Keeping it a delta rather than a full copy is what stops the two from drifting
+ * — as a full copy had, missing the `img-src data:` NFT images rely on.
+ */
+const buildConfig = (env = {}, argv = {}) => {
+  const isFirefox = env.browser === 'firefox';
+  const outputPath = path.join(__dirname, isFirefox ? 'dist-firefox' : 'dist');
+
+  // Shallow merge: a delta key replaces the base wholesale, which is what
+  // `background` needs (`scripts` instead of `service_worker`).
+  const firefoxOverrides = isFirefox
+    ? JSON.parse(fs.readFileSync(path.join(__dirname, 'public/manifest.firefox.json'), 'utf8'))
+    : {};
+
+  const config = {
+    // Source maps carry the original TypeScript in `sourcesContent`, so a shipped
+    // map hands out readable sources — comments, names and all — for a wallet.
+    // Dev builds keep them; production emits none, and no sourceMappingURL.
+    devtool: argv.mode === 'production' ? false : 'cheap-module-source-map',
+    entry: {
+      web: path.join(__dirname, './src/web.tsx'),
+      popup: path.join(__dirname, './src/popup.tsx'),
+      content: path.join(__dirname, './src/content.ts'),
+      background: path.join(__dirname, './src/background.ts'),
+      inject: path.join(__dirname, './src/inject.ts'),
+    },
+    output: {
+      path: outputPath,
+      filename: '[name].js',
+      // Webpack's default 'auto' public path throws
+      // "Automatic publicPath is not supported in this browser" inside
+      // Firefox content scripts (no document.currentScript there), which kills
+      // content.js before it can inject inject.js. Relative URLs work for the
+      // root-level extension pages, which is all this bundle loads assets from.
+      publicPath: '',
+    },
+    module: {
+      rules: [
+        {
+          test: /\.(js|jsx)$/,
+          use: 'babel-loader',
+          exclude: /node_modules/,
+        },
+        {
+          test: /\.(ts|tsx)?$/,
+          loader: 'ts-loader',
+          exclude: /node_modules/,
+        },
+        {
+          test: /\.css$/,
+          use: [
+            'style-loader',
+            {
+              loader: 'css-loader',
+              options: {
+                importLoaders: 1,
+                modules: true,
+              },
+            },
+          ],
+          include: /\.module\.css$/,
+        },
+        {
+          test: /\.(png|jpe?g|svg|gif)$/,
+          loader: 'file-loader',
+          options: {
+            name: 'assets/[name].[ext]',
+          },
+          exclude: /node_modules/,
+        },
+      ],
+    },
+    resolve: {
+      modules: ['node_modules'],
+      extensions: ['.js', '.jsx', '.tsx', '.ts'],
+      alias: {
+        '@types': path.resolve(__dirname, 'src/types'),
+        '@hooks': path.resolve(__dirname, 'src/hooks'),
+        '@ui': path.resolve(__dirname, 'src/ui'),
+        '@pages': path.resolve(__dirname, 'src/pages'),
+        '@router': path.resolve(__dirname, 'src/router'),
+        '@services': path.resolve(__dirname, 'src/services'),
+        '@styles': path.resolve(__dirname, 'src/styles'),
+        '@components': path.resolve(__dirname, 'src/components'),
+        '@states': path.resolve(__dirname, 'src/states'),
+        '@common': path.resolve(__dirname, 'src/common'),
+        '@inject': path.resolve(__dirname, 'src/inject'),
+        '@assets': path.resolve(__dirname, 'src/assets'),
+        '@repositories': path.resolve(__dirname, 'src/repositories'),
+        '@resources': path.resolve(__dirname, 'src/resources'),
+        '@migrates': path.resolve(__dirname, 'src/migrates'),
+        '@models': path.resolve(__dirname, 'src/models'),
+        '@public': path.resolve(__dirname, 'public/'),
+        'lottie-web': path.resolve('libs/lottie_light.min.js'),
+      },
+    },
+    plugins: [
+      new CleanWebPackPlugin(),
+      new CopyWebPackPlugin({
+        patterns: [
+          {
+            from: './public/manifest.json',
+            to: 'manifest.json',
+            transform: (content) =>
+              Buffer.from(
+                JSON.stringify({
+                  icons: {
+                    16: 'icons/icon16.png',
+                    32: 'icons/icon32.png',
+                    48: 'icons/icon48.png',
+                    128: 'icons/icon128.png',
+                  },
+                  ...JSON.parse(content.toString()),
+                  // Empty for the Chrome target; the Firefox-only keys otherwise.
+                  ...firefoxOverrides,
+                  // Keep the packaged manifest version in sync with the extension package.
+                  version: packageInfo.version,
+                }),
+              ),
+          },
+          {
+            from: './public/icon/*',
+            to: './icons/[name][ext]',
+          },
+          {
+            from: './src/resources',
+            to: './resources',
+          },
+        ],
+      }),
+      new HtmlWebPackPlugin({
+        template: './public/web.html',
+        chunks: ['web'],
+        filename: 'register.html',
+      }),
+      new HtmlWebPackPlugin({
+        template: './public/web.html',
+        chunks: ['web'],
+        filename: 'security.html',
+      }),
+      new HtmlWebPackPlugin({
+        template: './public/popup.html',
+        chunks: ['popup'],
+        filename: 'popup.html',
+      }),
+      new DefinePlugin(web3authEnvDefinitions),
+      new NodePolyfillPlugin(),
+      new ProvidePlugin({
+        process: 'process/browser.js',
+      }),
+    ],
+  };
+
+  return config;};
+
+module.exports = buildConfig;
