@@ -33,6 +33,13 @@ npx --yes web-ext@10 build \
 mkdir -p deploy-firefox-latest
 cp "deploy-firefox/${file_name}" "deploy-firefox-latest/${latest_file_name}"
 
+# Same keys build-qa.sh writes, so notification-success.sh reads this build too.
+result_info="scripts/result.info"
+echo "BUILD_VERSION:$tag_name" > $result_info
+echo "PACKAGE_VERSION:$version" >> $result_info
+echo "DEPLOY_CURRENT:$file_name" >> $result_info
+echo "DEPLOY_LATEST:$latest_file_name" >> $result_info
+
 echo "deploy-firefox/${file_name}"
 echo "deploy-firefox-latest/${latest_file_name}"
 echo "build success."

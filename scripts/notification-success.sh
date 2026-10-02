@@ -15,6 +15,10 @@ deploy_latest=$(get_result_info "DEPLOY_LATEST")
 
 aws_path=$1
 slack_path=$2
+# Chrome and Firefox each post their own message, so name the target. Defaults
+# keep the Chrome call site unchanged.
+target_name=${3:-Chrome}
+target_note=${4:-}
 
 curl -XPOST -H "Content-type: application/json" -d "{
     \"blocks\": [
@@ -22,7 +26,7 @@ curl -XPOST -H "Content-type: application/json" -d "{
 			\"type\": \"section\",
 			\"text\": {
 				\"type\": \"mrkdwn\",
-				\"text\": \"AdenaBuild Success !!\"
+				\"text\": \"Adena $target_name Build Success !!\"
 			}
 		}
     ],
@@ -34,7 +38,7 @@ curl -XPOST -H "Content-type: application/json" -d "{
                     \"type\": \"section\",
                     \"text\": {
                         \"type\": \"mrkdwn\",
-                        \"text\": \"*Package Version: $package_version *\n*QA Version: $build_version *\n*Build File: $deploy_current *\n*Download Path: $aws_path/$deploy_current *\n\n\n\"
+                        \"text\": \"*Package Version: $package_version *\n*QA Version: $build_version *\n*Build File: $deploy_current *\n*Download Path: $aws_path/$deploy_current *\n$target_note\n\n\n\"
                     }
                 },
                 {
