@@ -10,7 +10,7 @@ import { TransferSummaryWrapper } from './transfer-summary.styles';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import NetworkFee from '@components/molecules/network-fee/network-fee';
 import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
-import { Amount, NetworkFee as NetworkFeeType, TokenModel } from '@types';
+import { Amount, NetworkFee as NetworkFeeType, TokenModel, TokenPrice } from '@types';
 
 export interface TransferSummaryProps {
   tokenMetainfo: TokenModel;
@@ -20,6 +20,8 @@ export interface TransferSummaryProps {
   chainName: string;
   chainBadgeImage?: string;
   networkFee: NetworkFeeType | null;
+  /** Quote for the fee token, from `useFeeTokenPrice`; drives the fee rows' USD line. */
+  feeTokenPrice?: TokenPrice | null;
   memo: string;
   currentBalance: number | null | undefined;
   useNetworkFeeReturn: UseNetworkFeeReturn;
@@ -41,6 +43,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   chainName,
   chainBadgeImage,
   networkFee,
+  feeTokenPrice,
   memo,
   useNetworkFeeReturn,
   isErrorNetworkFee,
@@ -128,6 +131,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           isError={isErrorNetworkFee}
           isLoading={effectiveIsLoading}
           errorMessage={networkFeeErrorMessage}
+          feeTokenPrice={feeTokenPrice}
           onClickSetting={onClickNetworkFeeSetting}
         />
       </div>

@@ -1,5 +1,6 @@
 import { GasToken } from '@common/constants/token.constant';
-import { GasInfo, NetworkFeeSettingType } from '@types';
+import FeeAmountUSD from '@components/molecules/fee-amount-usd/fee-amount-usd';
+import { GasInfo, NetworkFeeSettingType, TokenPrice } from '@types';
 import BigNumber from 'bignumber.js';
 import React, { useMemo } from 'react';
 import { TokenBalance } from '../token-balance';
@@ -20,6 +21,8 @@ export interface NetworkFeeSettingItemProps {
   // Gno's `GasToken` (GNOT / 6 decimals). Cosmos callers pass PHOTON, etc.
   feeSymbol?: string;
   feeDecimals?: number;
+  /** Quote for the fee token, from `useFeeTokenPrice`. */
+  feeTokenPrice?: TokenPrice | null;
 }
 
 const networkFeeSettingTypeNames: { [key in NetworkFeeSettingType]: string } = {
@@ -35,6 +38,7 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
   select,
   feeSymbol,
   feeDecimals,
+  feeTokenPrice,
 }) => {
   const resolvedSymbol = feeSymbol ?? GasToken.symbol;
   const resolvedDecimals = feeDecimals ?? GasToken.decimals;
@@ -90,13 +94,17 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
       <span className='title'>{settingTypeName}</span>
 
       {hasGasInfo ? (
-        <TokenBalance
-          value={gasInfoAmount}
-          denom={gasInfoDenomination}
-          fontStyleKey='body2Reg'
-          minimumFontSize='11px'
-          orientation='HORIZONTAL'
-        />
+        <div className='amount'>
+          <TokenBalance
+            value={gasInfoAmount}
+            denom={gasInfoDenomination}
+            fontStyleKey='body2Reg'
+            minimumFontSize='11px'
+            orientation='HORIZONTAL'
+          />
+
+          <FeeAmountUSD value={gasInfoAmount} price={feeTokenPrice ?? undefined} />
+        </div>
       ) : (
         <span className='no-data'>{'-'}</span>
       )}

@@ -12,7 +12,7 @@ import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee
 import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
-import { NetworkFee as NetworkFeeType } from '@types';
+import { NetworkFee as NetworkFeeType, TokenPrice } from '@types';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
@@ -37,6 +37,8 @@ export interface ApproveTransactionProps {
   currentBalance?: number;
   isErrorNetworkFee?: boolean;
   networkFee: NetworkFeeType | null;
+  /** Quote for the fee token, from `useFeeTokenPrice`; drives the fee rows' USD line. */
+  feeTokenPrice?: TokenPrice | null;
   transactionData: string;
   opened: boolean;
   argumentInfos?: GnoArgumentInfo[];
@@ -79,6 +81,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   currentBalance,
   hasMemo,
   networkFee,
+  feeTokenPrice,
   isErrorNetworkFee,
   transactionData,
   opened,
@@ -223,6 +226,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
       <ApproveTransactionNetworkFeeWrapper>
         <NetworkFeeSetting
           {...useNetworkFeeReturn}
+          feeTokenPrice={feeTokenPrice}
           onClickBack={onClickNetworkFeeClose}
           onClickSave={onClickNetworkFeeSave}
         />
@@ -317,9 +321,11 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
           isError={isMaxDepositError}
           errorMessage={maxDepositErrorMessage}
           showPlaceholder={hasArgumentValidationError}
+          feeTokenPrice={feeTokenPrice}
         />
 
         <NetworkFee
+          feeTokenPrice={feeTokenPrice}
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           isError={isErrorNetworkFee}

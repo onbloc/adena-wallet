@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo } from 'react';
 import { Account, isMultisigAccount, MultisigConfig, SignerPublicKeyInfo } from 'adena-module';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, Signature, SignerInfo } from '@inject/types';
-import { NetworkFee as NetworkFeeType } from '@types';
+import { NetworkFee as NetworkFeeType, TokenPrice } from '@types';
 import { createMultisigSignerInfoList, filterValidSignatures } from '@common/utils/multisig-utils';
 
 import { Button, Text } from '@components/atoms';
@@ -39,6 +39,8 @@ export interface BroadcastMultisigTransactionProps {
   isErrorNetworkFee?: boolean;
   isNetworkFeeLoading?: boolean;
   networkFee: NetworkFeeType;
+  /** Quote for the fee token, from `useFeeTokenPrice`; drives the fee rows' USD line. */
+  feeTokenPrice?: TokenPrice | null;
   transactionData: string;
   opened: boolean;
   argumentInfos?: GnoArgumentInfo[];
@@ -65,6 +67,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   memo,
   hasMemo,
   networkFee,
+  feeTokenPrice,
   isErrorNetworkFee,
   isNetworkFeeLoading,
   transactionData,
@@ -207,6 +210,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
 
       <div className='fee-amount-wrapper'>
         <NetworkFee
+          feeTokenPrice={feeTokenPrice}
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           isError={isErrorNetworkFee}
