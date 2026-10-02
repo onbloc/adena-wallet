@@ -73,7 +73,12 @@ jobs:
             --channel unlisted \
             --api-key "$AMO_API_KEY" \
             --api-secret "$AMO_API_SECRET"
-          cp deploy-firefox-signed/*.xpi "deploy-firefox/adena-extension-firefox-${TAG_NAME}.xpi"
+          signed=$(ls deploy-firefox-signed/*.xpi)
+          current=$(awk -F: '/^DEPLOY_CURRENT:/{ print $2 }' scripts/result.info)
+          latest=$(awk -F: '/^DEPLOY_LATEST:/{ print $2 }' scripts/result.info)
+          # Both upload dirs must carry the signed build; they share a bucket root.
+          cp "$signed" "deploy-firefox/${current}"
+          cp "$signed" "deploy-firefox-latest/${latest}"
 
       - name: Upload XPI as workflow artifact
         uses: actions/upload-artifact@v4

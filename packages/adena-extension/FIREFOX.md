@@ -96,7 +96,7 @@ icon set and the version from `packages/adena-extension/package.json` (so
   and clicking a TxLink died silently — no dialog, no navigation. `command-handler.ts`
   now requests the document from the background (`FETCH_REALM_DOCUMENT`, handled in
   `background.ts` through `inject/message/methods/gno-realm-document.ts`); the background
-  is bound only by the extension CSP (`connect-src 'self' https: http://127.0.0.1:26657`).
+  is bound only by the extension CSP (`connect-src 'self' https: http://127.0.0.1:* http://localhost:*`).
   Chrome does not apply the page CSP to content scripts, which is why the same flow kept
   working there.
 - **Web pages dismiss their own tab through `closeCurrentSurface()`.**
