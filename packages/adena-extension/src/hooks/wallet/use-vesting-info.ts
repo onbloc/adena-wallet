@@ -9,19 +9,26 @@ import { useGetAccountInfo } from '@hooks/wallet/use-get-account-info';
 const VESTING_REFETCH_INTERVAL = 5_000;
 
 /**
- * Vesting schedule of the account whose balance the main screen shows, or null
- * when it has no grant — which is every account on the chain but a handful.
+ * Vesting schedule of an account, or null when it has no grant — which is
+ * every account on the chain but a handful.
+ *
+ * Defaults to the account whose balance the main screen shows. Callers that
+ * care about a different one — the transfer screen caps a send by what the
+ * FUNDING address may move — pass it explicitly; `null` disables the query.
  *
  * Only accounts that turn out to have a schedule keep polling; for everyone
  * else this settles into a single query and then goes quiet.
  */
-export const useVestingInfo = (): {
+export const useVestingInfo = (
+  address?: string | null,
+): {
   vestingInfo: VestingInfo | null;
   isLoading: boolean;
 } => {
   const { currentBalanceAddress } = useCurrentAccount();
+  const targetAddress = address === undefined ? currentBalanceAddress : address;
 
-  const { data: accountInfo, isLoading } = useGetAccountInfo(currentBalanceAddress, {
+  const { data: accountInfo, isLoading } = useGetAccountInfo(targetAddress, {
     refetchInterval: (data) => (data?.vesting ? VESTING_REFETCH_INTERVAL : false),
     // `useGetAccountInfo` keeps previous data by default. Here that would hand
     // back the PREVIOUS account's schedule and coins while the newly selected
@@ -41,7 +48,7 @@ export const useVestingInfo = (): {
     // Belt-and-braces against the same carry-over: whatever the cache hands
     // back, only ever break down the account actually on screen. `address` is
     // echoed by the provider from the query it answered.
-    if (accountInfo.address !== currentBalanceAddress) {
+    if (accountInfo.address !== targetAddress) {
       return null;
     }
 
@@ -51,7 +58,7 @@ export const useVestingInfo = (): {
     }
 
     return { schedule, coins: accountInfo.coins };
-  }, [accountInfo, currentBalanceAddress]);
+  }, [accountInfo, targetAddress]);
 
   return { vestingInfo, isLoading };
 };

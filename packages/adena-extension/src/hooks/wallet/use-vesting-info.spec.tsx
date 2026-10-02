@@ -98,6 +98,28 @@ describe('useVestingInfo', () => {
     );
   });
 
+  // The transfer screen caps a send by what the funding address may move,
+  // which is the master address for a session account.
+  it('reads the explicitly requested account instead of the one on screen', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo(accountInfo(ACCOUNT_B, true));
+
+    const { result } = renderHook(() => useVestingInfo(ACCOUNT_B));
+
+    expect(mockedUseGetAccountInfo).toHaveBeenCalledWith(ACCOUNT_B, expect.anything());
+    expect(result.current.vestingInfo?.coins).toBe('110294549738ugnot');
+  });
+
+  it('queries nothing when the requested account is null', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo(null);
+
+    const { result } = renderHook(() => useVestingInfo(null));
+
+    expect(mockedUseGetAccountInfo).toHaveBeenCalledWith(null, expect.anything());
+    expect(result.current.vestingInfo).toBeNull();
+  });
+
   it('returns null before any account is selected', () => {
     setCurrentAddress(null);
     setAccountInfo(null);

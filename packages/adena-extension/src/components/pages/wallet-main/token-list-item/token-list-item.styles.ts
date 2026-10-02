@@ -97,13 +97,12 @@ export const TokenListItemWrapper = styled.div<{ $disabled?: boolean; $withPrice
     `}
 `;
 
-// Aligned to the bottom of the row so it sits on the amount's line, matching
-// the design, rather than centring against the taller two-line cell.
+// Rendered inside the balance cell's amount line, so the USD value above it
+// can run to the row's right edge instead of stopping short of the chevron.
 export const VestingToggleButton = styled.button<{ $expanded: boolean }>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  align-self: flex-end;
   flex-shrink: 0;
   width: 16px;
   height: 15px;

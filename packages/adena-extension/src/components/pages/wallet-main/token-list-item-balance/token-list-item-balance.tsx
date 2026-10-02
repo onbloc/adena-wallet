@@ -24,6 +24,12 @@ export interface TokenListItemBalanceProps {
   error?: boolean;
   /** Marks the amount as partly vesting-locked with a padlock. */
   locked?: boolean;
+  /**
+   * Row affordance rendered at the end of the amount line (the vesting
+   * chevron). It sits inside the balance cell so the USD line above can run to
+   * the row's right edge and stay flush with the unexpandable rows.
+   */
+  trailing?: React.ReactNode;
 }
 
 const BalanceSkeleton = styled(SkeletonBoxStyle)`
@@ -60,6 +66,14 @@ const ValuedBalance = styled.span`
   }
 `;
 
+// Carries the amount plus any trailing affordance. Keeping the affordance on
+// this line — rather than beside the whole cell — lets the USD line above run
+// to the row's right edge, so priced rows all end on the same vertical line.
+const AmountLine = styled.span`
+  display: inline-flex;
+  align-items: center;
+`;
+
 // Keeps the padlock on the same baseline as the amount it qualifies. The icon
 // draws in `currentColor`, so it picks up the muted amount colour here.
 const LockedAmount = styled.span`
@@ -81,6 +95,7 @@ const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
   loading = false,
   error = false,
   locked = false,
+  trailing = null,
 }) => {
   if (error) {
     return (
@@ -110,14 +125,17 @@ const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
     return (
       <ValuedBalance>
         <span className='usd-value'>{tokenValue ? formatUSD(tokenValue.usdValue) : '-'}</span>
-        {locked ? (
-          <LockedAmount>
-            <IconLockOutline />
+        <AmountLine>
+          {locked ? (
+            <LockedAmount>
+              <IconLockOutline />
+              <span className='token-amount'>{amountText}</span>
+            </LockedAmount>
+          ) : (
             <span className='token-amount'>{amountText}</span>
-          </LockedAmount>
-        ) : (
-          <span className='token-amount'>{amountText}</span>
-        )}
+          )}
+          {trailing}
+        </AmountLine>
       </ValuedBalance>
     );
   }
@@ -134,13 +152,18 @@ const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
   );
 
   // Unpriced rows keep their single line; the padlock simply precedes it.
-  return locked ? (
-    <LockedAmount>
-      <IconLockOutline />
-      {balance}
-    </LockedAmount>
-  ) : (
-    balance
+  return (
+    <AmountLine>
+      {locked ? (
+        <LockedAmount>
+          <IconLockOutline />
+          {balance}
+        </LockedAmount>
+      ) : (
+        balance
+      )}
+      {trailing}
+    </AmountLine>
   );
 };
 

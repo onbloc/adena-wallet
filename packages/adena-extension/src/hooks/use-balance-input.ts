@@ -19,6 +19,7 @@ import { SESSIONS_QUERY_KEY } from './use-sessions';
 import { useTokenBalance } from './use-token-balance';
 import { getCosmosOriginDenom, useTokenMetainfo } from './use-token-metainfo';
 import { useNetworkFee } from './wallet/use-network-fee';
+import { useVestingSpendable } from './wallet/use-vesting-spendable';
 
 // Buffer applied to the simulated cosmos fee when computing the Max amount.
 // Absorbs feemarket base-price drift between Max click and broadcast, plus
@@ -72,11 +73,15 @@ export const useBalanceInput = (
   const [document, setDocument] = useState<Document | null>(null);
   const { currentGasInfo } = useNetworkFee(document);
 
+  const isGnoNativeTransfer = !!tokenMetainfo && isNativeTokenModel(tokenMetainfo);
+
   const isSessionNativeTransfer =
-    currentAccount !== null &&
-    isSessionAccount(currentAccount) &&
-    !!tokenMetainfo &&
-    isNativeTokenModel(tokenMetainfo);
+    currentAccount !== null && isSessionAccount(currentAccount) && isGnoNativeTransfer;
+
+  // Only the native token is ever vesting-locked, and the cap belongs to the
+  // address that pays — the master address for a session account.
+  const { spendableAmount: vestingSpendableAmount, isLoading: isLoadingVestingSpendable } =
+    useVestingSpendable(currentFundingAddress, isGnoNativeTransfer);
 
   const { data: currentSessionMetadata = null, isLoading: isLoadingCurrentSessionMetadata } =
     useQuery<SessionMetadataV021 | null>(
@@ -238,8 +243,13 @@ export const useBalanceInput = (
         .shiftedBy(GasToken.decimals * -1)
         .toFixed(GasToken.decimals, BigNumber.ROUND_UP);
 
-      const limitAmountNumber = getLimitedAmount(balanceAmountNumber, sessionSpendableAmount).minus(
-        maxGasFeeBN,
+      // Vesting caps the transfer only. Fees come out of the whole balance,
+      // locked coins included, so they are subtracted from the balance and the
+      // two limits are then compared: with a grant large enough to cover the
+      // fee the vesting cap binds, and once it is nearly spent the fee does.
+      const limitAmountNumber = getLimitedAmount(
+        getLimitedAmount(balanceAmountNumber, sessionSpendableAmount).minus(maxGasFeeBN),
+        vestingSpendableAmount,
       );
       setAvailAmountNumber(toNonNegativeBigNumber(limitAmountNumber));
       return;
@@ -276,6 +286,7 @@ export const useBalanceInput = (
     tokenMetainfo,
     tokenRegistry,
     sessionSpendableAmount,
+    vestingSpendableAmount,
     cosmosFeeContext?.currentFeeAmount,
     cosmosFeeContext?.currentFeeDenom,
     cosmosFeeContext?.feeDecimals,
@@ -308,7 +319,10 @@ export const useBalanceInput = (
     if (hasError || !tokenMetainfo) {
       return errorMessage;
     }
-    const label = isSessionNativeTransfer ? 'Spendable' : 'Balance';
+    // A grant makes part of the balance untransferable, so the figure stops
+    // being the account's balance and reads as spendable, like a session's.
+    const label =
+      isSessionNativeTransfer || vestingSpendableAmount !== null ? 'Spendable' : 'Balance';
 
     // A balance that could not be read is not a zero balance.
     if (!currentBalance) {
@@ -318,7 +332,10 @@ export const useBalanceInput = (
     const balanceAmount = BigNumber(currentBalance.amount.value || 0);
     const descriptionAmount = isSessionNativeTransfer
       ? availAmountNumber
-      : getLimitedAmount(balanceAmount, sessionSpendableAmount);
+      : getLimitedAmount(
+          getLimitedAmount(balanceAmount, sessionSpendableAmount),
+          vestingSpendableAmount,
+        );
     return `${label}: ${descriptionAmount.toFormat()} ${tokenMetainfo.symbol}`;
   }, [
     availAmountNumber,
@@ -327,6 +344,7 @@ export const useBalanceInput = (
     hasError,
     isSessionNativeTransfer,
     sessionSpendableAmount,
+    vestingSpendableAmount,
     tokenMetainfo,
   ]);
 
@@ -361,12 +379,20 @@ export const useBalanceInput = (
     if (!cosmosFeeContext && !currentGasInfo) {
       return;
     }
+    // An unread grant looks exactly like no grant, and filling the full
+    // balance would put locked coins in the field.
+    if (isLoadingVestingSpendable) {
+      return;
+    }
     setAmount(availAmountNumber.toString());
-  }, [availAmountNumber, currentGasInfo, cosmosFeeContext]);
+  }, [availAmountNumber, currentGasInfo, cosmosFeeContext, isLoadingVestingSpendable]);
 
   const validateBalanceInput = useCallback(() => {
     const balanceAmount = BigNumber(currentBalance?.amount.value || 0);
-    const limitedBalanceAmount = getLimitedAmount(balanceAmount, sessionSpendableAmount);
+    const limitedBalanceAmount = getLimitedAmount(
+      getLimitedAmount(balanceAmount, sessionSpendableAmount),
+      vestingSpendableAmount,
+    );
     const maxInputAmount = isSessionNativeTransfer
       ? currentGasInfo
         ? availAmountNumber
@@ -390,6 +416,7 @@ export const useBalanceInput = (
     currentGasInfo,
     isSessionNativeTransfer,
     sessionSpendableAmount,
+    vestingSpendableAmount,
   ]);
 
   return {
