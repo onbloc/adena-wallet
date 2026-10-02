@@ -174,6 +174,12 @@ export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolea
       ${fonts.body2Reg};
       resize: none;
     }
+    .raw-info-textarea {
+      /* Gecko ignores ::-webkit-scrollbar. */
+      scrollbar-width: thin;
+      scrollbar-color: darkgrey transparent;
+    }
+
     .raw-info-textarea::-webkit-scrollbar {
       width: 2px;
       padding: 1px 1px 1px 0px;

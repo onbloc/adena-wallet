@@ -34,6 +34,8 @@ yarn-error.log*
 # build * dist
 dist
 dist/
+dist-firefox
+dist-firefox/
 
 # setup
 package-lock.json
@@ -49,3 +51,7 @@ deploy-latest/*
 
 # local Web3Auth verifier values
 .env
+
+deploy-firefox/*
+deploy-firefox-latest/*
+deploy-firefox-signed/*

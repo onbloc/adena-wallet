@@ -14,6 +14,8 @@ export const StyledSelectAccountContent = styled(View)`
   background-color: #14161a;
   border-radius: 12px;
 
+  scrollbar-width: none; /* Firefox */
+
   ::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera*/
   }

@@ -69,7 +69,7 @@ jobs:
           RESOURCE_URI: ${{ secrets.RESOURCE_URI }}
           HOOK_URI: ${{ secrets.HOOK_URI }}
         run: |
-          bash scripts/notification-success.sh "$RESOURCE_URI" "$HOOK_URI"
+          bash scripts/notification-success.sh "$RESOURCE_URI" "$HOOK_URI" "Chrome"
 
   # TODO: Discuss and decide to adopt Chromatic UI
   # chromatic-deployment:

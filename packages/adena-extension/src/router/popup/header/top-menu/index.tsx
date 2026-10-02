@@ -265,7 +265,11 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     });
   };
 
-  const displayHostname = hostname && hostname.includes('.') ? hostname : 'chrome-extension';
+  const displayHostname = hostname?.startsWith('moz-extension')
+    ? 'moz-extension'
+    : hostname && hostname.includes('.')
+      ? hostname
+      : 'chrome-extension';
   const sessionMetadata =
     isSession && currentAddress
       ? sessions.find((s) => s.sessionAddr === currentAddress)
