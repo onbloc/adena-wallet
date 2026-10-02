@@ -22,7 +22,7 @@ const { ProvidePlugin } = require('webpack');
  * Keeping it a delta rather than a full copy is what stops the two from drifting
  * — as a full copy had, missing the `img-src data:` NFT images rely on.
  */
-const buildConfig = (env = {}) => {
+const buildConfig = (env = {}, argv = {}) => {
   const isFirefox = env.browser === 'firefox';
   const outputPath = path.join(__dirname, isFirefox ? 'dist-firefox' : 'dist');
 
@@ -33,7 +33,10 @@ const buildConfig = (env = {}) => {
     : {};
 
   const config = {
-    devtool: 'cheap-module-source-map',
+    // Source maps carry the original TypeScript in `sourcesContent`, so a shipped
+    // map hands out readable sources — comments, names and all — for a wallet.
+    // Dev builds keep them; production emits none, and no sourceMappingURL.
+    devtool: argv.mode === 'production' ? false : 'cheap-module-source-map',
     entry: {
       web: path.join(__dirname, './src/web.tsx'),
       popup: path.join(__dirname, './src/popup.tsx'),
