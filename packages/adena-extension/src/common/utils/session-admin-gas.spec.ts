@@ -17,7 +17,7 @@ describe('session-admin-gas', () => {
 
   it('uses chain gas price when calculating fee', async () => {
     const fee = await resolveSessionAdminGasFee(
-      { getGasPrice: jest.fn().mockResolvedValue(0.002) },
+      { getGasPriceRatio: jest.fn().mockResolvedValue(0.002) },
       1_500_000,
     );
 
@@ -26,7 +26,7 @@ describe('session-admin-gas', () => {
 
   it('uses minimum gas price when gas price lookup fails', async () => {
     const fee = await resolveSessionAdminGasFee(
-      { getGasPrice: jest.fn().mockRejectedValue(new Error('rpc failed')) },
+      { getGasPriceRatio: jest.fn().mockRejectedValue(new Error('rpc failed')) },
       2_000_000,
     );
 
@@ -48,7 +48,7 @@ describe('session-admin-gas', () => {
     const estimateGas = jest.fn().mockResolvedValue(1_166_340);
 
     const gasInfo = await resolveSessionAdminGasInfo({
-      gnoProvider: { getGasPrice: jest.fn().mockResolvedValue(0.001) },
+      gnoProvider: { getGasPriceRatio: jest.fn().mockResolvedValue(0.001) },
       transactionService: { createDocument },
       transactionGasService: { estimateGas },
       masterAccount: account,

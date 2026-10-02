@@ -21,9 +21,24 @@ export type KeyringType =
   | 'PRIVATE_KEY'
   | 'LEDGER'
   | 'WEB3_AUTH'
+  | 'WEB3_AUTH_EMAIL'
+  | 'WEB3_AUTH_X'
   | 'AIRGAP'
   | 'MULTISIG'
   | 'SESSION';
+
+/** Provider is kept in the type for labelling. 'WEB3_AUTH' is the Google-era value. */
+export type Web3AuthKeyringType = 'WEB3_AUTH' | 'WEB3_AUTH_EMAIL' | 'WEB3_AUTH_X';
+
+const WEB3_AUTH_KEYRING_TYPES: readonly KeyringType[] = [
+  'WEB3_AUTH',
+  'WEB3_AUTH_EMAIL',
+  'WEB3_AUTH_X',
+];
+
+export function isWeb3AuthKeyringType(type: KeyringType): type is Web3AuthKeyringType {
+  return WEB3_AUTH_KEYRING_TYPES.includes(type);
+}
 
 export interface SignRawOptions {
   // HD-only hint: which derivation path (or bare address index) to sign with.
@@ -86,6 +101,8 @@ export function makeKeyring(keyringData: KeyringData) {
     case 'PRIVATE_KEY':
       return new PrivateKeyKeyring(keyringData);
     case 'WEB3_AUTH':
+    case 'WEB3_AUTH_EMAIL':
+    case 'WEB3_AUTH_X':
       return new Web3AuthKeyring(keyringData);
     case 'AIRGAP':
       return new AddressKeyring(keyringData);

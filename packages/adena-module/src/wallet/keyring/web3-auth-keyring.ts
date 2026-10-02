@@ -10,21 +10,29 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { Document } from './../..';
 import { hexToArray } from './../../utils/data';
-import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
+import {
+  isWeb3AuthKeyringType,
+  Keyring,
+  KeyringData,
+  SignRawOptions,
+  Web3AuthKeyringType,
+} from './keyring';
 import { signGnoDocument } from './sign-gno-document';
 import { signRawWithPrivateKey } from './sign-raw-util';
 
 export class Web3AuthKeyring implements Keyring {
   public readonly id: string;
-  public readonly type: KeyringType = 'WEB3_AUTH';
+  public readonly type: Web3AuthKeyringType;
   public readonly publicKey: Uint8Array;
   public readonly privateKey: Uint8Array;
 
-  constructor({ id, publicKey, privateKey }: KeyringData) {
+  constructor({ id, publicKey, privateKey, type }: KeyringData) {
     if (!publicKey || !privateKey) {
       throw new Error('Invalid parameter values');
     }
     this.id = id || uuidv4();
+    // Keyrings stored before the other providers existed carry no social type.
+    this.type = type && isWeb3AuthKeyringType(type) ? type : 'WEB3_AUTH';
     this.publicKey = Uint8Array.from(publicKey);
     this.privateKey = Uint8Array.from(privateKey);
   }
@@ -65,20 +73,28 @@ export class Web3AuthKeyring implements Keyring {
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);
   }
 
-  public static async fromPrivateKey(privateKey: Uint8Array) {
+  public static async fromPrivateKey(
+    privateKey: Uint8Array,
+    type: Web3AuthKeyringType = 'WEB3_AUTH',
+  ) {
     const tm2Wallet = await Tm2Wallet.fromPrivateKey(privateKey);
     const publicKey = await tm2Wallet.getSigner().getPublicKey();
     return new Web3AuthKeyring({
+      type,
       publicKey: Array.from(publicKey),
       privateKey: Array.from(privateKey),
     });
   }
 
-  public static async fromPrivateKeyStr(privateKeyStr: string) {
+  public static async fromPrivateKeyStr(
+    privateKeyStr: string,
+    type: Web3AuthKeyringType = 'WEB3_AUTH',
+  ) {
     const privateKey = hexToArray(privateKeyStr);
     const tm2Wallet = await Tm2Wallet.fromPrivateKey(privateKey);
     const publicKey = await tm2Wallet.getSigner().getPublicKey();
     return new Web3AuthKeyring({
+      type,
       publicKey: Array.from(publicKey),
       privateKey: Array.from(privateKey),
     });

@@ -78,14 +78,13 @@
     "webpack-merge": "5.10.0"
   },
   "dependencies": {
-    "@adena-wallet/sdk": "0.0.14",
+    "@adena-wallet/sdk": "0.1.0",
     "@bufbuild/protobuf": "2.14.0",
-    "@gnolang/gno-js-client": "2.2.0",
-    "@gnolang/tm2-js-client": "3.0.0",
-    "@gnolang/tm2-rpc": "1.0.0",
+    "@gnolang/gno-js-client": "3.1.0",
+    "@gnolang/tm2-js-client": "3.3.0",
+    "@gnolang/tm2-rpc": "2.0.2",
     "@tanstack/react-query": "4.36.1",
     "adena-module": "*",
-    "adena-torus-signin": "*",
     "axios": "1.7.9",
     "bignumber.js": "9.1.2",
     "crypto-js": "4.2.0",

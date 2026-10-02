@@ -48,6 +48,10 @@ node_modules/
 result.info
 deploy/*
 deploy-latest/*
+
+# local Web3Auth verifier values
+.env
+
 deploy-firefox/*
 deploy-firefox-latest/*
 deploy-firefox-signed/*

@@ -32,7 +32,7 @@ export class TransactionGasRepository implements ITransactionGasRepository {
       return null;
     }
 
-    const gasPrice = await this.gnoProvider.getGasPrice();
+    const gasPrice = await this.gnoProvider.getGasPriceRatio();
     if (!gasPrice) {
       return null;
     }

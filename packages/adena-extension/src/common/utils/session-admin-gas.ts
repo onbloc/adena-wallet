@@ -16,7 +16,7 @@ export interface SessionAdminGasInfo {
 export type SessionAdminMessage = { type: string; value: unknown };
 
 interface SessionAdminGnoProviderLike {
-  getGasPrice?: () => Promise<number | null>;
+  getGasPriceRatio?: () => Promise<number | null>;
 }
 
 interface SessionAdminTransactionServiceLike {
@@ -39,7 +39,7 @@ export const resolveSessionAdminGasFee = async (
   gnoProvider: SessionAdminGnoProviderLike | null | undefined,
   gasWanted = SESSION_ADMIN_GAS_WANTED_FALLBACK,
 ): Promise<number> => {
-  const gasPrice = await gnoProvider?.getGasPrice?.().catch(() => null);
+  const gasPrice = await gnoProvider?.getGasPriceRatio?.().catch(() => null);
   const computedFee = Math.ceil((gasPrice ?? MINIMUM_GAS_PRICE) * gasWanted);
   return Math.max(SESSION_ADMIN_GAS_FEE_FLOOR_UGNOT, computedFee);
 };

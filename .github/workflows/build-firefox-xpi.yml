@@ -22,9 +22,6 @@ jobs:
   firefox-xpi:
     runs-on: ubuntu-latest
     env:
-      # Only available in the upstream repository; forks fall back to the
-      # checked-in adena-torus-signin mock repository.
-      PRIVATE_ACCESS_TOKEN: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
       # Optional: set both to sign the XPI via addons.mozilla.org (unlisted).
       AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
       AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
@@ -39,23 +36,24 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
 
-      - name: Remove adena-torus-signin mock repository
-        if: env.PRIVATE_ACCESS_TOKEN != ''
-        run: |
-          rm -rf packages/adena-torus-signin
-
-      - name: Clone adena-torus-signin repository
-        if: env.PRIVATE_ACCESS_TOKEN != ''
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
-          repository: onbloc/adena-torus-signin
-          path: 'packages/adena-torus-signin'
-
       - name: Build project
         run: |
           yarn
           yarn build:firefox
+        # Web3Auth verifier values are substituted into the bundle at build time.
+        env:
+          WEB3_AUTH_LEGACY_CLIENT_ID: ${{ secrets.WEB3_AUTH_LEGACY_CLIENT_ID }}
+          GOOGLE_LEGACY_VERIFIER: ${{ secrets.GOOGLE_LEGACY_VERIFIER }}
+          GOOGLE_LEGACY_CLIENT_ID: ${{ secrets.GOOGLE_LEGACY_CLIENT_ID }}
+          WEB3_AUTH_PRODUCTION_CLIENT_ID: ${{ secrets.WEB3_AUTH_PRODUCTION_CLIENT_ID }}
+          GOOGLE_PRODUCTION_VERIFIER: ${{ secrets.GOOGLE_PRODUCTION_VERIFIER }}
+          GOOGLE_PRODUCTION_CLIENT_ID: ${{ secrets.GOOGLE_PRODUCTION_CLIENT_ID }}
+          WEB3_AUTH_EMAIL_CLIENT_ID: ${{ secrets.WEB3_AUTH_EMAIL_CLIENT_ID }}
+          EMAIL_VERIFIER_NAME: ${{ secrets.EMAIL_VERIFIER_NAME }}
+          WEB3_AUTH_X_CLIENT_ID: ${{ secrets.WEB3_AUTH_X_CLIENT_ID }}
+          X_VERIFIER_NAME: ${{ secrets.X_VERIFIER_NAME }}
+          X_CLIENT_ID: ${{ secrets.X_CLIENT_ID }}
+          X_AUTH0_DOMAIN: ${{ secrets.X_AUTH0_DOMAIN }}
 
       - name: Package XPI
         env:

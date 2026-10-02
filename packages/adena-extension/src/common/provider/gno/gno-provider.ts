@@ -146,7 +146,8 @@ export class GnoProvider extends GnoJSONRPCProvider {
       .catch(() => 0);
   }
 
-  public async getGasPrice(height?: number | undefined): Promise<number> {
+  /** Price per unit of gas; the base getGasPrice() returns the raw { gas, price } pair. */
+  public async getGasPriceRatio(height?: number | undefined): Promise<number> {
     const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
       'auth/gasprice',
       '',
