@@ -62,4 +62,22 @@ describe('emitted manifests', () => {
       expect(imgSrc).toContain('data:');
     }
   });
+
+  it('lets the background reach every loopback RPC host gnoconnect accepts', () => {
+    for (const manifest of [chrome, firefox]) {
+      const connectSrc = manifest.content_security_policy.extension_pages
+        .split(';')
+        .map((directive: string) => directive.trim())
+        .find((directive: string) => directive.startsWith('connect-src'));
+
+      expect(connectSrc).toContain('http://127.0.0.1:*');
+      expect(connectSrc).toContain('http://localhost:*');
+    }
+  });
+
+  it('declares data collection for AMO signing', () => {
+    expect(firefox.browser_specific_settings.gecko.data_collection_permissions.required).toEqual(
+      expect.any(Array),
+    );
+  });
 });
