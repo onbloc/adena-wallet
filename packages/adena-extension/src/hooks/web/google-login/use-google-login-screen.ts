@@ -1,5 +1,5 @@
 import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import {
   DEFAULT_GOOGLE_KEY_SET_TYPE,
@@ -17,6 +17,7 @@ import useSocialLoginAccount, {
   SocialLoginFailType,
   toSocialLoginFailType,
 } from '../social-login/use-social-login-account';
+import useSocialLoginAttempt from '../social-login/use-social-login-attempt';
 import useQuestionnaire from '../use-questionnaire';
 
 export type UseGoogleLoginReturn = {
@@ -59,9 +60,9 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
     : ableToSelectLegacy
       ? 'LEGACY'
       : null;
-  // Identifies the login attempt that owns the popup, so a canceled or
+  // Identifies the login attempt that owns the popup, so an abandoned or
   // superseded one cannot commit an account when it finally resolves.
-  const requestIdRef = useRef(0);
+  const { begin: beginAttempt, abandon: abandonAttempt } = useSocialLoginAttempt();
   const [failType, setFailType] = useState<SocialLoginFailType>('DEFAULT');
   const { currentNetwork } = useNetwork();
 
@@ -117,8 +118,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
   }, [ableToSkipQuestionnaire, keySetType]);
 
   const requestGoogleLogin = async (): Promise<void> => {
-    const requestId = (requestIdRef.current += 1);
-    const isCurrentRequest = (): boolean => requestIdRef.current === requestId;
+    const isCurrentRequest = beginAttempt();
 
     try {
       const provider = await GnoSocialWalletProvider.createGoogle(
@@ -137,7 +137,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
 
   const backStep = useCallback(() => {
     // Abandons whatever popup is still open.
-    requestIdRef.current += 1;
+    abandonAttempt();
 
     if (googleLoginState === 'SELECT_KEY_SET') {
       navigate(RoutePath.WebAdvancedOption);
@@ -155,7 +155,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
       return;
     }
     setGoogleLoginState('INIT');
-  }, [googleLoginState, keySetType, ableToSelectKeySet, navigate]);
+  }, [abandonAttempt, googleLoginState, keySetType, ableToSelectKeySet, navigate]);
 
   const retry = useCallback(() => {
     if (!isVerifierConfigured(GOOGLE_VERIFIERS[keySetType], 'GOOGLE')) {
