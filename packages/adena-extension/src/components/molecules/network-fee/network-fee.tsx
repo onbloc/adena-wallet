@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 
 import IconRight from '@assets/icon-right';
 import { TokenBalance } from '@components/molecules';
+import FeeAmountUSD from '@components/molecules/fee-amount-usd/fee-amount-usd';
+import { TokenPrice } from '@types';
 import {
   NetworkFeeContainer,
   NetworkFeeItemSkeletonBox,
@@ -14,6 +16,12 @@ export interface NetworkFeeProps {
   isLoading?: boolean;
   isError?: boolean;
   errorMessage?: string;
+  /**
+   * Quote for the token the fee is charged in, from `useFeeTokenPrice`. The
+   * screen resolves it so this stays presentational; without one the row keeps
+   * its single-line, amount-only shape.
+   */
+  feeTokenPrice?: TokenPrice | null;
   onClickSetting?: () => void;
 }
 
@@ -23,6 +31,7 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
   isLoading = false,
   isError,
   errorMessage,
+  feeTokenPrice,
   onClickSetting,
 }) => {
   const hasSetting = !!onClickSetting;
@@ -51,7 +60,11 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
         <span className='key'>{'Network Fee'}</span>
 
         <div className='network-fee-amount-wrapper'>
-          <NetworkFeeAmount value={value} denom={denom} isLoading={isLoading} />
+          <div className='network-fee-amount'>
+            <NetworkFeeAmount value={value} denom={denom} isLoading={isLoading} />
+
+            {!isLoading && <FeeAmountUSD value={value} price={feeTokenPrice ?? undefined} />}
+          </div>
 
           {hasSetting && !isLoading && !isEmptyValue && (
             <button className='setting-button' onClick={onClickSetting}>

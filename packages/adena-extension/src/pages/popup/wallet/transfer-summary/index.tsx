@@ -53,6 +53,7 @@ import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transacti
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
 import { Grc20RouteFunc, RoutePath } from '@types';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 const TransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -163,6 +164,16 @@ const TransferSummaryContainer: React.FC = () => {
   }, [summaryInfo, cosmosAddress, isCosmosToken, chainRegistry, tokenRegistry]);
 
   const cosmosFee = useCosmosNetworkFee(cosmosDocument);
+
+  // One quote per path: a Cosmos send pays in that chain's own fee token, a Gno
+  // send in GNOT. `useFeeTokenPrice` resolves GNOT on its own, so only the
+  // Cosmos side has to name its token.
+  const gnoFeeTokenPrice = useFeeTokenPrice(networkFee?.denom ?? '');
+  const cosmosFeeTokenPrice = useFeeTokenPrice(
+    cosmosFee.networkFee?.denom ?? '',
+    cosmosFee.feeToken,
+  );
+  const feeTokenPrice = isCosmosToken ? cosmosFeeTokenPrice : gnoFeeTokenPrice;
 
   // Transfer-token denom (e.g. "uatone" or "uphoton") and the chain's fee
   // denom (always "uphoton" for atomone-1 outside the MintPhoton flow). When
@@ -865,6 +876,7 @@ const TransferSummaryContainer: React.FC = () => {
         <div className='network-fee-setting-wrapper'>
           <NetworkFeeSetting
             {...(isCosmosToken ? cosmosFee : useNetworkFeeReturn)}
+            feeTokenPrice={feeTokenPrice}
             onClickBack={onClickNetworkFeeClose}
             onClickSave={onClickNetworkFeeSave}
           />
@@ -881,6 +893,7 @@ const TransferSummaryContainer: React.FC = () => {
           isLoadingNetworkFee={isCosmosToken ? cosmosFee.isLoading : useNetworkFeeReturn.isLoading}
           isSessionSigning={!!currentAccount && isSessionAccount(currentAccount)}
           networkFee={isCosmosToken ? cosmosFee.networkFee : networkFee}
+          feeTokenPrice={feeTokenPrice}
           memo={summaryInfo.memo}
           currentBalance={currentBalance}
           useNetworkFeeReturn={useNetworkFeeReturn}

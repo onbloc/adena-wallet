@@ -3,7 +3,9 @@ import React, { useMemo } from 'react';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
 import { TokenBalance } from '@components/molecules';
+import FeeAmountUSD from '@components/molecules/fee-amount-usd/fee-amount-usd';
 import theme from '@styles/theme';
+import { TokenPrice } from '@types';
 import BigNumber from 'bignumber.js';
 import {
   StorageDepositContainer,
@@ -20,6 +22,11 @@ export interface StorageDepositProps {
   isError?: boolean;
   errorMessage?: string;
   showPlaceholder?: boolean;
+  /**
+   * Quote for GNOT, from `useFeeTokenPrice`. The screen resolves it so this
+   * stays presentational; without one the row keeps its amount-only shape.
+   */
+  feeTokenPrice?: TokenPrice | null;
 }
 
 const storageDepositTooltipMessage = `The total amount of GNOT deposited or
@@ -32,6 +39,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
   isError,
   errorMessage,
   showPlaceholder = false,
+  feeTokenPrice,
 }) => {
   const isEmptyValue = useMemo(() => {
     return storageDeposit.storageDeposit === 0 && storageDeposit.unlockDeposit === 0;
@@ -76,6 +84,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
             isRefundable={isRefundable}
             isLoading={isLoading}
             showPlaceholder={showPlaceholder}
+            price={feeTokenPrice}
           />
         </div>
       </StorageDepositWrapper>
@@ -90,7 +99,8 @@ const StorageDepositAmount: React.FC<{
   isRefundable: boolean;
   isLoading: boolean;
   showPlaceholder?: boolean;
-}> = ({ value, isRefundable, isLoading, showPlaceholder = false }) => {
+  price: TokenPrice | null | undefined;
+}> = ({ value, isRefundable, isLoading, showPlaceholder = false, price }) => {
   const fontColor = isRefundable ? theme.green._5 : theme.neutral._1;
 
   const amount = useMemo(() => {
@@ -120,15 +130,19 @@ const StorageDepositAmount: React.FC<{
   }
 
   return (
-    <TokenBalance
-      value={amount.value}
-      denom={amount.denom}
-      fontColor={fontColor}
-      fontStyleKey='body2Reg'
-      minimumFontSize='11px'
-      orientation='HORIZONTAL'
-      withSign={isRefundable}
-    />
+    <div className='storage-deposit-amount'>
+      <TokenBalance
+        value={amount.value}
+        denom={amount.denom}
+        fontColor={fontColor}
+        fontStyleKey='body2Reg'
+        minimumFontSize='11px'
+        orientation='HORIZONTAL'
+        withSign={isRefundable}
+      />
+
+      <FeeAmountUSD value={amount.value} price={price ?? undefined} withSign={isRefundable} />
+    </div>
   );
 };
 

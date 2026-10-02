@@ -57,6 +57,7 @@ import { ContractMessage } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
 import ApproveTransactionLoading from './loading';
 import ApproveTransactionResult from './result';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 interface TransactionData {
   messages: readonly any[];
@@ -286,6 +287,9 @@ const ApproveTransactionContainer: React.FC = () => {
       denom: GasToken.symbol,
     };
   }, [networkFee]);
+
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenPrice = useFeeTokenPrice(displayNetworkFee.denom);
 
   const maxDepositAmount = useMemo(() => {
     const accumulatedAmount = document?.msgs.reduce((acc, msg): number => {
@@ -948,6 +952,7 @@ const ApproveTransactionContainer: React.FC = () => {
       maxDepositAmount={maxDepositAmount}
       isErrorNetworkFee={isErrorNetworkFee || !networkFee}
       networkFee={displayNetworkFee}
+      feeTokenPrice={feeTokenPrice}
       useNetworkFeeReturn={useNetworkFeeReturn}
       transactionMessages={transactionMessages}
       changeTransactionMessages={setTransactionMessages}

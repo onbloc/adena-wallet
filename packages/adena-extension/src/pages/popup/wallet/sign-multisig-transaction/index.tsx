@@ -28,6 +28,7 @@ import { createSessionAccountUnsupportedResponse } from '@inject/message/session
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkFee, RoutePath } from '@types';
 import { Account, isAirgapAccount, isLedgerAccount, isSessionAccount } from 'adena-module';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 interface SignMultisigTransactionRequestData {
   multisigDocument: MultisigTransactionDocument;
@@ -135,6 +136,9 @@ const SignMultisigTransactionContainer: React.FC = () => {
       denom: GasToken.symbol,
     };
   }, [networkFee]);
+
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenPrice = useFeeTokenPrice(displayNetworkFee.denom);
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
   const done = useMemo(() => processType === 'DONE', [processType]);
@@ -407,6 +411,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
       isErrorNetworkFee={isErrorNetworkFee}
       isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}
+      feeTokenPrice={feeTokenPrice}
       transactionMessages={transactionMessages}
       argumentInfos={argumentInfos}
       onClickConfirm={onClickConfirm}
