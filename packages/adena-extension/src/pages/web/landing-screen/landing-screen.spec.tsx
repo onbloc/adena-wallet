@@ -13,7 +13,9 @@ jest.mock('@tanstack/react-query', () => ({
 }));
 
 jest.mock('@hooks/use-context', () => ({
-  useAdenaContext: (): { walletService: { id: string } } => ({ walletService: { id: 'test-wallet' } }),
+  useAdenaContext: (): { walletService: { id: string } } => ({
+    walletService: { id: 'test-wallet' },
+  }),
 }));
 
 jest.mock('@hooks/use-app-navigate', () => ({
@@ -25,6 +27,12 @@ jest.mock('@components/atoms/lottie', () => ({
   __esModule: true,
   default: (): React.ReactElement => <div data-testid='lottie' />,
 }));
+
+const mockBrowser = (scheme: 'moz-extension' | 'chrome-extension'): void => {
+  (globalThis as unknown as { chrome: unknown }).chrome = {
+    runtime: { getURL: (path: string) => `${scheme}://adena-test-id/${path}` },
+  };
+};
 
 const renderScreen = (): void => {
   render(
@@ -46,11 +54,11 @@ const advancedSetupButton = (): HTMLButtonElement =>
 describe('LandingScreen hardware wallet entry', () => {
   afterEach(() => {
     mockNavigate.mockClear();
-    delete (globalThis as unknown as { browser?: unknown }).browser;
+    delete (globalThis as unknown as { chrome?: unknown }).chrome;
   });
 
   it('disables the hardware wallet entry in Firefox and states the reason', () => {
-    (globalThis as unknown as { browser: unknown }).browser = {};
+    mockBrowser('moz-extension');
 
     renderScreen();
 
@@ -65,6 +73,8 @@ describe('LandingScreen hardware wallet entry', () => {
   });
 
   it('keeps the hardware wallet entry usable outside Firefox', () => {
+    mockBrowser('chrome-extension');
+
     renderScreen();
 
     const button = hardwareWalletButton();
@@ -78,7 +88,7 @@ describe('LandingScreen hardware wallet entry', () => {
   });
 
   it('leaves the other entries untouched in Firefox', () => {
-    (globalThis as unknown as { browser: unknown }).browser = {};
+    mockBrowser('moz-extension');
 
     renderScreen();
 

@@ -53,14 +53,19 @@ export const isSeparatePopupWindow = (): boolean => {
 /**
  * Whether this build is running inside Firefox.
  *
- * Firefox is the only browser Adena targets that exposes the promise-based
- * `browser` namespace (`chrome` is kept as an alias for compatibility);
- * Chromium exposes `chrome` only. The user-agent check is the fallback for
- * surfaces without extension APIs and for tests, which set it directly.
+ * Keys off the extension's own URL scheme — `moz-extension://` only ever means
+ * Gecko. Presence of the `browser` namespace is NOT a usable signal: Chromium
+ * exposes it as an alias too, which disabled the Ledger entry on Chrome. The
+ * user-agent check is the fallback for surfaces without extension APIs.
  */
 export const isFirefox = (): boolean => {
-  if (typeof (globalThis as { browser?: unknown }).browser !== 'undefined') {
-    return true;
+  try {
+    const extensionUrl = chrome?.runtime?.getURL?.('');
+    if (extensionUrl) {
+      return extensionUrl.startsWith('moz-extension://');
+    }
+  } catch {
+    // No extension APIs here; fall through to the user-agent check.
   }
 
   return typeof navigator !== 'undefined' && /firefox/i.test(navigator.userAgent);

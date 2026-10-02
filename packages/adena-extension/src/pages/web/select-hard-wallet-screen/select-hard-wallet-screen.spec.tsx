@@ -13,6 +13,12 @@ jest.mock('@hooks/use-app-navigate', () => ({
   default: (): { navigate: jest.Mock } => ({ navigate: mockNavigate }),
 }));
 
+const mockBrowser = (scheme: 'moz-extension' | 'chrome-extension'): void => {
+  (globalThis as unknown as { chrome: unknown }).chrome = {
+    runtime: { getURL: (path: string) => `${scheme}://adena-test-id/${path}` },
+  };
+};
+
 const renderScreen = (): void => {
   render(
     <ThemeProvider theme={theme}>
@@ -27,11 +33,12 @@ const ledgerButton = (): HTMLButtonElement =>
 describe('SelectHardWalletScreen Ledger entry', () => {
   afterEach(() => {
     mockNavigate.mockClear();
+    delete (globalThis as unknown as { chrome?: unknown }).chrome;
     delete (globalThis as unknown as { browser?: unknown }).browser;
   });
 
   it('disables the Ledger entry in Firefox and states the reason', () => {
-    (globalThis as unknown as { browser: unknown }).browser = {};
+    mockBrowser('moz-extension');
 
     renderScreen();
 
@@ -44,6 +51,8 @@ describe('SelectHardWalletScreen Ledger entry', () => {
   });
 
   it('keeps the Ledger entry usable in Chrome, with no reason shown', () => {
+    mockBrowser('chrome-extension');
+
     renderScreen();
 
     const button = ledgerButton();
@@ -60,6 +69,16 @@ describe('SelectHardWalletScreen Ledger entry', () => {
     const navigatorWithout = navigator as Navigator & { hid?: unknown; usb?: unknown };
     expect(navigatorWithout.hid).toBeUndefined();
     expect(navigatorWithout.usb).toBeUndefined();
+    mockBrowser('chrome-extension');
+
+    renderScreen();
+
+    expect(ledgerButton().disabled).toBe(false);
+  });
+
+  it('stays enabled on Chrome even though Chromium also exposes `browser`', () => {
+    (globalThis as unknown as { browser: unknown }).browser = {};
+    mockBrowser('chrome-extension');
 
     renderScreen();
 
