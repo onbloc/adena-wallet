@@ -6,11 +6,22 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenPrices } from '@hooks/use-token-prices';
 import { TokenPrice, TokenPriceRequest } from '@types';
 
+export interface FeeTokenQuote {
+  /** The quote, once there is one. */
+  price?: TokenPrice;
+  /**
+   * True while a quote is still on its way. Callers must not fall back to the
+   * token amount yet: the quote replaces it, so showing the amount first only
+   * puts a figure on screen that is about to be swapped out.
+   */
+  isLoading: boolean;
+}
+
 const NO_REQUESTS: TokenPriceRequest[] = [];
 
 /**
- * USD quote for the token a transaction's fee is charged in, or undefined when
- * there is none — which is every testnet, by design.
+ * USD quote for the token a transaction's fee is charged in, with no price
+ * when there is none — which is every testnet, by design.
  *
  * `denom` is the symbol the row is about to render. Only the current Gno
  * network's gas token is recognised on its own; a fee charged in anything else
@@ -20,7 +31,7 @@ const NO_REQUESTS: TokenPriceRequest[] = [];
 export const useFeeTokenPrice = (
   denom: string,
   feeToken?: TokenPriceRequest | null,
-): TokenPrice | undefined => {
+): FeeTokenQuote => {
   const { currentNetwork } = useNetwork();
 
   const target = useMemo<TokenPriceRequest | null>(() => {
@@ -43,13 +54,18 @@ export const useFeeTokenPrice = (
   // reference, so a caller passing a fresh `feeToken` object each render still
   // shares one query.
   const requests = useMemo(() => (target ? [target] : NO_REQUESTS), [target]);
-  const { tokenPrices } = useTokenPrices(requests);
+  const { tokenPrices, isFetched } = useTokenPrices(requests);
 
   return useMemo(() => {
+    // A token nothing can quote has nothing to wait for, so the amount shows
+    // straight away rather than sitting behind a skeleton that never resolves.
     if (!target) {
-      return undefined;
+      return { price: undefined, isLoading: false };
     }
 
-    return tokenPrices[getTokenPriceKey(target.tokenId, target.networkId)];
-  }, [target, tokenPrices]);
+    return {
+      price: tokenPrices[getTokenPriceKey(target.tokenId, target.networkId)],
+      isLoading: !isFetched,
+    };
+  }, [target, tokenPrices, isFetched]);
 };

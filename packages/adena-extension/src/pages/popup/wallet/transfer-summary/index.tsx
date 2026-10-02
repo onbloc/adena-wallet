@@ -168,12 +168,12 @@ const TransferSummaryContainer: React.FC = () => {
   // One quote per path: a Cosmos send pays in that chain's own fee token, a Gno
   // send in GNOT. `useFeeTokenPrice` resolves GNOT on its own, so only the
   // Cosmos side has to name its token.
-  const gnoFeeTokenPrice = useFeeTokenPrice(networkFee?.denom ?? '');
-  const cosmosFeeTokenPrice = useFeeTokenPrice(
+  const gnoFeeTokenQuote = useFeeTokenPrice(networkFee?.denom ?? '');
+  const cosmosFeeTokenQuote = useFeeTokenPrice(
     cosmosFee.networkFee?.denom ?? '',
     cosmosFee.feeToken,
   );
-  const feeTokenPrice = isCosmosToken ? cosmosFeeTokenPrice : gnoFeeTokenPrice;
+  const feeTokenQuote = isCosmosToken ? cosmosFeeTokenQuote : gnoFeeTokenQuote;
 
   // Transfer-token denom (e.g. "uatone" or "uphoton") and the chain's fee
   // denom (always "uphoton" for atomone-1 outside the MintPhoton flow). When
@@ -876,7 +876,7 @@ const TransferSummaryContainer: React.FC = () => {
         <div className='network-fee-setting-wrapper'>
           <NetworkFeeSetting
             {...(isCosmosToken ? cosmosFee : useNetworkFeeReturn)}
-            feeTokenPrice={feeTokenPrice}
+            feeTokenQuote={feeTokenQuote}
             onClickBack={onClickNetworkFeeClose}
             onClickSave={onClickNetworkFeeSave}
           />
@@ -893,7 +893,7 @@ const TransferSummaryContainer: React.FC = () => {
           isLoadingNetworkFee={isCosmosToken ? cosmosFee.isLoading : useNetworkFeeReturn.isLoading}
           isSessionSigning={!!currentAccount && isSessionAccount(currentAccount)}
           networkFee={isCosmosToken ? cosmosFee.networkFee : networkFee}
-          feeTokenPrice={feeTokenPrice}
+          feeTokenQuote={feeTokenQuote}
           memo={summaryInfo.memo}
           currentBalance={currentBalance}
           useNetworkFeeReturn={useNetworkFeeReturn}

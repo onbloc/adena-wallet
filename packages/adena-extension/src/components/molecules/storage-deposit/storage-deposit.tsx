@@ -2,10 +2,9 @@ import React, { useMemo } from 'react';
 
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
-import { TokenBalance } from '@components/molecules';
-import FeeAmountUSD from '@components/molecules/fee-amount-usd/fee-amount-usd';
+import FeeAmount from '@components/molecules/fee-amount/fee-amount';
 import theme from '@styles/theme';
-import { TokenPrice } from '@types';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import BigNumber from 'bignumber.js';
 import {
   StorageDepositContainer,
@@ -24,9 +23,10 @@ export interface StorageDepositProps {
   showPlaceholder?: boolean;
   /**
    * Quote for GNOT, from `useFeeTokenPrice`. The screen resolves it so this
-   * stays presentational; without one the row keeps its amount-only shape.
+   * stays presentational; with one the row reads in USD, without one it falls
+   * back to the token amount.
    */
-  feeTokenPrice?: TokenPrice | null;
+  feeTokenQuote?: FeeTokenQuote | null;
 }
 
 const storageDepositTooltipMessage = `The total amount of GNOT deposited or
@@ -39,7 +39,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
   isError,
   errorMessage,
   showPlaceholder = false,
-  feeTokenPrice,
+  feeTokenQuote,
 }) => {
   const isEmptyValue = useMemo(() => {
     return storageDeposit.storageDeposit === 0 && storageDeposit.unlockDeposit === 0;
@@ -84,7 +84,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
             isRefundable={isRefundable}
             isLoading={isLoading}
             showPlaceholder={showPlaceholder}
-            price={feeTokenPrice}
+            quote={feeTokenQuote}
           />
         </div>
       </StorageDepositWrapper>
@@ -99,8 +99,8 @@ const StorageDepositAmount: React.FC<{
   isRefundable: boolean;
   isLoading: boolean;
   showPlaceholder?: boolean;
-  price: TokenPrice | null | undefined;
-}> = ({ value, isRefundable, isLoading, showPlaceholder = false, price }) => {
+  quote: FeeTokenQuote | null | undefined;
+}> = ({ value, isRefundable, isLoading, showPlaceholder = false, quote }) => {
   const fontColor = isRefundable ? theme.green._5 : theme.neutral._1;
 
   const amount = useMemo(() => {
@@ -130,19 +130,13 @@ const StorageDepositAmount: React.FC<{
   }
 
   return (
-    <div className='storage-deposit-amount'>
-      <TokenBalance
-        value={amount.value}
-        denom={amount.denom}
-        fontColor={fontColor}
-        fontStyleKey='body2Reg'
-        minimumFontSize='11px'
-        orientation='HORIZONTAL'
-        withSign={isRefundable}
-      />
-
-      <FeeAmountUSD value={amount.value} price={price ?? undefined} withSign={isRefundable} />
-    </div>
+    <FeeAmount
+      value={amount.value}
+      denom={amount.denom}
+      quote={quote}
+      fontColor={fontColor}
+      withSign={isRefundable}
+    />
   );
 };
 

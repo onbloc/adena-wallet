@@ -89,7 +89,7 @@ const RevokeSessionPage = (): ReactElement => {
   const networkFee = useNetworkFeeReturn.networkFee;
 
   // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
-  const feeTokenPrice = useFeeTokenPrice(networkFee?.denom ?? '');
+  const feeTokenQuote = useFeeTokenPrice(networkFee?.denom ?? '');
 
   useEffect(() => {
     let cancelled = false;
@@ -234,7 +234,12 @@ const RevokeSessionPage = (): ReactElement => {
         <BottomFixedButtonGroup
           filled
           leftButton={{ text: 'Cancel', onClick: goBack }}
-          rightButton={{ text: 'Revoke', danger: true, disabled: true, onClick: (): void => undefined }}
+          rightButton={{
+            text: 'Revoke',
+            danger: true,
+            disabled: true,
+            onClick: (): void => undefined,
+          }}
         />
       </Container>
     );
@@ -247,7 +252,12 @@ const RevokeSessionPage = (): ReactElement => {
         <BottomFixedButtonGroup
           filled
           leftButton={{ text: 'Cancel', onClick: goBack }}
-          rightButton={{ text: 'Revoke', danger: true, disabled: true, onClick: (): void => undefined }}
+          rightButton={{
+            text: 'Revoke',
+            danger: true,
+            disabled: true,
+            onClick: (): void => undefined,
+          }}
         />
       </Container>
     );
@@ -256,11 +266,18 @@ const RevokeSessionPage = (): ReactElement => {
   if (error || !entry) {
     return (
       <Container>
-        <Status>{error ? `Failed to load session: ${error}` : 'Session not found on chain.'}</Status>
+        <Status>
+          {error ? `Failed to load session: ${error}` : 'Session not found on chain.'}
+        </Status>
         <BottomFixedButtonGroup
           filled
           leftButton={{ text: 'Cancel', onClick: goBack }}
-          rightButton={{ text: 'Revoke', danger: true, disabled: true, onClick: (): void => undefined }}
+          rightButton={{
+            text: 'Revoke',
+            danger: true,
+            disabled: true,
+            onClick: (): void => undefined,
+          }}
         />
       </Container>
     );
@@ -271,7 +288,7 @@ const RevokeSessionPage = (): ReactElement => {
       <NetworkFeeSettingWrapper>
         <NetworkFeeSetting
           {...useNetworkFeeReturn}
-          feeTokenPrice={feeTokenPrice}
+          feeTokenQuote={feeTokenQuote}
           onClickBack={(): void => setOpenedFeeSetting(false)}
           onClickSave={(): void => {
             useNetworkFeeReturn.save();
@@ -307,7 +324,7 @@ const RevokeSessionPage = (): ReactElement => {
       <NetworkFee
         value={networkFee?.amount ?? ''}
         denom={networkFee?.denom ?? ''}
-        feeTokenPrice={feeTokenPrice}
+        feeTokenQuote={feeTokenQuote}
         isLoading={useNetworkFeeReturn.isLoading}
         isError={useNetworkFeeReturn.isSimulateError}
         onClickSetting={(): void => setOpenedFeeSetting(true)}

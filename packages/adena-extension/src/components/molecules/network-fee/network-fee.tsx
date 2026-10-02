@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react';
 
 import IconRight from '@assets/icon-right';
-import { TokenBalance } from '@components/molecules';
-import FeeAmountUSD from '@components/molecules/fee-amount-usd/fee-amount-usd';
-import { TokenPrice } from '@types';
+import FeeAmount from '@components/molecules/fee-amount/fee-amount';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import {
   NetworkFeeContainer,
   NetworkFeeItemSkeletonBox,
@@ -18,10 +17,10 @@ export interface NetworkFeeProps {
   errorMessage?: string;
   /**
    * Quote for the token the fee is charged in, from `useFeeTokenPrice`. The
-   * screen resolves it so this stays presentational; without one the row keeps
-   * its single-line, amount-only shape.
+   * screen resolves it so this stays presentational; with one the row reads in
+   * USD, without one it falls back to the token amount.
    */
-  feeTokenPrice?: TokenPrice | null;
+  feeTokenQuote?: FeeTokenQuote | null;
   onClickSetting?: () => void;
 }
 
@@ -31,7 +30,7 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
   isLoading = false,
   isError,
   errorMessage,
-  feeTokenPrice,
+  feeTokenQuote,
   onClickSetting,
 }) => {
   const hasSetting = !!onClickSetting;
@@ -60,11 +59,12 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
         <span className='key'>{'Network Fee'}</span>
 
         <div className='network-fee-amount-wrapper'>
-          <div className='network-fee-amount'>
-            <NetworkFeeAmount value={value} denom={denom} isLoading={isLoading} />
-
-            {!isLoading && <FeeAmountUSD value={value} price={feeTokenPrice ?? undefined} />}
-          </div>
+          <NetworkFeeAmount
+            value={value}
+            denom={denom}
+            isLoading={isLoading}
+            feeTokenQuote={feeTokenQuote}
+          />
 
           {hasSetting && !isLoading && !isEmptyValue && (
             <button className='setting-button' onClick={onClickSetting}>
@@ -83,7 +83,8 @@ const NetworkFeeAmount: React.FC<{
   value: string;
   denom: string;
   isLoading: boolean;
-}> = ({ value, denom, isLoading }) => {
+  feeTokenQuote?: FeeTokenQuote | null;
+}> = ({ value, denom, isLoading, feeTokenQuote }) => {
   const hasNetworkFee = !!Number(value) && !!denom;
 
   if (isLoading) {
@@ -94,15 +95,7 @@ const NetworkFeeAmount: React.FC<{
     return <span className='value'>{'-'}</span>;
   }
 
-  return (
-    <TokenBalance
-      value={value}
-      denom={denom}
-      fontStyleKey='body2Reg'
-      minimumFontSize='11px'
-      orientation='HORIZONTAL'
-    />
-  );
+  return <FeeAmount value={value} denom={denom} quote={feeTokenQuote} />;
 };
 
 export default NetworkFee;

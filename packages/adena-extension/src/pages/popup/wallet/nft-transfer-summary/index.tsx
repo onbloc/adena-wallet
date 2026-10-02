@@ -63,7 +63,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
   const networkFee = useNetworkFeeReturn.networkFee;
 
   // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
-  const feeTokenPrice = useFeeTokenPrice(networkFee?.denom ?? '');
+  const feeTokenQuote = useFeeTokenPrice(networkFee?.denom ?? '');
 
   const hasNetworkFee = useMemo(() => {
     if (!currentBalance || currentBalance === 0) {
@@ -337,7 +337,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
         <div className='network-fee-setting-wrapper'>
           <NetworkFeeSetting
             {...useNetworkFeeReturn}
-            feeTokenPrice={feeTokenPrice}
+            feeTokenQuote={feeTokenQuote}
             onClickBack={onClickNetworkFeeClose}
             onClickSave={onClickNetworkFeeSave}
           />
@@ -352,7 +352,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
           isBalanceUnknown={currentBalance === null || currentBalance === undefined}
           simulateErrorBannerMessage={simulateErrorMessage}
           networkFee={networkFee}
-          feeTokenPrice={feeTokenPrice}
+          feeTokenQuote={feeTokenQuote}
           memo={summaryInfo.memo}
           queryGRC721TokenUri={useGetGRC721TokenUri}
           onClickBack={onClickBack}

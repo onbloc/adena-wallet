@@ -1,9 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  BroadcastTxCommitResult,
-  BroadcastTxSyncResult,
-  TM2Error,
-} from '@gnolang/tm2-js-client';
+import { BroadcastTxCommitResult, BroadcastTxSyncResult, TM2Error } from '@gnolang/tm2-js-client';
 import {
   Account,
   Document,
@@ -68,7 +64,11 @@ interface TransactionData {
   document: Document;
 }
 
-function makeDefaultNetworkInfo(chainId: string, rpcUrl: string, addressPrefix: string): NetworkMetainfo {
+function makeDefaultNetworkInfo(
+  chainId: string,
+  rpcUrl: string,
+  addressPrefix: string,
+): NetworkMetainfo {
   return {
     addressPrefix,
     chainId,
@@ -208,11 +208,7 @@ const ApproveTransactionContainer: React.FC = () => {
       currentWalletNetwork?.chainId === networkInfo.chainId &&
       currentWalletNetwork?.rpcUrl === networkInfo.rpcUrl
     );
-  }, [
-    currentWalletNetwork?.chainId,
-    currentWalletNetwork?.rpcUrl,
-    requestData?.data?.networkInfo,
-  ]);
+  }, [currentWalletNetwork?.chainId, currentWalletNetwork?.rpcUrl, requestData?.data?.networkInfo]);
 
   const isSessionAdminNetworkUnsupported = useMemo(() => {
     return (
@@ -289,7 +285,7 @@ const ApproveTransactionContainer: React.FC = () => {
   }, [networkFee]);
 
   // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
-  const feeTokenPrice = useFeeTokenPrice(displayNetworkFee.denom);
+  const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
 
   const maxDepositAmount = useMemo(() => {
     const accumulatedAmount = document?.msgs.reduce((acc, msg): number => {
@@ -652,9 +648,7 @@ const ApproveTransactionContainer: React.FC = () => {
         // it. Forward as a separate data field so existing dapp consumers
         // ignore it harmlessly.
         const chainLog =
-          response instanceof TM2Error
-            ? (response as TM2Error & { log?: string }).log
-            : undefined;
+          response instanceof TM2Error ? (response as TM2Error & { log?: string }).log : undefined;
         setResponse(
           InjectionMessageInstance.failure(
             WalletResponseFailureType.TRANSACTION_FAILED,
@@ -952,7 +946,7 @@ const ApproveTransactionContainer: React.FC = () => {
       maxDepositAmount={maxDepositAmount}
       isErrorNetworkFee={isErrorNetworkFee || !networkFee}
       networkFee={displayNetworkFee}
-      feeTokenPrice={feeTokenPrice}
+      feeTokenQuote={feeTokenQuote}
       useNetworkFeeReturn={useNetworkFeeReturn}
       transactionMessages={transactionMessages}
       changeTransactionMessages={setTransactionMessages}
@@ -966,9 +960,7 @@ const ApproveTransactionContainer: React.FC = () => {
       opened={visibleTransactionInfo}
       argumentInfos={argumentInfos}
       transactionData={JSON.stringify(document, null, 2)}
-      requiresHoldConfirmation={
-        requiresHoldConfirmation || approvalBlocked
-      }
+      requiresHoldConfirmation={requiresHoldConfirmation || approvalBlocked}
       onFinishHold={handleFinishHold}
       simulateErrorBannerMessage={parsedSimulateErrors.globalErrorMessage}
       sessionGuardBannerMessage={

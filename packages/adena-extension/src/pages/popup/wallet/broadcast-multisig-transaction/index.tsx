@@ -49,7 +49,11 @@ interface TransactionData {
   memo: string;
 }
 
-function makeDefaultNetworkInfo(chainId: string, rpcUrl: string, addressPrefix: string): NetworkMetainfo {
+function makeDefaultNetworkInfo(
+  chainId: string,
+  rpcUrl: string,
+  addressPrefix: string,
+): NetworkMetainfo {
   return {
     addressPrefix,
     chainId,
@@ -175,7 +179,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   }, [multisigDocument]);
 
   // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
-  const feeTokenPrice = useFeeTokenPrice(displayNetworkFee.denom);
+  const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
 
   const consumedTokenAmount = useMemo(() => {
     const accumulatedAmount = multisigDocument?.msg.reduce((acc: number, msg: any) => {
@@ -497,7 +501,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       isErrorNetworkFee={isErrorNetworkFee}
       isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}
-      feeTokenPrice={feeTokenPrice}
+      feeTokenQuote={feeTokenQuote}
       transactionData={JSON.stringify(multisigDocument, null, 2)}
       opened={visibleTransactionInfo}
       argumentInfos={argumentInfos}

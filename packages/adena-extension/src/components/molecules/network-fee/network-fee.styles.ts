@@ -39,13 +39,6 @@ export const NetworkFeeWrapper = styled.div<{ $error?: number }>`
     width: 100%;
     gap: 3px;
 
-    /* Column so the USD line can sit under the amount it restates, leaving
-       the setting chevron centred against both. */
-    & .network-fee-amount {
-      ${mixins.flex({ direction: 'column', align: 'flex-end', justify: 'center' })};
-      gap: 2px;
-    }
-
     & .setting-button {
       ${mixins.flex({ direction: 'row' })};
       width: 16px;

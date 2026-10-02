@@ -1,4 +1,10 @@
-import { Account, Document, isAirgapAccount, isLedgerAccount, isSessionAccount } from 'adena-module';
+import {
+  Account,
+  Document,
+  isAirgapAccount,
+  isLedgerAccount,
+  isSessionAccount,
+} from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -149,7 +155,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
   }, [networkFee]);
 
   // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
-  const feeTokenPrice = useFeeTokenPrice(displayNetworkFee.denom);
+  const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
 
   const consumedTokenAmount = useMemo(() => {
     const accumulatedAmount = document?.msgs.reduce((acc, msg) => {
@@ -237,10 +243,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
     requestData: InjectionMessage,
   ): Promise<boolean> => {
     const visibleAddress = await getDappVisibleAddress(currentAccount, chain.bech32Prefix);
-    const validationMessage = validateInjectionDataWithAddress(
-      requestData,
-      visibleAddress,
-    );
+    const validationMessage = validateInjectionDataWithAddress(requestData, visibleAddress);
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
       return false;
@@ -623,7 +626,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
       currentBalance={currentBalance || 0}
       isErrorNetworkFee={isErrorNetworkFee || !networkFee}
       networkFee={displayNetworkFee}
-      feeTokenPrice={feeTokenPrice}
+      feeTokenQuote={feeTokenQuote}
       useNetworkFeeReturn={useNetworkFeeReturn}
       transactionMessages={transactionMessages}
       argumentInfos={argumentInfos}

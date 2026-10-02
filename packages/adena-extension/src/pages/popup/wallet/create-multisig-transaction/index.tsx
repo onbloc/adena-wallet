@@ -176,7 +176,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   }, [networkFee]);
 
   // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
-  const feeTokenPrice = useFeeTokenPrice(displayNetworkFee.denom);
+  const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
 
   const currentGasWanted = useMemo(() => {
     return tx?.fee?.gas_wanted || '0';
@@ -493,7 +493,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       isErrorNetworkFee={isErrorNetworkFee}
       isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}
-      feeTokenPrice={feeTokenPrice}
+      feeTokenQuote={feeTokenQuote}
       multisigConfig={multisigConfig}
       transactionMessages={transactionMessages}
       argumentInfos={argumentInfos}

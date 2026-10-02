@@ -138,7 +138,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
   }, [networkFee]);
 
   // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
-  const feeTokenPrice = useFeeTokenPrice(displayNetworkFee.denom);
+  const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
   const done = useMemo(() => processType === 'DONE', [processType]);
@@ -411,7 +411,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
       isErrorNetworkFee={isErrorNetworkFee}
       isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}
-      feeTokenPrice={feeTokenPrice}
+      feeTokenQuote={feeTokenQuote}
       transactionMessages={transactionMessages}
       argumentInfos={argumentInfos}
       onClickConfirm={onClickConfirm}
