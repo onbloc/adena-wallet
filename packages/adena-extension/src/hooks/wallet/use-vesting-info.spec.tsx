@@ -120,6 +120,27 @@ describe('useVestingInfo', () => {
     expect(result.current.vestingInfo).toBeNull();
   });
 
+  // A failed RPC answers with an IN_ACTIVE placeholder that carries no
+  // `vesting`, which is indistinguishable from an account that has no grant.
+  it('reports an unreadable account as unresolved rather than ungranted', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo({ ...accountInfo(ACCOUNT_A, false), status: 'IN_ACTIVE', coins: '' });
+
+    const { result } = renderHook(() => useVestingInfo());
+
+    expect(result.current.vestingInfo).toBeNull();
+    expect(result.current.isResolved).toBe(false);
+  });
+
+  it('reports a read account as resolved', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo(accountInfo(ACCOUNT_A, false));
+
+    const { result } = renderHook(() => useVestingInfo());
+
+    expect(result.current.isResolved).toBe(true);
+  });
+
   it('returns null before any account is selected', () => {
     setCurrentAddress(null);
     setAccountInfo(null);

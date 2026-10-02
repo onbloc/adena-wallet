@@ -6,6 +6,7 @@ import { GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
+import { getTransferLimitAmount } from '@common/utils/transfer-limit';
 import { isNativeTokenModel } from '@common/validation/validation-token';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 import type { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
@@ -19,7 +20,7 @@ import { SESSIONS_QUERY_KEY } from './use-sessions';
 import { useTokenBalance } from './use-token-balance';
 import { getCosmosOriginDenom, useTokenMetainfo } from './use-token-metainfo';
 import { useNetworkFee } from './wallet/use-network-fee';
-import { useVestingSpendable } from './wallet/use-vesting-spendable';
+import { useVestingLocked } from './wallet/use-vesting-locked';
 
 // Buffer applied to the simulated cosmos fee when computing the Max amount.
 // Absorbs feemarket base-price drift between Max click and broadcast, plus
@@ -78,10 +79,12 @@ export const useBalanceInput = (
   const isSessionNativeTransfer =
     currentAccount !== null && isSessionAccount(currentAccount) && isGnoNativeTransfer;
 
-  // Only the native token is ever vesting-locked, and the cap belongs to the
+  // Only the native token is ever vesting-locked, and the lock belongs to the
   // address that pays — the master address for a session account.
-  const { spendableAmount: vestingSpendableAmount, isLoading: isLoadingVestingSpendable } =
-    useVestingSpendable(currentFundingAddress, isGnoNativeTransfer);
+  const { lockedAmount: vestingLockedAmount, isLoading: isLoadingVestingLocked } = useVestingLocked(
+    currentFundingAddress,
+    isGnoNativeTransfer,
+  );
 
   const { data: currentSessionMetadata = null, isLoading: isLoadingCurrentSessionMetadata } =
     useQuery<SessionMetadataV021 | null>(
@@ -243,15 +246,14 @@ export const useBalanceInput = (
         .shiftedBy(GasToken.decimals * -1)
         .toFixed(GasToken.decimals, BigNumber.ROUND_UP);
 
-      // Vesting caps the transfer only. Fees come out of the whole balance,
-      // locked coins included, so they are subtracted from the balance and the
-      // two limits are then compared: with a grant large enough to cover the
-      // fee the vesting cap binds, and once it is nearly spent the fee does.
-      const limitAmountNumber = getLimitedAmount(
-        getLimitedAmount(balanceAmountNumber, sessionSpendableAmount).minus(maxGasFeeBN),
-        vestingSpendableAmount,
+      setAvailAmountNumber(
+        getTransferLimitAmount({
+          balance: balanceAmountNumber,
+          sessionSpendable: sessionSpendableAmount,
+          vestingLocked: vestingLockedAmount,
+          feeAmount: BigNumber(maxGasFeeBN),
+        }),
       );
-      setAvailAmountNumber(toNonNegativeBigNumber(limitAmountNumber));
       return;
     }
 
@@ -286,7 +288,7 @@ export const useBalanceInput = (
     tokenMetainfo,
     tokenRegistry,
     sessionSpendableAmount,
-    vestingSpendableAmount,
+    vestingLockedAmount,
     cosmosFeeContext?.currentFeeAmount,
     cosmosFeeContext?.currentFeeDenom,
     cosmosFeeContext?.feeDecimals,
@@ -321,8 +323,7 @@ export const useBalanceInput = (
     }
     // A grant makes part of the balance untransferable, so the figure stops
     // being the account's balance and reads as spendable, like a session's.
-    const label =
-      isSessionNativeTransfer || vestingSpendableAmount !== null ? 'Spendable' : 'Balance';
+    const label = isSessionNativeTransfer || vestingLockedAmount !== null ? 'Spendable' : 'Balance';
 
     // A balance that could not be read is not a zero balance.
     if (!currentBalance) {
@@ -334,7 +335,7 @@ export const useBalanceInput = (
       ? availAmountNumber
       : getLimitedAmount(
           getLimitedAmount(balanceAmount, sessionSpendableAmount),
-          vestingSpendableAmount,
+          getVestingLimitedAmount(balanceAmount, vestingLockedAmount),
         );
     return `${label}: ${descriptionAmount.toFormat()} ${tokenMetainfo.symbol}`;
   }, [
@@ -344,7 +345,7 @@ export const useBalanceInput = (
     hasError,
     isSessionNativeTransfer,
     sessionSpendableAmount,
-    vestingSpendableAmount,
+    vestingLockedAmount,
     tokenMetainfo,
   ]);
 
@@ -381,23 +382,30 @@ export const useBalanceInput = (
     }
     // An unread grant looks exactly like no grant, and filling the full
     // balance would put locked coins in the field.
-    if (isLoadingVestingSpendable) {
+    if (isLoadingVestingLocked) {
       return;
     }
     setAmount(availAmountNumber.toString());
-  }, [availAmountNumber, currentGasInfo, cosmosFeeContext, isLoadingVestingSpendable]);
+  }, [availAmountNumber, currentGasInfo, cosmosFeeContext, isLoadingVestingLocked]);
 
   const validateBalanceInput = useCallback(() => {
     const balanceAmount = BigNumber(currentBalance?.amount.value || 0);
-    const limitedBalanceAmount = getLimitedAmount(
-      getLimitedAmount(balanceAmount, sessionSpendableAmount),
-      vestingSpendableAmount,
-    );
-    const maxInputAmount = isSessionNativeTransfer
-      ? currentGasInfo
-        ? availAmountNumber
-        : BigNumber(0)
-      : limitedBalanceAmount;
+    const limitedBalanceAmount = getLimitedAmount(balanceAmount, sessionSpendableAmount);
+
+    // A vesting send is checked against the fee-adjusted cap rather than the
+    // lenient balance the other paths use: the summary screen only weighs the
+    // transfer against the balance, so nothing downstream would catch an
+    // amount that clears the balance but not the lock. An unread grant admits
+    // nothing — treating it as "not locked" is exactly the gap that would let
+    // a typed amount through while MAX is still held back.
+    const isCappedTransfer = isSessionNativeTransfer || vestingLockedAmount !== null;
+    const maxInputAmount = isLoadingVestingLocked
+      ? BigNumber(0)
+      : isCappedTransfer
+        ? currentGasInfo
+          ? availAmountNumber
+          : BigNumber(0)
+        : limitedBalanceAmount;
 
     if (
       BigNumber(amount || 0).isGreaterThan(maxInputAmount) ||
@@ -415,8 +423,9 @@ export const useBalanceInput = (
     currentBalance,
     currentGasInfo,
     isSessionNativeTransfer,
+    isLoadingVestingLocked,
     sessionSpendableAmount,
-    vestingSpendableAmount,
+    vestingLockedAmount,
   ]);
 
   return {
@@ -496,13 +505,27 @@ function getCoinAmount(coins: ReturnType<typeof parseCoins>, denom: string): big
   return coins.find((coin) => coin.denom === denom)?.amount ?? BigInt(0);
 }
 
+/**
+ * The most of `amount` a vesting grant leaves transferable.
+ *
+ * The lock is subtracted from the caller's own balance snapshot rather than
+ * from one the grant query carried along, so the figure can never describe a
+ * balance the screen is not actually spending.
+ */
+function getVestingLimitedAmount(amount: BigNumber, locked: BigNumber | null): BigNumber | null {
+  if (locked === null) {
+    return null;
+  }
+
+  // Fees may be paid out of locked coins, so a balance can fall under its own
+  // lock. Nothing is spendable then, which is not the same as owing it.
+  const unlocked = amount.minus(locked);
+  return unlocked.isGreaterThan(0) ? unlocked : BigNumber(0);
+}
+
 function getLimitedAmount(amount: BigNumber, limit: BigNumber | null): BigNumber {
   if (limit === null) {
     return amount;
   }
   return amount.isLessThan(limit) ? amount : limit;
-}
-
-function toNonNegativeBigNumber(amount: BigNumber): BigNumber {
-  return amount.isGreaterThan(0) ? amount : BigNumber(0);
 }

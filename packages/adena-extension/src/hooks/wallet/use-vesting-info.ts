@@ -24,6 +24,13 @@ export const useVestingInfo = (
 ): {
   vestingInfo: VestingInfo | null;
   isLoading: boolean;
+  /**
+   * Whether the account was actually read. `getAccountInfo` answers a failed
+   * RPC with an IN_ACTIVE placeholder that carries no `vesting` field, which
+   * reads exactly like an account that simply has no grant. A caller that must
+   * not under-report a lock needs to tell the two apart.
+   */
+  isResolved: boolean;
 } => {
   const { currentBalanceAddress } = useCurrentAccount();
   const targetAddress = address === undefined ? currentBalanceAddress : address;
@@ -60,5 +67,10 @@ export const useVestingInfo = (
     return { schedule, coins: accountInfo.coins };
   }, [accountInfo, targetAddress]);
 
-  return { vestingInfo, isLoading };
+  const isResolved = useMemo(
+    () => !!accountInfo && accountInfo.address === targetAddress && accountInfo.status === 'ACTIVE',
+    [accountInfo, targetAddress],
+  );
+
+  return { vestingInfo, isLoading, isResolved };
 };
