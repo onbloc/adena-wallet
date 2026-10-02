@@ -83,11 +83,20 @@ const useSocialLoginAccount = (): UseSocialLoginAccountReturn => {
       account.index = clone.lastAccountIndex + 1;
       clone.addAccount(account);
       clone.addKeyring(web3AuthKeyring);
+
+      // Last point where nothing has been written yet.
+      if (!isCurrentRequest()) {
+        return;
+      }
+      await updateWallet(clone);
+
+      // Switching happens after the save so the current account never points at
+      // one the wallet has not stored - and a cancellation here leaves nothing
+      // half-applied to undo.
       const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
       if (storedAccount) {
         await changeCurrentAccount(storedAccount);
       }
-      await updateWallet(clone);
       if (!isCurrentRequest()) {
         return;
       }
