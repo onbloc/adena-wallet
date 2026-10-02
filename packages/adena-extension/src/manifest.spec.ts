@@ -76,8 +76,8 @@ describe('emitted manifests', () => {
   });
 
   it('declares data collection for AMO signing', () => {
-    expect(firefox.browser_specific_settings.gecko.data_collection_permissions.required).toEqual(
-      expect.any(Array),
-    );
+    expect(firefox.browser_specific_settings.gecko.data_collection_permissions.required).toEqual([
+      'none',
+    ]);
   });
 });
