@@ -3,7 +3,8 @@ import React, { useCallback, useEffect, useMemo } from 'react';
 import { Account, isMultisigAccount, MultisigConfig, SignerPublicKeyInfo } from 'adena-module';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, Signature, SignerInfo } from '@inject/types';
-import { NetworkFee as NetworkFeeType, TokenPrice } from '@types';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import { NetworkFee as NetworkFeeType } from '@types';
 import { createMultisigSignerInfoList, filterValidSignatures } from '@common/utils/multisig-utils';
 
 import { Button, Text } from '@components/atoms';
@@ -40,7 +41,7 @@ export interface BroadcastMultisigTransactionProps {
   isNetworkFeeLoading?: boolean;
   networkFee: NetworkFeeType;
   /** Quote for the fee token, from `useFeeTokenPrice`; drives the fee rows' USD line. */
-  feeTokenPrice?: TokenPrice | null;
+  feeTokenQuote?: FeeTokenQuote | null;
   transactionData: string;
   opened: boolean;
   argumentInfos?: GnoArgumentInfo[];
@@ -67,7 +68,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   memo,
   hasMemo,
   networkFee,
-  feeTokenPrice,
+  feeTokenQuote,
   isErrorNetworkFee,
   isNetworkFeeLoading,
   transactionData,
@@ -210,7 +211,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
 
       <div className='fee-amount-wrapper'>
         <NetworkFee
-          feeTokenPrice={feeTokenPrice}
+          feeTokenQuote={feeTokenQuote}
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           isError={isErrorNetworkFee}

@@ -33,12 +33,6 @@ export const NetworkFeeSettingItemWrapper = styled(View)`
     ${fonts.body1Bold}
   }
 
-  /* Column so the USD line can sit under the tier's fee. */
-  & .amount {
-    ${mixins.flex({ direction: 'column', align: 'flex-end', justify: 'center' })};
-    gap: 2px;
-  }
-
   & .no-data {
     ${fonts.body1Reg}
     color: ${getTheme('neutral', '_3')};

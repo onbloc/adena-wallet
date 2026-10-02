@@ -85,10 +85,7 @@ const RevokeAllSessionsPage = (): ReactElement => {
   const masterAddress = params?.masterAddress;
 
   const { entries, isLoading, error } = useMasterSessions(masterAddress);
-  const activeEntries = useMemo(
-    () => entries.filter((e) => e.status === 'ACTIVE'),
-    [entries],
-  );
+  const activeEntries = useMemo(() => entries.filter((e) => e.status === 'ACTIVE'), [entries]);
 
   const [document, setDocument] = useState<Document | null>(null);
   const [masterAccount, setMasterAccount] = useState<Account | null>(null);
@@ -100,7 +97,7 @@ const RevokeAllSessionsPage = (): ReactElement => {
   const networkFee = useNetworkFeeReturn.networkFee;
 
   // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
-  const feeTokenPrice = useFeeTokenPrice(networkFee?.denom ?? '');
+  const feeTokenQuote = useFeeTokenPrice(networkFee?.denom ?? '');
 
   useEffect(() => {
     let cancelled = false;
@@ -222,7 +219,12 @@ const RevokeAllSessionsPage = (): ReactElement => {
         <BottomFixedButtonGroup
           filled
           leftButton={{ text: 'Cancel', onClick: goBack }}
-          rightButton={{ text: 'Revoke', danger: true, disabled: true, onClick: (): void => undefined }}
+          rightButton={{
+            text: 'Revoke',
+            danger: true,
+            disabled: true,
+            onClick: (): void => undefined,
+          }}
         />
       </Container>
     );
@@ -233,7 +235,7 @@ const RevokeAllSessionsPage = (): ReactElement => {
       <NetworkFeeSettingWrapper>
         <NetworkFeeSetting
           {...useNetworkFeeReturn}
-          feeTokenPrice={feeTokenPrice}
+          feeTokenQuote={feeTokenQuote}
           onClickBack={(): void => setOpenedFeeSetting(false)}
           onClickSave={(): void => {
             useNetworkFeeReturn.save();
@@ -268,7 +270,7 @@ const RevokeAllSessionsPage = (): ReactElement => {
       <NetworkFee
         value={networkFee?.amount ?? ''}
         denom={networkFee?.denom ?? ''}
-        feeTokenPrice={feeTokenPrice}
+        feeTokenQuote={feeTokenQuote}
         isLoading={useNetworkFeeReturn.isLoading}
         isError={useNetworkFeeReturn.isSimulateError}
         onClickSetting={(): void => setOpenedFeeSetting(true)}

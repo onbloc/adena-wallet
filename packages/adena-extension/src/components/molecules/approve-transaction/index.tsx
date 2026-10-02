@@ -12,7 +12,8 @@ import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee
 import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
-import { NetworkFee as NetworkFeeType, TokenPrice } from '@types';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import { NetworkFee as NetworkFeeType } from '@types';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
@@ -38,7 +39,7 @@ export interface ApproveTransactionProps {
   isErrorNetworkFee?: boolean;
   networkFee: NetworkFeeType | null;
   /** Quote for the fee token, from `useFeeTokenPrice`; drives the fee rows' USD line. */
-  feeTokenPrice?: TokenPrice | null;
+  feeTokenQuote?: FeeTokenQuote | null;
   transactionData: string;
   opened: boolean;
   argumentInfos?: GnoArgumentInfo[];
@@ -81,7 +82,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   currentBalance,
   hasMemo,
   networkFee,
-  feeTokenPrice,
+  feeTokenQuote,
   isErrorNetworkFee,
   transactionData,
   opened,
@@ -226,7 +227,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
       <ApproveTransactionNetworkFeeWrapper>
         <NetworkFeeSetting
           {...useNetworkFeeReturn}
-          feeTokenPrice={feeTokenPrice}
+          feeTokenQuote={feeTokenQuote}
           onClickBack={onClickNetworkFeeClose}
           onClickSave={onClickNetworkFeeSave}
         />
@@ -321,11 +322,11 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
           isError={isMaxDepositError}
           errorMessage={maxDepositErrorMessage}
           showPlaceholder={hasArgumentValidationError}
-          feeTokenPrice={feeTokenPrice}
+          feeTokenQuote={feeTokenQuote}
         />
 
         <NetworkFee
-          feeTokenPrice={feeTokenPrice}
+          feeTokenQuote={feeTokenQuote}
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           isError={isErrorNetworkFee}

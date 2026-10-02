@@ -8,7 +8,8 @@ import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
-import { NetworkFee as NetworkFeeType, TokenPrice } from '@types';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import { NetworkFee as NetworkFeeType } from '@types';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
@@ -32,7 +33,7 @@ export interface ApproveSignedDocumentProps {
   isNetworkFeeLoading: boolean;
   networkFee: NetworkFeeType | null;
   /** Quote for the fee token, from `useFeeTokenPrice`; drives the fee rows' USD line. */
-  feeTokenPrice?: TokenPrice | null;
+  feeTokenQuote?: FeeTokenQuote | null;
   transactionData: string;
   opened: boolean;
   argumentInfos?: GnoArgumentInfo[];
@@ -57,7 +58,7 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   memo,
   hasMemo,
   networkFee,
-  feeTokenPrice,
+  feeTokenQuote,
   isErrorNetworkFee,
   isNetworkFeeLoading,
   transactionData,
@@ -134,7 +135,7 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
 
       <div className='fee-amount-wrapper'>
         <NetworkFee
-          feeTokenPrice={feeTokenPrice}
+          feeTokenQuote={feeTokenQuote}
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           isError={isErrorNetworkFee}

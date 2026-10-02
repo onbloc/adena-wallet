@@ -12,14 +12,15 @@ import NetworkFee from '@components/molecules/network-fee/network-fee';
 import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card';
 import TransferSummaryAddress from '@components/pages/transfer-summary/transfer-summary-address/transfer-summary-address';
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { GRC721Model, NetworkFee as NetworkFeeType, TokenPrice } from '@types';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import { GRC721Model, NetworkFee as NetworkFeeType } from '@types';
 
 export interface NFTTransferSummaryProps {
   grc721Token: GRC721Model;
   toAddress: string;
   networkFee: NetworkFeeType | null;
   /** Quote for the fee token, from `useFeeTokenPrice`; drives the fee rows' USD line. */
-  feeTokenPrice?: TokenPrice | null;
+  feeTokenQuote?: FeeTokenQuote | null;
   memo: string;
   isErrorNetworkFee?: boolean;
   isLoadingNetworkFee?: boolean;
@@ -42,7 +43,7 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
   grc721Token,
   toAddress,
   networkFee,
-  feeTokenPrice,
+  feeTokenQuote,
   memo,
   isErrorNetworkFee,
   isLoadingNetworkFee,
@@ -123,7 +124,7 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
         <NetworkFee
           isError={isErrorNetworkFee}
           isLoading={isLoadingNetworkFee}
-          feeTokenPrice={feeTokenPrice}
+          feeTokenQuote={feeTokenQuote}
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           errorMessage={networkFeeErrorMessage}

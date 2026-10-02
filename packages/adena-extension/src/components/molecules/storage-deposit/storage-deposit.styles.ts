@@ -39,12 +39,6 @@ export const StorageDepositWrapper = styled.div<{ $error?: number }>`
     ${mixins.flex({ direction: 'row', justify: 'flex-end' })};
     width: 100%;
     gap: 3px;
-
-    /* Column so the USD line can sit under the amount it restates. */
-    & .storage-deposit-amount {
-      ${mixins.flex({ direction: 'column', align: 'flex-end', justify: 'center' })};
-      gap: 2px;
-    }
   }
 `;
 
