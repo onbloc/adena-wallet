@@ -94,20 +94,21 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
             loading={loading}
             error={error}
             locked={withVesting}
+            trailing={
+              withVesting && (
+                <VestingToggleButton
+                  type='button'
+                  $expanded={vestingExpanded}
+                  aria-expanded={vestingExpanded}
+                  aria-label={vestingExpanded ? 'Hide vesting details' : 'Show vesting details'}
+                  onClick={handleToggle}
+                >
+                  <IconChevronDown />
+                </VestingToggleButton>
+              )
+            }
           />
         </div>
-
-        {withVesting && (
-          <VestingToggleButton
-            type='button'
-            $expanded={vestingExpanded}
-            aria-expanded={vestingExpanded}
-            aria-label={vestingExpanded ? 'Hide vesting details' : 'Show vesting details'}
-            onClick={handleToggle}
-          >
-            <IconChevronDown />
-          </VestingToggleButton>
-        )}
       </div>
 
       {withVesting && (

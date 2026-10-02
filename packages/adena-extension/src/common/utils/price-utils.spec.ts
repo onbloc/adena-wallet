@@ -1,12 +1,54 @@
 import {
   aggregateTokenValues,
   formatChangeRate,
+  formatFeeUSD,
   formatUSD,
   formatUSDChange,
   getChangeTone,
   getTokenPriceKey,
   makeTokenValue,
 } from './price-utils';
+
+describe('formatFeeUSD', () => {
+  it('fixes two decimals once there is a cent to show', () => {
+    expect(formatFeeUSD(1234.5)).toBe('$1,234.50');
+    expect(formatFeeUSD(5)).toBe('$5.00');
+    expect(formatFeeUSD(0.01)).toBe('$0.01');
+    expect(formatFeeUSD(0.019)).toBe('$0.01');
+  });
+
+  // A gas fee normally lands under a cent, and the tiers are chosen by
+  // comparing exactly these digits — "<$0.01" for all three says nothing.
+  it('keeps two significant digits below a cent', () => {
+    expect(formatFeeUSD(0.0048)).toBe('$0.0048');
+    expect(formatFeeUSD(0.004812)).toBe('$0.0048');
+    expect(formatFeeUSD(0.000091234)).toBe('$0.000091');
+    expect(formatFeeUSD(0.0000012)).toBe('$0.0000012');
+    // Already shorter than two significant digits: nothing to pad.
+    expect(formatFeeUSD(0.0006)).toBe('$0.0006');
+  });
+
+  it('rounds the small figures rather than truncating them', () => {
+    expect(formatFeeUSD(0.004899)).toBe('$0.0049');
+    expect(formatFeeUSD(0.0000095)).toBe('$0.0000095');
+    expect(formatFeeUSD(0.00999)).toBe('$0.01');
+  });
+
+  it('signs the figure when asked', () => {
+    expect(formatFeeUSD(5, true)).toBe('+$5.00');
+    expect(formatFeeUSD(-5, true)).toBe('-$5.00');
+    expect(formatFeeUSD(0.0048, true)).toBe('+$0.0048');
+  });
+
+  it('reads "-" for a figure that is not a number', () => {
+    expect(formatFeeUSD(Number.NaN)).toBe('-');
+    expect(formatFeeUSD(Number.POSITIVE_INFINITY)).toBe('-');
+  });
+
+  it('writes a zero fee plainly', () => {
+    expect(formatFeeUSD(0)).toBe('$0.00');
+  });
+});
 
 describe('formatUSD', () => {
   it('fixes two decimals and truncates beyond them', () => {

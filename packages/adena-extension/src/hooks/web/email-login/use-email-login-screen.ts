@@ -1,5 +1,5 @@
 import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { EMAIL_VERIFIER } from '@common/constants/web3auth.constant';
 import { createEmailLoginConfig, isVerifierConfigured } from '@common/utils/social-login';
@@ -13,6 +13,7 @@ import useSocialLoginAccount, {
   SocialLoginFailType,
   toSocialLoginFailType,
 } from '../social-login/use-social-login-account';
+import useSocialLoginAttempt from '../social-login/use-social-login-attempt';
 import useQuestionnaire from '../use-questionnaire';
 
 export type UseEmailLoginReturn = {
@@ -46,9 +47,9 @@ const useEmailLoginScreen = (): UseEmailLoginReturn => {
   const { connectWithProvider } = useSocialLoginAccount();
   const [failType, setFailType] = useState<SocialLoginFailType>('DEFAULT');
   const { currentNetwork } = useNetwork();
-  // Identifies the login attempt that owns the popup, so a canceled or
+  // Identifies the login attempt that owns the popup, so an abandoned or
   // superseded one cannot commit an account when it finally resolves.
-  const requestIdRef = useRef(0);
+  const { begin: beginAttempt, abandon: abandonAttempt } = useSocialLoginAttempt();
 
   const [emailLoginState, setEmailLoginState] = useState<EmailLoginStateType>(() => {
     // Nothing to log in against when the verifier is unconfigured.
@@ -101,8 +102,7 @@ const useEmailLoginScreen = (): UseEmailLoginReturn => {
   }, [ableToConfirmEmail, ableToSkipQuestionnaire, email, navigate]);
 
   const requestEmailLogin = async (): Promise<void> => {
-    const requestId = (requestIdRef.current += 1);
-    const isCurrentRequest = (): boolean => requestIdRef.current === requestId;
+    const isCurrentRequest = beginAttempt();
 
     try {
       const provider = await GnoSocialWalletProvider.createEmailPasswordless(
@@ -121,7 +121,7 @@ const useEmailLoginScreen = (): UseEmailLoginReturn => {
 
   const backStep = useCallback(() => {
     // Abandons whatever popup is still open.
-    requestIdRef.current += 1;
+    abandonAttempt();
 
     if (emailLoginState === 'INIT' || !isVerifierConfigured(EMAIL_VERIFIER, 'EMAIL')) {
       navigate(RoutePath.WebAdvancedOption);
@@ -132,7 +132,7 @@ const useEmailLoginScreen = (): UseEmailLoginReturn => {
       return;
     }
     setEmailLoginState('ENTER_EMAIL');
-  }, [emailLoginState, navigate]);
+  }, [abandonAttempt, emailLoginState, navigate]);
 
   const retry = useCallback(() => {
     if (!isVerifierConfigured(EMAIL_VERIFIER, 'EMAIL')) {

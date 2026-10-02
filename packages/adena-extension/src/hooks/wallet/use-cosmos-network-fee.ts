@@ -1,7 +1,13 @@
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useQuery } from '@tanstack/react-query';
-import { GasInfo, NetworkFee, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
+import {
+  GasInfo,
+  NetworkFee,
+  NetworkFeeSettingInfo,
+  NetworkFeeSettingType,
+  TokenPriceRequest,
+} from '@types';
 import {
   CosmosDocument,
   FEE_PRESET_MULTIPLIERS,
@@ -46,6 +52,11 @@ export interface UseCosmosNetworkFeeReturn {
   // Display-unit overrides for NetworkFeeSetting / NetworkFeeSettingItem.
   feeSymbol: string | undefined;
   feeDecimals: number | undefined;
+  /**
+   * Token the fee is charged in, for its USD line. Named explicitly because a
+   * Cosmos fee is not GNOT and must not be valued at GNOT's price.
+   */
+  feeToken: TokenPriceRequest | null;
 }
 
 /**
@@ -207,6 +218,20 @@ export const useCosmosNetworkFee = (
     return { amount: displayAmount, denom: symbol };
   }, [currentGasInfo, currentFeeDenom, feeTokenProfile]);
 
+  // The chain id doubles as the price networkId, the same way the wallet keys
+  // a Cosmos native token (`atomone-1:uphoton` on `atomone-1`).
+  const feeToken = useMemo<TokenPriceRequest | null>(() => {
+    if (!chain || !document?.chainId) {
+      return null;
+    }
+
+    return {
+      tokenId: chain.fee.defaultFeeTokenId,
+      networkId: document.chainId,
+      decimals: feeTokenProfile?.decimals,
+    };
+  }, [chain, document?.chainId, feeTokenProfile?.decimals]);
+
   const setNetworkFeeSetting = useCallback((info: NetworkFeeSettingInfo) => {
     setPendingSettingType(info.settingType);
   }, []);
@@ -240,5 +265,6 @@ export const useCosmosNetworkFee = (
     simulateErrorMessage,
     feeSymbol: feeTokenProfile?.symbol,
     feeDecimals: feeTokenProfile?.decimals,
+    feeToken,
   };
 };
