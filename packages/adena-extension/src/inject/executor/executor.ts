@@ -20,6 +20,7 @@ import {
   validateMultisigThreshold,
   validateTransactionDocumentFee,
   validateTransactionDocumentMessages,
+  validateSignArbitraryParams,
 } from '@common/validation';
 import {
   validateDoContractRequest,
@@ -59,6 +60,9 @@ import {
   SendCosmosTxResponse,
   Signature,
   SignCosmosAminoResponse,
+  SignArbitraryExecuteType,
+  SignArbitraryParams,
+  SignArbitraryResponse,
   SignCosmosDirectResponse,
   SignMultisigTransactionResponse,
   SignTxResponse,
@@ -161,6 +165,21 @@ export class AdenaExecutor {
       params,
     );
     return this.sendEventMessage(eventMessage);
+  };
+
+  public signArbitrary = (params: SignArbitraryParams): Promise<SignArbitraryResponse> => {
+    if (!validateSignArbitraryParams(params)) {
+      return this.sendEventMessage(
+        InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT),
+      );
+    }
+
+    return this.sendEventMessage(
+      AdenaExecutor.createSignArbitraryEventMessage(
+        SignArbitraryExecuteType.SIGN_ARBITRARY,
+        { ...params },
+      ),
+    );
   };
 
   public createMultisigAccount = (
@@ -541,6 +560,23 @@ export class AdenaExecutor {
   // lookup table has no row for these request types, so
   // `InjectionMessageInstance.request` would throw on destructure, so we build
   // the `InjectionMessage` literal directly as a temporary workaround.
+  // Same stand-in as `createCosmosEventMessage` below: the SDK's
+  // `WalletMessageInfo` has no SIGN_ARBITRARY row yet, so
+  // `InjectionMessageInstance.request` would throw on destructure.
+  private static createSignArbitraryEventMessage = (
+    type: SignArbitraryExecuteType,
+    params: Params,
+  ): InjectionMessage => {
+    return {
+      code: 0,
+      type: type as unknown as WalletResponseType,
+      status: 'request',
+      message: '',
+      data: params,
+      withNotification: true,
+    };
+  };
+
   private static createCosmosEventMessage = (
     type: CosmosResponseExecuteType,
     params: Params,

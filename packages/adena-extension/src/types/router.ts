@@ -56,6 +56,8 @@ export enum RoutePath {
   BroadcastMultisigTransaction = 'approve/wallet/broadcast-multisig-transaction',
   ApproveEstablish = '/approve/wallet/establish',
   ApproveEstablishCosmos = '/approve/wallet/establish-cosmos',
+  ApproveSignArbitrary = '/approve/wallet/sign-arbitrary',
+  ApproveSignArbitraryLedgerLoading = '/approve/wallet/sign-arbitrary/ledger-loading',
   ApproveSignCosmos = '/approve/wallet/sign-cosmos',
   ApproveSignCosmosLedgerLoading = '/approve/wallet/sign-cosmos/ledger-loading',
   ApproveGetCosmosKey = '/approve/wallet/get-cosmos-key',
@@ -182,6 +184,15 @@ export type RouteParams = {
   };
   [RoutePath.ApproveEstablish]: null;
   [RoutePath.ApproveEstablishCosmos]: null;
+  [RoutePath.ApproveSignArbitrary]: {
+    requestData?: InjectionMessage;
+  };
+  [RoutePath.ApproveSignArbitraryLedgerLoading]: {
+    chainId: string;
+    signer: string;
+    data: string;
+    responseKey: string | undefined;
+  };
   [RoutePath.ApproveSignCosmos]: {
     requestData?: InjectionMessage;
   };

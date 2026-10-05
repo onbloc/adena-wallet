@@ -41,6 +41,7 @@ export const Header = (): JSX.Element => {
   const approveTransaction = useMatch(RoutePath.ApproveTransaction);
   const approveSignFailed = useMatch(RoutePath.ApproveSignFailed);
   const approveEstablishCosmos = useMatch(RoutePath.ApproveEstablishCosmos);
+  const approveSignArbitrary = useMatch(RoutePath.ApproveSignArbitrary);
   const approveSignCosmos = useMatch(RoutePath.ApproveSignCosmos);
   const approveGetCosmosKey = useMatch(RoutePath.ApproveGetCosmosKey);
   const wallet = useMatch('/wallet/*');
@@ -85,6 +86,7 @@ export const Header = (): JSX.Element => {
       approveSign ||
       approveSignFailed ||
       approveEstablishCosmos ||
+      approveSignArbitrary ||
       approveSignCosmos ||
       approveGetCosmosKey
     ) {

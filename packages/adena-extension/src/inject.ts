@@ -30,6 +30,8 @@ import {
   GetNetworkResponse,
   MultisigTransactionDocument,
   SendCosmosTxResponse,
+  SignArbitraryParams,
+  SignArbitraryResponse,
   SignCosmosAminoResponse,
   Signature,
   SignMultisigTransactionResponse,
@@ -82,6 +84,11 @@ const init = (): void => {
     async Sign(message: TransactionParams): Promise<WalletResponse<unknown>> {
       const executor = new AdenaExecutor();
       const response = await executor.signAmino(message);
+      return response;
+    },
+    async SignArbitrary(params: SignArbitraryParams): Promise<SignArbitraryResponse> {
+      const executor = new AdenaExecutor();
+      const response = await executor.signArbitrary(params);
       return response;
     },
     async SignTx(message: TransactionParams): Promise<SignTxResponse> {

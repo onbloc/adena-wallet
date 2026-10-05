@@ -29,6 +29,8 @@ import ApproveChangingNetworkPage from '@pages/popup/wallet/approve-changing-net
 import ApproveEstablish from '@pages/popup/wallet/approve-establish';
 import ApproveEstablishCosmos from '@pages/popup/wallet/approve-establish-cosmos';
 import ApproveGetCosmosKey from '@pages/popup/wallet/approve-get-cosmos-key';
+import ApproveSignArbitrary from '@pages/popup/wallet/approve-sign-arbitrary';
+import ApproveSignArbitraryLedgerLoading from '@pages/popup/wallet/approve-sign-arbitrary-ledger-loading';
 import ApproveSignCosmos from '@pages/popup/wallet/approve-sign-cosmos';
 import ApproveSignCosmosLedgerLoading from '@pages/popup/wallet/approve-sign-cosmos-ledger-loading';
 import { ApproveLogin } from '@pages/popup/wallet/approve-login';
@@ -161,6 +163,11 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
         <Route path={RoutePath.ApproveEstablishCosmos} element={<ApproveEstablishCosmos />} />
+        <Route path={RoutePath.ApproveSignArbitrary} element={<ApproveSignArbitrary />} />
+        <Route
+          path={RoutePath.ApproveSignArbitraryLedgerLoading}
+          element={<ApproveSignArbitraryLedgerLoading />}
+        />
         <Route path={RoutePath.ApproveSignCosmos} element={<ApproveSignCosmos />} />
         <Route
           path={RoutePath.ApproveSignCosmosLedgerLoading}
