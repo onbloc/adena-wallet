@@ -93,14 +93,6 @@ export const useCosmosNetworkFee = (
 
   const fallbackFee = chain?.fee.fallbackFee ?? null;
 
-  // Resolve the display profile (symbol + decimals) for the chain's default
-  // fee token so the UI can render "PHOTON" rather than the on-chain
-  // "uphoton" micro-denom.
-  const feeTokenProfile = useMemo(() => {
-    if (!chain || !tokenRegistry) return null;
-    return tokenRegistry.get(chain.fee.defaultFeeTokenId) ?? null;
-  }, [chain, tokenRegistry]);
-
   const { data, isFetched } = useQuery({
     queryKey: [
       GET_ESTIMATE_COSMOS_FEE,
@@ -203,6 +195,22 @@ export const useCosmosNetworkFee = (
   const currentFeeDenom =
     data?.estimate?.feeDenom ?? fallbackFee?.amount[0]?.denom ?? null;
 
+  // The fee token is the denom the estimate resolved (ATONE for MintPhoton),
+  // not the chain default, so its symbol, decimals and price follow it.
+  const feeTokenId = useMemo(() => {
+    if (!chain || !document?.chainId) return null;
+    return currentFeeDenom
+      ? `${document.chainId}:${currentFeeDenom}`
+      : chain.fee.defaultFeeTokenId;
+  }, [chain, document?.chainId, currentFeeDenom]);
+
+  // Display profile (symbol + decimals), so the UI renders "PHOTON" rather
+  // than the on-chain "uphoton" micro-denom.
+  const feeTokenProfile = useMemo(() => {
+    if (!feeTokenId || !tokenRegistry) return null;
+    return tokenRegistry.get(feeTokenId) ?? null;
+  }, [feeTokenId, tokenRegistry]);
+
   const networkFee = useMemo<NetworkFee | null>(() => {
     if (!currentGasInfo || !currentFeeDenom) {
       return null;
@@ -221,16 +229,16 @@ export const useCosmosNetworkFee = (
   // The chain id doubles as the price networkId, the same way the wallet keys
   // a Cosmos native token (`atomone-1:uphoton` on `atomone-1`).
   const feeToken = useMemo<TokenPriceRequest | null>(() => {
-    if (!chain || !document?.chainId) {
+    if (!feeTokenId || !document?.chainId) {
       return null;
     }
 
     return {
-      tokenId: chain.fee.defaultFeeTokenId,
+      tokenId: feeTokenId,
       networkId: document.chainId,
       decimals: feeTokenProfile?.decimals,
     };
-  }, [chain, document?.chainId, feeTokenProfile?.decimals]);
+  }, [feeTokenId, document?.chainId, feeTokenProfile?.decimals]);
 
   const setNetworkFeeSetting = useCallback((info: NetworkFeeSettingInfo) => {
     setPendingSettingType(info.settingType);

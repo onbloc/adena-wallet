@@ -49,7 +49,7 @@ describe('StorageMigration025', () => {
     const result = await new StorageMigration025().up(makeInput({ NETWORKS: [] }));
     const mainnet = result.data.NETWORKS.find((n) => n.chainId === 'gnoland-1');
     expect(mainnet).toBeDefined();
-    expect(mainnet?.rpcUrl).toBe('https://rpc.gno.land:443');
+    expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
     expect(result.data.NETWORKS.find((n) => n.chainId === 'sapphire-1')).toBeUndefined();
   });
 

@@ -55,17 +55,12 @@ export function formatUSD(value: number): string {
   return `$${parsed.abs().toFormat(2, BigNumber.ROUND_DOWN)}`;
 }
 
-/** Significant figures kept for a fee too small for two decimals to state. */
-const FEE_SIGNIFICANT_DIGITS = 2;
+/** Smallest fee writable in USD; anything below reads "<$0.001". */
+const MIN_DISPLAYABLE_FEE_USD = 0.001;
 
 /**
- * A network fee in USD.
- *
- * Two decimals once there is a cent to show. Below that the figure keeps two
- * significant digits instead of collapsing to "<$0.01" — a gas fee usually
- * lands there, and the fee tiers are chosen by comparing exactly those digits,
- * which a single bucket would hide. Rounded rather than truncated, so the
- * smallest fees do not all read as the same number.
+ * A network fee in USD, truncated like `formatUSD`: two decimals from $1 up,
+ * up to three below that. A non-zero fee below $0.001 reads "<$0.001".
  */
 export function formatFeeUSD(value: number, withSign = false): string {
   const parsed = BigNumber(value);
@@ -74,24 +69,22 @@ export function formatFeeUSD(value: number, withSign = false): string {
   }
 
   const magnitude = parsed.abs();
+  const sign = withSign ? (parsed.isNegative() ? '-' : '+') : '';
 
-  let formatted: string;
   if (magnitude.isZero()) {
-    formatted = magnitude.toFormat(2);
-  } else if (magnitude.isLessThan(MIN_DISPLAYABLE_USD)) {
-    const rounded = magnitude.precision(FEE_SIGNIFICANT_DIGITS, BigNumber.ROUND_HALF_UP);
-    // Taken from the rounded value so the digits land where they are needed,
-    // and fixed notation so a very small fee never reads as an exponent.
-    formatted = rounded.toFormat(Math.max(2, rounded.decimalPlaces() ?? 2));
-  } else {
-    formatted = magnitude.toFormat(2, BigNumber.ROUND_DOWN);
+    return `${sign}$${magnitude.toFormat(2)}`;
   }
 
-  if (!withSign) {
-    return `$${formatted}`;
+  if (magnitude.isLessThan(MIN_DISPLAYABLE_FEE_USD)) {
+    return `${sign}<$${MIN_DISPLAYABLE_FEE_USD.toFixed(3)}`;
   }
 
-  return `${parsed.isNegative() ? '-' : '+'}$${formatted}`;
+  if (magnitude.isLessThan(1)) {
+    // Trailing zeros dropped: $0.5, $0.01.
+    return `${sign}$${magnitude.decimalPlaces(3, BigNumber.ROUND_DOWN).toFormat()}`;
+  }
+
+  return `${sign}$${magnitude.toFormat(2, BigNumber.ROUND_DOWN)}`;
 }
 
 /** Signed 24h delta: `+$125.02`, `-$3.00`, `+<$0.01`. */
