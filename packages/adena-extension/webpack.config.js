@@ -148,6 +148,9 @@ const buildConfig = (env = {}, argv = {}) => {
     },
     resolve: {
       modules: ['node_modules'],
+      // asn1.js only uses vm to name a constructor and falls back without it;
+      // the polyfill's eval is blocked by the extension CSP anyway.
+      fallback: { vm: false },
       extensions: ['.js', '.jsx', '.tsx', '.ts'],
       alias: {
         '@types': path.resolve(__dirname, 'src/types'),
@@ -220,7 +223,7 @@ const buildConfig = (env = {}, argv = {}) => {
         filename: 'popup.html',
       }),
       new DefinePlugin(web3authEnvDefinitions),
-      new NodePolyfillPlugin(),
+      new NodePolyfillPlugin({ excludeAliases: ['vm'] }),
       new ProvidePlugin({
         process: 'process/browser.js',
       }),
