@@ -38,7 +38,6 @@ const FeeAmountWrapper = styled.div`
 const FeeAmountUSDText = styled.span<{ $color: string }>`
   ${fonts.body2Reg};
   height: 23px;
-  line-height: 23px;
   color: ${({ $color, theme }): string => ($color === 'white' ? theme.neutral._1 : $color)};
   white-space: nowrap;
 `;
