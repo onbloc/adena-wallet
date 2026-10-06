@@ -17,10 +17,11 @@ describe('formatFeeUSD', () => {
     expect(formatFeeUSD(1.23456)).toBe('$1.23');
   });
 
-  it('keeps three decimals below $1, truncated', () => {
+  it('keeps up to three decimals below $1, truncated, without trailing zeros', () => {
     expect(formatFeeUSD(0.999)).toBe('$0.999');
-    expect(formatFeeUSD(0.5)).toBe('$0.500');
-    expect(formatFeeUSD(0.01)).toBe('$0.010');
+    expect(formatFeeUSD(0.5)).toBe('$0.5');
+    expect(formatFeeUSD(0.01)).toBe('$0.01');
+    expect(formatFeeUSD(0.0109)).toBe('$0.01');
     expect(formatFeeUSD(0.0129)).toBe('$0.012');
     expect(formatFeeUSD(0.0048)).toBe('$0.004');
     expect(formatFeeUSD(0.001)).toBe('$0.001');
