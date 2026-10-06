@@ -4,7 +4,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "adena-wallet@gnomore.dev",
+      "id": "adena-wallet@onbloc.xyz",
       "strict_min_version": "115.0",
       "data_collection_permissions": {
         "required": ["none"]

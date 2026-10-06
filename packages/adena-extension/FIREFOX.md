@@ -23,7 +23,7 @@ extension bundle.)
   removed when Firefox exits.)
 - Dev loop: `npx web-ext run --source-dir packages/adena-extension/dist-firefox`.
   - On Ubuntu where Firefox is the **snap** package, pass
-    `--firefox-profile=<dir>` pointing at a *non-hidden* directory inside `$HOME`
+    `--firefox-profile=<dir>` pointing at a _non-hidden_ directory inside `$HOME`
     (e.g. `~/adena-ff-profile`). The snap confinement blocks profiles under `~/.cache`
     or `/tmp`; Firefox then never starts its debugger server and web-ext fails with
     `connect ECONNREFUSED`.
@@ -56,12 +56,12 @@ Optional secrets:
 
 ## What differs from the Chrome build
 
-| | Chrome build | Firefox build |
-|---|---|---|
-| Manifest source | `public/manifest.json` | `public/manifest.firefox.json` |
-| Background | `background.service_worker` (service worker) | `background.scripts` (non-persistent event page — Firefox does not support extension service workers) |
-| Add-on id | none needed | `browser_specific_settings.gecko.id = adena-wallet@gnomore.dev`, `strict_min_version: 115.0` (needed for `storage.session`) |
-| Output dir | `dist/` | `dist-firefox/` |
+|                 | Chrome build                                 | Firefox build                                                                                                              |
+| --------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Manifest source | `public/manifest.json`                       | `public/manifest.firefox.json`                                                                                             |
+| Background      | `background.service_worker` (service worker) | `background.scripts` (non-persistent event page — Firefox does not support extension service workers)                      |
+| Add-on id       | none needed                                  | `browser_specific_settings.gecko.id = adena-wallet@onbloc.xyz`, `strict_min_version: 115.0` (needed for `storage.session`) |
+| Output dir      | `dist/`                                      | `dist-firefox/`                                                                                                            |
 
 Both builds share the manifest transform in `webpack.config.js`, which merges in the
 icon set and the version from `packages/adena-extension/package.json` (so
@@ -88,7 +88,7 @@ icon set and the version from `packages/adena-extension/package.json` (so
 - Popup header screens label `moz-extension` request origins as `moz-extension` (the
   fallback label previously said `chrome-extension` everywhere).
 - **TxLink realm-document fetch is relayed through the background.** Firefox runs content
-  scripts under an *expanded principal* (page + extension), so their `fetch()` calls are
+  scripts under an _expanded principal_ (page + extension), so their `fetch()` calls are
   subject to the **page's CSP** in addition to the extension's. Gnoweb pages ship a
   restrictive `connect-src` that does not include the RPC host, so the realm-document
   query backing a TxLink was blocked with
@@ -141,7 +141,7 @@ Firefox 156 (Ubuntu snap, headless) and Chromium 152 against the built dist:
   `register.html` tab the raw `window.close()` is refused with
   `Scripts may only close windows that were opened by a script.` (DOM Window pageError)
   and the tab stays open — the reported dead button; after `closeCurrentSurface()` the
-  tab closes on Start. The same `window.close()` *does* close the tab in Chromium
+  tab closes on Start. The same `window.close()` _does_ close the tab in Chromium
   (verified over CDP against the Chrome dist), which is why the breakage is Firefox-only.
 - The add-wallet landing screen was inspected with the rebuilt add-on in a fresh profile:
   the "Hardware Wallets" entry renders disabled with "Hardware wallets like Ledger are
