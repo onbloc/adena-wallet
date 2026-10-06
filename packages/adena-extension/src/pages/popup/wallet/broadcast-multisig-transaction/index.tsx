@@ -34,6 +34,7 @@ import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 interface BroadcastMultisigTransactionRequestData {
   multisigDocument: MultisigTransactionDocument;
@@ -48,7 +49,11 @@ interface TransactionData {
   memo: string;
 }
 
-function makeDefaultNetworkInfo(chainId: string, rpcUrl: string, addressPrefix: string): NetworkMetainfo {
+function makeDefaultNetworkInfo(
+  chainId: string,
+  rpcUrl: string,
+  addressPrefix: string,
+): NetworkMetainfo {
   return {
     addressPrefix,
     chainId,
@@ -172,6 +177,9 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       denom: GasToken.symbol,
     };
   }, [multisigDocument]);
+
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
 
   const consumedTokenAmount = useMemo(() => {
     const accumulatedAmount = multisigDocument?.msg.reduce((acc: number, msg: any) => {
@@ -493,6 +501,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       isErrorNetworkFee={isErrorNetworkFee}
       isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}
+      feeTokenQuote={feeTokenQuote}
       transactionData={JSON.stringify(multisigDocument, null, 2)}
       opened={visibleTransactionInfo}
       argumentInfos={argumentInfos}
