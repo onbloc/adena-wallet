@@ -10,9 +10,8 @@ export interface FeeTokenQuote {
   /** The quote, once there is one. */
   price?: TokenPrice;
   /**
-   * True while a quote is still on its way. Callers must not fall back to the
-   * token amount yet: the quote replaces it, so showing the amount first only
-   * puts a figure on screen that is about to be swapped out.
+   * True while a quote is still on its way, so the row can wait instead of
+   * shifting when the USD value lands. False once the request has failed.
    */
   isLoading: boolean;
 }
@@ -54,7 +53,7 @@ export const useFeeTokenPrice = (
   // reference, so a caller passing a fresh `feeToken` object each render still
   // shares one query.
   const requests = useMemo(() => (target ? [target] : NO_REQUESTS), [target]);
-  const { tokenPrices, isFetched } = useTokenPrices(requests);
+  const { tokenPrices, isFetched, isError } = useTokenPrices(requests);
 
   return useMemo(() => {
     // A token nothing can quote has nothing to wait for, so the amount shows
@@ -65,7 +64,8 @@ export const useFeeTokenPrice = (
 
     return {
       price: tokenPrices[getTokenPriceKey(target.tokenId, target.networkId)],
-      isLoading: !isFetched,
+      // A failed quote must not hide a fee that is already estimated.
+      isLoading: !isFetched && !isError,
     };
-  }, [target, tokenPrices, isFetched]);
+  }, [target, tokenPrices, isFetched, isError]);
 };

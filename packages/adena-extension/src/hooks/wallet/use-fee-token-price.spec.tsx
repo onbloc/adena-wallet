@@ -43,6 +43,7 @@ beforeEach(() => {
       'atomone-1:uphoton:atomone-1': PHOTON_PRICE,
     },
     isFetched: true,
+    isError: false,
   });
 });
 
@@ -87,21 +88,30 @@ describe('useFeeTokenPrice', () => {
     expect(result.current.price).toBe(PHOTON_PRICE);
   });
 
-  // A row that fell back to the token amount here would show GNOT and then
-  // swap to USD a moment later.
   it('reports a quote that has not arrived yet as loading', () => {
     setNetwork('gnoland-1');
-    mockedUseTokenPrices.mockReturnValue({ tokenPrices: {}, isFetched: false });
+    mockedUseTokenPrices.mockReturnValue({ tokenPrices: {}, isFetched: false, isError: false });
 
     const { result } = renderHook(() => useFeeTokenPrice('GNOT'));
 
     expect(result.current).toEqual({ price: undefined, isLoading: true });
   });
 
+  // A failed first fetch never sets `isFetched`, so it must not keep the row
+  // waiting on a quote that is not coming.
+  it('stops waiting once the quote request has failed', () => {
+    setNetwork('gnoland-1');
+    mockedUseTokenPrices.mockReturnValue({ tokenPrices: {}, isFetched: false, isError: true });
+
+    const { result } = renderHook(() => useFeeTokenPrice('GNOT'));
+
+    expect(result.current).toEqual({ price: undefined, isLoading: false });
+  });
+
   // An unquotable token has nothing to wait for, so the amount shows at once.
   it('never waits for a token nothing can quote', () => {
     setNetwork('gnoland-1');
-    mockedUseTokenPrices.mockReturnValue({ tokenPrices: {}, isFetched: false });
+    mockedUseTokenPrices.mockReturnValue({ tokenPrices: {}, isFetched: false, isError: false });
 
     const { result } = renderHook(() => useFeeTokenPrice('PHOTON'));
 
