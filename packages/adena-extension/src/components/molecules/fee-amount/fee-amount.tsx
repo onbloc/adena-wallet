@@ -32,6 +32,7 @@ const FeeAmountSkeleton = styled(SkeletonBoxStyle)`
 
 // Size of the amount's decimal part, which the USD value matches.
 const DECIMAL_FONT_SIZE = '11px';
+const USD_TEXT_FONT_SIZE = '12px';
 
 // Top-aligned like `TokenBalance`, so the USD value sits where the decimal part does.
 const FeeAmountWrapper = styled.div`
@@ -41,8 +42,9 @@ const FeeAmountWrapper = styled.div`
 
 const FeeAmountUSDText = styled.span`
   ${fonts.body2Reg};
-  font-size: ${DECIMAL_FONT_SIZE};
+  font-size: ${USD_TEXT_FONT_SIZE};
   height: 23px;
+  line-height: 23px;
   color: ${getTheme('neutral', 'a')};
   white-space: nowrap;
 `;
