@@ -102,6 +102,14 @@ const buildConfig = (env = {}, argv = {}) => {
       // root-level extension pages, which is all this bundle loads assets from.
       publicPath: '',
     },
+    // AMO rejects any script over 5MB, so the page bundles are split. Content,
+    // background and inject scripts stay single files the manifest can name.
+    optimization: {
+      splitChunks: {
+        chunks: (chunk) => ['web', 'popup'].includes(chunk.name),
+        maxSize: 3 * 1024 * 1024,
+      },
+    },
     module: {
       rules: [
         {
