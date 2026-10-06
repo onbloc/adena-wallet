@@ -30,41 +30,37 @@ function renderFeeAmount(props: FeeAmountProps): ReturnType<typeof render> {
 
 describe('FeeAmount Component', () => {
   describe('with a quote', () => {
-    // The GNOT figure behind a fee is six decimals nobody converts in their
-    // head, so a quoted fee reads in USD alone.
-    it('shows the USD value and drops the token amount', () => {
+    it('shows the token amount followed by its USD value in parentheses', () => {
       renderFeeAmount({ value: '0.4', denom: 'GNOT', quote: GNOT_QUOTE });
 
-      expect(screen.getByText('$5.00')).not.toBeNull();
-      expect(screen.queryByText('GNOT')).toBeNull();
-      expect(screen.queryByText(/0\.4/)).toBeNull();
+      expect(screen.getByText('GNOT')).not.toBeNull();
+      expect(screen.getByText('($5.00)')).not.toBeNull();
     });
 
     it('strips the separators a formatted amount carries', () => {
       renderFeeAmount({ value: '1,000.000000', denom: 'GNOT', quote: GNOT_QUOTE });
 
-      expect(screen.getByText('$12,500.00')).not.toBeNull();
+      expect(screen.getByText('($12,500.00)')).not.toBeNull();
     });
 
-    // A gas fee normally lands under a cent, so it keeps significant digits
-    // rather than collapsing into one bucket. 0.000048 GNOT at $12.50.
-    it('keeps a sub-cent fee readable', () => {
+    // 0.000048 GNOT at $12.50 is $0.0006.
+    it('reads a fee below $0.001 as "<$0.001"', () => {
       renderFeeAmount({ value: '0.000048', denom: 'GNOT', quote: GNOT_QUOTE });
 
-      expect(screen.getByText('$0.0006')).not.toBeNull();
+      expect(screen.getByText('GNOT')).not.toBeNull();
+      expect(screen.getByText('(<$0.001)')).not.toBeNull();
     });
 
     it('signs the figure when the deposit is being released', () => {
       renderFeeAmount({ value: '0.4', denom: 'GNOT', quote: GNOT_QUOTE, withSign: true });
 
-      expect(screen.getByText('+$5.00')).not.toBeNull();
+      expect(screen.getByText('(+$5.00)')).not.toBeNull();
     });
   });
 
-  // Showing GNOT first and swapping to USD a moment later puts a figure on
-  // screen only to take it away.
+  // Adding the USD value a moment after the amount would shift the row.
   describe('while the quote is still on its way', () => {
-    it('waits instead of falling back to the token amount', () => {
+    it('waits instead of showing the amount alone', () => {
       const { container } = renderFeeAmount({
         value: '0.004800',
         denom: 'GNOT',
@@ -82,7 +78,7 @@ describe('FeeAmount Component', () => {
         quote: { ...GNOT_QUOTE, isLoading: true },
       });
 
-      expect(screen.getByText('$5.00')).not.toBeNull();
+      expect(screen.getByText('($5.00)')).not.toBeNull();
     });
   });
 
@@ -93,14 +89,14 @@ describe('FeeAmount Component', () => {
       renderFeeAmount({ value: '0.004800', denom: 'GNOT', quote: UNQUOTED });
 
       expect(screen.getByText('GNOT')).not.toBeNull();
-      expect(screen.queryByText(/^\$/)).toBeNull();
+      expect(screen.queryByText(/\$/)).toBeNull();
     });
 
     it('keeps the token amount for a zero fee', () => {
       renderFeeAmount({ value: '0', denom: 'GNOT', quote: GNOT_QUOTE });
 
       expect(screen.getByText('GNOT')).not.toBeNull();
-      expect(screen.queryByText('$0.00')).toBeNull();
+      expect(screen.queryByText(/\$/)).toBeNull();
     });
 
     it('keeps the token amount when the figure is unreadable', () => {

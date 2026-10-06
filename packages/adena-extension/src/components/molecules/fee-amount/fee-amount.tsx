@@ -30,6 +30,11 @@ const FeeAmountSkeleton = styled(SkeletonBoxStyle)`
   align-self: center;
 `;
 
+const FeeAmountWrapper = styled.div`
+  ${mixins.flex({ direction: 'row', align: 'center' })};
+  column-gap: 4px;
+`;
+
 const FeeAmountUSDText = styled.span<{ $color: string }>`
   ${fonts.body2Reg};
   color: ${({ $color, theme }): string => ($color === 'white' ? theme.neutral._1 : $color)};
@@ -58,16 +63,11 @@ export const toFeeUSDValue = (
 };
 
 /**
- * What a fee costs, in the one unit worth reading.
+ * A fee as its token amount, followed by its USD value in parentheses when the
+ * token is quoted: `0.043245 GNOT (<$0.001)`.
  *
- * A quoted fee reads in USD alone: the GNOT figure behind it is six decimals
- * of a number nobody converts in their head, and showing both only asks the
- * reader to pick. Without a quote — every testnet, by design — the row falls
- * back to the token amount, which is then the only thing there is to say.
- *
- * While a quote is still on its way the row waits rather than falling back,
- * so a fee that is about to read in USD never shows its GNOT figure first and
- * then swaps.
+ * While a quote is still on its way the row waits, so the USD value never
+ * pops in beside an amount that is already on screen.
  */
 const FeeAmount: React.FC<FeeAmountProps> = ({
   value,
@@ -82,22 +82,23 @@ const FeeAmount: React.FC<FeeAmountProps> = ({
     return <FeeAmountSkeleton />;
   }
 
-  if (usdValue !== null) {
-    return (
-      <FeeAmountUSDText $color={fontColor}>{formatFeeUSD(usdValue, withSign)}</FeeAmountUSDText>
-    );
-  }
-
   return (
-    <TokenBalance
-      value={value}
-      denom={denom}
-      fontColor={fontColor}
-      fontStyleKey='body2Reg'
-      minimumFontSize='11px'
-      orientation='HORIZONTAL'
-      withSign={withSign}
-    />
+    <FeeAmountWrapper>
+      <TokenBalance
+        value={value}
+        denom={denom}
+        fontColor={fontColor}
+        fontStyleKey='body2Reg'
+        minimumFontSize='11px'
+        orientation='HORIZONTAL'
+        withSign={withSign}
+      />
+      {usdValue !== null && (
+        <FeeAmountUSDText $color={fontColor}>
+          {`(${formatFeeUSD(usdValue, withSign)})`}
+        </FeeAmountUSDText>
+      )}
+    </FeeAmountWrapper>
   );
 };
 

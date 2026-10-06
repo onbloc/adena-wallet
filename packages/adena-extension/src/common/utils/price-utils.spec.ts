@@ -10,34 +10,33 @@ import {
 } from './price-utils';
 
 describe('formatFeeUSD', () => {
-  it('fixes two decimals once there is a cent to show', () => {
+  it('keeps two decimals from $1 up, truncated', () => {
     expect(formatFeeUSD(1234.5)).toBe('$1,234.50');
     expect(formatFeeUSD(5)).toBe('$5.00');
-    expect(formatFeeUSD(0.01)).toBe('$0.01');
-    expect(formatFeeUSD(0.019)).toBe('$0.01');
+    expect(formatFeeUSD(1)).toBe('$1.00');
+    expect(formatFeeUSD(1.23456)).toBe('$1.23');
   });
 
-  // A gas fee normally lands under a cent, and the tiers are chosen by
-  // comparing exactly these digits — "<$0.01" for all three says nothing.
-  it('keeps two significant digits below a cent', () => {
-    expect(formatFeeUSD(0.0048)).toBe('$0.0048');
-    expect(formatFeeUSD(0.004812)).toBe('$0.0048');
-    expect(formatFeeUSD(0.000091234)).toBe('$0.000091');
-    expect(formatFeeUSD(0.0000012)).toBe('$0.0000012');
-    // Already shorter than two significant digits: nothing to pad.
-    expect(formatFeeUSD(0.0006)).toBe('$0.0006');
+  it('keeps three decimals below $1, truncated', () => {
+    expect(formatFeeUSD(0.999)).toBe('$0.999');
+    expect(formatFeeUSD(0.5)).toBe('$0.500');
+    expect(formatFeeUSD(0.01)).toBe('$0.010');
+    expect(formatFeeUSD(0.0129)).toBe('$0.012');
+    expect(formatFeeUSD(0.0048)).toBe('$0.004');
+    expect(formatFeeUSD(0.001)).toBe('$0.001');
   });
 
-  it('rounds the small figures rather than truncating them', () => {
-    expect(formatFeeUSD(0.004899)).toBe('$0.0049');
-    expect(formatFeeUSD(0.0000095)).toBe('$0.0000095');
-    expect(formatFeeUSD(0.00999)).toBe('$0.01');
+  it('reads a non-zero fee below $0.001 as "<$0.001"', () => {
+    expect(formatFeeUSD(0.00099)).toBe('<$0.001');
+    expect(formatFeeUSD(0.00023)).toBe('<$0.001');
+    expect(formatFeeUSD(0.0000012)).toBe('<$0.001');
   });
 
   it('signs the figure when asked', () => {
     expect(formatFeeUSD(5, true)).toBe('+$5.00');
     expect(formatFeeUSD(-5, true)).toBe('-$5.00');
-    expect(formatFeeUSD(0.0048, true)).toBe('+$0.0048');
+    expect(formatFeeUSD(0.0048, true)).toBe('+$0.004');
+    expect(formatFeeUSD(0.0002, true)).toBe('+<$0.001');
   });
 
   it('reads "-" for a figure that is not a number', () => {
