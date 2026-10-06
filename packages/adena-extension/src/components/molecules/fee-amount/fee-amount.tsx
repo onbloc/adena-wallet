@@ -7,7 +7,7 @@ import { SkeletonBoxStyle } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
 import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import mixins from '@styles/mixins';
-import { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import { TokenPrice } from '@types';
 
 export interface FeeAmountProps {
@@ -30,15 +30,20 @@ const FeeAmountSkeleton = styled(SkeletonBoxStyle)`
   align-self: center;
 `;
 
+// Size of the amount's decimal part, which the USD value matches.
+const DECIMAL_FONT_SIZE = '11px';
+
+// Top-aligned like `TokenBalance`, so the USD value sits where the decimal part does.
 const FeeAmountWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', align: 'center' })};
+  ${mixins.flex({ direction: 'row', align: 'flex-start' })};
   column-gap: 4px;
 `;
 
-const FeeAmountUSDText = styled.span<{ $color: string }>`
+const FeeAmountUSDText = styled.span`
   ${fonts.body2Reg};
+  font-size: ${DECIMAL_FONT_SIZE};
   height: 23px;
-  color: ${({ $color, theme }): string => ($color === 'white' ? theme.neutral._1 : $color)};
+  color: ${getTheme('neutral', 'a')};
   white-space: nowrap;
 `;
 
@@ -90,14 +95,12 @@ const FeeAmount: React.FC<FeeAmountProps> = ({
         denom={denom}
         fontColor={fontColor}
         fontStyleKey='body2Reg'
-        minimumFontSize='11px'
+        minimumFontSize={DECIMAL_FONT_SIZE}
         orientation='HORIZONTAL'
         withSign={withSign}
       />
       {usdValue !== null && (
-        <FeeAmountUSDText $color={fontColor}>
-          {`(${formatFeeUSD(usdValue, withSign)})`}
-        </FeeAmountUSDText>
+        <FeeAmountUSDText>{`(${formatFeeUSD(usdValue, withSign)})`}</FeeAmountUSDText>
       )}
     </FeeAmountWrapper>
   );
