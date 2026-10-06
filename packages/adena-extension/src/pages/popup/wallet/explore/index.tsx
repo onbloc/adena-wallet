@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
+import { useEffect, useState } from 'react';
 import { useRecoilState } from 'recoil';
+import styled, { useTheme } from 'styled-components';
 
-import { Text } from '@components/atoms';
 import link from '@assets/share.svg';
-import { ExploreState } from '@states';
+import { Text } from '@components/atoms';
 import { useAdenaContext } from '@hooks/use-context';
-import LoadingExplore from './loading-explore';
+import useLink from '@hooks/use-link';
+import { ExploreState } from '@states';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import useLink from '@hooks/use-link';
+import LoadingExplore from './loading-explore';
 
 export const Explore = (): JSX.Element => {
   const theme = useTheme();
@@ -29,7 +29,9 @@ export const Explore = (): JSX.Element => {
   async function initExploreSties(): Promise<void> {
     try {
       const response = await tokenService.getAppInfos();
-      const exploreSites = response.filter((site) => site.display).sort((a, b) => a.order - b.order);
+      const exploreSites = response
+        .filter((site) => site.display)
+        .sort((a, b) => a.order - b.order);
       Promise.all([...exploreSites]).then(setExploreSites);
     } catch (error) {
       console.error(error);
@@ -46,7 +48,7 @@ export const Explore = (): JSX.Element => {
       ) : (
         exploreSites.map((exploreSite, index) => (
           <BoxContainer key={index}>
-            <img src={exploreSite.logo} alt='logo-image' />
+            <img className='explore-logo' src={exploreSite.logo} alt='logo-image' />
             <Contents>
               <Text type='body2Bold'>{exploreSite.name}</Text>
               <Text type='captionReg' color={theme.neutral.a}>
@@ -84,6 +86,11 @@ const BoxContainer = styled.div`
   border-radius: 18px;
   margin-bottom: 12px;
   cursor: default;
+
+  & .explore-logo {
+    width: 34px;
+    height: 34px;
+  }
 `;
 
 const Wrapper = styled.main`
