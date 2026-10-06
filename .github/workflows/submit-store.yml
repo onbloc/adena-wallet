@@ -5,13 +5,20 @@ name: Submit To Stores
 # kept apart from the tag-triggered QA builds in build-deploy.yml and
 # build-firefox-xpi.yml.
 #
-# Jobs run in the `store-release` environment; add required reviewers to it so
-# every submission needs an explicit approval.
+# Only the users in STORE_SUBMITTERS or members of STORE_SUBMITTER_TEAM may run
+# it. Store secrets belong to the `store-release` environment, limited to main,
+# so a workflow edited on another branch cannot reach them.
+#
+# Variables:
+#   STORE_SUBMITTERS:     comma-separated GitHub logins (e.g. alice,bob)
+#   STORE_SUBMITTER_TEAM: team slug in this org (e.g. release)
 #
 # Secrets:
-#   Chrome:  CWS_PUBLISHER_ID, CWS_EXTENSION_ID, CWS_CLIENT_ID,
-#            CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN
-#   Firefox: AMO_API_KEY, AMO_API_SECRET
+#   TEAM_READ_TOKEN: token with org members:read, for the team check
+#   store-release environment:
+#     Chrome:  CWS_PUBLISHER_ID, CWS_EXTENSION_ID, CWS_CLIENT_ID,
+#              CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN
+#     Firefox: AMO_API_KEY, AMO_API_SECRET
 
 on:
   workflow_dispatch:
@@ -39,7 +46,34 @@ permissions:
   contents: read
 
 jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    steps:
+      # triggering_actor, not actor, so a re-run is checked against whoever re-ran it.
+      - name: Check actor is allowed to submit
+        env:
+          ACTOR: ${{ github.triggering_actor }}
+          ORG: ${{ github.repository_owner }}
+          SUBMITTERS: ${{ vars.STORE_SUBMITTERS }}
+          TEAM: ${{ vars.STORE_SUBMITTER_TEAM }}
+          GH_TOKEN: ${{ secrets.TEAM_READ_TOKEN }}
+        run: |
+          if [ -n "$ACTOR" ] && echo ",${SUBMITTERS// /}," | grep -qiF ",${ACTOR},"; then
+            echo "$ACTOR is listed in STORE_SUBMITTERS"
+            exit 0
+          fi
+          if [ -n "$TEAM" ] && [ -n "$GH_TOKEN" ]; then
+            state=$(gh api "orgs/$ORG/teams/$TEAM/memberships/$ACTOR" --jq .state 2>/dev/null || true)
+            if [ "$state" = "active" ]; then
+              echo "$ACTOR is a member of $ORG/$TEAM"
+              exit 0
+            fi
+          fi
+          echo "::error::$ACTOR is not allowed to submit to the stores"
+          exit 1
+
   chrome:
+    needs: authorize
     if: inputs.target == 'both' || inputs.target == 'chrome'
     runs-on: ubuntu-latest
     environment: store-release
@@ -136,6 +170,7 @@ jobs:
           fi
 
   firefox:
+    needs: authorize
     if: inputs.target == 'both' || inputs.target == 'firefox'
     runs-on: ubuntu-latest
     environment: store-release
