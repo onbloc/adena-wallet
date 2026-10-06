@@ -6,6 +6,7 @@ import { GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
+import { getTransferLimitAmount } from '@common/utils/transfer-limit';
 import { isNativeTokenModel } from '@common/validation/validation-token';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 import type { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
@@ -19,6 +20,7 @@ import { SESSIONS_QUERY_KEY } from './use-sessions';
 import { useTokenBalance } from './use-token-balance';
 import { getCosmosOriginDenom, useTokenMetainfo } from './use-token-metainfo';
 import { useNetworkFee } from './wallet/use-network-fee';
+import { useVestingLocked } from './wallet/use-vesting-locked';
 
 // Buffer applied to the simulated cosmos fee when computing the Max amount.
 // Absorbs feemarket base-price drift between Max click and broadcast, plus
@@ -72,11 +74,17 @@ export const useBalanceInput = (
   const [document, setDocument] = useState<Document | null>(null);
   const { currentGasInfo } = useNetworkFee(document);
 
+  const isGnoNativeTransfer = !!tokenMetainfo && isNativeTokenModel(tokenMetainfo);
+
   const isSessionNativeTransfer =
-    currentAccount !== null &&
-    isSessionAccount(currentAccount) &&
-    !!tokenMetainfo &&
-    isNativeTokenModel(tokenMetainfo);
+    currentAccount !== null && isSessionAccount(currentAccount) && isGnoNativeTransfer;
+
+  // Only the native token is ever vesting-locked, and the lock belongs to the
+  // address that pays — the master address for a session account.
+  const { lockedAmount: vestingLockedAmount, isLoading: isLoadingVestingLocked } = useVestingLocked(
+    currentFundingAddress,
+    isGnoNativeTransfer,
+  );
 
   const { data: currentSessionMetadata = null, isLoading: isLoadingCurrentSessionMetadata } =
     useQuery<SessionMetadataV021 | null>(
@@ -238,10 +246,14 @@ export const useBalanceInput = (
         .shiftedBy(GasToken.decimals * -1)
         .toFixed(GasToken.decimals, BigNumber.ROUND_UP);
 
-      const limitAmountNumber = getLimitedAmount(balanceAmountNumber, sessionSpendableAmount).minus(
-        maxGasFeeBN,
+      setAvailAmountNumber(
+        getTransferLimitAmount({
+          balance: balanceAmountNumber,
+          sessionSpendable: sessionSpendableAmount,
+          vestingLocked: vestingLockedAmount,
+          feeAmount: BigNumber(maxGasFeeBN),
+        }),
       );
-      setAvailAmountNumber(toNonNegativeBigNumber(limitAmountNumber));
       return;
     }
 
@@ -276,6 +288,7 @@ export const useBalanceInput = (
     tokenMetainfo,
     tokenRegistry,
     sessionSpendableAmount,
+    vestingLockedAmount,
     cosmosFeeContext?.currentFeeAmount,
     cosmosFeeContext?.currentFeeDenom,
     cosmosFeeContext?.feeDecimals,
@@ -308,15 +321,22 @@ export const useBalanceInput = (
     if (hasError || !tokenMetainfo) {
       return errorMessage;
     }
-    const label = isSessionNativeTransfer ? 'Spendable' : 'Balance';
+    // A grant makes part of the balance untransferable, so the figure stops
+    // being the account's balance and reads as spendable, like a session's.
+    const isCappedTransfer = isSessionNativeTransfer || vestingLockedAmount !== null;
+    const label = isCappedTransfer ? 'Spendable' : 'Balance';
 
     // A balance that could not be read is not a zero balance.
     if (!currentBalance) {
       return `${label}: - ${tokenMetainfo.symbol}`;
     }
 
+    // A capped transfer shows the figure the field will actually accept — fee
+    // reserved and all. Anything else would advertise an amount that validation
+    // rejects on the next keystroke, since a capped send is checked against
+    // that same limit rather than the lenient balance.
     const balanceAmount = BigNumber(currentBalance.amount.value || 0);
-    const descriptionAmount = isSessionNativeTransfer
+    const descriptionAmount = isCappedTransfer
       ? availAmountNumber
       : getLimitedAmount(balanceAmount, sessionSpendableAmount);
     return `${label}: ${descriptionAmount.toFormat()} ${tokenMetainfo.symbol}`;
@@ -327,6 +347,7 @@ export const useBalanceInput = (
     hasError,
     isSessionNativeTransfer,
     sessionSpendableAmount,
+    vestingLockedAmount,
     tokenMetainfo,
   ]);
 
@@ -361,17 +382,32 @@ export const useBalanceInput = (
     if (!cosmosFeeContext && !currentGasInfo) {
       return;
     }
+    // An unread grant looks exactly like no grant, and filling the full
+    // balance would put locked coins in the field.
+    if (isLoadingVestingLocked) {
+      return;
+    }
     setAmount(availAmountNumber.toString());
-  }, [availAmountNumber, currentGasInfo, cosmosFeeContext]);
+  }, [availAmountNumber, currentGasInfo, cosmosFeeContext, isLoadingVestingLocked]);
 
   const validateBalanceInput = useCallback(() => {
     const balanceAmount = BigNumber(currentBalance?.amount.value || 0);
     const limitedBalanceAmount = getLimitedAmount(balanceAmount, sessionSpendableAmount);
-    const maxInputAmount = isSessionNativeTransfer
-      ? currentGasInfo
-        ? availAmountNumber
-        : BigNumber(0)
-      : limitedBalanceAmount;
+
+    // A vesting send is checked against the fee-adjusted cap rather than the
+    // lenient balance the other paths use: the summary screen only weighs the
+    // transfer against the balance, so nothing downstream would catch an
+    // amount that clears the balance but not the lock. An unread grant admits
+    // nothing — treating it as "not locked" is exactly the gap that would let
+    // a typed amount through while MAX is still held back.
+    const isCappedTransfer = isSessionNativeTransfer || vestingLockedAmount !== null;
+    const maxInputAmount = isLoadingVestingLocked
+      ? BigNumber(0)
+      : isCappedTransfer
+        ? currentGasInfo
+          ? availAmountNumber
+          : BigNumber(0)
+        : limitedBalanceAmount;
 
     if (
       BigNumber(amount || 0).isGreaterThan(maxInputAmount) ||
@@ -389,7 +425,9 @@ export const useBalanceInput = (
     currentBalance,
     currentGasInfo,
     isSessionNativeTransfer,
+    isLoadingVestingLocked,
     sessionSpendableAmount,
+    vestingLockedAmount,
   ]);
 
   return {
@@ -474,8 +512,4 @@ function getLimitedAmount(amount: BigNumber, limit: BigNumber | null): BigNumber
     return amount;
   }
   return amount.isLessThan(limit) ? amount : limit;
-}
-
-function toNonNegativeBigNumber(amount: BigNumber): BigNumber {
-  return amount.isGreaterThan(0) ? amount : BigNumber(0);
 }

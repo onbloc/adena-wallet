@@ -1,3 +1,4 @@
+import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
 import { renderHook } from '@testing-library/react';
 
 import { EMAIL_VERIFIER } from '@common/constants/web3auth.constant';
@@ -31,9 +32,11 @@ jest.mock('../use-questionnaire', () => ({
   default: (): unknown => ({ ableToSkipQuestionnaire: true }),
 }));
 
+const mockConnectWithProvider = jest.fn();
+
 jest.mock('../social-login/use-social-login-account', () => ({
   __esModule: true,
-  default: (): unknown => ({ connectWithProvider: jest.fn() }),
+  default: (): unknown => ({ connectWithProvider: mockConnectWithProvider }),
   toSocialLoginFailType: (): string => 'DEFAULT',
 }));
 
@@ -42,6 +45,51 @@ const configured = { ...EMAIL_VERIFIER };
 const setVerifier = (verifier: Partial<typeof EMAIL_VERIFIER>): void => {
   Object.assign(EMAIL_VERIFIER, configured, verifier);
 };
+
+describe('useEmailLoginScreen popup ownership', () => {
+  const createEmailPasswordless = GnoSocialWalletProvider.createEmailPasswordless as jest.Mock;
+
+  beforeEach(() => {
+    Object.assign(EMAIL_VERIFIER, configured, { web3AuthClientId: 'client', verifier: 'verifier' });
+    mockConnectWithProvider.mockReset();
+    createEmailPasswordless.mockReset();
+    mockParams.doneQuestionnaire = true;
+    mockParams.email = 'user@mail.com';
+  });
+
+  // `WebRouter` answers the browser's Back button by navigating Home, which
+  // never reaches `backStep` — the screen just unmounts with the popup still
+  // open. The attempt must not commit an account when it finally resolves.
+  it('abandons a pending popup when the screen unmounts', async () => {
+    let openPopup = (): void => undefined;
+    createEmailPasswordless.mockReturnValue(
+      new Promise((resolve) => {
+        openPopup = (): void => resolve({});
+      }),
+    );
+
+    const { result, unmount } = renderHook(() => useEmailLoginScreen());
+    const pending = result.current.requestEmailLogin();
+
+    unmount();
+    openPopup();
+    await pending;
+
+    expect(mockConnectWithProvider).toHaveBeenCalledTimes(1);
+    const isCurrentRequest = mockConnectWithProvider.mock.calls[0][2];
+    expect(isCurrentRequest()).toBe(false);
+  });
+
+  it('keeps ownership while the screen is still mounted', async () => {
+    createEmailPasswordless.mockResolvedValue({});
+
+    const { result } = renderHook(() => useEmailLoginScreen());
+    await result.current.requestEmailLogin();
+
+    const isCurrentRequest = mockConnectWithProvider.mock.calls[0][2];
+    expect(isCurrentRequest()).toBe(true);
+  });
+});
 
 describe('useEmailLoginScreen entry state', () => {
   beforeEach(() => {
