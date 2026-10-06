@@ -1,3 +1,4 @@
+import { StorageMigration027 } from '../v027/storage-migration-v027';
 import { StorageMigration028 } from './storage-migration-v028';
 
 function gnolandMainnet(overrides: Record<string, unknown> = {}) {
@@ -52,6 +53,30 @@ describe('StorageMigration028', () => {
   it('migrates an existing rpc.gno.land default mainnet to onbloc without storing a fallback', async () => {
     const result = await new StorageMigration028().up(makeInput());
     expect(result.version).toBe(28);
+    const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
+    expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
+    expect(mainnet?.fallbackRPCUrl).toBeUndefined();
+  });
+
+  // Fresh installs on v027 and any later network save persist the default without fallbackRPCUrl.
+  it('migrates an rpc.gno.land default stored without fallbackRPCUrl', async () => {
+    const stored = gnolandMainnet({ fallbackRPCUrl: undefined });
+    const result = await new StorageMigration028().up(makeInput({ NETWORKS: [stored] }));
+    const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
+    expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
+    expect(mainnet?.fallbackRPCUrl).toBeUndefined();
+  });
+
+  it('moves the v026 onbloc default back to onbloc through v027 and v028', async () => {
+    const v026Default = gnolandMainnet({
+      rpcUrl: 'https://rpc.onbloc.xyz:443',
+      fallbackRPCUrl: undefined,
+    });
+    const v027 = await new StorageMigration027().up({
+      version: 26,
+      data: { ...BASE_DATA, NETWORKS: [v026Default] },
+    });
+    const result = await new StorageMigration028().up(v027);
     const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
     expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
     expect(mainnet?.fallbackRPCUrl).toBeUndefined();
