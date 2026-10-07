@@ -13,10 +13,10 @@ export const SYNC_GRC721_COLLECTIONS_QUERY_KEY = 'nft/useSyncGRC721Collections';
 const COLLECTION_DISCOVERY_STALE_TIME = 60_000;
 
 /**
- * Discovers the account's GRC721 collections from the indexer/RPC and merges
- * them into storage.
+ * Discovers the account's GRC721 collections from the API and merges them
+ * into storage.
  *
- * This is an indexer walk, not a storage read, and it used to run as part of
+ * This is a network read, not a storage read, and it used to run as part of
  * the main screen's token discovery — where nothing consumed it, and awaiting
  * it held up the token list. Mount it on the screens that actually show NFTs;
  * everywhere else reads what this leaves behind via useGetGRC721Collections.

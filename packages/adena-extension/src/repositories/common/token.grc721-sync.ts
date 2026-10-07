@@ -1,11 +1,9 @@
 /**
- * Where each GRC721 indexer walk left off, so the next one resumes instead of
- * replaying the account's whole history.
+ * Where the GRC721 catalog walk over the indexer left off, so the next one
+ * resumes instead of replaying the chain's whole history.
  *
- * This is a derived cache, not wallet state: the indexer only ever supplies
- * *candidates* and RPC (`BalanceOf` / `OwnerOf`) decides on every read what the
- * account still holds. Losing it costs one full walk, so it lives outside the
- * migrated wallet blob — see `ChromeCacheStorage`.
+ * This is a derived cache, not wallet state. Losing it costs one full walk, so
+ * it lives outside the migrated wallet blob — see `ChromeCacheStorage`.
  */
 
 import { CacheValueType, GRC721_SYNC_CACHE_KEY } from '@common/storage';
@@ -50,28 +48,9 @@ export interface GRC721CollectionCandidate {
   symbol: string;
 }
 
-/** A token id an address received, with the collection that emitted it. */
-export interface GRC721TokenCandidate {
-  tokenId: string;
-  collectionId: string;
-}
-
-/**
- * Cursors for one chain. Address-scoped walks are keyed by account address, so
- * switching account or chain selects a different cursor and one account never
- * resumes from another's height. `catalog` is the chain-wide `NewToken` walk
- * and is therefore chain-scoped only.
- */
+/** Cursors for one chain. `catalog` is the chain-wide `NewToken` walk. */
 export interface NetworkGRC721Sync {
   catalog?: GRC721SyncCursor<GRC721CollectionCandidate>;
-  collections?: {
-    [address in string]: GRC721SyncCursor<string>;
-  };
-  tokens?: {
-    [address in string]: {
-      [packagePath in string]: GRC721SyncCursor<GRC721TokenCandidate>;
-    };
-  };
 }
 
 /**
