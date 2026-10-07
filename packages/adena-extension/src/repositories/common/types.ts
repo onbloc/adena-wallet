@@ -45,11 +45,7 @@ export interface IGRC721TokenRepository {
     tokenId: string,
   ) => Promise<GRC721MetadataModel>;
   fetchGRC721BalanceBy: (packagePath: string, address: string) => Promise<number>;
-  fetchGRC721TokensBy: (
-    packagePath: string,
-    address: string,
-    collectionId?: string,
-  ) => Promise<GRC721Model[]>;
+  fetchGRC721TokensBy: (packagePath: string, address: string) => Promise<GRC721Model[]>;
 
   getAccountGRC721CollectionsBy: (
     accountId: string,

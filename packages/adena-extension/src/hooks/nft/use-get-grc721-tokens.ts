@@ -27,7 +27,7 @@ export const useGetGRC721Tokens = (
       }
 
       const tokens = await tokenService
-        .fetchGRC721Tokens(collection.packagePath, currentFundingAddress, collection.collectionId)
+        .fetchGRC721Tokens(collection.packagePath, currentFundingAddress)
         .catch(() => []);
 
       return tokens.map((token) => ({
@@ -38,7 +38,7 @@ export const useGetGRC721Tokens = (
         isMetadata: collection.isMetadata,
       }));
     },
-    // One API walk per collection, replayed on every remount without this.
+    // One API read per collection, replayed on every remount without this.
     staleTime: GRC721_TOKENS_STALE_TIME,
     keepPreviousData: false,
     refetchOnMount: true,

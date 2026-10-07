@@ -682,6 +682,9 @@ describe('GRC721 API', () => {
       {},
       {
         api: (url) => {
+          if (url === COLLECTIONS_URL) {
+            return { items: [collection] };
+          }
           if (!url.startsWith(ITEMS_URL)) {
             return undefined;
           }
@@ -692,14 +695,105 @@ describe('GRC721 API', () => {
       },
     );
 
-    const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS, COLLECTION_ID);
+    const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
 
     expect(tokens.map((token) => [token.tokenId, token.isOwned])).toEqual([
       ['351', false],
       ['350', true],
     ]);
-    expect(get).toHaveBeenCalledTimes(2);
+    // The collection list, then two item pages.
+    expect(get).toHaveBeenCalledTimes(3);
     expect(post).not.toHaveBeenCalled();
+  });
+
+  // The wallet keys collections by realm, so two collections of one realm must
+  // come back as one entry whose list and count both cover the two.
+  it('treats a realm with several collections as one, listing and counting all', async () => {
+    const SECOND_ID = `${PACKAGE_PATH}.GNFT2.0000001`;
+    const SECOND_ITEMS_URL = `${COLLECTIONS_URL}/${encodeURIComponent(SECOND_ID)}/items`;
+    const { repository } = makeRepository(
+      [[]],
+      {},
+      {
+        api: (url) => {
+          if (url === COLLECTIONS_URL) {
+            return {
+              items: [
+                { ...collection, tokenCount: 1 },
+                { ...collection, tokenId: SECOND_ID, symbol: 'GNFT2', tokenCount: 1 },
+              ],
+            };
+          }
+          if (url.startsWith(ITEMS_URL)) {
+            return { items: [item('1', true)], page: { hasNext: false } };
+          }
+          if (url.startsWith(SECOND_ITEMS_URL)) {
+            return { items: [{ ...(item('2', true) as object), tokenId: SECOND_ID }] };
+          }
+          return undefined;
+        },
+      },
+    );
+
+    const collections = await repository.fetchAccountGRC721CollectionsBy(ADDRESS);
+    expect(collections.map((entry) => entry.packagePath)).toEqual([PACKAGE_PATH]);
+
+    const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+    expect(tokens.map((token) => token.tokenId)).toEqual(['1', '2']);
+    await expect(repository.fetchGRC721BalanceBy(PACKAGE_PATH, ADDRESS)).resolves.toBe(2);
+  });
+
+  it('keeps the pages already read when a later page fails', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { repository } = makeRepository(
+      [[]],
+      {},
+      {
+        api: (url) => {
+          if (url === COLLECTIONS_URL) {
+            return { items: [collection] };
+          }
+          if (url.startsWith(ITEMS_URL) && !url.includes('cursor=P2')) {
+            return {
+              items: [item('1', true), item('2', true)],
+              page: { hasNext: true, cursor: 'P2' },
+            };
+          }
+          return undefined;
+        },
+      },
+    );
+
+    const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
+
+    expect(tokens.map((token) => token.tokenId)).toEqual(['1', '2']);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('warns when the page cap cuts the list short', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    let next = 0;
+    const { repository } = makeRepository(
+      [[]],
+      {},
+      {
+        api: (url) => {
+          if (url === COLLECTIONS_URL) {
+            return { items: [collection] };
+          }
+          if (!url.startsWith(ITEMS_URL)) {
+            return undefined;
+          }
+          const items = Array.from({ length: 100 }, () => item(`${(next += 1)}`, true));
+          return { items, page: { hasNext: true, cursor: `c${next}` } };
+        },
+      },
+    );
+
+    await expect(repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS)).resolves.toHaveLength(5000);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('truncated'), COLLECTION_ID);
+    warn.mockRestore();
   });
 
   it('counts every token the account owns or operates', async () => {
@@ -725,9 +819,7 @@ describe('GRC721 API', () => {
     const { repository, post } = makeRepository([[received(ADDRESS, '7')]]);
 
     await expect(repository.fetchAccountGRC721CollectionsBy(ADDRESS)).resolves.toEqual([]);
-    await expect(
-      repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS, COLLECTION_ID),
-    ).resolves.toEqual([]);
+    await expect(repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS)).resolves.toEqual([]);
     await expect(repository.fetchGRC721BalanceBy(PACKAGE_PATH, ADDRESS)).rejects.toThrow();
     expect(post).not.toHaveBeenCalled();
   });
@@ -777,6 +869,8 @@ describe('fetchGRC721TokenUriBy', () => {
       repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1'),
       repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '2'),
     ]);
+    // The cache writes run behind the returned value.
+    await new Promise((resolve) => setTimeout(resolve, 0));
     await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe(
       'data:image/svg+xml;base64,AAA',
     );
@@ -786,6 +880,30 @@ describe('fetchGRC721TokenUriBy', () => {
       '1': 'data:image/svg+xml;base64,AAA',
       '2': 'data:image/svg+xml;base64,AAA',
     });
+  });
+
+  it('returns the uri without waiting for the cache write', async () => {
+    let release = (): void => undefined;
+    const storage = {
+      get: jest.fn(async () => ''),
+      set: jest.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            release = resolve;
+          }),
+      ),
+    } as unknown as StorageManager;
+    const { repository } = makeRepository(
+      [[]],
+      { evaluations: { TokenURI: uri('ipfs://x') } },
+      { tokenUriCache: storage },
+    );
+
+    await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe('ipfs://x');
+
+    // The write queue is shared, so let it drain for the tests after this one.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    release();
   });
 
   it('does not cache a missing uri', async () => {

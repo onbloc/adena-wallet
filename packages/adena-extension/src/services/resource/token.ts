@@ -349,15 +349,10 @@ export class TokenService {
    *
    * @param packagePath
    * @param address
-   * @param collectionId
    * @returns
    */
-  public async fetchGRC721Tokens(
-    packagePath: string,
-    address: string,
-    collectionId?: string,
-  ): Promise<GRC721Model[]> {
-    return this.tokenRepository.fetchGRC721TokensBy(packagePath, address, collectionId);
+  public async fetchGRC721Tokens(packagePath: string, address: string): Promise<GRC721Model[]> {
+    return this.tokenRepository.fetchGRC721TokensBy(packagePath, address);
   }
 
   /**

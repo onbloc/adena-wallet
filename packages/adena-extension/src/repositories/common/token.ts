@@ -52,6 +52,7 @@ import {
   TokenModel,
 } from '@types';
 import {
+  AccountGRC721Collection,
   AccountGRC721CollectionItem,
   AccountGRC721CollectionItemsResponse,
   AccountGRC721CollectionsResponse,
@@ -705,21 +706,23 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
-   * The GRC721 collections an account holds at least one token of — owned, or
-   * operated on its behalf (e.g. a staked GNFT) — from the API's
+   * The GRC721 realms an account holds at least one token of, owned or
+   * operated (e.g. a staked GNFT), from the API's
    * `/v1/accounts/{address}/grc721-tokens`. Empty when the network has no API
    * URL or the request fails.
+   *
+   * The wallet keys collections by realm (storage, pins, `TokenURI`, transfer),
+   * so a realm exposing several collections becomes one entry; its token list
+   * and count cover all of them.
    */
   public async fetchAccountGRC721CollectionsBy(address: string): Promise<GRC721CollectionModel[]> {
-    const response = await this.fetchAccountGRC721CollectionItems(address);
-    if (!response) {
+    const realms = await this.fetchAccountGRC721Realms(address);
+    if (!realms) {
       return [];
     }
 
-    const held = response.items.filter((item) => !!item.packagePath && (item.tokenCount ?? 0) > 0);
-
     return Promise.all(
-      held.map(async (item) => {
+      [...realms.values()].map(async ([item]) => {
         const [capabilities, thumbnail] = await Promise.all([
           this.fetchGRC721Capabilities(item.packagePath),
           this.fetchGRC721ItemPageFromApi(address, item.tokenId || item.packagePath, null, 1),
@@ -727,7 +730,7 @@ export class TokenRepository implements ITokenRepository {
         const parsed = parseGrc721CollectionId(item.tokenId);
 
         return {
-          // Newest token: the collection thumbnail.
+          // The first item the API lists for the realm's first collection.
           tokenId: thumbnail?.items?.[0]?.nftId ?? '',
           collectionId: item.tokenId || undefined,
           networkId: this.networkId,
@@ -768,6 +771,28 @@ export class TokenRepository implements ITokenRepository {
     });
 
     return request;
+  }
+
+  /**
+   * The account's collections with at least one token, grouped by realm in the
+   * API's order. Null means no API URL or a failed request.
+   */
+  private async fetchAccountGRC721Realms(
+    address: string,
+  ): Promise<Map<string, AccountGRC721Collection[]> | null> {
+    const response = await this.fetchAccountGRC721CollectionItems(address);
+    if (!response) {
+      return null;
+    }
+
+    const realms = new Map<string, AccountGRC721Collection[]>();
+    response.items
+      .filter((item) => !!item.packagePath && (item.tokenCount ?? 0) > 0)
+      .forEach((item) => {
+        realms.set(item.packagePath, [...(realms.get(item.packagePath) || []), item]);
+      });
+
+    return realms;
   }
 
   /**
@@ -933,7 +958,7 @@ export class TokenRepository implements ITokenRepository {
   /**
    * `TokenURI(tokenId)` over ABCI; the realm's error tuple comes back as an
    * empty URI. A URI found is kept in session storage per realm and token id,
-   * so reopening the popup does not query the chain again for it.
+   * so within the browser session it is read from the chain only once.
    */
   public async fetchGRC721TokenUriBy(packagePath: string, tokenId: string): Promise<string> {
     const cached = await this.readCachedGRC721TokenUris(packagePath);
@@ -946,7 +971,8 @@ export class TokenRepository implements ITokenRepository {
       throw new Error('not found token uri');
     }
 
-    await this.writeCachedGRC721TokenUri(packagePath, tokenId, uri);
+    // Not awaited: the image should not wait on the serialised cache writes.
+    void this.writeCachedGRC721TokenUri(packagePath, tokenId, uri);
 
     return uri;
   }
@@ -1022,62 +1048,47 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
-   * How many tokens of the realm the account owns or operates, as the API's
-   * `tokenCount` — so a staked GNFT is counted, matching the token list.
+   * How many tokens of the realm the account owns or operates: the API's
+   * `tokenCount`, summed over the realm's collections like the token list.
    * Rejects when the API is unavailable, which the card shows as no count.
    */
   public async fetchGRC721BalanceBy(packagePath: string, address: string): Promise<number> {
-    const response = await this.fetchAccountGRC721CollectionItems(address);
-    if (!response) {
+    const realms = await this.fetchAccountGRC721Realms(address);
+    if (!realms) {
       throw new Error('not found grc721 balance');
     }
 
-    return response.items
-      .filter((item) => item.packagePath === packagePath)
-      .reduce((total, item) => total + (item.tokenCount ?? 0), 0);
+    return (realms.get(packagePath) || []).reduce(
+      (total, item) => total + (item.tokenCount ?? 0),
+      0,
+    );
   }
 
   /**
-   * The tokens of one collection the account owns or operates, newest first,
-   * from the API's `/v1/accounts/{address}/grc721-tokens/{tokenId}/items`.
-   * `collectionId` selects the collection; without it the API resolves the
-   * realm's first one. Empty when the network has no API URL or a page fails.
+   * The tokens of a realm the account owns or operates, from the API's
+   * `/v1/accounts/{address}/grc721-tokens/{tokenId}/items` for each of the
+   * realm's collections, each in the order the API returns. Empty when the
+   * network has no API URL or the collection list fails.
    */
-  public async fetchGRC721TokensBy(
-    packagePath: string,
-    address: string,
-    collectionId?: string,
-  ): Promise<GRC721Model[]> {
-    if (!this.apiUrl) {
+  public async fetchGRC721TokensBy(packagePath: string, address: string): Promise<GRC721Model[]> {
+    const realms = await this.fetchAccountGRC721Realms(address);
+    const collections = realms?.get(packagePath);
+    if (!collections) {
       return [];
     }
 
-    const items: AccountGRC721CollectionItem[] = [];
-    let cursor: string | null = null;
+    const pages = await Promise.all(
+      collections.map((collection) =>
+        this.fetchGRC721CollectionItemsFromApi(address, collection.tokenId || packagePath),
+      ),
+    );
 
-    for (let pageIndex = 0; pageIndex < GRC721_API_ITEMS_MAX_PAGES; pageIndex += 1) {
-      const response: AccountGRC721CollectionItemsResponse | null =
-        await this.fetchGRC721ItemPageFromApi(
-          address,
-          collectionId || packagePath,
-          cursor,
-          GRC721_API_ITEMS_PAGE_SIZE,
-        );
-      if (!response) {
-        return [];
-      }
-
-      items.push(...(response.items || []));
-
-      cursor = response.page?.cursor || null;
-      if (!response.page?.hasNext || !cursor) {
-        break;
-      }
-    }
-
+    // `TokenURI` and transfers address a token by realm and id alone, so an id
+    // repeated across the realm's collections is listed once.
     const seen = new Set<string>();
 
-    return items
+    return pages
+      .flat()
       .filter((item) => {
         if (!item.nftId || item.packagePath !== packagePath || seen.has(item.nftId)) {
           return false;
@@ -1099,6 +1110,47 @@ export class TokenRepository implements ITokenRepository {
       }));
   }
 
+  /**
+   * Every item of one collection, page by page. A page that fails ends the walk
+   * with the items read so far rather than dropping them.
+   */
+  private async fetchGRC721CollectionItemsFromApi(
+    address: string,
+    collection: string,
+  ): Promise<AccountGRC721CollectionItem[]> {
+    const items: AccountGRC721CollectionItem[] = [];
+    let cursor: string | null = null;
+
+    for (let pageIndex = 0; pageIndex < GRC721_API_ITEMS_MAX_PAGES; pageIndex += 1) {
+      const response: AccountGRC721CollectionItemsResponse | null =
+        await this.fetchGRC721ItemPageFromApi(
+          address,
+          collection,
+          cursor,
+          GRC721_API_ITEMS_PAGE_SIZE,
+        );
+      if (!response) {
+        if (pageIndex > 0) {
+          console.warn('[grc721] items page failed, showing the pages read so far', collection);
+        }
+        return items;
+      }
+
+      items.push(...(response.items || []));
+
+      cursor = response.page?.cursor || null;
+      if (!response.page?.hasNext || !cursor) {
+        return items;
+      }
+    }
+
+    console.warn(
+      `[grc721] stopped after ${GRC721_API_ITEMS_MAX_PAGES} pages; the item list is truncated`,
+      collection,
+    );
+    return items;
+  }
+
   /** One page of a collection's items; `collection` is its id or realm path. */
   private fetchGRC721ItemPageFromApi(
     address: string,
@@ -1117,9 +1169,9 @@ export class TokenRepository implements ITokenRepository {
   }
 
   /**
-   * GET `{apiUrl}{path}`, unwrapped to the payload carrying `items`. Some API
-   * deployments nest the payload one `data` deeper than others. Null on any
-   * failure.
+   * GET `{apiUrl}{path}`, unwrapped to the payload carrying `items`. Accepts
+   * the payload under one `data` (as the dev API serves it) or two (as the
+   * production `/v1/accounts/{address}` endpoint does). Null on any failure.
    */
   private async fetchApi<T extends { items?: unknown[] }>(path: string): Promise<T | null> {
     if (!this.apiUrl) {
