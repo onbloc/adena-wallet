@@ -26,7 +26,11 @@ import { isSessionSupportedNetwork } from '@common/utils/account-session';
 import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { validateMessageArguments } from '@common/utils/argument-validation';
-import { checkFeeSufficiency, sumSpentGnotAmount } from '@common/utils/fee-sufficiency';
+import {
+  checkFeeSufficiency,
+  getFeeShortfallFromSimulateError,
+  sumSpentGnotAmount,
+} from '@common/utils/fee-sufficiency';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -326,8 +330,22 @@ const ApproveTransactionContainer: React.FC = () => {
     useNetworkFeeReturn.currentGasFeeRawAmount,
     useNetworkFeeReturn.currentStorageDeposits,
   ]);
-  const isErrorNetworkFee = feeSufficiency.isInsufficientNetworkFee;
-  const isErrorStorageDeposit = feeSufficiency.isInsufficientStorageDeposit;
+  const simulateFeeShortfall = useMemo(() => {
+    if (!useNetworkFeeReturn.isSimulateError) {
+      return null;
+    }
+
+    return getFeeShortfallFromSimulateError(
+      useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
+    );
+  }, [
+    useNetworkFeeReturn.isSimulateError,
+    useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
+  ]);
+  const isErrorNetworkFee =
+    feeSufficiency.isInsufficientNetworkFee || simulateFeeShortfall === 'networkFee';
+  const isErrorStorageDeposit =
+    feeSufficiency.isInsufficientStorageDeposit || simulateFeeShortfall === 'storageDeposit';
 
   // Extract funcName and pkgPath from the first message for session tracking
   const { funcName, pkgPath } = useMemo(() => {
@@ -790,6 +808,10 @@ const ApproveTransactionContainer: React.FC = () => {
     if (!useNetworkFeeReturn.isSimulateError || useNetworkFeeReturn.isLoading) {
       return { globalErrorMessage: null, messageErrors: [] };
     }
+    // A balance shortfall is shown on the fee rows instead of the raw chain error.
+    if (simulateFeeShortfall) {
+      return { globalErrorMessage: null, messageErrors: [] };
+    }
     const rawMessage = useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || null;
     const parsed = parseSimulateErrors(rawMessage, transactionMessages);
 
@@ -802,6 +824,7 @@ const ApproveTransactionContainer: React.FC = () => {
     useNetworkFeeReturn.isSimulateError,
     useNetworkFeeReturn.isLoading,
     useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
+    simulateFeeShortfall,
     transactionMessages,
   ]);
 

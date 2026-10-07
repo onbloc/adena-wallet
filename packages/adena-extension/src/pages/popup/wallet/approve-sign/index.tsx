@@ -15,7 +15,11 @@ import {
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
-import { checkFeeSufficiency, sumSpentGnotAmount } from '@common/utils/fee-sufficiency';
+import {
+  checkFeeSufficiency,
+  getFeeShortfallFromSimulateError,
+  sumSpentGnotAmount,
+} from '@common/utils/fee-sufficiency';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -138,8 +142,22 @@ const ApproveSignContainer: React.FC = () => {
     useNetworkFeeReturn.currentGasFeeRawAmount,
     useNetworkFeeReturn.currentStorageDeposits,
   ]);
-  const isErrorNetworkFee = feeSufficiency.isInsufficientNetworkFee;
-  const isErrorStorageDeposit = feeSufficiency.isInsufficientStorageDeposit;
+  const simulateFeeShortfall = useMemo(() => {
+    if (!useNetworkFeeReturn.isSimulateError) {
+      return null;
+    }
+
+    return getFeeShortfallFromSimulateError(
+      useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
+    );
+  }, [
+    useNetworkFeeReturn.isSimulateError,
+    useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
+  ]);
+  const isErrorNetworkFee =
+    feeSufficiency.isInsufficientNetworkFee || simulateFeeShortfall === 'networkFee';
+  const isErrorStorageDeposit =
+    feeSufficiency.isInsufficientStorageDeposit || simulateFeeShortfall === 'storageDeposit';
 
   const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
     return requestData?.data?.arguments || [];

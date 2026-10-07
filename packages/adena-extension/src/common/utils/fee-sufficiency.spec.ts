@@ -1,4 +1,8 @@
-import { checkFeeSufficiency, sumSpentGnotAmount } from './fee-sufficiency';
+import {
+  checkFeeSufficiency,
+  getFeeShortfallFromSimulateError,
+  sumSpentGnotAmount,
+} from './fee-sufficiency';
 
 describe('sumSpentGnotAmount', () => {
   it('counts bank send `amount` and vm `send`', () => {
@@ -98,5 +102,25 @@ describe('checkFeeSufficiency', () => {
       unlockDeposit: 5000000,
     });
     expect(refund.isInsufficientNetworkFee).toBe(true);
+  });
+});
+
+describe('getFeeShortfallFromSimulateError', () => {
+  it('reads a storage deposit shortfall', () => {
+    const message =
+      'storage deposit processing encountered one or more errors: lockStorageDeposit failed for realm gno.land/r/gnoland/wugnot: unable to transfer deposit gno.land/r/gnoland/wugnot, insufficient coins error';
+
+    expect(getFeeShortfallFromSimulateError(message)).toBe('storageDeposit');
+  });
+
+  it('reads a fee shortfall', () => {
+    expect(
+      getFeeShortfallFromSimulateError('insufficient funds to pay for fees; 1ugnot < 120000ugnot'),
+    ).toBe('networkFee');
+  });
+
+  it('ignores other simulate errors', () => {
+    expect(getFeeShortfallFromSimulateError('invalid argument: amount')).toBeNull();
+    expect(getFeeShortfallFromSimulateError(null)).toBeNull();
   });
 });

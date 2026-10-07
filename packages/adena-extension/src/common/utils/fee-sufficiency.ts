@@ -82,3 +82,23 @@ export function checkFeeSufficiency({
     isInsufficientStorageDeposit: balanceBN.isLessThan(requiredForFee.plus(netStorageDeposit)),
   };
 }
+
+export type FeeShortfall = 'networkFee' | 'storageDeposit';
+
+const INSUFFICIENT_BALANCE_PATTERN = /insufficient (coins|funds)/i;
+const STORAGE_DEPOSIT_PATTERN = /storage deposit|lockStorageDeposit/i;
+
+/**
+ * Reads which fee the balance couldn't cover from a failed simulate. Once the
+ * simulate fails it returns no storage deposit or gas, so the amount check
+ * above has nothing to compare and only the chain's message tells us.
+ */
+export function getFeeShortfallFromSimulateError(
+  simulateErrorMessage: string | null | undefined,
+): FeeShortfall | null {
+  if (!simulateErrorMessage || !INSUFFICIENT_BALANCE_PATTERN.test(simulateErrorMessage)) {
+    return null;
+  }
+
+  return STORAGE_DEPOSIT_PATTERN.test(simulateErrorMessage) ? 'storageDeposit' : 'networkFee';
+}

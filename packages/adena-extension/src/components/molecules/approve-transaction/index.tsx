@@ -161,7 +161,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
     }
 
     if (isMaxDepositError) {
-      return 'Insufficient balance';
+      return 'Insufficient Fees';
     }
 
     return '';
@@ -169,7 +169,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
-      return 'Insufficient network fee';
+      return 'Insufficient Fees';
     }
 
     return '';
