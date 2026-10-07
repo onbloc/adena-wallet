@@ -1,7 +1,21 @@
 import { View } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+
+// The pill shared by the name/id label on top and the Staked label below.
+const labelPill = css`
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  margin: 0 auto;
+  width: max-content;
+  max-width: calc(100% - 20px);
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 10px;
+  background-color: ${getTheme('neutral', '_9')};
+`;
 
 export const NFTCollectionAssetCardWrapper = styled(View)`
   position: relative;
@@ -22,18 +36,9 @@ export const NFTCollectionAssetCardWrapper = styled(View)`
    */
   .info-static-wrapper {
     ${mixins.flex({ direction: 'row', align: 'center', justify: 'center' })}
-    position: absolute;
+    ${labelPill}
     top: 10px;
-    left: 10px;
-    right: 10px;
-    margin: 0 auto;
-    width: max-content;
-    max-width: calc(100% - 20px);
-    height: 20px;
-    padding: 0 7px;
     gap: 2px;
-    border-radius: 10px;
-    background-color: ${getTheme('neutral', '_9')};
 
     /* min-width:0 lets the name shrink past its text width, so a long
        collection name ellipsizes instead of pushing the row wider. */
@@ -52,5 +57,13 @@ export const NFTCollectionAssetCardWrapper = styled(View)`
       flex-shrink: 0;
       ${fonts.captionBold}
     }
+  }
+
+  .staked-label {
+    ${mixins.flex({ direction: 'row', align: 'center', justify: 'center' })}
+    ${labelPill}
+    bottom: 10px;
+    ${fonts.captionBold}
+    white-space: nowrap;
   }
 `;

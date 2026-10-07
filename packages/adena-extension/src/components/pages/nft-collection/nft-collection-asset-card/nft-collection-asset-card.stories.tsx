@@ -75,3 +75,21 @@ export const EmptyImage: StoryObj<NFTCollectionAssetCardProps> = {
       }) as unknown as UseQueryResult<string | null>,
   },
 };
+
+export const Staked: StoryObj<NFTCollectionAssetCardProps> = {
+  args: {
+    ...Default.args,
+    grc721Token: {
+      metadata: null,
+      name: 'GNOSWAP NFT',
+      networkId: '',
+      packagePath: 'gno.land/r/gnoswap/gnft',
+      symbol: 'GNFT',
+      tokenId: '351',
+      type: 'grc721',
+      isMetadata: false,
+      isTokenUri: true,
+      isOwned: false,
+    },
+  },
+};
