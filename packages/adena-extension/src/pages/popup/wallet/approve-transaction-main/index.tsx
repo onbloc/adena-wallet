@@ -46,6 +46,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useGnoSessionUpdates } from '@hooks/use-gno-session-updates';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
+import { useFeeSufficiency } from '@hooks/wallet/use-fee-sufficiency';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
@@ -306,41 +307,11 @@ const ApproveTransactionContainer: React.FC = () => {
     return accumulatedAmount;
   }, [document]);
 
-  const consumedTokenAmount = useMemo(() => {
-    const accumulatedAmount = document?.msgs.reduce((acc, msg) => {
-      const messageValue = msg.value;
-      const amountStr = messageValue?.amount || messageValue?.amount || messageValue?.max_deposit;
-      if (!amountStr) {
-        return acc;
-      }
-
-      try {
-        const amount = parseTokenAmount(amountStr);
-        return BigNumber(acc).plus(amount).toNumber();
-      } catch {
-        return acc;
-      }
-    }, 0);
-
-    const consumedBN = BigNumber(accumulatedAmount || 0).shiftedBy(GasToken.decimals * -1);
-    return consumedBN.toNumber();
-  }, [document]);
-
-  const isErrorNetworkFee = useMemo(() => {
-    if (!networkFee) {
-      return false;
-    }
-
-    if (currentBalance === 0) {
-      return true;
-    }
-
-    const resultConsumedAmount = BigNumber(consumedTokenAmount).plus(networkFee.amount);
-
-    return BigNumber(currentBalance)
-      .shiftedBy(GasToken.decimals * -1)
-      .isLessThan(resultConsumedAmount);
-  }, [networkFee?.amount, currentBalance, consumedTokenAmount]);
+  const { isErrorNetworkFee, isErrorStorageDeposit, simulateFeeShortfall } = useFeeSufficiency(
+    document,
+    currentBalance,
+    useNetworkFeeReturn,
+  );
 
   // Extract funcName and pkgPath from the first message for session tracking
   const { funcName, pkgPath } = useMemo(() => {
@@ -525,7 +496,7 @@ const ApproveTransactionContainer: React.FC = () => {
     if (!isRequestedNetworkReady || approvalBlocked) {
       return false;
     }
-    if (isErrorNetworkFee) {
+    if (isErrorNetworkFee || isErrorStorageDeposit) {
       return false;
     }
     if (!document || !currentNetwork || !signingAccount || !wallet) {
@@ -700,6 +671,7 @@ const ApproveTransactionContainer: React.FC = () => {
     if (
       !signingAccount ||
       isErrorNetworkFee ||
+      isErrorStorageDeposit ||
       requiresHoldConfirmation ||
       !isRequestedNetworkReady ||
       approvalBlocked
@@ -802,6 +774,10 @@ const ApproveTransactionContainer: React.FC = () => {
     if (!useNetworkFeeReturn.isSimulateError || useNetworkFeeReturn.isLoading) {
       return { globalErrorMessage: null, messageErrors: [] };
     }
+    // A balance shortfall is shown on the fee rows instead of the raw chain error.
+    if (simulateFeeShortfall) {
+      return { globalErrorMessage: null, messageErrors: [] };
+    }
     const rawMessage = useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || null;
     const parsed = parseSimulateErrors(rawMessage, transactionMessages);
 
@@ -814,6 +790,7 @@ const ApproveTransactionContainer: React.FC = () => {
     useNetworkFeeReturn.isSimulateError,
     useNetworkFeeReturn.isLoading,
     useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
+    simulateFeeShortfall,
     transactionMessages,
   ]);
 
@@ -945,6 +922,7 @@ const ApproveTransactionContainer: React.FC = () => {
       currentBalance={currentBalance}
       maxDepositAmount={maxDepositAmount}
       isErrorNetworkFee={isErrorNetworkFee || !networkFee}
+      isErrorStorageDeposit={isErrorStorageDeposit}
       networkFee={displayNetworkFee}
       feeTokenQuote={feeTokenQuote}
       useNetworkFeeReturn={useNetworkFeeReturn}

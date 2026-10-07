@@ -38,7 +38,7 @@ export const useGetGRC721Tokens = (
         isMetadata: collection.isMetadata,
       }));
     },
-    // One indexer query per collection, replayed on every remount without this.
+    // One API read per collection, replayed on every remount without this.
     staleTime: GRC721_TOKENS_STALE_TIME,
     keepPreviousData: false,
     refetchOnMount: true,

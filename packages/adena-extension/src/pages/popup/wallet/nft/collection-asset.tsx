@@ -45,6 +45,9 @@ export const NftCollectionAsset = (): JSX.Element => {
   const { pinCollection, unpinCollection, showCollection, hideCollection } =
     useNFTCollectionHandler();
   const collectionAsset = params.collectionAsset;
+  // A token the account only operates (e.g. a GNFT staked in GnoSwap) cannot be
+  // sent by it.
+  const isTransferable = collectionAsset.isOwned !== false;
 
   const { data: collections, refetch: refetchCollections } = useGetGRC721Collections({
     refetchOnMount: true,
@@ -108,12 +111,15 @@ export const NftCollectionAsset = (): JSX.Element => {
   }, [collectionAsset.packagePath, hideCollection]);
 
   const onClickSend = useCallback(() => {
+    if (!isTransferable) {
+      return;
+    }
     navigate(RoutePath.NftTransferInput, {
       state: {
         collectionAsset,
       },
     });
-  }, [collectionAsset]);
+  }, [collectionAsset, isTransferable]);
 
   return (
     <Wrapper>
@@ -131,15 +137,21 @@ export const NftCollectionAsset = (): JSX.Element => {
 
       <NFTAssetImageCard asset={collectionAsset} queryGRC721TokenUri={useGetGRC721TokenUri} />
 
-      <Button
-        className='send-button'
-        bgColor={theme.primary._6}
-        fullWidth
-        onClick={onClickSend}
-        margin={'4px 0 0 0'}
-      >
-        Send
-      </Button>
+      {isTransferable ? (
+        <Button
+          className='send-button'
+          bgColor={theme.primary._6}
+          fullWidth
+          onClick={onClickSend}
+          margin={'4px 0 0 0'}
+        >
+          Send
+        </Button>
+      ) : (
+        <Button className='send-button' hierarchy='dark' fullWidth disabled margin={'4px 0 0 0'}>
+          Staked GNFTs can&apos;t be transferred
+        </Button>
+      )}
 
       <NFTAssetMetadata
         asset={collectionAsset}

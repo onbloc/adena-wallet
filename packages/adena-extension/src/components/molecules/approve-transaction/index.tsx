@@ -37,6 +37,8 @@ export interface ApproveTransactionProps {
   hasMemo: boolean;
   currentBalance?: number;
   isErrorNetworkFee?: boolean;
+  /** Balance can't cover the storage deposit on top of the sent amount and network fee */
+  isErrorStorageDeposit?: boolean;
   networkFee: NetworkFeeType | null;
   /** Quote for the fee token, from `useFeeTokenPrice`; drives the fee rows' USD line. */
   feeTokenQuote?: FeeTokenQuote | null;
@@ -84,6 +86,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   networkFee,
   feeTokenQuote,
   isErrorNetworkFee,
+  isErrorStorageDeposit = false,
   transactionData,
   opened,
   processing,
@@ -111,6 +114,8 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   const [showRawError, setShowRawError] = useState(false);
   const errorBannerRef = useRef<HTMLDivElement>(null);
   const hasScrolledToError = useRef(false);
+  const feeAmountRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToFeeError = useRef(false);
 
   const disabledApprove = useMemo(() => {
     if (requiresHoldConfirmation) {
@@ -121,7 +126,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
       return true;
     }
 
-    if (isErrorNetworkFee || useNetworkFeeReturn.isSimulateError) {
+    if (isErrorNetworkFee || isErrorStorageDeposit || useNetworkFeeReturn.isSimulateError) {
       return true;
     }
 
@@ -133,6 +138,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   }, [
     requiresHoldConfirmation,
     isErrorNetworkFee,
+    isErrorStorageDeposit,
     useNetworkFeeReturn.isLoading,
     useNetworkFeeReturn.isSimulateError,
     hasArgumentValidationError,
@@ -140,12 +146,16 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   ]);
 
   const isMaxDepositError = useMemo(() => {
+    if (isErrorStorageDeposit) {
+      return true;
+    }
+
     if (!maxDepositAmount || currentBalance === undefined) {
       return false;
     }
 
     return currentBalance < maxDepositAmount;
-  }, [currentBalance, maxDepositAmount]);
+  }, [isErrorStorageDeposit, currentBalance, maxDepositAmount]);
 
   const maxDepositErrorMessage = useMemo(() => {
     if (useNetworkFeeReturn.isLoading) {
@@ -153,7 +163,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
     }
 
     if (isMaxDepositError) {
-      return 'Insufficient balance';
+      return 'Insufficient Fees';
     }
 
     return '';
@@ -161,7 +171,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
-      return 'Insufficient network fee';
+      return 'Insufficient Fees';
     }
 
     return '';
@@ -217,6 +227,20 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
       hasScrolledToError.current = false;
     }
   }, [simulateErrorBannerMessage]);
+
+  const hasFeeError = !useNetworkFeeReturn.isLoading && (isMaxDepositError || !!isErrorNetworkFee);
+
+  useEffect(() => {
+    if (hasFeeError && !hasScrolledToFeeError.current) {
+      hasScrolledToFeeError.current = true;
+      requestAnimationFrame(() => {
+        feeAmountRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+    if (!hasFeeError) {
+      hasScrolledToFeeError.current = false;
+    }
+  }, [hasFeeError]);
 
   if (loading) {
     return <ApproveTransactionLoading rightButtonText='Approve' />;
@@ -312,7 +336,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         )}
       </div>
 
-      <div className='fee-amount-wrapper'>
+      <div ref={feeAmountRef} className='fee-amount-wrapper'>
         <StorageDeposit
           storageDeposit={{
             storageDeposit: useNetworkFeeReturn.currentStorageDeposits?.storageDeposit || 0,

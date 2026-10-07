@@ -1,10 +1,6 @@
 import { Grc20TokenPackage } from '@common/utils/grc20reg-config';
 import { Grc721TokenPackage, GRC721_TOKEN_PACKAGES } from '@common/utils/grc721-config';
-import {
-  makeAllTransferEventsQueryBy,
-  makeGRC721NewTokenEventsQuery,
-  makeGRC721ReceivedTokensQuery,
-} from './token.queries';
+import { makeAllTransferEventsQueryBy, makeGRC721NewTokenEventsQuery } from './token.queries';
 
 const V0: Grc20TokenPackage = {
   path: 'gno.land/p/nt/grc20/v0',
@@ -71,31 +67,5 @@ describe('makeGRC721NewTokenEventsQuery', () => {
 
     expect(query).toContain('pkg_path: { eq: "gno.land/p/demo/grc721" }');
     expect(query).toContain('type: { eq: "Created" }');
-  });
-});
-
-describe('makeGRC721ReceivedTokensQuery', () => {
-  it('matches the transfers into the address for the realm, by token prefix', () => {
-    const query = makeGRC721ReceivedTokensQuery(
-      'gno.land/r/gnoswap/gnft',
-      'g1abc',
-      GRC721_TOKEN_PACKAGES,
-    );
-
-    expect(query).toContain('type: { eq: "Transfer" }');
-    expect(query).toContain('key: { eq: "token" }');
-    expect(query).toContain('value: { like: "gno.land/r/gnoswap/gnft." }');
-    expect(query).toContain('key: { eq: "to" }');
-    expect(query).toContain('value: { eq: "g1abc" }');
-  });
-
-  it('does not match the sending side: ownership is settled over RPC', () => {
-    const query = makeGRC721ReceivedTokensQuery(
-      'gno.land/r/gnoswap/gnft',
-      'g1abc',
-      GRC721_TOKEN_PACKAGES,
-    );
-
-    expect(query).not.toContain('key: { eq: "from" }');
   });
 });
