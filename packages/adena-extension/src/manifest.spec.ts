@@ -75,6 +75,21 @@ describe('emitted manifests', () => {
     }
   });
 
+  // Firefox does not implement CSP3's scheme matching, where `https:` also
+  // covers `wss:`. Social login relays its result over a websocket to
+  // session.web3auth.io, so without this the popup authenticates and the
+  // result is then dropped — on Firefox only.
+  it('lets social login reach its websocket relay in both targets', () => {
+    for (const manifest of [chrome, firefox]) {
+      const connectSrc = manifest.content_security_policy.extension_pages
+        .split(';')
+        .map((directive: string) => directive.trim())
+        .find((directive: string) => directive.startsWith('connect-src'));
+
+      expect(connectSrc).toContain('wss:');
+    }
+  });
+
   it('declares data collection for AMO signing', () => {
     expect(firefox.browser_specific_settings.gecko.data_collection_permissions.required).toEqual([
       'none',

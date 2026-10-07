@@ -63,6 +63,36 @@ describe('TokenListItemBalance Component', () => {
     expect(screen.getByText('640,315.512321 PHOTON')).not.toBeNull();
   });
 
+  // The affordance belongs on the amount line so the USD value above it keeps
+  // the row's full width and lines up with the rows that have none.
+  it('renders the trailing affordance beside the amount in both layouts', () => {
+    const trailing = <button aria-label='Show vesting details' />;
+
+    const priced = renderBalance({
+      amount: { value: '1,304,659.432987', denom: 'GNOT' },
+      usdDisplay: true,
+      tokenValue: { usdValue: 1234.5, change24h: 0 },
+      locked: true,
+      trailing,
+    });
+
+    const pricedLine = screen.getByLabelText('Show vesting details').parentElement;
+    expect(pricedLine?.textContent).toContain('1,304,659.432987 GNOT');
+    expect(pricedLine?.textContent).not.toContain('$1,234.50');
+
+    priced.unmount();
+
+    renderBalance({
+      amount: { value: '1,304,659.432987', denom: 'GNOT' },
+      locked: true,
+      trailing,
+    });
+
+    expect(screen.getByLabelText('Show vesting details').parentElement?.textContent).toContain(
+      'GNOT',
+    );
+  });
+
   it('prefers error over loading when both flags are set', () => {
     renderBalance({
       amount: { value: '', denom: '' },

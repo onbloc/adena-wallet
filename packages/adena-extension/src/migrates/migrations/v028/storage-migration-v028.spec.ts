@@ -1,0 +1,129 @@
+import { StorageMigration027 } from '../v027/storage-migration-v027';
+import { StorageMigration028 } from './storage-migration-v028';
+
+function gnolandMainnet(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'gnoland-1',
+    default: true,
+    main: true,
+    chainId: 'gnoland-1',
+    chainName: 'Gno.land',
+    networkId: 'gnoland-1',
+    networkName: 'Mainnet',
+    addressPrefix: 'g',
+    rpcUrl: 'https://rpc.gno.land:443',
+    fallbackRPCUrl: 'https://rpc.onbloc.xyz:443',
+    indexerUrl: 'https://indexer.onbloc.xyz',
+    gnoUrl: 'https://gno.land',
+    apiUrl: 'https://api.onbloc.xyz',
+    linkUrl: 'https://gnoscan.io',
+    ...overrides,
+  };
+}
+
+const BASE_DATA = {
+  NETWORKS: [gnolandMainnet()] as Parameters<StorageMigration028['up']>[0]['data']['NETWORKS'],
+  CURRENT_CHAIN_ID: 'gnoland-1',
+  CURRENT_NETWORK_ID: 'gnoland-1',
+  SERIALIZED: 'serialized-blob',
+  ENCRYPTED_STORED_PASSWORD: 'encrypted-pw',
+  CURRENT_ACCOUNT_ID: 'acc-1',
+  ACCOUNT_NAMES: { 'acc-1': 'Main' },
+  ESTABLISH_SITES: {},
+  ADDRESS_BOOK: 'encrypted-address-book',
+  ACCOUNT_TOKEN_METAINFOS: {},
+  QUESTIONNAIRE_EXPIRED_DATE: null,
+  WALLET_CREATION_GUIDE_CONFIRM_DATE: null,
+  ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null,
+  ACCOUNT_GRC721_COLLECTIONS: {},
+  ACCOUNT_GRC721_PINNED_PACKAGES: {},
+  KDF_SALT: 'abc123',
+  SESSIONS: {},
+};
+
+function makeInput(overrides: Partial<typeof BASE_DATA> = {}) {
+  return { version: 27 as const, data: { ...BASE_DATA, ...overrides } };
+}
+
+describe('StorageMigration028', () => {
+  it('version is 28', () => {
+    expect(new StorageMigration028().version).toBe(28);
+  });
+
+  it('migrates an existing rpc.gno.land default mainnet to onbloc without storing a fallback', async () => {
+    const result = await new StorageMigration028().up(makeInput());
+    expect(result.version).toBe(28);
+    const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
+    expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
+    expect(mainnet?.fallbackRPCUrl).toBeUndefined();
+  });
+
+  // Fresh installs on v027 and any later network save persist the default without fallbackRPCUrl.
+  it('migrates an rpc.gno.land default stored without fallbackRPCUrl', async () => {
+    const stored = gnolandMainnet({ fallbackRPCUrl: undefined });
+    const result = await new StorageMigration028().up(makeInput({ NETWORKS: [stored] }));
+    const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
+    expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
+    expect(mainnet?.fallbackRPCUrl).toBeUndefined();
+  });
+
+  it('moves the v026 onbloc default back to onbloc through v027 and v028', async () => {
+    const v026Default = gnolandMainnet({
+      rpcUrl: 'https://rpc.onbloc.xyz:443',
+      fallbackRPCUrl: undefined,
+    });
+    const v027 = await new StorageMigration027().up({
+      version: 26,
+      data: { ...BASE_DATA, NETWORKS: [v026Default] },
+    });
+    const result = await new StorageMigration028().up(v027);
+    const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
+    expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
+    expect(mainnet?.fallbackRPCUrl).toBeUndefined();
+  });
+
+  it('leaves a genuinely customized gnoland-1 rpcUrl untouched', async () => {
+    const custom = gnolandMainnet({
+      rpcUrl: 'https://my.custom.rpc:443',
+      fallbackRPCUrl: undefined,
+    });
+    const result = await new StorageMigration028().up(makeInput({ NETWORKS: [custom] }));
+    const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
+    expect(mainnet?.rpcUrl).toBe('https://my.custom.rpc:443');
+    expect(mainnet?.fallbackRPCUrl).toBeUndefined();
+  });
+
+  it('does not touch networks other than the default mainnet', async () => {
+    const other = gnolandMainnet({
+      id: 'custom',
+      default: false,
+      main: false,
+      chainId: 'custom-1',
+      networkId: 'custom-1',
+      rpcUrl: 'https://rpc.gno.land:443',
+      fallbackRPCUrl: undefined,
+    });
+    const result = await new StorageMigration028().up(makeInput({ NETWORKS: [other] }));
+    const network = result.data.NETWORKS.find((n) => n.id === 'custom');
+    expect(network?.rpcUrl).toBe('https://rpc.gno.land:443');
+    expect(network?.fallbackRPCUrl).toBeUndefined();
+  });
+
+  it('preserves unrelated v027 fields without loss', async () => {
+    const result = await new StorageMigration028().up(makeInput());
+    expect(result.data.SERIALIZED).toBe(BASE_DATA.SERIALIZED);
+    expect(result.data.ENCRYPTED_STORED_PASSWORD).toBe(BASE_DATA.ENCRYPTED_STORED_PASSWORD);
+    expect(result.data.CURRENT_ACCOUNT_ID).toBe(BASE_DATA.CURRENT_ACCOUNT_ID);
+    expect(result.data.ACCOUNT_NAMES).toEqual(BASE_DATA.ACCOUNT_NAMES);
+    expect(result.data.ADDRESS_BOOK).toBe(BASE_DATA.ADDRESS_BOOK);
+    expect(result.data.KDF_SALT).toBe(BASE_DATA.KDF_SALT);
+  });
+
+  it('throws when required v027 keys are missing', async () => {
+    const { KDF_SALT, ...withoutKdfSalt } = BASE_DATA;
+    const bad: any = { version: 27, data: withoutKdfSalt };
+    await expect(new StorageMigration028().up(bad)).rejects.toThrow(
+      'Storage Data does not match version V027',
+    );
+  });
+});

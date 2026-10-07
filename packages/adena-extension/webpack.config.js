@@ -102,6 +102,14 @@ const buildConfig = (env = {}, argv = {}) => {
       // root-level extension pages, which is all this bundle loads assets from.
       publicPath: '',
     },
+    // AMO rejects any script over 5MB, so the page bundles are split. Content,
+    // background and inject scripts stay single files the manifest can name.
+    optimization: {
+      splitChunks: {
+        chunks: (chunk) => ['web', 'popup'].includes(chunk.name),
+        maxSize: 3 * 1024 * 1024,
+      },
+    },
     module: {
       rules: [
         {
@@ -140,6 +148,9 @@ const buildConfig = (env = {}, argv = {}) => {
     },
     resolve: {
       modules: ['node_modules'],
+      // asn1.js only uses vm to name a constructor and falls back without it;
+      // the polyfill's eval is blocked by the extension CSP anyway.
+      fallback: { vm: false },
       extensions: ['.js', '.jsx', '.tsx', '.ts'],
       alias: {
         '@types': path.resolve(__dirname, 'src/types'),
@@ -212,7 +223,7 @@ const buildConfig = (env = {}, argv = {}) => {
         filename: 'popup.html',
       }),
       new DefinePlugin(web3authEnvDefinitions),
-      new NodePolyfillPlugin(),
+      new NodePolyfillPlugin({ excludeAliases: ['vm'] }),
       new ProvidePlugin({
         process: 'process/browser.js',
       }),

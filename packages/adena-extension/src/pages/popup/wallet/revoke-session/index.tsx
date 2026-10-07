@@ -23,6 +23,7 @@ import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.consta
 import { RoutePath } from '@types';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 const Container = styled.div`
   ${mixins.flex({ direction: 'column', align: 'stretch', justify: 'flex-start' })};
@@ -86,6 +87,9 @@ const RevokeSessionPage = (): ReactElement => {
 
   const useNetworkFeeReturn = useNetworkFee(document);
   const networkFee = useNetworkFeeReturn.networkFee;
+
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenQuote = useFeeTokenPrice(networkFee?.denom ?? '');
 
   useEffect(() => {
     let cancelled = false;
@@ -230,7 +234,12 @@ const RevokeSessionPage = (): ReactElement => {
         <BottomFixedButtonGroup
           filled
           leftButton={{ text: 'Cancel', onClick: goBack }}
-          rightButton={{ text: 'Revoke', danger: true, disabled: true, onClick: (): void => undefined }}
+          rightButton={{
+            text: 'Revoke',
+            danger: true,
+            disabled: true,
+            onClick: (): void => undefined,
+          }}
         />
       </Container>
     );
@@ -243,7 +252,12 @@ const RevokeSessionPage = (): ReactElement => {
         <BottomFixedButtonGroup
           filled
           leftButton={{ text: 'Cancel', onClick: goBack }}
-          rightButton={{ text: 'Revoke', danger: true, disabled: true, onClick: (): void => undefined }}
+          rightButton={{
+            text: 'Revoke',
+            danger: true,
+            disabled: true,
+            onClick: (): void => undefined,
+          }}
         />
       </Container>
     );
@@ -252,11 +266,18 @@ const RevokeSessionPage = (): ReactElement => {
   if (error || !entry) {
     return (
       <Container>
-        <Status>{error ? `Failed to load session: ${error}` : 'Session not found on chain.'}</Status>
+        <Status>
+          {error ? `Failed to load session: ${error}` : 'Session not found on chain.'}
+        </Status>
         <BottomFixedButtonGroup
           filled
           leftButton={{ text: 'Cancel', onClick: goBack }}
-          rightButton={{ text: 'Revoke', danger: true, disabled: true, onClick: (): void => undefined }}
+          rightButton={{
+            text: 'Revoke',
+            danger: true,
+            disabled: true,
+            onClick: (): void => undefined,
+          }}
         />
       </Container>
     );
@@ -267,6 +288,7 @@ const RevokeSessionPage = (): ReactElement => {
       <NetworkFeeSettingWrapper>
         <NetworkFeeSetting
           {...useNetworkFeeReturn}
+          feeTokenQuote={feeTokenQuote}
           onClickBack={(): void => setOpenedFeeSetting(false)}
           onClickSave={(): void => {
             useNetworkFeeReturn.save();
@@ -302,6 +324,7 @@ const RevokeSessionPage = (): ReactElement => {
       <NetworkFee
         value={networkFee?.amount ?? ''}
         denom={networkFee?.denom ?? ''}
+        feeTokenQuote={feeTokenQuote}
         isLoading={useNetworkFeeReturn.isLoading}
         isError={useNetworkFeeReturn.isSimulateError}
         onClickSetting={(): void => setOpenedFeeSetting(true)}

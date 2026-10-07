@@ -44,6 +44,7 @@ export interface TransferInputProps {
     amount: string;
     denom: string;
     description: string;
+    usdValue?: string | null;
     onChangeAmount: (value: string) => void;
     onClickMax: () => void;
   };

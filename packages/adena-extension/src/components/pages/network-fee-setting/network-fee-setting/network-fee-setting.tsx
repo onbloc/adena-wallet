@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import { SubHeader } from '@components/atoms';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import { GasInfo, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 
 import { DEFAULT_GAS_ADJUSTMENT } from '@common/constants/gas.constant';
@@ -25,6 +26,8 @@ export interface NetworkFeeSettingProps {
   // the default GNOT/6).
   feeSymbol?: string;
   feeDecimals?: number;
+  /** Quote for the fee token, from `useFeeTokenPrice`. */
+  feeTokenQuote?: FeeTokenQuote | null;
 }
 
 const settingTypesOfList: NetworkFeeSettingType[] = [
@@ -45,6 +48,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   onClickSave,
   feeSymbol,
   feeDecimals,
+  feeTokenQuote,
 }) => {
   const settingInfoMap = useMemo(() => {
     if (!networkFeeSettings) {
@@ -125,6 +129,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
               info={settingInfo}
               feeSymbol={feeSymbol}
               feeDecimals={feeDecimals}
+              feeTokenQuote={feeTokenQuote}
               select={(): void =>
                 setNetworkFeeSetting({
                   settingType: settingInfo.settingType,

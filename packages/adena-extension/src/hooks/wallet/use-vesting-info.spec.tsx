@@ -98,6 +98,80 @@ describe('useVestingInfo', () => {
     );
   });
 
+  // The transfer screen caps a send by what the funding address may move,
+  // which is the master address for a session account.
+  it('reads the explicitly requested account instead of the one on screen', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo(accountInfo(ACCOUNT_B, true));
+
+    const { result } = renderHook(() => useVestingInfo(ACCOUNT_B));
+
+    expect(mockedUseGetAccountInfo).toHaveBeenCalledWith(ACCOUNT_B, expect.anything());
+    expect(result.current.vestingInfo?.coins).toBe('110294549738ugnot');
+  });
+
+  it('queries nothing when the requested account is null', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo(null);
+
+    const { result } = renderHook(() => useVestingInfo(null));
+
+    expect(mockedUseGetAccountInfo).toHaveBeenCalledWith(null, expect.anything());
+    expect(result.current.vestingInfo).toBeNull();
+  });
+
+  // A failed RPC answers with an IN_ACTIVE placeholder that carries no
+  // `vesting`, which is indistinguishable from an account that has no grant.
+  it('reports an unreadable account as unresolved rather than ungranted', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo({ ...accountInfo(ACCOUNT_A, false), status: 'IN_ACTIVE', coins: '' });
+
+    const { result } = renderHook(() => useVestingInfo());
+
+    expect(result.current.vestingInfo).toBeNull();
+    expect(result.current.isResolved).toBe(false);
+  });
+
+  it('reports a read account as resolved', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo(accountInfo(ACCOUNT_A, false));
+
+    const { result } = renderHook(() => useVestingInfo());
+
+    expect(result.current.isResolved).toBe(true);
+  });
+
+  // A caller that holds a transfer back on "cap unknown" needs the query to
+  // keep asking, or one failed read strands the screen until it remounts.
+  describe('refetch policy', () => {
+    const refetchIntervalFor = (data: AccountInfo | null): number | false => {
+      setCurrentAddress(ACCOUNT_A);
+      setAccountInfo(data);
+      renderHook(() => useVestingInfo());
+
+      const options = mockedUseGetAccountInfo.mock.calls[0][1];
+      const refetchInterval = options?.refetchInterval as (
+        data: AccountInfo | null,
+      ) => number | false;
+
+      return refetchInterval(data);
+    };
+
+    it('polls a grant, whose split moves every block', () => {
+      expect(refetchIntervalFor(accountInfo(ACCOUNT_A, true))).toBe(5_000);
+    });
+
+    it('polls an account that could not be read', () => {
+      expect(
+        refetchIntervalFor({ ...accountInfo(ACCOUNT_A, false), status: 'IN_ACTIVE', coins: '' }),
+      ).toBe(5_000);
+    });
+
+    it('goes quiet for a read account with no grant', () => {
+      expect(refetchIntervalFor(accountInfo(ACCOUNT_A, false))).toBe(false);
+    });
+  });
+
   it('returns null before any account is selected', () => {
     setCurrentAddress(null);
     setAccountInfo(null);

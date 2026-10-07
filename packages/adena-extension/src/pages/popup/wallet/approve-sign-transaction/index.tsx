@@ -1,5 +1,10 @@
-import { Account, Document, isAirgapAccount, isLedgerAccount, isSessionAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
+import {
+  Account,
+  Document,
+  isAirgapAccount,
+  isLedgerAccount,
+  isSessionAccount,
+} from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -10,7 +15,6 @@ import {
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
-import { parseTokenAmount } from '@common/utils/amount-utils';
 import { getDappVisibleAddress } from '@common/utils/account-address';
 import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
 import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
@@ -28,6 +32,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
+import { useFeeSufficiency } from '@hooks/wallet/use-fee-sufficiency';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
@@ -39,6 +44,7 @@ import {
   SessionSigningGuardDecision,
 } from '@services/transaction/session-signing-guard';
 import { RoutePath } from '@types';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 interface TransactionData {
   messages: readonly any[];
@@ -147,37 +153,14 @@ const ApproveSignTransactionContainer: React.FC = () => {
     };
   }, [networkFee]);
 
-  const consumedTokenAmount = useMemo(() => {
-    const accumulatedAmount = document?.msgs.reduce((acc, msg) => {
-      const messageValue = msg.value;
-      const amountStr = messageValue?.amount || messageValue?.amount || messageValue?.max_deposit;
-      if (!amountStr) {
-        return acc;
-      }
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
 
-      try {
-        const amount = parseTokenAmount(amountStr);
-        return BigNumber(acc).plus(amount).toNumber();
-      } catch {
-        return acc;
-      }
-    }, 0);
-
-    const consumedBN = BigNumber(accumulatedAmount || 0).shiftedBy(GasToken.decimals * -1);
-    return consumedBN.toNumber();
-  }, [document]);
-
-  const isErrorNetworkFee = useMemo(() => {
-    if (!networkFee) {
-      return false;
-    }
-
-    const resultConsumedAmount = BigNumber(consumedTokenAmount).plus(networkFee.amount);
-
-    return BigNumber(currentBalance || 0)
-      .shiftedBy(GasToken.decimals * -1)
-      .isLessThan(resultConsumedAmount);
-  }, [networkFee?.amount, currentBalance, consumedTokenAmount]);
+  const { isErrorNetworkFee, isErrorStorageDeposit } = useFeeSufficiency(
+    document,
+    currentBalance,
+    useNetworkFeeReturn,
+  );
 
   const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
     return requestData?.data?.arguments || [];
@@ -233,10 +216,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
     requestData: InjectionMessage,
   ): Promise<boolean> => {
     const visibleAddress = await getDappVisibleAddress(currentAccount, chain.bech32Prefix);
-    const validationMessage = validateInjectionDataWithAddress(
-      requestData,
-      visibleAddress,
-    );
+    const validationMessage = validateInjectionDataWithAddress(requestData, visibleAddress);
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
       return false;
@@ -618,7 +598,9 @@ const ApproveSignTransactionContainer: React.FC = () => {
       logo={favicon}
       currentBalance={currentBalance || 0}
       isErrorNetworkFee={isErrorNetworkFee || !networkFee}
+      isErrorStorageDeposit={isErrorStorageDeposit}
       networkFee={displayNetworkFee}
+      feeTokenQuote={feeTokenQuote}
       useNetworkFeeReturn={useNetworkFeeReturn}
       transactionMessages={transactionMessages}
       argumentInfos={argumentInfos}
