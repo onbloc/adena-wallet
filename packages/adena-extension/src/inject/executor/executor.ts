@@ -174,11 +174,14 @@ export class AdenaExecutor {
       );
     }
 
+    // Only the validated fields travel onward. Spreading `params` would carry
+    // any extra field a dApp attached into the popup URL, which is the budget
+    // MAX_ARBITRARY_MESSAGE_BYTES exists to protect.
     return this.sendEventMessage(
-      AdenaExecutor.createSignArbitraryEventMessage(
-        SignArbitraryExecuteType.SIGN_ARBITRARY,
-        { ...params },
-      ),
+      AdenaExecutor.createSignArbitraryEventMessage(SignArbitraryExecuteType.SIGN_ARBITRARY, {
+        signer: params.signer,
+        data: params.data,
+      }),
     );
   };
 

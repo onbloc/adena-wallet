@@ -33,9 +33,12 @@ import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
 
-// Same stand-in as the Cosmos pages use: the SDK's `WalletMessageInfo` has no
-// SIGN_ARBITRARY row yet, so `InjectionMessageInstance.success/failure` would
-// throw on destructure. Consolidate once the SDK catches up.
+// Only the success response needs this: the SDK's `WalletMessageInfo` has no
+// SIGN_ARBITRARY row, so `InjectionMessageInstance.success` would throw on
+// destructure. Failures use the SDK builder, because every failure type here
+// does have a row, and answering the same condition with two different shapes
+// depending on whether the wallet was locked would be worse than the
+// duplication. Consolidate once the SDK catches up.
 function createSignArbitraryResponse(
   status: 'success' | 'failure',
   key: string | undefined,
@@ -67,7 +70,6 @@ const ApproveSignArbitraryContainer: React.FC = () => {
   const [signer, setSigner] = useState<string>('');
   const [message, setMessage] = useState<string>('');
   const [processing, setProcessing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     walletService
@@ -105,12 +107,7 @@ const ApproveSignArbitraryContainer: React.FC = () => {
     if (!currentAccount || !key) return;
     if (isMultisigAccount(currentAccount)) {
       chrome.runtime.sendMessage(
-        createSignArbitraryResponse(
-          'failure',
-          key,
-          undefined,
-          WalletResponseFailureType.UNSUPPORTED_TYPE,
-        ),
+        InjectionMessageInstance.failure(WalletResponseFailureType.UNSUPPORTED_TYPE, {}, key),
       );
       window.close();
     }
@@ -127,12 +124,7 @@ const ApproveSignArbitraryContainer: React.FC = () => {
     currentAccount.getAddress(chain.bech32Prefix).then((address) => {
       if (cancelled || address === signer) return;
       chrome.runtime.sendMessage(
-        createSignArbitraryResponse(
-          'failure',
-          key,
-          undefined,
-          WalletResponseFailureType.ACCOUNT_MISMATCH,
-        ),
+        InjectionMessageInstance.failure(WalletResponseFailureType.ACCOUNT_MISMATCH, {}, key),
       );
       window.close();
     });
@@ -179,11 +171,10 @@ const ApproveSignArbitraryContainer: React.FC = () => {
   const onClickApprove = useCallback(async () => {
     if (!currentAccount || !currentNetwork || !signer || !message) {
       chrome.runtime.sendMessage(
-        createSignArbitraryResponse(
-          'failure',
-          key,
-          { error: 'Sign state not ready' },
+        InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
+          { error: 'Sign state not ready' },
+          key,
         ),
       );
       window.close();
@@ -214,14 +205,12 @@ const ApproveSignArbitraryContainer: React.FC = () => {
       window.close();
     } catch (error) {
       const detail = (error as Error)?.message ?? String(error);
-      setErrorMessage(detail);
       setProcessing(false);
       chrome.runtime.sendMessage(
-        createSignArbitraryResponse(
-          'failure',
-          key,
-          { error: detail },
+        InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
+          { error: detail },
+          key,
         ),
       );
     }
@@ -264,13 +253,6 @@ const ApproveSignArbitraryContainer: React.FC = () => {
       <span className='notice'>
         Signing proves you control this address. It is not a transaction and moves no funds.
       </span>
-
-      {errorMessage && (
-        <div className='error-banner'>
-          <span className='error-label'>ERROR:&nbsp;</span>
-          <span className='error-text'>{errorMessage}</span>
-        </div>
-      )}
 
       <BottomFixedLoadingButtonGroup
         filled
@@ -406,25 +388,5 @@ const Wrapper = styled.div`
     padding: 0 4px;
     ${fonts.body2Reg};
     color: ${getTheme('neutral', 'a')};
-  }
-
-  .error-banner {
-    width: 100%;
-    min-height: 40px;
-    padding: 10px 16px;
-    border-radius: 18px;
-    background-color: rgba(239, 45, 33, 0.08);
-    border: 1px solid ${getTheme('red', '_5')};
-    margin-top: 8px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 13px;
-    line-height: 20px;
-    color: ${getTheme('red', '_5')};
-    word-break: break-word;
-
-    .error-label {
-      font-weight: 700;
-    }
   }
 `;

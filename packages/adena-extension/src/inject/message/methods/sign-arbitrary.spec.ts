@@ -119,9 +119,11 @@ describe('signArbitrary', () => {
     });
   });
 
-  // A locked wallet cannot resolve an account here, so the check defers to the
-  // approval page, which repeats it once the user has unlocked.
-  it('defers the signer check to the approval window when the wallet is locked', async () => {
+  // A locked wallet cannot resolve an account here, so this opens the window
+  // and answers nothing. The approval page repeats the check after unlock,
+  // which it is only reached to do because `approve-login` routes
+  // SIGN_ARBITRARY back to it.
+  it('opens the approval window and answers nothing when no account can be resolved', async () => {
     const sendResponse = jest.fn();
     await signArbitrary(makeCore(), makeRequest({ signer: SIGNER, data: 'hello' }), sendResponse);
 

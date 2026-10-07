@@ -14,9 +14,10 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { SignArbitraryExecuteType } from '@inject/types';
 import { RoutePath } from '@types';
 
-// Duplicated from approve-sign-arbitrary/index.tsx for the same reason the
-// Cosmos pages duplicate theirs: the SDK's `WalletMessageInfo` still throws on
-// this response type. Consolidate once the SDK catches up.
+// Only the success response needs this, for the same reason as
+// approve-sign-arbitrary/index.tsx: the SDK's `WalletMessageInfo` has no
+// SIGN_ARBITRARY row. Failures use the SDK builder so one condition always
+// answers with one shape. Consolidate once the SDK catches up.
 function createSignArbitraryResponse(
   status: 'success' | 'failure',
   key: string | undefined,
@@ -107,11 +108,10 @@ const ApproveSignArbitraryLedgerLoadingContainer: React.FC = () => {
       // the request rather than re-prompting it every second.
       if (error instanceof LedgerError && error.kind === 'AccountMismatch') {
         chrome.runtime.sendMessage(
-          createSignArbitraryResponse(
-            'failure',
-            responseKey,
-            { error: message },
+          InjectionMessageInstance.failure(
             WalletResponseFailureType.ACCOUNT_MISMATCH,
+            { error: message },
+            responseKey,
           ),
         );
         window.close();
