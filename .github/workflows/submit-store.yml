@@ -132,7 +132,11 @@ jobs:
             -d client_id="$CLIENT_ID" \
             -d client_secret="$CLIENT_SECRET" \
             -d refresh_token="$REFRESH_TOKEN" \
-            -d grant_type=refresh_token | jq -r .access_token)
+            -d grant_type=refresh_token | jq -r '.access_token // empty')
+          if [ -z "$token" ]; then
+            echo "::error::no access token in the OAuth response"
+            exit 1
+          fi
           echo "::add-mask::$token"
           echo "CWS_TOKEN=$token" >> "$GITHUB_ENV"
 
@@ -160,12 +164,16 @@ jobs:
         env:
           PUBLISH_TYPE: ${{ inputs.chrome_publish_type }}
         run: |
-          res=$(curl -sS -X POST -H "Authorization: Bearer $CWS_TOKEN" \
+          # A non-JSON body fails the jq check as well, so only a clean
+          # response passes.
+          status=0
+          res=$(curl -sS --fail-with-body -X POST -H "Authorization: Bearer $CWS_TOKEN" \
             -H 'Content-Type: application/json' \
             -d "{\"publishType\":\"$PUBLISH_TYPE\"}" \
-            "https://chromewebstore.googleapis.com/v2/publishers/${PUBLISHER_ID}/items/${EXTENSION_ID}:publish")
+            "https://chromewebstore.googleapis.com/v2/publishers/${PUBLISHER_ID}/items/${EXTENSION_ID}:publish") || status=$?
           echo "$res"
-          if echo "$res" | jq -e .error >/dev/null; then
+          if [ "$status" -ne 0 ] || ! echo "$res" | jq -e '.error == null' >/dev/null; then
+            echo "::error::publish request failed"
             exit 1
           fi
 
