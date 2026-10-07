@@ -32,7 +32,12 @@ const TransferSummaryBalance: React.FC<TransferSummaryBalanceProps> = ({
       <span className='chain-name'>{tokenName}</span>
       <div className='balance-wrapper'>
         {/* Same layout as the network fee row: `1.5 GNOT ($0.42)`. */}
-        <FeeAmount value={value} denom={denom} quote={tokenQuote} />
+        <FeeAmount
+          className='transfer-amount'
+          value={value}
+          denom={denom}
+          quote={tokenQuote}
+        />
       </div>
     </TransferSummaryBalanceWrapper>
   );

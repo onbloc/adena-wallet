@@ -63,7 +63,9 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
 
       {usdValue ? (
         <div className='description-wrapper'>
-          <span className='usd-value'>{usdValue}</span>
+          <span className='usd-value' title={usdValue}>
+            {usdValue}
+          </span>
           <span className='description'>{description}</span>
         </div>
       ) : (
