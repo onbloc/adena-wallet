@@ -49,6 +49,33 @@ export const BalanceInputWrapper = styled.div`
     color: ${getTheme('neutral', 'a')};
   }
 
+  .description-wrapper {
+    ${mixins.flex({ direction: 'row', justify: 'space-between', align: 'flex-start' })};
+    width: 100%;
+    padding: 0 16px;
+    column-gap: 8px;
+
+    /* The description keeps its natural width so Spendable and validation
+       errors stay readable; the USD value takes what is left and truncates. */
+    .usd-value {
+      flex: 1 1 0;
+      min-width: 0;
+      ${fonts.captionReg};
+      color: ${getTheme('neutral', 'a')};
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .description {
+      flex: 0 1 auto;
+      min-width: 0;
+      padding: 0;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+  }
+
   &.error {
     .input-wrapper {
       border-color: ${getTheme('red', '_5')};

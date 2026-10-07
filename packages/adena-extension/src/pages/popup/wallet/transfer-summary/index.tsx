@@ -54,6 +54,7 @@ import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
 import { Grc20RouteFunc, RoutePath } from '@types';
 import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
+import { useTransferTokenPrice } from '@hooks/wallet/use-transfer-token-price';
 
 const TransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -174,6 +175,7 @@ const TransferSummaryContainer: React.FC = () => {
     cosmosFee.feeToken,
   );
   const feeTokenQuote = isCosmosToken ? cosmosFeeTokenQuote : gnoFeeTokenQuote;
+  const transferTokenQuote = useTransferTokenPrice(summaryInfo.tokenMetainfo);
 
   // Transfer-token denom (e.g. "uatone" or "uphoton") and the chain's fee
   // denom (always "uphoton" for atomone-1 outside the MintPhoton flow). When
@@ -894,6 +896,7 @@ const TransferSummaryContainer: React.FC = () => {
           isSessionSigning={!!currentAccount && isSessionAccount(currentAccount)}
           networkFee={isCosmosToken ? cosmosFee.networkFee : networkFee}
           feeTokenQuote={feeTokenQuote}
+          transferTokenQuote={transferTokenQuote}
           memo={summaryInfo.memo}
           currentBalance={currentBalance}
           useNetworkFeeReturn={useNetworkFeeReturn}
