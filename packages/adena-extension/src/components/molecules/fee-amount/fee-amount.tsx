@@ -20,6 +20,8 @@ export interface FeeAmountProps {
   /** Mirrors the amount's sign, for a storage deposit being released. */
   withSign?: boolean;
   fontColor?: string;
+  /** Lets a tighter row adjust the layout, e.g. wrap the USD value. */
+  className?: string;
 }
 
 // Matches the skeletons the fee rows already show while an estimate loads.
@@ -83,6 +85,7 @@ const FeeAmount: React.FC<FeeAmountProps> = ({
   quote,
   withSign = false,
   fontColor = 'white',
+  className,
 }) => {
   const usdValue = useMemo(() => toFeeUSDValue(value, quote?.price), [value, quote?.price]);
 
@@ -91,7 +94,7 @@ const FeeAmount: React.FC<FeeAmountProps> = ({
   }
 
   return (
-    <FeeAmountWrapper>
+    <FeeAmountWrapper className={className}>
       <TokenBalance
         value={value}
         denom={denom}
@@ -102,7 +105,7 @@ const FeeAmount: React.FC<FeeAmountProps> = ({
         withSign={withSign}
       />
       {usdValue !== null && (
-        <FeeAmountUSDText>{`(${formatFeeUSD(usdValue, withSign)})`}</FeeAmountUSDText>
+        <FeeAmountUSDText className='fee-amount-usd'>{`(${formatFeeUSD(usdValue, withSign)})`}</FeeAmountUSDText>
       )}
     </FeeAmountWrapper>
   );

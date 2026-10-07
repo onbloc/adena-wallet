@@ -35,15 +35,36 @@ export const TransferSummaryBalanceWrapper = styled.div`
     background-color: ${getTheme('neutral', '_9')};
   }
 
+  /* A large amount and its USD value can outgrow the 360px popup, so the name
+     truncates, and the USD value wraps under the amount before truncating. */
   .chain-name {
-    flex-shrink: 0;
+    flex: 0 1 auto;
+    min-width: 40px;
     color: ${getTheme('neutral', '_1')};
     ${fonts.body2Bold};
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .balance-wrapper {
     margin-left: auto;
+    min-width: 0;
     display: flex;
     align-items: center;
+    justify-content: flex-end;
+  }
+
+  .transfer-amount {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+    max-width: 100%;
+
+    .fee-amount-usd {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
 `;

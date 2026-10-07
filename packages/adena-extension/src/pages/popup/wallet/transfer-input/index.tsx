@@ -21,11 +21,13 @@ import { useCosmosNetworkFee } from '@hooks/wallet/use-cosmos-network-fee';
 import { RoutePath } from '@types';
 
 import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
+import { formatUSD, makeTokenValue } from '@common/utils/price-utils';
 import { calculateByteSize } from '@common/utils/string-utils';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useNetwork } from '@hooks/use-network';
 import useSessionParams from '@hooks/use-session-state';
 import { useTransferInfo } from '@hooks/use-transfer-info';
+import { useTransferTokenPrice } from '@hooks/wallet/use-transfer-token-price';
 import { TokenModel } from '@types';
 
 // TODO(ADN-760 follow-up): replace with the finalized bridging guide URL.
@@ -147,6 +149,14 @@ const TransferInputContainer: React.FC = () => {
     // actually be charged (account-creation gas for a new recipient included).
     addressBookInput.resultAddress || undefined,
   );
+  // An unquoted token keeps the description as it was; a quoted one adds the
+  // entered amount in USD, "$0.00" while the field is empty.
+  const transferTokenQuote = useTransferTokenPrice(tokenMetainfo);
+  const amountUSDValue = useMemo(() => {
+    const tokenValue = makeTokenValue(balanceInput.amount || '0', transferTokenQuote.price);
+    return tokenValue ? formatUSD(tokenValue.usdValue) : null;
+  }, [balanceInput.amount, transferTokenQuote.price]);
+
   const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
   const { currentNetwork } = useNetwork();
   const { openLink } = useLink();
@@ -316,7 +326,7 @@ const TransferInputContainer: React.FC = () => {
       hasBackButton={isTokenSearch}
       tokenMetainfo={tokenMetainfo}
       addressInput={addressBookInput}
-      balanceInput={balanceInput}
+      balanceInput={{ ...balanceInput, usdValue: amountUSDValue }}
       memoInput={{ memo, onChangeMemo, memoError }}
       transferMode={transferMode}
       onChangeMode={onChangeMode}
