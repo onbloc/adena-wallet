@@ -149,6 +149,11 @@ export interface GRC721Model {
   isTokenUri: boolean;
   isMetadata: boolean;
   metadata: GRC721MetadataModel | null;
+  /**
+   * False when the account only operates the token rather than owns it, e.g. a
+   * GNFT staked in GnoSwap. Absent means owned.
+   */
+  isOwned?: boolean;
 }
 
 export interface GRC721MetadataModel {

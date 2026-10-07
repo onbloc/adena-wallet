@@ -1095,6 +1095,7 @@ export class TokenRepository implements ITokenRepository {
         isTokenUri: false,
         isMetadata: false,
         metadata: null,
+        isOwned: item.isOwned !== false,
       }));
   }
 

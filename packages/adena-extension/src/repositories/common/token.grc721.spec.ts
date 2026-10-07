@@ -676,7 +676,7 @@ describe('GRC721 API', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
-  it('pages through the items', async () => {
+  it('pages through the items and keeps whether the account owns each one', async () => {
     const { repository, get, post } = makeRepository(
       [[]],
       {},
@@ -694,7 +694,10 @@ describe('GRC721 API', () => {
 
     const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS, COLLECTION_ID);
 
-    expect(tokens.map((token) => token.tokenId)).toEqual(['351', '350']);
+    expect(tokens.map((token) => [token.tokenId, token.isOwned])).toEqual([
+      ['351', false],
+      ['350', true],
+    ]);
     expect(get).toHaveBeenCalledTimes(2);
     expect(post).not.toHaveBeenCalled();
   });
