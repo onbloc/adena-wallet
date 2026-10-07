@@ -55,6 +55,8 @@ const NFTCollectionAssetCard: React.FC<NFTCollectionAssetCardProps> = ({
         <div className='name-wrapper'>{tokenName}</div>
         <div className='id-wrapper'>{tokenId}</div>
       </div>
+
+      {grc721Token.isOwned === false && <div className='staked-label'>Staked</div>}
     </NFTCollectionAssetCardWrapper>
   );
 };
