@@ -27,11 +27,6 @@ import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-met
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { validateMessageArguments } from '@common/utils/argument-validation';
 import {
-  checkFeeSufficiency,
-  getFeeShortfallFromSimulateError,
-  sumSpentGnotAmount,
-} from '@common/utils/fee-sufficiency';
-import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
@@ -51,6 +46,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useGnoSessionUpdates } from '@hooks/use-gno-session-updates';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
+import { useFeeSufficiency } from '@hooks/wallet/use-fee-sufficiency';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
@@ -311,41 +307,11 @@ const ApproveTransactionContainer: React.FC = () => {
     return accumulatedAmount;
   }, [document]);
 
-  const feeSufficiency = useMemo(() => {
-    if (!networkFee) {
-      return { isInsufficientNetworkFee: false, isInsufficientStorageDeposit: false };
-    }
-
-    return checkFeeSufficiency({
-      balance: currentBalance,
-      spentAmount: sumSpentGnotAmount(document?.msgs, GasToken.denom),
-      networkFee: useNetworkFeeReturn.currentGasFeeRawAmount,
-      storageDeposit: useNetworkFeeReturn.currentStorageDeposits?.storageDeposit || 0,
-      unlockDeposit: useNetworkFeeReturn.currentStorageDeposits?.unlockDeposit || 0,
-    });
-  }, [
-    networkFee,
-    currentBalance,
+  const { isErrorNetworkFee, isErrorStorageDeposit, simulateFeeShortfall } = useFeeSufficiency(
     document,
-    useNetworkFeeReturn.currentGasFeeRawAmount,
-    useNetworkFeeReturn.currentStorageDeposits,
-  ]);
-  const simulateFeeShortfall = useMemo(() => {
-    if (!useNetworkFeeReturn.isSimulateError) {
-      return null;
-    }
-
-    return getFeeShortfallFromSimulateError(
-      useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
-    );
-  }, [
-    useNetworkFeeReturn.isSimulateError,
-    useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
-  ]);
-  const isErrorNetworkFee =
-    feeSufficiency.isInsufficientNetworkFee || simulateFeeShortfall === 'networkFee';
-  const isErrorStorageDeposit =
-    feeSufficiency.isInsufficientStorageDeposit || simulateFeeShortfall === 'storageDeposit';
+    currentBalance,
+    useNetworkFeeReturn,
+  );
 
   // Extract funcName and pkgPath from the first message for session tracking
   const { funcName, pkgPath } = useMemo(() => {

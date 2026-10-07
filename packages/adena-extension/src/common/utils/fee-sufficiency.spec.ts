@@ -57,16 +57,29 @@ describe('checkFeeSufficiency', () => {
     expect(result).toEqual({ isInsufficientNetworkFee: false, isInsufficientStorageDeposit: true });
   });
 
-  it('flags the network fee when the balance cannot cover send and fee', () => {
+  it('flags only the network fee when there is no storage deposit', () => {
     const result = checkFeeSufficiency({
       balance: 1000000,
       spentAmount: 1000000,
       networkFee: 120000,
-      storageDeposit: 2200000,
+      storageDeposit: 0,
       unlockDeposit: 0,
     });
 
     expect(result).toEqual({ isInsufficientNetworkFee: true, isInsufficientStorageDeposit: false });
+  });
+
+  it('flags both rows when neither the network fee nor the storage deposit fits', () => {
+    // 0.5 GNOT balance, 1 GNOT fee, 2 GNOT storage
+    const result = checkFeeSufficiency({
+      balance: 500000,
+      spentAmount: 0,
+      networkFee: 1000000,
+      storageDeposit: 2000000,
+      unlockDeposit: 0,
+    });
+
+    expect(result).toEqual({ isInsufficientNetworkFee: true, isInsufficientStorageDeposit: true });
   });
 
   it('passes when the balance covers everything', () => {
@@ -115,8 +128,31 @@ describe('getFeeShortfallFromSimulateError', () => {
 
   it('reads a fee shortfall', () => {
     expect(
-      getFeeShortfallFromSimulateError('insufficient funds to pay for fees; 1ugnot < 120000ugnot'),
+      getFeeShortfallFromSimulateError(
+        'insufficient funds to pay for fees; 1ugnot < 120000ugnot: insufficient funds error',
+      ),
     ).toBe('networkFee');
+  });
+
+  it('leaves insufficient coins errors that are not about fees unclassified', () => {
+    expect(
+      getFeeShortfallFromSimulateError(
+        'insufficient account funds; 0foo < 100foo: insufficient coins error',
+      ),
+    ).toBeNull();
+    expect(
+      getFeeShortfallFromSimulateError(
+        'gno.land/r/demo/foo: transfer failed: insufficient coins error',
+      ),
+    ).toBeNull();
+  });
+
+  it('does not treat a gas price below the minimum as a balance shortfall', () => {
+    expect(
+      getFeeShortfallFromSimulateError(
+        'insufficient fees; got: {Gas-Wanted: 1, Gas-Fee 1ugnot}, required (one of): "1ugnot"',
+      ),
+    ).toBeNull();
   });
 
   it('ignores other simulate errors', () => {

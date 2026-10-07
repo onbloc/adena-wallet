@@ -58,8 +58,10 @@ export interface FeeSufficiency {
  * Checks whether the balance covers everything the transaction takes from it.
  *
  * The chain charges the network fee before running the messages, then moves the
- * sent coins, then locks the storage deposit. Whichever is the first not to fit
- * is reported, so exactly one of the two fields is flagged.
+ * sent coins, then locks the storage deposit. The network fee is short when the
+ * balance can't cover the sent coins plus the fee; the storage deposit is short
+ * when there is a deposit and the balance can't cover it on top of those. Both
+ * are flagged when neither fits.
  */
 export function checkFeeSufficiency({
   balance,
@@ -70,35 +72,47 @@ export function checkFeeSufficiency({
 }: FeeSufficiencyParams): FeeSufficiency {
   const balanceBN = BigNumber(balance);
   const requiredForFee = BigNumber(spentAmount).plus(networkFee);
-
-  if (balanceBN.isLessThan(requiredForFee)) {
-    return { isInsufficientNetworkFee: true, isInsufficientStorageDeposit: false };
-  }
-
   const netStorageDeposit = BigNumber.max(BigNumber(storageDeposit).minus(unlockDeposit), 0);
 
   return {
-    isInsufficientNetworkFee: false,
-    isInsufficientStorageDeposit: balanceBN.isLessThan(requiredForFee.plus(netStorageDeposit)),
+    isInsufficientNetworkFee: balanceBN.isLessThan(requiredForFee),
+    isInsufficientStorageDeposit:
+      netStorageDeposit.isGreaterThan(0) &&
+      balanceBN.isLessThan(requiredForFee.plus(netStorageDeposit)),
   };
 }
 
 export type FeeShortfall = 'networkFee' | 'storageDeposit';
 
-const INSUFFICIENT_BALANCE_PATTERN = /insufficient (coins|funds)/i;
-const STORAGE_DEPOSIT_PATTERN = /storage deposit|lockStorageDeposit/i;
+// tm2 auth ante handler, when the balance can't pay the fee.
+const NETWORK_FEE_SHORTFALL_PATTERN = /insufficient funds to pay for fees/i;
+// gno.land vm keeper, when the balance can't lock a realm's storage deposit.
+const STORAGE_DEPOSIT_SHORTFALL_PATTERN =
+  /(lockStorageDeposit failed|unable to transfer deposit).*insufficient (coins|funds)/i;
 
 /**
  * Reads which fee the balance couldn't cover from a failed simulate. Once the
  * simulate fails it returns no storage deposit or gas, so the amount check
  * above has nothing to compare and only the chain's message tells us.
+ *
+ * Only errors that name the fee or the storage deposit are classified; any
+ * other `insufficient coins` error (e.g. sending a token the account lacks)
+ * returns null so the raw simulate error is still shown.
  */
 export function getFeeShortfallFromSimulateError(
   simulateErrorMessage: string | null | undefined,
 ): FeeShortfall | null {
-  if (!simulateErrorMessage || !INSUFFICIENT_BALANCE_PATTERN.test(simulateErrorMessage)) {
+  if (!simulateErrorMessage) {
     return null;
   }
 
-  return STORAGE_DEPOSIT_PATTERN.test(simulateErrorMessage) ? 'storageDeposit' : 'networkFee';
+  if (STORAGE_DEPOSIT_SHORTFALL_PATTERN.test(simulateErrorMessage)) {
+    return 'storageDeposit';
+  }
+
+  if (NETWORK_FEE_SHORTFALL_PATTERN.test(simulateErrorMessage)) {
+    return 'networkFee';
+  }
+
+  return null;
 }
