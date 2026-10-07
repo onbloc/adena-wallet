@@ -29,7 +29,7 @@ export const useGetGRC721Balance = (
 
       return tokenService.fetchGRC721Balance(packagePath, currentFundingAddress).catch(() => null);
     },
-    // One `BalanceOf` qeval per collection card, so an uncached mount replays the
+    // Every collection card asks for its count, so an uncached mount replays the
     // whole fan-out.
     staleTime: GRC721_BALANCE_STALE_TIME,
     ...options,

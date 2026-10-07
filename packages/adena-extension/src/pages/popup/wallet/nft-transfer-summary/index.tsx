@@ -23,6 +23,7 @@ import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transacti
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
 import { GRC721Model, RoutePath } from '@types';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 const NFTTransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -60,6 +61,9 @@ const NFTTransferSummaryContainer: React.FC = () => {
 
   const useNetworkFeeReturn = useNetworkFee(document);
   const networkFee = useNetworkFeeReturn.networkFee;
+
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenQuote = useFeeTokenPrice(networkFee?.denom ?? '');
 
   const hasNetworkFee = useMemo(() => {
     if (!currentBalance || currentBalance === 0) {
@@ -333,6 +337,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
         <div className='network-fee-setting-wrapper'>
           <NetworkFeeSetting
             {...useNetworkFeeReturn}
+            feeTokenQuote={feeTokenQuote}
             onClickBack={onClickNetworkFeeClose}
             onClickSave={onClickNetworkFeeSave}
           />
@@ -347,6 +352,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
           isBalanceUnknown={currentBalance === null || currentBalance === undefined}
           simulateErrorBannerMessage={simulateErrorMessage}
           networkFee={networkFee}
+          feeTokenQuote={feeTokenQuote}
           memo={summaryInfo.memo}
           queryGRC721TokenUri={useGetGRC721TokenUri}
           onClickBack={onClickBack}

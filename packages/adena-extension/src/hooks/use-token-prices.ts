@@ -36,6 +36,8 @@ export const useTokenPrices = (
 ): {
   tokenPrices: TokenPriceMap;
   isFetched: boolean;
+  /** The latest fetch failed; retries continue on the poll interval. */
+  isError: boolean;
 } => {
   const { tokenPriceService } = useAdenaContext();
   const sourceId = tokenPriceService.sourceId;
@@ -52,7 +54,7 @@ export const useTokenPrices = (
     [requests],
   );
 
-  const { data, isFetched } = useQuery<SourcedPrices>(
+  const { data, isFetched, isError } = useQuery<SourcedPrices>(
     ['token-prices', sourceId, requestKey],
     async () => ({
       sourceId,
@@ -70,5 +72,6 @@ export const useTokenPrices = (
   return {
     tokenPrices: isCurrentSource ? data.prices : EMPTY_PRICES,
     isFetched: isFetched && isCurrentSource,
+    isError,
   };
 };

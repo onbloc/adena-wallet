@@ -36,39 +36,57 @@
     "order": 4
   },
   {
-    "symbol": "GNOSTUDIO",
-    "name": "Gno Studio Connect",
-    "description": "Realm interaction made simple.",
-    "logo": "/resources/apps/images/gnostudio.svg",
-    "link": "https://gno.studio/connect",
-    "display": true,
-    "order": 5
-  },
-  {
     "symbol": "GNOSCAN",
     "name": "GnoScan",
     "description": "Making Gno on-chain data intuitive.",
     "logo": "/resources/apps/images/gnoscan.svg",
     "link": "https://gnoscan.io",
     "display": true,
+    "order": 5
+  },
+  {
+    "symbol": "KOURT",
+    "name": "Kourt",
+    "description": "An on-chain court of record for factual claims.",
+    "logo": "/resources/apps/images/kourt.svg",
+    "link": "https://kourt.xyz",
+    "display": true,
     "order": 6
   },
   {
-    "symbol": "AKKADIA",
-    "name": "Akkadia",
-    "description": "A living voxel world anchored on Gno.land.",
-    "logo": "/resources/apps/images/akkadia.svg",
-    "link": "https://akkadia.land/",
+    "symbol": "BUBBLERUMBLE",
+    "name": "BubbleRumble",
+    "description": "BubbleRumble is a game and a place to talk.",
+    "logo": "/resources/apps/images/bubblerumble.svg",
+    "link": "https://bubblerumble.net/",
     "display": true,
     "order": 7
   },
   {
-    "symbol": "MEMBA",
-    "name": "Memba",
-    "description": "Hub for DAOs and multisig wallets.",
-    "logo": "/resources/apps/images/memba.svg",
-    "link": "https://memba.samourai.app/",
+    "symbol": "AKKADIA",
+    "name": "Akkadia",
+    "description": "Fully on-chain Minecraft on Gno.land.",
+    "logo": "/resources/apps/images/akkadia.jpg",
+    "link": "https://landing.akkadia.land",
     "display": true,
     "order": 8
+  },
+  {
+    "symbol": "GNOMI",
+    "name": "Gnomi",
+    "description": "Meme token launchpad on Gno.land.",
+    "logo": "/resources/apps/images/gnomi.svg",
+    "link": "https://gnomi.fun",
+    "display": true,
+    "order": 9
+  },
+  {
+    "symbol": "BAZAAR",
+    "name": "Bazaar",
+    "description": "NFT marketplace on Gno.land.",
+    "logo": "/resources/apps/images/bazaar.svg",
+    "link": "https://bazaar.gnomi.fun",
+    "display": true,
+    "order": 10
   }
 ]

@@ -1,9 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  BroadcastTxCommitResult,
-  BroadcastTxSyncResult,
-  TM2Error,
-} from '@gnolang/tm2-js-client';
+import { BroadcastTxCommitResult, BroadcastTxSyncResult, TM2Error } from '@gnolang/tm2-js-client';
 import {
   Account,
   Document,
@@ -50,6 +46,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useGnoSessionUpdates } from '@hooks/use-gno-session-updates';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
+import { useFeeSufficiency } from '@hooks/wallet/use-fee-sufficiency';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
@@ -57,6 +54,7 @@ import { ContractMessage } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
 import ApproveTransactionLoading from './loading';
 import ApproveTransactionResult from './result';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 interface TransactionData {
   messages: readonly any[];
@@ -67,7 +65,11 @@ interface TransactionData {
   document: Document;
 }
 
-function makeDefaultNetworkInfo(chainId: string, rpcUrl: string, addressPrefix: string): NetworkMetainfo {
+function makeDefaultNetworkInfo(
+  chainId: string,
+  rpcUrl: string,
+  addressPrefix: string,
+): NetworkMetainfo {
   return {
     addressPrefix,
     chainId,
@@ -207,11 +209,7 @@ const ApproveTransactionContainer: React.FC = () => {
       currentWalletNetwork?.chainId === networkInfo.chainId &&
       currentWalletNetwork?.rpcUrl === networkInfo.rpcUrl
     );
-  }, [
-    currentWalletNetwork?.chainId,
-    currentWalletNetwork?.rpcUrl,
-    requestData?.data?.networkInfo,
-  ]);
+  }, [currentWalletNetwork?.chainId, currentWalletNetwork?.rpcUrl, requestData?.data?.networkInfo]);
 
   const isSessionAdminNetworkUnsupported = useMemo(() => {
     return (
@@ -287,6 +285,9 @@ const ApproveTransactionContainer: React.FC = () => {
     };
   }, [networkFee]);
 
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
+
   const maxDepositAmount = useMemo(() => {
     const accumulatedAmount = document?.msgs.reduce((acc, msg): number => {
       const messageValue = msg.value;
@@ -306,41 +307,11 @@ const ApproveTransactionContainer: React.FC = () => {
     return accumulatedAmount;
   }, [document]);
 
-  const consumedTokenAmount = useMemo(() => {
-    const accumulatedAmount = document?.msgs.reduce((acc, msg) => {
-      const messageValue = msg.value;
-      const amountStr = messageValue?.amount || messageValue?.amount || messageValue?.max_deposit;
-      if (!amountStr) {
-        return acc;
-      }
-
-      try {
-        const amount = parseTokenAmount(amountStr);
-        return BigNumber(acc).plus(amount).toNumber();
-      } catch {
-        return acc;
-      }
-    }, 0);
-
-    const consumedBN = BigNumber(accumulatedAmount || 0).shiftedBy(GasToken.decimals * -1);
-    return consumedBN.toNumber();
-  }, [document]);
-
-  const isErrorNetworkFee = useMemo(() => {
-    if (!networkFee) {
-      return false;
-    }
-
-    if (currentBalance === 0) {
-      return true;
-    }
-
-    const resultConsumedAmount = BigNumber(consumedTokenAmount).plus(networkFee.amount);
-
-    return BigNumber(currentBalance)
-      .shiftedBy(GasToken.decimals * -1)
-      .isLessThan(resultConsumedAmount);
-  }, [networkFee?.amount, currentBalance, consumedTokenAmount]);
+  const { isErrorNetworkFee, isErrorStorageDeposit, simulateFeeShortfall } = useFeeSufficiency(
+    document,
+    currentBalance,
+    useNetworkFeeReturn,
+  );
 
   // Extract funcName and pkgPath from the first message for session tracking
   const { funcName, pkgPath } = useMemo(() => {
@@ -525,7 +496,7 @@ const ApproveTransactionContainer: React.FC = () => {
     if (!isRequestedNetworkReady || approvalBlocked) {
       return false;
     }
-    if (isErrorNetworkFee) {
+    if (isErrorNetworkFee || isErrorStorageDeposit) {
       return false;
     }
     if (!document || !currentNetwork || !signingAccount || !wallet) {
@@ -648,9 +619,7 @@ const ApproveTransactionContainer: React.FC = () => {
         // it. Forward as a separate data field so existing dapp consumers
         // ignore it harmlessly.
         const chainLog =
-          response instanceof TM2Error
-            ? (response as TM2Error & { log?: string }).log
-            : undefined;
+          response instanceof TM2Error ? (response as TM2Error & { log?: string }).log : undefined;
         setResponse(
           InjectionMessageInstance.failure(
             WalletResponseFailureType.TRANSACTION_FAILED,
@@ -702,6 +671,7 @@ const ApproveTransactionContainer: React.FC = () => {
     if (
       !signingAccount ||
       isErrorNetworkFee ||
+      isErrorStorageDeposit ||
       requiresHoldConfirmation ||
       !isRequestedNetworkReady ||
       approvalBlocked
@@ -804,6 +774,10 @@ const ApproveTransactionContainer: React.FC = () => {
     if (!useNetworkFeeReturn.isSimulateError || useNetworkFeeReturn.isLoading) {
       return { globalErrorMessage: null, messageErrors: [] };
     }
+    // A balance shortfall is shown on the fee rows instead of the raw chain error.
+    if (simulateFeeShortfall) {
+      return { globalErrorMessage: null, messageErrors: [] };
+    }
     const rawMessage = useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || null;
     const parsed = parseSimulateErrors(rawMessage, transactionMessages);
 
@@ -816,6 +790,7 @@ const ApproveTransactionContainer: React.FC = () => {
     useNetworkFeeReturn.isSimulateError,
     useNetworkFeeReturn.isLoading,
     useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
+    simulateFeeShortfall,
     transactionMessages,
   ]);
 
@@ -947,7 +922,9 @@ const ApproveTransactionContainer: React.FC = () => {
       currentBalance={currentBalance}
       maxDepositAmount={maxDepositAmount}
       isErrorNetworkFee={isErrorNetworkFee || !networkFee}
+      isErrorStorageDeposit={isErrorStorageDeposit}
       networkFee={displayNetworkFee}
+      feeTokenQuote={feeTokenQuote}
       useNetworkFeeReturn={useNetworkFeeReturn}
       transactionMessages={transactionMessages}
       changeTransactionMessages={setTransactionMessages}
@@ -961,9 +938,7 @@ const ApproveTransactionContainer: React.FC = () => {
       opened={visibleTransactionInfo}
       argumentInfos={argumentInfos}
       transactionData={JSON.stringify(document, null, 2)}
-      requiresHoldConfirmation={
-        requiresHoldConfirmation || approvalBlocked
-      }
+      requiresHoldConfirmation={requiresHoldConfirmation || approvalBlocked}
       onFinishHold={handleFinishHold}
       simulateErrorBannerMessage={parsedSimulateErrors.globalErrorMessage}
       sessionGuardBannerMessage={

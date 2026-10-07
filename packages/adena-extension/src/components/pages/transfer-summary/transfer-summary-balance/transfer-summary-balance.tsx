@@ -1,4 +1,5 @@
-import { TokenBalance } from '@components/molecules';
+import FeeAmount from '@components/molecules/fee-amount/fee-amount';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import React from 'react';
 import { TransferSummaryBalanceWrapper } from './transfer-summary-balance.styles';
 
@@ -8,6 +9,8 @@ export interface TransferSummaryBalanceProps {
   denom: string;
   tokenName: string;
   chainBadgeImage?: string;
+  /** Quote for the token being sent; adds its USD value beside the amount. */
+  tokenQuote?: FeeTokenQuote | null;
 }
 
 const TransferSummaryBalance: React.FC<TransferSummaryBalanceProps> = ({
@@ -16,6 +19,7 @@ const TransferSummaryBalance: React.FC<TransferSummaryBalanceProps> = ({
   denom,
   tokenName,
   chainBadgeImage,
+  tokenQuote,
 }) => {
   return (
     <TransferSummaryBalanceWrapper>
@@ -27,12 +31,12 @@ const TransferSummaryBalance: React.FC<TransferSummaryBalanceProps> = ({
       </div>
       <span className='chain-name'>{tokenName}</span>
       <div className='balance-wrapper'>
-        <TokenBalance
+        {/* Same layout as the network fee row: `1.5 GNOT ($0.42)`. */}
+        <FeeAmount
+          className='transfer-amount'
           value={value}
           denom={denom}
-          fontStyleKey='body2Reg'
-          minimumFontSize='11px'
-          orientation='HORIZONTAL'
+          quote={tokenQuote}
         />
       </div>
     </TransferSummaryBalanceWrapper>
