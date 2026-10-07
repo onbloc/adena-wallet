@@ -5,7 +5,6 @@ import {
   isLedgerAccount,
   isSessionAccount,
 } from 'adena-module';
-import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -16,7 +15,7 @@ import {
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
-import { parseTokenAmount } from '@common/utils/amount-utils';
+import { checkFeeSufficiency, sumSpentGnotAmount } from '@common/utils/fee-sufficiency';
 import { getDappVisibleAddress } from '@common/utils/account-address';
 import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
 import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
@@ -157,37 +156,27 @@ const ApproveSignTransactionContainer: React.FC = () => {
   // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
   const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
 
-  const consumedTokenAmount = useMemo(() => {
-    const accumulatedAmount = document?.msgs.reduce((acc, msg) => {
-      const messageValue = msg.value;
-      const amountStr = messageValue?.amount || messageValue?.amount || messageValue?.max_deposit;
-      if (!amountStr) {
-        return acc;
-      }
-
-      try {
-        const amount = parseTokenAmount(amountStr);
-        return BigNumber(acc).plus(amount).toNumber();
-      } catch {
-        return acc;
-      }
-    }, 0);
-
-    const consumedBN = BigNumber(accumulatedAmount || 0).shiftedBy(GasToken.decimals * -1);
-    return consumedBN.toNumber();
-  }, [document]);
-
-  const isErrorNetworkFee = useMemo(() => {
+  const feeSufficiency = useMemo(() => {
     if (!networkFee) {
-      return false;
+      return { isInsufficientNetworkFee: false, isInsufficientStorageDeposit: false };
     }
 
-    const resultConsumedAmount = BigNumber(consumedTokenAmount).plus(networkFee.amount);
-
-    return BigNumber(currentBalance || 0)
-      .shiftedBy(GasToken.decimals * -1)
-      .isLessThan(resultConsumedAmount);
-  }, [networkFee?.amount, currentBalance, consumedTokenAmount]);
+    return checkFeeSufficiency({
+      balance: currentBalance || 0,
+      spentAmount: sumSpentGnotAmount(document?.msgs, GasToken.denom),
+      networkFee: useNetworkFeeReturn.currentGasFeeRawAmount,
+      storageDeposit: useNetworkFeeReturn.currentStorageDeposits?.storageDeposit || 0,
+      unlockDeposit: useNetworkFeeReturn.currentStorageDeposits?.unlockDeposit || 0,
+    });
+  }, [
+    networkFee,
+    currentBalance,
+    document,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
+    useNetworkFeeReturn.currentStorageDeposits,
+  ]);
+  const isErrorNetworkFee = feeSufficiency.isInsufficientNetworkFee;
+  const isErrorStorageDeposit = feeSufficiency.isInsufficientStorageDeposit;
 
   const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
     return requestData?.data?.arguments || [];
@@ -625,6 +614,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
       logo={favicon}
       currentBalance={currentBalance || 0}
       isErrorNetworkFee={isErrorNetworkFee || !networkFee}
+      isErrorStorageDeposit={isErrorStorageDeposit}
       networkFee={displayNetworkFee}
       feeTokenQuote={feeTokenQuote}
       useNetworkFeeReturn={useNetworkFeeReturn}

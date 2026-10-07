@@ -26,6 +26,7 @@ import { isSessionSupportedNetwork } from '@common/utils/account-session';
 import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { validateMessageArguments } from '@common/utils/argument-validation';
+import { checkFeeSufficiency, sumSpentGnotAmount } from '@common/utils/fee-sufficiency';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -306,41 +307,27 @@ const ApproveTransactionContainer: React.FC = () => {
     return accumulatedAmount;
   }, [document]);
 
-  const consumedTokenAmount = useMemo(() => {
-    const accumulatedAmount = document?.msgs.reduce((acc, msg) => {
-      const messageValue = msg.value;
-      const amountStr = messageValue?.amount || messageValue?.amount || messageValue?.max_deposit;
-      if (!amountStr) {
-        return acc;
-      }
-
-      try {
-        const amount = parseTokenAmount(amountStr);
-        return BigNumber(acc).plus(amount).toNumber();
-      } catch {
-        return acc;
-      }
-    }, 0);
-
-    const consumedBN = BigNumber(accumulatedAmount || 0).shiftedBy(GasToken.decimals * -1);
-    return consumedBN.toNumber();
-  }, [document]);
-
-  const isErrorNetworkFee = useMemo(() => {
+  const feeSufficiency = useMemo(() => {
     if (!networkFee) {
-      return false;
+      return { isInsufficientNetworkFee: false, isInsufficientStorageDeposit: false };
     }
 
-    if (currentBalance === 0) {
-      return true;
-    }
-
-    const resultConsumedAmount = BigNumber(consumedTokenAmount).plus(networkFee.amount);
-
-    return BigNumber(currentBalance)
-      .shiftedBy(GasToken.decimals * -1)
-      .isLessThan(resultConsumedAmount);
-  }, [networkFee?.amount, currentBalance, consumedTokenAmount]);
+    return checkFeeSufficiency({
+      balance: currentBalance,
+      spentAmount: sumSpentGnotAmount(document?.msgs, GasToken.denom),
+      networkFee: useNetworkFeeReturn.currentGasFeeRawAmount,
+      storageDeposit: useNetworkFeeReturn.currentStorageDeposits?.storageDeposit || 0,
+      unlockDeposit: useNetworkFeeReturn.currentStorageDeposits?.unlockDeposit || 0,
+    });
+  }, [
+    networkFee,
+    currentBalance,
+    document,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
+    useNetworkFeeReturn.currentStorageDeposits,
+  ]);
+  const isErrorNetworkFee = feeSufficiency.isInsufficientNetworkFee;
+  const isErrorStorageDeposit = feeSufficiency.isInsufficientStorageDeposit;
 
   // Extract funcName and pkgPath from the first message for session tracking
   const { funcName, pkgPath } = useMemo(() => {
@@ -525,7 +512,7 @@ const ApproveTransactionContainer: React.FC = () => {
     if (!isRequestedNetworkReady || approvalBlocked) {
       return false;
     }
-    if (isErrorNetworkFee) {
+    if (isErrorNetworkFee || isErrorStorageDeposit) {
       return false;
     }
     if (!document || !currentNetwork || !signingAccount || !wallet) {
@@ -700,6 +687,7 @@ const ApproveTransactionContainer: React.FC = () => {
     if (
       !signingAccount ||
       isErrorNetworkFee ||
+      isErrorStorageDeposit ||
       requiresHoldConfirmation ||
       !isRequestedNetworkReady ||
       approvalBlocked
@@ -945,6 +933,7 @@ const ApproveTransactionContainer: React.FC = () => {
       currentBalance={currentBalance}
       maxDepositAmount={maxDepositAmount}
       isErrorNetworkFee={isErrorNetworkFee || !networkFee}
+      isErrorStorageDeposit={isErrorStorageDeposit}
       networkFee={displayNetworkFee}
       feeTokenQuote={feeTokenQuote}
       useNetworkFeeReturn={useNetworkFeeReturn}
