@@ -19,7 +19,15 @@
   },
   "resolutions": {
     "@storybook/react-docgen-typescript-plugin": "npm:react-docgen-typescript-plugin@1.0.5",
-    "ws": "8.20.0",
+    "webpack-dev-middleware": "7.4.6",
+    "postcss": "8.5.28",
+    "serialize-javascript@^6.0.2": "7.1.2",
+    "tar@^6.0.5": "7.5.22",
+    "tar@^6.1.11": "7.5.22",
+    "tar@^6.2.1": "7.5.22",
+    "uuid@^8.3.2": "11.1.1",
+    "uuid@^9.0.0": "11.1.1",
+    "ws": "8.22.0",
     "@bufbuild/protobuf": "2.15.0",
     "@gnolang/tm2-js-client": "3.3.0",
     "@gnolang/tm2-rpc": "2.0.2",
@@ -29,8 +37,8 @@
     "@cosmjs/proto-signing": "0.39.0"
   },
   "devDependencies": {
-    "@babel/core": "7.23.9",
-    "@babel/runtime": "7.23.9",
+    "@babel/core": "7.29.7",
+    "@babel/runtime": "7.29.7",
     "@lavamoat/allow-scripts": "3.0.3",
     "@lavamoat/preinstall-always-fail": "2.0.0",
     "@yarnpkg/sdks": "3.1.0",

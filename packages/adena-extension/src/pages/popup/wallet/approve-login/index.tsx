@@ -175,7 +175,9 @@ export const ApproveLogin = (): JSX.Element => {
 
   const approveButtonClick = (): Promise<void> => tryLoginApprove(password);
 
-  const onClickForgotButton = (): void => navigate(RoutePath.ForgotPassword);
+  const onClickForgotButton = (): void => {
+    navigate(RoutePath.ForgotPassword);
+  };
 
   return (
     <>

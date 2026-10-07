@@ -373,7 +373,10 @@ const fetchFavicon = async (baseUrl: string): Promise<any> => {
 const fetchArrayData = (uri: string): Promise<AxiosResponse<any, any> | null> => {
   return axios
     .get(uri, { responseType: 'arraybuffer' })
-    .then((response) => (response.headers['content-type'].startsWith('image') ? response : null))
+    .then((response) => {
+      const contentType = response.headers['content-type'];
+      return typeof contentType === 'string' && contentType.startsWith('image') ? response : null;
+    })
     .catch(() => null);
 };
 
