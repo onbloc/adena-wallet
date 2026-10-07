@@ -50,14 +50,14 @@ describe('BalanceInput Component', () => {
   it('shows the USD value beside the description when the token is quoted', () => {
     renderWith({ usdValue: '$0.00' });
 
-    expect(screen.getByText('$0.00')).toBeInTheDocument();
-    expect(screen.getByText('Spendable: 10 GNOT')).toBeInTheDocument();
+    expect(screen.getByText('$0.00')).not.toBeNull();
+    expect(screen.getByText('Spendable: 10 GNOT')).not.toBeNull();
   });
 
   it('shows only the description when the token is unquoted', () => {
     renderWith({ usdValue: null });
 
-    expect(screen.queryByText(/\$/)).not.toBeInTheDocument();
-    expect(screen.getByText('Spendable: 10 GNOT')).toBeInTheDocument();
+    expect(screen.queryByText(/\$/)).toBeNull();
+    expect(screen.getByText('Spendable: 10 GNOT')).not.toBeNull();
   });
 });
