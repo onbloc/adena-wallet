@@ -6,6 +6,8 @@ export interface BalanceInputProps {
   amount: string;
   denom: string;
   description: string;
+  /** The amount in USD, already formatted; absent when the token has no quote. */
+  usdValue?: string | null;
   onChangeAmount: (value: string) => void;
   onClickMax: () => void;
 }
@@ -15,6 +17,7 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
   amount,
   denom,
   description,
+  usdValue,
   onChangeAmount,
   onClickMax,
 }) => {
@@ -58,7 +61,14 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
         </button>
       </div>
 
-      <span className='description'>{description}</span>
+      {usdValue ? (
+        <div className='description-wrapper'>
+          <span className='usd-value'>{usdValue}</span>
+          <span className='description'>{description}</span>
+        </div>
+      ) : (
+        <span className='description'>{description}</span>
+      )}
     </BalanceInputWrapper>
   );
 };

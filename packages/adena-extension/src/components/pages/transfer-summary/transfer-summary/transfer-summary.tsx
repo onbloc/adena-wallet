@@ -23,6 +23,8 @@ export interface TransferSummaryProps {
   networkFee: NetworkFeeType | null;
   /** Quote for the fee token, from `useFeeTokenPrice`; drives the fee rows' USD line. */
   feeTokenQuote?: FeeTokenQuote | null;
+  /** Quote for the token being sent; drives the amount row's USD value. */
+  transferTokenQuote?: FeeTokenQuote | null;
   memo: string;
   currentBalance: number | null | undefined;
   useNetworkFeeReturn: UseNetworkFeeReturn;
@@ -45,6 +47,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   chainBadgeImage,
   networkFee,
   feeTokenQuote,
+  transferTokenQuote,
   memo,
   useNetworkFeeReturn,
   isErrorNetworkFee,
@@ -116,6 +119,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           denom={transferBalance.denom}
           tokenName={tokenMetainfo.name}
           chainBadgeImage={chainBadgeImage}
+          tokenQuote={transferTokenQuote}
         />
 
         <TransferSummaryAddress toAddress={toAddress} network={chainName} memo={memo} />

@@ -49,6 +49,24 @@ export const BalanceInputWrapper = styled.div`
     color: ${getTheme('neutral', 'a')};
   }
 
+  .description-wrapper {
+    ${mixins.flex({ direction: 'row', justify: 'space-between', align: 'flex-start' })};
+    width: 100%;
+    padding: 0 16px;
+    column-gap: 8px;
+
+    .usd-value {
+      flex-shrink: 0;
+      ${fonts.captionReg};
+      color: ${getTheme('neutral', 'a')};
+    }
+
+    .description {
+      padding: 0;
+      text-align: right;
+    }
+  }
+
   &.error {
     .input-wrapper {
       border-color: ${getTheme('red', '_5')};
