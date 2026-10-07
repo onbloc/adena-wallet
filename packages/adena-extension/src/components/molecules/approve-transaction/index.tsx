@@ -114,6 +114,8 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   const [showRawError, setShowRawError] = useState(false);
   const errorBannerRef = useRef<HTMLDivElement>(null);
   const hasScrolledToError = useRef(false);
+  const feeAmountRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToFeeError = useRef(false);
 
   const disabledApprove = useMemo(() => {
     if (requiresHoldConfirmation) {
@@ -226,6 +228,20 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
     }
   }, [simulateErrorBannerMessage]);
 
+  const hasFeeError = !useNetworkFeeReturn.isLoading && (isMaxDepositError || !!isErrorNetworkFee);
+
+  useEffect(() => {
+    if (hasFeeError && !hasScrolledToFeeError.current) {
+      hasScrolledToFeeError.current = true;
+      requestAnimationFrame(() => {
+        feeAmountRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+    if (!hasFeeError) {
+      hasScrolledToFeeError.current = false;
+    }
+  }, [hasFeeError]);
+
   if (loading) {
     return <ApproveTransactionLoading rightButtonText='Approve' />;
   }
@@ -320,7 +336,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         )}
       </div>
 
-      <div className='fee-amount-wrapper'>
+      <div ref={feeAmountRef} className='fee-amount-wrapper'>
         <StorageDeposit
           storageDeposit={{
             storageDeposit: useNetworkFeeReturn.currentStorageDeposits?.storageDeposit || 0,
