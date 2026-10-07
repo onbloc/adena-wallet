@@ -1,7 +1,13 @@
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useQuery } from '@tanstack/react-query';
-import { GasInfo, NetworkFee, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
+import {
+  GasInfo,
+  NetworkFee,
+  NetworkFeeSettingInfo,
+  NetworkFeeSettingType,
+  TokenPriceRequest,
+} from '@types';
 import {
   CosmosDocument,
   FEE_PRESET_MULTIPLIERS,
@@ -46,6 +52,11 @@ export interface UseCosmosNetworkFeeReturn {
   // Display-unit overrides for NetworkFeeSetting / NetworkFeeSettingItem.
   feeSymbol: string | undefined;
   feeDecimals: number | undefined;
+  /**
+   * Token the fee is charged in, for its USD line. Named explicitly because a
+   * Cosmos fee is not GNOT and must not be valued at GNOT's price.
+   */
+  feeToken: TokenPriceRequest | null;
 }
 
 /**
@@ -81,14 +92,6 @@ export const useCosmosNetworkFee = (
   }, [document?.chainId, chainRegistry]);
 
   const fallbackFee = chain?.fee.fallbackFee ?? null;
-
-  // Resolve the display profile (symbol + decimals) for the chain's default
-  // fee token so the UI can render "PHOTON" rather than the on-chain
-  // "uphoton" micro-denom.
-  const feeTokenProfile = useMemo(() => {
-    if (!chain || !tokenRegistry) return null;
-    return tokenRegistry.get(chain.fee.defaultFeeTokenId) ?? null;
-  }, [chain, tokenRegistry]);
 
   const { data, isFetched } = useQuery({
     queryKey: [
@@ -192,6 +195,22 @@ export const useCosmosNetworkFee = (
   const currentFeeDenom =
     data?.estimate?.feeDenom ?? fallbackFee?.amount[0]?.denom ?? null;
 
+  // The fee token is the denom the estimate resolved (ATONE for MintPhoton),
+  // not the chain default, so its symbol, decimals and price follow it.
+  const feeTokenId = useMemo(() => {
+    if (!chain || !document?.chainId) return null;
+    return currentFeeDenom
+      ? `${document.chainId}:${currentFeeDenom}`
+      : chain.fee.defaultFeeTokenId;
+  }, [chain, document?.chainId, currentFeeDenom]);
+
+  // Display profile (symbol + decimals), so the UI renders "PHOTON" rather
+  // than the on-chain "uphoton" micro-denom.
+  const feeTokenProfile = useMemo(() => {
+    if (!feeTokenId || !tokenRegistry) return null;
+    return tokenRegistry.get(feeTokenId) ?? null;
+  }, [feeTokenId, tokenRegistry]);
+
   const networkFee = useMemo<NetworkFee | null>(() => {
     if (!currentGasInfo || !currentFeeDenom) {
       return null;
@@ -206,6 +225,20 @@ export const useCosmosNetworkFee = (
       .toFixed();
     return { amount: displayAmount, denom: symbol };
   }, [currentGasInfo, currentFeeDenom, feeTokenProfile]);
+
+  // The chain id doubles as the price networkId, the same way the wallet keys
+  // a Cosmos native token (`atomone-1:uphoton` on `atomone-1`).
+  const feeToken = useMemo<TokenPriceRequest | null>(() => {
+    if (!feeTokenId || !document?.chainId) {
+      return null;
+    }
+
+    return {
+      tokenId: feeTokenId,
+      networkId: document.chainId,
+      decimals: feeTokenProfile?.decimals,
+    };
+  }, [feeTokenId, document?.chainId, feeTokenProfile?.decimals]);
 
   const setNetworkFeeSetting = useCallback((info: NetworkFeeSettingInfo) => {
     setPendingSettingType(info.settingType);
@@ -240,5 +273,6 @@ export const useCosmosNetworkFee = (
     simulateErrorMessage,
     feeSymbol: feeTokenProfile?.symbol,
     feeDecimals: feeTokenProfile?.decimals,
+    feeToken,
   };
 };

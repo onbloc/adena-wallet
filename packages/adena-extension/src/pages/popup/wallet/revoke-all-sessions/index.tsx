@@ -23,6 +23,7 @@ import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.consta
 import { RoutePath } from '@types';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 const Container = styled.div`
   ${mixins.flex({ direction: 'column', align: 'stretch', justify: 'flex-start' })};
@@ -84,10 +85,7 @@ const RevokeAllSessionsPage = (): ReactElement => {
   const masterAddress = params?.masterAddress;
 
   const { entries, isLoading, error } = useMasterSessions(masterAddress);
-  const activeEntries = useMemo(
-    () => entries.filter((e) => e.status === 'ACTIVE'),
-    [entries],
-  );
+  const activeEntries = useMemo(() => entries.filter((e) => e.status === 'ACTIVE'), [entries]);
 
   const [document, setDocument] = useState<Document | null>(null);
   const [masterAccount, setMasterAccount] = useState<Account | null>(null);
@@ -97,6 +95,9 @@ const RevokeAllSessionsPage = (): ReactElement => {
 
   const useNetworkFeeReturn = useNetworkFee(document);
   const networkFee = useNetworkFeeReturn.networkFee;
+
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenQuote = useFeeTokenPrice(networkFee?.denom ?? '');
 
   useEffect(() => {
     let cancelled = false;
@@ -218,7 +219,12 @@ const RevokeAllSessionsPage = (): ReactElement => {
         <BottomFixedButtonGroup
           filled
           leftButton={{ text: 'Cancel', onClick: goBack }}
-          rightButton={{ text: 'Revoke', danger: true, disabled: true, onClick: (): void => undefined }}
+          rightButton={{
+            text: 'Revoke',
+            danger: true,
+            disabled: true,
+            onClick: (): void => undefined,
+          }}
         />
       </Container>
     );
@@ -229,6 +235,7 @@ const RevokeAllSessionsPage = (): ReactElement => {
       <NetworkFeeSettingWrapper>
         <NetworkFeeSetting
           {...useNetworkFeeReturn}
+          feeTokenQuote={feeTokenQuote}
           onClickBack={(): void => setOpenedFeeSetting(false)}
           onClickSave={(): void => {
             useNetworkFeeReturn.save();
@@ -263,6 +270,7 @@ const RevokeAllSessionsPage = (): ReactElement => {
       <NetworkFee
         value={networkFee?.amount ?? ''}
         denom={networkFee?.denom ?? ''}
+        feeTokenQuote={feeTokenQuote}
         isLoading={useNetworkFeeReturn.isLoading}
         isError={useNetworkFeeReturn.isSimulateError}
         onClickSetting={(): void => setOpenedFeeSetting(true)}

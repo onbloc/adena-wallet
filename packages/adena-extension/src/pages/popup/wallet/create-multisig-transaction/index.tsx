@@ -38,6 +38,7 @@ import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { ContractMessage } from '@inject/types';
 import { NetworkFee, RoutePath } from '@types';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 interface TransactionData {
   messages: readonly any[];
@@ -173,6 +174,9 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       denom: GasToken.symbol,
     };
   }, [networkFee]);
+
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
 
   const currentGasWanted = useMemo(() => {
     return tx?.fee?.gas_wanted || '0';
@@ -489,6 +493,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       isErrorNetworkFee={isErrorNetworkFee}
       isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}
+      feeTokenQuote={feeTokenQuote}
       multisigConfig={multisigConfig}
       transactionMessages={transactionMessages}
       argumentInfos={argumentInfos}

@@ -10,6 +10,7 @@ import { TransferSummaryWrapper } from './transfer-summary.styles';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import NetworkFee from '@components/molecules/network-fee/network-fee';
 import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import { Amount, NetworkFee as NetworkFeeType, TokenModel } from '@types';
 
 export interface TransferSummaryProps {
@@ -20,6 +21,8 @@ export interface TransferSummaryProps {
   chainName: string;
   chainBadgeImage?: string;
   networkFee: NetworkFeeType | null;
+  /** Quote for the fee token, from `useFeeTokenPrice`; drives the fee rows' USD line. */
+  feeTokenQuote?: FeeTokenQuote | null;
   memo: string;
   currentBalance: number | null | undefined;
   useNetworkFeeReturn: UseNetworkFeeReturn;
@@ -41,6 +44,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   chainName,
   chainBadgeImage,
   networkFee,
+  feeTokenQuote,
   memo,
   useNetworkFeeReturn,
   isErrorNetworkFee,
@@ -116,9 +120,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 
         <TransferSummaryAddress toAddress={toAddress} network={chainName} memo={memo} />
 
-        {isSessionSigning && (
-          <div className='session-signing-badge'>Signed with Session</div>
-        )}
+        {isSessionSigning && <div className='session-signing-badge'>Signed with Session</div>}
       </div>
 
       <div className='network-fee-wrapper'>
@@ -128,6 +130,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           isError={isErrorNetworkFee}
           isLoading={effectiveIsLoading}
           errorMessage={networkFeeErrorMessage}
+          feeTokenQuote={feeTokenQuote}
           onClickSetting={onClickNetworkFeeSetting}
         />
       </div>

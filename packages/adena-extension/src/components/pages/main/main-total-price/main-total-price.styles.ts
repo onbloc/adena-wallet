@@ -17,7 +17,7 @@ export const MainTotalPriceWrapper = styled(View).withConfig({
   height: 80px;
   align-items: flex-start;
   justify-content: center;
-  gap: 8px;
+  gap: 4px;
 
   .total-value {
     font-weight: 600;

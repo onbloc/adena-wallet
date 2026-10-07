@@ -1,12 +1,54 @@
 import {
   aggregateTokenValues,
   formatChangeRate,
+  formatFeeUSD,
   formatUSD,
   formatUSDChange,
   getChangeTone,
   getTokenPriceKey,
   makeTokenValue,
 } from './price-utils';
+
+describe('formatFeeUSD', () => {
+  it('keeps two decimals from $1 up, truncated', () => {
+    expect(formatFeeUSD(1234.5)).toBe('$1,234.50');
+    expect(formatFeeUSD(5)).toBe('$5.00');
+    expect(formatFeeUSD(1)).toBe('$1.00');
+    expect(formatFeeUSD(1.23456)).toBe('$1.23');
+  });
+
+  it('keeps up to three decimals below $1, truncated, without trailing zeros', () => {
+    expect(formatFeeUSD(0.999)).toBe('$0.999');
+    expect(formatFeeUSD(0.5)).toBe('$0.5');
+    expect(formatFeeUSD(0.01)).toBe('$0.01');
+    expect(formatFeeUSD(0.0109)).toBe('$0.01');
+    expect(formatFeeUSD(0.0129)).toBe('$0.012');
+    expect(formatFeeUSD(0.0048)).toBe('$0.004');
+    expect(formatFeeUSD(0.001)).toBe('$0.001');
+  });
+
+  it('reads a non-zero fee below $0.001 as "<$0.001"', () => {
+    expect(formatFeeUSD(0.00099)).toBe('<$0.001');
+    expect(formatFeeUSD(0.00023)).toBe('<$0.001');
+    expect(formatFeeUSD(0.0000012)).toBe('<$0.001');
+  });
+
+  it('signs the figure when asked', () => {
+    expect(formatFeeUSD(5, true)).toBe('+$5.00');
+    expect(formatFeeUSD(-5, true)).toBe('-$5.00');
+    expect(formatFeeUSD(0.0048, true)).toBe('+$0.004');
+    expect(formatFeeUSD(0.0002, true)).toBe('+<$0.001');
+  });
+
+  it('reads "-" for a figure that is not a number', () => {
+    expect(formatFeeUSD(Number.NaN)).toBe('-');
+    expect(formatFeeUSD(Number.POSITIVE_INFINITY)).toBe('-');
+  });
+
+  it('writes a zero fee plainly', () => {
+    expect(formatFeeUSD(0)).toBe('$0.00');
+  });
+});
 
 describe('formatUSD', () => {
   it('fixes two decimals and truncates beyond them', () => {

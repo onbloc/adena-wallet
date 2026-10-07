@@ -55,6 +55,38 @@ export function formatUSD(value: number): string {
   return `$${parsed.abs().toFormat(2, BigNumber.ROUND_DOWN)}`;
 }
 
+/** Smallest fee writable in USD; anything below reads "<$0.001". */
+const MIN_DISPLAYABLE_FEE_USD = 0.001;
+
+/**
+ * A network fee in USD, truncated like `formatUSD`: two decimals from $1 up,
+ * up to three below that. A non-zero fee below $0.001 reads "<$0.001".
+ */
+export function formatFeeUSD(value: number, withSign = false): string {
+  const parsed = BigNumber(value);
+  if (!parsed.isFinite()) {
+    return '-';
+  }
+
+  const magnitude = parsed.abs();
+  const sign = withSign ? (parsed.isNegative() ? '-' : '+') : '';
+
+  if (magnitude.isZero()) {
+    return `${sign}$${magnitude.toFormat(2)}`;
+  }
+
+  if (magnitude.isLessThan(MIN_DISPLAYABLE_FEE_USD)) {
+    return `${sign}<$${MIN_DISPLAYABLE_FEE_USD.toFixed(3)}`;
+  }
+
+  if (magnitude.isLessThan(1)) {
+    // Trailing zeros dropped: $0.5, $0.01.
+    return `${sign}$${magnitude.decimalPlaces(3, BigNumber.ROUND_DOWN).toFormat()}`;
+  }
+
+  return `${sign}$${magnitude.toFormat(2, BigNumber.ROUND_DOWN)}`;
+}
+
 /** Signed 24h delta: `+$125.02`, `-$3.00`, `+<$0.01`. */
 export function formatUSDChange(value: number): string {
   const parsed = BigNumber(value);

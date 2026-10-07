@@ -9,6 +9,7 @@ import {
 import { useCallback } from 'react';
 
 import { requestSocialPrivateKey } from '@common/utils/social-login';
+import { withPopupWindowGuard } from '@common/utils/popup-window-guard';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -144,7 +145,11 @@ const useSocialLoginAccount = (): UseSocialLoginAccountReturn => {
       keyringType: Web3AuthKeyringType,
       isCurrentRequest: IsCurrentRequest,
     ) => {
-      const connected = await provider.connect();
+      // The SDK opens its login popup through `window.open` on this page, so
+      // guarding the reference it hands back is enough to keep the whole flow
+      // working where the browser discards a torn-down popup. See
+      // `withPopupWindowGuard`.
+      const connected = await withPopupWindowGuard(() => provider.connect());
 
       // The popup outlives the screen that opened it, so a request the user
       // canceled - or one superseded by a retry - must not commit an account.
