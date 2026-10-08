@@ -27,9 +27,10 @@ extension bundle.)
     (e.g. `~/adena-ff-profile`). The snap confinement blocks profiles under `~/.cache`
     or `/tmp`; Firefox then never starts its debugger server and web-ext fails with
     `connect ECONNREFUSED`.
-- Permanent install (optional): `npx web-ext build -s packages/adena-extension/dist-firefox`
-  then sign the resulting XPI (`npx web-ext sign --channel=unlisted`) or use a Firefox
-  build that allows unsigned extensions (`xpinstall.signatures.required=false`).
+- Permanent install (optional): `yarn web-ext build -s packages/adena-extension/dist-firefox`
+  and use a Firefox build that allows unsigned extensions
+  (`xpinstall.signatures.required=false`). Don't sign it with `--channel=unlisted`:
+  that uses up the version number the listed submission needs.
 
 ## Releasing
 
@@ -44,14 +45,13 @@ the Chrome build and deploy in `build-deploy.yml`) and:
 3. uploads the XPI as a workflow artifact and attaches it to the GitHub release for
    the tag (creating the release if it does not exist yet).
 
+The XPI is not signed. AMO accepts a version number only once per add-on, so the
+release version is only uploaded by the listed submission in
+`.github/workflows/submit-store.yml`. Load the unsigned XPI via `about:debugging` or
+in a build with `xpinstall.signatures.required=false`.
+
 Optional secrets:
 
-- `AMO_QA_API_KEY` + `AMO_QA_API_SECRET`: when both are set, the XPI is signed through
-  addons.mozilla.org (`--channel=unlisted`) so it installs in release Firefox. It is
-  signed under the QA add-on ID `adena-wallet-qa@onbloc.xyz`, so the release version
-  number stays free for the listed submission in `submit-store.yml`.
-  Without them the unsigned XPI is still published, for manual signing or for use in
-  unbranded builds with `xpinstall.signatures.required=false`.
 - `PRIVATE_ACCESS_TOKEN`: only needed to build against the private
   `adena-torus-signin` repository; without it the checked-in mock is used, so the
   workflow runs in forks too (enable Actions in the fork first).
