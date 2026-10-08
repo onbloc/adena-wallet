@@ -49,12 +49,15 @@ function createSignArbitraryResponse(
   return {
     code: status === 'success' ? 0 : 1,
     key,
-    type: SignArbitraryExecuteType.SIGN_ARBITRARY as unknown as WalletResponseType,
+    type: (SignArbitraryExecuteType.SIGN_ARBITRARY as unknown) as WalletResponseType,
     status,
     message,
     data,
   };
 }
+
+const NOTICE_MESSAGE =
+  'This signature proves you own this address. \nIt isn’t a transaction and won’t move funds.';
 
 const ApproveSignArbitraryContainer: React.FC = () => {
   const navigate = useNavigate();
@@ -252,9 +255,7 @@ const ApproveSignArbitraryContainer: React.FC = () => {
         </div>
       </div>
 
-      <span className='notice'>
-        Signing proves you control this address. It is not a transaction and moves no funds.
-      </span>
+      <span className='notice'>{NOTICE_MESSAGE}</span>
 
       <BottomFixedLoadingButtonGroup
         filled
@@ -369,5 +370,6 @@ const Wrapper = styled.div`
     margin-bottom: 20px;
     ${fonts.body2Reg};
     color: ${getTheme('neutral', 'a')};
+    white-space: pre-wrap;
   }
 `;
