@@ -101,6 +101,26 @@ describe('signArbitrary', () => {
     expect(closeMessage.key).toBe('request-key');
   });
 
+  // The executor narrows params too, but a page can post to the content script
+  // directly, so the handler is what keeps extra fields out of the popup URL.
+  it('carries only the validated fields into the approval window', async () => {
+    const request = {
+      ...makeRequest({ signer: SIGNER, data: 'hello', padding: 'x'.repeat(100_000) }),
+      extra: 'x'.repeat(100_000),
+    };
+    await signArbitrary(makeCore(SIGNER), request, jest.fn());
+
+    const popupRequest = mockCreatePopup.mock.calls[0][1] as InjectionMessage;
+    expect(popupRequest.data).toEqual({ signer: SIGNER, data: 'hello' });
+    expect(popupRequest).not.toHaveProperty('extra');
+    expect(popupRequest).toMatchObject({
+      key: 'request-key',
+      type: 'SIGN_ARBITRARY',
+      hostname: 'example.com',
+      protocol: 'https:',
+    });
+  });
+
   // A window claiming that signing proves control of an address the user does
   // not hold is misleading even briefly, so it must never be shown.
   it('refuses a signer the user does not hold, without opening a window', async () => {
