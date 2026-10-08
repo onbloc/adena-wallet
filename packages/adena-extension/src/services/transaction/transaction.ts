@@ -1,7 +1,9 @@
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
+  Secp256k1PubKeyType,
   Tx,
+  TxSignPayload,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import {
@@ -22,6 +24,7 @@ import {
   SignedCosmosTx,
   hasHDPath,
   sha256,
+  signArbitraryMessage,
   signCosmosAmino,
   Wallet,
   compressPubkeyIfNeeded,
@@ -37,6 +40,7 @@ import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.consta
 import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
 import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { SignArbitraryData } from '@inject/types';
 import { WalletService } from '..';
 
 export interface EncodeTxSignature {
@@ -390,7 +394,7 @@ export class TransactionService {
     accountId: string,
     signDoc: StdSignDoc,
   ): Promise<AminoSignResponse> => {
-    const { account, keyring, hdPath } = await this.resolveCosmosSigner(accountId);
+    const { account, keyring, hdPath } = await this.resolveSigningKey(accountId);
     if (account.type === 'LEDGER') {
       throw new Error('LEDGER_NOT_SUPPORTED');
     }
@@ -415,7 +419,7 @@ export class TransactionService {
     accountId: string,
     signDoc: SignDoc,
   ): Promise<DirectSignResponse> => {
-    const { account, keyring, hdPath } = await this.resolveCosmosSigner(accountId);
+    const { account, keyring, hdPath } = await this.resolveSigningKey(accountId);
     if (account.type === 'LEDGER') {
       throw new Error('LEDGER_NOT_SUPPORTED');
     }
@@ -430,7 +434,93 @@ export class TransactionService {
     };
   };
 
-  private resolveCosmosSigner = async (
+  /**
+   * Sign arbitrary data so a dApp can prove the user controls an address,
+   * without asking them to approve something transaction-shaped.
+   *
+   * Nothing produced here is broadcastable: the document carries a message type
+   * no node can decode (see `ARBITRARY_MSG_TYPE`). `chainId` comes from the
+   * connected network rather than the caller, so the proof is bound to one
+   * network and a caller cannot choose that binding for itself.
+   *
+   * Ledger takes the separate path below, for the same reason the Cosmos amino
+   * signer does: the wallet-owned keyring has no connector after a restore.
+   */
+  public signArbitraryDoc = async (
+    accountId: string,
+    chainId: string,
+    signer: string,
+    data: string,
+  ): Promise<SignArbitraryData> => {
+    const { account, keyring, hdPath } = await this.resolveSigningKey(accountId);
+    if (account.type === 'LEDGER') {
+      throw new Error('LEDGER_NOT_SUPPORTED');
+    }
+
+    const { doc, signature } = await signArbitraryMessage({
+      keyring,
+      publicKey: account.publicKey,
+      chainId,
+      signer,
+      data,
+      hdPath,
+    });
+
+    return this.mapArbitrarySignature(doc, account.publicKey, signature);
+  };
+
+  /**
+   * Ledger counterpart of `signArbitraryDoc`. Uses a keyring freshly bound to
+   * an active connector, mirroring `signCosmosAminoDocWithLedger`.
+   */
+  public signArbitraryDocWithLedger = async (
+    ledgerConnector: AdenaLedgerConnector,
+    account: LedgerAccount,
+    chainId: string,
+    signer: string,
+    data: string,
+  ): Promise<SignArbitraryData> => {
+    const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
+    await keyring.assertPublicKey(account.publicKey, account.derivationPath);
+
+    const { doc, signature } = await signArbitraryMessage({
+      keyring,
+      publicKey: account.publicKey,
+      chainId,
+      signer,
+      data,
+      hdPath: account.derivationPath,
+    });
+
+    return this.mapArbitrarySignature(doc, account.publicKey, signature);
+  };
+
+  /**
+   * Shape the signed document for the dApp.
+   *
+   * `pubKey.value` is the compressed key itself, not a protobuf-wrapped one:
+   * the point of returning it is that a verifier can use it directly, and for
+   * an account that has never transacted it is the only place the key is
+   * available at all.
+   */
+  private mapArbitrarySignature = (
+    doc: TxSignPayload,
+    publicKey: Uint8Array,
+    signature: Uint8Array,
+  ): SignArbitraryData => {
+    return {
+      signed: doc,
+      signature: {
+        pubKey: {
+          typeUrl: Secp256k1PubKeyType,
+          value: uint8ArrayToBase64(compressPubkeyIfNeeded(publicKey)),
+        },
+        signature: uint8ArrayToBase64(signature),
+      },
+    };
+  };
+
+  private resolveSigningKey = async (
     accountId: string,
   ): Promise<{ account: Account; keyring: Keyring; hdPath: number | undefined }> => {
     const wallet = await this.walletService.getCurrentWallet();

@@ -2,6 +2,7 @@ export * from './validation-address-book';
 export * from './validation-cosmos';
 export * from './validation-message';
 export * from './validation-password';
+export * from './validation-sign-arbitrary';
 export * from './validation-token';
 export * from './validation-wallet';
 export * from './validation-document';

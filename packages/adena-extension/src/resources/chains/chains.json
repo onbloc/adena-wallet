@@ -16,18 +16,18 @@
     "linkUrl": "https://gnoscan.io"
   },
   {
-    "id": "staging",
+    "id": "onyx-1",
     "default": true,
     "main": false,
-    "chainId": "staging",
+    "chainId": "onyx-1",
     "chainName": "Gno.land",
-    "networkId": "staging",
-    "networkName": "Staging",
+    "networkId": "onyx-1",
+    "networkName": "Onyx",
     "addressPrefix": "g",
-    "rpcUrl": "https://rpc.staging.gno.land:443",
-    "indexerUrl": "https://staging.indexer.onbloc.xyz",
-    "gnoUrl": "https://staging.gno.land",
-    "apiUrl": "https://staging.api.onbloc.xyz",
+    "rpcUrl": "https://rpc.onyx.testnets.gno.land:443",
+    "indexerUrl": "https://onyx.indexer.onbloc.xyz",
+    "gnoUrl": "https://onyx.testnets.gno.land",
+    "apiUrl": "https://onyx.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {

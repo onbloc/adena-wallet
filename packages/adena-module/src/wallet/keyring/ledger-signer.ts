@@ -3,6 +3,7 @@ import { Secp256k1, Secp256k1Signature, sha256, Slip10RawIndex } from '@cosmjs/c
 import { LedgerConnector } from '@cosmjs/ledger-amino';
 import { Signer } from '@gnolang/tm2-js-client';
 
+import { classifyLedgerError } from '../../ledger/ledger-errors';
 import { HdPathLike, toSlip10Path } from './hd-path';
 
 const GNO_ADDRESS_PREFIX = 'g';
@@ -45,8 +46,13 @@ export class FullPathLedgerSigner implements Signer {
     throw new Error('Ledger does not support private key exports');
   };
 
+  // Classified like LedgerKeyring.signRaw so callers can match on `kind`.
   signData = async (data: Uint8Array): Promise<Uint8Array> => {
-    return this.connector.sign(data, this.hdPath);
+    try {
+      return await this.connector.sign(data, this.hdPath);
+    } catch (err) {
+      throw classifyLedgerError(err);
+    }
   };
 
   verifySignature = async (data: Uint8Array, signature: Uint8Array): Promise<boolean> => {

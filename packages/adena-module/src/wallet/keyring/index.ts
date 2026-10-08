@@ -8,4 +8,5 @@ export * from './ledger-signer';
 export * from './multisig-keyring';
 export * from './private-key-keyring';
 export * from './session-keyring';
+export * from './sign-arbitrary';
 export * from './web3-auth-keyring';

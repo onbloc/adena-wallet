@@ -10,15 +10,15 @@ import { ApproveLedgerLoading } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { InjectionMessage } from '@inject/message';
-import { CosmosResponseExecuteType } from '@inject/types';
+import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { SignArbitraryExecuteType } from '@inject/types';
 import { RoutePath } from '@types';
 
-// Duplicated from approve-sign-cosmos/index.tsx and inject/message/methods/
-// cosmos.ts because the SDK's `WalletMessageInfo` table still throws on
-// Cosmos response types. Consolidate once the SDK catches up.
-function createCosmosResponse(
-  type: CosmosResponseExecuteType,
+// Only the success response needs this, for the same reason as
+// approve-sign-arbitrary/index.tsx: the SDK's `WalletMessageInfo` has no
+// SIGN_ARBITRARY row. Failures use the SDK builder so one condition always
+// answers with one shape. Consolidate once the SDK catches up.
+function createSignArbitraryResponse(
   status: 'success' | 'failure',
   key: string | undefined,
   data?: Record<string, unknown>,
@@ -27,22 +27,22 @@ function createCosmosResponse(
   return {
     code: status === 'success' ? 0 : 1,
     key,
-    type: type as unknown as WalletResponseType,
+    type: SignArbitraryExecuteType.SIGN_ARBITRARY as unknown as WalletResponseType,
     status,
     message,
     data,
   };
 }
 
-const ApproveSignCosmosLedgerLoadingContainer: React.FC = () => {
-  const { params } = useAppNavigate<RoutePath.ApproveSignCosmosLedgerLoading>();
+const ApproveSignArbitraryLedgerLoadingContainer: React.FC = () => {
+  const { params } = useAppNavigate<RoutePath.ApproveSignArbitraryLedgerLoading>();
   const { transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
-  const { signDoc, responseKey } = params;
+  const { chainId, signer, data, responseKey } = params;
 
   const [completed, setCompleted] = useState(false);
-  // Prevent the retry loop from firing signRaw twice if the effect re-runs
-  // while a request is already in flight on the device.
+  // Stops the retry loop firing a second request at the device while one is
+  // already in flight.
   const inFlightRef = useRef(false);
 
   useEffect(() => {
@@ -60,17 +60,16 @@ const ApproveSignCosmosLedgerLoadingContainer: React.FC = () => {
     const done = await signWithLedger();
     inFlightRef.current = false;
     setCompleted(done);
-    // Mirror approve-sign-ledger-loading's retry cadence: transport hiccups
-    // (app locked, cable jostled) surface as "Ledger …" errors and retry
-    // after 1s. Terminal outcomes (success / user reject) flip `completed`
-    // and break the loop.
+    // Mirrors the other Ledger loading pages: transport hiccups (app locked,
+    // cable jostled) surface as errors and retry after a second, while terminal
+    // outcomes flip `completed` and break the loop.
     if (!done) {
       setTimeout(() => requestLedgerSign(), 1000);
     }
   };
 
   const signWithLedger = async (): Promise<boolean> => {
-    if (!currentAccount || !signDoc) {
+    if (!currentAccount || !chainId || !signer || !data) {
       return false;
     }
     if (!isLedgerAccount(currentAccount)) {
@@ -84,16 +83,15 @@ const ApproveSignCosmosLedgerLoadingContainer: React.FC = () => {
     const ledgerConnector = AdenaLedgerConnector.fromTransport(connected);
 
     try {
-      const response = await transactionService.signCosmosAminoDocWithLedger(
+      const response = await transactionService.signArbitraryDocWithLedger(
         ledgerConnector,
         currentAccount,
-        signDoc,
+        chainId,
+        signer,
+        data,
       );
       chrome.runtime.sendMessage(
-        createCosmosResponse(CosmosResponseExecuteType.SIGN_COSMOS_AMINO, 'success', responseKey, {
-          signed: response.signed,
-          signature: response.signature,
-        }),
+        createSignArbitraryResponse('success', responseKey, { ...response }),
       );
       window.close();
       return true;
@@ -101,58 +99,31 @@ const ApproveSignCosmosLedgerLoadingContainer: React.FC = () => {
       const message = (error as Error)?.message ?? String(error);
       if (error instanceof LedgerError && error.kind === 'UserRejected') {
         chrome.runtime.sendMessage(
-          createCosmosResponse(
-            CosmosResponseExecuteType.SIGN_COSMOS_AMINO,
-            'failure',
-            responseKey,
-            undefined,
-            WalletResponseRejectType.SIGN_REJECTED,
-          ),
+          InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, responseKey),
         );
         window.close();
         return true;
       }
       // A device holding a different seed never succeeds on retry, so answer
-      // the request instead of re-prompting the device every second.
+      // the request rather than re-prompting it every second.
       if (error instanceof LedgerError && error.kind === 'AccountMismatch') {
         chrome.runtime.sendMessage(
-          createCosmosResponse(
-            CosmosResponseExecuteType.SIGN_COSMOS_AMINO,
-            'failure',
-            responseKey,
-            undefined,
+          InjectionMessageInstance.failure(
             WalletResponseFailureType.ACCOUNT_MISMATCH,
+            { error: message },
+            responseKey,
           ),
         );
         window.close();
         return true;
       }
-      if (message.includes('Ledger')) {
-        return false;
-      }
-      chrome.runtime.sendMessage(
-        createCosmosResponse(
-          CosmosResponseExecuteType.SIGN_COSMOS_AMINO,
-          'failure',
-          responseKey,
-          { error: message },
-          WalletResponseFailureType.UNEXPECTED_ERROR,
-        ),
-      );
-      window.close();
-      return true;
+      return false;
     }
   };
 
   const onClickCancel = (): void => {
     chrome.runtime.sendMessage(
-      createCosmosResponse(
-        CosmosResponseExecuteType.SIGN_COSMOS_AMINO,
-        'failure',
-        responseKey,
-        undefined,
-        WalletResponseRejectType.SIGN_REJECTED,
-      ),
+      InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, responseKey),
     );
     window.close();
   };
@@ -160,4 +131,4 @@ const ApproveSignCosmosLedgerLoadingContainer: React.FC = () => {
   return <ApproveLedgerLoading document={null} onClickCancel={onClickCancel} />;
 };
 
-export default ApproveSignCosmosLedgerLoadingContainer;
+export default ApproveSignArbitraryLedgerLoadingContainer;
