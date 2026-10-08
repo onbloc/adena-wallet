@@ -17,6 +17,7 @@ import UnknownLogo from '@assets/common-unknown-logo.svg';
 import {
   createFaviconByHostname,
   decodeParameter,
+  formatAddress,
   getSiteName,
   parseParameters,
 } from '@common/utils/client-utils';
@@ -229,25 +230,26 @@ const ApproveSignArbitraryContainer: React.FC = () => {
         <span>{siteName || hostname}</span>
       </div>
 
-      <div className='info-table'>
-        <div className='row'>
-          <span className='key'>Network</span>
-          <span className='value'>{currentNetwork?.networkId || '—'}</span>
-        </div>
-        <div className='row'>
-          <span className='key'>Fee</span>
-          <span className='value'>None</span>
-        </div>
+      <div className='row'>
+        <span className='key'>Network</span>
+        <span className='value'>{currentNetwork?.networkId || '—'}</span>
       </div>
 
-      <div className='block'>
-        <span className='block-key'>Signing with</span>
-        <span className='block-value'>{signer || '—'}</span>
+      <div className='row'>
+        <span className='key'>Fee</span>
+        <span className='value'>None</span>
       </div>
 
-      <div className='block'>
-        <span className='block-key'>Message</span>
-        <pre className='message-pre'>{message}</pre>
+      <div className='row'>
+        <span className='key'>Signing with</span>
+        <span className='value'>{signer ? formatAddress(signer, 8) : '—'}</span>
+      </div>
+
+      <div className='message-wrapper'>
+        <span className='message-title'>Message</span>
+        <div className='message-box'>
+          <pre className='message'>{message}</pre>
+        </div>
       </div>
 
       <span className='notice'>
@@ -307,85 +309,64 @@ const Wrapper = styled.div`
     }
   }
 
-  .info-table {
-    width: 100%;
-    height: auto;
-    border-radius: 18px;
-    margin-bottom: 8px;
-    background-color: ${getTheme('neutral', '_9')};
-  }
-
   .row {
-    ${mixins.flex({ direction: 'row' })};
-    position: relative;
+    ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+    width: 100%;
+    min-height: 48px;
     padding: 10px 18px;
-    justify-content: space-between;
-    border-bottom: 2px solid ${getTheme('neutral', '_8')};
-    ${fonts.body1Reg};
-
-    &:last-child {
-      border-bottom: none;
-    }
+    margin-bottom: 8px;
+    gap: 10px;
+    border-radius: 30px;
+    background-color: ${getTheme('neutral', '_9')};
+    border: 1px solid ${getTheme('neutral', '_8')};
+    ${fonts.body2Reg};
 
     .key {
-      display: inline-flex;
-      width: fit-content;
       flex-shrink: 0;
       color: ${getTheme('neutral', 'a')};
     }
 
     .value {
-      display: block;
-      max-width: 204px;
+      overflow: hidden;
       text-align: right;
       text-overflow: ellipsis;
-      overflow: hidden;
       white-space: nowrap;
     }
   }
 
-  .block {
-    ${mixins.flex({ direction: 'column', align: 'flex-start' })};
+  .message-wrapper {
+    ${mixins.flex({ justify: 'flex-start' })};
     width: 100%;
-    padding: 12px 18px;
-    border-radius: 18px;
-    background-color: ${getTheme('neutral', '_9')};
     margin-bottom: 8px;
-    gap: 6px;
 
-    .block-key {
+    .message-title {
       ${fonts.body2Reg};
       color: ${getTheme('neutral', 'a')};
+      margin-bottom: 5px;
     }
 
-    .block-value {
-      ${fonts.body2Reg};
+    .message-box {
       width: 100%;
-      word-break: break-all;
-      color: ${getTheme('neutral', '_1')};
-    }
-
-    .message-pre {
-      width: 100%;
-      max-height: 240px;
+      max-height: 200px;
       overflow-y: auto;
-      margin: 0;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background-color: ${getTheme('neutral', '_8')};
+      padding: 12px 16px;
+      border-radius: 24px;
+      background-color: ${getTheme('neutral', '_9')};
       border: 1px solid ${getTheme('neutral', '_7')};
-      font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-      font-size: 11px;
-      line-height: 16px;
+    }
+
+    .message {
+      margin: 0;
+      ${fonts.body2Reg};
       white-space: pre-wrap;
       word-break: break-word;
-      color: ${getTheme('neutral', '_1')};
     }
   }
 
   .notice {
     width: 100%;
     padding: 0 4px;
+    margin-bottom: 20px;
     ${fonts.body2Reg};
     color: ${getTheme('neutral', 'a')};
   }
