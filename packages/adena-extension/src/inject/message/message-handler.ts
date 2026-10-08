@@ -161,6 +161,21 @@ export class MessageHandler {
           }
         });
         break;
+      // A SessionAccount is a Gno-only sub-key whose validity depends on chain
+      // state (it can be revoked). An offline signature can show that the key
+      // signed, but not that the key is still authorised when the proof is
+      // checked later, so proof-of-ownership is refused outright rather than
+      // answered with a key that proves less than the dApp will assume.
+      case 'SIGN_ARBITRARY':
+        if (await HandlerMethod.rejectSessionAccountUnsupported(core, message, sendResponse)) {
+          break;
+        }
+        HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
+          if (isEstablished) {
+            HandlerMethod.signArbitrary(core, message, sendResponse);
+          }
+        });
+        break;
       case 'SIGN_TX':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {

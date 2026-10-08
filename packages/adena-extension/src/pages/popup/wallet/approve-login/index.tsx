@@ -137,6 +137,9 @@ export const ApproveLogin = (): JSX.Element => {
         }
         navigate(RoutePath.ApproveSignTransaction + location.search, { state: { requestData } });
         return;
+      case 'SIGN_ARBITRARY':
+        navigate(RoutePath.ApproveSignArbitrary + location.search, { state: { requestData } });
+        return;
       case 'ADD_ESTABLISH':
         navigate(RoutePath.ApproveEstablish + location.search, { state: { requestData } });
         return;
