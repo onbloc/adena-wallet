@@ -48,6 +48,8 @@ permissions:
 jobs:
   authorize:
     runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.tag.outputs.sha }}
     steps:
       # triggering_actor, not actor, so a re-run is checked against whoever re-ran it.
       - name: Check actor is allowed to submit
@@ -72,6 +74,31 @@ jobs:
           echo "::error::$ACTOR is not allowed to submit to the stores"
           exit 1
 
+      # Pin both store jobs to the commit the tag points at, so a branch named
+      # like a version cannot be submitted and both stores get the same code.
+      - name: Resolve release tag
+        id: tag
+        env:
+          TAG_NAME: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if ! echo "$TAG_NAME" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::$TAG_NAME is not a release tag (vX.Y.Z)"
+            exit 1
+          fi
+          if ! ref=$(gh api "repos/$REPO/git/ref/tags/$TAG_NAME" --jq '.object.type + " " + .object.sha'); then
+            echo "::error::tag $TAG_NAME does not exist"
+            exit 1
+          fi
+          read -r type sha <<< "$ref"
+          # An annotated tag points at a tag object; follow it to the commit.
+          if [ "$type" = "tag" ]; then
+            sha=$(gh api "repos/$REPO/git/tags/$sha" --jq .object.sha)
+          fi
+          echo "$TAG_NAME -> $sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
   chrome:
     needs: authorize
     if: inputs.target == 'both' || inputs.target == 'chrome'
@@ -84,7 +111,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ needs.authorize.outputs.sha }}
 
       - name: Setup
         uses: ./.github/actions/setup
@@ -186,7 +213,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ needs.authorize.outputs.sha }}
 
       - name: Setup
         uses: ./.github/actions/setup
@@ -230,7 +257,7 @@ jobs:
           WEB_EXT_API_KEY: ${{ secrets.AMO_API_KEY }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_API_SECRET }}
         run: |
-          npx --yes web-ext@10 sign \
+          yarn web-ext sign \
             --source-dir packages/adena-extension/dist-firefox \
             --channel listed \
             --upload-source-code "$RUNNER_TEMP/source.zip" \

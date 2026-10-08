@@ -2,9 +2,9 @@ name: Setup
 description: Set up project environment and test environment.
 runs:
   using: composite
+  # Callers check out the repo first (a local action needs it), so checking out
+  # here again would reset the working tree to the triggering ref.
   steps:
-    - uses: actions/checkout@v4
-
     - uses: actions/setup-node@v4
       with:
         node-version: 22

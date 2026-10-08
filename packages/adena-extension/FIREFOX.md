@@ -46,8 +46,10 @@ the Chrome build and deploy in `build-deploy.yml`) and:
 
 Optional secrets:
 
-- `AMO_API_KEY` + `AMO_API_SECRET`: when both are set, the XPI is signed through
-  addons.mozilla.org (`--channel=unlisted`) so it installs in release Firefox.
+- `AMO_QA_API_KEY` + `AMO_QA_API_SECRET`: when both are set, the XPI is signed through
+  addons.mozilla.org (`--channel=unlisted`) so it installs in release Firefox. It is
+  signed under the QA add-on ID `adena-wallet-qa@onbloc.xyz`, so the release version
+  number stays free for the listed submission in `submit-store.yml`.
   Without them the unsigned XPI is still published, for manual signing or for use in
   unbranded builds with `xpinstall.signatures.required=false`.
 - `PRIVATE_ACCESS_TOKEN`: only needed to build against the private
