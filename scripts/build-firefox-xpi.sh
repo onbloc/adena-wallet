@@ -24,7 +24,7 @@ echo "filename: $file_name"
 
 rm -rf deploy-firefox deploy-firefox-latest
 
-npx --yes web-ext@10 build \
+yarn web-ext build \
   --source-dir packages/adena-extension/dist-firefox \
   --artifacts-dir deploy-firefox \
   --filename "$file_name" \

@@ -1,0 +1,264 @@
+name: Submit To Stores
+
+# Submits a release tag to the Chrome Web Store and addons.mozilla.org (listed)
+# for review. Manual only: a store submission cannot be taken back, so it is
+# kept apart from the tag-triggered QA builds in build-deploy.yml and
+# build-firefox-xpi.yml.
+#
+# Only the users in STORE_SUBMITTERS or members of STORE_SUBMITTER_TEAM may run
+# it. Store secrets belong to the `store-release` environment, limited to main,
+# so a workflow edited on another branch cannot reach them.
+#
+# Variables:
+#   STORE_SUBMITTERS:     comma-separated GitHub logins (e.g. alice,bob)
+#   STORE_SUBMITTER_TEAM: team slug in this org (e.g. release)
+#
+# Secrets:
+#   TEAM_READ_TOKEN: token with org members:read, for the team check
+#   store-release environment:
+#     Chrome:  CWS_PUBLISHER_ID, CWS_EXTENSION_ID, CWS_CLIENT_ID,
+#              CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN
+#     Firefox: AMO_API_KEY, AMO_API_SECRET
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to submit (e.g. v1.22.0)
+        required: true
+      target:
+        description: Store(s) to submit to
+        type: choice
+        default: both
+        options:
+          - both
+          - chrome
+          - firefox
+      chrome_publish_type:
+        description: Chrome - publish right after approval, or stage it for a manual publish
+        type: choice
+        default: STAGED_PUBLISH
+        options:
+          - STAGED_PUBLISH
+          - DEFAULT_PUBLISH
+
+permissions:
+  contents: read
+
+jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.tag.outputs.sha }}
+    steps:
+      # triggering_actor, not actor, so a re-run is checked against whoever re-ran it.
+      - name: Check actor is allowed to submit
+        env:
+          ACTOR: ${{ github.triggering_actor }}
+          ORG: ${{ github.repository_owner }}
+          SUBMITTERS: ${{ vars.STORE_SUBMITTERS }}
+          TEAM: ${{ vars.STORE_SUBMITTER_TEAM }}
+          GH_TOKEN: ${{ secrets.TEAM_READ_TOKEN }}
+        run: |
+          if [ -n "$ACTOR" ] && echo ",${SUBMITTERS// /}," | grep -qiF ",${ACTOR},"; then
+            echo "$ACTOR is listed in STORE_SUBMITTERS"
+            exit 0
+          fi
+          if [ -n "$TEAM" ] && [ -n "$GH_TOKEN" ]; then
+            state=$(gh api "orgs/$ORG/teams/$TEAM/memberships/$ACTOR" --jq .state 2>/dev/null || true)
+            if [ "$state" = "active" ]; then
+              echo "$ACTOR is a member of $ORG/$TEAM"
+              exit 0
+            fi
+          fi
+          echo "::error::$ACTOR is not allowed to submit to the stores"
+          exit 1
+
+      # Pin both store jobs to the commit the tag points at, so a branch named
+      # like a version cannot be submitted and both stores get the same code.
+      - name: Resolve release tag
+        id: tag
+        env:
+          TAG_NAME: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if ! echo "$TAG_NAME" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::$TAG_NAME is not a release tag (vX.Y.Z)"
+            exit 1
+          fi
+          if ! ref=$(gh api "repos/$REPO/git/ref/tags/$TAG_NAME" --jq '.object.type + " " + .object.sha'); then
+            echo "::error::tag $TAG_NAME does not exist"
+            exit 1
+          fi
+          read -r type sha <<< "$ref"
+          # An annotated tag points at a tag object; follow it to the commit.
+          if [ "$type" = "tag" ]; then
+            sha=$(gh api "repos/$REPO/git/tags/$sha" --jq .object.sha)
+          fi
+          echo "$TAG_NAME -> $sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+  chrome:
+    needs: authorize
+    if: inputs.target == 'both' || inputs.target == 'chrome'
+    runs-on: ubuntu-latest
+    environment: store-release
+    env:
+      PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+      EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.authorize.outputs.sha }}
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Check tag matches package version
+        env:
+          TAG_NAME: ${{ inputs.tag }}
+        run: |
+          version=$(node -p "require('./packages/adena-extension/package.json').version")
+          if [ "$TAG_NAME" != "v${version}" ]; then
+            echo "::error::tag $TAG_NAME does not match package version v${version}"
+            exit 1
+          fi
+
+      - name: Build project
+        run: |
+          yarn
+          yarn build
+        env:
+          WEB3_AUTH_LEGACY_CLIENT_ID: ${{ secrets.WEB3_AUTH_LEGACY_CLIENT_ID }}
+          GOOGLE_LEGACY_VERIFIER: ${{ secrets.GOOGLE_LEGACY_VERIFIER }}
+          GOOGLE_LEGACY_CLIENT_ID: ${{ secrets.GOOGLE_LEGACY_CLIENT_ID }}
+          WEB3_AUTH_PRODUCTION_CLIENT_ID: ${{ secrets.WEB3_AUTH_PRODUCTION_CLIENT_ID }}
+          GOOGLE_PRODUCTION_VERIFIER: ${{ secrets.GOOGLE_PRODUCTION_VERIFIER }}
+          GOOGLE_PRODUCTION_CLIENT_ID: ${{ secrets.GOOGLE_PRODUCTION_CLIENT_ID }}
+          WEB3_AUTH_EMAIL_CLIENT_ID: ${{ secrets.WEB3_AUTH_EMAIL_CLIENT_ID }}
+          EMAIL_VERIFIER_NAME: ${{ secrets.EMAIL_VERIFIER_NAME }}
+          WEB3_AUTH_X_CLIENT_ID: ${{ secrets.WEB3_AUTH_X_CLIENT_ID }}
+          X_VERIFIER_NAME: ${{ secrets.X_VERIFIER_NAME }}
+          X_CLIENT_ID: ${{ secrets.X_CLIENT_ID }}
+          X_AUTH0_DOMAIN: ${{ secrets.X_AUTH0_DOMAIN }}
+
+      - name: Package zip
+        run: |
+          cd packages/adena-extension/dist
+          zip -r "$GITHUB_WORKSPACE/chrome.zip" . -x '*.DS_Store' -x '__MACOSX/*'
+
+      - name: Get access token
+        env:
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          token=$(curl -sSf https://oauth2.googleapis.com/token \
+            -d client_id="$CLIENT_ID" \
+            -d client_secret="$CLIENT_SECRET" \
+            -d refresh_token="$REFRESH_TOKEN" \
+            -d grant_type=refresh_token | jq -r '.access_token // empty')
+          if [ -z "$token" ]; then
+            echo "::error::no access token in the OAuth response"
+            exit 1
+          fi
+          echo "::add-mask::$token"
+          echo "CWS_TOKEN=$token" >> "$GITHUB_ENV"
+
+      - name: Upload to Chrome Web Store
+        run: |
+          base="https://chromewebstore.googleapis.com"
+          item="publishers/${PUBLISHER_ID}/items/${EXTENSION_ID}"
+          res=$(curl -sS -X POST -H "Authorization: Bearer $CWS_TOKEN" \
+            -T chrome.zip "$base/upload/v2/$item:upload")
+          echo "$res"
+          state=$(echo "$res" | jq -r .uploadState)
+          # Large packages are processed asynchronously.
+          for _ in $(seq 1 30); do
+            [ "$state" = "IN_PROGRESS" ] || break
+            sleep 10
+            state=$(curl -sS -H "Authorization: Bearer $CWS_TOKEN" \
+              "$base/v2/$item:fetchStatus" | jq -r .lastAsyncUploadState)
+          done
+          if [ "$state" != "SUCCEEDED" ]; then
+            echo "::error::upload ended in state $state"
+            exit 1
+          fi
+
+      - name: Submit for review
+        env:
+          PUBLISH_TYPE: ${{ inputs.chrome_publish_type }}
+        run: |
+          # A non-JSON body fails the jq check as well, so only a clean
+          # response passes.
+          status=0
+          res=$(curl -sS --fail-with-body -X POST -H "Authorization: Bearer $CWS_TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d "{\"publishType\":\"$PUBLISH_TYPE\"}" \
+            "https://chromewebstore.googleapis.com/v2/publishers/${PUBLISHER_ID}/items/${EXTENSION_ID}:publish") || status=$?
+          echo "$res"
+          if [ "$status" -ne 0 ] || ! echo "$res" | jq -e '.error == null' >/dev/null; then
+            echo "::error::publish request failed"
+            exit 1
+          fi
+
+  firefox:
+    needs: authorize
+    if: inputs.target == 'both' || inputs.target == 'firefox'
+    runs-on: ubuntu-latest
+    environment: store-release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.authorize.outputs.sha }}
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Check tag matches package version
+        env:
+          TAG_NAME: ${{ inputs.tag }}
+        run: |
+          version=$(node -p "require('./packages/adena-extension/package.json').version")
+          if [ "$TAG_NAME" != "v${version}" ]; then
+            echo "::error::tag $TAG_NAME does not match package version v${version}"
+            exit 1
+          fi
+
+      # AMO reviewers rebuild bundled code, so the tagged source goes along.
+      - name: Package source code
+        run: git archive --format=zip -o "$RUNNER_TEMP/source.zip" HEAD
+
+      - name: Build project
+        run: |
+          yarn
+          yarn build:firefox
+        env:
+          WEB3_AUTH_LEGACY_CLIENT_ID: ${{ secrets.WEB3_AUTH_LEGACY_CLIENT_ID }}
+          GOOGLE_LEGACY_VERIFIER: ${{ secrets.GOOGLE_LEGACY_VERIFIER }}
+          GOOGLE_LEGACY_CLIENT_ID: ${{ secrets.GOOGLE_LEGACY_CLIENT_ID }}
+          WEB3_AUTH_PRODUCTION_CLIENT_ID: ${{ secrets.WEB3_AUTH_PRODUCTION_CLIENT_ID }}
+          GOOGLE_PRODUCTION_VERIFIER: ${{ secrets.GOOGLE_PRODUCTION_VERIFIER }}
+          GOOGLE_PRODUCTION_CLIENT_ID: ${{ secrets.GOOGLE_PRODUCTION_CLIENT_ID }}
+          WEB3_AUTH_EMAIL_CLIENT_ID: ${{ secrets.WEB3_AUTH_EMAIL_CLIENT_ID }}
+          EMAIL_VERIFIER_NAME: ${{ secrets.EMAIL_VERIFIER_NAME }}
+          WEB3_AUTH_X_CLIENT_ID: ${{ secrets.WEB3_AUTH_X_CLIENT_ID }}
+          X_VERIFIER_NAME: ${{ secrets.X_VERIFIER_NAME }}
+          X_CLIENT_ID: ${{ secrets.X_CLIENT_ID }}
+          X_AUTH0_DOMAIN: ${{ secrets.X_AUTH0_DOMAIN }}
+
+      # Listed review takes longer than a job should wait; --approval-timeout 0
+      # returns once the version is submitted.
+      - name: Submit to AMO (listed)
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+        run: |
+          yarn web-ext sign \
+            --source-dir packages/adena-extension/dist-firefox \
+            --channel listed \
+            --upload-source-code "$RUNNER_TEMP/source.zip" \
+            --approval-timeout 0
