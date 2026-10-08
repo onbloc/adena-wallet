@@ -100,7 +100,7 @@ const TransferLedgerLoadingContainer = (): JSX.Element => {
       .catch((error: Error) => {
         console.log(error);
         connected.close();
-        if (error.message === 'Transaction signing request was rejected by the user') {
+        if (error instanceof LedgerError && error.kind === 'UserRejected') {
           navigate(RoutePath.TransferLedgerReject);
           return null;
         }

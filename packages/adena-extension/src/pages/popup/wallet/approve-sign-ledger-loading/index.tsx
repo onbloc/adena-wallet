@@ -77,7 +77,7 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
           );
           return true;
         }
-        if (error.message === 'Transaction signing request was rejected by the user') {
+        if (error instanceof LedgerError && error.kind === 'UserRejected') {
           chrome.runtime.sendMessage(
             InjectionMessageInstance.failure(
               WalletResponseRejectType.SIGN_REJECTED,
