@@ -8,7 +8,7 @@ import {
 describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
   it('statically trusts every https gnoUrl origin declared in chains.json', () => {
     expect(GNO_CONNECT_ALLOWED_ORIGINS).toEqual(
-      expect.arrayContaining(['https://gno.land', 'https://staging.gno.land']),
+      expect.arrayContaining(['https://gno.land', 'https://onyx.testnets.gno.land']),
     );
   });
 

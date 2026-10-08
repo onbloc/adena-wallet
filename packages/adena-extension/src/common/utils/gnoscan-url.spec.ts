@@ -5,9 +5,9 @@ import {
 } from './gnoscan-url';
 
 describe('gnoscan url helpers', () => {
-  it('maps internal staging network id to Gnoscan staging chain id', () => {
-    expect(getGnoscanChainId('staging')).toBe('staging');
-    expect(getGnoscanChainParameters('staging')).toEqual({ chainId: 'staging' });
+  it('maps the onyx-1 testnet id to the Gnoscan onyx-1 chain id', () => {
+    expect(getGnoscanChainId('onyx-1')).toBe('onyx-1');
+    expect(getGnoscanChainParameters('onyx-1')).toEqual({ chainId: 'onyx-1' });
   });
 
   it('keeps supported Gnoscan chain ids unchanged when no alias is needed', () => {

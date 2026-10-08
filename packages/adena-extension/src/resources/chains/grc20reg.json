@@ -17,7 +17,7 @@
       }
     ]
   },
-  "staging": {
+  "onyx-1": {
     "helperPath": "",
     "registries": [
       { "path": "gno.land/r/nt/grc20reg/v0" }

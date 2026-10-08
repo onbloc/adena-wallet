@@ -238,7 +238,7 @@ describe('parseGnoMessageInfo', () => {
 describe('isAllowedGnoConnectOrigin', () => {
   it('returns true for registered gno.land origins', () => {
     expect(isAllowedGnoConnectOrigin('https://gno.land')).toBe(true);
-    expect(isAllowedGnoConnectOrigin('https://staging.gno.land')).toBe(true);
+    expect(isAllowedGnoConnectOrigin('https://onyx.testnets.gno.land')).toBe(true);
   });
 
   it('returns false for unregistered origins', () => {
@@ -271,7 +271,7 @@ describe('isAllowedGnoConnectOrigin', () => {
 describe('canHandleGnoConnectOrigin', () => {
   it('handles the origins chains.json declares over https', () => {
     expect(canHandleGnoConnectOrigin('https://gno.land')).toBe(true);
-    expect(canHandleGnoConnectOrigin('https://staging.gno.land')).toBe(true);
+    expect(canHandleGnoConnectOrigin('https://onyx.testnets.gno.land')).toBe(true);
   });
 
   it('handles loopback origins, whose trust is decided later at runtime', () => {
@@ -290,7 +290,11 @@ describe('canHandleGnoConnectOrigin', () => {
   });
 
   it('agrees with isAllowedGnoConnectOrigin for every remote origin it handles', () => {
-    const remoteHandled = ['https://gno.land', 'https://staging.gno.land', 'https://example.com'];
+    const remoteHandled = [
+      'https://gno.land',
+      'https://onyx.testnets.gno.land',
+      'https://example.com',
+    ];
     remoteHandled.forEach((origin) => {
       expect(canHandleGnoConnectOrigin(origin)).toBe(isAllowedGnoConnectOrigin(origin));
     });
