@@ -11,7 +11,7 @@ import {
   TransactionInfo,
 } from '@types';
 import { CosmosDocument, Document } from 'adena-module';
-import { GoogleKeySetType } from '@common/constants/web3auth.constant';
+import { SocialKeySetType } from '@common/constants/web3auth.constant';
 
 export const REGISTER_PATH = 'register.html' as const;
 export const SECURITY_PATH = 'security.html' as const;
@@ -314,14 +314,16 @@ export type RouteParams = {
   [RoutePath.WebCreatePassword]: null;
   [RoutePath.WebGoogleLogin]: {
     doneQuestionnaire: boolean;
-    keySetType?: GoogleKeySetType;
+    keySetType?: SocialKeySetType;
   } | null;
   [RoutePath.WebEmailLogin]: {
     doneQuestionnaire: boolean;
+    keySetType?: SocialKeySetType;
     email?: string;
   } | null;
   [RoutePath.WebXLogin]: {
     doneQuestionnaire: boolean;
+    keySetType?: SocialKeySetType;
   } | null;
   [RoutePath.WebSetupAirgap]: null;
   [RoutePath.WebSetupMultisig]: null;
@@ -360,7 +362,7 @@ export type RouteParams = {
     // Screen state that has to survive the questionnaire round trip and be
     // handed back to the callback screen.
     callbackState?: {
-      keySetType?: GoogleKeySetType;
+      keySetType?: SocialKeySetType;
       email?: string;
     };
   };

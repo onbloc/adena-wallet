@@ -6,7 +6,11 @@ import {
 } from '@adena-wallet/sdk';
 import { arrayToHex } from 'adena-module';
 
-import { Web3AuthVerifier } from '@common/constants/web3auth.constant';
+import {
+  DEFAULT_SOCIAL_KEY_SET_TYPE,
+  SocialKeySetType,
+  Web3AuthVerifier,
+} from '@common/constants/web3auth.constant';
 import { NetworkMetainfo } from '@types';
 
 const SOCIAL_LOGIN_APP_NAME = 'Adena';
@@ -34,6 +38,37 @@ export function isVerifierConfigured(
   provider: SocialProvider,
 ): boolean {
   return getMissingVerifierFields(verifier, provider).length === 0;
+}
+
+export interface SocialKeySetAvailability {
+  ableToSelectProduction: boolean;
+  ableToSelectLegacy: boolean;
+  /** Only worth asking when both are available. */
+  ableToSelectKeySet: boolean;
+  /** Key set the flow starts on: the requested one, else whichever can sign in. */
+  initialKeySetType: SocialKeySetType;
+}
+
+// A build may ship only one of the two, so the flow starts on whichever can
+// actually sign in rather than on the default.
+export function getSocialKeySetAvailability(
+  verifiers: Record<SocialKeySetType, Web3AuthVerifier>,
+  provider: SocialProvider,
+  requestedKeySetType?: SocialKeySetType,
+): SocialKeySetAvailability {
+  const ableToSelectProduction = isVerifierConfigured(verifiers.PRODUCTION, provider);
+  const ableToSelectLegacy = isVerifierConfigured(verifiers.LEGACY, provider);
+  const availableKeySetType: SocialKeySetType | null = ableToSelectProduction
+    ? 'PRODUCTION'
+    : ableToSelectLegacy
+      ? 'LEGACY'
+      : null;
+  return {
+    ableToSelectProduction,
+    ableToSelectLegacy,
+    ableToSelectKeySet: ableToSelectProduction && ableToSelectLegacy,
+    initialKeySetType: requestedKeySetType || availableKeySetType || DEFAULT_SOCIAL_KEY_SET_TYPE,
+  };
 }
 
 function assertConfigured(verifier: Web3AuthVerifier, provider: SocialProvider): void {

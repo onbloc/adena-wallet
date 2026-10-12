@@ -1,3 +1,4 @@
+import IconGoogle from '@assets/web/icon-google';
 import AnimationWaitForGoogleLogin from '@assets/web/lottie/waiting-for-google-login.json';
 import React, { useCallback, useMemo } from 'react';
 
@@ -14,7 +15,9 @@ import {
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import SocialLoginFail from '@components/pages/web/social-login-fail';
 import SocialLoginRequest from '@components/pages/web/social-login-request';
-import GoogleLoginSelectKeySet from './select-key-set';
+import SocialLoginSelectKeySet, {
+  SOCIAL_LOGIN_SENSITIVE_INFO_DESC,
+} from '@components/pages/web/social-login-select-key-set';
 
 const GoogleLoginScreen: React.FC = () => {
   const {
@@ -47,13 +50,6 @@ const GoogleLoginScreen: React.FC = () => {
     return null;
   }, [googleLoginState]);
 
-  const sensitiveInfoDesc = useMemo(() => {
-    if (keySetType === 'LEGACY') {
-      return 'You are about to construct a private key on your device using Web3Auth,\na third party service provider, with the previous verifier. This account\nwill be accessible with your social logins.';
-    }
-    return 'You are about to construct a private key on your device using Web3Auth,\na third party service provider. This account will be accessible with your\nsocial logins.';
-  }, [keySetType]);
-
   const onClickGoBack = useCallback(() => {
     backStep();
   }, [backStep]);
@@ -72,7 +68,9 @@ const GoogleLoginScreen: React.FC = () => {
         />
       )}
       {googleLoginState === 'SELECT_KEY_SET' && (
-        <GoogleLoginSelectKeySet
+        <SocialLoginSelectKeySet
+          providerName='Google'
+          providerIcon={<IconGoogle />}
           ableToSelectProduction={ableToSelectProduction}
           ableToSelectLegacy={ableToSelectLegacy}
           selectKeySetType={selectKeySetType}
@@ -80,7 +78,7 @@ const GoogleLoginScreen: React.FC = () => {
       )}
       {googleLoginState === 'INIT' && (
         <SensitiveInfoStep
-          desc={sensitiveInfoDesc}
+          desc={SOCIAL_LOGIN_SENSITIVE_INFO_DESC[keySetType]}
           onClickNext={initGoogleLogin}
           link={`${ADENA_DOCS_PAGE}/user-guide/sign-in/sign-in-with-google`}
         />

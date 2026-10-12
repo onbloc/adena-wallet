@@ -1,7 +1,7 @@
 import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
 import { renderHook } from '@testing-library/react';
 
-import { EMAIL_VERIFIER } from '@common/constants/web3auth.constant';
+import { EMAIL_VERIFIERS, Web3AuthVerifier } from '@common/constants/web3auth.constant';
 import useEmailLoginScreen from './use-email-login-screen';
 
 // Stub out the SDK to avoid pulling in @web3auth's native crypto at test time.
@@ -9,7 +9,7 @@ jest.mock('@adena-wallet/sdk', () => ({
   GnoSocialWalletProvider: { createEmailPasswordless: jest.fn() },
 }));
 
-const mockParams: { doneQuestionnaire?: boolean; email?: string } | null = {};
+const mockParams: { doneQuestionnaire?: boolean; keySetType?: string; email?: string } | null = {};
 
 jest.mock('@hooks/use-app-navigate', () => ({
   __esModule: true,
@@ -40,17 +40,34 @@ jest.mock('../social-login/use-social-login-account', () => ({
   toSocialLoginFailType: (): string => 'DEFAULT',
 }));
 
-const configured = { ...EMAIL_VERIFIER };
-
-const setVerifier = (verifier: Partial<typeof EMAIL_VERIFIER>): void => {
-  Object.assign(EMAIL_VERIFIER, configured, verifier);
+const CONFIGURED: Web3AuthVerifier = {
+  web3AuthClientId: 'client',
+  web3AuthNetwork: 'mainnet',
+  verifier: 'verifier',
 };
+
+const UNCONFIGURED: Web3AuthVerifier = {
+  web3AuthClientId: '',
+  web3AuthNetwork: 'mainnet',
+  verifier: '',
+};
+
+const originalVerifiers = { ...EMAIL_VERIFIERS };
+
+const setVerifiers = (production: Web3AuthVerifier, legacy = UNCONFIGURED): void => {
+  EMAIL_VERIFIERS.PRODUCTION = production;
+  EMAIL_VERIFIERS.LEGACY = legacy;
+};
+
+afterAll(() => {
+  setVerifiers(originalVerifiers.PRODUCTION, originalVerifiers.LEGACY);
+});
 
 describe('useEmailLoginScreen popup ownership', () => {
   const createEmailPasswordless = GnoSocialWalletProvider.createEmailPasswordless as jest.Mock;
 
   beforeEach(() => {
-    Object.assign(EMAIL_VERIFIER, configured, { web3AuthClientId: 'client', verifier: 'verifier' });
+    setVerifiers(CONFIGURED);
     mockConnectWithProvider.mockReset();
     createEmailPasswordless.mockReset();
     mockParams.doneQuestionnaire = true;
@@ -93,13 +110,14 @@ describe('useEmailLoginScreen popup ownership', () => {
 
 describe('useEmailLoginScreen entry state', () => {
   beforeEach(() => {
-    setVerifier({ web3AuthClientId: 'client', verifier: 'verifier' });
+    setVerifiers(CONFIGURED);
     delete mockParams.doneQuestionnaire;
+    delete mockParams.keySetType;
     delete mockParams.email;
   });
 
   it('fails up front when the verifier is unconfigured', () => {
-    setVerifier({ web3AuthClientId: '', verifier: '' });
+    setVerifiers(UNCONFIGURED);
 
     const { result } = renderHook(() => useEmailLoginScreen());
 
@@ -129,5 +147,44 @@ describe('useEmailLoginScreen entry state', () => {
 
     // The address is the login hint, so the popup must not open without one.
     expect(result.current.emailLoginState).toBe('ENTER_EMAIL');
+  });
+});
+
+describe('useEmailLoginScreen key set selection', () => {
+  beforeEach(() => {
+    delete mockParams.doneQuestionnaire;
+    delete mockParams.keySetType;
+    delete mockParams.email;
+  });
+
+  it('asks which key set to use when both verifiers are configured', () => {
+    setVerifiers(CONFIGURED, CONFIGURED);
+
+    const { result } = renderHook(() => useEmailLoginScreen());
+
+    expect(result.current.emailLoginState).toBe('SELECT_KEY_SET');
+    expect(result.current.ableToSelectProduction).toBe(true);
+    expect(result.current.ableToSelectLegacy).toBe(true);
+  });
+
+  it('starts on the legacy verifier when production is the one missing', () => {
+    setVerifiers(UNCONFIGURED, CONFIGURED);
+
+    const { result } = renderHook(() => useEmailLoginScreen());
+
+    expect(result.current.emailLoginState).toBe('INIT');
+    expect(result.current.keySetType).toBe('LEGACY');
+  });
+
+  it('keeps the selected key set across the questionnaire round trip', () => {
+    setVerifiers(CONFIGURED, CONFIGURED);
+    mockParams.doneQuestionnaire = true;
+    mockParams.keySetType = 'LEGACY';
+    mockParams.email = 'user@mail.com';
+
+    const { result } = renderHook(() => useEmailLoginScreen());
+
+    expect(result.current.emailLoginState).toBe('REQUEST_LOGIN');
+    expect(result.current.keySetType).toBe('LEGACY');
   });
 });

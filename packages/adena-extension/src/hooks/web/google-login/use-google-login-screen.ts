@@ -1,12 +1,12 @@
 import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
 import { useCallback, useState } from 'react';
 
+import { GOOGLE_VERIFIERS, SocialKeySetType } from '@common/constants/web3auth.constant';
 import {
-  DEFAULT_GOOGLE_KEY_SET_TYPE,
-  GOOGLE_VERIFIERS,
-  GoogleKeySetType,
-} from '@common/constants/web3auth.constant';
-import { createGoogleLoginConfig, isVerifierConfigured } from '@common/utils/social-login';
+  createGoogleLoginConfig,
+  getSocialKeySetAvailability,
+  isVerifierConfigured,
+} from '@common/utils/social-login';
 import { useNetwork } from '@hooks/use-network';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useIndicatorStep, {
@@ -25,11 +25,11 @@ export type UseGoogleLoginReturn = {
   ableToSelectProduction: boolean;
   ableToSelectLegacy: boolean;
   googleLoginState: GoogleLoginStateType;
-  keySetType: GoogleKeySetType;
+  keySetType: SocialKeySetType;
   indicatorInfo: UseIndicatorStepReturn;
   backStep: () => void;
   retry: () => void;
-  selectKeySetType: (keySetType: GoogleKeySetType) => void;
+  selectKeySetType: (keySetType: SocialKeySetType) => void;
   initGoogleLogin: () => void;
   requestGoogleLogin: () => Promise<void>;
 };
@@ -49,17 +49,10 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
   const { navigate, params } = useAppNavigate<RoutePath.WebGoogleLogin>();
   const { ableToSkipQuestionnaire } = useQuestionnaire();
   const { connectWithProvider } = useSocialLoginAccount();
-  const ableToSelectProduction = isVerifierConfigured(GOOGLE_VERIFIERS.PRODUCTION, 'GOOGLE');
-  const ableToSelectLegacy = isVerifierConfigured(GOOGLE_VERIFIERS.LEGACY, 'GOOGLE');
-  // Only worth asking when both are available.
-  const ableToSelectKeySet = ableToSelectProduction && ableToSelectLegacy;
-  // A build may ship only one of the two, so the flow starts on whichever can
-  // actually sign in rather than on the default.
-  const availableKeySetType: GoogleKeySetType | null = ableToSelectProduction
-    ? 'PRODUCTION'
-    : ableToSelectLegacy
-      ? 'LEGACY'
-      : null;
+  // Restored from the route state after the questionnaire round trip, which
+  // remounts this screen and would otherwise reset the selection.
+  const { ableToSelectProduction, ableToSelectLegacy, ableToSelectKeySet, initialKeySetType } =
+    getSocialKeySetAvailability(GOOGLE_VERIFIERS, 'GOOGLE', params?.keySetType);
   // Identifies the login attempt that owns the popup, so an abandoned or
   // superseded one cannot commit an account when it finally resolves.
   const { begin: beginAttempt, abandon: abandonAttempt } = useSocialLoginAttempt();
@@ -67,27 +60,17 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
   const { currentNetwork } = useNetwork();
 
   const [googleLoginState, setGoogleLoginState] = useState<GoogleLoginStateType>(() => {
-    if (!params?.doneQuestionnaire) {
-      if (ableToSelectKeySet) {
-        return 'SELECT_KEY_SET';
-      }
-      // Nothing to choose between: go straight in on the one that works.
-      return availableKeySetType ? 'INIT' : 'FAILED';
+    if (!params?.doneQuestionnaire && ableToSelectKeySet) {
+      return 'SELECT_KEY_SET';
     }
-    // Fail before reopening the popup when the key set is unconfigured.
-    return isVerifierConfigured(
-      GOOGLE_VERIFIERS[params.keySetType || DEFAULT_GOOGLE_KEY_SET_TYPE],
-      'GOOGLE',
-    )
-      ? 'REQUEST_LOGIN'
-      : 'FAILED';
+    // Fail before opening the popup when the key set is unconfigured.
+    if (!isVerifierConfigured(GOOGLE_VERIFIERS[initialKeySetType], 'GOOGLE')) {
+      return 'FAILED';
+    }
+    return params?.doneQuestionnaire ? 'REQUEST_LOGIN' : 'INIT';
   });
 
-  // Restored from the route state after the questionnaire round trip, which
-  // remounts this screen and would otherwise reset the selection.
-  const [keySetType, setKeySetType] = useState<GoogleKeySetType>(
-    params?.keySetType || availableKeySetType || DEFAULT_GOOGLE_KEY_SET_TYPE,
-  );
+  const [keySetType, setKeySetType] = useState<SocialKeySetType>(initialKeySetType);
 
   const indicatorInfo = useIndicatorStep<string>({
     stepMap: googleLoginStepNo,
@@ -95,7 +78,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
     hasQuestionnaire: true,
   });
 
-  const selectKeySetType = useCallback((selected: GoogleKeySetType) => {
+  const selectKeySetType = useCallback((selected: SocialKeySetType) => {
     setKeySetType(selected);
     setGoogleLoginState(
       isVerifierConfigured(GOOGLE_VERIFIERS[selected], 'GOOGLE') ? 'INIT' : 'FAILED',
