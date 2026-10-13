@@ -15,11 +15,11 @@ export interface Web3AuthVerifier {
 }
 
 // Accounts predating the production verifier are only reachable through legacy.
-export type GoogleKeySetType = 'LEGACY' | 'PRODUCTION';
+export type SocialKeySetType = 'LEGACY' | 'PRODUCTION';
 
-export const DEFAULT_GOOGLE_KEY_SET_TYPE: GoogleKeySetType = 'PRODUCTION';
+export const DEFAULT_SOCIAL_KEY_SET_TYPE: SocialKeySetType = 'PRODUCTION';
 
-export const GOOGLE_VERIFIERS: Record<GoogleKeySetType, Web3AuthVerifier> = {
+export const GOOGLE_VERIFIERS: Record<SocialKeySetType, Web3AuthVerifier> = {
   LEGACY: {
     web3AuthClientId: process.env.WEB3_AUTH_LEGACY_CLIENT_ID || '',
     web3AuthNetwork: 'testnet',
@@ -37,21 +37,41 @@ export const GOOGLE_VERIFIERS: Record<GoogleKeySetType, Web3AuthVerifier> = {
   },
 };
 
-// Email and X share one Web3Auth project, and the SDK's email path sends no
-// Auth0 values.
-export const EMAIL_VERIFIER: Web3AuthVerifier = {
-  web3AuthClientId:
-    process.env.WEB3_AUTH_EMAIL_CLIENT_ID || process.env.WEB3_AUTH_X_CLIENT_ID || '',
-  web3AuthNetwork: 'mainnet',
-  verifier: process.env.EMAIL_VERIFIER_NAME || '',
+// Email and X share one Web3Auth project per key set, and the SDK's email path
+// sends no Auth0 values.
+export const EMAIL_VERIFIERS: Record<SocialKeySetType, Web3AuthVerifier> = {
+  LEGACY: {
+    web3AuthClientId:
+      process.env.WEB3_AUTH_EMAIL_LEGACY_CLIENT_ID ||
+      process.env.WEB3_AUTH_X_LEGACY_CLIENT_ID ||
+      '',
+    web3AuthNetwork: 'testnet',
+    verifier: process.env.EMAIL_LEGACY_VERIFIER_NAME || '',
+  },
+
+  PRODUCTION: {
+    web3AuthClientId:
+      process.env.WEB3_AUTH_EMAIL_CLIENT_ID || process.env.WEB3_AUTH_X_CLIENT_ID || '',
+    web3AuthNetwork: 'mainnet',
+    verifier: process.env.EMAIL_VERIFIER_NAME || '',
+  },
 };
 
-// TODO: fill in the X verifier. Web3Auth reaches X through an Auth0 JWT
-// verifier, hence the domain.
-export const X_VERIFIER: Web3AuthVerifier = {
-  web3AuthClientId: process.env.WEB3_AUTH_X_CLIENT_ID || '',
-  web3AuthNetwork: 'mainnet',
-  verifier: process.env.X_VERIFIER_NAME || '',
-  authClientId: process.env.X_CLIENT_ID || '',
-  domain: process.env.X_AUTH0_DOMAIN || '',
+// Web3Auth reaches X through an Auth0 JWT verifier, hence the domain.
+export const X_VERIFIERS: Record<SocialKeySetType, Web3AuthVerifier> = {
+  LEGACY: {
+    web3AuthClientId: process.env.WEB3_AUTH_X_LEGACY_CLIENT_ID || '',
+    web3AuthNetwork: 'testnet',
+    verifier: process.env.X_LEGACY_VERIFIER_NAME || '',
+    authClientId: process.env.X_LEGACY_CLIENT_ID || '',
+    domain: process.env.X_LEGACY_AUTH0_DOMAIN || '',
+  },
+
+  PRODUCTION: {
+    web3AuthClientId: process.env.WEB3_AUTH_X_CLIENT_ID || '',
+    web3AuthNetwork: 'mainnet',
+    verifier: process.env.X_VERIFIER_NAME || '',
+    authClientId: process.env.X_CLIENT_ID || '',
+    domain: process.env.X_AUTH0_DOMAIN || '',
+  },
 };

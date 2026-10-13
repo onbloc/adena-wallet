@@ -10,6 +10,8 @@ export interface WebTitleWithDescriptionProps {
   title: string;
   description: string;
   isCenter?: boolean;
+  /** Keeps the title on one line even when it is wider than the column. */
+  titleNoWrap?: boolean;
   marginTop?: CSSProperties['marginTop'];
   marginBottom?: CSSProperties['marginBottom'];
   descriptionLetterSpacing?: CSSProperties['letterSpacing'];
@@ -19,6 +21,7 @@ export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = (
   title,
   description,
   isCenter,
+  titleNoWrap,
   marginTop = 0,
   marginBottom = 0,
   descriptionLetterSpacing,
@@ -33,7 +36,11 @@ export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = (
         marginBottom,
       }}
     >
-      <WebText type='headline2' textCenter={isCenter}>
+      <WebText
+        type='headline2'
+        textCenter={isCenter}
+        style={titleNoWrap ? { whiteSpace: 'nowrap' } : undefined}
+      >
         {title}
       </WebText>
       <WebText
