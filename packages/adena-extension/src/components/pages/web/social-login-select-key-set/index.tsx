@@ -47,7 +47,7 @@ const SocialLoginSelectKeySet: React.FC<SocialLoginSelectKeySetProps> = ({
   return (
     <StyledContainer>
       <WebTitleWithDescription
-        title='Select Your Account Type'
+        title='Select Account Type'
         titleNoWrap
         description='Your private key depends on the verifier used at sign-in, so pick the type that matches your account.'
       />
