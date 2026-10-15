@@ -59,7 +59,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
     }
 
     return Math.abs(storageDeposit.storageDeposit - storageDeposit.unlockDeposit);
-  }, [isEmptyValue, storageDeposit.storageDeposit]);
+  }, [isEmptyValue, storageDeposit.storageDeposit, storageDeposit.unlockDeposit]);
 
   const isRefundable = useMemo(() => {
     if (isEmptyValue) {
