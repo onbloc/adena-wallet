@@ -1,3 +1,4 @@
+/* eslint-disable no-bitwise -- UTF-8 decoding is bit manipulation by definition. */
 /**
  * Hermes (React Native 0.77) ships TextEncoder but no TextDecoder. Vault and
  * session decryption decode UTF-8 with `new TextDecoder()`, so without this
