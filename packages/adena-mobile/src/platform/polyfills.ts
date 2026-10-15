@@ -4,9 +4,13 @@
 import {Buffer} from 'buffer';
 
 import {installRandomValuesPolyfill} from './random-values-polyfill';
+import {installTextDecoderPolyfill} from './text-decoder-polyfill';
 
 // Hermes ships no CSPRNG-backed crypto.getRandomValues.
 installRandomValuesPolyfill();
+
+// Hermes ships TextEncoder but not TextDecoder (needed to decrypt the vault).
+installTextDecoderPolyfill();
 
 // Shared libraries (Ledger transports, tm2-js-client, cosmjs) expect Node's
 // Buffer global; Hermes has none.

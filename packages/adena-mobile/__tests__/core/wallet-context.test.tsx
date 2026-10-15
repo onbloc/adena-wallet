@@ -21,6 +21,7 @@ import {
   installMobilePlatform,
   MobilePlatform,
 } from '../../src/platform/install';
+import {installTextDecoderPolyfill} from '../../src/platform/text-decoder-polyfill';
 
 jest.setTimeout(60_000);
 
@@ -41,7 +42,12 @@ const waitFor = async (check: () => boolean): Promise<void> => {
 
 let platform: MobilePlatform;
 
+const nativeTextDecoder = globalThis.TextDecoder;
+
 beforeAll(async () => {
+  // Run the whole lifecycle the way Hermes does: no built-in TextDecoder.
+  delete (globalThis as {TextDecoder?: unknown}).TextDecoder;
+  installTextDecoderPolyfill();
   await sodium.ready;
   const result = await installMobilePlatform(makeDismissedResponse);
   if (!result.ok) {
@@ -58,6 +64,7 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
+  globalThis.TextDecoder = nativeTextDecoder;
   platform.autoLock.stop();
   setCryptoProvider(libsodiumCryptoProvider);
   setBackgroundMessenger(chromeBackgroundMessenger);
