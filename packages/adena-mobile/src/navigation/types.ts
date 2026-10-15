@@ -3,7 +3,8 @@ export type OnboardingStackParams = {
   CreateMnemonic: undefined;
   ConfirmMnemonic: undefined;
   ImportWallet: undefined;
-  SetPassword: undefined;
+  /** Which flow led here, for the step dots. */
+  SetPassword: {flow: 'create' | 'import'};
 };
 
 export type MainStackParams = {

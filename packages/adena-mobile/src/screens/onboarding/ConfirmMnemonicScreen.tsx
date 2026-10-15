@@ -1,17 +1,20 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {getCryptoProvider} from 'adena-module';
 import React, {useMemo, useState} from 'react';
+import {StyleSheet, View} from 'react-native';
 
 import {pendingSecret} from '../../core/pending-secret';
 import type {OnboardingStackParams} from '../../navigation/types';
 import {
-  Body,
-  Button,
-  ErrorText,
-  Field,
-  Screen,
-  Title,
-} from '../../ui/components';
+  SeedWordInput,
+  WebButton,
+  WebErrorText,
+  WebScreen,
+  WebStepHeader,
+  WebText,
+  WebTitle,
+} from '../../ui/web';
+import {CREATE_FLOW_STEPS} from './CreateMnemonicScreen';
 
 type Props = NativeStackScreenProps<OnboardingStackParams, 'ConfirmMnemonic'>;
 
@@ -41,53 +44,88 @@ export function ConfirmMnemonicScreen({navigation}: Props) {
   const [answers, setAnswers] = useState<string[]>(
     positions.map(position => (__DEV__ ? words[position] : '')),
   );
-  const [error, setError] = useState('');
+  const [wrong, setWrong] = useState<boolean[]>(positions.map(() => false));
 
   const confirm = () => {
-    const correct = positions.every(
+    const mismatches = positions.map(
       (position, index) =>
-        answers[index].trim().toLowerCase() === words[position],
+        answers[index].trim().toLowerCase() !== words[position],
     );
-    if (!correct) {
-      setError('One or more words do not match. Check your written phrase.');
+    setWrong(mismatches);
+    if (mismatches.some(Boolean)) {
       return;
     }
-    navigation.navigate('SetPassword');
+    navigation.navigate('SetPassword', {flow: 'create'});
   };
+
+  const header = (
+    <WebStepHeader
+      step={1}
+      steps={CREATE_FLOW_STEPS}
+      onBack={() => navigation.goBack()}
+    />
+  );
 
   if (words.length === 0) {
     return (
-      <Screen>
-        <Body>The recovery phrase is no longer available. Start again.</Body>
-        <Button title="Back to start" onPress={() => navigation.popToTop()} />
-      </Screen>
+      <WebScreen
+        header={header}
+        footer={
+          <WebButton
+            title="Back to start"
+            onPress={() => navigation.popToTop()}
+          />
+        }>
+        <WebText type="body4">
+          The seed phrase is no longer available. Start again.
+        </WebText>
+      </WebScreen>
     );
   }
 
   return (
-    <Screen>
-      <Title>Confirm your phrase</Title>
-      <Body muted>
-        Enter the words at these positions from what you wrote down.
-      </Body>
-      {positions.map((position, index) => (
-        <Field
-          key={position}
-          label={`Word #${position + 1}`}
-          value={answers[index]}
-          onChangeText={text =>
-            setAnswers(current =>
-              current.map((value, i) => (i === index ? text : value)),
-            )
-          }
+    <WebScreen
+      header={header}
+      footer={
+        <WebButton
+          testID="confirm-next"
+          title="Next"
+          chevron
+          disabled={answers.some(answer => !answer.trim())}
+          onPress={confirm}
         />
-      ))}
-      <ErrorText>{error}</ErrorText>
-      <Button
-        title="Continue"
-        disabled={answers.some(answer => !answer.trim())}
-        onPress={confirm}
+      }>
+      <WebTitle
+        title="Verify Your Seed Phrase"
+        description="Enter the requested words from your seed phrase in the fields below."
       />
-    </Screen>
+      <View style={styles.inputs}>
+        {positions.map((position, index) => (
+          <SeedWordInput
+            key={position}
+            label={`Word #${position + 1}`}
+            error={wrong[index]}
+            value={answers[index]}
+            onChangeText={text => {
+              setAnswers(current =>
+                current.map((value, i) => (i === index ? text : value)),
+              );
+              setWrong(current =>
+                current.map((value, i) => (i === index ? false : value)),
+              );
+            }}
+          />
+        ))}
+      </View>
+      <WebErrorText>
+        {wrong.some(Boolean)
+          ? 'One or more words do not match. Check your written phrase.'
+          : ''}
+      </WebErrorText>
+    </WebScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  inputs: {gap: 16},
+});

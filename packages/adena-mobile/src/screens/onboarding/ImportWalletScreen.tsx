@@ -1,23 +1,30 @@
+import {ADENA_DOCS_PAGE} from '@common/constants/resource.constant';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {EnglishMnemonic} from 'adena-module';
-import React, {useState} from 'react';
-import {StyleSheet} from 'react-native';
+import React, {useMemo, useState} from 'react';
+import {StyleSheet, View} from 'react-native';
 
 import {pendingSecret} from '../../core/pending-secret';
 import {normalizePrivateKey} from '../../core/private-key';
 import type {OnboardingStackParams} from '../../navigation/types';
 import {useSecureScreen} from '../../security/use-secure-screen';
 import {
-  Body,
-  Button,
-  ErrorText,
-  Field,
-  Notice,
-  Screen,
-  Title,
-} from '../../ui/components';
+  SeedWordInput,
+  WebButton,
+  WebCheckBox,
+  WebErrorText,
+  WebInput,
+  WebScreen,
+  WebStepHeader,
+  WebTabs,
+  WebTitle,
+} from '../../ui/web';
+import {SensitiveInfoStep} from './SensitiveInfoStep';
 
 type Props = NativeStackScreenProps<OnboardingStackParams, 'ImportWallet'>;
+
+/** Import flow: this screen, SetPassword. */
+export const IMPORT_FLOW_STEPS = 2;
 
 /** Word count, wordlist membership and checksum, via adena-module's BIP39 code. */
 export function isValidMnemonic(mnemonic: string): boolean {
@@ -32,91 +39,155 @@ export function normalizeMnemonic(input: string): string {
   return input.trim().toLowerCase().split(/\s+/).join(' ');
 }
 
-type ImportMode = 'mnemonic' | 'privateKey';
+/**
+ * Puts `text` into cell `index`; a pasted phrase (several words) fills the
+ * following cells too, as the extension's seed input does.
+ */
+export function fillWords(
+  current: string[],
+  index: number,
+  text: string,
+): string[] {
+  const pasted = text.trim().split(/\s+/).filter(Boolean);
+  if (pasted.length <= 1) {
+    return current.map((word, i) => (i === index ? text.trim() : word));
+  }
+  return current.map((word, i) =>
+    i >= index && i - index < pasted.length ? pasted[i - index] : word,
+  );
+}
+
+type ImportMode = '12' | '24' | 'privateKey';
+
+const TABS: {key: ImportMode; label: string}[] = [
+  {key: '12', label: '12 words'},
+  {key: '24', label: '24 words'},
+  {key: 'privateKey', label: 'Private Key'},
+];
 
 export function ImportWalletScreen({navigation}: Props) {
   useSecureScreen();
-  const [mode, setMode] = useState<ImportMode>('mnemonic');
-  const [secret, setSecret] = useState('');
-  const [error, setError] = useState('');
+  const [phase, setPhase] = useState<'intro' | 'input'>('intro');
+  const [mode, setMode] = useState<ImportMode>('12');
+  const [words, setWords] = useState<string[]>(() => Array(12).fill(''));
+  const [privateKey, setPrivateKey] = useState('');
+  const [agreed, setAgreed] = useState(false);
 
   const switchMode = (next: ImportMode) => {
     setMode(next);
-    setSecret('');
-    setError('');
+    setWords(Array(next === '24' ? 24 : 12).fill(''));
+    setPrivateKey('');
   };
+
+  const mnemonic = normalizeMnemonic(words.join(' '));
+  const complete =
+    mode === 'privateKey' ? !!privateKey.trim() : words.every(Boolean);
+  const valid = useMemo(() => {
+    if (!complete) {
+      return false;
+    }
+    return mode === 'privateKey'
+      ? !!normalizePrivateKey(privateKey)
+      : isValidMnemonic(mnemonic);
+  }, [complete, mode, privateKey, mnemonic]);
 
   const next = () => {
-    if (mode === 'mnemonic') {
-      const normalized = normalizeMnemonic(secret);
-      if (!isValidMnemonic(normalized)) {
-        setError(
-          'This is not a valid recovery phrase. Check the words and their order.',
-        );
+    if (mode === 'privateKey') {
+      const normalized = normalizePrivateKey(privateKey);
+      if (!normalized) {
         return;
       }
-      pendingSecret.set({kind: 'mnemonic', value: normalized});
+      pendingSecret.set({kind: 'privateKey', value: normalized});
     } else {
-      const privateKey = normalizePrivateKey(secret);
-      if (!privateKey) {
-        setError('A private key is 64 hexadecimal characters (0x optional).');
-        return;
-      }
-      pendingSecret.set({kind: 'privateKey', value: privateKey});
+      pendingSecret.set({kind: 'mnemonic', value: mnemonic});
     }
-    setSecret('');
-    navigation.navigate('SetPassword');
+    setWords(current => current.map(() => ''));
+    setPrivateKey('');
+    navigation.navigate('SetPassword', {flow: 'import'});
   };
 
+  const header = (
+    <WebStepHeader
+      step={0}
+      steps={IMPORT_FLOW_STEPS}
+      onBack={() => navigation.goBack()}
+    />
+  );
+
+  if (phase === 'intro') {
+    return (
+      <WebScreen header={header}>
+        <SensitiveInfoStep
+          description="You are about to import your seed phrase or private key on this device. We recommend connecting with a hardware wallet for higher security."
+          learnMoreUrl={`${ADENA_DOCS_PAGE}/user-guide/sign-in/import-wallet`}
+          onNext={() => setPhase('input')}
+        />
+      </WebScreen>
+    );
+  }
+
   return (
-    <Screen>
-      <Title>Import a wallet</Title>
-      <Button
-        title="Recovery phrase"
-        variant={mode === 'mnemonic' ? 'primary' : 'secondary'}
-        onPress={() => switchMode('mnemonic')}
+    <WebScreen
+      header={header}
+      footer={
+        <WebButton
+          testID="import-next"
+          title="Next"
+          chevron
+          disabled={!agreed || !valid}
+          onPress={next}
+        />
+      }>
+      <WebTitle
+        title="Import Existing Wallet"
+        description="Enter a seed phrase or your private key to import your existing wallet."
       />
-      <Button
-        title="Private key"
-        variant={mode === 'privateKey' ? 'primary' : 'secondary'}
-        onPress={() => switchMode('privateKey')}
-      />
-      <Body muted>
-        {mode === 'mnemonic'
-          ? 'Enter your 12 or 24 word recovery phrase, separated by spaces.'
-          : 'Enter the private key of a single account. A wallet imported this way has only that account and no recovery phrase.'}
-      </Body>
-      <Notice>
-        Only enter it here, in the Adena app you installed from the store.
-      </Notice>
-      {mode === 'mnemonic' ? (
-        <Field
-          label="Recovery phrase"
-          value={secret}
-          onChangeText={text => {
-            setSecret(text);
-            setError('');
-          }}
-          multiline
-          style={styles.phrase}
+      <WebTabs tabs={TABS} value={mode} onChange={switchMode} />
+      {mode === 'privateKey' ? (
+        <WebInput
+          label="Private Key"
+          secret
+          value={privateKey}
+          error={complete && !valid}
+          onChangeText={setPrivateKey}
         />
       ) : (
-        <Field
-          label="Private key"
-          secret
-          value={secret}
-          onChangeText={text => {
-            setSecret(text);
-            setError('');
-          }}
-        />
+        <View style={styles.grid}>
+          {words.map((word, index) => (
+            <SeedWordInput
+              key={`${mode}-${index}`}
+              label={`${index + 1}`}
+              labelWidth={28}
+              compact
+              containerStyle={styles.cell}
+              error={complete && !valid}
+              value={word}
+              onChangeText={text =>
+                setWords(current => fillWords(current, index, text))
+              }
+            />
+          ))}
+        </View>
       )}
-      <ErrorText>{error}</ErrorText>
-      <Button title="Continue" disabled={!secret.trim()} onPress={next} />
-    </Screen>
+      <WebErrorText>
+        {complete && !valid
+          ? mode === 'privateKey'
+            ? 'Invalid private key'
+            : 'Invalid seed phrase'
+          : ''}
+      </WebErrorText>
+      <WebCheckBox
+        testID="import-agree"
+        checked={agreed}
+        onChange={setAgreed}
+        label="This will only be stored on this device. Adena can't recover it for you."
+      />
+    </WebScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  phrase: {minHeight: 120, textAlignVertical: 'top'},
+  grid: {flexDirection: 'row', flexWrap: 'wrap', gap: 8},
+  // Three columns with two 8px gaps.
+  cell: {width: '31.5%', flexGrow: 1},
 });

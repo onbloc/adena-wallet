@@ -52,8 +52,7 @@ const popupHeader: NativeStackNavigationOptions = {
 };
 
 const webHeader: NativeStackNavigationOptions = {
-  ...popupHeader,
-  headerStyle: {backgroundColor: webColors.background},
+  headerShown: false,
   contentStyle: {backgroundColor: webColors.background},
 };
 
@@ -61,33 +60,20 @@ const Onboarding = createNativeStackNavigator<OnboardingStackParams>();
 const Main = createNativeStackNavigator<MainStackParams>();
 
 function OnboardingNavigator() {
+  // Onboarding screens draw the extension's web header (back + step dots).
   return (
     <Onboarding.Navigator screenOptions={webHeader}>
-      <Onboarding.Screen
-        name="Welcome"
-        component={WelcomeScreen}
-        options={{headerShown: false}}
-      />
+      <Onboarding.Screen name="Welcome" component={WelcomeScreen} />
       <Onboarding.Screen
         name="CreateMnemonic"
         component={CreateMnemonicScreen}
-        options={{title: 'New wallet'}}
       />
       <Onboarding.Screen
         name="ConfirmMnemonic"
         component={ConfirmMnemonicScreen}
-        options={{title: 'Confirm'}}
       />
-      <Onboarding.Screen
-        name="ImportWallet"
-        component={ImportWalletScreen}
-        options={{title: 'Import'}}
-      />
-      <Onboarding.Screen
-        name="SetPassword"
-        component={SetPasswordScreen}
-        options={{title: 'Password'}}
-      />
+      <Onboarding.Screen name="ImportWallet" component={ImportWalletScreen} />
+      <Onboarding.Screen name="SetPassword" component={SetPasswordScreen} />
     </Onboarding.Navigator>
   );
 }
