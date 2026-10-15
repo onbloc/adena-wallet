@@ -1,5 +1,8 @@
-import {NavigationContainer} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {DarkTheme, NavigationContainer, Theme} from '@react-navigation/native';
+import {
+  createNativeStackNavigator,
+  NativeStackNavigationOptions,
+} from '@react-navigation/native-stack';
 import React from 'react';
 import {ActivityIndicator, StyleSheet, View} from 'react-native';
 
@@ -21,14 +24,45 @@ import {NetworksScreen} from '../screens/settings/NetworksScreen';
 import {RevealMnemonicScreen} from '../screens/settings/RevealMnemonicScreen';
 import {SettingsScreen} from '../screens/settings/SettingsScreen';
 import {UnlockScreen} from '../screens/UnlockScreen';
+import {colors, fonts, webColors} from '../ui/theme';
 import type {MainStackParams, OnboardingStackParams} from './types';
+
+const navigationTheme: Theme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: colors.primary,
+    background: colors.background,
+    card: colors.background,
+    text: colors.text,
+    border: colors.border,
+    notification: colors.danger,
+  },
+};
+
+/** Popup sub-header: centred header4 title, no divider. */
+const popupHeader: NativeStackNavigationOptions = {
+  headerStyle: {backgroundColor: colors.background},
+  headerTintColor: colors.text,
+  headerTitleAlign: 'center',
+  headerTitleStyle: {fontFamily: fonts.header6.fontFamily, fontSize: 18},
+  headerShadowVisible: false,
+  headerBackButtonDisplayMode: 'minimal',
+  contentStyle: {backgroundColor: colors.background},
+};
+
+const webHeader: NativeStackNavigationOptions = {
+  ...popupHeader,
+  headerStyle: {backgroundColor: webColors.background},
+  contentStyle: {backgroundColor: webColors.background},
+};
 
 const Onboarding = createNativeStackNavigator<OnboardingStackParams>();
 const Main = createNativeStackNavigator<MainStackParams>();
 
 function OnboardingNavigator() {
   return (
-    <Onboarding.Navigator>
+    <Onboarding.Navigator screenOptions={webHeader}>
       <Onboarding.Screen
         name="Welcome"
         component={WelcomeScreen}
@@ -60,7 +94,7 @@ function OnboardingNavigator() {
 
 function MainNavigator() {
   return (
-    <Main.Navigator>
+    <Main.Navigator screenOptions={popupHeader}>
       <Main.Screen
         name="Home"
         component={HomeScreen}
@@ -109,13 +143,13 @@ export function RootNavigator() {
   if (status === 'loading') {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator />
+        <ActivityIndicator color={colors.text} />
       </View>
     );
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       {status === 'no-wallet' && <OnboardingNavigator />}
       {status === 'locked' && <UnlockScreen />}
       {status === 'unlocked' && (
@@ -129,5 +163,9 @@ export function RootNavigator() {
 }
 
 const styles = StyleSheet.create({
-  loading: {flex: 1, justifyContent: 'center'},
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
 });

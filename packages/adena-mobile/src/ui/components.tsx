@@ -3,26 +3,47 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  StyleProp,
   StyleSheet,
   Text,
   TextInput,
   TextInputProps,
+  TextStyle,
   View,
   ViewStyle,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
-import {colors, radius, spacing} from './theme';
+import {
+  colors,
+  colorTokens,
+  fonts,
+  monoFont,
+  radius,
+  spacing,
+  webColors,
+} from './theme';
+
+export type ScreenTone = 'popup' | 'web';
 
 export function Screen({
   children,
   scroll = true,
   topInset = false,
-}: React.PropsWithChildren<{scroll?: boolean; topInset?: boolean}>) {
+  tone = 'popup',
+  footer,
+}: React.PropsWithChildren<{
+  scroll?: boolean;
+  topInset?: boolean;
+  /** 'web' uses the extension's full-page palette (onboarding). */
+  tone?: ScreenTone;
+  /** Pinned below the scrolling content, like the popup's bottom buttons. */
+  footer?: React.ReactNode;
+}>) {
   const body = <View style={styles.body}>{children}</View>;
   return (
     <SafeAreaView
-      style={styles.screen}
+      style={[styles.screen, tone === 'web' && styles.screenWeb]}
       // Screens without a navigation header must keep clear of the status bar.
       edges={
         topInset
@@ -30,24 +51,52 @@ export function Screen({
           : ['bottom', 'left', 'right']
       }>
       {scroll ? (
-        <ScrollView keyboardShouldPersistTaps="handled">{body}</ScrollView>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}>
+          {body}
+        </ScrollView>
       ) : (
         body
       )}
+      {footer ? <View style={styles.footer}>{footer}</View> : null}
     </SafeAreaView>
   );
 }
 
-export function Title({children}: React.PropsWithChildren) {
-  return <Text style={styles.title}>{children}</Text>;
+export function Title({
+  children,
+  center,
+}: React.PropsWithChildren<{center?: boolean}>) {
+  return (
+    <Text
+      accessibilityRole="header"
+      style={[styles.title, center && styles.center]}>
+      {children}
+    </Text>
+  );
 }
 
 export function Body({
   children,
   muted,
-}: React.PropsWithChildren<{muted?: boolean}>) {
+  center,
+  style,
+}: React.PropsWithChildren<{
+  muted?: boolean;
+  center?: boolean;
+  style?: StyleProp<TextStyle>;
+}>) {
   return (
-    <Text style={[styles.body_text, muted && styles.muted]}>{children}</Text>
+    <Text
+      style={[
+        styles.bodyText,
+        muted && styles.muted,
+        center && styles.center,
+        style,
+      ]}>
+      {children}
+    </Text>
   );
 }
 
@@ -59,6 +108,12 @@ export function Mono({children}: React.PropsWithChildren) {
   );
 }
 
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+
+/**
+ * The popup button: 48px tall, fully rounded. `secondary` is the extension's
+ * "normal" (grey) hierarchy, `ghost` its outlined one.
+ */
 export function Button({
   title,
   onPress,
@@ -66,41 +121,61 @@ export function Button({
   disabled,
   loading,
   testID,
+  style,
+  icon,
 }: {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: ButtonVariant;
   disabled?: boolean;
   loading?: boolean;
   testID?: string;
+  style?: StyleProp<ViewStyle>;
+  icon?: React.ReactNode;
 }) {
   const inactive = disabled || loading;
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
+      accessibilityState={{disabled: !!inactive, busy: !!loading}}
       onPress={onPress}
       disabled={inactive}
       style={({pressed}) => [
         styles.button,
-        variant === 'secondary' && styles.buttonSecondary,
-        variant === 'danger' && styles.buttonDanger,
-        (pressed || inactive) && styles.buttonDimmed,
+        buttonStyles[variant],
+        pressed && pressedStyles[variant],
+        disabled && disabledStyles[variant],
+        style,
       ]}>
       {loading ? (
-        <ActivityIndicator
-          color={variant === 'secondary' ? colors.text : colors.primaryText}
-        />
+        <ActivityIndicator color={colors.text} />
       ) : (
-        <Text
-          style={[
-            styles.buttonText,
-            variant === 'secondary' && styles.buttonTextSecondary,
-          ]}>
-          {title}
-        </Text>
+        <>
+          {icon}
+          <Text
+            style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>
+            {title}
+          </Text>
+        </>
       )}
     </Pressable>
+  );
+}
+
+/** Cancel / confirm pair at the bottom of approval and review screens. */
+export function ButtonPair({
+  cancel,
+  confirm,
+}: {
+  cancel: React.ComponentProps<typeof Button>;
+  confirm: React.ComponentProps<typeof Button>;
+}) {
+  return (
+    <View style={styles.buttonPair}>
+      <Button variant="secondary" {...cancel} style={styles.flex} />
+      <Button {...confirm} style={styles.flex} />
+    </View>
   );
 }
 
@@ -112,15 +187,30 @@ export function Button({
 export function Field({
   label,
   secret,
+  error,
   style,
+  tone = 'popup',
   ...props
-}: TextInputProps & {label: string; secret?: boolean}) {
+}: TextInputProps & {
+  label: string;
+  secret?: boolean;
+  error?: boolean;
+  tone?: ScreenTone;
+}) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         {...props}
-        style={[styles.input, style]}
+        accessibilityLabel={label}
+        style={[
+          styles.input,
+          tone === 'web' && styles.inputWeb,
+          props.multiline && styles.inputMultiline,
+          secret && !!props.value && styles.inputSecret,
+          error && styles.inputError,
+          style,
+        ]}
         secureTextEntry={secret}
         autoCapitalize="none"
         autoCorrect={false}
@@ -133,7 +223,9 @@ export function Field({
         keyboardType={
           secret ? 'default' : props.keyboardType ?? 'visible-password'
         }
+        keyboardAppearance="dark"
         placeholderTextColor={colors.textMuted}
+        selectionColor={colors.primary}
       />
     </View>
   );
@@ -150,9 +242,12 @@ export function Notice({
         tone === 'danger' ? styles.noticeDanger : styles.noticeWarning,
       ]}>
       <Text
-        style={
-          tone === 'danger' ? styles.noticeDangerText : styles.noticeWarningText
-        }>
+        style={[
+          styles.noticeText,
+          tone === 'danger'
+            ? styles.noticeDangerText
+            : styles.noticeWarningText,
+        ]}>
         {children}
       </Text>
     </View>
@@ -163,13 +258,17 @@ export function ErrorText({children}: React.PropsWithChildren) {
   if (!children) {
     return null;
   }
-  return <Text style={styles.error}>{children}</Text>;
+  return (
+    <Text accessibilityRole="alert" style={styles.error}>
+      {children}
+    </Text>
+  );
 }
 
 export function Card({
   children,
   style,
-}: React.PropsWithChildren<{style?: ViewStyle}>) {
+}: React.PropsWithChildren<{style?: StyleProp<ViewStyle>}>) {
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
@@ -190,57 +289,161 @@ export function Row({label, value}: {label: string; value: React.ReactNode}) {
   );
 }
 
+/** A tappable settings-style row: label on the left, optional detail and chevron. */
+export function ListItem({
+  title,
+  detail,
+  onPress,
+  danger,
+  testID,
+}: {
+  title: string;
+  detail?: string;
+  onPress: () => void;
+  danger?: boolean;
+  testID?: string;
+}) {
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({pressed}) => [
+        styles.listItem,
+        pressed && styles.listItemPressed,
+      ]}>
+      <Text style={[styles.listItemTitle, danger && styles.listItemDanger]}>
+        {title}
+      </Text>
+      {detail ? <Text style={styles.listItemDetail}>{detail}</Text> : null}
+      <Text style={styles.chevron}>›</Text>
+    </Pressable>
+  );
+}
+
 export function Gap({size = spacing.md}: {size?: number}) {
   return <View style={{height: size}} />;
 }
 
-const styles = StyleSheet.create({
-  screen: {flex: 1, backgroundColor: colors.background},
-  body: {padding: spacing.lg, gap: spacing.md},
-  title: {fontSize: 24, fontWeight: '700', color: colors.text},
-  body_text: {fontSize: 15, lineHeight: 22, color: colors.text},
-  muted: {color: colors.textMuted},
-  mono: {fontFamily: 'Menlo', fontSize: 14, color: colors.text},
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: 14,
-    alignItems: 'center',
+const buttonStyles = StyleSheet.create({
+  primary: {backgroundColor: colors.primary},
+  secondary: {backgroundColor: colors.surfaceRaised},
+  ghost: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
   },
-  buttonSecondary: {
+  danger: {backgroundColor: colors.danger},
+});
+
+const pressedStyles = StyleSheet.create({
+  primary: {backgroundColor: colors.primaryPressed},
+  secondary: {backgroundColor: colorTokens.neutral.b},
+  ghost: {backgroundColor: colorTokens.neutral._6},
+  danger: {backgroundColor: '#BB150B'},
+});
+
+const disabledStyles = StyleSheet.create({
+  primary: {backgroundColor: colors.primaryDisabled},
+  secondary: {opacity: 0.5},
+  ghost: {
+    backgroundColor: colors.surfaceRaised,
+    borderColor: colorTokens.neutral._4,
+  },
+  danger: {opacity: 0.5},
+});
+
+const styles = StyleSheet.create({
+  flex: {flex: 1},
+  center: {textAlign: 'center'},
+  screen: {flex: 1, backgroundColor: colors.background},
+  screenWeb: {backgroundColor: webColors.background},
+  scrollContent: {flexGrow: 1},
+  body: {padding: 20, gap: spacing.md, flexGrow: 1},
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  title: {...fonts.header4, color: colors.text},
+  bodyText: {...fonts.body1Reg, color: colors.text},
+  muted: {...fonts.body2Reg, color: colors.textMuted},
+  mono: {...monoFont, fontSize: 14, lineHeight: 21, color: colors.text},
+  button: {
+    minHeight: 48,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  buttonText: {...fonts.body1Bold, color: colors.primaryText},
+  buttonTextDisabled: {color: colors.disabledText},
+  buttonPair: {flexDirection: 'row', gap: 10},
+  field: {gap: 6},
+  label: {...fonts.body2Reg, color: colors.textMuted},
+  input: {
+    ...fonts.body2Reg,
+    minHeight: 48,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  buttonDanger: {backgroundColor: colors.danger},
-  buttonDimmed: {opacity: 0.6},
-  buttonText: {color: colors.primaryText, fontSize: 16, fontWeight: '600'},
-  buttonTextSecondary: {color: colors.text},
-  field: {gap: spacing.xs},
-  label: {fontSize: 13, color: colors.textMuted},
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
+    borderRadius: radius.pill,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     color: colors.text,
   },
-  notice: {borderRadius: radius.sm, padding: spacing.md},
-  noticeWarning: {backgroundColor: colors.warningSurface},
-  noticeDanger: {backgroundColor: colors.dangerSurface},
-  noticeWarningText: {color: colors.warning, fontSize: 14, lineHeight: 20},
-  noticeDangerText: {color: colors.danger, fontSize: 14, lineHeight: 20},
-  error: {color: colors.danger, fontSize: 14},
+  inputWeb: {
+    backgroundColor: webColors.input,
+    borderColor: webColors.border,
+    borderRadius: 12,
+  },
+  inputMultiline: {
+    borderRadius: radius.md,
+    minHeight: 120,
+    textAlignVertical: 'top',
+  },
+  inputSecret: {letterSpacing: 4},
+  inputError: {borderColor: colors.danger},
+  notice: {borderRadius: radius.md, padding: 14, borderWidth: 1},
+  noticeWarning: {
+    backgroundColor: colors.warningSurface,
+    borderColor: colors.warning,
+  },
+  noticeDanger: {
+    backgroundColor: colors.dangerSurface,
+    borderColor: colors.danger,
+  },
+  noticeText: {...fonts.body2Reg},
+  noticeWarningText: {color: colors.warning},
+  noticeDangerText: {color: colors.danger},
+  error: {...fonts.captionReg, color: colors.danger},
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.md,
     gap: spacing.sm,
   },
   row: {flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md},
-  rowLabel: {fontSize: 14, color: colors.textMuted},
+  rowLabel: {...fonts.body2Reg, color: colors.textMuted},
   rowValue: {flexShrink: 1, alignItems: 'flex-end'},
-  rowValueText: {fontSize: 14, color: colors.text, textAlign: 'right'},
+  rowValueText: {...fonts.body2Reg, color: colors.text, textAlign: 'right'},
+  listItem: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+  },
+  listItemPressed: {backgroundColor: colors.surfaceRaised},
+  listItemTitle: {...fonts.body1Bold, color: colors.text, flex: 1},
+  listItemDanger: {color: colors.danger},
+  listItemDetail: {...fonts.body2Reg, color: colors.textMuted},
+  chevron: {...fonts.body1Reg, color: colors.textMuted},
 });

@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, Text} from 'react-native';
 
 import {addressParts} from '../core/format';
-import {colors} from './theme';
+import {colors, monoFont} from './theme';
 
 /**
  * Full address with its first and last six characters in bold. Address
@@ -21,6 +21,6 @@ export function Address({value}: {value: string}) {
 }
 
 const styles = StyleSheet.create({
-  text: {fontFamily: 'Menlo', fontSize: 14, color: colors.textMuted},
+  text: {...monoFont, fontSize: 14, lineHeight: 21, color: colors.textMuted},
   strong: {color: colors.text, fontWeight: '700'},
 });

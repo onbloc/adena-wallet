@@ -21,3 +21,9 @@ jest.mock(
   'react-native-safe-area-context',
   () => require('react-native-safe-area-context/jest/mock').default,
 );
+
+// Native Lottie view: a plain View in tests.
+jest.mock('lottie-react-native', () => {
+  const {View} = require('react-native');
+  return {__esModule: true, default: View};
+});

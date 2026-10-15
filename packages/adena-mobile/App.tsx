@@ -14,6 +14,7 @@ import {
   PlatformInstallResult,
 } from './src/platform/install';
 import {ReauthProvider} from './src/security/reauth';
+import {colors, fonts} from './src/ui/theme';
 
 type BootState =
   | {phase: 'booting'}
@@ -36,7 +37,7 @@ function App(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       <View style={styles.body}>
         <Text style={styles.title}>Adena</Text>
         <Text testID="platform-status" style={styles.status}>
@@ -63,7 +64,10 @@ function WalletApp({platform}: {platform: MobilePlatform}) {
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <View style={styles.container} onTouchStart={onActivity}>
-        <StatusBar barStyle="dark-content" />
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={colors.background}
+        />
         <WalletProvider platform={platform}>
           <ReauthProvider>
             <RootNavigator />
@@ -91,10 +95,10 @@ function describe(state: BootState): string {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#ffffff'},
+  container: {flex: 1, backgroundColor: colors.background},
   body: {flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24},
-  title: {fontSize: 28, fontWeight: '600', color: '#111111', marginBottom: 12},
-  status: {fontSize: 15, color: '#333333', textAlign: 'center'},
+  title: {...fonts.header3, color: colors.text, marginBottom: 12},
+  status: {...fonts.body2Reg, color: colors.textMuted, textAlign: 'center'},
 });
 
 export default App;
