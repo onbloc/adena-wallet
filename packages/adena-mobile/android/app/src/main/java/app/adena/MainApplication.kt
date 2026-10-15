@@ -1,4 +1,4 @@
-package com.adenamobile
+package app.adena
 
 import android.app.Application
 import com.facebook.react.PackageList

@@ -1,4 +1,4 @@
-package com.adenamobile
+package app.adena
 
 import android.os.Build
 import android.os.Bundle

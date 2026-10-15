@@ -1,4 +1,4 @@
-package com.adenamobile
+package app.adena
 
 import android.view.WindowManager
 import com.facebook.react.bridge.Promise
