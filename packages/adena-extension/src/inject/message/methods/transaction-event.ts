@@ -9,6 +9,7 @@ import { CommandMessageData } from '@inject/message/command-message';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message/message';
 import { InjectCore } from './core';
 import { createNotification } from './notification';
+import { getBackgroundMessenger } from '@common/platform/background-messenger';
 
 export async function addTransactionEvent(
   inMemoryProvider: MemoryProvider,
@@ -152,8 +153,8 @@ export function parseTransactionScannerUrl(notificationId: string): string | nul
 export function createNotificationSendMessage(
   result: BroadcastTxCommitResult | BroadcastTxSyncResult | null,
 ): void {
-  chrome.runtime
-    .sendMessage(
+  getBackgroundMessenger()
+    .broadcast(
       InjectionMessageInstance.success(
         WalletResponseSuccessType.TRANSACTION_SUCCESS,
         {
@@ -169,8 +170,8 @@ export function createNotificationSendMessage(
 }
 
 export function createNotificationSendMessageByHash(hash: string): void {
-  chrome.runtime
-    .sendMessage(
+  getBackgroundMessenger()
+    .broadcast(
       InjectionMessageInstance.success(
         WalletResponseSuccessType.TRANSACTION_SUCCESS,
         {
