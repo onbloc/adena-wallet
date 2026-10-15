@@ -14,6 +14,7 @@ module.exports = {
     '^@migrates/(.*)$': `${extensionSrc}/migrates/$1`,
     '^@resources/(.*)$': `${extensionSrc}/resources/$1`,
     '^@states$': `${extensionSrc}/states`,
+    '^@hooks/(.*)$': `${extensionSrc}/hooks/$1`,
     '^@styles/tokens$': `${extensionSrc}/styles/tokens`,
     '\\.svg$': '<rootDir>/__mocks__/svg.tsx',
     '^@assets/(.*)$': `${extensionSrc}/assets/$1`,

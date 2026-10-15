@@ -20,7 +20,9 @@ export class WalletEstablishRepository {
 
   public getEstablishedSites = async (): Promise<{ [x: string]: any }> => {
     const establishedSites = await this.localStorage.getToObject('ESTABLISH_SITES');
-    return establishedSites;
+    // Missing until the first connection where no migration seeded it (the
+    // mobile app), as in the AtomOne repository.
+    return establishedSites ?? {};
   };
 
   public updateEstablishedSites = async (addressBook: {

@@ -1,4 +1,6 @@
 import {setBackgroundMessenger} from '@common/platform/background-messenger';
+import {setLocalResourceClient} from '@common/platform/local-resource-client';
+import {setSessionPasswordReader} from '@common/platform/session-password-reader';
 import {AdenaStorage} from '@common/storage/storage';
 import {AUTO_LOCK_TRIGGERED_MESSAGE} from '@common/utils/auto-lock-timer';
 import {setApprovalPresenter} from '@inject/message/approval-presenter';
@@ -12,6 +14,7 @@ import {
 
 import {ApprovalQueue} from './approval-queue';
 import {AutoLock} from './auto-lock';
+import {bundledResourceClient} from './bundled-resources';
 import {InProcessMessenger} from './in-process-messenger';
 import {nativeCryptoProvider} from './native-crypto-provider';
 import {installRandomValuesPolyfill} from './random-values-polyfill';
@@ -139,6 +142,8 @@ async function install(
   });
 
   setBackgroundMessenger(messenger);
+  setSessionPasswordReader(messenger.readSessionPassword);
+  setLocalResourceClient(bundledResourceClient);
   setApprovalPresenter(approvals);
   autoLock.start();
 

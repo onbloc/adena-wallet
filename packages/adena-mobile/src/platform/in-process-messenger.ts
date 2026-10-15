@@ -80,6 +80,15 @@ export class InProcessMessenger implements BackgroundMessenger {
     };
   }
 
+  /**
+   * Opens the sealed session password for the shared dApp handlers
+   * (registered as their SessionPasswordReader). Throws when locked.
+   */
+  readSessionPassword = (
+    nonce: string,
+    sealedPassword: string,
+  ): Promise<string> => this.open(nonce, sealedPassword);
+
   clearSessionKey(): void {
     if (this.sessionKey) {
       getCryptoProvider().memzero(this.sessionKey);

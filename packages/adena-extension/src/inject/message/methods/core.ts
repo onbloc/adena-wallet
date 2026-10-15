@@ -30,6 +30,9 @@ import {
   WalletService,
 } from '@services/wallet';
 import { NetworkMetainfo } from '@types';
+import { getLocalResourceClient } from '@common/platform/local-resource-client';
+import { getSessionPasswordReader } from '@common/platform/session-password-reader';
+
 import { decryptPassword, getInMemoryKey } from '../commands/encrypt';
 
 import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
@@ -62,7 +65,10 @@ export class InjectCore {
     atomoneNetworkProfiles: makeAtomOneNetworkProfiles(ATOMONE_CHAIN_DATA),
   });
 
-  private chainRepository = new ChainRepository(this.localStorage, this.axiosInstance);
+  private chainRepository = new ChainRepository(
+    this.localStorage,
+    getLocalResourceClient() ?? this.axiosInstance,
+  );
 
   private tokenRepository = new TokenRepository(
     this.localStorage,
@@ -190,6 +196,17 @@ export class InjectCore {
   }
 
   private async getPasswordBy(inMemoryKey: CryptoKey | null): Promise<string | null> {
+    // Mobile: the password was sealed by the app's in-process messenger, not
+    // with this key. A failed read means the session key is gone: locked.
+    const reader = getSessionPasswordReader();
+    if (reader) {
+      const { iv, encryptedPassword } = await this.walletRepository.getSessionCryptPasswords();
+      if (iv === '' || encryptedPassword === '') {
+        return null;
+      }
+      return reader(iv, encryptedPassword).catch(() => null);
+    }
+
     if (!inMemoryKey) {
       return null;
     }

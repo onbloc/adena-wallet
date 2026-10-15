@@ -4,6 +4,10 @@ import {
   getBackgroundMessenger,
   setBackgroundMessenger,
 } from '@common/platform/background-messenger';
+import {
+  getSessionPasswordReader,
+  setSessionPasswordReader,
+} from '@common/platform/session-password-reader';
 import {AdenaStorage} from '@common/storage/storage';
 import {
   chromeApprovalPresenter,
@@ -28,6 +32,7 @@ afterAll(() => {
   setCryptoProvider(libsodiumCryptoProvider);
   setBackgroundMessenger(chromeBackgroundMessenger);
   setApprovalPresenter(chromeApprovalPresenter);
+  setSessionPasswordReader(null);
 });
 
 describe('installMobilePlatform', () => {
@@ -40,6 +45,9 @@ describe('installMobilePlatform', () => {
     expect(getCryptoProvider()).toBe(nativeCryptoProvider);
     expect(getBackgroundMessenger()).toBe(result.platform.messenger);
     expect(getApprovalPresenter()).toBe(result.platform.approvals);
+    expect(getSessionPasswordReader()).toBe(
+      result.platform.messenger.readSessionPassword,
+    );
     result.platform.autoLock.stop();
   });
 

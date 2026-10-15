@@ -10,6 +10,7 @@ import {ChainRepository} from '@repositories/common/chain';
 import {WalletRepository} from '@repositories/wallet/wallet';
 import {WalletAccountRepository} from '@repositories/wallet/wallet-account';
 import {WalletEstablishRepository} from '@repositories/wallet/wallet-establish';
+import {WalletEstablishAtomOneRepository} from '@repositories/wallet/wallet-establish-atomone';
 import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
 import GNO_CHAIN_DATA from '@resources/chains/chains.json';
 import {ChainService} from '@services/resource/chain';
@@ -18,29 +19,13 @@ import {WalletService} from '@services/wallet/wallet';
 import {WalletAccountService} from '@services/wallet/wallet-account';
 import {WalletBalanceService} from '@services/wallet/wallet-balance';
 import {WalletEstablishService} from '@services/wallet/wallet-establish';
+import {WalletEstablishAtomOneService} from '@services/wallet/wallet-establish-atomone';
 import type {NetworkMetainfo} from '@types';
 import {ChainRegistry, createChainRegistry} from 'adena-module';
-import type {AxiosInstance} from 'axios';
 
-/**
- * The extension reads the default network list over HTTP from its own origin
- * (`/resources/chains/*.json`). The app has no such origin, so the same files
- * are served from the bundle; any other request fails rather than going to
- * the network.
- */
-const bundledResources: Record<string, unknown> = {
-  '/resources/chains/chains.json': GNO_CHAIN_DATA,
-  '/resources/chains/atomone-chains.json': ATOMONE_CHAIN_DATA,
-};
+import {bundledResourceClient} from '../platform/bundled-resources';
 
-export const bundledResourceClient = {
-  get: async (url: string) => {
-    if (!(url in bundledResources)) {
-      throw new Error(`No bundled resource for ${url}`);
-    }
-    return {data: bundledResources[url]};
-  },
-} as unknown as AxiosInstance;
+export {bundledResourceClient};
 
 /** Services that do not depend on the selected network. */
 export function createBaseServices() {
@@ -60,12 +45,19 @@ export function createBaseServices() {
     new WalletEstablishRepository(local),
     chainRegistry,
   );
+  // AtomOne (Cosmos) connections are kept apart from Gno ones, as in the
+  // extension, so each can be revoked on its own.
+  const establishAtomOneService = new WalletEstablishAtomOneService(
+    new WalletEstablishAtomOneRepository(local),
+    chainRegistry,
+  );
   return {
     chainRegistry,
     walletService,
     chainService,
     accountRepository,
     establishService,
+    establishAtomOneService,
   };
 }
 
