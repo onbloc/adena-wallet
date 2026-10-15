@@ -180,13 +180,13 @@ export function WalletProvider({
   const importPrivateKey = useCallback(
     async (privateKeyHex: string, password: string) => {
       const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(privateKeyHex);
-      const account = await SingleAccount.createBy(keyring, 'Account');
+      const imported = await SingleAccount.createBy(keyring, 'Account');
       const created = new AdenaWallet();
-      created.currentAccountId = account.id;
-      created.addAccount(account);
+      created.currentAccountId = imported.id;
+      created.addAccount(imported);
       created.addKeyring(keyring);
       await base.walletService.saveWallet(created, password);
-      await base.accountRepository.updateCurrentAccountId(account.id);
+      await base.accountRepository.updateCurrentAccountId(imported.id);
       await adoptWallet(created);
     },
     [base, adoptWallet],
