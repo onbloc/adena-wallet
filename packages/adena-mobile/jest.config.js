@@ -14,6 +14,9 @@ module.exports = {
     '^@migrates/(.*)$': `${extensionSrc}/migrates/$1`,
     '^@resources/(.*)$': `${extensionSrc}/resources/$1`,
     '^@states$': `${extensionSrc}/states`,
+    '^@styles/tokens$': `${extensionSrc}/styles/tokens`,
+    '\\.svg$': '<rootDir>/__mocks__/svg.tsx',
+    '^@assets/(.*)$': `${extensionSrc}/assets/$1`,
     '^react-native-libsodium$': '<rootDir>/__mocks__/react-native-libsodium.ts',
     // One libsodium.js copy in tests: the workspace root's, which the extension uses.
     '^libsodium-wrappers-sumo$': path.resolve(
@@ -25,7 +28,7 @@ module.exports = {
     '^@types$': `${extensionSrc}/types`,
   },
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-native-clipboard|@react-navigation|react-native-[a-z-]+|@cosmjs|@gnolang|@noble|@scure|uuid)/)',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-native-clipboard|@react-navigation|react-native-[a-z-]+|lottie-react-native|@cosmjs|@gnolang|@noble|@scure|uuid)/)',
   ],
   testPathIgnorePatterns: ['/node_modules/', '/ios/', '/android/'],
 };

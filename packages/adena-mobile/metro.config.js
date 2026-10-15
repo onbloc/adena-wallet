@@ -20,6 +20,10 @@ const SHARED_ALIASES = {
   '@hooks/': path.join(extensionSrc, 'hooks/'),
   '@states': path.join(extensionSrc, 'states'),
   '@types': path.join(extensionSrc, 'types'),
+  // Design: the token file (plain values) and the image/animation assets.
+  // The extension's styled components stay out of the mobile bundle.
+  '@styles/tokens': path.join(extensionSrc, 'styles/tokens'),
+  '@assets/': path.join(extensionSrc, 'assets/'),
 };
 
 // Modules that must never run on mobile: libsodium.js is WASM (Hermes cannot
@@ -66,9 +70,20 @@ const BLOCKED_MODULES = {
 // One copy of the libraries that hold global state, whichever package imports them.
 const SINGLETONS = ['react', 'react-native', 'recoil', '@tanstack/react-query'];
 
+const defaultConfig = getDefaultConfig(projectRoot);
+
 const config = {
   watchFolders: [workspaceRoot],
+  transformer: {
+    // `import Icon from '@assets/x.svg'` yields a react-native-svg component,
+    // the same shape the extension's webpack SVG loader gives it.
+    babelTransformerPath: require.resolve(
+      'react-native-svg-transformer/react-native',
+    ),
+  },
   resolver: {
+    assetExts: defaultConfig.resolver.assetExts.filter(ext => ext !== 'svg'),
+    sourceExts: [...defaultConfig.resolver.sourceExts, 'svg'],
     // Subpath imports such as `@bufbuild/protobuf/wire` rely on "exports".
     unstable_enablePackageExports: true,
     nodeModulesPaths: [
@@ -113,4 +128,4 @@ const config = {
   },
 };
 
-module.exports = mergeConfig(getDefaultConfig(projectRoot), config);
+module.exports = mergeConfig(defaultConfig, config);

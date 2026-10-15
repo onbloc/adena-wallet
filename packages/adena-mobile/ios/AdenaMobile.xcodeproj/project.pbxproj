@@ -8,23 +8,33 @@
 
 /* Begin PBXBuildFile section */
 		0C80B921A6F3F58F76C31292 /* libPods-AdenaMobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-AdenaMobile.a */; };
+		11B8D25F0A1D6940A8B3327B /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F74B7F6956657178478D5C8D /* Inter-Bold.ttf */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		2C55B1D909309BBDBD8E3741 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		4FA49FF7EEAD673A7EC40028 /* Inter-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 83444CC4920A34CFC8A47A88 /* Inter-Light.ttf */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
+		7F7A88BC591F6A2B2C239511 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8780CCC0F6305A2C1EF4897A /* Inter-Regular.ttf */; };
+		80F282B9D484DFF23674C7AE /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2DA17C8E3655638BCD053FC2 /* Inter-SemiBold.ttf */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		AA820EBAB6CC2659ACF6C1DB /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 03367961E37AF4C06A5E90A2 /* Inter-Medium.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		03367961E37AF4C06A5E90A2 /* Inter-Medium.ttf */ = {isa = PBXFileReference; includeInIndex = 1; path = "Inter-Medium.ttf"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* AdenaMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AdenaMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = AdenaMobile/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = AdenaMobile/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = AdenaMobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		2DA17C8E3655638BCD053FC2 /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; path = "Inter-SemiBold.ttf"; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-AdenaMobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AdenaMobile.debug.xcconfig"; path = "Target Support Files/Pods-AdenaMobile/Pods-AdenaMobile.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-AdenaMobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AdenaMobile.release.xcconfig"; path = "Target Support Files/Pods-AdenaMobile/Pods-AdenaMobile.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-AdenaMobile.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AdenaMobile.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = AdenaMobile/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = AdenaMobile/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		83444CC4920A34CFC8A47A88 /* Inter-Light.ttf */ = {isa = PBXFileReference; includeInIndex = 1; path = "Inter-Light.ttf"; sourceTree = "<group>"; };
+		8780CCC0F6305A2C1EF4897A /* Inter-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; path = "Inter-Regular.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F74B7F6956657178478D5C8D /* Inter-Bold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,6 +49,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0964D0D4DADB768895A143E1 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				83444CC4920A34CFC8A47A88 /* Inter-Light.ttf */,
+				8780CCC0F6305A2C1EF4897A /* Inter-Regular.ttf */,
+				03367961E37AF4C06A5E90A2 /* Inter-Medium.ttf */,
+				2DA17C8E3655638BCD053FC2 /* Inter-SemiBold.ttf */,
+				F74B7F6956657178478D5C8D /* Inter-Bold.ttf */,
+			);
+			name = Fonts;
+			path = ../assets/fonts;
+			sourceTree = "<group>";
+		};
 		13B07FAE1A68108700A75B9A /* AdenaMobile */ = {
 			isa = PBXGroup;
 			children = (
@@ -75,6 +98,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				0964D0D4DADB768895A143E1 /* Fonts */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -161,6 +185,11 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				2C55B1D909309BBDBD8E3741 /* PrivacyInfo.xcprivacy in Resources */,
+				4FA49FF7EEAD673A7EC40028 /* Inter-Light.ttf in Resources */,
+				7F7A88BC591F6A2B2C239511 /* Inter-Regular.ttf in Resources */,
+				AA820EBAB6CC2659ACF6C1DB /* Inter-Medium.ttf in Resources */,
+				80F282B9D484DFF23674C7AE /* Inter-SemiBold.ttf in Resources */,
+				11B8D25F0A1D6940A8B3327B /* Inter-Bold.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

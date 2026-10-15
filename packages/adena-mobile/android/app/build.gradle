@@ -78,6 +78,13 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace "app.adena"
+    // Bundles assets/fonts (Inter) as android assets/fonts, where React
+    // Native looks fonts up by file name.
+    sourceSets {
+        main {
+            assets.srcDirs += ["../../assets"]
+        }
+    }
     defaultConfig {
         applicationId "app.adena"
         minSdkVersion rootProject.ext.minSdkVersion

@@ -24,11 +24,24 @@ module.exports = {
               '@pages/*',
               '@components/*',
               '@router/*',
-              '@assets/*',
               '@styles/*',
+              '!@styles/tokens',
               '@ui/*',
             ],
-            message: 'Extension UI is not shared with mobile.',
+            message:
+              'Extension UI is not shared with mobile (only @styles/tokens and @assets are).',
+          },
+          {
+            // Extension icon-*.tsx components render DOM <svg>; mobile takes
+            // the .svg files (react-native-svg) and Lottie .json instead.
+            group: [
+              '@assets/**',
+              '!@assets/**/',
+              '!@assets/**/*.svg',
+              '!@assets/**/*.json',
+              '!@assets/**/*.png',
+            ],
+            message: 'Import .svg or .json assets; extension icon components are DOM-only.',
           },
           {
             group: ['**/adena-extension/**'],
@@ -50,6 +63,7 @@ module.exports = {
   overrides: [
     {
       files: ['__tests__/**', '__mocks__/**', 'jest.setup.js'],
+      env: {jest: true, es2020: true},
       rules: {'no-restricted-imports': 'off'},
     },
   ],
