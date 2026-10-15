@@ -5,13 +5,14 @@ import {
 import {getSiteName} from '@common/utils/url-parameter-utils';
 import {InjectionMessageInstance} from '@inject/message/message';
 import React, {useState} from 'react';
-import {StyleSheet, Text} from 'react-native';
+import {ScrollView, StyleSheet, Text, View} from 'react-native';
 
 import {displayHost} from '../browser/url-origin';
 import {useWallet} from '../core/wallet-context';
 import {useReauth} from '../security/reauth';
-import {Body, Button, Card, Notice, Screen, Title} from '../ui/components';
-import {colors} from '../ui/theme';
+import {Body, ButtonPair, Notice, Screen} from '../ui/components';
+import {colors, colorTokens, fonts, monoFont} from '../ui/theme';
+import {ApprovalTitle, DomainBox, InfoPill} from './approval-ui';
 import type {ApprovalProps} from './types';
 
 /** Text that looks like a transaction or key material rather than a login message. */
@@ -66,41 +67,67 @@ export function SignArbitraryApproval({request, respond}: ApprovalProps) {
   };
 
   return (
-    <Screen>
-      <Title>Sign message</Title>
-      <Card>
-        <Body>{displayHost(origin)}</Body>
-        <Body muted>{origin}</Body>
-      </Card>
+    <Screen
+      footer={
+        <ButtonPair
+          cancel={{
+            title: 'Cancel',
+            onPress: () =>
+              respond(
+                InjectionMessageInstance.failure(
+                  WalletResponseRejectType.SIGN_REJECTED,
+                  {},
+                  message.key,
+                ),
+              ),
+          }}
+          confirm={{
+            title: 'Sign',
+            testID: 'approve-sign',
+            onPress: approve,
+            loading: busy,
+            disabled: !text,
+          }}
+        />
+      }>
+      <ApprovalTitle>Sign Message</ApprovalTitle>
+      <DomainBox origin={origin} />
+      <InfoPill label="Network" value={net?.network.chainId ?? ''} />
+      <InfoPill label="Fee" value="None" />
+      <InfoPill label="Signing with" value={signer} />
       {suspicious && (
         <Notice tone="danger">
           This message looks like a transaction, not a login message. Signing it
           may let the site act with your account.
         </Notice>
       )}
-      <Card>
-        <Text selectable style={styles.text}>
-          {text}
-        </Text>
-      </Card>
-      <Button title="Sign" onPress={approve} loading={busy} />
-      <Button
-        title="Reject"
-        variant="secondary"
-        onPress={() =>
-          respond(
-            InjectionMessageInstance.failure(
-              WalletResponseRejectType.SIGN_REJECTED,
-              {},
-              message.key,
-            ),
-          )
-        }
-      />
+      <View style={styles.message}>
+        <Text style={styles.messageLabel}>Message</Text>
+        <ScrollView style={styles.messageBox} nestedScrollEnabled>
+          <Text selectable style={styles.text}>
+            {text}
+          </Text>
+        </ScrollView>
+      </View>
+      <Body muted>
+        This signature proves you own this address. It isn’t a transaction and
+        won’t move funds.
+      </Body>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  text: {fontFamily: 'Menlo', fontSize: 13, color: colors.text},
+  message: {gap: 5},
+  messageLabel: {...fonts.body2Reg, color: colors.textMuted},
+  messageBox: {
+    maxHeight: 200,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colorTokens.neutral._7,
+    backgroundColor: colorTokens.neutral._9,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  text: {...monoFont, fontSize: 13, lineHeight: 19, color: colors.text},
 });

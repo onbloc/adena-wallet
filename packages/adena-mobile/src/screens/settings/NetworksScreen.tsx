@@ -3,23 +3,24 @@ import React from 'react';
 
 import {useWallet} from '../../core/wallet-context';
 import type {MainStackParams} from '../../navigation/types';
-import {Body, Button, Screen, Title} from '../../ui/components';
+import {Body, ListItem, Screen} from '../../ui/components';
 
 type Props = NativeStackScreenProps<MainStackParams, 'Networks'>;
 
+/** The popup's change-network list: one row per network, a check on the current one. */
 export function NetworksScreen({navigation}: Props) {
   const {networks, net, switchNetwork} = useWallet();
   const visible = networks.filter(network => !network.deleted);
 
   return (
     <Screen>
-      <Title>Network</Title>
-      {visible.length === 0 && <Body muted>No networks are configured.</Body>}
+      {visible.length === 0 && <Body muted>No networks available</Body>}
       {visible.map(network => (
-        <Button
+        <ListItem
           key={network.id}
-          title={`${network.networkName} (${network.chainId})`}
-          variant={network.id === net?.network.id ? 'primary' : 'secondary'}
+          title={network.networkName}
+          detail={network.chainId}
+          selected={network.id === net?.network.id}
           onPress={async () => {
             await switchNetwork(network.id);
             navigation.goBack();

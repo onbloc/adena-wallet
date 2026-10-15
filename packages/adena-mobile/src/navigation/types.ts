@@ -15,6 +15,9 @@ export type MainStackParams = {
   QrScan: undefined;
   Browser: {url?: string} | undefined;
   Settings: undefined;
+  Security: undefined;
+  AutoLock: undefined;
+  ResetWallet: undefined;
   Networks: undefined;
   ChangePassword: undefined;
   RevealMnemonic: undefined;

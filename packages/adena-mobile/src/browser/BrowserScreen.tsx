@@ -10,7 +10,7 @@ import WebView, {
 import type {ShouldStartLoadRequest} from 'react-native-webview/lib/WebViewTypes';
 
 import type {MainStackParams} from '../navigation/types';
-import {colors, radius, spacing} from '../ui/theme';
+import {colors, fonts, radius, spacing} from '../ui/theme';
 import {bridgeScript} from './bridge';
 import {routeToWallet} from './dapp-router';
 import {parsePageMessage} from './page-message';
@@ -123,6 +123,9 @@ export function BrowserScreen({route, navigation}: Props) {
           keyboardType="url"
           returnKeyType="go"
           selectTextOnFocus
+          keyboardAppearance="dark"
+          placeholderTextColor={colors.textMuted}
+          selectionColor={colors.primary}
         />
         <Pressable
           accessibilityRole="button"
@@ -168,30 +171,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    padding: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  toolButton: {paddingHorizontal: spacing.sm, paddingVertical: spacing.xs},
-  toolText: {color: colors.primary, fontSize: 15},
+  toolButton: {paddingHorizontal: spacing.xs, paddingVertical: spacing.xs},
+  toolText: {...fonts.body2Bold, color: colors.text},
   address: {
+    ...fonts.body2Reg,
     flex: 1,
+    minHeight: 36,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 14,
     paddingVertical: 6,
-    fontSize: 14,
     color: colors.text,
   },
   host: {
+    ...fonts.captionReg,
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xs,
+    paddingVertical: spacing.xs,
     color: colors.textMuted,
-    fontSize: 12,
   },
   blocked: {
+    ...fonts.captionReg,
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.xs,
     color: colors.danger,
-    fontSize: 12,
   },
 });

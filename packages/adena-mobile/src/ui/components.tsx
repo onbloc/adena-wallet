@@ -13,6 +13,9 @@ import {
   ViewStyle,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import CheckCircle from '@assets/check-circle.svg';
+
+import {ChevronRightIcon} from './icons';
 
 import {
   colors,
@@ -297,36 +300,60 @@ export function Row({label, value}: {label: string; value: React.ReactNode}) {
   );
 }
 
-/** A tappable settings-style row: label on the left, optional detail and chevron. */
+/**
+ * The popup's full-width menu row (full-button-right-icon): optional icon,
+ * bold title, optional detail, then a chevron or a "selected" check.
+ */
 export function ListItem({
   title,
   detail,
   onPress,
   danger,
+  icon,
+  chevron = true,
+  selected,
+  trailing,
   testID,
 }: {
   title: string;
   detail?: string;
-  onPress: () => void;
+  onPress?: () => void;
   danger?: boolean;
+  icon?: React.ReactNode;
+  chevron?: boolean;
+  selected?: boolean;
+  /** Replaces the chevron, e.g. a Switch. */
+  trailing?: React.ReactNode;
   testID?: string;
 }) {
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
+      accessibilityState={selected === undefined ? undefined : {selected}}
+      disabled={!onPress}
       onPress={onPress}
       style={({pressed}) => [
         styles.listItem,
         pressed && styles.listItemPressed,
       ]}>
+      {icon}
       <Text style={[styles.listItemTitle, danger && styles.listItemDanger]}>
         {title}
       </Text>
       {detail ? <Text style={styles.listItemDetail}>{detail}</Text> : null}
-      <Text style={styles.chevron}>›</Text>
+      {trailing ??
+        (selected ? (
+          <CheckCircle width={16} height={16} />
+        ) : chevron && selected === undefined ? (
+          <ChevronRightIcon color={danger ? colors.danger : undefined} />
+        ) : null)}
     </Pressable>
   );
+}
+
+export function Divider() {
+  return <View style={styles.divider} />;
 }
 
 /** Red "ERROR:" banner for simulation and broadcast failures. */
@@ -408,6 +435,7 @@ const pressedStyles = StyleSheet.create({
   dark: {backgroundColor: colorTokens.neutral._6},
   secondary: {backgroundColor: colorTokens.neutral.b},
   ghost: {backgroundColor: colorTokens.neutral._6},
+  // The extension's danger hover colour.
   danger: {backgroundColor: '#BB150B'},
 });
 
@@ -544,17 +572,18 @@ const styles = StyleSheet.create({
   rowValue: {flexShrink: 1, alignItems: 'flex-end'},
   rowValueText: {...fonts.body2Reg, color: colors.text, textAlign: 'right'},
   listItem: {
-    minHeight: 48,
+    minHeight: 54,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceRaised,
     borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
+    paddingLeft: 20,
+    paddingRight: 20,
     gap: spacing.sm,
   },
-  listItemPressed: {backgroundColor: colors.surfaceRaised},
+  listItemPressed: {backgroundColor: colorTokens.neutral.b},
+  divider: {height: 1, backgroundColor: colorTokens.neutral.b},
   listItemTitle: {...fonts.body1Bold, color: colors.text, flex: 1},
   listItemDanger: {color: colors.danger},
   listItemDetail: {...fonts.body2Reg, color: colors.textMuted},
-  chevron: {...fonts.body1Reg, color: colors.textMuted},
 });

@@ -4,12 +4,20 @@ import {
 } from '@adena-wallet/sdk';
 import {InjectionMessageInstance} from '@inject/message/message';
 import {getSiteName} from '@common/utils/url-parameter-utils';
+import FaviconDefault from '@assets/favicon-default.svg';
 import React, {useState} from 'react';
+import {StyleSheet, View} from 'react-native';
 
 import {useWallet} from '../core/wallet-context';
-import {displayHost} from '../browser/url-origin';
 import {Address} from '../ui/address';
-import {Body, Button, Card, Notice, Screen, Title} from '../ui/components';
+import {Body, ButtonPair, Screen} from '../ui/components';
+import {
+  ApprovalTitle,
+  DomainBox,
+  KeyValue,
+  MessageCard,
+  PermissionTable,
+} from './approval-ui';
 import type {ApprovalProps} from './types';
 
 /** ADD_ESTABLISH: lets the site see the address and ask for signatures. */
@@ -59,22 +67,46 @@ export function ConnectApproval({request, respond, dismiss}: ApprovalProps) {
   };
 
   return (
-    <Screen>
-      <Title>Connect to {appName}</Title>
-      <Card>
-        <Body>{displayHost(origin)}</Body>
-        <Body muted>{origin}</Body>
-      </Card>
+    <Screen
+      footer={
+        <ButtonPair
+          cancel={{title: 'Cancel', onPress: dismiss}}
+          confirm={{
+            title: 'Connect',
+            testID: 'approve-connect',
+            onPress: approve,
+            loading: busy,
+          }}
+        />
+      }>
+      <ApprovalTitle>{`Connect to ${appName}`}</ApprovalTitle>
+      <View style={styles.logo}>
+        <FaviconDefault width={80} height={80} />
+      </View>
+      <DomainBox origin={origin} />
+      <PermissionTable
+        items={[
+          'See your address, balance and activity',
+          'Suggest transactions to approve',
+        ]}
+      />
+      {address && (
+        <MessageCard title="Account">
+          <KeyValue
+            label="Address"
+            stacked
+            value={<Address value={address} />}
+          />
+        </MessageCard>
+      )}
       <Body muted>
-        The site will see this address and can ask you to approve transactions.
+        Only connect to websites you trust and opened yourself. Check the site
+        address above, letter by letter.
       </Body>
-      {address && <Address value={address} />}
-      <Notice>
-        Only connect to sites you opened yourself. Check the address above,
-        letter by letter.
-      </Notice>
-      <Button title="Connect" onPress={approve} loading={busy} />
-      <Button title="Cancel" variant="secondary" onPress={dismiss} />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  logo: {alignSelf: 'center'},
+});

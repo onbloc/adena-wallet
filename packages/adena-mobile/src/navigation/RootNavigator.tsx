@@ -22,6 +22,9 @@ import {SendScreen} from '../screens/SendScreen';
 import {ChangePasswordScreen} from '../screens/settings/ChangePasswordScreen';
 import {NetworksScreen} from '../screens/settings/NetworksScreen';
 import {RevealMnemonicScreen} from '../screens/settings/RevealMnemonicScreen';
+import {AutoLockScreen} from '../screens/settings/AutoLockScreen';
+import {ResetWalletScreen} from '../screens/settings/ResetWalletScreen';
+import {SecurityScreen} from '../screens/settings/SecurityScreen';
 import {SettingsScreen} from '../screens/settings/SettingsScreen';
 import {UnlockScreen} from '../screens/UnlockScreen';
 import {colors, fonts, webColors} from '../ui/theme';
@@ -113,19 +116,34 @@ function MainNavigator() {
       />
       <Main.Screen name="Settings" component={SettingsScreen} />
       <Main.Screen
+        name="Security"
+        component={SecurityScreen}
+        options={{title: 'Security & Privacy'}}
+      />
+      <Main.Screen
+        name="AutoLock"
+        component={AutoLockScreen}
+        options={{title: 'Auto-Lock Timer'}}
+      />
+      <Main.Screen
+        name="ResetWallet"
+        component={ResetWalletScreen}
+        options={{title: ''}}
+      />
+      <Main.Screen
         name="Networks"
         component={NetworksScreen}
-        options={{title: 'Network'}}
+        options={{title: 'Change Network'}}
       />
       <Main.Screen
         name="ChangePassword"
         component={ChangePasswordScreen}
-        options={{title: 'Password'}}
+        options={{title: 'Change Password'}}
       />
       <Main.Screen
         name="RevealMnemonic"
         component={RevealMnemonicScreen}
-        options={{title: 'Recovery phrase'}}
+        options={{title: 'Reveal Seed Phrase'}}
       />
     </Main.Navigator>
   );

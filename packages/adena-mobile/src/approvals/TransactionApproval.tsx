@@ -22,14 +22,13 @@ import {useWallet} from '../core/wallet-context';
 import {useReauth} from '../security/reauth';
 import {
   Body,
-  Button,
-  Card,
-  ErrorText,
+  ButtonPair,
+  ErrorBanner,
+  ListItem,
   Notice,
-  Row,
   Screen,
-  Title,
 } from '../ui/components';
+import {ApprovalTitle, DomainBox, InfoPill, RawData} from './approval-ui';
 import {RiskNotices} from '../ui/risk-notices';
 import {MessageSummary} from './message-summary';
 import type {ApprovalProps} from './types';
@@ -210,31 +209,39 @@ export function TransactionApproval({
 
   const highRisk = state.phase === 'ready' && state.risk.level === 'high';
   const title =
-    mode === 'broadcast' ? 'Approve transaction' : 'Sign transaction';
+    mode === 'broadcast' ? 'Approve Transaction' : 'Sign Transaction';
 
   return (
-    <Screen>
-      <Title>{title}</Title>
-      <Card>
-        <Body>{displayHost(origin)}</Body>
-        <Body muted>{origin}</Body>
-      </Card>
+    <Screen
+      footer={
+        <ButtonPair
+          cancel={{
+            title: 'Cancel',
+            onPress: state.phase === 'blocked' ? dismiss : reject,
+          }}
+          confirm={{
+            title: mode === 'broadcast' ? 'Approve' : 'Sign',
+            testID: 'approve-transaction',
+            onPress: approve,
+            disabled: state.phase !== 'ready' || (highRisk && !acknowledged),
+            loading: state.phase === 'working',
+          }}
+        />
+      }>
+      <ApprovalTitle>{title}</ApprovalTitle>
+      <DomainBox origin={origin} />
       {state.phase === 'preparing' && (
         <Body muted>Simulating the transaction…</Body>
       )}
-      {state.phase === 'blocked' && <ErrorText>{state.reason}</ErrorText>}
+      {state.phase === 'blocked' && <ErrorBanner>{state.reason}</ErrorBanner>}
       {state.phase === 'ready' && (
         <>
           {(state.document.msgs as any[]).map((item, index) => (
             <MessageSummary key={index} message={item} index={index} />
           ))}
-          <Card>
-            <Row label="Network fee" value={formatGnot(state.fee.gasFee)} />
-            <Row label="Network" value={net?.network.networkName ?? ''} />
-            {!!state.document.memo && (
-              <Row label="Memo" value={state.document.memo} />
-            )}
-          </Card>
+          <InfoPill label="Memo:" value={state.document.memo || '(Empty)'} />
+          <InfoPill label="Network" value={net?.network.networkName ?? ''} />
+          <InfoPill label="Network Fee" value={formatGnot(state.fee.gasFee)} />
           {mode !== 'broadcast' && (
             <Notice>
               The site receives a signed transaction and can broadcast it later.
@@ -242,26 +249,16 @@ export function TransactionApproval({
           )}
           <RiskNotices risk={state.risk} />
           {highRisk && (
-            <Row
-              label="I understand the risk"
-              value={
+            <ListItem
+              title="I understand the risk"
+              trailing={
                 <Switch value={acknowledged} onValueChange={setAcknowledged} />
               }
             />
           )}
+          <RawData json={state.document} />
         </>
       )}
-      <Button
-        title={mode === 'broadcast' ? 'Approve' : 'Sign'}
-        onPress={approve}
-        disabled={state.phase !== 'ready' || (highRisk && !acknowledged)}
-        loading={state.phase === 'working'}
-      />
-      <Button
-        title="Reject"
-        variant="secondary"
-        onPress={state.phase === 'blocked' ? dismiss : reject}
-      />
     </Screen>
   );
 }

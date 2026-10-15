@@ -10,25 +10,29 @@ import {
   Field,
   Notice,
   Screen,
-  Title,
 } from '../../ui/components';
-import {colors, radius, spacing} from '../../ui/theme';
+import {colors, colorTokens, fonts} from '../../ui/theme';
+import {HoldToReveal, SeedGrid, WebCheckBox} from '../../ui/web';
 
 /**
- * Re-asks for the password (biometrics alone are not enough here), then shows
- * the phrase from a separately decrypted copy that is destroyed on leave.
+ * The extension's Reveal Seed Phrase flow: caution, password and checklist,
+ * then the phrase masked behind Hold to Reveal. Biometrics alone are not
+ * enough here, and the phrase comes from a separately decrypted copy that is
+ * destroyed right away and dropped from memory on leave.
  */
 export function RevealMnemonicScreen() {
   const {screenshotTaken} = useSecureScreen();
   const {base} = useWallet();
   const [password, setPassword] = useState('');
+  const [checks, setChecks] = useState([false, false]);
   const [words, setWords] = useState<string[]>([]);
+  const [revealed, setRevealed] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => () => setWords([]), []);
 
-  const reveal = async () => {
+  const next = async () => {
     setBusy(true);
     try {
       const copy = await base.walletService.deserializeWallet(password);
@@ -39,72 +43,91 @@ export function RevealMnemonicScreen() {
       }
       setPassword('');
     } catch {
-      setError('The password is incorrect.');
+      setError('Invalid password');
     } finally {
       setBusy(false);
     }
   };
 
-  return (
-    <Screen>
-      <Title>Recovery phrase</Title>
-      <Notice tone="danger">
-        Anyone with this phrase controls your funds. Adena support will never
-        ask for it. Make sure no one can see your screen.
-      </Notice>
-      {screenshotTaken && (
+  if (words.length > 0) {
+    return (
+      <Screen>
         <Notice tone="danger">
-          A screenshot was taken. Delete it from your photos and cloud backup.
+          Your seed phrase is the only way to recover your wallet. Keep it
+          somewhere safe and secret.
         </Notice>
-      )}
-      {words.length === 0 ? (
-        <>
-          <Field
-            label="Wallet password"
-            secret
-            value={password}
-            onChangeText={setPassword}
-          />
-          <ErrorText>{error}</ErrorText>
-          <Button
-            title="Show phrase"
-            onPress={reveal}
-            loading={busy}
-            disabled={!password}
-          />
-        </>
-      ) : (
-        <>
-          <View style={styles.grid}>
-            {words.map((word, index) => (
-              <View key={`${index}-${word}`} style={styles.cell}>
-                <Text style={styles.index}>{index + 1}</Text>
-                <Text style={styles.word}>{word}</Text>
-              </View>
-            ))}
-          </View>
-          <Body muted>The phrase disappears when you leave this screen.</Body>
-          <Button
-            title="Hide"
-            variant="secondary"
-            onPress={() => setWords([])}
-          />
-        </>
-      )}
+        {screenshotTaken && (
+          <Notice tone="danger">
+            A screenshot was taken. Delete it from your photos and cloud backup.
+          </Notice>
+        )}
+        <SeedGrid words={words} hidden={!revealed} />
+        <View style={styles.center}>
+          <HoldToReveal revealed={revealed} onChange={setRevealed} />
+        </View>
+        <Body muted>The phrase disappears when you leave this screen.</Body>
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen
+      footer={
+        <Button
+          title="Next"
+          onPress={next}
+          loading={busy}
+          disabled={!password || checks.some(checked => !checked)}
+        />
+      }>
+      <View style={styles.caution}>
+        <Text style={styles.cautionTitle}>Approach with caution!</Text>
+        <Text style={styles.cautionBody}>
+          You’re about to reveal your seed phrase. Make sure no one can see your
+          screen, and review the checklist below.
+        </Text>
+      </View>
+      <Field
+        label="Password"
+        hideLabel
+        placeholder="Password"
+        secret
+        value={password}
+        error={!!error}
+        onChangeText={text => {
+          setPassword(text);
+          setError('');
+        }}
+      />
+      <ErrorText>{error}</ErrorText>
+      {[
+        'Anyone with the phrase will have full control over my funds.',
+        'I will never share my seed phrase with anyone.',
+      ].map((label, index) => (
+        <WebCheckBox
+          key={label}
+          checked={checks[index]}
+          onChange={checked =>
+            setChecks(current =>
+              current.map((value, i) => (i === index ? checked : value)),
+            )
+          }
+          label={label}
+        />
+      ))}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm},
-  cell: {
-    width: '31%',
-    flexDirection: 'row',
-    gap: spacing.xs,
-    backgroundColor: colors.surface,
-    borderRadius: radius.sm,
-    padding: spacing.sm,
+  center: {alignItems: 'center'},
+  caution: {
+    gap: 11,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 18,
+    backgroundColor: 'rgba(231, 50, 59, 0.1)',
   },
-  index: {color: colors.textMuted, fontSize: 13, minWidth: 18},
-  word: {color: colors.text, fontSize: 14, fontWeight: '600'},
+  cautionTitle: {...fonts.header7, color: colorTokens.red.a},
+  cautionBody: {...fonts.body2Reg, color: colors.danger},
 });

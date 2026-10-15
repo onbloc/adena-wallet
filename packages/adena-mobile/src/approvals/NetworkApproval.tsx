@@ -5,20 +5,14 @@ import {
 } from '@adena-wallet/sdk';
 import {getSiteName} from '@common/utils/url-parameter-utils';
 import {InjectionMessageInstance} from '@inject/message/message';
+import UnknownLogo from '@assets/common-unknown-logo.svg';
 import React, {useState} from 'react';
+import {StyleSheet, View} from 'react-native';
 
-import {displayHost, originOf} from '../browser/url-origin';
+import {originOf} from '../browser/url-origin';
 import {useWallet} from '../core/wallet-context';
-import {
-  Body,
-  Button,
-  Card,
-  ErrorText,
-  Notice,
-  Row,
-  Screen,
-  Title,
-} from '../ui/components';
+import {Body, ButtonPair, ErrorText, Notice, Screen} from '../ui/components';
+import {ApprovalTitle, DomainBox, KeyValue, MessageCard} from './approval-ui';
 import type {ApprovalProps} from './types';
 
 /** SWITCH_NETWORK and ADD_NETWORK. */
@@ -108,34 +102,53 @@ export function NetworkApproval({
     );
 
   return (
-    <Screen>
-      <Title>{mode === 'add' ? 'Add network' : 'Switch network'}</Title>
-      <Card>
-        <Body>{displayHost(origin)}</Body>
-        <Body muted>{origin}</Body>
-      </Card>
-      <Card>
-        <Row label="Chain ID" value={String(data.chainId ?? '')} />
-        {mode === 'add' && (
-          <Row label="Name" value={String(data.chainName ?? '')} />
-        )}
-        {mode === 'add' && (
-          <Row label="RPC" value={String(data.rpcUrl ?? '')} />
-        )}
-      </Card>
-      {mode === 'add' && (
-        <Notice>
-          A network added by a site can report false balances and transaction
-          results. Only add networks you trust.
+    <Screen
+      footer={
+        <ButtonPair
+          cancel={{title: 'Cancel', onPress: reject}}
+          confirm={{
+            title: mode === 'add' ? 'Approve' : 'Switch',
+            testID: 'approve-network',
+            onPress: approve,
+            loading: busy,
+          }}
+        />
+      }>
+      <ApprovalTitle>
+        {mode === 'add'
+          ? `Add ${String(data.chainName ?? 'Network')}`
+          : `Switch to ${String(data.chainId ?? '')}`}
+      </ApprovalTitle>
+      <View style={styles.logo}>
+        <UnknownLogo width={80} height={80} />
+      </View>
+      <DomainBox origin={origin} />
+      {mode === 'add' ? (
+        <Notice tone="danger">
+          You’re adding an unverified network. Adena doesn’t verify custom
+          networks, and a malicious one can report false balances and
+          transaction results. Only add networks that you trust.
         </Notice>
+      ) : (
+        <Body muted center>
+          This will switch the current network on Adena to the one that matches
+          the connected dapp.
+        </Body>
       )}
+      <MessageCard title="Network">
+        {mode === 'add' && (
+          <KeyValue label="Name" stacked value={String(data.chainName ?? '')} />
+        )}
+        {mode === 'add' && (
+          <KeyValue label="RPC URL" stacked value={String(data.rpcUrl ?? '')} />
+        )}
+        <KeyValue label="Chain ID" stacked value={String(data.chainId ?? '')} />
+      </MessageCard>
       <ErrorText>{error}</ErrorText>
-      <Button
-        title={mode === 'add' ? 'Add' : 'Switch'}
-        onPress={approve}
-        loading={busy}
-      />
-      <Button title="Reject" variant="secondary" onPress={reject} />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  logo: {alignSelf: 'center'},
+});

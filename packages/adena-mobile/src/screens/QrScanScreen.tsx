@@ -12,6 +12,7 @@ import {isAddressForNetwork} from '../core/address';
 import {useWallet} from '../core/wallet-context';
 import type {MainStackParams} from '../navigation/types';
 import {Body, Button, Screen} from '../ui/components';
+import {colorTokens} from '../ui/theme';
 
 type Props = NativeStackScreenProps<MainStackParams, 'QrScan'>;
 
@@ -76,5 +77,5 @@ export function QrScanScreen({navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#000'},
+  container: {flex: 1, backgroundColor: colorTokens.neutral._9},
 });

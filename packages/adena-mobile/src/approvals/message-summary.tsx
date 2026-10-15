@@ -1,10 +1,8 @@
 import React from 'react';
-import {StyleSheet, Text} from 'react-native';
 
 import {formatGnot} from '../core/format';
 import {Address} from '../ui/address';
-import {Body, Card, Row} from '../ui/components';
-import {colors} from '../ui/theme';
+import {KeyValue, MessageCard} from './approval-ui';
 
 const ugnot = (coins: string | undefined): string => {
   if (!coins) {
@@ -26,60 +24,71 @@ export function MessageSummary({
   index: number;
 }) {
   const value = message?.value ?? {};
+  const n = `${index + 1}.`;
   switch (message?.type) {
     case '/bank.MsgSend':
       return (
-        <Card>
-          <Body>#{index + 1} Send GNOT</Body>
-          <Row label="Amount" value={ugnot(value.amount)} />
-          <Body muted>To</Body>
-          <Address value={String(value.to_address ?? '')} />
-        </Card>
+        <MessageCard title={`${n} Send GNOT`}>
+          <KeyValue label="Amount" value={ugnot(value.amount)} />
+          <KeyValue
+            label="To"
+            stacked
+            value={<Address value={String(value.to_address ?? '')} />}
+          />
+        </MessageCard>
       );
-    case '/vm.m_call':
+    case '/vm.m_call': {
+      const args: unknown[] = Array.isArray(value.args) ? value.args : [];
       return (
-        <Card>
-          <Body>#{index + 1} Call realm</Body>
-          <Row label="Realm" value={String(value.pkg_path ?? '')} />
-          <Row label="Function" value={String(value.func ?? '')} />
-          <Row label="Arguments" value={JSON.stringify(value.args ?? [])} />
-          <Row label="Sends" value={ugnot(value.send)} />
-        </Card>
+        <MessageCard title={`${n} ${String(value.func ?? 'Call')}`}>
+          <KeyValue
+            label="realm"
+            stacked
+            value={String(value.pkg_path ?? '')}
+          />
+          {args.map((arg, i) => (
+            <KeyValue key={i} label={`arg${i + 1}`} value={String(arg)} />
+          ))}
+          <KeyValue label="send" value={ugnot(value.send)} />
+          {value.max_deposit ? (
+            <KeyValue label="max_deposit" value={ugnot(value.max_deposit)} />
+          ) : null}
+        </MessageCard>
       );
+    }
     case '/vm.m_addpkg':
     case '/vm.m_run': {
       const pkg = value.package ?? {};
       return (
-        <Card>
-          <Body>
-            #{index + 1}{' '}
-            {message.type === '/vm.m_run' ? 'Run code' : 'Deploy package'}
-          </Body>
-          <Row label="Package" value={String(pkg.path ?? pkg.Path ?? '')} />
-          <Row
-            label="Files"
+        <MessageCard
+          title={`${n} ${
+            message.type === '/vm.m_run' ? 'Run code' : 'Deploy package'
+          }`}>
+          <KeyValue
+            label="package"
+            stacked
+            value={String(pkg.path ?? pkg.Path ?? '')}
+          />
+          <KeyValue
+            label="files"
             value={String((pkg.files ?? pkg.Files ?? []).length)}
           />
           {message.type === '/vm.m_run' && (
-            <Row label="Sends" value={ugnot(value.send)} />
+            <KeyValue label="send" value={ugnot(value.send)} />
           )}
-        </Card>
+        </MessageCard>
       );
     }
     default:
       return (
-        <Card>
-          <Body>
-            #{index + 1} {String(message?.type ?? 'Unknown message')}
-          </Body>
-          <Text selectable style={styles.raw}>
-            {JSON.stringify(value, null, 2)}
-          </Text>
-        </Card>
+        <MessageCard
+          title={`${n} ${String(message?.type ?? 'Unknown message')}`}>
+          <KeyValue
+            label="value"
+            stacked
+            value={JSON.stringify(value, null, 2)}
+          />
+        </MessageCard>
       );
   }
 }
-
-const styles = StyleSheet.create({
-  raw: {fontFamily: 'Menlo', fontSize: 12, color: colors.text},
-});
