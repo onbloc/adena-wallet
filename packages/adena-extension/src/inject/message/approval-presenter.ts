@@ -1,5 +1,5 @@
 import { WalletResponseFailureType } from '@adena-wallet/sdk';
-import { encodeParameter } from '@common/utils/client-utils';
+import { encodeParameter } from '@common/utils/url-parameter-utils';
 import { InjectionMessage, InjectionMessageInstance } from './message';
 
 /**

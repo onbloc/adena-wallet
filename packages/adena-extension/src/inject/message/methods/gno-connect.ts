@@ -17,25 +17,9 @@ import {
 } from '@common/constants/url.constant';
 import { hasHttpProtocol } from '@common/provider/gno/utils';
 
-export interface GnoConnectInfo {
-  rpc: string;
-  chainId: string;
-}
+import type { GnoArgumentInfo, GnoConnectInfo, GnoMessageInfo } from '../../types/gno-connect';
 
-export interface GnoMessageInfo {
-  packagePath: string;
-  functionName: string;
-  send: string;
-  maxDeposit: string;
-  args: GnoArgumentInfo[] | null;
-}
-
-export interface GnoArgumentInfo {
-  index: number;
-  key: string;
-  value: string;
-  type?: string;
-}
+export type { GnoArgumentInfo, GnoConnectInfo, GnoMessageInfo };
 
 /**
  * Parses GNO connect information from meta tags in the current document.

@@ -1,7 +1,7 @@
 import { WalletResponseFailureType, WalletResponseSuccessType } from '@adena-wallet/sdk';
 import { Event, EventStatus, EventStore } from '@common/event-store';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
-import { fromBase64, toBase64 } from '@common/utils/client-utils';
+import { fromBase64, toBase64 } from '@common/utils/url-parameter-utils';
 import { getGnoscanChainId, isGnoscanChainIdSupported } from '@common/utils/gnoscan-url';
 import { makeTransactionScannerUrl } from '@common/utils/scanner-utils';
 import { BroadcastTxCommitResult, BroadcastTxSyncResult } from '@gnolang/tm2-js-client';

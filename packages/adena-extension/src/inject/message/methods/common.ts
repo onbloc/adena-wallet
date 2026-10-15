@@ -1,5 +1,5 @@
 import { WalletResponseFailureType } from '@adena-wallet/sdk';
-import { getSiteName } from '@common/utils/client-utils';
+import { getSiteName } from '@common/utils/url-parameter-utils';
 import { getApprovalPresenter } from '../approval-presenter';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
