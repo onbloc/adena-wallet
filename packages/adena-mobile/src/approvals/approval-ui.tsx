@@ -69,7 +69,9 @@ export function MessageCard({
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{title}</Text>
       {rows.map((row, index) => (
-        <View key={index} style={styles.cardRow}>
+        <View
+          key={index}
+          style={[styles.cardRow, index > 0 && styles.cardDivider]}>
           {row}
         </View>
       ))}
@@ -181,12 +183,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: neutral._8,
   },
-  cardRow: {
-    marginHorizontal: 18,
-    paddingVertical: 10,
-    borderTopWidth: 2,
-    borderTopColor: neutral._8,
-  },
+  cardRow: {marginHorizontal: 18, paddingVertical: 10},
+  cardDivider: {borderTopWidth: 2, borderTopColor: neutral._8},
   kv: {
     flexDirection: 'row',
     justifyContent: 'space-between',
