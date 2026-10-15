@@ -1,8 +1,8 @@
-import {validatePasswordComplexity} from '@common/validation/validation-password';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useState} from 'react';
 import {Switch, View} from 'react-native';
 
+import {isStrongEnoughPassword} from '../../core/password-policy';
 import {pendingMnemonic} from '../../core/pending-mnemonic';
 import {useWallet} from '../../core/wallet-context';
 import type {OnboardingStackParams} from '../../navigation/types';
@@ -35,10 +35,8 @@ export function SetPasswordScreen({navigation}: Props) {
   }, []);
 
   const submit = async () => {
-    try {
-      validatePasswordComplexity(password);
-    } catch (e) {
-      setError((e as Error).message || 'The password is too weak.');
+    if (!isStrongEnoughPassword(password)) {
+      setError('The password is too weak.');
       return;
     }
     if (password !== confirm) {
