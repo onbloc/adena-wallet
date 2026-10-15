@@ -3,7 +3,8 @@ import {EnglishMnemonic} from 'adena-module';
 import React, {useState} from 'react';
 import {StyleSheet} from 'react-native';
 
-import {pendingMnemonic} from '../../core/pending-mnemonic';
+import {pendingSecret} from '../../core/pending-secret';
+import {normalizePrivateKey} from '../../core/private-key';
 import type {OnboardingStackParams} from '../../navigation/types';
 import {useSecureScreen} from '../../security/use-secure-screen';
 import {
@@ -31,46 +32,87 @@ export function normalizeMnemonic(input: string): string {
   return input.trim().toLowerCase().split(/\s+/).join(' ');
 }
 
+type ImportMode = 'mnemonic' | 'privateKey';
+
 export function ImportWalletScreen({navigation}: Props) {
   useSecureScreen();
-  const [phrase, setPhrase] = useState('');
+  const [mode, setMode] = useState<ImportMode>('mnemonic');
+  const [secret, setSecret] = useState('');
   const [error, setError] = useState('');
 
+  const switchMode = (next: ImportMode) => {
+    setMode(next);
+    setSecret('');
+    setError('');
+  };
+
   const next = () => {
-    const normalized = normalizeMnemonic(phrase);
-    if (!isValidMnemonic(normalized)) {
-      setError(
-        'This is not a valid recovery phrase. Check the words and their order.',
-      );
-      return;
+    if (mode === 'mnemonic') {
+      const normalized = normalizeMnemonic(secret);
+      if (!isValidMnemonic(normalized)) {
+        setError(
+          'This is not a valid recovery phrase. Check the words and their order.',
+        );
+        return;
+      }
+      pendingSecret.set({kind: 'mnemonic', value: normalized});
+    } else {
+      const privateKey = normalizePrivateKey(secret);
+      if (!privateKey) {
+        setError('A private key is 64 hexadecimal characters (0x optional).');
+        return;
+      }
+      pendingSecret.set({kind: 'privateKey', value: privateKey});
     }
-    pendingMnemonic.set(normalized);
-    setPhrase('');
+    setSecret('');
     navigation.navigate('SetPassword');
   };
 
   return (
     <Screen>
       <Title>Import a wallet</Title>
+      <Button
+        title="Recovery phrase"
+        variant={mode === 'mnemonic' ? 'primary' : 'secondary'}
+        onPress={() => switchMode('mnemonic')}
+      />
+      <Button
+        title="Private key"
+        variant={mode === 'privateKey' ? 'primary' : 'secondary'}
+        onPress={() => switchMode('privateKey')}
+      />
       <Body muted>
-        Enter your 12 or 24 word recovery phrase, separated by spaces.
+        {mode === 'mnemonic'
+          ? 'Enter your 12 or 24 word recovery phrase, separated by spaces.'
+          : 'Enter the private key of a single account. A wallet imported this way has only that account and no recovery phrase.'}
       </Body>
       <Notice>
-        Only enter your phrase here, in the Adena app you installed from the
-        store.
+        Only enter it here, in the Adena app you installed from the store.
       </Notice>
-      <Field
-        label="Recovery phrase"
-        value={phrase}
-        onChangeText={text => {
-          setPhrase(text);
-          setError('');
-        }}
-        multiline
-        style={styles.phrase}
-      />
+      {mode === 'mnemonic' ? (
+        <Field
+          label="Recovery phrase"
+          value={secret}
+          onChangeText={text => {
+            setSecret(text);
+            setError('');
+          }}
+          multiline
+          style={styles.phrase}
+        />
+      ) : (
+        <Field
+          label="Private key"
+          secret
+          value={secret}
+          onChangeText={text => {
+            setSecret(text);
+            setError('');
+          }}
+        />
+      )}
       <ErrorText>{error}</ErrorText>
-      <Button title="Continue" disabled={!phrase.trim()} onPress={next} />
+      <Button title="Continue" disabled={!secret.trim()} onPress={next} />
     </Screen>
   );
 }

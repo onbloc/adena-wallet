@@ -9,6 +9,8 @@ import {
 import {
   AdenaWallet,
   libsodiumCryptoProvider,
+  PrivateKeyKeyring,
+  publicKeyToAddress,
   setCryptoProvider,
 } from 'adena-module';
 import sodium from 'libsodium-wrappers-sumo';
@@ -117,6 +119,34 @@ describe('wallet lifecycle on the mobile platform', () => {
     await waitFor(() => wallet.status === 'locked');
     expect(wallet.wallet).toBeNull();
     expect(wallet.address).toBeNull();
+  });
+
+  it('imports a wallet from a private key and unlocks it again', async () => {
+    await act(async () => {
+      await wallet.resetWallet();
+    });
+    const privateKey = Buffer.from(sodium.randombytes_buf(32)).toString('hex');
+    const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(privateKey);
+    const expected = await publicKeyToAddress(keyring.publicKey, 'g');
+
+    await act(async () => {
+      await wallet.importPrivateKey(privateKey, PASSWORD);
+    });
+    await waitFor(() => wallet.status === 'unlocked' && !!wallet.address);
+    const imported = wallet.address;
+    expect(imported).toMatch(/^g1/);
+    expect(imported).toBe(expected);
+    expect(() => wallet.wallet?.getMnemonic()).toThrow();
+
+    await act(async () => {
+      await wallet.lock();
+    });
+    let unlocked = false;
+    await act(async () => {
+      unlocked = await wallet.unlock(PASSWORD);
+    });
+    expect(unlocked).toBe(true);
+    await waitFor(() => wallet.address === imported);
   });
 
   it('wipes everything on reset', async () => {

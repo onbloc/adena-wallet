@@ -2,7 +2,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {getCryptoProvider} from 'adena-module';
 import React, {useMemo, useState} from 'react';
 
-import {pendingMnemonic} from '../../core/pending-mnemonic';
+import {pendingSecret} from '../../core/pending-secret';
 import type {OnboardingStackParams} from '../../navigation/types';
 import {
   Body,
@@ -30,7 +30,10 @@ function pickPositions(wordCount: number): number[] {
 }
 
 export function ConfirmMnemonicScreen({navigation}: Props) {
-  const words = useMemo(() => pendingMnemonic.peek()?.split(' ') ?? [], []);
+  const words = useMemo(
+    () => pendingSecret.peekMnemonic()?.split(' ') ?? [],
+    [],
+  );
   const positions = useMemo(() => pickPositions(words.length), [words]);
   // Debug builds pre-fill the answers to speed up manual testing. Release
   // builds always make the user type them: this check is what proves the

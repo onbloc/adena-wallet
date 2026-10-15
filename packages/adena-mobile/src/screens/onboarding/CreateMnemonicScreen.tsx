@@ -3,7 +3,7 @@ import {AdenaWallet} from 'adena-module';
 import React, {useEffect, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
-import {pendingMnemonic} from '../../core/pending-mnemonic';
+import {pendingSecret} from '../../core/pending-secret';
 import type {OnboardingStackParams} from '../../navigation/types';
 import {useSecureScreen} from '../../security/use-secure-screen';
 import {Body, Button, Notice, Screen, Title} from '../../ui/components';
@@ -20,7 +20,7 @@ export function CreateMnemonicScreen({navigation}: Props) {
 
   useEffect(() => {
     const mnemonic = AdenaWallet.generateMnemonic(WORD_COUNT);
-    pendingMnemonic.set(mnemonic);
+    pendingSecret.set({kind: 'mnemonic', value: mnemonic});
     setWords(mnemonic.split(' '));
     return () => setWords([]);
   }, []);

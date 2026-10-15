@@ -1,7 +1,13 @@
 import {AdenaStorage} from '@common/storage/storage';
 import {isAutoLockTriggeredMessage} from '@common/utils/auto-lock-timer';
 import type {NetworkMetainfo} from '@types';
-import type {Account, Wallet} from 'adena-module';
+import {
+  Account,
+  AdenaWallet,
+  PrivateKeyKeyring,
+  SingleAccount,
+  Wallet,
+} from 'adena-module';
 import React, {
   createContext,
   useCallback,
@@ -39,6 +45,8 @@ interface WalletContextValue {
   address: string | null;
   biometricEnabled: boolean;
   createWallet(mnemonic: string, password: string): Promise<void>;
+  /** `privateKeyHex` must already be validated (see core/private-key.ts). */
+  importPrivateKey(privateKeyHex: string, password: string): Promise<void>;
   unlock(password: string): Promise<boolean>;
   unlockWithBiometrics(): Promise<boolean>;
   lock(): Promise<void>;
@@ -168,6 +176,22 @@ export function WalletProvider({
     [base, adoptWallet],
   );
 
+  // Same construction as the extension's wallet import with a private key.
+  const importPrivateKey = useCallback(
+    async (privateKeyHex: string, password: string) => {
+      const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(privateKeyHex);
+      const account = await SingleAccount.createBy(keyring, 'Account');
+      const created = new AdenaWallet();
+      created.currentAccountId = account.id;
+      created.addAccount(account);
+      created.addKeyring(keyring);
+      await base.walletService.saveWallet(created, password);
+      await base.accountRepository.updateCurrentAccountId(account.id);
+      await adoptWallet(created);
+    },
+    [base, adoptWallet],
+  );
+
   const unlock = useCallback(
     async (password: string) => {
       try {
@@ -276,6 +300,7 @@ export function WalletProvider({
     address,
     biometricEnabled,
     createWallet,
+    importPrivateKey,
     unlock,
     unlockWithBiometrics: unlockBiometric,
     lock,

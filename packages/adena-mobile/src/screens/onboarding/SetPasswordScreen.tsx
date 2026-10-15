@@ -3,7 +3,7 @@ import React, {useEffect, useState} from 'react';
 import {Switch, View} from 'react-native';
 
 import {isStrongEnoughPassword} from '../../core/password-policy';
-import {pendingMnemonic} from '../../core/pending-mnemonic';
+import {pendingSecret} from '../../core/pending-secret';
 import {useWallet} from '../../core/wallet-context';
 import type {OnboardingStackParams} from '../../navigation/types';
 import {isBiometricUnlockAvailable} from '../../platform/biometric-unlock';
@@ -20,7 +20,7 @@ import {
 type Props = NativeStackScreenProps<OnboardingStackParams, 'SetPassword'>;
 
 export function SetPasswordScreen({navigation}: Props) {
-  const {createWallet, setBiometricUnlock} = useWallet();
+  const {createWallet, importPrivateKey, setBiometricUnlock} = useWallet();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [useBiometrics, setUseBiometrics] = useState(false);
@@ -43,20 +43,24 @@ export function SetPasswordScreen({navigation}: Props) {
       setError('The passwords do not match.');
       return;
     }
-    const mnemonic = pendingMnemonic.consume();
-    if (!mnemonic) {
+    const secret = pendingSecret.consume();
+    if (!secret) {
       navigation.popToTop();
       return;
     }
     setSaving(true);
     try {
-      await createWallet(mnemonic, password);
+      if (secret.kind === 'mnemonic') {
+        await createWallet(secret.value, password);
+      } else {
+        await importPrivateKey(secret.value, password);
+      }
       if (useBiometrics) {
         await setBiometricUnlock(true, password);
       }
     } catch {
       setError('The wallet could not be saved. Try again.');
-      pendingMnemonic.set(mnemonic);
+      pendingSecret.set(secret);
     } finally {
       setSaving(false);
     }
