@@ -1,6 +1,6 @@
 import { MsgAddPackage, MsgCall, MsgRun, MsgSend } from '@gnolang/gno-js-client';
 import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import type { GnoArgumentInfo } from '@inject/types/gno-connect';
 
 import { AdenaResponse } from '.';
 

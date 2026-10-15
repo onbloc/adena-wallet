@@ -1,5 +1,5 @@
 import { isBech32Address } from '@common/utils/string-utils';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import type { GnoArgumentInfo } from '@inject/types/gno-connect';
 import { ContractMessage } from '@inject/types';
 
 export interface ArgumentValidationResult {
