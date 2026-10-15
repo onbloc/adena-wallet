@@ -108,7 +108,12 @@ export function Mono({children}: React.PropsWithChildren) {
   );
 }
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'dark'
+  | 'ghost'
+  | 'danger';
 
 /**
  * The popup button: 48px tall, fully rounded. `secondary` is the extension's
@@ -173,7 +178,7 @@ export function ButtonPair({
 }) {
   return (
     <View style={styles.buttonPair}>
-      <Button variant="secondary" {...cancel} style={styles.flex} />
+      <Button variant="dark" {...cancel} style={styles.flex} />
       <Button {...confirm} style={styles.flex} />
     </View>
   );
@@ -186,6 +191,7 @@ export function ButtonPair({
  */
 export function Field({
   label,
+  hideLabel,
   secret,
   error,
   style,
@@ -193,13 +199,15 @@ export function Field({
   ...props
 }: TextInputProps & {
   label: string;
+  /** The popup shows only a placeholder; the label stays for screen readers. */
+  hideLabel?: boolean;
   secret?: boolean;
   error?: boolean;
   tone?: ScreenTone;
 }) {
   return (
     <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+      {hideLabel ? null : <Text style={styles.label}>{label}</Text>}
       <TextInput
         {...props}
         accessibilityLabel={label}
@@ -321,12 +329,71 @@ export function ListItem({
   );
 }
 
+/** Red "ERROR:" banner for simulation and broadcast failures. */
+export function ErrorBanner({children}: React.PropsWithChildren) {
+  return (
+    <View style={styles.errorBanner} accessibilityRole="alert">
+      <Text style={styles.errorBannerText}>
+        <Text style={styles.errorBannerLabel}>ERROR: </Text>
+        {children}
+      </Text>
+    </View>
+  );
+}
+
+/** Rounded card of label/value rows split by thin lines (transfer summary). */
+export function SummaryCard({children}: React.PropsWithChildren) {
+  const rows = React.Children.toArray(children).filter(Boolean);
+  return (
+    <View style={styles.summary}>
+      {rows.map((row, index) => (
+        <View key={index} style={index > 0 && styles.summaryDivider}>
+          {row}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+export function SummaryRow({
+  label,
+  value,
+  stacked,
+  muted,
+}: {
+  label: string;
+  value: React.ReactNode;
+  /** Value on its own line, for long values such as a full address. */
+  stacked?: boolean;
+  muted?: boolean;
+}) {
+  return (
+    <View style={[styles.summaryRow, stacked && styles.summaryRowStacked]}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      {typeof value === 'string' ? (
+        <Text
+          selectable
+          style={[
+            styles.rowValueText,
+            styles.summaryValue,
+            muted && styles.muted,
+          ]}>
+          {value}
+        </Text>
+      ) : (
+        value
+      )}
+    </View>
+  );
+}
+
 export function Gap({size = spacing.md}: {size?: number}) {
   return <View style={{height: size}} />;
 }
 
 const buttonStyles = StyleSheet.create({
   primary: {backgroundColor: colors.primary},
+  dark: {backgroundColor: colorTokens.neutral._5},
   secondary: {backgroundColor: colors.surfaceRaised},
   ghost: {
     backgroundColor: colors.surface,
@@ -338,6 +405,7 @@ const buttonStyles = StyleSheet.create({
 
 const pressedStyles = StyleSheet.create({
   primary: {backgroundColor: colors.primaryPressed},
+  dark: {backgroundColor: colorTokens.neutral._6},
   secondary: {backgroundColor: colorTokens.neutral.b},
   ghost: {backgroundColor: colorTokens.neutral._6},
   danger: {backgroundColor: '#BB150B'},
@@ -345,6 +413,7 @@ const pressedStyles = StyleSheet.create({
 
 const disabledStyles = StyleSheet.create({
   primary: {backgroundColor: colors.primaryDisabled},
+  dark: {backgroundColor: colorTokens.neutral._6},
   secondary: {opacity: 0.5},
   ghost: {
     backgroundColor: colors.surfaceRaised,
@@ -407,18 +476,25 @@ const styles = StyleSheet.create({
   },
   inputSecret: {letterSpacing: 4},
   inputError: {borderColor: colors.danger},
-  notice: {borderRadius: radius.md, padding: 14, borderWidth: 1},
+  // The extension's warning-box: red (danger) and orange (warning) tones.
+  notice: {borderWidth: 1},
   noticeWarning: {
-    backgroundColor: colors.warningSurface,
-    borderColor: colors.warning,
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(251, 146, 60, 0.1)',
+    borderColor: 'rgba(251, 146, 60, 0.05)',
   },
   noticeDanger: {
-    backgroundColor: colors.dangerSurface,
-    borderColor: colors.danger,
+    borderRadius: radius.md,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: 'rgba(231, 50, 59, 0.1)',
+    borderColor: 'rgba(231, 50, 59, 0.1)',
   },
   noticeText: {...fonts.body2Reg},
   noticeWarningText: {color: colors.warning},
-  noticeDangerText: {color: colors.danger},
+  noticeDangerText: {color: 'rgba(231, 50, 59, 1)'},
   error: {...fonts.captionReg, color: colors.danger},
   card: {
     backgroundColor: colors.surface,
@@ -429,6 +505,41 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   row: {flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md},
+  errorBanner: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerSurface,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  errorBannerText: {
+    fontFamily: fonts.body2Reg.fontFamily,
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.danger,
+  },
+  errorBannerLabel: {fontFamily: fonts.header7.fontFamily},
+  summary: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingHorizontal: 18,
+  },
+  summaryDivider: {borderTopWidth: 1, borderTopColor: colorTokens.neutral._6},
+  summaryRow: {
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingVertical: 12,
+  },
+  summaryRowStacked: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
+  },
+  summaryValue: {flexShrink: 1},
   rowLabel: {...fonts.body2Reg, color: colors.textMuted},
   rowValue: {flexShrink: 1, alignItems: 'flex-end'},
   rowValueText: {...fonts.body2Reg, color: colors.text, textAlign: 'right'},

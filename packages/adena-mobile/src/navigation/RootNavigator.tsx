@@ -45,7 +45,7 @@ const popupHeader: NativeStackNavigationOptions = {
   headerStyle: {backgroundColor: colors.background},
   headerTintColor: colors.text,
   headerTitleAlign: 'center',
-  headerTitleStyle: {fontFamily: fonts.header6.fontFamily, fontSize: 18},
+  headerTitleStyle: {fontFamily: fonts.header5.fontFamily, fontSize: 20},
   headerShadowVisible: false,
   headerBackButtonDisplayMode: 'minimal',
   contentStyle: {backgroundColor: colors.background},
@@ -84,14 +84,22 @@ function MainNavigator() {
       <Main.Screen
         name="Home"
         component={HomeScreen}
-        options={{title: 'Adena'}}
+        options={{headerShown: false}}
       />
-      <Main.Screen name="Receive" component={ReceiveScreen} />
-      <Main.Screen name="Send" component={SendScreen} />
+      <Main.Screen
+        name="Receive"
+        component={ReceiveScreen}
+        options={{title: 'Deposit GNOT'}}
+      />
+      <Main.Screen
+        name="Send"
+        component={SendScreen}
+        options={{title: 'Send GNOT'}}
+      />
       <Main.Screen
         name="SendConfirm"
         component={SendConfirmScreen}
-        options={{title: 'Review'}}
+        options={{title: 'Sending GNOT'}}
       />
       <Main.Screen
         name="QrScan"

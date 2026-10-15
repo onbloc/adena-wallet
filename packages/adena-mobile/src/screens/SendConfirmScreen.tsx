@@ -1,3 +1,5 @@
+import GnotLogo from '@assets/gnot-logo-white.svg';
+import SubmitIcon from '@assets/submit.svg';
 import {GNOT_TOKEN} from '@common/constants/token.constant';
 import {
   classifyGnoSigningRisk,
@@ -7,6 +9,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {Document} from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, {useEffect, useState} from 'react';
+import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
 
 import {estimateFee, FeeEstimate, withFee} from '../core/fees';
 import {formatGnot} from '../core/format';
@@ -14,18 +17,20 @@ import {useWallet} from '../core/wallet-context';
 import type {MainStackParams} from '../navigation/types';
 import {useReauth} from '../security/reauth';
 import {Address} from '../ui/address';
-import {RiskNotices} from '../ui/risk-notices';
 import {
   Body,
   Button,
-  Card,
-  ErrorText,
+  ButtonPair,
+  ErrorBanner,
   Mono,
   Notice,
-  Row,
   Screen,
+  SummaryCard,
+  SummaryRow,
   Title,
 } from '../ui/components';
+import {RiskNotices} from '../ui/risk-notices';
+import {colors, colorTokens, fonts} from '../ui/theme';
 
 type Props = NativeStackScreenProps<MainStackParams, 'SendConfirm'>;
 
@@ -41,6 +46,7 @@ type State =
   | {phase: 'sending'}
   | {phase: 'sent'; hash: string};
 
+/** The extension's transfer summary, broadcasting and result screens. */
 export function SendConfirmScreen({route, navigation}: Props) {
   const {to, ugnot, memo} = route.params;
   const {net, wallet, account, address} = useWallet();
@@ -117,13 +123,38 @@ export function SendConfirmScreen({route, navigation}: Props) {
     }
   };
 
+  if (state.phase === 'sending') {
+    return (
+      <Screen scroll={false}>
+        <View style={styles.status}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Title center>Broadcasting...</Title>
+          <Body muted center>
+            Your transaction is being broadcasted.
+          </Body>
+        </View>
+      </Screen>
+    );
+  }
+
   if (state.phase === 'sent') {
     return (
-      <Screen>
-        <Title>Submitted</Title>
-        <Body muted>The transaction was broadcast. Transaction hash:</Body>
-        <Mono>{state.hash}</Mono>
-        <Button title="Done" onPress={() => navigation.popToTop()} />
+      <Screen
+        footer={
+          <Button
+            title="Close"
+            variant="dark"
+            onPress={() => navigation.popToTop()}
+          />
+        }>
+        <View style={styles.status}>
+          <SubmitIcon width={100} height={100} />
+          <Title center>Transaction Submitted</Title>
+          <Body muted center>
+            Your transaction has been successfully submitted to the blockchain.
+          </Body>
+          <Mono>{state.hash}</Mono>
+        </View>
       </Screen>
     );
   }
@@ -137,32 +168,58 @@ export function SendConfirmScreen({route, navigation}: Props) {
       : null;
 
   return (
-    <Screen>
-      <Title>Review transfer</Title>
+    <Screen
+      footer={
+        <ButtonPair
+          cancel={{title: 'Cancel', onPress: () => navigation.goBack()}}
+          confirm={{
+            title: 'Send',
+            testID: 'send-confirm',
+            onPress: confirm,
+            disabled: state.phase !== 'ready',
+          }}
+        />
+      }>
       {state.phase === 'preparing' && (
         <Body muted>Simulating the transaction…</Body>
       )}
-      {state.phase === 'failed' && <ErrorText>{state.message}</ErrorText>}
+      {state.phase === 'failed' && <ErrorBanner>{state.message}</ErrorBanner>}
       {sendMessage && state.phase === 'ready' && (
         <>
-          <Card>
-            <Body muted>To</Body>
-            <Address value={sendMessage.value.to_address} />
-          </Card>
-          <Card>
-            <Row
-              label="Amount"
-              value={formatGnot(
+          <View style={styles.amountCard}>
+            <View style={styles.tokenLogo}>
+              <GnotLogo width={22} height={22} />
+            </View>
+            <Text style={styles.tokenName}>Gnoland</Text>
+            <Text style={styles.amount}>
+              {formatGnot(
                 sendMessage.value.amount.replace(GNOT_TOKEN.denom, ''),
               )}
+            </Text>
+          </View>
+          <SummaryCard>
+            <SummaryRow
+              label="To"
+              value={<Address value={sendMessage.value.to_address} />}
+              stacked
             />
-            <Row label="Network fee" value={formatGnot(state.fee.gasFee)} />
-            <Row label="Total" value={formatGnot(total)} />
-            <Row label="Network" value={net?.network.networkName ?? ''} />
-            {!!state.document.memo && (
-              <Row label="Memo" value={state.document.memo} />
-            )}
-          </Card>
+            <SummaryRow
+              label="Network"
+              value={net?.network.networkName ?? ''}
+            />
+            <SummaryRow
+              label="Memo"
+              value={state.document.memo || '(Empty)'}
+              muted={!state.document.memo}
+            />
+          </SummaryCard>
+          <SummaryCard>
+            <SummaryRow
+              label="Network Fee"
+              value={formatGnot(state.fee.gasFee)}
+            />
+            <SummaryRow label="Total" value={formatGnot(total)} />
+          </SummaryCard>
           <RiskNotices risk={state.risk} />
           <Notice>
             Check the full address against the one the recipient gave you, not
@@ -170,17 +227,31 @@ export function SendConfirmScreen({route, navigation}: Props) {
           </Notice>
         </>
       )}
-      <Button
-        title="Send"
-        onPress={confirm}
-        disabled={state.phase !== 'ready'}
-        loading={state.phase === 'sending'}
-      />
-      <Button
-        title="Cancel"
-        variant="secondary"
-        onPress={() => navigation.goBack()}
-      />
     </Screen>
   );
 }
+
+const {neutral} = colorTokens;
+
+const styles = StyleSheet.create({
+  status: {alignItems: 'center', gap: 12, paddingTop: 56},
+  amountCard: {
+    height: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    backgroundColor: neutral._9,
+  },
+  tokenLogo: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: neutral._7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tokenName: {...fonts.body2Bold, color: colors.text, flex: 1},
+  amount: {...fonts.body2Reg, color: colors.text},
+});

@@ -56,16 +56,19 @@ export function WebScreen({
   header?: React.ReactNode;
 }>) {
   return (
-    <SafeAreaView style={styles.screen}>
+    // The glow sits behind the safe area so it reaches the screen edges.
+    <View style={styles.screen}>
       <WebBackground />
-      {header ? <View style={styles.header}>{header}</View> : null}
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.scroll}>
-        {children}
-      </ScrollView>
-      {footer ? <View style={styles.footer}>{footer}</View> : null}
-    </SafeAreaView>
+      <SafeAreaView style={styles.safeArea}>
+        {header ? <View style={styles.header}>{header}</View> : null}
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scroll}>
+          {children}
+        </ScrollView>
+        {footer ? <View style={styles.footer}>{footer}</View> : null}
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -575,6 +578,7 @@ const pressedFigureStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: webBase._100},
+  safeArea: {flex: 1},
   header: {paddingHorizontal: 20, paddingTop: 8},
   scroll: {flexGrow: 1, padding: 20, gap: 24},
   footer: {paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16, gap: 12},

@@ -53,7 +53,7 @@ export function WelcomeScreen({navigation}: Props) {
 
 const styles = StyleSheet.create({
   body: {flex: 1, justifyContent: 'center', gap: 40},
-  animation: {height: 160},
+  animation: {height: 200},
   titles: {gap: 8},
   choices: {gap: 16},
 });
