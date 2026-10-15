@@ -7,6 +7,11 @@ import {Modal} from 'react-native';
 import {useWallet} from '../core/wallet-context';
 import type {PendingApproval} from '../platform/approval-queue';
 import {ConnectApproval} from './ConnectApproval';
+import {
+  CosmosConnectApproval,
+  CosmosKeyApproval,
+  CosmosSignApproval,
+} from './CosmosApprovals';
 import {NetworkApproval} from './NetworkApproval';
 import {SignArbitraryApproval} from './SignArbitraryApproval';
 import {TransactionApproval} from './TransactionApproval';
@@ -28,6 +33,21 @@ function ApprovalScreen(props: ApprovalProps) {
       return <NetworkApproval {...props} mode="switch" />;
     case RoutePath.ApproveAddingNetwork:
       return <NetworkApproval {...props} mode="add" />;
+    case RoutePath.ApproveEstablishCosmos:
+      return <CosmosConnectApproval {...props} />;
+    case RoutePath.ApproveGetCosmosKey:
+      return <CosmosKeyApproval {...props} />;
+    case RoutePath.ApproveSignCosmos:
+      return (
+        <CosmosSignApproval
+          {...props}
+          mode={
+            (props.request.message.type as string) === 'SIGN_COSMOS_DIRECT'
+              ? 'direct'
+              : 'amino'
+          }
+        />
+      );
     default:
       return null;
   }
@@ -41,6 +61,9 @@ const SUPPORTED = new Set<string>([
   RoutePath.ApproveSignArbitrary,
   RoutePath.ApproveChangingNetwork,
   RoutePath.ApproveAddingNetwork,
+  RoutePath.ApproveEstablishCosmos,
+  RoutePath.ApproveGetCosmosKey,
+  RoutePath.ApproveSignCosmos,
 ]);
 
 /** Shows the head of the approval queue as a full-screen modal, one at a time. */
@@ -54,7 +77,7 @@ export function ApprovalHost() {
   );
 
   useEffect(() => {
-    // Cosmos (AtomOne) and multisig requests are not handled on mobile yet.
+    // Multisig requests are not handled on mobile yet.
     if (current && !SUPPORTED.has(current.path)) {
       platform.approvals.resolve(
         current.id,
