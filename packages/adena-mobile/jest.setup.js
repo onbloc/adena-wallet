@@ -16,3 +16,8 @@ jest.mock('./src/security/native-security', () => ({
   getProtectedStorageDirectory: jest.fn(async () => '/protected'),
   onScreenshotTaken: jest.fn(() => () => undefined),
 }));
+
+jest.mock(
+  'react-native-safe-area-context',
+  () => require('react-native-safe-area-context/jest/mock').default,
+);

@@ -10,9 +10,13 @@ background messaging, approval popups) with mobile implementations in
 
 ```sh
 yarn install                                # from the repository root
-yarn workspace adena-mobile prepare:native  # verify + unpack prebuilt native libs
+yarn workspace adena-mobile prepare:native  # verify + unpack native libs, build the dApp provider
 yarn workspace adena-mobile pods            # iOS only
 ```
+
+`prepare:native` also builds `src/browser/provider/generated/provider-bundle.js`
+(not committed): the extension's `inject.ts` bundled with esbuild, which the
+in-app browser injects so dApps get the same `window.adena` API.
 
 Install scripts are disabled in this repository. `prepare:native` unpacks the
 prebuilt libsodium shipped with `react-native-libsodium` only after its archive
@@ -36,6 +40,15 @@ yarn workspace adena-mobile start
 yarn workspace adena-mobile ios       # or: android
 yarn workspace adena-mobile test
 ```
+
+## dApp requests
+
+A page's request travels: `inject.ts` (page) → bridge script (top frame only,
+per-browser token) → `page-message.ts` (origin from native navigation, size
+and token checks) → the extension's `MessageHandler` → `ApprovalQueue` →
+`src/approvals/*` → reply injected back into the page if it is still on the
+same origin. Cosmos (AtomOne) and multisig requests are answered with
+`UNSUPPORTED_TYPE` for now.
 
 ## Notes
 

@@ -21,9 +21,11 @@ module.exports = {
       '../../node_modules/libsodium-wrappers-sumo',
     ),
     '^react-native-keychain$': '<rootDir>/__mocks__/react-native-keychain.ts',
+    'provider/generated/provider-bundle$': '<rootDir>/__mocks__/provider-bundle.js',
+    '^@types$': `${extensionSrc}/types`,
   },
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|react-native-mmkv|@cosmjs|@gnolang|@noble|@scure|uuid)/)',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-native-clipboard|@react-navigation|react-native-[a-z-]+|@cosmjs|@gnolang|@noble|@scure|uuid)/)',
   ],
   testPathIgnorePatterns: ['/node_modules/', '/ios/', '/android/'],
 };

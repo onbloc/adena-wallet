@@ -10,6 +10,9 @@ require Pod::Executable.execute_command('node', ['-p',
 unless system('node', File.join(__dir__, '../scripts/prepare-native-deps.js'))
   raise 'Native dependency check failed; see the message above.'
 end
+unless system('node', File.join(__dir__, '../scripts/build-provider.js'))
+  raise 'Building the in-app browser provider failed; see the message above.'
+end
 
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
@@ -51,9 +54,24 @@ target 'AdenaMobile' do
       end
     end
 
+    # Some pods (e.g. RNSVG's resource bundle) still target iOS 12.4, which
+    # Xcode 26+ rejects; raise them to the app's minimum.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |build_config|
+        if build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 15.1
+          build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+        end
+      end
+    end
+
     # Clibsodium.xcframework is assembled without headers (see
     # scripts/prepare-native-deps.js); compile against the unpacked ones.
-    sodium_headers = '"${PODS_ROOT}/../../node_modules/react-native-libsodium/libsodium/build/libsodium-apple/ios/include"'
+    # Resolved like react_native_pods.rb, so it works whether Yarn hoists the
+    # package to the workspace root or keeps it under this package.
+    sodium_root = File.dirname(Pod::Executable.execute_command('node', ['-p',
+      'require.resolve("react-native-libsodium/package.json", {paths: [process.argv[1]]})',
+      __dir__]).strip)
+    sodium_headers = "\"#{sodium_root}/libsodium/build/libsodium-apple/ios/include\""
     installer.pods_project.targets.each do |target|
       next unless target.name == 'react-native-libsodium'
       target.build_configurations.each do |build_config|

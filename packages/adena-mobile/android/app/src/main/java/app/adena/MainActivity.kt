@@ -16,7 +16,9 @@ class MainActivity : ReactActivity() {
   override fun getMainComponentName(): String = "AdenaMobile"
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
+    // react-native-screens cannot restore fragments from saved state; start fresh
+    // (this also keeps no wallet screen state in the saved-instance bundle).
+    super.onCreate(null)
     // Tapjacking: ignore touches that pass through another app's overlay, and
     // hide non-system overlays while the wallet is in front (Android 12+).
     window.decorView.filterTouchesWhenObscured = true

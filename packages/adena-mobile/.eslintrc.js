@@ -17,11 +17,6 @@ module.exports = {
             message:
               'Use getCryptoProvider() from adena-module; Hermes cannot run libsodium.js.',
           },
-          {
-            name: '@adena-wallet/sdk',
-            message:
-              'Its entry point loads Web3Auth; see src/platform/dismissed-response.ts.',
-          },
         ],
         patterns: [
           {

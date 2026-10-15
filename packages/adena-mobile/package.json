@@ -9,8 +9,9 @@
     "start": "react-native start",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "prepare:native": "node scripts/prepare-native-deps.js",
-    "pods": "node scripts/prepare-native-deps.js && cd ios && pod install"
+    "prepare:native": "node scripts/prepare-native-deps.js && node scripts/build-provider.js",
+    "pods": "yarn prepare:native && cd ios && pod install",
+    "build:provider": "node scripts/build-provider.js"
   },
   "dependencies": {
     "@react-native-clipboard/clipboard": "1.16.2",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@babel/plugin-transform-export-namespace-from": "7.27.1",
     "@babel/preset-env": "^7.25.3",
     "@babel/runtime": "^7.25.0",
     "@react-native-community/cli": "15.0.1",
@@ -45,6 +47,7 @@
     "@types/react": "18.3.31",
     "@types/react-test-renderer": "^18.0.0",
     "babel-plugin-module-resolver": "5.0.2",
+    "esbuild": "0.25.0",
     "eslint": "^8.19.0",
     "jest": "^29.6.3",
     "prettier": "2.8.8",
