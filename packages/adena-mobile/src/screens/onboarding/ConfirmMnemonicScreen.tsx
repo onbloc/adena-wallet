@@ -32,7 +32,12 @@ function pickPositions(wordCount: number): number[] {
 export function ConfirmMnemonicScreen({navigation}: Props) {
   const words = useMemo(() => pendingMnemonic.peek()?.split(' ') ?? [], []);
   const positions = useMemo(() => pickPositions(words.length), [words]);
-  const [answers, setAnswers] = useState<string[]>(positions.map(() => ''));
+  // Debug builds pre-fill the answers to speed up manual testing. Release
+  // builds always make the user type them: this check is what proves the
+  // phrase was actually written down.
+  const [answers, setAnswers] = useState<string[]>(
+    positions.map(position => (__DEV__ ? words[position] : '')),
+  );
   const [error, setError] = useState('');
 
   const confirm = () => {
