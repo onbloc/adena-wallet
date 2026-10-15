@@ -1,0 +1,65 @@
+# Resolve react_native_pods.rb with node to allow for hoisting
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
+
+# Unpacks prebuilt native libraries after checking their pinned hashes;
+# install scripts are disabled in this repo (see scripts/prepare-native-deps.js).
+unless system('node', File.join(__dir__, '../scripts/prepare-native-deps.js'))
+  raise 'Native dependency check failed; see the message above.'
+end
+
+platform :ios, min_ios_version_supported
+prepare_react_native_project!
+
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+end
+
+target 'AdenaMobile' do
+  config = use_native_modules!
+
+  # Screen privacy and backup-excluded storage (see AdenaSecurity/).
+  pod 'AdenaSecurity', :path => './AdenaSecurity'
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  post_install do |installer|
+    # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false,
+      # :ccache_enabled => true
+    )
+
+    # fmt 11.0.2 (pulled in by RN 0.77's Folly) does not compile with the clang
+    # in Xcode 26+: its consteval format strings are rejected. Built as C++17,
+    # fmt skips consteval. Remove once React Native is upgraded.
+    installer.pods_project.targets.each do |target|
+      next unless target.name == 'fmt'
+      target.build_configurations.each do |build_config|
+        build_config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+      end
+    end
+
+    # Clibsodium.xcframework is assembled without headers (see
+    # scripts/prepare-native-deps.js); compile against the unpacked ones.
+    sodium_headers = '"${PODS_ROOT}/../../node_modules/react-native-libsodium/libsodium/build/libsodium-apple/ios/include"'
+    installer.pods_project.targets.each do |target|
+      next unless target.name == 'react-native-libsodium'
+      target.build_configurations.each do |build_config|
+        paths = build_config.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
+        build_config.build_settings['HEADER_SEARCH_PATHS'] = "#{paths} #{sodium_headers}"
+      end
+    end
+  end
+end

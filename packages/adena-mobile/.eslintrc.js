@@ -1,0 +1,61 @@
+module.exports = {
+  root: true,
+  extends: '@react-native',
+  rules: {
+    // Mobile shares the extension's logic, not its UI or its WASM crypto.
+    'no-restricted-imports': [
+      'error',
+      {
+        paths: [
+          {
+            name: 'libsodium-wrappers-sumo',
+            message:
+              'Use getCryptoProvider() from adena-module; Hermes cannot run libsodium.js.',
+          },
+          {
+            name: 'libsodium-wrappers',
+            message:
+              'Use getCryptoProvider() from adena-module; Hermes cannot run libsodium.js.',
+          },
+          {
+            name: '@adena-wallet/sdk',
+            message:
+              'Its entry point loads Web3Auth; see src/platform/dismissed-response.ts.',
+          },
+        ],
+        patterns: [
+          {
+            group: [
+              '@pages/*',
+              '@components/*',
+              '@router/*',
+              '@assets/*',
+              '@styles/*',
+              '@ui/*',
+            ],
+            message: 'Extension UI is not shared with mobile.',
+          },
+          {
+            group: ['**/adena-extension/**'],
+            message:
+              'Import shared extension code through the @common/@inject/... aliases.',
+          },
+        ],
+      },
+    ],
+    'no-restricted-properties': [
+      'error',
+      {
+        object: 'Math',
+        property: 'random',
+        message: 'Not a CSPRNG. Use getCryptoProvider().randomBytes.',
+      },
+    ],
+  },
+  overrides: [
+    {
+      files: ['__tests__/**', '__mocks__/**', 'jest.setup.js'],
+      rules: {'no-restricted-imports': 'off'},
+    },
+  ],
+};
