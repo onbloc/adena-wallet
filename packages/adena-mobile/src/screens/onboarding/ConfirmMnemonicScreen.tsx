@@ -4,7 +4,12 @@ import React, {useMemo, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 
 import {pendingSecret} from '../../core/pending-secret';
-import type {OnboardingStackParams} from '../../navigation/types';
+import {withNewSeedPhrase} from '../../core/account-import';
+import {useWallet} from '../../core/wallet-context';
+import type {
+  MainStackParams,
+  OnboardingStackParams,
+} from '../../navigation/types';
 import {
   SeedWordInput,
   WebButton,
@@ -16,7 +21,6 @@ import {
 } from '../../ui/web';
 import {CREATE_FLOW_STEPS} from './CreateMnemonicScreen';
 
-type Props = NativeStackScreenProps<OnboardingStackParams, 'ConfirmMnemonic'>;
 
 const CHECKED_WORDS = 3;
 
@@ -32,7 +36,70 @@ function pickPositions(wordCount: number): number[] {
   return [...positions].sort((a, b) => a - b);
 }
 
-export function ConfirmMnemonicScreen({navigation}: Props) {
+export function ConfirmMnemonicScreen({
+  navigation,
+}: NativeStackScreenProps<OnboardingStackParams, 'ConfirmMnemonic'>) {
+  return (
+    <ConfirmMnemonicFlow
+      step={3}
+      steps={CREATE_FLOW_STEPS}
+      onBack={() => navigation.goBack()}
+      onRestart={() => navigation.popToTop()}
+      onConfirmed={async () => {
+        navigation.navigate('SetPassword', {flow: 'create'});
+      }}
+    />
+  );
+}
+
+/** Add Account > Create New Seed Phrase: the checked phrase is added. */
+export function AddSeedPhraseConfirmScreen({
+  navigation,
+  route,
+}: NativeStackScreenProps<MainStackParams, 'AddSeedPhraseConfirm'>) {
+  const {wallet, saveAddedAccounts} = useWallet();
+  return (
+    <ConfirmMnemonicFlow
+      step={route.params.step}
+      steps={route.params.steps}
+      onBack={() => navigation.goBack()}
+      onRestart={() => navigation.popToTop()}
+      onConfirmed={async () => {
+        const mnemonic = pendingSecret.peekMnemonic();
+        if (!wallet || !mnemonic) {
+          return 'The seed phrase is no longer available. Start again.';
+        }
+        const result = await withNewSeedPhrase(wallet, mnemonic);
+        if (!result.ok) {
+          return 'This seed phrase is already in the wallet.';
+        }
+        await saveAddedAccounts(result.next, result.added[0].id);
+        pendingSecret.clear();
+        navigation.popToTop();
+      }}
+    />
+  );
+}
+
+/**
+ * The web's validate-mnemonic step. `onConfirmed` resolves to an error
+ * message to show, or nothing when it moved on.
+ */
+function ConfirmMnemonicFlow({
+  step,
+  steps,
+  onBack,
+  onRestart,
+  onConfirmed,
+}: {
+  step: number;
+  steps: number;
+  onBack: () => void;
+  onRestart: () => void;
+  onConfirmed: () => Promise<string | void>;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [failure, setFailure] = useState('');
   const words = useMemo(
     () => pendingSecret.peekMnemonic()?.split(' ') ?? [],
     [],
@@ -46,7 +113,7 @@ export function ConfirmMnemonicScreen({navigation}: Props) {
   );
   const [wrong, setWrong] = useState<boolean[]>(positions.map(() => false));
 
-  const confirm = () => {
+  const confirm = async () => {
     const mismatches = positions.map(
       (position, index) =>
         answers[index].trim().toLowerCase() !== words[position],
@@ -55,15 +122,18 @@ export function ConfirmMnemonicScreen({navigation}: Props) {
     if (mismatches.some(Boolean)) {
       return;
     }
-    navigation.navigate('SetPassword', {flow: 'create'});
+    setSaving(true);
+    try {
+      setFailure((await onConfirmed()) ?? '');
+    } catch {
+      setFailure('Could not add the account. Try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const header = (
-    <WebStepHeader
-      step={3}
-      steps={CREATE_FLOW_STEPS}
-      onBack={() => navigation.goBack()}
-    />
+    <WebStepHeader step={step} steps={steps} onBack={onBack} />
   );
 
   if (words.length === 0) {
@@ -73,7 +143,7 @@ export function ConfirmMnemonicScreen({navigation}: Props) {
         footer={
           <WebButton
             title="Back to start"
-            onPress={() => navigation.popToTop()}
+            onPress={onRestart}
           />
         }>
         <WebText type="body4">
@@ -91,7 +161,7 @@ export function ConfirmMnemonicScreen({navigation}: Props) {
           testID="confirm-next"
           title="Next"
           chevron
-          disabled={answers.some(answer => !answer.trim())}
+          disabled={saving || answers.some(answer => !answer.trim())}
           onPress={confirm}
         />
       }>
@@ -120,7 +190,7 @@ export function ConfirmMnemonicScreen({navigation}: Props) {
       <WebErrorText>
         {wrong.some(Boolean)
           ? 'One or more words do not match. Check your written phrase.'
-          : ''}
+          : failure}
       </WebErrorText>
     </WebScreen>
   );

@@ -332,19 +332,22 @@ export function WebCheckBox({
   onChange,
   label,
   testID,
+  disabled,
 }: {
   checked: boolean;
   onChange: (checked: boolean) => void;
   label: React.ReactNode;
   testID?: string;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
       testID={testID}
       accessibilityRole="checkbox"
-      accessibilityState={{checked}}
+      accessibilityState={{checked, disabled: !!disabled}}
+      disabled={disabled}
       onPress={() => onChange(!checked)}
-      style={styles.checkRow}>
+      style={[styles.checkRow, disabled && styles.disabled]}>
       <View style={[styles.checkBox, checked && styles.checkBoxOn]}>
         {checked ? <CheckIcon width={16} height={16} /> : null}
       </View>

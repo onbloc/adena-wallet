@@ -9,13 +9,23 @@ import {ActivityIndicator, StyleSheet, View} from 'react-native';
 import {ApprovalHost} from '../approvals/ApprovalHost';
 import {AccountDetailsScreen} from '../screens/accounts/AccountDetailsScreen';
 import {AccountsScreen} from '../screens/accounts/AccountsScreen';
+import {SelectImportAccountsScreen} from '../screens/accounts/SelectImportAccountsScreen';
 import {BrowserScreen} from '../browser/BrowserScreen';
 import {useWallet} from '../core/wallet-context';
 import {ExploreScreen} from '../screens/ExploreScreen';
 import {HomeScreen} from '../screens/HomeScreen';
-import {ConfirmMnemonicScreen} from '../screens/onboarding/ConfirmMnemonicScreen';
-import {CreateMnemonicScreen} from '../screens/onboarding/CreateMnemonicScreen';
-import {ImportWalletScreen} from '../screens/onboarding/ImportWalletScreen';
+import {
+  AddSeedPhraseConfirmScreen,
+  ConfirmMnemonicScreen,
+} from '../screens/onboarding/ConfirmMnemonicScreen';
+import {
+  AddSeedPhraseScreen,
+  CreateMnemonicScreen,
+} from '../screens/onboarding/CreateMnemonicScreen';
+import {
+  ImportAccountScreen,
+  ImportWalletScreen,
+} from '../screens/onboarding/ImportWalletScreen';
 import {SetPasswordScreen} from '../screens/onboarding/SetPasswordScreen';
 import {WelcomeScreen} from '../screens/onboarding/WelcomeScreen';
 import {ManageNftScreen} from '../screens/nft/ManageNftScreen';
@@ -222,6 +232,27 @@ function MainNavigator() {
         name="AccountDetails"
         component={AccountDetailsScreen}
         options={{title: 'Account Details'}}
+      />
+      {/* Add Account flows keep the extension's full-page (web) design. */}
+      <Main.Screen
+        name="AddSeedPhrase"
+        component={AddSeedPhraseScreen}
+        options={webHeader}
+      />
+      <Main.Screen
+        name="AddSeedPhraseConfirm"
+        component={AddSeedPhraseConfirmScreen}
+        options={webHeader}
+      />
+      <Main.Screen
+        name="ImportAccount"
+        component={ImportAccountScreen}
+        options={webHeader}
+      />
+      <Main.Screen
+        name="SelectImportAccounts"
+        component={SelectImportAccountsScreen}
+        options={webHeader}
       />
       <Main.Screen
         name="AddressBook"

@@ -64,8 +64,13 @@ interface WalletContextValue {
   saveNetworks(next: NetworkMetainfo[]): Promise<void>;
   resetWallet(): Promise<void>;
   switchAccount(accountId: string): Promise<void>;
-  /** Derives the next account of the seed phrase; false without one. */
-  addAccount(): Promise<boolean>;
+  /**
+   * Derives the next account of a seed phrase (the first one by default);
+   * false without one.
+   */
+  addAccount(keyringId?: string): Promise<boolean>;
+  /** Stores a wallet with added accounts (see core/account-import.ts). */
+  saveAddedAccounts(next: AdenaWallet, currentAccountId: string): Promise<void>;
   renameAccount(accountId: string, name: string): Promise<void>;
   /** False for the last account: the wallet must be reset instead. */
   removeAccount(accountId: string): Promise<boolean>;
@@ -338,9 +343,7 @@ export function WalletProvider({
       }
       setNetworks(next);
       const currentId = network?.id;
-      const current = next.find(
-        item => item.id === currentId && !item.deleted,
-      );
+      const current = next.find(item => item.id === currentId && !item.deleted);
       if (current) {
         // A new object rebuilds the provider on the edited RPC.
         if (current !== network) {
@@ -351,7 +354,9 @@ export function WalletProvider({
       // The current network was removed: fall back as the extension does.
       const isMainnet = network?.main === true;
       const fallback =
-        next.find(item => !item.deleted && (item.main === true) === isMainnet) ??
+        next.find(
+          item => !item.deleted && (item.main === true) === isMainnet,
+        ) ??
         next.find(item => !item.deleted) ??
         null;
       if (fallback) {
@@ -380,25 +385,40 @@ export function WalletProvider({
     [base, adoptWallet],
   );
 
-  // The extension's account add: next HD path of the first seed phrase.
-  const addAccount = useCallback(async () => {
-    const current = walletRef.current;
-    const keyring = current?.keyrings.find(isHDWalletKeyring);
-    if (!current || !keyring) {
-      return false;
-    }
-    const next = current.clone();
-    const created = await SeedAccount.createBy(
-      keyring,
-      `Account ${next.getNextAccountNumberBy(keyring)}`,
-      next.getNextHDPathBy(keyring),
-      next.getNextAccountIndexBy(keyring),
-    );
-    next.addAccount(created);
-    next.currentAccountId = created.id;
-    await commitWallet(next, created.id);
-    return true;
-  }, [commitWallet]);
+  // The extension's account add: next HD path of the chosen seed phrase.
+  const addAccount = useCallback(
+    async (keyringId?: string) => {
+      const current = walletRef.current;
+      const keyring = current?.keyrings.find(
+        item =>
+          isHDWalletKeyring(item) &&
+          (keyringId === undefined || item.id === keyringId),
+      );
+      if (!current || !keyring) {
+        return false;
+      }
+      const next = current.clone();
+      const created = await SeedAccount.createBy(
+        keyring,
+        `Account ${next.getNextAccountNumberBy(keyring)}`,
+        next.getNextHDPathBy(keyring),
+        next.getNextAccountIndexBy(keyring),
+      );
+      next.addAccount(created);
+      next.currentAccountId = created.id;
+      await commitWallet(next, created.id);
+      return true;
+    },
+    [commitWallet],
+  );
+
+  const saveAddedAccounts = useCallback(
+    async (next: AdenaWallet, currentAccountId: string) => {
+      next.currentAccountId = currentAccountId;
+      await commitWallet(next, currentAccountId);
+    },
+    [commitWallet],
+  );
 
   const renameAccount = useCallback(
     async (accountId: string, name: string) => {
@@ -476,6 +496,7 @@ export function WalletProvider({
     resetWallet,
     switchAccount,
     addAccount,
+    saveAddedAccounts,
     renameAccount,
     removeAccount,
   };

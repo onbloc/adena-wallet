@@ -6,26 +6,29 @@ import {Pressable, StyleSheet, Text, View} from 'react-native';
 
 import {accountDisplayName, useWallet} from '../../core/wallet-context';
 import type {MainStackParams} from '../../navigation/types';
-import {Body, Button, Screen} from '../../ui/components';
+import {Button, Screen} from '../../ui/components';
 import {ChevronRightIcon} from '../../ui/icons';
 import {useModal} from '../../ui/modal';
 import {colors, colorTokens, fonts, radius} from '../../ui/theme';
 
 type Props = NativeStackScreenProps<MainStackParams, 'Accounts'>;
 
-/** The popup's account list: switch, open details, add the next account. */
+/**
+ * The popup's account list: switch, open details, add accounts (next of a
+ * seed phrase, a new phrase, or an imported phrase or private key).
+ */
 export function AccountsScreen({navigation}: Props) {
   const {wallet, account, net, accountNames, switchAccount, addAccount} =
     useWallet();
   const [addresses, setAddresses] = useState<Record<string, string>>({});
   const [adding, setAdding] = useState(false);
-  const {inform} = useModal();
+  const {inform, chooseOption} = useModal();
   const prefix = net?.network.addressPrefix ?? 'g';
   // Session accounts sign for a master account; the list shows master ones.
   const accounts = (wallet?.accounts ?? []).filter(
     item => !isSessionAccount(item),
   );
-  const canAdd = !!wallet?.keyrings.some(isHDWalletKeyring);
+  const seedKeyrings = (wallet?.keyrings ?? []).filter(isHDWalletKeyring);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,10 +47,31 @@ export function AccountsScreen({navigation}: Props) {
     };
   }, [wallet, prefix]);
 
-  const add = async () => {
+  // The next account of a seed phrase; which one, when there are several.
+  const createAccount = async () => {
+    let keyringId = seedKeyrings[0]?.id;
+    if (seedKeyrings.length > 1) {
+      const chosen = await chooseOption(
+        'Select Seed Phrase',
+        seedKeyrings.map((keyring, index) => {
+          const count = (wallet?.accounts ?? []).filter(
+            item => item.keyringId === keyring.id,
+          ).length;
+          return {
+            label: `Seed Phrase ${index + 1} (${count} account${
+              count === 1 ? '' : 's'
+            })`,
+          };
+        }),
+      );
+      if (chosen === null) {
+        return;
+      }
+      keyringId = seedKeyrings[chosen].id;
+    }
     setAdding(true);
     try {
-      if (!(await addAccount())) {
+      if (!(await addAccount(keyringId))) {
         await inform('Add Account', 'This wallet has no seed phrase.');
         return;
       }
@@ -57,25 +81,36 @@ export function AccountsScreen({navigation}: Props) {
     }
   };
 
+  const add = async () => {
+    const options = [
+      ...(seedKeyrings.length > 0
+        ? [{label: 'Create New Account', run: createAccount}]
+        : []),
+      {
+        label: 'Create New Seed Phrase',
+        run: async () => navigation.navigate('AddSeedPhrase'),
+      },
+      {
+        label: 'Import Seed Phrase or Private Key',
+        run: async () => navigation.navigate('ImportAccount'),
+      },
+    ];
+    const chosen = await chooseOption('Add Account', options);
+    if (chosen !== null) {
+      await options[chosen].run();
+    }
+  };
+
   return (
     <Screen
       footer={
-        <>
-          {!canAdd && (
-            <Body muted center>
-              Accounts can only be added to a wallet created or imported with
-              a seed phrase.
-            </Body>
-          )}
-          <Button
-            testID="accounts-add"
-            variant="secondary"
-            title="Add Account"
-            disabled={!canAdd}
-            loading={adding}
-            onPress={add}
-          />
-        </>
+        <Button
+          testID="accounts-add"
+          variant="secondary"
+          title="Add Account"
+          loading={adding}
+          onPress={add}
+        />
       }>
       {accounts.map(item => {
         const current = item.id === account?.id;

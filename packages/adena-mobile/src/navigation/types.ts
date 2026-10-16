@@ -54,6 +54,11 @@ export type MainStackParams = {
   NetworkEdit: {id?: string} | undefined;
   Accounts: undefined;
   AccountDetails: {accountId: string};
+  /** Add Account flows; the step dots carry over to the next screen. */
+  AddSeedPhrase: undefined;
+  AddSeedPhraseConfirm: {step: number; steps: number};
+  ImportAccount: undefined;
+  SelectImportAccounts: {step: number; steps: number};
   AddressBook: undefined;
   /** Without `id`, adds an address. */
   AddressEdit: {id?: string} | undefined;

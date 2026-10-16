@@ -4,9 +4,14 @@ import {EnglishMnemonic} from 'adena-module';
 import React, {useMemo, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 
-import {pendingSecret} from '../../core/pending-secret';
+import {withPrivateKeyAccount} from '../../core/account-import';
+import {PendingSecret, pendingSecret} from '../../core/pending-secret';
 import {normalizePrivateKey} from '../../core/private-key';
-import type {OnboardingStackParams} from '../../navigation/types';
+import {useWallet} from '../../core/wallet-context';
+import type {
+  MainStackParams,
+  OnboardingStackParams,
+} from '../../navigation/types';
 import {useSecureScreen} from '../../security/use-secure-screen';
 import {
   SeedWordInput,
@@ -20,11 +25,10 @@ import {
   WebTitle,
 } from '../../ui/web';
 import {Questionnaire} from './Questionnaire';
+import {flowSteps, SeedFlowMode, useQuestionnaireGate} from './seed-flow';
 import {SensitiveInfoStep} from './SensitiveInfoStep';
 
-type Props = NativeStackScreenProps<OnboardingStackParams, 'ImportWallet'>;
-
-/** Import flow: this screen (warning, questionnaire, input), SetPassword. */
+/** Onboarding: warning, questionnaire, input, password. */
 export const IMPORT_FLOW_STEPS = 4;
 
 /** Word count, wordlist membership and checksum, via adena-module's BIP39 code. */
@@ -66,8 +70,84 @@ const TABS: {key: ImportMode; label: string}[] = [
   {key: 'privateKey', label: 'Private Key'},
 ];
 
-export function ImportWalletScreen({navigation}: Props) {
+/** The first wallet: a password is set next. */
+export function ImportWalletScreen({
+  navigation,
+}: NativeStackScreenProps<OnboardingStackParams, 'ImportWallet'>) {
+  return (
+    <ImportWalletFlow
+      mode="onboarding"
+      onLeave={() => navigation.goBack()}
+      onSubmit={async secret => {
+        pendingSecret.set(secret);
+        navigation.navigate('SetPassword', {flow: 'import'});
+      }}
+    />
+  );
+}
+
+/**
+ * Add Account > Import: a private key account is added right away; a seed
+ * phrase goes on to the choice of its accounts.
+ */
+export function ImportAccountScreen({
+  navigation,
+}: NativeStackScreenProps<MainStackParams, 'ImportAccount'>) {
+  const {wallet, net, saveAddedAccounts} = useWallet();
+  return (
+    <ImportWalletFlow
+      mode="add"
+      onLeave={() => navigation.goBack()}
+      onSubmit={async (secret, select) => {
+        if (secret.kind === 'mnemonic') {
+          pendingSecret.set(secret);
+          navigation.navigate('SelectImportAccounts', select);
+          return;
+        }
+        if (!wallet || !net) {
+          return 'The wallet is not ready. Try again.';
+        }
+        const result = await withPrivateKeyAccount(
+          wallet,
+          secret.value,
+          net.network.addressPrefix,
+        );
+        if (!result.ok) {
+          return 'Private key already registered';
+        }
+        await saveAddedAccounts(result.next, result.added[0].id);
+        navigation.popToTop();
+      }}
+    />
+  );
+}
+
+/**
+ * The web's import steps: a warning, the questionnaire, then a 12 or 24
+ * word phrase or a private key. `onSubmit` resolves to an error message to
+ * show, or nothing when it moved on.
+ */
+function ImportWalletFlow({
+  mode: flow,
+  onLeave,
+  onSubmit,
+}: {
+  mode: SeedFlowMode;
+  onLeave: () => void;
+  onSubmit: (
+    secret: PendingSecret,
+    select: {step: number; steps: number},
+  ) => Promise<string | void>;
+}) {
   useSecureScreen();
+  const questionnaire = useQuestionnaireGate(flow);
+  const {total, first} = flowSteps(
+    flow,
+    questionnaire.needed !== false,
+    flow === 'add' ? 2 : 1,
+  );
+  const [failure, setFailure] = useState('');
+  const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState<'intro' | 'questionnaire' | 'input'>(
     'intro',
   );
@@ -77,6 +157,7 @@ export function ImportWalletScreen({navigation}: Props) {
   const [agreed, setAgreed] = useState(false);
 
   const switchMode = (next: ImportMode) => {
+    setFailure('');
     setMode(next);
     setWords(Array(next === '24' ? 24 : 12).fill(''));
     setPrivateKey('');
@@ -94,32 +175,46 @@ export function ImportWalletScreen({navigation}: Props) {
       : isValidMnemonic(mnemonic);
   }, [complete, mode, privateKey, mnemonic]);
 
-  const next = () => {
+  const next = async () => {
+    let secret: PendingSecret;
     if (mode === 'privateKey') {
       const normalized = normalizePrivateKey(privateKey);
       if (!normalized) {
         return;
       }
-      pendingSecret.set({kind: 'privateKey', value: normalized});
+      secret = {kind: 'privateKey', value: normalized};
     } else {
-      pendingSecret.set({kind: 'mnemonic', value: mnemonic});
+      secret = {kind: 'mnemonic', value: mnemonic};
     }
-    setWords(current => current.map(() => ''));
-    setPrivateKey('');
-    navigation.navigate('SetPassword', {flow: 'import'});
+    setBusy(true);
+    try {
+      const error = await onSubmit(secret, {step: first + 1, steps: total});
+      if (error) {
+        setFailure(error);
+        return;
+      }
+      setWords(current => current.map(() => ''));
+      setPrivateKey('');
+    } catch {
+      setFailure('Could not add the account. Try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const header = (step: number, onBack: () => void) => (
-    <WebStepHeader step={step} steps={IMPORT_FLOW_STEPS} onBack={onBack} />
+    <WebStepHeader step={step} steps={total} onBack={onBack} />
   );
 
   if (phase === 'intro') {
     return (
-      <WebScreen header={header(0, () => navigation.goBack())}>
+      <WebScreen header={header(0, onLeave)}>
         <SensitiveInfoStep
           description="You are about to import your seed phrase or private key on this device. We recommend connecting with a hardware wallet for higher security."
           learnMoreUrl={`${ADENA_DOCS_PAGE}/user-guide/sign-in/import-wallet`}
-          onNext={() => setPhase('questionnaire')}
+          onNext={() =>
+            setPhase(questionnaire.needed === false ? 'input' : 'questionnaire')
+          }
         />
       </WebScreen>
     );
@@ -130,14 +225,17 @@ export function ImportWalletScreen({navigation}: Props) {
       <Questionnaire
         header={onBack => header(1, onBack)}
         onExit={() => setPhase('intro')}
-        onComplete={() => setPhase('input')}
+        onComplete={() => {
+          questionnaire.passed();
+          setPhase('input');
+        }}
       />
     );
   }
 
   return (
     <WebScreen
-      header={header(2, () => {
+      header={header(first, () => {
         switchMode(mode);
         setPhase('intro');
       })}
@@ -146,7 +244,7 @@ export function ImportWalletScreen({navigation}: Props) {
           testID="import-next"
           title="Next"
           chevron
-          disabled={!agreed || !valid}
+          disabled={busy || !agreed || !valid}
           onPress={next}
         />
       }>
@@ -161,7 +259,10 @@ export function ImportWalletScreen({navigation}: Props) {
           secret
           value={privateKey}
           error={complete && !valid}
-          onChangeText={setPrivateKey}
+          onChangeText={text => {
+            setFailure('');
+            setPrivateKey(text);
+          }}
         />
       ) : (
         <View style={styles.grid}>
@@ -174,9 +275,10 @@ export function ImportWalletScreen({navigation}: Props) {
               containerStyle={styles.cell}
               error={complete && !valid}
               value={word}
-              onChangeText={text =>
-                setWords(current => fillWords(current, index, text))
-              }
+              onChangeText={text => {
+                setFailure('');
+                setWords(current => fillWords(current, index, text));
+              }}
             />
           ))}
         </View>
@@ -186,7 +288,7 @@ export function ImportWalletScreen({navigation}: Props) {
           ? mode === 'privateKey'
             ? 'Invalid private key'
             : 'Invalid seed phrase'
-          : ''}
+          : failure}
       </WebErrorText>
       <WebCheckBox
         testID="import-agree"

@@ -8,6 +8,7 @@ import {
 } from '@inject/message/approval-presenter';
 import {
   AdenaWallet,
+  isHDWalletKeyring,
   libsodiumCryptoProvider,
   setCryptoProvider,
 } from 'adena-module';
@@ -15,6 +16,10 @@ import sodium from 'libsodium-wrappers-sumo';
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 
+import {
+  withPrivateKeyAccount,
+  withSeedAccounts,
+} from '../../src/core/account-import';
 import {useWallet, WalletProvider} from '../../src/core/wallet-context';
 import {makeDismissedResponse} from '../../src/platform/dismissed-response';
 import {
@@ -137,5 +142,70 @@ describe('accounts', () => {
     });
     expect(removed).toBe(false);
     expect(wallet.wallet!.accounts).toHaveLength(1);
+  });
+
+  // Public BIP39 test vector and a dummy key: never real secrets.
+  const OTHER_PHRASE =
+    'legal winner thank year wave sausage worth useful legal winner thank yellow';
+  const DUMMY_KEY = '22'.repeat(32);
+
+  it('adds accounts of another seed phrase and keeps them after unlock', async () => {
+    const before = wallet.wallet!.accounts.length;
+    const result = await withSeedAccounts(
+      wallet.wallet!,
+      OTHER_PHRASE,
+      [0, 1],
+      'g',
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    await act(async () => {
+      await wallet.saveAddedAccounts(result.next, result.added[1].id);
+    });
+    await waitFor(() => wallet.account?.id === result.added[1].id);
+    expect(wallet.wallet!.accounts).toHaveLength(before + 2);
+
+    await act(async () => {
+      await wallet.lock();
+    });
+    await act(async () => {
+      expect(await wallet.unlock(PASSWORD)).toBe(true);
+    });
+    await waitFor(() => wallet.status === 'unlocked');
+    expect(wallet.wallet!.accounts).toHaveLength(before + 2);
+    expect(wallet.wallet!.keyrings.filter(isHDWalletKeyring)).toHaveLength(2);
+  });
+
+  it('derives the next account of the chosen seed phrase', async () => {
+    const [, other] = wallet.wallet!.keyrings.filter(isHDWalletKeyring);
+    const before = wallet.wallet!.accounts.filter(
+      item => item.keyringId === other.id,
+    ).length;
+    await act(async () => {
+      expect(await wallet.addAccount(other.id)).toBe(true);
+    });
+    await waitFor(
+      () =>
+        wallet.wallet!.accounts.filter(item => item.keyringId === other.id)
+          .length === before + 1,
+    );
+    expect(wallet.account!.keyringId).toBe(other.id);
+  });
+
+  it('adds a private key account once', async () => {
+    const result = await withPrivateKeyAccount(wallet.wallet!, DUMMY_KEY, 'g');
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    await act(async () => {
+      await wallet.saveAddedAccounts(result.next, result.added[0].id);
+    });
+    await waitFor(() => wallet.account?.id === result.added[0].id);
+    expect(
+      await withPrivateKeyAccount(wallet.wallet!, DUMMY_KEY, 'g'),
+    ).toEqual({ok: false, reason: 'exists'});
   });
 });
