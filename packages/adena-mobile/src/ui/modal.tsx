@@ -10,6 +10,7 @@ import {Modal, Platform, Pressable, StyleSheet, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {Button, ButtonPair} from './components';
+import {ChevronRightIcon} from './icons';
 import {colors, colorTokens, fonts, monoFont, radius} from './theme';
 
 export interface ConfirmOptions {
@@ -26,6 +27,9 @@ export interface ConfirmOptions {
 export interface SheetOption {
   label: string;
   danger?: boolean;
+  /** With an icon or description the option is drawn as a card. */
+  icon?: React.ReactNode;
+  description?: string;
 }
 
 interface ModalApi {
@@ -183,31 +187,74 @@ export function ModalProvider({children}: React.PropsWithChildren) {
             <Pressable
               style={[styles.sheet, {paddingBottom: insets.bottom + 16}]}
               onPress={() => undefined}>
+              <View style={styles.handle} />
               <Text style={styles.sheetTitle} numberOfLines={1}>
                 {pending.title}
               </Text>
-              <View style={styles.options}>
-                {pending.options.map((option, index) => (
-                  <Pressable
-                    key={option.label}
-                    accessibilityRole="button"
-                    testID={`sheet-option-${index}`}
-                    onPress={() => finish(() => pending.resolve(index))}
-                    style={({pressed}) => [
-                      styles.option,
-                      index > 0 && styles.optionDivider,
-                      pressed && styles.optionPressed,
-                    ]}>
-                    <Text
-                      style={[
-                        styles.optionText,
-                        option.danger && styles.optionDanger,
+              {pending.options.some(
+                option => option.icon || option.description,
+              ) ? (
+                <View style={styles.cards}>
+                  {pending.options.map((option, index) => (
+                    <Pressable
+                      key={option.label}
+                      accessibilityRole="button"
+                      accessibilityHint={option.description}
+                      testID={`sheet-option-${index}`}
+                      onPress={() => finish(() => pending.resolve(index))}
+                      style={({pressed}) => [
+                        styles.optionCard,
+                        pressed && styles.cardPressed,
                       ]}>
-                      {option.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+                      <View
+                        style={[
+                          styles.iconTile,
+                          option.danger && styles.iconTileDanger,
+                        ]}>
+                        {option.icon}
+                      </View>
+                      <View style={styles.cardText}>
+                        <Text
+                          style={[
+                            styles.cardTitle,
+                            option.danger && styles.optionDanger,
+                          ]}>
+                          {option.label}
+                        </Text>
+                        {option.description ? (
+                          <Text style={styles.cardDescription}>
+                            {option.description}
+                          </Text>
+                        ) : null}
+                      </View>
+                      <ChevronRightIcon />
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.options}>
+                  {pending.options.map((option, index) => (
+                    <Pressable
+                      key={option.label}
+                      accessibilityRole="button"
+                      testID={`sheet-option-${index}`}
+                      onPress={() => finish(() => pending.resolve(index))}
+                      style={({pressed}) => [
+                        styles.option,
+                        index > 0 && styles.optionDivider,
+                        pressed && styles.optionPressed,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.optionText,
+                          option.danger && styles.optionDanger,
+                        ]}>
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
               <Button
                 variant="dark"
                 title="Cancel"
@@ -266,7 +313,46 @@ const styles = StyleSheet.create({
     borderColor: neutral._7,
     backgroundColor: neutral._8,
   },
-  sheetTitle: {...fonts.body1Bold, color: colors.text, textAlign: 'center'},
+  sheetTitle: {...fonts.header6, color: colors.text, textAlign: 'center'},
+  handle: {
+    alignSelf: 'center',
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    marginTop: -8,
+    backgroundColor: neutral._6,
+  },
+  cards: {gap: 10},
+  optionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+    paddingLeft: 14,
+    paddingRight: 12,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: neutral._7,
+    backgroundColor: neutral._9,
+  },
+  cardPressed: {backgroundColor: neutral._7},
+  iconTile: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(122, 169, 255, 0.24)',
+    backgroundColor: 'rgba(0, 89, 255, 0.16)',
+  },
+  iconTileDanger: {
+    borderColor: 'rgba(239, 45, 33, 0.24)',
+    backgroundColor: colors.dangerSurface,
+  },
+  cardText: {flex: 1, gap: 3},
+  cardTitle: {...fonts.body1Bold, color: colors.text},
+  cardDescription: {...fonts.captionReg, color: colors.textMuted},
   options: {
     borderRadius: 12.5,
     overflow: 'hidden',

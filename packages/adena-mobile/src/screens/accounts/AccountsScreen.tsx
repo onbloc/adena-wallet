@@ -7,11 +7,19 @@ import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {accountDisplayName, useWallet} from '../../core/wallet-context';
 import type {MainStackParams} from '../../navigation/types';
 import {Button, Screen} from '../../ui/components';
-import {ChevronRightIcon} from '../../ui/icons';
+import {
+  ChevronRightIcon,
+  ImportIcon,
+  SeedPhraseIcon,
+  UserPlusIcon,
+} from '../../ui/icons';
 import {useModal} from '../../ui/modal';
 import {colors, colorTokens, fonts, radius} from '../../ui/theme';
 
 type Props = NativeStackScreenProps<MainStackParams, 'Accounts'>;
+
+/** The web secondary button's text blue, on the option tiles. */
+const OPTION_ICON = '#ADCAFF';
 
 /**
  * The popup's account list: switch, open details, add accounts (next of a
@@ -58,9 +66,9 @@ export function AccountsScreen({navigation}: Props) {
             item => item.keyringId === keyring.id,
           ).length;
           return {
-            label: `Seed Phrase ${index + 1} (${count} account${
-              count === 1 ? '' : 's'
-            })`,
+            label: `Seed Phrase ${index + 1}`,
+            description: `${count} account${count === 1 ? '' : 's'}`,
+            icon: <SeedPhraseIcon color={OPTION_ICON} />,
           };
         }),
       );
@@ -84,14 +92,25 @@ export function AccountsScreen({navigation}: Props) {
   const add = async () => {
     const options = [
       ...(seedKeyrings.length > 0
-        ? [{label: 'Create New Account', run: createAccount}]
+        ? [
+            {
+              label: 'Create New Account',
+              description: 'The next account of a seed phrase in this wallet.',
+              icon: <UserPlusIcon color={OPTION_ICON} />,
+              run: createAccount,
+            },
+          ]
         : []),
       {
         label: 'Create New Seed Phrase',
+        description: 'A new 12 or 24-word phrase with its first account.',
+        icon: <SeedPhraseIcon color={OPTION_ICON} />,
         run: async () => navigation.navigate('AddSeedPhrase'),
       },
       {
-        label: 'Import Seed Phrase or Private Key',
+        label: 'Import Existing Account',
+        description: 'From a seed phrase or a private key.',
+        icon: <ImportIcon color={OPTION_ICON} />,
         run: async () => navigation.navigate('ImportAccount'),
       },
     ];

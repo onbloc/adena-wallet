@@ -5,7 +5,7 @@
  * are imported directly from @assets instead.
  */
 import React from 'react';
-import Svg, {Circle, Ellipse, Path} from 'react-native-svg';
+import Svg, {Circle, Ellipse, Path, Rect} from 'react-native-svg';
 
 import {colors} from './theme';
 
@@ -142,12 +142,18 @@ export function BookIcon({size = 18, color = colors.textMuted}: IconProps) {
         {...s}
       />
       <Path d="M6.5 6.4375H10.5" {...s} />
-      <Path d="M14.5 13.4375H4C3.17157 13.4375 2.5 13.8852 2.5 14.4375" {...s} />
+      <Path
+        d="M14.5 13.4375H4C3.17157 13.4375 2.5 13.8852 2.5 14.4375"
+        {...s}
+      />
     </Svg>
   );
 }
 
-export function EditSmallIcon({size = 11, color = colors.textMuted}: IconProps) {
+export function EditSmallIcon({
+  size = 11,
+  color = colors.textMuted,
+}: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 10 11">
       <Path
@@ -157,6 +163,55 @@ export function EditSmallIcon({size = 11, color = colors.textMuted}: IconProps) 
       <Path
         d="M9.63785 1.63767C10.1216 2.12635 10.1216 2.91949 9.63785 3.40836L8.70124 4.35482L6.18555 1.81308L7.12216 0.866624C7.60595 0.377792 8.39162 0.377792 8.8754 0.866624L9.63785 1.63767Z"
         fill={color}
+      />
+    </Svg>
+  );
+}
+
+/** Add Account > Create New Account: a person with a plus. */
+export function UserPlusIcon({size = 24, color = colors.text}: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Circle cx={10} cy={8} r={3.5} {...stroke(color, 1.8)} />
+      <Path
+        d="M3.5 19.5c0-3.4 2.9-5.7 6.5-5.7s6.5 2.3 6.5 5.7"
+        {...stroke(color, 1.8)}
+      />
+      <Path d="M19.5 8v6M16.5 11h6" {...stroke(color, 1.8)} />
+    </Svg>
+  );
+}
+
+/** Add Account > Create New Seed Phrase: a sheet of numbered words. */
+export function SeedPhraseIcon({size = 24, color = colors.text}: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      {[5, 10.5, 16].map(y => (
+        <React.Fragment key={y}>
+          <Rect x={3.5} y={y} width={7.5} height={3.5} rx={1.75} fill={color} />
+          <Rect
+            x={13}
+            y={y}
+            width={7.5}
+            height={3.5}
+            rx={1.75}
+            fill={color}
+            opacity={0.55}
+          />
+        </React.Fragment>
+      ))}
+    </Svg>
+  );
+}
+
+/** Add Account > Import: an arrow into a tray. */
+export function ImportIcon({size = 24, color = colors.text}: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5" {...stroke(color, 1.8)} />
+      <Path
+        d="M4.5 14.5v3a2.5 2.5 0 0 0 2.5 2.5h10a2.5 2.5 0 0 0 2.5-2.5v-3"
+        {...stroke(color, 1.8)}
       />
     </Svg>
   );
