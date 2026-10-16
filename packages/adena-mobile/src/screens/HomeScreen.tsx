@@ -13,11 +13,12 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
-import {useWallet} from '../core/wallet-context';
+import {accountDisplayName, useWallet} from '../core/wallet-context';
 import type {MainStackParams} from '../navigation/types';
 import {copyWithExpiry} from '../security/sensitive-clipboard';
 import {
   CopyCheckIcon,
+  ChevronDownIcon,
   ChevronRightIcon,
   CopyIcon,
   DepositIcon,
@@ -36,7 +37,7 @@ function splitAmount(value: number): {whole: string; fraction: string} {
 
 /** The extension's wallet main: top menu, network band, balance, actions, tokens. */
 export function HomeScreen({navigation}: Props) {
-  const {net, address, account} = useWallet();
+  const {net, address, account, accountNames} = useWallet();
   const [balance, setBalance] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -75,9 +76,18 @@ export function HomeScreen({navigation}: Props) {
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <View style={styles.topMenu}>
         <View style={styles.topLeft}>
-          <Text style={styles.accountName} numberOfLines={1}>
-            {account?.name ?? 'Account'}
-          </Text>
+          <Pressable
+            testID="home-accounts"
+            accessibilityRole="button"
+            accessibilityLabel="Accounts"
+            hitSlop={8}
+            onPress={() => navigation.navigate('Accounts')}
+            style={styles.accountButton}>
+            <Text style={styles.accountName} numberOfLines={1}>
+              {account ? accountDisplayName(account, accountNames) : 'Account'}
+            </Text>
+            <ChevronDownIcon />
+          </Pressable>
           {address && (
             <Pressable
               accessibilityRole="button"
@@ -210,6 +220,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   topLeft: {flexDirection: 'row', alignItems: 'center', gap: 8},
+  accountButton: {flexDirection: 'row', alignItems: 'center', gap: 6},
   accountName: {...fonts.body1Bold, color: colors.text, maxWidth: 160},
   topRight: {flexDirection: 'row', alignItems: 'center', gap: 12},
   networkBand: {

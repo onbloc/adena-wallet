@@ -31,6 +31,8 @@ export type MainStackParams = {
   Networks: undefined;
   /** Without `id`, adds a custom network. */
   NetworkEdit: {id?: string} | undefined;
+  Accounts: undefined;
+  AccountDetails: {accountId: string};
   AddressBook: undefined;
   /** Without `id`, adds an address. */
   AddressEdit: {id?: string} | undefined;

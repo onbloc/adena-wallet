@@ -7,6 +7,8 @@ import React from 'react';
 import {ActivityIndicator, StyleSheet, View} from 'react-native';
 
 import {ApprovalHost} from '../approvals/ApprovalHost';
+import {AccountDetailsScreen} from '../screens/accounts/AccountDetailsScreen';
+import {AccountsScreen} from '../screens/accounts/AccountsScreen';
 import {BrowserScreen} from '../browser/BrowserScreen';
 import {useWallet} from '../core/wallet-context';
 import {HomeScreen} from '../screens/HomeScreen';
@@ -159,6 +161,16 @@ function MainNavigator() {
         options={{title: 'Change Network'}}
       />
       <Main.Screen name="NetworkEdit" component={NetworkEditScreen} />
+      <Main.Screen
+        name="Accounts"
+        component={AccountsScreen}
+        options={{title: 'Accounts'}}
+      />
+      <Main.Screen
+        name="AccountDetails"
+        component={AccountDetailsScreen}
+        options={{title: 'Account Details'}}
+      />
       <Main.Screen
         name="AddressBook"
         component={AddressBookScreen}

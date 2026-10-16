@@ -110,6 +110,7 @@ export async function recipientCandidates(
   accounts: Account[],
   prefix: string,
   currentAddress: string | null,
+  accountNames: Record<string, string> = {},
 ): Promise<RecipientCandidate[]> {
   const own: RecipientCandidate[] = [];
   for (const account of accounts) {
@@ -118,7 +119,12 @@ export async function recipientCandidates(
     }
     const address = await account.getAddress(prefix);
     if (address !== currentAddress) {
-      own.push({id: account.id, name: account.name, address, own: true});
+      own.push({
+        id: account.id,
+        name: accountNames[account.id] || account.name,
+        address,
+        own: true,
+      });
     }
   }
   const saved = addressBook

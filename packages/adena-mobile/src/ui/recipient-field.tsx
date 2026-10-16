@@ -24,7 +24,7 @@ export function RecipientField({
   error?: string | null;
   onScan: () => void;
 }) {
-  const {base, net, address, wallet} = useWallet();
+  const {base, net, address, wallet, accountNames} = useWallet();
   const [candidates, setCandidates] = useState<RecipientCandidate[]>([]);
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<RecipientCandidate | null>(null);
@@ -43,6 +43,7 @@ export function RecipientField({
           wallet?.accounts ?? [],
           prefix,
           address,
+          accountNames,
         );
         if (!cancelled) {
           setCandidates(list);
@@ -51,7 +52,7 @@ export function RecipientField({
       return () => {
         cancelled = true;
       };
-    }, [base, wallet, prefix, address]),
+    }, [base, wallet, prefix, address, accountNames]),
   );
 
   return (

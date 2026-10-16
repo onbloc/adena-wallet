@@ -5,7 +5,9 @@ import type {NetworkMetainfo} from '@types';
 import {
   Account,
   AdenaWallet,
+  isHDWalletKeyring,
   PrivateKeyKeyring,
+  SeedAccount,
   SingleAccount,
   Wallet,
 } from 'adena-module';
@@ -44,6 +46,8 @@ interface WalletContextValue {
   wallet: Wallet | null;
   account: Account | null;
   address: string | null;
+  /** User-chosen account names by account id (the extension's ACCOUNT_NAMES). */
+  accountNames: Record<string, string>;
   biometricEnabled: boolean;
   createWallet(mnemonic: string, password: string): Promise<void>;
   /** `privateKeyHex` must already be validated (see core/private-key.ts). */
@@ -59,6 +63,20 @@ interface WalletContextValue {
   /** Stores the whole list after an add, edit or removal (custom networks). */
   saveNetworks(next: NetworkMetainfo[]): Promise<void>;
   resetWallet(): Promise<void>;
+  switchAccount(accountId: string): Promise<void>;
+  /** Derives the next account of the seed phrase; false without one. */
+  addAccount(): Promise<boolean>;
+  renameAccount(accountId: string, name: string): Promise<void>;
+  /** False for the last account: the wallet must be reset instead. */
+  removeAccount(accountId: string): Promise<boolean>;
+}
+
+/** The name shown for an account: the user's choice, else the stored one. */
+export function accountDisplayName(
+  account: Account,
+  names: Record<string, string>,
+): string {
+  return names[account.id] || account.name;
 }
 
 const WalletContext = createContext<WalletContextValue | null>(null);
@@ -83,6 +101,9 @@ export function WalletProvider({
   const [account, setAccount] = useState<Account | null>(null);
   const [address, setAddress] = useState<string | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [accountNames, setAccountNames] = useState<Record<string, string>>({});
+  // Bumped when the current account changes without a new wallet object.
+  const [accountRevision, setAccountRevision] = useState(0);
   const walletRef = useRef<Wallet | null>(null);
 
   const net = useMemo(
@@ -152,7 +173,18 @@ export function WalletProvider({
     return () => {
       cancelled = true;
     };
-  }, [wallet, net]);
+  }, [wallet, net, accountRevision]);
+
+  useEffect(() => {
+    if (!wallet) {
+      setAccountNames({});
+      return;
+    }
+    base.accountRepository
+      .getAccountNames()
+      .catch(() => ({}))
+      .then(names => setAccountNames(names ?? {}));
+  }, [base, wallet]);
 
   const adoptWallet = useCallback(
     async (unlocked: Wallet) => {
@@ -330,6 +362,84 @@ export function WalletProvider({
     [base, network],
   );
 
+  const switchAccount = useCallback(
+    async (accountId: string) => {
+      await base.accountRepository.updateCurrentAccountId(accountId);
+      setAccountRevision(value => value + 1);
+    },
+    [base],
+  );
+
+  /** Saves a changed copy of the wallet and makes it the one in use. */
+  const commitWallet = useCallback(
+    async (next: Wallet, currentAccountId: string) => {
+      await base.walletService.updateWallet(next);
+      await base.accountRepository.updateCurrentAccountId(currentAccountId);
+      await adoptWallet(next);
+    },
+    [base, adoptWallet],
+  );
+
+  // The extension's account add: next HD path of the first seed phrase.
+  const addAccount = useCallback(async () => {
+    const current = walletRef.current;
+    const keyring = current?.keyrings.find(isHDWalletKeyring);
+    if (!current || !keyring) {
+      return false;
+    }
+    const next = current.clone();
+    const created = await SeedAccount.createBy(
+      keyring,
+      `Account ${next.getNextAccountNumberBy(keyring)}`,
+      next.getNextHDPathBy(keyring),
+      next.getNextAccountIndexBy(keyring),
+    );
+    next.addAccount(created);
+    next.currentAccountId = created.id;
+    await commitWallet(next, created.id);
+    return true;
+  }, [commitWallet]);
+
+  const renameAccount = useCallback(
+    async (accountId: string, name: string) => {
+      const target = walletRef.current?.accounts.find(
+        item => item.id === accountId,
+      );
+      if (!target) {
+        return;
+      }
+      const next = {...accountNames, [accountId]: name.trim() || target.name};
+      setAccountNames(next);
+      await base.accountRepository.updateAccountNames(next);
+    },
+    [base, accountNames],
+  );
+
+  const removeAccount = useCallback(
+    async (accountId: string) => {
+      const current = walletRef.current;
+      const target = current?.accounts.find(item => item.id === accountId);
+      if (!current || !target || current.accounts.length <= 1) {
+        return false;
+      }
+      const next = current.clone();
+      next.removeAccount(next.accounts.find(item => item.id === accountId)!);
+      const fallback = next.accounts[next.accounts.length - 1];
+      next.currentAccountId = fallback.id;
+      await commitWallet(next, fallback.id);
+      await base.accountRepository
+        .deleteAccountNameByAccountId(accountId)
+        .catch(() => false);
+      setAccountNames(names => {
+        const rest = {...names};
+        delete rest[accountId];
+        return rest;
+      });
+      return true;
+    },
+    [base, commitWallet],
+  );
+
   const resetWallet = useCallback(async () => {
     await platform.lock();
     forgetWallet();
@@ -350,6 +460,7 @@ export function WalletProvider({
     wallet,
     account,
     address,
+    accountNames,
     biometricEnabled,
     createWallet,
     importPrivateKey,
@@ -363,6 +474,10 @@ export function WalletProvider({
     reloadNetworks,
     saveNetworks,
     resetWallet,
+    switchAccount,
+    addAccount,
+    renameAccount,
+    removeAccount,
   };
 
   return (
