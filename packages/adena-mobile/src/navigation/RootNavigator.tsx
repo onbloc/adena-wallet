@@ -19,7 +19,10 @@ import {QrScanScreen} from '../screens/QrScanScreen';
 import {ReceiveScreen} from '../screens/ReceiveScreen';
 import {SendConfirmScreen} from '../screens/SendConfirmScreen';
 import {SendScreen} from '../screens/SendScreen';
+import {AddressBookScreen} from '../screens/settings/AddressBookScreen';
+import {AddressEditScreen} from '../screens/settings/AddressEditScreen';
 import {ChangePasswordScreen} from '../screens/settings/ChangePasswordScreen';
+import {NetworkEditScreen} from '../screens/settings/NetworkEditScreen';
 import {NetworksScreen} from '../screens/settings/NetworksScreen';
 import {RevealMnemonicScreen} from '../screens/settings/RevealMnemonicScreen';
 import {AutoLockScreen} from '../screens/settings/AutoLockScreen';
@@ -135,6 +138,13 @@ function MainNavigator() {
         component={NetworksScreen}
         options={{title: 'Change Network'}}
       />
+      <Main.Screen name="NetworkEdit" component={NetworkEditScreen} />
+      <Main.Screen
+        name="AddressBook"
+        component={AddressBookScreen}
+        options={{title: 'Address Book'}}
+      />
+      <Main.Screen name="AddressEdit" component={AddressEditScreen} />
       <Main.Screen
         name="ChangePassword"
         component={ChangePasswordScreen}

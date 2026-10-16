@@ -9,6 +9,7 @@ import {AdenaStorage} from '@common/storage/storage';
 import {ChainRepository} from '@repositories/common/chain';
 import {WalletRepository} from '@repositories/wallet/wallet';
 import {WalletAccountRepository} from '@repositories/wallet/wallet-account';
+import {WalletAddressRepository} from '@repositories/wallet/wallet-address';
 import {WalletEstablishRepository} from '@repositories/wallet/wallet-establish';
 import {WalletEstablishAtomOneRepository} from '@repositories/wallet/wallet-establish-atomone';
 import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
@@ -17,6 +18,7 @@ import {ChainService} from '@services/resource/chain';
 import {TransactionService} from '@services/transaction/transaction';
 import {WalletService} from '@services/wallet/wallet';
 import {WalletAccountService} from '@services/wallet/wallet-account';
+import {WalletAddressBookService} from '@services/wallet/wallet-address-book';
 import {WalletBalanceService} from '@services/wallet/wallet-balance';
 import {WalletEstablishService} from '@services/wallet/wallet-establish';
 import {WalletEstablishAtomOneService} from '@services/wallet/wallet-establish-atomone';
@@ -36,7 +38,14 @@ export function createBaseServices() {
     gnoNetworkProfiles: makeGnoNetworkProfiles(GNO_CHAIN_DATA),
     atomoneNetworkProfiles: makeAtomOneNetworkProfiles(ATOMONE_CHAIN_DATA),
   });
-  const walletService = new WalletService(new WalletRepository(local, session));
+  const walletRepository = new WalletRepository(local, session);
+  const walletService = new WalletService(walletRepository);
+  const addressRepository = new WalletAddressRepository(local);
+  // Encrypted with the wallet password, so it reads only while unlocked.
+  const addressBookService = new WalletAddressBookService(
+    walletRepository,
+    addressRepository,
+  );
   const chainService = new ChainService(
     new ChainRepository(local, bundledResourceClient),
   );
@@ -53,7 +62,10 @@ export function createBaseServices() {
   );
   return {
     chainRegistry,
+    walletRepository,
     walletService,
+    addressRepository,
+    addressBookService,
     chainService,
     accountRepository,
     establishService,

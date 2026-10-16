@@ -19,6 +19,11 @@ export type MainStackParams = {
   AutoLock: undefined;
   ResetWallet: undefined;
   Networks: undefined;
+  /** Without `id`, adds a custom network. */
+  NetworkEdit: {id?: string} | undefined;
+  AddressBook: undefined;
+  /** Without `id`, adds an address. */
+  AddressEdit: {id?: string} | undefined;
   ChangePassword: undefined;
   RevealMnemonic: undefined;
 };

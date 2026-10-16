@@ -1,11 +1,15 @@
+import AddressBookIcon from '@assets/transfer-address-book.svg';
 import GnotLogo from '@assets/gnot-logo-white.svg';
+import {formatAddress, formatNickname} from '@common/utils/client-utils';
+import {useFocusEffect} from '@react-navigation/native';
 import WarningInfo from '@assets/warning-info.svg';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import BigNumber from 'bignumber.js';
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Pressable, StyleSheet, Text, TextInput, View} from 'react-native';
 
 import {isAddressForNetwork} from '../core/address';
+import {RecipientCandidate, recipientCandidates} from '../core/address-book';
 import {parseGnotToUgnot} from '../core/format';
 import {useWallet} from '../core/wallet-context';
 import type {MainStackParams} from '../navigation/types';
@@ -16,8 +20,11 @@ type Props = NativeStackScreenProps<MainStackParams, 'Send'>;
 
 /** The extension's transfer input: logo, recipient, amount, memo. */
 export function SendScreen({navigation, route}: Props) {
-  const {net, address} = useWallet();
+  const {base, net, address, wallet} = useWallet();
   const [to, setTo] = useState('');
+  const [candidates, setCandidates] = useState<RecipientCandidate[]>([]);
+  const [bookOpen, setBookOpen] = useState(false);
+  const [picked, setPicked] = useState<RecipientCandidate | null>(null);
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
   const [balance, setBalance] = useState<number | null>(null);
@@ -43,6 +50,37 @@ export function SendScreen({navigation, route}: Props) {
   }, [net, address]);
 
   const prefix = net?.network.addressPrefix ?? 'g';
+
+  // Reloaded on focus: an address saved from Settings shows up on return.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      (async () => {
+        const book = await base.addressBookService
+          .getAddressBook()
+          .catch(() => []);
+        const list = await recipientCandidates(
+          book,
+          wallet?.accounts ?? [],
+          prefix,
+          address,
+        );
+        if (!cancelled) {
+          setCandidates(list);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [base, wallet, prefix, address]),
+  );
+
+  const pick = (candidate: RecipientCandidate) => {
+    setTo(candidate.address);
+    setPicked(candidate);
+    setBookOpen(false);
+    setError(null);
+  };
 
   const next = () => {
     const recipient = to.trim();
@@ -100,11 +138,22 @@ export function SendScreen({navigation, route}: Props) {
             value={to}
             onChangeText={text => {
               setTo(text);
+              setPicked(null);
               setError(null);
             }}
             multiline
             style={styles.input}
           />
+          <Pressable
+            testID="send-address-book"
+            accessibilityRole="button"
+            accessibilityLabel="Address book"
+            accessibilityState={{expanded: bookOpen}}
+            hitSlop={6}
+            onPress={() => setBookOpen(open => !open)}
+            style={({pressed}) => [styles.pill, pressed && styles.pillPressed]}>
+            <AddressBookIcon width={16} height={16} />
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => navigation.navigate('QrScan')}
@@ -112,6 +161,37 @@ export function SendScreen({navigation, route}: Props) {
             <Text style={styles.pillText}>Scan</Text>
           </Pressable>
         </View>
+        {picked && picked.address === to && (
+          <Text style={styles.pickedText}>
+            {picked.own ? 'My account' : 'Address book'}:{' '}
+            {formatNickname(picked.name, 20)}
+          </Text>
+        )}
+        {bookOpen && (
+          <View style={styles.book}>
+            {candidates.length === 0 ? (
+              <Text style={styles.bookEmpty}>No saved addresses</Text>
+            ) : (
+              candidates.map(candidate => (
+                <Pressable
+                  key={candidate.id}
+                  accessibilityRole="button"
+                  onPress={() => pick(candidate)}
+                  style={({pressed}) => [
+                    styles.bookRow,
+                    pressed && styles.bookRowPressed,
+                  ]}>
+                  <Text style={styles.bookName} numberOfLines={1}>
+                    {formatNickname(candidate.name, 12)}
+                  </Text>
+                  <Text style={styles.bookAddress}>
+                    ({formatAddress(candidate.address)})
+                  </Text>
+                </Pressable>
+              ))
+            )}
+          </View>
+        )}
         {error?.field === 'to' && (
           <Text style={styles.errorText}>{error.message}</Text>
         )}
@@ -223,6 +303,25 @@ const styles = StyleSheet.create({
   },
   pillPressed: {backgroundColor: neutral.b},
   pillText: {...fonts.body3Bold, lineHeight: 16, color: colors.text},
+  pickedText: {...fonts.captionReg, color: colors.textMuted, paddingHorizontal: 16},
+  book: {
+    borderRadius: 18,
+    backgroundColor: neutral._9,
+    borderWidth: 1,
+    borderColor: neutral._7,
+    overflow: 'hidden',
+  },
+  bookEmpty: {...fonts.body2Reg, color: colors.textMuted, padding: 16},
+  bookRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  bookRowPressed: {backgroundColor: neutral._7},
+  bookName: {...fonts.body2Bold, color: colors.text, flexShrink: 1},
+  bookAddress: {...fonts.body2Reg, color: colors.textMuted},
   unit: {...fonts.body2Reg, color: colors.text},
   caption: {
     ...fonts.captionReg,

@@ -1,3 +1,4 @@
+import {toGnoNetworkProfile} from '@common/mapper/network-profile-mapper';
 import {AdenaStorage} from '@common/storage/storage';
 import {isAutoLockTriggeredMessage} from '@common/utils/auto-lock-timer';
 import type {NetworkMetainfo} from '@types';
@@ -55,6 +56,8 @@ interface WalletContextValue {
   setBiometricUnlock(enabled: boolean, password?: string): Promise<void>;
   switchNetwork(networkId: string): Promise<void>;
   reloadNetworks(): Promise<NetworkMetainfo[]>;
+  /** Stores the whole list after an add, edit or removal (custom networks). */
+  saveNetworks(next: NetworkMetainfo[]): Promise<void>;
   resetWallet(): Promise<void>;
 }
 
@@ -233,7 +236,22 @@ export function WalletProvider({
       if (!(await base.walletService.equalsPassword(current))) {
         return false;
       }
+      // The address book is sealed with the password too. The extension leaves
+      // it under the old one, so it reads as empty after a change.
+      const addressBook = await base.addressBookService
+        .getAddressBook()
+        .catch(() => []);
       const changed = await base.walletService.changePassword(next);
+      if (changed && addressBook.length > 0) {
+        const salt = await base.walletRepository.getKdfSalt();
+        if (salt) {
+          await base.addressRepository.updateAddressBook(
+            addressBook,
+            next,
+            salt,
+          );
+        }
+      }
       // The escrowed password is now stale; biometrics must be re-enabled.
       if (changed && (await isBiometricUnlockEnabled())) {
         await enableBiometricUnlock(next);
@@ -278,6 +296,40 @@ export function WalletProvider({
     return loaded;
   }, [base]);
 
+  const saveNetworks = useCallback(
+    async (next: NetworkMetainfo[]) => {
+      await base.chainService.updateNetworks(next);
+      for (const item of next) {
+        if (!item.deleted) {
+          base.chainRegistry.register(toGnoNetworkProfile(item));
+        }
+      }
+      setNetworks(next);
+      const currentId = network?.id;
+      const current = next.find(
+        item => item.id === currentId && !item.deleted,
+      );
+      if (current) {
+        // A new object rebuilds the provider on the edited RPC.
+        if (current !== network) {
+          setNetwork(current);
+        }
+        return;
+      }
+      // The current network was removed: fall back as the extension does.
+      const isMainnet = network?.main === true;
+      const fallback =
+        next.find(item => !item.deleted && (item.main === true) === isMainnet) ??
+        next.find(item => !item.deleted) ??
+        null;
+      if (fallback) {
+        await base.chainService.updateCurrentNetworkId(fallback.id);
+      }
+      setNetwork(fallback);
+    },
+    [base, network],
+  );
+
   const resetWallet = useCallback(async () => {
     await platform.lock();
     forgetWallet();
@@ -309,6 +361,7 @@ export function WalletProvider({
     setBiometricUnlock,
     switchNetwork,
     reloadNetworks,
+    saveNetworks,
     resetWallet,
   };
 

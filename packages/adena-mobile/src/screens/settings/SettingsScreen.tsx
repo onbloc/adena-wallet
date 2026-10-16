@@ -4,7 +4,7 @@ import React from 'react';
 import {useWallet} from '../../core/wallet-context';
 import type {MainStackParams} from '../../navigation/types';
 import {Divider, ListItem, Screen} from '../../ui/components';
-import {LockIcon, MapRouteIcon, SecurityIcon} from '../../ui/icons';
+import {BookIcon, LockIcon, MapRouteIcon, SecurityIcon} from '../../ui/icons';
 
 type Props = NativeStackScreenProps<MainStackParams, 'Settings'>;
 
@@ -27,6 +27,12 @@ export function SettingsScreen({navigation}: Props) {
         title="Change Network"
         detail={net?.network.networkName}
         onPress={() => navigation.navigate('Networks')}
+      />
+      <ListItem
+        testID="settings-address-book"
+        icon={<BookIcon />}
+        title="Address Book"
+        onPress={() => navigation.navigate('AddressBook')}
       />
       <ListItem
         testID="settings-security"
