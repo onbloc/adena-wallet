@@ -4,20 +4,25 @@ import {GNOT_TOKEN} from '@common/constants/token.constant';
 import {
   classifyGnoSigningRisk,
   SigningRiskAssessment,
+  SigningRiskCode,
+  SigningRiskLevel,
 } from '@common/validation/validation-signing-risk';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {createMessageOfVmCall} from '@services/transaction/message/vm/vm';
+import type {Grc20RouteMap, NetworkMetainfo} from '@types';
 import type {Document} from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, {useEffect, useState} from 'react';
 import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
 
 import {estimateFee, FeeEstimate, withFee} from '../core/fees';
+import {formatTokenAmount, grc20TransferMessage} from '../core/tokens';
 import {formatGnot} from '../core/format';
 import {useWallet} from '../core/wallet-context';
 import type {MainStackParams} from '../navigation/types';
 import {useReauth} from '../security/reauth';
 import {Address} from '../ui/address';
+import {TokenLogo} from '../ui/token-logo';
 import {NftImage} from '../ui/nft';
 import {
   Body,
@@ -48,8 +53,40 @@ type State =
   | {phase: 'sending'}
   | {phase: 'sent'; hash: string};
 
+const LEVELS: SigningRiskLevel[] = ['low', 'medium', 'high'];
+
+function withoutReason(
+  risk: SigningRiskAssessment,
+  code: SigningRiskCode,
+): SigningRiskAssessment {
+  const reasons = risk.reasons.filter(reason => reason.code !== code);
+  const level = reasons.reduce<SigningRiskLevel>(
+    (highest, reason) =>
+      LEVELS.indexOf(reason.level) > LEVELS.indexOf(highest)
+        ? reason.level
+        : highest,
+    'low',
+  );
+  return {level, reasons};
+}
+
 /** The message the confirm screen simulates and signs for each kind. */
-export function transferMessage(params: Props['route']['params'], from: string) {
+export function transferMessage(
+  params: Props['route']['params'],
+  from: string,
+  network: NetworkMetainfo,
+  routes: Grc20RouteMap = {},
+) {
+  if (params.kind === 'grc20') {
+    return grc20TransferMessage({
+      token: params.token,
+      from,
+      to: params.to,
+      rawAmount: params.rawAmount,
+      network,
+      routes,
+    });
+  }
   if (params.kind === 'nft') {
     // The extension's GRC721 transfer: TransferFrom on the collection realm.
     return createMessageOfVmCall({
@@ -88,7 +125,11 @@ export function SendConfirmScreen({route, navigation}: Props) {
     }
     (async () => {
       try {
-        const message = transferMessage(params, address);
+        const routes =
+          params.kind === 'grc20'
+            ? await net.tokenService.fetchGrc20Routes().catch(() => ({}))
+            : {};
+        const message = transferMessage(params, address, net.network, routes);
         const draft = await net.transactionService.createDocument(
           account,
           net.network.networkId,
@@ -100,9 +141,16 @@ export function SendConfirmScreen({route, navigation}: Props) {
         );
         const fee = await estimateFee(net.gnoProvider, account, draft);
         const document = withFee(draft, fee.gasWanted, fee.gasFee);
-        const risk = classifyGnoSigningRisk(document.msgs as any[], {
+        const assessed = classifyGnoSigningRisk(document.msgs as any[], {
           knownRecipients: new Set([address]),
         });
+        // The GRC20 fallback is a MsgRun, but of the script this screen just
+        // wrote (core/tokens.ts), not code from a site: that warning would
+        // only teach people to click through it.
+        const risk =
+          params.kind === 'grc20' && message.type === '/vm.m_run'
+            ? withoutReason(assessed, 'RUN_ARBITRARY_CODE')
+            : assessed;
         setState({phase: 'ready', document, fee, risk});
       } catch (e) {
         setState({
@@ -122,7 +170,12 @@ export function SendConfirmScreen({route, navigation}: Props) {
       return;
     }
     const {document} = state;
-    const what = params.kind === 'nft' ? 'NFT' : 'GNOT';
+    const what =
+      params.kind === 'nft'
+        ? 'NFT'
+        : params.kind === 'grc20'
+        ? params.token.symbol
+        : 'GNOT';
     if (!(await requestReauth(`Approve sending ${what}`))) {
       return;
     }
@@ -193,8 +246,8 @@ export function SendConfirmScreen({route, navigation}: Props) {
           .plus(state.fee.gasFee)
           .toFixed(0)
       : null;
-  const recipient =
-    sendMessage?.value.to_address ?? sendMessage?.value.args?.[1] ?? '';
+  // Shown from the form: a GRC20 route or script carries it in its own shape.
+  const recipient = to;
 
   return (
     <Screen
@@ -215,7 +268,16 @@ export function SendConfirmScreen({route, navigation}: Props) {
       {state.phase === 'failed' && <ErrorBanner>{state.message}</ErrorBanner>}
       {sendMessage && state.phase === 'ready' && (
         <>
-          {params.kind === 'nft' ? (
+          {params.kind === 'grc20' ? (
+            <View style={styles.amountCard}>
+              <TokenLogo token={params.token} />
+              <Text style={styles.tokenName}>{params.token.name}</Text>
+              <Text style={styles.amount}>
+                {formatTokenAmount(params.rawAmount, params.token.decimals)}{' '}
+                {params.token.symbol}
+              </Text>
+            </View>
+          ) : params.kind === 'nft' ? (
             <View style={styles.nftCard}>
               <View style={styles.nftImage}>
                 <NftImage token={params.token} />

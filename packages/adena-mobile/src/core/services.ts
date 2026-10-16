@@ -4,6 +4,7 @@ import {
   makeAtomOneNetworkProfiles,
   makeGnoNetworkProfiles,
 } from '@common/utils/chain-utils';
+import {getGrc20RegistryPaths} from '@common/utils/grc20reg-config';
 import {GnoProvider} from '@common/provider/gno/gno-provider';
 import {AdenaStorage} from '@common/storage/storage';
 import {ChainRepository} from '@repositories/common/chain';
@@ -93,6 +94,8 @@ export function createNetworkServices(
     gnoProvider,
   );
   const balanceService = new WalletBalanceService(gnoProvider);
+  // GRC20 balances in one registry query per chunk, as the extension does.
+  balanceService.setRegistryPaths(getGrc20RegistryPaths(network.chainId));
   const transactionService = new TransactionService(
     base.walletService,
     gnoProvider,

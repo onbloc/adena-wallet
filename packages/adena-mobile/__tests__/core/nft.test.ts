@@ -1,4 +1,8 @@
-import type {GRC721CollectionModel, GRC721Model} from '@types';
+import type {
+  GRC721CollectionModel,
+  GRC721Model,
+  NetworkMetainfo,
+} from '@types';
 
 import {
   classifyNftImage,
@@ -138,6 +142,8 @@ describe('remoteImageAllowed', () => {
   });
 });
 
+const testNetwork = {chainId: 'test-1'} as NetworkMetainfo;
+
 describe('transferMessage', () => {
   it('sends an NFT with TransferFrom on its collection realm', () => {
     const token = {
@@ -145,7 +151,11 @@ describe('transferMessage', () => {
       tokenId: '7',
     } as GRC721Model;
     expect(
-      transferMessage({kind: 'nft', to: 'g1to', token, memo: ''}, 'g1from'),
+      transferMessage(
+        {kind: 'nft', to: 'g1to', token, memo: ''},
+        'g1from',
+        testNetwork,
+      ),
     ).toEqual({
       type: '/vm.m_call',
       value: {
@@ -164,6 +174,7 @@ describe('transferMessage', () => {
       transferMessage(
         {kind: 'gnot', to: 'g1to', ugnot: '1500', memo: ''},
         'g1from',
+        testNetwork,
       ),
     ).toEqual({
       type: '/bank.MsgSend',

@@ -1,4 +1,5 @@
 import GnotLogo from '@assets/gnot-logo-white.svg';
+import ManageIcon from '@assets/main-manage-tokens-filter.svg';
 import MenuIcon from '@assets/menu.svg';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import BigNumber from 'bignumber.js';
@@ -13,6 +14,8 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
+import {formatTokenAmount} from '../core/tokens';
+import {useTokens} from '../core/use-tokens';
 import {accountDisplayName, useWallet} from '../core/wallet-context';
 import type {MainStackParams} from '../navigation/types';
 import {copyWithExpiry} from '../security/sensitive-clipboard';
@@ -26,6 +29,7 @@ import {
   SendIcon,
 } from '../ui/icons';
 import {colors, colorTokens, fonts, radius} from '../ui/theme';
+import {TokenLogo} from '../ui/token-logo';
 
 type Props = NativeStackScreenProps<MainStackParams, 'Home'>;
 
@@ -43,20 +47,27 @@ export function HomeScreen({navigation}: Props) {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
+  const tokens = useTokens();
+  const {refresh: refreshTokens} = tokens;
+
   const load = useCallback(async () => {
     if (!net || !address) {
       return;
     }
     setRefreshing(true);
     try {
-      setBalance(await net.balanceService.getGnotTokenBalance(address));
+      const [gnot] = await Promise.all([
+        net.balanceService.getGnotTokenBalance(address),
+        refreshTokens(),
+      ]);
+      setBalance(gnot);
       setError('');
     } catch {
       setError('Could not load the balance from the network.');
     } finally {
       setRefreshing(false);
     }
-  }, [net, address]);
+  }, [net, address, refreshTokens]);
 
   useEffect(() => {
     load();
@@ -154,7 +165,11 @@ export function HomeScreen({navigation}: Props) {
           <MainAction
             label="Send"
             icon={<SendIcon />}
-            onPress={() => navigation.navigate('Send')}
+            onPress={() =>
+              tokens.shown.some(token => token.type === 'grc20')
+                ? navigation.navigate('SelectToken')
+                : navigation.navigate('Send')
+            }
           />
           <MainAction
             label="Explore"
@@ -162,16 +177,51 @@ export function HomeScreen({navigation}: Props) {
             onPress={() => navigation.navigate('Browser')}
           />
         </View>
-        <View style={styles.token}>
-          <View style={styles.tokenLogo}>
-            <GnotLogo width={22} height={22} />
+        {tokens.shown.some(token => token.type === 'gno-native') ? null : (
+          // The resource list did not load: GNOT still shows.
+          <View style={styles.token}>
+            <View style={styles.tokenLogo}>
+              <GnotLogo width={22} height={22} />
+            </View>
+            <Text style={styles.tokenName}>Gnoland</Text>
+            <Text style={styles.tokenBalance} numberOfLines={1}>
+              {amount ? amount.whole : '-'}
+              <Text style={styles.tokenFraction}>{amount?.fraction}</Text> GNOT
+            </Text>
           </View>
-          <Text style={styles.tokenName}>Gnoland</Text>
-          <Text style={styles.tokenBalance} numberOfLines={1}>
-            {amount ? amount.whole : '-'}
-            <Text style={styles.tokenFraction}>{amount?.fraction}</Text> GNOT
-          </Text>
-        </View>
+        )}
+        {tokens.shown.map(token => (
+          <Pressable
+            key={token.tokenId}
+            testID={`home-token-${token.symbol}`}
+            accessibilityRole="button"
+            onPress={() =>
+              navigation.navigate('TokenDetails', {tokenId: token.tokenId})
+            }
+            style={({pressed}) => [styles.token, pressed && styles.pressed]}>
+            <View style={styles.tokenLogoGap}>
+              <TokenLogo token={token} />
+            </View>
+            <Text style={styles.tokenName} numberOfLines={1}>
+              {token.name}
+            </Text>
+            <Text style={styles.tokenBalance} numberOfLines={1}>
+              {formatTokenAmount(
+                tokens.balances[token.tokenId] ?? null,
+                token.decimals,
+              )}{' '}
+              {token.symbol}
+            </Text>
+          </Pressable>
+        ))}
+        <Pressable
+          testID="home-manage-tokens"
+          accessibilityRole="button"
+          onPress={() => navigation.navigate('ManageTokens')}
+          style={({pressed}) => [styles.manage, pressed && styles.pressed]}>
+          <ManageIcon width={16} height={16} />
+          <Text style={styles.manageText}>Manage Tokens</Text>
+        </Pressable>
         <Pressable
           testID="home-nft"
           accessibilityRole="button"
@@ -272,6 +322,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  tokenLogoGap: {marginRight: 12},
+  manage: {
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    height: 34,
+    borderRadius: 17,
+    marginTop: 6,
+    marginBottom: 16,
+    backgroundColor: neutral._7,
+  },
+  manageText: {...fonts.body2Bold, color: colors.text},
   tokenName: {...fonts.body2Bold, lineHeight: 17, color: colors.text, flex: 1},
   tokenBalance: {
     ...fonts.body2Reg,
