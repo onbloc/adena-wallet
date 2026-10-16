@@ -107,6 +107,11 @@ export class InjectCore {
   }
 
   public async getInMemoryKey(): Promise<CryptoKey | null> {
+    // Mobile reads the session password through its registered reader (see
+    // getPasswordBy) and has no Web Crypto to make this key with.
+    if (getSessionPasswordReader()) {
+      return null;
+    }
     return getInMemoryKey(this.inMemoryProvider);
   }
 
