@@ -2,7 +2,12 @@ import React, {useEffect, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
 import {useWallet} from '../../core/wallet-context';
+import {
+  copyWithExpiry,
+  SECRET_CLIPBOARD_CLEAR_MS,
+} from '../../security/sensitive-clipboard';
 import {useSecureScreen} from '../../security/use-secure-screen';
+import {COPIED_WARNING} from '../onboarding/CreateMnemonicScreen';
 import {
   Body,
   ErrorText,
@@ -15,6 +20,7 @@ import {
   HoldToReveal,
   SeedGrid,
   WebCheckBox,
+  WebCopyButton,
   WebHoldButton,
 } from '../../ui/web';
 
@@ -31,6 +37,7 @@ export function RevealMnemonicScreen() {
   const [checks, setChecks] = useState([false, false]);
   const [words, setWords] = useState<string[]>([]);
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -67,8 +74,16 @@ export function RevealMnemonicScreen() {
           </Notice>
         )}
         <SeedGrid words={words} hidden={!revealed} />
-        <View style={styles.center}>
+        {copied && <Notice tone="danger">{COPIED_WARNING}</Notice>}
+        <View style={styles.actions}>
           <HoldToReveal revealed={revealed} onChange={setRevealed} />
+          <WebCopyButton
+            testID="reveal-copy"
+            onCopy={() => {
+              copyWithExpiry(words.join(' '), SECRET_CLIPBOARD_CLEAR_MS);
+              setCopied(true);
+            }}
+          />
         </View>
         <Body muted>The phrase disappears when you leave this screen.</Body>
       </Screen>
@@ -125,7 +140,7 @@ export function RevealMnemonicScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: {alignItems: 'center'},
+  actions: {flexDirection: 'row', justifyContent: 'center', gap: 12},
   caution: {
     gap: 11,
     paddingHorizontal: 16,

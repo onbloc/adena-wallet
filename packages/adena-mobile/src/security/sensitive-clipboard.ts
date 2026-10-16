@@ -4,12 +4,17 @@ export const CLIPBOARD_CLEAR_MS = 60_000;
 
 let clearTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** The extension clears a copied seed phrase sooner (web-copy-button). */
+export const SECRET_CLIPBOARD_CLEAR_MS = 30_000;
+
 /**
- * Copies a value and clears the clipboard after a minute, but only if it
+ * Copies a value and clears the clipboard after `clearMs`, but only if it
  * still holds that value (the user may have copied something else since).
- * Mnemonics and private keys are never copied; there is no API for it here.
  */
-export function copyWithExpiry(value: string): void {
+export function copyWithExpiry(
+  value: string,
+  clearMs: number = CLIPBOARD_CLEAR_MS,
+): void {
   Clipboard.setString(value);
   if (clearTimer) {
     clearTimeout(clearTimer);
@@ -19,5 +24,5 @@ export function copyWithExpiry(value: string): void {
     if ((await Clipboard.getString()) === value) {
       Clipboard.setString('');
     }
-  }, CLIPBOARD_CLEAR_MS);
+  }, clearMs);
 }

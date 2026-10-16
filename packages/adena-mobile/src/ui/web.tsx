@@ -8,7 +8,7 @@ import ChevronRight from '@assets/web/chevron-right.svg';
 import CheckIcon from '@assets/web/check.svg';
 import ErrorIcon from '@assets/web/error.svg';
 import WarningIcon from '@assets/web/warning.svg';
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Animated,
   Pressable,
@@ -25,6 +25,7 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Defs, RadialGradient, Rect, Stop} from 'react-native-svg';
 
+import {CopyIcon} from './icons';
 import {colorTokens, monoFont, webFonts} from './theme';
 
 const {
@@ -552,6 +553,8 @@ export function WebHoldButton({
       accessibilityHint="Press and hold"
       accessibilityState={{disabled: !!disabled}}
       disabled={disabled}
+      // A hold must not be handed over to an enclosing ScrollView.
+      cancelable={false}
       onPressIn={start}
       onPressOut={cancel}
       style={[
@@ -586,6 +589,8 @@ export function HoldToReveal({
       accessibilityHint={
         revealed ? undefined : 'Press and hold'
       }
+      // Inside the phrase's ScrollView: keep the touch for the whole hold.
+      cancelable={false}
       onPressIn={revealed ? () => onChange(false) : start}
       onPressOut={revealed ? undefined : cancel}
       style={[
@@ -600,6 +605,55 @@ export function HoldToReveal({
           {color: holding || revealed ? webNeutral._100 : webNeutral._500},
         ]}>
         {revealed ? 'Hide Seed Phrase' : 'Hold to Reveal'}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** Small Copy button beside Hold to Reveal (web-copy-button). */
+export function WebCopyButton({
+  onCopy,
+  testID,
+}: {
+  onCopy: () => void;
+  testID?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timer.current) {
+        clearTimeout(timer.current);
+      }
+    },
+    [],
+  );
+
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      onPress={() => {
+        onCopy();
+        setCopied(true);
+        if (timer.current) {
+          clearTimeout(timer.current);
+        }
+        timer.current = setTimeout(() => setCopied(false), 2_000);
+      }}
+      style={({pressed}) => [
+        styles.hold,
+        styles.copy,
+        (pressed || copied) && styles.copyActive,
+      ]}>
+      <CopyIcon size={16} color={copied ? webNeutral._100 : webNeutral._500} />
+      <Text
+        style={[
+          webFonts.title6,
+          {color: copied ? webNeutral._100 : webNeutral._500},
+        ]}>
+        {copied ? 'Copied!' : 'Copy'}
       </Text>
     </Pressable>
   );
@@ -845,13 +899,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#212429',
+    // Lighter than the web's #212429 so it also shows on the popup background.
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   holdActive: {borderColor: '#1E3C71'},
   holdDone: {backgroundColor: '#0059FF52'},
+  copy: {flexDirection: 'row', gap: 4},
+  copyActive: {backgroundColor: 'rgba(255, 255, 255, 0.08)'},
   holdFill: {
     position: 'absolute',
     left: 0,

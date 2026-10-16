@@ -6,12 +6,17 @@ import {StyleSheet, View} from 'react-native';
 
 import {pendingSecret} from '../../core/pending-secret';
 import type {OnboardingStackParams} from '../../navigation/types';
+import {
+  copyWithExpiry,
+  SECRET_CLIPBOARD_CLEAR_MS,
+} from '../../security/sensitive-clipboard';
 import {useSecureScreen} from '../../security/use-secure-screen';
 import {
   HoldToReveal,
   SeedGrid,
   WebButton,
   WebCheckBox,
+  WebCopyButton,
   WebDanger,
   WebHoldButton,
   WebScreen,
@@ -26,6 +31,9 @@ import {SensitiveInfoStep} from './SensitiveInfoStep';
 type Props = NativeStackScreenProps<OnboardingStackParams, 'CreateMnemonic'>;
 
 type WordCount = 12 | 24;
+
+export const COPIED_WARNING =
+  'You have copied sensitive info. Do not paste it in public or shared places. The clipboard is cleared in 30 seconds.';
 
 const WORD_COUNT_TABS: {key: `${WordCount}`; label: string}[] = [
   {key: '12', label: '12 words'},
@@ -48,8 +56,8 @@ function generateWords(count: WordCount): string[] {
 /**
  * The extension's create-wallet steps: a warning, the security
  * questionnaire, then the phrase (12 or 24 words), masked until the user
- * agrees and holds the reveal button. There is no Copy
- * button: a phrase on the clipboard is readable by other apps.
+ * agrees and holds the reveal button. Copy is there as on the web, with a
+ * warning, and the clipboard is cleared after 30 seconds.
  */
 export function CreateMnemonicScreen({navigation}: Props) {
   const {screenshotTaken} = useSecureScreen();
@@ -63,6 +71,7 @@ export function CreateMnemonicScreen({navigation}: Props) {
   const [seen, setSeen] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => () => setWords([]), []);
 
@@ -163,6 +172,7 @@ export function CreateMnemonicScreen({navigation}: Props) {
             cloud app.
           </WebWarning>
         )}
+        {copied && <WebWarning>{COPIED_WARNING}</WebWarning>}
       </View>
       <WebTabs
         tabs={WORD_COUNT_TABS}
@@ -172,8 +182,15 @@ export function CreateMnemonicScreen({navigation}: Props) {
       <SeedGrid words={words} hidden={!revealed} />
       {seen ? (
         <>
-          <View style={styles.center}>
+          <View style={styles.actions}>
             <HoldToReveal revealed={revealed} onChange={setRevealed} />
+            <WebCopyButton
+              testID="mnemonic-copy"
+              onCopy={() => {
+                copyWithExpiry(words.join(' '), SECRET_CLIPBOARD_CLEAR_MS);
+                setCopied(true);
+              }}
+            />
           </View>
           <WebCheckBox
             testID="mnemonic-saved"
@@ -196,5 +213,5 @@ export function CreateMnemonicScreen({navigation}: Props) {
 
 const styles = StyleSheet.create({
   messages: {gap: 16},
-  center: {alignItems: 'center'},
+  actions: {flexDirection: 'row', justifyContent: 'center', gap: 12},
 });
