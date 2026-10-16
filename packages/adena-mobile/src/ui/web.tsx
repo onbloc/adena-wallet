@@ -26,7 +26,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Defs, RadialGradient, Rect, Stop} from 'react-native-svg';
 
 import {CopyIcon} from './icons';
-import {colorTokens, monoFont, webFonts} from './theme';
+import {colorTokens, inputFont, monoFont, webFonts} from './theme';
 
 const {
   webNeutral,
@@ -440,7 +440,7 @@ export function SeedWordInput({
         {...props}
         accessibilityLabel={label}
         style={[
-          compact ? webFonts.body5 : webFonts.body4,
+          inputFont(compact ? webFonts.body5 : webFonts.body4),
           styles.seedInputField,
           compact && styles.seedInputFieldCompact,
           error && styles.seedInputFieldError,
@@ -783,7 +783,7 @@ const styles = StyleSheet.create({
   },
   choiceText: {flex: 1, gap: 3},
   input: {
-    ...webFonts.body5,
+    ...inputFont(webFonts.body5),
     color: webNeutral._0,
     minHeight: 48,
     borderRadius: 12,

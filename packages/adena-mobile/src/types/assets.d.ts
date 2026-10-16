@@ -5,3 +5,9 @@ declare module '*.svg' {
   const content: React.FC<SvgProps>;
   export default content;
 }
+
+// Bundled raster images resolve to an asset id for <Image source>.
+declare module '*.jpg' {
+  const source: number;
+  export default source;
+}

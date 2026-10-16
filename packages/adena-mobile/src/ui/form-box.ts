@@ -38,6 +38,8 @@ export const formBox = StyleSheet.create({
     color: colors.text,
     paddingVertical: 4,
   },
+  /** The one-line amount field: see inputFont. */
+  inputSingleLine: {lineHeight: undefined},
   pill: {
     height: 25,
     paddingHorizontal: 14,

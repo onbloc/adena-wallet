@@ -21,6 +21,7 @@ export type MainStackParams = {
   Send: {tokenId?: string; scannedAddress?: string} | undefined;
   SelectToken: undefined;
   History: undefined;
+  Explore: undefined;
   TransactionDetail: {transaction: TransactionInfo};
   TokenDetails: {tokenId: string};
   ManageTokens: undefined;

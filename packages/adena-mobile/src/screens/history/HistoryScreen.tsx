@@ -6,6 +6,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {useHistory} from '../../core/use-history';
 import type {MainStackParams} from '../../navigation/types';
 import {HistoryList} from '../../ui/history-list';
+import {TabBar} from '../../ui/tab-bar';
 import {colors} from '../../ui/theme';
 
 type Props = NativeStackScreenProps<MainStackParams, 'History'>;
@@ -14,7 +15,7 @@ type Props = NativeStackScreenProps<MainStackParams, 'History'>;
 export function HistoryScreen({navigation}: Props) {
   const history = useHistory({kind: 'all'});
   return (
-    <SafeAreaView style={styles.screen} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.screen} edges={['left', 'right']}>
       <ScrollView
         contentContainerStyle={styles.body}
         refreshControl={
@@ -36,6 +37,7 @@ export function HistoryScreen({navigation}: Props) {
           }
         />
       </ScrollView>
+      <TabBar current="History" />
     </SafeAreaView>
   );
 }

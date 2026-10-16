@@ -90,6 +90,16 @@ const mapFonts = <K extends string>(
     ]),
   ) as Record<K, TextStyle>;
 
+/**
+ * A font for a single-line TextInput: without lineHeight, which pushes the
+ * text toward the bottom of the field on iOS.
+ */
+export function inputFont(style: TextStyle): TextStyle {
+  const rest = {...style};
+  delete rest.lineHeight;
+  return rest;
+}
+
 /** Popup type scale (header4, body1Bold, ...). */
 export const fonts: Record<FontsType, TextStyle> = mapFonts(fontTokens);
 

@@ -23,12 +23,11 @@ import {copyWithExpiry} from '../security/sensitive-clipboard';
 import {
   CopyCheckIcon,
   ChevronDownIcon,
-  ChevronRightIcon,
   CopyIcon,
   DepositIcon,
-  GlobeIcon,
   SendIcon,
 } from '../ui/icons';
+import {TabBar} from '../ui/tab-bar';
 import {colors, colorTokens, fonts, radius} from '../ui/theme';
 import {TokenLogo} from '../ui/token-logo';
 
@@ -40,7 +39,10 @@ function splitAmount(value: number): {whole: string; fraction: string} {
   return {whole, fraction: fraction ? `.${fraction}` : ''};
 }
 
-/** The extension's wallet main: top menu, network band, balance, actions, tokens. */
+/**
+ * The extension's wallet main: top menu, network band, balance, Deposit and
+ * Send, tokens; NFTs, Explore and History are on the tab bar.
+ */
 export function HomeScreen({navigation}: Props) {
   const {net, address, account, accountNames} = useWallet();
   const [balance, setBalance] = useState<number | null>(null);
@@ -118,13 +120,6 @@ export function HomeScreen({navigation}: Props) {
         </View>
         <View style={styles.topRight}>
           <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Explore dApps"
-            hitSlop={8}
-            onPress={() => navigation.navigate('Browser')}>
-            <GlobeIcon />
-          </Pressable>
-          <Pressable
             testID="home-settings"
             accessibilityRole="button"
             accessibilityLabel="Settings"
@@ -175,11 +170,6 @@ export function HomeScreen({navigation}: Props) {
                 : navigation.navigate('Send')
             }
           />
-          <MainAction
-            label="Explore"
-            icon={<GlobeIcon size={19} />}
-            onPress={() => navigation.navigate('Browser')}
-          />
         </View>
         {tokens.shown.some(token => token.type === 'gno-native') ? null : (
           // The resource list did not load: GNOT still shows.
@@ -226,23 +216,8 @@ export function HomeScreen({navigation}: Props) {
           <ManageIcon width={16} height={16} />
           <Text style={styles.manageText}>Manage Tokens</Text>
         </Pressable>
-        <Pressable
-          testID="home-nft"
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('Nft')}
-          style={({pressed}) => [styles.token, pressed && styles.pressed]}>
-          <Text style={styles.tokenName}>NFTs</Text>
-          <ChevronRightIcon />
-        </Pressable>
-        <Pressable
-          testID="home-history"
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('History')}
-          style={({pressed}) => [styles.token, pressed && styles.pressed]}>
-          <Text style={styles.tokenName}>History</Text>
-          <ChevronRightIcon />
-        </Pressable>
       </ScrollView>
+      <TabBar current="Home" />
     </SafeAreaView>
   );
 }

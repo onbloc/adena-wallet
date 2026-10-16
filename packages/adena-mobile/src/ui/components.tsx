@@ -21,6 +21,7 @@ import {
   colors,
   colorTokens,
   fonts,
+  inputFont,
   monoFont,
   radius,
   spacing,
@@ -482,7 +483,7 @@ const styles = StyleSheet.create({
   field: {gap: 6},
   label: {...fonts.body2Reg, color: colors.textMuted},
   input: {
-    ...fonts.body2Reg,
+    ...inputFont(fonts.body2Reg),
     minHeight: 48,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -498,6 +499,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   inputMultiline: {
+    lineHeight: fonts.body2Reg.lineHeight,
     borderRadius: radius.md,
     minHeight: 120,
     textAlignVertical: 'top',

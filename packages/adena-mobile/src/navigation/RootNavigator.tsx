@@ -11,6 +11,7 @@ import {AccountDetailsScreen} from '../screens/accounts/AccountDetailsScreen';
 import {AccountsScreen} from '../screens/accounts/AccountsScreen';
 import {BrowserScreen} from '../browser/BrowserScreen';
 import {useWallet} from '../core/wallet-context';
+import {ExploreScreen} from '../screens/ExploreScreen';
 import {HomeScreen} from '../screens/HomeScreen';
 import {ConfirmMnemonicScreen} from '../screens/onboarding/ConfirmMnemonicScreen';
 import {CreateMnemonicScreen} from '../screens/onboarding/CreateMnemonicScreen';
@@ -75,6 +76,16 @@ const webHeader: NativeStackNavigationOptions = {
   contentStyle: {backgroundColor: webColors.background},
 };
 
+/**
+ * Home, NFTs, Explore and History are switched with the bottom tab bar,
+ * which replaces one with another: no animation and nothing to go back to.
+ */
+const tabScreen = {
+  animation: 'none',
+  gestureEnabled: false,
+  headerBackVisible: false,
+} as const;
+
 const Onboarding = createNativeStackNavigator<OnboardingStackParams>();
 const Main = createNativeStackNavigator<MainStackParams>();
 
@@ -103,7 +114,7 @@ function MainNavigator() {
       <Main.Screen
         name="Home"
         component={HomeScreen}
-        options={{headerShown: false}}
+        options={{...tabScreen, headerShown: false}}
       />
       <Main.Screen
         name="Receive"
@@ -131,7 +142,12 @@ function MainNavigator() {
       <Main.Screen
         name="History"
         component={HistoryScreen}
-        options={{title: 'History'}}
+        options={{...tabScreen, title: 'History'}}
+      />
+      <Main.Screen
+        name="Explore"
+        component={ExploreScreen}
+        options={{...tabScreen, title: 'Explore'}}
       />
       <Main.Screen
         name="TransactionDetail"
@@ -148,7 +164,11 @@ function MainNavigator() {
         component={AddTokenScreen}
         options={{title: 'Add Custom Token'}}
       />
-      <Main.Screen name="Nft" component={NftScreen} options={{title: 'NFTs'}} />
+      <Main.Screen
+        name="Nft"
+        component={NftScreen}
+        options={{...tabScreen, title: 'NFTs'}}
+      />
       <Main.Screen name="NftCollection" component={NftCollectionScreen} />
       <Main.Screen name="NftAsset" component={NftAssetScreen} />
       <Main.Screen

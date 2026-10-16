@@ -171,7 +171,7 @@ export function SendScreen({navigation, route}: Props) {
               setAmount(text);
               setError(null);
             }}
-            style={formBox.input}
+            style={[formBox.input, formBox.inputSingleLine]}
           />
           <Text style={styles.unit}>{symbol}</Text>
         </View>

@@ -19,6 +19,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNftBalance, useNftCollections} from '../../core/use-nft';
 import type {MainStackParams} from '../../navigation/types';
 import {NftImage, PinIcon} from '../../ui/nft';
+import {TabBar} from '../../ui/tab-bar';
 import {colors, colorTokens, fonts} from '../../ui/theme';
 
 type Props = NativeStackScreenProps<MainStackParams, 'Nft'>;
@@ -87,7 +88,7 @@ export function NftScreen({navigation}: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.screen} edges={['left', 'right']}>
       <ScrollView
         contentContainerStyle={styles.body}
         refreshControl={
@@ -99,6 +100,7 @@ export function NftScreen({navigation}: Props) {
         }>
         {body}
       </ScrollView>
+      <TabBar current="Nft" />
     </SafeAreaView>
   );
 }

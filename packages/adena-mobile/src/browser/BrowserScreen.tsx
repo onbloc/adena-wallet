@@ -10,7 +10,7 @@ import WebView, {
 import type {ShouldStartLoadRequest} from 'react-native-webview/lib/WebViewTypes';
 
 import type {MainStackParams} from '../navigation/types';
-import {colors, fonts, radius, spacing} from '../ui/theme';
+import {colors, fonts, inputFont, radius, spacing} from '../ui/theme';
 import {bridgeScript} from './bridge';
 import {routeToWallet} from './dapp-router';
 import {parsePageMessage} from './page-message';
@@ -21,7 +21,8 @@ type Props = NativeStackScreenProps<MainStackParams, 'Browser'>;
 
 const HOME_URL = 'https://gno.land';
 
-function normalizeInput(input: string): string {
+/** A typed address: https:// is assumed when no scheme is given. */
+export function normalizeInput(input: string): string {
   const trimmed = input.trim();
   return /^[a-z]+:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
@@ -179,7 +180,7 @@ const styles = StyleSheet.create({
   toolButton: {paddingHorizontal: spacing.xs, paddingVertical: spacing.xs},
   toolText: {...fonts.body2Bold, color: colors.text},
   address: {
-    ...fonts.body2Reg,
+    ...inputFont(fonts.body2Reg),
     flex: 1,
     minHeight: 36,
     borderWidth: 1,
