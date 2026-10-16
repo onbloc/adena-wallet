@@ -1,3 +1,5 @@
+import type {GRC721CollectionModel, GRC721Model} from '@types';
+
 export type OnboardingStackParams = {
   Welcome: undefined;
   CreateMnemonic: undefined;
@@ -11,8 +13,16 @@ export type MainStackParams = {
   Home: undefined;
   Receive: undefined;
   Send: {scannedAddress?: string} | undefined;
-  SendConfirm: {to: string; ugnot: string; memo: string};
-  QrScan: undefined;
+  SendConfirm:
+    | {kind: 'gnot'; to: string; ugnot: string; memo: string}
+    | {kind: 'nft'; to: string; token: GRC721Model; memo: string};
+  /** Where a scanned address goes back to. */
+  QrScan: {returnTo: 'Send' | 'NftSend'};
+  Nft: undefined;
+  NftCollection: {collection: GRC721CollectionModel};
+  NftAsset: {token: GRC721Model};
+  ManageNft: undefined;
+  NftSend: {token: GRC721Model; scannedAddress?: string};
   Browser: {url?: string} | undefined;
   Settings: undefined;
   Security: undefined;

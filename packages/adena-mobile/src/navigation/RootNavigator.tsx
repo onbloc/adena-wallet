@@ -15,6 +15,11 @@ import {CreateMnemonicScreen} from '../screens/onboarding/CreateMnemonicScreen';
 import {ImportWalletScreen} from '../screens/onboarding/ImportWalletScreen';
 import {SetPasswordScreen} from '../screens/onboarding/SetPasswordScreen';
 import {WelcomeScreen} from '../screens/onboarding/WelcomeScreen';
+import {ManageNftScreen} from '../screens/nft/ManageNftScreen';
+import {NftAssetScreen} from '../screens/nft/NftAssetScreen';
+import {NftCollectionScreen} from '../screens/nft/NftCollectionScreen';
+import {NftScreen} from '../screens/nft/NftScreen';
+import {NftSendScreen} from '../screens/nft/NftSendScreen';
 import {QrScanScreen} from '../screens/QrScanScreen';
 import {ReceiveScreen} from '../screens/ReceiveScreen';
 import {SendConfirmScreen} from '../screens/SendConfirmScreen';
@@ -105,7 +110,22 @@ function MainNavigator() {
       <Main.Screen
         name="SendConfirm"
         component={SendConfirmScreen}
-        options={{title: 'Sending GNOT'}}
+        options={({route}) => ({
+          title: route.params.kind === 'nft' ? 'Sending NFT' : 'Sending GNOT',
+        })}
+      />
+      <Main.Screen name="Nft" component={NftScreen} options={{title: 'NFTs'}} />
+      <Main.Screen name="NftCollection" component={NftCollectionScreen} />
+      <Main.Screen name="NftAsset" component={NftAssetScreen} />
+      <Main.Screen
+        name="ManageNft"
+        component={ManageNftScreen}
+        options={{title: 'Manage Collectables'}}
+      />
+      <Main.Screen
+        name="NftSend"
+        component={NftSendScreen}
+        options={{title: 'Send NFT'}}
       />
       <Main.Screen
         name="QrScan"

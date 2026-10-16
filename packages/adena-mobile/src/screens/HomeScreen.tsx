@@ -18,6 +18,7 @@ import type {MainStackParams} from '../navigation/types';
 import {copyWithExpiry} from '../security/sensitive-clipboard';
 import {
   CopyCheckIcon,
+  ChevronRightIcon,
   CopyIcon,
   DepositIcon,
   GlobeIcon,
@@ -161,6 +162,14 @@ export function HomeScreen({navigation}: Props) {
             <Text style={styles.tokenFraction}>{amount?.fraction}</Text> GNOT
           </Text>
         </View>
+        <Pressable
+          testID="home-nft"
+          accessibilityRole="button"
+          onPress={() => navigation.navigate('Nft')}
+          style={({pressed}) => [styles.token, pressed && styles.pressed]}>
+          <Text style={styles.tokenName}>NFTs</Text>
+          <ChevronRightIcon />
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -236,6 +245,7 @@ const styles = StyleSheet.create({
   actionPressed: {backgroundColor: neutral._6},
   actionLabel: {...fonts.body2Bold, lineHeight: 16, color: colors.text},
   token: {
+    marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 13,

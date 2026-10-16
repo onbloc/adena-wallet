@@ -24,7 +24,7 @@ export function addressFromQr(value: string): string {
     .split(/[?#]/)[0];
 }
 
-export function QrScanScreen({navigation}: Props) {
+export function QrScanScreen({navigation, route}: Props) {
   const {net} = useWallet();
   const {hasPermission, requestPermission} = useCameraPermission();
   const device = useCameraDevice('back');
@@ -46,11 +46,12 @@ export function QrScanScreen({navigation}: Props) {
       const candidate = addressFromQr(value);
       if (isAddressForNetwork(candidate, net?.network.addressPrefix ?? 'g')) {
         handled.current = true;
+        // merge keeps the other params of the screen that asked (e.g. the NFT).
         navigation.navigate({
-          name: 'Send',
+          name: route.params.returnTo,
           params: {scannedAddress: candidate},
           merge: true,
-        });
+        } as never);
       }
     },
   });

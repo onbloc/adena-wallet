@@ -155,3 +155,38 @@ describe('custom networks', () => {
     );
   });
 });
+
+describe('NFT collections', () => {
+  it('stores collections and pins per account and chain', async () => {
+    const net = wallet.net!;
+    const accountId = wallet.account!.id;
+    const chainId = net.network.chainId;
+    const collection = {
+      tokenId: '1',
+      networkId: chainId,
+      display: true,
+      type: 'grc721' as const,
+      packagePath: 'gno.land/r/demo/nft',
+      name: 'Demo',
+      symbol: 'DMO',
+      image: null,
+      isTokenUri: true,
+      isMetadata: false,
+    };
+    await net.tokenService.saveAccountGRC721Collections(accountId, chainId, [
+      collection,
+    ]);
+    await net.tokenService.saveAccountGRC721PinnedPackages(accountId, chainId, [
+      collection.packagePath,
+    ]);
+    expect(
+      await net.tokenService.getAccountGRC721Collections(accountId, chainId),
+    ).toEqual([collection]);
+    expect(
+      await net.tokenService.getAccountGRC721PinnedPackages(accountId, chainId),
+    ).toEqual([collection.packagePath]);
+    expect(
+      await net.tokenService.getAccountGRC721Collections(accountId, 'other-1'),
+    ).toEqual([]);
+  });
+});

@@ -6,6 +6,7 @@ import {
   SigningRiskAssessment,
 } from '@common/validation/validation-signing-risk';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {createMessageOfVmCall} from '@services/transaction/message/vm/vm';
 import type {Document} from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, {useEffect, useState} from 'react';
@@ -17,6 +18,7 @@ import {useWallet} from '../core/wallet-context';
 import type {MainStackParams} from '../navigation/types';
 import {useReauth} from '../security/reauth';
 import {Address} from '../ui/address';
+import {NftImage} from '../ui/nft';
 import {
   Body,
   Button,
@@ -46,9 +48,36 @@ type State =
   | {phase: 'sending'}
   | {phase: 'sent'; hash: string};
 
-/** The extension's transfer summary, broadcasting and result screens. */
+/** The message the confirm screen simulates and signs for each kind. */
+export function transferMessage(params: Props['route']['params'], from: string) {
+  if (params.kind === 'nft') {
+    // The extension's GRC721 transfer: TransferFrom on the collection realm.
+    return createMessageOfVmCall({
+      caller: from,
+      send: '',
+      max_deposit: '',
+      pkgPath: params.token.packagePath,
+      func: 'TransferFrom',
+      args: [from, params.to, params.token.tokenId],
+    });
+  }
+  return {
+    type: '/bank.MsgSend',
+    value: {
+      from_address: from,
+      to_address: params.to,
+      amount: `${params.ugnot}${GNOT_TOKEN.denom}`,
+    },
+  };
+}
+
+/**
+ * The extension's transfer summary, broadcasting and result screens, for GNOT
+ * and for an NFT (GRC721).
+ */
 export function SendConfirmScreen({route, navigation}: Props) {
-  const {to, ugnot, memo} = route.params;
+  const params = route.params;
+  const {to, memo} = params;
   const {net, wallet, account, address} = useWallet();
   const requestReauth = useReauth();
   const [state, setState] = useState<State>({phase: 'preparing'});
@@ -59,14 +88,7 @@ export function SendConfirmScreen({route, navigation}: Props) {
     }
     (async () => {
       try {
-        const message = {
-          type: '/bank.MsgSend',
-          value: {
-            from_address: address,
-            to_address: to,
-            amount: `${ugnot}${GNOT_TOKEN.denom}`,
-          },
-        };
+        const message = transferMessage(params, address);
         const draft = await net.transactionService.createDocument(
           account,
           net.network.networkId,
@@ -91,14 +113,17 @@ export function SendConfirmScreen({route, navigation}: Props) {
         });
       }
     })();
-  }, [net, account, address, to, ugnot, memo]);
+    // `params` is fixed for the life of this screen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [net, account, address, to, memo]);
 
   const confirm = async () => {
     if (state.phase !== 'ready' || !net || !wallet || !account) {
       return;
     }
     const {document} = state;
-    if (!(await requestReauth('Approve sending GNOT'))) {
+    const what = params.kind === 'nft' ? 'NFT' : 'GNOT';
+    if (!(await requestReauth(`Approve sending ${what}`))) {
       return;
     }
     setState({phase: 'sending'});
@@ -164,8 +189,12 @@ export function SendConfirmScreen({route, navigation}: Props) {
     state.phase === 'ready' ? (state.document.msgs[0] as any) : null;
   const total =
     state.phase === 'ready'
-      ? BigNumber(ugnot).plus(state.fee.gasFee).toFixed(0)
+      ? BigNumber(params.kind === 'gnot' ? params.ugnot : 0)
+          .plus(state.fee.gasFee)
+          .toFixed(0)
       : null;
+  const recipient =
+    sendMessage?.value.to_address ?? sendMessage?.value.args?.[1] ?? '';
 
   return (
     <Screen
@@ -186,21 +215,32 @@ export function SendConfirmScreen({route, navigation}: Props) {
       {state.phase === 'failed' && <ErrorBanner>{state.message}</ErrorBanner>}
       {sendMessage && state.phase === 'ready' && (
         <>
-          <View style={styles.amountCard}>
-            <View style={styles.tokenLogo}>
-              <GnotLogo width={22} height={22} />
+          {params.kind === 'nft' ? (
+            <View style={styles.nftCard}>
+              <View style={styles.nftImage}>
+                <NftImage token={params.token} />
+              </View>
+              <Text style={styles.tokenName} numberOfLines={1}>
+                {params.token.name} #{params.token.tokenId}
+              </Text>
             </View>
-            <Text style={styles.tokenName}>Gnoland</Text>
-            <Text style={styles.amount}>
-              {formatGnot(
-                sendMessage.value.amount.replace(GNOT_TOKEN.denom, ''),
-              )}
-            </Text>
-          </View>
+          ) : (
+            <View style={styles.amountCard}>
+              <View style={styles.tokenLogo}>
+                <GnotLogo width={22} height={22} />
+              </View>
+              <Text style={styles.tokenName}>Gnoland</Text>
+              <Text style={styles.amount}>
+                {formatGnot(
+                  sendMessage.value.amount.replace(GNOT_TOKEN.denom, ''),
+                )}
+              </Text>
+            </View>
+          )}
           <SummaryCard>
             <SummaryRow
               label="To"
-              value={<Address value={sendMessage.value.to_address} />}
+              value={<Address value={recipient} />}
               stacked
             />
             <SummaryRow
@@ -254,4 +294,13 @@ const styles = StyleSheet.create({
   },
   tokenName: {...fonts.body2Bold, color: colors.text, flex: 1},
   amount: {...fonts.body2Reg, color: colors.text},
+  nftCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderRadius: 18,
+    backgroundColor: neutral._9,
+  },
+  nftImage: {width: 60, height: 60, borderRadius: 8, overflow: 'hidden'},
 });

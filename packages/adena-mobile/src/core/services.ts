@@ -7,6 +7,7 @@ import {
 import {GnoProvider} from '@common/provider/gno/gno-provider';
 import {AdenaStorage} from '@common/storage/storage';
 import {ChainRepository} from '@repositories/common/chain';
+import {TokenRepository} from '@repositories/common/token';
 import {WalletRepository} from '@repositories/wallet/wallet';
 import {WalletAccountRepository} from '@repositories/wallet/wallet-account';
 import {WalletAddressRepository} from '@repositories/wallet/wallet-address';
@@ -15,6 +16,7 @@ import {WalletEstablishAtomOneRepository} from '@repositories/wallet/wallet-esta
 import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
 import GNO_CHAIN_DATA from '@resources/chains/chains.json';
 import {ChainService} from '@services/resource/chain';
+import {TokenService} from '@services/resource/token';
 import {TransactionService} from '@services/transaction/transaction';
 import {WalletService} from '@services/wallet/wallet';
 import {WalletAccountService} from '@services/wallet/wallet-account';
@@ -24,6 +26,7 @@ import {WalletEstablishService} from '@services/wallet/wallet-establish';
 import {WalletEstablishAtomOneService} from '@services/wallet/wallet-establish-atomone';
 import type {NetworkMetainfo} from '@types';
 import {ChainRegistry, createChainRegistry} from 'adena-module';
+import axios from 'axios';
 
 import {bundledResourceClient} from '../platform/bundled-resources';
 
@@ -96,9 +99,22 @@ export function createNetworkServices(
     base.chainRegistry,
     null,
   );
+  // NFTs (GRC721): the network's API server, the chain over ABCI, and session
+  // storage for token URIs, as in the extension.
+  const tokenService = new TokenService(
+    new TokenRepository(
+      AdenaStorage.local(),
+      axios.create({}),
+      network,
+      gnoProvider,
+      undefined,
+      AdenaStorage.session(),
+    ),
+  );
   return {
     network,
     gnoProvider,
+    tokenService,
     accountService,
     balanceService,
     transactionService,
