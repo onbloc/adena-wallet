@@ -8,6 +8,10 @@ import {getProtectedStorageDirectory} from '../security/native-security';
 const STORAGE_KEY_SERVICE = 'adena.mobile.storage-key';
 const CANARY_KEY = '__adena_canary__';
 const CANARY_VALUE = 'adena-storage-v1';
+// An unencrypted MMKV beside the wallet files. It holds one flag and no
+// secrets: that encrypted storage was set up on this install.
+const META_ID = 'adena-meta';
+const META_INITIALIZED = 'storage-initialized';
 
 // MMKV accepts at most 16 bytes of key. 12 random bytes encode to exactly 16
 // base64url characters (96 bits). MMKV's cipher is a second layer: the wallet
@@ -23,11 +27,14 @@ async function saveStorageKey(
   key: string,
   hardware: boolean,
 ): Promise<boolean> {
+  // No `cloudSync` option: react-native-keychain 10 on iOS turns iCloud sync
+  // ON whenever the option is present, even as `false`, and then cannot find
+  // the item again. Left out, the item is not synchronizable, and
+  // ...THIS_DEVICE_ONLY keeps it off backups and other devices.
   const result = await Keychain.setGenericPassword('adena', key, {
     service: STORAGE_KEY_SERVICE,
     accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
     storage: Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
-    cloudSync: false,
     ...(hardware
       ? {securityLevel: Keychain.SECURITY_LEVEL.SECURE_HARDWARE}
       : {}),
@@ -35,9 +42,9 @@ async function saveStorageKey(
   return result !== false;
 }
 
-async function loadOrCreateStorageKey(): Promise<
-  {key: string} & SecureStorageStatus
-> {
+async function loadOrCreateStorageKey(
+  mayCreate: boolean,
+): Promise<{key: string} & SecureStorageStatus> {
   const existing = await Keychain.getGenericPassword({
     service: STORAGE_KEY_SERVICE,
   });
@@ -47,6 +54,13 @@ async function loadOrCreateStorageKey(): Promise<
       key: existing.password,
       hardwareBacked: level === Keychain.SECURITY_LEVEL.SECURE_HARDWARE,
     };
+  }
+  if (!mayCreate) {
+    // MMKV opened with a new key finds the old files unreadable and starts
+    // them empty, which would silently drop the wallet. Stop here instead.
+    throw new Error(
+      'The storage key for this install is missing from the keychain',
+    );
   }
 
   const key = toBase64UrlNoPadding(
@@ -114,12 +128,16 @@ export interface OpenedStorage extends SecureStorageStatus {
 /**
  * Opens the wallet's persistent storage: MMKV files in a backup-excluded
  * directory, encrypted with a key that lives only in this device's
- * Keychain/Keystore. Refuses to continue if the files were written with a
- * different key, instead of reading garbage or overwriting them.
+ * Keychain/Keystore. Refuses to continue, instead of reading garbage or
+ * starting the files over, when the key of an existing install is missing or
+ * the files were written with a different key.
  */
 export async function openSecureStorage(): Promise<OpenedStorage> {
-  const {key, hardwareBacked} = await loadOrCreateStorageKey();
   const path = await getProtectedStorageDirectory();
+  const meta = new MMKV({id: META_ID, path});
+  const {key, hardwareBacked} = await loadOrCreateStorageKey(
+    !meta.getBoolean(META_INITIALIZED),
+  );
 
   const open = (id: string): MMKV => {
     const mmkv = new MMKV({id, path, encryptionKey: key});
@@ -134,9 +152,11 @@ export async function openSecureStorage(): Promise<OpenedStorage> {
     return mmkv;
   };
 
-  return {
+  const opened = {
     local: new MmkvStorage(open('adena-local')),
     cache: new MmkvStorage(open('adena-cache')),
     hardwareBacked,
   };
+  meta.set(META_INITIALIZED, true);
+  return opened;
 }

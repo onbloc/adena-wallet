@@ -165,16 +165,22 @@ export function applyNetworkEdit(
   };
 }
 
-/** Default networks are hidden rather than removed, so "reset" can bring them back. */
+/**
+ * Networks shipped in the bundled list are hidden rather than removed: the
+ * chain repository re-adds any bundled entry missing from storage on the next
+ * start, so a plain removal would come back. That covers bundled entries that
+ * are not `default` too (e.g. GnoSwap Dev), which the extension misses.
+ */
 export function removeNetwork(
   networks: NetworkMetainfo[],
   id: string,
+  bundledIds: ReadonlySet<string>,
 ): NetworkMetainfo[] {
   const target = networks.find(network => network.id === id);
   if (!target) {
     return networks;
   }
-  return target.default || target.id === 'teritori'
+  return target.default || bundledIds.has(id)
     ? networks.map(network =>
         network.id === id ? {...network, deleted: true} : network,
       )

@@ -16,6 +16,14 @@ export enum STORAGE_TYPE {
   AES_GCM = 'KeystoreAESGCM',
 }
 
+/**
+ * react-native-keychain 10 on iOS treats a present `cloudSync` option as
+ * true, even `false`, and stores a synchronizable item that a query without
+ * the option does not find. Items are keyed the same way here.
+ */
+const itemKey = (options: any) =>
+  `${options.service}|sync=${'cloudSync' in options}`;
+
 const items = new Map<
   string,
   {username: string; password: string; options: any}
@@ -42,12 +50,12 @@ export async function setGenericPassword(
   ) {
     throw new Error('Secure hardware is not available');
   }
-  items.set(options.service, {username, password, options});
+  items.set(itemKey(options), {username, password, options});
   return {service: options.service, storage: options.storage};
 }
 
 export async function getGenericPassword(options: any = {}) {
-  const item = items.get(options.service);
+  const item = items.get(itemKey(options));
   return item
     ? {
         service: options.service,
@@ -58,11 +66,11 @@ export async function getGenericPassword(options: any = {}) {
 }
 
 export async function hasGenericPassword(options: any = {}) {
-  return items.has(options.service);
+  return items.has(itemKey(options));
 }
 
 export async function resetGenericPassword(options: any = {}) {
-  return items.delete(options.service);
+  return items.delete(itemKey(options));
 }
 
 export async function getSecurityLevel() {

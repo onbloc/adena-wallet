@@ -121,8 +121,15 @@ describe('network list changes', () => {
   it('hides a default network and removes a custom one', () => {
     const custom = makeCustomNetwork(input);
     const list = [network({}), custom];
-    expect(removeNetwork(list, 'test')[0].deleted).toBe(true);
-    expect(removeNetwork(list, custom.id)).toHaveLength(1);
+    expect(removeNetwork(list, 'test', new Set())[0].deleted).toBe(true);
+    expect(removeNetwork(list, custom.id, new Set())).toHaveLength(1);
+  });
+
+  it('hides a bundled network that is not a default, so it stays gone', () => {
+    // GnoSwap Dev ships in chains.json with `default: false`.
+    const bundled = network({id: 'gnoswap', default: false});
+    const next = removeNetwork([bundled], 'gnoswap', new Set(['gnoswap']));
+    expect(next).toEqual([{...bundled, deleted: true}]);
   });
 });
 

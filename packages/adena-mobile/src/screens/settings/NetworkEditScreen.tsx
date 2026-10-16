@@ -112,17 +112,24 @@ export function NetworkEditScreen({navigation, route}: Props) {
         text: isDefault ? 'Reset' : 'Remove',
         style: 'destructive',
         onPress: async () => {
+          const bundledList = await base.chainService
+            .fetchDefaultNetworks()
+            .catch(() => []);
           if (isDefault) {
-            const bundled = (
-              await base.chainService.fetchDefaultNetworks().catch(() => [])
-            ).find(item => item.id === origin.id);
+            const bundled = bundledList.find(item => item.id === origin.id);
             if (bundled) {
               await saveNetworks(
                 networks.map(item => (item.id === origin.id ? bundled : item)),
               );
             }
           } else {
-            await saveNetworks(removeNetwork(networks, origin.id));
+            await saveNetworks(
+              removeNetwork(
+                networks,
+                origin.id,
+                new Set(bundledList.map(item => item.id)),
+              ),
+            );
           }
           navigation.goBack();
         },

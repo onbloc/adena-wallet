@@ -146,13 +146,36 @@ describe('custom networks', () => {
 
   it('falls back to another network when the current one is removed', async () => {
     await act(async () => {
-      await wallet.saveNetworks(removeNetwork(wallet.networks, custom.id));
+      await wallet.saveNetworks(
+        removeNetwork(wallet.networks, custom.id, new Set()),
+      );
     });
     expect(wallet.networks.some(item => item.id === custom.id)).toBe(false);
     expect(wallet.net?.network.id).not.toBe(custom.id);
     expect(await wallet.base.chainService.getCurrentNetworkId()).toBe(
       wallet.net?.network.id,
     );
+  });
+});
+
+describe('bundled networks', () => {
+  it('keeps a removed bundled network hidden when the list is read again', async () => {
+    const bundled = await wallet.base.chainService.fetchDefaultNetworks();
+    const target = bundled.find(item => !item.default);
+    expect(target).toBeDefined();
+    await act(async () => {
+      await wallet.saveNetworks(
+        removeNetwork(
+          wallet.networks,
+          target!.id,
+          new Set(bundled.map(item => item.id)),
+        ),
+      );
+    });
+    // What the app reads on its next start.
+    const reread = await wallet.base.chainService.getNetworks();
+    const shown = reread.filter(item => !item.deleted).map(item => item.id);
+    expect(shown).not.toContain(target!.id);
   });
 });
 

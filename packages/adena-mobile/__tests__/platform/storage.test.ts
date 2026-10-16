@@ -2,30 +2,32 @@ import * as Keychain from 'react-native-keychain';
 
 const mockMmkvFiles = new Map<
   string,
-  {key?: string; values: Map<string, string>}
+  {key?: string; values: Map<string, any>}
 >();
 
 jest.mock('react-native-mmkv', () => ({
   MMKV: class {
-    private readonly file: {key?: string; values: Map<string, string>};
-
-    private readonly readable: boolean;
+    private readonly file: {key?: string; values: Map<string, any>};
 
     constructor({id, encryptionKey}: {id: string; encryptionKey?: string}) {
-      if (!mockMmkvFiles.has(id)) {
+      const existing = mockMmkvFiles.get(id);
+      // What react-native-mmkv 3.3 did on the iOS simulator: files written
+      // with another key come up empty and are started over.
+      if (!existing || existing.key !== encryptionKey) {
         mockMmkvFiles.set(id, {key: encryptionKey, values: new Map()});
       }
       this.file = mockMmkvFiles.get(id)!;
-      // A different key decrypts to garbage: model it as unreadable values.
-      this.readable = this.file.key === encryptionKey;
     }
 
     getString(key: string) {
-      const value = this.file.values.get(key);
-      return value === undefined || this.readable ? value : '\u0000garbage';
+      return this.file.values.get(key);
     }
 
-    set(key: string, value: string) {
+    getBoolean(key: string) {
+      return this.file.values.get(key);
+    }
+
+    set(key: string, value: any) {
       this.file.values.set(key, value);
     }
 
@@ -53,7 +55,7 @@ beforeEach(() => {
 });
 
 describe('openSecureStorage', () => {
-  it('creates a device-only, non-syncing storage key and round-trips JSON values', async () => {
+  it('creates a device-only storage key and round-trips JSON values', async () => {
     const {local, hardwareBacked} = await openSecureStorage();
     await local.set('NETWORKS', [{id: 'test12'}]);
 
@@ -64,9 +66,13 @@ describe('openSecureStorage', () => {
     expect(item.password).toHaveLength(16);
     expect(item.options).toMatchObject({
       accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-      cloudSync: false,
       securityLevel: Keychain.SECURITY_LEVEL.SECURE_HARDWARE,
     });
+    // Any `cloudSync`, even false, turns iCloud sync on (see storage.ts).
+    expect(item.options).not.toHaveProperty('cloudSync');
+    expect(
+      await Keychain.getGenericPassword({service: item.options.service}),
+    ).toBeTruthy();
   });
 
   it('reopens existing files with the same key', async () => {
@@ -83,11 +89,26 @@ describe('openSecureStorage', () => {
     expect(hardwareBacked).toBe(false);
   });
 
-  it('refuses files written with another key instead of overwriting them', async () => {
-    await openSecureStorage();
+  it('refuses to start over when the key of an existing install is missing', async () => {
+    const first = await openSecureStorage();
+    await first.local.set('SERIALIZED', 'vault');
     keychain.__reset();
 
-    await expect(openSecureStorage()).rejects.toThrow('cannot be decrypted');
+    await expect(openSecureStorage()).rejects.toThrow('missing from the keychain');
+    // No new key was made, so the files are untouched.
+    expect(keychain.__items.size).toBe(0);
+    expect(mockMmkvFiles.get('adena-local')?.values.get('SERIALIZED')).toBe(
+      '"vault"',
+    );
+  });
+
+  it('starts fresh after a reinstall that left the old key in the keychain', async () => {
+    await openSecureStorage();
+    // iOS keeps keychain items when an app is deleted; its files are gone.
+    mockMmkvFiles.clear();
+
+    const {local} = await openSecureStorage();
+    expect(await local.get('SERIALIZED')).toBeUndefined();
   });
 
   it('keeps the canary when the local storage is cleared', async () => {

@@ -16,7 +16,8 @@ const ESCROW_OPTIONS = {
   accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_CURRENT_SET,
   securityLevel: Keychain.SECURITY_LEVEL.SECURE_HARDWARE,
   storage: Keychain.STORAGE_TYPE.AES_GCM,
-  cloudSync: false,
+  // No `cloudSync`: react-native-keychain 10 on iOS enables iCloud sync when
+  // the option is present at all, even as `false` (see platform/storage.ts).
 };
 
 export async function isBiometricUnlockAvailable(): Promise<boolean> {
