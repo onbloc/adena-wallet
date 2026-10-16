@@ -1,5 +1,6 @@
+import {useFocusEffect} from '@react-navigation/native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {StyleSheet, Switch, Text} from 'react-native';
 
 import {useTokens} from '../../core/use-tokens';
@@ -12,7 +13,14 @@ type Props = NativeStackScreenProps<MainStackParams, 'ManageTokens'>;
 
 /** The extension's Manage Tokens: search and show/hide; GNOT always shows. */
 export function ManageTokensScreen({navigation}: Props) {
-  const {tokens, setDisplay} = useTokens();
+  const {tokens, setDisplay, refresh} = useTokens();
+
+  // Back from Add Custom Token: show what was added.
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
   const [keyword, setKeyword] = useState('');
   const query = keyword.trim().toLowerCase();
   const filtered = tokens.filter(

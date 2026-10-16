@@ -2,6 +2,7 @@ import type {
   GRC20TokenModel,
   GRC721CollectionModel,
   GRC721Model,
+  TransactionInfo,
 } from '@types';
 
 export type OnboardingStackParams = {
@@ -19,6 +20,8 @@ export type MainStackParams = {
   /** Without `tokenId`, sends GNOT. */
   Send: {tokenId?: string; scannedAddress?: string} | undefined;
   SelectToken: undefined;
+  History: undefined;
+  TransactionDetail: {transaction: TransactionInfo};
   TokenDetails: {tokenId: string};
   ManageTokens: undefined;
   AddToken: undefined;

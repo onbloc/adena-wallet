@@ -1,6 +1,7 @@
 import GnotLogo from '@assets/gnot-logo-white.svg';
 import ManageIcon from '@assets/main-manage-tokens-filter.svg';
 import MenuIcon from '@assets/menu.svg';
+import {useFocusEffect} from '@react-navigation/native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import BigNumber from 'bignumber.js';
 import React, {useCallback, useEffect, useState} from 'react';
@@ -69,9 +70,12 @@ export function HomeScreen({navigation}: Props) {
     }
   }, [net, address, refreshTokens]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Also on return from Manage Tokens, a send or a network change.
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   useEffect(() => {
     if (!copied) {
@@ -228,6 +232,14 @@ export function HomeScreen({navigation}: Props) {
           onPress={() => navigation.navigate('Nft')}
           style={({pressed}) => [styles.token, pressed && styles.pressed]}>
           <Text style={styles.tokenName}>NFTs</Text>
+          <ChevronRightIcon />
+        </Pressable>
+        <Pressable
+          testID="home-history"
+          accessibilityRole="button"
+          onPress={() => navigation.navigate('History')}
+          style={({pressed}) => [styles.token, pressed && styles.pressed]}>
+          <Text style={styles.tokenName}>History</Text>
           <ChevronRightIcon />
         </Pressable>
       </ScrollView>

@@ -9,6 +9,8 @@ import {GnoProvider} from '@common/provider/gno/gno-provider';
 import {AdenaStorage} from '@common/storage/storage';
 import {ChainRepository} from '@repositories/common/chain';
 import {TokenRepository} from '@repositories/common/token';
+import {TransactionHistoryApiRepository} from '@repositories/transaction/transaction-history-api';
+import {TransactionHistoryIndexerRepository} from '@repositories/transaction/transaction-history-indexer';
 import {WalletRepository} from '@repositories/wallet/wallet';
 import {WalletAccountRepository} from '@repositories/wallet/wallet-account';
 import {WalletAddressRepository} from '@repositories/wallet/wallet-address';
@@ -19,6 +21,7 @@ import GNO_CHAIN_DATA from '@resources/chains/chains.json';
 import {ChainService} from '@services/resource/chain';
 import {TokenService} from '@services/resource/token';
 import {TransactionService} from '@services/transaction/transaction';
+import {TransactionHistoryService} from '@services/transaction/transaction-history';
 import {WalletService} from '@services/wallet/wallet';
 import {WalletAccountService} from '@services/wallet/wallet-account';
 import {WalletAddressBookService} from '@services/wallet/wallet-address-book';
@@ -114,10 +117,20 @@ export function createNetworkServices(
       AdenaStorage.session(),
     ),
   );
+  // History from the API server where the network has one, else the indexer
+  // (none for a custom network without either), as in the extension.
+  const historyAxios = axios.create({});
+  const transactionHistoryService = new TransactionHistoryService(
+    gnoProvider,
+    network.apiUrl
+      ? new TransactionHistoryApiRepository(historyAxios, network)
+      : new TransactionHistoryIndexerRepository(historyAxios, network),
+  );
   return {
     network,
     gnoProvider,
     tokenService,
+    transactionHistoryService,
     accountService,
     balanceService,
     transactionService,

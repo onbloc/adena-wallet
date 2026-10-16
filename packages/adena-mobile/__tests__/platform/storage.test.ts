@@ -121,6 +121,13 @@ describe('openSecureStorage', () => {
   });
 });
 
+it('reads the keys the extension seeds on install as empty objects', async () => {
+  const {local} = await openSecureStorage();
+  expect(await local.get('ACCOUNT_TOKEN_METAINFOS')).toEqual({});
+  expect(await local.get('ACCOUNT_NAMES')).toEqual({});
+  expect(await local.get('SERIALIZED')).toBeUndefined();
+});
+
 describe('MemoryStorage', () => {
   it('answers missing keys with an empty string like chrome.storage.session', async () => {
     const storage = new MemoryStorage();

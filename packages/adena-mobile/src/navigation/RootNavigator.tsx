@@ -22,6 +22,8 @@ import {NftAssetScreen} from '../screens/nft/NftAssetScreen';
 import {NftCollectionScreen} from '../screens/nft/NftCollectionScreen';
 import {NftScreen} from '../screens/nft/NftScreen';
 import {NftSendScreen} from '../screens/nft/NftSendScreen';
+import {HistoryScreen} from '../screens/history/HistoryScreen';
+import {TransactionDetailScreen} from '../screens/history/TransactionDetailScreen';
 import {QrScanScreen} from '../screens/QrScanScreen';
 import {AddTokenScreen} from '../screens/tokens/AddTokenScreen';
 import {ManageTokensScreen} from '../screens/tokens/ManageTokensScreen';
@@ -126,6 +128,16 @@ function MainNavigator() {
         options={{title: 'Send'}}
       />
       <Main.Screen name="TokenDetails" component={TokenDetailsScreen} />
+      <Main.Screen
+        name="History"
+        component={HistoryScreen}
+        options={{title: 'History'}}
+      />
+      <Main.Screen
+        name="TransactionDetail"
+        component={TransactionDetailScreen}
+        options={{title: 'Transaction'}}
+      />
       <Main.Screen
         name="ManageTokens"
         component={ManageTokensScreen}

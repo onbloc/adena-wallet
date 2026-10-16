@@ -75,13 +75,28 @@ async function loadOrCreateStorageKey(
   throw new Error('Could not store the storage key in the keychain');
 }
 
+/**
+ * Object values the extension's storage migration writes on install. Its
+ * repositories read these keys without a null check (e.g. the token list does
+ * `stored[accountId]`), and mobile runs no migration, so a missing key reads
+ * as the same empty object instead of undefined.
+ */
+const INSTALL_DEFAULTS: Record<string, () => unknown> = {
+  ACCOUNT_NAMES: () => ({}),
+  ESTABLISH_SITES: () => ({}),
+  ACCOUNT_TOKEN_METAINFOS: () => ({}),
+  ACCOUNT_GRC721_COLLECTIONS: () => ({}),
+  ACCOUNT_GRC721_PINNED_PACKAGES: () => ({}),
+  SESSIONS: () => ({}),
+};
+
 /** `Storage` (from the extension) on top of an encrypted MMKV instance. */
 export class MmkvStorage implements Storage {
   constructor(private readonly mmkv: MMKV) {}
 
   get = async (key: string): Promise<any> => {
     const raw = this.mmkv.getString(key);
-    return raw === undefined ? undefined : JSON.parse(raw);
+    return raw === undefined ? INSTALL_DEFAULTS[key]?.() : JSON.parse(raw);
   };
 
   set = async (key: string, value: any): Promise<void> => {

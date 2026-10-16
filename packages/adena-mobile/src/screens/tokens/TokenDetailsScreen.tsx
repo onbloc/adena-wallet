@@ -1,20 +1,29 @@
+import {isTokenPath} from '@common/utils/grc20-token-path';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useLayoutEffect} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
 import {formatTokenAmount} from '../../core/tokens';
+import {useHistory} from '../../core/use-history';
 import {useTokens} from '../../core/use-tokens';
 import type {MainStackParams} from '../../navigation/types';
 import {Body, Button, Screen} from '../../ui/components';
+import {HistoryList} from '../../ui/history-list';
 import {colors, fonts} from '../../ui/theme';
 import {TokenLogo} from '../../ui/token-logo';
 
 type Props = NativeStackScreenProps<MainStackParams, 'TokenDetails'>;
 
-/** The extension's token details: balance, Deposit and Send. */
+/** The extension's token details: balance, Deposit, Send and the token's history. */
 export function TokenDetailsScreen({navigation, route}: Props) {
   const {tokens, balances, loading} = useTokens();
   const token = tokens.find(item => item.tokenId === route.params.tokenId);
+  // Decided from the id, so the right history loads before the token list does.
+  const history = useHistory(
+    isTokenPath(route.params.tokenId)
+      ? {kind: 'grc20', tokenPath: route.params.tokenId}
+      : {kind: 'native'},
+  );
 
   useLayoutEffect(() => {
     navigation.setOptions({title: token?.name ?? ''});
@@ -61,6 +70,17 @@ export function TokenDetailsScreen({navigation, route}: Props) {
           style={styles.flex}
         />
       </View>
+      <HistoryList
+        items={history.items}
+        loading={history.loading}
+        failed={history.failed}
+        hasMore={history.hasMore}
+        supported={history.supported}
+        onLoadMore={history.loadMore}
+        onPressItem={transaction =>
+          navigation.navigate('TransactionDetail', {transaction})
+        }
+      />
     </Screen>
   );
 }

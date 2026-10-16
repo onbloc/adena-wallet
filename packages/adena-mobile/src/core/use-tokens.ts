@@ -18,6 +18,7 @@ export function useTokens() {
   const [tokens, setTokens] = useState<TokenModel[]>([]);
   const [balances, setBalances] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const accountId = account?.id;
 
   const refresh = useCallback(async () => {
@@ -25,6 +26,7 @@ export function useTokens() {
       return;
     }
     setLoading(true);
+    setFailed(false);
     try {
       const list = await syncTokenList(net, accountId, address);
       setTokens(list);
@@ -36,6 +38,10 @@ export function useTokens() {
       setBalances(
         Object.fromEntries(read.map(item => [item.token.tokenId, item.raw])),
       );
+    } catch {
+      // The token resource or the chain did not answer: keep what is shown,
+      // and let the GNOT balance load on its own.
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -65,6 +71,7 @@ export function useTokens() {
     shown: tokens.filter(token => token.display),
     balances,
     loading,
+    failed,
     refresh,
     setDisplay,
   };
