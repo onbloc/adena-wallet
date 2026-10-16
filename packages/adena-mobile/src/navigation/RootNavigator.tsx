@@ -54,7 +54,8 @@ import {ResetWalletScreen} from '../screens/settings/ResetWalletScreen';
 import {SecurityScreen} from '../screens/settings/SecurityScreen';
 import {SettingsScreen} from '../screens/settings/SettingsScreen';
 import {UnlockScreen} from '../screens/UnlockScreen';
-import {colors, fonts, webColors} from '../ui/theme';
+import {PopupHeader} from '../ui/popup-header';
+import {colors, webColors} from '../ui/theme';
 import type {MainStackParams, OnboardingStackParams} from './types';
 
 const navigationTheme: Theme = {
@@ -70,14 +71,9 @@ const navigationTheme: Theme = {
   },
 };
 
-/** Popup sub-header: centred header4 title, no divider. */
+/** Popup sub-header (see ui/popup-header.tsx), no divider. */
 const popupHeader: NativeStackNavigationOptions = {
-  headerStyle: {backgroundColor: colors.background},
-  headerTintColor: colors.text,
-  headerTitleAlign: 'center',
-  headerTitleStyle: {fontFamily: fonts.header5.fontFamily, fontSize: 20},
-  headerShadowVisible: false,
-  headerBackButtonDisplayMode: 'minimal',
+  header: props => <PopupHeader {...props} />,
   contentStyle: {backgroundColor: colors.background},
 };
 
