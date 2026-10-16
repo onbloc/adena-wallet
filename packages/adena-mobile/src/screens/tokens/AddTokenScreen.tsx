@@ -1,12 +1,13 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {GRC20TokenModel} from '@types';
 import React, {useCallback, useEffect, useState} from 'react';
-import {ActivityIndicator, Alert, StyleSheet, Text} from 'react-native';
+import {ActivityIndicator, StyleSheet, Text} from 'react-native';
 
 import {addToken} from '../../core/tokens';
 import {useWallet} from '../../core/wallet-context';
 import type {MainStackParams} from '../../navigation/types';
 import {Button, Field, Screen} from '../../ui/components';
+import {useModal} from '../../ui/modal';
 import {colors, fonts} from '../../ui/theme';
 import {TokenRow} from '../../ui/token-row';
 
@@ -20,6 +21,7 @@ const PAGE_SIZE = 50;
  */
 export function AddTokenScreen({navigation}: Props) {
   const {net, account} = useWallet();
+  const {confirm} = useModal();
   const [items, setItems] = useState<GRC20TokenModel[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -60,24 +62,21 @@ export function AddTokenScreen({navigation}: Props) {
   );
   const hasMore = total !== null && items.length < total;
 
-  const add = (token: GRC20TokenModel) => {
+  const add = async (token: GRC20TokenModel) => {
     if (!net || !account) {
       return;
     }
-    Alert.alert(
-      'Add Token',
-      `${token.name} (${token.symbol})\n${token.tokenId}\n\nAnyone can register a token. Check the path before trusting it.`,
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Add',
-          onPress: async () => {
-            await addToken(net, account.id, token);
-            navigation.goBack();
-          },
-        },
-      ],
-    );
+    const ok = await confirm({
+      title: `Add ${token.symbol}`,
+      message: `${token.name}. Anyone can register a token under any name; check the path before trusting it.`,
+      detail: token.tokenId,
+      confirmText: 'Add',
+    });
+    if (!ok) {
+      return;
+    }
+    await addToken(net, account.id, token);
+    navigation.goBack();
   };
 
   return (

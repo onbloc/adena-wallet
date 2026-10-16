@@ -1,12 +1,13 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useState} from 'react';
-import {Alert, Pressable, StyleSheet, Text, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 
 import {accountDisplayName, useWallet} from '../../core/wallet-context';
 import type {MainStackParams} from '../../navigation/types';
 import {useReauth} from '../../security/reauth';
 import {Address} from '../../ui/address';
 import {Body, Button, Field, Screen} from '../../ui/components';
+import {useModal} from '../../ui/modal';
 import {colors, colorTokens, fonts, radius} from '../../ui/theme';
 
 type Props = NativeStackScreenProps<MainStackParams, 'AccountDetails'>;
@@ -19,6 +20,7 @@ export function AccountDetailsScreen({navigation, route}: Props) {
   const {accountId} = route.params;
   const {wallet, net, accountNames, renameAccount, removeAccount} = useWallet();
   const requestReauth = useReauth();
+  const {confirm} = useModal();
   const target = wallet?.accounts.find(item => item.id === accountId);
   const savedName = target ? accountDisplayName(target, accountNames) : '';
   const [name, setName] = useState(savedName);
@@ -39,26 +41,21 @@ export function AccountDetailsScreen({navigation, route}: Props) {
     );
   }
 
-  const remove = () => {
-    Alert.alert(
-      'Remove Account',
-      'The account is removed from this device. A seed phrase account can be added again from the same phrase; a private key account only with its key.',
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            if (!(await requestReauth('Remove this account'))) {
-              return;
-            }
-            if (await removeAccount(accountId)) {
-              navigation.goBack();
-            }
-          },
-        },
-      ],
-    );
+  const remove = async () => {
+    const ok = await confirm({
+      title: 'Remove Account',
+      message:
+        'The account is removed from this device. A seed phrase account can be added again from the same phrase; a private key account only with its key.',
+      detail: address || undefined,
+      confirmText: 'Remove',
+      tone: 'danger',
+    });
+    if (!ok || !(await requestReauth('Remove this account'))) {
+      return;
+    }
+    if (await removeAccount(accountId)) {
+      navigation.goBack();
+    }
   };
 
   return (

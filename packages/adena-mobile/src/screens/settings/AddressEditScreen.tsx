@@ -2,7 +2,7 @@ import AddSymbol from '@assets/add-symbol.svg';
 import EditSymbol from '@assets/edit-symbol.svg';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useLayoutEffect, useState} from 'react';
-import {Alert, Pressable, StyleSheet, Text, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 
 import {
   ADDRESS_LABEL_LIMIT,
@@ -16,6 +16,7 @@ import {
 import {useWallet} from '../../core/wallet-context';
 import type {MainStackParams} from '../../navigation/types';
 import {ButtonPair, ErrorText, Field, Screen} from '../../ui/components';
+import {useModal} from '../../ui/modal';
 import {colors, fonts} from '../../ui/theme';
 
 type Props = NativeStackScreenProps<MainStackParams, 'AddressEdit'>;
@@ -23,6 +24,7 @@ type Props = NativeStackScreenProps<MainStackParams, 'AddressEdit'>;
 /** The popup's add/edit address screen; edit also offers removal. */
 export function AddressEditScreen({navigation, route}: Props) {
   const {base, wallet} = useWallet();
+  const {confirm} = useModal();
   const editingId = route.params?.id;
   const isAdd = !editingId;
   const [all, setAll] = useState<AddressBookItem[] | null>(null);
@@ -91,24 +93,25 @@ export function AddressEditScreen({navigation, route}: Props) {
     }
   };
 
-  const remove = () => {
+  const remove = async () => {
     if (!current) {
       return;
     }
-    Alert.alert('Remove Address', `Remove “${current.name}”?`, [
-      {text: 'Cancel', style: 'cancel'},
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: async () => {
-          await base.addressBookService.removeAddressBookItemByAccountId(
-            '',
-            current.id,
-          );
-          navigation.goBack();
-        },
-      },
-    ]);
+    const ok = await confirm({
+      title: 'Remove Address',
+      message: `Remove “${current.name}” from the address book?`,
+      detail: current.address,
+      confirmText: 'Remove',
+      tone: 'danger',
+    });
+    if (!ok) {
+      return;
+    }
+    await base.addressBookService.removeAddressBookItemByAccountId(
+      '',
+      current.id,
+    );
+    navigation.goBack();
   };
 
   return (

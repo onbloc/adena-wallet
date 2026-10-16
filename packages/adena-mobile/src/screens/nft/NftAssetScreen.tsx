@@ -2,9 +2,6 @@ import EtcIcon from '@assets/etc.svg';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useLayoutEffect} from 'react';
 import {
-  ActionSheetIOS,
-  Alert,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -15,6 +12,7 @@ import {
 import {useNftCollections, useNftMetadata} from '../../core/use-nft';
 import type {MainStackParams} from '../../navigation/types';
 import {Button, Screen} from '../../ui/components';
+import {useModal} from '../../ui/modal';
 import {NftImage} from '../../ui/nft';
 import {colors, colorTokens, fonts} from '../../ui/theme';
 
@@ -24,6 +22,7 @@ type Props = NativeStackScreenProps<MainStackParams, 'NftAsset'>;
 export function NftAssetScreen({navigation, route}: Props) {
   const {token} = route.params;
   const nft = useNftCollections();
+  const {chooseOption} = useModal();
   const {data: metadata} = useNftMetadata(token);
   const {width} = useWindowDimensions();
   // A token the account only operates (e.g. a GNFT staked in GnoSwap) cannot
@@ -34,27 +33,15 @@ export function NftAssetScreen({navigation, route}: Props) {
     nft.collections.find(item => item.packagePath === token.packagePath)
       ?.display ?? false;
 
-  const openMenu = () => {
-    const pinLabel = pinned ? 'Unpin Collection' : 'Pin Collection';
-    const showLabel = visible ? 'Hide Collection' : 'Show Collection';
-    const run = (choice: number) => {
-      if (choice === 0) {
-        nft.togglePin(token.packagePath);
-      } else if (choice === 1) {
-        nft.setDisplay(token.packagePath, !visible);
-      }
-    };
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {options: [pinLabel, showLabel, 'Cancel'], cancelButtonIndex: 2},
-        run,
-      );
-    } else {
-      Alert.alert(token.name, undefined, [
-        {text: pinLabel, onPress: () => run(0)},
-        {text: showLabel, onPress: () => run(1)},
-        {text: 'Cancel', style: 'cancel'},
-      ]);
+  const openMenu = async () => {
+    const choice = await chooseOption(token.name, [
+      {label: pinned ? 'Unpin Collection' : 'Pin Collection'},
+      {label: visible ? 'Hide Collection' : 'Show Collection'},
+    ]);
+    if (choice === 0) {
+      nft.togglePin(token.packagePath);
+    } else if (choice === 1) {
+      nft.setDisplay(token.packagePath, !visible);
     }
   };
 

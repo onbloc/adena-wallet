@@ -14,6 +14,7 @@ import {
   PlatformInstallResult,
 } from './src/platform/install';
 import {ReauthProvider} from './src/security/reauth';
+import {ModalProvider} from './src/ui/modal';
 import {colors, fonts} from './src/ui/theme';
 
 type BootState =
@@ -70,7 +71,9 @@ function WalletApp({platform}: {platform: MobilePlatform}) {
         />
         <WalletProvider platform={platform}>
           <ReauthProvider>
-            <RootNavigator />
+            <ModalProvider>
+              <RootNavigator />
+            </ModalProvider>
           </ReauthProvider>
         </WalletProvider>
       </View>

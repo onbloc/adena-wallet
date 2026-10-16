@@ -1,6 +1,6 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useLayoutEffect, useMemo, useState} from 'react';
-import {Alert, Pressable, StyleSheet, Text} from 'react-native';
+import {Pressable, StyleSheet, Text} from 'react-native';
 
 import {
   applyNetworkEdit,
@@ -16,6 +16,7 @@ import {
 import {useWallet} from '../../core/wallet-context';
 import type {MainStackParams} from '../../navigation/types';
 import {ButtonPair, ErrorText, Field, Notice, Screen} from '../../ui/components';
+import {useModal} from '../../ui/modal';
 import {colors, fonts} from '../../ui/theme';
 
 type Props = NativeStackScreenProps<MainStackParams, 'NetworkEdit'>;
@@ -29,6 +30,7 @@ const stripSpaces = (text: string) => text.replace(/ /g, '');
  */
 export function NetworkEditScreen({navigation, route}: Props) {
   const {base, networks, saveNetworks} = useWallet();
+  const {confirm} = useModal();
   const origin = useMemo(
     () => networks.find(item => item.id === route.params?.id) ?? null,
     [networks, route.params?.id],
@@ -101,40 +103,48 @@ export function NetworkEditScreen({navigation, route}: Props) {
     }
   };
 
-  const clear = () => {
+  const clear = async () => {
     if (!origin) {
       return;
     }
-    const title = isDefault ? 'Reset to Default' : 'Remove Network';
-    Alert.alert(title, `${title}: ${origin.networkName}?`, [
-      {text: 'Cancel', style: 'cancel'},
-      {
-        text: isDefault ? 'Reset' : 'Remove',
-        style: 'destructive',
-        onPress: async () => {
-          const bundledList = await base.chainService
-            .fetchDefaultNetworks()
-            .catch(() => []);
-          if (isDefault) {
-            const bundled = bundledList.find(item => item.id === origin.id);
-            if (bundled) {
-              await saveNetworks(
-                networks.map(item => (item.id === origin.id ? bundled : item)),
-              );
-            }
-          } else {
-            await saveNetworks(
-              removeNetwork(
-                networks,
-                origin.id,
-                new Set(bundledList.map(item => item.id)),
-              ),
-            );
+    const ok = await confirm(
+      isDefault
+        ? {
+            title: 'Reset to Default',
+            message: `Put ${origin.networkName} back to the URLs Adena ships with?`,
+            confirmText: 'Reset',
           }
-          navigation.goBack();
-        },
-      },
-    ]);
+        : {
+            title: 'Remove Network',
+            message: `Remove ${origin.networkName} from this wallet?`,
+            detail: origin.rpcUrl,
+            confirmText: 'Remove',
+            tone: 'danger',
+          },
+    );
+    if (!ok) {
+      return;
+    }
+    const bundledList = await base.chainService
+      .fetchDefaultNetworks()
+      .catch(() => []);
+    if (isDefault) {
+      const bundled = bundledList.find(item => item.id === origin.id);
+      if (bundled) {
+        await saveNetworks(
+          networks.map(item => (item.id === origin.id ? bundled : item)),
+        );
+      }
+    } else {
+      await saveNetworks(
+        removeNetwork(
+          networks,
+          origin.id,
+          new Set(bundledList.map(item => item.id)),
+        ),
+      );
+    }
+    navigation.goBack();
   };
 
   return (

@@ -2,12 +2,13 @@ import {formatAddress, formatNickname} from '@common/utils/client-utils';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {isHDWalletKeyring, isSessionAccount} from 'adena-module';
 import React, {useEffect, useState} from 'react';
-import {Alert, Pressable, StyleSheet, Text, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 
 import {accountDisplayName, useWallet} from '../../core/wallet-context';
 import type {MainStackParams} from '../../navigation/types';
 import {Body, Button, Screen} from '../../ui/components';
 import {ChevronRightIcon} from '../../ui/icons';
+import {useModal} from '../../ui/modal';
 import {colors, colorTokens, fonts, radius} from '../../ui/theme';
 
 type Props = NativeStackScreenProps<MainStackParams, 'Accounts'>;
@@ -18,6 +19,7 @@ export function AccountsScreen({navigation}: Props) {
     useWallet();
   const [addresses, setAddresses] = useState<Record<string, string>>({});
   const [adding, setAdding] = useState(false);
+  const {inform} = useModal();
   const prefix = net?.network.addressPrefix ?? 'g';
   // Session accounts sign for a master account; the list shows master ones.
   const accounts = (wallet?.accounts ?? []).filter(
@@ -46,7 +48,7 @@ export function AccountsScreen({navigation}: Props) {
     setAdding(true);
     try {
       if (!(await addAccount())) {
-        Alert.alert('Add Account', 'This wallet has no seed phrase.');
+        await inform('Add Account', 'This wallet has no seed phrase.');
         return;
       }
       navigation.goBack();
