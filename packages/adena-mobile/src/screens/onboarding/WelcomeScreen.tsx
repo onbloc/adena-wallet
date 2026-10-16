@@ -30,7 +30,7 @@ export function WelcomeScreen({navigation}: Props) {
             figure="primary"
             icon={<CreateIcon width={24} height={24} />}
             title="Create New Wallet"
-            description="Generate a new 24-word seed phrase you can use to create multiple accounts."
+            description="Generate a new 12 or 24-word seed phrase you can use to create multiple accounts."
             onPress={() => navigation.navigate('CreateMnemonic')}
           />
           <WebChoiceButton

@@ -8,7 +8,7 @@ import ChevronRight from '@assets/web/chevron-right.svg';
 import CheckIcon from '@assets/web/check.svg';
 import ErrorIcon from '@assets/web/error.svg';
 import WarningIcon from '@assets/web/warning.svg';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {
   Animated,
   Pressable,
@@ -27,8 +27,15 @@ import Svg, {Defs, RadialGradient, Rect, Stop} from 'react-native-svg';
 
 import {colorTokens, monoFont, webFonts} from './theme';
 
-const {webNeutral, webInput, webPrimary, webError, webWarning, webBase} =
-  colorTokens;
+const {
+  webNeutral,
+  webInput,
+  webPrimary,
+  webError,
+  webWarning,
+  webSuccess,
+  webBase,
+} = colorTokens;
 
 /** The extension body background: black with a blue glow at the bottom. */
 function WebBackground() {
@@ -480,11 +487,88 @@ export function WebTabs<T extends string>({
   );
 }
 
-const HOLD_MS = 3_000;
+// Shorter than the extension's 3 s: long enough to be deliberate on a phone.
+const HOLD_MS = 1_500;
 
 /**
- * Press and hold for three seconds to reveal (web-hold-button). Releasing
- * early resets the fill; pressing again after a reveal hides the words.
+ * The web-hold-button gauge: fills over HOLD_MS while pressed and calls
+ * `onComplete` when full. Releasing early empties it.
+ */
+function useHoldGauge(onComplete: () => void) {
+  const progress = useRef(new Animated.Value(0)).current;
+  const [holding, setHolding] = useState(false);
+  const completeRef = useRef(onComplete);
+  completeRef.current = onComplete;
+
+  const start = () => {
+    setHolding(true);
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: HOLD_MS,
+      useNativeDriver: false,
+    }).start(({finished}) => {
+      setHolding(false);
+      progress.setValue(0);
+      if (finished) {
+        completeRef.current();
+      }
+    });
+  };
+
+  const cancel = () => {
+    progress.stopAnimation();
+    progress.setValue(0);
+    setHolding(false);
+  };
+
+  const fillWidth = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
+
+  return {holding, start, cancel, fillWidth};
+}
+
+/**
+ * Full-width main button that acts only after a short hold, with the
+ * gauge filling inside it (the reveal step's main button).
+ */
+export function WebHoldButton({
+  title,
+  onComplete,
+  disabled,
+  testID,
+}: {
+  title: string;
+  onComplete: () => void;
+  disabled?: boolean;
+  testID?: string;
+}) {
+  const {holding, start, cancel, fillWidth} = useHoldGauge(onComplete);
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityHint="Press and hold"
+      accessibilityState={{disabled: !!disabled}}
+      disabled={disabled}
+      onPressIn={start}
+      onPressOut={cancel}
+      style={[
+        styles.button,
+        styles.holdButton,
+        holding && styles.holdButtonActive,
+        disabled && styles.disabled,
+      ]}>
+      <Animated.View style={[styles.holdFill, {width: fillWidth}]} />
+      <Text style={[webFonts.title4, {color: webNeutral._100}]}>{title}</Text>
+    </Pressable>
+  );
+}
+
+/**
+ * Small toggle under a revealed phrase (web-hold-button): hold to show the
+ * words again, a tap hides them.
  */
 export function HoldToReveal({
   revealed,
@@ -493,63 +577,77 @@ export function HoldToReveal({
   revealed: boolean;
   onChange: (revealed: boolean) => void;
 }) {
-  const progress = useRef(new Animated.Value(revealed ? 1 : 0)).current;
-  const [holding, setHolding] = useState(false);
-
-  useEffect(() => {
-    progress.setValue(revealed ? 1 : 0);
-  }, [revealed, progress]);
-
-  const start = () => {
-    if (revealed) {
-      onChange(false);
-      return;
-    }
-    setHolding(true);
-    Animated.timing(progress, {
-      toValue: 1,
-      duration: HOLD_MS,
-      useNativeDriver: false,
-    }).start(({finished}) => {
-      setHolding(false);
-      if (finished) {
-        onChange(true);
-      }
-    });
-  };
-
-  const cancel = () => {
-    if (!revealed) {
-      progress.stopAnimation();
-      progress.setValue(0);
-      setHolding(false);
-    }
-  };
-
+  const {holding, start, cancel, fillWidth} = useHoldGauge(() =>
+    onChange(true),
+  );
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityHint="Press and hold for three seconds"
-      onPressIn={start}
-      onPressOut={cancel}
-      style={[styles.hold, (holding || revealed) && styles.holdActive]}>
-      <Animated.View
-        style={[
-          styles.holdFill,
-          {
-            width: progress.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['0%', '100%'],
-            }),
-          },
-        ]}
-      />
+      accessibilityHint={
+        revealed ? undefined : 'Press and hold'
+      }
+      onPressIn={revealed ? () => onChange(false) : start}
+      onPressOut={revealed ? undefined : cancel}
+      style={[
+        styles.hold,
+        (holding || revealed) && styles.holdActive,
+        revealed && styles.holdDone,
+      ]}>
+      <Animated.View style={[styles.holdFill, {width: fillWidth}]} />
       <Text
         style={[
           webFonts.title6,
           {color: holding || revealed ? webNeutral._100 : webNeutral._500},
         ]}>
         {revealed ? 'Hide Seed Phrase' : 'Hold to Reveal'}
+      </Text>
+    </Pressable>
+  );
+}
+
+/**
+ * One answer of the security questionnaire (web-answer-button): once chosen
+ * it turns green when right and red when wrong.
+ */
+export function WebAnswerButton({
+  answer,
+  correct,
+  selected,
+  disabled,
+  onPress,
+}: {
+  answer: string;
+  correct: boolean;
+  selected: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
+  const tone = selected ? (correct ? 'right' : 'wrong') : null;
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityState={{checked: selected, disabled: !!disabled}}
+      disabled={disabled}
+      onPress={onPress}
+      style={({pressed}) => [
+        styles.answer,
+        pressed && !selected && styles.answerPressed,
+        tone === 'right' && styles.answerRight,
+        tone === 'wrong' && styles.answerWrong,
+      ]}>
+      <Text
+        style={[
+          webFonts.body4,
+          {
+            color:
+              tone === 'right'
+                ? webSuccess._100
+                : tone === 'wrong'
+                ? webError._100
+                : webNeutral._200,
+          },
+        ]}>
+        {answer}
       </Text>
     </Pressable>
   );
@@ -753,6 +851,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   holdActive: {borderColor: '#1E3C71'},
+  holdDone: {backgroundColor: '#0059FF52'},
   holdFill: {
     position: 'absolute',
     left: 0,
@@ -760,4 +859,25 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: '#0059FF52',
   },
+  holdButton: {
+    overflow: 'hidden',
+    borderColor: 'rgba(122, 169, 255, 0.24)',
+    backgroundColor: 'rgba(0, 89, 255, 0.16)',
+  },
+  holdButtonActive: {borderColor: '#1E3C71'},
+  answer: {
+    minHeight: 44,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    justifyContent: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: webNeutral._800,
+  },
+  answerPressed: {backgroundColor: 'rgba(255, 255, 255, 0.04)'},
+  answerRight: {
+    borderColor: webSuccess._200,
+    backgroundColor: webSuccess._300,
+  },
+  answerWrong: {borderColor: webError._200, backgroundColor: webError._300},
 });

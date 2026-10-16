@@ -60,7 +60,7 @@ export function ConfirmMnemonicScreen({navigation}: Props) {
 
   const header = (
     <WebStepHeader
-      step={1}
+      step={3}
       steps={CREATE_FLOW_STEPS}
       onBack={() => navigation.goBack()}
     />

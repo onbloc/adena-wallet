@@ -5,20 +5,24 @@ import {useWallet} from '../../core/wallet-context';
 import {useSecureScreen} from '../../security/use-secure-screen';
 import {
   Body,
-  Button,
   ErrorText,
   Field,
   Notice,
   Screen,
 } from '../../ui/components';
 import {colors, colorTokens, fonts} from '../../ui/theme';
-import {HoldToReveal, SeedGrid, WebCheckBox} from '../../ui/web';
+import {
+  HoldToReveal,
+  SeedGrid,
+  WebCheckBox,
+  WebHoldButton,
+} from '../../ui/web';
 
 /**
- * The extension's Reveal Seed Phrase flow: caution, password and checklist,
- * then the phrase masked behind Hold to Reveal. Biometrics alone are not
- * enough here, and the phrase comes from a separately decrypted copy that is
- * destroyed right away and dropped from memory on leave.
+ * The extension's Reveal Seed Phrase flow in one step: caution, password and
+ * checklist, then a short hold shows the phrase. Biometrics alone are
+ * not enough here, and the phrase comes from a separately decrypted copy that
+ * is destroyed right away and dropped from memory on leave.
  */
 export function RevealMnemonicScreen() {
   const {screenshotTaken} = useSecureScreen();
@@ -38,6 +42,7 @@ export function RevealMnemonicScreen() {
       const copy = await base.walletService.deserializeWallet(password);
       try {
         setWords(copy.getMnemonic().split(' '));
+        setRevealed(true);
       } finally {
         copy.destroy();
       }
@@ -73,11 +78,11 @@ export function RevealMnemonicScreen() {
   return (
     <Screen
       footer={
-        <Button
-          title="Next"
-          onPress={next}
-          loading={busy}
-          disabled={!password || checks.some(checked => !checked)}
+        <WebHoldButton
+          testID="reveal-hold"
+          title={busy ? 'Checking…' : 'Hold to Reveal Seed Phrase'}
+          onComplete={next}
+          disabled={busy || !password || checks.some(checked => !checked)}
         />
       }>
       <View style={styles.caution}>

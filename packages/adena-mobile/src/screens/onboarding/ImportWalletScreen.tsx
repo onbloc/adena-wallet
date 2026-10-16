@@ -19,12 +19,13 @@ import {
   WebTabs,
   WebTitle,
 } from '../../ui/web';
+import {Questionnaire} from './Questionnaire';
 import {SensitiveInfoStep} from './SensitiveInfoStep';
 
 type Props = NativeStackScreenProps<OnboardingStackParams, 'ImportWallet'>;
 
-/** Import flow: this screen, SetPassword. */
-export const IMPORT_FLOW_STEPS = 2;
+/** Import flow: this screen (warning, questionnaire, input), SetPassword. */
+export const IMPORT_FLOW_STEPS = 4;
 
 /** Word count, wordlist membership and checksum, via adena-module's BIP39 code. */
 export function isValidMnemonic(mnemonic: string): boolean {
@@ -67,7 +68,9 @@ const TABS: {key: ImportMode; label: string}[] = [
 
 export function ImportWalletScreen({navigation}: Props) {
   useSecureScreen();
-  const [phase, setPhase] = useState<'intro' | 'input'>('intro');
+  const [phase, setPhase] = useState<'intro' | 'questionnaire' | 'input'>(
+    'intro',
+  );
   const [mode, setMode] = useState<ImportMode>('12');
   const [words, setWords] = useState<string[]>(() => Array(12).fill(''));
   const [privateKey, setPrivateKey] = useState('');
@@ -106,29 +109,38 @@ export function ImportWalletScreen({navigation}: Props) {
     navigation.navigate('SetPassword', {flow: 'import'});
   };
 
-  const header = (
-    <WebStepHeader
-      step={0}
-      steps={IMPORT_FLOW_STEPS}
-      onBack={() => navigation.goBack()}
-    />
+  const header = (step: number, onBack: () => void) => (
+    <WebStepHeader step={step} steps={IMPORT_FLOW_STEPS} onBack={onBack} />
   );
 
   if (phase === 'intro') {
     return (
-      <WebScreen header={header}>
+      <WebScreen header={header(0, () => navigation.goBack())}>
         <SensitiveInfoStep
           description="You are about to import your seed phrase or private key on this device. We recommend connecting with a hardware wallet for higher security."
           learnMoreUrl={`${ADENA_DOCS_PAGE}/user-guide/sign-in/import-wallet`}
-          onNext={() => setPhase('input')}
+          onNext={() => setPhase('questionnaire')}
         />
       </WebScreen>
     );
   }
 
+  if (phase === 'questionnaire') {
+    return (
+      <Questionnaire
+        header={onBack => header(1, onBack)}
+        onExit={() => setPhase('intro')}
+        onComplete={() => setPhase('input')}
+      />
+    );
+  }
+
   return (
     <WebScreen
-      header={header}
+      header={header(2, () => {
+        switchMode(mode);
+        setPhase('intro');
+      })}
       footer={
         <WebButton
           testID="import-next"
