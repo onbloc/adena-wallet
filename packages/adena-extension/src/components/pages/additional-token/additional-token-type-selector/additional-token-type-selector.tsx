@@ -4,10 +4,11 @@ import {
   StyledAdditionalTokenTypeSelectorWrapper,
 } from './additional-token-type-selector.styles';
 
-export enum AddingType {
-  'SEARCH',
-  'MANUAL',
-}
+import { AddingType } from '@types';
+
+// Defined with the token types so non-UI code can use it; re-exported here
+// for existing imports.
+export { AddingType };
 
 const displayTypeNames = {
   [AddingType.SEARCH]: 'Search',

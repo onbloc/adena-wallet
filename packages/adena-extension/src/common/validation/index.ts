@@ -7,3 +7,4 @@ export * from './validation-token';
 export * from './validation-wallet';
 export * from './validation-document';
 export * from './validation-create-multisig';
+export * from './validation-signing-risk';

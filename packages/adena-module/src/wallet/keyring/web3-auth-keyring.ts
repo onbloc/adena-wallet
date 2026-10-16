@@ -5,8 +5,9 @@ import {
   TxSignature,
   Wallet as Tm2Wallet,
 } from '@gnolang/tm2-js-client';
-import sodium from 'libsodium-wrappers-sumo';
 import { v4 as uuidv4 } from 'uuid';
+
+import { getCryptoProvider } from '../../crypto/crypto-provider';
 
 import { Document } from './../..';
 import { hexToArray } from './../../utils/data';
@@ -38,7 +39,7 @@ export class Web3AuthKeyring implements Keyring {
   }
 
   destroy() {
-    sodium.memzero(this.privateKey);
+    getCryptoProvider().memzero(this.privateKey);
   }
 
   toData() {

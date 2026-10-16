@@ -12,7 +12,7 @@ import {
   deserializeSignDoc,
   deserializeTxBytes,
 } from '@common/utils/cosmos-serialize';
-import { getSiteName } from '@common/utils/client-utils';
+import { getSiteName } from '@common/utils/url-parameter-utils';
 import {
   validateAminoSignDoc,
   validateCosmosChainId,
