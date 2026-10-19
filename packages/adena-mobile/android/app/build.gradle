@@ -2,6 +2,14 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+// Resolved with node, like the Podfile; see settings.gradle.
+def nodePackageDir = { String name ->
+    def manifest = ["node", "--print", "require.resolve('${name}/package.json', {paths: [require.resolve('react-native/package.json')]})"]
+        .execute(null, rootDir).text.trim()
+    return new File(manifest).parentFile
+}
+def reactNativePackageDir = nodePackageDir("react-native")
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -16,6 +24,9 @@ react {
     // codegenDir = file("../../node_modules/@react-native/codegen")
     //   The cli.js file which is the React Native CLI entrypoint. Default is ../../node_modules/react-native/cli.js
     // cliFile = file("../../node_modules/react-native/cli.js")
+    reactNativeDir = reactNativePackageDir
+    codegenDir = nodePackageDir("@react-native/codegen")
+    cliFile = new File(reactNativePackageDir, "cli.js")
 
     /* Variants */
     //   The list of variants to that are debuggable. For those we're going to
@@ -71,6 +82,15 @@ def enableProguardInReleaseBuilds = false
  * this variant is about 6MiB larger per architecture than default.
  */
 def jscFlavor = 'org.webkit:android-jsc:+'
+
+// Unpacks the prebuilt native libraries after checking their pinned hashes
+// and builds the dApp provider bundle; install scripts are disabled in this
+// repo (see scripts/prepare-native-deps.js).
+def prepareNative = tasks.register("prepareNative", Exec) {
+    workingDir = file("../..")
+    commandLine "sh", "-c", "node scripts/prepare-native-deps.js && node scripts/build-provider.js"
+}
+preBuild.dependsOn(prepareNative)
 
 android {
     ndkVersion rootProject.ext.ndkVersion
