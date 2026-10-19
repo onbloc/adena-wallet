@@ -26,6 +26,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Adena uses the camera only to scan wallet address QR codes.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Adena uses Face ID to unlock your wallet and confirm signatures.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 	  <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->
