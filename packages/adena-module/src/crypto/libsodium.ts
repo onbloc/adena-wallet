@@ -5,6 +5,7 @@
 
 import sodium from 'libsodium-wrappers-sumo';
 import { isNonNullObject } from '../utils';
+import { getCryptoProvider } from './crypto-provider';
 
 export interface Argon2idOptions {
   /** Output length in bytes */
@@ -39,15 +40,7 @@ export class Argon2id {
     salt: Uint8Array,
     options: Argon2idOptions,
   ): Promise<Uint8Array> {
-    await sodium.ready;
-    return sodium.crypto_pwhash(
-      options.outputLength,
-      password,
-      salt, // libsodium only supports 16 byte salts and will throw when you don't respect that
-      options.opsLimit,
-      options.memLimitKib * 1024,
-      sodium.crypto_pwhash_ALG_ARGON2ID13,
-    );
+    return getCryptoProvider().argon2id(password, salt, options);
   }
 }
 
@@ -122,17 +115,7 @@ export class Xchacha20poly1305Ietf {
     key: Uint8Array,
     nonce: Uint8Array,
   ): Promise<Uint8Array> {
-    await sodium.ready;
-
-    const additionalData = null;
-
-    return sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(
-      message,
-      additionalData,
-      null, // secret nonce: unused and should be null (https://download.libsodium.org/doc/secret-key_cryptography/aead/chacha20-poly1305/xchacha20-poly1305_construction)
-      nonce,
-      key,
-    );
+    return getCryptoProvider().xchacha20poly1305Encrypt(message, key, nonce);
   }
 
   public static async decrypt(
@@ -140,16 +123,6 @@ export class Xchacha20poly1305Ietf {
     key: Uint8Array,
     nonce: Uint8Array,
   ): Promise<Uint8Array> {
-    await sodium.ready;
-
-    const additionalData = null;
-
-    return sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
-      null, // secret nonce: unused and should be null (https://download.libsodium.org/doc/secret-key_cryptography/aead/chacha20-poly1305/xchacha20-poly1305_construction)
-      ciphertext,
-      additionalData,
-      nonce,
-      key,
-    );
+    return getCryptoProvider().xchacha20poly1305Decrypt(ciphertext, key, nonce);
   }
 }

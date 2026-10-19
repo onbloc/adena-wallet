@@ -26,12 +26,13 @@ import {
 } from './methods/gno-connect';
 import { describeLoopbackRejection, showGnoConnectNotice } from './methods/gno-connect-notice';
 import type { FetchRealmDocumentMessage } from './methods/gno-realm-document';
+import type { RequestSender } from './request-sender';
 
 export class CommandHandler {
   public static createHandler = async (
     inMemoryProvider: MemoryProvider,
     message: CommandMessageData,
-    _: chrome.runtime.MessageSender,
+    _: RequestSender,
     sendResponse: (response?: CommandMessageData) => void,
   ): Promise<void> => {
     // background.ts holds the message channel open for every command message
