@@ -26,13 +26,28 @@ import {
 } from '@inject/types';
 import FaviconDefault from '@assets/favicon-default.svg';
 import {compressPubkeyIfNeeded, isSessionAccount} from 'adena-module';
-import React, {useEffect, useRef, useState} from 'react';
-import {ActivityIndicator, StyleSheet, View} from 'react-native';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {ActivityIndicator, StyleSheet, Switch, View} from 'react-native';
 
+import {
+  classifyCosmosSigningRisk,
+  COSMOS_RISK_MESSAGES,
+  CosmosSignSummary,
+  formatCoin,
+  summarizeAminoSignDoc,
+  summarizeDirectSignDoc,
+} from '../core/cosmos-messages';
 import {useWallet} from '../core/wallet-context';
 import {useReauth} from '../security/reauth';
 import {Address} from '../ui/address';
-import {Body, ButtonPair, ErrorBanner, Notice, Screen} from '../ui/components';
+import {
+  Body,
+  ButtonPair,
+  ErrorBanner,
+  ListItem,
+  Notice,
+  Screen,
+} from '../ui/components';
 import {colors} from '../ui/theme';
 import {
   ApprovalTitle,
@@ -395,7 +410,24 @@ export function CosmosSignApproval({
     }
   };
 
-  const amino = mode === 'amino' ? (params.signDoc as StdSignDoc) : null;
+  // Null when the document cannot be decoded; it is then unreadable and
+  // treated like an unknown message.
+  const summary = useMemo<CosmosSignSummary | null>(() => {
+    try {
+      return mode === 'amino'
+        ? summarizeAminoSignDoc(params.signDoc as StdSignDoc)
+        : summarizeDirectSignDoc(
+            deserializeSignDoc(params.signDoc as SerializedSignDoc),
+          );
+    } catch {
+      return null;
+    }
+  }, [mode, params.signDoc]);
+  const risk = summary
+    ? classifyCosmosSigningRisk(summary)
+    : {level: 'high' as const, codes: ['UNKNOWN_MESSAGE' as const]};
+  const [acknowledged, setAcknowledged] = useState(false);
+  const highRisk = risk.level === 'high';
 
   return (
     <Screen
@@ -406,7 +438,7 @@ export function CosmosSignApproval({
             title: 'Sign',
             testID: 'approve-cosmos-sign',
             onPress: approve,
-            disabled: state.phase !== 'ready',
+            disabled: state.phase !== 'ready' || (highRisk && !acknowledged),
             loading: state.phase === 'working',
           }}
         />
@@ -426,26 +458,46 @@ export function CosmosSignApproval({
           value={<Address value={String(params.signer ?? '')} />}
         />
       </MessageCard>
-      {amino ? (
-        <MessageCard title={`${amino.msgs.length} message(s)`}>
-          {amino.msgs.map((msg, index) => (
-            <KeyValue key={index} label={`${index + 1}.`} value={msg.type} />
+      {summary?.messages.map((item, index) => (
+        <MessageCard
+          key={index}
+          title={`${index + 1}. ${item.title ?? 'Unknown message'}`}>
+          <KeyValue label="Type" stacked value={item.type} />
+          {item.rows.map(row => (
+            <KeyValue
+              key={row.label}
+              label={row.label}
+              stacked
+              value={row.value}
+            />
           ))}
-          <KeyValue
-            label="Fee"
-            value={
-              amino.fee.amount
-                .map(coin => `${coin.amount} ${coin.denom}`)
-                .join(', ') || 'None'
-            }
-          />
-          <KeyValue label="Memo" value={amino.memo || '(Empty)'} />
         </MessageCard>
-      ) : (
-        <Notice tone="danger">
-          Adena cannot show the messages of a DIRECT sign request in readable
-          form. Only sign it if you trust this site and expected this request.
+      ))}
+      {summary && (
+        <>
+          <InfoPill
+            label="Network Fee"
+            value={summary.fee.map(formatCoin).join(', ') || 'None'}
+          />
+          <InfoPill label="Memo" value={summary.memo || '(Empty)'} />
+        </>
+      )}
+      {risk.codes.map(code => (
+        <Notice key={code} tone={code === 'HIGH_FEE' ? 'warning' : 'danger'}>
+          {COSMOS_RISK_MESSAGES[code]}
         </Notice>
+      ))}
+      {highRisk && (
+        <ListItem
+          title="I understand the risk"
+          trailing={
+            <Switch
+              testID="cosmos-risk-ack"
+              value={acknowledged}
+              onValueChange={setAcknowledged}
+            />
+          }
+        />
       )}
       <Notice>
         The site receives the signature and can broadcast the transaction.
