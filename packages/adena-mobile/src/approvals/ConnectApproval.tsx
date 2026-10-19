@@ -8,6 +8,7 @@ import FaviconDefault from '@assets/favicon-default.svg';
 import React, {useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 
+import {establishSite, normalizeChainIds} from '../core/establish';
 import {useWallet} from '../core/wallet-context';
 import {Address} from '../ui/address';
 import {Body, ButtonPair, Screen} from '../ui/components';
@@ -34,20 +35,12 @@ export function ConnectApproval({request, respond, dismiss}: ApprovalProps) {
     }
     setBusy(true);
     try {
-      const requested = (message as any).data?.chainIds;
-      const chainIds: string[] = requested
-        ? (Array.isArray(requested) ? requested : [requested]).filter(
-            (id: unknown) => typeof id === 'string',
-          )
-        : [net.network.chainId];
-      for (const chainId of chainIds) {
-        await base.establishService.establishBy(account.id, chainId, {
-          hostname: origin,
-          accountId: account.id,
-          appName,
-          favicon: null,
-        });
-      }
+      await establishSite(
+        base,
+        {hostname: origin, accountId: account.id, appName, favicon: null},
+        normalizeChainIds((message as any).data?.chainIds),
+        net.network.chainId,
+      );
       respond(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.CONNECTION_SUCCESS,

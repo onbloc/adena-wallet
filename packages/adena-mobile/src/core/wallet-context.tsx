@@ -118,9 +118,25 @@ export function WalletProvider({
 
   // Signing paths ask the wallet service for the unlocked wallet; hand them
   // the instance this context holds instead of re-running Argon2id each time.
+  // lockWallet and clear drop the resolver, so it is registered again for
+  // every unlocked wallet, as the extension's WalletProvider does.
   useEffect(() => {
     base.walletService.setCurrentWalletResolver(() => walletRef.current);
-  }, [base]);
+    return () => base.walletService.setCurrentWalletResolver(null);
+  }, [base, wallet]);
+
+  // Custom networks resolve through the chain registry (connect, address
+  // book), which starts with the built-in networks only.
+  const registerNetworks = useCallback(
+    (items: NetworkMetainfo[]) => {
+      for (const item of items) {
+        if (!item.deleted) {
+          base.chainRegistry.register(toGnoNetworkProfile(item));
+        }
+      }
+    },
+    [base],
+  );
 
   const forgetWallet = useCallback(() => {
     walletRef.current?.destroy();
@@ -133,6 +149,7 @@ export function WalletProvider({
   useEffect(() => {
     (async () => {
       const loaded = await base.chainService.getNetworks();
+      registerNetworks(loaded);
       const current = await base.chainService.getCurrentNetwork();
       setNetworks(loaded);
       setNetwork(current);
@@ -140,7 +157,7 @@ export function WalletProvider({
       const exists = await base.walletService.existsWallet();
       setStatus(exists ? 'locked' : 'no-wallet');
     })();
-  }, [base]);
+  }, [base, registerNetworks]);
 
   // Auto-lock (idle, background) fires inside the platform layer.
   useEffect(
@@ -329,18 +346,15 @@ export function WalletProvider({
 
   const reloadNetworks = useCallback(async () => {
     const loaded = await base.chainService.getNetworks();
+    registerNetworks(loaded);
     setNetworks(loaded);
     return loaded;
-  }, [base]);
+  }, [base, registerNetworks]);
 
   const saveNetworks = useCallback(
     async (next: NetworkMetainfo[]) => {
       await base.chainService.updateNetworks(next);
-      for (const item of next) {
-        if (!item.deleted) {
-          base.chainRegistry.register(toGnoNetworkProfile(item));
-        }
-      }
+      registerNetworks(next);
       setNetworks(next);
       const currentId = network?.id;
       const current = next.find(item => item.id === currentId && !item.deleted);
@@ -364,7 +378,7 @@ export function WalletProvider({
       }
       setNetwork(fallback);
     },
-    [base, network],
+    [base, network, registerNetworks],
   );
 
   const switchAccount = useCallback(

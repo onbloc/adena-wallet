@@ -16,10 +16,7 @@ import sodium from 'libsodium-wrappers-sumo';
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 
-import {
-  makeCustomNetwork,
-  removeNetwork,
-} from '../../src/core/custom-network';
+import {makeCustomNetwork, removeNetwork} from '../../src/core/custom-network';
 import {useWallet, WalletProvider} from '../../src/core/wallet-context';
 import {makeDismissedResponse} from '../../src/platform/dismissed-response';
 import {
@@ -122,6 +119,23 @@ describe('custom networks', () => {
     expect(stored.some(item => item.id === custom.id)).toBe(true);
     expect(
       wallet.base.chainRegistry.getNetworkProfileByChainId('mine-1'),
+    ).toBeDefined();
+  });
+
+  it('registers a network a site added once the list is read again', async () => {
+    // What NetworkApproval does for a page's ADD_NETWORK request.
+    const added = makeCustomNetwork({
+      name: 'Site node',
+      rpcUrl: 'https://rpc.site.example',
+      chainId: 'site-1',
+      indexerUrl: '',
+    });
+    await wallet.base.chainService.updateNetworks([...wallet.networks, added]);
+    await act(async () => {
+      await wallet.reloadNetworks();
+    });
+    expect(
+      wallet.base.chainRegistry.getNetworkProfileByChainId('site-1'),
     ).toBeDefined();
   });
 

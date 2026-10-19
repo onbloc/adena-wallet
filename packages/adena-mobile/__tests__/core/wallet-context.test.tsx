@@ -112,6 +112,17 @@ describe('wallet lifecycle on the mobile platform', () => {
     await waitFor(() => wallet.address === address);
   });
 
+  it('serves signing paths the unlocked wallet again after a manual lock', async () => {
+    const loadWallet = jest.spyOn(wallet.base.walletService, 'loadWallet');
+    try {
+      const current = await wallet.base.walletService.getCurrentWallet();
+      expect(current).toBe(wallet.wallet);
+      expect(loadWallet).not.toHaveBeenCalled();
+    } finally {
+      loadWallet.mockRestore();
+    }
+  });
+
   it('drops the wallet from memory when the platform auto-locks', async () => {
     await act(async () => {
       await platform.lock();
