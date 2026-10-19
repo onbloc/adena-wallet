@@ -1,7 +1,16 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {getCryptoProvider, toBase64UrlNoPadding} from 'adena-module';
-import React, {useCallback, useMemo, useRef, useState} from 'react';
-import {Pressable, StyleSheet, Text, TextInput, View} from 'react-native';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  findNodeHandle,
+  NativeModules,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import WebView, {
   WebViewMessageEvent,
@@ -20,6 +29,33 @@ import {displayHost, isAllowedOrigin, originOf} from './url-origin';
 type Props = NativeStackScreenProps<MainStackParams, 'Browser'>;
 
 const HOME_URL = 'https://gno.land';
+
+/**
+ * Android only: registers `script` to run before any page script in every
+ * later document (AdenaWebViewModule). False when the system WebView is too
+ * old; the WebView prop, which can run late, is used then.
+ */
+async function addDocumentStartScript(
+  view: WebView | null,
+  script: string,
+): Promise<boolean> {
+  const tag = view ? findNodeHandle(view) : null;
+  if (tag === null || !NativeModules.AdenaWebView) {
+    return false;
+  }
+  return NativeModules.AdenaWebView.addDocumentStartScript(tag, script).catch(
+    () => false,
+  );
+}
+
+/** Document-start scripts reach every frame; the provider is for the top one. */
+function topFrameOnly(script: string): string {
+  return `(function () {
+  if (window.top !== window || !/^https?:$/.test(window.location.protocol)) { return; }
+${script}
+})();
+true;`;
+}
 
 /** A typed address: https:// is assumed when no scheme is given. */
 export function normalizeInput(input: string): string {
@@ -45,6 +81,19 @@ export function BrowserScreen({route, navigation}: Props) {
     () => `${bridgeScript(token)}\n${providerBundle}\ntrue;`,
     [token],
   );
+  // Android loads nothing until it knows how the provider is injected.
+  const [injection, setInjection] = useState<
+    'pending' | 'document-start' | 'prop'
+  >(Platform.OS === 'android' ? 'pending' : 'prop');
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+    addDocumentStartScript(webView.current, topFrameOnly(injected)).then(ok =>
+      setInjection(ok ? 'document-start' : 'prop'),
+    );
+  }, [injected]);
 
   const track = useCallback((url: string) => {
     navUrl.current = url;
@@ -139,8 +188,10 @@ export function BrowserScreen({route, navigation}: Props) {
       {!!blocked && <Text style={styles.blocked}>{blocked}</Text>}
       <WebView
         ref={webView}
-        source={{uri: source}}
-        injectedJavaScriptBeforeContentLoaded={injected}
+        source={{uri: injection === 'pending' ? 'about:blank' : source}}
+        injectedJavaScriptBeforeContentLoaded={
+          injection === 'prop' ? injected : undefined
+        }
         injectedJavaScriptBeforeContentLoadedForMainFrameOnly
         injectedJavaScriptForMainFrameOnly
         onLoadStart={event => track(event.nativeEvent.url)}

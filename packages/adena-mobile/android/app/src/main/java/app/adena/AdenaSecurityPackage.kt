@@ -7,7 +7,7 @@ import com.facebook.react.uimanager.ViewManager
 
 class AdenaSecurityPackage : ReactPackage {
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> =
-    listOf(AdenaSecurityModule(reactContext))
+    listOf(AdenaSecurityModule(reactContext), AdenaWebViewModule(reactContext))
 
   override fun createViewManagers(
     reactContext: ReactApplicationContext,
