@@ -4,6 +4,7 @@ import * as Keychain from 'react-native-keychain';
 import {MMKV} from 'react-native-mmkv';
 
 import {getProtectedStorageDirectory} from '../security/native-security';
+import {migrateStorage, SCHEMA_VERSION_KEY} from './storage-schema';
 
 const STORAGE_KEY_SERVICE = 'adena.mobile.storage-key';
 const CANARY_KEY = '__adena_canary__';
@@ -107,9 +108,10 @@ export class MmkvStorage implements Storage {
     this.mmkv.delete(key);
   };
 
+  // The canary and the schema version describe the file, not the wallet.
   clear = async (): Promise<void> => {
     for (const key of this.mmkv.getAllKeys()) {
-      if (key !== CANARY_KEY) {
+      if (key !== CANARY_KEY && key !== SCHEMA_VERSION_KEY) {
         this.mmkv.delete(key);
       }
     }
@@ -167,9 +169,12 @@ export async function openSecureStorage(): Promise<OpenedStorage> {
     return mmkv;
   };
 
+  const local = open('adena-local');
+  const cache = open('adena-cache');
+  migrateStorage({local, cache}, [CANARY_KEY]);
   const opened = {
-    local: new MmkvStorage(open('adena-local')),
-    cache: new MmkvStorage(open('adena-cache')),
+    local: new MmkvStorage(local),
+    cache: new MmkvStorage(cache),
     hardwareBacked,
   };
   meta.set(META_INITIALIZED, true);

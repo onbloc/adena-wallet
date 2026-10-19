@@ -42,6 +42,10 @@ jest.mock('react-native-mmkv', () => ({
 }));
 
 import {MemoryStorage, openSecureStorage} from '../../src/platform/storage';
+import {
+  CURRENT_SCHEMA_VERSION,
+  SCHEMA_VERSION_KEY,
+} from '../../src/platform/storage-schema';
 
 const keychain = Keychain as unknown as typeof Keychain & {
   __reset(): void;
@@ -94,7 +98,9 @@ describe('openSecureStorage', () => {
     await first.local.set('SERIALIZED', 'vault');
     keychain.__reset();
 
-    await expect(openSecureStorage()).rejects.toThrow('missing from the keychain');
+    await expect(openSecureStorage()).rejects.toThrow(
+      'missing from the keychain',
+    );
     // No new key was made, so the files are untouched.
     expect(keychain.__items.size).toBe(0);
     expect(mockMmkvFiles.get('adena-local')?.values.get('SERIALIZED')).toBe(
@@ -109,6 +115,24 @@ describe('openSecureStorage', () => {
 
     const {local} = await openSecureStorage();
     expect(await local.get('SERIALIZED')).toBeUndefined();
+  });
+
+  it('stores the schema version and keeps it when the wallet is reset', async () => {
+    const {local} = await openSecureStorage();
+    const file = mockMmkvFiles.get('adena-local')!.values;
+    expect(file.get(SCHEMA_VERSION_KEY)).toBe(String(CURRENT_SCHEMA_VERSION));
+
+    await local.set('SERIALIZED', 'vault');
+    await local.clear();
+    expect(file.get(SCHEMA_VERSION_KEY)).toBe(String(CURRENT_SCHEMA_VERSION));
+  });
+
+  it('refuses to open storage written by a newer app', async () => {
+    await openSecureStorage();
+    mockMmkvFiles
+      .get('adena-local')!
+      .values.set(SCHEMA_VERSION_KEY, String(CURRENT_SCHEMA_VERSION + 1));
+    await expect(openSecureStorage()).rejects.toThrow('newer app');
   });
 
   it('keeps the canary when the local storage is cleared', async () => {
