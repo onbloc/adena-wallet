@@ -17,6 +17,7 @@ import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 
 import {makeCustomNetwork, removeNetwork} from '../../src/core/custom-network';
+import {PasswordCheck, unlockThrottle} from '../../src/core/unlock-throttle';
 import {useWallet, WalletProvider} from '../../src/core/wallet-context';
 import {makeDismissedResponse} from '../../src/platform/dismissed-response';
 import {
@@ -92,11 +93,11 @@ describe('address book', () => {
   });
 
   it('keeps the entries readable after a password change', async () => {
-    let changed = false;
+    let changed: PasswordCheck = {ok: false, waitMs: 0};
     await act(async () => {
       changed = await wallet.changePassword(PASSWORD, NEXT_PASSWORD);
     });
-    expect(changed).toBe(true);
+    expect(changed.ok).toBe(true);
     const book = await wallet.base.addressBookService.getAddressBook();
     expect(book.map(item => item.address)).toEqual([friend]);
   });
@@ -225,5 +226,37 @@ describe('NFT collections', () => {
     expect(
       await net.tokenService.getAccountGRC721Collections(accountId, 'other-1'),
     ).toEqual([]);
+  });
+});
+
+describe('password attempts', () => {
+  afterAll(() => unlockThrottle.reset());
+
+  it('share one limit across every password check', async () => {
+    for (let i = 0; i < 4; i++) {
+      expect(await wallet.verifyPassword('wrong')).toEqual({
+        ok: false,
+        waitMs: 0,
+      });
+    }
+    const fifth = await wallet.changePassword('wrong', 'Next-Pass-1234!');
+    expect(fifth.ok).toBe(false);
+    expect(!fifth.ok && fifth.waitMs).toBeGreaterThan(0);
+
+    // During the wait even the right password is not checked.
+    const equalsPassword = jest.spyOn(
+      wallet.base.walletService,
+      'equalsPassword',
+    );
+    try {
+      const right = await wallet.verifyPassword(NEXT_PASSWORD);
+      expect(right.ok).toBe(false);
+      expect(equalsPassword).not.toHaveBeenCalled();
+      await expect(
+        wallet.setBiometricUnlock(true, NEXT_PASSWORD),
+      ).rejects.toThrow('Too many attempts');
+    } finally {
+      equalsPassword.mockRestore();
+    }
   });
 });

@@ -34,6 +34,11 @@ import {
   createNetworkServices,
   NetworkServices,
 } from './services';
+import {
+  checkPassword,
+  PasswordCheck,
+  passwordErrorMessage,
+} from './unlock-throttle';
 
 export type WalletStatus = 'loading' | 'no-wallet' | 'locked' | 'unlocked';
 
@@ -55,8 +60,10 @@ interface WalletContextValue {
   unlock(password: string): Promise<boolean>;
   unlockWithBiometrics(): Promise<boolean>;
   lock(): Promise<void>;
-  verifyPassword(password: string): Promise<boolean>;
-  changePassword(current: string, next: string): Promise<boolean>;
+  /** Counts toward the shared attempt limit (core/unlock-throttle.ts). */
+  verifyPassword(password: string): Promise<PasswordCheck>;
+  /** `ok` once the password is changed; a wrong `current` counts as an attempt. */
+  changePassword(current: string, next: string): Promise<PasswordCheck>;
   setBiometricUnlock(enabled: boolean, password?: string): Promise<void>;
   switchNetwork(networkId: string): Promise<void>;
   reloadNetworks(): Promise<NetworkMetainfo[]>;
@@ -281,14 +288,16 @@ export function WalletProvider({
   }, [base, platform, forgetWallet]);
 
   const verifyPassword = useCallback(
-    (password: string) => base.walletService.equalsPassword(password),
+    (password: string) =>
+      checkPassword(() => base.walletService.equalsPassword(password)),
     [base],
   );
 
   const changePassword = useCallback(
-    async (current: string, next: string) => {
-      if (!(await base.walletService.equalsPassword(current))) {
-        return false;
+    async (current: string, next: string): Promise<PasswordCheck> => {
+      const checked = await verifyPassword(current);
+      if (!checked.ok) {
+        return checked;
       }
       // The address book is sealed with the password too. The extension leaves
       // it under the old one, so it reads as empty after a change.
@@ -310,16 +319,20 @@ export function WalletProvider({
       if (changed && (await isBiometricUnlockEnabled())) {
         await enableBiometricUnlock(next);
       }
-      return changed;
+      return changed ? {ok: true} : {ok: false, waitMs: 0};
     },
-    [base],
+    [base, verifyPassword],
   );
 
   const setBiometricUnlock = useCallback(
     async (enabled: boolean, password?: string) => {
       if (enabled) {
-        if (!password || !(await base.walletService.equalsPassword(password))) {
-          throw new Error('The password is incorrect');
+        if (!password) {
+          throw new Error(passwordErrorMessage(0));
+        }
+        const checked = await verifyPassword(password);
+        if (!checked.ok) {
+          throw new Error(passwordErrorMessage(checked.waitMs));
         }
         await enableBiometricUnlock(password);
       } else {
@@ -327,7 +340,7 @@ export function WalletProvider({
       }
       setBiometricEnabled(await isBiometricUnlockEnabled());
     },
-    [base],
+    [verifyPassword],
   );
 
   const switchNetwork = useCallback(

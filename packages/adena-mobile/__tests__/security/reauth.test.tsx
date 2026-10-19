@@ -6,7 +6,8 @@ import {ReauthHost, ReauthProvider, useReauth} from '../../src/security/reauth';
 
 jest.mock('../../src/core/wallet-context', () => ({
   useWallet: () => ({
-    verifyPassword: async (password: string) => password === 'right',
+    verifyPassword: async (password: string) =>
+      password === 'right' ? {ok: true} : {ok: false, waitMs: 0},
     biometricEnabled: false,
   }),
 }));

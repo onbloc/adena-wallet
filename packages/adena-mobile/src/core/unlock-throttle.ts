@@ -49,3 +49,32 @@ export const unlockThrottle = {
     await storage().remove(KEY);
   },
 };
+
+export type PasswordCheck = {ok: true} | {ok: false; waitMs: number};
+
+/**
+ * Runs one password check under the shared limit. Every place that takes the
+ * wallet password goes through here (unlock, re-authentication, revealing
+ * the phrase, password change, enabling biometrics), so an unlocked phone
+ * gives no way around the wait. While the wait lasts `check` does not run.
+ */
+export async function checkPassword(
+  check: () => Promise<boolean>,
+  now = Date.now,
+): Promise<PasswordCheck> {
+  const remaining = await unlockThrottle.remainingMs(now());
+  if (remaining > 0) {
+    return {ok: false, waitMs: remaining};
+  }
+  if (await check()) {
+    await unlockThrottle.reset();
+    return {ok: true};
+  }
+  return {ok: false, waitMs: await unlockThrottle.recordFailure(now())};
+}
+
+export function passwordErrorMessage(waitMs: number): string {
+  return waitMs > 0
+    ? `Too many attempts. Try again in ${Math.ceil(waitMs / 1000)} seconds.`
+    : 'The password is incorrect.';
+}

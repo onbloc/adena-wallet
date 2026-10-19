@@ -4,7 +4,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
-import {unlockThrottle} from '../core/unlock-throttle';
+import {checkPassword, unlockThrottle} from '../core/unlock-throttle';
 import {useWallet} from '../core/wallet-context';
 import {Body, Button, ButtonPair, ErrorText, Field} from '../ui/components';
 import {colors, fonts} from '../ui/theme';
@@ -47,19 +47,14 @@ export function UnlockScreen() {
   }, [biometricEnabled, tryBiometrics]);
 
   const submit = async () => {
-    if ((await unlockThrottle.remainingMs()) > 0) {
-      return;
-    }
     setBusy(true);
-    const ok = await unlock(password);
+    const checked = await checkPassword(() => unlock(password));
     setBusy(false);
-    if (ok) {
+    if (checked.ok) {
       setPassword('');
-      await unlockThrottle.reset();
       return;
     }
-    const wait = await unlockThrottle.recordFailure();
-    setWaitMs(wait);
+    setWaitMs(checked.waitMs);
     setError('The password is incorrect.');
   };
 

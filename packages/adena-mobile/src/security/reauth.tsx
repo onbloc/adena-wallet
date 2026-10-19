@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import {Modal, StyleSheet, View} from 'react-native';
 
+import {passwordErrorMessage} from '../core/unlock-throttle';
 import {useWallet} from '../core/wallet-context';
 import {unlockWithBiometrics} from '../platform/biometric-unlock';
 import {Body, Button, ErrorText, Field, Gap, Title} from '../ui/components';
@@ -105,16 +106,16 @@ export function ReauthProvider({children}: React.PropsWithChildren) {
   const submit = useCallback(async () => {
     const pending = resolver.current;
     setChecking(true);
-    const ok = await verifyPassword(password);
+    const checked = await verifyPassword(password);
     setChecking(false);
     // The request may have been withdrawn while the password was checked.
     if (resolver.current !== pending) {
       return;
     }
-    if (ok) {
+    if (checked.ok) {
       finish(true);
     } else {
-      setError('The password is incorrect.');
+      setError(passwordErrorMessage(checked.waitMs));
     }
   }, [password, verifyPassword, finish]);
 

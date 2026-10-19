@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
+import {checkPassword, passwordErrorMessage} from '../../core/unlock-throttle';
 import {useWallet} from '../../core/wallet-context';
 import {
   copyWithExpiry,
@@ -45,20 +46,32 @@ export function RevealMnemonicScreen() {
 
   const next = async () => {
     setBusy(true);
-    try {
-      const copy = await base.walletService.deserializeWallet(password);
+    let phrase = '';
+    const checked = await checkPassword(async () => {
       try {
-        setWords(copy.getMnemonic().split(' '));
-        setRevealed(true);
-      } finally {
-        copy.destroy();
+        const copy = await base.walletService.deserializeWallet(password);
+        try {
+          phrase = copy.getMnemonic();
+        } finally {
+          copy.destroy();
+        }
+        return true;
+      } catch {
+        return false;
       }
-      setPassword('');
-    } catch {
-      setError('Invalid password');
-    } finally {
-      setBusy(false);
+    });
+    setBusy(false);
+    if (!checked.ok) {
+      setError(
+        checked.waitMs > 0
+          ? passwordErrorMessage(checked.waitMs)
+          : 'Invalid password',
+      );
+      return;
     }
+    setWords(phrase.split(' '));
+    setRevealed(true);
+    setPassword('');
   };
 
   if (words.length > 0) {

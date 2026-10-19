@@ -7,6 +7,7 @@ import {
   passwordStrength,
   PasswordStrength,
 } from '../../core/password-policy';
+import {passwordErrorMessage} from '../../core/unlock-throttle';
 import {useWallet} from '../../core/wallet-context';
 import type {MainStackParams} from '../../navigation/types';
 import {ButtonPair, ErrorText, Field, Screen} from '../../ui/components';
@@ -55,8 +56,14 @@ export function ChangePasswordScreen({navigation}: Props) {
     setBusy(true);
     const changed = await changePassword(values.current, values.next);
     setBusy(false);
-    if (!changed) {
-      setError({field: 'current', message: 'Invalid password'});
+    if (!changed.ok) {
+      setError({
+        field: 'current',
+        message:
+          changed.waitMs > 0
+            ? passwordErrorMessage(changed.waitMs)
+            : 'Invalid password',
+      });
       return;
     }
     navigation.goBack();
