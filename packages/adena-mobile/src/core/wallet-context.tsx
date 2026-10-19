@@ -226,8 +226,16 @@ export function WalletProvider({
     [platform],
   );
 
+  // The iOS Keychain outlives the app, so a biometric escrow from an earlier
+  // install or wallet can still be there; it holds another password.
+  const dropBiometricEscrow = useCallback(async () => {
+    await disableBiometricUnlock();
+    setBiometricEnabled(false);
+  }, []);
+
   const createWallet = useCallback(
     async (mnemonic: string, password: string) => {
+      await dropBiometricEscrow();
       const created = await base.walletService.createWallet({
         mnemonic,
         password,
@@ -237,12 +245,13 @@ export function WalletProvider({
       );
       await adoptWallet(created);
     },
-    [base, adoptWallet],
+    [base, adoptWallet, dropBiometricEscrow],
   );
 
   // Same construction as the extension's wallet import with a private key.
   const importPrivateKey = useCallback(
     async (privateKeyHex: string, password: string) => {
+      await dropBiometricEscrow();
       const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(privateKeyHex);
       const imported = await SingleAccount.createBy(keyring, 'Account');
       const created = new AdenaWallet();
@@ -253,7 +262,7 @@ export function WalletProvider({
       await base.accountRepository.updateCurrentAccountId(imported.id);
       await adoptWallet(created);
     },
-    [base, adoptWallet],
+    [base, adoptWallet, dropBiometricEscrow],
   );
 
   const unlock = useCallback(

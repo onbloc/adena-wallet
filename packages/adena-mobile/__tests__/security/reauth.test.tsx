@@ -4,16 +4,26 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 
 import {ReauthHost, ReauthProvider, useReauth} from '../../src/security/reauth';
 
+const mockState = {biometricEnabled: false, escrowMatches: false};
+
 jest.mock('../../src/core/wallet-context', () => ({
   useWallet: () => ({
+    base: {
+      walletService: {equalsPassword: async () => mockState.escrowMatches},
+    },
     verifyPassword: async (password: string) =>
       password === 'right' ? {ok: true} : {ok: false, waitMs: 0},
-    biometricEnabled: false,
+    biometricEnabled: mockState.biometricEnabled,
   }),
 }));
 jest.mock('../../src/platform/biometric-unlock', () => ({
-  unlockWithBiometrics: async () => false,
+  unlockWithBiometrics: async () => 'escrowed-password',
 }));
+
+afterEach(() => {
+  mockState.biometricEnabled = false;
+  mockState.escrowMatches = false;
+});
 
 let requestReauth: ReturnType<typeof useReauth>;
 function Probe() {
@@ -79,5 +89,26 @@ describe('ReauthProvider', () => {
     expect(shown).toHaveLength(1);
     const sheet = root.findByProps({testID: 'approval-sheet'});
     expect(sheet.findAllByType(Modal)).toContain(shown[0]);
+  });
+
+  it("passes with biometrics only when the escrowed password is this wallet's", async () => {
+    mockState.biometricEnabled = true;
+    mockState.escrowMatches = true;
+    const root = render(null);
+    let result: Promise<boolean>;
+    await act(async () => {
+      result = requestReauth('Sign');
+    });
+    await expect(result!).resolves.toBe(true);
+    expect(visibleModals(root)).toHaveLength(0);
+  });
+
+  it('asks for the password when the escrow is stale', async () => {
+    mockState.biometricEnabled = true;
+    const root = render(null);
+    await act(async () => {
+      requestReauth('Sign');
+    });
+    expect(visibleModals(root)).toHaveLength(1);
   });
 });

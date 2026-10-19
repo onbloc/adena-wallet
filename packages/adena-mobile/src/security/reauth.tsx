@@ -62,7 +62,7 @@ export function ReauthHost() {
 }
 
 export function ReauthProvider({children}: React.PropsWithChildren) {
-  const {verifyPassword, biometricEnabled} = useWallet();
+  const {base, verifyPassword, biometricEnabled} = useWallet();
   const [prompt, setPrompt] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -83,7 +83,12 @@ export function ReauthProvider({children}: React.PropsWithChildren) {
       if (signal?.aborted) {
         return false;
       }
-      if (biometricEnabled && (await unlockWithBiometrics(reason))) {
+      // The escrowed password must still be this wallet's (see
+      // dropBiometricEscrow); a stale one falls back to the prompt.
+      const escrowed = biometricEnabled
+        ? await unlockWithBiometrics(reason)
+        : null;
+      if (escrowed && (await base.walletService.equalsPassword(escrowed))) {
         return !signal?.aborted;
       }
       if (signal?.aborted) {
@@ -100,7 +105,7 @@ export function ReauthProvider({children}: React.PropsWithChildren) {
         });
       });
     },
-    [biometricEnabled, finish],
+    [base, biometricEnabled, finish],
   );
 
   const submit = useCallback(async () => {
