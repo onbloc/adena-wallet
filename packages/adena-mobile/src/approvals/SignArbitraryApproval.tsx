@@ -21,7 +21,11 @@ export function looksLikeTransaction(text: string): boolean {
 }
 
 /** SIGN_ARBITRARY: signs a message with the account key (ADR-036 style). */
-export function SignArbitraryApproval({request, respond}: ApprovalProps) {
+export function SignArbitraryApproval({
+  request,
+  signal,
+  respond,
+}: ApprovalProps) {
   const {net, account} = useWallet();
   const requestReauth = useReauth();
   const [busy, setBusy] = useState(false);
@@ -35,7 +39,12 @@ export function SignArbitraryApproval({request, respond}: ApprovalProps) {
     if (!net || !account) {
       return;
     }
-    if (!(await requestReauth(`Sign a message for ${displayHost(origin)}`))) {
+    if (
+      !(await requestReauth(
+        `Sign a message for ${displayHost(origin)}`,
+        signal,
+      ))
+    ) {
       return;
     }
     setBusy(true);

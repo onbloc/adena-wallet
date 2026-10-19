@@ -6,6 +6,8 @@ import {Modal} from 'react-native';
 
 import {useWallet} from '../core/wallet-context';
 import type {PendingApproval} from '../platform/approval-queue';
+import type {MobilePlatform} from '../platform/install';
+import {ReauthHost} from '../security/reauth';
 import {ConnectApproval} from './ConnectApproval';
 import {
   CosmosConnectApproval,
@@ -100,14 +102,36 @@ export function ApprovalHost() {
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={() => platform.approvals.reject(current.id)}>
-      <ApprovalScreen
-        key={current.id}
-        request={current}
-        respond={response =>
-          platform.approvals.resolve(current.id, response as any)
-        }
-        dismiss={() => platform.approvals.reject(current.id)}
-      />
+      <ApprovalSession key={current.id} request={current} platform={platform} />
+      <ReauthHost />
     </Modal>
+  );
+}
+
+/**
+ * One request's screen. It unmounts once the request is answered, including
+ * when the queue answers it (a newer request or a lock dismissed it); the
+ * abort then cancels a pending re-authentication so nothing is signed or
+ * broadcast for a request the page already got an answer to.
+ */
+function ApprovalSession({
+  request,
+  platform,
+}: {
+  request: PendingApproval;
+  platform: MobilePlatform;
+}) {
+  const [controller] = useState(() => new AbortController());
+  useEffect(() => () => controller.abort(), [controller]);
+
+  return (
+    <ApprovalScreen
+      request={request}
+      signal={controller.signal}
+      respond={response =>
+        platform.approvals.resolve(request.id, response as any)
+      }
+      dismiss={() => platform.approvals.reject(request.id)}
+    />
   );
 }

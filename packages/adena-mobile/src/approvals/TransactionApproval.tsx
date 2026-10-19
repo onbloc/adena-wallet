@@ -53,6 +53,7 @@ type State =
 
 export function TransactionApproval({
   request,
+  signal,
   respond,
   dismiss,
   mode,
@@ -124,7 +125,10 @@ export function TransactionApproval({
     }
     const {document} = state;
     if (
-      !(await requestReauth(`Approve the request from ${displayHost(origin)}`))
+      !(await requestReauth(
+        `Approve the request from ${displayHost(origin)}`,
+        signal,
+      ))
     ) {
       return;
     }
@@ -160,6 +164,10 @@ export function TransactionApproval({
             message.key,
           ),
         );
+        return;
+      }
+      // Signing takes seconds; the page may have been answered meanwhile.
+      if (signal.aborted) {
         return;
       }
       const hash = net.transactionService.createHash(signed);

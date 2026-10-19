@@ -275,6 +275,7 @@ type SignState =
 /** SIGN_COSMOS_AMINO and SIGN_COSMOS_DIRECT. */
 export function CosmosSignApproval({
   request,
+  signal,
   respond,
   mode,
 }: ApprovalProps & {mode: 'amino' | 'direct'}) {
@@ -355,7 +356,7 @@ export function CosmosSignApproval({
     if (state.phase !== 'ready' || !account || !net) {
       return;
     }
-    if (!(await requestReauth(`Sign for ${origin}`))) {
+    if (!(await requestReauth(`Sign for ${origin}`, signal))) {
       return;
     }
     setState({phase: 'working'});
