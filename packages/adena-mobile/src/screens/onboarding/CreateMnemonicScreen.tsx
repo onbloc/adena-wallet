@@ -9,10 +9,7 @@ import type {
   MainStackParams,
   OnboardingStackParams,
 } from '../../navigation/types';
-import {
-  copyWithExpiry,
-  SECRET_CLIPBOARD_CLEAR_MS,
-} from '../../security/sensitive-clipboard';
+import {copySecret} from '../../security/sensitive-clipboard';
 import {useSecureScreen} from '../../security/use-secure-screen';
 import {
   HoldToReveal,
@@ -244,7 +241,7 @@ function CreateMnemonicFlow({
             <WebCopyButton
               testID="mnemonic-copy"
               onCopy={() => {
-                copyWithExpiry(words.join(' '), SECRET_CLIPBOARD_CLEAR_MS);
+                copySecret(words.join(' '));
                 setCopied(true);
               }}
             />

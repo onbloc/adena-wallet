@@ -3,10 +3,7 @@ import {StyleSheet, Text, View} from 'react-native';
 
 import {checkPassword, passwordErrorMessage} from '../../core/unlock-throttle';
 import {useWallet} from '../../core/wallet-context';
-import {
-  copyWithExpiry,
-  SECRET_CLIPBOARD_CLEAR_MS,
-} from '../../security/sensitive-clipboard';
+import {copySecret} from '../../security/sensitive-clipboard';
 import {useSecureScreen} from '../../security/use-secure-screen';
 import {COPIED_WARNING} from '../onboarding/CreateMnemonicScreen';
 import {
@@ -93,7 +90,7 @@ export function RevealMnemonicScreen() {
           <WebCopyButton
             testID="reveal-copy"
             onCopy={() => {
-              copyWithExpiry(words.join(' '), SECRET_CLIPBOARD_CLEAR_MS);
+              copySecret(words.join(' '));
               setCopied(true);
             }}
           />

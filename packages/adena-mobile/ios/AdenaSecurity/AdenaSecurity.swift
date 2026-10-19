@@ -2,7 +2,7 @@ import Foundation
 import React
 import UIKit
 
-/// Screen privacy and backup-excluded storage.
+/// Screen privacy, backup-excluded storage and secret copies.
 ///
 /// iOS cannot block screenshots, so this module (1) covers the window whenever
 /// the app leaves the foreground, so the app switcher snapshot shows nothing,
@@ -63,6 +63,21 @@ final class AdenaSecurity: RCTEventEmitter {
       resolve(directory.path)
     } catch {
       reject("E_PROTECTED_STORAGE", "Could not prepare protected storage", error)
+    }
+  }
+
+  /// Copies a secret for this device only (no Universal Clipboard) with an
+  /// expiry the system enforces, so it is cleared even while the app is in the
+  /// background or after it was killed.
+  @objc(copySensitive:expiresMs:)
+  func copySensitive(_ text: String, expiresMs: Double) {
+    DispatchQueue.main.async {
+      UIPasteboard.general.setItems(
+        [["public.utf8-plain-text": text]],
+        options: [
+          .localOnly: true,
+          .expirationDate: Date().addingTimeInterval(expiresMs / 1000),
+        ])
     }
   }
 

@@ -5,6 +5,8 @@ interface AdenaSecurityNativeModule {
   setSecureScreen(enabled: boolean): void;
   /** A directory excluded from iCloud/Google backups, created on first call. */
   getProtectedStorageDirectory(): Promise<string>;
+  /** Copies a secret: device-only on iOS, marked sensitive on Android, cleared natively. */
+  copySensitive(text: string, expiresMs: number): void;
 }
 
 const nativeModule: AdenaSecurityNativeModule | undefined =
@@ -52,4 +54,14 @@ export function onScreenshotTaken(listener: () => void): () => void {
   const emitter = new NativeEventEmitter(NativeModules.AdenaSecurity);
   const subscription = emitter.addListener('screenshotTaken', listener);
   return () => subscription.remove();
+}
+
+/**
+ * Copies a seed phrase or key. Unlike a JS timer, which stops while the app
+ * is in the background, the clear runs natively: iOS expires the item itself
+ * (even after the app is killed) and keeps it off Universal Clipboard;
+ * Android hides it from clipboard previews and clears it on a native timer.
+ */
+export function copySensitive(text: string, expiresMs: number): void {
+  requireNativeModule().copySensitive(text, expiresMs);
 }
