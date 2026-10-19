@@ -32,20 +32,24 @@ const HOME_URL = 'https://gno.land';
 
 /**
  * Android only: registers `script` to run before any page script in every
- * later document (AdenaWebViewModule). False when the system WebView is too
- * old; the WebView prop, which can run late, is used then.
+ * later document of the WebView inside `container` (AdenaWebViewModule; the
+ * WebView ref is an imperative handle, not a view). False when the system
+ * WebView is too old or anything fails; the WebView prop, which can run
+ * late, is used then.
  */
 async function addDocumentStartScript(
-  view: WebView | null,
+  container: View | null,
   script: string,
 ): Promise<boolean> {
-  const tag = view ? findNodeHandle(view) : null;
-  if (tag === null || !NativeModules.AdenaWebView) {
+  try {
+    const tag = container ? findNodeHandle(container) : null;
+    if (tag === null || !NativeModules.AdenaWebView) {
+      return false;
+    }
+    return await NativeModules.AdenaWebView.addDocumentStartScript(tag, script);
+  } catch {
     return false;
   }
-  return NativeModules.AdenaWebView.addDocumentStartScript(tag, script).catch(
-    () => false,
-  );
 }
 
 /** Document-start scripts reach every frame; the provider is for the top one. */
@@ -65,6 +69,7 @@ export function normalizeInput(input: string): string {
 
 export function BrowserScreen({route, navigation}: Props) {
   const webView = useRef<WebView>(null);
+  const webViewContainer = useRef<View>(null);
   const navUrl = useRef('');
   const navOrigin = useRef<string | null>(null);
   const [source, setSource] = useState(route.params?.url ?? HOME_URL);
@@ -90,9 +95,10 @@ export function BrowserScreen({route, navigation}: Props) {
     if (Platform.OS !== 'android') {
       return;
     }
-    addDocumentStartScript(webView.current, topFrameOnly(injected)).then(ok =>
-      setInjection(ok ? 'document-start' : 'prop'),
-    );
+    addDocumentStartScript(
+      webViewContainer.current,
+      topFrameOnly(injected),
+    ).then(ok => setInjection(ok ? 'document-start' : 'prop'));
   }, [injected]);
 
   const track = useCallback((url: string) => {
@@ -186,39 +192,44 @@ export function BrowserScreen({route, navigation}: Props) {
       </View>
       {!!host && <Text style={styles.host}>{host}</Text>}
       {!!blocked && <Text style={styles.blocked}>{blocked}</Text>}
-      <WebView
-        ref={webView}
-        source={{uri: injection === 'pending' ? 'about:blank' : source}}
-        injectedJavaScriptBeforeContentLoaded={
-          injection === 'prop' ? injected : undefined
-        }
-        injectedJavaScriptBeforeContentLoadedForMainFrameOnly
-        injectedJavaScriptForMainFrameOnly
-        onLoadStart={event => track(event.nativeEvent.url)}
-        onNavigationStateChange={(state: WebViewNavigation) => track(state.url)}
-        onShouldStartLoadWithRequest={onShouldStartLoad}
-        onMessage={onMessage}
-        originWhitelist={[
-          'https://*',
-          'http://localhost*',
-          'http://127.0.0.1*',
-          'about:blank',
-        ]}
-        javaScriptCanOpenWindowsAutomatically={false}
-        setSupportMultipleWindows={false}
-        allowFileAccess={false}
-        allowFileAccessFromFileURLs={false}
-        allowUniversalAccessFromFileURLs={false}
-        mixedContentMode="never"
-        webviewDebuggingEnabled={__DEV__}
-        allowsLinkPreview={false}
-      />
+      <View ref={webViewContainer} collapsable={false} style={styles.web}>
+        <WebView
+          ref={webView}
+          source={{uri: injection === 'pending' ? 'about:blank' : source}}
+          injectedJavaScriptBeforeContentLoaded={
+            injection === 'prop' ? injected : undefined
+          }
+          injectedJavaScriptBeforeContentLoadedForMainFrameOnly
+          injectedJavaScriptForMainFrameOnly
+          onLoadStart={event => track(event.nativeEvent.url)}
+          onNavigationStateChange={(state: WebViewNavigation) =>
+            track(state.url)
+          }
+          onShouldStartLoadWithRequest={onShouldStartLoad}
+          onMessage={onMessage}
+          originWhitelist={[
+            'https://*',
+            'http://localhost*',
+            'http://127.0.0.1*',
+            'about:blank',
+          ]}
+          javaScriptCanOpenWindowsAutomatically={false}
+          setSupportMultipleWindows={false}
+          allowFileAccess={false}
+          allowFileAccessFromFileURLs={false}
+          allowUniversalAccessFromFileURLs={false}
+          mixedContentMode="never"
+          webviewDebuggingEnabled={__DEV__}
+          allowsLinkPreview={false}
+        />
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
+  web: {flex: 1},
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',

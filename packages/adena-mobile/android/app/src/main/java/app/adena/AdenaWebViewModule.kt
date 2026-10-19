@@ -33,20 +33,32 @@ class AdenaWebViewModule(private val reactContext: ReactApplicationContext) :
       promise.resolve(false)
       return
     }
-    UiThreadUtil.runOnUiThread {
-      try {
-        val tag = viewTag.toInt()
-        val view = UIManagerHelper.getUIManagerForReactTag(reactContext, tag)?.resolveView(tag)
-        val webView = view?.let(::findWebView)
-        if (webView == null) {
+    UiThreadUtil.runOnUiThread { attach(viewTag.toInt(), script, promise, ATTACH_ATTEMPTS) }
+  }
+
+  // Fabric may mount the WebView after JS asked, so look again a few times.
+  private fun attach(tag: Int, script: String, promise: Promise, attemptsLeft: Int) {
+    try {
+      // resolveView throws while the view is not mounted yet.
+      val view = runCatching {
+        UIManagerHelper.getUIManagerForReactTag(reactContext, tag)?.resolveView(tag)
+      }.getOrNull()
+      val webView = view?.let(::findWebView)
+      if (webView == null) {
+        if (attemptsLeft > 1) {
+          UiThreadUtil.runOnUiThread(
+            { attach(tag, script, promise, attemptsLeft - 1) },
+            ATTACH_RETRY_MS,
+          )
+        } else {
           promise.reject("E_NO_WEBVIEW", "No WebView for this tag")
-          return@runOnUiThread
         }
-        WebViewCompat.addDocumentStartJavaScript(webView, script, setOf("*"))
-        promise.resolve(true)
-      } catch (error: Exception) {
-        promise.reject("E_DOCUMENT_START_SCRIPT", error)
+        return
       }
+      WebViewCompat.addDocumentStartJavaScript(webView, script, setOf("*"))
+      promise.resolve(true)
+    } catch (error: Exception) {
+      promise.reject("E_DOCUMENT_START_SCRIPT", error)
     }
   }
 
@@ -63,5 +75,7 @@ class AdenaWebViewModule(private val reactContext: ReactApplicationContext) :
 
   companion object {
     const val NAME = "AdenaWebView"
+    private const val ATTACH_ATTEMPTS = 20
+    private const val ATTACH_RETRY_MS = 50L
   }
 }
