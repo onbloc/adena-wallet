@@ -312,11 +312,40 @@ function view(type: string, value: unknown): CosmosMessageView {
   return {type, title: spec.title, rows};
 }
 
+const isFeeCoin = (value: unknown): value is Coin =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as Coin).denom === 'string' &&
+  typeof (value as Coin).amount === 'string' &&
+  /^\d+$/.test((value as Coin).amount);
+
+const isAminoMsg = (value: unknown): value is {type: string; value: unknown} =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as {type: unknown}).type === 'string';
+
+/**
+ * The page's document is checked only for its outline before it gets here
+ * (`validateAminoSignDoc`), and the summary is rendered as is. Throws on
+ * anything else, so the caller treats the document as unreadable.
+ */
 export function summarizeAminoSignDoc(doc: StdSignDoc): CosmosSignSummary {
+  const msgs: unknown = doc.msgs ?? [];
+  const fee: unknown = doc.fee?.amount ?? [];
+  const memo: unknown = doc.memo ?? '';
+  if (
+    !Array.isArray(msgs) ||
+    !msgs.every(isAminoMsg) ||
+    !Array.isArray(fee) ||
+    !fee.every(isFeeCoin) ||
+    typeof memo !== 'string'
+  ) {
+    throw new Error('Malformed amino sign document');
+  }
   return {
-    messages: (doc.msgs ?? []).map(msg => view(msg.type, msg.value)),
-    fee: (doc.fee?.amount ?? []) as Coin[],
-    memo: doc.memo ?? '',
+    messages: msgs.map(msg => view(msg.type, msg.value)),
+    fee,
+    memo,
   };
 }
 

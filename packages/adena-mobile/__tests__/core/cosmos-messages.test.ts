@@ -95,6 +95,32 @@ describe('amino sign requests', () => {
     ).toMatchObject({level: 'high', codes: ['NO_MESSAGES']});
   });
 
+  it('refuses a malformed document instead of rendering it', () => {
+    const send = {
+      type: 'cosmos-sdk/MsgSend',
+      value: {from_address: ME, to_address: OTHER, amount: []},
+    };
+    const malformed = [
+      {...aminoDoc([send]), fee: {amount: 'x', gas: '1'}},
+      {...aminoDoc([send]), fee: {amount: [{denom: 'uatone', amount: 5}]}},
+      {...aminoDoc([send]), fee: {amount: [{denom: 7, amount: '5'}]}},
+      {...aminoDoc([send]), fee: {amount: [null]}},
+      aminoDoc([{type: {nested: true}, value: {}} as any]),
+      aminoDoc([null as any]),
+      {...aminoDoc([send]), msgs: 'x'},
+      {...aminoDoc([send]), memo: 5},
+    ];
+    for (const doc of malformed) {
+      expect(() => summarizeAminoSignDoc(doc as any)).toThrow(
+        'Malformed amino sign document',
+      );
+    }
+    // A missing fee or memo is still read as none.
+    expect(
+      summarizeAminoSignDoc({msgs: [send], fee: null} as any),
+    ).toMatchObject({fee: [], memo: ''});
+  });
+
   it('flags a fee of a whole token or more', () => {
     const send = {
       type: 'cosmos-sdk/MsgSend',
