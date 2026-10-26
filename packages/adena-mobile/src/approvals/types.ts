@@ -10,4 +10,9 @@ export interface ApprovalProps {
   respond(response: InjectionMessage | Record<string, unknown>): void;
   /** Closes without a decision; the page gets the request's close message. */
   dismiss(): void;
+  /**
+   * Call right before broadcasting. Keeps the request from being dismissed
+   * until it is answered; false if it was already answered.
+   */
+  markInFlight(): boolean;
 }

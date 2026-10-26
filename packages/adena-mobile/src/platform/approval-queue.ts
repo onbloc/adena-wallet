@@ -6,6 +6,8 @@ export interface PendingApproval {
   /** The extension route of the approval screen, e.g. `/approve-transaction`. */
   path: string;
   message: InjectionMessage;
+  /** Being broadcast: it can no longer be dismissed or cancelled. */
+  inFlight: boolean;
 }
 
 type Listener = (current: PendingApproval | null, queued: number) => void;
@@ -46,15 +48,21 @@ export class ApprovalQueue implements ApprovalPresenter {
       message,
       closeMessage,
       sendResponse,
+      inFlight: false,
     });
     this.emit();
   };
 
   hasOpenApprovals = async (): Promise<boolean> => this.entries.length > 0;
 
+  /**
+   * Answers every pending request except one being broadcast: that one keeps
+   * its place at the head, so a newer request waits behind it, and gets the
+   * broadcast's real result once it settles.
+   */
   dismissAll = async (): Promise<void> => {
-    const dismissed = this.entries;
-    this.entries = [];
+    const dismissed = this.entries.filter(entry => !entry.inFlight);
+    this.entries = this.entries.filter(entry => entry.inFlight);
     dismissed.forEach(entry =>
       entry.sendResponse(this.makeDismissedResponse(entry.message)),
     );
@@ -63,7 +71,28 @@ export class ApprovalQueue implements ApprovalPresenter {
 
   current(): PendingApproval | null {
     const head = this.entries[0];
-    return head ? {id: head.id, path: head.path, message: head.message} : null;
+    return head
+      ? {
+          id: head.id,
+          path: head.path,
+          message: head.message,
+          inFlight: head.inFlight,
+        }
+      : null;
+  }
+
+  /**
+   * Called right before a transaction that cannot be recalled is broadcast.
+   * False when `id` was already answered; the caller must then not send it.
+   */
+  markInFlight(id: number): boolean {
+    const entry = this.entries.find(item => item.id === id);
+    if (!entry) {
+      return false;
+    }
+    entry.inFlight = true;
+    this.emit();
+    return true;
   }
 
   /** The approval screen's answer for request `id`. Ignored if `id` is no longer pending. */
@@ -71,8 +100,11 @@ export class ApprovalQueue implements ApprovalPresenter {
     this.settle(id, entry => entry.sendResponse(response));
   }
 
-  /** The user closed the approval screen without deciding. */
+  /** The user closed the approval screen without deciding. Ignored while broadcasting. */
   reject(id: number): void {
+    if (this.entries.find(entry => entry.id === id)?.inFlight) {
+      return;
+    }
     this.settle(id, entry => entry.sendResponse(entry.closeMessage));
   }
 

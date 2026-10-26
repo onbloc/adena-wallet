@@ -2,12 +2,16 @@ import {WalletResponseFailureType} from '@adena-wallet/sdk';
 import {InjectionMessageInstance} from '@inject/message/message';
 import {RoutePath} from '@types';
 import React, {useEffect, useState} from 'react';
-import {Modal} from 'react-native';
+import {ActivityIndicator, Modal, StyleSheet, View} from 'react-native';
 
 import {useWallet} from '../core/wallet-context';
 import type {PendingApproval} from '../platform/approval-queue';
+import {makeDismissedResponse} from '../platform/dismissed-response';
 import type {MobilePlatform} from '../platform/install';
 import {ReauthHost} from '../security/reauth';
+import {Body, Screen} from '../ui/components';
+import {colors} from '../ui/theme';
+import {ApprovalTitle} from './approval-ui';
 import {ConnectApproval} from './ConnectApproval';
 import {
   CosmosConnectApproval,
@@ -123,15 +127,78 @@ function ApprovalSession({
 }) {
   const [controller] = useState(() => new AbortController());
   useEffect(() => () => controller.abort(), [controller]);
+  // Mounted on a request that is already being broadcast: the wallet was
+  // locked and unlocked meanwhile. The broadcast answers it; showing the
+  // screen again would offer to send the same transaction twice.
+  const [resumedInFlight] = useState(request.inFlight);
+
+  if (resumedInFlight) {
+    return <BroadcastPending />;
+  }
 
   return (
-    <ApprovalScreen
-      request={request}
-      signal={controller.signal}
-      respond={response =>
-        platform.approvals.resolve(request.id, response as any)
-      }
-      dismiss={() => platform.approvals.reject(request.id)}
-    />
+    <ApprovalErrorBoundary
+      onError={() => {
+        // A broadcast already under way answers the request itself.
+        if (platform.approvals.current()?.inFlight) {
+          return;
+        }
+        platform.approvals.resolve(
+          request.id,
+          makeDismissedResponse(request.message),
+        );
+      }}>
+      <ApprovalScreen
+        request={request}
+        signal={controller.signal}
+        respond={response =>
+          platform.approvals.resolve(request.id, response as any)
+        }
+        dismiss={() => platform.approvals.reject(request.id)}
+        markInFlight={() => platform.approvals.markInFlight(request.id)}
+      />
+    </ApprovalErrorBoundary>
   );
 }
+
+function BroadcastPending() {
+  return (
+    <Screen>
+      <ApprovalTitle>Sending Transaction</ApprovalTitle>
+      <View style={styles.pending}>
+        <ActivityIndicator color={colors.text} />
+      </View>
+      <Body muted center>
+        The transaction you approved is being sent. This closes when the network
+        answers.
+      </Body>
+    </Screen>
+  );
+}
+
+/**
+ * A request whose content breaks rendering fails that request instead of
+ * taking the app down; the page decides what it sends.
+ */
+class ApprovalErrorBoundary extends React.Component<
+  React.PropsWithChildren<{onError: () => void}>,
+  {failed: boolean}
+> {
+  state = {failed: false};
+
+  static getDerivedStateFromError() {
+    return {failed: true};
+  }
+
+  componentDidCatch() {
+    this.props.onError();
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+const styles = StyleSheet.create({
+  pending: {paddingVertical: 24},
+});

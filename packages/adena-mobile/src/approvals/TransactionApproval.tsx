@@ -56,6 +56,7 @@ export function TransactionApproval({
   signal,
   respond,
   dismiss,
+  markInFlight,
   mode,
 }: ApprovalProps & {mode: TransactionMode}) {
   const {net, wallet, account} = useWallet();
@@ -167,7 +168,9 @@ export function TransactionApproval({
         return;
       }
       // Signing takes seconds; the page may have been answered meanwhile.
-      if (signal.aborted) {
+      // From here on the request stays pending until the broadcast settles,
+      // so the page never gets a failure for a transaction that lands.
+      if (signal.aborted || !markInFlight()) {
         return;
       }
       const hash = net.transactionService.createHash(signed);

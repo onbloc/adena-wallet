@@ -54,4 +54,40 @@ describe('ApprovalQueue', () => {
     expect(second).toHaveBeenCalledWith({dismissed: '2'});
     expect(queue.current()).toBeNull();
   });
+
+  it('keeps a request that is being broadcast out of dismissAll', async () => {
+    const queue = new ApprovalQueue(dismissed);
+    const broadcasting = jest.fn();
+    const waiting = jest.fn();
+    await queue.present('/a', request('1'), request('1-close'), broadcasting);
+    await queue.present('/b', request('2'), request('2-close'), waiting);
+    const id = queue.current()!.id;
+
+    expect(queue.markInFlight(id)).toBe(true);
+    // A newer page request or a lock dismisses pending requests.
+    await queue.dismissAll();
+    await queue.present('/c', request('3'), request('3-close'), jest.fn());
+
+    expect(broadcasting).not.toHaveBeenCalled();
+    expect(waiting).toHaveBeenCalledWith({dismissed: '2'});
+    // The broadcast stays in front; the newer request waits behind it.
+    expect(queue.current()).toMatchObject({id, inFlight: true});
+
+    // Closing the sheet does not answer it either; the broadcast result does.
+    queue.reject(id);
+    expect(broadcasting).not.toHaveBeenCalled();
+    queue.resolve(id, request('tx-success'));
+    expect(broadcasting).toHaveBeenCalledWith(request('tx-success'));
+    expect(queue.current()?.message.key).toBe('3');
+  });
+
+  it('refuses to mark a request that was already answered', async () => {
+    const queue = new ApprovalQueue(dismissed);
+    await queue.present('/a', request('1'), request('1-close'), jest.fn());
+    const id = queue.current()!.id;
+
+    await queue.dismissAll();
+
+    expect(queue.markInFlight(id)).toBe(false);
+  });
 });
