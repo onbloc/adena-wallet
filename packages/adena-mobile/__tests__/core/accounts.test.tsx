@@ -20,6 +20,7 @@ import {
   withPrivateKeyAccount,
   withSeedAccounts,
 } from '../../src/core/account-import';
+import {readSeedPhrase} from '../../src/core/seed-phrase';
 import {useWallet, WalletProvider} from '../../src/core/wallet-context';
 import {makeDismissedResponse} from '../../src/platform/dismissed-response';
 import {
@@ -207,5 +208,31 @@ describe('accounts', () => {
     expect(
       await withPrivateKeyAccount(wallet.wallet!, DUMMY_KEY, 'g'),
     ).toEqual({ok: false, reason: 'exists'});
+  });
+
+  it('reads the phrase of the selected account, not the vault current one', async () => {
+    // The private key account added above is now the vault's current account.
+    const service = wallet.base.walletService;
+    const keyAccount = wallet.account!;
+    expect(
+      await readSeedPhrase(service, PASSWORD, keyAccount.keyringId),
+    ).toEqual({opened: true, phrase: null});
+
+    // Switching accounts does not re-save the vault.
+    const seed = wallet.wallet!.keyrings.find(isHDWalletKeyring)!;
+    const seedAccount = wallet.wallet!.accounts.find(
+      item => item.keyringId === seed.id,
+    )!;
+    await act(async () => {
+      await wallet.switchAccount(seedAccount.id);
+    });
+    await waitFor(() => wallet.account?.id === seedAccount.id);
+
+    expect(
+      await readSeedPhrase(service, PASSWORD, seedAccount.keyringId),
+    ).toEqual({opened: true, phrase: seed.getMnemonic()});
+    expect(
+      await readSeedPhrase(service, 'Wrong-Password-1!', seedAccount.keyringId),
+    ).toEqual({opened: false});
   });
 });

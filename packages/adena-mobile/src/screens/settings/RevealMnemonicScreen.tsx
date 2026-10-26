@@ -1,6 +1,8 @@
+import {isHDWalletKeyring} from 'adena-module';
 import React, {useEffect, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
+import {readSeedPhrase} from '../../core/seed-phrase';
 import {checkPassword, passwordErrorMessage} from '../../core/unlock-throttle';
 import {useWallet} from '../../core/wallet-context';
 import {copySecret} from '../../security/sensitive-clipboard';
@@ -22,15 +24,26 @@ import {
   WebHoldButton,
 } from '../../ui/web';
 
+const NO_PHRASE =
+  'This account was imported with a private key, so it has no seed phrase. Switch to an account created from a seed phrase.';
+
 /**
  * The extension's Reveal Seed Phrase flow in one step: caution, password and
  * checklist, then a short hold shows the phrase. Biometrics alone are
  * not enough here, and the phrase comes from a separately decrypted copy that
  * is destroyed right away and dropped from memory on leave.
+ *
+ * The phrase shown is the one of the account selected in the app. The stored
+ * vault's own current account can be a different one (switching accounts
+ * does not re-save the vault), so it is not used.
  */
 export function RevealMnemonicScreen() {
   const {screenshotTaken} = useSecureScreen();
-  const {base} = useWallet();
+  const {base, wallet, account} = useWallet();
+  const keyringId = account?.keyringId;
+  const hasPhrase = !!wallet?.keyrings.some(
+    keyring => keyring.id === keyringId && isHDWalletKeyring(keyring),
+  );
   const [password, setPassword] = useState('');
   const [checks, setChecks] = useState([false, false]);
   const [words, setWords] = useState<string[]>([]);
@@ -43,19 +56,15 @@ export function RevealMnemonicScreen() {
 
   const next = async () => {
     setBusy(true);
-    let phrase = '';
+    let phrase: string | null = null;
     const checked = await checkPassword(async () => {
-      try {
-        const copy = await base.walletService.deserializeWallet(password);
-        try {
-          phrase = copy.getMnemonic();
-        } finally {
-          copy.destroy();
-        }
-        return true;
-      } catch {
-        return false;
-      }
+      const result = await readSeedPhrase(
+        base.walletService,
+        password,
+        keyringId,
+      );
+      phrase = result.opened ? result.phrase : null;
+      return result.opened;
     });
     setBusy(false);
     if (!checked.ok) {
@@ -66,7 +75,11 @@ export function RevealMnemonicScreen() {
       );
       return;
     }
-    setWords(phrase.split(' '));
+    if (!phrase) {
+      setError(NO_PHRASE);
+      return;
+    }
+    setWords((phrase as string).split(' '));
     setRevealed(true);
     setPassword('');
   };
@@ -107,9 +120,12 @@ export function RevealMnemonicScreen() {
           testID="reveal-hold"
           title={busy ? 'Checking…' : 'Hold to Reveal Seed Phrase'}
           onComplete={next}
-          disabled={busy || !password || checks.some(checked => !checked)}
+          disabled={
+            busy || !hasPhrase || !password || checks.some(checked => !checked)
+          }
         />
       }>
+      {!hasPhrase && <Notice tone="danger">{NO_PHRASE}</Notice>}
       <View style={styles.caution}>
         <Text style={styles.cautionTitle}>Approach with caution!</Text>
         <Text style={styles.cautionBody}>
