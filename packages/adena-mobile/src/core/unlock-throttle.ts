@@ -35,7 +35,15 @@ export function delayAfter(count: number): number {
  */
 export const unlockThrottle = {
   async remainingMs(now = Date.now()): Promise<number> {
-    const {lockedUntil} = await read();
+    const {count, lockedUntil} = await read();
+    const delay = delayAfter(count);
+    // Never longer than the delay itself. Failures recorded while the clock
+    // ran ahead would otherwise wait until that future time; the wait starts
+    // over from now instead, and is saved so that it also ends.
+    if (lockedUntil - now > delay) {
+      await storage().setByObject(KEY, {count, lockedUntil: now + delay});
+      return delay;
+    }
     return Math.max(0, lockedUntil - now);
   },
   async recordFailure(now = Date.now()): Promise<number> {
