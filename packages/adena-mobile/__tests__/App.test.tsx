@@ -1,4 +1,5 @@
 import React from 'react';
+import {Alert} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 
 import App from '../App';
@@ -53,5 +54,48 @@ describe('App shell', () => {
     const status = renderer.root.findByProps({testID: 'platform-status'}).props
       .children;
     expect(status).toContain('Wallet features are disabled');
+  });
+
+  it('offers no reset when the crypto self-test fails', async () => {
+    mockedInstall.mockResolvedValue({
+      ok: false,
+      reason: 'crypto',
+      error: new Error('x'),
+    });
+    const renderer = await render();
+    expect(
+      renderer.root.findAllByProps({testID: 'storage-reset'}),
+    ).toHaveLength(0);
+  });
+
+  it('resets unreadable storage only after the user confirms', async () => {
+    mockedInstall.mockReset();
+    mockedInstall.mockResolvedValueOnce({
+      ok: false,
+      reason: 'storage',
+      error: new Error('came up empty'),
+    });
+    mockedInstall.mockResolvedValueOnce({
+      ok: true,
+      platform: {autoLock: {reset: jest.fn()}} as any,
+    });
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const renderer = await render();
+
+    const [reset] = renderer.root.findAllByProps({testID: 'storage-reset'});
+    await ReactTestRenderer.act(async () => reset.props.onPress());
+    expect(mockedInstall).toHaveBeenCalledTimes(1);
+
+    const buttons = alert.mock.calls[0][2]!;
+    await ReactTestRenderer.act(async () =>
+      buttons.find(button => button.style === 'destructive')!.onPress!(),
+    );
+    expect(mockedInstall).toHaveBeenLastCalledWith(expect.any(Function), {
+      resetStorage: true,
+    });
+    expect(
+      renderer.root.findAllByProps({testID: 'wallet-ui'}).length,
+    ).toBeGreaterThan(0);
+    alert.mockRestore();
   });
 });

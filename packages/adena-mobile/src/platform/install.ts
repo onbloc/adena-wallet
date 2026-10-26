@@ -40,13 +40,15 @@ let installation: Promise<PlatformInstallResult> | null = null;
  * Must run before any shared service touches wallet data. If the crypto
  * self-test or storage fails, nothing is registered and the app must not
  * offer wallet creation or unlock. A successful install happens once; later
- * calls get the same platform.
+ * calls get the same platform. `resetStorage` first deletes the wallet data
+ * on this device (see `openSecureStorage`); only the user asks for it.
  */
 export function installMobilePlatform(
   makeDismissedResponse: (request: InjectionMessage) => unknown,
+  options: {resetStorage?: boolean} = {},
 ): Promise<PlatformInstallResult> {
   if (!installation) {
-    installation = install(makeDismissedResponse).then(result => {
+    installation = install(makeDismissedResponse, options).then(result => {
       if (!result.ok) {
         installation = null;
       }
@@ -78,6 +80,7 @@ async function isRegistered(
 
 async function install(
   makeDismissedResponse: (request: InjectionMessage) => unknown,
+  options: {resetStorage?: boolean},
 ): Promise<PlatformInstallResult> {
   installRandomValuesPolyfill();
 
@@ -90,7 +93,7 @@ async function install(
 
   let storage;
   try {
-    storage = await openSecureStorage();
+    storage = await openSecureStorage({reset: options.resetStorage});
   } catch (error) {
     return {ok: false, reason: 'storage', error: error as Error};
   }

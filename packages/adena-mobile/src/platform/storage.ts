@@ -146,20 +146,46 @@ export interface OpenedStorage extends SecureStorageStatus {
  * Opens the wallet's persistent storage: MMKV files in a backup-excluded
  * directory, encrypted with a key that lives only in this device's
  * Keychain/Keystore. Refuses to continue, instead of reading garbage or
- * starting the files over, when the key of an existing install is missing or
- * the files were written with a different key.
+ * starting the files over, when the key of an existing install is missing,
+ * the files were written with a different key, or the wallet file of an
+ * existing install comes up empty.
+ *
+ * `reset` is the user's way out of those refusals: it drops the key and
+ * starts both files over, deleting the wallet on this device.
  */
-export async function openSecureStorage(): Promise<OpenedStorage> {
+export async function openSecureStorage(
+  options: {reset?: boolean} = {},
+): Promise<OpenedStorage> {
   const path = await getProtectedStorageDirectory();
   const meta = new MMKV({id: META_ID, path});
-  const {key, hardwareBacked} = await loadOrCreateStorageKey(
-    !meta.getBoolean(META_INITIALIZED),
-  );
+  if (options.reset) {
+    await Keychain.resetGenericPassword({service: STORAGE_KEY_SERVICE});
+    meta.delete(META_INITIALIZED);
+  }
+  const initialized = meta.getBoolean(META_INITIALIZED) === true;
+  const {key, hardwareBacked} = await loadOrCreateStorageKey(!initialized);
 
-  const open = (id: string): MMKV => {
+  // `holdsWallet`: the file must never come up empty once set up. MMKV
+  // returns an empty file when it cannot decode one (another key, or data
+  // dropped after a CRC failure), which would make the wallet look new. The
+  // cache can always be rebuilt.
+  const open = (id: string, holdsWallet: boolean): MMKV => {
     const mmkv = new MMKV({id, path, encryptionKey: key});
+    if (options.reset) {
+      mmkv.clearAll();
+      // MMKV keeps one instance per id for the life of the process and
+      // ignores the key of a later open. The failed start before a reset
+      // already opened these files with the old key; without this the reset
+      // files would be written with it and read as empty on the next start.
+      mmkv.recrypt(key);
+    }
     const canary = mmkv.getString(CANARY_KEY);
     if (canary === undefined && mmkv.getAllKeys().length === 0) {
+      if (initialized && holdsWallet) {
+        throw new Error(
+          `Storage "${id}" came up empty, but this install already set it up`,
+        );
+      }
       mmkv.set(CANARY_KEY, CANARY_VALUE);
     } else if (canary !== CANARY_VALUE) {
       throw new Error(
@@ -169,8 +195,8 @@ export async function openSecureStorage(): Promise<OpenedStorage> {
     return mmkv;
   };
 
-  const local = open('adena-local');
-  const cache = open('adena-cache');
+  const local = open('adena-local', true);
+  const cache = open('adena-cache', false);
   migrateStorage({local, cache}, [CANARY_KEY]);
   const opened = {
     local: new MmkvStorage(local),

@@ -1,5 +1,12 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {SafeAreaView, StatusBar, StyleSheet, Text, View} from 'react-native';
+import {
+  Alert,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {
   initialWindowMetrics,
   SafeAreaProvider,
@@ -14,6 +21,7 @@ import {
   PlatformInstallResult,
 } from './src/platform/install';
 import {ReauthProvider} from './src/security/reauth';
+import {Button} from './src/ui/components';
 import {ModalProvider} from './src/ui/modal';
 import {colors, fonts} from './src/ui/theme';
 
@@ -32,9 +40,35 @@ function App(): React.JSX.Element {
     );
   }, []);
 
+  // The only way past storage that cannot be read: start it over and
+  // restore the wallet from its seed phrase.
+  const confirmReset = () =>
+    Alert.alert(
+      'Reset Adena?',
+      'This deletes the wallet data on this device. You can restore your wallet afterwards with its seed phrase or private key. Without them, your assets cannot be recovered.',
+      [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            setState({phase: 'booting'});
+            installMobilePlatform(makeDismissedResponse, {
+              resetStorage: true,
+            }).then(result => setState({phase: 'done', result}));
+          },
+        },
+      ],
+    );
+
   if (state.phase === 'done' && state.result.ok) {
     return <WalletApp platform={state.result.platform} />;
   }
+
+  const storageFailed =
+    state.phase === 'done' &&
+    !state.result.ok &&
+    state.result.reason === 'storage';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -44,6 +78,15 @@ function App(): React.JSX.Element {
         <Text testID="platform-status" style={styles.status}>
           {describe(state)}
         </Text>
+        {storageFailed && (
+          <Button
+            testID="storage-reset"
+            title="Reset and Restore"
+            variant="danger"
+            onPress={confirmReset}
+            style={styles.reset}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -92,7 +135,7 @@ function describe(state: BootState): string {
   const message =
     result.reason === 'crypto'
       ? 'Security self-test failed. Wallet features are disabled on this device.'
-      : 'Secure storage could not be opened. Wallet features are disabled.';
+      : 'The wallet data on this device could not be read. To use Adena again, reset it and restore your wallet with its seed phrase or private key.';
   // Debug builds show the cause; release builds never print error details.
   return __DEV__ ? `${message}\n\n${result.error.message}` : message;
 }
@@ -102,6 +145,7 @@ const styles = StyleSheet.create({
   body: {flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24},
   title: {...fonts.header3, color: colors.text, marginBottom: 12},
   status: {...fonts.body2Reg, color: colors.textMuted, textAlign: 'center'},
+  reset: {alignSelf: 'stretch', marginTop: 24},
 });
 
 export default App;
