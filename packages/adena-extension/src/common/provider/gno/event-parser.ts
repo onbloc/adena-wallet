@@ -60,8 +60,8 @@ const parseStorageDeposit = (
       return {
         storageDeposit: 0,
         storageUsage: 0,
-        unlockDeposit: Math.abs(bytesDelta),
-        releaseStorageUsage: Math.abs(feeDelta),
+        unlockDeposit: Math.abs(feeDelta),
+        releaseStorageUsage: Math.abs(bytesDelta),
       };
     }
     default:
