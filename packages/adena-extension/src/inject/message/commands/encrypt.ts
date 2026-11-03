@@ -26,10 +26,22 @@ const IV_LENGTH = 12; // GCM nonce length (12 bytes is recommended)
 const AES_GCM_ALGORITHM: AesKeyGenParams = { name: 'AES-GCM', length: KEY_LENGTH };
 const KEY_USAGES: KeyUsage[] = ['encrypt', 'decrypt'];
 
-// Collapses concurrent cold-start calls into one restore-or-generate, so two
-// requests arriving right after a worker restart cannot each mint a key and
-// leave the caller holding one that was never persisted.
-let pendingKey: Promise<CryptoKey | null> | null = null;
+// Cold-start loads and clears run one at a time, in call order. Each of them
+// spans several awaits (storage reads and writes, key import/export), and
+// interleaving them breaks the invariant that the in-memory key and its
+// session copy exist together: a load finishing after a lock would put a key
+// back into memory whose session copy the lock just removed, and the next
+// unlock would then encrypt with a key no later worker restart can restore —
+// the very failure this module exists to prevent. Serializing also collapses
+// concurrent cold-start calls: the second one finds the key the first
+// installed instead of minting its own.
+let keyLock: Promise<unknown> = Promise.resolve();
+
+function withKeyLock<T>(task: () => Promise<T>): Promise<T> {
+  const run = keyLock.then(task, task);
+  keyLock = run.catch(() => undefined);
+  return run;
+}
 
 export async function getInMemoryKey(memoryProvider: MemoryProvider): Promise<CryptoKey | null> {
   const cached = memoryProvider?.get<CryptoKey>(MEMORY_KEY) || null;
@@ -37,25 +49,30 @@ export async function getInMemoryKey(memoryProvider: MemoryProvider): Promise<Cr
     return cached;
   }
 
-  if (!pendingKey) {
-    pendingKey = restoreOrGenerateKey(memoryProvider).finally(() => {
-      pendingKey = null;
-    });
-  }
+  return withKeyLock(async () => {
+    // Re-check under the lock: a call queued behind another cold start must
+    // return the key that one installed rather than load again.
+    const installed = memoryProvider?.get<CryptoKey>(MEMORY_KEY) || null;
+    if (installed) {
+      return installed;
+    }
 
-  return pendingKey;
+    return restoreOrGenerateKey(memoryProvider);
+  });
 }
 
 export async function clearInMemoryKey(memoryProvider: MemoryProvider): Promise<void> {
-  const random = await generateInMemoryKey();
-  memoryProvider.set(MEMORY_KEY, random);
-  memoryProvider.set(MEMORY_KEY, null);
+  return withKeyLock(async () => {
+    const random = await generateInMemoryKey();
+    memoryProvider.set(MEMORY_KEY, random);
+    memoryProvider.set(MEMORY_KEY, null);
 
-  try {
-    await chrome.storage.session.remove(SESSION_KEY);
-  } catch (e) {
-    console.warn('Failed to remove the session copy of the encrypt key', e);
-  }
+    try {
+      await chrome.storage.session.remove(SESSION_KEY);
+    } catch (e) {
+      console.warn('Failed to remove the session copy of the encrypt key', e);
+    }
+  });
 }
 
 // Encrypts a password using AES-GCM

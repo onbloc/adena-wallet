@@ -125,3 +125,76 @@ describe('clearInMemoryKey', () => {
     expect(after).not.toBe(before);
   });
 });
+
+// A lock (manual or auto) can land while a cold-start load is still awaiting
+// storage. Whatever the interleaving, the lock must leave neither a key in
+// memory nor a copy in session storage, and the next unlock must get a key
+// that a later worker restart can restore.
+describe('lock racing a cold-start load', () => {
+  const deferred = <T,>(): { promise: Promise<T>; resolve: (value: T) => void } => {
+    let resolve!: (value: T) => void;
+    const promise = new Promise<T>((r) => {
+      resolve = r;
+    });
+    return { promise, resolve };
+  };
+
+  // Give the lock the chance to finish before the load's held-open storage
+  // call resolves. With loads and clears serialized the lock cannot finish
+  // first (it is queued behind the load), so this falls through after a short
+  // wait. Without serialization it returns as soon as the lock has run, which
+  // is exactly the interleaving the fix guards against.
+  const letLockGoFirst = (lock: Promise<void>): Promise<unknown> =>
+    Promise.race([lock, new Promise((resolve) => setTimeout(resolve, 50))]);
+
+  it('leaves nothing behind when the lock lands during the session read', async () => {
+    const { area, store } = mockSessionStorage();
+    await getInMemoryKey(new MemoryProvider());
+    const jwk = store.ENCRYPT_KEY_JWK;
+
+    // Worker restart; the restore's session read is held open.
+    const provider = new MemoryProvider();
+    const read = deferred<Record<string, unknown>>();
+    area.get.mockImplementationOnce(() => read.promise);
+    const load = getInMemoryKey(provider);
+    const lock = clearInMemoryKey(provider);
+    await letLockGoFirst(lock);
+    read.resolve({ ENCRYPT_KEY_JWK: jwk });
+    await Promise.all([load, lock]);
+
+    expect(provider.get('encryptKey')).toBeNull();
+    expect(store.ENCRYPT_KEY_JWK).toBeUndefined();
+
+    // Next unlock: a fresh key with a session copy, so a further worker
+    // restart still restores it.
+    const nextKey = await getInMemoryKey(provider);
+    expect(nextKey).not.toBeNull();
+    expect(store.ENCRYPT_KEY_JWK).toBeDefined();
+    expect(store.ENCRYPT_KEY_JWK).not.toEqual(jwk);
+    const ciphertext = await encryptPassword(nextKey as CryptoKey, 'hunter2');
+    const restored = await getInMemoryKey(new MemoryProvider());
+    await expect(
+      decryptPassword(restored as CryptoKey, ciphertext.encryptedKey, ciphertext.encryptedPassword),
+    ).resolves.toBe('hunter2');
+  });
+
+  it('leaves nothing behind when the lock lands during the session write', async () => {
+    const { area, store } = mockSessionStorage();
+    const provider = new MemoryProvider();
+
+    // First unlock; the generated key's session write is held open.
+    const write = deferred<void>();
+    area.set.mockImplementationOnce(async (items: Record<string, unknown>) => {
+      await write.promise;
+      Object.assign(store, items);
+    });
+    const load = getInMemoryKey(provider);
+    const lock = clearInMemoryKey(provider);
+    await letLockGoFirst(lock);
+    write.resolve();
+    await Promise.all([load, lock]);
+
+    expect(provider.get('encryptKey')).toBeNull();
+    expect(store.ENCRYPT_KEY_JWK).toBeUndefined();
+  });
+});
