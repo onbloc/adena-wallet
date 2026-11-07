@@ -14,6 +14,7 @@ import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant
 import { WalletError } from '@common/errors/wallet/wallet-error';
 import { CommandMessage } from '@inject/message/command-message';
 import { WalletRepository } from '@repositories/wallet';
+import { getBackgroundMessenger } from '@common/platform/background-messenger';
 
 export class WalletService {
   private _id: string;
@@ -370,7 +371,7 @@ export class WalletService {
   public updateAutoLockTimeoutMinutes = async (minutes: number): Promise<void> => {
     await this.walletRepository.updateAutoLockTimeoutMinutes(minutes);
     try {
-      await chrome.runtime.sendMessage(
+      await getBackgroundMessenger().sendCommand(
         CommandMessage.command('updateAutoLockTimer', { minutes }),
       );
     } catch (e) {

@@ -1,13 +1,18 @@
-import addPkgLogo from '@assets/addpkg.svg';
-import contractLogo from '@assets/contract.svg';
-import failed from '@assets/failed.svg';
-import gnotLogo from '@assets/icons/tokens/gnot.svg';
-import success from '@assets/success.svg';
-import theme from '@styles/theme';
 import { validateAddress } from 'adena-module';
 import axios, { AxiosResponse } from 'axios';
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
+
+// Re-exported for existing callers; dApp message handling imports the module
+// directly so it does not pull in this file's UI assets.
+export {
+  decodeParameter,
+  encodeParameter,
+  fromBase64,
+  getSiteName,
+  parseParameters,
+  toBase64,
+} from './url-parameter-utils';
 
 export function formatHash(hash: string, num?: number): string {
   const length = num ?? 4;
@@ -66,96 +71,6 @@ export function fullDateFormat(d: Date | string): string {
   return `${result.month} ${result.day}, ${result.year} ${result.time}`;
 }
 
-export function parseTxsEachDate(txs: object[]): any {
-  return txs.reduce((o: any, cur: any) => {
-    const k = cur.date.slice(0, 10);
-    const currDate = new Date(cur.date);
-    const dateDiff = getDateDiff(currDate);
-    let formatDate = '';
-
-    if (dateDiff === 0) {
-      formatDate = 'Today';
-    } else if (dateDiff === 1) {
-      formatDate = 'Yesterday';
-    } else {
-      const result = dateTimeFormatEn(currDate);
-      formatDate = `${result.month} ${result.day}, ${result.year}`;
-    }
-
-    let txFunc;
-    let txDesc;
-    if (cur.func === 'Sent') {
-      txDesc = `To: ${formatAddress(cur.to, 4)}`;
-    } else if (cur.func === 'Received') {
-      txDesc = `From: ${formatAddress(cur.from, 4)}`;
-    } else if (cur.type === '/vm.m_call') {
-      txDesc = `pkg: ${cur.pkg_path}`;
-    } else if (cur.type === '/vm.m_addpkg') {
-      txFunc = 'AddPkg';
-    } else if (cur.type === '/vm.m_run') {
-      txDesc = 'Run';
-    } else {
-      txDesc = '';
-    }
-
-    let txLogo;
-    if (cur.type === '/bank.MsgSend') {
-      txLogo = gnotLogo;
-    } else if (cur.type === '/vm.m_call') {
-      txLogo = contractLogo;
-    } else if (cur.type === '/vm.m_addpkg') {
-      txLogo = addPkgLogo;
-    } else {
-      txLogo = null;
-    }
-
-    if (o[k]) {
-      if (!isFailedReceive(cur)) {
-        o[k].transaction.push({
-          txImg: txLogo,
-          txStatus: cur.result.status,
-          txType: cur.type,
-          txFunc: txFunc || cur.func,
-          txDesc: txDesc,
-          txSend: prettier(cur.send),
-          protoType: cur,
-        });
-      }
-    } else {
-      if (!isFailedReceive(cur)) {
-        o[k] = {
-          date: formatDate,
-          transaction: [
-            {
-              txImg: txLogo,
-              txStatus: cur.result.status,
-              txReason: cur.result.reason,
-              txType: cur.type,
-              txFunc: txFunc || cur.func,
-              txDesc: txDesc,
-              txSend: prettier(cur.send),
-              protoType: cur,
-            },
-          ],
-        };
-      }
-    }
-    return o;
-  }, {});
-}
-
-const prettier = (target: any): any => {
-  if (target === undefined) {
-    return '0';
-  } else {
-    if (target !== 0) {
-      return target.replace('gnot', '');
-    } else if (target === 0) {
-      return '0';
-    }
-  }
-};
-
 export function minifyStatus(status: string): string {
   if (status === 'Success') {
     return 'S';
@@ -178,26 +93,6 @@ export function addressValidationCheck(v: string): boolean {
 
 export function removeUgly(target: any): any {
   return target.replace('To: ', '').replace('From: ', '').replace('/std.', '');
-}
-
-export function getStatusStyle(status: string): { color: string; statusIcon: any } {
-  switch (status) {
-    case 'SUCCESS':
-      return {
-        color: theme.green._5,
-        statusIcon: success,
-      };
-    case 'FAIL':
-      return {
-        color: theme.red._5,
-        statusIcon: failed,
-      };
-    default:
-      return {
-        color: theme.red._5,
-        statusIcon: failed,
-      };
-  }
 }
 
 export function minFractionDigits(v: number | string, minDigits: number): string {
@@ -234,87 +129,6 @@ export function funcTextFilter(v: string): 'Send' | 'Receive' | undefined {
     return 'Receive';
   } else v;
 }
-
-export const parseParameters = (url: string): { [x: string]: string } => {
-  const hash = url.split('?');
-  if (hash.length < 2) {
-    return {};
-  }
-
-  const params: { [key in string]: string } = {};
-  for (const hashValue of hash) {
-    for (const parameterValue of hashValue.split('&')) {
-      // Split on the first '=' only so base64 '=' padding inside the value
-      // is preserved verbatim.
-      const eqIdx = parameterValue.indexOf('=');
-      if (eqIdx > 0) {
-        const key = parameterValue.slice(0, eqIdx);
-        const value = parameterValue.slice(eqIdx + 1);
-        params[key] = value;
-      }
-    }
-  }
-
-  return params;
-};
-
-// Swap '+' and '/' for URL-safe alternatives so the base64 payload survives
-// being embedded in a URL query string (where '+' may be decoded as space and
-// '/' has its own meaning). '=' padding is preserved as-is and is handled by
-// parseParameters' first-'=' boundary rule.
-const toUrlSafeBase64 = (value: string): string => value.replace(/\+/g, '-').replace(/\//g, '_');
-const fromUrlSafeBase64 = (value: string): string => value.replace(/-/g, '+').replace(/_/g, '/');
-
-const encodeParameterReplacer = (_key: string, value: unknown): unknown => {
-  return typeof value === 'bigint' ? value.toString() : value;
-};
-
-export const encodeParameter = (data: { [key in string]: any }): string => {
-  try {
-    const encodedValue = encodeURI(JSON.stringify(data, encodeParameterReplacer));
-    return toUrlSafeBase64(toBase64(encodedValue));
-  } catch (error) {
-    console.log(error);
-  }
-  return '';
-};
-
-export const decodeParameter = (data: string): any => {
-  if (!data) {
-    return {};
-  }
-
-  try {
-    const decodedString = fromBase64(fromUrlSafeBase64(data));
-    if (!decodedString) {
-      return {};
-    }
-
-    const decodedValue = JSON.parse(decodeURI(decodedString));
-    return decodedValue;
-  } catch (error) {
-    console.log(error);
-  }
-  return {};
-};
-
-export const toBase64 = (data: string): string => {
-  try {
-    return btoa(data);
-  } catch (error) {
-    console.log(error);
-  }
-  return '';
-};
-
-export const fromBase64 = (data: string): string => {
-  try {
-    return atob(data);
-  } catch (error) {
-    console.log(error);
-  }
-  return '';
-};
 
 export const createImageByURI = async (uri: string): Promise<string | null> => {
   try {
@@ -390,15 +204,6 @@ export const createImageDataBySvg = async (imageUri: string): Promise<string | n
     console.log(e);
   }
   return null;
-};
-
-const isFailedReceive = (cur: any): boolean => {
-  return cur.func === 'Received' && cur.result.status === 'Failed';
-};
-
-// TODO: CHECK SSL
-export const getSiteName = (protocol: string | undefined, hostname: string | undefined): string => {
-  return `${protocol}//${hostname}`;
 };
 
 export const optimizeNumber = (value: BigNumber, multiply: BigNumber): BigNumber => {

@@ -1,5 +1,5 @@
 import { CommandKeyType } from '@common/constants/command-key.constant';
-import { GnoConnectInfo, GnoMessageInfo } from './methods/gno-connect';
+import type { GnoConnectInfo, GnoMessageInfo } from '../types/gno-connect';
 type StatusType = 'command';
 
 export function isCommandMessageData(data: any): data is CommandMessageData {

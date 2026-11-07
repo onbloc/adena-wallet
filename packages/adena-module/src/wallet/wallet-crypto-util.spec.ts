@@ -144,3 +144,45 @@ describe('encrypt/decrypt XChaCha20-Poly1305', () => {
     expect(decrypted).toBe(largeData);
   });
 });
+
+describe('XChaCha20 vault compatibility', () => {
+  it('decrypts a vault written with libsodium base64 encoding', async () => {
+    await sodium.ready;
+    const salt = await generateKdfSalt();
+    const password = 'PASSWORD';
+    const key = await makeCryptKeyBytes(password, salt);
+    const nonce = sodium.randombytes_buf(24);
+    const ciphertext = sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(
+      new TextEncoder().encode('LEGACY_VAULT'),
+      null,
+      null,
+      nonce,
+      key,
+    );
+
+    const decrypted = await decryptXChacha20(
+      { ciphertext: sodium.to_base64(ciphertext), nonce: sodium.to_base64(nonce) },
+      password,
+      salt,
+    );
+
+    expect(decrypted).toBe('LEGACY_VAULT');
+  });
+
+  it('writes a vault that libsodium base64 can read back', async () => {
+    await sodium.ready;
+    const salt = await generateKdfSalt();
+    const encrypted = await encryptXChacha20('NEW_VAULT', 'PASSWORD', salt);
+    const key = await makeCryptKeyBytes('PASSWORD', salt);
+
+    const plain = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
+      null,
+      sodium.from_base64(encrypted.ciphertext),
+      null,
+      sodium.from_base64(encrypted.nonce),
+      key,
+    );
+
+    expect(new TextDecoder().decode(plain)).toBe('NEW_VAULT');
+  });
+});

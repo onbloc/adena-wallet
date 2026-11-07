@@ -1,0 +1,58 @@
+{
+  "extends": "@react-native/typescript-config/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "adena-module": [
+        "../adena-module/index.ts"
+      ],
+      "@common/*": [
+        "../adena-extension/src/common/*"
+      ],
+      "@inject/*": [
+        "../adena-extension/src/inject/*"
+      ],
+      "@services/*": [
+        "../adena-extension/src/services/*"
+      ],
+      "@repositories/*": [
+        "../adena-extension/src/repositories/*"
+      ],
+      "@migrates/*": [
+        "../adena-extension/src/migrates/*"
+      ],
+      "@resources/*": [
+        "../adena-extension/src/resources/*"
+      ],
+      "@hooks/*": [
+        "../adena-extension/src/hooks/*"
+      ],
+      "@states": [
+        "../adena-extension/src/states"
+      ],
+      "@types": [
+        "../adena-extension/src/types"
+      ],
+      "@styles/tokens": [
+        "../adena-extension/src/styles/tokens"
+      ],
+      "@assets/*": [
+        "../adena-extension/src/assets/*"
+      ]
+    },
+    "types": [
+      "react-native",
+      "jest",
+      "chrome"
+    ],
+    "resolveJsonModule": true
+  },
+  "include": [
+    "App.tsx",
+    "index.js",
+    "src/**/*",
+    "__tests__/**/*",
+    "__mocks__/**/*",
+    "../adena-module/src/types/*.d.ts"
+  ]
+}

@@ -56,7 +56,7 @@ export interface Keyring {
   signRaw: (bytes: Uint8Array, opts?: SignRawOptions) => Promise<Uint8Array>;
   // Zeroes any sensitive key material held by the keyring so it cannot be
   // recovered from the JS heap after the wallet is locked. Implementations
-  // must call sodium.memzero on every Uint8Array holding keys, seeds, or
+  // must call getCryptoProvider().memzero on every Uint8Array holding keys, seeds, or
   // mnemonic entropy.
   destroy: () => void;
   sign: (

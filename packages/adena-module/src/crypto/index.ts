@@ -1,4 +1,12 @@
 export { Bip39, EnglishMnemonic, entropyToMnemonic, mnemonicToEntropy } from './bip39';
+export {
+  CRYPTO_PROVIDER_VECTORS,
+  getCryptoProvider,
+  libsodiumCryptoProvider,
+  setCryptoProvider,
+  verifyCryptoProvider,
+  type CryptoProvider
+} from './crypto-provider';
 export { type HashFunction } from './hash';
 export {
   Argon2id,

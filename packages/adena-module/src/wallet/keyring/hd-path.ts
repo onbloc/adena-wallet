@@ -66,6 +66,15 @@ export async function generateKeyPairByHdPath(
   hdPath: HdPathLike,
 ): Promise<{ privateKey: Uint8Array; publicKey: Uint8Array }> {
   const seed = await Bip39.mnemonicToSeed(new EnglishMnemonic(mnemonic));
+  return generateKeyPairFromSeed(seed, hdPath);
+}
+
+// Same derivation from the BIP39 seed (no passphrase) of the mnemonic. Skips
+// the 2048-round PBKDF2 of mnemonicToSeed, which takes seconds on mobile.
+export async function generateKeyPairFromSeed(
+  seed: Uint8Array,
+  hdPath: HdPathLike,
+): Promise<{ privateKey: Uint8Array; publicKey: Uint8Array }> {
   const { privkey } = Slip10.derivePath(Slip10Curve.Secp256k1, seed, toSlip10Path(hdPath));
   const { pubkey } = await Secp256k1.makeKeypair(privkey);
 
