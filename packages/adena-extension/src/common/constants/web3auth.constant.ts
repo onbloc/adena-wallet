@@ -14,6 +14,10 @@ export interface Web3AuthVerifier {
   domain?: string;
 }
 
+// Turns off Sign In With Google / Email / X, whatever the build's verifier
+// values. Flip back to true to re-enable them.
+export const SOCIAL_LOGIN_ENABLED = false;
+
 // Accounts predating the production verifier are only reachable through legacy.
 export type SocialKeySetType = 'LEGACY' | 'PRODUCTION';
 

@@ -16,6 +16,7 @@ import {
 import {
   EMAIL_VERIFIERS,
   GOOGLE_VERIFIERS,
+  SOCIAL_LOGIN_ENABLED,
   X_VERIFIERS,
 } from '@common/constants/web3auth.constant';
 import { isVerifierConfigured } from '@common/utils/social-login';
@@ -45,14 +46,17 @@ const AdvancedOptionScreen = (): ReactElement => {
 
   // A provider can be absent from a build, so its entry point stays disabled.
   const ableToSignInWithGoogle =
-    isVerifierConfigured(GOOGLE_VERIFIERS.PRODUCTION, 'GOOGLE') ||
-    isVerifierConfigured(GOOGLE_VERIFIERS.LEGACY, 'GOOGLE');
+    SOCIAL_LOGIN_ENABLED &&
+    (isVerifierConfigured(GOOGLE_VERIFIERS.PRODUCTION, 'GOOGLE') ||
+      isVerifierConfigured(GOOGLE_VERIFIERS.LEGACY, 'GOOGLE'));
   const ableToSignInWithEmail =
-    isVerifierConfigured(EMAIL_VERIFIERS.PRODUCTION, 'EMAIL') ||
-    isVerifierConfigured(EMAIL_VERIFIERS.LEGACY, 'EMAIL');
+    SOCIAL_LOGIN_ENABLED &&
+    (isVerifierConfigured(EMAIL_VERIFIERS.PRODUCTION, 'EMAIL') ||
+      isVerifierConfigured(EMAIL_VERIFIERS.LEGACY, 'EMAIL'));
   const ableToSignInWithX =
-    isVerifierConfigured(X_VERIFIERS.PRODUCTION, 'X') ||
-    isVerifierConfigured(X_VERIFIERS.LEGACY, 'X');
+    SOCIAL_LOGIN_ENABLED &&
+    (isVerifierConfigured(X_VERIFIERS.PRODUCTION, 'X') ||
+      isVerifierConfigured(X_VERIFIERS.LEGACY, 'X'));
 
   const onClickNewWallet = useCallback(() => {
     if (wallet && wallet.hasHDWallet()) {
