@@ -1,9 +1,10 @@
-import React from 'react';
-import type { JSX } from 'react';
-import { Provider as JotaiProvider } from 'jotai';
-import { ThemeProvider } from 'styled-components';
-import { render, screen } from '@testing-library/react';
 import theme from '@styles/theme';
+import { render, screen } from '@testing-library/react';
+import { Provider as JotaiProvider } from 'jotai';
+import type { JSX } from 'react';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
+
 import StorageDeposit, { StorageDepositProps } from './storage-deposit';
 
 // Prints the amount the row hands to FeeAmount, sign included.

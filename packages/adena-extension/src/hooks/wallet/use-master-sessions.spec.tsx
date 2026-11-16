@@ -1,10 +1,10 @@
-import React, { PropsWithChildren } from 'react';
-import type { JSX } from 'react';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
+import type { JSX } from 'react';
+import React, { PropsWithChildren } from 'react';
 import type { Mock } from 'vitest';
 
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useMasterSessions } from './use-master-sessions';
 
 vi.mock('@hooks/use-context', () => ({

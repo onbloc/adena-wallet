@@ -1,9 +1,10 @@
-import { FormSubmitInterceptor } from './form-submit-interceptor';
-import { GnoMessageInfo } from '../gno-connect';
+import type { Mock } from 'vitest';
+
 import * as gnoConnect from '../gno-connect';
+import { GnoMessageInfo } from '../gno-connect';
 import { GnoConnectInfoProvider } from '../gno-connect-info-provider';
 import { InterceptorContext } from '../gno-interceptor.types';
-import type { Mock } from 'vitest';
+import { FormSubmitInterceptor } from './form-submit-interceptor';
 
 // The real command handler pulls @adena-wallet/sdk, whose web3auth → nested
 // @noble/hashes dependency ships sources jest does not transpile ("Uint8Array

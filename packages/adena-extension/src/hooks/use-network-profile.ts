@@ -1,13 +1,11 @@
-import { useMemo } from 'react';
-import { useAtomValue } from 'jotai';
-
-import { NetworkProfile } from 'adena-module';
-
 import {
   toCosmosNetworkProfile,
   toGnoNetworkProfile,
 } from '@common/mapper/network-profile-mapper';
 import { NetworkState } from '@states';
+import { NetworkProfile } from 'adena-module';
+import { useAtomValue } from 'jotai';
+import { useMemo } from 'react';
 
 /**
  * Return the NetworkProfile (endpoints, linkUrl, chainId, etc.) for the

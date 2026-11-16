@@ -1,9 +1,9 @@
-import React from 'react';
+import theme from '@styles/theme';
 import { fireEvent, render, RenderResult, screen } from '@testing-library/react';
 import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
 
-import theme from '@styles/theme';
 import { SessionOverviewPopover } from './session-overview-popover';
 
 const renderPopover = (

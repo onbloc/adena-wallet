@@ -1,5 +1,6 @@
-import { closeCurrentSurface, isFirefox } from './browser-utils';
 import type { Mock } from 'vitest';
+
+import { closeCurrentSurface, isFirefox } from './browser-utils';
 
 type TabStub = { id?: number; url?: string };
 
@@ -33,7 +34,7 @@ describe('closeCurrentSurface', () => {
   });
 
   it('removes this page’s own tab when the browser refused window.close()', () => {
-    const { remove } = mockChromeTabs((callback) => callback({ id: 7, url: window.location.href }));
+    const { remove } = mockChromeTabs(callback => callback({ id: 7, url: window.location.href }));
 
     closeCurrentSurface();
     vi.advanceTimersByTime(100);
@@ -42,7 +43,7 @@ describe('closeCurrentSurface', () => {
   });
 
   it('keeps the hash out of the tab/page comparison', () => {
-    const { remove } = mockChromeTabs((callback) =>
+    const { remove } = mockChromeTabs(callback =>
       callback({ id: 9, url: `${window.location.href.replace(/#.*$/, '')}#/web/all-set` }),
     );
 
@@ -53,7 +54,7 @@ describe('closeCurrentSurface', () => {
   });
 
   it('never closes a tab that is not this page (panel context borrowing a tab)', () => {
-    const { remove } = mockChromeTabs((callback) =>
+    const { remove } = mockChromeTabs(callback =>
       callback({ id: 3, url: 'https://gno.land/r/demo/profile' }),
     );
 

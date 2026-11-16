@@ -1,5 +1,4 @@
 import type { JSX } from 'react';
-/* eslint-disable @eslint-react/dom-no-unknown-property */
 
 const IconEditCancel = ({ className }: { className: string }): JSX.Element => (
   <svg

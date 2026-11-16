@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
-import { fromBase64 } from '@cosmjs/encoding';
-import { isSessionAccount } from 'adena-module';
-import { useQueryClient } from '@tanstack/react-query';
-
 import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
+import { flattenSessionAccount } from '@common/provider/gno/utils';
+import { fromBase64 } from '@cosmjs/encoding';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { SESSIONS_QUERY_KEY } from '@hooks/use-sessions';
-import { flattenSessionAccount } from '@common/provider/gno/utils';
+import { useQueryClient } from '@tanstack/react-query';
+import { isSessionAccount } from 'adena-module';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface MasterSessionEntry {
   sessionAddr: string;
@@ -86,7 +85,8 @@ export const useMasterSessions = (masterAddress: string | undefined): UseMasterS
           if (flat.publicKey?.value) {
             try {
               publicKey = fromBase64(flat.publicKey.value);
-            } catch {
+            }
+            catch {
               publicKey = null;
             }
           }
@@ -95,8 +95,8 @@ export const useMasterSessions = (masterAddress: string | undefined): UseMasterS
           // cached.status takes precedence only when REVOKED (a local-only
           // signal between revoke broadcast + chain re-fetch). Otherwise the
           // chain is authoritative for ACTIVE/EXPIRED.
-          const status: 'ACTIVE' | 'EXPIRED' | 'REVOKED' =
-            cached?.status === 'REVOKED' ? 'REVOKED' : chainStatus;
+          const status: 'ACTIVE' | 'EXPIRED' | 'REVOKED'
+            = cached?.status === 'REVOKED' ? 'REVOKED' : chainStatus;
           const walletName = walletSessionNameByAddr.get(flat.address);
           const chainLabel = `#${idx + 1}`;
           return {
@@ -121,12 +121,14 @@ export const useMasterSessions = (masterAddress: string | undefined): UseMasterS
           // popover, etc.) reflect the latest values pulled from chain.
           void queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
         }
-      } catch (e) {
+      }
+      catch (e) {
         if (!signal?.cancelled) {
           setError((e as Error)?.message ?? 'Failed to load sessions');
           setEntries([]);
         }
-      } finally {
+      }
+      finally {
         if (!signal?.cancelled) setIsLoading(false);
       }
     },

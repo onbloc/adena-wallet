@@ -7,8 +7,8 @@ import { MultisigKeyring } from './multisig-keyring';
 import { PrivateKeyKeyring } from './private-key-keyring';
 import { Web3AuthKeyring } from './web3-auth-keyring';
 
-const MNEMONIC =
-  'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
+const MNEMONIC
+  = 'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
 const BYTES = new TextEncoder().encode('hello gno signRaw');
 
 describe('Keyring.signRaw — private-key keyrings', () => {
@@ -24,7 +24,7 @@ describe('Keyring.signRaw — private-key keyrings', () => {
     const publicKey = await hd.getPublicKey(0);
     const keyring = new PrivateKeyKeyring({
       privateKey: Array.from(privateKey),
-      publicKey: Array.from(publicKey),
+      publicKey: Array.from(publicKey)
     });
     const sig = await keyring.signRaw(BYTES);
     expect(sig.length).toBe(64);
@@ -36,7 +36,7 @@ describe('Keyring.signRaw — private-key keyrings', () => {
     const publicKey = await hd.getPublicKey(0);
     const keyring = new Web3AuthKeyring({
       privateKey: Array.from(privateKey),
-      publicKey: Array.from(publicKey),
+      publicKey: Array.from(publicKey)
     });
     const sig = await keyring.signRaw(BYTES);
     expect(sig.length).toBe(64);
@@ -56,7 +56,7 @@ describe('Keyring.signRaw — private-key keyrings', () => {
     const ok = await Secp256k1.verifySignature(
       Secp256k1Signature.fromFixedLength(sig),
       sha256(BYTES),
-      pubkey,
+      pubkey
     );
     expect(ok).toBe(true);
   });
@@ -74,11 +74,11 @@ describe('Keyring.signRaw — private-key keyrings', () => {
     const publicKey = await hd.getPublicKey(0);
     const pk = new PrivateKeyKeyring({
       privateKey: Array.from(privateKey),
-      publicKey: Array.from(publicKey),
+      publicKey: Array.from(publicKey)
     });
     const web3 = new Web3AuthKeyring({
       privateKey: Array.from(privateKey),
-      publicKey: Array.from(publicKey),
+      publicKey: Array.from(publicKey)
     });
     const pkSig0 = await pk.signRaw(BYTES, { hdPath: 0 });
     const pkSig99 = await pk.signRaw(BYTES, { hdPath: 99 });
@@ -92,7 +92,7 @@ describe('Keyring.signRaw — private-key keyrings', () => {
 describe('Keyring.signRaw — non-signing keyrings', () => {
   it('AddressKeyring throws AIRGAP message', async () => {
     const keyring = await AddressKeyring.fromAddress(
-      'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+      'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5'
     );
     await expect(keyring.signRaw(BYTES)).rejects.toThrow(/AIRGAP/);
   });
@@ -100,15 +100,15 @@ describe('Keyring.signRaw — non-signing keyrings', () => {
   it('MultisigKeyring throws multisig message', async () => {
     const keyring = new MultisigKeyring({
       addressBytes: [
-        146, 15, 181, 241, 124, 45, 175, 116, 187, 21, 153, 183, 203, 224, 41, 90, 94, 30, 201, 183,
+        146, 15, 181, 241, 124, 45, 175, 116, 187, 21, 153, 183, 203, 224, 41, 90, 94, 30, 201, 183
       ],
       multisigConfig: {
         threshold: 2,
         signers: [
           'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
-          'g1kcdd3n0d472g2p5l8svyg9t0wq6h5857nq992f',
-        ],
-      },
+          'g1kcdd3n0d472g2p5l8svyg9t0wq6h5857nq992f'
+        ]
+      }
     });
     await expect(keyring.signRaw(BYTES)).rejects.toThrow(/Multisig/);
   });

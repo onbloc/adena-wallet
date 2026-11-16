@@ -1,7 +1,6 @@
+import { AccountTokenBalance, Amount, TokenBalanceType } from '@types';
 import { atom } from 'jotai';
 import { atomWithReset } from 'jotai/utils';
-
-import { AccountTokenBalance, Amount, TokenBalanceType } from '@types';
 
 export const isLoading = atomWithReset(false);
 

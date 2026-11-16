@@ -1,8 +1,9 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { crx, type ManifestV3Export } from '@crxjs/vite-plugin';
 import nodePolyfills from '@rolldown/plugin-node-polyfills';
 import react from '@vitejs/plugin-react';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { build, defineConfig, loadEnv, type Plugin } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
@@ -128,7 +129,7 @@ export default defineConfig(({ mode }) => {
   // Real environment variables (CI secrets) take precedence over the local .env file.
   const env = loadEnv(mode, root, '');
   const define = Object.fromEntries(
-    WEB3AUTH_ENV_KEYS.map((key) => [`process.env.${key}`, JSON.stringify(env[key] ?? '')]),
+    WEB3AUTH_ENV_KEYS.map(key => [`process.env.${key}`, JSON.stringify(env[key] ?? '')]),
   );
 
   return {

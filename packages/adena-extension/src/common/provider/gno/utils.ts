@@ -80,7 +80,8 @@ export const isHttpsAvailable = async (domain: string): Promise<boolean> => {
       cache: 'force-cache',
     });
     return response.ok;
-  } catch {
+  }
+  catch {
     return false;
   }
 };

@@ -1,6 +1,5 @@
-import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
-
 import type { SerializedSignDoc } from '@inject/types';
+import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 
 import { base64ToBytes, bytesToBase64 } from './encoding-util';
 

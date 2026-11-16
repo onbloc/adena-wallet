@@ -1,14 +1,4 @@
 import {
-  Account,
-  Document,
-  isAirgapAccount,
-  isLedgerAccount,
-  isSessionAccount,
-} from 'adena-module';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-
-import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
@@ -16,23 +6,24 @@ import {
 import { GasToken } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
 import { getDappVisibleAddress } from '@common/utils/account-address';
-import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
-import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
+import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
+import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useChain } from '@hooks/use-chain';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
-import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useFeeSufficiency } from '@hooks/wallet/use-fee-sufficiency';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
+import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
@@ -44,7 +35,15 @@ import {
   SessionSigningGuardDecision,
 } from '@services/transaction/session-signing-guard';
 import { RoutePath } from '@types';
-import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
+import {
+  Account,
+  Document,
+  isAirgapAccount,
+  isLedgerAccount,
+  isSessionAccount,
+} from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface TransactionData {
   messages: readonly any[];
@@ -120,8 +119,8 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
-  const [sessionGuardDecision, setSessionGuardDecision] =
-    useState<SessionSigningGuardDecision | null>(null);
+  const [sessionGuardDecision, setSessionGuardDecision]
+    = useState<SessionSigningGuardDecision | null>(null);
   const { openScannerLink } = useLink();
   const { data: currentBalance = null } = useGetGnotBalance();
 
@@ -180,7 +179,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   useEffect(() => {
@@ -251,13 +250,14 @@ const ApproveSignTransactionContainer: React.FC = () => {
       setMemo(document.memo);
       setTransactionMessages(mappedTransactionMessages(document.msgs));
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       const error: any = e;
       if (
-        currentAccount &&
-        isSessionAccount(currentAccount) &&
-        error?.message?.startsWith('Session not found:')
+        currentAccount
+        && isSessionAccount(currentAccount)
+        && error?.message?.startsWith('Session not found:')
       ) {
         let revoked = false;
         const sessionAddr = await currentAccount.getAddress(chain.bech32Prefix).catch(() => null);
@@ -399,7 +399,8 @@ const ApproveSignTransactionContainer: React.FC = () => {
           );
           return false;
         }
-      } catch {
+      }
+      catch {
         setResponse(
           InjectionMessageInstance.failure(
             WalletResponseRejectType.SIGN_REJECTED,
@@ -426,7 +427,8 @@ const ApproveSignTransactionContainer: React.FC = () => {
           requestData?.key,
         ),
       );
-    } catch (e) {
+    }
+    catch (e) {
       if (e instanceof Error) {
         const message = e.message;
         if (message.includes('Ledger')) {
@@ -464,9 +466,9 @@ const ApproveSignTransactionContainer: React.FC = () => {
     // is treated as a fast SIGN_REJECTED to the dApp (no fallback to master
     // key per Phase 5 policy).
     if (
-      isSessionAccount(currentAccount) &&
-      sessionGuardDecision &&
-      sessionGuardDecision.ok === false
+      isSessionAccount(currentAccount)
+      && sessionGuardDecision
+      && sessionGuardDecision.ok === false
     ) {
       setResponse(
         InjectionMessageInstance.failure(

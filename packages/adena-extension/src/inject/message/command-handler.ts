@@ -6,6 +6,7 @@ import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { clearAutoLockAlarm, resetAutoLockAlarm } from '@common/utils/auto-lock-timer';
 import { AdenaExecutor } from '@inject/executor';
 import { ContractMessage, TransactionParams } from '@inject/types';
+
 import { CheckMetadataMessageData, CommandMessageData } from './command-message';
 import {
   clearInMemoryKey,
@@ -117,10 +118,12 @@ export class CommandHandler {
         respond(makeSuccessResponse(message));
         return;
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.info(error);
       respond(makeInternalErrorResponse(message));
-    } finally {
+    }
+    finally {
       // No-op once a branch has answered.
       respond(makeInternalErrorResponse(message));
     }
@@ -160,8 +163,8 @@ export class CommandHandler {
     const addEstablishResponse = await executor.addEstablish(domain);
     // Not connected
     if (
-      addEstablishResponse.type !== WalletResponseSuccessType.CONNECTION_SUCCESS &&
-      addEstablishResponse.type !== WalletResponseFailureType.ALREADY_CONNECTED
+      addEstablishResponse.type !== WalletResponseSuccessType.CONNECTION_SUCCESS
+      && addEstablishResponse.type !== WalletResponseFailureType.ALREADY_CONNECTED
     ) {
       console.info('response: ', addEstablishResponse);
       return;
@@ -175,8 +178,8 @@ export class CommandHandler {
     // user is on another network.
     if (isLoopbackOrigin) {
       const networkResponse = await executor.getNetwork();
-      const isNetworkKnown =
-        networkResponse.type === WalletResponseSuccessType.GET_NETWORK_SUCCESS;
+      const isNetworkKnown
+        = networkResponse.type === WalletResponseSuccessType.GET_NETWORK_SUCCESS;
       const activeChainId = isNetworkKnown ? networkResponse.data?.chainId : undefined;
 
       // The gate is unchanged; only its silence is. A rejection used to end here
@@ -206,9 +209,9 @@ export class CommandHandler {
 
     const switchNetworkResponse = await executor.switchNetwork(gnoConnectInfo.chainId);
     if (
-      switchNetworkResponse.type !== WalletResponseSuccessType.SWITCH_NETWORK_SUCCESS &&
-      switchNetworkResponse.type !== WalletResponseFailureType.REDUNDANT_CHANGE_REQUEST &&
-      switchNetworkResponse.type !== WalletResponseFailureType.UNADDED_NETWORK
+      switchNetworkResponse.type !== WalletResponseSuccessType.SWITCH_NETWORK_SUCCESS
+      && switchNetworkResponse.type !== WalletResponseFailureType.REDUNDANT_CHANGE_REQUEST
+      && switchNetworkResponse.type !== WalletResponseFailureType.UNADDED_NETWORK
     ) {
       console.info('response: ', switchNetworkResponse);
       return;
@@ -233,7 +236,8 @@ export class CommandHandler {
       );
 
       executor.doContract(transactionParams).then(console.info).catch(console.info);
-    } catch (error) {
+    }
+    catch (error) {
       console.info(error);
     }
   };
@@ -288,16 +292,16 @@ function makeTransactionMessage(
   gnoConnectInfo: GnoConnectInfo,
   realmDocument: GnoDocumentInfo,
 ): TransactionParams & { gasFee: number; gasWanted: number } {
-  const func = realmDocument.funcs.find((f) => f.name === gnoMessageInfo.functionName);
+  const func = realmDocument.funcs.find(f => f.name === gnoMessageInfo.functionName);
   if (!func) {
     throw new Error(`Function not found: ${gnoMessageInfo.functionName}`);
   }
 
   const gnoArguments: GnoArgumentInfo[] = func.params
-    .filter((param) => !isInterRealmParameter(param.name, param.type))
+    .filter(param => !isInterRealmParameter(param.name, param.type))
     .map((param, index) => {
       const messageArguments = gnoMessageInfo.args || [];
-      const arg = messageArguments.find((arg) => arg.key === param.name);
+      const arg = messageArguments.find(arg => arg.key === param.name);
       const value = arg?.value || '';
 
       return {

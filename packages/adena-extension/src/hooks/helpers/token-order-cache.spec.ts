@@ -50,7 +50,7 @@ async function loadInAnotherWindow(): Promise<CacheModule> {
 }
 
 function entryKeys(): string[] {
-  return Object.keys(mockArea).filter((key) => key.startsWith(TOKEN_ORDER_CACHE_KEY_PREFIX));
+  return Object.keys(mockArea).filter(key => key.startsWith(TOKEN_ORDER_CACHE_KEY_PREFIX));
 }
 
 /** Holds entry writes open until the returned function is called. */

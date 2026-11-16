@@ -6,6 +6,7 @@ import { GasInfo, NetworkFee, NetworkFeeSettingInfo, NetworkFeeSettingType } fro
 import { Document } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
+
 import {
   isStaticSessionAdminFeeDocument,
   makeStaticSessionAdminFeeSettings,
@@ -90,8 +91,8 @@ export const useNetworkFee = (
       const simulateErrorMessage = estimatedGas.hasError
         ? estimatedGas.simulateErrorMessage
         : isTooLow
-        ? NETWORK_FEE_TOO_LOW_MESSAGE
-        : null;
+          ? NETWORK_FEE_TOO_LOW_MESSAGE
+          : null;
 
       const gasFee = hasError
         ? 0
@@ -151,7 +152,7 @@ export const useNetworkFee = (
       return null;
     }
 
-    const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
+    const current = gasPriceTiers.find(setting => setting.settingType === currentSettingType);
     if (!current?.gasInfo) {
       return {
         gasFee: 0,
@@ -171,7 +172,7 @@ export const useNetworkFee = (
       return null;
     }
 
-    const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
+    const current = gasPriceTiers.find(setting => setting.settingType === currentSettingType);
     if (!current?.storageDeposits) {
       return {
         storageDeposit: 0,
@@ -205,7 +206,7 @@ export const useNetworkFee = (
       return null;
     }
 
-    const current = gasPriceTiers.find((setting) => setting.settingType === changedSettingType);
+    const current = gasPriceTiers.find(setting => setting.settingType === changedSettingType);
 
     return current?.gasInfo || null;
   }, [changedSettingType, gasPriceTiers]);

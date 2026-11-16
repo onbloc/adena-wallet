@@ -1,9 +1,10 @@
-import React from 'react';
-import { Provider as JotaiProvider } from 'jotai';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
-import theme from '@styles/theme';
 import { GlobalWebStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
+
 import { WebMain } from '.';
 
 describe('WebMain Component', () => {
@@ -12,7 +13,7 @@ describe('WebMain Component', () => {
       <JotaiProvider>
         <GlobalWebStyle />
         <ThemeProvider theme={theme}>
-          <WebMain >Web Main</WebMain>
+          <WebMain>Web Main</WebMain>
         </ThemeProvider>
       </JotaiProvider>,
     );

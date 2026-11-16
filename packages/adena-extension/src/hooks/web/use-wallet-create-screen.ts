@@ -1,6 +1,3 @@
-import { AdenaWallet, HDWalletKeyring, SeedAccount } from 'adena-module';
-import { useCallback, useMemo, useState } from 'react';
-
 import { stringFromBase64, stringToBase64 } from '@common/utils/encoding-util';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
@@ -10,6 +7,9 @@ import useIndicatorStep, {
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
 import { RoutePath } from '@types';
+import { AdenaWallet, HDWalletKeyring, SeedAccount } from 'adena-module';
+import { useCallback, useMemo, useState } from 'react';
+
 import useQuestionnaire from './use-questionnaire';
 
 export type UseWalletCreateReturn = {
@@ -52,9 +52,11 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
   const onClickGoBack = useCallback(() => {
     if (step === 'INIT') {
       navigate(RoutePath.WebAdvancedOption);
-    } else if (step === 'GET_SEED_PHRASE') {
+    }
+    else if (step === 'GET_SEED_PHRASE') {
       setStep('INIT');
-    } else if (step === 'VALIDATE_MNEMONIC') {
+    }
+    else if (step === 'VALIDATE_MNEMONIC') {
       setStep('GET_SEED_PHRASE');
     }
   }, [step]);
@@ -63,16 +65,19 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
     if (step === 'INIT') {
       if (ableToSkipQuestionnaire) {
         setStep('GET_SEED_PHRASE');
-      } else {
+      }
+      else {
         navigate(RoutePath.WebQuestionnaire, {
           state: {
             callbackPath: RoutePath.WebWalletCreate,
           },
         });
       }
-    } else if (step === 'GET_SEED_PHRASE') {
+    }
+    else if (step === 'GET_SEED_PHRASE') {
       setStep('VALIDATE_MNEMONIC');
-    } else if (step === 'VALIDATE_MNEMONIC') {
+    }
+    else if (step === 'VALIDATE_MNEMONIC') {
       if (wallet) {
         let rawSeeds = stringFromBase64(seeds);
         const keyring = await HDWalletKeyring.fromMnemonic(rawSeeds);
@@ -89,14 +94,15 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         clone.addAccount(account);
         clone.addKeyring(keyring);
         const storedAccount = clone.accounts.find(
-          (storedAccount) => storedAccount.id === account.id,
+          storedAccount => storedAccount.id === account.id,
         );
         if (storedAccount) {
           await changeCurrentAccount(storedAccount);
         }
         await updateWallet(clone);
         navigate(RoutePath.WebAccountAddedComplete);
-      } else {
+      }
+      else {
         let rawSeeds = stringFromBase64(seeds);
         const createdWallet = await AdenaWallet.createByMnemonic(rawSeeds);
         rawSeeds = '';

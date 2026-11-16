@@ -1,5 +1,6 @@
-import { ChainRegistry } from 'adena-module';
 import { EstablishSite, WalletEstablishAtomOneRepository } from '@repositories/wallet';
+import { ChainRegistry } from 'adena-module';
+
 import { WalletEstablishAtomOneService } from './wallet-establish-atomone';
 
 const ACCOUNT_ID = 'account-a';
@@ -238,7 +239,7 @@ describe('WalletEstablishAtomOneService', () => {
       const result = await service.getEstablishedSitesBy(ACCOUNT_ID);
 
       expect(result).toHaveLength(2);
-      expect(result.map((s) => s.chainId)).toEqual(['atomone-1', 'atomone-testnet-1']);
+      expect(result.map(s => s.chainId)).toEqual(['atomone-1', 'atomone-testnet-1']);
     });
 
     it('returns an empty array when no records exist for the accountId', async () => {

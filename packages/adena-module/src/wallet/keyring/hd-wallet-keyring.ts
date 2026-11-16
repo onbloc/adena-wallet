@@ -3,7 +3,7 @@ import {
   TransactionEndpoint,
   Tx,
   TxSignature,
-  Wallet as Tm2Wallet,
+  Wallet as Tm2Wallet
 } from '@gnolang/tm2-js-client';
 import sodium from 'libsodium-wrappers-sumo';
 import { v4 as uuidv4 } from 'uuid';
@@ -59,7 +59,7 @@ export class HDWalletKeyring implements Keyring {
       id: this.id,
       type: this.type,
       seed: Array.from(this.seed),
-      mnemonicEntropy: Array.from(this.mnemonicEntropy),
+      mnemonicEntropy: Array.from(this.mnemonicEntropy)
     };
   }
 
@@ -68,7 +68,8 @@ export class HDWalletKeyring implements Keyring {
     const privateKey = await this.getPrivateKey(hdPath);
     try {
       return await signRawWithPrivateKey(bytes, privateKey);
-    } finally {
+    }
+    finally {
       // Wipe the per-call derived private key from memory; the long-lived
       // seed/entropy can re-derive it on the next call.
       sodium.memzero(privateKey);
@@ -78,7 +79,7 @@ export class HDWalletKeyring implements Keyring {
   async sign(
     provider: Provider,
     document: Document,
-    hdPath: HdPathLike = 0,
+    hdPath: HdPathLike = 0
   ): Promise<{
     signed: Tx;
     signature: TxSignature[];
@@ -90,7 +91,7 @@ export class HDWalletKeyring implements Keyring {
     // Broadcasting an already-signed tx does not use the derived key; only the
     // provider connection matters. accountIndex is passed for parity but is inert.
     const wallet = await Tm2Wallet.fromMnemonic(this.getMnemonic(), {
-      accountIndex: getAddressIndex(hdPath),
+      accountIndex: getAddressIndex(hdPath)
     });
     wallet.connect(provider);
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_SYNC);
@@ -98,7 +99,7 @@ export class HDWalletKeyring implements Keyring {
 
   async broadcastTxCommit(provider: Provider, signedTx: Tx, hdPath: HdPathLike = 0) {
     const wallet = await Tm2Wallet.fromMnemonic(this.getMnemonic(), {
-      accountIndex: getAddressIndex(hdPath),
+      accountIndex: getAddressIndex(hdPath)
     });
     wallet.connect(provider);
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);
@@ -110,7 +111,7 @@ export class HDWalletKeyring implements Keyring {
     const mnemonicEntropy = await mnemonicToEntropy(englishMnemonic.toString());
     return new HDWalletKeyring({
       mnemonicEntropy: Array.from(mnemonicEntropy),
-      seed: Array.from(seed),
+      seed: Array.from(seed)
     });
   }
 }

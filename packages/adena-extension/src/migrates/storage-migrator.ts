@@ -1,4 +1,5 @@
 import { StorageModel } from '@common/storage';
+
 import { StorageModelDataV001, StorageModelV001 } from './migrations/v001/storage-model-v001';
 import { StorageMigration002 } from './migrations/v002/storage-migration-v002';
 import { StorageModelV002 } from './migrations/v002/storage-model-v002';
@@ -73,36 +74,36 @@ const LegacyStorageKeys = [
 // The latest storage model type
 export type StorageModelLatest = StorageModelV029;
 
-type StorageModelDataType =
-  | StorageModelV029
-  | StorageModelV028
-  | StorageModelV027
-  | StorageModelV026
-  | StorageModelV025
-  | StorageModelV024
-  | StorageModelV023
-  | StorageModelV022
-  | StorageModelV021
-  | StorageModelV020
-  | StorageModelV019
-  | StorageModelV018
-  | StorageModelV017
-  | StorageModelV016
-  | StorageModelV015
-  | StorageModelV014
-  | StorageModelV013
-  | StorageModelV012
-  | StorageModelV011
-  | StorageModelV010
-  | StorageModelV009
-  | StorageModelV008
-  | StorageModelV007
-  | StorageModelV006
-  | StorageModelV005
-  | StorageModelV004
-  | StorageModelV003
-  | StorageModelV002
-  | StorageModelV001;
+type StorageModelDataType
+  = | StorageModelV029
+    | StorageModelV028
+    | StorageModelV027
+    | StorageModelV026
+    | StorageModelV025
+    | StorageModelV024
+    | StorageModelV023
+    | StorageModelV022
+    | StorageModelV021
+    | StorageModelV020
+    | StorageModelV019
+    | StorageModelV018
+    | StorageModelV017
+    | StorageModelV016
+    | StorageModelV015
+    | StorageModelV014
+    | StorageModelV013
+    | StorageModelV012
+    | StorageModelV011
+    | StorageModelV010
+    | StorageModelV009
+    | StorageModelV008
+    | StorageModelV007
+    | StorageModelV006
+    | StorageModelV005
+    | StorageModelV004
+    | StorageModelV003
+    | StorageModelV002
+    | StorageModelV001;
 
 // Default data structure for version 1 storage model
 const defaultData: StorageModelDataV001 = {
@@ -156,7 +157,7 @@ export class StorageMigrator implements Migrator {
   // Validates if the data can be saved
   async saveable(): Promise<boolean> {
     const current = await this.getCurrent();
-    const latestVersion = Math.max(...this.migrations.map((m) => m.version));
+    const latestVersion = Math.max(...this.migrations.map(m => m.version));
     if (current.data.SERIALIZED === '') {
       return false;
     }
@@ -177,7 +178,8 @@ export class StorageMigrator implements Migrator {
     if (data) {
       try {
         jsonData = JSON.parse(data);
-      } catch (e) {
+      }
+      catch (e) {
         console.error('Migrate', e);
       }
     }
@@ -205,12 +207,13 @@ export class StorageMigrator implements Migrator {
       const currentVersion = current.version || 1;
       const migrations = this.migrations
         .sort((a, b) => a.version - b.version)
-        .filter((migration) => migration.version > currentVersion);
+        .filter(migration => migration.version > currentVersion);
 
       for (const migration of migrations) {
         latest = await migration.up(latest, password);
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error(error);
       await this.backup(current);
       return null;

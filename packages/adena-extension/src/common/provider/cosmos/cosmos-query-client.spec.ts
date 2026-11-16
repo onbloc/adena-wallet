@@ -1,9 +1,10 @@
 import axios from 'axios';
+import type { Mock, Mocked } from 'vitest';
+
 import {
   CosmosQueryClient,
   parseMinimumGasPriceString,
 } from './cosmos-query-client';
-import type { Mock, Mocked } from 'vitest';
 
 vi.mock('axios');
 const mockedAxios = axios as Mocked<typeof axios>;

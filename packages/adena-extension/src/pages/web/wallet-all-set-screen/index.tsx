@@ -1,16 +1,14 @@
+import IconGnoLand from '@assets/web/gnoland.svg';
+import IconGnoScan from '@assets/web/gnoscan.svg';
+import IconGnoSwap from '@assets/web/gnoswap.svg';
+import AnimationAllSet from '@assets/web/lottie/you-are-all-set.json';
+import IconPin from '@assets/web/pin.svg';
+import { closeCurrentSurface } from '@common/utils/browser-utils';
+import { Row, View, WebButton, WebImg, WebMain, WebText } from '@components/atoms';
+import Lottie from '@components/atoms/lottie';
+import useLink from '@hooks/use-link';
 import type { JSX } from 'react';
 import styled, { useTheme } from 'styled-components';
-
-import IconGnoLand from '@assets/web/gnoland.svg';
-import IconGnoSwap from '@assets/web/gnoswap.svg';
-import IconGnoScan from '@assets/web/gnoscan.svg';
-import AnimationAllSet from '@assets/web/lottie/you-are-all-set.json';
-
-import { closeCurrentSurface } from '@common/utils/browser-utils';
-import { View, WebButton, WebMain, WebText, WebImg, Row } from '@components/atoms';
-import useLink from '@hooks/use-link';
-import Lottie from '@components/atoms/lottie';
-import IconPin from '@assets/web/pin.svg';
 
 const StyledContainer = styled(Row)`
   flex-shrink: 0;
@@ -189,7 +187,7 @@ const WalletAllSetScreen = (): JSX.Element => {
         </View>
         <View style={{ width: 256, gap: 6 }}>
           <WebText type='title3' color={theme.webNeutral._100}>
-            {'Pin Adena for easy access'}
+            Pin Adena for easy access
           </WebText>
           <WebText type='body5' color={theme.webNeutral._500}>
             {'Click the ‘Extensions’ button\nLocate Adena then click the ‘Pin’ button'}

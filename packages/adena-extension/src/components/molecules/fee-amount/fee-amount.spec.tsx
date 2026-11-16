@@ -1,9 +1,8 @@
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import theme from '@styles/theme';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { ThemeProvider } from 'styled-components';
-
-import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
-import theme from '@styles/theme';
 
 import FeeAmount, { FeeAmountProps } from './fee-amount';
 

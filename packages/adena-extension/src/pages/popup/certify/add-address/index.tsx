@@ -1,7 +1,7 @@
-import React, { useRef, useState, useEffect } from 'react';
-import type { JSX } from 'react';
-import styled, { useTheme } from 'styled-components';
-
+import add from '@assets/add-symbol.svg';
+import edit from '@assets/edit-symbol.svg';
+import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
+import { inferChainGroup } from '@common/utils/address-chain';
 import {
   DefaultInput,
   ErrorText,
@@ -14,24 +14,23 @@ import {
   chainOptionsFromRegistry,
 } from '@components/atoms/chain-dropdown';
 import { CancelAndConfirmButton } from '@components/molecules';
-import add from '@assets/add-symbol.svg';
-import edit from '@assets/edit-symbol.svg';
-import { getTheme } from '@styles/theme';
+import { useAddressBook } from '@hooks/use-address-book';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { AddressBookItem } from '@repositories/wallet';
 import {
   validateAlreadyAddress,
   validateAlreadyAddressByAccounts,
   validateAlreadyName,
   validateInvalidAddress,
 } from '@services/index';
-import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
-import { useChain } from '@hooks/use-chain';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
-import { AddressBookItem } from '@repositories/wallet';
-import useAppNavigate from '@hooks/use-app-navigate';
+import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
-import { useAddressBook } from '@hooks/use-address-book';
-import { inferChainGroup } from '@common/utils/address-chain';
+import type { JSX } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const specialPatternCheck = /\W|\s/g;
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
@@ -57,7 +56,7 @@ const AddAddress = (): JSX.Element => {
   // differs from the current selection isn't truncated before useEffect
   // re-syncs chainGroup from the new prefix.
   const addressMaxLength = React.useMemo(() => {
-    const prefixes = chainRegistry.listChains().map((c) => c.bech32Prefix.length);
+    const prefixes = chainRegistry.listChains().map(c => c.bech32Prefix.length);
     const maxPrefix = prefixes.length > 0 ? Math.max(...prefixes) : chain.bech32Prefix.length;
     return maxPrefix + 39;
   }, [chainRegistry, chain.bech32Prefix.length]);
@@ -93,7 +92,8 @@ const AddAddress = (): JSX.Element => {
 
     try {
       validateInvalidAddress(address);
-    } catch (error) {
+    }
+    catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {
         setAddressError(true);
@@ -105,7 +105,8 @@ const AddAddress = (): JSX.Element => {
 
     try {
       validateAlreadyAddress(currData, addressList, isAdd);
-    } catch (error) {
+    }
+    catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {
         setAddressError(true);
@@ -117,7 +118,8 @@ const AddAddress = (): JSX.Element => {
 
     try {
       await validateAlreadyAddressByAccounts(currData, wallet?.accounts ?? [], isAdd, chain.bech32Prefix);
-    } catch (error) {
+    }
+    catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {
         setAddressError(true);
@@ -129,7 +131,8 @@ const AddAddress = (): JSX.Element => {
 
     try {
       validateAlreadyName(currData, addressList, isAdd);
-    } catch (error) {
+    }
+    catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {
         setNameError(true);

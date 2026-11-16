@@ -1,17 +1,15 @@
-import React from 'react';
-import styled, { useTheme } from 'styled-components';
-
-import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
-import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
-
 import IconHelp from '@assets/help.svg';
+import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
 import { CommonFullContentLayout, Pressable, Text, View } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-multisig-transaction-upload-input';
 import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
+import useAppNavigate from '@hooks/use-app-navigate';
+import useLink from '@hooks/use-link';
+import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 import { RawTx } from 'adena-module';
+import React from 'react';
+import styled, { useTheme } from 'styled-components';
 
 interface SignMultisigTransactionUploadProps {
   currentAddress: string | null;
@@ -90,10 +88,10 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
       <StyledWrapper>
         <StyledHeaderWrapper>
           <Text type='header4' textAlign='center'>
-            {'Sign Transaction'}
+            Sign Transaction
           </Text>
           <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
-            {'Upload an unsigned transaction file to Adena to sign it.'}
+            Upload an unsigned transaction file to Adena to sign it.
           </Text>
         </StyledHeaderWrapper>
 
@@ -123,7 +121,7 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
         {!loadedTransaction && (
           <StyledHelpWrapper onClick={onClickHelp}>
             <Text type='body1Reg' color={theme.neutral.a}>
-              {'How does it work'}
+              How does it work
             </Text>
             <img src={IconHelp} alt='help icon' />
           </StyledHelpWrapper>

@@ -1,11 +1,10 @@
-import React, { ReactElement } from 'react';
-import styled from 'styled-components';
-
-import { Loading, SkeletonBoxStyle, Text } from '@components/atoms';
-import mixins from '@styles/mixins';
 import plus from '@assets/plus.svg';
+import { Loading, SkeletonBoxStyle, Text } from '@components/atoms';
 import { CloseShadowButton } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
+import React, { ReactElement } from 'react';
+import styled from 'styled-components';
 
 const LoadingAddressBook = (): ReactElement => {
   const { goBack } = useAppNavigate();

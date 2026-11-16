@@ -1,7 +1,6 @@
-import BigNumber from 'bignumber.js';
-
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { ABCIAccountVesting } from '@common/provider/gno';
+import BigNumber from 'bignumber.js';
 
 // Mirrors tm2/pkg/std/vesting.go: the empty string is the default (linear)
 // curve, 'delayed' is a cliff that vests nothing until end_time.

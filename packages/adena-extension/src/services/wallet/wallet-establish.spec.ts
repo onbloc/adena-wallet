@@ -1,5 +1,6 @@
-import { ChainRegistry } from 'adena-module';
 import { EstablishSite, WalletEstablishRepository } from '@repositories/wallet';
+import { ChainRegistry } from 'adena-module';
+
 import { WalletEstablishService } from './wallet-establish';
 
 const ACCOUNT = 'acc-1';
@@ -14,7 +15,7 @@ const GNO_PROFILES = [
 function makeChainRegistry(): ChainRegistry {
   return {
     getChainByChainId: vi.fn((chainId: string) => {
-      if (GNO_PROFILES.some((p) => p.chainId === chainId)) {
+      if (GNO_PROFILES.some(p => p.chainId === chainId)) {
         return { chainGroup: 'gno' };
       }
       return undefined;

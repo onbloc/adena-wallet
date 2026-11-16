@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
-import type { JSX } from 'react';
-import styled from 'styled-components';
-
 import logo from '@assets/logo-withIcon.svg';
 import { HamburgerMenuBtn } from '@components/atoms';
-
-import { RoutePath } from '@types';
 import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
+import type { JSX } from 'react';
+import React, { useState } from 'react';
+import styled from 'styled-components';
 
 const Wrapper = styled.div`
   width: 100%;

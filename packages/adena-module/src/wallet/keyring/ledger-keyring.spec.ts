@@ -11,7 +11,7 @@ const BYTES = new TextEncoder().encode('cosmos amino sign doc');
 function makeConnector(sign: Mock): LedgerConnector {
   return {
     sign,
-    getPubkey: vi.fn(),
+    getPubkey: vi.fn()
   } as unknown as LedgerConnector;
 }
 
@@ -49,7 +49,7 @@ describe('LedgerKeyring.signRaw', () => {
 
     await expect(keyring.signRaw(BYTES)).rejects.toBeInstanceOf(LedgerError);
     await expect(keyring.signRaw(BYTES)).rejects.toMatchObject({
-      kind: 'TransportFailed',
+      kind: 'TransportFailed'
     });
   });
 
@@ -59,16 +59,16 @@ describe('LedgerKeyring.signRaw', () => {
     [
       'cosmjs "Please open the Cosmos Ledger app" message',
       new Error('Please open the Cosmos Ledger app on your Ledger device.'),
-      'AppNotOpen',
+      'AppNotOpen'
     ],
-    ['transport disconnect', new Error('Transport was disconnected'), 'TransportFailed'],
+    ['transport disconnect', new Error('Transport was disconnected'), 'TransportFailed']
   ])('classifies %s as %s', async (_label, thrown, expectedKind) => {
     const sign = vi.fn().mockRejectedValue(thrown);
     const keyring = await attachConnector(sign);
 
     await expect(keyring.signRaw(BYTES)).rejects.toMatchObject({
       name: 'LedgerError',
-      kind: expectedKind,
+      kind: expectedKind
     });
   });
 
@@ -109,7 +109,7 @@ describe('LedgerKeyring.assertPublicKey', () => {
       Slip10RawIndex.hardened(118),
       Slip10RawIndex.hardened(1),
       Slip10RawIndex.normal(0),
-      Slip10RawIndex.normal(2),
+      Slip10RawIndex.normal(2)
     ]);
   });
 
@@ -119,7 +119,7 @@ describe('LedgerKeyring.assertPublicKey', () => {
 
     await expect(keyring.assertPublicKey(PUBLIC_KEY)).rejects.toMatchObject({
       name: 'LedgerError',
-      kind: 'AccountMismatch',
+      kind: 'AccountMismatch'
     });
   });
 
@@ -128,7 +128,7 @@ describe('LedgerKeyring.assertPublicKey', () => {
     const keyring = attachPubkeyConnector(getPubkey);
 
     await expect(keyring.assertPublicKey(PUBLIC_KEY)).rejects.toMatchObject({
-      kind: 'DeviceLocked',
+      kind: 'DeviceLocked'
     });
   });
 
@@ -136,7 +136,7 @@ describe('LedgerKeyring.assertPublicKey', () => {
     const keyring = new LedgerKeyring({});
 
     await expect(keyring.assertPublicKey(PUBLIC_KEY)).rejects.toMatchObject({
-      kind: 'TransportFailed',
+      kind: 'TransportFailed'
     });
   });
 });

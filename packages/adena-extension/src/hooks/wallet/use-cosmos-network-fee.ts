@@ -9,9 +9,9 @@ import {
   TokenPriceRequest,
 } from '@types';
 import {
+  calcFee,
   CosmosDocument,
   FEE_PRESET_MULTIPLIERS,
-  calcFee,
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
@@ -111,7 +111,8 @@ export const useCosmosNetworkFee = (
           document,
         );
         return { estimate, errorMessage: null as string | null };
-      } catch (e) {
+      }
+      catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         return { estimate: null, errorMessage: message };
       }
@@ -146,11 +147,13 @@ export const useCosmosNetworkFee = (
           });
           feeAmount = fee.amount[0].amount;
           gasWanted = fee.gas;
-        } else if (fallbackFee) {
+        }
+        else if (fallbackFee) {
           feeAmount = fallbackFee.amount[0].amount;
           gasWanted = fallbackFee.gas;
           hasError = true;
-        } else {
+        }
+        else {
           feeAmount = '0';
           gasWanted = '0';
           hasError = true;
@@ -177,14 +180,14 @@ export const useCosmosNetworkFee = (
   const currentTier = useMemo(() => {
     if (!networkFeeSettings) return null;
     return (
-      networkFeeSettings.find((t) => t.settingType === currentSettingType) ?? null
+      networkFeeSettings.find(t => t.settingType === currentSettingType) ?? null
     );
   }, [networkFeeSettings, currentSettingType]);
 
   const pendingTier = useMemo(() => {
     if (!networkFeeSettings) return null;
     return (
-      networkFeeSettings.find((t) => t.settingType === pendingSettingType) ?? null
+      networkFeeSettings.find(t => t.settingType === pendingSettingType) ?? null
     );
   }, [networkFeeSettings, pendingSettingType]);
 
@@ -192,8 +195,8 @@ export const useCosmosNetworkFee = (
   const changedGasInfo = pendingTier?.gasInfo ?? null;
   const currentFeeAmount = currentGasInfo ? String(currentGasInfo.gasFee) : '0';
   const currentFeeGas = currentGasInfo ? String(currentGasInfo.gasWanted) : '0';
-  const currentFeeDenom =
-    data?.estimate?.feeDenom ?? fallbackFee?.amount[0]?.denom ?? null;
+  const currentFeeDenom
+    = data?.estimate?.feeDenom ?? fallbackFee?.amount[0]?.denom ?? null;
 
   // The fee token is the denom the estimate resolved (ATONE for MintPhoton),
   // not the chain default, so its symbol, decimals and price follow it.

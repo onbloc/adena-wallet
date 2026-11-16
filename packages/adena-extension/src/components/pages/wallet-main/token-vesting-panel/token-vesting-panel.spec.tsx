@@ -1,10 +1,9 @@
-import { render, RenderResult, screen, within } from '@testing-library/react';
-import React from 'react';
-import { ThemeProvider } from 'styled-components';
-
 import { ABCIAccountVesting } from '@common/provider/gno';
 import { parseVestingSchedule, VestingSchedule } from '@common/utils/vesting-utils';
 import theme from '@styles/theme';
+import { render, RenderResult, screen, within } from '@testing-library/react';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
 
 import { TokenVestingPanel } from './token-vesting-panel';
 

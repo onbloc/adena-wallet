@@ -1,3 +1,4 @@
+import { GasInfo, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 import {
   Document,
   MSG_CREATE_SESSION_ENDPOINT,
@@ -5,7 +6,6 @@ import {
   MSG_REVOKE_SESSION_ENDPOINT,
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import { GasInfo, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 
 const STATIC_STORAGE_DEPOSITS = {
   storageDeposit: 0,
@@ -39,7 +39,7 @@ export const isStaticSessionAdminFeeDocument = (
   document?: Document | null,
 ): boolean => {
   const messages = document?.msgs ?? [];
-  return messages.length > 0 && messages.every((message) =>
+  return messages.length > 0 && messages.every(message =>
     SESSION_ADMIN_MESSAGE_TYPES.has(getMessageType(message) ?? ''),
   );
 };
@@ -72,7 +72,7 @@ export const makeStaticSessionAdminFeeSettings = (
     return null;
   }
 
-  return Object.values(NetworkFeeSettingType).map((settingType) => ({
+  return Object.values(NetworkFeeSettingType).map(settingType => ({
     settingType,
     gasInfo,
     storageDeposits: STATIC_STORAGE_DEPOSITS,

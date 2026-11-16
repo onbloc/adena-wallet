@@ -1,10 +1,9 @@
-import React, { ReactElement, ReactNode, Suspense } from 'react';
-
 import { AppProviderErrorBoundary, AppReloadFallback } from '@common/error-boundary';
 import { AdenaProvider, WalletProvider } from '@common/provider';
 import theme from '@styles/theme';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Provider as JotaiProvider } from 'jotai';
+import React, { ReactElement, ReactNode, Suspense } from 'react';
 import { ThemeProvider } from 'styled-components';
 
 // Without these, `staleTime: 0` makes every mount refetch, so navigating between

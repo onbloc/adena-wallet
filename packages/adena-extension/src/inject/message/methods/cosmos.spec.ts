@@ -50,10 +50,13 @@ const mockBroadcastTx = vi.fn();
 vi.mock('@common/provider/cosmos/cosmos-lcd-provider', () => ({
   CosmosLcdProvider: vi.fn().mockImplementation(function () {
     return {
-    broadcastTx: mockBroadcastTx,
+      broadcastTx: mockBroadcastTx,
     };
   }),
 }));
+
+import { base64ToBytes, bytesToBase64 } from '@common/utils/encoding-util';
+import { toBech32 } from '@cosmjs/encoding';
 
 import {
   cosmosEnable,
@@ -62,8 +65,6 @@ import {
   cosmosSignAmino,
   cosmosSignDirect,
 } from './cosmos';
-import { base64ToBytes, bytesToBase64 } from '@common/utils/encoding-util';
-import { toBech32 } from '@cosmjs/encoding';
 
 const SAMPLE_ADDRESS_BYTES = new Uint8Array(20).map((_, i) => i + 1);
 const SAMPLE_BECH32 = toBech32('atone', SAMPLE_ADDRESS_BYTES);

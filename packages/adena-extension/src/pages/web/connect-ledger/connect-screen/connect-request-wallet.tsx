@@ -1,11 +1,9 @@
+import AnimationOpenCosmosApp from '@assets/web/lottie/open-cosmos-app-in-your-ledger.json';
+import { View } from '@components/atoms';
+import Lottie from '@components/atoms/lottie';
+import { WebTitleWithDescription } from '@components/molecules';
 import type { JSX } from 'react';
 import styled from 'styled-components';
-
-import AnimationOpenCosmosApp from '@assets/web/lottie/open-cosmos-app-in-your-ledger.json';
-
-import { View } from '@components/atoms';
-import { WebTitleWithDescription } from '@components/molecules';
-import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   row-gap: 40px;

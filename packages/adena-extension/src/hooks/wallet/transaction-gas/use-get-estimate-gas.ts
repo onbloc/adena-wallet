@@ -1,15 +1,14 @@
-import { Tx } from '@gnolang/tm2-js-client';
-import { useQuery, useQueryClient, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { Account, Document, documentToDefaultTx, isSessionAccount, Wallet } from 'adena-module';
-import BigNumber from 'bignumber.js';
-
 import { MINIMUM_GAS_PRICE } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { parseStorageDeposits } from '@common/provider/gno/event-parser';
+import { Tx } from '@gnolang/tm2-js-client';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionService } from '@services/index';
+import { useQuery, useQueryClient, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { Account, Document, documentToDefaultTx, isSessionAccount, Wallet } from 'adena-module';
+import BigNumber from 'bignumber.js';
 
 import { useIsInitializedAccount } from '../use-get-account-info';
 import { canSignInProcess, resolveStaticCodeMessageGasUsed } from './code-message-static-gas';
@@ -225,7 +224,6 @@ export const useGetEstimateGas = (
           };
         })
         .catch((e: Error): EstimateGasResult => {
-          // eslint-disable-next-line no-console
           console.error('[estimate-gas] simulate failed:', e);
           return {
             ...ERROR_ESTIMATE_GAS_RESULT,

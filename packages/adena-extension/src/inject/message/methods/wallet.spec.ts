@@ -60,8 +60,8 @@ vi.mock('..', () => ({
   },
 }));
 
-import { addEstablish } from './wallet';
 import { InjectionMessage } from '../message';
+import { addEstablish } from './wallet';
 
 const GNO_CHAIN = { chainGroup: 'gno', bech32Prefix: 'g' };
 const ATOMONE_CHAIN = { chainGroup: 'atomone', bech32Prefix: 'atone' };

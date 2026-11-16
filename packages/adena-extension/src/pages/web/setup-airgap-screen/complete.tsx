@@ -1,12 +1,10 @@
+import LottieAccountSynced from '@assets/web/lottie/account-synced.json';
+import IconCheck from '@assets/web/web-check-circle.svg';
+import { Row, View, WebButton, WebImg, WebInput } from '@components/atoms';
+import Lottie from '@components/atoms/lottie';
+import { WebTitleWithDescription } from '@components/molecules';
 import React, { useCallback } from 'react';
 import styled from 'styled-components';
-
-import { Row, View, WebButton, WebImg, WebInput } from '@components/atoms';
-import { WebTitleWithDescription } from '@components/molecules';
-
-import IconCheck from '@assets/web/web-check-circle.svg';
-import LottieAccountSynced from '@assets/web/lottie/account-synced.json';
-import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   width: 100%;

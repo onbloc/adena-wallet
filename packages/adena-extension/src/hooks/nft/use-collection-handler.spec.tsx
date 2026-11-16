@@ -1,10 +1,10 @@
-import { renderHook } from '@testing-library/react';
-import type { Mock } from 'vitest';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import { renderHook } from '@testing-library/react';
 import { GRC721CollectionModel } from '@types';
+import type { Mock } from 'vitest';
+
 import { useNFTCollectionHandler } from './use-collection-handler';
 
 vi.mock('@hooks/use-context', () => ({ useAdenaContext: vi.fn() }));
@@ -47,8 +47,8 @@ function setup(stored: GRC721CollectionModel[]): { saveAccountGRC721Collections:
 
 describe('useNFTCollectionHandler.addCollections', () => {
   beforeEach(() => {
-  vi.clearAllMocks();
-});
+    vi.clearAllMocks();
+  });
 
   it('refreshes a stored collection from the chain and keeps its display flag', async () => {
     const { saveAccountGRC721Collections } = setup([

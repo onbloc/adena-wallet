@@ -12,7 +12,7 @@ export const accountAddressSelector = atomFamily(
   ({ accountId, prefix }: { accountId: string; prefix: string }) =>
     atom(async (get): Promise<string | null> => {
       const walletInstance = get(wallet);
-      const account = walletInstance?.accounts.find((a) => a.id === accountId);
+      const account = walletInstance?.accounts.find(a => a.id === accountId);
       if (!account) return null;
       return account.getAddress(prefix);
     }),
@@ -28,7 +28,7 @@ export const accountAddressesByPrefix = atomFamily((prefix: string) =>
     const walletInstance = get(wallet);
     if (!walletInstance) return {};
     const entries = await Promise.all(
-      walletInstance.accounts.map(async (a) => [a.id, await a.getAddress(prefix)] as const),
+      walletInstance.accounts.map(async a => [a.id, await a.getAddress(prefix)] as const),
     );
     return Object.fromEntries(entries);
   }),
@@ -43,7 +43,8 @@ export const accountAddressesByPrefixOrNull = atomFamily((prefix: string) =>
     atom(async (get): Promise<Record<string, string> | null> => {
       try {
         return await get(accountAddressesByPrefix(prefix));
-      } catch {
+      }
+      catch {
         return null;
       }
     }),

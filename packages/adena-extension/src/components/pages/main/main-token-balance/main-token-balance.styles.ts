@@ -9,7 +9,7 @@ export const MainTokenBalanceSkeleton = styled(SkeletonBoxStyle)`
 `;
 
 export const MainTokenBalanceWrapper = styled(View).withConfig({
-  shouldForwardProp: (prop) => prop !== '$compact',
+  shouldForwardProp: prop => prop !== '$compact',
 })<{ $compact: boolean }>`
   position: relative;
   width: 100%;
@@ -18,8 +18,8 @@ export const MainTokenBalanceWrapper = styled(View).withConfig({
   justify-content: center;
 
   ${({ $compact }): ReturnType<typeof css> | false =>
-    $compact &&
-    css`
+    $compact
+    && css`
       .value.integer,
       .denom {
         font-size: 25px !important;

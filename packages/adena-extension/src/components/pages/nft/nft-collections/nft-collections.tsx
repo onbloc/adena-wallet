@@ -4,6 +4,7 @@ import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721CollectionModel } from '@types';
 import React, { useCallback, useMemo } from 'react';
 import { useTheme } from 'styled-components';
+
 import ManageCollectionsButton from '../manage-collections-button/manage-collections-button';
 import NFTCollectionCard from '../nft-collection-card/nft-collection-card';
 import { NFTCollectionsWrapper } from './nft-collections.styles';
@@ -55,11 +56,11 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
   }, [collections]);
 
   const displayCollections = useMemo(() => {
-    return collections?.filter((collection) => collection.display);
+    return collections?.filter(collection => collection.display);
   }, [collections]);
 
   const isEmptyDisplayCollections = useMemo(() => {
-    return displayCollections?.filter((collection) => collection.display).length === 0;
+    return displayCollections?.filter(collection => collection.display).length === 0;
   }, [displayCollections]);
 
   const sortedCollections = useMemo(() => {
@@ -72,13 +73,13 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
     }
 
     const pinned = pinnedCollections
-      .map((packagePath) =>
-        displayCollections.find((collection) => collection.packagePath === packagePath),
+      .map(packagePath =>
+        displayCollections.find(collection => collection.packagePath === packagePath),
       )
-      .filter((collection) => !!collection) as GRC721CollectionModel[];
+      .filter(collection => !!collection) as GRC721CollectionModel[];
 
     const unpinned = displayCollections.filter(
-      (collection) => !pinnedCollections.includes(collection.packagePath),
+      collection => !pinnedCollections.includes(collection.packagePath),
     );
 
     return [...pinned, ...unpinned];
@@ -90,7 +91,7 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
         return false;
       }
 
-      return pinnedCollections.findIndex((path) => path === collection.packagePath) > -1;
+      return pinnedCollections.findIndex(path => path === collection.packagePath) > -1;
     },
     [pinnedCollections],
   );

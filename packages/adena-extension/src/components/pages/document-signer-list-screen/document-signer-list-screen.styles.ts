@@ -1,5 +1,5 @@
-import styled from 'styled-components';
 import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const DocumentSignerListWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};

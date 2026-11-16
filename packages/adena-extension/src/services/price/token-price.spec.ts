@@ -1,6 +1,6 @@
+import { ITokenPriceRepository } from '@repositories/price';
 import { AssetPrice } from '@types';
 
-import { ITokenPriceRepository } from '@repositories/price';
 import { TokenPriceService } from './token-price';
 
 function makeRepository(assetPrices: AssetPrice[]): ITokenPriceRepository {

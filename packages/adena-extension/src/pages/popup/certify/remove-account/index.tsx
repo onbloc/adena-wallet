@@ -1,22 +1,21 @@
-import React from 'react';
-import type { JSX } from 'react';
-import styled, { useTheme } from 'styled-components';
-import { useAtom } from 'jotai';
-
 import removeIcon from '@assets/icon-remove-blur.svg';
 import { Text } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { useClear } from '@hooks/use-clear';
 import { useWalletContext } from '@hooks/use-context';
-import { useRemoveAccount } from '@hooks/use-remove-account';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { RoutePath } from '@types';
+import { useRemoveAccount } from '@hooks/use-remove-account';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
+import { useAtom } from 'jotai';
+import type { JSX } from 'react';
+import React from 'react';
+import styled, { useTheme } from 'styled-components';
 
-const content =
-  'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
+const content
+  = 'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
 
 export const RemoveAccount = (): JSX.Element => {
   const theme = useTheme();

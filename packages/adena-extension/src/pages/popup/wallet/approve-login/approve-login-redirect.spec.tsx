@@ -49,15 +49,13 @@ vi.mock('jotai', async () => ({
 // The FINISH branch renders this; its contents are irrelevant to routing.
 vi.mock('./loading-approve-transaction', () => ({ default: (): null => null }));
 
-import { render } from '@testing-library/react';
-import React from 'react';
-import type { JSX } from 'react';
-import { ThemeProvider } from 'styled-components';
-
-import theme from '@styles/theme';
-
 import { encodeParameter } from '@common/utils/client-utils';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
 import { RoutePath } from '@types';
+import type { JSX } from 'react';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
 
 import { ApproveLogin } from '.';
 

@@ -1,6 +1,6 @@
+import { getTheme } from '@styles/theme';
 import React from 'react';
 import styled from 'styled-components';
-import { getTheme } from '@styles/theme';
 
 interface AssetIconProps {
   tokenIconUrl: string;

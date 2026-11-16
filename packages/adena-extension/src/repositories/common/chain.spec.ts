@@ -1,7 +1,7 @@
-import { AxiosInstance } from 'axios';
-
 import { StorageManager } from '@common/storage/storage-manager';
 import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
+import { AxiosInstance } from 'axios';
+
 import { ChainRepository } from './chain';
 import {
   AtomoneMetainfoItem,
@@ -44,8 +44,8 @@ const ATOMONE_RESPONSE: AtomoneMetainfoItem[] = [
   },
 ];
 
-const ATOMONE_DEFAULTS: AtomoneNetworkMetainfo[] =
-  AtomoneNetworkMetainfoMapper.fromResponse(ATOMONE_RESPONSE);
+const ATOMONE_DEFAULTS: AtomoneNetworkMetainfo[]
+  = AtomoneNetworkMetainfoMapper.fromResponse(ATOMONE_RESPONSE);
 
 const CUSTOM_NETWORK: AtomoneNetworkMetainfo = {
   id: 'custom-1',
@@ -101,14 +101,14 @@ describe('ChainRepository — AtomOne methods', () => {
 
     it('merges fetched defaults with stored customs', async () => {
       storedValue = [
-        ...ATOMONE_DEFAULTS.map((network) => ({ ...network, deleted: false })),
+        ...ATOMONE_DEFAULTS.map(network => ({ ...network, deleted: false })),
         CUSTOM_NETWORK,
       ];
 
       const result = await repository.getAtomoneNetworks();
 
       expect(result).toHaveLength(3);
-      expect(result.map((network) => network.id)).toEqual([
+      expect(result.map(network => network.id)).toEqual([
         'atomone-1',
         'atomone-testnet-1',
         'custom-1',
@@ -128,7 +128,7 @@ describe('ChainRepository — AtomOne methods', () => {
 
       const result = await repository.getAtomoneNetworks();
 
-      const testnet = result.find((network) => network.id === 'atomone-testnet-1');
+      const testnet = result.find(network => network.id === 'atomone-testnet-1');
       expect(testnet).toBeDefined();
       expect(testnet?.deleted).toBe(true);
     });
@@ -143,7 +143,7 @@ describe('ChainRepository — AtomOne methods', () => {
 
       const result = await repository.getAtomoneNetworks();
 
-      const mainnet = result.find((network) => network.id === 'atomone-1');
+      const mainnet = result.find(network => network.id === 'atomone-1');
       expect(mainnet?.rpcUrl).toBe('https://my-node.example/rpc');
       expect(mainnet?.restUrl).toBe('https://my-node.example/rest');
     });
@@ -157,7 +157,7 @@ describe('ChainRepository — AtomOne methods', () => {
 
       const result = await repository.getAtomoneNetworks();
 
-      expect(result.filter((network) => network.id === 'atomone-1')).toHaveLength(1);
+      expect(result.filter(network => network.id === 'atomone-1')).toHaveLength(1);
     });
 
     it('adds fetched defaults that have no stored counterpart', async () => {
@@ -166,13 +166,13 @@ describe('ChainRepository — AtomOne methods', () => {
 
       const result = await repository.getAtomoneNetworks();
 
-      expect(result.map((network) => network.id)).toEqual(['atomone-1', 'atomone-testnet-1']);
+      expect(result.map(network => network.id)).toEqual(['atomone-1', 'atomone-testnet-1']);
     });
   });
 
   describe('addAtomoneNetwork', () => {
     it('appends custom network to storage without touching Gno NETWORKS', async () => {
-      storedValue = ATOMONE_DEFAULTS.map((network) => ({ ...network, deleted: false }));
+      storedValue = ATOMONE_DEFAULTS.map(network => ({ ...network, deleted: false }));
 
       await repository.addAtomoneNetwork(CUSTOM_NETWORK);
 
@@ -183,7 +183,7 @@ describe('ChainRepository — AtomOne methods', () => {
 
   describe('updateAtomoneNetworks', () => {
     it('overwrites the stored list', async () => {
-      storedValue = ATOMONE_DEFAULTS.map((network) => ({ ...network, deleted: false }));
+      storedValue = ATOMONE_DEFAULTS.map(network => ({ ...network, deleted: false }));
 
       await repository.updateAtomoneNetworks([CUSTOM_NETWORK]);
 

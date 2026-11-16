@@ -4,6 +4,7 @@ import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721CollectionModel } from '@types';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useMemo } from 'react';
+
 import { NFTCollectionCardWrapper } from './nft-collection-card.styles';
 
 export interface NFTCollectionCardProps {

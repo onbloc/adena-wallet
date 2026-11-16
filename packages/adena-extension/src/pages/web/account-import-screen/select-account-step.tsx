@@ -1,8 +1,3 @@
-import { arrayContentEquals, hasHDPath } from 'adena-module';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import type { JSX } from 'react';
-import styled from 'styled-components';
-
 import IconSelectAccount from '@assets/web/select-account.svg';
 import { View, WebButton, WebImg } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
@@ -12,6 +7,10 @@ import SelectAccountBox from '@components/molecules/select-account-box/select-ac
 import { useChain } from '@hooks/use-chain';
 import { UseAccountImportReturn } from '@hooks/web/use-account-import-screen';
 import { useQuery } from '@tanstack/react-query';
+import { arrayContentEquals, hasHDPath } from 'adena-module';
+import type { JSX } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -41,7 +40,7 @@ const SelectAccountStep = ({
   // Addresses already registered in the wallet — used for the duplicate check.
   const { data: storedAddresses = [] } = useQuery<string[]>(
     ['accountImportStoredAddresses', storedAccounts],
-    () => Promise.all(storedAccounts.map((account) => account.getAddress(chain.bech32Prefix))),
+    () => Promise.all(storedAccounts.map(account => account.getAddress(chain.bech32Prefix))),
   );
 
   const derivationError = useMemo(() => {
@@ -74,7 +73,7 @@ const SelectAccountStep = ({
           changeIndex: hasHDPath(account) ? account.changeIndex : undefined,
           index: account.index,
           selected: selectedAddresses.includes(address),
-          stored: storedAccounts.some((storedAccount) =>
+          stored: storedAccounts.some(storedAccount =>
             arrayContentEquals(storedAccount.publicKey, account.publicKey),
           ),
           address,
@@ -117,12 +116,12 @@ const SelectAccountStep = ({
 
   const onToggleDerivationPath = useCallback(() => {
     setDerivationValue(null);
-    setShowDerivationPath((prev) => !prev);
+    setShowDerivationPath(prev => !prev);
   }, []);
 
   const onClickNext = useCallback(() => {
-    const path =
-      derivationAddress && derivationValue
+    const path
+      = derivationAddress && derivationValue
         ? {
             account: derivationValue.account,
             change: derivationValue.change,

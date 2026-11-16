@@ -7,7 +7,6 @@ import { Keyring } from '../../wallet/keyring/keyring';
 import { CosmosProvider } from '../providers/cosmos-provider';
 import { resolveAccount, resolvePublicKey } from '../signer-helpers';
 import { CosmosDocument, SignedCosmosTx } from '../types';
-
 import { makeDirectSignDoc } from './make-sign-doc';
 
 export interface SignCosmosDirectParams {
@@ -42,7 +41,7 @@ export async function signCosmosDirect(params: SignCosmosDirectParams): Promise<
     sequence,
     chainId: document.chainId,
     accountNumber,
-    publicKey,
+    publicKey
   });
 
   const signature = await keyring.signRaw(signBytes, { hdPath });
@@ -50,12 +49,12 @@ export async function signCosmosDirect(params: SignCosmosDirectParams): Promise<
   const txBytes = TxRaw.encode({
     bodyBytes,
     authInfoBytes,
-    signatures: [signature],
+    signatures: [signature]
   }).finish();
 
   return {
     txBytes,
     txHashHex: toHex(sha256(txBytes)).toUpperCase(),
-    signDoc,
+    signDoc
   };
 }

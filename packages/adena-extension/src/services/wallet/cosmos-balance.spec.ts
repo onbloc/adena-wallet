@@ -1,7 +1,8 @@
 import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
 import { TokenProfile } from 'adena-module';
-import { CosmosBalanceService } from './cosmos-balance';
 import type { Mock } from 'vitest';
+
+import { CosmosBalanceService } from './cosmos-balance';
 
 const UATONE: TokenProfile = {
   id: 'atomone-1:uatone',

@@ -1,6 +1,5 @@
-import BigNumber from 'bignumber.js';
-
 import { TokenBalanceType } from '@types';
+import BigNumber from 'bignumber.js';
 
 import { tokenRowKey } from './token-order-cache';
 
@@ -86,7 +85,7 @@ export function sortTokenBalancesByStoredOrder(
 
   const sorted = [...ranked.map(({ token }) => token), ...unranked.sort(compareTokenBalances)];
 
-  const mainIndex = sorted.findIndex((token) => token.main);
+  const mainIndex = sorted.findIndex(token => token.main);
   if (mainIndex > 0) {
     const [mainToken] = sorted.splice(mainIndex, 1);
     sorted.unshift(mainToken);

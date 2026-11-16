@@ -1,8 +1,8 @@
 import { WINDOW_EXPAND_SIZE } from '@common/constants/ui.constant';
 import { CommonState } from '@states';
 import { WindowSizeType } from '@types';
-import { useEffect } from 'react';
 import { useAtom } from 'jotai';
+import { useEffect } from 'react';
 
 export type UseWindowSizeReturn = {
   windowSizeType: WindowSizeType;
@@ -23,7 +23,8 @@ export const useWindowSize = (init = false): UseWindowSizeReturn => {
       window.addEventListener('resize', handleResize);
       handleResize();
       return () => window.removeEventListener('resize', handleResize);
-    } else {
+    }
+    else {
       return () =>
         window.removeEventListener('resize', () => {
           return null;

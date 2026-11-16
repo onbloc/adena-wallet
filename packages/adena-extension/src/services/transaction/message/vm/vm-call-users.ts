@@ -1,4 +1,5 @@
 import { TRANSACTION_MESSAGE_SEND_OF_REGISTER } from '@common/constants/tx.constant';
+
 import { createMessageOfVmCall } from './vm';
 
 export const createMessageOfVmRegister = (info: {

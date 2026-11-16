@@ -26,7 +26,7 @@ export function parseMinimumGasPriceString(
   if (!raw) return [];
   return raw
     .split(',')
-    .map((part) => part.trim())
+    .map(part => part.trim())
     .filter(Boolean)
     .map((part) => {
       const match = part.match(MIN_GAS_PRICE_ENTRY_RE);
@@ -53,7 +53,8 @@ export class CosmosQueryClient {
         balances: { denom: string; amount: string }[];
       }>(`${endpoint}/cosmos/bank/v1beta1/balances/${address}`);
       return response.data.balances ?? [];
-    } catch {
+    }
+    catch {
       return null;
     }
   }
@@ -70,7 +71,8 @@ export class CosmosQueryClient {
         params: { denom },
       });
       return response.data.balance?.amount ?? '0';
-    } catch {
+    }
+    catch {
       return null;
     }
   }

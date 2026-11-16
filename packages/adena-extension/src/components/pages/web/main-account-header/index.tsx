@@ -1,11 +1,10 @@
+import back from '@assets/web/chevron-left.svg';
+import { formatAddress } from '@common/utils/client-utils';
+import { CopyIconButton, Pressable, Row, WebImg, WebText } from '@components/atoms';
+import { useChain } from '@hooks/use-chain';
+import { Account } from 'adena-module';
 import React, { ReactElement, useEffect, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
-import { Account } from 'adena-module';
-import { useChain } from '@hooks/use-chain';
-
-import { CopyIconButton, Pressable, Row, WebImg, WebText } from '@components/atoms';
-import { formatAddress } from '@common/utils/client-utils';
-import back from '@assets/web/chevron-left.svg';
 
 const StyledContainer = styled(Row)`
   width: 100%;
@@ -74,6 +73,6 @@ export const WebMainAccountHeader = ({
         </StyledAccountRow>
       )}
       <StyledBlank />
-    </StyledContainer >
+    </StyledContainer>
   );
 };

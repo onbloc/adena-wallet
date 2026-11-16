@@ -1,6 +1,6 @@
+import { SideMenuAccountListProps } from '@types';
 import React from 'react';
 
-import { SideMenuAccountListProps } from '@types';
 import SideMenuAccountItem from '../side-menu-account-item/side-menu-account-item';
 import { SideMenuAccountListWrapper } from './side-menu-account-list.styles';
 
@@ -15,7 +15,7 @@ const SideMenuAccountList: React.FC<SideMenuAccountListProps> = ({
 }) => {
   return (
     <SideMenuAccountListWrapper>
-      {accounts.map((account) => (
+      {accounts.map(account => (
         <SideMenuAccountItem
           key={account.accountId}
           selected={account.accountId === currentAccountId}

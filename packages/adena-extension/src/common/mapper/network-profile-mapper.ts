@@ -1,9 +1,8 @@
+import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 import {
   CosmosNetworkProfile,
   GnoNetworkProfile,
 } from 'adena-module';
-
-import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 
 export function toGnoNetworkProfile(metainfo: NetworkMetainfo): GnoNetworkProfile {
   return {

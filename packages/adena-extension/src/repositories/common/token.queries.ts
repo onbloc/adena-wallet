@@ -34,7 +34,7 @@ const makeGRC20TransferEventBranches = (
   tokenPackages
     .flatMap(({ path, transferEvent }) =>
       [transferEvent.toAttr, transferEvent.fromAttr].map(
-        (partyAttr) => `
+        partyAttr => `
             {
               GnoEvent: {
                 pkg_path: { eq: "${path}" }

@@ -1,6 +1,7 @@
 import { BaseError } from '@common/errors';
 import { VestingInfo } from '@common/utils/vesting-utils';
 import { AddingType } from '@components/pages/additional-token/additional-token-type-selector';
+
 import { TokenValue } from './price';
 
 export interface TokenModel {

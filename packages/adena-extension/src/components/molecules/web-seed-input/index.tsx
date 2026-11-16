@@ -1,12 +1,11 @@
-import _ from 'lodash';
-import { ReactElement, useCallback, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconAlert from '@assets/web/alert-circle.svg';
 import { WebSeedInputItem } from '@components/atoms/web-seed-input-item';
 import { WebTextarea } from '@components/atoms/web-textarea';
 import { webFonts } from '@styles/theme';
 import { ImportWalletType } from '@types';
+import _ from 'lodash';
+import { ReactElement, useCallback, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 import { Pressable, Row, View, WebImg, WebText } from '../../atoms';
 import { makeFilledSeedPhrase } from './web-seed-input.utils';
@@ -115,38 +114,41 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
       </StyledTypeMenu>
 
       <View style={{ rowGap: 12 }}>
-        {type === 'pKey' ? (
-          <StyledTextarea
-            value={pKey}
-            placeholder='Private Key'
-            error={!!errorMessage}
-            onChange={({ target: { value } }): void => {
-              onChange({ type, value });
-              setPKey(value);
-            }}
-          />
-        ) : (
-          <StyledInputBox>
-            {_.times(type === '12seeds' ? 12 : 24, (index) => {
-              return (
-                <WebSeedInputItem
-                  type='password'
-                  key={`seeds-${index}`}
-                  index={index + 1}
-                  value={wordList[index] || ''}
-                  error={!!errorMessage}
-                  onChange={(value: string): void => {
-                    if (index === 0 && value.split(' ').length > 1) {
-                      onChangeWebSeedInputByWords(value);
-                    } else {
-                      onChangeWord(index, value);
-                    }
-                  }}
-                />
-              );
-            })}
-          </StyledInputBox>
-        )}
+        {type === 'pKey'
+          ? (
+              <StyledTextarea
+                value={pKey}
+                placeholder='Private Key'
+                error={!!errorMessage}
+                onChange={({ target: { value } }): void => {
+                  onChange({ type, value });
+                  setPKey(value);
+                }}
+              />
+            )
+          : (
+              <StyledInputBox>
+                {_.times(type === '12seeds' ? 12 : 24, (index) => {
+                  return (
+                    <WebSeedInputItem
+                      type='password'
+                      key={`seeds-${index}`}
+                      index={index + 1}
+                      value={wordList[index] || ''}
+                      error={!!errorMessage}
+                      onChange={(value: string): void => {
+                        if (index === 0 && value.split(' ').length > 1) {
+                          onChangeWebSeedInputByWords(value);
+                        }
+                        else {
+                          onChangeWord(index, value);
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </StyledInputBox>
+            )}
         {!!errorMessage && (
           <Row style={{ columnGap: 6, alignItems: 'center' }}>
             <WebImg src={IconAlert} size={20} color={theme.webError._100} />

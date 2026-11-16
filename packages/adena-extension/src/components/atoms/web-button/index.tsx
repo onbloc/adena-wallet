@@ -1,8 +1,7 @@
-import React, { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
-import styled, { css, RuleSet } from 'styled-components';
-
 import IconRight from '@assets/web/chevron-right.svg';
 import { getTheme, WebFontType } from '@styles/theme';
+import React, { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
+import styled, { css, RuleSet } from 'styled-components';
 
 import { Row, View } from '../base';
 import { WebImg } from '../web-img';
@@ -17,13 +16,13 @@ type WebButtonProps = {
 } & (
   | { text: string; rightIcon?: 'chevronRight' }
   | {
-      children: ReactNode;
-    }
-) &
-  ButtonHTMLAttributes<HTMLButtonElement>;
+    children: ReactNode;
+  }
+)
+& ButtonHTMLAttributes<HTMLButtonElement>;
 
 const StyledButtonBase = styled.button.withConfig({
-  shouldForwardProp: (prop) => !['ref', 'size', 'fixed', 'rightIcon'].includes(prop),
+  shouldForwardProp: prop => !['ref', 'size', 'fixed', 'rightIcon'].includes(prop),
 })<{ size: 'full' | 'large' | 'small'; fixed?: boolean }>`
   & {
     cursor: pointer;
@@ -248,7 +247,8 @@ export const WebButton: React.FC<WebButtonProps> = ({
     case 'tertiary':
       if (rest.size === 'small') {
         StyledComponent = StyledButtonTertiarySmall;
-      } else {
+      }
+      else {
         StyledComponent = StyledButtonTertiary;
       }
       break;
@@ -269,21 +269,23 @@ export const WebButton: React.FC<WebButtonProps> = ({
 
   return (
     <StyledComponent ref={buttonRef} fixed={isFixed} {...rest}>
-      {'text' in rest ? (
-        <Row style={{ gap: 4, alignItems: 'center', justifyContent: 'space-between' }}>
-          {isRightButton && <View style={{ width: 12 }} />}
-          <WebText type={textType} color={'inherit'}>
-            {rest.text}
-          </WebText>
-          {isRightButton && (
-            <View style={{ marginRight: 4 }}>
-              <WebImg src={IconRight} size={24} />
-            </View>
+      {'text' in rest
+        ? (
+            <Row style={{ gap: 4, alignItems: 'center', justifyContent: 'space-between' }}>
+              {isRightButton && <View style={{ width: 12 }} />}
+              <WebText type={textType} color='inherit'>
+                {rest.text}
+              </WebText>
+              {isRightButton && (
+                <View style={{ marginRight: 4 }}>
+                  <WebImg src={IconRight} size={24} />
+                </View>
+              )}
+            </Row>
+          )
+        : (
+            children
           )}
-        </Row>
-      ) : (
-        children
-      )}
     </StyledComponent>
   );
 };

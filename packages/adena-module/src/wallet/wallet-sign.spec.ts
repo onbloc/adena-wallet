@@ -9,11 +9,11 @@ import {
   Document,
   HDWalletKeyring,
   MSG_SEND_AMINO_TYPE,
-  txToDocument,
+  txToDocument
 } from './..';
 
-const mnemonic =
-  'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
+const mnemonic
+  = 'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
 
 function makeDocument(body: string): Document {
   return {
@@ -29,26 +29,26 @@ function makeDocument(body: string): Document {
             files: [
               {
                 name: 'hello.gno',
-                body: body,
-              },
-            ],
-          },
-        },
-      },
+                body: body
+              }
+            ]
+          }
+        }
+      }
     ],
     fee: {
       amount: [
         {
           amount: '1',
-          denom: 'ugnot',
-        },
+          denom: 'ugnot'
+        }
       ],
-      gas: '5000000',
+      gas: '5000000'
     },
     chain_id: 'dev',
     memo: '',
     account_number: '0',
-    sequence: '1',
+    sequence: '1'
   };
 }
 
@@ -59,8 +59,8 @@ describe('Transaction Sign', () => {
     mockProvider = new JSONRPCProvider('');
     mockProvider.getStatus = vi.fn().mockResolvedValue({
       node_info: {
-        network: 'dev',
-      },
+        network: 'dev'
+      }
     });
     const mockAccount: ABCIAccount = {
       BaseAccount: {
@@ -70,7 +70,7 @@ describe('Transaction Sign', () => {
         account_number: '0',
         sequence: '1'
       }
-    }
+    };
     mockProvider.getAccount = vi.fn().mockResolvedValue(mockAccount);
   });
 
@@ -122,7 +122,7 @@ describe('Transaction Sign', () => {
     const { signature } = await wallet.sign(mockProvider, document);
     const hex = Buffer.from(signature[0].signature).toString('hex');
     expect(hex).toBe(
-      '8aa543afa625c049f1ed09cdee68ebf779404b8f7f9d641af1903e8023591a9453a18c768cce515802cf51451942f32576f0bfc428a1ac812e754e651a6841e4',
+      '8aa543afa625c049f1ed09cdee68ebf779404b8f7f9d641af1903e8023591a9453a18c768cce515802cf51451942f32576f0bfc428a1ac812e754e651a6841e4'
     );
   });
 });
@@ -144,17 +144,17 @@ describe('Cosmos AMINO Sign via AdenaWallet', () => {
           value: {
             from_address: address,
             to_address: 'atone1qyqszqgpqyqszqgpqyqszqgpqyqszqgpwc2vge',
-            amount: [{ denom: 'uphoton', amount: '1000' }],
-          },
-        },
+            amount: [{ denom: 'uphoton', amount: '1000' }]
+          }
+        }
       ],
       fee: {
         amount: [{ denom: 'uphoton', amount: '1000' }],
-        gas: '200000',
+        gas: '200000'
       },
       memo: '',
       accountNumber: '42',
-      sequence: '7',
+      sequence: '7'
     };
   }
 
@@ -166,18 +166,18 @@ describe('Cosmos AMINO Sign via AdenaWallet', () => {
       getAccount: vi.fn().mockResolvedValue({
         address: '',
         accountNumber: '42',
-        sequence: '7',
+        sequence: '7'
       }),
       broadcastTx: vi.fn().mockResolvedValue({
         txhash: 'HASH',
         code: 0,
         rawLog: '',
-        height: '100',
+        height: '100'
       }),
       simulateTx: vi.fn().mockResolvedValue({ gasUsed: 100_000 }),
       getMinGasPrices: vi
         .fn()
-        .mockResolvedValue([{ denom: 'uphoton', amount: '0.01' }]),
+        .mockResolvedValue([{ denom: 'uphoton', amount: '0.01' }])
     };
   }
 
@@ -189,12 +189,12 @@ describe('Cosmos AMINO Sign via AdenaWallet', () => {
       wallet.currentAccount.id,
       document,
       makeMockCosmosProvider(),
-      'SIGN_MODE_LEGACY_AMINO_JSON',
+      'SIGN_MODE_LEGACY_AMINO_JSON'
     );
 
     // Same GOLDEN locked in src/cosmos/amino/sign-cosmos-amino.spec.ts.
     expect(Buffer.from(signed.txBytes).toString('base64')).toBe(
-      'CpABCo0BChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEm0KLGF0b25lMWpnOG10dXR1OWtoaGZ3YzRueG11aGNwZnRmMHBhamRoNXNzeTdnEixhdG9uZTFxeXFzenFncHF5cXN6cWdwcXlxc3pxZ3BxeXFzenFncHdjMnZnZRoPCgd1cGhvdG9uEgQxMDAwEmkKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQPhYTbbFx4y30iZNZQfBW4i+Jhj43OdCrfNSexCg5ydshIECgIIfxgHEhUKDwoHdXBob3RvbhIEMTAwMBDAmgwaQEB7POL2vYZ6A/Qumjxm0HxNAPrCoZ1NjBTqzhZ1Qod1eAChaKDeEHhHXeSdJmSSRNo4UwihxNZs76whBBD3G0c=',
+      'CpABCo0BChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEm0KLGF0b25lMWpnOG10dXR1OWtoaGZ3YzRueG11aGNwZnRmMHBhamRoNXNzeTdnEixhdG9uZTFxeXFzenFncHF5cXN6cWdwcXlxc3pxZ3BxeXFzenFncHdjMnZnZRoPCgd1cGhvdG9uEgQxMDAwEmkKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQPhYTbbFx4y30iZNZQfBW4i+Jhj43OdCrfNSexCg5ydshIECgIIfxgHEhUKDwoHdXBob3RvbhIEMTAwMBDAmgwaQEB7POL2vYZ6A/Qumjxm0HxNAPrCoZ1NjBTqzhZ1Qod1eAChaKDeEHhHXeSdJmSSRNo4UwihxNZs76whBBD3G0c='
     );
   });
 
@@ -206,14 +206,14 @@ describe('Cosmos AMINO Sign via AdenaWallet', () => {
       wallet.currentAccount.id,
       document,
       provider,
-      'SIGN_MODE_LEGACY_AMINO_JSON',
+      'SIGN_MODE_LEGACY_AMINO_JSON'
     );
 
     const result = await wallet.broadcastCosmosTx(signed, provider);
 
     expect(provider.broadcastTx).toHaveBeenCalledWith(
       signed.txBytes,
-      'BROADCAST_MODE_SYNC',
+      'BROADCAST_MODE_SYNC'
     );
     expect(result.txhash).toBe('HASH');
   });

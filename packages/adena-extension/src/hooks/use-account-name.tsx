@@ -1,8 +1,8 @@
-import { useAtom } from 'jotai';
+import { WalletState } from '@states';
 import { Account } from 'adena-module';
+import { useAtom } from 'jotai';
 
 import { useAdenaContext } from './use-context';
-import { WalletState } from '@states';
 
 export type UseAccountNameReturn = {
   accountNames: { [key in string]: string };

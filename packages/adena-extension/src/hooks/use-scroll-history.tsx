@@ -1,7 +1,7 @@
 import { CommonState } from '@states';
+import { useAtom } from 'jotai';
 import { RefObject, useCallback, useLayoutEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAtom } from 'jotai';
 
 export type UseScrollHistoryReturn = {
   scrollMove: () => void;
@@ -35,7 +35,8 @@ const useScrollHistory = (ref?: RefObject<HTMLDivElement | null>): UseScrollHist
       ref?.current
         ? ref.current.scrollTo(0, scrollPositions[location.key])
         : bodyElement?.scrollTo(0, scrollPositions[location.key]);
-    } else {
+    }
+    else {
       ref?.current ? ref.current.scrollTo(0, 0) : bodyElement?.scrollTo(0, 0);
     }
   }, [location, bodyElement, ref?.current]);

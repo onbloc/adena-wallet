@@ -1,21 +1,16 @@
-import { Document, isLedgerAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-
 import { GasToken } from '@common/constants/token.constant';
 import TransactionResult from '@components/molecules/transaction-result';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import NFTTransferSummary from '@components/pages/nft-transfer-summary/nft-transfer-summary/nft-transfer-summary';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useChain } from '@hooks/use-chain';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useTransferInfo } from '@hooks/use-transfer-info';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { createNotificationSendMessage } from '@inject/message/methods/transaction-event';
@@ -23,7 +18,11 @@ import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transacti
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
 import { GRC721Model, RoutePath } from '@types';
-import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
+import { Document, isLedgerAccount } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
 
 const NFTTransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -227,7 +226,8 @@ const NFTTransferSummaryContainer: React.FC = () => {
           status: 'SUCCESS',
           hash: txHash,
         });
-      } else {
+      }
+      else {
         setTransferResult({
           status: 'FAILED',
           errorMessage: 'Your transaction could not be submitted to the blockchain. Try again.',
@@ -237,7 +237,8 @@ const NFTTransferSummaryContainer: React.FC = () => {
       setScreenState('RESULT');
       setIsSent(false);
       return Boolean(txHash);
-    } catch (e) {
+    }
+    catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       setTransferResult({
         status: 'FAILED',
@@ -323,44 +324,50 @@ const NFTTransferSummaryContainer: React.FC = () => {
 
   return (
     <NFTTransferSummaryLayout>
-      {screenState === 'LOADING' ? (
-        <BroadcastTransactionLoading />
-      ) : screenState === 'RESULT' && transferResult ? (
-        <TransactionResult
-          status={transferResult.status}
-          errorMessage={transferResult.errorMessage}
-          onClickViewHistory={onClickViewHistory}
-          onClickViewGnoscan={onClickViewGnoscan}
-          onClickClose={onClickCloseResult}
-        />
-      ) : openedNetworkFeeSetting ? (
-        <div className='network-fee-setting-wrapper'>
-          <NetworkFeeSetting
-            {...useNetworkFeeReturn}
-            feeTokenQuote={feeTokenQuote}
-            onClickBack={onClickNetworkFeeClose}
-            onClickSave={onClickNetworkFeeSave}
-          />
-        </div>
-      ) : (
-        <NFTTransferSummary
-          grc721Token={summaryInfo.grc721Token}
-          toAddress={summaryInfo.toAddress}
-          isErrorNetworkFee={isNetworkFeeError}
-          isLoadingNetworkFee={useNetworkFeeReturn.isLoading}
-          isSimulateError={useNetworkFeeReturn.isSimulateError}
-          isBalanceUnknown={currentBalance === null || currentBalance === undefined}
-          simulateErrorBannerMessage={simulateErrorMessage}
-          networkFee={networkFee}
-          feeTokenQuote={feeTokenQuote}
-          memo={summaryInfo.memo}
-          queryGRC721TokenUri={useGetGRC721TokenUri}
-          onClickBack={onClickBack}
-          onClickCancel={onClickCancel}
-          onClickSend={transfer}
-          onClickNetworkFeeSetting={onClickNetworkFeeSetting}
-        />
-      )}
+      {screenState === 'LOADING'
+        ? (
+            <BroadcastTransactionLoading />
+          )
+        : screenState === 'RESULT' && transferResult
+          ? (
+              <TransactionResult
+                status={transferResult.status}
+                errorMessage={transferResult.errorMessage}
+                onClickViewHistory={onClickViewHistory}
+                onClickViewGnoscan={onClickViewGnoscan}
+                onClickClose={onClickCloseResult}
+              />
+            )
+          : openedNetworkFeeSetting
+            ? (
+                <div className='network-fee-setting-wrapper'>
+                  <NetworkFeeSetting
+                    {...useNetworkFeeReturn}
+                    feeTokenQuote={feeTokenQuote}
+                    onClickBack={onClickNetworkFeeClose}
+                    onClickSave={onClickNetworkFeeSave}
+                  />
+                </div>
+              )
+            : (
+                <NFTTransferSummary
+                  grc721Token={summaryInfo.grc721Token}
+                  toAddress={summaryInfo.toAddress}
+                  isErrorNetworkFee={isNetworkFeeError}
+                  isLoadingNetworkFee={useNetworkFeeReturn.isLoading}
+                  isSimulateError={useNetworkFeeReturn.isSimulateError}
+                  isBalanceUnknown={currentBalance === null || currentBalance === undefined}
+                  simulateErrorBannerMessage={simulateErrorMessage}
+                  networkFee={networkFee}
+                  feeTokenQuote={feeTokenQuote}
+                  memo={summaryInfo.memo}
+                  queryGRC721TokenUri={useGetGRC721TokenUri}
+                  onClickBack={onClickBack}
+                  onClickCancel={onClickCancel}
+                  onClickSend={transfer}
+                  onClickNetworkFeeSetting={onClickNetworkFeeSetting}
+                />
+              )}
     </NFTTransferSummaryLayout>
   );
 };

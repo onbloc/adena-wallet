@@ -1,11 +1,11 @@
+import { WalletState } from '@states';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import React, { PropsWithChildren } from 'react';
-import type { JSX } from 'react';
 import { createStore, Provider as JotaiProvider } from 'jotai';
+import type { JSX } from 'react';
+import React, { PropsWithChildren } from 'react';
 import type { Mock } from 'vitest';
 
-import { WalletState } from '@states';
 import { useChain } from './use-chain';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';

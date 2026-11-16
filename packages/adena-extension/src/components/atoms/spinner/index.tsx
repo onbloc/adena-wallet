@@ -1,7 +1,7 @@
+import { Icon } from '@components/atoms';
 import React from 'react';
 
 import { SpinnerWrapper } from './spinner.styles';
-import { Icon } from '@components/atoms';
 
 export interface SpinnerProps {
   size?: string | number;

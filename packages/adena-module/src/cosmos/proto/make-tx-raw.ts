@@ -44,15 +44,15 @@ export function makeTxRaw(params: MakeTxRawParams): Uint8Array {
   const bodyBytes = TxBody.encode(
     TxBody.fromPartial({
       messages: aminoMsgsToAnys(msgs),
-      memo,
-    }),
+      memo
+    })
   ).finish();
 
   const compressedPubKey = compressPubkeyIfNeeded(publicKey);
 
   const pubKeyAny = Any.fromPartial({
     typeUrl: COSMOS_SECP256K1_PUBKEY_TYPE_URL,
-    value: PubKey.encode({ key: compressedPubKey }).finish(),
+    value: PubKey.encode({ key: compressedPubKey }).finish()
   });
 
   const authInfoBytes = AuthInfo.encode({
@@ -60,20 +60,20 @@ export function makeTxRaw(params: MakeTxRawParams): Uint8Array {
       {
         publicKey: pubKeyAny,
         modeInfo: {
-          single: { mode: signMode },
+          single: { mode: signMode }
         },
-        sequence: BigInt(sequence),
-      },
+        sequence: BigInt(sequence)
+      }
     ],
     fee: Fee.fromPartial({
-      amount: fee.amount.map((c) => ({ denom: c.denom, amount: c.amount })),
-      gasLimit: BigInt(fee.gas),
-    }),
+      amount: fee.amount.map(c => ({ denom: c.denom, amount: c.amount })),
+      gasLimit: BigInt(fee.gas)
+    })
   }).finish();
 
   return TxRaw.encode({
     bodyBytes,
     authInfoBytes,
-    signatures: [signature],
+    signatures: [signature]
   }).finish();
 }

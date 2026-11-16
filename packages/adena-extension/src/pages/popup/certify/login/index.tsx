@@ -1,8 +1,3 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { JSX } from 'react';
-import { useLocation } from 'react-router-dom';
-import styled, { useTheme } from 'styled-components';
-
 import { validateEmptyPassword } from '@common/validation';
 import { Button, DefaultInput, Text } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -12,6 +7,10 @@ import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
 import { RoutePath } from '@types';
+import type { JSX } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import styled, { useTheme } from 'styled-components';
 
 const text = 'Enter\nYour Password';
 
@@ -94,7 +93,8 @@ export const Login = (): JSX.Element => {
         navigate(RoutePath.Wallet);
         return;
       }
-    } catch (e) {
+    }
+    catch (e) {
       setValidateState(false);
       console.log(e);
     }
@@ -117,33 +117,35 @@ export const Login = (): JSX.Element => {
 
   const onClickForgotButton = (): void => navigate(RoutePath.ForgotPassword);
 
-  return existWallet ? (
-    <Wrapper>
-      <Title>{text}</Title>
-      <DefaultInput
-        value={password}
-        type='password'
-        placeholder='Password'
-        onChange={onChangePasswordInput}
-        onKeyDown={onKeyEventUnLockButton}
-        error={!validateState}
-        ref={inputRef}
-      />
-      <ForgetPwd onClick={onClickForgotButton}>
-        <Text type='body2Reg' color={theme.neutral.a}>
-          Forgot Password?
-        </Text>
-      </ForgetPwd>
-      <Button
-        fullWidth
-        onClick={onClickUnLockButton}
-        margin='auto 0px 0px'
-        disabled={!availableLogin}
-      >
-        <Text type='body1Bold'>Unlock</Text>
-      </Button>
-    </Wrapper>
-  ) : (
-    <React.Fragment />
-  );
+  return existWallet
+    ? (
+        <Wrapper>
+          <Title>{text}</Title>
+          <DefaultInput
+            value={password}
+            type='password'
+            placeholder='Password'
+            onChange={onChangePasswordInput}
+            onKeyDown={onKeyEventUnLockButton}
+            error={!validateState}
+            ref={inputRef}
+          />
+          <ForgetPwd onClick={onClickForgotButton}>
+            <Text type='body2Reg' color={theme.neutral.a}>
+              Forgot Password?
+            </Text>
+          </ForgetPwd>
+          <Button
+            fullWidth
+            onClick={onClickUnLockButton}
+            margin='auto 0px 0px'
+            disabled={!availableLogin}
+          >
+            <Text type='body1Bold'>Unlock</Text>
+          </Button>
+        </Wrapper>
+      )
+    : (
+        <React.Fragment />
+      );
 };

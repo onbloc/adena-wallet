@@ -30,7 +30,7 @@ export const useGetGRC721Tokens = (
         .fetchGRC721Tokens(collection.packagePath, currentFundingAddress)
         .catch(() => []);
 
-      return tokens.map((token) => ({
+      return tokens.map(token => ({
         ...token,
         name: collection.name,
         symbol: collection.symbol,

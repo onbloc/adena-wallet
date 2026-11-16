@@ -1,6 +1,3 @@
-import { Account, Wallet } from 'adena-module';
-import { useCallback, useEffect, useState } from 'react';
-
 import {
   WALLET_EXPORT_ACCOUNT_ID,
   WALLET_EXPORT_TYPE_STORAGE_KEY,
@@ -12,6 +9,8 @@ import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { useQuery } from '@tanstack/react-query';
+import { Account, Wallet } from 'adena-module';
+import { useCallback, useEffect, useState } from 'react';
 
 export type UseWalletExportReturn = {
   currentAccount: Account | null;
@@ -76,7 +75,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
       if (exportType === 'SEED_PHRASE') {
         return currentAccount;
       }
-      return wallet?.accounts.find((account) => account.id === exportAccountId) || currentAccount;
+      return wallet?.accounts.find(account => account.id === exportAccountId) || currentAccount;
     },
     {},
   );
@@ -144,7 +143,8 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
 
       if (exportType === 'PRIVATE_KEY') {
         setExportData(instance);
-      } else {
+      }
+      else {
         setExportData(instance);
       }
       setWalletExportState('RESULT');

@@ -1,6 +1,6 @@
 /* eslint-disable @eslint-react/dom-no-unknown-property */
-import React from 'react';
 import type { JSX } from 'react';
+import React from 'react';
 
 const IconShow = ({ className }: { className?: string }): JSX.Element => (
   <svg

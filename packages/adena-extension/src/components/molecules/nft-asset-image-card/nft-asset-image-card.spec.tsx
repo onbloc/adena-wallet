@@ -1,11 +1,11 @@
-import React from 'react';
-
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { UseQueryResult } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
+
 import NFTAssetImageCard, { NFTAssetImageCardProps } from './nft-asset-image-card';
 
 const makeAsset = (
@@ -23,10 +23,10 @@ const makeAsset = (
   ...overrides,
 });
 
-const makeQuery =
-  (result: Partial<UseQueryResult<string | null>>): NFTAssetImageCardProps['queryGRC721TokenUri'] =>
-  (): UseQueryResult<string | null> =>
-    ({ data: null, isFetched: false, ...result }) as UseQueryResult<string | null>;
+const makeQuery
+  = (result: Partial<UseQueryResult<string | null>>): NFTAssetImageCardProps['queryGRC721TokenUri'] =>
+    (): UseQueryResult<string | null> =>
+      ({ data: null, isFetched: false, ...result }) as UseQueryResult<string | null>;
 
 const renderCard = (props: NFTAssetImageCardProps): void => {
   render(

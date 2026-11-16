@@ -1,10 +1,9 @@
-import BigNumber from 'bignumber.js';
-import { useMemo } from 'react';
-
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { getVestedAmount } from '@common/utils/vesting-utils';
 import { useChainBlockTime } from '@hooks/wallet/use-chain-block-time';
 import { useVestingInfo } from '@hooks/wallet/use-vesting-info';
+import BigNumber from 'bignumber.js';
+import { useMemo } from 'react';
 
 // Matches the grant poll in `useVestingInfo`: a linear schedule releases coins
 // on every block, so the lock has to keep shrinking while the screen is open.

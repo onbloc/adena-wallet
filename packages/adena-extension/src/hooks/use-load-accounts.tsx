@@ -1,11 +1,10 @@
-import { useAtom } from 'jotai';
+import { WalletState } from '@states';
+import { StateType } from '@types';
 import { Account } from 'adena-module';
+import { useAtom } from 'jotai';
 
 import { useWalletContext } from './use-context';
 import { useWalletAccounts } from './use-wallet-accounts';
-
-import { WalletState } from '@states';
-import { StateType } from '@types';
 
 export type UseLoadAccountsReturn = {
   state: StateType;

@@ -1,12 +1,13 @@
 import {
-  GRC20TokenModel,
   Grc20RouteMap,
+  GRC20TokenModel,
   GRC721CollectionModel,
   GRC721MetadataModel,
   GRC721Model,
   NetworkMetainfo,
   TokenModel,
 } from '@types';
+
 import { AppInfoResponse } from './response';
 
 export interface ITokenRepository extends IGRC721TokenRepository {

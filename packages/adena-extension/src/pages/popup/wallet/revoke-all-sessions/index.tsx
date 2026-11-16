@@ -1,29 +1,28 @@
-import React, { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
-import styled from 'styled-components';
-import { Account, Document, isLedgerAccount, isSessionAccount } from 'adena-module';
-
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useNetwork } from '@hooks/use-network';
-import { useMasterSessions } from '@hooks/wallet/use-master-sessions';
-import { useNetworkFee } from '@hooks/wallet/use-network-fee';
-import { useRevokeSession } from '@hooks/wallet/use-revoke-session';
+import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
+import { formatAddress } from '@common/utils/client-utils';
 import { resolveSessionAdminGasInfo } from '@common/utils/session-admin-gas';
 import { WarningBox } from '@components/atoms/warning-box';
-import { BottomFixedButtonGroup } from '@components/molecules/bottom-fixed-button-group';
 import { ApproveLedgerLoading } from '@components/molecules/approve-ledger-loading';
+import { BottomFixedButtonGroup } from '@components/molecules/bottom-fixed-button-group';
 import NetworkFee from '@components/molecules/network-fee/network-fee';
 import TransactionResult from '@components/molecules/transaction-result';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import useLink from '@hooks/use-link';
+import { useNetwork } from '@hooks/use-network';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
+import { useMasterSessions } from '@hooks/wallet/use-master-sessions';
+import { useNetworkFee } from '@hooks/wallet/use-network-fee';
+import { useRevokeSession } from '@hooks/wallet/use-revoke-session';
 import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading';
 import { createMessageOfRevokeAllSessions } from '@services/transaction/message/auth/auth';
-import { formatAddress } from '@common/utils/client-utils';
-import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
-import { RoutePath } from '@types';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
-import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
+import { RoutePath } from '@types';
+import { Account, Document, isLedgerAccount, isSessionAccount } from 'adena-module';
+import React, { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
+import styled from 'styled-components';
 
 const Container = styled.div`
   ${mixins.flex({ direction: 'column', align: 'stretch', justify: 'flex-start' })};
@@ -85,7 +84,7 @@ const RevokeAllSessionsPage = (): ReactElement => {
   const masterAddress = params?.masterAddress;
 
   const { entries, isLoading, error } = useMasterSessions(masterAddress);
-  const activeEntries = useMemo(() => entries.filter((e) => e.status === 'ACTIVE'), [entries]);
+  const activeEntries = useMemo(() => entries.filter(e => e.status === 'ACTIVE'), [entries]);
 
   const [document, setDocument] = useState<Document | null>(null);
   const [masterAccount, setMasterAccount] = useState<Account | null>(null);
@@ -142,7 +141,8 @@ const RevokeAllSessionsPage = (): ReactElement => {
           '',
         );
         if (!cancelled) setDocument(doc);
-      } catch {
+      }
+      catch {
         if (!cancelled) setDocument(null);
       }
     })();
@@ -168,7 +168,8 @@ const RevokeAllSessionsPage = (): ReactElement => {
     });
     if (result.ok) {
       setRevokeResult({ status: 'SUCCESS', hash: result.hash });
-    } else {
+    }
+    else {
       setRevokeResult({ status: 'FAILED', errorMessage: result.error });
     }
     setScreenState('RESULT');
@@ -177,7 +178,8 @@ const RevokeAllSessionsPage = (): ReactElement => {
   const onClickResultClose = useCallback(() => {
     if (masterAddress) {
       navigate(RoutePath.ManageSessions, { state: { masterAddress }, replace: true });
-    } else {
+    }
+    else {
       goBack();
     }
   }, [masterAddress, navigate, goBack]);
@@ -246,19 +248,24 @@ const RevokeAllSessionsPage = (): ReactElement => {
     );
   }
 
-  const canRevoke =
-    activeEntries.length > 0 &&
-    !!document &&
-    !isPending &&
-    !!networkFee &&
-    !useNetworkFeeReturn.isLoading;
+  const canRevoke
+    = activeEntries.length > 0
+      && !!document
+      && !isPending
+      && !!networkFee
+      && !useNetworkFeeReturn.isLoading;
 
   return (
     <Container>
       {isLoading && activeEntries.length === 0 && <Status>Loading sessions…</Status>}
-      {!isLoading && error && <Status>Failed to load sessions: {error}</Status>}
+      {!isLoading && error && (
+        <Status>
+          Failed to load sessions:
+          {error}
+        </Status>
+      )}
 
-      {activeEntries.map((entry) => (
+      {activeEntries.map(entry => (
         <SessionRow key={entry.sessionAddr}>
           <span className='name'>{entry.name}</span>
           <span className='address'>{formatAddress(entry.sessionAddr, 6)}</span>

@@ -1,3 +1,5 @@
+import { deserializeSignDoc } from '@common/utils/cosmos-serialize';
+import { base64ToBytes } from '@common/utils/encoding-util';
 import type {
   AccountData,
   AminoSignResponse,
@@ -8,11 +10,8 @@ import type {
   DirectSignResponse,
   OfflineDirectSigner,
 } from '@cosmjs/proto-signing';
-import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
-
-import { deserializeSignDoc } from '@common/utils/cosmos-serialize';
-import { base64ToBytes } from '@common/utils/encoding-util';
 import type { CosmosKey, SerializedCosmosKey } from '@inject/types';
+import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 
 import { AdenaExecutor } from '../executor/executor';
 

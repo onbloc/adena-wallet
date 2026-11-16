@@ -3,9 +3,10 @@ import { StorageManager } from '@common/storage/storage-manager';
 import { GRC721_TOKEN_PACKAGES } from '@common/utils/grc721-config';
 import { NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
-import { GRC721_RECONCILE_INTERVAL_MS, GRC721_SYNC_CACHE_KEY } from './token.grc721-sync';
-import { TokenRepository } from './token';
 import type { Mock } from 'vitest';
+
+import { TokenRepository } from './token';
+import { GRC721_RECONCILE_INTERVAL_MS, GRC721_SYNC_CACHE_KEY } from './token.grc721-sync';
 
 const GRC721_PACKAGE = GRC721_TOKEN_PACKAGES[0].path;
 const COLLECTION_ID = 'gno.land/r/gnoswap/gnft.GNFT.0000000';
@@ -107,7 +108,7 @@ function makeRepository(
       data: {
         data: {
           latestBlockHeight,
-          getTransactions: page.map((events) => ({
+          getTransactions: page.map(events => ({
             block_height: blockHeight,
             response: { events },
           })),
@@ -178,7 +179,7 @@ describe('indexer sync cursor', () => {
 
   const announced = (): unknown[] => [newToken(COLLECTION_ID, 'GNOSWAP NFT', 'GNFT')];
   const collectionIdsOf = async (repository: TokenRepository): Promise<string[]> =>
-    (await repository.fetchGRC721Collections()).map((collection) => collection.collectionId || '');
+    (await repository.fetchGRC721Collections()).map(collection => collection.collectionId || '');
 
   it('walks from genesis first, then resumes above the height it reached', async () => {
     const { repository, post, syncCacheValues } = makeRepository(
@@ -411,9 +412,9 @@ describe('indexer sync cursor', () => {
           data: {
             latestBlockHeight: 4_000_000,
             getTransactions: announcements
-              .filter((announcement) => announcement.height > fromBlockHeight)
+              .filter(announcement => announcement.height > fromBlockHeight)
               .sort((left, right) => left.height - right.height)
-              .map((announcement) => ({
+              .map(announcement => ({
                 block_height: announcement.height,
                 response: { events: [newToken(announcement.collectionId, 'Name', 'SYM')] },
               })),
@@ -588,7 +589,7 @@ describe('fetchGRC721Collections', () => {
 
     const collections = await repository.fetchGRC721Collections();
 
-    expect(collections.map((collection) => collection.collectionId)).toEqual([
+    expect(collections.map(collection => collection.collectionId)).toEqual([
       'gno.land/r/demo/nft.ITEM.0000000',
     ]);
   });
@@ -698,7 +699,7 @@ describe('GRC721 API', () => {
 
     const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
 
-    expect(tokens.map((token) => [token.tokenId, token.isOwned])).toEqual([
+    expect(tokens.map(token => [token.tokenId, token.isOwned])).toEqual([
       ['351', false],
       ['350', true],
     ]);
@@ -737,10 +738,10 @@ describe('GRC721 API', () => {
     );
 
     const collections = await repository.fetchAccountGRC721CollectionsBy(ADDRESS);
-    expect(collections.map((entry) => entry.packagePath)).toEqual([PACKAGE_PATH]);
+    expect(collections.map(entry => entry.packagePath)).toEqual([PACKAGE_PATH]);
 
     const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
-    expect(tokens.map((token) => token.tokenId)).toEqual(['1', '2']);
+    expect(tokens.map(token => token.tokenId)).toEqual(['1', '2']);
     await expect(repository.fetchGRC721BalanceBy(PACKAGE_PATH, ADDRESS)).resolves.toBe(2);
   });
 
@@ -767,7 +768,7 @@ describe('GRC721 API', () => {
 
     const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
 
-    expect(tokens.map((token) => token.tokenId)).toEqual(['1', '2']);
+    expect(tokens.map(token => token.tokenId)).toEqual(['1', '2']);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -802,7 +803,7 @@ describe('GRC721 API', () => {
       [[]],
       {},
       {
-        api: (url) => (url === COLLECTIONS_URL ? { items: [collection] } : undefined),
+        api: url => (url === COLLECTIONS_URL ? { items: [collection] } : undefined),
       },
     );
 
@@ -871,15 +872,15 @@ describe('fetchGRC721TokenUriBy', () => {
       repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '2'),
     ]);
     // The cache writes run behind the returned value.
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise(resolve => setTimeout(resolve, 0));
     await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe(
       'data:image/svg+xml;base64,AAA',
     );
 
     expect(evaluateFunction).toHaveBeenCalledTimes(2);
     expect(JSON.parse(values[`GRC721_TOKEN_URI:gnoland-1:${PACKAGE_PATH}`])).toEqual({
-      '1': 'data:image/svg+xml;base64,AAA',
-      '2': 'data:image/svg+xml;base64,AAA',
+      1: 'data:image/svg+xml;base64,AAA',
+      2: 'data:image/svg+xml;base64,AAA',
     });
   });
 
@@ -903,7 +904,7 @@ describe('fetchGRC721TokenUriBy', () => {
     await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe('ipfs://x');
 
     // The write queue is shared, so let it drain for the tests after this one.
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise(resolve => setTimeout(resolve, 0));
     release();
   });
 

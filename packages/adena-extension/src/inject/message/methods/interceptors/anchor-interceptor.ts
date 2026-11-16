@@ -1,7 +1,8 @@
 import { CommandHandler } from '@inject/message/command-handler';
 import { CommandMessage } from '@inject/message/command-message';
+
+import { canHandleGnoConnectOrigin, GnoMessageInfo, parseGnoMessageInfo, shouldIntercept } from '../gno-connect';
 import { GnoConnectInfoProvider } from '../gno-connect-info-provider';
-import { GnoMessageInfo, canHandleGnoConnectOrigin, parseGnoMessageInfo, shouldIntercept } from '../gno-connect';
 import { IInterceptor, InterceptorContext, InterceptorHandler } from '../gno-interceptor.types';
 
 /**
@@ -91,7 +92,8 @@ export class AnchorInterceptor implements IInterceptor {
       e.preventDefault();
 
       this.handler(gnoMessageInfo, context);
-    } catch (error) {
+    }
+    catch (error) {
       console.warn(`${this.name} error:`, error);
     }
   }

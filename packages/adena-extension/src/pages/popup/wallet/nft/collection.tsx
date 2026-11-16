@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { useCallback, useMemo } from 'react';
-import type { JSX } from 'react';
-import styled from 'styled-components';
-
 import NFTCollectionAssets from '@components/pages/nft-collection/nft-collection-assets/nft-collection-assets';
 import NFTCollectionHeader from '@components/pages/nft-collection/nft-collection-header/nft-collection-header';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
@@ -13,6 +8,9 @@ import useLink from '@hooks/use-link';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { GRC721Model, RoutePath } from '@types';
+import type { JSX } from 'react';
+import { useCallback, useMemo } from 'react';
+import styled from 'styled-components';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};

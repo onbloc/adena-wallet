@@ -1,3 +1,8 @@
+import {
+  WalletResponseFailureType,
+  WalletResponseRejectType,
+  WalletResponseType,
+} from '@adena-wallet/sdk';
 import DefaultFavicon from '@assets/favicon-default.svg';
 import {
   createFaviconByHostname,
@@ -15,11 +20,6 @@ import {
   EnableCosmosParams,
 } from '@inject/types';
 import { RoutePath } from '@types';
-import {
-  WalletResponseFailureType,
-  WalletResponseRejectType,
-  WalletResponseType,
-} from '@adena-wallet/sdk';
 import { isSessionAccount } from 'adena-module';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -100,7 +100,7 @@ const ApproveEstablishCosmosContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && navigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && navigate(RoutePath.ApproveLogin + location.search));
   };
 
   const initRequest = async (): Promise<void> => {
@@ -116,7 +116,8 @@ const ApproveEstablishCosmosContainer: React.FC = () => {
         setChainIds(normalizeChainIds(data.chainIds));
         setAppName(getSiteName(params.protocol, params.hostname));
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.log(e);
     }
   };
@@ -145,7 +146,8 @@ const ApproveEstablishCosmosContainer: React.FC = () => {
         createCosmosResponse(CosmosResponseExecuteType.ENABLE_COSMOS, 'success', key),
       );
       setDone(true);
-    } catch (error) {
+    }
+    catch (error) {
       setResponse(
         createCosmosResponse(
           CosmosResponseExecuteType.ENABLE_COSMOS,

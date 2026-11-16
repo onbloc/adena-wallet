@@ -1,9 +1,9 @@
+import theme from '@styles/theme';
 import { fireEvent, render, screen } from '@testing-library/react';
-import React from 'react';
 import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
 
-import theme from '@styles/theme';
 import { SessionDetailCard } from './session-detail-card';
 
 const NOW_SEC = 1_716_000_000;

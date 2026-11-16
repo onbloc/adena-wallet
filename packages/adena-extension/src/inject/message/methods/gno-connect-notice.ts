@@ -1,4 +1,5 @@
 import { getChainNetworkName } from '@common/constants/gno-connect-allowlist.constant';
+
 import { LoopbackTrustRejection } from './gno-connect';
 
 /**
@@ -58,8 +59,8 @@ export function describeLoopbackRejection(
     return {
       title: NOTICE_TITLE,
       body:
-        `This page declared the network "${clip(context.metaChainId)}", but a page served ` +
-        `from this address may only act as ${required}.`,
+        `This page declared the network "${clip(context.metaChainId)}", but a page served `
+        + `from this address may only act as ${required}.`,
     };
   }
 
@@ -67,21 +68,21 @@ export function describeLoopbackRejection(
     return {
       title: NOTICE_TITLE,
       body:
-        'Adena is locked, or has no account selected. Unlock it, make sure you are on ' +
-        `${required}, then use the link again.`,
+        'Adena is locked, or has no account selected. Unlock it, make sure you are on '
+        + `${required}, then use the link again.`,
     };
   }
 
-  const active =
-    context.activeChainId === undefined
+  const active
+    = context.activeChainId === undefined
       ? 'another network'
       : describeNetwork(context.activeChainId, context.activeNetworkName);
 
   return {
     title: NOTICE_TITLE,
     body:
-      `This link is for ${required}, but Adena is on ${active}. Switch networks in ` +
-      'Adena, then use the link again.',
+      `This link is for ${required}, but Adena is on ${active}. Switch networks in `
+      + 'Adena, then use the link again.',
   };
 }
 

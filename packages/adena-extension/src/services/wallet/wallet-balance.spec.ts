@@ -1,6 +1,7 @@
 import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { WalletBalanceService } from './wallet-balance';
 import type { Mock } from 'vitest';
+
+import { WalletBalanceService } from './wallet-balance';
 
 /**
  * A transport failure is not a zero balance: a failed request must reject so the
@@ -60,10 +61,10 @@ describe('WalletBalanceService.getGRC20TokenBalanceMap across registry versions'
       throw new Error('unknown package');
     }
     const keys = options.statements
-      .map((statement) => statement.match(/Get\("([^"]+)"\)/)?.[1])
+      .map(statement => statement.match(/Get\("([^"]+)"\)/)?.[1])
       .filter((key): key is string => !!key);
     return keys
-      .map((key) => (held[key] ? `(true bool)\n(${held[key]} int64)` : '(false bool)\n(0 int64)'))
+      .map(key => (held[key] ? `(true bool)\n(${held[key]} int64)` : '(false bool)\n(0 int64)'))
       .join('\n');
   });
 
@@ -71,8 +72,8 @@ describe('WalletBalanceService.getGRC20TokenBalanceMap across registry versions'
   service.setGnoProvider({ evaluateIIFE } as unknown as GnoProvider);
 
   beforeEach(() => {
-  evaluateIIFE.mockClear();
-});
+    evaluateIIFE.mockClear();
+  });
 
   it('resolves each token from the first registry version that holds it', async () => {
     service.setRegistryPaths([V1_REGISTRY, V0_REGISTRY]);

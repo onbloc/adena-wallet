@@ -9,11 +9,11 @@ import {
   ARBITRARY_MSG_TYPE,
   getArbitraryMessageSignBytes,
   makeArbitraryMessageDoc,
-  signArbitraryMessage,
+  signArbitraryMessage
 } from './sign-arbitrary';
 
-const MNEMONIC =
-  'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
+const MNEMONIC
+  = 'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
 
 // Address derived from MNEMONIC at index 0, the same fixture the other keyring
 // specs use.
@@ -61,9 +61,9 @@ describe('getArbitraryMessageSignBytes', () => {
   it('matches the pinned signature payload', () => {
     const doc = makeArbitraryMessageDoc(CHAIN_ID, SIGNER, 'hello');
     expect(fromUtf8(getArbitraryMessageSignBytes(doc))).toBe(
-      '{"account_number":"0","chain_id":"gnoland-1","fee":{"amount":[],"gas":"0"},"memo":"",' +
-        '"msgs":[{"type":"sign/MsgSignData","value":{"data":"aGVsbG8=",' +
-        '"signer":"g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5"}}],"sequence":"0"}',
+      '{"account_number":"0","chain_id":"gnoland-1","fee":{"amount":[],"gas":"0"},"memo":"",'
+      + '"msgs":[{"type":"sign/MsgSignData","value":{"data":"aGVsbG8=",'
+      + '"signer":"g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5"}}],"sequence":"0"}'
     );
   });
 
@@ -77,7 +77,7 @@ describe('getArbitraryMessageSignBytes', () => {
     for (const message of messages) {
       const doc = makeArbitraryMessageDoc(CHAIN_ID, SIGNER, message);
       expect(getArbitraryMessageSignBytes(doc)).toEqual(
-        serializeSignDoc(doc as unknown as StdSignDoc),
+        serializeSignDoc(doc as unknown as StdSignDoc)
       );
     }
   });
@@ -93,7 +93,7 @@ describe('signArbitraryMessage', () => {
       publicKey,
       chainId: CHAIN_ID,
       signer: SIGNER,
-      data: 'hello',
+      data: 'hello'
     });
 
     expect(signature).toHaveLength(64);
@@ -101,7 +101,7 @@ describe('signArbitraryMessage', () => {
     const verified = Secp256k1.verifySignature(
       Secp256k1Signature.fromFixedLength(signature),
       sha256(getArbitraryMessageSignBytes(doc)),
-      compressPubkeyIfNeeded(publicKey),
+      compressPubkeyIfNeeded(publicKey)
     );
     expect(verified).toBe(true);
   });
@@ -116,8 +116,8 @@ describe('signArbitraryMessage', () => {
         publicKey,
         chainId: CHAIN_ID,
         signer: 'g1234567890abcdefghijklmnopqrstuvwxyzabc',
-        data: 'hello',
-      }),
+        data: 'hello'
+      })
     ).rejects.toThrow('Signer does not match the signing key');
   });
 
@@ -126,7 +126,7 @@ describe('signArbitraryMessage', () => {
     const publicKey = await keyring.getPublicKey(0);
 
     await expect(
-      signArbitraryMessage({ keyring, publicKey, chainId: CHAIN_ID, signer: SIGNER, data: '' }),
+      signArbitraryMessage({ keyring, publicKey, chainId: CHAIN_ID, signer: SIGNER, data: '' })
     ).rejects.toThrow('non-empty message');
   });
 
@@ -135,7 +135,7 @@ describe('signArbitraryMessage', () => {
     const publicKey = await keyring.getPublicKey(0);
 
     await expect(
-      signArbitraryMessage({ keyring, publicKey, chainId: '', signer: SIGNER, data: 'hello' }),
+      signArbitraryMessage({ keyring, publicKey, chainId: '', signer: SIGNER, data: 'hello' })
     ).rejects.toThrow('requires a chain id');
   });
 });

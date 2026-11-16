@@ -1,4 +1,4 @@
-import { toBech32, fromBech32 } from './bech32';
+import { fromBech32, toBech32 } from './bech32';
 describe('bech32 test', () => {
   it('same data + different prefix is success', () => {
     const gnoPrefix = 'g';
@@ -23,7 +23,7 @@ describe('bech32 test', () => {
       178,
       100,
       176,
-      58,
+      58
     ];
     const bytes = new Uint8Array(data);
 

@@ -15,7 +15,7 @@ type LottieProps = {
 } & HTMLAttributes<HTMLDivElement>;
 
 const StyledContainer = styled.div.withConfig({
-  shouldForwardProp: (prop) => !['visibleSize', 'isOverflow'].includes(prop),
+  shouldForwardProp: prop => !['visibleSize', 'isOverflow'].includes(prop),
 })<{
   width?: number;
   height?: number;
@@ -94,7 +94,8 @@ const Lottie: React.FC<LottieProps> = ({
     if (animationInstance !== null) {
       if (isPaused) {
         animationInstance.pause();
-      } else {
+      }
+      else {
         animationInstance.play();
       }
 

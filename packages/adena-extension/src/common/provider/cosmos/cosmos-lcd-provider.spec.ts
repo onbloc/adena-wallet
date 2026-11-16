@@ -1,7 +1,8 @@
 import { CosmosNetworkProfile } from 'adena-module';
+import type { MockInstance } from 'vitest';
+
 import { CosmosLcdProvider } from './cosmos-lcd-provider';
 import { CosmosQueryClient } from './cosmos-query-client';
-import type { MockInstance } from 'vitest';
 
 const PROFILE: CosmosNetworkProfile = {
   id: 'atomone-1',
@@ -96,7 +97,8 @@ describe('CosmosLcdProvider', () => {
         await provider.getAccount('atone1abc');
 
         expect(getAccountMock).toHaveBeenCalledTimes(2);
-      } finally {
+      }
+      finally {
         vi.useRealTimers();
       }
     });

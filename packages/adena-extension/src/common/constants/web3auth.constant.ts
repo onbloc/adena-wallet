@@ -46,9 +46,9 @@ export const GOOGLE_VERIFIERS: Record<SocialKeySetType, Web3AuthVerifier> = {
 export const EMAIL_VERIFIERS: Record<SocialKeySetType, Web3AuthVerifier> = {
   LEGACY: {
     web3AuthClientId:
-      process.env.WEB3_AUTH_EMAIL_LEGACY_CLIENT_ID ||
-      process.env.WEB3_AUTH_X_LEGACY_CLIENT_ID ||
-      '',
+      process.env.WEB3_AUTH_EMAIL_LEGACY_CLIENT_ID
+      || process.env.WEB3_AUTH_X_LEGACY_CLIENT_ID
+      || '',
     web3AuthNetwork: 'testnet',
     verifier: process.env.EMAIL_LEGACY_VERIFIER_NAME || '',
   },

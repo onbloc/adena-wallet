@@ -4,7 +4,7 @@ export function toRealUint8Array(data: ArrayLike<number>): Uint8Array {
   else return Uint8Array.from(data);
 }
 export function mergeUintArray(...arraies: Array<Uint8Array | number>): Uint8Array {
-  const mappedUintArray = arraies.map(array => {
+  const mappedUintArray = arraies.map((array) => {
     if (array instanceof Uint8Array) return array;
     return Uint8Array.from([array]);
   });

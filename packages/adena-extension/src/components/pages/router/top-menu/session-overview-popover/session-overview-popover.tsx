@@ -1,8 +1,7 @@
-import React from 'react';
-
 import IconCircleExclamation from '@assets/icon-circle-exclamation';
 import { Portal } from '@components/atoms';
 import { SessionDetailCard } from '@components/molecules/session-detail-card';
+import React from 'react';
 
 import {
   PopoverWrapper,
@@ -74,17 +73,21 @@ export const SessionOverviewPopover: React.FC<SessionOverviewPopoverProps> = ({
             </RevokedChip>
             <div>
               <RevokedDescription>
-                This session account has been revoked and is no longer usable. Please{' '}
+                This session account has been revoked and is no longer usable. Please
+                {' '}
                 <RevokedInlineButton type='button' onClick={onRemoveAccount}>
                   remove this account
-                </RevokedInlineButton>{' '}
+                </RevokedInlineButton>
+                {' '}
                 from your wallet.
               </RevokedDescription>
               <RevokedDescription>
-                If you have any balance in your session account,{' '}
+                If you have any balance in your session account,
+                {' '}
                 <RevokedInlineButton type='button' onClick={onExportKey}>
                   export your key
-                </RevokedInlineButton>{' '}
+                </RevokedInlineButton>
+                {' '}
                 first.
               </RevokedDescription>
             </div>

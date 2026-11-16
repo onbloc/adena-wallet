@@ -1,10 +1,10 @@
-import { useMemo, useRef } from 'react';
-import type { JSX } from 'react';
-import styled from 'styled-components';
-
 import { Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import type { JSX } from 'react';
+import { useMemo, useRef } from 'react';
+import styled from 'styled-components';
+
 import IconConnected from '../icon/icon-assets/icon-connected';
 
 interface StatusDotProps {
@@ -13,7 +13,7 @@ interface StatusDotProps {
 }
 
 const StyledContainer = styled.div.withConfig({
-  shouldForwardProp: (prop) => !['status'].includes(prop),
+  shouldForwardProp: prop => !['status'].includes(prop),
 })<{ status: boolean }>`
   display: ${({ status }): string => (status ? 'flex' : 'none')};
   position: relative;
@@ -28,7 +28,7 @@ const StyledContainer = styled.div.withConfig({
 `;
 
 const StyledTooltip = styled.div.withConfig({
-  shouldForwardProp: (prop) => !['descriptionSize'].includes(prop),
+  shouldForwardProp: prop => !['descriptionSize'].includes(prop),
 })<{ descriptionSize: number }>`
   position: fixed;
   ${mixins.flex({ direction: 'row' })};

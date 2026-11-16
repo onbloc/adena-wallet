@@ -1,8 +1,7 @@
-import React from 'react';
-import styled from 'styled-components';
-
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
+import React from 'react';
+import styled from 'styled-components';
 
 export interface DatatableProps {
   data: {

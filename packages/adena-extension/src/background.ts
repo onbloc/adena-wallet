@@ -1,5 +1,6 @@
 // Must stay the first import: later modules may build BigNumbers on load.
 import '@common/config/bignumber';
+
 import { AlarmKey, SCHEDULE_ALARMS } from '@common/constants/alarm-key.constant';
 import { TransactionEventStore } from '@common/event-store';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
@@ -12,6 +13,10 @@ import {
 } from '@inject/message/command-message';
 import { clearInMemoryKey } from '@inject/message/commands/encrypt';
 import {
+  handleFetchRealmDocument,
+  isFetchRealmDocumentMessage,
+} from '@inject/message/methods/gno-realm-document';
+import {
   GnoSessionState,
   GnoSessionUpdateMessage,
   PopupSessionUpdateMessage,
@@ -21,10 +26,7 @@ import {
   isTransactionNotification,
   parseTransactionScannerUrl,
 } from '@inject/message/methods/transaction-event';
-import {
-  handleFetchRealmDocument,
-  isFetchRealmDocumentMessage,
-} from '@inject/message/methods/gno-realm-document';
+
 import { InjectionMessage, MessageHandler } from './inject/message';
 
 const inMemoryProvider = new MemoryProvider();
@@ -76,9 +78,9 @@ function cleanupSession(sessionId: string): void {
 
 function isGnoSessionUpdateMessage(message: unknown): message is GnoSessionUpdateMessage {
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    (message as GnoSessionUpdateMessage).type === 'GNO_SESSION_UPDATE'
+    typeof message === 'object'
+    && message !== null
+    && (message as GnoSessionUpdateMessage).type === 'GNO_SESSION_UPDATE'
   );
 }
 
@@ -89,9 +91,9 @@ interface RegisterPopupSessionMessage {
 
 function isRegisterPopupSessionMessage(message: unknown): message is RegisterPopupSessionMessage {
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    (message as RegisterPopupSessionMessage).type === 'REGISTER_POPUP_SESSION'
+    typeof message === 'object'
+    && message !== null
+    && (message as RegisterPopupSessionMessage).type === 'REGISTER_POPUP_SESSION'
   );
 }
 
@@ -112,25 +114,25 @@ interface GetAllGnoSessionsMessage {
 
 function isGetGnoSessionMessage(message: unknown): message is GetGnoSessionMessage {
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    (message as GetGnoSessionMessage).type === 'GET_GNO_SESSION'
+    typeof message === 'object'
+    && message !== null
+    && (message as GetGnoSessionMessage).type === 'GET_GNO_SESSION'
   );
 }
 
 function isGetActiveSessionMessage(message: unknown): message is GetActiveSessionMessage {
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    (message as GetActiveSessionMessage).type === 'GET_ACTIVE_SESSION'
+    typeof message === 'object'
+    && message !== null
+    && (message as GetActiveSessionMessage).type === 'GET_ACTIVE_SESSION'
   );
 }
 
 function isGetAllGnoSessionsMessage(message: unknown): message is GetAllGnoSessionsMessage {
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    (message as GetAllGnoSessionsMessage).type === 'GET_ALL_GNO_SESSIONS'
+    typeof message === 'object'
+    && message !== null
+    && (message as GetAllGnoSessionsMessage).type === 'GET_ALL_GNO_SESSIONS'
   );
 }
 
@@ -145,13 +147,15 @@ async function handleRegisterPopupSession(
 
   if (sender.tab?.windowId) {
     popupId = sender.tab.windowId;
-  } else {
+  }
+  else {
     try {
       const currentWindow = await chrome.windows.getCurrent();
       if (currentWindow.type === 'popup') {
         popupId = currentWindow.id;
       }
-    } catch {
+    }
+    catch {
       // Ignore
     }
   }
@@ -330,7 +334,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       default:
         break;
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error(error);
   }
 
@@ -342,11 +347,11 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
     try {
       const tab = await chrome.tabs.get(tabId).catch(() => null);
       if (
-        !tab?.url ||
-        tab.url.startsWith('chrome://') ||
-        tab.url.startsWith('chrome-extension://') ||
-        tab.url.startsWith('moz-extension://') ||
-        tab.url.startsWith('about:')
+        !tab?.url
+        || tab.url.startsWith('chrome://')
+        || tab.url.startsWith('chrome-extension://')
+        || tab.url.startsWith('moz-extension://')
+        || tab.url.startsWith('about:')
       ) {
         return;
       }
@@ -360,7 +365,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
           }),
         )
         .catch(() => undefined);
-    } catch {
+    }
+    catch {
       // Tab may have been closed
     }
   }
@@ -425,7 +431,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  return MessageHandler.createHandler(inMemoryProvider, message, sender, (response) =>
+  return MessageHandler.createHandler(inMemoryProvider, message, sender, response =>
     sendResponseWithNotification(response, message, sendResponse),
   );
 });

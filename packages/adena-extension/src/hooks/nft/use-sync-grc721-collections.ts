@@ -1,8 +1,8 @@
-import { useQuery, useQueryClient, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import { useQuery, useQueryClient, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+
 import { useNFTCollectionHandler } from './use-collection-handler';
 import { GET_GRC721_COLLECTIONS_QUERY_KEY } from './use-get-grc721-collections';
 

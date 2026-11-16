@@ -1,7 +1,8 @@
 import { ChainRepository } from '@repositories/common';
 import { AtomoneNetworkMetainfo } from '@types';
-import { ChainService } from './chain';
 import type { Mock } from 'vitest';
+
+import { ChainService } from './chain';
 
 describe('ChainService — AtomOne methods', () => {
   let mockAddAtomoneNetwork: Mock;

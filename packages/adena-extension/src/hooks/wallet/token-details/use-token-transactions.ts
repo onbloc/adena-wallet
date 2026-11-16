@@ -1,5 +1,3 @@
-import { useMemo, useState } from 'react';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
@@ -7,6 +5,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
+import { useMemo, useState } from 'react';
 
 export const useTokenTransactions = (
   isNative: boolean | undefined,
@@ -15,9 +14,9 @@ export const useTokenTransactions = (
 ): {
   data:
     | {
-        title: string;
-        transactions: TransactionInfo[];
-      }[]
+      title: string;
+      transactions: TransactionInfo[];
+    }[]
     | null;
   isFetched: boolean;
   status: 'loading' | 'error' | 'success';
@@ -47,10 +46,10 @@ export const useTokenTransactions = (
     },
     {
       enabled:
-        !!currentAddress &&
-        transactionHistoryService.supported &&
-        tokenMetainfos.length > 0 &&
-        enabled,
+        !!currentAddress
+        && transactionHistoryService.supported
+        && tokenMetainfos.length > 0
+        && enabled,
     },
   );
 

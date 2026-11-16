@@ -1,9 +1,9 @@
 import {
   canHandleGnoConnectOrigin,
   getLoopbackGnoConnectChainId,
+  getLoopbackGnoConnectRejection,
   GnoMessageInfo,
   isAllowedGnoConnectOrigin,
-  getLoopbackGnoConnectRejection,
   isLoopbackGnoConnectTrusted,
   normalizeGnoConnectRpc,
   parseGnoMessageInfo,
@@ -33,8 +33,8 @@ describe('parseGnoMessageInfo', () => {
 
     it('should correctly parse and decode URL with pkgpath parameter', () => {
       // Test URL (Case 2)
-      const url =
-        'https://gno.land/r/leon/hor$help&func=Upvote&pkgpath=gno.land%2Fr%2Fmorgan%2Fhome';
+      const url
+        = 'https://gno.land/r/leon/hor$help&func=Upvote&pkgpath=gno.land%2Fr%2Fmorgan%2Fhome';
 
       // Execute function
       const result = parseGnoMessageInfo(url);
@@ -62,8 +62,8 @@ describe('parseGnoMessageInfo', () => {
   describe('Complete field population tests', () => {
     it('should correctly parse URL with all five fields populated', () => {
       // Test URL (with all fields populated)
-      const url =
-        'https://gno.land/r/demo/test$help&func=CompleteFunction&.send=500000ugnot&.max_deposit=1000000ugnot&arg1=value1&arg2=value2&arg3=value3';
+      const url
+        = 'https://gno.land/r/demo/test$help&func=CompleteFunction&.send=500000ugnot&.max_deposit=1000000ugnot&arg1=value1&arg2=value2&arg3=value3';
 
       // Execute function
       const result = parseGnoMessageInfo(url);
@@ -87,8 +87,8 @@ describe('parseGnoMessageInfo', () => {
 
     it('should correctly parse URL with all five fields populated using pkgpath parameter', () => {
       // Test URL (with all fields populated using pkgpath)
-      const url =
-        'https://gno.land/r/demo/placeholder$help&func=FullTest&pkgpath=gno.land%2Fr%2Ftest%2Fcomplete&.send=750000ugnot&.max_deposit=2000000ugnot&param1=test1&param2=test2';
+      const url
+        = 'https://gno.land/r/demo/placeholder$help&func=FullTest&pkgpath=gno.land%2Fr%2Ftest%2Fcomplete&.send=750000ugnot&.max_deposit=2000000ugnot&param1=test1&param2=test2';
 
       // Execute function
       const result = parseGnoMessageInfo(url);
@@ -114,13 +114,13 @@ describe('parseGnoMessageInfo', () => {
   describe('URL encoding and decoding tests', () => {
     it('should correctly decode all URL-encoded arguments', () => {
       // Test URL with multiple encoded parameters
-      const url =
-        'https://gno.land/r/demo/test$help&func=TestFunction' +
-        '&encoded1=Hello%20World' +
-        '&encoded2=%3Cscript%3Ealert(1)%3C%2Fscript%3E' +
-        '&encoded3=special%40%23%24%25%5E%26*()' +
-        '&encoded4=path%2Fto%2Fresource' +
-        '&encoded5=%E2%9C%93%20Unicode%20Check';
+      const url
+        = 'https://gno.land/r/demo/test$help&func=TestFunction'
+          + '&encoded1=Hello%20World'
+          + '&encoded2=%3Cscript%3Ealert(1)%3C%2Fscript%3E'
+          + '&encoded3=special%40%23%24%25%5E%26*()'
+          + '&encoded4=path%2Fto%2Fresource'
+          + '&encoded5=%E2%9C%93%20Unicode%20Check';
 
       // Execute function
       const result = parseGnoMessageInfo(url);
@@ -146,12 +146,12 @@ describe('parseGnoMessageInfo', () => {
 
     it('should correctly handle mixed encoded and non-encoded arguments', () => {
       // Test URL with a mix of encoded and non-encoded parameters
-      const url =
-        'https://gno.land/r/demo/test$help&func=MixedTest' +
-        '&plain=simple text' +
-        '&encoded=complex%20text%20with%20spaces' +
-        '&.send=1000ugnot' +
-        '&mixed=half%20encoded+half+plus';
+      const url
+        = 'https://gno.land/r/demo/test$help&func=MixedTest'
+          + '&plain=simple text'
+          + '&encoded=complex%20text%20with%20spaces'
+          + '&.send=1000ugnot'
+          + '&mixed=half%20encoded+half+plus';
 
       // Execute function
       const result = parseGnoMessageInfo(url);
@@ -175,11 +175,11 @@ describe('parseGnoMessageInfo', () => {
 
     it('should properly decode pkgpath and other special parameters', () => {
       // Test URL with encoded pkgpath and other special parameters
-      const url =
-        'https://gno.land/r/demo/test$help&func=SpecialTest' +
-        '&pkgpath=gno.land%2Fr%2Ftest%2Fpackage%20with%20spaces' +
-        '&url=https%3A%2F%2Fexample.com%2Fpath%3Fparam%3Dvalue' +
-        '&json=%7B%22key%22%3A%22value%22%7D'; // {"key":"value"}
+      const url
+        = 'https://gno.land/r/demo/test$help&func=SpecialTest'
+          + '&pkgpath=gno.land%2Fr%2Ftest%2Fpackage%20with%20spaces'
+          + '&url=https%3A%2F%2Fexample.com%2Fpath%3Fparam%3Dvalue'
+          + '&json=%7B%22key%22%3A%22value%22%7D'; // {"key":"value"}
 
       // Execute function
       const result = parseGnoMessageInfo(url);
@@ -227,8 +227,8 @@ describe('parseGnoMessageInfo', () => {
 
   describe('For data verification', () => {
     it('data console.log', () => {
-      const url =
-        'https://gno.land/r/leon/hor$help&func=Upvote&pkgpath=gno.land%2Fr%2Fmorgan%2Fhome';
+      const url
+        = 'https://gno.land/r/leon/hor$help&func=Upvote&pkgpath=gno.land%2Fr%2Fmorgan%2Fhome';
       const result = parseGnoMessageInfo(url);
       console.log(result, 'result');
     });

@@ -8,7 +8,7 @@
  */
 export function arrayContentEquals<T extends string | number | boolean>(
   a: ArrayLike<T>,
-  b: ArrayLike<T>,
+  b: ArrayLike<T>
 ): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; ++i) {
@@ -27,7 +27,7 @@ export function arrayContentEquals<T extends string | number | boolean>(
  */
 export function arrayContentStartsWith<T extends string | number | boolean>(
   a: ArrayLike<T>,
-  b: ArrayLike<T>,
+  b: ArrayLike<T>
 ): boolean {
   if (a.length < b.length) return false;
   for (let i = 0; i < b.length; ++i) {

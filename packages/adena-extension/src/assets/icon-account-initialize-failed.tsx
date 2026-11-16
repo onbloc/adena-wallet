@@ -1,5 +1,4 @@
 import type { JSX } from 'react';
-/* eslint-disable @eslint-react/dom-no-unknown-property */
 
 const IconAccountInitializeFailed = (): JSX.Element => (
   <svg

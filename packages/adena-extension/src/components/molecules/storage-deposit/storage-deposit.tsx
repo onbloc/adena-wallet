@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
-
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
 import FeeAmount from '@components/molecules/fee-amount/fee-amount';
-import theme from '@styles/theme';
 import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import theme from '@styles/theme';
 import BigNumber from 'bignumber.js';
+import React, { useMemo } from 'react';
+
 import {
   StorageDepositContainer,
   StorageDepositItemSkeletonBox,
@@ -73,7 +73,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
     <StorageDepositContainer>
       <StorageDepositWrapper $error={hasError ? 1 : 0}>
         <span className='key'>
-          {'Storage Deposit'}
+          Storage Deposit
 
           <InfoTooltip content={storageDepositTooltipMessage} />
         </span>
@@ -126,7 +126,7 @@ const StorageDepositAmount: React.FC<{
   }
 
   if (showPlaceholder) {
-    return <span className='value'>{'-'}</span>;
+    return <span className='value'>-</span>;
   }
 
   return (

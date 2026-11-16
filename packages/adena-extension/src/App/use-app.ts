@@ -1,11 +1,5 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef } from 'react';
-import { useIdleTimer } from 'react-idle-timer';
-import { useLocation } from 'react-router-dom';
-
 import { WALLET_LOCKED_QUERY_KEY } from '@common/constants/query-key.constant';
 import { isAutoLockTriggeredMessage } from '@common/utils/auto-lock-timer';
-import { CommandMessage } from '@inject/message/command-message';
 import { useAccountName } from '@hooks/use-account-name';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -13,6 +7,11 @@ import { useNetwork } from '@hooks/use-network';
 import useScrollHistory from '@hooks/use-scroll-history';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useWallet } from '@hooks/use-wallet';
+import { CommandMessage } from '@inject/message/command-message';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef } from 'react';
+import { useIdleTimer } from 'react-idle-timer';
+import { useLocation } from 'react-router-dom';
 
 const useApp = (): void => {
   const { wallet, clearWallet, initWallet } = useWalletContext();
@@ -35,7 +34,8 @@ const useApp = (): void => {
     try {
       await clearWallet();
       await initWallet();
-    } finally {
+    }
+    finally {
       // Runs even if initWallet threw, so the lock screen still appears.
       await queryClient.invalidateQueries({ queryKey: [WALLET_LOCKED_QUERY_KEY] });
     }
@@ -53,7 +53,7 @@ const useApp = (): void => {
   useEffect(() => {
     const handler = (message: unknown): void => {
       if (isAutoLockTriggeredMessage(message)) {
-        handleAutoLockRef.current().catch((error) => console.warn(error));
+        handleAutoLockRef.current().catch(error => console.warn(error));
       }
     };
     chrome.runtime.onMessage.addListener(handler);

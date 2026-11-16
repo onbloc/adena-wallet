@@ -1,31 +1,30 @@
-import { isAirgapAccount, isMultisigAccount, isSessionAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { JSX } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import etc from '@assets/etc.svg';
-import { isCosmosNativeTokenModel, isGRC20TokenModel } from '@common/validation/validation-token';
-import { HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text } from '@components/atoms';
-import { DoubleButton, TransactionHistory } from '@components/molecules';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import useHistoryData from '@hooks/use-history-data';
-import useScrollHistory from '@hooks/use-scroll-history';
-import { getTheme } from '@styles/theme';
-import { RoutePath } from '@types';
-
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { toRegistryKey } from '@common/utils/grc20-token-path';
 import { makeQueryString } from '@common/utils/string-utils';
+import { isCosmosNativeTokenModel, isGRC20TokenModel } from '@common/validation/validation-token';
+import { HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text } from '@components/atoms';
+import { DoubleButton, TransactionHistory } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import useHistoryData from '@hooks/use-history-data';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useNetworkProfile } from '@hooks/use-network-profile';
+import useScrollHistory from '@hooks/use-scroll-history';
 import useSessionParams from '@hooks/use-session-state';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenTransactions } from '@hooks/wallet/token-details/use-token-transactions';
 import { useTokenTransactionsPage } from '@hooks/wallet/token-details/use-token-transactions-page';
 import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
+import { isAirgapAccount, isMultisigAccount, isSessionAccount } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import type { JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
+
 import LoadingTokenDetails from './loading-token-details';
 
 const Wrapper = styled.main`
@@ -107,8 +106,8 @@ export const TokenDetails = (): JSX.Element => {
   // Multisig × Cosmos = permanent non-support (keyrings are Gno-only).
   // Disable the Send button with a tooltip instead of hiding the token so
   // users can still see balances but immediately understand they can't send.
-  const isMultisigCosmosBlocked =
-    isCosmosNative && !!currentAccount && isMultisigAccount(currentAccount);
+  const isMultisigCosmosBlocked
+    = isCosmosNative && !!currentAccount && isMultisigAccount(currentAccount);
 
   // A SessionAccount address can never receive tokens, so depositing to it is
   // blocked; users deposit to the Master Account instead.
@@ -154,7 +153,7 @@ export const TokenDetails = (): JSX.Element => {
   }, [document.getElementsByTagName('body')]);
 
   const tokenAmount = useMemo((): string => {
-    const balance = currentBalances.find((balance) => balance.tokenId === tokenBalance?.tokenId);
+    const balance = currentBalances.find(balance => balance.tokenId === tokenBalance?.tokenId);
     return balance?.amount ? BigNumber(balance.amount.value).toFormat() : '0';
   }, [currentBalances, tokenBalance]);
 
@@ -177,8 +176,8 @@ export const TokenDetails = (): JSX.Element => {
 
   const onClickItem = useCallback(
     (hash: string) => {
-      const transactions = data?.flatMap((group) => group.transactions) ?? [];
-      const transactionInfo = transactions.find((transaction) => transaction.hash === hash);
+      const transactions = data?.flatMap(group => group.transactions) ?? [];
+      const transactionInfo = transactions.find(transaction => transaction.hash === hash);
       if (transactionInfo) {
         saveScrollPosition(scrollRef.current?.scrollTop || 0);
         navigate(RoutePath.TransactionDetail, {
@@ -261,8 +260,8 @@ export const TokenDetails = (): JSX.Element => {
         <HighlightNumber
           value={tokenAmount}
           fontColor={theme.neutral._1}
-          fontStyleKey={'header2'}
-          minimumFontSize={'24px'}
+          fontStyleKey='header2'
+          minimumFontSize='24px'
         />
       </div>
 
@@ -284,23 +283,29 @@ export const TokenDetails = (): JSX.Element => {
           },
         }}
       />
-      {isCosmosNative ? (
-        <Text className='desc' type='body1Reg' color={theme.neutral.a}>
-          Transaction history is not supported yet
-        </Text>
-      ) : isLoading && isSupported ? (
-        <LoadingTokenDetails />
-      ) : transactions.length > 0 ? (
-        <TransactionHistory
-          status={status}
-          transactionInfoLists={isSupported ? transactions : []}
-          onClickItem={onClickItem}
-        />
-      ) : (
-        <Text className='desc' type='body1Reg' color={theme.neutral.a}>
-          No transaction to display
-        </Text>
-      )}
+      {isCosmosNative
+        ? (
+            <Text className='desc' type='body1Reg' color={theme.neutral.a}>
+              Transaction history is not supported yet
+            </Text>
+          )
+        : isLoading && isSupported
+          ? (
+              <LoadingTokenDetails />
+            )
+          : transactions.length > 0
+            ? (
+                <TransactionHistory
+                  status={status}
+                  transactionInfoLists={isSupported ? transactions : []}
+                  onClickItem={onClickItem}
+                />
+              )
+            : (
+                <Text className='desc' type='body1Reg' color={theme.neutral.a}>
+                  No transaction to display
+                </Text>
+              )}
     </Wrapper>
   );
 };

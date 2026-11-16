@@ -1,29 +1,28 @@
-import React, { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
-import styled from 'styled-components';
-import { Account, Document, isLedgerAccount, isSessionAccount } from 'adena-module';
-
+import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
+import { resolveSessionAdminGasInfo } from '@common/utils/session-admin-gas';
+import { WarningBox } from '@components/atoms/warning-box';
+import { ApproveLedgerLoading } from '@components/molecules/approve-ledger-loading';
+import { BottomFixedButtonGroup } from '@components/molecules/bottom-fixed-button-group';
+import NetworkFee from '@components/molecules/network-fee/network-fee';
+import { SessionDetailCard } from '@components/molecules/session-detail-card';
+import TransactionResult from '@components/molecules/transaction-result';
+import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 import { useMasterSessions } from '@hooks/wallet/use-master-sessions';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { useRevokeSession } from '@hooks/wallet/use-revoke-session';
-import { resolveSessionAdminGasInfo } from '@common/utils/session-admin-gas';
-import { WarningBox } from '@components/atoms/warning-box';
-import { BottomFixedButtonGroup } from '@components/molecules/bottom-fixed-button-group';
-import { ApproveLedgerLoading } from '@components/molecules/approve-ledger-loading';
-import NetworkFee from '@components/molecules/network-fee/network-fee';
-import TransactionResult from '@components/molecules/transaction-result';
-import { SessionDetailCard } from '@components/molecules/session-detail-card';
-import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading';
 import { createMessageOfRevokeSession } from '@services/transaction/message/auth/auth';
-import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
-import { RoutePath } from '@types';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
-import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
+import { RoutePath } from '@types';
+import { Account, Document, isLedgerAccount, isSessionAccount } from 'adena-module';
+import React, { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
+import styled from 'styled-components';
 
 const Container = styled.div`
   ${mixins.flex({ direction: 'column', align: 'stretch', justify: 'flex-start' })};
@@ -75,7 +74,7 @@ const RevokeSessionPage = (): ReactElement => {
 
   const { entries, isLoading, error } = useMasterSessions(masterAddress);
   const entry = useMemo(
-    () => (sessionAddr ? entries.find((e) => e.sessionAddr === sessionAddr) : undefined),
+    () => (sessionAddr ? entries.find(e => e.sessionAddr === sessionAddr) : undefined),
     [entries, sessionAddr],
   );
 
@@ -140,7 +139,8 @@ const RevokeSessionPage = (): ReactElement => {
           '',
         );
         if (!cancelled) setDocument(doc);
-      } catch {
+      }
+      catch {
         if (!cancelled) setDocument(null);
       }
     })();
@@ -180,7 +180,8 @@ const RevokeSessionPage = (): ReactElement => {
     });
     if (result.ok) {
       setRevokeResult({ status: 'SUCCESS', hash: result.hash });
-    } else {
+    }
+    else {
       setRevokeResult({ status: 'FAILED', errorMessage: result.error });
     }
     setScreenState('RESULT');
@@ -192,7 +193,8 @@ const RevokeSessionPage = (): ReactElement => {
         state: { masterAddress: entry.masterAddress },
         replace: true,
       });
-    } else {
+    }
+    else {
       goBack();
     }
   }, [entry, navigate, goBack]);
@@ -299,8 +301,8 @@ const RevokeSessionPage = (): ReactElement => {
     );
   }
 
-  const canRevoke =
-    !!entry.publicKey && !!document && !isPending && !!networkFee && !useNetworkFeeReturn.isLoading;
+  const canRevoke
+    = !!entry.publicKey && !!document && !isPending && !!networkFee && !useNetworkFeeReturn.isLoading;
 
   return (
     <Container>

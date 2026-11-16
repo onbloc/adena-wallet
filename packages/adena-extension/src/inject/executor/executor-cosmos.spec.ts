@@ -63,8 +63,8 @@ function setupPostMessageSpy(): {
 
   return {
     getLast: () => captured[captured.length - 1],
-    respondSuccess: (data) => respond('success', { data, code: 0, message: 'OK' }),
-    respondFailure: (message) => respond('failure', { data: undefined, code: 1, message }),
+    respondSuccess: data => respond('success', { data, code: 0, message: 'OK' }),
+    respondFailure: message => respond('failure', { data: undefined, code: 1, message }),
     restore: (): void => {
       spy.mockRestore();
       window.postMessage = originalPostMessage;

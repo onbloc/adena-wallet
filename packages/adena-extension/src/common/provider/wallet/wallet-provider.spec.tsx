@@ -1,14 +1,13 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, waitFor } from '@testing-library/react';
-import React, { PropsWithChildren } from 'react';
-import type { JSX } from 'react';
-import { Provider as JotaiProvider, useAtomValue } from 'jotai';
-import type { Mock } from 'vitest';
-
 import { makeWalletLockedQueryKey } from '@common/constants/query-key.constant';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useWallet } from '@hooks/use-wallet';
 import { WalletState } from '@states';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, render, waitFor } from '@testing-library/react';
+import { Provider as JotaiProvider, useAtomValue } from 'jotai';
+import type { JSX } from 'react';
+import React, { PropsWithChildren } from 'react';
+import type { Mock } from 'vitest';
 
 import { WalletContext, WalletProvider } from './wallet-provider';
 

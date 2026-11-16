@@ -1,5 +1,6 @@
 // Must stay the first import: later modules may build BigNumbers on load.
 import '@common/config/bignumber';
+
 import * as ReactDOM from 'react-dom/client';
 
 import App from './App/web';

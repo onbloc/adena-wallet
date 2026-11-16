@@ -1,8 +1,8 @@
 import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
+import { EMAIL_VERIFIERS, Web3AuthVerifier } from '@common/constants/web3auth.constant';
 import { renderHook } from '@testing-library/react';
 import type { Mock } from 'vitest';
 
-import { EMAIL_VERIFIERS, Web3AuthVerifier } from '@common/constants/web3auth.constant';
 import useEmailLoginScreen from './use-email-login-screen';
 
 // Stub out the SDK to avoid pulling in @web3auth's native crypto at test time.

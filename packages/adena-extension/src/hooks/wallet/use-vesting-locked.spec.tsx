@@ -1,9 +1,8 @@
-import { renderHook } from '@testing-library/react';
-import type { MockedFunction } from 'vitest';
-
 import { parseVestingSchedule, VestingInfo } from '@common/utils/vesting-utils';
 import { useChainBlockTime } from '@hooks/wallet/use-chain-block-time';
 import { useVestingInfo } from '@hooks/wallet/use-vesting-info';
+import { renderHook } from '@testing-library/react';
+import type { MockedFunction } from 'vitest';
 
 import { useVestingLocked } from './use-vesting-locked';
 

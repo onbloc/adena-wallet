@@ -1,6 +1,3 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconWarning from '@assets/web/warning.svg';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
 import { AdenaStorage } from '@common/storage';
@@ -14,6 +11,8 @@ import { WebPrivateKeyBox } from '@components/molecules/web-private-key-box';
 import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { getTheme } from '@styles/theme';
 import { Wallet } from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -101,7 +100,8 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
 
     if (exportType === 'SEED_PHRASE') {
       navigator.clipboard.writeText(stringFromBase64(seeds));
-    } else {
+    }
+    else {
       exportData?.getPrivateKeyStr().then((result) => {
         navigator.clipboard.writeText(result);
       });
@@ -166,7 +166,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
         )}
         <Row style={{ gap: 16, justifyContent: 'center' }}>
           <WebHoldButton onFinishHold={onFinishHold} />
-          <WebCopyButton width={80} copyText={''} onCopy={onCopy} />
+          <WebCopyButton width={80} copyText='' onCopy={onCopy} />
         </Row>
       </StyledInputBox>
 

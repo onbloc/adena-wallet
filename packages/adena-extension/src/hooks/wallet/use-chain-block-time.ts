@@ -1,7 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-
 import { useWalletContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
+import { useQuery } from '@tanstack/react-query';
 
 export const GET_CHAIN_BLOCK_TIME_QUERY_KEY = 'wallet/useChainBlockTime';
 

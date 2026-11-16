@@ -49,7 +49,7 @@ const SIMULATE_ZERO_SIGNATURE = new Uint8Array(64);
  * preset multipliers via `calcFee` to build the slow/average/fast tiers.
  */
 export async function estimateCosmosFee(
-  params: EstimateCosmosFeeParams,
+  params: EstimateCosmosFeeParams
 ): Promise<CosmosFeeEstimate> {
   const { document, publicKey, cosmosProvider, simulateFee, feeDenom } = params;
 
@@ -62,15 +62,15 @@ export async function estimateCosmosFee(
     sequence,
     publicKey,
     signature: SIMULATE_ZERO_SIGNATURE,
-    signMode: SignMode.SIGN_MODE_DIRECT,
+    signMode: SignMode.SIGN_MODE_DIRECT
   });
 
   const [{ gasUsed }, prices] = await Promise.all([
     cosmosProvider.simulateTx(simulateTxBytes),
-    cosmosProvider.getMinGasPrices(),
+    cosmosProvider.getMinGasPrices()
   ]);
 
-  const match = prices.find((p) => p.denom === feeDenom);
+  const match = prices.find(p => p.denom === feeDenom);
   if (!match) {
     throw new Error(`min_gas_price has no entry for denom="${feeDenom}"`);
   }
@@ -78,6 +78,6 @@ export async function estimateCosmosFee(
   return {
     gasUsed,
     minBaseGasPrice: match.amount,
-    feeDenom,
+    feeDenom
   };
 }

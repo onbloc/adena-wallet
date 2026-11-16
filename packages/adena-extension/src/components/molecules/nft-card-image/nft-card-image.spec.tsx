@@ -1,10 +1,11 @@
-import React from 'react';
-import type { JSX } from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Provider as JotaiProvider } from 'jotai';
+import type { JSX } from 'react';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
+
 import NFTCardImage, { NFTCardImageProps } from './nft-card-image';
 
 describe('NFTCardImage Component', () => {

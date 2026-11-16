@@ -60,7 +60,8 @@ export class WalletAccountService {
       if (account) {
         return account;
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.log(e);
     }
     return {

@@ -1,11 +1,10 @@
+import { ATOMONE_CHAIN } from '@common/utils/chain-utils';
+import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import { useQuery } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import { CosmosDocument } from 'adena-module';
 import type { Mock } from 'vitest';
-
-import { ATOMONE_CHAIN } from '@common/utils/chain-utils';
-import { useAdenaContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
 
 import { useCosmosNetworkFee } from './use-cosmos-network-fee';
 

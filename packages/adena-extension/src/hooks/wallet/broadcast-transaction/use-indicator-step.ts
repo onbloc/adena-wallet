@@ -1,11 +1,10 @@
-import { useEffect, useMemo } from 'react';
-import { useAtom } from 'jotai';
-import _ from 'lodash';
-import { useQuery } from '@tanstack/react-query';
-
 import { useAdenaContext } from '@hooks/use-context';
 import useQuestionnaire from '@hooks/web/use-questionnaire';
 import { CommonState } from '@states';
+import { useQuery } from '@tanstack/react-query';
+import { useAtom } from 'jotai';
+import _ from 'lodash';
+import { useEffect, useMemo } from 'react';
 
 interface UseIndicatorStepProps<T extends string> {
   stepMap?: Record<T, number>;
@@ -47,7 +46,8 @@ const useIndicatorStep = <T extends string>({
       if (hasQuestionnaire) {
         if (!existWallet) {
           defaultStepLength = defaultStepLength + 1;
-        } else {
+        }
+        else {
           const ableToSkipQuestionnaire = await walletService
             .isSkipQuestionnaire()
             .catch(() => false);

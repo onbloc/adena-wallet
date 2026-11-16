@@ -1,4 +1,5 @@
 import { basename } from 'node:path';
+
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 

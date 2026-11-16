@@ -86,31 +86,31 @@ enum Green {
   _7 = '#057E5A',
 }
 
-export type WebFontType =
-  | 'title1'
-  | 'title2'
-  | 'title3'
-  | 'title4'
-  | 'title5'
-  | 'title6'
-  | 'titleOverline1'
-  | 'titleOverline2'
-  | 'titleOverline3'
-  | 'body1'
-  | 'body2'
-  | 'body3'
-  | 'body4'
-  | 'body5'
-  | 'body6'
-  | 'headline1'
-  | 'headline2'
-  | 'headline3'
-  | 'headline4'
-  | 'display1'
-  | 'display2'
-  | 'display3'
-  | 'display4'
-  | 'display5';
+export type WebFontType
+  = | 'title1'
+    | 'title2'
+    | 'title3'
+    | 'title4'
+    | 'title5'
+    | 'title6'
+    | 'titleOverline1'
+    | 'titleOverline2'
+    | 'titleOverline3'
+    | 'body1'
+    | 'body2'
+    | 'body3'
+    | 'body4'
+    | 'body5'
+    | 'body6'
+    | 'headline1'
+    | 'headline2'
+    | 'headline3'
+    | 'headline4'
+    | 'display1'
+    | 'display2'
+    | 'display3'
+    | 'display4'
+    | 'display5';
 
 export const webFonts: Record<WebFontType, RuleSet> = {
   title1: css`
@@ -380,30 +380,30 @@ export const fonts: FontsKeyType = {
   `,
 } as const;
 
-export type FontsType =
-  | 'header1'
-  | 'header2'
-  | 'header3'
-  | 'header4'
-  | 'header5'
-  | 'header6'
-  | 'header7'
-  | 'body1Bold'
-  | 'body1Reg'
-  | 'body2Bold'
-  | 'body2Reg'
-  | 'body3Bold'
-  | 'body3Reg'
-  | 'body4Bold'
-  | 'body4Reg'
-  | 'title1'
-  | 'captionBold'
-  | 'captionReg'
-  | 'light1Bold'
-  | 'light1Reg'
-  | 'bold13'
-  | 'light13'
-  | 'light11';
+export type FontsType
+  = | 'header1'
+    | 'header2'
+    | 'header3'
+    | 'header4'
+    | 'header5'
+    | 'header6'
+    | 'header7'
+    | 'body1Bold'
+    | 'body1Reg'
+    | 'body2Bold'
+    | 'body2Reg'
+    | 'body3Bold'
+    | 'body3Reg'
+    | 'body4Bold'
+    | 'body4Reg'
+    | 'title1'
+    | 'captionBold'
+    | 'captionReg'
+    | 'light1Bold'
+    | 'light1Reg'
+    | 'bold13'
+    | 'light13'
+    | 'light11';
 
 type FontsKeyType = { [key in FontsType]: RuleSet };
 
@@ -423,10 +423,10 @@ const theme = {
   webWarning: WebWarning,
 };
 
-export const getTheme =
-  <T1 extends keyof DefaultTheme, T2 extends keyof DefaultTheme[T1]>(val1: T1, val2: T2) =>
-  ({ theme }: { theme: DefaultTheme }): DefaultTheme[T1][T2] =>
-    theme[val1][val2];
+export const getTheme
+  = <T1 extends keyof DefaultTheme, T2 extends keyof DefaultTheme[T1]>(val1: T1, val2: T2) =>
+    ({ theme }: { theme: DefaultTheme }): DefaultTheme[T1][T2] =>
+      theme[val1][val2];
 
 export default theme;
 

@@ -8,10 +8,9 @@ vi.mock('@adena-wallet/sdk', () => ({
   WalletMessageInfo: {},
 }));
 
-import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
-
 import { bytesToBase64 } from '@common/utils/encoding-util';
 import type { SerializedCosmosKey } from '@inject/types';
+import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 
 import { AdenaExecutor } from '../executor/executor';
 import {

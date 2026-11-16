@@ -1,10 +1,9 @@
+import LottieQuestionnaireComplete from '@assets/web/lottie/questionnaire-complete.json';
+import { View, WebButton } from '@components/atoms';
+import Lottie from '@components/atoms/lottie';
+import { WebTitleWithDescription } from '@components/molecules';
 import React from 'react';
 import styled from 'styled-components';
-
-import { View, WebButton } from '@components/atoms';
-import LottieQuestionnaireComplete from '@assets/web/lottie/questionnaire-complete.json';
-import { WebTitleWithDescription } from '@components/molecules';
-import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   width: 100%;

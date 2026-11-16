@@ -1,7 +1,3 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { isSessionAccount, MultisigConfig } from 'adena-module';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
@@ -13,12 +9,15 @@ import {
   parseParameters,
 } from '@common/utils/client-utils';
 import { CreateMultisigAccount } from '@components/molecules/create-multisig-account';
-import { useAdenaContext } from '@hooks/use-context';
 import { useChain } from '@hooks/use-chain';
+import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { RoutePath } from '@types';
+import { isSessionAccount, MultisigConfig } from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const CreateMultisigAccountContainer: React.FC = () => {
   const normalNavigate = useNavigate();
@@ -44,7 +43,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   useEffect(() => {
@@ -107,8 +106,8 @@ const CreateMultisigAccountContainer: React.FC = () => {
     try {
       setProcessType('PROCESSING');
 
-      const { multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys } =
-        await multisigService.createMultisigAccount(multisigConfig, chain.bech32Prefix);
+      const { multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys }
+        = await multisigService.createMultisigAccount(multisigConfig, chain.bech32Prefix);
 
       const publicKeyBytesArray = Uint8Array.from(Object.values(multisigPubKey));
       const addressBytesArray = Uint8Array.from(Object.values(multisigAddressBytes));
@@ -133,7 +132,8 @@ const CreateMultisigAccountContainer: React.FC = () => {
           requestData?.key,
         ),
       );
-    } catch (e) {
+    }
+    catch (e) {
       if (e instanceof Error) {
         const message = e.message;
         setResponse(
@@ -144,7 +144,8 @@ const CreateMultisigAccountContainer: React.FC = () => {
           ),
         );
       }
-    } finally {
+    }
+    finally {
       setProcessType('DONE');
     }
   };

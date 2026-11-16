@@ -35,7 +35,7 @@ export async function fetchHealth(
 async function isEndpointHealthy(url: string): Promise<boolean> {
   return axios
     .get(url + '/health', { timeout: 5000 })
-    .then((response) => response.status === 200)
+    .then(response => response.status === 200)
     .catch(() => false);
 }
 

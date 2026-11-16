@@ -1,10 +1,11 @@
-import type { Mock } from 'vitest';
 /**
  * @jest-environment node
  */
 import { decryptAES, decryptXChacha20, encryptAES } from 'adena-module';
 import CryptoJS from 'crypto-js';
 import sodium from 'libsodium-wrappers-sumo';
+import type { Mock } from 'vitest';
+
 import { StorageMigration018 } from './storage-migration-v018';
 
 // Only decryptAES is stubbed, and it defaults to the real implementation — the

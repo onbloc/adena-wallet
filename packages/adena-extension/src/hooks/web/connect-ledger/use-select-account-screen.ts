@@ -1,22 +1,21 @@
-import { useEffect, useState } from 'react';
-import {
-  LedgerAccount,
-  AdenaLedgerConnector,
-  Account,
-  LedgerKeyring,
-  deserializeAccount,
-  AdenaWallet,
-} from 'adena-module';
-
-import { RoutePath } from '@types';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
-import { useQuery } from '@tanstack/react-query';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
+import { useQuery } from '@tanstack/react-query';
+import { RoutePath } from '@types';
+import {
+  Account,
+  AdenaLedgerConnector,
+  AdenaWallet,
+  deserializeAccount,
+  LedgerAccount,
+  LedgerKeyring,
+} from 'adena-module';
+import { useEffect, useState } from 'react';
 
 export type AccountInfoType = {
   index: number;
@@ -64,7 +63,7 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
   const { data: walletAddressList = [] } = useQuery(
     ['walletAddressList', walletAccounts],
     async () =>
-      Promise.all(walletAccounts.map(async (account) => await account.getAddress(addressPrefix))),
+      Promise.all(walletAccounts.map(async account => await account.getAddress(addressPrefix))),
   );
 
   useEffect(() => {
@@ -74,7 +73,7 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
   }, []);
 
   const initAccounts = async (accounts: Array<LedgerAccount>): Promise<void> => {
-    const lastPath = accounts.map((account) => account.toData().hdPath ?? 0).reverse()[0];
+    const lastPath = accounts.map(account => account.toData().hdPath ?? 0).reverse()[0];
     setLastPath(lastPath);
     setAccounts(accounts);
   };
@@ -82,7 +81,7 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
   const onClickSelectButton = (address: string): void => {
     if (selectAccountAddresses.includes(address)) {
       setSelectAccountAddresses(
-        selectAccountAddresses.filter((selectAddress) => selectAddress !== address),
+        selectAccountAddresses.filter(selectAddress => selectAddress !== address),
       );
       return;
     }
@@ -130,9 +129,11 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
         addressIndex,
       });
       return await ledgerAccount.getAddress(addressPrefix);
-    } catch {
+    }
+    catch {
       return '';
-    } finally {
+    }
+    finally {
       await transport.close();
     }
   };
@@ -173,23 +174,23 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
     }
 
     const withAddress = await Promise.all(
-      candidates.map(async (account) => ({
+      candidates.map(async account => ({
         account,
         address: await account.getAddress(addressPrefix),
       })),
     );
     withAddress.sort(
       (a, b) =>
-        a.account.accountIndex - b.account.accountIndex ||
-        a.account.changeIndex - b.account.changeIndex ||
-        a.account.hdPath - b.account.hdPath,
+        a.account.accountIndex - b.account.accountIndex
+        || a.account.changeIndex - b.account.changeIndex
+        || a.account.hdPath - b.account.hdPath,
     );
 
     // Skip addresses already registered in the wallet (defense in depth against a
     // stale UI selection/path), then dedup while preserving the sorted order. Each
     // account's data is rebuilt under the single keyring id.
     const storedAddresses = await Promise.all(
-      (wallet?.accounts ?? []).map((account) => account.getAddress(addressPrefix)),
+      (wallet?.accounts ?? []).map(account => account.getAddress(addressPrefix)),
     );
     const seen = new Set<string>(storedAddresses);
     const orderedData = [];
@@ -227,7 +228,8 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
       }
       await updateWallet(cloneWallet);
       navigate(RoutePath.WebAccountAddedComplete);
-    } else {
+    }
+    else {
       const namedAccounts = orderedData.map((data, index) => ({
         ...data,
         index: index + 1,

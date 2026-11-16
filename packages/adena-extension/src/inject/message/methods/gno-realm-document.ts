@@ -41,13 +41,13 @@ export function isFetchRealmDocumentMessage(
 
   const data = candidate.data;
   return (
-    typeof data === 'object' &&
-    data !== null &&
-    typeof data.rpc === 'string' &&
-    data.rpc.length > 0 &&
-    typeof data.chainId === 'string' &&
-    typeof data.packagePath === 'string' &&
-    data.packagePath.length > 0
+    typeof data === 'object'
+    && data !== null
+    && typeof data.rpc === 'string'
+    && data.rpc.length > 0
+    && typeof data.chainId === 'string'
+    && typeof data.packagePath === 'string'
+    && data.packagePath.length > 0
   );
 }
 
@@ -58,7 +58,8 @@ export async function handleFetchRealmDocument(
     const provider = new GnoProvider(message.data.rpc, message.data.chainId);
     const document = await provider.getRealmDocument(message.data.packagePath);
     return { document };
-  } catch (error) {
+  }
+  catch (error) {
     return { document: null, error: `${error}` };
   }
 }

@@ -1,11 +1,9 @@
-import React, { useCallback } from 'react';
+import IconSubmit from '@assets/submit.svg';
 import TransactionResult from '@components/molecules/transaction-result';
-
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import { RoutePath } from '@types';
-
-import IconSubmit from '@assets/submit.svg';
+import React, { useCallback } from 'react';
 
 interface BroadcastMultisigTransactionResultProps {
   status: 'SUCCESS' | 'FAILED';

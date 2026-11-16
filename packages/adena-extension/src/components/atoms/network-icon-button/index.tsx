@@ -1,8 +1,7 @@
-import React from 'react';
-import styled from 'styled-components';
-
 import IconGlobe from '@assets/icon-globe';
 import { fonts, getTheme } from '@styles/theme';
+import React from 'react';
+import styled from 'styled-components';
 
 interface NetworkIconButtonProps {
   isConnected: boolean;
@@ -10,7 +9,7 @@ interface NetworkIconButtonProps {
 }
 
 const StyledContainer = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isConnected',
+  shouldForwardProp: prop => prop !== 'isConnected',
 })<{ isConnected: boolean }>`
   display: inline-flex;
   position: relative;

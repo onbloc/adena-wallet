@@ -1,9 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
-
+import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
+import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
+import IconLink from '@assets/icon-link';
 import { formatAddress } from '@common/utils/client-utils';
 import { isBech32Address, reverseString } from '@common/utils/string-utils';
+import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
 import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box';
 import { PubKeySecp256k1 } from '@gnolang/tm2-js-client';
+import { useMaxDepositMessage } from '@hooks/wallet/transaction-message/use-max-deposit-message';
 import {
   ContractMessage,
   EMessageType,
@@ -13,13 +16,8 @@ import {
 } from '@inject/types';
 import { MsgCallValue } from '@repositories/transaction/response/transaction-history-query-response';
 import { publicKeyToAddress } from 'adena-module';
+import React, { useEffect, useMemo, useState } from 'react';
 
-import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
-import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
-
-import IconLink from '@assets/icon-link';
-import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
-import { useMaxDepositMessage } from '@hooks/wallet/transaction-message/use-max-deposit-message';
 import {
   ApproveTransactionMessageArgumentsOpenerWrapper,
   ApproveTransactionMessageWrapper,
@@ -703,7 +701,8 @@ function extractSessionPublicKey(sessionKey: unknown): Uint8Array | null {
     if (decoded.key && isLikelySecp256k1PublicKey(decoded.key)) {
       return decoded.key;
     }
-  } catch {
+  }
+  catch {
     if (isLikelySecp256k1PublicKey(valueBytes)) {
       return valueBytes;
     }
@@ -727,12 +726,12 @@ function bytesFromUnknown(value: unknown): Uint8Array | null {
 
   if (isRecord(value)) {
     const keys = Object.keys(value);
-    if (keys.length === 0 || !keys.every((key) => /^\d+$/.test(key))) {
+    if (keys.length === 0 || !keys.every(key => /^\d+$/.test(key))) {
       return null;
     }
 
     const sortedKeys = keys.sort((a, b) => Number(a) - Number(b));
-    const values = sortedKeys.map((key) => value[key]);
+    const values = sortedKeys.map(key => value[key]);
     if (!values.every(isByteNumber)) {
       return null;
     }
@@ -754,7 +753,8 @@ function bytesFromBase64(value: string): Uint8Array | null {
       bytes[index] = binary.charCodeAt(index);
     }
     return bytes;
-  } catch {
+  }
+  catch {
     return null;
   }
 }
@@ -811,10 +811,10 @@ function formatLongLikeValue(value: unknown): string | null {
   const unsigned = value.unsigned;
 
   if (
-    typeof low !== 'number' ||
-    typeof high !== 'number' ||
-    !Number.isInteger(low) ||
-    !Number.isInteger(high)
+    typeof low !== 'number'
+    || typeof high !== 'number'
+    || !Number.isInteger(low)
+    || !Number.isInteger(high)
   ) {
     return null;
   }
@@ -823,7 +823,8 @@ function formatLongLikeValue(value: unknown): string | null {
     const lowBig = BigInt(low >>> 0);
     const highBig = unsigned === true ? BigInt(high >>> 0) : BigInt(high);
     return (highBig * TWO_32 + lowBig).toString();
-  } catch {
+  }
+  catch {
     return null;
   }
 }
@@ -836,10 +837,12 @@ function formatCompactValue(value: unknown): string {
   let rendered = '';
   if (typeof value === 'string') {
     rendered = value;
-  } else {
+  }
+  else {
     try {
       rendered = JSON.stringify(value);
-    } catch {
+    }
+    catch {
       rendered = String(value);
     }
   }

@@ -4,6 +4,7 @@
 // libsodium.js API: https://gist.github.com/webmaster128/b2dbe6d54d36dd168c9fabf441b9b09c
 
 import sodium from 'libsodium-wrappers-sumo';
+
 import { isNonNullObject } from '../utils';
 
 export interface Argon2idOptions {
@@ -37,7 +38,7 @@ export class Argon2id {
   public static async execute(
     password: string,
     salt: Uint8Array,
-    options: Argon2idOptions,
+    options: Argon2idOptions
   ): Promise<Uint8Array> {
     await sodium.ready;
     return sodium.crypto_pwhash(
@@ -46,7 +47,7 @@ export class Argon2id {
       salt, // libsodium only supports 16 byte salts and will throw when you don't respect that
       options.opsLimit,
       options.memLimitKib * 1024,
-      sodium.crypto_pwhash_ALG_ARGON2ID13,
+      sodium.crypto_pwhash_ALG_ARGON2ID13
     );
   }
 }
@@ -93,7 +94,7 @@ export class Ed25519 {
 
   public static async createSignature(
     message: Uint8Array,
-    keyPair: Ed25519Keypair,
+    keyPair: Ed25519Keypair
   ): Promise<Uint8Array> {
     await sodium.ready;
     return sodium.crypto_sign_detached(message, keyPair.toLibsodiumPrivkey());
@@ -102,7 +103,7 @@ export class Ed25519 {
   public static async verifySignature(
     signature: Uint8Array,
     message: Uint8Array,
-    pubkey: Uint8Array,
+    pubkey: Uint8Array
   ): Promise<boolean> {
     await sodium.ready;
     return sodium.crypto_sign_verify_detached(signature, message, pubkey);
@@ -120,7 +121,7 @@ export class Xchacha20poly1305Ietf {
   public static async encrypt(
     message: Uint8Array,
     key: Uint8Array,
-    nonce: Uint8Array,
+    nonce: Uint8Array
   ): Promise<Uint8Array> {
     await sodium.ready;
 
@@ -131,14 +132,14 @@ export class Xchacha20poly1305Ietf {
       additionalData,
       null, // secret nonce: unused and should be null (https://download.libsodium.org/doc/secret-key_cryptography/aead/chacha20-poly1305/xchacha20-poly1305_construction)
       nonce,
-      key,
+      key
     );
   }
 
   public static async decrypt(
     ciphertext: Uint8Array,
     key: Uint8Array,
-    nonce: Uint8Array,
+    nonce: Uint8Array
   ): Promise<Uint8Array> {
     await sodium.ready;
 
@@ -149,7 +150,7 @@ export class Xchacha20poly1305Ietf {
       ciphertext,
       additionalData,
       nonce,
-      key,
+      key
     );
   }
 }

@@ -1,6 +1,6 @@
 import { Account, isSessionAccount } from 'adena-module';
-import { SessionMetadata } from '..';
 
+import { SessionMetadata } from '..';
 import { allMessagesMatchAllowPaths, DecodedMessageForGuard } from './session-allow-paths';
 import {
   addCoins,
@@ -24,21 +24,21 @@ const SESSION_ADMIN_MSG_TYPES = new Set([
 // here would falsely advertise support the pipeline cannot honor.
 const SUPPORTED_SESSION_MSG_TYPES = new Set(['/vm.m_call', '/vm.m_run', '/bank.MsgSend']);
 
-export type SessionSigningFailReason =
-  | 'wallet_locked'
-  | 'not_session_account'
-  | 'session_admin_msg'
-  | 'session_metadata_missing'
-  | 'session_inactive'
-  | 'chain_mismatch'
-  | 'session_expired'
-  | 'unsupported_msg_type'
-  | 'allowpaths_violation'
-  | 'spendlimit_exceeded';
+export type SessionSigningFailReason
+  = | 'wallet_locked'
+    | 'not_session_account'
+    | 'session_admin_msg'
+    | 'session_metadata_missing'
+    | 'session_inactive'
+    | 'chain_mismatch'
+    | 'session_expired'
+    | 'unsupported_msg_type'
+    | 'allowpaths_violation'
+    | 'spendlimit_exceeded';
 
-export type SessionSigningGuardDecision =
-  | { ok: true }
-  | { ok: false; reason: SessionSigningFailReason };
+export type SessionSigningGuardDecision
+  = | { ok: true }
+    | { ok: false; reason: SessionSigningFailReason };
 
 export interface SessionSigningGuardInput {
   currentAccount: Account;
@@ -130,7 +130,8 @@ export function evaluateSessionSigningGuard(
       if (!isAllGTE(limit, next)) {
         return { ok: false, reason: 'spendlimit_exceeded' };
       }
-    } catch {
+    }
+    catch {
       // Defensive: any parse failure in stored coin strings means we can't
       // verify safely. Block and force master review rather than silently
       // pass.

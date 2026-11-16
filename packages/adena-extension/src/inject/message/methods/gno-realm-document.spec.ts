@@ -8,7 +8,7 @@ const mockGetRealmDocument = vi.fn();
 vi.mock('@common/provider/gno/gno-provider', () => ({
   GnoProvider: vi.fn().mockImplementation(function () {
     return {
-    getRealmDocument: mockGetRealmDocument,
+      getRealmDocument: mockGetRealmDocument,
     };
   }),
 }));

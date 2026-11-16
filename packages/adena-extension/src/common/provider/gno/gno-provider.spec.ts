@@ -1,8 +1,9 @@
 import { stringToBase64 } from '@gnolang/tm2-js-client';
 import axios from 'axios';
+import type { Mock } from 'vitest';
+
 import { GnoProvider } from './gno-provider';
 import { postABCIResponse } from './utils';
-import type { Mock } from 'vitest';
 
 vi.mock('./utils', async () => ({
   ...(await vi.importActual<typeof import('./utils')>('./utils')),

@@ -1,11 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
-import React, { PropsWithChildren } from 'react';
-import type { JSX } from 'react';
-import type { Mock } from 'vitest';
-
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import type { JSX } from 'react';
+import React, { PropsWithChildren } from 'react';
+import type { Mock } from 'vitest';
+
 import { useSessionRevocationWatcher } from './use-session-revocation-watcher';
 
 vi.mock('@hooks/use-context', () => ({
@@ -141,7 +141,7 @@ describe('useSessionRevocationWatcher', () => {
 
     renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper().wrapper });
 
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise(resolve => setTimeout(resolve, 10));
     expect(get).not.toHaveBeenCalled();
     expect(getSession).not.toHaveBeenCalled();
   });

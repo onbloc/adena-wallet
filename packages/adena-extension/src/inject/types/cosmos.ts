@@ -1,4 +1,4 @@
-import type { AminoSignResponse, StdSignDoc, StdSignature } from '@cosmjs/amino';
+import type { AminoSignResponse, StdSignature, StdSignDoc } from '@cosmjs/amino';
 
 import { AdenaResponse } from './common';
 
@@ -12,8 +12,8 @@ export const CosmosResponseExecuteType = {
   SIGN_COSMOS_DIRECT: 'SIGN_COSMOS_DIRECT',
   SEND_COSMOS_TX: 'SEND_COSMOS_TX',
 } as const;
-export type CosmosResponseExecuteType =
-  (typeof CosmosResponseExecuteType)[keyof typeof CosmosResponseExecuteType];
+export type CosmosResponseExecuteType
+  = (typeof CosmosResponseExecuteType)[keyof typeof CosmosResponseExecuteType];
 
 // Keplr-compatible string union — accepted by `sendTx`.
 export type BroadcastMode = 'sync' | 'async' | 'block';

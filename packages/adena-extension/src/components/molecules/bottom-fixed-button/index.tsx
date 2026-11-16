@@ -1,9 +1,8 @@
-import React from 'react';
-import type { JSX } from 'react';
-import styled, { css, RuleSet } from 'styled-components';
-
 import { Button, ButtonProps, Text } from '@components/atoms';
 import mixins from '@styles/mixins';
+import type { JSX } from 'react';
+import React from 'react';
+import styled, { css, RuleSet } from 'styled-components';
 
 interface BottomFixedButtonProps {
   hierarchy?: ButtonProps['hierarchy'];

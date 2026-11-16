@@ -1,6 +1,7 @@
-import React, { CSSProperties } from 'react';
 import type { JSX } from 'react';
+import React, { CSSProperties } from 'react';
 import styled from 'styled-components';
+
 import { View } from '../base';
 import { WebButton } from '../web-button';
 import { WebText } from '../web-text';

@@ -1,9 +1,8 @@
+import { Icon, View, WebInputWithLabel } from '@components/atoms';
+import { MAX_SIGNERS } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
 import React from 'react';
 
-import { MAX_SIGNERS } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
-
 import * as S from './web-multisig-signer-input.styles';
-import { View, WebInputWithLabel, Icon } from '@components/atoms';
 
 type MultisigAccountMode = 'CREATE' | 'IMPORT';
 
@@ -44,7 +43,7 @@ export const WebMultisigSignerInput = ({
               value={signer}
               onChange={(value): void => onSignerChange(index, value)}
               disabled={index === 0 && isFirstInputDisabled}
-              placeholder={'Account Address'}
+              placeholder='Account Address'
               error={hasError}
             />
             {index >= 2 && (

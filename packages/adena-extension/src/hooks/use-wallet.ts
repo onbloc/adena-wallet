@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
-
 import {
   makeWalletExistsQueryKey,
   makeWalletLockedQueryKey,
 } from '@common/constants/query-key.constant';
+import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
+
 import { useAdenaContext, useWalletContext } from './use-context';
 
 export interface UseWalletReturn {

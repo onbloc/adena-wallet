@@ -1,26 +1,26 @@
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
+  Multisignature,
   Provider,
+  PubKeyMultisig,
+  PubKeySecp256k1,
   TransactionEndpoint,
   Tx,
   TxSignature,
-  uint8ArrayToBase64,
-  Multisignature,
-  PubKeyMultisig,
-  PubKeySecp256k1,
+  uint8ArrayToBase64
 } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
+  compactBitArraySetIndex,
+  createCompactBitArray,
   decodeTxMessages,
   Document,
   documentToTx,
   fromBech32,
-  compactBitArraySetIndex,
-  createCompactBitArray,
   MultisigConfig,
-  SignerPublicKeyInfo,
+  SignerPublicKeyInfo
 } from '../..';
 import { Keyring, KeyringData, SignRawOptions } from './keyring';
 
@@ -60,7 +60,7 @@ export class MultisigKeyring implements Keyring {
       addressBytes: Array.from(this.addressBytes),
       publicKey: Array.from(this.publicKey),
       multisigConfig: this.multisigConfig,
-      signerPublicKeys: this.signerPublicKeys,
+      signerPublicKeys: this.signerPublicKeys
     };
   }
 
@@ -77,7 +77,7 @@ export class MultisigKeyring implements Keyring {
     // addresses. Individual signers sign separately via their own keyrings,
     // then signatures are combined via combineSignatures().
     throw new Error(
-      `Multisig accounts cannot sign directly. Use individual signer accounts. (keyring ${this.id})`,
+      `Multisig accounts cannot sign directly. Use individual signer accounts. (keyring ${this.id})`
     );
   }
 
@@ -87,7 +87,7 @@ export class MultisigKeyring implements Keyring {
    */
   async sign(
     _provider: Provider,
-    _document: Document,
+    _document: Document
   ): Promise<{
     signed: Tx;
     signature: TxSignature[];
@@ -123,8 +123,8 @@ export class MultisigKeyring implements Keyring {
         sequence: document.sequence,
         fee: document.fee,
         msgs: decodeTxMessages(unsignedTx.messages),
-        memo: document.memo,
-      },
+        memo: document.memo
+      }
     };
   }
 
@@ -141,12 +141,12 @@ export class MultisigKeyring implements Keyring {
       signerAddress: string;
       signature: Uint8Array;
       pubkey: Uint8Array;
-    }>,
+    }>
   ): Promise<Tx> {
     // 1. Validate threshold
     if (individualSignatures.length < this.threshold) {
       throw new Error(
-        `Insufficient signatures: need ${this.threshold}, got ${individualSignatures.length}`,
+        `Insufficient signatures: need ${this.threshold}, got ${individualSignatures.length}`
       );
     }
 
@@ -165,7 +165,7 @@ export class MultisigKeyring implements Keyring {
       signerData.push({
         index,
         signature: sig.signature,
-        pubkey: sig.pubkey,
+        pubkey: sig.pubkey
       });
     }
 
@@ -181,7 +181,7 @@ export class MultisigKeyring implements Keyring {
     // 4. Create Multisignature
     const multisig = Multisignature.create({
       bit_array: bitArray,
-      sigs: signerData.map(({ signature }) => signature),
+      sigs: signerData.map(({ signature }) => signature)
     });
 
     // 5. Create PubKeyMultisig
@@ -189,8 +189,8 @@ export class MultisigKeyring implements Keyring {
       k: BigInt(this.threshold),
       pub_keys: signerData.map(({ pubkey }) => ({
         type_url: '/tm.PubKeySecp256k1',
-        value: PubKeySecp256k1.encode({ key: pubkey }).finish(),
-      })),
+        value: PubKeySecp256k1.encode({ key: pubkey }).finish()
+      }))
     });
 
     // 6. Create signed transaction
@@ -200,12 +200,12 @@ export class MultisigKeyring implements Keyring {
         {
           pub_key: {
             type_url: '/tm.PubKeyMultisig',
-            value: PubKeyMultisig.encode(multisigPubkey).finish(),
+            value: PubKeyMultisig.encode(multisigPubkey).finish()
           },
           signature: Multisignature.encode(multisig).finish(),
-          session_addr: '',
-        },
-      ],
+          session_addr: ''
+        }
+      ]
     };
 
     return signedTx;
@@ -238,7 +238,7 @@ export class MultisigKeyring implements Keyring {
     address: string,
     publicKey: Uint8Array,
     multisigConfig: MultisigConfig,
-    signerPublicKeys?: SignerPublicKeyInfo[],
+    signerPublicKeys?: SignerPublicKeyInfo[]
   ): Promise<MultisigKeyring> {
     const { data: addressBytes } = fromBech32(address);
     return new MultisigKeyring({
@@ -246,7 +246,7 @@ export class MultisigKeyring implements Keyring {
       addressBytes: [...addressBytes],
       publicKey: [...publicKey],
       multisigConfig,
-      signerPublicKeys,
+      signerPublicKeys
     });
   }
 }

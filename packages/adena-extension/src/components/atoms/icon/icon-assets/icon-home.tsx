@@ -1,7 +1,6 @@
+import { getTheme } from '@styles/theme';
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
-
-import { getTheme } from '@styles/theme';
 
 const StyledSvg = styled.svg`
   path {

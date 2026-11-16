@@ -1,6 +1,3 @@
-import BigNumber from 'bignumber.js';
-import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
 import IconError from '@assets/web/error.svg';
 import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
@@ -49,17 +46,12 @@ import {
   fromHex,
   publicKeyToAddress,
   SessionAccount,
+  type SessionConfig,
   SessionKeyring,
   validateAddress,
-  type SessionConfig,
 } from 'adena-module';
-import {
-  MASTER_ADDRESS_FORMAT_ERROR,
-  MASTER_ADDRESS_LENGTH,
-  NO_SESSION_FOUND_ERROR,
-  sanitizeMasterAddressInput,
-  sanitizeSessionPrivateKeyInput,
-} from './session-import-utils';
+import BigNumber from 'bignumber.js';
+import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   AmountInput,
@@ -107,6 +99,13 @@ import {
   TooltipWrapper,
   UnitToggle,
 } from './session-add-screen.styles';
+import {
+  MASTER_ADDRESS_FORMAT_ERROR,
+  MASTER_ADDRESS_LENGTH,
+  NO_SESSION_FOUND_ERROR,
+  sanitizeMasterAddressInput,
+  sanitizeSessionPrivateKeyInput,
+} from './session-import-utils';
 
 const MAX_REALM_PATHS_GAS_ONLY = 8;
 const MAX_REALM_PATHS_TRANSFER_ENABLED = 6;
@@ -135,10 +134,10 @@ type RealmValidationResult = { ok: true } | { ok: false; error: string };
 
 const isRealmPathFormatValid = (path: string): boolean => {
   return (
-    path.startsWith(REALM_PATH_PREFIX) &&
-    !path.endsWith('/') &&
-    !path.includes(':') &&
-    !/\s/.test(path)
+    path.startsWith(REALM_PATH_PREFIX)
+    && !path.endsWith('/')
+    && !path.includes(':')
+    && !/\s/.test(path)
   );
 };
 
@@ -176,7 +175,7 @@ const generateSessionPrivateKeyHex = (): string => {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
+    .map(b => b.toString(16).padStart(2, '0'))
     .join('');
 };
 
@@ -237,7 +236,8 @@ const SessionAddScreen = (): ReactElement => {
           currentNetwork,
         );
         return { ok: true, sessions };
-      } catch (e) {
+      }
+      catch (e) {
         const reason = getSessionImportErrorReason(e);
         return { ok: false, error: errorMessageOf(reason) };
       }
@@ -273,7 +273,8 @@ const SessionAddScreen = (): ReactElement => {
           );
           previews.push(preview);
           privKeyBySessionAddr[request.sessionAddr] = request.privKey;
-        } catch (e) {
+        }
+        catch (e) {
           const reason = getSessionImportErrorReason(e);
           errorBySessionAddr[request.sessionAddr] = errorMessageOf(reason);
         }
@@ -296,7 +297,8 @@ const SessionAddScreen = (): ReactElement => {
           );
           navigate(RoutePath.WebAccountAddedComplete);
           return { ok: true };
-        } catch (e) {
+        }
+        catch (e) {
           const reason = getSessionImportErrorReason(e);
           return { ok: false, error: errorMessageOf(reason) };
         }
@@ -311,7 +313,8 @@ const SessionAddScreen = (): ReactElement => {
         pendingWalletStore.set(bootstrap.wallet, { sessions: bootstrap.sessions });
         navigate(RoutePath.WebCreatePassword);
         return { ok: true };
-      } catch (e) {
+      }
+      catch (e) {
         const reason = getSessionImportErrorReason(e);
         return { ok: false, error: errorMessageOf(reason) };
       }
@@ -420,8 +423,8 @@ const wait = (ms: number): Promise<void> =>
 const waitForCreatedSessionOnChain = async (
   gnoProvider:
     | {
-        getSession?: (masterAddr: string, sessionAddr: string) => Promise<unknown>;
-      }
+      getSession?: (masterAddr: string, sessionAddr: string) => Promise<unknown>;
+    }
     | null
     | undefined,
   masterAddr: string,
@@ -473,8 +476,8 @@ const approveSessionViaPopup = (
   rpcUrl: string,
   signerAccountId: string,
 ): Promise<{ ok: true; hash?: string } | { ok: false; reason: string }> => {
-  const requestKey =
-    typeof crypto.randomUUID === 'function'
+  const requestKey
+    = typeof crypto.randomUUID === 'function'
       ? crypto.randomUUID()
       : Math.random().toString(36).slice(2) + Date.now().toString(36);
 
@@ -508,8 +511,8 @@ const approveSessionViaPopup = (
 
   const popupPath = '/approve/wallet/transaction';
   const url = chrome.runtime.getURL(
-    `popup.html#${popupPath}?key=${requestKey}` +
-      `&hostname=adena-wallet&protocol=extension&data=${encoded}`,
+    `popup.html#${popupPath}?key=${requestKey}`
+    + `&hostname=adena-wallet&protocol=extension&data=${encoded}`,
   );
 
   return new Promise((resolve) => {
@@ -536,9 +539,10 @@ const approveSessionViaPopup = (
       if (!msg || msg.key !== requestKey) return;
       if (msg.status === 'success') {
         settle({ ok: true, hash: msg.data?.hash });
-      } else {
-        const reason =
-          msg.data?.log || msg.data?.error || msg.message || msg.status || 'popup_rejected';
+      }
+      else {
+        const reason
+          = msg.data?.log || msg.data?.error || msg.message || msg.status || 'popup_rejected';
         settle({
           ok: false,
           reason,
@@ -574,7 +578,8 @@ const normalizeGnotInput = (raw: string): string => {
   const second = next.charAt(1);
   if (first === '0' && second !== '' && second !== '.') {
     next = next.replace(/^0+/, '') || '0';
-  } else if (first === '.') {
+  }
+  else if (first === '.') {
     next = `0${next}`;
   }
   if (next.includes('.')) {
@@ -602,8 +607,8 @@ const CreateTab = ({
   currentChainId,
   onComplete,
 }: CreateTabProps): ReactElement => {
-  const { sessionRepository, accountService, transactionService, transactionGasService } =
-    useAdenaContext();
+  const { sessionRepository, accountService, transactionService, transactionGasService }
+    = useAdenaContext();
   const { wallet, updateWallet, gnoProvider } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
@@ -625,9 +630,9 @@ const CreateTab = ({
         setMasterMenuOpen(false);
       }
       if (
-        expiresMenuOpen &&
-        expiresSelectRef.current &&
-        !expiresSelectRef.current.contains(target)
+        expiresMenuOpen
+        && expiresSelectRef.current
+        && !expiresSelectRef.current.contains(target)
       ) {
         setExpiresMenuOpen(false);
       }
@@ -658,7 +663,7 @@ const CreateTab = ({
   );
 
   const selectedMaster = useMemo(
-    () => masterCandidates.find((a) => a.id === selectedMasterId),
+    () => masterCandidates.find(a => a.id === selectedMasterId),
     [masterCandidates, selectedMasterId],
   );
 
@@ -667,7 +672,7 @@ const CreateTab = ({
   useEffect(() => {
     let cancelled = false;
     Promise.all(
-      masterCandidates.map(async (a) => [a.id, await a.getAddress(GNO_PREFIX)] as const),
+      masterCandidates.map(async a => [a.id, await a.getAddress(GNO_PREFIX)] as const),
     ).then((entries) => {
       if (cancelled) return;
       setMasterAddresses(Object.fromEntries(entries));
@@ -715,7 +720,8 @@ const CreateTab = ({
       const next = { ...prev };
       if (error) {
         next[idx] = error;
-      } else {
+      }
+      else {
         delete next[idx];
       }
       return next;
@@ -727,7 +733,8 @@ const CreateTab = ({
       const next = { ...prev };
       if (validating) {
         next[idx] = true;
-      } else {
+      }
+      else {
         delete next[idx];
       }
       return next;
@@ -780,9 +787,11 @@ const CreateTab = ({
         const document = await gnoProvider.getRealmDocument(path);
         result = document ? { ok: true } : { ok: false, error: REALM_NOT_FOUND_ERROR };
         realmValidationCacheRef.current.set(cacheKey, result);
-      } catch {
+      }
+      catch {
         result = { ok: false, error: REALM_VALIDATION_ERROR };
-      } finally {
+      }
+      finally {
         setRealmValidatingAt(idx, false);
       }
 
@@ -842,7 +851,8 @@ const CreateTab = ({
         const current = Number(key);
         if (current < idx) {
           next[current] = value;
-        } else if (current > idx) {
+        }
+        else if (current > idx) {
           next[current - 1] = value;
         }
       });
@@ -854,7 +864,8 @@ const CreateTab = ({
         const current = Number(key);
         if (current < idx) {
           next[current] = value;
-        } else if (current > idx) {
+        }
+        else if (current > idx) {
           next[current - 1] = value;
         }
       });
@@ -902,8 +913,8 @@ const CreateTab = ({
   }, [spendLimit]);
 
   const realmsValid = useMemo(() => {
-    const trimmed = realmPaths.map((p) => p.trim()).filter((p) => p.length > 0);
-    if (trimmed.some((p) => !isSessionPathInputValid(p))) {
+    const trimmed = realmPaths.map(p => p.trim()).filter(p => p.length > 0);
+    if (trimmed.some(p => !isSessionPathInputValid(p))) {
       return false;
     }
     return trimmed.length <= maxRealmPaths;
@@ -912,16 +923,16 @@ const CreateTab = ({
   const hasRealmErrors = Object.keys(realmErrors).length > 0;
   const hasValidatingRealms = Object.keys(validatingRealmIndexes).length > 0;
 
-  const canSubmit =
-    isSupportedSessionAccount &&
-    !!selectedMasterId &&
-    expirationValid &&
-    spendLimitValid &&
-    spendPeriodValid &&
-    realmsValid &&
-    !hasRealmErrors &&
-    !hasValidatingRealms &&
-    acknowledged;
+  const canSubmit
+    = isSupportedSessionAccount
+      && !!selectedMasterId
+      && expirationValid
+      && spendLimitValid
+      && spendPeriodValid
+      && realmsValid
+      && !hasRealmErrors
+      && !hasValidatingRealms
+      && acknowledged;
 
   const onClickCreate = useCallback(async () => {
     if (!wallet) return;
@@ -936,7 +947,7 @@ const CreateTab = ({
     }
     setSubmitting(true);
     try {
-      const masterAccount = masterCandidates.find((a) => a.id === selectedMasterId);
+      const masterAccount = masterCandidates.find(a => a.id === selectedMasterId);
       if (!masterAccount) throw new Error('Master account not found.');
 
       const sessionPrivKeyBytes = hexToBytes(sessionPrivKey);
@@ -947,15 +958,16 @@ const CreateTab = ({
 
       const trimmedRealmPaths = realmPaths
         .slice(0, maxRealmPaths)
-        .map((p) => p.trim())
-        .filter((p) => p.length > 0);
+        .map(p => p.trim())
+        .filter(p => p.length > 0);
       const userPaths = trimmedRealmPaths.map(toSessionAllowPath);
       const hasUserPaths = userPaths.length > 0;
       let allowPaths: string[];
       if (disableTransfer) {
         // Toggle ON: gas-only. No bank entries; vm/exec + vm/run when empty.
         allowPaths = hasUserPaths ? userPaths : ['vm/exec', 'vm/run'];
-      } else {
+      }
+      else {
         // Toggle OFF (default): prepend bank/send + bank/multisend when user
         // entered paths, otherwise full wildcard.
         allowPaths = hasUserPaths
@@ -1062,14 +1074,16 @@ const CreateTab = ({
       await sessionRepository.set(sessionAddr, sessionMetadata);
       try {
         await updateWallet(cloned);
-      } catch (e) {
+      }
+      catch (e) {
         await sessionRepository.remove(sessionAddr).catch(() => undefined);
         throw e;
       }
       await changeCurrentAccount(sessionAccount);
 
       onComplete();
-    } catch (e) {
+    }
+    catch (e) {
       // Surface chain's full diagnostic Log. tm2-js-client puts it on
       // err.log (separate from err.message which is just the static
       // category like "unknown request error"). Without this, errors
@@ -1077,10 +1091,11 @@ const CreateTab = ({
       // are indistinguishable in the UI.
       const err = e as { message?: string; log?: string };
       setSubmitError(
-        (err.log ? `${err.message ?? 'broadcast failed'}\n${err.log}` : err.message) ??
-          'Failed to create session account.',
+        (err.log ? `${err.message ?? 'broadcast failed'}\n${err.log}` : err.message)
+        ?? 'Failed to create session account.',
       );
-    } finally {
+    }
+    finally {
       setSubmitting(false);
     }
   }, [
@@ -1148,26 +1163,28 @@ const CreateTab = ({
             The Session Account will control this account with limited scope and time.
           </MasterTooltipBox>
         )}
-        <SelectTrigger type='button' onClick={(): void => setMasterMenuOpen((v) => !v)}>
-          {selectedMaster ? (
-            <Row style={{ columnGap: 6, alignItems: 'center' }}>
-              <span style={{ fontWeight: 600 }}>{selectedMaster.name}</span>
-              {masterAddresses[selectedMaster.id] && (
+        <SelectTrigger type='button' onClick={(): void => setMasterMenuOpen(v => !v)}>
+          {selectedMaster
+            ? (
+                <Row style={{ columnGap: 6, alignItems: 'center' }}>
+                  <span style={{ fontWeight: 600 }}>{selectedMaster.name}</span>
+                  {masterAddresses[selectedMaster.id] && (
+                    <span style={{ color: '#51555c' }}>
+                      {`(${truncateAddress(masterAddresses[selectedMaster.id])})`}
+                    </span>
+                  )}
+                </Row>
+              )
+            : (
                 <span style={{ color: '#51555c' }}>
-                  {`(${truncateAddress(masterAddresses[selectedMaster.id])})`}
+                  Select an account to serve as the Master Account.
                 </span>
               )}
-            </Row>
-          ) : (
-            <span style={{ color: '#51555c' }}>
-              Select an account to serve as the Master Account.
-            </span>
-          )}
           <DropdownChevronIcon />
         </SelectTrigger>
         {masterMenuOpen && (
           <SelectMenu style={{ left: 0, right: 0 }}>
-            {masterCandidates.map((a) => (
+            {masterCandidates.map(a => (
               <SelectOption
                 key={a.id}
                 type='button'
@@ -1200,7 +1217,7 @@ const CreateTab = ({
             This session will be active for
           </WebText>
           <SelectField ref={expiresSelectRef}>
-            <SelectTrigger type='button' onClick={(): void => setExpiresMenuOpen((v) => !v)}>
+            <SelectTrigger type='button' onClick={(): void => setExpiresMenuOpen(v => !v)}>
               <Row style={{ columnGap: 6, alignItems: 'center' }}>
                 <span>{`${expiresDays} ${expiresDays === 1 ? 'day' : 'days'}`}</span>
                 <span style={{ color: '#51555c' }}>{`(${formatExpiryLabel(expiresDays)})`}</span>
@@ -1209,7 +1226,7 @@ const CreateTab = ({
             </SelectTrigger>
             {expiresMenuOpen && (
               <SelectMenu>
-                {EXPIRES_DAY_OPTIONS.map((d) => (
+                {EXPIRES_DAY_OPTIONS.map(d => (
                   <SelectOption
                     key={d}
                     type='button'
@@ -1365,20 +1382,22 @@ const CreateTab = ({
                       placeholder='Enter a realm path. Leave this empty to allow all realms.'
                     />
                   </RealmInputBox>
-                  {isLast && canAddMore ? (
-                    <IconButton type='button' onClick={onAddRealm} aria-label='Add realm'>
-                      <PlusIcon />
-                    </IconButton>
-                  ) : (
-                    <IconButton
-                      type='button'
-                      onClick={(): void => onRemoveRealm(idx)}
-                      aria-label='Remove realm'
-                      disabled={visiblePaths.length === 1}
-                    >
-                      <MinusIcon />
-                    </IconButton>
-                  )}
+                  {isLast && canAddMore
+                    ? (
+                        <IconButton type='button' onClick={onAddRealm} aria-label='Add realm'>
+                          <PlusIcon />
+                        </IconButton>
+                      )
+                    : (
+                        <IconButton
+                          type='button'
+                          onClick={(): void => onRemoveRealm(idx)}
+                          aria-label='Remove realm'
+                          disabled={visiblePaths.length === 1}
+                        >
+                          <MinusIcon />
+                        </IconButton>
+                      )}
                 </Row>
                 {hasError && (
                   <InlineErrorRow>
@@ -1420,26 +1439,28 @@ const CreateTab = ({
         </ErrorBanner>
       )}
 
-      {submitting ? (
-        <WebButton figure='primary' size='full' disabled onClick={(): void => undefined}>
-          <Row style={{ columnGap: 6, alignItems: 'center', justifyContent: 'center' }}>
-            <WebText type='title4' color='inherit'>
-              Creating Session
-            </WebText>
-            <Spinner />
-          </Row>
-        </WebButton>
-      ) : (
-        <WebButton
-          figure='primary'
-          size='full'
-          text='Create Session Account'
-          disabled={!canSubmit}
-          onClick={(): void => {
-            onClickCreate();
-          }}
-        />
-      )}
+      {submitting
+        ? (
+            <WebButton figure='primary' size='full' disabled onClick={(): void => undefined}>
+              <Row style={{ columnGap: 6, alignItems: 'center', justifyContent: 'center' }}>
+                <WebText type='title4' color='inherit'>
+                  Creating Session
+                </WebText>
+                <Spinner />
+              </Row>
+            </WebButton>
+          )
+        : (
+            <WebButton
+              figure='primary'
+              size='full'
+              text='Create Session Account'
+              disabled={!canSubmit}
+              onClick={(): void => {
+                onClickCreate();
+              }}
+            />
+          )}
     </Card>
   );
 };
@@ -1558,8 +1579,8 @@ const ImportTab = ({
       return false;
     }
     return (
-      validateAddress(trimmedMasterAddress) &&
-      trimmedMasterAddress.startsWith(`${currentAddressPrefix}1`)
+      validateAddress(trimmedMasterAddress)
+      && trimmedMasterAddress.startsWith(`${currentAddressPrefix}1`)
     );
   }, [trimmedMasterAddress, currentAddressPrefix]);
 
@@ -1594,7 +1615,7 @@ const ImportTab = ({
             return;
           }
           setRows(
-            res.sessions.map((session) => ({
+            res.sessions.map(session => ({
               ...session,
               privKey: '',
               error: '',
@@ -1617,8 +1638,8 @@ const ImportTab = ({
 
   const selectedRequests = useMemo<SessionImportRequest[]>(() => {
     return rows
-      .filter((row) => row.selected && !row.alreadyImported && row.privKey.trim().length > 0)
-      .map((row) => ({
+      .filter(row => row.selected && !row.alreadyImported && row.privKey.trim().length > 0)
+      .map(row => ({
         sessionAddr: row.sessionAddr,
         privKey: row.privKey,
       }));
@@ -1627,8 +1648,8 @@ const ImportTab = ({
   const canSubmit = selectedRequests.length > 0 && !loading && !fetching && acknowledged;
 
   const onToggleRow = useCallback((sessionAddr: string): void => {
-    setRows((prev) =>
-      prev.map((row) =>
+    setRows(prev =>
+      prev.map(row =>
         row.sessionAddr === sessionAddr && !row.alreadyImported
           ? { ...row, selected: !row.selected, error: '' }
           : row,
@@ -1638,8 +1659,8 @@ const ImportTab = ({
 
   const onChangeRowPrivateKey = useCallback((sessionAddr: string, value: string): void => {
     const sanitized = sanitizeSessionPrivateKeyInput(value);
-    setRows((prev) =>
-      prev.map((row) =>
+    setRows(prev =>
+      prev.map(row =>
         row.sessionAddr === sessionAddr ? { ...row, privKey: sanitized, error: '' } : row,
       ),
     );
@@ -1651,15 +1672,15 @@ const ImportTab = ({
       setError('Enter at least one session private key to import.');
       return;
     }
-    setRows((prev) => prev.map((row) => ({ ...row, error: '' })));
+    setRows(prev => prev.map(row => ({ ...row, error: '' })));
     setLoading(true);
     const res = await onImport(selectedRequests, trimmedMasterAddress);
     setLoading(false);
     if (!res.ok) {
       if (res.errorBySessionAddr && Object.keys(res.errorBySessionAddr).length > 0) {
         const errorMap = res.errorBySessionAddr;
-        setRows((prev) =>
-          prev.map((row) =>
+        setRows(prev =>
+          prev.map(row =>
             errorMap[row.sessionAddr] ? { ...row, error: errorMap[row.sessionAddr] } : row,
           ),
         );
@@ -1705,25 +1726,26 @@ const ImportTab = ({
                         {truncateAddress(row.sessionAddr)}
                       </ImportSessionAddress>
                     </Row>
-                    {row.alreadyImported ? (
-                      <WebText
-                        type='body6'
-                        color='rgba(255,255,255,0.35)'
-                        style={{ whiteSpace: 'nowrap' }}
-                      >
-                        Imported
-                      </WebText>
-                    ) : (
-                      <WebCheckBox checked={row.selected} />
-                    )}
+                    {row.alreadyImported
+                      ? (
+                          <WebText
+                            type='body6'
+                            color='rgba(255,255,255,0.35)'
+                            style={{ whiteSpace: 'nowrap' }}
+                          >
+                            Imported
+                          </WebText>
+                        )
+                      : (
+                          <WebCheckBox checked={row.selected} />
+                        )}
                   </SessionCardHeader>
                   {row.selected && !row.alreadyImported && (
                     <SessionCardBody>
                       <WebTextarea
                         value={row.privKey}
                         onChange={(e): void =>
-                          onChangeRowPrivateKey(row.sessionAddr, e.target.value)
-                        }
+                          onChangeRowPrivateKey(row.sessionAddr, e.target.value)}
                         placeholder='Private Key'
                         error={!!row.error}
                         rows={2}

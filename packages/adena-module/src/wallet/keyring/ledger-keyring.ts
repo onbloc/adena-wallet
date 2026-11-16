@@ -13,8 +13,8 @@ function isSamePublicKey(left: Uint8Array, right: Uint8Array): boolean {
   const compressedLeft = compressPubkeyIfNeeded(left);
   const compressedRight = compressPubkeyIfNeeded(right);
   return (
-    compressedLeft.length === compressedRight.length &&
-    compressedLeft.every((byte, index) => byte === compressedRight[index])
+    compressedLeft.length === compressedRight.length
+    && compressedLeft.every((byte, index) => byte === compressedRight[index])
   );
 }
 
@@ -53,13 +53,14 @@ export class LedgerKeyring implements Keyring {
     let devicePublicKey: Uint8Array;
     try {
       devicePublicKey = await this.connector.getPubkey(toSlip10Path(hdPath));
-    } catch (err) {
+    }
+    catch (err) {
       throw classifyLedgerError(err);
     }
     if (!isSamePublicKey(devicePublicKey, publicKey)) {
       throw new LedgerError(
         'AccountMismatch',
-        'Connected Ledger device does not match the signing account',
+        'Connected Ledger device does not match the signing account'
       );
     }
   }
@@ -67,7 +68,7 @@ export class LedgerKeyring implements Keyring {
   toData() {
     return {
       id: this.id,
-      type: this.type,
+      type: this.type
     };
   }
 
@@ -82,7 +83,8 @@ export class LedgerKeyring implements Keyring {
     const hdPath = toSlip10Path(opts?.hdPath ?? 0);
     try {
       return await this.connector.sign(bytes, hdPath);
-    } catch (err) {
+    }
+    catch (err) {
       throw classifyLedgerError(err);
     }
   }
@@ -104,7 +106,7 @@ export class LedgerKeyring implements Keyring {
     const signedTx = await makeSignedTx(wallet, document);
     return {
       signed: signedTx,
-      signature: signedTx.signatures,
+      signature: signedTx.signatures
     };
   }
 
@@ -114,7 +116,7 @@ export class LedgerKeyring implements Keyring {
     }
     // Broadcasting an already-signed tx does not derive a key; accountIndex is inert.
     const wallet = Tm2Wallet.fromLedger(this.connector, {
-      accountIndex: getAddressIndex(hdPath),
+      accountIndex: getAddressIndex(hdPath)
     });
     wallet.connect(provider);
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_SYNC);
@@ -125,7 +127,7 @@ export class LedgerKeyring implements Keyring {
       throw new Error('Ledger connector does not found');
     }
     const wallet = Tm2Wallet.fromLedger(this.connector, {
-      accountIndex: getAddressIndex(hdPath),
+      accountIndex: getAddressIndex(hdPath)
     });
     wallet.connect(provider);
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);

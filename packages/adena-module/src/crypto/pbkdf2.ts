@@ -1,7 +1,8 @@
-import { assert } from '../utils';
 import { pbkdf2Async as noblePbkdf2Async } from '@noble/hashes/pbkdf2.js';
 import { sha512 as nobleSha512 } from '@noble/hashes/sha2.js';
 import crypto from 'crypto';
+
+import { assert } from '../utils';
 
 /**
  * Returns the Node.js crypto module when available and `undefined`
@@ -18,7 +19,8 @@ export async function getCryptoModule(): Promise<any | undefined> {
       return undefined;
     }
     return crypto;
-  } catch {
+  }
+  catch {
     return undefined;
   }
 }
@@ -36,12 +38,12 @@ export async function getSubtle(): Promise<any | undefined> {
 }
 
 export async function pbkdf2Sha512Subtle(
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+
   subtle: any,
   secret: Uint8Array,
   salt: Uint8Array,
   iterations: number,
-  keylen: number,
+  keylen: number
 ): Promise<Uint8Array> {
   assert(subtle, 'Argument subtle is falsy');
   assert(typeof subtle === 'object', 'Argument subtle is not of type object');
@@ -57,22 +59,22 @@ export async function pbkdf2Sha512Subtle(
             name: 'PBKDF2',
             salt: salt,
             iterations: iterations,
-            hash: { name: 'SHA-512' },
+            hash: { name: 'SHA-512' }
           },
           key,
-          keylen * 8,
+          keylen * 8
         )
-        .then((buffer: ArrayBuffer) => new Uint8Array(buffer)),
+        .then((buffer: ArrayBuffer) => new Uint8Array(buffer))
     );
 }
 
 export async function pbkdf2Sha512Crypto(
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+
   crypto: any,
   secret: Uint8Array,
   salt: Uint8Array,
   iterations: number,
-  keylen: number,
+  keylen: number
 ): Promise<Uint8Array> {
   assert(crypto, 'Argument crypto is falsy');
   assert(typeof crypto === 'object', 'Argument crypto is not of type object');
@@ -82,7 +84,8 @@ export async function pbkdf2Sha512Crypto(
     crypto.pbkdf2(secret, salt, iterations, keylen, 'sha512', (error: any, result: any) => {
       if (error) {
         reject(error);
-      } else {
+      }
+      else {
         resolve(Uint8Array.from(result));
       }
     });
@@ -93,7 +96,7 @@ export async function pbkdf2Sha512Noble(
   secret: Uint8Array,
   salt: Uint8Array,
   iterations: number,
-  keylen: number,
+  keylen: number
 ): Promise<Uint8Array> {
   return noblePbkdf2Async(nobleSha512, secret, salt, { c: iterations, dkLen: keylen });
 }
@@ -105,16 +108,18 @@ export async function pbkdf2Sha512(
   secret: Uint8Array,
   salt: Uint8Array,
   iterations: number,
-  keylen: number,
+  keylen: number
 ): Promise<Uint8Array> {
   const subtle = await getSubtle();
   if (subtle) {
     return pbkdf2Sha512Subtle(subtle, secret, salt, iterations, keylen);
-  } else {
+  }
+  else {
     const crypto = await getCryptoModule();
     if (crypto) {
       return pbkdf2Sha512Crypto(crypto, secret, salt, iterations, keylen);
-    } else {
+    }
+    else {
       return pbkdf2Sha512Noble(secret, salt, iterations, keylen);
     }
   }

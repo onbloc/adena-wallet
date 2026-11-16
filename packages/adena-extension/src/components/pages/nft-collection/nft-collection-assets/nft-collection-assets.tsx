@@ -4,6 +4,7 @@ import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721Model } from '@types';
 import React, { useMemo } from 'react';
 import { useTheme } from 'styled-components';
+
 import NFTCollectionAssetCard from '../nft-collection-asset-card/nft-collection-asset-card';
 import { NFTCollectionAssetsWrapper } from './nft-collection-assets.styles';
 

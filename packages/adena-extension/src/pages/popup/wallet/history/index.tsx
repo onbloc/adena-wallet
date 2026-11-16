@@ -1,6 +1,3 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import styled from 'styled-components';
-
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
 import { TransactionHistory } from '@components/molecules';
 import { useGetAllGRC721Collections } from '@hooks/nft/use-get-all-grc721-collections';
@@ -14,6 +11,8 @@ import { useTransactionHistoryPage } from '@hooks/wallet/transaction-history/use
 import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
 import { RoutePath } from '@types';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import styled from 'styled-components';
 
 const StyledHistoryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -56,8 +55,8 @@ const HistoryContainer: React.FC = () => {
     return commonTransactionHistoryQuery;
   }, [isUsedApi, commonTransactionHistoryQuery, pageTransactionHistoryQuery]);
 
-  const { isSupported, isFetching, isLoading, status, data, hasNextPage, fetchNextPage, refetch } =
-    transactionHistoryQuery;
+  const { isSupported, isFetching, isLoading, status, data, hasNextPage, fetchNextPage, refetch }
+    = transactionHistoryQuery;
 
   useEffect(() => {
     refetch();
@@ -101,8 +100,8 @@ const HistoryContainer: React.FC = () => {
 
   const onClickItem = useCallback(
     (hash: string) => {
-      const transactions = data?.flatMap((group) => group.transactions) ?? [];
-      const transactionInfo = transactions.find((transaction) => transaction.hash === hash);
+      const transactions = data?.flatMap(group => group.transactions) ?? [];
+      const transactionInfo = transactions.find(transaction => transaction.hash === hash);
       if (transactionInfo) {
         saveScrollPosition(scrollRef.current?.scrollTop || 0);
         navigate(RoutePath.TransactionDetail, {

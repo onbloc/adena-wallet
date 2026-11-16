@@ -1,8 +1,7 @@
-import React, { useCallback } from 'react';
-
 import IconPlus from '@assets/plus.svg';
 import type { ChainGroup } from '@hooks/use-network';
 import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
+import React, { useCallback } from 'react';
 
 import NetworkList from '../network-list/network-list';
 import { ChainGroupSectionWrapper } from './chain-group-section.styles';
@@ -58,17 +57,19 @@ const ChainGroupSection: React.FC<ChainGroupSectionProps> = ({
           </button>
         )}
       </div>
-      {networks.length === 0 ? (
-        <div className='empty'>No networks available</div>
-      ) : (
-        <NetworkList
-          currentNetworkId={selectedNetworkId ?? ''}
-          networkMetainfos={networks}
-          iconUrl={iconUrl}
-          changeNetwork={changeNetwork}
-          moveEditPage={moveEditPage}
-        />
-      )}
+      {networks.length === 0
+        ? (
+            <div className='empty'>No networks available</div>
+          )
+        : (
+            <NetworkList
+              currentNetworkId={selectedNetworkId ?? ''}
+              networkMetainfos={networks}
+              iconUrl={iconUrl}
+              changeNetwork={changeNetwork}
+              moveEditPage={moveEditPage}
+            />
+          )}
     </ChainGroupSectionWrapper>
   );
 };

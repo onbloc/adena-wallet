@@ -1,5 +1,5 @@
-import { CosmosNetworkProfile, TokenProfile } from 'adena-module';
 import { AtomoneNetworkMetainfo } from '@types';
+import { CosmosNetworkProfile, TokenProfile } from 'adena-module';
 
 const ATOMONE_CHAIN_ICON_URL = '/assets/icons/atone.svg';
 const PHOTON_ICON_URL = '/assets/icons/photon.svg';

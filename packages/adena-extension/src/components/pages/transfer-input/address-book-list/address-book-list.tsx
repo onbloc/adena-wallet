@@ -1,8 +1,8 @@
+import { Text } from '@components/atoms';
 import React from 'react';
 import { useTheme } from 'styled-components';
 
-import { AddressBookListWrapper, AddressBookListItemWrapper } from './address-book-list.styles';
-import { Text } from '@components/atoms';
+import { AddressBookListItemWrapper, AddressBookListWrapper } from './address-book-list.styles';
 
 export interface AddressBookListProps {
   addressBookInfos: {

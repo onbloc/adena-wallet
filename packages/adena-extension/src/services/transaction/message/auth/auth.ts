@@ -38,11 +38,11 @@ interface CreateSessionMessageInfo {
   spendPeriod: SessionInteger;
 }
 
-type SessionInteger =
-  | number
-  | string
-  | bigint
-  | {
+type SessionInteger
+  = | number
+    | string
+    | bigint
+    | {
       low?: number;
       high?: number;
       unsigned?: boolean;
@@ -132,10 +132,10 @@ const toBigInt = (value: SessionInteger): bigint => {
   const low = value.low;
   const high = value.high;
   if (
-    typeof low === 'number' &&
-    typeof high === 'number' &&
-    Number.isInteger(low) &&
-    Number.isInteger(high)
+    typeof low === 'number'
+    && typeof high === 'number'
+    && Number.isInteger(low)
+    && Number.isInteger(high)
   ) {
     const lowBig = BigInt(low >>> 0);
     const highBig = value.unsigned === true
@@ -177,14 +177,14 @@ const validateSpendLimit = (spendLimit: string): void => {
   if (trimmed === '') {
     return;
   }
-  const entries = trimmed.split(',').map((entry) => entry.trim());
+  const entries = trimmed.split(',').map(entry => entry.trim());
   const seenDenoms = new Set<string>();
   entries.forEach((entry, index) => {
     const match = entry.match(COIN_ENTRY_REGEX);
     if (!match) {
       throw new Error(
-        `invalid spend_limit: entry[${index}] "${entry}" does not match ` +
-          '<amount><denom> (denom requires lowercase, min 3 chars).',
+        `invalid spend_limit: entry[${index}] "${entry}" does not match `
+        + '<amount><denom> (denom requires lowercase, min 3 chars).',
       );
     }
     const amount = match[1];

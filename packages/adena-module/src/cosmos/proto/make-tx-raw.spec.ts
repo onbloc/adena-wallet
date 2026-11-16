@@ -4,7 +4,6 @@ import { SignMode } from 'cosmjs-types/cosmos/tx/signing/v1beta1/signing';
 import { AuthInfo, TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 
 import { MSG_SEND_AMINO_TYPE, MSG_SEND_TYPE_URL } from '../codec/msg-send';
-
 import { aminoMsgsToAnys, makeTxRaw } from './make-tx-raw';
 
 describe('makeTxRaw', () => {
@@ -13,8 +12,8 @@ describe('makeTxRaw', () => {
     value: {
       from_address: 'atone1qqqsyqcyq5rqwzqfpg9scrgwpugpzysndkda8p',
       to_address: 'atone1qyqszqgpqyqszqgpqyqszqgpqyqszqgpwc2vge',
-      amount: [{ denom: 'uphoton', amount: '1000' }],
-    },
+      amount: [{ denom: 'uphoton', amount: '1000' }]
+    }
   };
 
   // 33-byte compressed secp256k1 pubkey (arbitrary valid constant shape — 0x02 prefix + 32 bytes).
@@ -25,7 +24,7 @@ describe('makeTxRaw', () => {
   const signature = new Uint8Array(64).fill(7);
   const fee = {
     amount: [{ denom: 'uphoton', amount: '1000' }],
-    gas: '200000',
+    gas: '200000'
   };
 
   it('produces a TxRaw that decodes with AMINO mode, correct pubkey typeUrl, and preserved signature', () => {
@@ -36,7 +35,7 @@ describe('makeTxRaw', () => {
       sequence: '5',
       publicKey: compressedPubKey,
       signature,
-      signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
+      signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON
     });
 
     const raw = TxRaw.decode(txBytes);
@@ -76,7 +75,7 @@ describe('makeTxRaw', () => {
       sequence: '0',
       publicKey: uncompressed,
       signature,
-      signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
+      signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON
     });
 
     const raw = TxRaw.decode(txBytes);
@@ -94,7 +93,7 @@ describe('makeTxRaw', () => {
       sequence: '0',
       publicKey: compressedPubKey,
       signature,
-      signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
+      signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON
     });
 
     const raw = TxRaw.decode(txBytes);
@@ -105,7 +104,7 @@ describe('makeTxRaw', () => {
 
   it('aminoMsgsToAnys throws on unknown amino type', () => {
     expect(() => aminoMsgsToAnys([{ type: 'cosmos-sdk/Unknown', value: {} }])).toThrow(
-      /Unknown amino message type/,
+      /Unknown amino message type/
     );
   });
 });

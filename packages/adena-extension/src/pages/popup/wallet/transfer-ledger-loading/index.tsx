@@ -1,7 +1,3 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { JSX } from 'react';
-import styled from 'styled-components';
-
 import TransferLedgerLoading from '@components/pages/transfer-ledger-loading/transfer-ledger-loading';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
@@ -10,6 +6,9 @@ import { createNotificationSendMessageByHash } from '@inject/message/methods/tra
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
 import { AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
+import type { JSX } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import styled from 'styled-components';
 
 const TransferLedgerLoadingLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -65,7 +64,8 @@ const TransferLedgerLoadingContainer = (): JSX.Element => {
             ledgerResult: { status: 'SUCCESS', hash },
           },
         });
-      } else {
+      }
+      else {
         navigate(RoutePath.History);
       }
       return true;

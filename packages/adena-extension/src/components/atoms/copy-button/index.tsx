@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import type { JSX } from 'react';
-import styled, { useTheme } from 'styled-components';
-
-import { getTheme } from '@styles/theme';
-import { Text, Button } from '@components/atoms';
+import { Button, Text } from '@components/atoms';
 import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import type { JSX } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const CopyButton = styled(Button) <{ isClicked: boolean }>`
   ${mixins.flex({ direction: 'row' })};

@@ -22,7 +22,7 @@ function ok(appName: string) {
     appName,
     appVersion: '1.0.0',
     return_code: 0x9000,
-    error_message: 'No errors',
+    error_message: 'No errors'
   };
 }
 
@@ -48,7 +48,7 @@ describe('ensureAppOpen', () => {
 
     const result = await ensureAppOpen(transport, 'Cosmos', {
       pollIntervalMs: 1,
-      maxAttempts: 3,
+      maxAttempts: 3
     });
 
     expect(result).toBe(transport);
@@ -62,7 +62,7 @@ describe('ensureAppOpen', () => {
       ok('Ethereum'),
       ok('Ethereum'),
       ok('Ethereum'),
-      ok('Cosmos'),
+      ok('Cosmos')
     ]);
     MockedCosmosApp.mockImplementation(function () {
       return { appInfo };
@@ -73,7 +73,7 @@ describe('ensureAppOpen', () => {
     const result = await ensureAppOpen(transport, 'Cosmos', {
       pollIntervalMs: 1,
       maxAttempts: 10,
-      reopenTransport,
+      reopenTransport
     });
 
     expect(result).toBe(transport);
@@ -82,7 +82,7 @@ describe('ensureAppOpen', () => {
       0xd8,
       0x00,
       0x00,
-      Buffer.from('Cosmos', 'ascii'),
+      Buffer.from('Cosmos', 'ascii')
     );
     expect(reopenTransport).toHaveBeenCalledTimes(3);
     expect(appInfo).toHaveBeenCalledTimes(4);
@@ -98,11 +98,11 @@ describe('ensureAppOpen', () => {
     await expect(
       ensureAppOpen(transport, 'Cosmos', {
         pollIntervalMs: 1,
-        maxAttempts: 3,
-      }),
+        maxAttempts: 3
+      })
     ).rejects.toMatchObject({
       name: 'LedgerError',
-      kind: 'AppNotOpen',
+      kind: 'AppNotOpen'
     });
 
     expect(appInfo).toHaveBeenCalledTimes(4); // 1 initial + 3 polls
@@ -123,7 +123,7 @@ describe('ensureAppOpen', () => {
     const result = await ensureAppOpen(transport, 'Cosmos', {
       pollIntervalMs: 1,
       maxAttempts: 5,
-      reopenTransport,
+      reopenTransport
     });
 
     expect(result).toBe(transport);
@@ -143,7 +143,7 @@ describe('ensureAppOpen', () => {
 
     const result = await ensureAppOpen(transport, 'Cosmos', {
       pollIntervalMs: 1,
-      maxAttempts: 5,
+      maxAttempts: 5
     });
 
     expect(result).toBe(transport);
@@ -159,7 +159,7 @@ describe('ensureAppOpen', () => {
 
     await ensureAppOpen(transport, 'Cosmos', {
       pollIntervalMs: 1,
-      maxAttempts: 1,
+      maxAttempts: 1
     }).catch((err) => {
       expect(err).toBeInstanceOf(LedgerError);
     });

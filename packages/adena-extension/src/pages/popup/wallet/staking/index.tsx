@@ -1,8 +1,7 @@
-import React from 'react';
-import type { JSX } from 'react';
-import styled from 'styled-components';
-
 import { Text } from '@components/atoms';
+import type { JSX } from 'react';
+import React from 'react';
+import styled from 'styled-components';
 
 const Wrapper = styled.div`
   position: relative;

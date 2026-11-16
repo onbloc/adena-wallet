@@ -1,6 +1,5 @@
-/* eslint-disable @eslint-react/dom-no-unknown-property */
-import React from 'react';
 import type { JSX } from 'react';
+import React from 'react';
 
 const IconEtc = (): JSX.Element => (
   <svg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'>

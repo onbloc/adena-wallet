@@ -1,7 +1,7 @@
+import { SkeletonBoxStyle } from '@components/atoms';
 import React from 'react';
 import styled from 'styled-components';
 
-import { SkeletonBoxStyle } from '@components/atoms';
 import { TokenListItemWrapper } from '../token-list-item/token-list-item.styles';
 
 const LogoSkeleton = styled(SkeletonBoxStyle)`

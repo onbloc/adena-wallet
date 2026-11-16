@@ -1,6 +1,7 @@
+import type { Mock } from 'vitest';
+
 import { Storage } from './storage';
 import { StorageManager } from './storage-manager';
-import type { Mock } from 'vitest';
 
 describe('StorageManager.get', () => {
   let mockStorageGet: Mock;

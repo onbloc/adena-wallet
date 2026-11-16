@@ -7,6 +7,7 @@ import { makeTransactionScannerUrl } from '@common/utils/scanner-utils';
 import { BroadcastTxCommitResult, BroadcastTxSyncResult } from '@gnolang/tm2-js-client';
 import { CommandMessageData } from '@inject/message/command-message';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message/message';
+
 import { InjectCore } from './core';
 import { createNotification } from './notification';
 
@@ -24,8 +25,8 @@ export async function addTransactionEvent(
   const transactionHash = message?.data?.hash;
 
   if (
-    messageType !== WalletResponseSuccessType.TRANSACTION_SUCCESS &&
-    messageType !== WalletResponseFailureType.TRANSACTION_FAILED
+    messageType !== WalletResponseSuccessType.TRANSACTION_SUCCESS
+    && messageType !== WalletResponseFailureType.TRANSACTION_FAILED
   ) {
     return null;
   }

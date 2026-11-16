@@ -1,6 +1,6 @@
+import { formatChangeRate, getChangeTone } from '@common/utils/price-utils';
 import React from 'react';
 
-import { formatChangeRate, getChangeTone } from '@common/utils/price-utils';
 import { TokenChangeRateWrapper } from './token-change-rate.styles';
 
 export interface TokenChangeRateProps {

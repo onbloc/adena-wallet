@@ -1,5 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
-
 import { flattenSessionAccount } from '@common/provider/gno/utils';
 import { useWalletContext } from '@hooks/use-context';
 import {
@@ -7,6 +5,7 @@ import {
   sessionRecordQueryKey,
 } from '@hooks/wallet/use-current-session-record';
 import { SESSION_REVOCATION_POLL_INTERVAL } from '@hooks/wallet/use-session-revocation-watcher';
+import { useQuery } from '@tanstack/react-query';
 
 export interface CurrentSessionChainData {
   allowPaths: string[];

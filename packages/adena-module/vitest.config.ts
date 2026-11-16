@@ -3,8 +3,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      '@': new URL('./src', import.meta.url).pathname,
-    },
+      '@': new URL('./src', import.meta.url).pathname
+    }
   },
   test: {
     globals: true,
@@ -13,7 +13,7 @@ export default defineConfig({
     exclude: ['node_modules', 'dist'],
     env: {
       SIGNER_PREFIX: 'g',
-      SALT_KEY: 'TESTTESTTESTTEST',
-    },
-  },
+      SALT_KEY: 'TESTTESTTESTTEST'
+    }
+  }
 });

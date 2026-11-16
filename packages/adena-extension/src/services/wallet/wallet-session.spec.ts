@@ -1,23 +1,22 @@
+import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { GnoSessionAccountResponse } from '@common/provider/gno/types';
+import { Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
+import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
+import { SessionRepository } from '@repositories/session';
+import { NetworkMetainfo } from '@types';
 import {
   AdenaWallet,
   ChainRegistry,
   publicKeyToAddress,
 } from 'adena-module';
-import { Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 import type { Mock } from 'vitest';
 
-import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { GnoSessionAccountResponse } from '@common/provider/gno/types';
-import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
-import { SessionRepository } from '@repositories/session';
-import { NetworkMetainfo } from '@types';
-
+import { WalletService } from './wallet';
 import {
   SessionImportError,
   SessionImportPreview,
   WalletSessionService,
 } from './wallet-session';
-import { WalletService } from './wallet';
 
 const MASTER_ADDRESS = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
 const PRIV_KEY_1 = '0000000000000000000000000000000000000000000000000000000000000001';
@@ -199,8 +198,8 @@ describe('WalletSessionService bulk import', () => {
     const result = await service.listImportableSessions(MASTER_ADDRESS, network);
 
     expect(result).toHaveLength(2);
-    expect(result.find((item) => item.sessionAddr === active.sessionAddr)?.isExpired).toBe(false);
-    expect(result.find((item) => item.sessionAddr === expired.sessionAddr)?.isExpired).toBe(true);
+    expect(result.find(item => item.sessionAddr === active.sessionAddr)?.isExpired).toBe(false);
+    expect(result.find(item => item.sessionAddr === expired.sessionAddr)?.isExpired).toBe(true);
   });
 
   it('allows importing an expired session with expired metadata status', async () => {
@@ -340,8 +339,8 @@ describe('WalletSessionService bulk import', () => {
     expect(repository.sessions[second.sessionAddr]).toBeDefined();
     expect(walletService.updateWallet).toHaveBeenCalledTimes(1);
     expect(walletService.savedWallet?.accounts).toHaveLength(2);
-    expect(accounts.map((account) => account.name)).toEqual(['Session 1', 'Session 2']);
-    expect(walletService.savedWallet?.accounts.map((account) => account.name)).toEqual([
+    expect(accounts.map(account => account.name)).toEqual(['Session 1', 'Session 2']);
+    expect(walletService.savedWallet?.accounts.map(account => account.name)).toEqual([
       'Session 1',
       'Session 2',
     ]);
@@ -377,7 +376,7 @@ describe('WalletSessionService bulk import', () => {
     // The web app keeps one mounted document across routes, so the second import
     // must still be built on the persisted result of the first one.
     expect(walletService.savedWallet?.accounts).toHaveLength(2);
-    expect(walletService.savedWallet?.accounts.map((account) => account.name)).toEqual([
+    expect(walletService.savedWallet?.accounts.map(account => account.name)).toEqual([
       'Session 1',
       'Session 2',
     ]);
@@ -419,7 +418,7 @@ describe('WalletSessionService bulk import', () => {
       [second.sessionAddr]: PRIV_KEY_2,
     });
 
-    expect(result.wallet.accounts.map((account) => account.name)).toEqual([
+    expect(result.wallet.accounts.map(account => account.name)).toEqual([
       'Session 1',
       'Session 2',
     ]);

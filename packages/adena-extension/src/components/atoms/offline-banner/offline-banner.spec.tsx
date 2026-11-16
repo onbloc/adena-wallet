@@ -1,10 +1,10 @@
+import theme from '@styles/theme';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
-import React, { PropsWithChildren } from 'react';
 import type { JSX } from 'react';
+import React, { PropsWithChildren } from 'react';
 import { ThemeProvider } from 'styled-components';
 
-import theme from '@styles/theme';
 import { OfflineBanner } from '.';
 
 const setBrowserOnline = (online: boolean): void => {

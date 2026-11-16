@@ -1,19 +1,17 @@
-import React, { useMemo } from 'react';
-
-import { SubHeader } from '@components/atoms';
-
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
-import { NFTTransferSummaryWrapper } from './nft-transfer-summary.styles';
-
 import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
+import { SubHeader } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import NetworkFee from '@components/molecules/network-fee/network-fee';
 import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card';
 import TransferSummaryAddress from '@components/pages/transfer-summary/transfer-summary-address/transfer-summary-address';
-import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721Model, NetworkFee as NetworkFeeType } from '@types';
+import React, { useMemo } from 'react';
+
+import { NFTTransferSummaryWrapper } from './nft-transfer-summary.styles';
 
 export interface NFTTransferSummaryProps {
   grc721Token: GRC721Model;
@@ -101,7 +99,7 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
       <div className='sub-header-wrapper'>
         <SubHeader
           leftElement={{
-            element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
+            element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
             onClick: onClickBack,
           }}
           title={title}

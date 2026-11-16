@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { ToggleWrapper } from './toggle.styles';
 
 export interface ToggleProps {

@@ -6,6 +6,7 @@ import {
 import { getDappVisibleAddress } from '@common/utils/account-address';
 import { getSiteName } from '@common/utils/client-utils';
 import { RoutePath } from '@types';
+
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
@@ -55,7 +56,8 @@ export const getAccount = async (
         requestData.key,
       ),
     );
-  } catch (error) {
+  }
+  catch (error) {
     sendResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NO_ACCOUNT,
@@ -108,7 +110,8 @@ export const getNetwork = async (
         requestData.key,
       ),
     );
-  } catch (error) {
+  }
+  catch (error) {
     sendResponse(
       InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key),
     );
@@ -127,7 +130,7 @@ function normalizeChainIds(value: unknown): string[] | null {
   if (typeof value === 'string') {
     return value.length > 0 ? [value] : null;
   }
-  if (Array.isArray(value) && value.every((v) => typeof v === 'string' && v.length > 0)) {
+  if (Array.isArray(value) && value.every(v => typeof v === 'string' && v.length > 0)) {
     return value;
   }
   return null;

@@ -5,10 +5,6 @@ import {
   WalletResponseStatus,
   WalletResponseType,
 } from '@adena-wallet/sdk';
-import { MsgEndpoint } from '@gnolang/gno-js-client';
-import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
-import { v4 as uuidv4 } from 'uuid';
-
 import {
   serializeSignDoc,
   serializeTxBytes,
@@ -18,9 +14,9 @@ import {
   validateFee,
   validateMultisigSigners,
   validateMultisigThreshold,
+  validateSignArbitraryParams,
   validateTransactionDocumentFee,
   validateTransactionDocumentMessages,
-  validateSignArbitraryParams,
 } from '@common/validation';
 import {
   validateDoContractRequest,
@@ -34,17 +30,14 @@ import {
   validateTransactionMessageOfRun,
   validateTransactionMessageOfVmCall,
 } from '@common/validation/validation-message';
-import {
-  MSG_CREATE_SESSION_ENDPOINT,
-  MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
-  MSG_REVOKE_SESSION_ENDPOINT,
-} from 'adena-module';
+import type { StdSignDoc } from '@cosmjs/amino';
+import { MsgEndpoint } from '@gnolang/gno-js-client';
 import {
   AddEstablishResponse,
   AddNetworkParams,
   AddNetworkResponse,
-  BroadcastMultisigTransactionResponse,
   BroadcastMode,
+  BroadcastMultisigTransactionResponse,
   ContractOptions,
   CosmosResponseExecuteType,
   CreateMultisigAccountParams,
@@ -58,18 +51,25 @@ import {
   GetNetworkResponse,
   MultisigTransactionDocument,
   SendCosmosTxResponse,
-  Signature,
-  SignCosmosAminoResponse,
   SignArbitraryExecuteType,
   SignArbitraryParams,
   SignArbitraryResponse,
+  Signature,
+  SignCosmosAminoResponse,
   SignCosmosDirectResponse,
   SignMultisigTransactionResponse,
   SignTxResponse,
   SwitchNetworkResponse,
   TransactionParams,
 } from '@inject/types';
-import type { StdSignDoc } from '@cosmjs/amino';
+import {
+  MSG_CREATE_SESSION_ENDPOINT,
+  MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
+  MSG_REVOKE_SESSION_ENDPOINT,
+} from 'adena-module';
+import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
+import { v4 as uuidv4 } from 'uuid';
+
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 
 type Params = { [key in string]: any };
@@ -524,7 +524,8 @@ export class AdenaExecutor {
 
     try {
       window.postMessage(this.eventMessage, window.location.origin);
-    } catch (error) {
+    }
+    catch (error) {
       console.warn(error);
     }
     this.messages[this.eventKey] = {
@@ -609,25 +610,25 @@ export class AdenaExecutor {
             break;
           case 'success':
             this.unlisten();
-            this.resolver &&
-              this.resolver({
-                status: status as WalletResponseStatus,
-                data,
-                code,
-                message,
-                type,
-              });
+            this.resolver
+            && this.resolver({
+              status: status as WalletResponseStatus,
+              data,
+              code,
+              message,
+              type,
+            });
             break;
           case 'failure':
             this.unlisten();
-            this.resolver &&
-              this.resolver({
-                status: status as WalletResponseStatus,
-                data,
-                code,
-                message,
-                type,
-              });
+            this.resolver
+            && this.resolver({
+              status: status as WalletResponseStatus,
+              data,
+              code,
+              message,
+              type,
+            });
             break;
           default:
             break;

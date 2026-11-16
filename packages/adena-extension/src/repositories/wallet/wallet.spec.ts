@@ -1,6 +1,7 @@
 import { StorageManager } from '@common/storage/storage-manager';
-import { WalletRepository } from './wallet';
 import type { Mock } from 'vitest';
+
+import { WalletRepository } from './wallet';
 
 describe('WalletRepository.getKdfSalt', () => {
   let mockGet: Mock;

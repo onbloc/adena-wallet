@@ -1,9 +1,8 @@
-import { onlineManager, useQueryClient } from '@tanstack/react-query';
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
-
 import { Button } from '@components/atoms/button';
 import { Spinner } from '@components/atoms/spinner';
 import { WarningTriangleIcon } from '@components/atoms/warning-triangle-icon';
+import { onlineManager, useQueryClient } from '@tanstack/react-query';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 
 import { OfflineBannerWrapper } from './offline-banner.styles';
 
@@ -71,17 +70,23 @@ export const OfflineBanner = (): ReactElement | null => {
       </span>
       {/* Kept to one line: every wrapped line costs 21px of a 540px popup. */}
       <span className='message'>
-        {overridden ? (
-          <>
-            <span className='headline'>Retrying anyway.</span> Your browser still reports no
-            connection.
-          </>
-        ) : (
-          <>
-            <span className='headline'>No network connection.</span> Balances and chain data are
-            paused until you reconnect.
-          </>
-        )}
+        {overridden
+          ? (
+              <>
+                <span className='headline'>Retrying anyway.</span>
+                {' '}
+                Your browser still reports no
+                connection.
+              </>
+            )
+          : (
+              <>
+                <span className='headline'>No network connection.</span>
+                {' '}
+                Balances and chain data are
+                paused until you reconnect.
+              </>
+            )}
       </span>
       <Button
         className='action-button'

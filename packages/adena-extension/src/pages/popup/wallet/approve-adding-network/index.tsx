@@ -1,6 +1,3 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
@@ -14,6 +11,8 @@ import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { isSessionAccount } from 'adena-module';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const ApproveAddingNetworkContainer: React.FC = () => {
   const { search } = useLocation();
@@ -103,7 +102,7 @@ const ApproveAddingNetworkContainer: React.FC = () => {
           rpcUrl: rpcUrl,
           chainId: chainId,
         }}
-        logo={''}
+        logo=''
         approvable={requestData !== undefined}
         processing={processing}
         done={done}

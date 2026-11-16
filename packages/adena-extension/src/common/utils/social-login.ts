@@ -4,14 +4,13 @@ import {
   SocialGoogleConfigure,
   SocialTwitterConfigure,
 } from '@adena-wallet/sdk';
-import { arrayToHex } from 'adena-module';
-
 import {
   DEFAULT_SOCIAL_KEY_SET_TYPE,
   SocialKeySetType,
   Web3AuthVerifier,
 } from '@common/constants/web3auth.constant';
 import { NetworkMetainfo } from '@types';
+import { arrayToHex } from 'adena-module';
 
 const SOCIAL_LOGIN_APP_NAME = 'Adena';
 
@@ -29,7 +28,7 @@ function getMissingVerifierFields(
   verifier: Web3AuthVerifier,
   provider: SocialProvider,
 ): (keyof Web3AuthVerifier)[] {
-  return REQUIRED_VERIFIER_FIELDS[provider].filter((field) => !verifier[field]);
+  return REQUIRED_VERIFIER_FIELDS[provider].filter(field => !verifier[field]);
 }
 
 /** Values come from build-time secrets, so screens disable unconfigured providers. */

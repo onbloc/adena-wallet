@@ -1,10 +1,8 @@
-import React from 'react';
-import styled from 'styled-components';
-
+import IconCheck from '@assets/web/web-check-circle.svg';
 import { Row, View, WebButton, WebImg, WebInput } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
-
-import IconCheck from '@assets/web/web-check-circle.svg';
+import React from 'react';
+import styled from 'styled-components';
 
 interface SetupMultisigCompleteScreenProps {
   address: string;

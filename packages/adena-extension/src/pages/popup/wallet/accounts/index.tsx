@@ -1,20 +1,19 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import type { JSX } from 'react';
-import { useNavigate } from 'react-router-dom';
-
+import IconAddRounded from '@assets/icon-add-rounded';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { makeQueryString } from '@common/utils/string-utils';
-import IconAddRounded from '@assets/icon-add-rounded';
 import { BottomFixedButton } from '@components/molecules';
 import SideMenuAccountList from '@components/pages/router/side-menu-account-list/side-menu-account-list';
-import useAppNavigate from '@hooks/use-app-navigate';
 import { useAccountListInfos } from '@hooks/use-account-list-infos';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
-import { useVisibleAccounts } from '@hooks/use-visible-accounts';
 import { useNetworkProfile } from '@hooks/use-network-profile';
+import { useVisibleAccounts } from '@hooks/use-visible-accounts';
 import { RoutePath } from '@types';
+import type { JSX } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { AccountsWrapper, AddAccountButton } from './accounts.styles';
 
@@ -44,7 +43,7 @@ export const Accounts = (): JSX.Element => {
         goBack();
         return;
       }
-      const account = accounts.find((current) => current.id === accountId);
+      const account = accounts.find(current => current.id === accountId);
       if (!account) {
         return;
       }

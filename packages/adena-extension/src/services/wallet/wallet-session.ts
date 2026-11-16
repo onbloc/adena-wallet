@@ -1,3 +1,9 @@
+import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { GnoSessionAccountResponse } from '@common/provider/gno/types';
+import { Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
+import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
+import { SessionRepository } from '@repositories/session';
+import { NetworkMetainfo } from '@types';
 import {
   AdenaWallet,
   ChainRegistry,
@@ -10,31 +16,24 @@ import {
   validateAddress,
   Wallet,
 } from 'adena-module';
-import { Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
-
-import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { GnoSessionAccountResponse } from '@common/provider/gno/types';
-import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
-import { SessionRepository } from '@repositories/session';
-import { NetworkMetainfo } from '@types';
 
 import { WalletService } from './wallet';
 
 // Service-level errors raised by previewSessionImport / commitSessionImport.
 // UI maps these to user-facing copy via the table in
 // plans/account-sessions/phase-07-session-import.md.
-export type SessionImportErrorReason =
-  | 'invalid_private_key'
-  | 'invalid_master_address'
-  | 'unsupported_network'
-  | 'no_sessions_found'
-  | 'session_not_found'
-  | 'session_expired'
-  | 'session_already_imported'
-  | 'session_pubkey_mismatch'
-  | 'network_changed'
-  | 'wallet_locked'
-  | 'network_error';
+export type SessionImportErrorReason
+  = | 'invalid_private_key'
+    | 'invalid_master_address'
+    | 'unsupported_network'
+    | 'no_sessions_found'
+    | 'session_not_found'
+    | 'session_expired'
+    | 'session_already_imported'
+    | 'session_pubkey_mismatch'
+    | 'network_changed'
+    | 'wallet_locked'
+    | 'network_error';
 
 export class SessionImportError extends Error {
   public readonly reason: SessionImportErrorReason;
@@ -139,7 +138,8 @@ export class WalletSessionService {
     let responses: GnoSessionAccountResponse[];
     try {
       responses = await this.gnoProvider.getSessions(normalizedMasterAddress);
-    } catch (e) {
+    }
+    catch (e) {
       throw new SessionImportError('network_error', (e as Error)?.message);
     }
 
@@ -237,7 +237,8 @@ export class WalletSessionService {
           preview.metadata.masterAddress,
           preview.sessionAddr,
         );
-      } catch (e) {
+      }
+      catch (e) {
         throw new SessionImportError('network_error', (e as Error)?.message);
       }
       if (!recheck) {
@@ -266,9 +267,10 @@ export class WalletSessionService {
 
     try {
       await this.walletService.updateWallet(cloned);
-    } catch (e) {
+    }
+    catch (e) {
       await Promise.all(
-        entries.map((entry) =>
+        entries.map(entry =>
           this.sessionRepository.remove(entry.sessionAddr).catch(() => undefined),
         ),
       );
@@ -373,8 +375,8 @@ export class WalletSessionService {
     currentNetwork: NetworkMetainfo,
   ): void => {
     if (
-      currentNetwork.chainId !== preview.chainId ||
-      currentNetwork.addressPrefix !== preview.addressPrefix
+      currentNetwork.chainId !== preview.chainId
+      || currentNetwork.addressPrefix !== preview.addressPrefix
     ) {
       throw new SessionImportError('network_changed');
     }
@@ -447,7 +449,8 @@ export class WalletSessionService {
     let res: GnoSessionAccountResponse | null;
     try {
       res = await this.gnoProvider.getSession(normalizedMasterAddress, sessionAddr);
-    } catch (e) {
+    }
+    catch (e) {
       throw new SessionImportError('network_error', (e as Error)?.message);
     }
     if (!res) {
@@ -474,8 +477,8 @@ export class WalletSessionService {
     const nowSeconds = Math.floor(Date.now() / 1000);
     const spendPeriod = Number(res.BaseSessionAccount.spend_period ?? 0);
     const spendUsed = res.BaseSessionAccount.spend_used ?? '';
-    const spendReset =
-      res.BaseSessionAccount.spend_reset != null
+    const spendReset
+      = res.BaseSessionAccount.spend_reset != null
         ? Number(res.BaseSessionAccount.spend_reset)
         : undefined;
     const spendLimit = res.BaseSessionAccount.spend_limit ?? '';
@@ -601,7 +604,8 @@ export class WalletSessionService {
     try {
       const wallet = await this.walletService.getCurrentWallet();
       return this.getWalletSessionAddresses(wallet, addressPrefix);
-    } catch {
+    }
+    catch {
       return null;
     }
   };

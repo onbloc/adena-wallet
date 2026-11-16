@@ -2,20 +2,19 @@ import {
   WalletResponseFailureType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
-import { fromBech32 } from '@cosmjs/encoding';
-import { compressPubkeyIfNeeded, isSessionAccount } from 'adena-module';
-import React, { useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import { bytesToBase64 } from '@common/utils/encoding-util';
+import { fromBech32 } from '@cosmjs/encoding';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { CosmosResponseExecuteType } from '@inject/types';
 import { RoutePath } from '@types';
+import { compressPubkeyIfNeeded, isSessionAccount } from 'adena-module';
+import React, { useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
 
 // Silent approval popup dedicated to `GET_COSMOS_KEY`. When the dApp requests
 // a key while the wallet is locked, `cosmosGetKey` routes here via
@@ -56,7 +55,7 @@ const ApproveGetCosmosKeyContainer: React.FC = () => {
   useEffect(() => {
     walletService
       .isLocked()
-      .then((locked) => locked && navigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && navigate(RoutePath.ApproveLogin + location.search));
   }, [walletService, location.search, navigate]);
 
   // 2) Once unlocked and `currentAccount` is ready, build the key and respond.
@@ -124,7 +123,8 @@ const ApproveGetCosmosKeyContainer: React.FC = () => {
             },
           ),
         );
-      } catch (error) {
+      }
+      catch (error) {
         console.warn('[ApproveGetCosmosKey] unexpected error:', error);
         chrome.runtime.sendMessage(
           InjectionMessageInstance.failure(
@@ -133,7 +133,8 @@ const ApproveGetCosmosKeyContainer: React.FC = () => {
             key,
           ),
         );
-      } finally {
+      }
+      finally {
         sentRef.current = true;
         window.close();
       }

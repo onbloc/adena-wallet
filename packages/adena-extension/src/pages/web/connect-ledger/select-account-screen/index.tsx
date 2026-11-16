@@ -1,6 +1,3 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import type { JSX } from 'react';
-
 import IconLedger from '@assets/web/ledger.svg';
 import { View, WebButton, WebImg, WebMain } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
@@ -11,6 +8,8 @@ import { WebMainHeader } from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useSelectAccountScreen from '@hooks/web/connect-ledger/use-select-account-screen';
 import { RoutePath } from '@types';
+import type { JSX } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 const ConnectLedgerSelectAccount = (): JSX.Element => {
   const {
@@ -56,14 +55,14 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
 
   const onToggleDerivationPath = useCallback(() => {
     setDerivationValue(null);
-    setShowDerivationPath((prev) => !prev);
+    setShowDerivationPath(prev => !prev);
   }, []);
 
   const disabledNext = loadPath || (selectAccountAddresses.length === 0 && derivationAddress === null);
 
   const onClickNext = useCallback((): void => {
-    const path =
-      derivationAddress && derivationValue
+    const path
+      = derivationAddress && derivationValue
         ? {
             account: derivationValue.account,
             change: derivationValue.change,

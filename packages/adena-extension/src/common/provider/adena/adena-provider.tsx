@@ -54,8 +54,9 @@ import {
   TokenRegistryImpl,
 } from 'adena-module';
 import axios from 'axios';
-import React, { createContext, useMemo } from 'react';
 import { useAtomValue } from 'jotai';
+import React, { createContext, useMemo } from 'react';
+
 import { GnoProvider } from '../gno/gno-provider';
 
 export interface AdenaContextProps {
@@ -108,7 +109,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const tokenRegistry = useMemo(() => {
     const registry = new TokenRegistryImpl();
-    ALL_TOKENS.forEach((t) => registry.register(t));
+    ALL_TOKENS.forEach(t => registry.register(t));
     return registry;
   }, []);
 

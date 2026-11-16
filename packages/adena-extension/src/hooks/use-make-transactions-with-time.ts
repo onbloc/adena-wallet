@@ -1,6 +1,7 @@
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
+
 import { useGetAllGRC721Collections } from './nft/use-get-all-grc721-collections';
 import { useAdenaContext } from './use-context';
 import { useGRC20Tokens } from './use-grc20-tokens';
@@ -23,8 +24,8 @@ export const useMakeTransactionsWithTime = (
   const { transactionHistoryService } = useAdenaContext();
   const { allTokenMetainfos, tokenLogoMap, getTokenAmount } = useTokenMetainfo();
   const { isFetched: isFetchedTokens } = useGRC20Tokens();
-  const { data: grc721Collections = [], isFetched: isFetchedGRC721Collections } =
-    useGetAllGRC721Collections();
+  const { data: grc721Collections = [], isFetched: isFetchedGRC721Collections }
+    = useGetAllGRC721Collections();
 
   const queryClient = useQueryClient();
 
@@ -56,7 +57,7 @@ export const useMakeTransactionsWithTime = (
           if (transaction.type === 'TRANSFER_GRC721') {
             const amount = transaction.amount;
             const collection = grc721Collections.find(
-              (collection) => collection.packagePath === amount.denom,
+              collection => collection.packagePath === amount.denom,
             );
             return {
               ...transaction,
@@ -97,12 +98,12 @@ export const useMakeTransactionsWithTime = (
       return TransactionHistoryMapper.queryToDisplay(data);
     },
     enabled:
-      !!transactionHistoryService.supported &&
-      !!transactions &&
-      isFetchedTokens &&
-      isFetchedGRC721Collections &&
-      !!allTokenMetainfos &&
-      tokenLogoMap !== null,
+      !!transactionHistoryService.supported
+      && !!transactions
+      && isFetchedTokens
+      && isFetchedGRC721Collections
+      && !!allTokenMetainfos
+      && tokenLogoMap !== null,
     keepPreviousData: true,
   });
 

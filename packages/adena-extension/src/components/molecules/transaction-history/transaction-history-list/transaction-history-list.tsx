@@ -2,6 +2,7 @@ import TransactionHistoryListItem from '@components/molecules/transaction-histor
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
 import React from 'react';
+
 import { TransactionHistoryListWrapper } from './transaction-history-list.styles';
 
 export interface TransactionHistoryListProps {
@@ -25,7 +26,7 @@ const TransactionHistoryList: React.FC<TransactionHistoryListProps> = ({
     <TransactionHistoryListWrapper>
       <span className='title'>{title}</span>
       <div className='list-wrapper'>
-        {transactions.map((transaction) => (
+        {transactions.map(transaction => (
           <TransactionHistoryListItem
             key={transaction.hash}
             {...transaction}

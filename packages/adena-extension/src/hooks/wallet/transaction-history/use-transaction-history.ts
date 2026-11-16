@@ -1,6 +1,3 @@
-import { useCallback, useMemo } from 'react';
-import { useAtom } from 'jotai';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
@@ -9,6 +6,9 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { CommonState } from '@states';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
+import { useAtom } from 'jotai';
+import { useCallback, useMemo } from 'react';
+
 import { dedupeAndSortTransactions } from './session-history-source';
 
 // Indexer-backed (block-index paged) transaction history, used only when the
@@ -22,9 +22,9 @@ export const useTransactionHistory = ({
 }): {
   data:
     | {
-        title: string;
-        transactions: TransactionInfo[];
-      }[]
+      title: string;
+      transactions: TransactionInfo[];
+    }[]
     | null;
   isFetched: boolean;
   status: 'loading' | 'error' | 'success';
@@ -55,10 +55,10 @@ export const useTransactionHistory = ({
     },
     {
       enabled:
-        !!currentAddress &&
-        tokenMetainfos.length > 0 &&
-        transactionHistoryService.supported &&
-        enabled,
+        !!currentAddress
+        && tokenMetainfos.length > 0
+        && transactionHistoryService.supported
+        && enabled,
     },
   );
 

@@ -1,6 +1,5 @@
-import { useAtom } from 'jotai';
-
 import { CommonState } from '@states';
+import { useAtom } from 'jotai';
 import { useMemo } from 'react';
 
 export type UseLoadAccountsReturn = {
@@ -22,11 +21,11 @@ export const useLoadImages = (): UseLoadAccountsReturn => {
   }, [loadedImageUrls, loadingImageUrls]);
 
   const addLoadingImages = (imageUrls: string[]): void => {
-    setLoadingImageUrls([...new Set(imageUrls.filter((url) => !!url))]);
+    setLoadingImageUrls([...new Set(imageUrls.filter(url => !!url))]);
   };
 
   const completeImageLoading = (imageUrl: string): void => {
-    setLoadedImageUrls((prev) => [...new Set([...prev, imageUrl])]);
+    setLoadedImageUrls(prev => [...new Set([...prev, imageUrl])]);
   };
 
   const clear = (): void => {

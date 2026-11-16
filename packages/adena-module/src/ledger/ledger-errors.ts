@@ -1,11 +1,11 @@
-export type LedgerErrorKind =
-  | 'DeviceLocked'
-  | 'AppNotOpen'
-  | 'UserRejected'
-  | 'AccountMismatch'
-  | 'Timeout'
-  | 'TransportFailed'
-  | 'Unknown';
+export type LedgerErrorKind
+  = | 'DeviceLocked'
+    | 'AppNotOpen'
+    | 'UserRejected'
+    | 'AccountMismatch'
+    | 'Timeout'
+    | 'TransportFailed'
+    | 'Unknown';
 
 export class LedgerError extends Error {
   public readonly kind: LedgerErrorKind;
@@ -30,7 +30,7 @@ const STATUS_TO_KIND: Record<number, LedgerErrorKind> = {
   0x6e01: 'AppNotOpen',
   0x6985: 'UserRejected',
   0x6986: 'UserRejected',
-  0x6804: 'Timeout',
+  0x6804: 'Timeout'
 };
 
 function coerceNumber(value: unknown): number | undefined {
@@ -43,10 +43,10 @@ function extractStatus(err: unknown): number | undefined {
   }
   const record = err as Record<string, unknown>;
   return (
-    coerceNumber(record.return_code) ??
-    coerceNumber(record.returnCode) ??
-    coerceNumber(record.statusCode) ??
-    coerceNumber(record.status)
+    coerceNumber(record.return_code)
+    ?? coerceNumber(record.returnCode)
+    ?? coerceNumber(record.statusCode)
+    ?? coerceNumber(record.status)
   );
 }
 
@@ -82,27 +82,27 @@ export function classifyLedgerError(err: unknown): LedgerError {
   const lower = message.toLowerCase();
 
   if (
-    lower.includes('locked device') ||
-    lower.includes('device is locked') ||
-    lower.includes('device locked')
+    lower.includes('locked device')
+    || lower.includes('device is locked')
+    || lower.includes('device locked')
   ) {
     return new LedgerError('DeviceLocked', message, err);
   }
 
   if (
-    lower.includes('app does not seem to be open') ||
-    lower.includes('application is not open') ||
-    lower.includes('please open the') ||
-    lower.includes('open the cosmos app')
+    lower.includes('app does not seem to be open')
+    || lower.includes('application is not open')
+    || lower.includes('please open the')
+    || lower.includes('open the cosmos app')
   ) {
     return new LedgerError('AppNotOpen', message, err);
   }
 
   if (
-    lower.includes('transaction rejected') ||
-    lower.includes('denied by the user') ||
-    lower.includes('user rejected') ||
-    lower.includes('rejected by user')
+    lower.includes('transaction rejected')
+    || lower.includes('denied by the user')
+    || lower.includes('user rejected')
+    || lower.includes('rejected by user')
   ) {
     return new LedgerError('UserRejected', message, err);
   }
@@ -112,11 +112,11 @@ export function classifyLedgerError(err: unknown): LedgerError {
   }
 
   if (
-    lower.includes('disconnect') ||
-    lower.includes('transport') ||
-    lower.includes('no device selected') ||
-    lower.includes('cannot open device') ||
-    lower.includes('device not found')
+    lower.includes('disconnect')
+    || lower.includes('transport')
+    || lower.includes('no device selected')
+    || lower.includes('cannot open device')
+    || lower.includes('device not found')
   ) {
     return new LedgerError('TransportFailed', message, err);
   }

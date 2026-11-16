@@ -1,10 +1,9 @@
-import { Account, Wallet } from 'adena-module';
-import { atom } from 'jotai';
-import { atomWithReset } from 'jotai/utils';
-
 import { TransactionHistoryItem } from '@repositories/transaction/response/transaction-history-response';
 import { AddressBookItem } from '@repositories/wallet';
 import { StateType } from '@types';
+import { Account, Wallet } from 'adena-module';
+import { atom } from 'jotai';
+import { atomWithReset } from 'jotai/utils';
 
 interface TransactionHistoryState {
   address: string | null;

@@ -1,14 +1,14 @@
-import { PopupRouter } from '@router/popup/index';
-import { ReactElement, useEffect, useRef } from 'react';
-
 import { isFirefox, isToolbarPanel } from '@common/utils/browser-utils';
 import { Spinner } from '@components/atoms';
 import { useInitWallet } from '@hooks/use-init-wallet';
 import useLink from '@hooks/use-link';
 import { useWallet } from '@hooks/use-wallet';
+import { PopupRouter } from '@router/popup/index';
 import { GlobalPopupStyle } from '@styles/global-style';
+import { ReactElement, useEffect, useRef } from 'react';
 import { HashRouter } from 'react-router-dom';
 import styled from 'styled-components';
+
 import AppProvider from './app-provider';
 import useApp from './use-app';
 

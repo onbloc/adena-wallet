@@ -1,5 +1,3 @@
-import { useMemo } from 'react';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
@@ -7,6 +5,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
+import { useMemo } from 'react';
 
 export const useTokenTransactionsPage = (
   isNative: boolean | undefined,
@@ -15,9 +14,9 @@ export const useTokenTransactionsPage = (
 ): {
   data:
     | {
-        title: string;
-        transactions: TransactionInfo[];
-      }[]
+      title: string;
+      transactions: TransactionInfo[];
+    }[]
     | null;
   isFetched: boolean;
   status: 'loading' | 'error' | 'success';
@@ -63,10 +62,10 @@ export const useTokenTransactionsPage = (
     },
     {
       enabled:
-        !!currentAddress &&
-        transactionHistoryService.supported &&
-        tokenMetainfos.length > 0 &&
-        enabled,
+        !!currentAddress
+        && transactionHistoryService.supported
+        && tokenMetainfos.length > 0
+        && enabled,
     },
   );
 
@@ -75,7 +74,7 @@ export const useTokenTransactionsPage = (
       return null;
     }
 
-    return allTransactions.pages.flatMap((page) => page?.transactions || []);
+    return allTransactions.pages.flatMap(page => page?.transactions || []);
   }, [allTransactions]);
 
   const firstTransactionHash = useMemo(() => {

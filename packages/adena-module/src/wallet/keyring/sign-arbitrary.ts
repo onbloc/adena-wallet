@@ -2,7 +2,7 @@ import {
   encodeCharacterSet,
   sortedJsonStringify,
   stringToUTF8,
-  TxSignPayload,
+  TxSignPayload
 } from '@gnolang/tm2-js-client';
 
 import { toBase64 } from '../../encoding/base64';
@@ -59,14 +59,14 @@ export interface SignArbitraryParams {
 export function makeArbitraryMessageDoc(
   chainId: string,
   signer: string,
-  data: string,
+  data: string
 ): TxSignPayload {
   const message: ArbitraryMessage = {
     type: ARBITRARY_MSG_TYPE,
     value: {
       signer,
-      data: toBase64(toUtf8(data)),
-    },
+      data: toBase64(toUtf8(data))
+    }
   };
 
   return {
@@ -75,10 +75,10 @@ export function makeArbitraryMessageDoc(
     sequence: ARBITRARY_SEQUENCE,
     fee: {
       amount: [],
-      gas: ARBITRARY_GAS,
+      gas: ARBITRARY_GAS
     },
     msgs: [message],
-    memo: '',
+    memo: ''
   };
 }
 
@@ -93,7 +93,7 @@ export function getArbitraryMessageSignBytes(doc: TxSignPayload): Uint8Array {
  * Nothing produced here is broadcastable; see ARBITRARY_MSG_TYPE.
  */
 export async function signArbitraryMessage(
-  params: SignArbitraryParams,
+  params: SignArbitraryParams
 ): Promise<{ doc: TxSignPayload; signature: Uint8Array }> {
   const { keyring, publicKey, chainId, signer, data, hdPath } = params;
 

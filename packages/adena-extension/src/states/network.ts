@@ -1,13 +1,12 @@
+import { AtomoneNetworkMetainfoMapper } from '@repositories/common/mapper/atomone-network-metainfo-mapper';
+import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 import { atom } from 'jotai';
 import { atomWithReset } from 'jotai/utils';
 
-import { AtomoneNetworkMetainfoMapper } from '@repositories/common/mapper/atomone-network-metainfo-mapper';
-import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
-
 export type NetworkMode = 'mainnet' | 'testnet';
 
-const ATOMONE_DEFAULT_NETWORKS: AtomoneNetworkMetainfo[] =
-  AtomoneNetworkMetainfoMapper.fromResource();
+const ATOMONE_DEFAULT_NETWORKS: AtomoneNetworkMetainfo[]
+  = AtomoneNetworkMetainfoMapper.fromResource();
 
 export const networkMetainfos = atom<NetworkMetainfo[]>([]);
 

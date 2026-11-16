@@ -1,8 +1,9 @@
 import { CommandHandler } from '@inject/message/command-handler';
 import { CommandMessage } from '@inject/message/command-message';
+
 import {
-  GnoMessageInfo,
   canHandleGnoConnectOrigin,
+  GnoMessageInfo,
   parseGnoExecFormInfo,
   parseGnoFormInfo,
   shouldInterceptExecForm,
@@ -97,7 +98,8 @@ export class FormSubmitInterceptor implements IInterceptor {
       e.stopPropagation();
 
       this.handler(gnoMessageInfo, context);
-    } catch (error) {
+    }
+    catch (error) {
       console.warn(`${this.name} error:`, error);
       // On error, allow normal form submission to proceed
     }

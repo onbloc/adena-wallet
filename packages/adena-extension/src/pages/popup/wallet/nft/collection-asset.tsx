@@ -1,5 +1,3 @@
-import styled, { useTheme } from 'styled-components';
-
 import { Button } from '@components/atoms';
 import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card';
 import NFTAssetHeader from '@components/pages/nft-asset/nft-asset-header/nft-asset-header';
@@ -14,8 +12,9 @@ import useLink from '@hooks/use-link';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
-import { useCallback, useMemo } from 'react';
 import type { JSX } from 'react';
+import { useCallback, useMemo } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -43,8 +42,8 @@ export const NftCollectionAsset = (): JSX.Element => {
   const theme = useTheme();
   const { openScannerLink } = useLink();
   const { params, navigate, goBack } = useAppNavigate<RoutePath.NftCollectionAsset>();
-  const { pinCollection, unpinCollection, showCollection, hideCollection } =
-    useNFTCollectionHandler();
+  const { pinCollection, unpinCollection, showCollection, hideCollection }
+    = useNFTCollectionHandler();
   const collectionAsset = params.collectionAsset;
   // A token the account only operates (e.g. a GNFT staked in GnoSwap) cannot be
   // sent by it.
@@ -54,8 +53,8 @@ export const NftCollectionAsset = (): JSX.Element => {
     refetchOnMount: true,
   });
 
-  const { data: pinnedCollections, refetch: refetchPinnedCollection } =
-    useGetGRC721PinnedCollections({
+  const { data: pinnedCollections, refetch: refetchPinnedCollection }
+    = useGetGRC721PinnedCollections({
       refetchOnMount: true,
     });
 
@@ -68,7 +67,7 @@ export const NftCollectionAsset = (): JSX.Element => {
       return false;
     }
 
-    return !!pinnedCollections.find((packagePath) => packagePath === collectionAsset.packagePath);
+    return !!pinnedCollections.find(packagePath => packagePath === collectionAsset.packagePath);
   }, [collectionAsset, pinnedCollections]);
 
   const visibleCollection = useMemo(() => {
@@ -77,7 +76,7 @@ export const NftCollectionAsset = (): JSX.Element => {
     }
 
     const currentCollection = collections.find(
-      (collection) => collection.packagePath === collectionAsset.packagePath,
+      collection => collection.packagePath === collectionAsset.packagePath,
     );
 
     if (!currentCollection) {
@@ -138,21 +137,23 @@ export const NftCollectionAsset = (): JSX.Element => {
 
       <NFTAssetImageCard asset={collectionAsset} queryGRC721TokenUri={useGetGRC721TokenUri} />
 
-      {isTransferable ? (
-        <Button
-          className='send-button'
-          bgColor={theme.primary._6}
-          fullWidth
-          onClick={onClickSend}
-          margin={'4px 0 0 0'}
-        >
-          Send
-        </Button>
-      ) : (
-        <Button className='send-button' hierarchy='dark' fullWidth disabled margin={'4px 0 0 0'}>
-          Staked GNFTs can&apos;t be transferred
-        </Button>
-      )}
+      {isTransferable
+        ? (
+            <Button
+              className='send-button'
+              bgColor={theme.primary._6}
+              fullWidth
+              onClick={onClickSend}
+              margin='4px 0 0 0'
+            >
+              Send
+            </Button>
+          )
+        : (
+            <Button className='send-button' hierarchy='dark' fullWidth disabled margin='4px 0 0 0'>
+              Staked GNFTs can&apos;t be transferred
+            </Button>
+          )}
 
       <NFTAssetMetadata
         asset={collectionAsset}

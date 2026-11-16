@@ -1,7 +1,3 @@
-import { useMemo, useState } from 'react';
-import type { JSX } from 'react';
-import styled from 'styled-components';
-
 import AddPackageIcon from '@assets/addpkg.svg';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import ContractIcon from '@assets/contract.svg';
@@ -27,6 +23,9 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import mixins from '@styles/mixins';
 import theme, { fonts, getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
+import type { JSX } from 'react';
+import { useMemo, useState } from 'react';
+import styled from 'styled-components';
 
 interface DLProps {
   color?: string;
@@ -63,8 +62,8 @@ export const TransactionDetail = (): JSX.Element => {
     };
   }, [transactionItem?.callerAddress, transactionItem?.sessionAddress]);
   const isSessionTransaction = sessionInfo !== null;
-  const tokenUriQuery =
-    transactionItem?.type === 'TRANSFER_GRC721'
+  const tokenUriQuery
+    = transactionItem?.type === 'TRANSFER_GRC721'
       ? useGetGRC721TokenUri(transactionItem.logo, '0')
       : null;
 
@@ -136,161 +135,164 @@ export const TransactionDetail = (): JSX.Element => {
     );
   };
 
-  return transactionItem ? (
-    <Wrapper>
-      <img
-        className='status-icon'
-        src={getStatusStyle(transactionItem.status).statusIcon}
-        alt='status icon'
-      />
-      <TokenBox color={getStatusStyle(transactionItem.status).color}>
-        <img
-          className='tx-symbol'
-          src={logoImage}
-          onLoad={handleLoadLogo}
-          onError={handleLogoError}
-          alt='logo image'
-        />
-        {transactionItem.type === 'TRANSFER' ? (
-          <TokenBalance
-            value={transactionItem.amount.value || '0'}
-            denom={transactionItem.amount.denom || '0'}
-            fontStyleKey='header6'
-            minimumFontSize='14px'
-            orientation='HORIZONTAL'
+  return transactionItem
+    ? (
+        <Wrapper>
+          <img
+            className='status-icon'
+            src={getStatusStyle(transactionItem.status).statusIcon}
+            alt='status icon'
           />
-        ) : (
-          <Text display={'flex'} className='main-text' type='header6'>
-            {transactionItem.title}
-            {transactionItem.extraInfo && (
-              <Text type='body2Bold' className='extra-info'>
-                {transactionItem.extraInfo}
-              </Text>
-            )}
-          </Text>
-        )}
-      </TokenBox>
-      <DataBox>
-        <DLWrap>
-          <dt>Date</dt>
-          <dd>{transactionItem.date ? getDateTimeText(transactionItem.date) : '-'}</dd>
-        </DLWrap>
-        <DLWrap>
-          <dt>Type</dt>
-          <dd>
-            {transactionItem.typeName || ''}
-            {transactionItem.extraInfo && (
-              <Text className='extra-info' type='body3Bold'>
-                {transactionItem.extraInfo}
-              </Text>
-            )}
-          </dd>
-        </DLWrap>
-        <DLWrap color={getStatusStyle(transactionItem.status).color}>
-          <dt>Status</dt>
-          <StatusInfo>
-            <dd>{transactionItem.status === 'SUCCESS' ? 'Success' : 'Fail'}</dd>
-            <dd
-              className='link-icon'
-              onClick={(): void | '' =>
-                transactionItem.hash && handleLinkClick(transactionItem.hash ?? '')
-              }
-            >
-              <IconShare />
-            </dd>
-          </StatusInfo>
-        </DLWrap>
-        {transactionItem.to && (
-          <DLWrap>
-            <dt>To</dt>
-            <dd>
-              {transactionItem.to}
-              <CopyIconButton className='copy-button' copyText={transactionItem.originTo || ''} />
-            </dd>
-          </DLWrap>
-        )}
-        {transactionItem.from && (
-          <DLWrap>
-            <dt>From</dt>
-            <dd>
-              {transactionItem.from}
-              <CopyIconButton className='copy-button' copyText={transactionItem.originFrom || ''} />
-            </dd>
-          </DLWrap>
-        )}
-        <DLWrap>
-          <dt>TxID</dt>
-          <dd>
-            {formatHash(transactionItem.hash)}
-            <CopyIconButton className='copy-button' copyText={transactionItem.hash} />
-          </dd>
-        </DLWrap>
-        <DLWrap>
-          <dt>
-            {'Storage Deposit'}
-            <InfoTooltip content={storageDepositTooltipMessage} />
-          </dt>
-          <dd>
-            <TokenBalance
-              {...convertDenom(`${storageDeposit.amountValue}`, storageDeposit.amountDenom)}
-              minimumFontSize='12px'
-              fontStyleKey='body1Reg'
-              orientation='HORIZONTAL'
-              fontColor={storageDeposit.fontColor}
-              withSign={storageDeposit.isRefundable}
+          <TokenBox color={getStatusStyle(transactionItem.status).color}>
+            <img
+              className='tx-symbol'
+              src={logoImage}
+              onLoad={handleLoadLogo}
+              onError={handleLogoError}
+              alt='logo image'
             />
-          </dd>
-        </DLWrap>
-        {transactionItem.networkFee && (
-          <DLWrap>
-            <dt>Network Fee</dt>
-            <dd>
-              <TokenBalance
-                {...convertDenom(
-                  transactionItem.networkFee.value,
-                  transactionItem.networkFee.denom,
+            {transactionItem.type === 'TRANSFER'
+              ? (
+                  <TokenBalance
+                    value={transactionItem.amount.value || '0'}
+                    denom={transactionItem.amount.denom || '0'}
+                    fontStyleKey='header6'
+                    minimumFontSize='14px'
+                    orientation='HORIZONTAL'
+                  />
+                )
+              : (
+                  <Text display='flex' className='main-text' type='header6'>
+                    {transactionItem.title}
+                    {transactionItem.extraInfo && (
+                      <Text type='body2Bold' className='extra-info'>
+                        {transactionItem.extraInfo}
+                      </Text>
+                    )}
+                  </Text>
                 )}
-                minimumFontSize='12px'
-                fontStyleKey='body1Reg'
-                orientation='HORIZONTAL'
-              />
-            </dd>
-          </DLWrap>
-        )}
-        {isSessionTransaction && sessionInfo && (
-          <>
+          </TokenBox>
+          <DataBox>
             <DLWrap>
-              <dt>Master Acc.</dt>
+              <dt>Date</dt>
+              <dd>{transactionItem.date ? getDateTimeText(transactionItem.date) : '-'}</dd>
+            </DLWrap>
+            <DLWrap>
+              <dt>Type</dt>
               <dd>
-                {formatAddress(sessionInfo.masterAddress)}
-                <CopyIconButton className='copy-button' copyText={sessionInfo.masterAddress} />
+                {transactionItem.typeName || ''}
+                {transactionItem.extraInfo && (
+                  <Text className='extra-info' type='body3Bold'>
+                    {transactionItem.extraInfo}
+                  </Text>
+                )}
+              </dd>
+            </DLWrap>
+            <DLWrap color={getStatusStyle(transactionItem.status).color}>
+              <dt>Status</dt>
+              <StatusInfo>
+                <dd>{transactionItem.status === 'SUCCESS' ? 'Success' : 'Fail'}</dd>
+                <dd
+                  className='link-icon'
+                  onClick={(): void | '' =>
+                    transactionItem.hash && handleLinkClick(transactionItem.hash ?? '')}
+                >
+                  <IconShare />
+                </dd>
+              </StatusInfo>
+            </DLWrap>
+            {transactionItem.to && (
+              <DLWrap>
+                <dt>To</dt>
+                <dd>
+                  {transactionItem.to}
+                  <CopyIconButton className='copy-button' copyText={transactionItem.originTo || ''} />
+                </dd>
+              </DLWrap>
+            )}
+            {transactionItem.from && (
+              <DLWrap>
+                <dt>From</dt>
+                <dd>
+                  {transactionItem.from}
+                  <CopyIconButton className='copy-button' copyText={transactionItem.originFrom || ''} />
+                </dd>
+              </DLWrap>
+            )}
+            <DLWrap>
+              <dt>TxID</dt>
+              <dd>
+                {formatHash(transactionItem.hash)}
+                <CopyIconButton className='copy-button' copyText={transactionItem.hash} />
               </dd>
             </DLWrap>
             <DLWrap>
-              <dt>Session Acc.</dt>
+              <dt>
+                Storage Deposit
+                <InfoTooltip content={storageDepositTooltipMessage} />
+              </dt>
               <dd>
-                {formatAddress(sessionInfo.sessionAddress)}
-                <CopyIconButton className='copy-button' copyText={sessionInfo.sessionAddress} />
+                <TokenBalance
+                  {...convertDenom(`${storageDeposit.amountValue}`, storageDeposit.amountDenom)}
+                  minimumFontSize='12px'
+                  fontStyleKey='body1Reg'
+                  orientation='HORIZONTAL'
+                  fontColor={storageDeposit.fontColor}
+                  withSign={storageDeposit.isRefundable}
+                />
               </dd>
             </DLWrap>
-          </>
-        )}
-      </DataBox>
-      <div className='button-wrapper'>
-        <Button
-          className='close-button'
-          margin='auto 0px 0px'
-          fullWidth
-          hierarchy='dark'
-          onClick={goBack}
-        >
-          <Text type='body1Bold'>Close</Text>
-        </Button>
-      </div>
-    </Wrapper>
-  ) : (
-    <></>
-  );
+            {transactionItem.networkFee && (
+              <DLWrap>
+                <dt>Network Fee</dt>
+                <dd>
+                  <TokenBalance
+                    {...convertDenom(
+                      transactionItem.networkFee.value,
+                      transactionItem.networkFee.denom,
+                    )}
+                    minimumFontSize='12px'
+                    fontStyleKey='body1Reg'
+                    orientation='HORIZONTAL'
+                  />
+                </dd>
+              </DLWrap>
+            )}
+            {isSessionTransaction && sessionInfo && (
+              <>
+                <DLWrap>
+                  <dt>Master Acc.</dt>
+                  <dd>
+                    {formatAddress(sessionInfo.masterAddress)}
+                    <CopyIconButton className='copy-button' copyText={sessionInfo.masterAddress} />
+                  </dd>
+                </DLWrap>
+                <DLWrap>
+                  <dt>Session Acc.</dt>
+                  <dd>
+                    {formatAddress(sessionInfo.sessionAddress)}
+                    <CopyIconButton className='copy-button' copyText={sessionInfo.sessionAddress} />
+                  </dd>
+                </DLWrap>
+              </>
+            )}
+          </DataBox>
+          <div className='button-wrapper'>
+            <Button
+              className='close-button'
+              margin='auto 0px 0px'
+              fullWidth
+              hierarchy='dark'
+              onClick={goBack}
+            >
+              <Text type='body1Bold'>Close</Text>
+            </Button>
+          </div>
+        </Wrapper>
+      )
+    : (
+        <></>
+      );
 };
 
 const Wrapper = styled.main`

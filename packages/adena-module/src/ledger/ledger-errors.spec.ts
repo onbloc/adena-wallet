@@ -1,4 +1,4 @@
-import { LedgerError, classifyLedgerError } from './ledger-errors';
+import { classifyLedgerError, LedgerError } from './ledger-errors';
 
 describe('LedgerError', () => {
   it('sets kind, message, name, and prototype', () => {
@@ -34,11 +34,11 @@ describe('classifyLedgerError', () => {
     ['app not open (0x6e01)', 0x6e01, 'AppNotOpen'],
     ['user rejected (0x6985)', 0x6985, 'UserRejected'],
     ['user rejected (0x6986)', 0x6986, 'UserRejected'],
-    ['timeout (0x6804)', 0x6804, 'Timeout'],
+    ['timeout (0x6804)', 0x6804, 'Timeout']
   ])('maps %s to %s via return_code', (_label, statusCode, expectedKind) => {
     const result = classifyLedgerError({
       return_code: statusCode,
-      error_message: 'some device message',
+      error_message: 'some device message'
     });
 
     expect(result).toBeInstanceOf(LedgerError);
@@ -60,7 +60,7 @@ describe('classifyLedgerError', () => {
 
   it('falls back to AppNotOpen when message mentions opening the app', () => {
     const result = classifyLedgerError(
-      new Error('App does not seem to be open, please open the Cosmos app'),
+      new Error('App does not seem to be open, please open the Cosmos app')
     );
 
     expect(result.kind).toBe('AppNotOpen');
@@ -96,7 +96,7 @@ describe('classifyLedgerError', () => {
   it('prefers status mapping over message heuristics', () => {
     const result = classifyLedgerError({
       return_code: 0x6985,
-      error_message: 'Transport was disconnected',
+      error_message: 'Transport was disconnected'
     });
 
     expect(result.kind).toBe('UserRejected');

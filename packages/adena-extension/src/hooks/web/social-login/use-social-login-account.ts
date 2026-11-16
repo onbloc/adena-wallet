@@ -1,4 +1,11 @@
 import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
+import { withPopupWindowGuard } from '@common/utils/popup-window-guard';
+import { requestSocialPrivateKey } from '@common/utils/social-login';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
+import { RoutePath } from '@types';
 import {
   AdenaWallet,
   arrayToHex,
@@ -7,14 +14,6 @@ import {
   Web3AuthKeyringType,
 } from 'adena-module';
 import { useCallback } from 'react';
-
-import { requestSocialPrivateKey } from '@common/utils/social-login';
-import { withPopupWindowGuard } from '@common/utils/popup-window-guard';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
-import { RoutePath } from '@types';
 
 /** Tells whether the login attempt that started this work still owns the flow. */
 export type IsCurrentRequest = () => boolean;
@@ -70,7 +69,7 @@ const useSocialLoginAccount = (): UseSocialLoginAccountReturn => {
       // The same social account always derives the same key.
       const publicKey = arrayToHex(account.publicKey);
       const alreadyAdded = clone.accounts.some(
-        (storedAccount) => arrayToHex(storedAccount.publicKey) === publicKey,
+        storedAccount => arrayToHex(storedAccount.publicKey) === publicKey,
       );
       if (alreadyAdded) {
         throw new DuplicateSocialAccountError();
@@ -87,7 +86,7 @@ const useSocialLoginAccount = (): UseSocialLoginAccountReturn => {
       await updateWallet(clone);
 
       // Switching after the save keeps the current account off an unsaved one.
-      const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
+      const storedAccount = clone.accounts.find(storedAccount => storedAccount.id === account.id);
       if (storedAccount) {
         await changeCurrentAccount(storedAccount);
       }
@@ -165,7 +164,8 @@ const useSocialLoginAccount = (): UseSocialLoginAccountReturn => {
       let privateKey: string;
       try {
         privateKey = await requestSocialPrivateKey(provider);
-      } finally {
+      }
+      finally {
         // The key now lives in the wallet's vault; the session is not kept.
         await provider.disconnect().catch(() => false);
       }

@@ -43,7 +43,8 @@ const wrapPopupWindow = (popup: Window): Window => {
     set(_target, property, value): boolean {
       try {
         (popup as unknown as Record<PropertyKey, unknown>)[property] = value;
-      } catch {
+      }
+      catch {
         // The window is gone, so the write has nowhere to land and no effect
         // to report — the same as writing to a window that closed.
       }
@@ -53,7 +54,8 @@ const wrapPopupWindow = (popup: Window): Window => {
     has(_target, property): boolean {
       try {
         return property in popup;
-      } catch {
+      }
+      catch {
         return false;
       }
     },
@@ -61,7 +63,8 @@ const wrapPopupWindow = (popup: Window): Window => {
     getPrototypeOf(): object | null {
       try {
         return Object.getPrototypeOf(popup);
-      } catch {
+      }
+      catch {
         return null;
       }
     },
@@ -75,7 +78,8 @@ const wrapPopupWindow = (popup: Window): Window => {
 
       try {
         value = popup[property as keyof Window];
-      } catch {
+      }
+      catch {
         if (property === 'closed') {
           // Discarded, not known to be closed. See the note above.
           return false;
@@ -102,7 +106,8 @@ const wrapPopupWindow = (popup: Window): Window => {
         }
         try {
           return (value as (...callArgs: unknown[]) => unknown).apply(popup, args);
-        } catch {
+        }
+        catch {
           return undefined;
         }
       };
@@ -146,7 +151,8 @@ export const withPopupWindowGuard = async <T>(task: () => Promise<T>): Promise<T
 
   try {
     return await task();
-  } finally {
+  }
+  finally {
     installDepth -= 1;
     if (installDepth === 0 && nativeOpen) {
       window.open = nativeOpen;

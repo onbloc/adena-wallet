@@ -1,6 +1,3 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { isSessionAccount } from 'adena-module';
-
 import { GNO_ADDRESS_PREFIX } from '@common/constants/chain.constant';
 import { shouldMarkSessionRevoked } from '@common/utils/session-chain-visibility';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
@@ -10,6 +7,8 @@ import {
   fetchSessionRecord,
   sessionRecordQueryKey,
 } from '@hooks/wallet/use-current-session-record';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { isSessionAccount } from 'adena-module';
 
 export const SESSION_REVOCATION_POLL_INTERVAL = 5_000;
 // Under the poll interval, so a record is shared within a tick but never across two.
@@ -79,7 +78,8 @@ export const useSessionRevocationWatcher = (): void => {
           () => fetchSessionRecord(gnoProvider, masterAddress, sessionAddr),
           { staleTime: SESSION_RECORD_SHARE_WINDOW },
         );
-      } catch {
+      }
+      catch {
         // Network / parse failures are not a revoke signal.
         return 'unknown';
       }
@@ -92,7 +92,7 @@ export const useSessionRevocationWatcher = (): void => {
         () =>
           gnoProvider
             .getSession(masterAddress, sessionAddr)
-            .then((res) => !!res)
+            .then(res => !!res)
             .catch(() => true), // treat a failed recheck as "still there"
       );
       if (!revoked) {
@@ -105,7 +105,8 @@ export const useSessionRevocationWatcher = (): void => {
       // while the SESSIONS row still says ACTIVE and no surface would dim.
       try {
         await sessionRepository.setStatus(sessionAddr, 'REVOKED');
-      } catch {
+      }
+      catch {
         return 'unknown';
       }
       await queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
@@ -113,9 +114,9 @@ export const useSessionRevocationWatcher = (): void => {
     },
     {
       enabled: isSession && !!gnoProvider,
-      refetchInterval: (data) =>
+      refetchInterval: data =>
         isTerminalResult(data) ? false : SESSION_REVOCATION_POLL_INTERVAL,
-      refetchOnWindowFocus: (query) => !isTerminalResult(query.state.data as WatchResult),
+      refetchOnWindowFocus: query => !isTerminalResult(query.state.data as WatchResult),
     },
   );
 };

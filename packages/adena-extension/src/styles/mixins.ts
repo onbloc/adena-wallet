@@ -20,7 +20,7 @@ export type MixinsType = {
 };
 
 const mixins: MixinsType = {
-  flex: (props) => css`
+  flex: props => css`
     display: flex;
     flex-direction: ${props?.direction || 'column'};
     align-items: ${props?.align || 'center'};

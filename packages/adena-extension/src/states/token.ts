@@ -1,6 +1,5 @@
-import { atom } from 'jotai';
-
 import { TokenModel } from '@types';
+import { atom } from 'jotai';
 
 export const tokenMetainfos = atom<TokenModel[]>([]);
 

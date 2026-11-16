@@ -92,12 +92,12 @@ describe('StorageMigration026', () => {
 
   it('refreshes NETWORKS from chains.json and drops gnoland1 and pearl-1', async () => {
     const result = await new StorageMigration026().up(makeInput({ NETWORKS: [] }));
-    const mainnet = result.data.NETWORKS.find((n) => n.chainId === 'gnoland-1');
+    const mainnet = result.data.NETWORKS.find(n => n.chainId === 'gnoland-1');
     expect(mainnet).toBeDefined();
     expect(mainnet?.main).toBe(true);
     expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
-    expect(result.data.NETWORKS.find((n) => n.chainId === 'gnoland1')).toBeUndefined();
-    expect(result.data.NETWORKS.find((n) => n.chainId === 'pearl-1')).toBeUndefined();
+    expect(result.data.NETWORKS.find(n => n.chainId === 'gnoland1')).toBeUndefined();
+    expect(result.data.NETWORKS.find(n => n.chainId === 'pearl-1')).toBeUndefined();
   });
 
   it('keeps custom networks that are not retired chains', async () => {
@@ -117,7 +117,7 @@ describe('StorageMigration026', () => {
       linkUrl: '',
     };
     const result = await new StorageMigration026().up(makeInput({ NETWORKS: [custom] }));
-    expect(result.data.NETWORKS.find((n) => n.chainId === 'custom-1')).toBeDefined();
+    expect(result.data.NETWORKS.find(n => n.chainId === 'custom-1')).toBeDefined();
   });
 
   it('removes ESTABLISH_SITES entries for retired chains and keeps the rest', async () => {

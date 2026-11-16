@@ -1,9 +1,8 @@
-import type { JSX } from 'react';
-import styled from 'styled-components';
-
 import { Button } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
+import type { JSX } from 'react';
+import styled from 'styled-components';
 
 interface GhostButtonsProps {
   left: string;

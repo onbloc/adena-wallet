@@ -1,12 +1,11 @@
-import React from 'react';
-import styled from 'styled-components';
-
 import IconLockOutline from '@assets/icon-lock-outline';
 import { formatUSD } from '@common/utils/price-utils';
 import { SkeletonBoxStyle, WarningTriangleIcon } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
 import { fonts, getTheme } from '@styles/theme';
 import { TokenValue } from '@types';
+import React from 'react';
+import styled from 'styled-components';
 
 export interface TokenListItemBalanceProps {
   amount: {
@@ -126,14 +125,16 @@ const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
       <ValuedBalance>
         <span className='usd-value'>{tokenValue ? formatUSD(tokenValue.usdValue) : '-'}</span>
         <AmountLine>
-          {locked ? (
-            <LockedAmount>
-              <IconLockOutline />
-              <span className='token-amount'>{amountText}</span>
-            </LockedAmount>
-          ) : (
-            <span className='token-amount'>{amountText}</span>
-          )}
+          {locked
+            ? (
+                <LockedAmount>
+                  <IconLockOutline />
+                  <span className='token-amount'>{amountText}</span>
+                </LockedAmount>
+              )
+            : (
+                <span className='token-amount'>{amountText}</span>
+              )}
           {trailing}
         </AmountLine>
       </ValuedBalance>
@@ -154,14 +155,16 @@ const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
   // Unpriced rows keep their single line; the padlock simply precedes it.
   return (
     <AmountLine>
-      {locked ? (
-        <LockedAmount>
-          <IconLockOutline />
-          {balance}
-        </LockedAmount>
-      ) : (
-        balance
-      )}
+      {locked
+        ? (
+            <LockedAmount>
+              <IconLockOutline />
+              {balance}
+            </LockedAmount>
+          )
+        : (
+            balance
+          )}
       {trailing}
     </AmountLine>
   );

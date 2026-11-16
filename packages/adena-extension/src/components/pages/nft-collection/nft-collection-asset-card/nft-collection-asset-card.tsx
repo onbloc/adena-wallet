@@ -2,6 +2,7 @@ import NFTCardImage from '@components/molecules/nft-card-image/nft-card-image';
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721Model } from '@types';
 import React, { useCallback, useMemo } from 'react';
+
 import { NFTCollectionAssetCardWrapper } from './nft-collection-asset-card.styles';
 
 export interface NFTCollectionAssetCardProps {

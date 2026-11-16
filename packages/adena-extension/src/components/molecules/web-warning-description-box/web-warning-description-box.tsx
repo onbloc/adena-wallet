@@ -1,8 +1,7 @@
-import React from 'react';
-import { useTheme } from 'styled-components';
-
 import IconInfo from '@assets/web/info.svg';
 import { Row, WebImg, WebText } from '@components/atoms';
+import React from 'react';
+import { useTheme } from 'styled-components';
 
 import { StyledContainer } from './web-warning-description-box.styles';
 

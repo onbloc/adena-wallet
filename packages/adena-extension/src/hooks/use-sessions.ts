@@ -1,7 +1,7 @@
+import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
 import { useQuery } from '@tanstack/react-query';
 
 import { useAdenaContext } from './use-context';
-import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
 
 export type SessionListItem = SessionMetadataV021 & { sessionAddr: string };
 

@@ -1,12 +1,12 @@
-import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
-import type { Mock } from 'vitest';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
 import { GRC721CollectionModel } from '@types';
+import React from 'react';
+import type { Mock } from 'vitest';
+
 import { useNFTCollectionHandler } from './use-collection-handler';
 import { useSyncGRC721Collections } from './use-sync-grc721-collections';
 
@@ -62,8 +62,8 @@ function setup({
 
 describe('useSyncGRC721Collections', () => {
   beforeEach(() => {
-  vi.clearAllMocks();
-});
+    vi.clearAllMocks();
+  });
 
   it('walks the indexer once and merges what it finds into storage', async () => {
     const { fetchAccountGRC721Collections, addCollections, wrapper } = setup();

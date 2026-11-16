@@ -1,7 +1,8 @@
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import React from 'react';
-import ManageTokenListItem from './manage-token-list-item';
+
 import { ManageTokenListWrapper } from './manage-token-list.styles';
+import ManageTokenListItem from './manage-token-list-item';
 
 export interface ManageTokenInfo {
   tokenId: string;

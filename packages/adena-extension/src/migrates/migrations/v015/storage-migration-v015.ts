@@ -1,17 +1,18 @@
-import { decryptAES, encryptAES } from 'adena-module';
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
+import { decryptAES, encryptAES } from 'adena-module';
+
 import {
   AccountDataModelV014,
   KeyringDataModelV014,
-  WalletModelV014,
   StorageModelDataV014,
+  WalletModelV014,
 } from '../v014/storage-model-v014';
 import {
   AccountDataModelV015,
   KeyringDataModelV015,
-  WalletModelV015,
   StorageModelDataV015,
+  WalletModelV015,
 } from './storage-model-v015';
 
 export class StorageMigration015 implements Migration<StorageModelDataV015> {
@@ -100,14 +101,15 @@ export class StorageMigration015 implements Migration<StorageModelDataV015> {
 
       const migrated: WalletModelV015 = {
         ...wallet,
-        accounts: wallet.accounts.map((account) => this.migrateAccount(account)),
-        keyrings: wallet.keyrings.map((keyring) => this.migrateKeyring(keyring)),
+        accounts: wallet.accounts.map(account => this.migrateAccount(account)),
+        keyrings: wallet.keyrings.map(keyring => this.migrateKeyring(keyring)),
       };
 
       const json = JSON.stringify(migrated);
       const encrypted = await encryptAES(json, password);
       return encrypted;
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Failed to migrate wallet:', error);
       return serialized;
     }

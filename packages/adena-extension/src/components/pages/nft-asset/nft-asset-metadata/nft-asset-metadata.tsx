@@ -1,6 +1,7 @@
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721MetadataModel, GRC721Model } from '@types';
 import React, { useMemo } from 'react';
+
 import { NFTAssetMetadataWrapper } from './nft-asset-metadata.styles';
 
 export interface NFTAssetMetadataProps {

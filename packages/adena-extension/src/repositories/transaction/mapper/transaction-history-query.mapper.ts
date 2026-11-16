@@ -5,6 +5,7 @@ import { registryKeyToTokenPath } from '@common/utils/grc20-token-path';
 import { Grc20TokenPackage, resolveGrc20TransferEvent } from '@common/utils/grc20reg-config';
 import { toHexHash } from '@common/utils/hash-utils';
 import { TransactionInfo } from '@types';
+
 import {
   AddPackageValue,
   BankSendValue,
@@ -57,8 +58,8 @@ function resolveTransferShape(
   messageValue: MsgCallValue,
   helperPath?: string,
 ): { tokenPath: string | null; argOffset: number } {
-  const isHelperTransfer =
-    !!helperPath && messageValue.func === 'Transfer' && messageValue.pkg_path === helperPath;
+  const isHelperTransfer
+    = !!helperPath && messageValue.func === 'Transfer' && messageValue.pkg_path === helperPath;
   if (!isHelperTransfer) {
     return { tokenPath: null, argOffset: 0 };
   }
@@ -81,7 +82,7 @@ function resolveTransferShape(
 // necessarily the interesting one: `tokenKey` picks the token whose history is
 // being read, and `viewerAddress` picks the transfer the account took part in.
 function attrOf(event: Event, key: string): string {
-  return (event.attrs || []).find((a) => a.key === key)?.value || '';
+  return (event.attrs || []).find(a => a.key === key)?.value || '';
 }
 
 interface DecodedGRC20Transfer {
@@ -100,7 +101,7 @@ function decodeGRC20TransferEvent(
     return null;
   }
   const tokenId = attrOf(event, schema.tokenAttr);
-  const hasValue = (event.attrs || []).some((a) => a.key === schema.valueAttr);
+  const hasValue = (event.attrs || []).some(a => a.key === schema.valueAttr);
   if (!tokenId || !hasValue) {
     return null;
   }
@@ -119,7 +120,7 @@ export function hasGRC20TransferTo(
   tokenPackages?: Grc20TokenPackage[],
 ): boolean {
   const events: Event[] = tx?.response?.events || [];
-  return events.some((event) => decodeGRC20TransferEvent(event, tokenPackages)?.to === address);
+  return events.some(event => decodeGRC20TransferEvent(event, tokenPackages)?.to === address);
 }
 
 function getGRC20TransferFromEvent(
@@ -128,19 +129,19 @@ function getGRC20TransferFromEvent(
 ): { tokenPath: string | null; from: string; to: string; value: string } | null {
   const events: Event[] = tx?.response?.events || [];
   const grc20Events = events
-    .map((event) => decodeGRC20TransferEvent(event, options?.tokenPackages))
+    .map(event => decodeGRC20TransferEvent(event, options?.tokenPackages))
     .filter((decoded): decoded is DecodedGRC20Transfer => decoded !== null);
 
   const tokenKey = options?.tokenKey;
   const viewerAddress = options?.viewerAddress;
-  const transferEvent =
-    (tokenKey
-      ? grc20Events.find((event) => event.tokenId.startsWith(`${tokenKey}.`))
-      : undefined) ??
-    (viewerAddress
-      ? grc20Events.find((event) => event.from === viewerAddress || event.to === viewerAddress)
-      : undefined) ??
-    (!tokenKey ? grc20Events[0] : undefined);
+  const transferEvent
+    = (tokenKey
+      ? grc20Events.find(event => event.tokenId.startsWith(`${tokenKey}.`))
+      : undefined)
+    ?? (viewerAddress
+      ? grc20Events.find(event => event.from === viewerAddress || event.to === viewerAddress)
+      : undefined)
+    ?? (!tokenKey ? grc20Events[0] : undefined);
   if (!transferEvent) {
     return null;
   }
@@ -177,8 +178,8 @@ export function mapTransactionEdgeByAddress(
     case 'exec':
       // receive grc20 or grc721 token
       if (
-        ['Transfer', 'TransferFrom'].includes(message.value.func) &&
-        message.value.caller !== address
+        ['Transfer', 'TransferFrom'].includes(message.value.func)
+        && message.value.caller !== address
       ) {
         return mapReceivedTransactionByMsgCall(transaction, grc20, undefined, address);
       }
@@ -490,8 +491,8 @@ export function mapVMTransaction(
     // The event names both parties, so the direction is only known once the
     // viewer is: the same transaction is a send for one side and a receive for
     // the other.
-    const isReceive =
-      !!viewerAddress && runTransfer.to === viewerAddress && runTransfer.from !== viewerAddress;
+    const isReceive
+      = !!viewerAddress && runTransfer.to === viewerAddress && runTransfer.from !== viewerAddress;
 
     return {
       hash: toHexHash(tx.hash),

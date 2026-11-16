@@ -6,7 +6,7 @@ describe('calcFee', () => {
       gasUsed: 100_000,
       gasMultiplier: 1.0,
       minBaseGasPrice: '0.025',
-      feeDenom: 'uphoton',
+      feeDenom: 'uphoton'
     });
     // gas_limit = ceil(100_000 * 1.3) = 130_000
     // amount = ceil(130_000 * 0.025 * 1.0) = 3_250
@@ -18,12 +18,12 @@ describe('calcFee', () => {
     const base = {
       gasUsed: 200_000,
       minBaseGasPrice: '0.01',
-      feeDenom: 'uphoton',
+      feeDenom: 'uphoton'
     };
     const slow = calcFee({ ...base, gasMultiplier: FEE_PRESET_MULTIPLIERS.SLOW });
     const average = calcFee({
       ...base,
-      gasMultiplier: FEE_PRESET_MULTIPLIERS.AVERAGE,
+      gasMultiplier: FEE_PRESET_MULTIPLIERS.AVERAGE
     });
     const fast = calcFee({ ...base, gasMultiplier: FEE_PRESET_MULTIPLIERS.FAST });
 
@@ -42,7 +42,7 @@ describe('calcFee', () => {
       gasUsed: 100_000,
       gasMultiplier: 1.0,
       minBaseGasPrice: '0.025000000000000000',
-      feeDenom: 'uphoton',
+      feeDenom: 'uphoton'
     });
     expect(fee.amount[0].amount).toBe('3250');
   });
@@ -52,7 +52,7 @@ describe('calcFee', () => {
       gasUsed: 1,
       gasMultiplier: 1.0,
       minBaseGasPrice: '0.5',
-      feeDenom: 'uphoton',
+      feeDenom: 'uphoton'
     });
     // gas_limit = ceil(1 * 1.3) = 2 → amount = ceil(2 * 0.5) = 1
     // switch to a value that forces rounding:
@@ -62,7 +62,7 @@ describe('calcFee', () => {
       gasUsed: 1,
       gasMultiplier: 1.0,
       minBaseGasPrice: '0.3',
-      feeDenom: 'uphoton',
+      feeDenom: 'uphoton'
     });
     // gas_limit = 2, amount = ceil(2 * 0.3) = ceil(0.6) = 1
     expect(fee2.amount[0].amount).toBe('1');
@@ -74,32 +74,32 @@ describe('calcFee', () => {
         gasUsed: 0,
         gasMultiplier: 1.0,
         minBaseGasPrice: '0.025',
-        feeDenom: 'uphoton',
-      }),
+        feeDenom: 'uphoton'
+      })
     ).toThrow(/gasUsed/);
     expect(() =>
       calcFee({
         gasUsed: 100,
         gasMultiplier: 0,
         minBaseGasPrice: '0.025',
-        feeDenom: 'uphoton',
-      }),
+        feeDenom: 'uphoton'
+      })
     ).toThrow(/gasMultiplier/);
     expect(() =>
       calcFee({
         gasUsed: 100,
         gasMultiplier: 1.0,
         minBaseGasPrice: '0.025',
-        feeDenom: '',
-      }),
+        feeDenom: ''
+      })
     ).toThrow(/feeDenom/);
     expect(() =>
       calcFee({
         gasUsed: 100,
         gasMultiplier: 1.0,
         minBaseGasPrice: 'not-a-number',
-        feeDenom: 'uphoton',
-      }),
+        feeDenom: 'uphoton'
+      })
     ).toThrow(/decimal/);
   });
 });

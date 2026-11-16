@@ -1,7 +1,3 @@
-import { AdenaLedgerConnector, Document, isLedgerAccount, LedgerError } from 'adena-module';
-import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
@@ -11,6 +7,9 @@ import { ApproveLedgerLoading } from '@components/molecules';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { AdenaLedgerConnector, Document, isLedgerAccount, LedgerError } from 'adena-module';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 interface ApproveSignTransactionLedgerLoadingState {
   requestData?: InjectionMessage;

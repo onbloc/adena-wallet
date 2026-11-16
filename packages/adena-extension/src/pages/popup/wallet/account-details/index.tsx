@@ -1,7 +1,3 @@
-import { hasPrivateKeyAccount, isSeedAccount, isSessionAccount } from 'adena-module';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
-
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import {
   WALLET_EXPORT_ACCOUNT_ID,
@@ -20,6 +16,9 @@ import { useNetwork } from '@hooks/use-network';
 import { useNetworkProfile } from '@hooks/use-network-profile';
 import { useMasterSessions } from '@hooks/wallet/use-master-sessions';
 import { RoutePath } from '@types';
+import { hasPrivateKeyAccount, isSeedAccount, isSessionAccount } from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
@@ -36,7 +35,7 @@ const AccountDetailsContainer: React.FC = () => {
   const [address, setAddress] = useState<string>('');
 
   const account = useMemo(() => {
-    return accounts.find((current) => current.id === accountId);
+    return accounts.find(current => current.id === accountId);
   }, [accounts, accountId]);
 
   const hasSeedPhrase = useMemo(() => {
@@ -74,7 +73,7 @@ const AccountDetailsContainer: React.FC = () => {
   const { entries: masterSessions } = useMasterSessions(masterAddress);
 
   const hasSessions = useMemo(() => {
-    return masterSessions.some((session) => session.status === 'ACTIVE');
+    return masterSessions.some(session => session.status === 'ACTIVE');
   }, [masterSessions]);
 
   const moveManageSessions = useCallback(() => {

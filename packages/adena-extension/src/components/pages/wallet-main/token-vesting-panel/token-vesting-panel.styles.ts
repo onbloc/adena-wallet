@@ -1,7 +1,6 @@
-import styled, { css } from 'styled-components';
-
 import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
+import styled, { css } from 'styled-components';
 
 // Design tokens local to the vesting panel — none of these exist in the theme
 // palette, and rounding them to the nearest token visibly shifts the design.
@@ -157,8 +156,8 @@ export const ProgressRow = styled.div<{ $open: boolean; $index: number }>`
   }
 
   ${({ $open }): ReturnType<typeof css> | false =>
-    !$open &&
-    css`
+    !$open
+    && css`
       > *:first-child {
         opacity: 0;
         transform: translateX(-10px);

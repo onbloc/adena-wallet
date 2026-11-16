@@ -1,23 +1,21 @@
-import BigNumber from 'bignumber.js';
-import React, { useRef, useState } from 'react';
-import type { JSX } from 'react';
-import styled from 'styled-components';
-
 import cancel from '@assets/cancel-dark.svg';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import search from '@assets/search.svg';
 import { searchTextFilter } from '@common/utils/client-utils';
 import { Button, DefaultInput, ListBox, ListHierarchy, Text } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
-import useHistoryData from '@hooks/use-history-data';
-import { useTokenBalance } from '@hooks/use-token-balance';
-import { RoutePath } from '@types';
-
 import useAppNavigate from '@hooks/use-app-navigate';
+import useHistoryData from '@hooks/use-history-data';
 import useSessionState from '@hooks/use-session-state';
+import { useTokenBalance } from '@hooks/use-token-balance';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
 import { TokenBalanceType } from '@types';
+import BigNumber from 'bignumber.js';
+import type { JSX } from 'react';
+import React, { useRef, useState } from 'react';
+import styled from 'styled-components';
 
 import { DepositList } from './deposit-list';
 
@@ -128,28 +126,28 @@ export const WalletSearch = (): JSX.Element => {
       </SearchBox>
       <DataListWrap>
         {currentBalances
-          .filter((balance) => balance.display)
+          .filter(balance => balance.display)
           .filter((balance) => {
             return (
-              searchTextFilter(balance.name ?? '', searchText) ||
-              searchTextFilter(balance.symbol ?? '', searchText)
+              searchTextFilter(balance.name ?? '', searchText)
+              || searchTextFilter(balance.symbol ?? '', searchText)
             );
           })
           .map((balance, idx) => (
             <ListBox
-              left={
+              left={(
                 <img
                   src={balance.image || `${UnknownTokenIcon}`}
                   alt='logo image'
                   className='logo'
                 />
-              }
-              center={
+              )}
+              center={(
                 <Text type='body2Bold' margin='0px auto 0px 0px'>
                   {balance.name}
                 </Text>
-              }
-              right={
+              )}
+              right={(
                 <TokenBalance
                   value={BigNumber(balance.amount.value).toFormat()}
                   denom={balance.amount.denom}
@@ -157,7 +155,7 @@ export const WalletSearch = (): JSX.Element => {
                   minimumFontSize='11px'
                   orientation='HORIZONTAL'
                 />
-              }
+              )}
               hoverAction={true}
               key={idx}
               onClick={(): void => onClickItem(balance)}

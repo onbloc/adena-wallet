@@ -1,9 +1,8 @@
-import { renderHook } from '@testing-library/react';
-import type { MockedFunction } from 'vitest';
-
 import { AccountInfo } from '@common/provider/gno';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useGetAccountInfo } from '@hooks/wallet/use-get-account-info';
+import { renderHook } from '@testing-library/react';
+import type { MockedFunction } from 'vitest';
 
 import { useVestingInfo } from './use-vesting-info';
 

@@ -67,7 +67,8 @@ async function sendMessage<T = any>(
         resolve(response ?? null);
       });
     });
-  } catch (e) {
+  }
+  catch (e) {
     console.warn('Failed to send message', e);
   }
   return null;

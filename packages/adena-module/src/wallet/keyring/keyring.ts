@@ -3,7 +3,7 @@ import {
   BroadcastTxSyncResult,
   Provider,
   Tx,
-  TxSignature,
+  TxSignature
 } from '@gnolang/tm2-js-client';
 
 import { Document, MultisigConfig, SignerPublicKeyInfo } from './../..';
@@ -16,16 +16,16 @@ import { PrivateKeyKeyring } from './private-key-keyring';
 import { SessionKeyring } from './session-keyring';
 import { Web3AuthKeyring } from './web3-auth-keyring';
 
-export type KeyringType =
-  | 'HD_WALLET'
-  | 'PRIVATE_KEY'
-  | 'LEDGER'
-  | 'WEB3_AUTH'
-  | 'WEB3_AUTH_EMAIL'
-  | 'WEB3_AUTH_X'
-  | 'AIRGAP'
-  | 'MULTISIG'
-  | 'SESSION';
+export type KeyringType
+  = | 'HD_WALLET'
+    | 'PRIVATE_KEY'
+    | 'LEDGER'
+    | 'WEB3_AUTH'
+    | 'WEB3_AUTH_EMAIL'
+    | 'WEB3_AUTH_X'
+    | 'AIRGAP'
+    | 'MULTISIG'
+    | 'SESSION';
 
 /** Provider is kept in the type for labelling. 'WEB3_AUTH' is the Google-era value. */
 export type Web3AuthKeyringType = 'WEB3_AUTH' | 'WEB3_AUTH_EMAIL' | 'WEB3_AUTH_X';
@@ -33,7 +33,7 @@ export type Web3AuthKeyringType = 'WEB3_AUTH' | 'WEB3_AUTH_EMAIL' | 'WEB3_AUTH_X
 const WEB3_AUTH_KEYRING_TYPES: readonly KeyringType[] = [
   'WEB3_AUTH',
   'WEB3_AUTH_EMAIL',
-  'WEB3_AUTH_X',
+  'WEB3_AUTH_X'
 ];
 
 export function isWeb3AuthKeyringType(type: KeyringType): type is Web3AuthKeyringType {
@@ -62,7 +62,7 @@ export interface Keyring {
   sign: (
     provider: Provider,
     document: Document,
-    hdPath?: HdPathLike,
+    hdPath?: HdPathLike
   ) => Promise<{
     signed: Tx;
     signature: TxSignature[];
@@ -70,12 +70,12 @@ export interface Keyring {
   broadcastTxSync: (
     provider: Provider,
     signedTx: Tx,
-    hdPath?: HdPathLike,
+    hdPath?: HdPathLike
   ) => Promise<BroadcastTxSyncResult>;
   broadcastTxCommit: (
     provider: Provider,
     signedTx: Tx,
-    hdPath?: HdPathLike,
+    hdPath?: HdPathLike
   ) => Promise<BroadcastTxCommitResult>;
 }
 

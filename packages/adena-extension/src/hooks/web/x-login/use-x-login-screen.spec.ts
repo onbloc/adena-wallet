@@ -1,6 +1,6 @@
+import { Web3AuthVerifier, X_VERIFIERS } from '@common/constants/web3auth.constant';
 import { renderHook } from '@testing-library/react';
 
-import { Web3AuthVerifier, X_VERIFIERS } from '@common/constants/web3auth.constant';
 import useXLoginScreen from './use-x-login-screen';
 
 // Stub out the SDK to avoid pulling in @web3auth's native crypto at test time.

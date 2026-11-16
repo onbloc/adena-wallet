@@ -1,15 +1,14 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
-import * as S from './create-multisig-account.styles';
-import { MultisigConfig } from 'adena-module';
-
-import { SignerInfo, SignerStatusType } from '@inject/types';
-
+import UnknownLogo from '@assets/common-unknown-logo.svg';
 import { Text } from '@components/atoms';
 import { BottomFixedLoadingButtonGroup } from '@components/molecules';
-import UnknownLogo from '@assets/common-unknown-logo.svg';
+import { SignerInfo, SignerStatusType } from '@inject/types';
+import { MultisigConfig } from 'adena-module';
+import React, { useCallback, useEffect, useMemo } from 'react';
+
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
-import MultisigThreshold from '../multisig-threshold/multisig-threshold';
 import DocumentSignerList from '../document-signer-list/document-signer-list';
+import MultisigThreshold from '../multisig-threshold/multisig-threshold';
+import * as S from './create-multisig-account.styles';
 
 export interface CreateMultisigAccountProps {
   loading: boolean;
@@ -47,7 +46,7 @@ export const CreateMultisigAccount: React.FC<CreateMultisigAccountProps> = ({
   }, [multisigConfig]);
 
   const signerInfos: SignerInfo[] = useMemo(() => {
-    return signerAddresses.map((address) => ({
+    return signerAddresses.map(address => ({
       address,
       status: SignerStatusType.NONE,
     }));

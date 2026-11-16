@@ -1,6 +1,6 @@
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useMultisigTransactionContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useChain } from '@hooks/use-chain';
 import { useCallback, useState } from 'react';
 
 export type SignTransactionState = 'IDLE' | 'SIGNING' | 'SUCCESS' | 'FAILED';
@@ -55,7 +55,8 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
       addSignature(newSignature);
       setSignTransactionState('SUCCESS');
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       console.error('Sign failed:', e);
       if (e instanceof Error && e.message.includes('Public key not found')) {
         setErrorMessage(e.message);

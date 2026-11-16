@@ -1,9 +1,8 @@
-import React from 'react';
+import theme from '@styles/theme';
 import { fireEvent, render, screen } from '@testing-library/react';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
 import type { Mock } from 'vitest';
-
-import theme from '@styles/theme';
 
 import SelectHardWalletScreen from './index';
 

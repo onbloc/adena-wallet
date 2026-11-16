@@ -1,8 +1,8 @@
+import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 import React from 'react';
 
-import { NetworkListWrapper } from './network-list.styles';
 import NetworkListItem from '../network-list-item/network-list-item';
-import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
+import { NetworkListWrapper } from './network-list.styles';
 
 export interface NetworkListProps {
   currentNetworkId: string;

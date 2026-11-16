@@ -1,8 +1,7 @@
-import styled from 'styled-components';
-
 import { SkeletonBoxStyle } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const ApproveLoadingWrapper = styled.div`
   ${mixins.flex({ justify: 'flex-start' })};

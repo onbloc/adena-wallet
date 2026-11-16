@@ -1,12 +1,11 @@
+import LeftArrowIcon from '@assets/arrowL-left.svg';
+import { CustomNetworkInput, SubHeader } from '@components/atoms';
+import { BottomFixedButtonGroup } from '@components/molecules';
+import type { ChainGroup } from '@hooks/use-network';
 import React, { useCallback, useMemo } from 'react';
 
-import { SubHeader, CustomNetworkInput } from '@components/atoms';
-import { BottomFixedButtonGroup } from '@components/molecules';
-import { EditNetworkWrapper } from './edit-network.styles';
-import LeftArrowIcon from '@assets/arrowL-left.svg';
-import type { ChainGroup } from '@hooks/use-network';
-
 import RemoveNetworkButton from '../remove-network-button/remove-network-button';
+import { EditNetworkWrapper } from './edit-network.styles';
 
 type FieldType = 'indexer' | 'lcd';
 
@@ -86,7 +85,7 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
         <SubHeader
           title='Edit Network'
           leftElement={{
-            element: <img src={LeftArrowIcon} alt={'back icon'} />,
+            element: <img src={LeftArrowIcon} alt='back icon' />,
             onClick: onClickBack,
           }}
         />

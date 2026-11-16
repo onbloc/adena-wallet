@@ -13,9 +13,9 @@ export interface CreateChainRegistryOptions {
 export function createChainRegistry(options: CreateChainRegistryOptions): ChainRegistry {
   const registry = new ChainRegistryImpl();
 
-  options.chains.forEach((chain) => registry.registerChain(chain));
-  options.gnoNetworkProfiles.forEach((profile) => registry.registerNetworkProfile(profile));
-  options.atomoneNetworkProfiles.forEach((profile) => registry.registerNetworkProfile(profile));
+  options.chains.forEach(chain => registry.registerChain(chain));
+  options.gnoNetworkProfiles.forEach(profile => registry.registerNetworkProfile(profile));
+  options.atomoneNetworkProfiles.forEach(profile => registry.registerNetworkProfile(profile));
 
   return registry;
 }

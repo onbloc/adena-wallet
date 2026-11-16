@@ -1,6 +1,3 @@
-import { isSessionAccount } from 'adena-module';
-import styled from 'styled-components';
-
 import NFTCollections from '@components/pages/nft/nft-collections/nft-collections';
 import NFTHeader from '@components/pages/nft/nft-header/nft-header';
 import { useNFTCollectionHandler } from '@hooks/nft/use-collection-handler';
@@ -18,8 +15,10 @@ import mixins from '@styles/mixins';
 import { revokedDimStyle } from '@styles/session-revoked';
 import { getTheme } from '@styles/theme';
 import { GRC721CollectionModel, RoutePath } from '@types';
-import { useCallback, useMemo } from 'react';
+import { isSessionAccount } from 'adena-module';
 import type { JSX } from 'react';
+import { useCallback, useMemo } from 'react';
+import styled from 'styled-components';
 
 const Wrapper = styled.main<{ $dimmed: boolean }>`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};

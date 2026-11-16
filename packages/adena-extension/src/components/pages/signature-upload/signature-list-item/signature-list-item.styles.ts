@@ -1,5 +1,5 @@
-import styled from 'styled-components';
 import { fonts } from '@styles/theme';
+import styled from 'styled-components';
 
 export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
   display: flex;

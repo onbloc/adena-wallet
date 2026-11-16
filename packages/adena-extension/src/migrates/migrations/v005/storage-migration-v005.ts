@@ -1,5 +1,6 @@
-import { Migration } from '@migrates/migrator';
 import { StorageModel } from '@common/storage';
+import { Migration } from '@migrates/migrator';
+
 import { StorageModelDataV004 } from '../v004/storage-model-v004';
 import { AddressBookModelV005, StorageModelDataV005 } from './storage-model-v005';
 
@@ -39,7 +40,7 @@ export class StorageMigration005 implements Migration<StorageModelDataV005> {
       'ACCOUNT_TOKEN_METAINFOS',
       'QUESTIONNAIRE_EXPIRED_DATE',
     ];
-    const hasKeys = Object.keys(currentData).every((dataKey) => storageDataKeys.includes(dataKey));
+    const hasKeys = Object.keys(currentData).every(dataKey => storageDataKeys.includes(dataKey));
     if (!hasKeys) {
       return false;
     }

@@ -120,8 +120,8 @@ describe('checkFeeSufficiency', () => {
 
 describe('getFeeShortfallFromSimulateError', () => {
   it('reads a storage deposit shortfall', () => {
-    const message =
-      'storage deposit processing encountered one or more errors: lockStorageDeposit failed for realm gno.land/r/gnoland/wugnot: unable to transfer deposit gno.land/r/gnoland/wugnot, insufficient coins error';
+    const message
+      = 'storage deposit processing encountered one or more errors: lockStorageDeposit failed for realm gno.land/r/gnoland/wugnot: unable to transfer deposit gno.land/r/gnoland/wugnot, insufficient coins error';
 
     expect(getFeeShortfallFromSimulateError(message)).toBe('storageDeposit');
   });

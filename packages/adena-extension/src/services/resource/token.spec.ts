@@ -1,7 +1,7 @@
+import { ITokenRepository } from '@repositories/common/types';
 import { GRC20TokenModel, NativeTokenModel, TokenModel } from '@types';
 import type { Mock } from 'vitest';
 
-import { ITokenRepository } from '@repositories/common/types';
 import { TokenService } from './token';
 
 const ACCOUNT_ID = 'account-1';

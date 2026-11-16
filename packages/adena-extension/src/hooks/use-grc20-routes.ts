@@ -1,5 +1,4 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
-
 import { Grc20RouteMap } from '@types';
 
 import { useAdenaContext } from './use-context';

@@ -1,12 +1,10 @@
-import BigNumber from 'bignumber.js';
-
+import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
 import { parseTokenPath, toRegistryKey } from '@common/utils/grc20-token-path';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
-
-import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { TokenBalanceType, TokenModel } from '@types';
+import BigNumber from 'bignumber.js';
 
 // Max token balances per batched grc20reg qeval. Keeps one request's return
 // tuple and source expression within a comfortable size.
@@ -27,7 +25,7 @@ export class WalletBalanceService {
   }
 
   public setRegistryPaths(registryPaths: string[]): void {
-    this.registryPaths = registryPaths.filter((registryPath) => !!registryPath);
+    this.registryPaths = registryPaths.filter(registryPath => !!registryPath);
   }
 
   public getGnoProvider(): GnoProvider {
@@ -101,7 +99,8 @@ export class WalletBalanceService {
           if (found?.value === 'true' && balance && /^-?\d+$/.test(balance.value)) {
             return BigInt(balance.value);
           }
-        } catch {
+        }
+        catch {
           // Fall through to the next registry / the direct-realm path below.
         }
       }
@@ -133,7 +132,7 @@ export class WalletBalanceService {
     const gnoProvider = this.getGnoProvider();
     const result: Record<string, bigint> = {};
 
-    const batchable = tokenPaths.filter((tokenPath) => toRegistryKey(tokenPath) !== null);
+    const batchable = tokenPaths.filter(tokenPath => toRegistryKey(tokenPath) !== null);
     if (this.registryPaths.length === 0 || batchable.length === 0) {
       for (const tokenPath of tokenPaths) {
         const raw = await this.getGRC20RawBalance(address, tokenPath).catch(() => null);
@@ -156,7 +155,7 @@ export class WalletBalanceService {
         pending,
       );
       Object.assign(result, resolved);
-      pending = pending.filter((tokenPath) => !(tokenPath in resolved));
+      pending = pending.filter(tokenPath => !(tokenPath in resolved));
     }
 
     for (const tokenPath of pending) {
@@ -208,7 +207,8 @@ export class WalletBalanceService {
             result[tokenPath] = BigInt(balance.value);
           }
         });
-      } catch {
+      }
+      catch {
         // Batch failed — the chunk falls back to the next registry / per-token.
       }
     }
@@ -221,7 +221,7 @@ export class WalletBalanceService {
     const denom = GNOT_TOKEN.denom;
     const balance = await gnoProvider
       .getBalance(address, denom)
-      .then((value) => ({
+      .then(value => ({
         value: value.toFixed(),
         denom,
       }))
@@ -234,8 +234,8 @@ export class WalletBalanceService {
     for (const tokenMetainfo of this.tokenMetainfos) {
       const isNativeToken = isNativeTokenModel(tokenMetainfo);
       if (
-        balance.denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase() ||
-        (isNativeToken && balance.denom.toUpperCase() === tokenMetainfo.denom.toUpperCase())
+        balance.denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase()
+        || (isNativeToken && balance.denom.toUpperCase() === tokenMetainfo.denom.toUpperCase())
       ) {
         tokenBalances.push(this.createTokenBalance(balance, tokenMetainfo));
       }
@@ -260,7 +260,7 @@ export class WalletBalanceService {
       denom: symbol.toUpperCase(),
     };
     const tokenBalance = this.tokenMetainfos.find(
-      (tokenMetainfo) => isGRC20TokenModel(tokenMetainfo) && tokenMetainfo.pkgPath === packagePath,
+      tokenMetainfo => isGRC20TokenModel(tokenMetainfo) && tokenMetainfo.pkgPath === packagePath,
     );
     if (tokenBalance) {
       return [this.createTokenBalance(balanceAmount, tokenBalance)];

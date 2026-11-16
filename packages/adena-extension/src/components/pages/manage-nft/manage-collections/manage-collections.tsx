@@ -2,6 +2,7 @@ import ManageTokenList from '@components/molecules/manage-token-list/manage-toke
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { ManageGRC721Info } from '@types';
 import React from 'react';
+
 import ManageCollectionSearchInput from '../manage-collection-search-input/manage-collection-search-input';
 import { ManageCollectionsWrapper } from './manage-collections.styles';
 

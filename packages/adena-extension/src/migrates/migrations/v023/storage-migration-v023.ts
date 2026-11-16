@@ -1,6 +1,7 @@
 import { StorageModel } from '@common/storage';
 import { toTokenPath } from '@common/utils/grc20-token-path';
 import { Migration } from '@migrates/migrator';
+
 import {
   AccountTokenMetainfoModelV022,
   StorageModelDataV022,
@@ -70,12 +71,12 @@ export class StorageMigration023 implements Migration<StorageModelDataV023> {
       'SESSIONS',
     ];
     const currentDataKeys = Object.keys(currentData);
-    if (!storageDataKeys.every((key) => currentDataKeys.includes(key))) {
+    if (!storageDataKeys.every(key => currentDataKeys.includes(key))) {
       return false;
     }
     if (
-      typeof currentData.ACCOUNT_TOKEN_METAINFOS !== 'object' ||
-      currentData.ACCOUNT_TOKEN_METAINFOS === null
+      typeof currentData.ACCOUNT_TOKEN_METAINFOS !== 'object'
+      || currentData.ACCOUNT_TOKEN_METAINFOS === null
     ) {
       return false;
     }

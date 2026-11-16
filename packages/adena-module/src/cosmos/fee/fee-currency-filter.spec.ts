@@ -1,32 +1,32 @@
 import {
-  MSG_MINT_PHOTON_TYPE_URL,
   hasMsgMintPhoton,
   isMsgMintPhoton,
+  MSG_MINT_PHOTON_TYPE_URL
 } from './fee-currency-filter';
 
 describe('fee-currency-filter', () => {
   describe('isMsgMintPhoton', () => {
     it('detects the DIRECT proto msg form', () => {
       expect(
-        isMsgMintPhoton({ typeUrl: MSG_MINT_PHOTON_TYPE_URL, value: new Uint8Array() }),
+        isMsgMintPhoton({ typeUrl: MSG_MINT_PHOTON_TYPE_URL, value: new Uint8Array() })
       ).toBe(true);
     });
 
     it('detects the AMINO msg form', () => {
       expect(
-        isMsgMintPhoton({ type: 'cosmos-sdk/MsgMintPhoton', value: {} }),
+        isMsgMintPhoton({ type: 'cosmos-sdk/MsgMintPhoton', value: {} })
       ).toBe(true);
       expect(
-        isMsgMintPhoton({ type: MSG_MINT_PHOTON_TYPE_URL, value: {} }),
+        isMsgMintPhoton({ type: MSG_MINT_PHOTON_TYPE_URL, value: {} })
       ).toBe(true);
     });
 
     it('returns false for MsgSend', () => {
       expect(
-        isMsgMintPhoton({ type: 'cosmos-sdk/MsgSend', value: {} }),
+        isMsgMintPhoton({ type: 'cosmos-sdk/MsgSend', value: {} })
       ).toBe(false);
       expect(
-        isMsgMintPhoton({ typeUrl: '/cosmos.bank.v1beta1.MsgSend' }),
+        isMsgMintPhoton({ typeUrl: '/cosmos.bank.v1beta1.MsgSend' })
       ).toBe(false);
     });
 
@@ -43,8 +43,8 @@ describe('fee-currency-filter', () => {
       expect(
         hasMsgMintPhoton([
           { type: 'cosmos-sdk/MsgSend', value: {} },
-          { typeUrl: MSG_MINT_PHOTON_TYPE_URL },
-        ]),
+          { typeUrl: MSG_MINT_PHOTON_TYPE_URL }
+        ])
       ).toBe(true);
     });
 
@@ -52,8 +52,8 @@ describe('fee-currency-filter', () => {
       expect(
         hasMsgMintPhoton([
           { type: 'cosmos-sdk/MsgSend', value: {} },
-          { typeUrl: '/cosmos.bank.v1beta1.MsgSend' },
-        ]),
+          { typeUrl: '/cosmos.bank.v1beta1.MsgSend' }
+        ])
       ).toBe(false);
     });
 

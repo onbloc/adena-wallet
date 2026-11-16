@@ -1,6 +1,3 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
@@ -16,6 +13,8 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { RoutePath } from '@types';
 import { isSessionAccount } from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const ApproveChangingNetworkContainer: React.FC = () => {
   const { search } = useLocation();
@@ -32,7 +31,7 @@ const ApproveChangingNetworkContainer: React.FC = () => {
   const changeable = useMemo(() => chainId.length > 0, [chainId]);
 
   const toNetwork = useMemo(() => {
-    return networks.find((network) => network.networkId === chainId);
+    return networks.find(network => network.networkId === chainId);
   }, [networks, chainId]);
 
   useEffect(() => {
@@ -59,13 +58,13 @@ const ApproveChangingNetworkContainer: React.FC = () => {
   };
 
   const checkLockWallet = (): void => {
-    walletService.isLocked().then((locked) => locked && navigate(RoutePath.ApproveLogin + search));
+    walletService.isLocked().then(locked => locked && navigate(RoutePath.ApproveLogin + search));
   };
 
   const onClickChangeNetwork = useCallback(async () => {
     setProcessing(true);
     const network = networks.find(
-      (network) => network.chainId === chainId && network.deleted !== true,
+      network => network.chainId === chainId && network.deleted !== true,
     );
     if (!network) {
       setResponse(

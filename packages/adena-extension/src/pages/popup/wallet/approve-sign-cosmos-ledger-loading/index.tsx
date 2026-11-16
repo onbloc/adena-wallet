@@ -3,9 +3,6 @@ import {
   WalletResponseRejectType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
-import { AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
-import React, { useEffect, useRef, useState } from 'react';
-
 import { ApproveLedgerLoading } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
@@ -13,6 +10,8 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage } from '@inject/message';
 import { CosmosResponseExecuteType } from '@inject/types';
 import { RoutePath } from '@types';
+import { AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
+import React, { useEffect, useRef, useState } from 'react';
 
 // Duplicated from approve-sign-cosmos/index.tsx and inject/message/methods/
 // cosmos.ts because the SDK's `WalletMessageInfo` table still throws on
@@ -97,7 +96,8 @@ const ApproveSignCosmosLedgerLoadingContainer: React.FC = () => {
       );
       window.close();
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       const message = (error as Error)?.message ?? String(error);
       if (error instanceof LedgerError && error.kind === 'UserRejected') {
         chrome.runtime.sendMessage(

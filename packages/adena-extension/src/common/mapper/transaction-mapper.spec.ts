@@ -1,4 +1,5 @@
 import { EMessageType } from '@inject/types';
+
 import {
   mappedDocumentMessagesWithCaller,
   mappedTransactionMessages,
@@ -74,7 +75,7 @@ describe('mappedTransactionMessages', () => {
       },
     ]);
 
-    expect(messages.map((message) => message.type)).toEqual([
+    expect(messages.map(message => message.type)).toEqual([
       EMessageType.AUTH_CREATE_SESSION,
       EMessageType.AUTH_REVOKE_SESSION,
       EMessageType.AUTH_REVOKE_ALL_SESSIONS,

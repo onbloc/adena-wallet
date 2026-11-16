@@ -1,9 +1,9 @@
-import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
+import { TokenPriceMap } from '@types';
+import React from 'react';
 import type { Mock } from 'vitest';
 
-import { TokenPriceMap } from '@types';
 import { useAdenaContext } from './use-context';
 import { useTokenPrices } from './use-token-prices';
 
@@ -33,8 +33,8 @@ function makeWrapper(): React.FC<React.PropsWithChildren<unknown>> {
 
 describe('useTokenPrices', () => {
   beforeEach(() => {
-  vi.clearAllMocks();
-});
+    vi.clearAllMocks();
+  });
 
   it('returns the quotes for the requested tokens', async () => {
     mockService('https://api.onbloc.xyz', MAINNET_PRICES);

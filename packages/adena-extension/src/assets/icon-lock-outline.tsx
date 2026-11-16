@@ -1,5 +1,5 @@
-import React from 'react';
 import type { JSX } from 'react';
+import React from 'react';
 
 // Outline padlock used to mark a vesting-locked balance. `currentColor` lets
 // the same icon serve the token row (neutral.a) and the vesting panel's

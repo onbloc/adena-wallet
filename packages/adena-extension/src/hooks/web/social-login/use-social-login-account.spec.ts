@@ -1,8 +1,8 @@
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
 import { renderHook, waitFor } from '@testing-library/react';
 import { AdenaWallet, SingleAccount, Web3AuthKeyring } from 'adena-module';
 import type { Mock } from 'vitest';
 
-import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
 import useSocialLoginAccount from './use-social-login-account';
 
 // Stub out the SDK to avoid pulling in @web3auth's native crypto at test time.

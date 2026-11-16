@@ -1,9 +1,7 @@
-import React, { useCallback } from 'react';
-
 import IconLoadingCircle from '@assets/web/loading-circle.svg';
 import { WebImg, WebText } from '@components/atoms';
+import React, { useCallback } from 'react';
 
-import SelectAccountBoxItem from './select-account-box-item';
 import {
   StyledActionButton,
   StyledActionLabel,
@@ -13,6 +11,7 @@ import {
   StyledSelectAccountContent,
 } from './select-account-box.styles';
 import { AccountInfo } from './select-account-box.types';
+import SelectAccountBoxItem from './select-account-box-item';
 
 export interface SelectAccountBoxProps {
   isLoading: boolean;
@@ -47,13 +46,15 @@ const SelectAccountBox: React.FC<SelectAccountBoxProps> = ({
   return (
     <StyledSelectAccountBox>
       <StyledSelectAccountContent>
-        {hasAccount ? (
-          accounts.map((account, index) => (
-            <SelectAccountBoxItem key={index} account={account} select={select} />
-          ))
-        ) : (
-          <WebText type='body4'>No data to display</WebText>
-        )}
+        {hasAccount
+          ? (
+              accounts.map((account, index) => (
+                <SelectAccountBoxItem key={index} account={account} select={select} />
+              ))
+            )
+          : (
+              <WebText type='body4'>No data to display</WebText>
+            )}
       </StyledSelectAccountContent>
 
       <StyledActionRow>

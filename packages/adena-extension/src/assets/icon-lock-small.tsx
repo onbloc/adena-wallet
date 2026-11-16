@@ -1,6 +1,5 @@
-/* eslint-disable @eslint-react/dom-no-unknown-property */
-import React from 'react';
 import type { JSX } from 'react';
+import React from 'react';
 
 const IconLockSmall = (): JSX.Element => (
   <svg width='10' height='11' viewBox='0 0 10 11' fill='none' xmlns='http://www.w3.org/2000/svg'>

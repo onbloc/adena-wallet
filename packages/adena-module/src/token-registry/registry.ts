@@ -16,6 +16,6 @@ export class TokenRegistryImpl implements TokenRegistry {
     if (chainProfileId === undefined) {
       return all;
     }
-    return all.filter((token) => token.chainProfileId === chainProfileId);
+    return all.filter(token => token.chainProfileId === chainProfileId);
   }
 }

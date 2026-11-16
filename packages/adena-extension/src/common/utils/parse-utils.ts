@@ -11,8 +11,8 @@ export const parseGRC20ByABCIRender = (
     throw new Error('failed parse grc20 token render');
   }
 
-  const regex =
-    /#\s(?<tokenName>.+)\s\(\$(?<tokenSymbol>.+)\)\s*\* \*\*Decimals\*\*: (?<tokenDecimals>\d+)\s*\* \*\*Total supply\*\*: (?<totalSupply>\d+)\s*\* \*\*Known accounts\*\*: (?<knownAccounts>\d+)/;
+  const regex
+    = /#\s(?<tokenName>.+)\s\(\$(?<tokenSymbol>.+)\)\s*\* \*\*Decimals\*\*: (?<tokenDecimals>\d+)\s*\* \*\*Total supply\*\*: (?<totalSupply>\d+)\s*\* \*\*Known accounts\*\*: (?<knownAccounts>\d+)/;
 
   const match = response.match(regex);
 
@@ -80,7 +80,7 @@ export const parseGRC20ByFileContents = (
     return null;
   }
 
-  const args = matchLine.split(',').map((arg) => arg.trim());
+  const args = matchLine.split(',').map(arg => arg.trim());
   if (args.length < 3) {
     return null;
   }

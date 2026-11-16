@@ -1,7 +1,7 @@
-import React from 'react';
-import * as S from './document-signer.styles';
-
 import IconRight from '@assets/icon-right';
+import React from 'react';
+
+import * as S from './document-signer.styles';
 
 interface DocumentSignerProps {
   signerCount: number;
@@ -16,7 +16,7 @@ const DocumentSigner = ({
   return (
     <S.DocumentSignersContainer>
       <S.DocumentSignersWrapper>
-        <span className='key'>{'Signer'}</span>
+        <span className='key'>Signer</span>
 
         <div className='document-signers-amount-wrapper'>
           <span className='value'>{signerCount}</span>

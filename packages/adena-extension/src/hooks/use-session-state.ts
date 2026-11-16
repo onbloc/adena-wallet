@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
-
-import { ChromeSessionStorage } from '@common/storage/chrome-session-storage';
 import { POPUP_SESSION_DATA_KEY } from '@common/constants/storage.constant';
+import { ChromeSessionStorage } from '@common/storage/chrome-session-storage';
+import { useQuery } from '@tanstack/react-query';
 import { RouteParams } from '@types';
+
 import useAppNavigate from './use-app-navigate';
 
 const useSessionParams = <RouteName extends keyof RouteParams>(): {
@@ -17,7 +17,8 @@ const useSessionParams = <RouteName extends keyof RouteParams>(): {
       try {
         const isPopup = (await chrome.windows.getCurrent()).type === 'popup';
         return isPopup;
-      } catch {
+      }
+      catch {
         return null;
       }
     },
@@ -36,7 +37,8 @@ const useSessionParams = <RouteName extends keyof RouteParams>(): {
       try {
         const sessionState = await new ChromeSessionStorage().get(POPUP_SESSION_DATA_KEY);
         return JSON.parse(sessionState) as RouteParams[RouteName];
-      } catch {
+      }
+      catch {
         return null;
       }
     },

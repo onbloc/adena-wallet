@@ -1,7 +1,8 @@
-import { Wallet } from 'adena-module';
 import { WalletRepository } from '@repositories/wallet';
-import { WalletService } from './wallet';
+import { Wallet } from 'adena-module';
 import type { Mock } from 'vitest';
+
+import { WalletService } from './wallet';
 
 type MockRepository = WalletRepository & { [key: string]: Mock };
 

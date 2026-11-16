@@ -1,7 +1,8 @@
-import { decryptAES, encryptXChacha20, generateKdfSalt } from 'adena-module';
-import CryptoJS from 'crypto-js';
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
+import { decryptAES, encryptXChacha20, generateKdfSalt } from 'adena-module';
+import CryptoJS from 'crypto-js';
+
 import { StorageModelDataV017 } from '../v017/storage-model-v017';
 import { StorageModelDataV018 } from './storage-model-v018';
 
@@ -153,7 +154,8 @@ export class StorageMigration018 implements Migration<StorageModelDataV018> {
         if (isLegacyPlaintext(plaintext)) {
           return plaintext;
         }
-      } catch {
+      }
+      catch {
         // Try the next candidate key.
       }
     }
@@ -184,7 +186,8 @@ function isLegacyPlaintext(plaintext: string): boolean {
   try {
     const parsed = JSON.parse(plaintext);
     return typeof parsed === 'object' && parsed !== null;
-  } catch {
+  }
+  catch {
     return false;
   }
 }

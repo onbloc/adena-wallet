@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+
 import path from 'path';
 
 import { withPopupWindowGuard } from './popup-window-guard';

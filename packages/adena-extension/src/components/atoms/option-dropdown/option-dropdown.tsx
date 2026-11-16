@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+
 import { OptionDropdownItemWrapper, OptionDropdownWrapper } from './option-dropdown.styles';
 
 interface OptionItem {

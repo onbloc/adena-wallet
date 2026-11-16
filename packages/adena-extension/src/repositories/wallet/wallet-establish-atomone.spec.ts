@@ -1,7 +1,8 @@
 import { StorageManager } from '@common/storage/storage-manager';
+import type { Mock } from 'vitest';
+
 import { EstablishSite } from './wallet-establish';
 import { WalletEstablishAtomOneRepository } from './wallet-establish-atomone';
-import type { Mock } from 'vitest';
 
 describe('WalletEstablishAtomOneRepository', () => {
   let repository: WalletEstablishAtomOneRepository;

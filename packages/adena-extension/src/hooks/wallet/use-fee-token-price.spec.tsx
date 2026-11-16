@@ -1,9 +1,8 @@
-import { renderHook } from '@testing-library/react';
-import type { MockedFunction } from 'vitest';
-
 import { useNetwork } from '@hooks/use-network';
 import { useTokenPrices } from '@hooks/use-token-prices';
+import { renderHook } from '@testing-library/react';
 import { TokenPrice } from '@types';
+import type { MockedFunction } from 'vitest';
 
 import { useFeeTokenPrice } from './use-fee-token-price';
 

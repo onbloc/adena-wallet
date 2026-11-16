@@ -3,11 +3,10 @@ import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { AppInfoResponse } from '@repositories/common/response';
 import { ITokenRepository } from '@repositories/common/types';
-
 import {
   AccountTokenBalance,
-  GRC20TokenModel,
   Grc20RouteMap,
+  GRC20TokenModel,
   GRC721CollectionModel,
   GRC721MetadataModel,
   GRC721Model,
@@ -68,8 +67,8 @@ export class TokenService {
     ]);
 
     return tokens
-      .filter((token) => !!token)
-      .map((token) => this.overlayResourceMetainfo(token, resourceTokens));
+      .filter(token => !!token)
+      .map(token => this.overlayResourceMetainfo(token, resourceTokens));
   }
 
   /**
@@ -87,7 +86,7 @@ export class TokenService {
 
     return {
       ...page,
-      items: page.items.map((token) => this.overlayResourceMetainfo(token, resourceTokens)),
+      items: page.items.map(token => this.overlayResourceMetainfo(token, resourceTokens)),
     };
   }
 
@@ -113,7 +112,8 @@ export class TokenService {
     // Validate the realm (packagePath) component.
     try {
       parseReamPathItemsByPath(parsed.packagePath);
-    } catch {
+    }
+    catch {
       return null;
     }
 
@@ -144,7 +144,7 @@ export class TokenService {
       this.fetchResourceTokenMetainfos(),
     ]);
 
-    return tokens?.map((token) => this.overlayResourceMetainfo(token, resourceTokens)) ?? null;
+    return tokens?.map(token => this.overlayResourceMetainfo(token, resourceTokens)) ?? null;
   }
 
   /**
@@ -164,11 +164,11 @@ export class TokenService {
    * @returns
    */
   public async initAccountTokenMetainfos(accountId: string): Promise<boolean> {
-    const fetchedTokenMetainfos = (await this.fetchTokenMetainfos()).filter((token) => token.main);
+    const fetchedTokenMetainfos = (await this.fetchTokenMetainfos()).filter(token => token.main);
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
     await this.tokenRepository.updateTokenMetainfos(accountId, [
       ...fetchedTokenMetainfos.map((token1) => {
-        const previousInfo = storedTokenMetainfos.find((token2) =>
+        const previousInfo = storedTokenMetainfos.find(token2 =>
           this.equalsToken(token1, token2),
         );
         if (previousInfo) {
@@ -180,8 +180,8 @@ export class TokenService {
         }
         return token1;
       }),
-      ...storedTokenMetainfos.filter((token1) =>
-        fetchedTokenMetainfos.every((token2) => !this.equalsToken(token1, token2)),
+      ...storedTokenMetainfos.filter(token1 =>
+        fetchedTokenMetainfos.every(token2 => !this.equalsToken(token1, token2)),
       ),
     ]);
     return true;
@@ -198,7 +198,7 @@ export class TokenService {
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
     const resourceTokenMetainfos = await this.fetchResourceTokenMetainfos();
 
-    return storedTokenMetainfos.map((token) =>
+    return storedTokenMetainfos.map(token =>
       this.overlayResourceMetainfo(token, resourceTokenMetainfos),
     );
   }
@@ -215,7 +215,7 @@ export class TokenService {
     tokenMetainfos: TokenModel[],
   ): Promise<boolean> {
     const resourceTokenMetainfos = await this.fetchResourceTokenMetainfos();
-    const changedTokenMetaInfos = tokenMetainfos.map((token) =>
+    const changedTokenMetaInfos = tokenMetainfos.map(token =>
       this.overlayResourceMetainfo(token, resourceTokenMetainfos),
     );
     await this.tokenRepository.updateTokenMetainfos(accountId, changedTokenMetaInfos);
@@ -459,7 +459,7 @@ export class TokenService {
    */
   private overlayResourceMetainfo<T extends TokenModel>(token: T, resourceTokens: TokenModel[]): T {
     const resource = resourceTokens.find(
-      (candidate) => candidate.networkId === token.networkId && this.equalsToken(token, candidate),
+      candidate => candidate.networkId === token.networkId && this.equalsToken(token, candidate),
     );
     if (!resource) {
       return token;

@@ -1,5 +1,6 @@
-import GRC20REG_DATA from '@resources/chains/grc20reg.json';
 import CHAIN_DATA from '@resources/chains/chains.json';
+import GRC20REG_DATA from '@resources/chains/grc20reg.json';
+
 import {
   DEFAULT_GRC20_TRANSFER_EVENT,
   getGrc20RegConfig,
@@ -23,7 +24,7 @@ describe('grc20reg-config', () => {
 
   it('describes every token package version with its event shape', () => {
     const { tokenPackages } = getGrc20RegConfig('gnoland-1');
-    expect(tokenPackages.map((tokenPackage) => tokenPackage.path)).toEqual([
+    expect(tokenPackages.map(tokenPackage => tokenPackage.path)).toEqual([
       'gno.land/p/nt/grc20/v0',
     ]);
     tokenPackages.forEach((tokenPackage) => {

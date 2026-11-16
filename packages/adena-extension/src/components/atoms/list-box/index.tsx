@@ -1,8 +1,7 @@
-import React, { ReactElement } from 'react';
-import styled, { css, CSSProperties } from 'styled-components';
-
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import React, { ReactElement } from 'react';
+import styled, { css, CSSProperties } from 'styled-components';
 
 export enum ListHierarchy {
   Default = 'default',

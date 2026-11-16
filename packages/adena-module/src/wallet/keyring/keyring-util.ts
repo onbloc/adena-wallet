@@ -3,12 +3,12 @@ import { Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 import { decodeTxMessages, Document, documentToTx } from './../../utils/messages';
 import { AddressKeyring } from './address-keyring';
 import { HDWalletKeyring } from './hd-wallet-keyring';
-import { Keyring, isWeb3AuthKeyringType } from './keyring';
+import { isWeb3AuthKeyringType, Keyring } from './keyring';
 import { LedgerKeyring } from './ledger-keyring';
-import { PrivateKeyKeyring } from './private-key-keyring';
-import { Web3AuthKeyring } from './web3-auth-keyring';
 import { MultisigKeyring } from './multisig-keyring';
+import { PrivateKeyKeyring } from './private-key-keyring';
 import { SessionKeyring } from './session-keyring';
+import { Web3AuthKeyring } from './web3-auth-keyring';
 
 export function isHDWalletKeyring(keyring: Keyring): keyring is HDWalletKeyring {
   return keyring.type === 'HD_WALLET';
@@ -39,7 +39,7 @@ export function isSessionKeyring(keyring: Keyring): keyring is SessionKeyring {
 }
 
 export function hasPrivateKey(
-  keyring: Keyring,
+  keyring: Keyring
 ): keyring is HDWalletKeyring | PrivateKeyKeyring | Web3AuthKeyring | SessionKeyring {
   if (isHDWalletKeyring(keyring)) {
     return true;
@@ -66,6 +66,6 @@ export function makeSignedTx(wallet: Tm2Wallet, document: Document): Promise<Tx>
 
   return wallet.signTransaction(tx, decodeTxMessageFunction, {
     ...(document.account_number && { accountNumber: document.account_number }),
-    ...(document.sequence && { sequence: document.sequence }),
+    ...(document.sequence && { sequence: document.sequence })
   });
 }

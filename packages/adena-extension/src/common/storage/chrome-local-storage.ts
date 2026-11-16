@@ -1,30 +1,31 @@
 import { CommonError } from '@common/errors/common';
 import { StorageMigrator, StorageModelLatest } from '@migrates/storage-migrator';
+
 import { Storage } from '.';
 
 // Define the valid types of storage keys
-type StorageKeyTypes =
-  | 'NETWORKS'
-  | 'ATOMONE_NETWORKS'
-  | 'NETWORK_MODE'
-  | 'CURRENT_CHAIN_ID'
-  | 'CURRENT_NETWORK_ID'
-  | 'CURRENT_ATOMONE_NETWORK_ID'
-  | 'SERIALIZED'
-  | 'CURRENT_ACCOUNT_ID'
-  | 'ACCOUNT_NAMES'
-  | 'ESTABLISH_SITES'
-  | 'ESTABLISH_ATOMONE_SITES'
-  | 'ADDRESS_BOOK'
-  | 'ACCOUNT_TOKEN_METAINFOS'
-  | 'QUESTIONNAIRE_EXPIRED_DATE'
-  | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
-  | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
-  | 'ACCOUNT_GRC721_COLLECTIONS'
-  | 'ACCOUNT_GRC721_PINNED_PACKAGES'
-  | 'KDF_SALT'
-  | 'AUTO_LOCK_TIMEOUT_MINUTES'
-  | 'SESSIONS';
+type StorageKeyTypes
+  = | 'NETWORKS'
+    | 'ATOMONE_NETWORKS'
+    | 'NETWORK_MODE'
+    | 'CURRENT_CHAIN_ID'
+    | 'CURRENT_NETWORK_ID'
+    | 'CURRENT_ATOMONE_NETWORK_ID'
+    | 'SERIALIZED'
+    | 'CURRENT_ACCOUNT_ID'
+    | 'ACCOUNT_NAMES'
+    | 'ESTABLISH_SITES'
+    | 'ESTABLISH_ATOMONE_SITES'
+    | 'ADDRESS_BOOK'
+    | 'ACCOUNT_TOKEN_METAINFOS'
+    | 'QUESTIONNAIRE_EXPIRED_DATE'
+    | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
+    | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
+    | 'ACCOUNT_GRC721_COLLECTIONS'
+    | 'ACCOUNT_GRC721_PINNED_PACKAGES'
+    | 'KDF_SALT'
+    | 'AUTO_LOCK_TIMEOUT_MINUTES'
+    | 'SESSIONS';
 
 // List of all available storage keys
 const StorageKeys: StorageKeyTypes[] = [
@@ -53,7 +54,7 @@ const StorageKeys: StorageKeyTypes[] = [
 
 // Function to validate if a given key is a valid storage key
 function isStorageKey(key: string): key is StorageKeyTypes {
-  return StorageKeys.some((storageKey) => storageKey === key);
+  return StorageKeys.some(storageKey => storageKey === key);
 }
 
 // Class to handle Chrome's local storage with migration support

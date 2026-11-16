@@ -8,10 +8,11 @@ import { EventMessage } from '@inject/message/event-message';
 import { WalletState } from '@states';
 import { useQuery } from '@tanstack/react-query';
 import { Account } from 'adena-module';
-import { useCallback } from 'react';
 import { useAtom } from 'jotai';
-import { useAdenaContext, useWalletContext } from './use-context';
+import { useCallback } from 'react';
+
 import { useChain } from './use-chain';
+import { useAdenaContext, useWalletContext } from './use-context';
 import { useEvent } from './use-event';
 import { useNetwork } from './use-network';
 import { useSessions } from './use-sessions';

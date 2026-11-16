@@ -3,22 +3,19 @@ import {
   WalletResponseRejectType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
-import { fromBech32 } from '@cosmjs/encoding';
-import { compressPubkeyIfNeeded, isSessionAccount } from 'adena-module';
-
 import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
-import { bytesToBase64 } from '@common/utils/encoding-util';
+import { getSiteName } from '@common/utils/client-utils';
 import {
   deserializeSignDoc,
   deserializeTxBytes,
 } from '@common/utils/cosmos-serialize';
-import { getSiteName } from '@common/utils/client-utils';
+import { bytesToBase64 } from '@common/utils/encoding-util';
 import {
   validateAminoSignDoc,
   validateCosmosChainId,
   validateSerializedSignDoc,
 } from '@common/validation/validation-cosmos';
-import { RoutePath } from '@types';
+import { fromBech32 } from '@cosmjs/encoding';
 import {
   CosmosResponseExecuteType,
   EnableCosmosParams,
@@ -27,6 +24,8 @@ import {
   SignCosmosAminoParams,
   SignCosmosDirectParams,
 } from '@inject/types';
+import { RoutePath } from '@types';
+import { compressPubkeyIfNeeded, isSessionAccount } from 'adena-module';
 
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
@@ -59,7 +58,7 @@ function normalizeChainIds(value: unknown): string[] | null {
   if (typeof value === 'string') {
     return value.length > 0 ? [value] : null;
   }
-  if (Array.isArray(value) && value.every((v) => typeof v === 'string' && v.length > 0)) {
+  if (Array.isArray(value) && value.every(v => typeof v === 'string' && v.length > 0)) {
     return value;
   }
   return null;
@@ -96,7 +95,7 @@ export const cosmosEnable = async (
 
     // Reject the entire request if any requested chainId is outside the atomone
     // group — AtomOne-only scope established in Stage 1.
-    if (chainIds.some((id) => !validateCosmosChainId(id, core.chainRegistry))) {
+    if (chainIds.some(id => !validateCosmosChainId(id, core.chainRegistry))) {
       sendResponse(
         createCosmosResponse(
           CosmosResponseExecuteType.ENABLE_COSMOS,
@@ -115,7 +114,7 @@ export const cosmosEnable = async (
     // Short-circuit if every requested chainId is already connected — parallels
     // the Gno ALREADY_CONNECTED early-return so repeat enable calls are cheap.
     const alreadyConnected = await Promise.all(
-      chainIds.map((chainId) =>
+      chainIds.map(chainId =>
         core.establishAtomOneService.isEstablishedBy(accountId, hostname, chainId),
       ),
     );
@@ -138,7 +137,8 @@ export const cosmosEnable = async (
       ),
       sendResponse,
     );
-  } catch (error) {
+  }
+  catch (error) {
     console.warn('[cosmosEnable] unexpected error:', error);
     sendResponse(
       createCosmosResponse(
@@ -259,7 +259,8 @@ export const cosmosGetKey = async (
         isNanoLedger: currentAccount.type === 'LEDGER',
       }),
     );
-  } catch (error) {
+  }
+  catch (error) {
     console.warn('[cosmosGetKey] unexpected error:', error);
     sendResponse(
       createCosmosResponse(
@@ -289,9 +290,9 @@ export const cosmosSignAmino = async (
     }
     const params = (message.data ?? {}) as SignCosmosAminoParams;
     if (
-      typeof params.chainId !== 'string' ||
-      typeof params.signer !== 'string' ||
-      !validateAminoSignDoc(params.signDoc)
+      typeof params.chainId !== 'string'
+      || typeof params.signer !== 'string'
+      || !validateAminoSignDoc(params.signDoc)
     ) {
       sendResponse(
         createCosmosResponse(
@@ -324,7 +325,8 @@ export const cosmosSignAmino = async (
       ),
       sendResponse,
     );
-  } catch (error) {
+  }
+  catch (error) {
     console.warn('[cosmosSignAmino] unexpected error:', error);
     sendResponse(
       createCosmosResponse(
@@ -354,9 +356,9 @@ export const cosmosSignDirect = async (
     }
     const params = (message.data ?? {}) as SignCosmosDirectParams;
     if (
-      typeof params.chainId !== 'string' ||
-      typeof params.signer !== 'string' ||
-      !validateSerializedSignDoc(params.signDoc)
+      typeof params.chainId !== 'string'
+      || typeof params.signer !== 'string'
+      || !validateSerializedSignDoc(params.signDoc)
     ) {
       sendResponse(
         createCosmosResponse(
@@ -390,7 +392,8 @@ export const cosmosSignDirect = async (
       ),
       sendResponse,
     );
-  } catch (error) {
+  }
+  catch (error) {
     console.warn('[cosmosSignDirect] unexpected error:', error);
     sendResponse(
       createCosmosResponse(
@@ -420,9 +423,9 @@ export const cosmosSendTx = async (
     }
     const params = (message.data ?? {}) as SendCosmosTxParams;
     if (
-      typeof params.chainId !== 'string' ||
-      typeof params.tx !== 'string' ||
-      typeof params.mode !== 'string'
+      typeof params.chainId !== 'string'
+      || typeof params.tx !== 'string'
+      || typeof params.mode !== 'string'
     ) {
       sendResponse(
         createCosmosResponse(
@@ -444,7 +447,7 @@ export const cosmosSendTx = async (
 
     const profile = core.chainRegistry
       .listNetworkProfilesByChain('atomone')
-      .find((p) => p.chainId === params.chainId);
+      .find(p => p.chainId === params.chainId);
     if (!profile || profile.chainType !== 'cosmos') {
       sendResponse(
         createCosmosResponse(
@@ -470,7 +473,8 @@ export const cosmosSendTx = async (
           height: response.height,
         }),
       );
-    } catch (error) {
+    }
+    catch (error) {
       sendResponse(
         createCosmosResponse(
           CosmosResponseExecuteType.SEND_COSMOS_TX,
@@ -481,7 +485,8 @@ export const cosmosSendTx = async (
         ),
       );
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.warn('[cosmosSendTx] unexpected error:', error);
     sendResponse(
       createCosmosResponse(

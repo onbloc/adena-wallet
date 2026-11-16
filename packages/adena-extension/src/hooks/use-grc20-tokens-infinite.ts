@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { GRC20TokenModel } from '@types';
 import { useMemo } from 'react';
 
-import { GRC20TokenModel } from '@types';
 import { useAdenaContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
@@ -36,7 +36,7 @@ export const useGRC20TokensInfinite = () => {
   });
 
   const tokens = useMemo(
-    () => query.data?.pages.flatMap((page) => page.items) ?? [],
+    () => query.data?.pages.flatMap(page => page.items) ?? [],
     [query.data],
   );
 

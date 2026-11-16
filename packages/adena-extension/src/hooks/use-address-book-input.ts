@@ -1,10 +1,9 @@
-import { isSessionAccount, validateCosmosAddress } from 'adena-module';
-import { useCallback, useEffect, useState } from 'react';
-
-import { inferChainGroup } from '@common/utils/address-chain';
 import { getWalletFundingAddress } from '@common/utils/account-address';
+import { inferChainGroup } from '@common/utils/address-chain';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { AddressBookItem } from '@repositories/wallet';
+import { isSessionAccount, validateCosmosAddress } from 'adena-module';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useAccountName } from './use-account-name';
 import { useChain } from './use-chain';
@@ -88,8 +87,8 @@ export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHook
       }
     }
     const addressBookInfos = addressBooks
-      .filter((addressBook) => addressBook.address !== currentAddress)
-      .filter((addressBook) => inferChainGroup(addressBook.address, chainRegistry) === chainGroup)
+      .filter(addressBook => addressBook.address !== currentAddress)
+      .filter(addressBook => inferChainGroup(addressBook.address, chainRegistry) === chainGroup)
       .map((addressBook) => {
         return {
           addressBookId: addressBook.id,
@@ -128,7 +127,8 @@ export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHook
         setAddress('');
         setSelectedAddressBook(null);
         setOpened(false);
-      } else {
+      }
+      else {
         setOpened(!opened);
       }
     },
@@ -152,7 +152,7 @@ export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHook
   const onClickAddressBook = useCallback(
     async (addressBookId: string) => {
       const selectedAddressBook = addressBooks.find(
-        (addressBook) => addressBook.id === addressBookId,
+        addressBook => addressBook.id === addressBookId,
       );
       if (selectedAddressBook) {
         clearError();
@@ -161,7 +161,7 @@ export const useAddressBookInput = (chainGroup = 'gno'): UseAddressBookInputHook
         setSelectedAddressBook(selectedAddressBook);
         return;
       }
-      const selectedAccount = wallet?.accounts.find((account) => account.id === addressBookId);
+      const selectedAccount = wallet?.accounts.find(account => account.id === addressBookId);
       if (selectedAccount) {
         clearError();
         setOpened(false);

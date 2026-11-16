@@ -1,11 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
-import React, { PropsWithChildren } from 'react';
-import type { JSX } from 'react';
-import type { Mock } from 'vitest';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import type { JSX } from 'react';
+import React, { PropsWithChildren } from 'react';
+import type { Mock } from 'vitest';
+
 import { useAccountChainAddresses } from './use-account-chain-addresses';
 
 vi.mock('@hooks/use-context', () => ({
@@ -63,8 +63,8 @@ describe('useAccountChainAddresses', () => {
     const { result } = renderHook(() => useAccountChainAddresses(), { wrapper: makeWrapper() });
 
     await waitFor(() => expect(result.current).toHaveLength(2));
-    expect(result.current.map((entry) => entry.chain.chainGroup)).toEqual(['gno', 'atomone']);
-    expect(result.current.map((entry) => entry.address)).toEqual(['g1addr', 'atone1addr']);
+    expect(result.current.map(entry => entry.chain.chainGroup)).toEqual(['gno', 'atomone']);
+    expect(result.current.map(entry => entry.address)).toEqual(['g1addr', 'atone1addr']);
   });
 
   it('SessionAccount exposes only the Gno master address and hides AtomOne', async () => {

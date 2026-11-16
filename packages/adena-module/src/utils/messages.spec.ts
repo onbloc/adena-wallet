@@ -8,7 +8,7 @@ import {
   decodeTxMessages,
   Document,
   documentToDefaultTx,
-  documentToTx,
+  documentToTx
 } from './messages';
 import { MSG_CREATE_SESSION_ENDPOINT } from './session-message-endpoints';
 
@@ -20,18 +20,18 @@ function makeDocument(): Document {
         value: {
           from_address: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
           to_address: 'g1kcdd3n0d472g2p5l8svyg9t0wq6h5857nq992f',
-          amount: '1000ugnot',
-        },
-      } as unknown as Document['msgs'][number],
+          amount: '1000ugnot'
+        }
+      } as unknown as Document['msgs'][number]
     ],
     fee: {
       gas: '200000',
-      amount: [{ denom: 'ugnot', amount: '1000' }],
+      amount: [{ denom: 'ugnot', amount: '1000' }]
     },
     memo: '',
     chain_id: 'staging',
     account_number: '0',
-    sequence: '0',
+    sequence: '0'
   };
 }
 
@@ -86,10 +86,10 @@ describe('documentToDefaultTx', () => {
     const expectedCompressed = Secp256k1.compressPubkey(uncompressed);
     expect(expectedCompressed.length).toBe(33);
     const expectedWrapped = PubKeySecp256k1.encode({
-      key: expectedCompressed,
+      key: expectedCompressed
     }).finish();
     expect(Buffer.from(sig.pub_key!.value).equals(Buffer.from(expectedWrapped))).toBe(
-      true,
+      true
     );
   });
 });
@@ -98,7 +98,7 @@ describe('session messages', () => {
   function makeSessionKey(): Any {
     return Any.create({
       type_url: '/tm.PubKeySecp256k1',
-      value: PubKeySecp256k1.encode({ key: new Uint8Array(33).fill(0x02) }).finish(),
+      value: PubKeySecp256k1.encode({ key: new Uint8Array(33).fill(0x02) }).finish()
     });
   }
 
@@ -109,7 +109,7 @@ describe('session messages', () => {
       expires_at: BigInt(1779436464),
       allow_paths: ['bank/send'],
       spend_limit: '1000000ugnot',
-      spend_period: BigInt(1),
+      spend_period: BigInt(1)
     });
     const encoded = MsgCreateSession.encode(msg).finish();
     const decodeSpy = vi.spyOn(Any, 'decode').mockImplementation(() => {
@@ -120,7 +120,8 @@ describe('session messages', () => {
       const decoded = MsgCreateSession.decode(encoded);
       expect(decoded.session_key?.type_url).toBe('/tm.PubKeySecp256k1');
       expect(decoded.session_key?.value).toEqual(makeSessionKey().value);
-    } finally {
+    }
+    finally {
       decodeSpy.mockRestore();
     }
   });
@@ -134,19 +135,19 @@ describe('session messages', () => {
         expires_at: BigInt(1779436464),
         allow_paths: ['bank/send'],
         spend_limit: '1000000ugnot',
-        spend_period: BigInt(1),
-      },
+        spend_period: BigInt(1)
+      }
     };
     const document: Document = {
       msgs: [msg],
       fee: {
         gas: '200000',
-        amount: [{ denom: 'ugnot', amount: '1000000' }],
+        amount: [{ denom: 'ugnot', amount: '1000000' }]
       },
       memo: '',
       chain_id: 'test-13',
       account_number: '2701052',
-      sequence: '0',
+      sequence: '0'
     };
 
     const decoded = decodeTxMessages(documentToTx(document).messages);
@@ -156,10 +157,10 @@ describe('session messages', () => {
       creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
       allow_paths: ['bank/send'],
       spend_limit: '1000000ugnot',
-      spend_period: '1',
+      spend_period: '1'
     });
     expect(decoded[0].session_key.value).toBe(
-      Buffer.from(new Uint8Array(33).fill(0x02)).toString('base64'),
+      Buffer.from(new Uint8Array(33).fill(0x02)).toString('base64')
     );
   });
 
@@ -172,20 +173,20 @@ describe('session messages', () => {
         expires_at: '1779436464',
         allow_paths: ['bank/send'],
         spend_limit: '1000000ugnot',
-        spend_period: '1',
-      },
+        spend_period: '1'
+      }
     };
     const jsonSafeMsg = JSON.parse(JSON.stringify(msg));
     const document: Document = {
       msgs: [jsonSafeMsg],
       fee: {
         gas: '200000',
-        amount: [{ denom: 'ugnot', amount: '1000000' }],
+        amount: [{ denom: 'ugnot', amount: '1000000' }]
       },
       memo: '',
       chain_id: 'test-13',
       account_number: '2701052',
-      sequence: '0',
+      sequence: '0'
     };
 
     const decoded = decodeTxMessages(documentToTx(document).messages);
@@ -196,10 +197,10 @@ describe('session messages', () => {
       expires_at: '1779436464',
       allow_paths: ['bank/send'],
       spend_limit: '1000000ugnot',
-      spend_period: '1',
+      spend_period: '1'
     });
     expect(decoded[0].session_key.value).toBe(
-      Buffer.from(new Uint8Array(33).fill(0x02)).toString('base64'),
+      Buffer.from(new Uint8Array(33).fill(0x02)).toString('base64')
     );
   });
 
@@ -212,19 +213,19 @@ describe('session messages', () => {
         expires_at: BigInt(0),
         allow_paths: ['bank/send'],
         spend_limit: '',
-        spend_period: BigInt(0),
-      },
+        spend_period: BigInt(0)
+      }
     };
     const document: Document = {
       msgs: [msg],
       fee: {
         gas: '200000',
-        amount: [{ denom: 'ugnot', amount: '1000000' }],
+        amount: [{ denom: 'ugnot', amount: '1000000' }]
       },
       memo: '',
       chain_id: 'test-13',
       account_number: '2701052',
-      sequence: '0',
+      sequence: '0'
     };
 
     const decoded = decodeTxMessages(documentToTx(document).messages);
@@ -233,7 +234,7 @@ describe('session messages', () => {
       '@type': MSG_CREATE_SESSION_ENDPOINT,
       creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
       expires_at: '0',
-      allow_paths: ['bank/send'],
+      allow_paths: ['bank/send']
     });
     expect(decoded[0]).not.toHaveProperty('spend_limit');
     expect(decoded[0]).not.toHaveProperty('spend_period');

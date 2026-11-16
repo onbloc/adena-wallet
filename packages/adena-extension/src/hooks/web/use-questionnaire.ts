@@ -1,6 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-
 import { useAdenaContext } from '@hooks/use-context';
+import { useQuery } from '@tanstack/react-query';
 
 export type UseQuestionnaireReturn = {
   ableToSkipQuestionnaire: boolean;

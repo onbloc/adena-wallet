@@ -1,6 +1,6 @@
+import IconHelp from '@assets/icon-help';
 import React, { useEffect, useRef, useState } from 'react';
 
-import IconHelp from '@assets/icon-help';
 import {
   InfoTooltipContainer,
   InfoTooltipTooltipBoxWrapper,
@@ -56,8 +56,8 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, iconColor, variant =
     const containerCenterX = containerRect.left + containerRect.width / 2;
     const containerTop = containerRect.top;
 
-    let leftPosition =
-      variant === 'popover'
+    let leftPosition
+      = variant === 'popover'
         ? (viewportWidth - tooltipWidth) / 2
         : containerCenterX - tooltipWidth / 2;
 
@@ -68,7 +68,8 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, iconColor, variant =
       leftPosition = margin;
       const containerRelativeToNewTooltip = containerCenterX - leftPosition;
       arrowLeft = (containerRelativeToNewTooltip / tooltipWidth) * 100;
-    } else if (leftPosition + tooltipWidth > viewportWidth - margin) {
+    }
+    else if (leftPosition + tooltipWidth > viewportWidth - margin) {
       leftPosition = viewportWidth - tooltipWidth - margin;
 
       const containerRelativeToNewTooltip = containerCenterX - leftPosition;

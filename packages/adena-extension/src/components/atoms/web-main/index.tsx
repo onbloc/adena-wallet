@@ -1,7 +1,6 @@
-import styled, { css, RuleSet } from 'styled-components';
-
 import { WEB_CONTENT_WIDTH } from '@common/constants/ui.constant';
 import mixins from '@styles/mixins';
+import styled, { css, RuleSet } from 'styled-components';
 
 interface WebMainProps {
   width?: React.CSSProperties['width'];

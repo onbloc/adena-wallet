@@ -1,5 +1,5 @@
-import React from 'react';
 import type { JSX } from 'react';
+import React from 'react';
 
 const IconGlobe = (): JSX.Element => (
   <svg

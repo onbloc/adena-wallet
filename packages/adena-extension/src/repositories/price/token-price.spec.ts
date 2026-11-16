@@ -1,7 +1,7 @@
+import { NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
 import type { Mock } from 'vitest';
 
-import { NetworkMetainfo } from '@types';
 import { TokenPriceRepository } from './token-price';
 
 const network = {

@@ -1,15 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { Account } from 'adena-module';
-import React, { PropsWithChildren } from 'react';
 import type { JSX } from 'react';
+import React, { PropsWithChildren } from 'react';
 import type { Mock } from 'vitest';
 
 import { useAccountListInfos } from './use-account-list-infos';
 import { useAccountName } from './use-account-name';
+import { useAccountNativeBalanceMap } from './use-account-native-balance-map';
 import { useChain } from './use-chain';
 import { useMasterAccountBadgeMap } from './use-master-account-badge-map';
-import { useAccountNativeBalanceMap } from './use-account-native-balance-map';
 
 vi.mock('./use-account-name', () => ({ useAccountName: vi.fn() }));
 vi.mock('./use-chain', () => ({ useChain: vi.fn() }));

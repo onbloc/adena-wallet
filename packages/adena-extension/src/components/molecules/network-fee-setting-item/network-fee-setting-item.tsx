@@ -4,6 +4,7 @@ import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import { GasInfo, NetworkFeeSettingType } from '@types';
 import BigNumber from 'bignumber.js';
 import React, { useMemo } from 'react';
+
 import {
   NetworkFeeItemSkeletonBox,
   NetworkFeeSettingItemWrapper,
@@ -93,11 +94,13 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
     <NetworkFeeSettingItemWrapper className={selected ? 'selected' : ''} onClick={onClickItem}>
       <span className='title'>{settingTypeName}</span>
 
-      {hasGasInfo ? (
-        <FeeAmount value={gasInfoAmount} denom={gasInfoDenomination} quote={feeTokenQuote} />
-      ) : (
-        <span className='no-data'>{'-'}</span>
-      )}
+      {hasGasInfo
+        ? (
+            <FeeAmount value={gasInfoAmount} denom={gasInfoDenomination} quote={feeTokenQuote} />
+          )
+        : (
+            <span className='no-data'>-</span>
+          )}
     </NetworkFeeSettingItemWrapper>
   );
 };

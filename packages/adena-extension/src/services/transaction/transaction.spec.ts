@@ -1,8 +1,8 @@
-import { TransactionService } from './transaction';
-
 import type { GnoProvider } from '@common/provider/gno/gno-provider';
 import type { Account, Document, Wallet } from 'adena-module';
+
 import type { WalletService } from '..';
+import { TransactionService } from './transaction';
 
 const makeDocument = (): Document => ({
   msgs: [],

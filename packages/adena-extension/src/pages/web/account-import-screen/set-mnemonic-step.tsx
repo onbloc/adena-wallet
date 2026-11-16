@@ -1,9 +1,8 @@
-import { ReactElement, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import { Row, View, WebButton, WebCheckBox, WebText } from '@components/atoms';
 import { WebSeedInput, WebTitleWithDescription } from '@components/molecules';
 import { UseAccountImportReturn } from '@hooks/web/use-account-import-screen';
+import { ReactElement, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -15,8 +14,8 @@ const SetMnemonicStep = ({
 }: {
   useAccountImportScreenReturn: UseAccountImportReturn;
 }): ReactElement => {
-  const { errMsg, isValidForm, updateInputValue, setInputType, onClickNext } =
-    useAccountImportScreenReturn;
+  const { errMsg, isValidForm, updateInputValue, setInputType, onClickNext }
+    = useAccountImportScreenReturn;
   const theme = useTheme();
   const [agreeWarning, setAgreeWarning] = useState(false);
 

@@ -7,7 +7,7 @@ import {
   isHDWalletKeyring,
   Keyring,
   KeyringType,
-  toHdPath,
+  toHdPath
 } from '../../wallet/keyring';
 import { Wallet } from '../wallet';
 import { Account, AccountInfo } from './account';
@@ -40,7 +40,7 @@ export class SeedAccount implements Account {
     name,
     hdPath,
     accountIndex,
-    changeIndex,
+    changeIndex
   }: AccountInfo) {
     this.id = id ?? uuidv4();
     this._index = index;
@@ -88,7 +88,7 @@ export class SeedAccount implements Account {
       accountIndex: this.accountIndex,
       changeIndex: this.changeIndex,
       publicKey: Array.from(this.publicKey),
-      name: this._name,
+      name: this._name
     };
   }
 
@@ -108,7 +108,7 @@ export class SeedAccount implements Account {
       name,
       hdPath: addressIndex,
       accountIndex: account,
-      changeIndex: change,
+      changeIndex: change
     });
   }
 
@@ -130,7 +130,7 @@ export class SeedAccount implements Account {
       accountIndex: accountInfo.accountIndex,
       changeIndex: accountInfo.changeIndex,
       publicKey: accountInfo.publicKey,
-      name: accountInfo.name,
+      name: accountInfo.name
     });
   }
 }

@@ -1,8 +1,7 @@
-import BigNumber from 'bignumber.js';
-
 import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
-import { TokenProfile } from 'adena-module';
 import { TokenBalanceType } from '@types';
+import { TokenProfile } from 'adena-module';
+import BigNumber from 'bignumber.js';
 
 /** On-chain denom, or null for a token that does not live on a cosmos chain. */
 function cosmosDenomOf(token: TokenProfile): string | null {
@@ -51,7 +50,7 @@ export class CosmosBalanceService {
     }
 
     const cosmosTokens = tokens
-      .map((token) => ({ token, denom: cosmosDenomOf(token) }))
+      .map(token => ({ token, denom: cosmosDenomOf(token) }))
       .filter((entry): entry is { token: TokenProfile; denom: string } => entry.denom !== null);
 
     if (cosmosTokens.length === 0) {
@@ -63,7 +62,7 @@ export class CosmosBalanceService {
       return [];
     }
 
-    const amountByDenom = new Map(balances.map((balance) => [balance.denom, balance.amount]));
+    const amountByDenom = new Map(balances.map(balance => [balance.denom, balance.amount]));
 
     return cosmosTokens.map(({ token, denom }) =>
       this.toTokenBalance(token, denom, amountByDenom.get(denom) ?? '0'),

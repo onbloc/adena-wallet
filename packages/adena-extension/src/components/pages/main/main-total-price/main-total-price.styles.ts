@@ -10,7 +10,7 @@ export const MainTotalPriceSkeleton = styled(SkeletonBoxStyle)`
 `;
 
 export const MainTotalPriceWrapper = styled(View).withConfig({
-  shouldForwardProp: (prop) => prop !== '$compact',
+  shouldForwardProp: prop => prop !== '$compact',
 })<{ $compact: boolean }>`
   position: relative;
   width: 100%;
@@ -29,8 +29,8 @@ export const MainTotalPriceWrapper = styled(View).withConfig({
 
   /* A long total drops a size rather than overflowing the popup width. */
   ${({ $compact }): ReturnType<typeof css> | false =>
-    $compact &&
-    css`
+    $compact
+    && css`
       .total-value {
         font-size: 25px;
         line-height: 32px;

@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
-
 import { parseVestingSchedule, VestingInfo } from '@common/utils/vesting-utils';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useGetAccountInfo } from '@hooks/wallet/use-get-account-info';
+import { useMemo } from 'react';
 
 // Matches the Gno balance poll on the main screen: the schedule itself never
 // moves, but the account's coins do, and both figures are shown side by side.
@@ -41,7 +40,7 @@ export const useVestingInfo = (
     // with an IN_ACTIVE placeholder rather than rejecting, so that answer is
     // not an answer: without a retry a caller that holds back on "unknown"
     // would hold back for as long as the screen stays open.
-    refetchInterval: (data) =>
+    refetchInterval: data =>
       data?.vesting || (data && data.status !== 'ACTIVE') ? VESTING_REFETCH_INTERVAL : false,
     // `useGetAccountInfo` keeps previous data by default. Here that would hand
     // back the PREVIOUS account's schedule and coins while the newly selected

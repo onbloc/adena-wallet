@@ -1,6 +1,5 @@
-import styled from 'styled-components';
-
 import { WebInput } from '@components/atoms';
+import styled from 'styled-components';
 
 export const StyledHDDerivationPathBox = styled.div`
   display: flex;

@@ -1,17 +1,15 @@
+import ArrowLeftIcon from '@assets/arrowL-left.svg';
+import { SubHeader } from '@components/atoms';
+import { BottomFixedButtonGroup } from '@components/molecules';
+import NetworkFee from '@components/molecules/network-fee/network-fee';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
+import { Amount, NetworkFee as NetworkFeeType, TokenModel } from '@types';
 import React, { useMemo } from 'react';
 
-import { SubHeader } from '@components/atoms';
-
-import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
 import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
 import { TransferSummaryWrapper } from './transfer-summary.styles';
-
-import { BottomFixedButtonGroup } from '@components/molecules';
-import NetworkFee from '@components/molecules/network-fee/network-fee';
-import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
-import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
-import { Amount, NetworkFee as NetworkFeeType, TokenModel } from '@types';
 
 export interface TransferSummaryProps {
   tokenMetainfo: TokenModel;
@@ -105,7 +103,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
       <div className='sub-header-wrapper'>
         <SubHeader
           leftElement={{
-            element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
+            element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
             onClick: onClickBack,
           }}
           title={`Sending ${tokenMetainfo.symbol}`}

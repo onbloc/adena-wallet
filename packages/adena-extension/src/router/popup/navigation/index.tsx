@@ -1,14 +1,13 @@
-import { useCallback, useMemo } from 'react';
-import type { JSX } from 'react';
-import { useMatch, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-
 import { Icon, IconName } from '@components/atoms';
 import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
+import type { JSX } from 'react';
 import React from 'react';
+import { useCallback, useMemo } from 'react';
+import { useMatch, useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
 
 const Wrapper = styled.nav`
   width: 100%;
@@ -85,11 +84,11 @@ export const Navigation = (): JSX.Element => {
   // below so taps are no-ops until the wallet is ready.
   const visibleNavigation = useMemo(() => {
     return (
-      !!matchedWallet ||
-      !!matchedExplore ||
-      !!matchedNft ||
-      !!matchedHistory ||
-      !!matchedTokenDetails
+      !!matchedWallet
+      || !!matchedExplore
+      || !!matchedNft
+      || !!matchedHistory
+      || !!matchedTokenDetails
     );
   }, [matchedWallet, matchedExplore, matchedNft, matchedHistory, matchedTokenDetails]);
 

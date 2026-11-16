@@ -54,7 +54,8 @@ export class AdenaLedgerConnector extends AminoLedgerConnector {
       const transport = await AdenaLedgerConnector.openConnected();
       await transport?.close();
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       return false;
     }
   }

@@ -1,8 +1,7 @@
-import React from 'react';
-import styled from 'styled-components';
-
 import { IconButtonLoading } from '@components/atoms/icon/icon-assets';
 import { fonts, getTheme } from '@styles/theme';
+import React from 'react';
+import styled from 'styled-components';
 
 interface MainActionButtonProps {
   icon: React.ReactNode;
@@ -58,14 +57,16 @@ export const MainActionButton: React.FC<MainActionButtonProps> = ({
   loading = false,
 }) => (
   <StyledButton type='button' onClick={onClick} disabled={disabled || loading}>
-    {loading ? (
-      <IconButtonLoading />
-    ) : (
-      <>
-        <span className='icon'>{icon}</span>
-        <span className='label'>{label}</span>
-      </>
-    )}
+    {loading
+      ? (
+          <IconButtonLoading />
+        )
+      : (
+          <>
+            <span className='icon'>{icon}</span>
+            <span className='label'>{label}</span>
+          </>
+        )}
   </StyledButton>
 );
 

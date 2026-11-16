@@ -1,21 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-
+import { SCANNER_URL } from '@common/constants/resource.constant';
+import { makeQueryString } from '@common/utils/string-utils';
 import SideMenu from '@components/pages/router/side-menu/side-menu';
 import { useAccountListInfos } from '@hooks/use-account-list-infos';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import useLink from '@hooks/use-link';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
-import { useVisibleAccounts } from '@hooks/use-visible-accounts';
 import { useNetworkProfile } from '@hooks/use-network-profile';
-
-import { SCANNER_URL } from '@common/constants/resource.constant';
-import { makeQueryString } from '@common/utils/string-utils';
-import useLink from '@hooks/use-link';
+import { useVisibleAccounts } from '@hooks/use-visible-accounts';
 import { CommandMessage } from '@inject/message/command-message';
 import { RoutePath, SideMenuAccountInfo } from '@types';
 import { Account } from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const EMPTY_ACCOUNTS: Account[] = [];
 
@@ -84,7 +82,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const changeAccount = useCallback(
     async (accountId: string) => {
       setOpen(false);
-      const account = accounts.find((current) => current.id === accountId);
+      const account = accounts.find(current => current.id === accountId);
       if (!account) {
         return;
       }
@@ -101,7 +99,8 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
 
     try {
       await chrome.runtime.sendMessage(CommandMessage.command('clearPopup'));
-    } catch (error) {
+    }
+    catch (error) {
       console.warn(error);
     }
 

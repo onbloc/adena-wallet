@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo } from 'react';
-
 import { TokenBalanceType } from '@types';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import {
   buildTokenOrderScope,
@@ -51,7 +50,7 @@ export const useTokenOrder = (): {
   const liveAccountIdsKey = useMemo(
     () =>
       wallet?.accounts
-        .map((account) => account.id)
+        .map(account => account.id)
         .sort()
         .join('|') ?? '',
     [wallet?.accounts],
@@ -98,7 +97,7 @@ export const useTokenOrder = (): {
         return;
       }
 
-      const order = rows.map((row) => tokenRowKey(row.tokenId, row.networkId));
+      const order = rows.map(row => tokenRowKey(row.tokenId, row.networkId));
       const queryKey = [TOKEN_ORDER_QUERY_KEY, scope];
       const stored = queryClient.getQueryData<string[] | null>(queryKey);
 

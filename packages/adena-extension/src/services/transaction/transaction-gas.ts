@@ -1,5 +1,6 @@
 import { ResponseDeliverTx, Tx } from '@gnolang/tm2-js-client';
 import { ITransactionGasRepository } from '@repositories/transaction/types';
+
 import { ITransactionGasService } from '..';
 
 export class TransactionGasService implements ITransactionGasService {

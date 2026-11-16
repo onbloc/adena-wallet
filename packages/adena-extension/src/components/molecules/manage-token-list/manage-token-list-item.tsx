@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
-
 import IconEmptyImage from '@assets/icon-empty-image.svg';
 import Toggle from '@components/atoms/toggle';
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
+import React, { useMemo, useState } from 'react';
 import { useTheme } from 'styled-components';
+
 import { TokenBalance } from '../token-balance';
 import { ManageGRC721Info, ManageTokenInfo } from './manage-token-list';
 import { ManageTokenListItemWrapper } from './manage-token-list.styles';
@@ -36,14 +36,14 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
   const theme = useTheme();
   const [hasLogoError, setHasLogoError] = useState(false);
   const isTokenInfo = isManageTokenInfo(token);
-  const tokenUriResponse =
-    !isTokenInfo && token.isTokenUri && queryGRC721TokenUri
+  const tokenUriResponse
+    = !isTokenInfo && token.isTokenUri && queryGRC721TokenUri
       ? queryGRC721TokenUri(token.packagePath, token.tokenId, {
           enabled: !!token.isTokenUri && !!token.tokenId,
         })
       : null;
-  const tokenBalanceResponse =
-    !isTokenInfo && queryGRC721Balance
+  const tokenBalanceResponse
+    = !isTokenInfo && queryGRC721Balance
       ? queryGRC721Balance(token.packagePath, { refetchOnMount: true })
       : null;
 
@@ -69,9 +69,9 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
     }
 
     if (
-      tokenBalanceResponse === null ||
-      tokenBalanceResponse.data === undefined ||
-      tokenBalanceResponse.data === null
+      tokenBalanceResponse === null
+      || tokenBalanceResponse.data === undefined
+      || tokenBalanceResponse.data === null
     ) {
       return '-';
     }
@@ -91,7 +91,7 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
   if (isTokenInfo) {
     return (
       <ManageTokenListItemWrapper>
-        <div className={'logo-wrapper'}>
+        <div className='logo-wrapper'>
           <img className='logo' src={token.logo} alt='token img' onError={handleLogoError} />
         </div>
 
@@ -122,14 +122,16 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
 
   return (
     <ManageTokenListItemWrapper>
-      <div className={'logo-wrapper square'}>
-        {grc721CollectionImage ? (
-          <img className='logo' src={grc721CollectionImage} alt='token img' />
-        ) : (
-          <div className='logo empty'>
-            <img className='icon-empty' src={IconEmptyImage} alt='token empty' />
-          </div>
-        )}
+      <div className='logo-wrapper square'>
+        {grc721CollectionImage
+          ? (
+              <img className='logo' src={grc721CollectionImage} alt='token img' />
+            )
+          : (
+              <div className='logo empty'>
+                <img className='icon-empty' src={IconEmptyImage} alt='token empty' />
+              </div>
+            )}
       </div>
 
       <div className='name-wrapper'>

@@ -1,14 +1,12 @@
-import React from 'react';
-import type { JSX } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import lockLogo from '@assets/icon-lock.svg';
-import { Text, Icon, Button } from '@components/atoms';
-import { getTheme } from '@styles/theme';
-
-import { RoutePath } from '@types';
-import mixins from '@styles/mixins';
+import { Button, Icon, Text } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
+import type { JSX } from 'react';
+import React from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const text = {
   title: 'Forgot Password?',
@@ -21,10 +19,11 @@ export const ForgotPassword = (): JSX.Element => {
 
   const onClickLearnMore = (): void => {
     try {
-      const adenaDocsUrl =
-        'https://docs.adena.app/resources/faq#i-got-locked-out-of-my-wallet-and-didnt-back-up-my-seed-phrase-is-there-a-way-to-recover-my-wallet';
+      const adenaDocsUrl
+        = 'https://docs.adena.app/resources/faq#i-got-locked-out-of-my-wallet-and-didnt-back-up-my-seed-phrase-is-there-a-way-to-recover-my-wallet';
       chrome.tabs.create({ url: adenaDocsUrl });
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
     }
   };

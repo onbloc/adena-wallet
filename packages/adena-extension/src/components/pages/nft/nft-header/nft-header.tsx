@@ -4,6 +4,7 @@ import IconQRCode from '@assets/icon-qrcode';
 import { Text } from '@components/atoms';
 import OptionDropdown from '@components/atoms/option-dropdown/option-dropdown';
 import React, { useMemo } from 'react';
+
 import { NFTHeaderWrapper } from './nft-header.styles';
 
 export interface NFTHeaderProps {

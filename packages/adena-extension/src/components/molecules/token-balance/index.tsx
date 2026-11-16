@@ -1,6 +1,7 @@
 import { HighlightNumber } from '@components/atoms';
 import { FontsType } from '@styles/theme';
 import React from 'react';
+
 import { TokenBalanceWrapper } from './token-balance.styles';
 
 export interface TokenBalanceProps {

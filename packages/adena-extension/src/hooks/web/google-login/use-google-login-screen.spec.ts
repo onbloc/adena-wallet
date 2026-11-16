@@ -1,6 +1,6 @@
+import { GOOGLE_VERIFIERS, Web3AuthVerifier } from '@common/constants/web3auth.constant';
 import { renderHook } from '@testing-library/react';
 
-import { GOOGLE_VERIFIERS, Web3AuthVerifier } from '@common/constants/web3auth.constant';
 import useGoogleLoginScreen from './use-google-login-screen';
 
 // Stub out the SDK to avoid pulling in @web3auth's native crypto at test time.

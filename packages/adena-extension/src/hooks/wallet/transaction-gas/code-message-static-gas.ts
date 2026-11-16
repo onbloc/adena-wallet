@@ -33,7 +33,7 @@ type DocumentMessage = Document['msgs'][number];
 
 function isGRC20TransferRun(message: DocumentMessage): boolean {
   const files: { body?: string }[] = message.value?.package?.files ?? [];
-  return files.some((file) => (file?.body ?? '').includes(GRC20_TRANSFER_MARKER));
+  return files.some(file => (file?.body ?? '').includes(GRC20_TRANSFER_MARKER));
 }
 
 /** The gas bucket a message falls into, or null when it needs no fallback. */

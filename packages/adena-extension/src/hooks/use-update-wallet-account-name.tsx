@@ -1,6 +1,6 @@
 import { WalletState } from '@states';
-import { useAtom } from 'jotai';
 import { Account } from 'adena-module';
+import { useAtom } from 'jotai';
 
 export type UseUpdateWalletAccountNameReturn = (account: Account, name: string) => void;
 

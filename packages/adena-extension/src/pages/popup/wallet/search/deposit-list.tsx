@@ -1,6 +1,3 @@
-import React, { useCallback } from 'react';
-import type { JSX } from 'react';
-
 import LeftArrowIcon from '@assets/arrowL-left.svg';
 import IconQRCode from '@assets/icon-qrcode';
 import { CHAIN_ICON_BY_GROUP } from '@assets/icons/cosmos-icons';
@@ -9,6 +6,8 @@ import { Button, CopyIconButton, SubHeader, Text } from '@components/atoms';
 import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
+import type { JSX } from 'react';
+import React, { useCallback } from 'react';
 
 import {
   ButtonWrap,

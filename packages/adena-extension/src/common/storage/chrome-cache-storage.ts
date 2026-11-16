@@ -1,4 +1,5 @@
 import { CommonError } from '@common/errors/common';
+
 import { Storage } from '.';
 
 /** Where each GRC721 indexer walk left off; see `token.grc721-sync.ts`. */

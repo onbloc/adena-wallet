@@ -30,8 +30,8 @@ function normalizeChainIds(value: unknown): string[] {
 const ApproveEstablishContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const location = useLocation();
-  const { walletService, establishService, establishAtomOneService, chainRegistry } =
-    useAdenaContext();
+  const { walletService, establishService, establishAtomOneService, chainRegistry }
+    = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const profile = useNetworkProfile();
@@ -62,7 +62,7 @@ const ApproveEstablishContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   const initRequestSite = async (): Promise<void> => {
@@ -77,7 +77,8 @@ const ApproveEstablishContainer: React.FC = () => {
         setAppName(message?.data?.name ?? 'Unknown');
         setChainIds(normalizeChainIds(message?.data?.chainIds));
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.log(e);
     }
   };
@@ -101,8 +102,8 @@ const ApproveEstablishContainer: React.FC = () => {
     // Multi-chain requests: short-circuit only when every requested chainId is
     // already established (per the chainId's chainGroup). Legacy single-chain
     // path keeps the pre-Stage-8 hostname-only check.
-    const isEstablished =
-      chainIds.length > 0
+    const isEstablished
+      = chainIds.length > 0
         ? (
             await Promise.all(
               chainIds.map((chainId) => {
@@ -157,7 +158,8 @@ const ApproveEstablishContainer: React.FC = () => {
         setResponse(
           InjectionMessageInstance.success(WalletResponseSuccessType.CONNECTION_SUCCESS, {}, key),
         );
-      } catch (error) {
+      }
+      catch (error) {
         setResponse(
           InjectionMessageInstance.failure(
             WalletResponseFailureType.UNEXPECTED_ERROR,
@@ -189,7 +191,8 @@ const ApproveEstablishContainer: React.FC = () => {
         InjectionMessageInstance.success(WalletResponseSuccessType.CONNECTION_SUCCESS, {}, key),
       );
       setDone(true);
-    } catch (error) {
+    }
+    catch (error) {
       // Unwind in reverse order so rollback mirrors the persist sequence.
       await Promise.allSettled(
         [...persisted]

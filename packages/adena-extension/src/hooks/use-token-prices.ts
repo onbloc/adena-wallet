@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
-
 import { TokenPriceMap, TokenPriceRequest } from '@types';
+import { useMemo } from 'react';
 
 import { useAdenaContext } from './use-context';
 
@@ -48,7 +47,7 @@ export const useTokenPrices = (
         // Decimals are part of the identity: they decide how a quote in another
         // asset's unit is restated, so a row whose metadata arrived late must
         // re-ask rather than keep a price computed without them.
-        .map((request) => `${request.tokenId}:${request.networkId}:${request.decimals ?? ''}`)
+        .map(request => `${request.tokenId}:${request.networkId}:${request.decimals ?? ''}`)
         .sort()
         .join('|'),
     [requests],
