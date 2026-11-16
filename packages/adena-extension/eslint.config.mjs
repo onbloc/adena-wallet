@@ -83,4 +83,9 @@ export default tseslint.config([
       'simple-import-sort/exports': 'error',
     },
   },
+  {
+    // Node scripts run outside the extension.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: { process: 'readonly', console: 'readonly', setTimeout: 'readonly' } },
+  },
 ], storybook.configs['flat/recommended']);

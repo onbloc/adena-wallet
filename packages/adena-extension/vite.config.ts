@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
+import { builtinModules } from 'node:module';
 import { resolve } from 'node:path';
 
 import { crx, type ManifestV3Export } from '@crxjs/vite-plugin';
@@ -61,8 +62,31 @@ export const alias = {
   'lottie-web': resolve(root, 'libs/lottie_light.min.js'),
 };
 
-// Must resolve node built-ins (crypto, Buffer, ...) before Vite externalizes them.
-const polyfills = (): Plugin => ({ ...nodePolyfills(), enforce: 'pre' }) as Plugin;
+const NODE_BUILTINS = new Set(builtinModules);
+const POLYFILL_PREFIX = '\0polyfill-node.';
+
+/**
+ * Node built-in polyfills, resolved before Vite externalizes the built-ins.
+ * The plugin also claims any bare import named like one of its internal helper
+ * files, e.g. the npm package `inherits`, and hands CommonJS callers an ES module
+ * namespace instead of the function (`util.inherits is not a function` in
+ * readable-stream). Only built-ins and the plugin's own modules go through it.
+ */
+const polyfills = (): Plugin => {
+  const plugin = nodePolyfills();
+  const resolveId = plugin.resolveId as (this: unknown, ...args: unknown[]) => unknown;
+
+  return {
+    ...plugin,
+    enforce: 'pre',
+    resolveId(this: unknown, importee: string, importer: string | undefined, ...rest: unknown[]) {
+      const name = importee.replace(/^node:/, '').replace(/\/$/, '');
+      const isInternal = importee.startsWith('\0') || !!importer?.startsWith(POLYFILL_PREFIX);
+      if (!isInternal && !NODE_BUILTINS.has(name)) return null;
+      return resolveId.call(this, importee, importer, ...rest);
+    },
+  } as Plugin;
+};
 
 /**
  * content.ts loads `inject.js` into the page as a classic script, so it has to be
@@ -71,7 +95,6 @@ const polyfills = (): Plugin => ({ ...nodePolyfills(), enforce: 'pre' }) as Plug
  * build so watch mode tracks its sources and the file lands in the same output.
  */
 const injectScript = (options: {
-  outDir: string;
   mode: string;
   target: string;
   sourcemap: boolean;
@@ -79,10 +102,15 @@ const injectScript = (options: {
   define: Record<string, string>;
 }): Plugin => {
   let files: { fileName: string; source: string | Uint8Array }[] = [];
+  let outDir = '';
 
   return {
     name: 'adena:inject-script',
     apply: 'build',
+    configResolved(config) {
+      // Honour `--outDir` as well as the config value.
+      outDir = resolve(config.root, config.build.outDir);
+    },
     async buildEnd() {
       const result = await build({
         configFile: false,
@@ -125,7 +153,7 @@ const injectScript = (options: {
     },
     writeBundle() {
       // crx() writes the manifest; expose inject.js to pages after it has.
-      const manifestPath = resolve(options.outDir, 'manifest.json');
+      const manifestPath = resolve(outDir, 'manifest.json');
       const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
       manifest.web_accessible_resources = [
         ...(manifest.web_accessible_resources ?? []),
@@ -173,7 +201,7 @@ export default defineConfig(({ mode }) => {
             viteStaticCopy({
               targets: [{ src: 'src/resources/**/*', dest: 'resources', rename: { stripBase: 2 } }],
             }),
-            injectScript({ outDir, mode, target, sourcemap, minify, define }),
+            injectScript({ mode, target, sourcemap, minify, define }),
           ]),
     ],
     resolve: { alias },

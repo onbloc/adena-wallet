@@ -25,6 +25,7 @@ jobs:
           pnpm build:module
           pnpm build:storybook
           pnpm build:service
+          node packages/adena-extension/scripts/smoke-bundle.mjs dist
 
   # TODO: Apply when you're done setting up your storybook environment
   # storybook-tests:
