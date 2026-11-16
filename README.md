@@ -45,29 +45,79 @@ Also, follow us on our [Twitter](https://twitter.com/adenaapp) and [Medium](http
 
 ## Project Environment
 
-| Tool       | Version |
-| ---------- | ------- |
-| Node.js    | 18.14.2 |
-| TypeScript | 4.9.5   |
-| Babel Core | 7.23.9  |
-| Webpack    | 5.90.3  |
-| React      | 18.2.0  |
+| Tool       | Version                                                          |
+| ---------- | ---------------------------------------------------------------- |
+| Node.js    | 26 (`.nvmrc`)                                                    |
+| pnpm       | 11 (`packageManager` in `package.json`)                          |
+| TypeScript | 7 for type checks; 6 for tools that need the compiler API       |
+| Vite       | 8, with `@crxjs/vite-plugin` for the extension                   |
+| React      | 19                                                               |
+| Vitest     | 5                                                                |
 
-## Building Locally
+## Local Setup
 
-To set up a local environment, clone this repository and run the following commands:
+1. Use the Node.js version from `.nvmrc`:
+
+   ```
+   nvm install
+   nvm use
+   ```
+
+2. Install pnpm. Node.js 26 no longer ships Corepack, so either install pnpm
+   (`npm install -g pnpm`) or install and enable Corepack
+   (`npm install -g corepack && corepack enable`). Either way the version pinned in
+   `package.json` is the one that runs.
+
+3. Install the dependencies. Dependency install scripts are off unless listed under
+   `allowBuilds` in `pnpm-workspace.yaml`, and packages published less than 7 days
+   ago are not installed (`minimumReleaseAge`).
+
+   ```
+   pnpm install
+   ```
+
+4. Social login reads its Web3Auth settings at build time. Copy
+   `packages/adena-extension/.env.example` to `packages/adena-extension/.env` and fill
+   it in; environment variables take precedence over the file. Without them social
+   login is unavailable, the rest of the wallet works.
+
+## Development Build
 
 ```
- nvm use
-
- pnpm install
-​
- pnpm build
+pnpm develop            # Chrome  -> packages/adena-extension/dist
+pnpm develop:firefox    # Firefox -> packages/adena-extension/dist-firefox
 ```
 
-​
-This will store the extension's build output in `packages/adena-extension/dist`. For a Firefox build, see [FIREFOX.md](packages/adena-extension/FIREFOX.md).
-​
+This builds `adena-module` once, then watches it and the extension. Development
+builds use React's development runtime, are not minified and include source maps.
+They do not type-check; run `pnpm typecheck` for that.
+
+Load the output as an unpacked extension (Chrome: `chrome://extensions` → Developer
+mode → Load unpacked → `packages/adena-extension/dist`; Firefox: see
+[FIREFOX.md](packages/adena-extension/FIREFOX.md)) and reload it after a rebuild.
+
+## Production Build
+
+```
+pnpm build              # Chrome  -> packages/adena-extension/dist
+pnpm build:firefox      # Firefox -> packages/adena-extension/dist-firefox
+```
+
+Both type-check with TypeScript 7 first, then build minified bundles without source
+maps. To check that every entry of a build still loads (service worker, pages,
+content and inject scripts):
+
+```
+pnpm --filter adena-extension smoke dist            # or dist-firefox
+```
+
+## Checks
+
+```
+pnpm typecheck
+pnpm test
+pnpm lint
+```
 
 ## Documentation
 
