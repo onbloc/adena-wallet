@@ -1,8 +1,9 @@
-import IconError from '@assets/web/error.svg';
-import React, { type JSX } from 'react';
+import React from 'react';
+import type { JSX } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import { Row } from '../base';
+import IconError from '@assets/web/error.svg';
 import { WebImg } from '../web-img';
 import { WebText } from '../web-text';
 
@@ -19,11 +20,7 @@ export const WebErrorText = ({
 }): JSX.Element => {
   const theme = useTheme();
   return (
-    <Row style={{
-      gap: 6,
-      alignItems,
-    }}
-    >
+    <Row style={{ gap: 6, alignItems }}>
       <WebImg src={IconError} size={20} />
       <StyledText type='body5' color={theme.webError._100}>
         {text}

@@ -1,45 +1,47 @@
 import {
+  Account,
+  Document,
+  isAirgapAccount,
+  isLedgerAccount,
+  isSessionAccount,
+} from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
-import { parseTokenAmount } from '@common/utils/amount-utils';
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
+import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
+import { evaluateSessionSigningGuard } from '@services/transaction/session-signing-guard';
 import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
+import { useFeeSufficiency } from '@hooks/wallet/use-fee-sufficiency';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
 import { RoutePath } from '@types';
-import {
-  Account, Document, isAirgapAccount, isLedgerAccount,
-} from 'adena-module';
-import BigNumber from 'bignumber.js';
-import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 interface TransactionData {
   messages: readonly any[];
-  contracts: {
-    type: string;
-    function: string;
-    value: any;
-  }[];
+  contracts: { type: string; function: string; value: any }[];
   gasWanted: string;
   gasFee: string;
   memo: string;
@@ -67,10 +69,11 @@ const ApproveSignContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
-  const { walletService, transactionService } = useAdenaContext();
+  const { walletService, transactionService, sessionRepository } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
   const [requestData, setRequestData] = useState<InjectionMessage>();
@@ -113,38 +116,14 @@ const ApproveSignContainer: React.FC = () => {
     };
   }, [networkFee]);
 
-  const consumedTokenAmount = useMemo(() => {
-    const accumulatedAmount = document?.msgs.reduce((acc, msg) => {
-      const messageValue = msg.value;
-      const amountStr = messageValue?.amount || messageValue?.amount || messageValue?.max_deposit;
-      if (!amountStr) {
-        return acc;
-      }
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
 
-      try {
-        const amount = parseTokenAmount(amountStr);
-        return BigNumber(acc).plus(amount).toNumber();
-      }
-      catch {
-        return acc;
-      }
-    }, 0);
-
-    const consumedBN = BigNumber(accumulatedAmount || 0).shiftedBy(GasToken.decimals * -1);
-    return consumedBN.toNumber();
-  }, [document]);
-
-  const isErrorNetworkFee = useMemo(() => {
-    if (!networkFee) {
-      return false;
-    }
-
-    const resultConsumedAmount = BigNumber(consumedTokenAmount).plus(networkFee.amount);
-
-    return BigNumber(currentBalance || 0)
-      .shiftedBy(GasToken.decimals * -1)
-      .isLessThan(resultConsumedAmount);
-  }, [networkFee?.amount, currentBalance, consumedTokenAmount]);
+  const { isErrorNetworkFee, isErrorStorageDeposit } = useFeeSufficiency(
+    document,
+    currentBalance,
+    useNetworkFeeReturn,
+  );
 
   const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
     return requestData?.data?.arguments || [];
@@ -157,7 +136,7 @@ const ApproveSignContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
+      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   useEffect(() => {
@@ -169,10 +148,7 @@ const ApproveSignContainer: React.FC = () => {
   const initRequestData = (): void => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
-    setRequestData({
-      ...parsedData,
-      hostname: data['hostname'],
-    });
+    setRequestData({ ...parsedData, hostname: data['hostname'] });
   };
 
   useEffect(() => {
@@ -196,7 +172,7 @@ const ApproveSignContainer: React.FC = () => {
   ): Promise<boolean> => {
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
-      await currentAccount.getAddress('g'),
+      await currentAccount.getAddress(chain.bech32Prefix),
     );
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
@@ -221,6 +197,7 @@ const ApproveSignContainer: React.FC = () => {
         currentAccount,
         currentNetwork.networkId,
         requestData?.data?.messages,
+        chain.bech32Prefix,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
         requestData?.data?.memo,
@@ -231,8 +208,7 @@ const ApproveSignContainer: React.FC = () => {
       setMemo(document.memo);
       setTransactionMessages(mappedTransactionMessages(document.msgs));
       return true;
-    }
-    catch (e) {
+    } catch (e) {
       console.error(e);
       const error: any = e;
       if (error?.message === 'Transaction signing request was rejected by the user') {
@@ -291,21 +267,68 @@ const ApproveSignContainer: React.FC = () => {
       return false;
     }
 
+    // SessionAccount: SIGN_AMINO produces a session-key signature the dApp can
+    // broadcast, so it must pass the same fail-closed guard the SIGN_TX /
+    // DO_CONTRACT flows apply — evaluated against fresh chain state right before
+    // signing. Without this a dApp could obtain a session signature bypassing
+    // allowPaths / spendLimit / expiry / status / chain / unsupported-msg checks.
+    if (isSessionAccount(currentAccount) && currentNetwork && gnoProvider) {
+      const sessionAddr = await currentAccount.getAddress(chain.bech32Prefix);
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const cached = await sessionRepository.get(sessionAddr);
+      const metadata = await refreshSessionMetadataFromChain(
+        gnoProvider,
+        currentAccount.getMasterAddress(),
+        sessionAddr,
+        currentNetwork.chainId,
+        cached,
+        nowSeconds,
+      ).catch(() => null);
+      if (metadata) {
+        await sessionRepository
+          .syncFromChain(sessionAddr, {
+            spendUsed: metadata.spendUsed,
+            spendReset: metadata.spendReset,
+            status: metadata.status,
+          })
+          .catch(() => undefined);
+      }
+      const walletLocked = await walletService.isLocked();
+      const decision = evaluateSessionSigningGuard({
+        currentAccount,
+        sessionMetadata: metadata,
+        walletLocked,
+        nowSeconds,
+        currentChainId: currentNetwork.chainId,
+        decodedMessages: document.msgs as { type: string; value: any }[],
+        txFee: {
+          amount: document.fee.amount[0]?.amount ?? '0',
+          denom: document.fee.amount[0]?.denom ?? GasToken.denom,
+        },
+      });
+      if (decision.ok === false) {
+        setResponse(
+          InjectionMessageInstance.failure(
+            WalletResponseRejectType.SIGN_REJECTED,
+            { sessionGuardReason: decision.reason },
+            requestData?.key,
+          ),
+        );
+        return false;
+      }
+    }
+
     try {
       const signature = await transactionService.createSignature(currentAccount, document);
       setProcessType('PROCESSING');
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.SIGN_SUCCESS,
-          {
-            document,
-            signature,
-          },
+          { document, signature },
           requestData?.key,
         ),
       );
-    }
-    catch (e) {
+    } catch (e) {
       if (e instanceof Error) {
         const message = e.message;
         if (message.includes('Ledger')) {
@@ -383,7 +406,12 @@ const ApproveSignContainer: React.FC = () => {
     }
 
     updateTransactionData();
-  }, [memo, transactionMessages, useNetworkFeeReturn.currentGasInfo?.gasWanted, useNetworkFeeReturn.currentGasFeeRawAmount]);
+  }, [
+    memo,
+    transactionMessages,
+    useNetworkFeeReturn.currentGasInfo?.gasWanted,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
+  ]);
 
   return (
     <ApproveTransaction
@@ -398,7 +426,9 @@ const ApproveSignContainer: React.FC = () => {
       logo={favicon}
       currentBalance={currentBalance || 0}
       isErrorNetworkFee={isErrorNetworkFee || !networkFee}
+      isErrorStorageDeposit={isErrorStorageDeposit}
       networkFee={displayNetworkFee}
+      feeTokenQuote={feeTokenQuote}
       useNetworkFeeReturn={useNetworkFeeReturn}
       transactionMessages={transactionMessages}
       argumentInfos={argumentInfos}

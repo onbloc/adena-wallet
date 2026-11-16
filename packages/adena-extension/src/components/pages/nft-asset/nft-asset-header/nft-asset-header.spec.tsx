@@ -1,11 +1,9 @@
+import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
-import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
 import NFTAssetHeader, { NFTAssetHeaderProps } from './nft-asset-header';
 
 describe('NFTAssetHeader Component', () => {
@@ -35,12 +33,12 @@ describe('NFTAssetHeader Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <NFTAssetHeader {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

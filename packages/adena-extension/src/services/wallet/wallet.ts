@@ -1,21 +1,24 @@
-import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant';
-import { WalletError } from '@common/errors/wallet/wallet-error';
-import { encryptSha256Password, encryptWalletPassword } from '@common/utils/crypto-utils';
-import { WalletRepository } from '@repositories/wallet';
 import {
   AdenaWallet,
   MultisigAccount,
-  MultisigConfig,
   MultisigKeyring,
-  SignerPublicKeyInfo,
   Wallet,
+  MultisigConfig,
+  SignerPublicKeyInfo,
+  generateKdfSalt,
 } from 'adena-module';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
 
+import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant';
+import { WalletError } from '@common/errors/wallet/wallet-error';
+import { CommandMessage } from '@inject/message/command-message';
+import { WalletRepository } from '@repositories/wallet';
+
 export class WalletService {
   private _id: string;
   private walletRepository: WalletRepository;
+  private currentWalletResolver: (() => Wallet | null) | null = null;
 
   constructor(walletRepository: WalletRepository) {
     this._id = uuidv4();
@@ -26,10 +29,22 @@ export class WalletService {
     return this._id;
   }
 
+  /**
+   * Registers the already-unlocked wallet instance held by the caller's context,
+   * so `getCurrentWallet` can hand it out instead of deserializing again.
+   *
+   * Only UI contexts set this — the popup and the web pages keep the wallet for
+   * the whole unlocked session anyway. The background service worker never
+   * registers a resolver, so it keeps reading from storage.
+   */
+  public setCurrentWalletResolver = (resolver: (() => Wallet | null) | null): void => {
+    this.currentWalletResolver = resolver;
+  };
+
   public existsWallet = (): Promise<boolean> => {
     return this.walletRepository
       .getSerializedWallet()
-      .then(serializedWallet => !!serializedWallet)
+      .then((serializedWallet) => !!serializedWallet)
       .catch(() => false);
   };
 
@@ -69,6 +84,43 @@ export class WalletService {
   };
 
   /**
+   * Returns the wallet of the unlocked session, reusing the instance the caller's
+   * context already holds when one is registered and the wallet is still
+   * unlocked.
+   *
+   * Prefer this over `loadWallet` for signing and for reads that only need the
+   * current accounts and keyrings: `loadWallet` re-reads storage and re-runs the
+   * Argon2id KDF every time (~160ms), which signing paths and pollers were
+   * paying on every single call.
+   *
+   * Keep using `loadWallet` where the authoritative on-disk state is the point:
+   * initializing a context, and any read-modify-write of the wallet — a
+   * service-level `updateWallet` does not refresh the instance a UI context
+   * holds, so a second modification would be built on a pre-write snapshot.
+   *
+   * @returns Wallet
+   */
+  public getCurrentWallet = async (): Promise<Wallet> => {
+    const currentWallet = this.currentWalletResolver?.() ?? null;
+    if (!currentWallet) {
+      return this.loadWallet();
+    }
+
+    // The session password is shared by every document, the resolver is not:
+    // each popup window and each web page builds its own WalletService. Locking
+    // in one document clears only that service's resolver, so without checking
+    // the shared state here a document that was already open would keep signing
+    // with its cached keyrings after the wallet had been locked elsewhere.
+    // Falling through to `loadWallet` reproduces the pre-reuse behaviour: it
+    // throws once the password is gone.
+    if (await this.isLocked()) {
+      return this.loadWallet();
+    }
+
+    return currentWallet;
+  };
+
+  /**
    * This function loads a wallet instance with the password.
    *
    * @param password wallet's password
@@ -93,8 +145,7 @@ export class WalletService {
     try {
       const existsPassword = await this.walletRepository.existsWalletPassword();
       return !existsPassword;
-    }
-    catch (_e) {
+    } catch (e) {
       return true;
     }
   };
@@ -119,8 +170,7 @@ export class WalletService {
     try {
       const wallet = await AdenaWallet.createByMnemonic(mnemonic, accountPaths);
       return wallet;
-    }
-    catch (_e) {
+    } catch (e) {
       throw new WalletError('FAILED_TO_CREATE');
     }
   };
@@ -132,31 +182,25 @@ export class WalletService {
    * @param password wallet's password
    */
   public saveWallet = async (wallet: Wallet, password: string): Promise<void> => {
-    const encryptedPassword = encryptWalletPassword(password);
-
-    const serializedWallet = await wallet.serialize(encryptedPassword);
-    await this.walletRepository.updateWalletPassword(encryptedPassword);
+    let salt = await this.walletRepository.getKdfSalt();
+    if (!salt) {
+      salt = await generateKdfSalt();
+      await this.walletRepository.updateKdfSalt(salt);
+    }
+    const serializedWallet = await wallet.serialize(password, salt);
+    await this.walletRepository.updateWalletPassword(password);
     await this.walletRepository.updateSerializedWallet(serializedWallet);
-    try {
-      chrome?.action?.setPopup({ popup: 'popup.html' });
-    }
-    catch (e) {
-      console.error(e);
-    }
   };
 
   public updateWallet = async (wallet: Wallet): Promise<void> => {
-    let encryptedWallet = await this.walletRepository.getWalletPassword();
-    const serializedWallet = await wallet.serialize(encryptedWallet);
-    encryptedWallet = '';
+    const password = await this.walletRepository.getWalletPassword();
+    const salt = await this.walletRepository.getKdfSalt();
+    if (!salt) {
+      throw new WalletError('FAILED_TO_LOAD');
+    }
+    const serializedWallet = await wallet.serialize(password, salt);
 
     await this.walletRepository.updateSerializedWallet(serializedWallet);
-    try {
-      chrome?.action?.setPopup({ popup: 'popup.html' });
-    }
-    catch (e) {
-      console.error(e);
-    }
   };
 
   /**
@@ -216,8 +260,7 @@ export class WalletService {
       await this.updateWallet(clonedWallet);
 
       return multisigAccount;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Failed to add multisig account:', error);
       throw error;
     }
@@ -232,62 +275,59 @@ export class WalletService {
   public deserializeWallet = async (password: string): Promise<AdenaWallet> => {
     try {
       const serializedWallet = await this.walletRepository.getSerializedWallet();
+      const salt = await this.walletRepository.getKdfSalt();
+      if (!salt) {
+        throw new WalletError('FAILED_TO_LOAD');
+      }
 
-      const walletInstance = await AdenaWallet.deserialize(serializedWallet, password);
+      const walletInstance = await AdenaWallet.deserialize(serializedWallet, password, salt);
 
       return walletInstance;
-    }
-    catch (e) {
+    } catch (e) {
       console.error(e);
       throw new WalletError('FAILED_TO_LOAD');
     }
   };
 
   public lockWallet = async (): Promise<void> => {
+    // This used to deserialize the wallet just to call `destroy()` on it, which
+    // cost an Argon2id derivation to wipe a throwaway copy — the instance the UI
+    // holds was never the one being destroyed. Dropping the session password is
+    // what actually locks the wallet; the caller drops its own reference right
+    // after (see the lock flows in settings / side-menu-container).
+    //
+    // Drop the resolver in the same breath so a call that lands between this and
+    // the caller's teardown cannot be served the still-referenced wallet. The
+    // provider re-registers it on the next unlock.
+    this.currentWalletResolver = null;
+
     try {
       await this.walletRepository.deleteWalletPassword();
-    }
-    catch (_e) {
+    } catch (e) {
       throw new WalletError('FAILED_TO_LOAD');
     }
   };
 
   public equalsPassword = async (password: string): Promise<boolean> => {
-    const storedPassword = await this.walletRepository.getEncryptedPassword();
-
     try {
-      if (encryptSha256Password(password) === storedPassword) {
-        await this.walletRepository.migrate(password);
-        return this.updatePassword(password);
-      }
-
-      const encryptedPassword = encryptWalletPassword(password);
-      const wallet = await this.deserializeWallet(encryptedPassword);
-      if (wallet) {
-        return this.updatePassword(password);
-      }
+      // Trigger migration (v018: AES-CBC → XChaCha20) before deserialization
+      await this.walletRepository.updateStoragePassword(password);
+      await this.deserializeWallet(password);
+      return true;
+    } catch (e) {
+      return false;
     }
-    catch (e) {
-      console.error(e);
-    }
-    return false;
   };
 
   public updatePassword = async (password: string): Promise<boolean> => {
     return this.walletRepository.updateWalletPassword(password);
   };
 
-  public updatePasswordWithEncrypt = async (password: string): Promise<boolean> => {
-    const encryptedPassword = encryptWalletPassword(password);
-    return this.updatePassword(encryptedPassword);
-  };
-
   public changePassword = async (password: string): Promise<boolean> => {
     try {
       const wallet = await this.loadWallet();
       await this.saveWallet(wallet, password);
-    }
-    catch (e) {
+    } catch (e) {
       console.error(e);
       return false;
     }
@@ -323,15 +363,26 @@ export class WalletService {
     await updateGuideConfirmDate(confirmDate);
   };
 
+  public getAutoLockTimeoutMinutes = async (): Promise<number> => {
+    return this.walletRepository.getAutoLockTimeoutMinutes();
+  };
+
+  public updateAutoLockTimeoutMinutes = async (minutes: number): Promise<void> => {
+    await this.walletRepository.updateAutoLockTimeoutMinutes(minutes);
+    try {
+      await chrome.runtime.sendMessage(
+        CommandMessage.command('updateAutoLockTimer', { minutes }),
+      );
+    } catch (e) {
+      console.warn('Failed to notify background of auto-lock timer update', e);
+    }
+  };
+
   public clear = async (): Promise<boolean> => {
+    this.currentWalletResolver = null;
     await this.walletRepository.deleteSerializedWallet();
     await this.walletRepository.deleteWalletPassword();
-    try {
-      chrome?.action?.setPopup({ popup: '' });
-    }
-    catch (e) {
-      console.error(e);
-    }
+    await this.walletRepository.deleteKdfSalt();
     return true;
   };
 }

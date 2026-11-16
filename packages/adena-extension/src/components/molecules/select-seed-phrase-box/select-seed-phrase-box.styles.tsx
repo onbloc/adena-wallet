@@ -1,5 +1,6 @@
-import { Row, View } from '@components/atoms';
 import styled, { keyframes } from 'styled-components';
+
+import { Row, View } from '@components/atoms';
 
 export const StyledSelectSeedPhraseBox = styled(View)``;
 
@@ -10,6 +11,8 @@ export const StyledSelectSeedPhraseContent = styled(View)`
   overflow-y: auto;
   background-color: #14161a;
   border-radius: 12px;
+
+  scrollbar-width: none; /* Firefox */
 
   &::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera*/

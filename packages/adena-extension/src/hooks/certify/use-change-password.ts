@@ -1,5 +1,4 @@
 import { PasswordValidationError } from '@common/errors';
-import { encryptWalletPassword } from '@common/utils/crypto-utils';
 import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
 import {
   validateEqualsChangePassword,
@@ -9,9 +8,7 @@ import {
 } from '@common/validation';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
-import React, {
-  useCallback, useEffect, useMemo, useRef, useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export type UseChangePasswordReturn = {
   currPwdState: {
@@ -97,10 +94,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const { name, value } = e.target;
-      setInputs(inputs => ({
-        ...inputs,
-        [name]: value,
-      }));
+      setInputs((inputs) => ({ ...inputs, [name]: value }));
     },
     [currPwd, newPwd, confirmPwd],
   );
@@ -114,10 +108,11 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     let isValid = true;
     let errorMessage = '';
     try {
-      const encryptedCurrentPassword = encryptWalletPassword(currentPassword);
-      validateInvalidPassword(encryptedCurrentPassword, storedPassword);
-    }
-    catch (error) {
+      const isValid = await walletService.equalsPassword(currentPassword);
+      if (!isValid) {
+        throw new PasswordValidationError('INVALID_PASSWORD');
+      }
+    } catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
         setIsCurrPwdError(true);
@@ -129,8 +124,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     try {
       validatePasswordComplexity(newPassword);
       validateEqualsChangePassword(newPassword, currentPassword);
-    }
-    catch (error) {
+    } catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
         setIsNewPwdError(true);
@@ -141,8 +135,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     }
     try {
       validateNotMatchConfirmPassword(newPassword, newConfirmPassword);
-    }
-    catch (error) {
+    } catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
         setIsConfirmPwdError(true);
@@ -163,8 +156,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
           confirmPwd: '',
         });
         return 'FINISH';
-      }
-      catch (e) {
+      } catch (e) {
         console.error(e);
       }
     }
@@ -202,7 +194,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
         cancel: goBack,
         save: saveButtonClick,
       },
-      disabled: Object.values(inputs).some(el => el === ''),
+      disabled: Object.values(inputs).some((el) => el === ''),
     },
     onKeyDown,
   };

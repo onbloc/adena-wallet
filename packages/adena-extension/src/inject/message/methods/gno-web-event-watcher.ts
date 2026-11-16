@@ -182,10 +182,7 @@ export class GnoWebEventWatcher {
   /**
    * Extract gno-connect info from meta tag
    */
-  private getConnectInfo(): {
-    chainId: string;
-    rpc: string;
-  } {
+  private getConnectInfo(): { chainId: string; rpc: string } {
     const connectInfo = this.connectInfoProvider.getConnectInfo();
     return {
       chainId: connectInfo?.chainId || '',

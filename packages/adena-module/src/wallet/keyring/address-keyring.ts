@@ -3,12 +3,12 @@ import {
   TransactionEndpoint,
   Tx,
   TxSignature,
-  uint8ArrayToBase64
+  uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Document, fromBech32 } from '../../index.js';
-import { Keyring, KeyringData, KeyringType } from './keyring.js';
+import { Document, fromBech32 } from '../..';
+import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
 
 export class AddressKeyring implements Keyring {
   public readonly id: string;
@@ -23,17 +23,28 @@ export class AddressKeyring implements Keyring {
     this.addressBytes = Uint8Array.from(addressBytes);
   }
 
+  destroy() {
+    // No sensitive key material to clear
+  }
+
   toData() {
     return {
       id: this.id,
       type: this.type,
-      addressBytes: Array.from(this.addressBytes)
+      addressBytes: Array.from(this.addressBytes),
     };
+  }
+
+  async signRaw(_bytes: Uint8Array, _opts?: SignRawOptions): Promise<Uint8Array> {
+    // AIRGAP keyrings intentionally hold no private key. Signing happens on an
+    // external air-gapped device; the wallet only stores the address and
+    // broadcasts pre-signed transactions.
+    throw new Error(`AIRGAP keyring cannot sign (keyring ${this.id})`);
   }
 
   async sign(
     _provider: Provider,
-    _document: Document
+    _document: Document,
   ): Promise<{
     signed: Tx;
     signature: TxSignature[];

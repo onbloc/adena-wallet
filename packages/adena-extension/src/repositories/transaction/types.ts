@@ -1,11 +1,10 @@
-import { Tx } from '@gnolang/tm2-js-client';
-import { ResponseDeliverTx } from '@gnolang/tm2-js-client';
+import { ResponseDeliverTx, Tx } from '@gnolang/tm2-js-client';
 import { TransactionWithPageInfo } from '@types';
 
 export interface ITransactionGasRepository {
   fetchGasPrices: () => Promise<number | null>;
   simulateTx: (tx: Tx) => Promise<ResponseDeliverTx>;
-  estimateGasByTx: (tx: Tx) => Promise<bigint>;
+  estimateGasByTx: (tx: Tx) => Promise<number>;
 }
 
 export interface ITransactionHistoryRepository {
@@ -20,9 +19,11 @@ export interface ITransactionHistoryRepository {
   ) => Promise<TransactionWithPageInfo>;
   fetchGRC20TransactionHistoryBy: (
     address: string,
-    packagePath: string,
+    tokenPath: string,
     cursor?: string | null,
   ) => Promise<TransactionWithPageInfo>;
 }
 
-export interface ITransactionHistoryIndexerRepository extends ITransactionHistoryRepository { fetchBlockTimeByHeight: (height: number) => Promise<string | null> }
+export interface ITransactionHistoryIndexerRepository extends ITransactionHistoryRepository {
+  fetchBlockTimeByHeight: (height: number) => Promise<string | null>;
+}

@@ -1,6 +1,7 @@
+import styled from 'styled-components';
+
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
-import styled from 'styled-components';
 
 export const ApproveTransactionNetworkFeeWrapper = styled.div`
   ${mixins.flex({ justify: 'flex-start' })};
@@ -64,11 +65,7 @@ export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolea
   }
 
   .domain-wrapper {
-    ${mixins.flex({
-      direction: 'row',
-      align: 'center',
-      justify: 'center',
-    })};
+    ${mixins.flex({ direction: 'row', align: 'center', justify: 'center' })};
     width: 100%;
     min-height: 41px;
     border-radius: 24px;
@@ -156,7 +153,7 @@ export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolea
     background-color: rgba(239, 45, 33, 0.08);
     border: 1px solid ${getTheme('red', '_5')};
     margin-bottom: 8px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 500;
     font-size: 13px;
     line-height: 20px;
@@ -197,6 +194,12 @@ export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolea
       ${fonts.body2Reg};
       resize: none;
     }
+    .raw-info-textarea {
+      /* Gecko ignores ::-webkit-scrollbar. */
+      scrollbar-width: thin;
+      scrollbar-color: darkgrey transparent;
+    }
+
     .raw-info-textarea::-webkit-scrollbar {
       width: 2px;
       padding: 1px 1px 1px 0px;
@@ -215,11 +218,7 @@ export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolea
   }
 
   .error-detail-wrapper {
-    ${mixins.flex({
-      direction: 'column',
-      justify: 'flex-start',
-      align: 'stretch',
-    })};
+    ${mixins.flex({ direction: 'column', justify: 'flex-start', align: 'stretch' })};
     width: 100%;
     margin-top: 24px;
     gap: 16px;

@@ -24,7 +24,9 @@ export interface IInterceptor {
 /**
  * Context for interceptor execution
  */
-export interface InterceptorContext { gnoConnectInfo: GnoConnectInfo }
+export interface InterceptorContext {
+  gnoConnectInfo: GnoConnectInfo;
+}
 
 /**
  * Handler function for processing intercepted data

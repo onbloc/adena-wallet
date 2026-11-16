@@ -1,8 +1,9 @@
+// Must stay the first import: later modules may build BigNumbers on load.
+import '@common/config/bignumber';
 import { AlarmKey, SCHEDULE_ALARMS } from '@common/constants/alarm-key.constant';
-import { ADENA_WALLET_EXTENSION_ID } from '@common/constants/storage.constant';
 import { TransactionEventStore } from '@common/event-store';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
-import { ChromeLocalStorage } from '@common/storage';
+import { AUTO_LOCK_TRIGGERED_MESSAGE } from '@common/utils/auto-lock-timer';
 import { CommandHandler } from '@inject/message/command-handler';
 import {
   CommandMessage,
@@ -20,7 +21,10 @@ import {
   isTransactionNotification,
   parseTransactionScannerUrl,
 } from '@inject/message/methods/transaction-event';
-
+import {
+  handleFetchRealmDocument,
+  isFetchRealmDocumentMessage,
+} from '@inject/message/methods/gno-realm-document';
 import { InjectionMessage, MessageHandler } from './inject/message';
 
 const inMemoryProvider = new MemoryProvider();
@@ -72,9 +76,9 @@ function cleanupSession(sessionId: string): void {
 
 function isGnoSessionUpdateMessage(message: unknown): message is GnoSessionUpdateMessage {
   return (
-    typeof message === 'object'
-    && message !== null
-    && (message as GnoSessionUpdateMessage).type === 'GNO_SESSION_UPDATE'
+    typeof message === 'object' &&
+    message !== null &&
+    (message as GnoSessionUpdateMessage).type === 'GNO_SESSION_UPDATE'
   );
 }
 
@@ -85,9 +89,9 @@ interface RegisterPopupSessionMessage {
 
 function isRegisterPopupSessionMessage(message: unknown): message is RegisterPopupSessionMessage {
   return (
-    typeof message === 'object'
-    && message !== null
-    && (message as RegisterPopupSessionMessage).type === 'REGISTER_POPUP_SESSION'
+    typeof message === 'object' &&
+    message !== null &&
+    (message as RegisterPopupSessionMessage).type === 'REGISTER_POPUP_SESSION'
   );
 }
 
@@ -102,39 +106,38 @@ interface GetActiveSessionMessage {
   pkgPath: string;
 }
 
-interface GetAllGnoSessionsMessage { type: 'GET_ALL_GNO_SESSIONS' }
+interface GetAllGnoSessionsMessage {
+  type: 'GET_ALL_GNO_SESSIONS';
+}
 
 function isGetGnoSessionMessage(message: unknown): message is GetGnoSessionMessage {
   return (
-    typeof message === 'object'
-    && message !== null
-    && (message as GetGnoSessionMessage).type === 'GET_GNO_SESSION'
+    typeof message === 'object' &&
+    message !== null &&
+    (message as GetGnoSessionMessage).type === 'GET_GNO_SESSION'
   );
 }
 
 function isGetActiveSessionMessage(message: unknown): message is GetActiveSessionMessage {
   return (
-    typeof message === 'object'
-    && message !== null
-    && (message as GetActiveSessionMessage).type === 'GET_ACTIVE_SESSION'
+    typeof message === 'object' &&
+    message !== null &&
+    (message as GetActiveSessionMessage).type === 'GET_ACTIVE_SESSION'
   );
 }
 
 function isGetAllGnoSessionsMessage(message: unknown): message is GetAllGnoSessionsMessage {
   return (
-    typeof message === 'object'
-    && message !== null
-    && (message as GetAllGnoSessionsMessage).type === 'GET_ALL_GNO_SESSIONS'
+    typeof message === 'object' &&
+    message !== null &&
+    (message as GetAllGnoSessionsMessage).type === 'GET_ALL_GNO_SESSIONS'
   );
 }
 
 async function handleRegisterPopupSession(
   message: RegisterPopupSessionMessage,
   sender: chrome.runtime.MessageSender,
-): Promise<{
-  success: boolean;
-  session?: GnoSessionState;
-}> {
+): Promise<{ success: boolean; session?: GnoSessionState }> {
   const { sessionId } = message;
 
   // Get popup window ID
@@ -142,15 +145,13 @@ async function handleRegisterPopupSession(
 
   if (sender.tab?.windowId) {
     popupId = sender.tab.windowId;
-  }
-  else {
+  } else {
     try {
       const currentWindow = await chrome.windows.getCurrent();
       if (currentWindow.type === 'popup') {
         popupId = currentWindow.id;
       }
-    }
-    catch {
+    } catch {
       // Ignore
     }
   }
@@ -173,9 +174,7 @@ function handleGnoSessionUpdate(
   sender: chrome.runtime.MessageSender,
 ): void {
   const { data } = message;
-  const {
-    sessionId, funcName, pkgPath, chainId, rpc, updateType,
-  } = data;
+  const { sessionId, funcName, pkgPath, chainId, rpc, updateType } = data;
   const funcKey = makeFuncKey(pkgPath, funcName);
 
   // Get or create session state
@@ -258,10 +257,7 @@ function handleGetActiveSession(message: GetActiveSessionMessage): GnoSessionSta
   return session || null;
 }
 
-function handleGetAllGnoSessions(): Array<{
-  id: string;
-  data: GnoSessionState;
-}> {
+function handleGetAllGnoSessions(): Array<{ id: string; data: GnoSessionState }> {
   const allSessions = Array.from(gnoSessions.entries()).map(([id, data]) => ({
     id,
     data,
@@ -295,64 +291,23 @@ chrome.windows.onRemoved.addListener((windowId) => {
 
 initAlarms();
 
-function existsWallet(): Promise<boolean> {
-  const storage = new ChromeLocalStorage();
-  return storage
-    .get('SERIALIZED')
-    .then(async serialized => typeof serialized === 'string' && serialized.length !== 0)
-    .catch(() => false);
-}
-
-function setupPopup(existWallet: boolean): boolean {
-  const popupUri = existWallet ? 'popup.html' : '';
-  chrome.action.setPopup({ popup: popupUri });
-  return true;
-}
-
+// The popup is declared statically in the manifest (`action.default_popup`), so
+// clicking the icon always opens it — even on the very first click of a browser
+// session. It used to be registered at runtime with `chrome.action.setPopup`,
+// which is dynamic action state: it is dropped whenever the browser restarts or
+// the extension reloads, and nothing restored it on `chrome.runtime.onStartup`.
+// The icon then had no popup, so the click fell through to `action.onClicked`,
+// which only re-registered the popup without opening it — the first click after
+// every browser start did nothing at all.
+//
+// The wallet-less case is handled inside the popup: App/popup sees
+// `existWallet === false`, opens the register tab and closes itself.
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    chrome.tabs.create({ url: chrome.runtime.getURL('/register.html') });
-  }
-  else if (details.reason === 'update') {
-    existsWallet().then((existWallet) => {
-      setupPopup(existWallet);
+    chrome.tabs.create({
+      url: chrome.runtime.getURL('/register.html'),
     });
   }
-});
-
-chrome.tabs.onCreated.addListener(() => {
-  existsWallet().then((existWallet) => {
-    setupPopup(existWallet);
-  });
-});
-
-chrome.action.onClicked.addListener(async () => {
-  existsWallet().then((existWallet) => {
-    setupPopup(existWallet);
-    if (!existWallet) {
-      chrome.tabs.create({ url: chrome.runtime.getURL('/register.html') });
-    }
-  });
-});
-
-chrome.runtime.onConnect.addListener(async (port) => {
-  if (port.name !== ADENA_WALLET_EXTENSION_ID) {
-    return;
-  }
-
-  inMemoryProvider.addConnection();
-  inMemoryProvider.updateExpiredTimeBy(null);
-
-  port.onDisconnect.addListener(async () => {
-    inMemoryProvider.removeConnection();
-
-    if (!inMemoryProvider.isActive()) {
-      const expiredTime = new Date().getTime() + inMemoryProvider.getExpiredPasswordDurationTime();
-      inMemoryProvider.updateExpiredTimeBy(expiredTime);
-
-      console.info('Password Expired time:', new Date(expiredTime));
-    }
-  });
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
@@ -361,22 +316,21 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     chrome.storage.local.set({ SESSION: currentTime });
 
     switch (alarm?.name) {
-      case AlarmKey.EXPIRED_PASSWORD:
-        if (!inMemoryProvider.isExpired(currentTime)) {
-          return;
-        }
-
+      case AlarmKey.AUTO_LOCK_TIMER:
         await chrome.storage.session.clear();
         await clearInMemoryKey(inMemoryProvider);
-
-        inMemoryProvider.updateExpiredTimeBy(null);
-        console.info('Password Expired');
+        // Tell any open UI surface that auto-lock just fired so it can
+        // invalidate cached lock state and route to Login immediately.
+        // The send rejects when no UI is listening — that's expected.
+        chrome.runtime
+          .sendMessage({ type: AUTO_LOCK_TRIGGERED_MESSAGE })
+          .catch(() => undefined);
+        console.info('Auto-lock fired');
         break;
       default:
         break;
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.error(error);
   }
 
@@ -388,10 +342,11 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
     try {
       const tab = await chrome.tabs.get(tabId).catch(() => null);
       if (
-        !tab?.url
-        || tab.url.startsWith('chrome://')
-        || tab.url.startsWith('chrome-extension://')
-        || tab.url.startsWith('about:')
+        !tab?.url ||
+        tab.url.startsWith('chrome://') ||
+        tab.url.startsWith('chrome-extension://') ||
+        tab.url.startsWith('moz-extension://') ||
+        tab.url.startsWith('about:')
       ) {
         return;
       }
@@ -405,14 +360,20 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
           }),
         )
         .catch(() => undefined);
-    }
-    catch {
+    } catch {
       // Tab may have been closed
     }
   }
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Reject messages that did not originate from this extension's own contexts
+  // (background, popup, options, content scripts). External extensions must
+  // use chrome.runtime.onMessageExternal instead.
+  if (sender.id !== chrome.runtime.id) {
+    return;
+  }
+
   // Handle ping from content script for connection check
   if (message?.type === 'ping') {
     sendResponse({ status: 'pong' });
@@ -451,12 +412,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  // Fetch realm documents on behalf of content scripts. Firefox subjects
+  // content-script fetches to the page's CSP (expanded principal), and gnoweb's
+  // connect-src blocks the RPC request there, which broke TxLinks.
+  if (isFetchRealmDocumentMessage(message)) {
+    handleFetchRealmDocument(message).then(sendResponse).catch(console.warn);
+    return true;
+  }
+
   if (isCommandMessageData(message)) {
     CommandHandler.createHandler(inMemoryProvider, message, sender, sendResponse);
     return true;
   }
 
-  return MessageHandler.createHandler(inMemoryProvider, message, sender, response =>
+  return MessageHandler.createHandler(inMemoryProvider, message, sender, (response) =>
     sendResponseWithNotification(response, message, sendResponse),
   );
 });
@@ -477,19 +446,19 @@ function initAlarms(): void {
   SCHEDULE_ALARMS.map(initAlarmWithDelay);
 }
 
-function initAlarmWithDelay(alarm: {
-  key: string;
-  periodInMinutes: number;
-  delay: number;
-}): void {
+function initAlarmWithDelay(alarm: { key: string; periodInMinutes: number; delay: number }): void {
   if (alarm.delay === 0) {
-    chrome.alarms.create(alarm.key, { periodInMinutes: alarm.periodInMinutes });
+    chrome.alarms.create(alarm.key, {
+      periodInMinutes: alarm.periodInMinutes,
+    });
     return;
   }
 
   setTimeout(
     () =>
-      chrome.alarms.create(alarm.key, { periodInMinutes: alarm.periodInMinutes }),
+      chrome.alarms.create(alarm.key, {
+        periodInMinutes: alarm.periodInMinutes,
+      }),
     alarm.delay,
   );
 }

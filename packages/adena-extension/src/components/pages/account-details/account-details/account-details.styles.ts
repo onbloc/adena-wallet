@@ -3,10 +3,7 @@ import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const AccountDetailsWrapper = styled.div`
-  ${mixins.flex({
-    align: 'normal',
-    justify: 'normal',
-  })};
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
   padding: 24px 20px;
@@ -19,7 +16,7 @@ export const AccountDetailsWrapper = styled.div`
   .qrcode-wrapper {
     ${mixins.flex()};
     width: 100%;
-    padding: 12px 0;
+    padding: 12px 0 0 0;
 
     .qrcode-background {
       display: flex;
@@ -29,10 +26,7 @@ export const AccountDetailsWrapper = styled.div`
     }
 
     .qrcode-address-wrapper {
-      ${mixins.flex({
-        direction: 'row',
-        justify: 'space-between',
-      })};
+      ${mixins.flex({ direction: 'row', justify: 'space-between' })};
       width: 100%;
       height: 42px;
       background-color: ${getTheme('neutral', '_9')};
@@ -49,5 +43,9 @@ export const AccountDetailsWrapper = styled.div`
         text-overflow: ellipsis;
       }
     }
+  }
+
+  .button-group-wrapper {
+    padding: 12px 0 0 0;
   }
 `;

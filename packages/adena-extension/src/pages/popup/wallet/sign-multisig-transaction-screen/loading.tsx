@@ -1,8 +1,7 @@
-import {
-  CommonFullContentLayout, Spinner, Text, View,
-} from '@components/atoms';
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
+
+import { CommonFullContentLayout, Spinner, Text, View } from '@components/atoms';
 
 const SignTransactionLoading: React.FC = () => {
   const theme = useTheme();
@@ -13,7 +12,7 @@ const SignTransactionLoading: React.FC = () => {
         <Spinner />
         <StyledDescriptionWrapper>
           <Text type='header4' textAlign='center'>
-            Signing...
+            {'Signing...'}
           </Text>
           <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
             {'Your transaction is being signed.\nPlease wait a moment.'}

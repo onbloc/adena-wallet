@@ -7,13 +7,9 @@ import {
 } from '@common/validation';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
-import {
-  CreateAccountState, GoogleState, LedgerState, RoutePath, SeedState,
-} from '@types';
+import { CreateAccountState, GoogleState, LedgerState, RoutePath, SeedState } from '@types';
 import { AdenaWallet } from 'adena-module';
-import {
-  useCallback, useEffect, useMemo, useRef, useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export type UseCreatePasswordReturn = {
   pwdState: {
@@ -103,10 +99,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const { name, value } = e.target;
-      setInputs(input => ({
-        ...input,
-        [name]: value,
-      }));
+      setInputs((input) => ({ ...input, [name]: value }));
     },
     [pwd, confirmPwd],
   );
@@ -116,8 +109,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
     const confirmPassword = confirmPwd;
     try {
       if (validateNotMatchConfirmPassword(password, confirmPassword)) return true;
-    }
-    catch (error) {
+    } catch (error) {
       if (error instanceof PasswordValidationError) {
         switch (error.getType()) {
           case 'NOT_MATCH_CONFIRM_PASSWORD':
@@ -140,8 +132,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
       validateEmptyPassword(password);
       validatePasswordComplexity(password);
       return true;
-    }
-    catch (error) {
+    } catch (error) {
       console.log(error);
       setIsPwdError(true);
       if (error instanceof PasswordValidationError) {
@@ -179,8 +170,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
       await accountService.changeCurrentAccount(wallet.currentAccount);
       await walletService.changePassword(pwd);
       clearPassword();
-    }
-    catch (error) {
+    } catch (error) {
       console.error(error);
       return 'FAIL';
     }
@@ -195,8 +185,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
       await accountService.changeCurrentAccount(wallet.currentAccount);
       await walletService.saveWallet(wallet, pwd);
       clearPassword();
-    }
-    catch (error) {
+    } catch (error) {
       console.error(error);
       return 'FAIL';
     }
@@ -227,10 +216,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
   };
 
   const clearPassword = (): void => {
-    setInputs({
-      pwd: '',
-      confirmPwd: '',
-    });
+    setInputs({ pwd: '', confirmPwd: '' });
   };
 
   return {

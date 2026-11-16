@@ -33,7 +33,7 @@ const SVGWrapper = styled.div`
   }
 `;
 
-const IconButtonLoading = (): ReactElement<any> => {
+const IconButtonLoading = (): ReactElement => {
   return (
     <SVGWrapper>
       <svg

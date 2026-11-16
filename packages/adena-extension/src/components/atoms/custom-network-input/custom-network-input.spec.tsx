@@ -1,12 +1,10 @@
-import { GlobalPopupStyle } from '@styles/global-style';
-import theme from '@styles/theme';
-import { render } from '@testing-library/react';
 import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
-import { CustomNetworkInput, CustomNetworkInputProps } from '.';
+import { render } from '@testing-library/react';
+import theme from '@styles/theme';
+import { GlobalPopupStyle } from '@styles/global-style';
+import { CustomNetworkInputProps, CustomNetworkInput } from '.';
 
 describe('CustomNetworkInput Component', () => {
   it('CustomNetworkInput render', () => {
@@ -15,8 +13,9 @@ describe('CustomNetworkInput Component', () => {
       rpcUrl: '',
       rpcUrlError: '',
       chainId: '',
-      indexerUrl: '',
-      changeIndexerUrl: () => {
+      extraUrl: '',
+      fieldType: 'indexer',
+      changeExtraUrl: () => {
         return;
       },
       changeName: () => {
@@ -31,12 +30,12 @@ describe('CustomNetworkInput Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <CustomNetworkInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

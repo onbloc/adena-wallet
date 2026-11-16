@@ -1,7 +1,8 @@
+import { Account } from 'adena-module';
+
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
 import { addressValidationCheck } from '@common/utils/client-utils';
 import { AddressBookItem } from '@repositories/wallet';
-import { Account } from 'adena-module';
 
 export const validateInvalidAddress = (address: string): boolean => {
   const invalidCheck = addressValidationCheck(address);
@@ -19,8 +20,7 @@ export const validateAlreadyAddress = (
   let check: boolean;
   if (isAdd) {
     check = allData.some((v: AddressBookItem) => v.address === currData.address);
-  }
-  else {
+  } else {
     const filterData = allData.filter(
       (v: AddressBookItem) => v.id !== currData.id && v.address === currData.address,
     );
@@ -36,14 +36,14 @@ export const validateAlreadyAddressByAccounts = async (
   currData: AddressBookItem,
   accounts: Account[],
   isAdd: boolean,
+  addressPrefix: string,
 ): Promise<boolean> => {
   let check: boolean;
-  const addresses = await Promise.all(accounts.map(account => account.getAddress('g')));
+  const addresses = await Promise.all(accounts.map((account) => account.getAddress(addressPrefix)));
   if (isAdd) {
-    check = addresses.some(address => address === currData.address);
-  }
-  else {
-    const filterData = addresses.filter(address => address === currData.address);
+    check = addresses.some((address) => address === currData.address);
+  } else {
+    const filterData = addresses.filter((address) => address === currData.address);
     check = Boolean(filterData.length);
   }
   if (check) {
@@ -60,8 +60,7 @@ export const validateAlreadyName = (
   let check: boolean;
   if (isAdd) {
     check = allData.some((v: AddressBookItem) => v.name === currData.name);
-  }
-  else {
+  } else {
     const filterData = allData.filter(
       (v: AddressBookItem) => v.id !== currData.id && v.name === currData.name,
     );

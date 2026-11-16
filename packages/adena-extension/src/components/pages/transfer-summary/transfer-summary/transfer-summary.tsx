@@ -1,27 +1,36 @@
-import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
-import { SubHeader } from '@components/atoms';
-import { BottomFixedButtonGroup } from '@components/molecules';
-import NetworkFee from '@components/molecules/network-fee/network-fee';
-import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
-import { Amount, NetworkFee as NetworkFeeType, TokenModel } from '@types';
 import React, { useMemo } from 'react';
 
+import { SubHeader } from '@components/atoms';
+
+import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
 import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
 import { TransferSummaryWrapper } from './transfer-summary.styles';
+
+import { BottomFixedButtonGroup } from '@components/molecules';
+import NetworkFee from '@components/molecules/network-fee/network-fee';
+import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import { Amount, NetworkFee as NetworkFeeType, TokenModel } from '@types';
 
 export interface TransferSummaryProps {
   tokenMetainfo: TokenModel;
   tokenImage: string;
   transferBalance: Amount;
   toAddress: string;
+  chainName: string;
+  chainBadgeImage?: string;
   networkFee: NetworkFeeType | null;
+  /** Quote for the fee token, from `useFeeTokenPrice`; drives the fee rows' USD line. */
+  feeTokenQuote?: FeeTokenQuote | null;
+  /** Quote for the token being sent; drives the amount row's USD value. */
+  transferTokenQuote?: FeeTokenQuote | null;
   memo: string;
   currentBalance: number | null | undefined;
   useNetworkFeeReturn: UseNetworkFeeReturn;
   isErrorNetworkFee?: boolean;
   isLoadingNetworkFee?: boolean;
+  isSessionSigning?: boolean;
   simulateErrorBannerMessage?: string | null;
   onClickBack: () => void;
   onClickCancel: () => void;
@@ -34,27 +43,54 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   tokenImage,
   transferBalance,
   toAddress,
+  chainName,
+  chainBadgeImage,
   networkFee,
+  feeTokenQuote,
+  transferTokenQuote,
   memo,
   useNetworkFeeReturn,
   isErrorNetworkFee,
+  isLoadingNetworkFee,
+  isSessionSigning,
   simulateErrorBannerMessage,
   onClickBack,
   onClickCancel,
   onClickSend,
   onClickNetworkFeeSetting,
 }) => {
+  // TEMP (Phase 3 MVP): when the container supplies an explicit loading override
+  // it is also telling us "I'm providing the fee externally — don't rely on any
+  // of the Gno useNetworkFee hook state (loading, simulate error, etc.)". The
+  // Cosmos path uses this with a hardcoded fee.
+  // TODO(Phase 6): replace with a unified network-fee abstraction once feemarket
+  //                estimation lands.
+  const hasExternalFee = isLoadingNetworkFee !== undefined;
+  const effectiveIsLoading = hasExternalFee
+    ? (isLoadingNetworkFee as boolean)
+    : useNetworkFeeReturn.isLoading;
+
   const disabledSendButton = useMemo(() => {
-    if (useNetworkFeeReturn.isLoading) {
+    if (effectiveIsLoading) {
       return true;
     }
 
-    if (isErrorNetworkFee || useNetworkFeeReturn.isSimulateError) {
+    if (isErrorNetworkFee) {
+      return true;
+    }
+
+    if (!hasExternalFee && useNetworkFeeReturn.isSimulateError) {
       return true;
     }
 
     return Number(networkFee?.amount || 0) <= 0;
-  }, [isErrorNetworkFee, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.isSimulateError, networkFee]);
+  }, [
+    hasExternalFee,
+    isErrorNetworkFee,
+    effectiveIsLoading,
+    useNetworkFeeReturn.isSimulateError,
+    networkFee,
+  ]);
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
@@ -69,7 +105,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
       <div className='sub-header-wrapper'>
         <SubHeader
           leftElement={{
-            element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
+            element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
             onClick: onClickBack,
           }}
           title={`Sending ${tokenMetainfo.symbol}`}
@@ -81,13 +117,14 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           tokenImage={tokenImage}
           value={transferBalance.value}
           denom={transferBalance.denom}
+          tokenName={tokenMetainfo.name}
+          chainBadgeImage={chainBadgeImage}
+          tokenQuote={transferTokenQuote}
         />
 
-        <div className='direction-icon-wrapper'>
-          <img src={`${ArrowDownIcon}`} alt='direction-icon' />
-        </div>
+        <TransferSummaryAddress toAddress={toAddress} network={chainName} memo={memo} />
 
-        <TransferSummaryAddress toAddress={toAddress} memo={memo} />
+        {isSessionSigning && <div className='session-signing-badge'>Signed with Session</div>}
       </div>
 
       <div className='network-fee-wrapper'>
@@ -95,8 +132,9 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           isError={isErrorNetworkFee}
-          isLoading={useNetworkFeeReturn.isLoading}
+          isLoading={effectiveIsLoading}
           errorMessage={networkFeeErrorMessage}
+          feeTokenQuote={feeTokenQuote}
           onClickSetting={onClickNetworkFeeSetting}
         />
       </div>

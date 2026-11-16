@@ -1,9 +1,11 @@
+import React from 'react';
+import type { JSX } from 'react';
+import styled from 'styled-components';
+
 import { Loading, SkeletonBoxStyle } from '@components/atoms';
 import { GhostButtons } from '@components/molecules';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import React, { type JSX } from 'react';
-import styled from 'styled-components';
 
 interface ApproveProps {
   leftButtonText?: string;
@@ -19,7 +21,7 @@ const LoadingApproveTransaction = ({
     <Wrapper>
       <Loading.Round width='163px' height='14px' radius='24px' />
       <SkeletonBox />
-      <AllRadiusBox align='center'>
+      <AllRadiusBox $align='center'>
         <Loading.Round width='100px' height='10px' radius='24px' />
       </AllRadiusBox>
       <TopRadiusBox>
@@ -54,10 +56,7 @@ const Wrapper = styled.div`
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${mixins.flex({
-    align: 'flex-end',
-    justify: 'space-between',
-  })}
+  ${mixins.flex({ align: 'flex-end', justify: 'space-between' })}
   width: 80px;
   height: 80px;
   margin: 39px 0px 24px;
@@ -65,19 +64,16 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
 `;
 
 const RoundedBox = styled.div`
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'space-between',
-  })};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   height: 41px;
   background-color: ${getTheme('neutral', '_9')};
   padding: 0px 18px;
 `;
 
-const AllRadiusBox = styled(RoundedBox)<{ align?: string }>`
+const AllRadiusBox = styled(RoundedBox)<{ $align?: string }>`
   border-radius: 24px;
-  justify-content: ${({ align }): string | undefined => align && align};
+  justify-content: ${({ $align }): string | undefined => $align && $align};
 `;
 
 const TopRadiusBox = styled(RoundedBox)`

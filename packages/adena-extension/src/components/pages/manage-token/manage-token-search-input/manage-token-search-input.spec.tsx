@@ -1,11 +1,9 @@
-import { GlobalPopupStyle } from '@styles/global-style';
-import theme from '@styles/theme';
-import { render } from '@testing-library/react';
 import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
+import { render } from '@testing-library/react';
+import theme from '@styles/theme';
+import { GlobalPopupStyle } from '@styles/global-style';
 import ManageTokenSearchInput, { ManageTokenSearchInputProps } from './manage-token-search-input';
 
 describe('ManageTokenSearchInput Component', () => {
@@ -21,12 +19,12 @@ describe('ManageTokenSearchInput Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <ManageTokenSearchInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

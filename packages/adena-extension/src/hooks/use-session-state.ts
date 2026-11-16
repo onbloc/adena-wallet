@@ -1,8 +1,8 @@
-import { POPUP_SESSION_DATA_KEY } from '@common/constants/storage.constant';
-import { ChromeSessionStorage } from '@common/storage/chrome-session-storage';
 import { useQuery } from '@tanstack/react-query';
-import { RouteParams } from '@types';
 
+import { ChromeSessionStorage } from '@common/storage/chrome-session-storage';
+import { POPUP_SESSION_DATA_KEY } from '@common/constants/storage.constant';
+import { RouteParams } from '@types';
 import useAppNavigate from './use-app-navigate';
 
 const useSessionParams = <RouteName extends keyof RouteParams>(): {
@@ -11,22 +11,22 @@ const useSessionParams = <RouteName extends keyof RouteParams>(): {
   isLoading: boolean;
 } => {
   const { params } = useAppNavigate<RouteName>();
-  const { data: isPopup = null } = useQuery({
-    queryKey: ['popup/isPopup', chrome.windows],
-    queryFn: async () => {
+  const { data: isPopup = null } = useQuery(
+    ['popup/isPopup', chrome.windows],
+    async () => {
       try {
         const isPopup = (await chrome.windows.getCurrent()).type === 'popup';
         return isPopup;
-      }
-      catch {
+      } catch {
         return null;
       }
     },
-  });
+    {},
+  );
 
-  const { data = null, isLoading } = useQuery({
-    queryKey: ['popup/popupState', params, isPopup],
-    queryFn: async () => {
+  const { data = null, isLoading } = useQuery(
+    ['popup/popupState', params, isPopup],
+    async () => {
       if (params) {
         return params;
       }
@@ -36,12 +36,12 @@ const useSessionParams = <RouteName extends keyof RouteParams>(): {
       try {
         const sessionState = await new ChromeSessionStorage().get(POPUP_SESSION_DATA_KEY);
         return JSON.parse(sessionState) as RouteParams[RouteName];
-      }
-      catch {
+      } catch {
         return null;
       }
     },
-  });
+    {},
+  );
 
   return {
     isPopup,

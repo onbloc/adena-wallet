@@ -1,6 +1,7 @@
+import styled from 'styled-components';
+
 import { Pressable, Row, View } from '@components/atoms';
 import { fonts, getTheme } from '@styles/theme';
-import styled from 'styled-components';
 
 export const StyledWrapper = styled(View)`
   width: 100%;
@@ -74,6 +75,10 @@ export const StyledTransactionArea = styled.textarea`
   overflow: auto;
   ${fonts.body2Reg};
   resize: none;
+
+  /* Gecko ignores ::-webkit-scrollbar. */
+  scrollbar-width: thin;
+  scrollbar-color: darkgrey transparent;
 
   &::-webkit-scrollbar {
     width: 2px;

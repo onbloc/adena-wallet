@@ -1,3 +1,5 @@
+// Must stay the first import: later modules may build BigNumbers on load.
+import '@common/config/bignumber';
 import { EVENT_KEYS } from '@common/constants/event-key.constant';
 import { EventMessageData } from '@inject/message';
 import { CommandHandler } from '@inject/message/command-handler';
@@ -26,12 +28,10 @@ const initListener = (): void => {
     try {
       if (event.data?.status === 'request') {
         sendMessage(event);
-      }
-      else {
+      } else {
         return event.data;
       }
-    }
-    catch (e) {
+    } catch (e) {
       console.warn(e);
     }
   };
@@ -43,7 +43,9 @@ const initExtensionListener = (): void => {
   chrome.runtime.onMessage.addListener(
     (message: EventMessageData | CommandMessageData, _sender, sendResponse) => {
       if (message.status === 'event') {
-        const changedAccountEvent = new CustomEvent(EVENT_KEYS[message.type], { detail: message.data });
+        const changedAccountEvent = new CustomEvent(EVENT_KEYS[message.type], {
+          detail: message.data,
+        });
 
         window.dispatchEvent(changedAccountEvent);
         sendResponse({ received: true });
@@ -52,10 +54,7 @@ const initExtensionListener = (): void => {
 
       if (message.status === 'command') {
         const result = CommandHandler.createContentHandler(message);
-        sendResponse({
-          received: true,
-          result,
-        });
+        sendResponse({ received: true, result });
         return;
       }
 
@@ -90,7 +89,9 @@ const sendMessage = async (event: MessageEvent): Promise<void> => {
       Promise.resolve(response)
         .then((result) => {
           if (event.source) {
-            event.source.postMessage(result, { targetOrigin: event.origin });
+            event.source.postMessage(result, {
+              targetOrigin: event.origin,
+            });
           }
         })
         .catch((error) => {
@@ -98,8 +99,7 @@ const sendMessage = async (event: MessageEvent): Promise<void> => {
         });
       return true;
     });
-  }
-  catch (e) {
+  } catch (e) {
     console.warn('Failed to send message to runtime', e);
   }
 };
@@ -134,8 +134,7 @@ const sendGnoSessionUpdate = async (message: GnoSessionUpdateMessage): Promise<v
     chrome.runtime.sendMessage(message).catch((error) => {
       console.warn('Failed to send GnoSessionUpdate:', error);
     });
-  }
-  catch {
+  } catch {
     console.warn('Failed to send GnoSessionUpdateMessage to background');
   }
 };

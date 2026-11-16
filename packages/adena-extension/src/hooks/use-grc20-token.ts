@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { GRC20TokenModel } from '@types';
-
 import { useAdenaContext } from './use-context';
 import { useNetwork } from './use-network';
 
-interface UseGRC20TokenOptions { enabled: boolean }
+interface UseGRC20TokenOptions {
+  enabled: boolean;
+}
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const useGRC20Token = (tokenPath: string, options?: UseGRC20TokenOptions) => {

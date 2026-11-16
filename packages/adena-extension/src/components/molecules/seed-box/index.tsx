@@ -1,9 +1,9 @@
+import React from 'react';
+import type { JSX } from 'react';
+import styled from 'styled-components';
+import { Text, BlurScreen } from '../../atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import React, { type JSX } from 'react';
-import styled from 'styled-components';
-
-import { BlurScreen, Text } from '../../atoms';
 
 interface SeedScrollBoxProps {
   seeds: string[];

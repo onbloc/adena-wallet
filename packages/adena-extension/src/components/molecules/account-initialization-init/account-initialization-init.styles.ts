@@ -10,10 +10,7 @@ export const AccountInitializationInitWrapper = styled(View)`
   gap: 24px;
 
   .image-wrapper {
-    ${mixins.flex({
-      align: 'center',
-      justify: 'center',
-    })};
+    ${mixins.flex({ align: 'center', justify: 'center' })};
     width: 100%;
     height: auto;
 
@@ -24,20 +21,13 @@ export const AccountInitializationInitWrapper = styled(View)`
   }
 
   .content-wrapper {
-    ${mixins.flex({
-      direction: 'column',
-      align: 'center',
-      justify: 'center',
-    })};
+    ${mixins.flex({ direction: 'column', align: 'center', justify: 'center' })};
     width: 100%;
     height: auto;
     gap: 20px;
 
     .address-box {
-      ${mixins.flex({
-        align: 'center',
-        justify: 'center',
-      })};
+      ${mixins.flex({ align: 'center', justify: 'center' })};
       width: 100%;
       min-height: 41px;
       padding: 10px;

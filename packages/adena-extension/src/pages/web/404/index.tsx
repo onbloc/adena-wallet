@@ -1,9 +1,8 @@
-import {
-  Row, View, WebButton, WebMain, WebText,
-} from '@components/atoms';
-import useAppNavigate from '@hooks/use-app-navigate';
 import { ReactElement } from 'react';
 import styled, { useTheme } from 'styled-components';
+
+import { Row, View, WebButton, WebMain, WebText } from '@components/atoms';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const StyledAbsoluteWrapper = styled(View)`
   position:absolute;
@@ -46,7 +45,7 @@ const StyledLabel = styled(Row)`
   column-gap: 4px;
 `;
 
-const NotFoundScreen = (): ReactElement<any> => {
+const NotFoundScreen = (): ReactElement => {
   const theme = useTheme();
   const { reload } = useAppNavigate();
 
@@ -60,11 +59,7 @@ const NotFoundScreen = (): ReactElement<any> => {
           </WebText>
         </StyledLabel>
 
-        <View style={{
-          alignItems: 'center',
-          rowGap: 8,
-        }}
-        >
+        <View style={{ alignItems: 'center', rowGap: 8 }}>
           <WebText type='display5' textCenter>
             We can’t find this page
           </WebText>

@@ -1,18 +1,20 @@
+import React from 'react';
+import type { JSX } from 'react';
+import styled, { useTheme } from 'styled-components';
+
 import removeIcon from '@assets/icon-remove-blur.svg';
 import { Text } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
-import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
 import { useClear } from '@hooks/use-clear';
 import mixins from '@styles/mixins';
-import { RoutePath } from '@types';
-import React, { type JSX } from 'react';
-import styled, { useTheme } from 'styled-components';
+import useAppNavigate from '@hooks/use-app-navigate';
 
-const content
-  = 'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.';
+const content =
+  'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.';
 
-const forgotPasswordContent
-  = 'Adena cannot recover your password for you. You can only reset your password with your seed phrase.';
+const forgotPasswordContent =
+  'Adena cannot recover your password for you. You can only reset your password with your seed phrase.';
 
 export const ResetWallet = (): JSX.Element => {
   const theme = useTheme();

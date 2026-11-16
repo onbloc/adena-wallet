@@ -1,6 +1,7 @@
+import '../src/common/config/bignumber';
 import React from 'react';
 import { ThemeProvider } from 'styled-components';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import type { Decorator, Parameters } from '@storybook/react-vite';
 import { GlobalPopupStyle } from '../src/styles/global-style';
 import theme from '../src/styles/theme';
@@ -18,15 +19,12 @@ export const parameters: Parameters = {
   viewport: {
     options: {
       adenaExtension: extensionViewport,
-    }
+    },
   },
   backgrounds: {
     options: {
-      adenaextension: {
-        name: 'adenaExtension',
-        value: '#212128',
-      }
-    }
+      adenaExtension: { name: 'adenaExtension', value: '#212128' },
+    },
   },
   layout: 'fullscreen',
   actions: { argTypesRegex: '^on[A-Z].*' },
@@ -38,29 +36,23 @@ export const parameters: Parameters = {
   },
 };
 
+export const initialGlobals = {
+  viewport: { value: 'adenaExtension', isRotated: false },
+  backgrounds: { value: 'adenaExtension' },
+};
+
 export const decorators: Decorator[] = [
   (Story, context) => {
     return (
       <>
         <GlobalPopupStyle />
-        <RecoilRoot>
+        <JotaiProvider>
           <ThemeProvider theme={theme}>
             <div id='portal-popup'></div>
             <Story />
           </ThemeProvider>
-        </RecoilRoot>
+        </JotaiProvider>
       </>
     );
   },
 ];
-
-export const initialGlobals = {
-  viewport: {
-    value: 'adenaExtension',
-    isRotated: false
-  },
-
-  backgrounds: {
-    value: 'adenaextension'
-  }
-};

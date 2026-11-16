@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { BalanceInputWrapper } from './balance-input.styles';
 
 export interface BalanceInputProps {
@@ -7,6 +6,8 @@ export interface BalanceInputProps {
   amount: string;
   denom: string;
   description: string;
+  /** The amount in USD, already formatted; absent when the token has no quote. */
+  usdValue?: string | null;
   onChangeAmount: (value: string) => void;
   onClickMax: () => void;
 }
@@ -16,6 +17,7 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
   amount,
   denom,
   description,
+  usdValue,
   onChangeAmount,
   onClickMax,
 }) => {
@@ -25,19 +27,50 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
         <input
           className='amount-input'
           type='number'
+          min='0'
           value={amount}
           autoComplete='off'
-          onChange={(event): void => onChangeAmount(event.target.value)}
+          // Whitelist digits + a single decimal point. Catches scientific
+          // notation, signs, and other inputs that bypass onKeyDown via paste
+          // or drag-and-drop.
+          onChange={(event): void => {
+            const value = event.target.value;
+            if (!/^[0-9]*\.?[0-9]*$/.test(value)) {
+              return;
+            }
+            onChangeAmount(value);
+          }}
+          onKeyDown={(event): void => {
+            if (
+              event.key === '-' ||
+              event.key === 'e' ||
+              event.key === 'E' ||
+              event.key === 'ArrowUp' ||
+              event.key === 'ArrowDown'
+            ) {
+              event.preventDefault();
+            }
+          }}
+          onWheel={(event): void => event.currentTarget.blur()}
           placeholder='Amount'
         />
         <span className='denom'>{denom}</span>
 
         <button className='max-button' onClick={onClickMax}>
-          Max
+          {'Max'}
         </button>
       </div>
 
-      <span className='description'>{description}</span>
+      {usdValue ? (
+        <div className='description-wrapper'>
+          <span className='usd-value' title={usdValue}>
+            {usdValue}
+          </span>
+          <span className='description'>{description}</span>
+        </div>
+      ) : (
+        <span className='description'>{description}</span>
+      )}
     </BalanceInputWrapper>
   );
 };

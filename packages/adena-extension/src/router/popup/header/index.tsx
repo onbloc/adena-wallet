@@ -1,29 +1,36 @@
-import { useNetwork } from '@hooks/use-network';
-import { WalletState } from '@states';
-import { getTheme } from '@styles/theme';
-import { RoutePath } from '@types';
-import React, { type JSX } from 'react';
-import { useLocation, useMatch } from 'react-router';
-import { useRecoilState } from 'recoil';
+import React from 'react';
+import type { JSX } from 'react';
 import styled from 'styled-components';
+import { useLocation, useMatch } from 'react-router-dom';
+import { useAtom } from 'jotai';
 
+import { RoutePath } from '@types';
+import { WalletState } from '@states';
+import { useNetwork } from '@hooks/use-network';
+import { getTheme } from '@styles/theme';
+
+import { HomeMenu } from './home-menu';
+import { TopMenu } from './top-menu';
+import { ProgressMenu } from './progress-menu';
 import ApproveMenu from './approve-menu';
 import { ArrowTitleMenu } from './arrow-title-menu';
-import { CloseTitleMenu } from './close-title-menu';
-import { HomeMenu } from './home-menu';
-import { ProgressMenu } from './progress-menu';
 import { TabMenu } from './tab-menu';
-import { TopMenu } from './top-menu';
+import { CloseTitleMenu } from './close-title-menu';
 
 const Wrapper = styled.header`
   display: flex;
   flex-shrink: 0;
   width: 100%;
-  height: 48px;
+  height: 50px;
   background-color: ${getTheme('neutral', '_8')};
-  position: sticky;
+  /* Pinned to the viewport so scroll/overscroll on any nested container
+     never drags the header. Companion: #popup reserves 50px padding-top
+     in global-style.ts so this overlay does not cover page content. */
+  position: fixed;
   top: 0px;
-  z-index: 2;
+  left: 0px;
+  right: 0px;
+  z-index: 20;
 `;
 
 export const Header = (): JSX.Element => {
@@ -34,6 +41,10 @@ export const Header = (): JSX.Element => {
   const approveSign = useMatch(RoutePath.ApproveSign);
   const approveTransaction = useMatch(RoutePath.ApproveTransaction);
   const approveSignFailed = useMatch(RoutePath.ApproveSignFailed);
+  const approveEstablishCosmos = useMatch(RoutePath.ApproveEstablishCosmos);
+  const approveSignArbitrary = useMatch(RoutePath.ApproveSignArbitrary);
+  const approveSignCosmos = useMatch(RoutePath.ApproveSignCosmos);
+  const approveGetCosmosKey = useMatch(RoutePath.ApproveGetCosmosKey);
   const wallet = useMatch('/wallet/*');
   const nft = useMatch(RoutePath.Nft);
 
@@ -44,6 +55,9 @@ export const Header = (): JSX.Element => {
   const changeNetwork = useMatch(RoutePath.ChangeNetwork);
 
   const accountDetails = useMatch(RoutePath.AccountDetails);
+  const manageSessions = useMatch(RoutePath.ManageSessions);
+  const revokeSession = useMatch(RoutePath.RevokeSession);
+  const revokeAllSessions = useMatch(RoutePath.RevokeAllSessions);
   const enterSeedPhrase = useMatch(RoutePath.EnterSeedPhrase);
   const createPassword = useMatch(RoutePath.CreatePassword);
   const launchAdena = useMatch(RoutePath.LaunchAdena);
@@ -53,7 +67,7 @@ export const Header = (): JSX.Element => {
   const approveHardwareWalletConnect = useMatch(RoutePath.WebConnectLedger);
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.WebConnectLedgerSelectAccount);
 
-  const [walletState] = useRecoilState(WalletState.state);
+  const [walletState] = useAtom(WalletState.state);
   const { failedNetwork } = useNetwork();
 
   const loadingComplete = walletState === 'FINISH' || failedNetwork !== null;
@@ -65,46 +79,61 @@ export const Header = (): JSX.Element => {
       if (location?.state?.type === 'ADD_ACCOUNT') {
         return <ArrowTitleMenu />;
       }
-      return <ProgressMenu progressLevel='first' />;
+      return <ProgressMenu progressLevel={'first'} />;
     }
-    if (approveEstablish || approveTransaction || approveSign || approveSignFailed) {
+    if (
+      approveEstablish ||
+      approveTransaction ||
+      approveSign ||
+      approveSignFailed ||
+      approveEstablishCosmos ||
+      approveSignArbitrary ||
+      approveSignCosmos ||
+      approveGetCosmosKey
+    ) {
       return <ApproveMenu />;
     }
     if (createPassword) {
-      return <ProgressMenu progressLevel='second' />;
+      return <ProgressMenu progressLevel={'second'} />;
     }
     if (launchAdena) {
-      return <ProgressMenu progressLevel='third' hideArrow />;
+      return <ProgressMenu progressLevel={'third'} hideArrow />;
     }
     if (forgotPassword) {
-      return <ArrowTitleMenu title='Forgot Password?' />;
+      return <ArrowTitleMenu title={'Forgot Password?'} />;
     }
     if (approveHardwareWalletConnect || approveHardwareWalletSelectAccount) {
       return <TabMenu />;
     }
     if (resetWallet) {
-      return location?.state?.from === 'forgot-password'
-        ? (
-            <ArrowTitleMenu title='Reset Wallet' />
-          )
-        : (
-            <TopMenu />
-          );
+      return location?.state?.from === 'forgot-password' ? (
+        <ArrowTitleMenu title='Reset Wallet' />
+      ) : (
+        <TopMenu />
+      );
     }
 
     if (accountDetails) {
       return <CloseTitleMenu title='Account Details' />;
     }
 
+    if (revokeSession || revokeAllSessions) {
+      return <ArrowTitleMenu title='Revoking Session' />;
+    }
+
+    if (manageSessions) {
+      return <ArrowTitleMenu title='Session Accounts' />;
+    }
+
     if (
-      wallet
-      || nft
-      || explore
-      || history
-      || settings
-      || connectedApps
-      || changeNetwork
-      || loadingComplete
+      wallet ||
+      nft ||
+      explore ||
+      history ||
+      settings ||
+      connectedApps ||
+      changeNetwork ||
+      loadingComplete
     ) {
       return <TopMenu />;
     }

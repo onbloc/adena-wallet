@@ -1,9 +1,10 @@
+import React from 'react';
+
 import { ContractMessage, FUNCTION_NAME_MAP } from '@inject/types';
 import {
   AddPackageValue,
   MsgRunValue,
 } from '@repositories/transaction/response/transaction-history-query-response';
-import React from 'react';
 
 interface UseMaxDepositMessageReturn {
   type: string;

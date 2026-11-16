@@ -1,10 +1,11 @@
 import { StorageModel } from '@common/storage';
-import { encryptWalletPassword } from '@common/utils/crypto-utils';
 import { Migration } from '@migrates/migrator';
-import {
-  AdenaWallet, decryptAES, encryptAES, mnemonicToEntropy,
-} from 'adena-module';
+import CryptoJS from 'crypto-js';
+import { AdenaWallet, decryptAES, encryptAES, mnemonicToEntropy } from 'adena-module';
 
+const LEGACY_SALT = 'W9+fs3FJ9p5KdR1XzQy2A6ZT4vjN8LvM9J8pVZmN9rU=';
+const legacyEncryptWalletPassword = (password: string): string =>
+  CryptoJS.SHA256(LEGACY_SALT + password).toString();
 import {
   AddressBookModelV008,
   SerializedModelV008,
@@ -45,7 +46,19 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
   }
 
   private validateModelV008(currentData: StorageModelDataV008): boolean {
-    const storageDataKeys = ['NETWORKS', 'CURRENT_CHAIN_ID', 'CURRENT_NETWORK_ID', 'SERIALIZED', 'ENCRYPTED_STORED_PASSWORD', 'CURRENT_ACCOUNT_ID', 'ESTABLISH_SITES', 'ADDRESS_BOOK', 'ACCOUNT_TOKEN_METAINFOS', 'ACCOUNT_GRC721_COLLECTIONS', 'ACCOUNT_GRC721_PINNED_PACKAGES'];
+    const storageDataKeys = [
+      'NETWORKS',
+      'CURRENT_CHAIN_ID',
+      'CURRENT_NETWORK_ID',
+      'SERIALIZED',
+      'ENCRYPTED_STORED_PASSWORD',
+      'CURRENT_ACCOUNT_ID',
+      'ESTABLISH_SITES',
+      'ADDRESS_BOOK',
+      'ACCOUNT_TOKEN_METAINFOS',
+      'ACCOUNT_GRC721_COLLECTIONS',
+      'ACCOUNT_GRC721_PINNED_PACKAGES',
+    ];
     const currentDataKeys = Object.keys(currentData);
     const hasKeys = storageDataKeys.every((dataKey) => {
       return currentDataKeys.includes(dataKey);
@@ -109,23 +122,24 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
       return keyring;
     });
 
-    let changedWallet = new AdenaWallet({
+    const changedWallet = new AdenaWallet({
       accounts: wallet.accounts,
       keyrings: keyrings,
       currentAccountId: wallet.currentAccountId,
     });
 
-    const sha256Password = encryptWalletPassword(password);
+    const sha256Password = legacyEncryptWalletPassword(password);
 
-    const serializedWallet = await changedWallet.serialize(sha256Password);
+    const plain = {
+      currentAccountId: changedWallet.currentAccountId,
+      accounts: changedWallet.accounts.map((account) => account.toData()),
+      keyrings: changedWallet.keyrings.map((keyring) => keyring.toData()),
+    };
+    const serializedWallet = await encryptAES(JSON.stringify(plain), sha256Password);
 
     keyrings = [];
-    wallet = {
-      accounts: [],
-      keyrings: [],
-    };
+    wallet = { accounts: [], keyrings: [] };
     decrypted = '';
-    changedWallet = new AdenaWallet();
 
     return serializedWallet;
   }
@@ -144,7 +158,7 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
 
     let decrypted = await decryptAES(addressBook, password);
 
-    const sha256Password = encryptWalletPassword(password);
+    const sha256Password = legacyEncryptWalletPassword(password);
     const encryptedAddressBook = await encryptAES(decrypted, sha256Password);
 
     decrypted = '';

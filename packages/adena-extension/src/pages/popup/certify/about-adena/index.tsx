@@ -1,11 +1,13 @@
+import React, { useEffect, useState } from 'react';
+import type { JSX } from 'react';
+import styled, { useTheme } from 'styled-components';
+
 import logo from '@assets/logo-default-v2.svg';
-import { ButtonMode, FullButtonRightIcon, Text } from '@components/atoms';
+import { Text, FullButtonRightIcon, ButtonMode } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
+import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
-import mixins from '@styles/mixins';
-import React, { type JSX, useEffect, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
 
 const menuMakerInfo = [
   {

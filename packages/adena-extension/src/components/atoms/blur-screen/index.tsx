@@ -1,8 +1,10 @@
-import blurBg from '@assets/blur-bg.svg';
-import { Icon, Text } from '@components/atoms';
-import mixins from '@styles/mixins';
-import React, { type JSX } from 'react';
+import React from 'react';
+import type { JSX } from 'react';
 import styled from 'styled-components';
+
+import { Text, Icon } from '@components/atoms';
+import blurBg from '@assets/blur-bg.svg';
+import mixins from '@styles/mixins';
 
 interface BlurScreenProps {
   hasText?: boolean;

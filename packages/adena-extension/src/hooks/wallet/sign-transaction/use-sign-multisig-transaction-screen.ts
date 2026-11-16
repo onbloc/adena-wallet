@@ -1,5 +1,6 @@
 import { useAdenaContext, useMultisigTransactionContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useChain } from '@hooks/use-chain';
 import { useCallback, useState } from 'react';
 
 export type SignTransactionState = 'IDLE' | 'SIGNING' | 'SUCCESS' | 'FAILED';
@@ -17,6 +18,7 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
 
   const { multisigService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
+  const chain = useChain();
   const {
     transaction,
     chainId,
@@ -40,6 +42,7 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
         transaction,
         accountNumber,
         sequence,
+        chain.bech32Prefix,
       );
 
       const fileSaved = await multisigService.saveSignatureToFile(newSignature);
@@ -52,8 +55,7 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
       addSignature(newSignature);
       setSignTransactionState('SUCCESS');
       return true;
-    }
-    catch (e) {
+    } catch (e) {
       console.error('Sign failed:', e);
       if (e instanceof Error && e.message.includes('Public key not found')) {
         setErrorMessage(e.message);
@@ -61,7 +63,16 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
       setSignTransactionState('FAILED');
       return false;
     }
-  }, [currentAccount, currentAddress, chainId, transaction, accountNumber, sequence, multisigService, addSignature]);
+  }, [
+    currentAccount,
+    currentAddress,
+    chainId,
+    transaction,
+    accountNumber,
+    sequence,
+    multisigService,
+    addSignature,
+  ]);
 
   const resetSignState = useCallback(() => {
     setSignTransactionState('IDLE');

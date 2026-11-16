@@ -1,18 +1,17 @@
+import { decryptAES, encryptAES } from 'adena-module';
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
-import { decryptAES, encryptAES } from 'adena-module';
-
 import {
   AccountDataModelV014,
   KeyringDataModelV014,
-  StorageModelDataV014,
   WalletModelV014,
+  StorageModelDataV014,
 } from '../v014/storage-model-v014';
 import {
   AccountDataModelV015,
   KeyringDataModelV015,
-  StorageModelDataV015,
   WalletModelV015,
+  StorageModelDataV015,
 } from './storage-model-v015';
 
 export class StorageMigration015 implements Migration<StorageModelDataV015> {
@@ -36,7 +35,19 @@ export class StorageMigration015 implements Migration<StorageModelDataV015> {
   }
 
   private validateModelV014(currentData: StorageModelDataV014): boolean {
-    const storageDataKeys = ['NETWORKS', 'CURRENT_CHAIN_ID', 'CURRENT_NETWORK_ID', 'SERIALIZED', 'ENCRYPTED_STORED_PASSWORD', 'CURRENT_ACCOUNT_ID', 'ESTABLISH_SITES', 'ADDRESS_BOOK', 'ACCOUNT_TOKEN_METAINFOS', 'ACCOUNT_GRC721_COLLECTIONS', 'ACCOUNT_GRC721_PINNED_PACKAGES'];
+    const storageDataKeys = [
+      'NETWORKS',
+      'CURRENT_CHAIN_ID',
+      'CURRENT_NETWORK_ID',
+      'SERIALIZED',
+      'ENCRYPTED_STORED_PASSWORD',
+      'CURRENT_ACCOUNT_ID',
+      'ESTABLISH_SITES',
+      'ADDRESS_BOOK',
+      'ACCOUNT_TOKEN_METAINFOS',
+      'ACCOUNT_GRC721_COLLECTIONS',
+      'ACCOUNT_GRC721_PINNED_PACKAGES',
+    ];
     const currentDataKeys = Object.keys(currentData);
     const hasKeys = storageDataKeys.every((dataKey) => {
       return currentDataKeys.includes(dataKey);
@@ -89,15 +100,14 @@ export class StorageMigration015 implements Migration<StorageModelDataV015> {
 
       const migrated: WalletModelV015 = {
         ...wallet,
-        accounts: wallet.accounts.map(account => this.migrateAccount(account)),
-        keyrings: wallet.keyrings.map(keyring => this.migrateKeyring(keyring)),
+        accounts: wallet.accounts.map((account) => this.migrateAccount(account)),
+        keyrings: wallet.keyrings.map((keyring) => this.migrateKeyring(keyring)),
       };
 
       const json = JSON.stringify(migrated);
       const encrypted = await encryptAES(json, password);
       return encrypted;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Failed to migrate wallet:', error);
       return serialized;
     }

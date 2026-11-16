@@ -1,18 +1,17 @@
-import { Row, WebCheckBox, WebText } from '@components/atoms';
 import React, { useMemo } from 'react';
 import { useTheme } from 'styled-components';
 
-import { SeedPhraseInfo } from './select-seed-phrase-box.types';
+import { Row, WebCheckBox, WebText } from '@components/atoms';
+
 import { StyledSelectSeedPhraseBoxItem } from './select-seed-phrase-box-item.styles';
+import { SeedPhraseInfo } from './select-seed-phrase-box.types';
 
 const SelectSeedPhraseBoxItem: React.FC<{
   seedPhrase: SeedPhraseInfo;
   select: (keyringId: string) => void;
 }> = ({ seedPhrase, select }) => {
   const theme = useTheme();
-  const {
-    index, selected, accountCount, keyringId,
-  } = seedPhrase;
+  const { index, selected, accountCount, keyringId } = seedPhrase;
 
   const title = useMemo(() => {
     return `Seed Phrase ${index + 1}`;

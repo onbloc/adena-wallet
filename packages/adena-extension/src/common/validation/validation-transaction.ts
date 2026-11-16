@@ -1,6 +1,14 @@
 import { WalletResponseFailureType } from '@adena-wallet/sdk';
+import { MsgEndpoint } from '@gnolang/gno-js-client';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { Account, isMultisigAccount, RawTxMessageType } from 'adena-module';
+import {
+  Account,
+  isMultisigAccount,
+  MSG_CREATE_SESSION_ENDPOINT,
+  MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
+  MSG_REVOKE_SESSION_ENDPOINT,
+  RawTxMessageType,
+} from 'adena-module';
 
 export const validateInjectionData = (requestData: InjectionMessage): InjectionMessage | null => {
   if (!validateInjectionTransactionType(requestData)) {
@@ -29,10 +37,7 @@ export const validateInjectionDataWithAddressByRawTx = (
   if (!validateInjectionTransactionMessageWithAddress(requestData, address, skipCallerCheck)) {
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.ACCOUNT_MISMATCH,
-      {
-        requestData,
-        address,
-      },
+      { requestData, address },
       requestData?.key,
     );
   }
@@ -56,10 +61,7 @@ export const validateInjectionDataWithAddress = (
   if (!validateInjectionTransactionMessageWithAddress(requestData, address, skipCallerCheck)) {
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.ACCOUNT_MISMATCH,
-      {
-        requestData,
-        address,
-      },
+      { requestData, address },
       requestData?.key,
     );
   }
@@ -85,14 +87,33 @@ export const validateInjectionDataForMultisig = (
 };
 
 export const validateInjectionTransactionType = (requestData: InjectionMessage): any => {
-  const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg', '/vm.m_run'];
+  const messageTypes = [
+    '/bank.MsgSend',
+    '/vm.m_call',
+    '/vm.m_addpkg',
+    '/vm.m_run',
+    MsgEndpoint.MSG_ENABLE_PKG,
+    MsgEndpoint.MSG_REJECT_PKG,
+    // Session admin messages flow through approve-transaction popup when
+    // initiated from the wallet's web UI (Add Session Account screen).
+    MSG_CREATE_SESSION_ENDPOINT,
+    MSG_REVOKE_SESSION_ENDPOINT,
+    MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
+  ];
 
   const msgs = requestData.data?.messages || requestData.data?.msgs || [];
   return msgs.every((message: any) => messageTypes.includes(message?.type));
 };
 
 export const validateInjectionTransactionTypeByRawTx = (requestData: InjectionMessage): any => {
-  const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg', '/vm.m_run'];
+  const messageTypes = [
+    '/bank.MsgSend',
+    '/vm.m_call',
+    '/vm.m_addpkg',
+    '/vm.m_run',
+    MsgEndpoint.MSG_ENABLE_PKG,
+    MsgEndpoint.MSG_REJECT_PKG,
+  ];
 
   const msgs = requestData.data?.msg || [];
   return msgs.every((message: RawTxMessageType) => messageTypes.includes(message['@type']));
@@ -103,11 +124,11 @@ export const validateInjectionTransactionMessageWithAddress = (
   address: string,
   skipCallerCheck?: boolean,
 ): boolean => {
-  const messages
-    = requestData.data?.msgs
-      || requestData.data?.messages
-      || requestData.data?.multisigDocument?.tx?.msgs
-      || [];
+  const messages =
+    requestData.data?.msgs ||
+    requestData.data?.messages ||
+    requestData.data?.multisigDocument?.tx?.msgs ||
+    [];
   for (const message of messages) {
     let messageAddress = '';
     switch (message?.type) {
@@ -122,6 +143,18 @@ export const validateInjectionTransactionMessageWithAddress = (
         break;
       case '/vm.m_run':
         messageAddress = message.value.caller;
+        break;
+      case MsgEndpoint.MSG_ENABLE_PKG:
+        messageAddress = message.value.approver;
+        break;
+      case MsgEndpoint.MSG_REJECT_PKG:
+        messageAddress = message.value.sender;
+        break;
+      case MSG_CREATE_SESSION_ENDPOINT:
+      case MSG_REVOKE_SESSION_ENDPOINT:
+      case MSG_REVOKE_ALL_SESSIONS_ENDPOINT:
+        // Session admin messages carry the master address as `creator`.
+        messageAddress = message.value.creator;
         break;
       default:
         break;

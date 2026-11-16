@@ -1,6 +1,13 @@
-import { describe, expect, it } from 'vitest';
-
-import { GnoMessageInfo, parseGnoMessageInfo } from './gno-connect';
+import {
+  canHandleGnoConnectOrigin,
+  getLoopbackGnoConnectChainId,
+  GnoMessageInfo,
+  isAllowedGnoConnectOrigin,
+  getLoopbackGnoConnectRejection,
+  isLoopbackGnoConnectTrusted,
+  normalizeGnoConnectRpc,
+  parseGnoMessageInfo,
+} from './gno-connect';
 
 describe('parseGnoMessageInfo', () => {
   describe('URL parsing tests', () => {
@@ -26,8 +33,8 @@ describe('parseGnoMessageInfo', () => {
 
     it('should correctly parse and decode URL with pkgpath parameter', () => {
       // Test URL (Case 2)
-      const url
-        = 'https://gno.land/r/leon/hor$help&func=Upvote&pkgpath=gno.land%2Fr%2Fmorgan%2Fhome';
+      const url =
+        'https://gno.land/r/leon/hor$help&func=Upvote&pkgpath=gno.land%2Fr%2Fmorgan%2Fhome';
 
       // Execute function
       const result = parseGnoMessageInfo(url);
@@ -55,8 +62,8 @@ describe('parseGnoMessageInfo', () => {
   describe('Complete field population tests', () => {
     it('should correctly parse URL with all five fields populated', () => {
       // Test URL (with all fields populated)
-      const url
-        = 'https://gno.land/r/demo/test$help&func=CompleteFunction&.send=500000ugnot&.max_deposit=1000000ugnot&arg1=value1&arg2=value2&arg3=value3';
+      const url =
+        'https://gno.land/r/demo/test$help&func=CompleteFunction&.send=500000ugnot&.max_deposit=1000000ugnot&arg1=value1&arg2=value2&arg3=value3';
 
       // Execute function
       const result = parseGnoMessageInfo(url);
@@ -68,21 +75,9 @@ describe('parseGnoMessageInfo', () => {
         send: '500000ugnot',
         maxDeposit: '1000000ugnot',
         args: [
-          {
-            index: 0,
-            key: 'arg1',
-            value: 'value1',
-          },
-          {
-            index: 1,
-            key: 'arg2',
-            value: 'value2',
-          },
-          {
-            index: 2,
-            key: 'arg3',
-            value: 'value3',
-          },
+          { index: 0, key: 'arg1', value: 'value1' },
+          { index: 1, key: 'arg2', value: 'value2' },
+          { index: 2, key: 'arg3', value: 'value3' },
         ],
       };
 
@@ -92,8 +87,8 @@ describe('parseGnoMessageInfo', () => {
 
     it('should correctly parse URL with all five fields populated using pkgpath parameter', () => {
       // Test URL (with all fields populated using pkgpath)
-      const url
-        = 'https://gno.land/r/demo/placeholder$help&func=FullTest&pkgpath=gno.land%2Fr%2Ftest%2Fcomplete&.send=750000ugnot&.max_deposit=2000000ugnot&param1=test1&param2=test2';
+      const url =
+        'https://gno.land/r/demo/placeholder$help&func=FullTest&pkgpath=gno.land%2Fr%2Ftest%2Fcomplete&.send=750000ugnot&.max_deposit=2000000ugnot&param1=test1&param2=test2';
 
       // Execute function
       const result = parseGnoMessageInfo(url);
@@ -105,21 +100,9 @@ describe('parseGnoMessageInfo', () => {
         send: '750000ugnot',
         maxDeposit: '2000000ugnot',
         args: [
-          {
-            index: 0,
-            key: 'pkgpath',
-            value: 'gno.land/r/test/complete',
-          },
-          {
-            index: 1,
-            key: 'param1',
-            value: 'test1',
-          },
-          {
-            index: 2,
-            key: 'param2',
-            value: 'test2',
-          },
+          { index: 0, key: 'pkgpath', value: 'gno.land/r/test/complete' },
+          { index: 1, key: 'param1', value: 'test1' },
+          { index: 2, key: 'param2', value: 'test2' },
         ],
       };
 
@@ -131,13 +114,13 @@ describe('parseGnoMessageInfo', () => {
   describe('URL encoding and decoding tests', () => {
     it('should correctly decode all URL-encoded arguments', () => {
       // Test URL with multiple encoded parameters
-      const url
-        = 'https://gno.land/r/demo/test$help&func=TestFunction'
-          + '&encoded1=Hello%20World'
-          + '&encoded2=%3Cscript%3Ealert(1)%3C%2Fscript%3E'
-          + '&encoded3=special%40%23%24%25%5E%26*()'
-          + '&encoded4=path%2Fto%2Fresource'
-          + '&encoded5=%E2%9C%93%20Unicode%20Check';
+      const url =
+        'https://gno.land/r/demo/test$help&func=TestFunction' +
+        '&encoded1=Hello%20World' +
+        '&encoded2=%3Cscript%3Ealert(1)%3C%2Fscript%3E' +
+        '&encoded3=special%40%23%24%25%5E%26*()' +
+        '&encoded4=path%2Fto%2Fresource' +
+        '&encoded5=%E2%9C%93%20Unicode%20Check';
 
       // Execute function
       const result = parseGnoMessageInfo(url);
@@ -149,31 +132,11 @@ describe('parseGnoMessageInfo', () => {
         send: '',
         maxDeposit: '',
         args: [
-          {
-            index: 0,
-            key: 'encoded1',
-            value: 'Hello World',
-          },
-          {
-            index: 1,
-            key: 'encoded2',
-            value: '<script>alert(1)</script>',
-          },
-          {
-            index: 2,
-            key: 'encoded3',
-            value: 'special@#$%^&*()',
-          },
-          {
-            index: 3,
-            key: 'encoded4',
-            value: 'path/to/resource',
-          },
-          {
-            index: 4,
-            key: 'encoded5',
-            value: '✓ Unicode Check',
-          },
+          { index: 0, key: 'encoded1', value: 'Hello World' },
+          { index: 1, key: 'encoded2', value: '<script>alert(1)</script>' },
+          { index: 2, key: 'encoded3', value: 'special@#$%^&*()' },
+          { index: 3, key: 'encoded4', value: 'path/to/resource' },
+          { index: 4, key: 'encoded5', value: '✓ Unicode Check' },
         ],
       };
 
@@ -183,12 +146,12 @@ describe('parseGnoMessageInfo', () => {
 
     it('should correctly handle mixed encoded and non-encoded arguments', () => {
       // Test URL with a mix of encoded and non-encoded parameters
-      const url
-        = 'https://gno.land/r/demo/test$help&func=MixedTest'
-          + '&plain=simple text'
-          + '&encoded=complex%20text%20with%20spaces'
-          + '&.send=1000ugnot'
-          + '&mixed=half%20encoded+half+plus';
+      const url =
+        'https://gno.land/r/demo/test$help&func=MixedTest' +
+        '&plain=simple text' +
+        '&encoded=complex%20text%20with%20spaces' +
+        '&.send=1000ugnot' +
+        '&mixed=half%20encoded+half+plus';
 
       // Execute function
       const result = parseGnoMessageInfo(url);
@@ -200,21 +163,9 @@ describe('parseGnoMessageInfo', () => {
         send: '1000ugnot',
         maxDeposit: '',
         args: [
-          {
-            index: 0,
-            key: 'plain',
-            value: 'simple text',
-          },
-          {
-            index: 1,
-            key: 'encoded',
-            value: 'complex text with spaces',
-          },
-          {
-            index: 2,
-            key: 'mixed',
-            value: 'half encoded+half+plus',
-          },
+          { index: 0, key: 'plain', value: 'simple text' },
+          { index: 1, key: 'encoded', value: 'complex text with spaces' },
+          { index: 2, key: 'mixed', value: 'half encoded+half+plus' },
         ],
       };
 
@@ -224,11 +175,11 @@ describe('parseGnoMessageInfo', () => {
 
     it('should properly decode pkgpath and other special parameters', () => {
       // Test URL with encoded pkgpath and other special parameters
-      const url
-        = 'https://gno.land/r/demo/test$help&func=SpecialTest'
-          + '&pkgpath=gno.land%2Fr%2Ftest%2Fpackage%20with%20spaces'
-          + '&url=https%3A%2F%2Fexample.com%2Fpath%3Fparam%3Dvalue'
-          + '&json=%7B%22key%22%3A%22value%22%7D'; // {"key":"value"}
+      const url =
+        'https://gno.land/r/demo/test$help&func=SpecialTest' +
+        '&pkgpath=gno.land%2Fr%2Ftest%2Fpackage%20with%20spaces' +
+        '&url=https%3A%2F%2Fexample.com%2Fpath%3Fparam%3Dvalue' +
+        '&json=%7B%22key%22%3A%22value%22%7D'; // {"key":"value"}
 
       // Execute function
       const result = parseGnoMessageInfo(url);
@@ -240,21 +191,9 @@ describe('parseGnoMessageInfo', () => {
         send: '',
         maxDeposit: '',
         args: [
-          {
-            index: 0,
-            key: 'pkgpath',
-            value: 'gno.land/r/test/package with spaces',
-          },
-          {
-            index: 1,
-            key: 'url',
-            value: 'https://example.com/path?param=value',
-          },
-          {
-            index: 2,
-            key: 'json',
-            value: '{"key":"value"}',
-          },
+          { index: 0, key: 'pkgpath', value: 'gno.land/r/test/package with spaces' },
+          { index: 1, key: 'url', value: 'https://example.com/path?param=value' },
+          { index: 2, key: 'json', value: '{"key":"value"}' },
         ],
       };
 
@@ -288,10 +227,204 @@ describe('parseGnoMessageInfo', () => {
 
   describe('For data verification', () => {
     it('data console.log', () => {
-      const url
-        = 'https://gno.land/r/leon/hor$help&func=Upvote&pkgpath=gno.land%2Fr%2Fmorgan%2Fhome';
+      const url =
+        'https://gno.land/r/leon/hor$help&func=Upvote&pkgpath=gno.land%2Fr%2Fmorgan%2Fhome';
       const result = parseGnoMessageInfo(url);
       console.log(result, 'result');
     });
+  });
+});
+
+describe('isAllowedGnoConnectOrigin', () => {
+  it('returns true for registered gno.land origins', () => {
+    expect(isAllowedGnoConnectOrigin('https://gno.land')).toBe(true);
+    expect(isAllowedGnoConnectOrigin('https://onyx.testnets.gno.land')).toBe(true);
+  });
+
+  it('returns false for unregistered origins', () => {
+    expect(isAllowedGnoConnectOrigin('https://attacker.example')).toBe(false);
+    expect(isAllowedGnoConnectOrigin('https://evil.gno.land.attacker.example')).toBe(false);
+  });
+
+  it('rejects scheme mismatches', () => {
+    expect(isAllowedGnoConnectOrigin('http://gno.land')).toBe(false);
+  });
+
+  it('rejects origins with explicit non-default port', () => {
+    expect(isAllowedGnoConnectOrigin('https://gno.land:8443')).toBe(false);
+  });
+
+  it('rejects empty origin', () => {
+    expect(isAllowedGnoConnectOrigin('')).toBe(false);
+  });
+
+  it('rejects subdomain takeover patterns', () => {
+    expect(isAllowedGnoConnectOrigin('https://malicious.gno.land')).toBe(false);
+  });
+
+  it('never statically trusts loopback origins', () => {
+    expect(isAllowedGnoConnectOrigin('http://127.0.0.1:8888')).toBe(false);
+    expect(isAllowedGnoConnectOrigin('http://localhost:8888')).toBe(false);
+  });
+});
+
+describe('canHandleGnoConnectOrigin', () => {
+  it('handles the origins chains.json declares over https', () => {
+    expect(canHandleGnoConnectOrigin('https://gno.land')).toBe(true);
+    expect(canHandleGnoConnectOrigin('https://onyx.testnets.gno.land')).toBe(true);
+  });
+
+  it('handles loopback origins, whose trust is decided later at runtime', () => {
+    expect(canHandleGnoConnectOrigin('http://127.0.0.1:8888')).toBe(true);
+  });
+
+  it('never handles an origin no bundled chain declares', () => {
+    // Retiring a chain from chains.json (as upstream did for pearl-1) drops its
+    // gnoUrl from the allowlist. Anchors and forms on such an origin must fall
+    // through to the page instead of being swallowed by an interceptor that has
+    // nothing to do with the click.
+    expect(canHandleGnoConnectOrigin('https://example.com')).toBe(false);
+    expect(canHandleGnoConnectOrigin('https://pearl.testnets.gno.land')).toBe(false);
+    expect(canHandleGnoConnectOrigin('http://127.0.0.1:9999')).toBe(false);
+    expect(canHandleGnoConnectOrigin('')).toBe(false);
+  });
+
+  it('agrees with isAllowedGnoConnectOrigin for every remote origin it handles', () => {
+    const remoteHandled = [
+      'https://gno.land',
+      'https://onyx.testnets.gno.land',
+      'https://example.com',
+    ];
+    remoteHandled.forEach((origin) => {
+      expect(canHandleGnoConnectOrigin(origin)).toBe(isAllowedGnoConnectOrigin(origin));
+    });
+  });
+});
+
+describe('getLoopbackGnoConnectChainId', () => {
+  it('returns the chainId a known loopback origin may act as', () => {
+    expect(getLoopbackGnoConnectChainId('http://127.0.0.1:8888')).toBe('dev');
+  });
+
+  it('returns null for non-loopback or unknown origins', () => {
+    expect(getLoopbackGnoConnectChainId('https://gno.land')).toBeNull();
+    expect(getLoopbackGnoConnectChainId('http://127.0.0.1:9999')).toBeNull();
+  });
+});
+
+describe('isLoopbackGnoConnectTrusted', () => {
+  const LOOPBACK_CHAIN_ID = 'dev';
+
+  it('trusts a loopback origin when both the meta chainId and the active network match', () => {
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'dev', 'dev')).toBe(true);
+  });
+
+  it('rejects a foreign meta chainId even when the active network matches the origin', () => {
+    // Regression: a page served from http://127.0.0.1:8888 (origin -> dev) while
+    // the wallet is already on dev must not be allowed to declare a different
+    // chainId (e.g. gnoland-1) and switch/sign against a foreign network.
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'gnoland-1', 'dev')).toBe(false);
+  });
+
+  it('rejects when the active network is not the loopback chainId', () => {
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'dev', 'gnoland-1')).toBe(false);
+  });
+
+  it('rejects when the active network is unavailable (e.g. wallet locked)', () => {
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'dev', undefined)).toBe(false);
+  });
+
+  it('rejects when neither the meta chainId nor the active network match', () => {
+    expect(isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, 'gnoland-1', 'gnoland-1')).toBe(false);
+  });
+});
+
+describe('getLoopbackGnoConnectRejection', () => {
+  const LOOPBACK_CHAIN_ID = 'dev';
+
+  it('reports no rejection exactly when the origin is trusted', () => {
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'dev', 'dev')).toBeNull();
+  });
+
+  it('names a foreign meta chainId as the origin mismatch', () => {
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'gnoland-1', 'dev')).toBe(
+      'ORIGIN_CHAIN_MISMATCH',
+    );
+  });
+
+  it('names an absent active network as the wallet being unavailable', () => {
+    // What a locked wallet looks like from the gate: getNetwork answers
+    // WALLET_LOCKED, so the caller has no chainId to hand over.
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'dev', undefined)).toBe(
+      'WALLET_UNAVAILABLE',
+    );
+  });
+
+  it('names a different active network as the network mismatch', () => {
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'dev', 'gnoland-1')).toBe(
+      'ACTIVE_NETWORK_MISMATCH',
+    );
+  });
+
+  it('prefers the origin mismatch, which holds regardless of wallet state', () => {
+    expect(getLoopbackGnoConnectRejection(LOOPBACK_CHAIN_ID, 'gnoland-1', undefined)).toBe(
+      'ORIGIN_CHAIN_MISMATCH',
+    );
+  });
+
+  it('agrees with the trust decision over every combination', () => {
+    // The reason exists to be reported, never to be acted on. Pinning the two
+    // together means a future edit cannot let the message and the decision drift
+    // — the case that would tell a user their wallet is fine while it refuses.
+    const chainIds: (string | undefined)[] = [undefined, 'dev', 'gnoland-1', ''];
+
+    for (const metaChainId of chainIds) {
+      for (const activeChainId of chainIds) {
+        if (metaChainId === undefined) {
+          continue;
+        }
+
+        const trusted = isLoopbackGnoConnectTrusted(LOOPBACK_CHAIN_ID, metaChainId, activeChainId);
+        const rejection = getLoopbackGnoConnectRejection(
+          LOOPBACK_CHAIN_ID,
+          metaChainId,
+          activeChainId,
+        );
+
+        expect(rejection === null).toBe(trusted);
+      }
+    }
+  });
+});
+
+describe('normalizeGnoConnectRpc', () => {
+  it('keeps http(s) endpoints as-is', () => {
+    expect(normalizeGnoConnectRpc('https://rpc.gno.land')).toBe('https://rpc.gno.land');
+    expect(normalizeGnoConnectRpc('http://127.0.0.1:26657')).toBe('http://127.0.0.1:26657');
+  });
+
+  it('maps a non-http scheme on a loopback host to http://', () => {
+    // Local gno nodes commonly advertise their RPC as tcp://; downstream RPC
+    // clients require http(s), so it must be rewritten rather than stripped bare.
+    expect(normalizeGnoConnectRpc('tcp://127.0.0.1:26657')).toBe('http://127.0.0.1:26657');
+    expect(normalizeGnoConnectRpc('tcp://localhost:26657')).toBe('http://localhost:26657');
+  });
+
+  it('adds a protocol to a bare loopback host', () => {
+    expect(normalizeGnoConnectRpc('127.0.0.1:26657')).toBe('http://127.0.0.1:26657');
+  });
+
+  it('assumes https for non-loopback hosts missing a protocol', () => {
+    expect(normalizeGnoConnectRpc('tcp://rpc.gno.land')).toBe('https://rpc.gno.land');
+    expect(normalizeGnoConnectRpc('rpc.gno.land')).toBe('https://rpc.gno.land');
+  });
+
+  it('trims surrounding whitespace', () => {
+    expect(normalizeGnoConnectRpc('  http://127.0.0.1:26657  ')).toBe('http://127.0.0.1:26657');
+  });
+
+  it('returns an empty string unchanged', () => {
+    expect(normalizeGnoConnectRpc('')).toBe('');
+    expect(normalizeGnoConnectRpc('   ')).toBe('');
   });
 });

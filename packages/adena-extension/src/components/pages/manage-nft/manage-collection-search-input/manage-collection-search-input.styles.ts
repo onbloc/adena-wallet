@@ -3,10 +3,7 @@ import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const ManageCollectionSearchInputWrapper = styled.div`
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   width: 100%;
   height: 48px;
   padding: 12px 16px;

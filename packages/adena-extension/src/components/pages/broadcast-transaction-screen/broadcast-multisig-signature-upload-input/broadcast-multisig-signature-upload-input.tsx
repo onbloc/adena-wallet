@@ -1,15 +1,16 @@
-import { ErrorText } from '@components/atoms';
-import { SignatureUploadLabel, SignerListItem } from '@components/pages/signature-upload';
-import { SignatureUploadResult } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
-import { Signature } from '@inject/types';
-import { SignerPublicKeyInfo } from 'adena-module';
 import React, { useCallback, useMemo, useState } from 'react';
 
+import { Signature } from '@inject/types';
+import { SignerPublicKeyInfo } from 'adena-module';
+import { SignatureUploadResult } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
+
+import { ErrorText } from '@components/atoms';
 import {
   StyledHiddenInput,
-  StyledSignerListWrapper,
   StyledWrapper,
+  StyledSignerListWrapper,
 } from './broadcast-multisig-signature-upload-input.styles';
+import { SignatureUploadLabel, SignerListItem } from '@components/pages/signature-upload';
 
 export interface BroadcastMultisigSignatureUploadInputProps {
   signatures: Signature[];
@@ -21,16 +22,14 @@ export interface BroadcastMultisigSignatureUploadInputProps {
 
 const BroadcastMultisigSignatureUploadInput: React.FC<
   BroadcastMultisigSignatureUploadInputProps
-> = ({
-  signatures, uploadSignature, removeSignature, signerPublicKeys, threshold,
-}) => {
+> = ({ signatures, uploadSignature, removeSignature, signerPublicKeys, threshold }) => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const signersWithStatus = useMemo(() => {
     return signerPublicKeys.map((signer, index) => {
       const isSigned = signatures.some(
-        signature => signature.pub_key.value === signer.publicKey.value,
+        (signature) => signature.pub_key.value === signer.publicKey.value,
       );
       return {
         index: index + 1,
@@ -42,7 +41,7 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
   }, [signerPublicKeys, signatures]);
 
   const signedCount = useMemo(() => {
-    return signersWithStatus.filter(s => s.isSigned).length;
+    return signersWithStatus.filter((s) => s.isSigned).length;
   }, [signersWithStatus]);
 
   const uploadFiles = useCallback(
@@ -62,8 +61,7 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
 
           if (result.success) {
             successCount++;
-          }
-          else {
+          } else {
             switch (result.error) {
               case 'INVALID_FORMAT':
                 invalidFormatCount++;
@@ -76,8 +74,7 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
                 break;
             }
           }
-        }
-        catch {
+        } catch {
           invalidFormatCount++;
         }
       }
@@ -90,11 +87,9 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
         if (files.length === 1) {
           if (invalidFormatCount > 0) {
             setErrorMessage('Invalid signature format');
-          }
-          else if (invalidSignerCount > 0) {
+          } else if (invalidSignerCount > 0) {
             setErrorMessage('Not a valid signer for the multisig transaction file');
-          }
-          else if (duplicateCount > 0) {
+          } else if (duplicateCount > 0) {
             setErrorMessage('Duplicate signature');
           }
           return;
@@ -122,8 +117,7 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
         }
 
         setErrorMessage(messageParts.join(', '));
-      }
-      else {
+      } else {
         setErrorMessage(null);
       }
     },
@@ -166,7 +160,7 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
 
       {signerPublicKeys.length > 0 && (
         <StyledSignerListWrapper>
-          {signersWithStatus.map(signer => (
+          {signersWithStatus.map((signer) => (
             <SignerListItem key={signer.publicKey} signer={signer} onRemove={removeSignature} />
           ))}
         </StyledSignerListWrapper>

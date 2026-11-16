@@ -1,9 +1,10 @@
+import { useCallback, useEffect, useState } from 'react';
+
 import {
   GnoSessionState,
   GnoSessionUpdateType,
   PopupSessionUpdateMessage,
 } from '@inject/message/methods/gno-session';
-import { useCallback, useEffect, useState } from 'react';
 
 interface GnoSessionUpdates {
   sessionId: string | null;
@@ -64,13 +65,13 @@ function isPopupSessionUpdateMessage(message: unknown): message is PopupSessionU
   const msg = message as Record<string, unknown>;
 
   return (
-    'type' in msg
-    && msg.type === 'POPUP_SESSION_UPDATE'
-    && 'data' in msg
-    && typeof msg.data === 'object'
-    && msg.data !== null
-    && 'updateType' in msg
-    && typeof msg.updateType === 'string'
+    'type' in msg &&
+    msg.type === 'POPUP_SESSION_UPDATE' &&
+    'data' in msg &&
+    typeof msg.data === 'object' &&
+    msg.data !== null &&
+    'updateType' in msg &&
+    typeof msg.updateType === 'string'
   );
 }
 
@@ -129,8 +130,7 @@ export function useGnoSessionUpdates(
           type: 'GET_GNO_SESSION',
           sessionId: activeSessionId,
         });
-      }
-      else if (funcName && pkgPath) {
+      } else if (funcName && pkgPath) {
         // Get active session by function
         session = await chrome.runtime.sendMessage({
           type: 'GET_ACTIVE_SESSION',
@@ -166,14 +166,20 @@ export function useGnoSessionUpdates(
           onAddressChange?.(session.address);
         }
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.error('[useGnoSessionUpdates] Failed to load initial session:', error);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
-  }, [activeSessionId, funcName, pkgPath, loadInitialSession, onParamsChange, onModeChange, onAddressChange]);
+  }, [
+    activeSessionId,
+    funcName,
+    pkgPath,
+    loadInitialSession,
+    onParamsChange,
+    onModeChange,
+    onAddressChange,
+  ]);
 
   /**
    * Register this popup for a specific session
@@ -335,7 +341,7 @@ export function useUpdatedTransactionParams(
     pkgPath,
     onParamsChange: (newParams) => {
       setParams(newParams);
-      setUpdateCount(prev => prev + 1);
+      setUpdateCount((prev) => prev + 1);
     },
   });
 

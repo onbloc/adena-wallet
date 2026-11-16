@@ -1,9 +1,10 @@
-import { stringFromBase64 } from '@common/utils/encoding-util';
-import { generateRandomHex } from '@common/utils/rand-utils';
 import { WebTextarea } from '@components/atoms/web-textarea';
-import { type JSX, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { JSX } from 'react';
 import styled from 'styled-components';
 
+import { stringFromBase64 } from '@common/utils/encoding-util';
+import { generateRandomHex } from '@common/utils/rand-utils';
 import { View } from '../../atoms';
 
 interface WebPrivateKeyBoxProps {
@@ -13,7 +14,7 @@ interface WebPrivateKeyBoxProps {
   error?: boolean;
 }
 
-const StyledContainer = styled(View)<{ showBlur: boolean }>`
+const StyledContainer = styled(View)`
   position: relative;
   overflow: hidden;
   height: 80px;
@@ -54,7 +55,7 @@ export const WebPrivateKeyBox = ({
   }, []);
 
   return (
-    <StyledContainer showBlur={showBlur}>
+    <StyledContainer>
       <WebTextarea
         value={displayPrivateKey}
         placeholder='Private Key'

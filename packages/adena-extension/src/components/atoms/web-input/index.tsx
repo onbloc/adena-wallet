@@ -1,5 +1,6 @@
-import { getTheme, webFonts } from '@styles/theme';
 import styled from 'styled-components';
+
+import { getTheme, webFonts } from '@styles/theme';
 
 interface InputProps {
   width?: string;

@@ -1,12 +1,13 @@
-import IconShare from '@assets/icon-share';
-import SuccessIcon from '@assets/success.svg';
-import { formatAddress } from '@common/utils/client-utils';
-import { CopyIconButton } from '@components/atoms';
-import { SignerStatusType } from '@inject/types';
-import theme from '@styles/theme';
 import { useMemo } from 'react';
 
+import theme from '@styles/theme';
+import { formatAddress } from '@common/utils/client-utils';
+import { SignerStatusType } from '@inject/types';
+
 import { DocumentSignerListItemWrapper } from './document-signer-list.styles';
+import { CopyIconButton } from '@components/atoms';
+import SuccessIcon from '@assets/success.svg';
+import IconShare from '@assets/icon-share';
 
 interface StatusStyle {
   color: string;
@@ -58,7 +59,7 @@ const DocumentSignerListItem = ({
   order,
   status,
   onClickAddress,
-}: DocumentSignerListItemProps): React.ReactElement<any> => {
+}: DocumentSignerListItemProps): React.ReactElement => {
   const displaySignerAddress = useMemo(() => {
     return formatAddress(signerAddress, 8);
   }, [signerAddress]);
@@ -69,15 +70,12 @@ const DocumentSignerListItem = ({
     <DocumentSignerListItemWrapper borderColor={statusStyle.color}>
       <div className='logo-wrapper'>
         <div className='logo'>{order}</div>
-        {statusStyle.showBadge && <img className='badge' src={SuccessIcon} alt='success badge' />}
+        {statusStyle.showBadge && <img className='badge' src={SuccessIcon} alt={'success badge'} />}
       </div>
 
       <div className='title-wrapper'>
         <span className='title'>
-          <span className='info'>
-            Signer
-            {order}
-          </span>
+          <span className='info'>Signer {order}</span>
           <button className='link-button' onClick={(): void => onClickAddress(signerAddress)}>
             <IconShare />
           </button>

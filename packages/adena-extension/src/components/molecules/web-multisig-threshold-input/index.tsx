@@ -1,6 +1,7 @@
-import { View, WebInputWithLabel } from '@components/atoms';
 import React from 'react';
 import styled from 'styled-components';
+
+import { View, WebInputWithLabel } from '@components/atoms';
 
 interface WebMultisigThresholdInputProps {
   threshold: number;
@@ -12,7 +13,7 @@ export const WebMultisigThresholdInput = ({
   threshold,
   onThresholdChange,
   multisigConfigError,
-}: WebMultisigThresholdInputProps): React.ReactElement<any> => {
+}: WebMultisigThresholdInputProps): React.ReactElement => {
   const handleChange = (value: string): void => {
     const numericValue = value.replace(/[^0-9]/g, '');
     onThresholdChange(numericValue === '' ? 0 : Number(numericValue));

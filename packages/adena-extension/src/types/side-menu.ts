@@ -6,6 +6,7 @@ export interface SideMenuAccountInfo {
   address: string;
   type: KeyringType;
   balance: string;
+  badgeLabel?: string;
 }
 
 export interface SideMenuProps {

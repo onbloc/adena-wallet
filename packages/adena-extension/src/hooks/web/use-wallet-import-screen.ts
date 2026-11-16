@@ -1,9 +1,3 @@
-import { stringFromBase64, stringToBase64 } from '@common/utils/encoding-util';
-import { waitForRun } from '@common/utils/timeout-utils';
-import { isSeedPhraseString } from '@common/validation';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useIndicatorStep, { UseIndicatorStepReturn } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
-import { ImportWalletType, RoutePath } from '@types';
 import {
   AdenaWallet,
   EnglishMnemonic,
@@ -13,6 +7,16 @@ import {
 } from 'adena-module';
 import { useCallback, useMemo, useState } from 'react';
 
+import { waitForRun } from '@common/utils/timeout-utils';
+import { isSeedPhraseString } from '@common/validation';
+import useAppNavigate from '@hooks/use-app-navigate';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
+import { ImportWalletType, RoutePath } from '@types';
+
+import { stringFromBase64, stringToBase64 } from '@common/utils/encoding-util';
 import useQuestionnaire from './use-questionnaire';
 
 export type UseWalletImportReturn = {
@@ -33,31 +37,27 @@ export type WalletImportStateType = 'INIT' | 'SET_SEED_PHRASE' | 'LOADING';
 const isValidMnemonic = (mnemonic: string): boolean => {
   try {
     new EnglishMnemonic(mnemonic);
-  }
-  catch {
+  } catch {
     return false;
   }
   return true;
 };
 
-const createSerializedWalletWithMnemonic = (mnemonic: string): Promise<string | null> => {
-  return waitForRun<string>(async () => {
-    const createdWallet = await AdenaWallet.createByMnemonic(mnemonic);
-    const serializedWallet = await createdWallet.serialize('');
-    return serializedWallet;
+const createWalletWithMnemonic = (mnemonic: string): Promise<AdenaWallet | null> => {
+  return waitForRun<AdenaWallet>(async () => {
+    return AdenaWallet.createByMnemonic(mnemonic);
   }).catch(() => null);
 };
 
-const createSerializedWalletWithPrivateKeyKeyring = (keyring: Keyring): Promise<string | null> => {
-  return waitForRun<string>(async () => {
+const createWalletWithPrivateKeyKeyring = (keyring: Keyring): Promise<AdenaWallet | null> => {
+  return waitForRun<AdenaWallet>(async () => {
     const account = await SingleAccount.createBy(keyring, 'Account');
-    const createdWallet = await new AdenaWallet();
+    const createdWallet = new AdenaWallet();
     createdWallet.currentAccountId = account.id;
     createdWallet.addAccount(account);
     createdWallet.addKeyring(keyring);
 
-    const serializedWallet = await createdWallet.serialize('');
-    return serializedWallet;
+    return createdWallet;
   }).catch(() => null);
 };
 
@@ -86,11 +86,9 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
     let validInput = false;
     if (inputType === '12seeds') {
       validInput = isSeedPhraseString(decodedInputValue, 12);
-    }
-    else if (inputType === '24seeds') {
+    } else if (inputType === '24seeds') {
       validInput = isSeedPhraseString(decodedInputValue, 24);
-    }
-    else {
+    } else {
       validInput = !!inputValue;
     }
 
@@ -116,8 +114,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
   const onClickGoBack = useCallback(() => {
     if (step === 'INIT') {
       navigate(RoutePath.WebAdvancedOption);
-    }
-    else if (step === 'SET_SEED_PHRASE') {
+    } else if (step === 'SET_SEED_PHRASE') {
       setStep('INIT');
     }
   }, [step]);
@@ -126,13 +123,15 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
     if (step === 'INIT') {
       if (ableToSkipQuestionnaire) {
         setStep('SET_SEED_PHRASE');
+      } else {
+        navigate(RoutePath.WebQuestionnaire, {
+          state: {
+            callbackPath: RoutePath.WebWalletImport,
+          },
+        });
       }
-      else {
-        navigate(RoutePath.WebQuestionnaire, { state: { callbackPath: RoutePath.WebWalletImport } });
-      }
-    }
-    else if (step === 'SET_SEED_PHRASE') {
-      let serializedWallet: string | null = '';
+    } else if (step === 'SET_SEED_PHRASE') {
+      let createdWallet: AdenaWallet | null = null;
 
       const isSeed = inputType === '12seeds' || inputType === '24seeds';
       if (isSeed) {
@@ -142,10 +141,9 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
         }
 
         setStep('LOADING');
-        serializedWallet = await createSerializedWalletWithMnemonic(decodedInputValue);
+        createdWallet = await createWalletWithMnemonic(decodedInputValue);
         setInputValue('');
-      }
-      else {
+      } else {
         let keyring = await PrivateKeyKeyring.fromPrivateKeyStr(decodedInputValue).catch(
           () => null,
         );
@@ -155,23 +153,18 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
         }
 
         setStep('LOADING');
-        serializedWallet = await createSerializedWalletWithPrivateKeyKeyring(keyring);
+        createdWallet = await createWalletWithPrivateKeyKeyring(keyring);
         keyring = null;
         setInputValue('');
       }
 
-      if (!serializedWallet) {
+      if (!createdWallet) {
         navigate(RoutePath.WebNotFound);
         return;
       }
 
-      navigate(RoutePath.WebCreatePassword, {
-        state: {
-          serializedWallet,
-          stepLength: indicatorInfo.stepLength,
-        },
-        replace: true,
-      });
+      pendingWalletStore.set(createdWallet);
+      navigate(RoutePath.WebCreatePassword, { replace: true });
     }
   }, [step, inputType, inputValue, ableToSkipQuestionnaire]);
 

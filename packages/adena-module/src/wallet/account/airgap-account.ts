@@ -1,8 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
-
-import { toBech32 } from '../../encoding/index.js';
-import { isAddressKeyring, Keyring, KeyringType } from '../keyring/index.js';
-import { Account, AccountInfo } from './account.js';
+import { Account, AccountInfo } from './account';
+import { isAddressKeyring, Keyring, KeyringType } from '../keyring';
+import { toBech32 } from '../../encoding';
 
 export class AirgapAccount implements Account {
   public readonly id;
@@ -19,9 +18,7 @@ export class AirgapAccount implements Account {
 
   private _name: string;
 
-  constructor({
-    id, index, type, keyringId, addressBytes, name
-  }: AccountInfo) {
+  constructor({ id, index, type, keyringId, addressBytes, name }: AccountInfo) {
     this.id = id ?? uuidv4();
     this._index = index;
     this.type = type;
@@ -60,7 +57,7 @@ export class AirgapAccount implements Account {
       publicKey: Array.from(this.publicKey),
       addressBytes: Array.from(this.addressBytes),
       name: this._name,
-      hdPath: undefined
+      hdPath: undefined,
     };
   }
 
@@ -76,7 +73,7 @@ export class AirgapAccount implements Account {
       type,
       publicKey: [],
       addressBytes: Array.from(addressBytes),
-      name
+      name,
     });
   }
 
@@ -88,7 +85,7 @@ export class AirgapAccount implements Account {
       keyringId: accountInfo.keyringId,
       publicKey: accountInfo.publicKey,
       name: accountInfo.name,
-      addressBytes: accountInfo.addressBytes
+      addressBytes: accountInfo.addressBytes,
     });
   }
 }

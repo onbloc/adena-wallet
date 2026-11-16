@@ -30,10 +30,7 @@ const overlayItemEndAnimation = keyframes`
   }
 `;
 
-export const WebHelpOverlayItemWrapper = styled.div<{
-  x: number;
-  y: number;
-}>`
+export const WebHelpOverlayItemWrapper = styled.div<{ x: number; y: number }>`
   position: absolute;
   display: flex;
   flex-direction: column;

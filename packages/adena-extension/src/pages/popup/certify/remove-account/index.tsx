@@ -1,31 +1,55 @@
+import React from 'react';
+import type { JSX } from 'react';
+import styled, { useTheme } from 'styled-components';
+import { useAtom } from 'jotai';
+
 import removeIcon from '@assets/icon-remove-blur.svg';
 import { Text } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useCurrentAccount } from '@hooks/use-current-account';
+import { useClear } from '@hooks/use-clear';
+import { useWalletContext } from '@hooks/use-context';
 import { useRemoveAccount } from '@hooks/use-remove-account';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { RoutePath } from '@types';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
-import { RoutePath } from '@types';
-import React, { type JSX } from 'react';
-import { useRecoilState } from 'recoil';
-import styled, { useTheme } from 'styled-components';
+import useAppNavigate from '@hooks/use-app-navigate';
 
-const content
-  = 'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
+const content =
+  'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
 
 export const RemoveAccount = (): JSX.Element => {
   const theme = useTheme();
   const { navigate, goBack } = useAppNavigate();
   const { currentAccount } = useCurrentAccount();
-  const { removeAccount } = useRemoveAccount();
-  const [, setState] = useRecoilState(WalletState.state);
+  const { wallet } = useWalletContext();
+  const { availRemoveAccount, removeAccount } = useRemoveAccount();
+  const { clear } = useClear();
+  const [, setState] = useAtom(WalletState.state);
 
   const removeButtonClick = async (): Promise<void> => {
     if (!currentAccount) {
       return;
     }
+    // `availRemoveAccount` reads `wallet.accounts`, so a null wallet (still
+    // loading) would look exactly like "this is the last account" and reset the
+    // whole vault. Bail out to the main screen instead of acting on a wallet we
+    // cannot see.
+    if (!wallet) {
+      navigate(RoutePath.Wallet);
+      return;
+    }
     setState('LOADING');
+
+    // Removing the only account leaves no wallet to return to, so the wallet is
+    // reset instead. This is the exit path for a revoked session account that
+    // was imported on its own.
+    if (!(await availRemoveAccount())) {
+      await clear();
+      navigate(RoutePath.Home);
+      return;
+    }
+
     await removeAccount(currentAccount);
     navigate(RoutePath.Wallet);
   };

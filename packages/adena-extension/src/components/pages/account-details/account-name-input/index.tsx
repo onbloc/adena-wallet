@@ -1,7 +1,6 @@
-import IconEdit from '@assets/icon-edit';
 import React, { useCallback, useMemo, useState } from 'react';
-
 import { AccountNameInputWrapper } from './account-name-input.styles';
+import IconEdit from '@assets/icon-edit';
 
 export interface AccountNameInputProps {
   originName: string;

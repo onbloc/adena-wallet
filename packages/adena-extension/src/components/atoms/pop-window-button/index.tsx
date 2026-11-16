@@ -1,12 +1,15 @@
+import React from 'react';
+import type { JSX } from 'react';
+import styled from 'styled-components';
+
 import { Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import React, { type JSX } from 'react';
-import styled from 'styled-components';
-
 import IconExpand from '../icon/icon-assets/icon-expand';
 
-interface PopWindowButtonProps { onClick: () => void }
+interface PopWindowButtonProps {
+  onClick: () => void;
+}
 
 const StyledContainer = styled.div`
   display: flex;

@@ -1,22 +1,23 @@
-import { SCANNER_URL } from '@common/constants/resource.constant';
-import { formatNickname } from '@common/utils/client-utils';
-import { makeQueryString } from '@common/utils/string-utils';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import SideMenu from '@components/pages/router/side-menu/side-menu';
-import { useAccountName } from '@hooks/use-account-name';
+import { useAccountListInfos } from '@hooks/use-account-list-infos';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import useLink from '@hooks/use-link';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
-import { useTokenBalance } from '@hooks/use-token-balance';
+import { useVisibleAccounts } from '@hooks/use-visible-accounts';
+import { useNetworkProfile } from '@hooks/use-network-profile';
+
+import { SCANNER_URL } from '@common/constants/resource.constant';
+import { makeQueryString } from '@common/utils/string-utils';
+import useLink from '@hooks/use-link';
 import { CommandMessage } from '@inject/message/command-message';
-import { useQuery } from '@tanstack/react-query';
-import { RoutePath, SideMenuAccountInfo, TokenBalanceType } from '@types';
+import { RoutePath, SideMenuAccountInfo } from '@types';
 import { Account } from 'adena-module';
-import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react';
-import { useNavigate } from 'react-router';
+
+const EMPTY_ACCOUNTS: Account[] = [];
 
 interface SideMenuContainerProps {
   open: boolean;
@@ -29,10 +30,10 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const { clearWallet } = useWalletContext();
   const navigate = useNavigate();
   const { changeCurrentAccount } = useCurrentAccount();
-  const { currentNetwork, scannerParameters } = useNetwork();
-  const { accountNames } = useAccountName();
-  const { accounts, loadAccounts } = useLoadAccounts();
-  const { accountNativeBalanceMap } = useTokenBalance();
+  const { scannerParameters } = useNetwork();
+  const profile = useNetworkProfile();
+  const { loadAccounts } = useLoadAccounts();
+  const accounts = useVisibleAccounts();
   const [locked, setLocked] = useState(true);
   const { currentAccount } = useCurrentAccount();
   const [latestAccountInfos, setLatestAccountInfos] = useState<SideMenuAccountInfo[]>([]);
@@ -50,8 +51,8 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   }, [currentAccount]);
 
   const scannerUrl = useMemo(() => {
-    return currentNetwork.linkUrl || SCANNER_URL;
-  }, [currentNetwork]);
+    return profile?.linkUrl || SCANNER_URL;
+  }, [profile]);
 
   const scannerQueryString = useMemo(() => {
     if (scannerParameters) {
@@ -83,7 +84,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const changeAccount = useCallback(
     async (accountId: string) => {
       setOpen(false);
-      const account = accounts.find(current => current.id === accountId);
+      const account = accounts.find((current) => current.id === accountId);
       if (!account) {
         return;
       }
@@ -100,8 +101,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
 
     try {
       await chrome.runtime.sendMessage(CommandMessage.command('clearPopup'));
-    }
-    catch (error) {
+    } catch (error) {
       console.warn(error);
     }
 
@@ -113,31 +113,10 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
     setOpen(false);
   }, []);
 
-  const { data: sideMenuAccounts = [] } = useQuery<SideMenuAccountInfo[]>({
-    queryKey: ['sideMenuAccounts', accountNames, accounts, accountNativeBalanceMap, currentNetwork],
-    queryFn: () => {
-      function mapBalance(
-        accountNativeBalanceMap: Record<string, TokenBalanceType>,
-        account: Account,
-      ): string {
-        const amount = accountNativeBalanceMap[account.id]?.amount;
-        if (!amount) {
-          return '-';
-        }
-        return `${amount.value}`;
-      }
-
-      return Promise.all(
-        accounts.map(async account => ({
-          accountId: account.id,
-          name: formatNickname(accountNames[account.id] || account.name, 10),
-          address: await account.getAddress(currentNetwork.addressPrefix),
-          type: account.type,
-          balance: mapBalance(accountNativeBalanceMap, account),
-        })),
-      );
-    },
-  });
+  // An empty list withdraws the per-account balance RPC fan-out while the menu is
+  // closed; `latestAccountInfos` keeps the last rendered rows, so nothing blanks.
+  const listAccounts = useMemo(() => (open ? accounts : EMPTY_ACCOUNTS), [open, accounts]);
+  const { data: sideMenuAccounts = [] } = useAccountListInfos(listAccounts);
 
   useEffect(() => {
     if (sideMenuAccounts.length > 0) {

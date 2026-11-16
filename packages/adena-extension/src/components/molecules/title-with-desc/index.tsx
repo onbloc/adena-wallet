@@ -1,4 +1,5 @@
-import React, { type JSX } from 'react';
+import React from 'react';
+import type { JSX } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import { Text } from '../../atoms';

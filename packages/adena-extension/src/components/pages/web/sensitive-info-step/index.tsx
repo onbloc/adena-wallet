@@ -1,12 +1,12 @@
-import IconAlert from '@assets/web/alert-rounded.svg';
-import IconLink from '@assets/web/external-link.svg';
-import {
-  Pressable, Row, View, WebButton, WebImg, WebText,
-} from '@components/atoms';
-import { WebTitleWithDescription } from '@components/molecules';
-import useLink from '@hooks/use-link';
 import { ReactElement } from 'react';
 import styled, { useTheme } from 'styled-components';
+
+import IconAlert from '@assets/web/alert-rounded.svg';
+import IconLink from '@assets/web/external-link.svg';
+
+import { Pressable, Row, View, WebButton, WebImg, WebText } from '@components/atoms';
+import useLink from '@hooks/use-link';
+import { WebTitleWithDescription } from '@components/molecules';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -25,17 +25,13 @@ export const SensitiveInfoStep = ({
   link,
   desc,
   onClickNext,
-}: SensitiveInfoStepProps): ReactElement<any> => {
+}: SensitiveInfoStepProps): ReactElement => {
   const theme = useTheme();
   const { openLink } = useLink();
 
   return (
     <StyledContainer>
-      <View style={{
-        rowGap: 32,
-        alignItems: 'flex-start',
-      }}
-      >
+      <View style={{ rowGap: 32, alignItems: 'flex-start' }}>
         <WebImg src={IconAlert} size={88} />
         <WebTitleWithDescription title='Sensitive Information Ahead' description={desc} />
       </View>

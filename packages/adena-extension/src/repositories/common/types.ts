@@ -1,12 +1,12 @@
 import {
   GRC20TokenModel,
+  Grc20RouteMap,
   GRC721CollectionModel,
   GRC721MetadataModel,
   GRC721Model,
   NetworkMetainfo,
   TokenModel,
 } from '@types';
-
 import { AppInfoResponse } from './response';
 
 export interface ITokenRepository extends IGRC721TokenRepository {
@@ -16,24 +16,33 @@ export interface ITokenRepository extends IGRC721TokenRepository {
 
   setNetworkMetainfo: (networkMetainfo: NetworkMetainfo) => void;
   fetchTokenMetainfos: () => Promise<TokenModel[]>;
+  fetchGrc20Routes: () => Promise<Grc20RouteMap>;
   fetchAppInfos: () => Promise<AppInfoResponse[]>;
   fetchAllGRC20Tokens: () => Promise<GRC20TokenModel[]>;
-  fetchAllTransferPackagesBy: (address: string, fromBlockHeight: number) => Promise<string[]>;
+  fetchGRC20Tokens: (params?: {
+    offset?: number;
+    limit?: number;
+  }) => Promise<{ items: GRC20TokenModel[]; totalCount: number }>;
+  fetchAllTransferGRC20TokenPathsBy: (address: string) => Promise<string[]>;
+  fetchAccountGRC20Tokens: (address: string) => Promise<GRC20TokenModel[] | null>;
   fetchGRC20TokenByPackagePath: (packagePath: string) => Promise<GRC20TokenModel>;
 
   getAccountTokenMetainfos: (accountId: string) => Promise<TokenModel[]>;
   updateTokenMetainfos: (accountId: string, tokenMetainfos: TokenModel[]) => Promise<boolean>;
   deleteTokenMetainfos: (accountId: string) => Promise<boolean>;
   deleteAllTokenMetainfo: () => Promise<boolean>;
+
+  deleteGRC721SyncCache: () => Promise<boolean>;
 }
 
 export interface IGRC721TokenRepository {
   fetchGRC721Collections: () => Promise<GRC721CollectionModel[]>;
+  fetchAccountGRC721CollectionsBy: (address: string) => Promise<GRC721CollectionModel[]>;
   fetchGRC721CollectionByPackagePath: (packagePath: string) => Promise<GRC721CollectionModel>;
-  fetchGRC721TokenUriBy: (packagePath: string, address: string) => Promise<string>;
+  fetchGRC721TokenUriBy: (packagePath: string, tokenId: string) => Promise<string>;
   fetchGRC721TokenMetadataBy: (
     packagePath: string,
-    address: string,
+    tokenId: string,
   ) => Promise<GRC721MetadataModel>;
   fetchGRC721BalanceBy: (packagePath: string, address: string) => Promise<number>;
   fetchGRC721TokensBy: (packagePath: string, address: string) => Promise<GRC721Model[]>;

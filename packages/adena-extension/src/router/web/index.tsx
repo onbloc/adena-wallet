@@ -1,13 +1,23 @@
+import { useEffect } from 'react';
+import type { JSX } from 'react';
+import { Route, Routes } from 'react-router-dom';
+
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useWallet } from '@hooks/use-wallet';
-import NotFoundScreen from '@pages/web/404';
+import { RoutePath } from '@types';
+import { getRegisterInitialRoute } from '@common/utils/register-url';
+
+import { closeCurrentSurface } from '@common/utils/browser-utils';
 import AccountAddScreen from '@pages/web/account-add-screen';
 import AccountAddedCompleteScreen from '@pages/web/account-added-complete-screen';
 import AccountImportScreen from '@pages/web/account-import-screen';
+import SessionAddScreen from '@pages/web/session-add-screen';
 import AdvancedOptionScreen from '@pages/web/advanced-option-screen';
+import AdvancedSetupScreen from '@pages/web/advanced-setup-screen';
 import { ConnectLedgerScreen, ConnectLedgerSelectAccount } from '@pages/web/connect-ledger';
 import CreatePasswordScreen from '@pages/web/create-password-screen';
 import GoogleLoginScreen from '@pages/web/google-login-screen';
+import EmailLoginScreen from '@pages/web/email-login-screen';
+import XLoginScreen from '@pages/web/x-login-screen';
 import LandingScreen from '@pages/web/landing-screen';
 import QuestionnaireScreen from '@pages/web/questionnaire-screen';
 import SelectHardWalletScreen from '@pages/web/select-hard-wallet-screen';
@@ -17,10 +27,9 @@ import WalletAllSetScreen from '@pages/web/wallet-all-set-screen';
 import WalletCreateScreen from '@pages/web/wallet-create-screen';
 import WalletExportScreen from '@pages/web/wallet-export-screen';
 import WalletImportScreen from '@pages/web/wallet-import-screen';
-import { RoutePath } from '@types';
-import { type JSX, useEffect } from 'react';
-import { Route, Routes } from 'react-router';
 
+import { useWallet } from '@hooks/use-wallet';
+import NotFoundScreen from '@pages/web/404';
 import Header from './Header';
 
 export const WebRouter = (): JSX.Element => {
@@ -32,16 +41,22 @@ export const WebRouter = (): JSX.Element => {
 
   useEffect(() => {
     if (existWallet && lockedWallet) {
-      window.close();
+      closeCurrentSurface();
     }
   }, [existWallet, lockedWallet]);
 
   useEffect(() => {
+    const initialRoute = isRegister ? getRegisterInitialRoute(window.location.search) : null;
     const preventGoBack = (): void => {
       history.pushState(null, '', location.href);
       navigate(RoutePath.Home);
     };
-    preventGoBack();
+    history.pushState(null, '', location.href);
+    if (initialRoute === RoutePath.WebAccountAdd) {
+      navigate(RoutePath.WebAccountAdd);
+    } else {
+      navigate(RoutePath.Home);
+    }
     window.addEventListener('popstate', preventGoBack);
     return () => window.removeEventListener('popstate', preventGoBack);
   }, []);
@@ -59,13 +74,17 @@ export const WebRouter = (): JSX.Element => {
             element={<ConnectLedgerSelectAccount />}
           />
           <Route path={RoutePath.WebAdvancedOption} element={<AdvancedOptionScreen />} />
+          <Route path={RoutePath.WebAdvancedSetup} element={<AdvancedSetupScreen />} />
           <Route path={RoutePath.WebCreatePassword} element={<CreatePasswordScreen />} />
           <Route path={RoutePath.WebGoogleLogin} element={<GoogleLoginScreen />} />
+          <Route path={RoutePath.WebEmailLogin} element={<EmailLoginScreen />} />
+          <Route path={RoutePath.WebXLogin} element={<XLoginScreen />} />
           <Route path={RoutePath.WebSetupAirgap} element={<SetupAirgapScreen />} />
           <Route path={RoutePath.WebSetupMultisig} element={<SetupMultisigScreen />} />
           <Route path={RoutePath.WebWalletCreate} element={<WalletCreateScreen />} />
           <Route path={RoutePath.WebAccountAdd} element={<AccountAddScreen />} />
           <Route path={RoutePath.WebAccountImport} element={<AccountImportScreen />} />
+          <Route path={RoutePath.WebSessionAdd} element={<SessionAddScreen />} />
           <Route path={RoutePath.WebWalletImport} element={<WalletImportScreen />} />
           <Route path={RoutePath.WebWalletAllSet} element={<WalletAllSetScreen />} />
           <Route
@@ -73,7 +92,7 @@ export const WebRouter = (): JSX.Element => {
             element={<AccountAddedCompleteScreen />}
           />
           <Route path={RoutePath.WebQuestionnaire} element={<QuestionnaireScreen />} />
-          <Route path='*' element={<NotFoundScreen />} />
+          <Route path={'*'} element={<NotFoundScreen />} />
         </Routes>
       </>
     );
@@ -87,7 +106,7 @@ export const WebRouter = (): JSX.Element => {
           <Route path={RoutePath.Home} element={<WalletExportScreen />} />
           <Route path={RoutePath.WebWalletExport} element={<WalletExportScreen />} />
           <Route path={RoutePath.WebQuestionnaire} element={<QuestionnaireScreen />} />
-          <Route path='*' element={<NotFoundScreen />} />
+          <Route path={'*'} element={<NotFoundScreen />} />
         </Routes>
       </>
     );
@@ -96,7 +115,7 @@ export const WebRouter = (): JSX.Element => {
   return (
     <>
       <Header />
-      <Route path='*' element={<NotFoundScreen />} />
+      <Route path={'*'} element={<NotFoundScreen />} />
     </>
   );
 };

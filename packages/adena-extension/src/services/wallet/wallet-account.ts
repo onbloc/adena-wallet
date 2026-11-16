@@ -45,8 +45,9 @@ export class WalletAccountService {
     address: string,
     rpcUrl: string,
     chainId: string,
+    fallbackRPCUrl?: string,
   ): Promise<AccountInfo> => {
-    const gnoProvider = await GnoProvider.create(rpcUrl, chainId);
+    const gnoProvider = new GnoProvider(rpcUrl, chainId, fallbackRPCUrl);
     return this.getAccountInfoByProvider(address, gnoProvider);
   };
 
@@ -59,8 +60,7 @@ export class WalletAccountService {
       if (account) {
         return account;
       }
-    }
-    catch (e) {
+    } catch (e) {
       console.log(e);
     }
     return {
@@ -78,7 +78,9 @@ export class WalletAccountService {
     return true;
   };
 
-  public getAccountNames = async (): Promise<{ [x: string]: string }> => {
+  public getAccountNames = async (): Promise<{
+    [x: string]: string;
+  }> => {
     return this.walletAccountRepository.getAccountNames();
   };
 

@@ -1,9 +1,9 @@
 import { WalletResponseFailureType, WalletResponseRejectType } from '@adena-wallet/sdk';
 import { NetworkMetainfo, RoutePath } from '@types';
-
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
+import { rejectSessionAccountUnsupported } from './session-account-guard';
 
 function matchChainId(network: NetworkMetainfo, chainId: string): boolean {
   return network.chainId === chainId;
@@ -17,6 +17,11 @@ export const addNetwork = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
+  // Network mutations are master-account operations, exactly as in switchNetwork.
+  if (await rejectSessionAccountUnsupported(core, requestData, sendResponse)) {
+    return;
+  }
+
   const inMemoryKey = await core.getInMemoryKey();
 
   const isLocked = await core.isLockedBy(inMemoryKey);
@@ -46,11 +51,11 @@ export const addNetwork = async (
       return;
     }
     const networks = await core.chainService.getNetworks();
-    const existNetwork
-      = networks.findIndex(
-        current =>
-          (matchChainId(current, chainId) || matchRPCUrl(current, rpcUrl))
-          && current.deleted !== true,
+    const existNetwork =
+      networks.findIndex(
+        (current) =>
+          (matchChainId(current, chainId) || matchRPCUrl(current, rpcUrl)) &&
+          current.deleted !== true,
       ) > -1;
     if (existNetwork) {
       sendResponse(
@@ -73,8 +78,7 @@ export const addNetwork = async (
       ),
       sendResponse,
     );
-  }
-  else {
+  } else {
     sendResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.WALLET_LOCKED,
@@ -90,6 +94,10 @@ export const switchNetwork = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
+  if (await rejectSessionAccountUnsupported(core, requestData, sendResponse)) {
+    return;
+  }
+
   const chainId = requestData.data?.chainId || '';
   if (chainId === '') {
     sendResponse(
@@ -115,8 +123,8 @@ export const switchNetwork = async (
   }
 
   const networks = await core.chainService.getNetworks();
-  const existNetwork
-    = networks.findIndex(current => current.chainId === chainId && current.deleted !== true) > -1;
+  const existNetwork =
+    networks.findIndex((current) => current.chainId === chainId && current.deleted !== true) > -1;
   if (!existNetwork) {
     sendResponse(
       InjectionMessageInstance.failure(

@@ -1,12 +1,13 @@
+import React from 'react';
+
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
-import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
-import TransferSummaryNetworkFee, { TransferSummaryNetworkFeeProps } from './transfer-summary-network-fee';
+import TransferSummaryNetworkFee, {
+  TransferSummaryNetworkFeeProps,
+} from './transfer-summary-network-fee';
 
 describe('TransferSummaryNetworkFee Component', () => {
   it('TransferSummaryNetworkFee render', () => {
@@ -17,12 +18,12 @@ describe('TransferSummaryNetworkFee Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TransferSummaryNetworkFee {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

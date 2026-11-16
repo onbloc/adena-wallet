@@ -15,17 +15,15 @@ const WebAnswerButton: React.FC<WebAnswerButtonProps> = ({
   selected,
   onClick,
 }) => {
-  return correct
-    ? (
-        <StyledCorrectButton selected={selected} onClick={onClick}>
-          {answer}
-        </StyledCorrectButton>
-      )
-    : (
-        <StyledIncorrectButton selected={selected} onClick={onClick}>
-          {answer}
-        </StyledIncorrectButton>
-      );
+  return correct ? (
+    <StyledCorrectButton selected={selected} onClick={onClick}>
+      {answer}
+    </StyledCorrectButton>
+  ) : (
+    <StyledIncorrectButton selected={selected} onClick={onClick} >
+      {answer}
+    </StyledIncorrectButton>
+  );
 };
 
 export default WebAnswerButton;

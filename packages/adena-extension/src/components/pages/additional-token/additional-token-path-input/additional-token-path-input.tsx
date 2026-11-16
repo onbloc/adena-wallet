@@ -1,7 +1,6 @@
 import { Text } from '@components/atoms';
 import theme from '@styles/theme';
 import React, { useMemo } from 'react';
-
 import { AdditionalTokenPathInputWrapper } from './additional-token-path-input.styles';
 
 export interface AdditionalTokenPathInputProps {
@@ -25,7 +24,7 @@ const AdditionalTokenPathInput: React.FC<AdditionalTokenPathInputProps> = ({
         className={hasError ? 'search-input error' : 'search-input'}
         value={keyword}
         onChange={(event): void => onChangeKeyword(event.target.value)}
-        placeholder='Search'
+        placeholder='gno.land/r/demo/token.SYMBOL'
       />
 
       {hasError && (

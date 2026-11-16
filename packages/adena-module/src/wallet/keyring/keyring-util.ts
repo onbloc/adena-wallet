@@ -1,13 +1,14 @@
 import { Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 
-import { decodeTxMessages, Document, documentToTx } from './../../utils/messages.js';
-import { AddressKeyring } from './address-keyring.js';
-import { HDWalletKeyring } from './hd-wallet-keyring.js';
-import { Keyring } from './keyring.js';
-import { LedgerKeyring } from './ledger-keyring.js';
-import { MultisigKeyring } from './multisig-keyring.js';
-import { PrivateKeyKeyring } from './private-key-keyring.js';
-import { Web3AuthKeyring } from './web3-auth-keyring.js';
+import { decodeTxMessages, Document, documentToTx } from './../../utils/messages';
+import { AddressKeyring } from './address-keyring';
+import { HDWalletKeyring } from './hd-wallet-keyring';
+import { Keyring, isWeb3AuthKeyringType } from './keyring';
+import { LedgerKeyring } from './ledger-keyring';
+import { PrivateKeyKeyring } from './private-key-keyring';
+import { Web3AuthKeyring } from './web3-auth-keyring';
+import { MultisigKeyring } from './multisig-keyring';
+import { SessionKeyring } from './session-keyring';
 
 export function isHDWalletKeyring(keyring: Keyring): keyring is HDWalletKeyring {
   return keyring.type === 'HD_WALLET';
@@ -22,7 +23,7 @@ export function isPrivateKeyKeyring(keyring: Keyring): keyring is PrivateKeyKeyr
 }
 
 export function isWeb3AuthKeyring(keyring: Keyring): keyring is Web3AuthKeyring {
-  return keyring.type === 'WEB3_AUTH';
+  return isWeb3AuthKeyringType(keyring.type);
 }
 
 export function isAddressKeyring(keyring: Keyring): keyring is AddressKeyring {
@@ -33,9 +34,13 @@ export function isMultisigKeyring(keyring: Keyring): keyring is MultisigKeyring 
   return keyring.type === 'MULTISIG';
 }
 
+export function isSessionKeyring(keyring: Keyring): keyring is SessionKeyring {
+  return keyring.type === 'SESSION';
+}
+
 export function hasPrivateKey(
-  keyring: Keyring
-): keyring is HDWalletKeyring | PrivateKeyKeyring | Web3AuthKeyring {
+  keyring: Keyring,
+): keyring is HDWalletKeyring | PrivateKeyKeyring | Web3AuthKeyring | SessionKeyring {
   if (isHDWalletKeyring(keyring)) {
     return true;
   }
@@ -45,10 +50,13 @@ export function hasPrivateKey(
   if (isWeb3AuthKeyring(keyring)) {
     return true;
   }
+  if (isSessionKeyring(keyring)) {
+    return true;
+  }
   return false;
 }
 
-export function useTm2Wallet(_document: Document): typeof Tm2Wallet {
+export function useTm2Wallet(document: Document): typeof Tm2Wallet {
   return Tm2Wallet;
 }
 
@@ -58,6 +66,6 @@ export function makeSignedTx(wallet: Tm2Wallet, document: Document): Promise<Tx>
 
   return wallet.signTransaction(tx, decodeTxMessageFunction, {
     ...(document.account_number && { accountNumber: document.account_number }),
-    ...(document.sequence && { sequence: document.sequence })
+    ...(document.sequence && { sequence: document.sequence }),
   });
 }

@@ -1,9 +1,11 @@
-import AnimationLoginFailed from '@assets/web/lottie/login-failed.json';
-import { View, WebButton } from '@components/atoms';
-import Lottie from '@components/atoms/lottie';
-import { WebTitleWithDescription } from '@components/molecules';
 import type { JSX } from 'react';
 import styled from 'styled-components';
+
+import AnimationLoginFailed from '@assets/web/lottie/login-failed.json';
+
+import { View, WebButton } from '@components/atoms';
+import { WebTitleWithDescription } from '@components/molecules';
+import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
@@ -11,7 +13,9 @@ const StyledContainer = styled(View)`
   align-items: center;
 `;
 
-interface Props { retry: () => void }
+interface Props {
+  retry: () => void;
+}
 
 export const ConnectFail = ({ retry }: Props): JSX.Element => {
   return (

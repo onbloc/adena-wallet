@@ -1,13 +1,12 @@
 import React, { useCallback } from 'react';
-
 import {
   StyledAdditionalTokenTypeSelector,
   StyledAdditionalTokenTypeSelectorWrapper,
 } from './additional-token-type-selector.styles';
 
 export enum AddingType {
-  SEARCH,
-  MANUAL,
+  'SEARCH',
+  'MANUAL',
 }
 
 const displayTypeNames = {

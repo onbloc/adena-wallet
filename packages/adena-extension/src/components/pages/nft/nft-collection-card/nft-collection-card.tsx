@@ -4,7 +4,6 @@ import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721CollectionModel } from '@types';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useMemo } from 'react';
-
 import { NFTCollectionCardWrapper } from './nft-collection-card.styles';
 
 export interface NFTCollectionCardProps {
@@ -13,11 +12,11 @@ export interface NFTCollectionCardProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
+    options?: UseQueryOptions<string | null, Error>,
   ) => UseQueryResult<string | null>;
   queryGRC721Balance: (
     packagePath: string,
-    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
+    options?: UseQueryOptions<number | null, Error>,
   ) => UseQueryResult<number | null>;
   pin: (collection: GRC721CollectionModel) => void;
   unpin: (collection: GRC721CollectionModel) => void;
@@ -36,13 +35,17 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
   const { data: tokenUri, isFetched: isFetchedTokenUri } = queryGRC721TokenUri(
     grc721Collection.packagePath,
     grc721Collection.tokenId,
-    { enabled: grc721Collection.isTokenUri },
+    {
+      enabled: grc721Collection.isTokenUri && !!grc721Collection.tokenId,
+    },
   );
 
-  const { data: balance } = queryGRC721Balance(grc721Collection.packagePath, { refetchOnMount: true });
+  const { data: balance } = queryGRC721Balance(grc721Collection.packagePath, {
+    refetchOnMount: true,
+  });
 
   const isFetchedCardTokenUri = useMemo(() => {
-    if (!grc721Collection.isTokenUri) {
+    if (!grc721Collection.isTokenUri || !grc721Collection.tokenId) {
       return true;
     }
 

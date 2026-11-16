@@ -1,6 +1,7 @@
-import {
-  Button, DefaultInput, ErrorText, Text, View,
-} from '@components/atoms';
+import type { JSX } from 'react';
+import styled, { css, CSSProp } from 'styled-components';
+
+import { Button, DefaultInput, ErrorText, Text, View } from '@components/atoms';
 import { PasswordInput } from '@components/atoms/password-input';
 import { TermsCheckbox, TitleWithDesc } from '@components/molecules';
 import { useCreatePassword } from '@hooks/certify/use-create-password';
@@ -8,8 +9,6 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
-import type { JSX } from 'react';
-import styled, { css, CSSProp } from 'styled-components';
 
 const text = {
   title: 'Create\na Password',
@@ -54,10 +53,8 @@ const FormBox = styled.div`
 
 export const CreatePassword = (): JSX.Element => {
   const { openLink } = useLink();
-  const {
-    pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown,
-  }
-    = useCreatePassword();
+  const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown } =
+    useCreatePassword();
   const { params } = useAppNavigate<RoutePath.CreatePassword>();
   const handleLinkClick = (): void => openLink('https://adena.app/terms');
 

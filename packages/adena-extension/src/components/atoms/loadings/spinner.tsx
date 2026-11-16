@@ -1,7 +1,9 @@
+import React from 'react';
+import type { JSX } from 'react';
+import styled, { keyframes } from 'styled-components';
+
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import React, { type JSX } from 'react';
-import styled, { keyframes } from 'styled-components';
 
 const spinAnimation = keyframes`
   0% {

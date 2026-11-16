@@ -1,6 +1,7 @@
 {
   "folders": [
     {
+      "name": "adena-wallet",
       "path": "."
     },
     {
@@ -10,22 +11,30 @@
     {
       "name": "adena-extension",
       "path": "packages/adena-extension"
-    },
-    {
-      "name": "adena-torus-signin",
-      "path": "packages/adena-torus-signin"
     }
   ],
   "settings": {
-    "editor.formatOnSave": true,
-    "editor.insertSpaces": true,
-    "editor.detectIndentation": false,
-    "search.exclude": {
-      "**/.yarn": true,
-      "**/.pnp.*": true
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
     },
-    "extensions": {
-      "recommendations": ["esbenp.prettier-vscode", "editorconfig.editorconfig"]
-    }
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.detectIndentation": false,
+    "files.eol": "\n",
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true,
+    "eslint.useFlatConfig": true,
+    "eslint.workingDirectories": [{ "mode": "auto" }],
+    "search.exclude": {
+      "**/dist": true,
+      "**/dist-firefox": true,
+      "**/storybook-static": true
+    },
+    "typescript.tsdk": "packages/adena-extension/node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true
+  },
+  "extensions": {
+    "recommendations": ["dbaeumer.vscode-eslint", "editorconfig.editorconfig", "vitest.explorer"]
   }
 }

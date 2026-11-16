@@ -1,11 +1,10 @@
+import React from 'react';
+import type { JSX } from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
-import { render } from '@testing-library/react';
-import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
 import NFTCardImage, { NFTCardImageProps } from './nft-card-image';
 
 describe('NFTCardImage Component', () => {
@@ -17,12 +16,33 @@ describe('NFTCardImage Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <NFTCardImage {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
+    );
+  });
+
+  it('retries a new image after an earlier one failed to load', () => {
+    const renderImage = (image: string): JSX.Element => (
+      <JotaiProvider>
+        <GlobalPopupStyle />
+        <ThemeProvider theme={theme}>
+          <NFTCardImage isFetched image={image} />
+        </ThemeProvider>
+      </JotaiProvider>
+    );
+
+    const { rerender } = render(renderImage('https://example.test/broken.png'));
+    fireEvent.error(screen.getByAltText('nft image'));
+    expect(screen.getByAltText('empty image')).toBeTruthy();
+
+    rerender(renderImage('https://example.test/working.png'));
+
+    expect(screen.getByAltText('nft image').getAttribute('src')).toBe(
+      'https://example.test/working.png',
     );
   });
 });

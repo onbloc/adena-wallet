@@ -5,9 +5,10 @@ import AdditionalTokenInfo from '@components/pages/additional-token/additional-t
 import AdditionalTokenSelectBox from '@components/pages/additional-token/additional-token-select-box/additional-token-select-box';
 import { AdditionalTokenProps } from '@types';
 import React, { useMemo } from 'react';
-
 import AdditionalTokenPathInput from '../additional-token-path-input/additional-token-path-input';
-import AdditionalTokenTypeSelector, { AddingType } from '../additional-token-type-selector/additional-token-type-selector';
+import AdditionalTokenTypeSelector, {
+  AddingType,
+} from '../additional-token-type-selector/additional-token-type-selector';
 import { AdditionalTokenWrapper } from './additional-token.styles';
 
 const AdditionalToken: React.FC<AdditionalTokenProps> = ({
@@ -30,6 +31,9 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   onClickBack,
   onClickCancel,
   onClickAdd,
+  onEndReached,
+  hasMore,
+  loadingMore,
 }) => {
   const isSearchType = useMemo(() => {
     return addingType === AddingType.SEARCH;
@@ -56,7 +60,8 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   }, [selectedTokenInfo, errorManualGRC20Token]);
 
   const displaySelectedTokenPath = useMemo(() => {
-    const token = tokenInfos.find(token => token.path === selectedTokenPath);
+    // selectedTokenPath is the selected token's token path (tokenId).
+    const token = tokenInfos.find((token) => token.tokenId === selectedTokenPath);
     if (!token) {
       return null;
     }
@@ -73,7 +78,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
         <SubHeader
           title='Add Custom Token'
           leftElement={{
-            element: <img src={LeftArrowIcon} alt='back icon' />,
+            element: <img src={LeftArrowIcon} alt={'back icon'} />,
             onClick: onClickBack,
           }}
         />
@@ -84,26 +89,27 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
       </div>
 
       <div className='select-box-wrapper'>
-        {isSearchType
-          ? (
-              <AdditionalTokenSelectBox
-                opened={opened}
-                selected={selected}
-                keyword={keyword}
-                tokenInfos={tokenInfos}
-                selectedInfo={displaySelectedTokenPath || null}
-                onChangeKeyword={onChangeKeyword}
-                onClickOpenButton={onClickOpenButton}
-                onClickListItem={onClickListItem}
-              />
-            )
-          : (
-              <AdditionalTokenPathInput
-                keyword={manualTokenPath}
-                onChangeKeyword={onChangeManualTokenPath}
-                errorMessage={tokenPathInputErrorMessage}
-              />
-            )}
+        {isSearchType ? (
+          <AdditionalTokenSelectBox
+            opened={opened}
+            selected={selected}
+            keyword={keyword}
+            tokenInfos={tokenInfos}
+            selectedInfo={displaySelectedTokenPath || null}
+            onChangeKeyword={onChangeKeyword}
+            onClickOpenButton={onClickOpenButton}
+            onClickListItem={onClickListItem}
+            onEndReached={onEndReached}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+          />
+        ) : (
+          <AdditionalTokenPathInput
+            keyword={manualTokenPath}
+            onChangeKeyword={onChangeManualTokenPath}
+            errorMessage={tokenPathInputErrorMessage}
+          />
+        )}
       </div>
 
       <div className='info-wrapper'>

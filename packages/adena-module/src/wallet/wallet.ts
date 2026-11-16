@@ -2,15 +2,26 @@ import { LedgerConnector } from '@cosmjs/ledger-amino';
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  defaultAddressPrefix,
   Provider,
   Tx,
-  TxSignature
+  TxSignature,
 } from '@gnolang/tm2-js-client';
 
-import { Bip39, Random } from '../crypto/index.js';
-import { arrayContentEquals, arrayToHex, hexToArray } from '../utils/index.js';
-import { Document } from './../index.js';
+import { StdFee } from '@cosmjs/amino';
+import { CosmosSignMode } from '../chain-registry/types';
+import {
+  CosmosDocument,
+  CosmosFeeEstimate,
+  CosmosProvider,
+  CosmosTxBroadcastResponse,
+  estimateCosmosFee,
+  signCosmos,
+  SignedCosmosTx,
+} from '../cosmos';
+import { Bip39, Random } from '../crypto';
+import { fromBech32 } from '../encoding';
+import { arrayContentEquals, arrayToHex, hexToArray } from '../utils';
+import { Document } from './..';
 import {
   Account,
   AccountInfo,
@@ -19,10 +30,11 @@ import {
   isLedgerAccount,
   isMultisigAccount,
   isSeedAccount,
+  isSessionAccount,
   LedgerAccount,
   makeAccount,
   SeedAccount,
-  SingleAccount
+  SingleAccount,
 } from './account';
 import {
   AddressKeyring,
@@ -35,9 +47,10 @@ import {
   KeyringData,
   LedgerKeyring,
   makeKeyring,
-  Web3AuthKeyring
+  Web3AuthKeyring,
+  Web3AuthKeyringType,
 } from './keyring';
-import { decryptAES, encryptAES } from './wallet-crypto-util.js';
+import { decryptXChacha20, EncryptedData, encryptXChacha20 } from './wallet-crypto-util';
 
 export interface Wallet {
   accounts: Account[];
@@ -48,9 +61,11 @@ export interface Wallet {
   nextAccountName: string;
   nextLedgerAccountName: string;
   nextMultisigAccountName: string;
+  nextSessionAccountName: string;
   lastAccountIndex: number;
   lastLedgerAccountIndex: number;
   lastMultisigAccountIndex: number;
+  lastSessionAccountIndex: number;
 
   addAccount: (account: Account) => number;
   removeAccount: (account: Account) => boolean;
@@ -66,7 +81,7 @@ export interface Wallet {
   hasPrivateKey: (privateKey: Uint8Array) => boolean;
   sign: (
     provider: Provider,
-    document: Document
+    document: Document,
   ) => Promise<{
     signed: Tx;
     signature: TxSignature[];
@@ -74,7 +89,7 @@ export interface Wallet {
   signByAccountId: (
     provider: Provider,
     accountId: string,
-    document: Document
+    document: Document,
   ) => Promise<{
     signed: Tx;
     signature: TxSignature[];
@@ -82,14 +97,36 @@ export interface Wallet {
   broadcastTxSync: (
     provider: Provider,
     accountId: string,
-    tx: Tx
+    tx: Tx,
   ) => Promise<BroadcastTxSyncResult>;
   broadcastTxCommit: (
     provider: Provider,
     accountId: string,
-    tx: Tx
+    tx: Tx,
   ) => Promise<BroadcastTxCommitResult>;
-  serialize: (password: string) => Promise<string>;
+  // Cosmos AMINO (Phase 3) — kept as dedicated methods so the Gno path
+  // (sign / signByAccountId / broadcastTx*) stays strictly untouched. The
+  // caller injects a CosmosProvider just like it injects `Provider` for Gno,
+  // keeping adena-module free of HTTP-client deps.
+  signCosmosByAccountId: (
+    accountId: string,
+    document: CosmosDocument,
+    cosmosProvider: CosmosProvider,
+    signMode: CosmosSignMode,
+  ) => Promise<SignedCosmosTx>;
+  estimateCosmosFeeByAccountId: (
+    accountId: string,
+    document: CosmosDocument,
+    cosmosProvider: CosmosProvider,
+    simulateFee: StdFee,
+    feeDenom: string,
+  ) => Promise<CosmosFeeEstimate>;
+  broadcastCosmosTx: (
+    signedTx: SignedCosmosTx,
+    cosmosProvider: CosmosProvider,
+  ) => Promise<CosmosTxBroadcastResponse>;
+  serialize: (password: string, salt: Uint8Array) => Promise<string>;
+  destroy: () => void;
   clone: () => AdenaWallet;
 }
 export interface WalletData {
@@ -100,7 +137,7 @@ export interface WalletData {
 
 const defaultWalletData: WalletData = {
   accounts: [] as AccountInfo[],
-  keyrings: [] as KeyringData[]
+  keyrings: [] as KeyringData[],
 };
 
 /**
@@ -135,7 +172,7 @@ export class AdenaWallet implements Wallet {
   }
 
   get currentAccount() {
-    const currentAccount = this._accounts.find(account => account.id === this._currentAccountId);
+    const currentAccount = this._accounts.find((account) => account.id === this._currentAccountId);
     if (!currentAccount) {
       throw new Error('Current account not found');
     }
@@ -144,7 +181,7 @@ export class AdenaWallet implements Wallet {
 
   get currentKeyring() {
     const currentKeyringId = this.currentAccount.keyringId;
-    const currentKeyring = this._keyrings.find(keyring => keyring.id === currentKeyringId);
+    const currentKeyring = this._keyrings.find((keyring) => keyring.id === currentKeyringId);
     if (!currentKeyring) {
       throw new Error('Current keyring not found');
     }
@@ -166,6 +203,11 @@ export class AdenaWallet implements Wallet {
     return `Multisig ${nextIndex}`;
   }
 
+  get nextSessionAccountName() {
+    const nextIndex = this.lastSessionAccountIndex + 1;
+    return `Session ${nextIndex}`;
+  }
+
   set currentAccountId(currentAccountId: string) {
     this._currentAccountId = currentAccountId;
   }
@@ -176,18 +218,29 @@ export class AdenaWallet implements Wallet {
 
   get lastAccountIndex() {
     const indices = this.accounts
-      .filter(account => !isLedgerAccount(account) && !isMultisigAccount(account))
-      .map(account => account.index);
+      .filter(
+        (account) =>
+          !isLedgerAccount(account) && !isMultisigAccount(account) && !isSessionAccount(account),
+      )
+      .map((account) => account.index);
     return Math.max(0, ...indices);
   }
 
   get lastLedgerAccountIndex() {
-    const indices = this.accounts.filter(isLedgerAccount).map(account => account.index);
+    const indices = this.accounts.filter(isLedgerAccount).map((account) => account.index);
     return Math.max(0, ...indices);
   }
 
   get lastMultisigAccountIndex() {
     return this.accounts.filter(isMultisigAccount).length;
+  }
+
+  get lastSessionAccountIndex() {
+    // Derive from the account's numeric index (assigned at create/import),
+    // not from the "Session N" name — a user rename would otherwise corrupt
+    // the counter and yield duplicate names/indices.
+    const indices = this.accounts.filter(isSessionAccount).map((account) => account.index);
+    return Math.max(0, ...indices);
   }
 
   isEmpty() {
@@ -225,7 +278,7 @@ export class AdenaWallet implements Wallet {
   hasPrivateKey(privateKey: Uint8Array) {
     const keyring = this._keyrings
       .filter(isPrivateKeyKeyring)
-      .find(keyring => JSON.stringify(keyring.privateKey) === JSON.stringify(privateKey));
+      .find((keyring) => JSON.stringify(keyring.privateKey) === JSON.stringify(privateKey));
     return keyring !== undefined;
   }
 
@@ -243,8 +296,8 @@ export class AdenaWallet implements Wallet {
 
   getLastAccountIndexBy(keyring: Keyring) {
     const indices = this.accounts
-      .filter(account => account.keyringId === keyring.id)
-      .map(account => account.index);
+      .filter((account) => account.keyringId === keyring.id)
+      .map((account) => account.index);
     return Math.max(0, ...indices);
   }
 
@@ -266,18 +319,18 @@ export class AdenaWallet implements Wallet {
     }
 
     const seedAccounts = this.accounts
-      .filter(account => account.keyringId === keyring.id)
+      .filter((account) => account.keyringId === keyring.id)
       .filter(isSeedAccount);
     if (seedAccounts.length === 0) {
       return 0;
     }
 
     const lastHdPath = seedAccounts.reduce((account1, account2) =>
-      account1.hdPath > account2.hdPath ? account1 : account2
+      account1.hdPath > account2.hdPath ? account1 : account2,
     ).hdPath;
 
     for (let index = 0; index < lastHdPath; index += 1) {
-      if (!seedAccounts.find(account => account.hdPath === index)) {
+      if (!seedAccounts.find((account) => account.hdPath === index)) {
         return index;
       }
     }
@@ -285,29 +338,29 @@ export class AdenaWallet implements Wallet {
   }
 
   addAccount(account: Account) {
-    if (this._accounts.find(_account => _account.id === account.id)) {
+    if (this._accounts.find((_account) => _account.id === account.id)) {
       return this._accounts.length;
     }
     return this._accounts.push(account);
   }
 
   removeAccount(removedAccount: Account) {
-    const filteredAccounts = this._accounts.filter(account => account.id !== removedAccount.id);
+    const filteredAccounts = this._accounts.filter((account) => account.id !== removedAccount.id);
     this._accounts = filteredAccounts;
 
     const removedKeyringId = removedAccount.keyringId;
     const keyringUsedCount = filteredAccounts.filter(
-      account => account.keyringId === removedKeyringId
+      (account) => account.keyringId === removedKeyringId,
     ).length;
     if (keyringUsedCount === 0) {
-      const filteredKeyrings = this._keyrings.filter(keyring => keyring.id !== removedKeyringId);
+      const filteredKeyrings = this._keyrings.filter((keyring) => keyring.id !== removedKeyringId);
       this._keyrings = filteredKeyrings;
     }
     return true;
   }
 
   addKeyring(keyring: Keyring) {
-    if (this._keyrings.find(_keyring => _keyring.id === keyring.id)) {
+    if (this._keyrings.find((_keyring) => _keyring.id === keyring.id)) {
       return this._keyrings.length;
     }
     return this._keyrings.push(keyring);
@@ -319,7 +372,7 @@ export class AdenaWallet implements Wallet {
     }
     if (isHDWalletKeyring(this.currentKeyring)) {
       if (this.currentAccount instanceof SeedAccount) {
-        return this.currentKeyring.getPrivateKey(this.currentAccount.hdPath);
+        return this.currentKeyring.getPrivateKey(this.currentAccount.derivationPath);
       }
       throw new Error('Problems with account types');
     }
@@ -331,59 +384,123 @@ export class AdenaWallet implements Wallet {
   }
 
   async signByAccountId(provider: Provider, accountId: string, document: Document) {
-    const account = this._accounts.find(account => account.id === accountId);
+    const account = this._accounts.find((account) => account.id === accountId);
     if (!account) {
       throw new Error('Account not found');
     }
-    const keyring = this._keyrings.find(keyring => keyring.id === account.keyringId);
+    const keyring = this._keyrings.find((keyring) => keyring.id === account.keyringId);
     if (!keyring) {
       throw new Error('Keyring not found');
     }
     if (hasHDPath(account)) {
-      return keyring.sign(provider, document, account.hdPath);
+      return keyring.sign(provider, document, account.derivationPath);
     }
     return keyring.sign(provider, document);
   }
 
   async broadcastTxSync(provider: Provider, accountId: string, signedTx: Tx) {
-    const account = this._accounts.find(account => account.id === accountId);
+    const account = this._accounts.find((account) => account.id === accountId);
     if (!account) {
       throw new Error('Account not found');
     }
-    const keyring = this._keyrings.find(keyring => keyring.id === account.keyringId);
+    const keyring = this._keyrings.find((keyring) => keyring.id === account.keyringId);
     if (!keyring) {
       throw new Error('Keyring not found');
     }
     if (hasHDPath(account)) {
-      return keyring.broadcastTxSync(provider, signedTx, account.hdPath);
+      return keyring.broadcastTxSync(provider, signedTx, account.derivationPath);
     }
     return keyring.broadcastTxSync(provider, signedTx);
   }
 
   async broadcastTxCommit(provider: Provider, accountId: string, signedTx: Tx) {
-    const account = this._accounts.find(account => account.id === accountId);
+    const account = this._accounts.find((account) => account.id === accountId);
     if (!account) {
       throw new Error('Account not found');
     }
-    const keyring = this._keyrings.find(keyring => keyring.id === account.keyringId);
+    const keyring = this._keyrings.find((keyring) => keyring.id === account.keyringId);
     if (!keyring) {
       throw new Error('Keyring not found');
     }
     if (hasHDPath(account)) {
-      return keyring.broadcastTxCommit(provider, signedTx, account.hdPath);
+      return keyring.broadcastTxCommit(provider, signedTx, account.derivationPath);
     }
     return keyring.broadcastTxCommit(provider, signedTx);
   }
 
-  async serialize(password: string) {
+  // ─── Cosmos AMINO (Phase 3) ───────────────────────────────────────────
+  // Dedicated methods so Gno callers don't encounter union-typed returns.
+  // CosmosProvider is injected by the caller (mirrors the Gno `Provider` DI
+  // pattern — TransactionService receives the provider as a constructor
+  // dependency from the DI container before calling these methods).
+
+  async signCosmosByAccountId(
+    accountId: string,
+    document: CosmosDocument,
+    cosmosProvider: CosmosProvider,
+    signMode: CosmosSignMode,
+  ): Promise<SignedCosmosTx> {
+    const account = this._accounts.find((a) => a.id === accountId);
+    if (!account) {
+      throw new Error('Account not found');
+    }
+    const keyring = this._keyrings.find((k) => k.id === account.keyringId);
+    if (!keyring) {
+      throw new Error('Keyring not found');
+    }
+    const hdPath = hasHDPath(account) ? account.derivationPath : undefined;
+    return signCosmos({
+      document,
+      keyring,
+      cosmosProvider,
+      hdPath,
+      signMode,
+    });
+  }
+
+  async estimateCosmosFeeByAccountId(
+    accountId: string,
+    document: CosmosDocument,
+    cosmosProvider: CosmosProvider,
+    simulateFee: StdFee,
+    feeDenom: string,
+  ): Promise<CosmosFeeEstimate> {
+    const account = this._accounts.find((a) => a.id === accountId);
+    if (!account) {
+      throw new Error('Account not found');
+    }
+    // estimateCosmosFee only needs a public key to populate the simulate tx's
+    // AuthInfo — no signing. Reading publicKey straight from the account
+    // avoids the keyring lookup, which is unnecessary for a read-only gas
+    // query and brittle for Ledger accounts whose persisted keyring id can
+    // drift from account.keyringId (connect-ledger wizard bug).
+    const hdPath = hasHDPath(account) ? account.derivationPath : undefined;
+    return estimateCosmosFee({
+      document,
+      publicKey: account.publicKey,
+      cosmosProvider,
+      hdPath,
+      simulateFee,
+      feeDenom,
+    });
+  }
+
+  async broadcastCosmosTx(
+    signedTx: SignedCosmosTx,
+    cosmosProvider: CosmosProvider,
+  ): Promise<CosmosTxBroadcastResponse> {
+    return cosmosProvider.broadcastTx(signedTx.txBytes, 'BROADCAST_MODE_SYNC');
+  }
+
+  async serialize(password: string, salt: Uint8Array) {
     const plain: WalletData = {
       currentAccountId: this._currentAccountId,
-      accounts: this._accounts.map(account => account.toData()),
-      keyrings: this._keyrings.map(keyring => keyring.toData())
+      accounts: this._accounts.map((account) => account.toData()),
+      keyrings: this._keyrings.map((keyring) => keyring.toData()),
     };
     const serialized = JSON.stringify(plain);
-    const encryptedSerialize = await encryptAES(serialized, password);
-    return encryptedSerialize;
+    const encrypted = await encryptXChacha20(serialized, password, salt);
+    return JSON.stringify(encrypted);
   }
 
   /**
@@ -392,22 +509,47 @@ export class AdenaWallet implements Wallet {
    * @returns true if duplicate exists
    */
   async hasAddress(address: string): Promise<boolean> {
+    const { prefix } = fromBech32(address);
     const addresses = await Promise.all(
-      this._accounts.map(account => account.getAddress(defaultAddressPrefix))
+      this._accounts.map((account) => account.getAddress(prefix)),
     );
     return addresses.includes(address);
   }
 
+  destroy() {
+    for (const keyring of this._keyrings) {
+      keyring.destroy();
+    }
+    this._keyrings = [];
+    this._accounts = [];
+    this._currentAccountId = undefined;
+  }
+
+  toJSON(): string {
+    const plain: WalletData = {
+      currentAccountId: this._currentAccountId,
+      accounts: this._accounts.map((account) => account.toData()),
+      keyrings: this._keyrings.map((keyring) => keyring.toData()),
+    };
+    return JSON.stringify(plain);
+  }
+
+  static fromJSON(json: string): AdenaWallet {
+    const plain: WalletData = JSON.parse(json);
+    return new AdenaWallet(plain);
+  }
+
   clone() {
     return new AdenaWallet({
-      accounts: this._accounts.map(account => account.toData()),
-      keyrings: this._keyrings.map(keyring => keyring.toData()),
-      currentAccountId: this._currentAccountId
+      accounts: this._accounts.map((account) => account.toData()),
+      keyrings: this._keyrings.map((keyring) => keyring.toData()),
+      currentAccountId: this._currentAccountId,
     });
   }
 
-  public static async deserialize(encryptedSerialize: string, password: string) {
-    const serialized = await decryptAES(encryptedSerialize, password);
+  public static async deserialize(encryptedSerialize: string, password: string, salt: Uint8Array) {
+    const encryptedData: EncryptedData = JSON.parse(encryptedSerialize);
+    const serialized = await decryptXChacha20(encryptedData, password, salt);
     const plain: WalletData = JSON.parse(serialized);
     return new AdenaWallet(plain);
   }
@@ -436,10 +578,13 @@ export class AdenaWallet implements Wallet {
     return wallet;
   }
 
-  public static async createByWeb3Auth(privateKeyStr: string) {
+  public static async createByWeb3Auth(
+    privateKeyStr: string,
+    type: Web3AuthKeyringType = 'WEB3_AUTH',
+  ) {
     const privateKey = hexToArray(privateKeyStr);
     const wallet = new AdenaWallet();
-    const keyring = await Web3AuthKeyring.fromPrivateKey(privateKey);
+    const keyring = await Web3AuthKeyring.fromPrivateKey(privateKey, type);
     const account = await SingleAccount.createBy(keyring, wallet.nextAccountName);
     wallet.currentAccountId = account.id;
     wallet.addAccount(account);

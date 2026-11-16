@@ -1,76 +1,70 @@
 import { useCallback, useState } from 'react';
 
+export type CustomNetworkFieldType = 'indexer' | 'lcd';
+
 export type UseCustomNetworkInputReturn = {
   name: string;
   rpcUrl: string;
-  indexerUrl: string;
+  extraUrl: string;
   chainId: string;
   rpcUrlError: string;
-  indexerUrlError: string;
+  extraUrlError: string;
   chainIdError: string;
+  fieldType: CustomNetworkFieldType;
   changeName: (name: string) => void;
   changeRPCUrl: (rpcUrl: string) => void;
-  changeIndexerUrl: (indexerUrl: string) => void;
+  changeExtraUrl: (extraUrl: string) => void;
   changeChainId: (chainId: string) => void;
   setRPCUrlError: (error: string) => void;
-  setIndexerUrlError: (error: string) => void;
+  setExtraUrlError: (error: string) => void;
   setChainIdError: (error: string) => void;
 };
 
-export const useCustomNetworkInput = (): UseCustomNetworkInputReturn => {
+export const useCustomNetworkInput = (
+  fieldType: CustomNetworkFieldType = 'indexer',
+): UseCustomNetworkInputReturn => {
   const [name, setName] = useState('');
   const [rpcUrl, setRPCUrl] = useState('');
-  const [indexerUrl, setIndexerUrl] = useState('');
+  const [extraUrl, setExtraUrl] = useState('');
   const [chainId, setChainId] = useState('');
   const [rpcUrlError, setRPCUrlError] = useState('');
-  const [indexerUrlError, setIndexerUrlError] = useState('');
+  const [extraUrlError, setExtraUrlError] = useState('');
   const [chainIdError, setChainIdError] = useState('');
 
-  const changeName = useCallback(
-    (name: string) => {
-      setName(name);
-    },
-    [setName],
-  );
+  const changeName = useCallback((name: string) => {
+    setName(name);
+  }, []);
 
-  const changeRPCUrl = useCallback(
-    (rpcUrl: string) => {
-      setRPCUrl(rpcUrl.trim());
-      setRPCUrlError('');
-    },
-    [setRPCUrl, setRPCUrlError],
-  );
+  const changeRPCUrl = useCallback((nextUrl: string) => {
+    setRPCUrl(nextUrl.trim());
+    setRPCUrlError('');
+  }, []);
 
-  const changeIndexerUrl = useCallback(
-    (rpcUrl: string) => {
-      setIndexerUrl(rpcUrl.trim());
-      setIndexerUrlError('');
-    },
-    [setRPCUrl, setRPCUrlError],
-  );
+  const changeExtraUrl = useCallback((nextUrl: string) => {
+    setExtraUrl(nextUrl.trim());
+    setExtraUrlError('');
+  }, []);
 
-  const changeChainId = useCallback(
-    (chainId: string) => {
-      setChainId(chainId.trim());
-      setChainIdError('');
-    },
-    [setChainId],
-  );
+  const changeChainId = useCallback((nextId: string) => {
+    setChainId(nextId.trim());
+    setChainIdError('');
+  }, []);
 
   return {
     name,
     rpcUrl,
-    indexerUrl,
+    extraUrl,
     chainId,
     rpcUrlError,
-    indexerUrlError,
+    extraUrlError,
     chainIdError,
+    fieldType,
     changeName,
     changeRPCUrl,
-    changeIndexerUrl,
+    changeExtraUrl,
     changeChainId,
     setRPCUrlError,
-    setIndexerUrlError,
+    setExtraUrlError,
     setChainIdError,
   };
 };

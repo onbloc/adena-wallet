@@ -3,33 +3,66 @@ import {
   BroadcastTxSyncResult,
   Provider,
   Tx,
-  TxSignature
+  TxSignature,
 } from '@gnolang/tm2-js-client';
 
-import { Document, MultisigConfig, SignerPublicKeyInfo } from './../../index.js';
-import { AddressKeyring } from './address-keyring.js';
-import { HDWalletKeyring } from './hd-wallet-keyring.js';
-import { LedgerKeyring } from './ledger-keyring.js';
-import { MultisigKeyring } from './multisig-keyring.js';
-import { PrivateKeyKeyring } from './private-key-keyring.js';
-import { Web3AuthKeyring } from './web3-auth-keyring.js';
+import { Document, MultisigConfig, SignerPublicKeyInfo } from './../..';
+import { AddressKeyring } from './address-keyring';
+import { HdPathLike } from './hd-path';
+import { HDWalletKeyring } from './hd-wallet-keyring';
+import { LedgerKeyring } from './ledger-keyring';
+import { MultisigKeyring } from './multisig-keyring';
+import { PrivateKeyKeyring } from './private-key-keyring';
+import { SessionKeyring } from './session-keyring';
+import { Web3AuthKeyring } from './web3-auth-keyring';
 
-export type KeyringType
-  = | 'HD_WALLET'
-    | 'PRIVATE_KEY'
-    | 'LEDGER'
-    | 'WEB3_AUTH'
-    | 'AIRGAP'
-    | 'MULTISIG';
+export type KeyringType =
+  | 'HD_WALLET'
+  | 'PRIVATE_KEY'
+  | 'LEDGER'
+  | 'WEB3_AUTH'
+  | 'WEB3_AUTH_EMAIL'
+  | 'WEB3_AUTH_X'
+  | 'AIRGAP'
+  | 'MULTISIG'
+  | 'SESSION';
+
+/** Provider is kept in the type for labelling. 'WEB3_AUTH' is the Google-era value. */
+export type Web3AuthKeyringType = 'WEB3_AUTH' | 'WEB3_AUTH_EMAIL' | 'WEB3_AUTH_X';
+
+const WEB3_AUTH_KEYRING_TYPES: readonly KeyringType[] = [
+  'WEB3_AUTH',
+  'WEB3_AUTH_EMAIL',
+  'WEB3_AUTH_X',
+];
+
+export function isWeb3AuthKeyringType(type: KeyringType): type is Web3AuthKeyringType {
+  return WEB3_AUTH_KEYRING_TYPES.includes(type);
+}
+
+export interface SignRawOptions {
+  // HD-only hint: which derivation path (or bare address index) to sign with.
+  // Ignored by non-HD keyrings.
+  hdPath?: HdPathLike;
+}
 
 export interface Keyring {
   id: string;
   type: KeyringType;
   toData: () => KeyringData;
+  // Low-level byte signing. Returns raw ECDSA signature (r || s, 64 bytes).
+  // Decouples keyring from chain-specific serialization rules so that Gno,
+  // Cosmos AMINO, and Cosmos DIRECT pipelines can share one signing primitive.
+  signRaw: (bytes: Uint8Array, opts?: SignRawOptions) => Promise<Uint8Array>;
+  // Zeroes any sensitive key material held by the keyring so it cannot be
+  // recovered from the JS heap after the wallet is locked. Implementations
+  // must call sodium.memzero on every Uint8Array holding keys, seeds, or
+  // mnemonic entropy.
+  destroy: () => void;
   sign: (
     provider: Provider,
     document: Document,
-    hdPath?: number
+    hdPath?: HdPathLike,
   ) => Promise<{
     signed: Tx;
     signature: TxSignature[];
@@ -37,12 +70,12 @@ export interface Keyring {
   broadcastTxSync: (
     provider: Provider,
     signedTx: Tx,
-    hdPath?: number
+    hdPath?: HdPathLike,
   ) => Promise<BroadcastTxSyncResult>;
   broadcastTxCommit: (
     provider: Provider,
     signedTx: Tx,
-    hdPath?: number
+    hdPath?: HdPathLike,
   ) => Promise<BroadcastTxCommitResult>;
 }
 
@@ -56,6 +89,7 @@ export interface KeyringData {
   addressBytes?: number[];
   multisigConfig?: MultisigConfig;
   signerPublicKeys?: SignerPublicKeyInfo[];
+  masterAddress?: string;
 }
 
 export function makeKeyring(keyringData: KeyringData) {
@@ -67,11 +101,15 @@ export function makeKeyring(keyringData: KeyringData) {
     case 'PRIVATE_KEY':
       return new PrivateKeyKeyring(keyringData);
     case 'WEB3_AUTH':
+    case 'WEB3_AUTH_EMAIL':
+    case 'WEB3_AUTH_X':
       return new Web3AuthKeyring(keyringData);
     case 'AIRGAP':
       return new AddressKeyring(keyringData);
     case 'MULTISIG':
       return new MultisigKeyring(keyringData);
+    case 'SESSION':
+      return new SessionKeyring(keyringData);
     default:
       throw new Error('Invalid Account type');
   }

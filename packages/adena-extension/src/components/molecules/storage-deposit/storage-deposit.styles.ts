@@ -4,10 +4,7 @@ import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const StorageDepositContainer = styled.div`
-  ${mixins.flex({
-    direction: 'column',
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ direction: 'column', justify: 'flex-start' })};
   width: 100%;
 
   .error-message {
@@ -21,17 +18,14 @@ export const StorageDepositContainer = styled.div`
   }
 `;
 
-export const StorageDepositWrapper = styled.div<{ error?: number }>`
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'space-between',
-  })};
+export const StorageDepositWrapper = styled.div<{ $error?: number }>`
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   padding: 14px 16px;
   background-color: ${getTheme('neutral', '_9')};
   border: 1px solid ${getTheme('neutral', '_7')};
   border-radius: 30px;
-  ${({ error, theme }): string | false | undefined => !!error && `border-color: ${theme.red._5};`}
+  ${({ $error, theme }): string | false | undefined => !!$error && `border-color: ${theme.red._5};`}
 
   & .key {
     ${mixins.flex({ direction: 'row' })};
@@ -42,10 +36,7 @@ export const StorageDepositWrapper = styled.div<{ error?: number }>`
   }
 
   & .storage-deposit-amount-wrapper {
-    ${mixins.flex({
-      direction: 'row',
-      justify: 'flex-end',
-    })};
+    ${mixins.flex({ direction: 'row', justify: 'flex-end' })};
     width: 100%;
     gap: 3px;
   }

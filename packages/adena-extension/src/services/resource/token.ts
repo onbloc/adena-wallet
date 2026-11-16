@@ -1,10 +1,13 @@
+import { parseTokenIdentifier } from '@common/utils/grc20-token-path';
 import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { AppInfoResponse } from '@repositories/common/response';
 import { ITokenRepository } from '@repositories/common/types';
+
 import {
   AccountTokenBalance,
   GRC20TokenModel,
+  Grc20RouteMap,
   GRC721CollectionModel,
   GRC721MetadataModel,
   GRC721Model,
@@ -46,14 +49,46 @@ export class TokenService {
   }
 
   /**
+   * GRC20 `routes` for the current network, keyed by registry key. Not cached
+   * here; the caller caches it.
+   */
+  public async fetchGrc20Routes(): Promise<Grc20RouteMap> {
+    return this.tokenRepository.fetchGrc20Routes();
+  }
+
+  /**
    * Fetch GRC20 tokens
    *
    * @returns
    */
   public async fetchGRC20Tokens(): Promise<GRC20TokenModel[]> {
-    return this.tokenRepository
-      .fetchAllGRC20Tokens()
-      .then(tokens => tokens.filter(token => !!token));
+    const [tokens, resourceTokens] = await Promise.all([
+      this.tokenRepository.fetchAllGRC20Tokens(),
+      this.fetchResourceTokenMetainfos(),
+    ]);
+
+    return tokens
+      .filter((token) => !!token)
+      .map((token) => this.overlayResourceMetainfo(token, resourceTokens));
+  }
+
+  /**
+   * Fetch a single page of GRC20 tokens from the on-chain registry, with the
+   * registry's total size for pagination.
+   */
+  public async fetchGRC20TokensPaged(params: {
+    offset: number;
+    limit: number;
+  }): Promise<{ items: GRC20TokenModel[]; totalCount: number }> {
+    const [page, resourceTokens] = await Promise.all([
+      this.tokenRepository.fetchGRC20Tokens(params),
+      this.fetchResourceTokenMetainfos(),
+    ]);
+
+    return {
+      ...page,
+      items: page.items.map((token) => this.overlayResourceMetainfo(token, resourceTokens)),
+    };
   }
 
   /**
@@ -67,26 +102,49 @@ export class TokenService {
       return null;
     }
 
-    // validate realm path
-    try {
-      parseReamPathItemsByPath(tokenPath);
-    }
-    catch {
+    // Require a full token key `{packagePath}.{symbol}` (the legacy colon form
+    // `{packagePath}:{symbol}` is also accepted). A bare packagePath (no
+    // symbol) is rejected; grc20reg is always queried by the token key.
+    const parsed = parseTokenIdentifier(tokenPath);
+    if (!parsed) {
       return null;
     }
 
-    return this.tokenRepository.fetchGRC20TokenByPackagePath(tokenPath).catch(() => null);
+    // Validate the realm (packagePath) component.
+    try {
+      parseReamPathItemsByPath(parsed.packagePath);
+    } catch {
+      return null;
+    }
+
+    const [token, resourceTokens] = await Promise.all([
+      this.tokenRepository.fetchGRC20TokenByPackagePath(tokenPath).catch(() => null),
+      this.fetchResourceTokenMetainfos(),
+    ]);
+
+    return token ? this.overlayResourceMetainfo(token, resourceTokens) : null;
   }
 
   /**
-   * Fetch GRC20 token balance
-   *
-   * @param address
-   * @returns
+   * GRC20 token paths the account has transferred, derived from indexer Transfer
+   * events (token id parsed to the token path). Used by the indexer fallback to
+   * match held GRC20 tokens precisely per symbol.
    */
-  public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
-    const transferPackages = await this.tokenRepository.fetchAllTransferPackagesBy(address, 1);
-    return transferPackages;
+  public async fetchAllTransferGRC20TokenPathsBy(address: string): Promise<string[]> {
+    return this.tokenRepository.fetchAllTransferGRC20TokenPathsBy(address);
+  }
+
+  /**
+   * GRC20 tokens the account holds, mapped from the API account-assets endpoint
+   * (tokenId = token path). Returns null when the network has no API URL.
+   */
+  public async fetchAccountGRC20Tokens(address: string): Promise<GRC20TokenModel[] | null> {
+    const [tokens, resourceTokens] = await Promise.all([
+      this.tokenRepository.fetchAccountGRC20Tokens(address),
+      this.fetchResourceTokenMetainfos(),
+    ]);
+
+    return tokens?.map((token) => this.overlayResourceMetainfo(token, resourceTokens)) ?? null;
   }
 
   /**
@@ -106,11 +164,11 @@ export class TokenService {
    * @returns
    */
   public async initAccountTokenMetainfos(accountId: string): Promise<boolean> {
-    const fetchedTokenMetainfos = (await this.fetchTokenMetainfos()).filter(token => token.main);
+    const fetchedTokenMetainfos = (await this.fetchTokenMetainfos()).filter((token) => token.main);
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
     await this.tokenRepository.updateTokenMetainfos(accountId, [
       ...fetchedTokenMetainfos.map((token1) => {
-        const previousInfo = storedTokenMetainfos.find(token2 =>
+        const previousInfo = storedTokenMetainfos.find((token2) =>
           this.equalsToken(token1, token2),
         );
         if (previousInfo) {
@@ -122,40 +180,27 @@ export class TokenService {
         }
         return token1;
       }),
-      ...storedTokenMetainfos.filter(token1 =>
-        fetchedTokenMetainfos.every(token2 => !this.equalsToken(token1, token2)),
+      ...storedTokenMetainfos.filter((token1) =>
+        fetchedTokenMetainfos.every((token2) => !this.equalsToken(token1, token2)),
       ),
     ]);
     return true;
   }
 
   /**
-   * Get token metainfos by account id
+   * Get token metainfos by account id, with the gno-token-resource document
+   * laid over each stored token.
    *
    * @param accountId
    * @returns
    */
-  public async getTokenMetainfosByAccountId(accountId: string): Promise<
-    {
-      image: string;
-      main: boolean;
-      tokenId: string;
-      networkId: string;
-      display: boolean;
-      type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens';
-      name: string;
-      symbol: string;
-      decimals: number;
-      description?: string | undefined;
-      websiteUrl?: string | undefined;
-    }[]
-  > {
+  public async getTokenMetainfosByAccountId(accountId: string): Promise<TokenModel[]> {
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
-    return storedTokenMetainfos.map(token1 => ({
-      ...token1,
-      image:
-        this.getTokenMetainfos().find(token2 => this.equalsToken(token1, token2))?.image || '',
-    }));
+    const resourceTokenMetainfos = await this.fetchResourceTokenMetainfos();
+
+    return storedTokenMetainfos.map((token) =>
+      this.overlayResourceMetainfo(token, resourceTokenMetainfos),
+    );
   }
 
   /**
@@ -169,21 +214,10 @@ export class TokenService {
     accountId: string,
     tokenMetainfos: TokenModel[],
   ): Promise<boolean> {
-    const fetchedTokenMetainfos = await this.fetchTokenMetainfos();
-    const changedTokenMetaInfos = tokenMetainfos.map((token1) => {
-      const tokenMetaInfo = fetchedTokenMetainfos.find(token2 =>
-        this.equalsToken(token1, token2),
-      );
-      if (tokenMetaInfo) {
-        const { image, description } = tokenMetaInfo;
-        return {
-          ...token1,
-          image,
-          description,
-        };
-      }
-      return token1;
-    });
+    const resourceTokenMetainfos = await this.fetchResourceTokenMetainfos();
+    const changedTokenMetaInfos = tokenMetainfos.map((token) =>
+      this.overlayResourceMetainfo(token, resourceTokenMetainfos),
+    );
     await this.tokenRepository.updateTokenMetainfos(accountId, changedTokenMetaInfos);
     return true;
   }
@@ -246,12 +280,22 @@ export class TokenService {
   }
 
   /**
-   * Fetch GRC721 collections
+   * Fetch every GRC721 collection on the chain
    *
    * @returns
    */
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
     return this.tokenRepository.fetchGRC721Collections();
+  }
+
+  /**
+   * Fetch the GRC721 collections an account currently holds a token of
+   *
+   * @param address
+   * @returns
+   */
+  public async fetchAccountGRC721Collections(address: string): Promise<GRC721CollectionModel[]> {
+    return this.tokenRepository.fetchAccountGRC721CollectionsBy(address);
   }
 
   /**
@@ -376,21 +420,80 @@ export class TokenService {
   }
 
   /**
-   * Clear token metainfos
+   * Clear token metainfos and the GRC721 indexer cursors
    *
    * @returns
    */
   public clear = async (): Promise<boolean> => {
     await this.tokenRepository.deleteAllTokenMetainfo();
+    await this.tokenRepository.deleteGRC721SyncCache();
     return true;
   };
+
+  /**
+   * The gno-token-resource documents for the current network, or whatever was
+   * last read when the fetch fails. A curated list the wallet could not reach is
+   * a missing overlay, not a reason for a screen that only wanted its stored
+   * tokens to fail.
+   */
+  private async fetchResourceTokenMetainfos(): Promise<TokenModel[]> {
+    return this.fetchTokenMetainfos().catch(() => this.tokenMetaInfos);
+  }
+
+  /**
+   * One stored token with its gno-token-resource document laid over it.
+   *
+   * Two sources describe the same token: the curated gno-token-resource
+   * documents, and the contract data discovery read off chain or from the API.
+   * The resource wins field by field — it carries the display name, logo and
+   * copy a user recognises, while a realm is free to publish anything — and
+   * contract data fills in every field the resource leaves empty, so a token
+   * with no document at all keeps exactly what the chain says about it.
+   *
+   * The match is scoped to the network the document describes. The documents
+   * are fetched per network, while the account's stored tokens span every
+   * network it has held one on, and {@link equalsToken} compares a denom or a
+   * token key — both of which testnets share with mainnet. Without the network
+   * in the match, a mainnet document would describe a staging token of the same
+   * identity, and the update path would then persist that over it.
+   */
+  private overlayResourceMetainfo<T extends TokenModel>(token: T, resourceTokens: TokenModel[]): T {
+    const resource = resourceTokens.find(
+      (candidate) => candidate.networkId === token.networkId && this.equalsToken(token, candidate),
+    );
+    if (!resource) {
+      return token;
+    }
+
+    return {
+      ...token,
+      name: resource.name || token.name,
+      symbol: resource.symbol || token.symbol,
+      /**
+       * `decimals` follows the same priority as the rest, and it is the field
+       * that priority exists for: wugnot is the one token whose curated decimals
+       * differ from what its contract reports, and the resource is what says how
+       * many places the wallet should read the balance in.
+       *
+       * Only a number overrides — a document that omits the field decodes as
+       * undefined, and reading that as 0 would shift every balance it touches.
+       */
+      decimals: typeof resource.decimals === 'number' ? resource.decimals : token.decimals,
+      description: resource.description || token.description,
+      websiteUrl: resource.websiteUrl || token.websiteUrl,
+      image: resource.image || token.image,
+    };
+  }
 
   private equalsToken(token1: TokenModel, token2: TokenModel): boolean {
     if (isNativeTokenModel(token1)) {
       return token1.symbol === token2.symbol;
     }
     if (isGRC20TokenModel(token1) && isGRC20TokenModel(token2)) {
-      return token1.pkgPath === token2.pkgPath;
+      // GRC20 identity is the token key `{packagePath}.{symbol}`, carried in
+      // tokenId. Two tokens from the same realm but different symbols must not
+      // collapse into one, so compare tokenId rather than pkgPath.
+      return token1.tokenId === token2.tokenId;
     }
     return false;
   }

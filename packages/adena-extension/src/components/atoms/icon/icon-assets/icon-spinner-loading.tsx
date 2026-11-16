@@ -21,7 +21,7 @@ const SVG = styled.svg`
   animation: ${rotate} 1.5s infinite;
 `;
 
-const IconSpinnerLoading = ({ className }: { className: string }): ReactElement<any> => {
+const IconSpinnerLoading = ({ className }: { className: string }): ReactElement => {
   return (
     <SVG
       width='100'

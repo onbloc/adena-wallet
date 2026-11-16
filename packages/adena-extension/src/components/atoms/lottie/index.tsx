@@ -1,7 +1,5 @@
-import LottieWeb, { AnimationConfigWithData, AnimationItem } from 'lottie-web';
-import React, {
-  HTMLAttributes, useEffect, useMemo, useRef, useState,
-} from 'react';
+import { AnimationConfigWithData, AnimationItem, default as LottieWeb } from 'lottie-web';
+import React, { HTMLAttributes, useEffect, useMemo, useRef, useState } from 'react';
 import styled, { css, RuleSet } from 'styled-components';
 
 type LottieProps = {
@@ -16,7 +14,9 @@ type LottieProps = {
   visibleSize?: number;
 } & HTMLAttributes<HTMLDivElement>;
 
-const StyledContainer = styled.div.withConfig({ shouldForwardProp: prop => !['visibleSize', 'isOverflow'].includes(prop) })<{
+const StyledContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['visibleSize', 'isOverflow'].includes(prop),
+})<{
   width?: number;
   height?: number;
   visibleSize: number;
@@ -27,9 +27,7 @@ const StyledContainer = styled.div.withConfig({ shouldForwardProp: prop => !['vi
   width: ${({ width }): string => (width ? `${width}px` : 'auto')};
   height: ${({ height }): string => (height ? `${height}px` : 'auto')};
 
-  ${({
-    isOverflow, visibleSize, width, height,
-  }): RuleSet =>
+  ${({ isOverflow, visibleSize, width, height }): RuleSet =>
     isOverflow
       ? css`
           & .lottie-player {
@@ -79,7 +77,9 @@ const Lottie: React.FC<LottieProps> = ({
       loop,
       autoplay,
       animationData,
-      rendererSettings: { className: 'lottie-player' },
+      rendererSettings: {
+        className: 'lottie-player',
+      },
     };
 
     const animation = LottieWeb.loadAnimation<'svg'>(animationOptions);
@@ -94,8 +94,7 @@ const Lottie: React.FC<LottieProps> = ({
     if (animationInstance !== null) {
       if (isPaused) {
         animationInstance.pause();
-      }
-      else {
+      } else {
         animationInstance.play();
       }
 

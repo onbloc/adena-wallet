@@ -1,16 +1,19 @@
 {
   "name": "adena-wallet",
-  "version": "1.18.5",
+  "version": "1.22.5",
   "description": "Adena Wallet",
   "license": "Adena License",
   "private": true,
   "scripts": {
     "setup": "pnpm install",
     "develop": "pnpm --filter adena-extension dev",
+    "develop:firefox": "pnpm --filter adena-extension dev:firefox",
     "build": "pnpm build:module && pnpm build:service",
-    "build:module": "pnpm --filter adena-module --filter adena-torus-signin run build",
+    "build:module": "pnpm --filter adena-module build",
     "build:service": "pnpm --filter adena-extension build",
+    "build:firefox": "pnpm build:module && pnpm --filter adena-extension build:firefox",
     "build:storybook": "pnpm --filter adena-extension build:storybook",
+    "typecheck": "pnpm -r run typecheck",
     "lint": "pnpm -r run lint",
     "lint:fix": "pnpm -r run lint:fix",
     "test": "pnpm -r run test:ci",
@@ -19,38 +22,9 @@
     "tag": "sh scripts/create-tag.sh"
   },
   "devDependencies": {
-    "husky": "9.0.11",
-    "lint-staged": "15.4.3"
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0",
+    "web-ext": "10.8.0"
   },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx}": "eslint --fix"
-  },
-  "pnpm": {
-    "overrides": {
-      "ws": "8.18.0",
-      "@types/minimatch": "5.1.2"
-    },
-    "packageExtensions": {
-      "@walletconnect/socket-transport@*": {
-        "dependencies": {
-          "ws": "8.18.0"
-        }
-      },
-      "@walletconnect/jsonrpc-ws-connection@*": {
-        "dependencies": {
-          "ws": "8.18.0"
-        }
-      }
-    },
-    "peerDependencyRules": {
-      "allowedVersions": {
-        "react": "19",
-        "react-dom": "19"
-      }
-    },
-    "patchedDependencies": {
-      "recoil@0.7.7": "patches/recoil@0.7.7.patch"
-    }
-  },
-  "packageManager": "pnpm@9.15.4"
+  "packageManager": "pnpm@12.18.0"
 }

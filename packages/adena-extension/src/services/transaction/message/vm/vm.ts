@@ -6,16 +6,8 @@ export const createMessageOfVmAddPackage = (info: {
 }): {
   type: string;
   value:
-    | {
-      creator: string;
-      package: any;
-      max_deposit: string;
-    }
-    | {
-      creator: string;
-      max_deposit: string;
-      package?: undefined;
-    };
+    | { creator: string; package: any; max_deposit: string }
+    | { creator: string; max_deposit: string; package?: undefined };
 } => {
   return {
     type: '/vm.m_addpkg',
@@ -71,12 +63,7 @@ export const createMessageOfVmRun = (info: {
   packageInfo: any;
 }): {
   type: string;
-  value: {
-    caller: string;
-    send: string;
-    max_deposit: string;
-    package: any;
-  };
+  value: { caller: string; send: string; max_deposit: string; package: any };
 } => {
   return {
     type: '/vm.m_run',

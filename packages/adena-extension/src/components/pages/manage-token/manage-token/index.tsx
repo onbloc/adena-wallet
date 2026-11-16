@@ -1,7 +1,6 @@
 import ManageTokenList from '@components/molecules/manage-token-list/manage-token-list';
 import { ManageTokenInfo } from '@types';
 import React from 'react';
-
 import ManageTokenSearchInput from '../manage-token-search-input/manage-token-search-input';
 import { ManageTokenSearchWrapper } from './manage-token.styles';
 

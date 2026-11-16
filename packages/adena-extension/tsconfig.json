@@ -1,46 +1,86 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "outDir": "./dist/",
     "types": [
+      "node",
       "@types/react",
       "@types/react-dom",
       "@types/chrome",
-      "wicg-file-system-access"
+      "wicg-file-system-access",
+      "vitest/globals",
+      "vite/client",
+      "@crxjs/vite-plugin/client"
     ],
-    "noImplicitAny": true,
-    "module": "es2022",
-    "target": "es2020",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "sourceMap": false,
-    "skipLibCheck": true,
-    "strict": true,
-    "lib": ["dom", "es2022"],
-    "ignoreDeprecations": "6.0",
-    "baseUrl": "./",
     "paths": {
-      "@types": ["src/types"],
-      "@states": ["src/states"],
-      "@hooks/*": ["src/hooks/*"],
-      "@ui/*": ["src/ui/*"],
-      "@pages/*": ["src/pages/*"],
-      "@router/*": ["src/router/*"],
-      "@services/*": ["src/services/*"],
-      "@repositories/*": ["src/repositories/*"],
-      "@resources/*": ["src/resources/*"],
-      "@styles/*": ["src/styles/*"],
-      "@components/*": ["src/components/*"],
-      "@common/*": ["src/common/*"],
-      "@inject/*": ["src/inject/*"],
-      "@assets/*": ["src/assets/*"],
-      "@migrates/*": ["src/migrates/*"],
-      "@models/*": ["src/models/*"],
-      "@public/*": ["public/*"]
-    }
+      "@public/manifest.json": [
+        "./manifest.json"
+      ],
+      "@types": [
+        "./src/types"
+      ],
+      "@states": [
+        "./src/states"
+      ],
+      "@hooks/*": [
+        "./src/hooks/*"
+      ],
+      "@ui/*": [
+        "./src/ui/*"
+      ],
+      "@pages/*": [
+        "./src/pages/*"
+      ],
+      "@router/*": [
+        "./src/router/*"
+      ],
+      "@services/*": [
+        "./src/services/*"
+      ],
+      "@repositories/*": [
+        "./src/repositories/*"
+      ],
+      "@resources/*": [
+        "./src/resources/*"
+      ],
+      "@styles/*": [
+        "./src/styles/*"
+      ],
+      "@components/*": [
+        "./src/components/*"
+      ],
+      "@common/*": [
+        "./src/common/*"
+      ],
+      "@inject/*": [
+        "./src/inject/*"
+      ],
+      "@assets/*": [
+        "./src/assets/*"
+      ],
+      "@migrates/*": [
+        "./src/migrates/*"
+      ],
+      "@models/*": [
+        "./src/models/*"
+      ],
+      "@public/*": [
+        "./public/*"
+      ]
+    },
+    "noEmit": true
   },
-  "include": ["./src/**/*"],
-  "exclude": ["./src/**/*.spec.*", "./src/**/*.test.*", "./src/**/*.stories.*"]
+  "include": [
+    "./src/**/*",
+    "./vite.config.ts",
+    "./vitest.config.ts",
+    "./vitest.setup.ts",
+    "./manifest.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-firefox"
+  ]
 }

@@ -3,19 +3,13 @@ import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const AdditionalTokenSelectBoxWrapper = styled.div`
-  ${mixins.flex({
-    align: 'normal',
-    justify: 'normal',
-  })};
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   position: relative;
   width: 100%;
   height: 48px;
 
   .fixed-wrapper {
-    ${mixins.flex({
-      align: 'normal',
-      justify: 'normal',
-    })};
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     position: relative;
     width: 100%;
     height: auto;

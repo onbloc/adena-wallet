@@ -1,6 +1,7 @@
-import check from '@assets/web/check.svg';
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
+
+import check from '@assets/web/check.svg';
 
 import { View } from '../base';
 
@@ -10,10 +11,7 @@ type WebCheckBoxProps = {
   disabled?: boolean;
 };
 
-const StyledContainer = styled(View) <{
-  checked: boolean;
-  disabled?: boolean;
-}>`
+const StyledContainer = styled(View) <{ checked: boolean; disabled?: boolean }>`
   cursor: ${({ disabled }): string => (disabled ? 'not-allowed' : 'pointer')};
   opacity: ${({ disabled }): number => (disabled ? 0.5 : 1)};
   outline: ${({ checked }): string => (checked ? 'none' : '0.5px solid #6C717A')};
@@ -26,7 +24,7 @@ const StyledContainer = styled(View) <{
   border-radius: 4px;
 `;
 
-export const WebCheckBox = ({ checked, onClick, disabled }: WebCheckBoxProps): ReactElement<any> => {
+export const WebCheckBox = ({ checked, onClick, disabled }: WebCheckBoxProps): ReactElement => {
   return (
     <StyledContainer checked={checked} onClick={onClick} disabled={disabled}>
       {checked && <img src={check} width={16} height={16} />}

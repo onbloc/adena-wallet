@@ -1,7 +1,7 @@
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage } from '@inject/types';
 import React, { useMemo } from 'react';
 
+import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import { ContractMessage } from '@inject/types';
 import ApproveTransactionMessage from '../approve-transaction-message/approve-transaction-message';
 import { ApproveTransactionMessageBoxWrapper } from './approve-transaction-message-box.styles';
 

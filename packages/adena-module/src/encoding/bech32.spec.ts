@@ -1,11 +1,30 @@
-import { describe, expect, it } from 'vitest';
-
-import { fromBech32, toBech32 } from './bech32.js';
+import { toBech32, fromBech32 } from './bech32';
 describe('bech32 test', () => {
   it('same data + different prefix is success', () => {
     const gnoPrefix = 'g';
     const cosmosPrefix = 'cosmos';
-    const data = [74, 68, 107, 246, 158, 109, 222, 4, 48, 187, 237, 25, 18, 199, 131, 120, 178, 100, 176, 58];
+    const data = [
+      74,
+      68,
+      107,
+      246,
+      158,
+      109,
+      222,
+      4,
+      48,
+      187,
+      237,
+      25,
+      18,
+      199,
+      131,
+      120,
+      178,
+      100,
+      176,
+      58,
+    ];
     const bytes = new Uint8Array(data);
 
     const gnoAddress = toBech32(gnoPrefix, bytes);

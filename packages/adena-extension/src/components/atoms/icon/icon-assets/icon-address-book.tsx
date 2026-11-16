@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-export const IconAddressBookLarge = ({ className }: { className: string }): ReactElement<any> => {
+export const IconAddressBookLarge = ({ className }: { className: string }): ReactElement => {
   return (
     <svg
       className={className}
@@ -63,7 +63,7 @@ export const IconAddressBookLarge = ({ className }: { className: string }): Reac
   );
 };
 
-export const IconAddressBookSmall = ({ className }: { className: string }): ReactElement<any> => {
+export const IconAddressBookSmall = ({ className }: { className: string }): ReactElement => {
   return (
     <svg
       className={className}

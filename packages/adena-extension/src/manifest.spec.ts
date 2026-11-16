@@ -1,0 +1,87 @@
+import { buildManifest } from '../manifest.config';
+import packageInfo from '../package.json';
+
+/**
+ * The Firefox manifest is the Chrome one plus a small delta, so a key added to
+ * `manifest.json` can never silently miss the Firefox build — as
+ * `img-src data:` did, blocking NFT images on Firefox only.
+ */
+const readEmittedManifest = (browser?: 'firefox'): Record<string, any> =>
+  buildManifest(browser ?? 'chrome');
+
+describe('emitted manifests', () => {
+  const chrome = readEmittedManifest();
+  const firefox = readEmittedManifest('firefox');
+
+  it('carries the extension package version in both targets', () => {
+    expect(chrome.version).toBe(packageInfo.version);
+    expect(firefox.version).toBe(packageInfo.version);
+  });
+
+  it('gives Firefox a background event page and Chrome a service worker', () => {
+    expect(chrome.background).toEqual({ service_worker: 'src/background.ts' });
+    expect(firefox.background).toEqual({ scripts: ['src/background.ts'] });
+    // Firefox does not support MV3 extension service workers at all.
+    expect(firefox.background.service_worker).toBeUndefined();
+  });
+
+  it('declares the Gecko add-on id only for Firefox', () => {
+    expect(firefox.browser_specific_settings?.gecko?.id).toBeTruthy();
+    expect(chrome.browser_specific_settings).toBeUndefined();
+  });
+
+  it('shares every non-Firefox-specific key, so the two cannot drift', () => {
+    const firefoxOnly = new Set(['background', 'browser_specific_settings']);
+
+    for (const key of Object.keys(chrome)) {
+      if (firefoxOnly.has(key)) {
+        continue;
+      }
+      expect(firefox[key]).toEqual(chrome[key]);
+    }
+  });
+
+  it('allows data: images in both targets, so NFT data-URI artwork renders', () => {
+    for (const manifest of [chrome, firefox]) {
+      const imgSrc = manifest.content_security_policy.extension_pages
+        .split(';')
+        .map((directive: string) => directive.trim())
+        .find((directive: string) => directive.startsWith('img-src'));
+
+      expect(imgSrc).toContain('data:');
+    }
+  });
+
+  it('lets the background reach every loopback RPC host gnoconnect accepts', () => {
+    for (const manifest of [chrome, firefox]) {
+      const connectSrc = manifest.content_security_policy.extension_pages
+        .split(';')
+        .map((directive: string) => directive.trim())
+        .find((directive: string) => directive.startsWith('connect-src'));
+
+      expect(connectSrc).toContain('http://127.0.0.1:*');
+      expect(connectSrc).toContain('http://localhost:*');
+    }
+  });
+
+  // Firefox does not implement CSP3's scheme matching, where `https:` also
+  // covers `wss:`. Social login relays its result over a websocket to
+  // session.web3auth.io, so without this the popup authenticates and the
+  // result is then dropped — on Firefox only.
+  it('lets social login reach its websocket relay in both targets', () => {
+    for (const manifest of [chrome, firefox]) {
+      const connectSrc = manifest.content_security_policy.extension_pages
+        .split(';')
+        .map((directive: string) => directive.trim())
+        .find((directive: string) => directive.startsWith('connect-src'));
+
+      expect(connectSrc).toContain('wss:');
+    }
+  });
+
+  it('declares data collection for AMO signing', () => {
+    expect(firefox.browser_specific_settings.gecko.data_collection_permissions.required).toEqual([
+      'none',
+    ]);
+  });
+});

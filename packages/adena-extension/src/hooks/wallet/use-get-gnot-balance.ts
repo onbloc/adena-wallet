@@ -2,29 +2,34 @@ import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
-import {
-  keepPreviousData, useQuery, UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
+import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 
 export const GET_GNOT_BALANCE_QUERY_KEY = 'wallet/useGetGnotBalance';
 
+const GNOT_BALANCE_STALE_TIME = 5_000;
+
 export const useGetGnotBalance = (
-  options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
+  options?: UseQueryOptions<number | null, Error>,
 ): UseQueryResult<number | null> => {
   const { gnoProvider } = useWalletContext();
-  const { currentAddress } = useCurrentAccount();
+  const { currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
 
   return useQuery<number | null, Error>({
-    queryKey: [GET_GNOT_BALANCE_QUERY_KEY, currentAddress || '', currentNetwork.chainId],
+    // SessionAccount uses the master address for funding flows: the session
+    // address never holds GNOT, every session-signed tx spends master funds.
+    queryKey: [GET_GNOT_BALANCE_QUERY_KEY, currentFundingAddress || '', currentNetwork.chainId],
     queryFn: async () => {
-      if (!gnoProvider || !currentAddress) {
+      if (!gnoProvider || !currentFundingAddress) {
         return null;
       }
 
-      return gnoProvider.getBalance(currentAddress, GNOT_TOKEN.denom).catch(() => 0);
+      return gnoProvider.getBalance(currentFundingAddress, GNOT_TOKEN.denom).catch(() => 0);
     },
-    placeholderData: keepPreviousData,
+    keepPreviousData: true,
+    // Reads the same GNOT balance the wallet already polls elsewhere; the window
+    // keeps a Send -> Summary -> Confirm walk from querying once per step.
+    staleTime: GNOT_BALANCE_STALE_TIME,
     ...options,
   });
 };

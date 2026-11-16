@@ -3,10 +3,7 @@ import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransferSummaryNetworkFeeWrapper = styled.div<{ isError?: boolean }>`
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'space-between',
-  })};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   padding: 14px 16px;
   background-color: ${getTheme('neutral', '_9')};

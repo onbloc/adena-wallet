@@ -1,10 +1,12 @@
-import logo from '@assets/logo-withIcon.svg';
+import React from 'react';
+import type { JSX } from 'react';
+import styled from 'styled-components';
+
 import { LeftArrowBtn } from '@components/atoms';
-import useAppNavigate from '@hooks/use-app-navigate';
+import logo from '@assets/logo-withIcon.svg';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import React, { type JSX } from 'react';
-import styled from 'styled-components';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 type ProgressLevel = 'first' | 'second' | 'third';
 

@@ -4,7 +4,6 @@ import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721Model } from '@types';
 import React, { useMemo } from 'react';
 import { useTheme } from 'styled-components';
-
 import NFTCollectionAssetCard from '../nft-collection-asset-card/nft-collection-asset-card';
 import { NFTCollectionAssetsWrapper } from './nft-collection-assets.styles';
 
@@ -14,7 +13,7 @@ export interface NFTCollectionAssetsProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
+    options?: UseQueryOptions<string | null, Error>,
   ) => UseQueryResult<string | null>;
   moveAssetPage: (grc721Token: GRC721Model) => void;
 }

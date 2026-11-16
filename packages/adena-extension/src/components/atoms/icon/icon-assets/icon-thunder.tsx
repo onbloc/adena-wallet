@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-const IconThunder = (): ReactElement<any> => {
+const IconThunder = (): ReactElement => {
   return (
     <svg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14' fill='none'>
       <path

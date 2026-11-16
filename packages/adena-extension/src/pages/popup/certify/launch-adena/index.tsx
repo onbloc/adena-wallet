@@ -1,3 +1,7 @@
+import React, { useState } from 'react';
+import type { JSX } from 'react';
+import styled, { css, CSSProp } from 'styled-components';
+
 import { isSeparatePopupWindow } from '@common/utils/browser-utils';
 import { Button, Text } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
@@ -5,8 +9,6 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
-import React, { type JSX, useState } from 'react';
-import styled, { css, CSSProp } from 'styled-components';
 
 const text = {
   title: 'You’re All Set!',

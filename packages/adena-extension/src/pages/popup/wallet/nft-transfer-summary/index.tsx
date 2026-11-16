@@ -1,3 +1,9 @@
+import { Document, isLedgerAccount } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+
 import { GasToken } from '@common/constants/token.constant';
 import TransactionResult from '@components/molecules/transaction-result';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
@@ -5,6 +11,7 @@ import NFTTransferSummary from '@components/pages/nft-transfer-summary/nft-trans
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useChain } from '@hooks/use-chain';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
@@ -16,21 +23,13 @@ import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transacti
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
 import { GRC721Model, RoutePath } from '@types';
-import { Document, isLedgerAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react';
-import { useNavigate } from 'react-router';
-import styled from 'styled-components';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 const NFTTransferSummaryLayout = styled.div`
-  ${mixins.flex({
-    align: 'normal',
-    justify: 'normal',
-  })};
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
-  height: auto;
+  height: 100%;
+  overflow-y: auto;
 
   & .network-fee-setting-wrapper {
     padding: 24px 20px;
@@ -43,8 +42,9 @@ const NFTTransferSummaryContainer: React.FC = () => {
   const summaryInfo = params;
   const { wallet } = useWalletContext();
   const { transactionService } = useAdenaContext();
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const { openScannerLink } = useLink();
   const { memorizedTransferInfo, setMemorizedTransferInfo } = useTransferInfo();
   const [isSent, setIsSent] = useState(false);
@@ -54,7 +54,6 @@ const NFTTransferSummaryContainer: React.FC = () => {
     hash?: string | null;
     errorMessage?: string | null;
   } | null>(null);
-  const [isErrorNetworkFee, setIsErrorNetworkFee] = useState(false);
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
   const [document, setDocument] = useState<Document | null>(null);
 
@@ -62,6 +61,9 @@ const NFTTransferSummaryContainer: React.FC = () => {
 
   const useNetworkFeeReturn = useNetworkFee(document);
   const networkFee = useNetworkFeeReturn.networkFee;
+
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenQuote = useFeeTokenPrice(networkFee?.denom ?? '');
 
   const hasNetworkFee = useMemo(() => {
     if (!currentBalance || currentBalance === 0) {
@@ -85,6 +87,12 @@ const NFTTransferSummaryContainer: React.FC = () => {
       return false;
     }
 
+    // A failed simulate zeroes the estimated fee, which would otherwise read as
+    // "insufficient balance". The banner below reports the real reason.
+    if (useNetworkFeeReturn.isSimulateError) {
+      return false;
+    }
+
     if (currentBalance === null || currentBalance === undefined) {
       return false;
     }
@@ -94,7 +102,27 @@ const NFTTransferSummaryContainer: React.FC = () => {
     }
 
     return !hasNetworkFee;
-  }, [currentBalance, networkFee?.amount, useNetworkFeeReturn.isLoading, hasNetworkFee]);
+  }, [
+    currentBalance,
+    networkFee?.amount,
+    useNetworkFeeReturn.isLoading,
+    useNetworkFeeReturn.isSimulateError,
+    hasNetworkFee,
+  ]);
+
+  const simulateErrorMessage = useMemo(() => {
+    if (!useNetworkFeeReturn.isSimulateError || useNetworkFeeReturn.isLoading) {
+      return null;
+    }
+
+    return (
+      useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || 'Failed to simulate transaction'
+    );
+  }, [
+    useNetworkFeeReturn.isSimulateError,
+    useNetworkFeeReturn.isLoading,
+    useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
+  ]);
 
   const makeGRC721TransferMessage = useCallback(
     (grc721Token: GRC721Model, fromAddress: string, toAddress: string) => {
@@ -110,25 +138,30 @@ const NFTTransferSummaryContainer: React.FC = () => {
     [],
   );
 
-  const createDocument = useCallback(async () => {
-    if (!currentNetwork || !currentAccount || !currentAddress) {
+  // Deliberately not memoized: the gas budget and fee only exist after the
+  // simulate resolves, and a useCallback keyed on [summaryInfo, currentAccount]
+  // kept handing back the first render's closure — so both the re-estimated
+  // document and the tx that gets signed were stuck at gasWanted 0.
+  const createDocument = async (): Promise<Document | null> => {
+    if (!currentNetwork || !currentAccount || !currentFundingAddress) {
       return null;
     }
 
     const { grc721Token, toAddress, memo } = summaryInfo;
-    const message = makeGRC721TransferMessage(grc721Token, currentAddress, toAddress);
+    const message = makeGRC721TransferMessage(grc721Token, currentFundingAddress, toAddress);
 
     const document = await transactionService.createDocument(
       currentAccount,
       currentNetwork.networkId,
       [message],
-      useNetworkFeeReturn.currentGasInfo?.gasWanted || 0n,
+      chain.bech32Prefix,
+      useNetworkFeeReturn.currentGasInfo?.gasWanted || 0,
       useNetworkFeeReturn.currentGasFeeRawAmount,
       memo,
     );
 
     return document;
-  }, [summaryInfo, currentAccount]);
+  };
 
   const createTransaction = useCallback(async () => {
     if (!currentNetwork || !currentAccount || !wallet) {
@@ -153,15 +186,25 @@ const NFTTransferSummaryContainer: React.FC = () => {
       console.error(e);
       return null;
     });
-  }, [summaryInfo, currentAccount, currentNetwork, networkFee]);
+    // createDocument is rebuilt every render (it has to read the latest gas
+    // info), so listing it here makes this memo a no-op — which is the honest
+    // outcome: without it the memo would keep signing with an older document.
+  }, [
+    summaryInfo,
+    currentAccount,
+    currentNetwork,
+    networkFee,
+    createDocument,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
+    useNetworkFeeReturn.currentGasInfo,
+  ]);
 
   const transfer = async (): Promise<boolean> => {
     if (isSent || !currentAccount || !hasNetworkFee || useNetworkFeeReturn.isLoading) {
       return false;
     }
 
-    if (isNetworkFeeError) {
-      setIsErrorNetworkFee(true);
+    if (isNetworkFeeError || useNetworkFeeReturn.isSimulateError) {
       return false;
     }
 
@@ -184,8 +227,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
           status: 'SUCCESS',
           hash: txHash,
         });
-      }
-      else {
+      } else {
         setTransferResult({
           status: 'FAILED',
           errorMessage: 'Your transaction could not be submitted to the blockchain. Try again.',
@@ -195,8 +237,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
       setScreenState('RESULT');
       setIsSent(false);
       return Boolean(txHash);
-    }
-    catch (e) {
+    } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       setTransferResult({
         status: 'FAILED',
@@ -242,7 +283,6 @@ const NFTTransferSummaryContainer: React.FC = () => {
 
   const onClickNetworkFeeSave = useCallback(() => {
     useNetworkFeeReturn.save();
-    setIsErrorNetworkFee(false);
     setOpenedNetworkFeeSetting(false);
   }, [useNetworkFeeReturn.save]);
 
@@ -270,48 +310,57 @@ const NFTTransferSummaryContainer: React.FC = () => {
 
       setDocument(doc);
     });
-  }, [wallet, summaryInfo, currentAccount, currentNetwork, useNetworkFeeReturn.currentGasFeeRawAmount]);
+  }, [
+    wallet,
+    summaryInfo,
+    currentAccount,
+    currentNetwork,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
+    // The fee stays 0 while the gas price is 0, so the budget has to be watched
+    // separately or the stored document keeps gasWanted 0.
+    useNetworkFeeReturn.currentGasInfo?.gasWanted,
+  ]);
 
   return (
     <NFTTransferSummaryLayout>
-      {screenState === 'LOADING'
-        ? (
-            <BroadcastTransactionLoading />
-          )
-        : screenState === 'RESULT' && transferResult
-          ? (
-              <TransactionResult
-                status={transferResult.status}
-                errorMessage={transferResult.errorMessage}
-                onClickViewHistory={onClickViewHistory}
-                onClickViewGnoscan={onClickViewGnoscan}
-                onClickClose={onClickCloseResult}
-              />
-            )
-          : openedNetworkFeeSetting
-            ? (
-                <div className='network-fee-setting-wrapper'>
-                  <NetworkFeeSetting
-                    {...useNetworkFeeReturn}
-                    onClickBack={onClickNetworkFeeClose}
-                    onClickSave={onClickNetworkFeeSave}
-                  />
-                </div>
-              )
-            : (
-                <NFTTransferSummary
-                  grc721Token={summaryInfo.grc721Token}
-                  toAddress={summaryInfo.toAddress}
-                  isErrorNetworkFee={isErrorNetworkFee}
-                  networkFee={networkFee}
-                  memo={summaryInfo.memo}
-                  queryGRC721TokenUri={useGetGRC721TokenUri}
-                  onClickBack={onClickBack}
-                  onClickCancel={onClickCancel}
-                  onClickSend={transfer}
-                  onClickNetworkFeeSetting={onClickNetworkFeeSetting}
-                />
-              )}
+      {screenState === 'LOADING' ? (
+        <BroadcastTransactionLoading />
+      ) : screenState === 'RESULT' && transferResult ? (
+        <TransactionResult
+          status={transferResult.status}
+          errorMessage={transferResult.errorMessage}
+          onClickViewHistory={onClickViewHistory}
+          onClickViewGnoscan={onClickViewGnoscan}
+          onClickClose={onClickCloseResult}
+        />
+      ) : openedNetworkFeeSetting ? (
+        <div className='network-fee-setting-wrapper'>
+          <NetworkFeeSetting
+            {...useNetworkFeeReturn}
+            feeTokenQuote={feeTokenQuote}
+            onClickBack={onClickNetworkFeeClose}
+            onClickSave={onClickNetworkFeeSave}
+          />
+        </div>
+      ) : (
+        <NFTTransferSummary
+          grc721Token={summaryInfo.grc721Token}
+          toAddress={summaryInfo.toAddress}
+          isErrorNetworkFee={isNetworkFeeError}
+          isLoadingNetworkFee={useNetworkFeeReturn.isLoading}
+          isSimulateError={useNetworkFeeReturn.isSimulateError}
+          isBalanceUnknown={currentBalance === null || currentBalance === undefined}
+          simulateErrorBannerMessage={simulateErrorMessage}
+          networkFee={networkFee}
+          feeTokenQuote={feeTokenQuote}
+          memo={summaryInfo.memo}
+          queryGRC721TokenUri={useGetGRC721TokenUri}
+          onClickBack={onClickBack}
+          onClickCancel={onClickCancel}
+          onClickSend={transfer}
+          onClickNetworkFeeSetting={onClickNetworkFeeSetting}
+        />
+      )}
     </NFTTransferSummaryLayout>
   );
 };

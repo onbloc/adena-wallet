@@ -1,9 +1,11 @@
+import React from 'react';
+import type { JSX } from 'react';
+import styled, { CSSProp } from 'styled-components';
+
 import checkOff from '@assets/check-off.svg';
 import checkOn from '@assets/check-on.svg';
 import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
-import React, { type JSX } from 'react';
-import styled, { CSSProp } from 'styled-components';
 
 type CheckboxPos = 'CENTER' | 'TOP' | ' BOTTOM';
 interface TermsCheckboxProps {
@@ -20,29 +22,20 @@ interface TermsCheckboxProps {
 }
 
 const Wrapper = styled.div<{ margin?: string }>`
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   width: 100%;
   margin: ${({ margin }): string => margin ?? '0px 0px 10px'};
   ${fonts.body2Reg};
 `;
 
-const Label = styled.label<{
-  checkboxPos: CheckboxPos;
-  color?: string;
-}>`
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'flex-start',
-  })};
+const Label = styled.label<{ checkboxPos: CheckboxPos, color?: string }>`
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   position: relative;
   padding-left: 28px;
   cursor: pointer;
   &:before {
     ${({ checkboxPos }): CSSProp =>
-      checkboxPos === 'TOP' ? mixins.posTopLeft('2px') : mixins.posTopCenterLeft()};
+    checkboxPos === 'TOP' ? mixins.posTopLeft('2px') : mixins.posTopCenterLeft()};
     content: '';
     display: inline-block;
     width: 20px;

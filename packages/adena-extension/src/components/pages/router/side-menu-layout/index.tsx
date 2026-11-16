@@ -1,8 +1,7 @@
-import { Portal } from '@components/atoms';
 import React, { useCallback } from 'react';
-
-import SideMenuContainer from './side-menu-container';
+import { Portal } from '@components/atoms';
 import { SideMenuBackground, SideMenuContent, SideMenuOverlay } from './side-menu-layout.styles';
+import SideMenuContainer from './side-menu-container';
 
 interface SideMenuLayoutProps {
   open: boolean;

@@ -1,8 +1,10 @@
+import { Account, Wallet } from 'adena-module';
+import { atom } from 'jotai';
+import { atomWithReset } from 'jotai/utils';
+
 import { TransactionHistoryItem } from '@repositories/transaction/response/transaction-history-response';
 import { AddressBookItem } from '@repositories/wallet';
 import { StateType } from '@types';
-import { Account, Wallet } from 'adena-module';
-import { atom } from 'recoil';
 
 interface TransactionHistoryState {
   address: string | null;
@@ -12,46 +14,28 @@ interface TransactionHistoryState {
   items: Array<TransactionHistoryItem>;
 }
 
-export const wallet = atom<Wallet | null>({
-  key: 'wallet/wallet',
-  default: null,
+export const wallet = atom<Wallet | null>(null);
+
+export const state = atom<StateType>('NONE');
+
+export const currentAccount = atomWithReset<Account | null>(null);
+
+export const accountNames = atom<{ [key in string]: string }>({});
+
+export const transactionHistory = atomWithReset<TransactionHistoryState>({
+  init: false,
+  address: null,
+  currentPage: -1,
+  isFinish: false,
+  items: [],
 });
 
-export const state = atom<StateType>({
-  key: 'wallet/state',
-  default: 'NONE',
-});
-
-export const currentAccount = atom<Account | null>({
-  key: 'wallet/currentAccount',
-  default: null,
-});
-
-export const accountNames = atom<{ [key in string]: string }>({
-  key: 'wallet/accountNames',
-  default: {},
-});
-
-export const transactionHistory = atom<TransactionHistoryState>({
-  key: 'wallet/transactionHistory',
-  default: {
-    init: false,
-    address: null,
-    currentPage: -1,
-    isFinish: false,
-    items: [],
-  },
-});
-
-export const addressBook = atom<{
+export const addressBook = atomWithReset<{
   init: boolean;
   loading: boolean;
   items: AddressBookItem[];
 }>({
-  key: 'wallet/addressBook',
-  default: {
-    init: false,
-    loading: false,
-    items: [],
-  },
+  init: false,
+  loading: false,
+  items: [],
 });

@@ -1,13 +1,13 @@
+import { useContext } from 'react';
 import { CommonError } from '@common/errors/common';
 import {
   AdenaContext,
   AdenaContextProps,
-  MultisigTransactionContext,
-  MultisigTransactionContextProps,
   WalletContext,
   WalletContextProps,
+  MultisigTransactionContext,
+  MultisigTransactionContextProps,
 } from '@common/provider';
-import { useContext } from 'react';
 
 export const useAdenaContext = (): AdenaContextProps => {
   const context = useContext(AdenaContext);

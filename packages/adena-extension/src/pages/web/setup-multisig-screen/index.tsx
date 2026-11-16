@@ -1,16 +1,20 @@
-import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
-import { WebMain } from '@components/atoms';
-import WebLoadingAccounts from '@components/pages/web/loading-accounts';
-import { WebMainHeader } from '@components/pages/web/main-header';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import useSetupMultisigScreen, { setupMultisigStepBackTo } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
-import { RoutePath } from '@types';
 import React, { useCallback, useMemo } from 'react';
 
-import SetupMultisigCompleteScreen from './complete';
+import useSetupMultisigScreen, {
+  setupMultisigStepBackTo,
+} from '@hooks/web/setup-multisig/use-setup-multisig-screen';
+
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+
+import { WebMain } from '@components/atoms';
+import { WebMainHeader } from '@components/pages/web/main-header';
 import SetupMultisigConfig from './enter-multisig-config';
 import SetupMultisigInit from './init';
+import SetupMultisigCompleteScreen from './complete';
+import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 
 const SetupMultisigScreen: React.FC = () => {
   const { navigate } = useAppNavigate();
@@ -55,7 +59,7 @@ const SetupMultisigScreen: React.FC = () => {
   const onClickBack = useCallback(() => {
     const backTo = setupMultisigStepBackTo[setupMultisigState];
     if (backTo === null) {
-      navigate(RoutePath.Home);
+      navigate(RoutePath.WebAdvancedSetup);
       return;
     }
     resetMultisigConfig();

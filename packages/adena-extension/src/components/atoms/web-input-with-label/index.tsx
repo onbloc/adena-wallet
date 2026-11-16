@@ -1,7 +1,7 @@
-import { Row, View } from '@components/atoms';
 import { webFonts } from '@styles/theme';
 import React, { useState } from 'react';
 import styled, { css, RuleSet } from 'styled-components';
+import { Row, View } from '@components/atoms';
 
 interface StyleProps {
   hover?: boolean;
@@ -23,9 +23,7 @@ const StyledContainer = styled(Row).withConfig({
   border: 1px solid ${({ theme }): string => theme.webNeutral._800};
   ${webFonts.body4}
 
-  ${({
-    theme, hover, focus, filled,
-  }): RuleSet | string =>
+  ${({ theme, hover, focus, filled }): RuleSet | string =>
     hover || focus || filled
       ? css`
           border-color: ${theme.webNeutral._600};

@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { ApproveAddingNetworkTableWrapper } from './approve-adding-network-table.styles';
 
 export interface ApproveAddingNetworkTableProps {

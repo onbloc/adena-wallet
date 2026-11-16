@@ -1,10 +1,14 @@
-import { Button, Text } from '@components/atoms';
-import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
-import React, { type JSX } from 'react';
+import React from 'react';
+import type { JSX } from 'react';
 import styled from 'styled-components';
 
-interface Props { onClick: () => void }
+import { Text, Button } from '@components/atoms';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+
+interface Props {
+  onClick: () => void;
+}
 
 export const CloseShadowButton = ({ onClick }: Props): JSX.Element => {
   return (

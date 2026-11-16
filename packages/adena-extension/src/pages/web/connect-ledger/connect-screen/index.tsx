@@ -1,23 +1,23 @@
-import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
-import { WebMain } from '@components/atoms';
-import { WebMainHeader } from '@components/pages/web/main-header';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useConnectLedgerScreen from '@hooks/web/connect-ledger/use-connect-ledger-screen';
-import { RoutePath } from '@types';
 import { ReactElement, useMemo } from 'react';
 
-import ConnectFail from './connect-fail';
+import { WebMain } from '@components/atoms';
+
+import useConnectLedgerScreen from '@hooks/web/connect-ledger/use-connect-ledger-screen';
+import { WebMainHeader } from '@components/pages/web/main-header';
+import { RoutePath } from '@types';
+import useAppNavigate from '@hooks/use-app-navigate';
+
+import ConnectRequestWallet from './connect-request-wallet';
 import ConnectInit from './connect-init';
 import ConnectRequest from './connect-request';
-import ConnectRequestWallet from './connect-request-wallet';
+import ConnectFail from './connect-fail';
 import ConnectRequestWalletLoad from './connect-request-wallet-load';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
-const ConnectLedgerScreen = (): ReactElement<any> => {
+const ConnectLedgerScreen = (): ReactElement => {
   const useConnectLedgerScreenReturn = useConnectLedgerScreen();
-  const {
-    indicatorInfo, connectState, initWallet, requestPermission, setConnectState,
-  }
-    = useConnectLedgerScreenReturn;
+  const { indicatorInfo, connectState, initWallet, requestPermission, setConnectState } =
+    useConnectLedgerScreenReturn;
   const { navigate } = useAppNavigate();
 
   const topSpacing = useMemo(() => {
@@ -41,8 +41,7 @@ const ConnectLedgerScreen = (): ReactElement<any> => {
           onClickGoBack={(): void => {
             if (indicatorInfo.stepNo === 0) {
               navigate(RoutePath.WebSelectHardWallet);
-            }
-            else {
+            } else {
               setConnectState('INIT');
             }
           }}

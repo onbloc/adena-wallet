@@ -1,5 +1,4 @@
 import { TRANSACTION_MESSAGE_SEND_OF_REGISTER } from '@common/constants/tx.constant';
-
 import { createMessageOfVmCall } from './vm';
 
 export const createMessageOfVmRegister = (info: {
@@ -10,13 +9,7 @@ export const createMessageOfVmRegister = (info: {
   send?: string;
 }): {
   type: string;
-  value: {
-    caller: string;
-    send: string;
-    pkg_path: string;
-    func: string;
-    args: string[];
-  };
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
 } => {
   const invitor = info.invitor ?? '';
   const send = info.send ?? TRANSACTION_MESSAGE_SEND_OF_REGISTER;
@@ -35,13 +28,7 @@ export const createMessageOfVmInvite = (info: {
   invitee: string;
 }): {
   type: string;
-  value: {
-    caller: string;
-    send: string;
-    pkg_path: string;
-    func: string;
-    args: string[];
-  };
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
 } => {
   return createMessageOfVmCall({
     caller: info.address,

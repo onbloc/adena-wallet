@@ -1,6 +1,8 @@
 import React from 'react';
 
-interface UseExtensionWindowManagerReturn { closeAllExtensionWindows: () => Promise<void> }
+interface UseExtensionWindowManagerReturn {
+  closeAllExtensionWindows: () => Promise<void>;
+}
 
 const useExtensionWindowManager = (): UseExtensionWindowManagerReturn => {
   const closeAllExtensionWindows = React.useCallback(async () => {

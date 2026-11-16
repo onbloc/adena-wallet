@@ -30,19 +30,30 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
       currentNetwork.chainId,
     );
 
-    const addedCollections = collections
-      .map(collection => ({
-        ...collection,
-        display: true,
-      }))
-      .filter(
-        c1 =>
-          !storedCollections.find(
-            c2 => c1.packagePath === c2.packagePath && c1.networkId === c2.networkId,
-          ),
-      );
+    const isSameCollection = (a: GRC721CollectionModel, b: GRC721CollectionModel): boolean =>
+      a.packagePath === b.packagePath && a.networkId === b.networkId;
 
-    return tokenService.saveAccountGRC721Collections(currentAccount.id, currentNetwork.chainId, [...storedCollections, ...addedCollections]);
+    // Refresh stored entries from the chain so capability flags cannot go
+    // stale; the user-owned `display` flag is preserved.
+    const refreshedCollections = storedCollections.map((stored) => {
+      const fetched = collections.find((collection) => isSameCollection(collection, stored));
+      if (!fetched) {
+        return stored;
+      }
+
+      return { ...stored, ...fetched, display: stored.display };
+    });
+
+    const addedCollections = collections
+      .filter(
+        (collection) => !storedCollections.find((stored) => isSameCollection(collection, stored)),
+      )
+      .map((collection) => ({ ...collection, display: true }));
+
+    return tokenService.saveAccountGRC721Collections(currentAccount.id, currentNetwork.chainId, [
+      ...refreshedCollections,
+      ...addedCollections,
+    ]);
   };
 
   const pinCollection = async (packagePath: string): Promise<boolean> => {
@@ -54,7 +65,10 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
       currentAccount.id,
       currentNetwork.chainId,
     );
-    return tokenService.saveAccountGRC721PinnedPackages(currentAccount.id, currentNetwork.chainId, [...pinnedCollections, packagePath]);
+    return tokenService.saveAccountGRC721PinnedPackages(currentAccount.id, currentNetwork.chainId, [
+      ...pinnedCollections,
+      packagePath,
+    ]);
   };
 
   const unpinCollection = async (packagePath: string): Promise<boolean> => {
@@ -69,7 +83,7 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
     return tokenService.saveAccountGRC721PinnedPackages(
       currentAccount.id,
       currentNetwork.chainId,
-      pinnedCollections.filter(path => path !== packagePath),
+      pinnedCollections.filter((path) => path !== packagePath),
     );
   };
 
@@ -125,11 +139,5 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
     );
   };
 
-  return {
-    addCollections,
-    pinCollection,
-    unpinCollection,
-    showCollection,
-    hideCollection,
-  };
+  return { addCollections, pinCollection, unpinCollection, showCollection, hideCollection };
 };

@@ -1,15 +1,17 @@
+import { Account, Wallet } from 'adena-module';
+import { useCallback, useEffect, useState } from 'react';
+
 import {
   WALLET_EXPORT_ACCOUNT_ID,
   WALLET_EXPORT_TYPE_STORAGE_KEY,
 } from '@common/constants/storage.constant';
 import { AdenaStorage } from '@common/storage';
-import { encryptWalletPassword } from '@common/utils/crypto-utils';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import useIndicatorStep, { UseIndicatorStepReturn } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { useQuery } from '@tanstack/react-query';
-import { Account, Wallet } from 'adena-module';
-import { useCallback, useEffect, useState } from 'react';
 
 export type UseWalletExportReturn = {
   currentAccount: Account | null;
@@ -68,15 +70,16 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
     hasQuestionnaire: false,
   });
 
-  const { data: account = null } = useQuery({
-    queryKey: ['walletExportScreen/account', exportType, wallet, exportAccountId, currentAccount],
-    queryFn: async () => {
+  const { data: account = null } = useQuery(
+    ['walletExportScreen/account', exportType, wallet, exportAccountId, currentAccount],
+    async () => {
       if (exportType === 'SEED_PHRASE') {
         return currentAccount;
       }
-      return wallet?.accounts.find(account => account.id === exportAccountId) || currentAccount;
+      return wallet?.accounts.find((account) => account.id === exportAccountId) || currentAccount;
     },
-  });
+    {},
+  );
 
   const _initExportType = useCallback(async () => {
     const sessionStorage = AdenaStorage.session();
@@ -116,10 +119,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
         return false;
       }
 
-      return walletService
-        .loadWalletPassword()
-        .then(storedPassword => storedPassword === encryptWalletPassword(password))
-        .catch(() => false);
+      return walletService.equalsPassword(password).catch(() => false);
     },
     [exportType, walletService],
   );
@@ -129,9 +129,8 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
       if (exportType === 'NONE' || !account) {
         return;
       }
-      const encryptedWalletPassword = encryptWalletPassword(password);
       const wallet = await walletService
-        .loadWalletWithPassword(encryptedWalletPassword)
+        .loadWalletWithPassword(password)
         .catch((e) => {
           console.warn(e);
           return null;
@@ -145,8 +144,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
 
       if (exportType === 'PRIVATE_KEY') {
         setExportData(instance);
-      }
-      else {
+      } else {
         setExportData(instance);
       }
       setWalletExportState('RESULT');

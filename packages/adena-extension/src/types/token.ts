@@ -1,12 +1,14 @@
 import { BaseError } from '@common/errors';
+import { VestingInfo } from '@common/utils/vesting-utils';
 import { AddingType } from '@components/pages/additional-token/additional-token-type-selector';
+import { TokenValue } from './price';
 
 export interface TokenModel {
   main: boolean;
   tokenId: string;
   networkId: string;
   display: boolean;
-  type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens';
+  type: 'gno-native' | 'grc20' | 'cosmos-native';
   name: string;
   symbol: string;
   decimals: number;
@@ -15,20 +17,12 @@ export interface TokenModel {
   image: string;
 }
 
-export interface NativeTokenModel extends TokenModel { denom: string }
-
-export interface GRC20TokenModel extends TokenModel { pkgPath: string }
-
-export interface IBCNativeTokenModel extends TokenModel { denom: string }
-
-export interface IBCTokenModel extends TokenModel {
+export interface NativeTokenModel extends TokenModel {
   denom: string;
-  originChain: string;
-  originDenom: string;
-  originType: string;
-  path: string;
-  channel: string;
-  port: string;
+}
+
+export interface GRC20TokenModel extends TokenModel {
+  pkgPath: string;
 }
 
 export interface ManageTokenInfo {
@@ -83,6 +77,10 @@ export interface AdditionalTokenProps {
   onClickBack: () => void;
   onClickCancel: () => void;
   onClickAdd: () => void;
+  // Optional infinite-scroll pagination for the search list.
+  onEndReached?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
 }
 
 export interface AdditionalTokenSelectBoxProps {
@@ -97,6 +95,10 @@ export interface AdditionalTokenSelectBoxProps {
   onChangeKeyword: (keyword: string) => void;
   onClickOpenButton: (opened: boolean) => void;
   onClickListItem: (tokenId: string) => void;
+  // Optional infinite-scroll pagination for the search list.
+  onEndReached?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
 }
 
 export interface MainToken {
@@ -107,10 +109,25 @@ export interface MainToken {
     value: string;
     denom: string;
   };
+  chainIconUrl?: string;
+  /**
+   * USD figures for this row, or null when the token has no quote. The row
+   * layout differs between the two cases, so this doubles as the switch.
+   */
+  tokenValue?: TokenValue | null;
+  /**
+   * Vesting schedule for this row's balance, or null when the account has no
+   * grant — which is every account but a handful. Only the native token can
+   * carry one; its presence is what reveals the padlock and the expander.
+   */
+  vesting?: VestingInfo | null;
 }
 
 export interface GRC721CollectionModel {
+  /** A token the account owns, used as the collection thumbnail. */
   tokenId: string;
+  /** grc721 `Token.ID()`; absent on collections stored by earlier versions. */
+  collectionId?: string;
   networkId: string;
   display: boolean;
   type: 'grc721';
@@ -132,6 +149,11 @@ export interface GRC721Model {
   isTokenUri: boolean;
   isMetadata: boolean;
   metadata: GRC721MetadataModel | null;
+  /**
+   * False when the account only operates the token rather than owns it, e.g. a
+   * GNFT staked in GnoSwap. Absent means owned.
+   */
+  isOwned?: boolean;
 }
 
 export interface GRC721MetadataModel {

@@ -1,4 +1,5 @@
-import React, { type JSX } from 'react';
+import React from 'react';
+import type { JSX } from 'react';
 import styled from 'styled-components';
 
 interface CircleProps {
@@ -16,8 +17,6 @@ const CircleStyle = styled.div<CircleProps>`
   border-radius: 50%;
 `;
 
-export const Circle = ({
-  width, height, bgColor, margin,
-}: CircleProps): JSX.Element => {
+export const Circle = ({ width, height, bgColor, margin }: CircleProps): JSX.Element => {
   return <CircleStyle width={width} height={height} bgColor={bgColor} margin={margin} />;
 };

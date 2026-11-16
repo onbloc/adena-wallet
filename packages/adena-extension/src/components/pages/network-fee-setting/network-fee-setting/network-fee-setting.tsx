@@ -1,13 +1,15 @@
+import React, { useCallback, useMemo } from 'react';
+
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import { DEFAULT_GAS_ADJUSTMENT } from '@common/constants/gas.constant';
 import { SubHeader } from '@components/atoms';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import { GasInfo, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
+
+import { DEFAULT_GAS_ADJUSTMENT } from '@common/constants/gas.constant';
 import { BottomFixedButton } from '@components/molecules';
 import NetworkFeeCustomInput from '@components/molecules/network-fee-custom-input/network-fee-custom-input';
 import NetworkFeeSettingItem from '@components/molecules/network-fee-setting-item/network-fee-setting-item';
-import { GasInfo, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 import BigNumber from 'bignumber.js';
-import React, { useCallback, useMemo } from 'react';
-
 import { NetworkFeeSettingWrapper } from './network-fee-setting.styles';
 
 export interface NetworkFeeSettingProps {
@@ -20,9 +22,19 @@ export interface NetworkFeeSettingProps {
   networkFeeSettings: NetworkFeeSettingInfo[] | null;
   onClickBack: () => void;
   onClickSave: () => void;
+  // Optional fee-token display overrides (Cosmos uses PHOTON/6, Gno keeps
+  // the default GNOT/6).
+  feeSymbol?: string;
+  feeDecimals?: number;
+  /** Quote for the fee token, from `useFeeTokenPrice`. */
+  feeTokenQuote?: FeeTokenQuote | null;
 }
 
-const settingTypesOfList: NetworkFeeSettingType[] = [NetworkFeeSettingType.FAST, NetworkFeeSettingType.AVERAGE, NetworkFeeSettingType.SLOW];
+const settingTypesOfList: NetworkFeeSettingType[] = [
+  NetworkFeeSettingType.FAST,
+  NetworkFeeSettingType.AVERAGE,
+  NetworkFeeSettingType.SLOW,
+];
 
 const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   isFetchedPriceTiers,
@@ -34,6 +46,9 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   setGasAdjustment,
   onClickBack,
   onClickSave,
+  feeSymbol,
+  feeDecimals,
+  feeTokenQuote,
 }) => {
   const settingInfoMap = useMemo(() => {
     if (!networkFeeSettings) {
@@ -54,7 +69,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   }, [networkFeeSettings]);
 
   const settingInfos = useMemo(() => {
-    return settingTypesOfList.map(settingType => ({
+    return settingTypesOfList.map((settingType) => ({
       ...settingInfoMap[settingType],
       settingType,
     }));
@@ -69,10 +84,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   }, [changedGasInfo]);
 
   const isSelected = useCallback(
-    (settingInfo: {
-      settingType: NetworkFeeSettingType;
-      gasInfo?: GasInfo | undefined;
-    }) => {
+    (settingInfo: { settingType: NetworkFeeSettingType; gasInfo?: GasInfo | undefined }) => {
       return settingInfo?.settingType === networkFeeSettingType;
     },
     [networkFeeSettingType],
@@ -103,7 +115,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
         title='Network Fee Setting'
         leftElement={{
           onClick: onClickBack,
-          element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
+          element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
         }}
       />
 
@@ -115,6 +127,9 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
               selected={isSelected(settingInfo)}
               isLoading={!isFetchedPriceTiers}
               info={settingInfo}
+              feeSymbol={feeSymbol}
+              feeDecimals={feeDecimals}
+              feeTokenQuote={feeTokenQuote}
               select={(): void =>
                 setNetworkFeeSetting({
                   settingType: settingInfo.settingType,
@@ -128,12 +143,13 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
                     ...(settingInfo.gasInfo || {
                       gasFee: 0,
                       gasPrice: 0,
-                      gasUsed: 0n,
-                      gasWanted: 0n,
+                      gasUsed: 0,
+                      gasWanted: 0,
                       simulateErrorMessage: null,
                     }),
                   },
-                })}
+                })
+              }
             />
           ))}
         </div>

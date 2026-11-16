@@ -1,13 +1,11 @@
+import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { UseQueryResult } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { GRC721MetadataModel } from '@types';
-import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
 import NFTAssetMetadata, { NFTAssetMetadataProps } from './nft-asset-metadata';
 
 describe('NFTAssetMetadata Component', () => {
@@ -28,12 +26,12 @@ describe('NFTAssetMetadata Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <NFTAssetMetadata {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

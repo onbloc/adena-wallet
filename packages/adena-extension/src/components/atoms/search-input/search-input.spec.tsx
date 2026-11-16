@@ -1,11 +1,9 @@
-import { GlobalPopupStyle } from '@styles/global-style';
-import theme from '@styles/theme';
-import { render } from '@testing-library/react';
 import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
+import { render } from '@testing-library/react';
+import theme from '@styles/theme';
+import { GlobalPopupStyle } from '@styles/global-style';
 import { SearchInput, SearchInputProps } from '.';
 
 describe('SearchInput Component', () => {
@@ -18,12 +16,12 @@ describe('SearchInput Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <SearchInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

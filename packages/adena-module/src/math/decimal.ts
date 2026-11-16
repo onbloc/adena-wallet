@@ -1,6 +1,6 @@
 import BN from 'bn.js';
 
-import { Uint32, Uint53, Uint64 } from './integers.js';
+import { Uint32, Uint53, Uint64 } from './integers';
 
 // Too large values lead to massive memory usage. Limit to something sensible.
 // The largest value we need is 18 (Ether).
@@ -17,6 +17,7 @@ export class Decimal {
 
     const badCharacter = input.match(/[^0-9.]/);
     if (badCharacter) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       throw new Error(`Invalid character at position ${badCharacter.index! + 1}`);
     }
 
@@ -26,13 +27,11 @@ export class Decimal {
     if (input === '') {
       whole = '0';
       fractional = '';
-    }
-    else if (input.search(/\./) === -1) {
+    } else if (input.search(/\./) === -1) {
       // integer format, no separator
       whole = input;
       fractional = '';
-    }
-    else {
+    } else {
       const parts = input.split('.');
       switch (parts.length) {
         case 0:
@@ -114,13 +113,13 @@ export class Decimal {
   private constructor(atomics: string, fractionalDigits: number) {
     if (!atomics.match(/^[0-9]+$/)) {
       throw new Error(
-        'Invalid string format. Only non-negative integers in decimal representation supported.'
+        'Invalid string format. Only non-negative integers in decimal representation supported.',
       );
     }
 
     this.data = {
       atomics: new BN(atomics),
-      fractionalDigits: fractionalDigits
+      fractionalDigits: fractionalDigits,
     };
   }
 
@@ -137,8 +136,7 @@ export class Decimal {
 
     if (fractional.isZero()) {
       return this.clone();
-    }
-    else {
+    } else {
       return Decimal.fromAtomics(whole.mul(factor).toString(), this.fractionalDigits);
     }
   }
@@ -151,8 +149,7 @@ export class Decimal {
 
     if (fractional.isZero()) {
       return this.clone();
-    }
-    else {
+    } else {
       return Decimal.fromAtomics(whole.addn(1).mul(factor).toString(), this.fractionalDigits);
     }
   }
@@ -164,8 +161,7 @@ export class Decimal {
 
     if (fractional.isZero()) {
       return whole.toString();
-    }
-    else {
+    } else {
       const fullFractionalPart = fractional.toString().padStart(this.data.fractionalDigits, '0');
       const trimmedFractionalPart = fullFractionalPart.replace(/0+$/, '');
       return `${whole.toString()}.${trimmedFractionalPart}`;

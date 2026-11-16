@@ -1,8 +1,7 @@
-import WebHelpOverlay, { OverlayItem } from '@components/molecules/web-help-overlay/web-help-overlay';
-import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react';
-
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import WebHelpOverlay, {
+  OverlayItem,
+} from '@components/molecules/web-help-overlay/web-help-overlay';
 import { WalletCreationHelpOverlayItem } from './wallet-creation-help-overlay.styles';
 
 export interface WalletCreationHelpOverlayProps {
@@ -52,10 +51,7 @@ const TOOLTIP_CONFIGS: Record<string, TooltipConfig> = {
       <WalletCreationHelpOverlayItem>
         This allows you to connect with accounts
         <br />
-        from
-        {' '}
-        <b>hardware wallets</b>
-        .
+        from <b>hardware wallets</b>.
       </WalletCreationHelpOverlayItem>
     ),
   },
@@ -66,10 +62,7 @@ const TOOLTIP_CONFIGS: Record<string, TooltipConfig> = {
       <WalletCreationHelpOverlayItem>
         This allows you to connect with accounts
         <br />
-        from an
-        {' '}
-        <b>air-gapped environment</b>
-        .
+        from an <b>air-gapped environment</b>.
       </WalletCreationHelpOverlayItem>
     ),
   },
@@ -78,12 +71,9 @@ const TOOLTIP_CONFIGS: Record<string, TooltipConfig> = {
     convenienceRate: 1,
     content: (
       <WalletCreationHelpOverlayItem>
-        This allows you to connect with the
-        {' '}
+        This allows you to connect with the{' '}
         <b>
-          multi-sig
-          {' '}
-          <br />
+          multi-sig <br />
           accounts.
         </b>
       </WalletCreationHelpOverlayItem>
@@ -96,17 +86,7 @@ const TOOLTIP_CONFIGS: Record<string, TooltipConfig> = {
       <WalletCreationHelpOverlayItem>
         This allows you to create or restore accounts
         <br />
-        with
-        {' '}
-        <b>Seed Phrases</b>
-        ,
-        {' '}
-        <b>Private Key</b>
-        {' '}
-        or
-        {' '}
-        <b>Google Login</b>
-        .
+        with <b>Seed Phrases</b>, <b>Private Key</b> or <b>Google Login</b>.
       </WalletCreationHelpOverlayItem>
     ),
   },
@@ -119,10 +99,7 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
   advancedOptionButtonRef,
   onFinish,
 }) => {
-  const [windowSize, setWindowSize] = useState<{
-    width: number;
-    height: number;
-  }>({
+  const [windowSize, setWindowSize] = useState<{ width: number; height: number }>({
     width: 0,
     height: 0,
   });
@@ -134,9 +111,7 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
     ): OverlayItem | null => {
       if (!ref?.current) return null;
 
-      const {
-        x, y, width, height,
-      } = ref.current.getBoundingClientRect();
+      const { x, y, width, height } = ref.current.getBoundingClientRect();
       const tooltipPositionInfo = getTooltipPositionY(y, height, windowSize.height);
 
       return {
@@ -150,10 +125,21 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
   );
 
   const helpItems = useMemo(() => {
-    const items = [createHelpItem(hardwareWalletButtonRef, TOOLTIP_CONFIGS.hardwareWallet), createHelpItem(airgapAccountButtonRef, TOOLTIP_CONFIGS.airgapAccount), createHelpItem(multisigAccountButtonRef, TOOLTIP_CONFIGS.multisigAccount), createHelpItem(advancedOptionButtonRef, TOOLTIP_CONFIGS.advancedOption)];
+    const items = [
+      createHelpItem(hardwareWalletButtonRef, TOOLTIP_CONFIGS.hardwareWallet),
+      createHelpItem(airgapAccountButtonRef, TOOLTIP_CONFIGS.airgapAccount),
+      createHelpItem(multisigAccountButtonRef, TOOLTIP_CONFIGS.multisigAccount),
+      createHelpItem(advancedOptionButtonRef, TOOLTIP_CONFIGS.advancedOption),
+    ];
 
     return items.filter((item): item is OverlayItem => item !== null);
-  }, [createHelpItem, hardwareWalletButtonRef, airgapAccountButtonRef, multisigAccountButtonRef, advancedOptionButtonRef]);
+  }, [
+    createHelpItem,
+    hardwareWalletButtonRef,
+    airgapAccountButtonRef,
+    multisigAccountButtonRef,
+    advancedOptionButtonRef,
+  ]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

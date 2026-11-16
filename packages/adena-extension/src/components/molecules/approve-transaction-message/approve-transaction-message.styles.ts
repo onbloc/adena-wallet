@@ -3,13 +3,13 @@ import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
-export const ApproveTransactionMessageWrapper = styled(View)<{ hasError?: boolean }>`
+export const ApproveTransactionMessageWrapper = styled(View)<{ $hasError?: boolean }>`
   width: 100%;
   height: auto;
   border-radius: 18px;
-  margin-bottom: ${({ hasError }): string => (hasError ? '0' : '8px')};
+  margin-bottom: ${({ $hasError }): string => ($hasError ? '0' : '8px')};
   background-color: ${getTheme('neutral', '_9')};
-  border: 1px solid ${({ hasError }): string => (hasError ? '#EF2D21' : 'transparent')};
+  border: 1px solid ${({ $hasError }): string => ($hasError ? '#EF2D21' : 'transparent')};
 
   .message-row {
     ${mixins.flex({ direction: 'row' })};
@@ -80,11 +80,7 @@ export const MessageRowWrapper = styled(View)`
 `;
 
 export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
-  ${mixins.flex({
-    direction: 'row',
-    align: 'center',
-    justify: 'space-between',
-  })};
+  ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })};
   width: 100%;
   height: auto;
   color: ${getTheme('neutral', 'a')};
@@ -93,11 +89,7 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
   border-bottom: 2px solid ${getTheme('neutral', '_8')};
 
   & .title-wrapper {
-    ${mixins.flex({
-      direction: 'row',
-      align: 'center',
-      justify: 'space-between',
-    })};
+    ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })};
     width: 100%;
     flex-shrink: 0;
     gap: 4px;
@@ -122,7 +114,7 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
 export const MessageErrorText = styled.p`
   width: 100%;
   padding: 0px 16px 10px;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 500;
   font-size: 13px;
   line-height: 18px;

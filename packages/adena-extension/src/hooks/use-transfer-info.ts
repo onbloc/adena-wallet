@@ -1,6 +1,6 @@
 import { TransferState } from '@states';
-import { useRecoilState } from 'recoil';
-import { TransferInfo } from 'src/states/transfer';
+import { useAtom } from 'jotai';
+import { TransferInfo } from '../states/transfer';
 
 interface UseTransferInfoReturn {
   memorizedTransferInfo: TransferInfo | null;
@@ -9,7 +9,7 @@ interface UseTransferInfoReturn {
 }
 
 export const useTransferInfo = (): UseTransferInfoReturn => {
-  const [memorizedTransferInfo, setMemorizedTransferInfo] = useRecoilState(
+  const [memorizedTransferInfo, setMemorizedTransferInfo] = useAtom(
     TransferState.memorizedTransferInfo,
   );
 

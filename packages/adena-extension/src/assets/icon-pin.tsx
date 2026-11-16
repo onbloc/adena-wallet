@@ -1,4 +1,6 @@
-import React, { type JSX } from 'react';
+/* eslint-disable @eslint-react/dom-no-unknown-property */
+import React from 'react';
+import type { JSX } from 'react';
 
 const IconPin = ({ className }: { className?: string }): JSX.Element => (
   <svg

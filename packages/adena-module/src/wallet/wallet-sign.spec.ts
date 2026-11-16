@@ -1,12 +1,19 @@
+import { Secp256k1Wallet } from '@cosmjs/amino';
 import { ABCIAccount, JSONRPCProvider, Provider } from '@gnolang/tm2-js-client';
+import type { Mock } from 'vitest';
+
 import {
-  beforeEach, describe, expect, it, vi
-} from 'vitest';
+  AdenaWallet,
+  CosmosDocument,
+  CosmosProvider,
+  Document,
+  HDWalletKeyring,
+  MSG_SEND_AMINO_TYPE,
+  txToDocument,
+} from './..';
 
-import { AdenaWallet, Document, txToDocument } from './../index.js';
-
-const mnemonic
-  = 'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
+const mnemonic =
+  'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
 
 function makeDocument(body: string): Document {
   return {
@@ -22,26 +29,26 @@ function makeDocument(body: string): Document {
             files: [
               {
                 name: 'hello.gno',
-                body: body
-              }
-            ]
-          }
-        }
-      }
+                body: body,
+              },
+            ],
+          },
+        },
+      },
     ],
     fee: {
       amount: [
         {
           amount: '1',
-          denom: 'ugnot'
-        }
+          denom: 'ugnot',
+        },
       ],
-      gas: '5000000'
+      gas: '5000000',
     },
     chain_id: 'dev',
     memo: '',
     account_number: '0',
-    sequence: '1'
+    sequence: '1',
   };
 }
 
@@ -50,8 +57,11 @@ describe('Transaction Sign', () => {
 
   beforeEach(() => {
     mockProvider = new JSONRPCProvider('');
-    mockProvider.getStatus = vi.fn().mockResolvedValue('0');
-    mockProvider.getStatus = vi.fn().mockResolvedValue({ node_info: { node_info: 'dev' } });
+    mockProvider.getStatus = vi.fn().mockResolvedValue({
+      node_info: {
+        network: 'dev',
+      },
+    });
     const mockAccount: ABCIAccount = {
       BaseAccount: {
         address: '',
@@ -60,7 +70,7 @@ describe('Transaction Sign', () => {
         account_number: '0',
         sequence: '1'
       }
-    };
+    }
     mockProvider.getAccount = vi.fn().mockResolvedValue(mockAccount);
   });
 
@@ -100,5 +110,111 @@ describe('Transaction Sign', () => {
     const signature = await wallet.sign(mockProvider, document);
 
     expect(signature.signature).toHaveLength(1);
+  });
+
+  it('GOLDEN: fixed mnemonic + document yields known signature bytes', async () => {
+    // Bit-equality regression. If you intentionally change the signing pipeline
+    // (sign payload shape, encodeCharacterSet, etc.), regenerate by temporarily
+    // printing `hex` from this test and pasting the new value here.
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const body = 'package hello\n// golden\n';
+    const document = makeDocument(body);
+    const { signature } = await wallet.sign(mockProvider, document);
+    const hex = Buffer.from(signature[0].signature).toString('hex');
+    expect(hex).toBe(
+      '8aa543afa625c049f1ed09cdee68ebf779404b8f7f9d641af1903e8023591a9453a18c768cce515802cf51451942f32576f0bfc428a1ac812e754e651a6841e4',
+    );
+  });
+});
+
+describe('Cosmos AMINO Sign via AdenaWallet', () => {
+  async function makeCosmosDocument(): Promise<CosmosDocument> {
+    // Resolve the HD-derived atone address so the signer/message addresses match.
+    const keyring = await HDWalletKeyring.fromMnemonic(mnemonic);
+    const privKey = await keyring.getPrivateKey(0);
+    const cosmjsWallet = await Secp256k1Wallet.fromKey(privKey, 'atone');
+    const [{ address }] = await cosmjsWallet.getAccounts();
+
+    return {
+      chainId: 'atomone-1',
+      fromAddress: address,
+      msgs: [
+        {
+          type: MSG_SEND_AMINO_TYPE,
+          value: {
+            from_address: address,
+            to_address: 'atone1qyqszqgpqyqszqgpqyqszqgpqyqszqgpwc2vge',
+            amount: [{ denom: 'uphoton', amount: '1000' }],
+          },
+        },
+      ],
+      fee: {
+        amount: [{ denom: 'uphoton', amount: '1000' }],
+        gas: '200000',
+      },
+      memo: '',
+      accountNumber: '42',
+      sequence: '7',
+    };
+  }
+
+  function makeMockCosmosProvider(): CosmosProvider & {
+    getAccount: Mock;
+    broadcastTx: Mock;
+  } {
+    return {
+      getAccount: vi.fn().mockResolvedValue({
+        address: '',
+        accountNumber: '42',
+        sequence: '7',
+      }),
+      broadcastTx: vi.fn().mockResolvedValue({
+        txhash: 'HASH',
+        code: 0,
+        rawLog: '',
+        height: '100',
+      }),
+      simulateTx: vi.fn().mockResolvedValue({ gasUsed: 100_000 }),
+      getMinGasPrices: vi
+        .fn()
+        .mockResolvedValue([{ denom: 'uphoton', amount: '0.01' }]),
+    };
+  }
+
+  it('signCosmosByAccountId signs with the current HD account and matches the Part 3 GOLDEN', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const document = await makeCosmosDocument();
+
+    const signed = await wallet.signCosmosByAccountId(
+      wallet.currentAccount.id,
+      document,
+      makeMockCosmosProvider(),
+      'SIGN_MODE_LEGACY_AMINO_JSON',
+    );
+
+    // Same GOLDEN locked in src/cosmos/amino/sign-cosmos-amino.spec.ts.
+    expect(Buffer.from(signed.txBytes).toString('base64')).toBe(
+      'CpABCo0BChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEm0KLGF0b25lMWpnOG10dXR1OWtoaGZ3YzRueG11aGNwZnRmMHBhamRoNXNzeTdnEixhdG9uZTFxeXFzenFncHF5cXN6cWdwcXlxc3pxZ3BxeXFzenFncHdjMnZnZRoPCgd1cGhvdG9uEgQxMDAwEmkKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQPhYTbbFx4y30iZNZQfBW4i+Jhj43OdCrfNSexCg5ydshIECgIIfxgHEhUKDwoHdXBob3RvbhIEMTAwMBDAmgwaQEB7POL2vYZ6A/Qumjxm0HxNAPrCoZ1NjBTqzhZ1Qod1eAChaKDeEHhHXeSdJmSSRNo4UwihxNZs76whBBD3G0c=',
+    );
+  });
+
+  it('broadcastCosmosTx forwards to CosmosProvider.broadcastTx', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const document = await makeCosmosDocument();
+    const provider = makeMockCosmosProvider();
+    const signed = await wallet.signCosmosByAccountId(
+      wallet.currentAccount.id,
+      document,
+      provider,
+      'SIGN_MODE_LEGACY_AMINO_JSON',
+    );
+
+    const result = await wallet.broadcastCosmosTx(signed, provider);
+
+    expect(provider.broadcastTx).toHaveBeenCalledWith(
+      signed.txBytes,
+      'BROADCAST_MODE_SYNC',
+    );
+    expect(result.txhash).toBe('HASH');
   });
 });

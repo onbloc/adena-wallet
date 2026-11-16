@@ -4,7 +4,6 @@ import { useMultisigTransactionContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 import React from 'react';
-
 import BroadcastTransactionLoading from '../broadcast-transaction-screen/loading';
 import BroadcastTransactionResult from './result';
 import BroadcastMultisigTransactionUpload from './upload';

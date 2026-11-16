@@ -5,24 +5,33 @@ import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query
 
 export const GET_GRC721_BALANCE_QUERY_KEY = 'nft/useGetGRC721TokenBalance';
 
+const GRC721_BALANCE_STALE_TIME = 30_000;
+
 export const useGetGRC721Balance = (
   packagePath: string,
-  options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
+  options?: UseQueryOptions<number | null, Error>,
 ): UseQueryResult<number | null> => {
   const { tokenService } = useAdenaContext();
-  const { currentAddress } = useCurrentAccount();
+  const { currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
 
   return useQuery<number | null, Error>({
-    queryKey: [GET_GRC721_BALANCE_QUERY_KEY, packagePath, currentAddress, currentNetwork.chainId],
+    queryKey: [
+      GET_GRC721_BALANCE_QUERY_KEY,
+      packagePath,
+      currentFundingAddress,
+      currentNetwork.chainId,
+    ],
     queryFn: () => {
-      if (!currentAddress) {
+      if (!currentFundingAddress) {
         return null;
       }
 
-      return tokenService.fetchGRC721Balance(packagePath, currentAddress).catch(() => null);
+      return tokenService.fetchGRC721Balance(packagePath, currentFundingAddress).catch(() => null);
     },
-    staleTime: 0,
+    // Every collection card asks for its count, so an uncached mount replays the
+    // whole fan-out.
+    staleTime: GRC721_BALANCE_STALE_TIME,
     ...options,
   });
 };

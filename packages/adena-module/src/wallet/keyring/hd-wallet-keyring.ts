@@ -1,18 +1,19 @@
 import {
-  generateKeyPair,
   Provider,
   TransactionEndpoint,
   Tx,
   TxSignature,
-  Wallet as Tm2Wallet
+  Wallet as Tm2Wallet,
 } from '@gnolang/tm2-js-client';
+import sodium from 'libsodium-wrappers-sumo';
 import { v4 as uuidv4 } from 'uuid';
 
-import {
-  Bip39, EnglishMnemonic, entropyToMnemonic, mnemonicToEntropy
-} from '../../crypto/index.js';
-import { Document, makeSignedTx, useTm2Wallet } from './../../index.js';
-import { Keyring, KeyringData, KeyringType } from './keyring.js';
+import { Bip39, EnglishMnemonic, entropyToMnemonic, mnemonicToEntropy } from '../../crypto';
+import { Document } from './../..';
+import { generateKeyPairByHdPath, getAddressIndex, HdPathLike } from './hd-path';
+import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
+import { signGnoDocument } from './sign-gno-document';
+import { signRawWithPrivateKey } from './sign-raw-util';
 
 export class HDWalletKeyring implements Keyring {
   public readonly id: string;
@@ -33,22 +34,24 @@ export class HDWalletKeyring implements Keyring {
     return entropyToMnemonic(this.mnemonicEntropy);
   }
 
-  async getKeypair(hdPath: number) {
-    const { privateKey, publicKey } = await generateKeyPair(this.getMnemonic(), hdPath);
-    return {
-      privateKey,
-      publicKey: publicKey
-    };
+  async getKeypair(hdPath: HdPathLike) {
+    const { privateKey, publicKey } = await generateKeyPairByHdPath(this.getMnemonic(), hdPath);
+    return { privateKey, publicKey: publicKey };
   }
 
-  async getPrivateKey(hdPath: number) {
+  async getPrivateKey(hdPath: HdPathLike) {
     const { privateKey } = await this.getKeypair(hdPath);
     return privateKey;
   }
 
-  async getPublicKey(hdPath: number) {
+  async getPublicKey(hdPath: HdPathLike) {
     const { publicKey } = await this.getKeypair(hdPath);
     return publicKey;
+  }
+
+  destroy() {
+    sodium.memzero(this.seed);
+    sodium.memzero(this.mnemonicEntropy);
   }
 
   toData() {
@@ -56,39 +59,47 @@ export class HDWalletKeyring implements Keyring {
       id: this.id,
       type: this.type,
       seed: Array.from(this.seed),
-      mnemonicEntropy: Array.from(this.mnemonicEntropy)
+      mnemonicEntropy: Array.from(this.mnemonicEntropy),
     };
+  }
+
+  async signRaw(bytes: Uint8Array, opts?: SignRawOptions): Promise<Uint8Array> {
+    const hdPath: HdPathLike = opts?.hdPath ?? 0;
+    const privateKey = await this.getPrivateKey(hdPath);
+    try {
+      return await signRawWithPrivateKey(bytes, privateKey);
+    } finally {
+      // Wipe the per-call derived private key from memory; the long-lived
+      // seed/entropy can re-derive it on the next call.
+      sodium.memzero(privateKey);
+    }
   }
 
   async sign(
     provider: Provider,
     document: Document,
-    hdPath: number = 0
+    hdPath: HdPathLike = 0,
   ): Promise<{
     signed: Tx;
     signature: TxSignature[];
   }> {
-    const wallet = await useTm2Wallet(document).fromMnemonic(this.getMnemonic(), { accountIndex: hdPath });
-    wallet.connect(provider);
-    return this.signByWallet(wallet, document);
+    return signGnoDocument(provider, document, this, { hdPath });
   }
 
-  private async signByWallet(wallet: Tm2Wallet, document: Document) {
-    const signedTx = await makeSignedTx(wallet, document);
-    return {
-      signed: signedTx,
-      signature: signedTx.signatures
-    };
-  }
-
-  async broadcastTxSync(provider: Provider, signedTx: Tx, hdPath: number = 0) {
-    const wallet = await Tm2Wallet.fromMnemonic(this.getMnemonic(), { accountIndex: hdPath });
+  async broadcastTxSync(provider: Provider, signedTx: Tx, hdPath: HdPathLike = 0) {
+    // Broadcasting an already-signed tx does not use the derived key; only the
+    // provider connection matters. accountIndex is passed for parity but is inert.
+    const wallet = await Tm2Wallet.fromMnemonic(this.getMnemonic(), {
+      accountIndex: getAddressIndex(hdPath),
+    });
     wallet.connect(provider);
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_SYNC);
   }
 
-  async broadcastTxCommit(provider: Provider, signedTx: Tx, hdPath: number = 0) {
-    const wallet = await Tm2Wallet.fromMnemonic(this.getMnemonic(), { accountIndex: hdPath });
+  async broadcastTxCommit(provider: Provider, signedTx: Tx, hdPath: HdPathLike = 0) {
+    const wallet = await Tm2Wallet.fromMnemonic(this.getMnemonic(), {
+      accountIndex: getAddressIndex(hdPath),
+    });
     wallet.connect(provider);
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);
   }
@@ -99,7 +110,7 @@ export class HDWalletKeyring implements Keyring {
     const mnemonicEntropy = await mnemonicToEntropy(englishMnemonic.toString());
     return new HDWalletKeyring({
       mnemonicEntropy: Array.from(mnemonicEntropy),
-      seed: Array.from(seed)
+      seed: Array.from(seed),
     });
   }
 }

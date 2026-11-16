@@ -1,7 +1,6 @@
 import { fonts, webFonts } from '@styles/theme';
 import React, { useCallback, useMemo, useState } from 'react';
 import styled, { css, RuleSet } from 'styled-components';
-
 import { Row, View } from '../base';
 
 interface StyleProps {
@@ -24,9 +23,7 @@ const StyledContainer = styled(Row).withConfig({ shouldForwardProp: forwardConfi
   border: 1px solid ${({ theme }): string => theme.webNeutral._800};
   ${webFonts.body4}
 
-  ${({
-    theme, hover, focus, filled,
-  }): RuleSet | string =>
+  ${({ theme, hover, focus, filled }): RuleSet | string =>
     hover || focus || filled
       ? css`
           border-color: ${theme.webNeutral._600};
@@ -57,7 +54,9 @@ const StyledContainer = styled(Row).withConfig({ shouldForwardProp: forwardConfi
       : ''}
 `;
 
-const StyledTitle = styled(View).withConfig({ shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop) })<StyleProps>`
+const StyledTitle = styled(View).withConfig({
+  shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop),
+})<StyleProps>`
   width: 90px;
   height: 100%;
   background: ${({ theme }): string => theme.webInput._100};
@@ -83,7 +82,9 @@ const StyledTitle = styled(View).withConfig({ shouldForwardProp: (prop): boolean
       : ''}
 `;
 
-const StyledInput = styled.input.withConfig({ shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop) })<StyleProps>`
+const StyledInput = styled.input.withConfig({
+  shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop),
+})<StyleProps>`
   flex: 1;
   width: 100%;
   height: 40px;

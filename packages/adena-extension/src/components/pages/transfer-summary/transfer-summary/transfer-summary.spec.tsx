@@ -1,11 +1,10 @@
+
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
 import { NetworkFeeSettingType } from '@types';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
 import TransferSummary, { TransferSummaryProps } from './transfer-summary';
 
 describe('TransferSummary Component', () => {
@@ -52,6 +51,7 @@ describe('TransferSummary Component', () => {
         denom: 'GNOT',
       },
       toAddress: '',
+      chainName: 'Gno.land',
       networkFee: {
         amount: '0.0048',
         denom: 'GNOT',
@@ -73,12 +73,12 @@ describe('TransferSummary Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TransferSummary {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

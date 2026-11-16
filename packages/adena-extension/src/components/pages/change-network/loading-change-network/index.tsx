@@ -1,13 +1,11 @@
-import { Loading, SkeletonBoxStyle } from '@components/atoms';
-import mixins from '@styles/mixins';
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
 
+import { Loading, SkeletonBoxStyle } from '@components/atoms';
+import mixins from '@styles/mixins';
+
 const Wrapper = styled.div`
-  ${mixins.flex({
-    align: 'flex-start',
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   position: relative;
   width: 100%;
   margin-top: 13px;
@@ -20,7 +18,7 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
   height: 60px;
 `;
 
-const LoadingChangeNetwork = (): ReactElement<any> => {
+const LoadingChangeNetwork = (): ReactElement => {
   return (
     <Wrapper>
       {Array.from({ length: 4 }, (v, i) => (

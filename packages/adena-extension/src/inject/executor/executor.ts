@@ -5,6 +5,14 @@ import {
   WalletResponseStatus,
   WalletResponseType,
 } from '@adena-wallet/sdk';
+import { MsgEndpoint } from '@gnolang/gno-js-client';
+import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
+import { v4 as uuidv4 } from 'uuid';
+
+import {
+  serializeSignDoc,
+  serializeTxBytes,
+} from '@common/utils/cosmos-serialize';
 import {
   validateChainId,
   validateFee,
@@ -12,36 +20,56 @@ import {
   validateMultisigThreshold,
   validateTransactionDocumentFee,
   validateTransactionDocumentMessages,
+  validateSignArbitraryParams,
 } from '@common/validation';
 import {
   validateDoContractRequest,
   validateTransactionMessageOfAddPkg,
   validateTransactionMessageOfBankSend,
+  validateTransactionMessageOfCreateSession,
+  validateTransactionMessageOfEnablePackage,
+  validateTransactionMessageOfRejectPackage,
+  validateTransactionMessageOfRevokeAllSessions,
+  validateTransactionMessageOfRevokeSession,
   validateTransactionMessageOfRun,
   validateTransactionMessageOfVmCall,
 } from '@common/validation/validation-message';
+import {
+  MSG_CREATE_SESSION_ENDPOINT,
+  MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
+  MSG_REVOKE_SESSION_ENDPOINT,
+} from 'adena-module';
 import {
   AddEstablishResponse,
   AddNetworkParams,
   AddNetworkResponse,
   BroadcastMultisigTransactionResponse,
+  BroadcastMode,
   ContractOptions,
+  CosmosResponseExecuteType,
   CreateMultisigAccountParams,
   CreateMultisigAccountResponse,
   CreateMultisigTransactionParams,
   CreateMultisigTransactionResponse,
   DoContractResponse,
+  EnableCosmosResponse,
   GetAccountResponse,
+  GetCosmosKeyResponse,
   GetNetworkResponse,
   MultisigTransactionDocument,
+  SendCosmosTxResponse,
   Signature,
+  SignCosmosAminoResponse,
+  SignArbitraryExecuteType,
+  SignArbitraryParams,
+  SignArbitraryResponse,
+  SignCosmosDirectResponse,
   SignMultisigTransactionResponse,
   SignTxResponse,
   SwitchNetworkResponse,
   TransactionParams,
 } from '@inject/types';
-import { v4 as uuidv4 } from 'uuid';
-
+import type { StdSignDoc } from '@cosmjs/amino';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 
 type Params = { [key in string]: any };
@@ -56,10 +84,7 @@ export class AdenaExecutor {
   private resolver: ((message: WalletResponse<unknown>) => void) | undefined;
 
   private messages: {
-    [key in string]: {
-      request: InjectionMessage;
-      response: InjectionMessage | undefined;
-    };
+    [key in string]: { request: InjectionMessage; response: InjectionMessage | undefined };
   } = {};
 
   private static instance: AdenaExecutor | undefined = new AdenaExecutor();
@@ -79,8 +104,14 @@ export class AdenaExecutor {
     return AdenaExecutor.instance;
   };
 
-  public addEstablish = (name?: string): Promise<AddEstablishResponse> => {
-    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.ADD_ESTABLISH, { name: name ?? 'Unknown' });
+  public addEstablish = (
+    name?: string,
+    chainIds?: string | string[],
+  ): Promise<AddEstablishResponse> => {
+    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.ADD_ESTABLISH, {
+      name: name ?? 'Unknown',
+      chainIds,
+    });
     return this.sendEventMessage<Record<string, never>>(eventMessage);
   };
 
@@ -96,10 +127,7 @@ export class AdenaExecutor {
     const { withNotification, isVisibleResult } = options ?? {};
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.DO_CONTRACT,
-      {
-        ...params,
-        isVisibleResult,
-      },
+      { ...params, isVisibleResult },
       withNotification,
     );
     return this.sendEventMessage(eventMessage);
@@ -139,6 +167,24 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
+  public signArbitrary = (params: SignArbitraryParams): Promise<SignArbitraryResponse> => {
+    if (!validateSignArbitraryParams(params)) {
+      return this.sendEventMessage(
+        InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT),
+      );
+    }
+
+    // Only the validated fields travel onward. Spreading `params` would carry
+    // any extra field a dApp attached into the popup URL, which is the budget
+    // MAX_ARBITRARY_MESSAGE_BYTES exists to protect.
+    return this.sendEventMessage(
+      AdenaExecutor.createSignArbitraryEventMessage(SignArbitraryExecuteType.SIGN_ARBITRARY, {
+        signer: params.signer,
+        data: params.data,
+      }),
+    );
+  };
+
   public createMultisigAccount = (
     params: CreateMultisigAccountParams,
   ): Promise<CreateMultisigAccountResponse> => {
@@ -166,10 +212,7 @@ export class AdenaExecutor {
 
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.CREATE_MULTISIG_TRANSACTION,
-      {
-        ...params,
-        withSaveFile,
-      },
+      { ...params, withSaveFile },
     );
 
     return this.sendEventMessage(eventMessage);
@@ -187,11 +230,7 @@ export class AdenaExecutor {
 
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.SIGN_MULTISIG_TRANSACTION,
-      {
-        multisigDocument,
-        multisigSignatures,
-        withSaveFile,
-      },
+      { multisigDocument, multisigSignatures, withSaveFile },
     );
 
     return this.sendEventMessage(eventMessage);
@@ -210,11 +249,7 @@ export class AdenaExecutor {
     const { withNotification, isVisibleResult } = options ?? {};
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.BROADCAST_MULTISIG_TRANSACTION,
-      {
-        multisigDocument,
-        multisigSignatures,
-        isVisibleResult,
-      },
+      { multisigDocument, multisigSignatures, isVisibleResult },
       withNotification,
     );
 
@@ -222,7 +257,9 @@ export class AdenaExecutor {
   };
 
   public addNetwork = (chain: AddNetworkParams): Promise<AddNetworkResponse> => {
-    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.ADD_NETWORK, { ...chain });
+    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.ADD_NETWORK, {
+      ...chain,
+    });
     return this.sendEventMessage(eventMessage);
   };
 
@@ -232,6 +269,64 @@ export class AdenaExecutor {
       { chainId },
     );
     return this.sendEventMessage(eventMessage);
+  };
+
+  public enableCosmos = (chainIds: string | string[]): Promise<EnableCosmosResponse> => {
+    return this.sendEventMessage(
+      AdenaExecutor.createCosmosEventMessage(CosmosResponseExecuteType.ENABLE_COSMOS, {
+        chainIds,
+      }),
+    );
+  };
+
+  public getCosmosKey = (chainId: string): Promise<GetCosmosKeyResponse> => {
+    return this.sendEventMessage(
+      AdenaExecutor.createCosmosEventMessage(CosmosResponseExecuteType.GET_COSMOS_KEY, {
+        chainId,
+      }),
+    );
+  };
+
+  public signCosmosAmino = (
+    chainId: string,
+    signer: string,
+    signDoc: StdSignDoc,
+  ): Promise<SignCosmosAminoResponse> => {
+    return this.sendEventMessage(
+      AdenaExecutor.createCosmosEventMessage(CosmosResponseExecuteType.SIGN_COSMOS_AMINO, {
+        chainId,
+        signer,
+        signDoc,
+      }),
+    );
+  };
+
+  public signCosmosDirect = (
+    chainId: string,
+    signer: string,
+    signDoc: SignDoc,
+  ): Promise<SignCosmosDirectResponse> => {
+    return this.sendEventMessage(
+      AdenaExecutor.createCosmosEventMessage(CosmosResponseExecuteType.SIGN_COSMOS_DIRECT, {
+        chainId,
+        signer,
+        signDoc: serializeSignDoc(signDoc),
+      }),
+    );
+  };
+
+  public sendCosmosTx = (
+    chainId: string,
+    tx: Uint8Array,
+    mode: BroadcastMode,
+  ): Promise<SendCosmosTxResponse> => {
+    return this.sendEventMessage(
+      AdenaExecutor.createCosmosEventMessage(CosmosResponseExecuteType.SEND_COSMOS_TX, {
+        chainId,
+        tx: serializeTxBytes(tx),
+        mode,
+      }),
+    );
   };
 
   /**
@@ -267,6 +362,31 @@ export class AdenaExecutor {
           break;
         case '/vm.m_run':
           if (!validateTransactionMessageOfRun(messageData)) {
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+          }
+          break;
+        case MsgEndpoint.MSG_ENABLE_PKG:
+          if (!validateTransactionMessageOfEnablePackage(messageData)) {
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+          }
+          break;
+        case MsgEndpoint.MSG_REJECT_PKG:
+          if (!validateTransactionMessageOfRejectPackage(messageData)) {
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+          }
+          break;
+        case MSG_CREATE_SESSION_ENDPOINT:
+          if (!validateTransactionMessageOfCreateSession(messageData)) {
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+          }
+          break;
+        case MSG_REVOKE_SESSION_ENDPOINT:
+          if (!validateTransactionMessageOfRevokeSession(messageData)) {
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+          }
+          break;
+        case MSG_REVOKE_ALL_SESSIONS_ENDPOINT:
+          if (!validateTransactionMessageOfRevokeAllSessions(messageData)) {
             return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
           }
           break;
@@ -339,31 +459,45 @@ export class AdenaExecutor {
     multisigDocument: MultisigTransactionDocument,
   ): InjectionMessage | undefined => {
     if (!multisigDocument) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'Multisig document is missing.' });
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: 'Multisig document is missing.',
+      });
     }
 
     if (!multisigDocument.tx) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'Transaction (tx) is missing in multisig document.' });
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: 'Transaction (tx) is missing in multisig document.',
+      });
     }
 
     if (!validateChainId(multisigDocument.chainId)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'Invalid or unsupported chainId.' });
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: 'Invalid or unsupported chainId.',
+      });
     }
 
     if (!multisigDocument.accountNumber || typeof multisigDocument.accountNumber !== 'string') {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'accountNumber is missing or not a string.' });
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: 'accountNumber is missing or not a string.',
+      });
     }
 
     if (!multisigDocument.sequence || typeof multisigDocument.sequence !== 'string') {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'sequence is missing or not a string.' });
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: 'sequence is missing or not a string.',
+      });
     }
 
     if (!validateTransactionDocumentFee(multisigDocument.tx.fee)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'Invalid transaction fee format.' });
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: 'Invalid transaction fee format.',
+      });
     }
 
     if (!validateTransactionDocumentMessages(multisigDocument.tx.msg)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'Invalid or missing transaction messages (msgs).' });
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: 'Invalid or missing transaction messages (msgs).',
+      });
     }
 
     return this.validateMessages(multisigDocument.tx.msg);
@@ -390,8 +524,7 @@ export class AdenaExecutor {
 
     try {
       window.postMessage(this.eventMessage, window.location.origin);
-    }
-    catch (error) {
+    } catch (error) {
       console.warn(error);
     }
     this.messages[this.eventKey] = {
@@ -425,6 +558,42 @@ export class AdenaExecutor {
     return InjectionMessageInstance.request(type, params, undefined, withNotification);
   };
 
+  // TODO: fold this into `createEventMessage` once `@adena-wallet/sdk` is
+  // updated to add Cosmos entries to `WalletMessageInfo`. Until then the SDK
+  // lookup table has no row for these request types, so
+  // `InjectionMessageInstance.request` would throw on destructure, so we build
+  // the `InjectionMessage` literal directly as a temporary workaround.
+  // Same stand-in as `createCosmosEventMessage` below: the SDK's
+  // `WalletMessageInfo` has no SIGN_ARBITRARY row yet, so
+  // `InjectionMessageInstance.request` would throw on destructure.
+  private static createSignArbitraryEventMessage = (
+    type: SignArbitraryExecuteType,
+    params: Params,
+  ): InjectionMessage => {
+    return {
+      code: 0,
+      type: type as unknown as WalletResponseType,
+      status: 'request',
+      message: '',
+      data: params,
+      withNotification: true,
+    };
+  };
+
+  private static createCosmosEventMessage = (
+    type: CosmosResponseExecuteType,
+    params: Params,
+  ): InjectionMessage => {
+    return {
+      code: 0,
+      type: type as unknown as WalletResponseType,
+      status: 'request',
+      message: '',
+      data: params,
+      withNotification: true,
+    };
+  };
+
   private messageHandler = (event: MessageEvent<InjectionMessage>): void => {
     if (event.origin !== window.location.origin) {
       console.warn(`Untrusted origin: ${event.origin}`);
@@ -433,34 +602,32 @@ export class AdenaExecutor {
 
     const eventData = event.data;
     if (eventData.status) {
-      const {
-        key, status, data, code, message, type,
-      } = eventData;
+      const { key, status, data, code, message, type } = eventData;
       if (key === this.eventKey) {
         switch (eventData.status) {
           case 'response':
             break;
           case 'success':
             this.unlisten();
-            this.resolver
-            && this.resolver({
-              status: status as WalletResponseStatus,
-              data,
-              code,
-              message,
-              type,
-            });
+            this.resolver &&
+              this.resolver({
+                status: status as WalletResponseStatus,
+                data,
+                code,
+                message,
+                type,
+              });
             break;
           case 'failure':
             this.unlisten();
-            this.resolver
-            && this.resolver({
-              status: status as WalletResponseStatus,
-              data,
-              code,
-              message,
-              type,
-            });
+            this.resolver &&
+              this.resolver({
+                status: status as WalletResponseStatus,
+                data,
+                code,
+                message,
+                type,
+              });
             break;
           default:
             break;

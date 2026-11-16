@@ -1,11 +1,12 @@
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import React, { CSSProperties, type JSX } from 'react';
+import React, { CSSProperties } from 'react';
+import type { JSX } from 'react';
 import styled, { css } from 'styled-components';
 
 type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
-type XOR<T, U>
-  = T | U extends Record<string, unknown> ? (Without<T, U> & U) | (Without<U, T> & T) : T | U;
+type XOR<T, U> =
+  T | U extends Record<string, unknown> ? (Without<T, U> & U) | (Without<U, T> & T) : T | U;
 
 type ButtonHierarchy = 'normal' | 'primary' | 'ghost' | 'dark' | 'danger' | 'custom';
 
@@ -108,7 +109,7 @@ export const Button = ({
 };
 
 const ButtonWrapper = styled.button.withConfig({
-  shouldForwardProp: prop =>
+  shouldForwardProp: (prop) =>
     !['width', 'height', 'hierarchy', 'margin', 'radius', 'fullWidth', 'bgColor'].includes(prop),
 })<ButtonProps>`
   ${mixins.flex({ direction: 'row' })};

@@ -1,6 +1,11 @@
 import { TokenModel } from './';
 
-export interface TokenBalanceType extends TokenModel { amount: Amount }
+export interface TokenBalanceType extends TokenModel {
+  amount: Amount;
+  // Present on 'gno-native' / 'cosmos-native' rows — the raw on-chain denom
+  // (e.g. ugnot, uatone, uphoton) used to construct transactions.
+  denom?: string;
+}
 
 export interface Amount {
   value: string;
@@ -24,10 +29,33 @@ export interface NetworkMetainfo {
   networkName: string;
   addressPrefix: string;
   rpcUrl: string;
-  indexerUrl: string;
-  gnoUrl: string;
-  apiUrl: string;
-  linkUrl: string;
+  /**
+   * Optional secondary RPC endpoint, managed in `chains.json`. When a request
+   * against `rpcUrl` fails at the transport level the provider switches here
+   * and keeps using it for the rest of its lifetime.
+   */
+  fallbackRPCUrl?: string;
+  indexerUrl?: string;
+  gnoUrl?: string;
+  apiUrl?: string;
+  linkUrl?: string;
+  deleted?: boolean;
+}
+
+export interface AtomoneNetworkMetainfo {
+  id: string;
+  default: boolean;
+  isMainnet: boolean;
+  chainGroup: 'atomone';
+  chainType: 'cosmos';
+  chainId: string;
+  chainName: string;
+  networkId: string;
+  networkName: string;
+  addressPrefix: string;
+  rpcUrl: string;
+  restUrl: string;
+  linkUrl?: string;
   deleted?: boolean;
 }
 

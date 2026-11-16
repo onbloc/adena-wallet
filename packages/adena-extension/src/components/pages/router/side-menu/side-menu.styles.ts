@@ -3,19 +3,13 @@ import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const SideMenuWrapper = styled.div`
-  ${mixins.flex({
-    align: 'normal',
-    justify: 'normal',
-  })};
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: 100vh;
   background-color: ${getTheme('neutral', '_8')};
 
   .header-wrapper {
-    ${mixins.flex({
-      direction: 'row',
-      justify: 'space-between',
-    })};
+    ${mixins.flex({ direction: 'row', justify: 'space-between' })};
     height: 50px;
     flex-shrink: 0;
     padding: 0 20px;
@@ -94,10 +88,7 @@ export const SideMenuWrapper = styled.div`
   }
 
   .bottom-wrapper {
-    ${mixins.flex({
-      align: 'normal',
-      justify: 'normal',
-    })};
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     flex-shrink: 0;
     height: fit-content;
 

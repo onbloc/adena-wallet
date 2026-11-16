@@ -1,14 +1,7 @@
-import { waitForRun } from '@common/utils/timeout-utils';
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useWallet } from '@hooks/use-wallet';
-import useIndicatorStep, { UseIndicatorStepReturn } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
-import { ImportWalletType, RoutePath } from '@types';
 import {
   Account,
   AdenaWallet,
+  arrayContentEquals,
   HDWalletKeyring,
   isAirgapAccount,
   isHDWalletKeyring,
@@ -21,6 +14,16 @@ import {
 } from 'adena-module';
 import { useCallback, useMemo, useState } from 'react';
 
+import { waitForRun } from '@common/utils/timeout-utils';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useWalletContext } from '@hooks/use-context';
+import { useChain } from '@hooks/use-chain';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useWallet } from '@hooks/use-wallet';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { ImportWalletType, RoutePath } from '@types';
 import useQuestionnaire from './use-questionnaire';
 
 export type UseAccountImportReturn = {
@@ -30,6 +33,10 @@ export type UseAccountImportReturn = {
   storedAccounts: Account[];
   loadedAccounts: Account[];
   loadAccounts: () => Promise<void>;
+  deriveAddressByPath: (account: number, change: number, addressIndex: number) => Promise<string>;
+  submitSelectedAccounts: (
+    derivationPath: { account: number; change: number; addressIndex: number } | null,
+  ) => Promise<void>;
   selectedAddresses: string[];
   selectAccount: (address: string) => void;
   errMsg: string;
@@ -41,16 +48,16 @@ export type UseAccountImportReturn = {
   setStep: React.Dispatch<React.SetStateAction<AccountImportStateType>>;
   accountImportStepNo:
     | {
-      INIT: number;
-      SET_MNEMONIC: number;
-      LOADING: number;
-    }
+        INIT: number;
+        SET_MNEMONIC: number;
+        LOADING: number;
+      }
     | {
-      INIT: number;
-      SET_MNEMONIC: number;
-      LOADING: number;
-      SELECT_ACCOUNT: number;
-    };
+        INIT: number;
+        SET_MNEMONIC: number;
+        LOADING: number;
+        SELECT_ACCOUNT: number;
+      };
   stepLength: number;
   onClickGoBack: () => void;
   onClickNext: () => void;
@@ -64,6 +71,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
   const { updateWallet } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
   const { hasHDWallet } = useWallet();
+  const chain = useChain();
 
   const [inputType, setInputType] = useState<ImportWalletType>('12seeds');
   const [step, setStep] = useState<AccountImportStateType>(
@@ -112,10 +120,10 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
 
   const selectAccount = (selectedAddress: string): void => {
     if (selectedAddresses.includes(selectedAddress)) {
-      setSelectedAddresses(prev => prev.filter(address => address !== selectedAddress));
+      setSelectedAddresses((prev) => prev.filter((address) => address !== selectedAddress));
       return;
     }
-    setSelectedAddresses(prev => [...prev, selectedAddress]);
+    setSelectedAddresses((prev) => [...prev, selectedAddress]);
   };
 
   const makePrivateKeyAccountAndKeyring = useCallback(async (): Promise<{
@@ -134,20 +142,17 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     }
 
     const account = await SingleAccount.createBy(keyring, wallet.nextAccountName);
-    const address = await account.getAddress(defaultAddressPrefix);
-    const checkAccounts = wallet.accounts.filter(account => !isAirgapAccount(account));
+    const address = await account.getAddress(chain.bech32Prefix);
+    const checkAccounts = wallet.accounts.filter((account) => !isAirgapAccount(account));
     const storedAddresses = await Promise.all(
-      checkAccounts.map(account => account.getAddress(defaultAddressPrefix)),
+      checkAccounts.map((account) => account.getAddress(chain.bech32Prefix)),
     );
     const existAddress = storedAddresses.includes(address);
     if (existAddress) {
       setErrMsg('Private key already registered');
       return null;
     }
-    return {
-      account,
-      keyring,
-    };
+    return { account, keyring };
   }, [wallet, inputValue]);
 
   const onClickGoBack = useCallback(() => {
@@ -171,12 +176,14 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
       setErrMsg('');
       if (ableToSkipQuestionnaire) {
         setStep('SET_MNEMONIC');
+      } else {
+        navigate(RoutePath.WebQuestionnaire, {
+          state: {
+            callbackPath: RoutePath.WebAccountImport,
+          },
+        });
       }
-      else {
-        navigate(RoutePath.WebQuestionnaire, { state: { callbackPath: RoutePath.WebAccountImport } });
-      }
-    }
-    else if (step === 'SET_MNEMONIC') {
+    } else if (step === 'SET_MNEMONIC') {
       if (inputType === 'pKey') {
         const result = await makePrivateKeyAccountAndKeyring();
         if (!result) {
@@ -191,8 +198,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
           setInputValue('');
         }).then(() => navigate(RoutePath.WebAccountAddedComplete));
         return;
-      }
-      else {
+      } else {
         const keyring = await HDWalletKeyring.fromMnemonic(inputValue).catch(() => null);
         if (!keyring) {
           setErrMsg('Invalid seed phrase');
@@ -208,28 +214,16 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
         });
       }
     }
-    else if (step === 'SELECT_ACCOUNT') {
-      let resultWallet = wallet.clone();
-
-      const entropy = mnemonicToEntropy(inputValue);
-
-      const storedKeyring = resultWallet.keyrings
-        .filter(isHDWalletKeyring)
-        .find(keyring => keyring.mnemonicEntropy === entropy);
-      const keyring = storedKeyring || (await HDWalletKeyring.fromMnemonic(inputValue));
-
-      for (const account of loadedAccounts) {
-        const address = await account.getAddress('g');
-        if (selectedAddresses.includes(address)) {
-          resultWallet = await addAccountWith(resultWallet, keyring, account);
-        }
-      }
-
-      await updateWallet(resultWallet);
-      setInputValue('');
-      navigate(RoutePath.WebAccountAddedComplete);
-    }
-  }, [step, wallet, inputType, inputValue, selectedAddresses, loadedAccounts, ableToSkipQuestionnaire, makePrivateKeyAccountAndKeyring]);
+  }, [
+    step,
+    wallet,
+    inputType,
+    inputValue,
+    selectedAddresses,
+    loadedAccounts,
+    ableToSkipQuestionnaire,
+    makePrivateKeyAccountAndKeyring,
+  ]);
 
   const loadAccounts = async (): Promise<void> => {
     if (!generatedKeyring) {
@@ -240,14 +234,14 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
 
   const loadAccountsByKeyring = async (keyring: Keyring): Promise<void> => {
     setIsLoadingAccounts(true);
-    const filteredAccounts = loadedAccounts.filter(account => account.keyringId === keyring.id);
+    const filteredAccounts = loadedAccounts.filter((account) => account.keyringId === keyring.id);
     await waitForRun(async () => {
       const startIndex = filteredAccounts.length;
       const range = Array.from({ length: 5 }, (_, index) => index + startIndex);
 
       const accounts: Account[] = [];
-      for (const hdPath of range) {
-        const account = await SeedAccount.createBy(keyring, 'Account', hdPath, hdPath);
+      for (const addressIndex of range) {
+        const account = await SeedAccount.createBy(keyring, 'Account', addressIndex, addressIndex);
         accounts.push(account);
       }
 
@@ -257,6 +251,25 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
       setIsLoadingAccounts(false);
       setLoadedAccounts(currentAccounts);
     });
+  };
+
+  // Derives the address for an exact path, used for the "Address" preview in the
+  // Set Derivation Path editor.
+  const deriveAddressByPath = async (
+    account: number,
+    change: number,
+    addressIndex: number,
+  ): Promise<string> => {
+    if (!generatedKeyring || !isHDWalletKeyring(generatedKeyring)) {
+      return '';
+    }
+    const seedAccount = await SeedAccount.createBy(
+      generatedKeyring,
+      'Account',
+      { account, change, addressIndex },
+      addressIndex,
+    );
+    return seedAccount.getAddress(chain.bech32Prefix);
   };
 
   const addAccountWith = async (
@@ -276,13 +289,80 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     clone.addAccount(account);
     clone.addKeyring(keyring);
 
-    const storedAccount = clone.accounts.find(storedAccount => storedAccount.id === account.id);
+    const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
 
     if (storedAccount) {
       await changeCurrentAccount(storedAccount);
     }
 
     return clone;
+  };
+
+  // Adds the checkbox-selected accounts plus the optional derivation-path account,
+  // deduplicated by address and ordered by (account', change, addressIndex).
+  const submitSelectedAccounts = async (
+    derivationPath: { account: number; change: number; addressIndex: number } | null,
+  ): Promise<void> => {
+    const entropy = mnemonicToEntropy(inputValue);
+    let resultWallet = wallet.clone();
+    const storedKeyring = resultWallet.keyrings
+      .filter(isHDWalletKeyring)
+      .find((keyring) => arrayContentEquals(keyring.mnemonicEntropy, entropy));
+    const keyring = storedKeyring || (await HDWalletKeyring.fromMnemonic(inputValue));
+
+    const candidates: SeedAccount[] = [];
+    for (const account of loadedAccounts) {
+      if (!(account instanceof SeedAccount)) {
+        continue;
+      }
+      const address = await account.getAddress(chain.bech32Prefix);
+      if (selectedAddresses.includes(address)) {
+        candidates.push(account);
+      }
+    }
+    if (derivationPath) {
+      candidates.push(
+        await SeedAccount.createBy(keyring, 'Account', derivationPath, derivationPath.addressIndex),
+      );
+    }
+
+    // Addresses already registered — never add a duplicate even if a stale
+    // selection or path slips through the UI guard.
+    const storedAddresses = await Promise.all(
+      wallet.accounts.map((account) => account.getAddress(chain.bech32Prefix)),
+    );
+
+    const withAddress = await Promise.all(
+      candidates.map(async (account) => ({
+        account,
+        address: await account.getAddress(chain.bech32Prefix),
+      })),
+    );
+    withAddress.sort(
+      (a, b) =>
+        a.account.accountIndex - b.account.accountIndex ||
+        a.account.changeIndex - b.account.changeIndex ||
+        a.account.hdPath - b.account.hdPath,
+    );
+
+    const seen = new Set<string>(storedAddresses);
+    let addedCount = 0;
+    for (const { account, address } of withAddress) {
+      if (seen.has(address)) {
+        continue;
+      }
+      seen.add(address);
+      resultWallet = await addAccountWith(resultWallet, keyring, account);
+      addedCount += 1;
+    }
+
+    if (addedCount === 0) {
+      return;
+    }
+
+    await updateWallet(resultWallet);
+    setInputValue('');
+    navigate(RoutePath.WebAccountAddedComplete);
   };
 
   return {
@@ -303,6 +383,8 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     selectAccount,
     loadedAccounts,
     loadAccounts,
+    deriveAddressByPath,
+    submitSelectedAccounts,
     onClickGoBack,
     onClickNext,
   };

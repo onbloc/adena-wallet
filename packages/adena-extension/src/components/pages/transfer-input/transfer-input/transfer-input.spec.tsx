@@ -1,11 +1,9 @@
+import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
-import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
 import TransferInput, { TransferInputProps } from './transfer-input';
 
 describe('TransferInput Component', () => {
@@ -59,6 +57,21 @@ describe('TransferInput Component', () => {
           return;
         },
       },
+      transferMode: 'send',
+      onChangeMode: () => {
+        return;
+      },
+      ibcChainInput: {
+        chainGroup: 'atomone',
+        chainName: 'AtomOne',
+        chainOptions: [],
+        onChangeChain: () => {
+          return;
+        },
+      },
+      onClickBridgeGuide: () => {
+        return;
+      },
       isNext: true,
       hasBackButton: true,
       onClickBack: () => {
@@ -73,12 +86,12 @@ describe('TransferInput Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TransferInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

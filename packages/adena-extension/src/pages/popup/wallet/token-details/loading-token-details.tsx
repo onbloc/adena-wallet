@@ -1,13 +1,11 @@
-import { Loading, SkeletonBoxStyle } from '@components/atoms';
-import mixins from '@styles/mixins';
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
 
+import { Loading, SkeletonBoxStyle } from '@components/atoms';
+import mixins from '@styles/mixins';
+
 const Wrapper = styled.div`
-  ${mixins.flex({
-    align: 'flex-start',
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   position: relative;
   width: 100%;
 `;
@@ -25,15 +23,12 @@ const ListBoxWrap = styled.div`
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'flex-start',
-  })}
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })}
   width: 100%;
   height: 60px;
 `;
 
-const LoadingTokenDetails = (): ReactElement<any> => {
+const LoadingTokenDetails = (): ReactElement => {
   return (
     <Wrapper>
       <Loading.Round width='91px' height='14px' radius='24px' />

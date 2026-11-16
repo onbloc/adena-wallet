@@ -1,7 +1,6 @@
 import IconCopy from '@assets/icon-copy';
 import IconCopyCheck from '@assets/icon-copy-check';
 import React, { useCallback, useEffect, useState } from 'react';
-
 import { CopyButtonWrapper } from './copy-icon-button.styles';
 
 export interface CopyIconButtonProps {

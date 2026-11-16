@@ -1,6 +1,7 @@
+import styled from 'styled-components';
+
 import { View } from '@components/atoms';
 import { fonts, getTheme } from '@styles/theme';
-import styled from 'styled-components';
 
 export const AdditionalTokenPathInputWrapper = styled(View)`
   width: 100%;

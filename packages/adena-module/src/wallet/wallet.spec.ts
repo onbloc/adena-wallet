@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { MockLedgerConnector } from './../test-utils/mock-ledgerconnector';
+import { SessionAccount } from './account/session-account';
+import { SessionKeyring } from './keyring/session-keyring';
+import { AdenaWallet } from './wallet';
+import { generateKdfSalt } from './wallet-crypto-util';
 
-import { MockLedgerConnector } from './../test-utils/mock-ledgerconnector.js';
-import { AdenaWallet } from './wallet.js';
-
-const mnemonic
-  = 'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
+const mnemonic =
+  'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
 
 describe('create wallet by mnemonic', () => {
   it('create success', async () => {
@@ -20,7 +21,7 @@ describe('create wallet by mnemonic', () => {
     expect(wallet.accounts.length).toBe(1);
   });
 
-  it('initilaize account\' address is corret', async () => {
+  it("initilaize account' address is corret", async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
     const account = wallet.accounts[0];
     const address = await account.getAddress('g');
@@ -44,7 +45,7 @@ describe('create wallet by web3 auth', () => {
     expect(wallet.accounts.length).toBe(1);
   });
 
-  it('initilaize account\' address is corret', async () => {
+  it("initilaize account' address is corret", async () => {
     const privateKeyHexStr = 'ea97b9fddb7e6bf6867090a7a819657047949fbb9466d617f940538efd888605';
     const wallet = await AdenaWallet.createByWeb3Auth(privateKeyHexStr);
     const account = wallet.accounts[0];
@@ -61,10 +62,7 @@ describe('create wallet by ledger', () => {
       const wallet = await AdenaWallet.createByLedger(ledgerConnector);
 
       expect(wallet.currentKeyring.type).toBe('LEDGER');
-    }
-    catch (e) {
-      console.error(e);
-    }
+    } catch (e) {}
   });
 
   it('account initialize success', async () => {
@@ -73,43 +71,195 @@ describe('create wallet by ledger', () => {
       const wallet = await AdenaWallet.createByLedger(ledgerConnector);
 
       expect(wallet.accounts.length).toBe(1);
-    }
-    catch (e) {
-      console.error(e);
-    }
+    } catch (e) {}
   });
 });
 
 describe('serialize', () => {
-  // SALT_KEY: TESTTESTTESTTEST
-  // PASSWORD: PASSWORD
+  let salt: Uint8Array;
+
+  beforeAll(async () => {
+    salt = await generateKdfSalt();
+  });
+
   it('serialize success', async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
-    const serialized = await wallet.serialize('PASSWORD');
+    const serialized = await wallet.serialize('PASSWORD', salt);
 
     expect(serialized).toBeTruthy();
+    const parsed = JSON.parse(serialized);
+    expect(parsed.ciphertext).toBeTruthy();
+    expect(parsed.nonce).toBeTruthy();
   });
 
-  it('deserialize success', async () => {
-    const serialized
-      = 'U2FsdGVkX1/E9wVYaJL0UGOKTC0nxbdu1Jd0qdCqsjErlbEw4ruhRw+9Bxx1rVEMV20Gv86YRRprVZGTUHmuwU5gKcX/3DE0j9cvUn781WMff81DZcczqQMj1C0hhknmz/D/t34G7UWUeQyMQrSr7k6gyNo/KVyNVkAAlNuWCIkZGkzKkH+wPJdvliFLgxUaVbTuBKcO6fuZ1vvB2hbUZ0vE10/dIF3H5BTRYt6I64IbHNXEoQiz0ZzU+LItNMFbGELYLqi9xJKPaJY6T1fejibc6qxq0hhHvdSXT28rOciavvHGKi5lYpWWfQVl31WxmNZPmE8Hu21qF0P9rmY+x+t0jCtTOSmg+2r3WJOmHorOWChxVoCrob6qyGEZS7WSJ/nKo04IuroxO7xpnWXiyQvxv4TcsDSTtu298MRN4USViRodchJCe7mvvXO9yxEbXf3YcOQ7MF/tjyIXHd3cm4mcchbA4jQ2JPvlbb5+6kejThYqkHna3K8h1X2Pi9LFwdgDXZuajW2JtINPEpDxKx/yuMjrJaqtubzi2FIRTtC9NJauf5XizWDAN22m7rMbuV6KRNwwkleEB67CjdlOnJx7f0KxdopPT/XRlXivimUTf8nABAc7egWcaUmbvhtTnxOs9RYjIfq9Mid2AGk4Ehpsq8mLujOPVBLDdS5o+BUt4xTRV1/+ZIJKa/3m5bhWZWU2/pUMhXnxg8YKg6lba2cFwHu15KvE5+gjofNIgnXkwNCMRtEpaCgODBnz25RWcq+ktpiQI6nn6e9jIc9jPNtTX5mxuWC5G7yx7oSsGR4fbKd0xJZaZrn+I+1wyR39L7FFszWXOyCvyDDq0FxH7M0PiAVZbO+440XtRTEvblwEeJWlrR6Jze8XPjjfy/ehwYXNHfOoocP3SO/NYR7AuPxskDVoIdW9ZYu+FT4tL3yK8ew43MJqKYBWL483aUSEF9IofQr+9qOFSimWxCHzPmTRUvkf4gu1pHUoNU0o+oKN7CYw4UMJ1G0crXMBPwCKPWIgD0NGed2vJKjdYgAzApazXmc3s5DH2Jn2rO6fsU8c7egEm6CzUYO6rg2Eq9xvC6sscgbbpP3rEhTVCwc9ESd6p0htM+oq7I8AfNDBH8HUrLrkht4WoiHAZJZjo27FV+EWVcz+TtH6BoZ6jPbqB+zkeUbGFEcNuLK6IRvAAZEoCPDGNJSgJZLf7ULxMTAr4k9aJwh827gjEp9tw586rKAGC//AYG1FzyLVupvA7kQ=';
-    const wallet = await AdenaWallet.deserialize(serialized, 'PASSWORD');
+  it('serialize then deserialize round-trip success', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const serialized = await wallet.serialize('PASSWORD', salt);
+    const deserialized = await AdenaWallet.deserialize(serialized, 'PASSWORD', salt);
 
-    expect(wallet).toBeTruthy();
-    expect(wallet.accounts.length).toBe(1);
+    expect(deserialized).toBeTruthy();
+    expect(deserialized.accounts.length).toBe(1);
+    expect(deserialized.getMnemonic()).toBe(mnemonic);
   });
 
-  it('deserialize invalid password', async () => {
-    const serialized
-      = 'U2FsdGVkX1/1NOyr0ePUNNNzXcR0lN4p5nHveepGqc0048xBRarEAHuUOCMh41qXmMxMZMTnNq0xrV3zd5COb2aa2ETbzW57rHcwTdVU11kvbkcFuKb8Vqghv0fGauy+/BxetqL+8VzqTAL8u5DQg29N0HUtSGPc5cFGBPDJ/TZBiDh43/fYi0mR75cG397eVxOMKJcKbWf6jNke9E2xp9QOlLAf6iZeqRitLlT20P7qw2UycoOmmg6Lfj7Z1o5xyyHe2rvt2BYQkC8ny3C2j7stFNRXcB0B8EZyQRwECkvRSmSBmnwX7PjHMQoqVSi/HxG/oLZNFhUcwHxFWpKF24So0iv+nkiLU4LEwjOZrbgpv8CFI1KXAGf442iOLvO+j5e5sRyCJqt53+U219UF1dbCtT7pr7WyeCfsAR6Eb3qoejUVR92m+PAfi/JWaYm2V7fDKflpnRVTzo7Eqn3+aQdUHZqjFXLo6k2sTw8hdZULA017sAe4WffOHL8XfRmi1m4SJUfBw3QrHNvdGYHmLX7rVMPDDGKMfbhk5W/H+e/7UX3Cz8rbS5mYcJNwOXNCgX6YYAxljdGR7HzRPKFIzBgOEOr4R3h7wibiq9hHrPKm0mDJYRkscRVQFvy78ko91KcE2NDkzyWwwXA7WAiWtlg3m0FlZxm/4DzmOVz5t7Kw2ln36W+xnT3qCbq37j/xii4PQDPCPuurMCa122BYOHYeuC/6Jd0l1GBuo5Vk2GQ4vNUq9YG55kCeI5cVznwLjEMBYDtlBb54uwxJgpBGHYYK1CQW+aVEl8AJihMrNuEesjznTSTNj9ZWXuVwnXIbRo9UjaEydlcfXpsew0WMFC8J2Brl08rrnX6N9wPWZ1V3ZO+ccGN5X3MsFIOADuNzYtyZdXrpeJxUChsiRKXIihu3qyjJp4OkaIqYSi/WoRpSL6CzmvhzPStRwU8yxIEZE8dnoUJroyQDrQRUhtYqB+PobWL7rjenwpAtCsUfu220N4XfuM/GGwkpg8jiepvToYWPzy9vJXBT9WZigsce6EPun2RieGRvq7FoCBExJnUPqWzFr3yew7ThwxxWcgtaX25Ej9ChFRl3YtrXuFg+d9vvzlA4OZcjoowT3BSVHfQJcJEL/f97fu24aIa2LKM6aNKcTsU/3YTYtxupLoK1v+xwLaT3R7rCMXyw+58u3grOweFEWtRjpmcIzvVDR/UZ';
-    let wallet;
-    try {
-      wallet = await AdenaWallet.deserialize(serialized, 'INVALID_PASSWORD');
-    }
-    catch (e) {
-      console.error(e);
-    }
+  it('deserialize with invalid password throws', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const serialized = await wallet.serialize('PASSWORD', salt);
 
-    expect(wallet).toBeFalsy();
+    await expect(
+      AdenaWallet.deserialize(serialized, 'INVALID_PASSWORD', salt),
+    ).rejects.toThrow();
+  });
+
+  it('deserialize with different salt throws', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const serialized = await wallet.serialize('PASSWORD', salt);
+    const differentSalt = await generateKdfSalt();
+
+    await expect(
+      AdenaWallet.deserialize(serialized, 'PASSWORD', differentSalt),
+    ).rejects.toThrow();
+  });
+});
+
+describe('toJSON / fromJSON', () => {
+  it('round-trip preserves wallet data', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const json = wallet.toJSON();
+    const restored = AdenaWallet.fromJSON(json);
+
+    expect(restored.accounts.length).toBe(1);
+    expect(restored.getMnemonic()).toBe(mnemonic);
+  });
+
+  it('toJSON produces valid JSON with wallet fields', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const json = wallet.toJSON();
+    const parsed = JSON.parse(json);
+
+    expect(parsed).toHaveProperty('accounts');
+    expect(parsed).toHaveProperty('keyrings');
+    expect(parsed).toHaveProperty('currentAccountId');
+  });
+
+  it('toJSON is not encrypted (no ciphertext/nonce)', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const json = wallet.toJSON();
+    const parsed = JSON.parse(json);
+
+    expect(parsed).not.toHaveProperty('ciphertext');
+    expect(parsed).not.toHaveProperty('nonce');
+  });
+
+  it('fromJSON with invalid JSON throws', () => {
+    expect(() => AdenaWallet.fromJSON('invalid')).toThrow();
+  });
+});
+
+describe('nextSessionAccountName', () => {
+  const baseSessionConfig = {
+    masterAddress: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+    chainId: 'test-13',
+    status: 'ACTIVE' as const,
+    expiresAt: 1_900_000_000,
+    allowPaths: ['vm/exec:gno.land/r/demo/foo'],
+    spendLimit: '1000000ugnot',
+    spendPeriod: 86_400,
+  };
+
+  it('returns Session 1 when no session accounts exist', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+
+    expect(wallet.nextSessionAccountName).toBe('Session 1');
+  });
+
+  // Mirrors the production import/create flow, which assigns each session a
+  // numeric index (lastSessionAccountIndex + 1) before adding it.
+  const addSession = async (wallet: AdenaWallet, name: string): Promise<SessionAccount> => {
+    const keyring = await SessionKeyring.generate(baseSessionConfig.masterAddress);
+    const session = SessionAccount.createBy(keyring, name, baseSessionConfig);
+    session.index = wallet.lastSessionAccountIndex + 1;
+    wallet.addKeyring(keyring);
+    wallet.addAccount(session);
+    return session;
+  };
+
+  it('uses the highest existing Session number plus one', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    await addSession(wallet, 'Session 1');
+    await addSession(wallet, 'Session 2');
+
+    expect(wallet.nextSessionAccountName).toBe('Session 3');
+  });
+
+  it('keeps the counter stable when a session is renamed', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const session = await addSession(wallet, 'Session 1');
+
+    // Renaming must not free the index or the next name would collide with it.
+    session.name = 'My Custom Session';
+
+    expect(wallet.nextSessionAccountName).toBe('Session 2');
+  });
+
+  it('does not reuse a number after a session is deleted', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    await addSession(wallet, 'Session 1');
+    const session2 = await addSession(wallet, 'Session 2');
+    await addSession(wallet, 'Session 3');
+
+    wallet.removeAccount(session2);
+
+    expect(wallet.nextSessionAccountName).toBe('Session 4');
+  });
+
+  it('does not count session accounts toward lastAccountIndex', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const beforeIndex = wallet.lastAccountIndex;
+
+    const keyring = await SessionKeyring.generate(baseSessionConfig.masterAddress);
+    const session = SessionAccount.createBy(keyring, 'Session 1', baseSessionConfig);
+    wallet.addKeyring(keyring);
+    wallet.addAccount(session);
+
+    expect(wallet.lastAccountIndex).toBe(beforeIndex);
+  });
+
+  it('exports the current session account private key', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const keyring = await SessionKeyring.generate(baseSessionConfig.masterAddress);
+    const session = SessionAccount.createBy(keyring, 'Session 1', baseSessionConfig);
+    wallet.addKeyring(keyring);
+    wallet.addAccount(session);
+    wallet.currentAccountId = session.id;
+
+    await expect(wallet.getPrivateKeyStr()).resolves.toBe(
+      Buffer.from(keyring.privateKey).toString('hex'),
+    );
+  });
+});
+
+describe('destroy', () => {
+  it('clears keyrings and accounts after destroy', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    expect(wallet.keyrings.length).toBeGreaterThan(0);
+    expect(wallet.accounts.length).toBeGreaterThan(0);
+
+    wallet.destroy();
+
+    expect(wallet.keyrings.length).toBe(0);
+    expect(wallet.accounts.length).toBe(0);
+  });
+
+  it('keyring seed is zeroed after destroy', async () => {
+    const wallet = await AdenaWallet.createByMnemonic(mnemonic);
+    const keyring = wallet.keyrings[0] as any;
+    const seedBefore = new Uint8Array(keyring.seed);
+
+    wallet.destroy();
+
+    // Original buffer should be zeroed
+    expect(seedBefore.every((b: number) => b === 0)).toBe(false);
+    expect(keyring.seed.every((b: number) => b === 0)).toBe(true);
   });
 });

@@ -5,13 +5,7 @@ export const createMessageOfVmCreateBoard = (info: {
   boardName: string;
 }): {
   type: string;
-  value: {
-    caller: string;
-    send: string;
-    pkg_path: string;
-    func: string;
-    args: string[];
-  };
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
 } => {
   return createMessageOfVmCall({
     caller: info.address,
@@ -32,20 +26,20 @@ export const createMessageOfVmCreateRepost = (info: {
   body: string;
 }): {
   type: string;
-  value: {
-    caller: string;
-    send: string;
-    pkg_path: string;
-    func: string;
-    args: string[];
-  };
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
 } => {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',
     max_deposit: '',
     func: 'CreateRepost',
-    args: [`${info.boardId}`, `${info.postId}`, info.title, info.body, `${`${info.destinationBoardId}`}`],
+    args: [
+      `${info.boardId}`,
+      `${info.postId}`,
+      info.title,
+      info.body,
+      `${`${info.destinationBoardId}`}`,
+    ],
     send: '',
   });
 };
@@ -57,13 +51,7 @@ export const createMessageOfVmCreateThread = (info: {
   body: string;
 }): {
   type: string;
-  value: {
-    caller: string;
-    send: string;
-    pkg_path: string;
-    func: string;
-    args: string[];
-  };
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
 } => {
   return createMessageOfVmCall({
     caller: info.address,
@@ -84,13 +72,7 @@ export const createMessageOfVmEditPost = (info: {
   body: string;
 }): {
   type: string;
-  value: {
-    caller: string;
-    send: string;
-    pkg_path: string;
-    func: string;
-    args: string[];
-  };
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
 } => {
   return createMessageOfVmCall({
     caller: info.address,
@@ -109,13 +91,7 @@ export const createMessageOfVmDeletePost = (info: {
   reason: string;
 }): {
   type: string;
-  value: {
-    caller: string;
-    send: string;
-    pkg_path: string;
-    func: string;
-    args: string[];
-  };
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
 } => {
   return createMessageOfVmCall({
     caller: info.address,
@@ -135,13 +111,7 @@ export const createMessageOfVmCreateReply = (info: {
   body: string;
 }): {
   type: string;
-  value: {
-    caller: string;
-    send: string;
-    pkg_path: string;
-    func: string;
-    args: string[];
-  };
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
 } => {
   return createMessageOfVmCall({
     caller: info.address,

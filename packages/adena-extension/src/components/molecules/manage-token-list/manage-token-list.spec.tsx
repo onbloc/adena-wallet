@@ -1,11 +1,9 @@
+import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
-import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
 import ManageTokenList, { ManageTokenListProps } from './manage-token-list';
 
 const tokens = [
@@ -45,12 +43,12 @@ describe('ManageTokenList Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <ManageTokenList {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

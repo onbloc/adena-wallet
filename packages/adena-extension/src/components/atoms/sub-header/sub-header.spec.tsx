@@ -1,24 +1,24 @@
-import { GlobalPopupStyle } from '@styles/global-style';
-import theme from '@styles/theme';
-import { render } from '@testing-library/react';
 import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
+import { render } from '@testing-library/react';
+import theme from '@styles/theme';
+import { GlobalPopupStyle } from '@styles/global-style';
 import { SubHeader, SubHeaderProps } from '.';
 
 describe('SubHeader Component', () => {
   it('SubHeader render', () => {
-    const args: SubHeaderProps = { title: '' };
+    const args: SubHeaderProps = {
+      title: '',
+    };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <SubHeader {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

@@ -6,7 +6,6 @@ import SuccessIcon from '@assets/success.svg';
 import { TokenBalance } from '@components/molecules';
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import React, { useMemo, useState } from 'react';
-
 import { TransactionHistoryListItemWrapper } from './transaction-history-list-item.styles';
 
 export interface TransactionHistoryListItemProps {
@@ -25,7 +24,7 @@ export interface TransactionHistoryListItemProps {
   queryGRC721TokenUri?: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
+    options?: UseQueryOptions<string | null, Error>,
   ) => UseQueryResult<string | null>;
   onClickItem: (hash: string) => void;
 }
@@ -47,8 +46,8 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
   const [hasLogoError, setHasLogoError] = useState(false);
   const [isLoadedLogo, setIsLoadedLogo] = useState(false);
 
-  const tokenUriQuery
-    = type === 'TRANSFER_GRC721' && queryGRC721TokenUri !== undefined
+  const tokenUriQuery =
+    type === 'TRANSFER_GRC721' && queryGRC721TokenUri !== undefined
       ? queryGRC721TokenUri(logo || '', '0')
       : null;
 
@@ -132,24 +131,20 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
       </div>
 
       <div className={`value-wrapper ${getValueTypeClassName}`}>
-        {type === 'MULTI_CONTRACT_CALL'
-          ? (
-              <span className='value more'>More</span>
-            )
-          : type === 'TRANSFER_GRC721'
-            ? (
-                <span className='value grc721'>{`${amount.denom} #${amount.value}`}</span>
-              )
-            : (
-                <TokenBalance
-                  value={amount.value}
-                  denom={amount.denom}
-                  fontStyleKey='body2Reg'
-                  minimumFontSize='11px'
-                  orientation='HORIZONTAL'
-                  withSign={withSignAmount}
-                />
-              )}
+        {type === 'MULTI_CONTRACT_CALL' ? (
+          <span className='value more'>More</span>
+        ) : type === 'TRANSFER_GRC721' ? (
+          <span className='value grc721'>{`${amount.denom} #${amount.value}`}</span>
+        ) : (
+          <TokenBalance
+            value={amount.value}
+            denom={amount.denom}
+            fontStyleKey='body2Reg'
+            minimumFontSize='11px'
+            orientation='HORIZONTAL'
+            withSign={withSignAmount}
+          />
+        )}
       </div>
     </TransactionHistoryListItemWrapper>
   );

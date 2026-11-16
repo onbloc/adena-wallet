@@ -1,8 +1,8 @@
-import down from '@assets/arrowL-down.svg';
+import styled from 'styled-components';
 import left from '@assets/arrowL-left.svg';
 import right from '@assets/arrowL-right.svg';
 import up from '@assets/arrowL-up.svg';
-import styled from 'styled-components';
+import down from '@assets/arrowL-down.svg';
 
 const ButtonSet = styled.button`
   width: 24px;

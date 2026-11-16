@@ -28,6 +28,7 @@ export const Default: StoryObj<TransferSummaryProps> = {
       denom: 'GNOT',
     },
     toAddress: 'g1fnakf9vrd6uqn8qdmp88yac4p0ngy572answ9f',
+    chainName: 'Gno.land',
     networkFee: {
       amount: '0.0048',
       denom: 'GNOT',

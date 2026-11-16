@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-const IconQuestion = ({ className }: { className?: string }): ReactElement<any> => {
+const IconQuestion = ({ className }: { className?: string }): ReactElement => {
   return (
     <svg
       className={className}

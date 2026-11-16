@@ -1,4 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Account, isMultisigAccount, isSessionAccount, MultisigConfig, RawTx } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
@@ -14,27 +19,22 @@ import {
   parseParameters,
 } from '@common/utils/client-utils';
 import { fetchHealth } from '@common/utils/fetch-utils';
-import { makeQueryString } from '@common/utils/string-utils';
+import { makeTransactionScannerUrl, toScannerNetworkInfo } from '@common/utils/scanner-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { BroadcastMultisigTransaction } from '@components/molecules/broadcast-multisig-transaction';
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
-import {
-  Account, isMultisigAccount, MultisigConfig, RawTx,
-} from 'adena-module';
-import BigNumber from 'bignumber.js';
-import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 interface BroadcastMultisigTransactionRequestData {
   multisigDocument: MultisigTransactionDocument;
@@ -43,19 +43,19 @@ interface BroadcastMultisigTransactionRequestData {
 
 interface TransactionData {
   messages: readonly any[];
-  contracts: {
-    type: string;
-    function: string;
-    value: any;
-  }[];
+  contracts: { type: string; function: string; value: any }[];
   gasWanted: string;
   gasFee: string;
   memo: string;
 }
 
-function makeDefaultNetworkInfo(chainId: string, rpcUrl: string): NetworkMetainfo {
+function makeDefaultNetworkInfo(
+  chainId: string,
+  rpcUrl: string,
+  addressPrefix: string,
+): NetworkMetainfo {
   return {
-    addressPrefix: defaultAddressPrefix,
+    addressPrefix,
     chainId,
     rpcUrl,
     networkId: chainId,
@@ -109,7 +109,9 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const { walletService, multisigService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const location = useLocation();
-  const { currentNetwork: currentWalletNetwork, scannerParameters } = useNetwork();
+  const { currentNetwork: currentWalletNetwork } = useNetwork();
+  const chain = useChain();
+  const profile = useNetworkProfile();
   const { openScannerLink } = useLink();
 
   const [requestData, setRequestData] = useState<InjectionMessage>();
@@ -130,7 +132,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const currentNetwork: NetworkMetainfo = useMemo(() => {
     const networkInfo = requestData?.data?.networkInfo;
     if (!!networkInfo?.chainId && !!networkInfo?.rpcUrl) {
-      return makeDefaultNetworkInfo(networkInfo.chainId, networkInfo.rpcUrl);
+      return makeDefaultNetworkInfo(networkInfo.chainId, networkInfo.rpcUrl, chain.bech32Prefix);
     }
 
     return currentWalletNetwork;
@@ -176,6 +178,9 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     };
   }, [multisigDocument]);
 
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
+
   const consumedTokenAmount = useMemo(() => {
     const accumulatedAmount = multisigDocument?.msg.reduce((acc: number, msg: any) => {
       const amountStr = msg.value?.send || msg.value?.amount || msg.value?.max_deposit;
@@ -186,8 +191,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       try {
         const amount = parseTokenAmount(amountStr);
         return BigNumber(acc).plus(amount).toNumber();
-      }
-      catch {
+      } catch {
         return acc;
       }
     }, 0);
@@ -233,16 +237,13 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
+      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   const initRequestData = (): void => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
-    setRequestData({
-      ...parsedData,
-      hostname: data['hostname'],
-    });
+    setRequestData({ ...parsedData, hostname: data['hostname'] });
   };
 
   const initFavicon = async (): Promise<void> => {
@@ -291,11 +292,11 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       setTransactionMessages(mappedRawTxMessages(data.multisigDocument.tx.msg));
 
       return true;
-    }
-    catch (e) {
+    } catch (e) {
       const error: any = e;
       if (error?.message === 'Connection Error') {
-        checkHealth(currentNetwork.rpcUrl, requestData.key);
+        const { rpcUrl } = currentNetwork;
+        checkHealth(rpcUrl, requestData.key);
       }
       chrome.runtime.sendMessage(
         InjectionMessageInstance.failure(
@@ -318,7 +319,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
-      await currentAccount.getAddress(defaultAddressPrefix),
+      await currentAccount.getAddress(chain.bech32Prefix),
       false,
     );
     if (validationMessage) {
@@ -329,13 +330,11 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   };
 
   const createTxExplorerUrl = (txHash: string): string => {
-    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
-    const params = {
-      ...(scannerParameters || {}),
-      txhash: txHash,
-    };
-
-    return `${scannerUrl}/transactions/details?${makeQueryString(params)}`;
+    return makeTransactionScannerUrl(
+      toScannerNetworkInfo(currentNetwork),
+      txHash,
+      profile?.linkUrl || SCANNER_URL,
+    );
   };
 
   const broadcastMultisigTransaction = async (): Promise<boolean> => {
@@ -381,22 +380,17 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.TRANSACTION_SUCCESS,
-          {
-            broadcastResult,
-            txExplorerUrl,
-          },
+          { broadcastResult, txExplorerUrl },
           requestData?.key,
           requestData?.withNotification,
         ),
       );
 
       return true;
-    }
-    catch (e) {
+    } catch (e) {
       handleBroadcastError(e);
       return false;
-    }
-    finally {
+    } finally {
       setProcessType('DONE');
     }
   };
@@ -439,6 +433,11 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
+      if (isSessionAccount(currentAccount)) {
+        chrome.runtime.sendMessage(createSessionAccountUnsupportedResponse(requestData.key));
+        window.close();
+        return;
+      }
       if (!isMultisigAccount(currentAccount)) {
         navigate(RoutePath.ApproveSignFailed);
         return;
@@ -449,7 +448,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
           initMultisigDocument();
         }
       });
-      currentAccount.getAddress(currentNetwork.addressPrefix).then(initBalance);
+      currentAccount.getAddress(chain.bech32Prefix).then(initBalance);
     }
   }, [currentAccount, requestData, gnoProvider]);
 
@@ -470,7 +469,9 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const onResponseBroadcastTransaction = useCallback(() => {
     if (response) {
       if (isVisibleResult) {
-        navigate(RoutePath.ApproveTransactionResult, { state: { response } });
+        navigate(RoutePath.ApproveTransactionResult, {
+          state: { response },
+        });
         return;
       }
       chrome.runtime.sendMessage(response);
@@ -500,6 +501,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       isErrorNetworkFee={isErrorNetworkFee}
       isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}
+      feeTokenQuote={feeTokenQuote}
       transactionData={JSON.stringify(multisigDocument, null, 2)}
       opened={visibleTransactionInfo}
       argumentInfos={argumentInfos}

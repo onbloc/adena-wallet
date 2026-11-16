@@ -1,26 +1,27 @@
-import { GlobalPopupStyle } from '@styles/global-style';
-import theme from '@styles/theme';
-import { render } from '@testing-library/react';
 import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
+import { render } from '@testing-library/react';
+import theme from '@styles/theme';
+import { GlobalPopupStyle } from '@styles/global-style';
 import ChangeNetwork, { ChangeNetworkProps } from './change-network';
 
 describe('ChangeNetwork Component', () => {
   it('ChangeNetwork render', () => {
     const args: ChangeNetworkProps = {
       loading: false,
-      currentNetworkId: '',
-      networkMetainfos: [],
-      changeNetwork: () => {
+      networkMode: 'mainnet',
+      sections: [],
+      onChangeMode: () => {
         return;
       },
-      moveEditPage: () => {
+      onSelect: () => {
         return;
       },
-      moveAddPage: () => {
+      onEdit: () => {
+        return;
+      },
+      onAdd: () => {
         return;
       },
       moveBack: () => {
@@ -29,12 +30,12 @@ describe('ChangeNetwork Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <ChangeNetwork {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

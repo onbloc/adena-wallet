@@ -104,7 +104,9 @@ export interface CreateMultisigTransactionParams extends TransactionParams {
 /**
  * Response data for creating a multisig transaction document
  */
-export type CreateMultisigTransactionResponseData = { tx: RawTx };
+export type CreateMultisigTransactionResponseData = {
+  tx: RawTx;
+};
 
 /**
  * Response for creating a multisig transaction document
@@ -144,7 +146,9 @@ export type BroadcastMultisigTransactionResponse = AdenaResponse<
 export interface UnsignedTransaction {
   msgs: Array<{
     type: string;
-    value: { [key: string]: any };
+    value: {
+      [key: string]: any;
+    };
   }>;
   fee: {
     gas_wanted: string;

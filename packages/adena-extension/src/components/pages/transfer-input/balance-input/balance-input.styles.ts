@@ -3,18 +3,12 @@ import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const BalanceInputWrapper = styled.div`
-  ${mixins.flex({
-    align: 'normal',
-    justify: 'normal',
-  })};
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
 
   .input-wrapper {
-    ${mixins.flex({
-      direction: 'row',
-      justify: 'normal',
-    })};
+    ${mixins.flex({ direction: 'row', justify: 'normal' })};
     width: 100%;
     min-height: 48px;
     padding: 12px 16px;
@@ -53,6 +47,33 @@ export const BalanceInputWrapper = styled.div`
     padding: 0 16px;
     ${fonts.captionReg};
     color: ${getTheme('neutral', 'a')};
+  }
+
+  .description-wrapper {
+    ${mixins.flex({ direction: 'row', justify: 'space-between', align: 'flex-start' })};
+    width: 100%;
+    padding: 0 16px;
+    column-gap: 8px;
+
+    /* The description keeps its natural width so Spendable and validation
+       errors stay readable; the USD value takes what is left and truncates. */
+    .usd-value {
+      flex: 1 1 0;
+      min-width: 0;
+      ${fonts.captionReg};
+      color: ${getTheme('neutral', 'a')};
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .description {
+      flex: 0 1 auto;
+      min-width: 0;
+      padding: 0;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
   }
 
   &.error {

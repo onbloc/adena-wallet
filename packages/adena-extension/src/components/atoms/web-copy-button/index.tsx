@@ -1,9 +1,7 @@
-import IconCopy from '@assets/web/icon-copy';
-import React, {
-  CSSProperties, useCallback, useEffect, useMemo, useState,
-} from 'react';
+import React, { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
 import styled, { css, RuleSet, useTheme } from 'styled-components';
 
+import IconCopy from '@assets/web/icon-copy';
 import { Row, View } from '../base';
 import { WebText } from '../web-text';
 
@@ -15,7 +13,9 @@ interface WebCopyButtonProps {
   onCopy?: () => void;
 }
 
-const StyledContainer = styled(Row).withConfig({ shouldForwardProp: (prop): boolean => !['clicked'].includes(prop) })<{ clicked: boolean }>`
+const StyledContainer = styled(Row).withConfig({
+  shouldForwardProp: (prop): boolean => !['clicked'].includes(prop),
+})<{ clicked: boolean }>`
   display: flex;
   padding: 0 14px 0 14px;
   gap: 4px;
@@ -125,22 +125,20 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
       onMouseLeave={onMouseLeave}
       onMouseOut={onMouseLeave}
     >
-      {clicked
-        ? (
-            <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='body6'>
-              {buttonStr}
-            </WebText>
-          )
-        : (
-            <React.Fragment>
-              <View>
-                <IconCopy />
-              </View>
-              <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='title6'>
-                {buttonStr}
-              </WebText>
-            </React.Fragment>
-          )}
+      {clicked ? (
+        <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='body6'>
+          {buttonStr}
+        </WebText>
+      ) : (
+        <React.Fragment>
+          <View>
+            <IconCopy />
+          </View>
+          <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='title6'>
+            {buttonStr}
+          </WebText>
+        </React.Fragment>
+      )}
     </StyledContainer>
   );
 };

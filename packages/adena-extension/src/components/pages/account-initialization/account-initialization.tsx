@@ -28,8 +28,7 @@ const AccountInitialization: React.FC<AccountInitializationProps> = ({
     waitForRun(initializeAccount, 500).then((success) => {
       if (success) {
         setState(AccountInitializationState.SUCCESS);
-      }
-      else {
+      } else {
         setState(AccountInitializationState.FAILURE);
       }
     });

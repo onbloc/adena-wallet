@@ -1,9 +1,10 @@
-import IconAccountInitializeFailed from '@assets/icon-account-initialize-failed';
-import IconAccountInitializeSuccess from '@assets/icon-account-initialize-success';
-import { BottomFixedButton, BottomFixedButtonGroup, TitleWithDesc } from '@components/molecules';
 import React from 'react';
 
+import { BottomFixedButton, BottomFixedButtonGroup, TitleWithDesc } from '@components/molecules';
 import { AccountInitializationResultWrapper } from './account-initialization-result.styles';
+
+import IconAccountInitializeFailed from '@assets/icon-account-initialize-failed';
+import IconAccountInitializeSuccess from '@assets/icon-account-initialize-success';
 
 export interface AccountInitializationResultProps {
   state: 'LOADING' | 'SUCCESS' | 'FAILURE';
@@ -49,23 +50,17 @@ const AccountInitializationResult: React.FC<AccountInitializationResultProps> = 
         />
       </div>
 
-      {state === 'FAILURE'
-        ? (
-            <BottomFixedButtonGroup
-              leftButton={{
-                text: 'Cancel',
-                onClick: moveBack,
-              }}
-              rightButton={{
-                text: 'Retry',
-                primary: true,
-                onClick: moveInit,
-              }}
-            />
-          )
-        : (
-            <BottomFixedButton fill={false} text='Cancel' onClick={moveBack} />
-          )}
+      {state === 'FAILURE' ? (
+        <BottomFixedButtonGroup
+          leftButton={{
+            text: 'Cancel',
+            onClick: moveBack,
+          }}
+          rightButton={{ text: 'Retry', primary: true, onClick: moveInit }}
+        />
+      ) : (
+        <BottomFixedButton fill={false} text='Cancel' onClick={moveBack} />
+      )}
     </AccountInitializationResultWrapper>
   );
 };

@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-const IconConnectFailed = ({ className }: { className: string }): ReactElement<any> => {
+const IconConnectFailed = ({ className }: { className: string }): ReactElement => {
   return (
     <svg
       width='100'

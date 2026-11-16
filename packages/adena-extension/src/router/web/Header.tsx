@@ -1,19 +1,16 @@
-import logo from '@assets/web/brand.svg';
-import { ADENA_HELP_PAGE } from '@common/constants/resource.constant';
-import {
-  Pressable, Row, WebImg, WebText,
-} from '@components/atoms';
-import IconQuestion from '@components/atoms/icon/icon-assets/icon-question';
-import useLink from '@hooks/use-link';
-import mixins from '@styles/mixins';
 import { ReactElement } from 'react';
 import styled from 'styled-components';
 
+import logo from '@assets/web/brand.svg';
+
+import mixins from '@styles/mixins';
+import { Pressable, Row, WebText, WebImg } from '@components/atoms';
+import useLink from '@hooks/use-link';
+import { ADENA_HELP_PAGE } from '@common/constants/resource.constant';
+import IconQuestion from '@components/atoms/icon/icon-assets/icon-question';
+
 const StyledContainer = styled.header`
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'space-between',
-  })}
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })}
   padding: 0 74px;
   height: 80px;
 `;
@@ -39,7 +36,7 @@ const StyedHoverText = styled(WebText)`
   color: inherit;
 `;
 
-const Header = (): ReactElement<any> => {
+const Header = (): ReactElement => {
   const { openLink } = useLink();
 
   return (

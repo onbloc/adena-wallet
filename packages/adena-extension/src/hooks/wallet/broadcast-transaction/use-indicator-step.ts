@@ -1,10 +1,11 @@
+import { useEffect, useMemo } from 'react';
+import { useAtom } from 'jotai';
+import _ from 'lodash';
+import { useQuery } from '@tanstack/react-query';
+
 import { useAdenaContext } from '@hooks/use-context';
 import useQuestionnaire from '@hooks/web/use-questionnaire';
 import { CommonState } from '@states';
-import { useQuery } from '@tanstack/react-query';
-import _ from 'lodash';
-import { useEffect, useMemo } from 'react';
-import { useRecoilState } from 'recoil';
 
 interface UseIndicatorStepProps<T extends string> {
   stepMap?: Record<T, number>;
@@ -24,7 +25,7 @@ const useIndicatorStep = <T extends string>({
 }: UseIndicatorStepProps<T>): UseIndicatorStepReturn => {
   const { walletService } = useAdenaContext();
   const { ableToSkipQuestionnaire } = useQuestionnaire();
-  const [webHeaderIndicatorLength, setWebHeaderIndicatorLength] = useRecoilState(
+  const [webHeaderIndicatorLength, setWebHeaderIndicatorLength] = useAtom(
     CommonState.webHeaderIndicatorLength,
   );
 
@@ -35,9 +36,9 @@ const useIndicatorStep = <T extends string>({
     };
   }
 
-  const { data: stepLength = 0 } = useQuery<number>({
-    queryKey: ['stepLength', hasQuestionnaire, stepMap, walletService],
-    queryFn: async () => {
+  const { data: stepLength = 0 } = useQuery<number>(
+    ['stepLength', hasQuestionnaire, stepMap, walletService],
+    async () => {
       let defaultStepLength = Math.max(..._.values<number>(stepMap)) + 1;
       const existWallet = await walletService.existsWallet().catch(() => false);
       if (!existWallet) {
@@ -46,8 +47,7 @@ const useIndicatorStep = <T extends string>({
       if (hasQuestionnaire) {
         if (!existWallet) {
           defaultStepLength = defaultStepLength + 1;
-        }
-        else {
+        } else {
           const ableToSkipQuestionnaire = await walletService
             .isSkipQuestionnaire()
             .catch(() => false);
@@ -58,7 +58,7 @@ const useIndicatorStep = <T extends string>({
       }
       return defaultStepLength;
     },
-  });
+  );
 
   const existQuestionnaire = useMemo(() => {
     return hasQuestionnaire && !ableToSkipQuestionnaire;

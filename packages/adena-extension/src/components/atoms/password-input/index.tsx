@@ -1,9 +1,9 @@
 import { EvaluatePasswordResult } from '@common/utils/password-utils';
-import { type JSX, useMemo } from 'react';
-import styled, { useTheme } from 'styled-components';
-
-import { View } from '../base';
 import { DefaultInput } from '../default-input';
+import { View } from '../base';
+import styled, { useTheme } from 'styled-components';
+import { useMemo } from 'react';
+import type { JSX } from 'react';
 import { Text } from '../text';
 
 interface PasswordInputProps extends React.ComponentPropsWithoutRef<'input'> {

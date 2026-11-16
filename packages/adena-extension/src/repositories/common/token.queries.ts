@@ -1,206 +1,117 @@
-export const makeAllRealmsQuery = (): string => `
-{
-  transactions(filter: {
-    success: true
-    message: {
-      type_url: add_package
-    }
-  }) {
-    messages {
-        value {
-          ... on MsgAddPackage {
-            creator
-            package {
-              path
-              name
-              files {
-                name
-                body
-              }
-            }
-          }
+import { Grc20TokenPackage } from '@common/utils/grc20reg-config';
+import { Grc721TokenPackage } from '@common/utils/grc721-config';
+
+// `where` selects transactions, not events, so each match carries all of its
+// events and callers still filter the list themselves.
+const EVENT_TRANSACTION_FIELDS = `
+  block_height
+  response {
+    events {
+      ... on GnoEvent {
+        type
+        pkg_path
+        attrs {
+          key
+          value
         }
+      }
     }
   }
-}
 `;
 
-export const makeGRC721TransferEventsQuery = (packagePath: string, address: string): string => `
-{
-  transactions(
-    filter: {
-      success: true
-      events: {
-        type: "Transfer"
-        pkg_path: "${packagePath}"
-        attrs: [{
-          key: "from"
-          value: "${address}"
-        }, {
-          key:"to"
-          value: "${address}"
-        }]
-      }
-      message: [
-        {
-          type_url: exec
-        }
-      ]
-    }
-  ) {
-    hash
-    index
-    success
-    block_height
-    response {
-      events {
-        ...on GnoEvent {
-          type
-          pkg_path
-          func
-          attrs {
-            key
-            value
-          }
-        }
-      }
-    }
-  }
-}
-`;
-export const makeGRC721TransferEventsQueryWithCursor = (
-  packagePath: string,
+/**
+ * `block_height: { gt: N }` clause for resuming a walk, or nothing when
+ * starting from genesis. The indexer applies it server-side, so a resumed walk
+ * transfers only the blocks added since the last one.
+ */
+const makeFromBlockHeightClause = (fromBlockHeight?: number): string =>
+  fromBlockHeight && fromBlockHeight > 0 ? `block_height: { gt: ${fromBlockHeight} }` : '';
+
+const makeGRC20TransferEventBranches = (
   address: string,
+  tokenPackages: Grc20TokenPackage[],
+): string =>
+  tokenPackages
+    .flatMap(({ path, transferEvent }) =>
+      [transferEvent.toAttr, transferEvent.fromAttr].map(
+        (partyAttr) => `
+            {
+              GnoEvent: {
+                pkg_path: { eq: "${path}" }
+                type: { eq: "${transferEvent.type}" }
+                attrs: {
+                  key: { eq: "${partyAttr}" }
+                  value: { eq: "${address}" }
+                }
+              }
+            }`,
+      ),
+    )
+    .join('');
+
+/** GRC20 transfer events (sent or received) for an address, across every configured version. */
+export const makeAllTransferEventsQueryBy = (
+  address: string,
+  tokenPackages: Grc20TokenPackage[],
 ): string => `
-{
-  transactions(
-    filter: {
-      success: true
-      events: {
-        type: "Transfer"
-        pkg_path: "${packagePath}"
-        attrs: [{
-          key: "from"
-          value: "${address}"
-        }, {
-          key:"to"
-          value: "${address}"
-        }]
-      }
-      message: [
-        {
-          type_url: exec
-        }
-      ]
-    }
-    ascending: false
-    after: null
-  ) {
-    pageInfo {
-      last
-      hasNext
-    }
-    edges {
-      cursor
-      transaction {
-        hash
-        index
-        success
-        block_height
-        response {
-          events {
-            ...on GnoEvent {
-              type
-              pkg_path
-              func
-              attrs {
-                key
-                value
-              }
-            }
-          }
+query getTokenTransferEvents {
+  getTransactions(
+    where: {
+      success: { eq: true }
+      response: {
+        events: {
+          _or: [${makeGRC20TransferEventBranches(address, tokenPackages)}
+          ]
         }
       }
     }
-  }
-}
-`;
-
-export const makeAllTransferEventsQueryBy = (address: string): string => `
-{
-  transactions(
-    filter: {
-      success: true
-      events: {
-        type: "Transfer"
-        attrs: [{
-          key: "to"
-          value: "${address}"
-        }]
-      }
+    order: {
+      heightAndIndex: DESC
     }
   ) {
-    hash
-    index
-    success
-    block_height
-    response {
-      events {
-        ...on GnoEvent {
-          type
-          pkg_path
-          func
-          attrs {
-            key
-            value
-          }
-        }
-      }
-    }
+    ${EVENT_TRANSACTION_FIELDS}
   }
 }`;
 
-export const makeAllTransferEventsQueryWithCursorBy = (address: string): string => `
-{
-  transactions(
-    filter: {
-      success: true
-      events: {
-        type: "Transfer"
-        attrs: [{
-          key: "to"
-          value: "${address}"
-        }]
-      }
-    }
-    ascending: false
-    after: null
-  ) {
-    pageInfo {
-      last
-      hasNext
-    }
-    edges {
-      cursor
-      transaction {
-        hash
-        index
-        success
-        block_height
-        response {
-          events {
-            ...on GnoEvent {
-              type
-              pkg_path
-              func
-              attrs {
-                key
-                value
+/**
+ * Every GRC721 collection on the chain. `NewToken` is emitted by the only
+ * constructor of a `Token`, and there is no grc721 registry to read instead.
+ */
+export const makeGRC721NewTokenEventsQuery = (
+  tokenPackages: Grc721TokenPackage[],
+  fromBlockHeight?: number,
+): string => {
+  const branches = tokenPackages
+    .map(
+      ({ path, events }) => `
+            {
+              GnoEvent: {
+                pkg_path: { eq: "${path}" }
+                type: { eq: "${events.newTokenType}" }
               }
-            }
-          }
+            }`,
+    )
+    .join('');
+
+  return `
+query getGRC721NewTokenEvents {
+  latestBlockHeight
+  getTransactions(
+    where: {
+      success: { eq: true }
+      ${makeFromBlockHeightClause(fromBlockHeight)}
+      response: {
+        events: {
+          _or: [${branches}
+          ]
         }
       }
     }
+    order: {
+      heightAndIndex: ASC
+    }
+  ) {
+    ${EVENT_TRANSACTION_FIELDS}
   }
 }`;
+};

@@ -1,24 +1,46 @@
-import { GasToken } from '@common/constants/token.constant';
-import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
-import { GnoProvider } from '@common/provider/gno/gno-provider';
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  defaultAddressPrefix,
+  Secp256k1PubKeyType,
   Tx,
+  TxSignPayload,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import {
   Account,
   AdenaLedgerConnector,
+  ChainRegistry,
+  CosmosChain,
+  CosmosDocument,
+  CosmosFeeEstimate,
+  CosmosNetworkProfile,
+  CosmosSignMode,
+  CosmosTxBroadcastResponse,
   Document,
+  isSessionAccount,
+  Keyring,
   LedgerAccount,
   LedgerKeyring,
+  SignedCosmosTx,
+  hasHDPath,
   sha256,
+  signArbitraryMessage,
+  signCosmosAmino,
   Wallet,
+  compressPubkeyIfNeeded,
 } from 'adena-module';
+import type { AminoSignResponse, StdSignDoc } from '@cosmjs/amino';
+import { encodeSecp256k1Pubkey, serializeSignDoc } from '@cosmjs/amino';
+import type { DirectSignResponse } from '@cosmjs/proto-signing';
+import { makeSignBytes } from '@cosmjs/proto-signing';
+import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 
+import { GasToken } from '@common/constants/token.constant';
+import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
+import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
+import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
+import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { SignArbitraryData } from '@inject/types';
 import { WalletService } from '..';
 
 export interface EncodeTxSignature {
@@ -34,9 +56,22 @@ export class TransactionService {
 
   private gnoProvider: GnoProvider | null;
 
-  constructor(walletService: WalletService, gnoProvider: GnoProvider | null) {
+  // ChainRegistry is optional so older construction sites (inject/message/methods)
+  // keep working while the DI container in adena-provider wires it up.
+  private chainRegistry: ChainRegistry | null;
+
+  private cosmosProvider: CosmosLcdProvider | null;
+
+  constructor(
+    walletService: WalletService,
+    gnoProvider: GnoProvider | null,
+    chainRegistry: ChainRegistry | null = null,
+    cosmosProvider: CosmosLcdProvider | null = null,
+  ) {
     this.walletService = walletService;
     this.gnoProvider = gnoProvider;
+    this.chainRegistry = chainRegistry;
+    this.cosmosProvider = cosmosProvider;
   }
 
   public getGnoProvider(): GnoProvider {
@@ -48,6 +83,65 @@ export class TransactionService {
 
   public setGnoProvider(gnoProvider: GnoProvider): void {
     this.gnoProvider = gnoProvider;
+  }
+
+  public setChainRegistry(chainRegistry: ChainRegistry): void {
+    this.chainRegistry = chainRegistry;
+  }
+
+  private refreshGnoSigningDocument = async (
+    account: Account,
+    document: Document,
+  ): Promise<Document> => {
+    const provider = this.getGnoProvider();
+
+    if (isSessionAccount(account)) {
+      const masterAddress = account.getMasterAddress();
+      const sessionAddress = await account.getAddress('g');
+      const session = await provider.getSession(masterAddress, sessionAddress);
+      if (!session) {
+        return document;
+      }
+      return {
+        ...document,
+        account_number: session.BaseSessionAccount.BaseAccount.account_number,
+        sequence: session.BaseSessionAccount.BaseAccount.sequence,
+      };
+    }
+
+    const address = await account.getAddress('g');
+    const accountInfo = await provider.getAccountInfo(address);
+    if (!accountInfo || accountInfo.status !== 'ACTIVE') {
+      return document;
+    }
+
+    return {
+      ...document,
+      account_number: accountInfo.accountNumber,
+      sequence: accountInfo.sequence,
+    };
+  };
+
+  private resolveCosmosProfile(chainId: string): CosmosNetworkProfile {
+    if (!this.chainRegistry) {
+      throw new Error('ChainRegistry not initialized for Cosmos operations');
+    }
+    const profile = this.chainRegistry.getNetworkProfileByChainId(chainId);
+    if (!profile || profile.chainType !== 'cosmos') {
+      throw new Error(`Cosmos network profile not found for chainId: ${chainId}`);
+    }
+    return profile as CosmosNetworkProfile;
+  }
+
+  private resolvePreferredSignMode(chainId: string): CosmosSignMode {
+    if (!this.chainRegistry) {
+      throw new Error('ChainRegistry not initialized for Cosmos operations');
+    }
+    const chain = this.chainRegistry.getChainByChainId(chainId);
+    if (!chain || chain.chainType !== 'cosmos') {
+      throw new Error(`Cosmos chain not found for chainId: ${chainId}`);
+    }
+    return (chain as CosmosChain).signing.preferred;
   }
 
   /**
@@ -66,17 +160,60 @@ export class TransactionService {
     chainId: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[],
-    gasWanted?: bigint,
+    addressPrefix: string,
+    gasWanted?: number,
     gasFee?: number,
     memo?: string | undefined,
   ): Promise<Document> => {
     const provider = this.getGnoProvider();
-    const address = await account.getAddress(defaultAddressPrefix);
-    const accountInfo = await provider.getAccountInfo(address).catch(() => null);
-    const accountNumber = accountInfo?.accountNumber ?? 0;
-    const accountSequence = accountInfo?.sequence ?? 0;
+
+    let accountNumber: string;
+    let accountSequence: string;
+    let callerAddress: string;
+
+    if (isSessionAccount(account)) {
+      // Session sign bytes require the session's OWN account_number/sequence
+      // (NOT the master's; see gno tm2/pkg/sdk/auth/ante.go). The session
+      // record lives under auth/accounts/{master}/session/{session}, so we
+      // can't reuse the standard getAccountInfo() path which queries
+      // auth/accounts/{address}.
+      //
+      // caller / from_address however must be the master address: sessions
+      // act on the master account's behalf and the chain credits state
+      // changes to it.
+      const master = account.getMasterAddress();
+      const sessionAddr = await account.getAddress(addressPrefix);
+      // getSession() returns null only for "not found" and throws on
+      // network/parse/endpoint errors (see GnoProvider.getSession docs).
+      // We do NOT catch here: catching would let a parse failure leak as
+      // accountNumber=0 into the sign bytes and surface as an unrelated
+      // sequence-mismatch error downstream.
+      const res = await provider.getSession(master, sessionAddr);
+      if (!res) {
+        throw new Error(
+          `Session not found: master=${master} session=${sessionAddr}`,
+        );
+      }
+      accountNumber = res.BaseSessionAccount.BaseAccount.account_number;
+      accountSequence = res.BaseSessionAccount.BaseAccount.sequence;
+      callerAddress = master;
+    } else {
+      const address = await account.getAddress(addressPrefix);
+      const accountInfo = await provider.getAccountInfo(address).catch(() => null);
+      accountNumber = (accountInfo?.accountNumber ?? 0).toString();
+      accountSequence = (accountInfo?.sequence ?? 0).toString();
+      callerAddress = address;
+    }
+
     return {
-      msgs: mappedDocumentMessagesWithCaller(messages, address),
+      // SessionAccount must force from_address/caller to master because UI
+      // call sites may have populated it with the session address before
+      // reaching here. Other accounts keep the existing fallback semantics.
+      msgs: mappedDocumentMessagesWithCaller(
+        messages,
+        callerAddress,
+        isSessionAccount(account),
+      ),
       fee: {
         amount: [
           {
@@ -88,8 +225,8 @@ export class TransactionService {
       },
       chain_id: chainId,
       memo: memo || '',
-      account_number: accountNumber.toString(),
-      sequence: accountSequence.toString(),
+      account_number: accountNumber,
+      sequence: accountSequence,
     };
   };
 
@@ -104,9 +241,9 @@ export class TransactionService {
     document: Document,
   ): Promise<EncodeTxSignature> => {
     const provider = this.getGnoProvider();
-    const wallet = await this.walletService.loadWallet();
+    const wallet = await this.walletService.getCurrentWallet();
     const { signature } = await wallet.signByAccountId(provider, account.id, document);
-    const signatures = signature.map(s => ({
+    const signatures = signature.map((s) => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
         value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
@@ -127,23 +264,22 @@ export class TransactionService {
     wallet: Wallet,
     account: Account,
     document: Document,
-  ): Promise<{
-    signed: Tx;
-    signature: EncodeTxSignature[];
-  }> => {
+  ): Promise<{ signed: Tx; signature: EncodeTxSignature[] }> => {
     const provider = this.getGnoProvider();
-    const { signed, signature } = await wallet.signByAccountId(provider, account.id, document);
-    const encodedSignature = signature.map(s => ({
+    const signingDocument = await this.refreshGnoSigningDocument(account, document);
+    const { signed, signature } = await wallet.signByAccountId(
+      provider,
+      account.id,
+      signingDocument,
+    );
+    const encodedSignature = signature.map((s) => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
         value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
       },
       signature: uint8ArrayToBase64(s.signature),
     }));
-    return {
-      signed,
-      signature: encodedSignature,
-    };
+    return { signed, signature: encodedSignature };
   };
 
   /**
@@ -158,24 +294,24 @@ export class TransactionService {
     ledgerConnector: AdenaLedgerConnector,
     account: LedgerAccount,
     document: Document,
-  ): Promise<{
-    signed: Tx;
-    signature: EncodeTxSignature[];
-  }> => {
+  ): Promise<{ signed: Tx; signature: EncodeTxSignature[] }> => {
     const provider = this.getGnoProvider();
     const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
-    const { signed, signature } = await keyring.sign(provider, document, account.hdPath);
-    const encodedSignature = signature.map(s => ({
+    await keyring.assertPublicKey(account.publicKey, account.derivationPath);
+    const signingDocument = await this.refreshGnoSigningDocument(account, document);
+    const { signed, signature } = await keyring.sign(
+      provider,
+      signingDocument,
+      account.derivationPath,
+    );
+    const encodedSignature = signature.map((s) => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
         value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
       },
       signature: uint8ArrayToBase64(s.signature),
     }));
-    return {
-      signed,
-      signature: encodedSignature,
-    };
+    return { signed, signature: encodedSignature };
   };
 
   /**
@@ -227,15 +363,304 @@ export class TransactionService {
     return result;
   };
 
+  // Cosmos AMINO (Phase 3)
+  // Thin passthrough to AdenaWallet's Cosmos methods. Gno methods above
+  // remain untouched so Gno flows have zero regression risk.
+
+  public signCosmos = async (
+    accountId: string,
+    document: CosmosDocument,
+  ): Promise<SignedCosmosTx> => {
+    if (!this.cosmosProvider) {
+      throw new Error('CosmosProvider not injected');
+    }
+    this.resolveCosmosProfile(document.chainId);
+    const wallet = await this.walletService.getCurrentWallet();
+    const signMode = this.resolvePreferredSignMode(document.chainId);
+    return wallet.signCosmosByAccountId(
+      accountId,
+      document,
+      this.cosmosProvider,
+      signMode,
+    );
+  };
+
   /**
-   * create a transaction hash
+   * Sign an already-constructed Keplr `StdSignDoc` supplied by an external dApp.
+   * Bypasses CosmosDocument translation: the caller owns signDoc construction
+   * and the returned `signed` field echoes it verbatim (Keplr spec).
+   */
+  public signCosmosAminoDoc = async (
+    accountId: string,
+    signDoc: StdSignDoc,
+  ): Promise<AminoSignResponse> => {
+    const { account, keyring, hdPath } = await this.resolveSigningKey(accountId);
+    if (account.type === 'LEDGER') {
+      throw new Error('LEDGER_NOT_SUPPORTED');
+    }
+    const signBytes = serializeSignDoc(signDoc);
+    const signature = await keyring.signRaw(signBytes, { hdPath });
+    return {
+      signed: signDoc,
+      signature: {
+        pub_key: encodeSecp256k1Pubkey(compressPubkeyIfNeeded(account.publicKey)),
+        signature: Buffer.from(signature).toString('base64'),
+      },
+    };
+  };
+
+  /**
+   * Direct-mode counterpart of `signCosmosAminoDoc`. `signDoc` is the native
+   * protobuf `SignDoc` (Uint8Array bodyBytes/authInfoBytes, bigint
+   * accountNumber); the inject wrapper re-serializes the echoed `signed`
+   * before handing it back to the dApp.
+   */
+  public signCosmosDirectDoc = async (
+    accountId: string,
+    signDoc: SignDoc,
+  ): Promise<DirectSignResponse> => {
+    const { account, keyring, hdPath } = await this.resolveSigningKey(accountId);
+    if (account.type === 'LEDGER') {
+      throw new Error('LEDGER_NOT_SUPPORTED');
+    }
+    const signBytes = makeSignBytes(signDoc);
+    const signature = await keyring.signRaw(signBytes, { hdPath });
+    return {
+      signed: signDoc,
+      signature: {
+        pub_key: encodeSecp256k1Pubkey(compressPubkeyIfNeeded(account.publicKey)),
+        signature: Buffer.from(signature).toString('base64'),
+      },
+    };
+  };
+
+  /**
+   * Sign arbitrary data so a dApp can prove the user controls an address,
+   * without asking them to approve something transaction-shaped.
+   *
+   * Nothing produced here is broadcastable: the document carries a message type
+   * no node can decode (see `ARBITRARY_MSG_TYPE`). `chainId` comes from the
+   * connected network rather than the caller, so the proof is bound to one
+   * network and a caller cannot choose that binding for itself.
+   *
+   * Ledger takes the separate path below, for the same reason the Cosmos amino
+   * signer does: the wallet-owned keyring has no connector after a restore.
+   */
+  public signArbitraryDoc = async (
+    accountId: string,
+    chainId: string,
+    signer: string,
+    data: string,
+  ): Promise<SignArbitraryData> => {
+    const { account, keyring, hdPath } = await this.resolveSigningKey(accountId);
+    if (account.type === 'LEDGER') {
+      throw new Error('LEDGER_NOT_SUPPORTED');
+    }
+
+    const { doc, signature } = await signArbitraryMessage({
+      keyring,
+      publicKey: account.publicKey,
+      chainId,
+      signer,
+      data,
+      hdPath,
+    });
+
+    return this.mapArbitrarySignature(doc, account.publicKey, signature);
+  };
+
+  /**
+   * Ledger counterpart of `signArbitraryDoc`. Uses a keyring freshly bound to
+   * an active connector, mirroring `signCosmosAminoDocWithLedger`.
+   */
+  public signArbitraryDocWithLedger = async (
+    ledgerConnector: AdenaLedgerConnector,
+    account: LedgerAccount,
+    chainId: string,
+    signer: string,
+    data: string,
+  ): Promise<SignArbitraryData> => {
+    const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
+    await keyring.assertPublicKey(account.publicKey, account.derivationPath);
+
+    const { doc, signature } = await signArbitraryMessage({
+      keyring,
+      publicKey: account.publicKey,
+      chainId,
+      signer,
+      data,
+      hdPath: account.derivationPath,
+    });
+
+    return this.mapArbitrarySignature(doc, account.publicKey, signature);
+  };
+
+  /**
+   * Shape the signed document for the dApp.
+   *
+   * `pubKey.value` is the compressed key itself, not a protobuf-wrapped one:
+   * the point of returning it is that a verifier can use it directly, and for
+   * an account that has never transacted it is the only place the key is
+   * available at all.
+   */
+  private mapArbitrarySignature = (
+    doc: TxSignPayload,
+    publicKey: Uint8Array,
+    signature: Uint8Array,
+  ): SignArbitraryData => {
+    return {
+      signed: doc,
+      signature: {
+        pubKey: {
+          typeUrl: Secp256k1PubKeyType,
+          value: uint8ArrayToBase64(compressPubkeyIfNeeded(publicKey)),
+        },
+        signature: uint8ArrayToBase64(signature),
+      },
+    };
+  };
+
+  private resolveSigningKey = async (
+    accountId: string,
+  ): Promise<{ account: Account; keyring: Keyring; hdPath: number | undefined }> => {
+    const wallet = await this.walletService.getCurrentWallet();
+    const account = wallet.accounts.find((a) => a.id === accountId);
+    if (!account) {
+      throw new Error('ACCOUNT_NOT_FOUND');
+    }
+    const keyring = wallet.keyrings.find((k) => k.id === account.keyringId);
+    if (!keyring) {
+      throw new Error('KEYRING_NOT_FOUND');
+    }
+    const hdPath = hasHDPath(account) ? account.hdPath : undefined;
+    return { account, keyring, hdPath };
+  };
+
+  public estimateCosmosFee = async (
+    accountId: string,
+    document: CosmosDocument,
+  ): Promise<CosmosFeeEstimate> => {
+    if (!this.cosmosProvider) {
+      throw new Error('CosmosProvider not injected');
+    }
+    const chain = this.resolveCosmosChain(document.chainId);
+    const fallbackFee = chain.fee.fallbackFee;
+    if (!fallbackFee) {
+      throw new Error(
+        `CosmosChain ${chain.chainGroup} has no fallbackFee configured`,
+      );
+    }
+    // feeDenom: pick the first token returned by the chain's feeCurrencyFilter
+    // (already scoped to the current msgs), stripping the "<chainId>:" prefix.
+    const filter = chain.fee.feeCurrencyFilter;
+    const allowedTokenIds = filter
+      ? filter(document.msgs)
+      : [chain.fee.defaultFeeTokenId];
+    const firstAllowed = allowedTokenIds[0] ?? chain.fee.defaultFeeTokenId;
+    const feeDenom = firstAllowed.includes(':')
+      ? firstAllowed.split(':')[1]
+      : firstAllowed;
+
+    const wallet = await this.walletService.getCurrentWallet();
+    return wallet.estimateCosmosFeeByAccountId(
+      accountId,
+      document,
+      this.cosmosProvider,
+      fallbackFee,
+      feeDenom,
+    );
+  };
+
+  private resolveCosmosChain(chainId: string): CosmosChain {
+    if (!this.chainRegistry) {
+      throw new Error('ChainRegistry not initialized for Cosmos operations');
+    }
+    const chain = this.chainRegistry.getChainByChainId(chainId);
+    if (!chain || chain.chainType !== 'cosmos') {
+      throw new Error(`Cosmos chain not found for chainId: ${chainId}`);
+    }
+    return chain;
+  }
+
+  /**
+   * AMINO-mode counterpart of `signCosmosAminoDoc` for Ledger accounts.
+   * Uses a connector-bound LedgerKeyring instead of the wallet-owned one
+   * (whose connector is null after restore) and delegates to the same
+   * `signRaw` path that the Gno sign flow already exercises. Direct mode has
+   * no Ledger counterpart: the Cosmos Ledger app only signs AMINO JSON, so
+   * dApps must use `getOfflineSignerAuto` (which our `isNanoLedger` flag
+   * already steers toward AMINO-only).
+   */
+  public signCosmosAminoDocWithLedger = async (
+    ledgerConnector: AdenaLedgerConnector,
+    account: LedgerAccount,
+    signDoc: StdSignDoc,
+  ): Promise<AminoSignResponse> => {
+    const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
+    await keyring.assertPublicKey(account.publicKey, account.derivationPath);
+    const signBytes = serializeSignDoc(signDoc);
+    const signature = await keyring.signRaw(signBytes, { hdPath: account.derivationPath });
+    return {
+      signed: signDoc,
+      signature: {
+        pub_key: encodeSecp256k1Pubkey(compressPubkeyIfNeeded(account.publicKey)),
+        signature: Buffer.from(signature).toString('base64'),
+      },
+    };
+  };
+
+  /**
+   * Sign a Cosmos document with a Ledger keyring. Parallel to `signCosmos` but
+   * bypasses the wallet-owned keyring (whose connector is null after restore)
+   * and uses a keyring freshly bound to an active `AdenaLedgerConnector`.
+   */
+  public signCosmosWithLedger = async (
+    ledgerConnector: AdenaLedgerConnector,
+    account: LedgerAccount,
+    document: CosmosDocument,
+  ): Promise<SignedCosmosTx> => {
+    if (!this.cosmosProvider) {
+      throw new Error('CosmosProvider not injected');
+    }
+    this.resolveCosmosProfile(document.chainId);
+    // PR #822 (ADN-752) introduces a unified `signCosmos` dispatcher that
+    // routes by `chain.signing.preferred`. Until #822 lands, hardcode the
+    // AMINO pipeline: the Cosmos Ledger app only renders AMINO JSON
+    // anyway, so AMINO is the only mode that produces a usable display
+    // for Ledger users.
+    const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
+    await keyring.assertPublicKey(account.publicKey, account.derivationPath);
+    return signCosmosAmino({
+      document,
+      keyring,
+      cosmosProvider: this.cosmosProvider,
+      hdPath: account.derivationPath,
+    });
+  };
+
+  public broadcastCosmos = async (
+    signedTx: SignedCosmosTx,
+    chainId: string,
+  ): Promise<CosmosTxBroadcastResponse> => {
+    if (!this.cosmosProvider) {
+      throw new Error('CosmosProvider not injected');
+    }
+    this.resolveCosmosProfile(chainId);
+    const wallet = await this.walletService.getCurrentWallet();
+    const result = await wallet.broadcastCosmosTx(signedTx, this.cosmosProvider);
+    this.cosmosProvider.invalidate();
+    return result;
+  };
+
+  /**
+   * create a hex-encoded transaction hash
    *
    * @param transaction
    * @returns
    */
   public createHash(transaction: Tx): string {
     const hash = sha256(Tx.encode(transaction).finish());
-    return Buffer.from(hash).toString('base64');
+    return Buffer.from(hash).toString('hex');
   }
 
   /**

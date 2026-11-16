@@ -1,0 +1,291 @@
+import { AxiosInstance } from 'axios';
+
+import { StorageManager } from '@common/storage/storage-manager';
+import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
+import { ChainRepository } from './chain';
+import {
+  AtomoneMetainfoItem,
+  AtomoneNetworkMetainfoMapper,
+} from './mapper/atomone-network-metainfo-mapper';
+import { ChainMetainfoItem, NetworkMetainfoMapper } from './mapper/network-metainfo-mapper';
+
+// Raw atomone-chains.json entries, as returned by the mocked HTTP fetch. The
+// repository maps these into AtomoneNetworkMetainfo (main -> isMainnet,
+// apiUrl -> restUrl) before returning or persisting them.
+const ATOMONE_RESPONSE: AtomoneMetainfoItem[] = [
+  {
+    id: 'atomone-1',
+    default: true,
+    main: true,
+    chainGroup: 'atomone',
+    chainType: 'cosmos',
+    chainId: 'atomone-1',
+    chainName: 'AtomOne',
+    networkId: 'atomone-1',
+    networkName: 'Mainnet',
+    addressPrefix: 'atone',
+    rpcUrl: 'https://atomone-rpc.allinbits.com',
+    apiUrl: 'https://atomone-api.allinbits.com',
+    linkUrl: 'https://www.mintscan.io/atomone',
+  },
+  {
+    id: 'atomone-testnet-1',
+    default: true,
+    main: false,
+    chainGroup: 'atomone',
+    chainType: 'cosmos',
+    chainId: 'atomone-testnet-1',
+    chainName: 'AtomOne',
+    networkId: 'atomone-testnet-1',
+    networkName: 'Testnet',
+    addressPrefix: 'atone',
+    rpcUrl: 'https://atomone-testnet-1-rpc.allinbits.services',
+    apiUrl: 'https://atomone-testnet-1-api.allinbits.services',
+  },
+];
+
+const ATOMONE_DEFAULTS: AtomoneNetworkMetainfo[] =
+  AtomoneNetworkMetainfoMapper.fromResponse(ATOMONE_RESPONSE);
+
+const CUSTOM_NETWORK: AtomoneNetworkMetainfo = {
+  id: 'custom-1',
+  default: false,
+  isMainnet: false,
+  chainGroup: 'atomone',
+  chainType: 'cosmos',
+  chainId: 'atomone-local',
+  chainName: 'AtomOne',
+  networkId: 'atomone-local',
+  networkName: 'My Local Node',
+  addressPrefix: 'atone',
+  rpcUrl: 'http://127.0.0.1:26657',
+  restUrl: 'http://127.0.0.1:1317',
+};
+
+describe('ChainRepository — AtomOne methods', () => {
+  let localStorage: StorageManager;
+  let networkInstance: AxiosInstance;
+  let repository: ChainRepository;
+  let storedValue: AtomoneNetworkMetainfo[] | undefined;
+
+  beforeEach(() => {
+    storedValue = undefined;
+
+    localStorage = {
+      getToObject: vi.fn().mockImplementation(async () => storedValue),
+      setByObject: vi.fn().mockImplementation(async (_key, value) => {
+        storedValue = value as AtomoneNetworkMetainfo[];
+      }),
+      remove: vi.fn().mockImplementation(async () => {
+        storedValue = undefined;
+      }),
+    } as unknown as StorageManager;
+
+    networkInstance = {
+      get: vi.fn().mockResolvedValue({ data: ATOMONE_RESPONSE }),
+    } as unknown as AxiosInstance;
+
+    repository = new ChainRepository(localStorage, networkInstance);
+  });
+
+  describe('getAtomoneNetworks', () => {
+    it('seeds storage with fetched defaults when storage is empty', async () => {
+      storedValue = undefined;
+
+      const result = await repository.getAtomoneNetworks();
+
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('atomone-1');
+      expect(localStorage.setByObject).toHaveBeenCalledWith('ATOMONE_NETWORKS', ATOMONE_DEFAULTS);
+    });
+
+    it('merges fetched defaults with stored customs', async () => {
+      storedValue = [
+        ...ATOMONE_DEFAULTS.map((network) => ({ ...network, deleted: false })),
+        CUSTOM_NETWORK,
+      ];
+
+      const result = await repository.getAtomoneNetworks();
+
+      expect(result).toHaveLength(3);
+      expect(result.map((network) => network.id)).toEqual([
+        'atomone-1',
+        'atomone-testnet-1',
+        'custom-1',
+      ]);
+    });
+
+    it('preserves the deleted flag on stored default entries', async () => {
+      const deletedDefault = {
+        ...ATOMONE_DEFAULTS[1],
+        deleted: true,
+      };
+      storedValue = [
+        { ...ATOMONE_DEFAULTS[0], deleted: false },
+        deletedDefault,
+        CUSTOM_NETWORK,
+      ];
+
+      const result = await repository.getAtomoneNetworks();
+
+      const testnet = result.find((network) => network.id === 'atomone-testnet-1');
+      expect(testnet).toBeDefined();
+      expect(testnet?.deleted).toBe(true);
+    });
+
+    it('preserves user-edited rpc/rest urls on stored default entries', async () => {
+      const editedMainnet = {
+        ...ATOMONE_DEFAULTS[0],
+        rpcUrl: 'https://my-node.example/rpc',
+        restUrl: 'https://my-node.example/rest',
+      };
+      storedValue = [editedMainnet, ATOMONE_DEFAULTS[1]];
+
+      const result = await repository.getAtomoneNetworks();
+
+      const mainnet = result.find((network) => network.id === 'atomone-1');
+      expect(mainnet?.rpcUrl).toBe('https://my-node.example/rpc');
+      expect(mainnet?.restUrl).toBe('https://my-node.example/rest');
+    });
+
+    it('does not duplicate defaults when custom shares an id with a default', async () => {
+      const overriddenMainnet = {
+        ...ATOMONE_DEFAULTS[0],
+        restUrl: 'https://user-override.example/',
+      };
+      storedValue = [overriddenMainnet, ATOMONE_DEFAULTS[1]];
+
+      const result = await repository.getAtomoneNetworks();
+
+      expect(result.filter((network) => network.id === 'atomone-1')).toHaveLength(1);
+    });
+
+    it('adds fetched defaults that have no stored counterpart', async () => {
+      // Storage was populated before a new default shipped in atomone-chains.json.
+      storedValue = [{ ...ATOMONE_DEFAULTS[0], deleted: false }];
+
+      const result = await repository.getAtomoneNetworks();
+
+      expect(result.map((network) => network.id)).toEqual(['atomone-1', 'atomone-testnet-1']);
+    });
+  });
+
+  describe('addAtomoneNetwork', () => {
+    it('appends custom network to storage without touching Gno NETWORKS', async () => {
+      storedValue = ATOMONE_DEFAULTS.map((network) => ({ ...network, deleted: false }));
+
+      await repository.addAtomoneNetwork(CUSTOM_NETWORK);
+
+      const last = storedValue[storedValue.length - 1];
+      expect(last.id).toBe('custom-1');
+    });
+  });
+
+  describe('updateAtomoneNetworks', () => {
+    it('overwrites the stored list', async () => {
+      storedValue = ATOMONE_DEFAULTS.map((network) => ({ ...network, deleted: false }));
+
+      await repository.updateAtomoneNetworks([CUSTOM_NETWORK]);
+
+      expect(storedValue).toEqual([CUSTOM_NETWORK]);
+    });
+  });
+
+  describe('deleteAtomoneNetworks', () => {
+    it('removes the storage key', async () => {
+      storedValue = [CUSTOM_NETWORK];
+
+      await repository.deleteAtomoneNetworks();
+
+      expect(localStorage.remove).toHaveBeenCalledWith('ATOMONE_NETWORKS');
+    });
+  });
+});
+
+describe('ChainRepository — getCurrentNetworkId', () => {
+  function makeRepository(getValue: string): ChainRepository {
+    const localStorage = {
+      get: vi.fn().mockResolvedValue(getValue),
+    } as unknown as StorageManager;
+    const networkInstance = {} as AxiosInstance;
+    return new ChainRepository(localStorage, networkInstance);
+  }
+
+  it('returns an empty string when storage holds the literal "undefined"', async () => {
+    const repository = makeRepository('undefined');
+    expect(await repository.getCurrentNetworkId()).toBe('');
+  });
+
+  it('returns an empty string when storage holds "null"', async () => {
+    const repository = makeRepository('null');
+    expect(await repository.getCurrentNetworkId()).toBe('');
+  });
+
+  it('returns the stored id verbatim for legitimate values', async () => {
+    const repository = makeRepository('test-13');
+    expect(await repository.getCurrentNetworkId()).toBe('test-13');
+  });
+});
+
+describe('ChainRepository — getNetworks fallbackRPCUrl', () => {
+  const GNO_RESPONSE: ChainMetainfoItem[] = [
+    {
+      id: 'gnoland-1',
+      default: true,
+      main: true,
+      chainId: 'gnoland-1',
+      chainName: 'Gno.land',
+      networkId: 'gnoland-1',
+      networkName: 'Mainnet',
+      addressPrefix: 'g',
+      rpcUrl: 'https://rpc.gno.land:443',
+      fallbackRPCUrl: 'https://rpc.gno.land:443',
+      indexerUrl: 'https://indexer.onbloc.xyz',
+      gnoUrl: 'https://gno.land',
+      apiUrl: 'https://api.onbloc.xyz',
+      linkUrl: 'https://gnoscan.io',
+    },
+  ];
+
+  const GNO_DEFAULTS = NetworkMetainfoMapper.fromChainMetainfoResponse(GNO_RESPONSE);
+
+  let storedValue: NetworkMetainfo[] | undefined;
+  let repository: ChainRepository;
+
+  beforeEach(() => {
+    storedValue = undefined;
+
+    const localStorage = {
+      getToObject: vi.fn().mockImplementation(async () => storedValue),
+      setByObject: vi.fn().mockImplementation(async (_key, value) => {
+        storedValue = value as NetworkMetainfo[];
+      }),
+      remove: vi.fn(),
+    } as unknown as StorageManager;
+
+    const networkInstance = {
+      get: vi.fn().mockResolvedValue({ data: GNO_RESPONSE }),
+    } as unknown as AxiosInstance;
+
+    repository = new ChainRepository(localStorage, networkInstance);
+  });
+
+  it('grafts the bundled fallback onto a stored entry that predates the field', async () => {
+    const storedBeforeFallback: NetworkMetainfo = { ...GNO_DEFAULTS[0] };
+    delete storedBeforeFallback.fallbackRPCUrl;
+    storedValue = [storedBeforeFallback];
+
+    const [mainnet] = await repository.getNetworks();
+
+    expect(mainnet.fallbackRPCUrl).toBe('https://rpc.gno.land:443');
+  });
+
+  it('drops the fallback once the user repoints the network at their own node', async () => {
+    storedValue = [{ ...GNO_DEFAULTS[0], rpcUrl: 'http://127.0.0.1:26657' }];
+
+    const [mainnet] = await repository.getNetworks();
+
+    expect(mainnet.rpcUrl).toBe('http://127.0.0.1:26657');
+    expect(mainnet.fallbackRPCUrl).toBeUndefined();
+  });
+});

@@ -1,47 +1,131 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { JSX } from 'react';
+import { useLocation } from 'react-router-dom';
+import styled from 'styled-components';
+
+import IconCopy from '@assets/icon-copy';
+import IconCopyCheck from '@assets/icon-copy-check';
 import {
-  formatAddress,
+  decodeParameter,
   formatNickname,
   getSiteName,
   parseParameters,
 } from '@common/utils/client-utils';
-import {
-  CopyTooltip, Row, StatusDot, Text,
-} from '@components/atoms';
+import { AccountSelectorButton, NetworkIconButton } from '@components/atoms';
+import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
+import { useAccountChainAddresses } from '@hooks/use-account-chain-addresses';
 import { useAccountName } from '@hooks/use-account-name';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import React, { type JSX, useEffect, useState } from 'react';
-import { useLocation } from 'react-router';
-import styled, { useTheme } from 'styled-components';
+import { RoutePath } from '@types';
 
-const StyledContainer = styled(Row)`
+const COSMOS_APPROVE_PATHS: string[] = [
+  RoutePath.ApproveEstablishCosmos,
+  RoutePath.ApproveSignCosmos,
+  RoutePath.ApproveGetCosmosKey,
+];
+
+const extractCosmosChainId = (encodedData: string | undefined): string | undefined => {
+  if (!encodedData) return undefined;
+  const decoded = decodeParameter(encodedData);
+  const data = decoded?.data;
+  if (typeof data?.chainId === 'string' && data.chainId) {
+    return data.chainId;
+  }
+  if (Array.isArray(data?.chainIds) && typeof data.chainIds[0] === 'string') {
+    return data.chainIds[0];
+  }
+  return undefined;
+};
+
+const Wrapper = styled.div`
   width: 100%;
   height: 100%;
   padding: 0px 20px;
-  justify-content: center;
-  align-items: center;
   border-bottom: 1px solid ${getTheme('neutral', '_7')};
 `;
 
-const StyledCenterWrapper = styled(Row)`
-  width: auto;
+const Header = styled.div`
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  width: 100%;
   height: 100%;
+`;
+
+const StyledLeftSideWrapper = styled.div`
+  ${mixins.flex({ direction: 'row', align: 'center', justify: 'flex-start' })};
   gap: 8px;
+  height: 100%;
+`;
+
+const StyledRightSideWrapper = styled.div`
+  ${mixins.flex({ direction: 'row', align: 'center', justify: 'flex-start' })};
+  gap: 12px;
+  height: 100%;
+`;
+
+const StyledCopyIconButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isActive',
+})<{ isActive?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: ${({ isActive, theme }): string => (isActive ? theme.neutral._1 : theme.neutral.a)};
+  flex-shrink: 0;
+
+  &:hover {
+    color: ${getTheme('neutral', '_1')};
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
 `;
 
 const ApproveMenu = (): JSX.Element => {
-  const theme = useTheme();
-  const { establishService } = useAdenaContext();
-  const { currentAccount, getCurrentAddress } = useCurrentAccount();
-  const [address, setAddress] = useState('');
+  const { establishService, establishAtomOneService } = useAdenaContext();
+  const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const [accountName, setAccountName] = useState('');
   const [isEstablished, setIsEstablished] = useState(false);
   const location = useLocation();
   const [requestData, setRequestData] = useState<any>();
   const { accountNames } = useAccountName();
   const { currentNetwork } = useNetwork();
+
+  const copyButtonRef = useRef<HTMLButtonElement>(null);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [popoverX, setPopoverX] = useState(0);
+  const [popoverY, setPopoverY] = useState(0);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chainAddressEntries = useAccountChainAddresses();
+  const [addressCopied, setAddressCopied] = useState(false);
+
+  // The funding address is the one that can actually receive tokens: the master
+  // address for a SessionAccount, the account's own Gno address otherwise.
+  const handleCopyIconClick = useCallback(() => {
+    if (!currentFundingAddress) {
+      return;
+    }
+    navigator.clipboard.writeText(currentFundingAddress);
+    setAddressCopied(true);
+  }, [currentFundingAddress]);
+
+  useEffect(() => {
+    if (!addressCopied) {
+      return;
+    }
+    const timer = setTimeout(() => setAddressCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [addressCopied]);
 
   useEffect(() => {
     if (location.search) {
@@ -57,62 +141,125 @@ const ApproveMenu = (): JSX.Element => {
   }, [requestData, currentAccount, currentNetwork]);
 
   useEffect(() => {
-    initAddress();
-  }, [currentAccount]);
+    if (!currentAccount) return;
+    setAccountName(accountNames[currentAccount.id] || currentAccount.name);
+  }, [currentAccount, accountNames]);
 
-  const initAddress = async (): Promise<void> => {
-    if (!currentAccount) {
-      return;
-    }
-    const address = (await getCurrentAddress(currentNetwork.addressPrefix)) || '';
-    const currentAccountName = accountNames[currentAccount.id] || currentAccount.name;
-    setAddress(address);
-    setAccountName(currentAccountName);
-  };
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!popoverOpen) return;
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setPopoverOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [popoverOpen]);
+
+  const isCosmosApproveRoute = useMemo(
+    () => COSMOS_APPROVE_PATHS.includes(location.pathname),
+    [location.pathname],
+  );
 
   const updateEstablishState = async (): Promise<void> => {
-    if (requestData?.hostname) {
-      const id = currentAccount?.id ?? '';
-      const siteName = getSiteName(requestData.protocol, requestData.hostname);
-      const currentIsEstablished = await establishService.isEstablishedBy(id, siteName);
-      setIsEstablished(currentIsEstablished);
+    if (!requestData?.hostname) return;
+    const id = currentAccount?.id ?? '';
+    const siteName = getSiteName(requestData.protocol, requestData.hostname);
+
+    if (isCosmosApproveRoute) {
+      const chainId = extractCosmosChainId(requestData.data);
+      if (!chainId) {
+        setIsEstablished(false);
+        return;
+      }
+      try {
+        const established = await establishAtomOneService.isEstablishedBy(id, siteName, chainId);
+        setIsEstablished(established);
+      } catch {
+        setIsEstablished(false);
+      }
+      return;
     }
+
+    const currentIsEstablished = await establishService.isEstablishedBy(id, siteName);
+    setIsEstablished(currentIsEstablished);
   };
 
-  const getTooltipText = (): string => {
-    let currentHostname = requestData?.hostname ?? '';
-    if (currentHostname.startsWith('chrome-extension') || !currentHostname.includes('.')) {
-      currentHostname = 'chrome-extension';
+  const scheduleClose = useCallback(() => {
+    closeTimerRef.current = setTimeout(() => setPopoverOpen(false), 120);
+  }, []);
+
+  const cancelClose = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
     }
-    return isEstablished
-      ? `You are connected to ${currentHostname}`
-      : `You are not connected to ${currentHostname}`;
-  };
+  }, []);
+
+  const handleCopyIconMouseEnter = useCallback(() => {
+    cancelClose();
+    if (copyButtonRef.current) {
+      const rect = copyButtonRef.current.getBoundingClientRect();
+      const POPOVER_WIDTH = 220;
+      const iconCenterX = rect.left + rect.width / 2;
+      const popoverLeft = (window.innerWidth - POPOVER_WIDTH) / 2;
+      setPopoverX(iconCenterX - popoverLeft);
+      setPopoverY(rect.bottom + 16);
+    }
+    setPopoverOpen(true);
+  }, [cancelClose]);
+
+  const handleCopyIconMouseLeave = useCallback(() => {
+    scheduleClose();
+  }, [scheduleClose]);
+
+  const displayHostname = useMemo(() => {
+    const h = requestData?.hostname ?? '';
+    if (h.startsWith('moz-extension')) {
+      return 'moz-extension';
+    }
+    if (!h || h.startsWith('chrome-extension') || !h.includes('.')) {
+      return 'chrome-extension';
+    }
+    return h;
+  }, [requestData?.hostname]);
 
   return (
-    <StyledContainer>
-      {address && (
-        <StyledCenterWrapper>
-          <StatusDot status={isEstablished} tooltipText={getTooltipText()} />
-          <CopyTooltip copyText={address} className='t-approve'>
-            <Text
-              type='body1Bold'
-              display='inline-flex'
-              style={{ whiteSpace: 'pre' }}
-            >
-              {formatNickname(accountName, 12)}
-              <Text
-                type='body1Reg'
-                color={theme.neutral.a}
-                style={{ whiteSpace: 'pre' }}
-              >
-                {` (${formatAddress(address)})`}
-              </Text>
-            </Text>
-          </CopyTooltip>
-        </StyledCenterWrapper>
-      )}
-    </StyledContainer>
+    <Wrapper>
+      <Header>
+        <StyledLeftSideWrapper>
+          <AccountSelectorButton name={formatNickname(accountName, 12)} />
+          <StyledCopyIconButton
+            ref={copyButtonRef}
+            type='button'
+            isActive={popoverOpen}
+            onClick={handleCopyIconClick}
+            onMouseEnter={handleCopyIconMouseEnter}
+            onMouseLeave={handleCopyIconMouseLeave}
+            aria-label='Copy address'
+          >
+            {addressCopied ? <IconCopyCheck /> : <IconCopy />}
+          </StyledCopyIconButton>
+        </StyledLeftSideWrapper>
+        <StyledRightSideWrapper>
+          <NetworkIconButton isConnected={isEstablished} hostname={displayHostname} />
+        </StyledRightSideWrapper>
+      </Header>
+      <AccountAddressesPopover
+        open={popoverOpen}
+        positionX={popoverX}
+        positionY={popoverY}
+        onMouseEnter={cancelClose}
+        onMouseLeave={scheduleClose}
+        entries={chainAddressEntries}
+      />
+    </Wrapper>
   );
 };
 

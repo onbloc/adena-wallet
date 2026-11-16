@@ -12,12 +12,16 @@ declare global {
   /**
    * mode:changed event detail
    */
-  interface GnoWebModeChangedDetail { mode: 'fast' | 'secure' }
+  interface GnoWebModeChangedDetail {
+    mode: 'fast' | 'secure';
+  }
 
   /**
    * address:changed event detail
    */
-  interface GnoWebAddressChangedDetail { address: string }
+  interface GnoWebAddressChangedDetail {
+    address: string;
+  }
 
   /**
    * Document event map

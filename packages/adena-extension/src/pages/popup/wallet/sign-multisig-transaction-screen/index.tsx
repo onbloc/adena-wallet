@@ -6,12 +6,13 @@ import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-trans
 import useSignMultisigTransactionScreen from '@hooks/wallet/sign-transaction/use-sign-multisig-transaction-screen';
 import {
   RawBankSendMessage,
+  RawMsgEnablePackage,
+  RawMsgRejectPackage,
   RawVmAddPackageMessage,
   RawVmCallMessage,
   RawVmRunMessage,
 } from 'adena-module';
 import React, { useEffect } from 'react';
-
 import SignTransactionLoading from './loading';
 import SignTransactionResult from './result';
 import SignMultisigTransactionUpload from './upload';
@@ -73,6 +74,16 @@ const SignMultisigTransactionContent: React.FC = () => {
       case '/vm.m_run': {
         const vmRunMessage = transaction.msg[0] as RawVmRunMessage;
         caller = vmRunMessage.caller;
+        break;
+      }
+      case '/vm.m_enable_pkg': {
+        const enablePkgMessage = transaction.msg[0] as RawMsgEnablePackage;
+        caller = enablePkgMessage.approver;
+        break;
+      }
+      case '/vm.m_reject_pkg': {
+        const rejectPkgMessage = transaction.msg[0] as RawMsgRejectPackage;
+        caller = rejectPkgMessage.sender;
         break;
       }
       default:

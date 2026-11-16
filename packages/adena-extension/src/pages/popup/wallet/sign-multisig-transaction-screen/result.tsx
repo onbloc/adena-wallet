@@ -1,11 +1,13 @@
-import IconAccountInitializeFailed from '@assets/icon-account-initialize-failed';
-import IconAccountInitializeSuccess from '@assets/icon-account-initialize-success';
-import { CommonFullContentLayout, Text, View } from '@components/atoms';
-import { BottomFixedButton } from '@components/molecules';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
 import React, { useCallback } from 'react';
 import styled, { useTheme } from 'styled-components';
+
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
+
+import { CommonFullContentLayout, Text, View } from '@components/atoms';
+import { BottomFixedButton } from '@components/molecules';
+import IconAccountInitializeFailed from '@assets/icon-account-initialize-failed';
+import IconAccountInitializeSuccess from '@assets/icon-account-initialize-success';
 
 interface SignMultisigTransactionResultProps {
   status: 'SUCCESS' | 'FAILED';

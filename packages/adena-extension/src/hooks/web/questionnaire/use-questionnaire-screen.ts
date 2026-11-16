@@ -1,10 +1,12 @@
-import useAppNavigate from '@hooks/use-app-navigate';
-import useIndicatorStep, { UseIndicatorStepReturn } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
-import QuestionData from '@resources/questions/questions.json';
-import { Question, RoutePath } from '@types';
 import { useCallback, useMemo, useState } from 'react';
 
+import useAppNavigate from '@hooks/use-app-navigate';
+import { Question, RoutePath } from '@types';
+import QuestionData from '@resources/questions/questions.json';
 import useQuestionnaire from '../use-questionnaire';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
 export type UseQuestionnaireScreenReturn = {
   indicatorInfo: UseIndicatorStepReturn;
@@ -48,10 +50,10 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
   const indicatorInfo = useIndicatorStep({});
 
   const questions: Question[] = QuestionData;
-  const { callbackPath } = params;
+  const { callbackPath, callbackState } = params;
 
   const question = useMemo(() => {
-    const question = questions.find(question => question.index === questionIndex);
+    const question = questions.find((question) => question.index === questionIndex);
     if (question) {
       return question;
     }
@@ -74,29 +76,28 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
   const completeQuestion = useCallback(() => {
     doneQuestionnaire().then(() => {
       navigate(callbackPath, {
-        state: { doneQuestionnaire: true },
+        state: { ...callbackState, doneQuestionnaire: true },
         replace: true,
       });
     });
-  }, [callbackPath]);
+  }, [callbackPath, callbackState]);
 
   const backStep = useCallback(() => {
     if (questionnaireState === 'INIT') {
-      navigate(callbackPath, { state: { doneQuestionnaire: false } });
+      navigate(callbackPath, { state: { ...callbackState, doneQuestionnaire: false } });
       return;
     }
     if (questionnaireState === 'QUESTION') {
       if (questionIndex > 1) {
         setQuestionIndex(questionIndex - 1);
-      }
-      else {
+      } else {
         goBack();
       }
       return;
     }
     setQuestionIndex(1);
     setQuestionnaireState('INIT');
-  }, [callbackPath, questionnaireState, questionIndex]);
+  }, [callbackPath, callbackState, questionnaireState, questionIndex]);
 
   return {
     indicatorInfo: {

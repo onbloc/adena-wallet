@@ -1,10 +1,10 @@
+import React from 'react';
+import { Provider as JotaiProvider } from 'jotai';
+import { ThemeProvider } from 'styled-components';
+
 import { GlobalWebStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
 
 import SelectSeedPhraseBoxItem from './select-seed-phrase-box-item';
 
@@ -23,12 +23,12 @@ describe('SelectSeedPhraseBoxItem Component', () => {
 
   it('SelectSeedPhraseBoxItem render', () => {
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalWebStyle />
         <ThemeProvider theme={theme}>
           <SelectSeedPhraseBoxItem {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

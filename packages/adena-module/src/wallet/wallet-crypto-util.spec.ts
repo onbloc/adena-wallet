@@ -1,13 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import sodium from 'libsodium-wrappers-sumo';
 
-import { toHex } from '../encoding/index.js';
 import {
   decryptAES,
+  decryptXChacha20,
   encryptAES,
   encryptSha256,
+  encryptXChacha20,
   executeKdf,
-  makeCryptKey
+  generateKdfSalt,
+  makeCryptKey,
+  makeCryptKeyBytes,
 } from './wallet-crypto-util';
+import { toHex } from '../encoding';
 
 describe('execute kdf', () => {
   it('success', async () => {
@@ -18,8 +22,8 @@ describe('execute kdf', () => {
       params: {
         outputLength: 32,
         opsLimit: 24,
-        memLimitKib: 12 * 1024
-      }
+        memLimitKib: 12 * 1024,
+      },
     };
     const result = await executeKdf(salt, password, kdfConfiguration);
     const hexResult = toHex(result);
@@ -63,12 +67,80 @@ describe('encrypt/decrypt AES', () => {
     expect(result).toBe('CURRENT_VALUE');
   });
 
-  it('encrypt with decrypt success', { timeout: 30_000 }, async () => {
+  it('encrypt with decrypt success', async () => {
     const value = 'CURRENT_VALUE';
     const password = 'PASSWORD';
     const encryptedValue = await encryptAES(value, password);
     const result = await decryptAES(encryptedValue, password);
 
     expect(result).toBe('CURRENT_VALUE');
+  });
+});
+
+describe('makeCryptKeyBytes', () => {
+  it('returns 32-byte Uint8Array', async () => {
+    const salt = await generateKdfSalt();
+    const result = await makeCryptKeyBytes('PASSWORD', salt);
+    expect(result).toBeInstanceOf(Uint8Array);
+    expect(result.length).toBe(32);
+  });
+});
+
+describe('encrypt/decrypt XChaCha20-Poly1305', () => {
+  const testPassword = 'TEST_PASSWORD';
+  let testSalt: Uint8Array;
+
+  beforeAll(async () => {
+    testSalt = await generateKdfSalt();
+  });
+
+  it('result contains ciphertext and nonce', async () => {
+    const result = await encryptXChacha20('hello world', testPassword, testSalt);
+    expect(result.ciphertext).toBeTruthy();
+    expect(result.nonce).toBeTruthy();
+  });
+
+  it('round-trip encrypt then decrypt recovers original', async () => {
+    const original = '{"accounts":[],"keyrings":[]}';
+    const encrypted = await encryptXChacha20(original, testPassword, testSalt);
+    const decrypted = await decryptXChacha20(encrypted, testPassword, testSalt);
+    expect(decrypted).toBe(original);
+  });
+
+  it('encrypting same plaintext twice produces different ciphertexts', async () => {
+    const plain = 'same plaintext';
+    const enc1 = await encryptXChacha20(plain, testPassword, testSalt);
+    const enc2 = await encryptXChacha20(plain, testPassword, testSalt);
+    expect(enc1.ciphertext).not.toBe(enc2.ciphertext);
+    expect(enc1.nonce).not.toBe(enc2.nonce);
+  });
+
+  it('tampered ciphertext throws on decrypt', async () => {
+    await sodium.ready;
+    const encrypted = await encryptXChacha20('secret data', testPassword, testSalt);
+    const bytes = sodium.from_base64(encrypted.ciphertext);
+    bytes[0] ^= 0xff;
+    const tampered = { ciphertext: sodium.to_base64(bytes), nonce: encrypted.nonce };
+
+    await expect(decryptXChacha20(tampered, testPassword, testSalt)).rejects.toThrow();
+  });
+
+  it('wrong password throws on decrypt', async () => {
+    const encrypted = await encryptXChacha20('secret', testPassword, testSalt);
+    await expect(decryptXChacha20(encrypted, 'WRONG_PASSWORD', testSalt)).rejects.toThrow();
+  });
+
+  it('handles unicode correctly', async () => {
+    const original = 'mnemonic seed phrase test \u{1F510}';
+    const encrypted = await encryptXChacha20(original, testPassword, testSalt);
+    const decrypted = await decryptXChacha20(encrypted, testPassword, testSalt);
+    expect(decrypted).toBe(original);
+  });
+
+  it('handles large data (64KB)', async () => {
+    const largeData = 'x'.repeat(65536);
+    const encrypted = await encryptXChacha20(largeData, testPassword, testSalt);
+    const decrypted = await decryptXChacha20(encrypted, testPassword, testSalt);
+    expect(decrypted).toBe(largeData);
   });
 });

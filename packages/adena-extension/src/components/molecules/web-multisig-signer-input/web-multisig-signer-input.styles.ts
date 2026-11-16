@@ -1,5 +1,5 @@
-import { Pressable, View, WebText } from '@components/atoms';
 import styled from 'styled-components';
+import { Pressable, View, WebText } from '@components/atoms';
 
 export const StyledContainer = styled(View)`
   width: 100%;

@@ -1,0 +1,184 @@
+import { renderHook } from '@testing-library/react';
+import type { MockedFunction } from 'vitest';
+
+import { AccountInfo } from '@common/provider/gno';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useGetAccountInfo } from '@hooks/wallet/use-get-account-info';
+
+import { useVestingInfo } from './use-vesting-info';
+
+vi.mock('@hooks/use-current-account', () => ({
+  useCurrentAccount: vi.fn(),
+}));
+vi.mock('@hooks/wallet/use-get-account-info', () => ({
+  useGetAccountInfo: vi.fn(),
+}));
+
+const mockedUseCurrentAccount = useCurrentAccount as MockedFunction<typeof useCurrentAccount>;
+const mockedUseGetAccountInfo = useGetAccountInfo as MockedFunction<typeof useGetAccountInfo>;
+
+const ACCOUNT_A = 'g1manfred47kzduec920z88wfr64ylksmdcedlf5';
+const ACCOUNT_B = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
+
+const accountInfo = (address: string, withVesting: boolean): AccountInfo => ({
+  address,
+  coins: '110294549738ugnot',
+  chainId: 'test5',
+  status: 'ACTIVE',
+  publicKey: null,
+  accountNumber: '1',
+  sequence: '1',
+  vesting: withVesting
+    ? {
+        original_vesting: '106560000000ugnot',
+        start_time: '1789225200',
+        end_time: '1852383600',
+      }
+    : undefined,
+});
+
+const setCurrentAddress = (address: string | null): void => {
+  mockedUseCurrentAccount.mockReturnValue({
+    currentBalanceAddress: address,
+  } as unknown as ReturnType<typeof useCurrentAccount>);
+};
+
+const setAccountInfo = (data: AccountInfo | null): void => {
+  mockedUseGetAccountInfo.mockReturnValue({
+    data,
+    isLoading: false,
+  } as unknown as ReturnType<typeof useGetAccountInfo>);
+};
+
+describe('useVestingInfo', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns the grant of the account on screen', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo(accountInfo(ACCOUNT_A, true));
+
+    const { result } = renderHook(() => useVestingInfo());
+
+    expect(result.current.vestingInfo?.schedule.originalVesting.toFixed()).toBe('106560000000');
+    expect(result.current.vestingInfo?.coins).toBe('110294549738ugnot');
+  });
+
+  it('returns null for an account without a grant', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo(accountInfo(ACCOUNT_A, false));
+
+    const { result } = renderHook(() => useVestingInfo());
+
+    expect(result.current.vestingInfo).toBeNull();
+  });
+
+  // Switching accounts must not leave the previous account's grant (and coins)
+  // on screen while the new account's request is still in flight — the main
+  // balance switches independently, so the panel would be splitting one
+  // account's balance by another account's schedule.
+  it('drops a grant left over from the previously selected account', () => {
+    setCurrentAddress(ACCOUNT_B);
+    setAccountInfo(accountInfo(ACCOUNT_A, true));
+
+    const { result } = renderHook(() => useVestingInfo());
+
+    expect(result.current.vestingInfo).toBeNull();
+  });
+
+  it('asks the account-info query not to carry data across accounts', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo(accountInfo(ACCOUNT_A, true));
+
+    renderHook(() => useVestingInfo());
+
+    expect(mockedUseGetAccountInfo).toHaveBeenCalledWith(
+      ACCOUNT_A,
+      expect.objectContaining({ keepPreviousData: false }),
+    );
+  });
+
+  // The transfer screen caps a send by what the funding address may move,
+  // which is the master address for a session account.
+  it('reads the explicitly requested account instead of the one on screen', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo(accountInfo(ACCOUNT_B, true));
+
+    const { result } = renderHook(() => useVestingInfo(ACCOUNT_B));
+
+    expect(mockedUseGetAccountInfo).toHaveBeenCalledWith(ACCOUNT_B, expect.anything());
+    expect(result.current.vestingInfo?.coins).toBe('110294549738ugnot');
+  });
+
+  it('queries nothing when the requested account is null', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo(null);
+
+    const { result } = renderHook(() => useVestingInfo(null));
+
+    expect(mockedUseGetAccountInfo).toHaveBeenCalledWith(null, expect.anything());
+    expect(result.current.vestingInfo).toBeNull();
+  });
+
+  // A failed RPC answers with an IN_ACTIVE placeholder that carries no
+  // `vesting`, which is indistinguishable from an account that has no grant.
+  it('reports an unreadable account as unresolved rather than ungranted', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo({ ...accountInfo(ACCOUNT_A, false), status: 'IN_ACTIVE', coins: '' });
+
+    const { result } = renderHook(() => useVestingInfo());
+
+    expect(result.current.vestingInfo).toBeNull();
+    expect(result.current.isResolved).toBe(false);
+  });
+
+  it('reports a read account as resolved', () => {
+    setCurrentAddress(ACCOUNT_A);
+    setAccountInfo(accountInfo(ACCOUNT_A, false));
+
+    const { result } = renderHook(() => useVestingInfo());
+
+    expect(result.current.isResolved).toBe(true);
+  });
+
+  // A caller that holds a transfer back on "cap unknown" needs the query to
+  // keep asking, or one failed read strands the screen until it remounts.
+  describe('refetch policy', () => {
+    const refetchIntervalFor = (data: AccountInfo | null): number | false => {
+      setCurrentAddress(ACCOUNT_A);
+      setAccountInfo(data);
+      renderHook(() => useVestingInfo());
+
+      const options = mockedUseGetAccountInfo.mock.calls[0][1];
+      const refetchInterval = options?.refetchInterval as (
+        data: AccountInfo | null,
+      ) => number | false;
+
+      return refetchInterval(data);
+    };
+
+    it('polls a grant, whose split moves every block', () => {
+      expect(refetchIntervalFor(accountInfo(ACCOUNT_A, true))).toBe(5_000);
+    });
+
+    it('polls an account that could not be read', () => {
+      expect(
+        refetchIntervalFor({ ...accountInfo(ACCOUNT_A, false), status: 'IN_ACTIVE', coins: '' }),
+      ).toBe(5_000);
+    });
+
+    it('goes quiet for a read account with no grant', () => {
+      expect(refetchIntervalFor(accountInfo(ACCOUNT_A, false))).toBe(false);
+    });
+  });
+
+  it('returns null before any account is selected', () => {
+    setCurrentAddress(null);
+    setAccountInfo(null);
+
+    const { result } = renderHook(() => useVestingInfo());
+
+    expect(result.current.vestingInfo).toBeNull();
+  });
+});

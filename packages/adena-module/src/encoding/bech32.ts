@@ -7,15 +7,12 @@ export function toBech32(prefix: string, data: Uint8Array, limit?: number): stri
 
 export function fromBech32(
   address: string,
-  limit = Infinity
-): {
-  readonly prefix: string;
-  readonly data: Uint8Array;
-} {
+  limit = Infinity,
+): { readonly prefix: string; readonly data: Uint8Array } {
   const decodedAddress = bech32.decode(address, limit);
   return {
     prefix: decodedAddress.prefix,
-    data: new Uint8Array(bech32.fromWords(decodedAddress.words))
+    data: new Uint8Array(bech32.fromWords(decodedAddress.words)),
   };
 }
 
@@ -46,11 +43,8 @@ export class Bech32 {
    */
   public static decode(
     address: string,
-    limit = Infinity
-  ): {
-    readonly prefix: string;
-    readonly data: Uint8Array;
-  } {
+    limit = Infinity,
+  ): { readonly prefix: string; readonly data: Uint8Array } {
     return fromBech32(address, limit);
   }
 }

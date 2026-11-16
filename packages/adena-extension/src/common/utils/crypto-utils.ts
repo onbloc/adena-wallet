@@ -1,23 +1,9 @@
 import { CommandMessage, CommandMessageData } from '@inject/message/command-message';
-import CryptoJS from 'crypto-js';
-
-const salt = 'W9+fs3FJ9p5KdR1XzQy2A6ZT4vjN8LvM9J8pVZmN9rU=';
-
-export const encryptSha256Password = (password: string, salt = ''): string => {
-  return CryptoJS.SHA256(salt + password).toString();
-};
-
-export const encryptWalletPassword = (password: string): string => {
-  return encryptSha256Password(password, salt);
-};
 
 // Sends a message to the background script to encrypt a password
 export const encryptPassword = async (
   password: string,
-): Promise<{
-  encryptedKey: string;
-  encryptedPassword: string;
-}> => {
+): Promise<{ encryptedKey: string; encryptedPassword: string }> => {
   const result = await sendMessage(CommandMessage.command('encryptPassword', { password }));
   if (!result || result.code !== 200) {
     throw new Error('Encryption key not initialized.');
@@ -48,18 +34,40 @@ export const clearInMemoryKey = async (): Promise<void> => {
   await sendMessage(CommandMessage.command('clearEncryptKey'));
 };
 
+// Chrome already answers the callback — with `chrome.runtime.lastError` set —
+// when nothing is listening, so this only guards the pathological case: a
+// background handler that keeps the message channel open (`return true`) and
+// never calls `sendResponse`. Without the timeout that promise stays pending
+// forever, and `isLocked()` never settles, which leaves the popup stuck on its
+// boot spinner. Generous on purpose: it must never fire while a cold service
+// worker is still starting up.
+const RESPONSE_TIMEOUT_MS = 15_000;
+
 async function sendMessage<T = any>(
   message: CommandMessageData,
 ): Promise<CommandMessageData<T> | null> {
   try {
-    return new Promise<CommandMessageData<T> | null>((resolve) => {
-      chrome.runtime.sendMessage(message, resolve);
-    }).catch((error) => {
-      console.warn(error);
-      return null;
+    return await new Promise<CommandMessageData<T> | null>((resolve) => {
+      const timeout = setTimeout(() => {
+        console.warn(`No background response for '${message.command}'`);
+        resolve(null);
+      }, RESPONSE_TIMEOUT_MS);
+
+      chrome.runtime.sendMessage(message, (response) => {
+        clearTimeout(timeout);
+
+        // Read it so Chrome does not log it as unchecked: an absent receiver is
+        // an expected outcome here, handled by returning null.
+        if (chrome.runtime.lastError) {
+          console.warn(chrome.runtime.lastError.message);
+          resolve(null);
+          return;
+        }
+
+        resolve(response ?? null);
+      });
     });
-  }
-  catch (e) {
+  } catch (e) {
     console.warn('Failed to send message', e);
   }
   return null;

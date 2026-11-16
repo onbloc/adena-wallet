@@ -1,12 +1,10 @@
+import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { UseQueryResult } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
-import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
 import NFTCollectionCard, { NFTCollectionCardProps } from './nft-collection-card';
 
 describe('NFTCollectionCard Component', () => {
@@ -39,12 +37,12 @@ describe('NFTCollectionCard Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <NFTCollectionCard {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

@@ -23,9 +23,5 @@ export const useDebounce = <T>(value: T, delay: number): UseDebounceReturn<T> =>
     };
   }, [value, delay]);
 
-  return {
-    debouncedValue,
-    setDebouncedValue,
-    isLoading,
-  };
+  return { debouncedValue, setDebouncedValue, isLoading };
 };

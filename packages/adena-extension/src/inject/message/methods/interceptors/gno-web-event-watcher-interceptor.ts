@@ -40,8 +40,7 @@ export class GnoWebEventWatcherInterceptor implements IInterceptor {
       document.addEventListener('DOMContentLoaded', () => {
         this.startWatcher();
       });
-    }
-    else {
+    } else {
       this.startWatcher();
     }
 

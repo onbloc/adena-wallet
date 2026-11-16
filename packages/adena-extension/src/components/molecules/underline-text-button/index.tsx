@@ -1,5 +1,4 @@
 import React, { useCallback } from 'react';
-
 import { UnderlineTextButtonWrapper } from './underline-text-button.styles';
 
 export interface UnderlineTextButtonProps {

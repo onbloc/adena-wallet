@@ -1,0 +1,142 @@
+import { Slip10RawIndex } from '@cosmjs/crypto';
+import { LedgerConnector } from '@cosmjs/ledger-amino';
+import { generateHDPath } from '@gnolang/tm2-js-client';
+import type { Mock } from 'vitest';
+
+import { LedgerError } from '../../ledger/ledger-errors';
+import { LedgerKeyring } from './ledger-keyring';
+
+const BYTES = new TextEncoder().encode('cosmos amino sign doc');
+
+function makeConnector(sign: Mock): LedgerConnector {
+  return {
+    sign,
+    getPubkey: vi.fn(),
+  } as unknown as LedgerConnector;
+}
+
+async function attachConnector(sign: Mock): Promise<LedgerKeyring> {
+  const keyring = new LedgerKeyring({});
+  keyring.setConnector(makeConnector(sign));
+  return keyring;
+}
+
+describe('LedgerKeyring.signRaw', () => {
+  it('returns the 64-byte r||s signature produced by the connector', async () => {
+    const signature = new Uint8Array(64).fill(0x07);
+    const sign = vi.fn().mockResolvedValue(signature);
+    const keyring = await attachConnector(sign);
+
+    const result = await keyring.signRaw(BYTES);
+
+    expect(result).toBe(signature);
+    expect(sign).toHaveBeenCalledTimes(1);
+    expect(sign.mock.calls[0][0]).toBe(BYTES);
+    expect(sign.mock.calls[0][1]).toEqual(generateHDPath(0));
+  });
+
+  it('forwards the requested hdPath index to the connector', async () => {
+    const sign = vi.fn().mockResolvedValue(new Uint8Array(64));
+    const keyring = await attachConnector(sign);
+
+    await keyring.signRaw(BYTES, { hdPath: 3 });
+
+    expect(sign.mock.calls[0][1]).toEqual(generateHDPath(3));
+  });
+
+  it('throws LedgerError(TransportFailed) when the connector is not attached', async () => {
+    const keyring = new LedgerKeyring({});
+
+    await expect(keyring.signRaw(BYTES)).rejects.toBeInstanceOf(LedgerError);
+    await expect(keyring.signRaw(BYTES)).rejects.toMatchObject({
+      kind: 'TransportFailed',
+    });
+  });
+
+  it.each<[string, unknown, string]>([
+    ['device locked (0x6b0c)', { return_code: 0x6b0c, error_message: 'locked' }, 'DeviceLocked'],
+    ['user rejected (0x6985)', { return_code: 0x6985, error_message: 'denied' }, 'UserRejected'],
+    [
+      'cosmjs "Please open the Cosmos Ledger app" message',
+      new Error('Please open the Cosmos Ledger app on your Ledger device.'),
+      'AppNotOpen',
+    ],
+    ['transport disconnect', new Error('Transport was disconnected'), 'TransportFailed'],
+  ])('classifies %s as %s', async (_label, thrown, expectedKind) => {
+    const sign = vi.fn().mockRejectedValue(thrown);
+    const keyring = await attachConnector(sign);
+
+    await expect(keyring.signRaw(BYTES)).rejects.toMatchObject({
+      name: 'LedgerError',
+      kind: expectedKind,
+    });
+  });
+
+  it('preserves existing LedgerError instances without re-wrapping', async () => {
+    const original = new LedgerError('UserRejected', 'user tapped reject');
+    const sign = vi.fn().mockRejectedValue(original);
+    const keyring = await attachConnector(sign);
+
+    await expect(keyring.signRaw(BYTES)).rejects.toBe(original);
+  });
+});
+
+describe('LedgerKeyring.assertPublicKey', () => {
+  const PUBLIC_KEY = new Uint8Array(33).fill(0x02);
+
+  function attachPubkeyConnector(getPubkey: Mock): LedgerKeyring {
+    const keyring = new LedgerKeyring({});
+    keyring.setConnector({ sign: vi.fn(), getPubkey } as unknown as LedgerConnector);
+    return keyring;
+  }
+
+  it('resolves when the connected device derives the account public key', async () => {
+    const getPubkey = vi.fn().mockResolvedValue(Uint8Array.from(PUBLIC_KEY));
+    const keyring = attachPubkeyConnector(getPubkey);
+
+    await expect(keyring.assertPublicKey(PUBLIC_KEY, 1)).resolves.toBeUndefined();
+    expect(getPubkey.mock.calls[0][0]).toEqual(generateHDPath(1));
+  });
+
+  it('derives at the full account/change path', async () => {
+    const getPubkey = vi.fn().mockResolvedValue(Uint8Array.from(PUBLIC_KEY));
+    const keyring = attachPubkeyConnector(getPubkey);
+
+    await keyring.assertPublicKey(PUBLIC_KEY, { account: 1, change: 0, addressIndex: 2 });
+
+    expect(getPubkey.mock.calls[0][0]).toEqual([
+      Slip10RawIndex.hardened(44),
+      Slip10RawIndex.hardened(118),
+      Slip10RawIndex.hardened(1),
+      Slip10RawIndex.normal(0),
+      Slip10RawIndex.normal(2),
+    ]);
+  });
+
+  it('throws LedgerError(AccountMismatch) when another device is connected', async () => {
+    const getPubkey = vi.fn().mockResolvedValue(new Uint8Array(33).fill(0x03));
+    const keyring = attachPubkeyConnector(getPubkey);
+
+    await expect(keyring.assertPublicKey(PUBLIC_KEY)).rejects.toMatchObject({
+      name: 'LedgerError',
+      kind: 'AccountMismatch',
+    });
+  });
+
+  it('classifies connector failures like the signing path', async () => {
+    const getPubkey = vi.fn().mockRejectedValue({ return_code: 0x6b0c, error_message: 'locked' });
+    const keyring = attachPubkeyConnector(getPubkey);
+
+    await expect(keyring.assertPublicKey(PUBLIC_KEY)).rejects.toMatchObject({
+      kind: 'DeviceLocked',
+    });
+  });
+
+  it('throws LedgerError(TransportFailed) when the connector is not attached', async () => {
+    const keyring = new LedgerKeyring({});
+
+    await expect(keyring.assertPublicKey(PUBLIC_KEY)).rejects.toMatchObject({
+      kind: 'TransportFailed',
+    });
+  });
+});

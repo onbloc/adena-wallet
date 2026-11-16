@@ -1,8 +1,7 @@
-import {
-  CommonFullContentLayout, Spinner, Text, View,
-} from '@components/atoms';
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
+
+import { CommonFullContentLayout, Spinner, Text, View } from '@components/atoms';
 
 const ApproveTransactionLoading: React.FC = () => {
   const theme = useTheme();
@@ -13,10 +12,10 @@ const ApproveTransactionLoading: React.FC = () => {
         <Spinner />
         <StyledDescriptionWrapper>
           <Text type='header4' textAlign='center'>
-            Broadcasting...
+            {'Broadcasting...'}
           </Text>
           <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
-            Your transaction is being broadcasted.
+            {'Your transaction is being broadcasted.'}
           </Text>
         </StyledDescriptionWrapper>
       </StyledLoadingWrapper>

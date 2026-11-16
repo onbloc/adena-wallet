@@ -1,3 +1,8 @@
+import { useEffect, useState } from 'react';
+import type { JSX } from 'react';
+import { useAtom } from 'jotai';
+import styled, { useTheme } from 'styled-components';
+
 import link from '@assets/share.svg';
 import { Text } from '@components/atoms';
 import { useAdenaContext } from '@hooks/use-context';
@@ -5,24 +10,19 @@ import useLink from '@hooks/use-link';
 import { ExploreState } from '@states';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import React, { type JSX, useEffect, useState } from 'react';
-import { useRecoilState } from 'recoil';
-import styled, { useTheme } from 'styled-components';
-
 import LoadingExplore from './loading-explore';
 
 export const Explore = (): JSX.Element => {
   const theme = useTheme();
   const { openLink } = useLink();
   const { tokenService } = useAdenaContext();
-  const [exploreSites, setExploreSites] = useRecoilState(ExploreState.sites);
+  const [exploreSites, setExploreSites] = useAtom(ExploreState.sites);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (exploreSites.length === 0) {
       initExploreSties().finally(() => setLoading(false));
-    }
-    else {
+    } else {
       setLoading(false);
     }
   }, [exploreSites]);
@@ -30,10 +30,11 @@ export const Explore = (): JSX.Element => {
   async function initExploreSties(): Promise<void> {
     try {
       const response = await tokenService.getAppInfos();
-      const exploreSites = response.filter(site => site.display).sort(site => site.order);
+      const exploreSites = response
+        .filter((site) => site.display)
+        .sort((a, b) => a.order - b.order);
       Promise.all([...exploreSites]).then(setExploreSites);
-    }
-    catch (error) {
+    } catch (error) {
       console.error(error);
     }
   }
@@ -43,28 +44,26 @@ export const Explore = (): JSX.Element => {
       <Text type='header4' className='explore-title'>
         Explore
       </Text>
-      {loading || exploreSites.length === 0
-        ? (
-            <LoadingExplore />
-          )
-        : (
-            exploreSites.map((exploreSite, index) => (
-              <BoxContainer key={index}>
-                <img src={exploreSite.logo} alt='logo-image' />
-                <Contents>
-                  <Text type='body2Bold'>{exploreSite.name}</Text>
-                  <Text type='captionReg' color={theme.neutral.a}>
-                    {exploreSite.description}
-                  </Text>
-                </Contents>
-                <MoveToLink
-                  src={link}
-                  alt='move to link'
-                  onClick={(): void => openLink(exploreSite.link)}
-                />
-              </BoxContainer>
-            ))
-          )}
+      {loading || exploreSites.length === 0 ? (
+        <LoadingExplore />
+      ) : (
+        exploreSites.map((exploreSite, index) => (
+          <BoxContainer key={index}>
+            <img className='explore-logo' src={exploreSite.logo} alt='logo-image' />
+            <Contents>
+              <Text type='body2Bold'>{exploreSite.name}</Text>
+              <Text type='captionReg' color={theme.neutral.a}>
+                {exploreSite.description}
+              </Text>
+            </Contents>
+            <MoveToLink
+              src={link}
+              alt='move to link'
+              onClick={(): void => openLink(exploreSite.link)}
+            />
+          </BoxContainer>
+        ))
+      )}
     </Wrapper>
   );
 };
@@ -80,10 +79,7 @@ const Contents = styled.div`
 `;
 
 const BoxContainer = styled.div`
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   background-color: ${getTheme('neutral', '_9')};
   width: 100%;
   height: 60px;
@@ -91,13 +87,15 @@ const BoxContainer = styled.div`
   border-radius: 18px;
   margin-bottom: 12px;
   cursor: default;
+
+  & .explore-logo {
+    width: 34px;
+    height: 34px;
+  }
 `;
 
 const Wrapper = styled.main`
-  ${mixins.flex({
-    align: 'flex-start',
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 24px;

@@ -1,9 +1,10 @@
-import IconFailed from '@assets/connect-fail-permission.svg';
+import React, { useCallback } from 'react';
+import styled, { useTheme } from 'styled-components';
+
 import { CommonFullContentLayout, Text, View } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
-import React, { useCallback } from 'react';
-import styled, { useTheme } from 'styled-components';
+import IconFailed from '@assets/connect-fail-permission.svg';
 
 const StyledFailedWrapper = styled(View)`
   margin-top: 56px;
@@ -33,7 +34,7 @@ const ApproveSignFailedScreen: React.FC = () => {
         <img src={IconFailed} alt='failed icon' />
         <StyledDescriptionWrapper>
           <Text type='header4' textAlign='center'>
-            Cannot Sign Transaction
+            {'Cannot Sign Transaction'}
           </Text>
           <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
             {'You cannot sign transactions when\nusing an airgap account. Upload a\nsigned transaction file or use another account.'}

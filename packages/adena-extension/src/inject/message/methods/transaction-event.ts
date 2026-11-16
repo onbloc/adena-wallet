@@ -1,12 +1,12 @@
 import { WalletResponseFailureType, WalletResponseSuccessType } from '@adena-wallet/sdk';
-import { SCANNER_URL } from '@common/constants/resource.constant';
 import { Event, EventStatus, EventStore } from '@common/event-store';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { fromBase64, toBase64 } from '@common/utils/client-utils';
+import { getGnoscanChainId, isGnoscanChainIdSupported } from '@common/utils/gnoscan-url';
+import { makeTransactionScannerUrl } from '@common/utils/scanner-utils';
 import { BroadcastTxCommitResult, BroadcastTxSyncResult } from '@gnolang/tm2-js-client';
 import { CommandMessageData } from '@inject/message/command-message';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message/message';
-
 import { InjectCore } from './core';
 import { createNotification } from './notification';
 
@@ -24,8 +24,8 @@ export async function addTransactionEvent(
   const transactionHash = message?.data?.hash;
 
   if (
-    messageType !== WalletResponseSuccessType.TRANSACTION_SUCCESS
-    && messageType !== WalletResponseFailureType.TRANSACTION_FAILED
+    messageType !== WalletResponseSuccessType.TRANSACTION_SUCCESS &&
+    messageType !== WalletResponseFailureType.TRANSACTION_FAILED
   ) {
     return null;
   }
@@ -44,12 +44,14 @@ export async function addTransactionEvent(
     return null;
   }
 
-  const isDefaultNetwork = !!network.apiUrl;
+  const scannerNetworkId = network.networkId || network.chainId;
+  const scannerChainId = getGnoscanChainId(scannerNetworkId);
+  const isDefaultNetwork = !!network.apiUrl || isGnoscanChainIdSupported(scannerNetworkId);
 
   createTransactionNotification(
     'PENDING',
     transactionHash,
-    network.chainId,
+    scannerChainId,
     network.rpcUrl,
     isDefaultNetwork,
   );
@@ -63,7 +65,7 @@ export async function addTransactionEvent(
       createTransactionNotification(
         eventResult.status,
         transactionHash,
-        network.chainId,
+        scannerChainId,
         network.rpcUrl,
         isDefaultNetwork,
       );
@@ -78,10 +80,16 @@ function createTransactionNotificationId(
   rpcUrl: string,
   isDefaultNetwork: boolean,
 ): string {
-  const scannerUrl = `${SCANNER_URL}/transactions/details?=txhash=${txHash}`;
-  const resultScannerUrl = isDefaultNetwork
-    ? `${scannerUrl}&chainId=${chainId}`
-    : `${scannerUrl}&type=custom&rpcUrl=${rpcUrl}`;
+  // indexerUrl is unavailable in this context; leaving it undefined makes the
+  // builder omit it (matching the previous `type=custom&rpcUrl=...` form).
+  const resultScannerUrl = makeTransactionScannerUrl(
+    {
+      chainId,
+      isOfficial: isDefaultNetwork,
+      rpcUrl,
+    },
+    txHash,
+  );
 
   const encodedResultScannerUrl = toBase64(resultScannerUrl);
 
@@ -148,7 +156,9 @@ export function createNotificationSendMessage(
     .sendMessage(
       InjectionMessageInstance.success(
         WalletResponseSuccessType.TRANSACTION_SUCCESS,
-        { hash: result?.hash },
+        {
+          hash: result?.hash,
+        },
         '',
         true,
       ),
@@ -163,7 +173,9 @@ export function createNotificationSendMessageByHash(hash: string): void {
     .sendMessage(
       InjectionMessageInstance.success(
         WalletResponseSuccessType.TRANSACTION_SUCCESS,
-        { hash },
+        {
+          hash,
+        },
         '',
         true,
       ),

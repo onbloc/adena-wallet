@@ -1,3 +1,7 @@
+import { useCallback, useMemo } from 'react';
+import type { JSX } from 'react';
+import styled, { useTheme } from 'styled-components';
+
 import IconConfirmCheck from '@assets/icon-confirm-check';
 import { ADENA_TERMS_PAGE } from '@common/constants/resource.constant';
 import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
@@ -18,8 +22,6 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import { useCreatePasswordScreen } from '@hooks/web/common/use-create-password-screen';
 import { RoutePath } from '@types';
-import { type JSX, useCallback, useMemo } from 'react';
-import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -105,10 +107,7 @@ const CreatePasswordScreen = (): JSX.Element => {
                 type='password'
                 name='password'
                 placeholder='Password'
-                style={{
-                  width: '100%',
-                  flexShrink: 0,
-                }}
+                style={{ width: '100%', flexShrink: 0 }}
                 value={passwordState.value}
                 onChange={passwordState.onChange}
                 onKeyDown={onKeyDown}
@@ -144,7 +143,7 @@ const CreatePasswordScreen = (): JSX.Element => {
           onChange={termsState.onChange}
           text='I agree to the&nbsp;'
           tabIndex={3}
-          margin='0'
+          margin={'0'}
         >
           <StyledLink onClick={moveAdenaTermsPage} tabIndex={4}>
             Terms of Use
@@ -166,7 +165,9 @@ const CreatePasswordScreen = (): JSX.Element => {
   );
 };
 
-const EvaluationPasswordResultDescription = ({ complexity }: EvaluatePasswordResult): JSX.Element => {
+const EvaluationPasswordResultDescription = ({
+  complexity,
+}: EvaluatePasswordResult): JSX.Element => {
   const theme = useTheme();
 
   const complexityColor = useMemo(() => {

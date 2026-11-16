@@ -1,29 +1,35 @@
-import { GlobalPopupStyle } from '@styles/global-style';
-import theme from '@styles/theme';
-import { render } from '@testing-library/react';
 import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
+import { render, screen } from '@testing-library/react';
+import theme from '@styles/theme';
+import { GlobalPopupStyle } from '@styles/global-style';
 import MainTokenBalance, { MainTokenBalanceProps } from './main-token-balance';
 
-describe('MainTokenBalance Component', () => {
-  it('MainTokenBalance render', () => {
-    const args: MainTokenBalanceProps = {
-      amount: {
-        value: '240,255.241155',
-        denom: 'GNOT',
-      },
-    };
+function renderMainBalance(props: MainTokenBalanceProps): ReturnType<typeof render> {
+  return render(
+    <JotaiProvider>
+      <GlobalPopupStyle />
+      <ThemeProvider theme={theme}>
+        <MainTokenBalance {...props} />
+      </ThemeProvider>
+    </JotaiProvider>,
+  );
+}
 
-    render(
-      <RecoilRoot>
-        <GlobalPopupStyle />
-        <ThemeProvider theme={theme}>
-          <MainTokenBalance {...args} />
-        </ThemeProvider>
-      </RecoilRoot>,
-    );
+describe('MainTokenBalance Component', () => {
+  it('renders amount when loaded', () => {
+    renderMainBalance({
+      amount: { value: '240,255.241155', denom: 'GNOT' },
+    });
+  });
+
+  it('renders skeleton when loading', () => {
+    renderMainBalance({
+      amount: { value: '', denom: '' },
+      loading: true,
+    });
+
+    expect(screen.getByLabelText('Loading balance')).not.toBeNull();
   });
 });

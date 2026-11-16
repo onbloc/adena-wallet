@@ -14,3 +14,27 @@ export const Default: StoryObj<TokenListItemBalanceProps> = {
     },
   },
 };
+
+export const WithPrice: StoryObj<TokenListItemBalanceProps> = {
+  args: {
+    amount: {
+      value: '640,315.512321',
+      denom: 'PHOTON',
+    },
+    usdDisplay: true,
+    tokenValue: {
+      usdValue: 2120252.23,
+      change24h: 3.29,
+    },
+  },
+};
+
+export const UnquotedInUSDMode: StoryObj<TokenListItemBalanceProps> = {
+  args: {
+    amount: {
+      value: '640,315.512321',
+      denom: 'PHOTON',
+    },
+    usdDisplay: true,
+  },
+};

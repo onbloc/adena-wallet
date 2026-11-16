@@ -1,3 +1,7 @@
+import { hasPrivateKeyAccount, isSeedAccount, isSessionAccount } from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
+
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import {
   WALLET_EXPORT_ACCOUNT_ID,
@@ -8,14 +12,14 @@ import { makeQueryString } from '@common/utils/string-utils';
 import { CommonFullContentLayout } from '@components/atoms';
 import AccountDetails from '@components/pages/account-details/account-details';
 import { useAccountName } from '@hooks/use-account-name';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
 import useLink from '@hooks/use-link';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
-import { hasPrivateKeyAccount, isSeedAccount } from 'adena-module';
-import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react';
-import { useParams } from 'react-router';
+import { useNetworkProfile } from '@hooks/use-network-profile';
+import { useMasterSessions } from '@hooks/wallet/use-master-sessions';
+import { RoutePath } from '@types';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
@@ -24,28 +28,59 @@ const AccountDetailsContainer: React.FC = () => {
   const { accountId } = useParams();
   const { accounts } = useLoadAccounts();
   const { currentNetwork, scannerParameters } = useNetwork();
+  const chain = useChain();
+  const profile = useNetworkProfile();
   const { accountNames, changeAccountName } = useAccountName();
   const [originName, setOriginName] = useState('');
   const [name, setName] = useState('');
   const [address, setAddress] = useState<string>('');
 
   const account = useMemo(() => {
-    return accounts.find(current => current.id === accountId);
-  }, [accounts]);
+    return accounts.find((current) => current.id === accountId);
+  }, [accounts, accountId]);
 
   const hasSeedPhrase = useMemo(() => {
     if (!account) {
       return false;
     }
     return isSeedAccount(account);
-  }, []);
+  }, [account]);
 
   const hasPrivateKey = useMemo(() => {
     if (!account) {
       return false;
     }
     return hasPrivateKeyAccount(account);
-  }, []);
+  }, [account]);
+
+  const { navigate } = useAppNavigate();
+
+  const isMasterAccount = useMemo(() => {
+    if (!account) return false;
+    return !isSessionAccount(account);
+  }, [account]);
+
+  const isSession = useMemo(() => {
+    if (!account) return false;
+    return isSessionAccount(account);
+  }, [account]);
+
+  const masterAddress = useMemo(() => {
+    if (!isMasterAccount) return undefined;
+    if (!address) return undefined;
+    return address;
+  }, [isMasterAccount, address]);
+
+  const { entries: masterSessions } = useMasterSessions(masterAddress);
+
+  const hasSessions = useMemo(() => {
+    return masterSessions.some((session) => session.status === 'ACTIVE');
+  }, [masterSessions]);
+
+  const moveManageSessions = useCallback(() => {
+    if (!address) return;
+    navigate(RoutePath.ManageSessions, { state: { masterAddress: address } });
+  }, [navigate, address]);
 
   useEffect(() => {
     if (account?.id) {
@@ -62,7 +97,7 @@ const AccountDetailsContainer: React.FC = () => {
   }, [name, originName, account]);
 
   const moveGnoscan = useCallback(() => {
-    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+    const scannerUrl = profile?.linkUrl || SCANNER_URL;
     const openLinkUrl = scannerParameters
       ? `${scannerUrl}/account/${address}?${makeQueryString(scannerParameters)}`
       : `${scannerUrl}/account/${address}`;
@@ -101,7 +136,7 @@ const AccountDetailsContainer: React.FC = () => {
       setAddress('');
       return;
     }
-    account.getAddress(currentNetwork.addressPrefix).then(setAddress);
+    account.getAddress(chain.bech32Prefix).then(setAddress);
   }, [currentNetwork, account]);
 
   return (
@@ -112,11 +147,14 @@ const AccountDetailsContainer: React.FC = () => {
         address={address}
         hasPrivateKey={hasPrivateKey}
         hasSeedPhrase={hasSeedPhrase}
+        hasSessions={hasSessions}
         moveGnoscan={moveGnoscan}
         moveRevealSeedPhrase={moveRevealSeedPhrase}
         moveExportPrivateKey={moveExportPrivateKey}
+        moveManageSessions={moveManageSessions}
         setName={changeName}
         reset={reset}
+        isSessionAccount={isSession}
       />
     </CommonFullContentLayout>
   );

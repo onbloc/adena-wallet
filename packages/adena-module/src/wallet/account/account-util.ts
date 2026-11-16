@@ -1,7 +1,9 @@
-import { Account, AccountInfo } from './account.js';
-import { LedgerAccount } from './ledger-account.js';
-import { SeedAccount } from './seed-account.js';
-import { SingleAccount } from './single-account.js';
+import { isWeb3AuthKeyringType } from '../keyring';
+import { Account, AccountInfo } from './account';
+import { LedgerAccount } from './ledger-account';
+import { SeedAccount } from './seed-account';
+import { SingleAccount } from './single-account';
+import { SessionAccount } from './session-account';
 
 export function isSeedAccount(account: Account): account is SeedAccount {
   return account.type === 'HD_WALLET';
@@ -12,15 +14,19 @@ export function isLedgerAccount(account: Account): account is LedgerAccount {
 }
 
 export function isSingleAccount(account: Account): account is SingleAccount {
-  return account.type === 'WEB3_AUTH' || account.type === 'PRIVATE_KEY';
+  return isWeb3AuthKeyringType(account.type) || account.type === 'PRIVATE_KEY';
 }
 
 export function isAirgapAccount(account: Account): account is SingleAccount {
   return account.type === 'AIRGAP';
 }
 
+export function isSessionAccount(account: Account): account is SessionAccount {
+  return account.type === 'SESSION';
+}
+
 export function hasPrivateKeyAccount(account: Account): boolean {
-  return isSeedAccount(account) || isSingleAccount(account);
+  return isSeedAccount(account) || isSingleAccount(account) || isSessionAccount(account);
 }
 
 export function hasHDPath(account: Account): account is SeedAccount | LedgerAccount {
@@ -39,8 +45,11 @@ export function deserializeAccount(plain: string) {
   if (accountInfo.type === 'LEDGER') {
     return LedgerAccount.fromData(accountInfo);
   }
-  if (accountInfo.type === 'PRIVATE_KEY' || accountInfo.type === 'WEB3_AUTH') {
+  if (accountInfo.type === 'PRIVATE_KEY' || isWeb3AuthKeyringType(accountInfo.type)) {
     return SingleAccount.fromData(accountInfo);
+  }
+  if (accountInfo.type === 'SESSION') {
+    return SessionAccount.fromData(accountInfo);
   }
   throw new Error('Invalid account type');
 }

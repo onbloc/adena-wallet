@@ -1,4 +1,7 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { TokenValidationError } from '@common/errors';
+import { parseTokenIdentifier } from '@common/utils/grc20-token-path';
 import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
 import { isGRC20TokenModel } from '@common/validation';
 import AdditionalToken from '@components/pages/additional-token/additional-token';
@@ -7,13 +10,10 @@ import { ManageTokenLayout } from '@components/pages/manage-token-layout';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useDebounce } from '@hooks/use-debounce';
 import { useGRC20Token } from '@hooks/use-grc20-token';
-import { useGRC20Tokens } from '@hooks/use-grc20-tokens';
+import { useGRC20TokensInfinite } from '@hooks/use-grc20-tokens-infinite';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RoutePath, TokenInfo } from '@types';
-import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react';
 
 const ManageTokenAddedContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();
@@ -28,7 +28,13 @@ const ManageTokenAddedContainer: React.FC = () => {
   const [addingType, setAddingType] = useState(AddingType.SEARCH);
   const [manualTokenPath, setManualTokenPath] = useState('');
 
-  const { data: grc20Tokens, refetch: refetchGRC20Tokens } = useGRC20Tokens();
+  const {
+    tokens: grc20Tokens,
+    refetch: refetchGRC20Tokens,
+    fetchNextPage: fetchNextGRC20Tokens,
+    hasNextPage: hasMoreGRC20Tokens,
+    isFetchingNextPage: isFetchingNextGRC20Tokens,
+  } = useGRC20TokensInfinite();
 
   /**
    * Manual GRC20 Token Query
@@ -56,11 +62,18 @@ const ManageTokenAddedContainer: React.FC = () => {
       return true;
     }
 
-    try {
-      parseReamPathItemsByPath(manualTokenPath);
-      return true;
+    // Require a full token key `{packagePath}.{symbol}` (the legacy colon form
+    // `{packagePath}:{symbol}` is also accepted) — a bare packagePath is not
+    // accepted, so grc20reg is always queried by the exact token.
+    const parsed = parseTokenIdentifier(manualTokenPath);
+    if (!parsed) {
+      return false;
     }
-    catch {
+
+    try {
+      parseReamPathItemsByPath(parsed.packagePath);
+      return true;
+    } catch {
       return false;
     }
   }, [manualTokenPath]);
@@ -98,20 +111,17 @@ const ManageTokenAddedContainer: React.FC = () => {
       return new TokenValidationError('INVALID_REALM_PATH');
     }
 
-    const isRegistered = tokenMetainfos.some((tokenMetaInfo) => {
-      if (
-        tokenMetaInfo.tokenId !== manualTokenPath
-        || tokenMetaInfo.networkId !== currentNetwork.networkId
-      ) {
-        return false;
-      }
-
-      if (isGRC20TokenModel(tokenMetaInfo)) {
-        return tokenMetaInfo.pkgPath === manualTokenPath;
-      }
-
-      return false;
-    });
+    // The manual input is a realm (package) path; the resolved token carries the
+    // token path in tokenId. Compare against that so a realm with multiple
+    // symbols is matched by the exact token the user is adding.
+    const isRegistered =
+      !!manualGRC20Token &&
+      tokenMetainfos.some(
+        (tokenMetaInfo) =>
+          isGRC20TokenModel(tokenMetaInfo) &&
+          tokenMetaInfo.networkId === currentNetwork.networkId &&
+          tokenMetaInfo.tokenId === manualGRC20Token.tokenId,
+      );
 
     if (isRegistered) {
       return new TokenValidationError('ALREADY_ADDED');
@@ -126,22 +136,22 @@ const ManageTokenAddedContainer: React.FC = () => {
     }
 
     return grc20Tokens
-      .filter(token => token.networkId === currentNetwork.networkId)
+      .filter((token) => token.networkId === currentNetwork.networkId)
       .filter(
-        token =>
+        (token) =>
           !tokenMetainfos.find(
-            tokenMetainfo =>
-              tokenMetainfo.tokenId === token.tokenId
-              && tokenMetainfo.networkId === token.networkId,
+            (tokenMetainfo) =>
+              tokenMetainfo.tokenId === token.tokenId &&
+              tokenMetainfo.networkId === token.networkId,
           ),
       )
       .filter(
-        token =>
-          token?.pkgPath.includes(keyword)
-          || token?.symbol.includes(keyword)
-          || token?.name.includes(keyword),
+        (token) =>
+          token?.pkgPath.includes(keyword) ||
+          token?.symbol.includes(keyword) ||
+          token?.name.includes(keyword),
       )
-      .map(token => ({
+      .map((token) => ({
         tokenId: token?.tokenId,
         name: token?.name,
         symbol: token?.symbol,
@@ -180,13 +190,15 @@ const ManageTokenAddedContainer: React.FC = () => {
 
   const onClickListItem = useCallback(
     (tokenId: string) => {
-      const tokenInfo = tokenInfos?.find(tokenInfo => tokenInfo.tokenId === tokenId);
+      const tokenInfo = tokenInfos?.find((tokenInfo) => tokenInfo.tokenId === tokenId);
       if (!tokenInfo) {
         return;
       }
 
       setSelected(true);
-      setSelectedTokenPath(tokenInfo.path);
+      // Re-fetch by the exact token path (tokenId) so a realm with multiple
+      // symbols resolves to the selected token rather than the first one.
+      setSelectedTokenPath(tokenInfo.tokenId);
       setOpened(false);
     },
     [tokenInfos],
@@ -300,6 +312,11 @@ const ManageTokenAddedContainer: React.FC = () => {
         onClickBack={goBack}
         onClickCancel={onClickCancel}
         onClickAdd={onClickAdd}
+        onEndReached={(): void => {
+          fetchNextGRC20Tokens();
+        }}
+        hasMore={hasMoreGRC20Tokens}
+        loadingMore={isFetchingNextGRC20Tokens}
       />
     </ManageTokenLayout>
   );

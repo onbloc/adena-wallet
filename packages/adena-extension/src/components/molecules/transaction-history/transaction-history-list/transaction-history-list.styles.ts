@@ -3,10 +3,7 @@ import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransactionHistoryListWrapper = styled.div`
-  ${mixins.flex({
-    align: 'normal',
-    justify: 'normal',
-  })};
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
 

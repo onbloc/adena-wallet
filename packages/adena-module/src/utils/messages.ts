@@ -4,17 +4,27 @@ import {
   MemPackage,
   MsgAddPackage,
   MsgCall,
+  MsgCreateSession,
+  MsgEnablePackage,
   MsgEndpoint,
+  MsgRejectPackage,
+  MsgRevokeAllSessions,
+  MsgRevokeSession,
   MsgRun,
-  MsgSend
+  MsgSend,
 } from '@gnolang/gno-js-client';
-import {
-  PubKeySecp256k1, Tx, TxFee, TxSignature
-} from '@gnolang/tm2-js-client';
-import { PubKeyMultisig } from '@gnolang/tm2-js-client';
+import { PubKeyMultisig, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
 
-import { fromBase64, toBase64 } from '../encoding/index.js';
-import { ProtoMessage } from './multisig.js';
+import { fromBase64, toBase64 } from '../encoding';
+import { compressPubkeyIfNeeded } from './pubkey';
+import {
+  MSG_CREATE_SESSION_ENDPOINT,
+  MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
+  MSG_REVOKE_SESSION_ENDPOINT,
+} from './session-message-endpoints';
+
+const ZERO_BIGINT = BigInt(0);
+const TWO_32 = BigInt('4294967296');
 
 export interface Document {
   chain_id: string;
@@ -31,7 +41,6 @@ export interface Document {
   };
   msgs: {
     type: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- loosely typed JSON document
     value: any;
   }[];
   memo: string;
@@ -49,35 +58,106 @@ export interface Document {
   }[];
 }
 
-export const decodeTxMessages = (messages: Any[]): ProtoMessage[] => {
+export const decodeTxMessages = (messages: Any[]): any[] => {
   return messages.map((m: Any) => {
     switch (m.type_url) {
       case MsgEndpoint.MSG_CALL: {
         const decodedMessage = MsgCall.decode(m.value);
+        const messageJson = MsgCall.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
-          ...decodedMessage
+          ...messageJson,
         };
       }
       case MsgEndpoint.MSG_SEND: {
         const decodedMessage = MsgSend.decode(m.value);
+        const messageJson = MsgSend.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
-          ...decodedMessage
+          ...messageJson,
         };
       }
       case MsgEndpoint.MSG_ADD_PKG: {
         const decodedMessage = MsgAddPackage.decode(m.value);
+        const messageJson = MsgAddPackage.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
-          ...decodedMessage
+          ...messageJson,
         };
       }
       case MsgEndpoint.MSG_RUN: {
         const decodedMessage = MsgRun.decode(m.value);
+        const messageJson = MsgRun.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
-          ...decodedMessage
+          ...messageJson,
+        };
+      }
+      case MsgEndpoint.MSG_ENABLE_PKG: {
+        const decodedMessage = MsgEnablePackage.decode(m.value);
+        const messageJson = MsgEnablePackage.toJSON(decodedMessage) as any;
+        return {
+          '@type': m.type_url,
+          ...messageJson,
+        };
+      }
+      case MsgEndpoint.MSG_REJECT_PKG: {
+        const decodedMessage = MsgRejectPackage.decode(m.value);
+        const messageJson = MsgRejectPackage.toJSON(decodedMessage) as any;
+        return {
+          '@type': m.type_url,
+          ...messageJson,
+        };
+      }
+      case MSG_CREATE_SESSION_ENDPOINT: {
+        const decodedMessage = MsgCreateSession.decode(m.value);
+        const messageJson = MsgCreateSession.toJSON(decodedMessage) as any;
+        messageJson.expires_at = decodedMessage.expires_at.toString();
+        if (!decodedMessage.allow_paths.length) {
+          delete messageJson.allow_paths;
+        }
+        if (!decodedMessage.spend_limit) {
+          delete messageJson.spend_limit;
+        }
+        if (decodedMessage.spend_period === ZERO_BIGINT) {
+          delete messageJson.spend_period;
+        }
+        // Chain's amino-JSON for crypto.PubKey uses "@type" and emits the raw
+        // 33-byte compressed pubkey base64 (not the proto-wrapped PubKey
+        // message). MsgCreateSession.expires_at has no omitempty tag in Go,
+        // so force it to remain present even when it is 0. Fields marked
+        // omitempty in Go are removed above when they carry zero values.
+        if (messageJson.session_key && messageJson.session_key.type_url !== undefined) {
+          messageJson.session_key = aminoizePubKeyAny(
+            messageJson.session_key,
+            decodedMessage.session_key?.value,
+          );
+        }
+        return {
+          '@type': m.type_url,
+          ...messageJson,
+        };
+      }
+      case MSG_REVOKE_SESSION_ENDPOINT: {
+        const decodedMessage = MsgRevokeSession.decode(m.value);
+        const messageJson = MsgRevokeSession.toJSON(decodedMessage) as any;
+        if (messageJson.session_key && messageJson.session_key.type_url !== undefined) {
+          messageJson.session_key = aminoizePubKeyAny(
+            messageJson.session_key,
+            decodedMessage.session_key?.value,
+          );
+        }
+        return {
+          '@type': m.type_url,
+          ...messageJson,
+        };
+      }
+      case MSG_REVOKE_ALL_SESSIONS_ENDPOINT: {
+        const decodedMessage = MsgRevokeAllSessions.decode(m.value);
+        const messageJson = MsgRevokeAllSessions.toJSON(decodedMessage) as any;
+        return {
+          '@type': m.type_url,
+          ...messageJson,
         };
       }
       default:
@@ -86,80 +166,240 @@ export const decodeTxMessages = (messages: Any[]): ProtoMessage[] => {
   });
 };
 
-function createMemPackage(memPackage: RawMemPackage): MemPackage {
+function createMemPackage(memPackage: RawMemPackage): any {
   return MemPackage.create({
     name: memPackage.name,
     path: memPackage.path,
-    files: memPackage.files.map(file =>
+    files: memPackage.files.map((file: any) =>
       MemFile.create({
         name: file.name,
-        body: file.body
-      })
-    )
+        body: file.body,
+      }),
+    ),
   });
 }
 
-function encodeMessageValue(message: {
-  type: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- loosely-typed JSON document messages
-  value: any;
-}) {
+// Coerce an `Any`-shaped field back into proper proto form after a
+// JSON round-trip. When InjectionMessage is shipped across the popup
+// query string it goes JSON.stringify -> encodeURI -> base64 -> reverse,
+// and the embedded Uint8Array in `value` is silently rehydrated as a
+// plain `{0:..,1:..}` object (or string, or number[]). The proto
+// BinaryWriter.bytes() asserts on `.length`, so an unnormalized shape
+// trips `invalid uint32: undefined`.
+function toUint8Array(input: unknown): Uint8Array {
+  if (input instanceof Uint8Array) return input;
+  if (Array.isArray(input)) return Uint8Array.from(input as number[]);
+  if (typeof input === 'string') return fromBase64(input);
+  if (input && typeof input === 'object') {
+    const indexed = input as { [k: string]: number };
+    const keys = Object.keys(indexed)
+      .filter((k) => /^\d+$/.test(k))
+      .map((k) => Number(k))
+      .sort((a, b) => a - b);
+    if (keys.length > 0) {
+      const out = new Uint8Array(keys.length);
+      for (let i = 0; i < keys.length; i++) {
+        out[i] = indexed[String(keys[i])];
+      }
+      return out;
+    }
+  }
+  return new Uint8Array(0);
+}
+
+function normalizeAnyField(
+  anyField: { type_url?: string; value?: unknown } | undefined,
+): { type_url: string; value: Uint8Array } | undefined {
+  if (!anyField) return undefined;
+  return {
+    type_url: anyField.type_url ?? '',
+    value: toUint8Array(anyField.value),
+  };
+}
+
+function toProtoBigInt(value: unknown): bigint {
+  if (value === undefined || value === null || value === '') {
+    return ZERO_BIGINT;
+  }
+  if (typeof value === 'bigint') {
+    return value;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || !Number.isInteger(value)) {
+      throw new Error(`invalid integer value: ${value}`);
+    }
+    return BigInt(value);
+  }
+  if (typeof value === 'string') {
+    return BigInt(value);
+  }
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const low = record.low;
+    const high = record.high;
+    if (
+      typeof low === 'number' &&
+      typeof high === 'number' &&
+      Number.isInteger(low) &&
+      Number.isInteger(high)
+    ) {
+      const lowBig = BigInt(low >>> 0);
+      const highBig = record.unsigned === true
+        ? BigInt(high >>> 0)
+        : BigInt(high);
+      return highBig * TWO_32 + lowBig;
+    }
+    if ('toString' in record) {
+      return BigInt(String(value));
+    }
+  }
+  throw new Error('invalid integer value');
+}
+
+// Convert a proto-encoded PubKey Any into the amino-JSON form the gno chain
+// emits in GetSignBytes:
+//   wallet (proto Any.toJSON): { type_url, value: base64(<proto-encoded PubKey
+//                                                          message: 0a 21 <33 bytes>>) }
+//   chain (amino JSON):        { "@type": ...,
+//                                value: base64(<raw 33-byte compressed pubkey>) }
+// Both the key name (@type vs type_url) AND the value content (raw pubkey bytes
+// vs proto-wrapped pubkey bytes) differ, so we unwrap the inner PubKeySecp256k1
+// message to expose the raw `key` bytes before base64-encoding.
+function aminoizePubKeyAny(
+  any: { type_url?: string; value?: unknown },
+  protoEncodedValueBytes: Uint8Array | undefined,
+): { '@type': string; value: string } {
+  let valueBase64 = typeof any.value === 'string' ? any.value : '';
+  if (protoEncodedValueBytes && protoEncodedValueBytes.length > 0) {
+    try {
+      const pubKey = PubKeySecp256k1.decode(protoEncodedValueBytes);
+      valueBase64 = toBase64(pubKey.key);
+    } catch {
+      // Fall back to whatever Any.toJSON produced; chain will still reject,
+      // but the user gets a deterministic error rather than a JS exception.
+    }
+  }
+  return {
+    '@type': any.type_url ?? '',
+    value: valueBase64,
+  };
+}
+
+function encodeMessageValue(message: { type: string; value: any }) {
   switch (message.type) {
     case MsgEndpoint.MSG_ADD_PKG: {
       const value = message.value;
-      const msgAddPackage = MsgAddPackage.fromPartial({
+      const msgAddPackage = MsgAddPackage.create({
         creator: value.creator,
         send: value.send || '',
         max_deposit: value?.max_deposit || '',
-        package: value.package ? MemPackage.fromPartial(value.package) : undefined
+        package: value.package ? createMemPackage(value.package) : undefined,
       });
       return Any.create({
         type_url: MsgEndpoint.MSG_ADD_PKG,
-        value: MsgAddPackage.encode(msgAddPackage).finish()
+        value: MsgAddPackage.encode(msgAddPackage).finish(),
       });
     }
     case MsgEndpoint.MSG_CALL: {
-      const args: string[] | null = message.value.args
+      const args: string[] = message.value.args
         ? message.value.args.length === 0
           ? null
           : message.value.args
         : null;
       const result = MsgCall.create({
-        args: args ? args : undefined,
+        args: args,
         caller: message.value.caller,
         func: message.value.func,
         pkg_path: message.value.pkg_path,
         send: message.value.send || '',
-        max_deposit: message.value.max_deposit || ''
+        max_deposit: message.value.max_deposit || '',
       });
       return Any.create({
         type_url: MsgEndpoint.MSG_CALL,
-        value: MsgCall.encode(result).finish()
+        value: MsgCall.encode(result).finish(),
       });
     }
     case MsgEndpoint.MSG_SEND: {
       return Any.create({
         type_url: MsgEndpoint.MSG_SEND,
-        value: MsgSend.encode(MsgSend.create(message.value)).finish()
+        value: MsgSend.encode(MsgSend.create(message.value)).finish(),
       });
     }
     case MsgEndpoint.MSG_RUN: {
       const value = message.value;
       const msgRun = MsgRun.create({
         caller: value.caller,
-        send: value.send || '',
-        package: value.package ? createMemPackage(value.package as unknown as RawMemPackage) : undefined,
-        max_deposit: value?.max_deposit || ''
+        send: value.send || null,
+        package: value.package ? createMemPackage(value.package) : undefined,
+        max_deposit: value?.max_deposit || '',
       });
       return Any.create({
         type_url: MsgEndpoint.MSG_RUN,
-        value: MsgRun.encode(msgRun).finish()
+        value: MsgRun.encode(msgRun).finish(),
+      });
+    }
+    case MsgEndpoint.MSG_ENABLE_PKG: {
+      const value = message.value;
+      const msg = MsgEnablePackage.create({
+        approver: value.approver,
+        pkg_path: value.pkg_path,
+        pkg_hash: value.pkg_hash || '',
+        pkg_height: toProtoBigInt(value.pkg_height),
+      });
+      return Any.create({
+        type_url: MsgEndpoint.MSG_ENABLE_PKG,
+        value: MsgEnablePackage.encode(msg).finish(),
+      });
+    }
+    case MsgEndpoint.MSG_REJECT_PKG: {
+      const value = message.value;
+      const msg = MsgRejectPackage.create({
+        sender: value.sender,
+        pkg_path: value.pkg_path,
+      });
+      return Any.create({
+        type_url: MsgEndpoint.MSG_REJECT_PKG,
+        value: MsgRejectPackage.encode(msg).finish(),
+      });
+    }
+    case MSG_CREATE_SESSION_ENDPOINT: {
+      const value = message.value;
+      const msg = MsgCreateSession.create({
+        creator: value.creator,
+        session_key: normalizeAnyField(value.session_key),
+        expires_at: toProtoBigInt(value.expires_at),
+        allow_paths: value.allow_paths || [],
+        spend_limit: value.spend_limit || '',
+        spend_period: toProtoBigInt(value.spend_period),
+      });
+      return Any.create({
+        type_url: MSG_CREATE_SESSION_ENDPOINT,
+        value: MsgCreateSession.encode(msg).finish(),
+      });
+    }
+    case MSG_REVOKE_SESSION_ENDPOINT: {
+      const value = message.value;
+      const msg = MsgRevokeSession.create({
+        creator: value.creator,
+        session_key: normalizeAnyField(value.session_key),
+      });
+      return Any.create({
+        type_url: MSG_REVOKE_SESSION_ENDPOINT,
+        value: MsgRevokeSession.encode(msg).finish(),
+      });
+    }
+    case MSG_REVOKE_ALL_SESSIONS_ENDPOINT: {
+      const value = message.value;
+      const msg = MsgRevokeAllSessions.create({ creator: value.creator });
+      return Any.create({
+        type_url: MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
+        value: MsgRevokeAllSessions.encode(msg).finish(),
       });
     }
     default: {
       return Any.create({
         type_url: MsgEndpoint.MSG_CALL,
-        value: MsgCall.encode(MsgCall.fromJSON(message.value)).finish()
+        value: MsgCall.encode(MsgCall.fromJSON(message.value)).finish(),
       });
     }
   }
@@ -177,111 +417,140 @@ export function combineMultisigPublicKey(pubKeys: RawPubKey[], threshold: number
   const multisigPubKey = {
     threshold: threshold,
     pubkeys:
-      pubKeys?.map(pk => ({
+      pubKeys?.map((pk) => ({
         type_url: pk['@type'],
-        value: PubKeySecp256k1.encode({ key: fromBase64(pk.value) }).finish()
-      })) || []
+        value: PubKeySecp256k1.encode({
+          key: fromBase64(pk.value),
+        }).finish(),
+      })) || [],
   };
 
   const resultPubKey = Any.create({
     type_url: '/tm.PubKeyMultisig',
     value: PubKeyMultisig.encode({
       k: BigInt(multisigPubKey.threshold),
-      pub_keys: multisigPubKey.pubkeys.map(pk =>
+      pub_keys: multisigPubKey.pubkeys.map((pk) =>
         Any.create({
           type_url: pk.type_url,
-          value: pk.value
-        })
-      )
-    }).finish()
+          value: pk.value,
+        }),
+      ),
+    }).finish(),
   });
 
   return {
     '@type': resultPubKey.type_url,
-    value: toBase64(resultPubKey.value)
+    value: toBase64(resultPubKey.value),
   };
 }
 
 export function documentToTx(document: Document): Tx {
   const messages: Any[] = document.msgs.map(encodeMessageValue);
 
-  const signatures: TxSignature[]
-    = document.signatures?.map((sig) => {
+  const signatures: TxSignature[] =
+    document.signatures?.map((sig) => {
       let pubKeyAny: Any;
 
       if (sig.pub_key['@type'] === '/tm.PubKeyMultisig') {
         const multisigPubKey = {
           threshold: parseInt(sig.pub_key.threshold || '1'),
           pubkeys:
-            sig.pub_key.pubkeys?.map(pk => ({
+            sig.pub_key.pubkeys?.map((pk) => ({
               type_url: pk['@type'],
-              value: PubKeySecp256k1.encode({ key: fromBase64(pk.value) }).finish()
-            })) || []
+              value: PubKeySecp256k1.encode({
+                key: fromBase64(pk.value),
+              }).finish(),
+            })) || [],
         };
 
         pubKeyAny = Any.create({
           type_url: sig.pub_key['@type'],
           value: PubKeyMultisig.encode({
             k: BigInt(multisigPubKey.threshold),
-            pub_keys: multisigPubKey.pubkeys.map(pk =>
+            pub_keys: multisigPubKey.pubkeys.map((pk) =>
               Any.create({
                 type_url: pk.type_url,
-                value: pk.value
-              })
-            )
-          }).finish()
+                value: pk.value,
+              }),
+            ),
+          }).finish(),
         });
-      }
-      else {
+      } else {
         const publicKeyBytes = fromBase64(sig.pub_key.value || '');
-        const wrappedPublicKeyValue: PubKeySecp256k1 = { key: publicKeyBytes };
+        const wrappedPublicKeyValue: PubKeySecp256k1 = {
+          key: publicKeyBytes,
+        };
         const encodedPublicKeyBytes = PubKeySecp256k1.encode(wrappedPublicKeyValue).finish();
 
         pubKeyAny = {
           type_url: sig.pub_key['@type'],
-          value: encodedPublicKeyBytes
+          value: encodedPublicKeyBytes,
         };
       }
 
       return TxSignature.create({
         pub_key: pubKeyAny,
-        signature: fromBase64(sig.signature)
+        signature: fromBase64(sig.signature),
       });
     }) || [];
 
   return {
     messages,
     fee: TxFee.create({
-      gas_wanted: BigInt(document.fee.gas),
+      gas_wanted: toProtoBigInt(document.fee.gas),
       gas_fee: document.fee.amount
-        .map(feeAmount => `${feeAmount.amount}${feeAmount.denom}`)
-        .join(',')
+        .map((feeAmount) => `${feeAmount.amount}${feeAmount.denom}`)
+        .join(','),
     }),
     signatures,
-    memo: document.memo
+    memo: document.memo,
   };
 }
 
-export function documentToDefaultTx(document: Document): Tx {
+export function documentToDefaultTx(
+  document: Document,
+  publicKey?: Uint8Array,
+  sessionAddr?: string,
+): Tx {
   const messages: Any[] = document.msgs.map(encodeMessageValue);
+  // gno.land /app/simulate skips signature verification but still validates
+  // pub_key to signer-address derivation. When the caller has a pubkey (e.g. a
+  // Ledger account whose signing requires hardware that isn't attached during
+  // gas estimation), include it so simulate accepts the placeholder tx for
+  // pre-initialized accounts. Callers with no pubkey (AirGap) pass undefined
+  // and keep the historical empty placeholder.
+  //
+  // SessionAccount path supplies sessionAddr so the placeholder signature
+  // carries session_addr (std.Signature field 3); the node's ante handler then
+  // routes the simulate as a session signature (pubkey to session address)
+  // instead of failing the master pubkey-address derivation check.
+  const pubKey =
+    publicKey && publicKey.length > 0
+      ? {
+          type_url: '/tm.PubKeySecp256k1',
+          value: PubKeySecp256k1.encode({
+            key: compressPubkeyIfNeeded(publicKey),
+          }).finish(),
+        }
+      : {
+          type_url: '',
+          value: new Uint8Array(),
+        };
+  const signature: TxSignature = {
+    pub_key: pubKey,
+    signature: new Uint8Array(),
+    session_addr: sessionAddr ?? '',
+  };
   return {
     messages,
     fee: TxFee.create({
-      gas_wanted: BigInt(document.fee.gas),
+      gas_wanted: toProtoBigInt(document.fee.gas),
       gas_fee: document.fee.amount
-        .map(feeAmount => `${feeAmount.amount}${feeAmount.denom}`)
-        .join(',')
+        .map((feeAmount) => `${feeAmount.amount}${feeAmount.denom}`)
+        .join(','),
     }),
-    signatures: [
-      {
-        pub_key: {
-          type_url: '',
-          value: new Uint8Array()
-        },
-        signature: new Uint8Array()
-      }
-    ],
-    memo: document.memo
+    signatures: [signature],
+    memo: document.memo,
   };
 }
 
@@ -339,18 +608,61 @@ export interface RawMemPackage {
   };
 }
 
-export type RawTxMessageType
-  = | RawBankSendMessage
-    | RawVmCallMessage
-    | RawVmAddPackageMessage
-    | RawVmRunMessage;
+export interface RawMsgCreateSession {
+  '@type': string;
+  creator: string;
+  session_key?: {
+    type_url: string;
+    value: string;
+  };
+  expires_at: string;
+  allow_paths?: string[];
+  spend_limit?: string;
+  spend_period?: string;
+}
+
+export interface RawMsgRevokeSession {
+  '@type': string;
+  creator: string;
+  session_key?: {
+    type_url: string;
+    value: string;
+  };
+}
+
+export interface RawMsgRevokeAllSessions {
+  '@type': string;
+  creator: string;
+}
+
+export interface RawMsgEnablePackage {
+  '@type': string;
+  approver: string;
+  pkg_path: string;
+  pkg_hash: string;
+  pkg_height: string;
+}
+
+export interface RawMsgRejectPackage {
+  '@type': string;
+  sender: string;
+  pkg_path: string;
+}
+
+export type RawTxMessageType =
+  | RawBankSendMessage
+  | RawVmCallMessage
+  | RawVmAddPackageMessage
+  | RawVmRunMessage
+  | RawMsgCreateSession
+  | RawMsgRevokeSession
+  | RawMsgRevokeAllSessions
+  | RawMsgEnablePackage
+  | RawMsgRejectPackage;
 
 export interface RawTx {
   msg: RawTxMessageType[];
-  fee: {
-    gas_wanted: string;
-    gas_fee: string;
-  };
+  fee: { gas_wanted: string; gas_fee: string };
   signatures: RawSignature[] | null;
   memo: string;
 }
@@ -375,8 +687,7 @@ export const strToSignedTx = (str: string): Tx | null => {
   let rawTx = null;
   try {
     rawTx = JSON.parse(str);
-  }
-  catch (e) {
+  } catch (e) {
     console.error(e);
   }
 
@@ -389,23 +700,22 @@ export const rawTxToTx = (rawTx: RawTx): Tx | null => {
   try {
     const document = rawTx;
     const messages: Any[] = document.msg
-      .map(msg => ({
+      .map((msg) => ({
         type: msg['@type'],
-        value: { ...msg }
+        value: { ...msg },
       }))
       .map(encodeMessageValue);
     return {
       messages,
 
       fee: TxFee.create({
-        gas_wanted: BigInt(document.fee.gas_wanted),
-        gas_fee: document.fee.gas_fee
+        gas_wanted: toProtoBigInt(document.fee.gas_wanted),
+        gas_fee: document.fee.gas_fee,
       }),
       signatures: (document.signatures || []).map(rawSignatureToTxSignature),
-      memo: document.memo
+      memo: document.memo,
     };
-  }
-  catch (e) {
+  } catch (e) {
     console.error(e);
     return null;
   }
@@ -418,21 +728,23 @@ const rawSignatureToTxSignature = (signature: RawSignature): TxSignature => {
     return TxSignature.create({
       pub_key: {
         type_url: signatureType,
-        value: fromBase64(signature.pub_key.value)
+        value: fromBase64(signature.pub_key.value),
       },
-      signature: fromBase64(signature.signature)
+      signature: fromBase64(signature.signature),
     });
   }
 
   const publicKeyBytes = fromBase64(signature?.pub_key?.value || '');
-  const wrappedPublicKeyValue: PubKeySecp256k1 = { key: publicKeyBytes };
+  const wrappedPublicKeyValue: PubKeySecp256k1 = {
+    key: publicKeyBytes,
+  };
   const encodedPublicKeyBytes = PubKeySecp256k1.encode(wrappedPublicKeyValue).finish();
   const signatureBytes = fromBase64(signature?.signature || '');
   return TxSignature.create({
     pub_key: {
       type_url: signatureType,
-      value: encodedPublicKeyBytes
+      value: encodedPublicKeyBytes,
     },
-    signature: signatureBytes
+    signature: signatureBytes,
   });
 };

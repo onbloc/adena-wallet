@@ -1,5 +1,4 @@
 import React, { ReactNode } from 'react';
-
 import { SubHeaderWrapper } from './sub-header.styles';
 
 export interface SubHeaderProps {

@@ -33,8 +33,8 @@ export interface NetworkFee {
 
 export interface GasInfo {
   gasFee: number;
-  gasUsed: bigint;
-  gasWanted: bigint;
+  gasUsed: number;
+  gasWanted: number;
   gasPrice: number;
   hasError?: boolean;
   simulateErrorMessage: string | null;

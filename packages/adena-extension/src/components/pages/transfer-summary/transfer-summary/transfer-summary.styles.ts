@@ -3,10 +3,7 @@ import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransferSummaryWrapper = styled.div`
-  ${mixins.flex({
-    align: 'normal',
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ align: 'normal', justify: 'flex-start' })};
   position: relative;
   padding: 24px 20px 0;
   width: 100%;
@@ -19,14 +16,22 @@ export const TransferSummaryWrapper = styled.div`
   }
 
   .info-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     width: 100%;
     margin-top: 25px;
   }
 
-  .direction-icon-wrapper {
-    width: 100%;
-    text-align: center;
-    margin: 10px 0;
+  .session-signing-badge {
+    align-self: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background-color: ${getTheme('neutral', '_9')};
+    color: ${getTheme('neutral', 'a')};
+    ${fonts.captionReg};
+    font-size: 11px;
+    line-height: 16px;
   }
 
   .network-fee-wrapper {
@@ -50,7 +55,7 @@ export const TransferSummaryWrapper = styled.div`
     background-color: rgba(239, 45, 33, 0.08);
     border: 1px solid ${getTheme('red', '_5')};
     margin-top: 8px;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 500;
     font-size: 13px;
     line-height: 20px;

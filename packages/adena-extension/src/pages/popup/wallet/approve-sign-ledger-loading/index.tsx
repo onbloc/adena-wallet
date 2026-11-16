@@ -1,12 +1,17 @@
-import { WalletResponseRejectType, WalletResponseSuccessType } from '@adena-wallet/sdk';
+import { AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
+import React, { useEffect, useState } from 'react';
+
+import {
+  WalletResponseFailureType,
+  WalletResponseRejectType,
+  WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
 import { ApproveLedgerLoading } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessageInstance } from '@inject/message';
 import { RoutePath } from '@types';
-import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
-import React, { useEffect, useState } from 'react';
 
 const ApproveSignLedgerLoadingContainer: React.FC = () => {
   const { wallet } = useWalletContext();
@@ -53,17 +58,26 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
         chrome.runtime.sendMessage(
           InjectionMessageInstance.success(
             WalletResponseSuccessType.SIGN_SUCCESS,
-            {
-              document,
-              signature,
-            },
+            { document, signature },
             requestData?.key,
           ),
         );
         return true;
       })
       .catch((error: Error) => {
-        if (error.message === 'Transaction signing request was rejected by the user') {
+        // A device holding a different seed never succeeds on retry, so answer
+        // the request instead of re-prompting the device every second.
+        if (error instanceof LedgerError && error.kind === 'AccountMismatch') {
+          chrome.runtime.sendMessage(
+            InjectionMessageInstance.failure(
+              WalletResponseFailureType.ACCOUNT_MISMATCH,
+              {},
+              requestData?.key,
+            ),
+          );
+          return true;
+        }
+        if (error instanceof LedgerError && error.kind === 'UserRejected') {
           chrome.runtime.sendMessage(
             InjectionMessageInstance.failure(
               WalletResponseRejectType.SIGN_REJECTED,

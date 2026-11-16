@@ -1,19 +1,21 @@
 import { CopyIconButton, FullButtonRightIcon } from '@components/atoms';
 import { QRCodeSVG } from 'qrcode.react';
 import React, { useCallback } from 'react';
-
 import AccountNameInput from '../account-name-input';
 import { AccountDetailsWrapper } from './account-details.styles';
 
 export interface AccountDetailsProps {
   hasPrivateKey: boolean;
   hasSeedPhrase: boolean;
+  hasSessions: boolean;
   originName: string;
   name: string;
   address: string;
+  isSessionAccount: boolean;
   moveGnoscan: () => void;
   moveRevealSeedPhrase: () => void;
   moveExportPrivateKey: () => void;
+  moveManageSessions: () => void;
   setName: (name: string) => void;
   reset: () => void;
 }
@@ -21,14 +23,17 @@ export interface AccountDetailsProps {
 const AccountDetails: React.FC<AccountDetailsProps> = ({
   hasPrivateKey,
   hasSeedPhrase,
+  hasSessions,
   originName,
   name,
   address,
+  isSessionAccount,
   setName,
   reset,
   moveGnoscan,
   moveRevealSeedPhrase,
   moveExportPrivateKey,
+  moveManageSessions,
 }) => {
   const onClickViewOnGnoscan = useCallback(() => {
     moveGnoscan();
@@ -54,30 +59,35 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
         <AccountNameInput originName={originName} name={name} setName={setName} reset={reset} />
       </div>
 
-      <div className='qrcode-wrapper'>
-        <div className='qrcode-background'>
-          <QRCodeSVG value={address} size={150} />
+      {!isSessionAccount && (
+        <div className='qrcode-wrapper'>
+          <div className='qrcode-background'>
+            <QRCodeSVG value={address} size={150} />
+          </div>
+          <div className='qrcode-address-wrapper'>
+            <span className='address'>{address}</span>
+            <CopyIconButton copyText={address} />
+          </div>
         </div>
-        <div className='qrcode-address-wrapper'>
-          <span className='address'>{address}</span>
-          <CopyIconButton copyText={address} />
-        </div>
-      </div>
+      )}
 
       <div className='button-group-wrapper'>
         <FullButtonRightIcon
           icon='WEBLINK'
-          title='View on GnoScan'
+          title={'View on GnoScan'}
           onClick={onClickViewOnGnoscan}
         />
+        {hasSessions && (
+          <FullButtonRightIcon title={'Session Accounts'} onClick={moveManageSessions} />
+        )}
         <FullButtonRightIcon
           disabled={!hasPrivateKey}
-          title='Export Private Key'
+          title={'Export Private Key'}
           onClick={onClickExportPrivateKey}
         />
         <FullButtonRightIcon
           disabled={!hasSeedPhrase}
-          title='Reveal Seed Phrase'
+          title={'Reveal Seed Phrase'}
           onClick={onClickRevealSeedPhrase}
         />
       </div>

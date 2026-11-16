@@ -1,23 +1,55 @@
+import { packagePathOfTokenPath, toRegistryKey } from '@common/utils/grc20-token-path';
+import { getGrc20RegConfig, Grc20RegConfig } from '@common/utils/grc20reg-config';
 import { NetworkMetainfo, TransactionWithPageInfo } from '@types';
 import { AxiosInstance } from 'axios';
-
 import {
+  Grc20MapperContext,
+  hasGRC20TransferTo,
   mapReceivedTransactionByBankMsgSend,
   mapReceivedTransactionByMsgCall,
   mapSendTransactionByBankMsgSend,
+  mapTransactionEdgeByAddress,
   mapVMTransaction,
 } from './mapper/transaction-history-query.mapper';
 import {
+  BankSendValue,
+  MsgCallValue,
+  TransactionResponse,
+} from './response/transaction-history-query-response';
+import {
+  makeAllTransactionHistoryQuery,
   makeBlockTimeLegacyQuery,
   makeBlockTimeQuery,
-  makeGRC20ReceivedTransactionsByAddressQuery,
-  makeGRC20ReceivedTransactionsByAddressQueryByPackagePath,
-  makeGRC20SendTransactionsByAddressQueryByPackagePath,
-  makeNativeTokenReceivedTransactionsByAddressQuery,
-  makeNativeTokenSendTransactionsByAddressQuery,
-  makeVMTransactionsByAddressQuery,
+  makeGRC20ReceivedTransactionHistoryQuery,
+  makeGRC20TransactionHistoryQuery,
+  makeNativeTransactionHistoryQuery,
 } from './transaction-history-indexer.queries';
 import { ITransactionHistoryIndexerRepository } from './types';
+
+type TransactionsQueryResult = {
+  data?: {
+    getTransactions?: TransactionResponse[] | null;
+  } | null;
+} | null;
+
+const EMPTY_PAGE: TransactionWithPageInfo = {
+  page: { hasNext: false, cursor: null },
+  transactions: [],
+};
+
+// Two queries can return the same transaction; keep one row per hash and
+// restore the indexer's newest-first order.
+function mergeTransactionsByHash(...groups: TransactionResponse[][]): TransactionResponse[] {
+  const byHash = new Map<string, TransactionResponse>();
+  for (const group of groups) {
+    for (const tx of group) {
+      if (!byHash.has(tx.hash)) {
+        byHash.set(tx.hash, tx);
+      }
+    }
+  }
+  return [...byHash.values()].sort((a, b) => b.block_height - a.block_height || b.index - a.index);
+}
 
 export class TransactionHistoryIndexerRepository implements ITransactionHistoryIndexerRepository {
   private axiosInstance: AxiosInstance;
@@ -40,172 +72,126 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
     return this.networkMetainfo.indexerUrl + '/graphql/query';
   }
 
-  /**
-   * XXX: The fix is required after the indexer's pagination update.
-   */
+  // The chain's GRC20 helper realm (if any) and grc20 packages. GRC20 transfers
+  // routed through the helper appear as helperPath.Transfer(tokenKey, to, amount)
+  // in history; the mapper uses this to identify the token from the first arg.
+  private get grc20Config(): Grc20RegConfig {
+    return getGrc20RegConfig(this.networkMetainfo?.chainId);
+  }
+
+  private get grc20MapperContext(): Grc20MapperContext {
+    const { helperPath, tokenPackages } = this.grc20Config;
+    return { helperPath: helperPath || undefined, tokenPackages };
+  }
+
   public async fetchAllTransactionHistoryBy(address: string): Promise<TransactionWithPageInfo> {
     if (!this.queryUrl) {
-      return {
-        page: {
-          hasNext: false,
-          cursor: null,
-        },
-        transactions: [],
-      };
+      return EMPTY_PAGE;
     }
 
-    const grc20ReceivedTransactionsQuery = makeGRC20ReceivedTransactionsByAddressQuery(address);
-    const nativeTokenSendQuery = makeNativeTokenSendTransactionsByAddressQuery(address);
-    const nativeTokenReceivedQuery = makeNativeTokenReceivedTransactionsByAddressQuery(address);
-    const vmTransactionsQuery = makeVMTransactionsByAddressQuery(address);
-    return Promise.all([
-      TransactionHistoryIndexerRepository.postGraphQuery(
+    // Second query: a MsgRun-routed transfer only names its sender in the
+    // message, so the recipient is reachable through the Transfer event alone.
+    const [result, receivedResult] = await Promise.all([
+      TransactionHistoryIndexerRepository.postGraphQuery<TransactionsQueryResult>(
         this.axiosInstance,
         this.queryUrl,
-        grc20ReceivedTransactionsQuery,
-      ).then(result =>
-        result?.data?.transactions
-          ? result?.data?.transactions.map(mapReceivedTransactionByMsgCall)
-          : [],
+        makeAllTransactionHistoryQuery(address),
       ),
-      TransactionHistoryIndexerRepository.postGraphQuery(
+      TransactionHistoryIndexerRepository.postGraphQuery<TransactionsQueryResult>(
         this.axiosInstance,
         this.queryUrl,
-        nativeTokenSendQuery,
-      ).then(result =>
-        result?.data?.transactions
-          ? result?.data?.transactions.map(mapSendTransactionByBankMsgSend)
-          : [],
+        makeGRC20ReceivedTransactionHistoryQuery(address, this.grc20Config.tokenPackages),
       ),
-      TransactionHistoryIndexerRepository.postGraphQuery(
-        this.axiosInstance,
-        this.queryUrl,
-        nativeTokenReceivedQuery,
-      ).then(result =>
-        result?.data?.transactions
-          ? result?.data?.transactions.map(mapReceivedTransactionByBankMsgSend)
-          : [],
-      ),
-      TransactionHistoryIndexerRepository.postGraphQuery(
-        this.axiosInstance,
-        this.queryUrl,
-        vmTransactionsQuery,
-      ).then(result =>
-        result?.data?.transactions ? result?.data?.transactions.map(mapVMTransaction) : [],
-      ),
-    ])
-      .then(results => results.flatMap(result => result))
-      .then(txs => ({
-        page: {
-          hasNext: false,
-          cursor: null,
-        },
-        transactions: txs,
-      }));
+    ]);
+
+    // The received query matches any `Transfer` event, and GRC721 emits one too
+    // (with `tokenId` in place of `value`), so keep only the GRC20 receives it
+    // was meant to add.
+    const { tokenPackages } = this.grc20Config;
+    const received = (receivedResult?.data?.getTransactions ?? []).filter((tx) =>
+      hasGRC20TransferTo(tx, address, tokenPackages),
+    );
+
+    const transactions = mergeTransactionsByHash(
+      result?.data?.getTransactions ?? [],
+      received,
+    ).map((tx) => mapTransactionEdgeByAddress(tx, address, this.grc20MapperContext));
+
+    return {
+      page: { hasNext: false, cursor: null },
+      transactions,
+    };
   }
 
-  /**
-   * XXX: The fix is required after the indexer's pagination update.
-   */
   public async fetchNativeTransactionHistoryBy(address: string): Promise<TransactionWithPageInfo> {
     if (!this.queryUrl) {
-      return {
-        page: {
-          hasNext: false,
-          cursor: null,
-        },
-        transactions: [],
-      };
+      return EMPTY_PAGE;
     }
 
-    const nativeTokenSendQuery = makeNativeTokenSendTransactionsByAddressQuery(address);
-    const nativeTokenReceivedQuery = makeNativeTokenReceivedTransactionsByAddressQuery(address);
-    return Promise.all([
-      TransactionHistoryIndexerRepository.postGraphQuery(
-        this.axiosInstance,
-        this.queryUrl,
-        nativeTokenSendQuery,
-      ).then(result =>
-        result?.data?.transactions
-          ? result?.data?.transactions.map(mapSendTransactionByBankMsgSend)
-          : [],
-      ),
-      TransactionHistoryIndexerRepository.postGraphQuery(
-        this.axiosInstance,
-        this.queryUrl,
-        nativeTokenReceivedQuery,
-      ).then(result =>
-        result?.data?.transactions
-          ? result?.data?.transactions.map(mapReceivedTransactionByBankMsgSend)
-          : [],
-      ),
-    ])
-      .then(results => results.flatMap(result => result))
-      .then(txs => ({
-        page: {
-          hasNext: false,
-          cursor: null,
-        },
-        transactions: txs,
-      }));
+    const result = await TransactionHistoryIndexerRepository.postGraphQuery<
+      TransactionsQueryResult
+    >(this.axiosInstance, this.queryUrl, makeNativeTransactionHistoryQuery(address));
+
+    const transactions = (result?.data?.getTransactions ?? []).map((tx) => {
+      const bankTx = tx as TransactionResponse<BankSendValue>;
+      const firstMessage = bankTx.messages?.[0];
+      const isReceive = firstMessage?.value?.to_address === address;
+      return isReceive
+        ? mapReceivedTransactionByBankMsgSend(bankTx)
+        : mapSendTransactionByBankMsgSend(bankTx);
+    });
+
+    return {
+      page: { hasNext: false, cursor: null },
+      transactions,
+    };
   }
 
-  /**
-   * XXX: The fix is required after the indexer's pagination update.
-   */
   public async fetchGRC20TransactionHistoryBy(
     address: string,
-    packagePath: string,
+    tokenPath: string,
   ): Promise<TransactionWithPageInfo> {
     if (!this.queryUrl) {
-      return {
-        page: {
-          hasNext: false,
-          cursor: null,
-        },
-        transactions: [],
-      };
+      return EMPTY_PAGE;
     }
 
-    const grc20ReceivedTransactionsQuery = makeGRC20ReceivedTransactionsByAddressQueryByPackagePath(
-      address,
-      packagePath,
+    // `tokenPath` is the token key `{packagePath}.{symbol}`, which is what the
+    // Transfer event identifies the token by (minus its trailing sequence).
+    const packagePath = packagePathOfTokenPath(tokenPath);
+    const tokenKey = toRegistryKey(tokenPath) ?? tokenPath;
+
+    const result = await TransactionHistoryIndexerRepository.postGraphQuery<
+      TransactionsQueryResult
+    >(
+      this.axiosInstance,
+      this.queryUrl,
+      makeGRC20TransactionHistoryQuery(address, tokenKey, this.grc20Config.tokenPackages),
     );
-    const grc20SendTransactionsQuery = makeGRC20SendTransactionsByAddressQueryByPackagePath(
-      address,
-      packagePath,
+
+    const mapped = (result?.data?.getTransactions ?? []).map((tx) => {
+      const callTx = tx as TransactionResponse<MsgCallValue>;
+      const firstMessage = callTx.messages?.[0];
+      const isCallerSelf = firstMessage?.value?.caller === address;
+      return isCallerSelf
+        ? mapVMTransaction(callTx, this.grc20MapperContext, tokenKey)
+        : mapReceivedTransactionByMsgCall(callTx, this.grc20MapperContext, tokenKey);
+    });
+
+    // A transaction can carry several Transfer events (e.g. a swap); the mapper
+    // decodes the first one, which is not necessarily this token's. Keep only
+    // the rows that ended up describing the selected token — or, when no event
+    // could be decoded, the realm path (the fallback can't disambiguate
+    // sibling symbols).
+    const transactions = mapped.filter(
+      (tx) => tx.amount?.denom === tokenPath || tx.amount?.denom === packagePath,
     );
-    return Promise.all([
-      TransactionHistoryIndexerRepository.postGraphQuery(
-        this.axiosInstance,
-        this.queryUrl,
-        grc20ReceivedTransactionsQuery,
-      ).then(result =>
-        result?.data?.transactions
-          ? result?.data?.transactions.map(mapReceivedTransactionByMsgCall)
-          : [],
-      ),
-      TransactionHistoryIndexerRepository.postGraphQuery(
-        this.axiosInstance,
-        this.queryUrl,
-        grc20SendTransactionsQuery,
-      ).then(result =>
-        result?.data?.transactions ? result?.data?.transactions.map(mapVMTransaction) : [],
-      ),
-    ])
-      .then(results => results.flatMap(result => result))
-      .then(txs => ({
-        page: {
-          hasNext: false,
-          cursor: null,
-        },
-        transactions: txs,
-      }));
+
+    return {
+      page: { hasNext: false, cursor: null },
+      transactions,
+    };
   }
 
-  /**
-   * XXX: The fix is required after the indexer's pagination update.
-   */
   public async fetchBlockTimeByHeight(height: number): Promise<string | null> {
     if (!this.queryUrl) {
       return null;
@@ -216,14 +202,14 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         this.axiosInstance,
         this.queryUrl,
         makeBlockTimeLegacyQuery(height),
-      ).then(result => (result?.data?.blocks?.[0] ? result?.data?.blocks?.[0].time : null));
+      ).then((result) => (result?.data?.blocks?.[0] ? result?.data?.blocks?.[0].time : null));
     }
 
     return TransactionHistoryIndexerRepository.postGraphQuery(
       this.axiosInstance,
       this.queryUrl,
       makeBlockTimeQuery(height),
-    ).then(result =>
+    ).then((result) =>
       result?.data?.blocks?.edges?.[0] ? result?.data?.blocks.edges?.[0].block.time : null,
     );
   }
@@ -237,10 +223,14 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
     return axiosInstance
       .post<T>(
         url,
-        { query },
-        { headers: header || {} },
+        {
+          query,
+        },
+        {
+          headers: header || {},
+        },
       )
-      .then(response => response.data)
+      .then((response) => response.data)
       .catch((e) => {
         console.log(e);
         return null;

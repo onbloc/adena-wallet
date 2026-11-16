@@ -1,6 +1,7 @@
+import styled from 'styled-components';
+
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
-import styled from 'styled-components';
 
 export const ApproveSignedDocumentSignerWrapper = styled.div`
   ${mixins.flex({ justify: 'flex-start' })};
@@ -64,11 +65,7 @@ export const ApproveSignedDocumentWrapper = styled.div<{ $isErrorNetworkFee: boo
   }
 
   .domain-wrapper {
-    ${mixins.flex({
-      direction: 'row',
-      align: 'center',
-      justify: 'center',
-    })};
+    ${mixins.flex({ direction: 'row', align: 'center', justify: 'center' })};
     width: 100%;
     min-height: 41px;
     border-radius: 24px;
@@ -177,6 +174,12 @@ export const ApproveSignedDocumentWrapper = styled.div<{ $isErrorNetworkFee: boo
       ${fonts.body2Reg};
       resize: none;
     }
+    .raw-info-textarea {
+      /* Gecko ignores ::-webkit-scrollbar. */
+      scrollbar-width: thin;
+      scrollbar-color: darkgrey transparent;
+    }
+
     .raw-info-textarea::-webkit-scrollbar {
       width: 2px;
       padding: 1px 1px 1px 0px;

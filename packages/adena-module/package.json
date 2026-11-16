@@ -1,52 +1,11 @@
 {
   "name": "adena-module",
   "private": true,
-  "version": "1.18.5",
+  "version": "1.22.5",
   "description": "Adena's Wallet",
-  "scripts": {
-    "tsc": "tsc",
-    "lint": "eslint",
-    "lint:fix": "eslint --fix",
-    "build": "tsc --noEmit && tsdown",
-    "test": "vitest",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
-  },
-  "devDependencies": {
-    "@arethetypeswrong/core": "^0.18.2",
-    "@eslint/js": "^10.0.1",
-    "@stylistic/eslint-plugin": "^5.10.0",
-    "@types/bn.js": "5.2.0",
-    "@types/crypto-js": "4.2.2",
-"@types/node": "^25.5.0",
-    "@vitest/coverage-istanbul": "^4.1.2",
-    "eslint": "^10.1.0",
-    "eslint-plugin-simple-import-sort": "^12.1.1",
-    "tsdown": "^0.21.7",
-    "typescript": "^6.0.2",
-    "typescript-eslint": "^8.57.2",
-    "vitest": "^4.1.2"
-  },
-  "dependencies": {
-    "@cosmjs/ledger-amino": "0.38.1",
-    "@gnolang/gno-js-client": "2.0.2",
-    "@gnolang/tm2-js-client": "2.0.4",
-    "@ledgerhq/hw-transport": "6.34.1",
-    "@ledgerhq/hw-transport-mocker": "6.33.1",
-    "@ledgerhq/hw-transport-webhid": "6.34.0",
-    "@ledgerhq/hw-transport-webusb": "6.33.0",
-    "@noble/hashes": "2.0.1",
-    "bech32": "2.0.0",
-    "bn.js": "5.2.3",
-    "crypto-js": "4.2.0",
-    "@noble/ciphers": "2.1.1",
-    "@noble/curves": "2.0.1",
-    "readonly-date": "1.0.0",
-    "uuid": "13.0.0"
-  },
-  "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.mts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
       "import": {
@@ -54,10 +13,60 @@
         "default": "./dist/index.mjs"
       },
       "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       }
     },
     "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "pnpm typecheck && tsdown",
+    "typecheck": "node ./node_modules/typescript-native/bin/tsc --noEmit",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "test": "vitest",
+    "test:ci": "vitest --run"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@noble/hashes": "2.4.0",
+    "@stylistic/eslint-plugin": "5.10.0",
+    "@types/bn.js": "5.2.0",
+    "@types/crypto-js": "4.2.2",
+    "@types/libsodium-wrappers-sumo": "0.8.2",
+    "@types/node": "26.6.6",
+    "eslint": "10.14.0",
+    "eslint-plugin-simple-import-sort": "14.0.0",
+    "tsdown": "0.23.7",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "typescript-native": "npm:typescript@7.0.2",
+    "vitest": "5.1.0"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "2.17.0",
+    "@cosmjs/amino": "0.39.0",
+    "@cosmjs/crypto": "0.39.0",
+    "@cosmjs/encoding": "0.39.0",
+    "@cosmjs/ledger-amino": "0.39.0",
+    "@cosmjs/proto-signing": "0.39.0",
+    "@gnolang/gno-js-client": "3.1.0",
+    "@gnolang/tm2-js-client": "3.3.0",
+    "@ledgerhq/hw-transport": "6.35.5",
+    "@ledgerhq/hw-transport-mocker": "6.36.0",
+    "@ledgerhq/hw-transport-webhid": "6.36.0",
+    "@ledgerhq/hw-transport-webusb": "6.35.0",
+    "base64-js": "1.5.1",
+    "bech32": "2.0.0",
+    "bn.js": "5.2.5",
+    "cosmjs-types": "0.11.0",
+    "crypto-js": "4.2.0",
+    "ledger-cosmos-js": "2.1.8",
+    "libsodium-wrappers-sumo": "0.8.4",
+    "readonly-date": "1.0.0",
+    "uuid": "14.0.3"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs}": "eslint --fix"
   }
 }

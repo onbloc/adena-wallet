@@ -1,4 +1,6 @@
-import React, { type JSX } from 'react';
+/* eslint-disable @eslint-react/dom-no-unknown-property */
+import React from 'react';
+import type { JSX } from 'react';
 
 const IconConfirmCheck = ({ fill = '#11D695' }: { fill: string }): JSX.Element => (
   <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18' fill='none'>

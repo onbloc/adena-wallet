@@ -12,6 +12,7 @@ export interface ChainMetainfoItem {
   networkName: string;
   addressPrefix: string;
   rpcUrl: string;
+  fallbackRPCUrl?: string;
   gnoUrl: string;
   apiUrl: string;
   indexerUrl: string;

@@ -1,15 +1,17 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
+import IconCopy from '@assets/icon-copy';
+import IconCopyCheck from '@assets/icon-copy-check';
 import IconEtc from '@assets/icon-etc';
 import IconLink from '@assets/icon-link';
 import IconQRCode from '@assets/icon-qrcode';
-import { GNOT_TOKEN } from '@common/constants/token.constant';
-import { CopyIconButton, Portal } from '@components/atoms';
-import { TokenBalance } from '@components/molecules';
+import { formatAddress } from '@common/utils/client-utils';
+import { Portal } from '@components/atoms';
 import { SideMenuAccountItemProps } from '@types';
-import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react';
-import { useTheme } from 'styled-components';
 
+import { GNOT_TOKEN } from '@common/constants/token.constant';
+import { TokenBalance } from '@components/molecules';
+import { useTheme } from 'styled-components';
 import {
   SideMenuAccountItemMoreInfoWrapper,
   SideMenuAccountItemWrapper,
@@ -25,33 +27,64 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
   moveAccountDetail,
 }) => {
   const theme = useTheme();
-  const {
-    accountId, name, address, balance, type,
-  } = account;
+  const { accountId, name, address, balance, type, badgeLabel } = account;
   const [openedMoreInfo, setOpenedMoreInfo] = useState(false);
   const [positionX, setPositionX] = useState(0);
   const [positionY, setPositionY] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  const onClickCopy = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      navigator.clipboard.writeText(address);
+      setCopied(true);
+      focusAccountId(null);
+    },
+    [address, focusAccountId],
+  );
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return (): void => clearTimeout(timer);
+  }, [copied]);
 
   const displayName = useMemo(() => {
     return name;
   }, [name]);
 
-  const label = useMemo(() => {
-    switch (type) {
-      case 'AIRGAP':
-        return 'Airgap';
-      case 'WEB3_AUTH':
-        return 'Google';
-      case 'PRIVATE_KEY':
-        return 'Imported';
-      case 'LEDGER':
-        return 'Ledger';
-      case 'MULTISIG':
-        return 'Multsig';
-      default:
-        return null;
-    }
-  }, [type]);
+  // A SessionAccount address can never receive tokens, so it is hidden in the
+  // account list to avoid users copying it as a deposit destination.
+  const isSession = type === 'SESSION';
+
+  const labels = useMemo(() => {
+    const typeLabel = ((): string | null => {
+      switch (type) {
+        case 'AIRGAP':
+          return 'Airgap';
+        case 'WEB3_AUTH':
+          return 'Google';
+        case 'WEB3_AUTH_EMAIL':
+          return 'Email';
+        case 'WEB3_AUTH_X':
+          return 'X';
+        case 'PRIVATE_KEY':
+          return 'Imported';
+        case 'LEDGER':
+          return 'Ledger';
+        case 'MULTISIG':
+          return 'Multsig';
+        case 'SESSION':
+          return 'Session';
+        default:
+          return null;
+      }
+    })();
+
+    // Master badge (if any) comes first, followed by the account type chip.
+    return [badgeLabel, typeLabel].filter((value): value is string => Boolean(value));
+  }, [badgeLabel, type]);
 
   const onClickItem = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -102,28 +135,31 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
       <div className='info-wrapper'>
         <div className='address-wrapper'>
           <span className='name'>{displayName}</span>
-          <CopyIconButton
-            className='copy-button'
-            copyText={address}
-            onClick={(): void => focusAccountId(null)}
-          />
-          {label !== null && <span className='label'>{label}</span>}
+          {!isSession && (
+            <div className='address-copy' onClick={onClickCopy}>
+              <span className='address'>{formatAddress(address, 6)}</span>
+              <span className='copy-icon'>{copied ? <IconCopyCheck /> : <IconCopy />}</span>
+            </div>
+          )}
+          {labels.map((text) => (
+            <span key={text} className='label'>
+              {text}
+            </span>
+          ))}
         </div>
         <div className='balance-wrapper'>
-          {balance === '-'
-            ? (
-                <span className='balance'>{balance}</span>
-              )
-            : (
-                <TokenBalance
-                  value={balance}
-                  denom={GNOT_TOKEN.symbol}
-                  fontColor={theme.neutral.a}
-                  orientation='HORIZONTAL'
-                  minimumFontSize='11px'
-                  fontStyleKey='body3Reg'
-                />
-              )}
+          {balance === '-' ? (
+            <span className='balance'>{balance}</span>
+          ) : (
+            <TokenBalance
+              value={balance}
+              denom={GNOT_TOKEN.symbol}
+              fontColor={theme.neutral.a}
+              orientation='HORIZONTAL'
+              minimumFontSize='11px'
+              fontStyleKey='body3Reg'
+            />
+          )}
         </div>
       </div>
 
@@ -189,7 +225,7 @@ const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = 
   );
 
   return (
-    <Portal selector='portal-popup'>
+    <Portal selector={'portal-popup'}>
       <SideMenuAccountItemMoreInfoWrapper
         positionX={positionX}
         positionY={positionY}

@@ -1,10 +1,11 @@
-import { GNOT_TOKEN } from '@common/constants/token.constant';
-import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
-import { TokenBalance } from '@components/molecules';
-import theme from '@styles/theme';
-import BigNumber from 'bignumber.js';
 import React, { useMemo } from 'react';
 
+import { GNOT_TOKEN } from '@common/constants/token.constant';
+import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
+import FeeAmount from '@components/molecules/fee-amount/fee-amount';
+import theme from '@styles/theme';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import BigNumber from 'bignumber.js';
 import {
   StorageDepositContainer,
   StorageDepositItemSkeletonBox,
@@ -20,6 +21,12 @@ export interface StorageDepositProps {
   isError?: boolean;
   errorMessage?: string;
   showPlaceholder?: boolean;
+  /**
+   * Quote for GNOT, from `useFeeTokenPrice`. The screen resolves it so this
+   * stays presentational; with one the row reads in USD, without one it falls
+   * back to the token amount.
+   */
+  feeTokenQuote?: FeeTokenQuote | null;
 }
 
 const storageDepositTooltipMessage = `The total amount of GNOT deposited or
@@ -32,6 +39,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
   isError,
   errorMessage,
   showPlaceholder = false,
+  feeTokenQuote,
 }) => {
   const isEmptyValue = useMemo(() => {
     return storageDeposit.storageDeposit === 0 && storageDeposit.unlockDeposit === 0;
@@ -51,7 +59,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
     }
 
     return Math.abs(storageDeposit.storageDeposit - storageDeposit.unlockDeposit);
-  }, [isEmptyValue, storageDeposit.storageDeposit]);
+  }, [isEmptyValue, storageDeposit.storageDeposit, storageDeposit.unlockDeposit]);
 
   const isRefundable = useMemo(() => {
     if (isEmptyValue) {
@@ -63,9 +71,9 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
 
   return (
     <StorageDepositContainer>
-      <StorageDepositWrapper error={hasError ? 1 : 0}>
+      <StorageDepositWrapper $error={hasError ? 1 : 0}>
         <span className='key'>
-          Storage Deposit
+          {'Storage Deposit'}
 
           <InfoTooltip content={storageDepositTooltipMessage} />
         </span>
@@ -76,6 +84,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
             isRefundable={isRefundable}
             isLoading={isLoading}
             showPlaceholder={showPlaceholder}
+            quote={feeTokenQuote}
           />
         </div>
       </StorageDepositWrapper>
@@ -90,9 +99,8 @@ const StorageDepositAmount: React.FC<{
   isRefundable: boolean;
   isLoading: boolean;
   showPlaceholder?: boolean;
-}> = ({
-  value, isRefundable, isLoading, showPlaceholder = false,
-}) => {
+  quote: FeeTokenQuote | null | undefined;
+}> = ({ value, isRefundable, isLoading, showPlaceholder = false, quote }) => {
   const fontColor = isRefundable ? theme.green._5 : theme.neutral._1;
 
   const amount = useMemo(() => {
@@ -118,17 +126,15 @@ const StorageDepositAmount: React.FC<{
   }
 
   if (showPlaceholder) {
-    return <span className='value'>-</span>;
+    return <span className='value'>{'-'}</span>;
   }
 
   return (
-    <TokenBalance
+    <FeeAmount
       value={amount.value}
       denom={amount.denom}
+      quote={quote}
       fontColor={fontColor}
-      fontStyleKey='body2Reg'
-      minimumFontSize='11px'
-      orientation='HORIZONTAL'
       withSign={isRefundable}
     />
   );

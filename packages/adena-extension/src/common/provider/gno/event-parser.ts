@@ -1,7 +1,6 @@
 import { StorageDepositEvent, StorageUnlockEvent } from '@adena-wallet/sdk';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { Any } from '@gnolang/gno-js-client';
-
 import { StorageDepositEventType } from './types';
 import { parseProto } from './utils';
 
@@ -43,7 +42,7 @@ const parseStorageDeposit = (
   switch (event.type_url) {
     case StorageDepositEventType.StorageDeposit: {
       const decodedEvent = parseProto(event.value, StorageDepositEvent.decode);
-      const bytesDelta = decodedEvent.bytes_delta.toInt();
+      const bytesDelta = Number(decodedEvent.bytes_delta);
       const feeDelta = decodedEvent.fee_delta ? parseTokenAmount(decodedEvent.fee_delta) : 0;
 
       return {
@@ -55,14 +54,14 @@ const parseStorageDeposit = (
     }
     case StorageDepositEventType.UnlockDeposit: {
       const decodedEvent = parseProto(event.value, StorageUnlockEvent.decode);
-      const bytesDelta = decodedEvent.bytes_delta.toInt();
+      const bytesDelta = Number(decodedEvent.bytes_delta);
       const feeDelta = decodedEvent.fee_refund ? parseTokenAmount(decodedEvent.fee_refund) : 0;
 
       return {
         storageDeposit: 0,
         storageUsage: 0,
-        unlockDeposit: Math.abs(bytesDelta),
-        releaseStorageUsage: Math.abs(feeDelta),
+        unlockDeposit: Math.abs(feeDelta),
+        releaseStorageUsage: Math.abs(bytesDelta),
       };
     }
     default:

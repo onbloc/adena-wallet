@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
@@ -5,7 +7,6 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
-import { useMemo } from 'react';
 
 export const useTokenTransactionsPage = (
   isNative: boolean | undefined,
@@ -14,12 +15,12 @@ export const useTokenTransactionsPage = (
 ): {
   data:
     | {
-      title: string;
-      transactions: TransactionInfo[];
-    }[]
+        title: string;
+        transactions: TransactionInfo[];
+      }[]
     | null;
   isFetched: boolean;
-  status: 'pending' | 'error' | 'success';
+  status: 'loading' | 'error' | 'success';
   isLoading: boolean;
   isFetching: boolean;
   isSupported: boolean;
@@ -37,13 +38,15 @@ export const useTokenTransactionsPage = (
     refetch,
     hasNextPage,
     fetchNextPage,
-  } = useInfiniteQuery({
-    queryKey: ['token-details/page/history', currentNetwork.networkId, `${isNative}`, currentAddress, tokenPath],
-    initialPageParam: null as string | null,
-    getNextPageParam: (lastPage: any): string | null => {
-      return lastPage?.page?.cursor || null;
-    },
-    queryFn: (context) => {
+  } = useInfiniteQuery(
+    [
+      'token-details/page/history',
+      currentNetwork.networkId,
+      `${isNative}`,
+      currentAddress,
+      tokenPath,
+    ],
+    (context: any) => {
       if (isNative === undefined) {
         return null;
       }
@@ -58,19 +61,21 @@ export const useTokenTransactionsPage = (
             cursor,
           );
     },
-    enabled:
-      !!currentAddress
-      && transactionHistoryService.supported
-      && tokenMetainfos.length > 0
-      && enabled,
-  });
+    {
+      enabled:
+        !!currentAddress &&
+        transactionHistoryService.supported &&
+        tokenMetainfos.length > 0 &&
+        enabled,
+    },
+  );
 
   const transactions = useMemo(() => {
     if (!allTransactions) {
       return null;
     }
 
-    return allTransactions.pages.flatMap(page => page?.transactions || []);
+    return allTransactions.pages.flatMap((page) => page?.transactions || []);
   }, [allTransactions]);
 
   const firstTransactionHash = useMemo(() => {
@@ -81,9 +86,7 @@ export const useTokenTransactionsPage = (
     return transactions[0]?.hash;
   }, [transactions]);
 
-  const {
-    data, isFetched, status, isLoading, isFetching,
-  } = useMakeTransactionsWithTime(
+  const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
     `token-details/page/history/${currentNetwork.chainId}/${firstTransactionHash}/${tokenPath}`,
     transactions,
   );

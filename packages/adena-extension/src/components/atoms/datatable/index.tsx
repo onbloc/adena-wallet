@@ -1,7 +1,8 @@
-import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
 import React from 'react';
 import styled from 'styled-components';
+
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
 
 export interface DatatableProps {
   data: {
@@ -11,19 +12,13 @@ export interface DatatableProps {
 }
 
 const StyledContainer = styled.div`
-  ${mixins.flex({
-    direction: 'column',
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ direction: 'column', justify: 'flex-start' })};
   width: 100%;
   background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
 
   .row {
-    ${mixins.flex({
-      direction: 'row',
-      justify: 'space-between',
-    })};
+    ${mixins.flex({ direction: 'row', justify: 'space-between' })};
     width: 100%;
     padding: 10px 18px;
     border-bottom: 1px solid ${getTheme('neutral', '_8')};

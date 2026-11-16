@@ -1,12 +1,12 @@
+import React, { useCallback, useState } from 'react';
+
 import IconArrowDown from '@assets/arrowS-down-gray.svg';
 import IconArrowUp from '@assets/arrowS-up-gray.svg';
 import { formatAddress } from '@common/utils/client-utils';
 import { CopyIconButton, Text } from '@components/atoms';
 import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box';
 import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
-import React, { useCallback, useState } from 'react';
 import { useTheme } from 'styled-components';
-
 import {
   StyledInfoButton,
   StyledInfoWrapper,

@@ -1,19 +1,37 @@
+import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
+import styled from 'styled-components';
+
 import { stringFromBase64 } from '@common/utils/encoding-util';
 import { View, WebButton, WebText } from '@components/atoms';
 import { WebSeedValidateInputItem } from '@components/atoms/web-seed-validate-input-item';
 import { WebTitleWithDescription } from '@components/molecules';
 import { UseWalletCreateReturn } from '@hooks/web/use-wallet-create-screen';
-import {
-  ReactElement, useCallback, useEffect, useMemo, useState,
-} from 'react';
-import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
 `;
 
-const ValidateMnemonicStep = ({ useWalletCreateScreenReturn }: { useWalletCreateScreenReturn: UseWalletCreateReturn }): ReactElement<any> => {
+// Uniformly samples two distinct indexes from [0, total). Equivalent to
+// picking a random pair from C(total, 2) — the second index is drawn from
+// the remaining (total - 1) slots and shifted past the first when needed.
+export const pickTwoDistinctIndexes = (total: number): number[] => {
+  if (total < 2) {
+    throw new Error('pickTwoDistinctIndexes requires total >= 2');
+  }
+  const first = Math.floor(Math.random() * total);
+  let second = Math.floor(Math.random() * (total - 1));
+  if (second >= first) {
+    second += 1;
+  }
+  return [first, second].sort((a, b) => a - b);
+};
+
+const ValidateMnemonicStep = ({
+  useWalletCreateScreenReturn,
+}: {
+  useWalletCreateScreenReturn: UseWalletCreateReturn;
+}): ReactElement => {
   const { seeds, onClickNext } = useWalletCreateScreenReturn;
 
   const [firstSeed, setFirstSeed] = useState('');
@@ -39,8 +57,8 @@ const ValidateMnemonicStep = ({ useWalletCreateScreenReturn }: { useWalletCreate
     let currentSeeds = stringFromBase64(seeds);
 
     const currentSeedsArray = currentSeeds.split(' ');
-    const firstSeedIndex = currentSeedsArray.findIndex(word => word === firstSeed);
-    const secondSeedIndex = currentSeedsArray.findIndex(word => word === secondSeed);
+    const firstSeedIndex = currentSeedsArray.findIndex((word) => word === firstSeed);
+    const secondSeedIndex = currentSeedsArray.findIndex((word) => word === secondSeed);
 
     currentSeeds = '';
 
@@ -69,10 +87,7 @@ const ValidateMnemonicStep = ({ useWalletCreateScreenReturn }: { useWalletCreate
     setSecondSeedError(false);
   }, []);
   useEffect(() => {
-    const randomIndexes = Array.from({ length: 2 }, () => Math.floor(Math.random() * 12)).sort(
-      (a, b) => a - b,
-    );
-    setValidateSeedIndexes(randomIndexes);
+    setValidateSeedIndexes(pickTwoDistinctIndexes(12));
   }, []);
 
   return (
@@ -84,11 +99,7 @@ const ValidateMnemonicStep = ({ useWalletCreateScreenReturn }: { useWalletCreate
       />
 
       {hasValidatedIndexes && (
-        <View style={{
-          width: '100%',
-          gap: 16,
-        }}
-        >
+        <View style={{ width: '100%', gap: 16 }}>
           <WebSeedValidateInputItem
             index={validateSeedIndexes[0]}
             value={firstSeed}

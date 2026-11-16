@@ -1,12 +1,12 @@
-import { GlobalPopupStyle } from '@styles/global-style';
-import theme from '@styles/theme';
-import { render } from '@testing-library/react';
 import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
-import ApproveAddingNetworkTable, { ApproveAddingNetworkTableProps } from './approve-adding-network-table';
+import { render } from '@testing-library/react';
+import theme from '@styles/theme';
+import { GlobalPopupStyle } from '@styles/global-style';
+import ApproveAddingNetworkTable, {
+  ApproveAddingNetworkTableProps,
+} from './approve-adding-network-table';
 
 describe('ApproveAddingNetworkTable Component', () => {
   it('ApproveAddingNetworkTable render', () => {
@@ -17,12 +17,12 @@ describe('ApproveAddingNetworkTable Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <ApproveAddingNetworkTable {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

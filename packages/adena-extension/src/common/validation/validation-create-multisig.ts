@@ -6,9 +6,9 @@ import { validateAddress } from 'adena-module';
  */
 export const validateMultisigSigners = (signers: any): boolean => {
   return (
-    Array.isArray(signers)
-    && signers.length >= 2
-    && signers.every(signer => typeof signer === 'string' && validateAddress(signer))
+    Array.isArray(signers) &&
+    signers.length >= 2 &&
+    signers.every((signer) => typeof signer === 'string' && validateAddress(signer))
   );
 };
 

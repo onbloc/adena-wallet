@@ -1,9 +1,12 @@
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
+import React from 'react';
+
+import { MultisigConfig, fromBech32, validateAddress } from 'adena-module';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import useIndicatorStep, { UseIndicatorStepReturn } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
-import { fromBech32, MultisigConfig, validateAddress } from 'adena-module';
-import React from 'react';
+import { useChain } from '@hooks/use-chain';
 
 export type UseSetupMultisigScreenReturn = {
   setupMultisigState: SetupMultisigStateType;
@@ -55,15 +58,18 @@ export const MAX_SIGNERS = 7;
 const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
   const { multisigService, walletService } = useAdenaContext();
   const { changeCurrentAccount, currentAddress } = useCurrentAccount();
+  const chain = useChain();
 
-  const [setupMultisigState, setSetupMultisigState]
-    = React.useState<SetupMultisigStateType>('INIT');
+  const [setupMultisigState, setSetupMultisigState] =
+    React.useState<SetupMultisigStateType>('INIT');
 
-  const [multisigConfig, setMultisigConfig] = React.useState<MultisigConfig>({ ...DEFAULT_MULTISIG_CONFIG });
+  const [multisigConfig, setMultisigConfig] = React.useState<MultisigConfig>({
+    ...DEFAULT_MULTISIG_CONFIG,
+  });
   const [multisigConfigError, setMultisigConfigError] = React.useState<string | null>(null);
 
-  const [multisigAccountMode, setMultisigAccountMode]
-    = React.useState<MultisigAccountMode>('CREATE');
+  const [multisigAccountMode, setMultisigAccountMode] =
+    React.useState<MultisigAccountMode>('CREATE');
 
   const [blockedEvent, setBlockedEvent] = React.useState<boolean>(false);
   const [createdMultisigAddress, setCreatedMultisigAddress] = React.useState<string>('');
@@ -83,8 +89,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
           ...DEFAULT_MULTISIG_CONFIG,
           signers: [currentAddress, ''],
         });
-      }
-      else {
+      } else {
         setMultisigConfig({ ...DEFAULT_MULTISIG_CONFIG });
       }
 
@@ -120,7 +125,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
   }, []);
 
   const removeSigner = React.useCallback((index: number) => {
-    setMultisigConfig(prev => ({
+    setMultisigConfig((prev) => ({
       ...prev,
       signers: prev.signers.filter((_, i) => i !== index),
     }));
@@ -128,7 +133,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
   }, []);
 
   const updateThreshold = React.useCallback((threshold: number) => {
-    setMultisigConfig(prev => ({
+    setMultisigConfig((prev) => ({
       ...prev,
       threshold,
     }));
@@ -137,7 +142,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
 
   const validateMultisigConfig = React.useCallback(() => {
     const { signers, threshold } = multisigConfig;
-    const validSigners = signers.filter(signer => signer.trim() !== '');
+    const validSigners = signers.filter((signer) => signer.trim() !== '');
 
     if (validSigners.length < 2) {
       setMultisigConfigError('At least 2 signers are required.');
@@ -154,12 +159,11 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
     for (const signer of validSigners) {
       try {
         const { prefix } = fromBech32(signer);
-        if (prefix !== defaultAddressPrefix) {
+        if (prefix !== chain.bech32Prefix) {
           setMultisigConfigError('Invalid address format.');
           return false;
         }
-      }
-      catch (_e) {
+      } catch (e) {
         setMultisigConfigError('Invalid address format.');
         return false;
       }
@@ -178,7 +182,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
   const _createMultisigAccount = React.useCallback(async () => {
     try {
       const { signers } = multisigConfig;
-      const validSigners = signers.filter(signer => signer.trim() !== '');
+      const validSigners = signers.filter((signer) => signer.trim() !== '');
 
       for (let i = 0; i < validSigners.length; i++) {
         const isValid = validateAddress(validSigners[i]);
@@ -189,10 +193,8 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
         }
       }
 
-      const {
-        multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys,
-      }
-        = await multisigService.createMultisigAccount(multisigConfig);
+      const { multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys } =
+        await multisigService.createMultisigAccount(multisigConfig, chain.bech32Prefix);
 
       const publicKeyBytesArray = Uint8Array.from(Object.values(multisigPubKey));
       const addressBytesArray = Uint8Array.from(Object.values(multisigAddressBytes));
@@ -207,13 +209,11 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
 
       await changeCurrentAccount(multisigAccount);
       return multisigAddress;
-    }
-    catch (error) {
+    } catch (error) {
       if (error instanceof Error) {
         throw error;
-      }
-      else {
-        throw new Error('Failed to create multisig account. Please try again.', { cause: error });
+      } else {
+        throw new Error('Failed to create multisig account. Please try again.');
       }
     }
   }, [multisigService, walletService, multisigConfig, changeCurrentAccount]);
@@ -234,21 +234,24 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
       const address = await _createMultisigAccount();
       setCreatedMultisigAddress(address);
       setSetupMultisigState('COMPLETE');
-    }
-    catch (e) {
+    } catch (e) {
       setSetupMultisigState('ENTER_MULTISIG_CONFIG');
 
       if (e instanceof Error) {
         setMultisigConfigError(e.message);
-      }
-      else {
+      } else {
         setMultisigConfigError(String(e));
       }
-    }
-    finally {
+    } finally {
       setBlockedEvent(false);
     }
-  }, [blockedEvent, _createMultisigAccount, setSetupMultisigState, setMultisigConfigError, validateMultisigConfig]);
+  }, [
+    blockedEvent,
+    _createMultisigAccount,
+    setSetupMultisigState,
+    setMultisigConfigError,
+    validateMultisigConfig,
+  ]);
 
   const resetMultisigConfig = React.useCallback(() => {
     setMultisigConfig({ ...DEFAULT_MULTISIG_CONFIG });

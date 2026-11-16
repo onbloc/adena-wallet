@@ -1,17 +1,19 @@
-import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
-import { TokenState } from '@states';
-import { useQuery } from '@tanstack/react-query';
-import { GRC20TokenModel, GRC721CollectionModel, TokenModel } from '@types';
-import { Account } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import { useCallback, useMemo } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 
-import { useNFTCollectionHandler } from './nft/use-collection-handler';
+import { getWalletFundingAddress } from '@common/utils/account-address';
+import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import { useChain } from './use-chain';
 import { useAdenaContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
-import { useGRC20Tokens } from './use-grc20-tokens';
 import { useNetwork } from './use-network';
+
+import { TokenState } from '@states';
+import { useQuery } from '@tanstack/react-query';
+import { GRC20TokenModel, TokenModel } from '@types';
+import { Account, TokenProfile } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useGRC20Tokens } from './use-grc20-tokens';
 import { useTransferTokens } from './wallet/use-transfer-tokens';
 
 interface GRC20Token {
@@ -28,13 +30,7 @@ export type UseTokenMetainfoReturn = {
   allTokenMetainfos: TokenModel[] | null;
   currentTokenMetainfos: TokenModel[];
   tokenLogoMap: Record<string, string | null>;
-  getTokenAmount: (amount: {
-    value: string;
-    denom: string;
-  }) => {
-    value: string;
-    denom: string;
-  };
+  getTokenAmount: (amount: { value: string; denom: string }) => { value: string; denom: string };
   initTokenMetainfos: () => Promise<void>;
   updateAllTokenMetainfos: () => Promise<void>;
   updateTokenMetainfos: (account: Account, tokenMetainfos: TokenModel[]) => Promise<void>;
@@ -51,10 +47,7 @@ export type UseTokenMetainfoReturn = {
     amount: string,
     denom: string,
     convertType?: 'COMMON' | 'MINIMAL',
-  ) => {
-    value: string;
-    denom: string;
-  };
+  ) => { value: string; denom: string };
   getTokenImage: (token: TokenModel) => string | null;
   getTokenImageByDenom: (denom: string) => string | null;
   getTokenImageByPkgPath: (pkgPath: string) => string | null;
@@ -73,44 +66,107 @@ function makeTokenKey(token: TokenModel): string {
     return makeTokenKeyByDenom(token.denom);
   }
   if (isGRC20TokenModel(token)) {
-    return makeTokenKeyByPackagePath(token.pkgPath);
+    // GRC20 identity is the token path so two symbols in the same realm don't
+    // share a key. A packagePath-only fallback key is added at map build time
+    // for transaction history, which carries only the realm path.
+    return token.tokenId;
   }
   return `${token.symbol}`;
 }
 
 export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
-  const { balanceService, tokenService } = useAdenaContext();
-  const [tokenMetainfos, setTokenMetainfo] = useRecoilState(TokenState.tokenMetainfos);
+  const { balanceService, tokenService, tokenRegistry } = useAdenaContext();
+  const [tokenMetainfos, setTokenMetainfo] = useAtom(TokenState.tokenMetainfos);
   const { currentAccount } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
+  const { currentNetwork, currentAtomoneNetwork } = useNetwork();
+  const chain = useChain();
   const { fetchTransferTokens } = useTransferTokens();
-  const { addCollections } = useNFTCollectionHandler();
   const { data: grc20Tokens } = useGRC20Tokens();
 
-  const { data: allTokenMetainfos = null } = useQuery<TokenModel[]>({
-    queryKey: ['useTokenMetainfo/allTokenMetainfos', grc20Tokens?.map(token => token.pkgPath), currentNetwork.networkId],
-    queryFn: async (): Promise<TokenModel[]> => {
+  const { data: allTokenMetainfos = null } = useQuery<TokenModel[]>(
+    [
+      'useTokenMetainfo/allTokenMetainfos',
+      grc20Tokens?.map((token) => token.tokenId),
+      currentNetwork.networkId,
+    ],
+    async (): Promise<TokenModel[]> => {
       const fetchedTokenMetainfos = await tokenService.fetchTokenMetainfos();
       const remainGRC20Tokens = grc20Tokens
         ? grc20Tokens.filter(
-            token =>
+            (token) =>
               !fetchedTokenMetainfos.find(
-                meta => isGRC20TokenModel(meta) && meta?.pkgPath === token?.pkgPath,
+                // Dedupe by token key (`{packagePath}.{symbol}`), not pkgPath, so
+                // two tokens from the same realm are treated as distinct.
+                (meta) => isGRC20TokenModel(meta) && meta?.tokenId === token?.tokenId,
               ),
           )
         : [];
 
       return [...fetchedTokenMetainfos, ...remainGRC20Tokens];
     },
-    staleTime: Infinity,
-    enabled: !!grc20Tokens,
-  });
+    {
+      staleTime: Infinity,
+      enabled: !!grc20Tokens,
+    },
+  );
 
   const currentTokenMetainfos = useMemo(() => {
     return tokenMetainfos.filter(
-      tokenMetainfo => tokenMetainfo.main || tokenMetainfo.networkId === currentNetwork.networkId,
+      (tokenMetainfo) => tokenMetainfo.main || tokenMetainfo.networkId === currentNetwork.networkId,
     );
   }, [tokenMetainfos, currentNetwork]);
+
+  // Seed cosmos token entries (e.g. ATONE/PHOTON) into the account's stored
+  // metainfos when an AtomOne network is active. Source of truth is
+  // `tokenRegistry`, which already enumerates every supported cosmos token per
+  // chainProfileId. Without this, cosmos tokens have no persisted `display`
+  // flag and the Manage Tokens toggle has nothing to flip.
+  useEffect(() => {
+    if (!currentAccount) return;
+    const atomoneId = currentAtomoneNetwork?.id ?? null;
+    if (!atomoneId) return;
+
+    const cosmosProfiles = tokenRegistry.list(atomoneId);
+    if (cosmosProfiles.length === 0) return;
+
+    let cancelled = false;
+
+    void (async (): Promise<void> => {
+      // Read straight from storage to avoid a race with the recoil-state
+      // initializer on first mount, which could overwrite stored entries.
+      const stored = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
+      if (cancelled) return;
+
+      const missing = cosmosProfiles.filter(
+        (profile) =>
+          !stored.find((m) => m.tokenId === profile.id && m.networkId === profile.chainProfileId),
+      );
+      if (missing.length === 0) return;
+
+      const newEntries: TokenModel[] = missing.map((profile) => ({
+        main: false,
+        tokenId: profile.id,
+        networkId: profile.chainProfileId,
+        display: true,
+        type: 'cosmos-native',
+        name: profile.name,
+        symbol: profile.symbol,
+        decimals: profile.decimals,
+        image: profile.iconUrl ?? '',
+        denom: getCosmosOriginDenom(profile),
+      }));
+
+      const merged = [...stored, ...newEntries];
+      await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, merged);
+      if (!cancelled) {
+        setTokenMetainfo(merged);
+      }
+    })();
+
+    return (): void => {
+      cancelled = true;
+    };
+  }, [currentAccount, currentAtomoneNetwork?.id, tokenRegistry, tokenService, setTokenMetainfo]);
 
   const tokenMetaMap = useMemo(() => {
     if (!allTokenMetainfos) {
@@ -122,7 +178,14 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
         acc[current.denom] = current;
       }
       if (isGRC20TokenModel(current)) {
-        acc[current.pkgPath] = current;
+        // Primary key: token path (exact identity). Secondary key: packagePath,
+        // because transaction history only carries the realm path in
+        // amount.denom. First occurrence wins so a displayed token is not
+        // overwritten by a sibling symbol from the same realm.
+        acc[current.tokenId] = current;
+        if (!(current.pkgPath in acc)) {
+          acc[current.pkgPath] = current;
+        }
       }
       return acc;
     }, {});
@@ -134,8 +197,17 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }
 
     return allTokenMetainfos.reduce<Record<string, string | null>>((accum, current) => {
-      const key = makeTokenKey(current);
-      accum[key] = current.image || null;
+      const image = current.image || null;
+      if (isGRC20TokenModel(current)) {
+        // Key by token path (exact) plus a packagePath fallback for history.
+        accum[current.tokenId] = image;
+        const pkgKey = makeTokenKeyByPackagePath(current.pkgPath);
+        if (!(pkgKey in accum)) {
+          accum[pkgKey] = image;
+        }
+        return accum;
+      }
+      accum[makeTokenKey(current)] = image;
       return accum;
     }, {});
   }, [allTokenMetainfos]);
@@ -146,7 +218,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }
 
     await setTokenMetainfo([]);
-    const currentAddress = await currentAccount.getAddress(currentNetwork.addressPrefix);
+    const currentAddress = await getWalletFundingAddress(currentAccount, chain.bech32Prefix);
 
     /**
      * For accounts with no transfer events, initialize the state with the list of stored tokens.
@@ -164,27 +236,16 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
      * The new tokens are added to the account's token information.
      */
     const storedGRC20Tokens = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-    const storedCollections = await tokenService.getAccountGRC721Collections(
-      currentAccount.id,
-      currentNetwork.chainId,
-    );
 
     const storedGRC20Packages = storedGRC20Tokens
       .filter((token: TokenModel) => token.networkId === currentNetwork.networkId)
-      .map(grc20Token => grc20Token.tokenId);
-    const storedGRC721Packages = storedCollections
-      .filter((token: GRC721CollectionModel) => token.networkId === currentNetwork.networkId)
-      .map(grc721Token => grc721Token.packagePath);
+      .map((grc20Token) => grc20Token.tokenId);
 
     const filteredGRC20Packages = (transferTokens.grc20Packages || []).filter(
-      grc20Token => !storedGRC20Packages.includes(grc20Token.tokenId),
-    );
-    const filteredGRC721Packages = (transferTokens.grc721Packages || []).filter(
-      grc721Token => !storedGRC721Packages.includes(grc721Token.packagePath),
+      (grc20Token) => !storedGRC20Packages.includes(grc20Token.tokenId),
     );
 
     await addTokenMetainfos(filteredGRC20Packages);
-    await addCollections(filteredGRC721Packages);
 
     await tokenService.initAccountTokenMetainfos(currentAccount.id);
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
@@ -196,7 +257,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       return;
     }
 
-    const currentAddress = await currentAccount.getAddress(currentNetwork.addressPrefix);
+    const currentAddress = await getWalletFundingAddress(currentAccount, chain.bech32Prefix);
 
     /**
      * For accounts with no transfer events, initialize the state with the list of stored tokens.
@@ -214,27 +275,16 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
      * The new tokens are added to the account's token information.
      */
     const storedGRC20Tokens = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-    const storedCollections = await tokenService.getAccountGRC721Collections(
-      currentAccount.id,
-      currentNetwork.chainId,
-    );
 
     const storedGRC20Packages = storedGRC20Tokens
       .filter((token: TokenModel) => token.networkId === currentNetwork.networkId)
-      .map(grc20Token => grc20Token.tokenId);
-    const storedGRC721Packages = storedCollections
-      .filter((token: GRC721CollectionModel) => token.networkId === currentNetwork.networkId)
-      .map(grc721Token => grc721Token.packagePath);
+      .map((grc20Token) => grc20Token.tokenId);
 
     const filteredGRC20Packages = (transferTokens.grc20Packages || []).filter(
-      grc20Token => !storedGRC20Packages.includes(grc20Token.tokenId),
-    );
-    const filteredGRC721Packages = (transferTokens.grc721Packages || []).filter(
-      grc721Token => !storedGRC721Packages.includes(grc721Token.packagePath),
+      (grc20Token) => !storedGRC20Packages.includes(grc20Token.tokenId),
     );
 
     await addTokenMetainfos(filteredGRC20Packages);
-    await addCollections(filteredGRC721Packages);
 
     await tokenService.initAccountTokenMetainfos(currentAccount.id);
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
@@ -245,25 +295,27 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     account: Account,
     tokenMetainfos: TokenModel[],
   ): Promise<void> => {
-    await tokenService.updateTokenMetainfosByAccountId(account.id, tokenMetainfos);
+    // Apply the change to Recoil first so consumers (e.g. wallet-main's
+    // metadata-driven row shell) reflect the new display flag synchronously.
+    // Without this, navigating away from manage-token immediately after a
+    // toggle can race the storage write and briefly re-render the just-hidden
+    // token before the atom catches up.
     setTokenMetainfo([...tokenMetainfos]);
+    await tokenService.updateTokenMetainfosByAccountId(account.id, tokenMetainfos);
   };
 
   const convertDenom = (
     amount: string,
     denom: string,
     convertType?: 'COMMON' | 'MINIMAL',
-  ): {
-    value: string;
-    denom: string;
-  } => {
+  ): { value: string; denom: string } => {
     if (tokenMetainfos) {
       const tokenMetainfo = tokenMetainfos
         .filter(isNativeTokenModel)
         .find(
-          tokenMetainfo =>
-            denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase()
-            || denom.toUpperCase() === tokenMetainfo.denom.toUpperCase(),
+          (tokenMetainfo) =>
+            denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase() ||
+            denom.toUpperCase() === tokenMetainfo.denom.toUpperCase(),
         );
 
       if (tokenMetainfo) {
@@ -278,10 +330,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   };
 
   const getTokenAmount = useCallback(
-    (amount: {
-      value: string;
-      denom: string;
-    }) => {
+    (amount: { value: string; denom: string }) => {
       const tokenMeta = tokenMetaMap[amount.denom];
       if (!tokenMeta) {
         const paths = amount.denom.split('/');
@@ -332,21 +381,26 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }
     const changedTokenMetainfo = {
       ...tokenMetainfo,
-      image: getTokenImage(tokenMetainfo) ?? '',
+      // Resource logo first, the token's own contract data behind it — never
+      // blank, which would discard an image only the chain knows about.
+      image: getTokenImage(tokenMetainfo) || tokenMetainfo.image,
     };
 
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
     if (
       tokenMetainfos.find(
-        item =>
-          item.tokenId === changedTokenMetainfo.tokenId
-          && item.networkId === changedTokenMetainfo.networkId,
+        (item) =>
+          item.tokenId === changedTokenMetainfo.tokenId &&
+          item.networkId === changedTokenMetainfo.networkId,
       )
     ) {
       return false;
     }
 
-    await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [...tokenMetainfos, changedTokenMetainfo]);
+    await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [
+      ...tokenMetainfos,
+      changedTokenMetainfo,
+    ]);
     const changedTokenMetainfos = await tokenService.getTokenMetainfosByAccountId(
       currentAccount.id,
     );
@@ -369,19 +423,22 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
     const newTokenMetainfos = tokenMetainfos
       .filter(
-        t1 =>
+        (t1) =>
           !currentTokenMetainfos.find(
-            t2 => t1.tokenId === t2.tokenId && t1.networkId === t2.networkId,
+            (t2) => t1.tokenId === t2.tokenId && t1.networkId === t2.networkId,
           ),
       )
-      .map(tokenMetainfo => ({
+      .map((tokenMetainfo) => ({
         ...tokenMetainfo,
         main: false,
         display: true,
-        image: getTokenImage(tokenMetainfo) ?? '',
+        image: getTokenImage(tokenMetainfo) || tokenMetainfo.image,
       }));
 
-    await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [...currentTokenMetainfos, ...newTokenMetainfos]);
+    await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [
+      ...currentTokenMetainfos,
+      ...newTokenMetainfos,
+    ]);
     return true;
   };
 
@@ -424,4 +481,20 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     getTokenImageByPkgPath,
     updateTokenMetainfos,
   };
+};
+
+// Extracts the raw on-chain denom (e.g. "uphoton") from a TokenProfile's
+// origin discriminated union. Cosmos-native and cosmos-factory expose `denom`
+// directly; cosmos-ibc uses `ibcDenom`. Used when seeding cosmos token
+// metainfos so transfer flows can read `tokenMetainfo.denom` without going
+// back to the registry.
+export const getCosmosOriginDenom = (profile: TokenProfile): string => {
+  const { origin } = profile;
+  if (origin.kind === 'cosmos-native' || origin.kind === 'cosmos-factory') {
+    return origin.denom;
+  }
+  if (origin.kind === 'cosmos-ibc') {
+    return origin.ibcDenom;
+  }
+  return '';
 };

@@ -1,14 +1,13 @@
+import React from 'react';
+
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
 import { AdditionalTokenProps } from '@types';
-import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
-import { AddingType } from '../additional-token-type-selector';
 import AdditionalToken from '.';
+import { AddingType } from '../additional-token-type-selector';
 
 describe('AdditionalToken Component', () => {
   it('AdditionalToken render', () => {
@@ -51,12 +50,12 @@ describe('AdditionalToken Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <AdditionalToken {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

@@ -1,6 +1,6 @@
 import { CommonState } from '@states';
 import { useEffect } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 
 export type UseToastReturn = {
   message: string | null;
@@ -9,7 +9,7 @@ export type UseToastReturn = {
 };
 
 export const useToast = (): UseToastReturn => {
-  const [message, setMessage] = useRecoilState(CommonState.toastMessage);
+  const [message, setMessage] = useAtom(CommonState.toastMessage);
 
   const show = (message: string): void => {
     setMessage(message);

@@ -1,4 +1,19 @@
 import {
+  Account,
+  isMultisigAccount,
+  isSessionAccount,
+  MultisigConfig,
+  RawBankSendMessage,
+  RawTx,
+  RawTxMessageType,
+  RawVmAddPackageMessage,
+  RawVmCallMessage,
+  RawVmRunMessage,
+} from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
@@ -13,36 +28,21 @@ import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 import { validateInjectionDataForMultisig } from '@common/validation/validation-transaction';
 import { CreateMultisigTransaction } from '@components/molecules/create-multisig-transaction';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { ContractMessage } from '@inject/types';
 import { NetworkFee, RoutePath } from '@types';
-import {
-  Account,
-  isMultisigAccount,
-  MultisigConfig,
-  RawBankSendMessage,
-  RawTx,
-  RawTxMessageType,
-  RawVmAddPackageMessage,
-  RawVmRunMessage,
-} from 'adena-module';
-import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 interface TransactionData {
   messages: readonly any[];
-  contracts: {
-    type: string;
-    function: string;
-    value: any;
-  }[];
+  contracts: { type: string; function: string; value: any }[];
   gasWanted: string;
   gasFee: string;
   memo: string;
@@ -60,6 +60,10 @@ function isRunMessage(message: RawTxMessageType): message is RawVmRunMessage {
   return message['@type'] === '/vm.m_run';
 }
 
+function isVmCallMessage(message: RawTxMessageType): message is RawVmCallMessage {
+  return message['@type'] === '/vm.m_call';
+}
+
 function parseFunctionName(message: RawTxMessageType): string {
   if (isBankSendMessage(message)) {
     return 'Transfer';
@@ -70,7 +74,18 @@ function parseFunctionName(message: RawTxMessageType): string {
   if (isRunMessage(message)) {
     return 'Run';
   }
-  return message.func;
+  if (isVmCallMessage(message)) {
+    return message.func;
+  }
+  if (message['@type'] === '/vm.m_enable_pkg') {
+    return 'EnablePackage';
+  }
+  if (message['@type'] === '/vm.m_reject_pkg') {
+    return 'RejectPackage';
+  }
+  // Session message types (create/revoke session) are not expected in a
+  // multisig flow; fall back to the raw @type for display.
+  return message['@type'];
 }
 
 function mappedTransactionData(rawTx: RawTx): TransactionData {
@@ -98,6 +113,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
+  const chain = useChain();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
   const [requestData, setRequestData] = useState<InjectionMessage>();
@@ -159,6 +175,9 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     };
   }, [networkFee]);
 
+  // GNOT quote for the fee rows' USD line; undefined on networks with no quote.
+  const feeTokenQuote = useFeeTokenPrice(displayNetworkFee.denom);
+
   const currentGasWanted = useMemo(() => {
     return tx?.fee?.gas_wanted || '0';
   }, [tx?.fee?.gas_wanted]);
@@ -201,7 +220,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
+      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   useEffect(() => {
@@ -213,14 +232,16 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   const initRequestData = (): void => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
-    setRequestData({
-      ...parsedData,
-      hostname: data['hostname'],
-    });
+    setRequestData({ ...parsedData, hostname: data['hostname'] });
   };
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
+      if (isSessionAccount(currentAccount)) {
+        chrome.runtime.sendMessage(createSessionAccountUnsupportedResponse(requestData.key));
+        window.close();
+        return;
+      }
       validate(currentAccount, requestData).then((validated) => {
         if (validated) {
           initFavicon();
@@ -237,7 +258,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     const validationMessage = validateInjectionDataForMultisig(
       requestData,
       currentAccount,
-      await currentAccount.getAddress('g'),
+      await currentAccount.getAddress(chain.bech32Prefix),
     );
 
     if (validationMessage) {
@@ -257,11 +278,11 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
   const initTransactionData = async (): Promise<boolean> => {
     if (
-      !currentAccount
-      || !isMultisigAccount(currentAccount)
-      || !requestData
-      || !requestData?.data
-      || !currentNetwork
+      !currentAccount ||
+      !isMultisigAccount(currentAccount) ||
+      !requestData ||
+      !requestData?.data ||
+      !currentNetwork
     ) {
       return false;
     }
@@ -286,8 +307,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       setTransactionMessages(messages);
 
       return true;
-    }
-    catch (e) {
+    } catch (e) {
       console.error(e);
       const error: any = e;
       if (error?.message === 'Transaction signing request was rejected by the user') {
@@ -365,14 +385,15 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.CREATE_MULTISIG_TRANSACTION_SUCCESS,
-          { tx: tx },
+          {
+            tx: tx,
+          },
           requestData?.key,
         ),
       );
 
       return true;
-    }
-    catch (e) {
+    } catch (e) {
       setProcessType('INIT');
 
       if (e instanceof Error) {
@@ -387,8 +408,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
             requestData?.key,
           ),
         );
-      }
-      else {
+      } else {
         setResponse(
           InjectionMessageInstance.failure(
             WalletResponseFailureType.CREATE_MULTISIG_TRANSACTION_FAILED,
@@ -410,7 +430,11 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       return;
     }
     if (!isMultisigAccount(currentAccount)) {
-      navigate(RoutePath.ApproveSignLoading, { state: { requestData } });
+      navigate(RoutePath.ApproveSignLoading, {
+        state: {
+          requestData,
+        },
+      });
       return;
     }
 
@@ -469,6 +493,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       isErrorNetworkFee={isErrorNetworkFee}
       isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}
+      feeTokenQuote={feeTokenQuote}
       multisigConfig={multisigConfig}
       transactionMessages={transactionMessages}
       argumentInfos={argumentInfos}

@@ -1,10 +1,10 @@
-import IconCheck from '@assets/web/web-check-circle.svg';
-import {
-  Row, View, WebButton, WebImg, WebInput,
-} from '@components/atoms';
-import { WebTitleWithDescription } from '@components/molecules';
 import React from 'react';
 import styled from 'styled-components';
+
+import { Row, View, WebButton, WebImg, WebInput } from '@components/atoms';
+import { WebTitleWithDescription } from '@components/molecules';
+
+import IconCheck from '@assets/web/web-check-circle.svg';
 
 interface SetupMultisigCompleteScreenProps {
   address: string;
@@ -17,8 +17,7 @@ const SetupMultisigCompleteScreen: React.FC<SetupMultisigCompleteScreenProps> = 
 }) => {
   return (
     <StyledContainer>
-      <View style={{ marginBottom: 8 }}>
-      </View>
+      <View style={{ marginBottom: 8 }}></View>
       <WebTitleWithDescription
         title='Account Added!'
         description={

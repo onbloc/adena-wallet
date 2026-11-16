@@ -115,12 +115,7 @@ export class Tm2Error extends BaseError {
     this.hash = hash;
   }
 
-  get response(): {
-    error: {
-      type: string;
-      message: string;
-    };
-  } {
+  get response(): { error: { type: string; message: string } } {
     return {
       error: {
         type: this.getType(),
@@ -130,8 +125,8 @@ export class Tm2Error extends BaseError {
   }
 
   public static createTm2Error(hash: string | null, message: string): Tm2Error {
-    const errorType
-      = Object.keys(ERROR_VALUE).find(key => ERROR_VALUE[key].type === message) || 'UNKNOWN_ERROR';
+    const errorType =
+      Object.keys(ERROR_VALUE).find((key) => ERROR_VALUE[key].type === message) || 'UNKNOWN_ERROR';
     return new Tm2Error(hash, errorType);
   }
 }

@@ -1,9 +1,9 @@
 import { GasToken } from '@common/constants/token.constant';
+import FeeAmount from '@components/molecules/fee-amount/fee-amount';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import { GasInfo, NetworkFeeSettingType } from '@types';
 import BigNumber from 'bignumber.js';
 import React, { useMemo } from 'react';
-
-import { TokenBalance } from '../token-balance';
 import {
   NetworkFeeItemSkeletonBox,
   NetworkFeeSettingItemWrapper,
@@ -17,6 +17,12 @@ export interface NetworkFeeSettingItemProps {
     settingType: NetworkFeeSettingType;
     gasInfo?: GasInfo | undefined;
   };
+  // Optional fee-token display overrides. When omitted, falls back to
+  // Gno's `GasToken` (GNOT / 6 decimals). Cosmos callers pass PHOTON, etc.
+  feeSymbol?: string;
+  feeDecimals?: number;
+  /** Quote for the fee token, from `useFeeTokenPrice`. */
+  feeTokenQuote?: FeeTokenQuote | null;
 }
 
 const networkFeeSettingTypeNames: { [key in NetworkFeeSettingType]: string } = {
@@ -30,7 +36,12 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
   isLoading,
   info,
   select,
+  feeSymbol,
+  feeDecimals,
+  feeTokenQuote,
 }) => {
+  const resolvedSymbol = feeSymbol ?? GasToken.symbol;
+  const resolvedDecimals = feeDecimals ?? GasToken.decimals;
   const settingTypeName = useMemo(
     () => networkFeeSettingTypeNames[info.settingType],
     [info.settingType],
@@ -45,20 +56,20 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
 
     return (
       BigNumber(info.gasInfo.gasFee)
-        .shiftedBy(GasToken.decimals * -1)
+        .shiftedBy(resolvedDecimals * -1)
         .toFixed(6, BigNumber.ROUND_UP)
         .toString()
         .replace(/0+$/, '') || ''
     );
-  }, [info.gasInfo]);
+  }, [info.gasInfo, resolvedDecimals]);
 
   const gasInfoDenomination = useMemo(() => {
     if (!hasGasInfo) {
       return '-';
     }
 
-    return GasToken.symbol;
-  }, [info.gasInfo]);
+    return resolvedSymbol;
+  }, [info.gasInfo, resolvedSymbol]);
 
   const onClickItem = (): void => {
     if (!hasGasInfo) {
@@ -82,19 +93,11 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
     <NetworkFeeSettingItemWrapper className={selected ? 'selected' : ''} onClick={onClickItem}>
       <span className='title'>{settingTypeName}</span>
 
-      {hasGasInfo
-        ? (
-            <TokenBalance
-              value={gasInfoAmount}
-              denom={gasInfoDenomination}
-              fontStyleKey='body2Reg'
-              minimumFontSize='11px'
-              orientation='HORIZONTAL'
-            />
-          )
-        : (
-            <span className='no-data'>-</span>
-          )}
+      {hasGasInfo ? (
+        <FeeAmount value={gasInfoAmount} denom={gasInfoDenomination} quote={feeTokenQuote} />
+      ) : (
+        <span className='no-data'>{'-'}</span>
+      )}
     </NetworkFeeSettingItemWrapper>
   );
 };

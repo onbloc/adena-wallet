@@ -1,8 +1,10 @@
-import { Button, ButtonProps, Text } from '@components/atoms';
-import mixins from '@styles/mixins';
-import { FontsType } from '@styles/theme';
-import React, { type JSX } from 'react';
+import React from 'react';
+import type { JSX } from 'react';
 import styled from 'styled-components';
+
+import { FontsType } from '@styles/theme';
+import { Text, Button, ButtonProps } from '@components/atoms';
+import mixins from '@styles/mixins';
 
 interface EachButtonProps {
   onClick: () => void;
@@ -13,7 +15,9 @@ interface EachButtonProps {
   fontType?: FontsType;
 }
 
-interface WrapperStyleProps { margin?: string }
+interface WrapperStyleProps {
+  margin?: string;
+}
 
 interface DoubleButtonProps extends WrapperStyleProps {
   leftProps: EachButtonProps;
@@ -21,10 +25,7 @@ interface DoubleButtonProps extends WrapperStyleProps {
 }
 
 const Wrapper = styled.div<WrapperStyleProps>`
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'space-between',
-  })};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   gap: 10px;
   ${({ margin }): string | undefined => margin && `margin: ${margin}`};

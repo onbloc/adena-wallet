@@ -1,8 +1,7 @@
 // For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+import eslintReact from '@eslint-react/eslint-plugin';
 import eslint from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
-import react from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import storybook from 'eslint-plugin-storybook';
 import tseslint from 'typescript-eslint';
@@ -14,7 +13,7 @@ export default tseslint.config([
   },
   {
     name: 'app/files-to-ignore',
-    ignores: ['**/dist/**', '**/build/**', '**/coverage/**', '**/public/**', '**/libs/**', '**/*.stories.*', '.storybook/**', 'svgTransformer.js', 'jest.config.js', 'jest.setup.js'],
+    ignores: ['**/dist/**', '**/dist-firefox/**', '**/storybook-static/**', '**/build/**', '**/coverage/**', '**/public/**', '**/libs/**', '**/*.stories.*', '.storybook/**', 'manifest*.json'],
   },
   {
     plugins: {
@@ -27,20 +26,13 @@ export default tseslint.config([
     semi: true,
   }),
   {
-    plugins: {
-      react,
-      'react-hooks': reactHooks,
-    },
-    settings: {
-      react: {
-        version: 'detect',
-      },
-    },
+    files: ['**/*.{ts,tsx}'],
+    ...eslintReact.configs['recommended-typescript'],
     rules: {
-      'react-hooks/rules-of-hooks': 'warn',
-      'react-hooks/exhaustive-deps': 'warn',
-      'react/react-in-jsx-scope': 'off',
-      'react/prop-types': 'off',
+      ...eslintReact.configs['recommended-typescript'].rules,
+      '@eslint-react/rules-of-hooks': 'warn',
+      '@eslint-react/exhaustive-deps': 'warn',
+      '@eslint-react/dom-no-unknown-property': 'error',
     },
   },
   {

@@ -1,3 +1,6 @@
+import { isSessionAccount } from 'adena-module';
+import styled from 'styled-components';
+
 import NFTCollections from '@components/pages/nft/nft-collections/nft-collections';
 import NFTHeader from '@components/pages/nft/nft-header/nft-header';
 import { useNFTCollectionHandler } from '@hooks/nft/use-collection-handler';
@@ -6,20 +9,20 @@ import { useGetGRC721Collections } from '@hooks/nft/use-get-grc721-collections';
 import { useGetGRC721PinnedCollections } from '@hooks/nft/use-get-grc721-pinned-collections';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import { useIsLoadingNFT } from '@hooks/nft/use-is-loading-nft';
+import { useSyncGRC721Collections } from '@hooks/nft/use-sync-grc721-collections';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
+import { useIsCurrentSessionRevoked } from '@hooks/wallet/use-current-session-revoked';
 import mixins from '@styles/mixins';
+import { revokedDimStyle } from '@styles/session-revoked';
 import { getTheme } from '@styles/theme';
 import { GRC721CollectionModel, RoutePath } from '@types';
-import { type JSX, useCallback, useMemo } from 'react';
-import styled from 'styled-components';
+import { useCallback, useMemo } from 'react';
+import type { JSX } from 'react';
 
-const Wrapper = styled.main`
-  ${mixins.flex({
-    align: 'flex-start',
-    justify: 'flex-start',
-  })};
+const Wrapper = styled.main<{ $dimmed: boolean }>`
+  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   width: 100%;
   height: auto;
   flex-shrink: 0;
@@ -27,19 +30,36 @@ const Wrapper = styled.main`
   padding-bottom: 96px;
   gap: 12px;
   background-color: ${getTheme('neutral', '_8')};
+
+  ${revokedDimStyle}
 `;
 
 export const Nft = (): JSX.Element => {
-  const { currentAddress } = useCurrentAccount();
+  const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const { navigate } = useAppNavigate();
   const { openScannerLink } = useLink();
+  const sessionRevoked = useIsCurrentSessionRevoked();
 
-  const { data: collections, isFetched: isFetchedCollections } = useGetGRC721Collections({ refetchOnMount: true });
+  // A SessionAccount address can never receive tokens, so the NFT deposit entry
+  // point is hidden and navigation to the Deposit page is blocked.
+  const isSession = useMemo(
+    () => (currentAccount ? isSessionAccount(currentAccount) : false),
+    [currentAccount],
+  );
+
+  const { data: collections, isFetched: isFetchedCollections } = useGetGRC721Collections({
+    refetchOnMount: true,
+  });
   const {
     data: pinnedCollections,
     isFetched: isFetchedPinnedCollections,
     refetch: refetchPinnedCollection,
-  } = useGetGRC721PinnedCollections({ refetchOnMount: true });
+  } = useGetGRC721PinnedCollections({
+    refetchOnMount: true,
+  });
+
+  // Discovery runs here rather than on the main screen, which never shows NFTs.
+  useSyncGRC721Collections();
 
   const { pinCollection, unpinCollection } = useNFTCollectionHandler();
 
@@ -66,20 +86,25 @@ export const Nft = (): JSX.Element => {
   );
 
   const openGnoscan = useCallback(() => {
-    if (!currentAddress) {
+    if (!currentFundingAddress) {
       return;
     }
-    openScannerLink('/account/' + currentAddress);
-  }, [currentAddress, openScannerLink]);
+    openScannerLink('/account/' + currentFundingAddress);
+  }, [currentFundingAddress, openScannerLink]);
 
   const moveDepositPage = useCallback(() => {
+    if (isSession) {
+      return;
+    }
     navigate(RoutePath.Deposit, {
       state: {
-        token: { symbol: 'NFT' },
+        token: {
+          symbol: 'NFT',
+        },
         type: 'token',
       },
     });
-  }, [navigate]);
+  }, [navigate, isSession]);
 
   const moveCollectionPage = useCallback(
     (collection: GRC721CollectionModel) => {
@@ -93,8 +118,12 @@ export const Nft = (): JSX.Element => {
   }, [navigate]);
 
   return (
-    <Wrapper>
-      <NFTHeader openGnoscan={openGnoscan} moveDepositPage={moveDepositPage} />
+    <Wrapper $dimmed={sessionRevoked}>
+      <NFTHeader
+        openGnoscan={openGnoscan}
+        moveDepositPage={moveDepositPage}
+        isSessionAccount={isSession}
+      />
       <NFTCollections
         collections={collections}
         isFetchedCollections={isFinishFetchedCollections}

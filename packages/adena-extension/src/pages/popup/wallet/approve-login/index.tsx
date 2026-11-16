@@ -1,7 +1,13 @@
-import { WalletResponseFailureType, WalletResponseType } from '@adena-wallet/sdk';
+import { WalletResponseFailureType } from '@adena-wallet/sdk';
+import { isAirgapAccount } from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { JSX } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAtom } from 'jotai';
+import styled, { useTheme } from 'styled-components';
+
 import { PasswordValidationError } from '@common/errors';
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
-import { encryptWalletPassword } from '@common/utils/crypto-utils';
 import { validateEmptyPassword } from '@common/validation';
 import { Button, DefaultInput, Text } from '@components/atoms';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
@@ -12,22 +18,14 @@ import { ForgetPwd, Title } from '@pages/popup/certify/login';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
-import { isAirgapAccount } from 'adena-module';
-import React, {
-  type JSX, useCallback, useEffect, useMemo, useRef, useState,
-} from 'react';
-import { useLocation, useNavigate } from 'react-router';
-import { useRecoilState } from 'recoil';
-import styled, { useTheme } from 'styled-components';
 
 import LoadingApproveTransaction from './loading-approve-transaction';
 
 const text = 'Enter\nYour Password';
-const Wrapper = styled.div`
-  ${mixins.flex({ justify: 'flex-start' })};
-  max-width: 100%;
-  min-height: 100%;
-  padding: 29px 20px 72px;
+const Wrapper = styled.main`
+  ${mixins.flex({ justify: 'stretch' })}
+  width: 100%;
+  height: 100%;
 `;
 
 export const ApproveLogin = (): JSX.Element => {
@@ -36,7 +34,7 @@ export const ApproveLogin = (): JSX.Element => {
   const location = useLocation();
   const { walletService } = useAdenaContext();
   const { initWallet } = useWalletContext();
-  const [, setState] = useRecoilState(WalletState.state);
+  const [, setState] = useAtom(WalletState.state);
   const { state, loadAccounts } = useLoadAccounts();
   const { currentAccount } = useCurrentAccount();
   const [password, setPassword] = useState('');
@@ -51,10 +49,7 @@ export const ApproveLogin = (): JSX.Element => {
   useEffect(() => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
-    setRequestData({
-      ...parsedData,
-      hostname: data['hostname'],
-    });
+    setRequestData({ ...parsedData, hostname: data['hostname'] });
   }, []);
 
   useEffect(() => {
@@ -99,16 +94,14 @@ export const ApproveLogin = (): JSX.Element => {
     try {
       validateEmptyPassword(password);
 
-      const encryptedPassword = encryptWalletPassword(password);
       const equalPassword = await walletService.equalsPassword(password);
       if (equalPassword) {
-        await walletService.updatePassword(encryptedPassword);
+        await walletService.updatePassword(password);
         await initWallet();
         setPassword('');
         setState('FINISH');
       }
-    }
-    catch (error) {
+    } catch (error) {
       if (error instanceof PasswordValidationError) {
         currentError = new PasswordValidationError('INVALID_PASSWORD');
       }
@@ -120,7 +113,10 @@ export const ApproveLogin = (): JSX.Element => {
   };
 
   const redirect = (): void => {
-    switch (requestData?.type as WalletResponseType | undefined) {
+    // Widen to `string` so extension-local Cosmos identifiers (e.g.
+    // ENABLE_COSMOS) are recognized until `@adena-wallet/sdk` ships Cosmos
+    // enum entries.
+    switch (requestData?.type as string | undefined) {
       case 'DO_CONTRACT':
         if (currentAccount === null || isAirgapAccount(currentAccount)) {
           navigate(RoutePath.ApproveSignFailed);
@@ -142,8 +138,21 @@ export const ApproveLogin = (): JSX.Element => {
         }
         navigate(RoutePath.ApproveSignTransaction + location.search, { state: { requestData } });
         return;
+      case 'SIGN_ARBITRARY':
+        navigate(RoutePath.ApproveSignArbitrary + location.search, { state: { requestData } });
+        return;
       case 'ADD_ESTABLISH':
         navigate(RoutePath.ApproveEstablish + location.search, { state: { requestData } });
+        return;
+      case 'ENABLE_COSMOS':
+        navigate(RoutePath.ApproveEstablishCosmos + location.search, { state: { requestData } });
+        return;
+      case 'SIGN_COSMOS_AMINO':
+      case 'SIGN_COSMOS_DIRECT':
+        navigate(RoutePath.ApproveSignCosmos + location.search, { state: { requestData } });
+        return;
+      case 'GET_COSMOS_KEY':
+        navigate(RoutePath.ApproveGetCosmosKey + location.search, { state: { requestData } });
         return;
       case 'ADD_NETWORK':
         navigate(RoutePath.ApproveAddingNetwork + location.search, { state: { requestData } });
@@ -176,37 +185,35 @@ export const ApproveLogin = (): JSX.Element => {
 
   return (
     <>
-      {state === 'LOGIN' || (state === 'LOADING' && password !== '')
-        ? (
-            <Wrapper>
-              <Title>{text}</Title>
-              <DefaultInput
-                type='password'
-                placeholder='Password'
-                value={password}
-                onChange={onChange}
-                onKeyDown={onKeyDown}
-                error={error !== null}
-                ref={inputRef}
-              />
-              <ForgetPwd onClick={onClickForgotButton}>
-                <Text type='body2Reg' color={theme.neutral.a}>
-                  Forgot Password?
-                </Text>
-              </ForgetPwd>
-              <Button
-                fullWidth
-                onClick={approveButtonClick}
-                margin='auto 0px 0px'
-                disabled={!availableLogin}
-              >
-                <Text type='body1Bold'>Unlock</Text>
-              </Button>
-            </Wrapper>
-          )
-        : (
-            <LoadingApproveTransaction rightButtonText='Approve' />
-          )}
+      {state === 'LOGIN' || (state === 'LOADING' && password !== '') ? (
+        <Wrapper>
+          <Title>{text}</Title>
+          <DefaultInput
+            type='password'
+            placeholder='Password'
+            value={password}
+            onChange={onChange}
+            onKeyDown={onKeyDown}
+            error={error !== null}
+            ref={inputRef}
+          />
+          <ForgetPwd onClick={onClickForgotButton}>
+            <Text type='body2Reg' color={theme.neutral.a}>
+              Forgot Password?
+            </Text>
+          </ForgetPwd>
+          <Button
+            fullWidth
+            onClick={approveButtonClick}
+            margin='auto 0px 0px'
+            disabled={!availableLogin}
+          >
+            <Text type='body1Bold'>Unlock</Text>
+          </Button>
+        </Wrapper>
+      ) : (
+        <LoadingApproveTransaction rightButtonText='Approve' />
+      )}
     </>
   );
 };

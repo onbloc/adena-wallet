@@ -1,5 +1,4 @@
 import { CommonError } from '@common/errors/common';
-
 import { Storage } from '.';
 
 export class ChromeSessionStorage implements Storage {
@@ -19,7 +18,9 @@ export class ChromeSessionStorage implements Storage {
   };
 
   public set = async (key: string, value: string): Promise<void> => {
-    await this.storage.set({ [key]: `${value}` });
+    await this.storage.set({
+      [key]: `${value}`,
+    });
   };
 
   public remove = async (key: string): Promise<void> => {

@@ -8,10 +8,7 @@ interface CopyButtonWrapperProps {
 }
 
 export const CopyButtonWrapper = styled.div<CopyButtonWrapperProps>`
-  ${mixins.flex({
-    align: 'normal',
-    justify: 'normal',
-  })};
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: ${({ size }): string => `${size}px`};
   height: ${({ size }): string => `${size}px`};
   cursor: pointer;

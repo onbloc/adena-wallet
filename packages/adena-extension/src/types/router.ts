@@ -1,3 +1,4 @@
+import type { StdSignDoc } from '@cosmjs/amino';
 import { InjectionMessage } from '@inject/message';
 import { AddressBookItem } from '@repositories/wallet';
 import {
@@ -9,7 +10,8 @@ import {
   TokenModel,
   TransactionInfo,
 } from '@types';
-import { Document } from 'adena-module';
+import { CosmosDocument, Document } from 'adena-module';
+import { SocialKeySetType } from '@common/constants/web3auth.constant';
 
 export const REGISTER_PATH = 'register.html' as const;
 export const SECURITY_PATH = 'security.html' as const;
@@ -29,7 +31,7 @@ export enum RoutePath {
   CreatePassword = '/popup/create-password',
   LaunchAdena = '/popup/launch-adena',
 
-  // wallet
+  //wallet
   Wallet = '/wallet',
   WalletAccountInitialization = '/wallet/account-initialization',
   WalletSearch = '/wallet/search',
@@ -53,8 +55,15 @@ export enum RoutePath {
   SignMultisigDocument = 'approve/wallet/sign-multisig-document',
   BroadcastMultisigTransaction = 'approve/wallet/broadcast-multisig-transaction',
   ApproveEstablish = '/approve/wallet/establish',
+  ApproveEstablishCosmos = '/approve/wallet/establish-cosmos',
+  ApproveSignArbitrary = '/approve/wallet/sign-arbitrary',
+  ApproveSignArbitraryLedgerLoading = '/approve/wallet/sign-arbitrary/ledger-loading',
+  ApproveSignCosmos = '/approve/wallet/sign-cosmos',
+  ApproveSignCosmosLedgerLoading = '/approve/wallet/sign-cosmos/ledger-loading',
+  ApproveGetCosmosKey = '/approve/wallet/get-cosmos-key',
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',
+  Accounts = '/wallet/accounts',
   AccountDetails = '/wallet/accounts/:accountId',
   ManageToken = '/wallet/manage-token',
   ManageNft = '/wallet/manage-nft',
@@ -64,6 +73,7 @@ export enum RoutePath {
   TransferSummary = '/wallet/transfer-summary',
   NftTransferSummary = '/wallet/nft-transfer-summary',
   TransferLedgerLoading = '/wallet/transfer-ledger/loading',
+  TransferLedgerCosmosLoading = '/wallet/transfer-ledger/cosmos-loading',
   TransferLedgerReject = '/wallet/transfer-ledger/reject',
   BroadcastTransaction = '/wallet/broadcast-transaction',
   BroadcastMultisigTransactionScreen = '/wallet/broadcast-multiig-transaction',
@@ -80,8 +90,12 @@ export enum RoutePath {
   AddAddress = '/settings/add-address',
   SecurityPrivacy = '/settings/security-privacy',
   AboutAdena = '/settings/about-adena',
+  ManageSessions = '/settings/manage-sessions',
+  RevokeSession = '/settings/manage-sessions/revoke',
+  RevokeAllSessions = '/settings/manage-sessions/revoke-all',
   RemoveAccount = '/settings/security-privacy/remove-account',
   ResetWallet = '/settings/security-privacy/reset-wallet',
+  SettingAutoLockTimer = '/settings/security-privacy/auto-lock-timer',
 
   // web
   WebNotFound = '/web/not-found',
@@ -91,6 +105,8 @@ export enum RoutePath {
   WebAdvancedOption = '/web/option',
   WebCreatePassword = '/web/create-password',
   WebGoogleLogin = '/web/google-login',
+  WebEmailLogin = '/web/email-login',
+  WebXLogin = '/web/x-login',
   WebSetupAirgap = '/web/airgap',
   WebSetupMultisig = '/web/multisig',
   WebWalletCreate = '/web/wallet-create',
@@ -101,34 +117,51 @@ export enum RoutePath {
   WebQuestionnaire = '/web/questionnaire',
   WebAccountAdd = '/web/account-add',
   WebAccountImport = '/web/account-import',
+  WebSessionAdd = '/web/session-add',
+  WebAdvancedSetup = '/web/advanced-setup',
 }
 
 export type RouteParams = {
   [RoutePath.Home]: null;
   [RoutePath.Login]: null;
   [RoutePath.Nft]: null;
-  [RoutePath.NftCollection]: { collection: GRC721CollectionModel };
+  [RoutePath.NftCollection]: {
+    collection: GRC721CollectionModel;
+  };
   [RoutePath.WalletAccountInitialization]: null;
-  [RoutePath.NftCollectionAsset]: { collectionAsset: GRC721Model };
+  [RoutePath.NftCollectionAsset]: {
+    collectionAsset: GRC721Model;
+  };
   [RoutePath.Staking]: null;
   [RoutePath.Explore]: null;
   [RoutePath.History]: null;
   [RoutePath.Create]: null;
   [RoutePath.ForgotPassword]: null;
-  [RoutePath.EnterSeedPhrase]: { from: 'forgot-password' | 'wallet-create' } | null;
+  [RoutePath.EnterSeedPhrase]: {
+    from: 'forgot-password' | 'wallet-create';
+  } | null;
   [RoutePath.CreatePassword]: CreateAccountState;
   [RoutePath.LaunchAdena]: CreateAccountState;
 
-  // wallet
+  //wallet
   [RoutePath.Wallet]: null;
-  [RoutePath.WalletSearch]: { type: 'deposit' | 'send' };
-  [RoutePath.TransactionDetail]: { transactionInfo: TransactionInfo };
+  [RoutePath.WalletSearch]: {
+    type: 'deposit' | 'send';
+  };
+  [RoutePath.TransactionDetail]: {
+    transactionInfo: TransactionInfo;
+  };
   [RoutePath.Deposit]: {
     type: 'token' | 'wallet';
-    token: { symbol: string };
+    token: {
+      symbol: string;
+      networkId?: string;
+    };
   };
   [RoutePath.Send]: null;
-  [RoutePath.TokenDetails]: { tokenBalance: TokenBalanceType };
+  [RoutePath.TokenDetails]: {
+    tokenBalance: TokenBalanceType;
+  };
   [RoutePath.ApproveLogin]: null;
   [RoutePath.ApproveSignFailed]: null;
   [RoutePath.ApproveTransaction]: null;
@@ -136,7 +169,9 @@ export type RouteParams = {
     document?: Document;
     requestData?: InjectionMessage;
   };
-  [RoutePath.ApproveTransactionResult]: { response: InjectionMessage };
+  [RoutePath.ApproveTransactionResult]: {
+    response: InjectionMessage;
+  };
   [RoutePath.ApproveSign]: null;
   [RoutePath.ApproveSignLoading]: {
     document?: Document;
@@ -148,13 +183,36 @@ export type RouteParams = {
     requestData?: InjectionMessage;
   };
   [RoutePath.ApproveEstablish]: null;
+  [RoutePath.ApproveEstablishCosmos]: null;
+  [RoutePath.ApproveSignArbitrary]: {
+    requestData?: InjectionMessage;
+  };
+  [RoutePath.ApproveSignArbitraryLedgerLoading]: {
+    chainId: string;
+    signer: string;
+    data: string;
+    responseKey: string | undefined;
+  };
+  [RoutePath.ApproveSignCosmos]: {
+    requestData?: InjectionMessage;
+  };
+  [RoutePath.ApproveSignCosmosLedgerLoading]: {
+    signDoc: StdSignDoc;
+    responseKey: string | undefined;
+  };
+  [RoutePath.ApproveGetCosmosKey]: {
+    requestData?: InjectionMessage;
+  };
   [RoutePath.ApproveChangingNetwork]: null;
   [RoutePath.ApproveAddingNetwork]: null;
+  [RoutePath.Accounts]: null;
   [RoutePath.AccountDetails]: null;
   [RoutePath.ManageToken]: null;
   [RoutePath.ManageTokenAdded]: null;
   [RoutePath.ManageNft]: null;
-  [RoutePath.NftTransferInput]: { collectionAsset: GRC721Model };
+  [RoutePath.NftTransferInput]: {
+    collectionAsset: GRC721Model;
+  };
   [RoutePath.TransferInput]: {
     tokenBalance: TokenBalanceType;
     isTokenSearch?: boolean;
@@ -169,6 +227,15 @@ export type RouteParams = {
     };
     gasInfo: GasInfo | null;
     memo: string;
+    // Populated only when a Ledger loading page navigates back after a
+    // successful/failed broadcast — lets TransferSummary enter its RESULT
+    // screen (same UX HD/PK transfers already get) without a dedicated
+    // Ledger completion page.
+    ledgerResult?: {
+      status: 'SUCCESS' | 'FAILED';
+      hash?: string | null;
+      errorMessage?: string | null;
+    };
   };
   [RoutePath.NftTransferSummary]: {
     grc721Token: GRC721Model;
@@ -179,8 +246,23 @@ export type RouteParams = {
     };
     memo: string;
   };
-  [RoutePath.TransferLedgerLoading]: { document: Document };
-  [RoutePath.TransferLedgerReject]: null;
+  [RoutePath.TransferLedgerLoading]: {
+    document: Document;
+    // Original TransferSummary params — carried through so the Ledger
+    // loading page can navigate back to TransferSummary with the broadcast
+    // result and reuse its existing RESULT screen. Optional because NFT
+    // transfers reuse this page but don't have an equivalent result screen
+    // on the NFT summary side.
+    summary?: RouteParams[RoutePath.TransferSummary];
+  };
+  [RoutePath.TransferLedgerCosmosLoading]: {
+    document: CosmosDocument;
+    summary?: RouteParams[RoutePath.TransferSummary];
+  };
+  [RoutePath.TransferLedgerReject]: {
+    title?: string;
+    desc?: string;
+  } | null;
   [RoutePath.BroadcastTransaction]: null;
   [RoutePath.BroadcastMultisigTransactionScreen]: null;
   [RoutePath.SignMultisigTransactionScreen]: null;
@@ -189,8 +271,13 @@ export type RouteParams = {
   [RoutePath.SettingChangePassword]: null;
   [RoutePath.ConnectedApps]: null;
   [RoutePath.ChangeNetwork]: null;
-  [RoutePath.AddCustomNetwork]: null;
-  [RoutePath.EditCustomNetwork]: { networkId: string };
+  [RoutePath.AddCustomNetwork]: {
+    chainGroup: 'gno' | 'atomone';
+  } | null;
+  [RoutePath.EditCustomNetwork]: {
+    networkId: string;
+    chainGroup: 'gno' | 'atomone';
+  };
   [RoutePath.AddressBook]: null;
   [RoutePath.AddAddress]: {
     status: 'add' | 'edit';
@@ -199,37 +286,83 @@ export type RouteParams = {
   };
   [RoutePath.SecurityPrivacy]: null;
   [RoutePath.AboutAdena]: null;
+  [RoutePath.ManageSessions]: {
+    masterAddress: string;
+  } | null;
+  [RoutePath.RevokeSession]: {
+    sessionAddr: string;
+    masterAddress: string;
+  };
+  [RoutePath.RevokeAllSessions]: {
+    masterAddress: string;
+  };
   [RoutePath.RemoveAccount]: null;
-  [RoutePath.ResetWallet]: { from: 'forgot-password' } | null;
+  [RoutePath.ResetWallet]: {
+    from: 'forgot-password';
+  } | null;
+  [RoutePath.SettingAutoLockTimer]: null;
 
   [RoutePath.WebNotFound]: null;
   [RoutePath.WebConnectLedger]: null;
-  [RoutePath.WebConnectLedgerSelectAccount]: { accounts: string[] };
+  [RoutePath.WebConnectLedgerSelectAccount]: {
+    accounts: string[];
+  };
 
   [RoutePath.WebSelectHardWallet]: null;
-  [RoutePath.WebConnectLedger]: null;
   [RoutePath.WebAdvancedOption]: null;
-  [RoutePath.WebCreatePassword]: {
-    serializedWallet: string;
-    stepLength: number;
-  };
-  [RoutePath.WebGoogleLogin]: { doneQuestionnaire: boolean } | null;
+  [RoutePath.WebCreatePassword]: null;
+  [RoutePath.WebGoogleLogin]: {
+    doneQuestionnaire: boolean;
+    keySetType?: SocialKeySetType;
+  } | null;
+  [RoutePath.WebEmailLogin]: {
+    doneQuestionnaire: boolean;
+    keySetType?: SocialKeySetType;
+    email?: string;
+  } | null;
+  [RoutePath.WebXLogin]: {
+    doneQuestionnaire: boolean;
+    keySetType?: SocialKeySetType;
+  } | null;
   [RoutePath.WebSetupAirgap]: null;
   [RoutePath.WebSetupMultisig]: null;
-  [RoutePath.WebWalletCreate]: { doneQuestionnaire: boolean } | null;
-  [RoutePath.WebAccountAdd]: { doneQuestionnaire: boolean } | null;
-  [RoutePath.WebAccountImport]: { doneQuestionnaire: boolean } | null;
-  [RoutePath.WebWalletImport]: { doneQuestionnaire: boolean } | null;
-  [RoutePath.WebWalletExport]: { doneQuestionnaire: boolean } | null;
+  [RoutePath.WebWalletCreate]: {
+    doneQuestionnaire: boolean;
+  } | null;
+  [RoutePath.WebAccountAdd]: {
+    doneQuestionnaire: boolean;
+  } | null;
+  [RoutePath.WebAccountImport]: {
+    doneQuestionnaire: boolean;
+  } | null;
+  [RoutePath.WebSessionAdd]: {
+    doneQuestionnaire: boolean;
+  } | null;
+  [RoutePath.WebAdvancedSetup]: null;
+  [RoutePath.WebWalletImport]: {
+    doneQuestionnaire: boolean;
+  } | null;
+  [RoutePath.WebWalletExport]: {
+    doneQuestionnaire: boolean;
+  } | null;
   [RoutePath.WebWalletAllSet]: null;
   [RoutePath.WebAccountAddedComplete]: null;
   [RoutePath.WebQuestionnaire]: {
     callbackPath:
       | RoutePath.WebWalletCreate
       | RoutePath.WebGoogleLogin
+      | RoutePath.WebEmailLogin
+      | RoutePath.WebXLogin
       | RoutePath.WebAccountAdd
       | RoutePath.WebWalletExport
       | RoutePath.WebWalletImport
-      | RoutePath.WebAccountImport;
+      | RoutePath.WebAccountImport
+      | RoutePath.WebSessionAdd;
+    // Screen state that has to survive the questionnaire round trip and be
+    // handed back to the callback screen.
+    callbackState?: {
+      keySetType?: SocialKeySetType;
+      email?: string;
+    };
   };
 };

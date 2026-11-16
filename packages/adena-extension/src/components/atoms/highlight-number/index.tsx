@@ -1,7 +1,6 @@
 import { FontsType } from '@styles/theme';
 import BigNumber from 'bignumber.js';
 import React, { useMemo } from 'react';
-
 import { HighlightNumberWrapper } from './highlight-number.styles';
 
 export interface HighlightNumberProps {
@@ -25,14 +24,18 @@ export const HighlightNumber: React.FC<HighlightNumberProps> = ({
   const [integer, decimal] = hasDecimal ? value.split('.') : [value, ''];
 
   const integerStr = useMemo(() => {
-    const raw = integer.replace(/,/g, '');
-    const formattedValue = raw === '' ? '0' : BigNumber(raw).toFormat(0);
+    const parsed = BigNumber(integer.replace(/,/g, ''));
+    // Pass non-numeric placeholders (e.g. '-' from an error state) through
+    // unchanged. Without this, BigNumber('-').toFormat(0) returns "NaN" and
+    // leaks into the row even though the upstream wallet-main mapping already
+    // guarded with isFinite().
+    const formattedValue = parsed.isFinite() ? parsed.toFormat(0) : integer;
     if (withSign) {
       return `+${formattedValue}`;
     }
 
     return formattedValue;
-  }, [integer]);
+  }, [integer, withSign]);
 
   return (
     <HighlightNumberWrapper

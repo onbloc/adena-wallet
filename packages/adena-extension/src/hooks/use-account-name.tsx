@@ -1,8 +1,8 @@
-import { WalletState } from '@states';
+import { useAtom } from 'jotai';
 import { Account } from 'adena-module';
-import { useRecoilState } from 'recoil';
 
 import { useAdenaContext } from './use-context';
+import { WalletState } from '@states';
 
 export type UseAccountNameReturn = {
   accountNames: { [key in string]: string };
@@ -13,7 +13,7 @@ export type UseAccountNameReturn = {
 
 export const useAccountName = (): UseAccountNameReturn => {
   const { accountService } = useAdenaContext();
-  const [accountNames, setAccountNames] = useRecoilState(WalletState.accountNames);
+  const [accountNames, setAccountNames] = useAtom(WalletState.accountNames);
 
   const initAccountNames = async (accounts: Account[]): Promise<void> => {
     const storedAccountNames = await accountService.getAccountNames();
@@ -21,10 +21,7 @@ export const useAccountName = (): UseAccountNameReturn => {
     for (const account of accounts) {
       accountNames[account.id] = account.name;
     }
-    const changedAccountNames = {
-      ...accountNames,
-      ...storedAccountNames,
-    };
+    const changedAccountNames = { ...accountNames, ...storedAccountNames };
     setAccountNames(changedAccountNames);
     await accountService.updateAccountNames(changedAccountNames);
   };

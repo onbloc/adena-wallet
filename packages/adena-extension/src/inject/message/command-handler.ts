@@ -1,12 +1,11 @@
 import { WalletResponseFailureType, WalletResponseSuccessType } from '@adena-wallet/sdk';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { GnoDocumentInfo } from '@common/provider/gno';
-import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { isInterRealmParameter } from '@common/provider/gno/utils';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
+import { clearAutoLockAlarm, resetAutoLockAlarm } from '@common/utils/auto-lock-timer';
 import { AdenaExecutor } from '@inject/executor';
 import { ContractMessage, TransactionParams } from '@inject/types';
-
 import { CheckMetadataMessageData, CommandMessageData } from './command-message';
 import {
   clearInMemoryKey,
@@ -16,12 +15,17 @@ import {
 } from './commands/encrypt';
 import { clearPopup } from './commands/popup';
 import {
+  canHandleGnoConnectOrigin,
+  getLoopbackGnoConnectChainId,
+  getLoopbackGnoConnectRejection,
   GnoArgumentInfo,
   GnoConnectInfo,
   GnoMessageInfo,
   parseGnoConnectInfo,
   parseGnoMessageInfo,
 } from './methods/gno-connect';
+import { describeLoopbackRejection, showGnoConnectNotice } from './methods/gno-connect-notice';
+import type { FetchRealmDocumentMessage } from './methods/gno-realm-document';
 
 export class CommandHandler {
   public static createHandler = async (
@@ -30,8 +34,24 @@ export class CommandHandler {
     _: chrome.runtime.MessageSender,
     sendResponse: (response?: CommandMessageData) => void,
   ): Promise<void> => {
+    // background.ts holds the message channel open for every command message
+    // (`return true`), so an exit that does not answer leaves the caller's
+    // promise pending forever — the popup then waits on `isLocked()` and never
+    // renders. Route every exit through `respond`, and let the `finally` answer
+    // the paths no branch above handled.
+    let responded = false;
+    const respond = (response: CommandMessageData): void => {
+      if (responded) {
+        return;
+      }
+
+      responded = true;
+      sendResponse(response);
+    };
+
     try {
       if (message.code !== 0) {
+        respond(makeInternalErrorResponse(message));
         return;
       }
 
@@ -48,7 +68,7 @@ export class CommandHandler {
         const password = message.data.password;
         const responseData = await encryptPassword(key, password);
 
-        sendResponse(makeSuccessResponse(message, responseData));
+        respond(makeSuccessResponse(message, responseData));
         return;
       }
 
@@ -62,31 +82,47 @@ export class CommandHandler {
         const encryptedPassword = message.data.encryptedPassword;
         const decryptedPassword = await decryptPassword(key, iv, encryptedPassword);
 
-        const responseData = { password: decryptedPassword };
+        const responseData = {
+          password: decryptedPassword,
+        };
 
-        sendResponse(makeSuccessResponse(message, responseData));
+        respond(makeSuccessResponse(message, responseData));
         return;
       }
 
       if (message.command === 'clearEncryptKey') {
         await clearInMemoryKey(inMemoryProvider);
-        sendResponse(makeSuccessResponse(message));
+        respond(makeSuccessResponse(message));
         return;
       }
-    }
-    catch (error) {
-      console.info(error);
-      sendResponse(makeInternalErrorResponse(message));
-    }
 
-    if (message.command === 'clearPopup') {
-      await clearInMemoryKey(inMemoryProvider);
-      await clearPopup();
-      sendResponse({
-        ...message,
-        code: 200,
-      });
-      return;
+      if (message.command === 'resetAutoLockTimer') {
+        await resetAutoLockAlarm();
+        respond(makeSuccessResponse(message));
+        return;
+      }
+
+      if (message.command === 'updateAutoLockTimer') {
+        // The new duration is already persisted by the service layer; the
+        // helper re-reads from storage so we don't need to trust the payload.
+        await resetAutoLockAlarm();
+        respond(makeSuccessResponse(message));
+        return;
+      }
+
+      if (message.command === 'clearPopup') {
+        await clearInMemoryKey(inMemoryProvider);
+        await clearAutoLockAlarm();
+        await clearPopup();
+        respond(makeSuccessResponse(message));
+        return;
+      }
+    } catch (error) {
+      console.info(error);
+      respond(makeInternalErrorResponse(message));
+    } finally {
+      // No-op once a branch has answered.
+      respond(makeInternalErrorResponse(message));
     }
   };
 
@@ -98,6 +134,19 @@ export class CommandHandler {
     }
 
     const currentUrl = window?.location?.href || '';
+    const currentOrigin = window?.location?.origin || '';
+
+    // Remote (https) gno origins are trusted statically. Loopback origins (local
+    // dev nodes) are trusted only after the runtime gate below confirms the
+    // wallet's active network is the one that declares this origin.
+    const loopbackChainId = getLoopbackGnoConnectChainId(currentOrigin);
+    const isLoopbackOrigin = loopbackChainId !== null;
+    // Same helper the interceptors consult before swallowing a click/submit, so
+    // "we handle this origin" has exactly one definition.
+    if (!canHandleGnoConnectOrigin(currentOrigin)) {
+      return;
+    }
+
     const gnoMessageInfo = message.data.gnoMessageInfo || parseGnoMessageInfo(currentUrl);
     const gnoConnectInfo = message.data.gnoConnectInfo || parseGnoConnectInfo();
 
@@ -111,25 +160,65 @@ export class CommandHandler {
     const addEstablishResponse = await executor.addEstablish(domain);
     // Not connected
     if (
-      addEstablishResponse.type !== WalletResponseSuccessType.CONNECTION_SUCCESS
-      && addEstablishResponse.type !== WalletResponseFailureType.ALREADY_CONNECTED
+      addEstablishResponse.type !== WalletResponseSuccessType.CONNECTION_SUCCESS &&
+      addEstablishResponse.type !== WalletResponseFailureType.ALREADY_CONNECTED
     ) {
       console.info('response: ', addEstablishResponse);
       return;
     }
 
+    // Runtime trust gate for loopback origins: only honor a local node's
+    // gnoconnect declarations when the meta-declared chainId matches the one the
+    // origin is permitted to act as AND that chainId is the wallet's active network.
+    // This prevents an arbitrary process holding the local port from
+    // switching the wallet to a foreign network or driving the flow while the
+    // user is on another network.
+    if (isLoopbackOrigin) {
+      const networkResponse = await executor.getNetwork();
+      const isNetworkKnown =
+        networkResponse.type === WalletResponseSuccessType.GET_NETWORK_SUCCESS;
+      const activeChainId = isNetworkKnown ? networkResponse.data?.chainId : undefined;
+
+      // The gate is unchanged; only its silence is. A rejection used to end here
+      // as a bare console.info, which is easy to miss in the page's console and
+      // leaves the user with a link that does nothing and no way to tell whether
+      // their wallet is locked, on another network, or too old to support
+      // loopback TxLinks at all.
+      const rejection = getLoopbackGnoConnectRejection(
+        loopbackChainId,
+        gnoConnectInfo.chainId,
+        activeChainId,
+      );
+
+      if (rejection !== null) {
+        const notice = describeLoopbackRejection(rejection, {
+          requiredChainId: loopbackChainId,
+          metaChainId: gnoConnectInfo.chainId,
+          activeChainId,
+          activeNetworkName: isNetworkKnown ? networkResponse.data?.networkName : undefined,
+        });
+
+        console.warn(`[Adena] ${notice.title}: ${notice.body} (${rejection})`);
+        showGnoConnectNotice(notice);
+        return;
+      }
+    }
+
     const switchNetworkResponse = await executor.switchNetwork(gnoConnectInfo.chainId);
     if (
-      switchNetworkResponse.type !== WalletResponseSuccessType.SWITCH_NETWORK_SUCCESS
-      && switchNetworkResponse.type !== WalletResponseFailureType.REDUNDANT_CHANGE_REQUEST
-      && switchNetworkResponse.type !== WalletResponseFailureType.UNADDED_NETWORK
+      switchNetworkResponse.type !== WalletResponseSuccessType.SWITCH_NETWORK_SUCCESS &&
+      switchNetworkResponse.type !== WalletResponseFailureType.REDUNDANT_CHANGE_REQUEST &&
+      switchNetworkResponse.type !== WalletResponseFailureType.UNADDED_NETWORK
     ) {
       console.info('response: ', switchNetworkResponse);
       return;
     }
 
-    const gnoProvider = await GnoProvider.create(gnoConnectInfo.rpc, gnoConnectInfo.chainId);
-    const realmDocument = await gnoProvider.getRealmDocument(gnoMessageInfo.packagePath);
+    const realmDocument = await fetchRealmDocument({
+      rpc: gnoConnectInfo.rpc,
+      chainId: gnoConnectInfo.chainId,
+      packagePath: gnoMessageInfo.packagePath,
+    });
     if (!realmDocument) {
       console.info('Realm document not found');
       return;
@@ -144,11 +233,39 @@ export class CommandHandler {
       );
 
       executor.doContract(transactionParams).then(console.info).catch(console.info);
-    }
-    catch (error) {
+    } catch (error) {
       console.info(error);
     }
   };
+}
+
+/**
+ * Ask the background for the realm document. Content scripts must not fetch the
+ * RPC endpoint directly: Firefox runs them under an expanded principal, so their
+ * requests are subject to the page's CSP as well, and gnoweb pages ship a
+ * restrictive `connect-src` that excludes the RPC host - which silently killed
+ * TxLinks there. The background performs the request instead (extension CSP:
+ * `connect-src https: ...`).
+ */
+function fetchRealmDocument(params: {
+  rpc: string;
+  chainId: string;
+  packagePath: string;
+}): Promise<GnoDocumentInfo | null> {
+  return new Promise((resolve) => {
+    const message: FetchRealmDocumentMessage = { type: 'FETCH_REALM_DOCUMENT', data: params };
+    chrome.runtime.sendMessage(
+      message,
+      (response?: { document?: GnoDocumentInfo | null } | null) => {
+        if (chrome.runtime.lastError) {
+          console.info(chrome.runtime.lastError.message);
+          resolve(null);
+          return;
+        }
+        resolve(response?.document ?? null);
+      },
+    );
+  });
 }
 
 function makeSuccessResponse(message: CommandMessageData, data: any = null): CommandMessageData {
@@ -170,20 +287,17 @@ function makeTransactionMessage(
   gnoMessageInfo: GnoMessageInfo,
   gnoConnectInfo: GnoConnectInfo,
   realmDocument: GnoDocumentInfo,
-): TransactionParams & {
-  gasFee: number;
-  gasWanted: number;
-} {
-  const func = realmDocument.funcs.find(f => f.name === gnoMessageInfo.functionName);
+): TransactionParams & { gasFee: number; gasWanted: number } {
+  const func = realmDocument.funcs.find((f) => f.name === gnoMessageInfo.functionName);
   if (!func) {
     throw new Error(`Function not found: ${gnoMessageInfo.functionName}`);
   }
 
   const gnoArguments: GnoArgumentInfo[] = func.params
-    .filter(param => !isInterRealmParameter(param.name, param.type))
+    .filter((param) => !isInterRealmParameter(param.name, param.type))
     .map((param, index) => {
       const messageArguments = gnoMessageInfo.args || [];
-      const arg = messageArguments.find(arg => arg.key === param.name);
+      const arg = messageArguments.find((arg) => arg.key === param.name);
       const value = arg?.value || '';
 
       return {

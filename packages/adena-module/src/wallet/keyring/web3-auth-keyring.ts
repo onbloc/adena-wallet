@@ -1,25 +1,44 @@
 import {
-  Provider, TransactionEndpoint, Tx, Wallet as Tm2Wallet
+  Provider,
+  TransactionEndpoint,
+  Tx,
+  TxSignature,
+  Wallet as Tm2Wallet,
 } from '@gnolang/tm2-js-client';
+import sodium from 'libsodium-wrappers-sumo';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Document, makeSignedTx, useTm2Wallet } from './../../index.js';
-import { hexToArray } from './../../utils/data.js';
-import { Keyring, KeyringData, KeyringType } from './keyring.js';
+import { Document } from './../..';
+import { hexToArray } from './../../utils/data';
+import {
+  isWeb3AuthKeyringType,
+  Keyring,
+  KeyringData,
+  SignRawOptions,
+  Web3AuthKeyringType,
+} from './keyring';
+import { signGnoDocument } from './sign-gno-document';
+import { signRawWithPrivateKey } from './sign-raw-util';
 
 export class Web3AuthKeyring implements Keyring {
   public readonly id: string;
-  public readonly type: KeyringType = 'WEB3_AUTH';
+  public readonly type: Web3AuthKeyringType;
   public readonly publicKey: Uint8Array;
   public readonly privateKey: Uint8Array;
 
-  constructor({ id, publicKey, privateKey }: KeyringData) {
+  constructor({ id, publicKey, privateKey, type }: KeyringData) {
     if (!publicKey || !privateKey) {
       throw new Error('Invalid parameter values');
     }
     this.id = id || uuidv4();
+    // Keyrings stored before the other providers existed carry no social type.
+    this.type = type && isWeb3AuthKeyringType(type) ? type : 'WEB3_AUTH';
     this.publicKey = Uint8Array.from(publicKey);
     this.privateKey = Uint8Array.from(privateKey);
+  }
+
+  destroy() {
+    sodium.memzero(this.privateKey);
   }
 
   toData() {
@@ -27,22 +46,19 @@ export class Web3AuthKeyring implements Keyring {
       id: this.id,
       type: this.type,
       publicKey: Array.from(this.publicKey),
-      privateKey: Array.from(this.privateKey)
+      privateKey: Array.from(this.privateKey),
     };
   }
 
-  async sign(provider: Provider, document: Document) {
-    const wallet = await useTm2Wallet(document).fromPrivateKey(this.privateKey);
-    wallet.connect(provider);
-    return this.signByWallet(wallet, document);
+  async signRaw(bytes: Uint8Array, _opts?: SignRawOptions): Promise<Uint8Array> {
+    return signRawWithPrivateKey(bytes, this.privateKey);
   }
 
-  private async signByWallet(wallet: Tm2Wallet, document: Document) {
-    const signedTx = await makeSignedTx(wallet, document);
-    return {
-      signed: signedTx,
-      signature: signedTx.signatures
-    };
+  async sign(
+    provider: Provider,
+    document: Document,
+  ): Promise<{ signed: Tx; signature: TxSignature[] }> {
+    return signGnoDocument(provider, document, this);
   }
 
   async broadcastTxSync(provider: Provider, signedTx: Tx) {
@@ -57,22 +73,30 @@ export class Web3AuthKeyring implements Keyring {
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);
   }
 
-  public static async fromPrivateKey(privateKey: Uint8Array) {
+  public static async fromPrivateKey(
+    privateKey: Uint8Array,
+    type: Web3AuthKeyringType = 'WEB3_AUTH',
+  ) {
     const tm2Wallet = await Tm2Wallet.fromPrivateKey(privateKey);
     const publicKey = await tm2Wallet.getSigner().getPublicKey();
     return new Web3AuthKeyring({
+      type,
       publicKey: Array.from(publicKey),
-      privateKey: Array.from(privateKey)
+      privateKey: Array.from(privateKey),
     });
   }
 
-  public static async fromPrivateKeyStr(privateKeyStr: string) {
+  public static async fromPrivateKeyStr(
+    privateKeyStr: string,
+    type: Web3AuthKeyringType = 'WEB3_AUTH',
+  ) {
     const privateKey = hexToArray(privateKeyStr);
     const tm2Wallet = await Tm2Wallet.fromPrivateKey(privateKey);
     const publicKey = await tm2Wallet.getSigner().getPublicKey();
     return new Web3AuthKeyring({
+      type,
       publicKey: Array.from(publicKey),
-      privateKey: Array.from(privateKey)
+      privateKey: Array.from(privateKey),
     });
   }
 }

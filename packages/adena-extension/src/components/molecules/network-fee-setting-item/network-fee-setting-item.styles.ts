@@ -11,11 +11,7 @@ export const NetworkFeeItemSkeletonBox = styled(SkeletonBoxStyle)`
 `;
 
 export const NetworkFeeSettingItemWrapper = styled(View)`
-  ${mixins.flex({
-    direction: 'row',
-    align: 'normal',
-    justify: 'space-between',
-  })};
+  ${mixins.flex({ direction: 'row', align: 'normal', justify: 'space-between' })};
   display: flex;
   width: 100%;
   padding: 14px 16px;

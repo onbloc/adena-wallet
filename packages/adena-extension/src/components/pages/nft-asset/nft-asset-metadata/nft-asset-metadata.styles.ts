@@ -22,11 +22,7 @@ export const NFTAssetMetadataWrapper = styled(View)`
 
   .content-wrapper,
   .attribute-wrapper {
-    ${mixins.flex({
-      direction: 'column',
-      align: 'flex-start',
-      justify: 'flex-start',
-    })};
+    ${mixins.flex({ direction: 'column', align: 'flex-start', justify: 'flex-start' })};
     gap: 8px;
   }
 
@@ -35,11 +31,7 @@ export const NFTAssetMetadataWrapper = styled(View)`
   }
 
   .trait-wrapper {
-    ${mixins.flex({
-      direction: 'column',
-      align: 'flex-start',
-      justify: 'flex-start',
-    })};
+    ${mixins.flex({ direction: 'column', align: 'flex-start', justify: 'flex-start' })};
     width: auto;
     max-width: 100%;
     height: auto;

@@ -1,38 +1,35 @@
+import { isAirgapAccount, isMultisigAccount, isSessionAccount } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { JSX } from 'react';
+import styled, { useTheme } from 'styled-components';
+
 import etc from '@assets/etc.svg';
-import { SCANNER_URL } from '@common/constants/resource.constant';
-import { makeQueryString } from '@common/utils/string-utils';
-import { isGRC20TokenModel } from '@common/validation/validation-token';
-import {
-  HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text,
-} from '@components/atoms';
+import { isCosmosNativeTokenModel, isGRC20TokenModel } from '@common/validation/validation-token';
+import { HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text } from '@components/atoms';
 import { DoubleButton, TransactionHistory } from '@components/molecules';
-import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useHistoryData from '@hooks/use-history-data';
+import useScrollHistory from '@hooks/use-scroll-history';
+import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
+
+import { SCANNER_URL } from '@common/constants/resource.constant';
+import { toRegistryKey } from '@common/utils/grc20-token-path';
+import { makeQueryString } from '@common/utils/string-utils';
+import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
-import useScrollHistory from '@hooks/use-scroll-history';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 import useSessionParams from '@hooks/use-session-state';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenTransactions } from '@hooks/wallet/token-details/use-token-transactions';
 import { useTokenTransactionsPage } from '@hooks/wallet/token-details/use-token-transactions-page';
 import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
-import { RoutePath } from '@types';
-import { isAirgapAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import {
-  type JSX, useCallback, useEffect, useMemo, useRef, useState,
-} from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import LoadingTokenDetails from './loading-token-details';
 
 const Wrapper = styled.main`
-  ${mixins.flex({
-    align: 'flex-start',
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -89,14 +86,15 @@ const EtcIcon = styled.div`
 
 export const TokenDetails = (): JSX.Element => {
   const theme = useTheme();
-  const { currentNetwork, scannerParameters } = useNetwork();
+  const { scannerParameters } = useNetwork();
+  const profile = useNetworkProfile();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { saveScrollPosition } = useScrollHistory(scrollRef);
   const { openLink } = useLink();
   const { navigate } = useAppNavigate<RoutePath.TokenDetails>();
   const { params } = useSessionParams<RoutePath.TokenDetails>();
   const [etcClicked, setEtcClicked] = useState(false);
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentAccount, currentFundingAddress } = useCurrentAccount();
   const tokenBalance = params?.tokenBalance;
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
@@ -104,24 +102,39 @@ export const TokenDetails = (): JSX.Element => {
   const { currentBalances } = useTokenBalance();
 
   const isNative = tokenBalance && !isGRC20TokenModel(tokenBalance);
+  const isCosmosNative = !!tokenBalance && isCosmosNativeTokenModel(tokenBalance);
+
+  // Multisig × Cosmos = permanent non-support (keyrings are Gno-only).
+  // Disable the Send button with a tooltip instead of hiding the token so
+  // users can still see balances but immediately understand they can't send.
+  const isMultisigCosmosBlocked =
+    isCosmosNative && !!currentAccount && isMultisigAccount(currentAccount);
+
+  // A SessionAccount address can never receive tokens, so depositing to it is
+  // blocked; users deposit to the Master Account instead.
+  const isSession = !!currentAccount && isSessionAccount(currentAccount);
 
   const tokenPath = useMemo(() => {
     if (!tokenBalance || !isGRC20TokenModel(tokenBalance)) {
       return '';
     }
-    return tokenBalance.pkgPath;
+    // Pass the token path (tokenId) so the history query can match both direct
+    // token transfers and helper-routed transfers by the token key.
+    return tokenBalance.tokenId;
   }, [tokenBalance]);
 
   const isUsedApi = useMemo(() => {
-    return !!currentNetwork.apiUrl;
-  }, [currentNetwork]);
+    return profile?.chainType === 'gno' && !!profile.apiUrl;
+  }, [profile]);
 
-  const pageTransactionHistoryQuery = useTokenTransactionsPage(isNative, tokenPath, { enabled: isUsedApi });
-  const commonTransactionHistoryQuery = useTokenTransactions(isNative, tokenPath, { enabled: !isUsedApi });
+  const pageTransactionHistoryQuery = useTokenTransactionsPage(isNative, tokenPath, {
+    enabled: isUsedApi && !isCosmosNative,
+  });
+  const commonTransactionHistoryQuery = useTokenTransactions(isNative, tokenPath, {
+    enabled: !isUsedApi && !isCosmosNative,
+  });
 
-  const {
-    status, isLoading, isFetching, data, isSupported, fetchNextPage,
-  } = useMemo(() => {
+  const { status, isLoading, isFetching, data, isSupported, fetchNextPage } = useMemo(() => {
     if (isUsedApi) {
       return pageTransactionHistoryQuery;
     }
@@ -141,7 +154,7 @@ export const TokenDetails = (): JSX.Element => {
   }, [document.getElementsByTagName('body')]);
 
   const tokenAmount = useMemo((): string => {
-    const balance = currentBalances.find(balance => balance.tokenId === tokenBalance?.tokenId);
+    const balance = currentBalances.find((balance) => balance.tokenId === tokenBalance?.tokenId);
     return balance?.amount ? BigNumber(balance.amount.value).toFormat() : '0';
   }, [currentBalances, tokenBalance]);
 
@@ -164,11 +177,13 @@ export const TokenDetails = (): JSX.Element => {
 
   const onClickItem = useCallback(
     (hash: string) => {
-      const transactions = data?.flatMap(group => group.transactions) ?? [];
-      const transactionInfo = transactions.find(transaction => transaction.hash === hash);
+      const transactions = data?.flatMap((group) => group.transactions) ?? [];
+      const transactionInfo = transactions.find((transaction) => transaction.hash === hash);
       if (transactionInfo) {
         saveScrollPosition(scrollRef.current?.scrollTop || 0);
-        navigate(RoutePath.TransactionDetail, { state: { transactionInfo } });
+        navigate(RoutePath.TransactionDetail, {
+          state: { transactionInfo },
+        });
       }
     },
     [data, bodyElement],
@@ -179,12 +194,7 @@ export const TokenDetails = (): JSX.Element => {
     if (!tokenBalance) {
       return;
     }
-    navigate(RoutePath.Deposit, {
-      state: {
-        type: 'token',
-        token: tokenBalance,
-      },
-    });
+    navigate(RoutePath.Deposit, { state: { type: 'token', token: tokenBalance } });
   };
 
   const SendButtonClick = (): void => {
@@ -201,26 +211,27 @@ export const TokenDetails = (): JSX.Element => {
   const etcButtonClick = (): void => setEtcClicked((prev: boolean) => !prev);
 
   const getAccountDetailUri = (): string => {
-    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+    const scannerUrl = profile?.linkUrl || SCANNER_URL;
     return scannerParameters
-      ? `${scannerUrl}/account/${currentAddress}?${makeQueryString(scannerParameters)}`
-      : `${scannerUrl}/account/${currentAddress}`;
+      ? `${scannerUrl}/account/${currentFundingAddress}?${makeQueryString(scannerParameters)}`
+      : `${scannerUrl}/account/${currentFundingAddress}`;
   };
 
   const getTokenUri = (): string => {
     if (tokenBalance && isGRC20TokenModel(tokenBalance)) {
-      const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+      const scannerUrl = profile?.linkUrl || SCANNER_URL;
+      // The scanner identifies a GRC20 token by its registry fqname
+      // `{packagePath}.{symbol}` — the same token key the wallet uses. Fall back
+      // to the bare pkgPath for a legacy value with no symbol.
+      const tokenPath = toRegistryKey(tokenBalance.tokenId) ?? tokenBalance.pkgPath;
       return scannerParameters
-        ? `${scannerUrl}/tokens/${tokenBalance.pkgPath}?${makeQueryString(scannerParameters)}`
-        : `${scannerUrl}/tokens/${tokenBalance.pkgPath}`;
+        ? `${scannerUrl}/tokens/${tokenPath}?${makeQueryString(scannerParameters)}`
+        : `${scannerUrl}/tokens/${tokenPath}`;
     }
     return '';
   };
 
-  const getTooltipItems = (): {
-    tooltipText: string;
-    onClick: () => void;
-  }[] => {
+  const getTooltipItems = (): { tooltipText: string; onClick: () => void }[] => {
     const accountDetailItem = {
       tooltipText: 'View on GnoScan',
       onClick: () => openLink(getAccountDetailUri()),
@@ -250,8 +261,8 @@ export const TokenDetails = (): JSX.Element => {
         <HighlightNumber
           value={tokenAmount}
           fontColor={theme.neutral._1}
-          fontStyleKey='header2'
-          minimumFontSize='24px'
+          fontStyleKey={'header2'}
+          minimumFontSize={'24px'}
         />
       </div>
 
@@ -260,29 +271,36 @@ export const TokenDetails = (): JSX.Element => {
         leftProps={{
           onClick: DepositButtonClick,
           text: 'Deposit',
+          props: { disabled: isSession },
         }}
         rightProps={{
           onClick: SendButtonClick,
           text: 'Send',
+          props: {
+            disabled: isMultisigCosmosBlocked,
+            title: isMultisigCosmosBlocked
+              ? 'Multisig accounts do not support Cosmos chains'
+              : undefined,
+          },
         }}
       />
-      {isLoading && isSupported
-        ? (
-            <LoadingTokenDetails />
-          )
-        : transactions.length > 0
-          ? (
-              <TransactionHistory
-                status={status}
-                transactionInfoLists={isSupported ? transactions : []}
-                onClickItem={onClickItem}
-              />
-            )
-          : (
-              <Text className='desc' type='body1Reg' color={theme.neutral.a}>
-                No transaction to display
-              </Text>
-            )}
+      {isCosmosNative ? (
+        <Text className='desc' type='body1Reg' color={theme.neutral.a}>
+          Transaction history is not supported yet
+        </Text>
+      ) : isLoading && isSupported ? (
+        <LoadingTokenDetails />
+      ) : transactions.length > 0 ? (
+        <TransactionHistory
+          status={status}
+          transactionInfoLists={isSupported ? transactions : []}
+          onClickItem={onClickItem}
+        />
+      ) : (
+        <Text className='desc' type='body1Reg' color={theme.neutral.a}>
+          No transaction to display
+        </Text>
+      )}
     </Wrapper>
   );
 };

@@ -1,6 +1,6 @@
-import { AccountTokenBalance } from '@types';
 import { Account } from 'adena-module';
 
+import { AccountTokenBalance } from '@types';
 import { useWalletContext } from './use-context';
 
 export type UseWalletAccountsReturn = {

@@ -1,12 +1,7 @@
-import IconHelp from '@assets/help.svg';
+import React from 'react';
+import styled, { useTheme } from 'styled-components';
+
 import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
-import {
-  CommonFullContentLayout, Pressable, Text, View,
-} from '@components/atoms';
-import { BottomFixedButtonGroup } from '@components/molecules';
-import BroadcastMultisigSignatureUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-multisig-signature-upload-input/broadcast-multisig-signature-upload-input';
-import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-multisig-transaction-upload-input';
-import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import {
@@ -15,8 +10,13 @@ import {
 } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 import { Signature } from '@inject/types';
 import { RawTx, SignerPublicKeyInfo } from 'adena-module';
-import React from 'react';
-import styled, { useTheme } from 'styled-components';
+
+import IconHelp from '@assets/help.svg';
+import { CommonFullContentLayout, Pressable, Text, View } from '@components/atoms';
+import { BottomFixedButtonGroup } from '@components/molecules';
+import BroadcastMultisigSignatureUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-multisig-signature-upload-input/broadcast-multisig-signature-upload-input';
+import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-multisig-transaction-upload-input';
+import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
 
 interface BroadcastMultisigTransactionUploadProps {
   currentAddress: string | null;
@@ -53,8 +53,8 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
   const { goBack } = useAppNavigate();
 
   const validSignatures = React.useMemo(() => {
-    return signatures.filter(signature =>
-      signerPublicKeys.some(signer => signer.publicKey.value === signature.pub_key.value),
+    return signatures.filter((signature) =>
+      signerPublicKeys.some((signer) => signer.publicKey.value === signature.pub_key.value),
     );
   }, [signatures, signerPublicKeys]);
 
@@ -108,7 +108,7 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
       <StyledWrapper>
         <StyledHeaderWrapper>
           <Text type='header4' textAlign='center'>
-            Broadcast Transaction
+            {'Broadcast Transaction'}
           </Text>
           <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
             {'Upload a signed transaction file to\nAdena to broadcast it.'}
@@ -144,7 +144,7 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
         {!loadedTransaction && (
           <StyledHelpWrapper onClick={onClickHelp}>
             <Text type='body1Reg' color={theme.neutral.a}>
-              How does it work
+              {'How does it work'}
             </Text>
             <img src={IconHelp} alt='help icon' />
           </StyledHelpWrapper>

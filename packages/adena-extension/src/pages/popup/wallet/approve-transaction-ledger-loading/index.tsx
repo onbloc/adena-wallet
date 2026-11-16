@@ -1,18 +1,19 @@
+import { TM2Error } from '@gnolang/tm2-js-client';
+import { Account, AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
+import React, { useEffect, useMemo, useState } from 'react';
+
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { ApproveLedgerLoading } from '@components/molecules';
-import { TM2Error } from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessageInstance } from '@inject/message';
 import { RoutePath } from '@types';
-import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
-import React, { useEffect, useState } from 'react';
 
 const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
   const { params } = useAppNavigate<RoutePath.ApproveTransactionLoading>();
@@ -22,12 +23,23 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
   const { currentAccount } = useCurrentAccount();
   const [completed, setCompleted] = useState(false);
   const { currentNetwork } = useNetwork();
+  const requestedSignerAccountId = useMemo(() => {
+    const value = requestData?.data?.signerAccountId;
+    return typeof value === 'string' && value.length > 0 ? value : null;
+  }, [requestData?.data?.signerAccountId]);
+  const shouldBroadcastCommit = requestData?.data?.commit === true;
+  const signingAccount = useMemo<Account | null>(() => {
+    if (requestedSignerAccountId) {
+      return wallet?.accounts.find((account) => account.id === requestedSignerAccountId) ?? null;
+    }
+    return currentAccount;
+  }, [currentAccount, requestedSignerAccountId, wallet]);
 
   useEffect(() => {
-    if (currentAccount) {
+    if (signingAccount) {
       requestTransaction();
     }
-  }, [currentAccount]);
+  }, [signingAccount]);
 
   const requestTransaction = async (): Promise<void> => {
     if (completed) {
@@ -39,10 +51,10 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
   };
 
   const createLedgerTransaction = async (): Promise<boolean> => {
-    if (!currentAccount || !document || !currentNetwork || !wallet) {
+    if (!signingAccount || !document || !currentNetwork || !wallet) {
       return false;
     }
-    if (!isLedgerAccount(currentAccount)) {
+    if (!isLedgerAccount(signingAccount)) {
       return false;
     }
 
@@ -54,11 +66,11 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
     const ledgerConnector = AdenaLedgerConnector.fromTransport(connected);
 
     const result = await transactionService
-      .createTransactionWithLedger(ledgerConnector, currentAccount, document)
+      .createTransactionWithLedger(ledgerConnector, signingAccount, document)
       .then(async ({ signed }) => {
         const hash = transactionService.createHash(signed);
         const response = await transactionService
-          .sendTransactionByLedger(ledgerConnector, currentAccount, signed)
+          .sendTransactionByLedger(ledgerConnector, signingAccount, signed, shouldBroadcastCommit)
           .catch((error: TM2Error | Error) => {
             return error;
           });
@@ -72,6 +84,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
                 error: null,
               },
               requestData?.key,
+              requestData?.withNotification,
             ),
           );
           return true;
@@ -85,6 +98,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
                 error: response,
               },
               requestData?.key,
+              requestData?.withNotification,
             ),
           );
           return true;
@@ -95,22 +109,38 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
             WalletResponseSuccessType.TRANSACTION_SUCCESS,
             response,
             requestData?.key,
+            requestData?.withNotification,
           ),
         );
         return true;
       })
       .catch((error: Error) => {
-        if (error.message.includes('Ledger')) {
-          return false;
+        // A device holding a different seed never succeeds on retry, so answer
+        // the request instead of re-prompting the device every second.
+        if (error instanceof LedgerError && error.kind === 'AccountMismatch') {
+          chrome.runtime.sendMessage(
+            InjectionMessageInstance.failure(
+              WalletResponseFailureType.ACCOUNT_MISMATCH,
+              {},
+              requestData?.key,
+              requestData?.withNotification,
+            ),
+          );
+          return true;
         }
-        if (error.message === 'Transaction signing request was rejected by the user') {
+        if (error instanceof LedgerError && error.kind === 'UserRejected') {
           chrome.runtime.sendMessage(
             InjectionMessageInstance.failure(
               WalletResponseRejectType.TRANSACTION_REJECTED,
               {},
               requestData?.key,
+              requestData?.withNotification,
             ),
           );
+          return true;
+        }
+        if (error.message.includes('Ledger')) {
+          return false;
         }
         return false;
       });

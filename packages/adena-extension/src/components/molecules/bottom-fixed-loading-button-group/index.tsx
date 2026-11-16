@@ -1,10 +1,10 @@
+import React, { ReactElement, useCallback, useMemo } from 'react';
+import styled from 'styled-components';
+
 import { Button, Text } from '@components/atoms';
 import { IconButtonLoading } from '@components/atoms/icon/icon-assets';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import React, { ReactElement, useCallback, useMemo } from 'react';
-import styled from 'styled-components';
-
 import { ApproveHoldButton } from '../approve-hold-button/approve-hold-button';
 
 interface ButtonProps {
@@ -34,7 +34,7 @@ export const BottomFixedLoadingButtonGroup = ({
   leftButton,
   rightButton,
   filled,
-}: BottomFixedLoadingButtonGroupProps): ReactElement<any> => {
+}: BottomFixedLoadingButtonGroupProps): ReactElement => {
   const leftClassName = useMemo(() => {
     return mapClassName(leftButton);
   }, [leftButton]);
@@ -66,22 +66,20 @@ export const BottomFixedLoadingButtonGroup = ({
         onClick={onClickLeftButton}
       />
 
-      {isHoldButton
-        ? (
-            <ApproveHoldButton
-              onFinishHold={
-                (rightButton as HoldButtonProps).onFinishHold
-              }
-            />
-          )
-        : (
-            <LoadingButton
-              className={rightClassName}
-              loading={(rightButton as ButtonProps).loading}
-              text={(rightButton as ButtonProps).text}
-              onClick={onClickRightButton}
-            />
-          )}
+      {isHoldButton ? (
+        <ApproveHoldButton
+          onFinishHold={
+            (rightButton as HoldButtonProps).onFinishHold
+          }
+        />
+      ) : (
+        <LoadingButton
+          className={rightClassName}
+          loading={(rightButton as ButtonProps).loading}
+          text={(rightButton as ButtonProps).text}
+          onClick={onClickRightButton}
+        />
+      )}
     </ButtonWrap>
   );
 };
@@ -107,10 +105,7 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
 };
 
 const ButtonWrap = styled.div<{ $filled?: boolean }>`
-  ${mixins.flex({
-    direction: 'row',
-    align: 'flex-start',
-  })};
+  ${mixins.flex({ direction: 'row', align: 'flex-start' })};
   position: fixed;
   left: 0px;
   width: 100%;

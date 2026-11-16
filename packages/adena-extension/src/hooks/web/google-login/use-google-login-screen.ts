@@ -1,41 +1,76 @@
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import useIndicatorStep, { UseIndicatorStepReturn } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
-import { RoutePath } from '@types';
-import { AdenaWallet, SingleAccount, Web3AuthKeyring } from 'adena-module';
-import { GoogleTorusSigner } from 'adena-torus-signin';
+import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
 import { useCallback, useState } from 'react';
 
+import { GOOGLE_VERIFIERS, SocialKeySetType } from '@common/constants/web3auth.constant';
+import {
+  createGoogleLoginConfig,
+  getSocialKeySetAvailability,
+  isVerifierConfigured,
+} from '@common/utils/social-login';
+import { useNetwork } from '@hooks/use-network';
+import useAppNavigate from '@hooks/use-app-navigate';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { RoutePath } from '@types';
+import useSocialLoginAccount, {
+  SocialLoginFailType,
+  toSocialLoginFailType,
+} from '../social-login/use-social-login-account';
+import useSocialLoginAttempt from '../social-login/use-social-login-attempt';
 import useQuestionnaire from '../use-questionnaire';
 
 export type UseGoogleLoginReturn = {
+  failType: SocialLoginFailType;
+  ableToSelectProduction: boolean;
+  ableToSelectLegacy: boolean;
   googleLoginState: GoogleLoginStateType;
+  keySetType: SocialKeySetType;
   indicatorInfo: UseIndicatorStepReturn;
   backStep: () => void;
   retry: () => void;
+  selectKeySetType: (keySetType: SocialKeySetType) => void;
   initGoogleLogin: () => void;
   requestGoogleLogin: () => Promise<void>;
 };
 
-export type GoogleLoginStateType = 'INIT' | 'REQUEST_LOGIN' | 'FAILED';
+export type GoogleLoginStateType = 'SELECT_KEY_SET' | 'INIT' | 'REQUEST_LOGIN' | 'FAILED';
 
+// SELECT_KEY_SET shares the indicator step with INIT so picking a key set does
+// not add a step to the onboarding progress bar.
 const googleLoginStepNo: Record<GoogleLoginStateType, number> = {
+  SELECT_KEY_SET: 0,
   INIT: 0,
   REQUEST_LOGIN: 1,
   FAILED: 1,
 };
 
 const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
-  const { walletService } = useAdenaContext();
   const { navigate, params } = useAppNavigate<RoutePath.WebGoogleLogin>();
   const { ableToSkipQuestionnaire } = useQuestionnaire();
-  const { updateWallet } = useWalletContext();
-  const { changeCurrentAccount } = useCurrentAccount();
+  const { connectWithProvider } = useSocialLoginAccount();
+  // Restored from the route state after the questionnaire round trip, which
+  // remounts this screen and would otherwise reset the selection.
+  const { ableToSelectProduction, ableToSelectLegacy, ableToSelectKeySet, initialKeySetType } =
+    getSocialKeySetAvailability(GOOGLE_VERIFIERS, 'GOOGLE', params?.keySetType);
+  // Identifies the login attempt that owns the popup, so an abandoned or
+  // superseded one cannot commit an account when it finally resolves.
+  const { begin: beginAttempt, abandon: abandonAttempt } = useSocialLoginAttempt();
+  const [failType, setFailType] = useState<SocialLoginFailType>('DEFAULT');
+  const { currentNetwork } = useNetwork();
 
-  const [googleLoginState, setGoogleLoginState] = useState<GoogleLoginStateType>(
-    params?.doneQuestionnaire ? 'REQUEST_LOGIN' : 'INIT',
-  );
+  const [googleLoginState, setGoogleLoginState] = useState<GoogleLoginStateType>(() => {
+    if (!params?.doneQuestionnaire && ableToSelectKeySet) {
+      return 'SELECT_KEY_SET';
+    }
+    // Fail before opening the popup when the key set is unconfigured.
+    if (!isVerifierConfigured(GOOGLE_VERIFIERS[initialKeySetType], 'GOOGLE')) {
+      return 'FAILED';
+    }
+    return params?.doneQuestionnaire ? 'REQUEST_LOGIN' : 'INIT';
+  });
+
+  const [keySetType, setKeySetType] = useState<SocialKeySetType>(initialKeySetType);
 
   const indicatorInfo = useIndicatorStep<string>({
     stepMap: googleLoginStepNo,
@@ -43,97 +78,86 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
     hasQuestionnaire: true,
   });
 
+  const selectKeySetType = useCallback((selected: SocialKeySetType) => {
+    setKeySetType(selected);
+    setGoogleLoginState(
+      isVerifierConfigured(GOOGLE_VERIFIERS[selected], 'GOOGLE') ? 'INIT' : 'FAILED',
+    );
+  }, []);
+
   const initGoogleLogin = useCallback(() => {
     if (ableToSkipQuestionnaire) {
       setGoogleLoginState('REQUEST_LOGIN');
       return;
     }
-    navigate(RoutePath.WebQuestionnaire, { state: { callbackPath: RoutePath.WebGoogleLogin } });
-  }, [ableToSkipQuestionnaire]);
+    navigate(RoutePath.WebQuestionnaire, {
+      state: {
+        callbackPath: RoutePath.WebGoogleLogin,
+        callbackState: {
+          keySetType,
+        },
+      },
+    });
+  }, [ableToSkipQuestionnaire, keySetType]);
 
   const requestGoogleLogin = async (): Promise<void> => {
+    const isCurrentRequest = beginAttempt();
+
     try {
-      // Initialize Google Login
-      const web3Auth = GoogleTorusSigner.create();
-      const initialized = await web3Auth.init();
-      if (!web3Auth || !initialized) {
-        throw new Error('Failed to initialize web3auth.');
-      }
-
-      // // Connect Google
-      const connected = await web3Auth.connect();
-      if (!connected) {
-        throw new Error('Failed to connect web3auth.');
-      }
-      const privateKey = await web3Auth.getPrivateKey();
-      await web3Auth.disconnect();
-
-      // Create Adena Wallet Instance
-      const existWallet = await walletService.existsWallet();
-      if (existWallet) {
-        await _addGoogleAccount(privateKey);
-      }
-      else {
-        await _createGoogleAccount(privateKey);
-      }
-    }
-    catch (e) {
+      const provider = await GnoSocialWalletProvider.createGoogle(
+        createGoogleLoginConfig(GOOGLE_VERIFIERS[keySetType], currentNetwork),
+      );
+      await connectWithProvider(provider, 'WEB3_AUTH', isCurrentRequest);
+    } catch (e) {
       console.error(e);
+      if (!isCurrentRequest()) {
+        return;
+      }
+      setFailType(toSocialLoginFailType(e));
+      setGoogleLoginState('FAILED');
     }
-    setGoogleLoginState('FAILED');
   };
 
-  const _addGoogleAccount = useCallback(
-    async (privateKey: string) => {
-      const wallet = await walletService.loadWallet();
-
-      const clone = wallet.clone();
-      const web3AuthKeyring = await Web3AuthKeyring.fromPrivateKeyStr(privateKey);
-      const account = await SingleAccount.createBy(web3AuthKeyring, clone.nextAccountName);
-      account.index = clone.lastAccountIndex + 1;
-      clone.addAccount(account);
-      clone.addKeyring(web3AuthKeyring);
-      const storedAccount = clone.accounts.find(storedAccount => storedAccount.id === account.id);
-      if (storedAccount) {
-        await changeCurrentAccount(storedAccount);
-      }
-      await updateWallet(clone);
-      navigate(RoutePath.WebAccountAddedComplete);
-    },
-    [navigate],
-  );
-
-  const _createGoogleAccount = useCallback(
-    async (privateKey: string) => {
-      const createdWallet = await AdenaWallet.createByWeb3Auth(privateKey);
-      const serializedWallet = await createdWallet.serialize('');
-      navigate(RoutePath.WebCreatePassword, {
-        state: {
-          serializedWallet,
-          stepLength: indicatorInfo.stepLength,
-        },
-      });
-    },
-    [navigate],
-  );
-
   const backStep = useCallback(() => {
-    if (googleLoginState === 'INIT') {
+    // Abandons whatever popup is still open.
+    abandonAttempt();
+
+    if (googleLoginState === 'SELECT_KEY_SET') {
       navigate(RoutePath.WebAdvancedOption);
       return;
     }
+    if (
+      googleLoginState === 'INIT' ||
+      !isVerifierConfigured(GOOGLE_VERIFIERS[keySetType], 'GOOGLE')
+    ) {
+      if (!ableToSelectKeySet) {
+        navigate(RoutePath.WebAdvancedOption);
+        return;
+      }
+      setGoogleLoginState('SELECT_KEY_SET');
+      return;
+    }
     setGoogleLoginState('INIT');
-  }, [googleLoginState]);
+  }, [abandonAttempt, googleLoginState, keySetType, ableToSelectKeySet, navigate]);
 
   const retry = useCallback(() => {
+    if (!isVerifierConfigured(GOOGLE_VERIFIERS[keySetType], 'GOOGLE')) {
+      return;
+    }
+    setFailType('DEFAULT');
     setGoogleLoginState('REQUEST_LOGIN');
-  }, []);
+  }, [keySetType]);
 
   return {
+    failType,
+    ableToSelectProduction,
+    ableToSelectLegacy,
     googleLoginState,
+    keySetType,
     indicatorInfo,
     backStep,
     retry,
+    selectKeySetType,
     initGoogleLogin,
     requestGoogleLogin,
   };

@@ -1,14 +1,16 @@
-import IconCheck from '@assets/check-circle.svg';
-import IconEdit from '@assets/icon-edit-small';
-import { NetworkMetainfo } from '@types';
 import React, { useCallback } from 'react';
 
 import { NetworkListItemWrapper } from './network-list-item.styles';
+import IconCheck from '@assets/check-circle.svg';
+import IconEdit from '@assets/icon-edit-small';
+
+import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 
 export interface NetworkListItemProps {
   selected: boolean;
   locked: boolean;
-  networkMetainfo: NetworkMetainfo;
+  networkMetainfo: NetworkMetainfo | AtomoneNetworkMetainfo;
+  iconUrl?: string;
   moveEditPage: (networkMetainfoId: string) => void;
   changeNetwork: (networkMetainfoId: string) => void;
 }
@@ -16,6 +18,7 @@ export interface NetworkListItemProps {
 const NetworkListItem: React.FC<NetworkListItemProps> = ({
   selected,
   networkMetainfo,
+  iconUrl,
   moveEditPage,
   changeNetwork,
 }) => {
@@ -34,6 +37,11 @@ const NetworkListItem: React.FC<NetworkListItemProps> = ({
 
   return (
     <NetworkListItemWrapper onClick={onClickItem}>
+      {iconUrl && (
+        <div className='chain-icon-wrapper'>
+          <img className='chain-icon' src={iconUrl} alt='chain' />
+        </div>
+      )}
       <div className='info-wrapper'>
         <div className='name-wrapper'>
           <span className='name'>{networkMetainfo.networkName}</span>

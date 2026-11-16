@@ -1,17 +1,16 @@
-import { GlobalWebStyle } from '@styles/global-style';
-import theme from '@styles/theme';
-import { render } from '@testing-library/react';
 import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
+import { render } from '@testing-library/react';
+import theme from '@styles/theme';
+import { GlobalWebStyle } from '@styles/global-style';
 import { WebButton } from '.';
 
 describe('WebButton Component', () => {
   it('WebButton render', () => {
+
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalWebStyle />
         <ThemeProvider theme={theme}>
           <WebButton
@@ -20,7 +19,7 @@ describe('WebButton Component', () => {
             text='WebButton'
           />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

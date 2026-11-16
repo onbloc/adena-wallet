@@ -1,18 +1,24 @@
-import IconWarning from '@assets/warning-info.svg';
-import { BaseError } from '@common/errors';
 import React, { useEffect, useMemo, useRef } from 'react';
 
+import IconWarning from '@assets/warning-info.svg';
+import { BaseError } from '@common/errors';
 import { MemoInputWrapper } from './memo-input.styles';
 
 export interface MemoInputProps {
   memo: string;
   memoError?: BaseError | null;
   onChangeMemo: (memo: string) => void;
+  warningText?: string;
 }
 
-const WARNING_TEXT = 'A memo is required when sending tokens to a centralized exchange.';
+const DEFAULT_WARNING_TEXT = 'A memo is required when sending tokens to a centralized exchange.';
 
-const MemoInput: React.FC<MemoInputProps> = ({ memo, memoError, onChangeMemo }) => {
+const MemoInput: React.FC<MemoInputProps> = ({
+  memo,
+  memoError,
+  onChangeMemo,
+  warningText = DEFAULT_WARNING_TEXT,
+}) => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const hasError = useMemo(() => {
@@ -60,7 +66,7 @@ const MemoInput: React.FC<MemoInputProps> = ({ memo, memoError, onChangeMemo }) 
 
       <div className='warning-wrapper'>
         <img className='icon-warning' src={IconWarning} alt='icon' />
-        <span className='warning-text'>{WARNING_TEXT}</span>
+        <span className='warning-text'>{warningText}</span>
       </div>
     </MemoInputWrapper>
   );

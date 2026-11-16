@@ -1,5 +1,4 @@
 import React from 'react';
-
 import {
   AdditionalTokenInfoItemWrapper,
   AdditionalTokenInfoWrapper,
@@ -26,10 +25,7 @@ const AdditionalTokenInfoBlock: React.FC<AdditionalTokenInfoBlockProps> = ({
 }) => {
   return (
     <AdditionalTokenInfoItemWrapper>
-      <span className='title'>
-        {title}
-        :
-      </span>
+      <span className='title'>{title}:</span>
 
       {isLoading ? <TokenInfoValueLoadingBox /> : <span className='value'>{value}</span>}
     </AdditionalTokenInfoItemWrapper>

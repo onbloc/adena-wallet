@@ -1,6 +1,5 @@
-import SearchIcon from '@assets/common-search.svg';
 import React from 'react';
-
+import SearchIcon from '@assets/common-search.svg';
 import { SearchInputWrapper } from './search-input.styles';
 
 interface AdditionalButtonOption {

@@ -1,13 +1,13 @@
-import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
-import { WebMain } from '@components/atoms';
-import useQuestionnaireScreen from '@hooks/web/questionnaire/use-questionnaire-screen';
 import { ReactElement, useMemo } from 'react';
 
-import QuestionnaireComplete from './complete';
+import { WebMain } from '@components/atoms';
+import useQuestionnaireScreen from '@hooks/web/questionnaire/use-questionnaire-screen';
 import QuestionnaireInitStep from './init-step';
 import QuestionnaireQuestion from './question';
+import QuestionnaireComplete from './complete';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
-const QuestionnaireScreen = (): ReactElement<any> => {
+const QuestionnaireScreen = (): ReactElement => {
   const {
     indicatorInfo,
     questionnaireState,

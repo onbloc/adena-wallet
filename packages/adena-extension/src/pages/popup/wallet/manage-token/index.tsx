@@ -1,15 +1,14 @@
+import BigNumber from 'bignumber.js';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import ManageTokenSearch from '@components/pages/manage-token/manage-token';
 import { ManageTokenLayout } from '@components/pages/manage-token-layout';
+import ManageTokenSearch from '@components/pages/manage-token/manage-token';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { ManageTokenInfo, RoutePath } from '@types';
-import BigNumber from 'bignumber.js';
-import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react';
 
 const ManageTokenSearchContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();
@@ -42,7 +41,7 @@ const ManageTokenSearchContainer: React.FC = () => {
             value: BigNumber(metainfo.amount.value).toFormat(),
             denom: metainfo.amount.denom,
           },
-          logo: tokenLogoMap[metainfo.tokenId] || `${UnknownTokenIcon}`,
+          logo: tokenLogoMap[metainfo.tokenId] || metainfo.image || `${UnknownTokenIcon}`,
         };
       });
     return filteredTokens;
@@ -61,7 +60,7 @@ const ManageTokenSearchContainer: React.FC = () => {
       if (!currentAccount) {
         return;
       }
-      const changedToken = currentBalances.find(token => tokenId === token.tokenId);
+      const changedToken = currentBalances.find((token) => tokenId === token.tokenId);
       if (changedToken) {
         toggleDisplayOption(currentAccount, changedToken, activated);
       }

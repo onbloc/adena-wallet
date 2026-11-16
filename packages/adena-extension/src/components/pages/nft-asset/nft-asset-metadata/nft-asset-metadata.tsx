@@ -1,7 +1,6 @@
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721MetadataModel, GRC721Model } from '@types';
 import React, { useMemo } from 'react';
-
 import { NFTAssetMetadataWrapper } from './nft-asset-metadata.styles';
 
 export interface NFTAssetMetadataProps {
@@ -9,7 +8,7 @@ export interface NFTAssetMetadataProps {
   queryGRC721TokenMetadata: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<GRC721MetadataModel | null, Error>, 'queryKey' | 'queryFn'>,
+    options?: UseQueryOptions<GRC721MetadataModel | null, Error>,
   ) => UseQueryResult<GRC721MetadataModel | null>;
 }
 

@@ -16,7 +16,9 @@ export enum SwitchNetworkResponseType {
   UNADDED_NETWORK = 'UNADDED_NETWORK',
 }
 
-interface SwitchNetworkResponseData { chainId: string }
+interface SwitchNetworkResponseData {
+  chainId: string;
+}
 
 export type SwitchNetworkResponse = AdenaResponse<SwitchNetworkResponseData>;
 

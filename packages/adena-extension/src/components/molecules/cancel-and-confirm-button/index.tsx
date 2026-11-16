@@ -1,7 +1,8 @@
-import { Button, ButtonProps, Text } from '@components/atoms';
-import mixins from '@styles/mixins';
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
+
+import { Text, Button, ButtonProps } from '@components/atoms';
+import mixins from '@styles/mixins';
 
 interface DefaultButtonProps {
   onClick: () => void;
@@ -20,10 +21,7 @@ interface CancelAndConfirmLocation {
 
 const Wrapper = styled.div`
   margin-top: auto;
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'space-between',
-  })};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   gap: 10px;
 `;
@@ -31,7 +29,7 @@ const Wrapper = styled.div`
 export const CancelAndConfirmButton = ({
   cancelButtonProps,
   confirmButtonProps,
-}: CancelAndConfirmLocation): ReactElement<any> => {
+}: CancelAndConfirmLocation): ReactElement => {
   return (
     <Wrapper>
       <Button

@@ -1,5 +1,6 @@
-import { Row } from '@components/atoms';
 import styled from 'styled-components';
+
+import { Row } from '@components/atoms';
 
 export const StyledSelectSeedPhraseBoxItem = styled(Row)`
   height: 48px;

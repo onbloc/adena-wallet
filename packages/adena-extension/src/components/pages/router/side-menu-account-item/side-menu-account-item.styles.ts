@@ -3,10 +3,7 @@ import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const SideMenuAccountItemWrapper = styled.div`
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'space-between',
-  })};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   height: auto;
   padding: 12px 20px;
@@ -22,22 +19,70 @@ export const SideMenuAccountItemWrapper = styled.div`
   }
 
   .info-wrapper {
-    ${mixins.flex({
-      align: 'flex-start',
-      justify: 'normal',
-    })};
+    ${mixins.flex({ align: 'flex-start', justify: 'normal' })};
+    flex: 1;
+    min-width: 0;
 
     .address-wrapper {
-      display: inline-flex;
+      display: flex;
       flex-direction: row;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
 
       .name {
         ${fonts.body2Bold}
         line-height: 18px;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
-      .copy-button {
-        margin: 0 8px 0 5px;
+      .address-copy {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0 8px 0 6px;
+        cursor: pointer;
+        flex-shrink: 0;
+
+        .address {
+          ${fonts.body3Reg}
+          line-height: 18px;
+          color: ${getTheme('neutral', 'a')};
+          transition: color 0.2s ease;
+        }
+
+        .copy-icon {
+          display: inline-flex;
+          align-items: center;
+
+          svg {
+            width: 14px;
+            height: 14px;
+          }
+
+          svg path {
+            transition: stroke 0.2s ease;
+            stroke: ${getTheme('neutral', 'a')};
+          }
+        }
+
+        &:hover .address {
+          color: ${getTheme('neutral', '_1')};
+        }
+
+        &:hover .copy-icon svg path {
+          stroke: ${getTheme('neutral', '_1')};
+        }
+      }
+
+      /* Session accounts hide the address block, so the type chip sits directly
+         after the name and needs its own left spacing. */
+      .name + .label {
+        margin-left: 8px;
       }
 
       .label {
@@ -48,7 +93,12 @@ export const SideMenuAccountItemWrapper = styled.div`
         background: #191920;
         justify-content: center;
         align-items: center;
+        flex-shrink: 0;
         ${fonts.captionReg}
+      }
+
+      .label + .label {
+        margin-left: 4px;
       }
     }
 
@@ -69,6 +119,8 @@ export const SideMenuAccountItemWrapper = styled.div`
     display: flex;
     width: 16px;
     height: 16px;
+    flex-shrink: 0;
+    margin-left: 8px;
     cursor: pointer;
 
     & > svg {
@@ -104,11 +156,7 @@ export const SideMenuAccountItemMoreInfoWrapper = styled.div<{
   overflow: hidden;
 
   .info-wrapper {
-    ${mixins.flex({
-      direction: 'row',
-      align: 'normal',
-      justify: 'normal',
-    })};
+    ${mixins.flex({ direction: 'row', align: 'normal', justify: 'normal' })};
     padding: 7px 0 7px 12px;
     border-bottom: 1px solid ${getTheme('neutral', '_7')};
     cursor: pointer;

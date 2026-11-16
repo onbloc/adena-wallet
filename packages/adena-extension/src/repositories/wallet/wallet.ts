@@ -2,12 +2,16 @@ import { WalletError } from '@common/errors';
 import { StorageManager } from '@common/storage/storage-manager';
 import { clearInMemoryKey, decryptPassword, encryptPassword } from '@common/utils/crypto-utils';
 
-type LocalValueType
-  = | 'SERIALIZED'
-    | 'ENCRYPTED_STORED_PASSWORD'
-    | 'QUESTIONNAIRE_EXPIRED_DATE'
-    | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
-    | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE';
+type LocalValueType =
+  | 'SERIALIZED'
+  | 'QUESTIONNAIRE_EXPIRED_DATE'
+  | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
+  | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
+  | 'KDF_SALT'
+  | 'AUTO_LOCK_TIMEOUT_MINUTES';
+
+export const DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES = 5;
+export const MAX_AUTO_LOCK_TIMEOUT_MINUTES = 1440;
 type SessionValueType = 'ENCRYPTED_KEY' | 'ENCRYPTED_PASSWORD';
 
 export class WalletRepository {
@@ -37,7 +41,6 @@ export class WalletRepository {
 
   public deleteSerializedWallet = async (): Promise<boolean> => {
     await this.localStorage.remove('SERIALIZED');
-    await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
     await this.localStorage.remove('QUESTIONNAIRE_EXPIRED_DATE');
 
     return true;
@@ -49,8 +52,7 @@ export class WalletRepository {
       if (password === '') {
         throw new WalletError('NOT_FOUND_PASSWORD');
       }
-    }
-    catch (_e) {
+    } catch (e) {
       return false;
     }
 
@@ -69,8 +71,7 @@ export class WalletRepository {
         iv,
         encryptedPassword,
       };
-    }
-    catch (e) {
+    } catch (e) {
       console.warn('Failed to get session crypt passwords', e);
 
       return {
@@ -89,8 +90,7 @@ export class WalletRepository {
 
     try {
       return decryptPassword(iv, encryptedPassword);
-    }
-    catch (e) {
+    } catch (e) {
       console.log('e', e);
       throw new WalletError('NOT_FOUND_PASSWORD');
     }
@@ -101,19 +101,12 @@ export class WalletRepository {
       const { encryptedKey, encryptedPassword } = await encryptPassword(password);
       await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey);
       await this.sessionStorage.set('ENCRYPTED_PASSWORD', encryptedPassword);
-      await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
-    }
-    catch (e) {
+    } catch (e) {
       console.warn('Failed to update wallet password', e);
 
       return false;
     }
 
-    return true;
-  };
-
-  public updateStoredPassword = async (encryptedStoredPassword: string): Promise<boolean> => {
-    await this.localStorage.set('ENCRYPTED_STORED_PASSWORD', encryptedStoredPassword);
     return true;
   };
 
@@ -124,11 +117,6 @@ export class WalletRepository {
     await this.sessionStorage.remove('ENCRYPTED_PASSWORD');
 
     return true;
-  };
-
-  public getEncryptedPassword = async (): Promise<string> => {
-    const encryptedPassword = await this.localStorage.get('ENCRYPTED_STORED_PASSWORD');
-    return encryptedPassword;
   };
 
   public updateStoragePassword = async (password: string): Promise<void> => {
@@ -172,6 +160,46 @@ export class WalletRepository {
 
   public updateAddAccountGuideConfirmDate = async (confirmDate: number): Promise<void> => {
     await this.localStorage.set('ADD_ACCOUNT_GUIDE_CONFIRM_DATE', confirmDate);
+  };
+
+  public getAutoLockTimeoutMinutes = async (): Promise<number> => {
+    const value = await this.localStorage.get('AUTO_LOCK_TIMEOUT_MINUTES');
+    if (value === null || value === undefined || value === '') {
+      return DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES;
+    }
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES;
+    }
+    return parsed;
+  };
+
+  public updateAutoLockTimeoutMinutes = async (minutes: number): Promise<void> => {
+    await this.localStorage.set('AUTO_LOCK_TIMEOUT_MINUTES', minutes);
+  };
+
+  public getKdfSalt = async (): Promise<Uint8Array | null> => {
+    const saltB64 = await this.localStorage.get('KDF_SALT');
+    if (!saltB64) {
+      return null;
+    }
+    const salt = Uint8Array.from(Buffer.from(saltB64, 'base64'));
+    // Argon2id requires exactly 16-byte salts. Treat any other length
+    // (including corrupted base64 like the literal "undefined" string)
+    // as missing so saveWallet generates a fresh salt.
+    if (salt.length !== 16) {
+      return null;
+    }
+    return salt;
+  };
+
+  public updateKdfSalt = async (salt: Uint8Array): Promise<void> => {
+    await this.localStorage.set('KDF_SALT', Buffer.from(salt).toString('base64'));
+  };
+
+  public deleteKdfSalt = async (): Promise<boolean> => {
+    await this.localStorage.remove('KDF_SALT');
+    return true;
   };
 
   public migrate = async (password: string): Promise<void> => {

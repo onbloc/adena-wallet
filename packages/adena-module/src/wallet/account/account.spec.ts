@@ -1,0 +1,174 @@
+import { makeAccount } from './account';
+import { SeedAccount } from './seed-account';
+import { LedgerAccount } from './ledger-account';
+import { SingleAccount } from './single-account';
+import { AirgapAccount } from './airgap-account';
+import { MultisigAccount } from './multisig-account';
+import { hasPrivateKeyAccount } from './account-util';
+import { secp256k1PubKeyToAddressBytes } from '../../utils/address';
+
+// Fixed compressed secp256k1 public key for deterministic tests
+const TEST_PUBLIC_KEY = [
+  2, 166, 122, 96, 148, 55, 234, 211, 60, 58, 186, 188, 53, 82, 114, 229, 244, 40, 232, 63, 44,
+  159, 93, 198, 72, 130, 163, 64, 100, 45, 245, 181, 154,
+];
+
+function makeAddressBytes(): number[] {
+  return Array.from(secp256k1PubKeyToAddressBytes(Uint8Array.from(TEST_PUBLIC_KEY)));
+}
+
+const BASE_SEED_INFO = {
+  index: 0,
+  type: 'HD_WALLET' as const,
+  name: 'Account 1',
+  keyringId: 'keyring-1',
+  hdPath: 0,
+  publicKey: TEST_PUBLIC_KEY,
+};
+
+const BASE_SINGLE_INFO = {
+  index: 0,
+  type: 'PRIVATE_KEY' as const,
+  name: 'Account 1',
+  keyringId: 'keyring-1',
+  publicKey: TEST_PUBLIC_KEY,
+};
+
+const BASE_LEDGER_INFO = {
+  index: 0,
+  type: 'LEDGER' as const,
+  name: 'Account 1',
+  keyringId: 'keyring-1',
+  hdPath: 0,
+  publicKey: TEST_PUBLIC_KEY,
+};
+
+const BASE_MULTISIG_INFO = {
+  index: 0,
+  type: 'MULTISIG' as const,
+  name: 'Multisig 1',
+  keyringId: 'keyring-ms',
+  publicKey: [],
+  addressBytes: makeAddressBytes(),
+  multisigConfig: { signers: ['g1aaa', 'g1bbb'], threshold: 2 },
+  signerPublicKeys: [
+    { address: 'g1aaa', publicKey: { '@type': '/cosmos.crypto.secp256k1.PubKey', value: 'abc' } },
+    { address: 'g1bbb', publicKey: { '@type': '/cosmos.crypto.secp256k1.PubKey', value: 'def' } },
+  ],
+};
+
+const BASE_SESSION_INFO = {
+  index: 0,
+  type: 'SESSION' as const,
+  name: 'Session 1',
+  keyringId: 'keyring-session',
+  publicKey: TEST_PUBLIC_KEY,
+  sessionConfig: {
+    masterAddress: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+    chainId: 'test-13',
+    status: 'ACTIVE' as const,
+  },
+};
+
+describe('SeedAccount.getAddress', () => {
+  it('returns an address with the given bech32 prefix', async () => {
+    const account = new SeedAccount(BASE_SEED_INFO);
+    const gAddress = await account.getAddress('g');
+    const atoneAddress = await account.getAddress('atone');
+    expect(gAddress).toMatch(/^g1/);
+    expect(atoneAddress).toMatch(/^atone1/);
+    expect(gAddress).not.toBe(atoneAddress);
+  });
+});
+
+describe('LedgerAccount.getAddress', () => {
+  it('returns a bech32 address for the given prefix', async () => {
+    const account = new LedgerAccount(BASE_LEDGER_INFO);
+    const address = await account.getAddress('g');
+    expect(address).toMatch(/^g1/);
+  });
+});
+
+describe('SingleAccount.getAddress', () => {
+  it('returns a bech32 address for the given prefix', async () => {
+    const account = new SingleAccount(BASE_SINGLE_INFO);
+    const address = await account.getAddress('g');
+    expect(address).toMatch(/^g1/);
+  });
+});
+
+describe('AirgapAccount.getAddress', () => {
+  it('returns a bech32 address for the given prefix', async () => {
+    const account = new AirgapAccount({
+      index: 0,
+      type: 'AIRGAP',
+      name: 'Airgap 1',
+      keyringId: 'keyring-ag',
+      publicKey: [],
+      addressBytes: makeAddressBytes(),
+    });
+    const address = await account.getAddress('g');
+    expect(address).toMatch(/^g1/);
+  });
+});
+
+describe('MultisigAccount.getAddress', () => {
+  it('returns a bech32 address for the given prefix', async () => {
+    const account = new MultisigAccount(BASE_MULTISIG_INFO);
+    const address = await account.getAddress('g');
+    expect(address).toMatch(/^g1/);
+  });
+});
+
+describe('makeAccount', () => {
+  it('returns an Account instance that derives an address for the given prefix', async () => {
+    const account = makeAccount(BASE_SEED_INFO);
+    const address = await account.getAddress('g');
+    expect(address).toMatch(/^g1/);
+  });
+});
+
+describe('hasPrivateKeyAccount', () => {
+  it('treats session accounts as private key exportable', () => {
+    expect(hasPrivateKeyAccount(makeAccount(BASE_SESSION_INFO))).toBe(true);
+  });
+});
+
+describe('derivation path (account/change/addressIndex)', () => {
+  it('defaults account/change to 0 for pre-custom-path accounts (backward compat)', () => {
+    // BASE_SEED_INFO has no accountIndex/changeIndex, mirroring stored data.
+    const seed = new SeedAccount({ ...BASE_SEED_INFO, hdPath: 3 });
+    expect(seed.accountIndex).toBe(0);
+    expect(seed.changeIndex).toBe(0);
+    expect(seed.derivationPath).toEqual({ account: 0, change: 0, addressIndex: 3 });
+  });
+
+  it('exposes a custom derivation path and round-trips through toData/fromData', () => {
+    const seed = new SeedAccount({
+      ...BASE_SEED_INFO,
+      hdPath: 4,
+      accountIndex: 2,
+      changeIndex: 1,
+    });
+    expect(seed.derivationPath).toEqual({ account: 2, change: 1, addressIndex: 4 });
+
+    const restored = SeedAccount.fromData(seed.toData());
+    expect(restored.derivationPath).toEqual({ account: 2, change: 1, addressIndex: 4 });
+    expect(restored.toData()).toMatchObject({ hdPath: 4, accountIndex: 2, changeIndex: 1 });
+  });
+
+  it('applies the same rules to Ledger accounts', () => {
+    const ledger = new LedgerAccount({
+      ...BASE_LEDGER_INFO,
+      hdPath: 7,
+      accountIndex: 5,
+      changeIndex: 0,
+    });
+    expect(ledger.derivationPath).toEqual({ account: 5, change: 0, addressIndex: 7 });
+    expect(LedgerAccount.fromData(ledger.toData()).derivationPath).toEqual({
+      account: 5,
+      change: 0,
+      addressIndex: 7,
+    });
+  });
+});

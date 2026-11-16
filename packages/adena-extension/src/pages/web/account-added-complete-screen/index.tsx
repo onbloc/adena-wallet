@@ -1,9 +1,12 @@
-import AnimationAddAccount from '@assets/web/lottie/account-added.json';
-import { View, WebButton, WebMain } from '@components/atoms';
-import Lottie from '@components/atoms/lottie';
-import { WebTitleWithDescription } from '@components/molecules';
 import type { JSX } from 'react';
 import styled from 'styled-components';
+
+import { closeCurrentSurface } from '@common/utils/browser-utils';
+import { WebMain, View, WebButton } from '@components/atoms';
+
+import AnimationAddAccount from '@assets/web/lottie/account-added.json';
+import { WebTitleWithDescription } from '@components/molecules';
+import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   row-gap: 18px;
@@ -13,19 +16,12 @@ const StyledContainer = styled(View)`
 
 const AccountAddedCompleteScreen = (): JSX.Element => {
   const onClickDoneButton = async (): Promise<void> => {
-    window.close();
+    closeCurrentSurface();
   };
 
   return (
-    <WebMain
-      spacing={null}
-      style={{ alignItems: 'center' }}
-    >
-      <View style={{
-        paddingBottom: 16,
-        marginTop: -80,
-      }}
-      >
+    <WebMain spacing={null} style={{ alignItems: 'center' }}>
+      <View style={{ paddingBottom: 16, marginTop: -80 }}>
         <Lottie
           speed={1}
           height={200}

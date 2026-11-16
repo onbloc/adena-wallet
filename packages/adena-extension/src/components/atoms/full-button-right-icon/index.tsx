@@ -1,11 +1,14 @@
-import { Icon, Text } from '@components/atoms';
-import mixins from '@styles/mixins';
-import { FontsType, getTheme } from '@styles/theme';
-import React, { type JSX } from 'react';
+import React from 'react';
+import type { JSX } from 'react';
 import styled, { css } from 'styled-components';
 
+import { Text, Icon } from '@components/atoms';
+import { IconName } from '@components/atoms/icon';
+import { FontsType, getTheme } from '@styles/theme';
+import mixins from '@styles/mixins';
+
 export type ButtonMode = 'DEFAULT' | 'DANGER' | 'HOVER';
-export type IconMode = 'ARROW' | 'WEBLINK';
+export type IconMode = 'ARROW' | 'WEBLINK' | 'NONE';
 
 interface ButtonStyleProps {
   mode?: ButtonMode;
@@ -18,6 +21,7 @@ interface ButtonProps extends ButtonStyleProps {
   textType?: FontsType;
   className?: string;
   disabled?: boolean;
+  leftIcon?: IconName;
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => unknown;
 }
 
@@ -30,13 +34,19 @@ export const FullButtonRightIcon = ({
   onClick,
   gap = 12,
   icon = 'ARROW',
+  leftIcon,
 }: ButtonProps): JSX.Element => {
   if (disabled) return <></>;
   return (
     <ButtonWrapper className={className} onClick={onClick} mode={mode} gap={gap}>
-      <Text type={textType} color='inherit'>
-        {title}
-      </Text>
+      <LeftGroup>
+        {leftIcon && (
+          <Icon name={leftIcon} className={leftIcon === 'iconAdenaMark' ? '' : 'icon-left'} />
+        )}
+        <Text type={textType} color='inherit'>
+          {title}
+        </Text>
+      </LeftGroup>
       {icon === 'ARROW' && <Icon name='iconArrowV2' className='icon-arrow-v2' />}
       {icon === 'WEBLINK' && <Icon name='iconWebLink' className='icon-weblink' />}
     </ButtonWrapper>
@@ -52,6 +62,13 @@ const defaultIconStyle = css<ButtonStyleProps>`
     transition: 0.2s;
     fill: ${({ theme, mode }): string => (mode === 'DANGER' ? theme.red.b : theme.neutral.a)};
   }
+  .icon-left * {
+    transition: 0.2s;
+    stroke: ${({ theme, mode }): string => (mode === 'DANGER' ? theme.red.b : theme.neutral.a)};
+  }
+  .icon-left [fill]:not([fill='none']) {
+    fill: ${({ theme, mode }): string => (mode === 'DANGER' ? theme.red.b : theme.neutral.a)};
+  }
 `;
 
 const hoverIconStyle = css<ButtonStyleProps>`
@@ -61,6 +78,17 @@ const hoverIconStyle = css<ButtonStyleProps>`
   .icon-weblink * {
     fill: ${({ theme, mode }): string => (mode === 'DANGER' ? theme.red._5 : theme.neutral._1)};
   }
+  .icon-left * {
+    stroke: ${({ theme, mode }): string => (mode === 'DANGER' ? theme.red._5 : theme.neutral._1)};
+  }
+  .icon-left [fill]:not([fill='none']) {
+    fill: ${({ theme, mode }): string => (mode === 'DANGER' ? theme.red._5 : theme.neutral._1)};
+  }
+`;
+
+const LeftGroup = styled.div`
+  ${mixins.flex({ direction: 'row', align: 'center' })};
+  gap: 8px;
 `;
 
 const ButtonWrapper = styled.button<ButtonStyleProps>`
@@ -68,10 +96,7 @@ const ButtonWrapper = styled.button<ButtonStyleProps>`
     margin-top: ${({ gap }): string | undefined => (typeof gap === 'number' ? gap + 'px' : gap)};
   }
   ${defaultIconStyle};
-  ${mixins.flex({
-    direction: 'row',
-    justify: 'space-between',
-  })};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   flex-shrink: 0;
   width: 100%;
   height: 54px;

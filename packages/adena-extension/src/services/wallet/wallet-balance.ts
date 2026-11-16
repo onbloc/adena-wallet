@@ -1,17 +1,33 @@
-import { GNOT_TOKEN } from '@common/constants/token.constant';
-import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
-import { TokenBalanceType, TokenModel } from '@types';
 import BigNumber from 'bignumber.js';
+
+import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
+import { parseTokenPath, toRegistryKey } from '@common/utils/grc20-token-path';
+import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+
+import { GNOT_TOKEN } from '@common/constants/token.constant';
+import { TokenBalanceType, TokenModel } from '@types';
+
+// Max token balances per batched grc20reg qeval. Keeps one request's return
+// tuple and source expression within a comfortable size.
+const GRC20_BALANCE_BATCH_SIZE = 50;
 
 export class WalletBalanceService {
   private tokenMetainfos: TokenModel[];
 
   private gnoProvider: GnoProvider | null = null;
 
+  // grc20reg realms used to resolve GRC20 token objects for balance queries.
+  // An empty list falls back to calling BalanceOf on the token realm directly.
+  private registryPaths: string[] = [];
+
   constructor(gnoProvider?: GnoProvider | null) {
     this.tokenMetainfos = [];
     this.gnoProvider = gnoProvider || null;
+  }
+
+  public setRegistryPaths(registryPaths: string[]): void {
+    this.registryPaths = registryPaths.filter((registryPath) => !!registryPath);
   }
 
   public getGnoProvider(): GnoProvider {
@@ -31,36 +47,173 @@ export class WalletBalanceService {
 
   public async getGnotTokenBalance(address: string): Promise<number | null> {
     const gnoProvider = this.getGnoProvider();
-    return gnoProvider
-      .getBalance(address, GNOT_TOKEN.denom)
-      .then((result) => {
-        if (BigNumber(result).isInteger()) {
-          return BigNumber(result)
-            .shiftedBy(GNOT_TOKEN.decimals * -1)
-            .toNumber();
-        }
-        return null;
-      })
-      .catch(() => null);
+    return gnoProvider.getBalance(address, GNOT_TOKEN.denom).then((result) => {
+      if (BigNumber(result).isInteger()) {
+        return BigNumber(result)
+          .shiftedBy(GNOT_TOKEN.decimals * -1)
+          .toNumber();
+      }
+      return null;
+    });
   }
 
+  /**
+   * GRC20 balance of `address` for a token key (`{packagePath}.{symbol}`),
+   * shifted by decimals. Resolves the token through the grc20reg registry
+   * (`Get(registryKey).BalanceOf(address)`); a nil token yields 0.
+   */
   public async getGRC20TokenBalance(
     address: string,
-    packagePath: string,
+    tokenPath: string,
     decimals = 6,
   ): Promise<number | null> {
+    const raw = await this.getGRC20RawBalance(address, tokenPath).catch(() => null);
+    if (raw === null) {
+      return null;
+    }
+    return BigNumber(raw.toString())
+      .shiftedBy(decimals * -1)
+      .toNumber();
+  }
+
+  /**
+   * Raw (undecimalized) GRC20 balance as a bigint. Prefers the grc20reg
+   * registry object receiver; falls back to calling BalanceOf on the token
+   * realm directly when no registry holds it or the token path has no
+   * symbol (legacy pkgPath-only input).
+   */
+  private async getGRC20RawBalance(address: string, tokenPath: string): Promise<bigint | null> {
     const gnoProvider = this.getGnoProvider();
-    return gnoProvider
-      .getValueByEvaluateExpression(packagePath, 'BalanceOf', [address])
-      .then((result) => {
-        if (result === null || !BigNumber(result).isInteger()) {
-          return null;
+    const registryKey = toRegistryKey(tokenPath);
+
+    if (registryKey) {
+      for (const registryPath of this.registryPaths) {
+        try {
+          const response = await gnoProvider.evaluateIIFE(registryPath, {
+            returnType: '(bool, int64)',
+            statements: [
+              `token := Get(${gnoLiteral(registryKey)})`,
+              'if token == nil { return false, 0 }',
+            ],
+            returnExpression: `true, token.BalanceOf(${gnoLiteral(address)})`,
+          });
+          const [found, balance] = parseQEvalResult(response);
+          if (found?.value === 'true' && balance && /^-?\d+$/.test(balance.value)) {
+            return BigInt(balance.value);
+          }
+        } catch {
+          // Fall through to the next registry / the direct-realm path below.
         }
-        return BigNumber(result)
-          .shiftedBy(decimals * -1)
-          .toNumber();
-      })
+      }
+    }
+
+    const packagePath = parseTokenPath(tokenPath)?.packagePath ?? tokenPath;
+    const result = await gnoProvider
+      .getValueByEvaluateExpression(packagePath, 'BalanceOf', [address])
       .catch(() => null);
+    if (result === null || !BigNumber(result).isInteger()) {
+      return null;
+    }
+    return BigInt(result);
+  }
+
+  /**
+   * Batch GRC20 balances for many token paths in as few qeval calls as
+   * possible: one `grc20reg` IIFE per chunk that returns a (found, int64) pair
+   * per token (`Get(key).BalanceOf(addr)`), tried against each registry in
+   * turn. Returns raw (undecimalized) balances keyed by token path; callers
+   * apply each token's decimals. Used by the wallet-main balance load to cut
+   * per-token round-trips. Falls back to per-token queries when no registry
+   * path is configured.
+   */
+  public async getGRC20TokenBalanceMap(
+    address: string,
+    tokenPaths: string[],
+  ): Promise<Record<string, bigint>> {
+    const gnoProvider = this.getGnoProvider();
+    const result: Record<string, bigint> = {};
+
+    const batchable = tokenPaths.filter((tokenPath) => toRegistryKey(tokenPath) !== null);
+    if (this.registryPaths.length === 0 || batchable.length === 0) {
+      for (const tokenPath of tokenPaths) {
+        const raw = await this.getGRC20RawBalance(address, tokenPath).catch(() => null);
+        if (raw !== null) {
+          result[tokenPath] = raw;
+        }
+      }
+      return result;
+    }
+
+    let pending = batchable;
+    for (const registryPath of this.registryPaths) {
+      if (pending.length === 0) {
+        break;
+      }
+      const resolved = await this.batchGRC20BalancesFrom(
+        gnoProvider,
+        registryPath,
+        address,
+        pending,
+      );
+      Object.assign(result, resolved);
+      pending = pending.filter((tokenPath) => !(tokenPath in resolved));
+    }
+
+    for (const tokenPath of pending) {
+      const raw = await this.getGRC20RawBalance(address, tokenPath).catch(() => null);
+      if (raw !== null) {
+        result[tokenPath] = raw;
+      }
+    }
+
+    return result;
+  }
+
+  // Batched balances from one registry; only the tokens it holds are returned.
+  private async batchGRC20BalancesFrom(
+    gnoProvider: GnoProvider,
+    registryPath: string,
+    address: string,
+    tokenPaths: string[],
+  ): Promise<Record<string, bigint>> {
+    const result: Record<string, bigint> = {};
+
+    for (let start = 0; start < tokenPaths.length; start += GRC20_BALANCE_BATCH_SIZE) {
+      const chunk = tokenPaths.slice(start, start + GRC20_BALANCE_BATCH_SIZE);
+
+      const statements: string[] = [];
+      const returnParts: string[] = [];
+      const returnTypes: string[] = [];
+      chunk.forEach((tokenPath, i) => {
+        const key = toRegistryKey(tokenPath) as string;
+        statements.push(`f${i} := false; v${i} := int64(0)`);
+        statements.push(
+          `{ t := Get(${gnoLiteral(key)}); if t != nil { f${i} = true; v${i} = t.BalanceOf(${gnoLiteral(address)}) } }`,
+        );
+        returnParts.push(`f${i}, v${i}`);
+        returnTypes.push('bool, int64');
+      });
+
+      try {
+        const response = await gnoProvider.evaluateIIFE(registryPath, {
+          returnType: `(${returnTypes.join(', ')})`,
+          statements,
+          returnExpression: returnParts.join(', '),
+        });
+        const tuples = parseQEvalResult(response);
+        chunk.forEach((tokenPath, i) => {
+          const found = tuples[i * 2];
+          const balance = tuples[i * 2 + 1];
+          if (found?.value === 'true' && balance && /^-?\d+$/.test(balance.value)) {
+            result[tokenPath] = BigInt(balance.value);
+          }
+        });
+      } catch {
+        // Batch failed — the chunk falls back to the next registry / per-token.
+      }
+    }
+
+    return result;
   }
 
   public getTokenBalances = async (address: string): Promise<TokenBalanceType[]> => {
@@ -68,7 +221,7 @@ export class WalletBalanceService {
     const denom = GNOT_TOKEN.denom;
     const balance = await gnoProvider
       .getBalance(address, denom)
-      .then(value => ({
+      .then((value) => ({
         value: value.toFixed(),
         denom,
       }))
@@ -81,8 +234,8 @@ export class WalletBalanceService {
     for (const tokenMetainfo of this.tokenMetainfos) {
       const isNativeToken = isNativeTokenModel(tokenMetainfo);
       if (
-        balance.denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase()
-        || (isNativeToken && balance.denom.toUpperCase() === tokenMetainfo.denom.toUpperCase())
+        balance.denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase() ||
+        (isNativeToken && balance.denom.toUpperCase() === tokenMetainfo.denom.toUpperCase())
       ) {
         tokenBalances.push(this.createTokenBalance(balance, tokenMetainfo));
       }
@@ -96,7 +249,9 @@ export class WalletBalanceService {
     symbol: string,
   ): Promise<TokenBalanceType[]> => {
     const gnoProvider = this.getGnoProvider();
-    const balance = await gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [address]);
+    const balance = await gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [
+      address,
+    ]);
     if (!balance) {
       return [];
     }
@@ -105,7 +260,7 @@ export class WalletBalanceService {
       denom: symbol.toUpperCase(),
     };
     const tokenBalance = this.tokenMetainfos.find(
-      tokenMetainfo => isGRC20TokenModel(tokenMetainfo) && tokenMetainfo.pkgPath === packagePath,
+      (tokenMetainfo) => isGRC20TokenModel(tokenMetainfo) && tokenMetainfo.pkgPath === packagePath,
     );
     if (tokenBalance) {
       return [this.createTokenBalance(balanceAmount, tokenBalance)];

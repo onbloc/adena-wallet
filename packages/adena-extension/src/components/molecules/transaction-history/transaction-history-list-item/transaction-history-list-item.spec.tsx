@@ -1,12 +1,12 @@
-import { GlobalPopupStyle } from '@styles/global-style';
-import theme from '@styles/theme';
-import { render } from '@testing-library/react';
 import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
-import TransactionHistoryListItem, { TransactionHistoryListItemProps } from './transaction-history-list-item';
+import { render } from '@testing-library/react';
+import theme from '@styles/theme';
+import { GlobalPopupStyle } from '@styles/global-style';
+import TransactionHistoryListItem, {
+  TransactionHistoryListItemProps,
+} from './transaction-history-list-item';
 
 describe('TransactionHistoryListItem Component', () => {
   it('TransactionHistoryListItem render', () => {
@@ -29,12 +29,12 @@ describe('TransactionHistoryListItem Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TransactionHistoryListItem {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

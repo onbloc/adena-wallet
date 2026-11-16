@@ -1,12 +1,12 @@
+import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
-import React from 'react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
-import { describe, it } from 'vitest';
-
-import ManageCollectionSearchInput, { ManageCollectionSearchInputProps } from './manage-collection-search-input';
+import ManageCollectionSearchInput, {
+  ManageCollectionSearchInputProps,
+} from './manage-collection-search-input';
 
 describe('ManageCollectionSearchInput Component', () => {
   it('ManageCollectionSearchInput render', () => {
@@ -18,12 +18,12 @@ describe('ManageCollectionSearchInput Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <ManageCollectionSearchInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

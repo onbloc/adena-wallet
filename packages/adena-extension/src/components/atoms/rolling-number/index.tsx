@@ -1,14 +1,10 @@
 import { WebFontType } from '@styles/theme';
 import React, { useEffect, useState } from 'react';
 import styled, { css, RuleSet } from 'styled-components';
-
 import { View } from '../base';
 import { WebText } from '../web-text';
 
-export const StyledWrapper = styled(View)<{
-  active: boolean;
-  height?: number;
-}>`
+export const StyledWrapper = styled(View)<{ active: boolean; height?: number }>`
   width: fit-content;
   height: ${({ height }): string => (height ? `${height}px` : '1em')};
   flex-direction: column;

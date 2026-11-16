@@ -1,4 +1,6 @@
 import type { JSX } from 'react';
+/* eslint-disable @eslint-react/dom-no-unknown-property */
+
 const IconPencil = ({ className }: { className: string }): JSX.Element => (
   <svg
     className={className}

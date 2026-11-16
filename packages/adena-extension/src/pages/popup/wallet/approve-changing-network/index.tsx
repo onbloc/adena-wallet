@@ -1,3 +1,6 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
@@ -7,19 +10,19 @@ import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import { CommonFullContentLayout } from '@components/atoms';
 import ApproveChangingNetwork from '@components/pages/approve-changing-network/approve-changing-network/approve-changing-network';
 import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { RoutePath } from '@types';
-import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { isSessionAccount } from 'adena-module';
 
 const ApproveChangingNetworkContainer: React.FC = () => {
   const { search } = useLocation();
   const navigate = useNavigate();
   const { currentNetwork, networks, changeNetwork } = useNetwork();
   const { walletService } = useAdenaContext();
+  const { currentAccount } = useCurrentAccount();
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [chainId, setChainId] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -29,7 +32,7 @@ const ApproveChangingNetworkContainer: React.FC = () => {
   const changeable = useMemo(() => chainId.length > 0, [chainId]);
 
   const toNetwork = useMemo(() => {
-    return networks.find(network => network.networkId === chainId);
+    return networks.find((network) => network.networkId === chainId);
   }, [networks, chainId]);
 
   useEffect(() => {
@@ -38,24 +41,31 @@ const ApproveChangingNetworkContainer: React.FC = () => {
     }
   }, [search]);
 
+  useEffect(() => {
+    if (!currentAccount || !requestData) {
+      return;
+    }
+    if (isSessionAccount(currentAccount)) {
+      chrome.runtime.sendMessage(createSessionAccountUnsupportedResponse(requestData.key));
+      window.close();
+    }
+  }, [currentAccount, requestData]);
+
   const initRequestData = (): void => {
     const data = parseParameters(search);
     const parsedData = decodeParameter(data['data']);
-    setRequestData({
-      ...parsedData,
-      hostname: data['hostname'],
-    });
+    setRequestData({ ...parsedData, hostname: data['hostname'] });
     setChainId(parsedData?.data?.chainId || '');
   };
 
   const checkLockWallet = (): void => {
-    walletService.isLocked().then(locked => locked && navigate(RoutePath.ApproveLogin + search));
+    walletService.isLocked().then((locked) => locked && navigate(RoutePath.ApproveLogin + search));
   };
 
   const onClickChangeNetwork = useCallback(async () => {
     setProcessing(true);
     const network = networks.find(
-      network => network.chainId === chainId && network.deleted !== true,
+      (network) => network.chainId === chainId && network.deleted !== true,
     );
     if (!network) {
       setResponse(
@@ -67,7 +77,11 @@ const ApproveChangingNetworkContainer: React.FC = () => {
       );
       return;
     }
-    await changeNetwork(network.id);
+    const changed = await changeNetwork(network.id);
+    if (!changed) {
+      setProcessing(false);
+      return;
+    }
     setResponse(
       InjectionMessageInstance.success(
         WalletResponseSuccessType.SWITCH_NETWORK_SUCCESS,
@@ -111,8 +125,12 @@ const ApproveChangingNetworkContainer: React.FC = () => {
   return (
     <CommonFullContentLayout>
       <ApproveChangingNetwork
-        fromChain={{ name: currentNetwork.networkName }}
-        toChain={{ name: toNetwork?.networkName || '' }}
+        fromChain={{
+          name: currentNetwork.networkName,
+        }}
+        toChain={{
+          name: toNetwork?.networkName || '',
+        }}
         changeable={changeable}
         processing={processing}
         done={done}

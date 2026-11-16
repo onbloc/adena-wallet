@@ -38,5 +38,11 @@ export interface TransactionHistoryItem {
   timestamp: string;
   fromAddress: string;
   toAddress: string;
+  // On-chain caller (master account for a session-signed tx). Optional for
+  // backward compatibility with API versions that predate the field.
+  callerAddress?: string;
+  // Session account that signed the tx, or "" for a master-key signature.
+  sessionAddress?: string;
+  // Hex-encoded since onbloc-api-v3#213; older deployments still answer base64.
   txHash: string;
 }

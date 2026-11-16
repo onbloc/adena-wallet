@@ -8,20 +8,20 @@ jobs:
   unit-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: |
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm build:module
       - run: pnpm run test
 
   build-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: |
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm build:module
           pnpm build:storybook
           pnpm build:service
@@ -30,6 +30,6 @@ jobs:
   # storybook-tests:
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v3
+  #     - uses: actions/checkout@v7
   #     - uses: ./.github/actions/setup
   #     - run: run test:storybook

@@ -1,9 +1,7 @@
 import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { Tx } from '@gnolang/tm2-js-client';
-import { ResponseDeliverTx } from '@gnolang/tm2-js-client';
+import { ResponseDeliverTx, Tx } from '@gnolang/tm2-js-client';
 import { NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
-
 import { ITransactionGasRepository } from './types';
 
 export class TransactionGasRepository implements ITransactionGasRepository {
@@ -34,7 +32,7 @@ export class TransactionGasRepository implements ITransactionGasRepository {
       return null;
     }
 
-    const gasPrice = await this.gnoProvider.getGasPrice();
+    const gasPrice = await this.gnoProvider.getGasPriceRatio();
     if (!gasPrice) {
       return null;
     }
@@ -50,13 +48,13 @@ export class TransactionGasRepository implements ITransactionGasRepository {
     return this.gnoProvider.simulateTx(tx);
   }
 
-  public async estimateGasByTx(tx: Tx): Promise<bigint> {
+  public async estimateGasByTx(tx: Tx): Promise<number> {
     if (!this.gnoProvider) {
       throw new Error('GnoProvider is not initialized');
     }
 
     const simulateResult = await this.gnoProvider.simulateTx(tx);
-    return simulateResult.gas_used;
+    return Number(simulateResult.gas_used);
   }
 
   private static postRPCRequest = <T = any>(
@@ -66,7 +64,7 @@ export class TransactionGasRepository implements ITransactionGasRepository {
   ): Promise<T | null> => {
     return networkInstance
       .post<T>(url, data)
-      .then(response => response.data)
+      .then((response) => response.data)
       .catch((e) => {
         console.log(e);
         return null;

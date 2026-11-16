@@ -1,6 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
+import {
+  makeWalletExistsQueryKey,
+  makeWalletLockedQueryKey,
+} from '@common/constants/query-key.constant';
 import { useAdenaContext, useWalletContext } from './use-context';
 
 export interface UseWalletReturn {
@@ -23,21 +27,26 @@ export const useWallet = (): UseWalletReturn => {
     return wallet.hasHDWallet();
   }, [wallet]);
 
-  const { data: existWallet, isLoading: isLoadingExistWallet } = useQuery({
-    queryKey: ['wallet/existWallet', walletService.id],
-    queryFn: async () => {
+  // networkMode 'always': both read chrome.storage, never the network. Paused
+  // offline they leave the popup blank, since App/popup renders <></> while
+  // isLoadingLockedWallet is true.
+  const { data: existWallet, isLoading: isLoadingExistWallet } = useQuery(
+    makeWalletExistsQueryKey(walletService.id),
+    async () => {
       const existWallet = await walletService.existsWallet().catch(() => false);
       return existWallet;
     },
-  });
+    { networkMode: 'always' },
+  );
 
-  const { data: lockedWallet, isLoading: isLoadingLockedWallet } = useQuery({
-    queryKey: ['wallet/locked', walletService.id],
-    queryFn: async () => {
+  const { data: lockedWallet, isLoading: isLoadingLockedWallet } = useQuery(
+    makeWalletLockedQueryKey(walletService.id),
+    async () => {
       const lockedWallet = await walletService.isLocked();
       return lockedWallet;
     },
-  });
+    { networkMode: 'always' },
+  );
 
   return {
     hasHDWallet,

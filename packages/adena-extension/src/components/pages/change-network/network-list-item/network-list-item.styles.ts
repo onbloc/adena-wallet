@@ -3,11 +3,7 @@ import { getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const NetworkListItemWrapper = styled.div`
-  ${mixins.flex({
-    direction: 'row',
-    align: 'normal',
-    justify: 'normal',
-  })};
+  ${mixins.flex({ direction: 'row', align: 'center', justify: 'normal' })};
   width: 100%;
   height: auto;
   padding: 9px 16px;
@@ -20,25 +16,35 @@ export const NetworkListItemWrapper = styled.div`
     background-color: ${getTheme('neutral', 'b')};
   }
 
+  .chain-icon-wrapper {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+
+    .chain-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+  }
+
   .info-wrapper {
-    ${mixins.flex({
-      align: 'normal',
-      justify: 'normal',
-    })};
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     width: 100%;
     font-size: 12px;
     font-weight: 600;
     line-height: 21px;
 
     .name-wrapper {
-      ${mixins.flex({
-        direction: 'row',
-        justify: 'normal',
-      })};
+      ${mixins.flex({ direction: 'row', justify: 'normal' })};
 
       .name {
         display: block;
-        max-width: 236px;
+        max-width: 192px;
         color: ${getTheme('neutral', '_1')};
 
         overflow: hidden;
@@ -71,14 +77,11 @@ export const NetworkListItemWrapper = styled.div`
     }
 
     .description-wrapper {
-      ${mixins.flex({
-        direction: 'row',
-        justify: 'normal',
-      })};
+      ${mixins.flex({ direction: 'row', justify: 'normal' })};
 
       .description {
         display: block;
-        max-width: 244px;
+        max-width: 200px;
         color: ${getTheme('neutral', 'a')};
         font-weight: 400;
         white-space: nowrap;

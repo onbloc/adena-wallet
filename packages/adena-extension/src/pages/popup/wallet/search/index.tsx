@@ -1,22 +1,25 @@
+import BigNumber from 'bignumber.js';
+import React, { useRef, useState } from 'react';
+import type { JSX } from 'react';
+import styled from 'styled-components';
+
 import cancel from '@assets/cancel-dark.svg';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import search from '@assets/search.svg';
 import { searchTextFilter } from '@common/utils/client-utils';
-import {
-  Button, DefaultInput, ListBox, ListHierarchy, Text,
-} from '@components/atoms';
+import { Button, DefaultInput, ListBox, ListHierarchy, Text } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
-import useAppNavigate from '@hooks/use-app-navigate';
 import useHistoryData from '@hooks/use-history-data';
-import useSessionState from '@hooks/use-session-state';
 import { useTokenBalance } from '@hooks/use-token-balance';
+import { RoutePath } from '@types';
+
+import useAppNavigate from '@hooks/use-app-navigate';
+import useSessionState from '@hooks/use-session-state';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import { RoutePath } from '@types';
 import { TokenBalanceType } from '@types';
-import BigNumber from 'bignumber.js';
-import React, { type JSX, useRef, useState } from 'react';
-import styled from 'styled-components';
+
+import { DepositList } from './deposit-list';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -90,24 +93,11 @@ export const WalletSearch = (): JSX.Element => {
   };
 
   const onClickItem = (tokenBalance: TokenBalanceType): void => {
-    params?.type === 'send' ? moveTransferInput(tokenBalance) : moveDeposit(tokenBalance);
-  };
-
-  const moveTransferInput = (tokenBalance: TokenBalanceType): void => {
     clearHistoryData(RoutePath.TransferInput);
     navigate(RoutePath.TransferInput, {
       state: {
         isTokenSearch: true,
         tokenBalance,
-      },
-    });
-  };
-
-  const moveDeposit = (tokenBalance: TokenBalanceType): void => {
-    navigate(RoutePath.Deposit, {
-      state: {
-        type: 'wallet',
-        token: tokenBalance,
       },
     });
   };
@@ -118,6 +108,10 @@ export const WalletSearch = (): JSX.Element => {
       inputRef.current.focus();
     }
   };
+
+  if (params?.type === 'deposit') {
+    return <DepositList />;
+  }
 
   return (
     <Wrapper>
@@ -134,26 +128,28 @@ export const WalletSearch = (): JSX.Element => {
       </SearchBox>
       <DataListWrap>
         {currentBalances
-          .filter(
-            balance =>
-              searchTextFilter(balance.name ?? '', searchText)
-              || searchTextFilter(balance.symbol ?? '', searchText),
-          )
+          .filter((balance) => balance.display)
+          .filter((balance) => {
+            return (
+              searchTextFilter(balance.name ?? '', searchText) ||
+              searchTextFilter(balance.symbol ?? '', searchText)
+            );
+          })
           .map((balance, idx) => (
             <ListBox
-              left={(
+              left={
                 <img
                   src={balance.image || `${UnknownTokenIcon}`}
                   alt='logo image'
                   className='logo'
                 />
-              )}
-              center={(
+              }
+              center={
                 <Text type='body2Bold' margin='0px auto 0px 0px'>
                   {balance.name}
                 </Text>
-              )}
-              right={(
+              }
+              right={
                 <TokenBalance
                   value={BigNumber(balance.amount.value).toFormat()}
                   denom={balance.amount.denom}
@@ -161,7 +157,7 @@ export const WalletSearch = (): JSX.Element => {
                   minimumFontSize='11px'
                   orientation='HORIZONTAL'
                 />
-              )}
+              }
               hoverAction={true}
               key={idx}
               onClick={(): void => onClickItem(balance)}

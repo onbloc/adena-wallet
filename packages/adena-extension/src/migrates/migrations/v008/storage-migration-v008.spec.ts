@@ -1,6 +1,4 @@
 import { decryptAES } from 'adena-module';
-import { describe, expect, it } from 'vitest';
-
 import { StorageMigration008 } from './storage-migration-v008';
 
 const mockStorageData = {
@@ -67,10 +65,7 @@ describe('serialized wallet migration V008', () => {
   it('up failed throw error', async () => {
     const mockData: any = {
       version: 1,
-      data: {
-        ...mockStorageData,
-        SERIALIZED: null,
-      },
+      data: { ...mockStorageData, SERIALIZED: null },
     };
     const migration = new StorageMigration008();
 

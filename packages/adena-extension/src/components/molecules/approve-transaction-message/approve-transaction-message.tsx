@@ -1,15 +1,25 @@
-import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
-import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
-import IconLink from '@assets/icon-link';
+import React, { useEffect, useMemo, useState } from 'react';
+
 import { formatAddress } from '@common/utils/client-utils';
 import { isBech32Address, reverseString } from '@common/utils/string-utils';
-import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
 import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box';
-import { useMaxDepositMessage } from '@hooks/wallet/transaction-message/use-max-deposit-message';
-import { ContractMessage, EMessageType, FUNCTION_NAME_MAP } from '@inject/types';
+import { PubKeySecp256k1 } from '@gnolang/tm2-js-client';
+import {
+  ContractMessage,
+  EMessageType,
+  FUNCTION_NAME_MAP,
+  PackageApprovalMessage,
+  SessionAdminMessage,
+} from '@inject/types';
 import { MsgCallValue } from '@repositories/transaction/response/transaction-history-query-response';
-import React, { useMemo, useState } from 'react';
+import { publicKeyToAddress } from 'adena-module';
 
+import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
+import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
+
+import IconLink from '@assets/icon-link';
+import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
+import { useMaxDepositMessage } from '@hooks/wallet/transaction-message/use-max-deposit-message';
 import {
   ApproveTransactionMessageArgumentsOpenerWrapper,
   ApproveTransactionMessageWrapper,
@@ -29,9 +39,17 @@ empty as the network will automatically
 determine the actual amount required
 for storage.`;
 
+const TWO_32 = BigInt('4294967296');
+
 const isMsgCall = (type: string): boolean => type === EMessageType.VM_CALL;
 const isMsgAddPkg = (type: string): boolean => type === EMessageType.VM_ADDPKG;
 const isMsgRun = (type: string): boolean => type === EMessageType.VM_RUN;
+const isMsgEnablePkg = (type: string): boolean => type === EMessageType.VM_ENABLE_PKG;
+const isMsgRejectPkg = (type: string): boolean => type === EMessageType.VM_REJECT_PKG;
+const isMsgCreateSession = (type: string): boolean => type === EMessageType.AUTH_CREATE_SESSION;
+const isMsgRevokeSession = (type: string): boolean => type === EMessageType.AUTH_REVOKE_SESSION;
+const isMsgRevokeAllSessions = (type: string): boolean =>
+  type === EMessageType.AUTH_REVOKE_ALL_SESSIONS;
 
 function makeTitle(index: number, functionName: string): string {
   return `${index + 1}. ${functionName}`;
@@ -98,6 +116,57 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
     );
   }
 
+  if (isMsgEnablePkg(type)) {
+    return (
+      <MsgEnablePackageTransactionMessage index={index} message={message} errorMessage={errorMessage} />
+    );
+  }
+
+  if (isMsgRejectPkg(type)) {
+    return (
+      <MsgRejectPackageTransactionMessage index={index} message={message} errorMessage={errorMessage} />
+    );
+  }
+
+  if (isMsgCreateSession(type)) {
+    return (
+      <MsgCreateSessionTransactionMessage
+        index={index}
+        message={message}
+        changeMessage={changeMessage}
+        openScannerLink={openScannerLink}
+        editable={editable}
+        errorMessage={errorMessage}
+      />
+    );
+  }
+
+  if (isMsgRevokeSession(type)) {
+    return (
+      <MsgRevokeSessionTransactionMessage
+        index={index}
+        message={message}
+        changeMessage={changeMessage}
+        openScannerLink={openScannerLink}
+        editable={editable}
+        errorMessage={errorMessage}
+      />
+    );
+  }
+
+  if (isMsgRevokeAllSessions(type)) {
+    return (
+      <MsgRevokeAllSessionsTransactionMessage
+        index={index}
+        message={message}
+        changeMessage={changeMessage}
+        openScannerLink={openScannerLink}
+        editable={editable}
+        errorMessage={errorMessage}
+      />
+    );
+  }
+
   return (
     <DefaultTransactionMessage
       index={index}
@@ -128,7 +197,7 @@ const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 
   return (
     <>
-      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
         <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
         {isOpen && (
@@ -149,6 +218,152 @@ const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   );
 };
 
+const MsgCreateSessionTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
+  index,
+  message,
+  errorMessage,
+}) => {
+  const [isOpen, setIsOpen] = useState(true);
+  const value = message.value as SessionAdminMessage;
+  const sessionKeyDisplay = useSessionKeyDisplay(value.session_key);
+  const title = useMemo(() => makeTitle(index, 'Create Session'), [index]);
+  const allowPaths = useMemo(() => (value.allow_paths ?? []).join(', '), [value.allow_paths]);
+
+  return (
+    <>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
+        <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+
+        {isOpen && (
+          <MessageRowWrapper>
+            <SessionMessageRow label='type' value='MsgCreateSession' />
+            <SessionMessageRow label='creator' value={formatSessionAddress(value.creator)} />
+            <SessionMessageRow label='SessionKey' value={sessionKeyDisplay} />
+            <SessionMessageRow label='ExpiresAt' value={formatUnknownValue(value.expires_at)} />
+            <SessionMessageRow label='AllowPaths' value={allowPaths} />
+            <SessionMessageRow label='SpendLimit' value={value.spend_limit ?? ''} />
+            <SessionMessageRow label='SpendPeriod' value={formatUnknownValue(value.spend_period)} />
+          </MessageRowWrapper>
+        )}
+      </ApproveTransactionMessageWrapper>
+      {errorMessage && <MessageErrorText>{errorMessage}</MessageErrorText>}
+    </>
+  );
+};
+
+const MsgRevokeSessionTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
+  index,
+  message,
+  errorMessage,
+}) => {
+  const [isOpen, setIsOpen] = useState(true);
+  const value = message.value as SessionAdminMessage;
+  const sessionKeyDisplay = useSessionKeyDisplay(value.session_key);
+  const title = useMemo(() => makeTitle(index, 'Revoke Session'), [index]);
+
+  return (
+    <>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
+        <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+
+        {isOpen && (
+          <MessageRowWrapper>
+            <SessionMessageRow label='type' value='MsgRevokeSession' />
+            <SessionMessageRow label='creator' value={formatSessionAddress(value.creator)} />
+            <SessionMessageRow label='SessionKey' value={sessionKeyDisplay} />
+          </MessageRowWrapper>
+        )}
+      </ApproveTransactionMessageWrapper>
+      {errorMessage && <MessageErrorText>{errorMessage}</MessageErrorText>}
+    </>
+  );
+};
+
+const MsgRevokeAllSessionsTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
+  index,
+  message,
+  errorMessage,
+}) => {
+  const [isOpen, setIsOpen] = useState(true);
+  const value = message.value as SessionAdminMessage;
+  const title = useMemo(() => makeTitle(index, 'Revoke All Sessions'), [index]);
+
+  return (
+    <>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
+        <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+
+        {isOpen && (
+          <MessageRowWrapper>
+            <SessionMessageRow label='type' value='MsgRevokeAllSessions' />
+            <SessionMessageRow label='creator' value={formatSessionAddress(value.creator)} />
+          </MessageRowWrapper>
+        )}
+      </ApproveTransactionMessageWrapper>
+      {errorMessage && <MessageErrorText>{errorMessage}</MessageErrorText>}
+    </>
+  );
+};
+
+const MsgEnablePackageTransactionMessage: React.FC<
+  Pick<ApproveTransactionMessageProps, 'index' | 'message' | 'errorMessage'>
+> = ({ index, message, errorMessage }) => {
+  const [isOpen, setIsOpen] = useState(true);
+  const value = message.value as PackageApprovalMessage;
+  const title = useMemo(() => makeTitle(index, 'Enable Package'), [index]);
+
+  return (
+    <>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
+        <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+
+        {isOpen && (
+          <MessageRowWrapper>
+            <SessionMessageRow label='type' value='MsgEnablePackage' />
+            <SessionMessageRow label='approver' value={formatSessionAddress(value.approver)} />
+            <SessionMessageRow label='pkg_path' value={value.pkg_path ?? ''} />
+            <SessionMessageRow label='pkg_hash' value={value.pkg_hash ?? ''} />
+            <SessionMessageRow label='pkg_height' value={String(value.pkg_height ?? '')} />
+          </MessageRowWrapper>
+        )}
+      </ApproveTransactionMessageWrapper>
+      {errorMessage && <MessageErrorText>{errorMessage}</MessageErrorText>}
+    </>
+  );
+};
+
+const MsgRejectPackageTransactionMessage: React.FC<
+  Pick<ApproveTransactionMessageProps, 'index' | 'message' | 'errorMessage'>
+> = ({ index, message, errorMessage }) => {
+  const [isOpen, setIsOpen] = useState(true);
+  const value = message.value as PackageApprovalMessage;
+  const title = useMemo(() => makeTitle(index, 'Reject Package'), [index]);
+
+  return (
+    <>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
+        <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+
+        {isOpen && (
+          <MessageRowWrapper>
+            <SessionMessageRow label='type' value='MsgRejectPackage' />
+            <SessionMessageRow label='sender' value={formatSessionAddress(value.sender)} />
+            <SessionMessageRow label='pkg_path' value={value.pkg_path ?? ''} />
+          </MessageRowWrapper>
+        )}
+      </ApproveTransactionMessageWrapper>
+      {errorMessage && <MessageErrorText>{errorMessage}</MessageErrorText>}
+    </>
+  );
+};
+
+const SessionMessageRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className='message-row'>
+    <span className='key'>{label}</span>
+    <span className='value'>{value}</span>
+  </div>
+);
+
 const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   index,
   message,
@@ -158,9 +373,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   editable,
   errorMessage,
 }) => {
-  const {
-    func, pkg_path, args, send, max_deposit,
-  } = message.value as MsgCallValue;
+  const { func, pkg_path, args, send, max_deposit } = message.value as MsgCallValue;
   const [isOpen, setIsOpen] = useState(true);
 
   const functionName = useMemo(() => {
@@ -270,7 +483,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 
   return (
     <>
-      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
         <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
         {isOpen && (
@@ -339,13 +552,18 @@ const MsgAddPkgTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   errorMessage,
 }) => {
   const {
-    type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit,
-  }
-    = useMaxDepositMessage(index, message, changeMessage);
+    type,
+    isOpen,
+    setIsOpen,
+    maxDeposit,
+    functionName,
+    title,
+    changeMaxDeposit,
+  } = useMaxDepositMessage(index, message, changeMessage);
 
   return (
     <>
-      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
         <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
         {isOpen && (
@@ -385,13 +603,18 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   errorMessage,
 }) => {
   const {
-    type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit,
-  }
-    = useMaxDepositMessage(index, message, changeMessage);
+    type,
+    isOpen,
+    setIsOpen,
+    maxDeposit,
+    functionName,
+    title,
+    changeMaxDeposit,
+  } = useMaxDepositMessage(index, message, changeMessage);
 
   return (
     <>
-      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+      <ApproveTransactionMessageWrapper $hasError={!!errorMessage}>
         <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
         {isOpen && (
@@ -423,6 +646,211 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   );
 };
 
+function useSessionKeyDisplay(sessionKey: unknown): string {
+  const [address, setAddress] = useState('');
+  const fallback = useMemo(() => formatCompactValue(sessionKey), [sessionKey]);
+
+  useEffect(() => {
+    let canceled = false;
+
+    sessionKeyToAddress(sessionKey)
+      .then((value) => {
+        if (!canceled) {
+          setAddress(value);
+        }
+      })
+      .catch(() => {
+        if (!canceled) {
+          setAddress('');
+        }
+      });
+
+    return () => {
+      canceled = true;
+    };
+  }, [sessionKey]);
+
+  return address ? formatAddress(address, 6) : fallback;
+}
+
+async function sessionKeyToAddress(sessionKey: unknown): Promise<string> {
+  const publicKey = extractSessionPublicKey(sessionKey);
+  if (!publicKey) {
+    return '';
+  }
+  return publicKeyToAddress(publicKey, 'g');
+}
+
+function extractSessionPublicKey(sessionKey: unknown): Uint8Array | null {
+  const direct = bytesFromUnknown(sessionKey);
+  if (direct && isLikelySecp256k1PublicKey(direct)) {
+    return direct;
+  }
+
+  const record = isRecord(sessionKey) ? sessionKey : null;
+  const keyBytes = bytesFromUnknown(record?.key);
+  if (keyBytes && isLikelySecp256k1PublicKey(keyBytes)) {
+    return keyBytes;
+  }
+
+  const valueBytes = bytesFromUnknown(record?.value);
+  if (!valueBytes) {
+    return null;
+  }
+
+  try {
+    const decoded = PubKeySecp256k1.decode(valueBytes);
+    if (decoded.key && isLikelySecp256k1PublicKey(decoded.key)) {
+      return decoded.key;
+    }
+  } catch {
+    if (isLikelySecp256k1PublicKey(valueBytes)) {
+      return valueBytes;
+    }
+  }
+
+  return null;
+}
+
+function bytesFromUnknown(value: unknown): Uint8Array | null {
+  if (value instanceof Uint8Array) {
+    return value;
+  }
+
+  if (Array.isArray(value) && value.every(isByteNumber)) {
+    return Uint8Array.from(value);
+  }
+
+  if (typeof value === 'string') {
+    return bytesFromBase64(value);
+  }
+
+  if (isRecord(value)) {
+    const keys = Object.keys(value);
+    if (keys.length === 0 || !keys.every((key) => /^\d+$/.test(key))) {
+      return null;
+    }
+
+    const sortedKeys = keys.sort((a, b) => Number(a) - Number(b));
+    const values = sortedKeys.map((key) => value[key]);
+    if (!values.every(isByteNumber)) {
+      return null;
+    }
+    return Uint8Array.from(values);
+  }
+
+  return null;
+}
+
+function bytesFromBase64(value: string): Uint8Array | null {
+  if (typeof atob !== 'function') {
+    return null;
+  }
+
+  try {
+    const binary = atob(value);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+
+function isLikelySecp256k1PublicKey(value: Uint8Array): boolean {
+  return value.length === 33 || value.length === 65;
+}
+
+function isByteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 255;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function formatSessionAddress(value: unknown): string {
+  return typeof value === 'string' ? formatAddress(value, 6) : formatUnknownValue(value);
+}
+
+function formatUnknownValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  const longLikeValue = formatLongLikeValue(value);
+  if (longLikeValue !== null) {
+    return longLikeValue;
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
+    return value.toString();
+  }
+
+  if (typeof value === 'object' && 'toString' in value) {
+    const rendered = String(value);
+    return rendered === '[object Object]' ? formatCompactValue(value) : rendered;
+  }
+
+  return formatCompactValue(value);
+}
+
+function formatLongLikeValue(value: unknown): string | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const low = value.low;
+  const high = value.high;
+  const unsigned = value.unsigned;
+
+  if (
+    typeof low !== 'number' ||
+    typeof high !== 'number' ||
+    !Number.isInteger(low) ||
+    !Number.isInteger(high)
+  ) {
+    return null;
+  }
+
+  try {
+    const lowBig = BigInt(low >>> 0);
+    const highBig = unsigned === true ? BigInt(high >>> 0) : BigInt(high);
+    return (highBig * TWO_32 + lowBig).toString();
+  } catch {
+    return null;
+  }
+}
+
+function formatCompactValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  let rendered = '';
+  if (typeof value === 'string') {
+    rendered = value;
+  } else {
+    try {
+      rendered = JSON.stringify(value);
+    } catch {
+      rendered = String(value);
+    }
+  }
+
+  if (!rendered) {
+    return '';
+  }
+
+  return rendered.length > 24 ? `${rendered.slice(0, 10)}...${rendered.slice(-8)}` : rendered;
+}
+
 const MessageBoxArgumentsOpener: React.FC<{
   title: string;
   isOpen: boolean;
@@ -449,9 +877,7 @@ const RealmPathInfo: React.FC<{
   nameSpace: string;
   namespaceSubPath: string;
   contract: string;
-}> = ({
-  domain, nameSpace, namespaceSubPath, contract,
-}) => {
+}> = ({ domain, nameSpace, namespaceSubPath, contract }) => {
   const displayDomain = useMemo(() => {
     return reverseString(domain);
   }, [domain]);
