@@ -75,7 +75,7 @@ func TestInstallRequiresAbsoluteHostPath(t *testing.T) {
 func TestInstallUnsupportedOS(t *testing.T) {
 	t.Parallel()
 
-	_, err := Install(Options{HostPath: "/x", GOOS: "windows", UserHome: t.TempDir()})
+	_, err := Install(Options{HostPath: "/x", GOOS: "plan9", UserHome: t.TempDir()})
 	if !errors.Is(err, ErrUnsupportedOS) {
 		t.Fatalf("got %v, want ErrUnsupportedOS", err)
 	}
