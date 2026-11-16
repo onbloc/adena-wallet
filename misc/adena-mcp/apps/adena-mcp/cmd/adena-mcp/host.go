@@ -81,7 +81,12 @@ func hostBinary() (string, error) {
 		return "", fmt.Errorf("resolve executable: %w", err)
 	}
 
-	candidate := filepath.Join(filepath.Dir(resolved), hostBinaryName)
+	name := hostBinaryName
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
+
+	candidate := filepath.Join(filepath.Dir(resolved), name)
 	if _, statErr := os.Stat(candidate); statErr != nil {
 		return "", errors.New(hostBinaryName + " was not found next to adena-mcp; set " + hostBinEnv)
 	}

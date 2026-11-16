@@ -53,10 +53,10 @@ func Listen(socketPath string) (net.Listener, error) {
 		return nil, fmt.Errorf("listen on %s: %w", socketPath, err)
 	}
 
-	if err := os.Chmod(socketPath, socketPerm); err != nil {
+	if err := restrictSocket(socketPath); err != nil {
 		_ = listener.Close()
 
-		return nil, fmt.Errorf("chmod socket: %w", err)
+		return nil, err
 	}
 
 	return listener, nil
@@ -67,7 +67,8 @@ func Listen(socketPath string) (net.Listener, error) {
 // replaced instead of probed. A live socket of this user means another host
 // already serves agents.
 func clearSocket(socketPath string) error {
-	if _, err := os.Stat(socketPath); errors.Is(err, os.ErrNotExist) {
+	// Lstat: on Windows, Stat cannot follow the socket file's reparse point.
+	if _, err := os.Lstat(socketPath); errors.Is(err, os.ErrNotExist) {
 		return nil
 	} else if err != nil {
 		return fmt.Errorf("stat socket: %w", err)
