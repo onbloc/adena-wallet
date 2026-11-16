@@ -26,5 +26,5 @@
     "lint-staged": "17.6.0",
     "web-ext": "10.8.0"
   },
-  "packageManager": "pnpm@12.18.0"
+  "packageManager": "pnpm@11.28.11"
 }
