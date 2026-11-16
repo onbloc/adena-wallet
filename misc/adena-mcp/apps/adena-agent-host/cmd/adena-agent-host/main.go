@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"syscall"
 
@@ -58,11 +59,13 @@ func run(args []string) error {
 
 func printUsage() {
 	fmt.Fprint(os.Stderr, `usage:
-  adena-agent-host install [-chrome-extension-id id ...] [-firefox-extension-id id]
+  adena-agent-host install [-detect=false] [-extension-path dir ...] [-chrome-extension-id id ...]
+                           [-firefox-extension-id id]
   adena-agent-host uninstall
   adena-agent-host version
 
-Browsers start the host themselves after "install".
+Browsers start the host themselves after "install". Unpacked Adena builds
+loaded in Chromium profiles are allowed automatically unless -detect=false.
 `)
 }
 
@@ -79,9 +82,11 @@ func (l *stringList) Set(v string) error {
 func runInstall(args []string) error {
 	flags := flag.NewFlagSet("install", flag.ContinueOnError)
 
-	var chromeIDs stringList
+	var chromeIDs, extensionPaths stringList
 
 	flags.Var(&chromeIDs, "chrome-extension-id", "additional Chromium extension id to allow (repeatable)")
+	flags.Var(&extensionPaths, "extension-path", "unpacked Adena build directory to allow (repeatable)")
+	detect := flags.Bool("detect", true, "allow unpacked Adena builds loaded in Chromium profiles")
 	firefoxID := flags.String("firefox-extension-id", install.AdenaFirefoxExtensionID, "Firefox extension id to allow")
 
 	if err := flags.Parse(args); err != nil {
@@ -103,9 +108,14 @@ func runInstall(args []string) error {
 		return fmt.Errorf("resolve user home: %w", err)
 	}
 
+	ids, err := allowedChromeIDs(home, chromeIDs, extensionPaths, *detect)
+	if err != nil {
+		return err
+	}
+
 	written, err := install.Install(install.Options{
 		HostPath:           hostPath,
-		ChromeExtensionIDs: append([]string{install.AdenaChromeExtensionID}, chromeIDs...),
+		ChromeExtensionIDs: ids,
 		FirefoxExtensionID: *firefoxID,
 		UserHome:           home,
 		GOOS:               runtime.GOOS,
@@ -121,6 +131,45 @@ func runInstall(args []string) error {
 	fmt.Println("enable Settings > Security & Privacy > AI Agent Connection in Adena to connect")
 
 	return nil
+}
+
+// allowedChromeIDs combines the published id, explicit ids, ids computed from
+// build paths and, when detect is set, unpacked builds found in profiles.
+func allowedChromeIDs(home string, explicit, paths []string, detect bool) ([]string, error) {
+	ids := append([]string{install.AdenaChromeExtensionID}, explicit...)
+
+	for _, path := range paths {
+		id, err := install.UnpackedID(path)
+		if err != nil {
+			return nil, fmt.Errorf("extension path %s: %w", path, err)
+		}
+
+		fmt.Printf("allowing unpacked build %s (%s)\n", id, path)
+
+		ids = append(ids, id)
+	}
+
+	if detect {
+		browsers, err := install.Browsers(runtime.GOOS, home)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, found := range install.DetectUnpacked(browsers) {
+			fmt.Printf("allowing unpacked build %s found in %s/%s (%s)\n", found.ID, found.Browser, found.Profile, found.Path)
+
+			ids = append(ids, found.ID)
+		}
+	}
+
+	unique := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if !slices.Contains(unique, id) {
+			unique = append(unique, id)
+		}
+	}
+
+	return unique, nil
 }
 
 func runUninstall() error {
