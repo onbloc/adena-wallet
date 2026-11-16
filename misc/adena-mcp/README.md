@@ -31,7 +31,7 @@ described in [packages/adena-extension/AGENT-HOST.md](../../packages/adena-exten
 
 ## Setup
 
-With the published npm package (macOS and Linux, arm64 and x64), one
+With the published npm package (macOS, Linux and Windows, arm64 and x64), one
 command sets up the machine:
 
 ```sh
@@ -170,6 +170,24 @@ as `agent://<client name>.agent`.
 | `request_too_large` | A request, usually a package deployment, is over the 1 MiB protocol limit |
 | `policy_violation` | The session request breaks Adena's agent policy: a total spend (spend limit × periods) above the maximum set on the AI Agent Connection screen, a path broader than one realm, `vm/run` while script sessions are off, `bank/multisend` or `*` |
 | Adena says another browser serves agents | Only one browser at a time can serve the socket. Close the other one, or turn off AI Agent Connection there, then reload Adena |
+
+## Windows
+
+The host and MCP server run on Windows 10 (1803) or later, which provide the
+Unix domain sockets the two use.
+
+- `install` writes the manifests under `%USERPROFILE%\.adena-agent\native-messaging`.
+  It registers each one under the browser's
+  `HKCU\Software\<browser>\NativeMessagingHosts\xyz.onbloc.adena_agent` key.
+- Unpacked builds are detected from the profiles under `%LOCALAPPDATA%`.
+  `-extension-path` is not supported, because the extension id cannot be
+  computed from the path there.
+- Files under `%USERPROFILE%\.adena-agent` rely on the profile's ACL instead of
+  permission bits.
+- The process hardening (core dumps, debugger attach) is not applied on
+  Windows yet.
+- A running host executable cannot be overwritten, so reinstalling moves it
+  aside first.
 
 ## Safety model
 
