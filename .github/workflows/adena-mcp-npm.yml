@@ -1,0 +1,70 @@
+name: Publish adena-mcp to npm
+
+# Tags use their own prefix so they never trigger the extension release on v*.*.*.
+on:
+  push:
+    tags:
+      - adena-mcp-v*
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Package version, e.g. 0.1.0
+        required: true
+      publish:
+        description: Publish to npm (otherwise build only)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: misc/adena-mcp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: misc/adena-mcp/go.mod
+          cache-dependency-path: misc/adena-mcp/go.sum
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Resolve version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            echo "version=${GITHUB_REF_NAME#adena-mcp-v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Test
+        run: go test -race ./...
+
+      - name: Build packages
+        run: node npm/build.mjs --version "${{ steps.version.outputs.version }}"
+
+      # Platform packages go first so the launcher never points at missing versions.
+      - name: Publish
+        if: github.event_name == 'push' || inputs.publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for dir in npm/dist/mcp-*/; do
+            npm publish "$dir" --access public --provenance
+          done
+          npm publish npm/dist/mcp --access public --provenance

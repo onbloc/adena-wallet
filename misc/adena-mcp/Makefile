@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := build
-.PHONY: apps build build-all run test vet fmt lint install-host require-app
+.PHONY: apps build build-all run test vet fmt lint install-host require-app npm npm-pack
 
 # Layout (mirrors onbloc/market-data-service):
 #   apps/<app>   application code: cmd/<binary> plus app-private internal packages
@@ -46,3 +46,16 @@ fmt:
 
 lint:
 	golangci-lint run --config .golangci.yaml ./...
+
+# npm packages for @adena-wallet/mcp, written to npm/dist.
+# NPM_PLATFORMS limits the build, e.g. NPM_PLATFORMS=darwin-arm64.
+NPM_VERSION ?=
+NPM_PLATFORMS ?=
+
+npm:
+	@test -n "$(NPM_VERSION)" || { echo "usage: make npm NPM_VERSION=0.1.0"; exit 2; }
+	node npm/build.mjs --version $(NPM_VERSION) $(if $(NPM_PLATFORMS),--platforms $(NPM_PLATFORMS))
+
+# Packs every built package into a tarball for local installs.
+npm-pack: npm
+	cd npm/dist && for dir in */; do (cd $$dir && npm pack --pack-destination ..); done
