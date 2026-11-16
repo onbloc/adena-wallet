@@ -1,0 +1,133 @@
+package bridge
+
+import (
+	"bufio"
+	"context"
+	"encoding/json"
+	"errors"
+	"net"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+// serveOnce answers the first request on a fresh socket with respond.
+func serveOnce(t *testing.T, respond func(Request) Response) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), "s.sock")
+
+	listener, err := net.Listen("unix", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { _ = listener.Close() })
+
+	go func() {
+		conn, err := listener.Accept()
+		if err != nil {
+			return
+		}
+
+		defer func() { _ = conn.Close() }()
+
+		scanner := bufio.NewScanner(conn)
+		if !scanner.Scan() {
+			return
+		}
+
+		var request Request
+		if err := json.Unmarshal(scanner.Bytes(), &request); err != nil {
+			return
+		}
+
+		line, marshalErr := json.Marshal(respond(request))
+		if marshalErr != nil {
+			return
+		}
+
+		if _, writeErr := conn.Write(append(line, '\n')); writeErr != nil {
+			return
+		}
+	}()
+
+	return path
+}
+
+func TestCallDecodesResult(t *testing.T) {
+	t.Parallel()
+
+	path := serveOnce(t, func(r Request) Response {
+		if r.Method != MethodGetAccount {
+			return Response{ID: r.ID, Error: &Error{Code: "invalid_request", Message: r.Method}}
+		}
+
+		return Response{ID: r.ID, Result: json.RawMessage(`{"address":"g1abc","chain_id":"dev","rpc_url":"http://x"}`)}
+	})
+
+	var account Account
+	if err := (&Client{SocketPath: path}).Call(context.Background(), MethodGetAccount, nil, &account); err != nil {
+		t.Fatal(err)
+	}
+
+	if account.Address != "g1abc" || account.ChainID != "dev" {
+		t.Fatalf("unexpected account %+v", account)
+	}
+}
+
+func TestCallReturnsRemoteError(t *testing.T) {
+	t.Parallel()
+
+	path := serveOnce(t, func(r Request) Response {
+		return Response{ID: r.ID, Error: &Error{Code: CodeRejected, Message: "user rejected"}}
+	})
+
+	err := (&Client{SocketPath: path}).Call(context.Background(), MethodPing, nil, nil)
+
+	var remote *Error
+	if !errors.As(err, &remote) || remote.Code != CodeRejected {
+		t.Fatalf("got %v, want a rejected error", err)
+	}
+}
+
+func TestCallReportsMissingHost(t *testing.T) {
+	t.Parallel()
+
+	client := &Client{SocketPath: filepath.Join(t.TempDir(), "missing.sock")}
+	err := client.Call(context.Background(), MethodPing, nil, nil)
+
+	var remote *Error
+	if !errors.As(err, &remote) || remote.Code != CodeHostUnavailable {
+		t.Fatalf("got %v, want host_unavailable", err)
+	}
+}
+
+func TestCallHonorsContextDeadline(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "slow.sock")
+
+	listener, err := net.Listen("unix", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { _ = listener.Close() })
+
+	go func() {
+		conn, err := listener.Accept()
+		if err == nil {
+			time.Sleep(time.Second)
+
+			_ = conn.Close()
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	if err := (&Client{SocketPath: path}).Call(ctx, MethodPing, nil, nil); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("got %v, want context.DeadlineExceeded", err)
+	}
+}
