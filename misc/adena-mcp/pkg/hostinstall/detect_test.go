@@ -1,13 +1,19 @@
 package hostinstall
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
 func TestUnpackedIDMatchesChromium(t *testing.T) {
 	t.Parallel()
+
+	if runtime.GOOS == "windows" {
+		t.Skip("ids are computed from Unix paths; Windows relies on profile detection")
+	}
 
 	// Observed in Chrome for this path.
 	got, err := UnpackedID("/Users/onbloc/.paseo/worktrees/1ddqwii6/black-hound/packages/adena-extension/dist")
@@ -18,6 +24,18 @@ func TestUnpackedIDMatchesChromium(t *testing.T) {
 	if got != "ageeiiepclgijgimgllbeebmgblnflje" {
 		t.Fatalf("got %s", got)
 	}
+}
+
+// jsonString quotes s for JSON, escaping Windows path separators.
+func jsonString(t *testing.T, s string) string {
+	t.Helper()
+
+	data, err := json.Marshal(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return string(data)
 }
 
 func writeFile(t *testing.T, path, content string) {
@@ -44,8 +62,8 @@ func TestDetectUnpackedFindsAdenaBuilds(t *testing.T) {
 
 	root := filepath.Join(home, ".config", "google-chrome")
 	writeFile(t, filepath.Join(root, "Profile 3", "Secure Preferences"), `{"extensions":{"settings":{
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa":{"location":4,"path":"`+adena+`"},
-		"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb":{"location":4,"path":"`+other+`"},
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa":{"location":4,"path":`+jsonString(t, adena)+`},
+		"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb":{"location":4,"path":`+jsonString(t, other)+`},
 		"oefglhbffgfkcpboeackfgdagmlnihnh":{"location":1}
 	}}}`)
 	writeFile(t, filepath.Join(root, "Default", "Preferences"), `not json`)

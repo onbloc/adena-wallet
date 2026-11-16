@@ -23,8 +23,10 @@ func TestInstallWritesManifestsForInstalledBrowsers(t *testing.T) {
 		}
 	}
 
+	hostPath := filepath.Join(home, "bin", "adena-agent-host")
+
 	written, err := Install(Options{
-		HostPath:           "/opt/adena/adena-agent-host",
+		HostPath:           hostPath,
 		ChromeExtensionIDs: []string{AdenaChromeExtensionID, "devid"},
 		FirefoxExtensionID: AdenaFirefoxExtensionID,
 		UserHome:           home,
@@ -42,7 +44,7 @@ func TestInstallWritesManifestsForInstalledBrowsers(t *testing.T) {
 
 	readJSON(t, filepath.Join(chromeRoot, "NativeMessagingHosts", HostName+".json"), &chrome)
 
-	if chrome.Path != "/opt/adena/adena-agent-host" || chrome.Type != "stdio" || len(chrome.AllowedOrigins) != 2 {
+	if chrome.Path != hostPath || chrome.Type != "stdio" || len(chrome.AllowedOrigins) != 2 {
 		t.Fatalf("unexpected chrome manifest %+v", chrome)
 	}
 
@@ -75,7 +77,9 @@ func TestInstallRequiresAbsoluteHostPath(t *testing.T) {
 func TestInstallUnsupportedOS(t *testing.T) {
 	t.Parallel()
 
-	_, err := Install(Options{HostPath: "/x", GOOS: "plan9", UserHome: t.TempDir()})
+	home := t.TempDir()
+
+	_, err := Install(Options{HostPath: filepath.Join(home, "x"), GOOS: "plan9", UserHome: home})
 	if !errors.Is(err, ErrUnsupportedOS) {
 		t.Fatalf("got %v, want ErrUnsupportedOS", err)
 	}
