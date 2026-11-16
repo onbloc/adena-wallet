@@ -11,6 +11,9 @@ export const AGENT_HOST_NAME = 'xyz.onbloc.adena_agent';
 export const AGENT_HOST_ENABLED_STORAGE_KEY = 'AGENT_HOST_ENABLED';
 export const AGENT_HOST_STATUS_STORAGE_KEY = 'AGENT_HOST_STATUS';
 export const AGENT_HOST_RELOAD_REQUIRED = 'reload_required';
+// Off by default: agents sign with session accounts unless the user allows
+// them to ask for master-account signatures directly.
+export const AGENT_MASTER_REQUESTS_STORAGE_KEY = 'AGENT_HOST_ALLOW_MASTER_REQUESTS';
 
 // Agent sessions are bounded tighter than the chain allows: revoking needs the
 // user, so a short expiry is what limits an abandoned session.
@@ -50,6 +53,7 @@ export type AgentHostErrorCode =
   | 'policy_violation'
   | 'no_wallet'
   | 'not_connected'
+  | 'master_requests_disabled'
   | 'wallet_locked'
   | 'unsupported_account'
   | 'unsupported_network'

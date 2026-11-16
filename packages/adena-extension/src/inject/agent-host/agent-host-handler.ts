@@ -35,6 +35,7 @@ import {
   parseTransactionParams,
   toErrorResponse,
 } from './agent-host-protocol';
+import { isMasterRequestsAllowed } from './agent-host-settings';
 
 interface WalletContext {
   account: Account;
@@ -75,6 +76,17 @@ const requireConnected = async (core: InjectCore, agentName: string): Promise<vo
     throw new AgentHostRequestError(
       'not_connected',
       'this agent is not connected to Adena; call connect_wallet first',
+    );
+  }
+};
+
+// Refuses before any popup opens, so a disabled setting never prompts the user.
+const requireMasterRequestsAllowed = async (): Promise<void> => {
+  if (!(await isMasterRequestsAllowed())) {
+    throw new AgentHostRequestError(
+      'master_requests_disabled',
+      'direct master account requests are turned off in Adena ' +
+        '(Settings > Security & Privacy > AI Agent Connection)',
     );
   }
 };
@@ -210,9 +222,16 @@ const handleGetStatus = async (
   request: AgentHostRequest,
 ): Promise<Record<string, unknown>> => {
   const version = chrome.runtime.getManifest().version;
+  const masterRequestsAllowed = await isMasterRequestsAllowed();
   const accountId = await core.getCurrentAccountId();
   if (!accountId) {
-    return { version, has_wallet: false, locked: false, connected: false };
+    return {
+      version,
+      has_wallet: false,
+      locked: false,
+      connected: false,
+      master_requests_allowed: masterRequestsAllowed,
+    };
   }
 
   const locked = await core.isLockedBy(await core.getInMemoryKey());
@@ -227,6 +246,7 @@ const handleGetStatus = async (
     has_wallet: true,
     locked,
     connected,
+    master_requests_allowed: masterRequestsAllowed,
     chain_id: network?.chainId ?? null,
     rpc_url: network?.rpcUrl ?? null,
   };
@@ -320,6 +340,7 @@ const handleSendTransaction = async (
   core: InjectCore,
   request: AgentHostRequest,
 ): Promise<Record<string, unknown>> => {
+  await requireMasterRequestsAllowed();
   const context = await resolveWalletContext(core);
   const tx = parseTransactionParams(request.params, context.address);
   return broadcastViaPopup(context, tx, agentNameOf(request));
@@ -329,6 +350,7 @@ const handleSignTransaction = async (
   core: InjectCore,
   request: AgentHostRequest,
 ): Promise<Record<string, unknown>> => {
+  await requireMasterRequestsAllowed();
   const context = await resolveWalletContext(core);
   const tx = parseTransactionParams(request.params, context.address);
 

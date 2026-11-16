@@ -11,6 +11,10 @@ import {
   AGENT_HOST_STATUS_STORAGE_KEY,
   AgentHostStatus,
 } from '@inject/agent-host/agent-host-protocol';
+import {
+  isMasterRequestsAllowed,
+  setMasterRequestsAllowed as saveMasterRequestsAllowed,
+} from '@inject/agent-host/agent-host-settings';
 import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
 
@@ -35,11 +39,13 @@ export const AgentConnection = (): JSX.Element => {
   const theme = useTheme();
   const { goBack } = useAppNavigate();
   const [enabled, setEnabled] = useState(false);
+  const [masterRequestsAllowed, setMasterRequestsAllowed] = useState(false);
   const [status, setStatus] = useState<AgentHostStatus | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     readEnabled().then(setEnabled);
+    isMasterRequestsAllowed().then(setMasterRequestsAllowed);
     readStatus().then(setStatus);
 
     const onChanged = (
@@ -68,6 +74,11 @@ export const AgentConnection = (): JSX.Element => {
     }
     await chrome.storage.local.set({ [AGENT_HOST_ENABLED_STORAGE_KEY]: activated });
     setEnabled(activated);
+  }, []);
+
+  const onToggleMasterRequests = useCallback(async (activated: boolean) => {
+    await saveMasterRequestsAllowed(activated);
+    setMasterRequestsAllowed(activated);
   }, []);
 
   const reloadRequired = enabled && status?.error === AGENT_HOST_RELOAD_REQUIRED;
@@ -100,6 +111,19 @@ export const AgentConnection = (): JSX.Element => {
         <ReloadButton type='button' onClick={(): void => chrome.runtime.reload()}>
           Reload Adena (you will need to unlock it again)
         </ReloadButton>
+      )}
+      {enabled && (
+        <>
+          <ToggleRow>
+            <Text type='body2Bold'>Allow master account requests</Text>
+            <Toggle activated={masterRequestsAllowed} onToggle={onToggleMasterRequests} />
+          </ToggleRow>
+          <Text type='body3Reg' color={theme.neutral.a}>
+            When on, agents may ask you to approve and sign transactions with your account directly,
+            including package deployments. When off, agents can only act through session accounts
+            you approve.
+          </Text>
+        </>
       )}
       {errorMessage && (
         <Text type='body3Reg' color={theme.red._5} margin='8px 0px 0px 0px'>
