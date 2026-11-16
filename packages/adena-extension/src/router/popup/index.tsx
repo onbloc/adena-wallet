@@ -9,6 +9,7 @@ import RevokeSession from '@pages/popup/wallet/revoke-session';
 import RevokeAllSessions from '@pages/popup/wallet/revoke-all-sessions';
 import AddAddress from '@pages/popup/certify/add-address';
 import AddressBook from '@pages/popup/certify/address-book';
+import { AgentConnection } from '@pages/popup/certify/agent-connection';
 import { AutoLockTimer } from '@pages/popup/certify/auto-lock-timer';
 import ChangeNetwork from '@pages/popup/certify/change-network';
 import { ChangePassword } from '@pages/popup/certify/change-password';
@@ -186,6 +187,7 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.AddAddress} element={<AddAddress />} />
         <Route path={RoutePath.SecurityPrivacy} element={<SecurityPrivacy />} />
         <Route path={RoutePath.SettingAutoLockTimer} element={<AutoLockTimer />} />
+        <Route path={RoutePath.SettingAgentConnection} element={<AgentConnection />} />
         <Route path={RoutePath.AboutAdena} element={<AboutAdena />} />
         <Route path={RoutePath.ManageSessions} element={<ManageSessions />} />
         <Route path={RoutePath.RevokeSession} element={<RevokeSession />} />
