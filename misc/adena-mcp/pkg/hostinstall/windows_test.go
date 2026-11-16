@@ -101,7 +101,9 @@ func TestWindowsInstallWithoutRegistry(t *testing.T) {
 		t.Skip("the system registry exists on this OS")
 	}
 
-	_, err := Install(Options{HostPath: "/x/host.exe", UserHome: t.TempDir(), GOOS: "windows"})
+	home := t.TempDir()
+
+	_, err := Install(Options{HostPath: filepath.Join(home, "host.exe"), UserHome: home, GOOS: "windows"})
 	if err == nil {
 		t.Fatal("expected ErrNoRegistry")
 	}

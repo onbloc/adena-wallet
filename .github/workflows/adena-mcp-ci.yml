@@ -62,9 +62,12 @@ jobs:
           go-version-file: misc/adena-mcp/go.mod
           cache-dependency-path: misc/adena-mcp/go.sum
 
+      # Built from source so it matches the module's Go version; release
+      # binaries can lag behind the go directive in go.mod.
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.6.1
+          install-mode: goinstall
           working-directory: misc/adena-mcp
           args: --config .golangci.yaml
