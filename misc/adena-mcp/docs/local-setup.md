@@ -28,7 +28,7 @@ yarn workspace adena-extension build      # writes packages/adena-extension/dist
 
 1. `chrome://extensions`를 열고 **개발자 모드**를 켭니다.
 2. **압축해제된 확장 프로그램 로드**를 눌러 `packages/adena-extension/dist`를 선택합니다.
-3. 카드에 표시되는 **ID**를 복사해 둡니다(예: `ageeiiepclgijgimgllbeebmgblnflje`). 같은 폴더를 다시 로드하면 ID는 유지됩니다.
+3. ID는 복사하지 않아도 됩니다. 2단계의 host 설치가 로드된 개발 빌드를 자동으로 찾습니다. 같은 폴더를 다시 로드하면 ID는 유지됩니다.
 4. 스토어 버전 Adena가 설치되어 있다면, 충돌하지 않도록 테스트하는 동안 꺼 두세요.
 
 ## 2. adena-mcp 설치
@@ -40,7 +40,7 @@ yarn workspace adena-extension build      # writes packages/adena-extension/dist
 ```sh
 cd misc/adena-mcp
 make build-all                                         # bin/adena-mcp, bin/adena-agent-host
-./bin/adena-agent-host install -chrome-extension-id <1단계에서 복사한 ID>
+./bin/adena-agent-host install      # 로드된 개발 빌드를 자동으로 찾아 허용
 claude mcp add adena -- "$(pwd)/bin/adena-mcp"
 ```
 
@@ -53,7 +53,7 @@ make npm-pack NPM_VERSION=0.0.0-local NPM_PLATFORMS=darwin-arm64   # Intel Mac: 
 PKG="$(pwd)/npm/dist"
 npx -y --package="$PKG/adena-wallet-mcp-darwin-arm64-0.0.0-local.tgz" \
        --package="$PKG/adena-wallet-mcp-0.0.0-local.tgz" \
-       adena-mcp install-host -chrome-extension-id <1단계에서 복사한 ID>
+       adena-mcp install-host
 
 claude mcp add adena -- npx -y \
   --package="$PKG/adena-wallet-mcp-darwin-arm64-0.0.0-local.tgz" \
@@ -65,7 +65,12 @@ claude mcp add adena -- npx -y \
 
 ### 공통 참고
 
-- `install-host`(또는 `adena-agent-host install`)는 스토어 버전 Adena ID를 항상 허용하고, `-chrome-extension-id`로 준 ID를 추가합니다. 개발 빌드 ID가 빠지면 연결되지 않습니다.
+- `install-host`(또는 `adena-agent-host install`)가 허용하는 확장 ID는 다음과 같습니다.
+  - 스토어 버전 Adena ID는 항상 허용합니다.
+  - 브라우저 프로필(`Secure Preferences`)에서 압축해제로 로드된 Adena 빌드를 찾아 자동으로 추가합니다. 출력의 `allowing unpacked build ...` 줄에서 확인할 수 있습니다.
+  - 아직 로드하지 않은 빌드는 `-extension-path <dist 폴더>`로 지정합니다. Chrome과 같은 방식으로 폴더 경로에서 ID를 계산합니다.
+  - 그 밖의 ID는 `-chrome-extension-id <ID>`로 직접 넣습니다. 자동 탐지를 끄려면 `-detect=false`를 씁니다.
+  - 개발 빌드를 다른 폴더에서 다시 로드하면 ID가 바뀌므로, 설치를 다시 실행하세요.
 - 설치 결과는 브라우저별 manifest 파일입니다. macOS Chrome 기준 경로는 `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/xyz.onbloc.adena_agent.json`이고, 안의 `allowed_origins`에서 ID를 확인할 수 있습니다.
 - `claude mcp add`는 기본적으로 **현재 디렉터리 프로젝트(local 범위)**에만 등록됩니다. 모든 프로젝트에서 쓰려면 `--scope user`를 붙이세요. 이미 같은 이름이 있으면 `claude mcp remove adena -s local` 후 다시 등록합니다.
 
@@ -104,7 +109,7 @@ gnodev local          # RPC http://127.0.0.1:26657, chain id "dev"
 |---|---|---|
 | `Not connected: chrome.runtime.connectNative is not a function` 또는 Reload 안내 | 권한을 받기 전에 실행된 background | 설정 화면의 Reload 버튼, 또는 `chrome://extensions`에서 새로고침 |
 | `Specified native messaging host not found.` | host manifest가 없음 | 2단계 `install-host`(또는 `adena-agent-host install`)를 다시 실행 |
-| `Access to the specified native messaging host is forbidden.` | manifest에 현재 확장 ID가 없음 | `-chrome-extension-id <ID>`를 붙여 다시 설치 |
+| `Access to the specified native messaging host is forbidden.` | manifest에 현재 확장 ID가 없음 (빌드를 로드하기 전에 설치했거나 폴더가 바뀜) | 개발 빌드를 로드한 상태에서 설치를 다시 실행 (또는 `-extension-path`) |
 | `Native host has exited.` | host가 바로 종료됨. 다른 브라우저 프로필이 이미 소켓을 사용 중일 수 있음 | 다른 프로필의 연결을 끄거나 그 브라우저를 종료 |
 | `adena_status`가 `host_unavailable` | 브라우저가 꺼져 있거나 연결 토글이 꺼져 있음 | 브라우저를 열고 3단계를 확인 |
 | `wallet_locked` | Adena가 잠김 | 잠금 해제 후 재시도 |

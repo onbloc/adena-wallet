@@ -29,7 +29,7 @@ stays in locked memory and is never shown to the agent.
 | Command | What it does |
 |---|---|
 | `adena-mcp` | Runs the MCP server over stdio |
-| `adena-mcp install-host [-chrome-extension-id <id>]` | Copies the host to `~/.adena-agent/bin` and registers it with the installed browsers |
+| `adena-mcp install-host [-extension-path <dir>] [-chrome-extension-id <id>]` | Copies the host to `~/.adena-agent/bin` and registers it with the installed browsers. Unpacked Adena builds loaded in Chromium profiles are allowed automatically (`-detect=false` turns this off). |
 | `adena-mcp uninstall-host` | Removes the browser registrations and the copied host |
 | `adena-mcp version` | Prints the version |
 

@@ -36,7 +36,7 @@ To build from source and connect a development build of Adena, follow the
 
 ```sh
 make build-all
-./bin/adena-agent-host install -chrome-extension-id <unpacked-extension-id>
+./bin/adena-agent-host install     # also allows unpacked Adena builds found in Chromium profiles
 claude mcp add adena -- /absolute/path/to/bin/adena-mcp
 ```
 
