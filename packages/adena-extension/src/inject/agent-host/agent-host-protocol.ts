@@ -3,6 +3,7 @@ import { fromBase64 } from 'adena-module';
 export const AGENT_HOST_NAME = 'xyz.onbloc.adena_agent';
 export const AGENT_HOST_ENABLED_STORAGE_KEY = 'AGENT_HOST_ENABLED';
 export const AGENT_HOST_STATUS_STORAGE_KEY = 'AGENT_HOST_STATUS';
+export const AGENT_HOST_RELOAD_REQUIRED = 'reload_required';
 
 // Agent sessions are bounded tighter than the chain allows: revoking needs the
 // user, so a short expiry is what limits an abandoned session.

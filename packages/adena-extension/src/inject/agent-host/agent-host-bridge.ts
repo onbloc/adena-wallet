@@ -4,6 +4,7 @@ import { handleAgentHostMessage } from './agent-host-handler';
 import {
   AGENT_HOST_ENABLED_STORAGE_KEY,
   AGENT_HOST_NAME,
+  AGENT_HOST_RELOAD_REQUIRED,
   AGENT_HOST_STATUS_STORAGE_KEY,
   AgentHostStatus,
 } from './agent-host-protocol';
@@ -43,6 +44,13 @@ const disconnect = (): void => {
 
 const connect = (inMemoryProvider: MemoryProvider): void => {
   if (port) {
+    return;
+  }
+
+  // A worker started before the optional permission was granted does not
+  // gain connectNative; only a restarted extension does.
+  if (typeof chrome.runtime.connectNative !== 'function') {
+    writeStatus({ connected: false, error: AGENT_HOST_RELOAD_REQUIRED });
     return;
   }
 

@@ -7,10 +7,12 @@ import { BottomFixedButton } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import {
   AGENT_HOST_ENABLED_STORAGE_KEY,
+  AGENT_HOST_RELOAD_REQUIRED,
   AGENT_HOST_STATUS_STORAGE_KEY,
   AgentHostStatus,
 } from '@inject/agent-host/agent-host-protocol';
 import mixins from '@styles/mixins';
+import { fonts } from '@styles/theme';
 
 const NATIVE_MESSAGING_PERMISSION: chrome.permissions.Permissions = {
   permissions: ['nativeMessaging'],
@@ -68,13 +70,17 @@ export const AgentConnection = (): JSX.Element => {
     setEnabled(activated);
   }, []);
 
+  const reloadRequired = enabled && status?.error === AGENT_HOST_RELOAD_REQUIRED;
+
   const statusText = !enabled
     ? 'Disabled'
     : status?.connected
       ? 'Connected'
-      : status?.error
-        ? `Not connected: ${status.error}`
-        : 'Not connected';
+      : reloadRequired
+        ? 'Reload Adena to finish turning on the agent connection.'
+        : status?.error
+          ? `Not connected: ${status.error}`
+          : 'Not connected';
 
   return (
     <Wrapper>
@@ -90,6 +96,11 @@ export const AgentConnection = (): JSX.Element => {
       <Text type='body3Reg' color={status?.connected ? theme.green._5 : theme.neutral.a}>
         {statusText}
       </Text>
+      {reloadRequired && (
+        <ReloadButton type='button' onClick={(): void => chrome.runtime.reload()}>
+          Reload Adena (you will need to unlock it again)
+        </ReloadButton>
+      )}
       {errorMessage && (
         <Text type='body3Reg' color={theme.red._5} margin='8px 0px 0px 0px'>
           {errorMessage}
@@ -117,4 +128,14 @@ const ToggleRow = styled.div`
   ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })};
   width: 100%;
   margin: 24px 0px 8px 0px;
+`;
+
+const ReloadButton = styled.button`
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 18px;
+  background-color: ${({ theme }): string => theme.primary._6};
+  color: ${({ theme }): string => theme.neutral._1};
+  ${fonts.body2Bold};
+  cursor: pointer;
 `;
