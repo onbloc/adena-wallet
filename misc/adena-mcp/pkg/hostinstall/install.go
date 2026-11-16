@@ -1,6 +1,6 @@
-// Package install registers the agent host with browsers by writing their
+// Package hostinstall registers the agent host with browsers by writing their
 // native messaging host manifests.
-package install
+package hostinstall
 
 import (
 	"encoding/json"
@@ -21,8 +21,9 @@ const (
 )
 
 const (
-	manifestPerm = 0o644
-	dirPerm      = 0o755
+	manifestPerm   = 0o644
+	hostBinaryPerm = 0o755
+	dirPerm        = 0o755
 )
 
 // ErrUnsupportedOS is returned where manifests are registered another way,
@@ -190,4 +191,49 @@ func writeManifest(browser Browser, opts Options) (string, error) {
 	}
 
 	return path, nil
+}
+
+// Installed returns the host manifests present for the supported browsers.
+func Installed(goos, home string) []string {
+	browsers, err := Browsers(goos, home)
+	if err != nil {
+		return nil
+	}
+
+	var found []string
+
+	for _, browser := range browsers {
+		if _, statErr := os.Stat(manifestPath(browser)); statErr == nil {
+			found = append(found, manifestPath(browser))
+		}
+	}
+
+	return found
+}
+
+// CopyHost copies the host binary at src into binDir and returns the copy's
+// path. Browsers launch the host from the path in its manifest, so it must
+// not live somewhere transient such as the npx cache.
+func CopyHost(src, binDir string) (string, error) {
+	if err := os.MkdirAll(binDir, 0o700); err != nil {
+		return "", fmt.Errorf("create %s: %w", binDir, err)
+	}
+
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return "", fmt.Errorf("read host binary: %w", err)
+	}
+
+	target := filepath.Join(binDir, filepath.Base(src))
+	staging := target + ".tmp"
+
+	if err := os.WriteFile(staging, data, hostBinaryPerm); err != nil {
+		return "", fmt.Errorf("write host binary: %w", err)
+	}
+
+	if err := os.Rename(staging, target); err != nil {
+		return "", fmt.Errorf("install host binary: %w", err)
+	}
+
+	return target, nil
 }

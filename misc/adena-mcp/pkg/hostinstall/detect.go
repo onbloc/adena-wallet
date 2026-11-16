@@ -1,4 +1,4 @@
-package install
+package hostinstall
 
 import (
 	"crypto/sha256"
@@ -130,4 +130,51 @@ func isAdenaBuild(dir string) bool {
 	}
 
 	return json.Unmarshal(data, &manifest) == nil && manifest.Name == adenaManifestName
+}
+
+// Allowed is the set of Chromium extension ids a manifest should allow and
+// where each detected or computed id came from.
+type Allowed struct {
+	IDs      []string
+	Detected []Unpacked
+}
+
+// AllowedChromeIDs combines the published id, explicit ids, ids computed from
+// unpacked build directories and, when detect is set, unpacked Adena builds
+// loaded in the Chromium profiles of goos.
+func AllowedChromeIDs(goos, home string, explicit, paths []string, detect bool) (Allowed, error) {
+	ids := append([]string{AdenaChromeExtensionID}, explicit...)
+
+	detected := make([]Unpacked, 0, len(paths))
+
+	for _, path := range paths {
+		id, err := UnpackedID(path)
+		if err != nil {
+			return Allowed{}, err
+		}
+
+		ids = append(ids, id)
+		detected = append(detected, Unpacked{ID: id, Path: path})
+	}
+
+	if detect {
+		browsers, err := Browsers(goos, home)
+		if err != nil {
+			return Allowed{}, err
+		}
+
+		for _, found := range DetectUnpacked(browsers) {
+			ids = append(ids, found.ID)
+			detected = append(detected, found)
+		}
+	}
+
+	unique := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if !slices.Contains(unique, id) {
+			unique = append(unique, id)
+		}
+	}
+
+	return Allowed{IDs: unique, Detected: detected}, nil
 }

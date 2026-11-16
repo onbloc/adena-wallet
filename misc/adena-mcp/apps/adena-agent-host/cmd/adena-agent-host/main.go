@@ -14,13 +14,12 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
-	"slices"
 	"strings"
 	"syscall"
 
-	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-agent-host/internal/install"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-agent-host/internal/relay"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/hostinstall"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -87,7 +86,7 @@ func runInstall(args []string) error {
 	flags.Var(&chromeIDs, "chrome-extension-id", "additional Chromium extension id to allow (repeatable)")
 	flags.Var(&extensionPaths, "extension-path", "unpacked Adena build directory to allow (repeatable)")
 	detect := flags.Bool("detect", true, "allow unpacked Adena builds loaded in Chromium profiles")
-	firefoxID := flags.String("firefox-extension-id", install.AdenaFirefoxExtensionID, "Firefox extension id to allow")
+	firefoxID := flags.String("firefox-extension-id", hostinstall.AdenaFirefoxExtensionID, "Firefox extension id to allow")
 
 	if err := flags.Parse(args); err != nil {
 		return err
@@ -108,14 +107,23 @@ func runInstall(args []string) error {
 		return fmt.Errorf("resolve user home: %w", err)
 	}
 
-	ids, err := allowedChromeIDs(home, chromeIDs, extensionPaths, *detect)
+	allowed, err := hostinstall.AllowedChromeIDs(runtime.GOOS, home, chromeIDs, extensionPaths, *detect)
 	if err != nil {
 		return err
 	}
 
-	written, err := install.Install(install.Options{
+	for _, found := range allowed.Detected {
+		where := found.Path
+		if found.Browser != "" {
+			where = found.Browser + "/" + found.Profile + " (" + found.Path + ")"
+		}
+
+		fmt.Printf("allowing unpacked build %s from %s\n", found.ID, where)
+	}
+
+	written, err := hostinstall.Install(hostinstall.Options{
 		HostPath:           hostPath,
-		ChromeExtensionIDs: ids,
+		ChromeExtensionIDs: allowed.IDs,
 		FirefoxExtensionID: *firefoxID,
 		UserHome:           home,
 		GOOS:               runtime.GOOS,
@@ -133,52 +141,13 @@ func runInstall(args []string) error {
 	return nil
 }
 
-// allowedChromeIDs combines the published id, explicit ids, ids computed from
-// build paths and, when detect is set, unpacked builds found in profiles.
-func allowedChromeIDs(home string, explicit, paths []string, detect bool) ([]string, error) {
-	ids := append([]string{install.AdenaChromeExtensionID}, explicit...)
-
-	for _, path := range paths {
-		id, err := install.UnpackedID(path)
-		if err != nil {
-			return nil, fmt.Errorf("extension path %s: %w", path, err)
-		}
-
-		fmt.Printf("allowing unpacked build %s (%s)\n", id, path)
-
-		ids = append(ids, id)
-	}
-
-	if detect {
-		browsers, err := install.Browsers(runtime.GOOS, home)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, found := range install.DetectUnpacked(browsers) {
-			fmt.Printf("allowing unpacked build %s found in %s/%s (%s)\n", found.ID, found.Browser, found.Profile, found.Path)
-
-			ids = append(ids, found.ID)
-		}
-	}
-
-	unique := make([]string, 0, len(ids))
-	for _, id := range ids {
-		if !slices.Contains(unique, id) {
-			unique = append(unique, id)
-		}
-	}
-
-	return unique, nil
-}
-
 func runUninstall() error {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("resolve user home: %w", err)
 	}
 
-	removed, err := install.Uninstall(runtime.GOOS, home)
+	removed, err := hostinstall.Uninstall(runtime.GOOS, home)
 	for _, path := range removed {
 		fmt.Println("removed", path)
 	}
