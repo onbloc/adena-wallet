@@ -71,6 +71,8 @@ type Status struct {
 	HasWallet bool    `json:"has_wallet"`
 	Locked    bool    `json:"locked"`
 	Connected bool    `json:"connected"`
+	// MasterRequestsAllowed is the user's setting for signer=wallet requests.
+	MasterRequestsAllowed bool `json:"master_requests_allowed"`
 }
 
 // TransactionParams asks the user to sign messages with the master account.

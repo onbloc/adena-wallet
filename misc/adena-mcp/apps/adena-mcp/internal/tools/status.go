@@ -96,6 +96,7 @@ func getStatus(ctx context.Context, d *Deps) (server.Result, error) {
 		structured["has_wallet"] = status.HasWallet
 		structured["locked"] = status.Locked
 		structured["connected"] = status.Connected
+		structured["master_requests_allowed"] = status.MasterRequestsAllowed
 		structured["adena_version"] = status.Version
 	}
 
@@ -124,6 +125,13 @@ func getStatus(ctx context.Context, d *Deps) (server.Result, error) {
 	var b strings.Builder
 
 	fmt.Fprintf(&b, "State: ready. Account %s on %s (%s).\n", account.Address, account.ChainID, account.RPCURL)
+
+	if status.MasterRequestsAllowed {
+		b.WriteString("Master account requests (signer=wallet): allowed.\n")
+	} else {
+		b.WriteString("Master account requests (signer=wallet): turned off by the user; use sessions.\n")
+	}
+
 	fmt.Fprintf(&b, "Sessions held: %d.\n", len(sessions))
 
 	for _, s := range sessions {

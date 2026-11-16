@@ -90,7 +90,7 @@ Claude Code를 **새로 시작**한 뒤 차례로 요청합니다.
 2. "connect_wallet 해줘" → Adena에 연결 승인 팝업이 뜹니다. 요청자는 클라이언트 이름(예: `claude-code.agent`)으로 표시됩니다. 승인하면 Connected Apps에 추가됩니다.
 3. "bank/send 권한으로 30분짜리 세션 만들어줘" → Adena 승인 팝업이 뜨고, 승인하면 세션이 생성됩니다.
 4. "내 다른 주소 g1...로 1000ugnot 보내줘" → `send_transaction`이 팝업 없이 세션 키로 서명해 실행합니다.
-5. (선택) "이번 송금은 Adena에서 직접 승인할게" → `signer: "wallet"`로 요청하면 트랜잭션 승인 팝업이 뜹니다. 패키지 배포(`/vm.m_addpkg`)는 항상 이 방식입니다.
+5. (선택) "이번 송금은 Adena에서 직접 승인할게" → `signer: "wallet"`로 요청하면 트랜잭션 승인 팝업이 뜹니다. 패키지 배포(`/vm.m_addpkg`)는 항상 이 방식입니다. 먼저 AI Agent Connection 화면에서 **Allow master account requests**를 켜야 합니다(기본값은 꺼짐).
 6. "세션 폐기해줘" → Adena 폐기 승인 팝업이 뜨고, 승인하면 세션 키가 파기됩니다.
 
 세션은 Adena의 현재 계정과 네트워크로 만들어지고, 수수료는 그 계정에서 나갑니다. 테스트넷이나 로컬 체인에서 시험하는 것을 권장합니다.
@@ -117,6 +117,7 @@ gnodev local          # RPC http://127.0.0.1:26657, chain id "dev"
 | `get_status`가 `host_not_installed` | host가 등록되지 않음 | `connect_wallet` 호출(자동 설치) 또는 2단계 실행 |
 | `not_connected` | 이 클라이언트가 Adena에 연결 승인되지 않음 | `connect_wallet` 호출 후 Adena에서 승인 |
 | `session_required` | 메시지를 모두 허용하는 세션이 없음 | 오류에 나온 `required_allow_paths`로 세션 생성, 또는 `signer: "wallet"` |
+| `master_requests_disabled` | Master 계정 직접 요청 허용이 꺼져 있음 | 세션을 사용하거나, AI Agent Connection 화면에서 Allow master account requests 켜기 |
 | `wallet_signature_required` | 세션으로 서명할 수 없는 메시지(`/vm.m_addpkg`) | `signer: "wallet"`로 다시 요청 |
 | `wallet_locked` | Adena가 잠김 | 잠금 해제 후 재시도 |
 | `approval_timeout` | 5분 안에 승인하지 않음 | 다시 요청 (`ADENA_MCP_APPROVAL_TIMEOUT`으로 조정 가능) |

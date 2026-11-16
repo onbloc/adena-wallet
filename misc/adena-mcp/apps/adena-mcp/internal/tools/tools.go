@@ -112,6 +112,13 @@ func bridgeError(err error) error {
 		return &server.ToolError{Code: "wallet_locked", Message: "Adena is locked; ask the user to unlock it and retry"}
 	case "not_connected":
 		return &server.ToolError{Code: "not_connected", Message: "this agent is not connected to Adena; call connect_wallet"}
+	case "master_requests_disabled":
+		return &server.ToolError{
+			Code: "master_requests_disabled",
+			Message: "the user has not allowed master account requests; sign with a session (create_session), " +
+				"or ask the user to turn on Settings > Security & Privacy > AI Agent Connection > " +
+				"Allow master account requests in Adena",
+		}
 	default:
 		return &server.ToolError{Code: remote.Code, Message: remote.Message}
 	}

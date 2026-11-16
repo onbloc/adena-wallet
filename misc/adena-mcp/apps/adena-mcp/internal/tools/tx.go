@@ -59,7 +59,8 @@ func txSchema(extra map[string]any) map[string]any {
 			"enum": []string{signerSession, signerWallet},
 			"description": `"session" (default) signs without a popup using a session from create_session whose ` +
 				`allow_paths cover every message. "wallet" asks the user to approve and sign in Adena with ` +
-				`the master account; required for /vm.m_addpkg.`,
+				`the master account; required for /vm.m_addpkg. "wallet" works only if the user turned on ` +
+				`"Allow master account requests" in Adena (get_status reports master_requests_allowed).`,
 		},
 		"session_address": stringProp("Session to sign with (signer=session). Default: the newest usable " +
 			"session that covers every message."),

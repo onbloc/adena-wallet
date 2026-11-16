@@ -37,7 +37,9 @@ const instructions = "adena tools let you act on gno.land as the user of the Ade
 	"expires_in. The user approves it in Adena once; send_transaction and sign_transaction then sign " +
 	"with the session key without popups. Gas fees count against the spend limit.\n" +
 	"- Use signer=\"wallet\" only when the user asks to approve a transaction directly, or for " +
-	"/vm.m_addpkg, which sessions can never sign. The user approves each such transaction in Adena.\n" +
+	"/vm.m_addpkg, which sessions can never sign. The user approves each such transaction in Adena. " +
+	"This works only when the user has turned on \"Allow master account requests\" in Adena; " +
+	"get_status reports it as master_requests_allowed.\n" +
 	"- Call revoke_session when the task is done. Session keys live only in this server's memory and " +
 	"are lost on restart; revoke such sessions and create new ones.\n" +
 	"- Never ask the user for a seed phrase or private key."

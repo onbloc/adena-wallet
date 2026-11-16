@@ -61,7 +61,10 @@ removes the host manifests.
 session is the one named, or the newest usable session whose `allow_paths`
 cover every message. `signer: "wallet"` sends the transaction to Adena for the
 user to approve with the master account instead. `/vm.m_addpkg` always needs
-the wallet, because sessions can never deploy packages.
+the wallet, because sessions can never deploy packages. Wallet requests are
+refused (`master_requests_disabled`) unless the user turns on **Allow master
+account requests** on Adena's AI Agent Connection screen; it is off by default.
+`get_status` reports it as `master_requests_allowed`.
 
 For session signing, gas is measured by simulating first and reserved at 1.5
 times the gas used. The fee is priced from `auth/gasprice`, because the chain

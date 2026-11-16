@@ -57,6 +57,12 @@ in Adena with their master account. Use it when:
 - it contains `/vm.m_addpkg` (package deployment), which sessions can never
   sign.
 
+This only works if the user turned on **Allow master account requests** in
+Adena (*Settings → Security & Privacy → AI Agent Connection*). `get_status`
+reports it as `master_requests_allowed`. When it is off, the request fails
+with `master_requests_disabled`; use a session, or ask the user to turn the
+setting on.
+
 ## Rules
 
 - Never ask for a seed phrase or private key. Session keys have none and are

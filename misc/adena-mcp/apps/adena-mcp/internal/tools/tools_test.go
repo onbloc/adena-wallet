@@ -530,6 +530,34 @@ func TestSignTransactionWithSession(t *testing.T) {
 	}
 }
 
+func TestWalletRequestsBlockedByUserSetting(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	env.bridge.errs[bridge.MethodSendTransaction] = &bridge.Error{Code: "master_requests_disabled", Message: "off"}
+
+	_, err := env.call(t, "send_transaction", map[string]any{"messages": []any{sendMsg()}, "signer": "wallet"})
+	if toolErrorCode(err) != "master_requests_disabled" {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestGetStatusReportsMasterRequestSetting(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	env.bridge.status.MasterRequestsAllowed = true
+
+	res, err := env.call(t, "get_status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if res.StructuredContent["master_requests_allowed"] != true {
+		t.Fatalf("got %+v", res.StructuredContent)
+	}
+}
+
 func TestSignTransactionWithWallet(t *testing.T) {
 	t.Parallel()
 

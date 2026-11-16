@@ -11,7 +11,9 @@ The adena MCP tools act on gno.land as the user of the Adena browser wallet.
 3. `send_transaction` / `sign_transaction` sign one or more messages
    (`/vm.m_call`, `/vm.m_run`, `/bank.MsgSend`) with the session. Use
    `signer: "wallet"` when the user wants to approve each transaction, or for
-   `/vm.m_addpkg`, which sessions cannot sign.
+   `/vm.m_addpkg`, which sessions cannot sign. That needs the user to turn on
+   "Allow master account requests" in Adena (`master_requests_allowed` in
+   `get_status`).
 4. `revoke_session` when done.
 
 Never ask for a seed phrase or private key.
