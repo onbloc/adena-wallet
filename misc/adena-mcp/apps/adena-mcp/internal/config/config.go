@@ -13,7 +13,6 @@ import (
 
 // Environment variables.
 const (
-	GnokeyEnv          = "ADENA_MCP_GNOKEY"
 	ApprovalTimeoutEnv = "ADENA_MCP_APPROVAL_TIMEOUT"
 	GasCeilingEnv      = "ADENA_MCP_GAS_CEILING"
 )
@@ -36,9 +35,8 @@ const (
 type Config struct {
 	// Home is the shared agent home holding the host socket.
 	Home string
-	// DataDir holds the session keybase and session records.
-	DataDir   string
-	GnokeyBin string
+	// DataDir holds the public session records. Session keys are never stored.
+	DataDir string
 	// ApprovalTimeout bounds how long a tool waits for the user in Adena.
 	ApprovalTimeout time.Duration
 	// GasCeiling is the gas limit used to measure a transaction before it is
@@ -46,8 +44,8 @@ type Config struct {
 	GasCeiling int64
 }
 
-// KeybaseDir is the gnokey home for session keys.
-func (c Config) KeybaseDir() string { return filepath.Join(c.DataDir, "keys") }
+// LegacyKeybaseDir is where earlier versions kept gnokey session keys.
+func (c Config) LegacyKeybaseDir() string { return filepath.Join(c.DataDir, "keys") }
 
 // SessionsFile stores the session records.
 func (c Config) SessionsFile() string { return filepath.Join(c.DataDir, "sessions.json") }
@@ -65,13 +63,8 @@ func Load() (Config, error) {
 	c := Config{
 		Home:            home,
 		DataDir:         filepath.Join(home, "mcp"),
-		GnokeyBin:       "gnokey",
 		ApprovalTimeout: defaultApprovalTimeout,
 		GasCeiling:      defaultGasCeiling,
-	}
-
-	if bin := os.Getenv(GnokeyEnv); bin != "" {
-		c.GnokeyBin = bin
 	}
 
 	if v := os.Getenv(ApprovalTimeoutEnv); v != "" {

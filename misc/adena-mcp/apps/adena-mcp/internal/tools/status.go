@@ -28,11 +28,9 @@ func statusHandler(ctx context.Context, d *Deps) (server.Result, error) {
 		return server.Result{}, err
 	}
 
-	now := d.Now()
-
 	sessions := make([]map[string]any, 0, len(records))
 	for i := range records {
-		sessions = append(sessions, publicRecord(&records[i], now))
+		sessions = append(sessions, d.publicRecord(&records[i]))
 	}
 
 	structured := map[string]any{"sessions": sessions, "connected": false}
@@ -61,7 +59,7 @@ func statusHandler(ctx context.Context, d *Deps) (server.Result, error) {
 	for i := range records {
 		r := &records[i]
 		fmt.Fprintf(&b, "- %s for %s on %s, usable=%t, allow_paths=%v, expires %s\n",
-			r.SessionAddress, r.MasterAddress, r.ChainID, r.Usable(now), r.AllowPaths, sessions[i]["expires_at"])
+			r.SessionAddress, r.MasterAddress, r.ChainID, d.usable(r), r.AllowPaths, sessions[i]["expires_at"])
 	}
 
 	return server.Result{Text: b.String(), StructuredContent: structured}, nil

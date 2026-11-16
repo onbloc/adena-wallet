@@ -2,31 +2,23 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
-	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/gnokey"
+	"github.com/gnolang/gno/gno.land/pkg/sdk/vm"
+	"github.com/gnolang/gno/tm2/pkg/crypto"
+	"github.com/gnolang/gno/tm2/pkg/sdk/bank"
+	"github.com/gnolang/gno/tm2/pkg/std"
+
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/chain"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/server"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/session"
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/sessionkey"
 )
 
-// Gas sizing follows gno-mcp: measure at a ceiling, reserve 1.5x what was used,
-// and price the fee for the gas reserved, because the chain charges the whole
-// offered fee against the session spend limit.
-const (
-	minGasWanted = 100_000
-	// The genesis floor is 1ugnot per 1000 gas.
-	floorPriceAmount = 1
-	floorPriceGas    = 1000
-)
-
-var gasPricePattern = regexp.MustCompile(`^(\d+)ugnot$`)
+var mainPackagePattern = regexp.MustCompile(`(?m)^\s*package\s+main\s*$`)
 
 var commonTxProps = map[string]any{
 	"session_address": stringProp("Session to sign with. Default: the newest usable session whose " +
@@ -56,11 +48,25 @@ func txProps(extra map[string]any) map[string]any {
 	return props
 }
 
+func coinsArg(args map[string]any, name string) (std.Coins, error) {
+	raw, err := server.StringArg(args, name)
+	if err != nil || raw == "" {
+		return nil, err
+	}
+
+	coins, err := std.ParseCoins(raw)
+	if err != nil {
+		return nil, server.InvalidArg(name, err.Error())
+	}
+
+	return coins, nil
+}
+
 func registerCall(r *server.Registry, d *Deps) {
 	r.Add(&server.Tool{
 		Name: "adena_call",
-		Description: "Calls a realm function as the user, signed by a session key (gnokey maketx call " +
-			"--master). The session must allow vm/exec for the realm.",
+		Description: "Calls a realm function as the user, signed by a session key. The chain sees the " +
+			"user's address as the caller. The session must allow vm/exec for the realm.",
 		InputSchema: objectSchema(txProps(map[string]any{
 			"pkg_path": stringProp("Realm path, e.g. gno.land/r/demo/counter."),
 			"func":     stringProp("Exported crossing function to call."),
@@ -87,17 +93,20 @@ func registerCall(r *server.Registry, d *Deps) {
 				return server.Result{}, err
 			}
 
-			send, err := server.StringArg(args, "send")
+			send, err := coinsArg(args, "send")
 			if err != nil {
 				return server.Result{}, err
 			}
 
-			return writeTx(ctx, d, args, session.RouteExec, pkgPath, gnokey.TxOptions{
-				Kind:    gnokey.TxCall,
-				PkgPath: pkgPath,
-				Func:    fn,
-				Args:    callArgs,
-				Send:    send,
+			maxDeposit, err := coinsArg(args, "max_deposit")
+			if err != nil {
+				return server.Result{}, err
+			}
+
+			return writeTx(ctx, d, args, session.RouteExec, pkgPath, "call", func(master crypto.Address) (std.Msg, error) {
+				return vm.MsgCall{
+					Caller: master, Send: send, MaxDeposit: maxDeposit, PkgPath: pkgPath, Func: fn, Args: callArgs,
+				}, nil
 			})
 		},
 	})
@@ -106,8 +115,8 @@ func registerCall(r *server.Registry, d *Deps) {
 func registerRun(r *server.Registry, d *Deps) {
 	r.Add(&server.Tool{
 		Name: "adena_run",
-		Description: "Runs a Gno main package as the user, signed by a session key (gnokey maketx run " +
-			"--master). The session must allow vm/run.",
+		Description: "Runs a Gno main package as the user, signed by a session key. " +
+			"The session must allow vm/run.",
 		InputSchema: objectSchema(txProps(map[string]any{
 			"code": stringProp("Source of a single-file package main with func main()."),
 			"send": stringProp(`Coins to send with the run, e.g. "1000ugnot".`),
@@ -119,27 +128,31 @@ func registerRun(r *server.Registry, d *Deps) {
 				return server.Result{}, err
 			}
 
-			send, err := server.StringArg(args, "send")
+			if !mainPackagePattern.MatchString(code) {
+				return server.Result{}, server.InvalidArg("code", "must declare package main")
+			}
+
+			send, err := coinsArg(args, "send")
 			if err != nil {
 				return server.Result{}, err
 			}
 
-			dir, err := os.MkdirTemp("", "adena-mcp-run-")
+			maxDeposit, err := coinsArg(args, "max_deposit")
 			if err != nil {
-				return server.Result{}, fmt.Errorf("create run directory: %w", err)
+				return server.Result{}, err
 			}
 
-			defer func() { _ = os.RemoveAll(dir) }()
-
-			file := filepath.Join(dir, "main.gno")
-			if err := os.WriteFile(file, []byte(code), 0o600); err != nil {
-				return server.Result{}, fmt.Errorf("write run file: %w", err)
-			}
-
-			return writeTx(ctx, d, args, session.RouteRun, "", gnokey.TxOptions{
-				Kind: gnokey.TxRun,
-				File: file,
-				Send: send,
+			return writeTx(ctx, d, args, session.RouteRun, "", "run", func(master crypto.Address) (std.Msg, error) {
+				return vm.MsgRun{
+					Caller:     master,
+					Send:       send,
+					MaxDeposit: maxDeposit,
+					// The handler fills in the ephemeral package path.
+					Package: &std.MemPackage{
+						Name:  "main",
+						Files: []*std.MemFile{{Name: "main.gno", Body: code}},
+					},
+				}, nil
 			})
 		},
 	})
@@ -148,8 +161,8 @@ func registerRun(r *server.Registry, d *Deps) {
 func registerSend(r *server.Registry, d *Deps) {
 	r.Add(&server.Tool{
 		Name: "adena_send",
-		Description: "Sends coins from the user's account, signed by a session key (gnokey maketx send " +
-			"--master). The session must allow bank/send.",
+		Description: "Sends coins from the user's account, signed by a session key. " +
+			"The session must allow bank/send.",
 		InputSchema: objectSchema(txProps(map[string]any{
 			"to":     stringProp("Recipient address."),
 			"amount": stringProp(`Coins to send, e.g. "1000000ugnot".`),
@@ -161,15 +174,22 @@ func registerSend(r *server.Registry, d *Deps) {
 				return server.Result{}, err
 			}
 
-			amount, err := server.RequiredStringArg(args, "amount")
+			recipient, err := crypto.AddressFromBech32(to)
+			if err != nil {
+				return server.Result{}, server.InvalidArg("to", err.Error())
+			}
+
+			amount, err := coinsArg(args, "amount")
 			if err != nil {
 				return server.Result{}, err
 			}
 
-			return writeTx(ctx, d, args, session.RouteSend, "", gnokey.TxOptions{
-				Kind: gnokey.TxSend,
-				To:   to,
-				Send: amount,
+			if amount.Empty() {
+				return server.Result{}, server.InvalidArg("amount", "required")
+			}
+
+			return writeTx(ctx, d, args, session.RouteSend, "", "send", func(master crypto.Address) (std.Msg, error) {
+				return bank.MsgSend{FromAddress: master, ToAddress: recipient, Amount: amount}, nil
 			})
 		},
 	})
@@ -179,16 +199,26 @@ func writeTx(
 	ctx context.Context,
 	d *Deps,
 	args map[string]any,
-	route, pkgPath string,
-	opts gnokey.TxOptions,
+	route, pkgPath, kind string,
+	msg func(master crypto.Address) (std.Msg, error),
 ) (server.Result, error) {
-	record, err := selectSession(d, args, route, pkgPath)
+	record, key, err := selectSession(d, args, route, pkgPath)
 	if err != nil {
 		return server.Result{}, err
 	}
 
-	if argErr := applyCommonTxArgs(args, &opts); argErr != nil {
-		return server.Result{}, argErr
+	gasWanted, err := server.IntArg(args, "gas_wanted", 0)
+	if err != nil {
+		return server.Result{}, err
+	}
+
+	if gasWanted < 0 {
+		return server.Result{}, server.InvalidArg("gas_wanted", "must be positive")
+	}
+
+	gasFee, err := server.StringArg(args, "gas_fee")
+	if err != nil {
+		return server.Result{}, err
 	}
 
 	simulateOnly, err := server.BoolArg(args, "simulate", false)
@@ -196,19 +226,17 @@ func writeTx(
 		return server.Result{}, err
 	}
 
-	opts.KeyName = record.KeyName
-	opts.Password = record.Password
-	opts.Master = record.MasterAddress
-	opts.Remote = record.RPCURL
-	opts.ChainID = record.ChainID
-
-	if gasErr := sizeGas(ctx, d, &opts); gasErr != nil {
-		return server.Result{}, gasErr
-	}
-
-	opts.Simulate = simulateOnly
-
-	result, err := d.Gnokey.MakeTx(ctx, opts)
+	result, err := d.Chain.Execute(ctx, chain.TxRequest{
+		Signer:     key,
+		Msg:        msg,
+		RPCURL:     record.RPCURL,
+		ChainID:    record.ChainID,
+		Master:     record.MasterAddress,
+		GasFee:     gasFee,
+		GasWanted:  gasWanted,
+		GasCeiling: d.Config.GasCeiling,
+		Simulate:   simulateOnly,
+	})
 	if err != nil {
 		return server.Result{}, txError(err)
 	}
@@ -218,95 +246,94 @@ func writeTx(
 		verb = "Simulated"
 	}
 
-	text := fmt.Sprintf("%s %s. Signed by session %s on behalf of %s.\nGas wanted %d, fee %s.\n%s",
-		verb, opts.Kind, record.SessionAddress, record.MasterAddress, opts.GasWanted, opts.GasFee,
-		strings.TrimSpace(result.Output))
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "%s %s. Signed by session %s on behalf of %s.\n",
+		verb, kind, record.SessionAddress, record.MasterAddress)
+	fmt.Fprintf(&b, "Gas wanted %d, used %d, fee %s.\n", result.GasWanted, result.GasUsed, result.GasFee)
+
+	if result.TxHash != "" {
+		fmt.Fprintf(&b, "Tx hash %s at height %d.\n", result.TxHash, result.Height)
+	}
+
+	if result.Data != "" {
+		fmt.Fprintf(&b, "Result: %s\n", strings.TrimSpace(result.Data))
+	}
 
 	return server.Result{
-		Text: text,
+		Text: b.String(),
 		StructuredContent: map[string]any{
-			"simulated":       simulateOnly,
+			"simulated":       result.Simulated,
 			"tx_hash":         result.TxHash,
 			"height":          result.Height,
-			"gas_wanted":      opts.GasWanted,
+			"gas_wanted":      result.GasWanted,
 			"gas_used":        result.GasUsed,
-			"gas_fee":         opts.GasFee,
+			"gas_fee":         result.GasFee,
+			"result":          result.Data,
 			"session_address": record.SessionAddress,
 			"master_address":  record.MasterAddress,
 		},
 	}, nil
 }
 
-func applyCommonTxArgs(args map[string]any, opts *gnokey.TxOptions) error {
-	gasWanted, err := server.IntArg(args, "gas_wanted", 0)
-	if err != nil {
-		return err
-	}
-
-	if gasWanted < 0 {
-		return server.InvalidArg("gas_wanted", "must be positive")
-	}
-
-	gasFee, err := server.StringArg(args, "gas_fee")
-	if err != nil {
-		return err
-	}
-
-	maxDeposit, err := server.StringArg(args, "max_deposit")
-	if err != nil {
-		return err
-	}
-
-	opts.GasWanted = gasWanted
-	opts.GasFee = gasFee
-	opts.MaxDeposit = maxDeposit
-
-	return nil
-}
-
-func selectSession(d *Deps, args map[string]any, route, pkgPath string) (session.Record, error) {
+func selectSession(d *Deps, args map[string]any, route, pkgPath string) (session.Record, *sessionkey.Key, error) {
 	address, err := server.StringArg(args, "session_address")
 	if err != nil {
-		return session.Record{}, err
+		return session.Record{}, nil, err
 	}
 
-	now := d.Now()
-
 	if address != "" {
-		record, getErr := d.Store.Get(address)
-		if getErr != nil {
-			return session.Record{}, &server.ToolError{
-				Code:    "session_unknown",
-				Message: "this server holds no session " + address,
-			}
-		}
-
-		if !record.Usable(now) {
-			return session.Record{}, &server.ToolError{
-				Code:    "session_expired",
-				Message: "session " + address + " is revoked or expired; create a new one with adena_session_create",
-			}
-		}
-
-		if !record.Allows(route, pkgPath) {
-			return session.Record{}, scopeError(route, pkgPath)
-		}
-
-		return record, nil
+		return pickSession(d, address, route, pkgPath)
 	}
 
 	records, err := d.Store.List()
 	if err != nil {
-		return session.Record{}, err
+		return session.Record{}, nil, err
 	}
 
 	for i := range records {
-		if records[i].Usable(now) && records[i].Allows(route, pkgPath) {
-			return records[i], nil
+		if !d.usable(&records[i]) || !records[i].Allows(route, pkgPath) {
+			continue
+		}
+
+		if key, ok := d.Keys.Get(records[i].SessionAddress); ok {
+			return records[i], key, nil
 		}
 	}
 
-	return session.Record{}, scopeError(route, pkgPath)
+	return session.Record{}, nil, scopeError(route, pkgPath)
+}
+
+func pickSession(d *Deps, address, route, pkgPath string) (session.Record, *sessionkey.Key, error) {
+	record, err := d.Store.Get(address)
+	if err != nil {
+		return session.Record{}, nil, &server.ToolError{
+			Code:    "session_unknown",
+			Message: "this server holds no session " + address,
+		}
+	}
+
+	key, held := d.Keys.Get(address)
+	if !held {
+		return session.Record{}, nil, &server.ToolError{
+			Code: "session_key_lost",
+			Message: "the key for session " + address + " was lost when the server restarted; revoke it " +
+				"with adena_session_revoke and create a new one",
+		}
+	}
+
+	if !record.Usable(d.Now()) {
+		return session.Record{}, nil, &server.ToolError{
+			Code:    "session_expired",
+			Message: "session " + address + " is revoked or expired; create a new one with adena_session_create",
+		}
+	}
+
+	if !record.Allows(route, pkgPath) {
+		return session.Record{}, nil, scopeError(route, pkgPath)
+	}
+
+	return record, key, nil
 }
 
 func scopeError(route, pkgPath string) *server.ToolError {
@@ -322,102 +349,34 @@ func scopeError(route, pkgPath string) *server.ToolError {
 	}
 }
 
-// sizeGas fills in the gas limit and fee the caller left out.
-func sizeGas(ctx context.Context, d *Deps, opts *gnokey.TxOptions) error {
-	if opts.GasWanted > 0 && opts.GasFee != "" {
-		return nil
-	}
-
-	p := gasPrice(ctx, d, opts.Remote)
-
-	if opts.GasWanted == 0 {
-		measure := *opts
-		measure.Simulate = true
-		measure.GasWanted = d.Config.GasCeiling
-		measure.GasFee = feeFor(d.Config.GasCeiling, p)
-
-		result, err := d.Gnokey.MakeTx(ctx, measure)
-		if err != nil {
-			return txError(err)
-		}
-
-		opts.GasWanted = max(result.GasUsed*3/2, minGasWanted)
-	}
-
-	if opts.GasFee == "" {
-		opts.GasFee = feeFor(opts.GasWanted, p)
-	}
-
-	return nil
-}
-
-// price is a gas price of amount ugnot per gas units.
-type price struct {
-	amount int64
-	gas    int64
-}
-
-var floorPrice = price{amount: floorPriceAmount, gas: floorPriceGas}
-
-// gasPrice reads the chain gas price, falling back to the genesis floor when
-// the query fails.
-func gasPrice(ctx context.Context, d *Deps, remote string) price {
-	data, err := d.Gnokey.Query(ctx, remote, "auth/gasprice")
-	if err != nil {
-		return floorPrice
-	}
-
-	var raw struct {
-		Price string          `json:"price"`
-		Gas   json.RawMessage `json:"gas"`
-	}
-
-	if json.Unmarshal([]byte(data), &raw) != nil {
-		return floorPrice
-	}
-
-	gasUnits, gasErr := strconv.ParseInt(strings.Trim(string(raw.Gas), `"`), 10, 64)
-	match := gasPricePattern.FindStringSubmatch(raw.Price)
-
-	if gasErr != nil || gasUnits <= 0 || match == nil {
-		return floorPrice
-	}
-
-	ugnot, parseErr := strconv.ParseInt(match[1], 10, 64)
-	if parseErr != nil || ugnot <= 0 {
-		return floorPrice
-	}
-
-	return price{amount: ugnot, gas: gasUnits}
-}
-
-func feeFor(gasWanted int64, p price) string {
-	fee := (gasWanted*p.amount + p.gas - 1) / p.gas
-
-	return strconv.FormatInt(max(fee, 1), 10) + "ugnot"
-}
-
 func txError(err error) error {
-	var cmdErr *gnokey.CommandError
-	if !errors.As(err, &cmdErr) {
-		return err
+	var spendErr *chain.SpendError
+	if errors.As(err, &spendErr) {
+		return &server.ToolError{
+			Code:    "session_spend_limit",
+			Message: spendErr.Error() + "; create a session with a larger spend_limit",
+		}
 	}
 
-	output := strings.TrimSpace(cmdErr.Output)
-	lower := strings.ToLower(output)
-
-	switch {
-	case strings.Contains(lower, "session not allowed") || strings.Contains(lower, "not allowed by session"):
-		return &server.ToolError{
-			Code:    "session_scope",
-			Message: "the chain refused the session for this message (scope or spend limit): " + output,
-		}
-	case strings.Contains(lower, "expired"):
+	if errors.Is(err, chain.ErrSessionNotFound) {
 		return &server.ToolError{
 			Code:    "session_expired",
-			Message: "the session has expired on chain: " + output,
+			Message: "the chain no longer holds this session (revoked or expired); create a new one",
 		}
-	default:
-		return &server.ToolError{Code: "transaction_failed", Message: output}
 	}
+
+	var txErr *chain.TxError
+	if errors.As(err, &txErr) {
+		lower := strings.ToLower(txErr.Error())
+		if strings.Contains(lower, "session not allowed") || strings.Contains(lower, "not allowed by session") {
+			return &server.ToolError{
+				Code:    "session_scope",
+				Message: "the chain refused the session for this message: " + txErr.Error(),
+			}
+		}
+
+		return &server.ToolError{Code: "transaction_failed", Message: txErr.Error()}
+	}
+
+	return err
 }

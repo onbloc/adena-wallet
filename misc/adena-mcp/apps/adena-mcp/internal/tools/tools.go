@@ -3,16 +3,16 @@ package tools
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"time"
 
+	"github.com/gnolang/gno/tm2/pkg/std"
+
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/chain"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/config"
-	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/gnokey"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/server"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/session"
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/sessionkey"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/bridge"
 )
 
@@ -21,18 +21,17 @@ type Bridge interface {
 	Call(ctx context.Context, method string, params, out any) error
 }
 
-// Gnokey is the subset of the gnokey CLI the tools use.
-type Gnokey interface {
-	AddKey(ctx context.Context, name, password string) (gnokey.Key, error)
-	DeleteKey(ctx context.Context, name string) error
-	MakeTx(ctx context.Context, opts gnokey.TxOptions) (gnokey.TxResult, error)
-	Query(ctx context.Context, remote, path string) (string, error)
+// Chain signs and broadcasts session transactions and reads session state.
+type Chain interface {
+	Execute(ctx context.Context, req chain.TxRequest) (chain.TxResult, error)
+	SessionAccount(ctx context.Context, rpcURL, master, session string) (*std.BaseSessionAccount, error)
 }
 
 // Deps are the collaborators shared by every tool.
 type Deps struct {
 	Bridge Bridge
-	Gnokey Gnokey
+	Chain  Chain
+	Keys   *sessionkey.Keyring
 	Store  *session.Store
 	Now    func() time.Time
 	Config config.Config
@@ -80,16 +79,16 @@ func bridgeError(err error) error {
 	}
 }
 
-func randomHex(n int) (string, error) {
-	buf := make([]byte, n)
-	if _, err := rand.Read(buf); err != nil {
-		return "", fmt.Errorf("generate random bytes: %w", err)
-	}
+// usable reports whether this process can sign with the session now.
+func (d *Deps) usable(r *session.Record) bool {
+	_, held := d.Keys.Get(r.SessionAddress)
 
-	return hex.EncodeToString(buf), nil
+	return held && r.Usable(d.Now())
 }
 
-func publicRecord(r *session.Record, now time.Time) map[string]any {
+func (d *Deps) publicRecord(r *session.Record) map[string]any {
+	_, held := d.Keys.Get(r.SessionAddress)
+
 	return map[string]any{
 		"session_address": r.SessionAddress,
 		"master_address":  r.MasterAddress,
@@ -98,11 +97,16 @@ func publicRecord(r *session.Record, now time.Time) map[string]any {
 		"allow_paths":     r.AllowPaths,
 		"spend_limit":     r.SpendLimit,
 		"spend_period":    r.SpendPeriod,
-		"expires_at":      time.Unix(r.ExpiresAt, 0).UTC().Format(time.RFC3339),
+		"expires_at":      formatTime(r.ExpiresAt),
 		"status":          r.Status,
-		"usable":          r.Usable(now),
+		"key_held":        held,
+		"usable":          held && r.Usable(d.Now()),
 		"tx_hash":         r.TxHash,
 	}
+}
+
+func formatTime(unix int64) string {
+	return time.Unix(unix, 0).UTC().Format(time.RFC3339)
 }
 
 func objectSchema(props map[string]any, required ...string) map[string]any {

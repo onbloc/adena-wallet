@@ -1,5 +1,6 @@
-// Package session stores the session keys this MCP server created, so later
-// writes and the final revoke can find them.
+// Package session stores public metadata about the sessions this MCP server
+// created: addresses, public keys and the approved scope. It never holds key
+// material, so the file reveals nothing that can sign.
 package session
 
 import (
@@ -32,11 +33,8 @@ const filePerm = 0o600
 // ErrNotFound means no stored session matches.
 var ErrNotFound = errors.New("session not found")
 
-// Record is one session key and the scope the user approved. Password
-// protects the gnokey keybase entry; the file holding it is owner-only.
+// Record is one session and the scope the user approved.
 type Record struct {
-	KeyName          string   `json:"key_name"`
-	Password         string   `json:"password"`
 	SessionAddress   string   `json:"session_address"`
 	SessionPublicKey string   `json:"session_public_key"`
 	MasterAddress    string   `json:"master_address"`
@@ -134,6 +132,24 @@ func (s *Store) Put(record Record) error {
 
 	records = slices.DeleteFunc(records, func(r Record) bool { return r.SessionAddress == record.SessionAddress })
 	records = append(records, record)
+
+	return s.save(records)
+}
+
+// Scrub rewrites the file so fields earlier versions stored, such as keybase
+// passwords, are dropped.
+func (s *Store) Scrub() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, err := os.Stat(s.path); errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+
+	records, err := s.load()
+	if err != nil {
+		return err
+	}
 
 	return s.save(records)
 }

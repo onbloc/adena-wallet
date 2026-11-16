@@ -2,25 +2,28 @@ package tools
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/gnolang/gno/gno.land/pkg/sdk/vm"
+	"github.com/gnolang/gno/tm2/pkg/crypto"
+	"github.com/gnolang/gno/tm2/pkg/std"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/chain"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/config"
-	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/gnokey"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/server"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/session"
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/sessionkey"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/bridge"
 )
-
-const testPubKey = "gpub1pgfj7ard9eg82cjtv4u4xetrwqer2dntxyfzxz3pqf4w3gn7lyh333vmh7jaek2gt88tm860" +
-	"sl49qdfkn6dqkpqwexs6w7hv9qd"
 
 var testNow = time.Unix(1_800_000_000, 0)
 
@@ -68,55 +71,44 @@ func (f *fakeBridge) Call(_ context.Context, method string, params, out any) err
 	return json.Unmarshal(data, out)
 }
 
-type fakeGnokey struct {
-	deleted []string
-	txs     []gnokey.TxOptions
-	queries []string
-	mu      sync.Mutex
+type fakeChain struct {
+	missing  map[string]bool
+	requests []chain.TxRequest
+	mu       sync.Mutex
 }
 
-func (f *fakeGnokey) AddKey(_ context.Context, name, _ string) (gnokey.Key, error) {
-	return gnokey.Key{Name: name, Address: "g1session", PubKey: testPubKey}, nil
-}
-
-func (f *fakeGnokey) DeleteKey(_ context.Context, name string) error {
+func (f *fakeChain) Execute(_ context.Context, req chain.TxRequest) (chain.TxResult, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	f.deleted = append(f.deleted, name)
+	f.requests = append(f.requests, req)
 
-	return nil
-}
-
-func (f *fakeGnokey) MakeTx(_ context.Context, opts gnokey.TxOptions) (gnokey.TxResult, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
-	f.txs = append(f.txs, opts)
-
-	if opts.Simulate {
-		return gnokey.TxResult{GasUsed: 200_000}, nil
+	if _, err := req.Msg(crypto.Address{}); err != nil {
+		return chain.TxResult{}, err
 	}
 
-	return gnokey.TxResult{TxHash: "txhash", Height: 7, GasUsed: 190_000}, nil
+	if _, err := req.Signer.Sign([]byte("probe")); err != nil {
+		return chain.TxResult{}, err
+	}
+
+	return chain.TxResult{TxHash: "txhash", Height: 7, GasWanted: 300_000, GasUsed: 200_000, GasFee: "300ugnot"}, nil
 }
 
-func (f *fakeGnokey) Query(_ context.Context, _, path string) (string, error) {
+func (f *fakeChain) SessionAccount(_ context.Context, _, _, session string) (*std.BaseSessionAccount, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	f.queries = append(f.queries, path)
-
-	if path == "auth/gasprice" {
-		return `{"gas":1000,"price":"2ugnot"}`, nil
+	if f.missing[session] {
+		return nil, chain.ErrSessionNotFound
 	}
 
-	return "", &gnokey.CommandError{Op: "query", Err: errors.New("exit 1"), Output: "session not found"}
+	return &std.BaseSessionAccount{}, nil
 }
 
 type testEnv struct {
 	bridge *fakeBridge
-	gnokey *fakeGnokey
+	chain  *fakeChain
+	keys   *sessionkey.Keyring
 	store  *session.Store
 	tools  map[string]*server.Tool
 }
@@ -126,7 +118,8 @@ func newEnv(t *testing.T) *testEnv {
 
 	env := &testEnv{
 		bridge: &fakeBridge{},
-		gnokey: &fakeGnokey{},
+		chain:  &fakeChain{missing: map[string]bool{}},
+		keys:   sessionkey.NewKeyring(),
 		store:  session.NewStore(filepath.Join(t.TempDir(), "sessions.json")),
 		tools:  map[string]*server.Tool{},
 	}
@@ -134,7 +127,8 @@ func newEnv(t *testing.T) *testEnv {
 	registry := server.NewRegistry()
 	Register(registry, &Deps{
 		Bridge: env.bridge,
-		Gnokey: env.gnokey,
+		Chain:  env.chain,
+		Keys:   env.keys,
 		Store:  env.store,
 		Now:    func() time.Time { return testNow },
 		Config: config.Config{ApprovalTimeout: time.Minute, GasCeiling: 10_000_000},
@@ -172,7 +166,7 @@ func TestSessionCreateStoresApprovedSession(t *testing.T) {
 
 	env := newEnv(t)
 
-	_, err := env.call(t, "adena_session_create", map[string]any{
+	res, err := env.call(t, "adena_session_create", map[string]any{
 		"allow_paths": []any{"vm/exec:gno.land/r/demo/counter"},
 		"expires_in":  "30m",
 	})
@@ -189,21 +183,27 @@ func TestSessionCreateStoresApprovedSession(t *testing.T) {
 		t.Fatalf("unexpected request %+v", sent)
 	}
 
-	if sent.SessionPublicKey != "Amroon75LxjFm7+l3NlIWc69n0+H6lA1Np6aCwQOyaGn" {
-		t.Fatalf("unexpected public key %q", sent.SessionPublicKey)
+	address, ok := res.StructuredContent["session_address"].(string)
+	if !ok {
+		t.Fatalf("no session address in %+v", res.StructuredContent)
 	}
 
-	record, err := env.store.Get("g1session")
+	key, held := env.keys.Get(address)
+	if !held || base64.StdEncoding.EncodeToString(key.PublicKey()) != sent.SessionPublicKey {
+		t.Fatal("the authorized public key must belong to the held key")
+	}
+
+	record, err := env.store.Get(address)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if record.MasterAddress != "g1master" || record.RPCURL != "http://rpc" || record.Password == "" {
+	if record.MasterAddress != "g1master" || record.RPCURL != "http://rpc" {
 		t.Fatalf("unexpected record %+v", record)
 	}
 }
 
-func TestSessionCreateDeletesKeyWhenRejected(t *testing.T) {
+func TestSessionCreateDestroysKeyWhenRejected(t *testing.T) {
 	t.Parallel()
 
 	env := newEnv(t)
@@ -216,13 +216,35 @@ func TestSessionCreateDeletesKeyWhenRejected(t *testing.T) {
 		t.Fatalf("got %v, want user_rejected", err)
 	}
 
-	if len(env.gnokey.deleted) != 1 {
-		t.Fatalf("the unauthorized key must be deleted, deleted=%v", env.gnokey.deleted)
-	}
-
 	records, err := env.store.List()
 	if err != nil || len(records) != 0 {
 		t.Fatalf("nothing should be stored, got %+v %v", records, err)
+	}
+}
+
+func TestStoredRecordsHoldNoKeyMaterial(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+
+	if _, err := env.call(t, "adena_session_create", map[string]any{"allow_paths": []any{"bank/send"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	records, err := env.store.List()
+	if err != nil || len(records) != 1 {
+		t.Fatalf("got %+v %v", records, err)
+	}
+
+	data, err := json.Marshal(records[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, field := range []string{"password", "key_name", "private", "mnemonic"} {
+		if strings.Contains(string(data), field) {
+			t.Fatalf("record contains %q: %s", field, data)
+		}
 	}
 }
 
@@ -240,17 +262,18 @@ func TestSessionCreateRejectsLongLifetime(t *testing.T) {
 	}
 }
 
-const testSession = "g1session"
-
-func putSession(t *testing.T, env *testEnv, allowPaths ...string) {
+func putSession(t *testing.T, env *testEnv, allowPaths ...string) string {
 	t.Helper()
 
-	address := testSession
+	key, err := sessionkey.Generate()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	env.keys.Put(key)
 
 	if err := env.store.Put(session.Record{
-		KeyName:        "key-" + address,
-		Password:       "pw",
-		SessionAddress: address,
+		SessionAddress: key.Address(),
 		MasterAddress:  "g1master",
 		ChainID:        "dev",
 		RPCURL:         "http://rpc",
@@ -261,35 +284,44 @@ func putSession(t *testing.T, env *testEnv, allowPaths ...string) {
 	}); err != nil {
 		t.Fatal(err)
 	}
+
+	return key.Address()
 }
 
-func TestCallMeasuresGasAndSignsWithMaster(t *testing.T) {
+func TestCallSignsWithSessionOnBehalfOfMaster(t *testing.T) {
 	t.Parallel()
 
 	env := newEnv(t)
-	putSession(t, env, "vm/exec:gno.land/r/demo")
+	address := putSession(t, env, "vm/exec:gno.land/r/demo")
 
 	res, err := env.call(t, "adena_call", map[string]any{
 		"pkg_path": "gno.land/r/demo/counter",
 		"func":     "Incr",
 		"args":     []any{"1"},
+		"send":     "5ugnot",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(env.gnokey.txs) != 2 || !env.gnokey.txs[0].Simulate || env.gnokey.txs[1].Simulate {
-		t.Fatalf("want a simulation then a broadcast, got %+v", env.gnokey.txs)
+	if len(env.chain.requests) != 1 {
+		t.Fatalf("got %d requests", len(env.chain.requests))
 	}
 
-	broadcast := env.gnokey.txs[1]
-	if broadcast.Master != "g1master" || broadcast.KeyName != "key-g1session" || broadcast.GasWanted != 300_000 {
-		t.Fatalf("unexpected broadcast %+v", broadcast)
+	req := env.chain.requests[0]
+	if req.Master != "g1master" || req.Signer.Address() != address || req.GasWanted != 0 || req.GasCeiling != 10_000_000 {
+		t.Fatalf("unexpected request %+v", req)
 	}
 
-	// 300000 gas at 2ugnot per 1000 gas.
-	if broadcast.GasFee != "600ugnot" {
-		t.Fatalf("got fee %s", broadcast.GasFee)
+	msg, err := req.Msg(crypto.Address{1})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	call, ok := msg.(vm.MsgCall)
+	if !ok || call.Caller != (crypto.Address{1}) || call.PkgPath != "gno.land/r/demo/counter" ||
+		call.Send.String() != "5ugnot" {
+		t.Fatalf("unexpected message %#v", msg)
 	}
 
 	if res.StructuredContent["tx_hash"] != "txhash" {
@@ -308,12 +340,12 @@ func TestCallRequiresMatchingSession(t *testing.T) {
 		t.Fatalf("got %v, want session_required", err)
 	}
 
-	if len(env.gnokey.txs) != 0 {
+	if len(env.chain.requests) != 0 {
 		t.Fatal("nothing must be signed without a matching session")
 	}
 }
 
-func TestCallSkipsMeasurementWhenGasGiven(t *testing.T) {
+func TestCallPassesExplicitGas(t *testing.T) {
 	t.Parallel()
 
 	env := newEnv(t)
@@ -329,8 +361,44 @@ func TestCallSkipsMeasurementWhenGasGiven(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(env.gnokey.txs) != 1 || env.gnokey.txs[0].GasFee != "50ugnot" {
-		t.Fatalf("got %+v", env.gnokey.txs)
+	if req := env.chain.requests[0]; req.GasWanted != 50_000 || req.GasFee != "50ugnot" {
+		t.Fatalf("got %+v", req)
+	}
+}
+
+func TestCallReportsLostKey(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	address := putSession(t, env, "vm/exec")
+	env.keys.Destroy(address)
+
+	_, err := env.call(t, "adena_call", map[string]any{
+		"pkg_path": "gno.land/r/x", "func": "F", "session_address": address,
+	})
+	if toolErrorCode(err) != "session_key_lost" {
+		t.Fatalf("got %v, want session_key_lost", err)
+	}
+}
+
+func TestRunRequiresMainPackage(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	putSession(t, env, "vm/run")
+
+	_, err := env.call(t, "adena_run", map[string]any{"code": "package foo\nfunc main() {}\n"})
+	if toolErrorCode(err) != "invalid_argument" {
+		t.Fatalf("got %v, want invalid_argument", err)
+	}
+}
+
+func TestTxErrorMapsSpendLimit(t *testing.T) {
+	t.Parallel()
+
+	err := txError(&chain.SpendError{Outflow: "10ugnot", Limit: "5ugnot", Used: "0ugnot"})
+	if toolErrorCode(err) != "session_spend_limit" {
+		t.Fatalf("got %v", err)
 	}
 }
 
@@ -340,27 +408,34 @@ func TestSendRequiresBankSend(t *testing.T) {
 	env := newEnv(t)
 	putSession(t, env, "vm/exec")
 
-	_, err := env.call(t, "adena_send", map[string]any{"to": "g1dest", "amount": "1ugnot"})
+	_, err := env.call(t, "adena_send", map[string]any{
+		"to": "g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5", "amount": "1ugnot",
+	})
 	if toolErrorCode(err) != "session_required" {
 		t.Fatalf("got %v, want session_required", err)
 	}
 }
 
-func TestRevokeDeletesKeyAfterApproval(t *testing.T) {
+func TestRevokeDestroysKeyAfterApproval(t *testing.T) {
 	t.Parallel()
 
 	env := newEnv(t)
-	putSession(t, env, "vm/exec")
+	address := putSession(t, env, "vm/exec")
+	key, _ := env.keys.Get(address)
 
-	if _, err := env.call(t, "adena_session_revoke", map[string]any{"session_address": "g1session"}); err != nil {
+	if _, err := env.call(t, "adena_session_revoke", map[string]any{"session_address": address}); err != nil {
 		t.Fatal(err)
 	}
 
-	if len(env.gnokey.deleted) != 1 || env.gnokey.deleted[0] != "key-g1session" {
-		t.Fatalf("deleted %v", env.gnokey.deleted)
+	if _, held := env.keys.Get(address); held {
+		t.Fatal("key must leave the keyring")
 	}
 
-	if _, err := env.store.Get("g1session"); !errors.Is(err, session.ErrNotFound) {
+	if _, err := key.Sign([]byte("x")); !errors.Is(err, sessionkey.ErrDestroyed) {
+		t.Fatalf("revoked key must not sign, got %v", err)
+	}
+
+	if _, err := env.store.Get(address); !errors.Is(err, session.ErrNotFound) {
 		t.Fatalf("record must be removed, got %v", err)
 	}
 }
@@ -369,18 +444,18 @@ func TestRevokeKeepsKeyWhenRejected(t *testing.T) {
 	t.Parallel()
 
 	env := newEnv(t)
-	putSession(t, env, "vm/exec")
+	address := putSession(t, env, "vm/exec")
 	env.bridge.errs = map[string]error{
 		bridge.MethodRevokeSession: &bridge.Error{Code: bridge.CodeRejected, Message: "no"},
 	}
 
-	_, err := env.call(t, "adena_session_revoke", map[string]any{"session_address": "g1session"})
+	_, err := env.call(t, "adena_session_revoke", map[string]any{"session_address": address})
 	if toolErrorCode(err) != "user_rejected" {
 		t.Fatalf("got %v", err)
 	}
 
-	if len(env.gnokey.deleted) != 0 {
-		t.Fatal("a still-active session key must not be deleted")
+	if _, held := env.keys.Get(address); !held {
+		t.Fatal("a still-active session key must be kept")
 	}
 }
 
@@ -388,13 +463,14 @@ func TestListRefreshMarksMissingSessionsRevoked(t *testing.T) {
 	t.Parallel()
 
 	env := newEnv(t)
-	putSession(t, env, "vm/exec")
+	address := putSession(t, env, "vm/exec")
+	env.chain.missing[address] = true
 
 	if _, err := env.call(t, "adena_session_list", map[string]any{"refresh": true}); err != nil {
 		t.Fatal(err)
 	}
 
-	record, err := env.store.Get("g1session")
+	record, err := env.store.Get(address)
 	if err != nil || record.Status != session.StatusRevoked {
 		t.Fatalf("got %+v %v", record, err)
 	}
@@ -418,19 +494,16 @@ func TestStatusReportsUnreachableHost(t *testing.T) {
 	}
 }
 
-func TestFeeFor(t *testing.T) {
-	t.Parallel()
-
-	if got := feeFor(1_000_001, floorPrice); got != "1001ugnot" {
-		t.Fatalf("fee must round up, got %s", got)
-	}
-}
-
 func TestAllToolsPublish(t *testing.T) {
 	t.Parallel()
 
 	registry := server.NewRegistry()
-	Register(registry, &Deps{Bridge: &fakeBridge{}, Gnokey: &fakeGnokey{}, Store: session.NewStore(t.TempDir())})
+	Register(registry, &Deps{
+		Bridge: &fakeBridge{},
+		Chain:  &fakeChain{},
+		Keys:   sessionkey.NewKeyring(),
+		Store:  session.NewStore(t.TempDir()),
+	})
 
 	srv := mcp.NewServer(&mcp.Implementation{Name: "t"}, nil)
 	if err := registry.Publish(srv, slog.New(slog.DiscardHandler)); err != nil {

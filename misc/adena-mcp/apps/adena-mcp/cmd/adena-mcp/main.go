@@ -1,7 +1,8 @@
 // Command adena-mcp is an MCP server over stdio that lets an AI agent act on
 // gno.land as the Adena user through session accounts. The user authorizes
-// and revokes each session in Adena; the agent signs with the session key via
-// gnokey and never sees the user's master key.
+// and revokes each session in Adena. Session keys are generated in locked
+// memory without a seed phrase, sign in process, and are never stored, logged
+// or shown to the agent.
 package main
 
 import (
@@ -14,10 +15,12 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/chain"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/config"
-	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/gnokey"
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/hardening"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/server"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/session"
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/sessionkey"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/tools"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/bridge"
@@ -37,8 +40,9 @@ const instructions = "adena-mcp lets you act on gno.land as the user of the Aden
 	"- Write with adena_call, adena_run or adena_send. The chain sees the user's address as the caller. " +
 	"Gas fees are charged against the session spend limit.\n" +
 	"- When the task is done, call adena_session_revoke. The user approves the revocation in Adena.\n" +
-	"- Never ask the user for a seed phrase or private key. Deploying packages (addpkg) is not " +
-	"possible with a session.\n" +
+	"- Never ask the user for a seed phrase or private key. Session keys have none, live only in " +
+	"this server's memory and are lost on restart; revoke such sessions and create new ones. " +
+	"Deploying packages (addpkg) is not possible with a session.\n" +
 	"- If Adena is unreachable, ask the user to open the browser, unlock Adena and enable " +
 	"Settings > Security & Privacy > AI Agent Connection, and to install the agent host " +
 	"(adena-agent-host install) once."
@@ -61,22 +65,36 @@ func run() error {
 	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(log)
 
+	// Applied before any key exists, so no key is ever in a dumpable process.
+	if err := hardening.Apply(); err != nil {
+		log.Warn("process hardening incomplete", "error", err)
+	}
+
 	conf, err := config.Load()
 	if err != nil {
 		return err
 	}
 
-	for _, dir := range []string{conf.Home, conf.DataDir, conf.KeybaseDir()} {
+	for _, dir := range []string{conf.Home, conf.DataDir} {
 		if err := agentpath.EnsureDir(dir); err != nil {
 			return err
 		}
 	}
 
+	store := session.NewStore(conf.SessionsFile())
+	if err := removeLegacySecrets(conf, store, log); err != nil {
+		return err
+	}
+
+	keys := sessionkey.NewKeyring()
+	defer keys.DestroyAll()
+
 	registry := server.NewRegistry()
 	tools.Register(registry, &tools.Deps{
 		Bridge: &bridge.Client{SocketPath: conf.SocketPath()},
-		Gnokey: gnokey.New(conf.GnokeyBin, conf.KeybaseDir()),
-		Store:  session.NewStore(conf.SessionsFile()),
+		Chain:  chain.NewClient(),
+		Keys:   keys,
+		Store:  store,
 		Config: conf,
 	})
 
@@ -93,4 +111,19 @@ func run() error {
 	defer stop()
 
 	return mcpServer.Run(ctx, &mcp.StdioTransport{})
+}
+
+// removeLegacySecrets deletes the gnokey keybase and keybase passwords that
+// earlier versions stored on disk.
+func removeLegacySecrets(conf config.Config, store *session.Store, log *slog.Logger) error {
+	if _, err := os.Stat(conf.LegacyKeybaseDir()); err == nil {
+		if err := os.RemoveAll(conf.LegacyKeybaseDir()); err != nil {
+			return fmt.Errorf("remove legacy keybase: %w", err)
+		}
+
+		log.Warn("removed session keys stored by an earlier version; revoke their sessions in Adena",
+			"path", conf.LegacyKeybaseDir())
+	}
+
+	return store.Scrub()
 }

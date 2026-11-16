@@ -9,23 +9,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/chain"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/config"
-	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/gnokey"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/server"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/session"
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/sessionkey"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/bridge"
 )
-
-// Bounded cleanup after the caller's context is gone.
-const cleanupTimeout = 30 * time.Second
 
 func registerSessionCreate(r *server.Registry, d *Deps) {
 	r.Add(&server.Tool{
 		Name: "adena_session_create",
 		Description: "Creates a session key and asks the user to authorize it in Adena. The user " +
-			"reviews and signs the session with their master account; the private key never leaves " +
-			"this server. Blocks until the user approves or rejects. Keep allow_paths narrow, the " +
-			"spend limit low and the lifetime short. spend_limit also pays gas for every write.",
+			"reviews and signs the session with their master account. The key has no seed phrase, " +
+			"exists only in this server's locked memory and is never shown to anyone, so it is lost " +
+			"when the server restarts. Blocks until the user approves or rejects. Keep allow_paths " +
+			"narrow, the spend limit low and the lifetime short. spend_limit also pays gas for every write.",
 		InputSchema: objectSchema(map[string]any{
 			"allow_paths": map[string]any{
 				"type":     "array",
@@ -139,33 +138,21 @@ func sessionCreateHandler(ctx context.Context, d *Deps, args map[string]any) (se
 		return server.Result{}, bridgeError(callErr)
 	}
 
-	suffix, err := randomHex(4)
-	if err != nil {
-		return server.Result{}, err
-	}
-
-	password, err := randomHex(16)
+	key, err := sessionkey.Generate()
 	if err != nil {
 		return server.Result{}, err
 	}
 
 	now := d.Now()
-	keyName := fmt.Sprintf("session-%d-%s", now.Unix(), suffix)
-
-	key, err := d.Gnokey.AddKey(ctx, keyName, password)
-	if err != nil {
-		return server.Result{}, err
-	}
 
 	record, err := authorizeKey(approvalCtx, d, key, &account, in, now)
 	if err != nil {
-		cleanupCtx, cleanupCancel := context.WithTimeout(context.WithoutCancel(ctx), cleanupTimeout)
-		defer cleanupCancel()
+		key.Destroy()
 
-		return server.Result{}, errors.Join(err, d.Gnokey.DeleteKey(cleanupCtx, keyName))
+		return server.Result{}, err
 	}
 
-	record.Password = password
+	d.Keys.Put(key)
 
 	if err := d.Store.Put(record); err != nil {
 		return server.Result{}, fmt.Errorf("the session is live on chain but could not be saved: %w", err)
@@ -175,26 +162,21 @@ func sessionCreateHandler(ctx context.Context, d *Deps, args map[string]any) (se
 
 	fmt.Fprintf(&b, "Session %s authorized by %s on %s.\n", record.SessionAddress, record.MasterAddress, record.ChainID)
 	fmt.Fprintf(&b, "Allow paths: %v. Spend limit: %s. Expires: %s.\n",
-		record.AllowPaths, record.SpendLimit, time.Unix(record.ExpiresAt, 0).UTC().Format(time.RFC3339))
+		record.AllowPaths, record.SpendLimit, formatTime(record.ExpiresAt))
 	b.WriteString("Use adena_call, adena_run or adena_send to act as the user, and adena_session_revoke when done.\n")
 
-	return server.Result{Text: b.String(), StructuredContent: publicRecord(&record, now)}, nil
+	return server.Result{Text: b.String(), StructuredContent: d.publicRecord(&record)}, nil
 }
 
 func authorizeKey(
 	ctx context.Context,
 	d *Deps,
-	key gnokey.Key,
+	key *sessionkey.Key,
 	account *bridge.Account,
 	in createArgs,
 	now time.Time,
 ) (session.Record, error) {
-	pub, err := gnokey.CompressedPubKey(key.PubKey)
-	if err != nil {
-		return session.Record{}, err
-	}
-
-	publicKey := base64.StdEncoding.EncodeToString(pub)
+	publicKey := base64.StdEncoding.EncodeToString(key.PublicKey())
 	expiresAt := now.Add(in.expiresIn).Unix()
 
 	var tx bridge.SessionTxResult
@@ -215,8 +197,7 @@ func authorizeKey(
 	}
 
 	return session.Record{
-		KeyName:          key.Name,
-		SessionAddress:   key.Address,
+		SessionAddress:   key.Address(),
 		SessionPublicKey: publicKey,
 		MasterAddress:    master,
 		ChainID:          account.ChainID,
@@ -257,12 +238,11 @@ func sessionListHandler(ctx context.Context, d *Deps, args map[string]any) (serv
 		return server.Result{}, err
 	}
 
-	now := d.Now()
 	out := make([]map[string]any, 0, len(records))
 
 	for i := range records {
 		r := &records[i]
-		entry := publicRecord(r, now)
+		entry := d.publicRecord(r)
 
 		if refresh {
 			onChain, queryErr := querySession(ctx, d, r)
@@ -276,7 +256,7 @@ func sessionListHandler(ctx context.Context, d *Deps, args map[string]any) (serv
 					return server.Result{}, putErr
 				}
 
-				entry = publicRecord(r, now)
+				entry = d.publicRecord(r)
 			}
 
 			entry["on_chain"] = onChain
@@ -295,28 +275,21 @@ func sessionListHandler(ctx context.Context, d *Deps, args map[string]any) (serv
 
 // querySession reports whether the chain still holds the session.
 func querySession(ctx context.Context, d *Deps, r *session.Record) (bool, error) {
-	path := fmt.Sprintf("auth/accounts/%s/session/%s", r.MasterAddress, r.SessionAddress)
-
-	data, err := d.Gnokey.Query(ctx, r.RPCURL, path)
-	if err != nil {
-		var cmdErr *gnokey.CommandError
-		if errors.As(err, &cmdErr) && strings.Contains(strings.ToLower(cmdErr.Output), "not found") {
-			return false, nil
-		}
-
-		return false, err
+	_, err := d.Chain.SessionAccount(ctx, r.RPCURL, r.MasterAddress, r.SessionAddress)
+	if errors.Is(err, chain.ErrSessionNotFound) {
+		return false, nil
 	}
 
-	return data != "" && data != "null", nil
+	return err == nil, err
 }
 
 func registerSessionRevoke(r *server.Registry, d *Deps) {
 	r.Add(&server.Tool{
 		Name: "adena_session_revoke",
-		Description: "Asks the user to revoke a session in Adena, then deletes the local session key. " +
-			"Call it when the task is done. Blocks until the user approves or rejects. With " +
-			"forget_only=true the local key is deleted without asking, for sessions that are already " +
-			"revoked or expired on chain.",
+		Description: "Asks the user to revoke a session in Adena, then destroys the session key. " +
+			"Call it when the task is done. Blocks until the user approves or rejects. Works for " +
+			"sessions whose key was lost in a restart too. With forget_only=true the record and key " +
+			"are dropped without asking, for sessions already revoked or expired on chain.",
 		InputSchema: objectSchema(map[string]any{
 			"session_address": stringProp("Address of the session, from adena_session_create or adena_session_list."),
 			"forget_only":     map[string]any{"type": "boolean", "description": "Only delete the local key."},
@@ -361,17 +334,15 @@ func sessionRevokeHandler(ctx context.Context, d *Deps, args map[string]any) (se
 		}
 	}
 
-	if err := d.Gnokey.DeleteKey(ctx, record.KeyName); err != nil {
-		return server.Result{}, fmt.Errorf("the session was revoked but its key could not be deleted: %w", err)
-	}
+	d.Keys.Destroy(address)
 
 	if err := d.Store.Delete(address); err != nil {
 		return server.Result{}, err
 	}
 
-	text := fmt.Sprintf("Session %s revoked by %s and its key deleted.", address, record.MasterAddress)
+	text := fmt.Sprintf("Session %s revoked by %s and its key destroyed.", address, record.MasterAddress)
 	if forgetOnly {
-		text = fmt.Sprintf("Session key %s deleted locally; nothing was sent to the chain.", address)
+		text = fmt.Sprintf("Session %s forgotten locally; nothing was sent to the chain.", address)
 	}
 
 	return server.Result{
