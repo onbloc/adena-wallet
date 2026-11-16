@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -91,6 +92,12 @@ func EnsureDir(dir string) error {
 
 	if !info.IsDir() {
 		return errors.New(dir + " is not a directory")
+	}
+
+	// Windows has no permission bits; the profile directory's ACL already
+	// limits access to the user.
+	if runtime.GOOS == "windows" {
+		return nil
 	}
 
 	// Checked directly: a chmod only fails for another owner when the mode is
