@@ -22,28 +22,26 @@ app-private `internal` packages, and shared packages in `pkg/`.
 
 ## Setup
 
-Requires Go 1.25 to build. Nothing else is needed at run time.
+With the published npm package (macOS and Linux, arm64 and x64):
 
-1. Build the binaries and register the host with the installed browsers
-   (macOS and Linux):
+```sh
+npx -y @adena-wallet/mcp install-host            # once: copy the host to ~/.adena-agent/bin and register it
+claude mcp add adena -- npx -y @adena-wallet/mcp
+```
 
-   ```sh
-   make build-all
-   ./bin/adena-agent-host install
-   # development builds of Adena have their own Chrome extension id:
-   ./bin/adena-agent-host install -chrome-extension-id <unpacked-extension-id>
-   ```
+Then, in Adena, turn on **Settings → Security & Privacy → AI Agent Connection**.
 
-2. In Adena, turn on **Settings → Security & Privacy → AI Agent Connection**
-   and grant the permission to communicate with native applications.
+To build from source and connect a development build of Adena, follow the
+[local setup guide](docs/local-setup.md) (Korean). In short:
 
-3. Add the MCP server to the agent, for example Claude Code:
+```sh
+make build-all
+./bin/adena-agent-host install -chrome-extension-id <unpacked-extension-id>
+claude mcp add adena -- /absolute/path/to/bin/adena-mcp
+```
 
-   ```sh
-   claude mcp add adena -- /absolute/path/to/bin/adena-mcp
-   ```
-
-`adena-agent-host uninstall` removes the host manifests.
+`adena-agent-host uninstall` (or `npx -y @adena-wallet/mcp uninstall-host`)
+removes the host manifests.
 
 ## Tools
 
@@ -121,6 +119,14 @@ Methods: `ping`, `get_account`, `create_session`, `revoke_session`.
 ## Development
 
 ```sh
-make test   # go test -race ./...
-make lint   # golangci-lint with .golangci.yaml
+make test                                   # go test -race ./...
+make lint                                   # golangci-lint with .golangci.yaml
+make npm-pack NPM_VERSION=0.0.0-local       # npm packages and tarballs in npm/dist
 ```
+
+## Releasing to npm
+
+Push a tag `adena-mcp-v<version>` (for example `adena-mcp-v0.1.0`). The
+`adena-mcp-npm` workflow tests, builds the platform packages and the
+`@adena-wallet/mcp` launcher, and publishes them with the `NPM_TOKEN` secret.
+It can also be run manually, optionally without publishing.
