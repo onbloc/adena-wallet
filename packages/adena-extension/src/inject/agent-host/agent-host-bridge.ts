@@ -1,0 +1,108 @@
+import { MemoryProvider } from '@common/provider/memory/memory-provider';
+
+import { handleAgentHostMessage } from './agent-host-handler';
+import {
+  AGENT_HOST_ENABLED_STORAGE_KEY,
+  AGENT_HOST_NAME,
+  AGENT_HOST_STATUS_STORAGE_KEY,
+  AgentHostStatus,
+} from './agent-host-protocol';
+
+const NATIVE_MESSAGING_PERMISSION: chrome.permissions.Permissions = {
+  permissions: ['nativeMessaging'],
+};
+
+let port: chrome.runtime.Port | null = null;
+
+const writeStatus = async (status: Omit<AgentHostStatus, 'updatedAt'>): Promise<void> => {
+  await chrome.storage.session
+    .set({ [AGENT_HOST_STATUS_STORAGE_KEY]: { ...status, updatedAt: Date.now() } })
+    .catch(() => undefined);
+};
+
+export const isAgentHostEnabled = async (): Promise<boolean> => {
+  const stored = await chrome.storage.local.get(AGENT_HOST_ENABLED_STORAGE_KEY);
+  return stored?.[AGENT_HOST_ENABLED_STORAGE_KEY] === true;
+};
+
+export const hasNativeMessagingPermission = async (): Promise<boolean> => {
+  if (!chrome.permissions?.contains) {
+    return false;
+  }
+  return chrome.permissions.contains(NATIVE_MESSAGING_PERMISSION).catch(() => false);
+};
+
+const disconnect = (): void => {
+  if (!port) {
+    return;
+  }
+  const current = port;
+  port = null;
+  current.disconnect();
+};
+
+const connect = (inMemoryProvider: MemoryProvider): void => {
+  if (port) {
+    return;
+  }
+
+  let connected: chrome.runtime.Port;
+  try {
+    connected = chrome.runtime.connectNative(AGENT_HOST_NAME);
+  } catch (error) {
+    writeStatus({
+      connected: false,
+      error: error instanceof Error ? error.message : 'failed to connect agent host',
+    });
+    return;
+  }
+  port = connected;
+
+  connected.onMessage.addListener((message: unknown) => {
+    handleAgentHostMessage(inMemoryProvider, message).then((response) => {
+      if (port === connected) {
+        connected.postMessage(response);
+      }
+    });
+  });
+
+  connected.onDisconnect.addListener(() => {
+    // Reading lastError marks it handled; it explains why the host went away
+    // (for example, the host manifest is not installed).
+    const reason = chrome.runtime.lastError?.message;
+    if (port === connected) {
+      port = null;
+    }
+    writeStatus({ connected: false, error: reason });
+  });
+
+  writeStatus({ connected: true });
+};
+
+export const syncAgentHostConnection = async (inMemoryProvider: MemoryProvider): Promise<void> => {
+  const [enabled, permitted] = await Promise.all([
+    isAgentHostEnabled().catch(() => false),
+    hasNativeMessagingPermission(),
+  ]);
+
+  if (enabled && permitted) {
+    connect(inMemoryProvider);
+    return;
+  }
+
+  disconnect();
+  await writeStatus({ connected: false });
+};
+
+export const initAgentHostBridge = (inMemoryProvider: MemoryProvider): void => {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && AGENT_HOST_ENABLED_STORAGE_KEY in changes) {
+      syncAgentHostConnection(inMemoryProvider);
+    }
+  });
+  chrome.permissions?.onRemoved?.addListener(() => {
+    syncAgentHostConnection(inMemoryProvider);
+  });
+
+  syncAgentHostConnection(inMemoryProvider);
+};

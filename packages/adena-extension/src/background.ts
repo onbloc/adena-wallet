@@ -23,10 +23,12 @@ import {
   handleFetchRealmDocument,
   isFetchRealmDocumentMessage,
 } from '@inject/message/methods/gno-realm-document';
+import { initAgentHostBridge } from '@inject/agent-host/agent-host-bridge';
 import { InjectionMessage, MessageHandler } from './inject/message';
 
 const inMemoryProvider = new MemoryProvider();
 inMemoryProvider.init();
+initAgentHostBridge(inMemoryProvider);
 
 const transactionEventStore = new TransactionEventStore();
 
