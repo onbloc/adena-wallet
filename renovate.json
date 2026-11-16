@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "local>onbloc/renovate-config"
+    "local>onbloc/renovate-config",
+    "local>onbloc/renovate-config:javascript"
   ]
 }
