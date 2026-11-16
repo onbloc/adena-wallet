@@ -13,7 +13,9 @@
 | Adena | 선택 권한 `nativeMessaging`, background bridge, `ping`/`get_account`/`create_session`/`revoke_session` 처리, 에이전트 세션 정책 | `packages/adena-extension/src/inject/agent-host/` |
 | Adena 설정 | Security & Privacy → AI Agent Connection 토글과 연결 상태 표시 | `pages/popup/certify/agent-connection` |
 | Native host | `adena-agent-host`: 소켓 ↔ native messaging 중계, 브라우저별 manifest 설치·제거 | `misc/adena-mcp/apps/adena-agent-host` |
-| MCP 서버 | `adena-mcp`: 세션 생성·조회·폐기, `adena_call`/`adena_run`/`adena_send` | `misc/adena-mcp/apps/adena-mcp` |
+| MCP 서버 | `adena-mcp`: `get_status`, `connect_wallet`, `create_session`, `get_sessions`, `revoke_session`, `send_transaction`, `sign_transaction` | `misc/adena-mcp/apps/adena-mcp` |
+| 직접 승인 | `signer: "wallet"`이면 Adena 팝업에서 마스터 계정으로 서명(`/vm.m_addpkg` 포함), 에이전트별 연결 승인 필요 | `inject/agent-host`, `tools/tx.go` |
+| 플러그인 | Claude Code·Codex·Cursor·Gemini용 플러그인(`misc/adena-mcp/plugin`), 클라이언트별 설정 문서 | `misc/adena-mcp/docs/clients.md` |
 | 세션 키 보호 | gnokey를 쓰지 않고 프로세스 안에서 서명. 니모닉 없이 잠긴 메모리(memguard)에서만 키 생성·사용, 디스크·로그·도구 응답에 미노출, core dump·디버거 부착 차단 | `apps/adena-mcp/internal/{sessionkey,hardening,chain}` |
 
 원래 설계와 다른 점 / 아직 안 된 것

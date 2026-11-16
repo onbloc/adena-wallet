@@ -25,11 +25,13 @@ app-private `internal` packages, and shared packages in `pkg/`.
 With the published npm package (macOS and Linux, arm64 and x64):
 
 ```sh
-npx -y @adena-wallet/mcp install-host            # once: copy the host to ~/.adena-agent/bin and register it
-claude mcp add adena -- npx -y @adena-wallet/mcp
+claude mcp add --scope user adena -- npx -y @adena-wallet/mcp   # or install the plugin, see below
 ```
 
-Then, in Adena, turn on **Settings → Security & Privacy → AI Agent Connection**.
+Then, in Adena, turn on **Settings → Security & Privacy → AI Agent Connection**,
+and ask the agent to call `connect_wallet`. It installs the agent host on first
+use, copying it to `~/.adena-agent/bin`. `npx -y @adena-wallet/mcp install-host`
+does the same up front.
 
 To build from source and connect a development build of Adena, follow the
 [local setup guide](docs/local-setup.md) (Korean). In short:
@@ -47,17 +49,43 @@ removes the host manifests.
 
 | Tool | What it does |
 |---|---|
-| `adena_status` | Adena connection, current account and network, held sessions |
-| `adena_session_create` | Generates a key and asks the user to authorize it (`allow_paths`, `spend_limit`, `spend_period`, `expires_in`) |
-| `adena_session_list` | Held sessions; `refresh` checks them on chain |
-| `adena_call` / `adena_run` / `adena_send` | Signs `vm/exec`, `vm/run` or `bank/send` as the user |
-| `adena_session_revoke` | Asks the user to revoke, then destroys the key |
+| `get_status` | Host installed, Adena reachable, wallet present, unlocked and connected. Returns the account and sessions when ready, otherwise the next setup step |
+| `connect_wallet` | Installs the host when missing and asks the user to approve the connection in Adena |
+| `create_session` | Generates a session key and asks the user to authorize it (`allow_paths`, `spend_limit`, `spend_period`, `expires_in`) |
+| `get_sessions` | Held sessions; `refresh` checks them on chain |
+| `revoke_session` | Asks the user to revoke a session, then destroys its key |
+| `send_transaction` | Signs and broadcasts one or more `/vm.m_call`, `/vm.m_run`, `/vm.m_addpkg`, `/bank.MsgSend` messages |
+| `sign_transaction` | Same, but returns the signed transaction (base64 amino) without broadcasting |
 
-Writes choose the newest usable session whose `allow_paths` cover the message,
-and run the chain's spend check before broadcasting.
-Gas is measured by simulating first, then reserved at 1.5 times the gas used.
-The fee is priced from `auth/gasprice`, because the chain charges the whole
-offered fee against the session spend limit.
+`send_transaction` and `sign_transaction` sign with a session by default. The
+session is the one named, or the newest usable session whose `allow_paths`
+cover every message. `signer: "wallet"` sends the transaction to Adena for the
+user to approve with the master account instead. `/vm.m_addpkg` always needs
+the wallet, because sessions can never deploy packages.
+
+For session signing, gas is measured by simulating first and reserved at 1.5
+times the gas used. The fee is priced from `auth/gasprice`, because the chain
+charges the whole offered fee against the session spend limit. The chain's
+spend check runs before broadcasting.
+
+The agent name sent to Adena is the MCP client's name, so each client is
+connected (and listed under Connected Apps as `agent://<name>.agent`)
+separately. Transaction and session requests are refused until the agent is
+connected.
+
+## Plugins and other clients
+
+`plugin/` packages the server with an `adena` skill for Claude Code, Codex,
+Cursor and Gemini CLI. The root `.claude-plugin/marketplace.json` makes it
+installable with:
+
+```sh
+claude plugin marketplace add onbloc/adena-wallet
+claude plugin install adena@adena
+```
+
+Configuration for Codex, Cursor, OpenCode, Gemini CLI, Claude Desktop, VS Code
+and Windsurf is in [docs/clients.md](docs/clients.md) (Korean).
 
 ## Safety model
 

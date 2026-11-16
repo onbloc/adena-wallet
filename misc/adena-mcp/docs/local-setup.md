@@ -86,10 +86,12 @@ claude mcp add adena -- npx -y \
 
 Claude Code를 **새로 시작**한 뒤 차례로 요청합니다.
 
-1. "adena_status 실행해줘" → Adena 주소와 네트워크가 보이면 정상입니다.
-2. "bank/send 권한으로 30분짜리 세션 만들어줘" → Adena 승인 팝업이 뜹니다. 요청자는 `adena-mcp.agent`로 표시됩니다. 승인하면 세션이 생성됩니다.
-3. "내 다른 주소 g1...로 1000ugnot 보내줘" → 팝업 없이 세션 키로 서명해 실행됩니다.
-4. "세션 폐기해줘" → Adena 폐기 승인 팝업이 뜨고, 승인하면 세션 키가 파기됩니다.
+1. "get_status 실행해줘" → `state`가 `ready`가 아니면 `next_step` 안내가 나옵니다.
+2. "connect_wallet 해줘" → Adena에 연결 승인 팝업이 뜹니다. 요청자는 클라이언트 이름(예: `claude-code.agent`)으로 표시됩니다. 승인하면 Connected Apps에 추가됩니다.
+3. "bank/send 권한으로 30분짜리 세션 만들어줘" → Adena 승인 팝업이 뜨고, 승인하면 세션이 생성됩니다.
+4. "내 다른 주소 g1...로 1000ugnot 보내줘" → `send_transaction`이 팝업 없이 세션 키로 서명해 실행합니다.
+5. (선택) "이번 송금은 Adena에서 직접 승인할게" → `signer: "wallet"`로 요청하면 트랜잭션 승인 팝업이 뜹니다. 패키지 배포(`/vm.m_addpkg`)는 항상 이 방식입니다.
+6. "세션 폐기해줘" → Adena 폐기 승인 팝업이 뜨고, 승인하면 세션 키가 파기됩니다.
 
 세션은 Adena의 현재 계정과 네트워크로 만들어지고, 수수료는 그 계정에서 나갑니다. 테스트넷이나 로컬 체인에서 시험하는 것을 권장합니다.
 
@@ -111,10 +113,14 @@ gnodev local          # RPC http://127.0.0.1:26657, chain id "dev"
 | `Specified native messaging host not found.` | host manifest가 없음 | 2단계 `install-host`(또는 `adena-agent-host install`)를 다시 실행 |
 | `Access to the specified native messaging host is forbidden.` | manifest에 현재 확장 ID가 없음 (빌드를 로드하기 전에 설치했거나 폴더가 바뀜) | 개발 빌드를 로드한 상태에서 설치를 다시 실행 (또는 `-extension-path`) |
 | `Native host has exited.` | host가 바로 종료됨. 다른 브라우저 프로필이 이미 소켓을 사용 중일 수 있음 | 다른 프로필의 연결을 끄거나 그 브라우저를 종료 |
-| `adena_status`가 `host_unavailable` | 브라우저가 꺼져 있거나 연결 토글이 꺼져 있음 | 브라우저를 열고 3단계를 확인 |
+| `get_status`가 `adena_unreachable` | 브라우저가 꺼져 있거나 연결 토글이 꺼져 있음 | 브라우저를 열고 3단계를 확인 |
+| `get_status`가 `host_not_installed` | host가 등록되지 않음 | `connect_wallet` 호출(자동 설치) 또는 2단계 실행 |
+| `not_connected` | 이 클라이언트가 Adena에 연결 승인되지 않음 | `connect_wallet` 호출 후 Adena에서 승인 |
+| `session_required` | 메시지를 모두 허용하는 세션이 없음 | 오류에 나온 `required_allow_paths`로 세션 생성, 또는 `signer: "wallet"` |
+| `wallet_signature_required` | 세션으로 서명할 수 없는 메시지(`/vm.m_addpkg`) | `signer: "wallet"`로 다시 요청 |
 | `wallet_locked` | Adena가 잠김 | 잠금 해제 후 재시도 |
 | `approval_timeout` | 5분 안에 승인하지 않음 | 다시 요청 (`ADENA_MCP_APPROVAL_TIMEOUT`으로 조정 가능) |
-| `session_key_lost` | MCP가 재시작되어 메모리의 세션 키가 사라짐 | `adena_session_revoke`로 폐기하고 새 세션 생성 |
+| `session_key_lost` | MCP가 재시작되어 메모리의 세션 키가 사라짐 | `revoke_session`으로 폐기하고 새 세션 생성 |
 | `session_spend_limit` | 수수료와 송금액 합계가 지출 한도를 넘음 | 더 큰 `spend_limit`으로 새 세션 생성 |
 
 로그 위치
@@ -125,7 +131,7 @@ gnodev local          # RPC http://127.0.0.1:26657, chain id "dev"
 ## 6. 정리
 
 ```sh
-# 1. Revoke any session that is still active (ask Claude Code: "adena_session_revoke 해줘")
+# 1. Revoke any session that is still active (ask Claude Code: "revoke_session 해줘")
 
 # 2. Remove the MCP registration
 claude mcp remove adena -s local
