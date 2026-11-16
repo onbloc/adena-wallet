@@ -33,9 +33,10 @@ export const useTokenTransactions = (
   const { tokenMetainfos } = useTokenMetainfo();
   const [fetchedHistoryBlockHeight, setFetchedHistoryBlockHeight] = useState<number | null>(null);
 
-  const { data: allTransactions, refetch } = useQuery(
-    ['token-details/history', currentNetwork.networkId, `${isNative}`, currentAddress, tokenPath],
-    () => {
+  const { data: allTransactions, refetch } = useQuery({
+    queryKey: ['token-details/history', currentNetwork.networkId, `${isNative}`, currentAddress, tokenPath],
+
+    queryFn: () => {
       if (isNative === undefined) {
         return null;
       }
@@ -44,14 +45,13 @@ export const useTokenTransactions = (
         ? transactionHistoryService.fetchNativeTransactionHistory(currentAddress || '')
         : transactionHistoryService.fetchGRC20TransactionHistory(currentAddress || '', tokenPath);
     },
-    {
-      enabled:
-        !!currentAddress
-        && transactionHistoryService.supported
-        && tokenMetainfos.length > 0
-        && enabled,
-    },
-  );
+
+    enabled:
+      !!currentAddress
+      && transactionHistoryService.supported
+      && tokenMetainfos.length > 0
+      && enabled,
+  });
 
   const blockIndex = useMemo(() => {
     if (!allTransactions) {

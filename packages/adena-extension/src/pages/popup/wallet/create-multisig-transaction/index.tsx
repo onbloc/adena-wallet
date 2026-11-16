@@ -37,7 +37,7 @@ import {
   RawVmRunMessage,
 } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 
 interface TransactionData {
   messages: readonly any[];

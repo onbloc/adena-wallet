@@ -13,7 +13,7 @@ import { CosmosResponseExecuteType } from '@inject/types';
 import { RoutePath } from '@types';
 import { compressPubkeyIfNeeded, isSessionAccount } from 'adena-module';
 import React, { useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import styled from 'styled-components';
 
 // Silent approval popup dedicated to `GET_COSMOS_KEY`. When the dApp requests

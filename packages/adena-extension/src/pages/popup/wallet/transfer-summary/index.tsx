@@ -52,7 +52,7 @@ import {
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 
 const TransferSummaryLayout = styled.div`
@@ -120,14 +120,16 @@ const TransferSummaryContainer: React.FC = () => {
   const { data: currentBalance } = useGetGnotBalance();
 
   // ─── Cosmos: async address resolution + reactive document ──────────────
-  const { data: cosmosAddress } = useQuery<string | null>(
-    ['cosmosAddress', currentAccount?.id, chain?.bech32Prefix],
-    async () => {
+  const { data: cosmosAddress } = useQuery<string | null>({
+    queryKey: ['cosmosAddress', currentAccount?.id, chain?.bech32Prefix],
+
+    queryFn: async () => {
       if (!currentAccount || !isCosmosToken || !chain) return null;
       return currentAccount.getAddress(chain.bech32Prefix);
     },
-    { enabled: !!currentAccount && isCosmosToken && !!chain },
-  );
+
+    enabled: !!currentAccount && isCosmosToken && !!chain,
+  });
 
   const cosmosDocument = useMemo<CosmosDocument | null>(() => {
     if (!isCosmosToken || !cosmosAddress) return null;
@@ -190,28 +192,30 @@ const TransferSummaryContainer: React.FC = () => {
   const feeDenom = cosmosFee.currentFeeDenom;
   const sameDenom = !!transferDenom && !!feeDenom && transferDenom === feeDenom;
 
-  const { data: photonBalance } = useQuery<string | null>(
-    ['photonBalance', cosmosAddress],
-    async () => {
+  const { data: photonBalance } = useQuery<string | null>({
+    queryKey: ['photonBalance', cosmosAddress],
+
+    queryFn: async () => {
       if (!cosmosAddress || !cosmosProvider) return null;
       return cosmosProvider.getBalance(cosmosAddress, 'uphoton');
     },
-    { enabled: !!cosmosAddress && !!cosmosProvider && isCosmosToken },
-  );
+
+    enabled: !!cosmosAddress && !!cosmosProvider && isCosmosToken,
+  });
 
   // Only fetched when transferDenom != feeDenom (e.g. ATONE send). For
   // same-denom sends `photonBalance` already represents the transfer balance.
-  const { data: transferTokenBalance } = useQuery<string | null>(
-    ['cosmosTransferTokenBalance', cosmosAddress, transferDenom],
-    async () => {
+  const { data: transferTokenBalance } = useQuery<string | null>({
+    queryKey: ['cosmosTransferTokenBalance', cosmosAddress, transferDenom],
+
+    queryFn: async () => {
       if (!cosmosAddress || !cosmosProvider || !transferDenom) return null;
       return cosmosProvider.getBalance(cosmosAddress, transferDenom);
     },
-    {
-      enabled:
-        !!cosmosAddress && !!cosmosProvider && isCosmosToken && !sameDenom && !!transferDenom,
-    },
-  );
+
+    enabled:
+      !!cosmosAddress && !!cosmosProvider && isCosmosToken && !sameDenom && !!transferDenom,
+  });
 
   const hasNetworkFee = useMemo(() => {
     if (isCosmosToken) {

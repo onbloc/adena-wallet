@@ -8,7 +8,10 @@ import type { Mock } from 'vitest';
 
 import { useCosmosNetworkFee } from './use-cosmos-network-fee';
 
-vi.mock('@tanstack/react-query', () => ({ useQuery: vi.fn() }));
+vi.mock('@tanstack/react-query', async () => ({
+  ...(await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')),
+  useQuery: vi.fn(),
+}));
 vi.mock('@hooks/use-context', () => ({ useAdenaContext: vi.fn() }));
 vi.mock('@hooks/use-current-account', () => ({ useCurrentAccount: vi.fn() }));
 

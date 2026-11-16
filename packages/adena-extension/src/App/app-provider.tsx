@@ -13,7 +13,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 10_000,
-      cacheTime: 5 * 60_000,
+      gcTime: 5 * 60_000,
       refetchOnWindowFocus: false,
       retry: 1,
       retryDelay: (attempt): number => Math.min(1_000 * 2 ** attempt, 30_000),

@@ -74,17 +74,17 @@ export const useTokenOrder = (): {
     );
   }, [currentAccount?.id, currentNetwork.networkId, currentAtomoneNetwork?.id]);
 
-  const { data: storedOrder = null, isFetched } = useQuery<string[] | null>(
-    [TOKEN_ORDER_QUERY_KEY, scope],
-    () => (scope === null ? null : readTokenOrder(scope)),
-    {
-      enabled: scope !== null,
-      // Storage is only ever written through persistOrder below, which updates
-      // this entry itself, so there is nothing for a refetch to pick up.
-      staleTime: Infinity,
-      cacheTime: Infinity,
-    },
-  );
+  const { data: storedOrder = null, isFetched } = useQuery<string[] | null>({
+    queryKey: [TOKEN_ORDER_QUERY_KEY, scope],
+    queryFn: () => (scope === null ? null : readTokenOrder(scope)),
+    enabled: scope !== null,
+
+    // Storage is only ever written through persistOrder below, which updates
+    // this entry itself, so there is nothing for a refetch to pick up.
+    staleTime: Infinity,
+
+    gcTime: Infinity,
+  });
 
   // With no account there is nothing to scope an order to, and the query stays
   // disabled — so it never fetches and `isFetched` never flips. That is still a

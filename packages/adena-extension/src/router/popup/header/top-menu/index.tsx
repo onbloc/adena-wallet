@@ -29,7 +29,7 @@ import { RoutePath } from '@types';
 import { isSessionAccount, SessionAccount } from 'adena-module';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import styled from 'styled-components';
 
 import { useHoverPopover } from './use-hover-popover';

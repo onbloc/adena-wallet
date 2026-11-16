@@ -15,7 +15,7 @@ import { isAirgapAccount } from 'adena-module';
 import { useAtom } from 'jotai';
 import type { JSX } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import styled, { useTheme } from 'styled-components';
 
 import LoadingApproveTransaction from './loading-approve-transaction';

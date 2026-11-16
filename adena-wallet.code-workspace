@@ -16,7 +16,8 @@
   "settings": {
     "editor.formatOnSave": false,
     "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "explicit"
+      "source.fixAll.eslint": "explicit",
+      "source.organizeImports": "never"
     },
     "editor.insertSpaces": true,
     "editor.tabSize": 2,
@@ -24,8 +25,63 @@
     "files.eol": "\n",
     "files.insertFinalNewline": true,
     "files.trimTrailingWhitespace": true,
+    "[markdown]": {
+      "editor.formatOnSave": false,
+      "editor.tabSize": 2,
+      "editor.insertSpaces": true,
+      "files.trimTrailingWhitespace": false
+    },
     "eslint.useFlatConfig": true,
+    "eslint.packageManager": "pnpm",
     "eslint.workingDirectories": [{ "mode": "auto" }],
+    "eslint.format.enable": true,
+    "prettier.requireConfig": true,
+    "prettier.disableLanguages": [
+      "javascript",
+      "javascriptreact",
+      "typescript",
+      "typescriptreact"
+    ],
+    "[javascript]": {
+      "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+      "editor.formatOnSave": false,
+      "editor.tabSize": 2,
+      "editor.insertSpaces": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit",
+        "source.organizeImports": "never"
+      }
+    },
+    "[javascriptreact]": {
+      "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+      "editor.formatOnSave": false,
+      "editor.tabSize": 2,
+      "editor.insertSpaces": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit",
+        "source.organizeImports": "never"
+      }
+    },
+    "[typescript]": {
+      "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+      "editor.formatOnSave": false,
+      "editor.tabSize": 2,
+      "editor.insertSpaces": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit",
+        "source.organizeImports": "never"
+      }
+    },
+    "[typescriptreact]": {
+      "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+      "editor.formatOnSave": false,
+      "editor.tabSize": 2,
+      "editor.insertSpaces": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit",
+        "source.organizeImports": "never"
+      }
+    },
     "search.exclude": {
       "**/dist": true,
       "**/dist-firefox": true,

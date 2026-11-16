@@ -1,7 +1,7 @@
 import { selectBalanceAddress } from '@common/utils/account-address';
 import { isRevokedSessionAccount } from '@common/utils/account-session';
 import { AccountState } from '@states';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { TokenBalanceType } from '@types';
 import { isSessionAccount } from 'adena-module';
 import { useAtomValue } from 'jotai';
@@ -51,8 +51,8 @@ export const useAccountNativeBalanceMap = (enabled: boolean): Record<string, Tok
     [sessions],
   );
 
-  const { data = {} } = useQuery<Record<string, TokenBalanceType>>(
-    [
+  const { data = {} } = useQuery<Record<string, TokenBalanceType>>({
+    queryKey: [
       'accountNativeBalanceMap',
       wallet?.accounts,
       currentNetwork.chainId,
@@ -61,7 +61,8 @@ export const useAccountNativeBalanceMap = (enabled: boolean): Record<string, Tok
       // A revoke moves a session row onto its own balance, so the map must refetch.
       revokedSessionAddrsKey,
     ],
-    () => {
+
+    queryFn: () => {
       if (
         wallet === null
         || wallet.accounts === null
@@ -103,18 +104,19 @@ export const useAccountNativeBalanceMap = (enabled: boolean): Record<string, Tok
         }, {}),
       );
     },
-    {
-      staleTime: STALE_TIME,
-      keepPreviousData: true,
-      enabled:
-        enabled
-        && existWallet
-        && !lockedWallet
-        && isFetchedGRC20Tokens
-        && tokenMetainfos.length > 0
-        && accountAddressesByAccountId !== null,
-    },
-  );
+
+    staleTime: STALE_TIME,
+
+    enabled:
+      enabled
+      && existWallet
+      && !lockedWallet
+      && isFetchedGRC20Tokens
+      && tokenMetainfos.length > 0
+      && accountAddressesByAccountId !== null,
+
+    placeholderData: keepPreviousData,
+  });
 
   return data;
 };

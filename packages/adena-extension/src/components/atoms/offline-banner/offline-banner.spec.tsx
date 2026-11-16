@@ -26,7 +26,7 @@ const Wrapper = ({ children }: PropsWithChildren): JSX.Element => {
 describe('OfflineBanner', () => {
   afterEach(() => {
     // onlineManager is a module-level singleton; reset it between tests.
-    onlineManager.setOnline(undefined);
+    onlineManager.setOnline(true);
     setBrowserOnline(true);
   });
 

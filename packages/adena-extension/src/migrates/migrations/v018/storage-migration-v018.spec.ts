@@ -1,8 +1,7 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { decryptAES, decryptXChacha20, encryptAES } from 'adena-module';
-import CryptoJS from 'crypto-js';
 import sodium from 'libsodium-wrappers-sumo';
 import type { Mock } from 'vitest';
 
@@ -15,9 +14,9 @@ vi.mock('adena-module', async () => {
   return { ...actual, decryptAES: vi.fn(actual.decryptAES) };
 });
 
-const LEGACY_SALT = 'W9+fs3FJ9p5KdR1XzQy2A6ZT4vjN8LvM9J8pVZmN9rU=';
 const RAW_PASSWORD = '123';
-const HASHED_PASSWORD = CryptoJS.SHA256(LEGACY_SALT + RAW_PASSWORD).toString();
+// SHA-256 of the v009 legacy salt + RAW_PASSWORD, as CryptoJS computed it.
+const HASHED_PASSWORD = '953877f4dd33e9b77353dd1914a7f9fe06a0ffc144895695063bd9d81e70c548';
 
 const WALLET_JSON = JSON.stringify({
   accounts: [],

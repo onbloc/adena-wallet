@@ -18,7 +18,7 @@ import { useMasterSessions } from '@hooks/wallet/use-master-sessions';
 import { RoutePath } from '@types';
 import { hasPrivateKeyAccount, isSeedAccount, isSessionAccount } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 

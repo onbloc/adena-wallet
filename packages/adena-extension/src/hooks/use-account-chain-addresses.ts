@@ -38,9 +38,10 @@ export const useAccountChainAddresses = (): ChainAddressEntry[] => {
   // change. It must be part of the key or a stale entry list survives the switch.
   const profilesKey = profiles.map(profile => profile.id).join('|');
 
-  const { data: entries = [] } = useQuery<ChainAddressEntry[]>(
-    ['accountChainAddresses', currentAccount?.id, profilesKey],
-    async () => {
+  const { data: entries = [] } = useQuery<ChainAddressEntry[]>({
+    queryKey: ['accountChainAddresses', currentAccount?.id, profilesKey],
+
+    queryFn: async () => {
       if (!currentAccount) return [];
 
       if (isSessionAccount(currentAccount)) {
@@ -60,8 +61,9 @@ export const useAccountChainAddresses = (): ChainAddressEntry[] => {
       );
       return resolved.filter((entry): entry is ChainAddressEntry => entry !== null);
     },
-    { enabled: !!currentAccount },
-  );
+
+    enabled: !!currentAccount,
+  });
 
   return entries;
 };

@@ -70,7 +70,7 @@ import TransferSummary from '@pages/popup/wallet/transfer-summary';
 import { WalletMain } from '@pages/popup/wallet/wallet-main';
 import type { JSX } from 'react';
 import React from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router';
 
 import { RoutePath } from '../../types/router';
 import { Header } from './header';

@@ -45,9 +45,10 @@ export const useSessionRevocationWatcher = (): void => {
 
   const isSession = currentAccount !== null && isSessionAccount(currentAccount);
 
-  useQuery<WatchResult>(
-    ['session/revocation-watch', currentAccount?.id ?? ''],
-    async (): Promise<WatchResult> => {
+  useQuery<WatchResult>({
+    queryKey: ['session/revocation-watch', currentAccount?.id ?? ''],
+
+    queryFn: async (): Promise<WatchResult> => {
       if (!currentAccount || !isSessionAccount(currentAccount) || !gnoProvider) {
         return 'not-session';
       }
@@ -73,11 +74,11 @@ export const useSessionRevocationWatcher = (): void => {
       try {
         // Shared with the Session Overview poll on the same pair, so whichever
         // ticks first serves both.
-        record = await queryClient.fetchQuery(
-          sessionRecordQueryKey(masterAddress, sessionAddr),
-          () => fetchSessionRecord(gnoProvider, masterAddress, sessionAddr),
-          { staleTime: SESSION_RECORD_SHARE_WINDOW },
-        );
+        record = await queryClient.fetchQuery({
+          queryKey: sessionRecordQueryKey(masterAddress, sessionAddr),
+          queryFn: () => fetchSessionRecord(gnoProvider, masterAddress, sessionAddr),
+          staleTime: SESSION_RECORD_SHARE_WINDOW,
+        });
       }
       catch {
         // Network / parse failures are not a revoke signal.
@@ -112,11 +113,12 @@ export const useSessionRevocationWatcher = (): void => {
       await queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
       return 'revoked';
     },
-    {
-      enabled: isSession && !!gnoProvider,
-      refetchInterval: data =>
-        isTerminalResult(data) ? false : SESSION_REVOCATION_POLL_INTERVAL,
-      refetchOnWindowFocus: query => !isTerminalResult(query.state.data as WatchResult),
-    },
-  );
+
+    enabled: isSession && !!gnoProvider,
+
+    refetchInterval: query =>
+      isTerminalResult(query.state.data) ? false : SESSION_REVOCATION_POLL_INTERVAL,
+
+    refetchOnWindowFocus: query => !isTerminalResult(query.state.data as WatchResult),
+  });
 };

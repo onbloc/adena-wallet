@@ -10,9 +10,10 @@ export type UseQuestionnaireReturn = {
 const useQuestionnaire = (): UseQuestionnaireReturn => {
   const { walletService } = useAdenaContext();
 
-  const { data: ableToSkipQuestionnaire = false, isLoading: isQuestionnaireLoading } = useQuery(
-    ['questionnaire', walletService],
-    async () => {
+  const { data: ableToSkipQuestionnaire = false, isPending: isQuestionnaireLoading } = useQuery({
+    queryKey: ['questionnaire', walletService],
+
+    queryFn: async () => {
       const existWallet = await walletService.existsWallet();
       if (!existWallet) {
         return false;
@@ -20,8 +21,7 @@ const useQuestionnaire = (): UseQuestionnaireReturn => {
       const ableToSkipQuestionnaire = await walletService.isSkipQuestionnaire().catch(() => false);
       return ableToSkipQuestionnaire;
     },
-    {},
-  );
+  });
 
   const doneQuestionnaire = (): Promise<void> => {
     return walletService.updateQuestionnaireExpiredDate();

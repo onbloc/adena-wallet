@@ -30,23 +30,25 @@ export const useWallet = (): UseWalletReturn => {
   // networkMode 'always': both read chrome.storage, never the network. Paused
   // offline they leave the popup blank, since App/popup renders <></> while
   // isLoadingLockedWallet is true.
-  const { data: existWallet, isLoading: isLoadingExistWallet } = useQuery(
-    makeWalletExistsQueryKey(walletService.id),
-    async () => {
+  const { data: existWallet, isPending: isLoadingExistWallet } = useQuery({
+    queryKey: makeWalletExistsQueryKey(walletService.id),
+
+    queryFn: async () => {
       const existWallet = await walletService.existsWallet().catch(() => false);
       return existWallet;
     },
-    { networkMode: 'always' },
-  );
+    networkMode: 'always',
+  });
 
-  const { data: lockedWallet, isLoading: isLoadingLockedWallet } = useQuery(
-    makeWalletLockedQueryKey(walletService.id),
-    async () => {
+  const { data: lockedWallet, isPending: isLoadingLockedWallet } = useQuery({
+    queryKey: makeWalletLockedQueryKey(walletService.id),
+
+    queryFn: async () => {
       const lockedWallet = await walletService.isLocked();
       return lockedWallet;
     },
-    { networkMode: 'always' },
-  );
+    networkMode: 'always',
+  });
 
   return {
     hasHDWallet,

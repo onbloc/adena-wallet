@@ -1,6 +1,6 @@
 import { RoutePath } from '@types';
 import { useEffect } from 'react';
-import { useMatch } from 'react-router-dom';
+import { useMatch } from 'react-router';
 
 import { useAddressBook } from './use-address-book';
 import useAppNavigate from './use-app-navigate';

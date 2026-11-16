@@ -5,7 +5,7 @@ import {
   sessionRecordQueryKey,
 } from '@hooks/wallet/use-current-session-record';
 import { SESSION_REVOCATION_POLL_INTERVAL } from '@hooks/wallet/use-session-revocation-watcher';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 export interface CurrentSessionChainData {
   allowPaths: string[];
@@ -32,36 +32,35 @@ export const useCurrentSessionChainData = (
 
   // Owns the poll for the shared session record; the revocation watcher reads
   // through the same key rather than issuing a second identical query.
-  const { data } = useQuery(
-    sessionRecordQueryKey(masterAddress ?? '', sessionAddress ?? ''),
-    async () => {
+  const { data } = useQuery({
+    queryKey: sessionRecordQueryKey(masterAddress ?? '', sessionAddress ?? ''),
+
+    queryFn: async () => {
       if (!gnoProvider || !masterAddress || !sessionAddress) {
         return null;
       }
 
       return fetchSessionRecord(gnoProvider, masterAddress, sessionAddress);
     },
-    {
-      select: (res): CurrentSessionChainData | null => {
-        if (!res) {
-          return null;
-        }
+    select: (res): CurrentSessionChainData | null => {
+      if (!res) {
+        return null;
+      }
 
-        const flat = flattenSessionAccount(res);
-        return {
-          allowPaths: flat.allowPaths,
-          spendPeriod: Number(flat.spendPeriod || '0'),
-          spendReset: Number(flat.spendReset || '0'),
-          spendUsed: flat.spendUsed,
-          spendLimit: flat.spendLimit,
-        };
-      },
-      enabled: !!gnoProvider && !!masterAddress && !!sessionAddress,
-      refetchInterval: SESSION_REVOCATION_POLL_INTERVAL,
-      refetchOnWindowFocus: true,
-      keepPreviousData: true,
+      const flat = flattenSessionAccount(res);
+      return {
+        allowPaths: flat.allowPaths,
+        spendPeriod: Number(flat.spendPeriod || '0'),
+        spendReset: Number(flat.spendReset || '0'),
+        spendUsed: flat.spendUsed,
+        spendLimit: flat.spendLimit,
+      };
     },
-  );
+    enabled: !!gnoProvider && !!masterAddress && !!sessionAddress,
+    refetchInterval: SESSION_REVOCATION_POLL_INTERVAL,
+    refetchOnWindowFocus: true,
+    placeholderData: keepPreviousData,
+  });
 
   return data ?? undefined;
 };

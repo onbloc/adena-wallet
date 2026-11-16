@@ -78,14 +78,16 @@ const TransferInputContainer: React.FC = () => {
     const chain = chainRegistry.getChainByChainId(tokenMetainfo.networkId);
     return chain && chain.chainType === 'cosmos' ? chain : null;
   }, [isCosmosNative, tokenMetainfo, chainRegistry]);
-  const { data: cosmosFromAddress } = useQuery<string | null>(
-    ['cosmosFromAddrInput', currentAccount?.id, cosmosChain?.bech32Prefix],
-    async () => {
+  const { data: cosmosFromAddress } = useQuery<string | null>({
+    queryKey: ['cosmosFromAddrInput', currentAccount?.id, cosmosChain?.bech32Prefix],
+
+    queryFn: async () => {
       if (!currentAccount || !cosmosChain) return null;
       return currentAccount.getAddress(cosmosChain.bech32Prefix);
     },
-    { enabled: !!currentAccount && !!cosmosChain },
-  );
+
+    enabled: !!currentAccount && !!cosmosChain,
+  });
   const cosmosEstimateDoc = useMemo<CosmosDocument | null>(() => {
     if (!isCosmosNative || !cosmosFromAddress || !cosmosChain || !tokenMetainfo) return null;
     if (tokenMetainfo.type !== 'cosmos-native') return null;

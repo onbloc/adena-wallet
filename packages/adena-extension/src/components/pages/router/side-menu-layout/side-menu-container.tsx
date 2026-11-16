@@ -13,7 +13,7 @@ import { CommandMessage } from '@inject/message/command-message';
 import { RoutePath, SideMenuAccountInfo } from '@types';
 import { Account } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 const EMPTY_ACCOUNTS: Account[] = [];
 

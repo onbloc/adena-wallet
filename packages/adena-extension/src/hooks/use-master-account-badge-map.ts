@@ -20,9 +20,10 @@ export const useMasterAccountBadgeMap = (accounts: Account[]): Record<string, bo
     [accounts],
   );
 
-  const { data = {} } = useQuery<Record<string, boolean>>(
-    ['masterAccountBadgeMap', currentNetwork.chainId, queryAccountsKey],
-    async () => {
+  const { data = {} } = useQuery<Record<string, boolean>>({
+    queryKey: ['masterAccountBadgeMap', currentNetwork.chainId, queryAccountsKey],
+
+    queryFn: async () => {
       if (!gnoProvider || !supported) {
         return {};
       }
@@ -49,12 +50,11 @@ export const useMasterAccountBadgeMap = (accounts: Account[]): Record<string, bo
         return accum;
       }, {});
     },
-    {
-      enabled: supported && accounts.length > 0,
-      refetchInterval: MASTER_BADGE_REFETCH_INTERVAL,
-      staleTime: MASTER_BADGE_REFETCH_INTERVAL,
-    },
-  );
+
+    enabled: supported && accounts.length > 0,
+    refetchInterval: MASTER_BADGE_REFETCH_INTERVAL,
+    staleTime: MASTER_BADGE_REFETCH_INTERVAL,
+  });
 
   return data;
 };

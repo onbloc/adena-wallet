@@ -20,10 +20,10 @@ const messageData = {
 };
 
 const makeMessage = () =>
-  ({
+  (({
     type: 'FETCH_REALM_DOCUMENT',
     data: { ...messageData },
-  }) as const;
+  }) as const);
 
 describe('isFetchRealmDocumentMessage', () => {
   it('accepts a well-formed realm document request', () => {

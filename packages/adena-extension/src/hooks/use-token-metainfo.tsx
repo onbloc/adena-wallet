@@ -82,13 +82,14 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const { fetchTransferTokens } = useTransferTokens();
   const { data: grc20Tokens } = useGRC20Tokens();
 
-  const { data: allTokenMetainfos = null } = useQuery<TokenModel[]>(
-    [
+  const { data: allTokenMetainfos = null } = useQuery<TokenModel[]>({
+    queryKey: [
       'useTokenMetainfo/allTokenMetainfos',
       grc20Tokens?.map(token => token.tokenId),
       currentNetwork.networkId,
     ],
-    async (): Promise<TokenModel[]> => {
+
+    queryFn: async (): Promise<TokenModel[]> => {
       const fetchedTokenMetainfos = await tokenService.fetchTokenMetainfos();
       const remainGRC20Tokens = grc20Tokens
         ? grc20Tokens.filter(
@@ -103,11 +104,10 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
       return [...fetchedTokenMetainfos, ...remainGRC20Tokens];
     },
-    {
-      staleTime: Infinity,
-      enabled: !!grc20Tokens,
-    },
-  );
+
+    staleTime: Infinity,
+    enabled: !!grc20Tokens,
+  });
 
   const currentTokenMetainfos = useMemo(() => {
     return tokenMetainfos.filter(

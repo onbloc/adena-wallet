@@ -94,7 +94,7 @@ describe('useVestingInfo', () => {
 
     expect(mockedUseGetAccountInfo).toHaveBeenCalledWith(
       ACCOUNT_A,
-      expect.objectContaining({ keepPreviousData: false }),
+      expect.objectContaining({ placeholderData: undefined }),
     );
   });
 
@@ -150,11 +150,11 @@ describe('useVestingInfo', () => {
       renderHook(() => useVestingInfo());
 
       const options = mockedUseGetAccountInfo.mock.calls[0][1];
-      const refetchInterval = options?.refetchInterval as (
-        data: AccountInfo | null,
-      ) => number | false;
+      const refetchInterval = options?.refetchInterval as unknown as (query: {
+        state: { data: AccountInfo | null };
+      }) => number | false;
 
-      return refetchInterval(data);
+      return refetchInterval({ state: { data } });
     };
 
     it('polls a grant, whose split moves every block', () => {

@@ -55,13 +55,11 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
       return '';
     }
 
-    return (
-      BigNumber(info.gasInfo.gasFee)
-        .shiftedBy(resolvedDecimals * -1)
-        .toFixed(6, BigNumber.ROUND_UP)
-        .toString()
-        .replace(/0+$/, '') || ''
-    );
+    return (BigNumber(info.gasInfo.gasFee)
+      .shiftedBy(resolvedDecimals * -1)
+      .toFixed(6, BigNumber.ROUND_UP)
+      .toString()
+      .replace(/0+$/, '') || '');
   }, [info.gasInfo, resolvedDecimals]);
 
   const gasInfoDenomination = useMemo(() => {

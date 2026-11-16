@@ -11,9 +11,10 @@ const useSessionParams = <RouteName extends keyof RouteParams>(): {
   isLoading: boolean;
 } => {
   const { params } = useAppNavigate<RouteName>();
-  const { data: isPopup = null } = useQuery(
-    ['popup/isPopup', chrome.windows],
-    async () => {
+  const { data: isPopup = null } = useQuery({
+    queryKey: ['popup/isPopup', chrome.windows],
+
+    queryFn: async () => {
       try {
         const isPopup = (await chrome.windows.getCurrent()).type === 'popup';
         return isPopup;
@@ -22,12 +23,12 @@ const useSessionParams = <RouteName extends keyof RouteParams>(): {
         return null;
       }
     },
-    {},
-  );
+  });
 
-  const { data = null, isLoading } = useQuery(
-    ['popup/popupState', params, isPopup],
-    async () => {
+  const { data = null, isPending: isLoading } = useQuery({
+    queryKey: ['popup/popupState', params, isPopup],
+
+    queryFn: async () => {
       if (params) {
         return params;
       }
@@ -42,8 +43,7 @@ const useSessionParams = <RouteName extends keyof RouteParams>(): {
         return null;
       }
     },
-    {},
-  );
+  });
 
   return {
     isPopup,

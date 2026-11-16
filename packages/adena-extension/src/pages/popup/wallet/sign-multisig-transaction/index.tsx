@@ -27,7 +27,7 @@ import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject
 import { NetworkFee, RoutePath } from '@types';
 import { Account, isAirgapAccount, isLedgerAccount, isSessionAccount } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 
 interface SignMultisigTransactionRequestData {
   multisigDocument: MultisigTransactionDocument;

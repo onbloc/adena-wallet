@@ -21,7 +21,7 @@ import { GRC721Model, RoutePath } from '@types';
 import { Document, isLedgerAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 
 const NFTTransferSummaryLayout = styled.div`

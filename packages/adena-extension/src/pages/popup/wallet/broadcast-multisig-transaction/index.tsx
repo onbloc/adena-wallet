@@ -33,7 +33,7 @@ import { NetworkMetainfo, RoutePath } from '@types';
 import { Account, isMultisigAccount, isSessionAccount, MultisigConfig, RawTx } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 
 interface BroadcastMultisigTransactionRequestData {
   multisigDocument: MultisigTransactionDocument;

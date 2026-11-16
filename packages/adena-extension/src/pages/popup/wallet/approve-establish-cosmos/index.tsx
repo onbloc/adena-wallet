@@ -22,7 +22,7 @@ import {
 import { RoutePath } from '@types';
 import { isSessionAccount } from 'adena-module';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 
 // TODO: replace with `InjectionMessageInstance.success/failure` once
 // `@adena-wallet/sdk` is updated to ship `WalletMessageInfo` entries for

@@ -1,11 +1,10 @@
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
-import { AdenaWallet, decryptAES, encryptAES, mnemonicToEntropy } from 'adena-module';
-import CryptoJS from 'crypto-js';
+import { AdenaWallet, decryptAES, encryptAES, mnemonicToEntropy, sha256Hex } from 'adena-module';
 
 const LEGACY_SALT = 'W9+fs3FJ9p5KdR1XzQy2A6ZT4vjN8LvM9J8pVZmN9rU=';
 const legacyEncryptWalletPassword = (password: string): string =>
-  CryptoJS.SHA256(LEGACY_SALT + password).toString();
+  sha256Hex(LEGACY_SALT + password);
 import {
   AddressBookModelV008,
   SerializedModelV008,

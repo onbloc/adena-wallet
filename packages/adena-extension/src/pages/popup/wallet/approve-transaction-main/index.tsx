@@ -51,7 +51,7 @@ import {
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 
 import ApproveTransactionLoading from './loading';
 import ApproveTransactionResult from './result';

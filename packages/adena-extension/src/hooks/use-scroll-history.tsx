@@ -1,7 +1,7 @@
 import { CommonState } from '@states';
 import { useAtom } from 'jotai';
 import { RefObject, useCallback, useLayoutEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 export type UseScrollHistoryReturn = {
   scrollMove: () => void;

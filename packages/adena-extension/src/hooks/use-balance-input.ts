@@ -86,10 +86,11 @@ export const useBalanceInput = (
     isGnoNativeTransfer,
   );
 
-  const { data: currentSessionMetadata = null, isLoading: isLoadingCurrentSessionMetadata }
-    = useQuery<SessionMetadataV021 | null>(
-      ['sessionMetadataForBalanceInput', currentAccount?.id, currentNetwork.chainId],
-      async () => {
+  const { data: currentSessionMetadata = null, isPending: isLoadingCurrentSessionMetadata }
+    = useQuery<SessionMetadataV021 | null>({
+      queryKey: ['sessionMetadataForBalanceInput', currentAccount?.id, currentNetwork.chainId],
+
+      queryFn: async () => {
         if (!currentAccount || !isSessionAccount(currentAccount)) {
           return null;
         }
@@ -153,7 +154,7 @@ export const useBalanceInput = (
           chainId: stored?.chainId ?? currentAccount.sessionConfig.chainId,
           allowPaths: stored?.allowPaths ?? currentAccount.sessionConfig.allowPaths ?? [],
           spendLimit:
-            base.spend_limit ?? stored?.spendLimit ?? currentAccount.sessionConfig.spendLimit ?? '',
+          base.spend_limit ?? stored?.spendLimit ?? currentAccount.sessionConfig.spendLimit ?? '',
           spendPeriod: Number(
             base.spend_period
             ?? stored?.spendPeriod
@@ -168,11 +169,10 @@ export const useBalanceInput = (
           txHash: stored?.txHash,
         };
       },
-      {
-        enabled: currentAccount !== null && isSessionAccount(currentAccount),
-        refetchInterval: 30_000,
-      },
-    );
+
+      enabled: currentAccount !== null && isSessionAccount(currentAccount),
+      refetchInterval: 30_000,
+    });
 
   const sessionSpendConfig = useMemo<SessionSpendConfig | null>(() => {
     if (!currentAccount || !isSessionAccount(currentAccount)) {

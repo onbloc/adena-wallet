@@ -1,7 +1,14 @@
-import CryptoJS from 'crypto-js';
 import sodium from 'libsodium-wrappers-sumo';
 
-import { Argon2id, isArgon2idOptions, xchacha20NonceLength, Xchacha20poly1305Ietf } from '../crypto';
+import {
+  Argon2id,
+  isArgon2idOptions,
+  legacyAesDecrypt,
+  legacyAesEncrypt,
+  sha256Hex,
+  xchacha20NonceLength,
+  Xchacha20poly1305Ietf
+} from '../crypto';
 import { toAscii, toHex } from '../encoding';
 
 interface KdfConfiguration {
@@ -45,19 +52,19 @@ export const makeCryptKey = async (password: string) => {
 
 export const encryptSha256 = (password: string) => {
   return Promise.resolve(makeCryptKey(password)).then(cryptKey =>
-    CryptoJS.SHA256(cryptKey).toString()
+    sha256Hex(cryptKey)
   );
 };
 
 export const encryptAES = (value: string, password: string) => {
   return Promise.resolve(makeCryptKey(password)).then(cryptKey =>
-    CryptoJS.AES.encrypt(value, cryptKey).toString()
+    legacyAesEncrypt(value, cryptKey)
   );
 };
 
 export const decryptAES = (encryptedValue: string, password: string) => {
   return Promise.resolve(makeCryptKey(password)).then(cryptKey =>
-    CryptoJS.AES.decrypt(encryptedValue, cryptKey).toString(CryptoJS.enc.Utf8)
+    legacyAesDecrypt(encryptedValue, cryptKey)
   );
 };
 

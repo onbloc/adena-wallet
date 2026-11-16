@@ -13,7 +13,7 @@ import { useVisibleAccounts } from '@hooks/use-visible-accounts';
 import { RoutePath } from '@types';
 import type { JSX } from 'react';
 import React, { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 import { AccountsWrapper, AddAccountButton } from './accounts.styles';
 

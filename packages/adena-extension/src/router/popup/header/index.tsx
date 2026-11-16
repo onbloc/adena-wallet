@@ -5,7 +5,7 @@ import { RoutePath } from '@types';
 import { useAtom } from 'jotai';
 import type { JSX } from 'react';
 import React from 'react';
-import { useLocation, useMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router';
 import styled from 'styled-components';
 
 import ApproveMenu from './approve-menu';

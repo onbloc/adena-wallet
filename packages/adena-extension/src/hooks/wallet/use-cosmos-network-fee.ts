@@ -1,6 +1,6 @@
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   GasInfo,
   NetworkFee,
@@ -101,6 +101,7 @@ export const useCosmosNetworkFee = (
       document?.msgs,
       document?.memo,
     ],
+
     queryFn: async () => {
       if (!transactionService || !currentAccount || !document) {
         return null;
@@ -117,9 +118,10 @@ export const useCosmosNetworkFee = (
         return { estimate: null, errorMessage: message };
       }
     },
+
     enabled: !!transactionService && !!currentAccount && !!document,
     refetchInterval: REFETCH_INTERVAL,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   const isLoading = !isFetched && data === undefined;

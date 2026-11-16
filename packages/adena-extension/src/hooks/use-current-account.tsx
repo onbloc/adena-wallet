@@ -76,19 +76,19 @@ export const useCurrentAccount = (): {
     [chain.bech32Prefix, dispatchEvent],
   );
 
-  const { data: currentAddress } = useQuery<string | null>(
-    ['currentAddress', currentAccount, currentNetwork],
-    async () => {
+  const { data: currentAddress } = useQuery<string | null>({
+    queryKey: ['currentAddress', currentAccount, currentNetwork],
+
+    queryFn: async () => {
       if (!currentAccount) {
         return null;
       }
       const address = await currentAccount.getAddress(chain.bech32Prefix);
       return address;
     },
-    {
-      enabled: currentAccount !== null,
-    },
-  );
+
+    enabled: currentAccount !== null,
+  });
 
   const sessionRevoked = isRevokedSessionAccount(currentAccount, currentAddress, sessions);
 
@@ -99,18 +99,18 @@ export const useCurrentAccount = (): {
   // This stays the master address even while revoked: the master is still the
   // account a deposit belongs to, and the sign path forces caller=master
   // regardless of what the UI passes in.
-  const { data: currentFundingAddress } = useQuery<string | null>(
-    ['currentFundingAddress', currentAccount, currentNetwork],
-    async () => {
+  const { data: currentFundingAddress } = useQuery<string | null>({
+    queryKey: ['currentFundingAddress', currentAccount, currentNetwork],
+
+    queryFn: async () => {
       if (!currentAccount) {
         return null;
       }
       return getWalletFundingAddress(currentAccount, chain.bech32Prefix);
     },
-    {
-      enabled: currentAccount !== null,
-    },
-  );
+
+    enabled: currentAccount !== null,
+  });
 
   // Address whose balance the wallet displays. See `selectBalanceAddress` for
   // the policy; the account list applies the same one.

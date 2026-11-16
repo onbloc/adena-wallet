@@ -1,5 +1,5 @@
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
 
 import { useGetAllGRC721Collections } from './nft/use-get-all-grc721-collections';
@@ -29,7 +29,7 @@ export const useMakeTransactionsWithTime = (
 
   const queryClient = useQueryClient();
 
-  const { status, isLoading, isFetched, isFetching, data } = useQuery({
+  const { status, isPending: isLoading, isFetched, isFetching, data } = useQuery({
     queryKey: [
       'useMakeTransactionsWithTime',
       currentNetwork.chainId,
@@ -37,6 +37,7 @@ export const useMakeTransactionsWithTime = (
       transactions?.length,
       key || '',
     ],
+
     queryFn: () => {
       if (!transactions || !grc721Collections) {
         return null;
@@ -47,11 +48,11 @@ export const useMakeTransactionsWithTime = (
           let time: string | null = transaction.date;
 
           if (!transactionHistoryService.supportedApi) {
-            time = await queryClient.fetchQuery(
-              ['blockTime', currentNetwork.networkId, transaction.height || 1],
-              () => transactionHistoryService.fetchBlockTime(Number(transaction.height || 1)),
-              { staleTime: Infinity },
-            );
+            time = await queryClient.fetchQuery({
+              queryKey: ['blockTime', currentNetwork.networkId, transaction.height || 1],
+              queryFn: () => transactionHistoryService.fetchBlockTime(Number(transaction.height || 1)),
+              staleTime: Infinity,
+            });
           }
 
           if (transaction.type === 'TRANSFER_GRC721') {
@@ -90,6 +91,7 @@ export const useMakeTransactionsWithTime = (
         }),
       );
     },
+
     select: (data) => {
       if (!data) {
         return null;
@@ -97,6 +99,7 @@ export const useMakeTransactionsWithTime = (
 
       return TransactionHistoryMapper.queryToDisplay(data);
     },
+
     enabled:
       !!transactionHistoryService.supported
       && !!transactions
@@ -104,8 +107,16 @@ export const useMakeTransactionsWithTime = (
       && isFetchedGRC721Collections
       && !!allTokenMetainfos
       && tokenLogoMap !== null,
-    keepPreviousData: true,
+
+    placeholderData: keepPreviousData,
   });
 
-  return { status, isLoading, isFetched, isFetching, data };
+  // react-query v5 renamed `loading` to `pending`; callers keep the old name.
+  return {
+    status: status === 'pending' ? 'loading' : status,
+    isLoading,
+    isFetched,
+    isFetching,
+    data,
+  };
 };

@@ -18,7 +18,7 @@ jobs:
       - name: Branch info
         id: branch-info
         run: |
-          echo ::set-output name=BRANCH_TAG::${GITHUB_REF#refs/tags/}
+          echo "BRANCH_TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
       - name: Build project
         run: |

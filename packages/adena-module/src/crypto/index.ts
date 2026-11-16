@@ -1,5 +1,6 @@
 export { Bip39, EnglishMnemonic, entropyToMnemonic, mnemonicToEntropy } from './bip39';
 export { type HashFunction } from './hash';
+export { legacyAesDecrypt, legacyAesEncrypt, sha256Hex } from './legacy-aes';
 export {
   Argon2id,
   type Argon2idOptions,

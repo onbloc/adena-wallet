@@ -9,7 +9,7 @@ import LandingScreen from './index';
 const mockNavigate = vi.fn();
 
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: (): { data: boolean; isLoading: boolean } => ({ data: false, isLoading: false }),
+  useQuery: (): { data: boolean; isPending: boolean } => ({ data: false, isPending: false }),
 }));
 
 vi.mock('@hooks/use-context', () => ({

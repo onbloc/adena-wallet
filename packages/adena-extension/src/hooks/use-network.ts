@@ -11,7 +11,7 @@ import { makeScannerParameters, toScannerNetworkInfo } from '@common/utils/scann
 import { EventMessage } from '@inject/message';
 import CHAIN_DATA from '@resources/chains/chains.json';
 import { NetworkState, WalletState } from '@states';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AtomoneNetworkMetainfo, NetworkMetainfo, RoutePath } from '@types';
 import { Account, isSessionAccount } from 'adena-module';
 import { useAtom, useAtomValue } from 'jotai';
@@ -111,9 +111,10 @@ export const useNetwork = (): NetworkResponse => {
 
   const queryClient = useQueryClient();
 
-  const { data: failedNetwork = null } = useQuery<boolean | null>(
-    NETWORK_HEALTH_QUERY_KEY(currentGnoNetwork),
-    () => {
+  const { data: failedNetwork = null } = useQuery<boolean | null>({
+    queryKey: NETWORK_HEALTH_QUERY_KEY(currentGnoNetwork),
+
+    queryFn: () => {
       if (!currentGnoNetwork) {
         return null;
       }
@@ -121,8 +122,9 @@ export const useNetwork = (): NetworkResponse => {
         ({ healthy }) => !healthy,
       );
     },
-    { keepPreviousData: true, staleTime: NETWORK_HEALTH_STALE_TIME },
-  );
+    placeholderData: keepPreviousData,
+    staleTime: NETWORK_HEALTH_STALE_TIME,
+  });
 
   const cosmosUnresponsiveIds = useAtomValue(NetworkState.cosmosUnresponsiveNetworkIds);
 

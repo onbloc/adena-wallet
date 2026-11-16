@@ -10,7 +10,7 @@ export interface NFTAssetImageCardProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: UseQueryOptions<string | null, Error>,
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
 }
 

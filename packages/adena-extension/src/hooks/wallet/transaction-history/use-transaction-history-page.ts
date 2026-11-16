@@ -3,7 +3,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { InfiniteData, keepPreviousData, RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { TransactionInfo, TransactionWithPageInfo } from '@types';
 import { useCallback, useMemo } from 'react';
 
@@ -44,9 +44,16 @@ export const useTransactionHistoryPage = ({
     hasNextPage,
     refetch,
     fetchNextPage,
-  } = useInfiniteQuery<TransactionWithPageInfo, Error, unknown, any>(
+  } = useInfiniteQuery<
+    TransactionWithPageInfo,
+    Error,
+    InfiniteData<TransactionWithPageInfo>,
+    readonly unknown[],
+    string | null
+  >(
     {
       queryKey: ['history/page/all', currentNetwork.networkId, currentAddress || ''],
+      initialPageParam: null,
       getNextPageParam: (lastPage?: TransactionWithPageInfo): string | null => {
         if (!lastPage || !lastPage.page.hasNext) {
           return null;
@@ -60,14 +67,12 @@ export const useTransactionHistoryPage = ({
         }
         return transactionHistoryService.fetchAllTransactionHistory(currentAddress, cursor);
       },
-    },
-    {
       enabled:
         !!currentAddress
         && tokenMetainfos.length > 0
         && transactionHistoryService.supported
         && enabled,
-      keepPreviousData: true,
+      placeholderData: keepPreviousData,
       // No refetchInterval here: the history screen owns the single poll timer.
     },
   );

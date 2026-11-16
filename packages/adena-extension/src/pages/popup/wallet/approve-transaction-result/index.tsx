@@ -4,7 +4,7 @@ import useLink from '@hooks/use-link';
 import { InjectionMessage } from '@inject/message';
 import { RoutePath } from '@types';
 import React, { useCallback, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 const ApproveTransactionResult: React.FC = () => {
   const { navigate } = useAppNavigate();

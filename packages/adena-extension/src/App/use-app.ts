@@ -11,7 +11,7 @@ import { CommandMessage } from '@inject/message/command-message';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import { useIdleTimer } from 'react-idle-timer';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 const useApp = (): void => {
   const { wallet, clearWallet, initWallet } = useWalletContext();

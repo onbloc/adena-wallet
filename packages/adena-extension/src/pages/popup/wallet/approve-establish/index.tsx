@@ -15,7 +15,7 @@ import { useNetworkProfile } from '@hooks/use-network-profile';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { RoutePath } from '@types';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 
 function normalizeChainIds(value: unknown): string[] {
   if (typeof value === 'string') {

@@ -6,7 +6,7 @@ import { Tx } from '@gnolang/tm2-js-client';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionService } from '@services/index';
-import { useQuery, useQueryClient, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { Account, Document, documentToDefaultTx, isSessionAccount, Wallet } from 'adena-module';
 import BigNumber from 'bignumber.js';
 
@@ -161,7 +161,7 @@ export const makeEstimateGasTransaction = async (
  */
 export const useGetEstimateGas = (
   document: Document | null | undefined,
-  options?: UseQueryOptions<EstimateGasResult | null, Error>,
+  options?: Omit<UseQueryOptions<EstimateGasResult | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<EstimateGasResult | null> => {
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { transactionService, transactionGasService } = useAdenaContext();
@@ -242,7 +242,7 @@ export const useGetEstimateGas = (
       return nextResult;
     },
     refetchInterval: REFETCH_INTERVAL,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     enabled: !!document && !!transactionGasService && !!gasPrice,
     ...options,
   });

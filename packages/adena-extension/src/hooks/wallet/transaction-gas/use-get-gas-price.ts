@@ -1,12 +1,12 @@
 import { useAdenaContext } from '@hooks/use-context';
-import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 
 export const GET_GAS_PRICE = 'transactionGas/useGetGasPrice';
 
 const REFETCH_INTERVAL = 5_000;
 
 export const useGetGasPrice = (
-  options?: UseQueryOptions<number | null, Error>,
+  options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<number | null> => {
   const { transactionGasService } = useAdenaContext();
 
@@ -21,7 +21,7 @@ export const useGetGasPrice = (
     },
     refetchInterval: REFETCH_INTERVAL,
     enabled: !!transactionGasService,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     ...options,
   });
 };

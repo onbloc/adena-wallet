@@ -9,7 +9,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { AdenaLedgerConnector, Document, isLedgerAccount, LedgerError } from 'adena-module';
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 interface ApproveSignTransactionLedgerLoadingState {
   requestData?: InjectionMessage;

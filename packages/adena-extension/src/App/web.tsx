@@ -1,7 +1,7 @@
 import { WebRouter } from '@router/web/index';
 import { GlobalWebStyle } from '@styles/global-style';
 import React, { ReactElement } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 import AppProvider from './app-provider';
 import useApp from './use-app';

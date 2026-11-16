@@ -1,14 +1,13 @@
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
-import { decryptAES, encryptXChacha20, generateKdfSalt } from 'adena-module';
-import CryptoJS from 'crypto-js';
+import { decryptAES, encryptXChacha20, generateKdfSalt, sha256Hex } from 'adena-module';
 
 import { StorageModelDataV017 } from '../v017/storage-model-v017';
 import { StorageModelDataV018 } from './storage-model-v018';
 
 const LEGACY_SALT = 'W9+fs3FJ9p5KdR1XzQy2A6ZT4vjN8LvM9J8pVZmN9rU=';
 const legacyHashPassword = (password: string): string =>
-  CryptoJS.SHA256(LEGACY_SALT + password).toString();
+  sha256Hex(LEGACY_SALT + password);
 
 export class StorageMigration018 implements Migration<StorageModelDataV018> {
   public readonly version = 18;

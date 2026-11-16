@@ -30,7 +30,7 @@ import {
   isSessionAccount,
 } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import styled from 'styled-components';
 
 // Only the success response needs this: the SDK's `WalletMessageInfo` has no

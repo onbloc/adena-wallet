@@ -35,11 +35,11 @@ const LandingScreen = (): ReactElement => {
 
   // networkMode 'always': this reads chrome.storage, never the network. The
   // default 'online' pauses offline, leaving isLoading true for the session.
-  const { data: existWallet, isLoading } = useQuery(
-    ['existWallet', walletService.id],
-    async () => walletService.existsWallet(),
-    { networkMode: 'always' },
-  );
+  const { data: existWallet, isPending: isLoading } = useQuery({
+    queryKey: ['existWallet', walletService.id],
+    queryFn: async () => walletService.existsWallet(),
+    networkMode: 'always',
+  });
 
   if (isLoading) {
     return <WebMain />;

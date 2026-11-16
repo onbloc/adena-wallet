@@ -14,7 +14,7 @@ import { createSessionAccountUnsupportedResponse } from '@inject/message/session
 import { RoutePath } from '@types';
 import { isSessionAccount } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 
 const ApproveChangingNetworkContainer: React.FC = () => {
   const { search } = useLocation();

@@ -1,6 +1,6 @@
 import { CommonState } from '@states';
 import { useAtom } from 'jotai';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 export type UstHistoryDataReturn<T> = {
   getHistoryData: () => T | undefined;

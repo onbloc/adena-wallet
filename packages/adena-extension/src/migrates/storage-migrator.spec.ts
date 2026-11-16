@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { StorageModelV001 } from './migrations/v001/storage-model-v001';
 import { StorageMigrator } from './storage-migrator';

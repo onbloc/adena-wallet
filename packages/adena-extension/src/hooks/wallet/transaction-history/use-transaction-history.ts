@@ -43,9 +43,10 @@ export const useTransactionHistory = ({
     CommonState.fetchedHistoryBlockHeight,
   );
 
-  const { data: fetchedTransactions, refetch } = useQuery(
-    ['history/common/all', currentNetwork.networkId, currentAddress],
-    async () => {
+  const { data: fetchedTransactions, refetch } = useQuery({
+    queryKey: ['history/common/all', currentNetwork.networkId, currentAddress],
+
+    queryFn: async () => {
       if (!currentAddress) {
         return [];
       }
@@ -53,14 +54,13 @@ export const useTransactionHistory = ({
       const history = await transactionHistoryService.fetchAllTransactionHistory(currentAddress);
       return dedupeAndSortTransactions(history.transactions);
     },
-    {
-      enabled:
-        !!currentAddress
-        && tokenMetainfos.length > 0
-        && transactionHistoryService.supported
-        && enabled,
-    },
-  );
+
+    enabled:
+      !!currentAddress
+      && tokenMetainfos.length > 0
+      && transactionHistoryService.supported
+      && enabled,
+  });
 
   const blockIndex = useMemo(() => {
     if (!fetchedTransactions) {

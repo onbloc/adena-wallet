@@ -1,6 +1,6 @@
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { webcrypto } from 'crypto';
 import type { Mock } from 'vitest';

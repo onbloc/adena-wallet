@@ -18,7 +18,7 @@ vi.mock('adena-module', () => ({
 
 const mockNavigate = vi.fn();
 let mockSearch = '';
-vi.mock('react-router-dom', () => ({
+vi.mock('react-router', () => ({
   useNavigate: (): Mock => mockNavigate,
   useLocation: (): { search: string } => ({ search: mockSearch }),
 }));

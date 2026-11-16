@@ -32,7 +32,7 @@ import { fonts, getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
 import { isLedgerAccount, isSessionAccount } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import styled from 'styled-components';
 
 // TODO: replace with `InjectionMessageInstance.success/failure` once

@@ -26,7 +26,11 @@ const makeAsset = (
 const makeQuery
   = (result: Partial<UseQueryResult<string | null>>): NFTAssetImageCardProps['queryGRC721TokenUri'] =>
     (): UseQueryResult<string | null> =>
-      ({ data: null, isFetched: false, ...result }) as UseQueryResult<string | null>;
+      (({
+        data: null,
+        isFetched: false,
+        ...result,
+      }) as UseQueryResult<string | null>);
 
 const renderCard = (props: NFTAssetImageCardProps): void => {
   render(

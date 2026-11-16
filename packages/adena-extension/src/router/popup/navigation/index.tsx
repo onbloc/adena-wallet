@@ -6,7 +6,7 @@ import { RoutePath } from '@types';
 import type { JSX } from 'react';
 import React from 'react';
 import { useCallback, useMemo } from 'react';
-import { useMatch, useNavigate } from 'react-router-dom';
+import { useMatch, useNavigate } from 'react-router';
 import styled from 'styled-components';
 
 const Wrapper = styled.nav`

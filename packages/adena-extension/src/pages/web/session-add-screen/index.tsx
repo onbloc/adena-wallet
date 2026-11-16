@@ -133,12 +133,9 @@ type SpendPeriodUnit = 'days' | 'hours';
 type RealmValidationResult = { ok: true } | { ok: false; error: string };
 
 const isRealmPathFormatValid = (path: string): boolean => {
-  return (
-    path.startsWith(REALM_PATH_PREFIX)
+  return (path.startsWith(REALM_PATH_PREFIX)
     && !path.endsWith('/')
-    && !path.includes(':')
-    && !/\s/.test(path)
-  );
+    && !path.includes(':') && !/\s/.test(path));
 };
 
 const isSessionAllowPathRouteType = (path: string): boolean => {

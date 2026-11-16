@@ -12,7 +12,7 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { isSessionAccount } from 'adena-module';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 const ApproveAddingNetworkContainer: React.FC = () => {
   const { search } = useLocation();

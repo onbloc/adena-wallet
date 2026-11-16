@@ -26,7 +26,7 @@ import XLoginScreen from '@pages/web/x-login-screen';
 import { RoutePath } from '@types';
 import type { JSX } from 'react';
 import { useEffect } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router';
 
 import Header from './Header';
 

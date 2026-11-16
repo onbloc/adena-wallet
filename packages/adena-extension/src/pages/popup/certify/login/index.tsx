@@ -9,7 +9,7 @@ import { fonts } from '@styles/theme';
 import { RoutePath } from '@types';
 import type { JSX } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import styled, { useTheme } from 'styled-components';
 
 const text = 'Enter\nYour Password';

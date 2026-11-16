@@ -18,7 +18,7 @@ import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import styled from 'styled-components';
 
 const COSMOS_APPROVE_PATHS: string[] = [
