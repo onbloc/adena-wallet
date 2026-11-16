@@ -13,7 +13,8 @@
 | Adena | 선택 권한 `nativeMessaging`, background bridge, `ping`/`get_account`/`create_session`/`revoke_session` 처리, 에이전트 세션 정책 | `packages/adena-extension/src/inject/agent-host/` |
 | Adena 설정 | Security & Privacy → AI Agent Connection 토글과 연결 상태 표시 | `pages/popup/certify/agent-connection` |
 | Native host | `adena-agent-host`: 소켓 ↔ native messaging 중계, 브라우저별 manifest 설치·제거 | `misc/adena-mcp/apps/adena-agent-host` |
-| MCP 서버 | `adena-mcp`: 세션 생성·조회·폐기, `adena_call`/`adena_run`/`adena_send` (gnokey `--master`) | `misc/adena-mcp/apps/adena-mcp` |
+| MCP 서버 | `adena-mcp`: 세션 생성·조회·폐기, `adena_call`/`adena_run`/`adena_send` | `misc/adena-mcp/apps/adena-mcp` |
+| 세션 키 보호 | gnokey를 쓰지 않고 프로세스 안에서 서명. 니모닉 없이 잠긴 메모리(memguard)에서만 키 생성·사용, 디스크·로그·도구 응답에 미노출, core dump·디버거 부착 차단 | `apps/adena-mcp/internal/{sessionkey,hardening,chain}` |
 
 원래 설계와 다른 점 / 아직 안 된 것
 - 승인 화면은 전용 `ApproveAgentSession`을 만들지 않았다. 기존 트랜잭션 승인 팝업을 재사용한다.
@@ -24,6 +25,8 @@
   - 에이전트 세션은 체인 동기화로 기존 세션 관리 화면에 나타날 것으로 예상하지만, 실제 확인은 하지 않았다.
 - §3.1 보안 갭(외부 `DoContract`의 세션 관리 메시지, payload `hostname` 위조)은 이번 작업에서 고치지 않았다.
 - Native host 자동 설치는 macOS/Linux만 지원한다. Windows는 레지스트리 등록이 필요하다.
+- 원래 설계(§7.2, §8)는 에이전트가 gnokey로 트랜잭션을 실행하는 방식이었다. 구현에서는 gnokey 의존성을 없애고 키를 노출하지 않기 위해 `adena-mcp`가 직접 서명한다.
+- 그 결과 세션 키는 프로세스 재시작 시 사라진다. 해당 세션은 폐기하거나 만료되게 둔다.
 
 ## 1. 목표
 
