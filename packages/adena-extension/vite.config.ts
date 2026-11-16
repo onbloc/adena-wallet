@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { crx, type ManifestV3Export } from '@crxjs/vite-plugin';
 import nodePolyfills from '@rolldown/plugin-node-polyfills';
 import react from '@vitejs/plugin-react';
-import { build, defineConfig, loadEnv, type Plugin } from 'vite';
+import { build, defineConfig, loadEnv, type Plugin, type Rolldown } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 import { buildManifest } from './manifest.config';
@@ -67,48 +67,74 @@ const polyfills = (): Plugin => ({ ...nodePolyfills(), enforce: 'pre' }) as Plug
 /**
  * content.ts loads `inject.js` into the page as a classic script, so it has to be
  * one self-contained file. crx()'s own IIFE build runs without plugins and would
- * drop the node polyfills, hence this separate build.
+ * drop the node polyfills, hence this separate build. It runs inside the main
+ * build so watch mode tracks its sources and the file lands in the same output.
  */
 const injectScript = (options: {
   outDir: string;
   mode: string;
   target: string;
   sourcemap: boolean;
+  minify: boolean;
   define: Record<string, string>;
-}): Plugin => ({
-  name: 'adena:inject-script',
-  apply: 'build',
-  async closeBundle() {
-    await build({
-      configFile: false,
-      logLevel: 'warn',
-      mode: options.mode,
-      resolve: { alias },
-      define: options.define,
-      plugins: [polyfills()],
-      build: {
-        outDir: options.outDir,
-        emptyOutDir: false,
-        sourcemap: options.sourcemap,
-        target: options.target,
-        lib: {
-          entry: resolve(root, 'src/inject.ts'),
-          formats: ['iife'],
-          name: 'adenaInject',
-          fileName: () => INJECT_SCRIPT,
-        },
-      },
-    });
+}): Plugin => {
+  let files: { fileName: string; source: string | Uint8Array }[] = [];
 
-    const manifestPath = resolve(options.outDir, 'manifest.json');
-    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-    manifest.web_accessible_resources = [
-      ...(manifest.web_accessible_resources ?? []),
-      { resources: [INJECT_SCRIPT], matches: ['<all_urls>'] },
-    ];
-    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-  },
-});
+  return {
+    name: 'adena:inject-script',
+    apply: 'build',
+    async buildEnd() {
+      const result = await build({
+        configFile: false,
+        logLevel: 'warn',
+        mode: options.mode,
+        resolve: { alias },
+        define: options.define,
+        plugins: [polyfills()],
+        build: {
+          write: false,
+          sourcemap: options.sourcemap,
+          minify: options.minify,
+          target: options.target,
+          lib: {
+            entry: resolve(root, 'src/inject.ts'),
+            formats: ['iife'],
+            name: 'adenaInject',
+            fileName: () => INJECT_SCRIPT,
+          },
+        },
+      });
+      const outputs = (Array.isArray(result) ? result : [result]) as Rolldown.RolldownOutput[];
+      const items = outputs.flatMap(({ output }) => output);
+
+      for (const item of items) {
+        if (item.type !== 'chunk') continue;
+        for (const id of item.moduleIds) {
+          if (!id.startsWith('\0') && !id.includes('/node_modules/')) this.addWatchFile(id);
+        }
+      }
+      files = items.map(item => ({
+        fileName: item.fileName,
+        source: item.type === 'chunk' ? item.code : item.source,
+      }));
+    },
+    generateBundle() {
+      for (const { fileName, source } of files) {
+        this.emitFile({ type: 'asset', fileName, source });
+      }
+    },
+    writeBundle() {
+      // crx() writes the manifest; expose inject.js to pages after it has.
+      const manifestPath = resolve(options.outDir, 'manifest.json');
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      manifest.web_accessible_resources = [
+        ...(manifest.web_accessible_resources ?? []),
+        { resources: [INJECT_SCRIPT], matches: ['<all_urls>'] },
+      ];
+      writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+    },
+  };
+};
 
 /**
  * Builds the Chrome target by default (`dist`). `-- --browser=firefox` builds the
@@ -119,6 +145,10 @@ export default defineConfig(({ mode }) => {
   const isFirefox = process.argv.includes('--browser=firefox');
   const isStorybook = process.argv[1]?.includes('storybook');
   const isProduction = mode === 'production';
+  // `vite build` defaults to a production React build; development keeps the
+  // dev runtime and readable output, as `webpack --mode=development` did.
+  if (!isProduction) process.env.NODE_ENV = 'development';
+  const minify = isProduction;
   const outDir = resolve(root, isFirefox ? 'dist-firefox' : 'dist');
   const target = isFirefox ? 'firefox115' : 'chrome100';
   // Shipped source maps would hand out the wallet's readable sources.
@@ -143,7 +173,7 @@ export default defineConfig(({ mode }) => {
             viteStaticCopy({
               targets: [{ src: 'src/resources/**/*', dest: 'resources', rename: { stripBase: 2 } }],
             }),
-            injectScript({ outDir, mode, target, sourcemap, define }),
+            injectScript({ outDir, mode, target, sourcemap, minify, define }),
           ]),
     ],
     resolve: { alias },
@@ -153,6 +183,7 @@ export default defineConfig(({ mode }) => {
       emptyOutDir: true,
       assetsInlineLimit: 0,
       sourcemap,
+      minify,
       target,
       chunkSizeWarningLimit: MAX_CHUNK_SIZE / 1024,
       rolldownOptions: {

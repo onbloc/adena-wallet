@@ -6,8 +6,8 @@
   "private": true,
   "scripts": {
     "setup": "pnpm install",
-    "develop": "pnpm --filter adena-extension dev",
-    "develop:firefox": "pnpm --filter adena-extension dev:firefox",
+    "develop": "pnpm build:module && pnpm --parallel --filter adena-module --filter adena-extension run \"/^(watch|dev)$/\"",
+    "develop:firefox": "pnpm build:module && pnpm --parallel --filter adena-module --filter adena-extension run \"/^(watch|dev:firefox)$/\"",
     "build": "pnpm build:module && pnpm build:service",
     "build:module": "pnpm --filter adena-module build",
     "build:service": "pnpm --filter adena-extension build",

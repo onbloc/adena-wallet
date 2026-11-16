@@ -9,7 +9,7 @@ const define = Object.fromEntries(
   Object.entries(env).map(([key, value]) => [`process.env.${key}`, JSON.stringify(value)])
 );
 
-export default defineConfig({
+export default defineConfig(({ watch }) => ({
   entry: ['./src/index.ts'],
   format: ['esm', 'cjs'],
   platform: 'browser',
@@ -17,5 +17,8 @@ export default defineConfig({
   outDir: './dist',
   sourcemap: true,
   dts: true,
-  define
-});
+  define,
+  // Keep the previous output in place while watching: the extension's own watch
+  // build reads dist/ and would fail on a half-emptied directory.
+  clean: !watch
+}));

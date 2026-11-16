@@ -21,6 +21,7 @@
   },
   "scripts": {
     "build": "pnpm typecheck && tsdown",
+    "watch": "tsdown --watch",
     "typecheck": "node ./node_modules/typescript-native/bin/tsc --noEmit",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
