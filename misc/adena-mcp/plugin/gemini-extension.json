@@ -1,0 +1,12 @@
+{
+  "name": "adena",
+  "version": "0.1.0",
+  "description": "Use the Adena wallet from your agent: connect, create scoped session accounts, and send or sign gno.land transactions as the user.",
+  "mcpServers": {
+    "adena": {
+      "command": "npx",
+      "args": ["-y", "@adena-wallet/mcp"]
+    }
+  },
+  "contextFileName": "GEMINI.md"
+}
