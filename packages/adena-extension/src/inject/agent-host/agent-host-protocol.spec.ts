@@ -3,11 +3,13 @@ import { toBase64 } from 'adena-module';
 import {
   AGENT_SESSION_MAX_LIFETIME_SECONDS,
   AgentHostRequestError,
+  agentSiteName,
   normalizeAgentName,
   parseAgentHostRequest,
   parseCreateSessionParams,
   parseRevokeSessionParams,
   parseSessionPublicKey,
+  parseTransactionParams,
   toErrorResponse,
 } from './agent-host-protocol';
 
@@ -165,5 +167,96 @@ describe('toErrorResponse', () => {
 
   it('maps unknown errors to internal_error', () => {
     expect(toErrorResponse('1', new Error('boom')).error?.code).toBe('internal_error');
+  });
+});
+
+describe('parseTransactionParams', () => {
+  const ADDRESS = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
+
+  it('fills signer fields and defaults for every supported type', () => {
+    const parsed = parseTransactionParams(
+      {
+        messages: [
+          { type: '/vm.m_call', value: { pkg_path: 'gno.land/r/demo/counter', func: 'Incr' } },
+          {
+            type: '/vm.m_run',
+            value: { package: { name: 'main', path: '', files: [{ name: 'main.gno', body: '' }] } },
+          },
+          {
+            type: '/vm.m_addpkg',
+            value: { package: { name: 'foo', path: 'gno.land/p/demo/foo', files: [] } },
+          },
+          { type: '/bank.MsgSend', value: { to_address: ADDRESS, amount: '1ugnot' } },
+        ],
+        memo: 'hello',
+        gas_wanted: 100000,
+      },
+      ADDRESS,
+    );
+
+    expect(
+      parsed.messages.map((m) => m.value.caller ?? m.value.creator ?? m.value.from_address),
+    ).toEqual([ADDRESS, ADDRESS, ADDRESS, ADDRESS]);
+    expect(parsed.messages[0].value.args).toEqual([]);
+    expect(parsed.messages[0].value.send).toBe('');
+    expect(parsed.memo).toBe('hello');
+    expect(parsed.gasWanted).toBe(100000);
+    expect(parsed.gasFee).toBeUndefined();
+  });
+
+  it('rejects a signer field naming another account', () => {
+    expectErrorCode(
+      () =>
+        parseTransactionParams(
+          {
+            messages: [
+              {
+                type: '/bank.MsgSend',
+                value: { from_address: 'g1other', to_address: ADDRESS, amount: '1ugnot' },
+              },
+            ],
+          },
+          ADDRESS,
+        ),
+      'invalid_params',
+    );
+  });
+
+  it('rejects session admin and unknown message types', () => {
+    for (const type of ['/auth.m_create_session', '/bank.MsgMultiSend']) {
+      expectErrorCode(
+        () => parseTransactionParams({ messages: [{ type, value: {} }] }, ADDRESS),
+        'invalid_params',
+      );
+    }
+  });
+
+  it('rejects empty and malformed message lists', () => {
+    expectErrorCode(() => parseTransactionParams({ messages: [] }, ADDRESS), 'invalid_params');
+    expectErrorCode(
+      () =>
+        parseTransactionParams(
+          { messages: [{ type: '/vm.m_call', value: { func: 'F' } }] },
+          ADDRESS,
+        ),
+      'invalid_params',
+    );
+    expectErrorCode(
+      () =>
+        parseTransactionParams(
+          {
+            messages: [{ type: '/bank.MsgSend', value: { to_address: ADDRESS, amount: '1ugnot' } }],
+            gas_fee: -1,
+          },
+          ADDRESS,
+        ),
+      'invalid_params',
+    );
+  });
+});
+
+describe('agentSiteName', () => {
+  it('matches the connected-sites key the establish popup stores', () => {
+    expect(agentSiteName('claude-code')).toBe('agent://claude-code.agent');
   });
 });

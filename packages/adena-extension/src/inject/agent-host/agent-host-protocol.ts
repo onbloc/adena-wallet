@@ -1,5 +1,12 @@
 import { fromBase64 } from 'adena-module';
 
+import {
+  validateTransactionMessageOfAddPkg,
+  validateTransactionMessageOfBankSend,
+  validateTransactionMessageOfRun,
+  validateTransactionMessageOfVmCall,
+} from '@common/validation/validation-message';
+
 export const AGENT_HOST_NAME = 'xyz.onbloc.adena_agent';
 export const AGENT_HOST_ENABLED_STORAGE_KEY = 'AGENT_HOST_ENABLED';
 export const AGENT_HOST_STATUS_STORAGE_KEY = 'AGENT_HOST_STATUS';
@@ -12,8 +19,19 @@ export const AGENT_SESSION_SPEND_DENOM = 'ugnot';
 
 const MAX_AGENT_NAME_LENGTH = 32;
 const SECP256K1_COMPRESSED_PUBKEY_LENGTH = 33;
+const MAX_TRANSACTION_MESSAGES = 32;
 
-export type AgentHostMethod = 'ping' | 'get_account' | 'create_session' | 'revoke_session';
+export const AGENT_REQUEST_PROTOCOL = 'agent:';
+
+export type AgentHostMethod =
+  | 'ping'
+  | 'get_status'
+  | 'connect'
+  | 'get_account'
+  | 'create_session'
+  | 'revoke_session'
+  | 'send_transaction'
+  | 'sign_transaction';
 
 export interface AgentHostRequest {
   id: string;
@@ -31,6 +49,7 @@ export type AgentHostErrorCode =
   | 'invalid_params'
   | 'policy_violation'
   | 'no_wallet'
+  | 'not_connected'
   | 'wallet_locked'
   | 'unsupported_account'
   | 'unsupported_network'
@@ -64,6 +83,18 @@ export interface RevokeAgentSessionParams {
   agentName: string;
 }
 
+export interface AgentTransactionMessage {
+  type: string;
+  value: Record<string, unknown>;
+}
+
+export interface AgentTransactionParams {
+  messages: AgentTransactionMessage[];
+  memo: string;
+  gasWanted?: number;
+  gasFee?: number;
+}
+
 export class AgentHostRequestError extends Error {
   constructor(
     public readonly code: AgentHostErrorCode,
@@ -76,9 +107,13 @@ export class AgentHostRequestError extends Error {
 
 const METHODS: ReadonlySet<string> = new Set([
   'ping',
+  'get_status',
+  'connect',
   'get_account',
   'create_session',
   'revoke_session',
+  'send_transaction',
+  'sign_transaction',
 ]);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -220,6 +255,98 @@ export const parseRevokeSessionParams = (
     agentName: normalizeAgentName(params.agent_name),
   };
 };
+
+// The address field each message type takes from the signer.
+const SIGNER_FIELDS: Record<string, string> = {
+  '/vm.m_call': 'caller',
+  '/vm.m_run': 'caller',
+  '/vm.m_addpkg': 'creator',
+  '/bank.MsgSend': 'from_address',
+};
+
+const MESSAGE_VALIDATORS: Record<string, (message: AgentTransactionMessage) => boolean> = {
+  '/vm.m_call': validateTransactionMessageOfVmCall,
+  '/vm.m_run': validateTransactionMessageOfRun,
+  '/vm.m_addpkg': validateTransactionMessageOfAddPkg,
+  '/bank.MsgSend': validateTransactionMessageOfBankSend,
+};
+
+const parseOptionalPositiveInteger = (value: unknown, name: string): number | undefined => {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value <= 0) {
+    throw invalidParams(`${name} must be a positive integer`);
+  }
+  return value;
+};
+
+// Parses the messages an agent asks the wallet to sign. Signer fields are
+// filled with the master address when missing and must match it otherwise,
+// so an agent cannot ask the user to sign for another account.
+export const parseTransactionParams = (
+  params: Record<string, unknown> | undefined,
+  signerAddress: string,
+): AgentTransactionParams => {
+  if (!params) {
+    throw invalidParams('params are required');
+  }
+
+  const { messages } = params;
+  if (!Array.isArray(messages) || messages.length === 0) {
+    throw invalidParams('messages must be a non-empty array');
+  }
+  if (messages.length > MAX_TRANSACTION_MESSAGES) {
+    throw invalidParams(`at most ${MAX_TRANSACTION_MESSAGES} messages are allowed`);
+  }
+
+  const parsed = messages.map((message, index): AgentTransactionMessage => {
+    if (!isRecord(message) || typeof message.type !== 'string' || !isRecord(message.value)) {
+      throw invalidParams(`messages[${index}] must be an object with type and value`);
+    }
+
+    const signerField = SIGNER_FIELDS[message.type];
+    if (!signerField) {
+      throw invalidParams(`messages[${index}]: unsupported type ${message.type}`);
+    }
+
+    const current = message.value[signerField];
+    if (current !== undefined && current !== '' && current !== signerAddress) {
+      throw invalidParams(`messages[${index}].value.${signerField} must be the wallet address`);
+    }
+
+    const value: Record<string, unknown> = { ...message.value, [signerField]: signerAddress };
+    if (message.type === '/vm.m_call') {
+      value.send = typeof value.send === 'string' ? value.send : '';
+      value.args = Array.isArray(value.args) ? value.args : [];
+    }
+    if (message.type === '/vm.m_run') {
+      value.send = typeof value.send === 'string' ? value.send : '';
+    }
+
+    const normalized = { type: message.type, value };
+    if (!MESSAGE_VALIDATORS[message.type](normalized)) {
+      throw invalidParams(`messages[${index}] is not a valid ${message.type} message`);
+    }
+    return normalized;
+  });
+
+  const memo = params.memo === undefined ? '' : params.memo;
+  if (typeof memo !== 'string') {
+    throw invalidParams('memo must be a string');
+  }
+
+  return {
+    messages: parsed,
+    memo,
+    gasWanted: parseOptionalPositiveInteger(params.gas_wanted, 'gas_wanted'),
+    gasFee: parseOptionalPositiveInteger(params.gas_fee, 'gas_fee'),
+  };
+};
+
+// The connected-sites key an agent is stored under.
+export const agentSiteName = (agentName: string): string =>
+  `${AGENT_REQUEST_PROTOCOL}//${agentName}.agent`;
 
 export const toErrorResponse = (id: string, error: unknown): AgentHostResponse => {
   if (error instanceof AgentHostRequestError) {
