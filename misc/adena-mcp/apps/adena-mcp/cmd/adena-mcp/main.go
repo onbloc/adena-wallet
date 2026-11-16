@@ -29,23 +29,18 @@ import (
 // version is set at build time with -ldflags "-X main.version=...".
 var version = "dev"
 
-const instructions = "adena-mcp lets you act on gno.land as the user of the Adena wallet, through " +
-	"session accounts the user approves in Adena.\n" +
-	"- Start with adena_status: it shows whether Adena is reachable, the user's address and network, " +
-	"and the sessions you hold.\n" +
-	"- Before writing, call adena_session_create with the narrowest allow_paths the task needs " +
-	"(\"vm/exec:<realm path>\" per realm), a low spend_limit and a short expires_in. The user sees and " +
-	"approves the request in Adena; the call blocks until they decide. A session cannot be widened, " +
-	"so ask for a new one if the scope changes.\n" +
-	"- Write with adena_call, adena_run or adena_send. The chain sees the user's address as the caller. " +
-	"Gas fees are charged against the session spend limit.\n" +
-	"- When the task is done, call adena_session_revoke. The user approves the revocation in Adena.\n" +
-	"- Never ask the user for a seed phrase or private key. Session keys have none, live only in " +
-	"this server's memory and are lost on restart; revoke such sessions and create new ones. " +
-	"Deploying packages (addpkg) is not possible with a session.\n" +
-	"- If Adena is unreachable, ask the user to open the browser, unlock Adena and enable " +
-	"Settings > Security & Privacy > AI Agent Connection, and to install the agent host " +
-	"(adena-agent-host install) once."
+const instructions = "adena tools let you act on gno.land as the user of the Adena wallet.\n" +
+	"- Start with get_status. If it is not ready, follow its next_step; connect_wallet installs the " +
+	"agent host when missing and asks the user to approve the connection in Adena.\n" +
+	"- The default flow is sessions: create_session with the narrowest allow_paths the task needs " +
+	"(\"vm/exec:<realm path>\" per realm, \"vm/run\", \"bank/send\"), a low spend_limit and a short " +
+	"expires_in. The user approves it in Adena once; send_transaction and sign_transaction then sign " +
+	"with the session key without popups. Gas fees count against the spend limit.\n" +
+	"- Use signer=\"wallet\" only when the user asks to approve a transaction directly, or for " +
+	"/vm.m_addpkg, which sessions can never sign. The user approves each such transaction in Adena.\n" +
+	"- Call revoke_session when the task is done. Session keys live only in this server's memory and " +
+	"are lost on restart; revoke such sessions and create new ones.\n" +
+	"- Never ask the user for a seed phrase or private key."
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "version" {
@@ -93,6 +88,7 @@ func run() error {
 	tools.Register(registry, &tools.Deps{
 		Bridge: &bridge.Client{SocketPath: conf.SocketPath()},
 		Chain:  chain.NewClient(),
+		Host:   hostInstaller{agentHome: conf.Home},
 		Keys:   keys,
 		Store:  store,
 		Config: conf,

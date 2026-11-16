@@ -73,12 +73,14 @@ func TestCheckSpendRejectsOverLimit(t *testing.T) {
 
 	send := bank.MsgSend{FromAddress: master, ToAddress: crypto.Address{2}, Amount: std.NewCoins(std.NewCoin("ugnot", 90))}
 
-	if err := client.checkSpend(acc, newTx(send, 1000, std.NewCoin("ugnot", 5)), master); err != nil {
+	if err := client.checkSpend(acc, newTx([]std.Msg{send}, "", 1000, std.NewCoin("ugnot", 5)), master); err != nil {
 		t.Fatalf("95ugnot fits in 100ugnot: %v", err)
 	}
 
 	var spendErr *SpendError
-	if err := client.checkSpend(acc, newTx(send, 1000, std.NewCoin("ugnot", 20)), master); !errors.As(err, &spendErr) {
+
+	overLimit := newTx([]std.Msg{send}, "", 1000, std.NewCoin("ugnot", 20))
+	if err := client.checkSpend(acc, overLimit, master); !errors.As(err, &spendErr) {
 		t.Fatalf("got %v, want SpendError", err)
 	}
 }
@@ -104,7 +106,7 @@ func TestSignerMarksSessionSignature(t *testing.T) {
 	signer := txSigner{chainID: "dev", acc: acc, signer: key, sessionAddr: sessionAddr}
 	master := crypto.Address{1}
 	send := bank.MsgSend{FromAddress: master, ToAddress: crypto.Address{2}, Amount: std.NewCoins(std.NewCoin("ugnot", 1))}
-	tx := newTx(send, 1000, std.NewCoin("ugnot", 1))
+	tx := newTx([]std.Msg{send}, "memo", 1000, std.NewCoin("ugnot", 1))
 
 	signed, err := signer.sign(tx)
 	if err != nil {

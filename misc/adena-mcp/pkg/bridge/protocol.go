@@ -16,10 +16,14 @@ const MaxLineSize = 1 << 20
 
 // Methods understood by the Adena extension.
 const (
-	MethodPing          = "ping"
-	MethodGetAccount    = "get_account"
-	MethodCreateSession = "create_session"
-	MethodRevokeSession = "revoke_session"
+	MethodPing            = "ping"
+	MethodGetStatus       = "get_status"
+	MethodConnect         = "connect"
+	MethodGetAccount      = "get_account"
+	MethodCreateSession   = "create_session"
+	MethodRevokeSession   = "revoke_session"
+	MethodSendTransaction = "send_transaction"
+	MethodSignTransaction = "sign_transaction"
 )
 
 // Error codes produced by the host itself; the extension reports its own.
@@ -51,6 +55,46 @@ type Error struct {
 
 func (e *Error) Error() string {
 	return fmt.Sprintf("%s: %s", e.Code, e.Message)
+}
+
+// AgentParams identifies the agent; every request carries it so Adena can
+// check that the agent is connected.
+type AgentParams struct {
+	AgentName string `json:"agent_name,omitempty"`
+}
+
+// Status is the wallet state reported without revealing the address.
+type Status struct {
+	ChainID   *string `json:"chain_id"`
+	RPCURL    *string `json:"rpc_url"`
+	Version   string  `json:"version"`
+	HasWallet bool    `json:"has_wallet"`
+	Locked    bool    `json:"locked"`
+	Connected bool    `json:"connected"`
+}
+
+// TransactionParams asks the user to sign messages with the master account.
+type TransactionParams struct {
+	AgentName string            `json:"agent_name,omitempty"`
+	Memo      string            `json:"memo,omitempty"`
+	Messages  []json.RawMessage `json:"messages"`
+	GasWanted int64             `json:"gas_wanted,omitempty"`
+	GasFee    int64             `json:"gas_fee,omitempty"`
+}
+
+// BroadcastResult is a transaction the user signed and Adena broadcast.
+type BroadcastResult struct {
+	TxHash        string          `json:"tx_hash"`
+	MasterAddress string          `json:"master_address"`
+	ChainID       string          `json:"chain_id"`
+	Height        json.RawMessage `json:"height,omitempty"`
+}
+
+// SignResult is a transaction the user signed without broadcasting.
+type SignResult struct {
+	SignedTx      string `json:"signed_tx"`
+	SignerAddress string `json:"signer_address"`
+	ChainID       string `json:"chain_id"`
 }
 
 // Account is the extension's current master account and network.

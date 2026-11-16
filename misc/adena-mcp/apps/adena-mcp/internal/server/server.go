@@ -43,6 +43,21 @@ func (e *ToolError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Code, e.Message)
 }
 
+type clientNameKey struct{}
+
+// WithClientName attaches the MCP client's name to ctx.
+func WithClientName(ctx context.Context, name string) context.Context {
+	return context.WithValue(ctx, clientNameKey{}, name)
+}
+
+// ClientName returns the MCP client's self-reported name, such as
+// "claude-code", or "" when the client sent none.
+func ClientName(ctx context.Context) string {
+	name, _ := ctx.Value(clientNameKey{}).(string)
+
+	return name
+}
+
 // Handler executes a tool with decoded JSON arguments.
 type Handler func(ctx context.Context, args map[string]any) (Result, error)
 
@@ -153,6 +168,12 @@ func adapt(t *Tool, log *slog.Logger) mcp.ToolHandler {
 		if req.Params != nil && len(req.Params.Arguments) > 0 {
 			if decodeErr := json.Unmarshal(req.Params.Arguments, &args); decodeErr != nil {
 				return textResult("invalid arguments: "+decodeErr.Error(), true), nil
+			}
+		}
+
+		if req.Session != nil {
+			if params := req.Session.InitializeParams(); params != nil && params.ClientInfo != nil {
+				ctx = WithClientName(ctx, params.ClientInfo.Name)
 			}
 		}
 

@@ -63,28 +63,41 @@ func (p Price) Fee(gasWanted int64) std.Coin {
 	return std.NewCoin(gasDenom, max((gasWanted*p.Amount+p.Gas-1)/p.Gas, 1))
 }
 
+// Mode selects what Execute does with the signed transaction.
+type Mode int
+
+// Execution modes.
+const (
+	Broadcast Mode = iota
+	Simulate
+	SignOnly
+)
+
 // TxRequest describes one session-signed transaction.
 type TxRequest struct {
 	Signer Signer
-	// Msg builds the message with the master address as the caller.
-	Msg     func(master crypto.Address) (std.Msg, error)
+	// Msgs builds the messages with the master address as the caller.
+	Msgs    func(master crypto.Address) ([]std.Msg, error)
 	RPCURL  string
 	ChainID string
 	Master  string
+	Memo    string
 	// GasFee overrides the fee priced from the chain gas price.
 	GasFee string
 	// GasWanted skips measurement when set.
 	GasWanted int64
 	// GasCeiling is the gas limit used to measure the transaction.
 	GasCeiling int64
-	Simulate   bool
+	Mode       Mode
 }
 
-// TxResult is the outcome of a broadcast or simulation.
+// TxResult is the outcome of a broadcast, simulation or signature.
 type TxResult struct {
-	TxHash    string
-	GasFee    string
-	Data      string
+	TxHash string
+	GasFee string
+	Data   string
+	// SignedTx is the amino-encoded signed transaction (SignOnly).
+	SignedTx  []byte
 	Height    int64
 	GasWanted int64
 	GasUsed   int64
@@ -248,13 +261,19 @@ func (c *Client) Execute(ctx context.Context, req TxRequest) (TxResult, error) {
 		return TxResult{}, fmt.Errorf("session address: %w", err)
 	}
 
-	msg, err := req.Msg(master)
+	msgs, err := req.Msgs(master)
 	if err != nil {
 		return TxResult{}, err
 	}
 
-	if validateErr := msg.ValidateBasic(); validateErr != nil {
-		return TxResult{}, fmt.Errorf("invalid message: %w", validateErr)
+	if len(msgs) == 0 {
+		return TxResult{}, errors.New("at least one message is required")
+	}
+
+	for i, msg := range msgs {
+		if validateErr := msg.ValidateBasic(); validateErr != nil {
+			return TxResult{}, fmt.Errorf("invalid message %d: %w", i, validateErr)
+		}
 	}
 
 	acc, err := c.SessionAccount(ctx, req.RPCURL, req.Master, req.Signer.Address())
@@ -265,7 +284,7 @@ func (c *Client) Execute(ctx context.Context, req TxRequest) (TxResult, error) {
 	signer := txSigner{chainID: req.ChainID, acc: acc, signer: req.Signer, sessionAddr: sessionAddr}
 	price := c.GasPrice(ctx, req.RPCURL)
 
-	gasWanted, measured, err := c.measure(ctx, cli, &signer, req, msg, master, price)
+	gasWanted, measured, err := c.measure(ctx, cli, &signer, req, msgs, master, price)
 	if err != nil {
 		return TxResult{}, err
 	}
@@ -279,18 +298,27 @@ func (c *Client) Execute(ctx context.Context, req TxRequest) (TxResult, error) {
 		}
 	}
 
-	tx := newTx(msg, gasWanted, fee)
+	tx := newTx(msgs, req.Memo, gasWanted, fee)
 	if spendErr := c.checkSpend(acc, tx, master); spendErr != nil {
 		return TxResult{}, spendErr
 	}
 
-	if req.Simulate {
+	if req.Mode == Simulate {
 		return c.simulateFinal(ctx, cli, &signer, tx, measured)
 	}
 
 	signed, err := signer.sign(tx)
 	if err != nil {
 		return TxResult{}, err
+	}
+
+	if req.Mode == SignOnly {
+		bz, marshalErr := amino.Marshal(signed)
+		if marshalErr != nil {
+			return TxResult{}, fmt.Errorf("encode signed tx: %w", marshalErr)
+		}
+
+		return TxResult{SignedTx: bz, GasWanted: gasWanted, GasFee: fee.String()}, nil
 	}
 
 	res, err := broadcast(ctx, cli, signed)
@@ -320,7 +348,7 @@ func (c *Client) measure(
 	cli *rpcclient.RPCClient,
 	signer *txSigner,
 	req TxRequest,
-	msg std.Msg,
+	msgs []std.Msg,
 	master crypto.Address,
 	price Price,
 ) (int64, *measurement, error) {
@@ -328,7 +356,7 @@ func (c *Client) measure(
 		return req.GasWanted, nil, nil
 	}
 
-	tx := newTx(msg, req.GasCeiling, price.Fee(req.GasCeiling))
+	tx := newTx(msgs, req.Memo, req.GasCeiling, price.Fee(req.GasCeiling))
 	if err := c.checkSpend(signer.acc, tx, master); err != nil {
 		return 0, nil, err
 	}
@@ -485,8 +513,8 @@ func broadcast(ctx context.Context, cli *rpcclient.RPCClient, tx *std.Tx) (broad
 	}, nil
 }
 
-func newTx(msg std.Msg, gasWanted int64, fee std.Coin) *std.Tx {
-	return &std.Tx{Msgs: []std.Msg{msg}, Fee: std.NewFee(gasWanted, fee)}
+func newTx(msgs []std.Msg, memo string, gasWanted int64, fee std.Coin) *std.Tx {
+	return &std.Tx{Msgs: msgs, Fee: std.NewFee(gasWanted, fee), Memo: memo}
 }
 
 type txSigner struct {

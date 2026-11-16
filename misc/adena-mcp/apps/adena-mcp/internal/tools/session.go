@@ -17,9 +17,9 @@ import (
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/bridge"
 )
 
-func registerSessionCreate(r *server.Registry, d *Deps) {
+func registerCreateSession(r *server.Registry, d *Deps) {
 	r.Add(&server.Tool{
-		Name: "adena_session_create",
+		Name: "create_session",
 		Description: "Creates a session key and asks the user to authorize it in Adena. The user " +
 			"reviews and signs the session with their master account. The key has no seed phrase, " +
 			"exists only in this server's locked memory and is never shown to anyone, so it is lost " +
@@ -43,7 +43,6 @@ func registerSessionCreate(r *server.Registry, d *Deps) {
 			},
 			"expires_in": stringProp(`Session lifetime as a Go duration, e.g. "30m" or "2h". ` +
 				"Default 1h, at most 168h."),
-			"agent_name": stringProp("Short name shown to the user as the requester. Default adena-mcp."),
 		}, "allow_paths"),
 		Annotations: server.Annotations{OpenWorld: true},
 		Handler: func(ctx context.Context, args map[string]any) (server.Result, error) {
@@ -54,7 +53,6 @@ func registerSessionCreate(r *server.Registry, d *Deps) {
 
 type createArgs struct {
 	spendLimit  string
-	agentName   string
 	allowPaths  []string
 	spendPeriod int64
 	expiresIn   time.Duration
@@ -106,21 +104,11 @@ func parseCreateArgs(args map[string]any) (createArgs, error) {
 		return createArgs{}, server.InvalidArg("expires_in", "must be at most "+config.MaxSessionTTL.String())
 	}
 
-	agentName, err := server.StringArg(args, "agent_name")
-	if err != nil {
-		return createArgs{}, err
-	}
-
-	if agentName == "" {
-		agentName = config.DefaultAgentName
-	}
-
 	return createArgs{
 		allowPaths:  allowPaths,
 		spendLimit:  spendLimit,
 		spendPeriod: spendPeriod,
 		expiresIn:   expiresIn,
-		agentName:   agentName,
 	}, nil
 }
 
@@ -134,7 +122,7 @@ func sessionCreateHandler(ctx context.Context, d *Deps, args map[string]any) (se
 	defer cancel()
 
 	var account bridge.Account
-	if callErr := d.Bridge.Call(approvalCtx, bridge.MethodGetAccount, nil, &account); callErr != nil {
+	if callErr := d.Bridge.Call(approvalCtx, bridge.MethodGetAccount, agentParams(ctx), &account); callErr != nil {
 		return server.Result{}, bridgeError(callErr)
 	}
 
@@ -145,7 +133,7 @@ func sessionCreateHandler(ctx context.Context, d *Deps, args map[string]any) (se
 
 	now := d.Now()
 
-	record, err := authorizeKey(approvalCtx, d, key, &account, in, now)
+	record, err := authorizeKey(approvalCtx, d, key, &account, in, now, agentName(ctx))
 	if err != nil {
 		key.Destroy()
 
@@ -163,7 +151,7 @@ func sessionCreateHandler(ctx context.Context, d *Deps, args map[string]any) (se
 	fmt.Fprintf(&b, "Session %s authorized by %s on %s.\n", record.SessionAddress, record.MasterAddress, record.ChainID)
 	fmt.Fprintf(&b, "Allow paths: %v. Spend limit: %s. Expires: %s.\n",
 		record.AllowPaths, record.SpendLimit, formatTime(record.ExpiresAt))
-	b.WriteString("Use adena_call, adena_run or adena_send to act as the user, and adena_session_revoke when done.\n")
+	b.WriteString("send_transaction and sign_transaction now sign with this session; call revoke_session when done.\n")
 
 	return server.Result{Text: b.String(), StructuredContent: d.publicRecord(&record)}, nil
 }
@@ -175,6 +163,7 @@ func authorizeKey(
 	account *bridge.Account,
 	in createArgs,
 	now time.Time,
+	agent string,
 ) (session.Record, error) {
 	publicKey := base64.StdEncoding.EncodeToString(key.PublicKey())
 	expiresAt := now.Add(in.expiresIn).Unix()
@@ -186,7 +175,7 @@ func authorizeKey(
 		SpendLimit:       in.spendLimit,
 		SpendPeriod:      in.spendPeriod,
 		ExpiresAt:        expiresAt,
-		AgentName:        in.agentName,
+		AgentName:        agent,
 	}, &tx); callErr != nil {
 		return session.Record{}, bridgeError(callErr)
 	}
@@ -212,9 +201,9 @@ func authorizeKey(
 	}, nil
 }
 
-func registerSessionList(r *server.Registry, d *Deps) {
+func registerGetSessions(r *server.Registry, d *Deps) {
 	r.Add(&server.Tool{
-		Name: "adena_session_list",
+		Name: "get_sessions",
 		Description: "Lists the session keys this server holds. With refresh=true each session is " +
 			"looked up on chain, and sessions the chain no longer knows (revoked or expired) are marked.",
 		InputSchema: objectSchema(map[string]any{
@@ -222,12 +211,12 @@ func registerSessionList(r *server.Registry, d *Deps) {
 		}),
 		Annotations: server.Annotations{ReadOnly: true, Idempotent: true, OpenWorld: true},
 		Handler: func(ctx context.Context, args map[string]any) (server.Result, error) {
-			return sessionListHandler(ctx, d, args)
+			return getSessionsHandler(ctx, d, args)
 		},
 	})
 }
 
-func sessionListHandler(ctx context.Context, d *Deps, args map[string]any) (server.Result, error) {
+func getSessionsHandler(ctx context.Context, d *Deps, args map[string]any) (server.Result, error) {
 	refresh, err := server.BoolArg(args, "refresh", false)
 	if err != nil {
 		return server.Result{}, err
@@ -283,15 +272,15 @@ func querySession(ctx context.Context, d *Deps, r *session.Record) (bool, error)
 	return err == nil, err
 }
 
-func registerSessionRevoke(r *server.Registry, d *Deps) {
+func registerRevokeSession(r *server.Registry, d *Deps) {
 	r.Add(&server.Tool{
-		Name: "adena_session_revoke",
+		Name: "revoke_session",
 		Description: "Asks the user to revoke a session in Adena, then destroys the session key. " +
 			"Call it when the task is done. Blocks until the user approves or rejects. Works for " +
 			"sessions whose key was lost in a restart too. With forget_only=true the record and key " +
 			"are dropped without asking, for sessions already revoked or expired on chain.",
 		InputSchema: objectSchema(map[string]any{
-			"session_address": stringProp("Address of the session, from adena_session_create or adena_session_list."),
+			"session_address": stringProp("Address of the session, from create_session or get_sessions."),
 			"forget_only":     map[string]any{"type": "boolean", "description": "Only delete the local key."},
 		}, "session_address"),
 		Annotations: server.Annotations{Destructive: true, OpenWorld: true},
@@ -316,7 +305,7 @@ func sessionRevokeHandler(ctx context.Context, d *Deps, args map[string]any) (se
 	if err != nil {
 		return server.Result{}, &server.ToolError{
 			Code:    "session_unknown",
-			Message: "this server holds no session " + address + "; adena_session_list shows the ones it holds",
+			Message: "this server holds no session " + address + "; get_sessions shows the ones it holds",
 		}
 	}
 
@@ -328,7 +317,7 @@ func sessionRevokeHandler(ctx context.Context, d *Deps, args map[string]any) (se
 
 		if callErr := d.Bridge.Call(approvalCtx, bridge.MethodRevokeSession, bridge.RevokeSessionParams{
 			SessionPublicKey: record.SessionPublicKey,
-			AgentName:        config.DefaultAgentName,
+			AgentName:        agentName(ctx),
 		}, &tx); callErr != nil {
 			return server.Result{}, bridgeError(callErr)
 		}
