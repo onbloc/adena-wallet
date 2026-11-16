@@ -30,7 +30,7 @@ stays in locked memory and is never shown to the agent.
    ```
 
 3. Ask the agent to call `connect_wallet`. It installs the agent host the first
-   time (macOS and Linux), and you approve the connection in Adena.
+   time (macOS, Linux and Windows), and you approve the connection in Adena.
 
 `npx -y @adena-wallet/mcp uninstall-host` removes the host.
 
@@ -50,7 +50,7 @@ transaction in Adena instead.
 | `adena-mcp uninstall-host` | Removes the browser registrations and the copied host |
 | `adena-mcp version` | Prints the version |
 
-Supported platforms: macOS and Linux on arm64 and x64.
+Supported platforms: macOS, Linux and Windows 10 (1803) or later, on arm64 and x64.
 
 See [misc/adena-mcp](https://github.com/onbloc/adena-wallet/tree/main/misc/adena-mcp)
 for tools, the safety model and configuration.

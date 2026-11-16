@@ -21,6 +21,8 @@ const TARGETS = {
   'darwin-x64': { goos: 'darwin', goarch: 'amd64', os: 'darwin', cpu: 'x64' },
   'linux-arm64': { goos: 'linux', goarch: 'arm64', os: 'linux', cpu: 'arm64' },
   'linux-x64': { goos: 'linux', goarch: 'amd64', os: 'linux', cpu: 'x64' },
+  'win32-arm64': { goos: 'windows', goarch: 'arm64', os: 'win32', cpu: 'arm64', exe: '.exe' },
+  'win32-x64': { goos: 'windows', goarch: 'amd64', os: 'win32', cpu: 'x64', exe: '.exe' },
 };
 
 const BINARIES = ['adena-mcp', 'adena-agent-host'];
@@ -98,7 +100,7 @@ function buildPlatform(platform, version, launcher, release) {
         '-ldflags',
         `-s -w -X main.version=${version}`,
         '-o',
-        path.join(dir, 'bin', binary),
+        path.join(dir, 'bin', binary + (target.exe ?? '')),
         `./apps/${binary}/cmd/${binary}`,
       ],
       {
