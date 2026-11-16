@@ -22,7 +22,7 @@ app-private `internal` packages, and shared packages in `pkg/`.
 
 ## Setup
 
-With the published npm package (macOS and Linux, arm64 and x64):
+With the published npm package (macOS, Linux and Windows, arm64 and x64):
 
 ```sh
 claude mcp add --scope user adena -- npx -y @adena-wallet/mcp   # or install the plugin, see below
@@ -136,6 +136,24 @@ as `agent://<client name>.agent`.
 | `revoke_unconfirmed` | Adena did not report the revoke as committed on the session's network; the key is kept. Check `get_sessions` with `refresh` |
 | `request_too_large` | A request, usually a package deployment, is over the 1 MiB protocol limit |
 | `policy_violation` | The session request breaks Adena's agent policy, e.g. a `spend_limit` above the maximum set on the AI Agent Connection screen |
+
+## Windows
+
+The host and MCP server run on Windows 10 (1803) or later, which provide the
+Unix domain sockets the two use.
+
+- `install` writes the manifests under `%USERPROFILE%\.adena-agent\native-messaging`.
+  It registers each one under the browser's
+  `HKCU\Software\<browser>\NativeMessagingHosts\xyz.onbloc.adena_agent` key.
+- Unpacked builds are detected from the profiles under `%LOCALAPPDATA%`.
+  `-extension-path` is not supported, because the extension id cannot be
+  computed from the path there.
+- Files under `%USERPROFILE%\.adena-agent` rely on the profile's ACL instead of
+  permission bits.
+- The process hardening (core dumps, debugger attach) is not applied on
+  Windows yet.
+- A running host executable cannot be overwritten, so reinstalling moves it
+  aside first.
 
 ## Safety model
 
