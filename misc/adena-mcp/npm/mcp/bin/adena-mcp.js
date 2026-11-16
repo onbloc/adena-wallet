@@ -8,9 +8,17 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const PLATFORMS = new Set(['darwin-arm64', 'darwin-x64', 'linux-arm64', 'linux-x64']);
-const HOST_BINARY = 'adena-agent-host';
-const MCP_BINARY = 'adena-mcp';
+const PLATFORMS = new Set([
+  'darwin-arm64',
+  'darwin-x64',
+  'linux-arm64',
+  'linux-x64',
+  'win32-arm64',
+  'win32-x64',
+]);
+const EXE = process.platform === 'win32' ? '.exe' : '';
+const HOST_BINARY = `adena-agent-host${EXE}`;
+const MCP_BINARY = `adena-mcp${EXE}`;
 
 function fail(message) {
   process.stderr.write(`@adena-wallet/mcp: ${message}\n`);
@@ -97,7 +105,19 @@ function copyHost() {
   const staging = `${target}.${process.pid}.tmp`;
   fs.copyFileSync(source, staging);
   fs.chmodSync(staging, 0o755);
+
+  // Windows cannot overwrite a running executable but can rename it.
+  const previous = `${target}.old`;
+  if (fs.existsSync(target)) {
+    fs.rmSync(previous, { force: true });
+    fs.renameSync(target, previous);
+  }
   fs.renameSync(staging, target);
+  try {
+    fs.rmSync(previous, { force: true });
+  } catch {
+    // Still in use by a running host; removed on the next install.
+  }
 
   process.stdout.write(`copied ${HOST_BINARY} to ${target}\n`);
   return target;
