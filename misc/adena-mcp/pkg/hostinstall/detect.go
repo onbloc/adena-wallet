@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -144,6 +145,13 @@ type Allowed struct {
 // loaded in the Chromium profiles of goos.
 func AllowedChromeIDs(goos, home string, explicit, paths []string, detect bool) (Allowed, error) {
 	ids := append([]string{AdenaChromeExtensionID}, explicit...)
+
+	// Chromium hashes the native path string, which on Windows is UTF-16 and
+	// is not reproduced here; detection reads the id from the profile instead.
+	if goos == goosWindows && len(paths) > 0 {
+		return Allowed{}, errors.New("-extension-path is not supported on Windows; load the build in the " +
+			"browser so it is detected, or pass -chrome-extension-id")
+	}
 
 	detected := make([]Unpacked, 0, len(paths))
 

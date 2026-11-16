@@ -1,5 +1,6 @@
 // Package hostinstall registers the agent host with browsers by writing their
-// native messaging host manifests.
+// native messaging host manifests. On Windows each manifest is also
+// registered under the browser's HKCU NativeMessagingHosts registry key.
 package hostinstall
 
 import (
@@ -11,6 +12,8 @@ import (
 
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
 )
+
+const goosWindows = "windows"
 
 // HostName is the native messaging host name Adena connects to.
 const HostName = "xyz.onbloc.adena_agent"
@@ -28,21 +31,37 @@ const (
 	dirPerm        = 0o755
 )
 
-// ErrUnsupportedOS is returned where manifests are registered another way,
-// such as the Windows registry.
-var ErrUnsupportedOS = errors.New("automatic installation is supported on macOS and Linux only")
+// ErrUnsupportedOS is returned for operating systems without a known
+// manifest location.
+var ErrUnsupportedOS = errors.New("automatic installation supports macOS, Linux and Windows")
 
-// Browser is one browser's per-user native messaging host directory.
+// ErrNoRegistry means a Windows installation was attempted without access to
+// the Windows registry, which only exists on Windows.
+var ErrNoRegistry = errors.New("the Windows registry is not available")
+
+// Registry stores the default value of HKCU registry keys.
+type Registry interface {
+	SetDefault(key, value string) error
+	Delete(key string) error
+	Exists(key string) bool
+}
+
+// Browser is one browser's per-user native messaging host location.
 type Browser struct {
 	Name string
 	// Root must exist for the browser to be considered installed.
-	Root    string
-	Dir     string
-	Firefox bool
+	Root string
+	// Dir receives the manifest file.
+	Dir string
+	// RegistryKey, on Windows, points the browser at the manifest.
+	RegistryKey string
+	Firefox     bool
 }
 
 // Options configures an installation.
 type Options struct {
+	// Registry overrides the system registry, for tests.
+	Registry           Registry
 	HostPath           string
 	FirefoxExtensionID string
 	UserHome           string
@@ -95,9 +114,56 @@ func Browsers(goos, home string) ([]Browser, error) {
 				Firefox: true,
 			},
 		}, nil
+	case goosWindows:
+		return windowsBrowsers(home), nil
 	default:
 		return nil, ErrUnsupportedOS
 	}
+}
+
+// windowsBrowsers places manifests under the agent home, since Windows
+// browsers find them through the registry rather than a fixed directory.
+// Roots follow the default %LOCALAPPDATA% and %APPDATA% under home.
+func windowsBrowsers(home string) []Browser {
+	local := filepath.Join(home, "AppData", "Local")
+	roaming := filepath.Join(home, "AppData", "Roaming")
+	manifests := filepath.Join(home, ".adena-agent", "native-messaging")
+
+	browser := func(name, root, slug, registryBase string, firefox bool) Browser {
+		return Browser{
+			Name:        name,
+			Root:        root,
+			Dir:         filepath.Join(manifests, slug),
+			RegistryKey: registryBase + `\NativeMessagingHosts\` + HostName,
+			Firefox:     firefox,
+		}
+	}
+
+	return []Browser{
+		browser("Google Chrome", filepath.Join(local, "Google", "Chrome", "User Data"),
+			"chrome", `Software\Google\Chrome`, false),
+		browser("Chromium", filepath.Join(local, "Chromium", "User Data"),
+			"chromium", `Software\Chromium`, false),
+		browser("Brave", filepath.Join(local, "BraveSoftware", "Brave-Browser", "User Data"),
+			"brave", `Software\BraveSoftware\Brave-Browser`, false),
+		browser("Microsoft Edge", filepath.Join(local, "Microsoft", "Edge", "User Data"),
+			"edge", `Software\Microsoft\Edge`, false),
+		browser("Firefox", filepath.Join(roaming, "Mozilla", "Firefox"),
+			"firefox", `Software\Mozilla`, true),
+	}
+}
+
+// windowsRegistry returns the registry Windows installs use.
+func windowsRegistry(override Registry) (Registry, error) {
+	if override != nil {
+		return override, nil
+	}
+
+	if systemRegistry == nil {
+		return nil, ErrNoRegistry
+	}
+
+	return systemRegistry, nil
 }
 
 func chromium(name, root string) Browser {
@@ -122,16 +188,30 @@ func Install(opts Options) ([]string, error) {
 		}
 	}
 
+	var reg Registry
+
+	if opts.GOOS == goosWindows {
+		if reg, err = windowsRegistry(opts.Registry); err != nil {
+			return nil, err
+		}
+	}
+
 	written := make([]string, 0, len(browsers))
 
 	for _, browser := range browsers {
-		if _, err := os.Stat(browser.Root); err != nil {
+		if _, statErr := os.Stat(browser.Root); statErr != nil {
 			continue
 		}
 
-		path, err := writeManifest(browser, opts)
-		if err != nil {
-			return written, err
+		path, writeErr := writeManifest(browser, opts)
+		if writeErr != nil {
+			return written, writeErr
+		}
+
+		if reg != nil && browser.RegistryKey != "" {
+			if regErr := reg.SetDefault(browser.RegistryKey, path); regErr != nil {
+				return written, fmt.Errorf("register %s: %w", browser.Name, regErr)
+			}
 		}
 
 		written = append(written, path)
@@ -144,23 +224,41 @@ func Install(opts Options) ([]string, error) {
 	return written, nil
 }
 
-// Uninstall removes the host manifest from every supported browser and
-// returns the paths it removed.
+// Uninstall removes the host manifest, and on Windows its registry key, from
+// every supported browser and returns the manifest paths it removed.
 func Uninstall(goos, home string) ([]string, error) {
+	return uninstall(goos, home, nil)
+}
+
+func uninstall(goos, home string, override Registry) ([]string, error) {
 	browsers, err := Browsers(goos, home)
 	if err != nil {
 		return nil, err
 	}
 
+	var reg Registry
+
+	if goos == goosWindows {
+		if reg, err = windowsRegistry(override); err != nil {
+			return nil, err
+		}
+	}
+
 	var removed []string
 
 	for _, browser := range browsers {
+		if reg != nil && browser.RegistryKey != "" && reg.Exists(browser.RegistryKey) {
+			if regErr := reg.Delete(browser.RegistryKey); regErr != nil {
+				return removed, fmt.Errorf("unregister %s: %w", browser.Name, regErr)
+			}
+		}
+
 		path := manifestPath(browser)
 
-		if err := os.Remove(path); err == nil {
+		if removeErr := os.Remove(path); removeErr == nil {
 			removed = append(removed, path)
-		} else if !errors.Is(err, os.ErrNotExist) {
-			return removed, fmt.Errorf("remove %s: %w", path, err)
+		} else if !errors.Is(removeErr, os.ErrNotExist) {
+			return removed, fmt.Errorf("remove %s: %w", path, removeErr)
 		}
 	}
 
@@ -252,18 +350,37 @@ func renameOver(src, dst string) error {
 }
 
 // Installed returns the host manifests present for the supported browsers.
+// On Windows a manifest only counts while its registry key exists.
 func Installed(goos, home string) []string {
+	return installed(goos, home, nil)
+}
+
+func installed(goos, home string, override Registry) []string {
 	browsers, err := Browsers(goos, home)
 	if err != nil {
 		return nil
 	}
 
-	var found []string
+	var reg Registry
+
+	if goos == goosWindows {
+		if reg, err = windowsRegistry(override); err != nil {
+			return nil
+		}
+	}
+
+	found := make([]string, 0, len(browsers))
 
 	for _, browser := range browsers {
-		if _, statErr := os.Stat(manifestPath(browser)); statErr == nil {
-			found = append(found, manifestPath(browser))
+		if _, statErr := os.Stat(manifestPath(browser)); statErr != nil {
+			continue
 		}
+
+		if reg != nil && browser.RegistryKey != "" && !reg.Exists(browser.RegistryKey) {
+			continue
+		}
+
+		found = append(found, manifestPath(browser))
 	}
 
 	return found
@@ -290,9 +407,23 @@ func CopyHost(src, binDir string) (string, error) {
 		return "", fmt.Errorf("write host binary: %w", err)
 	}
 
+	// Windows cannot replace a running executable, but it can rename one, so
+	// a host the browser is running is moved aside first.
+	previous := target + ".old"
+	if _, err := os.Stat(target); err == nil {
+		_ = os.Remove(previous)
+
+		if err := os.Rename(target, previous); err != nil {
+			return "", fmt.Errorf("move previous host binary: %w", err)
+		}
+	}
+
 	if err := os.Rename(staging, target); err != nil {
 		return "", fmt.Errorf("install host binary: %w", err)
 	}
+
+	// Still locked while the old host runs; removed on the next install.
+	_ = os.Remove(previous)
 
 	return target, nil
 }
