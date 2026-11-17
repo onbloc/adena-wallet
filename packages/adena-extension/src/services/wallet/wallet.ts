@@ -89,7 +89,7 @@ export class WalletService {
    *
    * Prefer this over `loadWallet` for signing and for reads that only need the
    * current accounts and keyrings: `loadWallet` re-reads storage and re-runs the
-   * Argon2id KDF every time (~160ms), which signing paths and pollers were
+   * Argon2id KDF every time (~1s), which signing paths and pollers were
    * paying on every single call.
    *
    * Keep using `loadWallet` where the authoritative on-disk state is the point:

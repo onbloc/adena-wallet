@@ -8,8 +8,9 @@ export {
   Ed25519Keypair,
   isArgon2idOptions,
   xchacha20NonceLength,
-  Xchacha20poly1305Ietf
-} from './libsodium';
+  Xchacha20poly1305Ietf,
+  zeroize
+} from './primitives';
 export { Random } from './random';
 export { Ripemd160, ripemd160 } from './ripemd160';
 export { Sha256, sha256, Sha512, sha512 } from './sha';

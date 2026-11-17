@@ -5,7 +5,7 @@ import { AdenaWallet } from 'adena-module';
 // entry flow and the create-password screen. The wallet is never serialized to
 // history.state, storage, or any other channel that survives in heap snapshots
 // or DevTools introspection. On consume/clear/overwrite, the wallet's keyring
-// buffers are zeroized via AdenaWallet.destroy() (sodium.memzero).
+// buffers are zeroized via AdenaWallet.destroy() (zeroize).
 //
 // The optional postSave slot carries side-effect data that needs to be written
 // only after walletService.saveWallet succeeds: used by the session-import

@@ -5,10 +5,9 @@ import {
   TxSignature,
   Wallet as Tm2Wallet
 } from '@gnolang/tm2-js-client';
-import sodium from 'libsodium-wrappers-sumo';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Bip39, EnglishMnemonic, entropyToMnemonic, mnemonicToEntropy } from '../../crypto';
+import { Bip39, EnglishMnemonic, entropyToMnemonic, mnemonicToEntropy, zeroize } from '../../crypto';
 import { Document } from './../..';
 import { generateKeyPairByHdPath, getAddressIndex, HdPathLike } from './hd-path';
 import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
@@ -50,8 +49,8 @@ export class HDWalletKeyring implements Keyring {
   }
 
   destroy() {
-    sodium.memzero(this.seed);
-    sodium.memzero(this.mnemonicEntropy);
+    zeroize(this.seed);
+    zeroize(this.mnemonicEntropy);
   }
 
   toData() {
@@ -72,7 +71,7 @@ export class HDWalletKeyring implements Keyring {
     finally {
       // Wipe the per-call derived private key from memory; the long-lived
       // seed/entropy can re-derive it on the next call.
-      sodium.memzero(privateKey);
+      zeroize(privateKey);
     }
   }
 

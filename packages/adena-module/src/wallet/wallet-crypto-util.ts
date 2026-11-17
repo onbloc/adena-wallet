@@ -1,15 +1,14 @@
-import sodium from 'libsodium-wrappers-sumo';
-
 import {
   Argon2id,
   isArgon2idOptions,
   legacyAesDecrypt,
   legacyAesEncrypt,
+  Random,
   sha256Hex,
   xchacha20NonceLength,
   Xchacha20poly1305Ietf
 } from '../crypto';
-import { toAscii, toHex } from '../encoding';
+import { fromBase64Url, toAscii, toBase64Url, toHex } from '../encoding';
 
 interface KdfConfiguration {
   /**
@@ -71,8 +70,8 @@ export const decryptAES = (encryptedValue: string, password: string) => {
 // --- XChaCha20-Poly1305 AEAD encryption (replacement for AES-CBC) ---
 
 export interface EncryptedData {
-  ciphertext: string; // base64
-  nonce: string; // base64
+  ciphertext: string; // base64url, unpadded
+  nonce: string; // base64url, unpadded
 }
 
 /**
@@ -80,8 +79,7 @@ export interface EncryptedData {
  * Called once when creating a new wallet, then stored in storage.
  */
 export const generateKdfSalt = async (): Promise<Uint8Array> => {
-  await sodium.ready;
-  return sodium.randombytes_buf(16);
+  return Random.getBytes(16);
 };
 
 /**
@@ -109,14 +107,13 @@ export const encryptXChacha20 = async (
   password: string,
   salt: Uint8Array
 ): Promise<EncryptedData> => {
-  await sodium.ready;
   const cryptKey = await makeCryptKeyBytes(password, salt);
-  const nonce = sodium.randombytes_buf(xchacha20NonceLength);
+  const nonce = Random.getBytes(xchacha20NonceLength);
   const message = new TextEncoder().encode(value);
   const ciphertext = await Xchacha20poly1305Ietf.encrypt(message, cryptKey, nonce);
   return {
-    ciphertext: sodium.to_base64(ciphertext),
-    nonce: sodium.to_base64(nonce)
+    ciphertext: toBase64Url(ciphertext),
+    nonce: toBase64Url(nonce)
   };
 };
 
@@ -130,10 +127,9 @@ export const decryptXChacha20 = async (
   password: string,
   salt: Uint8Array
 ): Promise<string> => {
-  await sodium.ready;
   const cryptKey = await makeCryptKeyBytes(password, salt);
-  const ciphertext = sodium.from_base64(encryptedData.ciphertext);
-  const nonce = sodium.from_base64(encryptedData.nonce);
+  const ciphertext = fromBase64Url(encryptedData.ciphertext);
+  const nonce = fromBase64Url(encryptedData.nonce);
   const decrypted = await Xchacha20poly1305Ietf.decrypt(ciphertext, cryptKey, nonce);
   return new TextDecoder().decode(decrypted);
 };

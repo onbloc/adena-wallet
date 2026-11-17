@@ -38,6 +38,9 @@ const storage = {
   },
 };
 
+// Each migration step runs Argon2id (~1s in pure JS) several times.
+vi.setConfig({ testTimeout: 30_000 });
+
 describe('StorageMigrator', () => {
   beforeAll(() => {
     const mockValue = {
