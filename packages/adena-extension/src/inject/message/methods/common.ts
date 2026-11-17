@@ -14,6 +14,7 @@ export const createPopup = async (
   message: InjectionMessage,
   closeMessage: InjectionMessage,
   sendResponse: (response: any) => void,
+  onWindowCreated?: (windowId: number) => void,
 ): Promise<void> => {
   const popupOption: chrome.windows.CreateData = {
     url: chrome.runtime.getURL(
@@ -32,7 +33,18 @@ export const createPopup = async (
 
   chrome.windows.create(popupOption, async (windowResponse) => {
     if (!windowResponse) {
+      // Settle the request; otherwise its caller waits forever.
+      sendResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.UNEXPECTED_ERROR,
+          {},
+          message.key,
+        ),
+      );
       return;
+    }
+    if (windowResponse.id !== undefined) {
+      onWindowCreated?.(windowResponse.id);
     }
 
     // Guard: ensure sendResponse fires at most once. Without this, a successful

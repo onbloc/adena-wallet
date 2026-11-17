@@ -1,6 +1,6 @@
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 
-import { handleAgentHostMessage } from './agent-host-handler';
+import { cancelAllAgentApprovals, handleAgentHostMessage } from './agent-host-handler';
 import {
   AGENT_HOST_ENABLED_STORAGE_KEY,
   AGENT_HOST_NAME,
@@ -39,6 +39,7 @@ const disconnect = (): void => {
   }
   const current = port;
   port = null;
+  cancelAllAgentApprovals();
   current.disconnect();
 };
 
@@ -68,7 +69,7 @@ const connect = (inMemoryProvider: MemoryProvider): void => {
 
   connected.onMessage.addListener((message: unknown) => {
     handleAgentHostMessage(inMemoryProvider, message).then((response) => {
-      if (port === connected) {
+      if (response && port === connected) {
         connected.postMessage(response);
       }
     });
@@ -80,6 +81,7 @@ const connect = (inMemoryProvider: MemoryProvider): void => {
     const reason = chrome.runtime.lastError?.message;
     if (port === connected) {
       port = null;
+      cancelAllAgentApprovals();
     }
     writeStatus({ connected: false, error: reason });
   });

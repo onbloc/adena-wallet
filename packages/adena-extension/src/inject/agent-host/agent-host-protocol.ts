@@ -14,6 +14,11 @@ export const AGENT_HOST_RELOAD_REQUIRED = 'reload_required';
 // Off by default: agents sign with session accounts unless the user allows
 // them to ask for master-account signatures directly.
 export const AGENT_MASTER_REQUESTS_STORAGE_KEY = 'AGENT_HOST_ALLOW_MASTER_REQUESTS';
+// The largest ugnot spend limit the user lets an agent session ask for.
+export const AGENT_MAX_SPEND_LIMIT_STORAGE_KEY = 'AGENT_HOST_MAX_SPEND_LIMIT';
+export const AGENT_DEFAULT_MAX_SPEND_LIMIT_UGNOT = '10000000';
+// Executable of the agent process each connection was approved for.
+export const AGENT_BINDINGS_STORAGE_KEY = 'AGENT_HOST_BINDINGS';
 
 // Agent sessions are bounded tighter than the chain allows: revoking needs the
 // user, so a short expiry is what limits an abandoned session.
@@ -23,6 +28,8 @@ export const AGENT_SESSION_SPEND_DENOM = 'ugnot';
 const MAX_AGENT_NAME_LENGTH = 32;
 const SECP256K1_COMPRESSED_PUBKEY_LENGTH = 33;
 const MAX_TRANSACTION_MESSAGES = 32;
+const MAX_PEER_EXE_LENGTH = 4096;
+const UGNOT_AMOUNT_PATTERN = /^([0-9]+)ugnot$/;
 
 export const AGENT_REQUEST_PROTOCOL = 'agent:';
 
@@ -34,12 +41,21 @@ export type AgentHostMethod =
   | 'create_session'
   | 'revoke_session'
   | 'send_transaction'
-  | 'sign_transaction';
+  | 'sign_transaction'
+  | 'cancel';
+
+// The process on the other end of the host socket, as seen by the host. The
+// host overwrites anything a client sends here.
+export interface AgentPeer {
+  pid?: number;
+  exe?: string;
+}
 
 export interface AgentHostRequest {
   id: string;
   method: AgentHostMethod;
   params?: Record<string, unknown>;
+  peer?: AgentPeer;
 }
 
 export interface AgentHostError {
@@ -54,9 +70,13 @@ export type AgentHostErrorCode =
   | 'no_wallet'
   | 'not_connected'
   | 'master_requests_disabled'
+  | 'approval_pending'
+  | 'approval_timeout'
+  | 'cancelled'
   | 'wallet_locked'
   | 'unsupported_account'
   | 'unsupported_network'
+  | 'context_mismatch'
   | 'rejected'
   | 'transaction_failed'
   | 'internal_error';
@@ -73,7 +93,13 @@ export interface AgentHostStatus {
   updatedAt: number;
 }
 
-export interface CreateAgentSessionParams {
+// The account and chain the agent expects a session admin request to act on.
+export interface AgentExpectedContext {
+  masterAddress?: string;
+  chainId?: string;
+}
+
+export interface CreateAgentSessionParams extends AgentExpectedContext {
   sessionPublicKey: Uint8Array;
   allowPaths: string[];
   spendLimit: string;
@@ -82,7 +108,7 @@ export interface CreateAgentSessionParams {
   agentName: string;
 }
 
-export interface RevokeAgentSessionParams {
+export interface RevokeAgentSessionParams extends AgentExpectedContext {
   sessionPublicKey: Uint8Array;
   agentName: string;
 }
@@ -118,6 +144,7 @@ const METHODS: ReadonlySet<string> = new Set([
   'revoke_session',
   'send_transaction',
   'sign_transaction',
+  'cancel',
 ]);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -140,7 +167,26 @@ export const parseAgentHostRequest = (raw: unknown): AgentHostRequest => {
     id: raw.id,
     method: raw.method as AgentHostMethod,
     params: raw.params as Record<string, unknown> | undefined,
+    peer: parsePeer(raw.peer),
   };
+};
+
+const parsePeer = (value: unknown): AgentPeer | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  const peer: AgentPeer = {};
+  if (typeof value.pid === 'number' && Number.isSafeInteger(value.pid) && value.pid > 0) {
+    peer.pid = value.pid;
+  }
+  if (
+    typeof value.exe === 'string' &&
+    value.exe.length > 0 &&
+    value.exe.length <= MAX_PEER_EXE_LENGTH
+  ) {
+    peer.exe = value.exe;
+  }
+  return peer;
 };
 
 export const parseSessionPublicKey = (value: unknown): Uint8Array => {
@@ -161,6 +207,21 @@ export const parseSessionPublicKey = (value: unknown): Uint8Array => {
   }
   return bytes;
 };
+
+const parseOptionalString = (value: unknown, name: string): string | undefined => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  if (typeof value !== 'string') {
+    throw invalidParams(`${name} must be a string`);
+  }
+  return value;
+};
+
+const parseExpectedContext = (params: Record<string, unknown>): AgentExpectedContext => ({
+  masterAddress: parseOptionalString(params.master_address, 'master_address'),
+  chainId: parseOptionalString(params.chain_id, 'chain_id'),
+});
 
 const parseNonNegativeInteger = (value: unknown, name: string): number => {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
@@ -183,15 +244,33 @@ export const normalizeAgentName = (value: unknown): string => {
   return normalized || 'agent';
 };
 
-const hasSpendDenom = (spendLimit: string): boolean =>
-  spendLimit
-    .split(',')
-    .map((entry) => entry.trim())
-    .some((entry) => entry.endsWith(AGENT_SESSION_SPEND_DENOM) && /^[0-9]+/.test(entry));
+// Agent sessions may only spend ugnot, so the user's cap bounds every coin
+// the session can move.
+const parseSpendLimit = (value: unknown, maxUgnot: bigint): string => {
+  const match = typeof value === 'string' ? UGNOT_AMOUNT_PATTERN.exec(value.trim()) : null;
+  if (!match) {
+    throw new AgentHostRequestError(
+      'policy_violation',
+      `spend_limit must be a single ${AGENT_SESSION_SPEND_DENOM} amount such as "5000000ugnot"`,
+    );
+  }
+  const amount = BigInt(match[1]);
+  if (amount <= BigInt(0)) {
+    throw new AgentHostRequestError('policy_violation', 'spend_limit must be positive');
+  }
+  if (amount > maxUgnot) {
+    throw new AgentHostRequestError(
+      'policy_violation',
+      `spend_limit exceeds the maximum the user allows for agent sessions (${maxUgnot}${AGENT_SESSION_SPEND_DENOM})`,
+    );
+  }
+  return `${amount}${AGENT_SESSION_SPEND_DENOM}`;
+};
 
 export const parseCreateSessionParams = (
   params: Record<string, unknown> | undefined,
   nowSeconds: number,
+  maxSpendUgnot: bigint,
 ): CreateAgentSessionParams => {
   if (!params) {
     throw invalidParams('params are required');
@@ -214,13 +293,7 @@ export const parseCreateSessionParams = (
     );
   }
 
-  const { spend_limit: spendLimit } = params;
-  if (typeof spendLimit !== 'string' || !hasSpendDenom(spendLimit)) {
-    throw new AgentHostRequestError(
-      'policy_violation',
-      `spend_limit must include ${AGENT_SESSION_SPEND_DENOM} to pay gas`,
-    );
-  }
+  const spendLimit = parseSpendLimit(params.spend_limit, maxSpendUgnot);
 
   const spendPeriod =
     params.spend_period === undefined
@@ -245,6 +318,7 @@ export const parseCreateSessionParams = (
     spendPeriod,
     expiresAt,
     agentName: normalizeAgentName(params.agent_name),
+    ...parseExpectedContext(params),
   };
 };
 
@@ -257,6 +331,7 @@ export const parseRevokeSessionParams = (
   return {
     sessionPublicKey: parseSessionPublicKey(params.session_public_key),
     agentName: normalizeAgentName(params.agent_name),
+    ...parseExpectedContext(params),
   };
 };
 
@@ -351,6 +426,14 @@ export const parseTransactionParams = (
 // The connected-sites key an agent is stored under.
 export const agentSiteName = (agentName: string): string =>
   `${AGENT_REQUEST_PROTOCOL}//${agentName}.agent`;
+
+export const parseCancelParams = (params: Record<string, unknown> | undefined): string => {
+  const requestId = params?.request_id;
+  if (typeof requestId !== 'string' || requestId.length === 0) {
+    throw invalidParams('request_id is required');
+  }
+  return requestId;
+};
 
 export const toErrorResponse = (id: string, error: unknown): AgentHostResponse => {
   if (error instanceof AgentHostRequestError) {

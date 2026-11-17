@@ -6,6 +6,7 @@ import {
   agentSiteName,
   normalizeAgentName,
   parseAgentHostRequest,
+  parseCancelParams,
   parseCreateSessionParams,
   parseRevokeSessionParams,
   parseSessionPublicKey,
@@ -14,6 +15,7 @@ import {
 } from './agent-host-protocol';
 
 const NOW = 1_800_000_000;
+const MAX_SPEND = BigInt(10_000_000);
 
 const compressedKey = (): Uint8Array => {
   const key = new Uint8Array(33).fill(7);
@@ -57,6 +59,20 @@ describe('parseAgentHostRequest', () => {
     expectErrorCode(() => parseAgentHostRequest({ id: '1', method: 'sign_tx' }), 'invalid_request');
   });
 
+  it('keeps a well-formed peer and drops malformed fields', () => {
+    expect(
+      parseAgentHostRequest({ id: '1', method: 'ping', peer: { pid: 42, exe: '/bin/adena-mcp' } })
+        .peer,
+    ).toEqual({ pid: 42, exe: '/bin/adena-mcp' });
+    expect(
+      parseAgentHostRequest({ id: '1', method: 'ping', peer: { pid: -1, exe: 7 } }).peer,
+    ).toEqual({});
+  });
+
+  it('accepts cancel', () => {
+    expect(parseAgentHostRequest({ id: 'c1', method: 'cancel' }).method).toBe('cancel');
+  });
+
   it('rejects non-object params', () => {
     expectErrorCode(
       () => parseAgentHostRequest({ id: '1', method: 'ping', params: ['x'] }),
@@ -85,7 +101,7 @@ describe('parseSessionPublicKey', () => {
 
 describe('parseCreateSessionParams', () => {
   it('parses valid params and normalizes the agent name', () => {
-    const parsed = parseCreateSessionParams(validParams(), NOW);
+    const parsed = parseCreateSessionParams(validParams(), NOW, MAX_SPEND);
 
     expect(parsed.sessionPublicKey).toEqual(compressedKey());
     expect(parsed.allowPaths).toEqual(['vm/exec:gno.land/r/demo/counter']);
@@ -95,28 +111,51 @@ describe('parseCreateSessionParams', () => {
 
   it('rejects the wildcard allow path', () => {
     expectErrorCode(
-      () => parseCreateSessionParams({ ...validParams(), allow_paths: ['*'] }, NOW),
+      () => parseCreateSessionParams({ ...validParams(), allow_paths: ['*'] }, NOW, MAX_SPEND),
       'policy_violation',
     );
   });
 
   it('rejects empty allow paths', () => {
     expectErrorCode(
-      () => parseCreateSessionParams({ ...validParams(), allow_paths: [] }, NOW),
+      () => parseCreateSessionParams({ ...validParams(), allow_paths: [] }, NOW, MAX_SPEND),
       'invalid_params',
     );
   });
 
-  it('requires ugnot in the spend limit', () => {
+  it('accepts only a single positive ugnot amount', () => {
+    for (const spendLimit of ['100foo', '100xugnot', '1ugnot,1foo', '0ugnot', 'ugnot', 100]) {
+      expectErrorCode(
+        () =>
+          parseCreateSessionParams({ ...validParams(), spend_limit: spendLimit }, NOW, MAX_SPEND),
+        'policy_violation',
+      );
+    }
+    expect(
+      parseCreateSessionParams({ ...validParams(), spend_limit: ' 007ugnot ' }, NOW, MAX_SPEND)
+        .spendLimit,
+    ).toBe('7ugnot');
+  });
+
+  it('caps the spend limit at the user maximum', () => {
+    expect(
+      parseCreateSessionParams({ ...validParams(), spend_limit: '10000000ugnot' }, NOW, MAX_SPEND)
+        .spendLimit,
+    ).toBe('10000000ugnot');
     expectErrorCode(
-      () => parseCreateSessionParams({ ...validParams(), spend_limit: '100foo' }, NOW),
+      () =>
+        parseCreateSessionParams(
+          { ...validParams(), spend_limit: '10000001ugnot' },
+          NOW,
+          MAX_SPEND,
+        ),
       'policy_violation',
     );
   });
 
   it('rejects a past or zero expiry', () => {
     expectErrorCode(
-      () => parseCreateSessionParams({ ...validParams(), expires_at: 0 }, NOW),
+      () => parseCreateSessionParams({ ...validParams(), expires_at: 0 }, NOW, MAX_SPEND),
       'policy_violation',
     );
   });
@@ -127,6 +166,7 @@ describe('parseCreateSessionParams', () => {
         parseCreateSessionParams(
           { ...validParams(), expires_at: NOW + AGENT_SESSION_MAX_LIFETIME_SECONDS + 1 },
           NOW,
+          MAX_SPEND,
         ),
       'policy_violation',
     );
@@ -134,15 +174,38 @@ describe('parseCreateSessionParams', () => {
 
   it('rejects a fractional spend period', () => {
     expectErrorCode(
-      () => parseCreateSessionParams({ ...validParams(), spend_period: 1.5 }, NOW),
+      () => parseCreateSessionParams({ ...validParams(), spend_period: 1.5 }, NOW, MAX_SPEND),
       'invalid_params',
     );
+  });
+});
+
+describe('parseCancelParams', () => {
+  it('requires the id of the request to cancel', () => {
+    expect(parseCancelParams({ request_id: '7' })).toBe('7');
+    expectErrorCode(() => parseCancelParams({}), 'invalid_params');
   });
 });
 
 describe('parseRevokeSessionParams', () => {
   it('requires a session public key', () => {
     expectErrorCode(() => parseRevokeSessionParams({}), 'invalid_params');
+  });
+
+  it('keeps the expected master and chain', () => {
+    const parsed = parseRevokeSessionParams({
+      session_public_key: toBase64(compressedKey()),
+      master_address: 'g1master',
+      chain_id: 'test11',
+    });
+    expect(parsed.masterAddress).toBe('g1master');
+    expect(parsed.chainId).toBe('test11');
+
+    expectErrorCode(
+      () =>
+        parseRevokeSessionParams({ session_public_key: toBase64(compressedKey()), chain_id: 7 }),
+      'invalid_params',
+    );
   });
 });
 

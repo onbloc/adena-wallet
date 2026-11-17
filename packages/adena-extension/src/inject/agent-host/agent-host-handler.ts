@@ -13,7 +13,7 @@ import {
   SESSION_ADMIN_GAS_WANTED_FALLBACK,
 } from '@common/utils/session-admin-gas';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message/message';
-import { createPopup, existsPopups, removePopups } from '@inject/message/methods/common';
+import { createPopup, existsPopups } from '@inject/message/methods/common';
 import { InjectCore } from '@inject/message/methods/core';
 import {
   createMessageOfCreateSession,
@@ -21,21 +21,31 @@ import {
 } from '@services/transaction/message/auth/auth';
 import { NetworkMetainfo, RoutePath } from '@types';
 
+import { AgentApprovalQueue } from './agent-approval-queue';
 import {
   AGENT_REQUEST_PROTOCOL,
+  AGENT_SESSION_SPEND_DENOM,
   AgentHostRequest,
   AgentHostRequestError,
+  AgentExpectedContext,
   AgentHostResponse,
+  AgentPeer,
   agentSiteName,
   AgentTransactionParams,
   normalizeAgentName,
   parseAgentHostRequest,
+  parseCancelParams,
   parseCreateSessionParams,
   parseRevokeSessionParams,
   parseTransactionParams,
   toErrorResponse,
 } from './agent-host-protocol';
-import { isMasterRequestsAllowed } from './agent-host-settings';
+import {
+  getAgentBinding,
+  getMaxSpendLimitUgnot,
+  isMasterRequestsAllowed,
+  setAgentBinding,
+} from './agent-host-settings';
 
 interface WalletContext {
   account: Account;
@@ -49,6 +59,16 @@ interface PopupRequest {
   rejectType: WalletResponseType;
   data: Record<string, unknown>;
 }
+
+// A backstop for approvals the agent never cancels, e.g. when the host died.
+const APPROVAL_TIMEOUT_MS = 10 * 60 * 1000;
+const MAX_QUEUED_APPROVALS = 8;
+
+const approvalQueue = new AgentApprovalQueue(MAX_QUEUED_APPROVALS);
+const activeApprovals = new Map<string, AbortController>();
+
+const cancelledError = (): AgentHostRequestError =>
+  new AgentHostRequestError('cancelled', 'the agent cancelled the request');
 
 const createRequestKey = (): string =>
   typeof crypto.randomUUID === 'function'
@@ -66,16 +86,35 @@ const requireWallet = async (core: InjectCore): Promise<string> => {
   return accountId;
 };
 
-const requireConnected = async (core: InjectCore, agentName: string): Promise<void> => {
+const peerExe = (peer: AgentPeer | undefined): string => peer?.exe ?? '';
+
+// A connection counts only for the executable it was approved for, so another
+// local program cannot reuse an agent's connection by sending its name.
+const isAgentConnected = async (
+  core: InjectCore,
+  accountId: string,
+  agentName: string,
+  peer: AgentPeer | undefined,
+): Promise<boolean> => {
+  const siteName = agentSiteName(agentName);
+  if (!(await core.establishService.isEstablishedBy(accountId, siteName))) {
+    return false;
+  }
+  const bound = await getAgentBinding(accountId, siteName);
+  return bound !== undefined && bound === peerExe(peer);
+};
+
+const requireConnected = async (
+  core: InjectCore,
+  agentName: string,
+  peer: AgentPeer | undefined,
+): Promise<void> => {
   const accountId = await requireWallet(core);
-  const connected = await core.establishService.isEstablishedBy(
-    accountId,
-    agentSiteName(agentName),
-  );
-  if (!connected) {
+  if (!(await isAgentConnected(core, accountId, agentName, peer))) {
     throw new AgentHostRequestError(
       'not_connected',
-      'this agent is not connected to Adena; call connect_wallet first',
+      'this agent is not connected to Adena, or its program changed since it was approved; ' +
+        'call connect_wallet first',
     );
   }
 };
@@ -124,9 +163,22 @@ const requireSessionSupport = (context: WalletContext): void => {
   }
 };
 
-// Opens an Adena approval popup on behalf of the agent and resolves with the
-// popup's answer. The requester is shown as "<agent>.agent".
-const openPopup = async (agentName: string, request: PopupRequest): Promise<InjectionMessage> => {
+const showPopup = async (
+  agentName: string,
+  request: PopupRequest,
+  signal: AbortSignal,
+): Promise<InjectionMessage> => {
+  // Never close a popup that belongs to another request.
+  if (await existsPopups()) {
+    throw new AgentHostRequestError(
+      'approval_pending',
+      'another approval is open in Adena; ask the user to finish it, then retry',
+    );
+  }
+  if (signal.aborted) {
+    throw cancelledError();
+  }
+
   const key = createRequestKey();
   const message: InjectionMessage = {
     code: 0,
@@ -140,18 +192,110 @@ const openPopup = async (agentName: string, request: PopupRequest): Promise<Inje
     data: request.data,
   };
 
-  if (await existsPopups()) {
-    await removePopups();
-  }
+  return new Promise<InjectionMessage>((resolve, reject) => {
+    let settled = false;
+    let windowId: number | undefined;
 
-  return new Promise<InjectionMessage>((resolve) => {
+    const closeWindow = (): void => {
+      if (windowId !== undefined) {
+        chrome.windows.remove(windowId).catch(() => undefined);
+      }
+    };
+
+    const finish = (complete: () => void): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      signal.removeEventListener('abort', onAbort);
+      complete();
+    };
+
+    const onAbort = (): void =>
+      finish(() => {
+        closeWindow();
+        reject(cancelledError());
+      });
+
+    const timer = setTimeout(
+      () =>
+        finish(() => {
+          closeWindow();
+          reject(
+            new AgentHostRequestError(
+              'approval_timeout',
+              'the user did not respond in Adena in time',
+            ),
+          );
+        }),
+      APPROVAL_TIMEOUT_MS,
+    );
+
+    signal.addEventListener('abort', onAbort);
+
     createPopup(
       request.route,
       message,
       InjectionMessageInstance.failure(request.rejectType, {}, key),
-      resolve,
+      (response: InjectionMessage) => finish(() => resolve(response)),
+      (createdWindowId) => {
+        windowId = createdWindowId;
+        if (settled) {
+          closeWindow();
+        }
+      },
     );
   });
+};
+
+// Session admin requests must act on the account and chain the agent recorded,
+// e.g. a revoke must not land on another network the user switched to.
+const requireExpectedContext = (context: WalletContext, expected: AgentExpectedContext): void => {
+  if (expected.masterAddress && expected.masterAddress !== context.address) {
+    throw new AgentHostRequestError(
+      'context_mismatch',
+      `Adena's current account is ${context.address}, not ${expected.masterAddress}; ` +
+        'ask the user to switch accounts in Adena, then retry',
+    );
+  }
+  if (expected.chainId && expected.chainId !== context.network.chainId) {
+    throw new AgentHostRequestError(
+      'context_mismatch',
+      `Adena is on chain ${context.network.chainId}, not ${expected.chainId}; ` +
+        'ask the user to switch networks in Adena, then retry',
+    );
+  }
+};
+
+// Opens an Adena approval popup on behalf of the agent and resolves with the
+// popup's answer. The requester is shown as "<agent>.agent". Approvals are
+// queued and can be cancelled by the host with the request id.
+const openPopup = async (
+  requestId: string,
+  agentName: string,
+  request: PopupRequest,
+): Promise<InjectionMessage> => {
+  const controller = new AbortController();
+  activeApprovals.get(requestId)?.abort();
+  activeApprovals.set(requestId, controller);
+
+  try {
+    return await approvalQueue.run(
+      () => showPopup(agentName, request, controller.signal),
+      controller.signal,
+    );
+  } finally {
+    if (activeApprovals.get(requestId) === controller) {
+      activeApprovals.delete(requestId);
+    }
+  }
+};
+
+// Called when the host channel closes: nobody is left to receive the answers.
+export const cancelAllAgentApprovals = (): void => {
+  activeApprovals.forEach((controller) => controller.abort());
+  activeApprovals.clear();
 };
 
 const failureFrom = (response: InjectionMessage, rejectType: WalletResponseType): never => {
@@ -163,9 +307,12 @@ const failureFrom = (response: InjectionMessage, rejectType: WalletResponseType)
   );
 };
 
+// commit makes the popup wait for the block and fail unless the transaction
+// executed, not just passed CheckTx.
 const transactionPopupData = (
   context: WalletContext,
   tx: AgentTransactionParams,
+  commit = false,
 ): Record<string, unknown> => ({
   messages: tx.messages,
   memo: tx.memo,
@@ -173,19 +320,22 @@ const transactionPopupData = (
   gasFee: tx.gasFee,
   networkInfo: { chainId: context.network.chainId, rpcUrl: context.network.rpcUrl },
   signerAccountId: context.account.id,
+  ...(commit ? { commit: true } : {}),
 });
 
 const broadcastViaPopup = async (
+  requestId: string,
   context: WalletContext,
   tx: AgentTransactionParams,
   agentName: string,
+  commit = false,
 ): Promise<Record<string, unknown>> => {
   const rejectType = WalletResponseRejectType.TRANSACTION_REJECTED;
-  const response = await openPopup(agentName, {
+  const response = await openPopup(requestId, agentName, {
     route: RoutePath.ApproveTransaction,
     type: 'DO_CONTRACT',
     rejectType,
-    data: transactionPopupData(context, tx),
+    data: transactionPopupData(context, tx, commit),
   });
 
   if (response?.status !== 'success') {
@@ -217,28 +367,23 @@ const sessionAdminTx = async (
   };
 };
 
+// Reveals wallet details only to a connected agent.
 const handleGetStatus = async (
   core: InjectCore,
   request: AgentHostRequest,
 ): Promise<Record<string, unknown>> => {
   const version = chrome.runtime.getManifest().version;
-  const masterRequestsAllowed = await isMasterRequestsAllowed();
   const accountId = await core.getCurrentAccountId();
   if (!accountId) {
-    return {
-      version,
-      has_wallet: false,
-      locked: false,
-      connected: false,
-      master_requests_allowed: masterRequestsAllowed,
-    };
+    return { version, has_wallet: false, connected: false };
+  }
+
+  const connected = await isAgentConnected(core, accountId, agentNameOf(request), request.peer);
+  if (!connected) {
+    return { version, has_wallet: true, connected: false };
   }
 
   const locked = await core.isLockedBy(await core.getInMemoryKey());
-  const connected = await core.establishService.isEstablishedBy(
-    accountId,
-    agentSiteName(agentNameOf(request)),
-  );
   const network = await core.getCurrentNetwork();
 
   return {
@@ -246,38 +391,47 @@ const handleGetStatus = async (
     has_wallet: true,
     locked,
     connected,
-    master_requests_allowed: masterRequestsAllowed,
+    master_requests_allowed: await isMasterRequestsAllowed(),
+    max_spend_limit: `${await getMaxSpendLimitUgnot()}${AGENT_SESSION_SPEND_DENOM}`,
     chain_id: network?.chainId ?? null,
     rpc_url: network?.rpcUrl ?? null,
   };
 };
 
+const describeAgent = (agentName: string, peer: AgentPeer | undefined): string =>
+  peer?.exe ? `${agentName} (${peer.exe})` : agentName;
+
 // Asks the user to connect the agent, the way a dApp asks to connect. The
-// approval popup also unlocks the wallet when needed.
+// approval popup also unlocks the wallet when needed. The connection is bound
+// to the agent's executable; a different program must be approved again.
 const handleConnect = async (
   core: InjectCore,
   request: AgentHostRequest,
 ): Promise<Record<string, unknown>> => {
   const agentName = agentNameOf(request);
+  const siteName = agentSiteName(agentName);
   const accountId = await requireWallet(core);
 
-  const connected = await core.establishService.isEstablishedBy(
-    accountId,
-    agentSiteName(agentName),
-  );
-  if (!connected) {
+  if (!(await isAgentConnected(core, accountId, agentName, request.peer))) {
+    if (await core.establishService.isEstablishedBy(accountId, siteName)) {
+      await core.establishService.unEstablishBy(accountId, siteName);
+    }
+
     const rejectType = WalletResponseRejectType.CONNECTION_REJECTED;
-    const response = await openPopup(agentName, {
+    const response = await openPopup(request.id, agentName, {
       route: RoutePath.ApproveEstablish,
       type: 'ADD_ESTABLISH',
       rejectType,
-      data: { name: agentName },
+      data: { name: describeAgent(agentName, request.peer) },
     });
 
     const alreadyConnected = response?.type === WalletResponseFailureType.ALREADY_CONNECTED;
     if (response?.status !== 'success' && !alreadyConnected) {
       failureFrom(response, rejectType);
     }
+
+    const approvedAccountId = await requireWallet(core);
+    await setAgentBinding(approvedAccountId, siteName, peerExe(request.peer));
   }
 
   return handleGetAccount(core);
@@ -292,9 +446,15 @@ const handleCreateSession = async (
   core: InjectCore,
   request: AgentHostRequest,
 ): Promise<Record<string, unknown>> => {
-  const params = parseCreateSessionParams(request.params, Math.floor(Date.now() / 1000));
+  const maxSpendUgnot = BigInt(await getMaxSpendLimitUgnot());
+  const params = parseCreateSessionParams(
+    request.params,
+    Math.floor(Date.now() / 1000),
+    maxSpendUgnot,
+  );
   const context = await resolveWalletContext(core);
   requireSessionSupport(context);
+  requireExpectedContext(context, params);
 
   let message: { type: string; value: unknown };
   try {
@@ -314,9 +474,11 @@ const handleCreateSession = async (
   }
 
   const result = await broadcastViaPopup(
+    request.id,
     context,
     await sessionAdminTx(context, message),
     params.agentName,
+    true,
   );
   return { ...result, expires_at: params.expiresAt };
 };
@@ -328,12 +490,19 @@ const handleRevokeSession = async (
   const params = parseRevokeSessionParams(request.params);
   const context = await resolveWalletContext(core);
   requireSessionSupport(context);
+  requireExpectedContext(context, params);
 
   const message = createMessageOfRevokeSession({
     creator: context.address,
     sessionPublicKey: params.sessionPublicKey,
   });
-  return broadcastViaPopup(context, await sessionAdminTx(context, message), params.agentName);
+  return broadcastViaPopup(
+    request.id,
+    context,
+    await sessionAdminTx(context, message),
+    params.agentName,
+    true,
+  );
 };
 
 const handleSendTransaction = async (
@@ -343,7 +512,7 @@ const handleSendTransaction = async (
   await requireMasterRequestsAllowed();
   const context = await resolveWalletContext(core);
   const tx = parseTransactionParams(request.params, context.address);
-  return broadcastViaPopup(context, tx, agentNameOf(request));
+  return broadcastViaPopup(request.id, context, tx, agentNameOf(request));
 };
 
 const handleSignTransaction = async (
@@ -355,7 +524,7 @@ const handleSignTransaction = async (
   const tx = parseTransactionParams(request.params, context.address);
 
   const rejectType = WalletResponseRejectType.SIGN_REJECTED;
-  const response = await openPopup(agentNameOf(request), {
+  const response = await openPopup(request.id, agentNameOf(request), {
     route: RoutePath.ApproveSignTransaction,
     type: 'SIGN_TX',
     rejectType,
@@ -384,18 +553,24 @@ const CONNECTION_REQUIRED: ReadonlySet<string> = new Set([
   'sign_transaction',
 ]);
 
+// Returns null for messages that expect no response, such as cancel.
 export const handleAgentHostMessage = async (
   inMemoryProvider: MemoryProvider,
   raw: unknown,
-): Promise<AgentHostResponse> => {
+): Promise<AgentHostResponse | null> => {
   const id = typeof (raw as { id?: unknown })?.id === 'string' ? (raw as { id: string }).id : '';
 
   try {
     const request = parseAgentHostRequest(raw);
+    if (request.method === 'cancel') {
+      activeApprovals.get(parseCancelParams(request.params))?.abort();
+      return null;
+    }
+
     const core = new InjectCore(inMemoryProvider);
 
     if (CONNECTION_REQUIRED.has(request.method)) {
-      await requireConnected(core, agentNameOf(request));
+      await requireConnected(core, agentNameOf(request), request.peer);
     }
 
     switch (request.method) {
