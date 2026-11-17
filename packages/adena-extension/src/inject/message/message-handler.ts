@@ -5,6 +5,7 @@ import { CommandMessageData } from './command-message';
 import { InjectionMessage, InjectionMessageInstance } from './message';
 import { existsPopups, removePopups } from './methods';
 import { InjectCore } from './methods/core';
+import { withSenderIdentity } from './sender-identity';
 
 const NON_POPUP_REQUEST_TYPES: ReadonlySet<string> = new Set(['GET_ACCOUNT', 'GET_NETWORK']);
 
@@ -19,9 +20,21 @@ export class MessageHandler {
       if (message?.status) {
         const status = message?.status;
         switch (status) {
-          case 'request':
-            this.requestHandler(inMemoryProvider, message, sender, sendResponse);
+          case 'request': {
+            const request = withSenderIdentity(message, sender, chrome.runtime.getURL(''));
+            if (!request) {
+              sendResponse(
+                InjectionMessageInstance.failure(
+                  WalletResponseFailureType.UNEXPECTED_ERROR,
+                  {},
+                  message?.key,
+                ),
+              );
+              break;
+            }
+            this.requestHandler(inMemoryProvider, request, sender, sendResponse);
             break;
+          }
           case 'failure':
           case 'success':
             sendResponse(message);
