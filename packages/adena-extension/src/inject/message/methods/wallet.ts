@@ -4,7 +4,7 @@ import {
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { getDappVisibleAddress } from '@common/utils/account-address';
-import { getSiteName } from '@common/utils/client-utils';
+import { getSiteName } from '@common/utils/url-parameter-utils';
 import { RoutePath } from '@types';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';

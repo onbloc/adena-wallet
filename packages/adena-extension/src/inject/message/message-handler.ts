@@ -5,6 +5,7 @@ import { CommandMessageData } from './command-message';
 import { InjectionMessage, InjectionMessageInstance } from './message';
 import { existsPopups, removePopups } from './methods';
 import { InjectCore } from './methods/core';
+import type { RequestSender } from './request-sender';
 
 const NON_POPUP_REQUEST_TYPES: ReadonlySet<string> = new Set(['GET_ACCOUNT', 'GET_NETWORK']);
 
@@ -12,7 +13,7 @@ export class MessageHandler {
   public static createHandler = (
     inMemoryProvider: MemoryProvider,
     message: InjectionMessage | CommandMessageData | any,
-    sender: chrome.runtime.MessageSender,
+    sender: RequestSender,
     sendResponse: (response?: InjectionMessage | CommandMessageData | any) => void,
   ): boolean => {
     try {
@@ -44,7 +45,7 @@ export class MessageHandler {
   private static requestHandler = async (
     inMemoryProvider: MemoryProvider,
     message: InjectionMessage,
-    sender: chrome.runtime.MessageSender,
+    sender: RequestSender,
     sendResponse: (response?: any) => void,
   ): Promise<true | undefined> => {
     const core = new InjectCore(inMemoryProvider);

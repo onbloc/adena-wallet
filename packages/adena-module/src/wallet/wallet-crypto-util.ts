@@ -1,8 +1,13 @@
 import CryptoJS from 'crypto-js';
-import sodium from 'libsodium-wrappers-sumo';
 
-import { Argon2id, isArgon2idOptions, Xchacha20poly1305Ietf, xchacha20NonceLength } from '../crypto';
-import { toAscii, toHex } from '../encoding';
+import {
+  Argon2id,
+  getCryptoProvider,
+  isArgon2idOptions,
+  Xchacha20poly1305Ietf,
+  xchacha20NonceLength,
+} from '../crypto';
+import { fromBase64UrlNoPadding, toAscii, toBase64UrlNoPadding, toHex } from '../encoding';
 
 interface KdfConfiguration {
   /**
@@ -64,8 +69,8 @@ export const decryptAES = (encryptedValue: string, password: string) => {
 // --- XChaCha20-Poly1305 AEAD encryption (replacement for AES-CBC) ---
 
 export interface EncryptedData {
-  ciphertext: string; // base64
-  nonce: string; // base64
+  ciphertext: string; // base64url, unpadded (libsodium default)
+  nonce: string; // base64url, unpadded (libsodium default)
 }
 
 /**
@@ -73,8 +78,7 @@ export interface EncryptedData {
  * Called once when creating a new wallet, then stored in storage.
  */
 export const generateKdfSalt = async (): Promise<Uint8Array> => {
-  await sodium.ready;
-  return sodium.randombytes_buf(16);
+  return getCryptoProvider().randomBytes(16);
 };
 
 /**
@@ -102,15 +106,18 @@ export const encryptXChacha20 = async (
   password: string,
   salt: Uint8Array,
 ): Promise<EncryptedData> => {
-  await sodium.ready;
   const cryptKey = await makeCryptKeyBytes(password, salt);
-  const nonce = sodium.randombytes_buf(xchacha20NonceLength);
-  const message = new TextEncoder().encode(value);
-  const ciphertext = await Xchacha20poly1305Ietf.encrypt(message, cryptKey, nonce);
-  return {
-    ciphertext: sodium.to_base64(ciphertext),
-    nonce: sodium.to_base64(nonce),
-  };
+  try {
+    const nonce = getCryptoProvider().randomBytes(xchacha20NonceLength);
+    const message = new TextEncoder().encode(value);
+    const ciphertext = await Xchacha20poly1305Ietf.encrypt(message, cryptKey, nonce);
+    return {
+      ciphertext: toBase64UrlNoPadding(ciphertext),
+      nonce: toBase64UrlNoPadding(nonce),
+    };
+  } finally {
+    getCryptoProvider().memzero(cryptKey);
+  }
 };
 
 /**
@@ -123,10 +130,13 @@ export const decryptXChacha20 = async (
   password: string,
   salt: Uint8Array,
 ): Promise<string> => {
-  await sodium.ready;
   const cryptKey = await makeCryptKeyBytes(password, salt);
-  const ciphertext = sodium.from_base64(encryptedData.ciphertext);
-  const nonce = sodium.from_base64(encryptedData.nonce);
-  const decrypted = await Xchacha20poly1305Ietf.decrypt(ciphertext, cryptKey, nonce);
-  return new TextDecoder().decode(decrypted);
+  try {
+    const ciphertext = fromBase64UrlNoPadding(encryptedData.ciphertext);
+    const nonce = fromBase64UrlNoPadding(encryptedData.nonce);
+    const decrypted = await Xchacha20poly1305Ietf.decrypt(ciphertext, cryptKey, nonce);
+    return new TextDecoder().decode(decrypted);
+  } finally {
+    getCryptoProvider().memzero(cryptKey);
+  }
 };

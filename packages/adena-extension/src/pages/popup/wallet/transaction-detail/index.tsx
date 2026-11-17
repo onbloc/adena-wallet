@@ -7,12 +7,8 @@ import ContractIcon from '@assets/contract.svg';
 import IconShare from '@assets/icon-share';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
-import {
-  formatAddress,
-  formatHash,
-  getDateTimeText,
-  getStatusStyle,
-} from '@common/utils/client-utils';
+import { formatAddress, formatHash, getDateTimeText } from '@common/utils/client-utils';
+import { getStatusStyle } from '@common/utils/client-ui-utils';
 import { makeTransactionScannerUrl, toScannerNetworkInfo } from '@common/utils/scanner-utils';
 import { Button, CopyIconButton, Text } from '@components/atoms';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
