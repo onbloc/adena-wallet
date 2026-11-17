@@ -6,8 +6,12 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -52,7 +56,7 @@ func newHarness(t *testing.T) *harness {
 		fromHost:   fromHost,
 		done:       make(chan error, 1),
 		cancel:     cancel,
-		requestsCh: make(chan bridge.Request, 8),
+		requestsCh: make(chan bridge.Request, 64),
 	}
 
 	relay := New(browserIn, browserOut, listener, slog.New(slog.DiscardHandler))
@@ -195,4 +199,153 @@ func TestListenReplacesStaleSocket(t *testing.T) {
 	}
 
 	_ = listener.Close()
+}
+
+func dialRaw(t *testing.T, socket string) net.Conn {
+	t.Helper()
+
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { _ = conn.Close() })
+
+	return conn
+}
+
+func writeLine(t *testing.T, conn net.Conn, line string) {
+	t.Helper()
+
+	if _, err := conn.Write([]byte(line + "\n")); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRelaySetsPeerFromTheOS(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t)
+	conn := dialRaw(t, h.socket)
+
+	writeLine(t, conn, `{"id":"1","method":"ping","peer":{"pid":1,"exe":"/forged"}}`)
+
+	request := h.nextRequest(t)
+
+	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
+		if request.Peer != nil {
+			t.Fatalf("got peer %+v, want none", request.Peer)
+		}
+
+		return
+	}
+
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if request.Peer == nil || request.Peer.PID != os.Getpid() {
+		t.Fatalf("got peer %+v, want pid %d", request.Peer, os.Getpid())
+	}
+
+	want, err := filepath.EvalSymlinks(exe)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := filepath.EvalSymlinks(request.Peer.Exe)
+	if err != nil {
+		t.Fatalf("peer exe %q: %v", request.Peer.Exe, err)
+	}
+
+	if got != want {
+		t.Fatalf("got exe %q, want %q", request.Peer.Exe, exe)
+	}
+}
+
+func TestRelayRefusesCancelFromClients(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t)
+	conn := dialRaw(t, h.socket)
+
+	writeLine(t, conn, `{"id":"1","method":"cancel","params":{"request_id":"1"}}`)
+
+	var response bridge.Response
+	if err := json.NewDecoder(conn).Decode(&response); err != nil {
+		t.Fatal(err)
+	}
+
+	if response.Error == nil || response.Error.Code != "invalid_request" {
+		t.Fatalf("got %+v, want invalid_request", response)
+	}
+
+	select {
+	case request := <-h.requestsCh:
+		t.Fatalf("forwarded %+v", request)
+	case <-time.After(100 * time.Millisecond):
+	}
+}
+
+func TestRelayCancelsRequestsOfAClosedConnection(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t)
+	conn := dialRaw(t, h.socket)
+
+	writeLine(t, conn, `{"id":"a","method":"create_session"}`)
+
+	forwarded := h.nextRequest(t)
+	_ = conn.Close()
+
+	cancel := h.nextRequest(t)
+	if cancel.Method != bridge.MethodCancel {
+		t.Fatalf("got method %q, want cancel", cancel.Method)
+	}
+
+	var params bridge.CancelParams
+	if err := json.Unmarshal(cancel.Params, &params); err != nil {
+		t.Fatal(err)
+	}
+
+	if params.RequestID != forwarded.ID {
+		t.Fatalf("cancel names %q, want %q", params.RequestID, forwarded.ID)
+	}
+}
+
+func TestRelaySlowClientDoesNotBlockOthers(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t)
+	stalled := dialRaw(t, h.socket)
+
+	ids := make([]string, 0, maxPendingCalls)
+
+	for i := range maxPendingCalls {
+		writeLine(t, stalled, `{"id":"s`+strconv.Itoa(i)+`","method":"ping"}`)
+		ids = append(ids, h.nextRequest(t).ID)
+	}
+
+	// Large results fill the stalled client's socket buffer and queue.
+	big := json.RawMessage(`{"pad":"` + strings.Repeat("x", 512<<10) + `"}`)
+	for _, id := range ids {
+		h.reply(t, bridge.Response{ID: id, Result: big})
+	}
+
+	client := &bridge.Client{SocketPath: h.socket}
+	result := make(chan error, 1)
+
+	go func() { result <- client.Call(context.Background(), bridge.MethodPing, nil, nil) }()
+
+	h.reply(t, bridge.Response{ID: h.nextRequest(t).ID, Result: json.RawMessage(`{}`)})
+
+	select {
+	case err := <-result:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("a stalled client blocked another client's response")
+	}
 }

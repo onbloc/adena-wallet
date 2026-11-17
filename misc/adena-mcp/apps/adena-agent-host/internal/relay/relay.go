@@ -26,6 +26,12 @@ const (
 	socketPerm       = 0o600
 	probeTimeout     = 500 * time.Millisecond
 	maxClientRequest = 64 << 10
+	// A client that does not read its responses for this long is dropped, so
+	// it cannot stall responses to everyone else.
+	clientWriteTimeout = 5 * time.Second
+	clientQueueSize    = 16
+	maxClients         = 32
+	maxPendingCalls    = 16
 )
 
 // ErrHostRunning means another host already serves the socket, typically
@@ -67,23 +73,77 @@ func Listen(socketPath string) (net.Listener, error) {
 }
 
 type client struct {
-	conn net.Conn
-	mu   sync.Mutex
+	conn    net.Conn
+	peer    *bridge.Peer
+	out     chan []byte
+	done    chan struct{}
+	once    sync.Once
+	pending int
 }
 
+func newClient(conn net.Conn, peer *bridge.Peer) *client {
+	return &client{conn: conn, peer: peer, out: make(chan []byte, clientQueueSize), done: make(chan struct{})}
+}
+
+// send queues a response without blocking; a client whose queue is full has
+// stopped reading and is dropped.
 func (c *client) send(response bridge.Response) {
 	line, err := json.Marshal(response)
 	if err != nil {
 		return
 	}
 
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// A client that stopped reading is dropped; its reader loop then exits.
-	if _, err := c.conn.Write(append(line, '\n')); err != nil {
-		_ = c.conn.Close()
+	select {
+	case <-c.done:
+	case c.out <- append(line, '\n'):
+	default:
+		c.close()
 	}
+}
+
+// sendNow writes a response directly, for the final responses written right
+// before the connection closes.
+func (c *client) sendNow(response bridge.Response) {
+	line, err := json.Marshal(response)
+	if err != nil {
+		return
+	}
+
+	if c.conn.SetWriteDeadline(time.Now().Add(clientWriteTimeout)) != nil {
+		return
+	}
+
+	if _, err := c.conn.Write(append(line, '\n')); err != nil {
+		c.close()
+	}
+}
+
+func (c *client) writeLoop() {
+	for {
+		select {
+		case <-c.done:
+			return
+		case line := <-c.out:
+			if err := c.conn.SetWriteDeadline(time.Now().Add(clientWriteTimeout)); err != nil {
+				c.close()
+
+				return
+			}
+
+			if _, err := c.conn.Write(line); err != nil {
+				c.close()
+
+				return
+			}
+		}
+	}
+}
+
+func (c *client) close() {
+	c.once.Do(func() {
+		close(c.done)
+		_ = c.conn.Close()
+	})
 }
 
 type pendingCall struct {
@@ -100,6 +160,7 @@ type Relay struct {
 	pending    map[string]pendingCall
 	clients    map[*client]struct{}
 	seq        uint64
+	cancelSeq  uint64
 	outMu      sync.Mutex
 	mu         sync.Mutex
 }
@@ -149,12 +210,34 @@ func (r *Relay) acceptLoop() {
 			return
 		}
 
-		c := &client{conn: conn}
+		peer, err := peerOf(conn)
+		if err != nil {
+			r.log.Warn("refusing agent connection", "error", err)
+
+			_ = conn.Close()
+
+			continue
+		}
+
+		c := newClient(conn, peer)
 
 		r.mu.Lock()
-		r.clients[c] = struct{}{}
+
+		full := len(r.clients) >= maxClients
+		if !full {
+			r.clients[c] = struct{}{}
+		}
 		r.mu.Unlock()
 
+		if full {
+			r.log.Warn("refusing agent connection", "error", "too many connections")
+
+			_ = conn.Close()
+
+			continue
+		}
+
+		handlers.Go(c.writeLoop)
 		handlers.Go(func() { r.serveClient(c) })
 	}
 }
@@ -173,12 +256,33 @@ func (r *Relay) serveClient(c *client) {
 			continue
 		}
 
+		// Only the host cancels, so one agent cannot close another's approval.
+		if request.Method == bridge.MethodCancel {
+			c.send(bridge.Response{
+				ID:    request.ID,
+				Error: &bridge.Error{Code: "invalid_request", Message: "cancel is reserved for the host"},
+			})
+
+			continue
+		}
+
 		r.forward(c, request)
 	}
 }
 
 func (r *Relay) forward(c *client, request bridge.Request) {
 	r.mu.Lock()
+	if c.pending >= maxPendingCalls {
+		r.mu.Unlock()
+		c.send(bridge.Response{
+			ID:    request.ID,
+			Error: &bridge.Error{Code: "too_many_requests", Message: "too many requests are in flight on this connection"},
+		})
+
+		return
+	}
+
+	c.pending++
 	r.seq++
 	hostID := strconv.FormatUint(r.seq, 10)
 	r.pending[hostID] = pendingCall{client: c, id: request.ID}
@@ -186,17 +290,17 @@ func (r *Relay) forward(c *client, request bridge.Request) {
 
 	originalID := request.ID
 	request.ID = hostID
+	// The extension trusts this field, so it always comes from the host.
+	request.Peer = c.peer
 
-	message, err := json.Marshal(request)
-	if err == nil {
-		r.outMu.Lock()
-		err = nativemsg.Write(r.browserOut, message)
-		r.outMu.Unlock()
-	}
-
+	err := r.writeBrowser(request)
 	if err != nil {
 		r.mu.Lock()
-		delete(r.pending, hostID)
+		if _, ok := r.pending[hostID]; ok {
+			delete(r.pending, hostID)
+
+			c.pending--
+		}
 		r.mu.Unlock()
 
 		c.send(bridge.Response{
@@ -204,6 +308,18 @@ func (r *Relay) forward(c *client, request bridge.Request) {
 			Error: &bridge.Error{Code: bridge.CodeExtensionGone, Message: err.Error()},
 		})
 	}
+}
+
+func (r *Relay) writeBrowser(request bridge.Request) error {
+	message, err := json.Marshal(request)
+	if err != nil {
+		return err
+	}
+
+	r.outMu.Lock()
+	defer r.outMu.Unlock()
+
+	return nativemsg.Write(r.browserOut, message)
 }
 
 func (r *Relay) browserLoop() error {
@@ -225,8 +341,13 @@ func (r *Relay) browserLoop() error {
 		}
 
 		r.mu.Lock()
+
 		call, ok := r.pending[response.ID]
-		delete(r.pending, response.ID)
+		if ok {
+			delete(r.pending, response.ID)
+
+			call.client.pending--
+		}
 		r.mu.Unlock()
 
 		if !ok {
@@ -238,18 +359,45 @@ func (r *Relay) browserLoop() error {
 	}
 }
 
+// dropClient forgets a closed connection and asks Adena to cancel what it
+// still waits for, so a late approval cannot act for an agent that gave up.
 func (r *Relay) dropClient(c *client) {
 	r.mu.Lock()
 	delete(r.clients, c)
 
+	var abandoned []string
+
 	for id, call := range r.pending {
 		if call.client == c {
 			delete(r.pending, id)
+			abandoned = append(abandoned, id)
 		}
 	}
+
+	c.pending = 0
 	r.mu.Unlock()
 
-	_ = c.conn.Close()
+	c.close()
+
+	for _, id := range abandoned {
+		r.cancel(id)
+	}
+}
+
+func (r *Relay) cancel(hostID string) {
+	r.mu.Lock()
+	r.cancelSeq++
+	id := "cancel-" + strconv.FormatUint(r.cancelSeq, 10)
+	r.mu.Unlock()
+
+	params, err := json.Marshal(bridge.CancelParams{RequestID: hostID})
+	if err != nil {
+		return
+	}
+
+	if err := r.writeBrowser(bridge.Request{ID: id, Method: bridge.MethodCancel, Params: params}); err != nil {
+		r.log.Warn("could not cancel an abandoned request", "error", err)
+	}
 }
 
 func (r *Relay) failAll() {
@@ -261,13 +409,13 @@ func (r *Relay) failAll() {
 	r.mu.Unlock()
 
 	for _, call := range pending {
-		call.client.send(bridge.Response{
+		call.client.sendNow(bridge.Response{
 			ID:    call.id,
 			Error: &bridge.Error{Code: bridge.CodeExtensionGone, Message: "the browser closed the connection"},
 		})
 	}
 
 	for c := range clients {
-		_ = c.conn.Close()
+		c.close()
 	}
 }

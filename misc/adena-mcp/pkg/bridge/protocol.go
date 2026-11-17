@@ -24,6 +24,9 @@ const (
 	MethodRevokeSession   = "revoke_session"
 	MethodSendTransaction = "send_transaction"
 	MethodSignTransaction = "sign_transaction"
+	// MethodCancel is sent by the host only, when the agent that made a request
+	// goes away, so Adena closes the request's approval popup.
+	MethodCancel = "cancel"
 )
 
 // Error codes produced by the host itself; the extension reports its own.
@@ -33,11 +36,24 @@ const (
 	CodeRejected        = "rejected"
 )
 
+// Peer is the process connected to the host socket, as the operating system
+// reports it. The host sets it on every request; clients cannot.
+type Peer struct {
+	Exe string `json:"exe,omitempty"`
+	PID int    `json:"pid,omitempty"`
+}
+
 // Request is a call from an agent to the extension.
 type Request struct {
+	Peer   *Peer           `json:"peer,omitempty"`
 	ID     string          `json:"id"`
 	Method string          `json:"method"`
 	Params json.RawMessage `json:"params,omitempty"`
+}
+
+// CancelParams names the request a cancel is for.
+type CancelParams struct {
+	RequestID string `json:"request_id"`
 }
 
 // Response carries either a result or an error for a request id.
@@ -63,14 +79,18 @@ type AgentParams struct {
 	AgentName string `json:"agent_name,omitempty"`
 }
 
-// Status is the wallet state reported without revealing the address.
+// Status is the wallet state reported without revealing the address. Only a
+// connected agent learns more than whether a wallet exists.
 type Status struct {
-	ChainID   *string `json:"chain_id"`
-	RPCURL    *string `json:"rpc_url"`
-	Version   string  `json:"version"`
-	HasWallet bool    `json:"has_wallet"`
-	Locked    bool    `json:"locked"`
-	Connected bool    `json:"connected"`
+	ChainID *string `json:"chain_id"`
+	RPCURL  *string `json:"rpc_url"`
+	Version string  `json:"version"`
+	// MaxSpendLimit is the largest session spend limit the user allows, e.g.
+	// "10000000ugnot".
+	MaxSpendLimit string `json:"max_spend_limit,omitempty"`
+	HasWallet     bool   `json:"has_wallet"`
+	Locked        bool   `json:"locked"`
+	Connected     bool   `json:"connected"`
 	// MasterRequestsAllowed is the user's setting for signer=wallet requests.
 	MasterRequestsAllowed bool `json:"master_requests_allowed"`
 }
@@ -106,20 +126,26 @@ type Account struct {
 	RPCURL  string `json:"rpc_url"`
 }
 
-// CreateSessionParams asks the user to authorize a session key.
+// CreateSessionParams asks the user to authorize a session key. Adena refuses
+// it unless its current account and chain match MasterAddress and ChainID.
 type CreateSessionParams struct {
 	SessionPublicKey string   `json:"session_public_key"`
 	SpendLimit       string   `json:"spend_limit"`
 	AgentName        string   `json:"agent_name,omitempty"`
+	MasterAddress    string   `json:"master_address,omitempty"`
+	ChainID          string   `json:"chain_id,omitempty"`
 	AllowPaths       []string `json:"allow_paths"`
 	SpendPeriod      int64    `json:"spend_period,omitempty"`
 	ExpiresAt        int64    `json:"expires_at"`
 }
 
-// RevokeSessionParams asks the user to revoke a session key.
+// RevokeSessionParams asks the user to revoke a session key on the account and
+// chain that created it.
 type RevokeSessionParams struct {
 	SessionPublicKey string `json:"session_public_key"`
 	AgentName        string `json:"agent_name,omitempty"`
+	MasterAddress    string `json:"master_address,omitempty"`
+	ChainID          string `json:"chain_id,omitempty"`
 }
 
 // SessionTxResult describes the session admin transaction the user signed.
