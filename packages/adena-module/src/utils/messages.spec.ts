@@ -1,6 +1,6 @@
 import { Secp256k1 } from '@cosmjs/crypto';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
-import { PubKeySecp256k1 } from '@gnolang/tm2-js-client';
+import { PubKeySecp256k1, Tx } from '@gnolang/tm2-js-client';
 import { Any } from '@gnolang/tm2-js-client';
 
 import { MsgCreateSession } from '../proto';
@@ -36,21 +36,28 @@ function makeDocument(): Document {
 }
 
 describe('documentToDefaultTx', () => {
-  it('leaves pub_key empty when no publicKey is provided (back-compat)', () => {
+  it('omits pub_key when no publicKey is provided', () => {
     const tx = documentToDefaultTx(makeDocument());
 
     expect(tx.signatures).toHaveLength(1);
     const sig = tx.signatures[0];
-    expect(sig.pub_key?.type_url).toBe('');
-    expect(sig.pub_key?.value).toEqual(new Uint8Array());
+    expect(sig.pub_key).toBeUndefined();
     expect(sig.signature).toEqual(new Uint8Array());
   });
 
-  it('leaves pub_key empty when publicKey is an empty Uint8Array (AirGap case)', () => {
+  it('omits pub_key when publicKey is an empty Uint8Array (AirGap case)', () => {
     const tx = documentToDefaultTx(makeDocument(), new Uint8Array());
 
-    expect(tx.signatures[0].pub_key?.type_url).toBe('');
-    expect(tx.signatures[0].pub_key?.value).toEqual(new Uint8Array());
+    expect(tx.signatures[0].pub_key).toBeUndefined();
+  });
+
+  // gno.land#6406 rejects non-canonical tx bytes; an empty pub_key Any would
+  // encode the placeholder signature as `1a 02 0a 00` instead of `1a 00`.
+  it('encodes the AirGap placeholder signature canonically', () => {
+    const tx = documentToDefaultTx(makeDocument(), new Uint8Array());
+    const encoded = Buffer.from(Tx.encode(tx).finish()).toString('hex');
+
+    expect(encoded.endsWith('1a00')).toBe(true);
   });
 
   it('wraps the provided compressed pubkey with /tm.PubKeySecp256k1', () => {
