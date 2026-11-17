@@ -66,7 +66,14 @@ func WriteHomeMarker(binDir, home string) error {
 		return err
 	}
 
-	if err := os.WriteFile(filepath.Join(binDir, HomeMarker), []byte(abs+"\n"), markerPerm); err != nil {
+	// Replaced rather than rewritten, so an existing file's owner does not
+	// carry over.
+	marker := filepath.Join(binDir, HomeMarker)
+	if err := os.Remove(marker); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("record agent home: %w", err)
+	}
+
+	if err := os.WriteFile(marker, []byte(abs+"\n"), markerPerm); err != nil {
 		return fmt.Errorf("record agent home: %w", err)
 	}
 

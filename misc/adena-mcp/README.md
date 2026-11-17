@@ -151,7 +151,10 @@ Unix domain sockets the two use.
   supported, because the extension id cannot be computed from the path there.
 - The agent home gets a protected ACL that grants access to the current user
   and SYSTEM only, in place of permission bits. Its socket and `sessions.json`
-  inherit it, wherever `ADENA_AGENT_HOME` points.
+  inherit it, wherever `ADENA_AGENT_HOME` points. A directory owned by another
+  account is taken over first, because an owner can always rewrite the ACL;
+  if that is not possible, adena-mcp refuses to use it. The host's `bin`
+  directory gets the same treatment.
 - The host identifies each peer with `SIO_AF_UNIX_GETPEERPID` and refuses
   processes of other users, as on macOS and Linux.
 - Process hardening is weaker than on macOS and Linux. adena-mcp sets a
