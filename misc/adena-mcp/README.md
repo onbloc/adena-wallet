@@ -142,18 +142,27 @@ as `agent://<client name>.agent`.
 The host and MCP server run on Windows 10 (1803) or later, which provide the
 Unix domain sockets the two use.
 
-- `install` writes the manifests under `%USERPROFILE%\.adena-agent\native-messaging`.
-  It registers each one under the browser's
+- `install` writes the manifests under `native-messaging` in the agent home
+  (`%USERPROFILE%\.adena-agent`, or `ADENA_AGENT_HOME`). It registers each one
+  under the browser's
   `HKCU\Software\<browser>\NativeMessagingHosts\xyz.onbloc.adena_agent` key.
-- Unpacked builds are detected from the profiles under `%LOCALAPPDATA%`.
-  `-extension-path` is not supported, because the extension id cannot be
-  computed from the path there.
-- Files under `%USERPROFILE%\.adena-agent` rely on the profile's ACL instead of
-  permission bits.
-- The process hardening (core dumps, debugger attach) is not applied on
-  Windows yet.
-- A running host executable cannot be overwritten, so reinstalling moves it
-  aside first.
+- Unpacked builds are detected from the profiles under `%LOCALAPPDATA%` and
+  `%APPDATA%`, so redirected profiles are found. `-extension-path` is not
+  supported, because the extension id cannot be computed from the path there.
+- The agent home gets a protected ACL that grants access to the current user
+  and SYSTEM only, in place of permission bits. Its socket and `sessions.json`
+  inherit it, wherever `ADENA_AGENT_HOME` points.
+- The host identifies each peer with `SIO_AF_UNIX_GETPEERPID` and refuses
+  processes of other users, as on macOS and Linux.
+- Process hardening is weaker than on macOS and Linux. adena-mcp sets a
+  process DACL that lets other processes of the user only wait for, query and
+  stop it, and an OWNER RIGHTS entry keeps them from changing that DACL back.
+  An administrator, or any process with `SeDebugPrivilege` enabled, can still
+  read its memory and with it the session keys. There is no core dump control
+  yet. Sign with sessions whose scope you could afford to lose.
+- A running host executable cannot be overwritten, so reinstalling moves it to
+  a unique `.old.<n>` name first. Retired copies are removed by a later install
+  once no host runs them.
 
 ## Safety model
 
