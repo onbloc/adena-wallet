@@ -7,10 +7,18 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // HomeEnv overrides the default home directory.
 const HomeEnv = "ADENA_AGENT_HOME"
+
+// HomeMarker is the file next to an installed host that records the agent
+// home it was installed for. Browsers launch the host without the MCP
+// client's environment, so ADENA_AGENT_HOME would otherwise be lost.
+const HomeMarker = "agent-home"
+
+const markerPerm = 0o600
 
 const (
 	defaultDirName = ".adena-agent"
@@ -30,6 +38,38 @@ func Home() (string, error) {
 	}
 
 	return filepath.Join(userHome, defaultDirName), nil
+}
+
+// HostHome returns the agent home for the host at executable:
+// ADENA_AGENT_HOME, then the home recorded next to it at install, then the
+// default.
+func HostHome(executable string) (string, error) {
+	if dir := os.Getenv(HomeEnv); dir != "" {
+		return filepath.Abs(dir)
+	}
+
+	data, err := os.ReadFile(filepath.Join(filepath.Dir(executable), HomeMarker))
+	if err == nil {
+		if dir := strings.TrimSpace(string(data)); filepath.IsAbs(dir) {
+			return filepath.Clean(dir), nil
+		}
+	}
+
+	return Home()
+}
+
+// WriteHomeMarker records home next to the host binary in binDir.
+func WriteHomeMarker(binDir, home string) error {
+	abs, err := filepath.Abs(home)
+	if err != nil {
+		return err
+	}
+
+	if err := os.WriteFile(filepath.Join(binDir, HomeMarker), []byte(abs+"\n"), markerPerm); err != nil {
+		return fmt.Errorf("record agent home: %w", err)
+	}
+
+	return nil
 }
 
 // SocketPath returns the Unix socket the host listens on.

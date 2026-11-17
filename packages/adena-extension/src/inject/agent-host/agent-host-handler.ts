@@ -348,6 +348,7 @@ const broadcastViaPopup = async (
     height: data.height ?? null,
     master_address: context.address,
     chain_id: context.network.chainId,
+    rpc_url: context.network.rpcUrl,
   };
 };
 

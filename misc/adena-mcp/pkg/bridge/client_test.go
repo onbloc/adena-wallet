@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -129,5 +130,32 @@ func TestCallHonorsContextDeadline(t *testing.T) {
 
 	if err := (&Client{SocketPath: path}).Call(ctx, MethodPing, nil, nil); !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("got %v, want context.DeadlineExceeded", err)
+	}
+}
+
+func TestCallRefusesAnOversizedRequest(t *testing.T) {
+	t.Parallel()
+
+	client := &Client{SocketPath: filepath.Join(t.TempDir(), "none.sock")}
+
+	params := map[string]string{"body": strings.Repeat("x", MaxLineSize)}
+	err := client.Call(context.Background(), MethodSendTransaction, params, nil)
+
+	var remote *Error
+	if !errors.As(err, &remote) || remote.Code != CodeRequestTooLarge {
+		t.Fatalf("got %v, want request_too_large", err)
+	}
+}
+
+func TestCommittedHeight(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]int64{``: 0, `null`: 0, `"0"`: 0, `"12"`: 12, `34`: 34, `"x"`: 0}
+
+	for raw, want := range cases {
+		result := SessionTxResult{Height: json.RawMessage(raw)}
+		if got := result.CommittedHeight(); got != want {
+			t.Errorf("%q: got %d, want %d", raw, got, want)
+		}
 	}
 }

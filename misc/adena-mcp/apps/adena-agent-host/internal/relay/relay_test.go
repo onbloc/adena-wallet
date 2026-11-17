@@ -349,3 +349,48 @@ func TestRelaySlowClientDoesNotBlockOthers(t *testing.T) {
 		t.Fatal("a stalled client blocked another client's response")
 	}
 }
+
+func TestRelayForwardsRequestsUpToTheSharedLimit(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t)
+	client := &bridge.Client{SocketPath: h.socket}
+	body := strings.Repeat("x", 70<<10)
+
+	result := make(chan error, 1)
+
+	go func() {
+		result <- client.Call(context.Background(), bridge.MethodSendTransaction, map[string]string{"body": body}, nil)
+	}()
+
+	h.reply(t, bridge.Response{ID: h.nextRequest(t).ID, Result: json.RawMessage(`{}`)})
+
+	if err := <-result; err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRelayExplainsAnOversizedRequest(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t)
+	conn := dialRaw(t, h.socket)
+
+	line := `{"id":"1","method":"ping","params":{"body":"` + strings.Repeat("x", bridge.MaxLineSize) + `"}}`
+
+	written := make(chan error, 1)
+
+	go func() {
+		_, err := conn.Write([]byte(line + "\n"))
+		written <- err
+	}()
+
+	var response bridge.Response
+	if err := json.NewDecoder(conn).Decode(&response); err != nil {
+		t.Fatal(err)
+	}
+
+	if response.Error == nil || response.Error.Code != bridge.CodeRequestTooLarge {
+		t.Fatalf("got %+v, want request_too_large", response)
+	}
+}

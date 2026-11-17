@@ -131,6 +131,9 @@ as `agent://<client name>.agent`.
 | `master_requests_disabled` | Use a session, or turn on *Allow master account requests* in Adena |
 | `session_key_lost` | The server restarted; revoke the session and create a new one |
 | `approval_pending` | Another approval is open in Adena; finish it, then retry |
+| `context_mismatch` | Adena is on another account or network than the session; switch back, then retry |
+| `revoke_unconfirmed` | Adena did not report the revoke as committed on the session's network; the key is kept. Check `get_sessions` with `refresh` |
+| `request_too_large` | A request, usually a package deployment, is over the 1 MiB protocol limit |
 | `policy_violation` | The session request breaks Adena's agent policy, e.g. a `spend_limit` above the maximum set on the AI Agent Connection screen |
 
 ## Safety model
@@ -187,7 +190,7 @@ what bounds the damage in those cases.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `ADENA_AGENT_HOME` | `~/.adena-agent` | Socket and MCP data directory |
+| `ADENA_AGENT_HOME` | `~/.adena-agent` | Socket and MCP data directory. Installing the host records it in `bin/agent-home` next to the host, because the browser launches the host without the MCP client's environment |
 | `ADENA_MCP_APPROVAL_TIMEOUT` | `5m` | How long a tool waits for the user |
 | `ADENA_MCP_GAS_CEILING` | `10000000` | Gas limit used when measuring a transaction |
 

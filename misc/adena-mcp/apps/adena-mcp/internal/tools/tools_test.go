@@ -35,10 +35,11 @@ const (
 var testNow = time.Unix(1_800_000_000, 0)
 
 type fakeBridge struct {
-	errs   map[string]error
-	params map[string]json.RawMessage
-	status bridge.Status
-	mu     sync.Mutex
+	errs          map[string]error
+	params        map[string]json.RawMessage
+	sessionResult *bridge.SessionTxResult
+	status        bridge.Status
+	mu            sync.Mutex
 }
 
 func (f *fakeBridge) Call(_ context.Context, method string, params, out any) error {
@@ -64,7 +65,13 @@ func (f *fakeBridge) Call(_ context.Context, method string, params, out any) err
 	case bridge.MethodGetAccount, bridge.MethodConnect:
 		result = bridge.Account{Address: testMaster, ChainID: "dev", RPCURL: "http://rpc"}
 	case bridge.MethodCreateSession, bridge.MethodRevokeSession:
-		result = bridge.SessionTxResult{TxHash: "hash", MasterAddress: testMaster, ChainID: "dev"}
+		result = bridge.SessionTxResult{
+			TxHash: "hash", MasterAddress: testMaster, ChainID: "dev", RPCURL: "http://rpc",
+			Height: json.RawMessage(`"7"`),
+		}
+		if f.sessionResult != nil {
+			result = *f.sessionResult
+		}
 	case bridge.MethodSendTransaction:
 		result = bridge.BroadcastResult{TxHash: "wallethash", MasterAddress: testMaster, ChainID: "dev"}
 	case bridge.MethodSignTransaction:
@@ -844,6 +851,10 @@ func TestSessionAdminRequestsCarryTheExpectedContext(t *testing.T) {
 		t.Fatal(putErr)
 	}
 
+	env.bridge.sessionResult = &bridge.SessionTxResult{
+		MasterAddress: testMaster, ChainID: "other-chain", Height: json.RawMessage(`12`),
+	}
+
 	if _, callErr := env.call(t, "revoke_session", map[string]any{"session_address": address}); callErr != nil {
 		t.Fatal(callErr)
 	}
@@ -872,5 +883,57 @@ func TestRevokeKeepsKeyOnContextMismatch(t *testing.T) {
 
 	if _, held := env.keys.Get(address); !held {
 		t.Fatal("the key of a session that was not revoked must be kept")
+	}
+}
+
+func TestCreateSessionStoresTheNetworkThatAuthorizedIt(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	env.bridge.sessionResult = &bridge.SessionTxResult{
+		TxHash: "hash", MasterAddress: testMaster, ChainID: "new-chain", RPCURL: "http://new-rpc",
+		Height: json.RawMessage(`"3"`),
+	}
+
+	if _, err := env.call(t, "create_session", map[string]any{"allow_paths": []any{"bank/send"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	records, err := env.store.List()
+	if err != nil || len(records) != 1 {
+		t.Fatalf("got %+v %v", records, err)
+	}
+
+	if records[0].ChainID != "new-chain" || records[0].RPCURL != "http://new-rpc" {
+		t.Fatalf("stored %s at %s, want the authorizing network", records[0].ChainID, records[0].RPCURL)
+	}
+}
+
+func TestRevokeKeepsKeyUnlessConfirmedOnTheSessionNetwork(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]bridge.SessionTxResult{
+		"not committed": {MasterAddress: testMaster, ChainID: "dev"},
+		"other chain":   {MasterAddress: testMaster, ChainID: "b", Height: json.RawMessage(`5`)},
+		"other master":  {MasterAddress: testRecipient, ChainID: "dev", Height: json.RawMessage(`5`)},
+	}
+
+	for name, result := range cases {
+		env := newEnv(t)
+		address := putSession(t, env, "bank/send")
+		env.bridge.sessionResult = &result
+
+		_, err := env.call(t, "revoke_session", map[string]any{"session_address": address})
+		if toolErrorCode(err) != "revoke_unconfirmed" {
+			t.Fatalf("%s: got %v, want revoke_unconfirmed", name, err)
+		}
+
+		if _, held := env.keys.Get(address); !held {
+			t.Fatalf("%s: the key was destroyed", name)
+		}
+
+		if _, err := env.store.Get(address); err != nil {
+			t.Fatalf("%s: the record was removed: %v", name, err)
+		}
 	}
 }

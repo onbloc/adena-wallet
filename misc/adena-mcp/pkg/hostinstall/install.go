@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
 )
 
 // HostName is the native messaging host name Adena connects to.
@@ -45,6 +47,9 @@ type Options struct {
 	FirefoxExtensionID string
 	UserHome           string
 	GOOS               string
+	// AgentHome is recorded next to the host, so the browser-launched host
+	// serves the same socket as adena-mcp. Empty leaves it unrecorded.
+	AgentHome          string
 	ChromeExtensionIDs []string
 }
 
@@ -109,6 +114,12 @@ func Install(opts Options) ([]string, error) {
 	browsers, err := Browsers(opts.GOOS, opts.UserHome)
 	if err != nil {
 		return nil, err
+	}
+
+	if opts.AgentHome != "" {
+		if err := agentpath.WriteHomeMarker(filepath.Dir(opts.HostPath), opts.AgentHome); err != nil {
+			return nil, err
+		}
 	}
 
 	written := make([]string, 0, len(browsers))

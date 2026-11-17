@@ -62,6 +62,7 @@ func (h hostInstaller) Install() ([]string, error) {
 		FirefoxExtensionID: hostinstall.AdenaFirefoxExtensionID,
 		UserHome:           home,
 		GOOS:               runtime.GOOS,
+		AgentHome:          h.agentHome,
 	})
 }
 

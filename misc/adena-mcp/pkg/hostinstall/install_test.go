@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
 )
 
 func TestInstallWritesManifestsForInstalledBrowsers(t *testing.T) {
@@ -89,5 +91,32 @@ func readJSON(t *testing.T, path string, out any) {
 
 	if err := json.Unmarshal(data, out); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestInstallRecordsTheAgentHomeNextToTheHost(t *testing.T) {
+	t.Parallel()
+
+	home := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(home, ".config", "google-chrome"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	bin := t.TempDir()
+	agentHome := filepath.Join(t.TempDir(), "custom")
+
+	if _, err := Install(Options{
+		HostPath:           filepath.Join(bin, "adena-agent-host"),
+		ChromeExtensionIDs: []string{AdenaChromeExtensionID},
+		UserHome:           home,
+		GOOS:               "linux",
+		AgentHome:          agentHome,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := agentpath.HostHome(filepath.Join(bin, "adena-agent-host"))
+	if err != nil || got != agentHome {
+		t.Fatalf("got %q %v, want %q", got, err, agentHome)
 	}
 }

@@ -23,9 +23,8 @@ import (
 )
 
 const (
-	socketPerm       = 0o600
-	probeTimeout     = 500 * time.Millisecond
-	maxClientRequest = 64 << 10
+	socketPerm   = 0o600
+	probeTimeout = 500 * time.Millisecond
 	// A client that does not read its responses for this long is dropped, so
 	// it cannot stall responses to everyone else.
 	clientWriteTimeout = 5 * time.Second
@@ -246,7 +245,8 @@ func (r *Relay) serveClient(c *client) {
 	defer r.dropClient(c)
 
 	scanner := bufio.NewScanner(c.conn)
-	scanner.Buffer(make([]byte, 0, 4096), maxClientRequest)
+	// The shared limit, so wallet requests carrying package sources fit.
+	scanner.Buffer(make([]byte, 0, 4096), bridge.MaxLineSize)
 
 	for scanner.Scan() {
 		var request bridge.Request
@@ -267,6 +267,14 @@ func (r *Relay) serveClient(c *client) {
 		}
 
 		r.forward(c, request)
+	}
+
+	// Tell the client why it is being dropped instead of only closing.
+	if errors.Is(scanner.Err(), bufio.ErrTooLong) {
+		c.sendNow(bridge.Response{Error: &bridge.Error{
+			Code:    bridge.CodeRequestTooLarge,
+			Message: fmt.Sprintf("a request line must be under %d bytes", bridge.MaxLineSize),
+		}})
 	}
 }
 
@@ -303,10 +311,12 @@ func (r *Relay) forward(c *client, request bridge.Request) {
 		}
 		r.mu.Unlock()
 
-		c.send(bridge.Response{
-			ID:    originalID,
-			Error: &bridge.Error{Code: bridge.CodeExtensionGone, Message: err.Error()},
-		})
+		code := bridge.CodeExtensionGone
+		if errors.Is(err, nativemsg.ErrMessageTooLarge) {
+			code = bridge.CodeRequestTooLarge
+		}
+
+		c.send(bridge.Response{ID: originalID, Error: &bridge.Error{Code: code, Message: err.Error()}})
 	}
 }
 

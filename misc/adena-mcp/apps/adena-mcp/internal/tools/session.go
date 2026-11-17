@@ -193,17 +193,19 @@ func authorizeKey(
 		return session.Record{}, bridgeError(callErr)
 	}
 
-	master := tx.MasterAddress
-	if master == "" {
-		master = account.Address
+	// The network that authorized the session, which Adena reports with the
+	// result; get_account ran earlier and the user may have switched since.
+	authorized := bridge.Account{Address: tx.MasterAddress, ChainID: tx.ChainID, RPCURL: tx.RPCURL}
+	if authorized.Address == "" || authorized.ChainID == "" || authorized.RPCURL == "" {
+		authorized = *account
 	}
 
 	return session.Record{
 		SessionAddress:   key.Address(),
 		SessionPublicKey: publicKey,
-		MasterAddress:    master,
-		ChainID:          account.ChainID,
-		RPCURL:           account.RPCURL,
+		MasterAddress:    authorized.Address,
+		ChainID:          authorized.ChainID,
+		RPCURL:           authorized.RPCURL,
 		AllowPaths:       in.allowPaths,
 		SpendLimit:       in.spendLimit,
 		SpendPeriod:      in.spendPeriod,
@@ -361,6 +363,12 @@ func sessionRevokeHandler(ctx context.Context, d *Deps, args map[string]any) (se
 		}
 	}
 
+	if !forgetOnly {
+		if err := confirmRevoked(&record, &tx); err != nil {
+			return server.Result{}, err
+		}
+	}
+
 	d.Keys.Destroy(address)
 
 	if err := d.Store.Delete(address); err != nil {
@@ -380,4 +388,26 @@ func sessionRevokeHandler(ctx context.Context, d *Deps, args map[string]any) (se
 			"tx_hash":         tx.TxHash,
 		},
 	}, nil
+}
+
+// confirmRevoked keeps the key and record unless Adena reports the revoke as
+// committed on the session's own account and chain.
+func confirmRevoked(record *session.Record, tx *bridge.SessionTxResult) error {
+	switch {
+	case tx.ChainID != record.ChainID || tx.MasterAddress != record.MasterAddress:
+		return &server.ToolError{
+			Code: "revoke_unconfirmed",
+			Message: fmt.Sprintf("Adena revoked on %s as %s, but the session belongs to %s on %s; the key is "+
+				"kept. Check get_sessions with refresh=true", tx.ChainID, tx.MasterAddress, record.MasterAddress,
+				record.ChainID),
+		}
+	case tx.CommittedHeight() == 0:
+		return &server.ToolError{
+			Code: "revoke_unconfirmed",
+			Message: "Adena did not report the revoke as committed; the key is kept. Check get_sessions " +
+				"with refresh=true before revoking again",
+		}
+	default:
+		return nil
+	}
 }

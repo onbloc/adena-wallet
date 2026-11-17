@@ -121,12 +121,18 @@ func runInstall(args []string) error {
 		fmt.Printf("allowing unpacked build %s from %s\n", found.ID, where)
 	}
 
+	agentHome, err := agentpath.Home()
+	if err != nil {
+		return err
+	}
+
 	written, err := hostinstall.Install(hostinstall.Options{
 		HostPath:           hostPath,
 		ChromeExtensionIDs: allowed.IDs,
 		FirefoxExtensionID: *firefoxID,
 		UserHome:           home,
 		GOOS:               runtime.GOOS,
+		AgentHome:          agentHome,
 	})
 	for _, path := range written {
 		fmt.Println("installed", path)
@@ -152,6 +158,13 @@ func runUninstall() error {
 		fmt.Println("removed", path)
 	}
 
+	if executable, exeErr := os.Executable(); exeErr == nil {
+		marker := filepath.Join(filepath.Dir(executable), agentpath.HomeMarker)
+		if removeErr := os.Remove(marker); removeErr != nil && !errors.Is(removeErr, os.ErrNotExist) {
+			err = errors.Join(err, fmt.Errorf("remove %s: %w", marker, removeErr))
+		}
+	}
+
 	return err
 }
 
@@ -160,7 +173,14 @@ func runUninstall() error {
 func serve(args []string) error {
 	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
-	home, err := agentpath.Home()
+	executable, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("resolve executable: %w", err)
+	}
+
+	// The browser does not pass on the MCP client's environment, so the home
+	// recorded at install time decides which socket to serve.
+	home, err := agentpath.HostHome(executable)
 	if err != nil {
 		return err
 	}

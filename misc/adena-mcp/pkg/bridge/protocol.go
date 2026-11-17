@@ -9,6 +9,8 @@ package bridge
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 // MaxLineSize bounds one JSON line on the host socket.
@@ -34,6 +36,8 @@ const (
 	CodeHostUnavailable = "host_unavailable"
 	CodeExtensionGone   = "extension_disconnected"
 	CodeRejected        = "rejected"
+	// CodeRequestTooLarge means a request line exceeded MaxLineSize.
+	CodeRequestTooLarge = "request_too_large"
 )
 
 // Peer is the process connected to the host socket, as the operating system
@@ -148,11 +152,27 @@ type RevokeSessionParams struct {
 	ChainID          string `json:"chain_id,omitempty"`
 }
 
-// SessionTxResult describes the session admin transaction the user signed.
+// SessionTxResult describes the session admin transaction the user signed:
+// the account and network it ran on, and the block that committed it.
 type SessionTxResult struct {
 	TxHash        string          `json:"tx_hash"`
 	MasterAddress string          `json:"master_address"`
 	ChainID       string          `json:"chain_id"`
+	RPCURL        string          `json:"rpc_url,omitempty"`
 	Height        json.RawMessage `json:"height,omitempty"`
 	ExpiresAt     int64           `json:"expires_at,omitempty"`
+}
+
+// CommittedHeight returns the block height the transaction was committed at,
+// or 0 when Adena reported none, e.g. for a broadcast that only passed
+// CheckTx.
+func (r *SessionTxResult) CommittedHeight() int64 {
+	raw := strings.Trim(strings.TrimSpace(string(r.Height)), `"`)
+
+	height, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || height <= 0 {
+		return 0
+	}
+
+	return height
 }

@@ -21,6 +21,23 @@ type Client struct {
 // Call sends one request and decodes the result into out, which may be nil.
 // The context bounds the whole exchange, including the user's approval.
 func (c *Client) Call(ctx context.Context, method string, params, out any) error {
+	request, err := newRequest(method, params)
+	if err != nil {
+		return err
+	}
+
+	line, err := json.Marshal(request)
+	if err != nil {
+		return fmt.Errorf("encode request: %w", err)
+	}
+
+	if len(line) >= MaxLineSize {
+		return &Error{
+			Code:    CodeRequestTooLarge,
+			Message: fmt.Sprintf("the %s request is %d bytes; it must be under %d", method, len(line), MaxLineSize),
+		}
+	}
+
 	var dialer net.Dialer
 
 	conn, err := dialer.DialContext(ctx, "unix", c.SocketPath)
@@ -41,16 +58,6 @@ func (c *Client) Call(ctx context.Context, method string, params, out any) error
 		}
 	})
 	defer stop()
-
-	request, err := newRequest(method, params)
-	if err != nil {
-		return err
-	}
-
-	line, err := json.Marshal(request)
-	if err != nil {
-		return fmt.Errorf("encode request: %w", err)
-	}
 
 	if _, writeErr := conn.Write(append(line, '\n')); writeErr != nil {
 		return fmt.Errorf("send request: %w", writeErr)
@@ -112,6 +119,12 @@ func readResponse(conn net.Conn, id string) (Response, error) {
 
 		if response.ID == id {
 			return response, nil
+		}
+
+		// The host answers without an id only for errors about the connection
+		// itself, such as a request it could not read.
+		if response.ID == "" && response.Error != nil {
+			return Response{}, response.Error
 		}
 	}
 
