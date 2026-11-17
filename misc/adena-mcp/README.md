@@ -33,14 +33,19 @@ and ask the agent to call `connect_wallet`. It installs the agent host on first
 use, copying it to `~/.adena-agent/bin`. `npx -y @adena-wallet/mcp install-host`
 does the same up front.
 
-To build from source and connect a development build of Adena, follow the
-[local setup guide](docs/local-setup.md) (Korean). In short:
+To build from source and connect a development build of Adena:
 
 ```sh
+yarn build:module && yarn workspace adena-extension build   # repository root; load packages/adena-extension/dist unpacked
 make build-all
 ./bin/adena-agent-host install     # also allows unpacked Adena builds found in Chromium profiles
 claude mcp add adena -- /absolute/path/to/bin/adena-mcp
 ```
+
+Load the unpacked build before running `install`, so its extension id is
+detected. If the AI Agent Connection screen asks to reload Adena after the
+permission prompt, reload it: a running service worker does not gain
+`connectNative`.
 
 `adena-agent-host uninstall` (or `npx -y @adena-wallet/mcp uninstall-host`)
 removes the host manifests.
@@ -87,8 +92,36 @@ claude plugin marketplace add onbloc/adena-wallet
 claude plugin install adena@adena
 ```
 
-Configuration for Codex, Cursor, OpenCode, Gemini CLI, Claude Desktop, VS Code
-and Windsurf is in [docs/clients.md](docs/clients.md) (Korean).
+Other clients run the same command, `npx -y @adena-wallet/mcp`:
+
+| Client | Where |
+|---|---|
+| Codex CLI | `codex mcp add adena -- npx -y @adena-wallet/mcp`, or `[mcp_servers.adena]` in `~/.codex/config.toml` |
+| Cursor | `mcpServers` in `~/.cursor/mcp.json` or `.cursor/mcp.json` |
+| Claude Desktop | `mcpServers` in `claude_desktop_config.json` |
+| Gemini CLI | `mcpServers` in `~/.gemini/settings.json` |
+| Windsurf | `mcpServers` in `~/.codeium/windsurf/mcp_config.json` |
+| VS Code | `servers` in `.vscode/mcp.json`, with `"type": "stdio"` |
+| OpenCode | `mcp` in `opencode.json`: `{"type": "local", "command": ["npx", "-y", "@adena-wallet/mcp"], "enabled": true}` |
+
+```json
+{ "mcpServers": { "adena": { "command": "npx", "args": ["-y", "@adena-wallet/mcp"] } } }
+```
+
+Each client is connected to Adena separately. It shows up under Connected Apps
+as `agent://<client name>.agent`.
+
+### Troubleshooting
+
+| Error | Fix |
+|---|---|
+| `Specified native messaging host not found.` | Run `install` (or `install-host`) again |
+| `Access to the specified native messaging host is forbidden.` | The extension id is not allowed: reinstall after loading the build, or pass `-chrome-extension-id` |
+| `adena_unreachable` | Open the browser, unlock Adena and turn on AI Agent Connection |
+| `not_connected` | Call `connect_wallet` and approve it in Adena |
+| `session_required` | Create a session with the `required_allow_paths` in the error, or use `signer: "wallet"` |
+| `master_requests_disabled` | Use a session, or turn on *Allow master account requests* in Adena |
+| `session_key_lost` | The server restarted; revoke the session and create a new one |
 
 ## Safety model
 
