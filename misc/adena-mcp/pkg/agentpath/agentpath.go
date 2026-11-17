@@ -94,10 +94,10 @@ func EnsureDir(dir string) error {
 		return errors.New(dir + " is not a directory")
 	}
 
-	// Windows has no permission bits; the profile directory's ACL already
-	// limits access to the user.
+	// Windows has no permission bits; an owner-only ACL takes their place, so
+	// a home outside the user profile (ADENA_AGENT_HOME) is protected too.
 	if runtime.GOOS == "windows" {
-		return nil
+		return restrictDir(dir)
 	}
 
 	// Checked directly: a chmod only fails for another owner when the mode is
