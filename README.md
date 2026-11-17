@@ -96,6 +96,28 @@ Load the output as an unpacked extension (Chrome: `chrome://extensions` → Deve
 mode → Load unpacked → `packages/adena-extension/dist`; Firefox: see
 [FIREFOX.md](packages/adena-extension/FIREFOX.md)) and reload it after a rebuild.
 
+### Hot reload (Chrome only)
+
+```
+pnpm develop:hmr        # Chrome  -> packages/adena-extension/dist, dev server on :5173
+```
+
+Runs the Vite dev server through `@crxjs/vite-plugin` instead of rebuilding. Load
+`packages/adena-extension/dist` once; the extension then loads its code from the dev
+server, which must keep running.
+
+| Change in                         | Takes effect                                     |
+| --------------------------------- | ------------------------------------------------ |
+| Popup, register and security UI   | Hot update, state kept                           |
+| `src/background.ts` and its imports | The extension reloads itself                   |
+| `src/content.ts` and its imports  | Hot update in open pages                         |
+| `src/inject.ts` and its imports   | Rebuilt into `dist/inject.js`; reload the page   |
+| `adena-module`                    | Rebuilt by its watcher, then as above            |
+
+The dev build widens the manifest's CSP to `http://localhost:5173` and
+`ws://localhost:5173`; production builds keep it unchanged. Firefox is not supported
+in this mode: use `pnpm develop:firefox`.
+
 ## Production Build
 
 ```

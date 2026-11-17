@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite build --mode development --watch",
     "dev:firefox": "vite build --mode development --watch -- --browser=firefox",
+    "dev:hmr": "vite",
     "build": "pnpm typecheck && vite build",
     "build:firefox": "pnpm typecheck && vite build -- --browser=firefox",
     "smoke": "node scripts/smoke-bundle.mjs",
