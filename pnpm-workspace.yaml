@@ -44,3 +44,6 @@ allowBuilds:
   protobufjs: false
   # Native addon build; the browser field maps the package to its pure-JS version.
   tiny-secp256k1: false
+
+patchedDependencies:
+  '@crxjs/vite-plugin@3.0.0': patches/@crxjs__vite-plugin@3.0.0.patch

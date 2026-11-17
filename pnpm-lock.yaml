@@ -180,6 +180,9 @@ overrides:
   '@cosmjs/proto-signing': 0.39.0
   '@scure/base@^2.0.0': 2.2.0
 
+patchedDependencies:
+  '@crxjs/vite-plugin@3.0.0': 0cc6f9ef47ab9fa9fe47bc0a872a9bf5269e606a20534a55ea70056e2a7b0fc2
+
 importers:
 
   .:
@@ -277,7 +280,7 @@ importers:
     devDependencies:
       '@crxjs/vite-plugin':
         specifier: 3.0.0
-        version: 3.0.0(supports-color@7.2.0)(vite@8.3.6(@types/node@26.6.6)(terser@5.46.1)(yaml@2.9.1))
+        version: 3.0.0(patch_hash=0cc6f9ef47ab9fa9fe47bc0a872a9bf5269e606a20534a55ea70056e2a7b0fc2)(supports-color@7.2.0)(vite@8.3.6(@types/node@26.6.6)(terser@5.46.1)(yaml@2.9.1))
       '@eslint-react/eslint-plugin':
         specifier: 5.28.8
         version: 5.28.8(eslint@10.14.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
@@ -7068,7 +7071,7 @@ snapshots:
 
   '@cosmjs/utils@0.39.0': {}
 
-  '@crxjs/vite-plugin@3.0.0(supports-color@7.2.0)(vite@8.3.6(@types/node@26.6.6)(terser@5.46.1)(yaml@2.9.1))':
+  '@crxjs/vite-plugin@3.0.0(patch_hash=0cc6f9ef47ab9fa9fe47bc0a872a9bf5269e606a20534a55ea70056e2a7b0fc2)(supports-color@7.2.0)(vite@8.3.6(@types/node@26.6.6)(terser@5.46.1)(yaml@2.9.1))':
     dependencies:
       '@webcomponents/custom-elements': 1.6.0
       acorn-walk: 8.3.5

@@ -7,6 +7,7 @@
   "scripts": {
     "setup": "pnpm install",
     "develop": "pnpm build:module && pnpm --parallel --filter adena-module --filter adena-extension run \"/^(watch|dev)$/\"",
+    "develop:hmr": "pnpm build:module && pnpm --parallel --filter adena-module --filter adena-extension run \"/^(watch|dev:hmr)$/\"",
     "develop:firefox": "pnpm build:module && pnpm --parallel --filter adena-module --filter adena-extension run \"/^(watch|dev:firefox)$/\"",
     "build": "pnpm build:module && pnpm build:service",
     "build:module": "pnpm --filter adena-module build",
