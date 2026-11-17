@@ -30,8 +30,9 @@ claude mcp add --scope user adena -- npx -y @adena-wallet/mcp   # or install the
 
 Then, in Adena, turn on **Settings → Security & Privacy → AI Agent Connection**,
 and ask the agent to call `connect_wallet`. It installs the agent host on first
-use, copying it to `~/.adena-agent/bin`. `npx -y @adena-wallet/mcp install-host`
-does the same up front.
+use, copying it to `~/.adena-agent/bin`, and allows only the store build of
+Adena. `npx -y @adena-wallet/mcp install-host` does the same up front, and also
+allows unpacked Adena builds it finds in Chromium profiles.
 
 To build from source and connect a development build of Adena:
 
@@ -79,7 +80,14 @@ spend check runs before broadcasting.
 The agent name sent to Adena is the MCP client's name, so each client is
 connected (and listed under Connected Apps as `agent://<name>.agent`)
 separately. Transaction and session requests are refused until the agent is
-connected.
+connected. A connection is bound to the executable that asked for it (see
+below), so it has to be approved again after `adena-mcp` moves, for example
+when npx fetches a new version.
+
+Each `adena-mcp` process lists and uses only the sessions its client created.
+Requests that open a popup in Adena are queued and shown one at a time. If an
+approval times out, the agent closes it in Adena; check `get_sessions` or the
+account's transactions before asking again.
 
 ## Plugins and other clients
 
@@ -122,17 +130,32 @@ as `agent://<client name>.agent`.
 | `session_required` | Create a session with the `required_allow_paths` in the error, or use `signer: "wallet"` |
 | `master_requests_disabled` | Use a session, or turn on *Allow master account requests* in Adena |
 | `session_key_lost` | The server restarted; revoke the session and create a new one |
+| `approval_pending` | Another approval is open in Adena; finish it, then retry |
+| `policy_violation` | The session request breaks Adena's agent policy, e.g. a `spend_limit` above the maximum set on the AI Agent Connection screen |
 
 ## Safety model
 
 - The chain enforces each session's `allow_paths`, `spend_limit` and
   expiry. Sessions can never sign `auth/*` messages or deploy packages.
-- Adena refuses `*` allow paths and requires `ugnot` in the spend limit. It
-  also caps the lifetime at 7 days, because revoking needs the user. Expiry
-  is the backstop if the agent never revokes.
-- The socket and `~/.adena-agent` are owner-only. Any process running as the
-  same user can reach the socket. It can only *ask*: every session and
-  revocation still needs the user to approve it in Adena.
+- Adena refuses `*` allow paths. The spend limit must be a single `ugnot`
+  amount no larger than the maximum the user sets on the AI Agent Connection
+  screen (10 GNOT by default). It also caps the lifetime at 7 days, because
+  revoking needs the user. Expiry is the backstop if the agent never revokes.
+- The spend limit bounds GNOT only. Tokens and NFTs held by realms are moved
+  by realm calls, so a session allowed to call a realm (or `vm/run`, or any
+  realm through a bare `vm/exec`) can move them.
+- The socket and `~/.adena-agent` are owner-only, and the host refuses peers
+  running as another user. Any process running as the same user can reach the
+  socket. It can only *ask*: every session and revocation still needs the
+  user to approve it in Adena.
+- The host attaches the peer's pid and executable path, read from the OS, to
+  every request. Adena binds an agent's connection to that executable and
+  shows it in the connection popup, so another program cannot reuse an
+  agent's connection by sending its name.
+- Web pages cannot use the `agent://` identity: Adena takes the identity of a
+  web page's request from the browser, not from the page.
+- Adena reports the lock state, network and settings only to a connected
+  agent.
 
 ### Session keys
 
@@ -148,8 +171,10 @@ as `agent://<client name>.agent`.
   holds only addresses, public keys and the approved scope. A `Key` formats,
   logs and serializes as its address.
 - At startup the process disables core dumps. It also blocks inspection by
-  other processes of the same user: `PT_DENY_ATTACH` on macOS, and on Linux
-  a cleared dumpable flag, so there is no ptrace and no `/proc/<pid>/mem`.
+  other processes of the same user: on macOS `PT_DENY_ATTACH`, plus the
+  hardened runtime the release binaries are signed with, which refuses
+  `task_for_pid`; on Linux a cleared dumpable flag, so there is no ptrace and
+  no `/proc/<pid>/mem`. Builds from source are not signed.
 - Keys do not survive a restart. Their sessions show `key_held: false`, still
   revoke through Adena, and otherwise expire on chain.
 
@@ -170,7 +195,12 @@ what bounds the damage in those cases.
 
 The socket carries one JSON object per line. The host forwards each request
 to Adena as a native messaging frame (32-bit native-endian length + JSON).
-It also rewrites `id` so the response returns to the connection that asked.
+It also rewrites `id` so the response returns to the connection that asked,
+and sets `peer` (`pid`, `exe`) from the OS, replacing anything the client
+sent. When a connection closes with requests still open, the host sends Adena
+`{"method":"cancel","params":{"request_id":"<host id>"}}` for each; clients
+cannot send `cancel` themselves. A client that stops reading its responses is
+disconnected.
 
 ```json
 {"id":"1","method":"create_session","params":{"session_public_key":"<base64 33-byte secp256k1>","allow_paths":["vm/exec:gno.land/r/demo/counter"],"spend_limit":"5000000ugnot","expires_at":1800003600,"agent_name":"claude-code"}}
@@ -178,7 +208,9 @@ It also rewrites `id` so the response returns to the connection that asked.
 {"id":"2","error":{"code":"rejected","message":"..."}}
 ```
 
-Methods: `ping`, `get_account`, `create_session`, `revoke_session`.
+Methods: `ping`, `get_status`, `connect`, `get_account`, `create_session`,
+`revoke_session`, `send_transaction`, `sign_transaction`, and `cancel` (host
+only).
 
 ## Development
 
@@ -190,7 +222,12 @@ make npm-pack NPM_VERSION=0.0.0-local       # npm packages and tarballs in npm/d
 
 ## Releasing to npm
 
-Push a tag `adena-mcp-v<version>` (for example `adena-mcp-v0.1.0`). The
-`adena-mcp-npm` workflow tests, builds the platform packages and the
-`@adena-wallet/mcp` launcher, and publishes them with the `NPM_TOKEN` secret.
-It can also be run manually, optionally without publishing.
+Bump the plugin manifests and the version pinned in `plugin/.mcp.json`,
+`plugin/mcp.json` and `plugin/gemini-extension.json` to the release version,
+then push a tag `adena-mcp-v<version>` (for example `adena-mcp-v0.1.0`). The
+`adena-mcp-npm` workflow tests and builds the platform packages and the
+`@adena-wallet/mcp` launcher on macOS, signing the macOS binaries with the
+hardened runtime, and fails if the plugin files do not pin that version. A
+separate job publishes them with the `NPM_TOKEN` secret of the `npm-release`
+environment; give that environment required reviewers. Run manually, the
+workflow builds only, and publishes only from `main` when asked to.

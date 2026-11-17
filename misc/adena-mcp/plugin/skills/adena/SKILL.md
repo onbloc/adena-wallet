@@ -24,7 +24,9 @@ without popups.
    - `allow_paths`: `"vm/exec:<realm path>"` per realm called, `"vm/run"` to
      run scripts, `"bank/send"` to send coins. Never ask for broader paths
      than the task needs. `"*"` is refused.
-   - `spend_limit` in ugnot. It also pays gas for every transaction.
+   - `spend_limit`: one ugnot amount, e.g. `"5000000ugnot"`. It also pays gas
+     for every transaction, and cannot exceed `max_spend_limit` from
+     `get_status`, which the user sets in Adena.
    - `expires_in`: as short as the task allows (default `1h`, at most `168h`).
 
    The user approves it in Adena. Sessions cannot be widened later; create a
@@ -33,6 +35,11 @@ without popups.
    They sign with the session by default. Use `simulate: true` to check a
    transaction first.
 4. **`revoke_session`** when the task is done. The user approves it in Adena.
+
+Ask for one approval at a time: Adena shows them one by one and reports
+`approval_pending` while another is open. After `approval_timeout`, do not
+simply retry; check `get_sessions` (with `refresh: true`) or the account's
+transactions first, because the user may have approved just in time.
 
 ## Messages
 

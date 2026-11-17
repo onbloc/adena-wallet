@@ -5,7 +5,7 @@
   "mcpServers": {
     "adena": {
       "command": "npx",
-      "args": ["-y", "@adena-wallet/mcp"]
+      "args": ["-y", "@adena-wallet/mcp@0.1.0"]
     }
   },
   "contextFileName": "GEMINI.md"

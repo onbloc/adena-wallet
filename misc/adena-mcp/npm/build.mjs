@@ -2,7 +2,10 @@
 //   dist/mcp               the launcher package
 //   dist/mcp-<os>-<arch>   one package per platform with the Go binaries
 //
-// Usage: node npm/build.mjs --version 0.1.0 [--platforms darwin-arm64,linux-x64]
+// Usage: node npm/build.mjs --version 0.1.0 [--platforms darwin-arm64,linux-x64] [--release]
+//
+// --release signs the macOS binaries with the hardened runtime, which needs
+// macOS, and checks that the plugin manifests pin this version.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,10 +25,24 @@ const TARGETS = {
 
 const BINARIES = ['adena-mcp', 'adena-agent-host'];
 
+// Plugin files that launch the server and must pin the released version.
+const PLUGIN_LAUNCHERS = ['plugin/.mcp.json', 'plugin/mcp.json', 'plugin/gemini-extension.json'];
+const PLUGIN_MANIFESTS = [
+  'plugin/.claude-plugin/plugin.json',
+  'plugin/.codex-plugin/plugin.json',
+  'plugin/.cursor-plugin/plugin.json',
+  'plugin/gemini-extension.json',
+];
+
 function parseArgs(argv) {
-  const args = { platforms: Object.keys(TARGETS) };
-  for (let i = 0; i < argv.length; i += 2) {
-    const [flag, value] = [argv[i], argv[i + 1]];
+  const args = { platforms: Object.keys(TARGETS), release: false };
+  for (let i = 0; i < argv.length; i += 1) {
+    const flag = argv[i];
+    if (flag === '--release') {
+      args.release = true;
+      continue;
+    }
+    const value = argv[(i += 1)];
     if (flag === '--version') args.version = value;
     else if (flag === '--platforms') args.platforms = value.split(',');
     else throw new Error(`unknown flag ${flag}`);
@@ -43,7 +60,31 @@ function writeJSON(file, value) {
   fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-function buildPlatform(platform, version, launcher) {
+// The hardened runtime keeps other processes of the user from reading the
+// session keys through task_for_pid.
+function codesign(file) {
+  execFileSync('codesign', ['--force', '--sign', '-', '--options', 'runtime', file], {
+    stdio: 'inherit',
+  });
+  execFileSync('codesign', ['--verify', '--strict', file], { stdio: 'inherit' });
+}
+
+function checkPluginVersion(version) {
+  const pinned = `@adena-wallet/mcp@${version}`;
+  for (const file of PLUGIN_LAUNCHERS) {
+    if (!fs.readFileSync(path.join(moduleDir, file), 'utf8').includes(`"${pinned}"`)) {
+      throw new Error(`${file} must launch ${pinned}`);
+    }
+  }
+  for (const file of PLUGIN_MANIFESTS) {
+    const manifest = JSON.parse(fs.readFileSync(path.join(moduleDir, file), 'utf8'));
+    if (manifest.version !== version) {
+      throw new Error(`${file} has version ${manifest.version}, want ${version}`);
+    }
+  }
+}
+
+function buildPlatform(platform, version, launcher, release) {
   const target = TARGETS[platform];
   const dir = path.join(distDir, `mcp-${platform}`);
   fs.mkdirSync(path.join(dir, 'bin'), { recursive: true });
@@ -66,6 +107,9 @@ function buildPlatform(platform, version, launcher) {
         env: { ...process.env, CGO_ENABLED: '0', GOOS: target.goos, GOARCH: target.goarch },
       },
     );
+    if (release && target.goos === 'darwin') {
+      codesign(path.join(dir, 'bin', binary));
+    }
   }
 
   writeJSON(path.join(dir, 'package.json'), {
@@ -96,12 +140,18 @@ function buildLauncher(version, platforms, launcher) {
   });
 }
 
-const { version, platforms } = parseArgs(process.argv.slice(2));
+const { version, platforms, release } = parseArgs(process.argv.slice(2));
+if (release) {
+  if (process.platform !== 'darwin') {
+    throw new Error('--release signs macOS binaries and must run on macOS');
+  }
+  checkPluginVersion(version);
+}
 const launcher = JSON.parse(fs.readFileSync(path.join(npmDir, 'mcp', 'package.json'), 'utf8'));
 
 fs.rmSync(distDir, { recursive: true, force: true });
 for (const platform of platforms) {
-  buildPlatform(platform, version, launcher);
+  buildPlatform(platform, version, launcher, release);
 }
 buildLauncher(version, platforms, launcher);
 
