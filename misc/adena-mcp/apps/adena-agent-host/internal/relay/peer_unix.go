@@ -43,8 +43,8 @@ func peerOf(conn net.Conn) (*bridge.Peer, error) {
 
 	peer := &bridge.Peer{PID: pid}
 
-	// Without an executable the connection can still be approved, but it is
-	// then bound to "unknown" and any unidentified program matches it.
+	// The executable is only shown to the user. Linux refuses to resolve it
+	// for a non-dumpable (hardened) peer, so it may be missing.
 	if exe, exeErr := executableOf(pid); exeErr == nil {
 		peer.Exe = exe
 	}

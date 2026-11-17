@@ -159,3 +159,48 @@ func TestCommittedHeight(t *testing.T) {
 		}
 	}
 }
+
+func TestCallSendsTheConnectionToken(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "s.sock")
+
+	listener, err := net.Listen("unix", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { _ = listener.Close() })
+
+	got := make(chan Request, 1)
+
+	go func() {
+		conn, acceptErr := listener.Accept()
+		if acceptErr != nil {
+			return
+		}
+
+		defer func() { _ = conn.Close() }()
+
+		var request Request
+		if json.NewDecoder(conn).Decode(&request) == nil {
+			got <- request
+
+			response := Response{ID: request.ID, Result: json.RawMessage(`{}`)}
+			if encodeErr := json.NewEncoder(conn).Encode(response); encodeErr != nil {
+				return
+			}
+		}
+	}()
+
+	client := &Client{SocketPath: path}
+	client.SetConnectionToken("tok")
+
+	if err := client.Call(context.Background(), MethodPing, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	if request := <-got; request.Token != "tok" {
+		t.Fatalf("got token %q", request.Token)
+	}
+}

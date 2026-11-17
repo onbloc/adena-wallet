@@ -41,6 +41,8 @@ const ApproveEstablishContainer: React.FC = () => {
   const [protocol, setProtocol] = useState<string>('');
   const [favicon, setFavicon] = useState<string | null>(null);
   const [chainIds, setChainIds] = useState<string[]>([]);
+  // Agent processes ask again under a connected name; each needs its own approval.
+  const [reapprove, setReapprove] = useState(false);
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [response, setResponse] = useState<InjectionMessage>();
@@ -57,7 +59,7 @@ const ApproveEstablishContainer: React.FC = () => {
 
   useEffect(() => {
     checkEstablished();
-  }, [key, hostname, currentAccount, currentNetwork, chainIds]);
+  }, [key, hostname, currentAccount, currentNetwork, chainIds, reapprove]);
 
   const checkLockWallet = (): void => {
     walletService
@@ -76,6 +78,7 @@ const ApproveEstablishContainer: React.FC = () => {
         const message = decodeParameter(data);
         setAppName(message?.data?.name ?? 'Unknown');
         setChainIds(normalizeChainIds(message?.data?.chainIds));
+        setReapprove(protocol === 'agent:' && message?.data?.reapprove === true);
       }
     } catch (e) {
       console.log(e);
@@ -117,7 +120,7 @@ const ApproveEstablishContainer: React.FC = () => {
           ).every(Boolean)
         : await establishService.isEstablishedBy(accountId, siteName);
     setLoading(false);
-    if (isEstablished) {
+    if (isEstablished && !reapprove) {
       chrome.runtime.sendMessage(
         InjectionMessageInstance.failure(WalletResponseFailureType.ALREADY_CONNECTED, {}, key),
       );

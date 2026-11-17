@@ -61,6 +61,11 @@ func connectWallet(ctx context.Context, d *Deps) (server.Result, error) {
 		return server.Result{}, bridgeError(callErr)
 	}
 
+	if account.ConnectionToken != "" {
+		d.Bridge.SetConnectionToken(account.ConnectionToken)
+		account.ConnectionToken = ""
+	}
+
 	notes = append(notes, fmt.Sprintf("Connected to Adena as %s: account %s on %s.",
 		agentName(ctx), account.Address, account.ChainID))
 

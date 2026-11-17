@@ -17,8 +17,8 @@ export const AGENT_MASTER_REQUESTS_STORAGE_KEY = 'AGENT_HOST_ALLOW_MASTER_REQUES
 // The largest ugnot spend limit the user lets an agent session ask for.
 export const AGENT_MAX_SPEND_LIMIT_STORAGE_KEY = 'AGENT_HOST_MAX_SPEND_LIMIT';
 export const AGENT_DEFAULT_MAX_SPEND_LIMIT_UGNOT = '10000000';
-// Executable of the agent process each connection was approved for.
-export const AGENT_BINDINGS_STORAGE_KEY = 'AGENT_HOST_BINDINGS';
+// Hashes of the connection tokens issued to approved agent processes.
+export const AGENT_CONNECTION_TOKENS_STORAGE_KEY = 'AGENT_HOST_CONNECTION_TOKENS';
 
 // Agent sessions are bounded tighter than the chain allows: revoking needs the
 // user, so a short expiry is what limits an abandoned session.
@@ -29,6 +29,7 @@ const MAX_AGENT_NAME_LENGTH = 32;
 const SECP256K1_COMPRESSED_PUBKEY_LENGTH = 33;
 const MAX_TRANSACTION_MESSAGES = 32;
 const MAX_PEER_EXE_LENGTH = 4096;
+const MAX_TOKEN_LENGTH = 256;
 const UGNOT_AMOUNT_PATTERN = /^([0-9]+)ugnot$/;
 
 export const AGENT_REQUEST_PROTOCOL = 'agent:';
@@ -56,6 +57,9 @@ export interface AgentHostRequest {
   method: AgentHostMethod;
   params?: Record<string, unknown>;
   peer?: AgentPeer;
+  // Issued by connect to the approved agent process; it proves the request
+  // comes from that process.
+  token?: string;
 }
 
 export interface AgentHostError {
@@ -168,6 +172,10 @@ export const parseAgentHostRequest = (raw: unknown): AgentHostRequest => {
     method: raw.method as AgentHostMethod,
     params: raw.params as Record<string, unknown> | undefined,
     peer: parsePeer(raw.peer),
+    token:
+      typeof raw.token === 'string' && raw.token.length > 0 && raw.token.length <= MAX_TOKEN_LENGTH
+        ? raw.token
+        : undefined,
   };
 };
 

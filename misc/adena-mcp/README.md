@@ -80,9 +80,9 @@ spend check runs before broadcasting.
 The agent name sent to Adena is the MCP client's name, so each client is
 connected (and listed under Connected Apps as `agent://<name>.agent`)
 separately. Transaction and session requests are refused until the agent is
-connected. A connection is bound to the executable that asked for it (see
-below), so it has to be approved again after `adena-mcp` moves, for example
-when npx fetches a new version.
+connected. Each `adena-mcp` process is approved on its own: approving the
+connection issues that process a token it keeps in memory, so a restarted
+server, or a second window of the same client, asks the user again.
 
 Each `adena-mcp` process lists and uses only the sessions its client created.
 Requests that open a popup in Adena are queued and shown one at a time. If an
@@ -151,10 +151,16 @@ as `agent://<client name>.agent`.
   running as another user. Any process running as the same user can reach the
   socket. It can only *ask*: every session and revocation still needs the
   user to approve it in Adena.
+- Connecting issues the approved process a random token. Adena keeps only its
+  hash, and accepts requests under an agent's name only with a valid token,
+  so another program cannot reuse an agent's connection by sending its name,
+  even one that runs `adena-mcp` itself: it has to be approved in a popup.
+  The token stays in the hardened process's memory and is never returned to
+  the agent.
 - The host attaches the peer's pid and executable path, read from the OS, to
-  every request. Adena binds an agent's connection to that executable and
-  shows it in the connection popup, so another program cannot reuse an
-  agent's connection by sending its name.
+  every request; the connection popup shows the executable. It is
+  informational: on Linux a hardened (non-dumpable) peer's executable cannot
+  be read by the host, and the popup then says "unidentified program".
 - Web pages cannot use the `agent://` identity: Adena takes the identity of a
   web page's request from the browser, not from the page.
 - Adena reports the lock state, network and settings only to a connected

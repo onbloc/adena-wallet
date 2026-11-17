@@ -1,11 +1,13 @@
 import {
-  getAgentBinding,
+  addConnectionToken,
+  createConnectionToken,
   getMaxSpendLimitUgnot,
+  hasConnectionToken,
   isMasterRequestsAllowed,
-  setAgentBinding,
   setMaxSpendLimitUgnot,
 } from './agent-host-settings';
 import {
+  AGENT_CONNECTION_TOKENS_STORAGE_KEY,
   AGENT_DEFAULT_MAX_SPEND_LIMIT_UGNOT,
   AGENT_MASTER_REQUESTS_STORAGE_KEY,
   AGENT_MAX_SPEND_LIMIT_STORAGE_KEY,
@@ -61,16 +63,56 @@ describe('max spend limit', () => {
   });
 });
 
-describe('agent bindings', () => {
-  it('is undefined until a connection is bound, then per account and site', async () => {
+describe('connection tokens', () => {
+  const SITE = 'agent://claude-code.agent';
+
+  it('accepts only tokens issued for the account and agent', async () => {
     installStorage();
-    await expect(getAgentBinding('acc', 'agent://a.agent')).resolves.toBeUndefined();
+    const token = createConnectionToken();
 
-    await setAgentBinding('acc', 'agent://a.agent', '/bin/adena-mcp');
-    await setAgentBinding('acc', 'agent://b.agent', '');
+    await expect(hasConnectionToken('acc', SITE, token)).resolves.toBe(false);
+    await addConnectionToken('acc', SITE, token, false);
 
-    await expect(getAgentBinding('acc', 'agent://a.agent')).resolves.toBe('/bin/adena-mcp');
-    await expect(getAgentBinding('acc', 'agent://b.agent')).resolves.toBe('');
-    await expect(getAgentBinding('other', 'agent://a.agent')).resolves.toBeUndefined();
+    await expect(hasConnectionToken('acc', SITE, token)).resolves.toBe(true);
+    await expect(hasConnectionToken('acc', SITE, undefined)).resolves.toBe(false);
+    await expect(hasConnectionToken('acc', SITE, createConnectionToken())).resolves.toBe(false);
+    await expect(hasConnectionToken('other', SITE, token)).resolves.toBe(false);
+    await expect(hasConnectionToken('acc', 'agent://cursor.agent', token)).resolves.toBe(false);
+  });
+
+  it('stores hashes, not tokens', async () => {
+    const store = installStorage();
+    const token = createConnectionToken();
+    await addConnectionToken('acc', SITE, token, false);
+
+    expect(JSON.stringify(store[AGENT_CONNECTION_TOKENS_STORAGE_KEY])).not.toContain(token);
+  });
+
+  it('keeps several processes, drops old ones on reset and caps the count', async () => {
+    installStorage();
+    const first = createConnectionToken();
+    const second = createConnectionToken();
+
+    await addConnectionToken('acc', SITE, first, false);
+    await addConnectionToken('acc', SITE, second, false);
+    await expect(hasConnectionToken('acc', SITE, first)).resolves.toBe(true);
+
+    const fresh = createConnectionToken();
+    await addConnectionToken('acc', SITE, fresh, true);
+    await expect(hasConnectionToken('acc', SITE, first)).resolves.toBe(false);
+    await expect(hasConnectionToken('acc', SITE, fresh)).resolves.toBe(true);
+
+    const many = Array.from({ length: 9 }, () => createConnectionToken());
+    for (const token of many) {
+      await addConnectionToken('acc', SITE, token, false);
+    }
+    await expect(hasConnectionToken('acc', SITE, many[0])).resolves.toBe(false);
+    await expect(hasConnectionToken('acc', SITE, many[8])).resolves.toBe(true);
+  });
+
+  it('creates distinct 32-byte hex tokens', () => {
+    const token = createConnectionToken();
+    expect(token).toMatch(/^[0-9a-f]{64}$/);
+    expect(createConnectionToken()).not.toBe(token);
   });
 });

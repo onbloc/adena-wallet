@@ -1,8 +1,4 @@
-import {
-  WalletResponseFailureType,
-  WalletResponseRejectType,
-  WalletResponseType,
-} from '@adena-wallet/sdk';
+import { WalletResponseRejectType, WalletResponseType } from '@adena-wallet/sdk';
 import { Account } from 'adena-module';
 
 import { GnoProvider } from '@common/provider/gno/gno-provider';
@@ -41,10 +37,11 @@ import {
   toErrorResponse,
 } from './agent-host-protocol';
 import {
-  getAgentBinding,
+  addConnectionToken,
+  createConnectionToken,
   getMaxSpendLimitUgnot,
+  hasConnectionToken,
   isMasterRequestsAllowed,
-  setAgentBinding,
 } from './agent-host-settings';
 
 interface WalletContext {
@@ -86,35 +83,32 @@ const requireWallet = async (core: InjectCore): Promise<string> => {
   return accountId;
 };
 
-const peerExe = (peer: AgentPeer | undefined): string => peer?.exe ?? '';
-
-// A connection counts only for the executable it was approved for, so another
-// local program cannot reuse an agent's connection by sending its name.
+// A connection counts only for a process holding a token Adena issued when
+// the user approved that process. The agent name alone is not enough, and a
+// new process (even the same program) has to be approved again.
 const isAgentConnected = async (
   core: InjectCore,
   accountId: string,
   agentName: string,
-  peer: AgentPeer | undefined,
+  token: string | undefined,
 ): Promise<boolean> => {
   const siteName = agentSiteName(agentName);
   if (!(await core.establishService.isEstablishedBy(accountId, siteName))) {
     return false;
   }
-  const bound = await getAgentBinding(accountId, siteName);
-  return bound !== undefined && bound === peerExe(peer);
+  return hasConnectionToken(accountId, siteName, token);
 };
 
 const requireConnected = async (
   core: InjectCore,
   agentName: string,
-  peer: AgentPeer | undefined,
+  token: string | undefined,
 ): Promise<void> => {
   const accountId = await requireWallet(core);
-  if (!(await isAgentConnected(core, accountId, agentName, peer))) {
+  if (!(await isAgentConnected(core, accountId, agentName, token))) {
     throw new AgentHostRequestError(
       'not_connected',
-      'this agent is not connected to Adena, or its program changed since it was approved; ' +
-        'call connect_wallet first',
+      'this agent process is not connected to Adena; call connect_wallet first',
     );
   }
 };
@@ -268,6 +262,21 @@ const requireExpectedContext = (context: WalletContext, expected: AgentExpectedC
   }
 };
 
+const requireSameContext = (expected: WalletContext, actual: WalletContext): void => {
+  if (
+    expected.account.id !== actual.account.id ||
+    expected.address !== actual.address ||
+    expected.network.chainId !== actual.network.chainId ||
+    expected.network.rpcUrl !== actual.network.rpcUrl
+  ) {
+    throw new AgentHostRequestError(
+      'context_mismatch',
+      'the account or network in Adena changed while the request was open; the signature was ' +
+        'discarded. Retry on the intended account and network',
+    );
+  }
+};
+
 // Opens an Adena approval popup on behalf of the agent and resolves with the
 // popup's answer. The requester is shown as "<agent>.agent". Approvals are
 // queued, and signal (the request's cancellation) stops them at any stage.
@@ -362,7 +371,7 @@ const handleGetStatus = async (
     return { version, has_wallet: false, connected: false };
   }
 
-  const connected = await isAgentConnected(core, accountId, agentNameOf(request), request.peer);
+  const connected = await isAgentConnected(core, accountId, agentNameOf(request), request.token);
   if (!connected) {
     return { version, has_wallet: true, connected: false };
   }
@@ -382,12 +391,19 @@ const handleGetStatus = async (
   };
 };
 
+// Shown in the connection popup; the executable comes from the host, not the
+// agent, and is only informational.
 const describeAgent = (agentName: string, peer: AgentPeer | undefined): string =>
-  peer?.exe ? `${agentName} (${peer.exe})` : agentName;
+  `${agentName} (${peer?.exe ?? 'unidentified program'})`;
 
-// Asks the user to connect the agent, the way a dApp asks to connect. The
-// approval popup also unlocks the wallet when needed. The connection is bound
-// to the agent's executable; a different program must be approved again.
+// Connections are handled one at a time from check to token, so two processes
+// connecting under one name cannot ride on each other's approval.
+const connectQueue = new AgentApprovalQueue(MAX_QUEUED_APPROVALS);
+
+// Asks the user to connect this agent process, the way a dApp asks to
+// connect, and issues it a token. The approval popup also unlocks the wallet
+// when needed. Every process needs its own approval, even when the agent
+// name is already connected.
 const handleConnect = async (
   core: InjectCore,
   request: AgentHostRequest,
@@ -395,32 +411,41 @@ const handleConnect = async (
 ): Promise<Record<string, unknown>> => {
   const agentName = agentNameOf(request);
   const siteName = agentSiteName(agentName);
-  const accountId = await requireWallet(core);
 
-  if (!(await isAgentConnected(core, accountId, agentName, request.peer))) {
-    throwIfCancelled(signal);
-    if (await core.establishService.isEstablishedBy(accountId, siteName)) {
-      await core.establishService.unEstablishBy(accountId, siteName);
+  const token = await connectQueue.run(async () => {
+    const accountId = await requireWallet(core);
+    if (request.token && (await isAgentConnected(core, accountId, agentName, request.token))) {
+      return request.token;
     }
+    throwIfCancelled(signal);
 
+    const establishedBefore = await core.establishService.isEstablishedBy(accountId, siteName);
     const rejectType = WalletResponseRejectType.CONNECTION_REJECTED;
     const response = await openPopup(signal, agentName, {
       route: RoutePath.ApproveEstablish,
       type: 'ADD_ESTABLISH',
       rejectType,
-      data: { name: describeAgent(agentName, request.peer) },
+      // reapprove keeps the popup from answering ALREADY_CONNECTED on its own.
+      data: { name: describeAgent(agentName, request.peer), reapprove: true },
     });
 
-    const alreadyConnected = response?.type === WalletResponseFailureType.ALREADY_CONNECTED;
-    if (response?.status !== 'success' && !alreadyConnected) {
+    // Only an explicit approval issues a token; ALREADY_CONNECTED is not one.
+    if (response?.status !== 'success') {
       failureFrom(response, rejectType);
     }
 
     const approvedAccountId = await requireWallet(core);
-    await setAgentBinding(approvedAccountId, siteName, peerExe(request.peer));
-  }
+    const issued = createConnectionToken();
+    await addConnectionToken(
+      approvedAccountId,
+      siteName,
+      issued,
+      !establishedBefore || approvedAccountId !== accountId,
+    );
+    return issued;
+  }, signal);
 
-  return handleGetAccount(core);
+  return { ...(await handleGetAccount(core)), connection_token: token };
 };
 
 const handleGetAccount = async (core: InjectCore): Promise<Record<string, unknown>> => {
@@ -525,6 +550,10 @@ const handleSignTransaction = async (
     failureFrom(response, rejectType);
   }
 
+  // The popup signs with the current account and network; the result is only
+  // reported for the context the request was made in.
+  requireSameContext(context, await resolveWalletContext(core));
+
   const data = (response.data ?? {}) as { encodedTransaction?: unknown };
   return {
     signed_tx: data.encodedTransaction ?? null,
@@ -574,7 +603,7 @@ export const handleAgentHostMessage = async (
     const core = new InjectCore(inMemoryProvider);
 
     if (CONNECTION_REQUIRED.has(request.method)) {
-      await requireConnected(core, agentNameOf(request), request.peer);
+      await requireConnected(core, agentNameOf(request), request.token);
     }
 
     switch (request.method) {

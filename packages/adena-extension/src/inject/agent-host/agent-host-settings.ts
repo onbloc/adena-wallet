@@ -1,5 +1,7 @@
+import { Random, sha256, toHex } from 'adena-module';
+
 import {
-  AGENT_BINDINGS_STORAGE_KEY,
+  AGENT_CONNECTION_TOKENS_STORAGE_KEY,
   AGENT_DEFAULT_MAX_SPEND_LIMIT_UGNOT,
   AGENT_MASTER_REQUESTS_STORAGE_KEY,
   AGENT_MAX_SPEND_LIMIT_STORAGE_KEY,
@@ -34,32 +36,48 @@ export const setMaxSpendLimitUgnot = async (ugnot: string): Promise<void> => {
   await chrome.storage.local.set({ [AGENT_MAX_SPEND_LIMIT_STORAGE_KEY]: ugnot });
 };
 
-const bindingKey = (accountId: string, siteName: string): string => `${accountId}|${siteName}`;
+const MAX_TOKENS_PER_CONNECTION = 8;
+const TOKEN_BYTES = 32;
 
-const readBindings = async (): Promise<Record<string, string>> => {
-  const stored = await chrome.storage.local.get(AGENT_BINDINGS_STORAGE_KEY);
-  const value = stored?.[AGENT_BINDINGS_STORAGE_KEY];
-  return value && typeof value === 'object' ? (value as Record<string, string>) : {};
+const connectionKey = (accountId: string, siteName: string): string => `${accountId}|${siteName}`;
+
+const hashToken = (token: string): string => toHex(sha256(new TextEncoder().encode(token)));
+
+const readTokens = async (): Promise<Record<string, string[]>> => {
+  const stored = await chrome.storage.local.get(AGENT_CONNECTION_TOKENS_STORAGE_KEY);
+  const value = stored?.[AGENT_CONNECTION_TOKENS_STORAGE_KEY];
+  return value && typeof value === 'object' ? (value as Record<string, string[]>) : {};
 };
 
-// Returns the executable a connection was approved for, or undefined when the
-// connection predates binding.
-export const getAgentBinding = async (
+export const createConnectionToken = (): string => toHex(Random.getBytes(TOKEN_BYTES));
+
+// Reports whether token was issued for this account and agent. Only hashes
+// are stored, so the storage does not hold usable tokens.
+export const hasConnectionToken = async (
   accountId: string,
   siteName: string,
-): Promise<string | undefined> => {
-  const bindings = await readBindings();
-  const value = bindings[bindingKey(accountId, siteName)];
-  return typeof value === 'string' ? value : undefined;
+  token: string | undefined,
+): Promise<boolean> => {
+  if (!token) {
+    return false;
+  }
+  const hashes = (await readTokens())[connectionKey(accountId, siteName)];
+  return Array.isArray(hashes) && hashes.includes(hashToken(token));
 };
 
-export const setAgentBinding = async (
+// Records a newly approved token. reset drops tokens from an earlier
+// connection, e.g. one the user removed under Connected Apps.
+export const addConnectionToken = async (
   accountId: string,
   siteName: string,
-  exe: string,
+  token: string,
+  reset: boolean,
 ): Promise<void> => {
-  const bindings = await readBindings();
+  const tokens = await readTokens();
+  const key = connectionKey(accountId, siteName);
+  const previous = reset || !Array.isArray(tokens[key]) ? [] : tokens[key];
+  const hashes = [...previous, hashToken(token)].slice(-MAX_TOKENS_PER_CONNECTION);
   await chrome.storage.local.set({
-    [AGENT_BINDINGS_STORAGE_KEY]: { ...bindings, [bindingKey(accountId, siteName)]: exe },
+    [AGENT_CONNECTION_TOKENS_STORAGE_KEY]: { ...tokens, [key]: hashes },
   });
 };

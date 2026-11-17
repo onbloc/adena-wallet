@@ -49,7 +49,9 @@ type Peer struct {
 
 // Request is a call from an agent to the extension.
 type Request struct {
-	Peer   *Peer           `json:"peer,omitempty"`
+	Peer *Peer `json:"peer,omitempty"`
+	// Token is the connection token Adena issued to this process on connect.
+	Token  string          `json:"token,omitempty"`
 	ID     string          `json:"id"`
 	Method string          `json:"method"`
 	Params json.RawMessage `json:"params,omitempty"`
@@ -128,6 +130,9 @@ type Account struct {
 	Address string `json:"address"`
 	ChainID string `json:"chain_id"`
 	RPCURL  string `json:"rpc_url"`
+	// ConnectionToken is set by connect only. It authenticates this process to
+	// Adena and must not be shown to the agent.
+	ConnectionToken string `json:"connection_token,omitempty"`
 }
 
 // CreateSessionParams asks the user to authorize a session key. Adena refuses

@@ -226,8 +226,9 @@ func Installed(goos, home string) []string {
 // path. Browsers launch the host from the path in its manifest, so it must
 // not live somewhere transient such as the npx cache.
 func CopyHost(src, binDir string) (string, error) {
-	if err := os.MkdirAll(binDir, 0o700); err != nil {
-		return "", fmt.Errorf("create %s: %w", binDir, err)
+	// The same protection as the agent home: browsers run what lands here.
+	if err := agentpath.EnsureDir(binDir); err != nil {
+		return "", err
 	}
 
 	data, err := os.ReadFile(src)

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -16,6 +17,24 @@ import (
 // its own connection, so a Client is safe for concurrent use.
 type Client struct {
 	SocketPath string
+	token      string
+	mu         sync.Mutex
+}
+
+// SetConnectionToken attaches token to every later request. It lives only in
+// this process's memory, so a restarted server has to connect again.
+func (c *Client) SetConnectionToken(token string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.token = token
+}
+
+func (c *Client) connectionToken() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return c.token
 }
 
 // Call sends one request and decodes the result into out, which may be nil.
@@ -25,6 +44,8 @@ func (c *Client) Call(ctx context.Context, method string, params, out any) error
 	if err != nil {
 		return err
 	}
+
+	request.Token = c.connectionToken()
 
 	line, err := json.Marshal(request)
 	if err != nil {

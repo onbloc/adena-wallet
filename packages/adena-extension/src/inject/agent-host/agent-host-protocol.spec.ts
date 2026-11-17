@@ -69,6 +69,14 @@ describe('parseAgentHostRequest', () => {
     ).toEqual({});
   });
 
+  it('keeps a connection token of sane length', () => {
+    expect(parseAgentHostRequest({ id: '1', method: 'ping', token: 'abc' }).token).toBe('abc');
+    expect(
+      parseAgentHostRequest({ id: '1', method: 'ping', token: 'x'.repeat(257) }).token,
+    ).toBeUndefined();
+    expect(parseAgentHostRequest({ id: '1', method: 'ping', token: 7 }).token).toBeUndefined();
+  });
+
   it('accepts cancel', () => {
     expect(parseAgentHostRequest({ id: 'c1', method: 'cancel' }).method).toBe('cancel');
   });

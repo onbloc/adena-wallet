@@ -35,11 +35,19 @@ const (
 var testNow = time.Unix(1_800_000_000, 0)
 
 type fakeBridge struct {
+	token         string
 	errs          map[string]error
 	params        map[string]json.RawMessage
 	sessionResult *bridge.SessionTxResult
 	status        bridge.Status
 	mu            sync.Mutex
+}
+
+func (f *fakeBridge) SetConnectionToken(token string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	f.token = token
 }
 
 func (f *fakeBridge) Call(_ context.Context, method string, params, out any) error {
@@ -62,8 +70,10 @@ func (f *fakeBridge) Call(_ context.Context, method string, params, out any) err
 	switch method {
 	case bridge.MethodGetStatus:
 		result = f.status
-	case bridge.MethodGetAccount, bridge.MethodConnect:
+	case bridge.MethodGetAccount:
 		result = bridge.Account{Address: testMaster, ChainID: "dev", RPCURL: "http://rpc"}
+	case bridge.MethodConnect:
+		result = bridge.Account{Address: testMaster, ChainID: "dev", RPCURL: "http://rpc", ConnectionToken: "secret"}
 	case bridge.MethodCreateSession, bridge.MethodRevokeSession:
 		result = bridge.SessionTxResult{
 			TxHash: "hash", MasterAddress: testMaster, ChainID: "dev", RPCURL: "http://rpc",
@@ -935,5 +945,30 @@ func TestRevokeKeepsKeyUnlessConfirmedOnTheSessionNetwork(t *testing.T) {
 		if _, err := env.store.Get(address); err != nil {
 			t.Fatalf("%s: the record was removed: %v", name, err)
 		}
+	}
+}
+
+func TestConnectWalletKeepsTheTokenAndHidesIt(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	env.bridge.status.Connected = false
+
+	res, err := env.call(t, "connect_wallet", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if env.bridge.token != "secret" {
+		t.Fatalf("token not kept: %q", env.bridge.token)
+	}
+
+	data, err := json.Marshal(res.StructuredContent)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if strings.Contains(string(data), "secret") || strings.Contains(res.Text, "secret") {
+		t.Fatalf("the token reached the agent: %s %s", data, res.Text)
 	}
 }

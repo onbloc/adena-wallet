@@ -25,6 +25,8 @@ import (
 // Bridge reaches the Adena extension through the agent host.
 type Bridge interface {
 	Call(ctx context.Context, method string, params, out any) error
+	// SetConnectionToken keeps the token connect returned for later requests.
+	SetConnectionToken(token string)
 }
 
 // Chain signs and broadcasts session transactions and reads session state.
@@ -124,7 +126,11 @@ func bridgeError(err error) error {
 	case "wallet_locked":
 		return &server.ToolError{Code: "wallet_locked", Message: "Adena is locked; ask the user to unlock it and retry"}
 	case "not_connected":
-		return &server.ToolError{Code: "not_connected", Message: "this agent is not connected to Adena; call connect_wallet"}
+		return &server.ToolError{
+			Code: "not_connected",
+			Message: "this agent is not connected to Adena; call connect_wallet. Each adena-mcp process, " +
+				"including one restarted, needs the user's approval",
+		}
 	case "master_requests_disabled":
 		return &server.ToolError{
 			Code: "master_requests_disabled",
