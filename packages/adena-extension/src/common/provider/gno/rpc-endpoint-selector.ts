@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 // tm2-rpc's HttpClient turns any HTTP status >= 400 into this message.
 const BAD_STATUS_PATTERN = /bad status on response:\s*(\d{3})/i;
 
@@ -17,10 +15,6 @@ function isServerSideStatus(status: number): boolean {
 export function isTransportError(error: unknown): boolean {
   if (!error) {
     return false;
-  }
-
-  if (axios.isAxiosError(error)) {
-    return !error.response || isServerSideStatus(error.response.status);
   }
 
   const message = error instanceof Error ? error.message : String(error);

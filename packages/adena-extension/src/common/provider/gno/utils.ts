@@ -1,11 +1,4 @@
-import { ABCIResponse, RPCRequest, RPCResponse } from '@gnolang/tm2-js-client';
-
 import { FlatSessionAccount, GnoSessionAccountResponse } from './types';
-
-const HTTP_PROTOCOL = 'http';
-const HTTPS_PROTOCOL = 'https';
-const HTTP_PROTOCOL_PREFIX = `${HTTP_PROTOCOL}://`;
-const HTTPS_PROTOCOL_PREFIX = `${HTTPS_PROTOCOL}://`;
 
 export const parseProto = <T>(
   data: string | Uint8Array,
@@ -17,74 +10,8 @@ export const parseProto = <T>(
   return protoData;
 };
 
-// Mirrors the message tm2-rpc's HttpClient raises for a bad HTTP status, so
-// RpcEndpointSelector sees a dead endpoint rather than a JSON parse error.
-const assertOkStatus = (response: Response): Response => {
-  if (response.status >= 400) {
-    throw new Error(`Bad status on response: ${response.status}`);
-  }
-  return response;
-};
-
-export const fetchABCIResponse = async (
-  url: string,
-  withCache?: boolean,
-): Promise<RPCResponse<ABCIResponse>> => {
-  const response = await fetch(url, {
-    cache: withCache ? 'force-cache' : 'default',
-  });
-  const data = await assertOkStatus(response).json();
-  return data;
-};
-
-export const postABCIResponse = async (
-  url: string,
-  body: RPCRequest,
-): Promise<RPCResponse<ABCIResponse>> => {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await assertOkStatus(response).json();
-  return data;
-};
-
-export const makeRequestQueryPath = (
-  baseUrl: string,
-  path: string,
-  data: string,
-  ssl: boolean,
-): string => {
-  const requestUri = `${baseUrl}/abci_query?path="${path}"&data="${data}"`;
-
-  if (hasHttpProtocol(baseUrl)) {
-    return requestUri;
-  }
-
-  const protocol = ssl ? HTTPS_PROTOCOL : HTTP_PROTOCOL;
-
-  return `${protocol}://${requestUri}`;
-};
-
-export const isHttpsAvailable = async (domain: string): Promise<boolean> => {
-  if (hasHttpProtocol(domain)) {
-    return isHttpsProtocol(domain);
-  }
-
-  try {
-    const response = await fetch(`${HTTPS_PROTOCOL_PREFIX}${domain}`, {
-      method: 'HEAD',
-      cache: 'force-cache',
-    });
-    return response.ok;
-  }
-  catch {
-    return false;
-  }
-};
+const HTTP_PROTOCOL_PREFIX = 'http://';
+const HTTPS_PROTOCOL_PREFIX = 'https://';
 
 export const hasHttpProtocol = (domain: string): boolean => {
   return isHttpProtocol(domain) || isHttpsProtocol(domain);
