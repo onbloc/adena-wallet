@@ -186,3 +186,57 @@ func TestInstallReplacesAnExistingManifestFile(t *testing.T) {
 		t.Fatalf("staging left behind: %v %v", leftovers, globErr)
 	}
 }
+
+func TestCopyHostRetiresThePreviousCopyUnderAUniqueName(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src", "adena-agent-host")
+	bin := filepath.Join(dir, "bin")
+
+	if err := os.MkdirAll(filepath.Dir(src), 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	target := filepath.Join(bin, "adena-agent-host")
+
+	for i, body := range []string{"v1", "v2", "v3"} {
+		if err := os.WriteFile(src, []byte(body), 0o700); err != nil {
+			t.Fatal(err)
+		}
+
+		// A retired copy and a staging file left by an earlier install, as when
+		// a running host kept them locked or a rename failed.
+		if i == 1 {
+			for _, leftover := range []string{target + ".old", target + ".old.1", target + ".123.tmp"} {
+				if err := os.WriteFile(leftover, nil, 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+
+		got, err := CopyHost(src, bin)
+		if err != nil {
+			t.Fatalf("install %d: %v", i+1, err)
+		}
+
+		data, err := os.ReadFile(got)
+		if err != nil || string(data) != body {
+			t.Fatalf("install %d: got %q %v", i+1, data, err)
+		}
+	}
+
+	entries, err := os.ReadDir(bin)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(entries) != 1 {
+		names := make([]string, 0, len(entries))
+		for _, e := range entries {
+			names = append(names, e.Name())
+		}
+
+		t.Fatalf("leftovers were not swept: %v", names)
+	}
+}

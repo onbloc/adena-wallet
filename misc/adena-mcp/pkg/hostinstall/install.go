@@ -10,7 +10,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
+	"strings"
+	"time"
 
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
 )
@@ -127,11 +130,9 @@ func Browsers(goos, home string) ([]Browser, error) {
 
 // windowsBrowsers places manifests under the agent home, since Windows
 // browsers find them through the registry rather than a fixed directory.
-// Roots follow the default %LOCALAPPDATA% and %APPDATA% under home.
 func windowsBrowsers(home string) []Browser {
-	local := filepath.Join(home, "AppData", "Local")
-	roaming := filepath.Join(home, "AppData", "Roaming")
-	manifests := filepath.Join(home, ".adena-agent", "native-messaging")
+	local, roaming, agentHome := windowsDirs(home)
+	manifests := filepath.Join(agentHome, "native-messaging")
 
 	browser := func(name, root, slug, registryBase string, firefox bool) Browser {
 		return Browser{
@@ -155,6 +156,44 @@ func windowsBrowsers(home string) []Browser {
 		browser("Firefox", filepath.Join(roaming, "Mozilla", "Firefox"),
 			"firefox", `Software\Mozilla`, true),
 	}
+}
+
+// windowsDirs returns %LOCALAPPDATA%, %APPDATA% and the agent home. The
+// environment is used only for the real profile of a Windows user, so a
+// redirected profile and ADENA_AGENT_HOME are honored; any other home, such
+// as one in a test, uses the default layout under it.
+func windowsDirs(home string) (string, string, string) {
+	local := filepath.Join(home, "AppData", "Local")
+	roaming := filepath.Join(home, "AppData", "Roaming")
+	agentHome := filepath.Join(home, ".adena-agent")
+
+	if !isRealUserHome(home) {
+		return local, roaming, agentHome
+	}
+
+	if dir := os.Getenv("LOCALAPPDATA"); dir != "" {
+		local = dir
+	}
+
+	if dir := os.Getenv("APPDATA"); dir != "" {
+		roaming = dir
+	}
+
+	if dir, err := agentpath.Home(); err == nil {
+		agentHome = dir
+	}
+
+	return local, roaming, agentHome
+}
+
+func isRealUserHome(home string) bool {
+	if runtime.GOOS != goosWindows {
+		return false
+	}
+
+	userHome, err := os.UserHomeDir()
+
+	return err == nil && strings.EqualFold(filepath.Clean(userHome), filepath.Clean(home))
 }
 
 // windowsRegistry returns the registry Windows installs use.
@@ -432,6 +471,10 @@ func installed(goos, home string, override Registry) []string {
 // CopyHost copies the host binary at src into binDir and returns the copy's
 // path. Browsers launch the host from the path in its manifest, so it must
 // not live somewhere transient such as the npx cache.
+//
+// Windows cannot replace a running executable but can rename one, so the
+// current host is moved to a unique ".old.<n>" name first. Retired copies
+// that are no longer running are removed on each install.
 func CopyHost(src, binDir string) (string, error) {
 	// The same protection as the agent home: browsers run what lands here.
 	if err := agentpath.EnsureDir(binDir); err != nil {
@@ -444,29 +487,71 @@ func CopyHost(src, binDir string) (string, error) {
 	}
 
 	target := filepath.Join(binDir, filepath.Base(src))
-	staging := target + ".tmp"
+	sweepRetired(target)
 
-	if err := os.WriteFile(staging, data, hostBinaryPerm); err != nil {
-		return "", fmt.Errorf("write host binary: %w", err)
+	staging, err := writeStaging(binDir, filepath.Base(src), data)
+	if err != nil {
+		return "", err
 	}
 
-	// Windows cannot replace a running executable, but it can rename one, so
-	// a host the browser is running is moved aside first.
-	previous := target + ".old"
-	if _, err := os.Stat(target); err == nil {
-		_ = os.Remove(previous)
+	retired := ""
 
-		if err := os.Rename(target, previous); err != nil {
+	if _, statErr := os.Stat(target); statErr == nil {
+		retired = fmt.Sprintf("%s.old.%d", target, time.Now().UnixNano())
+
+		if err := os.Rename(target, retired); err != nil {
+			_ = os.Remove(staging)
+
 			return "", fmt.Errorf("move previous host binary: %w", err)
 		}
 	}
 
 	if err := os.Rename(staging, target); err != nil {
+		_ = os.Remove(staging)
+
+		if retired != "" {
+			if restoreErr := os.Rename(retired, target); restoreErr != nil {
+				err = errors.Join(err, fmt.Errorf("restore previous host binary: %w", restoreErr))
+			}
+		}
+
 		return "", fmt.Errorf("install host binary: %w", err)
 	}
 
-	// Still locked while the old host runs; removed on the next install.
-	_ = os.Remove(previous)
+	sweepRetired(target)
 
 	return target, nil
+}
+
+func writeStaging(dir, name string, data []byte) (string, error) {
+	f, err := os.CreateTemp(dir, name+".*.tmp")
+	if err != nil {
+		return "", fmt.Errorf("write host binary: %w", err)
+	}
+
+	_, writeErr := f.Write(data)
+	closeErr := f.Close()
+
+	if err := errors.Join(writeErr, closeErr, os.Chmod(f.Name(), hostBinaryPerm)); err != nil {
+		_ = os.Remove(f.Name())
+
+		return "", fmt.Errorf("write host binary: %w", err)
+	}
+
+	return f.Name(), nil
+}
+
+// sweepRetired removes retired and leftover staging copies of target. A copy a
+// running host still holds fails to delete and is left for the next install.
+func sweepRetired(target string) {
+	for _, pattern := range []string{target + ".old*", target + ".*.tmp", target + ".tmp"} {
+		matches, err := filepath.Glob(pattern)
+		if err != nil {
+			continue
+		}
+
+		for _, match := range matches {
+			_ = os.Remove(match)
+		}
+	}
 }
