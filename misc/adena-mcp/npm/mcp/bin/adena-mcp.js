@@ -92,8 +92,29 @@ function secureDir(dir) {
   }
 }
 
+// Removes retired and leftover staging copies of target. A copy a running host
+// still holds cannot be deleted on Windows; it is left for the next install.
+function sweepRetired(target) {
+  const dir = path.dirname(target);
+  const base = path.basename(target);
+  for (const name of fs.readdirSync(dir)) {
+    const retired = name.startsWith(`${base}.old`);
+    const staging = name.startsWith(`${base}.`) && name.endsWith('.tmp');
+    if (!retired && !staging) {
+      continue;
+    }
+    try {
+      fs.rmSync(path.join(dir, name), { force: true });
+    } catch {
+      // Still in use.
+    }
+  }
+}
+
 // Browsers launch the host from the path in its manifest, and the npx cache
 // is not a stable path, so the host is copied under the agent home first.
+// Windows cannot overwrite a running executable but can rename it, so the
+// current copy is moved to a unique name before the new one takes its place.
 function installHost(args) {
   const source = path.join(binaryDir(), HOST_BINARY);
   const targetDir = path.join(agentHome(), 'bin');
@@ -102,22 +123,26 @@ function installHost(args) {
   fs.mkdirSync(targetDir, { recursive: true, mode: 0o700 });
   secureDir(agentHome());
   secureDir(targetDir);
-  const staging = `${target}.${process.pid}.tmp`;
-  fs.copyFileSync(source, staging);
-  fs.chmodSync(staging, 0o755);
+  sweepRetired(target);
 
-  // Windows cannot overwrite a running executable but can rename it.
-  const previous = `${target}.old`;
-  if (fs.existsSync(target)) {
-    fs.rmSync(previous, { force: true });
-    fs.renameSync(target, previous);
-  }
-  fs.renameSync(staging, target);
+  const staging = `${target}.${process.pid}.tmp`;
+  let retired = null;
   try {
-    fs.rmSync(previous, { force: true });
-  } catch {
-    // Still in use by a running host; removed on the next install.
+    fs.copyFileSync(source, staging);
+    fs.chmodSync(staging, 0o755);
+    if (fs.existsSync(target)) {
+      retired = `${target}.old.${Date.now()}.${process.pid}`;
+      fs.renameSync(target, retired);
+    }
+    fs.renameSync(staging, target);
+  } catch (error) {
+    fs.rmSync(staging, { force: true });
+    if (retired && !fs.existsSync(target)) {
+      fs.renameSync(retired, target);
+    }
+    fail(`cannot install ${HOST_BINARY} to ${target}: ${error.message}`);
   }
+  sweepRetired(target);
 
   process.stdout.write(`copied ${HOST_BINARY} to ${target}\n`);
   run(target, ['install', ...args]);
