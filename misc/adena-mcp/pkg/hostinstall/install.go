@@ -222,8 +222,8 @@ func Install(opts Options) ([]string, error) {
 	}
 
 	if opts.AgentHome != "" {
-		if err := agentpath.WriteHomeMarker(filepath.Dir(opts.HostPath), opts.AgentHome); err != nil {
-			return nil, err
+		if markerErr := agentpath.WriteHomeMarker(filepath.Dir(opts.HostPath), opts.AgentHome); markerErr != nil {
+			return nil, markerErr
 		}
 	}
 
