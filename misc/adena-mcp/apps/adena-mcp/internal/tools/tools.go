@@ -6,7 +6,9 @@ package tools
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -91,10 +93,7 @@ func bridgeError(err error) error {
 	var remote *bridge.Error
 	if !errors.As(err, &remote) {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return &server.ToolError{
-				Code:    "approval_timeout",
-				Message: "the user did not respond in Adena in time; ask them to approve and retry",
-			}
+			return approvalTimeoutError()
 		}
 
 		return err
@@ -108,6 +107,20 @@ func bridgeError(err error) error {
 		}
 	case bridge.CodeRejected:
 		return &server.ToolError{Code: "user_rejected", Message: "the user rejected the request in Adena"}
+	case "approval_timeout":
+		return approvalTimeoutError()
+	case "context_mismatch":
+		return &server.ToolError{
+			Code: "context_mismatch",
+			Message: remote.Message + ". The session belongs to that account and chain; nothing was " +
+				"sent. Retry once the user has switched",
+		}
+	case "approval_pending":
+		return &server.ToolError{
+			Code: "approval_pending",
+			Message: "another approval is open in Adena; wait for the user to finish it, then retry. " +
+				"Send requests that need approval one at a time",
+		}
 	case "wallet_locked":
 		return &server.ToolError{Code: "wallet_locked", Message: "Adena is locked; ask the user to unlock it and retry"}
 	case "not_connected":
@@ -122,6 +135,43 @@ func bridgeError(err error) error {
 	default:
 		return &server.ToolError{Code: remote.Code, Message: remote.Message}
 	}
+}
+
+// approvalTimeoutError does not suggest a blind retry: the user may have
+// approved just as the request was cancelled.
+func approvalTimeoutError() *server.ToolError {
+	return &server.ToolError{
+		Code: "approval_timeout",
+		Message: "the user did not respond in Adena in time and the request was cancelled. Before " +
+			"asking again, check that it did not go through: get_sessions with refresh=true for a " +
+			"session, or the account's recent transactions for a transaction",
+	}
+}
+
+// agentRecords lists the sessions this agent created.
+func (d *Deps) agentRecords(ctx context.Context) ([]session.Record, error) {
+	records, err := d.Store.List()
+	if err != nil {
+		return nil, err
+	}
+
+	agent := agentName(ctx)
+
+	return slices.DeleteFunc(records, func(r session.Record) bool { return !r.OwnedBy(agent) }), nil
+}
+
+// agentRecord returns one of this agent's sessions.
+func (d *Deps) agentRecord(ctx context.Context, address string) (session.Record, error) {
+	record, err := d.Store.Get(address)
+	if err != nil {
+		return session.Record{}, err
+	}
+
+	if !record.OwnedBy(agentName(ctx)) {
+		return session.Record{}, fmt.Errorf("%w: %s", session.ErrNotFound, address)
+	}
+
+	return record, nil
 }
 
 // usable reports whether this process can sign with the session now.
@@ -150,8 +200,8 @@ func (d *Deps) publicRecord(r *session.Record) map[string]any {
 	}
 }
 
-func (d *Deps) publicRecords() ([]map[string]any, error) {
-	records, err := d.Store.List()
+func (d *Deps) publicRecords(ctx context.Context) ([]map[string]any, error) {
+	records, err := d.agentRecords(ctx)
 	if err != nil {
 		return nil, err
 	}

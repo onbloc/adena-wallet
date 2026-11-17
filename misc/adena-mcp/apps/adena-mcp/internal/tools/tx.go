@@ -249,7 +249,7 @@ func sessionTransact(ctx context.Context, d *Deps, in txArgs, signOnly bool) (se
 		}
 	}
 
-	record, key, err := selectSession(d, in.sessionAddress, in.messages)
+	record, key, err := selectSession(ctx, d, in.sessionAddress, in.messages)
 	if err != nil {
 		return server.Result{}, err
 	}
@@ -331,7 +331,12 @@ func sessionResult(record *session.Record, result chain.TxResult, mode chain.Mod
 
 // selectSession picks the session to sign with: the one named, or the newest
 // usable session whose allow_paths cover every message.
-func selectSession(d *Deps, address string, messages []txMessage) (session.Record, *sessionkey.Key, error) {
+func selectSession(
+	ctx context.Context,
+	d *Deps,
+	address string,
+	messages []txMessage,
+) (session.Record, *sessionkey.Key, error) {
 	covers := func(r *session.Record) bool {
 		for _, m := range messages {
 			if !r.Allows(m.route, m.pkgPath) {
@@ -343,10 +348,10 @@ func selectSession(d *Deps, address string, messages []txMessage) (session.Recor
 	}
 
 	if address != "" {
-		return pickSession(d, address, covers, messages)
+		return pickSession(ctx, d, address, covers, messages)
 	}
 
-	records, err := d.Store.List()
+	records, err := d.agentRecords(ctx)
 	if err != nil {
 		return session.Record{}, nil, err
 	}
@@ -365,12 +370,13 @@ func selectSession(d *Deps, address string, messages []txMessage) (session.Recor
 }
 
 func pickSession(
+	ctx context.Context,
 	d *Deps,
 	address string,
 	covers func(*session.Record) bool,
 	messages []txMessage,
 ) (session.Record, *sessionkey.Key, error) {
-	record, err := d.Store.Get(address)
+	record, err := d.agentRecord(ctx, address)
 	if err != nil {
 		return session.Record{}, nil, &server.ToolError{
 			Code:    "session_unknown",

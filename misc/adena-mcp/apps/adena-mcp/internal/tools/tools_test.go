@@ -29,6 +29,7 @@ import (
 const (
 	testMaster    = "g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5"
 	testRecipient = "g1us8428u2a5satrlxzagqqa5m6vmuze025anjlj"
+	testAgent     = "claude-code"
 )
 
 var testNow = time.Unix(1_800_000_000, 0)
@@ -674,5 +675,202 @@ func TestAllToolsPublish(t *testing.T) {
 	want := "connect_wallet,create_session,get_sessions,get_status,revoke_session,send_transaction,sign_transaction"
 	if strings.Join(names, ",") != want {
 		t.Fatalf("got %v", names)
+	}
+}
+
+func TestGetStatusHidesLockStateUntilConnected(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	env.bridge.status = bridge.Status{HasWallet: true, Locked: true}
+
+	res, err := env.call(t, "get_status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if res.StructuredContent["state"] != stateNotConnected {
+		t.Fatalf("got state %v, want %s", res.StructuredContent["state"], stateNotConnected)
+	}
+
+	for _, field := range []string{"locked", "master_requests_allowed", "max_spend_limit"} {
+		if _, ok := res.StructuredContent[field]; ok {
+			t.Errorf("%s reported before the agent is connected", field)
+		}
+	}
+}
+
+func TestCreateSessionDefaultsWithinUserMaximum(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct{ maximum, want string }{
+		{"", config.DefaultSpendLimit},
+		{"1000000ugnot", "1000000ugnot"},
+		{"90000000ugnot", config.DefaultSpendLimit},
+	}
+
+	for _, c := range cases {
+		env := newEnv(t)
+		env.bridge.status.MaxSpendLimit = c.maximum
+
+		if _, err := env.call(t, "create_session", map[string]any{"allow_paths": []any{"bank/send"}}); err != nil {
+			t.Fatal(err)
+		}
+
+		var sent bridge.CreateSessionParams
+		if err := json.Unmarshal(env.bridge.params[bridge.MethodCreateSession], &sent); err != nil {
+			t.Fatal(err)
+		}
+
+		if sent.SpendLimit != c.want {
+			t.Errorf("maximum %q: got spend_limit %q, want %q", c.maximum, sent.SpendLimit, c.want)
+		}
+	}
+}
+
+func TestCreateSessionRejectsMalformedSpendLimit(t *testing.T) {
+	t.Parallel()
+
+	for _, spendLimit := range []string{"100xugnot", "1ugnot,1foo", "0ugnot", "5foo"} {
+		env := newEnv(t)
+
+		_, err := env.call(t, "create_session", map[string]any{
+			"allow_paths": []any{"bank/send"},
+			"spend_limit": spendLimit,
+		})
+		if toolErrorCode(err) != "invalid_argument" {
+			t.Errorf("%q: got %v, want invalid_argument", spendLimit, err)
+		}
+
+		if _, called := env.bridge.params[bridge.MethodCreateSession]; called {
+			t.Errorf("%q: reached Adena", spendLimit)
+		}
+	}
+}
+
+func TestCreateSessionRecordsTheAgent(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+
+	if _, err := env.call(t, "create_session", map[string]any{"allow_paths": []any{"bank/send"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	records, err := env.store.List()
+	if err != nil || len(records) != 1 || records[0].AgentName != testAgent {
+		t.Fatalf("got %+v %v", records, err)
+	}
+}
+
+func TestSessionsOfAnotherAgentAreInvisible(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	address := putSession(t, env, "bank/send")
+
+	record, err := env.store.Get(address)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	record.AgentName = "cursor"
+	if putErr := env.store.Put(record); putErr != nil {
+		t.Fatal(putErr)
+	}
+
+	_, sendErr := env.call(t, "send_transaction", map[string]any{"messages": []any{sendMsg()}})
+	if toolErrorCode(sendErr) != "session_required" {
+		t.Fatalf("send: got %v, want session_required", sendErr)
+	}
+
+	_, revokeErr := env.call(t, "revoke_session", map[string]any{"session_address": address})
+	if toolErrorCode(revokeErr) != "session_unknown" {
+		t.Fatalf("revoke: got %v, want session_unknown", revokeErr)
+	}
+
+	res, err := env.call(t, "get_sessions", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if sessions, _ := res.StructuredContent["sessions"].([]map[string]any); len(sessions) != 0 {
+		t.Fatalf("listed another agent's sessions: %+v", sessions)
+	}
+}
+
+func TestApprovalTimeoutDoesNotSuggestBlindRetry(t *testing.T) {
+	t.Parallel()
+
+	for _, err := range []error{context.DeadlineExceeded, &bridge.Error{Code: "approval_timeout", Message: "late"}} {
+		var te *server.ToolError
+		if !errors.As(bridgeError(err), &te) || te.Code != "approval_timeout" {
+			t.Fatalf("got %v", bridgeError(err))
+		}
+
+		if strings.Contains(te.Message, "approve and retry") || !strings.Contains(te.Message, "did not go through") {
+			t.Fatalf("message %q", te.Message)
+		}
+	}
+}
+
+func TestSessionAdminRequestsCarryTheExpectedContext(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+
+	if _, err := env.call(t, "create_session", map[string]any{"allow_paths": []any{"bank/send"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	var created bridge.CreateSessionParams
+	if err := json.Unmarshal(env.bridge.params[bridge.MethodCreateSession], &created); err != nil {
+		t.Fatal(err)
+	}
+
+	if created.MasterAddress != testMaster || created.ChainID != "dev" {
+		t.Fatalf("create carries %+v", created)
+	}
+
+	address := putSession(t, env, "bank/send")
+
+	record, err := env.store.Get(address)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	record.ChainID = "other-chain"
+	if putErr := env.store.Put(record); putErr != nil {
+		t.Fatal(putErr)
+	}
+
+	if _, callErr := env.call(t, "revoke_session", map[string]any{"session_address": address}); callErr != nil {
+		t.Fatal(callErr)
+	}
+
+	var revoked bridge.RevokeSessionParams
+	if decodeErr := json.Unmarshal(env.bridge.params[bridge.MethodRevokeSession], &revoked); decodeErr != nil {
+		t.Fatal(decodeErr)
+	}
+
+	if revoked.MasterAddress != testMaster || revoked.ChainID != "other-chain" {
+		t.Fatalf("revoke carries %+v", revoked)
+	}
+}
+
+func TestRevokeKeepsKeyOnContextMismatch(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	address := putSession(t, env, "bank/send")
+	env.bridge.errs[bridge.MethodRevokeSession] = &bridge.Error{Code: "context_mismatch", Message: "Adena is on chain b"}
+
+	_, err := env.call(t, "revoke_session", map[string]any{"session_address": address})
+	if toolErrorCode(err) != "context_mismatch" {
+		t.Fatalf("got %v", err)
+	}
+
+	if _, held := env.keys.Get(address); !held {
+		t.Fatal("the key of a session that was not revoked must be kept")
 	}
 }

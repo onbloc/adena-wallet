@@ -49,7 +49,9 @@ func (h hostInstaller) Install() ([]string, error) {
 		return nil, err
 	}
 
-	allowed, err := hostinstall.AllowedChromeIDs(runtime.GOOS, home, nil, nil, true)
+	// Unpacked builds are allowed only when the user runs install themselves;
+	// an agent-triggered install must not trust any extension named "Adena".
+	allowed, err := hostinstall.AllowedChromeIDs(runtime.GOOS, home, nil, nil, false)
 	if err != nil {
 		return nil, err
 	}

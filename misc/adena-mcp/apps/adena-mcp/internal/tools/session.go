@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gnolang/gno/tm2/pkg/std"
+
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/chain"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/config"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/server"
@@ -16,6 +18,8 @@ import (
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/sessionkey"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/bridge"
 )
+
+const spendDenom = "ugnot"
 
 func registerCreateSession(r *server.Registry, d *Deps) {
 	r.Add(&server.Tool{
@@ -34,8 +38,9 @@ func registerCreateSession(r *server.Registry, d *Deps) {
 				"description": `Message types the session may sign: "vm/exec:<realm path>" for calls to a realm ` +
 					`and its sub-paths, "vm/exec" for any realm, "vm/run", "bank/send". "*" is refused by Adena.`,
 			},
-			"spend_limit": stringProp("Coins the session may spend, including gas fees. " +
-				"Must include ugnot. Default " + config.DefaultSpendLimit + "."),
+			"spend_limit": stringProp(`One ugnot amount the session may spend, gas fees included, e.g. ` +
+				`"5000000ugnot". It cannot exceed the maximum the user set in Adena (max_spend_limit in ` +
+				"get_status). Default: " + config.DefaultSpendLimit + " or that maximum, whichever is lower."),
 			"spend_period": map[string]any{
 				"type":        "integer",
 				"minimum":     0,
@@ -73,8 +78,10 @@ func parseCreateArgs(args map[string]any) (createArgs, error) {
 		return createArgs{}, err
 	}
 
-	if spendLimit == "" {
-		spendLimit = config.DefaultSpendLimit
+	if spendLimit != "" {
+		if coin, parseErr := std.ParseCoin(spendLimit); parseErr != nil || coin.Denom != spendDenom || !coin.IsPositive() {
+			return createArgs{}, server.InvalidArg("spend_limit", `must be one positive ugnot amount such as "5000000ugnot"`)
+		}
 	}
 
 	spendPeriod, err := server.IntArg(args, "spend_period", 0)
@@ -124,6 +131,10 @@ func sessionCreateHandler(ctx context.Context, d *Deps, args map[string]any) (se
 	var account bridge.Account
 	if callErr := d.Bridge.Call(approvalCtx, bridge.MethodGetAccount, agentParams(ctx), &account); callErr != nil {
 		return server.Result{}, bridgeError(callErr)
+	}
+
+	if in.spendLimit == "" {
+		in.spendLimit = defaultSpendLimit(approvalCtx, d, agentParams(ctx))
 	}
 
 	key, err := sessionkey.Generate()
@@ -176,6 +187,8 @@ func authorizeKey(
 		SpendPeriod:      in.spendPeriod,
 		ExpiresAt:        expiresAt,
 		AgentName:        agent,
+		MasterAddress:    account.Address,
+		ChainID:          account.ChainID,
 	}, &tx); callErr != nil {
 		return session.Record{}, bridgeError(callErr)
 	}
@@ -197,15 +210,38 @@ func authorizeKey(
 		ExpiresAt:        expiresAt,
 		CreatedAt:        now.Unix(),
 		TxHash:           tx.TxHash,
+		AgentName:        agent,
 		Status:           session.StatusActive,
 	}, nil
+}
+
+// defaultSpendLimit keeps the default within the user's maximum, so a request
+// without spend_limit is not refused by Adena.
+func defaultSpendLimit(ctx context.Context, d *Deps, params bridge.AgentParams) string {
+	fallback, err := std.ParseCoin(config.DefaultSpendLimit)
+	if err != nil {
+		return config.DefaultSpendLimit
+	}
+
+	var status bridge.Status
+	if d.Bridge.Call(ctx, bridge.MethodGetStatus, params, &status) != nil || status.MaxSpendLimit == "" {
+		return config.DefaultSpendLimit
+	}
+
+	maximum, err := std.ParseCoin(status.MaxSpendLimit)
+	if err != nil || maximum.Denom != fallback.Denom || !maximum.IsLT(fallback) {
+		return config.DefaultSpendLimit
+	}
+
+	return maximum.String()
 }
 
 func registerGetSessions(r *server.Registry, d *Deps) {
 	r.Add(&server.Tool{
 		Name: "get_sessions",
-		Description: "Lists the session keys this server holds. With refresh=true each session is " +
-			"looked up on chain, and sessions the chain no longer knows (revoked or expired) are marked.",
+		Description: "Lists the sessions this agent created. key_held tells whether this server process " +
+			"holds the key and can sign with it. With refresh=true each session is looked up on chain, " +
+			"and sessions the chain no longer knows (revoked or expired) are marked.",
 		InputSchema: objectSchema(map[string]any{
 			"refresh": map[string]any{"type": "boolean", "description": "Check each session on chain."},
 		}),
@@ -222,7 +258,7 @@ func getSessionsHandler(ctx context.Context, d *Deps, args map[string]any) (serv
 		return server.Result{}, err
 	}
 
-	records, err := d.Store.List()
+	records, err := d.agentRecords(ctx)
 	if err != nil {
 		return server.Result{}, err
 	}
@@ -301,7 +337,7 @@ func sessionRevokeHandler(ctx context.Context, d *Deps, args map[string]any) (se
 		return server.Result{}, err
 	}
 
-	record, err := d.Store.Get(address)
+	record, err := d.agentRecord(ctx, address)
 	if err != nil {
 		return server.Result{}, &server.ToolError{
 			Code:    "session_unknown",
@@ -318,6 +354,8 @@ func sessionRevokeHandler(ctx context.Context, d *Deps, args map[string]any) (se
 		if callErr := d.Bridge.Call(approvalCtx, bridge.MethodRevokeSession, bridge.RevokeSessionParams{
 			SessionPublicKey: record.SessionPublicKey,
 			AgentName:        agentName(ctx),
+			MasterAddress:    record.MasterAddress,
+			ChainID:          record.ChainID,
 		}, &tx); callErr != nil {
 			return server.Result{}, bridgeError(callErr)
 		}

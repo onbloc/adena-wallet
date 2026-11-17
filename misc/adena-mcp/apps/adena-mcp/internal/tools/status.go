@@ -27,7 +27,7 @@ var setupSteps = map[string]string{
 		"and turn on Settings > Security & Privacy > AI Agent Connection (reloading Adena if it asks). " +
 		"Adena must be installed from the browser's extension store first.",
 	stateNoWallet:     "Adena has no wallet yet. Ask the user to create or import one in Adena.",
-	stateLocked:       "Adena is locked. Ask the user to unlock it, or call connect_wallet to prompt them.",
+	stateLocked:       "Adena is locked. Ask the user to unlock it.",
 	stateNotConnected: "This agent is not connected to Adena yet. Call connect_wallet; the user approves it in Adena.",
 }
 
@@ -67,13 +67,14 @@ func walletState(ctx context.Context, d *Deps) (string, *bridge.Status, error) {
 		return stateAdenaUnreachable, nil, nil
 	}
 
+	// Adena reports the lock state only to a connected agent.
 	switch {
 	case !status.HasWallet:
 		return stateNoWallet, &status, nil
-	case status.Locked:
-		return stateLocked, &status, nil
 	case !status.Connected:
 		return stateNotConnected, &status, nil
+	case status.Locked:
+		return stateLocked, &status, nil
 	default:
 		return stateReady, &status, nil
 	}
@@ -94,10 +95,17 @@ func getStatus(ctx context.Context, d *Deps) (server.Result, error) {
 
 	if status != nil {
 		structured["has_wallet"] = status.HasWallet
-		structured["locked"] = status.Locked
 		structured["connected"] = status.Connected
-		structured["master_requests_allowed"] = status.MasterRequestsAllowed
 		structured["adena_version"] = status.Version
+
+		if status.Connected {
+			structured["locked"] = status.Locked
+			structured["master_requests_allowed"] = status.MasterRequestsAllowed
+
+			if status.MaxSpendLimit != "" {
+				structured["max_spend_limit"] = status.MaxSpendLimit
+			}
+		}
 	}
 
 	if state != stateReady {
@@ -114,7 +122,7 @@ func getStatus(ctx context.Context, d *Deps) (server.Result, error) {
 		return server.Result{}, bridgeError(callErr)
 	}
 
-	sessions, err := d.publicRecords()
+	sessions, err := d.publicRecords(ctx)
 	if err != nil {
 		return server.Result{}, err
 	}
@@ -130,6 +138,10 @@ func getStatus(ctx context.Context, d *Deps) (server.Result, error) {
 		b.WriteString("Master account requests (signer=wallet): allowed.\n")
 	} else {
 		b.WriteString("Master account requests (signer=wallet): turned off by the user; use sessions.\n")
+	}
+
+	if status.MaxSpendLimit != "" {
+		fmt.Fprintf(&b, "Largest session spend_limit the user allows: %s.\n", status.MaxSpendLimit)
 	}
 
 	fmt.Fprintf(&b, "Sessions held: %d.\n", len(sessions))

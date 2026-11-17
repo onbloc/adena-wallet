@@ -284,7 +284,7 @@ func (c *Client) Execute(ctx context.Context, req TxRequest) (TxResult, error) {
 	signer := txSigner{chainID: req.ChainID, acc: acc, signer: req.Signer, sessionAddr: sessionAddr}
 	price := c.GasPrice(ctx, req.RPCURL)
 
-	gasWanted, measured, err := c.measure(ctx, cli, &signer, req, msgs, master, price)
+	gasWanted, measured, err := c.measure(ctx, cli, &signer, req, msgs, master)
 	if err != nil {
 		return TxResult{}, err
 	}
@@ -350,13 +350,12 @@ func (c *Client) measure(
 	req TxRequest,
 	msgs []std.Msg,
 	master crypto.Address,
-	price Price,
 ) (int64, *measurement, error) {
 	if req.GasWanted > 0 {
 		return req.GasWanted, nil, nil
 	}
 
-	tx := newTx(msgs, req.Memo, req.GasCeiling, price.Fee(req.GasCeiling))
+	tx := measurementTx(msgs, req.Memo, req.GasCeiling)
 	if err := c.checkSpend(signer.acc, tx, master); err != nil {
 		return 0, nil, err
 	}
@@ -372,6 +371,14 @@ func (c *Client) measure(
 	}
 
 	return max(deliver.GasUsed*3/2, minGasWanted), &measurement{gasUsed: deliver.GasUsed, data: string(deliver.Data)}, nil
+}
+
+// measurementTx simulates at the gas ceiling with the smallest fee. The chain
+// skips the minimum fee check when simulating but still charges the fee to the
+// session budget, so a ceiling-priced fee would refuse sessions that can afford
+// the real transaction. Execute checks the real fee before signing.
+func measurementTx(msgs []std.Msg, memo string, gasCeiling int64) *std.Tx {
+	return newTx(msgs, memo, gasCeiling, std.NewCoin(gasDenom, 1))
 }
 
 func (c *Client) simulateFinal(

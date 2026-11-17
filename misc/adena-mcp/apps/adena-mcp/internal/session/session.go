@@ -35,23 +35,31 @@ var ErrNotFound = errors.New("session not found")
 
 // Record is one session and the scope the user approved.
 type Record struct {
-	SessionAddress   string   `json:"session_address"`
-	SessionPublicKey string   `json:"session_public_key"`
-	MasterAddress    string   `json:"master_address"`
-	ChainID          string   `json:"chain_id"`
-	RPCURL           string   `json:"rpc_url"`
-	SpendLimit       string   `json:"spend_limit"`
-	Status           string   `json:"status"`
-	TxHash           string   `json:"tx_hash,omitempty"`
-	AllowPaths       []string `json:"allow_paths"`
-	SpendPeriod      int64    `json:"spend_period,omitempty"`
-	ExpiresAt        int64    `json:"expires_at"`
-	CreatedAt        int64    `json:"created_at"`
+	SessionAddress   string `json:"session_address"`
+	SessionPublicKey string `json:"session_public_key"`
+	MasterAddress    string `json:"master_address"`
+	ChainID          string `json:"chain_id"`
+	RPCURL           string `json:"rpc_url"`
+	SpendLimit       string `json:"spend_limit"`
+	Status           string `json:"status"`
+	TxHash           string `json:"tx_hash,omitempty"`
+	// AgentName is the agent that created the session. Records written before
+	// it existed have none and belong to every agent.
+	AgentName   string   `json:"agent_name,omitempty"`
+	AllowPaths  []string `json:"allow_paths"`
+	SpendPeriod int64    `json:"spend_period,omitempty"`
+	ExpiresAt   int64    `json:"expires_at"`
+	CreatedAt   int64    `json:"created_at"`
 }
 
 // Expired reports whether the session expiry has passed at now.
 func (r *Record) Expired(now time.Time) bool {
 	return r.ExpiresAt > 0 && now.Unix() >= r.ExpiresAt
+}
+
+// OwnedBy reports whether agent created the session.
+func (r *Record) OwnedBy(agent string) bool {
+	return r.AgentName == "" || r.AgentName == agent
 }
 
 // Usable reports whether the session can still sign at now.
@@ -85,10 +93,26 @@ func (r *Record) Allows(route, pkgPath string) bool {
 	return false
 }
 
-// Store persists records as one JSON file.
+// Store persists records as one JSON file. Every adena-mcp process of the
+// user shares it, so each access also holds an exclusive lock on a sibling
+// lock file.
 type Store struct {
 	path string
 	mu   sync.Mutex
+}
+
+// locked runs fn while holding both the process and the file lock.
+func (s *Store) locked(fn func() error) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	unlock, err := lockFile(s.path + ".lock")
+	if err != nil {
+		return fmt.Errorf("lock sessions: %w", err)
+	}
+	defer unlock()
+
+	return fn()
 }
 
 // NewStore returns a store backed by path.
@@ -98,10 +122,16 @@ func NewStore(path string) *Store {
 
 // List returns every record, newest first.
 func (s *Store) List() ([]Record, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	var records []Record
 
-	return s.load()
+	err := s.locked(func() error {
+		var loadErr error
+		records, loadErr = s.load()
+
+		return loadErr
+	})
+
+	return records, err
 }
 
 // Get returns the record for a session address.
@@ -122,49 +152,46 @@ func (s *Store) Get(sessionAddress string) (Record, error) {
 
 // Put inserts or replaces the record with the same session address.
 func (s *Store) Put(record Record) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	return s.locked(func() error {
+		records, err := s.load()
+		if err != nil {
+			return err
+		}
 
-	records, err := s.load()
-	if err != nil {
-		return err
-	}
+		records = slices.DeleteFunc(records, func(r Record) bool { return r.SessionAddress == record.SessionAddress })
+		records = append(records, record)
 
-	records = slices.DeleteFunc(records, func(r Record) bool { return r.SessionAddress == record.SessionAddress })
-	records = append(records, record)
-
-	return s.save(records)
+		return s.save(records)
+	})
 }
 
 // Scrub rewrites the file so fields earlier versions stored, such as keybase
 // passwords, are dropped.
 func (s *Store) Scrub() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	return s.locked(func() error {
+		if _, err := os.Stat(s.path); errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
 
-	if _, err := os.Stat(s.path); errors.Is(err, os.ErrNotExist) {
-		return nil
-	}
+		records, err := s.load()
+		if err != nil {
+			return err
+		}
 
-	records, err := s.load()
-	if err != nil {
-		return err
-	}
-
-	return s.save(records)
+		return s.save(records)
+	})
 }
 
 // Delete removes the record for a session address.
 func (s *Store) Delete(sessionAddress string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	return s.locked(func() error {
+		records, err := s.load()
+		if err != nil {
+			return err
+		}
 
-	records, err := s.load()
-	if err != nil {
-		return err
-	}
-
-	return s.save(slices.DeleteFunc(records, func(r Record) bool { return r.SessionAddress == sessionAddress }))
+		return s.save(slices.DeleteFunc(records, func(r Record) bool { return r.SessionAddress == sessionAddress }))
+	})
 }
 
 func (s *Store) load() ([]Record, error) {

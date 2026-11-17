@@ -101,3 +101,53 @@ func TestStoreRoundTrip(t *testing.T) {
 		t.Fatalf("got %v, want ErrNotFound", err)
 	}
 }
+
+func TestStoreKeepsConcurrentWritersFromSeparateStores(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "sessions.json")
+
+	const writers = 8
+
+	errs := make(chan error, writers)
+
+	for i := range writers {
+		// Separate Stores stand in for separate adena-mcp processes.
+		store := NewStore(path)
+
+		go func() {
+			errs <- store.Put(Record{SessionAddress: "g1session" + string(rune('a'+i)), CreatedAt: int64(i)})
+		}()
+	}
+
+	for range writers {
+		if err := <-errs; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	records, err := NewStore(path).List()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(records) != writers {
+		t.Fatalf("got %d records, want %d", len(records), writers)
+	}
+}
+
+func TestOwnedBy(t *testing.T) {
+	t.Parallel()
+
+	if !(&Record{}).OwnedBy("claude-code") {
+		t.Error("a record without an agent belongs to every agent")
+	}
+
+	if !(&Record{AgentName: "claude-code"}).OwnedBy("claude-code") {
+		t.Error("an agent owns its records")
+	}
+
+	if (&Record{AgentName: "cursor"}).OwnedBy("claude-code") {
+		t.Error("an agent must not own another agent's records")
+	}
+}

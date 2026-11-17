@@ -85,6 +85,34 @@ func TestCheckSpendRejectsOverLimit(t *testing.T) {
 	}
 }
 
+func TestMeasurementFitsASmallRemainingBudget(t *testing.T) {
+	t.Parallel()
+
+	master := crypto.Address{1}
+	// 5,000ugnot left: below the 10,000ugnot a ceiling-priced fee would need.
+	acc := &std.BaseSessionAccount{
+		SpendLimit: std.NewCoins(std.NewCoin("ugnot", 10_000)),
+		SpendUsed:  std.NewCoins(std.NewCoin("ugnot", 5_000)),
+		ExpiresAt:  time.Now().Add(time.Hour).Unix(),
+	}
+	client := NewClient()
+	call := bank.MsgSend{FromAddress: master, ToAddress: crypto.Address{2}, Amount: std.NewCoins(std.NewCoin("ugnot", 1))}
+
+	tx := measurementTx([]std.Msg{call}, "", 10_000_000)
+	if tx.Fee.GasWanted != 10_000_000 || tx.Fee.GasFee.Amount != 1 {
+		t.Fatalf("unexpected measurement fee %+v", tx.Fee)
+	}
+
+	if err := client.checkSpend(acc, tx, master); err != nil {
+		t.Fatalf("measurement must fit the remaining budget: %v", err)
+	}
+
+	ceilingPriced := newTx([]std.Msg{call}, "", 10_000_000, FloorPrice.Fee(10_000_000))
+	if err := client.checkSpend(acc, ceilingPriced, master); err == nil {
+		t.Fatal("a ceiling-priced fee should not fit, or this test proves nothing")
+	}
+}
+
 func TestSignerMarksSessionSignature(t *testing.T) {
 	t.Parallel()
 
