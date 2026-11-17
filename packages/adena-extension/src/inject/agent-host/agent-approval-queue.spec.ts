@@ -1,4 +1,4 @@
-import { AgentApprovalQueue } from './agent-approval-queue';
+import { AgentApprovalQueue, AgentRequestRegistry } from './agent-approval-queue';
 import { AgentHostRequestError } from './agent-host-protocol';
 
 const deferred = (): { promise: Promise<void>; resolve: () => void } => {
@@ -76,5 +76,68 @@ describe('AgentApprovalQueue', () => {
 
     first.resolve();
     await a;
+  });
+});
+
+describe('AgentRequestRegistry', () => {
+  // Models a request that is still preparing (wallet checks, gas pricing) when
+  // the cancellation arrives, then reaches the approval queue.
+  const prepareThenQueue = async (
+    registry: AgentRequestRegistry,
+    cancelDuringPreparation: () => void,
+  ): Promise<{ code: string | undefined; opened: boolean }> => {
+    const queue = new AgentApprovalQueue(4);
+    const signal = registry.begin('7');
+    const preparation = deferred();
+    let opened = false;
+
+    const run = (async (): Promise<void> => {
+      await preparation.promise;
+      await queue.run(async () => {
+        opened = true;
+      }, signal);
+    })();
+
+    cancelDuringPreparation();
+    preparation.resolve();
+
+    const code = await codeOf(run);
+    registry.end('7', signal);
+    return { code, opened };
+  };
+
+  it('stops a request cancelled before its popup is queued', async () => {
+    const registry = new AgentRequestRegistry();
+    const result = await prepareThenQueue(registry, () => registry.cancel('7'));
+    expect(result).toEqual({ code: 'cancelled', opened: false });
+  });
+
+  it('stops a preparing request when the channel closes', async () => {
+    const registry = new AgentRequestRegistry();
+    const result = await prepareThenQueue(registry, () => registry.cancelAll());
+    expect(result).toEqual({ code: 'cancelled', opened: false });
+  });
+
+  it('ignores cancels for other or finished requests', async () => {
+    const registry = new AgentRequestRegistry();
+    const signal = registry.begin('1');
+
+    registry.cancel('2');
+    expect(signal.aborted).toBe(false);
+
+    registry.end('1', signal);
+    registry.cancel('1');
+    expect(signal.aborted).toBe(false);
+  });
+
+  it('replaces a reused id without letting the old request end the new one', () => {
+    const registry = new AgentRequestRegistry();
+    const first = registry.begin('1');
+    const second = registry.begin('1');
+
+    expect(first.aborted).toBe(true);
+    registry.end('1', first);
+    registry.cancel('1');
+    expect(second.aborted).toBe(true);
   });
 });

@@ -21,7 +21,7 @@ import {
 } from '@services/transaction/message/auth/auth';
 import { NetworkMetainfo, RoutePath } from '@types';
 
-import { AgentApprovalQueue } from './agent-approval-queue';
+import { AgentApprovalQueue, AgentRequestRegistry, throwIfCancelled } from './agent-approval-queue';
 import {
   AGENT_REQUEST_PROTOCOL,
   AGENT_SESSION_SPEND_DENOM,
@@ -65,7 +65,7 @@ const APPROVAL_TIMEOUT_MS = 10 * 60 * 1000;
 const MAX_QUEUED_APPROVALS = 8;
 
 const approvalQueue = new AgentApprovalQueue(MAX_QUEUED_APPROVALS);
-const activeApprovals = new Map<string, AbortController>();
+const requests = new AgentRequestRegistry();
 
 const cancelledError = (): AgentHostRequestError =>
   new AgentHostRequestError('cancelled', 'the agent cancelled the request');
@@ -270,33 +270,16 @@ const requireExpectedContext = (context: WalletContext, expected: AgentExpectedC
 
 // Opens an Adena approval popup on behalf of the agent and resolves with the
 // popup's answer. The requester is shown as "<agent>.agent". Approvals are
-// queued and can be cancelled by the host with the request id.
-const openPopup = async (
-  requestId: string,
+// queued, and signal (the request's cancellation) stops them at any stage.
+const openPopup = (
+  signal: AbortSignal,
   agentName: string,
   request: PopupRequest,
-): Promise<InjectionMessage> => {
-  const controller = new AbortController();
-  activeApprovals.get(requestId)?.abort();
-  activeApprovals.set(requestId, controller);
-
-  try {
-    return await approvalQueue.run(
-      () => showPopup(agentName, request, controller.signal),
-      controller.signal,
-    );
-  } finally {
-    if (activeApprovals.get(requestId) === controller) {
-      activeApprovals.delete(requestId);
-    }
-  }
-};
+): Promise<InjectionMessage> =>
+  approvalQueue.run(() => showPopup(agentName, request, signal), signal);
 
 // Called when the host channel closes: nobody is left to receive the answers.
-export const cancelAllAgentApprovals = (): void => {
-  activeApprovals.forEach((controller) => controller.abort());
-  activeApprovals.clear();
-};
+export const cancelAllAgentApprovals = (): void => requests.cancelAll();
 
 const failureFrom = (response: InjectionMessage, rejectType: WalletResponseType): never => {
   const detail = response?.data as { error?: unknown; log?: unknown } | undefined;
@@ -324,14 +307,14 @@ const transactionPopupData = (
 });
 
 const broadcastViaPopup = async (
-  requestId: string,
+  signal: AbortSignal,
   context: WalletContext,
   tx: AgentTransactionParams,
   agentName: string,
   commit = false,
 ): Promise<Record<string, unknown>> => {
   const rejectType = WalletResponseRejectType.TRANSACTION_REJECTED;
-  const response = await openPopup(requestId, agentName, {
+  const response = await openPopup(signal, agentName, {
     route: RoutePath.ApproveTransaction,
     type: 'DO_CONTRACT',
     rejectType,
@@ -408,18 +391,20 @@ const describeAgent = (agentName: string, peer: AgentPeer | undefined): string =
 const handleConnect = async (
   core: InjectCore,
   request: AgentHostRequest,
+  signal: AbortSignal,
 ): Promise<Record<string, unknown>> => {
   const agentName = agentNameOf(request);
   const siteName = agentSiteName(agentName);
   const accountId = await requireWallet(core);
 
   if (!(await isAgentConnected(core, accountId, agentName, request.peer))) {
+    throwIfCancelled(signal);
     if (await core.establishService.isEstablishedBy(accountId, siteName)) {
       await core.establishService.unEstablishBy(accountId, siteName);
     }
 
     const rejectType = WalletResponseRejectType.CONNECTION_REJECTED;
-    const response = await openPopup(request.id, agentName, {
+    const response = await openPopup(signal, agentName, {
       route: RoutePath.ApproveEstablish,
       type: 'ADD_ESTABLISH',
       rejectType,
@@ -446,6 +431,7 @@ const handleGetAccount = async (core: InjectCore): Promise<Record<string, unknow
 const handleCreateSession = async (
   core: InjectCore,
   request: AgentHostRequest,
+  signal: AbortSignal,
 ): Promise<Record<string, unknown>> => {
   const maxSpendUgnot = BigInt(await getMaxSpendLimitUgnot());
   const params = parseCreateSessionParams(
@@ -475,7 +461,7 @@ const handleCreateSession = async (
   }
 
   const result = await broadcastViaPopup(
-    request.id,
+    signal,
     context,
     await sessionAdminTx(context, message),
     params.agentName,
@@ -487,6 +473,7 @@ const handleCreateSession = async (
 const handleRevokeSession = async (
   core: InjectCore,
   request: AgentHostRequest,
+  signal: AbortSignal,
 ): Promise<Record<string, unknown>> => {
   const params = parseRevokeSessionParams(request.params);
   const context = await resolveWalletContext(core);
@@ -498,7 +485,7 @@ const handleRevokeSession = async (
     sessionPublicKey: params.sessionPublicKey,
   });
   return broadcastViaPopup(
-    request.id,
+    signal,
     context,
     await sessionAdminTx(context, message),
     params.agentName,
@@ -509,23 +496,25 @@ const handleRevokeSession = async (
 const handleSendTransaction = async (
   core: InjectCore,
   request: AgentHostRequest,
+  signal: AbortSignal,
 ): Promise<Record<string, unknown>> => {
   await requireMasterRequestsAllowed();
   const context = await resolveWalletContext(core);
   const tx = parseTransactionParams(request.params, context.address);
-  return broadcastViaPopup(request.id, context, tx, agentNameOf(request));
+  return broadcastViaPopup(signal, context, tx, agentNameOf(request));
 };
 
 const handleSignTransaction = async (
   core: InjectCore,
   request: AgentHostRequest,
+  signal: AbortSignal,
 ): Promise<Record<string, unknown>> => {
   await requireMasterRequestsAllowed();
   const context = await resolveWalletContext(core);
   const tx = parseTransactionParams(request.params, context.address);
 
   const rejectType = WalletResponseRejectType.SIGN_REJECTED;
-  const response = await openPopup(request.id, agentNameOf(request), {
+  const response = await openPopup(signal, agentNameOf(request), {
     route: RoutePath.ApproveSignTransaction,
     type: 'SIGN_TX',
     rejectType,
@@ -561,13 +550,27 @@ export const handleAgentHostMessage = async (
 ): Promise<AgentHostResponse | null> => {
   const id = typeof (raw as { id?: unknown })?.id === 'string' ? (raw as { id: string }).id : '';
 
+  let request: AgentHostRequest;
   try {
-    const request = parseAgentHostRequest(raw);
-    if (request.method === 'cancel') {
-      activeApprovals.get(parseCancelParams(request.params))?.abort();
-      return null;
-    }
+    request = parseAgentHostRequest(raw);
+  } catch (error) {
+    return toErrorResponse(id, error);
+  }
 
+  if (request.method === 'cancel') {
+    try {
+      requests.cancel(parseCancelParams(request.params));
+    } catch {
+      // A malformed cancel has nothing to cancel and expects no response.
+    }
+    return null;
+  }
+
+  // Registered before the first await, so a cancel that arrives while the
+  // request is still being prepared is not lost.
+  const signal = requests.begin(id);
+
+  try {
     const core = new InjectCore(inMemoryProvider);
 
     if (CONNECTION_REQUIRED.has(request.method)) {
@@ -580,21 +583,23 @@ export const handleAgentHostMessage = async (
       case 'get_status':
         return { id, result: await handleGetStatus(core, request) };
       case 'connect':
-        return { id, result: await handleConnect(core, request) };
+        return { id, result: await handleConnect(core, request, signal) };
       case 'get_account':
         return { id, result: await handleGetAccount(core) };
       case 'create_session':
-        return { id, result: await handleCreateSession(core, request) };
+        return { id, result: await handleCreateSession(core, request, signal) };
       case 'revoke_session':
-        return { id, result: await handleRevokeSession(core, request) };
+        return { id, result: await handleRevokeSession(core, request, signal) };
       case 'send_transaction':
-        return { id, result: await handleSendTransaction(core, request) };
+        return { id, result: await handleSendTransaction(core, request, signal) };
       case 'sign_transaction':
-        return { id, result: await handleSignTransaction(core, request) };
+        return { id, result: await handleSignTransaction(core, request, signal) };
       default:
         throw new AgentHostRequestError('invalid_request', 'unknown method');
     }
   } catch (error) {
     return toErrorResponse(id, error);
+  } finally {
+    requests.end(id, signal);
   }
 };

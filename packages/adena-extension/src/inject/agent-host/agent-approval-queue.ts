@@ -36,3 +36,38 @@ export class AgentApprovalQueue {
     });
   }
 }
+
+// Tracks a cancellation signal per host request id from the moment the request
+// arrives, so a cancel or a closed channel also stops a request that is still
+// preparing (checking the wallet, pricing gas) before its popup is queued.
+export class AgentRequestRegistry {
+  private readonly controllers = new Map<string, AbortController>();
+
+  public begin(requestId: string): AbortSignal {
+    this.controllers.get(requestId)?.abort();
+    const controller = new AbortController();
+    this.controllers.set(requestId, controller);
+    return controller.signal;
+  }
+
+  public end(requestId: string, signal: AbortSignal): void {
+    if (this.controllers.get(requestId)?.signal === signal) {
+      this.controllers.delete(requestId);
+    }
+  }
+
+  public cancel(requestId: string): void {
+    this.controllers.get(requestId)?.abort();
+  }
+
+  public cancelAll(): void {
+    this.controllers.forEach((controller) => controller.abort());
+    this.controllers.clear();
+  }
+}
+
+export const throwIfCancelled = (signal: AbortSignal): void => {
+  if (signal.aborted) {
+    throw new AgentHostRequestError('cancelled', 'the agent cancelled the request');
+  }
+};
