@@ -517,8 +517,8 @@ export function documentToDefaultTx(
   // pub_key to signer-address derivation. When the caller has a pubkey (e.g. a
   // Ledger account whose signing requires hardware that isn't attached during
   // gas estimation), include it so simulate accepts the placeholder tx for
-  // pre-initialized accounts. Callers with no pubkey (AirGap) pass undefined
-  // and keep the historical empty placeholder.
+  // pre-initialized accounts. Callers with no pubkey (AirGap) get no pub_key:
+  // an empty Any encodes as `0a 00`, which the node rejects as non-canonical.
   //
   // SessionAccount path supplies sessionAddr so the placeholder signature
   // carries session_addr (std.Signature field 3); the node's ante handler then
@@ -532,10 +532,7 @@ export function documentToDefaultTx(
             key: compressPubkeyIfNeeded(publicKey),
           }).finish(),
         }
-      : {
-          type_url: '',
-          value: new Uint8Array(),
-        };
+      : undefined;
   const signature: TxSignature = {
     pub_key: pubKey,
     signature: new Uint8Array(),
