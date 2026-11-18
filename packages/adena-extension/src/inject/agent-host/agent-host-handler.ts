@@ -426,10 +426,10 @@ const handleConnect = async (
     );
   }
 
-  const token = await connectQueue.run(async () => {
+  const grant = await connectQueue.run(async () => {
     const accountId = await requireWallet(core);
     if (request.token && (await isAgentConnected(core, accountId, agentName, request))) {
-      return request.token;
+      return { token: request.token, accountId };
     }
     throwIfCancelled(signal);
 
@@ -467,10 +467,27 @@ const handleConnect = async (
       agentProcess,
       !establishedBefore || approvedAccountId !== accountId,
     );
-    return issued;
+    return { token: issued, accountId: approvedAccountId };
   }, signal);
 
-  return { ...(await handleGetAccount(core)), connection_token: token };
+  // The result describes the account the token was granted for. If another
+  // window selected a different one meanwhile, report that instead of
+  // returning the other account's address with this token.
+  const context = await resolveWalletContext(core);
+  if (context.account.id !== grant.accountId) {
+    throw new AgentHostRequestError(
+      'context_mismatch',
+      'the account in Adena changed while the connection was being approved; switch back to ' +
+        'the approved account, or connect again',
+    );
+  }
+
+  return {
+    address: context.address,
+    chain_id: context.network.chainId,
+    rpc_url: context.network.rpcUrl,
+    connection_token: grant.token,
+  };
 };
 
 const handleGetAccount = async (core: InjectCore): Promise<Record<string, unknown>> => {
