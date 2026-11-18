@@ -1,0 +1,15 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+index d21d875b6199b696a14e86ea5611b8a49fe96fcc..388e28c072709bcb520f49dbfa1003f056ec59c0 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -938,7 +938,9 @@ function add(script) {
+ 		debug$5("add: stored new file %s", file.fileName);
+ 	} else {
+ 		const isVirtualModule = script.id.startsWith("/@id/") || script.id.startsWith("/__");
+-		const isTimestampedModule = script.type === "module" && /[?&]t=\d+/.test(script.id);
++		// A module already written for this exact timestamp is current; writing it
++		// again on every import makes modules in an import cycle rewrite forever.
++		const isTimestampedModule = script.type === "module" && /[?&]t=\d+/.test(script.id) && script.id !== file.id;
+ 		if (isVirtualModule || isTimestampedModule) {
+ 			debug$5("add: module already exists, triggering re-write for %s", fileName);
+ 			file = formatFileData({
