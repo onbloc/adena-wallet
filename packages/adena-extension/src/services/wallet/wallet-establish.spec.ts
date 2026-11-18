@@ -1,3 +1,8 @@
+import {
+  addConnectionToken,
+  createConnectionToken,
+  hasConnectionToken,
+} from '@inject/agent-host/agent-host-settings';
 import { EstablishSite, WalletEstablishRepository } from '@repositories/wallet';
 import { ChainRegistry } from 'adena-module';
 
@@ -164,5 +169,75 @@ describe('WalletEstablishService (Stage 8 — sibling-aware)', () => {
       const entries = repo.snapshot()[ACCOUNT];
       expect(entries).toHaveLength(0);
     });
+  });
+});
+
+describe('WalletEstablishService agent connections', () => {
+  const AGENT_SITE = 'agent://claude-code.agent';
+  const PROCESS = { pid: 1, start: 's' };
+
+  const installStorage = (): void => {
+    const store: Record<string, unknown> = {};
+    (globalThis as unknown as { chrome: unknown }).chrome = {
+      storage: {
+        local: {
+          get: vi.fn(async (key: string) => (key in store ? { [key]: store[key] } : {})),
+          set: vi.fn(async (items: Record<string, unknown>) => {
+            Object.assign(store, items);
+          }),
+          remove: vi.fn(async (key: string) => {
+            delete store[key];
+          }),
+        },
+      },
+    };
+  };
+
+  afterEach(() => {
+    delete (globalThis as unknown as { chrome?: unknown }).chrome;
+  });
+
+  it('drops the grants of a disconnected agent, and only those', async () => {
+    installStorage();
+    const service = new WalletEstablishService(
+      makeRepo({
+        [ACCOUNT]: [
+          {
+            hostname: AGENT_SITE,
+            chainId: 'gnoland-1',
+            account: ACCOUNT,
+            name: 'claude-code',
+            favicon: null,
+            establishedTime: '1',
+          },
+        ],
+      }) as unknown as WalletEstablishRepository,
+      makeChainRegistry(),
+    );
+    const kept = createConnectionToken();
+    const dropped = createConnectionToken();
+    await addConnectionToken(ACCOUNT, AGENT_SITE, dropped, PROCESS, false);
+    await addConnectionToken(ACCOUNT, 'agent://cursor.agent', kept, PROCESS, false);
+
+    await service.unEstablishBy(ACCOUNT, AGENT_SITE);
+
+    await expect(hasConnectionToken(ACCOUNT, AGENT_SITE, dropped, PROCESS)).resolves.toBe(false);
+    await expect(hasConnectionToken(ACCOUNT, 'agent://cursor.agent', kept, PROCESS)).resolves.toBe(
+      true,
+    );
+  });
+
+  it('drops every grant when all connections are cleared', async () => {
+    installStorage();
+    const service = new WalletEstablishService(
+      makeRepo() as unknown as WalletEstablishRepository,
+      makeChainRegistry(),
+    );
+    const token = createConnectionToken();
+    await addConnectionToken(ACCOUNT, AGENT_SITE, token, PROCESS, false);
+
+    await service.clear();
+
+    await expect(hasConnectionToken(ACCOUNT, AGENT_SITE, token, PROCESS)).resolves.toBe(false);
   });
 });

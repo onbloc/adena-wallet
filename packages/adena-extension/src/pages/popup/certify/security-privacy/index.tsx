@@ -19,6 +19,7 @@ import styled from 'styled-components';
 type MenuType
   = | RoutePath.SettingChangePassword
     | RoutePath.SettingAutoLockTimer
+    | RoutePath.SettingAgentConnection
     | RoutePath.RemoveAccount
     | RoutePath.ResetWallet
     | 'EXPORT_SEED_PHRASE'
@@ -42,6 +43,12 @@ const getMenuMakerInfo = (
   {
     title: 'Auto-Lock Timer',
     navigatePath: RoutePath.SettingAutoLockTimer,
+    mode: 'DEFAULT',
+    disabled: false,
+  },
+  {
+    title: 'AI Agent Connection',
+    navigatePath: RoutePath.SettingAgentConnection,
     mode: 'DEFAULT',
     disabled: false,
   },

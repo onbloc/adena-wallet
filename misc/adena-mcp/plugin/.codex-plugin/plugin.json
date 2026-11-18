@@ -1,0 +1,28 @@
+{
+  "name": "adena",
+  "version": "0.1.0",
+  "description": "Use the Adena wallet from your agent: connect, create scoped session accounts, and send or sign gno.land transactions as the user.",
+  "author": {
+    "name": "Onbloc",
+    "url": "https://github.com/onbloc"
+  },
+  "homepage": "https://github.com/onbloc/adena-wallet/tree/main/misc/adena-mcp",
+  "repository": "https://github.com/onbloc/adena-wallet",
+  "keywords": ["adena", "gno", "gno.land", "wallet", "mcp", "session-accounts"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Adena Wallet",
+    "shortDescription": "Act on gno.land as the Adena user through approved session accounts",
+    "longDescription": "Connects your agent to the Adena browser wallet. The user approves a scoped session account once in Adena; the agent then sends or signs gno.land transactions with it. Transactions can also be sent to Adena for the user to approve one by one.",
+    "developerName": "Onbloc",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "defaultPrompt": [
+      "Check whether my Adena wallet is connected.",
+      "Create a one-hour session that can call gno.land/r/demo/counter.",
+      "Send 1 GNOT to g1... from my Adena wallet."
+    ],
+    "websiteURL": "https://adena.app"
+  }
+}

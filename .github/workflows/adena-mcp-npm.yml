@@ -1,0 +1,113 @@
+name: Publish adena-mcp to npm
+
+# Tags use their own prefix so they never trigger the extension release on v*.*.*.
+on:
+  push:
+    tags:
+      - adena-mcp-v*
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Package version, e.g. 0.1.0
+        required: true
+      publish:
+        description: Publish to npm (otherwise build only); only allowed from main
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # macOS, so the darwin binaries can be signed with the hardened runtime.
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: misc/adena-mcp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: misc/adena-mcp/go.mod
+          cache-dependency-path: misc/adena-mcp/go.sum
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Values from the tag or the dispatch form reach the shell only through
+      # env, and must be a plain semver.
+      - name: Resolve version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            version="${REF_NAME#adena-mcp-v}"
+          else
+            version="$INPUT_VERSION"
+          fi
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "invalid version: $version" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: go test -race ./...
+
+      - name: Build packages
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: node npm/build.mjs --version "$VERSION" --release
+
+      # Tarred, because artifacts drop the executable bit of the binaries.
+      - name: Pack packages
+        run: tar -czf npm-dist.tgz -C npm dist
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-dist
+          path: misc/adena-mcp/npm-dist.tgz
+          retention-days: 7
+
+  publish:
+    needs: build
+    if: github.event_name == 'push' || (inputs.publish && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    # Holds NPM_TOKEN; protect it with required reviewers in the repository settings.
+    environment: npm-release
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-dist
+
+      - name: Unpack packages
+        run: tar -xzf npm-dist.tgz
+
+      # Platform packages go first so the launcher never points at missing versions.
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for dir in dist/mcp-*/; do
+            npm publish "$dir" --access public --provenance
+          done
+          npm publish dist/mcp --access public --provenance
