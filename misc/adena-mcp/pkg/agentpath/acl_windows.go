@@ -2,6 +2,9 @@ package agentpath
 
 import (
 	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
 
 	"golang.org/x/sys/windows"
 )
@@ -67,20 +70,51 @@ func restrictDir(dir string) error {
 		return fmt.Errorf("%s is owned by another account; remove it or choose another ADENA_AGENT_HOME", dir)
 	}
 
-	return nil
+	return removeUntrusted(dir, user.User.Sid)
 }
 
-// hasTrustedOwner reports whether dir belongs to user, SYSTEM or the
-// Administrators group, which elevated processes create objects for.
-func hasTrustedOwner(dir string, user *windows.SID) (bool, error) {
-	sd, err := windows.GetNamedSecurityInfo(dir, windows.SE_FILE_OBJECT, windows.OWNER_SECURITY_INFORMATION)
-	if err != nil {
-		return false, fmt.Errorf("read owner of %s: %w", dir, err)
-	}
+// removeUntrusted deletes whatever below dir another account owns. Taking over
+// dir does not take over what is inside: an owner keeps rewriting rights on
+// its own files and directories, and Windows lets it reach them by path even
+// through a directory it can no longer list. Everything in the agent home is
+// recreated by adena-mcp or the installer, so removing it is safe.
+func removeUntrusted(dir string, user *windows.SID) error {
+	return filepath.WalkDir(dir, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
 
-	owner, _, err := sd.Owner()
+		if path == dir {
+			return nil
+		}
+
+		trusted, err := hasTrustedOwner(path, user)
+		if err != nil {
+			return err
+		}
+
+		if trusted {
+			return nil
+		}
+
+		if err := os.RemoveAll(path); err != nil {
+			return fmt.Errorf("%s is owned by another account and cannot be removed: %w", path, err)
+		}
+
+		if entry.IsDir() {
+			return filepath.SkipDir
+		}
+
+		return nil
+	})
+}
+
+// hasTrustedOwner reports whether path belongs to user, SYSTEM or the
+// Administrators group, which elevated processes create objects for.
+func hasTrustedOwner(path string, user *windows.SID) (bool, error) {
+	owner, err := ownerOf(path)
 	if err != nil {
-		return false, fmt.Errorf("read owner of %s: %w", dir, err)
+		return false, err
 	}
 
 	if owner.Equals(user) {
@@ -99,4 +133,34 @@ func hasTrustedOwner(dir string, user *windows.SID) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// ownerOf reads the owner through a handle opened on the entry itself, so
+// links and AF_UNIX socket files, which are reparse points, are not followed.
+func ownerOf(path string) (*windows.SID, error) {
+	name, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return nil, err
+	}
+
+	handle, err := windows.CreateFile(name, windows.READ_CONTROL,
+		windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE|windows.FILE_SHARE_DELETE, nil, windows.OPEN_EXISTING,
+		windows.FILE_FLAG_OPEN_REPARSE_POINT|windows.FILE_FLAG_BACKUP_SEMANTICS, 0)
+	if err != nil {
+		return nil, fmt.Errorf("open %s: %w", path, err)
+	}
+
+	defer windows.CloseHandle(handle) //nolint:errcheck // nothing to do if closing a query handle fails
+
+	sd, err := windows.GetSecurityInfo(handle, windows.SE_FILE_OBJECT, windows.OWNER_SECURITY_INFORMATION)
+	if err != nil {
+		return nil, fmt.Errorf("read owner of %s: %w", path, err)
+	}
+
+	owner, _, err := sd.Owner()
+	if err != nil {
+		return nil, fmt.Errorf("read owner of %s: %w", path, err)
+	}
+
+	return owner, nil
 }
