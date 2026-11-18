@@ -44,17 +44,8 @@ func Listen(socketPath string) (net.Listener, error) {
 		return nil, err
 	}
 
-	if _, err := os.Stat(socketPath); err == nil {
-		conn, dialErr := net.DialTimeout("unix", socketPath, probeTimeout)
-		if dialErr == nil {
-			_ = conn.Close()
-
-			return nil, ErrHostRunning
-		}
-
-		if err := os.Remove(socketPath); err != nil {
-			return nil, fmt.Errorf("remove stale socket: %w", err)
-		}
+	if err := clearSocket(socketPath); err != nil {
+		return nil, err
 	}
 
 	listener, err := net.Listen("unix", socketPath)
@@ -69,6 +60,37 @@ func Listen(socketPath string) (net.Listener, error) {
 	}
 
 	return listener, nil
+}
+
+// clearSocket removes a socket file nobody serves, or one another user owns:
+// such a socket may still have that user's listener behind it, so it is
+// replaced instead of probed. A live socket of this user means another host
+// already serves agents.
+func clearSocket(socketPath string) error {
+	if _, err := os.Stat(socketPath); errors.Is(err, os.ErrNotExist) {
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("stat socket: %w", err)
+	}
+
+	owned, err := agentpath.IsOwnedByUser(socketPath)
+	if err != nil {
+		return fmt.Errorf("check socket owner: %w", err)
+	}
+
+	if owned {
+		if conn, dialErr := net.DialTimeout("unix", socketPath, probeTimeout); dialErr == nil {
+			_ = conn.Close()
+
+			return ErrHostRunning
+		}
+	}
+
+	if err := os.Remove(socketPath); err != nil {
+		return fmt.Errorf("remove stale socket: %w", err)
+	}
+
+	return nil
 }
 
 type client struct {

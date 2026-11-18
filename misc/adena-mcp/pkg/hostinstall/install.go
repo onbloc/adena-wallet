@@ -197,11 +197,31 @@ func writeManifest(browser Browser, opts Options) (string, error) {
 	}
 
 	path := manifestPath(browser)
-	if err := os.WriteFile(path, append(data, '\n'), manifestPerm); err != nil {
+	if err := replaceFile(path, append(data, '\n'), manifestPerm); err != nil {
 		return "", fmt.Errorf("write %s: %w", path, err)
 	}
 
 	return path, nil
+}
+
+// replaceFile writes a new file and renames it over path, so an existing file
+// is replaced, with its owner and permissions, rather than rewritten in place.
+func replaceFile(path string, data []byte, perm os.FileMode) error {
+	f, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".*.tmp")
+	if err != nil {
+		return err
+	}
+
+	_, writeErr := f.Write(data)
+	closeErr := f.Close()
+
+	if err := errors.Join(writeErr, closeErr, os.Chmod(f.Name(), perm), os.Rename(f.Name(), path)); err != nil {
+		_ = os.Remove(f.Name())
+
+		return err
+	}
+
+	return nil
 }
 
 // Installed returns the host manifests present for the supported browsers.

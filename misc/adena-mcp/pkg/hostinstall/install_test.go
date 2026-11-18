@@ -120,3 +120,65 @@ func TestInstallRecordsTheAgentHomeNextToTheHost(t *testing.T) {
 		t.Fatalf("got %q %v, want %q", got, err, agentHome)
 	}
 }
+
+func TestInstallReplacesAnExistingManifestFile(t *testing.T) {
+	t.Parallel()
+
+	home := t.TempDir()
+	chromeRoot := filepath.Join(home, ".config", "google-chrome")
+
+	browsers, browsersErr := Browsers("linux", home)
+	if browsersErr != nil {
+		t.Fatal(browsersErr)
+	}
+
+	// A planted, read-only manifest pointing elsewhere is replaced as a new
+	// file, not rewritten in place.
+	planted := manifestPath(browsers[0])
+	for _, dir := range []string{chromeRoot, filepath.Dir(planted)} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := os.WriteFile(planted, []byte(`{"path":"/tmp/evil"}`), 0o444); err != nil {
+		t.Fatal(err)
+	}
+
+	before, statErr := os.Stat(planted)
+	if statErr != nil {
+		t.Fatal(statErr)
+	}
+
+	_, installErr := Install(Options{
+		HostPath:           "/opt/adena/adena-agent-host",
+		ChromeExtensionIDs: []string{AdenaChromeExtensionID},
+		UserHome:           home,
+		GOOS:               "linux",
+	})
+	if installErr != nil {
+		t.Fatal(installErr)
+	}
+
+	after, statAfterErr := os.Stat(planted)
+	if statAfterErr != nil {
+		t.Fatal(statAfterErr)
+	}
+
+	if os.SameFile(before, after) {
+		t.Fatal("the manifest was rewritten in place")
+	}
+
+	var m manifest
+
+	readJSON(t, planted, &m)
+
+	if m.Path != "/opt/adena/adena-agent-host" {
+		t.Fatalf("manifest path %q", m.Path)
+	}
+
+	leftovers, globErr := filepath.Glob(filepath.Join(filepath.Dir(planted), "*.tmp"))
+	if globErr != nil || len(leftovers) != 0 {
+		t.Fatalf("staging left behind: %v %v", leftovers, globErr)
+	}
+}

@@ -11,6 +11,8 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
 )
 
 // Client calls the extension through the agent host socket. Each call uses
@@ -56,6 +58,14 @@ func (c *Client) Call(ctx context.Context, method string, params, out any) error
 		return &Error{
 			Code:    CodeRequestTooLarge,
 			Message: fmt.Sprintf("the %s request is %d bytes; it must be under %d", method, len(line), MaxLineSize),
+		}
+	}
+
+	// Never talk to a socket another user owns: it is not this user's host.
+	if owned, ownerErr := agentpath.IsOwnedByUser(c.SocketPath); ownerErr == nil && !owned {
+		return &Error{
+			Code:    CodeHostUnavailable,
+			Message: c.SocketPath + " belongs to another user; remove it and restart the browser",
 		}
 	}
 

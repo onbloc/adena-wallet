@@ -1,6 +1,7 @@
 package agentpath
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -89,5 +90,22 @@ func TestHostHomeIgnoresARelativeMarker(t *testing.T) {
 
 	if got, hostErr := HostHome(filepath.Join(bin, "adena-agent-host")); hostErr != nil || got != fallback {
 		t.Fatalf("got %q, want %q", got, fallback)
+	}
+}
+
+func TestIsOwnedByUser(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(path, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if owned, err := IsOwnedByUser(path); err != nil || !owned {
+		t.Fatalf("own file: owned=%t err=%v", owned, err)
+	}
+
+	if _, err := IsOwnedByUser(filepath.Join(t.TempDir(), "missing")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("missing file: got %v", err)
 	}
 }
