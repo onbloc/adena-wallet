@@ -126,6 +126,8 @@ func TestInstallReplacesAnExistingManifestFile(t *testing.T) {
 
 	home := t.TempDir()
 	chromeRoot := filepath.Join(home, ".config", "google-chrome")
+	// Built from a temp dir so it is absolute on Windows too.
+	hostPath := filepath.Join(home, "bin", "adena-agent-host")
 
 	browsers, browsersErr := Browsers("linux", home)
 	if browsersErr != nil {
@@ -151,7 +153,7 @@ func TestInstallReplacesAnExistingManifestFile(t *testing.T) {
 	}
 
 	_, installErr := Install(Options{
-		HostPath:           "/opt/adena/adena-agent-host",
+		HostPath:           hostPath,
 		ChromeExtensionIDs: []string{AdenaChromeExtensionID},
 		UserHome:           home,
 		GOOS:               "linux",
@@ -173,7 +175,7 @@ func TestInstallReplacesAnExistingManifestFile(t *testing.T) {
 
 	readJSON(t, planted, &m)
 
-	if m.Path != "/opt/adena/adena-agent-host" {
+	if m.Path != hostPath {
 		t.Fatalf("manifest path %q", m.Path)
 	}
 
