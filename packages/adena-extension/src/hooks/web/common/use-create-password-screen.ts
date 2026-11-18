@@ -155,7 +155,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
       return true;
     }
     finally {
-      // Zeroize Uint8Array seed/entropy/privateKey buffers via sodium.memzero,
+      // Zeroize Uint8Array seed/entropy/privateKey buffers via zeroize,
       // covering both success and failure paths.
       wallet.destroy();
       setInputs({ password: '', confirmPassword: '' });

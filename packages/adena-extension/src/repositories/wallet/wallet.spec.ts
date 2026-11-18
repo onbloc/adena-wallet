@@ -30,7 +30,7 @@ describe('WalletRepository.getKdfSalt', () => {
   it('returns null when KDF_SALT is the literal "undefined" string', async () => {
     // Regression: StorageManager used to coerce undefined to "undefined".
     // base64-decoding "undefined" produces a 6-byte buffer which would
-    // trip libsodium's 16-byte salt requirement.
+    // trip Argon2id's 16-byte salt requirement.
     mockGet.mockResolvedValue('undefined');
     expect(await repository.getKdfSalt()).toBeNull();
   });

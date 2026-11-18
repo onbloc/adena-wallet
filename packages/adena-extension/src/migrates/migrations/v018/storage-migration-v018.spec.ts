@@ -50,6 +50,9 @@ const createMockData = (
   ACCOUNT_GRC721_PINNED_PACKAGES: {},
 });
 
+// Each migration step runs Argon2id (~1s in pure JS) several times.
+vi.setConfig({ testTimeout: 30_000 });
+
 describe('storage migration V018', () => {
   // encryptAES uses Argon2id KDF internally, so we prepare test data with it.
   // v009 re-encrypted SERIALIZED with the hashed password, while v015 later
