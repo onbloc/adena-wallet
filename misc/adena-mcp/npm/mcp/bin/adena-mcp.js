@@ -92,15 +92,45 @@ function secureDir(dir) {
   }
 }
 
-// Removes retired and leftover staging copies of target. A copy a running host
-// still holds cannot be deleted on Windows; it is left for the next install.
+function isAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM';
+  }
+}
+
+// The pid recorded in a retired (".old.<pid>.<time>") or staging
+// (".<pid>[.<random>].tmp") copy of base, 0 when none is, or null when name is
+// not such a copy. Go's installer uses the same names.
+function leftoverOwner(base, name) {
+  if (!name.startsWith(`${base}.`)) {
+    return null;
+  }
+  const parts = name.slice(base.length + 1).split('.');
+  let pidPart;
+  if (parts[0] === 'old') {
+    pidPart = parts[1];
+  } else if (parts[parts.length - 1] === 'tmp') {
+    pidPart = parts[0];
+  } else {
+    return null;
+  }
+  const pid = Number(pidPart);
+  return Number.isSafeInteger(pid) && pid > 0 ? pid : 0;
+}
+
+// Removes retired and leftover staging copies of target, except those of
+// another installer that is still running: it may be about to rename them. A
+// copy a running host still holds cannot be deleted on Windows; it is left for
+// the next install.
 function sweepRetired(target) {
   const dir = path.dirname(target);
   const base = path.basename(target);
   for (const name of fs.readdirSync(dir)) {
-    const retired = name.startsWith(`${base}.old`);
-    const staging = name.startsWith(`${base}.`) && name.endsWith('.tmp');
-    if (!retired && !staging) {
+    const pid = leftoverOwner(base, name);
+    if (pid === null || (pid > 0 && pid !== process.pid && isAlive(pid))) {
       continue;
     }
     try {
@@ -131,7 +161,7 @@ function copyHost() {
     fs.copyFileSync(source, staging);
     fs.chmodSync(staging, 0o755);
     if (fs.existsSync(target)) {
-      retired = `${target}.old.${Date.now()}.${process.pid}`;
+      retired = `${target}.old.${process.pid}.${Date.now()}`;
       fs.renameSync(target, retired);
     }
     fs.renameSync(staging, target);
@@ -241,6 +271,31 @@ function printHelp() {
 `);
 }
 
+// Deletes the copied host. On Windows a host the browser still runs cannot be
+// deleted, so it is moved aside instead and removed by a later install, or by
+// hand once the browser is closed.
+function removeHostCopy(target) {
+  try {
+    fs.rmSync(target, { force: true });
+    return;
+  } catch {
+    // Probably running; retire it below.
+  }
+  const retired = `${target}.old.${process.pid}.${Date.now()}`;
+  try {
+    fs.renameSync(target, retired);
+    process.stdout.write(
+      `the agent host is still running in the browser; moved it to ${retired}. ` +
+        'It is removed by a later install, or delete it after closing the browser.\n',
+    );
+  } catch (error) {
+    process.stderr.write(
+      `@adena-wallet/mcp: could not remove ${target} (${error.message}); ` +
+        'delete it after closing the browser.\n',
+    );
+  }
+}
+
 function uninstallHost() {
   const target = path.join(agentHome(), 'bin', HOST_BINARY);
   const binary = fs.existsSync(target) ? target : path.join(binaryDir(), HOST_BINARY);
@@ -249,7 +304,7 @@ function uninstallHost() {
   child.on('error', (error) => fail(`cannot start ${binary}: ${error.message}`));
   child.on('exit', (code) => {
     if (code === 0) {
-      fs.rmSync(target, { force: true });
+      removeHostCopy(target);
     }
     process.exit(code ?? 1);
   });
