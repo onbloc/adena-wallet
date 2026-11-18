@@ -64,6 +64,7 @@ export const alias = {
 
 const NODE_BUILTINS = new Set(builtinModules);
 const POLYFILL_PREFIX = '\0polyfill-node.';
+const SOURCE_DIR = resolve(root, 'src') + '/';
 
 /**
  * Node built-in polyfills, resolved before Vite externalizes the built-ins.
@@ -81,6 +82,11 @@ const polyfills = (): Plugin => {
     enforce: 'pre',
     resolveId(this: unknown, importee: string, importer: string | undefined, ...rest: unknown[]) {
       const name = importee.replace(/^node:/, '').replace(/\/$/, '');
+      // The polyfill for `crypto` is an empty object, so any call on it fails at
+      // runtime; extension code has to use Web Crypto instead.
+      if (name === 'crypto' && importer?.startsWith(SOURCE_DIR)) {
+        throw new Error(`${importer} imports Node's crypto, which bundles as an empty module; use globalThis.crypto`);
+      }
       const isInternal = importee.startsWith('\0') || !!importer?.startsWith(POLYFILL_PREFIX);
       if (!isInternal && !NODE_BUILTINS.has(name)) return null;
       return resolveId.call(this, importee, importer, ...rest);
