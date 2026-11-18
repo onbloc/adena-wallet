@@ -147,11 +147,6 @@ func TestInstallReplacesAnExistingManifestFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	before, statErr := os.Stat(planted)
-	if statErr != nil {
-		t.Fatal(statErr)
-	}
-
 	_, installErr := Install(Options{
 		HostPath:           hostPath,
 		ChromeExtensionIDs: []string{AdenaChromeExtensionID},
@@ -162,13 +157,16 @@ func TestInstallReplacesAnExistingManifestFile(t *testing.T) {
 		t.Fatal(installErr)
 	}
 
+	// The planted file was read-only, so a writable file with the new content
+	// can only be a replacement. os.SameFile is no help here: on Windows it
+	// reads both file ids from the path at comparison time.
 	after, statAfterErr := os.Stat(planted)
 	if statAfterErr != nil {
 		t.Fatal(statAfterErr)
 	}
 
-	if os.SameFile(before, after) {
-		t.Fatal("the manifest was rewritten in place")
+	if after.Mode().Perm()&0o200 == 0 {
+		t.Fatalf("the manifest is still the planted read-only file (%v)", after.Mode())
 	}
 
 	var m manifest
