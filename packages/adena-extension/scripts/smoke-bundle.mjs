@@ -2,7 +2,7 @@
 // its modules evaluate (e.g. a broken polyfill). Unit tests run the sources, not
 // the bundle, so they cannot see this class of error.
 //
-// Usage: node scripts/smoke-bundle.mjs [dist|dist-firefox]
+// Usage: node scripts/smoke-bundle.mjs [dist|dist-firefox|<path>]
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -69,9 +69,20 @@ process.on('unhandledRejection', error => asyncErrors.push(error));
 const renderErrors = [];
 dom.window.addEventListener('error', event => renderErrors.push(event.error ?? event.message));
 
+const urlOf = file => pathToFileURL(resolve(outDir, file.replace(/^\.?\//, ''))).href;
+
+// crx()'s content-script loader imports the real module itself and ends with
+// `.catch(console.error)`, which would hide its failure; import that module too.
+const loadedModulesOf = (label, file) => {
+  if (label !== 'content script') return [];
+  const source = readFileSync(resolve(outDir, file.replace(/^\.?\//, '')), 'utf8');
+  return [...source.matchAll(/chrome\.runtime\.getURL\(\s*["']([^"']+)["']\s*\)/g)].map(m => m[1]);
+};
+
 for (const [label, file] of entries) {
   try {
-    await import(pathToFileURL(resolve(outDir, file.replace(/^\.?\//, ''))).href);
+    await import(urlOf(file));
+    for (const loaded of loadedModulesOf(label, file)) await import(urlOf(loaded));
     console.log(`ok   ${label} (${file})`);
   }
   catch (error) {
