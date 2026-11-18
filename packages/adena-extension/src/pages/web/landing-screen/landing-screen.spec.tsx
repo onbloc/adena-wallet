@@ -1,29 +1,29 @@
-import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { ThemeProvider } from 'styled-components';
-
 import theme from '@styles/theme';
+import { fireEvent, render, screen } from '@testing-library/react';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
+import type { Mock } from 'vitest';
 
 import LandingScreen from './index';
 
-const mockNavigate = jest.fn();
+const mockNavigate = vi.fn();
 
-jest.mock('@tanstack/react-query', () => ({
-  useQuery: (): { data: boolean; isLoading: boolean } => ({ data: false, isLoading: false }),
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: (): { data: boolean; isPending: boolean } => ({ data: false, isPending: false }),
 }));
 
-jest.mock('@hooks/use-context', () => ({
+vi.mock('@hooks/use-context', () => ({
   useAdenaContext: (): { walletService: { id: string } } => ({
     walletService: { id: 'test-wallet' },
   }),
 }));
 
-jest.mock('@hooks/use-app-navigate', () => ({
+vi.mock('@hooks/use-app-navigate', () => ({
   __esModule: true,
-  default: (): { navigate: jest.Mock } => ({ navigate: mockNavigate }),
+  default: (): { navigate: Mock } => ({ navigate: mockNavigate }),
 }));
 
-jest.mock('@components/atoms/lottie', () => ({
+vi.mock('@components/atoms/lottie', () => ({
   __esModule: true,
   default: (): React.ReactElement => <div data-testid='lottie' />,
 }));

@@ -3,6 +3,7 @@ import { toHexHash } from '@common/utils/hash-utils';
 import { createRegisterUrl } from '@common/utils/register-url';
 import { makeScannerUrl } from '@common/utils/scanner-utils';
 import { RoutePath, SECURITY_PATH } from '@types';
+
 import { useNetwork } from './use-network';
 import { useNetworkProfile } from './use-network-profile';
 

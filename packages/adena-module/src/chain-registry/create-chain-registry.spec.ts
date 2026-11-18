@@ -2,7 +2,7 @@ import {
   ATOMONE_CHAIN,
   ATOMONE_NETWORK_PROFILES,
   GNO_CHAIN,
-  GNO_NETWORK_PROFILES,
+  GNO_NETWORK_PROFILES
 } from './__fixtures__/chains';
 import { createChainRegistry } from './create-chain-registry';
 import { ChainRegistry } from './types';
@@ -12,7 +12,7 @@ describe('createChainRegistry', () => {
     createChainRegistry({
       chains: [GNO_CHAIN, ATOMONE_CHAIN],
       gnoNetworkProfiles: GNO_NETWORK_PROFILES,
-      atomoneNetworkProfiles: ATOMONE_NETWORK_PROFILES,
+      atomoneNetworkProfiles: ATOMONE_NETWORK_PROFILES
     });
 
   it('registers both Gno and AtomOne chains', () => {
@@ -33,7 +33,7 @@ describe('createChainRegistry', () => {
     const registry = makeRegistry();
 
     expect(registry.list()).toHaveLength(
-      GNO_NETWORK_PROFILES.length + ATOMONE_NETWORK_PROFILES.length,
+      GNO_NETWORK_PROFILES.length + ATOMONE_NETWORK_PROFILES.length
     );
   });
 

@@ -1,5 +1,6 @@
 import { WalletResponseFailureType, WalletResponseRejectType } from '@adena-wallet/sdk';
 import { NetworkMetainfo, RoutePath } from '@types';
+
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
@@ -51,11 +52,11 @@ export const addNetwork = async (
       return;
     }
     const networks = await core.chainService.getNetworks();
-    const existNetwork =
-      networks.findIndex(
-        (current) =>
-          (matchChainId(current, chainId) || matchRPCUrl(current, rpcUrl)) &&
-          current.deleted !== true,
+    const existNetwork
+      = networks.findIndex(
+        current =>
+          (matchChainId(current, chainId) || matchRPCUrl(current, rpcUrl))
+          && current.deleted !== true,
       ) > -1;
     if (existNetwork) {
       sendResponse(
@@ -78,7 +79,8 @@ export const addNetwork = async (
       ),
       sendResponse,
     );
-  } else {
+  }
+  else {
     sendResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.WALLET_LOCKED,
@@ -123,8 +125,8 @@ export const switchNetwork = async (
   }
 
   const networks = await core.chainService.getNetworks();
-  const existNetwork =
-    networks.findIndex((current) => current.chainId === chainId && current.deleted !== true) > -1;
+  const existNetwork
+    = networks.findIndex(current => current.chainId === chainId && current.deleted !== true) > -1;
   if (!existNetwork) {
     sendResponse(
       InjectionMessageInstance.failure(

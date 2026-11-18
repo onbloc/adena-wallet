@@ -4,13 +4,13 @@ import {
   Tx,
   TxSignature,
   uint8ArrayToBase64,
-  Wallet as Tm2Wallet,
+  Wallet as Tm2Wallet
 } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Random } from '../../crypto/random';
-import { Document } from './../..';
 import { publicKeyToAddress } from '../../utils/address';
+import { Document } from './../..';
 import { Keyring, KeyringData, KeyringType, SignRawOptions } from './keyring';
 import { signGnoDocument } from './sign-gno-document';
 import { signRawWithPrivateKey } from './sign-raw-util';
@@ -45,7 +45,7 @@ export class SessionKeyring implements Keyring {
       type: this.type,
       publicKey: Array.from(this.publicKey),
       privateKey: Array.from(this.privateKey),
-      masterAddress: this.masterAddress,
+      masterAddress: this.masterAddress
     };
   }
 
@@ -59,7 +59,7 @@ export class SessionKeyring implements Keyring {
 
   async sign(
     provider: Provider,
-    document: Document,
+    document: Document
   ): Promise<{ signed: Tx; signature: TxSignature[] }> {
     const sessionAddr = await publicKeyToAddress(this.publicKey, 'g');
 
@@ -81,10 +81,10 @@ export class SessionKeyring implements Keyring {
     const sequenceMissing = !document.sequence || document.sequence === '';
     if (accountNumberMissing || sequenceMissing) {
       throw new Error(
-        'SessionKeyring.sign() requires document.account_number and document.sequence ' +
-          'to be pre-populated via the transaction service createDocument() flow. ' +
-          'Direct sign() calls bypassing createDocument() are not supported for ' +
-          'SessionAccount because the session store is not at auth/accounts/{address}.',
+        'SessionKeyring.sign() requires document.account_number and document.sequence '
+        + 'to be pre-populated via the transaction service createDocument() flow. '
+        + 'Direct sign() calls bypassing createDocument() are not supported for '
+        + 'SessionAccount because the session store is not at auth/accounts/{address}.'
       );
     }
 
@@ -94,14 +94,14 @@ export class SessionKeyring implements Keyring {
   async broadcastTxSync(provider: Provider, signedTx: Tx) {
     return provider.sendTransaction(
       uint8ArrayToBase64(Tx.encode(signedTx).finish()),
-      TransactionEndpoint.BROADCAST_TX_SYNC,
+      TransactionEndpoint.BROADCAST_TX_SYNC
     );
   }
 
   async broadcastTxCommit(provider: Provider, signedTx: Tx) {
     return provider.sendTransaction(
       uint8ArrayToBase64(Tx.encode(signedTx).finish()),
-      TransactionEndpoint.BROADCAST_TX_COMMIT,
+      TransactionEndpoint.BROADCAST_TX_COMMIT
     );
   }
 
@@ -112,7 +112,7 @@ export class SessionKeyring implements Keyring {
     return new SessionKeyring({
       publicKey: Array.from(publicKey),
       privateKey: Array.from(privateKey),
-      masterAddress,
+      masterAddress
     });
   }
 }

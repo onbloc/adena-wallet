@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
 import IconCancel from '@assets/cancel-small.svg';
 import { WebErrorText, WebImg, WebInput, WebText } from '@components/atoms';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTheme } from 'styled-components';
 
 import {

@@ -1,12 +1,11 @@
-import { ReactElement } from 'react';
-
-import { WebMain } from '@components/atoms';
-import { WebMainHeader } from '@components/pages/web/main-header';
-
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import { WebMain } from '@components/atoms';
+import { WebMainHeader } from '@components/pages/web/main-header';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import useWalletCreateScreen from '@hooks/web/use-wallet-create-screen';
+import { ReactElement } from 'react';
+
 import GetMnemonicStep from './get-mnemonic-step';
 import ValidateMnemonicStep from './validate-mnemonic-step';
 

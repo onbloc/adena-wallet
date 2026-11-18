@@ -1,7 +1,7 @@
-import { styled } from 'styled-components';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { fonts } from '@styles/theme';
+import { styled } from 'styled-components';
 
 export const MultisigThresholdContainer = styled.div`
   ${mixins.flex({ direction: 'column', justify: 'flex-start' })};

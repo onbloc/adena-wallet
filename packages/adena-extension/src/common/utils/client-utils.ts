@@ -75,9 +75,11 @@ export function parseTxsEachDate(txs: object[]): any {
 
     if (dateDiff === 0) {
       formatDate = 'Today';
-    } else if (dateDiff === 1) {
+    }
+    else if (dateDiff === 1) {
       formatDate = 'Yesterday';
-    } else {
+    }
+    else {
       const result = dateTimeFormatEn(currDate);
       formatDate = `${result.month} ${result.day}, ${result.year}`;
     }
@@ -86,26 +88,34 @@ export function parseTxsEachDate(txs: object[]): any {
     let txDesc;
     if (cur.func === 'Sent') {
       txDesc = `To: ${formatAddress(cur.to, 4)}`;
-    } else if (cur.func === 'Received') {
+    }
+    else if (cur.func === 'Received') {
       txDesc = `From: ${formatAddress(cur.from, 4)}`;
-    } else if (cur.type === '/vm.m_call') {
+    }
+    else if (cur.type === '/vm.m_call') {
       txDesc = `pkg: ${cur.pkg_path}`;
-    } else if (cur.type === '/vm.m_addpkg') {
+    }
+    else if (cur.type === '/vm.m_addpkg') {
       txFunc = 'AddPkg';
-    } else if (cur.type === '/vm.m_run') {
+    }
+    else if (cur.type === '/vm.m_run') {
       txDesc = 'Run';
-    } else {
+    }
+    else {
       txDesc = '';
     }
 
     let txLogo;
     if (cur.type === '/bank.MsgSend') {
       txLogo = gnotLogo;
-    } else if (cur.type === '/vm.m_call') {
+    }
+    else if (cur.type === '/vm.m_call') {
       txLogo = contractLogo;
-    } else if (cur.type === '/vm.m_addpkg') {
+    }
+    else if (cur.type === '/vm.m_addpkg') {
       txLogo = addPkgLogo;
-    } else {
+    }
+    else {
       txLogo = null;
     }
 
@@ -121,7 +131,8 @@ export function parseTxsEachDate(txs: object[]): any {
           protoType: cur,
         });
       }
-    } else {
+    }
+    else {
       if (!isFailedReceive(cur)) {
         o[k] = {
           date: formatDate,
@@ -147,10 +158,12 @@ export function parseTxsEachDate(txs: object[]): any {
 const prettier = (target: any): any => {
   if (target === undefined) {
     return '0';
-  } else {
+  }
+  else {
     if (target !== 0) {
       return target.replace('gnot', '');
-    } else if (target === 0) {
+    }
+    else if (target === 0) {
       return '0';
     }
   }
@@ -159,7 +172,8 @@ const prettier = (target: any): any => {
 export function minifyStatus(status: string): string {
   if (status === 'Success') {
     return 'S';
-  } else {
+  }
+  else {
     return 'F';
   }
 }
@@ -219,9 +233,11 @@ export function searchTextFilter(target: string, searchText: string): boolean {
 export function amountSetSymbol(v: number | string, full?: boolean): string {
   if (v === '0' || v === 0) {
     return String(v);
-  } else if (String(v).includes('-')) {
+  }
+  else if (String(v).includes('-')) {
     return full ? minFractionDigits(v, 6) : maxFractionDigits(v, 6);
-  } else {
+  }
+  else {
     return full ? `+${minFractionDigits(v, 6)}` : `+${maxFractionDigits(v, 6)}`;
   }
 }
@@ -232,7 +248,8 @@ export function funcTextFilter(v: string): 'Send' | 'Receive' | undefined {
   }
   if (v === 'Received') {
     return 'Receive';
-  } else v;
+  }
+  else v;
 }
 
 export const parseParameters = (url: string): { [x: string]: string } => {
@@ -273,7 +290,8 @@ export const encodeParameter = (data: { [key in string]: any }): string => {
   try {
     const encodedValue = encodeURI(JSON.stringify(data, encodeParameterReplacer));
     return toUrlSafeBase64(toBase64(encodedValue));
-  } catch (error) {
+  }
+  catch (error) {
     console.log(error);
   }
   return '';
@@ -292,7 +310,8 @@ export const decodeParameter = (data: string): any => {
 
     const decodedValue = JSON.parse(decodeURI(decodedString));
     return decodedValue;
-  } catch (error) {
+  }
+  catch (error) {
     console.log(error);
   }
   return {};
@@ -301,7 +320,8 @@ export const decodeParameter = (data: string): any => {
 export const toBase64 = (data: string): string => {
   try {
     return btoa(data);
-  } catch (error) {
+  }
+  catch (error) {
     console.log(error);
   }
   return '';
@@ -310,7 +330,8 @@ export const toBase64 = (data: string): string => {
 export const fromBase64 = (data: string): string => {
   try {
     return atob(data);
-  } catch (error) {
+  }
+  catch (error) {
     console.log(error);
   }
   return '';
@@ -319,10 +340,11 @@ export const fromBase64 = (data: string): string => {
 export const createImageByURI = async (uri: string): Promise<string | null> => {
   try {
     const imageData = await fetchArrayData(uri);
-    const encodeImageData =
-      'data:image/svg+xml;base64,' + Buffer.from(imageData?.data, 'binary').toString('base64');
+    const encodeImageData
+      = 'data:image/svg+xml;base64,' + Buffer.from(imageData?.data, 'binary').toString('base64');
     return encodeImageData;
-  } catch (e) {
+  }
+  catch (e) {
     console.log(e);
   }
   return null;
@@ -336,7 +358,8 @@ export const createFaviconByHostname = async (baseUrl: string): Promise<string |
   try {
     const faviconData = await fetchFavicon(baseUrl);
     return faviconData;
-  } catch (e) {
+  }
+  catch (e) {
     console.log(e);
   }
   return null;
@@ -383,10 +406,11 @@ const fetchArrayData = (uri: string): Promise<AxiosResponse<any, any> | null> =>
 export const createImageDataBySvg = async (imageUri: string): Promise<string | null> => {
   try {
     const response = await axios.get(imageUri, { responseType: 'arraybuffer' });
-    const imageData =
-      'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64');
+    const imageData
+      = 'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64');
     return imageData;
-  } catch (e) {
+  }
+  catch (e) {
     console.log(e);
   }
   return null;
@@ -433,7 +457,8 @@ export const getDateText = (date: string): string => {
   let formatDate = '';
   if (today.year === result.year && today.month === result.month && today.day === result.day) {
     formatDate = 'Today';
-  } else {
+  }
+  else {
     formatDate = `${result.month} ${result.day}, ${result.year}`;
   }
   return formatDate;

@@ -1,11 +1,11 @@
 import { WalletState } from '@states';
-import { useRecoilState } from 'recoil';
 import { Account } from 'adena-module';
+import { useAtom } from 'jotai';
 
 export type UseUpdateWalletAccountNameReturn = (account: Account, name: string) => void;
 
 export const useUpdateWalletAccountName = (): UseUpdateWalletAccountNameReturn => {
-  const [, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
+  const [, setCurrentAccount] = useAtom(WalletState.currentAccount);
 
   const updateAccountName = async (account: Account, name: string): Promise<void> => {
     account.name = name;

@@ -1,9 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Account, isMultisigAccount, isSessionAccount, MultisigConfig, RawTx } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
@@ -29,12 +24,16 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useNetworkProfile } from '@hooks/use-network-profile';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { createSessionAccountUnsupportedResponse } from '@inject/message/session-account-response';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
-import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
+import { Account, isMultisigAccount, isSessionAccount, MultisigConfig, RawTx } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
 
 interface BroadcastMultisigTransactionRequestData {
   multisigDocument: MultisigTransactionDocument;
@@ -191,7 +190,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       try {
         const amount = parseTokenAmount(amountStr);
         return BigNumber(acc).plus(amount).toNumber();
-      } catch {
+      }
+      catch {
         return acc;
       }
     }, 0);
@@ -237,7 +237,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   const initRequestData = (): void => {
@@ -292,7 +292,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       setTransactionMessages(mappedRawTxMessages(data.multisigDocument.tx.msg));
 
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       const error: any = e;
       if (error?.message === 'Connection Error') {
         const { rpcUrl } = currentNetwork;
@@ -387,10 +388,12 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       );
 
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       handleBroadcastError(e);
       return false;
-    } finally {
+    }
+    finally {
       setProcessType('DONE');
     }
   };

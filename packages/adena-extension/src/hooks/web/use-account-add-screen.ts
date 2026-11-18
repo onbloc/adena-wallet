@@ -1,6 +1,3 @@
-import { isHDWalletKeyring, SeedAccount } from 'adena-module';
-import { useCallback, useMemo, useState } from 'react';
-
 import { waitForRun } from '@common/utils/timeout-utils';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
@@ -9,6 +6,9 @@ import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { RoutePath } from '@types';
+import { isHDWalletKeyring, SeedAccount } from 'adena-module';
+import { useCallback, useMemo, useState } from 'react';
+
 import useQuestionnaire from './use-questionnaire';
 
 interface KeyringInfo {
@@ -82,7 +82,7 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
     return wallet.keyrings.filter(isHDWalletKeyring).map((keyring, index) => ({
       index,
       keyringId: keyring.id,
-      accountCount: accounts.filter((account) => account.keyringId === keyring.id).length,
+      accountCount: accounts.filter(account => account.keyringId === keyring.id).length,
     }));
   }, [wallet]);
 
@@ -121,7 +121,8 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
       }
 
       setStep('CREATE_ACCOUNT');
-    } else if (step === 'SELECT_SEED_PHRASE') {
+    }
+    else if (step === 'SELECT_SEED_PHRASE') {
       setStep('CREATE_ACCOUNT');
     }
   }, [step, ableToSkipQuestionnaire]);
@@ -136,7 +137,8 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
     const succeed = await waitForRun<boolean>(async () => _addAccount(currentKeyringId));
     if (succeed) {
       navigate(RoutePath.WebAccountAddedComplete);
-    } else {
+    }
+    else {
       navigate(RoutePath.WebNotFound);
     }
   };
@@ -148,7 +150,7 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
       }
 
       const hdWalletKeyring = wallet.keyrings.find(
-        (keyring) => keyring.id === keyringId && isHDWalletKeyring(keyring),
+        keyring => keyring.id === keyringId && isHDWalletKeyring(keyring),
       );
       if (!hdWalletKeyring) {
         return false;
@@ -164,13 +166,14 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
       const clone = wallet.clone();
       clone.addAccount(account);
 
-      const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
+      const storedAccount = clone.accounts.find(storedAccount => storedAccount.id === account.id);
       if (storedAccount) {
         await changeCurrentAccount(storedAccount);
       }
       await updateWallet(clone);
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       return false;
     }
   };

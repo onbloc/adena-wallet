@@ -1,6 +1,7 @@
+import { Text } from '@components/atoms';
 import React from 'react';
 import { useTheme } from 'styled-components';
-import { Text } from '@components/atoms';
+
 import { MainNetworkLabelWrapper } from './main-network-label.styles';
 
 export interface MainNetworkLabelProps {
@@ -18,7 +19,9 @@ const MainNetworkLabel: React.FC<MainNetworkLabelProps> = ({ networkName, onClic
         type='light13'
         color={theme.primary._2}
       >
-        You are on <Text type='bold13'>{networkName}</Text>
+        You are on
+        {' '}
+        <Text type='bold13'>{networkName}</Text>
       </Text>
     </MainNetworkLabelWrapper>
   );

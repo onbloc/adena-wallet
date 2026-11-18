@@ -19,7 +19,7 @@ const ApproveTransactionResult: React.FC<ApproveTransactionResultProps> = ({
   return (
     <TransactionResult
       status={status}
-      successButtonText={'Close'}
+      successButtonText='Close'
       errorMessage={errorMessage}
       onClickViewHistory={onClickViewHistory}
       onClickViewGnoscan={onClickViewGnoscan}

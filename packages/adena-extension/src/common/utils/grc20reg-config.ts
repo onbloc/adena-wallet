@@ -72,14 +72,14 @@ function normalizeTransferEvent(raw: RawTransferEvent | undefined): Grc20Transfe
 function normalizeRegistries(raw: RawRegistry[] | undefined): Grc20Registry[] {
   const registries = (raw ?? [])
     .filter((entry): entry is { path: string } => !!entry?.path)
-    .map((entry) => ({ path: entry.path }));
+    .map(entry => ({ path: entry.path }));
   return registries.length > 0 ? registries : DEFAULT_REGISTRIES;
 }
 
 function normalizeTokenPackages(raw: RawTokenPackage[] | undefined): Grc20TokenPackage[] {
   const packages = (raw ?? [])
     .filter((entry): entry is RawTokenPackage & { path: string } => !!entry?.path)
-    .map((entry) => ({
+    .map(entry => ({
       path: entry.path,
       transferEvent: normalizeTransferEvent(entry.transferEvent),
     }));
@@ -96,7 +96,7 @@ export function getGrc20RegConfig(chainId: string | null | undefined): Grc20RegC
 }
 
 export function getGrc20RegistryPaths(chainId: string | null | undefined): string[] {
-  return getGrc20RegConfig(chainId).registries.map((registry) => registry.path);
+  return getGrc20RegConfig(chainId).registries.map(registry => registry.path);
 }
 
 // Transfer-event shape of the package that emitted an event; the shared
@@ -106,7 +106,7 @@ export function resolveGrc20TransferEvent(
   tokenPackages: Grc20TokenPackage[] | undefined,
 ): Grc20TransferEventSchema {
   const matched = pkgPath
-    ? tokenPackages?.find((tokenPackage) => tokenPackage.path === pkgPath)
+    ? tokenPackages?.find(tokenPackage => tokenPackage.path === pkgPath)
     : undefined;
   return matched?.transferEvent ?? DEFAULT_GRC20_TRANSFER_EVENT;
 }

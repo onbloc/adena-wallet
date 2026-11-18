@@ -1,12 +1,11 @@
-import { useMemo } from 'react';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
-import { TransactionInfo } from '@types';
+import { TransactionInfo, TransactionWithPageInfo } from '@types';
+import { useMemo } from 'react';
 
 export const useTokenTransactionsPage = (
   isNative: boolean | undefined,
@@ -15,9 +14,9 @@ export const useTokenTransactionsPage = (
 ): {
   data:
     | {
-        title: string;
-        transactions: TransactionInfo[];
-      }[]
+      title: string;
+      transactions: TransactionInfo[];
+    }[]
     | null;
   isFetched: boolean;
   status: 'loading' | 'error' | 'success';
@@ -38,44 +37,45 @@ export const useTokenTransactionsPage = (
     refetch,
     hasNextPage,
     fetchNextPage,
-  } = useInfiniteQuery(
-    [
+  } = useInfiniteQuery({
+    queryKey: [
       'token-details/page/history',
       currentNetwork.networkId,
       `${isNative}`,
       currentAddress,
       tokenPath,
     ],
-    (context: any) => {
+    queryFn: ({ pageParam }): Promise<TransactionWithPageInfo | null> | null => {
       if (isNative === undefined) {
         return null;
       }
 
-      const cursor = context.pageParam || null;
-
       return isNative
-        ? transactionHistoryService.fetchNativeTransactionHistory(currentAddress || '', cursor)
+        ? transactionHistoryService.fetchNativeTransactionHistory(currentAddress || '', pageParam)
         : transactionHistoryService.fetchGRC20TransactionHistory(
             currentAddress || '',
             tokenPath,
-            cursor,
+            pageParam,
           );
     },
-    {
-      enabled:
-        !!currentAddress &&
-        transactionHistoryService.supported &&
-        tokenMetainfos.length > 0 &&
-        enabled,
-    },
-  );
+    initialPageParam: null as string | null,
+    // v4 ran this without getNextPageParam, so "next page" re-read the first
+    // page; follow the cursor the way the account history does.
+    getNextPageParam: (lastPage): string | null =>
+      lastPage?.page.hasNext ? lastPage.page.cursor : null,
+    enabled:
+      !!currentAddress
+      && transactionHistoryService.supported
+      && tokenMetainfos.length > 0
+      && enabled,
+  });
 
   const transactions = useMemo(() => {
     if (!allTransactions) {
       return null;
     }
 
-    return allTransactions.pages.flatMap((page) => page?.transactions || []);
+    return allTransactions.pages.flatMap(page => page?.transactions || []);
   }, [allTransactions]);
 
   const firstTransactionHash = useMemo(() => {

@@ -1,9 +1,9 @@
-import React, { useCallback } from 'react';
-import styled, { useTheme } from 'styled-components';
-
-import { Text, Button, Copy } from '@components/atoms';
+import { Button, Copy, Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import type { JSX } from 'react';
+import React, { useCallback } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 interface SeedViewAndCopyProps {
   showBlurScreen: boolean;

@@ -1,44 +1,10 @@
-import type { StorybookConfig } from '@storybook/react-webpack5';
-import { merge } from 'webpack-merge';
-import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
-import webpack from 'webpack';
+import type { StorybookConfig } from '@storybook/react-vite';
 
-const storybookConfig: StorybookConfig = {
+// The builder merges vite.config.ts, which skips crx() and keeps the aliases.
+const config: StorybookConfig = {
   stories: ['templates/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
-  addons: [
-    '@storybook/addon-links',
-    '@storybook/addon-essentials',
-    '@storybook/addon-interactions',
-  ],
-  framework: '@storybook/react-webpack5',
-  core: {
-    builder: '@storybook/builder-webpack5',
-  },
-  docs: {
-    autodocs: 'tag',
-  },
+  addons: ['@storybook/addon-links', '@storybook/addon-docs'],
+  framework: '@storybook/react-vite',
 };
 
-module.exports = {
-  ...storybookConfig,
-  webpackFinal: async (config) => {
-    config.module.rules.push({
-      test: /\.(ts|tsx)$/,
-      loader: require.resolve('babel-loader'),
-      options: {},
-    });
-
-    return merge(config, {
-      resolve: {
-        plugins: [new TsconfigPathsPlugin()],
-      },
-      plugins: [
-        ...(config.plugins || []),
-        new webpack.ProvidePlugin({
-          Buffer: ['buffer', 'Buffer'],
-          process: 'process/browser',
-        }),
-      ],
-    });
-  },
-};
+export default config;

@@ -1,4 +1,5 @@
-jest.mock('@adena-wallet/sdk', () => ({
+import type { Mock } from 'vitest';
+vi.mock('@adena-wallet/sdk', () => ({
   WalletResponseFailureType: {
     INVALID_FORMAT: 'INVALID_FORMAT',
     REDUNDANT_CHANGE_REQUEST: 'REDUNDANT_CHANGE_REQUEST',
@@ -56,8 +57,8 @@ jest.mock('@adena-wallet/sdk', () => ({
   },
 }));
 
-const mockCreatePopup = jest.fn();
-jest.mock('..', () => ({
+const mockCreatePopup = vi.fn();
+vi.mock('..', () => ({
   HandlerMethod: {
     createPopup: (...args: unknown[]): unknown => mockCreatePopup(...args),
   },
@@ -68,19 +69,19 @@ import { addNetwork, switchNetwork } from './network';
 
 type FakeCore = {
   chainService: {
-    getCurrentNetwork: jest.Mock;
-    getNetworks: jest.Mock;
+    getCurrentNetwork: Mock;
+    getNetworks: Mock;
   };
-  getInMemoryKey: jest.Mock;
-  getCurrentAccount: jest.Mock;
-  isLockedBy: jest.Mock;
+  getInMemoryKey: Mock;
+  getCurrentAccount: Mock;
+  isLockedBy: Mock;
 };
 
 function makeCore(overrides?: Partial<FakeCore>): FakeCore {
   return {
     chainService: {
-      getCurrentNetwork: jest.fn(async () => ({ networkId: 'portal-loop' })),
-      getNetworks: jest.fn(async () => [
+      getCurrentNetwork: vi.fn(async () => ({ networkId: 'portal-loop' })),
+      getNetworks: vi.fn(async () => [
         {
           id: 'network-1',
           chainId: 'test-1',
@@ -88,12 +89,12 @@ function makeCore(overrides?: Partial<FakeCore>): FakeCore {
         },
       ]),
     },
-    getInMemoryKey: jest.fn(async () => null),
-    getCurrentAccount: jest.fn(async () => ({
+    getInMemoryKey: vi.fn(async () => null),
+    getCurrentAccount: vi.fn(async () => ({
       id: 'account-1',
       type: 'HD_WALLET',
     })),
-    isLockedBy: jest.fn(async () => false),
+    isLockedBy: vi.fn(async () => false),
     ...overrides,
   };
 }
@@ -118,12 +119,12 @@ describe('switchNetwork handler', () => {
 
   it('returns UNSUPPORTED_TYPE for SessionAccount before other checks', async () => {
     const core = makeCore({
-      getCurrentAccount: jest.fn(async () => ({
+      getCurrentAccount: vi.fn(async () => ({
         id: 'session-1',
         type: 'SESSION',
       })),
     });
-    const send = jest.fn();
+    const send = vi.fn();
 
     await switchNetwork(core as never, makeMessage({ chainId: '' }), send);
 
@@ -141,7 +142,7 @@ describe('switchNetwork handler', () => {
 
   it('keeps the existing popup flow for non-session accounts', async () => {
     const core = makeCore();
-    const send = jest.fn();
+    const send = vi.fn();
 
     await switchNetwork(core as never, makeMessage({ chainId: 'test-1' }), send);
 
@@ -162,12 +163,12 @@ describe('addNetwork handler', () => {
   // dApp must not be able to drive it while a SessionAccount is selected.
   it('returns UNSUPPORTED_TYPE for SessionAccount before other checks', async () => {
     const core = makeCore({
-      getCurrentAccount: jest.fn(async () => ({
+      getCurrentAccount: vi.fn(async () => ({
         id: 'session-1',
         type: 'SESSION',
       })),
     });
-    const send = jest.fn();
+    const send = vi.fn();
 
     await addNetwork(
       core as never,
@@ -188,7 +189,7 @@ describe('addNetwork handler', () => {
 
   it('keeps the existing popup flow for non-session accounts', async () => {
     const core = makeCore();
-    const send = jest.fn();
+    const send = vi.fn();
 
     await addNetwork(
       core as never,

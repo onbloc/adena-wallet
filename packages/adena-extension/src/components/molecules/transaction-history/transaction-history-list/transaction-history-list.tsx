@@ -2,6 +2,7 @@ import TransactionHistoryListItem from '@components/molecules/transaction-histor
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
 import React from 'react';
+
 import { TransactionHistoryListWrapper } from './transaction-history-list.styles';
 
 export interface TransactionHistoryListProps {
@@ -10,7 +11,7 @@ export interface TransactionHistoryListProps {
   queryGRC721TokenUri?: (
     packagePath: string,
     tokenId: string,
-    options?: UseQueryOptions<string | null, Error>,
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   onClickItem: (hash: string) => void;
 }
@@ -25,7 +26,7 @@ const TransactionHistoryList: React.FC<TransactionHistoryListProps> = ({
     <TransactionHistoryListWrapper>
       <span className='title'>{title}</span>
       <div className='list-wrapper'>
-        {transactions.map((transaction) => (
+        {transactions.map(transaction => (
           <TransactionHistoryListItem
             key={transaction.hash}
             {...transaction}

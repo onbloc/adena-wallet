@@ -1,13 +1,11 @@
-import React, { useCallback, useMemo } from 'react';
-
 import { CommonFullContentLayout } from '@components/atoms';
 import AddCustomNetwork from '@components/pages/add-custom-network';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
 import type { ChainGroup } from '@hooks/use-network';
 import { useNetwork } from '@hooks/use-network';
-
 import { AtomoneNetworkMetainfo, NetworkMetainfo, RoutePath } from '@types';
-import useAppNavigate from '@hooks/use-app-navigate';
+import React, { useCallback, useMemo } from 'react';
 
 function isValidURL(url: string): boolean {
   const regExp = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
@@ -19,7 +17,7 @@ function existsChainId(
   networks: Array<NetworkMetainfo | AtomoneNetworkMetainfo>,
 ): boolean {
   return (
-    networks.findIndex((network) => network.networkId === chainId && network.deleted !== true) > -1
+    networks.findIndex(network => network.networkId === chainId && network.deleted !== true) > -1
   );
 }
 
@@ -29,8 +27,8 @@ function existsRPCUrl(
 ): boolean {
   const currentRPCUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
   return (
-    networks.findIndex((network) => network.rpcUrl === currentRPCUrl && network.deleted !== true) >
-    -1
+    networks.findIndex(network => network.rpcUrl === currentRPCUrl && network.deleted !== true)
+    > -1
   );
 }
 
@@ -72,7 +70,8 @@ const AddCustomNetworkContainer: React.FC = () => {
         isValid = false;
         setExtraUrlError('Invalid URL');
       }
-    } else if (extraUrl.length > 0 && !isValidURL(extraUrl)) {
+    }
+    else if (extraUrl.length > 0 && !isValidURL(extraUrl)) {
       isValid = false;
       setExtraUrlError('Invalid URL');
     }

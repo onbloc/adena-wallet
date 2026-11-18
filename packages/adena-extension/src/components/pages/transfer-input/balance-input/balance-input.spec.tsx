@@ -1,9 +1,10 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render, screen } from '@testing-library/react';
-import theme from '@styles/theme';
 import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render, screen } from '@testing-library/react';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
+
 import BalanceInput, { BalanceInputProps } from './balance-input';
 
 describe('BalanceInput Component', () => {
@@ -22,12 +23,12 @@ describe('BalanceInput Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <BalanceInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 
@@ -39,8 +40,8 @@ describe('BalanceInput Component', () => {
           amount=''
           denom='GNOT'
           description='Spendable: 10 GNOT'
-          onChangeAmount={jest.fn()}
-          onClickMax={jest.fn()}
+          onChangeAmount={vi.fn()}
+          onClickMax={vi.fn()}
           {...props}
         />
       </ThemeProvider>,

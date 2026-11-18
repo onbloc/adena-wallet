@@ -3,7 +3,7 @@ import {
   TransactionEndpoint,
   Tx,
   TxSignature,
-  uint8ArrayToBase64,
+  uint8ArrayToBase64
 } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -31,7 +31,7 @@ export class AddressKeyring implements Keyring {
     return {
       id: this.id,
       type: this.type,
-      addressBytes: Array.from(this.addressBytes),
+      addressBytes: Array.from(this.addressBytes)
     };
   }
 
@@ -44,7 +44,7 @@ export class AddressKeyring implements Keyring {
 
   async sign(
     _provider: Provider,
-    _document: Document,
+    _document: Document
   ): Promise<{
     signed: Tx;
     signature: TxSignature[];

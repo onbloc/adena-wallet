@@ -42,7 +42,7 @@ export function resolveGrc721Events(
   tokenPackages: Grc721TokenPackage[] | undefined,
 ): Grc721EventSchema {
   const matched = pkgPath
-    ? tokenPackages?.find((tokenPackage) => tokenPackage.path === pkgPath)
+    ? tokenPackages?.find(tokenPackage => tokenPackage.path === pkgPath)
     : undefined;
   return matched?.events ?? DEFAULT_GRC721_EVENTS;
 }
@@ -51,5 +51,5 @@ export function isGrc721Package(
   pkgPath: string | undefined,
   tokenPackages: Grc721TokenPackage[] | undefined,
 ): boolean {
-  return !!pkgPath && !!tokenPackages?.some((tokenPackage) => tokenPackage.path === pkgPath);
+  return !!pkgPath && !!tokenPackages?.some(tokenPackage => tokenPackage.path === pkgPath);
 }

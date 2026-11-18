@@ -30,6 +30,7 @@ export class CosmosLcdProvider implements CosmosProvider {
     string,
     { at: number; promise: Promise<unknown> }
   >;
+
   private readonly restEndpoint: string;
 
   constructor(private readonly profile: CosmosNetworkProfile) {

@@ -4,7 +4,7 @@ import {
   Secp256k1,
   Slip10,
   Slip10Curve,
-  Slip10RawIndex,
+  Slip10RawIndex
 } from '@cosmjs/crypto';
 
 // Adena fixes the BIP44 purpose (44') and coin type (118', Cosmos). Only the
@@ -47,7 +47,7 @@ export function toSlip10Path(value: HdPathLike): Slip10RawIndex[] {
     Slip10RawIndex.hardened(HD_PATH_COIN_TYPE),
     Slip10RawIndex.hardened(account),
     Slip10RawIndex.normal(change),
-    Slip10RawIndex.normal(addressIndex),
+    Slip10RawIndex.normal(addressIndex)
   ];
 }
 
@@ -63,7 +63,7 @@ export function formatHdPath(value: HdPathLike): string {
 // paths existed.
 export async function generateKeyPairByHdPath(
   mnemonic: string,
-  hdPath: HdPathLike,
+  hdPath: HdPathLike
 ): Promise<{ privateKey: Uint8Array; publicKey: Uint8Array }> {
   const seed = await Bip39.mnemonicToSeed(new EnglishMnemonic(mnemonic));
   const { privkey } = Slip10.derivePath(Slip10Curve.Secp256k1, seed, toSlip10Path(hdPath));

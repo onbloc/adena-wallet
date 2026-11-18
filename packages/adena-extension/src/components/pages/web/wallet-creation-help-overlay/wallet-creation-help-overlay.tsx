@@ -1,14 +1,15 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import WebHelpOverlay, {
   OverlayItem,
 } from '@components/molecules/web-help-overlay/web-help-overlay';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { WalletCreationHelpOverlayItem } from './wallet-creation-help-overlay.styles';
 
 export interface WalletCreationHelpOverlayProps {
-  hardwareWalletButtonRef?: React.RefObject<HTMLButtonElement>;
-  airgapAccountButtonRef?: React.RefObject<HTMLButtonElement>;
-  multisigAccountButtonRef?: React.RefObject<HTMLButtonElement>;
-  advancedOptionButtonRef?: React.RefObject<HTMLButtonElement>;
+  hardwareWalletButtonRef?: React.RefObject<HTMLButtonElement | null>;
+  airgapAccountButtonRef?: React.RefObject<HTMLButtonElement | null>;
+  multisigAccountButtonRef?: React.RefObject<HTMLButtonElement | null>;
+  advancedOptionButtonRef?: React.RefObject<HTMLButtonElement | null>;
   onFinish: () => void;
 }
 
@@ -51,7 +52,10 @@ const TOOLTIP_CONFIGS: Record<string, TooltipConfig> = {
       <WalletCreationHelpOverlayItem>
         This allows you to connect with accounts
         <br />
-        from <b>hardware wallets</b>.
+        from
+        {' '}
+        <b>hardware wallets</b>
+        .
       </WalletCreationHelpOverlayItem>
     ),
   },
@@ -62,7 +66,10 @@ const TOOLTIP_CONFIGS: Record<string, TooltipConfig> = {
       <WalletCreationHelpOverlayItem>
         This allows you to connect with accounts
         <br />
-        from an <b>air-gapped environment</b>.
+        from an
+        {' '}
+        <b>air-gapped environment</b>
+        .
       </WalletCreationHelpOverlayItem>
     ),
   },
@@ -71,9 +78,12 @@ const TOOLTIP_CONFIGS: Record<string, TooltipConfig> = {
     convenienceRate: 1,
     content: (
       <WalletCreationHelpOverlayItem>
-        This allows you to connect with the{' '}
+        This allows you to connect with the
+        {' '}
         <b>
-          multi-sig <br />
+          multi-sig
+          {' '}
+          <br />
           accounts.
         </b>
       </WalletCreationHelpOverlayItem>
@@ -86,7 +96,17 @@ const TOOLTIP_CONFIGS: Record<string, TooltipConfig> = {
       <WalletCreationHelpOverlayItem>
         This allows you to create or restore accounts
         <br />
-        with <b>Seed Phrases</b>, <b>Private Key</b> or <b>Google Login</b>.
+        with
+        {' '}
+        <b>Seed Phrases</b>
+        ,
+        {' '}
+        <b>Private Key</b>
+        {' '}
+        or
+        {' '}
+        <b>Google Login</b>
+        .
       </WalletCreationHelpOverlayItem>
     ),
   },
@@ -106,7 +126,7 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
 
   const createHelpItem = useCallback(
     (
-      ref: React.RefObject<HTMLButtonElement> | undefined,
+      ref: React.RefObject<HTMLButtonElement | null> | undefined,
       config: TooltipConfig,
     ): OverlayItem | null => {
       if (!ref?.current) return null;

@@ -1,10 +1,11 @@
-import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
 import { NetworkFeeSettingType } from '@types';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
+
 import { ApproveTransaction, ApproveTransactionProps } from '.';
 
 describe('ApproveTransaction Component', () => {
@@ -53,7 +54,7 @@ describe('ApproveTransaction Component', () => {
       onClickCancel: () => {
         return;
       },
-      openScannerLink: jest.fn(),
+      openScannerLink: vi.fn(),
       useNetworkFeeReturn: {
         isLoading: false,
         isFetchedEstimateGasInfo: true,
@@ -94,12 +95,12 @@ describe('ApproveTransaction Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <ApproveTransaction {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

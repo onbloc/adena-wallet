@@ -8,7 +8,7 @@ export function toAscii(input: string): Uint8Array {
       // 0x80–0xFF out of 7 bit ascii range
       if (charCode < 0x20 || charCode > 0x7e) {
         throw new Error(
-          'Cannot encode character that is out of printable ASCII range: ' + charCode,
+          'Cannot encode character that is out of printable ASCII range: ' + charCode
         );
       }
       return charCode;

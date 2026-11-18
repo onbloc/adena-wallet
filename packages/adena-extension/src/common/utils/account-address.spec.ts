@@ -18,9 +18,9 @@ function makeSessionAccount(): Account {
     name: 'Session',
     keyringId: 'session-keyring',
     publicKey: new Uint8Array(),
-    toData: jest.fn(),
-    getAddress: jest.fn().mockResolvedValue(sessionAddress),
-    getMasterAddress: jest.fn().mockReturnValue(masterAddress),
+    toData: vi.fn(),
+    getAddress: vi.fn().mockResolvedValue(sessionAddress),
+    getMasterAddress: vi.fn().mockReturnValue(masterAddress),
   } as unknown as Account;
 }
 
@@ -32,8 +32,8 @@ function makeRegularAccount(): Account {
     name: 'Regular',
     keyringId: 'regular-keyring',
     publicKey: new Uint8Array(),
-    toData: jest.fn(),
-    getAddress: jest.fn().mockResolvedValue(regularAddress),
+    toData: vi.fn(),
+    getAddress: vi.fn().mockResolvedValue(regularAddress),
   } as unknown as Account;
 }
 

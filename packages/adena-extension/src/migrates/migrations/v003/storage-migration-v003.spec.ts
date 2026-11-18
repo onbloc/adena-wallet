@@ -1,4 +1,5 @@
 import { decryptAES } from 'adena-module';
+
 import { StorageMigration003 } from './storage-migration-v003';
 
 const mockStorageData = {

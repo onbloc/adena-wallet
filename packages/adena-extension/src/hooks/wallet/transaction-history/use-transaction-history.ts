@@ -1,6 +1,3 @@
-import { useCallback, useMemo } from 'react';
-import { useRecoilState } from 'recoil';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
@@ -9,6 +6,9 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { CommonState } from '@states';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
+import { useAtom } from 'jotai';
+import { useCallback, useMemo } from 'react';
+
 import { dedupeAndSortTransactions } from './session-history-source';
 
 // Indexer-backed (block-index paged) transaction history, used only when the
@@ -22,9 +22,9 @@ export const useTransactionHistory = ({
 }): {
   data:
     | {
-        title: string;
-        transactions: TransactionInfo[];
-      }[]
+      title: string;
+      transactions: TransactionInfo[];
+    }[]
     | null;
   isFetched: boolean;
   status: 'loading' | 'error' | 'success';
@@ -39,13 +39,14 @@ export const useTransactionHistory = ({
   const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();
   const { tokenMetainfos } = useTokenMetainfo();
-  const [fetchedHistoryBlockHeight, setFetchedHistoryBlockHeight] = useRecoilState(
+  const [fetchedHistoryBlockHeight, setFetchedHistoryBlockHeight] = useAtom(
     CommonState.fetchedHistoryBlockHeight,
   );
 
-  const { data: fetchedTransactions, refetch } = useQuery(
-    ['history/common/all', currentNetwork.networkId, currentAddress],
-    async () => {
+  const { data: fetchedTransactions, refetch } = useQuery({
+    queryKey: ['history/common/all', currentNetwork.networkId, currentAddress],
+
+    queryFn: async () => {
       if (!currentAddress) {
         return [];
       }
@@ -53,14 +54,13 @@ export const useTransactionHistory = ({
       const history = await transactionHistoryService.fetchAllTransactionHistory(currentAddress);
       return dedupeAndSortTransactions(history.transactions);
     },
-    {
-      enabled:
-        !!currentAddress &&
-        tokenMetainfos.length > 0 &&
-        transactionHistoryService.supported &&
-        enabled,
-    },
-  );
+
+    enabled:
+      !!currentAddress
+      && tokenMetainfos.length > 0
+      && transactionHistoryService.supported
+      && enabled,
+  });
 
   const blockIndex = useMemo(() => {
     if (!fetchedTransactions) {

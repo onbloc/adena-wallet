@@ -32,9 +32,10 @@ export async function getAppInfo(transport: Transport): Promise<AppInfo | null> 
     return {
       appName,
       errorMessage: response.error_message ?? '',
-      returnCode: response.return_code ?? 0,
+      returnCode: response.return_code ?? 0
     };
-  } catch {
+  }
+  catch {
     return null;
   }
 }
@@ -45,12 +46,12 @@ export async function openApp(transport: Transport, appName: string): Promise<vo
     BOLOS_INS_OPEN_APP,
     0x00,
     0x00,
-    Buffer.from(appName, 'ascii'),
+    Buffer.from(appName, 'ascii')
   );
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function isAppMatch(info: AppInfo | null, expectedApp: string): boolean {
@@ -60,7 +61,7 @@ function isAppMatch(info: AppInfo | null, expectedApp: string): boolean {
 export async function ensureAppOpen(
   transport: Transport,
   expectedApp = 'Cosmos',
-  options: EnsureAppOpenOptions = {},
+  options: EnsureAppOpenOptions = {}
 ): Promise<Transport> {
   const pollIntervalMs = options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
   const maxAttempts = options.maxAttempts ?? DEFAULT_POLL_MAX_ATTEMPTS;
@@ -72,7 +73,8 @@ export async function ensureAppOpen(
 
   try {
     await openApp(transport, expectedApp);
-  } catch {
+  }
+  catch {
     // openApp often disconnects the transport; polling below will re-check.
   }
 
@@ -83,7 +85,8 @@ export async function ensureAppOpen(
     if (options.reopenTransport) {
       try {
         activeTransport = await options.reopenTransport();
-      } catch {
+      }
+      catch {
         continue;
       }
     }
@@ -96,6 +99,6 @@ export async function ensureAppOpen(
 
   throw new LedgerError(
     'AppNotOpen',
-    `Expected Ledger app "${expectedApp}" but it did not open in time`,
+    `Expected Ledger app "${expectedApp}" but it did not open in time`
   );
 }

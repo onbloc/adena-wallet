@@ -9,7 +9,7 @@ const GRC721_BALANCE_STALE_TIME = 30_000;
 
 export const useGetGRC721Balance = (
   packagePath: string,
-  options?: UseQueryOptions<number | null, Error>,
+  options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<number | null> => {
   const { tokenService } = useAdenaContext();
   const { currentFundingAddress } = useCurrentAccount();

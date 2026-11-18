@@ -37,7 +37,8 @@ export const isToolbarPanel = (): boolean => {
   try {
     const views = chrome?.extension?.getViews?.({ type: 'popup' });
     return !!views && views.length > 0 && views[0] === window;
-  } catch {
+  }
+  catch {
     return false;
   }
 };
@@ -64,7 +65,8 @@ export const isFirefox = (): boolean => {
     if (extensionUrl) {
       return extensionUrl.startsWith('moz-extension://');
     }
-  } catch {
+  }
+  catch {
     // No extension APIs here; fall through to the user-agent check.
   }
 

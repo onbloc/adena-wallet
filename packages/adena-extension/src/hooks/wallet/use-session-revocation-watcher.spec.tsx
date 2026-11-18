@@ -1,16 +1,18 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
-import React, { PropsWithChildren } from 'react';
-
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import type { JSX } from 'react';
+import React, { PropsWithChildren } from 'react';
+import type { Mock } from 'vitest';
+
 import { useSessionRevocationWatcher } from './use-session-revocation-watcher';
 
-jest.mock('@hooks/use-context', () => ({
-  useAdenaContext: jest.fn(),
-  useWalletContext: jest.fn(),
+vi.mock('@hooks/use-context', () => ({
+  useAdenaContext: vi.fn(),
+  useWalletContext: vi.fn(),
 }));
-jest.mock('@hooks/use-current-account', () => ({ useCurrentAccount: jest.fn() }));
+vi.mock('@hooks/use-current-account', () => ({ useCurrentAccount: vi.fn() }));
 
 // shouldMarkSessionRevoked sleeps SESSION_MISSING_RECHECK_DELAY_MS (1.5s) before
 // its recheck, so the revoke assertion needs a window wider than that.
@@ -34,25 +36,25 @@ const makeWrapper = (): { wrapper: React.FC<PropsWithChildren>; client: QueryCli
 };
 
 describe('useSessionRevocationWatcher', () => {
-  const getSession = jest.fn();
-  const get = jest.fn();
-  const setStatus = jest.fn(async () => undefined);
+  const getSession = vi.fn();
+  const get = vi.fn();
+  const setStatus = vi.fn(async () => undefined);
 
   const mockSessionAccount = (): void => {
-    (useCurrentAccount as jest.Mock).mockReturnValue({
+    (useCurrentAccount as Mock).mockReturnValue({
       currentAccount: {
         id: 'session-1',
         type: 'SESSION',
-        getAddress: jest.fn(async () => SESSION_ADDR),
+        getAddress: vi.fn(async () => SESSION_ADDR),
         getMasterAddress: (): string => MASTER_ADDR,
       },
     });
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useWalletContext as jest.Mock).mockReturnValue({ gnoProvider: { getSession } });
-    (useAdenaContext as jest.Mock).mockReturnValue({ sessionRepository: { get, setStatus } });
+    vi.clearAllMocks();
+    (useWalletContext as Mock).mockReturnValue({ gnoProvider: { getSession } });
+    (useAdenaContext as Mock).mockReturnValue({ sessionRepository: { get, setStatus } });
   });
 
   it('flags REVOKED when the session is absent from chain past the grace period', async () => {
@@ -133,13 +135,13 @@ describe('useSessionRevocationWatcher', () => {
   // A key imported from a session private key is an ordinary account: no
   // delegation exists on chain, so nothing should be watched.
   it('is disabled for non-session accounts', async () => {
-    (useCurrentAccount as jest.Mock).mockReturnValue({
-      currentAccount: { id: 'pk-1', type: 'PRIVATE_KEY', getAddress: jest.fn() },
+    (useCurrentAccount as Mock).mockReturnValue({
+      currentAccount: { id: 'pk-1', type: 'PRIVATE_KEY', getAddress: vi.fn() },
     });
 
     renderHook(() => useSessionRevocationWatcher(), { wrapper: makeWrapper().wrapper });
 
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise(resolve => setTimeout(resolve, 10));
     expect(get).not.toHaveBeenCalled();
     expect(getSession).not.toHaveBeenCalled();
   });

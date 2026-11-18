@@ -1,12 +1,13 @@
 import { WalletResponseFailureType, WalletResponseRejectType } from '@adena-wallet/sdk';
-import { validateSignArbitraryParams } from '@common/validation';
 import { GNO_CHAIN } from '@common/utils/chain-utils';
-import { SignArbitraryParams } from '@inject/types';
-import { InjectCore } from './core';
+import { validateSignArbitraryParams } from '@common/validation';
 import { validateInjectionData } from '@common/validation/validation-transaction';
+import { SignArbitraryParams } from '@inject/types';
 import { RoutePath } from '@types';
+
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
+import { InjectCore } from './core';
 
 export const signAmino = async (
   requestData: InjectionMessage,

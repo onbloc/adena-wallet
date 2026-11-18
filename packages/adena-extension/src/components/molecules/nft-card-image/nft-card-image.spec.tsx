@@ -1,9 +1,11 @@
-import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
+import type { JSX } from 'react';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
+
 import NFTCardImage, { NFTCardImageProps } from './nft-card-image';
 
 describe('NFTCardImage Component', () => {
@@ -15,23 +17,23 @@ describe('NFTCardImage Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <NFTCardImage {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 
   it('retries a new image after an earlier one failed to load', () => {
     const renderImage = (image: string): JSX.Element => (
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <NFTCardImage isFetched image={image} />
         </ThemeProvider>
-      </RecoilRoot>
+      </JotaiProvider>
     );
 
     const { rerender } = render(renderImage('https://example.test/broken.png'));

@@ -10,8 +10,8 @@ import {
 // `gno.land/r/gnoswap/gnft`.
 const SINGLE_RESULT = '("GNOSWAP NFT" string)';
 const TWO_RESULTS_NIL_ERROR = '("data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=" string)\n(undefined)';
-const TWO_RESULTS_ERROR =
-  '("" string)\n(&(struct{("token has no uri" string)} errors.errorString) *errors.errorString)';
+const TWO_RESULTS_ERROR
+  = '("" string)\n(&(struct{("token has no uri" string)} errors.errorString) *errors.errorString)';
 const NON_WORD_TYPE = '("g1q6d4ns7zkr492rgl0pcgf5ajaf2dlz0nnptky3" .uverse.address)\n(undefined)';
 
 /** The leading value and the untouched remainder, for terse assertions. */
@@ -67,7 +67,7 @@ describe('parseFirstQEvalTuple', () => {
 
 describe('parseQEvalResult', () => {
   it('still splits a response whose tuples are all well formed', () => {
-    expect(parseQEvalResult(TWO_RESULTS_NIL_ERROR).map((tuple) => tuple.type)).toEqual([
+    expect(parseQEvalResult(TWO_RESULTS_NIL_ERROR).map(tuple => tuple.type)).toEqual([
       'string',
       '',
     ]);

@@ -1,13 +1,12 @@
+import { WebText } from '@components/atoms';
 import React from 'react';
 
-import { WebText } from '@components/atoms';
-
-import SelectSeedPhraseBoxItem from './select-seed-phrase-box-item';
 import {
   StyledSelectSeedPhraseBox,
   StyledSelectSeedPhraseContent,
 } from './select-seed-phrase-box.styles';
 import { SeedPhraseInfo } from './select-seed-phrase-box.types';
+import SelectSeedPhraseBoxItem from './select-seed-phrase-box-item';
 
 export interface SelectSeedPhraseBoxProps {
   seedPhrases: SeedPhraseInfo[];
@@ -20,13 +19,15 @@ const SelectSeedPhraseBox: React.FC<SelectSeedPhraseBoxProps> = ({ seedPhrases, 
   return (
     <StyledSelectSeedPhraseBox>
       <StyledSelectSeedPhraseContent>
-        {hasSeedPhrase ? (
-          seedPhrases.map((seedPhrase, index) => (
-            <SelectSeedPhraseBoxItem key={index} seedPhrase={seedPhrase} select={select} />
-          ))
-        ) : (
-          <WebText type='body4'>No data to display</WebText>
-        )}
+        {hasSeedPhrase
+          ? (
+              seedPhrases.map((seedPhrase, index) => (
+                <SelectSeedPhraseBoxItem key={index} seedPhrase={seedPhrase} select={select} />
+              ))
+            )
+          : (
+              <WebText type='body4'>No data to display</WebText>
+            )}
       </StyledSelectSeedPhraseContent>
     </StyledSelectSeedPhraseBox>
   );

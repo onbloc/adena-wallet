@@ -1,5 +1,6 @@
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
+
 import { StorageModelDataV020 } from '../v020/storage-model-v020';
 import { StorageModelDataV021 } from './storage-model-v021';
 
@@ -37,7 +38,7 @@ export class StorageMigration021 implements Migration<StorageModelDataV021> {
       'KDF_SALT',
     ];
     const currentDataKeys = Object.keys(currentData);
-    const hasKeys = storageDataKeys.every((key) => currentDataKeys.includes(key));
+    const hasKeys = storageDataKeys.every(key => currentDataKeys.includes(key));
     if (!hasKeys) {
       return false;
     }

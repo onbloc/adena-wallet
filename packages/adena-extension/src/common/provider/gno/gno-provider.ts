@@ -31,6 +31,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import { HttpClient, RpcClient, Tm2Client } from '@gnolang/tm2-rpc';
 import axios from 'axios';
+
 import { decodeQEvalTupleValue, formatGnoArg, GnoArg, parseFirstQEvalTuple } from './qeval';
 import { RpcEndpointSelector } from './rpc-endpoint-selector';
 import {
@@ -71,11 +72,11 @@ class FallbackRpcClient implements RpcClient {
   }
 
   public execute = (request: RpcRequest): Promise<RpcSuccessResponse> => {
-    return this.endpoints.run((endpoint) => this.clientFor(endpoint).execute(request));
+    return this.endpoints.run(endpoint => this.clientFor(endpoint).execute(request));
   };
 
   public disconnect = (): void => {
-    this.clients.forEach((client) => client.disconnect());
+    this.clients.forEach(client => client.disconnect());
   };
 
   private clientFor(endpoint: string): HttpClient {
@@ -127,7 +128,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
   }
 
   public async getStatus(): Promise<Status> {
-    return this.endpoints.run((baseURL) =>
+    return this.endpoints.run(baseURL =>
       RestService.post<Status>(baseURL, {
         request: newRequest(CommonEndpoint.STATUS, ['0']),
       }),
@@ -136,13 +137,13 @@ export class GnoProvider extends GnoJSONRPCProvider {
 
   public async getAccountNumber(address: string, height?: number | undefined): Promise<number> {
     return this.getAccountInfo(address, height)
-      .then((account) => Number(account?.accountNumber ?? 0))
+      .then(account => Number(account?.accountNumber ?? 0))
       .catch(() => 0);
   }
 
   public async getAccountSequence(address: string, height?: number | undefined): Promise<number> {
     return this.getAccountInfo(address, height)
-      .then((account) => Number(account?.sequence ?? 0))
+      .then(account => Number(account?.sequence ?? 0))
       .catch(() => 0);
   }
 
@@ -156,7 +157,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
     ]);
 
     const abciResponse = await this.endpoints
-      .run((baseURL) => postABCIResponse(baseURL, requestBody))
+      .run(baseURL => postABCIResponse(baseURL, requestBody))
       .catch(() => null);
 
     const abciData = abciResponse?.result?.response.ResponseBase.Data;
@@ -222,7 +223,8 @@ export class GnoProvider extends GnoJSONRPCProvider {
         sequence,
         vesting,
       };
-    } catch (e) {
+    }
+    catch (e) {
       console.info(e);
       return inActiveAccount;
     }
@@ -249,7 +251,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
       false,
     ]);
 
-    const abciResponse = await this.endpoints.run((baseURL) =>
+    const abciResponse = await this.endpoints.run(baseURL =>
       postABCIResponse(baseURL, requestBody),
     );
     const abciData = abciResponse?.result?.response.ResponseBase.Data;
@@ -279,7 +281,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
       false,
     ]);
 
-    const abciResponse = await this.endpoints.run((baseURL) =>
+    const abciResponse = await this.endpoints.run(baseURL =>
       postABCIResponse(baseURL, requestBody),
     );
     const abciData = abciResponse?.result?.response.ResponseBase.Data;
@@ -437,7 +439,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
       hash: string;
     };
 
-    const rpcResponse = await this.endpoints.run((baseURL) =>
+    const rpcResponse = await this.endpoints.run(baseURL =>
       axios.post<RPCResponse<RawSyncResult>>(baseURL, {
         jsonrpc: '2.0',
         id: 1,
@@ -490,7 +492,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
       request: newRequest(ABCIEndpoint.ABCI_QUERY, ['.app/simulate', `${encodedTx}`, '0', false]),
     };
 
-    const abciResponse = await this.endpoints.run((baseURL) =>
+    const abciResponse = await this.endpoints.run(baseURL =>
       axios.post<RPCResponse<ABCIResponse>>(baseURL, params.request, {}),
     );
 
@@ -503,15 +505,15 @@ export class GnoProvider extends GnoJSONRPCProvider {
 
     if (simulateResult.response_base?.error) {
       if (
-        simulateResult.response_base.error.type_url === INVALID_PUBLIC_KEY_ERROR_TYPE ||
-        simulateResult.response_base.error.type_url === UNKNOWN_ADDRESS_ERROR_TYPE
+        simulateResult.response_base.error.type_url === INVALID_PUBLIC_KEY_ERROR_TYPE
+        || simulateResult.response_base.error.type_url === UNKNOWN_ADDRESS_ERROR_TYPE
       ) {
         throw new Error(INVALID_PUBLIC_KEY_ERROR_TYPE);
       }
 
       if (
-        simulateResult.response_base.error.type_url === INSUFFICIENT_FUNDS_ERROR_TYPE ||
-        simulateResult.response_base.error.type_url === INSUFFICIENT_COINS_ERROR_TYPE
+        simulateResult.response_base.error.type_url === INSUFFICIENT_FUNDS_ERROR_TYPE
+        || simulateResult.response_base.error.type_url === INSUFFICIENT_COINS_ERROR_TYPE
       ) {
         throw new Error(simulateResult.response_base.error.type_url);
       }
@@ -550,7 +552,8 @@ export class GnoProvider extends GnoJSONRPCProvider {
       }
 
       return parseABCI<GnoDocumentInfo>(abciData);
-    } catch (e) {
+    }
+    catch (e) {
       console.info(e);
     }
 

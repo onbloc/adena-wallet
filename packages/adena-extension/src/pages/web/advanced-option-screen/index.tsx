@@ -1,6 +1,3 @@
-import { ReactElement, useCallback } from 'react';
-import styled from 'styled-components';
-
 import BackIcon from '@assets/web/chevron-left.svg';
 import IconCreate from '@assets/web/icon-create';
 import IconEmail from '@assets/web/icon-email.svg';
@@ -25,6 +22,8 @@ import WebMainButton from '@components/atoms/web-main-button';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
 import { RoutePath } from '@types';
+import { ReactElement, useCallback } from 'react';
+import styled from 'styled-components';
 
 const StyledWrapper = styled(View)`
   position: relative;
@@ -45,18 +44,18 @@ const AdvancedOptionScreen = (): ReactElement => {
   const { wallet } = useWalletContext();
 
   // A provider can be absent from a build, so its entry point stays disabled.
-  const ableToSignInWithGoogle =
-    SOCIAL_LOGIN_ENABLED &&
-    (isVerifierConfigured(GOOGLE_VERIFIERS.PRODUCTION, 'GOOGLE') ||
-      isVerifierConfigured(GOOGLE_VERIFIERS.LEGACY, 'GOOGLE'));
-  const ableToSignInWithEmail =
-    SOCIAL_LOGIN_ENABLED &&
-    (isVerifierConfigured(EMAIL_VERIFIERS.PRODUCTION, 'EMAIL') ||
-      isVerifierConfigured(EMAIL_VERIFIERS.LEGACY, 'EMAIL'));
-  const ableToSignInWithX =
-    SOCIAL_LOGIN_ENABLED &&
-    (isVerifierConfigured(X_VERIFIERS.PRODUCTION, 'X') ||
-      isVerifierConfigured(X_VERIFIERS.LEGACY, 'X'));
+  const ableToSignInWithGoogle
+    = SOCIAL_LOGIN_ENABLED
+      && (isVerifierConfigured(GOOGLE_VERIFIERS.PRODUCTION, 'GOOGLE')
+        || isVerifierConfigured(GOOGLE_VERIFIERS.LEGACY, 'GOOGLE'));
+  const ableToSignInWithEmail
+    = SOCIAL_LOGIN_ENABLED
+      && (isVerifierConfigured(EMAIL_VERIFIERS.PRODUCTION, 'EMAIL')
+        || isVerifierConfigured(EMAIL_VERIFIERS.LEGACY, 'EMAIL'));
+  const ableToSignInWithX
+    = SOCIAL_LOGIN_ENABLED
+      && (isVerifierConfigured(X_VERIFIERS.PRODUCTION, 'X')
+        || isVerifierConfigured(X_VERIFIERS.LEGACY, 'X'));
 
   const onClickNewWallet = useCallback(() => {
     if (wallet && wallet.hasHDWallet()) {

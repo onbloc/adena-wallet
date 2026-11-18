@@ -1,5 +1,6 @@
 import sodium from 'libsodium-wrappers-sumo';
 
+import { toHex } from '../encoding';
 import {
   decryptAES,
   decryptXChacha20,
@@ -9,9 +10,8 @@ import {
   executeKdf,
   generateKdfSalt,
   makeCryptKey,
-  makeCryptKeyBytes,
+  makeCryptKeyBytes
 } from './wallet-crypto-util';
-import { toHex } from '../encoding';
 
 describe('execute kdf', () => {
   it('success', async () => {
@@ -22,8 +22,8 @@ describe('execute kdf', () => {
       params: {
         outputLength: 32,
         opsLimit: 24,
-        memLimitKib: 12 * 1024,
-      },
+        memLimitKib: 12 * 1024
+      }
     };
     const result = await executeKdf(salt, password, kdfConfiguration);
     const hexResult = toHex(result);

@@ -1,7 +1,3 @@
-import BigNumber from 'bignumber.js';
-import React, { useMemo } from 'react';
-import styled from 'styled-components';
-
 import { formatFeeUSD, makeTokenValue } from '@common/utils/price-utils';
 import { SkeletonBoxStyle } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
@@ -9,6 +5,9 @@ import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import { TokenPrice } from '@types';
+import BigNumber from 'bignumber.js';
+import React, { useMemo } from 'react';
+import styled from 'styled-components';
 
 export interface FeeAmountProps {
   /** The fee in display units. */

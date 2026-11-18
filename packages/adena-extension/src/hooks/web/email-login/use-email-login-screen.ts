@@ -1,6 +1,4 @@
 import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
-import { useCallback, useMemo, useState } from 'react';
-
 import { EMAIL_VERIFIERS, SocialKeySetType } from '@common/constants/web3auth.constant';
 import {
   createEmailLoginConfig,
@@ -13,6 +11,8 @@ import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { RoutePath } from '@types';
+import { useCallback, useMemo, useState } from 'react';
+
 import useSocialLoginAccount, {
   SocialLoginFailType,
   toSocialLoginFailType,
@@ -38,12 +38,12 @@ export type UseEmailLoginReturn = {
   requestEmailLogin: () => Promise<void>;
 };
 
-export type EmailLoginStateType =
-  | 'SELECT_KEY_SET'
-  | 'INIT'
-  | 'ENTER_EMAIL'
-  | 'REQUEST_LOGIN'
-  | 'FAILED';
+export type EmailLoginStateType
+  = | 'SELECT_KEY_SET'
+    | 'INIT'
+    | 'ENTER_EMAIL'
+    | 'REQUEST_LOGIN'
+    | 'FAILED';
 
 // SELECT_KEY_SET shares the indicator step with INIT so picking a key set does
 // not add a step to the onboarding progress bar.
@@ -63,8 +63,8 @@ const useEmailLoginScreen = (): UseEmailLoginReturn => {
   const { connectWithProvider } = useSocialLoginAccount();
   // Restored from the route state after the questionnaire round trip, which
   // remounts this screen and would otherwise reset the selection.
-  const { ableToSelectProduction, ableToSelectLegacy, ableToSelectKeySet, initialKeySetType } =
-    getSocialKeySetAvailability(EMAIL_VERIFIERS, 'EMAIL', params?.keySetType);
+  const { ableToSelectProduction, ableToSelectLegacy, ableToSelectKeySet, initialKeySetType }
+    = getSocialKeySetAvailability(EMAIL_VERIFIERS, 'EMAIL', params?.keySetType);
   const [failType, setFailType] = useState<SocialLoginFailType>('DEFAULT');
   const { currentNetwork } = useNetwork();
   // Identifies the login attempt that owns the popup, so an abandoned or
@@ -142,7 +142,8 @@ const useEmailLoginScreen = (): UseEmailLoginReturn => {
         createEmailLoginConfig(EMAIL_VERIFIERS[keySetType], currentNetwork, email.trim()),
       );
       await connectWithProvider(provider, 'WEB3_AUTH_EMAIL', isCurrentRequest);
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       if (!isCurrentRequest()) {
         return;

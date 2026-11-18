@@ -1,5 +1,4 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
-
 import { Grc20RouteMap } from '@types';
 
 import { useAdenaContext } from './use-context';
@@ -14,12 +13,10 @@ export const useGRC20Routes = (): UseQueryResult<Grc20RouteMap> => {
   const { tokenService } = useAdenaContext();
   const { currentNetwork } = useNetwork();
 
-  return useQuery<Grc20RouteMap>(
-    ['useGRC20Routes', currentNetwork?.networkId],
-    () => tokenService.fetchGrc20Routes(),
-    {
-      staleTime: Infinity,
-      enabled: !!currentNetwork?.networkId,
-    },
-  );
+  return useQuery<Grc20RouteMap>({
+    queryKey: ['useGRC20Routes', currentNetwork?.networkId],
+    queryFn: () => tokenService.fetchGrc20Routes(),
+    staleTime: Infinity,
+    enabled: !!currentNetwork?.networkId,
+  });
 };

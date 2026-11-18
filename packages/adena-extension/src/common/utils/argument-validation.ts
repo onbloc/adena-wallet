@@ -72,7 +72,7 @@ export function validateMessageArguments(
     return { messageErrors };
   }
 
-  const typedArgInfos = argumentInfos.filter((info) => !!info.type);
+  const typedArgInfos = argumentInfos.filter(info => !!info.type);
   if (typedArgInfos.length === 0) {
     return { messageErrors };
   }

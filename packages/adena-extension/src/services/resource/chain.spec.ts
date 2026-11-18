@@ -1,25 +1,27 @@
 import { ChainRepository } from '@repositories/common';
 import { AtomoneNetworkMetainfo } from '@types';
+import type { Mock } from 'vitest';
+
 import { ChainService } from './chain';
 
 describe('ChainService — AtomOne methods', () => {
-  let mockAddAtomoneNetwork: jest.Mock;
-  let mockDeleteAtomoneNetworks: jest.Mock;
-  let mockDeleteNetworks: jest.Mock;
-  let mockDeleteCurrentChainId: jest.Mock;
-  let mockDeleteCurrentNetworkId: jest.Mock;
-  let mockDeleteNetworkMode: jest.Mock;
-  let mockDeleteCurrentAtomoneNetworkId: jest.Mock;
+  let mockAddAtomoneNetwork: Mock;
+  let mockDeleteAtomoneNetworks: Mock;
+  let mockDeleteNetworks: Mock;
+  let mockDeleteCurrentChainId: Mock;
+  let mockDeleteCurrentNetworkId: Mock;
+  let mockDeleteNetworkMode: Mock;
+  let mockDeleteCurrentAtomoneNetworkId: Mock;
   let service: ChainService;
 
   beforeEach(() => {
-    mockAddAtomoneNetwork = jest.fn().mockResolvedValue(true);
-    mockDeleteAtomoneNetworks = jest.fn().mockResolvedValue(true);
-    mockDeleteNetworks = jest.fn().mockResolvedValue(true);
-    mockDeleteCurrentChainId = jest.fn().mockResolvedValue(true);
-    mockDeleteCurrentNetworkId = jest.fn().mockResolvedValue(true);
-    mockDeleteNetworkMode = jest.fn().mockResolvedValue(true);
-    mockDeleteCurrentAtomoneNetworkId = jest.fn().mockResolvedValue(true);
+    mockAddAtomoneNetwork = vi.fn().mockResolvedValue(true);
+    mockDeleteAtomoneNetworks = vi.fn().mockResolvedValue(true);
+    mockDeleteNetworks = vi.fn().mockResolvedValue(true);
+    mockDeleteCurrentChainId = vi.fn().mockResolvedValue(true);
+    mockDeleteCurrentNetworkId = vi.fn().mockResolvedValue(true);
+    mockDeleteNetworkMode = vi.fn().mockResolvedValue(true);
+    mockDeleteCurrentAtomoneNetworkId = vi.fn().mockResolvedValue(true);
 
     const repository = {
       addAtomoneNetwork: mockAddAtomoneNetwork,

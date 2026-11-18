@@ -1,18 +1,17 @@
-import { ReactElement, useCallback } from 'react';
-import styled from 'styled-components';
-
-import BackIcon from '@assets/web/chevron-left.svg';
-import IconAdvancedSetup from '@assets/web/advanced-setup-rounded.svg';
-import ThunderIcon from '@assets/web/thunder.svg';
-import IconCardShield from '@assets/icon-card-shield';
 import IconBank from '@assets/icon-bank';
+import IconCardShield from '@assets/icon-card-shield';
+import IconAdvancedSetup from '@assets/web/advanced-setup-rounded.svg';
+import BackIcon from '@assets/web/chevron-left.svg';
+import ThunderIcon from '@assets/web/thunder.svg';
 import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import { isSessionSupportedNetwork } from '@common/utils/account-session';
 import { Pressable, View, WebImg, WebMain, WebText } from '@components/atoms';
 import WebMainButton from '@components/atoms/web-main-button';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useNetwork } from '@hooks/use-network';
-import { isSessionSupportedNetwork } from '@common/utils/account-session';
 import { RoutePath } from '@types';
+import { ReactElement, useCallback } from 'react';
+import styled from 'styled-components';
 
 const StyledWrapper = styled(View)`
   position: relative;

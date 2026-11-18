@@ -102,5 +102,5 @@ export function allMessagesMatchAllowPaths(
   messages: DecodedMessageForGuard[],
   allowPaths: string[],
 ): boolean {
-  return messages.every((m) => matchesAllowPaths(m, allowPaths));
+  return messages.every(m => matchesAllowPaths(m, allowPaths));
 }

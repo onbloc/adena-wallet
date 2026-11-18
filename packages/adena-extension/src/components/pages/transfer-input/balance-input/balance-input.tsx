@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { BalanceInputWrapper } from './balance-input.styles';
 
 export interface BalanceInputProps {
@@ -42,11 +43,11 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
           }}
           onKeyDown={(event): void => {
             if (
-              event.key === '-' ||
-              event.key === 'e' ||
-              event.key === 'E' ||
-              event.key === 'ArrowUp' ||
-              event.key === 'ArrowDown'
+              event.key === '-'
+              || event.key === 'e'
+              || event.key === 'E'
+              || event.key === 'ArrowUp'
+              || event.key === 'ArrowDown'
             ) {
               event.preventDefault();
             }
@@ -57,20 +58,22 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
         <span className='denom'>{denom}</span>
 
         <button className='max-button' onClick={onClickMax}>
-          {'Max'}
+          Max
         </button>
       </div>
 
-      {usdValue ? (
-        <div className='description-wrapper'>
-          <span className='usd-value' title={usdValue}>
-            {usdValue}
-          </span>
-          <span className='description'>{description}</span>
-        </div>
-      ) : (
-        <span className='description'>{description}</span>
-      )}
+      {usdValue
+        ? (
+            <div className='description-wrapper'>
+              <span className='usd-value' title={usdValue}>
+                {usdValue}
+              </span>
+              <span className='description'>{description}</span>
+            </div>
+          )
+        : (
+            <span className='description'>{description}</span>
+          )}
     </BalanceInputWrapper>
   );
 };

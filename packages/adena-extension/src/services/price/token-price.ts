@@ -1,10 +1,8 @@
-import BigNumber from 'bignumber.js';
-
-import { AssetPrice, TokenPrice, TokenPriceMap, TokenPriceRequest } from '@types';
-
 import { getPriceProviderRank, getTokenAssetBinding } from '@common/constants/token-price.constant';
 import { getTokenPriceKey } from '@common/utils/price-utils';
 import { ITokenPriceRepository } from '@repositories/price';
+import { AssetPrice, TokenPrice, TokenPriceMap, TokenPriceRequest } from '@types';
+import BigNumber from 'bignumber.js';
 
 /**
  * Fiat quotes for the tokens the wallet displays.
@@ -115,8 +113,8 @@ export class TokenPriceService {
     for (const assetPrice of assetPrices) {
       const current = bestByAssetId.get(assetPrice.assetId);
       if (
-        current &&
-        getPriceProviderRank(current.provider) <= getPriceProviderRank(assetPrice.provider)
+        current
+        && getPriceProviderRank(current.provider) <= getPriceProviderRank(assetPrice.provider)
       ) {
         continue;
       }

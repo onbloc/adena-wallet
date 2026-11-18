@@ -1,6 +1,6 @@
+import { AssetPrice } from '@types';
 import BigNumber from 'bignumber.js';
 
-import { AssetPrice } from '@types';
 import { AssetPriceItem, AssetPricesResponse } from '../response/asset-price-response';
 
 /** The feed publishes assets it has not priced yet under this status. */

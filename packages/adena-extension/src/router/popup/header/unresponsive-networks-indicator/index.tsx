@@ -1,10 +1,9 @@
+import { WarningTriangleIcon } from '@components/atoms';
+import { UnresponsiveNetworkInfo } from '@hooks/use-network';
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-
-import { WarningTriangleIcon } from '@components/atoms';
-import { fonts, getTheme } from '@styles/theme';
-import mixins from '@styles/mixins';
-import { UnresponsiveNetworkInfo } from '@hooks/use-network';
 
 interface Props {
   networks: UnresponsiveNetworkInfo[];
@@ -98,7 +97,7 @@ export const UnresponsiveNetworksIndicator: React.FC<Props> = ({ networks }) => 
       {open && (
         <Popover role='dialog' onMouseEnter={cancelClose} onMouseLeave={scheduleClose}>
           <span className='title'>Following networks are unresponsive:</span>
-          {networks.map((network) => (
+          {networks.map(network => (
             <span key={network.id} className='item'>
               {network.name}
             </span>

@@ -1,19 +1,18 @@
-import { useRecoilState } from 'recoil';
-
 import { getWalletFundingAddress } from '@common/utils/account-address';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
-import { useChain } from './use-chain';
-import { useAdenaContext } from './use-context';
-import { useCurrentAccount } from './use-current-account';
-import { useNetwork } from './use-network';
-
 import { TokenState } from '@states';
 import { useQuery } from '@tanstack/react-query';
 import { GRC20TokenModel, TokenModel } from '@types';
 import { Account, TokenProfile } from 'adena-module';
 import BigNumber from 'bignumber.js';
+import { useAtom } from 'jotai';
 import { useCallback, useEffect, useMemo } from 'react';
+
+import { useChain } from './use-chain';
+import { useAdenaContext } from './use-context';
+import { useCurrentAccount } from './use-current-account';
 import { useGRC20Tokens } from './use-grc20-tokens';
+import { useNetwork } from './use-network';
 import { useTransferTokens } from './wallet/use-transfer-tokens';
 
 interface GRC20Token {
@@ -76,43 +75,43 @@ function makeTokenKey(token: TokenModel): string {
 
 export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const { balanceService, tokenService, tokenRegistry } = useAdenaContext();
-  const [tokenMetainfos, setTokenMetainfo] = useRecoilState(TokenState.tokenMetainfos);
+  const [tokenMetainfos, setTokenMetainfo] = useAtom(TokenState.tokenMetainfos);
   const { currentAccount } = useCurrentAccount();
   const { currentNetwork, currentAtomoneNetwork } = useNetwork();
   const chain = useChain();
   const { fetchTransferTokens } = useTransferTokens();
   const { data: grc20Tokens } = useGRC20Tokens();
 
-  const { data: allTokenMetainfos = null } = useQuery<TokenModel[]>(
-    [
+  const { data: allTokenMetainfos = null } = useQuery<TokenModel[]>({
+    queryKey: [
       'useTokenMetainfo/allTokenMetainfos',
-      grc20Tokens?.map((token) => token.tokenId),
+      grc20Tokens?.map(token => token.tokenId),
       currentNetwork.networkId,
     ],
-    async (): Promise<TokenModel[]> => {
+
+    queryFn: async (): Promise<TokenModel[]> => {
       const fetchedTokenMetainfos = await tokenService.fetchTokenMetainfos();
       const remainGRC20Tokens = grc20Tokens
         ? grc20Tokens.filter(
-            (token) =>
+            token =>
               !fetchedTokenMetainfos.find(
                 // Dedupe by token key (`{packagePath}.{symbol}`), not pkgPath, so
                 // two tokens from the same realm are treated as distinct.
-                (meta) => isGRC20TokenModel(meta) && meta?.tokenId === token?.tokenId,
+                meta => isGRC20TokenModel(meta) && meta?.tokenId === token?.tokenId,
               ),
           )
         : [];
 
       return [...fetchedTokenMetainfos, ...remainGRC20Tokens];
     },
-    {
-      staleTime: Infinity,
-      enabled: !!grc20Tokens,
-    },
-  );
+
+    staleTime: Infinity,
+    enabled: !!grc20Tokens,
+  });
 
   const currentTokenMetainfos = useMemo(() => {
     return tokenMetainfos.filter(
-      (tokenMetainfo) => tokenMetainfo.main || tokenMetainfo.networkId === currentNetwork.networkId,
+      tokenMetainfo => tokenMetainfo.main || tokenMetainfo.networkId === currentNetwork.networkId,
     );
   }, [tokenMetainfos, currentNetwork]);
 
@@ -138,12 +137,12 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       if (cancelled) return;
 
       const missing = cosmosProfiles.filter(
-        (profile) =>
-          !stored.find((m) => m.tokenId === profile.id && m.networkId === profile.chainProfileId),
+        profile =>
+          !stored.find(m => m.tokenId === profile.id && m.networkId === profile.chainProfileId),
       );
       if (missing.length === 0) return;
 
-      const newEntries: TokenModel[] = missing.map((profile) => ({
+      const newEntries: TokenModel[] = missing.map(profile => ({
         main: false,
         tokenId: profile.id,
         networkId: profile.chainProfileId,
@@ -239,10 +238,10 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
     const storedGRC20Packages = storedGRC20Tokens
       .filter((token: TokenModel) => token.networkId === currentNetwork.networkId)
-      .map((grc20Token) => grc20Token.tokenId);
+      .map(grc20Token => grc20Token.tokenId);
 
     const filteredGRC20Packages = (transferTokens.grc20Packages || []).filter(
-      (grc20Token) => !storedGRC20Packages.includes(grc20Token.tokenId),
+      grc20Token => !storedGRC20Packages.includes(grc20Token.tokenId),
     );
 
     await addTokenMetainfos(filteredGRC20Packages);
@@ -278,10 +277,10 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
     const storedGRC20Packages = storedGRC20Tokens
       .filter((token: TokenModel) => token.networkId === currentNetwork.networkId)
-      .map((grc20Token) => grc20Token.tokenId);
+      .map(grc20Token => grc20Token.tokenId);
 
     const filteredGRC20Packages = (transferTokens.grc20Packages || []).filter(
-      (grc20Token) => !storedGRC20Packages.includes(grc20Token.tokenId),
+      grc20Token => !storedGRC20Packages.includes(grc20Token.tokenId),
     );
 
     await addTokenMetainfos(filteredGRC20Packages);
@@ -313,9 +312,9 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       const tokenMetainfo = tokenMetainfos
         .filter(isNativeTokenModel)
         .find(
-          (tokenMetainfo) =>
-            denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase() ||
-            denom.toUpperCase() === tokenMetainfo.denom.toUpperCase(),
+          tokenMetainfo =>
+            denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase()
+            || denom.toUpperCase() === tokenMetainfo.denom.toUpperCase(),
         );
 
       if (tokenMetainfo) {
@@ -389,9 +388,9 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
     if (
       tokenMetainfos.find(
-        (item) =>
-          item.tokenId === changedTokenMetainfo.tokenId &&
-          item.networkId === changedTokenMetainfo.networkId,
+        item =>
+          item.tokenId === changedTokenMetainfo.tokenId
+          && item.networkId === changedTokenMetainfo.networkId,
       )
     ) {
       return false;
@@ -423,12 +422,12 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
     const newTokenMetainfos = tokenMetainfos
       .filter(
-        (t1) =>
+        t1 =>
           !currentTokenMetainfos.find(
-            (t2) => t1.tokenId === t2.tokenId && t1.networkId === t2.networkId,
+            t2 => t1.tokenId === t2.tokenId && t1.networkId === t2.networkId,
           ),
       )
-      .map((tokenMetainfo) => ({
+      .map(tokenMetainfo => ({
         ...tokenMetainfo,
         main: false,
         display: true,

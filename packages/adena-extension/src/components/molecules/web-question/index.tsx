@@ -1,5 +1,5 @@
-import React from 'react';
 import { View, WebText } from '@components/atoms';
+import React from 'react';
 import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
@@ -24,10 +24,10 @@ export const WebQuestion: React.FC<WebQuestionProps> = ({
         alignItems: 'flex-start',
       }}
     >
-      <WebText type='headline2' >
+      <WebText type='headline2'>
         {title}
       </WebText>
-      <WebText type='body3' color={theme.webNeutral._300} >
+      <WebText type='body3' color={theme.webNeutral._300}>
         {question}
       </WebText>
     </StyledContainer>

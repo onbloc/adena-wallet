@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+
 import { ToastContent, ToastWrapper } from './toast.styles';
 
 export interface ToastProps {

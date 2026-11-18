@@ -1,5 +1,44 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  WalletResponseFailureType,
+  WalletResponseRejectType,
+  WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
+import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
+import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
+import { getDappVisibleAddress, getWalletFundingAddress } from '@common/utils/account-address';
+import { isSessionSupportedNetwork } from '@common/utils/account-session';
+import { parseTokenAmount } from '@common/utils/amount-utils';
+import { validateMessageArguments } from '@common/utils/argument-validation';
+import {
+  createFaviconByHostname,
+  decodeParameter,
+  parseParameters,
+} from '@common/utils/client-utils';
+import { fetchHealth } from '@common/utils/fetch-utils';
+import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
+import { parseSimulateErrors } from '@common/utils/transaction-error-parser';
+import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
+import { ApproveTransaction } from '@components/molecules';
 import { BroadcastTxCommitResult, BroadcastTxSyncResult, TM2Error } from '@gnolang/tm2-js-client';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useGnoSessionUpdates } from '@hooks/use-gno-session-updates';
+import useLink from '@hooks/use-link';
+import { useNetwork } from '@hooks/use-network';
+import { useFeeSufficiency } from '@hooks/wallet/use-fee-sufficiency';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
+import { useNetworkFee } from '@hooks/wallet/use-network-fee';
+import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import { ContractMessage } from '@inject/types';
+import {
+  evaluateSessionSigningGuard,
+  SessionSigningGuardDecision,
+} from '@services/transaction/session-signing-guard';
+import { NetworkMetainfo, RoutePath } from '@types';
 import {
   Account,
   Document,
@@ -12,49 +51,10 @@ import {
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 
-import {
-  WalletResponseFailureType,
-  WalletResponseRejectType,
-  WalletResponseSuccessType,
-} from '@adena-wallet/sdk';
-import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
-import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
-import { getDappVisibleAddress, getWalletFundingAddress } from '@common/utils/account-address';
-import { isSessionSupportedNetwork } from '@common/utils/account-session';
-import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
-import { parseTokenAmount } from '@common/utils/amount-utils';
-import { validateMessageArguments } from '@common/utils/argument-validation';
-import {
-  createFaviconByHostname,
-  decodeParameter,
-  parseParameters,
-} from '@common/utils/client-utils';
-import { fetchHealth } from '@common/utils/fetch-utils';
-import { parseSimulateErrors } from '@common/utils/transaction-error-parser';
-import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
-import {
-  evaluateSessionSigningGuard,
-  SessionSigningGuardDecision,
-} from '@services/transaction/session-signing-guard';
-import { ApproveTransaction } from '@components/molecules';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useChain } from '@hooks/use-chain';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useGnoSessionUpdates } from '@hooks/use-gno-session-updates';
-import useLink from '@hooks/use-link';
-import { useNetwork } from '@hooks/use-network';
-import { useFeeSufficiency } from '@hooks/wallet/use-fee-sufficiency';
-import { useNetworkFee } from '@hooks/wallet/use-network-fee';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage } from '@inject/types';
-import { NetworkMetainfo, RoutePath } from '@types';
 import ApproveTransactionLoading from './loading';
 import ApproveTransactionResult from './result';
-import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 
 interface TransactionData {
   messages: readonly any[];
@@ -126,7 +126,7 @@ const getMessageType = (message: any): string | undefined => {
 };
 
 const hasSessionAdminMessage = (messages: readonly any[] | undefined): boolean => {
-  return (messages ?? []).some((message) =>
+  return (messages ?? []).some(message =>
     SESSION_ADMIN_MESSAGE_TYPES.has(getMessageType(message) ?? ''),
   );
 };
@@ -164,7 +164,7 @@ const ApproveTransactionContainer: React.FC = () => {
 
   const signingAccount = useMemo<Account | null>(() => {
     if (requestedSignerAccountId) {
-      return wallet?.accounts.find((account) => account.id === requestedSignerAccountId) ?? null;
+      return wallet?.accounts.find(account => account.id === requestedSignerAccountId) ?? null;
     }
     return currentAccount;
   }, [currentAccount, requestedSignerAccountId, wallet]);
@@ -184,8 +184,8 @@ const ApproveTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     if (
-      currentWalletNetwork?.chainId === currentNetwork.chainId &&
-      currentWalletNetwork?.rpcUrl === currentNetwork.rpcUrl
+      currentWalletNetwork?.chainId === currentNetwork.chainId
+      && currentWalletNetwork?.rpcUrl === currentNetwork.rpcUrl
     ) {
       return;
     }
@@ -206,15 +206,15 @@ const ApproveTransactionContainer: React.FC = () => {
     }
 
     return (
-      currentWalletNetwork?.chainId === networkInfo.chainId &&
-      currentWalletNetwork?.rpcUrl === networkInfo.rpcUrl
+      currentWalletNetwork?.chainId === networkInfo.chainId
+      && currentWalletNetwork?.rpcUrl === networkInfo.rpcUrl
     );
   }, [currentWalletNetwork?.chainId, currentWalletNetwork?.rpcUrl, requestData?.data?.networkInfo]);
 
   const isSessionAdminNetworkUnsupported = useMemo(() => {
     return (
-      hasSessionAdminMessage(requestData?.data?.messages) &&
-      !isSessionSupportedNetwork(currentNetwork)
+      hasSessionAdminMessage(requestData?.data?.messages)
+      && !isSessionSupportedNetwork(currentNetwork)
     );
   }, [currentNetwork, requestData?.data?.messages]);
   const sessionAdminNetworkUnsupportedMessage = isSessionAdminNetworkUnsupported
@@ -223,9 +223,9 @@ const ApproveTransactionContainer: React.FC = () => {
 
   const isSessionAdminSigningAccountUnsupported = useMemo(() => {
     return (
-      hasSessionAdminMessage(requestData?.data?.messages) &&
-      !!signingAccount &&
-      isSessionAccount(signingAccount)
+      hasSessionAdminMessage(requestData?.data?.messages)
+      && !!signingAccount
+      && isSessionAccount(signingAccount)
     );
   }, [requestData?.data?.messages, signingAccount]);
   const sessionAdminSigningAccountUnsupportedMessage = isSessionAdminSigningAccountUnsupported
@@ -234,10 +234,10 @@ const ApproveTransactionContainer: React.FC = () => {
   const signingAccountMissingMessage = signingAccountMissing
     ? 'Requested signing account was not found.'
     : null;
-  const approvalBlocked =
-    isSessionAdminNetworkUnsupported ||
-    isSessionAdminSigningAccountUnsupported ||
-    signingAccountMissing;
+  const approvalBlocked
+    = isSessionAdminNetworkUnsupported
+      || isSessionAdminSigningAccountUnsupported
+      || signingAccountMissing;
 
   const hasMemo = useMemo(() => {
     if (!requestData?.data?.memo) {
@@ -255,7 +255,7 @@ const ApproveTransactionContainer: React.FC = () => {
   }, [transactionMessages, argumentInfos]);
 
   const hasArgumentValidationError = useMemo(() => {
-    return argumentValidationErrors.messageErrors.some((e) => !!e);
+    return argumentValidationErrors.messageErrors.some(e => !!e);
   }, [argumentValidationErrors]);
 
   const simulateDocument = useMemo(() => {
@@ -299,7 +299,8 @@ const ApproveTransactionContainer: React.FC = () => {
       try {
         const amount = parseTokenAmount(amountStr);
         return BigNumber(acc).plus(amount).toNumber();
-      } catch {
+      }
+      catch {
         return acc;
       }
     }, 0);
@@ -377,7 +378,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && nomarlNavigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && nomarlNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   const initRequestData = (): void => {
@@ -441,7 +442,8 @@ const ApproveTransactionContainer: React.FC = () => {
       setMemo(document.memo);
       setTransactionMessages(mappedTransactionMessages(document.msgs));
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       const error: any = e;
       if (error?.message === 'Connection Error') {
         const { rpcUrl } = currentNetwork;
@@ -555,7 +557,8 @@ const ApproveTransactionContainer: React.FC = () => {
             denom: document.fee.amount[0]?.denom ?? GasToken.denom,
           },
         });
-      } catch {
+      }
+      catch {
         decision = { ok: false, reason: 'session_metadata_missing' };
       }
       if (decision.ok === false) {
@@ -618,8 +621,8 @@ const ApproveTransactionContainer: React.FC = () => {
         // can't tell apart auth.go vs handler.go vs ante.go rejections without
         // it. Forward as a separate data field so existing dapp consumers
         // ignore it harmlessly.
-        const chainLog =
-          response instanceof TM2Error ? (response as TM2Error & { log?: string }).log : undefined;
+        const chainLog
+          = response instanceof TM2Error ? (response as TM2Error & { log?: string }).log : undefined;
         setResponse(
           InjectionMessageInstance.failure(
             WalletResponseFailureType.TRANSACTION_FAILED,
@@ -644,7 +647,8 @@ const ApproveTransactionContainer: React.FC = () => {
         ),
       );
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       if (e instanceof Error) {
         const message = e.message;
         if (message.includes('Ledger')) {
@@ -669,12 +673,12 @@ const ApproveTransactionContainer: React.FC = () => {
 
   const onClickConfirm = (): void => {
     if (
-      !signingAccount ||
-      isErrorNetworkFee ||
-      isErrorStorageDeposit ||
-      requiresHoldConfirmation ||
-      !isRequestedNetworkReady ||
-      approvalBlocked
+      !signingAccount
+      || isErrorNetworkFee
+      || isErrorStorageDeposit
+      || requiresHoldConfirmation
+      || !isRequestedNetworkReady
+      || approvalBlocked
     ) {
       return;
     }
@@ -812,7 +816,8 @@ const ApproveTransactionContainer: React.FC = () => {
     if (response) {
       chrome.runtime.sendMessage(response);
       navigate(RoutePath.History);
-    } else {
+    }
+    else {
       onTimeoutSendTransaction();
       navigate(RoutePath.History);
     }
@@ -823,11 +828,11 @@ const ApproveTransactionContainer: React.FC = () => {
       return;
     }
 
-    const txHash =
-      response?.data?.hash ||
-      response?.data?.txhash ||
-      response?.data?.txHash ||
-      response?.data?.transactionHash;
+    const txHash
+      = response?.data?.hash
+        || response?.data?.txhash
+        || response?.data?.txHash
+        || response?.data?.transactionHash;
 
     if (!txHash || typeof txHash !== 'string') {
       return;
@@ -844,10 +849,12 @@ const ApproveTransactionContainer: React.FC = () => {
       // succeeded.
       try {
         await chrome.runtime.sendMessage(response);
-      } catch {
+      }
+      catch {
         // Best-effort: if the channel is already gone, nothing to do.
       }
-    } else {
+    }
+    else {
       onTimeoutSendTransaction();
     }
 
@@ -942,9 +949,9 @@ const ApproveTransactionContainer: React.FC = () => {
       onFinishHold={handleFinishHold}
       simulateErrorBannerMessage={parsedSimulateErrors.globalErrorMessage}
       sessionGuardBannerMessage={
-        sessionAdminNetworkUnsupportedMessage ||
-        signingAccountMissingMessage ||
-        sessionAdminSigningAccountUnsupportedMessage
+        sessionAdminNetworkUnsupportedMessage
+        || signingAccountMissingMessage
+        || sessionAdminSigningAccountUnsupportedMessage
       }
       messageErrors={combinedMessageErrors}
       hasArgumentValidationError={hasArgumentValidationError}

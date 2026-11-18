@@ -1,5 +1,5 @@
 import { GasInfo, TokenModel } from '@types';
-import { atom } from 'recoil';
+import { atom } from 'jotai';
 
 export interface TransferInfo {
   tokenMetainfo: TokenModel;
@@ -12,7 +12,4 @@ export interface TransferInfo {
   memo: string;
 }
 
-export const memorizedTransferInfo = atom<TransferInfo | null>({
-  key: 'transfer/transfer-info',
-  default: null,
-});
+export const memorizedTransferInfo = atom<TransferInfo | null>(null);

@@ -1,15 +1,17 @@
-import { FormSubmitInterceptor } from './form-submit-interceptor';
-import { GnoMessageInfo } from '../gno-connect';
+import type { Mock } from 'vitest';
+
 import * as gnoConnect from '../gno-connect';
+import { GnoMessageInfo } from '../gno-connect';
 import { GnoConnectInfoProvider } from '../gno-connect-info-provider';
 import { InterceptorContext } from '../gno-interceptor.types';
+import { FormSubmitInterceptor } from './form-submit-interceptor';
 
 // The real command handler pulls @adena-wallet/sdk, whose web3auth → nested
 // @noble/hashes dependency ships sources jest does not transpile ("Uint8Array
 // expected"). These tests always inject their own handler, so the default one is
 // never exercised; mocking the module keeps the suite loadable.
-jest.mock('@inject/message/command-handler', () => ({
-  CommandHandler: { createContentHandler: jest.fn() },
+vi.mock('@inject/message/command-handler', () => ({
+  CommandHandler: { createContentHandler: vi.fn() },
 }));
 
 const setGnoConnectMetas = (): void => {
@@ -41,22 +43,22 @@ const submitForm = (form: HTMLFormElement): boolean =>
   form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
 describe('FormSubmitInterceptor', () => {
-  let handler: jest.Mock<void, [GnoMessageInfo, InterceptorContext]>;
+  let handler: Mock<(...args: [GnoMessageInfo, InterceptorContext]) => void>;
 
   beforeEach(() => {
-    handler = jest.fn();
+    handler = vi.fn();
     setGnoConnectMetas();
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('lets a gnoweb action form submit normally when the origin is not a supported Gno origin', () => {
     // jsdom serves from http://localhost, which no chain in chains.json declares.
     const interceptor = new FormSubmitInterceptor(handler);
     interceptor.register();
-    const consoleInfo = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+    const consoleInfo = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     const form = buildActionFunctionForm();
 
     const notPrevented = submitForm(form);
@@ -69,7 +71,7 @@ describe('FormSubmitInterceptor', () => {
   });
 
   it('takes over the submission for a supported origin', () => {
-    jest.spyOn(gnoConnect, 'canHandleGnoConnectOrigin').mockReturnValue(true);
+    vi.spyOn(gnoConnect, 'canHandleGnoConnectOrigin').mockReturnValue(true);
     const interceptor = new FormSubmitInterceptor(handler);
     interceptor.register();
     const form = buildActionFunctionForm();
@@ -88,7 +90,7 @@ describe('FormSubmitInterceptor', () => {
   });
 
   it('ignores forms that are not gnoweb action function forms', () => {
-    jest.spyOn(gnoConnect, 'canHandleGnoConnectOrigin').mockReturnValue(true);
+    vi.spyOn(gnoConnect, 'canHandleGnoConnectOrigin').mockReturnValue(true);
     const interceptor = new FormSubmitInterceptor(handler);
     interceptor.register();
     document.body.innerHTML = '<form class="params"><input value="search" /></form>';

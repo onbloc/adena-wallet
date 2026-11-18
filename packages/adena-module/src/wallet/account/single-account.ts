@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Account, AccountInfo } from './account';
-import { isPrivateKeyKeyring, isWeb3AuthKeyring, Keyring, KeyringType } from '../keyring';
+
 import { publicKeyToAddress } from '../../utils/address';
+import { isPrivateKeyKeyring, isWeb3AuthKeyring, Keyring, KeyringType } from '../keyring';
+import { Account, AccountInfo } from './account';
 
 export class SingleAccount implements Account {
   public readonly id;
@@ -53,7 +54,7 @@ export class SingleAccount implements Account {
       keyringId: this.keyringId,
       publicKey: Array.from(this.publicKey),
       name: this._name,
-      hdPath: undefined,
+      hdPath: undefined
     };
   }
 
@@ -68,7 +69,7 @@ export class SingleAccount implements Account {
       index: 1,
       type,
       publicKey: Array.from(publicKey),
-      name,
+      name
     });
   }
 
@@ -79,7 +80,7 @@ export class SingleAccount implements Account {
       type: accountInfo.type,
       keyringId: accountInfo.keyringId,
       publicKey: accountInfo.publicKey,
-      name: accountInfo.name,
+      name: accountInfo.name
     });
   }
 }

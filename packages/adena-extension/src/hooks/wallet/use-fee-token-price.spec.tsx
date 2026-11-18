@@ -1,20 +1,20 @@
-import { renderHook } from '@testing-library/react';
-
 import { useNetwork } from '@hooks/use-network';
 import { useTokenPrices } from '@hooks/use-token-prices';
+import { renderHook } from '@testing-library/react';
 import { TokenPrice } from '@types';
+import type { MockedFunction } from 'vitest';
 
 import { useFeeTokenPrice } from './use-fee-token-price';
 
-jest.mock('@hooks/use-network', () => ({
-  useNetwork: jest.fn(),
+vi.mock('@hooks/use-network', () => ({
+  useNetwork: vi.fn(),
 }));
-jest.mock('@hooks/use-token-prices', () => ({
-  useTokenPrices: jest.fn(),
+vi.mock('@hooks/use-token-prices', () => ({
+  useTokenPrices: vi.fn(),
 }));
 
-const mockedUseNetwork = useNetwork as jest.MockedFunction<typeof useNetwork>;
-const mockedUseTokenPrices = useTokenPrices as jest.MockedFunction<typeof useTokenPrices>;
+const mockedUseNetwork = useNetwork as MockedFunction<typeof useNetwork>;
+const mockedUseTokenPrices = useTokenPrices as MockedFunction<typeof useTokenPrices>;
 
 const GNOT_PRICE: TokenPrice = {
   tokenId: 'ugnot',
@@ -48,7 +48,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('useFeeTokenPrice', () => {

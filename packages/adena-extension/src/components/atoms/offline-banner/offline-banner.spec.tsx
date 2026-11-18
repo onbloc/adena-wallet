@@ -1,9 +1,10 @@
+import theme from '@styles/theme';
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { JSX } from 'react';
 import React, { PropsWithChildren } from 'react';
 import { ThemeProvider } from 'styled-components';
 
-import theme from '@styles/theme';
 import { OfflineBanner } from '.';
 
 const setBrowserOnline = (online: boolean): void => {
@@ -25,7 +26,7 @@ const Wrapper = ({ children }: PropsWithChildren): JSX.Element => {
 describe('OfflineBanner', () => {
   afterEach(() => {
     // onlineManager is a module-level singleton; reset it between tests.
-    onlineManager.setOnline(undefined);
+    onlineManager.setOnline(true);
     setBrowserOnline(true);
   });
 

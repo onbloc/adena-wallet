@@ -1,27 +1,28 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import React from 'react';
-
 import { TokenBalanceType } from '@types';
+import React from 'react';
+import type { Mock } from 'vitest';
+
 import { readTokenOrder, sweepTokenOrders, writeTokenOrder } from './helpers/token-order-cache';
 import { useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
 import { useTokenOrder } from './use-token-order';
 
-jest.mock('./use-current-account', () => ({ useCurrentAccount: jest.fn() }));
-jest.mock('./use-context', () => ({ useWalletContext: jest.fn() }));
-jest.mock('./use-network', () => ({ useNetwork: jest.fn() }));
-jest.mock('./helpers/token-order-cache', () => ({
-  ...jest.requireActual('./helpers/token-order-cache'),
-  readTokenOrder: jest.fn(),
-  writeTokenOrder: jest.fn(),
-  sweepTokenOrders: jest.fn(),
+vi.mock('./use-current-account', () => ({ useCurrentAccount: vi.fn() }));
+vi.mock('./use-context', () => ({ useWalletContext: vi.fn() }));
+vi.mock('./use-network', () => ({ useNetwork: vi.fn() }));
+vi.mock('./helpers/token-order-cache', async () => ({
+  ...(await vi.importActual<typeof import('./helpers/token-order-cache')>('./helpers/token-order-cache')),
+  readTokenOrder: vi.fn(),
+  writeTokenOrder: vi.fn(),
+  sweepTokenOrders: vi.fn(),
 }));
 
-const mockedReadTokenOrder = readTokenOrder as jest.Mock;
-const mockedWriteTokenOrder = writeTokenOrder as jest.Mock;
-const mockedSweepTokenOrders = sweepTokenOrders as jest.Mock;
+const mockedReadTokenOrder = readTokenOrder as Mock;
+const mockedWriteTokenOrder = writeTokenOrder as Mock;
+const mockedSweepTokenOrders = sweepTokenOrders as Mock;
 
 function row(tokenId: string, networkId = 'gnoland-1'): TokenBalanceType {
   return { tokenId, networkId } as TokenBalanceType;
@@ -37,15 +38,15 @@ function makeWrapper(): React.FC<React.PropsWithChildren<unknown>> {
 
 describe('useTokenOrder', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockedReadTokenOrder.mockResolvedValue(null);
     mockedWriteTokenOrder.mockResolvedValue(undefined);
     mockedSweepTokenOrders.mockResolvedValue(undefined);
-    (useCurrentAccount as jest.Mock).mockReturnValue({ currentAccount: { id: 'account-1' } });
-    (useWalletContext as jest.Mock).mockReturnValue({
+    (useCurrentAccount as Mock).mockReturnValue({ currentAccount: { id: 'account-1' } });
+    (useWalletContext as Mock).mockReturnValue({
       wallet: { accounts: [{ id: 'account-1' }, { id: 'account-2' }] },
     });
-    (useNetwork as jest.Mock).mockReturnValue({
+    (useNetwork as Mock).mockReturnValue({
       currentNetwork: { networkId: 'gnoland-1' },
       currentAtomoneNetwork: { id: 'atomone-1' },
     });
@@ -101,7 +102,7 @@ describe('useTokenOrder', () => {
   });
 
   it('scopes the order to the active AtomOne network too', async () => {
-    (useNetwork as jest.Mock).mockReturnValue({
+    (useNetwork as Mock).mockReturnValue({
       currentNetwork: { networkId: 'gnoland-1' },
       currentAtomoneNetwork: { id: 'atomone-test' },
     });
@@ -134,7 +135,7 @@ describe('useTokenOrder', () => {
   });
 
   it('counts a missing account as resolved, since no order can exist for it', async () => {
-    (useCurrentAccount as jest.Mock).mockReturnValue({ currentAccount: null });
+    (useCurrentAccount as Mock).mockReturnValue({ currentAccount: null });
 
     const { result } = renderHook(() => useTokenOrder(), { wrapper: makeWrapper() });
 
@@ -151,7 +152,7 @@ describe('useTokenOrder', () => {
   });
 
   it('does not sweep while the wallet is locked or still loading', async () => {
-    (useWalletContext as jest.Mock).mockReturnValue({ wallet: null });
+    (useWalletContext as Mock).mockReturnValue({ wallet: null });
 
     renderHook(() => useTokenOrder(), { wrapper: makeWrapper() });
     await waitFor(() => expect(mockedReadTokenOrder).toHaveBeenCalled());
@@ -162,7 +163,7 @@ describe('useTokenOrder', () => {
   });
 
   it('stores nothing while there is no account to scope it to', async () => {
-    (useCurrentAccount as jest.Mock).mockReturnValue({ currentAccount: null });
+    (useCurrentAccount as Mock).mockReturnValue({ currentAccount: null });
 
     const { result } = renderHook(() => useTokenOrder(), { wrapper: makeWrapper() });
 

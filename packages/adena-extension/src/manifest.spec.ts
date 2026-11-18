@@ -1,24 +1,13 @@
-import fs from 'fs';
-import path from 'path';
-
-import buildConfig from '../webpack.config';
+import { buildManifest } from '../manifest.config';
 import packageInfo from '../package.json';
 
 /**
  * The Firefox manifest is the Chrome one plus a small delta, so a key added to
- * `public/manifest.json` can never silently miss the Firefox build — as
+ * `manifest.json` can never silently miss the Firefox build — as
  * `img-src data:` did, blocking NFT images on Firefox only.
  */
-const readEmittedManifest = (browser?: 'firefox'): Record<string, any> => {
-  const config = buildConfig(browser ? { browser } : {});
-  const copyPlugin = config.plugins.find(
-    (plugin: any) => plugin?.patterns?.[0]?.to === 'manifest.json',
-  );
-  const pattern = (copyPlugin as any).patterns[0];
-  const source = fs.readFileSync(path.join(__dirname, '..', pattern.from), 'utf8');
-
-  return JSON.parse(pattern.transform(Buffer.from(source)).toString());
-};
+const readEmittedManifest = (browser?: 'firefox'): Record<string, any> =>
+  buildManifest(browser ?? 'chrome');
 
 describe('emitted manifests', () => {
   const chrome = readEmittedManifest();
@@ -30,8 +19,8 @@ describe('emitted manifests', () => {
   });
 
   it('gives Firefox a background event page and Chrome a service worker', () => {
-    expect(chrome.background).toEqual({ service_worker: 'background.js' });
-    expect(firefox.background).toEqual({ scripts: ['background.js'] });
+    expect(chrome.background).toEqual({ service_worker: 'src/background.ts' });
+    expect(firefox.background).toEqual({ scripts: ['src/background.ts'] });
     // Firefox does not support MV3 extension service workers at all.
     expect(firefox.background.service_worker).toBeUndefined();
   });

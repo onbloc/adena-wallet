@@ -1,7 +1,6 @@
+import { View, WebInputWithLabel } from '@components/atoms';
 import React from 'react';
 import styled from 'styled-components';
-
-import { View, WebInputWithLabel } from '@components/atoms';
 
 interface WebMultisigThresholdInputProps {
   threshold: number;

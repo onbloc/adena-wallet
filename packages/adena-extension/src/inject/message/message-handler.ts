@@ -1,5 +1,6 @@
 import { WalletResponseFailureType } from '@adena-wallet/sdk';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
+
 import { HandlerMethod } from '.';
 import { CommandMessageData } from './command-message';
 import { InjectionMessage, InjectionMessageInstance } from './message';
@@ -45,10 +46,12 @@ export class MessageHandler {
             sendResponse(message);
             break;
         }
-      } else {
+      }
+      else {
         sendResponse(message);
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.warn(error);
     }
     return true;
@@ -67,7 +70,8 @@ export class MessageHandler {
     try {
       const currentAccountId = await core.getCurrentAccountId();
       existsWallet = currentAccountId?.length > 0;
-    } catch (e) {
+    }
+    catch (e) {
       existsWallet = false;
     }
 

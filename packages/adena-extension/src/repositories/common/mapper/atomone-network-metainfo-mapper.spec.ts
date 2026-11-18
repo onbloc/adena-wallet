@@ -1,4 +1,5 @@
 import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
+
 import {
   AtomoneMetainfoItem,
   AtomoneMetainfoResponse,
@@ -82,7 +83,7 @@ describe('AtomoneNetworkMetainfoMapper', () => {
     expect(metainfos).toEqual(
       AtomoneNetworkMetainfoMapper.fromResponse(ATOMONE_CHAIN_DATA as AtomoneMetainfoResponse),
     );
-    expect(metainfos.some((metainfo) => metainfo.isMainnet)).toBe(true);
+    expect(metainfos.some(metainfo => metainfo.isMainnet)).toBe(true);
     for (const metainfo of metainfos) {
       expect(metainfo.restUrl).toBeTruthy();
       expect(metainfo.deleted).toBe(false);

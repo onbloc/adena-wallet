@@ -1,6 +1,5 @@
-import { useMemo } from 'react';
-
 import { Chain } from 'adena-module';
+import { useMemo } from 'react';
 
 import { useAdenaContext } from './use-context';
 

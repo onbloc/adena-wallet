@@ -12,12 +12,12 @@ describe('session-admin-gas', () => {
   const message = { type: '/auth.m_revoke_session', value: { creator: 'g1master' } };
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('uses chain gas price when calculating fee', async () => {
     const fee = await resolveSessionAdminGasFee(
-      { getGasPriceRatio: jest.fn().mockResolvedValue(0.002) },
+      { getGasPriceRatio: vi.fn().mockResolvedValue(0.002) },
       1_500_000,
     );
 
@@ -26,7 +26,7 @@ describe('session-admin-gas', () => {
 
   it('uses minimum gas price when gas price lookup fails', async () => {
     const fee = await resolveSessionAdminGasFee(
-      { getGasPriceRatio: jest.fn().mockRejectedValue(new Error('rpc failed')) },
+      { getGasPriceRatio: vi.fn().mockRejectedValue(new Error('rpc failed')) },
       2_000_000,
     );
 
@@ -34,7 +34,7 @@ describe('session-admin-gas', () => {
   });
 
   it('estimates gas with a high simulation limit and applies safety margin', async () => {
-    const createDocument = jest.fn().mockResolvedValue({
+    const createDocument = vi.fn().mockResolvedValue({
       msgs: [message],
       fee: {
         gas: SESSION_ADMIN_GAS_ESTIMATE_LIMIT.toString(),
@@ -45,10 +45,10 @@ describe('session-admin-gas', () => {
       account_number: '1',
       sequence: '1',
     });
-    const estimateGas = jest.fn().mockResolvedValue(1_166_340);
+    const estimateGas = vi.fn().mockResolvedValue(1_166_340);
 
     const gasInfo = await resolveSessionAdminGasInfo({
-      gnoProvider: { getGasPriceRatio: jest.fn().mockResolvedValue(0.001) },
+      gnoProvider: { getGasPriceRatio: vi.fn().mockResolvedValue(0.001) },
       transactionService: { createDocument },
       transactionGasService: { estimateGas },
       masterAccount: account,
@@ -77,9 +77,9 @@ describe('session-admin-gas', () => {
     const gasInfo = await resolveSessionAdminGasInfo({
       gnoProvider: null,
       transactionService: {
-        createDocument: jest.fn().mockRejectedValue(new Error('simulate failed')),
+        createDocument: vi.fn().mockRejectedValue(new Error('simulate failed')),
       },
-      transactionGasService: { estimateGas: jest.fn() },
+      transactionGasService: { estimateGas: vi.fn() },
       masterAccount: account,
       chainId: 'test-13',
       message,

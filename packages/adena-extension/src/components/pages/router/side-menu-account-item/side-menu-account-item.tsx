@@ -1,17 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
 import IconCopy from '@assets/icon-copy';
 import IconCopyCheck from '@assets/icon-copy-check';
 import IconEtc from '@assets/icon-etc';
 import IconLink from '@assets/icon-link';
 import IconQRCode from '@assets/icon-qrcode';
+import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { formatAddress } from '@common/utils/client-utils';
 import { Portal } from '@components/atoms';
-import { SideMenuAccountItemProps } from '@types';
-
-import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { TokenBalance } from '@components/molecules';
+import { SideMenuAccountItemProps } from '@types';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTheme } from 'styled-components';
+
 import {
   SideMenuAccountItemMoreInfoWrapper,
   SideMenuAccountItemWrapper,
@@ -141,25 +140,27 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
               <span className='copy-icon'>{copied ? <IconCopyCheck /> : <IconCopy />}</span>
             </div>
           )}
-          {labels.map((text) => (
+          {labels.map(text => (
             <span key={text} className='label'>
               {text}
             </span>
           ))}
         </div>
         <div className='balance-wrapper'>
-          {balance === '-' ? (
-            <span className='balance'>{balance}</span>
-          ) : (
-            <TokenBalance
-              value={balance}
-              denom={GNOT_TOKEN.symbol}
-              fontColor={theme.neutral.a}
-              orientation='HORIZONTAL'
-              minimumFontSize='11px'
-              fontStyleKey='body3Reg'
-            />
-          )}
+          {balance === '-'
+            ? (
+                <span className='balance'>{balance}</span>
+              )
+            : (
+                <TokenBalance
+                  value={balance}
+                  denom={GNOT_TOKEN.symbol}
+                  fontColor={theme.neutral.a}
+                  orientation='HORIZONTAL'
+                  minimumFontSize='11px'
+                  fontStyleKey='body3Reg'
+                />
+              )}
         </div>
       </div>
 
@@ -225,7 +226,7 @@ const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = 
   );
 
   return (
-    <Portal selector={'portal-popup'}>
+    <Portal selector='portal-popup'>
       <SideMenuAccountItemMoreInfoWrapper
         positionX={positionX}
         positionY={positionY}

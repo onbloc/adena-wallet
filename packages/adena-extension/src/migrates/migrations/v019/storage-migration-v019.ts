@@ -1,6 +1,7 @@
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
 import CHAIN_DATA from '@resources/chains/chains.json';
+
 import { StorageModelDataV018 } from '../v018/storage-model-v018';
 import {
   AccountGRC721CollectionsV019,
@@ -59,7 +60,7 @@ export class StorageMigration019 implements Migration<StorageModelDataV019> {
       'KDF_SALT',
     ];
     const currentDataKeys = Object.keys(currentData);
-    const hasKeys = storageDataKeys.every((key) => currentDataKeys.includes(key));
+    const hasKeys = storageDataKeys.every(key => currentDataKeys.includes(key));
     if (!hasKeys) {
       return false;
     }
@@ -95,11 +96,11 @@ export class StorageMigration019 implements Migration<StorageModelDataV019> {
   }
 
   private migrateNetworks(networks: StorageModelDataV018['NETWORKS']): NetworksModelV019 {
-    const defaultNetworks = CHAIN_DATA.filter((n) => n.default);
+    const defaultNetworks = CHAIN_DATA.filter(n => n.default);
     const customNetworks = networks
-      .filter((n) => !n.default)
+      .filter(n => !n.default)
       .map((n) => {
-        const provided = CHAIN_DATA.find((d) => d.chainId === n.id);
+        const provided = CHAIN_DATA.find(d => d.chainId === n.id);
         if (provided) {
           return { ...provided, chainName: n.chainName, networkName: n.networkName, rpcUrl: n.rpcUrl };
         }
@@ -113,7 +114,7 @@ export class StorageMigration019 implements Migration<StorageModelDataV019> {
   ): EstablishSitesModelV019 {
     const result: EstablishSitesModelV019 = {};
     for (const accountId of Object.keys(sites)) {
-      result[accountId] = sites[accountId].map((site) => ({
+      result[accountId] = sites[accountId].map(site => ({
         ...site,
         chainId: site.chainId === OLD_CHAIN_ID ? NEW_CHAIN_ID : site.chainId,
       }));
@@ -126,7 +127,7 @@ export class StorageMigration019 implements Migration<StorageModelDataV019> {
   ): AccountTokenMetainfoModelV019 {
     const result: AccountTokenMetainfoModelV019 = {};
     for (const accountId of Object.keys(metainfos)) {
-      result[accountId] = metainfos[accountId].map((token) => ({
+      result[accountId] = metainfos[accountId].map(token => ({
         ...token,
         networkId: token.networkId === OLD_CHAIN_ID ? NEW_CHAIN_ID : token.networkId,
       }));
@@ -142,7 +143,7 @@ export class StorageMigration019 implements Migration<StorageModelDataV019> {
       result[accountId] = {};
       for (const networkId of Object.keys(collections[accountId])) {
         const newNetworkId = networkId === OLD_CHAIN_ID ? NEW_CHAIN_ID : networkId;
-        result[accountId][newNetworkId] = collections[accountId][networkId].map((item) => ({
+        result[accountId][newNetworkId] = collections[accountId][networkId].map(item => ({
           ...item,
           networkId: item.networkId === OLD_CHAIN_ID ? NEW_CHAIN_ID : item.networkId,
         }));

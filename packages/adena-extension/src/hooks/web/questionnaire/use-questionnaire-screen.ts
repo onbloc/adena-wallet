@@ -1,12 +1,12 @@
-import { useCallback, useMemo, useState } from 'react';
-
 import useAppNavigate from '@hooks/use-app-navigate';
-import { Question, RoutePath } from '@types';
-import QuestionData from '@resources/questions/questions.json';
-import useQuestionnaire from '../use-questionnaire';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import QuestionData from '@resources/questions/questions.json';
+import { Question, RoutePath } from '@types';
+import { useCallback, useMemo, useState } from 'react';
+
+import useQuestionnaire from '../use-questionnaire';
 
 export type UseQuestionnaireScreenReturn = {
   indicatorInfo: UseIndicatorStepReturn;
@@ -53,7 +53,7 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
   const { callbackPath, callbackState } = params;
 
   const question = useMemo(() => {
-    const question = questions.find((question) => question.index === questionIndex);
+    const question = questions.find(question => question.index === questionIndex);
     if (question) {
       return question;
     }
@@ -90,7 +90,8 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
     if (questionnaireState === 'QUESTION') {
       if (questionIndex > 1) {
         setQuestionIndex(questionIndex - 1);
-      } else {
+      }
+      else {
         goBack();
       }
       return;

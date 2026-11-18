@@ -1,5 +1,7 @@
-import { Migration } from '@migrates/migrator';
 import { StorageModel } from '@common/storage';
+import { Migration } from '@migrates/migrator';
+import { decryptAES, encryptAES } from 'adena-module';
+
 import {
   AccountTokenMetainfoModelV001,
   AddressBookModelV001,
@@ -12,7 +14,6 @@ import {
   StorageModelDataV002,
   WalletModelV002,
 } from './storage-model-v002';
-import { decryptAES, encryptAES } from 'adena-module';
 
 export class StorageMigration002 implements Migration<StorageModelDataV002> {
   public readonly version = 2;
@@ -51,7 +52,7 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
       'ADDRESS_BOOK',
       'ACCOUNT_TOKEN_METAINFOS',
     ];
-    const hasKeys = Object.keys(currentData).every((dataKey) => storageDataKeys.includes(dataKey));
+    const hasKeys = Object.keys(currentData).every(dataKey => storageDataKeys.includes(dataKey));
     if (!hasKeys) {
       return false;
     }
@@ -87,11 +88,11 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
 
   private migrateAddressBook(addressBookDataV001: AddressBookModelV001): AddressBookModelV002 {
     const addressBooks = Object.keys(addressBookDataV001).flatMap(
-      (key) => addressBookDataV001[key],
+      key => addressBookDataV001[key],
     );
     const result = addressBooks.filter(
       (addressBook, index, callback) =>
-        index === callback.findIndex((compare) => compare.address === addressBook.address),
+        index === callback.findIndex(compare => compare.address === addressBook.address),
     );
     return result;
   }

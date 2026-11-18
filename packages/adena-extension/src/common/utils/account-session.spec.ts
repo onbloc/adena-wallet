@@ -15,8 +15,8 @@ const accountOf = (type: Account['type']): Account =>
     name: type,
     keyringId: type,
     publicKey: new Uint8Array(),
-    toData: jest.fn(),
-    getAddress: jest.fn(),
+    toData: vi.fn(),
+    getAddress: vi.fn(),
   }) as unknown as Account;
 
 describe('account session utils', () => {

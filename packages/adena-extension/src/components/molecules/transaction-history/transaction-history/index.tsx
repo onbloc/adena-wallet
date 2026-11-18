@@ -1,10 +1,10 @@
-import React from 'react';
-import { useTheme } from 'styled-components';
-
 import { Text } from '@components/atoms';
 import TransactionHistoryList from '@components/molecules/transaction-history/transaction-history-list/transaction-history-list';
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
+import React from 'react';
+import { useTheme } from 'styled-components';
+
 import LoadingHistory from '../loading-history';
 import {
   TransactionHistoryDescriptionWrapper,
@@ -20,7 +20,7 @@ export interface TransactionHistoryProps {
   queryGRC721TokenUri?: (
     packagePath: string,
     tokenId: string,
-    options?: UseQueryOptions<string | null, Error>,
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   onClickItem: (hash: string) => void;
 }

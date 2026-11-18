@@ -29,7 +29,7 @@ export class ChainRegistryImpl implements ChainRegistry {
   }
 
   getNetworkProfileByChainId(chainId: string): NetworkProfile | undefined {
-    return Array.from(this.profiles.values()).find((p) => p.chainId === chainId);
+    return Array.from(this.profiles.values()).find(p => p.chainId === chainId);
   }
 
   getChainByChainId(chainId: string): Chain | undefined {
@@ -39,12 +39,12 @@ export class ChainRegistryImpl implements ChainRegistry {
   }
 
   listNetworkProfilesByChain(chainGroup: string): NetworkProfile[] {
-    return Array.from(this.profiles.values()).filter((p) => p.chainGroup === chainGroup);
+    return Array.from(this.profiles.values()).filter(p => p.chainGroup === chainGroup);
   }
 
   getDefaultNetworkProfile(chainGroup: string): NetworkProfile | undefined {
     const group = this.listNetworkProfilesByChain(chainGroup);
-    return group.find((p) => p.isMainnet) ?? group[0];
+    return group.find(p => p.isMainnet) ?? group[0];
   }
 
   // ── Backward-compatible API ────────────────────────────────────────

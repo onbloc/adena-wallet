@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo } from 'react';
-
 import { TokenBalanceType } from '@types';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import {
   buildTokenOrderScope,
@@ -51,7 +50,7 @@ export const useTokenOrder = (): {
   const liveAccountIdsKey = useMemo(
     () =>
       wallet?.accounts
-        .map((account) => account.id)
+        .map(account => account.id)
         .sort()
         .join('|') ?? '',
     [wallet?.accounts],
@@ -75,17 +74,17 @@ export const useTokenOrder = (): {
     );
   }, [currentAccount?.id, currentNetwork.networkId, currentAtomoneNetwork?.id]);
 
-  const { data: storedOrder = null, isFetched } = useQuery<string[] | null>(
-    [TOKEN_ORDER_QUERY_KEY, scope],
-    () => (scope === null ? null : readTokenOrder(scope)),
-    {
-      enabled: scope !== null,
-      // Storage is only ever written through persistOrder below, which updates
-      // this entry itself, so there is nothing for a refetch to pick up.
-      staleTime: Infinity,
-      cacheTime: Infinity,
-    },
-  );
+  const { data: storedOrder = null, isFetched } = useQuery<string[] | null>({
+    queryKey: [TOKEN_ORDER_QUERY_KEY, scope],
+    queryFn: () => (scope === null ? null : readTokenOrder(scope)),
+    enabled: scope !== null,
+
+    // Storage is only ever written through persistOrder below, which updates
+    // this entry itself, so there is nothing for a refetch to pick up.
+    staleTime: Infinity,
+
+    gcTime: Infinity,
+  });
 
   // With no account there is nothing to scope an order to, and the query stays
   // disabled — so it never fetches and `isFetched` never flips. That is still a
@@ -98,7 +97,7 @@ export const useTokenOrder = (): {
         return;
       }
 
-      const order = rows.map((row) => tokenRowKey(row.tokenId, row.networkId));
+      const order = rows.map(row => tokenRowKey(row.tokenId, row.networkId));
       const queryKey = [TOKEN_ORDER_QUERY_KEY, scope];
       const stored = queryClient.getQueryData<string[] | null>(queryKey);
 

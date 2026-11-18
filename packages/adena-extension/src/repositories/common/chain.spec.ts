@@ -1,7 +1,7 @@
-import { AxiosInstance } from 'axios';
-
 import { StorageManager } from '@common/storage/storage-manager';
 import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
+import { AxiosInstance } from 'axios';
+
 import { ChainRepository } from './chain';
 import {
   AtomoneMetainfoItem,
@@ -44,8 +44,8 @@ const ATOMONE_RESPONSE: AtomoneMetainfoItem[] = [
   },
 ];
 
-const ATOMONE_DEFAULTS: AtomoneNetworkMetainfo[] =
-  AtomoneNetworkMetainfoMapper.fromResponse(ATOMONE_RESPONSE);
+const ATOMONE_DEFAULTS: AtomoneNetworkMetainfo[]
+  = AtomoneNetworkMetainfoMapper.fromResponse(ATOMONE_RESPONSE);
 
 const CUSTOM_NETWORK: AtomoneNetworkMetainfo = {
   id: 'custom-1',
@@ -72,17 +72,17 @@ describe('ChainRepository — AtomOne methods', () => {
     storedValue = undefined;
 
     localStorage = {
-      getToObject: jest.fn().mockImplementation(async () => storedValue),
-      setByObject: jest.fn().mockImplementation(async (_key, value) => {
+      getToObject: vi.fn().mockImplementation(async () => storedValue),
+      setByObject: vi.fn().mockImplementation(async (_key, value) => {
         storedValue = value as AtomoneNetworkMetainfo[];
       }),
-      remove: jest.fn().mockImplementation(async () => {
+      remove: vi.fn().mockImplementation(async () => {
         storedValue = undefined;
       }),
     } as unknown as StorageManager;
 
     networkInstance = {
-      get: jest.fn().mockResolvedValue({ data: ATOMONE_RESPONSE }),
+      get: vi.fn().mockResolvedValue({ data: ATOMONE_RESPONSE }),
     } as unknown as AxiosInstance;
 
     repository = new ChainRepository(localStorage, networkInstance);
@@ -101,14 +101,14 @@ describe('ChainRepository — AtomOne methods', () => {
 
     it('merges fetched defaults with stored customs', async () => {
       storedValue = [
-        ...ATOMONE_DEFAULTS.map((network) => ({ ...network, deleted: false })),
+        ...ATOMONE_DEFAULTS.map(network => ({ ...network, deleted: false })),
         CUSTOM_NETWORK,
       ];
 
       const result = await repository.getAtomoneNetworks();
 
       expect(result).toHaveLength(3);
-      expect(result.map((network) => network.id)).toEqual([
+      expect(result.map(network => network.id)).toEqual([
         'atomone-1',
         'atomone-testnet-1',
         'custom-1',
@@ -128,7 +128,7 @@ describe('ChainRepository — AtomOne methods', () => {
 
       const result = await repository.getAtomoneNetworks();
 
-      const testnet = result.find((network) => network.id === 'atomone-testnet-1');
+      const testnet = result.find(network => network.id === 'atomone-testnet-1');
       expect(testnet).toBeDefined();
       expect(testnet?.deleted).toBe(true);
     });
@@ -143,7 +143,7 @@ describe('ChainRepository — AtomOne methods', () => {
 
       const result = await repository.getAtomoneNetworks();
 
-      const mainnet = result.find((network) => network.id === 'atomone-1');
+      const mainnet = result.find(network => network.id === 'atomone-1');
       expect(mainnet?.rpcUrl).toBe('https://my-node.example/rpc');
       expect(mainnet?.restUrl).toBe('https://my-node.example/rest');
     });
@@ -157,7 +157,7 @@ describe('ChainRepository — AtomOne methods', () => {
 
       const result = await repository.getAtomoneNetworks();
 
-      expect(result.filter((network) => network.id === 'atomone-1')).toHaveLength(1);
+      expect(result.filter(network => network.id === 'atomone-1')).toHaveLength(1);
     });
 
     it('adds fetched defaults that have no stored counterpart', async () => {
@@ -166,13 +166,13 @@ describe('ChainRepository — AtomOne methods', () => {
 
       const result = await repository.getAtomoneNetworks();
 
-      expect(result.map((network) => network.id)).toEqual(['atomone-1', 'atomone-testnet-1']);
+      expect(result.map(network => network.id)).toEqual(['atomone-1', 'atomone-testnet-1']);
     });
   });
 
   describe('addAtomoneNetwork', () => {
     it('appends custom network to storage without touching Gno NETWORKS', async () => {
-      storedValue = ATOMONE_DEFAULTS.map((network) => ({ ...network, deleted: false }));
+      storedValue = ATOMONE_DEFAULTS.map(network => ({ ...network, deleted: false }));
 
       await repository.addAtomoneNetwork(CUSTOM_NETWORK);
 
@@ -183,7 +183,7 @@ describe('ChainRepository — AtomOne methods', () => {
 
   describe('updateAtomoneNetworks', () => {
     it('overwrites the stored list', async () => {
-      storedValue = ATOMONE_DEFAULTS.map((network) => ({ ...network, deleted: false }));
+      storedValue = ATOMONE_DEFAULTS.map(network => ({ ...network, deleted: false }));
 
       await repository.updateAtomoneNetworks([CUSTOM_NETWORK]);
 
@@ -205,7 +205,7 @@ describe('ChainRepository — AtomOne methods', () => {
 describe('ChainRepository — getCurrentNetworkId', () => {
   function makeRepository(getValue: string): ChainRepository {
     const localStorage = {
-      get: jest.fn().mockResolvedValue(getValue),
+      get: vi.fn().mockResolvedValue(getValue),
     } as unknown as StorageManager;
     const networkInstance = {} as AxiosInstance;
     return new ChainRepository(localStorage, networkInstance);
@@ -256,15 +256,15 @@ describe('ChainRepository — getNetworks fallbackRPCUrl', () => {
     storedValue = undefined;
 
     const localStorage = {
-      getToObject: jest.fn().mockImplementation(async () => storedValue),
-      setByObject: jest.fn().mockImplementation(async (_key, value) => {
+      getToObject: vi.fn().mockImplementation(async () => storedValue),
+      setByObject: vi.fn().mockImplementation(async (_key, value) => {
         storedValue = value as NetworkMetainfo[];
       }),
-      remove: jest.fn(),
+      remove: vi.fn(),
     } as unknown as StorageManager;
 
     const networkInstance = {
-      get: jest.fn().mockResolvedValue({ data: GNO_RESPONSE }),
+      get: vi.fn().mockResolvedValue({ data: GNO_RESPONSE }),
     } as unknown as AxiosInstance;
 
     repository = new ChainRepository(localStorage, networkInstance);

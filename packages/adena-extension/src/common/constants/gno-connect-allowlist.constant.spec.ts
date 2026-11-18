@@ -1,4 +1,5 @@
 import CHAIN_DATA from '@resources/chains/chains.json';
+
 import {
   getLoopbackOriginChainId,
   GNO_CONNECT_ALLOWED_ORIGINS,
@@ -15,7 +16,7 @@ describe('GNO_CONNECT_ALLOWED_ORIGINS', () => {
   it('never statically trusts a loopback origin', () => {
     // Loopback origins are gated at runtime against the wallet's active network,
     // so they must not appear in the unconditional allowlist.
-    expect(GNO_CONNECT_ALLOWED_ORIGINS.some((origin) => isLoopbackOrigin(origin))).toBe(false);
+    expect(GNO_CONNECT_ALLOWED_ORIGINS.some(origin => isLoopbackOrigin(origin))).toBe(false);
     expect(GNO_CONNECT_ALLOWED_ORIGINS).not.toContain('http://127.0.0.1:8888');
   });
 

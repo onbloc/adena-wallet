@@ -1,23 +1,21 @@
 import IconGoogle from '@assets/web/icon-google';
 import AnimationWaitForGoogleLogin from '@assets/web/lottie/waiting-for-google-login.json';
-import React, { useCallback, useMemo } from 'react';
-
-import { WebMain } from '@components/atoms';
-import { WebMainHeader } from '@components/pages/web/main-header';
-import useGoogleLoginScreen from '@hooks/web/google-login/use-google-login-screen';
-
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import {
   WEB_SELECT_CONTENT_WIDTH,
   WEB_TOP_SPACING,
   WEB_TOP_SPACING_RESPONSIVE,
 } from '@common/constants/ui.constant';
+import { WebMain } from '@components/atoms';
+import { WebMainHeader } from '@components/pages/web/main-header';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import SocialLoginFail from '@components/pages/web/social-login-fail';
 import SocialLoginRequest from '@components/pages/web/social-login-request';
 import SocialLoginSelectKeySet, {
   SOCIAL_LOGIN_SENSITIVE_INFO_DESC,
 } from '@components/pages/web/social-login-select-key-set';
+import useGoogleLoginScreen from '@hooks/web/google-login/use-google-login-screen';
+import React, { useCallback, useMemo } from 'react';
 
 const GoogleLoginScreen: React.FC = () => {
   const {

@@ -24,7 +24,7 @@ export class FullPathLedgerSigner implements Signer {
   constructor(
     connector: LedgerConnector,
     hdPath: HdPathLike,
-    addressPrefix: string = GNO_ADDRESS_PREFIX,
+    addressPrefix: string = GNO_ADDRESS_PREFIX
   ) {
     this.connector = connector;
     this.hdPath = toSlip10Path(hdPath);
@@ -34,7 +34,7 @@ export class FullPathLedgerSigner implements Signer {
   getAddress = async (): Promise<string> => {
     return pubkeyToAddress(
       encodeSecp256k1Pubkey(await this.connector.getPubkey(this.hdPath)),
-      this.addressPrefix,
+      this.addressPrefix
     );
   };
 
@@ -50,7 +50,8 @@ export class FullPathLedgerSigner implements Signer {
   signData = async (data: Uint8Array): Promise<Uint8Array> => {
     try {
       return await this.connector.sign(data, this.hdPath);
-    } catch (err) {
+    }
+    catch (err) {
       throw classifyLedgerError(err);
     }
   };
@@ -60,7 +61,7 @@ export class FullPathLedgerSigner implements Signer {
     return Secp256k1.verifySignature(
       Secp256k1Signature.fromFixedLength(signature),
       sha256(data),
-      publicKey,
+      publicKey
     );
   };
 }

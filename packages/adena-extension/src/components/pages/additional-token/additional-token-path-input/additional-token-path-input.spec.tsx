@@ -1,11 +1,9 @@
-import React from 'react';
-
-import { render } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
 
 import AdditionalTokenPathInput, {
   AdditionalTokenPathInputProps,
@@ -22,12 +20,12 @@ describe('AdditionalTokenPathInput Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <AdditionalTokenPathInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

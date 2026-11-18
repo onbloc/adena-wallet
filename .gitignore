@@ -1,13 +1,5 @@
 # dependencies
 /node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
 
 # testing
 /coverage
@@ -24,8 +16,7 @@
 .env.production.local
 
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+pnpm-debug.log*
 
 # ide
 .idea
@@ -39,6 +30,7 @@ dist-firefox/
 
 # setup
 package-lock.json
+yarn.lock
 
 .vscode
 package.lock
@@ -48,6 +40,7 @@ node_modules/
 result.info
 deploy/*
 deploy-latest/*
+**/storybook-static
 
 # local Web3Auth verifier values
 .env

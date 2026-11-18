@@ -1,20 +1,21 @@
 import { Slip10RawIndex } from '@cosmjs/crypto';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
 import { generateHDPath } from '@gnolang/tm2-js-client';
+import type { Mock } from 'vitest';
 
 import { LedgerError } from '../../ledger/ledger-errors';
 import { LedgerKeyring } from './ledger-keyring';
 
 const BYTES = new TextEncoder().encode('cosmos amino sign doc');
 
-function makeConnector(sign: jest.Mock): LedgerConnector {
+function makeConnector(sign: Mock): LedgerConnector {
   return {
     sign,
-    getPubkey: jest.fn(),
+    getPubkey: vi.fn()
   } as unknown as LedgerConnector;
 }
 
-async function attachConnector(sign: jest.Mock): Promise<LedgerKeyring> {
+async function attachConnector(sign: Mock): Promise<LedgerKeyring> {
   const keyring = new LedgerKeyring({});
   keyring.setConnector(makeConnector(sign));
   return keyring;
@@ -23,7 +24,7 @@ async function attachConnector(sign: jest.Mock): Promise<LedgerKeyring> {
 describe('LedgerKeyring.signRaw', () => {
   it('returns the 64-byte r||s signature produced by the connector', async () => {
     const signature = new Uint8Array(64).fill(0x07);
-    const sign = jest.fn().mockResolvedValue(signature);
+    const sign = vi.fn().mockResolvedValue(signature);
     const keyring = await attachConnector(sign);
 
     const result = await keyring.signRaw(BYTES);
@@ -35,7 +36,7 @@ describe('LedgerKeyring.signRaw', () => {
   });
 
   it('forwards the requested hdPath index to the connector', async () => {
-    const sign = jest.fn().mockResolvedValue(new Uint8Array(64));
+    const sign = vi.fn().mockResolvedValue(new Uint8Array(64));
     const keyring = await attachConnector(sign);
 
     await keyring.signRaw(BYTES, { hdPath: 3 });
@@ -48,7 +49,7 @@ describe('LedgerKeyring.signRaw', () => {
 
     await expect(keyring.signRaw(BYTES)).rejects.toBeInstanceOf(LedgerError);
     await expect(keyring.signRaw(BYTES)).rejects.toMatchObject({
-      kind: 'TransportFailed',
+      kind: 'TransportFailed'
     });
   });
 
@@ -58,22 +59,22 @@ describe('LedgerKeyring.signRaw', () => {
     [
       'cosmjs "Please open the Cosmos Ledger app" message',
       new Error('Please open the Cosmos Ledger app on your Ledger device.'),
-      'AppNotOpen',
+      'AppNotOpen'
     ],
-    ['transport disconnect', new Error('Transport was disconnected'), 'TransportFailed'],
+    ['transport disconnect', new Error('Transport was disconnected'), 'TransportFailed']
   ])('classifies %s as %s', async (_label, thrown, expectedKind) => {
-    const sign = jest.fn().mockRejectedValue(thrown);
+    const sign = vi.fn().mockRejectedValue(thrown);
     const keyring = await attachConnector(sign);
 
     await expect(keyring.signRaw(BYTES)).rejects.toMatchObject({
       name: 'LedgerError',
-      kind: expectedKind,
+      kind: expectedKind
     });
   });
 
   it('preserves existing LedgerError instances without re-wrapping', async () => {
     const original = new LedgerError('UserRejected', 'user tapped reject');
-    const sign = jest.fn().mockRejectedValue(original);
+    const sign = vi.fn().mockRejectedValue(original);
     const keyring = await attachConnector(sign);
 
     await expect(keyring.signRaw(BYTES)).rejects.toBe(original);
@@ -83,14 +84,14 @@ describe('LedgerKeyring.signRaw', () => {
 describe('LedgerKeyring.assertPublicKey', () => {
   const PUBLIC_KEY = new Uint8Array(33).fill(0x02);
 
-  function attachPubkeyConnector(getPubkey: jest.Mock): LedgerKeyring {
+  function attachPubkeyConnector(getPubkey: Mock): LedgerKeyring {
     const keyring = new LedgerKeyring({});
-    keyring.setConnector({ sign: jest.fn(), getPubkey } as unknown as LedgerConnector);
+    keyring.setConnector({ sign: vi.fn(), getPubkey } as unknown as LedgerConnector);
     return keyring;
   }
 
   it('resolves when the connected device derives the account public key', async () => {
-    const getPubkey = jest.fn().mockResolvedValue(Uint8Array.from(PUBLIC_KEY));
+    const getPubkey = vi.fn().mockResolvedValue(Uint8Array.from(PUBLIC_KEY));
     const keyring = attachPubkeyConnector(getPubkey);
 
     await expect(keyring.assertPublicKey(PUBLIC_KEY, 1)).resolves.toBeUndefined();
@@ -98,7 +99,7 @@ describe('LedgerKeyring.assertPublicKey', () => {
   });
 
   it('derives at the full account/change path', async () => {
-    const getPubkey = jest.fn().mockResolvedValue(Uint8Array.from(PUBLIC_KEY));
+    const getPubkey = vi.fn().mockResolvedValue(Uint8Array.from(PUBLIC_KEY));
     const keyring = attachPubkeyConnector(getPubkey);
 
     await keyring.assertPublicKey(PUBLIC_KEY, { account: 1, change: 0, addressIndex: 2 });
@@ -108,26 +109,26 @@ describe('LedgerKeyring.assertPublicKey', () => {
       Slip10RawIndex.hardened(118),
       Slip10RawIndex.hardened(1),
       Slip10RawIndex.normal(0),
-      Slip10RawIndex.normal(2),
+      Slip10RawIndex.normal(2)
     ]);
   });
 
   it('throws LedgerError(AccountMismatch) when another device is connected', async () => {
-    const getPubkey = jest.fn().mockResolvedValue(new Uint8Array(33).fill(0x03));
+    const getPubkey = vi.fn().mockResolvedValue(new Uint8Array(33).fill(0x03));
     const keyring = attachPubkeyConnector(getPubkey);
 
     await expect(keyring.assertPublicKey(PUBLIC_KEY)).rejects.toMatchObject({
       name: 'LedgerError',
-      kind: 'AccountMismatch',
+      kind: 'AccountMismatch'
     });
   });
 
   it('classifies connector failures like the signing path', async () => {
-    const getPubkey = jest.fn().mockRejectedValue({ return_code: 0x6b0c, error_message: 'locked' });
+    const getPubkey = vi.fn().mockRejectedValue({ return_code: 0x6b0c, error_message: 'locked' });
     const keyring = attachPubkeyConnector(getPubkey);
 
     await expect(keyring.assertPublicKey(PUBLIC_KEY)).rejects.toMatchObject({
-      kind: 'DeviceLocked',
+      kind: 'DeviceLocked'
     });
   });
 
@@ -135,7 +136,7 @@ describe('LedgerKeyring.assertPublicKey', () => {
     const keyring = new LedgerKeyring({});
 
     await expect(keyring.assertPublicKey(PUBLIC_KEY)).rejects.toMatchObject({
-      kind: 'TransportFailed',
+      kind: 'TransportFailed'
     });
   });
 });

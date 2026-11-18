@@ -17,8 +17,8 @@ export function msgSendToAmino(proto: MsgSend): AminoMsg {
     value: {
       from_address: proto.fromAddress,
       to_address: proto.toAddress,
-      amount: proto.amount.map((c) => ({ denom: c.denom, amount: c.amount })),
-    } satisfies MsgSendAminoValue,
+      amount: proto.amount.map(c => ({ denom: c.denom, amount: c.amount }))
+    } satisfies MsgSendAminoValue
   };
 }
 
@@ -30,13 +30,13 @@ export function msgSendFromAmino(amino: AminoMsg): MsgSend {
   return MsgSend.fromPartial({
     fromAddress: v.from_address,
     toAddress: v.to_address,
-    amount: v.amount,
+    amount: v.amount
   });
 }
 
 export function msgSendToAny(proto: MsgSend): Any {
   return Any.fromPartial({
     typeUrl: MSG_SEND_TYPE_URL,
-    value: MsgSend.encode(proto).finish(),
+    value: MsgSend.encode(proto).finish()
   });
 }

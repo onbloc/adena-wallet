@@ -1,9 +1,9 @@
-import React from 'react';
+import theme from '@styles/theme';
 import { fireEvent, render, RenderResult, screen } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
 
-import theme from '@styles/theme';
 import { SessionOverviewPopover } from './session-overview-popover';
 
 const renderPopover = (
@@ -13,8 +13,8 @@ const renderPopover = (
     open: true,
     positionY: 50,
     caretRight: 30,
-    onMouseEnter: jest.fn(),
-    onMouseLeave: jest.fn(),
+    onMouseEnter: vi.fn(),
+    onMouseLeave: vi.fn(),
     masterAddress: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
     expiresAt: 1_900_000_000,
     allowPaths: [],
@@ -22,18 +22,18 @@ const renderPopover = (
     spendPeriod: undefined,
     spendUsedUgnot: undefined,
     spendReset: undefined,
-    onOpenAccount: jest.fn(),
-    onOpenRealm: jest.fn(),
+    onOpenAccount: vi.fn(),
+    onOpenRealm: vi.fn(),
     ...overrides,
   };
 
   return render(
-    <RecoilRoot>
+    <JotaiProvider>
       <ThemeProvider theme={theme}>
         <div id='portal-popup' />
         <SessionOverviewPopover {...props} />
       </ThemeProvider>
-    </RecoilRoot>,
+    </JotaiProvider>,
   );
 };
 
@@ -70,8 +70,8 @@ describe('SessionOverviewPopover', () => {
     });
 
     it('invokes the recovery handlers', () => {
-      const onRemoveAccount = jest.fn();
-      const onExportKey = jest.fn();
+      const onRemoveAccount = vi.fn();
+      const onExportKey = vi.fn();
       renderPopover({ revoked: true, onRemoveAccount, onExportKey });
 
       fireEvent.click(screen.getByText('remove this account'));

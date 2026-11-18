@@ -1,7 +1,7 @@
-import { useQueryClient } from '@tanstack/react-query';
-
 import { SESSIONS_QUERY_KEY } from '@hooks/use-sessions';
+import { useQueryClient } from '@tanstack/react-query';
 import { Account, isSessionAccount } from 'adena-module';
+
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 

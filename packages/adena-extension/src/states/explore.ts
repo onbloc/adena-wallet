@@ -1,4 +1,4 @@
-import { atom } from 'recoil';
+import { atom } from 'jotai';
 
 interface SiteInfo {
   symbol: string;
@@ -10,7 +10,4 @@ interface SiteInfo {
   order: number;
 }
 
-export const sites = atom<Array<SiteInfo>>({
-  key: 'explore/sites',
-  default: [],
-});
+export const sites = atom<Array<SiteInfo>>([]);

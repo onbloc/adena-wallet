@@ -1,4 +1,5 @@
 import { Grc20TokenPackage } from '@common/utils/grc20reg-config';
+
 import {
   makeGRC20ReceivedTransactionHistoryQuery,
   makeGRC20TransactionHistoryQuery,

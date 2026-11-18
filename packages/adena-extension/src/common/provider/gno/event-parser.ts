@@ -1,6 +1,7 @@
 import { StorageDepositEvent, StorageUnlockEvent } from '@adena-wallet/sdk';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { Any } from '@gnolang/gno-js-client';
+
 import { StorageDepositEventType } from './types';
 import { parseProto } from './utils';
 

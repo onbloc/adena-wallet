@@ -1,12 +1,10 @@
-import { ReactElement } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconAlert from '@assets/web/alert-rounded.svg';
 import IconLink from '@assets/web/external-link.svg';
-
 import { Pressable, Row, View, WebButton, WebImg, WebText } from '@components/atoms';
-import useLink from '@hooks/use-link';
 import { WebTitleWithDescription } from '@components/molecules';
+import useLink from '@hooks/use-link';
+import { ReactElement } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;

@@ -1,9 +1,9 @@
+import { Button, ButtonProps, Text } from '@components/atoms';
+import mixins from '@styles/mixins';
+import { FontsType } from '@styles/theme';
+import type { JSX } from 'react';
 import React from 'react';
 import styled from 'styled-components';
-
-import { FontsType } from '@styles/theme';
-import { Text, Button, ButtonProps } from '@components/atoms';
-import mixins from '@styles/mixins';
 
 interface EachButtonProps {
   onClick: () => void;

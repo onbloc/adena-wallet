@@ -1,11 +1,13 @@
 import { GnoProvider } from '@common/provider/gno/gno-provider';
+import type { Mock } from 'vitest';
+
 import { WalletBalanceService } from './wallet-balance';
 
 /**
  * A transport failure is not a zero balance: a failed request must reject so the
  * query errors, and null is reserved for a response that is not an integer.
  */
-const serviceWith = (getBalance: jest.Mock): WalletBalanceService => {
+const serviceWith = (getBalance: Mock): WalletBalanceService => {
   const service = new WalletBalanceService();
   service.setGnoProvider({ getBalance } as unknown as GnoProvider);
   return service;
@@ -13,26 +15,26 @@ const serviceWith = (getBalance: jest.Mock): WalletBalanceService => {
 
 describe('WalletBalanceService.getGnotTokenBalance', () => {
   it('rejects when the request fails, rather than reporting a zero balance', async () => {
-    const service = serviceWith(jest.fn().mockRejectedValue(new Error('network unreachable')));
+    const service = serviceWith(vi.fn().mockRejectedValue(new Error('network unreachable')));
 
     await expect(service.getGnotTokenBalance('g1abc')).rejects.toThrow('network unreachable');
   });
 
   it('returns the converted amount when the request succeeds', async () => {
     // 6 decimals: 1_500_000 ugnot is 1.5 GNOT.
-    const service = serviceWith(jest.fn().mockResolvedValue('1500000'));
+    const service = serviceWith(vi.fn().mockResolvedValue('1500000'));
 
     await expect(service.getGnotTokenBalance('g1abc')).resolves.toBe(1.5);
   });
 
   it('reports zero as zero, which must stay distinguishable from a failure', async () => {
-    const service = serviceWith(jest.fn().mockResolvedValue('0'));
+    const service = serviceWith(vi.fn().mockResolvedValue('0'));
 
     await expect(service.getGnotTokenBalance('g1abc')).resolves.toBe(0);
   });
 
   it('returns null for a non-integer response, the one case null still means', async () => {
-    const service = serviceWith(jest.fn().mockResolvedValue('not-a-number'));
+    const service = serviceWith(vi.fn().mockResolvedValue('not-a-number'));
 
     await expect(service.getGnotTokenBalance('g1abc')).resolves.toBeNull();
   });
@@ -53,23 +55,25 @@ describe('WalletBalanceService.getGRC20TokenBalanceMap across registry versions'
     [V0_REGISTRY]: { [OLD_TOKEN]: '7' },
   };
 
-  const evaluateIIFE = jest.fn(async (registryPath: string, options: { statements: string[] }) => {
+  const evaluateIIFE = vi.fn(async (registryPath: string, options: { statements: string[] }) => {
     const held = registries[registryPath];
     if (!held) {
       throw new Error('unknown package');
     }
     const keys = options.statements
-      .map((statement) => statement.match(/Get\("([^"]+)"\)/)?.[1])
+      .map(statement => statement.match(/Get\("([^"]+)"\)/)?.[1])
       .filter((key): key is string => !!key);
     return keys
-      .map((key) => (held[key] ? `(true bool)\n(${held[key]} int64)` : '(false bool)\n(0 int64)'))
+      .map(key => (held[key] ? `(true bool)\n(${held[key]} int64)` : '(false bool)\n(0 int64)'))
       .join('\n');
   });
 
   const service = new WalletBalanceService();
   service.setGnoProvider({ evaluateIIFE } as unknown as GnoProvider);
 
-  beforeEach(() => evaluateIIFE.mockClear());
+  beforeEach(() => {
+    evaluateIIFE.mockClear();
+  });
 
   it('resolves each token from the first registry version that holds it', async () => {
     service.setRegistryPaths([V1_REGISTRY, V0_REGISTRY]);

@@ -1,6 +1,5 @@
-import BigNumber from 'bignumber.js';
-
 import { TokenPrice, TokenValue } from '@types';
+import BigNumber from 'bignumber.js';
 
 /** Smallest USD amount / percentage writable under the 2-decimal policy. */
 const MIN_DISPLAYABLE_USD = 0.01;

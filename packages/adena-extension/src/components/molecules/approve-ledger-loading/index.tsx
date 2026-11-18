@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
-import { Document } from 'adena-module';
-
 import { Icon } from '@components/atoms';
-import { BottomFixedButton, TitleWithDesc } from '@components/molecules';
-import { ApproveLedgerLoadingWrapper } from './approve-ledger-loading.styles';
 import { Datatable } from '@components/atoms/datatable';
+import { BottomFixedButton, TitleWithDesc } from '@components/molecules';
+import { Document } from 'adena-module';
+import React, { useMemo } from 'react';
+
+import { ApproveLedgerLoadingWrapper } from './approve-ledger-loading.styles';
 
 export interface ApproveLedgerLoadingProps {
   document: Document | null;

@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
-
 import IconRight from '@assets/icon-right';
 import FeeAmount from '@components/molecules/fee-amount/fee-amount';
 import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import React, { useMemo } from 'react';
+
 import {
   NetworkFeeContainer,
   NetworkFeeItemSkeletonBox,
@@ -56,7 +56,7 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
   return (
     <NetworkFeeContainer>
       <NetworkFeeWrapper $error={hasError && !isEmptyValue ? 1 : 0}>
-        <span className='key'>{'Network Fee'}</span>
+        <span className='key'>Network Fee</span>
 
         <div className='network-fee-amount-wrapper'>
           <NetworkFeeAmount
@@ -92,7 +92,7 @@ const NetworkFeeAmount: React.FC<{
   }
 
   if (!hasNetworkFee) {
-    return <span className='value'>{'-'}</span>;
+    return <span className='value'>-</span>;
   }
 
   return <FeeAmount value={value} denom={denom} quote={feeTokenQuote} />;

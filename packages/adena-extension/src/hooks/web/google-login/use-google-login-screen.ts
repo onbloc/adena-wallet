@@ -1,18 +1,18 @@
 import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
-import { useCallback, useState } from 'react';
-
 import { GOOGLE_VERIFIERS, SocialKeySetType } from '@common/constants/web3auth.constant';
 import {
   createGoogleLoginConfig,
   getSocialKeySetAvailability,
   isVerifierConfigured,
 } from '@common/utils/social-login';
-import { useNetwork } from '@hooks/use-network';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useNetwork } from '@hooks/use-network';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { RoutePath } from '@types';
+import { useCallback, useState } from 'react';
+
 import useSocialLoginAccount, {
   SocialLoginFailType,
   toSocialLoginFailType,
@@ -51,8 +51,8 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
   const { connectWithProvider } = useSocialLoginAccount();
   // Restored from the route state after the questionnaire round trip, which
   // remounts this screen and would otherwise reset the selection.
-  const { ableToSelectProduction, ableToSelectLegacy, ableToSelectKeySet, initialKeySetType } =
-    getSocialKeySetAvailability(GOOGLE_VERIFIERS, 'GOOGLE', params?.keySetType);
+  const { ableToSelectProduction, ableToSelectLegacy, ableToSelectKeySet, initialKeySetType }
+    = getSocialKeySetAvailability(GOOGLE_VERIFIERS, 'GOOGLE', params?.keySetType);
   // Identifies the login attempt that owns the popup, so an abandoned or
   // superseded one cannot commit an account when it finally resolves.
   const { begin: beginAttempt, abandon: abandonAttempt } = useSocialLoginAttempt();
@@ -108,7 +108,8 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
         createGoogleLoginConfig(GOOGLE_VERIFIERS[keySetType], currentNetwork),
       );
       await connectWithProvider(provider, 'WEB3_AUTH', isCurrentRequest);
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       if (!isCurrentRequest()) {
         return;
@@ -127,8 +128,8 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
       return;
     }
     if (
-      googleLoginState === 'INIT' ||
-      !isVerifierConfigured(GOOGLE_VERIFIERS[keySetType], 'GOOGLE')
+      googleLoginState === 'INIT'
+      || !isVerifierConfigured(GOOGLE_VERIFIERS[keySetType], 'GOOGLE')
     ) {
       if (!ableToSelectKeySet) {
         navigate(RoutePath.WebAdvancedOption);

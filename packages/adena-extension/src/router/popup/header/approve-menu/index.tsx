@@ -1,7 +1,3 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import styled from 'styled-components';
-
 import IconCopy from '@assets/icon-copy';
 import IconCopyCheck from '@assets/icon-copy-check';
 import {
@@ -20,6 +16,10 @@ import { useNetwork } from '@hooks/use-network';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
+import type { JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router';
+import styled from 'styled-components';
 
 const COSMOS_APPROVE_PATHS: string[] = [
   RoutePath.ApproveEstablishCosmos,
@@ -66,7 +66,7 @@ const StyledRightSideWrapper = styled.div`
 `;
 
 const StyledCopyIconButton = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isActive',
+  shouldForwardProp: prop => prop !== 'isActive',
 })<{ isActive?: boolean }>`
   display: inline-flex;
   align-items: center;
@@ -180,7 +180,8 @@ const ApproveMenu = (): JSX.Element => {
       try {
         const established = await establishAtomOneService.isEstablishedBy(id, siteName, chainId);
         setIsEstablished(established);
-      } catch {
+      }
+      catch {
         setIsEstablished(false);
       }
       return;

@@ -1,7 +1,6 @@
-import styled from 'styled-components';
-
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const SideMenuOverlay = styled.div<{ open: boolean }>`
   position: fixed;

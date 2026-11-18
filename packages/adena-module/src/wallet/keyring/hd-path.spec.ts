@@ -4,12 +4,12 @@ import {
   formatHdPath,
   generateKeyPairByHdPath,
   getAddressIndex,
-  toHdPath,
+  toHdPath
 } from './hd-path';
 
 // A valid BIP39 test mnemonic (checksum-correct). Never used for real funds.
-const MNEMONIC =
-  'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+const MNEMONIC
+  = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 
 describe('toHdPath', () => {
   it('treats undefined as the all-zero default path', () => {
@@ -35,8 +35,8 @@ describe('getAddressIndex', () => {
 
 describe('formatHdPath', () => {
   it('renders the canonical BIP44 string with fixed 44/118 prefix', () => {
-    expect(formatHdPath(5)).toBe("m/44'/118'/0'/0/5");
-    expect(formatHdPath({ account: 1, change: 2, addressIndex: 3 })).toBe("m/44'/118'/1'/2/3");
+    expect(formatHdPath(5)).toBe('m/44\'/118\'/0\'/0/5');
+    expect(formatHdPath({ account: 1, change: 2, addressIndex: 3 })).toBe('m/44\'/118\'/1\'/2/3');
   });
 });
 
@@ -56,7 +56,7 @@ describe('generateKeyPairByHdPath', () => {
     const fromPath = await generateKeyPairByHdPath(MNEMONIC, {
       account: 0,
       change: 0,
-      addressIndex: 5,
+      addressIndex: 5
     });
 
     expect(Array.from(fromPath.privateKey)).toEqual(Array.from(fromNumber.privateKey));
@@ -68,12 +68,12 @@ describe('generateKeyPairByHdPath', () => {
     const otherAccount = await generateKeyPairByHdPath(MNEMONIC, {
       account: 1,
       change: 0,
-      addressIndex: 0,
+      addressIndex: 0
     });
     const otherChange = await generateKeyPairByHdPath(MNEMONIC, {
       account: 0,
       change: 1,
-      addressIndex: 0,
+      addressIndex: 0
     });
 
     expect(Array.from(otherAccount.privateKey)).not.toEqual(Array.from(base.privateKey));

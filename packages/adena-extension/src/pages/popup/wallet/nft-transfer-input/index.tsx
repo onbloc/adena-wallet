@@ -1,20 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
-import { useAddressBookInput } from '@hooks/use-address-book-input';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import useHistoryData from '@hooks/use-history-data';
-import { GRC721Model, RoutePath } from '@types';
-
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_NETWORK_FEE } from '@common/constants/tx.constant';
 import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
 import { calculateByteSize } from '@common/utils/string-utils';
 import NFTTransferInput from '@components/pages/nft-transfer-input/nft-transfer-input/nft-transfer-input';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
+import { useAddressBookInput } from '@hooks/use-address-book-input';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import useHistoryData from '@hooks/use-history-data';
 import { useNetwork } from '@hooks/use-network';
 import { useTransferInfo } from '@hooks/use-transfer-info';
+import { GRC721Model, RoutePath } from '@types';
 import BigNumber from 'bignumber.js';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface HistoryData {
   grc721Token: GRC721Model;
@@ -91,9 +89,9 @@ const NFTTransferInputContainer: React.FC = () => {
     if (!grc721Token) {
       return;
     }
-    const validAddress =
-      addressBookInput.validateAddressBookInput() &&
-      (await addressBookInput.validateEqualAddress());
+    const validAddress
+      = addressBookInput.validateAddressBookInput()
+        && (await addressBookInput.validateEqualAddress());
 
     if (validAddress) {
       saveHistoryData();

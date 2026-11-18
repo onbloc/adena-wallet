@@ -1,9 +1,10 @@
 import { AdenaWallet } from 'adena-module';
+import type { Mock } from 'vitest';
 
 import { pendingWalletStore } from './pending-wallet-store';
 
-function makeWalletStub(): { wallet: AdenaWallet; destroy: jest.Mock } {
-  const destroy = jest.fn();
+function makeWalletStub(): { wallet: AdenaWallet; destroy: Mock } {
+  const destroy = vi.fn();
   const wallet = { destroy } as unknown as AdenaWallet;
   return { wallet, destroy };
 }

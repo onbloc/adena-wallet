@@ -77,8 +77,8 @@ export function checkFeeSufficiency({
   return {
     isInsufficientNetworkFee: balanceBN.isLessThan(requiredForFee),
     isInsufficientStorageDeposit:
-      netStorageDeposit.isGreaterThan(0) &&
-      balanceBN.isLessThan(requiredForFee.plus(netStorageDeposit)),
+      netStorageDeposit.isGreaterThan(0)
+      && balanceBN.isLessThan(requiredForFee.plus(netStorageDeposit)),
   };
 }
 
@@ -87,8 +87,8 @@ export type FeeShortfall = 'networkFee' | 'storageDeposit';
 // tm2 auth ante handler, when the balance can't pay the fee.
 const NETWORK_FEE_SHORTFALL_PATTERN = /insufficient funds to pay for fees/i;
 // gno.land vm keeper, when the balance can't lock a realm's storage deposit.
-const STORAGE_DEPOSIT_SHORTFALL_PATTERN =
-  /(lockStorageDeposit failed|unable to transfer deposit).*insufficient (coins|funds)/i;
+const STORAGE_DEPOSIT_SHORTFALL_PATTERN
+  = /(lockStorageDeposit failed|unable to transfer deposit).*insufficient (coins|funds)/i;
 
 /**
  * Reads which fee the balance couldn't cover from a failed simulate. Once the

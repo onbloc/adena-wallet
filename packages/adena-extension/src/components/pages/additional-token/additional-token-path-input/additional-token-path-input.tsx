@@ -1,6 +1,7 @@
 import { Text } from '@components/atoms';
 import theme from '@styles/theme';
 import React, { useMemo } from 'react';
+
 import { AdditionalTokenPathInputWrapper } from './additional-token-path-input.styles';
 
 export interface AdditionalTokenPathInputProps {

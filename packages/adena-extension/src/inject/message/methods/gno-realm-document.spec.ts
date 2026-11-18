@@ -3,12 +3,14 @@ import {
   isFetchRealmDocumentMessage,
 } from './gno-realm-document';
 
-const mockGetRealmDocument = jest.fn();
+const mockGetRealmDocument = vi.fn();
 
-jest.mock('@common/provider/gno/gno-provider', () => ({
-  GnoProvider: jest.fn().mockImplementation(() => ({
-    getRealmDocument: mockGetRealmDocument,
-  })),
+vi.mock('@common/provider/gno/gno-provider', () => ({
+  GnoProvider: vi.fn().mockImplementation(function () {
+    return {
+      getRealmDocument: mockGetRealmDocument,
+    };
+  }),
 }));
 
 const messageData = {
@@ -18,10 +20,10 @@ const messageData = {
 };
 
 const makeMessage = () =>
-  ({
+  (({
     type: 'FETCH_REALM_DOCUMENT',
     data: { ...messageData },
-  }) as const;
+  }) as const);
 
 describe('isFetchRealmDocumentMessage', () => {
   it('accepts a well-formed realm document request', () => {

@@ -1,13 +1,3 @@
-import { useCallback, useState } from 'react';
-import {
-  Account,
-  AdenaLedgerConnector,
-  Document,
-  isLedgerAccount,
-  isSessionAccount,
-  LedgerAccount,
-} from 'adena-module';
-
 import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
 import { isSessionMasterAccount } from '@common/utils/account-session';
 import { SESSION_ADMIN_GAS_WANTED_FALLBACK } from '@common/utils/session-admin-gas';
@@ -18,6 +8,15 @@ import {
   createMessageOfRevokeAllSessions,
   createMessageOfRevokeSession,
 } from '@services/transaction/message/auth/auth';
+import {
+  Account,
+  AdenaLedgerConnector,
+  Document,
+  isLedgerAccount,
+  isSessionAccount,
+  LedgerAccount,
+} from 'adena-module';
+import { useCallback, useState } from 'react';
 
 export const REVOKE_GAS_WANTED_DEFAULT = SESSION_ADMIN_GAS_WANTED_FALLBACK;
 export const REVOKE_GAS_FEE_UGNOT_DEFAULT = 2_000;
@@ -34,13 +33,13 @@ type CommitResultLike = {
 // caller's catch surfaces the failure and skips local cleanup.
 const assertRevokeCommitted = (result: unknown): void => {
   const commit = result as CommitResultLike | null;
-  const failed =
-    !!commit?.check_tx?.ResponseBase?.Error || !!commit?.deliver_tx?.ResponseBase?.Error;
+  const failed
+    = !!commit?.check_tx?.ResponseBase?.Error || !!commit?.deliver_tx?.ResponseBase?.Error;
   if (failed) {
     throw new Error(
-      commit?.deliver_tx?.ResponseBase?.Log ||
-        commit?.check_tx?.ResponseBase?.Log ||
-        'Revoke transaction failed on chain',
+      commit?.deliver_tx?.ResponseBase?.Log
+      || commit?.check_tx?.ResponseBase?.Log
+      || 'Revoke transaction failed on chain',
     );
   }
 };
@@ -59,9 +58,9 @@ interface RevokeOneArgs {
   opts?: RevokeOptions;
 }
 
-type RevokeResult =
-  | { ok: true; hash: string | null }
-  | { ok: false; error: string };
+type RevokeResult
+  = | { ok: true; hash: string | null }
+    | { ok: false; error: string };
 
 interface UseRevokeSessionReturn {
   isPending: boolean;
@@ -120,7 +119,8 @@ export const useRevokeSession = (): UseRevokeSessionReturn => {
         );
         assertRevokeCommitted(result);
         return (result as { hash?: string | null })?.hash ?? null;
-      } finally {
+      }
+      finally {
         await connected.close().catch(() => undefined);
       }
     },
@@ -137,17 +137,17 @@ export const useRevokeSession = (): UseRevokeSessionReturn => {
       const gasFeeUgnot = opts.gasFeeUgnot ?? REVOKE_GAS_FEE_UGNOT_DEFAULT;
       const memo = opts.memo ?? '';
 
-      const document =
-        opts.document ??
-        (await transactionService.createDocument(
-          masterAccount,
-          currentNetwork.chainId,
-          [message],
-          GNO_PREFIX,
-          gasWanted,
-          gasFeeUgnot,
-          memo,
-        ));
+      const document
+        = opts.document
+          ?? (await transactionService.createDocument(
+            masterAccount,
+            currentNetwork.chainId,
+            [message],
+            GNO_PREFIX,
+            gasWanted,
+            gasFeeUgnot,
+            memo,
+          ));
 
       if (isLedgerAccount(masterAccount)) {
         return runLedgerRevoke(masterAccount, document);
@@ -239,11 +239,13 @@ export const useRevokeSession = (): UseRevokeSessionReturn => {
         await cleanupSessionLocally(sessionAddr);
         await refetch();
         return { ok: true, hash };
-      } catch (e) {
+      }
+      catch (e) {
         const error = (e as Error)?.message ?? 'Revoke failed';
         setErrorMessage(error);
         return { ok: false, error };
-      } finally {
+      }
+      finally {
         setIsPending(false);
       }
     },
@@ -285,11 +287,13 @@ export const useRevokeSession = (): UseRevokeSessionReturn => {
         await cleanupMasterSessionsLocally(masterAddress, localSessionAddrs);
         await refetch();
         return { ok: true, hash };
-      } catch (e) {
+      }
+      catch (e) {
         const error = (e as Error)?.message ?? 'Revoke failed';
         setErrorMessage(error);
         return { ok: false, error };
-      } finally {
+      }
+      finally {
         setIsPending(false);
       }
     },

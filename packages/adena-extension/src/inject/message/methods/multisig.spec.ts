@@ -1,4 +1,5 @@
-jest.mock('@adena-wallet/sdk', () => ({
+import type { Mock } from 'vitest';
+vi.mock('@adena-wallet/sdk', () => ({
   WalletResponseFailureType: {
     UNSUPPORTED_TYPE: 'UNSUPPORTED_TYPE',
   },
@@ -21,8 +22,8 @@ jest.mock('@adena-wallet/sdk', () => ({
   },
 }));
 
-const mockCreatePopup = jest.fn();
-jest.mock('..', () => ({
+const mockCreatePopup = vi.fn();
+vi.mock('..', () => ({
   HandlerMethod: {
     createPopup: (...args: unknown[]): unknown => mockCreatePopup(...args),
   },
@@ -37,20 +38,20 @@ import {
 } from './multisig';
 
 type FakeCore = {
-  getInMemoryKey: jest.Mock;
-  getCurrentAccount: jest.Mock;
+  getInMemoryKey: Mock;
+  getCurrentAccount: Mock;
 };
 
 type MultisigRunner = (
   core: FakeCore,
   message: InjectionMessage,
-  sendResponse: jest.Mock,
+  sendResponse: Mock,
 ) => Promise<void>;
 
 function makeCore(overrides?: Partial<FakeCore>): FakeCore {
   return {
-    getInMemoryKey: jest.fn(async () => null),
-    getCurrentAccount: jest.fn(async () => ({
+    getInMemoryKey: vi.fn(async () => null),
+    getCurrentAccount: vi.fn(async () => ({
       id: 'account-1',
       type: 'HD_WALLET',
     })),
@@ -82,7 +83,7 @@ describe('multisig handlers', () => {
   describe('session account guard', () => {
     function makeSessionCore(): FakeCore {
       return makeCore({
-        getCurrentAccount: jest.fn(async () => ({
+        getCurrentAccount: vi.fn(async () => ({
           id: 'session-1',
           type: 'SESSION',
         })),
@@ -110,7 +111,7 @@ describe('multisig handlers', () => {
 
     it.each(cases)('returns UNSUPPORTED_TYPE for %s', async (type, run) => {
       const core = makeSessionCore();
-      const send = jest.fn();
+      const send = vi.fn();
 
       await run(core, makeMessage(type, {}), send);
 
@@ -128,7 +129,7 @@ describe('multisig handlers', () => {
 
   it('keeps the existing create account popup flow for non-session accounts', async () => {
     const core = makeCore();
-    const send = jest.fn();
+    const send = vi.fn();
 
     await createMultisigAccount(
       core as never,

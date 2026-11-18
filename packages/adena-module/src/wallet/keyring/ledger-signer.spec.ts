@@ -2,8 +2,8 @@ import { LedgerConnector } from '@cosmjs/ledger-amino';
 import Transport from '@ledgerhq/hw-transport';
 
 import { LedgerError } from '../../ledger/ledger-errors';
-import { FullPathLedgerSigner } from './ledger-signer';
 import { LedgerKeyring } from './ledger-keyring';
+import { FullPathLedgerSigner } from './ledger-signer';
 
 const OK = Buffer.from([0x90, 0x00]);
 const TRANSACTION_REJECTED = Buffer.from([0x69, 0x86]);
@@ -23,7 +23,7 @@ class RejectingTransport extends Transport {
         Buffer.from([version.length]),
         version,
         Buffer.from([1, 0]),
-        OK,
+        OK
       ]);
     }
     if (cla === 0x55 && ins === 0x00) {
@@ -42,7 +42,7 @@ describe('Ledger user rejection', () => {
   it('surfaces as UserRejected from the Gno signer', async () => {
     const signer = new FullPathLedgerSigner(new LedgerConnector(new RejectingTransport()), 0);
 
-    const error = await signer.signData(BYTES).catch((e) => e);
+    const error = await signer.signData(BYTES).catch(e => e);
 
     expect(error).toBeInstanceOf(LedgerError);
     expect(error.kind).toBe('UserRejected');
@@ -52,7 +52,7 @@ describe('Ledger user rejection', () => {
     const keyring = new LedgerKeyring({});
     keyring.setConnector(new LedgerConnector(new RejectingTransport()));
 
-    const error = await keyring.signRaw(BYTES).catch((e) => e);
+    const error = await keyring.signRaw(BYTES).catch(e => e);
 
     expect(error).toBeInstanceOf(LedgerError);
     expect(error.kind).toBe('UserRejected');

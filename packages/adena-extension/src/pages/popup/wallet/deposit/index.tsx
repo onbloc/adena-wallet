@@ -1,8 +1,3 @@
-import { isSessionAccount } from 'adena-module';
-import { QRCodeSVG } from 'qrcode.react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import { CHAIN_ICON_BY_GROUP } from '@assets/icons/cosmos-icons';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { Button, Copy, inputStyle, Text } from '@components/atoms';
@@ -15,6 +10,11 @@ import useSessionParams from '@hooks/use-session-state';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
+import { isSessionAccount } from 'adena-module';
+import { QRCodeSVG } from 'qrcode.react';
+import type { JSX } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const CHAIN_DISPLAY_NAME: Record<string, string> = {
   gno: 'Gno.land',
@@ -91,7 +91,7 @@ export const Deposit = (): JSX.Element => {
   }, [params?.token?.networkId, currentNetwork.networkId]);
 
   const chainEntry = useMemo(
-    () => chainAddressEntries.find((e) => e.chain.chainGroup === chainGroup),
+    () => chainAddressEntries.find(e => e.chain.chainGroup === chainGroup),
     [chainAddressEntries, chainGroup],
   );
 
@@ -154,7 +154,8 @@ export const Deposit = (): JSX.Element => {
             <img className='chain-icon' src={chainInfo.icon} alt={chainInfo.name} />
           )}
           <span className='chain-name'>{chainInfo.name}</span>
-        </span>{' '}
+        </span>
+        {' '}
         network.
       </ChainNoticeText>
       <Button fullWidth hierarchy='dark' margin='auto 0px 0px' onClick={closeButtonClick}>

@@ -1,11 +1,10 @@
-import styled from 'styled-components';
-
-import { closeCurrentSurface } from '@common/utils/browser-utils';
-import { WebMain, View, WebButton } from '@components/atoms';
-
 import AnimationAddAccount from '@assets/web/lottie/account-added.json';
-import { WebTitleWithDescription } from '@components/molecules';
+import { closeCurrentSurface } from '@common/utils/browser-utils';
+import { View, WebButton, WebMain } from '@components/atoms';
 import Lottie from '@components/atoms/lottie';
+import { WebTitleWithDescription } from '@components/molecules';
+import type { JSX } from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   row-gap: 18px;

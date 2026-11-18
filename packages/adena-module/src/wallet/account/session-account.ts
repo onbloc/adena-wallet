@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import { publicKeyToAddress } from '../../utils/address';
-import { Account, AccountInfo, SessionConfig } from './account';
 import { SessionKeyring } from '../keyring/session-keyring';
+import { Account, AccountInfo, SessionConfig } from './account';
 
 export class SessionAccount implements Account {
   public readonly id: string;
@@ -60,14 +60,14 @@ export class SessionAccount implements Account {
       keyringId: this.keyringId,
       publicKey: Array.from(this.publicKey),
       name: this._name,
-      sessionConfig: this.sessionConfig,
+      sessionConfig: this.sessionConfig
     };
   }
 
   public static createBy(
     keyring: SessionKeyring,
     name: string,
-    sessionConfig: SessionConfig,
+    sessionConfig: SessionConfig
   ): SessionAccount {
     return new SessionAccount({
       index: 0,
@@ -75,7 +75,7 @@ export class SessionAccount implements Account {
       type: 'SESSION',
       publicKey: Array.from(keyring.publicKey),
       name,
-      sessionConfig,
+      sessionConfig
     });
   }
 

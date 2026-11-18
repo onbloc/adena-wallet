@@ -1,5 +1,7 @@
 import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
 import { TokenProfile } from 'adena-module';
+import type { Mock } from 'vitest';
+
 import { CosmosBalanceService } from './cosmos-balance';
 
 const UATONE: TokenProfile = {
@@ -36,12 +38,12 @@ const GNO_TOKEN: TokenProfile = {
 
 describe('CosmosBalanceService', () => {
   let service: CosmosBalanceService;
-  let mockGetBalance: jest.Mock;
-  let mockGetAllBalances: jest.Mock;
+  let mockGetBalance: Mock;
+  let mockGetAllBalances: Mock;
 
   beforeEach(() => {
-    mockGetBalance = jest.fn();
-    mockGetAllBalances = jest.fn();
+    mockGetBalance = vi.fn();
+    mockGetAllBalances = vi.fn();
     const mockProvider = {
       getBalance: mockGetBalance,
       getAllBalances: mockGetAllBalances,

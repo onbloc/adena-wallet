@@ -1,37 +1,37 @@
+import { GOOGLE_VERIFIERS, Web3AuthVerifier } from '@common/constants/web3auth.constant';
 import { renderHook } from '@testing-library/react';
 
-import { GOOGLE_VERIFIERS, Web3AuthVerifier } from '@common/constants/web3auth.constant';
 import useGoogleLoginScreen from './use-google-login-screen';
 
 // Stub out the SDK to avoid pulling in @web3auth's native crypto at test time.
-jest.mock('@adena-wallet/sdk', () => ({
-  GnoSocialWalletProvider: { createGoogle: jest.fn() },
+vi.mock('@adena-wallet/sdk', () => ({
+  GnoSocialWalletProvider: { createGoogle: vi.fn() },
 }));
 
-jest.mock('@hooks/use-app-navigate', () => ({
+vi.mock('@hooks/use-app-navigate', () => ({
   __esModule: true,
-  default: (): unknown => ({ navigate: jest.fn(), params: null }),
+  default: (): unknown => ({ navigate: vi.fn(), params: null }),
 }));
 
-jest.mock('@hooks/use-network', () => ({
+vi.mock('@hooks/use-network', () => ({
   useNetwork: (): unknown => ({
     currentNetwork: { chainId: 'test', rpcUrl: '', addressPrefix: 'g' },
   }),
 }));
 
-jest.mock('@hooks/wallet/broadcast-transaction/use-indicator-step', () => ({
+vi.mock('@hooks/wallet/broadcast-transaction/use-indicator-step', () => ({
   __esModule: true,
   default: (): unknown => ({ stepNo: 0, stepLength: 2 }),
 }));
 
-jest.mock('../use-questionnaire', () => ({
+vi.mock('../use-questionnaire', () => ({
   __esModule: true,
   default: (): unknown => ({ ableToSkipQuestionnaire: true }),
 }));
 
-jest.mock('../social-login/use-social-login-account', () => ({
+vi.mock('../social-login/use-social-login-account', () => ({
   __esModule: true,
-  default: (): unknown => ({ connectWithProvider: jest.fn() }),
+  default: (): unknown => ({ connectWithProvider: vi.fn() }),
   toSocialLoginFailType: (): string => 'DEFAULT',
 }));
 

@@ -1,11 +1,10 @@
-import { NavigateOptions, useLocation, useNavigate } from 'react-router-dom';
 import { RouteParams, RoutePath } from '@types';
+import { NavigateOptions, useLocation, useNavigate } from 'react-router';
 
 type NavigateProps<key extends keyof RouteParams> = key extends unknown
   ? null extends RouteParams[key]
-    ?
-        | [screen: key] // if the params are optional, we don't have to provide it
-        | [
+    ? | [screen: key] // if the params are optional, we don't have to provide it
+    | [
             screen: key,
             params: {
               replace?: NavigateOptions['replace'];
@@ -13,7 +12,7 @@ type NavigateProps<key extends keyof RouteParams> = key extends unknown
               preventScrollReset?: NavigateOptions['preventScrollReset'];
               relative?: NavigateOptions['relative'];
             },
-          ]
+    ]
     : [
         screen: key,
         params: {
@@ -45,7 +44,8 @@ const useAppNavigate = <RouteName extends keyof RouteParams>(): {
   const goBack = (): void => {
     if (window?.history?.length > 1) {
       baseNavigate(-1);
-    } else {
+    }
+    else {
       navigate(RoutePath.Home, {});
     }
   };

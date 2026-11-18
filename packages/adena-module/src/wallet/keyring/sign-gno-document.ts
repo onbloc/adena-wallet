@@ -8,7 +8,7 @@ import {
   stringToUTF8,
   Tx,
   TxSignature,
-  TxSignPayload,
+  TxSignPayload
 } from '@gnolang/tm2-js-client';
 
 import { publicKeyToAddress } from '../../utils/address';
@@ -19,7 +19,7 @@ import { Keyring } from './keyring';
 import {
   isHDWalletKeyring,
   isPrivateKeyKeyring,
-  isWeb3AuthKeyring,
+  isWeb3AuthKeyring
 } from './keyring-util';
 import { SignGnoOptions } from './sign-gno-options';
 
@@ -34,7 +34,7 @@ export async function signGnoDocument(
   provider: Provider,
   document: Document,
   keyring: Keyring,
-  opts?: SignGnoOptions,
+  opts?: SignGnoOptions
 ): Promise<{ signed: Tx; signature: TxSignature[] }> {
   const status = await provider.getStatus();
   const chainID = status.node_info.network;
@@ -66,10 +66,10 @@ export async function signGnoDocument(
     sequence: sequence,
     fee: {
       amount: parseSignCoin(tx.fee.gas_fee),
-      gas: tx.fee.gas_wanted.toString(10),
+      gas: tx.fee.gas_wanted.toString(10)
     },
     msgs: decodeTxMessages(tx.messages),
-    memo: tx.memo,
+    memo: tx.memo
   };
 
   const signJsonString = sortedJsonStringify(signPayload);
@@ -84,25 +84,25 @@ export async function signGnoDocument(
   const compressedPubKey = compressPubkeyIfNeeded(publicKey);
   const pubKeyAny = {
     type_url: Secp256k1PubKeyType,
-    value: PubKeySecp256k1.encode({ key: compressedPubKey }).finish(),
+    value: PubKeySecp256k1.encode({ key: compressedPubKey }).finish()
   };
 
   const txSignature: TxSignature = {
     pub_key: pubKeyAny,
     signature,
-    session_addr: opts?.sessionAddr ?? '',
+    session_addr: opts?.sessionAddr ?? ''
   };
 
   const signedTx: Tx = {
     ...tx,
-    signatures: [...tx.signatures, txSignature],
+    signatures: [...tx.signatures, txSignature]
   };
   return { signed: signedTx, signature: signedTx.signatures };
 }
 
 async function getKeyringPublicKey(
   keyring: Keyring,
-  hdPath: HdPathLike | undefined,
+  hdPath: HdPathLike | undefined
 ): Promise<Uint8Array> {
   if (isHDWalletKeyring(keyring)) return keyring.getPublicKey(hdPath ?? 0);
   if (isPrivateKeyKeyring(keyring)) return keyring.publicKey;
@@ -112,6 +112,6 @@ async function getKeyringPublicKey(
   // session-keyring -> sign-gno-document -> keyring-util -> session-keyring
   if (keyring.type === 'SESSION') return (keyring as unknown as { publicKey: Uint8Array }).publicKey;
   throw new Error(
-    `Keyring type ${keyring.type} cannot provide a public key for signing`,
+    `Keyring type ${keyring.type} cannot provide a public key for signing`
   );
 }

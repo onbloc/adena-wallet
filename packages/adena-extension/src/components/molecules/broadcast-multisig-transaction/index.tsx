@@ -1,28 +1,26 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
-
-import { Account, isMultisigAccount, MultisigConfig, SignerPublicKeyInfo } from 'adena-module';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, Signature, SignerInfo } from '@inject/types';
-import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
-import { NetworkFee as NetworkFeeType } from '@types';
-import { createMultisigSignerInfoList, filterValidSignatures } from '@common/utils/multisig-utils';
-
-import { Button, Text } from '@components/atoms';
-import { BottomFixedLoadingButtonGroup } from '@components/molecules';
-
-import {
-  ApproveTransactionWrapper,
-  ApproveTransactionNetworkFeeWrapper,
-} from '../approve-transaction/approve-transaction.styles';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
+import { createMultisigSignerInfoList, filterValidSignatures } from '@common/utils/multisig-utils';
+import { Button, Text } from '@components/atoms';
+import { BottomFixedLoadingButtonGroup } from '@components/molecules';
+import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import { ContractMessage, Signature, SignerInfo } from '@inject/types';
+import { NetworkFee as NetworkFeeType } from '@types';
+import { Account, isMultisigAccount, MultisigConfig, SignerPublicKeyInfo } from 'adena-module';
+import React, { useCallback, useEffect, useMemo } from 'react';
+
+import {
+  ApproveTransactionNetworkFeeWrapper,
+  ApproveTransactionWrapper,
+} from '../approve-transaction/approve-transaction.styles';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
-import NetworkFee from '../network-fee/network-fee';
-import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
-import MultisigBroadcastThreshold from '../multisig-threshold/multisig-broadcast-threshold';
 import DocumentBroadcastSigner from '../document-signer/document-broadcast-signer';
+import MultisigBroadcastThreshold from '../multisig-threshold/multisig-broadcast-threshold';
+import NetworkFee from '../network-fee/network-fee';
 
 export interface BroadcastMultisigTransactionProps {
   loading: boolean;
@@ -227,17 +225,19 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
           className='visible-button'
           onClick={(): void => onToggleTransactionData(!opened)}
         >
-          {opened ? (
-            <>
-              <>Hide Transaction Data</>
-              <img src={IconArraowUp} alt='collapse' />
-            </>
-          ) : (
-            <>
-              <>View Transaction Data</>
-              <img src={IconArraowDown} alt='expand' />
-            </>
-          )}
+          {opened
+            ? (
+                <>
+                  <>Hide Transaction Data</>
+                  <img src={IconArraowUp} alt='collapse' />
+                </>
+              )
+            : (
+                <>
+                  <>View Transaction Data</>
+                  <img src={IconArraowDown} alt='expand' />
+                </>
+              )}
         </Button>
 
         {opened && (

@@ -99,7 +99,8 @@ export const resolveSessionAdminGasInfo = async ({
       gasUsed,
       estimated: true,
     };
-  } catch {
+  }
+  catch {
     // Gas estimation is best-effort; fall back to static gas on any failure.
     return fallbackGasInfo;
   }

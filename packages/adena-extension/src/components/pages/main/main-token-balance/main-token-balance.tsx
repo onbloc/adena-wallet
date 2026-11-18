@@ -1,5 +1,6 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { TokenBalance } from '@components/molecules';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+
 import {
   MainTokenBalanceSkeleton,
   MainTokenBalanceWrapper,
@@ -41,32 +42,34 @@ const MainTokenBalance: React.FC<MainTokenBalanceProps> = ({ amount, loading = f
 
   return (
     <MainTokenBalanceWrapper ref={wrapperRef} $compact={!loading && compact}>
-      {loading ? (
-        <MainTokenBalanceSkeleton aria-label='Loading balance' />
-      ) : (
-        <>
-          <div ref={cloneRef} className='measure-clone' aria-hidden>
-            <TokenBalance
-              value={value}
-              denom={denom}
-              orientation='HORIZONTAL'
-              fontColor='white'
-              fontStyleKey='header2'
-              minimumFontSize='24px'
-              lineHeight='39px'
-            />
-          </div>
-          <TokenBalance
-            value={value}
-            denom={denom}
-            orientation='HORIZONTAL'
-            fontColor='white'
-            fontStyleKey='header2'
-            minimumFontSize='24px'
-            lineHeight='39px'
-          />
-        </>
-      )}
+      {loading
+        ? (
+            <MainTokenBalanceSkeleton aria-label='Loading balance' />
+          )
+        : (
+            <>
+              <div ref={cloneRef} className='measure-clone' aria-hidden>
+                <TokenBalance
+                  value={value}
+                  denom={denom}
+                  orientation='HORIZONTAL'
+                  fontColor='white'
+                  fontStyleKey='header2'
+                  minimumFontSize='24px'
+                  lineHeight='39px'
+                />
+              </div>
+              <TokenBalance
+                value={value}
+                denom={denom}
+                orientation='HORIZONTAL'
+                fontColor='white'
+                fontStyleKey='header2'
+                minimumFontSize='24px'
+                lineHeight='39px'
+              />
+            </>
+          )}
     </MainTokenBalanceWrapper>
   );
 };

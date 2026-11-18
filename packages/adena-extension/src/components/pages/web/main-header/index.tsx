@@ -1,9 +1,8 @@
+import back from '@assets/web/chevron-left.svg';
+import { Pressable, Row, View, WebImg } from '@components/atoms';
+import _ from 'lodash';
 import React, { ReactElement, useMemo } from 'react';
 import styled, { useTheme } from 'styled-components';
-import _ from 'lodash';
-import back from '@assets/web/chevron-left.svg';
-
-import { Pressable, Row, View, WebImg } from '@components/atoms';
 
 const StyledContainer = styled(Row)`
   width: 100%;
@@ -51,7 +50,7 @@ export const WebMainHeader = ({
       <Row style={{ columnGap: 8 }}>
         {stepLength > 1 && isCurrentStep && (
           <React.Fragment>
-            {_.times(stepLength, (index) => (
+            {_.times(stepLength, index => (
               <StyledDot key={index} selected={index === currentStep} />
             ))}
           </React.Fragment>

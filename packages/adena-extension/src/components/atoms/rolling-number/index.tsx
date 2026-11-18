@@ -1,6 +1,7 @@
 import { WebFontType } from '@styles/theme';
 import React, { useEffect, useState } from 'react';
 import styled, { css, RuleSet } from 'styled-components';
+
 import { View } from '../base';
 import { WebText } from '../web-text';
 

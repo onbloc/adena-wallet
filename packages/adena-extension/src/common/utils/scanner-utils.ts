@@ -1,5 +1,6 @@
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { NetworkMetainfo } from '@types';
+
 import { makeQueryString } from './string-utils';
 
 /**

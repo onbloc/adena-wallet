@@ -1,4 +1,5 @@
-/* eslint-disable react/no-unknown-property */
+/* eslint-disable @eslint-react/dom-no-unknown-property */
+import type { JSX } from 'react';
 import React from 'react';
 
 const IconUnpin = ({ className }: { className?: string }): JSX.Element => (

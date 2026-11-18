@@ -1,6 +1,5 @@
-import styled from 'styled-components';
-
 import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const ApproveLedgerLoadingWrapper = styled.div`
   ${mixins.flex({ justify: 'flex-start' })};

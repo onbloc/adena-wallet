@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
+
 import { CustomNetworkInputWrapper } from './custom-network-input.styles';
 
 export type CustomNetworkFieldType = 'indexer' | 'lcd';

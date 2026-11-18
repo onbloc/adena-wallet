@@ -1,5 +1,6 @@
 import { WalletResponseFailureType } from '@adena-wallet/sdk';
 import { encodeParameter, getSiteName } from '@common/utils/client-utils';
+
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
 
@@ -18,11 +19,11 @@ export const createPopup = async (
 ): Promise<void> => {
   const popupOption: chrome.windows.CreateData = {
     url: chrome.runtime.getURL(
-      `popup.html#${popupPath}` +
-        `?key=${message.key}` +
-        `&hostname=${message.hostname}` +
-        `&protocol=${message.protocol}` +
-        `&data=${encodeParameter(message)}`,
+      `popup.html#${popupPath}`
+      + `?key=${message.key}`
+      + `&hostname=${message.hostname}`
+      + `&protocol=${message.protocol}`
+      + `&data=${encodeParameter(message)}`,
     ),
     type: 'popup',
     height: 590,
@@ -87,7 +88,7 @@ export const createPopup = async (
       popupMessageListener(windowResponse.id, message, popupMessage, sendResponseOnce, cleanup);
     };
 
-    const onTabsUpdatedListener = (tabId: number, info: chrome.tabs.TabChangeInfo): void => {
+    const onTabsUpdatedListener = (tabId: number, info: chrome.tabs.OnUpdatedInfo): void => {
       if (info.status === 'complete' && windowResponse.tabs) {
         chrome.runtime.onMessage.removeListener(onMessageListener);
         chrome.runtime.onMessage.addListener(onMessageListener);
@@ -109,7 +110,7 @@ export const createPopup = async (
 
 export const existsPopups = async (): Promise<boolean> => {
   const windows = await chrome.windows.getAll();
-  return windows.findIndex((window) => window.type === 'popup') > -1;
+  return windows.findIndex(window => window.type === 'popup') > -1;
 };
 
 export const removePopups = async (): Promise<void> => {

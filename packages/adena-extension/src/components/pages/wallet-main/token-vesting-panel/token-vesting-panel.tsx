@@ -1,10 +1,9 @@
-import BigNumber from 'bignumber.js';
-import dayjs from 'dayjs';
-import React, { useMemo } from 'react';
-
 import IconLockOutline from '@assets/icon-lock-outline';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { getVestingBreakdown, VestingInfo } from '@common/utils/vesting-utils';
+import BigNumber from 'bignumber.js';
+import dayjs from 'dayjs';
+import React, { useMemo } from 'react';
 
 import {
   PanelBody,
@@ -64,8 +63,8 @@ export const TokenVestingPanel: React.FC<TokenVestingPanelProps> = ({
   // The design's "Auto-release every block" describes the default linear curve,
   // which vests on every block's timestamp. A cliff releases nothing until its
   // end time, so it gets that date instead of a claim that would be false.
-  const releaseLabel =
-    schedule.type === 'delayed'
+  const releaseLabel
+    = schedule.type === 'delayed'
       ? `Unlocks on ${formatDate(schedule.endTime)}`
       : 'Auto-release every block';
 

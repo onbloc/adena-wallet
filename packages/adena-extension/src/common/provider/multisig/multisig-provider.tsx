@@ -1,9 +1,8 @@
-import React from 'react';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
 import { Signature } from '@inject/types';
 import { RawTx } from 'adena-module';
+import React from 'react';
 
 export interface MultisigTransactionContextProps {
   transaction: RawTx | null;
@@ -38,7 +37,7 @@ export const MultisigTransactionProvider: React.FC<React.PropsWithChildren<unkno
 
   const addSignature = React.useCallback((signature: Signature) => {
     setSignatures((prev) => {
-      const isDuplicate = prev.some((sig) => sig.pub_key.value === signature.pub_key.value);
+      const isDuplicate = prev.some(sig => sig.pub_key.value === signature.pub_key.value);
       if (isDuplicate) {
         return prev;
       }
@@ -47,7 +46,7 @@ export const MultisigTransactionProvider: React.FC<React.PropsWithChildren<unkno
   }, []);
 
   const removeSignature = React.useCallback((pubKeyValue: string) => {
-    setSignatures((prev) => prev.filter((sig) => sig.pub_key.value !== pubKeyValue));
+    setSignatures(prev => prev.filter(sig => sig.pub_key.value !== pubKeyValue));
   }, []);
 
   const clearSignatures = React.useCallback(() => {

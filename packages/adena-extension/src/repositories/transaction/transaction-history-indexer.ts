@@ -2,6 +2,7 @@ import { packagePathOfTokenPath, toRegistryKey } from '@common/utils/grc20-token
 import { getGrc20RegConfig, Grc20RegConfig } from '@common/utils/grc20reg-config';
 import { NetworkMetainfo, TransactionWithPageInfo } from '@types';
 import { AxiosInstance } from 'axios';
+
 import {
   Grc20MapperContext,
   hasGRC20TransferTo,
@@ -108,14 +109,14 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
     // (with `tokenId` in place of `value`), so keep only the GRC20 receives it
     // was meant to add.
     const { tokenPackages } = this.grc20Config;
-    const received = (receivedResult?.data?.getTransactions ?? []).filter((tx) =>
+    const received = (receivedResult?.data?.getTransactions ?? []).filter(tx =>
       hasGRC20TransferTo(tx, address, tokenPackages),
     );
 
     const transactions = mergeTransactionsByHash(
       result?.data?.getTransactions ?? [],
       received,
-    ).map((tx) => mapTransactionEdgeByAddress(tx, address, this.grc20MapperContext));
+    ).map(tx => mapTransactionEdgeByAddress(tx, address, this.grc20MapperContext));
 
     return {
       page: { hasNext: false, cursor: null },
@@ -183,7 +184,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
     // could be decoded, the realm path (the fallback can't disambiguate
     // sibling symbols).
     const transactions = mapped.filter(
-      (tx) => tx.amount?.denom === tokenPath || tx.amount?.denom === packagePath,
+      tx => tx.amount?.denom === tokenPath || tx.amount?.denom === packagePath,
     );
 
     return {
@@ -202,14 +203,14 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         this.axiosInstance,
         this.queryUrl,
         makeBlockTimeLegacyQuery(height),
-      ).then((result) => (result?.data?.blocks?.[0] ? result?.data?.blocks?.[0].time : null));
+      ).then(result => (result?.data?.blocks?.[0] ? result?.data?.blocks?.[0].time : null));
     }
 
     return TransactionHistoryIndexerRepository.postGraphQuery(
       this.axiosInstance,
       this.queryUrl,
       makeBlockTimeQuery(height),
-    ).then((result) =>
+    ).then(result =>
       result?.data?.blocks?.edges?.[0] ? result?.data?.blocks.edges?.[0].block.time : null,
     );
   }
@@ -230,7 +231,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
           headers: header || {},
         },
       )
-      .then((response) => response.data)
+      .then(response => response.data)
       .catch((e) => {
         console.log(e);
         return null;

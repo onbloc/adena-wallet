@@ -1,12 +1,13 @@
-import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-
 import { TokenPriceMap } from '@types';
+import React from 'react';
+import type { Mock } from 'vitest';
+
 import { useAdenaContext } from './use-context';
 import { useTokenPrices } from './use-token-prices';
 
-jest.mock('./use-context', () => ({ useAdenaContext: jest.fn() }));
+vi.mock('./use-context', () => ({ useAdenaContext: vi.fn() }));
 
 const REQUESTS = [{ tokenId: 'uatone', networkId: 'atomone-1' }];
 
@@ -14,9 +15,9 @@ const MAINNET_PRICES: TokenPriceMap = {
   'uatone:atomone-1': { tokenId: 'uatone', networkId: 'atomone-1', usd: 3.87, change24h: 1 },
 };
 
-function mockService(sourceId: string, prices: TokenPriceMap): jest.Mock {
-  const getTokenPrices = jest.fn().mockResolvedValue(prices);
-  (useAdenaContext as jest.Mock).mockReturnValue({
+function mockService(sourceId: string, prices: TokenPriceMap): Mock {
+  const getTokenPrices = vi.fn().mockResolvedValue(prices);
+  (useAdenaContext as Mock).mockReturnValue({
     tokenPriceService: { sourceId, getTokenPrices },
   });
   return getTokenPrices;
@@ -31,7 +32,9 @@ function makeWrapper(): React.FC<React.PropsWithChildren<unknown>> {
 }
 
 describe('useTokenPrices', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('returns the quotes for the requested tokens', async () => {
     mockService('https://api.onbloc.xyz', MAINNET_PRICES);

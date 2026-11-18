@@ -76,7 +76,8 @@ const escapeGnoString = (value: string): string => {
         // Escape other control characters; leave printable Unicode as-is.
         if (code < 0x20 || code === 0x7f) {
           out += `\\x${code.toString(16).padStart(2, '0')}`;
-        } else {
+        }
+        else {
           out += ch;
         }
       }
@@ -120,7 +121,8 @@ const readQEvalTuple = (response: string, offset: number): { tuple: QEvalTuple; 
       i++;
     }
     value = response.slice(quoteStart, i);
-  } else {
+  }
+  else {
     const tokenStart = i;
     while (i < response.length && !/\s/.test(response[i]) && response[i] !== ')') i++;
     value = response.slice(tokenStart, i);

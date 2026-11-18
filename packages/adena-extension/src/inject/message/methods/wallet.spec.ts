@@ -1,7 +1,8 @@
+import type { Mock } from 'vitest';
 // Stub out `@adena-wallet/sdk` to avoid loading @web3auth's native crypto,
 // which fails under jsdom's Uint8Array. Handlers use the enum values as
 // plain strings. Mirrors the setup in `cosmos.spec.ts`.
-jest.mock('@adena-wallet/sdk', () => ({
+vi.mock('@adena-wallet/sdk', () => ({
   WalletResponseFailureType: {
     ALREADY_CONNECTED: 'ALREADY_CONNECTED',
     INVALID_FORMAT: 'INVALID_FORMAT',
@@ -52,15 +53,15 @@ jest.mock('@adena-wallet/sdk', () => ({
   },
 }));
 
-const mockCreatePopup = jest.fn();
-jest.mock('..', () => ({
+const mockCreatePopup = vi.fn();
+vi.mock('..', () => ({
   HandlerMethod: {
     createPopup: (...args: unknown[]): unknown => mockCreatePopup(...args),
   },
 }));
 
-import { addEstablish } from './wallet';
 import { InjectionMessage } from '../message';
+import { addEstablish } from './wallet';
 
 const GNO_CHAIN = { chainGroup: 'gno', bech32Prefix: 'g' };
 const ATOMONE_CHAIN = { chainGroup: 'atomone', bech32Prefix: 'atone' };
@@ -68,24 +69,24 @@ const COSMOSHUB_CHAIN = { chainGroup: 'cosmoshub', bech32Prefix: 'cosmos' };
 
 type FakeCore = {
   chainRegistry: {
-    getChainByChainId: jest.Mock;
+    getChainByChainId: Mock;
   };
   establishService: {
-    isEstablishedBy: jest.Mock;
+    isEstablishedBy: Mock;
   };
   establishAtomOneService: {
-    isEstablishedBy: jest.Mock;
+    isEstablishedBy: Mock;
   };
-  getCurrentAccountId: jest.Mock;
-  getInMemoryKey: jest.Mock;
-  isLockedBy: jest.Mock;
-  hydrateChainRegistry: jest.Mock;
+  getCurrentAccountId: Mock;
+  getInMemoryKey: Mock;
+  isLockedBy: Mock;
+  hydrateChainRegistry: Mock;
 };
 
 function makeCore(overrides?: Partial<FakeCore>): FakeCore {
   return {
     chainRegistry: {
-      getChainByChainId: jest.fn((id: string) => {
+      getChainByChainId: vi.fn((id: string) => {
         if (id === 'gnoland-1' || id === 'staging') return GNO_CHAIN;
         if (id === 'atomone-1') return ATOMONE_CHAIN;
         if (id === 'cosmoshub-4') return COSMOSHUB_CHAIN;
@@ -93,15 +94,15 @@ function makeCore(overrides?: Partial<FakeCore>): FakeCore {
       }),
     },
     establishService: {
-      isEstablishedBy: jest.fn(async () => false),
+      isEstablishedBy: vi.fn(async () => false),
     },
     establishAtomOneService: {
-      isEstablishedBy: jest.fn(async () => false),
+      isEstablishedBy: vi.fn(async () => false),
     },
-    getCurrentAccountId: jest.fn(async () => 'acc-1'),
-    getInMemoryKey: jest.fn(async () => null),
-    isLockedBy: jest.fn(async () => false),
-    hydrateChainRegistry: jest.fn(async () => undefined),
+    getCurrentAccountId: vi.fn(async () => 'acc-1'),
+    getInMemoryKey: vi.fn(async () => null),
+    isLockedBy: vi.fn(async () => false),
+    hydrateChainRegistry: vi.fn(async () => undefined),
     ...overrides,
   };
 }
@@ -127,9 +128,9 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
   describe('legacy single-chain path (no chainIds)', () => {
     it('returns ALREADY_CONNECTED when the hostname is already established', async () => {
       const core = makeCore({
-        establishService: { isEstablishedBy: jest.fn(async () => true) },
+        establishService: { isEstablishedBy: vi.fn(async () => true) },
       } as never);
-      const send = jest.fn();
+      const send = vi.fn();
       await addEstablish(core as never, makeMessage(), send);
       expect(send).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'failure', type: 'ALREADY_CONNECTED' }),
@@ -139,7 +140,7 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
 
     it('opens the approve popup when not established', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await addEstablish(core as never, makeMessage(), send);
       expect(mockCreatePopup).toHaveBeenCalledTimes(1);
       expect(mockCreatePopup.mock.calls[0][0]).toBe('/approve/wallet/establish');
@@ -149,7 +150,7 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
   describe('multi-chain path (chainIds provided)', () => {
     it('rejects INVALID_FORMAT when chainIds is empty string', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await addEstablish(core as never, makeMessage({ chainIds: '' }), send);
       expect(send).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'failure', type: 'INVALID_FORMAT' }),
@@ -159,7 +160,7 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
 
     it('rejects UNADDED_NETWORK when any chainId is unknown', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await addEstablish(
         core as never,
         makeMessage({ chainIds: ['gnoland-1', 'unknown-chain'] }),
@@ -173,7 +174,7 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
 
     it('rejects UNSUPPORTED_TYPE for chainGroups outside the whitelist (e.g. cosmoshub)', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await addEstablish(
         core as never,
         makeMessage({ chainIds: ['gnoland-1', 'cosmoshub-4'] }),
@@ -187,7 +188,7 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
 
     it('routes to the approve popup when cross-protocol chainIds (gno + atomone) are provided', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await addEstablish(
         core as never,
         makeMessage({ chainIds: ['gnoland-1', 'atomone-1'] }),
@@ -199,10 +200,10 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
 
     it('short-circuits ALREADY_CONNECTED when every chainId is already established (per service)', async () => {
       const core = makeCore({
-        establishService: { isEstablishedBy: jest.fn(async () => true) },
-        establishAtomOneService: { isEstablishedBy: jest.fn(async () => true) },
+        establishService: { isEstablishedBy: vi.fn(async () => true) },
+        establishAtomOneService: { isEstablishedBy: vi.fn(async () => true) },
       } as never);
-      const send = jest.fn();
+      const send = vi.fn();
       await addEstablish(
         core as never,
         makeMessage({ chainIds: ['gnoland-1', 'atomone-1'] }),
@@ -218,10 +219,10 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
       // Gno already connected, AtomOne not — all-established AND must fail,
       // so the handler should route to the popup rather than short-circuit.
       const core = makeCore({
-        establishService: { isEstablishedBy: jest.fn(async () => true) },
-        establishAtomOneService: { isEstablishedBy: jest.fn(async () => false) },
+        establishService: { isEstablishedBy: vi.fn(async () => true) },
+        establishAtomOneService: { isEstablishedBy: vi.fn(async () => false) },
       } as never);
-      const send = jest.fn();
+      const send = vi.fn();
       await addEstablish(
         core as never,
         makeMessage({ chainIds: ['gnoland-1', 'atomone-1'] }),
@@ -235,7 +236,7 @@ describe('addEstablish handler (Stage 8 — cross-protocol router)', () => {
 
     it('routes per chainGroup when checking ALREADY_CONNECTED — atomone chainId hits AtomOne service', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await addEstablish(core as never, makeMessage({ chainIds: ['atomone-1'] }), send);
       expect(core.establishAtomOneService.isEstablishedBy).toHaveBeenCalledWith(
         'acc-1',

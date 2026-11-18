@@ -1,14 +1,12 @@
-import React from 'react';
-import styled from 'styled-components';
-
-import { MultisigAccountMode } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
-import { MultisigConfig } from 'adena-module';
-
+import IconAirgap from '@assets/web/airgap-green.svg';
 import { View, WebButton, WebErrorText, WebImg } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import { WebMultisigSignerInput } from '@components/molecules/web-multisig-signer-input';
 import { WebMultisigThresholdInput } from '@components/molecules/web-multisig-threshold-input';
-import IconAirgap from '@assets/web/airgap-green.svg';
+import { MultisigAccountMode } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
+import { MultisigConfig } from 'adena-module';
+import React from 'react';
+import styled from 'styled-components';
 
 interface SetupMultisigConfigProps {
   currentAddress: string;
@@ -36,15 +34,15 @@ const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
   const { signers, threshold } = multisigConfig;
 
   const validSignersCount = React.useMemo(() => {
-    return Math.max(1, signers.filter((signer) => signer.trim() !== '').length);
+    return Math.max(1, signers.filter(signer => signer.trim() !== '').length);
   }, [signers]);
 
   const disabledNextButton = React.useMemo(() => {
-    if (signers.some((signer) => signer.trim() === '')) {
+    if (signers.some(signer => signer.trim() === '')) {
       return true;
     }
 
-    const validSigners = signers.filter((signer) => signer.trim() !== '');
+    const validSigners = signers.filter(signer => signer.trim() !== '');
 
     if (validSigners.length < 2) {
       return true;
@@ -70,7 +68,7 @@ const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
       <WebTitleWithDescription
         title='Set Up Multi-sig Account'
         description='Enter the required information for your multisig account. Please make sure all addresses and threshold are correct — they cannot be changed after setup.'
-        descriptionLetterSpacing={'-0.40px'}
+        descriptionLetterSpacing='-0.40px'
         marginBottom={-6}
       />
 

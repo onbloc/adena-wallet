@@ -1,6 +1,3 @@
-import { AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
-import React, { useEffect, useState } from 'react';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
@@ -12,6 +9,8 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessageInstance } from '@inject/message';
 import { RoutePath } from '@types';
+import { AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
+import React, { useEffect, useState } from 'react';
 
 const ApproveSignLedgerLoadingContainer: React.FC = () => {
   const { wallet } = useWalletContext();

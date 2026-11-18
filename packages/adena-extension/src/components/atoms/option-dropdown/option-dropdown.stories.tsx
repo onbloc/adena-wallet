@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import OptionDropdown, { type OptionDropdownProps } from './option-dropdown';
 
 export default {

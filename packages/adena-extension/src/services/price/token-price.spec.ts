@@ -1,13 +1,13 @@
+import { ITokenPriceRepository } from '@repositories/price';
 import { AssetPrice } from '@types';
 
-import { ITokenPriceRepository } from '@repositories/price';
 import { TokenPriceService } from './token-price';
 
 function makeRepository(assetPrices: AssetPrice[]): ITokenPriceRepository {
   return {
     apiUrl: 'https://api.onbloc.xyz',
     supported: true,
-    fetchAssetPrices: jest.fn().mockResolvedValue(assetPrices),
+    fetchAssetPrices: vi.fn().mockResolvedValue(assetPrices),
   };
 }
 

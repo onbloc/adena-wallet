@@ -1,4 +1,5 @@
 import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
+
 import { toCosmosNetworkProfile, toGnoNetworkProfile } from '../network-profile-mapper';
 
 describe('toGnoNetworkProfile', () => {

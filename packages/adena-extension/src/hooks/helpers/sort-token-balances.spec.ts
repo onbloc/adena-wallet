@@ -36,7 +36,7 @@ describe('compareTokenBalances', () => {
 
     const sorted = [atom, photon].sort(compareTokenBalances);
 
-    expect(sorted.map((t) => t.symbol)).toEqual(['PHOTON', 'ATOM']);
+    expect(sorted.map(t => t.symbol)).toEqual(['PHOTON', 'ATOM']);
   });
 
   it('falls back to symbol ascending when amounts are equal', () => {
@@ -45,7 +45,7 @@ describe('compareTokenBalances', () => {
 
     const sorted = [a, b].sort(compareTokenBalances);
 
-    expect(sorted.map((t) => t.symbol)).toEqual(['AAA', 'BBB']);
+    expect(sorted.map(t => t.symbol)).toEqual(['AAA', 'BBB']);
   });
 
   it('places tokens with missing or invalid amounts last', () => {
@@ -59,7 +59,7 @@ describe('compareTokenBalances', () => {
     expect(
       sorted
         .slice(1)
-        .map((t) => t.symbol)
+        .map(t => t.symbol)
         .sort(),
     ).toEqual(['EMPTY', 'NAN']);
   });
@@ -71,7 +71,7 @@ describe('compareTokenBalances', () => {
 
     const sorted = [photon, atom, gnot].sort(compareTokenBalances);
 
-    expect(sorted.map((t) => t.symbol)).toEqual(['GNOT', 'PHOTON', 'ATOM']);
+    expect(sorted.map(t => t.symbol)).toEqual(['GNOT', 'PHOTON', 'ATOM']);
   });
 });
 
@@ -86,7 +86,7 @@ describe('sortTokenBalancesByStoredOrder', () => {
       ['GNOT:test', 'PHOTON:test', 'ATOM:test'],
     );
 
-    expect(sorted.map((t) => t.symbol)).toEqual(['GNOT', 'PHOTON', 'ATOM']);
+    expect(sorted.map(t => t.symbol)).toEqual(['GNOT', 'PHOTON', 'ATOM']);
   });
 
   it('holds the stored order while amounts are still arriving', () => {
@@ -97,7 +97,7 @@ describe('sortTokenBalancesByStoredOrder', () => {
 
     // ATOM resolving first must not lift it above the rows still loading.
     expect(
-      sortTokenBalancesByStoredOrder([gnot, atom, photon], order).map((t) => t.symbol),
+      sortTokenBalancesByStoredOrder([gnot, atom, photon], order).map(t => t.symbol),
     ).toEqual(['GNOT', 'PHOTON', 'ATOM']);
   });
 
@@ -112,7 +112,7 @@ describe('sortTokenBalancesByStoredOrder', () => {
       ['GNOT:test', 'ATOM:test'],
     );
 
-    expect(sorted.map((t) => t.symbol)).toEqual(['GNOT', 'ATOM', 'FRESHER', 'FRESH']);
+    expect(sorted.map(t => t.symbol)).toEqual(['GNOT', 'ATOM', 'FRESHER', 'FRESH']);
   });
 
   it('pins the native token even when the stored order buried it', () => {
@@ -121,7 +121,7 @@ describe('sortTokenBalancesByStoredOrder', () => {
 
     const sorted = sortTokenBalancesByStoredOrder([gnot, atom], ['ATOM:test', 'GNOT:test']);
 
-    expect(sorted.map((t) => t.symbol)).toEqual(['GNOT', 'ATOM']);
+    expect(sorted.map(t => t.symbol)).toEqual(['GNOT', 'ATOM']);
   });
 
   it('keys rows by network so the same token id on two chains stays distinct', () => {
@@ -133,7 +133,7 @@ describe('sortTokenBalancesByStoredOrder', () => {
       ['uatone:atomone-test', 'uatone:atomone-1'],
     );
 
-    expect(sorted.map((t) => t.networkId)).toEqual(['atomone-test', 'atomone-1']);
+    expect(sorted.map(t => t.networkId)).toEqual(['atomone-test', 'atomone-1']);
   });
 
   it('falls back to balance order when nothing is stored', () => {
@@ -142,6 +142,6 @@ describe('sortTokenBalancesByStoredOrder', () => {
 
     const sorted = sortTokenBalancesByStoredOrder([atom, photon], []);
 
-    expect(sorted.map((t) => t.symbol)).toEqual(['PHOTON', 'ATOM']);
+    expect(sorted.map(t => t.symbol)).toEqual(['PHOTON', 'ATOM']);
   });
 });

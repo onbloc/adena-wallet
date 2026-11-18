@@ -9,7 +9,7 @@ export const UGNOT: TokenProfile = {
   iconUrl: '/assets/icons/gnoland.svg',
   origin: { kind: 'gno-native', denom: 'ugnot' },
   tags: ['native', 'fee', 'staking'],
-  priceId: 'gnoland',
+  priceId: 'gnoland'
 };
 
 export const UATONE: TokenProfile = {
@@ -21,7 +21,7 @@ export const UATONE: TokenProfile = {
   iconUrl: '/assets/icons/atone.svg',
   origin: { kind: 'cosmos-native', denom: 'uatone' },
   tags: ['native', 'staking', 'governance'],
-  priceId: 'atomone',
+  priceId: 'atomone'
 };
 
 export const UPHOTON: TokenProfile = {
@@ -33,7 +33,7 @@ export const UPHOTON: TokenProfile = {
   iconUrl: '/assets/icons/photon.svg',
   origin: { kind: 'cosmos-native', denom: 'uphoton' },
   tags: ['native', 'fee'],
-  priceId: 'photon',
+  priceId: 'photon'
 };
 
 export const UATONE_TESTNET: TokenProfile = {
@@ -44,7 +44,7 @@ export const UATONE_TESTNET: TokenProfile = {
   decimals: 6,
   iconUrl: '/assets/icons/atone.svg',
   origin: { kind: 'cosmos-native', denom: 'uatone' },
-  tags: ['native', 'staking', 'governance'],
+  tags: ['native', 'staking', 'governance']
 };
 
 export const UPHOTON_TESTNET: TokenProfile = {
@@ -55,7 +55,7 @@ export const UPHOTON_TESTNET: TokenProfile = {
   decimals: 6,
   iconUrl: '/assets/icons/photon.svg',
   origin: { kind: 'cosmos-native', denom: 'uphoton' },
-  tags: ['native', 'fee'],
+  tags: ['native', 'fee']
 };
 
 export const ALL_TOKENS: TokenProfile[] = [
@@ -63,5 +63,5 @@ export const ALL_TOKENS: TokenProfile[] = [
   UATONE,
   UPHOTON,
   UATONE_TESTNET,
-  UPHOTON_TESTNET,
+  UPHOTON_TESTNET
 ];

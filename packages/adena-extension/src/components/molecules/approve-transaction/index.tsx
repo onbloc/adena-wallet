@@ -1,19 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
-import { Button, Text } from '@components/atoms';
-import { BottomFixedButton, BottomFixedLoadingButtonGroup } from '@components/molecules';
-
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
 import IconFailed from '@assets/connect-fail-permission.svg';
 import { TransactionErrorDetail as TransactionErrorDetailType } from '@common/utils/transaction-error-detail';
+import { Button, Text } from '@components/atoms';
+import { BottomFixedButton, BottomFixedLoadingButtonGroup } from '@components/molecules';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
-import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import { NetworkFee as NetworkFeeType } from '@types';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
@@ -288,9 +287,11 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
                 hierarchy='custom'
                 bgColor='transparent'
                 className='error-detail-raw-toggle'
-                onClick={(): void => setShowRawError((v) => !v)}
+                onClick={(): void => setShowRawError(v => !v)}
               >
-                {showRawError ? 'Hide' : 'Show'} error details
+                {showRawError ? 'Hide' : 'Show'}
+                {' '}
+                error details
               </Button>
               {showRawError && <div className='error-detail-raw-box'>{errorDetail.rawError}</div>}
             </>
@@ -322,18 +323,20 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
 
       <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>
         <span className='key'>Memo:</span>
-        {hasMemo ? (
-          <span className={'value'}>{memo}</span>
-        ) : (
-          <input
-            type='text'
-            className={'value'}
-            value={memo}
-            onChange={onChangeMemo}
-            autoComplete='off'
-            placeholder='(Optional)'
-          />
-        )}
+        {hasMemo
+          ? (
+              <span className='value'>{memo}</span>
+            )
+          : (
+              <input
+                type='text'
+                className='value'
+                value={memo}
+                onChange={onChangeMemo}
+                autoComplete='off'
+                placeholder='(Optional)'
+              />
+            )}
       </div>
 
       <div ref={feeAmountRef} className='fee-amount-wrapper'>
@@ -381,17 +384,19 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
           className='visible-button'
           onClick={(): void => onToggleTransactionData(!opened)}
         >
-          {opened ? (
-            <>
-              <>Hide Transaction Data</>
-              <img src={IconArraowUp} />
-            </>
-          ) : (
-            <>
-              <>View Transaction Data</>
-              <img src={IconArraowDown} />
-            </>
-          )}
+          {opened
+            ? (
+                <>
+                  <>Hide Transaction Data</>
+                  <img src={IconArraowUp} />
+                </>
+              )
+            : (
+                <>
+                  <>View Transaction Data</>
+                  <img src={IconArraowDown} />
+                </>
+              )}
         </Button>
 
         {opened && (

@@ -1,20 +1,19 @@
 # Adena on Firefox
 
 This fork builds Adena as a Manifest V3 extension that also runs on Firefox. The default
-build targets Chrome/Chromium; the Firefox target is a separate `--env browser=firefox`
-webpack pass that emits `packages/adena-extension/dist-firefox`.
+build targets Chrome/Chromium; the Firefox target is a separate
+`vite build -- --browser=firefox` pass that emits `packages/adena-extension/dist-firefox`.
 
 ## Building
 
 ```
-yarn install
+pnpm install
 
-yarn build            # chrome dist  -> packages/adena-extension/dist
-yarn build:firefox    # firefox dist -> packages/adena-extension/dist-firefox
+pnpm build            # chrome dist  -> packages/adena-extension/dist
+pnpm build:firefox    # firefox dist -> packages/adena-extension/dist-firefox
 ```
 
-(`yarn build:firefox` rebuilds `adena-module` / `adena-torus-signin` first, then the
-extension bundle.)
+(`pnpm build:firefox` rebuilds `adena-module` first, then the extension bundle.)
 
 ## Loading it in Firefox
 
@@ -27,7 +26,7 @@ extension bundle.)
     (e.g. `~/adena-ff-profile`). The snap confinement blocks profiles under `~/.cache`
     or `/tmp`; Firefox then never starts its debugger server and web-ext fails with
     `connect ECONNREFUSED`.
-- Permanent install (optional): `yarn web-ext build -s packages/adena-extension/dist-firefox`
+- Permanent install (optional): `pnpm exec web-ext build -s packages/adena-extension/dist-firefox`
   and use a Firefox build that allows unsigned extensions
   (`xpinstall.signatures.required=false`). Don't sign it with `--channel=unlisted`:
   that uses up the version number the listed submission needs.
@@ -37,7 +36,7 @@ extension bundle.)
 `.github/workflows/build-firefox-xpi.yml` runs on `v*.*.*` tags (the same trigger as
 the Chrome build and deploy in `build-deploy.yml`) and:
 
-1. builds the Firefox bundle (`yarn build:firefox`);
+1. builds the Firefox bundle (`pnpm build:firefox`);
 2. packages it into an XPI with `scripts/build-firefox-xpi.sh` (the Firefox
    counterpart of `build-qa.sh`), producing
    `deploy-firefox/adena-extension-firefox-<tag>.xpi` plus a version-named copy in
@@ -50,36 +49,31 @@ release version is only uploaded by the listed submission in
 `.github/workflows/submit-store.yml`. Load the unsigned XPI via `about:debugging` or
 in a build with `xpinstall.signatures.required=false`.
 
-Optional secrets:
-
-- `PRIVATE_ACCESS_TOKEN`: only needed to build against the private
-  `adena-torus-signin` repository; without it the checked-in mock is used, so the
-  workflow runs in forks too (enable Actions in the fork first).
-
 ## What differs from the Chrome build
 
 |                 | Chrome build                                 | Firefox build                                                                                                              |
 | --------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Manifest source | `public/manifest.json`                       | `public/manifest.firefox.json`                                                                                             |
+| Manifest source | `manifest.json`                              | `manifest.json` + `manifest.firefox.json`                                                                                  |
 | Background      | `background.service_worker` (service worker) | `background.scripts` (non-persistent event page — Firefox does not support extension service workers)                      |
 | Add-on id       | none needed                                  | `browser_specific_settings.gecko.id = adena-wallet@onbloc.xyz`, `strict_min_version: 115.0` (needed for `storage.session`) |
 | Output dir      | `dist/`                                      | `dist-firefox/`                                                                                                            |
 
-Both builds share the manifest transform in `webpack.config.js`, which merges in the
-icon set and the version from `packages/adena-extension/package.json` (so
-`manifest.firefox.json` does not drift when the release scripts bump versions).
+Both builds share `buildManifest()` in `manifest.config.ts`, which merges in the
+version from `packages/adena-extension/package.json` (so `manifest.firefox.json` does
+not drift when the release scripts bump versions); `crx()` then rewrites the source
+entries to the emitted files.
 
 ## Source changes for Firefox
 
-- `webpack.config.js`
-  - **`output.publicPath: ''`** — webpack's default `'auto'` public path throws
-    `Automatic publicPath is not supported in this browser` inside Firefox content
-    scripts (no `document.currentScript` in that execution context). The exception
-    killed `content.js` before it could inject `inject.js`, so the whole dApp bridge
-    (and `window.adena`) silently never worked on Firefox. Relative URLs are correct
-    for the root-level extension pages that load assets. Applies to both build targets.
-  - `--env browser=firefox` selects `public/manifest.firefox.json` and the
-    `dist-firefox` output directory.
+- `vite.config.ts`
+  - `-- --browser=firefox` selects the Firefox manifest delta, `crx({ browser: 'firefox' })`
+    and the `dist-firefox` output directory.
+  - `inject.js` is built separately as one self-contained IIFE with the node polyfills,
+    because `content.ts` loads it into the page as a classic script.
+  - The webpack build needed `output.publicPath: ''` because webpack's `'auto'` public
+    path threw inside Firefox content scripts; `crx()` loads content scripts through
+    `chrome.runtime.getURL`, so verify the dApp bridge (`window.adena`) on Firefox
+    after any change to how content scripts are emitted.
 - `background.ts`: the tab-update handler also skips `moz-extension://` URLs
   (alongside `chrome://` / `chrome-extension://` / `about:`).
 - `adena-module/ledger-connector.ts`: `AdenaLedgerConnector.isSupported()` plus guards so

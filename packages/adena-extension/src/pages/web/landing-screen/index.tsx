@@ -1,21 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
-import React, { ReactElement } from 'react';
-import styled from 'styled-components';
-
-import { useAdenaContext } from '@hooks/use-context';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
-import { isLedgerSupportedBrowser } from '@common/utils/browser-utils';
-
-import { View, WebMain } from '@components/atoms';
-import WebMainButton from '@components/atoms/web-main-button';
+import IconAdvancedSetup from '@assets/icon-advanced-setup';
 import IconStandardWallet from '@assets/icon-standard-wallet';
 import IconUsb from '@assets/icon-usb';
-import IconAdvancedSetup from '@assets/icon-advanced-setup';
 import AnimationAddAccount from '@assets/web/lottie/add-account.json';
 import welcomeJson from '@assets/web/lottie/welcome.json';
+import { isLedgerSupportedBrowser } from '@common/utils/browser-utils';
+import { View, WebMain } from '@components/atoms';
 import Lottie from '@components/atoms/lottie';
+import WebMainButton from '@components/atoms/web-main-button';
 import { WebText } from '@components/atoms/web-text';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext } from '@hooks/use-context';
+import { useQuery } from '@tanstack/react-query';
+import { RoutePath } from '@types';
+import React, { ReactElement } from 'react';
+import styled from 'styled-components';
 
 const StyledAnimationWrapper = styled.div`
   display: block;
@@ -37,11 +35,11 @@ const LandingScreen = (): ReactElement => {
 
   // networkMode 'always': this reads chrome.storage, never the network. The
   // default 'online' pauses offline, leaving isLoading true for the session.
-  const { data: existWallet, isLoading } = useQuery(
-    ['existWallet', walletService.id],
-    async () => walletService.existsWallet(),
-    { networkMode: 'always' },
-  );
+  const { data: existWallet, isPending: isLoading } = useQuery({
+    queryKey: ['existWallet', walletService.id],
+    queryFn: async () => walletService.existsWallet(),
+    networkMode: 'always',
+  });
 
   if (isLoading) {
     return <WebMain />;

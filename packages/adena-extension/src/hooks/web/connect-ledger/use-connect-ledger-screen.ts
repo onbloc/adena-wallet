@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { AdenaLedgerConnector, AdenaWallet, Wallet, Account, serializeAccount } from 'adena-module';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { RoutePath } from '@types';
+import { Account, AdenaLedgerConnector, AdenaWallet, serializeAccount, Wallet } from 'adena-module';
+import { useEffect, useState } from 'react';
 
 export type UseConnectLedgerDeviceScreenReturn = {
   indicatorInfo: UseIndicatorStepReturn;
@@ -14,14 +14,14 @@ export type UseConnectLedgerDeviceScreenReturn = {
   requestPermission: () => Promise<void>;
 };
 
-export type ConnectLedgerStateType =
-  | 'INIT'
-  | 'REQUEST'
-  | 'NOT_PERMISSION'
-  | 'REQUEST_WALLET'
-  | 'REQUEST_WALLET_LOAD'
-  | 'FAILED'
-  | 'SUCCESS';
+export type ConnectLedgerStateType
+  = | 'INIT'
+    | 'REQUEST'
+    | 'NOT_PERMISSION'
+    | 'REQUEST_WALLET'
+    | 'REQUEST_WALLET_LOAD'
+    | 'FAILED'
+    | 'SUCCESS';
 
 export const connectLedgerStep: Record<
   ConnectLedgerStateType,
@@ -110,7 +110,8 @@ const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
       await transport?.close();
       setConnectState('REQUEST_WALLET');
       requestHardwareWallet();
-    } catch (e) {
+    }
+    catch (e) {
       setConnectState('NOT_PERMISSION');
     }
   };
@@ -132,7 +133,8 @@ const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
         setConnectState('NOT_PERMISSION');
         return;
       }
-    } catch (e) {
+    }
+    catch (e) {
       setConnectState('NOT_PERMISSION');
     }
 
@@ -150,7 +152,8 @@ const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
       setWallet(wallet);
       setConnectState('SUCCESS');
       retry = false;
-    } catch (e) {
+    }
+    catch (e) {
       if (e instanceof Error) {
         if (e.message !== 'The device is already open.') {
           console.log(e);

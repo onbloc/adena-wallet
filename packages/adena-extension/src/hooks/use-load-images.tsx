@@ -1,6 +1,5 @@
-import { useRecoilState } from 'recoil';
-
 import { CommonState } from '@states';
+import { useAtom } from 'jotai';
 import { useMemo } from 'react';
 
 export type UseLoadAccountsReturn = {
@@ -11,8 +10,8 @@ export type UseLoadAccountsReturn = {
 };
 
 export const useLoadImages = (): UseLoadAccountsReturn => {
-  const [loadingImageUrls, setLoadingImageUrls] = useRecoilState(CommonState.loadingImageUrls);
-  const [loadedImageUrls, setLoadedImageUrls] = useRecoilState(CommonState.loadedImageUrls);
+  const [loadingImageUrls, setLoadingImageUrls] = useAtom(CommonState.loadingImageUrls);
+  const [loadedImageUrls, setLoadedImageUrls] = useAtom(CommonState.loadedImageUrls);
 
   const isLoading = useMemo(() => {
     if (loadingImageUrls.length === 0) {
@@ -22,11 +21,11 @@ export const useLoadImages = (): UseLoadAccountsReturn => {
   }, [loadedImageUrls, loadingImageUrls]);
 
   const addLoadingImages = (imageUrls: string[]): void => {
-    setLoadingImageUrls([...new Set(imageUrls.filter((url) => !!url))]);
+    setLoadingImageUrls([...new Set(imageUrls.filter(url => !!url))]);
   };
 
   const completeImageLoading = (imageUrl: string): void => {
-    setLoadedImageUrls((prev) => [...new Set([...prev, imageUrl])]);
+    setLoadedImageUrls(prev => [...new Set([...prev, imageUrl])]);
   };
 
   const clear = (): void => {

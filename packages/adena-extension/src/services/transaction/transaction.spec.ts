@@ -1,8 +1,8 @@
-import { TransactionService } from './transaction';
-
 import type { GnoProvider } from '@common/provider/gno/gno-provider';
 import type { Account, Document, Wallet } from 'adena-module';
+
 import type { WalletService } from '..';
+import { TransactionService } from './transaction';
 
 const makeDocument = (): Document => ({
   msgs: [],
@@ -19,7 +19,7 @@ const makeDocument = (): Document => ({
 describe('TransactionService', () => {
   it('refreshes account number and sequence before signing', async () => {
     const provider = {
-      getAccountInfo: jest.fn(async () => ({
+      getAccountInfo: vi.fn(async () => ({
         address: 'g1master',
         coins: '10000000ugnot',
         chainId: 'test-13',
@@ -31,7 +31,7 @@ describe('TransactionService', () => {
     } as unknown as GnoProvider;
     const service = new TransactionService({} as WalletService, provider);
     const wallet = {
-      signByAccountId: jest.fn(async () => ({
+      signByAccountId: vi.fn(async () => ({
         signed: { signatures: [] },
         signature: [],
       })),
@@ -39,7 +39,7 @@ describe('TransactionService', () => {
     const account = {
       id: 'account-1',
       type: 'PRIVATE_KEY',
-      getAddress: jest.fn(async () => 'g1master'),
+      getAddress: vi.fn(async () => 'g1master'),
     } as unknown as Account;
 
     await service.createTransaction(wallet, account, makeDocument());

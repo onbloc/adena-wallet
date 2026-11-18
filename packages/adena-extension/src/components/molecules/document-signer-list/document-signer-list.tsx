@@ -1,13 +1,13 @@
-import { useCallback } from 'react';
-import { useNetwork } from '@hooks/use-network';
-import { useNetworkProfile } from '@hooks/use-network-profile';
-
-import { DocumentSignerListWrapper } from './document-signer-list.styles';
-import DocumentSignerListItem from './document-signer-list-item';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { makeQueryString } from '@common/utils/string-utils';
 import useLink from '@hooks/use-link';
+import { useNetwork } from '@hooks/use-network';
+import { useNetworkProfile } from '@hooks/use-network-profile';
 import { SignerInfo } from '@inject/types';
+import { useCallback } from 'react';
+
+import { DocumentSignerListWrapper } from './document-signer-list.styles';
+import DocumentSignerListItem from './document-signer-list-item';
 
 interface DocumentSignerListProps {
   signerInfos: SignerInfo[];

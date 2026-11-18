@@ -1,5 +1,3 @@
-import { useMemo, useState } from 'react';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
@@ -7,6 +5,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
+import { useMemo, useState } from 'react';
 
 export const useTokenTransactions = (
   isNative: boolean | undefined,
@@ -15,9 +14,9 @@ export const useTokenTransactions = (
 ): {
   data:
     | {
-        title: string;
-        transactions: TransactionInfo[];
-      }[]
+      title: string;
+      transactions: TransactionInfo[];
+    }[]
     | null;
   isFetched: boolean;
   status: 'loading' | 'error' | 'success';
@@ -34,9 +33,10 @@ export const useTokenTransactions = (
   const { tokenMetainfos } = useTokenMetainfo();
   const [fetchedHistoryBlockHeight, setFetchedHistoryBlockHeight] = useState<number | null>(null);
 
-  const { data: allTransactions, refetch } = useQuery(
-    ['token-details/history', currentNetwork.networkId, `${isNative}`, currentAddress, tokenPath],
-    () => {
+  const { data: allTransactions, refetch } = useQuery({
+    queryKey: ['token-details/history', currentNetwork.networkId, `${isNative}`, currentAddress, tokenPath],
+
+    queryFn: () => {
       if (isNative === undefined) {
         return null;
       }
@@ -45,14 +45,13 @@ export const useTokenTransactions = (
         ? transactionHistoryService.fetchNativeTransactionHistory(currentAddress || '')
         : transactionHistoryService.fetchGRC20TransactionHistory(currentAddress || '', tokenPath);
     },
-    {
-      enabled:
-        !!currentAddress &&
-        transactionHistoryService.supported &&
-        tokenMetainfos.length > 0 &&
-        enabled,
-    },
-  );
+
+    enabled:
+      !!currentAddress
+      && transactionHistoryService.supported
+      && tokenMetainfos.length > 0
+      && enabled,
+  });
 
   const blockIndex = useMemo(() => {
     if (!allTransactions) {

@@ -1,20 +1,19 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
-
-import { Button, Text } from '@components/atoms';
-import { BottomFixedLoadingButtonGroup } from '@components/molecules';
-
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
+import { Button, Text } from '@components/atoms';
+import { BottomFixedLoadingButtonGroup } from '@components/molecules';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
-import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import { EncodeTxSignature } from '@services/index';
 import { NetworkFee as NetworkFeeType } from '@types';
+import React, { useCallback, useEffect, useMemo } from 'react';
+
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
 import { ApproveSignedDocumentWrapper } from './approve-signed-document.styles';
-import { EncodeTxSignature } from '@services/index';
 
 export interface ApproveSignedDocumentProps {
   loading: boolean;
@@ -130,7 +129,7 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
 
       <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>
         <span className='key'>Memo:</span>
-        {hasMemo ? <span className={'value'}>{memo}</span> : null}
+        {hasMemo ? <span className='value'>{memo}</span> : null}
       </div>
 
       <div className='fee-amount-wrapper'>
@@ -151,17 +150,19 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
           className='visible-button'
           onClick={(): void => onToggleTransactionData(!opened)}
         >
-          {opened ? (
-            <>
-              <>Hide Transaction Data</>
-              <img src={IconArraowUp} />
-            </>
-          ) : (
-            <>
-              <>View Transaction Data</>
-              <img src={IconArraowDown} />
-            </>
-          )}
+          {opened
+            ? (
+                <>
+                  <>Hide Transaction Data</>
+                  <img src={IconArraowUp} />
+                </>
+              )
+            : (
+                <>
+                  <>View Transaction Data</>
+                  <img src={IconArraowDown} />
+                </>
+              )}
         </Button>
 
         {opened && (

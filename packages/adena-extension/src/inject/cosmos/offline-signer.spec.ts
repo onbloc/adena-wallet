@@ -1,16 +1,16 @@
+import type { MockedClass } from 'vitest';
 // Stub out `@adena-wallet/sdk` to avoid pulling in @web3auth's native crypto at
 // import time — jsdom's globals fail noble-hashes' Uint8Array instance check.
-jest.mock('@adena-wallet/sdk', () => ({
+vi.mock('@adena-wallet/sdk', () => ({
   WalletResponseExecuteType: {},
   WalletResponseFailureType: {},
   WalletResponseStatus: { SUCCESS: 'success', FAILURE: 'failure' },
   WalletMessageInfo: {},
 }));
 
-import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
-
 import { bytesToBase64 } from '@common/utils/encoding-util';
 import type { SerializedCosmosKey } from '@inject/types';
+import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 
 import { AdenaExecutor } from '../executor/executor';
 import {
@@ -19,20 +19,22 @@ import {
   decodeCosmosKey,
 } from './offline-signer';
 
-jest.mock('../executor/executor');
+vi.mock('../executor/executor');
 
 const mockExecutorInstance = {
-  getCosmosKey: jest.fn(),
-  signCosmosAmino: jest.fn(),
-  signCosmosDirect: jest.fn(),
+  getCosmosKey: vi.fn(),
+  signCosmosAmino: vi.fn(),
+  signCosmosDirect: vi.fn(),
 };
 
 beforeEach(() => {
   mockExecutorInstance.getCosmosKey.mockReset();
   mockExecutorInstance.signCosmosAmino.mockReset();
   mockExecutorInstance.signCosmosDirect.mockReset();
-  (AdenaExecutor as jest.MockedClass<typeof AdenaExecutor>).mockImplementation(
-    () => mockExecutorInstance as unknown as AdenaExecutor,
+  (AdenaExecutor as MockedClass<typeof AdenaExecutor>).mockImplementation(
+    function () {
+      return mockExecutorInstance as unknown as AdenaExecutor;
+    },
   );
 });
 

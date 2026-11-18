@@ -3,15 +3,7 @@ import {
   WalletResponseRejectType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
-import type { StdSignDoc } from '@cosmjs/amino';
-import { isLedgerAccount, isSessionAccount } from 'adena-module';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-
 import UnknownLogo from '@assets/common-unknown-logo.svg';
-import { Text } from '@components/atoms';
-import { BottomFixedLoadingButtonGroup } from '@components/molecules';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -22,8 +14,9 @@ import {
   deserializeSignDoc,
   serializeSignDoc,
 } from '@common/utils/cosmos-serialize';
-import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import { Text } from '@components/atoms';
+import { BottomFixedLoadingButtonGroup } from '@components/molecules';
+import type { StdSignDoc } from '@cosmjs/amino';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
@@ -34,7 +27,13 @@ import {
   SignCosmosAminoParams,
   SignCosmosDirectParams,
 } from '@inject/types';
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
+import { isLedgerAccount, isSessionAccount } from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import styled from 'styled-components';
 
 // TODO: replace with `InjectionMessageInstance.success/failure` once
 // `@adena-wallet/sdk` is updated so `WalletMessageInfo` contains entries for
@@ -78,7 +77,7 @@ const ApproveSignCosmosContainer: React.FC = () => {
   useEffect(() => {
     walletService
       .isLocked()
-      .then((locked) => locked && navigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && navigate(RoutePath.ApproveLogin + location.search));
   }, [walletService]);
 
   // SessionAccount is a Gno-only sub-key. Block any Cosmos signing as soon as
@@ -108,7 +107,8 @@ const ApproveSignCosmosContainer: React.FC = () => {
           setChainId(data.chainId);
           setSigner(data.signer);
           setRawSignDoc(data.signDoc);
-        } else if (executeType === CosmosResponseExecuteType.SIGN_COSMOS_DIRECT) {
+        }
+        else if (executeType === CosmosResponseExecuteType.SIGN_COSMOS_DIRECT) {
           const data = (message.data ?? {}) as SignCosmosDirectParams;
           setMode('direct');
           setChainId(data.chainId);
@@ -116,7 +116,8 @@ const ApproveSignCosmosContainer: React.FC = () => {
           setRawSignDoc(data.signDoc);
         }
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.warn('[ApproveSignCosmos] initRequest failed:', error);
     }
   }, [location]);
@@ -217,7 +218,8 @@ const ApproveSignCosmosContainer: React.FC = () => {
             signature: response.signature,
           }),
         );
-      } else {
+      }
+      else {
         const nativeDoc = deserializeSignDoc(rawSignDoc as SerializedSignDoc);
         const response = await transactionService.signCosmosDirectDoc(
           currentAccount.id,
@@ -231,12 +233,13 @@ const ApproveSignCosmosContainer: React.FC = () => {
         );
       }
       window.close();
-    } catch (error) {
+    }
+    catch (error) {
       const detail = (error as Error)?.message ?? String(error);
       setErrorMessage(detail);
       setProcessing(false);
-      const failureType =
-        detail === 'LEDGER_NOT_SUPPORTED'
+      const failureType
+        = detail === 'LEDGER_NOT_SUPPORTED'
           ? WalletResponseFailureType.UNSUPPORTED_TYPE
           : WalletResponseFailureType.UNEXPECTED_ERROR;
       sendFailure(failureType, detail);
@@ -246,7 +249,8 @@ const ApproveSignCosmosContainer: React.FC = () => {
   const prettySignDoc = useMemo(() => {
     try {
       return JSON.stringify(rawSignDoc, null, 2);
-    } catch {
+    }
+    catch {
       return String(rawSignDoc);
     }
   }, [rawSignDoc]);

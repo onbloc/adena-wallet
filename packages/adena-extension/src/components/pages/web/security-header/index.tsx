@@ -1,10 +1,8 @@
+import back from '@assets/web/chevron-left.svg';
+import { Pressable, Row, View, WebImg } from '@components/atoms';
+import _ from 'lodash';
 import React, { ReactElement } from 'react';
 import styled, { useTheme } from 'styled-components';
-import _ from 'lodash';
-
-import { Pressable, Row, View, WebImg } from '@components/atoms';
-
-import back from '@assets/web/chevron-left.svg';
 
 const StyledContainer = styled(Row)`
   width: 100%;
@@ -43,24 +41,26 @@ export const WebSecurityHeader = ({
 
   return (
     <StyledContainer>
-      {visibleBackButton ? (
-        <Pressable
-          onClick={onClickGoBack}
-          style={{ padding: 4, backgroundColor: theme.webInput._100, borderRadius: 16 }}
-        >
-          <WebImg src={back} size={24} />
-        </Pressable>
-      ) : <StyledEmpty />}
+      {visibleBackButton
+        ? (
+            <Pressable
+              onClick={onClickGoBack}
+              style={{ padding: 4, backgroundColor: theme.webInput._100, borderRadius: 16 }}
+            >
+              <WebImg src={back} size={24} />
+            </Pressable>
+          )
+        : <StyledEmpty />}
 
       {stepLength > 0 && (
         <Row style={{ columnGap: 8 }}>
-          {_.times(stepLength, (index) => (
+          {_.times(stepLength, index => (
             <StyledDot key={index} selected={index === currentStep} />
           ))}
         </Row>
       )}
 
       <StyledEmpty />
-    </StyledContainer >
+    </StyledContainer>
   );
 };

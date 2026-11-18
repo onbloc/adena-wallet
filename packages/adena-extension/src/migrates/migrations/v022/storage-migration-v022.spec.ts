@@ -47,10 +47,10 @@ describe('StorageMigration022', () => {
 
   it('refreshes NETWORKS from chains.json and drops the stale test-13 entry', async () => {
     const result = await new StorageMigration022().up(makeInput({ NETWORKS: [] }));
-    const mainnet = result.data.NETWORKS.find((n) => n.chainId === 'gnoland-1');
+    const mainnet = result.data.NETWORKS.find(n => n.chainId === 'gnoland-1');
     expect(mainnet).toBeDefined();
     expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
-    expect(result.data.NETWORKS.find((n) => n.chainId === 'test-13')).toBeUndefined();
+    expect(result.data.NETWORKS.find(n => n.chainId === 'test-13')).toBeUndefined();
   });
 
   it('removes ESTABLISH_SITES entries for test-13', async () => {

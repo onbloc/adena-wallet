@@ -1,16 +1,16 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
-import theme from '@styles/theme';
 import { GlobalWebStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
+
 import { WebSecurityHeader } from '.';
 
 describe('WebSecurityHeader Component', () => {
   it('WebSecurityHeader render', () => {
-
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalWebStyle />
         <ThemeProvider theme={theme}>
           <WebSecurityHeader
@@ -20,7 +20,7 @@ describe('WebSecurityHeader Component', () => {
             onClickGoBack={(): void => { return; }}
           />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

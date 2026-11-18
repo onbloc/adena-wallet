@@ -1,8 +1,7 @@
-import React from 'react';
-import styled from 'styled-components';
-
 import IconChevronDown from '@assets/icon-chevron-down';
 import { fonts } from '@styles/theme';
+import React from 'react';
+import styled from 'styled-components';
 
 interface AccountSelectorButtonProps {
   name: string;

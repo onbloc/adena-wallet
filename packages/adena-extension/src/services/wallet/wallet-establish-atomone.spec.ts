@@ -1,5 +1,6 @@
-import { ChainRegistry } from 'adena-module';
 import { EstablishSite, WalletEstablishAtomOneRepository } from '@repositories/wallet';
+import { ChainRegistry } from 'adena-module';
+
 import { WalletEstablishAtomOneService } from './wallet-establish-atomone';
 
 const ACCOUNT_ID = 'account-a';
@@ -11,14 +12,14 @@ const ATOMONE_GROUP_PROFILES = [
 ];
 
 const makeChainRegistry = (): ChainRegistry => {
-  const getChainByChainId = jest.fn((chainId: string) => {
+  const getChainByChainId = vi.fn((chainId: string) => {
     if (chainId === 'atomone-1' || chainId === 'atomone-testnet-1') {
       return { chainGroup: 'atomone' };
     }
     return undefined;
   });
 
-  const listNetworkProfilesByChain = jest.fn((chainGroup: string) => {
+  const listNetworkProfilesByChain = vi.fn((chainGroup: string) => {
     if (chainGroup === 'atomone') {
       return ATOMONE_GROUP_PROFILES;
     }
@@ -39,11 +40,11 @@ const makeRepository = (
 } => {
   let store: { [accountId: string]: EstablishSite[] } = { ...initialStore };
   const repository = {
-    getEstablishedSites: jest.fn(async () => store),
-    updateEstablishedSites: jest.fn(async (next: { [accountId: string]: EstablishSite[] }) => {
+    getEstablishedSites: vi.fn(async () => store),
+    updateEstablishedSites: vi.fn(async (next: { [accountId: string]: EstablishSite[] }) => {
       store = next;
     }),
-    deleteEstablishedSites: jest.fn(async () => {
+    deleteEstablishedSites: vi.fn(async () => {
       store = {};
     }),
   } as unknown as WalletEstablishAtomOneRepository;
@@ -238,7 +239,7 @@ describe('WalletEstablishAtomOneService', () => {
       const result = await service.getEstablishedSitesBy(ACCOUNT_ID);
 
       expect(result).toHaveLength(2);
-      expect(result.map((s) => s.chainId)).toEqual(['atomone-1', 'atomone-testnet-1']);
+      expect(result.map(s => s.chainId)).toEqual(['atomone-1', 'atomone-testnet-1']);
     });
 
     it('returns an empty array when no records exist for the accountId', async () => {

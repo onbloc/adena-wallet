@@ -1,20 +1,21 @@
 import { renderHook } from '@testing-library/react';
 import { Account } from 'adena-module';
+import type { Mock } from 'vitest';
 
 import { useLoadAccounts } from './use-load-accounts';
 import { useNetwork } from './use-network';
 import { useVisibleAccounts } from './use-visible-accounts';
 
-jest.mock('./use-load-accounts', () => ({
-  useLoadAccounts: jest.fn(),
+vi.mock('./use-load-accounts', () => ({
+  useLoadAccounts: vi.fn(),
 }));
 
-jest.mock('./use-network', () => ({
-  useNetwork: jest.fn(),
+vi.mock('./use-network', () => ({
+  useNetwork: vi.fn(),
 }));
 
-const useLoadAccountsMock = useLoadAccounts as jest.Mock;
-const useNetworkMock = useNetwork as jest.Mock;
+const useLoadAccountsMock = useLoadAccounts as Mock;
+const useNetworkMock = useNetwork as Mock;
 
 const makeSessionAccount = (chainId?: string): Account =>
   ({
@@ -29,9 +30,9 @@ const makeSessionAccount = (chainId?: string): Account =>
       chainId,
       status: 'ACTIVE',
     },
-    getAddress: jest.fn(async () => 'g1session'),
-    getMasterAddress: jest.fn(() => 'g1master'),
-    toData: jest.fn(),
+    getAddress: vi.fn(async () => 'g1session'),
+    getMasterAddress: vi.fn(() => 'g1master'),
+    toData: vi.fn(),
   }) as unknown as Account;
 
 const makeSeedAccount = (): Account =>
@@ -44,7 +45,7 @@ const makeSeedAccount = (): Account =>
 
 describe('useVisibleAccounts', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     useNetworkMock.mockReturnValue({ currentNetwork: { chainId: 'test-13', addressPrefix: 'g' } });
   });
 

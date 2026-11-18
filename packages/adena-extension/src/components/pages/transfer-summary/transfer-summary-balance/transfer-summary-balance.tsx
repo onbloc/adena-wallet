@@ -1,6 +1,7 @@
 import FeeAmount from '@components/molecules/fee-amount/fee-amount';
 import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
 import React from 'react';
+
 import { TransferSummaryBalanceWrapper } from './transfer-summary-balance.styles';
 
 export interface TransferSummaryBalanceProps {

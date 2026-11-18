@@ -3,8 +3,10 @@ import { StorageManager } from '@common/storage/storage-manager';
 import { GRC721_TOKEN_PACKAGES } from '@common/utils/grc721-config';
 import { NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
-import { GRC721_RECONCILE_INTERVAL_MS, GRC721_SYNC_CACHE_KEY } from './token.grc721-sync';
+import type { Mock } from 'vitest';
+
 import { TokenRepository } from './token';
+import { GRC721_RECONCILE_INTERVAL_MS, GRC721_SYNC_CACHE_KEY } from './token.grc721-sync';
 
 const GRC721_PACKAGE = GRC721_TOKEN_PACKAGES[0].path;
 const COLLECTION_ID = 'gno.land/r/gnoswap/gnft.GNFT.0000000';
@@ -56,12 +58,12 @@ interface ChainState {
 function makeSyncCache(): { storage: StorageManager; values: Record<string, unknown> } {
   const values: Record<string, unknown> = {};
   const storage = {
-    getToObject: jest.fn(async (key: string) => values[key]),
-    setByObject: jest.fn(async (key: string, value: unknown) => {
+    getToObject: vi.fn(async (key: string) => values[key]),
+    setByObject: vi.fn(async (key: string, value: unknown) => {
       values[key] = value;
       values.__writes = ((values.__writes as number) ?? 0) + 1;
     }),
-    remove: jest.fn(async (key: string) => {
+    remove: vi.fn(async (key: string) => {
       delete values[key];
     }),
   } as unknown as StorageManager;
@@ -89,24 +91,24 @@ function makeRepository(
   } = {},
 ): {
   repository: TokenRepository;
-  evaluateFunction: jest.Mock;
-  post: jest.Mock;
+  evaluateFunction: Mock;
+  post: Mock;
   syncCacheValues: Record<string, unknown>;
-  get: jest.Mock;
+  get: Mock;
 } {
   const pages = [transactionEvents, ...(options.laterPages ?? [])];
   const latestBlockHeight = options.latestBlockHeight ?? 500;
   const blockHeight = options.blockHeight ?? 100;
   let call = 0;
 
-  const post = jest.fn(async () => {
+  const post = vi.fn(async () => {
     const page = pages[Math.min(call, pages.length - 1)];
     call += 1;
     return {
       data: {
         data: {
           latestBlockHeight,
-          getTransactions: page.map((events) => ({
+          getTransactions: page.map(events => ({
             block_height: blockHeight,
             response: { events },
           })),
@@ -115,7 +117,7 @@ function makeRepository(
     };
   });
 
-  const get = jest.fn(async (url: string) => {
+  const get = vi.fn(async (url: string) => {
     const payload = options.api?.(url);
     if (payload === undefined) {
       throw new Error('Request failed with status code 404');
@@ -126,7 +128,7 @@ function makeRepository(
   const axiosInstance = { post, get } as unknown as AxiosInstance;
   const { storage: syncCache, values: syncCacheValues } = makeSyncCache();
 
-  const evaluateFunction = jest.fn(
+  const evaluateFunction = vi.fn(
     async (
       _packagePath: string,
       functionName: string,
@@ -135,7 +137,7 @@ function makeRepository(
 
   const gnoProvider = {
     evaluateFunction,
-    getRealmDocument: jest.fn(async () => ({ funcs: chain.funcs ?? [] })),
+    getRealmDocument: vi.fn(async () => ({ funcs: chain.funcs ?? [] })),
   } as unknown as GnoProvider;
 
   const repository = new TokenRepository(
@@ -157,13 +159,13 @@ function makeRepository(
 }
 
 /** The GraphQL document sent on the nth indexer call. */
-const queryOf = (post: jest.Mock, call: number): string => post.mock.calls[call][1].query;
+const queryOf = (post: Mock, call: number): string => post.mock.calls[call][1].query;
 
 /**
  * The resume height in a query's `where` clause, or null when it walks from
  * genesis. `block_height` also names a selected field, so match the filter.
  */
-const resumeHeightOf = (post: jest.Mock, call: number): number | null => {
+const resumeHeightOf = (post: Mock, call: number): number | null => {
   const matched = queryOf(post, call).match(/block_height: \{ gt: (\d+) \}/);
   return matched ? Number(matched[1]) : null;
 };
@@ -172,12 +174,12 @@ describe('indexer sync cursor', () => {
   // Reconciliation is driven by the clock, so a test that moves it has to put
   // it back for the ones after it.
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   const announced = (): unknown[] => [newToken(COLLECTION_ID, 'GNOSWAP NFT', 'GNFT')];
   const collectionIdsOf = async (repository: TokenRepository): Promise<string[]> =>
-    (await repository.fetchGRC721Collections()).map((collection) => collection.collectionId || '');
+    (await repository.fetchGRC721Collections()).map(collection => collection.collectionId || '');
 
   it('walks from genesis first, then resumes above the height it reached', async () => {
     const { repository, post, syncCacheValues } = makeRepository(
@@ -410,9 +412,9 @@ describe('indexer sync cursor', () => {
           data: {
             latestBlockHeight: 4_000_000,
             getTransactions: announcements
-              .filter((announcement) => announcement.height > fromBlockHeight)
+              .filter(announcement => announcement.height > fromBlockHeight)
               .sort((left, right) => left.height - right.height)
-              .map((announcement) => ({
+              .map(announcement => ({
                 block_height: announcement.height,
                 response: { events: [newToken(announcement.collectionId, 'Name', 'SYM')] },
               })),
@@ -429,7 +431,7 @@ describe('indexer sync cursor', () => {
     await expect(collectionIdsOf(repository)).resolves.toEqual([OTHER_COLLECTION_ID]);
 
     const now = Date.now();
-    jest.spyOn(Date, 'now').mockReturnValue(now + GRC721_RECONCILE_INTERVAL_MS);
+    vi.spyOn(Date, 'now').mockReturnValue(now + GRC721_RECONCILE_INTERVAL_MS);
 
     await expect(collectionIdsOf(repository)).resolves.toEqual([
       COLLECTION_ID,
@@ -587,7 +589,7 @@ describe('fetchGRC721Collections', () => {
 
     const collections = await repository.fetchGRC721Collections();
 
-    expect(collections.map((collection) => collection.collectionId)).toEqual([
+    expect(collections.map(collection => collection.collectionId)).toEqual([
       'gno.land/r/demo/nft.ITEM.0000000',
     ]);
   });
@@ -697,7 +699,7 @@ describe('GRC721 API', () => {
 
     const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
 
-    expect(tokens.map((token) => [token.tokenId, token.isOwned])).toEqual([
+    expect(tokens.map(token => [token.tokenId, token.isOwned])).toEqual([
       ['351', false],
       ['350', true],
     ]);
@@ -736,15 +738,15 @@ describe('GRC721 API', () => {
     );
 
     const collections = await repository.fetchAccountGRC721CollectionsBy(ADDRESS);
-    expect(collections.map((entry) => entry.packagePath)).toEqual([PACKAGE_PATH]);
+    expect(collections.map(entry => entry.packagePath)).toEqual([PACKAGE_PATH]);
 
     const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
-    expect(tokens.map((token) => token.tokenId)).toEqual(['1', '2']);
+    expect(tokens.map(token => token.tokenId)).toEqual(['1', '2']);
     await expect(repository.fetchGRC721BalanceBy(PACKAGE_PATH, ADDRESS)).resolves.toBe(2);
   });
 
   it('keeps the pages already read when a later page fails', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const { repository } = makeRepository(
       [[]],
       {},
@@ -766,13 +768,13 @@ describe('GRC721 API', () => {
 
     const tokens = await repository.fetchGRC721TokensBy(PACKAGE_PATH, ADDRESS);
 
-    expect(tokens.map((token) => token.tokenId)).toEqual(['1', '2']);
+    expect(tokens.map(token => token.tokenId)).toEqual(['1', '2']);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
 
   it('warns when the page cap cuts the list short', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     let next = 0;
     const { repository } = makeRepository(
       [[]],
@@ -801,7 +803,7 @@ describe('GRC721 API', () => {
       [[]],
       {},
       {
-        api: (url) => (url === COLLECTIONS_URL ? { items: [collection] } : undefined),
+        api: url => (url === COLLECTIONS_URL ? { items: [collection] } : undefined),
       },
     );
 
@@ -844,8 +846,8 @@ describe('fetchGRC721TokenUriBy', () => {
   function makeSessionCache(): { storage: StorageManager; values: Record<string, string> } {
     const values: Record<string, string> = {};
     const storage = {
-      get: jest.fn(async (key: string) => values[key] ?? ''),
-      set: jest.fn(async (key: string, value: string) => {
+      get: vi.fn(async (key: string) => values[key] ?? ''),
+      set: vi.fn(async (key: string, value: string) => {
         values[key] = `${value}`;
       }),
     } as unknown as StorageManager;
@@ -870,23 +872,23 @@ describe('fetchGRC721TokenUriBy', () => {
       repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '2'),
     ]);
     // The cache writes run behind the returned value.
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise(resolve => setTimeout(resolve, 0));
     await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe(
       'data:image/svg+xml;base64,AAA',
     );
 
     expect(evaluateFunction).toHaveBeenCalledTimes(2);
     expect(JSON.parse(values[`GRC721_TOKEN_URI:gnoland-1:${PACKAGE_PATH}`])).toEqual({
-      '1': 'data:image/svg+xml;base64,AAA',
-      '2': 'data:image/svg+xml;base64,AAA',
+      1: 'data:image/svg+xml;base64,AAA',
+      2: 'data:image/svg+xml;base64,AAA',
     });
   });
 
   it('returns the uri without waiting for the cache write', async () => {
     let release = (): void => undefined;
     const storage = {
-      get: jest.fn(async () => ''),
-      set: jest.fn(
+      get: vi.fn(async () => ''),
+      set: vi.fn(
         () =>
           new Promise<void>((resolve) => {
             release = resolve;
@@ -902,7 +904,7 @@ describe('fetchGRC721TokenUriBy', () => {
     await expect(repository.fetchGRC721TokenUriBy(PACKAGE_PATH, '1')).resolves.toBe('ipfs://x');
 
     // The write queue is shared, so let it drain for the tests after this one.
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise(resolve => setTimeout(resolve, 0));
     release();
   });
 

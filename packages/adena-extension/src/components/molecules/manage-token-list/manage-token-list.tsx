@@ -1,7 +1,8 @@
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import React from 'react';
-import ManageTokenListItem from './manage-token-list-item';
+
 import { ManageTokenListWrapper } from './manage-token-list.styles';
+import ManageTokenListItem from './manage-token-list-item';
 
 export interface ManageTokenInfo {
   tokenId: string;
@@ -30,11 +31,11 @@ export interface ManageTokenListProps {
   queryGRC721TokenUri?: (
     packagePath: string,
     tokenId: string,
-    options?: UseQueryOptions<string | null, Error>,
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   queryGRC721Balance?: (
     packagePath: string,
-    options?: UseQueryOptions<number | null, Error>,
+    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<number | null>;
   onToggleActiveItem: (tokenId: string, activated: boolean) => void;
 }

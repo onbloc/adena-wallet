@@ -1,6 +1,6 @@
 import NetworkListItem, { type NetworkListItemProps } from './network-list-item';
-import { Meta, StoryObj } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react-vite';
+import { action } from 'storybook/actions';
 import CHAIN_DATA from '@resources/chains/chains.json';
 
 export default {

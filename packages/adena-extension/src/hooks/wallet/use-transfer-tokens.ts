@@ -29,7 +29,8 @@ export const useTransferTokens = (): UseTransferTokenReturn => {
     if (accountGRC20Tokens) {
       // Precise, self-contained: exactly the tokens the account holds.
       filteredGRC20Packages = accountGRC20Tokens;
-    } else {
+    }
+    else {
       // Indexer path: cross-reference the on-chain registry list by token path.
       // Transfer events carry the token id `{packagePath}.{symbol}.{sequence}`,
       // parsed to the token path, so sibling symbols in one realm stay distinct.
@@ -37,7 +38,7 @@ export const useTransferTokens = (): UseTransferTokenReturn => {
         tokenService.fetchGRC20Tokens().catch((): GRC20TokenModel[] => []),
         tokenService.fetchAllTransferGRC20TokenPathsBy(address).catch((): string[] => []),
       ]);
-      filteredGRC20Packages = deployedGRC20Tokens.filter((grc20Token) =>
+      filteredGRC20Packages = deployedGRC20Tokens.filter(grc20Token =>
         transferTokenPaths.includes(grc20Token.tokenId),
       );
     }

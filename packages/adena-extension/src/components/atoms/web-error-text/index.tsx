@@ -1,8 +1,9 @@
+import IconError from '@assets/web/error.svg';
+import type { JSX } from 'react';
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import { Row } from '../base';
-import IconError from '@assets/web/error.svg';
 import { WebImg } from '../web-img';
 import { WebText } from '../web-text';
 

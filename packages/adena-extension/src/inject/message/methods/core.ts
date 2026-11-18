@@ -1,6 +1,3 @@
-import { Account, ChainRegistry, createChainRegistry } from 'adena-module';
-import axios from 'axios';
-
 import { toGnoNetworkProfile } from '@common/mapper/network-profile-mapper';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
@@ -20,6 +17,8 @@ import {
   WalletEstablishRepository,
   WalletRepository,
 } from '@repositories/wallet';
+import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
+import GNO_CHAIN_DATA from '@resources/chains/chains.json';
 import { ChainService, TokenService } from '@services/resource';
 import { TransactionService } from '@services/transaction';
 import {
@@ -30,10 +29,10 @@ import {
   WalletService,
 } from '@services/wallet';
 import { NetworkMetainfo } from '@types';
-import { decryptPassword, getInMemoryKey } from '../commands/encrypt';
+import { Account, ChainRegistry, createChainRegistry } from 'adena-module';
+import axios from 'axios';
 
-import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
-import GNO_CHAIN_DATA from '@resources/chains/chains.json';
+import { decryptPassword, getInMemoryKey } from '../commands/encrypt';
 
 export class InjectCore {
   private inMemoryProvider: MemoryProvider;
@@ -111,7 +110,8 @@ export class InjectCore {
         if (network.deleted) continue;
         this.chainRegistry.register(toGnoNetworkProfile(network));
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
     }
 
@@ -121,7 +121,8 @@ export class InjectCore {
         if (network.deleted) continue;
         this.chainRegistry.register(atomoneNetworkToProfile(network));
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
     }
   }
@@ -133,7 +134,8 @@ export class InjectCore {
       this.gnoProvider = new GnoProvider(network.rpcUrl, network.networkId, network.fallbackRPCUrl);
       this.accountService.setGnoProvider(this.gnoProvider);
       this.transactionService.setGnoProvider(this.gnoProvider);
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       return false;
     }
@@ -150,7 +152,7 @@ export class InjectCore {
       return null;
     }
     const networkId = await this.chainRepository.getCurrentNetworkId().catch(() => '');
-    const network = networks.find((network) => network.id === networkId) || networks[0];
+    const network = networks.find(network => network.id === networkId) || networks[0];
     return network;
   }
 
@@ -167,7 +169,7 @@ export class InjectCore {
     const wallet = await this.walletService.deserializeWallet(password);
 
     const accountId = await this.accountService.getCurrentAccountId();
-    const currentAccount = wallet.accounts.find((account) => account.id === accountId);
+    const currentAccount = wallet.accounts.find(account => account.id === accountId);
     return currentAccount;
   }
 
@@ -185,7 +187,7 @@ export class InjectCore {
 
   public async isLockedBy(inMemoryKey: CryptoKey | null): Promise<boolean> {
     return this.getPasswordBy(inMemoryKey)
-      .then((password) => !password)
+      .then(password => !password)
       .catch(() => true);
   }
 

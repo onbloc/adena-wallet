@@ -1,12 +1,12 @@
 export * from './address';
-export * from './compact-bit-array';
-export * from './cosmos-address';
 export { arrayContentEquals, arrayContentStartsWith } from './arrays';
 export { assert, assertDefined, assertDefinedAndNotNull } from './assert';
+export * from './compact-bit-array';
+export * from './cosmos-address';
 export * from './data';
 export * from './messages';
+export * from './multisig';
 export * from './pubkey';
 export * from './session-message-endpoints';
 export { sleep } from './sleep';
 export { isDefined, isNonNullObject, isUint8Array } from './typechecks';
-export * from './multisig';

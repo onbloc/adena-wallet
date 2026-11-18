@@ -1,4 +1,3 @@
-/* eslint-disable no-bitwise */
 import BN from 'bn.js';
 
 const uint64MaxValue = new BN('18446744073709551615', 10, 'be');
@@ -51,7 +50,7 @@ export class Uint32 implements Integer, WithByteConverters {
     // Use mulitiplication instead of shifting since bitwise operators are defined
     // on SIGNED int32 in JavaScript and we don't want to risk surprises
     return new Uint32(
-      beBytes[0] * 2 ** 24 + beBytes[1] * 2 ** 16 + beBytes[2] * 2 ** 8 + beBytes[3],
+      beBytes[0] * 2 ** 24 + beBytes[1] * 2 ** 16 + beBytes[2] * 2 ** 8 + beBytes[3]
     );
   }
 
@@ -87,7 +86,7 @@ export class Uint32 implements Integer, WithByteConverters {
       Math.floor(this.data / 2 ** 24) & 0xff,
       Math.floor(this.data / 2 ** 16) & 0xff,
       Math.floor(this.data / 2 ** 8) & 0xff,
-      Math.floor(this.data / 2 ** 0) & 0xff,
+      Math.floor(this.data / 2 ** 0) & 0xff
     ]);
   }
 
@@ -98,7 +97,7 @@ export class Uint32 implements Integer, WithByteConverters {
       Math.floor(this.data / 2 ** 0) & 0xff,
       Math.floor(this.data / 2 ** 8) & 0xff,
       Math.floor(this.data / 2 ** 16) & 0xff,
-      Math.floor(this.data / 2 ** 24) & 0xff,
+      Math.floor(this.data / 2 ** 24) & 0xff
     ]);
   }
 
@@ -230,7 +229,8 @@ export class Uint64 implements Integer, WithByteConverters {
     let bigint: BN;
     try {
       bigint = new BN(input);
-    } catch {
+    }
+    catch {
       throw new Error('Input is not a safe integer');
     }
     return new Uint64(bigint);

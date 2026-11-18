@@ -11,8 +11,8 @@ export const GNO_CHAIN: GnoChain = {
   coinType: 118,
   signing: {
     modes: ['gno-amino-json'] as const,
-    preferred: 'gno-amino-json' as const,
-  },
+    preferred: 'gno-amino-json' as const
+  }
 };
 
 export const ATOMONE_CHAIN: CosmosChain = {
@@ -23,7 +23,7 @@ export const ATOMONE_CHAIN: CosmosChain = {
   coinType: 118,
   signing: {
     modes: ['SIGN_MODE_DIRECT', 'SIGN_MODE_LEGACY_AMINO_JSON'] as const,
-    preferred: 'SIGN_MODE_DIRECT' as const,
+    preferred: 'SIGN_MODE_DIRECT' as const
   },
   fee: {
     model: 'feemarket' as const,
@@ -31,22 +31,22 @@ export const ATOMONE_CHAIN: CosmosChain = {
     feeCurrencyFilter: (): string[] => ['test-mainnet:ufee'],
     fallbackFee: {
       amount: [{ denom: 'ufee', amount: '45000' }],
-      gas: '200000',
-    },
+      gas: '200000'
+    }
   },
-  features: ['feemarket'],
+  features: ['feemarket']
 };
 
 const GNO_PROFILE_BASE = {
   chainType: 'gno' as const,
   chainGroup: 'gno' as const,
-  chainIconUrl: '/assets/icons/gnoland.svg',
+  chainIconUrl: '/assets/icons/gnoland.svg'
 };
 
 const ATOMONE_PROFILE_BASE = {
   chainType: 'cosmos' as const,
   chainGroup: 'atomone' as const,
-  chainIconUrl: '/assets/icons/atone.svg',
+  chainIconUrl: '/assets/icons/atone.svg'
 };
 
 export const GNO_MAINNET: GnoNetworkProfile = {
@@ -56,7 +56,7 @@ export const GNO_MAINNET: GnoNetworkProfile = {
   displayName: 'Gno Mainnet',
   isMainnet: true,
   nativeTokenId: 'gno-mainnet:ugnot',
-  rpcEndpoints: ['https://rpc.example.invalid:443'],
+  rpcEndpoints: ['https://rpc.example.invalid:443']
 };
 
 export const GNO_TESTNET: GnoNetworkProfile = {
@@ -66,7 +66,7 @@ export const GNO_TESTNET: GnoNetworkProfile = {
   displayName: 'Gno Testnet',
   isMainnet: false,
   nativeTokenId: 'gno-testnet:ugnot',
-  rpcEndpoints: ['https://testnet-rpc.example.invalid:443'],
+  rpcEndpoints: ['https://testnet-rpc.example.invalid:443']
 };
 
 export const ATOMONE_MAINNET: CosmosNetworkProfile = {
@@ -77,7 +77,7 @@ export const ATOMONE_MAINNET: CosmosNetworkProfile = {
   isMainnet: true,
   nativeTokenId: 'atomone-mainnet:uatone',
   rpcEndpoints: ['https://atomone-rpc.example.invalid'],
-  restEndpoints: ['https://atomone-api.example.invalid'],
+  restEndpoints: ['https://atomone-api.example.invalid']
 };
 
 export const ATOMONE_TESTNET: CosmosNetworkProfile = {
@@ -88,7 +88,7 @@ export const ATOMONE_TESTNET: CosmosNetworkProfile = {
   isMainnet: false,
   nativeTokenId: 'atomone-testnet:uatone',
   rpcEndpoints: ['https://atomone-testnet-rpc.example.invalid'],
-  restEndpoints: ['https://atomone-testnet-api.example.invalid'],
+  restEndpoints: ['https://atomone-testnet-api.example.invalid']
 };
 
 export const GNO_NETWORK_PROFILES: GnoNetworkProfile[] = [GNO_MAINNET, GNO_TESTNET];

@@ -1,8 +1,7 @@
-import { ReactElement } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import { Row, View, WebButton, WebMain, WebText } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { ReactElement } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledAbsoluteWrapper = styled(View)`
   position:absolute;

@@ -46,7 +46,7 @@ describe('StorageMigration019', () => {
 
   it('refreshes NETWORKS from chains.json', async () => {
     const result = await new StorageMigration019().up(makeInput({ NETWORKS: [] }));
-    const mainnet = result.data.NETWORKS.find((n) => n.chainId === 'gnoland-1');
+    const mainnet = result.data.NETWORKS.find(n => n.chainId === 'gnoland-1');
     expect(mainnet).toBeDefined();
     expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
   });

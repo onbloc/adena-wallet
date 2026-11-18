@@ -3,8 +3,9 @@ import { EMessageType } from '@inject/types';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render, screen } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
 import { ThemeProvider } from 'styled-components';
+
 import ApproveTransactionMessage, {
   ApproveTransactionMessageProps,
 } from './approve-transaction-message';
@@ -12,19 +13,19 @@ import ApproveTransactionMessage, {
 describe('ApproveTransactionMessage Component', () => {
   const renderMessage = (args: ApproveTransactionMessageProps): void => {
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <ApproveTransactionMessage {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   };
 
   it('ApproveTransactionMessage render', () => {
     const args: ApproveTransactionMessageProps = {
-      changeMessage: jest.fn(),
-      openScannerLink: jest.fn(),
+      changeMessage: vi.fn(),
+      openScannerLink: vi.fn(),
       index: 0,
       editable: true,
       message: {
@@ -50,8 +51,8 @@ describe('ApproveTransactionMessage Component', () => {
     };
 
     renderMessage({
-      changeMessage: jest.fn(),
-      openScannerLink: jest.fn(),
+      changeMessage: vi.fn(),
+      openScannerLink: vi.fn(),
       index: 0,
       editable: true,
       message: {
@@ -84,8 +85,8 @@ describe('ApproveTransactionMessage Component', () => {
     };
 
     renderMessage({
-      changeMessage: jest.fn(),
-      openScannerLink: jest.fn(),
+      changeMessage: vi.fn(),
+      openScannerLink: vi.fn(),
       index: 0,
       editable: true,
       message: {
@@ -104,8 +105,8 @@ describe('ApproveTransactionMessage Component', () => {
 
   it('renders revoke all sessions details', () => {
     renderMessage({
-      changeMessage: jest.fn(),
-      openScannerLink: jest.fn(),
+      changeMessage: vi.fn(),
+      openScannerLink: vi.fn(),
       index: 0,
       editable: true,
       message: {

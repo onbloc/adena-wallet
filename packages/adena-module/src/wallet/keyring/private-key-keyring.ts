@@ -3,7 +3,7 @@ import {
   TransactionEndpoint,
   Tx,
   TxSignature,
-  Wallet as Tm2Wallet,
+  Wallet as Tm2Wallet
 } from '@gnolang/tm2-js-client';
 import sodium from 'libsodium-wrappers-sumo';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,7 +37,7 @@ export class PrivateKeyKeyring implements Keyring {
       id: this.id,
       type: this.type,
       publicKey: Array.from(this.publicKey),
-      privateKey: Array.from(this.privateKey),
+      privateKey: Array.from(this.privateKey)
     };
   }
 
@@ -47,7 +47,7 @@ export class PrivateKeyKeyring implements Keyring {
 
   async sign(
     provider: Provider,
-    document: Document,
+    document: Document
   ): Promise<{ signed: Tx; signature: TxSignature[] }> {
     return signGnoDocument(provider, document, this);
   }
@@ -71,7 +71,7 @@ export class PrivateKeyKeyring implements Keyring {
     const publicKey = await wallet.getSigner().getPublicKey();
     return new PrivateKeyKeyring({
       publicKey: Array.from(publicKey),
-      privateKey: Array.from(privateKey),
+      privateKey: Array.from(privateKey)
     });
   }
 }

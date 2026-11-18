@@ -1,8 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { Wallet } from 'adena-module';
-import React, { createContext, useCallback, useEffect, useState } from 'react';
-import { useRecoilState, useSetRecoilState } from 'recoil';
-
 import {
   makeWalletExistsQueryKey,
   makeWalletLockedQueryKey,
@@ -20,7 +15,12 @@ import {
 import { useAdenaContext } from '@hooks/use-context';
 import { AtomoneNetworkMetainfoMapper } from '@repositories/common/mapper/atomone-network-metainfo-mapper';
 import { NetworkState, TokenState, WalletState } from '@states';
+import { useQueryClient } from '@tanstack/react-query';
 import { AtomoneNetworkMetainfo, NetworkMetainfo, StateType, TokenModel } from '@types';
+import { Wallet } from 'adena-module';
+import { useAtom, useSetAtom } from 'jotai';
+import React, { createContext, useCallback, useEffect, useState } from 'react';
+
 import { GnoProvider } from '../gno/gno-provider';
 
 type NetworkMode = NetworkState.NetworkMode;
@@ -53,23 +53,23 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
 
   const [gnoProvider, setGnoProvider] = useState<GnoProvider>();
 
-  const [wallet, setWallet] = useRecoilState(WalletState.wallet);
+  const [wallet, setWallet] = useAtom(WalletState.wallet);
 
-  const [walletStatus, setWalletStatus] = useRecoilState(WalletState.state);
+  const [walletStatus, setWalletStatus] = useAtom(WalletState.state);
 
-  const [tokenMetainfos] = useRecoilState(TokenState.tokenMetainfos);
+  const [tokenMetainfos] = useAtom(TokenState.tokenMetainfos);
 
-  const [networkMetainfos, setNetworkMetainfos] = useRecoilState(NetworkState.networkMetainfos);
+  const [networkMetainfos, setNetworkMetainfos] = useAtom(NetworkState.networkMetainfos);
 
-  const setCurrentNetwork = useSetRecoilState(NetworkState.currentNetwork);
+  const setCurrentNetwork = useSetAtom(NetworkState.currentNetwork);
 
-  const setNetworkMode = useSetRecoilState(NetworkState.networkMode);
+  const setNetworkMode = useSetAtom(NetworkState.networkMode);
 
-  const setCurrentAtomoneNetwork = useSetRecoilState(NetworkState.currentAtomoneNetwork);
+  const setCurrentAtomoneNetwork = useSetAtom(NetworkState.currentAtomoneNetwork);
 
-  const setAtomoneNetworkMetainfos = useSetRecoilState(NetworkState.atomoneNetworkMetainfos);
+  const setAtomoneNetworkMetainfos = useSetAtom(NetworkState.atomoneNetworkMetainfos);
 
-  const setCurrentAccount = useSetRecoilState(WalletState.currentAccount);
+  const setCurrentAccount = useSetAtom(WalletState.currentAccount);
 
   useEffect(() => {
     initWallet();
@@ -96,7 +96,8 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     let networks: AtomoneNetworkMetainfo[];
     try {
       networks = await chainService.getAtomoneNetworks();
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       networks = AtomoneNetworkMetainfoMapper.fromResource();
     }
@@ -118,19 +119,20 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
   ): Promise<void> {
     const storedId = await chainService.getCurrentAtomoneNetworkId().catch(() => null);
     const wantsMainnet = mode === 'mainnet';
-    const candidates = networks.filter((network) => !network.deleted);
+    const candidates = networks.filter(network => !network.deleted);
 
     let selected: AtomoneNetworkMetainfo | null = null;
     if (storedId) {
-      selected = candidates.find((network) => network.id === storedId) ?? null;
+      selected = candidates.find(network => network.id === storedId) ?? null;
     }
     // Only fall back to a default mainnet/testnet entry when the stored
     // selection is missing or stale. A user-added custom network whose mode
     // matches the active mode must be kept as-is.
     if (!selected) {
-      selected = candidates.find((network) => network.isMainnet === wantsMainnet) ?? null;
-    } else if (selected.isMainnet !== wantsMainnet) {
-      selected = candidates.find((network) => network.isMainnet === wantsMainnet) ?? selected;
+      selected = candidates.find(network => network.isMainnet === wantsMainnet) ?? null;
+    }
+    else if (selected.isMainnet !== wantsMainnet) {
+      selected = candidates.find(network => network.isMainnet === wantsMainnet) ?? selected;
     }
     if (selected) {
       setCurrentAtomoneNetwork(selected);
@@ -186,7 +188,8 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
       wallet.currentAccountId = currentAccountId;
       setWallet(wallet);
       await initCurrentAccount(wallet);
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       setWallet(null);
       setWalletStatus('FAIL');
@@ -212,8 +215,8 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
 
   async function initCurrentAccount(wallet: Wallet): Promise<boolean> {
     const currentAccountId = await accountService.getCurrentAccountId();
-    const currentAccount =
-      wallet.accounts.find((account) => account.id === currentAccountId) ?? wallet.accounts[0];
+    const currentAccount
+      = wallet.accounts.find(account => account.id === currentAccountId) ?? wallet.accounts[0];
     if (currentAccount) {
       setCurrentAccount(currentAccount);
       await accountService.changeCurrentAccount(currentAccount);
@@ -262,10 +265,10 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     mode: NetworkMode,
   ): Promise<boolean> {
     const storedNetwork = storedCurrentId
-      ? networkMetainfos.find((network) => network.id === storedCurrentId)
+      ? networkMetainfos.find(network => network.id === storedCurrentId)
       : undefined;
-    const currentNetwork =
-      storedNetwork ?? pickDefaultByMode(networkMetainfos, mode) ?? networkMetainfos[0];
+    const currentNetwork
+      = storedNetwork ?? pickDefaultByMode(networkMetainfos, mode) ?? networkMetainfos[0];
 
     await chainService.updateCurrentNetworkId(currentNetwork.id);
     await changeNetwork(currentNetwork);

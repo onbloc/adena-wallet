@@ -1,4 +1,5 @@
 import mixins from '@styles/mixins';
+import type { JSX } from 'react';
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
 

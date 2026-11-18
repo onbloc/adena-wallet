@@ -1,7 +1,6 @@
+import check from '@assets/web/check.svg';
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
-
-import check from '@assets/web/check.svg';
 
 import { View } from '../base';
 

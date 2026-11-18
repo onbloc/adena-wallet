@@ -1,14 +1,4 @@
 import {
-  Account,
-  Document,
-  isAirgapAccount,
-  isLedgerAccount,
-  isSessionAccount,
-} from 'adena-module';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-
-import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
@@ -22,7 +12,6 @@ import {
 } from '@common/utils/client-utils';
 import { refreshSessionMetadataFromChain } from '@common/utils/session-guard-metadata';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
-import { evaluateSessionSigningGuard } from '@services/transaction/session-signing-guard';
 import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useChain } from '@hooks/use-chain';
@@ -30,14 +19,24 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
-import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useFeeSufficiency } from '@hooks/wallet/use-fee-sufficiency';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
+import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
+import { evaluateSessionSigningGuard } from '@services/transaction/session-signing-guard';
 import { RoutePath } from '@types';
-import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
+import {
+  Account,
+  Document,
+  isAirgapAccount,
+  isLedgerAccount,
+  isSessionAccount,
+} from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
 
 interface TransactionData {
   messages: readonly any[];
@@ -136,7 +135,7 @@ const ApproveSignContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   useEffect(() => {
@@ -208,7 +207,8 @@ const ApproveSignContainer: React.FC = () => {
       setMemo(document.memo);
       setTransactionMessages(mappedTransactionMessages(document.msgs));
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       const error: any = e;
       if (error?.message === 'Transaction signing request was rejected by the user') {
@@ -328,7 +328,8 @@ const ApproveSignContainer: React.FC = () => {
           requestData?.key,
         ),
       );
-    } catch (e) {
+    }
+    catch (e) {
       if (e instanceof Error) {
         const message = e.message;
         if (message.includes('Ledger')) {

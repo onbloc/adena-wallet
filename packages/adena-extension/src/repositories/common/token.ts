@@ -1,29 +1,9 @@
-import { AxiosInstance } from 'axios';
-
-import { StorageManager } from '@common/storage/storage-manager';
-import { TokenMapper } from './mapper/token-mapper';
-import {
-  AccountAsset,
-  AccountAssetsResponse,
-  GRC20TokenResponse,
-  NativeTokenResponse,
-} from './response/token-asset-response';
-
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { AdenaStorage } from '@common/storage';
-import {
-  emptyCursor,
-  GRC721_RECONCILE_INTERVAL_MS,
-  GRC721_SYNC_CACHE_KEY,
-  GRC721CollectionCandidate,
-  GRC721SyncCache,
-  GRC721SyncCacheValueType,
-  GRC721SyncCursor,
-  NetworkGRC721Sync,
-} from './token.grc721-sync';
-import { GnoFunction } from '@common/provider/gno/types';
 import { decodeGnoString, gnoLiteral, parseQEvalResult } from '@common/provider/gno/qeval';
+import { GnoFunction } from '@common/provider/gno/types';
+import { AdenaStorage } from '@common/storage';
+import { StorageManager } from '@common/storage/storage-manager';
 import {
   parseRegistryKey,
   registryKeyToTokenPath,
@@ -42,15 +22,18 @@ import {
 } from '@common/utils/grc721-config';
 import { parseGrc721CollectionId } from '@common/utils/grc721-token-id';
 import {
+  Grc20RouteMap,
   GRC20TokenModel,
   GRC721CollectionModel,
   GRC721MetadataModel,
   GRC721Model,
-  Grc20RouteMap,
   NativeTokenModel,
   NetworkMetainfo,
   TokenModel,
 } from '@types';
+import { AxiosInstance } from 'axios';
+
+import { TokenMapper } from './mapper/token-mapper';
 import {
   AccountGRC721Collection,
   AccountGRC721CollectionItem,
@@ -58,6 +41,22 @@ import {
   AccountGRC721CollectionsResponse,
   AppInfoResponse,
 } from './response';
+import {
+  AccountAsset,
+  AccountAssetsResponse,
+  GRC20TokenResponse,
+  NativeTokenResponse,
+} from './response/token-asset-response';
+import {
+  emptyCursor,
+  GRC721_RECONCILE_INTERVAL_MS,
+  GRC721_SYNC_CACHE_KEY,
+  GRC721CollectionCandidate,
+  GRC721SyncCache,
+  GRC721SyncCacheValueType,
+  GRC721SyncCursor,
+  NetworkGRC721Sync,
+} from './token.grc721-sync';
 import { makeAllTransferEventsQueryBy, makeGRC721NewTokenEventsQuery } from './token.queries';
 import { ITokenRepository } from './types';
 
@@ -148,8 +147,8 @@ const DEFAULT_TOKEN_METAINFOS: NativeTokenModel[] = [
 ];
 
 export class TokenRepository implements ITokenRepository {
-  private static GNO_TOKEN_RESOURCE_URI =
-    'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
+  private static GNO_TOKEN_RESOURCE_URI
+    = 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
 
   private static APP_INFO_URI = '/resources/apps/apps.json';
 
@@ -249,7 +248,7 @@ export class TokenRepository implements ITokenRepository {
       return [];
     }
 
-    return Promise.all([this.fetchNativeTokenAssets(), this.fetchGRC20TokenAssets()]).then((data) =>
+    return Promise.all([this.fetchNativeTokenAssets(), this.fetchGRC20TokenAssets()]).then(data =>
       data.flat(),
     );
   };
@@ -265,8 +264,8 @@ export class TokenRepository implements ITokenRepository {
     }>(LocalValueType.AccountTokenMetainfos);
 
     return (
-      accountTokenMetainfos[accountId] ??
-      DEFAULT_TOKEN_METAINFOS.map((token) => ({ ...token, networkId: this.networkId }))
+      accountTokenMetainfos[accountId]
+      ?? DEFAULT_TOKEN_METAINFOS.map(token => ({ ...token, networkId: this.networkId }))
     );
   };
 
@@ -283,7 +282,7 @@ export class TokenRepository implements ITokenRepository {
     };
 
     const filteredTokenMetainfos = tokenMetainfos.filter((info1, index) => {
-      return tokenMetainfos.findIndex((info2) => isUnique(info1, info2)) === index;
+      return tokenMetainfos.findIndex(info2 => isUnique(info1, info2)) === index;
     });
 
     const changedAccountTokenMetainfos = {
@@ -463,7 +462,8 @@ export class TokenRepository implements ITokenRepository {
         ],
         returnExpression: 'reg.Size(), s',
       });
-    } catch (e) {
+    }
+    catch (e) {
       console.warn('fetchRegistryKeyPageFrom: evaluateIIFE failed', registryPath, offset, limit, e);
       return { keys: [], totalCount: 0 };
     }
@@ -480,7 +480,7 @@ export class TokenRepository implements ITokenRepository {
 
     const totalCount = Number(tuples[0].value);
     const joined = decodeGnoString(tuples[1].value);
-    const keys = joined.split(',').filter((key) => key.length > 0);
+    const keys = joined.split(',').filter(key => key.length > 0);
 
     return { keys, totalCount: Number.isFinite(totalCount) ? totalCount : 0 };
   }
@@ -503,11 +503,11 @@ export class TokenRepository implements ITokenRepository {
       }
       const found = await this.fetchGRC20TokensByKeysFrom(registry.path, unresolved);
       found.forEach((token, key) => resolved.set(key, token));
-      unresolved = unresolved.filter((key) => !resolved.has(key));
+      unresolved = unresolved.filter(key => !resolved.has(key));
     }
 
     return keys
-      .map((key) => resolved.get(key))
+      .map(key => resolved.get(key))
       .filter((token): token is GRC20TokenModel => token !== undefined);
   }
 
@@ -552,7 +552,8 @@ export class TokenRepository implements ITokenRepository {
           statements,
           returnExpression: returnParts.join(', '),
         });
-      } catch (e) {
+      }
+      catch (e) {
         console.warn('fetchGRC20TokensByKeysFrom: evaluateIIFE failed', registryPath, chunk, e);
         continue;
       }
@@ -653,7 +654,7 @@ export class TokenRepository implements ITokenRepository {
       });
     }
 
-    ambiguous.forEach((collectionId) => collections.delete(collectionId));
+    ambiguous.forEach(collectionId => collections.delete(collectionId));
 
     return { collections, ambiguous };
   }
@@ -663,7 +664,7 @@ export class TokenRepository implements ITokenRepository {
     const network = await this.readGRC721SyncNetwork();
     const cursor = network.catalog || emptyCursor<GRC721CollectionCandidate>();
 
-    const walk = await this.walkIndexedEvents(cursor, (fromBlockHeight) =>
+    const walk = await this.walkIndexedEvents(cursor, fromBlockHeight =>
       makeGRC721NewTokenEventsQuery(GRC721_TOKEN_PACKAGES, fromBlockHeight),
     );
     const { page, previousItems } = walk;
@@ -696,7 +697,7 @@ export class TokenRepository implements ITokenRepository {
     }
 
     if (TokenRepository.shouldStoreWalk(walk)) {
-      await this.writeGRC721SyncStore(epoch, (stored) => ({
+      await this.writeGRC721SyncStore(epoch, stored => ({
         ...stored,
         catalog: TokenRepository.nextCursor(walk, merged),
       }));
@@ -787,7 +788,7 @@ export class TokenRepository implements ITokenRepository {
 
     const realms = new Map<string, AccountGRC721Collection[]>();
     response.items
-      .filter((item) => !!item.packagePath && (item.tokenCount ?? 0) > 0)
+      .filter(item => !!item.packagePath && (item.tokenCount ?? 0) > 0)
       .forEach((item) => {
         realms.set(item.packagePath, [...(realms.get(item.packagePath) || []), item]);
       });
@@ -814,7 +815,7 @@ export class TokenRepository implements ITokenRepository {
       this.networkInstance,
       this.apiUrl + '/v1/accounts/' + address,
     )
-      .then((data) => data?.data?.assets ?? null)
+      .then(data => data?.data?.assets ?? null)
       .catch(() => null);
 
     this.accountAssetsInFlight.set(address, request);
@@ -849,14 +850,14 @@ export class TokenRepository implements ITokenRepository {
     }
 
     return assets
-      .filter((asset) => (asset.tokenType ?? '').toUpperCase() === 'GRC20' && !!asset.packagePath)
+      .filter(asset => (asset.tokenType ?? '').toUpperCase() === 'GRC20' && !!asset.packagePath)
       .map((asset) => {
         // tokenKey is the wallet's canonical identity; tokenId is opaque and
         // must never be used, even as a fallback. Rebuild from packagePath +
         // symbol when tokenKey is absent (older API versions).
-        const tokenId =
-          (asset.tokenKey ? tokenIdentifierToRegistryKey(asset.tokenKey) : null) ??
-          toTokenPath(asset.packagePath, asset.symbol);
+        const tokenId
+          = (asset.tokenKey ? tokenIdentifierToRegistryKey(asset.tokenKey) : null)
+            ?? toTokenPath(asset.packagePath, asset.symbol);
 
         return {
           main: false,
@@ -897,8 +898,8 @@ export class TokenRepository implements ITokenRepository {
           return null;
         }
         const attrs = event?.attrs || [];
-        const hasParty = attrs.some((a) => a.key === schema.toAttr || a.key === schema.fromAttr);
-        const tokenAttr = attrs.find((a) => a.key === schema.tokenAttr);
+        const hasParty = attrs.some(a => a.key === schema.toAttr || a.key === schema.fromAttr);
+        const tokenAttr = attrs.find(a => a.key === schema.tokenAttr);
         if (!hasParty || !tokenAttr?.value) {
           return null;
         }
@@ -930,8 +931,8 @@ export class TokenRepository implements ITokenRepository {
     }
 
     const funcs = document.funcs || [];
-    const isGRC721 = GRC721_REALM_READ_FUNCTIONS.every((name) =>
-      funcs.some((func) => func.name === name),
+    const isGRC721 = GRC721_REALM_READ_FUNCTIONS.every(name =>
+      funcs.some(func => func.name === name),
     );
     if (!isGRC721) {
       throw new Error('Realm is not GRC721');
@@ -985,7 +986,8 @@ export class TokenRepository implements ITokenRepository {
     if (!this.tokenUriCacheStorage) {
       try {
         this.tokenUriCacheStorage = AdenaStorage.session();
-      } catch {
+      }
+      catch {
         // No session storage: every URI is read from the chain, as before.
         return null;
       }
@@ -1004,7 +1006,8 @@ export class TokenRepository implements ITokenRepository {
       const value = await this.tokenUriCache?.get(this.tokenUriCacheKey(packagePath));
       const parsed = value ? JSON.parse(value) : null;
       return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch {
+    }
+    catch {
       return {};
     }
   }
@@ -1078,7 +1081,7 @@ export class TokenRepository implements ITokenRepository {
     }
 
     const pages = await Promise.all(
-      collections.map((collection) =>
+      collections.map(collection =>
         this.fetchGRC721CollectionItemsFromApi(address, collection.tokenId || packagePath),
       ),
     );
@@ -1096,7 +1099,7 @@ export class TokenRepository implements ITokenRepository {
         seen.add(item.nftId);
         return true;
       })
-      .map((item) => ({
+      .map(item => ({
         tokenId: item.nftId,
         networkId: this.networkId,
         type: 'grc721' as const,
@@ -1122,8 +1125,8 @@ export class TokenRepository implements ITokenRepository {
     let cursor: string | null = null;
 
     for (let pageIndex = 0; pageIndex < GRC721_API_ITEMS_MAX_PAGES; pageIndex += 1) {
-      const response: AccountGRC721CollectionItemsResponse | null =
-        await this.fetchGRC721ItemPageFromApi(
+      const response: AccountGRC721CollectionItemsResponse | null
+        = await this.fetchGRC721ItemPageFromApi(
           address,
           collection,
           cursor,
@@ -1189,7 +1192,8 @@ export class TokenRepository implements ITokenRepository {
 
       const payload = Array.isArray((data as T).items) ? (data as T) : (data as { data?: T }).data;
       return payload && Array.isArray(payload.items) ? payload : null;
-    } catch {
+    }
+    catch {
       return null;
     }
   }
@@ -1212,7 +1216,7 @@ export class TokenRepository implements ITokenRepository {
   } {
     // Only a `string` first result is readable over qeval.
     const returnsString = (name: string): boolean =>
-      funcs.some((func) => func.name === name && func.results?.[0]?.type === 'string');
+      funcs.some(func => func.name === name && func.results?.[0]?.type === 'string');
 
     return {
       isTokenUri: returnsString('TokenURI'),
@@ -1307,7 +1311,7 @@ export class TokenRepository implements ITokenRepository {
     );
 
     return {
-      events: transactions.flatMap((transaction) => transaction?.response?.events || []),
+      events: transactions.flatMap(transaction => transaction?.response?.events || []),
       maxBlockHeight,
       latestBlockHeight,
     };
@@ -1486,7 +1490,8 @@ export class TokenRepository implements ITokenRepository {
     if (!this.syncCacheStorage) {
       try {
         this.syncCacheStorage = AdenaStorage.cache<GRC721SyncCacheValueType>();
-      } catch {
+      }
+      catch {
         // No cache available: every walk starts from genesis, as before.
         return null;
       }
@@ -1633,8 +1638,8 @@ export class TokenRepository implements ITokenRepository {
     networkId: string,
     collections: GRC721CollectionModel[],
   ): Promise<boolean> {
-    const accountGRC721CollectionsMap =
-      (await this.localStorage.getToObject<{
+    const accountGRC721CollectionsMap
+      = (await this.localStorage.getToObject<{
         [key in string]: { [key in string]: GRC721CollectionModel[] };
       }>(LocalValueType.AccountGRC721Collections)) || {};
 
@@ -1671,8 +1676,8 @@ export class TokenRepository implements ITokenRepository {
     networkId: string,
     packagePaths: string[],
   ): Promise<boolean> {
-    const accountGRC721PinnedPackagesMap =
-      (await this.localStorage.getToObject<{
+    const accountGRC721PinnedPackagesMap
+      = (await this.localStorage.getToObject<{
         [key in string]: { [key in string]: string[] };
       }>(LocalValueType.AccountGRC721PinnedPackages)) || {};
 
@@ -1690,13 +1695,13 @@ export class TokenRepository implements ITokenRepository {
   }
 
   private fetchNativeTokenAssets = async (): Promise<NativeTokenModel[]> => {
-    const requestUri =
-      TokenRepository.GNO_TOKEN_RESOURCE_URI + `/gno-native/${this.networkId}.json`;
+    const requestUri
+      = TokenRepository.GNO_TOKEN_RESOURCE_URI + `/gno-native/${this.networkId}.json`;
     return this.networkInstance
       .get<NativeTokenResponse>(requestUri)
-      .then((response) => TokenMapper.fromNativeTokenMetainfos(this.networkId, response.data))
+      .then(response => TokenMapper.fromNativeTokenMetainfos(this.networkId, response.data))
       .catch(() =>
-        DEFAULT_TOKEN_METAINFOS.map((token) => ({ ...token, networkId: this.networkId })),
+        DEFAULT_TOKEN_METAINFOS.map(token => ({ ...token, networkId: this.networkId })),
       );
   };
 
@@ -1704,7 +1709,7 @@ export class TokenRepository implements ITokenRepository {
     const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + `/grc20/${this.networkId}.json`;
     return this.networkInstance
       .get<GRC20TokenResponse>(requestUri)
-      .then((response) => TokenMapper.fromGRC20TokenMetainfos(this.networkId, response.data))
+      .then(response => TokenMapper.fromGRC20TokenMetainfos(this.networkId, response.data))
       .catch(() => []);
   };
 
@@ -1721,7 +1726,7 @@ export class TokenRepository implements ITokenRepository {
     const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + `/grc20/${this.networkId}.json`;
     return this.networkInstance
       .get<GRC20TokenResponse>(requestUri)
-      .then((response) => TokenMapper.toGrc20RouteMap(response.data))
+      .then(response => TokenMapper.toGrc20RouteMap(response.data))
       .catch(() => ({}));
   };
 
@@ -1731,7 +1736,7 @@ export class TokenRepository implements ITokenRepository {
   ): Promise<T | null> => {
     return axiosInstance
       .get<any>(url)
-      .then((response) => response.data?.data || null)
+      .then(response => response.data?.data || null)
       .catch((e) => {
         console.log(e);
         return null;

@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
-
 import { isRevokedSessionAccount } from '@common/utils/account-session';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useSessions } from '@hooks/use-sessions';
+import { useMemo } from 'react';
 
 // True when the currently selected account is a SessionAccount that the
 // local SessionRepository has flagged REVOKED. Used to swap UI affordances

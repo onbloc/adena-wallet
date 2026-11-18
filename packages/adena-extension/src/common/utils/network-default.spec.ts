@@ -1,5 +1,6 @@
 import CHAIN_DATA from '@resources/chains/chains.json';
 import { NetworkMetainfo } from '@types';
+
 import {
   normalizeStoredId,
   pickDefaultByMode,
@@ -76,7 +77,7 @@ describe('pickDefaultByMode', () => {
   // updating the constant, the preferred lookup silently falls through to the
   // generic match, so assert both ids still exist in the shipped resource.
   it('keeps the canonical ids in sync with chains.json', () => {
-    const ids = CHAIN_DATA.map((network) => network.id);
+    const ids = CHAIN_DATA.map(network => network.id);
     expect(ids).toContain(PRIMARY_TESTNET_ID);
     expect(ids).toContain(PRIMARY_MAINNET_ID);
   });
@@ -90,12 +91,12 @@ describe('pickDefaultByMode', () => {
   });
 
   it('falls back to a generic testnet default when staging is missing', () => {
-    const withoutStaging = NETWORKS.filter((network) => network.id !== 'staging');
+    const withoutStaging = NETWORKS.filter(network => network.id !== 'staging');
     expect(pickDefaultByMode(withoutStaging, 'testnet')?.id).toBe('dev');
   });
 
   it('skips deleted networks when picking', () => {
-    const withDeletedStaging = NETWORKS.map((network) =>
+    const withDeletedStaging = NETWORKS.map(network =>
       network.id === 'staging' ? { ...network, deleted: true } : network,
     );
     expect(pickDefaultByMode(withDeletedStaging, 'testnet')?.id).toBe('dev');
@@ -107,7 +108,7 @@ describe('pickDefaultByMode', () => {
   });
 
   it('returns undefined when every network is deleted', () => {
-    const allDeleted = NETWORKS.map((network) => ({ ...network, deleted: true }));
+    const allDeleted = NETWORKS.map(network => ({ ...network, deleted: true }));
     expect(pickDefaultByMode(allDeleted, 'testnet')).toBeUndefined();
   });
 });

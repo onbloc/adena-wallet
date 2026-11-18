@@ -1,5 +1,3 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
 import { PasswordValidationError } from '@common/errors';
 import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
 import {
@@ -14,6 +12,7 @@ import useIndicatorStep, {
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
 import { RoutePath } from '@types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export type UseCreatePasswordScreenReturn = {
   passwordState: {
@@ -22,7 +21,7 @@ export type UseCreatePasswordScreenReturn = {
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     errorMessage: string;
     error: boolean;
-    ref: React.RefObject<HTMLInputElement>;
+    ref: React.RefObject<HTMLInputElement | null>;
   };
   confirmPasswordState: {
     value: string;
@@ -83,7 +82,8 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
   const _validateConfirmPassword = (validationPassword?: boolean): boolean => {
     try {
       if (validateNotMatchConfirmPassword(password, confirmPassword)) return true;
-    } catch (error) {
+    }
+    catch (error) {
       if (error instanceof PasswordValidationError) {
         switch (error.getType()) {
           case 'NOT_MATCH_CONFIRM_PASSWORD':
@@ -105,7 +105,8 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
       validateEmptyPassword(password);
       validatePasswordComplexity(password);
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       console.log(error);
       setIsPasswordError(true);
       if (error instanceof PasswordValidationError) {
@@ -123,7 +124,8 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
       if (validatedInputPassword && validatedConfirmPassword) {
         return true;
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error(error);
     }
     return false;
@@ -151,7 +153,8 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
         await sessionRepository.setMany(postSave.sessions);
       }
       return true;
-    } finally {
+    }
+    finally {
       // Zeroize Uint8Array seed/entropy/privateKey buffers via sodium.memzero,
       // covering both success and failure paths.
       wallet.destroy();

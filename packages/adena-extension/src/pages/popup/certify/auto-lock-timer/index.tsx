@@ -1,10 +1,10 @@
-import styled, { useTheme } from 'styled-components';
-
 import { DefaultInput, ErrorText, Text } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
 import { useAutoLockTimer } from '@hooks/certify/use-auto-lock-timer';
 import { MAX_AUTO_LOCK_TIMEOUT_MINUTES } from '@repositories/wallet';
 import mixins from '@styles/mixins';
+import type { JSX } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -85,12 +85,12 @@ export const AutoLockTimer = (): JSX.Element => {
             // of paste/IME behavior.
             onKeyDown={(event): void => {
               if (
-                event.key === '-' ||
-                event.key === '.' ||
-                event.key === 'e' ||
-                event.key === 'E' ||
-                event.key === 'ArrowUp' ||
-                event.key === 'ArrowDown'
+                event.key === '-'
+                || event.key === '.'
+                || event.key === 'e'
+                || event.key === 'E'
+                || event.key === 'ArrowUp'
+                || event.key === 'ArrowDown'
               ) {
                 event.preventDefault();
               }

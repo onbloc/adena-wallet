@@ -1,11 +1,13 @@
 import { renderHook } from '@testing-library/react';
+import { NetworkFeeSettingType } from '@types';
 import {
   Document,
   MSG_CREATE_SESSION_ENDPOINT,
   MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
   MSG_REVOKE_SESSION_ENDPOINT,
 } from 'adena-module';
-import { NetworkFeeSettingType } from '@types';
+import type { Mock } from 'vitest';
+
 import {
   isStaticSessionAdminFeeDocument,
   makeStaticSessionAdminFeeSettings,
@@ -14,16 +16,16 @@ import { useGetEstimateGas } from './transaction-gas/use-get-estimate-gas';
 import { useGetGasPrice } from './transaction-gas/use-get-gas-price';
 import { useNetworkFee } from './use-network-fee';
 
-jest.mock('./transaction-gas/use-get-estimate-gas', () => ({
-  useGetEstimateGas: jest.fn(),
+vi.mock('./transaction-gas/use-get-estimate-gas', () => ({
+  useGetEstimateGas: vi.fn(),
 }));
 
-jest.mock('./transaction-gas/use-get-gas-price', () => ({
-  useGetGasPrice: jest.fn(),
+vi.mock('./transaction-gas/use-get-gas-price', () => ({
+  useGetGasPrice: vi.fn(),
 }));
 
-const useGetEstimateGasMock = useGetEstimateGas as jest.Mock;
-const useGetGasPriceMock = useGetGasPrice as jest.Mock;
+const useGetEstimateGasMock = useGetEstimateGas as Mock;
+const useGetGasPriceMock = useGetGasPrice as Mock;
 
 const EMPTY_STORAGE_DEPOSITS = {
   storageDeposit: 0,
@@ -155,7 +157,7 @@ describe('useNetworkFee', () => {
 });
 
 function makeDocument(messageTypes: string[]): Document {
-  return makeDocumentFromMessages(messageTypes.map((type) => ({ type, value: {} })));
+  return makeDocumentFromMessages(messageTypes.map(type => ({ type, value: {} })));
 }
 
 function makeDocumentFromMessages(messages: unknown[]): Document {

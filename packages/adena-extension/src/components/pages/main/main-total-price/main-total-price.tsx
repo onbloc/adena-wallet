@@ -1,5 +1,3 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-
 import {
   formatUSD,
   formatUSDChange,
@@ -7,6 +5,8 @@ import {
   PortfolioValue,
 } from '@common/utils/price-utils';
 import { TokenChangeRate } from '@components/molecules';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+
 import { MainTotalPriceSkeleton, MainTotalPriceWrapper } from './main-total-price.styles';
 
 export interface MainTotalPriceProps {
@@ -56,24 +56,26 @@ const MainTotalPrice: React.FC<MainTotalPriceProps> = ({
 
   return (
     <MainTotalPriceWrapper ref={wrapperRef} $compact={!loading && compact}>
-      {loading ? (
-        <MainTotalPriceSkeleton aria-label='Loading balance' />
-      ) : (
-        <>
-          <span ref={cloneRef} className='measure-clone' aria-hidden>
-            <span className='total-value'>{totalText}</span>
-          </span>
-          <span className='total-value'>{totalText}</span>
-          {hasChange && (
-            <div className='change-wrapper'>
-              <span className={`change-value ${getChangeTone(changeRate)}`}>
-                {formatUSDChange(changeUSDValue)}
+      {loading
+        ? (
+            <MainTotalPriceSkeleton aria-label='Loading balance' />
+          )
+        : (
+            <>
+              <span ref={cloneRef} className='measure-clone' aria-hidden>
+                <span className='total-value'>{totalText}</span>
               </span>
-              <TokenChangeRate rate={changeRate} variant='badge' />
-            </div>
+              <span className='total-value'>{totalText}</span>
+              {hasChange && (
+                <div className='change-wrapper'>
+                  <span className={`change-value ${getChangeTone(changeRate)}`}>
+                    {formatUSDChange(changeUSDValue)}
+                  </span>
+                  <TokenChangeRate rate={changeRate} variant='badge' />
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
     </MainTotalPriceWrapper>
   );
 };

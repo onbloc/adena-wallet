@@ -1,26 +1,28 @@
-import React, { PropsWithChildren } from 'react';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
+import type { JSX } from 'react';
+import React, { PropsWithChildren } from 'react';
+import type { Mock } from 'vitest';
 
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useMasterSessions } from './use-master-sessions';
 
-jest.mock('@hooks/use-context', () => ({
-  useAdenaContext: jest.fn(),
-  useWalletContext: jest.fn(),
+vi.mock('@hooks/use-context', () => ({
+  useAdenaContext: vi.fn(),
+  useWalletContext: vi.fn(),
 }));
 
 describe('useMasterSessions', () => {
-  const useAdenaContextMock = useAdenaContext as jest.Mock;
-  const useWalletContextMock = useWalletContext as jest.Mock;
+  const useAdenaContextMock = useAdenaContext as Mock;
+  const useWalletContextMock = useWalletContext as Mock;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('stops loading when the master account has no sessions', async () => {
-    const getSessions = jest.fn().mockResolvedValue([]);
-    const getAll = jest.fn().mockResolvedValue({});
+    const getSessions = vi.fn().mockResolvedValue([]);
+    const getAll = vi.fn().mockResolvedValue({});
 
     useWalletContextMock.mockReturnValue({
       gnoProvider: { getSessions },

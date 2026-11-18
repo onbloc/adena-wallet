@@ -27,7 +27,7 @@ interface ChainOrigin {
   chainId: string;
 }
 
-const CHAIN_ORIGINS: ChainOrigin[] = CHAIN_DATA.map((chain) => ({
+const CHAIN_ORIGINS: ChainOrigin[] = CHAIN_DATA.map(chain => ({
   origin: chain.gnoUrl,
   chainId: chain.chainId,
 })).filter((entry): entry is ChainOrigin => Boolean(entry.origin));
@@ -58,7 +58,7 @@ export const getLoopbackOriginChainId = (origin: string): string | null =>
 // Diagnostics only: it lets a message name the network the way the user sees it
 // in the UI, instead of quoting a chainId they would have to translate.
 const CHAIN_NETWORK_NAMES: ReadonlyMap<string, string> = new Map(
-  CHAIN_DATA.map((chain) => [chain.chainId, chain.networkName] as const),
+  CHAIN_DATA.map(chain => [chain.chainId, chain.networkName] as const),
 );
 
 // Returns the network picker's label for a chainId, or null when the chainId is

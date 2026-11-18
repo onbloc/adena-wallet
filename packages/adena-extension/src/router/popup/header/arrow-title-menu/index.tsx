@@ -1,10 +1,10 @@
-import React from 'react';
-import styled from 'styled-components';
-
-import { Text, LeftArrowBtn } from '@components/atoms';
+import { LeftArrowBtn, Text } from '@components/atoms';
+import useAppNavigate from '@hooks/use-app-navigate';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import useAppNavigate from '@hooks/use-app-navigate';
+import type { JSX } from 'react';
+import React from 'react';
+import styled from 'styled-components';
 
 interface ArrowTitleMenuProps {
   title?: string;

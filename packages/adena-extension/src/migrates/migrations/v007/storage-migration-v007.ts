@@ -1,5 +1,6 @@
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
+
 import { StorageModelDataV006 } from '../v006/storage-model-v006';
 import { StorageModelDataV007 } from './storage-model-v007';
 

@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Setup
         uses: ./.github/actions/setup
@@ -18,12 +18,12 @@ jobs:
       - name: Branch info
         id: branch-info
         run: |
-          echo ::set-output name=BRANCH_TAG::${GITHUB_REF#refs/tags/}
+          echo "BRANCH_TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
       - name: Build project
         run: |
-          yarn
-          yarn build
+          pnpm install --frozen-lockfile
+          pnpm build
         # Web3Auth verifier values are substituted into the bundle at build time.
         # A provider whose secret is unset is skipped at runtime.
         env:
@@ -83,7 +83,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout
-  #       uses: actions/checkout@v3
+  #       uses: actions/checkout@v7
 
   #     - name: Setup
   #       uses: ./.github/actions/setup

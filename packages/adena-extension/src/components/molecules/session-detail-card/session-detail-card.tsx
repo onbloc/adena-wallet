@@ -1,11 +1,10 @@
-import BigNumber from 'bignumber.js';
-import dayjs from 'dayjs';
-import React, { useEffect, useMemo, useState } from 'react';
-
 import IconCircleExclamation from '@assets/icon-circle-exclamation';
 import IconClock from '@assets/icon-clock';
 import IconShare from '@assets/icon-share';
 import { formatAddress } from '@common/utils/client-utils';
+import BigNumber from 'bignumber.js';
+import dayjs from 'dayjs';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import {
   CardContainer,
@@ -24,8 +23,8 @@ import {
 // Match the wallet's main asset list logo (loaded from the canonical
 // gno-token-resource CDN) so the card stays visually consistent with the
 // rest of the wallet wherever it appears.
-const GNOT_LOGO_URL =
-  'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/ugnot.svg';
+const GNOT_LOGO_URL
+  = 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/ugnot.svg';
 
 const SECONDS_PER_DAY = 86_400;
 
@@ -92,11 +91,11 @@ const formatAllowPathDisplay = (allowPath: string): string => {
   return allowPath;
 };
 
-type ExpiryChipState =
-  | { kind: 'hidden' }
-  | { kind: 'days'; label: string }
-  | { kind: 'sub-day' }
-  | { kind: 'expired' };
+type ExpiryChipState
+  = | { kind: 'hidden' }
+    | { kind: 'days'; label: string }
+    | { kind: 'sub-day' }
+    | { kind: 'expired' };
 
 const resolveExpiryChip = (expiresAt: number, nowSec: number): ExpiryChipState => {
   if (!expiresAt || expiresAt <= 0) return { kind: 'hidden' };
@@ -234,11 +233,18 @@ export const SessionDetailCard: React.FC<SessionDetailCardProps> = ({
         <Row {...rowProps}>
           <RowHeader>
             <RowLabel>Spend Limit</RowLabel>
-            <Chip $variant={percentUsed >= 100 ? 'danger' : 'info'}>{percentUsed}% USED</Chip>
+            <Chip $variant={percentUsed >= 100 ? 'danger' : 'info'}>
+              {percentUsed}
+              % USED
+            </Chip>
           </RowHeader>
           <RowBody>
             <img className='crypto-icon' src={GNOT_LOGO_URL} alt='GNOT' />
-            <RowValue>{spendLimitDisplay} GNOT</RowValue>
+            <RowValue>
+              {spendLimitDisplay}
+              {' '}
+              GNOT
+            </RowValue>
           </RowBody>
         </Row>
       )}
@@ -258,32 +264,34 @@ export const SessionDetailCard: React.FC<SessionDetailCardProps> = ({
         <RowHeader>
           <RowLabel>Allow Paths</RowLabel>
         </RowHeader>
-        {allowPaths.length === 0 ? (
-          <RowBody>
-            <RowMuted>No allow paths</RowMuted>
-          </RowBody>
-        ) : (
-          <RealmList>
-            {allowPaths.map((allowPath) => {
-              const realmPath = getRealmPathFromAllowPath(allowPath);
-              const allowPathDisplay = formatAllowPathDisplay(allowPath);
-              return (
-                <RealmRow key={allowPath}>
-                  <RowValue>{allowPathDisplay}</RowValue>
-                  {realmPath && onOpenRealm && (
-                    <LinkButton
-                      type='button'
-                      aria-label={`Open ${realmPath} on gnoscan`}
-                      onClick={(): void => onOpenRealm(realmPath)}
-                    >
-                      <IconShare />
-                    </LinkButton>
-                  )}
-                </RealmRow>
-              );
-            })}
-          </RealmList>
-        )}
+        {allowPaths.length === 0
+          ? (
+              <RowBody>
+                <RowMuted>No allow paths</RowMuted>
+              </RowBody>
+            )
+          : (
+              <RealmList>
+                {allowPaths.map((allowPath) => {
+                  const realmPath = getRealmPathFromAllowPath(allowPath);
+                  const allowPathDisplay = formatAllowPathDisplay(allowPath);
+                  return (
+                    <RealmRow key={allowPath}>
+                      <RowValue>{allowPathDisplay}</RowValue>
+                      {realmPath && onOpenRealm && (
+                        <LinkButton
+                          type='button'
+                          aria-label={`Open ${realmPath} on gnoscan`}
+                          onClick={(): void => onOpenRealm(realmPath)}
+                        >
+                          <IconShare />
+                        </LinkButton>
+                      )}
+                    </RealmRow>
+                  );
+                })}
+              </RealmList>
+            )}
       </Row>
     </CardContainer>
   );

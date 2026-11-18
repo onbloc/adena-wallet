@@ -1,4 +1,4 @@
-/* eslint-disable react/no-unknown-property */
+import type { JSX } from 'react';
 
 const IconEditConfirm = ({ className }: { className: string }): JSX.Element => (
   <svg

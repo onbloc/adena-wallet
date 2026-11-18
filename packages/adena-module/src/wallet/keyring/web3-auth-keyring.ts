@@ -3,7 +3,7 @@ import {
   TransactionEndpoint,
   Tx,
   TxSignature,
-  Wallet as Tm2Wallet,
+  Wallet as Tm2Wallet
 } from '@gnolang/tm2-js-client';
 import sodium from 'libsodium-wrappers-sumo';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,7 +15,7 @@ import {
   Keyring,
   KeyringData,
   SignRawOptions,
-  Web3AuthKeyringType,
+  Web3AuthKeyringType
 } from './keyring';
 import { signGnoDocument } from './sign-gno-document';
 import { signRawWithPrivateKey } from './sign-raw-util';
@@ -46,7 +46,7 @@ export class Web3AuthKeyring implements Keyring {
       id: this.id,
       type: this.type,
       publicKey: Array.from(this.publicKey),
-      privateKey: Array.from(this.privateKey),
+      privateKey: Array.from(this.privateKey)
     };
   }
 
@@ -56,7 +56,7 @@ export class Web3AuthKeyring implements Keyring {
 
   async sign(
     provider: Provider,
-    document: Document,
+    document: Document
   ): Promise<{ signed: Tx; signature: TxSignature[] }> {
     return signGnoDocument(provider, document, this);
   }
@@ -75,20 +75,20 @@ export class Web3AuthKeyring implements Keyring {
 
   public static async fromPrivateKey(
     privateKey: Uint8Array,
-    type: Web3AuthKeyringType = 'WEB3_AUTH',
+    type: Web3AuthKeyringType = 'WEB3_AUTH'
   ) {
     const tm2Wallet = await Tm2Wallet.fromPrivateKey(privateKey);
     const publicKey = await tm2Wallet.getSigner().getPublicKey();
     return new Web3AuthKeyring({
       type,
       publicKey: Array.from(publicKey),
-      privateKey: Array.from(privateKey),
+      privateKey: Array.from(privateKey)
     });
   }
 
   public static async fromPrivateKeyStr(
     privateKeyStr: string,
-    type: Web3AuthKeyringType = 'WEB3_AUTH',
+    type: Web3AuthKeyringType = 'WEB3_AUTH'
   ) {
     const privateKey = hexToArray(privateKeyStr);
     const tm2Wallet = await Tm2Wallet.fromPrivateKey(privateKey);
@@ -96,7 +96,7 @@ export class Web3AuthKeyring implements Keyring {
     return new Web3AuthKeyring({
       type,
       publicKey: Array.from(publicKey),
-      privateKey: Array.from(privateKey),
+      privateKey: Array.from(privateKey)
     });
   }
 }

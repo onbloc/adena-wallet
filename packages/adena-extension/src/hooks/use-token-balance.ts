@@ -1,9 +1,3 @@
-import { onlineManager, QueryObserverResult, useQuery } from '@tanstack/react-query';
-import { Account, isSessionAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useMemo } from 'react';
-import { useSetRecoilState } from 'recoil';
-
 import { COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
 import {
   isCosmosNativeTokenModel,
@@ -11,7 +5,12 @@ import {
   isNativeTokenModel,
 } from '@common/validation/validation-token';
 import { NetworkState } from '@states';
+import { keepPreviousData, onlineManager, QueryObserverResult, useQuery } from '@tanstack/react-query';
 import { Amount, GRC20TokenModel, TokenBalanceType, TokenModel } from '@types';
+import { Account, isSessionAccount } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import { useSetAtom } from 'jotai';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import { CosmosFetchResult, fetchCosmosTokenBalances } from './helpers/fetch-cosmos-balances';
 import {
@@ -66,7 +65,7 @@ export const useTokenBalance = (): {
 
   // Declared early because it is referenced in the Gno query's `enabled` condition below.
   const nativeToken = useMemo((): TokenModel | null => {
-    return tokenMetainfos.find((tokenModel) => tokenModel.main) || null;
+    return tokenMetainfos.find(tokenModel => tokenModel.main) || null;
   }, [tokenMetainfos]);
 
   const availableBalanceFetching = useMemo(() => {
@@ -90,9 +89,9 @@ export const useTokenBalance = (): {
     refetch: refetchGnoBalances,
     isError: isGnoBalanceError,
     fetchStatus: gnoFetchStatus,
-    isPreviousData: isGnoBalancePrevious,
-  } = useQuery<TokenBalanceType[]>(
-    // 'gno' discriminator keeps this cache entry separate from the Cosmos query
+    isPlaceholderData: isGnoBalancePrevious,
+  } = useQuery<TokenBalanceType[]>({
+    queryKey: // 'gno' discriminator keeps this cache entry separate from the Cosmos query
     // even though both share the 'balances' prefix.
     // For an ACTIVE SessionAccount, currentBalanceAddress resolves to the master
     // Gno address: session keys never hold balances, every session-signed tx
@@ -106,24 +105,24 @@ export const useTokenBalance = (): {
       isFetchedGRC20Tokens,
       tokenLogoMap,
     ],
-    () => {
+
+    queryFn: () => {
       if (currentBalanceAddress === null || nativeToken == null) return [];
       return fetchBalances(currentBalanceAddress, tokenMetainfos);
     },
-    {
-      refetchInterval: GNO_REFETCH_INTERVAL,
-      keepPreviousData: true,
-      enabled: availableBalanceFetching && currentBalanceAddress !== null && nativeToken !== null,
-    },
-  );
+
+    refetchInterval: GNO_REFETCH_INTERVAL,
+    enabled: availableBalanceFetching && currentBalanceAddress !== null && nativeToken !== null,
+    placeholderData: keepPreviousData,
+  });
 
   const {
     data: cosmosResults = [],
     refetch: refetchCosmosBalances,
     fetchStatus: cosmosFetchStatus,
-    isPreviousData: isCosmosBalancePrevious,
-  } = useQuery<CosmosFetchResult[]>(
-    // Keyed by account id (not the object reference) to avoid spurious refetches
+    isPlaceholderData: isCosmosBalancePrevious,
+  } = useQuery<CosmosFetchResult[]>({
+    queryKey: // Keyed by account id (not the object reference) to avoid spurious refetches
     // when a new Account instance is created from the same underlying data.
     [
       'balances',
@@ -132,7 +131,8 @@ export const useTokenBalance = (): {
       currentNetwork.chainId,
       currentAtomoneNetwork?.id ?? null,
     ],
-    () => {
+
+    queryFn: () => {
       if (currentAccount === null) return [];
       return fetchCosmosTokenBalances(
         currentAccount,
@@ -142,18 +142,20 @@ export const useTokenBalance = (): {
         currentAtomoneNetwork?.id ?? null,
       );
     },
-    {
-      refetchInterval: COSMOS_REFETCH_INTERVAL,
-      keepPreviousData: true,
-      // SessionAccount is a Gno-only key; deriving and querying Cosmos
-      // addresses for it is meaningless and wastes LCD bandwidth. Skip the
-      // query entirely so the Cosmos token rows stay empty in this mode.
-      enabled:
-        availableBalanceFetching && currentAccount !== null && !isSessionAccount(currentAccount),
-      // Default retry (3) causes excessive delay and traffic during LCD outages.
-      retry: 1,
-    },
-  );
+
+    refetchInterval: COSMOS_REFETCH_INTERVAL,
+
+    // SessionAccount is a Gno-only key; deriving and querying Cosmos
+    // addresses for it is meaningless and wastes LCD bandwidth. Skip the
+    // query entirely so the Cosmos token rows stay empty in this mode.
+    enabled:
+      availableBalanceFetching && currentAccount !== null && !isSessionAccount(currentAccount),
+
+    // Default retry (3) causes excessive delay and traffic during LCD outages.
+    retry: 1,
+
+    placeholderData: keepPreviousData,
+  });
 
   // Refetch both chains in parallel. Returns the Gno result to satisfy the
   // existing QueryObserverResult return type; callers discard the return value.
@@ -168,7 +170,7 @@ export const useTokenBalance = (): {
   // than fails while offline, so there is no error to observe. Only while we
   // still believe we are offline: the two chains resume on different intervals.
   const errorNetworkIds = useMemo(() => {
-    const ids = new Set(cosmosResults.filter((r) => r.error).map((r) => r.networkId));
+    const ids = new Set(cosmosResults.filter(r => r.error).map(r => r.networkId));
     const believedOffline = !onlineManager.isOnline();
 
     if (isGnoBalanceError || (believedOffline && gnoFetchStatus === 'paused')) {
@@ -206,7 +208,7 @@ export const useTokenBalance = (): {
 
   // Publish the failing cosmos network ids so the header indicator can list
   // them alongside gno failedNetwork without re-running the cosmos query.
-  const setCosmosUnresponsiveNetworkIds = useSetRecoilState(
+  const setCosmosUnresponsiveNetworkIds = useSetAtom(
     NetworkState.cosmosUnresponsiveNetworkIds,
   );
   useEffect(() => {
@@ -241,7 +243,7 @@ export const useTokenBalance = (): {
       }
       return true;
     });
-    return new Set(profiles.map((profile) => profile.id));
+    return new Set(profiles.map(profile => profile.id));
   }, [chainRegistry, currentAtomoneNetwork]);
 
   const cosmosShellTokens = useMemo<TokenModel[]>(() => {
@@ -253,9 +255,9 @@ export const useTokenBalance = (): {
     }
     return allTokenMetainfos
       .filter(
-        (meta) => isCosmosNativeTokenModel(meta) && activeCosmosNetworkIds.has(meta.networkId),
+        meta => isCosmosNativeTokenModel(meta) && activeCosmosNetworkIds.has(meta.networkId),
       )
-      .map((meta) => ({
+      .map(meta => ({
         ...meta,
         // Persisted metainfo.image is the registry's iconUrl (often empty or a
         // domain hint that does not match webpack-bundled assets). Normalise
@@ -287,7 +289,7 @@ export const useTokenBalance = (): {
     }
 
     const gnoRows: TokenBalanceType[] = tokenMetainfos.map((meta) => {
-      const found = gnoBalances.find((b) => b.tokenId === meta.tokenId);
+      const found = gnoBalances.find(b => b.tokenId === meta.tokenId);
       return {
         ...meta,
         amount: found?.amount ?? EMPTY_AMOUNT,
@@ -297,7 +299,7 @@ export const useTokenBalance = (): {
     const cosmosRows: TokenBalanceType[] = cosmosShellTokens.map((meta) => {
       const networkResult = cosmosResultsByNetwork.get(meta.networkId);
       const found = networkResult?.balances.find(
-        (b) => b.tokenId === meta.tokenId && b.networkId === meta.networkId,
+        b => b.tokenId === meta.tokenId && b.networkId === meta.networkId,
       );
       return {
         ...meta,
@@ -311,10 +313,10 @@ export const useTokenBalance = (): {
     // would otherwise read as settled and persist the old account's ranking
     // under the new account's key.
     const showingPreviousBalances = isGnoBalancePrevious || isCosmosBalancePrevious;
-    const settled =
-      !showingPreviousBalances &&
-      rows.length > 0 &&
-      rows.every((row) => row.amount.value !== '' || errorNetworkIds.has(row.networkId));
+    const settled
+      = !showingPreviousBalances
+        && rows.length > 0
+        && rows.every(row => row.amount.value !== '' || errorNetworkIds.has(row.networkId));
 
     if (settled || !storedOrder?.length) {
       return { currentBalances: rows.sort(compareTokenBalances), balancesSettled: settled };
@@ -368,7 +370,7 @@ export const useTokenBalance = (): {
       return null;
     }
 
-    const mainToken = currentBalances.find((balance) => balance.tokenId === nativeToken.tokenId);
+    const mainToken = currentBalances.find(balance => balance.tokenId === nativeToken.tokenId);
     if (!mainToken?.amount || mainToken.amount.value === '') {
       return null;
     }
@@ -446,12 +448,12 @@ export const useTokenBalance = (): {
   async function fetchBalances(address: string, tokens: TokenModel[]): Promise<TokenBalanceType[]> {
     const grc20TokenPaths = tokens
       .filter((token): token is GRC20TokenModel => isGRC20TokenModel(token))
-      .map((token) => token.tokenId);
+      .map(token => token.tokenId);
 
     const grc20BalanceMap = grc20TokenPaths.length
       ? await balanceService
           .getGRC20TokenBalanceMap(address, grc20TokenPaths)
-          .catch(() => ({}) as Record<string, bigint>)
+          .catch(() => (({}) as Record<string, bigint>))
       : ({} as Record<string, bigint>);
 
     return Promise.all(

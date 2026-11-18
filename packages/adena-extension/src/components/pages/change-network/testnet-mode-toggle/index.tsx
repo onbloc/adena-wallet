@@ -1,6 +1,6 @@
+import { NetworkState } from '@states';
 import React, { useCallback } from 'react';
 
-import { NetworkState } from '@states';
 import { TestnetModeToggleWrapper } from './testnet-mode-toggle.styles';
 
 type NetworkMode = NetworkState.NetworkMode;

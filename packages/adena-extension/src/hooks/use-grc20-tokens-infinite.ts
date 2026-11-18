@@ -1,7 +1,7 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
+import { GRC20TokenModel } from '@types';
 import { useMemo } from 'react';
 
-import { GRC20TokenModel } from '@types';
 import { useAdenaContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
@@ -19,24 +19,28 @@ export const useGRC20TokensInfinite = () => {
   const { currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
 
-  const query = useInfiniteQuery<GRC20TokenPage, Error>({
+  const query = useInfiniteQuery({
     queryKey: ['grc20-tokens-infinite', currentNetwork.networkId],
-    queryFn: ({ pageParam = 0 }) =>
+
+    queryFn: ({ pageParam }): Promise<GRC20TokenPage> =>
       tokenService.fetchGRC20TokensPaged({ offset: pageParam, limit: GRC20_PAGE_SIZE }),
+    initialPageParam: 0,
+
     // Advance the offset by whole pages of registry keys. Items may be fewer
     // than the page size (nil/invalid entries are filtered), so paginate on the
     // registry size, not on item count.
-    getNextPageParam: (lastPage, allPages) => {
+    getNextPageParam: (lastPage, allPages): number | undefined => {
       const nextOffset = allPages.length * GRC20_PAGE_SIZE;
       return nextOffset < lastPage.totalCount ? nextOffset : undefined;
     },
+
     staleTime: Infinity,
-    keepPreviousData: true,
     enabled: !!currentAddress,
+    placeholderData: keepPreviousData,
   });
 
   const tokens = useMemo(
-    () => query.data?.pages.flatMap((page) => page.items) ?? [],
+    () => query.data?.pages.flatMap(page => page.items) ?? [],
     [query.data],
   );
 

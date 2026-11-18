@@ -51,7 +51,7 @@ describe('StorageMigration027', () => {
   it('migrates an existing onbloc default mainnet to rpc.gno.land with onbloc fallback', async () => {
     const result = await new StorageMigration027().up(makeInput());
     expect(result.version).toBe(27);
-    const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
+    const mainnet = result.data.NETWORKS.find(n => n.id === 'gnoland-1');
     expect(mainnet?.rpcUrl).toBe('https://rpc.gno.land:443');
     expect(mainnet?.fallbackRPCUrl).toBe('https://rpc.onbloc.xyz:443');
   });
@@ -59,7 +59,7 @@ describe('StorageMigration027', () => {
   it('leaves a genuinely customized gnoland-1 rpcUrl untouched', async () => {
     const custom = gnolandMainnet({ rpcUrl: 'https://my.custom.rpc:443' });
     const result = await new StorageMigration027().up(makeInput({ NETWORKS: [custom] }));
-    const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
+    const mainnet = result.data.NETWORKS.find(n => n.id === 'gnoland-1');
     expect(mainnet?.rpcUrl).toBe('https://my.custom.rpc:443');
     expect(mainnet?.fallbackRPCUrl).toBeUndefined();
   });
@@ -74,7 +74,7 @@ describe('StorageMigration027', () => {
       rpcUrl: 'https://rpc.onbloc.xyz:443',
     });
     const result = await new StorageMigration027().up(makeInput({ NETWORKS: [other] }));
-    const network = result.data.NETWORKS.find((n) => n.id === 'custom');
+    const network = result.data.NETWORKS.find(n => n.id === 'custom');
     expect(network?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
     expect(network?.fallbackRPCUrl).toBeUndefined();
   });

@@ -1,19 +1,20 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render, screen } from '@testing-library/react';
-import theme from '@styles/theme';
 import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render, screen } from '@testing-library/react';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
+
 import MainTotalPrice, { MainTotalPriceProps } from './main-total-price';
 
 function renderTotalPrice(props: MainTotalPriceProps): ReturnType<typeof render> {
   return render(
-    <RecoilRoot>
+    <JotaiProvider>
       <GlobalPopupStyle />
       <ThemeProvider theme={theme}>
         <MainTotalPrice {...props} />
       </ThemeProvider>
-    </RecoilRoot>,
+    </JotaiProvider>,
   );
 }
 

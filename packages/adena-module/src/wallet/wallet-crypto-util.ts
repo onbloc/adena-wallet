@@ -1,7 +1,14 @@
-import CryptoJS from 'crypto-js';
 import sodium from 'libsodium-wrappers-sumo';
 
-import { Argon2id, isArgon2idOptions, Xchacha20poly1305Ietf, xchacha20NonceLength } from '../crypto';
+import {
+  Argon2id,
+  isArgon2idOptions,
+  legacyAesDecrypt,
+  legacyAesEncrypt,
+  sha256Hex,
+  xchacha20NonceLength,
+  Xchacha20poly1305Ietf
+} from '../crypto';
 import { toAscii, toHex } from '../encoding';
 
 interface KdfConfiguration {
@@ -16,7 +23,7 @@ interface KdfConfiguration {
 export async function executeKdf(
   salt: string,
   password: string,
-  configuration: KdfConfiguration,
+  configuration: KdfConfiguration
 ): Promise<Uint8Array> {
   switch (configuration.algorithm) {
     case 'argon2id': {
@@ -36,28 +43,28 @@ export const makeCryptKey = async (password: string) => {
     params: {
       outputLength: 32,
       opsLimit: 24,
-      memLimitKib: 12 * 1024,
-    },
+      memLimitKib: 12 * 1024
+    }
   };
   const cryptKey = await executeKdf(SALT_KEY, password, kdfConfiguration);
   return toHex(cryptKey);
 };
 
 export const encryptSha256 = (password: string) => {
-  return Promise.resolve(makeCryptKey(password)).then((cryptKey) =>
-    CryptoJS.SHA256(cryptKey).toString(),
+  return Promise.resolve(makeCryptKey(password)).then(cryptKey =>
+    sha256Hex(cryptKey)
   );
 };
 
 export const encryptAES = (value: string, password: string) => {
-  return Promise.resolve(makeCryptKey(password)).then((cryptKey) =>
-    CryptoJS.AES.encrypt(value, cryptKey).toString(),
+  return Promise.resolve(makeCryptKey(password)).then(cryptKey =>
+    legacyAesEncrypt(value, cryptKey)
   );
 };
 
 export const decryptAES = (encryptedValue: string, password: string) => {
-  return Promise.resolve(makeCryptKey(password)).then((cryptKey) =>
-    CryptoJS.AES.decrypt(encryptedValue, cryptKey).toString(CryptoJS.enc.Utf8),
+  return Promise.resolve(makeCryptKey(password)).then(cryptKey =>
+    legacyAesDecrypt(encryptedValue, cryptKey)
   );
 };
 
@@ -83,12 +90,12 @@ export const generateKdfSalt = async (): Promise<Uint8Array> => {
  */
 export const makeCryptKeyBytes = async (
   password: string,
-  salt: Uint8Array,
+  salt: Uint8Array
 ): Promise<Uint8Array> => {
   return Argon2id.execute(password, salt, {
     outputLength: 32,
     opsLimit: 24,
-    memLimitKib: 12 * 1024,
+    memLimitKib: 12 * 1024
   });
 };
 
@@ -100,7 +107,7 @@ export const makeCryptKeyBytes = async (
 export const encryptXChacha20 = async (
   value: string,
   password: string,
-  salt: Uint8Array,
+  salt: Uint8Array
 ): Promise<EncryptedData> => {
   await sodium.ready;
   const cryptKey = await makeCryptKeyBytes(password, salt);
@@ -109,7 +116,7 @@ export const encryptXChacha20 = async (
   const ciphertext = await Xchacha20poly1305Ietf.encrypt(message, cryptKey, nonce);
   return {
     ciphertext: sodium.to_base64(ciphertext),
-    nonce: sodium.to_base64(nonce),
+    nonce: sodium.to_base64(nonce)
   };
 };
 
@@ -121,7 +128,7 @@ export const encryptXChacha20 = async (
 export const decryptXChacha20 = async (
   encryptedData: EncryptedData,
   password: string,
-  salt: Uint8Array,
+  salt: Uint8Array
 ): Promise<string> => {
   await sodium.ready;
   const cryptKey = await makeCryptKeyBytes(password, salt);

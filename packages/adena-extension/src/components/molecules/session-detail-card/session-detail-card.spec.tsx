@@ -1,9 +1,9 @@
+import theme from '@styles/theme';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { Provider as JotaiProvider } from 'jotai';
 import React from 'react';
-import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 
-import theme from '@styles/theme';
 import { SessionDetailCard } from './session-detail-card';
 
 const NOW_SEC = 1_716_000_000;
@@ -22,28 +22,28 @@ const renderCard = (
     spendPeriod: undefined,
     spendUsedUgnot: undefined,
     spendReset: undefined,
-    onOpenAccount: jest.fn(),
-    onOpenRealm: jest.fn(),
+    onOpenAccount: vi.fn(),
+    onOpenRealm: vi.fn(),
     ...overrides,
   };
 
   const utils = render(
-    <RecoilRoot>
+    <JotaiProvider>
       <ThemeProvider theme={theme}>
         <SessionDetailCard {...props} />
       </ThemeProvider>
-    </RecoilRoot>,
+    </JotaiProvider>,
   );
   return { ...utils, props };
 };
 
 beforeAll(() => {
-  jest.useFakeTimers();
-  jest.setSystemTime(NOW_SEC * 1000);
+  vi.useFakeTimers();
+  vi.setSystemTime(NOW_SEC * 1000);
 });
 
 afterAll(() => {
-  jest.useRealTimers();
+  vi.useRealTimers();
 });
 
 describe('SessionDetailCard', () => {
@@ -61,7 +61,7 @@ describe('SessionDetailCard', () => {
   });
 
   it('calls onOpenAccount when master account share is clicked', () => {
-    const onOpenAccount = jest.fn();
+    const onOpenAccount = vi.fn();
     renderCard({ showMasterRow: true, onOpenAccount });
 
     fireEvent.click(screen.getByLabelText('Open master account on gnoscan'));
@@ -119,7 +119,7 @@ describe('SessionDetailCard', () => {
   });
 
   it('renders allow paths and calls onOpenRealm for vm/exec realm path links', () => {
-    const onOpenRealm = jest.fn();
+    const onOpenRealm = vi.fn();
     renderCard({
       allowPaths: ['vm/exec:gno.land/r/demo/foo', 'vm/exec:gno.land/r/demo/bar'],
       onOpenRealm,

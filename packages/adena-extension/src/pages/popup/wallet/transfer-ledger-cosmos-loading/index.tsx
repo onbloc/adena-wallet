@@ -1,6 +1,3 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import styled from 'styled-components';
-
 import TransferLedgerLoading from '@components/pages/transfer-ledger-loading/transfer-ledger-loading';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
@@ -16,6 +13,9 @@ import {
   LedgerError,
   LedgerErrorKind,
 } from 'adena-module';
+import type { JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import styled from 'styled-components';
 
 const TransferLedgerCosmosLoadingLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -34,7 +34,7 @@ function toCompatDocument(cosmos: CosmosDocument): Document {
     sequence: cosmos.sequence ?? '',
     fee: {
       gas: cosmos.fee.gas,
-      amount: cosmos.fee.amount.map((a) => ({
+      amount: cosmos.fee.amount.map(a => ({
         denom: a.denom,
         amount: a.amount,
       })),
@@ -134,14 +134,17 @@ const TransferLedgerCosmosLoadingContainer = (): JSX.Element => {
         currentAccount,
         document,
       );
-    } catch (error) {
+    }
+    catch (error) {
       if (error instanceof LedgerError) {
         navigateToReject(LEDGER_ERROR_COPY[error.kind]);
-      } else {
+      }
+      else {
         navigateToReject(SIGN_FAILURE_COPY);
       }
       return;
-    } finally {
+    }
+    finally {
       await transport.close().catch(() => undefined);
     }
 
@@ -155,10 +158,12 @@ const TransferLedgerCosmosLoadingContainer = (): JSX.Element => {
             ledgerResult: { status: 'SUCCESS', hash: result.txhash },
           },
         });
-      } else {
+      }
+      else {
         navigate(RoutePath.History);
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.log(error);
       navigateToReject(BROADCAST_FAILURE_COPY);
     }

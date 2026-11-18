@@ -1,19 +1,4 @@
-import {
-  BroadcastTransactionMap,
-  BroadcastTxCommitResult,
-  BroadcastTxSyncResult,
-  CompactBitArray,
-  Multisignature,
-  parseSignCoin,
-  Tx,
-  uint8ArrayToBase64,
-} from '@gnolang/tm2-js-client';
-
 import { GnoProvider } from '@common/provider/gno';
-import { EncodeTxSignature, WalletService } from '..';
-
-import { ContractMessage, MultisigAccountResult, Signature } from '@inject/types';
-
 import {
   MemPackage,
   MsgAddPackage,
@@ -24,11 +9,22 @@ import {
   MsgSend,
 } from '@gnolang/gno-js-client';
 import {
+  BroadcastTransactionMap,
+  BroadcastTxCommitResult,
+  BroadcastTxSyncResult,
+  CompactBitArray,
+  Multisignature,
+  parseSignCoin,
+  Tx,
+  uint8ArrayToBase64,
+} from '@gnolang/tm2-js-client';
+import { ContractMessage, MultisigAccountResult, Signature } from '@inject/types';
+import {
   Account,
   combineMultisigPublicKey,
   compactBitArraySetIndex,
-  createMultisigPublicKey,
   createCompactBitArray,
+  createMultisigPublicKey,
   Document,
   fromBase64,
   fromBech32,
@@ -43,6 +39,8 @@ import {
   secp256k1PubKeyToAddressBytes,
   toBase64,
 } from 'adena-module';
+
+import { EncodeTxSignature, WalletService } from '..';
 
 const AMINO_PREFIX = 0x0a;
 const AMINO_LENGTH = 0x21;
@@ -91,7 +89,7 @@ export class MultisigService {
     // Generate address and public key using Proto to Amino conversion
     const { address: multisigAddress, publicKey: multisigPubKey } = createMultisigPublicKey(
       threshold,
-      sortedSignerInfos.map((info) => ({
+      sortedSignerInfos.map(info => ({
         '@type': info.publicKey['@type'],
         value: info.bytes,
       })),
@@ -106,7 +104,7 @@ export class MultisigService {
       multisigAddress,
       multisigAddressBytes: this.uint8ArrayToRecord(addressBytes),
       multisigPubKey: this.uint8ArrayToRecord(multisigPubKey),
-      signerPublicKeys: sortedSignerInfos.map((info) => ({
+      signerPublicKeys: sortedSignerInfos.map(info => ({
         address: info.address,
         publicKey: {
           '@type': info.publicKey['@type'],
@@ -167,7 +165,8 @@ export class MultisigService {
         await writable.close();
 
         return true;
-      } else {
+      }
+      else {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -179,7 +178,8 @@ export class MultisigService {
 
         return true;
       }
-    } catch (error) {
+    }
+    catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.log('User cancelled file save');
         return false;
@@ -221,7 +221,8 @@ export class MultisigService {
         await writable.close();
 
         return true;
-      } else {
+      }
+      else {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -233,7 +234,8 @@ export class MultisigService {
 
         return true;
       }
-    } catch (error) {
+    }
+    catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.log('User cancelled file save');
         return false;
@@ -260,7 +262,7 @@ export class MultisigService {
     const accountInfo = await provider.getAccountInfo(address);
     const wallet = await this.walletService.getCurrentWallet();
     const { signature } = await wallet.signByAccountId(provider, account.id, document);
-    const signatures = signature.map((s) => ({
+    const signatures = signature.map(s => ({
       pubKey: {
         typeUrl: accountInfo?.publicKey?.['@type'],
         value: accountInfo?.publicKey?.value ?? undefined,
@@ -302,7 +304,8 @@ export class MultisigService {
         },
         signature: encodedSignature.signature,
       };
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Failed to sign multisig transaction:', error);
       throw error;
     }
@@ -338,7 +341,7 @@ export class MultisigService {
     }
 
     // Signer public keys to bytes
-    const signerPublicKeys = multisigAccount.signerPublicKeys.map((signer) =>
+    const signerPublicKeys = multisigAccount.signerPublicKeys.map(signer =>
       fromBase64(signer.publicKey.value),
     );
 
@@ -357,7 +360,7 @@ export class MultisigService {
 
     const multisigSignature = Multisignature.encode(protoMultisig).finish();
 
-    const pubKeys = signerPublicKeys.map((pubKey) => ({
+    const pubKeys = signerPublicKeys.map(pubKey => ({
       '@type': SECP256K1_TYPE,
       value: uint8ArrayToBase64(pubKey),
     }));
@@ -426,7 +429,8 @@ export class MultisigService {
       const encodedTx = uint8ArrayToBase64(txBytes);
 
       return await provider.sendTransaction(encodedTx, mode as keyof BroadcastTransactionMap);
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Broadcast Failed:', error);
       throw error;
     }
@@ -538,10 +542,10 @@ export class MultisigService {
    * Strip Amino prefix from public key if present
    */
   private stripAminoPrefix(pubKeyBytes: Uint8Array): Uint8Array {
-    const hasAminoPrefix =
-      pubKeyBytes.length === AMINO_PREFIXED_LENGTH &&
-      pubKeyBytes[0] === AMINO_PREFIX &&
-      pubKeyBytes[1] === AMINO_LENGTH;
+    const hasAminoPrefix
+      = pubKeyBytes.length === AMINO_PREFIXED_LENGTH
+        && pubKeyBytes[0] === AMINO_PREFIX
+        && pubKeyBytes[1] === AMINO_LENGTH;
     return hasAminoPrefix ? pubKeyBytes.slice(2) : pubKeyBytes;
   }
 
@@ -549,9 +553,9 @@ export class MultisigService {
     address: string,
   ): Promise<
     | {
-        '@type': string;
-        value: string;
-      }
+      '@type': string;
+      value: string;
+    }
     | null
     | undefined
   > {
@@ -580,7 +584,7 @@ export class MultisigService {
    */
   private async fetchSignerInfos(signers: string[]): Promise<SignerInfo[]> {
     const results = await Promise.allSettled(
-      signers.map((address) => this.getPublicKeyFromChain(address)),
+      signers.map(address => this.getPublicKeyFromChain(address)),
     );
 
     const uninitializedAccounts: string[] = [];
@@ -593,7 +597,8 @@ export class MultisigService {
 
       if (!publicKeyInfo?.value) {
         uninitializedAccounts.push(address);
-      } else {
+      }
+      else {
         signerInfos.push({
           address,
           publicKey: publicKeyInfo,
@@ -603,8 +608,8 @@ export class MultisigService {
     });
 
     if (uninitializedAccounts.length > 0) {
-      const accountList =
-        uninitializedAccounts.length > 1
+      const accountList
+        = uninitializedAccounts.length > 1
           ? `${uninitializedAccounts.join(', ')}`
           : uninitializedAccounts[0];
 
@@ -664,7 +669,7 @@ export class MultisigService {
     chainId: string,
   ): Document {
     return {
-      msgs: rawTx.msg.map((rawMessage) => ({
+      msgs: rawTx.msg.map(rawMessage => ({
         type: rawMessage['@type'],
         value: rawMessage,
       })),
@@ -713,7 +718,7 @@ function mapRawTransactionByParams(
   gasFee: string,
 ): RawTx {
   return {
-    msg: messages.map((message) => mapRawTransactionMessage(message)),
+    msg: messages.map(message => mapRawTransactionMessage(message)),
     fee: {
       gas_wanted: gasWanted,
       gas_fee: gasFee,
@@ -807,7 +812,7 @@ function mapRawMemPackage(memPackage: MemPackage): RawMemPackage {
           value: toBase64(memPackage.info.value) || '',
         }
       : undefined,
-    files: memPackage.files.map((file) => ({
+    files: memPackage.files.map(file => ({
       name: file.name,
       body: file.body,
     })),

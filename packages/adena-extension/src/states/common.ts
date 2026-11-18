@@ -1,60 +1,31 @@
 import { WindowSizeType } from '@types';
-import { atom } from 'recoil';
+import { atom } from 'jotai';
+import { atomWithReset } from 'jotai/utils';
 
 interface HistoryPosition {
   position: number;
 }
 
-export const fetchedHistoryBlockHeight = atom<number | null>({
-  key: 'common/fetched-history-block-height',
-  default: null,
-});
+export const fetchedHistoryBlockHeight = atom<number | null>(null);
 
-export const historyPosition = atom<HistoryPosition>({
-  key: 'common/history-position',
-  default: {
-    position: 0,
-  },
+export const historyPosition = atomWithReset<HistoryPosition>({
+  position: 0,
 });
 
 export const tokenDetailPosition = atom<HistoryPosition>({
-  key: 'common/token-detail-position',
-  default: {
-    position: 0,
-  },
+  position: 0,
 });
 
-export const scrollPositions = atom<{ [key in string]: number }>({
-  key: 'common/scroll-positions',
-  default: {},
-});
+export const scrollPositions = atom<{ [key in string]: number }>({});
 
-export const historyState = atom<{ [key in string]: any }>({
-  key: 'common/history-state',
-  default: {},
-});
+export const historyState = atom<{ [key in string]: any }>({});
 
-export const webHeaderIndicatorLength = atom<number>({
-  key: 'common/webHeaderIndicatorLength',
-  default: 0,
-});
+export const webHeaderIndicatorLength = atom<number>(0);
 
-export const toastMessage = atom<string | null>({
-  key: 'common/toastMessage',
-  default: null,
-});
+export const toastMessage = atom<string | null>(null);
 
-export const windowSizeType = atom<WindowSizeType>({
-  key: 'common/windowSizeType',
-  default: 'DEFAULT',
-});
+export const windowSizeType = atom<WindowSizeType>('DEFAULT');
 
-export const loadingImageUrls = atom<string[]>({
-  key: 'common/loadingImageUrls',
-  default: [],
-});
+export const loadingImageUrls = atom<string[]>([]);
 
-export const loadedImageUrls = atom<string[]>({
-  key: 'common/loadedImageUrls',
-  default: [],
-});
+export const loadedImageUrls = atom<string[]>([]);

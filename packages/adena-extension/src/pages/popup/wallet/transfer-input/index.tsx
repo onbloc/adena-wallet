@@ -1,8 +1,6 @@
-import { CosmosDocument, MSG_SEND_AMINO_TYPE } from 'adena-module';
-import { useQuery } from '@tanstack/react-query';
-import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
+import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
+import { formatUSD, makeTokenValue } from '@common/utils/price-utils';
+import { calculateByteSize } from '@common/utils/string-utils';
 import { isCosmosNativeTokenModel, isGRC20TokenModel } from '@common/validation/validation-token';
 import {
   CHAIN_DISPLAY_NAME,
@@ -11,24 +9,24 @@ import {
 import TransferInput from '@components/pages/transfer-input/transfer-input/transfer-input';
 import { TransferMode } from '@components/pages/transfer-input/transfer-mode-tabs/transfer-mode-tabs';
 import { useAddressBookInput } from '@hooks/use-address-book-input';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { useBalanceInput } from '@hooks/use-balance-input';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useHistoryData from '@hooks/use-history-data';
 import useLink from '@hooks/use-link';
-import { getCosmosOriginDenom } from '@hooks/use-token-metainfo';
-import { useCosmosNetworkFee } from '@hooks/wallet/use-cosmos-network-fee';
-import { RoutePath } from '@types';
-
-import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
-import { formatUSD, makeTokenValue } from '@common/utils/price-utils';
-import { calculateByteSize } from '@common/utils/string-utils';
-import useAppNavigate from '@hooks/use-app-navigate';
 import { useNetwork } from '@hooks/use-network';
 import useSessionParams from '@hooks/use-session-state';
+import { getCosmosOriginDenom } from '@hooks/use-token-metainfo';
 import { useTransferInfo } from '@hooks/use-transfer-info';
+import { useCosmosNetworkFee } from '@hooks/wallet/use-cosmos-network-fee';
 import { useTransferTokenPrice } from '@hooks/wallet/use-transfer-token-price';
+import { useQuery } from '@tanstack/react-query';
+import { RoutePath } from '@types';
 import { TokenModel } from '@types';
+import { CosmosDocument, MSG_SEND_AMINO_TYPE } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 // TODO(ADN-760 follow-up): replace with the finalized bridging guide URL.
 const BRIDGE_GUIDE_URL = '#';
@@ -80,32 +78,34 @@ const TransferInputContainer: React.FC = () => {
     const chain = chainRegistry.getChainByChainId(tokenMetainfo.networkId);
     return chain && chain.chainType === 'cosmos' ? chain : null;
   }, [isCosmosNative, tokenMetainfo, chainRegistry]);
-  const { data: cosmosFromAddress } = useQuery<string | null>(
-    ['cosmosFromAddrInput', currentAccount?.id, cosmosChain?.bech32Prefix],
-    async () => {
+  const { data: cosmosFromAddress } = useQuery<string | null>({
+    queryKey: ['cosmosFromAddrInput', currentAccount?.id, cosmosChain?.bech32Prefix],
+
+    queryFn: async () => {
       if (!currentAccount || !cosmosChain) return null;
       return currentAccount.getAddress(cosmosChain.bech32Prefix);
     },
-    { enabled: !!currentAccount && !!cosmosChain },
-  );
+
+    enabled: !!currentAccount && !!cosmosChain,
+  });
   const cosmosEstimateDoc = useMemo<CosmosDocument | null>(() => {
     if (!isCosmosNative || !cosmosFromAddress || !cosmosChain || !tokenMetainfo) return null;
     if (tokenMetainfo.type !== 'cosmos-native') return null;
     // Prefer the persisted metainfo denom; fall back to the registry for
     // accounts whose stored entries predate the denom-seed fix.
     const profile = tokenRegistry.get(tokenMetainfo.tokenId);
-    const denom =
-      (tokenMetainfo as { denom?: string }).denom ||
-      (profile ? getCosmosOriginDenom(profile) : '');
+    const denom
+      = (tokenMetainfo as { denom?: string }).denom
+        || (profile ? getCosmosOriginDenom(profile) : '');
     if (!denom) return null;
     // Mirror the actual broadcast tx as closely as possible so the simulated
     // gas matches what summary will charge. Falls back to a self-send +
     // amount=1u placeholder when the user has not yet entered a recipient,
     // which is enough to drive an initial fee preview.
-    const placeholderFee =
-      cosmosChain.fee.fallbackFee ?? { amount: [{ denom, amount: '0' }], gas: '0' };
-    const toAddress =
-      addressBookInput.resultAddress && addressBookInput.resultAddress !== ''
+    const placeholderFee
+      = cosmosChain.fee.fallbackFee ?? { amount: [{ denom, amount: '0' }], gas: '0' };
+    const toAddress
+      = addressBookInput.resultAddress && addressBookInput.resultAddress !== ''
         ? addressBookInput.resultAddress
         : cosmosFromAddress;
     return {
@@ -167,14 +167,14 @@ const TransferInputContainer: React.FC = () => {
     return chainRegistry.list()[0]?.chainGroup ?? 'atomone';
   }, [chainRegistry]);
 
-  const [receivingChainGroup, setReceivingChainGroup] =
-    useState<string>(defaultReceivingChainGroup);
+  const [receivingChainGroup, setReceivingChainGroup]
+    = useState<string>(defaultReceivingChainGroup);
 
   const receivingChainName = useMemo(() => {
     return (
-      CHAIN_DISPLAY_NAME[receivingChainGroup] ??
-      chainRegistry.getDefault(receivingChainGroup)?.displayName ??
-      receivingChainGroup
+      CHAIN_DISPLAY_NAME[receivingChainGroup]
+      ?? chainRegistry.getDefault(receivingChainGroup)?.displayName
+      ?? receivingChainGroup
     );
   }, [receivingChainGroup, chainRegistry]);
 
@@ -261,9 +261,9 @@ const TransferInputContainer: React.FC = () => {
     if (!tokenMetainfo) {
       return;
     }
-    const validAddress =
-      addressBookInput.validateAddressBookInput() &&
-      (!isGRC20TokenModel(tokenMetainfo) || (await addressBookInput.validateEqualAddress()));
+    const validAddress
+      = addressBookInput.validateAddressBookInput()
+        && (!isGRC20TokenModel(tokenMetainfo) || (await addressBookInput.validateEqualAddress()));
     const validBalance = balanceInput.validateBalanceInput();
     if (validAddress && validBalance) {
       saveHistoryData();

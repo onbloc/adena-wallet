@@ -1,25 +1,27 @@
+import type { Mock } from 'vitest';
+
 import { closeCurrentSurface, isFirefox } from './browser-utils';
 
 type TabStub = { id?: number; url?: string };
 
 const mockChromeTabs = (
   getCurrent?: (callback: (tab?: TabStub) => void) => void,
-): { remove: jest.Mock; getCurrent?: jest.Mock } => {
-  const remove = jest.fn();
+): { remove: Mock; getCurrent?: Mock } => {
+  const remove = vi.fn();
   (globalThis as unknown as { chrome: unknown }).chrome = {
     tabs: getCurrent ? { getCurrent, remove } : { remove },
   };
-  return { remove, getCurrent: getCurrent as jest.Mock | undefined };
+  return { remove, getCurrent: getCurrent as Mock | undefined };
 };
 
 describe('closeCurrentSurface', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
-    window.close = jest.fn();
+    vi.useFakeTimers();
+    window.close = vi.fn();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     delete (globalThis as unknown as { chrome?: unknown }).chrome;
   });
 
@@ -32,32 +34,32 @@ describe('closeCurrentSurface', () => {
   });
 
   it('removes this page’s own tab when the browser refused window.close()', () => {
-    const { remove } = mockChromeTabs((callback) => callback({ id: 7, url: window.location.href }));
+    const { remove } = mockChromeTabs(callback => callback({ id: 7, url: window.location.href }));
 
     closeCurrentSurface();
-    jest.advanceTimersByTime(100);
+    vi.advanceTimersByTime(100);
 
     expect(remove).toHaveBeenCalledWith(7, expect.any(Function));
   });
 
   it('keeps the hash out of the tab/page comparison', () => {
-    const { remove } = mockChromeTabs((callback) =>
+    const { remove } = mockChromeTabs(callback =>
       callback({ id: 9, url: `${window.location.href.replace(/#.*$/, '')}#/web/all-set` }),
     );
 
     closeCurrentSurface();
-    jest.advanceTimersByTime(100);
+    vi.advanceTimersByTime(100);
 
     expect(remove).toHaveBeenCalledWith(9, expect.any(Function));
   });
 
   it('never closes a tab that is not this page (panel context borrowing a tab)', () => {
-    const { remove } = mockChromeTabs((callback) =>
+    const { remove } = mockChromeTabs(callback =>
       callback({ id: 3, url: 'https://gno.land/r/demo/profile' }),
     );
 
     closeCurrentSurface();
-    jest.advanceTimersByTime(100);
+    vi.advanceTimersByTime(100);
 
     expect(remove).not.toHaveBeenCalled();
   });
@@ -67,7 +69,7 @@ describe('closeCurrentSurface', () => {
 
     expect(() => {
       closeCurrentSurface();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
     }).not.toThrow();
   });
 });

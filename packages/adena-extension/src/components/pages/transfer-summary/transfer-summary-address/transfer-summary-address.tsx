@@ -1,6 +1,6 @@
+import { formatAddress } from '@common/utils/client-utils';
 import React, { useMemo } from 'react';
 
-import { formatAddress } from '@common/utils/client-utils';
 import { TransferSummaryAddressWrapper } from './transfer-summary-address.styles';
 
 export interface TransferSummaryAddressProps {

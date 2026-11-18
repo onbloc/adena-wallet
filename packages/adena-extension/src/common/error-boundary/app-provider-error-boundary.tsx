@@ -1,6 +1,5 @@
-import React, { ErrorInfo } from 'react';
-
 import { CommonError } from '@common/errors/common';
+import React, { ErrorInfo } from 'react';
 
 interface Props {
   fallback: React.ReactNode;

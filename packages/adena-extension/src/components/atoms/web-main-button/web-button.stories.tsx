@@ -1,5 +1,5 @@
 import IconAdd from '@assets/icon-add';
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import WebMainButton from '.';
 
 export default {

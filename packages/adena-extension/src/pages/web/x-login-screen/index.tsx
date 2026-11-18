@@ -1,8 +1,6 @@
-import AnimationLoadingAccount from '@assets/web/lottie/loading-accounts.json';
-import React, { useCallback, useMemo } from 'react';
-
-import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import IconX from '@assets/web/icon-x.svg';
+import AnimationLoadingAccount from '@assets/web/lottie/loading-accounts.json';
+import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import {
   WEB_SELECT_CONTENT_WIDTH,
   WEB_TOP_SPACING,
@@ -17,6 +15,7 @@ import SocialLoginSelectKeySet, {
   SOCIAL_LOGIN_SENSITIVE_INFO_DESC,
 } from '@components/pages/web/social-login-select-key-set';
 import useXLoginScreen from '@hooks/web/x-login/use-x-login-screen';
+import React, { useCallback, useMemo } from 'react';
 
 const XLoginScreen: React.FC = () => {
   const {

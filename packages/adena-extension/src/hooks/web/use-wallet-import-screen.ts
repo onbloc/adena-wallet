@@ -1,3 +1,12 @@
+import { stringFromBase64, stringToBase64 } from '@common/utils/encoding-util';
+import { waitForRun } from '@common/utils/timeout-utils';
+import { isSeedPhraseString } from '@common/validation';
+import useAppNavigate from '@hooks/use-app-navigate';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
+import { ImportWalletType, RoutePath } from '@types';
 import {
   AdenaWallet,
   EnglishMnemonic,
@@ -7,16 +16,6 @@ import {
 } from 'adena-module';
 import { useCallback, useMemo, useState } from 'react';
 
-import { waitForRun } from '@common/utils/timeout-utils';
-import { isSeedPhraseString } from '@common/validation';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useIndicatorStep, {
-  UseIndicatorStepReturn,
-} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
-import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
-import { ImportWalletType, RoutePath } from '@types';
-
-import { stringFromBase64, stringToBase64 } from '@common/utils/encoding-util';
 import useQuestionnaire from './use-questionnaire';
 
 export type UseWalletImportReturn = {
@@ -37,7 +36,8 @@ export type WalletImportStateType = 'INIT' | 'SET_SEED_PHRASE' | 'LOADING';
 const isValidMnemonic = (mnemonic: string): boolean => {
   try {
     new EnglishMnemonic(mnemonic);
-  } catch {
+  }
+  catch {
     return false;
   }
   return true;
@@ -86,9 +86,11 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
     let validInput = false;
     if (inputType === '12seeds') {
       validInput = isSeedPhraseString(decodedInputValue, 12);
-    } else if (inputType === '24seeds') {
+    }
+    else if (inputType === '24seeds') {
       validInput = isSeedPhraseString(decodedInputValue, 24);
-    } else {
+    }
+    else {
       validInput = !!inputValue;
     }
 
@@ -114,7 +116,8 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
   const onClickGoBack = useCallback(() => {
     if (step === 'INIT') {
       navigate(RoutePath.WebAdvancedOption);
-    } else if (step === 'SET_SEED_PHRASE') {
+    }
+    else if (step === 'SET_SEED_PHRASE') {
       setStep('INIT');
     }
   }, [step]);
@@ -123,14 +126,16 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
     if (step === 'INIT') {
       if (ableToSkipQuestionnaire) {
         setStep('SET_SEED_PHRASE');
-      } else {
+      }
+      else {
         navigate(RoutePath.WebQuestionnaire, {
           state: {
             callbackPath: RoutePath.WebWalletImport,
           },
         });
       }
-    } else if (step === 'SET_SEED_PHRASE') {
+    }
+    else if (step === 'SET_SEED_PHRASE') {
       let createdWallet: AdenaWallet | null = null;
 
       const isSeed = inputType === '12seeds' || inputType === '24seeds';
@@ -143,7 +148,8 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
         setStep('LOADING');
         createdWallet = await createWalletWithMnemonic(decodedInputValue);
         setInputValue('');
-      } else {
+      }
+      else {
         let keyring = await PrivateKeyKeyring.fromPrivateKeyStr(decodedInputValue).catch(
           () => null,
         );

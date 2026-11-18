@@ -1,3 +1,4 @@
+import { SocialKeySetType } from '@common/constants/web3auth.constant';
 import type { StdSignDoc } from '@cosmjs/amino';
 import { InjectionMessage } from '@inject/message';
 import { AddressBookItem } from '@repositories/wallet';
@@ -11,7 +12,6 @@ import {
   TransactionInfo,
 } from '@types';
 import { CosmosDocument, Document } from 'adena-module';
-import { SocialKeySetType } from '@common/constants/web3auth.constant';
 
 export const REGISTER_PATH = 'register.html' as const;
 export const SECURITY_PATH = 'security.html' as const;
@@ -31,7 +31,7 @@ export enum RoutePath {
   CreatePassword = '/popup/create-password',
   LaunchAdena = '/popup/launch-adena',
 
-  //wallet
+  // wallet
   Wallet = '/wallet',
   WalletAccountInitialization = '/wallet/account-initialization',
   WalletSearch = '/wallet/search',
@@ -144,7 +144,7 @@ export type RouteParams = {
   [RoutePath.CreatePassword]: CreateAccountState;
   [RoutePath.LaunchAdena]: CreateAccountState;
 
-  //wallet
+  // wallet
   [RoutePath.Wallet]: null;
   [RoutePath.WalletSearch]: {
     type: 'deposit' | 'send';
@@ -311,7 +311,6 @@ export type RouteParams = {
   };
 
   [RoutePath.WebSelectHardWallet]: null;
-  [RoutePath.WebConnectLedger]: null;
   [RoutePath.WebAdvancedOption]: null;
   [RoutePath.WebCreatePassword]: null;
   [RoutePath.WebGoogleLogin]: {

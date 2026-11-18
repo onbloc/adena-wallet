@@ -1,7 +1,7 @@
 // Stub out `@adena-wallet/sdk` to avoid loading @web3auth's native crypto,
 // which fails under jsdom's Uint8Array. Handlers use the enum values as
 // plain strings.
-jest.mock('@adena-wallet/sdk', () => ({
+vi.mock('@adena-wallet/sdk', () => ({
   WalletResponseFailureType: {
     INVALID_FORMAT: 'INVALID_FORMAT',
     ACCOUNT_MISMATCH: 'ACCOUNT_MISMATCH',
@@ -31,8 +31,8 @@ jest.mock('@adena-wallet/sdk', () => ({
   },
 }));
 
-const mockCreatePopup = jest.fn();
-jest.mock('..', () => ({
+const mockCreatePopup = vi.fn();
+vi.mock('..', () => ({
   HandlerMethod: {
     createPopup: (...args: unknown[]): unknown => mockCreatePopup(...args),
   },
@@ -49,11 +49,11 @@ const OTHER = 'g1vcq3xd966wryuk9pmgfy7r2c8r02sm957zv9en';
 // how the locked case is expressed here.
 function makeCore(currentAddress?: string): InjectCore {
   return {
-    getInMemoryKey: jest.fn().mockResolvedValue(currentAddress ? {} : null),
-    getCurrentAccount: jest
+    getInMemoryKey: vi.fn().mockResolvedValue(currentAddress ? {} : null),
+    getCurrentAccount: vi
       .fn()
       .mockResolvedValue(
-        currentAddress ? { getAddress: jest.fn().mockResolvedValue(currentAddress) } : undefined,
+        currentAddress ? { getAddress: vi.fn().mockResolvedValue(currentAddress) } : undefined,
       ),
   } as unknown as InjectCore;
 }
@@ -77,7 +77,7 @@ describe('signArbitrary', () => {
   });
 
   it('opens the approval window for a well-formed request', async () => {
-    const sendResponse = jest.fn();
+    const sendResponse = vi.fn();
     await signArbitrary(
       makeCore(SIGNER),
       makeRequest({ signer: SIGNER, data: 'hello' }),
@@ -93,7 +93,7 @@ describe('signArbitrary', () => {
     await signArbitrary(
       makeCore(SIGNER),
       makeRequest({ signer: SIGNER, data: 'hello' }),
-      jest.fn(),
+      vi.fn(),
     );
 
     const closeMessage = mockCreatePopup.mock.calls[0][2] as InjectionMessage;
@@ -108,7 +108,7 @@ describe('signArbitrary', () => {
       ...makeRequest({ signer: SIGNER, data: 'hello', padding: 'x'.repeat(100_000) }),
       extra: 'x'.repeat(100_000),
     };
-    await signArbitrary(makeCore(SIGNER), request, jest.fn());
+    await signArbitrary(makeCore(SIGNER), request, vi.fn());
 
     const popupRequest = mockCreatePopup.mock.calls[0][1] as InjectionMessage;
     expect(popupRequest.data).toEqual({ signer: SIGNER, data: 'hello' });
@@ -124,7 +124,7 @@ describe('signArbitrary', () => {
   // A window claiming that signing proves control of an address the user does
   // not hold is misleading even briefly, so it must never be shown.
   it('refuses a signer the user does not hold, without opening a window', async () => {
-    const sendResponse = jest.fn();
+    const sendResponse = vi.fn();
     await signArbitrary(
       makeCore(OTHER),
       makeRequest({ signer: SIGNER, data: 'hello' }),
@@ -144,7 +144,7 @@ describe('signArbitrary', () => {
   // which it is only reached to do because `approve-login` routes
   // SIGN_ARBITRARY back to it.
   it('opens the approval window and answers nothing when no account can be resolved', async () => {
-    const sendResponse = jest.fn();
+    const sendResponse = vi.fn();
     await signArbitrary(makeCore(), makeRequest({ signer: SIGNER, data: 'hello' }), sendResponse);
 
     expect(mockCreatePopup).toHaveBeenCalledTimes(1);
@@ -157,7 +157,7 @@ describe('signArbitrary', () => {
     ['an address that is not bech32', { signer: 'nope', data: 'hello' }],
     ['no params at all', undefined],
   ])('answers INVALID_FORMAT for %s, without opening a window', async (_label, data) => {
-    const sendResponse = jest.fn();
+    const sendResponse = vi.fn();
     await signArbitrary(makeCore(SIGNER), makeRequest(data), sendResponse);
 
     expect(mockCreatePopup).not.toHaveBeenCalled();
