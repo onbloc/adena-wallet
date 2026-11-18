@@ -212,10 +212,22 @@ func replaceFile(path string, data []byte, perm os.FileMode) error {
 		return err
 	}
 
+	// Each step is checked before the next: the rename must never run after a
+	// failed write, or a truncated file would replace a working one.
 	_, writeErr := f.Write(data)
-	closeErr := f.Close()
+	if err := errors.Join(writeErr, f.Close()); err != nil {
+		_ = os.Remove(f.Name())
 
-	if err := errors.Join(writeErr, closeErr, os.Chmod(f.Name(), perm), renameOver(f.Name(), path)); err != nil {
+		return err
+	}
+
+	if err := os.Chmod(f.Name(), perm); err != nil {
+		_ = os.Remove(f.Name())
+
+		return err
+	}
+
+	if err := renameOver(f.Name(), path); err != nil {
 		_ = os.Remove(f.Name())
 
 		return err
