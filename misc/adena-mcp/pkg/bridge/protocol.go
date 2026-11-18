@@ -11,10 +11,17 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/nativemsg"
 )
 
-// MaxLineSize bounds one JSON line on the host socket.
+// MaxLineSize bounds one request line on the host socket.
 const MaxLineSize = 1 << 20
+
+// MaxResponseLineSize bounds one response line. Responses come from the
+// browser, which may send frames up to nativemsg.MaxBrowserMessageSize; a
+// signed transaction is base64 and larger than the request that produced it.
+const MaxResponseLineSize = nativemsg.MaxBrowserMessageSize + 64<<10
 
 // Methods understood by the Adena extension.
 const (

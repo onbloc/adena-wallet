@@ -140,7 +140,7 @@ func newRequest(method string, params any) (Request, error) {
 
 func readResponse(conn net.Conn, id string) (Response, error) {
 	scanner := bufio.NewScanner(conn)
-	scanner.Buffer(make([]byte, 0, 4096), MaxLineSize)
+	scanner.Buffer(make([]byte, 0, 4096), MaxResponseLineSize)
 
 	for scanner.Scan() {
 		var response Response

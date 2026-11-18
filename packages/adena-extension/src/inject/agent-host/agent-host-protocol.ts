@@ -62,6 +62,9 @@ export interface AgentHostRequest {
   // Issued by connect to the approved agent process; it proves the request
   // comes from that process.
   token?: string;
+  // Set by the handler once the connection check passed: the account that
+  // check authorized. Never parsed from the host.
+  authorizedAccountId?: string;
 }
 
 export interface AgentHostError {

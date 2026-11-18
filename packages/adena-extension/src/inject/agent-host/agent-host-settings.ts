@@ -114,3 +114,27 @@ export const addConnectionToken = async (
     },
   });
 };
+
+// Drops connection grants when an agent's connection is removed: for one
+// account and site, or every grant when no site is given. A later approval of
+// another process must not revive the grants of a disconnected one.
+export const dropConnectionGrants = async (
+  accountId?: string,
+  siteName?: string,
+): Promise<void> => {
+  if (typeof chrome === 'undefined' || !chrome.storage?.local) {
+    return;
+  }
+  if (accountId === undefined || siteName === undefined) {
+    await chrome.storage.local.remove(AGENT_CONNECTION_TOKENS_STORAGE_KEY);
+    return;
+  }
+  const grants = await readGrants();
+  const key = connectionKey(accountId, siteName);
+  if (!(key in grants)) {
+    return;
+  }
+  const remaining = { ...grants };
+  delete remaining[key];
+  await chrome.storage.local.set({ [AGENT_CONNECTION_TOKENS_STORAGE_KEY]: remaining });
+};

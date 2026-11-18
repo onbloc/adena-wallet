@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -202,5 +203,61 @@ func TestCallSendsTheConnectionToken(t *testing.T) {
 
 	if request := <-got; request.Token != "tok" {
 		t.Fatalf("got token %q", request.Token)
+	}
+}
+
+func TestCallReadsResponsesLargerThanTheRequestLimit(t *testing.T) {
+	t.Parallel()
+
+	// A short directory: this test's name would push t.TempDir past the
+	// 104-byte Unix socket path limit on macOS.
+	dir, dirErr := os.MkdirTemp("", "br")
+	if dirErr != nil {
+		t.Fatal(dirErr)
+	}
+
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	path := filepath.Join(dir, "s.sock")
+
+	listener, err := net.Listen("unix", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() { _ = listener.Close() })
+
+	signed := strings.Repeat("A", 2<<20) // a base64 signed tx above MaxLineSize
+
+	go func() {
+		conn, acceptErr := listener.Accept()
+		if acceptErr != nil {
+			return
+		}
+
+		defer func() { _ = conn.Close() }()
+
+		var request Request
+		if json.NewDecoder(conn).Decode(&request) != nil {
+			return
+		}
+
+		result, marshalErr := json.Marshal(SignResult{SignedTx: signed})
+		if marshalErr != nil {
+			return
+		}
+
+		if encodeErr := json.NewEncoder(conn).Encode(Response{ID: request.ID, Result: result}); encodeErr != nil {
+			return
+		}
+	}()
+
+	var out SignResult
+	if err := (&Client{SocketPath: path}).Call(context.Background(), MethodSignTransaction, nil, &out); err != nil {
+		t.Fatal(err)
+	}
+
+	if out.SignedTx != signed {
+		t.Fatalf("got %d bytes", len(out.SignedTx))
 	}
 }

@@ -394,3 +394,33 @@ func TestRelayExplainsAnOversizedRequest(t *testing.T) {
 		t.Fatalf("got %+v, want request_too_large", response)
 	}
 }
+
+func TestRelayStopsOnCancelWhileTheBrowserStaysOpen(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t)
+	client := &bridge.Client{SocketPath: h.socket}
+
+	result := make(chan error, 1)
+
+	go func() { result <- client.Call(context.Background(), bridge.MethodPing, nil, nil) }()
+
+	h.nextRequest(t)
+
+	// The browser side stays open and silent; only the signal context ends.
+	h.cancel()
+
+	select {
+	case err := <-h.done:
+		if err != nil {
+			t.Fatalf("relay returned %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("Run did not return after cancellation while the browser channel was open")
+	}
+
+	var remote *bridge.Error
+	if err := <-result; !errors.As(err, &remote) || remote.Code != bridge.CodeExtensionGone {
+		t.Fatalf("pending call got %v, want extension_disconnected", err)
+	}
+}

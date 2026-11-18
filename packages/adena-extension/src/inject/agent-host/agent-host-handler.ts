@@ -103,11 +103,12 @@ const isAgentConnected = async (
   return hasConnectionToken(accountId, siteName, request.token, agentProcessOf(request.peer));
 };
 
+// Returns the account the connection was checked for.
 const requireConnected = async (
   core: InjectCore,
   agentName: string,
   request: AgentHostRequest,
-): Promise<void> => {
+): Promise<string> => {
   const accountId = await requireWallet(core);
   if (!(await isAgentConnected(core, accountId, agentName, request))) {
     throw new AgentHostRequestError(
@@ -115,6 +116,7 @@ const requireConnected = async (
       'this agent process is not connected to Adena; call connect_wallet first',
     );
   }
+  return accountId;
 };
 
 // Refuses before any popup opens, so a disabled setting never prompts the user.
@@ -128,13 +130,24 @@ const requireMasterRequestsAllowed = async (): Promise<void> => {
   }
 };
 
-const resolveWalletContext = async (core: InjectCore): Promise<WalletContext> => {
+// expectedAccountId, when set, is the account the connection check authorized;
+// a different account selected meanwhile is refused rather than acted for.
+const resolveWalletContext = async (
+  core: InjectCore,
+  expectedAccountId?: string,
+): Promise<WalletContext> => {
   await requireWallet(core);
 
   const inMemoryKey = await core.getInMemoryKey();
   const account = await core.getCurrentAccount(inMemoryKey).catch(() => undefined);
   if (!account) {
     throw new AgentHostRequestError('wallet_locked', 'unlock Adena and retry');
+  }
+  if (expectedAccountId !== undefined && account.id !== expectedAccountId) {
+    throw new AgentHostRequestError(
+      'context_mismatch',
+      'the account in Adena changed after this agent was checked; retry on the connected account',
+    );
   }
 
   const network = await core.getCurrentNetwork();
@@ -490,8 +503,11 @@ const handleConnect = async (
   };
 };
 
-const handleGetAccount = async (core: InjectCore): Promise<Record<string, unknown>> => {
-  const { address, network } = await resolveWalletContext(core);
+const handleGetAccount = async (
+  core: InjectCore,
+  request: AgentHostRequest,
+): Promise<Record<string, unknown>> => {
+  const { address, network } = await resolveWalletContext(core, request.authorizedAccountId);
   return { address, chain_id: network.chainId, rpc_url: network.rpcUrl };
 };
 
@@ -506,7 +522,7 @@ const handleCreateSession = async (
     Math.floor(Date.now() / 1000),
     maxSpendUgnot,
   );
-  const context = await resolveWalletContext(core);
+  const context = await resolveWalletContext(core, request.authorizedAccountId);
   requireSessionSupport(context);
   requireExpectedContext(context, params);
 
@@ -543,7 +559,7 @@ const handleRevokeSession = async (
   signal: AbortSignal,
 ): Promise<Record<string, unknown>> => {
   const params = parseRevokeSessionParams(request.params);
-  const context = await resolveWalletContext(core);
+  const context = await resolveWalletContext(core, request.authorizedAccountId);
   requireSessionSupport(context);
   requireExpectedContext(context, params);
 
@@ -566,7 +582,7 @@ const handleSendTransaction = async (
   signal: AbortSignal,
 ): Promise<Record<string, unknown>> => {
   await requireMasterRequestsAllowed();
-  const context = await resolveWalletContext(core);
+  const context = await resolveWalletContext(core, request.authorizedAccountId);
   const tx = parseTransactionParams(request.params, context.address);
   return broadcastViaPopup(signal, context, tx, agentNameOf(request));
 };
@@ -577,7 +593,7 @@ const handleSignTransaction = async (
   signal: AbortSignal,
 ): Promise<Record<string, unknown>> => {
   await requireMasterRequestsAllowed();
-  const context = await resolveWalletContext(core);
+  const context = await resolveWalletContext(core, request.authorizedAccountId);
   const tx = parseTransactionParams(request.params, context.address);
 
   const rejectType = WalletResponseRejectType.SIGN_REJECTED;
@@ -645,7 +661,7 @@ export const handleAgentHostMessage = async (
     const core = new InjectCore(inMemoryProvider);
 
     if (CONNECTION_REQUIRED.has(request.method)) {
-      await requireConnected(core, agentNameOf(request), request);
+      request.authorizedAccountId = await requireConnected(core, agentNameOf(request), request);
     }
 
     switch (request.method) {
@@ -656,7 +672,7 @@ export const handleAgentHostMessage = async (
       case 'connect':
         return { id, result: await handleConnect(core, request, signal) };
       case 'get_account':
-        return { id, result: await handleGetAccount(core) };
+        return { id, result: await handleGetAccount(core, request) };
       case 'create_session':
         return { id, result: await handleCreateSession(core, request, signal) };
       case 'revoke_session':

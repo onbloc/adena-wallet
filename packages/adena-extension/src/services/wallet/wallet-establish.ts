@@ -1,5 +1,7 @@
 import { ChainRegistry } from 'adena-module';
 
+import { dropConnectionGrants } from '@inject/agent-host/agent-host-settings';
+import { AGENT_REQUEST_PROTOCOL } from '@inject/agent-host/agent-host-protocol';
 import { EstablishSite, WalletEstablishRepository } from '@repositories/wallet';
 
 export class WalletEstablishService {
@@ -97,10 +99,16 @@ export class WalletEstablishService {
     };
 
     await this.walletEstablishRepository.updateEstablishedSites(updated);
+
+    // An agent connection also ends the tokens issued to its processes.
+    if (hostname.startsWith(AGENT_REQUEST_PROTOCOL)) {
+      await dropConnectionGrants(accountId, hostname);
+    }
   };
 
   public clear = async (): Promise<boolean> => {
     await this.walletEstablishRepository.deleteEstablishedSites();
+    await dropConnectionGrants();
     return true;
   };
 

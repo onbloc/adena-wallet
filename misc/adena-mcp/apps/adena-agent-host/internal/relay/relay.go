@@ -211,7 +211,19 @@ func (r *Relay) Run(ctx context.Context) error {
 
 	workers.Go(r.acceptLoop)
 
-	err := r.browserLoop()
+	// A read from the browser cannot be interrupted, so cancellation does not
+	// wait for it: the reader is left behind and cleanup runs now. The process
+	// exits right after Run returns.
+	browserDone := make(chan error, 1)
+
+	go func() { browserDone <- r.browserLoop() }()
+
+	var err error
+
+	select {
+	case err = <-browserDone:
+	case <-runCtx.Done():
+	}
 
 	_ = r.listener.Close()
 
