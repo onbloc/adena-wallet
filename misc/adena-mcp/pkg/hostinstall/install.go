@@ -215,13 +215,28 @@ func replaceFile(path string, data []byte, perm os.FileMode) error {
 	_, writeErr := f.Write(data)
 	closeErr := f.Close()
 
-	if err := errors.Join(writeErr, closeErr, os.Chmod(f.Name(), perm), os.Rename(f.Name(), path)); err != nil {
+	if err := errors.Join(writeErr, closeErr, os.Chmod(f.Name(), perm), renameOver(f.Name(), path)); err != nil {
 		_ = os.Remove(f.Name())
 
 		return err
 	}
 
 	return nil
+}
+
+// renameOver renames src over dst. Windows refuses to replace a read-only
+// file, so dst is made writable and the rename retried once.
+func renameOver(src, dst string) error {
+	err := os.Rename(src, dst)
+	if err == nil {
+		return nil
+	}
+
+	if chmodErr := os.Chmod(dst, 0o600); chmodErr != nil {
+		return err
+	}
+
+	return os.Rename(src, dst)
 }
 
 // Installed returns the host manifests present for the supported browsers.
