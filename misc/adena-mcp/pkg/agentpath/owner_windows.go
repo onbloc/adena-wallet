@@ -2,6 +2,7 @@ package agentpath
 
 import (
 	"fmt"
+	"os"
 
 	"golang.org/x/sys/windows"
 )
@@ -16,3 +17,7 @@ func IsOwnedByUser(path string) (bool, error) {
 
 	return hasTrustedOwner(path, user.User.Sid)
 }
+
+// dirOwnedByUser is not used on Windows, where restrictDir checks and takes
+// over the owner.
+func dirOwnedByUser(os.FileInfo) bool { return true }

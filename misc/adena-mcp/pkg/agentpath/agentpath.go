@@ -21,6 +21,8 @@ const HomeMarker = "agent-home"
 
 const markerPerm = 0o600
 
+const goosWindows = "windows"
+
 const (
 	defaultDirName = ".adena-agent"
 	socketName     = "agent.sock"
@@ -103,7 +105,7 @@ func EnsureDir(dir string) error {
 
 	// Windows has no permission bits; an owner-only ACL takes their place, so
 	// a home outside the user profile (ADENA_AGENT_HOME) is protected too.
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == goosWindows {
 		return restrictDir(dir)
 	}
 
