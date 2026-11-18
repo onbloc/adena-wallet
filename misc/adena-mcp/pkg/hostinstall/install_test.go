@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"testing"
 
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
@@ -23,8 +26,10 @@ func TestInstallWritesManifestsForInstalledBrowsers(t *testing.T) {
 		}
 	}
 
+	hostPath := filepath.Join(home, "bin", "adena-agent-host")
+
 	written, err := Install(Options{
-		HostPath:           "/opt/adena/adena-agent-host",
+		HostPath:           hostPath,
 		ChromeExtensionIDs: []string{AdenaChromeExtensionID, "devid"},
 		FirefoxExtensionID: AdenaFirefoxExtensionID,
 		UserHome:           home,
@@ -42,7 +47,7 @@ func TestInstallWritesManifestsForInstalledBrowsers(t *testing.T) {
 
 	readJSON(t, filepath.Join(chromeRoot, "NativeMessagingHosts", HostName+".json"), &chrome)
 
-	if chrome.Path != "/opt/adena/adena-agent-host" || chrome.Type != "stdio" || len(chrome.AllowedOrigins) != 2 {
+	if chrome.Path != hostPath || chrome.Type != "stdio" || len(chrome.AllowedOrigins) != 2 {
 		t.Fatalf("unexpected chrome manifest %+v", chrome)
 	}
 
@@ -75,7 +80,9 @@ func TestInstallRequiresAbsoluteHostPath(t *testing.T) {
 func TestInstallUnsupportedOS(t *testing.T) {
 	t.Parallel()
 
-	_, err := Install(Options{HostPath: "/x", GOOS: "windows", UserHome: t.TempDir()})
+	home := t.TempDir()
+
+	_, err := Install(Options{HostPath: filepath.Join(home, "x"), GOOS: "plan9", UserHome: home})
 	if !errors.Is(err, ErrUnsupportedOS) {
 		t.Fatalf("got %v, want ErrUnsupportedOS", err)
 	}
@@ -181,4 +188,120 @@ func TestInstallReplacesAnExistingManifestFile(t *testing.T) {
 	if globErr != nil || len(leftovers) != 0 {
 		t.Fatalf("staging left behind: %v %v", leftovers, globErr)
 	}
+}
+
+func TestCopyHostRetiresThePreviousCopyUnderAUniqueName(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src", "adena-agent-host")
+	bin := filepath.Join(dir, "bin")
+
+	if err := os.MkdirAll(filepath.Dir(src), 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	target := filepath.Join(bin, "adena-agent-host")
+
+	for i, body := range []string{"v1", "v2", "v3"} {
+		if err := os.WriteFile(src, []byte(body), 0o700); err != nil {
+			t.Fatal(err)
+		}
+
+		// A retired copy and a staging file left by an earlier install, as when
+		// a running host kept them locked or a rename failed.
+		if i == 1 {
+			// Older names (a fixed .old, a nanosecond .old.<n>) and a staging
+			// file of an installer that is gone.
+			leftovers := []string{target + ".old", target + ".old.1700000000000000000", target + ".999999998.tmp"}
+			for _, leftover := range leftovers {
+				if err := os.WriteFile(leftover, nil, 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+
+		got, err := CopyHost(src, bin)
+		if err != nil {
+			t.Fatalf("install %d: %v", i+1, err)
+		}
+
+		data, err := os.ReadFile(got)
+		if err != nil || string(data) != body {
+			t.Fatalf("install %d: got %q %v", i+1, data, err)
+		}
+	}
+
+	entries, err := os.ReadDir(bin)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(entries) != 1 {
+		names := make([]string, 0, len(entries))
+		for _, e := range entries {
+			names = append(names, e.Name())
+		}
+
+		t.Fatalf("leftovers were not swept: %v", names)
+	}
+}
+
+func TestSweepKeepsTheCopiesOfARunningInstaller(t *testing.T) {
+	t.Parallel()
+
+	bin := t.TempDir()
+	target := filepath.Join(bin, "adena-agent-host")
+
+	// A child that outlives the sweep stands in for a concurrent installer.
+	sleeper := exec.Command(sleepCommand()[0], sleepCommand()[1:]...)
+	if err := sleeper.Start(); err != nil {
+		t.Skipf("no sleep command: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if err := sleeper.Process.Kill(); err != nil {
+			t.Log(err)
+		}
+
+		if err := sleeper.Wait(); err == nil {
+			t.Log("sleeper exited before it was killed")
+		}
+	})
+
+	live := strconv.Itoa(sleeper.Process.Pid)
+	kept := []string{
+		target + "." + live + ".123.tmp", target + "." + live + ".tmp", target + ".old." + live + ".5",
+	}
+	swept := []string{
+		target + ".999999999.tmp", target + ".old.999999999.5", target + ".old", target + ".tmp", target + ".abc.tmp",
+	}
+
+	for _, path := range append(append([]string{}, kept...), swept...) {
+		if err := os.WriteFile(path, nil, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	sweepRetired(target)
+
+	for _, path := range kept {
+		if _, err := os.Stat(path); err != nil {
+			t.Errorf("a live installer's %s was removed", filepath.Base(path))
+		}
+	}
+
+	for _, path := range swept {
+		if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+			t.Errorf("abandoned %s was kept", filepath.Base(path))
+		}
+	}
+}
+
+func sleepCommand() []string {
+	if runtime.GOOS == "windows" {
+		return []string{"powershell", "-NoProfile", "-Command", "Start-Sleep -Seconds 60"}
+	}
+
+	return []string{"sleep", "60"}
 }

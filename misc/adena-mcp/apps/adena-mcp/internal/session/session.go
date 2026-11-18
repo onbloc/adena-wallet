@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -229,10 +230,13 @@ func (s *Store) save(records []Record) error {
 
 	defer func() { _ = os.Remove(tmp.Name()) }()
 
-	if err := tmp.Chmod(filePerm); err != nil {
-		_ = tmp.Close()
+	// Windows has no permission bits; the agent home's ACL covers the file.
+	if runtime.GOOS != "windows" {
+		if err := tmp.Chmod(filePerm); err != nil {
+			_ = tmp.Close()
 
-		return fmt.Errorf("write sessions: %w", err)
+			return fmt.Errorf("write sessions: %w", err)
+		}
 	}
 
 	if _, err := tmp.Write(data); err != nil {

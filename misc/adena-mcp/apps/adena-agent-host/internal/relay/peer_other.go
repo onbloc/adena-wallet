@@ -1,4 +1,4 @@
-//go:build !darwin && !linux
+//go:build !darwin && !linux && !windows
 
 package relay
 
@@ -8,6 +8,6 @@ import (
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/bridge"
 )
 
-// peerOf cannot identify the peer here; the socket's permissions remain the
-// only access control.
-func peerOf(net.Conn) (*bridge.Peer, error) { return nil, nil }
+// peerOf cannot identify the peer here, so the connection is bound to an
+// unknown program; the socket's permissions remain the only access control.
+func peerOf(net.Conn) (*bridge.Peer, error) { return &bridge.Peer{}, nil }

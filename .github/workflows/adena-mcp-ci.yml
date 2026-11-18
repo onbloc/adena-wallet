@@ -1,0 +1,73 @@
+name: adena-mcp CI
+
+on:
+  pull_request:
+    paths:
+      - misc/adena-mcp/**
+      - .github/workflows/adena-mcp-ci.yml
+  push:
+    branches:
+      - main
+    paths:
+      - misc/adena-mcp/**
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: misc/adena-mcp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: misc/adena-mcp/go.mod
+          cache-dependency-path: misc/adena-mcp/go.sum
+
+      - name: Vet
+        run: go vet ./...
+
+      # The race detector needs cgo, which the Windows runner lacks by default.
+      - name: Test
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            go test ./...
+          else
+            go test -race ./...
+          fi
+
+      - name: Build binaries
+        run: go build ./apps/...
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: misc/adena-mcp/go.mod
+          cache-dependency-path: misc/adena-mcp/go.sum
+
+      # Built from source so it matches the module's Go version; release
+      # binaries can lag behind the go directive in go.mod.
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.6.1
+          install-mode: goinstall
+          working-directory: misc/adena-mcp
+          args: --config .golangci.yaml

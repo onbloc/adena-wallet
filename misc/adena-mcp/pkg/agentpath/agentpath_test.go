@@ -25,6 +25,10 @@ func TestHomeHonorsEnv(t *testing.T) {
 func TestEnsureDirTightensPermissions(t *testing.T) {
 	t.Parallel()
 
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows has no permission bits")
+	}
+
 	dir := filepath.Join(t.TempDir(), "home")
 	if err := os.Mkdir(dir, 0o755); err != nil {
 		t.Fatal(err)

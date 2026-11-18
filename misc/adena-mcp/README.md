@@ -22,7 +22,7 @@ app-private `internal` packages, and shared packages in `pkg/`.
 
 ## Setup
 
-With the published npm package (macOS and Linux, arm64 and x64):
+With the published npm package (macOS, Linux and Windows, arm64 and x64):
 
 ```sh
 claude mcp add --scope user adena -- npx -y @adena-wallet/mcp   # or install the plugin, see below
@@ -136,6 +136,43 @@ as `agent://<client name>.agent`.
 | `revoke_unconfirmed` | Adena did not report the revoke as committed on the session's network; the key is kept. Check `get_sessions` with `refresh` |
 | `request_too_large` | A request, usually a package deployment, is over the 1 MiB protocol limit |
 | `policy_violation` | The session request breaks Adena's agent policy, e.g. a `spend_limit` above the maximum set on the AI Agent Connection screen |
+
+## Windows
+
+The host and MCP server run on Windows 10 (1803) or later, which provide the
+Unix domain sockets the two use.
+
+- `install` writes the manifests under `native-messaging` in the agent home
+  (`%USERPROFILE%\.adena-agent`, or `ADENA_AGENT_HOME`). It registers each one
+  under the browser's
+  `HKCU\Software\<browser>\NativeMessagingHosts\xyz.onbloc.adena_agent` key.
+- Unpacked builds are detected from the profiles under `%LOCALAPPDATA%` and
+  `%APPDATA%`, so redirected profiles are found. `-extension-path` is not
+  supported, because the extension id cannot be computed from the path there.
+- The agent home gets a protected ACL that grants access to the current user
+  and SYSTEM only, in place of permission bits. Its socket and `sessions.json`
+  inherit it, wherever `ADENA_AGENT_HOME` points. A directory owned by another
+  account is taken over first, because an owner can always rewrite the ACL;
+  if that is not possible, adena-mcp refuses to use it. The host's `bin`
+  directory gets the same treatment. Anything inside the home that another
+  account owns, such as a planted `native-messaging` manifest or a socket, is
+  removed (adena-mcp and the installer recreate all of it), because an owner
+  keeps control of its own files and can reach them by path through a
+  directory it can no longer list.
+- The host identifies each peer with `SIO_AF_UNIX_GETPEERPID` and refuses
+  processes of other users, as on macOS and Linux.
+- Process hardening is weaker than on macOS and Linux. adena-mcp sets a
+  process DACL that lets other processes of the user only wait for, query and
+  stop it, and an OWNER RIGHTS entry keeps them from changing that DACL back.
+  An administrator, or any process with `SeDebugPrivilege` enabled, can still
+  read its memory and with it the session keys. There is no core dump control
+  yet. Sign with sessions whose scope you could afford to lose.
+- A running host executable cannot be overwritten, so reinstalling moves it to
+  a unique `.old.<pid>.<time>` name first. Retired and staging copies are
+  removed by a later install once no host runs them, except those of another
+  installer that is still running. `uninstall-host` moves a host the browser
+  still runs aside the same way instead of failing; close the browser to let
+  a later install, or you, delete it.
 
 ## Safety model
 

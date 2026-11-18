@@ -232,9 +232,11 @@ func TestRelaySetsPeerFromTheOS(t *testing.T) {
 
 	request := h.nextRequest(t)
 
-	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
-		if request.Peer != nil {
-			t.Fatalf("got peer %+v, want none", request.Peer)
+	switch runtime.GOOS {
+	case "darwin", "linux", "windows":
+	default:
+		if request.Peer == nil || request.Peer.Exe != "" {
+			t.Fatalf("got peer %+v, want an unidentified one", request.Peer)
 		}
 
 		return
