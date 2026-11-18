@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"strconv"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -55,6 +56,13 @@ func Of(conn net.Conn) (*Process, error) {
 	}
 
 	peer := &Process{PID: int(pid)}
+
+	// With the pid, the creation time identifies this process; Adena refuses
+	// to connect a process without it.
+	var creation, exit, kernel, user windows.Filetime
+	if timesErr := windows.GetProcessTimes(process, &creation, &exit, &kernel, &user); timesErr == nil {
+		peer.Start = strconv.FormatInt(creation.Nanoseconds(), 10)
+	}
 
 	if exe, exeErr := imageName(process); exeErr == nil {
 		peer.Exe = exe
