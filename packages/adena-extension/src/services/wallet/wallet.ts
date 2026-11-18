@@ -1,19 +1,18 @@
-import {
-  AdenaWallet,
-  MultisigAccount,
-  MultisigKeyring,
-  Wallet,
-  MultisigConfig,
-  SignerPublicKeyInfo,
-  generateKdfSalt,
-} from 'adena-module';
-import dayjs from 'dayjs';
-import { v4 as uuidv4 } from 'uuid';
-
 import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant';
 import { WalletError } from '@common/errors/wallet/wallet-error';
 import { CommandMessage } from '@inject/message/command-message';
 import { WalletRepository } from '@repositories/wallet';
+import {
+  AdenaWallet,
+  generateKdfSalt,
+  MultisigAccount,
+  MultisigConfig,
+  MultisigKeyring,
+  SignerPublicKeyInfo,
+  Wallet,
+} from 'adena-module';
+import dayjs from 'dayjs';
+import { v4 as uuidv4 } from 'uuid';
 
 export class WalletService {
   private _id: string;
@@ -44,7 +43,7 @@ export class WalletService {
   public existsWallet = (): Promise<boolean> => {
     return this.walletRepository
       .getSerializedWallet()
-      .then((serializedWallet) => !!serializedWallet)
+      .then(serializedWallet => !!serializedWallet)
       .catch(() => false);
   };
 
@@ -145,7 +144,8 @@ export class WalletService {
     try {
       const existsPassword = await this.walletRepository.existsWalletPassword();
       return !existsPassword;
-    } catch (e) {
+    }
+    catch (e) {
       return true;
     }
   };
@@ -170,7 +170,8 @@ export class WalletService {
     try {
       const wallet = await AdenaWallet.createByMnemonic(mnemonic, accountPaths);
       return wallet;
-    } catch (e) {
+    }
+    catch (e) {
       throw new WalletError('FAILED_TO_CREATE');
     }
   };
@@ -260,7 +261,8 @@ export class WalletService {
       await this.updateWallet(clonedWallet);
 
       return multisigAccount;
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Failed to add multisig account:', error);
       throw error;
     }
@@ -283,7 +285,8 @@ export class WalletService {
       const walletInstance = await AdenaWallet.deserialize(serializedWallet, password, salt);
 
       return walletInstance;
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       throw new WalletError('FAILED_TO_LOAD');
     }
@@ -303,7 +306,8 @@ export class WalletService {
 
     try {
       await this.walletRepository.deleteWalletPassword();
-    } catch (e) {
+    }
+    catch (e) {
       throw new WalletError('FAILED_TO_LOAD');
     }
   };
@@ -314,7 +318,8 @@ export class WalletService {
       await this.walletRepository.updateStoragePassword(password);
       await this.deserializeWallet(password);
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       return false;
     }
   };
@@ -327,7 +332,8 @@ export class WalletService {
     try {
       const wallet = await this.loadWallet();
       await this.saveWallet(wallet, password);
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       return false;
     }
@@ -373,7 +379,8 @@ export class WalletService {
       await chrome.runtime.sendMessage(
         CommandMessage.command('updateAutoLockTimer', { minutes }),
       );
-    } catch (e) {
+    }
+    catch (e) {
       console.warn('Failed to notify background of auto-lock timer update', e);
     }
   };

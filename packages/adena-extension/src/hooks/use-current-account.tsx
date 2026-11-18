@@ -8,10 +8,11 @@ import { EventMessage } from '@inject/message/event-message';
 import { WalletState } from '@states';
 import { useQuery } from '@tanstack/react-query';
 import { Account } from 'adena-module';
+import { useAtom } from 'jotai';
 import { useCallback } from 'react';
-import { useRecoilState } from 'recoil';
-import { useAdenaContext, useWalletContext } from './use-context';
+
 import { useChain } from './use-chain';
+import { useAdenaContext, useWalletContext } from './use-context';
 import { useEvent } from './use-event';
 import { useNetwork } from './use-network';
 import { useSessions } from './use-sessions';
@@ -24,7 +25,7 @@ export const useCurrentAccount = (): {
   getCurrentAddress: (prefix?: string) => Promise<string | null>;
   changeCurrentAccount: (changedAccount: Account) => Promise<boolean>;
 } => {
-  const [currentAccount, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
+  const [currentAccount, setCurrentAccount] = useAtom(WalletState.currentAccount);
   const { accountService } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { currentNetwork } = useNetwork();
@@ -75,19 +76,19 @@ export const useCurrentAccount = (): {
     [chain.bech32Prefix, dispatchEvent],
   );
 
-  const { data: currentAddress } = useQuery<string | null>(
-    ['currentAddress', currentAccount, currentNetwork],
-    async () => {
+  const { data: currentAddress } = useQuery<string | null>({
+    queryKey: ['currentAddress', currentAccount, currentNetwork],
+
+    queryFn: async () => {
       if (!currentAccount) {
         return null;
       }
       const address = await currentAccount.getAddress(chain.bech32Prefix);
       return address;
     },
-    {
-      enabled: currentAccount !== null,
-    },
-  );
+
+    enabled: currentAccount !== null,
+  });
 
   const sessionRevoked = isRevokedSessionAccount(currentAccount, currentAddress, sessions);
 
@@ -98,18 +99,18 @@ export const useCurrentAccount = (): {
   // This stays the master address even while revoked: the master is still the
   // account a deposit belongs to, and the sign path forces caller=master
   // regardless of what the UI passes in.
-  const { data: currentFundingAddress } = useQuery<string | null>(
-    ['currentFundingAddress', currentAccount, currentNetwork],
-    async () => {
+  const { data: currentFundingAddress } = useQuery<string | null>({
+    queryKey: ['currentFundingAddress', currentAccount, currentNetwork],
+
+    queryFn: async () => {
       if (!currentAccount) {
         return null;
       }
       return getWalletFundingAddress(currentAccount, chain.bech32Prefix);
     },
-    {
-      enabled: currentAccount !== null,
-    },
-  );
+
+    enabled: currentAccount !== null,
+  });
 
   // Address whose balance the wallet displays. See `selectBalanceAddress` for
   // the policy; the account list applies the same one.

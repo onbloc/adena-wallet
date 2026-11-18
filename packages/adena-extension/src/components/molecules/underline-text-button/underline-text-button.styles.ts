@@ -1,7 +1,6 @@
-import styled from 'styled-components';
-
-import { fonts, getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const UnderlineTextButtonWrapper = styled.div`
   ${mixins.flex({ direction: 'row' })};

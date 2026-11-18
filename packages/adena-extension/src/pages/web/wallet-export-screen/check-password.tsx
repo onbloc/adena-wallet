@@ -1,11 +1,10 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconWarning from '@assets/web/warning.svg';
 import { Row, View, WebButton, WebErrorText, WebImg, WebInput, WebText } from '@components/atoms';
 import { TermsCheckbox } from '@components/molecules';
 import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { getTheme } from '@styles/theme';
+import React, { useCallback, useMemo, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -107,7 +106,8 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
     if (checkedPassword) {
       setPassword('');
       moveExport(password);
-    } else {
+    }
+    else {
       setErrorMessage('Invalid password');
     }
   }, [availableCheckPassword, password, checkPassword, moveExport]);

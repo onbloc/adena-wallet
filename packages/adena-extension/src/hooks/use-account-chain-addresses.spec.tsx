@@ -1,16 +1,18 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
-import React, { PropsWithChildren } from 'react';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import type { JSX } from 'react';
+import React, { PropsWithChildren } from 'react';
+import type { Mock } from 'vitest';
+
 import { useAccountChainAddresses } from './use-account-chain-addresses';
 
-jest.mock('@hooks/use-context', () => ({
-  useAdenaContext: jest.fn(),
+vi.mock('@hooks/use-context', () => ({
+  useAdenaContext: vi.fn(),
 }));
-jest.mock('@hooks/use-current-account', () => ({
-  useCurrentAccount: jest.fn(),
+vi.mock('@hooks/use-current-account', () => ({
+  useCurrentAccount: vi.fn(),
 }));
 
 const GNO_PROFILE = {
@@ -41,11 +43,11 @@ const makeWrapper = (): React.FC<PropsWithChildren> => {
 };
 
 describe('useAccountChainAddresses', () => {
-  const useAdenaContextMock = useAdenaContext as jest.Mock;
-  const useCurrentAccountMock = useCurrentAccount as jest.Mock;
+  const useAdenaContextMock = useAdenaContext as Mock;
+  const useCurrentAccountMock = useCurrentAccount as Mock;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     useAdenaContextMock.mockReturnValue({ chainRegistry });
   });
 
@@ -54,21 +56,21 @@ describe('useAccountChainAddresses', () => {
       currentAccount: {
         id: 'account-1',
         type: 'HD_WALLET',
-        getAddress: jest.fn(async (prefix: string) => `${prefix}1addr`),
+        getAddress: vi.fn(async (prefix: string) => `${prefix}1addr`),
       },
     });
 
     const { result } = renderHook(() => useAccountChainAddresses(), { wrapper: makeWrapper() });
 
     await waitFor(() => expect(result.current).toHaveLength(2));
-    expect(result.current.map((entry) => entry.chain.chainGroup)).toEqual(['gno', 'atomone']);
-    expect(result.current.map((entry) => entry.address)).toEqual(['g1addr', 'atone1addr']);
+    expect(result.current.map(entry => entry.chain.chainGroup)).toEqual(['gno', 'atomone']);
+    expect(result.current.map(entry => entry.address)).toEqual(['g1addr', 'atone1addr']);
   });
 
   it('SessionAccount exposes only the Gno master address and hides AtomOne', async () => {
     // A session address can never receive deposits, so it must never surface as
     // a receivable address — and a session has no key material for AtomOne.
-    const getAddress = jest.fn();
+    const getAddress = vi.fn();
     useCurrentAccountMock.mockReturnValue({
       currentAccount: {
         id: 'session-1',

@@ -9,8 +9,8 @@ import { AdenaResponse } from './common';
 export const SignArbitraryExecuteType = {
   SIGN_ARBITRARY: 'SIGN_ARBITRARY',
 } as const;
-export type SignArbitraryExecuteType =
-  (typeof SignArbitraryExecuteType)[keyof typeof SignArbitraryExecuteType];
+export type SignArbitraryExecuteType
+  = (typeof SignArbitraryExecuteType)[keyof typeof SignArbitraryExecuteType];
 
 // `createPopup` carries the request to the approval window inside the popup URL
 // (JSON -> encodeURI -> base64), so a payload arrives at roughly four times its

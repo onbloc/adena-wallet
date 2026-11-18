@@ -1,7 +1,7 @@
 import React from 'react';
 import { SubHeader, type SubHeaderProps } from '.';
-import { Meta, StoryObj } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react-vite';
+import { action } from 'storybook/actions';
 import ArrowBackIcon from '@assets/arrowL-left.svg';
 import ArrowNextIcon from '@assets/arrowL-right.svg';
 

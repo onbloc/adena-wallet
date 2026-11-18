@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import AdditionalTokenPathInput, {
   type AdditionalTokenPathInputProps,
 } from './additional-token-path-input';

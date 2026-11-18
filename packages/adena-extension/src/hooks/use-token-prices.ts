@@ -1,7 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
-
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { TokenPriceMap, TokenPriceRequest } from '@types';
+import { useMemo } from 'react';
 
 import { useAdenaContext } from './use-context';
 
@@ -48,24 +47,24 @@ export const useTokenPrices = (
         // Decimals are part of the identity: they decide how a quote in another
         // asset's unit is restated, so a row whose metadata arrived late must
         // re-ask rather than keep a price computed without them.
-        .map((request) => `${request.tokenId}:${request.networkId}:${request.decimals ?? ''}`)
+        .map(request => `${request.tokenId}:${request.networkId}:${request.decimals ?? ''}`)
         .sort()
         .join('|'),
     [requests],
   );
 
-  const { data, isFetched, isError } = useQuery<SourcedPrices>(
-    ['token-prices', sourceId, requestKey],
-    async () => ({
+  const { data, isFetched, isError } = useQuery<SourcedPrices>({
+    queryKey: ['token-prices', sourceId, requestKey],
+
+    queryFn: async () => ({
       sourceId,
       prices: await tokenPriceService.getTokenPrices(requests),
     }),
-    {
-      refetchInterval: PRICE_REFETCH_INTERVAL,
-      keepPreviousData: true,
-      enabled: requests.length > 0,
-    },
-  );
+
+    refetchInterval: PRICE_REFETCH_INTERVAL,
+    enabled: requests.length > 0,
+    placeholderData: keepPreviousData,
+  });
 
   const isCurrentSource = data?.sourceId === sourceId;
 

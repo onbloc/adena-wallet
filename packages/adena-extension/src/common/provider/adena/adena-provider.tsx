@@ -54,8 +54,9 @@ import {
   TokenRegistryImpl,
 } from 'adena-module';
 import axios from 'axios';
+import { useAtomValue } from 'jotai';
 import React, { createContext, useMemo } from 'react';
-import { useRecoilValue } from 'recoil';
+
 import { GnoProvider } from '../gno/gno-provider';
 
 export interface AdenaContextProps {
@@ -83,7 +84,7 @@ export interface AdenaContextProps {
 export const AdenaContext = createContext<AdenaContextProps | null>(null);
 
 export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
-  const currentGnoNetwork = useRecoilValue(NetworkState.currentNetwork);
+  const currentGnoNetwork = useAtomValue(NetworkState.currentNetwork);
 
   const gnoProvider: GnoProvider | null = useMemo(() => {
     if (!currentGnoNetwork) {
@@ -108,11 +109,11 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const tokenRegistry = useMemo(() => {
     const registry = new TokenRegistryImpl();
-    ALL_TOKENS.forEach((t) => registry.register(t));
+    ALL_TOKENS.forEach(t => registry.register(t));
     return registry;
   }, []);
 
-  const currentAtomoneNetwork = useRecoilValue(NetworkState.currentAtomoneNetwork);
+  const currentAtomoneNetwork = useAtomValue(NetworkState.currentAtomoneNetwork);
   const cosmosProvider = useMemo<CosmosLcdProvider | null>(() => {
     if (!currentAtomoneNetwork) {
       return null;

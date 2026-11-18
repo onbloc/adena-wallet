@@ -1,19 +1,18 @@
-import { TM2Error } from '@gnolang/tm2-js-client';
-import { Account, AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
-import React, { useEffect, useMemo, useState } from 'react';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { ApproveLedgerLoading } from '@components/molecules';
+import { TM2Error } from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessageInstance } from '@inject/message';
 import { RoutePath } from '@types';
+import { Account, AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
+import React, { useEffect, useMemo, useState } from 'react';
 
 const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
   const { params } = useAppNavigate<RoutePath.ApproveTransactionLoading>();
@@ -30,7 +29,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
   const shouldBroadcastCommit = requestData?.data?.commit === true;
   const signingAccount = useMemo<Account | null>(() => {
     if (requestedSignerAccountId) {
-      return wallet?.accounts.find((account) => account.id === requestedSignerAccountId) ?? null;
+      return wallet?.accounts.find(account => account.id === requestedSignerAccountId) ?? null;
     }
     return currentAccount;
   }, [currentAccount, requestedSignerAccountId, wallet]);

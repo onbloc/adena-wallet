@@ -1,21 +1,22 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { decryptAES, decryptXChacha20, encryptAES } from 'adena-module';
-import CryptoJS from 'crypto-js';
 import sodium from 'libsodium-wrappers-sumo';
+import type { Mock } from 'vitest';
+
 import { StorageMigration018 } from './storage-migration-v018';
 
 // Only decryptAES is stubbed, and it defaults to the real implementation — the
 // wrong-key test below drives a single call to reproduce a false accept.
-jest.mock('adena-module', () => {
-  const actual = jest.requireActual('adena-module');
-  return { ...actual, decryptAES: jest.fn(actual.decryptAES) };
+vi.mock('adena-module', async () => {
+  const actual = await vi.importActual<typeof import('adena-module')>('adena-module');
+  return { ...actual, decryptAES: vi.fn(actual.decryptAES) };
 });
 
-const LEGACY_SALT = 'W9+fs3FJ9p5KdR1XzQy2A6ZT4vjN8LvM9J8pVZmN9rU=';
 const RAW_PASSWORD = '123';
-const HASHED_PASSWORD = CryptoJS.SHA256(LEGACY_SALT + RAW_PASSWORD).toString();
+// SHA-256 of the v009 legacy salt + RAW_PASSWORD, as CryptoJS computed it.
+const HASHED_PASSWORD = '953877f4dd33e9b77353dd1914a7f9fe06a0ffc144895695063bd9d81e70c548';
 
 const WALLET_JSON = JSON.stringify({
   accounts: [],
@@ -154,7 +155,7 @@ describe('storage migration V018', () => {
   // over the wallet, which is unrecoverable — so a candidate key only counts
   // when its plaintext is the JSON container the field actually holds.
   it('rejects a wrong key whose garbage plaintext is non-empty valid UTF-8', async () => {
-    (decryptAES as jest.Mock).mockResolvedValueOnce('C\u9661?');
+    (decryptAES as Mock).mockResolvedValueOnce('C\u9661?');
 
     const mockData = {
       version: 17,
@@ -175,7 +176,7 @@ describe('storage migration V018', () => {
   });
 
   it('still refuses a password that decrypts nothing', async () => {
-    (decryptAES as jest.Mock).mockResolvedValueOnce('C\u9661?');
+    (decryptAES as Mock).mockResolvedValueOnce('C\u9661?');
 
     const mockData = {
       version: 17,

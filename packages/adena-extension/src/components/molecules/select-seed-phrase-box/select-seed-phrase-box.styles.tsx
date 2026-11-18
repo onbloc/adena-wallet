@@ -1,6 +1,5 @@
-import styled, { keyframes } from 'styled-components';
-
 import { Row, View } from '@components/atoms';
+import styled, { keyframes } from 'styled-components';
 
 export const StyledSelectSeedPhraseBox = styled(View)``;
 

@@ -233,7 +233,7 @@ export const makeGRC20TransactionHistoryQuery = (
   const branches = tokenPackages
     .flatMap(({ path, transferEvent }) =>
       [transferEvent.fromAttr, transferEvent.toAttr].map(
-        (partyAttr) => `
+        partyAttr => `
             {
               GnoEvent: {
                 pkg_path: { eq: "${path}" }

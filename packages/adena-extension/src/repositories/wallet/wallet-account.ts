@@ -42,7 +42,8 @@ export class WalletAccountRepository {
     const accountNames = await this.getAccountNames();
     try {
       delete accountNames[accountId];
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
     }
     await this.localStorage.setByObject('ACCOUNT_NAMES', accountNames);

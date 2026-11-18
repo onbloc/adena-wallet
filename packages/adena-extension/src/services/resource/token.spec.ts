@@ -1,6 +1,7 @@
-import { GRC20TokenModel, NativeTokenModel, TokenModel } from '@types';
-
 import { ITokenRepository } from '@repositories/common/types';
+import { GRC20TokenModel, NativeTokenModel, TokenModel } from '@types';
+import type { Mock } from 'vitest';
+
 import { TokenService } from './token';
 
 const ACCOUNT_ID = 'account-1';
@@ -37,12 +38,12 @@ function makeRepository(
   contractTokens: GRC20TokenModel[] = storedTokens.filter(
     (token): token is GRC20TokenModel => token.type === 'grc20',
   ),
-): { repository: ITokenRepository; updateTokenMetainfos: jest.Mock } {
-  const updateTokenMetainfos = jest.fn().mockResolvedValue(true);
+): { repository: ITokenRepository; updateTokenMetainfos: Mock } {
+  const updateTokenMetainfos = vi.fn().mockResolvedValue(true);
 
   const repository = {
-    getAccountTokenMetainfos: jest.fn().mockResolvedValue(storedTokens),
-    fetchTokenMetainfos: jest
+    getAccountTokenMetainfos: vi.fn().mockResolvedValue(storedTokens),
+    fetchTokenMetainfos: vi
       .fn()
       .mockImplementation(() =>
         resourceTokens instanceof Error
@@ -52,12 +53,12 @@ function makeRepository(
     updateTokenMetainfos,
     // The three ways a GRC20 token reaches the wallet straight from its
     // contract, none of which pass through the account's stored metainfos.
-    fetchAllGRC20Tokens: jest.fn().mockResolvedValue(contractTokens),
-    fetchGRC20Tokens: jest
+    fetchAllGRC20Tokens: vi.fn().mockResolvedValue(contractTokens),
+    fetchGRC20Tokens: vi
       .fn()
       .mockResolvedValue({ items: contractTokens, totalCount: contractTokens.length }),
-    fetchGRC20TokenByPackagePath: jest.fn().mockResolvedValue(contractTokens[0]),
-    fetchAccountGRC20Tokens: jest.fn().mockResolvedValue(contractTokens),
+    fetchGRC20TokenByPackagePath: vi.fn().mockResolvedValue(contractTokens[0]),
+    fetchAccountGRC20Tokens: vi.fn().mockResolvedValue(contractTokens),
   } as unknown as ITokenRepository;
 
   return { repository, updateTokenMetainfos };

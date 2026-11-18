@@ -1,14 +1,15 @@
-import { renderHook } from '@testing-library/react';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import { renderHook } from '@testing-library/react';
 import { GRC721CollectionModel } from '@types';
+import type { Mock } from 'vitest';
+
 import { useNFTCollectionHandler } from './use-collection-handler';
 
-jest.mock('@hooks/use-context', () => ({ useAdenaContext: jest.fn() }));
-jest.mock('@hooks/use-current-account', () => ({ useCurrentAccount: jest.fn() }));
-jest.mock('@hooks/use-network', () => ({ useNetwork: jest.fn() }));
+vi.mock('@hooks/use-context', () => ({ useAdenaContext: vi.fn() }));
+vi.mock('@hooks/use-current-account', () => ({ useCurrentAccount: vi.fn() }));
+vi.mock('@hooks/use-network', () => ({ useNetwork: vi.fn() }));
 
 const PACKAGE_PATH = 'gno.land/r/gnoswap/gnft';
 
@@ -29,23 +30,25 @@ function collection(overrides: Partial<GRC721CollectionModel> = {}): GRC721Colle
   };
 }
 
-function setup(stored: GRC721CollectionModel[]): { saveAccountGRC721Collections: jest.Mock } {
-  const saveAccountGRC721Collections = jest.fn().mockResolvedValue(true);
+function setup(stored: GRC721CollectionModel[]): { saveAccountGRC721Collections: Mock } {
+  const saveAccountGRC721Collections = vi.fn().mockResolvedValue(true);
 
-  (useAdenaContext as jest.Mock).mockReturnValue({
+  (useAdenaContext as Mock).mockReturnValue({
     tokenService: {
-      getAccountGRC721Collections: jest.fn().mockResolvedValue(stored),
+      getAccountGRC721Collections: vi.fn().mockResolvedValue(stored),
       saveAccountGRC721Collections,
     },
   });
-  (useCurrentAccount as jest.Mock).mockReturnValue({ currentAccount: { id: 'account-1' } });
-  (useNetwork as jest.Mock).mockReturnValue({ currentNetwork: { chainId: 'gnoland-1' } });
+  (useCurrentAccount as Mock).mockReturnValue({ currentAccount: { id: 'account-1' } });
+  (useNetwork as Mock).mockReturnValue({ currentNetwork: { chainId: 'gnoland-1' } });
 
   return { saveAccountGRC721Collections };
 }
 
 describe('useNFTCollectionHandler.addCollections', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('refreshes a stored collection from the chain and keeps its display flag', async () => {
     const { saveAccountGRC721Collections } = setup([

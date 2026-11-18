@@ -1,8 +1,7 @@
-import styled from 'styled-components';
-
 import check from '@assets/check-circle.svg';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const WalletConnectWrapper = styled.div`
   ${mixins.flex({ justify: 'flex-start' })};

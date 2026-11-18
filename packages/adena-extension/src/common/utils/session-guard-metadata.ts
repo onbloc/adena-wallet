@@ -30,15 +30,15 @@ export async function refreshSessionMetadataFromChain(
   const flat = flattenSessionAccount(res);
   const base = res.BaseSessionAccount;
   const expiresAt = Number(flat.expiresAt || cached?.expiresAt || 0);
-  const status: SessionMetadata['status'] =
-    cached?.status === 'REVOKED'
+  const status: SessionMetadata['status']
+    = cached?.status === 'REVOKED'
       ? 'REVOKED'
       : expiresAt > 0 && nowSeconds >= expiresAt
-      ? 'EXPIRED'
-      : 'ACTIVE';
+        ? 'EXPIRED'
+        : 'ACTIVE';
   const spendUsed = base.spend_used === '' ? undefined : base.spend_used;
-  const spendReset =
-    base.spend_reset != null && base.spend_reset !== '' ? Number(base.spend_reset) : undefined;
+  const spendReset
+    = base.spend_reset != null && base.spend_reset !== '' ? Number(base.spend_reset) : undefined;
 
   return {
     masterAddress: flat.masterAddress || cached?.masterAddress || masterAddress,

@@ -1,10 +1,9 @@
+import IconCheck from '@assets/check-circle.svg';
+import IconEdit from '@assets/icon-edit-small';
+import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 import React, { useCallback } from 'react';
 
 import { NetworkListItemWrapper } from './network-list-item.styles';
-import IconCheck from '@assets/check-circle.svg';
-import IconEdit from '@assets/icon-edit-small';
-
-import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 
 export interface NetworkListItemProps {
   selected: boolean;

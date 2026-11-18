@@ -1,8 +1,8 @@
-import { useQuery, useQueryClient, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import { useQuery, useQueryClient, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+
 import { useNFTCollectionHandler } from './use-collection-handler';
 import { GET_GRC721_COLLECTIONS_QUERY_KEY } from './use-get-grc721-collections';
 
@@ -22,7 +22,7 @@ const COLLECTION_DISCOVERY_STALE_TIME = 60_000;
  * everywhere else reads what this leaves behind via useGetGRC721Collections.
  */
 export const useSyncGRC721Collections = (
-  options?: UseQueryOptions<boolean, Error>,
+  options?: Omit<UseQueryOptions<boolean, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<boolean> => {
   const { tokenService } = useAdenaContext();
   const { currentAccount, currentFundingAddress } = useCurrentAccount();
@@ -50,7 +50,9 @@ export const useSyncGRC721Collections = (
       // refreshes the ones already stored, preserving the user's display flag.
       await addCollections(collections);
       // Storage changed underneath the readers, so make them re-read.
-      await queryClient.invalidateQueries([GET_GRC721_COLLECTIONS_QUERY_KEY]);
+      await queryClient.invalidateQueries({
+        queryKey: [GET_GRC721_COLLECTIONS_QUERY_KEY],
+      });
 
       return true;
     },

@@ -1,6 +1,5 @@
-import styled from 'styled-components';
-
 import { View } from '@components/atoms';
+import styled from 'styled-components';
 
 export const MainNetworkLabelWrapper = styled(View)<{ $clickable?: boolean }>`
   width: 100%;

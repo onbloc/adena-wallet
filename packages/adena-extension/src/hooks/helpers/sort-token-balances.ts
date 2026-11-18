@@ -1,6 +1,5 @@
-import BigNumber from 'bignumber.js';
-
 import { TokenBalanceType } from '@types';
+import BigNumber from 'bignumber.js';
 
 import { tokenRowKey } from './token-order-cache';
 
@@ -26,7 +25,7 @@ export function compareTokenBalances(a: TokenBalanceType, b: TokenBalanceType): 
   if (aAmount === null) return 1;
   if (bAmount === null) return -1;
 
-  const cmp = bAmount.comparedTo(aAmount);
+  const cmp = bAmount.comparedTo(aAmount) ?? 0;
   if (cmp !== 0) return cmp;
 
   return compareSymbol(a, b);
@@ -86,7 +85,7 @@ export function sortTokenBalancesByStoredOrder(
 
   const sorted = [...ranked.map(({ token }) => token), ...unranked.sort(compareTokenBalances)];
 
-  const mainIndex = sorted.findIndex((token) => token.main);
+  const mainIndex = sorted.findIndex(token => token.main);
   if (mainIndex > 0) {
     const [mainToken] = sorted.splice(mainIndex, 1);
     sorted.unshift(mainToken);

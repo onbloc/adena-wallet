@@ -1,24 +1,23 @@
-import { useCallback, useState } from 'react';
-import {
-  AirgapAccount,
-  AddressKeyring,
-  AdenaWallet,
-  fromBech32,
-  isAirgapAccount,
-} from 'adena-module';
-
+import { waitForRun } from '@common/utils/timeout-utils';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useChain } from '@hooks/use-chain';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useChain } from '@hooks/use-chain';
-import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
-import { RoutePath } from '@types';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
-import { waitForRun } from '@common/utils/timeout-utils';
 import { useWallet } from '@hooks/use-wallet';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
+import { RoutePath } from '@types';
+import {
+  AddressKeyring,
+  AdenaWallet,
+  AirgapAccount,
+  fromBech32,
+  isAirgapAccount,
+} from 'adena-module';
+import { useCallback, useState } from 'react';
 
 export type UseSetupAirgapScreenReturn = {
   address: string;
@@ -81,17 +80,18 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
       if (address && prefix === chain.bech32Prefix) {
         return true;
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
     }
     return false;
   }, [address]);
 
   const _existsAddress = useCallback(async () => {
-    const checkAccounts = accounts.filter((account) => isAirgapAccount(account));
+    const checkAccounts = accounts.filter(account => isAirgapAccount(account));
     return Promise.all(
-      checkAccounts.map((account) => account.getAddress(chain.bech32Prefix)),
-    ).then((addresses) => addresses.includes(address));
+      checkAccounts.map(account => account.getAddress(chain.bech32Prefix)),
+    ).then(addresses => addresses.includes(address));
   }, [accounts, address]);
 
   const confirmAddress = useCallback(async () => {
@@ -122,7 +122,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
     clone.addKeyring(addressKeyring);
     clone.addAccount(account);
     clone.addKeyring(addressKeyring);
-    const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
+    const storedAccount = clone.accounts.find(storedAccount => storedAccount.id === account.id);
     if (storedAccount) {
       await changeCurrentAccount(storedAccount);
     }
@@ -142,7 +142,8 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
       setSetupAirgapState('LOADING');
       await waitForRun<void>(_addAddressAccount);
       navigate(RoutePath.WebAccountAddedComplete);
-    } else {
+    }
+    else {
       setSetupAirgapState('LOADING');
       const createdWallet = await waitForRun<AdenaWallet>(_createAddressAccount);
       pendingWalletStore.set(createdWallet);

@@ -47,13 +47,13 @@ export type PackageApprovalMessage = {
   pkg_height?: unknown;
 };
 
-export type TMessage =
-  | MsgAddPackage
-  | MsgCall
-  | MsgSend
-  | MsgRun
-  | SessionAdminMessage
-  | PackageApprovalMessage;
+export type TMessage
+  = | MsgAddPackage
+    | MsgCall
+    | MsgSend
+    | MsgRun
+    | SessionAdminMessage
+    | PackageApprovalMessage;
 
 export type ContractMessage = {
   type: EMessageType;

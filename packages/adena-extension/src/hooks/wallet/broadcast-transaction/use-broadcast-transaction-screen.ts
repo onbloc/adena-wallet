@@ -1,5 +1,10 @@
+import { makeGnotAmountByRaw } from '@common/utils/amount-utils';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 import { Tx } from '@gnolang/tm2-js-client';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { RoutePath } from '@types';
 import {
   RawBankSendMessage,
   RawMsgEnablePackage,
@@ -11,12 +16,6 @@ import {
   strToSignedTx,
 } from 'adena-module';
 import { useCallback, useMemo, useState } from 'react';
-
-import { makeGnotAmountByRaw } from '@common/utils/amount-utils';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { RoutePath } from '@types';
 
 export type BroadcastTransactionState = 'UPLOAD_TRANSACTION' | 'LOADING' | 'FAILED' | 'SUCCESS';
 
@@ -130,8 +129,8 @@ function mapTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
     return mapVmCallTransactionInfo(rawTx);
   }
   if (
-    messages[0]['@type'] === MsgEndpoint.MSG_ENABLE_PKG ||
-    messages[0]['@type'] === MsgEndpoint.MSG_REJECT_PKG
+    messages[0]['@type'] === MsgEndpoint.MSG_ENABLE_PKG
+    || messages[0]['@type'] === MsgEndpoint.MSG_REJECT_PKG
   ) {
     return mapPackageApprovalTransactionInfo(rawTx);
   }
@@ -206,8 +205,8 @@ const useBroadcastTransactionScreen = (): UseBroadcastTransactionScreenReturn =>
   const { transactionService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { navigate } = useAppNavigate();
-  const [broadcastTransactionState, setBroadcastTransactionState] =
-    useState<BroadcastTransactionState>('UPLOAD_TRANSACTION');
+  const [broadcastTransactionState, setBroadcastTransactionState]
+    = useState<BroadcastTransactionState>('UPLOAD_TRANSACTION');
   const [transaction, setTransaction] = useState<Tx | null>(null);
   const [rawTransaction, setRawTransaction] = useState<RawTx | null>(null);
 
@@ -238,7 +237,8 @@ const useBroadcastTransactionScreen = (): UseBroadcastTransactionScreenReturn =>
       setTransaction(transaction);
       setRawTransaction(rawTx);
       return transaction !== null;
-    } catch (error) {
+    }
+    catch (error) {
       setTransaction(null);
       setRawTransaction(null);
       console.error(error);
@@ -263,7 +263,8 @@ const useBroadcastTransactionScreen = (): UseBroadcastTransactionScreenReturn =>
 
     if (isSuccessBroadcasting) {
       navigate(RoutePath.History);
-    } else {
+    }
+    else {
       setBroadcastTransactionState('FAILED');
     }
     return isSuccessBroadcasting;

@@ -8,8 +8,8 @@ const discardedWindow = (): Window =>
     },
   });
 
-const liveWindow = (close = jest.fn()): Window =>
-  ({ closed: false, close, focus: jest.fn() }) as unknown as Window;
+const liveWindow = (close = vi.fn()): Window =>
+  ({ closed: false, close, focus: vi.fn() }) as unknown as Window;
 
 describe('withPopupWindowGuard', () => {
   const nativeOpen = window.open;
@@ -19,7 +19,7 @@ describe('withPopupWindowGuard', () => {
   });
 
   const openDuring = async (popup: Window | null): Promise<Window | null> => {
-    window.open = jest.fn().mockReturnValue(popup) as unknown as typeof window.open;
+    window.open = vi.fn().mockReturnValue(popup) as unknown as typeof window.open;
 
     let opened: Window | null = null;
     await withPopupWindowGuard(async () => {
@@ -62,7 +62,7 @@ describe('withPopupWindowGuard', () => {
   });
 
   it('passes a live window straight through', async () => {
-    const close = jest.fn();
+    const close = vi.fn();
     const opened = await openDuring(liveWindow(close));
 
     expect(opened?.closed).toBe(false);
@@ -76,7 +76,7 @@ describe('withPopupWindowGuard', () => {
     class FakeWindow {
       public closed = false;
       public marker = 'original';
-      public close = jest.fn();
+      public close = vi.fn();
     }
 
     const live = new FakeWindow();
@@ -126,7 +126,7 @@ describe('withPopupWindowGuard', () => {
   });
 
   it('restores window.open afterwards, including when the task throws', async () => {
-    const stub = jest.fn() as unknown as typeof window.open;
+    const stub = vi.fn() as unknown as typeof window.open;
     window.open = stub;
 
     await withPopupWindowGuard(async () => undefined);
@@ -151,7 +151,7 @@ describe('withPopupWindowGuard', () => {
   });
 
   it('survives nested scopes without stranding the wrapper', async () => {
-    const stub = jest.fn() as unknown as typeof window.open;
+    const stub = vi.fn() as unknown as typeof window.open;
     window.open = stub;
 
     await withPopupWindowGuard(async () => {

@@ -17,9 +17,9 @@ export const isAutoLockTriggeredMessage = (
   message: unknown,
 ): message is AutoLockTriggeredMessage => {
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    (message as { type?: unknown }).type === AUTO_LOCK_TRIGGERED_MESSAGE
+    typeof message === 'object'
+    && message !== null
+    && (message as { type?: unknown }).type === AUTO_LOCK_TRIGGERED_MESSAGE
   );
 };
 
@@ -49,7 +49,8 @@ export async function readAutoLockMinutes(): Promise<number> {
       return DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES;
     }
     return minutes;
-  } catch {
+  }
+  catch {
     return DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES;
   }
 }
@@ -62,7 +63,8 @@ export async function isWalletUnlocked(): Promise<boolean> {
   try {
     const session = await chrome.storage.session.get(['ENCRYPTED_KEY', 'ENCRYPTED_PASSWORD']);
     return !!session.ENCRYPTED_KEY && !!session.ENCRYPTED_PASSWORD;
-  } catch {
+  }
+  catch {
     return false;
   }
 }

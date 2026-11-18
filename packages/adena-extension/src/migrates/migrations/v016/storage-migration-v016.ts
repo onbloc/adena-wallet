@@ -1,6 +1,7 @@
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
 import CHAIN_DATA from '@resources/chains/chains.json';
+
 import {
   CurrentChainIdModelV015,
   CurrentNetworkIdModelV015,
@@ -101,11 +102,11 @@ export class StorageMigration016 implements Migration<StorageModelDataV016> {
   }
 
   private migrateNetwork(networks: NetworksModelV015): NetworksModelV016 {
-    const defaultNetworks = CHAIN_DATA.filter((network) => network.default);
+    const defaultNetworks = CHAIN_DATA.filter(network => network.default);
     const customNetworks = networks
-      .filter((network) => !network.default)
+      .filter(network => !network.default)
       .map((network) => {
-        const providedNetwork = CHAIN_DATA.find((data) => data.chainId === network.id);
+        const providedNetwork = CHAIN_DATA.find(data => data.chainId === network.id);
         if (providedNetwork) {
           return {
             ...providedNetwork,

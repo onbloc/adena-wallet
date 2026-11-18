@@ -2,6 +2,7 @@ import NFTCardImage from '@components/molecules/nft-card-image/nft-card-image';
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721Model } from '@types';
 import React, { useMemo } from 'react';
+
 import { NFTAssetImageCardWrapper } from './nft-asset-image-card.styles';
 
 export interface NFTAssetImageCardProps {
@@ -9,7 +10,7 @@ export interface NFTAssetImageCardProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: UseQueryOptions<string | null, Error>,
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
 }
 

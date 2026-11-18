@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+
 import path from 'path';
 
 import { withPopupWindowGuard } from './popup-window-guard';
@@ -16,14 +18,14 @@ import { withPopupWindowGuard } from './popup-window-guard';
  * require. Nothing here patches the dependency; if upstream ever guards these
  * sites the test still passes.
  */
+// Resolved the way the SDK itself loads it, so the test drives the copy the
+// extension actually ships.
+const sdkRequire = createRequire(createRequire(import.meta.url).resolve('@adena-wallet/sdk'));
 const popupHandlerPath = path.join(
-  __dirname,
-  '../../../../../node_modules/@web3auth/auth/dist/lib.cjs/core/PopupHandler.js',
+  path.dirname(sdkRequire.resolve('@web3auth/auth')),
+  'core/PopupHandler.js',
 );
-
-/* eslint-disable @typescript-eslint/no-var-requires */
-const popupHandlerModule = require(popupHandlerPath);
-/* eslint-enable @typescript-eslint/no-var-requires */
+const popupHandlerModule = sdkRequire(popupHandlerPath);
 
 const PopupHandler = popupHandlerModule.default ?? popupHandlerModule;
 
@@ -43,7 +45,7 @@ type TestPopupHandler = {
 };
 
 const openHandler = async (popup: Window | null): Promise<TestPopupHandler> => {
-  window.open = jest.fn().mockReturnValue(popup) as unknown as typeof window.open;
+  window.open = vi.fn().mockReturnValue(popup) as unknown as typeof window.open;
 
   return withPopupWindowGuard(async () => {
     const handler: TestPopupHandler = new PopupHandler({
@@ -59,20 +61,20 @@ describe('web3auth PopupHandler behind withPopupWindowGuard', () => {
   const nativeOpen = window.open;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.clearAllTimers();
-    jest.useRealTimers();
+    vi.clearAllTimers();
+    vi.useRealTimers();
     window.open = nativeOpen;
   });
 
   it('polls a discarded window without throwing out of the timer', async () => {
     await openHandler(discardedWindow());
 
-    expect(() => jest.advanceTimersByTime(500)).not.toThrow();
-    expect(() => jest.advanceTimersByTime(5_000)).not.toThrow();
+    expect(() => vi.advanceTimersByTime(500)).not.toThrow();
+    expect(() => vi.advanceTimersByTime(5_000)).not.toThrow();
   });
 
   it('closes a discarded window without throwing', async () => {
@@ -85,10 +87,10 @@ describe('web3auth PopupHandler behind withPopupWindowGuard', () => {
   // login in progress must never be reported as cancelled.
   it('does not cancel a login while the reference is merely discarded', async () => {
     const handler = await openHandler(discardedWindow());
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     handler.on('close', onClose);
 
-    jest.advanceTimersByTime(60_000);
+    vi.advanceTimersByTime(60_000);
 
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -97,26 +99,26 @@ describe('web3auth PopupHandler behind withPopupWindowGuard', () => {
   // popup, which is also what lets the handler's poll stop.
   it('does not report a finished login as cancelled once it closes the popup', async () => {
     const handler = await openHandler(discardedWindow());
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     handler.on('close', onClose);
 
     handler.close();
-    jest.advanceTimersByTime(POPUP_TIMEOUT * 100);
+    vi.advanceTimersByTime(POPUP_TIMEOUT * 100);
 
     expect(onClose).not.toHaveBeenCalled();
   });
 
   it('leaves a live popup to behave as it always has', async () => {
-    const close = jest.fn();
+    const close = vi.fn();
     const handler = await openHandler({
       closed: false,
       close,
-      focus: jest.fn(),
+      focus: vi.fn(),
     } as unknown as Window);
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     handler.on('close', onClose);
 
-    jest.advanceTimersByTime(5_000);
+    vi.advanceTimersByTime(5_000);
     expect(onClose).not.toHaveBeenCalled();
 
     handler.close();

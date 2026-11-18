@@ -13,24 +13,24 @@ const mockArea: Record<string, unknown> = {};
 /** When set, holds entry writes open until it resolves. */
 let mockSetGate: Promise<void> | null = null;
 
-jest.mock('@common/storage', () => {
-  const actual = jest.requireActual('@common/storage');
+vi.mock('@common/storage', async () => {
+  const actual = await vi.importActual<typeof import('@common/storage')>('@common/storage');
 
   class MockChromeCacheStorage {
-    get = jest.fn(async (key: string) => mockArea[key]);
+    get = vi.fn(async (key: string) => mockArea[key]);
 
-    set = jest.fn(async (key: string, value: unknown) => {
+    set = vi.fn(async (key: string, value: unknown) => {
       if (mockSetGate) {
         await mockSetGate;
       }
       mockArea[key] = value;
     });
 
-    remove = jest.fn(async (key: string) => {
+    remove = vi.fn(async (key: string) => {
       delete mockArea[key];
     });
 
-    getByPrefix = jest.fn(async (prefix: string) =>
+    getByPrefix = vi.fn(async (prefix: string) =>
       Object.fromEntries(Object.entries(mockArea).filter(([key]) => key.startsWith(prefix))),
     );
   }
@@ -44,16 +44,13 @@ type CacheModule = typeof import('./token-order-cache');
  * A second copy of the module, standing in for another extension window: its
  * own module-local state, the same `mockArea` behind it.
  */
-function loadInAnotherWindow(): CacheModule {
-  let other: CacheModule = null as unknown as CacheModule;
-  jest.isolateModules(() => {
-    other = require('./token-order-cache');
-  });
-  return other;
+async function loadInAnotherWindow(): Promise<CacheModule> {
+  vi.resetModules();
+  return import('./token-order-cache');
 }
 
 function entryKeys(): string[] {
-  return Object.keys(mockArea).filter((key) => key.startsWith(TOKEN_ORDER_CACHE_KEY_PREFIX));
+  return Object.keys(mockArea).filter(key => key.startsWith(TOKEN_ORDER_CACHE_KEY_PREFIX));
 }
 
 /** Holds entry writes open until the returned function is called. */
@@ -77,7 +74,7 @@ describe('token order cache', () => {
       delete mockArea[key];
     }
     mockSetGate = null;
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('reads back the order it stored', async () => {
@@ -108,7 +105,7 @@ describe('token order cache', () => {
   });
 
   it('keeps a writer in another window from dropping this scope', async () => {
-    const otherWindow = loadInAnotherWindow();
+    const otherWindow = await loadInAnotherWindow();
 
     await writeTokenOrder(SCOPE_A, ['a:gnoland-1']);
     await otherWindow.writeTokenOrder(SCOPE_B, ['b:gnoland-1']);
@@ -214,7 +211,7 @@ describe('token order cache', () => {
     });
 
     it('removes what another window stranded after the reset swept', async () => {
-      const otherWindow = loadInAnotherWindow();
+      const otherWindow = await loadInAnotherWindow();
       const release = holdWrites();
 
       // Window B is inside `storage.set` and cannot be called back; window A

@@ -1,7 +1,6 @@
-import type { ChainRegistry } from 'adena-module';
-
-import type { SerializedSignDoc } from '@inject/types';
 import type { StdSignDoc } from '@cosmjs/amino';
+import type { SerializedSignDoc } from '@inject/types';
+import type { ChainRegistry } from 'adena-module';
 
 // Request-level sanity checks for Cosmos handlers. Signer address format and
 // signDoc field semantics are delegated to the `signCosmos` dispatcher, so we
@@ -24,12 +23,12 @@ export function validateAminoSignDoc(doc: unknown): doc is StdSignDoc {
   }
   const candidate = doc as Record<string, unknown>;
   return (
-    typeof candidate.chain_id === 'string' &&
-    typeof candidate.account_number === 'string' &&
-    typeof candidate.sequence === 'string' &&
-    typeof candidate.fee === 'object' &&
-    Array.isArray(candidate.msgs) &&
-    typeof candidate.memo === 'string'
+    typeof candidate.chain_id === 'string'
+    && typeof candidate.account_number === 'string'
+    && typeof candidate.sequence === 'string'
+    && typeof candidate.fee === 'object'
+    && Array.isArray(candidate.msgs)
+    && typeof candidate.memo === 'string'
   );
 }
 
@@ -39,9 +38,9 @@ export function validateSerializedSignDoc(doc: unknown): doc is SerializedSignDo
   }
   const candidate = doc as Record<string, unknown>;
   return (
-    typeof candidate.bodyBytes === 'string' &&
-    typeof candidate.authInfoBytes === 'string' &&
-    typeof candidate.chainId === 'string' &&
-    typeof candidate.accountNumber === 'string'
+    typeof candidate.bodyBytes === 'string'
+    && typeof candidate.authInfoBytes === 'string'
+    && typeof candidate.chainId === 'string'
+    && typeof candidate.accountNumber === 'string'
   );
 }

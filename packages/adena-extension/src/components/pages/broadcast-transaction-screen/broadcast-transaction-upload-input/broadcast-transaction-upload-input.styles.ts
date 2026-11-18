@@ -1,6 +1,5 @@
-import styled from 'styled-components';
-
 import { Pressable, View } from '@components/atoms';
+import styled from 'styled-components';
 
 export const StyledWrapper = styled(View)`
   width: 100%;

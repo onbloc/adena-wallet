@@ -1,18 +1,20 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { Account } from 'adena-module';
+import type { JSX } from 'react';
 import React, { PropsWithChildren } from 'react';
+import type { Mock } from 'vitest';
 
 import { useAccountListInfos } from './use-account-list-infos';
 import { useAccountName } from './use-account-name';
+import { useAccountNativeBalanceMap } from './use-account-native-balance-map';
 import { useChain } from './use-chain';
 import { useMasterAccountBadgeMap } from './use-master-account-badge-map';
-import { useAccountNativeBalanceMap } from './use-account-native-balance-map';
 
-jest.mock('./use-account-name', () => ({ useAccountName: jest.fn() }));
-jest.mock('./use-chain', () => ({ useChain: jest.fn() }));
-jest.mock('./use-master-account-badge-map', () => ({ useMasterAccountBadgeMap: jest.fn() }));
-jest.mock('./use-account-native-balance-map', () => ({ useAccountNativeBalanceMap: jest.fn() }));
+vi.mock('./use-account-name', () => ({ useAccountName: vi.fn() }));
+vi.mock('./use-chain', () => ({ useChain: vi.fn() }));
+vi.mock('./use-master-account-badge-map', () => ({ useMasterAccountBadgeMap: vi.fn() }));
+vi.mock('./use-account-native-balance-map', () => ({ useAccountNativeBalanceMap: vi.fn() }));
 
 const makeWrapper = (): React.FC<PropsWithChildren> => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -25,11 +27,11 @@ const makeWrapper = (): React.FC<PropsWithChildren> => {
 
 describe('useAccountListInfos', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useAccountName as jest.Mock).mockReturnValue({ accountNames: {} });
-    (useChain as jest.Mock).mockReturnValue({ bech32Prefix: 'g' });
-    (useMasterAccountBadgeMap as jest.Mock).mockReturnValue({});
-    (useAccountNativeBalanceMap as jest.Mock).mockReturnValue({});
+    vi.clearAllMocks();
+    (useAccountName as Mock).mockReturnValue({ accountNames: {} });
+    (useChain as Mock).mockReturnValue({ bech32Prefix: 'g' });
+    (useMasterAccountBadgeMap as Mock).mockReturnValue({});
+    (useAccountNativeBalanceMap as Mock).mockReturnValue({});
   });
 
   it('lists a regular account under its own address', async () => {
@@ -37,7 +39,7 @@ describe('useAccountListInfos', () => {
       id: 'account-1',
       name: 'Account 1',
       type: 'HD_WALLET',
-      getAddress: jest.fn(async (prefix: string) => `${prefix}1self`),
+      getAddress: vi.fn(async (prefix: string) => `${prefix}1self`),
     } as unknown as Account;
 
     const { result } = renderHook(() => useAccountListInfos([account]), { wrapper: makeWrapper() });
@@ -49,7 +51,7 @@ describe('useAccountListInfos', () => {
   // The session address holds no balance and cannot receive deposits, so the
   // row must show — and copy — the master address next to the master balance.
   it('lists a SessionAccount under its master address', async () => {
-    const getAddress = jest.fn();
+    const getAddress = vi.fn();
     const account = {
       id: 'session-1',
       name: 'Session 1',

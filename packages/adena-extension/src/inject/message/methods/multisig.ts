@@ -1,6 +1,7 @@
 import { WalletResponseRejectType } from '@adena-wallet/sdk';
 import { validateInjectionData } from '@common/validation/validation-transaction';
 import { RoutePath } from '@types';
+
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';

@@ -1,11 +1,11 @@
-import React from 'react';
-
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { UseQueryResult } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
+
 import NFTTransferSummary, { NFTTransferSummaryProps } from './nft-transfer-summary';
 
 const makeProps = (overrides?: Partial<NFTTransferSummaryProps>): NFTTransferSummaryProps => ({
@@ -46,12 +46,12 @@ const makeProps = (overrides?: Partial<NFTTransferSummaryProps>): NFTTransferSum
 
 const renderSummary = (props: NFTTransferSummaryProps): void => {
   render(
-    <RecoilRoot>
+    <JotaiProvider>
       <GlobalPopupStyle />
       <ThemeProvider theme={theme}>
         <NFTTransferSummary {...props} />
       </ThemeProvider>
-    </RecoilRoot>,
+    </JotaiProvider>,
   );
 };
 

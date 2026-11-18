@@ -1,7 +1,7 @@
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import NFTCollectionHeader, { type NFTCollectionHeaderProps } from './nft-collection-header';
 
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 export default {
   title: 'components/nft/NFTCollectionHeader',

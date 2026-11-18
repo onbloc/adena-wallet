@@ -1,5 +1,3 @@
-import React, { useCallback, useMemo } from 'react';
-
 import atomoneChainIcon from '@assets/icons/chains/atomone.svg';
 import gnolandChainIcon from '@assets/icons/chains/gno-chain.svg';
 import { CommonFullContentLayout } from '@components/atoms';
@@ -11,6 +9,7 @@ import type { ChainGroup } from '@hooks/use-network';
 import { useNetwork } from '@hooks/use-network';
 import { NetworkState } from '@states';
 import { RoutePath } from '@types';
+import React, { useCallback, useMemo } from 'react';
 
 type NetworkMode = NetworkState.NetworkMode;
 
@@ -39,14 +38,14 @@ const ChangeNetworkContainer: React.FC = () => {
 
   const gnoNetworks = useMemo(() => {
     return networks
-      .filter((network) => network.deleted !== true)
-      .filter((network) => (network.main === true) !== isTestnet);
+      .filter(network => network.deleted !== true)
+      .filter(network => (network.main === true) !== isTestnet);
   }, [networks, isTestnet]);
 
   const atomoneVisibleNetworks = useMemo(() => {
     return atomoneNetworks
-      .filter((network) => network.deleted !== true)
-      .filter((network) => network.isMainnet !== isTestnet);
+      .filter(network => network.deleted !== true)
+      .filter(network => network.isMainnet !== isTestnet);
   }, [atomoneNetworks, isTestnet]);
 
   const sections = useMemo<ChainGroupSectionModel[]>(() => {

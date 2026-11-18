@@ -1,6 +1,7 @@
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
 import CHAIN_DATA from '@resources/chains/chains.json';
+
 import { StorageModelDataV019 } from '../v019/storage-model-v019';
 import { NetworksModelV020, StorageModelDataV020 } from './storage-model-v020';
 
@@ -39,7 +40,7 @@ export class StorageMigration020 implements Migration<StorageModelDataV020> {
       'KDF_SALT',
     ];
     const currentDataKeys = Object.keys(currentData);
-    const hasKeys = storageDataKeys.every((key) => currentDataKeys.includes(key));
+    const hasKeys = storageDataKeys.every(key => currentDataKeys.includes(key));
     if (!hasKeys) {
       return false;
     }
@@ -78,7 +79,7 @@ export class StorageMigration020 implements Migration<StorageModelDataV020> {
         return network;
       }
 
-      const migrateNetwork = CHAIN_DATA.find((chain) => chain.chainId === migrateChainId);
+      const migrateNetwork = CHAIN_DATA.find(chain => chain.chainId === migrateChainId);
       if (!migrateNetwork) {
         return network;
       }

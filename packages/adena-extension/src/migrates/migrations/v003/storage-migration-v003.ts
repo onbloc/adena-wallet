@@ -1,5 +1,6 @@
-import { Migration } from '@migrates/migrator';
 import { StorageModel } from '@common/storage';
+import { Migration } from '@migrates/migrator';
+
 import { NetworksModelV002, StorageModelDataV002 } from '../v002/storage-model-v002';
 import { NetworksModelV003, StorageModelDataV003 } from './storage-model-v003';
 
@@ -35,7 +36,7 @@ export class StorageMigration003 implements Migration<StorageModelDataV003> {
       'ADDRESS_BOOK',
       'ACCOUNT_TOKEN_METAINFOS',
     ];
-    const hasKeys = Object.keys(currentData).every((dataKey) => storageDataKeys.includes(dataKey));
+    const hasKeys = Object.keys(currentData).every(dataKey => storageDataKeys.includes(dataKey));
     if (!hasKeys) {
       return false;
     }

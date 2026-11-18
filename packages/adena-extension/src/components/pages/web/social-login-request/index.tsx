@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect } from 'react';
-import styled from 'styled-components';
-
 import { View, WebButton } from '@components/atoms';
 import Lottie from '@components/atoms/lottie';
 import { WebTitleWithDescription } from '@components/molecules';
+import React, { useCallback, useEffect } from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;

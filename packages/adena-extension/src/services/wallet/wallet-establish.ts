@@ -1,6 +1,5 @@
-import { ChainRegistry } from 'adena-module';
-
 import { EstablishSite, WalletEstablishRepository } from '@repositories/wallet';
+import { ChainRegistry } from 'adena-module';
 
 export class WalletEstablishService {
   private walletEstablishRepository: WalletEstablishRepository;
@@ -26,11 +25,11 @@ export class WalletEstablishService {
       // Legacy hostname-only check: any chainGroup connection counts. Used by
       // header status indicators and other UI gates that pre-date the
       // chainId-aware paths.
-      return accountSites.some((site) => site.hostname === hostname);
+      return accountSites.some(site => site.hostname === hostname);
     }
     const siblingChainIds = this.resolveSiblingChainIds(chainId);
     return accountSites.some(
-      (site) => site.hostname === hostname && siblingChainIds.includes(site.chainId),
+      site => site.hostname === hostname && siblingChainIds.includes(site.chainId),
     );
   };
 
@@ -52,7 +51,7 @@ export class WalletEstablishService {
     // a single approval covers the whole chainGroup. Mirrors
     // WalletEstablishAtomOneService.establishBy.
     const retained = accountSites.filter(
-      (site) =>
+      site =>
         !(site.hostname === establishedInfo.hostname && siblingChainIds.includes(site.chainId)),
     );
 
@@ -111,7 +110,7 @@ export class WalletEstablishService {
     }
     return this.chainRegistry
       .listNetworkProfilesByChain(chain.chainGroup)
-      .map((profile) => profile.chainId);
+      .map(profile => profile.chainId);
   };
 
   private selectEstablishedSitesBy = (

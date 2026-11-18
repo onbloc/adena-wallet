@@ -1,11 +1,10 @@
-import { useRecoilState } from 'recoil';
+import { WalletState } from '@states';
+import { StateType } from '@types';
 import { Account } from 'adena-module';
+import { useAtom } from 'jotai';
 
 import { useWalletContext } from './use-context';
 import { useWalletAccounts } from './use-wallet-accounts';
-
-import { WalletState } from '@states';
-import { StateType } from '@types';
 
 export type UseLoadAccountsReturn = {
   state: StateType;
@@ -17,7 +16,7 @@ export type UseLoadAccountsReturn = {
 export const useLoadAccounts = (): UseLoadAccountsReturn => {
   const { wallet, initWallet } = useWalletContext();
   const { accounts } = useWalletAccounts();
-  const [state] = useRecoilState(WalletState.state);
+  const [state] = useAtom(WalletState.state);
 
   const loadAccounts = async (): Promise<boolean> => {
     return initWallet();

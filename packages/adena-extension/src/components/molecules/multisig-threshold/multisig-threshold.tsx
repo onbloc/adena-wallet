@@ -1,4 +1,5 @@
 import React from 'react';
+
 import * as S from './multisig-threshold.styles';
 
 interface MultisigThresholdProps {
@@ -9,7 +10,7 @@ const MultisigThreshold = ({ threshold }: MultisigThresholdProps): React.ReactEl
   return (
     <S.MultisigThresholdContainer>
       <S.MultisigThresholdWrapper>
-        <span className='key'>{'Threshold'}</span>
+        <span className='key'>Threshold</span>
 
         <div className='document-signers-amount-wrapper'>
           <span className='value'>{threshold}</span>

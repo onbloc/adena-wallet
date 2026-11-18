@@ -1,9 +1,8 @@
 // Presentational styled-components and inline SVG icons for the session-add
 // screen. Extracted from index.tsx to keep the screen logic readable.
+import { Row, View } from '@components/atoms';
 import { ReactElement } from 'react';
 import styled from 'styled-components';
-
-import { Row, View } from '@components/atoms';
 
 export const TabRow = styled(Row)`
   width: 350px;

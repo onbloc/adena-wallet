@@ -1,10 +1,8 @@
-import React, { useCallback, useMemo } from 'react';
-import styled from 'styled-components';
-
+import IconAirgap from '@assets/web/airgap-green.svg';
 import { View, WebButton, WebErrorText, WebImg, WebInput } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
-
-import IconAirgap from '@assets/web/airgap-green.svg';
+import React, { useCallback, useMemo } from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;

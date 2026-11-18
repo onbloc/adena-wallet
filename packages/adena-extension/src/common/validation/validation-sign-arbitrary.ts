@@ -1,6 +1,5 @@
-import { validateAddress } from 'adena-module';
-
 import { MAX_ARBITRARY_MESSAGE_BYTES, SignArbitraryParams } from '@inject/types';
+import { validateAddress } from 'adena-module';
 
 // Request-level checks for `SignArbitrary`. Whether the signer is the account
 // actually connected, and whether the signing key derives it, are decided

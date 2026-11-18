@@ -1,5 +1,4 @@
 import { toUtf8 } from '../encoding';
-
 import { pbkdf2Sha512 } from './pbkdf2';
 import { sha256 } from './sha';
 
@@ -2051,7 +2050,7 @@ const wordlist = [
   'zebra',
   'zero',
   'zone',
-  'zoo',
+  'zoo'
 ];
 
 function bytesToBitstring(bytes: ArrayLike<number>): string {
@@ -2083,7 +2082,7 @@ export function entropyToMnemonic(entropy: Uint8Array): string {
   const checksumBits = deriveChecksumBits(entropy);
 
   const bits = entropyBits + checksumBits;
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
   const chunks = bits.match(/(.{11})/g)!;
   const words = chunks.map((binary: string): string => {
     const index = bitstringToByte(binary);
@@ -2125,7 +2124,7 @@ export function mnemonicToEntropy(mnemonic: string): Uint8Array {
   const checksumBits = bits.slice(dividerIndex);
 
   // calculate the checksum and compare
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
   const entropyBytes = entropyBits.match(/(.{1,8})/g)!.map(bitstringToByte);
   if (entropyBytes.length < 16 || entropyBytes.length > 32 || entropyBytes.length % 4 !== 0) {
     throw new Error(invalidEntropy);
@@ -2157,7 +2156,7 @@ export class EnglishMnemonic {
     const allowedWordsLengths: readonly number[] = [12, 15, 18, 21, 24];
     if (allowedWordsLengths.indexOf(words.length) === -1) {
       throw new Error(
-        `Invalid word count in mnemonic (allowed: ${allowedWordsLengths} got: ${words.length})`,
+        `Invalid word count in mnemonic (allowed: ${allowedWordsLengths} got: ${words.length})`
       );
     }
 
@@ -2204,7 +2203,7 @@ export class Bip39 {
 
   public static async mnemonicToSeed(
     mnemonic: EnglishMnemonic,
-    password?: string,
+    password?: string
   ): Promise<Uint8Array> {
     const mnemonicBytes = toUtf8(normalize(mnemonic.toString()));
     const salt = 'mnemonic' + (password ? normalize(password) : '');

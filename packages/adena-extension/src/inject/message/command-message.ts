@@ -1,4 +1,5 @@
 import { CommandKeyType } from '@common/constants/command-key.constant';
+
 import { GnoConnectInfo, GnoMessageInfo } from './methods/gno-connect';
 type StatusType = 'command';
 

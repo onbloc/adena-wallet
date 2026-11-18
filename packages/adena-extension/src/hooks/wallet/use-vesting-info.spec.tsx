@@ -1,20 +1,20 @@
-import { renderHook } from '@testing-library/react';
-
 import { AccountInfo } from '@common/provider/gno';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useGetAccountInfo } from '@hooks/wallet/use-get-account-info';
+import { renderHook } from '@testing-library/react';
+import type { MockedFunction } from 'vitest';
 
 import { useVestingInfo } from './use-vesting-info';
 
-jest.mock('@hooks/use-current-account', () => ({
-  useCurrentAccount: jest.fn(),
+vi.mock('@hooks/use-current-account', () => ({
+  useCurrentAccount: vi.fn(),
 }));
-jest.mock('@hooks/wallet/use-get-account-info', () => ({
-  useGetAccountInfo: jest.fn(),
+vi.mock('@hooks/wallet/use-get-account-info', () => ({
+  useGetAccountInfo: vi.fn(),
 }));
 
-const mockedUseCurrentAccount = useCurrentAccount as jest.MockedFunction<typeof useCurrentAccount>;
-const mockedUseGetAccountInfo = useGetAccountInfo as jest.MockedFunction<typeof useGetAccountInfo>;
+const mockedUseCurrentAccount = useCurrentAccount as MockedFunction<typeof useCurrentAccount>;
+const mockedUseGetAccountInfo = useGetAccountInfo as MockedFunction<typeof useGetAccountInfo>;
 
 const ACCOUNT_A = 'g1manfred47kzduec920z88wfr64ylksmdcedlf5';
 const ACCOUNT_B = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
@@ -51,7 +51,7 @@ const setAccountInfo = (data: AccountInfo | null): void => {
 
 describe('useVestingInfo', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('returns the grant of the account on screen', () => {
@@ -94,7 +94,7 @@ describe('useVestingInfo', () => {
 
     expect(mockedUseGetAccountInfo).toHaveBeenCalledWith(
       ACCOUNT_A,
-      expect.objectContaining({ keepPreviousData: false }),
+      expect.objectContaining({ placeholderData: undefined }),
     );
   });
 
@@ -150,11 +150,11 @@ describe('useVestingInfo', () => {
       renderHook(() => useVestingInfo());
 
       const options = mockedUseGetAccountInfo.mock.calls[0][1];
-      const refetchInterval = options?.refetchInterval as (
-        data: AccountInfo | null,
-      ) => number | false;
+      const refetchInterval = options?.refetchInterval as unknown as (query: {
+        state: { data: AccountInfo | null };
+      }) => number | false;
 
-      return refetchInterval(data);
+      return refetchInterval({ state: { data } });
     };
 
     it('polls a grant, whose split moves every block', () => {

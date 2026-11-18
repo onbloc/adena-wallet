@@ -1,5 +1,5 @@
 import { WarningBox, type WarningBoxProps } from '.';
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 
 export default {
   title: 'components/common/WarningBox',

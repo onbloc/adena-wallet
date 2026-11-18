@@ -1,6 +1,6 @@
 import SideMenuAccountList from './side-menu-account-list';
-import { Meta, StoryObj } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react-vite';
+import { action } from 'storybook/actions';
 import { SideMenuAccountListProps } from '@types';
 
 export default {

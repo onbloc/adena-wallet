@@ -1,13 +1,6 @@
-import { isSessionAccount, SessionAccount } from 'adena-module';
-import { useCallback, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-
 import IconCopy from '@assets/icon-copy';
 import IconCopyCheck from '@assets/icon-copy-check';
 import IconThunder from '@assets/icon-thunder';
-import { AccountSelectorButton, HamburgerMenuBtn, NetworkIconButton } from '@components/atoms';
-
 import {
   WALLET_EXPORT_ACCOUNT_ID,
   WALLET_EXPORT_TYPE_STORAGE_KEY,
@@ -15,6 +8,7 @@ import {
 import { AdenaStorage } from '@common/storage';
 import { isRevokedSessionAccount } from '@common/utils/account-session';
 import { formatNickname, getSiteName } from '@common/utils/client-utils';
+import { AccountSelectorButton, HamburgerMenuBtn, NetworkIconButton } from '@components/atoms';
 import { AccountAddressesPopover } from '@components/pages/router/top-menu/account-addresses-popover';
 import { SessionAddressWarningPopover } from '@components/pages/router/top-menu/session-address-warning-popover';
 import { SessionOverviewPopover } from '@components/pages/router/top-menu/session-overview-popover';
@@ -32,6 +26,11 @@ import UnresponsiveNetworksIndicator from '@router/popup/header/unresponsive-net
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
+import { isSessionAccount, SessionAccount } from 'adena-module';
+import type { JSX } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import styled from 'styled-components';
 
 import { useHoverPopover } from './use-hover-popover';
 
@@ -74,7 +73,7 @@ const StyledSessionAccountButton = styled.button`
 `;
 
 const StyledCopyIconButton = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isActive',
+  shouldForwardProp: prop => prop !== 'isActive',
 })<{ isActive?: boolean }>`
   display: inline-flex;
   align-items: center;
@@ -270,9 +269,9 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     : hostname && hostname.includes('.')
       ? hostname
       : 'chrome-extension';
-  const sessionMetadata =
-    isSession && currentAddress
-      ? sessions.find((s) => s.sessionAddr === currentAddress)
+  const sessionMetadata
+    = isSession && currentAddress
+      ? sessions.find(s => s.sessionAddr === currentAddress)
       : undefined;
   const sessionConfig = isSession ? (currentAccount as SessionAccount).sessionConfig : null;
   const sessionRevoked = isRevokedSessionAccount(currentAccount, currentAddress, sessions);
@@ -311,93 +310,97 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     openSecurity();
   }, [currentAccount, openSecurity, sessionPopover]);
 
-  return !disabled ? (
-    <Wrapper>
-      <Header>
-        <StyledLeftSideWrapper>
-          <AccountSelectorButton
-            name={formatNickname(currentAccountName, 12)}
-            onClick={goToAccounts}
-          />
-          <StyledCopyIconButton
-            ref={copyPopover.anchorRef}
-            type='button'
-            isActive={copyPopover.open}
-            onClick={handleCopyIconClick}
-            onMouseEnter={handleCopyIconMouseEnter}
-            onMouseLeave={copyPopover.onAnchorMouseLeave}
-            aria-label={isSession ? 'Session account address info' : 'Copy address'}
-          >
-            {addressCopied && !isSession ? <IconCopyCheck /> : <IconCopy />}
-          </StyledCopyIconButton>
-        </StyledLeftSideWrapper>
-        <StyledRightSideWrapper>
-          <UnresponsiveNetworksIndicator networks={unresponsiveNetworks} />
-          {isSession && (
-            <StyledSessionAccountButton
-              ref={sessionPopover.anchorRef}
-              type='button'
-              aria-label='Session account overview'
-              onMouseEnter={handleSessionIconMouseEnter}
-              onMouseLeave={sessionPopover.onAnchorMouseLeave}
-            >
-              <IconThunder />
-            </StyledSessionAccountButton>
+  return !disabled
+    ? (
+        <Wrapper>
+          <Header>
+            <StyledLeftSideWrapper>
+              <AccountSelectorButton
+                name={formatNickname(currentAccountName, 12)}
+                onClick={goToAccounts}
+              />
+              <StyledCopyIconButton
+                ref={copyPopover.anchorRef}
+                type='button'
+                isActive={copyPopover.open}
+                onClick={handleCopyIconClick}
+                onMouseEnter={handleCopyIconMouseEnter}
+                onMouseLeave={copyPopover.onAnchorMouseLeave}
+                aria-label={isSession ? 'Session account address info' : 'Copy address'}
+              >
+                {addressCopied && !isSession ? <IconCopyCheck /> : <IconCopy />}
+              </StyledCopyIconButton>
+            </StyledLeftSideWrapper>
+            <StyledRightSideWrapper>
+              <UnresponsiveNetworksIndicator networks={unresponsiveNetworks} />
+              {isSession && (
+                <StyledSessionAccountButton
+                  ref={sessionPopover.anchorRef}
+                  type='button'
+                  aria-label='Session account overview'
+                  onMouseEnter={handleSessionIconMouseEnter}
+                  onMouseLeave={sessionPopover.onAnchorMouseLeave}
+                >
+                  <IconThunder />
+                </StyledSessionAccountButton>
+              )}
+              <NetworkIconButton isConnected={isEstablish} hostname={displayHostname} />
+              <HamburgerMenuBtn type='button' onClick={goToSettings} />
+            </StyledRightSideWrapper>
+          </Header>
+          {isSession
+            ? (
+                <SessionAddressWarningPopover
+                  open={copyPopover.open}
+                  positionX={copyPosition.x}
+                  positionY={copyPosition.y}
+                  onMouseEnter={copyPopover.onPopoverMouseEnter}
+                  onMouseLeave={copyPopover.onPopoverMouseLeave}
+                />
+              )
+            : (
+                <AccountAddressesPopover
+                  open={copyPopover.open}
+                  positionX={copyPosition.x}
+                  positionY={copyPosition.y}
+                  onMouseEnter={copyPopover.onPopoverMouseEnter}
+                  onMouseLeave={copyPopover.onPopoverMouseLeave}
+                  entries={chainAddressEntries}
+                />
+              )}
+          {sessionConfig && (
+            <SessionOverviewPopover
+              open={sessionPopover.open}
+              positionY={sessionPosition.y}
+              caretRight={sessionPosition.caretRight}
+              onMouseEnter={sessionPopover.onPopoverMouseEnter}
+              onMouseLeave={sessionPopover.onPopoverMouseLeave}
+              masterAddress={sessionConfig.masterAddress}
+              expiresAt={sessionConfig.expiresAt ?? 0}
+              allowPaths={
+                sessionChainData?.allowPaths
+                ?? sessionMetadata?.allowPaths
+                ?? sessionConfig.allowPaths
+                ?? []
+              }
+              spendLimitUgnot={sessionChainData?.spendLimit || sessionConfig.spendLimit}
+              spendPeriod={
+                sessionChainData?.spendPeriod
+                ?? sessionConfig.spendPeriod
+                ?? sessionMetadata?.spendPeriod
+              }
+              spendUsedUgnot={sessionChainData?.spendUsed ?? sessionMetadata?.spendUsed}
+              spendReset={sessionChainData?.spendReset ?? sessionMetadata?.spendReset}
+              revoked={sessionRevoked}
+              onRemoveAccount={handleRemoveRevokedAccount}
+              onExportKey={handleExportRevokedKey}
+              onOpenAccount={handleOpenAccount}
+              onOpenRealm={handleOpenRealm}
+            />
           )}
-          <NetworkIconButton isConnected={isEstablish} hostname={displayHostname} />
-          <HamburgerMenuBtn type='button' onClick={goToSettings} />
-        </StyledRightSideWrapper>
-      </Header>
-      {isSession ? (
-        <SessionAddressWarningPopover
-          open={copyPopover.open}
-          positionX={copyPosition.x}
-          positionY={copyPosition.y}
-          onMouseEnter={copyPopover.onPopoverMouseEnter}
-          onMouseLeave={copyPopover.onPopoverMouseLeave}
-        />
-      ) : (
-        <AccountAddressesPopover
-          open={copyPopover.open}
-          positionX={copyPosition.x}
-          positionY={copyPosition.y}
-          onMouseEnter={copyPopover.onPopoverMouseEnter}
-          onMouseLeave={copyPopover.onPopoverMouseLeave}
-          entries={chainAddressEntries}
-        />
-      )}
-      {sessionConfig && (
-        <SessionOverviewPopover
-          open={sessionPopover.open}
-          positionY={sessionPosition.y}
-          caretRight={sessionPosition.caretRight}
-          onMouseEnter={sessionPopover.onPopoverMouseEnter}
-          onMouseLeave={sessionPopover.onPopoverMouseLeave}
-          masterAddress={sessionConfig.masterAddress}
-          expiresAt={sessionConfig.expiresAt ?? 0}
-          allowPaths={
-            sessionChainData?.allowPaths ??
-            sessionMetadata?.allowPaths ??
-            sessionConfig.allowPaths ??
-            []
-          }
-          spendLimitUgnot={sessionChainData?.spendLimit || sessionConfig.spendLimit}
-          spendPeriod={
-            sessionChainData?.spendPeriod ??
-            sessionConfig.spendPeriod ??
-            sessionMetadata?.spendPeriod
-          }
-          spendUsedUgnot={sessionChainData?.spendUsed ?? sessionMetadata?.spendUsed}
-          spendReset={sessionChainData?.spendReset ?? sessionMetadata?.spendReset}
-          revoked={sessionRevoked}
-          onRemoveAccount={handleRemoveRevokedAccount}
-          onExportKey={handleExportRevokedKey}
-          onOpenAccount={handleOpenAccount}
-          onOpenRealm={handleOpenRealm}
-        />
-      )}
-    </Wrapper>
-  ) : (
-    <></>
-  );
+        </Wrapper>
+      )
+    : (
+        <></>
+      );
 };

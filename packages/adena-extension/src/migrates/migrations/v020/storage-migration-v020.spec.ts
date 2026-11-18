@@ -70,7 +70,7 @@ describe('StorageMigration020', () => {
         ],
       }),
     );
-    const test13 = result.data.NETWORKS.find((n) => n.chainId === 'test-13');
+    const test13 = result.data.NETWORKS.find(n => n.chainId === 'test-13');
     expect(test13).toBeDefined();
     expect(test13?.rpcUrl).toBe('XXXXX');
     expect(test13?.indexerUrl).toBe('https://indexer.test-13.gnoland.network:443');

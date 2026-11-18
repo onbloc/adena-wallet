@@ -1,8 +1,8 @@
-import styled from 'styled-components';
-
 import IconLedger from '@assets/web/ledger.svg';
 import { View, WebButton, WebImg } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
+import type { JSX } from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   row-gap: 18px;

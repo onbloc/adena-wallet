@@ -1,6 +1,7 @@
 import { CopyIconButton, FullButtonRightIcon } from '@components/atoms';
 import { QRCodeSVG } from 'qrcode.react';
 import React, { useCallback } from 'react';
+
 import AccountNameInput from '../account-name-input';
 import { AccountDetailsWrapper } from './account-details.styles';
 
@@ -74,20 +75,20 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
       <div className='button-group-wrapper'>
         <FullButtonRightIcon
           icon='WEBLINK'
-          title={'View on GnoScan'}
+          title='View on GnoScan'
           onClick={onClickViewOnGnoscan}
         />
         {hasSessions && (
-          <FullButtonRightIcon title={'Session Accounts'} onClick={moveManageSessions} />
+          <FullButtonRightIcon title='Session Accounts' onClick={moveManageSessions} />
         )}
         <FullButtonRightIcon
           disabled={!hasPrivateKey}
-          title={'Export Private Key'}
+          title='Export Private Key'
           onClick={onClickExportPrivateKey}
         />
         <FullButtonRightIcon
           disabled={!hasSeedPhrase}
-          title={'Reveal Seed Phrase'}
+          title='Reveal Seed Phrase'
           onClick={onClickRevealSeedPhrase}
         />
       </div>

@@ -1,7 +1,7 @@
-import React, { ReactElement } from 'react';
-import styled from 'styled-components';
 import { Loading, SkeletonBoxStyle } from '@components/atoms';
 import mixins from '@styles/mixins';
+import React, { ReactElement } from 'react';
+import styled from 'styled-components';
 
 const Wrapper = styled.div`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};

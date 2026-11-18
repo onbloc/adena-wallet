@@ -1,9 +1,9 @@
-import React from 'react';
-
-import { SessionDetailCard } from '@components/molecules/session-detail-card';
 import IconChevronDown from '@assets/icon-chevron-down';
 import IconShare from '@assets/icon-share';
 import { formatAddress } from '@common/utils/client-utils';
+import { SessionDetailCard } from '@components/molecules/session-detail-card';
+import type { JSX } from 'react';
+import React from 'react';
 
 import {
   Card,

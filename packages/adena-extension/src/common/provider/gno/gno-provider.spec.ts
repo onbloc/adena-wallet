@@ -1,18 +1,20 @@
 import { stringToBase64 } from '@gnolang/tm2-js-client';
 import axios from 'axios';
+import type { Mock } from 'vitest';
+
 import { GnoProvider } from './gno-provider';
 import { postABCIResponse } from './utils';
 
-jest.mock('./utils', () => ({
-  ...jest.requireActual('./utils'),
-  postABCIResponse: jest.fn(),
+vi.mock('./utils', async () => ({
+  ...(await vi.importActual<typeof import('./utils')>('./utils')),
+  postABCIResponse: vi.fn(),
 }));
 
-jest.mock('axios');
+vi.mock('axios');
 
 describe('GnoProvider', () => {
-  const postABCIResponseMock = postABCIResponse as jest.Mock;
-  const axiosPostMock = axios.post as jest.Mock;
+  const postABCIResponseMock = postABCIResponse as Mock;
+  const axiosPostMock = axios.post as Mock;
 
   beforeEach(() => {
     postABCIResponseMock.mockReset();
@@ -78,7 +80,7 @@ describe('GnoProvider', () => {
   describe('evaluateFunction', () => {
     const makeProvider = (response: string): GnoProvider => {
       const provider = new GnoProvider('https://rpc.example', 'test-13');
-      jest.spyOn(provider, 'evaluateExpression').mockResolvedValue(response);
+      vi.spyOn(provider, 'evaluateExpression').mockResolvedValue(response);
       return provider;
     };
 
@@ -126,7 +128,7 @@ describe('GnoProvider', () => {
 
     it('escapes string arguments instead of splicing them in raw', async () => {
       const provider = makeProvider('("" string)');
-      const evaluateExpression = jest.spyOn(provider, 'evaluateExpression');
+      const evaluateExpression = vi.spyOn(provider, 'evaluateExpression');
 
       await provider.evaluateFunction('gno.land/r/gnoswap/gnft', 'TokenURI', ['a"b']);
 
@@ -146,7 +148,7 @@ describe('GnoProvider', () => {
 
     it('returns null when the node call fails', async () => {
       const provider = new GnoProvider('https://rpc.example', 'test-13');
-      jest.spyOn(provider, 'evaluateExpression').mockRejectedValue(new Error('boom'));
+      vi.spyOn(provider, 'evaluateExpression').mockRejectedValue(new Error('boom'));
 
       await expect(
         provider.evaluateFunction('gno.land/r/gnoswap/gnft', 'Name'),

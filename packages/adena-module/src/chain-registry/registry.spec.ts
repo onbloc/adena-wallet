@@ -4,7 +4,7 @@ import {
   ATOMONE_NETWORK_PROFILES,
   GNO_CHAIN,
   GNO_MAINNET,
-  GNO_NETWORK_PROFILES,
+  GNO_NETWORK_PROFILES
 } from './__fixtures__/chains';
 import { ChainRegistryImpl } from './registry';
 import { CosmosNetworkProfile, GnoNetworkProfile } from './types';
@@ -18,8 +18,8 @@ describe('ChainRegistry', () => {
     registry = new ChainRegistryImpl();
     registry.registerChain(GNO_CHAIN);
     registry.registerChain(ATOMONE_CHAIN);
-    [...GNO_NETWORK_PROFILES, ...ATOMONE_NETWORK_PROFILES].forEach((p) =>
-      registry.registerNetworkProfile(p),
+    [...GNO_NETWORK_PROFILES, ...ATOMONE_NETWORK_PROFILES].forEach(p =>
+      registry.registerNetworkProfile(p)
     );
   });
 
@@ -72,7 +72,6 @@ describe('ChainRegistry', () => {
   });
 
   it('list returns all registered profiles', () => {
-
     expect(registry.list()).toHaveLength(TOTAL_PROFILES);
   });
 

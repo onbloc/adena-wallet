@@ -1,17 +1,19 @@
+import type { Mock } from 'vitest';
+
 import { Storage } from './storage';
 import { StorageManager } from './storage-manager';
 
 describe('StorageManager.get', () => {
-  let mockStorageGet: jest.Mock;
+  let mockStorageGet: Mock;
   let manager: StorageManager;
 
   beforeEach(() => {
-    mockStorageGet = jest.fn();
+    mockStorageGet = vi.fn();
     const mockStorage = {
       get: mockStorageGet,
-      set: jest.fn(),
-      remove: jest.fn(),
-      clear: jest.fn(),
+      set: vi.fn(),
+      remove: vi.fn(),
+      clear: vi.fn(),
     } as unknown as Storage;
     manager = new StorageManager(mockStorage);
   });

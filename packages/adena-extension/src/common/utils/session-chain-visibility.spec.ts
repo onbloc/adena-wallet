@@ -10,25 +10,25 @@ describe('session-chain-visibility', () => {
   });
 
   it('marks revoked only after grace and a failed recheck', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     const result = shouldMarkSessionRevoked({ createdAt: 1 }, async () => false);
 
-    jest.advanceTimersByTime(1_500);
+    vi.advanceTimersByTime(1_500);
     await expect(result).resolves.toBe(true);
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('does not mark revoked after grace if the recheck finds the session', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     const result = shouldMarkSessionRevoked({ createdAt: 1 }, async () => true);
 
-    jest.advanceTimersByTime(1_500);
+    vi.advanceTimersByTime(1_500);
     await expect(result).resolves.toBe(false);
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('never marks revoked while still in creation grace', async () => {
-    const recheck = jest.fn();
+    const recheck = vi.fn();
     await expect(shouldMarkSessionRevoked(null, recheck)).resolves.toBe(false);
     expect(recheck).not.toHaveBeenCalled();
   });

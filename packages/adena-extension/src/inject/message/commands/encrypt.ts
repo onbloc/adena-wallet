@@ -69,7 +69,8 @@ export async function clearInMemoryKey(memoryProvider: MemoryProvider): Promise<
 
     try {
       await chrome.storage.session.remove(SESSION_KEY);
-    } catch (e) {
+    }
+    catch (e) {
       console.warn('Failed to remove the session copy of the encrypt key', e);
     }
   });
@@ -134,7 +135,8 @@ async function restoreOrGenerateKey(memoryProvider: MemoryProvider): Promise<Cry
     memoryProvider.set(MEMORY_KEY, key);
 
     return memoryProvider.get<CryptoKey>(MEMORY_KEY) || null;
-  } catch (e) {
+  }
+  catch (e) {
     console.error(e);
   }
 
@@ -159,7 +161,8 @@ async function restoreSessionKey(): Promise<CryptoKey | null> {
       true,
       KEY_USAGES,
     );
-  } catch (e) {
+  }
+  catch (e) {
     console.warn('Failed to restore the encrypt key from session storage', e);
     return null;
   }
@@ -171,7 +174,8 @@ async function persistSessionKey(key: CryptoKey): Promise<void> {
   try {
     const jwk = await crypto.subtle.exportKey('jwk', key);
     await chrome.storage.session.set({ [SESSION_KEY]: jwk });
-  } catch (e) {
+  }
+  catch (e) {
     console.warn('Failed to persist the encrypt key to session storage', e);
   }
 }

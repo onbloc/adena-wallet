@@ -1,12 +1,14 @@
-import { Wallet } from 'adena-module';
 import { WalletRepository } from '@repositories/wallet';
+import { Wallet } from 'adena-module';
+import type { Mock } from 'vitest';
+
 import { WalletService } from './wallet';
 
-type MockRepository = WalletRepository & { [key: string]: jest.Mock };
+type MockRepository = WalletRepository & { [key: string]: Mock };
 
 function makeRepo({ serialized = '', unlocked = true } = {}): MockRepository {
   return {
-    getSerializedWallet: jest.fn(async () => {
+    getSerializedWallet: vi.fn(async () => {
       if (!serialized) {
         throw new Error('NOT_FOUND_SERIALIZED');
       }
@@ -14,10 +16,10 @@ function makeRepo({ serialized = '', unlocked = true } = {}): MockRepository {
     }),
     // The session password is shared by every document, so this is what decides
     // whether a cached wallet may still be reused.
-    existsWalletPassword: jest.fn(async () => unlocked),
-    getWalletPassword: jest.fn(async () => 'password'),
-    getKdfSalt: jest.fn(async () => null),
-    deleteWalletPassword: jest.fn(async () => true),
+    existsWalletPassword: vi.fn(async () => unlocked),
+    getWalletPassword: vi.fn(async () => 'password'),
+    getKdfSalt: vi.fn(async () => null),
+    deleteWalletPassword: vi.fn(async () => true),
   } as unknown as MockRepository;
 }
 

@@ -47,7 +47,8 @@ function getCacheStorage(): ChromeCacheStorage | null {
 
   try {
     cacheStorage = new ChromeCacheStorage();
-  } catch {
+  }
+  catch {
     // No chrome.storage available: the list falls back to balance order.
     return null;
   }
@@ -114,8 +115,8 @@ export async function readTokenOrder(scope: string): Promise<string[] | null> {
     return null;
   }
 
-  const entry: TokenOrderEntry | null =
-    (await storage.get(entryKey(scope)).catch(() => null)) ?? null;
+  const entry: TokenOrderEntry | null
+    = (await storage.get(entryKey(scope)).catch(() => null)) ?? null;
 
   const order = entry?.order;
   if (!Array.isArray(order)) {
@@ -184,8 +185,9 @@ export async function sweepTokenOrders(liveAccountIds: string[]): Promise<void> 
       return;
     }
 
-    await Promise.all(stale.map((key) => storage.remove(key)));
-  } catch (error) {
+    await Promise.all(stale.map(key => storage.remove(key)));
+  }
+  catch (error) {
     console.warn('[token-order] failed to sweep orders', error);
   }
 }
@@ -207,7 +209,7 @@ export async function clearTokenOrderCache(): Promise<void> {
 
   const remove = pendingWrites.then(async () => {
     const entries = await storage.getByPrefix(TOKEN_ORDER_CACHE_KEY_PREFIX);
-    await Promise.all(Object.keys(entries).map((key) => storage.remove(key)));
+    await Promise.all(Object.keys(entries).map(key => storage.remove(key)));
   });
 
   pendingWrites = remove.then(

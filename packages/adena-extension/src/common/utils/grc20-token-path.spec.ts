@@ -5,9 +5,9 @@ import {
   parseTokenIdentifier,
   parseTokenPath,
   registryKeyToTokenPath,
+  tokenIdentifierToRegistryKey,
   toRegistryKey,
   toTokenPath,
-  tokenIdentifierToRegistryKey,
 } from './grc20-token-path';
 
 const PKG = 'gno.land/r/demo/foo20';

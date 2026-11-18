@@ -1,6 +1,6 @@
 import { CommonState } from '@states';
-import { useLocation } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
+import { useLocation } from 'react-router';
 
 export type UstHistoryDataReturn<T> = {
   getHistoryData: () => T | undefined;
@@ -10,7 +10,7 @@ export type UstHistoryDataReturn<T> = {
 
 const useHistoryData = <T>(): UstHistoryDataReturn<T> => {
   const location = useLocation();
-  const [historyState, setHistoryState] = useRecoilState(CommonState.historyState);
+  const [historyState, setHistoryState] = useAtom(CommonState.historyState);
 
   function getLocationPath(): string {
     return location.pathname;

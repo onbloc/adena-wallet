@@ -3,6 +3,7 @@ import {
   MSG_REVOKE_ALL_SESSIONS_ENDPOINT,
   MSG_REVOKE_SESSION_ENDPOINT,
 } from 'adena-module';
+
 import {
   validateTransactionMessageOfCreateSession,
   validateTransactionMessageOfEnablePackage,

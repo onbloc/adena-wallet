@@ -1,14 +1,14 @@
 import { ABCIAccount, JSONRPCProvider, Provider, Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 
-import { makeSignedTx } from '..';
 import { Document } from '../../utils/messages';
+import { makeSignedTx } from '..';
 import { HDWalletKeyring } from './hd-wallet-keyring';
 import { PrivateKeyKeyring } from './private-key-keyring';
 import { signGnoDocument } from './sign-gno-document';
 import { Web3AuthKeyring } from './web3-auth-keyring';
 
-const MNEMONIC =
-  'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
+const MNEMONIC
+  = 'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
 
 function makeDocument(body: string): Document {
   return {
@@ -21,16 +21,16 @@ function makeDocument(body: string): Document {
           package: {
             name: 'hello',
             path: 'gno.land/r/demo/hello',
-            files: [{ name: 'hello.gno', body }],
-          },
-        },
-      },
+            files: [{ name: 'hello.gno', body }]
+          }
+        }
+      }
     ],
     fee: { amount: [{ amount: '1', denom: 'ugnot' }], gas: '5000000' },
     chain_id: 'dev',
     memo: '',
     account_number: '0',
-    sequence: '1',
+    sequence: '1'
   };
 }
 
@@ -39,8 +39,8 @@ describe('signGnoDocument', () => {
 
   beforeEach(() => {
     mockProvider = new JSONRPCProvider('');
-    mockProvider.getStatus = jest.fn().mockResolvedValue({
-      node_info: { network: 'dev' },
+    mockProvider.getStatus = vi.fn().mockResolvedValue({
+      node_info: { network: 'dev' }
     });
     const account: ABCIAccount = {
       BaseAccount: {
@@ -48,10 +48,10 @@ describe('signGnoDocument', () => {
         coins: '',
         public_key: null,
         account_number: '0',
-        sequence: '1',
-      },
+        sequence: '1'
+      }
     };
-    mockProvider.getAccount = jest.fn().mockResolvedValue(account);
+    mockProvider.getAccount = vi.fn().mockResolvedValue(account);
   });
 
   it('returns 64-byte signature with /tm.PubKeySecp256k1 wrapper', async () => {
@@ -61,7 +61,7 @@ describe('signGnoDocument', () => {
       mockProvider,
       doc,
       keyring,
-      { hdPath: 0 },
+      { hdPath: 0 }
     );
     expect(signature).toHaveLength(1);
     expect(signature[0].signature.length).toBe(64);
@@ -73,7 +73,7 @@ describe('signGnoDocument', () => {
     const keyring = await HDWalletKeyring.fromMnemonic(MNEMONIC);
     const doc = makeDocument(`package hello\n// ${ch}\n`);
     const { signature } = await signGnoDocument(mockProvider, doc, keyring, {
-      hdPath: 0,
+      hdPath: 0
     });
     expect(signature[0].signature.length).toBe(64);
   });
@@ -93,7 +93,7 @@ describe('signGnoDocument', () => {
       mockProvider,
       doc,
       keyring,
-      { hdPath: 0 },
+      { hdPath: 0 }
     );
     const legacyHex = Buffer.from(Tx.encode(legacySigned).finish()).toString('hex');
     const newHex = Buffer.from(Tx.encode(newSigned).finish()).toString('hex');
@@ -114,7 +114,7 @@ describe('signGnoDocument', () => {
     const pkPublicKey = await tm2Wallet.getSigner().getPublicKey();
     const keyring = new PrivateKeyKeyring({
       privateKey: Array.from(privateKey),
-      publicKey: Array.from(pkPublicKey),
+      publicKey: Array.from(pkPublicKey)
     });
     const { signed: newSigned } = await signGnoDocument(mockProvider, doc, keyring);
     const legacyHex = Buffer.from(Tx.encode(legacySigned).finish()).toString('hex');
@@ -133,7 +133,7 @@ describe('signGnoDocument', () => {
     const pkPublicKey = await tm2Wallet.getSigner().getPublicKey();
     const keyring = new Web3AuthKeyring({
       privateKey: Array.from(privateKey),
-      publicKey: Array.from(pkPublicKey),
+      publicKey: Array.from(pkPublicKey)
     });
     const { signed: newSigned } = await signGnoDocument(mockProvider, doc, keyring);
     const legacyHex = Buffer.from(Tx.encode(legacySigned).finish()).toString('hex');
@@ -150,14 +150,14 @@ describe('signGnoDocument', () => {
     const doc: Document = {
       ...makeDocument('package hello\n'),
       account_number: '',
-      sequence: '',
+      sequence: ''
     };
     const { signature } = await signGnoDocument(mockProvider, doc, keyring, {
-      hdPath: 0,
+      hdPath: 0
     });
     expect(signature[0].signature.length).toBe(64);
     expect(mockProvider.getAccount).toHaveBeenCalledWith(
-      'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
+      'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5'
     );
   });
 
@@ -166,12 +166,12 @@ describe('signGnoDocument', () => {
     const doc: Document = {
       ...makeDocument('package hello\n'),
       account_number: '',
-      sequence: '',
+      sequence: ''
     };
     const { signature } = await signGnoDocument(mockProvider, doc, keyring, {
       hdPath: 0,
       accountNumber: '42',
-      sequence: '7',
+      sequence: '7'
     });
     expect(signature[0].signature.length).toBe(64);
     expect(mockProvider.getAccount).not.toHaveBeenCalled();

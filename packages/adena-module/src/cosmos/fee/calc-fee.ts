@@ -13,7 +13,7 @@ export const DEFAULT_GAS_SAFETY_MARGIN = 1.3;
 export const FEE_PRESET_MULTIPLIERS = {
   SLOW: 1.0,
   AVERAGE: 1.2,
-  FAST: 1.5,
+  FAST: 1.5
 } as const;
 
 /**
@@ -30,7 +30,7 @@ export function calcFee({
   gasMultiplier,
   minBaseGasPrice,
   feeDenom,
-  gasSafetyMargin = DEFAULT_GAS_SAFETY_MARGIN,
+  gasSafetyMargin = DEFAULT_GAS_SAFETY_MARGIN
 }: CalcFeeInput): StdFee {
   if (!Number.isFinite(gasUsed) || gasUsed <= 0) {
     throw new Error(`calcFee: invalid gasUsed=${gasUsed}`);
@@ -46,12 +46,12 @@ export function calcFee({
   const amount = ceilGasLimitTimesDecTimesMultiplier(
     gasLimit,
     minBaseGasPrice,
-    gasMultiplier,
+    gasMultiplier
   );
 
   return {
     amount: [{ denom: feeDenom, amount }],
-    gas: gasLimit.toString(),
+    gas: gasLimit.toString()
   };
 }
 
@@ -62,11 +62,11 @@ const TOTAL_SCALE = DEC_SCALE + MULTIPLIER_SCALE;
 function ceilGasLimitTimesDecTimesMultiplier(
   gasLimit: number,
   priceDec: string,
-  multiplier: number,
+  multiplier: number
 ): string {
   const priceScaled = decStringToScaledBigInt(priceDec, DEC_SCALE);
   const multiplierScaled = BigInt(
-    Math.round(multiplier * 10 ** MULTIPLIER_SCALE),
+    Math.round(multiplier * 10 ** MULTIPLIER_SCALE)
   );
   const product = BigInt(gasLimit) * priceScaled * multiplierScaled;
   // Divisor built from a string literal — BigInt ** is downleveled to

@@ -3,16 +3,6 @@ import {
   WalletResponseRejectType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
-import {
-  isAirgapAccount,
-  isLedgerAccount,
-  isMultisigAccount,
-  isSessionAccount,
-} from 'adena-module';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-
 import UnknownLogo from '@assets/common-unknown-logo.svg';
 import {
   createFaviconByHostname,
@@ -33,6 +23,15 @@ import { SignArbitraryExecuteType, SignArbitraryParams } from '@inject/types';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
+import {
+  isAirgapAccount,
+  isLedgerAccount,
+  isMultisigAccount,
+  isSessionAccount,
+} from 'adena-module';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import styled from 'styled-components';
 
 // Only the success response needs this: the SDK's `WalletMessageInfo` has no
 // SIGN_ARBITRARY row, so `InjectionMessageInstance.success` would throw on
@@ -56,8 +55,8 @@ function createSignArbitraryResponse(
   };
 }
 
-const NOTICE_MESSAGE =
-  'This signature proves you own this address. \nIt isn’t a transaction and won’t move funds.';
+const NOTICE_MESSAGE
+  = 'This signature proves you own this address. \nIt isn’t a transaction and won’t move funds.';
 
 const ApproveSignArbitraryContainer: React.FC = () => {
   const navigate = useNavigate();
@@ -78,7 +77,7 @@ const ApproveSignArbitraryContainer: React.FC = () => {
   useEffect(() => {
     walletService
       .isLocked()
-      .then((locked) => locked && navigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && navigate(RoutePath.ApproveLogin + location.search));
   }, [walletService]);
 
   // Refused for the same reason the Cosmos handlers refuse it: a SessionAccount
@@ -151,7 +150,8 @@ const ApproveSignArbitraryContainer: React.FC = () => {
         setSigner(data.signer);
         setMessage(data.data);
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.warn('[ApproveSignArbitrary] initRequest failed:', error);
     }
   }, [location]);
@@ -207,7 +207,8 @@ const ApproveSignArbitraryContainer: React.FC = () => {
       );
       chrome.runtime.sendMessage(createSignArbitraryResponse('success', key, { ...response }));
       window.close();
-    } catch (error) {
+    }
+    catch (error) {
       const detail = (error as Error)?.message ?? String(error);
       setProcessing(false);
       chrome.runtime.sendMessage(

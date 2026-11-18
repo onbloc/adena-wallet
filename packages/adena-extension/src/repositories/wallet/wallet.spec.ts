@@ -1,16 +1,18 @@
 import { StorageManager } from '@common/storage/storage-manager';
+import type { Mock } from 'vitest';
+
 import { WalletRepository } from './wallet';
 
 describe('WalletRepository.getKdfSalt', () => {
-  let mockGet: jest.Mock;
-  let mockSet: jest.Mock;
-  let mockRemove: jest.Mock;
+  let mockGet: Mock;
+  let mockSet: Mock;
+  let mockRemove: Mock;
   let repository: WalletRepository;
 
   beforeEach(() => {
-    mockGet = jest.fn();
-    mockSet = jest.fn();
-    mockRemove = jest.fn();
+    mockGet = vi.fn();
+    mockSet = vi.fn();
+    mockRemove = vi.fn();
     const mockLocalStorage = {
       get: mockGet,
       set: mockSet,
@@ -54,10 +56,10 @@ describe('WalletRepository.getKdfSalt', () => {
 
 describe('WalletRepository.deleteKdfSalt', () => {
   it('removes the KDF_SALT key from local storage', async () => {
-    const mockRemove = jest.fn();
+    const mockRemove = vi.fn();
     const mockLocalStorage = {
-      get: jest.fn(),
-      set: jest.fn(),
+      get: vi.fn(),
+      set: vi.fn(),
       remove: mockRemove,
     } as unknown as StorageManager;
     const repository = new WalletRepository(

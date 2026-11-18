@@ -1,7 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-
 import { useWalletContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
+import { useQuery } from '@tanstack/react-query';
 
 export const GET_CHAIN_BLOCK_TIME_QUERY_KEY = 'wallet/useChainBlockTime';
 
@@ -33,11 +32,10 @@ export const useChainBlockTime = (enabled: boolean, refetchIntervalMs: number): 
       return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : null;
     },
     refetchInterval: refetchIntervalMs,
-    // Deliberately off: a refetch on the same key already keeps the previous
-    // reading on screen, while carrying one ACROSS a key change would hand a
-    // new chain the old chain's clock — which can sit far in its future and
-    // report a grant as released early.
-    keepPreviousData: false,
+    // No placeholderData on purpose: a refetch on the same key already keeps
+    // the previous reading on screen, while carrying one ACROSS a key change
+    // would hand a new chain the old chain's clock — which can sit far in its
+    // future and report a grant as released early.
     enabled: enabled && !!gnoProvider,
   });
 

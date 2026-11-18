@@ -1,10 +1,11 @@
-import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { UseQueryResult } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
+
 import ManageCollections, { ManageCollectionsProps } from './manage-collections';
 
 -describe('ManageCollections Component', () => {
@@ -26,12 +27,12 @@ import ManageCollections, { ManageCollectionsProps } from './manage-collections'
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <ManageCollections {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

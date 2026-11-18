@@ -36,7 +36,7 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
     // Refresh stored entries from the chain so capability flags cannot go
     // stale; the user-owned `display` flag is preserved.
     const refreshedCollections = storedCollections.map((stored) => {
-      const fetched = collections.find((collection) => isSameCollection(collection, stored));
+      const fetched = collections.find(collection => isSameCollection(collection, stored));
       if (!fetched) {
         return stored;
       }
@@ -46,9 +46,9 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
 
     const addedCollections = collections
       .filter(
-        (collection) => !storedCollections.find((stored) => isSameCollection(collection, stored)),
+        collection => !storedCollections.find(stored => isSameCollection(collection, stored)),
       )
-      .map((collection) => ({ ...collection, display: true }));
+      .map(collection => ({ ...collection, display: true }));
 
     return tokenService.saveAccountGRC721Collections(currentAccount.id, currentNetwork.chainId, [
       ...refreshedCollections,
@@ -83,7 +83,7 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
     return tokenService.saveAccountGRC721PinnedPackages(
       currentAccount.id,
       currentNetwork.chainId,
-      pinnedCollections.filter((path) => path !== packagePath),
+      pinnedCollections.filter(path => path !== packagePath),
     );
   };
 

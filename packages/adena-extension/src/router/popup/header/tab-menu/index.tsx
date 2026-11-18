@@ -1,11 +1,11 @@
-import React from 'react';
-import styled from 'styled-components';
-
-import { Text } from '@components/atoms';
-import IconLogo from '@assets/logo-type-b.svg';
 import IconHelp from '@assets/help-fill.svg';
+import IconLogo from '@assets/logo-type-b.svg';
+import { Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import type { JSX } from 'react';
+import React from 'react';
+import styled from 'styled-components';
 
 const Container = styled.div`
   ${mixins.flex({ direction: 'row', justify: 'space-between' })}

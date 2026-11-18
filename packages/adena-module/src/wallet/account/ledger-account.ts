@@ -1,11 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
+
 import {
   HdPath,
   HdPathLike,
   isLedgerKeyring,
   Keyring,
   KeyringType,
-  toHdPath,
+  toHdPath
 } from '../../wallet/keyring';
 import { publicKeyToAddress } from './../../utils/address';
 import { Account, AccountInfo } from './account';
@@ -38,7 +39,7 @@ export class LedgerAccount implements Account {
     name,
     hdPath,
     accountIndex,
-    changeIndex,
+    changeIndex
   }: AccountInfo) {
     this.id = id || uuidv4();
     this._index = index;
@@ -86,7 +87,7 @@ export class LedgerAccount implements Account {
       accountIndex: this.accountIndex,
       changeIndex: this.changeIndex,
       publicKey: Array.from(this.publicKey),
-      name: this._name,
+      name: this._name
     };
   }
 
@@ -106,7 +107,7 @@ export class LedgerAccount implements Account {
       name,
       hdPath: addressIndex,
       accountIndex: account,
-      changeIndex: change,
+      changeIndex: change
     });
   }
 
@@ -120,7 +121,7 @@ export class LedgerAccount implements Account {
       accountIndex: accountInfo.accountIndex,
       changeIndex: accountInfo.changeIndex,
       publicKey: accountInfo.publicKey,
-      name: accountInfo.name,
+      name: accountInfo.name
     });
   }
 }

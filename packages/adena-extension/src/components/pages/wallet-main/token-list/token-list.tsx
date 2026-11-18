@@ -1,5 +1,6 @@
 import { MainToken } from '@types';
 import React from 'react';
+
 import TokenListItem from '../token-list-item/token-list-item';
 import TokenListItemPlaceholder from '../token-list-item-placeholder/token-list-item-placeholder';
 import { TokenListWrapper } from './token-list.styles';

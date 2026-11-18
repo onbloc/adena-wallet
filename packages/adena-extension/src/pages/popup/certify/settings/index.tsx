@@ -1,16 +1,16 @@
-import React, { useCallback } from 'react';
-import styled from 'styled-components';
-
 import { FullButtonRightIcon } from '@components/atoms';
 import { IconName } from '@components/atoms/icon';
 import { BottomFixedButton } from '@components/molecules';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { CommandMessage } from '@inject/message/command-message';
-import { RoutePath } from '@types';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
+import type { JSX } from 'react';
+import React, { useCallback } from 'react';
+import styled from 'styled-components';
 
 const menuMakerInfo: {
   title: string;
@@ -60,7 +60,8 @@ export const Settings = (): JSX.Element => {
     await clearWallet();
     try {
       await chrome.runtime.sendMessage(CommandMessage.command('clearPopup'));
-    } catch (error) {
+    }
+    catch (error) {
       console.warn(error);
     }
     await loadAccounts();

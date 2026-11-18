@@ -21,7 +21,7 @@ describe('parseCoins / coinsToString', () => {
 
   it('multiple coins are sorted by denom', () => {
     const coins = parseCoins('100ugnot,5uatom');
-    expect(coins.map((c) => c.denom)).toEqual(['uatom', 'ugnot']);
+    expect(coins.map(c => c.denom)).toEqual(['uatom', 'ugnot']);
   });
 
   it('rejects non-positive amount via merge', () => {

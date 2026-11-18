@@ -2,18 +2,19 @@ import { stringToBase64 } from '@common/utils/encoding-util';
 import { GlobalWebStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
+import { Provider as JotaiProvider } from 'jotai';
 import React from 'react';
-import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
+
 import { WebPrivateKeyBox } from '.';
 
 describe('WebPrivateKeyBox Component', () => {
   const renderWithTheme = (node: React.ReactElement): ReturnType<typeof render> =>
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalWebStyle />
         <ThemeProvider theme={theme}>{node}</ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
 
   it('WebPrivateKeyBox render', () => {

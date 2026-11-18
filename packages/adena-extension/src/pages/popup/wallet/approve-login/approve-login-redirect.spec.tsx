@@ -1,6 +1,7 @@
+import type { Mock } from 'vitest';
 // Stub out `@adena-wallet/sdk` to avoid loading @web3auth's native crypto,
 // which fails under jsdom's Uint8Array.
-jest.mock('@adena-wallet/sdk', () => ({
+vi.mock('@adena-wallet/sdk', () => ({
   WalletResponseFailureType: {
     NO_ACCOUNT: 'NO_ACCOUNT',
     UNEXPECTED_ERROR: 'UNEXPECTED_ERROR',
@@ -11,51 +12,50 @@ jest.mock('@adena-wallet/sdk', () => ({
   },
 }));
 
-jest.mock('adena-module', () => ({
+vi.mock('adena-module', () => ({
   isAirgapAccount: (): boolean => false,
 }));
 
-const mockNavigate = jest.fn();
+const mockNavigate = vi.fn();
 let mockSearch = '';
-jest.mock('react-router-dom', () => ({
-  useNavigate: (): jest.Mock => mockNavigate,
+vi.mock('react-router', () => ({
+  useNavigate: (): Mock => mockNavigate,
   useLocation: (): { search: string } => ({ search: mockSearch }),
 }));
 
 let mockState = 'LOGIN';
-jest.mock('@hooks/use-load-accounts', () => ({
-  useLoadAccounts: (): { state: string; loadAccounts: jest.Mock } => ({
+vi.mock('@hooks/use-load-accounts', () => ({
+  useLoadAccounts: (): { state: string; loadAccounts: Mock } => ({
     state: mockState,
-    loadAccounts: jest.fn(),
+    loadAccounts: vi.fn(),
   }),
 }));
 
-jest.mock('@hooks/use-context', () => ({
+vi.mock('@hooks/use-context', () => ({
   useAdenaContext: (): { walletService: object } => ({ walletService: {} }),
-  useWalletContext: (): { initWallet: jest.Mock } => ({ initWallet: jest.fn() }),
+  useWalletContext: (): { initWallet: Mock } => ({ initWallet: vi.fn() }),
 }));
 
-jest.mock('@hooks/use-current-account', () => ({
+vi.mock('@hooks/use-current-account', () => ({
   useCurrentAccount: (): { currentAccount: object } => ({ currentAccount: {} }),
 }));
 
 // Keep the real module: `@states` builds atoms at import time.
-jest.mock('recoil', () => ({
-  ...jest.requireActual('recoil'),
-  useRecoilState: (): [undefined, jest.Mock] => [undefined, jest.fn()],
+vi.mock('jotai', async () => ({
+  ...(await vi.importActual<typeof import('jotai')>('jotai')),
+  useAtom: (): [undefined, Mock] => [undefined, vi.fn()],
 }));
 
 // The FINISH branch renders this; its contents are irrelevant to routing.
-jest.mock('./loading-approve-transaction', () => (): null => null);
-
-import { render } from '@testing-library/react';
-import React from 'react';
-import { ThemeProvider } from 'styled-components';
-
-import theme from '@styles/theme';
+vi.mock('./loading-approve-transaction', () => ({ default: (): null => null }));
 
 import { encodeParameter } from '@common/utils/client-utils';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
 import { RoutePath } from '@types';
+import type { JSX } from 'react';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
 
 import { ApproveLogin } from '.';
 

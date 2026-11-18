@@ -1,10 +1,4 @@
 import { WalletResponseFailureType } from '@adena-wallet/sdk';
-import { isAirgapAccount } from 'adena-module';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
-import styled, { useTheme } from 'styled-components';
-
 import { PasswordValidationError } from '@common/errors';
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import { validateEmptyPassword } from '@common/validation';
@@ -17,6 +11,12 @@ import { ForgetPwd, Title } from '@pages/popup/certify/login';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
+import { isAirgapAccount } from 'adena-module';
+import { useAtom } from 'jotai';
+import type { JSX } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import styled, { useTheme } from 'styled-components';
 
 import LoadingApproveTransaction from './loading-approve-transaction';
 
@@ -33,7 +33,7 @@ export const ApproveLogin = (): JSX.Element => {
   const location = useLocation();
   const { walletService } = useAdenaContext();
   const { initWallet } = useWalletContext();
-  const [, setState] = useRecoilState(WalletState.state);
+  const [, setState] = useAtom(WalletState.state);
   const { state, loadAccounts } = useLoadAccounts();
   const { currentAccount } = useCurrentAccount();
   const [password, setPassword] = useState('');
@@ -100,7 +100,8 @@ export const ApproveLogin = (): JSX.Element => {
         setPassword('');
         setState('FINISH');
       }
-    } catch (error) {
+    }
+    catch (error) {
       if (error instanceof PasswordValidationError) {
         currentError = new PasswordValidationError('INVALID_PASSWORD');
       }
@@ -184,35 +185,37 @@ export const ApproveLogin = (): JSX.Element => {
 
   return (
     <>
-      {state === 'LOGIN' || (state === 'LOADING' && password !== '') ? (
-        <Wrapper>
-          <Title>{text}</Title>
-          <DefaultInput
-            type='password'
-            placeholder='Password'
-            value={password}
-            onChange={onChange}
-            onKeyDown={onKeyDown}
-            error={error !== null}
-            ref={inputRef}
-          />
-          <ForgetPwd onClick={onClickForgotButton}>
-            <Text type='body2Reg' color={theme.neutral.a}>
-              Forgot Password?
-            </Text>
-          </ForgetPwd>
-          <Button
-            fullWidth
-            onClick={approveButtonClick}
-            margin='auto 0px 0px'
-            disabled={!availableLogin}
-          >
-            <Text type='body1Bold'>Unlock</Text>
-          </Button>
-        </Wrapper>
-      ) : (
-        <LoadingApproveTransaction rightButtonText='Approve' />
-      )}
+      {state === 'LOGIN' || (state === 'LOADING' && password !== '')
+        ? (
+            <Wrapper>
+              <Title>{text}</Title>
+              <DefaultInput
+                type='password'
+                placeholder='Password'
+                value={password}
+                onChange={onChange}
+                onKeyDown={onKeyDown}
+                error={error !== null}
+                ref={inputRef}
+              />
+              <ForgetPwd onClick={onClickForgotButton}>
+                <Text type='body2Reg' color={theme.neutral.a}>
+                  Forgot Password?
+                </Text>
+              </ForgetPwd>
+              <Button
+                fullWidth
+                onClick={approveButtonClick}
+                margin='auto 0px 0px'
+                disabled={!availableLogin}
+              >
+                <Text type='body1Bold'>Unlock</Text>
+              </Button>
+            </Wrapper>
+          )
+        : (
+            <LoadingApproveTransaction rightButtonText='Approve' />
+          )}
     </>
   );
 };

@@ -1,11 +1,10 @@
-import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
-import styled from 'styled-components';
-
 import { stringFromBase64 } from '@common/utils/encoding-util';
 import { View, WebButton, WebText } from '@components/atoms';
 import { WebSeedValidateInputItem } from '@components/atoms/web-seed-validate-input-item';
 import { WebTitleWithDescription } from '@components/molecules';
 import { UseWalletCreateReturn } from '@hooks/web/use-wallet-create-screen';
+import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -57,8 +56,8 @@ const ValidateMnemonicStep = ({
     let currentSeeds = stringFromBase64(seeds);
 
     const currentSeedsArray = currentSeeds.split(' ');
-    const firstSeedIndex = currentSeedsArray.findIndex((word) => word === firstSeed);
-    const secondSeedIndex = currentSeedsArray.findIndex((word) => word === secondSeed);
+    const firstSeedIndex = currentSeedsArray.findIndex(word => word === firstSeed);
+    const secondSeedIndex = currentSeedsArray.findIndex(word => word === secondSeed);
 
     currentSeeds = '';
 

@@ -1,6 +1,7 @@
 import ATOMONE_CHAIN_DATA from '@resources/chains/atomone-chains.json';
 import GNO_CHAIN_DATA from '@resources/chains/chains.json';
 import { createChainRegistry } from 'adena-module';
+
 import { inferChainGroup } from './address-chain';
 import {
   ATOMONE_CHAIN,

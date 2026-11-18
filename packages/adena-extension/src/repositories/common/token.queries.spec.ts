@@ -1,5 +1,6 @@
 import { Grc20TokenPackage } from '@common/utils/grc20reg-config';
-import { Grc721TokenPackage, GRC721_TOKEN_PACKAGES } from '@common/utils/grc721-config';
+import { GRC721_TOKEN_PACKAGES, Grc721TokenPackage } from '@common/utils/grc721-config';
+
 import { makeAllTransferEventsQueryBy, makeGRC721NewTokenEventsQuery } from './token.queries';
 
 const V0: Grc20TokenPackage = {

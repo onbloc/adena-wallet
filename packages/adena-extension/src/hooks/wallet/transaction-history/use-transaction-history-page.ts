@@ -1,12 +1,12 @@
-import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
-
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import { InfiniteData, keepPreviousData, RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { TransactionInfo, TransactionWithPageInfo } from '@types';
+import { useCallback, useMemo } from 'react';
+
 import { dedupeAndSortTransactions } from './session-history-source';
 
 // API-backed (cursor paginated) transaction history. `currentAddress` already
@@ -21,9 +21,9 @@ export const useTransactionHistoryPage = ({
 }): {
   data:
     | {
-        title: string;
-        transactions: TransactionInfo[];
-      }[]
+      title: string;
+      transactions: TransactionInfo[];
+    }[]
     | null;
   isFetched: boolean;
   status: 'loading' | 'error' | 'success';
@@ -44,9 +44,16 @@ export const useTransactionHistoryPage = ({
     hasNextPage,
     refetch,
     fetchNextPage,
-  } = useInfiniteQuery<TransactionWithPageInfo, Error, unknown, any>(
+  } = useInfiniteQuery<
+    TransactionWithPageInfo,
+    Error,
+    InfiniteData<TransactionWithPageInfo>,
+    readonly unknown[],
+    string | null
+  >(
     {
       queryKey: ['history/page/all', currentNetwork.networkId, currentAddress || ''],
+      initialPageParam: null,
       getNextPageParam: (lastPage?: TransactionWithPageInfo): string | null => {
         if (!lastPage || !lastPage.page.hasNext) {
           return null;
@@ -60,14 +67,12 @@ export const useTransactionHistoryPage = ({
         }
         return transactionHistoryService.fetchAllTransactionHistory(currentAddress, cursor);
       },
-    },
-    {
       enabled:
-        !!currentAddress &&
-        tokenMetainfos.length > 0 &&
-        transactionHistoryService.supported &&
-        enabled,
-      keepPreviousData: true,
+        !!currentAddress
+        && tokenMetainfos.length > 0
+        && transactionHistoryService.supported
+        && enabled,
+      placeholderData: keepPreviousData,
       // No refetchInterval here: the history screen owns the single poll timer.
     },
   );
@@ -119,7 +124,7 @@ export const useTransactionHistoryPage = ({
     hasNextPage: hasNextPage !== false,
     fetchNextPage: (): Promise<boolean> => {
       return fetchNextPage()
-        .then((result) => !result.error)
+        .then(result => !result.error)
         .catch(() => false);
     },
     refetch: refetchTransactions,

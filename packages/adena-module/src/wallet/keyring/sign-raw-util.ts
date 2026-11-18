@@ -7,7 +7,7 @@ import { sha256 } from '../../crypto';
 // See tm2-js-client KeySigner.signData for the reference flow.
 export async function signRawWithPrivateKey(
   bytes: Uint8Array,
-  privateKey: Uint8Array,
+  privateKey: Uint8Array
 ): Promise<Uint8Array> {
   const digest = sha256(bytes);
   const signature = await Secp256k1.createSignature(digest, privateKey);

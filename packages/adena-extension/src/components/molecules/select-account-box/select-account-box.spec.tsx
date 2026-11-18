@@ -1,9 +1,10 @@
-import React from 'react';
 import { GlobalWebStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
+
 import SelectAccountBox, { SelectAccountBoxProps } from './select-account-box';
 
 describe('SelectAccountBox Component', () => {
@@ -20,12 +21,12 @@ describe('SelectAccountBox Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalWebStyle />
         <ThemeProvider theme={theme}>
           <SelectAccountBox {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

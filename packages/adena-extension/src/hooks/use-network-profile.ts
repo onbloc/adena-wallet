@@ -1,13 +1,11 @@
-import { useMemo } from 'react';
-import { useRecoilValue } from 'recoil';
-
-import { NetworkProfile } from 'adena-module';
-
 import {
   toCosmosNetworkProfile,
   toGnoNetworkProfile,
 } from '@common/mapper/network-profile-mapper';
 import { NetworkState } from '@states';
+import { NetworkProfile } from 'adena-module';
+import { useAtomValue } from 'jotai';
+import { useMemo } from 'react';
 
 /**
  * Return the NetworkProfile (endpoints, linkUrl, chainId, etc.) for the
@@ -21,8 +19,8 @@ import { NetworkState } from '@states';
  * Returns null when no network is selected for the requested chainGroup.
  */
 export const useNetworkProfile = (chainGroup = 'gno'): NetworkProfile | null => {
-  const currentGnoNetwork = useRecoilValue(NetworkState.currentNetwork);
-  const currentAtomoneNetwork = useRecoilValue(NetworkState.currentAtomoneNetwork);
+  const currentGnoNetwork = useAtomValue(NetworkState.currentNetwork);
+  const currentAtomoneNetwork = useAtomValue(NetworkState.currentAtomoneNetwork);
 
   return useMemo(() => {
     if (chainGroup === 'gno') {

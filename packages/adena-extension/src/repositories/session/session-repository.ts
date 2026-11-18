@@ -44,7 +44,8 @@ export class SessionRepository {
     try {
       const parsed = JSON.parse(raw) as SessionsMap;
       return parsed ?? {};
-    } catch {
+    }
+    catch {
       return {};
     }
   }

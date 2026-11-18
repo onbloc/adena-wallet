@@ -35,7 +35,7 @@ export function resolveNetworkMode(
     return storedMode;
   }
   if (storedCurrentId) {
-    const storedNetwork = networks.find((network) => network.id === storedCurrentId);
+    const storedNetwork = networks.find(network => network.id === storedCurrentId);
     if (storedNetwork) {
       return storedNetwork.main === true ? 'mainnet' : 'testnet';
     }
@@ -53,15 +53,15 @@ export function pickDefaultByMode(
 ): NetworkMetainfo | undefined {
   const wantsMainnet = mode === 'mainnet';
   const preferredId = wantsMainnet ? PRIMARY_MAINNET_ID : PRIMARY_TESTNET_ID;
-  const preferred = networks.find((network) => !network.deleted && network.id === preferredId);
+  const preferred = networks.find(network => !network.deleted && network.id === preferredId);
   if (preferred) {
     return preferred;
   }
   const generic = networks.find(
-    (network) => !network.deleted && (network.main === true) === wantsMainnet && network.default,
+    network => !network.deleted && (network.main === true) === wantsMainnet && network.default,
   );
   if (generic) {
     return generic;
   }
-  return networks.find((network) => !network.deleted);
+  return networks.find(network => !network.deleted);
 }

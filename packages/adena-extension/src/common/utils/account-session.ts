@@ -1,6 +1,6 @@
-import { Account, isSessionAccount } from 'adena-module';
 import { SESSION_UNSUPPORTED_CHAIN_IDS } from '@common/constants/chain.constant';
 import { NetworkMetainfo } from '@types';
+import { Account, isSessionAccount } from 'adena-module';
 
 const SESSION_MASTER_ACCOUNT_TYPES = new Set([
   'HD_WALLET',
@@ -43,5 +43,5 @@ export const isRevokedSessionAccount = (
   if (!account || !isSessionAccount(account) || !address) {
     return false;
   }
-  return sessions.find((session) => session.sessionAddr === address)?.status === 'REVOKED';
+  return sessions.find(session => session.sessionAddr === address)?.status === 'REVOKED';
 };

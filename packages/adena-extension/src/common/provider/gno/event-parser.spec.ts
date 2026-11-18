@@ -1,6 +1,6 @@
 // The SDK cannot load under jsdom; its decoders only need to hand back the
 // event fields, so the events below are carried as JSON.
-jest.mock('@adena-wallet/sdk', () => {
+vi.mock('@adena-wallet/sdk', () => {
   const decode = (input: Uint8Array): unknown => JSON.parse(Buffer.from(input).toString());
   return {
     StorageDepositEvent: { decode },

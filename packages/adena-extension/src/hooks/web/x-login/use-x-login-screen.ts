@@ -1,6 +1,4 @@
 import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
-import { useCallback, useState } from 'react';
-
 import { SocialKeySetType, X_VERIFIERS } from '@common/constants/web3auth.constant';
 import {
   createXLoginConfig,
@@ -13,6 +11,8 @@ import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { RoutePath } from '@types';
+import { useCallback, useState } from 'react';
+
 import useSocialLoginAccount, {
   SocialLoginFailType,
   toSocialLoginFailType,
@@ -51,8 +51,8 @@ const useXLoginScreen = (): UseXLoginReturn => {
   const { connectWithProvider } = useSocialLoginAccount();
   // Restored from the route state after the questionnaire round trip, which
   // remounts this screen and would otherwise reset the selection.
-  const { ableToSelectProduction, ableToSelectLegacy, ableToSelectKeySet, initialKeySetType } =
-    getSocialKeySetAvailability(X_VERIFIERS, 'X', params?.keySetType);
+  const { ableToSelectProduction, ableToSelectLegacy, ableToSelectKeySet, initialKeySetType }
+    = getSocialKeySetAvailability(X_VERIFIERS, 'X', params?.keySetType);
   const [failType, setFailType] = useState<SocialLoginFailType>('DEFAULT');
   const { currentNetwork } = useNetwork();
   // Identifies the login attempt that owns the popup, so an abandoned or
@@ -106,7 +106,8 @@ const useXLoginScreen = (): UseXLoginReturn => {
         createXLoginConfig(X_VERIFIERS[keySetType], currentNetwork),
       );
       await connectWithProvider(provider, 'WEB3_AUTH_X', isCurrentRequest);
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       if (!isCurrentRequest()) {
         return;

@@ -1,10 +1,10 @@
+import LeftArrowIcon from '@assets/arrowL-left.svg';
+import { CustomNetworkInput, SubHeader, WarningBox } from '@components/atoms';
+import { BottomFixedButtonGroup } from '@components/molecules';
+import type { ChainGroup } from '@hooks/use-network';
 import React, { useCallback, useMemo } from 'react';
 
 import { AddCustomNetworkWrapper } from './add-custom-network.styles';
-import LeftArrowIcon from '@assets/arrowL-left.svg';
-import { SubHeader, WarningBox, CustomNetworkInput } from '@components/atoms';
-import { BottomFixedButtonGroup } from '@components/molecules';
-import type { ChainGroup } from '@hooks/use-network';
 
 type FieldType = 'indexer' | 'lcd';
 
@@ -86,7 +86,7 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
       <SubHeader
         title='Add Custom Network'
         leftElement={{
-          element: <img src={LeftArrowIcon} alt={'back icon'} />,
+          element: <img src={LeftArrowIcon} alt='back icon' />,
           onClick: onClickBack,
         }}
       />

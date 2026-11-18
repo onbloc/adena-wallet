@@ -47,10 +47,10 @@ describe('StorageMigration025', () => {
 
   it('refreshes NETWORKS from chains.json and drops sapphire-1', async () => {
     const result = await new StorageMigration025().up(makeInput({ NETWORKS: [] }));
-    const mainnet = result.data.NETWORKS.find((n) => n.chainId === 'gnoland-1');
+    const mainnet = result.data.NETWORKS.find(n => n.chainId === 'gnoland-1');
     expect(mainnet).toBeDefined();
     expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
-    expect(result.data.NETWORKS.find((n) => n.chainId === 'sapphire-1')).toBeUndefined();
+    expect(result.data.NETWORKS.find(n => n.chainId === 'sapphire-1')).toBeUndefined();
   });
 
   it('removes ESTABLISH_SITES entries for sapphire-1', async () => {

@@ -1,9 +1,10 @@
-import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
+
 import MemoInput, { MemoInputProps } from './memo-input';
 
 describe('MemoInput Component', () => {
@@ -16,12 +17,12 @@ describe('MemoInput Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <MemoInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

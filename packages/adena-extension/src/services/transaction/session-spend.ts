@@ -23,7 +23,7 @@ export type Coins = Coin[];
 export function parseCoins(coinsStr: string): Coins {
   const trimmed = coinsStr.trim();
   if (trimmed === '') return [];
-  const entries = trimmed.split(',').map((e) => e.trim());
+  const entries = trimmed.split(',').map(e => e.trim());
   const result: Coins = [];
   for (const entry of entries) {
     const m = entry.match(COIN_REGEX);
@@ -46,7 +46,7 @@ function mergeAndSort(coins: Coins): Coins {
   }
   return Array.from(merged.entries())
     .map(([denom, amount]) => ({ denom, amount }))
-    .filter((c) => c.amount > ZERO)
+    .filter(c => c.amount > ZERO)
     .sort((a, b) => (a.denom < b.denom ? -1 : a.denom > b.denom ? 1 : 0));
 }
 
@@ -57,7 +57,7 @@ export function addCoins(a: Coins, b: Coins): Coins {
 // Chain Coins.IsAllGTE(other): for every denom in `other`, this has >= amount.
 // Denoms missing on the left side count as 0.
 export function isAllGTE(limit: Coins, used: Coins): boolean {
-  const limitMap = new Map(limit.map((c) => [c.denom, c.amount]));
+  const limitMap = new Map(limit.map(c => [c.denom, c.amount]));
   for (const u of used) {
     const have = limitMap.get(u.denom) ?? ZERO;
     if (have < u.amount) return false;
@@ -66,7 +66,7 @@ export function isAllGTE(limit: Coins, used: Coins): boolean {
 }
 
 export function coinsToString(coins: Coins): string {
-  return coins.map((c) => `${c.amount.toString()}${c.denom}`).join(',');
+  return coins.map(c => `${c.amount.toString()}${c.denom}`).join(',');
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -134,7 +134,8 @@ function safeParse(coinsStr: string | undefined): Coins {
   if (!coinsStr || coinsStr === '') return [];
   try {
     return parseCoins(coinsStr);
-  } catch {
+  }
+  catch {
     return [];
   }
 }

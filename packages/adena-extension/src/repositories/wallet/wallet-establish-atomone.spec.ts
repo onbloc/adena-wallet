@@ -1,17 +1,19 @@
 import { StorageManager } from '@common/storage/storage-manager';
+import type { Mock } from 'vitest';
+
 import { EstablishSite } from './wallet-establish';
 import { WalletEstablishAtomOneRepository } from './wallet-establish-atomone';
 
 describe('WalletEstablishAtomOneRepository', () => {
   let repository: WalletEstablishAtomOneRepository;
-  let mockGetToObject: jest.Mock;
-  let mockSetByObject: jest.Mock;
-  let mockRemove: jest.Mock;
+  let mockGetToObject: Mock;
+  let mockSetByObject: Mock;
+  let mockRemove: Mock;
 
   beforeEach(() => {
-    mockGetToObject = jest.fn();
-    mockSetByObject = jest.fn();
-    mockRemove = jest.fn();
+    mockGetToObject = vi.fn();
+    mockSetByObject = vi.fn();
+    mockRemove = vi.fn();
     const mockStorage = {
       getToObject: mockGetToObject,
       setByObject: mockSetByObject,

@@ -1,15 +1,17 @@
 import { EvaluatePasswordResult } from '@common/utils/password-utils';
-import { DefaultInput } from '../default-input';
-import { View } from '../base';
-import styled, { useTheme } from 'styled-components';
+import type { JSX } from 'react';
 import { useMemo } from 'react';
+import styled, { useTheme } from 'styled-components';
+
+import { View } from '../base';
+import { DefaultInput } from '../default-input';
 import { Text } from '../text';
 
 interface PasswordInputProps extends React.ComponentPropsWithoutRef<'input'> {
   evaluationResult?: EvaluatePasswordResult | null;
   error?: boolean;
   margin?: string;
-  ref?: React.RefObject<HTMLInputElement>;
+  ref?: React.RefObject<HTMLInputElement | null>;
 }
 
 const StyledPasswordInputContainer = styled(View)`

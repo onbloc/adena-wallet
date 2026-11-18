@@ -1,10 +1,12 @@
-import { AdenaWallet, WalletResponse } from '@adena-wallet/sdk';
-import type { StdSignDoc } from '@cosmjs/amino';
-import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
-import manifest from '@public/manifest.json';
+// Must stay the first import: later modules may build BigNumbers on load.
+import '@common/config/bignumber';
 
+import { AdenaWallet, WalletResponse } from '@adena-wallet/sdk';
 import { EVENT_KEYS } from '@common/constants/event-key.constant';
 import { deserializeSignDoc } from '@common/utils/cosmos-serialize';
+import type { StdSignDoc } from '@cosmjs/amino';
+import manifest from '@public/manifest.json';
+import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 
 import {
   createOfflineAminoSigner,
@@ -32,8 +34,8 @@ import {
   SendCosmosTxResponse,
   SignArbitraryParams,
   SignArbitraryResponse,
-  SignCosmosAminoResponse,
   Signature,
+  SignCosmosAminoResponse,
   SignMultisigTransactionResponse,
   SignTxResponse,
   SwitchNetworkResponse,
@@ -63,8 +65,8 @@ const init = (): void => {
       const executor = new AdenaExecutor();
 
       // Supports boolean for backward compatibility with the previous API signature
-      const resolved =
-        typeof options === 'boolean'
+      const resolved
+        = typeof options === 'boolean'
           ? { withNotification: options, isVisibleResult: options }
           : options;
       const { withNotification = true, isVisibleResult = true } = resolved ?? {};
@@ -153,7 +155,7 @@ const init = (): void => {
         case 'changedNetwork':
           window.addEventListener<(typeof EVENT_KEYS)[typeof eventName]>(
             EVENT_KEYS[eventName],
-            (event) => callbackCustomEvent<string>(event, callback),
+            event => callbackCustomEvent<string>(event, callback),
             true,
           );
           return true;

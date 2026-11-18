@@ -4,6 +4,7 @@ import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721CollectionModel } from '@types';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useMemo } from 'react';
+
 import { NFTCollectionCardWrapper } from './nft-collection-card.styles';
 
 export interface NFTCollectionCardProps {
@@ -12,11 +13,11 @@ export interface NFTCollectionCardProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: UseQueryOptions<string | null, Error>,
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   queryGRC721Balance: (
     packagePath: string,
-    options?: UseQueryOptions<number | null, Error>,
+    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<number | null>;
   pin: (collection: GRC721CollectionModel) => void;
   unpin: (collection: GRC721CollectionModel) => void;

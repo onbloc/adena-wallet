@@ -1,7 +1,8 @@
+import type { Mock } from 'vitest';
 // Stub out `@adena-wallet/sdk` to avoid loading @web3auth's native crypto,
 // which fails under jsdom's Uint8Array. Handlers use the enum values as
 // plain strings.
-jest.mock('@adena-wallet/sdk', () => ({
+vi.mock('@adena-wallet/sdk', () => ({
   WalletResponseFailureType: {
     INVALID_FORMAT: 'INVALID_FORMAT',
     NOT_CONNECTED: 'NOT_CONNECTED',
@@ -38,19 +39,24 @@ jest.mock('@adena-wallet/sdk', () => ({
   },
 }));
 
-const mockCreatePopup = jest.fn();
-jest.mock('..', () => ({
+const mockCreatePopup = vi.fn();
+vi.mock('..', () => ({
   HandlerMethod: {
     createPopup: (...args: unknown[]): unknown => mockCreatePopup(...args),
   },
 }));
 
-const mockBroadcastTx = jest.fn();
-jest.mock('@common/provider/cosmos/cosmos-lcd-provider', () => ({
-  CosmosLcdProvider: jest.fn().mockImplementation(() => ({
-    broadcastTx: mockBroadcastTx,
-  })),
+const mockBroadcastTx = vi.fn();
+vi.mock('@common/provider/cosmos/cosmos-lcd-provider', () => ({
+  CosmosLcdProvider: vi.fn().mockImplementation(function () {
+    return {
+      broadcastTx: mockBroadcastTx,
+    };
+  }),
 }));
+
+import { base64ToBytes, bytesToBase64 } from '@common/utils/encoding-util';
+import { toBech32 } from '@cosmjs/encoding';
 
 import {
   cosmosEnable,
@@ -59,24 +65,22 @@ import {
   cosmosSignAmino,
   cosmosSignDirect,
 } from './cosmos';
-import { base64ToBytes, bytesToBase64 } from '@common/utils/encoding-util';
-import { toBech32 } from '@cosmjs/encoding';
 
 const SAMPLE_ADDRESS_BYTES = new Uint8Array(20).map((_, i) => i + 1);
 const SAMPLE_BECH32 = toBech32('atone', SAMPLE_ADDRESS_BYTES);
 
 type FakeCore = {
   chainRegistry: {
-    getChainByChainId: jest.Mock;
-    listNetworkProfilesByChain: jest.Mock;
+    getChainByChainId: Mock;
+    listNetworkProfilesByChain: Mock;
   };
   establishAtomOneService: {
-    isEstablishedBy: jest.Mock;
+    isEstablishedBy: Mock;
   };
-  getCurrentAccountId: jest.Mock;
-  getCurrentAccount: jest.Mock;
-  getInMemoryKey: jest.Mock;
-  isLockedBy: jest.Mock;
+  getCurrentAccountId: Mock;
+  getCurrentAccount: Mock;
+  getInMemoryKey: Mock;
+  isLockedBy: Mock;
 };
 
 const ATOMONE_CHAIN = { chainGroup: 'atomone', bech32Prefix: 'atone' };
@@ -84,10 +88,10 @@ const ATOMONE_CHAIN = { chainGroup: 'atomone', bech32Prefix: 'atone' };
 function makeCore(overrides?: Partial<FakeCore>): FakeCore {
   const core: FakeCore = {
     chainRegistry: {
-      getChainByChainId: jest.fn((id: string) =>
+      getChainByChainId: vi.fn((id: string) =>
         id === 'atomone-1' ? ATOMONE_CHAIN : undefined,
       ),
-      listNetworkProfilesByChain: jest.fn(() => [
+      listNetworkProfilesByChain: vi.fn(() => [
         {
           id: 'atomone-1:mainnet',
           chainType: 'cosmos',
@@ -103,18 +107,18 @@ function makeCore(overrides?: Partial<FakeCore>): FakeCore {
       ]),
     },
     establishAtomOneService: {
-      isEstablishedBy: jest.fn(async () => true),
+      isEstablishedBy: vi.fn(async () => true),
     },
-    getCurrentAccountId: jest.fn(async () => 'acc-1'),
-    getCurrentAccount: jest.fn(async () => ({
+    getCurrentAccountId: vi.fn(async () => 'acc-1'),
+    getCurrentAccount: vi.fn(async () => ({
       id: 'acc-1',
       name: 'Account 1',
       type: 'HD_WALLET',
       publicKey: new Uint8Array([1, 2, 3, 4]),
       getAddress: async () => SAMPLE_BECH32,
     })),
-    getInMemoryKey: jest.fn(async () => null),
-    isLockedBy: jest.fn(async () => false),
+    getInMemoryKey: vi.fn(async () => null),
+    isLockedBy: vi.fn(async () => false),
     ...overrides,
   };
   return core;
@@ -147,7 +151,7 @@ describe('cosmos handlers', () => {
   describe('session account guard', () => {
     function makeSessionCore(): FakeCore {
       return makeCore({
-        getCurrentAccount: jest.fn(async () => ({
+        getCurrentAccount: vi.fn(async () => ({
           id: 'session-1',
           type: 'SESSION',
         })),
@@ -157,19 +161,19 @@ describe('cosmos handlers', () => {
     it.each([
       [
         'ENABLE_COSMOS',
-        (core: FakeCore, message: InjectionMessage, send: jest.Mock) =>
+        (core: FakeCore, message: InjectionMessage, send: Mock) =>
           cosmosEnable(core as never, message, send),
         { chainIds: 'atomone-1' },
       ],
       [
         'GET_COSMOS_KEY',
-        (core: FakeCore, message: InjectionMessage, send: jest.Mock) =>
+        (core: FakeCore, message: InjectionMessage, send: Mock) =>
           cosmosGetKey(core as never, message, send),
         { chainId: 'atomone-1' },
       ],
       [
         'SIGN_COSMOS_AMINO',
-        (core: FakeCore, message: InjectionMessage, send: jest.Mock) =>
+        (core: FakeCore, message: InjectionMessage, send: Mock) =>
           cosmosSignAmino(core as never, message, send),
         {
           chainId: 'atomone-1',
@@ -186,7 +190,7 @@ describe('cosmos handlers', () => {
       ],
       [
         'SIGN_COSMOS_DIRECT',
-        (core: FakeCore, message: InjectionMessage, send: jest.Mock) =>
+        (core: FakeCore, message: InjectionMessage, send: Mock) =>
           cosmosSignDirect(core as never, message, send),
         {
           chainId: 'atomone-1',
@@ -201,13 +205,13 @@ describe('cosmos handlers', () => {
       ],
       [
         'SEND_COSMOS_TX',
-        (core: FakeCore, message: InjectionMessage, send: jest.Mock) =>
+        (core: FakeCore, message: InjectionMessage, send: Mock) =>
           cosmosSendTx(core as never, message, send),
         { chainId: 'atomone-1', tx: bytesToBase64([1]), mode: 'sync' },
       ],
     ])('returns UNSUPPORTED_TYPE for %s', async (type, run, data) => {
       const core = makeSessionCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await run(core, makeMessage(type, data), send);
 
       expect(send).toHaveBeenCalledWith(
@@ -226,7 +230,7 @@ describe('cosmos handlers', () => {
   describe('cosmosEnable', () => {
     it('returns INVALID_FORMAT when chainIds missing', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosEnable(core as never, makeMessage('ENABLE_COSMOS', {}), send);
       expect(send).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'failure', message: 'INVALID_FORMAT' }),
@@ -235,7 +239,7 @@ describe('cosmos handlers', () => {
 
     it('returns UNSUPPORTED_TYPE for non-atomone chainId', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosEnable(
         core as never,
         makeMessage('ENABLE_COSMOS', { chainIds: 'cosmoshub-4' }),
@@ -248,7 +252,7 @@ describe('cosmos handlers', () => {
 
     it('short-circuits success when all chainIds are already connected', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosEnable(
         core as never,
         makeMessage('ENABLE_COSMOS', { chainIds: ['atomone-1'] }),
@@ -262,9 +266,9 @@ describe('cosmos handlers', () => {
 
     it('routes to the establish popup when not connected', async () => {
       const core = makeCore({
-        establishAtomOneService: { isEstablishedBy: jest.fn(async () => false) },
+        establishAtomOneService: { isEstablishedBy: vi.fn(async () => false) },
       } as never);
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosEnable(
         core as never,
         makeMessage('ENABLE_COSMOS', { chainIds: 'atomone-1' }),
@@ -278,7 +282,7 @@ describe('cosmos handlers', () => {
   describe('cosmosGetKey', () => {
     it('fails with UNSUPPORTED_TYPE when chainId is outside atomone', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosGetKey(
         core as never,
         makeMessage('GET_COSMOS_KEY', { chainId: 'cosmoshub-4' }),
@@ -291,9 +295,9 @@ describe('cosmos handlers', () => {
 
     it('routes to the silent unlock popup when wallet is locked', async () => {
       const core = makeCore({
-        isLockedBy: jest.fn(async () => true),
+        isLockedBy: vi.fn(async () => true),
       } as never);
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosGetKey(
         core as never,
         makeMessage('GET_COSMOS_KEY', { chainId: 'atomone-1' }),
@@ -313,9 +317,9 @@ describe('cosmos handlers', () => {
 
     it('fails with NOT_CONNECTED when site is not established', async () => {
       const core = makeCore({
-        establishAtomOneService: { isEstablishedBy: jest.fn(async () => false) },
+        establishAtomOneService: { isEstablishedBy: vi.fn(async () => false) },
       } as never);
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosGetKey(
         core as never,
         makeMessage('GET_COSMOS_KEY', { chainId: 'atomone-1' }),
@@ -328,7 +332,7 @@ describe('cosmos handlers', () => {
 
     it('returns the key with base64-encoded pubKey and address on success', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosGetKey(
         core as never,
         makeMessage('GET_COSMOS_KEY', { chainId: 'atomone-1' }),
@@ -358,7 +362,7 @@ describe('cosmos handlers', () => {
 
     it('rejects invalid signDoc with INVALID_FORMAT', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosSignAmino(
         core as never,
         makeMessage('SIGN_COSMOS_AMINO', {
@@ -375,7 +379,7 @@ describe('cosmos handlers', () => {
 
     it('routes to the sign popup when inputs are valid', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosSignAmino(
         core as never,
         makeMessage('SIGN_COSMOS_AMINO', {
@@ -408,7 +412,7 @@ describe('cosmos handlers', () => {
 
     it('rejects malformed serialized signDoc', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosSignDirect(
         core as never,
         makeMessage('SIGN_COSMOS_DIRECT', {
@@ -425,7 +429,7 @@ describe('cosmos handlers', () => {
 
     it('routes to the sign popup when inputs are valid', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosSignDirect(
         core as never,
         makeMessage('SIGN_COSMOS_DIRECT', {
@@ -451,7 +455,7 @@ describe('cosmos handlers', () => {
 
     it('returns INVALID_FORMAT on missing fields', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosSendTx(
         core as never,
         makeMessage('SEND_COSMOS_TX', { chainId: 'atomone-1', tx: validTx }),
@@ -464,7 +468,7 @@ describe('cosmos handlers', () => {
 
     it('broadcasts through CosmosLcdProvider and surfaces txhash', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       mockBroadcastTx.mockResolvedValueOnce({
         txhash: 'ABCD',
         code: 0,
@@ -494,7 +498,7 @@ describe('cosmos handlers', () => {
 
     it('maps broadcast errors to TRANSACTION_FAILED', async () => {
       const core = makeCore();
-      const send = jest.fn();
+      const send = vi.fn();
       mockBroadcastTx.mockRejectedValueOnce(new Error('rpc down'));
       await cosmosSendTx(
         core as never,
@@ -525,10 +529,10 @@ describe('cosmos handlers', () => {
     it('cosmosEnable answers UNEXPECTED_ERROR when establishAtomOneService throws', async () => {
       const core = makeCore({
         establishAtomOneService: {
-          isEstablishedBy: jest.fn().mockRejectedValue(new Error('boom')),
+          isEstablishedBy: vi.fn().mockRejectedValue(new Error('boom')),
         },
       } as never);
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosEnable(
         core as never,
         makeMessage('ENABLE_COSMOS', { chainIds: ['atomone-1'] }),
@@ -545,7 +549,7 @@ describe('cosmos handlers', () => {
 
     it('cosmosGetKey answers UNEXPECTED_ERROR when getAddress throws', async () => {
       const core = makeCore({
-        getCurrentAccount: jest.fn(async () => ({
+        getCurrentAccount: vi.fn(async () => ({
           id: 'acc-1',
           name: 'Account 1',
           type: 'HD_WALLET',
@@ -555,7 +559,7 @@ describe('cosmos handlers', () => {
           },
         })),
       } as never);
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosGetKey(
         core as never,
         makeMessage('GET_COSMOS_KEY', { chainId: 'atomone-1' }),
@@ -573,10 +577,10 @@ describe('cosmos handlers', () => {
     it('cosmosSignAmino answers UNEXPECTED_ERROR when the establish gate throws', async () => {
       const core = makeCore({
         establishAtomOneService: {
-          isEstablishedBy: jest.fn().mockRejectedValue(new Error('gate-fail')),
+          isEstablishedBy: vi.fn().mockRejectedValue(new Error('gate-fail')),
         },
       } as never);
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosSignAmino(
         core as never,
         makeMessage('SIGN_COSMOS_AMINO', {
@@ -605,10 +609,10 @@ describe('cosmos handlers', () => {
     it('cosmosSignDirect answers UNEXPECTED_ERROR when the establish gate throws', async () => {
       const core = makeCore({
         establishAtomOneService: {
-          isEstablishedBy: jest.fn().mockRejectedValue(new Error('gate-fail')),
+          isEstablishedBy: vi.fn().mockRejectedValue(new Error('gate-fail')),
         },
       } as never);
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosSignDirect(
         core as never,
         makeMessage('SIGN_COSMOS_DIRECT', {
@@ -635,15 +639,15 @@ describe('cosmos handlers', () => {
     it('cosmosSendTx answers UNEXPECTED_ERROR when the chain registry throws', async () => {
       const core = makeCore({
         chainRegistry: {
-          getChainByChainId: jest.fn((id: string) =>
+          getChainByChainId: vi.fn((id: string) =>
             id === 'atomone-1' ? ATOMONE_CHAIN : undefined,
           ),
-          listNetworkProfilesByChain: jest.fn(() => {
+          listNetworkProfilesByChain: vi.fn(() => {
             throw new Error('registry-fail');
           }),
         },
       } as never);
-      const send = jest.fn();
+      const send = vi.fn();
       await cosmosSendTx(
         core as never,
         makeMessage('SEND_COSMOS_TX', {

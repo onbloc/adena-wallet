@@ -5,8 +5,11 @@ runs:
   # Callers check out the repo first (a local action needs it), so checking out
   # here again would reset the working tree to the triggering ref.
   steps:
-    - uses: actions/setup-node@v4
+    # Reads the pnpm version from `packageManager` in package.json.
+    - uses: pnpm/action-setup@v6
+
+    - uses: actions/setup-node@v7
       with:
-        node-version: 22
+        node-version-file: .nvmrc
         registry-url: https://registry.npmjs.org
-        cache: yarn
+        cache: pnpm

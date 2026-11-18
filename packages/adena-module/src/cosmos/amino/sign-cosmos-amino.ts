@@ -8,7 +8,6 @@ import { makeTxRaw } from '../proto/make-tx-raw';
 import { CosmosProvider } from '../providers/cosmos-provider';
 import { resolveAccount, resolvePublicKey } from '../signer-helpers';
 import { CosmosDocument, SignedCosmosTx } from '../types';
-
 import { makeStdSignDoc } from './make-std-sign-doc';
 import { serializeSignDoc } from './serialize-sign-doc';
 
@@ -43,7 +42,7 @@ export async function signCosmosAmino(params: SignCosmosAminoParams): Promise<Si
     sequence,
     msgs: document.msgs,
     fee: document.fee,
-    memo: document.memo,
+    memo: document.memo
   });
 
   const signBytes = serializeSignDoc(signDoc);
@@ -58,12 +57,12 @@ export async function signCosmosAmino(params: SignCosmosAminoParams): Promise<Si
     sequence,
     publicKey,
     signature,
-    signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
+    signMode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON
   });
 
   return {
     txBytes,
     txHashHex: toHex(sha256(txBytes)).toUpperCase(),
-    signDoc,
+    signDoc
   };
 }

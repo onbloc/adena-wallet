@@ -1,8 +1,7 @@
-import React, { useCallback } from 'react';
-import styled from 'styled-components';
-
 import { View, WebButton, WebInput } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
+import React, { useCallback } from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;

@@ -1,6 +1,6 @@
-import { ChainRegistry } from 'adena-module';
 import { EstablishSite } from '@repositories/wallet';
 import { WalletEstablishAtomOneRepository } from '@repositories/wallet/wallet-establish-atomone';
+import { ChainRegistry } from 'adena-module';
 
 export class WalletEstablishAtomOneService {
   private repository: WalletEstablishAtomOneRepository;
@@ -24,7 +24,7 @@ export class WalletEstablishAtomOneService {
     const siblingChainIds = this.resolveSiblingChainIds(chainId);
     const accountSites = await this.getEstablishedSitesBy(accountId);
     return accountSites.some(
-      (site) => site.hostname === hostname && siblingChainIds.includes(site.chainId),
+      site => site.hostname === hostname && siblingChainIds.includes(site.chainId),
     );
   };
 
@@ -43,7 +43,7 @@ export class WalletEstablishAtomOneService {
     const accountSites = this.selectEstablishedSitesBy(accountId, establishedSites);
 
     const retained = accountSites.filter(
-      (site) =>
+      site =>
         !(site.hostname === establishedInfo.hostname && siblingChainIds.includes(site.chainId)),
     );
 
@@ -75,7 +75,7 @@ export class WalletEstablishAtomOneService {
     const accountSites = this.selectEstablishedSitesBy(accountId, establishedSites);
 
     const retained = accountSites.filter(
-      (site) => !(site.hostname === hostname && siblingChainIds.includes(site.chainId)),
+      site => !(site.hostname === hostname && siblingChainIds.includes(site.chainId)),
     );
 
     const updated = {
@@ -98,7 +98,7 @@ export class WalletEstablishAtomOneService {
     }
     return this.chainRegistry
       .listNetworkProfilesByChain(chain.chainGroup)
-      .map((profile) => profile.chainId);
+      .map(profile => profile.chainId);
   };
 
   private selectEstablishedSitesBy = (

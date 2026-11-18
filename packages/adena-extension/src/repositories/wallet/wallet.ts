@@ -2,13 +2,13 @@ import { WalletError } from '@common/errors';
 import { StorageManager } from '@common/storage/storage-manager';
 import { clearInMemoryKey, decryptPassword, encryptPassword } from '@common/utils/crypto-utils';
 
-type LocalValueType =
-  | 'SERIALIZED'
-  | 'QUESTIONNAIRE_EXPIRED_DATE'
-  | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
-  | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
-  | 'KDF_SALT'
-  | 'AUTO_LOCK_TIMEOUT_MINUTES';
+type LocalValueType
+  = | 'SERIALIZED'
+    | 'QUESTIONNAIRE_EXPIRED_DATE'
+    | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
+    | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
+    | 'KDF_SALT'
+    | 'AUTO_LOCK_TIMEOUT_MINUTES';
 
 export const DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES = 5;
 export const MAX_AUTO_LOCK_TIMEOUT_MINUTES = 1440;
@@ -52,7 +52,8 @@ export class WalletRepository {
       if (password === '') {
         throw new WalletError('NOT_FOUND_PASSWORD');
       }
-    } catch (e) {
+    }
+    catch (e) {
       return false;
     }
 
@@ -71,7 +72,8 @@ export class WalletRepository {
         iv,
         encryptedPassword,
       };
-    } catch (e) {
+    }
+    catch (e) {
       console.warn('Failed to get session crypt passwords', e);
 
       return {
@@ -90,7 +92,8 @@ export class WalletRepository {
 
     try {
       return decryptPassword(iv, encryptedPassword);
-    } catch (e) {
+    }
+    catch (e) {
       console.log('e', e);
       throw new WalletError('NOT_FOUND_PASSWORD');
     }
@@ -101,7 +104,8 @@ export class WalletRepository {
       const { encryptedKey, encryptedPassword } = await encryptPassword(password);
       await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey);
       await this.sessionStorage.set('ENCRYPTED_PASSWORD', encryptedPassword);
-    } catch (e) {
+    }
+    catch (e) {
       console.warn('Failed to update wallet password', e);
 
       return false;

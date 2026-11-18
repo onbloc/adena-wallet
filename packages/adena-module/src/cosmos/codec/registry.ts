@@ -19,8 +19,8 @@ const codecs: Record<string, MessageCodec<unknown>> = {
     aminoType: MsgSendCodec.MSG_SEND_AMINO_TYPE,
     toAmino: MsgSendCodec.msgSendToAmino as (p: unknown) => AminoMsg,
     fromAmino: MsgSendCodec.msgSendFromAmino as (a: AminoMsg) => unknown,
-    toAny: MsgSendCodec.msgSendToAny as (p: unknown) => Any,
-  },
+    toAny: MsgSendCodec.msgSendToAny as (p: unknown) => Any
+  }
 };
 
 export function getCodecByAminoType(aminoType: string): MessageCodec<unknown> {

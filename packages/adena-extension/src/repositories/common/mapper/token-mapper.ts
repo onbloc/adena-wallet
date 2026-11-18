@@ -1,18 +1,16 @@
+import { parseGrc20Route } from '@common/utils/grc20-route';
+import { toTokenPath } from '@common/utils/grc20-token-path';
+import { Grc20RouteMap, GRC20TokenModel, NativeTokenModel, TokenModel } from '@types';
+
 import {
   SearchGRC20Token,
   SearchGRC20TokenResponse,
 } from '../response/search-grc20-token-response';
 import { GRC20TokenResponse, NativeTokenResponse } from '../response/token-asset-response';
 
-import { GRC20TokenModel, Grc20RouteMap, NativeTokenModel, TokenModel } from '@types';
-
-import { parseGrc20Route } from '@common/utils/grc20-route';
-
-import { toTokenPath } from '@common/utils/grc20-token-path';
-
 export class TokenMapper {
-  private static IMAGE_BASE_URI =
-    'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
+  private static IMAGE_BASE_URI
+    = 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
 
   public static fromNativeTokenMetainfos(
     networkId: string,
@@ -82,7 +80,7 @@ export class TokenMapper {
     if (response === null) {
       return [];
     }
-    return response.map((token) => this.mappedMetainfoBySearchToken(networkId, token, tokenInfos));
+    return response.map(token => this.mappedMetainfoBySearchToken(networkId, token, tokenInfos));
   }
 
   private static mappedAddtionalTokenBySearchToken(searchToken: SearchGRC20Token): {
@@ -109,7 +107,7 @@ export class TokenMapper {
   ): GRC20TokenModel {
     const { decimals, name, pkg_path: pkgPath, symbol } = searchToken;
     const tokenId = toTokenPath(pkgPath, symbol);
-    const token = tokenInfos && tokenInfos.find((t) => t.tokenId === tokenId);
+    const token = tokenInfos && tokenInfos.find(t => t.tokenId === tokenId);
     return {
       main: false,
       display: false,

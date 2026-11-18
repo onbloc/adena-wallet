@@ -1,9 +1,10 @@
-import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
+
 import TransferInput, { TransferInputProps } from './transfer-input';
 
 describe('TransferInput Component', () => {
@@ -86,12 +87,12 @@ describe('TransferInput Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TransferInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

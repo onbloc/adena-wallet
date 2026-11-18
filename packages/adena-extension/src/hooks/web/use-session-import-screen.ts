@@ -1,6 +1,5 @@
-import { useCallback, useState } from 'react';
-
 import { SessionImportErrorReason } from '@services/wallet/wallet-session';
+import { useCallback, useState } from 'react';
 
 export interface UseSessionImportReturn {
   masterAddress: string;

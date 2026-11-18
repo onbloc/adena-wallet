@@ -1,10 +1,9 @@
-import { useMemo } from 'react';
-
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { getTokenPriceKey } from '@common/utils/price-utils';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenPrices } from '@hooks/use-token-prices';
 import { TokenPrice, TokenPriceRequest } from '@types';
+import { useMemo } from 'react';
 
 export interface FeeTokenQuote {
   /** The quote, once there is one. */

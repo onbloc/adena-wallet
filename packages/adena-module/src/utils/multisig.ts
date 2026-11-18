@@ -1,4 +1,5 @@
 import { Any, PubKeyMultisig, PubKeySecp256k1 } from '@gnolang/tm2-js-client';
+
 import { sha256 } from '../crypto';
 import { toBech32 } from '../encoding';
 
@@ -16,12 +17,12 @@ export interface Pubkey {
 export function createMultisigPublicKey(
   threshold: number,
   publicKeys: Pubkey[],
-  addressPrefix: string,
+  addressPrefix: string
 ): { address: string; publicKey: Uint8Array } {
   const publicKeysAny = publicKeys.map((pk) => {
     return Any.create({
       type_url: pk['@type'],
-      value: pk.value,
+      value: pk.value
     });
   });
 
@@ -32,7 +33,7 @@ export function createMultisigPublicKey(
 
   return {
     address,
-    publicKey: aminoEncoded,
+    publicKey: aminoEncoded
   };
 }
 
@@ -50,23 +51,23 @@ export function convertMessageToAmino(msg: any): { type: string; value: any } {
 function encodeMultisigPubKey(threshold: number, pubkeys: Any[]): Uint8Array {
   const pubKeysEncoded = pubkeys.map((pk) => {
     const pubKeyValue = PubKeySecp256k1.encode({
-      key: pk.value,
+      key: pk.value
     }).finish();
 
     return Any.create({
       type_url: pk.type_url,
-      value: pubKeyValue,
+      value: pubKeyValue
     });
   });
 
   const multisigValue = PubKeyMultisig.encode({
     k: BigInt(threshold),
-    pub_keys: pubKeysEncoded,
+    pub_keys: pubKeysEncoded
   }).finish();
 
   const result = Any.create({
     type_url: '/tm.PubKeyMultisig',
-    value: multisigValue,
+    value: multisigValue
   });
 
   return Any.encode(result).finish();

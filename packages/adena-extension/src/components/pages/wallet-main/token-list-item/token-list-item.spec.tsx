@@ -1,11 +1,10 @@
-import React from 'react';
+import { parseVestingSchedule } from '@common/utils/vesting-utils';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
 import { ThemeProvider } from 'styled-components';
-
-import { parseVestingSchedule } from '@common/utils/vesting-utils';
 
 import TokenListItem, { TokenListItemProps } from './token-list-item';
 
@@ -21,12 +20,12 @@ const token = {
 
 function renderTokenListItem(args: TokenListItemProps): ReturnType<typeof render> {
   return render(
-    <RecoilRoot>
+    <JotaiProvider>
       <GlobalPopupStyle />
       <ThemeProvider theme={theme}>
         <TokenListItem {...args} />
       </ThemeProvider>
-    </RecoilRoot>,
+    </JotaiProvider>,
   );
 }
 
@@ -123,8 +122,8 @@ describe('TokenListItem Component', () => {
     });
 
     it('reports the toggle without navigating into token details', () => {
-      const onClickTokenItem = jest.fn();
-      const onToggleVesting = jest.fn();
+      const onClickTokenItem = vi.fn();
+      const onToggleVesting = vi.fn();
       renderTokenListItem({
         ...baseArgs,
         token: vestingToken,
@@ -155,12 +154,12 @@ describe('TokenListItem Component', () => {
       expect(screen.queryByLabelText('Show vesting details')).toBeNull();
 
       rerender(
-        <RecoilRoot>
+        <JotaiProvider>
           <GlobalPopupStyle />
           <ThemeProvider theme={theme}>
             <TokenListItem {...baseArgs} token={vestingToken} error />
           </ThemeProvider>
-        </RecoilRoot>,
+        </JotaiProvider>,
       );
       expect(screen.queryByLabelText('Show vesting details')).toBeNull();
     });

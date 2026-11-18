@@ -1,40 +1,41 @@
 import { GnoSocialWalletProvider } from '@adena-wallet/sdk';
-import { renderHook } from '@testing-library/react';
-
 import { EMAIL_VERIFIERS, Web3AuthVerifier } from '@common/constants/web3auth.constant';
+import { renderHook } from '@testing-library/react';
+import type { Mock } from 'vitest';
+
 import useEmailLoginScreen from './use-email-login-screen';
 
 // Stub out the SDK to avoid pulling in @web3auth's native crypto at test time.
-jest.mock('@adena-wallet/sdk', () => ({
-  GnoSocialWalletProvider: { createEmailPasswordless: jest.fn() },
+vi.mock('@adena-wallet/sdk', () => ({
+  GnoSocialWalletProvider: { createEmailPasswordless: vi.fn() },
 }));
 
 const mockParams: { doneQuestionnaire?: boolean; keySetType?: string; email?: string } | null = {};
 
-jest.mock('@hooks/use-app-navigate', () => ({
+vi.mock('@hooks/use-app-navigate', () => ({
   __esModule: true,
-  default: (): unknown => ({ navigate: jest.fn(), params: mockParams }),
+  default: (): unknown => ({ navigate: vi.fn(), params: mockParams }),
 }));
 
-jest.mock('@hooks/use-network', () => ({
+vi.mock('@hooks/use-network', () => ({
   useNetwork: (): unknown => ({
     currentNetwork: { chainId: 'test', rpcUrl: '', addressPrefix: 'g' },
   }),
 }));
 
-jest.mock('@hooks/wallet/broadcast-transaction/use-indicator-step', () => ({
+vi.mock('@hooks/wallet/broadcast-transaction/use-indicator-step', () => ({
   __esModule: true,
   default: (): unknown => ({ stepNo: 0, stepLength: 2 }),
 }));
 
-jest.mock('../use-questionnaire', () => ({
+vi.mock('../use-questionnaire', () => ({
   __esModule: true,
   default: (): unknown => ({ ableToSkipQuestionnaire: true }),
 }));
 
-const mockConnectWithProvider = jest.fn();
+const mockConnectWithProvider = vi.fn();
 
-jest.mock('../social-login/use-social-login-account', () => ({
+vi.mock('../social-login/use-social-login-account', () => ({
   __esModule: true,
   default: (): unknown => ({ connectWithProvider: mockConnectWithProvider }),
   toSocialLoginFailType: (): string => 'DEFAULT',
@@ -64,7 +65,7 @@ afterAll(() => {
 });
 
 describe('useEmailLoginScreen popup ownership', () => {
-  const createEmailPasswordless = GnoSocialWalletProvider.createEmailPasswordless as jest.Mock;
+  const createEmailPasswordless = GnoSocialWalletProvider.createEmailPasswordless as Mock;
 
   beforeEach(() => {
     setVerifiers(CONFIGURED);

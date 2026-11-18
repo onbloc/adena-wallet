@@ -1,13 +1,12 @@
-import React, { ReactElement, useCallback, useMemo, useState } from 'react';
-import styled from 'styled-components';
-
+import { BottomFixedButtonGroup } from '@components/molecules/bottom-fixed-button-group';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import { useMasterSessions } from '@hooks/wallet/use-master-sessions';
-import { BottomFixedButtonGroup } from '@components/molecules/bottom-fixed-button-group';
-import { RoutePath } from '@types';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
+import React, { ReactElement, useCallback, useMemo, useState } from 'react';
+import styled from 'styled-components';
 
 import { SessionAccordionCard } from './session-accordion-card';
 
@@ -41,12 +40,12 @@ const ManageSessions = (): ReactElement => {
   const { entries, isLoading, error } = useMasterSessions(masterAddress);
 
   const revokeableEntries = useMemo(
-    () => entries.filter((e) => e.status === 'ACTIVE'),
+    () => entries.filter(e => e.status === 'ACTIVE'),
     [entries],
   );
 
   const handleToggle = useCallback((addr: string) => {
-    setExpandedAddr((prev) => (prev === addr ? null : addr));
+    setExpandedAddr(prev => (prev === addr ? null : addr));
   }, []);
 
   const handleOpenAccount = useCallback(
@@ -80,13 +79,17 @@ const ManageSessions = (): ReactElement => {
         <Status>Loading sessions…</Status>
       )}
       {masterAddress && !isLoading && error && (
-        <Status>Failed to load sessions: {error}</Status>
+        <Status>
+          Failed to load sessions:
+          {' '}
+          {error}
+        </Status>
       )}
       {masterAddress && !isLoading && !error && entries.length === 0 && (
         <Status>No sessions.</Status>
       )}
 
-      {entries.map((entry) => (
+      {entries.map(entry => (
         <SessionAccordionCard
           key={entry.sessionAddr}
           sessionName={entry.name}

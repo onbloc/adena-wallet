@@ -2,14 +2,14 @@ import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
-import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 
 export const GET_GNOT_BALANCE_QUERY_KEY = 'wallet/useGetGnotBalance';
 
 const GNOT_BALANCE_STALE_TIME = 5_000;
 
 export const useGetGnotBalance = (
-  options?: UseQueryOptions<number | null, Error>,
+  options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<number | null> => {
   const { gnoProvider } = useWalletContext();
   const { currentFundingAddress } = useCurrentAccount();
@@ -26,7 +26,7 @@ export const useGetGnotBalance = (
 
       return gnoProvider.getBalance(currentFundingAddress, GNOT_TOKEN.denom).catch(() => 0);
     },
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     // Reads the same GNOT balance the wallet already polls elsewhere; the window
     // keeps a Send -> Summary -> Confirm walk from querying once per step.
     staleTime: GNOT_BALANCE_STALE_TIME,

@@ -1,20 +1,20 @@
-import { renderHook } from '@testing-library/react';
-
 import { parseVestingSchedule, VestingInfo } from '@common/utils/vesting-utils';
 import { useChainBlockTime } from '@hooks/wallet/use-chain-block-time';
 import { useVestingInfo } from '@hooks/wallet/use-vesting-info';
+import { renderHook } from '@testing-library/react';
+import type { MockedFunction } from 'vitest';
 
 import { useVestingLocked } from './use-vesting-locked';
 
-jest.mock('@hooks/wallet/use-vesting-info', () => ({
-  useVestingInfo: jest.fn(),
+vi.mock('@hooks/wallet/use-vesting-info', () => ({
+  useVestingInfo: vi.fn(),
 }));
-jest.mock('@hooks/wallet/use-chain-block-time', () => ({
-  useChainBlockTime: jest.fn(),
+vi.mock('@hooks/wallet/use-chain-block-time', () => ({
+  useChainBlockTime: vi.fn(),
 }));
 
-const mockedUseVestingInfo = useVestingInfo as jest.MockedFunction<typeof useVestingInfo>;
-const mockedUseChainBlockTime = useChainBlockTime as jest.MockedFunction<typeof useChainBlockTime>;
+const mockedUseVestingInfo = useVestingInfo as MockedFunction<typeof useVestingInfo>;
+const mockedUseChainBlockTime = useChainBlockTime as MockedFunction<typeof useChainBlockTime>;
 
 const ADDRESS = 'g1manfred47kzduec920z88wfr64ylksmdcedlf5';
 
@@ -52,7 +52,7 @@ const setVestingInfo = (
 
 describe('useVestingLocked', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('reports the still-locked amount in display units', () => {

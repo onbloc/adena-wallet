@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
-import { Document } from 'adena-module';
-
 import { Icon } from '@components/atoms';
-import { BottomFixedButton, TitleWithDesc } from '@components/molecules';
-import { TransferLedgerLoadingWrapper } from './transfer-ledger-loading.styles';
 import { Datatable } from '@components/atoms/datatable';
+import { BottomFixedButton, TitleWithDesc } from '@components/molecules';
+import { Document } from 'adena-module';
+import React, { useMemo } from 'react';
+
+import { TransferLedgerLoadingWrapper } from './transfer-ledger-loading.styles';
 
 export interface TransferLedgerLoadingProps {
   document: Document | null;

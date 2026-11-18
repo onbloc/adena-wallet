@@ -1,5 +1,6 @@
 import MainManageTokensFilterIcon from '@assets/main-manage-tokens-filter.svg';
 import React from 'react';
+
 import { MainManageTokenButtonWrapper } from './main-manage-token-button.styles';
 
 export interface MainManageTokenButtonProps {
@@ -13,8 +14,8 @@ const MainManageTokenButton: React.FC<MainManageTokenButtonProps> = ({
 }) => {
   return (
     <MainManageTokenButtonWrapper type='button' onClick={onClick} disabled={disabled}>
-      <img className='icon' src={MainManageTokensFilterIcon} alt={'mange token filter icon'} />
-      <span className='title'>{'Manage Tokens'}</span>
+      <img className='icon' src={MainManageTokensFilterIcon} alt='mange token filter icon' />
+      <span className='title'>Manage Tokens</span>
     </MainManageTokenButtonWrapper>
   );
 };

@@ -1,7 +1,6 @@
 import { CosmosSignMode } from '../chain-registry/types';
 import { HdPathLike } from '../wallet/keyring/hd-path';
 import { Keyring } from '../wallet/keyring/keyring';
-
 import { signCosmosAmino } from './amino/sign-cosmos-amino';
 import { signCosmosDirect } from './direct/sign-cosmos-direct';
 import { CosmosProvider } from './providers/cosmos-provider';

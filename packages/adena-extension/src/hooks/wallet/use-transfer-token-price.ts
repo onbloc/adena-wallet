@@ -1,7 +1,6 @@
-import { useMemo } from 'react';
-
 import { FeeTokenQuote, useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 import { TokenModel } from '@types';
+import { useMemo } from 'react';
 
 /**
  * USD quote for the token being sent, keyed like the wallet main's rows so the

@@ -109,7 +109,7 @@ jobs:
       EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.authorize.outputs.sha }}
 
@@ -128,8 +128,8 @@ jobs:
 
       - name: Build project
         run: |
-          yarn
-          yarn build
+          pnpm install --frozen-lockfile
+          pnpm build
         env:
           WEB3_AUTH_LEGACY_CLIENT_ID: ${{ secrets.WEB3_AUTH_LEGACY_CLIENT_ID }}
           GOOGLE_LEGACY_VERIFIER: ${{ secrets.GOOGLE_LEGACY_VERIFIER }}
@@ -217,7 +217,7 @@ jobs:
     environment: store-release
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.authorize.outputs.sha }}
 
@@ -240,8 +240,8 @@ jobs:
 
       - name: Build project
         run: |
-          yarn
-          yarn build:firefox
+          pnpm install --frozen-lockfile
+          pnpm build:firefox
         env:
           WEB3_AUTH_LEGACY_CLIENT_ID: ${{ secrets.WEB3_AUTH_LEGACY_CLIENT_ID }}
           GOOGLE_LEGACY_VERIFIER: ${{ secrets.GOOGLE_LEGACY_VERIFIER }}
@@ -269,7 +269,7 @@ jobs:
           WEB_EXT_API_KEY: ${{ secrets.AMO_API_KEY }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_API_SECRET }}
         run: |
-          yarn web-ext sign \
+          pnpm exec web-ext sign \
             --source-dir packages/adena-extension/dist-firefox \
             --channel listed \
             --upload-source-code "$RUNNER_TEMP/source.zip" \

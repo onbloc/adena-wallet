@@ -33,21 +33,21 @@ export interface SignedCosmosTx {
 
 export function isCosmosDocument(doc: unknown): doc is CosmosDocument {
   return (
-    typeof doc === 'object' &&
-    doc !== null &&
-    'chainId' in doc &&
-    'fromAddress' in doc &&
-    'msgs' in doc &&
-    'fee' in doc
+    typeof doc === 'object'
+    && doc !== null
+    && 'chainId' in doc
+    && 'fromAddress' in doc
+    && 'msgs' in doc
+    && 'fee' in doc
   );
 }
 
 export function isSignedCosmosTx(tx: unknown): tx is SignedCosmosTx {
   return (
-    typeof tx === 'object' &&
-    tx !== null &&
-    'txBytes' in tx &&
-    'signDoc' in tx
+    typeof tx === 'object'
+    && tx !== null
+    && 'txBytes' in tx
+    && 'signDoc' in tx
   );
 }
 

@@ -1,18 +1,8 @@
-import { atom } from 'recoil';
-
 import { TokenModel } from '@types';
+import { atom } from 'jotai';
 
-export const tokenMetainfos = atom<TokenModel[]>({
-  key: 'token/tokenMetainfos',
-  default: [],
-});
+export const tokenMetainfos = atom<TokenModel[]>([]);
 
-export const accountTokenMetainfos = atom<TokenModel[]>({
-  key: 'token/accountTokenMetainfos',
-  default: [],
-});
+export const accountTokenMetainfos = atom<TokenModel[]>([]);
 
-export const tokenLogoMap = atom<Record<string, string | null>>({
-  key: 'token/tokenLogoMap',
-  default: {},
-});
+export const tokenLogoMap = atom<Record<string, string | null>>({});

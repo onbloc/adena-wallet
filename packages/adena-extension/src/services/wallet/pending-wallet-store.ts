@@ -1,6 +1,5 @@
-import { AdenaWallet } from 'adena-module';
-
 import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
+import { AdenaWallet } from 'adena-module';
 
 // Single-shot in-memory handoff for an unencrypted wallet between an onboarding
 // entry flow and the create-password screen. The wallet is never serialized to

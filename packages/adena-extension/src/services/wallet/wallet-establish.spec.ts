@@ -1,5 +1,6 @@
-import { ChainRegistry } from 'adena-module';
 import { EstablishSite, WalletEstablishRepository } from '@repositories/wallet';
+import { ChainRegistry } from 'adena-module';
+
 import { WalletEstablishService } from './wallet-establish';
 
 const ACCOUNT = 'acc-1';
@@ -13,13 +14,13 @@ const GNO_PROFILES = [
 
 function makeChainRegistry(): ChainRegistry {
   return {
-    getChainByChainId: jest.fn((chainId: string) => {
-      if (GNO_PROFILES.some((p) => p.chainId === chainId)) {
+    getChainByChainId: vi.fn((chainId: string) => {
+      if (GNO_PROFILES.some(p => p.chainId === chainId)) {
         return { chainGroup: 'gno' };
       }
       return undefined;
     }),
-    listNetworkProfilesByChain: jest.fn((chainGroup: string) => {
+    listNetworkProfilesByChain: vi.fn((chainGroup: string) => {
       if (chainGroup === 'gno') {
         return GNO_PROFILES;
       }
@@ -31,11 +32,11 @@ function makeChainRegistry(): ChainRegistry {
 function makeRepo(initial: { [key: string]: EstablishSite[] } = {}) {
   let storage: { [key: string]: EstablishSite[] } = { ...initial };
   return {
-    getEstablishedSites: jest.fn(async () => storage),
-    updateEstablishedSites: jest.fn(async (next) => {
+    getEstablishedSites: vi.fn(async () => storage),
+    updateEstablishedSites: vi.fn(async (next) => {
       storage = next;
     }),
-    deleteEstablishedSites: jest.fn(async () => {
+    deleteEstablishedSites: vi.fn(async () => {
       storage = {};
     }),
     snapshot: () => storage,

@@ -1,4 +1,5 @@
 import { stringFromBase64 } from '@common/utils/encoding-util';
+import type { JSX } from 'react';
 import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 
@@ -103,7 +104,9 @@ export const WebSeedBox = ({ seedString, showBlur = true }: WebSeedBoxProps): JS
       {Array.from({ length: seedSize }).map((_, index) => (
         <CanvasWrapper key={index} blur={showBlur}>
           <canvas
-            ref={(el): HTMLCanvasElement | null => (canvasRefs.current[index] = el)}
+            ref={(el): void => {
+              canvasRefs.current[index] = el;
+            }}
             width={BOX_WIDTH}
             height={BOX_HEIGHT}
           />

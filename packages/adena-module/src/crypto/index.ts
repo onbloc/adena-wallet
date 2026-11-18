@@ -1,15 +1,15 @@
 export { Bip39, EnglishMnemonic, entropyToMnemonic, mnemonicToEntropy } from './bip39';
 export { type HashFunction } from './hash';
+export { legacyAesDecrypt, legacyAesEncrypt, sha256Hex } from './legacy-aes';
 export {
   Argon2id,
+  type Argon2idOptions,
   Ed25519,
   Ed25519Keypair,
   isArgon2idOptions,
   xchacha20NonceLength,
-  Xchacha20poly1305Ietf,
-  type Argon2idOptions
+  Xchacha20poly1305Ietf
 } from './libsodium';
 export { Random } from './random';
 export { Ripemd160, ripemd160 } from './ripemd160';
 export { Sha256, sha256, Sha512, sha512 } from './sha';
-

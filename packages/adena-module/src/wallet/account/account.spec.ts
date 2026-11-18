@@ -1,16 +1,16 @@
-import { makeAccount } from './account';
-import { SeedAccount } from './seed-account';
-import { LedgerAccount } from './ledger-account';
-import { SingleAccount } from './single-account';
-import { AirgapAccount } from './airgap-account';
-import { MultisigAccount } from './multisig-account';
-import { hasPrivateKeyAccount } from './account-util';
 import { secp256k1PubKeyToAddressBytes } from '../../utils/address';
+import { makeAccount } from './account';
+import { hasPrivateKeyAccount } from './account-util';
+import { AirgapAccount } from './airgap-account';
+import { LedgerAccount } from './ledger-account';
+import { MultisigAccount } from './multisig-account';
+import { SeedAccount } from './seed-account';
+import { SingleAccount } from './single-account';
 
 // Fixed compressed secp256k1 public key for deterministic tests
 const TEST_PUBLIC_KEY = [
   2, 166, 122, 96, 148, 55, 234, 211, 60, 58, 186, 188, 53, 82, 114, 229, 244, 40, 232, 63, 44,
-  159, 93, 198, 72, 130, 163, 64, 100, 45, 245, 181, 154,
+  159, 93, 198, 72, 130, 163, 64, 100, 45, 245, 181, 154
 ];
 
 function makeAddressBytes(): number[] {
@@ -23,7 +23,7 @@ const BASE_SEED_INFO = {
   name: 'Account 1',
   keyringId: 'keyring-1',
   hdPath: 0,
-  publicKey: TEST_PUBLIC_KEY,
+  publicKey: TEST_PUBLIC_KEY
 };
 
 const BASE_SINGLE_INFO = {
@@ -31,7 +31,7 @@ const BASE_SINGLE_INFO = {
   type: 'PRIVATE_KEY' as const,
   name: 'Account 1',
   keyringId: 'keyring-1',
-  publicKey: TEST_PUBLIC_KEY,
+  publicKey: TEST_PUBLIC_KEY
 };
 
 const BASE_LEDGER_INFO = {
@@ -40,7 +40,7 @@ const BASE_LEDGER_INFO = {
   name: 'Account 1',
   keyringId: 'keyring-1',
   hdPath: 0,
-  publicKey: TEST_PUBLIC_KEY,
+  publicKey: TEST_PUBLIC_KEY
 };
 
 const BASE_MULTISIG_INFO = {
@@ -53,8 +53,8 @@ const BASE_MULTISIG_INFO = {
   multisigConfig: { signers: ['g1aaa', 'g1bbb'], threshold: 2 },
   signerPublicKeys: [
     { address: 'g1aaa', publicKey: { '@type': '/cosmos.crypto.secp256k1.PubKey', value: 'abc' } },
-    { address: 'g1bbb', publicKey: { '@type': '/cosmos.crypto.secp256k1.PubKey', value: 'def' } },
-  ],
+    { address: 'g1bbb', publicKey: { '@type': '/cosmos.crypto.secp256k1.PubKey', value: 'def' } }
+  ]
 };
 
 const BASE_SESSION_INFO = {
@@ -66,8 +66,8 @@ const BASE_SESSION_INFO = {
   sessionConfig: {
     masterAddress: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
     chainId: 'test-13',
-    status: 'ACTIVE' as const,
-  },
+    status: 'ACTIVE' as const
+  }
 };
 
 describe('SeedAccount.getAddress', () => {
@@ -105,7 +105,7 @@ describe('AirgapAccount.getAddress', () => {
       name: 'Airgap 1',
       keyringId: 'keyring-ag',
       publicKey: [],
-      addressBytes: makeAddressBytes(),
+      addressBytes: makeAddressBytes()
     });
     const address = await account.getAddress('g');
     expect(address).toMatch(/^g1/);
@@ -148,7 +148,7 @@ describe('derivation path (account/change/addressIndex)', () => {
       ...BASE_SEED_INFO,
       hdPath: 4,
       accountIndex: 2,
-      changeIndex: 1,
+      changeIndex: 1
     });
     expect(seed.derivationPath).toEqual({ account: 2, change: 1, addressIndex: 4 });
 
@@ -162,13 +162,13 @@ describe('derivation path (account/change/addressIndex)', () => {
       ...BASE_LEDGER_INFO,
       hdPath: 7,
       accountIndex: 5,
-      changeIndex: 0,
+      changeIndex: 0
     });
     expect(ledger.derivationPath).toEqual({ account: 5, change: 0, addressIndex: 7 });
     expect(LedgerAccount.fromData(ledger.toData()).derivationPath).toEqual({
       account: 5,
       change: 0,
-      addressIndex: 7,
+      addressIndex: 7
     });
   });
 });

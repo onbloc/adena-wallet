@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
 import { Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
+import type { JSX } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import styled from 'styled-components';
 
 interface CopyTooltipProps {
   children: React.ReactNode;

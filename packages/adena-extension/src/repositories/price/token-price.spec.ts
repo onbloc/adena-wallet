@@ -1,6 +1,7 @@
-import { AxiosInstance } from 'axios';
-
 import { NetworkMetainfo } from '@types';
+import { AxiosInstance } from 'axios';
+import type { Mock } from 'vitest';
+
 import { TokenPriceRepository } from './token-price';
 
 const network = {
@@ -16,7 +17,7 @@ const network = {
   apiUrl: 'https://api.onbloc.xyz',
 } as NetworkMetainfo;
 
-function makeAxios(get: jest.Mock): AxiosInstance {
+function makeAxios(get: Mock): AxiosInstance {
   return { get } as unknown as AxiosInstance;
 }
 
@@ -45,7 +46,7 @@ const response = {
 
 describe('TokenPriceRepository', () => {
   it('prices the whole screen with one call to the batch endpoint', async () => {
-    const get = jest.fn().mockResolvedValue(response);
+    const get = vi.fn().mockResolvedValue(response);
     const repository = new TokenPriceRepository(makeAxios(get), network);
 
     await expect(repository.fetchAssetPrices()).resolves.toEqual([
@@ -55,7 +56,7 @@ describe('TokenPriceRepository', () => {
   });
 
   it('asks nothing of a network with no price API', async () => {
-    const get = jest.fn();
+    const get = vi.fn();
     const repository = new TokenPriceRepository(makeAxios(get), {
       ...network,
       apiUrl: '',
@@ -67,7 +68,7 @@ describe('TokenPriceRepository', () => {
   });
 
   it('shares one round trip between concurrent callers', async () => {
-    const get = jest.fn().mockResolvedValue(response);
+    const get = vi.fn().mockResolvedValue(response);
     const repository = new TokenPriceRepository(makeAxios(get), network);
 
     await Promise.all([repository.fetchAssetPrices(), repository.fetchAssetPrices()]);
@@ -76,7 +77,7 @@ describe('TokenPriceRepository', () => {
   });
 
   it('lets a failure surface so the caller can keep its last good quotes', async () => {
-    const get = jest.fn().mockRejectedValue(new Error('network down'));
+    const get = vi.fn().mockRejectedValue(new Error('network down'));
     const repository = new TokenPriceRepository(makeAxios(get), network);
 
     await expect(repository.fetchAssetPrices()).rejects.toThrow('network down');

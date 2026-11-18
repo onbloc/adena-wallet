@@ -1,4 +1,5 @@
 import { MAX_ARBITRARY_MESSAGE_BYTES } from '@inject/types';
+
 import { validateSignArbitraryParams } from './validation-sign-arbitrary';
 
 const SIGNER = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';

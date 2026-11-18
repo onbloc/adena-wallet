@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-
 import IconWarning from '@assets/warning-info.svg';
 import { BaseError } from '@common/errors';
+import React, { useEffect, useMemo, useRef } from 'react';
+
 import { MemoInputWrapper } from './memo-input.styles';
 
 export interface MemoInputProps {

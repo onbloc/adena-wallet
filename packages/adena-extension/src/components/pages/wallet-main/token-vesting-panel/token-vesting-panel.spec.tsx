@@ -1,10 +1,9 @@
-import { render, RenderResult, screen, within } from '@testing-library/react';
-import React from 'react';
-import { ThemeProvider } from 'styled-components';
-
 import { ABCIAccountVesting } from '@common/provider/gno';
 import { parseVestingSchedule, VestingSchedule } from '@common/utils/vesting-utils';
 import theme from '@styles/theme';
+import { render, RenderResult, screen, within } from '@testing-library/react';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
 
 import { TokenVestingPanel } from './token-vesting-panel';
 
@@ -97,8 +96,8 @@ describe('TokenVestingPanel', () => {
   // ending at END_TIME stays fully locked while block time reads END_TIME - 1,
   // however far ahead the local clock happens to be.
   it('keeps a cliff locked while block time is still short of its end', () => {
-    jest.useFakeTimers();
-    jest.setSystemTime((END_TIME + 3_600) * 1000);
+    vi.useFakeTimers();
+    vi.setSystemTime((END_TIME + 3_600) * 1000);
 
     renderPanel({
       vesting: { schedule: CLIFF_SCHEDULE, coins: COINS },
@@ -109,7 +108,7 @@ describe('TokenVestingPanel', () => {
     expect(readRow('Locked · Vesting')).toEqual('106,560 GNOT');
     expect(screen.getByText('0.0% Vested')).not.toBeNull();
 
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('shows no figures until the chain clock has been read', () => {

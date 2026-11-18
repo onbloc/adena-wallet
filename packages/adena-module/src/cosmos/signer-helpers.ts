@@ -5,15 +5,14 @@ import {
   isLedgerKeyring,
   isMultisigKeyring,
   isPrivateKeyKeyring,
-  isWeb3AuthKeyring,
+  isWeb3AuthKeyring
 } from '../wallet/keyring/keyring-util';
-
 import { CosmosProvider } from './providers/cosmos-provider';
 import { CosmosDocument } from './types';
 
 export async function resolveAccount(
   document: CosmosDocument,
-  cosmosProvider: CosmosProvider,
+  cosmosProvider: CosmosProvider
 ): Promise<{ accountNumber: string; sequence: string }> {
   // Treat empty string as missing so downstream BigInt(sequence) / BigInt(gas)
   // in make-tx-raw never receives '' (which would throw a cryptic SyntaxError).
@@ -26,7 +25,7 @@ export async function resolveAccount(
   const account = await cosmosProvider.getAccount(document.fromAddress);
   return {
     accountNumber: docAccountNumber ?? account.accountNumber,
-    sequence: docSequence ?? account.sequence,
+    sequence: docSequence ?? account.sequence
   };
 }
 
@@ -36,7 +35,7 @@ function nonEmpty(v: string | undefined): string | undefined {
 
 export async function resolvePublicKey(
   keyring: Keyring,
-  hdPath: HdPathLike | undefined,
+  hdPath: HdPathLike | undefined
 ): Promise<Uint8Array> {
   if (isHDWalletKeyring(keyring)) return keyring.getPublicKey(hdPath ?? 0);
   if (isPrivateKeyKeyring(keyring)) return keyring.publicKey;

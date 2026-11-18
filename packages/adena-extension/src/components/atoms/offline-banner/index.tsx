@@ -1,9 +1,8 @@
-import { onlineManager, useQueryClient } from '@tanstack/react-query';
-import React, { ReactElement, useCallback, useEffect, useState } from 'react';
-
 import { Button } from '@components/atoms/button';
 import { Spinner } from '@components/atoms/spinner';
 import { WarningTriangleIcon } from '@components/atoms/warning-triangle-icon';
+import { onlineManager, useQueryClient } from '@tanstack/react-query';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 
 import { OfflineBannerWrapper } from './offline-banner.styles';
 
@@ -11,6 +10,9 @@ const SPINNER_SIZE = 14;
 
 const isBrowserOffline = (): boolean =>
   typeof navigator !== 'undefined' && navigator.onLine === false;
+
+// Drops a Retry override: the manager goes back to what the browser reports.
+const followBrowser = (): void => onlineManager.setOnline(!isBrowserOffline());
 
 /**
  * Offline notice. Carries no positioning; each host places it.
@@ -28,14 +30,14 @@ export const OfflineBanner = (): ReactElement | null => {
     const onOnline = (): void => {
       setOffline(false);
       setOverridden(false);
-      onlineManager.setOnline(undefined);
+      followBrowser();
       queryClient.refetchQueries({ type: 'active' });
     };
     const onOffline = (): void => {
       setOffline(true);
-      // setOnline(true) is sticky for the session, so an old Retry would leave
-      // the manager claiming online and the next outage would go unreported.
-      onlineManager.setOnline(undefined);
+      // An earlier Retry set the manager online; follow the browser again so
+      // this outage is reported.
+      followBrowser();
       setOverridden(false);
     };
 
@@ -56,7 +58,7 @@ export const OfflineBanner = (): ReactElement | null => {
   }, [queryClient]);
 
   const stop = useCallback((): void => {
-    onlineManager.setOnline(undefined);
+    followBrowser();
     setOverridden(false);
   }, []);
 
@@ -71,17 +73,23 @@ export const OfflineBanner = (): ReactElement | null => {
       </span>
       {/* Kept to one line: every wrapped line costs 21px of a 540px popup. */}
       <span className='message'>
-        {overridden ? (
-          <>
-            <span className='headline'>Retrying anyway.</span> Your browser still reports no
-            connection.
-          </>
-        ) : (
-          <>
-            <span className='headline'>No network connection.</span> Balances and chain data are
-            paused until you reconnect.
-          </>
-        )}
+        {overridden
+          ? (
+              <>
+                <span className='headline'>Retrying anyway.</span>
+                {' '}
+                Your browser still reports no
+                connection.
+              </>
+            )
+          : (
+              <>
+                <span className='headline'>No network connection.</span>
+                {' '}
+                Balances and chain data are
+                paused until you reconnect.
+              </>
+            )}
       </span>
       <Button
         className='action-button'

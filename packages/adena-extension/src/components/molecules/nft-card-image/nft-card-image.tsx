@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-
 import IconEmptyImage from '@assets/icon-empty-image.svg';
 import { Loading } from '@components/atoms';
+import React, { useEffect, useState } from 'react';
+
 import { NFTCardImageSkeletonBox, NFTCardImageWrapper } from './nft-card-image.styles';
 
 export interface NFTCardImageProps {

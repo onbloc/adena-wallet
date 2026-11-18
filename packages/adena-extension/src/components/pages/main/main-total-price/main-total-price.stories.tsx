@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import MainTotalPrice, { type MainTotalPriceProps } from './main-total-price';
 
 export default {

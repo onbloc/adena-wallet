@@ -1,7 +1,6 @@
+import { webFonts, WebFontType } from '@styles/theme';
 import React, { CSSProperties, ReactElement } from 'react';
 import styled, { RuleSet } from 'styled-components';
-
-import { webFonts, WebFontType } from '@styles/theme';
 
 type FormTextProps = {
   type: WebFontType;

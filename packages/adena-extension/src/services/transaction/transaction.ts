@@ -1,3 +1,12 @@
+import { GasToken } from '@common/constants/token.constant';
+import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
+import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
+import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
+import { GnoProvider } from '@common/provider/gno/gno-provider';
+import type { AminoSignResponse, StdSignDoc } from '@cosmjs/amino';
+import { encodeSecp256k1Pubkey, serializeSignDoc } from '@cosmjs/amino';
+import type { DirectSignResponse } from '@cosmjs/proto-signing';
+import { makeSignBytes } from '@cosmjs/proto-signing';
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
@@ -6,10 +15,12 @@ import {
   TxSignPayload,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
+import { SignArbitraryData } from '@inject/types';
 import {
   Account,
   AdenaLedgerConnector,
   ChainRegistry,
+  compressPubkeyIfNeeded,
   CosmosChain,
   CosmosDocument,
   CosmosFeeEstimate,
@@ -17,30 +28,19 @@ import {
   CosmosSignMode,
   CosmosTxBroadcastResponse,
   Document,
+  hasHDPath,
   isSessionAccount,
   Keyring,
   LedgerAccount,
   LedgerKeyring,
-  SignedCosmosTx,
-  hasHDPath,
   sha256,
   signArbitraryMessage,
   signCosmosAmino,
+  SignedCosmosTx,
   Wallet,
-  compressPubkeyIfNeeded,
 } from 'adena-module';
-import type { AminoSignResponse, StdSignDoc } from '@cosmjs/amino';
-import { encodeSecp256k1Pubkey, serializeSignDoc } from '@cosmjs/amino';
-import type { DirectSignResponse } from '@cosmjs/proto-signing';
-import { makeSignBytes } from '@cosmjs/proto-signing';
 import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 
-import { GasToken } from '@common/constants/token.constant';
-import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
-import { CosmosLcdProvider } from '@common/provider/cosmos/cosmos-lcd-provider';
-import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { SignArbitraryData } from '@inject/types';
 import { WalletService } from '..';
 
 export interface EncodeTxSignature {
@@ -197,7 +197,8 @@ export class TransactionService {
       accountNumber = res.BaseSessionAccount.BaseAccount.account_number;
       accountSequence = res.BaseSessionAccount.BaseAccount.sequence;
       callerAddress = master;
-    } else {
+    }
+    else {
       const address = await account.getAddress(addressPrefix);
       const accountInfo = await provider.getAccountInfo(address).catch(() => null);
       accountNumber = (accountInfo?.accountNumber ?? 0).toString();
@@ -243,7 +244,7 @@ export class TransactionService {
     const provider = this.getGnoProvider();
     const wallet = await this.walletService.getCurrentWallet();
     const { signature } = await wallet.signByAccountId(provider, account.id, document);
-    const signatures = signature.map((s) => ({
+    const signatures = signature.map(s => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
         value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
@@ -272,7 +273,7 @@ export class TransactionService {
       account.id,
       signingDocument,
     );
-    const encodedSignature = signature.map((s) => ({
+    const encodedSignature = signature.map(s => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
         value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
@@ -304,7 +305,7 @@ export class TransactionService {
       signingDocument,
       account.derivationPath,
     );
-    const encodedSignature = signature.map((s) => ({
+    const encodedSignature = signature.map(s => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
         value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
@@ -524,11 +525,11 @@ export class TransactionService {
     accountId: string,
   ): Promise<{ account: Account; keyring: Keyring; hdPath: number | undefined }> => {
     const wallet = await this.walletService.getCurrentWallet();
-    const account = wallet.accounts.find((a) => a.id === accountId);
+    const account = wallet.accounts.find(a => a.id === accountId);
     if (!account) {
       throw new Error('ACCOUNT_NOT_FOUND');
     }
-    const keyring = wallet.keyrings.find((k) => k.id === account.keyringId);
+    const keyring = wallet.keyrings.find(k => k.id === account.keyringId);
     if (!keyring) {
       throw new Error('KEYRING_NOT_FOUND');
     }

@@ -1,15 +1,14 @@
-import React, { useCallback, useMemo } from 'react';
-
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import { SubHeader } from '@components/atoms';
-import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
-import { GasInfo, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
-
 import { DEFAULT_GAS_ADJUSTMENT } from '@common/constants/gas.constant';
+import { SubHeader } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
 import NetworkFeeCustomInput from '@components/molecules/network-fee-custom-input/network-fee-custom-input';
 import NetworkFeeSettingItem from '@components/molecules/network-fee-setting-item/network-fee-setting-item';
+import { FeeTokenQuote } from '@hooks/wallet/use-fee-token-price';
+import { GasInfo, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 import BigNumber from 'bignumber.js';
+import React, { useCallback, useMemo } from 'react';
+
 import { NetworkFeeSettingWrapper } from './network-fee-setting.styles';
 
 export interface NetworkFeeSettingProps {
@@ -69,7 +68,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   }, [networkFeeSettings]);
 
   const settingInfos = useMemo(() => {
-    return settingTypesOfList.map((settingType) => ({
+    return settingTypesOfList.map(settingType => ({
       ...settingInfoMap[settingType],
       settingType,
     }));
@@ -115,7 +114,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
         title='Network Fee Setting'
         leftElement={{
           onClick: onClickBack,
-          element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
+          element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
         }}
       />
 
@@ -148,8 +147,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
                       simulateErrorMessage: null,
                     }),
                   },
-                })
-              }
+                })}
             />
           ))}
         </div>

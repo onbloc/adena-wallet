@@ -303,7 +303,8 @@ export function shouldIntercept(href: string): boolean {
   try {
     const url = new URL(href);
     return url.pathname.includes(GNO_HELP_MARKER);
-  } catch {
+  }
+  catch {
     return false;
   }
 }
@@ -439,10 +440,10 @@ export function isLoopbackGnoConnectTrusted(
  *   only so the user can be told to unlock rather than to switch networks.
  * - ACTIVE_NETWORK_MISMATCH: the wallet is on some other network.
  */
-export type LoopbackTrustRejection =
-  | 'ORIGIN_CHAIN_MISMATCH'
-  | 'WALLET_UNAVAILABLE'
-  | 'ACTIVE_NETWORK_MISMATCH';
+export type LoopbackTrustRejection
+  = | 'ORIGIN_CHAIN_MISMATCH'
+    | 'WALLET_UNAVAILABLE'
+    | 'ACTIVE_NETWORK_MISMATCH';
 
 export function getLoopbackGnoConnectRejection(
   loopbackChainId: string,

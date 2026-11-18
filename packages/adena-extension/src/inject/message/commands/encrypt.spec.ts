@@ -1,15 +1,16 @@
+import { MemoryProvider } from '@common/provider/memory/memory-provider';
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { webcrypto } from 'crypto';
+import type { Mock } from 'vitest';
 
-import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { clearInMemoryKey, decryptPassword, encryptPassword, getInMemoryKey } from './encrypt';
 
 type SessionArea = {
-  get: jest.Mock;
-  set: jest.Mock;
-  remove: jest.Mock;
+  get: Mock;
+  set: Mock;
+  remove: Mock;
 };
 
 // In-memory stand-in for chrome.storage.session: it outlives a "worker
@@ -17,11 +18,11 @@ type SessionArea = {
 const mockSessionStorage = (): { area: SessionArea; store: Record<string, unknown> } => {
   const store: Record<string, unknown> = {};
   const area: SessionArea = {
-    get: jest.fn(async (key: string) => (key in store ? { [key]: store[key] } : {})),
-    set: jest.fn(async (items: Record<string, unknown>) => {
+    get: vi.fn(async (key: string) => (key in store ? { [key]: store[key] } : {})),
+    set: vi.fn(async (items: Record<string, unknown>) => {
       Object.assign(store, items);
     }),
-    remove: jest.fn(async (key: string) => {
+    remove: vi.fn(async (key: string) => {
       delete store[key];
     }),
   };
@@ -98,7 +99,7 @@ describe('getInMemoryKey', () => {
   it('mints a fresh key when the session copy is unreadable', async () => {
     const { store } = mockSessionStorage();
     store.ENCRYPT_KEY_JWK = { kty: 'oct', k: 'not-a-valid-key', alg: 'A256GCM' };
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     const key = await getInMemoryKey(new MemoryProvider());
 
@@ -131,7 +132,7 @@ describe('clearInMemoryKey', () => {
 // memory nor a copy in session storage, and the next unlock must get a key
 // that a later worker restart can restore.
 describe('lock racing a cold-start load', () => {
-  const deferred = <T,>(): { promise: Promise<T>; resolve: (value: T) => void } => {
+  const deferred = <T>(): { promise: Promise<T>; resolve: (value: T) => void } => {
     let resolve!: (value: T) => void;
     const promise = new Promise<T>((r) => {
       resolve = r;
@@ -145,7 +146,7 @@ describe('lock racing a cold-start load', () => {
   // wait. Without serialization it returns as soon as the lock has run, which
   // is exactly the interleaving the fix guards against.
   const letLockGoFirst = (lock: Promise<void>): Promise<unknown> =>
-    Promise.race([lock, new Promise((resolve) => setTimeout(resolve, 50))]);
+    Promise.race([lock, new Promise(resolve => setTimeout(resolve, 50))]);
 
   it('leaves nothing behind when the lock lands during the session read', async () => {
     const { area, store } = mockSessionStorage();

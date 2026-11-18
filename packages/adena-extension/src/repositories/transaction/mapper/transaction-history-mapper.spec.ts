@@ -1,5 +1,5 @@
 import { TransactionHistoryItem } from '../response/transaction-history-response';
-import { TransactionHistoryMapper, normalizeTokenDenom } from './transaction-history-mapper';
+import { normalizeTokenDenom, TransactionHistoryMapper } from './transaction-history-mapper';
 
 const baseItem = (overrides: Partial<TransactionHistoryItem> = {}): TransactionHistoryItem => ({
   amountIn: { denom: 'ugnot', value: '0' },

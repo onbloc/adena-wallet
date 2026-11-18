@@ -1,15 +1,14 @@
-import { Tx } from '@gnolang/tm2-js-client';
-import { useQuery, useQueryClient, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { Account, Document, documentToDefaultTx, isSessionAccount, Wallet } from 'adena-module';
-import BigNumber from 'bignumber.js';
-
 import { MINIMUM_GAS_PRICE } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { parseStorageDeposits } from '@common/provider/gno/event-parser';
+import { Tx } from '@gnolang/tm2-js-client';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionService } from '@services/index';
+import { keepPreviousData, useQuery, useQueryClient, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { Account, Document, documentToDefaultTx, isSessionAccount, Wallet } from 'adena-module';
+import BigNumber from 'bignumber.js';
 
 import { useIsInitializedAccount } from '../use-get-account-info';
 import { canSignInProcess, resolveStaticCodeMessageGasUsed } from './code-message-static-gas';
@@ -162,7 +161,7 @@ export const makeEstimateGasTransaction = async (
  */
 export const useGetEstimateGas = (
   document: Document | null | undefined,
-  options?: UseQueryOptions<EstimateGasResult | null, Error>,
+  options?: Omit<UseQueryOptions<EstimateGasResult | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<EstimateGasResult | null> => {
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { transactionService, transactionGasService } = useAdenaContext();
@@ -225,7 +224,6 @@ export const useGetEstimateGas = (
           };
         })
         .catch((e: Error): EstimateGasResult => {
-          // eslint-disable-next-line no-console
           console.error('[estimate-gas] simulate failed:', e);
           return {
             ...ERROR_ESTIMATE_GAS_RESULT,
@@ -244,7 +242,7 @@ export const useGetEstimateGas = (
       return nextResult;
     },
     refetchInterval: REFETCH_INTERVAL,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     enabled: !!document && !!transactionGasService && !!gasPrice,
     ...options,
   });

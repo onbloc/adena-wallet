@@ -15,7 +15,7 @@ export type UseChangePasswordReturn = {
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     error: boolean;
-    ref: React.RefObject<HTMLInputElement>;
+    ref: React.RefObject<HTMLInputElement | null>;
   };
   newPwdState: {
     value: string;
@@ -94,7 +94,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const { name, value } = e.target;
-      setInputs((inputs) => ({ ...inputs, [name]: value }));
+      setInputs(inputs => ({ ...inputs, [name]: value }));
     },
     [currPwd, newPwd, confirmPwd],
   );
@@ -112,7 +112,8 @@ export const useChangePassword = (): UseChangePasswordReturn => {
       if (!isValid) {
         throw new PasswordValidationError('INVALID_PASSWORD');
       }
-    } catch (error) {
+    }
+    catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
         setIsCurrPwdError(true);
@@ -124,7 +125,8 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     try {
       validatePasswordComplexity(newPassword);
       validateEqualsChangePassword(newPassword, currentPassword);
-    } catch (error) {
+    }
+    catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
         setIsNewPwdError(true);
@@ -135,7 +137,8 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     }
     try {
       validateNotMatchConfirmPassword(newPassword, newConfirmPassword);
-    } catch (error) {
+    }
+    catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
         setIsConfirmPwdError(true);
@@ -156,7 +159,8 @@ export const useChangePassword = (): UseChangePasswordReturn => {
           confirmPwd: '',
         });
         return 'FINISH';
-      } catch (e) {
+      }
+      catch (e) {
         console.error(e);
       }
     }
@@ -194,7 +198,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
         cancel: goBack,
         save: saveButtonClick,
       },
-      disabled: Object.values(inputs).some((el) => el === ''),
+      disabled: Object.values(inputs).some(el => el === ''),
     },
     onKeyDown,
   };

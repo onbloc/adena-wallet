@@ -1,16 +1,15 @@
-import React, { useMemo } from 'react';
-
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import { SubHeader } from '@components/atoms';
-import { NFTTransferInputWrapper } from './nft-transfer-input.styles';
-
 import { BaseError } from '@common/errors';
+import { SubHeader } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card';
 import AddressInput from '@components/pages/transfer-input/address-input/address-input';
 import MemoInput from '@components/pages/transfer-input/memo-input/memo-input';
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721Model } from '@types';
+import React, { useMemo } from 'react';
+
+import { NFTTransferInputWrapper } from './nft-transfer-input.styles';
 
 export interface NFTTransferInputProps {
   grc721Token: GRC721Model;
@@ -41,7 +40,7 @@ export interface NFTTransferInputProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: UseQueryOptions<string | null, Error>,
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>;
   onClickBack: () => void;
   onClickCancel: () => void;
@@ -65,17 +64,19 @@ const NFTTransferInput: React.FC<NFTTransferInputProps> = ({
 
   return (
     <NFTTransferInputWrapper>
-      {hasBackButton ? (
-        <SubHeader
-          title={title}
-          leftElement={{
-            element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
-            onClick: onClickBack,
-          }}
-        />
-      ) : (
-        <SubHeader title={title} />
-      )}
+      {hasBackButton
+        ? (
+            <SubHeader
+              title={title}
+              leftElement={{
+                element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
+                onClick: onClickBack,
+              }}
+            />
+          )
+        : (
+            <SubHeader title={title} />
+          )}
       <div className='asset-card-wrapper'>
         <NFTAssetImageCard asset={grc721Token} queryGRC721TokenUri={queryGRC721TokenUri} />
       </div>

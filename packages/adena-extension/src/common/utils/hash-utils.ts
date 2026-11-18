@@ -33,7 +33,8 @@ export const toHexHash = (hash: string): string => {
     }
 
     return toHex(bytes);
-  } catch {
+  }
+  catch {
     return hash;
   }
 };

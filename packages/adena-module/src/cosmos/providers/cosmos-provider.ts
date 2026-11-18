@@ -11,10 +11,10 @@ export interface CosmosTxBroadcastResponse {
   height: string;
 }
 
-export type CosmosBroadcastMode =
-  | 'BROADCAST_MODE_SYNC'
-  | 'BROADCAST_MODE_ASYNC'
-  | 'BROADCAST_MODE_BLOCK';
+export type CosmosBroadcastMode
+  = | 'BROADCAST_MODE_SYNC'
+    | 'BROADCAST_MODE_ASYNC'
+    | 'BROADCAST_MODE_BLOCK';
 
 /**
  * Abstract Cosmos network client consumed by the signing pipeline.

@@ -49,8 +49,8 @@ export class RpcEndpointSelector {
   private activeIndex = 0;
 
   constructor(rpcUrl: string, fallbackRPCUrl?: string) {
-    this.endpoints =
-      fallbackRPCUrl && fallbackRPCUrl !== rpcUrl ? [rpcUrl, fallbackRPCUrl] : [rpcUrl];
+    this.endpoints
+      = fallbackRPCUrl && fallbackRPCUrl !== rpcUrl ? [rpcUrl, fallbackRPCUrl] : [rpcUrl];
   }
 
   public get active(): string {
@@ -65,7 +65,8 @@ export class RpcEndpointSelector {
 
       try {
         return await request(this.endpoints[attemptedIndex]);
-      } catch (error) {
+      }
+      catch (error) {
         if (!isTransportError(error)) {
           throw error;
         }

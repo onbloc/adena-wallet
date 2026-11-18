@@ -1,6 +1,7 @@
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
 import CHAIN_DATA from '@resources/chains/chains.json';
+
 import {
   AccountGRC721CollectionsV022,
   AccountGRC721PinnedPackagesV022,
@@ -73,7 +74,7 @@ export class StorageMigration025 implements Migration<StorageModelDataV025> {
       'SESSIONS',
     ];
     const currentDataKeys = Object.keys(currentData);
-    const hasKeys = storageDataKeys.every((key) => currentDataKeys.includes(key));
+    const hasKeys = storageDataKeys.every(key => currentDataKeys.includes(key));
     if (!hasKeys) {
       return false;
     }
@@ -116,11 +117,11 @@ export class StorageMigration025 implements Migration<StorageModelDataV025> {
   }
 
   private migrateNetworks(networks: StorageModelDataV024['NETWORKS']): NetworksModelV022 {
-    const defaultNetworks = CHAIN_DATA.filter((n) => n.default);
+    const defaultNetworks = CHAIN_DATA.filter(n => n.default);
     const customNetworks = networks
-      .filter((n) => !n.default && !this.isOldChainId(n.chainId))
+      .filter(n => !n.default && !this.isOldChainId(n.chainId))
       .map((n) => {
-        const provided = CHAIN_DATA.find((d) => d.chainId === n.chainId || d.id === n.id);
+        const provided = CHAIN_DATA.find(d => d.chainId === n.chainId || d.id === n.id);
         if (provided) {
           return {
             ...provided,
@@ -142,7 +143,7 @@ export class StorageMigration025 implements Migration<StorageModelDataV025> {
   ): EstablishSitesModelV022 {
     const result: EstablishSitesModelV022 = {};
     for (const accountId of Object.keys(sites)) {
-      const filtered = sites[accountId].filter((site) => !this.isOldChainId(site.chainId));
+      const filtered = sites[accountId].filter(site => !this.isOldChainId(site.chainId));
       if (filtered.length > 0) {
         result[accountId] = filtered;
       }
@@ -155,7 +156,7 @@ export class StorageMigration025 implements Migration<StorageModelDataV025> {
   ): AccountTokenMetainfoModelV022 {
     const result: AccountTokenMetainfoModelV022 = {};
     for (const accountId of Object.keys(metainfos)) {
-      const filtered = metainfos[accountId].filter((token) => !this.isOldChainId(token.networkId));
+      const filtered = metainfos[accountId].filter(token => !this.isOldChainId(token.networkId));
       if (filtered.length > 0) {
         result[accountId] = filtered;
       }
@@ -179,7 +180,7 @@ export class StorageMigration025 implements Migration<StorageModelDataV025> {
     const result: AccountGRC721CollectionsV022 = {};
     for (const accountId of Object.keys(collections)) {
       const networks = Object.keys(collections[accountId]).filter(
-        (networkId) => !this.isOldChainId(networkId),
+        networkId => !this.isOldChainId(networkId),
       );
       if (networks.length === 0) {
         continue;
@@ -198,7 +199,7 @@ export class StorageMigration025 implements Migration<StorageModelDataV025> {
     const result: AccountGRC721PinnedPackagesV022 = {};
     for (const accountId of Object.keys(pinned)) {
       const networks = Object.keys(pinned[accountId]).filter(
-        (networkId) => !this.isOldChainId(networkId),
+        networkId => !this.isOldChainId(networkId),
       );
       if (networks.length === 0) {
         continue;

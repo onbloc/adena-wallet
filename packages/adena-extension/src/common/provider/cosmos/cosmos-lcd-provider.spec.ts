@@ -1,4 +1,6 @@
 import { CosmosNetworkProfile } from 'adena-module';
+import type { MockInstance } from 'vitest';
+
 import { CosmosLcdProvider } from './cosmos-lcd-provider';
 import { CosmosQueryClient } from './cosmos-query-client';
 
@@ -16,24 +18,24 @@ const PROFILE: CosmosNetworkProfile = {
 };
 
 describe('CosmosLcdProvider', () => {
-  let getAccountMock: jest.SpyInstance;
-  let getBalanceMock: jest.SpyInstance;
+  let getAccountMock: MockInstance;
+  let getBalanceMock: MockInstance;
 
   beforeEach(() => {
-    getAccountMock = jest
+    getAccountMock = vi
       .spyOn(CosmosQueryClient.prototype, 'getAccount')
       .mockResolvedValue({
         address: 'atone1abc',
         accountNumber: '1',
         sequence: '2',
       });
-    getBalanceMock = jest
+    getBalanceMock = vi
       .spyOn(CosmosQueryClient.prototype, 'getBalance')
       .mockResolvedValue('1000');
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('constructor', () => {
@@ -85,18 +87,19 @@ describe('CosmosLcdProvider', () => {
     });
 
     it('re-fetches after 5-second window elapses', async () => {
-      jest.useFakeTimers({ doNotFake: ['setImmediate'] });
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
       try {
-        jest.setSystemTime(new Date('2026-04-21T00:00:00Z'));
+        vi.setSystemTime(new Date('2026-04-21T00:00:00Z'));
         const provider = new CosmosLcdProvider(PROFILE);
 
         await provider.getAccount('atone1abc');
-        jest.setSystemTime(new Date('2026-04-21T00:00:06Z'));
+        vi.setSystemTime(new Date('2026-04-21T00:00:06Z'));
         await provider.getAccount('atone1abc');
 
         expect(getAccountMock).toHaveBeenCalledTimes(2);
-      } finally {
-        jest.useRealTimers();
+      }
+      finally {
+        vi.useRealTimers();
       }
     });
   });
@@ -115,7 +118,7 @@ describe('CosmosLcdProvider', () => {
 
   describe('broadcastTx', () => {
     it('is not debounced (always hits the network)', async () => {
-      const broadcastSpy = jest
+      const broadcastSpy = vi
         .spyOn(CosmosQueryClient.prototype, 'broadcastTx')
         .mockResolvedValue({ txhash: 'HASH', code: 0, rawLog: '', height: '1' });
 

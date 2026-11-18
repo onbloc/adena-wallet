@@ -1,4 +1,5 @@
 import { fonts, FontsType } from '@styles/theme';
+import type { JSX } from 'react';
 import React, { CSSProperties, PropsWithChildren } from 'react';
 import styled, { css, CSSProp } from 'styled-components';
 
@@ -37,7 +38,7 @@ export const Text = ({
 };
 
 const Wrapper = styled.div.withConfig({
-  shouldForwardProp: (prop) => !['type', 'display', 'textAlign', 'color', 'margin'].includes(prop),
+  shouldForwardProp: prop => !['type', 'display', 'textAlign', 'color', 'margin'].includes(prop),
 })<TextProps>`
   ${(props): CSSProp => {
     return css`

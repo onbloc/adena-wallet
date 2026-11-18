@@ -8,7 +8,7 @@ const transportError = (): Error => new TypeError('Failed to fetch');
 describe('RpcEndpointSelector', () => {
   it('runs on the primary endpoint while it answers', async () => {
     const selector = new RpcEndpointSelector(PRIMARY, FALLBACK);
-    const request = jest.fn().mockResolvedValue('ok');
+    const request = vi.fn().mockResolvedValue('ok');
 
     await expect(selector.run(request)).resolves.toBe('ok');
     await expect(selector.run(request)).resolves.toBe('ok');
@@ -18,7 +18,7 @@ describe('RpcEndpointSelector', () => {
 
   it('retries on the fallback endpoint after a transport failure, and stays there', async () => {
     const selector = new RpcEndpointSelector(PRIMARY, FALLBACK);
-    const request = jest.fn().mockRejectedValueOnce(transportError()).mockResolvedValue('ok');
+    const request = vi.fn().mockRejectedValueOnce(transportError()).mockResolvedValue('ok');
 
     await expect(selector.run(request)).resolves.toBe('ok');
     await expect(selector.run(request)).resolves.toBe('ok');
@@ -28,19 +28,19 @@ describe('RpcEndpointSelector', () => {
 
   it('rotates back to the primary endpoint once the fallback also fails', async () => {
     const selector = new RpcEndpointSelector(PRIMARY, FALLBACK);
-    const failing = jest.fn().mockRejectedValue(transportError());
+    const failing = vi.fn().mockRejectedValue(transportError());
 
     await expect(selector.run(failing)).rejects.toThrow('Failed to fetch');
     expect(failing.mock.calls.map(([endpoint]) => endpoint)).toEqual([PRIMARY, FALLBACK]);
 
-    const succeeding = jest.fn().mockResolvedValue('ok');
+    const succeeding = vi.fn().mockResolvedValue('ok');
     await expect(selector.run(succeeding)).resolves.toBe('ok');
     expect(succeeding).toHaveBeenCalledWith(PRIMARY);
   });
 
   it('treats a 5xx response as a transport failure but a 4xx as a chain answer', async () => {
     const serverDown = new RpcEndpointSelector(PRIMARY, FALLBACK);
-    const onServerError = jest
+    const onServerError = vi
       .fn()
       .mockRejectedValueOnce(new Error('Bad status on response: 502'))
       .mockResolvedValue('ok');
@@ -49,7 +49,7 @@ describe('RpcEndpointSelector', () => {
     expect(onServerError).toHaveBeenLastCalledWith(FALLBACK);
 
     const badRequest = new RpcEndpointSelector(PRIMARY, FALLBACK);
-    const onClientError = jest.fn().mockRejectedValue(new Error('Bad status on response: 404'));
+    const onClientError = vi.fn().mockRejectedValue(new Error('Bad status on response: 404'));
 
     await expect(badRequest.run(onClientError)).rejects.toThrow('Bad status on response: 404');
     expect(onClientError).toHaveBeenCalledTimes(1);
@@ -57,7 +57,7 @@ describe('RpcEndpointSelector', () => {
 
   it('rethrows a chain-level error without leaving the primary endpoint', async () => {
     const selector = new RpcEndpointSelector(PRIMARY, FALLBACK);
-    const request = jest.fn().mockRejectedValue(new Error('insufficient funds'));
+    const request = vi.fn().mockRejectedValue(new Error('insufficient funds'));
 
     await expect(selector.run(request)).rejects.toThrow('insufficient funds');
     expect(request).toHaveBeenCalledTimes(1);
@@ -66,7 +66,7 @@ describe('RpcEndpointSelector', () => {
 
   it('does not retry when the network declares no fallback', async () => {
     const selector = new RpcEndpointSelector(PRIMARY);
-    const request = jest.fn().mockRejectedValue(transportError());
+    const request = vi.fn().mockRejectedValue(transportError());
 
     await expect(selector.run(request)).rejects.toThrow('Failed to fetch');
     expect(request).toHaveBeenCalledTimes(1);
@@ -74,7 +74,7 @@ describe('RpcEndpointSelector', () => {
 
   it('ignores a fallback that repeats the primary endpoint', async () => {
     const selector = new RpcEndpointSelector(PRIMARY, PRIMARY);
-    const request = jest.fn().mockRejectedValue(transportError());
+    const request = vi.fn().mockRejectedValue(transportError());
 
     await expect(selector.run(request)).rejects.toThrow('Failed to fetch');
     expect(request).toHaveBeenCalledTimes(1);

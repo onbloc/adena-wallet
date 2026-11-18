@@ -1,10 +1,10 @@
-import React from 'react';
-import styled from 'styled-components';
-
 import { Loading, SkeletonBoxStyle } from '@components/atoms';
 import { GhostButtons } from '@components/molecules';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import type { JSX } from 'react';
+import React from 'react';
+import styled from 'styled-components';
 
 interface ApproveProps {
   leftButtonText?: string;

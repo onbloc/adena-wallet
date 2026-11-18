@@ -89,7 +89,7 @@ function parseRouteFunc(raw: unknown): Grc20RouteFunc | null {
   if (typeof name !== 'string' || !EXPORTED_FUNC_NAME.test(name)) {
     return null;
   }
-  if (!Array.isArray(args) || args.some((arg) => typeof arg !== 'string')) {
+  if (!Array.isArray(args) || args.some(arg => typeof arg !== 'string')) {
     return null;
   }
 

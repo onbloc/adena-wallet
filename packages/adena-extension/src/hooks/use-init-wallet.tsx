@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
-
 import { RoutePath } from '@types';
+import { useEffect } from 'react';
+import { useMatch } from 'react-router';
+
+import { useAddressBook } from './use-address-book';
 import useAppNavigate from './use-app-navigate';
 import { useLoadAccounts } from './use-load-accounts';
-import { useMatch } from 'react-router-dom';
-import { useAddressBook } from './use-address-book';
 import { useWallet } from './use-wallet';
 
 export const useInitWallet = (): void => {

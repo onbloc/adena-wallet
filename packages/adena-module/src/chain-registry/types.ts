@@ -1,9 +1,9 @@
 import type { StdFee } from '@cosmjs/amino';
 
 type GnoSignMode = 'gno-amino-json';
-export type CosmosSignMode =
-  | 'SIGN_MODE_DIRECT'
-  | 'SIGN_MODE_LEGACY_AMINO_JSON';
+export type CosmosSignMode
+  = | 'SIGN_MODE_DIRECT'
+    | 'SIGN_MODE_LEGACY_AMINO_JSON';
 
 // ─────────────────────────────────────────────────────────────────────
 // Chain — chain-group-level definition (one entry per chainGroup).

@@ -64,7 +64,7 @@ describe('describeLoopbackRejection', () => {
 describe('showGnoConnectNotice', () => {
   afterEach(() => {
     document.body.innerHTML = '';
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('renders the notice into the page', () => {
@@ -81,10 +81,10 @@ describe('showGnoConnectNotice', () => {
   });
 
   it('removes itself after the timeout', () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     showGnoConnectNotice({ title: 'Title', body: 'Body' });
 
-    jest.advanceTimersByTime(15_000);
+    vi.advanceTimersByTime(15_000);
 
     expect(document.getElementById('adena-gnoconnect-notice')).toBeNull();
   });

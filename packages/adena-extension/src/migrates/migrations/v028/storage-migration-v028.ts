@@ -1,5 +1,6 @@
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
+
 import { StorageModelDataV027 } from '../v027/storage-model-v027';
 import { StorageModelDataV028 } from './storage-model-v028';
 
@@ -48,7 +49,7 @@ export class StorageMigration028 implements Migration<StorageModelDataV028> {
       'SESSIONS',
     ];
     const currentDataKeys = Object.keys(currentData);
-    const hasKeys = storageDataKeys.every((key) => currentDataKeys.includes(key));
+    const hasKeys = storageDataKeys.every(key => currentDataKeys.includes(key));
     if (!hasKeys) {
       return false;
     }

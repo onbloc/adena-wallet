@@ -1,6 +1,7 @@
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { Amount } from '@types';
 import BigNumber from 'bignumber.js';
+
 import { convertTextToAmount } from './string-utils';
 
 const GNOT_DECIMALS = 6 as const;

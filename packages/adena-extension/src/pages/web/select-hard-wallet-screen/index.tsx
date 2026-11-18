@@ -1,17 +1,15 @@
-import { ReactElement, useCallback } from 'react';
-import styled from 'styled-components';
-
-import { Pressable, View, WebImg, WebMain, WebText } from '@components/atoms';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
-
 import BackIcon from '@assets/web/chevron-left.svg';
 import IconWallet from '@assets/web/hard-wallet-rounded.svg';
-import IconLedger from '@assets/web/ledger-xs.svg';
 import IconKeystone from '@assets/web/keystone-xs.svg';
-import WebMainButton from '@components/atoms/web-main-button';
+import IconLedger from '@assets/web/ledger-xs.svg';
 import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 import { isLedgerSupportedBrowser } from '@common/utils/browser-utils';
+import { Pressable, View, WebImg, WebMain, WebText } from '@components/atoms';
+import WebMainButton from '@components/atoms/web-main-button';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
+import { ReactElement, useCallback } from 'react';
+import styled from 'styled-components';
 
 const StyledWrapper = styled(View)`
   position: relative;

@@ -1,7 +1,3 @@
-import { useEffect, useState } from 'react';
-import { useRecoilState } from 'recoil';
-import styled, { useTheme } from 'styled-components';
-
 import disconnected from '@assets/disconnected.svg';
 import DefaultImage from '@assets/favicon-default-small.svg';
 import { ListBox, ListHierarchy, Text } from '@components/atoms';
@@ -13,6 +9,10 @@ import { EstablishSite } from '@repositories/wallet';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import { useAtom } from 'jotai';
+import type { JSX } from 'react';
+import { useEffect, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 // `source` disambiguates which service owns the entry so disconnect routes to
 // the matching repository. AtomOne entries carry a concrete chainId (e.g.
@@ -24,7 +24,7 @@ export const ConnectedApps = (): JSX.Element => {
   const { establishService, establishAtomOneService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const { goBack } = useAppNavigate();
-  const [state] = useRecoilState(WalletState.state);
+  const [state] = useAtom(WalletState.state);
   const [data, setData] = useState<EnrichedSite[]>([]);
 
   useEffect(() => {
@@ -41,7 +41,8 @@ export const ConnectedApps = (): JSX.Element => {
         item.hostname,
         item.chainId,
       );
-    } else {
+    }
+    else {
       await establishService.unEstablishBy(currentAccount.id, item.hostname);
     }
     await updateData();
@@ -56,8 +57,8 @@ export const ConnectedApps = (): JSX.Element => {
       establishAtomOneService.getEstablishedSitesBy(currentAccount.id),
     ]);
     const merged: EnrichedSite[] = [
-      ...gnoSites.map((site) => ({ ...site, source: 'gno' as const })),
-      ...cosmosSites.map((site) => ({ ...site, source: 'cosmos' as const })),
+      ...gnoSites.map(site => ({ ...site, source: 'gno' as const })),
+      ...cosmosSites.map(site => ({ ...site, source: 'cosmos' as const })),
     ];
     setData(merged);
   };
@@ -65,14 +66,14 @@ export const ConnectedApps = (): JSX.Element => {
   const renderAppItem = (item: EnrichedSite, index: number): JSX.Element => {
     return (
       <ListBox
-        left={
+        left={(
           <img
             className='logo'
             src={item.favicon !== null ? item.favicon : DefaultImage}
             alt='logo image'
           />
-        }
-        center={
+        )}
+        center={(
           <div className='connected-center'>
             <Text type='body2Bold' className='connected-hostname'>
               {item.hostname}
@@ -83,12 +84,12 @@ export const ConnectedApps = (): JSX.Element => {
               </Text>
             )}
           </div>
-        }
-        right={
+        )}
+        right={(
           <DisconnectedBtn onClick={(): Promise<void> => onClickDisconnect(item)}>
             <img src={disconnected} alt='disconnected button' />
           </DisconnectedBtn>
-        }
+        )}
         cursor='default'
         hoverAction={false}
         key={`${item.source}:${item.hostname}:${item.chainId}:${index}`}
@@ -102,23 +103,27 @@ export const ConnectedApps = (): JSX.Element => {
       <Text type='header4' margin='0px 0px 12px'>
         Connected Apps
       </Text>
-      {state === 'FINISH' ? (
-        <>
-          {data.length > 0 ? (
-            data.map(renderAppItem)
-          ) : (
-            <Text className='desc' type='body1Reg' color={theme.neutral.a}>
-              No connections
-            </Text>
+      {state === 'FINISH'
+        ? (
+            <>
+              {data.length > 0
+                ? (
+                    data.map(renderAppItem)
+                  )
+                : (
+                    <Text className='desc' type='body1Reg' color={theme.neutral.a}>
+                      No connections
+                    </Text>
+                  )}
+
+              <div className='empty-box' />
+
+              <CloseShadowButton onClick={goBack} />
+            </>
+          )
+        : (
+            <LoadingNft />
           )}
-
-          <div className='empty-box' />
-
-          <CloseShadowButton onClick={goBack} />
-        </>
-      ) : (
-        <LoadingNft />
-      )}
     </Wrapper>
   );
 };

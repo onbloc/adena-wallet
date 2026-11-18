@@ -1,6 +1,6 @@
+import { AssetPrice, NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
 
-import { AssetPrice, NetworkMetainfo } from '@types';
 import { AssetPriceMapper } from './mapper/asset-price-mapper';
 import { AssetPricesResponse } from './response/asset-price-response';
 import { ITokenPriceRepository } from './types';
@@ -50,7 +50,7 @@ export class TokenPriceRepository implements ITokenPriceRepository {
     // quotes on a failed poll, which a silent empty result would wipe out.
     const request = this.axiosInstance
       .get<{ data: AssetPricesResponse }>(`${apiUrl}/v1/prices`)
-      .then((response) => AssetPriceMapper.fromResponse(response.data?.data))
+      .then(response => AssetPriceMapper.fromResponse(response.data?.data))
       .finally(() => {
         this.inflightRequest = null;
       });

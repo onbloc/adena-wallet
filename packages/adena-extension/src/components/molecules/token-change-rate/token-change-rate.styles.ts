@@ -1,7 +1,6 @@
+import { ChangeTone } from '@common/utils/price-utils';
 import theme, { fonts } from '@styles/theme';
 import styled, { css, RuleSet } from 'styled-components';
-
-import { ChangeTone } from '@common/utils/price-utils';
 
 export const changeToneColor = (tone: ChangeTone): string => {
   if (tone === 'positive') {
@@ -14,7 +13,7 @@ export const changeToneColor = (tone: ChangeTone): string => {
 };
 
 export const TokenChangeRateWrapper = styled.span.withConfig({
-  shouldForwardProp: (prop) => !['$tone', '$variant'].includes(prop),
+  shouldForwardProp: prop => !['$tone', '$variant'].includes(prop),
 })<{ $tone: ChangeTone; $variant: 'badge' | 'plain' }>`
   display: inline-flex;
   align-items: center;
@@ -24,8 +23,8 @@ export const TokenChangeRateWrapper = styled.span.withConfig({
   color: ${({ $tone }): string => changeToneColor($tone)};
 
   ${({ $variant, $tone }): RuleSet | false =>
-    $variant === 'badge' &&
-    css`
+    $variant === 'badge'
+    && css`
       padding: 2px 3px;
       border-radius: 3px;
       /* 20% tint of the tone colour (hex alpha suffix keeps the theme token). */

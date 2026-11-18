@@ -1,6 +1,5 @@
-import { Account } from 'adena-module';
-
 import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
+import { Account } from 'adena-module';
 
 import { evaluateSessionSigningGuard } from './session-signing-guard';
 

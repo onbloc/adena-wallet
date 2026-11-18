@@ -2,8 +2,8 @@ import { isWeb3AuthKeyringType } from '../keyring';
 import { Account, AccountInfo } from './account';
 import { LedgerAccount } from './ledger-account';
 import { SeedAccount } from './seed-account';
-import { SingleAccount } from './single-account';
 import { SessionAccount } from './session-account';
+import { SingleAccount } from './single-account';
 
 export function isSeedAccount(account: Account): account is SeedAccount {
   return account.type === 'HD_WALLET';

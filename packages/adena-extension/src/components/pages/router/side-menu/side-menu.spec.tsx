@@ -1,11 +1,12 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
-import theme from '@styles/theme';
 import { GlobalPopupStyle } from '@styles/global-style';
-import SideMenu from './side-menu';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
 import { SideMenuProps } from '@types';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
+
+import SideMenu from './side-menu';
 
 describe('SideMenu Component', () => {
   it('SideMenu render', () => {
@@ -17,7 +18,7 @@ describe('SideMenu Component', () => {
       accounts: [],
       focusedAccountId: '',
       focusAccountId: () => {
-        return; 
+        return;
       },
       changeAccount: () => {
         return;
@@ -40,12 +41,12 @@ describe('SideMenu Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <SideMenu {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

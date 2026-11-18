@@ -1,10 +1,9 @@
+import TransferLedgerReject from '@components/pages/transfer-ledger-reject/transfer-ledger-reject';
+import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
+import { RoutePath } from '@types';
 import React, { useCallback } from 'react';
 import styled from 'styled-components';
-
-import TransferLedgerReject from '@components/pages/transfer-ledger-reject/transfer-ledger-reject';
-import { RoutePath } from '@types';
-import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigate';
 
 const TransferLedgerRejectLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};

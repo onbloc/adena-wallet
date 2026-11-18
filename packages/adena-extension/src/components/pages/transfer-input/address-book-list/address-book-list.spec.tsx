@@ -1,9 +1,10 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
-import theme from '@styles/theme';
 import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import { Provider as JotaiProvider } from 'jotai';
+import React from 'react';
+import { ThemeProvider } from 'styled-components';
+
 import AddressBookList, { AddressBookListProps } from './address-book-list';
 
 describe('AddressBookList Component', () => {
@@ -22,12 +23,12 @@ describe('AddressBookList Component', () => {
     };
 
     render(
-      <RecoilRoot>
+      <JotaiProvider>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <AddressBookList {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
+      </JotaiProvider>,
     );
   });
 });

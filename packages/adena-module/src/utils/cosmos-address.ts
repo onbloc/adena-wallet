@@ -9,7 +9,8 @@ export function validateCosmosAddress(address: string, expectedPrefix: string): 
   try {
     const { prefix } = fromBech32(address);
     return prefix === expectedPrefix;
-  } catch {
+  }
+  catch {
     return false;
   }
 }

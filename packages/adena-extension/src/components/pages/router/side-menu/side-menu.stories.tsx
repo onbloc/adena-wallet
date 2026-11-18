@@ -1,6 +1,6 @@
 import SideMenu from './side-menu';
-import { Meta, StoryObj } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react-vite';
+import { action } from 'storybook/actions';
 import { SideMenuProps } from '@types';
 
 export default {

@@ -1,13 +1,12 @@
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { getWalletFundingAddress } from '@common/utils/account-address';
+import { formatNickname } from '@common/utils/client-utils';
+import { keepPreviousData, useQuery, UseQueryResult } from '@tanstack/react-query';
+import { SideMenuAccountInfo, TokenBalanceType } from '@types';
 import { Account } from 'adena-module';
 import { useMemo } from 'react';
 
-import { getWalletFundingAddress } from '@common/utils/account-address';
-import { formatNickname } from '@common/utils/client-utils';
-import { SideMenuAccountInfo, TokenBalanceType } from '@types';
-
-import { useAccountNativeBalanceMap } from './use-account-native-balance-map';
 import { useAccountName } from './use-account-name';
+import { useAccountNativeBalanceMap } from './use-account-native-balance-map';
 import { useChain } from './use-chain';
 import { useMasterAccountBadgeMap } from './use-master-account-badge-map';
 
@@ -29,7 +28,7 @@ const buildAccountListInfos = async (
   };
 
   return Promise.all(
-    accounts.map(async (account) => ({
+    accounts.map(async account => ({
       accountId: account.id,
       name: formatNickname(accountNames[account.id] || account.name, 10),
       // A SessionAccount row shows the master address — the one that holds the
@@ -54,10 +53,10 @@ export const useAccountListInfos = (
   const accountNativeBalanceMap = useAccountNativeBalanceMap(accounts.length > 0);
   const masterAccountBadgeMap = useMasterAccountBadgeMap(accounts);
 
-  const accountIdsKey = useMemo(() => accounts.map((account) => account.id).join('|'), [accounts]);
+  const accountIdsKey = useMemo(() => accounts.map(account => account.id).join('|'), [accounts]);
 
-  return useQuery<SideMenuAccountInfo[]>(
-    [
+  return useQuery<SideMenuAccountInfo[]>({
+    queryKey: [
       'accountListInfos',
       accountIdsKey,
       accountNames,
@@ -65,7 +64,8 @@ export const useAccountListInfos = (
       masterAccountBadgeMap,
       chain.bech32Prefix,
     ],
-    () =>
+
+    queryFn: () =>
       buildAccountListInfos(
         accounts,
         accountNames,
@@ -73,10 +73,9 @@ export const useAccountListInfos = (
         masterAccountBadgeMap,
         chain.bech32Prefix,
       ),
-    {
-      enabled: accounts.length > 0,
-      keepPreviousData: true,
-      staleTime: ACCOUNT_LIST_INFOS_STALE_TIME,
-    },
-  );
+
+    enabled: accounts.length > 0,
+    staleTime: ACCOUNT_LIST_INFOS_STALE_TIME,
+    placeholderData: keepPreviousData,
+  });
 };

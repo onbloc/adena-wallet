@@ -1,15 +1,17 @@
-import { AnchorInterceptor } from './anchor-interceptor';
-import { GnoMessageInfo } from '../gno-connect';
+import type { Mock } from 'vitest';
+
 import * as gnoConnect from '../gno-connect';
+import { GnoMessageInfo } from '../gno-connect';
 import { GnoConnectInfoProvider } from '../gno-connect-info-provider';
 import { InterceptorContext } from '../gno-interceptor.types';
+import { AnchorInterceptor } from './anchor-interceptor';
 
 // The real command handler pulls @adena-wallet/sdk, whose web3auth → nested
 // @noble/hashes dependency ships sources jest does not transpile ("Uint8Array
 // expected"). These tests always inject their own handler, so the default one is
 // never exercised; mocking the module keeps the suite loadable.
-jest.mock('@inject/message/command-handler', () => ({
-  CommandHandler: { createContentHandler: jest.fn() },
+vi.mock('@inject/message/command-handler', () => ({
+  CommandHandler: { createContentHandler: vi.fn() },
 }));
 
 const TX_LINK = 'https://example.com/r/demo/profile$help&func=SetStringField&field=Avatar';
@@ -27,27 +29,27 @@ const clickTxLink = (href: string = TX_LINK): boolean => {
   anchor.setAttribute('href', href);
   document.body.appendChild(anchor);
 
-  return anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+  return anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 };
 
 describe('AnchorInterceptor', () => {
-  let handler: jest.Mock<void, [GnoMessageInfo, InterceptorContext]>;
+  let handler: Mock<(...args: [GnoMessageInfo, InterceptorContext]) => void>;
 
   beforeEach(() => {
-    handler = jest.fn();
+    handler = vi.fn();
     document.body.innerHTML = '';
     setGnoConnectMetas();
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('does not swallow a $help link click when the origin is not a supported Gno origin', () => {
     // jsdom serves from http://localhost, which no chain in chains.json declares.
     const interceptor = new AnchorInterceptor(handler);
     interceptor.register();
-    const consoleInfo = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+    const consoleInfo = vi.spyOn(console, 'info').mockImplementation(() => undefined);
 
     const notPrevented = clickTxLink();
 
@@ -59,7 +61,7 @@ describe('AnchorInterceptor', () => {
   });
 
   it('intercepts the click and hands the parsed message to the handler for a supported origin', () => {
-    jest.spyOn(gnoConnect, 'canHandleGnoConnectOrigin').mockReturnValue(true);
+    vi.spyOn(gnoConnect, 'canHandleGnoConnectOrigin').mockReturnValue(true);
     const interceptor = new AnchorInterceptor(handler);
     interceptor.register();
 
@@ -78,7 +80,7 @@ describe('AnchorInterceptor', () => {
   });
 
   it('ignores clicks on ordinary links', () => {
-    jest.spyOn(gnoConnect, 'canHandleGnoConnectOrigin').mockReturnValue(true);
+    vi.spyOn(gnoConnect, 'canHandleGnoConnectOrigin').mockReturnValue(true);
     const interceptor = new AnchorInterceptor(handler);
     interceptor.register();
 

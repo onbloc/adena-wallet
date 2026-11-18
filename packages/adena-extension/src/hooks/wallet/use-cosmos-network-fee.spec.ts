@@ -1,18 +1,21 @@
-import { useQuery } from '@tanstack/react-query';
-import { renderHook } from '@testing-library/react';
-import { CosmosDocument } from 'adena-module';
-
 import { ATOMONE_CHAIN } from '@common/utils/chain-utils';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useQuery } from '@tanstack/react-query';
+import { renderHook } from '@testing-library/react';
+import { CosmosDocument } from 'adena-module';
+import type { Mock } from 'vitest';
 
 import { useCosmosNetworkFee } from './use-cosmos-network-fee';
 
-jest.mock('@tanstack/react-query', () => ({ useQuery: jest.fn() }));
-jest.mock('@hooks/use-context', () => ({ useAdenaContext: jest.fn() }));
-jest.mock('@hooks/use-current-account', () => ({ useCurrentAccount: jest.fn() }));
+vi.mock('@tanstack/react-query', async () => ({
+  ...(await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')),
+  useQuery: vi.fn(),
+}));
+vi.mock('@hooks/use-context', () => ({ useAdenaContext: vi.fn() }));
+vi.mock('@hooks/use-current-account', () => ({ useCurrentAccount: vi.fn() }));
 
-const mockedUseQuery = useQuery as jest.Mock;
+const mockedUseQuery = useQuery as Mock;
 
 const TOKENS: Record<string, { symbol: string; decimals: number }> = {
   'atomone-1:uatone': { symbol: 'ATONE', decimals: 6 },
@@ -32,18 +35,18 @@ const mockEstimate = (estimate: { feeDenom: string } | null): void => {
 };
 
 beforeEach(() => {
-  (useAdenaContext as jest.Mock).mockReturnValue({
+  (useAdenaContext as Mock).mockReturnValue({
     transactionService: {},
     chainRegistry: {
       getChainByChainId: () => ({ ...ATOMONE_CHAIN, chainId: 'atomone-1' }),
     },
     tokenRegistry: { get: (id: string) => TOKENS[id] },
   });
-  (useCurrentAccount as jest.Mock).mockReturnValue({ currentAccount: { id: 'account' } });
+  (useCurrentAccount as Mock).mockReturnValue({ currentAccount: { id: 'account' } });
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('useCosmosNetworkFee', () => {

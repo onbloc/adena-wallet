@@ -34,7 +34,8 @@ export class WalletAddressRepository {
       const encryptedData: EncryptedData = JSON.parse(encryptedAddressBook);
       const addressBookRaw = await decryptXChacha20(encryptedData, password, salt);
       return JSON.parse(addressBookRaw) as AddressBookItem[];
-    } catch {
+    }
+    catch {
       return [];
     }
   };

@@ -1,21 +1,23 @@
 import axios from 'axios';
+import type { Mock, Mocked } from 'vitest';
+
 import {
   CosmosQueryClient,
   parseMinimumGasPriceString,
 } from './cosmos-query-client';
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+vi.mock('axios');
+const mockedAxios = axios as Mocked<typeof axios>;
 
 describe('CosmosQueryClient', () => {
   const ENDPOINT = 'https://atomone-api.allinbits.com';
   let client: CosmosQueryClient;
-  let mockGet: jest.Mock;
-  let mockPost: jest.Mock;
+  let mockGet: Mock;
+  let mockPost: Mock;
 
   beforeEach(() => {
-    mockGet = jest.fn();
-    mockPost = jest.fn();
+    mockGet = vi.fn();
+    mockPost = vi.fn();
     mockedAxios.create.mockReturnValue({ get: mockGet, post: mockPost } as any);
     client = new CosmosQueryClient();
   });

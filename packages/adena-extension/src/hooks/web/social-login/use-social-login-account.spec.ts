@@ -1,60 +1,61 @@
+import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
 import { renderHook, waitFor } from '@testing-library/react';
 import { AdenaWallet, SingleAccount, Web3AuthKeyring } from 'adena-module';
+import type { Mock } from 'vitest';
 
-import { pendingWalletStore } from '@services/wallet/pending-wallet-store';
 import useSocialLoginAccount from './use-social-login-account';
 
 // Stub out the SDK to avoid pulling in @web3auth's native crypto at test time.
-jest.mock('@adena-wallet/sdk', () => ({}));
+vi.mock('@adena-wallet/sdk', () => ({}));
 
-jest.mock('adena-module', () => ({
-  AdenaWallet: { createByWeb3Auth: jest.fn() },
-  Web3AuthKeyring: { fromPrivateKeyStr: jest.fn() },
-  SingleAccount: { createBy: jest.fn() },
-  arrayToHex: jest.fn(() => 'hex'),
+vi.mock('adena-module', () => ({
+  AdenaWallet: { createByWeb3Auth: vi.fn() },
+  Web3AuthKeyring: { fromPrivateKeyStr: vi.fn() },
+  SingleAccount: { createBy: vi.fn() },
+  arrayToHex: vi.fn(() => 'hex'),
 }));
 
-jest.mock('@common/utils/social-login', () => ({
-  requestSocialPrivateKey: jest.fn(async () => 'private-key'),
+vi.mock('@common/utils/social-login', () => ({
+  requestSocialPrivateKey: vi.fn(async () => 'private-key'),
 }));
 
-jest.mock('@services/wallet/pending-wallet-store', () => ({
-  pendingWalletStore: { set: jest.fn() },
+vi.mock('@services/wallet/pending-wallet-store', () => ({
+  pendingWalletStore: { set: vi.fn() },
 }));
 
-const mockNavigate = jest.fn();
-const mockExistsWallet = jest.fn();
-const mockLoadWallet = jest.fn();
-const mockUpdateWallet = jest.fn();
-const mockChangeCurrentAccount = jest.fn();
+const mockNavigate = vi.fn();
+const mockExistsWallet = vi.fn();
+const mockLoadWallet = vi.fn();
+const mockUpdateWallet = vi.fn();
+const mockChangeCurrentAccount = vi.fn();
 
-jest.mock('@hooks/use-app-navigate', () => ({
+vi.mock('@hooks/use-app-navigate', () => ({
   __esModule: true,
   default: (): unknown => ({ navigate: mockNavigate }),
 }));
 
-jest.mock('@hooks/use-context', () => ({
+vi.mock('@hooks/use-context', () => ({
   useAdenaContext: (): unknown => ({
     walletService: { existsWallet: mockExistsWallet, loadWallet: mockLoadWallet },
   }),
   useWalletContext: (): unknown => ({ updateWallet: mockUpdateWallet }),
 }));
 
-jest.mock('@hooks/use-current-account', () => ({
+vi.mock('@hooks/use-current-account', () => ({
   useCurrentAccount: (): unknown => ({ changeCurrentAccount: mockChangeCurrentAccount }),
 }));
 
-const createByWeb3AuthMock = AdenaWallet.createByWeb3Auth as jest.Mock;
-const pendingWalletSetMock = pendingWalletStore.set as jest.Mock;
+const createByWeb3AuthMock = AdenaWallet.createByWeb3Auth as Mock;
+const pendingWalletSetMock = pendingWalletStore.set as Mock;
 
 const makeProvider = (): unknown => ({
-  connect: jest.fn(async () => true),
-  disconnect: jest.fn(async () => true),
+  connect: vi.fn(async () => true),
+  disconnect: vi.fn(async () => true),
 });
 
 describe('useSocialLoginAccount cancellation', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('does not create a wallet when the request is abandoned mid-flight', async () => {
@@ -90,7 +91,7 @@ describe('useSocialLoginAccount cancellation', () => {
 
   it('creates the wallet when the request is still current', async () => {
     mockExistsWallet.mockResolvedValue(false);
-    createByWeb3AuthMock.mockResolvedValue({ destroy: jest.fn() });
+    createByWeb3AuthMock.mockResolvedValue({ destroy: vi.fn() });
 
     const { result } = renderHook(() => useSocialLoginAccount());
 
@@ -115,16 +116,16 @@ describe('useSocialLoginAccount cancellation on the existing-wallet path', () =>
       accounts,
       nextAccountName: 'Account 2',
       lastAccountIndex: 1,
-      addAccount: jest.fn((added: unknown) => accounts.push(added)),
-      addKeyring: jest.fn(),
+      addAccount: vi.fn((added: unknown) => accounts.push(added)),
+      addKeyring: vi.fn(),
     };
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockExistsWallet.mockResolvedValue(true);
-    (SingleAccount.createBy as jest.Mock).mockResolvedValue(account);
-    (Web3AuthKeyring.fromPrivateKeyStr as jest.Mock).mockResolvedValue({ id: 'keyring' });
+    (SingleAccount.createBy as Mock).mockResolvedValue(account);
+    (Web3AuthKeyring.fromPrivateKeyStr as Mock).mockResolvedValue({ id: 'keyring' });
   });
 
   it('does not write to the wallet when the request is abandoned mid-flight', async () => {

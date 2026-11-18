@@ -22,6 +22,6 @@ export function makeStdSignDoc(params: MakeStdSignDocParams): StdSignDoc {
     params.chainId,
     params.memo ?? '',
     params.accountNumber,
-    params.sequence,
+    params.sequence
   );
 }

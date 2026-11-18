@@ -1,6 +1,7 @@
 import { webFonts } from '@styles/theme';
 import React, { useCallback, useMemo, useState } from 'react';
 import styled, { css, RuleSet } from 'styled-components';
+
 import { Row, View } from '../base';
 
 interface StyleProps {

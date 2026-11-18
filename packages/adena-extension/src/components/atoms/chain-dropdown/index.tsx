@@ -1,11 +1,10 @@
+import IconChevronDown from '@assets/icon-chevron-down';
+import { CHAIN_ICON_BY_GROUP } from '@assets/icons/cosmos-icons';
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import { ChainRegistry } from 'adena-module';
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
-
-import { CHAIN_ICON_BY_GROUP } from '@assets/icons/cosmos-icons';
-import IconChevronDown from '@assets/icon-chevron-down';
-import { ChainRegistry } from 'adena-module';
-import { fonts, getTheme } from '@styles/theme';
-import mixins from '@styles/mixins';
 
 export const CHAIN_DISPLAY_NAME: Record<string, string> = {
   gno: 'Gno.land',
@@ -37,7 +36,7 @@ export function chainOptionsFromRegistry(
       if (excluded.has(profile.chainGroup)) return false;
       return true;
     })
-    .map((profile) => ({
+    .map(profile => ({
       chainGroup: profile.chainGroup,
       name: CHAIN_DISPLAY_NAME[profile.chainGroup] ?? profile.displayName,
       icon: CHAIN_ICON_BY_GROUP[profile.chainGroup] ?? profile.chainIconUrl,
@@ -147,13 +146,13 @@ export const ChainDropdown: React.FC<ChainDropdownProps> = ({
   const [opened, setOpened] = useState(false);
 
   const selected = useMemo(
-    () => options.find((o) => o.chainGroup === value),
+    () => options.find(o => o.chainGroup === value),
     [options, value],
   );
 
   const toggle = (): void => {
     if (disabled) return;
-    setOpened((prev) => !prev);
+    setOpened(prev => !prev);
   };
 
   const onSelect = (chainGroup: string): void => {
@@ -180,7 +179,7 @@ export const ChainDropdown: React.FC<ChainDropdownProps> = ({
 
       {opened && options.length > 0 && (
         <Menu>
-          {options.map((option) => (
+          {options.map(option => (
             <MenuItem
               key={option.chainGroup}
               className={option.chainGroup === value ? 'selected' : ''}

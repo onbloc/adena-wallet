@@ -1,11 +1,11 @@
 // signature-upload-label.tsx
+import IconFile from '@assets/file.svg';
+import IconUpload from '@assets/icon-upload';
+import { Text, WebImg } from '@components/atoms';
 import React from 'react';
 import { useTheme } from 'styled-components';
 
-import { Text, WebImg } from '@components/atoms';
 import { StyledInputLabel } from './signature-upload-label.styles';
-import IconUpload from '@assets/icon-upload';
-import IconFile from '@assets/file.svg';
 
 interface SignatureUploadLabelProps {
   loading: boolean;
@@ -29,7 +29,7 @@ const SignatureUploadLabel: React.FC<SignatureUploadLabelProps> = ({
       <StyledInputLabel htmlFor='signatureUpload' onDrop={onDrop}>
         <IconUpload fill='inherit' />
         <Text type='body2Reg' color={theme.neutral.a}>
-          {'Uploading signatures...'}
+          Uploading signatures...
         </Text>
       </StyledInputLabel>
     );
@@ -43,7 +43,7 @@ const SignatureUploadLabel: React.FC<SignatureUploadLabelProps> = ({
           {`${signedCount} of ${threshold} required signatures uploaded`}
         </Text>
         <Text type='body3Reg' color={theme.neutral.a}>
-          {'Click to upload more'}
+          Click to upload more
         </Text>
       </StyledInputLabel>
     );
@@ -53,7 +53,7 @@ const SignatureUploadLabel: React.FC<SignatureUploadLabelProps> = ({
     <StyledInputLabel htmlFor='signatureUpload' onDrop={onDrop}>
       <IconUpload fill='inherit' />
       <Text type='body2Reg' color='inherit'>
-        {'Drag & drop signature files or click to upload'}
+        Drag & drop signature files or click to upload
       </Text>
     </StyledInputLabel>
   );

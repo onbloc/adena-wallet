@@ -1,25 +1,19 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "jsx": "preserve",
-    "module": "ES6",
-    "moduleResolution": "node",
-    "downlevelIteration": true,
-    "allowSyntheticDefaultImports": true,
-    "allowUmdGlobalAccess": true,
-    "sourceMap": true,
-    "strict": true,
-    "allowJs": true,
-    "noEmit": false,
-    "target": "ES2020",
-    "lib": ["dom", "ES2020"],
-    "baseUrl": ".",
-    "rootDir": ".",
-    "outDir": "./dist",
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "declaration": true,
-    "isolatedModules": true
+    "types": [
+      "node",
+      "vitest/globals"
+    ],
+    "noEmit": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.spec.*"]
+  "include": [
+    "./index.ts",
+    "./src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.*"
+  ]
 }

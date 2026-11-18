@@ -1,33 +1,30 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, waitFor } from '@testing-library/react';
-import React, { PropsWithChildren } from 'react';
-import { RecoilRoot, useRecoilValue } from 'recoil';
-
 import { makeWalletLockedQueryKey } from '@common/constants/query-key.constant';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useWallet } from '@hooks/use-wallet';
 import { WalletState } from '@states';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, render, waitFor } from '@testing-library/react';
+import { Provider as JotaiProvider, useAtomValue } from 'jotai';
+import type { JSX } from 'react';
+import React, { PropsWithChildren } from 'react';
+import type { Mock } from 'vitest';
 
-import { WalletProvider } from './wallet-provider';
+import { WalletContext, WalletProvider } from './wallet-provider';
 
 // Mocked wholesale rather than with `requireActual`: the real module reaches
 // the provider barrel, which pulls @adena-wallet/sdk's social-wallet stack into
 // jsdom and blows up on import.
-jest.mock('@hooks/use-context', () => ({
-  useAdenaContext: jest.fn(),
-  // Resolved lazily: requiring the provider from the factory body would run
-  // into the mock while it is still being constructed.
-  useWalletContext: (): unknown => {
-    /* eslint-disable @typescript-eslint/no-var-requires */
-    const react = require('react');
-    const { WalletContext } = require('./wallet-provider');
-    /* eslint-enable @typescript-eslint/no-var-requires */
-    return react.useContext(WalletContext);
-  },
+vi.mock('@hooks/use-context', () => ({
+  useAdenaContext: vi.fn(),
+  // Read at render time: the provider module is still loading while this
+  // factory runs, so its exports cannot be touched here.
+  useWalletContext: (): unknown => React.useContext(WalletContext),
 }));
 
-jest.mock('../gno/gno-provider', () => ({
-  GnoProvider: jest.fn().mockImplementation(() => ({})),
+vi.mock('../gno/gno-provider', () => ({
+  GnoProvider: vi.fn().mockImplementation(function () {
+    return {};
+  }),
 }));
 
 const WALLET_SERVICE_ID = 'wallet-service-id';
@@ -38,16 +35,16 @@ const makeAdenaContext = (
 ): Record<string, unknown> => ({
   // `setCurrentWalletResolver` is registered by the provider on mount, so every
   // walletService stub needs it even when the test does not care about it.
-  walletService: { id: WALLET_SERVICE_ID, setCurrentWalletResolver: jest.fn(), ...walletService },
+  walletService: { id: WALLET_SERVICE_ID, setCurrentWalletResolver: vi.fn(), ...walletService },
   accountService: {
-    getCurrentAccountId: jest.fn().mockResolvedValue(currentAccountId),
-    changeCurrentAccount: jest.fn().mockResolvedValue(true),
+    getCurrentAccountId: vi.fn().mockResolvedValue(currentAccountId),
+    changeCurrentAccount: vi.fn().mockResolvedValue(true),
   },
   // An empty network list makes `initNetworkMetainfos` bail out early, so the
   // test only exercises the wallet half of the provider's bootstrap.
-  chainService: { getNetworks: jest.fn().mockResolvedValue([]) },
-  chainRegistry: { register: jest.fn() },
-  tokenRegistry: { register: jest.fn() },
+  chainService: { getNetworks: vi.fn().mockResolvedValue([]) },
+  chainRegistry: { register: vi.fn() },
+  tokenRegistry: { register: vi.fn() },
 });
 
 let initWallet: () => Promise<boolean>;
@@ -61,7 +58,7 @@ const Probe = (): JSX.Element => {
   initWallet = context.initWallet;
   clearWallet = context.clearWallet;
   wallet = context.wallet;
-  currentAccount = useRecoilValue(WalletState.currentAccount);
+  currentAccount = useAtomValue(WalletState.currentAccount);
   lockedWallet = useWallet().lockedWallet;
   return <div />;
 };
@@ -71,11 +68,11 @@ const Probe = (): JSX.Element => {
 // write the fresh value back itself.
 const makeWrapper = (queryClient: QueryClient): React.FC<PropsWithChildren> => {
   const Wrapper = ({ children }: PropsWithChildren): JSX.Element => (
-    <RecoilRoot>
+    <JotaiProvider>
       <QueryClientProvider client={queryClient}>
         <WalletProvider>{children}</WalletProvider>
       </QueryClientProvider>
-    </RecoilRoot>
+    </JotaiProvider>
   );
   Wrapper.displayName = 'WalletProviderWrapper';
   return Wrapper;
@@ -85,9 +82,9 @@ describe('WalletProvider lock-state cache', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    initWallet = jest.fn();
-    clearWallet = jest.fn();
+    vi.clearAllMocks();
+    initWallet = vi.fn();
+    clearWallet = vi.fn();
     lockedWallet = undefined;
     wallet = undefined;
     currentAccount = undefined;
@@ -99,15 +96,15 @@ describe('WalletProvider lock-state cache', () => {
   });
 
   it('reports the wallet as unlocked right after an unlock, without waiting for a refetch', async () => {
-    const isLocked = jest.fn().mockResolvedValue(true);
+    const isLocked = vi.fn().mockResolvedValue(true);
     const walletService = {
-      existsWallet: jest.fn().mockResolvedValue(true),
+      existsWallet: vi.fn().mockResolvedValue(true),
       isLocked,
-      loadWallet: jest
+      loadWallet: vi
         .fn()
         .mockResolvedValue({ accounts: [], currentAccountId: null, hasHDWallet: () => false }),
     };
-    (useAdenaContext as jest.Mock).mockReturnValue(makeAdenaContext(walletService));
+    (useAdenaContext as Mock).mockReturnValue(makeAdenaContext(walletService));
 
     const Wrapper = makeWrapper(queryClient);
     render(
@@ -130,11 +127,11 @@ describe('WalletProvider lock-state cache', () => {
 
   it('keeps the cached lock state authoritative while the wallet is locked', async () => {
     const walletService = {
-      existsWallet: jest.fn().mockResolvedValue(true),
-      isLocked: jest.fn().mockResolvedValue(true),
-      loadWallet: jest.fn(),
+      existsWallet: vi.fn().mockResolvedValue(true),
+      isLocked: vi.fn().mockResolvedValue(true),
+      loadWallet: vi.fn(),
     };
-    (useAdenaContext as jest.Mock).mockReturnValue(makeAdenaContext(walletService));
+    (useAdenaContext as Mock).mockReturnValue(makeAdenaContext(walletService));
 
     // Pre-seed a stale `false`, as if the wallet had been unlocked earlier.
     queryClient.setQueryData(makeWalletLockedQueryKey(WALLET_SERVICE_ID), false);
@@ -152,15 +149,15 @@ describe('WalletProvider lock-state cache', () => {
   it('drops the in-memory wallet and current account when the wallet is cleared', async () => {
     const account = { id: 'account-1' };
     const walletService = {
-      existsWallet: jest.fn().mockResolvedValue(true),
-      isLocked: jest.fn().mockResolvedValue(false),
-      loadWallet: jest.fn().mockResolvedValue({
+      existsWallet: vi.fn().mockResolvedValue(true),
+      isLocked: vi.fn().mockResolvedValue(false),
+      loadWallet: vi.fn().mockResolvedValue({
         accounts: [account],
         currentAccountId: null,
         hasHDWallet: () => false,
       }),
     };
-    (useAdenaContext as jest.Mock).mockReturnValue(makeAdenaContext(walletService, account.id));
+    (useAdenaContext as Mock).mockReturnValue(makeAdenaContext(walletService, account.id));
 
     const Wrapper = makeWrapper(queryClient);
     render(

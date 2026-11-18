@@ -1,11 +1,11 @@
-import React, { useCallback } from 'react';
-
 import IconChevronDown from '@assets/icon-chevron-down';
 import AssetIcon from '@components/atoms/asset-icon/asset-icon';
 import { TokenChangeRate } from '@components/molecules';
 import TokenListItemBalance from '@components/pages/wallet-main/token-list-item-balance/token-list-item-balance';
 import { TokenVestingPanel } from '@components/pages/wallet-main/token-vesting-panel';
 import { MainToken } from '@types';
+import React, { useCallback } from 'react';
+
 import { TokenListItemWrapper, VestingToggleButton } from './token-list-item.styles';
 
 export interface TokenListItemProps {

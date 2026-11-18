@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
-
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext } from '@hooks/use-context';
 import {
   DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   MAX_AUTO_LOCK_TIMEOUT_MINUTES,
 } from '@repositories/wallet';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext } from '@hooks/use-context';
+import { useCallback, useEffect, useState } from 'react';
 
 export type UseAutoLockTimerReturn = {
   value: string;

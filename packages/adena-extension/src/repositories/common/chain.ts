@@ -1,20 +1,20 @@
+import { StorageManager } from '@common/storage/storage-manager';
+import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
 
-import { StorageManager } from '@common/storage/storage-manager';
 import {
   AtomoneMetainfoResponse,
   AtomoneNetworkMetainfoMapper,
 } from './mapper/atomone-network-metainfo-mapper';
 import { ChainMetainfoResponse, NetworkMetainfoMapper } from './mapper/network-metainfo-mapper';
-import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
 
-type LocalValueType =
-  | 'NETWORKS'
-  | 'ATOMONE_NETWORKS'
-  | 'CURRENT_CHAIN_ID'
-  | 'CURRENT_NETWORK_ID'
-  | 'CURRENT_ATOMONE_NETWORK_ID'
-  | 'NETWORK_MODE';
+type LocalValueType
+  = | 'NETWORKS'
+    | 'ATOMONE_NETWORKS'
+    | 'CURRENT_CHAIN_ID'
+    | 'CURRENT_NETWORK_ID'
+    | 'CURRENT_ATOMONE_NETWORK_ID'
+    | 'NETWORK_MODE';
 
 export type NetworkModeValue = 'mainnet' | 'testnet';
 
@@ -42,7 +42,7 @@ export class ChainRepository {
     const fetchedNetworks = await this.fetchNetworkMetainfos();
     const networks = await this.localStorage
       .getToObject<Array<NetworkMetainfo>>('NETWORKS')
-      .then((networks) => (Array.isArray(networks) ? networks : []))
+      .then(networks => (Array.isArray(networks) ? networks : []))
       .catch(() => []);
     if (networks.length === 0) {
       await this.updateNetworks(fetchedNetworks);
@@ -52,8 +52,8 @@ export class ChainRepository {
     // Prefer the locally stored entry when it shares an id with a fetched default
     // so user edits and the deleted flag survive a restart. Fall back to fetched
     // when no local copy exists (newly introduced defaults).
-    const localById = new Map(networks.map((network) => [network.id, network]));
-    const fetchedIds = new Set(fetchedNetworks.map((network) => network.id));
+    const localById = new Map(networks.map(network => [network.id, network]));
+    const fetchedIds = new Set(fetchedNetworks.map(network => network.id));
     const defaultNetworks = fetchedNetworks.map((fetched) => {
       const local = localById.get(fetched.id);
       if (!local) {
@@ -66,7 +66,7 @@ export class ChainRepository {
       return { ...local, fallbackRPCUrl };
     });
     const customNetworks = networks.filter(
-      (network) => network.default === false && !fetchedIds.has(network.id),
+      network => network.default === false && !fetchedIds.has(network.id),
     );
     return [...defaultNetworks, ...customNetworks];
   };
@@ -98,20 +98,20 @@ export class ChainRepository {
     const fetchedNetworks = await this.fetchAtomoneMetainfos();
     const networks = await this.localStorage
       .getToObject<Array<AtomoneNetworkMetainfo>>('ATOMONE_NETWORKS')
-      .then((networks) => (Array.isArray(networks) ? networks : []))
+      .then(networks => (Array.isArray(networks) ? networks : []))
       .catch(() => []);
     if (networks.length === 0) {
       await this.updateAtomoneNetworks(fetchedNetworks);
       return fetchedNetworks;
     }
 
-    const localById = new Map(networks.map((network) => [network.id, network]));
-    const fetchedIds = new Set(fetchedNetworks.map((network) => network.id));
+    const localById = new Map(networks.map(network => [network.id, network]));
+    const fetchedIds = new Set(fetchedNetworks.map(network => network.id));
     const defaultNetworks = fetchedNetworks.map(
-      (fetched) => localById.get(fetched.id) ?? fetched,
+      fetched => localById.get(fetched.id) ?? fetched,
     );
     const customNetworks = networks.filter(
-      (network) => network.default === false && !fetchedIds.has(network.id),
+      network => network.default === false && !fetchedIds.has(network.id),
     );
     return [...defaultNetworks, ...customNetworks];
   };

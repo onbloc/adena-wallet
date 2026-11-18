@@ -1,19 +1,19 @@
-import { TokenRegistryImpl } from './registry';
 import {
   ALL_TOKENS,
   UATONE,
   UATONE_TESTNET,
   UGNOT,
   UPHOTON,
-  UPHOTON_TESTNET,
+  UPHOTON_TESTNET
 } from './entries';
+import { TokenRegistryImpl } from './registry';
 
 describe('TokenRegistry', () => {
   let registry: TokenRegistryImpl;
 
   beforeEach(() => {
     registry = new TokenRegistryImpl();
-    ALL_TOKENS.forEach((token) => registry.register(token));
+    ALL_TOKENS.forEach(token => registry.register(token));
   });
 
   it('get returns correct token by id', () => {

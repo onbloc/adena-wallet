@@ -5,7 +5,7 @@ import {
   MSG_SEND_TYPE_URL,
   msgSendFromAmino,
   msgSendToAmino,
-  msgSendToAny,
+  msgSendToAny
 } from './msg-send';
 
 describe('MsgSend codec', () => {
@@ -14,8 +14,8 @@ describe('MsgSend codec', () => {
     value: {
       from_address: 'atone1qqqsyqcyq5rqwzqfpg9scrgwpugpzysndkda8p',
       to_address: 'atone1qyqszqgpqyqszqgpqyqszqgpqyqszqgpwc2vge',
-      amount: [{ denom: 'uphoton', amount: '1000' }],
-    },
+      amount: [{ denom: 'uphoton', amount: '1000' }]
+    }
   };
 
   it('round-trips amino ↔ proto', () => {
@@ -41,7 +41,7 @@ describe('MsgSend codec', () => {
 
   it('throws when amino type does not match', () => {
     expect(() =>
-      msgSendFromAmino({ type: 'cosmos-sdk/Foo', value: {} }),
+      msgSendFromAmino({ type: 'cosmos-sdk/Foo', value: {} })
     ).toThrow(/Expected cosmos-sdk\/MsgSend/);
   });
 
@@ -53,9 +53,9 @@ describe('MsgSend codec', () => {
         to_address: 'atone1qyqszqgpqyqszqgpqyqszqgpqyqszqgpwc2vge',
         amount: [
           { denom: 'uatone', amount: '500' },
-          { denom: 'uphoton', amount: '1000' },
-        ],
-      },
+          { denom: 'uphoton', amount: '1000' }
+        ]
+      }
     };
     const proto = msgSendFromAmino(multi);
     expect(proto.amount).toHaveLength(2);

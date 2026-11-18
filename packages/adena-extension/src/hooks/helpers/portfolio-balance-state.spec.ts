@@ -1,4 +1,5 @@
 import { TokenBalanceType, TokenPriceMap } from '@types';
+
 import { getPortfolioBalanceState } from './portfolio-balance-state';
 
 function row(tokenId: string, networkId: string): TokenBalanceType {

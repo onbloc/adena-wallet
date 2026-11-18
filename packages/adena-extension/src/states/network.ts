@@ -1,45 +1,27 @@
-import { atom } from 'recoil';
-
 import { AtomoneNetworkMetainfoMapper } from '@repositories/common/mapper/atomone-network-metainfo-mapper';
 import { AtomoneNetworkMetainfo, NetworkMetainfo } from '@types';
+import { atom } from 'jotai';
+import { atomWithReset } from 'jotai/utils';
 
 export type NetworkMode = 'mainnet' | 'testnet';
 
-const ATOMONE_DEFAULT_NETWORKS: AtomoneNetworkMetainfo[] =
-  AtomoneNetworkMetainfoMapper.fromResource();
+const ATOMONE_DEFAULT_NETWORKS: AtomoneNetworkMetainfo[]
+  = AtomoneNetworkMetainfoMapper.fromResource();
 
-export const networkMetainfos = atom<NetworkMetainfo[]>({
-  key: 'network/networkMetainfos',
-  default: [],
-});
+export const networkMetainfos = atom<NetworkMetainfo[]>([]);
 
-export const currentNetwork = atom<NetworkMetainfo | null>({
-  key: 'network/current-network',
-  default: null,
-});
+export const currentNetwork = atomWithReset<NetworkMetainfo | null>(null);
 
-export const modified = atom<boolean>({
-  key: 'network/modified',
-  default: false,
-});
+export const modified = atom<boolean>(false);
 
-export const atomoneNetworkMetainfos = atom<AtomoneNetworkMetainfo[]>({
-  key: 'network/atomoneNetworkMetainfos',
-  default: ATOMONE_DEFAULT_NETWORKS,
-});
+export const atomoneNetworkMetainfos = atom<AtomoneNetworkMetainfo[]>(ATOMONE_DEFAULT_NETWORKS);
 
 // Stay null until WalletProvider hydrates this from storage; the provider
 // resolves the mode and picks the matching AtomOne network. Defaulting to a
 // mainnet entry caused a first-render flash for users who land on testnet.
-export const currentAtomoneNetwork = atom<AtomoneNetworkMetainfo | null>({
-  key: 'network/current-atomone-network',
-  default: null,
-});
+export const currentAtomoneNetwork = atom<AtomoneNetworkMetainfo | null>(null);
 
-export const networkMode = atom<NetworkMode>({
-  key: 'network/network-mode',
-  default: 'mainnet',
-});
+export const networkMode = atom<NetworkMode>('mainnet');
 
 /**
  * Stores the selected NetworkProfile id per chainGroup.
@@ -47,8 +29,8 @@ export const networkMode = atom<NetworkMode>({
  * Example: { gno: 'gnoland-1', atomone: 'atomone-1' }
  */
 export const selectedProfileByChainGroup = atom<Record<string, string>>({
-  key: 'network/selectedProfileByChainGroup',
-  default: { gno: 'gnoland-1', atomone: 'atomone-1' },
+  gno: 'gnoland-1',
+  atomone: 'atomone-1',
 });
 
 /**
@@ -57,7 +39,4 @@ export const selectedProfileByChainGroup = atom<Record<string, string>>({
  * unresponsive-network popover can list every failing chain alongside the
  * gno failedNetwork signal.
  */
-export const cosmosUnresponsiveNetworkIds = atom<string[]>({
-  key: 'network/cosmosUnresponsiveNetworkIds',
-  default: [],
-});
+export const cosmosUnresponsiveNetworkIds = atom<string[]>([]);

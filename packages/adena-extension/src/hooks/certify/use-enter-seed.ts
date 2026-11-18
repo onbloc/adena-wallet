@@ -1,8 +1,7 @@
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
 import { EnglishMnemonic } from 'adena-module';
 import { useCallback, useEffect, useState } from 'react';
-
-import { RoutePath } from '@types';
-import useAppNavigate from '@hooks/use-app-navigate';
 
 const specialPatternCheck = /[{}[]\/?.,;:|\)*~`!^-_+<>@#$%&\\=\('"]/g;
 
@@ -57,7 +56,8 @@ export const useEnterSeed = (): {
         setError(false);
         return;
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.log(e);
     }
     setError(true);

@@ -5,6 +5,7 @@ import { formatAddress } from '@common/utils/client-utils';
 import { Portal } from '@components/atoms';
 import { ChainAddressEntry } from '@hooks/use-account-chain-addresses';
 import React, { useCallback, useEffect, useState } from 'react';
+
 import { ChainRow, PopoverWrapper } from './account-addresses-popover.styles';
 
 const CHAIN_SHORT_NAME: Record<string, string> = {
@@ -41,7 +42,7 @@ export const AccountAddressesPopover: React.FC<AccountAddressesPopoverProps> = (
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
       >
-        {entries.map((entry) => (
+        {entries.map(entry => (
           <ChainAddressRow key={entry.id ?? entry.chain.id} entry={entry} />
         ))}
       </PopoverWrapper>

@@ -1,12 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { isSessionAccount } from 'adena-module';
-import { useMemo } from 'react';
-import { useRecoilValueLoadable } from 'recoil';
-
 import { selectBalanceAddress } from '@common/utils/account-address';
 import { isRevokedSessionAccount } from '@common/utils/account-session';
 import { AccountState } from '@states';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { TokenBalanceType } from '@types';
+import { isSessionAccount } from 'adena-module';
+import { useAtomValue } from 'jotai';
+import { useMemo } from 'react';
 
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useGRC20Tokens } from './use-grc20-tokens';
@@ -34,28 +33,26 @@ export const useAccountNativeBalanceMap = (enabled: boolean): Record<string, Tok
   const { existWallet, lockedWallet } = useWallet();
 
   const nativeToken = useMemo(
-    () => tokenMetainfos.find((tokenModel) => tokenModel.main) ?? null,
+    () => tokenMetainfos.find(tokenModel => tokenModel.main) ?? null,
     [tokenMetainfos],
   );
 
-  const accountAddressesLoadable = useRecoilValueLoadable(
-    AccountState.accountAddressesByPrefix(currentNetwork.addressPrefix),
+  const accountAddressesByAccountId = useAtomValue(
+    AccountState.accountAddressesByPrefixOrNull(currentNetwork.addressPrefix),
   );
-  const accountAddressesByAccountId =
-    accountAddressesLoadable.state === 'hasValue' ? accountAddressesLoadable.contents : null;
 
   const revokedSessionAddrsKey = useMemo(
     () =>
       sessions
-        .filter((session) => session.status === 'REVOKED')
-        .map((session) => session.sessionAddr)
+        .filter(session => session.status === 'REVOKED')
+        .map(session => session.sessionAddr)
         .sort()
         .join('|'),
     [sessions],
   );
 
-  const { data = {} } = useQuery<Record<string, TokenBalanceType>>(
-    [
+  const { data = {} } = useQuery<Record<string, TokenBalanceType>>({
+    queryKey: [
       'accountNativeBalanceMap',
       wallet?.accounts,
       currentNetwork.chainId,
@@ -64,12 +61,13 @@ export const useAccountNativeBalanceMap = (enabled: boolean): Record<string, Tok
       // A revoke moves a session row onto its own balance, so the map must refetch.
       revokedSessionAddrsKey,
     ],
-    () => {
+
+    queryFn: () => {
       if (
-        wallet === null ||
-        wallet.accounts === null ||
-        nativeToken == null ||
-        accountAddressesByAccountId === null
+        wallet === null
+        || wallet.accounts === null
+        || nativeToken == null
+        || accountAddressesByAccountId === null
       ) {
         return {};
       }
@@ -97,7 +95,7 @@ export const useAccountNativeBalanceMap = (enabled: boolean): Record<string, Tok
             }),
           } as TokenBalanceType;
         }),
-      ).then((balances) =>
+      ).then(balances =>
         balances.reduce<Record<string, TokenBalanceType>>((accum, current, index) => {
           if (wallet.accounts[index]?.id) {
             accum[wallet.accounts[index]?.id] = current;
@@ -106,18 +104,19 @@ export const useAccountNativeBalanceMap = (enabled: boolean): Record<string, Tok
         }, {}),
       );
     },
-    {
-      staleTime: STALE_TIME,
-      keepPreviousData: true,
-      enabled:
-        enabled &&
-        existWallet &&
-        !lockedWallet &&
-        isFetchedGRC20Tokens &&
-        tokenMetainfos.length > 0 &&
-        accountAddressesByAccountId !== null,
-    },
-  );
+
+    staleTime: STALE_TIME,
+
+    enabled:
+      enabled
+      && existWallet
+      && !lockedWallet
+      && isFetchedGRC20Tokens
+      && tokenMetainfos.length > 0
+      && accountAddressesByAccountId !== null,
+
+    placeholderData: keepPreviousData,
+  });
 
   return data;
 };

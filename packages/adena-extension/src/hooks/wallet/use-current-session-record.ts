@@ -18,4 +18,4 @@ export const fetchSessionRecord = (
   masterAddress: string,
   sessionAddress: string,
 ): Promise<GnoSessionAccountResponse | null> =>
-  gnoProvider.getSession(masterAddress, sessionAddress).then((record) => record ?? null);
+  gnoProvider.getSession(masterAddress, sessionAddress).then(record => record ?? null);

@@ -1,4 +1,5 @@
 import { CommonError } from '@common/errors/common';
+
 import { Storage } from '.';
 
 export class ChromeSessionStorage implements Storage {

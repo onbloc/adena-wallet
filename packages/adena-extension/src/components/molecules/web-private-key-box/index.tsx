@@ -1,9 +1,10 @@
+import { stringFromBase64 } from '@common/utils/encoding-util';
+import { generateRandomHex } from '@common/utils/rand-utils';
 import { WebTextarea } from '@components/atoms/web-textarea';
+import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
-import { stringFromBase64 } from '@common/utils/encoding-util';
-import { generateRandomHex } from '@common/utils/rand-utils';
 import { View } from '../../atoms';
 
 interface WebPrivateKeyBoxProps {

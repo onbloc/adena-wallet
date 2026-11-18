@@ -53,7 +53,7 @@ describe('StorageMigration028', () => {
   it('migrates an existing rpc.gno.land default mainnet to onbloc without storing a fallback', async () => {
     const result = await new StorageMigration028().up(makeInput());
     expect(result.version).toBe(28);
-    const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
+    const mainnet = result.data.NETWORKS.find(n => n.id === 'gnoland-1');
     expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
     expect(mainnet?.fallbackRPCUrl).toBeUndefined();
   });
@@ -62,7 +62,7 @@ describe('StorageMigration028', () => {
   it('migrates an rpc.gno.land default stored without fallbackRPCUrl', async () => {
     const stored = gnolandMainnet({ fallbackRPCUrl: undefined });
     const result = await new StorageMigration028().up(makeInput({ NETWORKS: [stored] }));
-    const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
+    const mainnet = result.data.NETWORKS.find(n => n.id === 'gnoland-1');
     expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
     expect(mainnet?.fallbackRPCUrl).toBeUndefined();
   });
@@ -77,7 +77,7 @@ describe('StorageMigration028', () => {
       data: { ...BASE_DATA, NETWORKS: [v026Default] },
     });
     const result = await new StorageMigration028().up(v027);
-    const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
+    const mainnet = result.data.NETWORKS.find(n => n.id === 'gnoland-1');
     expect(mainnet?.rpcUrl).toBe('https://rpc.onbloc.xyz:443');
     expect(mainnet?.fallbackRPCUrl).toBeUndefined();
   });
@@ -88,7 +88,7 @@ describe('StorageMigration028', () => {
       fallbackRPCUrl: undefined,
     });
     const result = await new StorageMigration028().up(makeInput({ NETWORKS: [custom] }));
-    const mainnet = result.data.NETWORKS.find((n) => n.id === 'gnoland-1');
+    const mainnet = result.data.NETWORKS.find(n => n.id === 'gnoland-1');
     expect(mainnet?.rpcUrl).toBe('https://my.custom.rpc:443');
     expect(mainnet?.fallbackRPCUrl).toBeUndefined();
   });
@@ -104,7 +104,7 @@ describe('StorageMigration028', () => {
       fallbackRPCUrl: undefined,
     });
     const result = await new StorageMigration028().up(makeInput({ NETWORKS: [other] }));
-    const network = result.data.NETWORKS.find((n) => n.id === 'custom');
+    const network = result.data.NETWORKS.find(n => n.id === 'custom');
     expect(network?.rpcUrl).toBe('https://rpc.gno.land:443');
     expect(network?.fallbackRPCUrl).toBeUndefined();
   });

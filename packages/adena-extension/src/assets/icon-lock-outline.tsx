@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import React from 'react';
 
 // Outline padlock used to mark a vesting-locked balance. `currentColor` lets

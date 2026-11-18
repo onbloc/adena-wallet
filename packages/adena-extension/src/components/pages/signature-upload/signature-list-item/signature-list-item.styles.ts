@@ -1,5 +1,5 @@
-import styled from 'styled-components';
 import { fonts } from '@styles/theme';
+import styled from 'styled-components';
 
 export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
   display: flex;
@@ -22,7 +22,7 @@ export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
       height: 34px;
       border-radius: 50%;
       background-color: ${({ theme }): string => theme.neutral._5};
-      color: ${({ theme }): string => theme.white};
+      color: ${({ theme }): string => theme.neutral._1};
       display: flex;
       align-items: center;
       justify-content: center;

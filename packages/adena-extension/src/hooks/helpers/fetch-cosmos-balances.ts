@@ -1,7 +1,7 @@
-import { Account, ChainRegistry, TokenRegistry } from 'adena-module';
 import { COSMOS_TOKEN_ICON_MAP } from '@assets/icons/cosmos-icons';
 import { CosmosBalanceService } from '@services/wallet';
 import { TokenBalanceType } from '@types';
+import { Account, ChainRegistry, TokenRegistry } from 'adena-module';
 
 export interface CosmosFetchResult {
   networkId: string;
@@ -55,13 +55,14 @@ export async function fetchCosmosTokenBalances(
         // the source of truth for presentation.
         return {
           networkId: profile.id,
-          balances: balances.map((balance) => ({
+          balances: balances.map(balance => ({
             ...balance,
             image: COSMOS_TOKEN_ICON_MAP[balance.tokenId] ?? balance.image,
           })),
           error: unreachable,
         };
-      } catch {
+      }
+      catch {
         return { networkId: profile.id, balances: [], error: true };
       }
     }),

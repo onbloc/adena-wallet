@@ -1,9 +1,3 @@
-import { isAirgapAccount, isMultisigAccount, isSessionAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRecoilState } from 'recoil';
-import styled from 'styled-components';
-
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import IconDeposit from '@assets/icon-deposit';
 import IconSend from '@assets/icon-send';
@@ -21,9 +15,9 @@ import MainNetworkLabel from '@components/pages/main/main-network-label/main-net
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
 import MainTotalPrice from '@components/pages/main/main-total-price/main-total-price';
 import TokenList, { TokenListItemState } from '@components/pages/wallet-main/token-list/token-list';
+import { getPortfolioBalanceState } from '@hooks/helpers/portfolio-balance-state';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { getPortfolioBalanceState } from '@hooks/helpers/portfolio-balance-state';
 import { useLoadImages } from '@hooks/use-load-images';
 import { useNetwork } from '@hooks/use-network';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
@@ -37,6 +31,12 @@ import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { revokedDimStyle } from '@styles/session-revoked';
 import { MainToken, RoutePath, TokenPriceRequest, TokenValue } from '@types';
+import { isAirgapAccount, isMultisigAccount, isSessionAccount } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import { useAtom } from 'jotai';
+import type { JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import styled from 'styled-components';
 
 // `updateAllTokenMetainfos` walks the account's full transfer history to find
 // tokens the wallet has never seen — expensive, and not a balance read. The
@@ -60,7 +60,8 @@ function readCachedRowCount(): number {
     const raw = window.localStorage.getItem(ROW_COUNT_CACHE_KEY);
     const parsed = raw ? Number(raw) : 0;
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-  } catch {
+  }
+  catch {
     return 0;
   }
 }
@@ -127,7 +128,7 @@ const Wrapper = styled.main<{ $dimmed: boolean }>`
 export const WalletMain = (): JSX.Element => {
   usePreventHistoryBack();
   const { navigate } = useAppNavigate();
-  const [state] = useRecoilState(WalletState.state);
+  const [state] = useAtom(WalletState.state);
   const { currentNetwork } = useNetwork();
   const { currentAccount } = useCurrentAccount();
   const {
@@ -166,7 +167,7 @@ export const WalletMain = (): JSX.Element => {
   );
 
   const onToggleVesting = useCallback((tokenId: string) => {
-    setExpandedVestingTokenId((prev) => (prev === tokenId ? null : tokenId));
+    setExpandedVestingTokenId(prev => (prev === tokenId ? null : tokenId));
   }, []);
 
   // An account with no grant has no panel to keep open.
@@ -246,7 +247,7 @@ export const WalletMain = (): JSX.Element => {
   }, [currentAccount?.id, currentNetwork.chainId]);
 
   const displayedBalances = useMemo(
-    () => currentBalances.filter((tokenBalance) => tokenBalance.display),
+    () => currentBalances.filter(tokenBalance => tokenBalance.display),
     [currentBalances],
   );
 
@@ -283,13 +284,13 @@ export const WalletMain = (): JSX.Element => {
       return {
         tokenId: tokenBalance.tokenId,
         logo:
-          getTokenImage(tokenBalance) ||
-          COSMOS_TOKEN_ICON_MAP[tokenBalance.tokenId] ||
+          getTokenImage(tokenBalance)
+          || COSMOS_TOKEN_ICON_MAP[tokenBalance.tokenId]
           // Last resort before the placeholder: whatever the token's own
           // contract data carried, since gno-token-resource describes only the
           // tokens someone has curated.
-          tokenBalance.image ||
-          `${UnknownTokenIcon}`,
+          || tokenBalance.image
+          || `${UnknownTokenIcon}`,
         name: tokenBalance.name,
         balanceAmount: {
           value: displayValue,
@@ -309,7 +310,7 @@ export const WalletMain = (): JSX.Element => {
   // Null when nothing on screen is quoted: keep the native-balance headline.
   const portfolioValue = useMemo<PortfolioValue | null>(() => {
     const values = tokens
-      .map((token) => token.tokenValue)
+      .map(token => token.tokenValue)
       .filter((tokenValue): tokenValue is TokenValue => !!tokenValue);
 
     return values.length === 0 ? null : aggregateTokenValues(values);
@@ -344,12 +345,12 @@ export const WalletMain = (): JSX.Element => {
   }, [currentBalances, loadingTokenKeys, errorNetworkIds]);
 
   const tokenImages = useMemo(() => {
-    return tokens.map((token) => token.logo);
+    return tokens.map(token => token.logo);
   }, [tokens]);
 
   const onClickTokenListItem = useCallback(
     (tokenId: string) => {
-      const tokenBalance = currentBalances.find((tokenBalance) => tokenBalance.tokenId === tokenId);
+      const tokenBalance = currentBalances.find(tokenBalance => tokenBalance.tokenId === tokenId);
       if (!tokenBalance) {
         window.alert('Token not found');
         return;
@@ -373,7 +374,8 @@ export const WalletMain = (): JSX.Element => {
     if (tokens.length === 0) return;
     try {
       window.localStorage.setItem(ROW_COUNT_CACHE_KEY, String(tokens.length));
-    } catch {
+    }
+    catch {
       // Storage may be unavailable (private mode, quota); placeholder count
       // simply stays at its previous value next mount.
     }
@@ -405,21 +407,23 @@ export const WalletMain = (): JSX.Element => {
         />
       </div>
       <div className='token-balance-wrapper'>
-        {portfolioValue ? (
-          <MainTotalPrice
-            value={portfolioValue}
-            unavailable={portfolioUnavailable}
-            loading={portfolioIncomplete}
-          />
-        ) : (
-          <MainTokenBalance
-            amount={{
-              value: mainBalanceValue,
-              denom: mainTokenBalance === null ? '' : mainTokenBalance.denom,
-            }}
-            loading={isMainBalanceLoading}
-          />
-        )}
+        {portfolioValue
+          ? (
+              <MainTotalPrice
+                value={portfolioValue}
+                unavailable={portfolioUnavailable}
+                loading={portfolioIncomplete}
+              />
+            )
+          : (
+              <MainTokenBalance
+                amount={{
+                  value: mainBalanceValue,
+                  denom: mainTokenBalance === null ? '' : mainTokenBalance.denom,
+                }}
+                loading={isMainBalanceLoading}
+              />
+            )}
       </div>
 
       <div className='main-button-wrapper'>

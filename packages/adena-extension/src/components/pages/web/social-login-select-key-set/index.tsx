@@ -1,11 +1,11 @@
-import React, { useCallback } from 'react';
-import styled from 'styled-components';
-
 import IconImport from '@assets/web/icon-import';
 import { SocialKeySetType } from '@common/constants/web3auth.constant';
 import { View } from '@components/atoms';
 import WebMainButton from '@components/atoms/web-main-button';
 import { WebTitleWithDescription } from '@components/molecules';
+import type { JSX } from 'react';
+import React, { useCallback } from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;

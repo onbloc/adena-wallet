@@ -1,6 +1,6 @@
 // Stub out `@adena-wallet/sdk` to avoid pulling in @web3auth's native crypto at
 // import time. jsdom's globals fail noble-hashes' Uint8Array instance check.
-jest.mock('@adena-wallet/sdk', () => ({
+vi.mock('@adena-wallet/sdk', () => ({
   WalletResponseExecuteType: {},
   WalletResponseFailureType: { INVALID_FORMAT: 'INVALID_FORMAT' },
   WalletResponseStatus: { SUCCESS: 'success', FAILURE: 'failure' },
@@ -34,7 +34,7 @@ function setupPostMessageSpy(): {
 } {
   const captured: CapturedMessage[] = [];
   const originalPostMessage = window.postMessage.bind(window);
-  const spy = jest.spyOn(window, 'postMessage').mockImplementation((message: unknown) => {
+  const spy = vi.spyOn(window, 'postMessage').mockImplementation((message: unknown) => {
     captured.push(message as CapturedMessage);
   });
 

@@ -74,8 +74,8 @@ export const TokenListItemWrapper = styled.div<{ $disabled?: boolean; $withPrice
 
   /* Priced rows stack two lines per side and match the icon's full height. */
   ${({ $withPrice }): ReturnType<typeof css> | false =>
-    !!$withPrice &&
-    css`
+    !!$withPrice
+    && css`
       .name-wrapper {
         flex-direction: column;
         align-items: flex-start;

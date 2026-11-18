@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Account, isSessionAccount } from 'adena-module';
-
 import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
 import { GnoSessionAccountResponse } from '@common/provider/gno/types';
 import { isSessionSupportedNetwork } from '@common/utils/account-session';
+import { useQuery } from '@tanstack/react-query';
+import { Account, isSessionAccount } from 'adena-module';
+import { useMemo } from 'react';
+
 import { useWalletContext } from './use-context';
 import { useNetwork } from './use-network';
 
@@ -16,13 +16,14 @@ export const useMasterAccountBadgeMap = (accounts: Account[]): Record<string, bo
   const supported = isSessionSupportedNetwork(currentNetwork);
 
   const queryAccountsKey = useMemo(
-    () => accounts.map((account) => account.id).join('|'),
+    () => accounts.map(account => account.id).join('|'),
     [accounts],
   );
 
-  const { data = {} } = useQuery<Record<string, boolean>>(
-    ['masterAccountBadgeMap', currentNetwork.chainId, queryAccountsKey],
-    async () => {
+  const { data = {} } = useQuery<Record<string, boolean>>({
+    queryKey: ['masterAccountBadgeMap', currentNetwork.chainId, queryAccountsKey],
+
+    queryFn: async () => {
       if (!gnoProvider || !supported) {
         return {};
       }
@@ -37,7 +38,8 @@ export const useMasterAccountBadgeMap = (accounts: Account[]): Record<string, bo
             const address = await account.getAddress(GNO_PREFIX);
             const sessions = await gnoProvider.getSessions(address);
             return [account.id, hasActiveSession(sessions)] as const;
-          } catch {
+          }
+          catch {
             return [account.id, false] as const;
           }
         }),
@@ -48,12 +50,11 @@ export const useMasterAccountBadgeMap = (accounts: Account[]): Record<string, bo
         return accum;
       }, {});
     },
-    {
-      enabled: supported && accounts.length > 0,
-      refetchInterval: MASTER_BADGE_REFETCH_INTERVAL,
-      staleTime: MASTER_BADGE_REFETCH_INTERVAL,
-    },
-  );
+
+    enabled: supported && accounts.length > 0,
+    refetchInterval: MASTER_BADGE_REFETCH_INTERVAL,
+    staleTime: MASTER_BADGE_REFETCH_INTERVAL,
+  });
 
   return data;
 };

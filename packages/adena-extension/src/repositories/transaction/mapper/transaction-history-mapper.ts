@@ -1,6 +1,7 @@
 import { dateToLocal, formatAddress, getDateText } from '@common/utils/client-utils';
 import { toHexHash } from '@common/utils/hash-utils';
 import { TransactionInfo, TransactionWithPageInfo } from '@types';
+
 import {
   TransactionHistoryItem,
   TransactionHistoryResponse,
@@ -109,7 +110,7 @@ function titleFromMessageType(messageType: string | undefined): string {
   return withoutPrefix
     .split('_')
     .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
 
@@ -141,13 +142,14 @@ export class TransactionHistoryMapper {
     return transactions.reduce(
       (accum: { title: string; transactions: TransactionInfo[] }[], current) => {
         const title = getDateText(current.date.slice(0, 10));
-        const accumIndex = accum.findIndex((item) => item.title === title);
+        const accumIndex = accum.findIndex(item => item.title === title);
         if (accumIndex < 0) {
           accum.push({
             title,
             transactions: [current],
           });
-        } else {
+        }
+        else {
           accum[accumIndex].transactions.push(current);
         }
         return accum;
@@ -171,7 +173,7 @@ export class TransactionHistoryMapper {
     }
 
     const { page, items } = response;
-    const mappedTxs = items.map((item) =>
+    const mappedTxs = items.map(item =>
       TransactionHistoryMapper.mappedHistoryItem(item, callerAddress),
     );
     return {

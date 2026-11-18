@@ -95,7 +95,7 @@ export class MultisigAccount implements Account {
       addressBytes: Array.from(this.addressBytes),
       multisigConfig: this.multisigConfig,
       signerPublicKeys: this.signerPublicKeys,
-      hdPath: undefined,
+      hdPath: undefined
     };
   }
 
@@ -117,7 +117,7 @@ export class MultisigAccount implements Account {
   public static async createBy(
     keyring: MultisigKeyring,
     name: string,
-    index: number,
+    index: number
   ): Promise<MultisigAccount> {
     const publicKey = keyring.publicKey;
     const addressBytes = keyring.addressBytes;
@@ -130,7 +130,7 @@ export class MultisigAccount implements Account {
       publicKey: Array.from(publicKey),
       addressBytes: Array.from(addressBytes),
       multisigConfig: keyring.multisigConfig,
-      signerPublicKeys: keyring.signerPublicKeys,
+      signerPublicKeys: keyring.signerPublicKeys
     });
   }
 

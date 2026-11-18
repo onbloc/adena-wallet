@@ -1,11 +1,13 @@
+import type { JSX } from 'react';
 import React, { CSSProperties } from 'react';
 import styled from 'styled-components';
+
 import { View } from '../base';
 import { WebButton } from '../web-button';
 import { WebText } from '../web-text';
 
 export interface WebMainButtonProps {
-  buttonRef?: React.RefObject<HTMLButtonElement>;
+  buttonRef?: React.RefObject<HTMLButtonElement | null>;
   figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'quinary';
   layout?: 'card' | 'list';
   listAlign?: 'start' | 'center';

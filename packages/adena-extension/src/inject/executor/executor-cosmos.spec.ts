@@ -5,7 +5,7 @@ import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx';
 // import time. jsdom's globals fail noble-hashes' Uint8Array instance check.
 // Most cosmos executor methods build their request messages directly; doContract
 // needs the SDK metadata for request construction.
-jest.mock('@adena-wallet/sdk', () => ({
+vi.mock('@adena-wallet/sdk', () => ({
   WalletResponseExecuteType: { DO_CONTRACT: 'DO_CONTRACT' },
   WalletResponseFailureType: {},
   WalletResponseStatus: { SUCCESS: 'success', FAILURE: 'failure' },
@@ -42,7 +42,7 @@ function setupPostMessageSpy(): {
 } {
   const captured: CapturedMessage[] = [];
   const originalPostMessage = window.postMessage.bind(window);
-  const spy = jest
+  const spy = vi
     .spyOn(window, 'postMessage')
     .mockImplementation((message: unknown) => {
       captured.push(message as CapturedMessage);
@@ -63,8 +63,8 @@ function setupPostMessageSpy(): {
 
   return {
     getLast: () => captured[captured.length - 1],
-    respondSuccess: (data) => respond('success', { data, code: 0, message: 'OK' }),
-    respondFailure: (message) => respond('failure', { data: undefined, code: 1, message }),
+    respondSuccess: data => respond('success', { data, code: 0, message: 'OK' }),
+    respondFailure: message => respond('failure', { data: undefined, code: 1, message }),
     restore: (): void => {
       spy.mockRestore();
       window.postMessage = originalPostMessage;

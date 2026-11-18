@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { StorageModelV001 } from './migrations/v001/storage-model-v001';
 import { StorageMigrator } from './storage-migrator';
@@ -43,7 +43,7 @@ describe('StorageMigrator', () => {
     const mockValue = {
       ADENA_DATA: JSON.stringify(mockStorageV001),
     };
-    storage.get = jest.fn().mockResolvedValue(mockValue);
+    storage.get = vi.fn().mockResolvedValue(mockValue);
   });
 
   it('getCurrent success', async () => {

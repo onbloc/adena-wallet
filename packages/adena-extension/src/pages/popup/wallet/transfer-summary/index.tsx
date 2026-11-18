@@ -1,16 +1,3 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  CosmosDocument,
-  Document,
-  isLedgerAccount,
-  isSessionAccount,
-  MSG_SEND_AMINO_TYPE,
-} from 'adena-module';
-import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import AtomoneChainBadge from '@assets/icons/chains/atomone.svg';
 import { GasToken } from '@common/constants/token.constant';
@@ -43,8 +30,10 @@ import { useNetworkProfile } from '@hooks/use-network-profile';
 import { getCosmosOriginDenom } from '@hooks/use-token-metainfo';
 import { useTransferInfo } from '@hooks/use-transfer-info';
 import { useCosmosNetworkFee } from '@hooks/wallet/use-cosmos-network-fee';
+import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
+import { useTransferTokenPrice } from '@hooks/wallet/use-transfer-token-price';
 import {
   createNotificationSendMessage,
   createNotificationSendMessageByHash,
@@ -52,9 +41,19 @@ import {
 import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading';
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Grc20RouteFunc, RoutePath } from '@types';
-import { useFeeTokenPrice } from '@hooks/wallet/use-fee-token-price';
-import { useTransferTokenPrice } from '@hooks/wallet/use-transfer-token-price';
+import {
+  CosmosDocument,
+  Document,
+  isLedgerAccount,
+  isSessionAccount,
+  MSG_SEND_AMINO_TYPE,
+} from 'adena-module';
+import BigNumber from 'bignumber.js';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
+import styled from 'styled-components';
 
 const TransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -72,8 +71,8 @@ const TransferSummaryContainer: React.FC = () => {
   const { navigate, goBack, params } = useAppNavigate<RoutePath.TransferSummary>();
   const summaryInfo = params;
   const { wallet, gnoProvider } = useWalletContext();
-  const { transactionService, chainRegistry, tokenRegistry, cosmosProvider, sessionRepository } =
-    useAdenaContext();
+  const { transactionService, chainRegistry, tokenRegistry, cosmosProvider, sessionRepository }
+    = useAdenaContext();
   const queryClient = useQueryClient();
   const { currentAccount, currentAddress, currentFundingAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
@@ -121,14 +120,16 @@ const TransferSummaryContainer: React.FC = () => {
   const { data: currentBalance } = useGetGnotBalance();
 
   // ─── Cosmos: async address resolution + reactive document ──────────────
-  const { data: cosmosAddress } = useQuery<string | null>(
-    ['cosmosAddress', currentAccount?.id, chain?.bech32Prefix],
-    async () => {
+  const { data: cosmosAddress } = useQuery<string | null>({
+    queryKey: ['cosmosAddress', currentAccount?.id, chain?.bech32Prefix],
+
+    queryFn: async () => {
       if (!currentAccount || !isCosmosToken || !chain) return null;
       return currentAccount.getAddress(chain.bech32Prefix);
     },
-    { enabled: !!currentAccount && isCosmosToken && !!chain },
-  );
+
+    enabled: !!currentAccount && isCosmosToken && !!chain,
+  });
 
   const cosmosDocument = useMemo<CosmosDocument | null>(() => {
     if (!isCosmosToken || !cosmosAddress) return null;
@@ -137,13 +138,13 @@ const TransferSummaryContainer: React.FC = () => {
     // Prefer the persisted metainfo denom; fall back to the registry for
     // accounts whose stored entries predate the denom-seed fix.
     const profile = tokenRegistry.get(tokenMetainfo.tokenId);
-    const denom =
-      (tokenMetainfo as { denom?: string }).denom || (profile ? getCosmosOriginDenom(profile) : '');
+    const denom
+      = (tokenMetainfo as { denom?: string }).denom || (profile ? getCosmosOriginDenom(profile) : '');
     if (!denom) return null;
     const rawAmount = BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals).toFixed(0);
     const cosmosChain = chainRegistry.getChainByChainId(tokenMetainfo.networkId);
-    const placeholderFee =
-      cosmosChain && cosmosChain.chainType === 'cosmos' && cosmosChain.fee.fallbackFee
+    const placeholderFee
+      = cosmosChain && cosmosChain.chainType === 'cosmos' && cosmosChain.fee.fallbackFee
         ? cosmosChain.fee.fallbackFee
         : { amount: [{ denom, amount: '0' }], gas: '0' };
     return {
@@ -191,28 +192,30 @@ const TransferSummaryContainer: React.FC = () => {
   const feeDenom = cosmosFee.currentFeeDenom;
   const sameDenom = !!transferDenom && !!feeDenom && transferDenom === feeDenom;
 
-  const { data: photonBalance } = useQuery<string | null>(
-    ['photonBalance', cosmosAddress],
-    async () => {
+  const { data: photonBalance } = useQuery<string | null>({
+    queryKey: ['photonBalance', cosmosAddress],
+
+    queryFn: async () => {
       if (!cosmosAddress || !cosmosProvider) return null;
       return cosmosProvider.getBalance(cosmosAddress, 'uphoton');
     },
-    { enabled: !!cosmosAddress && !!cosmosProvider && isCosmosToken },
-  );
+
+    enabled: !!cosmosAddress && !!cosmosProvider && isCosmosToken,
+  });
 
   // Only fetched when transferDenom != feeDenom (e.g. ATONE send). For
   // same-denom sends `photonBalance` already represents the transfer balance.
-  const { data: transferTokenBalance } = useQuery<string | null>(
-    ['cosmosTransferTokenBalance', cosmosAddress, transferDenom],
-    async () => {
+  const { data: transferTokenBalance } = useQuery<string | null>({
+    queryKey: ['cosmosTransferTokenBalance', cosmosAddress, transferDenom],
+
+    queryFn: async () => {
       if (!cosmosAddress || !cosmosProvider || !transferDenom) return null;
       return cosmosProvider.getBalance(cosmosAddress, transferDenom);
     },
-    {
-      enabled:
-        !!cosmosAddress && !!cosmosProvider && isCosmosToken && !sameDenom && !!transferDenom,
-    },
-  );
+
+    enabled:
+      !!cosmosAddress && !!cosmosProvider && isCosmosToken && !sameDenom && !!transferDenom,
+  });
 
   const hasNetworkFee = useMemo(() => {
     if (isCosmosToken) {
@@ -596,7 +599,8 @@ const TransferSummaryContainer: React.FC = () => {
       let record;
       try {
         record = await gnoProvider.getSession(currentAccount.getMasterAddress(), sessionAddr);
-      } catch {
+      }
+      catch {
         continue;
       }
       if (!record) {
@@ -617,8 +621,8 @@ const TransferSummaryContainer: React.FC = () => {
       const nowSeconds = Math.floor(Date.now() / 1000);
       const expiresAt = Number(base.expires_at ?? 0);
       const spendUsed = base.spend_used === '' ? undefined : base.spend_used;
-      const spendReset =
-        base.spend_reset != null && base.spend_reset !== '' ? Number(base.spend_reset) : undefined;
+      const spendReset
+        = base.spend_reset != null && base.spend_reset !== '' ? Number(base.spend_reset) : undefined;
 
       // A REVOKED row is preserved by syncFromChain itself, so this loop may
       // report the chain-derived status without re-reading the stored one.
@@ -666,7 +670,8 @@ const TransferSummaryContainer: React.FC = () => {
       const txHash = response?.hash || null;
       if (isCosmosToken) {
         if (txHash) createNotificationSendMessageByHash(txHash);
-      } else {
+      }
+      else {
         // Type-narrow: non-cosmos path returns TM2 broadcast result.
         createNotificationSendMessage(
           response as Awaited<ReturnType<typeof transactionService.sendTransaction>> | null,
@@ -679,7 +684,8 @@ const TransferSummaryContainer: React.FC = () => {
           status: 'SUCCESS',
           hash: txHash,
         });
-      } else {
+      }
+      else {
         setTransferResult({
           status: 'FAILED',
           errorMessage: 'Your transaction could not be submitted to the blockchain. Try again.',
@@ -688,7 +694,8 @@ const TransferSummaryContainer: React.FC = () => {
       setScreenState('RESULT');
       setIsSent(false);
       return Boolean(txHash);
-    } catch (e) {
+    }
+    catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       setTransferResult({
         status: 'FAILED',
@@ -762,7 +769,8 @@ const TransferSummaryContainer: React.FC = () => {
   const onClickNetworkFeeSave = useCallback(() => {
     if (isCosmosToken) {
       cosmosFee.save();
-    } else {
+    }
+    else {
       useNetworkFeeReturn.save();
     }
     setOpenedNetworkFeeSetting(false);
@@ -846,7 +854,8 @@ const TransferSummaryContainer: React.FC = () => {
 
         setDocument(doc);
       });
-    } else {
+    }
+    else {
       updateDocument();
     }
   }, [
@@ -863,56 +872,62 @@ const TransferSummaryContainer: React.FC = () => {
 
   return (
     <TransferSummaryLayout ref={layoutRef}>
-      {screenState === 'LOADING' ? (
-        <BroadcastTransactionLoading />
-      ) : screenState === 'RESULT' && transferResult ? (
-        <TransactionResult
-          status={transferResult.status}
-          errorMessage={transferResult.errorMessage}
-          onClickViewHistory={onClickViewHistory}
-          onClickViewGnoscan={onClickViewGnoscan}
-          onClickClose={onClickCloseResult}
-          scannerLabel={isCosmosToken ? 'View on Mintscan' : 'View on GnoScan'}
-        />
-      ) : openedNetworkFeeSetting ? (
-        <div className='network-fee-setting-wrapper'>
-          <NetworkFeeSetting
-            {...(isCosmosToken ? cosmosFee : useNetworkFeeReturn)}
-            feeTokenQuote={feeTokenQuote}
-            onClickBack={onClickNetworkFeeClose}
-            onClickSave={onClickNetworkFeeSave}
-          />
-        </div>
-      ) : (
-        <TransferSummary
-          tokenMetainfo={summaryInfo.tokenMetainfo}
-          tokenImage={summaryInfo.tokenMetainfo.image || `${UnknownTokenIcon}`}
-          toAddress={summaryInfo.toAddress}
-          chainName={tokenProfile?.displayName || ''}
-          chainBadgeImage={isCosmosToken ? AtomoneChainBadge : undefined}
-          transferBalance={getTransferBalance()}
-          isErrorNetworkFee={isNetworkFeeError}
-          isLoadingNetworkFee={isCosmosToken ? cosmosFee.isLoading : useNetworkFeeReturn.isLoading}
-          isSessionSigning={!!currentAccount && isSessionAccount(currentAccount)}
-          networkFee={isCosmosToken ? cosmosFee.networkFee : networkFee}
-          feeTokenQuote={feeTokenQuote}
-          transferTokenQuote={transferTokenQuote}
-          memo={summaryInfo.memo}
-          currentBalance={currentBalance}
-          useNetworkFeeReturn={useNetworkFeeReturn}
-          simulateErrorBannerMessage={simulateErrorMessage}
-          onClickBack={onClickBack}
-          onClickCancel={onClickCancel}
-          onClickSend={transfer}
-          onClickNetworkFeeSetting={onClickNetworkFeeSetting}
-        />
-      )}
+      {screenState === 'LOADING'
+        ? (
+            <BroadcastTransactionLoading />
+          )
+        : screenState === 'RESULT' && transferResult
+          ? (
+              <TransactionResult
+                status={transferResult.status}
+                errorMessage={transferResult.errorMessage}
+                onClickViewHistory={onClickViewHistory}
+                onClickViewGnoscan={onClickViewGnoscan}
+                onClickClose={onClickCloseResult}
+                scannerLabel={isCosmosToken ? 'View on Mintscan' : 'View on GnoScan'}
+              />
+            )
+          : openedNetworkFeeSetting
+            ? (
+                <div className='network-fee-setting-wrapper'>
+                  <NetworkFeeSetting
+                    {...(isCosmosToken ? cosmosFee : useNetworkFeeReturn)}
+                    feeTokenQuote={feeTokenQuote}
+                    onClickBack={onClickNetworkFeeClose}
+                    onClickSave={onClickNetworkFeeSave}
+                  />
+                </div>
+              )
+            : (
+                <TransferSummary
+                  tokenMetainfo={summaryInfo.tokenMetainfo}
+                  tokenImage={summaryInfo.tokenMetainfo.image || `${UnknownTokenIcon}`}
+                  toAddress={summaryInfo.toAddress}
+                  chainName={tokenProfile?.displayName || ''}
+                  chainBadgeImage={isCosmosToken ? AtomoneChainBadge : undefined}
+                  transferBalance={getTransferBalance()}
+                  isErrorNetworkFee={isNetworkFeeError}
+                  isLoadingNetworkFee={isCosmosToken ? cosmosFee.isLoading : useNetworkFeeReturn.isLoading}
+                  isSessionSigning={!!currentAccount && isSessionAccount(currentAccount)}
+                  networkFee={isCosmosToken ? cosmosFee.networkFee : networkFee}
+                  feeTokenQuote={feeTokenQuote}
+                  transferTokenQuote={transferTokenQuote}
+                  memo={summaryInfo.memo}
+                  currentBalance={currentBalance}
+                  useNetworkFeeReturn={useNetworkFeeReturn}
+                  simulateErrorBannerMessage={simulateErrorMessage}
+                  onClickBack={onClickBack}
+                  onClickCancel={onClickCancel}
+                  onClickSend={transfer}
+                  onClickNetworkFeeSetting={onClickNetworkFeeSetting}
+                />
+              )}
     </TransferSummaryLayout>
   );
 };
 
 function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export default TransferSummaryContainer;

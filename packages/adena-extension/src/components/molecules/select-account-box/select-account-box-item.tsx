@@ -2,8 +2,9 @@ import { Row, WebCheckBox, WebText } from '@components/atoms';
 import { formatHdPath } from 'adena-module';
 import React from 'react';
 import { useTheme } from 'styled-components';
-import { StyledSelectAccountBoxItem } from './select-account-box-item.styles';
+
 import { AccountInfo } from './select-account-box.types';
+import { StyledSelectAccountBoxItem } from './select-account-box-item.styles';
 
 const SelectAccountBoxItem: React.FC<{
   account: AccountInfo;
@@ -30,11 +31,13 @@ const SelectAccountBoxItem: React.FC<{
           {derivationPath}
         </WebText>
       </Row>
-      {checkboxDisabled ? (
-        <WebCheckBox checked={stored || locked || selected} disabled />
-      ) : (
-        <WebCheckBox checked={selected} onClick={(): void => select(address)} />
-      )}
+      {checkboxDisabled
+        ? (
+            <WebCheckBox checked={stored || locked || selected} disabled />
+          )
+        : (
+            <WebCheckBox checked={selected} onClick={(): void => select(address)} />
+          )}
     </StyledSelectAccountBoxItem>
   );
 };

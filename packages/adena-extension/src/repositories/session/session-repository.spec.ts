@@ -22,11 +22,11 @@ const makeMetadata = (
 const makeStorage = (initial: Record<string, SessionMetadataV021>): StorageManager => {
   let raw: string | null = JSON.stringify(initial);
   return {
-    get: jest.fn(async () => raw),
-    set: jest.fn(async (_key: string, value: string) => {
+    get: vi.fn(async () => raw),
+    set: vi.fn(async (_key: string, value: string) => {
       raw = value;
     }),
-    remove: jest.fn(async () => {
+    remove: vi.fn(async () => {
       raw = null;
     }),
   } as unknown as StorageManager;

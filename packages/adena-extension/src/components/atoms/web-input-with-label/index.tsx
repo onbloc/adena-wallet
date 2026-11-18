@@ -1,7 +1,7 @@
+import { Row, View } from '@components/atoms';
 import { webFonts } from '@styles/theme';
 import React, { useState } from 'react';
 import styled, { css, RuleSet } from 'styled-components';
-import { Row, View } from '@components/atoms';
 
 interface StyleProps {
   hover?: boolean;

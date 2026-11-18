@@ -1,7 +1,7 @@
+import { fonts, getTheme } from '@styles/theme';
+import type { JSX } from 'react';
 import React from 'react';
 import styled from 'styled-components';
-
-import { fonts, getTheme } from '@styles/theme';
 
 interface SecureTextareaProps {
   value: string;

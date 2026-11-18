@@ -1,22 +1,22 @@
+import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { GnoSessionAccountResponse } from '@common/provider/gno/types';
+import { Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
+import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
+import { SessionRepository } from '@repositories/session';
+import { NetworkMetainfo } from '@types';
 import {
   AdenaWallet,
   ChainRegistry,
   publicKeyToAddress,
 } from 'adena-module';
-import { Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
+import type { Mock } from 'vitest';
 
-import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { GnoSessionAccountResponse } from '@common/provider/gno/types';
-import { SessionMetadataV021 } from '@migrates/migrations/v021/storage-model-v021';
-import { SessionRepository } from '@repositories/session';
-import { NetworkMetainfo } from '@types';
-
+import { WalletService } from './wallet';
 import {
   SessionImportError,
   SessionImportPreview,
   WalletSessionService,
 } from './wallet-session';
-import { WalletService } from './wallet';
 
 const MASTER_ADDRESS = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
 const PRIV_KEY_1 = '0000000000000000000000000000000000000000000000000000000000000001';
@@ -47,7 +47,7 @@ function hexToBytes(hex: string): Uint8Array {
 
 function makeChainRegistry(): ChainRegistry {
   return {
-    getChainByChainId: jest.fn(() => ({
+    getChainByChainId: vi.fn(() => ({
       chainGroup: 'gno',
     })),
   } as unknown as ChainRegistry;
@@ -59,19 +59,19 @@ function makeSessionRepository(): SessionRepository & {
   const sessions: Record<string, SessionMetadataV021> = {};
   return {
     sessions,
-    get: jest.fn(async (sessionAddr: string) => sessions[sessionAddr] ?? null),
-    getAll: jest.fn(async () => ({ ...sessions })),
-    set: jest.fn(async (sessionAddr: string, metadata: SessionMetadataV021) => {
+    get: vi.fn(async (sessionAddr: string) => sessions[sessionAddr] ?? null),
+    getAll: vi.fn(async () => ({ ...sessions })),
+    set: vi.fn(async (sessionAddr: string, metadata: SessionMetadataV021) => {
       sessions[sessionAddr] = metadata;
     }),
-    setMany: jest.fn(
+    setMany: vi.fn(
       async (entries: Array<{ sessionAddr: string; metadata: SessionMetadataV021 }>) => {
         for (const entry of entries) {
           sessions[entry.sessionAddr] = entry.metadata;
         }
       },
     ),
-    remove: jest.fn(async (sessionAddr: string) => {
+    remove: vi.fn(async (sessionAddr: string) => {
       delete sessions[sessionAddr];
     }),
   } as unknown as SessionRepository & {
@@ -81,30 +81,30 @@ function makeSessionRepository(): SessionRepository & {
 
 function makeWalletService(wallet: AdenaWallet): WalletService & {
   savedWallet: AdenaWallet | null;
-  updateWallet: jest.Mock;
+  updateWallet: Mock;
 } {
   // Held outside the object literal: reading it back through `service` inside
   // `loadWallet` would make the literal's type depend on itself.
   let persisted: AdenaWallet | null = null;
   const service = {
     savedWallet: null as AdenaWallet | null,
-    existsWallet: jest.fn(async () => true),
-    isLocked: jest.fn(async () => false),
+    existsWallet: vi.fn(async () => true),
+    isLocked: vi.fn(async () => false),
     // Authoritative read: reflects whatever was persisted last, the way storage
     // does.
-    loadWallet: jest.fn(async () => persisted ?? wallet),
+    loadWallet: vi.fn(async () => persisted ?? wallet),
     // The instance a mounted document holds. A service-level `updateWallet`
     // never refreshes it, so it stays at the state the document mounted with —
     // which is exactly why a read-modify-write must not use it.
-    getCurrentWallet: jest.fn(async () => wallet),
-    updateWallet: jest.fn(async (nextWallet: AdenaWallet) => {
+    getCurrentWallet: vi.fn(async () => wallet),
+    updateWallet: vi.fn(async (nextWallet: AdenaWallet) => {
       persisted = nextWallet;
       service.savedWallet = nextWallet;
     }),
   };
   return service as unknown as WalletService & {
     savedWallet: AdenaWallet | null;
-    updateWallet: jest.Mock;
+    updateWallet: Mock;
   };
 }
 
@@ -172,7 +172,7 @@ describe('WalletSessionService bulk import', () => {
   it('lists active sessions for a valid master address', async () => {
     const session = await makeSessionRecord(PRIV_KEY_1);
     const provider = {
-      getSessions: jest.fn(async () => [session.record]),
+      getSessions: vi.fn(async () => [session.record]),
     } as unknown as GnoProvider;
     const repository = makeSessionRepository();
     const service = makeService(provider, repository, makeWalletService(new AdenaWallet()));
@@ -190,7 +190,7 @@ describe('WalletSessionService bulk import', () => {
     const expiredAt = String(Math.floor(Date.now() / 1000) - 60);
     const expired = await makeSessionRecord(PRIV_KEY_2, expiredAt);
     const provider = {
-      getSessions: jest.fn(async () => [active.record, expired.record]),
+      getSessions: vi.fn(async () => [active.record, expired.record]),
     } as unknown as GnoProvider;
     const repository = makeSessionRepository();
     const service = makeService(provider, repository, makeWalletService(new AdenaWallet()));
@@ -198,15 +198,15 @@ describe('WalletSessionService bulk import', () => {
     const result = await service.listImportableSessions(MASTER_ADDRESS, network);
 
     expect(result).toHaveLength(2);
-    expect(result.find((item) => item.sessionAddr === active.sessionAddr)?.isExpired).toBe(false);
-    expect(result.find((item) => item.sessionAddr === expired.sessionAddr)?.isExpired).toBe(true);
+    expect(result.find(item => item.sessionAddr === active.sessionAddr)?.isExpired).toBe(false);
+    expect(result.find(item => item.sessionAddr === expired.sessionAddr)?.isExpired).toBe(true);
   });
 
   it('allows importing an expired session with expired metadata status', async () => {
     const expiredAt = String(Math.floor(Date.now() / 1000) - 60);
     const session = await makeSessionRecord(PRIV_KEY_1, expiredAt);
     const provider = {
-      getSession: jest.fn(async () => session.record),
+      getSession: vi.fn(async () => session.record),
     } as unknown as GnoProvider;
     const repository = makeSessionRepository();
     const walletService = makeWalletService(new AdenaWallet());
@@ -231,7 +231,7 @@ describe('WalletSessionService bulk import', () => {
   it('does not mark stale session metadata as imported when the wallet lacks the account', async () => {
     const session = await makeSessionRecord(PRIV_KEY_1);
     const provider = {
-      getSessions: jest.fn(async () => [session.record]),
+      getSessions: vi.fn(async () => [session.record]),
     } as unknown as GnoProvider;
     const repository = makeSessionRepository();
     repository.sessions[session.sessionAddr] = makeMetadata();
@@ -245,7 +245,7 @@ describe('WalletSessionService bulk import', () => {
   it('clears stale session metadata and allows preview when the wallet lacks the account', async () => {
     const session = await makeSessionRecord(PRIV_KEY_1);
     const provider = {
-      getSession: jest.fn(async () => session.record),
+      getSession: vi.fn(async () => session.record),
     } as unknown as GnoProvider;
     const repository = makeSessionRepository();
     repository.sessions[session.sessionAddr] = makeMetadata();
@@ -264,7 +264,7 @@ describe('WalletSessionService bulk import', () => {
 
   it('throws no_sessions_found when chain has no sessions for the master', async () => {
     const provider = {
-      getSessions: jest.fn(async () => []),
+      getSessions: vi.fn(async () => []),
     } as unknown as GnoProvider;
     const service = makeService(
       provider,
@@ -280,7 +280,7 @@ describe('WalletSessionService bulk import', () => {
   it('rejects a private key that does not match the selected session address', async () => {
     const session = await makeSessionRecord(PRIV_KEY_1);
     const provider = {
-      getSession: jest.fn(async () => session.record),
+      getSession: vi.fn(async () => session.record),
     } as unknown as GnoProvider;
     const service = makeService(
       provider,
@@ -308,7 +308,7 @@ describe('WalletSessionService bulk import', () => {
       [second.sessionAddr]: second.record,
     };
     const provider = {
-      getSession: jest.fn(async (_master: string, sessionAddr: string) => records[sessionAddr]),
+      getSession: vi.fn(async (_master: string, sessionAddr: string) => records[sessionAddr]),
     } as unknown as GnoProvider;
     const repository = makeSessionRepository();
     const walletService = makeWalletService(new AdenaWallet());
@@ -339,8 +339,8 @@ describe('WalletSessionService bulk import', () => {
     expect(repository.sessions[second.sessionAddr]).toBeDefined();
     expect(walletService.updateWallet).toHaveBeenCalledTimes(1);
     expect(walletService.savedWallet?.accounts).toHaveLength(2);
-    expect(accounts.map((account) => account.name)).toEqual(['Session 1', 'Session 2']);
-    expect(walletService.savedWallet?.accounts.map((account) => account.name)).toEqual([
+    expect(accounts.map(account => account.name)).toEqual(['Session 1', 'Session 2']);
+    expect(walletService.savedWallet?.accounts.map(account => account.name)).toEqual([
       'Session 1',
       'Session 2',
     ]);
@@ -354,7 +354,7 @@ describe('WalletSessionService bulk import', () => {
       [second.sessionAddr]: second.record,
     };
     const provider = {
-      getSession: jest.fn(async (_master: string, sessionAddr: string) => records[sessionAddr]),
+      getSession: vi.fn(async (_master: string, sessionAddr: string) => records[sessionAddr]),
     } as unknown as GnoProvider;
     const repository = makeSessionRepository();
     const walletService = makeWalletService(new AdenaWallet());
@@ -376,7 +376,7 @@ describe('WalletSessionService bulk import', () => {
     // The web app keeps one mounted document across routes, so the second import
     // must still be built on the persisted result of the first one.
     expect(walletService.savedWallet?.accounts).toHaveLength(2);
-    expect(walletService.savedWallet?.accounts.map((account) => account.name)).toEqual([
+    expect(walletService.savedWallet?.accounts.map(account => account.name)).toEqual([
       'Session 1',
       'Session 2',
     ]);
@@ -392,7 +392,7 @@ describe('WalletSessionService bulk import', () => {
       [second.sessionAddr]: second.record,
     };
     const provider = {
-      getSession: jest.fn(async (_master: string, sessionAddr: string) => records[sessionAddr]),
+      getSession: vi.fn(async (_master: string, sessionAddr: string) => records[sessionAddr]),
     } as unknown as GnoProvider;
     const repository = makeSessionRepository();
     const walletService = makeWalletService(new AdenaWallet());
@@ -418,7 +418,7 @@ describe('WalletSessionService bulk import', () => {
       [second.sessionAddr]: PRIV_KEY_2,
     });
 
-    expect(result.wallet.accounts.map((account) => account.name)).toEqual([
+    expect(result.wallet.accounts.map(account => account.name)).toEqual([
       'Session 1',
       'Session 2',
     ]);
@@ -432,7 +432,7 @@ describe('WalletSessionService bulk import', () => {
       [second.sessionAddr]: second.record,
     };
     const provider = {
-      getSession: jest.fn(async (_master: string, sessionAddr: string) => records[sessionAddr]),
+      getSession: vi.fn(async (_master: string, sessionAddr: string) => records[sessionAddr]),
     } as unknown as GnoProvider;
     const repository = makeSessionRepository();
     const walletService = makeWalletService(new AdenaWallet());

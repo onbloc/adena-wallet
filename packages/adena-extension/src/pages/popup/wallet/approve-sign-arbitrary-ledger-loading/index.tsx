@@ -3,9 +3,6 @@ import {
   WalletResponseRejectType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
-import { AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
-import React, { useEffect, useRef, useState } from 'react';
-
 import { ApproveLedgerLoading } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
@@ -13,6 +10,8 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { SignArbitraryExecuteType } from '@inject/types';
 import { RoutePath } from '@types';
+import { AdenaLedgerConnector, isLedgerAccount, LedgerError } from 'adena-module';
+import React, { useEffect, useRef, useState } from 'react';
 
 // Only the success response needs this, for the same reason as
 // approve-sign-arbitrary/index.tsx: the SDK's `WalletMessageInfo` has no
@@ -95,7 +94,8 @@ const ApproveSignArbitraryLedgerLoadingContainer: React.FC = () => {
       );
       window.close();
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       const message = (error as Error)?.message ?? String(error);
       if (error instanceof LedgerError && error.kind === 'UserRejected') {
         chrome.runtime.sendMessage(

@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconAccountInitializeFailed from '@assets/icon-account-initialize-failed';
 import IconSubmit from '@assets/submit.svg';
 import ExternalLinkIcon from '@assets/web/external-link.svg';
 import { CommonFullContentLayout, Text, View } from '@components/atoms';
+import React, { useMemo } from 'react';
+import styled, { useTheme } from 'styled-components';
+
 import { BottomFixedButton } from '../bottom-fixed-button';
 
 export interface TransactionResultProps {
@@ -46,11 +46,13 @@ const TransactionResult: React.FC<TransactionResultProps> = ({
   return (
     <CommonFullContentLayout>
       <StyledResultWrapper>
-        {isSuccess ? (
-          <img src={successIconSrc || IconSubmit} alt='result icon' />
-        ) : (
-          <IconAccountInitializeFailed />
-        )}
+        {isSuccess
+          ? (
+              <img src={successIconSrc || IconSubmit} alt='result icon' />
+            )
+          : (
+              <IconAccountInitializeFailed />
+            )}
         <StyledDescriptionWrapper>
           <Text type='header4' textAlign='center'>
             {isSuccess ? 'Transaction Submitted' : 'Transaction Failed'}
@@ -64,7 +66,9 @@ const TransactionResult: React.FC<TransactionResultProps> = ({
         {!isSuccess && (
           <StyledErrorWrapper>
             <Text type='captionReg'>
-              <StyledErrorTitle>ERROR:</StyledErrorTitle> {failureErrorMessage}
+              <StyledErrorTitle>ERROR:</StyledErrorTitle>
+              {' '}
+              {failureErrorMessage}
             </Text>
           </StyledErrorWrapper>
         )}

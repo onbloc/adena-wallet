@@ -10,6 +10,6 @@ export function inferChainGroup(address: string, chainRegistry: ChainRegistry): 
     .listChains()
     .slice()
     .sort((a, b) => b.bech32Prefix.length - a.bech32Prefix.length)
-    .find((chain) => address.startsWith(chain.bech32Prefix + '1'));
+    .find(chain => address.startsWith(chain.bech32Prefix + '1'));
   return matched?.chainGroup ?? 'gno';
 }

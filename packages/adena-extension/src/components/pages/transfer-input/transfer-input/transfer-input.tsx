@@ -1,22 +1,21 @@
-import React from 'react';
-
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import IconLink from '@assets/icon-link';
+import { BaseError } from '@common/errors';
+import { isCosmosNativeTokenModel } from '@common/validation/validation-token';
 import { SubHeader } from '@components/atoms';
 import { ChainDropdown, ChainOption } from '@components/atoms/chain-dropdown';
+import { BottomFixedButtonGroup } from '@components/molecules';
+import { TokenModel } from '@types';
+import React from 'react';
+
 import AddressInput from '../address-input/address-input';
 import BalanceInput from '../balance-input/balance-input';
+import MemoInput from '../memo-input/memo-input';
 import TransferModeTabs, {
   TransferMode,
 } from '../transfer-mode-tabs/transfer-mode-tabs';
 import { TransferInputWrapper } from './transfer-input.styles';
-
-import { BaseError } from '@common/errors';
-import { isCosmosNativeTokenModel } from '@common/validation/validation-token';
-import { BottomFixedButtonGroup } from '@components/molecules';
-import { TokenModel } from '@types';
-import MemoInput from '../memo-input/memo-input';
 
 const IBC_WARNING_TEXT = 'Do not use your centralized exchange address for IBC transfers.';
 
@@ -95,17 +94,19 @@ const TransferInput: React.FC<TransferInputProps> = ({
 
   return (
     <TransferInputWrapper>
-      {hasBackButton ? (
-        <SubHeader
-          title={`Send ${tokenMetainfo?.symbol || ''}`}
-          leftElement={{
-            element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
-            onClick: onClickBack,
-          }}
-        />
-      ) : (
-        <SubHeader title={`Send ${tokenMetainfo?.symbol || ''}`} />
-      )}
+      {hasBackButton
+        ? (
+            <SubHeader
+              title={`Send ${tokenMetainfo?.symbol || ''}`}
+              leftElement={{
+                element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
+                onClick: onClickBack,
+              }}
+            />
+          )
+        : (
+            <SubHeader title={`Send ${tokenMetainfo?.symbol || ''}`} />
+          )}
       <div className='logo-wrapper'>
         <img className='logo' src={tokenMetainfo?.image || UnknownTokenIcon} alt='token image' />
       </div>

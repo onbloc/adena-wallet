@@ -1,5 +1,3 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
 import { TokenValidationError } from '@common/errors';
 import { parseTokenIdentifier } from '@common/utils/grc20-token-path';
 import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
@@ -14,6 +12,7 @@ import { useGRC20TokensInfinite } from '@hooks/use-grc20-tokens-infinite';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RoutePath, TokenInfo } from '@types';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 const ManageTokenAddedContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();
@@ -73,7 +72,8 @@ const ManageTokenAddedContainer: React.FC = () => {
     try {
       parseReamPathItemsByPath(parsed.packagePath);
       return true;
-    } catch {
+    }
+    catch {
       return false;
     }
   }, [manualTokenPath]);
@@ -114,14 +114,14 @@ const ManageTokenAddedContainer: React.FC = () => {
     // The manual input is a realm (package) path; the resolved token carries the
     // token path in tokenId. Compare against that so a realm with multiple
     // symbols is matched by the exact token the user is adding.
-    const isRegistered =
-      !!manualGRC20Token &&
-      tokenMetainfos.some(
-        (tokenMetaInfo) =>
-          isGRC20TokenModel(tokenMetaInfo) &&
-          tokenMetaInfo.networkId === currentNetwork.networkId &&
-          tokenMetaInfo.tokenId === manualGRC20Token.tokenId,
-      );
+    const isRegistered
+      = !!manualGRC20Token
+        && tokenMetainfos.some(
+          tokenMetaInfo =>
+            isGRC20TokenModel(tokenMetaInfo)
+            && tokenMetaInfo.networkId === currentNetwork.networkId
+            && tokenMetaInfo.tokenId === manualGRC20Token.tokenId,
+        );
 
     if (isRegistered) {
       return new TokenValidationError('ALREADY_ADDED');
@@ -136,22 +136,22 @@ const ManageTokenAddedContainer: React.FC = () => {
     }
 
     return grc20Tokens
-      .filter((token) => token.networkId === currentNetwork.networkId)
+      .filter(token => token.networkId === currentNetwork.networkId)
       .filter(
-        (token) =>
+        token =>
           !tokenMetainfos.find(
-            (tokenMetainfo) =>
-              tokenMetainfo.tokenId === token.tokenId &&
-              tokenMetainfo.networkId === token.networkId,
+            tokenMetainfo =>
+              tokenMetainfo.tokenId === token.tokenId
+              && tokenMetainfo.networkId === token.networkId,
           ),
       )
       .filter(
-        (token) =>
-          token?.pkgPath.includes(keyword) ||
-          token?.symbol.includes(keyword) ||
-          token?.name.includes(keyword),
+        token =>
+          token?.pkgPath.includes(keyword)
+          || token?.symbol.includes(keyword)
+          || token?.name.includes(keyword),
       )
-      .map((token) => ({
+      .map(token => ({
         tokenId: token?.tokenId,
         name: token?.name,
         symbol: token?.symbol,
@@ -190,7 +190,7 @@ const ManageTokenAddedContainer: React.FC = () => {
 
   const onClickListItem = useCallback(
     (tokenId: string) => {
-      const tokenInfo = tokenInfos?.find((tokenInfo) => tokenInfo.tokenId === tokenId);
+      const tokenInfo = tokenInfos?.find(tokenInfo => tokenInfo.tokenId === tokenId);
       if (!tokenInfo) {
         return;
       }

@@ -1,5 +1,6 @@
 import { Portal } from '@components/atoms';
 import React from 'react';
+
 import { WarningPopoverWrapper } from './session-address-warning-popover.styles';
 
 // A SessionAccount address can never receive tokens, so the header copy affordance
@@ -30,7 +31,11 @@ export const SessionAddressWarningPopover: React.FC<SessionAddressWarningPopover
         onMouseLeave={onMouseLeave}
       >
         <span className='warning-text'>
-          Do not send tokens to your Session Account. Use the <b>Master Account’s</b> address to
+          Do not send tokens to your Session Account. Use the
+          {' '}
+          <b>Master Account’s</b>
+          {' '}
+          address to
           receive tokens.
         </span>
       </WarningPopoverWrapper>

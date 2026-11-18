@@ -1,9 +1,8 @@
-import { ReactElement, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import { Row, View, WebButton, WebCheckBox, WebText } from '@components/atoms';
 import { WebSeedInput, WebTitleWithDescription } from '@components/molecules';
 import { UseWalletImportReturn } from '@hooks/web/use-wallet-import-screen';
+import { ReactElement, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -15,8 +14,8 @@ const SetMnemonicStep = ({
 }: {
   useWalletImportScreenReturn: UseWalletImportReturn;
 }): ReactElement => {
-  const { setInputType, updateInputValue, onClickNext, errMsg, isValidForm } =
-    useWalletImportScreenReturn;
+  const { setInputType, updateInputValue, onClickNext, errMsg, isValidForm }
+    = useWalletImportScreenReturn;
   const theme = useTheme();
   const [agreeWarning, setAgreeWarning] = useState(false);
 

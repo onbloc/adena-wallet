@@ -1,6 +1,7 @@
 import { FontsType } from '@styles/theme';
 import BigNumber from 'bignumber.js';
 import React, { useMemo } from 'react';
+
 import { HighlightNumberWrapper } from './highlight-number.styles';
 
 export interface HighlightNumberProps {

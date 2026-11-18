@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { SideMenuLinkWrapper } from './side-menu-link.styles';
 
 export interface SideMenuLinkProps {

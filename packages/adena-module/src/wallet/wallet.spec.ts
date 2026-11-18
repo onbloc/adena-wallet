@@ -4,8 +4,8 @@ import { SessionKeyring } from './keyring/session-keyring';
 import { AdenaWallet } from './wallet';
 import { generateKdfSalt } from './wallet-crypto-util';
 
-const mnemonic =
-  'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
+const mnemonic
+  = 'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
 
 describe('create wallet by mnemonic', () => {
   it('create success', async () => {
@@ -21,7 +21,7 @@ describe('create wallet by mnemonic', () => {
     expect(wallet.accounts.length).toBe(1);
   });
 
-  it("initilaize account' address is corret", async () => {
+  it('initilaize account\' address is corret', async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
     const account = wallet.accounts[0];
     const address = await account.getAddress('g');
@@ -45,7 +45,7 @@ describe('create wallet by web3 auth', () => {
     expect(wallet.accounts.length).toBe(1);
   });
 
-  it("initilaize account' address is corret", async () => {
+  it('initilaize account\' address is corret', async () => {
     const privateKeyHexStr = 'ea97b9fddb7e6bf6867090a7a819657047949fbb9466d617f940538efd888605';
     const wallet = await AdenaWallet.createByWeb3Auth(privateKeyHexStr);
     const account = wallet.accounts[0];
@@ -62,7 +62,8 @@ describe('create wallet by ledger', () => {
       const wallet = await AdenaWallet.createByLedger(ledgerConnector);
 
       expect(wallet.currentKeyring.type).toBe('LEDGER');
-    } catch (e) {}
+    }
+    catch (e) {}
   });
 
   it('account initialize success', async () => {
@@ -71,7 +72,8 @@ describe('create wallet by ledger', () => {
       const wallet = await AdenaWallet.createByLedger(ledgerConnector);
 
       expect(wallet.accounts.length).toBe(1);
-    } catch (e) {}
+    }
+    catch (e) {}
   });
 });
 
@@ -107,7 +109,7 @@ describe('serialize', () => {
     const serialized = await wallet.serialize('PASSWORD', salt);
 
     await expect(
-      AdenaWallet.deserialize(serialized, 'INVALID_PASSWORD', salt),
+      AdenaWallet.deserialize(serialized, 'INVALID_PASSWORD', salt)
     ).rejects.toThrow();
   });
 
@@ -117,7 +119,7 @@ describe('serialize', () => {
     const differentSalt = await generateKdfSalt();
 
     await expect(
-      AdenaWallet.deserialize(serialized, 'PASSWORD', differentSalt),
+      AdenaWallet.deserialize(serialized, 'PASSWORD', differentSalt)
     ).rejects.toThrow();
   });
 });
@@ -164,7 +166,7 @@ describe('nextSessionAccountName', () => {
     expiresAt: 1_900_000_000,
     allowPaths: ['vm/exec:gno.land/r/demo/foo'],
     spendLimit: '1000000ugnot',
-    spendPeriod: 86_400,
+    spendPeriod: 86_400
   };
 
   it('returns Session 1 when no session accounts exist', async () => {
@@ -234,7 +236,7 @@ describe('nextSessionAccountName', () => {
     wallet.currentAccountId = session.id;
 
     await expect(wallet.getPrivateKeyStr()).resolves.toBe(
-      Buffer.from(keyring.privateKey).toString('hex'),
+      Buffer.from(keyring.privateKey).toString('hex')
     );
   });
 });

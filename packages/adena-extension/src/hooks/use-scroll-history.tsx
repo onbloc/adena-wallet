@@ -1,16 +1,16 @@
 import { CommonState } from '@states';
+import { useAtom } from 'jotai';
 import { RefObject, useCallback, useLayoutEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import { useLocation } from 'react-router';
 
 export type UseScrollHistoryReturn = {
   scrollMove: () => void;
   saveScrollPosition: (scrollY?: number) => void;
 };
 
-const useScrollHistory = (ref?: RefObject<HTMLDivElement>): UseScrollHistoryReturn => {
+const useScrollHistory = (ref?: RefObject<HTMLDivElement | null>): UseScrollHistoryReturn => {
   const location = useLocation();
-  const [scrollPositions, setScrollPositions] = useRecoilState(CommonState.scrollPositions);
+  const [scrollPositions, setScrollPositions] = useAtom(CommonState.scrollPositions);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
 
   useLayoutEffect(() => {
@@ -35,7 +35,8 @@ const useScrollHistory = (ref?: RefObject<HTMLDivElement>): UseScrollHistoryRetu
       ref?.current
         ? ref.current.scrollTo(0, scrollPositions[location.key])
         : bodyElement?.scrollTo(0, scrollPositions[location.key]);
-    } else {
+    }
+    else {
       ref?.current ? ref.current.scrollTo(0, 0) : bodyElement?.scrollTo(0, 0);
     }
   }, [location, bodyElement, ref?.current]);
