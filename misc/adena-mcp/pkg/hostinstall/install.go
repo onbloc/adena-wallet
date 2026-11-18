@@ -58,7 +58,10 @@ type Browser struct {
 	Dir string
 	// RegistryKey, on Windows, points the browser at the manifest.
 	RegistryKey string
-	Firefox     bool
+	// AgentHome, on Windows, is the agent home Dir lies in. It is secured
+	// before a manifest is written, since browsers launch what it names.
+	AgentHome string
+	Firefox   bool
 }
 
 // Options configures an installation.
@@ -136,6 +139,7 @@ func windowsBrowsers(home string) []Browser {
 			Root:        root,
 			Dir:         filepath.Join(manifests, slug),
 			RegistryKey: registryBase + `\NativeMessagingHosts\` + HostName,
+			AgentHome:   agentHome,
 			Firefox:     firefox,
 		}
 	}
@@ -327,6 +331,16 @@ func writeManifest(browser Browser, opts Options) (string, error) {
 	data, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("encode manifest: %w", err)
+	}
+
+	if browser.AgentHome != "" {
+		// Removes anything another account owns below the home, such as a
+		// planted manifest directory, then protects the directories used here.
+		for _, dir := range []string{browser.AgentHome, filepath.Dir(browser.Dir), browser.Dir} {
+			if err := agentpath.EnsureDir(dir); err != nil {
+				return "", err
+			}
+		}
 	}
 
 	if err := os.MkdirAll(browser.Dir, dirPerm); err != nil {

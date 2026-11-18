@@ -154,7 +154,11 @@ Unix domain sockets the two use.
   inherit it, wherever `ADENA_AGENT_HOME` points. A directory owned by another
   account is taken over first, because an owner can always rewrite the ACL;
   if that is not possible, adena-mcp refuses to use it. The host's `bin`
-  directory gets the same treatment.
+  directory gets the same treatment. Anything inside the home that another
+  account owns, such as a planted `native-messaging` manifest or a socket, is
+  removed (adena-mcp and the installer recreate all of it), because an owner
+  keeps control of its own files and can reach them by path through a
+  directory it can no longer list.
 - The host identifies each peer with `SIO_AF_UNIX_GETPEERPID` and refuses
   processes of other users, as on macOS and Linux.
 - Process hardening is weaker than on macOS and Linux. adena-mcp sets a
