@@ -261,6 +261,7 @@ const RevokeAllSessionsPage = (): ReactElement => {
       {!isLoading && error && (
         <Status>
           Failed to load sessions:
+          {' '}
           {error}
         </Status>
       )}

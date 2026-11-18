@@ -81,6 +81,7 @@ const ManageSessions = (): ReactElement => {
       {masterAddress && !isLoading && error && (
         <Status>
           Failed to load sessions:
+          {' '}
           {error}
         </Status>
       )}

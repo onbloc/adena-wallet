@@ -35,6 +35,7 @@ const SignerListItem: React.FC<SignerListItemProps> = ({ signer, onRemove }) => 
         <span className='title'>
           <span className='info'>
             Signer
+            {' '}
             {signer.index}
           </span>
         </span>

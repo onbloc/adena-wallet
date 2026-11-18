@@ -76,6 +76,7 @@ const DocumentSignerListItem = ({
         <span className='title'>
           <span className='info'>
             Signer
+            {' '}
             {order}
           </span>
           <button className='link-button' onClick={(): void => onClickAddress(signerAddress)}>

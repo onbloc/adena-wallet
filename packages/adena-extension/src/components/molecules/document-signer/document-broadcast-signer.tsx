@@ -25,6 +25,7 @@ const DocumentBroadcastSigner = ({
             {signedCount}
             {' '}
             of
+            {' '}
             {signerCount}
           </span>
           {hasSetting && (
