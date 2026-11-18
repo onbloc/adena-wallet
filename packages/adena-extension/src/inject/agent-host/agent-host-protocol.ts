@@ -1,11 +1,10 @@
-import { fromBase64 } from 'adena-module';
-
 import {
   validateTransactionMessageOfAddPkg,
   validateTransactionMessageOfBankSend,
   validateTransactionMessageOfRun,
   validateTransactionMessageOfVmCall,
 } from '@common/validation/validation-message';
+import { fromBase64 } from 'adena-module';
 
 export const AGENT_HOST_NAME = 'xyz.onbloc.adena_agent';
 export const AGENT_HOST_ENABLED_STORAGE_KEY = 'AGENT_HOST_ENABLED';
@@ -34,16 +33,16 @@ const UGNOT_AMOUNT_PATTERN = /^([0-9]+)ugnot$/;
 
 export const AGENT_REQUEST_PROTOCOL = 'agent:';
 
-export type AgentHostMethod =
-  | 'ping'
-  | 'get_status'
-  | 'connect'
-  | 'get_account'
-  | 'create_session'
-  | 'revoke_session'
-  | 'send_transaction'
-  | 'sign_transaction'
-  | 'cancel';
+export type AgentHostMethod
+  = | 'ping'
+    | 'get_status'
+    | 'connect'
+    | 'get_account'
+    | 'create_session'
+    | 'revoke_session'
+    | 'send_transaction'
+    | 'sign_transaction'
+    | 'cancel';
 
 // The process on the other end of the host socket, as seen by the host. The
 // host overwrites anything a client sends here.
@@ -72,25 +71,25 @@ export interface AgentHostError {
   message: string;
 }
 
-export type AgentHostErrorCode =
-  | 'invalid_request'
-  | 'invalid_params'
-  | 'policy_violation'
-  | 'no_wallet'
-  | 'not_connected'
-  | 'master_requests_disabled'
-  | 'approval_pending'
-  | 'approval_timeout'
-  | 'cancelled'
-  | 'wallet_locked'
-  | 'unsupported_account'
-  | 'unsupported_network'
-  | 'context_mismatch'
-  | 'unidentified_agent'
-  | 'request_too_large'
-  | 'rejected'
-  | 'transaction_failed'
-  | 'internal_error';
+export type AgentHostErrorCode
+  = | 'invalid_request'
+    | 'invalid_params'
+    | 'policy_violation'
+    | 'no_wallet'
+    | 'not_connected'
+    | 'master_requests_disabled'
+    | 'approval_pending'
+    | 'approval_timeout'
+    | 'cancelled'
+    | 'wallet_locked'
+    | 'unsupported_account'
+    | 'unsupported_network'
+    | 'context_mismatch'
+    | 'unidentified_agent'
+    | 'request_too_large'
+    | 'rejected'
+    | 'transaction_failed'
+    | 'internal_error';
 
 export interface AgentHostResponse {
   id: string;
@@ -198,9 +197,9 @@ const parsePeer = (value: unknown): AgentPeer | undefined => {
     peer.start = value.start;
   }
   if (
-    typeof value.exe === 'string' &&
-    value.exe.length > 0 &&
-    value.exe.length <= MAX_PEER_EXE_LENGTH
+    typeof value.exe === 'string'
+    && value.exe.length > 0
+    && value.exe.length <= MAX_PEER_EXE_LENGTH
   ) {
     peer.exe = value.exe;
   }
@@ -214,12 +213,13 @@ export const parseSessionPublicKey = (value: unknown): Uint8Array => {
   let bytes: Uint8Array;
   try {
     bytes = fromBase64(value);
-  } catch {
+  }
+  catch {
     throw invalidParams('session_public_key must be base64');
   }
   if (
-    bytes.length !== SECP256K1_COMPRESSED_PUBKEY_LENGTH ||
-    (bytes[0] !== 0x02 && bytes[0] !== 0x03)
+    bytes.length !== SECP256K1_COMPRESSED_PUBKEY_LENGTH
+    || (bytes[0] !== 0x02 && bytes[0] !== 0x03)
   ) {
     throw invalidParams('session_public_key must be a compressed secp256k1 public key');
   }
@@ -298,9 +298,9 @@ export const parseCreateSessionParams = (
 
   const { allow_paths: allowPaths } = params;
   if (
-    !Array.isArray(allowPaths) ||
-    allowPaths.length === 0 ||
-    !allowPaths.every((entry) => typeof entry === 'string' && entry.length > 0)
+    !Array.isArray(allowPaths)
+    || allowPaths.length === 0
+    || !allowPaths.every(entry => typeof entry === 'string' && entry.length > 0)
   ) {
     throw invalidParams('allow_paths must be a non-empty string array');
   }
@@ -313,8 +313,8 @@ export const parseCreateSessionParams = (
 
   const spendLimit = parseSpendLimit(params.spend_limit, maxSpendUgnot);
 
-  const spendPeriod =
-    params.spend_period === undefined
+  const spendPeriod
+    = params.spend_period === undefined
       ? 0
       : parseNonNegativeInteger(params.spend_period, 'spend_period');
 

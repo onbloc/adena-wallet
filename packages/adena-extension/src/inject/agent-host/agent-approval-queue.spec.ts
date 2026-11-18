@@ -12,7 +12,7 @@ const deferred = (): { promise: Promise<void>; resolve: () => void } => {
 const codeOf = async (promise: Promise<unknown>): Promise<string | undefined> =>
   promise.then(
     () => undefined,
-    (error) => (error as AgentHostRequestError).code,
+    error => (error as AgentHostRequestError).code,
   );
 
 describe('AgentApprovalQueue', () => {
@@ -41,7 +41,7 @@ describe('AgentApprovalQueue', () => {
   it('skips a waiting task that was aborted', async () => {
     const queue = new AgentApprovalQueue(4);
     const first = deferred();
-    const task = jest.fn(async () => undefined);
+    const task = vi.fn(async () => undefined);
     const controller = new AbortController();
 
     const a = queue.run(() => first.promise, new AbortController().signal);

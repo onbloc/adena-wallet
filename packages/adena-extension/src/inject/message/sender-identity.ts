@@ -8,7 +8,8 @@ const senderUrl = (sender: chrome.runtime.MessageSender): URL | null => {
     if (!source) continue;
     try {
       return new URL(source);
-    } catch {
+    }
+    catch {
       // Try the next source.
     }
   }

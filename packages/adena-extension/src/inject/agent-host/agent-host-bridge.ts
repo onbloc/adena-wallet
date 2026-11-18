@@ -1,7 +1,6 @@
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 
 import { cancelAllAgentApprovals, handleAgentHostMessage } from './agent-host-handler';
-import { dropConnectionGrants } from './agent-host-settings';
 import {
   AGENT_HOST_ENABLED_STORAGE_KEY,
   AGENT_HOST_NAME,
@@ -9,6 +8,7 @@ import {
   AGENT_HOST_STATUS_STORAGE_KEY,
   AgentHostStatus,
 } from './agent-host-protocol';
+import { dropConnectionGrants } from './agent-host-settings';
 
 const NATIVE_MESSAGING_PERMISSION: chrome.permissions.Permissions = {
   permissions: ['nativeMessaging'],
@@ -59,7 +59,8 @@ const connect = (inMemoryProvider: MemoryProvider): void => {
   let connected: chrome.runtime.Port;
   try {
     connected = chrome.runtime.connectNative(AGENT_HOST_NAME);
-  } catch (error) {
+  }
+  catch (error) {
     writeStatus({
       connected: false,
       error: error instanceof Error ? error.message : 'failed to connect agent host',
@@ -114,7 +115,7 @@ export const initAgentHostBridge = (inMemoryProvider: MemoryProvider): void => {
   // Losing the permission revokes agents like turning the connection off.
   chrome.permissions?.onRemoved?.addListener((removed) => {
     if (removed.permissions?.includes('nativeMessaging')) {
-      dropConnectionGrants().catch((error) =>
+      dropConnectionGrants().catch(error =>
         console.warn('could not revoke agent connections', error),
       );
     }

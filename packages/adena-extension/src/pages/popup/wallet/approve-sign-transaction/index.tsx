@@ -130,18 +130,18 @@ const ApproveSignTransactionContainer: React.FC = () => {
     const pinnedAccountId = requestData?.data?.signerAccountId;
     const pinnedNetwork = requestData?.data?.networkInfo;
     if (
-      typeof pinnedAccountId === 'string' &&
-      pinnedAccountId.length > 0 &&
-      currentAccount &&
-      currentAccount.id !== pinnedAccountId
+      typeof pinnedAccountId === 'string'
+      && pinnedAccountId.length > 0
+      && currentAccount
+      && currentAccount.id !== pinnedAccountId
     ) {
       return 'The current account is not the one this request was made for.';
     }
     if (
-      pinnedNetwork?.chainId &&
-      currentNetwork &&
-      (currentNetwork.chainId !== pinnedNetwork.chainId ||
-        (!!pinnedNetwork.rpcUrl && currentNetwork.rpcUrl !== pinnedNetwork.rpcUrl))
+      pinnedNetwork?.chainId
+      && currentNetwork
+      && (currentNetwork.chainId !== pinnedNetwork.chainId
+        || (!!pinnedNetwork.rpcUrl && currentNetwork.rpcUrl !== pinnedNetwork.rpcUrl))
     ) {
       return 'The current network is not the one this request was made for.';
     }

@@ -1,7 +1,3 @@
-import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import { DefaultInput, Text } from '@components/atoms';
 import Toggle from '@components/atoms/toggle';
 import { BottomFixedButton } from '@components/molecules';
@@ -22,6 +18,10 @@ import {
 } from '@inject/agent-host/agent-host-settings';
 import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
+import BigNumber from 'bignumber.js';
+import type { JSX } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const NATIVE_MESSAGING_PERMISSION: chrome.permissions.Permissions = {
   permissions: ['nativeMessaging'],

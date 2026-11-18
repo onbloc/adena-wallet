@@ -181,11 +181,11 @@ describe('WalletEstablishService agent connections', () => {
     (globalThis as unknown as { chrome: unknown }).chrome = {
       storage: {
         local: {
-          get: jest.fn(async (key: string) => (key in store ? { [key]: store[key] } : {})),
-          set: jest.fn(async (items: Record<string, unknown>) => {
+          get: vi.fn(async (key: string) => (key in store ? { [key]: store[key] } : {})),
+          set: vi.fn(async (items: Record<string, unknown>) => {
             Object.assign(store, items);
           }),
-          remove: jest.fn(async (key: string) => {
+          remove: vi.fn(async (key: string) => {
             delete store[key];
           }),
         },

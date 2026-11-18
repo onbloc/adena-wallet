@@ -58,11 +58,11 @@ const connectionKey = (accountId: string, siteName: string): string => `${accoun
 const hashToken = (token: string): string => toHex(sha256(new TextEncoder().encode(token)));
 
 const isGrant = (value: unknown): value is TokenGrant =>
-  !!value &&
-  typeof value === 'object' &&
-  typeof (value as TokenGrant).hash === 'string' &&
-  typeof (value as TokenGrant).pid === 'number' &&
-  typeof (value as TokenGrant).start === 'string';
+  !!value
+  && typeof value === 'object'
+  && typeof (value as TokenGrant).hash === 'string'
+  && typeof (value as TokenGrant).pid === 'number'
+  && typeof (value as TokenGrant).start === 'string';
 
 const readGrants = async (): Promise<Record<string, unknown>> => {
   const stored = await chrome.storage.local.get(AGENT_CONNECTION_TOKENS_STORAGE_KEY);
@@ -100,7 +100,7 @@ export const hasConnectionToken = async (
   }
   const hash = hashToken(token);
   return grantsOf(await readGrants(), connectionKey(accountId, siteName)).some(
-    (grant) => grant.hash === hash && grant.pid === process.pid && grant.start === process.start,
+    grant => grant.hash === hash && grant.pid === process.pid && grant.start === process.start,
   );
 };
 

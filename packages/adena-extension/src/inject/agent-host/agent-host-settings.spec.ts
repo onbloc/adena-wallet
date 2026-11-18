@@ -1,4 +1,10 @@
 import {
+  AGENT_CONNECTION_TOKENS_STORAGE_KEY,
+  AGENT_DEFAULT_MAX_SPEND_LIMIT_UGNOT,
+  AGENT_MASTER_REQUESTS_STORAGE_KEY,
+  AGENT_MAX_SPEND_LIMIT_STORAGE_KEY,
+} from './agent-host-protocol';
+import {
   addConnectionToken,
   createConnectionToken,
   dropConnectionGrants,
@@ -7,20 +13,14 @@ import {
   isMasterRequestsAllowed,
   setMaxSpendLimitUgnot,
 } from './agent-host-settings';
-import {
-  AGENT_CONNECTION_TOKENS_STORAGE_KEY,
-  AGENT_DEFAULT_MAX_SPEND_LIMIT_UGNOT,
-  AGENT_MASTER_REQUESTS_STORAGE_KEY,
-  AGENT_MAX_SPEND_LIMIT_STORAGE_KEY,
-} from './agent-host-protocol';
 
 const installStorage = (initial: Record<string, unknown> = {}): Record<string, unknown> => {
   const store: Record<string, unknown> = { ...initial };
   (globalThis as unknown as { chrome: unknown }).chrome = {
     storage: {
       local: {
-        get: jest.fn(async (key: string) => (key in store ? { [key]: store[key] } : {})),
-        set: jest.fn(async (items: Record<string, unknown>) => {
+        get: vi.fn(async (key: string) => (key in store ? { [key]: store[key] } : {})),
+        set: vi.fn(async (items: Record<string, unknown>) => {
           Object.assign(store, items);
         }),
       },
@@ -170,7 +170,8 @@ describe('grant locking', () => {
             held = true;
             try {
               return await run();
-            } finally {
+            }
+            finally {
               held = false;
             }
           });

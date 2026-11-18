@@ -34,7 +34,8 @@ const validParams = (): Record<string, unknown> => ({
 const expectErrorCode = (fn: () => unknown, code: string): void => {
   try {
     fn();
-  } catch (error) {
+  }
+  catch (error) {
     expect(error).toBeInstanceOf(AgentHostRequestError);
     expect((error as AgentHostRequestError).code).toBe(code);
     return;
@@ -269,7 +270,7 @@ describe('parseTransactionParams', () => {
     );
 
     expect(
-      parsed.messages.map((m) => m.value.caller ?? m.value.creator ?? m.value.from_address),
+      parsed.messages.map(m => m.value.caller ?? m.value.creator ?? m.value.from_address),
     ).toEqual([ADDRESS, ADDRESS, ADDRESS, ADDRESS]);
     expect(parsed.messages[0].value.args).toEqual([]);
     expect(parsed.messages[0].value.send).toBe('');

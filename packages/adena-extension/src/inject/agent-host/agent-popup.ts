@@ -13,8 +13,8 @@ export const requirePopupFits = (message: InjectionMessage): void => {
   if (encodedLength === 0 || encodedLength > MAX_POPUP_DATA_LENGTH) {
     throw new AgentHostRequestError(
       'request_too_large',
-      `the request is too large for Adena's approval window (${encodedLength} bytes encoded); ` +
-        'send less at once, for example fewer or smaller package files',
+      `the request is too large for Adena's approval window (${encodedLength} bytes encoded); `
+      + 'send less at once, for example fewer or smaller package files',
     );
   }
 };
@@ -25,8 +25,8 @@ export const existsAdenaPopups = async (): Promise<boolean> => {
   const popupPage = chrome.runtime.getURL('popup.html');
   const windows = await chrome.windows.getAll({ populate: true });
   return windows.some(
-    (window) =>
-      window.type === 'popup' &&
-      !!window.tabs?.some((tab) => (tab.url ?? tab.pendingUrl ?? '').startsWith(popupPage)),
+    window =>
+      window.type === 'popup'
+      && !!window.tabs?.some(tab => (tab.url ?? tab.pendingUrl ?? '').startsWith(popupPage)),
   );
 };

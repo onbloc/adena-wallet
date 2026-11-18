@@ -1,14 +1,14 @@
 import type { InjectionMessage } from '@inject/message/message';
 
-import { existsAdenaPopups, MAX_POPUP_DATA_LENGTH, requirePopupFits } from './agent-popup';
 import { AgentHostRequestError } from './agent-host-protocol';
+import { existsAdenaPopups, MAX_POPUP_DATA_LENGTH, requirePopupFits } from './agent-popup';
 
 const POPUP = 'chrome-extension://adena/popup.html';
 
 const installWindows = (windows: chrome.windows.Window[]): void => {
   (globalThis as unknown as { chrome: unknown }).chrome = {
     runtime: { getURL: (path: string) => `chrome-extension://adena/${path}` },
-    windows: { getAll: jest.fn().mockResolvedValue(windows) },
+    windows: { getAll: vi.fn().mockResolvedValue(windows) },
   };
 };
 
@@ -42,7 +42,8 @@ describe('requirePopupFits', () => {
   it('rejects a request whose popup URL would exceed the browser limit', () => {
     try {
       requirePopupFits(message('x'.repeat(MAX_POPUP_DATA_LENGTH)));
-    } catch (error) {
+    }
+    catch (error) {
       expect(error).toBeInstanceOf(AgentHostRequestError);
       expect((error as AgentHostRequestError).code).toBe('request_too_large');
       return;

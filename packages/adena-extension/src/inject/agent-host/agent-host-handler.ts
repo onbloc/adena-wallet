@@ -1,6 +1,4 @@
 import { WalletResponseRejectType, WalletResponseType } from '@adena-wallet/sdk';
-import { Account } from 'adena-module';
-
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { isSessionMasterAccount, isSessionSupportedNetwork } from '@common/utils/account-session';
@@ -16,15 +14,15 @@ import {
   createMessageOfRevokeSession,
 } from '@services/transaction/message/auth/auth';
 import { NetworkMetainfo, RoutePath } from '@types';
+import { Account } from 'adena-module';
 
 import { AgentApprovalQueue, AgentRequestRegistry, throwIfCancelled } from './agent-approval-queue';
-import { existsAdenaPopups, requirePopupFits } from './agent-popup';
 import {
   AGENT_REQUEST_PROTOCOL,
   AGENT_SESSION_SPEND_DENOM,
+  AgentExpectedContext,
   AgentHostRequest,
   AgentHostRequestError,
-  AgentExpectedContext,
   AgentHostResponse,
   AgentPeer,
   agentSiteName,
@@ -45,6 +43,7 @@ import {
   hasConnectionToken,
   isMasterRequestsAllowed,
 } from './agent-host-settings';
+import { existsAdenaPopups, requirePopupFits } from './agent-popup';
 
 interface WalletContext {
   account: Account;
@@ -125,8 +124,8 @@ const requireMasterRequestsAllowed = async (): Promise<void> => {
   if (!(await isMasterRequestsAllowed())) {
     throw new AgentHostRequestError(
       'master_requests_disabled',
-      'direct master account requests are turned off in Adena ' +
-        '(Settings > Security & Privacy > AI Agent Connection)',
+      'direct master account requests are turned off in Adena '
+      + '(Settings > Security & Privacy > AI Agent Connection)',
     );
   }
 };
@@ -269,30 +268,30 @@ const requireExpectedContext = (context: WalletContext, expected: AgentExpectedC
   if (expected.masterAddress && expected.masterAddress !== context.address) {
     throw new AgentHostRequestError(
       'context_mismatch',
-      `Adena's current account is ${context.address}, not ${expected.masterAddress}; ` +
-        'ask the user to switch accounts in Adena, then retry',
+      `Adena's current account is ${context.address}, not ${expected.masterAddress}; `
+      + 'ask the user to switch accounts in Adena, then retry',
     );
   }
   if (expected.chainId && expected.chainId !== context.network.chainId) {
     throw new AgentHostRequestError(
       'context_mismatch',
-      `Adena is on chain ${context.network.chainId}, not ${expected.chainId}; ` +
-        'ask the user to switch networks in Adena, then retry',
+      `Adena is on chain ${context.network.chainId}, not ${expected.chainId}; `
+      + 'ask the user to switch networks in Adena, then retry',
     );
   }
 };
 
 const requireSameContext = (expected: WalletContext, actual: WalletContext): void => {
   if (
-    expected.account.id !== actual.account.id ||
-    expected.address !== actual.address ||
-    expected.network.chainId !== actual.network.chainId ||
-    expected.network.rpcUrl !== actual.network.rpcUrl
+    expected.account.id !== actual.account.id
+    || expected.address !== actual.address
+    || expected.network.chainId !== actual.network.chainId
+    || expected.network.rpcUrl !== actual.network.rpcUrl
   ) {
     throw new AgentHostRequestError(
       'context_mismatch',
-      'the account or network in Adena changed while the request was open; the signature was ' +
-        'discarded. Retry on the intended account and network',
+      'the account or network in Adena changed while the request was open; the signature was '
+      + 'discarded. Retry on the intended account and network',
     );
   }
 };
@@ -493,8 +492,8 @@ const handleConnect = async (
   if (context.account.id !== grant.accountId) {
     throw new AgentHostRequestError(
       'context_mismatch',
-      'the account in Adena changed while the connection was being approved; switch back to ' +
-        'the approved account, or connect again',
+      'the account in Adena changed while the connection was being approved; switch back to '
+      + 'the approved account, or connect again',
     );
   }
 
@@ -539,7 +538,8 @@ const handleCreateSession = async (
       spendPeriod: params.spendPeriod,
       expiresAt: params.expiresAt,
     });
-  } catch (error) {
+  }
+  catch (error) {
     throw new AgentHostRequestError(
       'invalid_params',
       error instanceof Error ? error.message : 'invalid session parameters',
@@ -643,14 +643,16 @@ export const handleAgentHostMessage = async (
   let request: AgentHostRequest;
   try {
     request = parseAgentHostRequest(raw);
-  } catch (error) {
+  }
+  catch (error) {
     return toErrorResponse(id, error);
   }
 
   if (request.method === 'cancel') {
     try {
       requests.cancel(parseCancelParams(request.params));
-    } catch {
+    }
+    catch {
       // A malformed cancel has nothing to cancel and expects no response.
     }
     return null;
@@ -687,9 +689,11 @@ export const handleAgentHostMessage = async (
       default:
         throw new AgentHostRequestError('invalid_request', 'unknown method');
     }
-  } catch (error) {
+  }
+  catch (error) {
     return toErrorResponse(id, error);
-  } finally {
+  }
+  finally {
     requests.end(id, signal);
   }
 };
