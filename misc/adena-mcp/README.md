@@ -168,8 +168,11 @@ Unix domain sockets the two use.
   read its memory and with it the session keys. There is no core dump control
   yet. Sign with sessions whose scope you could afford to lose.
 - A running host executable cannot be overwritten, so reinstalling moves it to
-  a unique `.old.<n>` name first. Retired copies are removed by a later install
-  once no host runs them.
+  a unique `.old.<pid>.<time>` name first. Retired and staging copies are
+  removed by a later install once no host runs them, except those of another
+  installer that is still running. `uninstall-host` moves a host the browser
+  still runs aside the same way instead of failing; close the browser to let
+  a later install, or you, delete it.
 
 ## Safety model
 

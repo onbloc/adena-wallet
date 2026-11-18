@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"testing"
 
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
@@ -208,7 +211,10 @@ func TestCopyHostRetiresThePreviousCopyUnderAUniqueName(t *testing.T) {
 		// A retired copy and a staging file left by an earlier install, as when
 		// a running host kept them locked or a rename failed.
 		if i == 1 {
-			for _, leftover := range []string{target + ".old", target + ".old.1", target + ".123.tmp"} {
+			// Older names (a fixed .old, a nanosecond .old.<n>) and a staging
+			// file of an installer that is gone.
+			leftovers := []string{target + ".old", target + ".old.1700000000000000000", target + ".999999998.tmp"}
+			for _, leftover := range leftovers {
 				if err := os.WriteFile(leftover, nil, 0o600); err != nil {
 					t.Fatal(err)
 				}
@@ -239,4 +245,63 @@ func TestCopyHostRetiresThePreviousCopyUnderAUniqueName(t *testing.T) {
 
 		t.Fatalf("leftovers were not swept: %v", names)
 	}
+}
+
+func TestSweepKeepsTheCopiesOfARunningInstaller(t *testing.T) {
+	t.Parallel()
+
+	bin := t.TempDir()
+	target := filepath.Join(bin, "adena-agent-host")
+
+	// A child that outlives the sweep stands in for a concurrent installer.
+	sleeper := exec.Command(sleepCommand()[0], sleepCommand()[1:]...)
+	if err := sleeper.Start(); err != nil {
+		t.Skipf("no sleep command: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if err := sleeper.Process.Kill(); err != nil {
+			t.Log(err)
+		}
+
+		if err := sleeper.Wait(); err == nil {
+			t.Log("sleeper exited before it was killed")
+		}
+	})
+
+	live := strconv.Itoa(sleeper.Process.Pid)
+	kept := []string{
+		target + "." + live + ".123.tmp", target + "." + live + ".tmp", target + ".old." + live + ".5",
+	}
+	swept := []string{
+		target + ".999999999.tmp", target + ".old.999999999.5", target + ".old", target + ".tmp", target + ".abc.tmp",
+	}
+
+	for _, path := range append(append([]string{}, kept...), swept...) {
+		if err := os.WriteFile(path, nil, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	sweepRetired(target)
+
+	for _, path := range kept {
+		if _, err := os.Stat(path); err != nil {
+			t.Errorf("a live installer's %s was removed", filepath.Base(path))
+		}
+	}
+
+	for _, path := range swept {
+		if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+			t.Errorf("abandoned %s was kept", filepath.Base(path))
+		}
+	}
+}
+
+func sleepCommand() []string {
+	if runtime.GOOS == "windows" {
+		return []string{"powershell", "-NoProfile", "-Command", "Start-Sleep -Seconds 60"}
+	}
+
+	return []string{"sleep", "60"}
 }

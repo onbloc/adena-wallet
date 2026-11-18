@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -468,7 +469,7 @@ func CopyHost(src, binDir string) (string, error) {
 	retired := ""
 
 	if _, statErr := os.Stat(target); statErr == nil {
-		retired = fmt.Sprintf("%s.old.%d", target, time.Now().UnixNano())
+		retired = fmt.Sprintf("%s.old.%d.%d", target, os.Getpid(), time.Now().UnixNano())
 
 		if err := os.Rename(target, retired); err != nil {
 			_ = os.Remove(staging)
@@ -495,7 +496,7 @@ func CopyHost(src, binDir string) (string, error) {
 }
 
 func writeStaging(dir, name string, data []byte) (string, error) {
-	f, err := os.CreateTemp(dir, name+".*.tmp")
+	f, err := os.CreateTemp(dir, name+"."+strconv.Itoa(os.Getpid())+".*.tmp")
 	if err != nil {
 		return "", fmt.Errorf("write host binary: %w", err)
 	}
@@ -518,17 +519,57 @@ func writeStaging(dir, name string, data []byte) (string, error) {
 	return f.Name(), nil
 }
 
-// sweepRetired removes retired and leftover staging copies of target. A copy a
-// running host still holds fails to delete and is left for the next install.
+// sweepRetired removes retired and leftover staging copies of target. Their
+// names carry the pid of the installer that made them (".old.<pid>.<time>",
+// ".<pid>.<random>.tmp", the npm launcher's ".<pid>.tmp"); copies of another
+// installer that is still running are left alone, since it may be about to
+// rename them. A copy a running host still holds fails to delete and is left
+// for the next install.
 func sweepRetired(target string) {
-	for _, pattern := range []string{target + ".old*", target + ".*.tmp", target + ".tmp"} {
-		matches, err := filepath.Glob(pattern)
-		if err != nil {
+	dir, base := filepath.Dir(target), filepath.Base(target)
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		pid, ok := leftoverOwner(base, entry.Name())
+		if !ok || (pid != os.Getpid() && pid > 0 && processAlive(pid)) {
 			continue
 		}
 
-		for _, match := range matches {
-			_ = os.Remove(match)
-		}
+		_ = os.Remove(filepath.Join(dir, entry.Name()))
 	}
+}
+
+// leftoverOwner reports whether name is a retired or staging copy of base and
+// the pid that made it; 0 means none is recorded, as in older names.
+func leftoverOwner(base, name string) (int, bool) {
+	rest, found := strings.CutPrefix(name, base+".")
+	if !found {
+		return 0, false
+	}
+
+	parts := strings.Split(rest, ".")
+
+	var pidPart string
+
+	switch {
+	case parts[0] == "old":
+		if len(parts) > 1 {
+			pidPart = parts[1]
+		}
+	case parts[len(parts)-1] == "tmp":
+		pidPart = parts[0]
+	default:
+		return 0, false
+	}
+
+	pid, err := strconv.Atoi(pidPart)
+	if err != nil {
+		return 0, true
+	}
+
+	return pid, true
 }
