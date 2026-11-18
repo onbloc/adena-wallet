@@ -41,7 +41,12 @@ func peerOf(conn net.Conn) (*bridge.Peer, error) {
 		return nil, fmt.Errorf("peer runs as uid %d", uid)
 	}
 
+	// Without a start time the extension cannot tell this process from a
+	// later one with the same pid, and refuses to connect it.
 	peer := &bridge.Peer{PID: pid}
+	if start, startErr := startTimeOf(pid); startErr == nil {
+		peer.Start = start
+	}
 
 	// The executable is only shown to the user. Linux refuses to resolve it
 	// for a non-dumpable (hardened) peer, so it may be missing.

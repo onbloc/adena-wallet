@@ -49,6 +49,8 @@ export type AgentHostMethod =
 // host overwrites anything a client sends here.
 export interface AgentPeer {
   pid?: number;
+  // Process start time, opaque. With pid it identifies one process.
+  start?: string;
   exe?: string;
 }
 
@@ -81,6 +83,7 @@ export type AgentHostErrorCode =
   | 'unsupported_account'
   | 'unsupported_network'
   | 'context_mismatch'
+  | 'unidentified_agent'
   | 'rejected'
   | 'transaction_failed'
   | 'internal_error';
@@ -186,6 +189,9 @@ const parsePeer = (value: unknown): AgentPeer | undefined => {
   const peer: AgentPeer = {};
   if (typeof value.pid === 'number' && Number.isSafeInteger(value.pid) && value.pid > 0) {
     peer.pid = value.pid;
+  }
+  if (typeof value.start === 'string' && value.start.length > 0 && value.start.length <= 64) {
+    peer.start = value.start;
   }
   if (
     typeof value.exe === 'string' &&

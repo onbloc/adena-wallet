@@ -245,8 +245,8 @@ func TestRelaySetsPeerFromTheOS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if request.Peer == nil || request.Peer.PID != os.Getpid() {
-		t.Fatalf("got peer %+v, want pid %d", request.Peer, os.Getpid())
+	if request.Peer == nil || request.Peer.PID != os.Getpid() || request.Peer.Start == "" {
+		t.Fatalf("got peer %+v, want pid %d with a start time", request.Peer, os.Getpid())
 	}
 
 	want, err := filepath.EvalSymlinks(exe)

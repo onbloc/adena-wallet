@@ -65,25 +65,45 @@ describe('max spend limit', () => {
 
 describe('connection tokens', () => {
   const SITE = 'agent://claude-code.agent';
+  const PROCESS = { pid: 42, start: '1700000000.5' };
 
-  it('accepts only tokens issued for the account and agent', async () => {
+  it('accepts only tokens issued for the account, agent and process', async () => {
     installStorage();
     const token = createConnectionToken();
 
-    await expect(hasConnectionToken('acc', SITE, token)).resolves.toBe(false);
-    await addConnectionToken('acc', SITE, token, false);
+    await expect(hasConnectionToken('acc', SITE, token, PROCESS)).resolves.toBe(false);
+    await addConnectionToken('acc', SITE, token, PROCESS, false);
 
-    await expect(hasConnectionToken('acc', SITE, token)).resolves.toBe(true);
-    await expect(hasConnectionToken('acc', SITE, undefined)).resolves.toBe(false);
-    await expect(hasConnectionToken('acc', SITE, createConnectionToken())).resolves.toBe(false);
-    await expect(hasConnectionToken('other', SITE, token)).resolves.toBe(false);
-    await expect(hasConnectionToken('acc', 'agent://cursor.agent', token)).resolves.toBe(false);
+    await expect(hasConnectionToken('acc', SITE, token, PROCESS)).resolves.toBe(true);
+    await expect(hasConnectionToken('acc', SITE, undefined, PROCESS)).resolves.toBe(false);
+    await expect(hasConnectionToken('acc', SITE, createConnectionToken(), PROCESS)).resolves.toBe(
+      false,
+    );
+    await expect(hasConnectionToken('other', SITE, token, PROCESS)).resolves.toBe(false);
+    await expect(hasConnectionToken('acc', 'agent://cursor.agent', token, PROCESS)).resolves.toBe(
+      false,
+    );
+  });
+
+  it('refuses a captured token replayed from another process', async () => {
+    installStorage();
+    const token = createConnectionToken();
+    await addConnectionToken('acc', SITE, token, PROCESS, false);
+
+    await expect(hasConnectionToken('acc', SITE, token, { ...PROCESS, pid: 43 })).resolves.toBe(
+      false,
+    );
+    // Same pid, reused by a later process.
+    await expect(
+      hasConnectionToken('acc', SITE, token, { ...PROCESS, start: '1700000999.0' }),
+    ).resolves.toBe(false);
+    await expect(hasConnectionToken('acc', SITE, token, undefined)).resolves.toBe(false);
   });
 
   it('stores hashes, not tokens', async () => {
     const store = installStorage();
     const token = createConnectionToken();
-    await addConnectionToken('acc', SITE, token, false);
+    await addConnectionToken('acc', SITE, token, PROCESS, false);
 
     expect(JSON.stringify(store[AGENT_CONNECTION_TOKENS_STORAGE_KEY])).not.toContain(token);
   });
@@ -92,22 +112,29 @@ describe('connection tokens', () => {
     installStorage();
     const first = createConnectionToken();
     const second = createConnectionToken();
+    const other = { pid: 7, start: '1' };
 
-    await addConnectionToken('acc', SITE, first, false);
-    await addConnectionToken('acc', SITE, second, false);
-    await expect(hasConnectionToken('acc', SITE, first)).resolves.toBe(true);
+    await addConnectionToken('acc', SITE, first, PROCESS, false);
+    await addConnectionToken('acc', SITE, second, other, false);
+    await expect(hasConnectionToken('acc', SITE, first, PROCESS)).resolves.toBe(true);
+    await expect(hasConnectionToken('acc', SITE, second, other)).resolves.toBe(true);
 
     const fresh = createConnectionToken();
-    await addConnectionToken('acc', SITE, fresh, true);
-    await expect(hasConnectionToken('acc', SITE, first)).resolves.toBe(false);
-    await expect(hasConnectionToken('acc', SITE, fresh)).resolves.toBe(true);
+    await addConnectionToken('acc', SITE, fresh, PROCESS, true);
+    await expect(hasConnectionToken('acc', SITE, first, PROCESS)).resolves.toBe(false);
+    await expect(hasConnectionToken('acc', SITE, fresh, PROCESS)).resolves.toBe(true);
 
     const many = Array.from({ length: 9 }, () => createConnectionToken());
     for (const token of many) {
-      await addConnectionToken('acc', SITE, token, false);
+      await addConnectionToken('acc', SITE, token, PROCESS, false);
     }
-    await expect(hasConnectionToken('acc', SITE, many[0])).resolves.toBe(false);
-    await expect(hasConnectionToken('acc', SITE, many[8])).resolves.toBe(true);
+    await expect(hasConnectionToken('acc', SITE, many[0], PROCESS)).resolves.toBe(false);
+    await expect(hasConnectionToken('acc', SITE, many[8], PROCESS)).resolves.toBe(true);
+  });
+
+  it('ignores grants stored in the previous unbound format', async () => {
+    installStorage({ [AGENT_CONNECTION_TOKENS_STORAGE_KEY]: { [`acc|${SITE}`]: ['deadbeef'] } });
+    await expect(hasConnectionToken('acc', SITE, 'x', PROCESS)).resolves.toBe(false);
   });
 
   it('creates distinct 32-byte hex tokens', () => {

@@ -131,6 +131,7 @@ as `agent://<client name>.agent`.
 | `master_requests_disabled` | Use a session, or turn on *Allow master account requests* in Adena |
 | `session_key_lost` | The server restarted; revoke the session and create a new one |
 | `approval_pending` | Another approval is open in Adena; finish it, then retry |
+| `unidentified_agent` | The agent host could not read this process's identity from the OS; connections need it |
 | `context_mismatch` | Adena is on another account or network than the session; switch back, then retry |
 | `revoke_unconfirmed` | Adena did not report the revoke as committed on the session's network; the key is kept. Check `get_sessions` with `refresh` |
 | `request_too_large` | A request, usually a package deployment, is over the 1 MiB protocol limit |
@@ -152,11 +153,15 @@ as `agent://<client name>.agent`.
   socket. It can only *ask*: every session and revocation still needs the
   user to approve it in Adena.
 - Connecting issues the approved process a random token. Adena keeps only its
-  hash, and accepts requests under an agent's name only with a valid token,
-  so another program cannot reuse an agent's connection by sending its name,
-  even one that runs `adena-mcp` itself: it has to be approved in a popup.
-  The token stays in the hardened process's memory and is never returned to
-  the agent.
+  hash, together with the pid and start time the host read from the OS for
+  that process, and accepts requests under an agent's name only with a token
+  coming from that same process. Another program cannot reuse an agent's
+  connection by sending its name, even one that runs `adena-mcp` itself, and
+  a token captured by taking over the socket path is useless from any other
+  process. A process the host cannot identify cannot connect. The token stays
+  in the hardened process's memory and is never returned to the agent.
+- The connection is stored under the account the approval popup approved; if
+  the selected account changed meanwhile, no token is issued.
 - The host attaches the peer's pid and executable path, read from the OS, to
   every request; the connection popup shows the executable. It is
   informational: on Linux a hardened (non-dumpable) peer's executable cannot

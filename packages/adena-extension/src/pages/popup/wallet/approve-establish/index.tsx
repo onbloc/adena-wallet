@@ -157,8 +157,13 @@ const ApproveEstablishContainer: React.FC = () => {
           appName,
           favicon,
         });
+        // Agents bind their connection to the account approved here.
         setResponse(
-          InjectionMessageInstance.success(WalletResponseSuccessType.CONNECTION_SUCCESS, {}, key),
+          InjectionMessageInstance.success(
+            WalletResponseSuccessType.CONNECTION_SUCCESS,
+            reapprove ? { accountId } : {},
+            key,
+          ),
         );
       } catch (error) {
         setResponse(

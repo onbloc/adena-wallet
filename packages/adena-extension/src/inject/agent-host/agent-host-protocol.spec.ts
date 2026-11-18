@@ -61,9 +61,12 @@ describe('parseAgentHostRequest', () => {
 
   it('keeps a well-formed peer and drops malformed fields', () => {
     expect(
-      parseAgentHostRequest({ id: '1', method: 'ping', peer: { pid: 42, exe: '/bin/adena-mcp' } })
-        .peer,
-    ).toEqual({ pid: 42, exe: '/bin/adena-mcp' });
+      parseAgentHostRequest({
+        id: '1',
+        method: 'ping',
+        peer: { pid: 42, start: '17.5', exe: '/bin/adena-mcp' },
+      }).peer,
+    ).toEqual({ pid: 42, start: '17.5', exe: '/bin/adena-mcp' });
     expect(
       parseAgentHostRequest({ id: '1', method: 'ping', peer: { pid: -1, exe: 7 } }).peer,
     ).toEqual({});

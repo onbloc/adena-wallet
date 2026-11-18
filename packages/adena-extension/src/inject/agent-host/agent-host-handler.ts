@@ -38,6 +38,7 @@ import {
 } from './agent-host-protocol';
 import {
   addConnectionToken,
+  AgentProcess,
   createConnectionToken,
   getMaxSpendLimitUgnot,
   hasConnectionToken,
@@ -86,26 +87,29 @@ const requireWallet = async (core: InjectCore): Promise<string> => {
 // A connection counts only for a process holding a token Adena issued when
 // the user approved that process. The agent name alone is not enough, and a
 // new process (even the same program) has to be approved again.
+const agentProcessOf = (peer: AgentPeer | undefined): AgentProcess | undefined =>
+  peer?.pid && peer.start ? { pid: peer.pid, start: peer.start } : undefined;
+
 const isAgentConnected = async (
   core: InjectCore,
   accountId: string,
   agentName: string,
-  token: string | undefined,
+  request: AgentHostRequest,
 ): Promise<boolean> => {
   const siteName = agentSiteName(agentName);
   if (!(await core.establishService.isEstablishedBy(accountId, siteName))) {
     return false;
   }
-  return hasConnectionToken(accountId, siteName, token);
+  return hasConnectionToken(accountId, siteName, request.token, agentProcessOf(request.peer));
 };
 
 const requireConnected = async (
   core: InjectCore,
   agentName: string,
-  token: string | undefined,
+  request: AgentHostRequest,
 ): Promise<void> => {
   const accountId = await requireWallet(core);
-  if (!(await isAgentConnected(core, accountId, agentName, token))) {
+  if (!(await isAgentConnected(core, accountId, agentName, request))) {
     throw new AgentHostRequestError(
       'not_connected',
       'this agent process is not connected to Adena; call connect_wallet first',
@@ -371,7 +375,7 @@ const handleGetStatus = async (
     return { version, has_wallet: false, connected: false };
   }
 
-  const connected = await isAgentConnected(core, accountId, agentNameOf(request), request.token);
+  const connected = await isAgentConnected(core, accountId, agentNameOf(request), request);
   if (!connected) {
     return { version, has_wallet: true, connected: false };
   }
@@ -412,9 +416,19 @@ const handleConnect = async (
   const agentName = agentNameOf(request);
   const siteName = agentSiteName(agentName);
 
+  // The token is bound to the process the host identified; without that
+  // identity it could be replayed from another process.
+  const agentProcess = agentProcessOf(request.peer);
+  if (!agentProcess) {
+    throw new AgentHostRequestError(
+      'unidentified_agent',
+      'the agent host could not identify this process, so it cannot be connected',
+    );
+  }
+
   const token = await connectQueue.run(async () => {
     const accountId = await requireWallet(core);
-    if (request.token && (await isAgentConnected(core, accountId, agentName, request.token))) {
+    if (request.token && (await isAgentConnected(core, accountId, agentName, request))) {
       return request.token;
     }
     throwIfCancelled(signal);
@@ -434,12 +448,23 @@ const handleConnect = async (
       failureFrom(response, rejectType);
     }
 
-    const approvedAccountId = await requireWallet(core);
+    // The popup reports the account it approved; another window may have
+    // switched the selection meanwhile, and the token must not land there.
+    const approvedAccountId = (response.data as { accountId?: unknown } | undefined)?.accountId;
+    const currentAccountId = await requireWallet(core);
+    if (typeof approvedAccountId !== 'string' || approvedAccountId !== currentAccountId) {
+      throw new AgentHostRequestError(
+        'context_mismatch',
+        'the account in Adena changed while the connection was being approved; connect again',
+      );
+    }
+
     const issued = createConnectionToken();
     await addConnectionToken(
       approvedAccountId,
       siteName,
       issued,
+      agentProcess,
       !establishedBefore || approvedAccountId !== accountId,
     );
     return issued;
@@ -603,7 +628,7 @@ export const handleAgentHostMessage = async (
     const core = new InjectCore(inMemoryProvider);
 
     if (CONNECTION_REQUIRED.has(request.method)) {
-      await requireConnected(core, agentNameOf(request), request.token);
+      await requireConnected(core, agentNameOf(request), request);
     }
 
     switch (request.method) {

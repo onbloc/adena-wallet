@@ -44,7 +44,10 @@ const (
 // reports it. The host sets it on every request; clients cannot.
 type Peer struct {
 	Exe string `json:"exe,omitempty"`
-	PID int    `json:"pid,omitempty"`
+	// Start is the process start time, opaque and OS-specific. With PID it
+	// identifies one process, so a reused pid does not match.
+	Start string `json:"start,omitempty"`
+	PID   int    `json:"pid,omitempty"`
 }
 
 // Request is a call from an agent to the extension.

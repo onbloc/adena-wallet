@@ -3,6 +3,7 @@ package relay
 import (
 	"bytes"
 	"errors"
+	"strconv"
 
 	"golang.org/x/sys/unix"
 )
@@ -40,4 +41,15 @@ func executableOf(pid int) (string, error) {
 	}
 
 	return string(path), nil
+}
+
+func startTimeOf(pid int) (string, error) {
+	info, err := unix.SysctlKinfoProc("kern.proc.pid", pid)
+	if err != nil {
+		return "", err
+	}
+
+	start := info.Proc.P_starttime
+
+	return strconv.FormatInt(start.Sec, 10) + "." + strconv.FormatInt(int64(start.Usec), 10), nil
 }

@@ -39,45 +39,78 @@ export const setMaxSpendLimitUgnot = async (ugnot: string): Promise<void> => {
 const MAX_TOKENS_PER_CONNECTION = 8;
 const TOKEN_BYTES = 32;
 
+// A token is valid only for the process it was issued to, as identified by the
+// host from the OS (pid and start time). A token captured by another process,
+// for example by taking over the socket path, does not work from there.
+interface TokenGrant {
+  hash: string;
+  pid: number;
+  start: string;
+}
+
+export interface AgentProcess {
+  pid: number;
+  start: string;
+}
+
 const connectionKey = (accountId: string, siteName: string): string => `${accountId}|${siteName}`;
 
 const hashToken = (token: string): string => toHex(sha256(new TextEncoder().encode(token)));
 
-const readTokens = async (): Promise<Record<string, string[]>> => {
+const isGrant = (value: unknown): value is TokenGrant =>
+  !!value &&
+  typeof value === 'object' &&
+  typeof (value as TokenGrant).hash === 'string' &&
+  typeof (value as TokenGrant).pid === 'number' &&
+  typeof (value as TokenGrant).start === 'string';
+
+const readGrants = async (): Promise<Record<string, unknown>> => {
   const stored = await chrome.storage.local.get(AGENT_CONNECTION_TOKENS_STORAGE_KEY);
   const value = stored?.[AGENT_CONNECTION_TOKENS_STORAGE_KEY];
-  return value && typeof value === 'object' ? (value as Record<string, string[]>) : {};
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+};
+
+const grantsOf = (grants: Record<string, unknown>, key: string): TokenGrant[] => {
+  const list = grants[key];
+  return Array.isArray(list) ? list.filter(isGrant) : [];
 };
 
 export const createConnectionToken = (): string => toHex(Random.getBytes(TOKEN_BYTES));
 
-// Reports whether token was issued for this account and agent. Only hashes
-// are stored, so the storage does not hold usable tokens.
+// Reports whether token was issued for this account and agent to this very
+// process. Only hashes are stored, so the storage holds no usable token.
 export const hasConnectionToken = async (
   accountId: string,
   siteName: string,
   token: string | undefined,
+  process: AgentProcess | undefined,
 ): Promise<boolean> => {
-  if (!token) {
+  if (!token || !process) {
     return false;
   }
-  const hashes = (await readTokens())[connectionKey(accountId, siteName)];
-  return Array.isArray(hashes) && hashes.includes(hashToken(token));
+  const hash = hashToken(token);
+  return grantsOf(await readGrants(), connectionKey(accountId, siteName)).some(
+    (grant) => grant.hash === hash && grant.pid === process.pid && grant.start === process.start,
+  );
 };
 
-// Records a newly approved token. reset drops tokens from an earlier
+// Records a token approved for process. reset drops tokens from an earlier
 // connection, e.g. one the user removed under Connected Apps.
 export const addConnectionToken = async (
   accountId: string,
   siteName: string,
   token: string,
+  process: AgentProcess,
   reset: boolean,
 ): Promise<void> => {
-  const tokens = await readTokens();
+  const grants = await readGrants();
   const key = connectionKey(accountId, siteName);
-  const previous = reset || !Array.isArray(tokens[key]) ? [] : tokens[key];
-  const hashes = [...previous, hashToken(token)].slice(-MAX_TOKENS_PER_CONNECTION);
+  const previous = reset ? [] : grantsOf(grants, key);
+  const next = [...previous, { hash: hashToken(token), pid: process.pid, start: process.start }];
   await chrome.storage.local.set({
-    [AGENT_CONNECTION_TOKENS_STORAGE_KEY]: { ...tokens, [key]: hashes },
+    [AGENT_CONNECTION_TOKENS_STORAGE_KEY]: {
+      ...grants,
+      [key]: next.slice(-MAX_TOKENS_PER_CONNECTION),
+    },
   });
 };
