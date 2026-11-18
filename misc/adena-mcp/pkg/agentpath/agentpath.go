@@ -93,6 +93,12 @@ func EnsureDir(dir string) error {
 		return errors.New(dir + " is not a directory")
 	}
 
+	// Checked directly: a chmod only fails for another owner when the mode is
+	// wrong, and an ACL can still let this user in.
+	if !dirOwnedByUser(info) {
+		return fmt.Errorf("%s is owned by another user; remove it or choose another %s", dir, HomeEnv)
+	}
+
 	if info.Mode().Perm() != dirPerm {
 		if err := os.Chmod(dir, dirPerm); err != nil {
 			return fmt.Errorf("chmod %s: %w", dir, err)

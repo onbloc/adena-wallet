@@ -1,6 +1,7 @@
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 
 import { cancelAllAgentApprovals, handleAgentHostMessage } from './agent-host-handler';
+import { dropConnectionGrants } from './agent-host-settings';
 import {
   AGENT_HOST_ENABLED_STORAGE_KEY,
   AGENT_HOST_NAME,
@@ -110,7 +111,13 @@ export const initAgentHostBridge = (inMemoryProvider: MemoryProvider): void => {
       syncAgentHostConnection(inMemoryProvider);
     }
   });
-  chrome.permissions?.onRemoved?.addListener(() => {
+  // Losing the permission revokes agents like turning the connection off.
+  chrome.permissions?.onRemoved?.addListener((removed) => {
+    if (removed.permissions?.includes('nativeMessaging')) {
+      dropConnectionGrants().catch((error) =>
+        console.warn('could not revoke agent connections', error),
+      );
+    }
     syncAgentHostConnection(inMemoryProvider);
   });
 

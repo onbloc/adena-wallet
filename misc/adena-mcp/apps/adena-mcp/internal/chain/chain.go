@@ -36,6 +36,13 @@ const (
 	simulatePath     = ".app/simulate"
 )
 
+// The tm2 HTTP client has no timeout of its own, and a stalled node would
+// otherwise hold the session lock indefinitely.
+var (
+	queryTimeout   = 30 * time.Second
+	executeTimeout = 2 * time.Minute
+)
+
 // ErrSessionNotFound means the chain holds no such session: it was revoked,
 // expired, or never created.
 var ErrSessionNotFound = errors.New("session not found on chain")
@@ -173,6 +180,9 @@ func (c *Client) query(ctx context.Context, rpcURL, path string) ([]byte, error)
 
 // GasPrice reads the chain gas price, falling back to the genesis floor.
 func (c *Client) GasPrice(ctx context.Context, rpcURL string) Price {
+	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	defer cancel()
+
 	data, err := c.query(ctx, rpcURL, "auth/gasprice")
 	if err != nil {
 		return FloorPrice
@@ -208,6 +218,9 @@ func parseGasPrice(data []byte) Price {
 
 // SessionAccount returns the chain's record of a session.
 func (c *Client) SessionAccount(ctx context.Context, rpcURL, master, session string) (*std.BaseSessionAccount, error) {
+	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	defer cancel()
+
 	data, err := c.query(ctx, rpcURL, fmt.Sprintf("auth/accounts/%s/session/%s", master, session))
 	if err != nil {
 		if strings.Contains(err.Error(), "session not found") {
@@ -242,6 +255,9 @@ func decodeSessionAccount(data []byte) (*std.BaseSessionAccount, error) {
 
 // Execute measures, signs and broadcasts (or only simulates) the request.
 func (c *Client) Execute(ctx context.Context, req TxRequest) (TxResult, error) {
+	ctx, cancel := context.WithTimeout(ctx, executeTimeout)
+	defer cancel()
+
 	lock := c.sessionLock(req.Signer.Address())
 	lock.Lock()
 	defer lock.Unlock()

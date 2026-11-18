@@ -12,3 +12,6 @@ func IsOwnedByUser(path string) (bool, error) {
 
 	return true, nil
 }
+
+// dirOwnedByUser cannot read owners here.
+func dirOwnedByUser(os.FileInfo) bool { return true }

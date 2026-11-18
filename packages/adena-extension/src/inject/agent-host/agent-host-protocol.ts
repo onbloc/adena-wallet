@@ -87,6 +87,7 @@ export type AgentHostErrorCode =
   | 'unsupported_network'
   | 'context_mismatch'
   | 'unidentified_agent'
+  | 'request_too_large'
   | 'rejected'
   | 'transaction_failed'
   | 'internal_error';

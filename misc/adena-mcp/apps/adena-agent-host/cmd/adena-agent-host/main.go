@@ -126,6 +126,20 @@ func runInstall(args []string) error {
 		return err
 	}
 
+	// The copy npm install-host makes lives in the agent home; browsers run it,
+	// so that directory must be this user's before it is registered.
+	if strings.HasPrefix(hostPath, agentHome+string(filepath.Separator)) {
+		for _, dir := range []string{agentHome, filepath.Dir(hostPath)} {
+			if dirErr := agentpath.EnsureDir(dir); dirErr != nil {
+				return dirErr
+			}
+		}
+
+		if _, statErr := os.Stat(hostPath); statErr != nil {
+			return fmt.Errorf("the host binary is gone after securing %s; run install-host again: %w", agentHome, statErr)
+		}
+	}
+
 	written, err := hostinstall.Install(hostinstall.Options{
 		HostPath:           hostPath,
 		ChromeExtensionIDs: allowed.IDs,

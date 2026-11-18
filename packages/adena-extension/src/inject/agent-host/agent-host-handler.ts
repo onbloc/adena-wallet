@@ -9,7 +9,7 @@ import {
   SESSION_ADMIN_GAS_WANTED_FALLBACK,
 } from '@common/utils/session-admin-gas';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message/message';
-import { createPopup, existsPopups } from '@inject/message/methods/common';
+import { createPopup } from '@inject/message/methods/common';
 import { InjectCore } from '@inject/message/methods/core';
 import {
   createMessageOfCreateSession,
@@ -18,6 +18,7 @@ import {
 import { NetworkMetainfo, RoutePath } from '@types';
 
 import { AgentApprovalQueue, AgentRequestRegistry, throwIfCancelled } from './agent-approval-queue';
+import { existsAdenaPopups, requirePopupFits } from './agent-popup';
 import {
   AGENT_REQUEST_PROTOCOL,
   AGENT_SESSION_SPEND_DENOM,
@@ -180,7 +181,7 @@ const showPopup = async (
   signal: AbortSignal,
 ): Promise<InjectionMessage> => {
   // Never close a popup that belongs to another request.
-  if (await existsPopups()) {
+  if (await existsAdenaPopups()) {
     throw new AgentHostRequestError(
       'approval_pending',
       'another approval is open in Adena; ask the user to finish it, then retry',
@@ -202,6 +203,8 @@ const showPopup = async (
     protocol: AGENT_REQUEST_PROTOCOL,
     data: request.data,
   };
+
+  requirePopupFits(message);
 
   return new Promise<InjectionMessage>((resolve, reject) => {
     let settled = false;

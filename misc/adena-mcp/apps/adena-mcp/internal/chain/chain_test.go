@@ -1,7 +1,10 @@
 package chain
 
 import (
+	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -157,5 +160,31 @@ func TestSignerMarksSessionSignature(t *testing.T) {
 
 	if len(tx.Signatures) != 0 {
 		t.Fatal("signing must not mutate the unsigned transaction")
+	}
+}
+
+func TestSessionAccountGivesUpOnAStalledNode(t *testing.T) {
+	stalled := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { <-stalled }))
+
+	t.Cleanup(func() {
+		close(stalled)
+		server.Close()
+	})
+
+	previous := queryTimeout
+	queryTimeout = 200 * time.Millisecond
+
+	t.Cleanup(func() { queryTimeout = previous })
+
+	started := time.Now()
+
+	_, err := NewClient().SessionAccount(context.Background(), server.URL, "g1master", "g1session")
+	if err == nil {
+		t.Fatal("a stalled node must fail the query")
+	}
+
+	if elapsed := time.Since(started); elapsed > 5*time.Second {
+		t.Fatalf("gave up after %v", elapsed)
 	}
 }

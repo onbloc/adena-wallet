@@ -1,6 +1,7 @@
 import {
   addConnectionToken,
   createConnectionToken,
+  dropConnectionGrants,
   getMaxSpendLimitUgnot,
   hasConnectionToken,
   isMasterRequestsAllowed,
@@ -141,5 +142,53 @@ describe('connection tokens', () => {
     const token = createConnectionToken();
     expect(token).toMatch(/^[0-9a-f]{64}$/);
     expect(createConnectionToken()).not.toBe(token);
+  });
+});
+
+describe('grant locking', () => {
+  const SITE = 'agent://claude-code.agent';
+  const PROCESS = { pid: 3, start: 'x' };
+
+  afterEach(() => {
+    delete (globalThis.navigator as unknown as { locks?: unknown }).locks;
+  });
+
+  it('runs every grant change under one Web Lock, one at a time', async () => {
+    installStorage();
+    const names: string[] = [];
+    let held = false;
+    let overlapped = false;
+    let tail: Promise<unknown> = Promise.resolve();
+
+    Object.defineProperty(globalThis.navigator, 'locks', {
+      configurable: true,
+      value: {
+        request: (name: string, run: () => Promise<unknown>) => {
+          names.push(name);
+          const next = tail.then(async () => {
+            overlapped = overlapped || held;
+            held = true;
+            try {
+              return await run();
+            } finally {
+              held = false;
+            }
+          });
+          tail = next.catch(() => undefined);
+          return next;
+        },
+      },
+    });
+
+    const token = createConnectionToken();
+    await Promise.all([
+      addConnectionToken('acc', SITE, token, PROCESS, false),
+      dropConnectionGrants('acc', SITE),
+    ]);
+
+    expect(names).toEqual(['adena-agent-connection-grants', 'adena-agent-connection-grants']);
+    expect(overlapped).toBe(false);
+    // The drop ran after the add, so nothing survives.
+    await expect(hasConnectionToken('acc', SITE, token, PROCESS)).resolves.toBe(false);
   });
 });

@@ -117,8 +117,11 @@ func getStatus(ctx context.Context, d *Deps) (server.Result, error) {
 		}, nil
 	}
 
+	accountCtx, cancel := context.WithTimeout(ctx, statusTimeout)
+	defer cancel()
+
 	var account bridge.Account
-	if callErr := d.Bridge.Call(ctx, bridge.MethodGetAccount, agentParams(ctx), &account); callErr != nil {
+	if callErr := d.Bridge.Call(accountCtx, bridge.MethodGetAccount, agentParams(ctx), &account); callErr != nil {
 		return server.Result{}, bridgeError(callErr)
 	}
 

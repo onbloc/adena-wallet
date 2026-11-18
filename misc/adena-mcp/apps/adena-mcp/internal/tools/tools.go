@@ -111,6 +111,13 @@ func bridgeError(err error) error {
 		return &server.ToolError{Code: "user_rejected", Message: "the user rejected the request in Adena"}
 	case "approval_timeout":
 		return approvalTimeoutError()
+	case bridge.CodeExtensionGone:
+		return &server.ToolError{
+			Code: bridge.CodeExtensionGone,
+			Message: "the connection to Adena closed while the request was open, so its outcome is unknown: " +
+				"an approval may already have been signed or broadcast. Before asking again, check " +
+				"get_sessions with refresh=true for a session, or the account's recent transactions",
+		}
 	case "context_mismatch":
 		return &server.ToolError{
 			Code: "context_mismatch",

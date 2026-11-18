@@ -75,6 +75,16 @@ const grantsOf = (grants: Record<string, unknown>, key: string): TokenGrant[] =>
   return Array.isArray(list) ? list.filter(isGrant) : [];
 };
 
+// Grants are changed from the service worker (connect) and from wallet pages
+// (disconnect); a Web Lock serializes those read-modify-write cycles across
+// contexts so one cannot undo the other.
+const GRANTS_LOCK = 'adena-agent-connection-grants';
+
+const withGrantsLock = async <T>(update: () => Promise<T>): Promise<T> => {
+  const locks = (globalThis.navigator as Navigator | undefined)?.locks;
+  return locks ? locks.request(GRANTS_LOCK, update) : update();
+};
+
 export const createConnectionToken = (): string => toHex(Random.getBytes(TOKEN_BYTES));
 
 // Reports whether token was issued for this account and agent to this very
@@ -103,15 +113,17 @@ export const addConnectionToken = async (
   process: AgentProcess,
   reset: boolean,
 ): Promise<void> => {
-  const grants = await readGrants();
-  const key = connectionKey(accountId, siteName);
-  const previous = reset ? [] : grantsOf(grants, key);
-  const next = [...previous, { hash: hashToken(token), pid: process.pid, start: process.start }];
-  await chrome.storage.local.set({
-    [AGENT_CONNECTION_TOKENS_STORAGE_KEY]: {
-      ...grants,
-      [key]: next.slice(-MAX_TOKENS_PER_CONNECTION),
-    },
+  await withGrantsLock(async () => {
+    const grants = await readGrants();
+    const key = connectionKey(accountId, siteName);
+    const previous = reset ? [] : grantsOf(grants, key);
+    const next = [...previous, { hash: hashToken(token), pid: process.pid, start: process.start }];
+    await chrome.storage.local.set({
+      [AGENT_CONNECTION_TOKENS_STORAGE_KEY]: {
+        ...grants,
+        [key]: next.slice(-MAX_TOKENS_PER_CONNECTION),
+      },
+    });
   });
 };
 
@@ -125,16 +137,18 @@ export const dropConnectionGrants = async (
   if (typeof chrome === 'undefined' || !chrome.storage?.local) {
     return;
   }
-  if (accountId === undefined || siteName === undefined) {
-    await chrome.storage.local.remove(AGENT_CONNECTION_TOKENS_STORAGE_KEY);
-    return;
-  }
-  const grants = await readGrants();
-  const key = connectionKey(accountId, siteName);
-  if (!(key in grants)) {
-    return;
-  }
-  const remaining = { ...grants };
-  delete remaining[key];
-  await chrome.storage.local.set({ [AGENT_CONNECTION_TOKENS_STORAGE_KEY]: remaining });
+  await withGrantsLock(async () => {
+    if (accountId === undefined || siteName === undefined) {
+      await chrome.storage.local.remove(AGENT_CONNECTION_TOKENS_STORAGE_KEY);
+      return;
+    }
+    const grants = await readGrants();
+    const key = connectionKey(accountId, siteName);
+    if (!(key in grants)) {
+      return;
+    }
+    const remaining = { ...grants };
+    delete remaining[key];
+    await chrome.storage.local.set({ [AGENT_CONNECTION_TOKENS_STORAGE_KEY]: remaining });
+  });
 };

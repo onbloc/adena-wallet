@@ -13,6 +13,7 @@ import {
   AgentHostStatus,
 } from '@inject/agent-host/agent-host-protocol';
 import {
+  dropConnectionGrants,
   getMaxSpendLimitUgnot,
   isMasterRequestsAllowed,
   isValidMaxSpendLimit,
@@ -104,6 +105,11 @@ export const AgentConnection = (): JSX.Element => {
       }
     }
     await chrome.storage.local.set({ [AGENT_HOST_ENABLED_STORAGE_KEY]: activated });
+    // Turning the connection off revokes every agent process; each has to be
+    // approved again after it is turned back on.
+    if (!activated) {
+      await dropConnectionGrants();
+    }
     setEnabled(activated);
   }, []);
 

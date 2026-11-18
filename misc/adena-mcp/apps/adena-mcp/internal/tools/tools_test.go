@@ -972,3 +972,16 @@ func TestConnectWalletKeepsTheTokenAndHidesIt(t *testing.T) {
 		t.Fatalf("the token reached the agent: %s %s", data, res.Text)
 	}
 }
+
+func TestExtensionGoneReportsAnUnknownOutcome(t *testing.T) {
+	t.Parallel()
+
+	var te *server.ToolError
+	if !errors.As(bridgeError(&bridge.Error{Code: bridge.CodeExtensionGone, Message: "closed"}), &te) {
+		t.Fatal("not a tool error")
+	}
+
+	if te.Code != bridge.CodeExtensionGone || !strings.Contains(te.Message, "outcome is unknown") {
+		t.Fatalf("got %+v", te)
+	}
+}

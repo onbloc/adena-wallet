@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -107,5 +108,22 @@ func TestIsOwnedByUser(t *testing.T) {
 
 	if _, err := IsOwnedByUser(filepath.Join(t.TempDir(), "missing")); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("missing file: got %v", err)
+	}
+}
+
+func TestEnsureDirRefusesADirectoryOfAnotherUser(t *testing.T) {
+	t.Parallel()
+
+	own, err := os.Stat(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !dirOwnedByUser(own) {
+		t.Fatal("own directory reported as foreign")
+	}
+
+	if dirOwnedByUser(foreignDir{own}) && runtime.GOOS != "windows" {
+		t.Fatal("a directory of another uid was accepted")
 	}
 }

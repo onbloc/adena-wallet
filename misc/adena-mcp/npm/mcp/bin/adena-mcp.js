@@ -67,6 +67,23 @@ function run(binary, args) {
   });
 }
 
+// The browser runs whatever lands in the agent home's bin directory, so on
+// POSIX systems both directories must belong to this user and be closed to
+// others. Windows is checked by the host's own install, which takes over or
+// clears a directory another account owns.
+function secureDir(dir) {
+  if (process.platform === 'win32') {
+    return;
+  }
+  const info = fs.statSync(dir);
+  if (info.uid !== process.getuid()) {
+    fail(`${dir} belongs to another user; remove it or choose another ADENA_AGENT_HOME`);
+  }
+  if ((info.mode & 0o777) !== 0o700) {
+    fs.chmodSync(dir, 0o700);
+  }
+}
+
 // Browsers launch the host from the path in its manifest, and the npx cache
 // is not a stable path, so the host is copied under the agent home first.
 function installHost(args) {
@@ -75,6 +92,8 @@ function installHost(args) {
   const target = path.join(targetDir, HOST_BINARY);
 
   fs.mkdirSync(targetDir, { recursive: true, mode: 0o700 });
+  secureDir(agentHome());
+  secureDir(targetDir);
   const staging = `${target}.${process.pid}.tmp`;
   fs.copyFileSync(source, staging);
   fs.chmodSync(staging, 0o755);
