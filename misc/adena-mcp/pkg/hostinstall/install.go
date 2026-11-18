@@ -500,10 +500,16 @@ func writeStaging(dir, name string, data []byte) (string, error) {
 		return "", fmt.Errorf("write host binary: %w", err)
 	}
 
+	// Checked step by step, like replaceFile, so a failed write never reaches
+	// the rename in CopyHost.
 	_, writeErr := f.Write(data)
-	closeErr := f.Close()
+	if err := errors.Join(writeErr, f.Close()); err != nil {
+		_ = os.Remove(f.Name())
 
-	if err := errors.Join(writeErr, closeErr, os.Chmod(f.Name(), hostBinaryPerm)); err != nil {
+		return "", fmt.Errorf("write host binary: %w", err)
+	}
+
+	if err := os.Chmod(f.Name(), hostBinaryPerm); err != nil {
 		_ = os.Remove(f.Name())
 
 		return "", fmt.Errorf("write host binary: %w", err)
