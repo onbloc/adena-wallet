@@ -65,6 +65,7 @@ type runValue struct {
 	Caller     string      `json:"caller"`
 	Send       string      `json:"send"`
 	MaxDeposit string      `json:"max_deposit"`
+	MaxSend    string      `json:"max_send"`
 }
 
 type sendValue struct {
@@ -182,6 +183,11 @@ func buildSessionMsg(m txMessage, master crypto.Address) (std.Msg, error) {
 			return nil, err
 		}
 
+		maxSend, err := std.ParseCoins(v.MaxSend)
+		if err != nil {
+			return nil, fmt.Errorf("max_send: %w", err)
+		}
+
 		files := make([]*std.MemFile, 0, len(v.Package.Files))
 		for _, f := range v.Package.Files {
 			files = append(files, &std.MemFile{Name: f.Name, Body: f.Body})
@@ -193,6 +199,7 @@ func buildSessionMsg(m txMessage, master crypto.Address) (std.Msg, error) {
 			Send:       send,
 			MaxDeposit: maxDeposit,
 			Package:    &std.MemPackage{Name: "main", Files: files},
+			MaxSend:    maxSend,
 		}, nil
 	case msgSend:
 		var v sendValue
