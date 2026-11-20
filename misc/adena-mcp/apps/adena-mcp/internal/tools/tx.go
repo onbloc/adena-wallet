@@ -30,7 +30,8 @@ const messagesDescription = "Messages in Adena's format, signed together in one 
 	`- {"type":"/vm.m_call","value":{"pkg_path":"gno.land/r/...","func":"F","args":["1"],"send":"","max_deposit":""}}` +
 	"\n" +
 	`- {"type":"/vm.m_run","value":{"send":"","package":{"name":"main","path":"",` +
-	`"files":[{"name":"main.gno","body":"package main\n\nfunc main() {}"}]}}}` + "\n" +
+	`"files":[{"name":"main.gno","body":"package main\n\nfunc main() {}"}]},"max_send":""}}` +
+	" (max_send caps the coins the script may send from the wallet; empty refuses every transfer)\n" +
 	`- {"type":"/vm.m_addpkg","value":{"package":{"name":"foo","path":"gno.land/p/<ns>/foo",` +
 	`"files":[{"name":"foo.gno","body":"..."}]},"send":"","max_deposit":""}} (signer=wallet only)` + "\n" +
 	`- {"type":"/bank.MsgSend","value":{"to_address":"g1...","amount":"1000ugnot"}}`
