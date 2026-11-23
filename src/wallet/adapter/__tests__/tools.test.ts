@@ -6,6 +6,7 @@ import {
   WalletErrorCode,
   WalletStatus,
 } from '../../constants';
+import { INVALID_ADDRESS_LENGTH_MESSAGE } from '../../sdk/address';
 import { autoApproval } from '../../sdk/approval';
 import { ACTIVE_ADDRESS, FIXTURE } from '../../sdk/fixture';
 import { MockWalletSdk } from '../../sdk/mockWalletSdk';
@@ -14,7 +15,7 @@ import { createWalletTools, type ToolResult } from '../tools';
 
 const to = FIXTURE.recipient;
 const gnot = TokenSymbol.Gnot;
-const [, acc2] = FIXTURE.accounts;
+const other = FIXTURE.contacts[0].address;
 
 function setup(requestApproval: ApprovalHandler = autoApproval(ApprovalPolicy.Approve), secret?: string) {
   const sdk = new MockWalletSdk({ requestApproval, secret });
@@ -42,13 +43,38 @@ describe('get_balance', () => {
     });
   });
 
-  it('takes no model arguments, so the model cannot ask about another address', () => {
+  it('looks up the address the model names, including what was sent to it', async () => {
     const { tools } = setup();
-    const schema = tools[ToolName.GetBalance].inputSchema as unknown as {
-      parse(value: unknown): object;
-    };
+    await run(tools[ToolName.Transfer], { to, amount: '0.5', token: gnot });
 
-    expect(schema.parse({ address: acc2.address })).toEqual({});
+    expect(await run(tools[ToolName.GetBalance], { address: to })).toEqual({
+      status: WalletStatus.Ok,
+      address: to,
+      balances: { GNOT: '0.5', GNS: '0' },
+    });
+    expect(await run(tools[ToolName.GetBalance], {})).toMatchObject({
+      address: ACTIVE_ADDRESS,
+      balances: { GNOT: '9.5' },
+    });
+  });
+
+  it.each([undefined, '', '   '])('treats a blank address (%p) as the user\'s own', async (address) => {
+    const { tools } = setup();
+
+    expect(await run(tools[ToolName.GetBalance], { address })).toMatchObject({
+      status: WalletStatus.Ok,
+      address: ACTIVE_ADDRESS,
+    });
+  });
+
+  it('turns a wrong-length address into an error result with the length message', async () => {
+    const { tools } = setup();
+
+    expect(await run(tools[ToolName.GetBalance], { address: to.slice(0, -1) })).toEqual({
+      status: WalletStatus.Error,
+      code: WalletErrorCode.InvalidAddress,
+      message: INVALID_ADDRESS_LENGTH_MESSAGE,
+    });
   });
 });
 
@@ -107,7 +133,7 @@ describe('transfer', () => {
     const schema = tools[ToolName.Transfer].inputSchema as unknown as {
       parse(value: unknown): object;
     };
-    const parsed = schema.parse({ ...input, from: acc2.address });
+    const parsed = schema.parse({ ...input, from: other });
 
     expect(parsed).not.toHaveProperty('from');
   });

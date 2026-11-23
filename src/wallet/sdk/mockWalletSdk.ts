@@ -1,6 +1,6 @@
 import { fromBaseUnits, toBaseUnits } from '../amount';
 import { SignRequestType, WalletErrorCode, WalletStatus, type TokenSymbol } from '../constants';
-import { isValidAddress } from './address';
+import { ADDRESS_LENGTH, INVALID_ADDRESS_LENGTH_MESSAGE, isValidAddress } from './address';
 import { FIXTURE, type MockAccount } from './fixture';
 import { TOKEN_DECIMALS, TOKEN_SYMBOLS } from './tokens';
 import {
@@ -94,10 +94,16 @@ export class MockWalletSdk implements WalletSdk {
     this.#balances.set(address, tokens);
   }
 
-  async getBalance(address: string): Promise<Balances> {
-    if (!isValidAddress(address)) {
-      throw new WalletError(WalletErrorCode.InvalidAddress, 'Not a valid g1... address');
+  /** Throws InvalidAddress: a length message first, then `formatMessage` for other malformed input. */
+  #assertAddress(address: string, formatMessage: string) {
+    if (address.length !== ADDRESS_LENGTH) {
+      throw new WalletError(WalletErrorCode.InvalidAddress, INVALID_ADDRESS_LENGTH_MESSAGE);
     }
+    if (!isValidAddress(address)) throw new WalletError(WalletErrorCode.InvalidAddress, formatMessage);
+  }
+
+  async getBalance(address: string): Promise<Balances> {
+    this.#assertAddress(address, 'Not a valid g1... address');
     const entries = TOKEN_SYMBOLS.map((token) => [
       token,
       fromBaseUnits(this.#units(address, token), TOKEN_DECIMALS[token]),
@@ -110,9 +116,7 @@ export class MockWalletSdk implements WalletSdk {
     if (!this.#owned.has(from)) {
       throw new WalletError(WalletErrorCode.UnknownAccount, 'Sender is not an account of this wallet');
     }
-    if (!isValidAddress(to)) {
-      throw new WalletError(WalletErrorCode.InvalidAddress, 'Recipient is not a valid g1... address');
-    }
+    this.#assertAddress(to, 'Recipient is not a valid g1... address');
     const decimals = TOKEN_DECIMALS[token];
     const units = toBaseUnits(amount, decimals);
     if (units === null || units <= 0n) {

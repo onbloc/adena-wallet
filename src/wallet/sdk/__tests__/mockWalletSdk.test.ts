@@ -4,12 +4,13 @@ import {
   WalletErrorCode,
   WalletStatus,
 } from '../../constants';
-import { isValidAddress } from '../address';
+import { INVALID_ADDRESS_LENGTH_MESSAGE, isValidAddress } from '../address';
 import { FIXTURE } from '../fixture';
 import { MockWalletSdk } from '../mockWalletSdk';
 import type { SignRequest, TextMessage } from '../types';
 
-const [acc1, acc2] = FIXTURE.accounts;
+const [acc1] = FIXTURE.accounts;
+const other = FIXTURE.contacts[0].address;
 const to = FIXTURE.recipient;
 const gnot = TokenSymbol.Gnot;
 
@@ -61,7 +62,6 @@ describe('getBalance', () => {
     const { sdk } = makeSdk();
 
     expect(await sdk.getBalance(acc1.address)).toEqual({ GNOT: '10', GNS: '250' });
-    expect(await sdk.getBalance(acc2.address)).toEqual({ GNOT: '1.5', GNS: '0' });
   });
 
   it('returns zeros for a valid address the wallet has never seen', async () => {
@@ -71,6 +71,24 @@ describe('getBalance', () => {
   it('rejects a malformed address', async () => {
     await expect(makeSdk().sdk.getBalance('alice')).rejects.toMatchObject({
       code: WalletErrorCode.InvalidAddress,
+    });
+  });
+
+  it.each([
+    ['empty', ''],
+    ['too short', acc1.address.slice(0, -1)],
+    ['too long', acc1.address + 'q'],
+  ])('tells the user the address length is invalid when it is %s', async (_label, address) => {
+    await expect(makeSdk().sdk.getBalance(address)).rejects.toMatchObject({
+      code: WalletErrorCode.InvalidAddress,
+      message: INVALID_ADDRESS_LENGTH_MESSAGE,
+    });
+  });
+
+  it('keeps the generic message for a right-length address in the wrong format', async () => {
+    await expect(makeSdk().sdk.getBalance('G1' + acc1.address.slice(2))).rejects.toMatchObject({
+      code: WalletErrorCode.InvalidAddress,
+      message: 'Not a valid g1... address',
     });
   });
 });
@@ -119,6 +137,16 @@ describe('transfer', () => {
   it('allows spending exactly the whole balance', async () => {
     await expect(makeSdk().sdk.transfer(send('10'))).resolves.toMatchObject({ amount: '10' });
   });
+
+  it('tells the user the recipient address length is invalid, without asking to sign', async () => {
+    const { sdk, shown } = makeSdk();
+
+    await expect(sdk.transfer({ ...send('1'), to: to.slice(0, -1) })).rejects.toMatchObject({
+      code: WalletErrorCode.InvalidAddress,
+      message: INVALID_ADDRESS_LENGTH_MESSAGE,
+    });
+    expect(shown).toEqual([]);
+  });
 });
 
 describe('sign a transfer', () => {
@@ -133,6 +161,17 @@ describe('sign a transfer', () => {
     expect(await sdk.getBalance(acc1.address)).toMatchObject({ GNOT: '9.5' });
     expect(await sdk.getBalance(to)).toMatchObject({ GNOT: '0.5' });
     expect(sdk.approvals).toEqual([{ request: message, approved: true }]);
+  });
+
+  it('adds up what approved transfers sent to the same address, per token', async () => {
+    const { sdk } = makeSdk(true);
+
+    await sdk.sign(await sdk.transfer(send('0.5')));
+    await sdk.sign(await sdk.transfer(send('1.25')));
+    await sdk.sign(await sdk.transfer(send('7', TokenSymbol.Gns)));
+
+    expect(await sdk.getBalance(to)).toEqual({ GNOT: '1.75', GNS: '7' });
+    expect(await sdk.getBalance(acc1.address)).toEqual({ GNOT: '8.25', GNS: '243' });
   });
 
   it('leaves the balances alone when the user rejects', async () => {
@@ -184,7 +223,7 @@ describe('sign a transfer', () => {
     await expect(sdk.sign({ ...message, amount: '9' })).rejects.toMatchObject({
       code: WalletErrorCode.InvalidMessage,
     });
-    await expect(sdk.sign({ ...message, to: acc2.address })).rejects.toMatchObject({
+    await expect(sdk.sign({ ...message, to: other })).rejects.toMatchObject({
       code: WalletErrorCode.InvalidMessage,
     });
 

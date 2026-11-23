@@ -24,6 +24,21 @@ npm run android   # expo run:android (generates android/ and builds)
 First launch: tap **Load**. The model (~1.4 GB) is downloaded from Hugging Face once,
 then loaded from local storage (works offline afterwards).
 
+### Install a Release build on a phone
+
+Connect the phone (iOS: unlocked, USB, trusted, Developer Mode on, a Team set in Xcode
+under Signing & Capabilities; Android: USB debugging on), then:
+
+```bash
+make deploy ios       # Release build, signs missing frameworks, installs and launches
+make deploy android   # Release build via expo run:android, installed through adb
+DEVICE=<id> make deploy ios   # pick a phone when several are connected (UDID / adb serial)
+```
+
+A Release build carries its JS, so any code change needs a new `make deploy`. A free Apple
+account signs for 7 days; after that, deploy again. On the first iOS install, trust the
+developer in Settings > General > VPN & Device Management.
+
 ## Structure
 
 ```
@@ -57,10 +72,13 @@ model --tool call--> adapter (src/wallet/adapter)      LLM layer
                        sign(message) -> asks the user (popup) -> signed | rejected
 ```
 
-- The model sees `get_balance()`, `transfer({to,amount,token})`, `sign_message({message})`.
-  No account or `from` is ever a model argument: the harness injects the user's own account.
-  (An optional `address` on `get_balance` made the 2B model pass the recipient's address or
-  `""`, which broke the transfer scenarios, so it was removed.)
+- The model sees `get_balance({address?})`, `transfer({to,amount,token})`, `sign_message({message})`.
+  `get_balance` without an address returns the user's own (fixed) account; with an address it
+  returns that address's balance from the mock wallet, so tokens sent to an address show up
+  when it is looked up later. A blank `address` counts as omitted. No account or `from` is ever
+  a model argument: the harness injects the user's own account. (An optional `address` made
+  the 2B model pass the recipient's address or `""` for its own balance; re-measure with
+  `npm run eval` after prompt or tool changes.)
 - After `transfer`, **the harness** (not the model) passes the wallet-created message to
   `sdk.sign`. The popup shows exactly that message. Funds move only when the user approves
   (signed); on reject nothing moves. The model gets a small `{status: signed | rejected}`.
@@ -73,13 +91,19 @@ model --tool call--> adapter (src/wallet/adapter)      LLM layer
 - Tool arguments are validated with zod before `execute`. A call that fails validation (wrong
   type, unknown tool, unparsable JSON) is shown as **[INVALID]** and never reaches the wallet;
   the SDK feeds the error back to the model, which may retry.
-- Value checks (address format, amount > 0, balance) live in the SDK, so a well-formed but
-  wrong value shows up as an `error` result with a code instead.
+- Value checks (address, amount > 0, balance) live in the SDK, so a well-formed but wrong
+  value shows up as an `error` result with a code instead. An address that is not 40 characters
+  long gets the message `The address length is not valid. Please check it again.`; other malformed
+  addresses get a generic invalid-address message.
 - Pick a scenario chip to fill the prompt and see what is expected (calls, popups, balances);
   after the run you get PASS/FAIL per check. The evaluation is strict: any invalid call fails
   it even if a retry succeeds. The "answer mentions" checks are a keyword heuristic.
 - Mock data (addresses, balances, token decimals, address format, chain id) are assumptions,
-  not real Gno.land values. Scenarios that need a recipient include an address in the prompt.
+  not real Gno.land values. Only the user's own account has a starting balance; any other
+  address starts at zero and gets what is sent to it. Scenarios that need a recipient include
+  an address in the prompt.
+- In the app, free prompts keep using one wallet, so a transfer shows up in later balance
+  lookups. Running a scenario starts a fresh wallet; **Reset wallet** (Settings) does too.
 
 ## Eval against a real model (desktop)
 
@@ -161,4 +185,5 @@ make test   # typecheck + lint + jest (mock model, no LLM)
 make eval   # real-model scenarios on this Mac; starts llama-server if none is running,
             # stops it afterwards. e.g. make eval RUNS=20 ARGS="--scenario transfer --verbose"
 make chat   # talk to the model in your own words; PROMPT="..." asks once, ARGS="--plain" = bare model
+make deploy # Release build + install on a connected phone: make deploy ios|android
 ```

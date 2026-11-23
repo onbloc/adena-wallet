@@ -9,16 +9,12 @@ export type MockAccount = {
 
 // Example data for scenarios; the values are assumptions, not real Gno.land data.
 export const FIXTURE = {
+  // Only the user's own account has funds; every other address starts at zero.
   accounts: [
     {
       name: 'Account 1',
       address: 'g1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9',
       balances: { [TokenSymbol.Gnot]: '10', [TokenSymbol.Gns]: '250' },
-    },
-    {
-      name: 'Account 2',
-      address: 'g19x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2',
-      balances: { [TokenSymbol.Gnot]: '1.5', [TokenSymbol.Gns]: '0' },
     },
   ] satisfies MockAccount[],
   contacts: [

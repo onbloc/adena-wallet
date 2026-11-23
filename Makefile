@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help init test eval chat
+.PHONY: help init test eval chat deploy ios android
 
 PORT   ?= 8089
 RUNS   ?= 10
@@ -29,3 +29,13 @@ eval: ## Run wallet scenarios on a real model via llama.cpp on this Mac. Vars: R
 
 chat: ## Chat with the model in your own words (wallet assistant). Vars: PROMPT="..." asks once; ARGS="--plain" for the bare model
 	$(WITH_SERVER) bun scripts/chat.ts --url $(URL) $(if $(PROMPT),--prompt "$$PROMPT") $(ARGS)
+
+# `ios` / `android` are only arguments of `deploy`.
+DEPLOY_PLATFORM := $(firstword $(filter ios android,$(MAKECMDGOALS)))
+
+deploy: ## Release build + install on a connected phone: make deploy ios|android. Vars: DEVICE=<id> picks the phone
+	@test -n "$(DEPLOY_PLATFORM)" || { echo "usage: make deploy ios|android" >&2; exit 1; }
+	scripts/deploy.sh $(DEPLOY_PLATFORM)
+
+ios android:
+	@$(if $(filter deploy,$(MAKECMDGOALS)),:,echo "use: make deploy $@" >&2; exit 1)

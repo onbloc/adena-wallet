@@ -1,5 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -7,6 +10,7 @@ import {
   Text,
   TextInput,
   View,
+  type ScrollViewInstance,
 } from 'react-native';
 
 import type { CallRecord } from '../llm/calls';
@@ -76,6 +80,10 @@ type WalletSnapshot = {
   balances: Record<string, Balances>;
 };
 
+/** Balances of a wallet nobody has used yet. */
+const initialBalances = () =>
+  snapshotBalances(new MockWalletSdk({ requestApproval: autoApproval(ApprovalPolicy.Reject) }));
+
 export default function PlaygroundScreen() {
   const { status, run, start, stop, load, unload, remove } = useLlm();
   const approvalPrompt = useApprovalPrompt();
@@ -95,12 +103,39 @@ export default function PlaygroundScreen() {
   const [ranScenario, setRanScenario] = useState<Scenario | null>(null);
   const [balances, setBalances] = useState<Record<string, Balances> | null>(null);
   const [snapshot, setSnapshot] = useState<WalletSnapshot | null>(null);
+  // Prompt that started the last run, shown as the user message.
+  const [submittedPrompt, setSubmittedPrompt] = useState<string | null>(null);
+  const [tab, setTab] = useState<'chat' | 'settings'>('chat');
+  const [keyboardShown, setKeyboardShown] = useState(false);
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  // Wallet kept across free-prompt runs, so a transfer shows up in later balance lookups.
+  const walletRef = useRef<MockWalletSdk | null>(null);
+  const chat = tab === 'chat';
+
+  // Drops the home-indicator padding while the keyboard covers it.
+  useEffect(() => {
+    const ios = Platform.OS === 'ios';
+    const show = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', () =>
+      setKeyboardShown(true)
+    );
+    const hide = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', () =>
+      setKeyboardShown(false)
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   // Initial balances, before any run.
   useEffect(() => {
-    const sdk = new MockWalletSdk({ requestApproval: autoApproval(ApprovalPolicy.Reject) });
-    void snapshotBalances(sdk).then(setBalances);
+    void initialBalances().then(setBalances);
   }, []);
+
+  const onResetWallet = () => {
+    walletRef.current = null;
+    void initialBalances().then(setBalances);
+  };
 
   const temperatureValue = parseBounded(temperature, TEMPERATURE_RANGE);
   const maxTokensValue = parseBounded(maxTokens, MAX_OUTPUT_TOKENS_RANGE, true);
@@ -141,9 +176,15 @@ export default function PlaygroundScreen() {
 
   const onRun = async () => {
     if (temperatureValue === null || maxTokensValue === null) return;
-    // A fresh wallet per run: every run starts from the same balances.
-    const sdk = new MockWalletSdk({ requestApproval: approvalPrompt.requestApproval });
-    setRanScenario(useTools ? scenario : null);
+    setSubmittedPrompt(prompt);
+    // Scenarios start from a fresh wallet so they are judged on the same balances;
+    // free prompts continue on the session wallet.
+    const scenarioRun = useTools && scenario !== null;
+    if (scenarioRun || walletRef.current === null) {
+      walletRef.current = new MockWalletSdk({ requestApproval: approvalPrompt.requestApproval });
+    }
+    const sdk = walletRef.current;
+    setRanScenario(scenarioRun ? scenario : null);
     setSnapshot(null);
     setBalances(await snapshotBalances(sdk));
 
@@ -162,21 +203,50 @@ export default function PlaygroundScreen() {
     setSnapshot({ approvals: [...sdk.approvals], balances: after });
   };
 
-  return (
-    <>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>On-device LLM Playground</Text>
+  const sendDisabled = !run.running && !canRun;
 
-        <View style={styles.card}>
+  return (
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={styles.header}>
+        <Text style={styles.title}>On-device LLM Playground</Text>
+        <View style={styles.headerRow}>
+          <Text style={[styles.status, styles.flex]} numberOfLines={2}>
+            {describeStatus(status)}
+          </Text>
+          <Button label="Load" onPress={() => void load()} disabled={busy || ready} />
+        </View>
+        {status.state === 'downloading' && (
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${status.percentage}%` }]} />
+          </View>
+        )}
+      </View>
+
+      <View style={styles.tabs}>
+        {(['chat', 'settings'] as const).map((id) => (
+          <Pressable
+            key={id}
+            onPress={() => setTab(id)}
+            style={[styles.tab, tab === id && styles.tabActive]}
+          >
+            <Text style={[styles.tabText, tab === id && styles.tabTextActive]}>
+              {id === 'chat' ? 'Chat' : 'Settings'}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {!chat && (
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.settingsContent}
+          keyboardShouldPersistTaps="handled"
+        >
           <Text style={styles.mono}>{DEFAULT_MODEL_ID}</Text>
-          <Text style={styles.status}>{describeStatus(status)}</Text>
-          {status.state === 'downloading' && (
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${status.percentage}%` }]} />
-            </View>
-          )}
           <View style={styles.row}>
-            <Button label="Load" onPress={() => void load()} disabled={busy || ready} />
             <Button
               label="Unload"
               onPress={() => void unload()}
@@ -188,123 +258,163 @@ export default function PlaygroundScreen() {
               disabled={busy || run.running}
             />
           </View>
-        </View>
 
-        <BalancesCard balances={balances} />
+          <BalancesCard balances={balances} />
+          <View style={styles.row}>
+            <Button label="Reset wallet" onPress={onResetWallet} disabled={run.running} />
+          </View>
 
-        <Text style={styles.label}>System prompt (optional)</Text>
-        <TextInput style={styles.input} value={system} onChangeText={setSystem} multiline />
+          <Text style={styles.label}>System prompt (optional)</Text>
+          <TextInput style={styles.input} value={system} onChangeText={setSystem} multiline />
 
-        <Text style={styles.label}>Scenarios</Text>
-        <View style={styles.chips}>
-          {SCENARIOS.map((item) => (
-            <Pressable
-              key={item.id}
-              onPress={() => selectScenario(item)}
-              style={[styles.chip, item.id === scenarioId && styles.chipActive]}
-            >
-              <Text style={[styles.chipText, item.id === scenarioId && styles.chipTextActive]}>
-                {item.title}
+          <Text style={styles.label}>Scenarios</Text>
+          <View style={styles.chips}>
+            {SCENARIOS.map((item) => (
+              <Pressable
+                key={item.id}
+                onPress={() => selectScenario(item)}
+                style={[styles.chip, item.id === scenarioId && styles.chipActive]}
+              >
+                <Text style={[styles.chipText, item.id === scenarioId && styles.chipTextActive]}>
+                  {item.title}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          {scenario && <ScenarioExpectation scenario={scenario} />}
+
+          <View style={styles.row}>
+            <View style={styles.flex}>
+              <Text style={styles.label}>
+                Temperature ({TEMPERATURE_RANGE.min}-{TEMPERATURE_RANGE.max})
               </Text>
-            </Pressable>
-          ))}
-        </View>
-        {scenario && <ScenarioExpectation scenario={scenario} />}
-
-        <Text style={styles.label}>Prompt</Text>
-        <TextInput style={styles.input} value={prompt} onChangeText={onPromptChange} multiline />
-
-        <View style={styles.row}>
-          <View style={styles.flex}>
-            <Text style={styles.label}>
-              Temperature ({TEMPERATURE_RANGE.min}-{TEMPERATURE_RANGE.max})
-            </Text>
-            <TextInput
-              style={[styles.input, temperatureValue === null && styles.invalid]}
-              value={temperature}
-              onChangeText={setTemperature}
-              keyboardType="decimal-pad"
-            />
+              <TextInput
+                style={[styles.input, temperatureValue === null && styles.invalid]}
+                value={temperature}
+                onChangeText={setTemperature}
+                keyboardType="decimal-pad"
+              />
+            </View>
+            <View style={styles.flex}>
+              <Text style={styles.label}>
+                Max tokens ({MAX_OUTPUT_TOKENS_RANGE.min}-{MAX_OUTPUT_TOKENS_RANGE.max})
+              </Text>
+              <TextInput
+                style={[styles.input, maxTokensValue === null && styles.invalid]}
+                value={maxTokens}
+                onChangeText={setMaxTokens}
+                keyboardType="number-pad"
+              />
+            </View>
           </View>
-          <View style={styles.flex}>
-            <Text style={styles.label}>
-              Max tokens ({MAX_OUTPUT_TOKENS_RANGE.min}-{MAX_OUTPUT_TOKENS_RANGE.max})
-            </Text>
-            <TextInput
-              style={[styles.input, maxTokensValue === null && styles.invalid]}
-              value={maxTokens}
-              onChangeText={setMaxTokens}
-              keyboardType="number-pad"
-            />
+
+          <View style={styles.rowCenter}>
+            <Switch value={thinking} onValueChange={setThinking} />
+            <Text style={styles.switchLabel}>Thinking (reasoning)</Text>
           </View>
-        </View>
 
-        <View style={styles.rowCenter}>
-          <Switch value={thinking} onValueChange={setThinking} />
-          <Text style={styles.switchLabel}>Thinking (reasoning)</Text>
-        </View>
+          <View style={styles.rowCenter}>
+            <Switch value={useTools} onValueChange={setUseTools} />
+            <Text style={styles.switchLabel}>Wallet tools (mock, max {MAX_STEPS} steps)</Text>
+          </View>
+        </ScrollView>
+      )}
 
-        <View style={styles.rowCenter}>
-          <Switch value={useTools} onValueChange={setUseTools} />
-          <Text style={styles.switchLabel}>Wallet tools (mock, max {MAX_STEPS} steps)</Text>
-        </View>
-
-        <View style={styles.row}>
-          <Button label="Run" onPress={() => void onRun()} disabled={!canRun} />
-          <Button label="Stop" onPress={stop} disabled={!run.running} />
-        </View>
-
-        {run.error !== null && <Text style={styles.error}>{run.error}</Text>}
-        {run.warnings.map((warning, index) => (
-          <Text key={`${index}:${warning}`} style={styles.warning}>
-            Warning: {warning}
-          </Text>
-        ))}
-
-        {(run.calls.length > 0 || run.metrics !== null) && useTools && (
-          <CallLog calls={run.calls} />
-        )}
-
-        <Text style={styles.label}>
-          Output{run.aborted ? ' (stopped)' : ''}
-        </Text>
-        <Text style={styles.output} selectable>
-          {run.text}
-        </Text>
-
-        {verdict && ranScenario && <VerdictView scenario={ranScenario} verdict={verdict} />}
-
-        {run.reasoning !== '' && (
+      <ScrollView
+        ref={scrollRef}
+        style={[styles.flex, !chat && styles.hidden]}
+        contentContainerStyle={styles.transcript}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        onContentSizeChange={() => {
+          if (run.running) scrollRef.current?.scrollToEnd({ animated: true });
+        }}
+      >
+        {submittedPrompt === null ? (
+          <Text style={styles.muted}>Send a prompt to start.</Text>
+        ) : (
           <>
-            <Pressable onPress={() => setShowReasoning((value) => !value)}>
-              <Text style={styles.link}>
-                {showReasoning ? 'Hide' : 'Show'} reasoning ({run.reasoning.length} chars)
+            <View style={styles.userBubble}>
+              <Text style={styles.userText} selectable>
+                {submittedPrompt}
               </Text>
-            </Pressable>
-            {showReasoning && (
-              <Text style={[styles.output, styles.muted]} selectable>
-                {run.reasoning}
+            </View>
+
+            {run.error !== null && <Text style={styles.error}>{run.error}</Text>}
+            {run.warnings.map((warning, index) => (
+              <Text key={`${index}:${warning}`} style={styles.warning}>
+                Warning: {warning}
               </Text>
+            ))}
+
+            {(run.calls.length > 0 || run.metrics !== null) && useTools && (
+              <CallLog calls={run.calls} />
+            )}
+
+            {run.running && run.text === '' && <Text style={styles.muted}>Generating...</Text>}
+            <Text style={styles.output} selectable>
+              {run.text}
+            </Text>
+            {run.aborted && <Text style={styles.muted}>(stopped)</Text>}
+
+            {verdict && ranScenario && <VerdictView scenario={ranScenario} verdict={verdict} />}
+
+            {run.reasoning !== '' && (
+              <>
+                <Pressable onPress={() => setShowReasoning((value) => !value)}>
+                  <Text style={styles.link}>
+                    {showReasoning ? 'Hide' : 'Show'} reasoning ({run.reasoning.length} chars)
+                  </Text>
+                </Pressable>
+                {showReasoning && (
+                  <Text style={[styles.output, styles.muted]} selectable>
+                    {run.reasoning}
+                  </Text>
+                )}
+              </>
+            )}
+
+            {run.metrics && (
+              <View style={styles.card}>
+                <Text style={styles.mono}>TTFT: {fmt(run.metrics.ttftMs, 'ms')}</Text>
+                <Text style={styles.mono}>Total: {fmt(run.metrics.totalMs, 'ms')}</Text>
+                <Text style={styles.mono}>Output tokens: {run.metrics.outputTokens ?? '-'}</Text>
+                <Text style={styles.mono}>Speed: {fmt(run.metrics.tokensPerSec, 'tok/s', 1)}</Text>
+              </View>
             )}
           </>
         )}
-
-        {run.metrics && (
-          <View style={styles.card}>
-            <Text style={styles.mono}>TTFT: {fmt(run.metrics.ttftMs, 'ms')}</Text>
-            <Text style={styles.mono}>Total: {fmt(run.metrics.totalMs, 'ms')}</Text>
-            <Text style={styles.mono}>Output tokens: {run.metrics.outputTokens ?? '-'}</Text>
-            <Text style={styles.mono}>Speed: {fmt(run.metrics.tokensPerSec, 'tok/s', 1)}</Text>
-          </View>
-        )}
       </ScrollView>
+
+      <View style={[styles.composer, keyboardShown && styles.composerKeyboard, !chat && styles.hidden]}>
+        <TextInput
+          style={styles.composerInput}
+          value={prompt}
+          onChangeText={onPromptChange}
+          placeholder="Ask anything"
+          placeholderTextColor="#999"
+          multiline
+        />
+        <View style={styles.composerFooter}>
+          {(temperatureValue === null || maxTokensValue === null) && (
+            <Text style={[styles.error, styles.flex]}>Check Temperature / Max tokens in Settings</Text>
+          )}
+          <Pressable
+            onPress={() => (run.running ? stop() : void onRun())}
+            disabled={sendDisabled}
+            style={[styles.sendButton, sendDisabled && styles.buttonDisabled]}
+          >
+            <Text style={styles.buttonText}>{run.running ? 'Stop' : 'Run'}</Text>
+          </Pressable>
+        </View>
+      </View>
 
       <ApprovalModal
         request={approvalPrompt.current}
         onApprove={approvalPrompt.approve}
         onReject={approvalPrompt.reject}
       />
-    </>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -386,23 +496,31 @@ function ScenarioExpectation({ scenario }: { scenario: Scenario }) {
 }
 
 function CallLog({ calls }: { calls: CallRecord[] }) {
+  const [open, setOpen] = useState(false);
+  const invalid = calls.filter((call) => call.invalid).length;
   return (
     <View style={styles.card}>
-      <Text style={styles.label}>Tool calls ({calls.length})</Text>
-      {calls.length === 0 && <Text style={styles.muted}>The model made no tool call.</Text>}
-      {calls.map((call, index) => (
-        <View key={call.id} style={styles.callRow}>
-          <Text style={[styles.mono, call.invalid && styles.error]}>
-            #{index + 1} {call.name}({json(call.input)}){call.invalid ? '  [INVALID]' : ''}
-          </Text>
-          {call.error !== undefined && (
-            <Text style={styles.error}>{compact(call.error, 300)}</Text>
-          )}
-          {call.output !== undefined && (
-            <Text style={styles.mono}>-&gt; {json(call.output)}</Text>
-          )}
-        </View>
-      ))}
+      <Pressable onPress={() => setOpen((value) => !value)}>
+        <Text style={styles.label}>
+          {open ? '▾' : '▸'} Tool calls ({calls.length})
+          {invalid > 0 ? ` - ${invalid} invalid` : ''}
+        </Text>
+      </Pressable>
+      {open && calls.length === 0 && <Text style={styles.muted}>The model made no tool call.</Text>}
+      {open &&
+        calls.map((call, index) => (
+          <View key={call.id} style={styles.callRow}>
+            <Text style={[styles.mono, call.invalid && styles.error]}>
+              #{index + 1} {call.name}({json(call.input)}){call.invalid ? '  [INVALID]' : ''}
+            </Text>
+            {call.error !== undefined && (
+              <Text style={styles.error}>{compact(call.error, 300)}</Text>
+            )}
+            {call.output !== undefined && (
+              <Text style={styles.mono}>-&gt; {json(call.output)}</Text>
+            )}
+          </View>
+        ))}
     </View>
   );
 }
@@ -424,7 +542,50 @@ function VerdictView({ scenario, verdict }: { scenario: Scenario; verdict: Verdi
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, paddingTop: 64, gap: 8 },
+  screen: { flex: 1, backgroundColor: '#fff' },
+  header: { paddingHorizontal: 16, paddingTop: 56, paddingBottom: 8, gap: 6 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  // Chat stays mounted behind the settings tab, so scroll position and folds survive.
+  hidden: { display: 'none' },
+  tabs: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '#eee' },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderBottomWidth: 2, borderColor: 'transparent' },
+  tabActive: { borderColor: '#2563eb' },
+  tabText: { fontSize: 15, color: '#666' },
+  tabTextActive: { color: '#2563eb', fontWeight: '700' },
+  settingsContent: { padding: 16, gap: 8 },
+  transcript: { padding: 16, gap: 8, flexGrow: 1 },
+  userBubble: {
+    alignSelf: 'flex-end',
+    maxWidth: '85%',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  userText: { fontSize: 15 },
+  composer: {
+    marginHorizontal: 12,
+    marginBottom: 28,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 24,
+    padding: 12,
+    backgroundColor: '#fff',
+  },
+  composerKeyboard: { marginBottom: 8 },
+  composerInput: {
+    minHeight: 72,
+    maxHeight: 180,
+    fontSize: 16,
+    textAlignVertical: 'top',
+  },
+  composerFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 },
+  sendButton: {
+    backgroundColor: '#2563eb',
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    borderRadius: 18,
+  },
   title: { fontSize: 20, fontWeight: '700' },
   card: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, gap: 6 },
   row: { flexDirection: 'row', gap: 8 },
