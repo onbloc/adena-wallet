@@ -52,7 +52,15 @@ export const SCENARIOS: Scenario[] = [
     title: 'Balance lookup',
     prompt: 'Tell me my GNOT balance',
     calls: [{ tool: ToolName.GetBalance }],
+    forbid: [ToolName.GetAddressBalance],
     answerMentions: [startGnot],
+    approvalRequests: 0,
+  },
+  {
+    id: 'address-balance',
+    title: 'Balance of an address',
+    prompt: `What is the GNOT balance of ${recipient}?`,
+    calls: [{ tool: ToolName.GetAddressBalance, args: { address: recipient } }],
     approvalRequests: 0,
   },
   {
@@ -62,6 +70,7 @@ export const SCENARIOS: Scenario[] = [
     calls: [
       { tool: ToolName.Transfer, args: { to: recipient, amount: '0.5', token: gnot } },
     ],
+    forbid: [ToolName.GetAddressBalance],
     approvalRequests: 1,
     balances: [
       { address: ACTIVE_ADDRESS, token: gnot, amount: gnotAfterSending('0.5') },
@@ -83,6 +92,7 @@ export const SCENARIOS: Scenario[] = [
       { tool: ToolName.GetBalance },
       { tool: ToolName.Transfer, args: { to: recipient, amount: halfGnot, token: gnot } },
     ],
+    forbid: [ToolName.GetAddressBalance],
     approvalRequests: 1,
     balances: [
       { address: ACTIVE_ADDRESS, token: gnot, amount: gnotAfterSending(halfGnot) },

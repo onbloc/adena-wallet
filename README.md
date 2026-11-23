@@ -24,20 +24,22 @@ npm run android   # expo run:android (generates android/ and builds)
 First launch: tap **Load**. The model (~1.4 GB) is downloaded from Hugging Face once,
 then loaded from local storage (works offline afterwards).
 
-### Install a Release build on a phone
+### Release builds for a phone
 
-Connect the phone (iOS: unlocked, USB, trusted, Developer Mode on, a Team set in Xcode
-under Signing & Capabilities; Android: USB debugging on), then:
+Connect the phone to install (iOS: unlocked, USB, trusted, Developer Mode on, a Team set in
+Xcode under Signing & Capabilities; Android: USB debugging on), then:
 
 ```bash
-make deploy ios       # Release build, signs missing frameworks, installs and launches
-make deploy android   # Release build via expo run:android, installed through adb
+make build ios        # Release build only; prints the .app path (no phone needed)
+make build android    # Release build only; prints the .apk path
+make deploy ios       # build, sign missing frameworks, install and launch
+make deploy android   # build via expo run:android and install through adb
 DEVICE=<id> make deploy ios   # pick a phone when several are connected (UDID / adb serial)
 ```
 
-A Release build carries its JS, so any code change needs a new `make deploy`. A free Apple
-account signs for 7 days; after that, deploy again. On the first iOS install, trust the
-developer in Settings > General > VPN & Device Management.
+A Release build carries its JS, so any code change needs a new `make build` / `make deploy`.
+A free Apple account signs for 7 days; after that, deploy again. On the first iOS install,
+trust the developer in Settings > General > VPN & Device Management.
 
 ## Structure
 
@@ -72,13 +74,14 @@ model --tool call--> adapter (src/wallet/adapter)      LLM layer
                        sign(message) -> asks the user (popup) -> signed | rejected
 ```
 
-- The model sees `get_balance({address?})`, `transfer({to,amount,token})`, `sign_message({message})`.
-  `get_balance` without an address returns the user's own (fixed) account; with an address it
-  returns that address's balance from the mock wallet, so tokens sent to an address show up
-  when it is looked up later. A blank `address` counts as omitted. No account or `from` is ever
-  a model argument: the harness injects the user's own account. (An optional `address` made
-  the 2B model pass the recipient's address or `""` for its own balance; re-measure with
-  `npm run eval` after prompt or tool changes.)
+- The model sees `get_balance()`, `get_address_balance({address})`, `transfer({to,amount,token})`,
+  `sign_message({message})`. `get_balance` is the user's own (fixed) account;
+  `get_address_balance` reads any other address from the mock wallet, so tokens sent to an
+  address show up when it is looked up later. No account or `from` is ever a model argument:
+  the harness injects the user's own account. (An optional `address` on `get_balance` made the
+  2B model invent endless addresses until the context was full, or look up a transfer's
+  recipient instead of sending, so the two lookups are separate tools. Re-measure with
+  `make eval` after prompt or tool changes.)
 - After `transfer`, **the harness** (not the model) passes the wallet-created message to
   `sdk.sign`. The popup shows exactly that message. Funds move only when the user approves
   (signed); on reject nothing moves. The model gets a small `{status: signed | rejected}`.
@@ -185,5 +188,6 @@ make test   # typecheck + lint + jest (mock model, no LLM)
 make eval   # real-model scenarios on this Mac; starts llama-server if none is running,
             # stops it afterwards. e.g. make eval RUNS=20 ARGS="--scenario transfer --verbose"
 make chat   # talk to the model in your own words; PROMPT="..." asks once, ARGS="--plain" = bare model
+make build  # Release build only: make build ios|android
 make deploy # Release build + install on a connected phone: make deploy ios|android
 ```

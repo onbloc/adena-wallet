@@ -43,11 +43,22 @@ describe('get_balance', () => {
     });
   });
 
+  it('takes no model arguments, so the model cannot redirect it to another address', () => {
+    const { tools } = setup();
+    const schema = tools[ToolName.GetBalance].inputSchema as unknown as {
+      parse(value: unknown): object;
+    };
+
+    expect(schema.parse({ address: other })).toEqual({});
+  });
+});
+
+describe('get_address_balance', () => {
   it('looks up the address the model names, including what was sent to it', async () => {
     const { tools } = setup();
     await run(tools[ToolName.Transfer], { to, amount: '0.5', token: gnot });
 
-    expect(await run(tools[ToolName.GetBalance], { address: to })).toEqual({
+    expect(await run(tools[ToolName.GetAddressBalance], { address: to })).toEqual({
       status: WalletStatus.Ok,
       address: to,
       balances: { GNOT: '0.5', GNS: '0' },
@@ -58,24 +69,18 @@ describe('get_balance', () => {
     });
   });
 
-  it.each([undefined, '', '   '])('treats a blank address (%p) as the user\'s own', async (address) => {
-    const { tools } = setup();
+  it.each(['', to.slice(0, -1), to + 'q'])(
+    'turns the wrong-length address %p into an error result with the length message',
+    async (address) => {
+      const { tools } = setup();
 
-    expect(await run(tools[ToolName.GetBalance], { address })).toMatchObject({
-      status: WalletStatus.Ok,
-      address: ACTIVE_ADDRESS,
-    });
-  });
-
-  it('turns a wrong-length address into an error result with the length message', async () => {
-    const { tools } = setup();
-
-    expect(await run(tools[ToolName.GetBalance], { address: to.slice(0, -1) })).toEqual({
-      status: WalletStatus.Error,
-      code: WalletErrorCode.InvalidAddress,
-      message: INVALID_ADDRESS_LENGTH_MESSAGE,
-    });
-  });
+      expect(await run(tools[ToolName.GetAddressBalance], { address })).toEqual({
+        status: WalletStatus.Error,
+        code: WalletErrorCode.InvalidAddress,
+        message: INVALID_ADDRESS_LENGTH_MESSAGE,
+      });
+    }
+  );
 });
 
 describe('transfer', () => {

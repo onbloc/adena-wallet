@@ -4,6 +4,7 @@
 /** Tools the model may call. Values are the names the model sees. */
 export const ToolName = {
   GetBalance: 'get_balance',
+  GetAddressBalance: 'get_address_balance',
   Transfer: 'transfer',
   SignMessage: 'sign_message',
 } as const;

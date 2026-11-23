@@ -37,22 +37,29 @@ const afterSigning = (result: SignResult, signed: Omit<ToolResult, 'status'> = {
 /** Tools bound to one wallet session. */
 export function createWalletTools({ sdk, activeAddress }: WalletToolsContext) {
   return {
-    // `address` is optional: leaving it out means the user's own account.
+    // No arguments: the model only sees the user's own balances here. An optional address
+    // on this tool made the 2B model invent endless addresses (filling the context) or look
+    // up a transfer's recipient instead of sending, so other addresses have their own tool.
     [ToolName.GetBalance]: tool({
+      description: "Get the token balances of the user's own account.",
+      inputSchema: z.object({}),
+      execute: () =>
+        refusalsAsResults(async () => ({
+          status: WalletStatus.Ok,
+          address: activeAddress,
+          balances: await sdk.getBalance(activeAddress),
+        })),
+    }),
+    [ToolName.GetAddressBalance]: tool({
       description:
-        "Get token balances. Without an address: the user's own account. With an address: that address.",
-      inputSchema: z.object({
-        address: z
-          .string()
-          .optional()
-          .describe("Address starting with g1. Leave out for the user's own balance"),
-      }),
+        "Get the token balances of another address, only when the user asks about that address. Never use it for the user's own balance.",
+      inputSchema: z.object({ address: z.string().describe('Address starting with g1') }),
       execute: ({ address }) =>
-        refusalsAsResults(async () => {
-          // Small models fill optional fields with "": treat a blank address as the user's own.
-          const target = address?.trim() || activeAddress;
-          return { status: WalletStatus.Ok, address: target, balances: await sdk.getBalance(target) };
-        }),
+        refusalsAsResults(async () => ({
+          status: WalletStatus.Ok,
+          address,
+          balances: await sdk.getBalance(address),
+        })),
     }),
     [ToolName.Transfer]: tool({
       description:

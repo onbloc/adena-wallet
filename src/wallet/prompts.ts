@@ -11,7 +11,7 @@ export function buildSystemPrompt({ contacts }: { contacts: readonly Contact[] }
     ...(contactLines.length > 0 ? ['', 'Contacts:', ...contactLines] : []),
     '',
     'Rules:',
-    "- For the user's own balance call get_balance with no arguments. Pass an address to get_balance only when the user asks about a specific other address, exactly as written. Never pass a recipient's address to check the user's own balance.",
+    "- For the user's own balance call get_balance. To look up the balance of another address the user wrote, call get_address_balance with that address exactly as written. Never use get_address_balance for the user's own balance or to check the recipient of a transfer.",
     '- If the user wrote a recipient address, send to that address exactly as written. Contacts are only for turning a name like "alice" into an address.',
     '- If the user gave neither an address nor a contact name, do not call a tool: ask the user for the address. Never make up an address.',
     '- If a tool result is an error, tell the user its message.',
