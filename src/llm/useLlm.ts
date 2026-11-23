@@ -7,6 +7,7 @@ import {
   type GenerateSettings,
   type Metrics,
 } from './generate';
+import { withCompletedToolCalls } from './onblocRun';
 import { llamaRuntime } from './runtime';
 
 export type RunState = {
@@ -58,7 +59,8 @@ export function useLlm() {
     setRun({ ...INITIAL_RUN, running: true });
 
     try {
-      for await (const event of generate(model, {
+      const generationModel = options.onbloc ? withCompletedToolCalls(model) : model;
+      for await (const event of generate(generationModel, {
         ...options,
         signal: controller.signal,
       })) {

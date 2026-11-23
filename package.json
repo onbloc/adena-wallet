@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@react-native-ai/llama": "^0.13.0",
     "@stardazed/streams-text-encoding": "^1.0.2",
     "@ungap/structured-clone": "^1.4.0",

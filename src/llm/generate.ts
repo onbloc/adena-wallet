@@ -5,6 +5,7 @@ import {
   type ModelMessage,
   type ToolSet,
 } from 'ai';
+import { startOnblocRun, type OnblocRun } from './onblocRun';
 
 /** What to answer: one prompt, or a whole conversation. */
 type GenerateInput =
@@ -24,6 +25,8 @@ export type GenerateSettings = GenerateInput & {
   tools?: ToolSet;
   /** Max model calls when tools are used (SDK default: 1). */
   maxSteps?: number;
+  /** Read-only mainnet mode; mutually exclusive with the playground's mock tools. */
+  onbloc?: OnblocRun;
 };
 
 export type GenerateOptions = GenerateSettings & { signal?: AbortSignal };
@@ -89,7 +92,7 @@ const errorMessage = (error: unknown) =>
  */
 export async function* generate(
   model: LanguageModel,
-  { signal, maxSteps, ...options }: GenerateOptions,
+  { signal, maxSteps, onbloc, ...options }: GenerateOptions,
   now: () => number = () => Date.now()
 ): AsyncGenerator<GenerateEvent> {
   const startedAt = now();
@@ -99,24 +102,35 @@ export async function* generate(
   let aborted = false;
   const warnings: string[] = [];
   let responseMessages: ModelMessage[] = [];
+  let managed: Awaited<ReturnType<typeof startOnblocRun>> | undefined;
+  let onblocText = '';
+  let readSucceeded = false;
+  let readFailed = false;
 
   try {
+    if (onbloc) {
+      if (options.tools || maxSteps !== undefined) throw new TypeError('Cannot combine Onbloc and mock wallet tools.');
+      managed = await startOnblocRun(onbloc, options.maxOutputTokens ?? 512, signal);
+    }
     const result = streamText({
       model,
       ...options,
       ...(maxSteps !== undefined && { stopWhen: isStepCount(maxSteps) }),
       abortSignal: signal,
+      ...managed?.options,
       onError: () => {}, // errors are rethrown from the stream below
     });
     // Part types in the cases below are the AI SDK's; yielded events use GenerateEventType.
     for await (const part of result.fullStream) {
       switch (part.type) {
         case 'start-step':
+          if (managed) onblocText = '';
           warnings.push(...part.warnings.map(describeWarning));
           break;
         case 'text-delta':
           firstDeltaAt ??= now();
-          yield { type: GenerateEventType.Text, delta: part.text };
+          if (managed) onblocText += part.text;
+          else yield { type: GenerateEventType.Text, delta: part.text };
           break;
         case 'reasoning-delta':
           firstDeltaAt ??= now();
@@ -124,6 +138,7 @@ export async function* generate(
           break;
         case 'tool-call':
           firstDeltaAt ??= now();
+          if (part.invalid) readFailed = true;
           yield {
             type: GenerateEventType.ToolCall,
             id: part.toolCallId,
@@ -134,6 +149,9 @@ export async function* generate(
           };
           break;
         case 'tool-result':
+          if (managed && part.output && typeof part.output === 'object' && 'kind' in part.output && part.output.kind === 'result') {
+            readSucceeded = true;
+          } else if (managed) readFailed = true;
           yield {
             type: GenerateEventType.ToolResult,
             id: part.toolCallId,
@@ -142,6 +160,7 @@ export async function* generate(
           };
           break;
         case 'tool-error':
+          readFailed = true;
           yield {
             type: GenerateEventType.ToolError,
             id: part.toolCallId,
@@ -160,10 +179,12 @@ export async function* generate(
           throw part.error;
       }
     }
-    if (!aborted) responseMessages = await result.responseMessages;
+    if (!aborted && (!managed || (readSucceeded && !readFailed))) responseMessages = await result.responseMessages;
   } catch (error) {
-    if (!signal?.aborted) throw error;
+    if (!signal?.aborted && !managed?.options.abortSignal.aborted) throw error;
     aborted = true;
+  } finally {
+    managed?.close();
   }
 
   const endedAt = now();
@@ -172,6 +193,13 @@ export async function* generate(
     outputTokens !== undefined && outputTokens > 1 && decodeMs > 0
       ? ((outputTokens - 1) * 1000) / decodeMs
       : undefined;
+
+  if (onbloc && !aborted) {
+    const answer = !readSucceeded ? 'No Onbloc lookup returned verified data.'
+      : readFailed ? 'Some Onbloc lookups failed. Review the individual tool results.'
+        : onblocText || 'Onbloc returned data; no model summary was produced.';
+    yield { type: GenerateEventType.Text, delta: answer };
+  }
 
   yield {
     type: GenerateEventType.Done,

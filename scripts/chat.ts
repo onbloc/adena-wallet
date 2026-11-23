@@ -13,6 +13,8 @@ import type { LanguageModel, ModelMessage } from 'ai';
 
 import { DEFAULT_GENERATE_SETTINGS, MAX_STEPS } from '../src/llm/config';
 import { generate, GenerateEventType } from '../src/llm/generate';
+import { gnoPublicAddress } from '../src/harness/gno';
+import { onblocInstructions, type OnblocRun } from '../src/llm/onblocRun';
 import { describeRequest } from '../src/ui/describeRequest';
 import { createWalletTools } from '../src/wallet/adapter/tools';
 import { ApprovalPolicy } from '../src/wallet/constants';
@@ -37,6 +39,7 @@ const USAGE = `Usage: bun scripts/chat.ts [options]
   --max-tokens N     per model call (default ${DEFAULT_GENERATE_SETTINGS.maxOutputTokens})
   --max-steps N      model calls per question with tools (default ${MAX_STEPS})
   --system-file P    use this file as the system prompt
+  --onbloc           read-only Onbloc tools (EXPO_PUBLIC_ONBLOC_MCP_URL and EXPO_PUBLIC_ONBLOC_ACCOUNT)
 
 In the chat: /reset (forget the conversation, reset the wallet)  /balances  /help  /exit`;
 
@@ -50,22 +53,36 @@ type Options = {
   maxTokens: number;
   maxSteps: number;
   system?: string;
+  onbloc?: OnblocRun;
 };
 
 function parseOptions(argv: string[]): Options {
   const { values, flags } = parseArgs(argv, {
     values: ['prompt', 'approval', 'url', 'model', 'temperature', 'max-tokens', 'max-steps', 'system-file'],
-    flags: ['plain'],
+    flags: ['plain', 'onbloc'],
   });
   const approval = values.get('approval') ?? ASK;
   if (approval !== ASK && !Object.values(ApprovalPolicy).includes(approval as ApprovalPolicy)) {
     throw new Error(`--approval must be one of: ${[ASK, ...Object.values(ApprovalPolicy)].join(', ')}`);
   }
   const systemFile = values.get('system-file');
+  let onbloc: OnblocRun | undefined;
+  if (flags.has('onbloc')) {
+    if (flags.has('plain') || values.has('approval') || values.has('max-steps')) {
+      throw new Error('--onbloc cannot be combined with --plain, --approval or --max-steps.');
+    }
+    const endpoint = process.env.EXPO_PUBLIC_ONBLOC_MCP_URL?.trim();
+    const account = process.env.EXPO_PUBLIC_ONBLOC_ACCOUNT?.trim();
+    if (!endpoint || !gnoPublicAddress.safeParse(account).success) {
+      throw new Error('Set EXPO_PUBLIC_ONBLOC_MCP_URL and a valid public EXPO_PUBLIC_ONBLOC_ACCOUNT.');
+    }
+    onbloc = { endpoint, account: gnoPublicAddress.parse(account) };
+  }
 
   return {
     prompt: values.get('prompt'),
     plain: flags.has('plain'),
+    onbloc,
     approval: approval as Options['approval'],
     url: values.get('url') ?? DEFAULT_SERVER_URL,
     model: values.get('model') ?? DEFAULT_MODEL_NAME,
@@ -92,7 +109,7 @@ function printBalances(balances: Record<string, Balances>) {
 }
 
 /** A wallet session: the mock wallet and the conversation so far. */
-type Session = { sdk: MockWalletSdk; history: ModelMessage[] };
+type Session = { sdk?: MockWalletSdk; history: ModelMessage[] };
 
 async function main() {
   const options = parseOptions(process.argv.slice(2));
@@ -147,17 +164,22 @@ async function main() {
         }
       : autoApproval(options.approval === ASK ? ApprovalPolicy.Reject : options.approval);
 
-  const newSession = (): Session => ({ sdk: new MockWalletSdk({ requestApproval }), history: [] });
+  const newSession = (): Session => ({
+    sdk: options.plain || options.onbloc ? undefined : new MockWalletSdk({ requestApproval }),
+    history: [],
+  });
   let session = newSession();
 
-  const system = options.system ?? (options.plain ? undefined : buildSystemPrompt({ contacts: FIXTURE.contacts }));
+  const system = options.system ?? (options.onbloc ? onblocInstructions
+    : options.plain ? undefined : buildSystemPrompt({ contacts: FIXTURE.contacts }));
   let turnAbort: AbortController | null = null;
   rl.on('SIGINT', () => (turnAbort ? turnAbort.abort() : rl.close()));
 
   /** One question and the model's whole answer, tools included. */
   async function ask1(text: string) {
     const messages: ModelMessage[] = [...session.history, { role: 'user', content: text }];
-    const before = options.plain ? null : await snapshotBalances(session.sdk);
+    const sdk = session.sdk;
+    const before = sdk ? await snapshotBalances(sdk) : null;
     const controller = new AbortController();
     turnAbort = controller;
     let lineOpen = false;
@@ -172,8 +194,9 @@ async function main() {
         system,
         temperature: options.temperature,
         maxOutputTokens: options.maxTokens,
-        tools: options.plain ? undefined : createWalletTools({ sdk: session.sdk, activeAddress: ACTIVE_ADDRESS }),
-        maxSteps: options.plain ? undefined : options.maxSteps,
+        tools: sdk ? createWalletTools({ sdk, activeAddress: ACTIVE_ADDRESS }) : undefined,
+        maxSteps: sdk ? options.maxSteps : undefined,
+        onbloc: options.onbloc,
         signal: controller.signal,
       })) {
         switch (event.type) {
@@ -202,7 +225,7 @@ async function main() {
             console.log(dim(`  (${event.aborted ? 'stopped, ' : ''}${stats.join(', ')})`));
             for (const warning of event.warnings) console.log(dim(`  warning: ${warning}`));
             // A stopped turn is not remembered.
-            if (!event.aborted) session.history = [...messages, ...event.messages];
+            if (!event.aborted && event.messages.length) session.history = [...messages, ...event.messages];
           }
         }
       }
@@ -210,12 +233,13 @@ async function main() {
       endLine();
       console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
       console.error('(this question was dropped; /reset starts over if the conversation got too long)');
+      if (options.prompt !== undefined) process.exitCode = 1;
     } finally {
       turnAbort = null;
     }
 
-    if (before) {
-      const after = await snapshotBalances(session.sdk);
+    if (sdk && before) {
+      const after = await snapshotBalances(sdk);
       if (json(after) !== json(before)) {
         console.log('  wallet balances changed:');
         printBalances(after);
@@ -223,7 +247,8 @@ async function main() {
     }
   }
 
-  const mode = options.plain ? 'bare model' : 'wallet assistant (mock wallet, tools on)';
+  const mode = options.onbloc ? 'Onbloc indexed reads (no mock wallet)'
+    : options.plain ? 'bare model' : 'wallet assistant (mock wallet, tools on)';
   console.error(`model: ${options.model} @ ${options.url} - ${mode}`);
 
   if (options.prompt !== undefined) {
@@ -246,7 +271,8 @@ async function main() {
       session = newSession();
       console.log('  conversation and wallet reset');
     } else if (text === '/balances') {
-      printBalances(await snapshotBalances(session.sdk));
+      if (session.sdk) printBalances(await snapshotBalances(session.sdk));
+      else console.log('  No mock wallet in this mode. Ask a balance question to use Onbloc.');
     } else if (text.startsWith('/')) {
       console.log(`  unknown command: ${text} (try /help)`);
     } else {
@@ -258,7 +284,7 @@ async function main() {
 
 main().then(
   // Exit explicitly: after Ctrl-C the aborted request keeps the process alive.
-  () => process.exit(0),
+  () => process.exit(process.exitCode ?? 0),
   (error) => {
     console.error(error instanceof Error ? error.message : error);
     console.error(`\n${USAGE}`);

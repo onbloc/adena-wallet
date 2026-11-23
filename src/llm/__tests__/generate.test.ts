@@ -12,6 +12,7 @@ import { autoApproval } from '../../wallet/sdk/approval';
 import { ACTIVE_ADDRESS, FIXTURE } from '../../wallet/sdk/fixture';
 import { MockWalletSdk } from '../../wallet/sdk/mockWalletSdk';
 import { generate, GenerateEventType, type GenerateEvent } from '../generate';
+import { withCompletedToolCalls } from '../onblocRun';
 
 type Part = Record<string, unknown>;
 
@@ -265,6 +266,54 @@ describe('generate with tools', () => {
         }) as never,
       })),
     });
+
+  it('discovers Onbloc tools and injects the configured address before executing', async () => {
+    const account = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
+    const name = 'get_native_balance';
+    const calls: unknown[] = [];
+    const fetcher: typeof fetch = async (_url, init) => {
+      if (init?.method !== 'POST') return new Response(null, { status: 405 });
+      const request = JSON.parse(String(init.body));
+      if (request.id === undefined) return new Response(null, { status: 202 });
+      let result;
+      switch (request.method) {
+        case 'initialize':
+          result = { protocolVersion: '2025-11-25', capabilities: { tools: {} }, serverInfo: { name: 'onbloc', version: '1' } };
+          break;
+        case 'tools/list':
+          result = { tools: [{ name, description: 'Get GNOT', inputSchema: { type: 'object', properties: { address: { type: 'string' } },
+            required: ['address'], additionalProperties: false }, annotations: { readOnlyHint: true } }] };
+          break;
+        case 'tools/call':
+          calls.push(request.params);
+          result = { content: [], structuredContent: { address: account, denom: 'ugnot', balance: '42000000' } };
+          break;
+        default:
+          throw new Error(`Unexpected method ${request.method}`);
+      }
+      return new Response(JSON.stringify({ jsonrpc: '2.0', id: request.id, result }), {
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+    const model = new MockLanguageModelV4({
+      doStream: async () => { throw new Error('Native stream would emit a partial { argument'); },
+      doGenerate: [
+        { content: [{ type: 'tool-call', toolCallId: 'native', toolName: name, input: '{}' }],
+          finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage: usage(5), warnings: [] },
+        { content: [{ type: 'text', text: '42 GNOT' }],
+          finishReason: { unified: 'stop', raw: 'stop' }, usage: usage(3), warnings: [] },
+      ],
+    });
+    const events = await collect(generate(withCompletedToolCalls(model), { prompt: 'My balance', onbloc: {
+      endpoint: 'https://example.test/mcp', account, fetcher,
+    } }));
+    expect(calls).toEqual([{ name, arguments: { address: account } }]);
+    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: '42 GNOT' });
+    expect(JSON.stringify(model.doGenerateCalls[1].prompt)).toContain('42000000');
+    expect(events.filter(event => event.type === GenerateEventType.ToolCall)).toEqual([
+      expect.objectContaining({ name, input: {}, invalid: false }),
+    ]);
+  });
 
   const newSdk = (policy: ApprovalPolicy = ApprovalPolicy.Approve) =>
     new MockWalletSdk({ requestApproval: autoApproval(policy) });
