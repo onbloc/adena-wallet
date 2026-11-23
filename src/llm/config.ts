@@ -1,4 +1,5 @@
 import type { ContextParams } from '@react-native-ai/llama';
+import type { JsonSchema } from './generate';
 
 // Format: owner/repo/filename.gguf (Hugging Face).
 export const DEFAULT_MODEL_ID =
@@ -19,3 +20,19 @@ export const MAX_OUTPUT_TOKENS_RANGE = {
   min: 1,
   max: (DEFAULT_CONTEXT_PARAMS.n_ctx ?? 2048) - 1,
 } as const;
+
+// 'text': free-form streaming text. 'structured': JSON constrained by
+// STRUCTURED_SCHEMA via grammar (not streamed, thinking is disabled).
+export type GenerationMode = 'text' | 'structured';
+export const GENERATION_MODE: GenerationMode = 'text';
+
+export const STRUCTURED_SCHEMA: JsonSchema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    age: { type: 'integer' },
+    hobbies: { type: 'array', items: { type: 'string' } },
+  },
+  required: ['name', 'age', 'hobbies'],
+  additionalProperties: false,
+};

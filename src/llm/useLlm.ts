@@ -9,6 +9,8 @@ export type RunState = {
   reasoning: string;
   metrics: Metrics | null;
   aborted: boolean;
+  finishReason?: string;
+  warnings: string[];
   error: string | null;
 };
 
@@ -18,6 +20,7 @@ const INITIAL_RUN: RunState = {
   reasoning: '',
   metrics: null,
   aborted: false,
+  warnings: [],
   error: null,
 };
 
@@ -62,6 +65,8 @@ export function useLlm() {
             ...prev,
             metrics: event.metrics,
             aborted: event.aborted,
+            finishReason: event.finishReason,
+            warnings: event.warnings,
           }));
         }
       }

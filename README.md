@@ -26,18 +26,33 @@ then loaded from local storage (works offline afterwards).
 
 ```
 polyfills.js              Web APIs the AI SDK needs (imported first in index.ts)
-src/llm/config.ts         Model ID, context size, default generation settings
+src/llm/config.ts         Model ID, context size, generation mode + structured schema, defaults
 src/llm/runtime.ts        LlamaRuntime: download -> load -> unload/remove, status + load time
-src/llm/generate.ts       Streaming generation: text/reasoning events, TTFT, tok/s
+src/llm/generate.ts       Generation (text / structured): events, TTFT, tok/s, warnings
 src/llm/useLlm.ts         React hook over runtime + generation
 src/ui/PlaygroundScreen   Model controls, prompt, options, output, metrics
 ```
 
+## Generation modes
+
+Set `GENERATION_MODE` in `src/llm/config.ts` (hot reloads in a dev build):
+
+| | `'text'` (default) | `'structured'` |
+|---|---|---|
+| Output | free-form text, streamed | JSON constrained by `STRUCTURED_SCHEMA` (grammar) |
+| Thinking | switch | always off (grammar + thinking crashes llama.rn natively) |
+| TTFT / tok/s | measured | unavailable: the provider emits the whole JSON at once |
+
+Structured output is guaranteed to match the schema's *shape*, not to have correct *values*.
+The UI shows whether the output parses as JSON and pretty-prints it. Edit `STRUCTURED_SCHEMA`
+to test other shapes; schema keywords llama.cpp cannot convert to a grammar are unverified.
+
 ## Metrics
 
-- **TTFT**: start -> first text or reasoning delta.
-- **tok/s**: decode speed, `(outputTokens - 1) / (end - first delta)`. Shown as `-` when the
-  provider reports no usage.
+- **TTFT**: start -> first text or reasoning delta (text mode only).
+- **tok/s**: decode speed, `(outputTokens - 1) / (end - first delta)` (text mode only). Shown
+  as `-` when the provider reports no usage.
+- Provider warnings (e.g. unsupported options) are shown under the output.
 - Memory / thermal are not measured in-app; use Xcode Instruments or Android Studio Profiler.
 
 ## Notes

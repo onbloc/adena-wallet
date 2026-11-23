@@ -12,11 +12,16 @@ import {
 import {
   DEFAULT_GENERATE_SETTINGS,
   DEFAULT_MODEL_ID,
+  GENERATION_MODE,
   MAX_OUTPUT_TOKENS_RANGE,
+  STRUCTURED_SCHEMA,
   TEMPERATURE_RANGE,
 } from '../llm/config';
+import { tryParseJson } from '../llm/generate';
 import type { RuntimeStatus } from '../llm/runtime';
 import { useLlm } from '../llm/useLlm';
+
+const structured = GENERATION_MODE === 'structured';
 
 /** Parses user input; null when empty, non-numeric, non-integer (if required) or out of range. */
 function parseBounded(
@@ -72,6 +77,8 @@ export default function PlaygroundScreen() {
     prompt.trim() !== '' &&
     temperatureValue !== null &&
     maxTokensValue !== null;
+  const parsedOutput =
+    structured && !run.running && run.text !== '' ? tryParseJson(run.text) : null;
 
   const onRun = () => {
     if (temperatureValue === null || maxTokensValue === null) return;
@@ -81,12 +88,15 @@ export default function PlaygroundScreen() {
       temperature: temperatureValue,
       maxOutputTokens: maxTokensValue,
       reasoning: thinking ? 'provider-default' : 'none',
+      schema: structured ? STRUCTURED_SCHEMA : undefined,
     });
   };
 
   return (
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>On-device LLM Playground</Text>
+      <Text style={styles.title}>
+        On-device LLM Playground ({GENERATION_MODE})
+      </Text>
 
       <View style={styles.card}>
         <Text style={styles.mono}>{DEFAULT_MODEL_ID}</Text>
@@ -143,8 +153,10 @@ export default function PlaygroundScreen() {
       </View>
 
       <View style={styles.rowCenter}>
-        <Switch value={thinking} onValueChange={setThinking} />
-        <Text style={styles.switchLabel}>Thinking (reasoning)</Text>
+        <Switch value={thinking && !structured} onValueChange={setThinking} disabled={structured} />
+        <Text style={styles.switchLabel}>
+          Thinking (reasoning){structured ? ' - disabled in structured mode' : ''}
+        </Text>
       </View>
 
       <View style={styles.row}>
@@ -153,12 +165,22 @@ export default function PlaygroundScreen() {
       </View>
 
       {run.error !== null && <Text style={styles.error}>{run.error}</Text>}
+      {run.warnings.map((warning, index) => (
+        <Text key={`${index}:${warning}`} style={styles.warning}>
+          Warning: {warning}
+        </Text>
+      ))}
 
       <Text style={styles.label}>
         Output{run.aborted ? ' (stopped)' : ''}
       </Text>
+      {parsedOutput && (
+        <Text style={parsedOutput.valid ? styles.ok : styles.error}>
+          {parsedOutput.valid ? 'Valid JSON' : `Invalid JSON: ${parsedOutput.error}`}
+        </Text>
+      )}
       <Text style={styles.output} selectable>
-        {run.text}
+        {parsedOutput?.valid ? JSON.stringify(parsedOutput.value, null, 2) : run.text}
       </Text>
 
       {run.reasoning !== '' && (
@@ -182,6 +204,11 @@ export default function PlaygroundScreen() {
           <Text style={styles.mono}>Total: {fmt(run.metrics.totalMs, 'ms')}</Text>
           <Text style={styles.mono}>Output tokens: {run.metrics.outputTokens ?? '-'}</Text>
           <Text style={styles.mono}>Speed: {fmt(run.metrics.tokensPerSec, 'tok/s', 1)}</Text>
+          {structured && (
+            <Text style={styles.muted}>
+              Structured output is not streamed: TTFT and speed are unavailable.
+            </Text>
+          )}
         </View>
       )}
     </ScrollView>
@@ -242,4 +269,6 @@ const styles = StyleSheet.create({
   muted: { color: '#666' },
   link: { color: '#2563eb', fontSize: 13 },
   error: { color: '#d33' },
+  warning: { color: '#b45309' },
+  ok: { color: '#15803d' },
 });

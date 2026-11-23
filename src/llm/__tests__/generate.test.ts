@@ -1,6 +1,11 @@
 import { MockLanguageModelV4 } from 'ai/test';
 
-import { generate, type GenerateEvent } from '../generate';
+import {
+  generate,
+  tryParseJson,
+  type GenerateEvent,
+  type JsonSchema,
+} from '../generate';
 
 type Part = Record<string, unknown>;
 
@@ -32,12 +37,12 @@ const reasoning = (delta: string): Part[] => [
   { type: 'reasoning-end', id: 'r' },
 ];
 
-const modelFrom = (parts: Part[]) =>
+const modelFrom = (parts: Part[], warnings: Part[] = []) =>
   new MockLanguageModelV4({
     doStream: async () => ({
       stream: new ReadableStream({
         start(controller) {
-          controller.enqueue({ type: 'stream-start', warnings: [] });
+          controller.enqueue({ type: 'stream-start', warnings });
           parts.forEach((part) => controller.enqueue(part));
           controller.close();
         },
@@ -71,6 +76,8 @@ describe('generate', () => {
       {
         type: 'done',
         aborted: false,
+        finishReason: 'stop',
+        warnings: [],
         metrics: {
           ttftMs: 100,
           totalMs: 1100,
@@ -177,5 +184,83 @@ describe('generate', () => {
       type: 'done',
       aborted: true,
     });
+  });
+
+  it('surfaces provider warnings in the done event', async () => {
+    const model = modelFrom(
+      [...text('x'), finish(1)],
+      [{ type: 'unsupported', feature: 'reasoning', details: 'too big' }]
+    );
+
+    const events = await collect(generate(model, { prompt: 'hi' }));
+
+    expect(events[events.length - 1]).toMatchObject({
+      warnings: ['unsupported: reasoning: too big'],
+    });
+  });
+
+  describe('structured mode (schema)', () => {
+    const schema: JsonSchema = {
+      type: 'object',
+      properties: { name: { type: 'string' } },
+      required: ['name'],
+    };
+
+    it('requests JSON output with the schema', async () => {
+      const model = modelFrom([...text('{"name":"a"}'), finish(5)]);
+
+      await collect(generate(model, { prompt: 'hi', schema }));
+
+      expect(model.doStreamCalls[0].responseFormat).toMatchObject({
+        type: 'json',
+        schema: { properties: { name: { type: 'string' } } },
+      });
+    });
+
+    it('never forwards reasoning or provider options with a grammar', async () => {
+      const model = modelFrom([...text('{"name":"a"}'), finish(5)]);
+
+      await collect(
+        generate(model, { prompt: 'hi', schema, reasoning: 'provider-default' })
+      );
+
+      const call = model.doStreamCalls[0];
+      expect(call.reasoning).toBeUndefined();
+      expect(call.providerOptions).toBeUndefined();
+    });
+
+    it('reports no ttft or decode speed since output arrives at once', async () => {
+      const model = modelFrom([...text('{"name":"a"}'), finish(40)]);
+      const ticks = [0, 900, 1000]; // single delta lands right before the end
+
+      const events = await collect(
+        generate(model, { prompt: 'hi', schema }, () => ticks.shift() as number)
+      );
+
+      expect(events[events.length - 1]).toMatchObject({
+        metrics: {
+          ttftMs: null,
+          totalMs: 1000,
+          outputTokens: 40,
+          tokensPerSec: undefined,
+        },
+      });
+    });
+  });
+});
+
+describe('tryParseJson', () => {
+  it('parses valid JSON', () => {
+    expect(tryParseJson('{"a":[1,2]}')).toEqual({
+      valid: true,
+      value: { a: [1, 2] },
+    });
+  });
+
+  it('reports invalid JSON with a message', () => {
+    const result = tryParseJson('{"a":');
+
+    expect(result.valid).toBe(false);
+    expect(result.valid === false && result.error.length > 0).toBe(true);
   });
 });
