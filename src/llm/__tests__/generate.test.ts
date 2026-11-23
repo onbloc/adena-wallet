@@ -12,6 +12,7 @@ import { autoApproval } from '../../wallet/sdk/approval';
 import { ACTIVE_ADDRESS, FIXTURE } from '../../wallet/sdk/fixture';
 import { MockWalletSdk } from '../../wallet/sdk/mockWalletSdk';
 import { generate, GenerateEventType, type GenerateEvent } from '../generate';
+import { withCompletedToolCalls } from '../onblocRun';
 
 type Part = Record<string, unknown>;
 
@@ -294,13 +295,24 @@ describe('generate with tools', () => {
         headers: { 'content-type': 'application/json' },
       });
     };
-    const model = stepsModel([toolCall(name, {}), [...text('42 GNOT'), finish(3)]]);
-    const events = await collect(generate(model, { prompt: 'My balance', onbloc: {
+    const model = new MockLanguageModelV4({
+      doStream: async () => { throw new Error('Native stream would emit a partial { argument'); },
+      doGenerate: [
+        { content: [{ type: 'tool-call', toolCallId: 'native', toolName: name, input: '{}' }],
+          finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage: usage(5), warnings: [] },
+        { content: [{ type: 'text', text: '42 GNOT' }],
+          finishReason: { unified: 'stop', raw: 'stop' }, usage: usage(3), warnings: [] },
+      ],
+    });
+    const events = await collect(generate(withCompletedToolCalls(model), { prompt: 'My balance', onbloc: {
       endpoint: 'https://example.test/mcp', account, fetcher,
     } }));
     expect(calls).toEqual([{ name, arguments: { address: account } }]);
     expect(events).toContainEqual({ type: GenerateEventType.Text, delta: '42 GNOT' });
-    expect(JSON.stringify(model.doStreamCalls[1].prompt)).toContain('42000000');
+    expect(JSON.stringify(model.doGenerateCalls[1].prompt)).toContain('42000000');
+    expect(events.filter(event => event.type === GenerateEventType.ToolCall)).toEqual([
+      expect.objectContaining({ name, input: {}, invalid: false }),
+    ]);
   });
 
   const newSdk = (policy: ApprovalPolicy = ApprovalPolicy.Approve) =>

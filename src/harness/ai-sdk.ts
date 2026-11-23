@@ -10,9 +10,10 @@ export type AiSdkBudget =
 
 type ModelToolDefinition = Readonly<{ name: string; description: string; inputSchema: JSONSchema7 }>;
 
-function createAiSdkTools({ run, onInterrupt }: {
+function createAiSdkTools({ run, onInterrupt, projectResult }: {
   run: HarnessRun;
   onInterrupt: (interruption: Interruption) => void;
+  projectResult?: (name: string, output: unknown) => unknown;
 }): ToolSet {
   const tools: ToolSet = {};
   for (const definition of run.tools) {
@@ -20,6 +21,11 @@ function createAiSdkTools({ run, onInterrupt }: {
     tools[name] = tool({
       description,
       inputSchema: 'inputSchema' in definition ? definition.inputSchema : jsonSchema(definition.jsonSchema),
+      ...(projectResult && {
+        toModelOutput: ({ output }: { output: unknown }) => ({
+          type: 'text' as const, value: JSON.stringify(projectResult(name, output)),
+        }),
+      }),
       async execute(input) {
         const decision = await run.dispatch({ name, input });
         if (decision.kind === 'clarify' || decision.kind === 'approval-required') {
@@ -35,7 +41,7 @@ function createAiSdkTools({ run, onInterrupt }: {
 }
 
 /** Options for one AI SDK generation loop. Close the run in the consumer's finally block. */
-export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budget, onInterrupt }: {
+export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budget, onInterrupt, projectResult }: {
   run: HarnessRun;
   maxOutputTokens: number;
   /** Include instructions, tool schema and provider formatting overhead for this step. */
@@ -47,8 +53,9 @@ export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budg
   }>) => number;
   budget: AiSdkBudget;
   onInterrupt: (interruption: Interruption) => void;
+  projectResult?: (name: string, output: unknown) => unknown;
 }) {
-  const tools = createAiSdkTools({ run, onInterrupt });
+  const tools = createAiSdkTools({ run, onInterrupt, projectResult });
   let definitions: Promise<ModelToolDefinition[]> | undefined;
   const prepareStep: PrepareStepFunction<ToolSet> = async ({ stepNumber, model, messages, instructions }) => {
     definitions ??= Promise.all(run.tools.map(async ({ name, description }) => ({
