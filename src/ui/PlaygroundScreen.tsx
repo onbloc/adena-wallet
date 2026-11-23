@@ -12,16 +12,18 @@ import {
 import {
   DEFAULT_GENERATE_SETTINGS,
   DEFAULT_MODEL_ID,
-  GENERATION_MODE,
   MAX_OUTPUT_TOKENS_RANGE,
-  STRUCTURED_SCHEMA,
+  MAX_STEPS,
   TEMPERATURE_RANGE,
 } from '../llm/config';
-import { tryParseJson } from '../llm/generate';
+import type { CallRecord } from '../llm/calls';
 import type { RuntimeStatus } from '../llm/runtime';
 import { useLlm } from '../llm/useLlm';
-
-const structured = GENERATION_MODE === 'structured';
+import { evaluateScenario, type Verdict } from '../wallet/evaluate';
+import { MockWallet } from '../wallet/mockWallet';
+import { buildSystemPrompt } from '../wallet/prompts';
+import { SCENARIOS, type Scenario } from '../wallet/scenarios';
+import { createWalletTools } from '../wallet/tools';
 
 /** Parses user input; null when empty, non-numeric, non-integer (if required) or out of range. */
 function parseBounded(
@@ -53,9 +55,19 @@ function describeStatus(status: RuntimeStatus): string {
 const fmt = (value: number | null | undefined, unit: string, digits = 0) =>
   value === null || value === undefined ? '-' : `${value.toFixed(digits)} ${unit}`;
 
+// One wallet for the screen; reset before every run.
+const wallet = new MockWallet();
+const DEFAULT_SYSTEM = buildSystemPrompt(wallet);
+
+const json = (value: unknown) => JSON.stringify(value) ?? 'undefined';
+const compact = (text: string, max: number) => {
+  const flat = text.replace(/\s+/g, ' ');
+  return flat.length > max ? `${flat.slice(0, max)}...` : flat;
+};
+
 export default function PlaygroundScreen() {
   const { status, run, start, stop, load, unload, remove } = useLlm();
-  const [system, setSystem] = useState('');
+  const [system, setSystem] = useState(DEFAULT_SYSTEM);
   const [prompt, setPrompt] = useState('');
   const [temperature, setTemperature] = useState(
     String(DEFAULT_GENERATE_SETTINGS.temperature)
@@ -65,6 +77,10 @@ export default function PlaygroundScreen() {
   );
   const [thinking, setThinking] = useState(false);
   const [showReasoning, setShowReasoning] = useState(false);
+  const [useTools, setUseTools] = useState(true);
+  const [scenarioId, setScenarioId] = useState<string | null>(null);
+  // The scenario that was selected when the last run started.
+  const [ranScenario, setRanScenario] = useState<Scenario | null>(null);
 
   const temperatureValue = parseBounded(temperature, TEMPERATURE_RANGE);
   const maxTokensValue = parseBounded(maxTokens, MAX_OUTPUT_TOKENS_RANGE, true);
@@ -77,26 +93,44 @@ export default function PlaygroundScreen() {
     prompt.trim() !== '' &&
     temperatureValue !== null &&
     maxTokensValue !== null;
-  const parsedOutput =
-    structured && !run.running && run.text !== '' ? tryParseJson(run.text) : null;
+
+  const scenario = SCENARIOS.find((item) => item.id === scenarioId) ?? null;
+  const verdict: Verdict | null =
+    ranScenario !== null &&
+    !run.running &&
+    run.metrics !== null &&
+    !run.aborted &&
+    run.error === null
+      ? evaluateScenario(ranScenario, run.calls, run.text)
+      : null;
+
+  const selectScenario = (item: Scenario) => {
+    setScenarioId(item.id);
+    setPrompt(item.prompt);
+  };
+  const onPromptChange = (text: string) => {
+    setPrompt(text);
+    if (scenario && text !== scenario.prompt) setScenarioId(null);
+  };
 
   const onRun = () => {
     if (temperatureValue === null || maxTokensValue === null) return;
+    wallet.reset();
+    setRanScenario(useTools ? scenario : null);
     void start({
       prompt,
       system: system.trim() === '' ? undefined : system,
       temperature: temperatureValue,
       maxOutputTokens: maxTokensValue,
       reasoning: thinking ? 'provider-default' : 'none',
-      schema: structured ? STRUCTURED_SCHEMA : undefined,
+      tools: useTools ? createWalletTools(wallet) : undefined,
+      maxSteps: useTools ? MAX_STEPS : undefined,
     });
   };
 
   return (
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>
-        On-device LLM Playground ({GENERATION_MODE})
-      </Text>
+      <Text style={styles.title}>On-device LLM Playground</Text>
 
       <View style={styles.card}>
         <Text style={styles.mono}>{DEFAULT_MODEL_ID}</Text>
@@ -124,8 +158,24 @@ export default function PlaygroundScreen() {
       <Text style={styles.label}>System prompt (optional)</Text>
       <TextInput style={styles.input} value={system} onChangeText={setSystem} multiline />
 
+      <Text style={styles.label}>Scenarios</Text>
+      <View style={styles.chips}>
+        {SCENARIOS.map((item) => (
+          <Pressable
+            key={item.id}
+            onPress={() => selectScenario(item)}
+            style={[styles.chip, item.id === scenarioId && styles.chipActive]}
+          >
+            <Text style={[styles.chipText, item.id === scenarioId && styles.chipTextActive]}>
+              {item.title}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      {scenario && <ScenarioExpectation scenario={scenario} />}
+
       <Text style={styles.label}>Prompt</Text>
-      <TextInput style={styles.input} value={prompt} onChangeText={setPrompt} multiline />
+      <TextInput style={styles.input} value={prompt} onChangeText={onPromptChange} multiline />
 
       <View style={styles.row}>
         <View style={styles.flex}>
@@ -153,10 +203,13 @@ export default function PlaygroundScreen() {
       </View>
 
       <View style={styles.rowCenter}>
-        <Switch value={thinking && !structured} onValueChange={setThinking} disabled={structured} />
-        <Text style={styles.switchLabel}>
-          Thinking (reasoning){structured ? ' - disabled in structured mode' : ''}
-        </Text>
+        <Switch value={thinking} onValueChange={setThinking} />
+        <Text style={styles.switchLabel}>Thinking (reasoning)</Text>
+      </View>
+
+      <View style={styles.rowCenter}>
+        <Switch value={useTools} onValueChange={setUseTools} />
+        <Text style={styles.switchLabel}>Wallet tools (mock, max {MAX_STEPS} steps)</Text>
       </View>
 
       <View style={styles.row}>
@@ -171,17 +224,18 @@ export default function PlaygroundScreen() {
         </Text>
       ))}
 
+      {(run.calls.length > 0 || run.metrics !== null) && useTools && (
+        <CallLog calls={run.calls} />
+      )}
+
       <Text style={styles.label}>
         Output{run.aborted ? ' (stopped)' : ''}
       </Text>
-      {parsedOutput && (
-        <Text style={parsedOutput.valid ? styles.ok : styles.error}>
-          {parsedOutput.valid ? 'Valid JSON' : `Invalid JSON: ${parsedOutput.error}`}
-        </Text>
-      )}
       <Text style={styles.output} selectable>
-        {parsedOutput?.valid ? JSON.stringify(parsedOutput.value, null, 2) : run.text}
+        {run.text}
       </Text>
+
+      {verdict && ranScenario && <VerdictView scenario={ranScenario} verdict={verdict} />}
 
       {run.reasoning !== '' && (
         <>
@@ -204,11 +258,6 @@ export default function PlaygroundScreen() {
           <Text style={styles.mono}>Total: {fmt(run.metrics.totalMs, 'ms')}</Text>
           <Text style={styles.mono}>Output tokens: {run.metrics.outputTokens ?? '-'}</Text>
           <Text style={styles.mono}>Speed: {fmt(run.metrics.tokensPerSec, 'tok/s', 1)}</Text>
-          {structured && (
-            <Text style={styles.muted}>
-              Structured output is not streamed: TTFT and speed are unavailable.
-            </Text>
-          )}
         </View>
       )}
     </ScrollView>
@@ -232,6 +281,67 @@ function Button({
     >
       <Text style={styles.buttonText}>{label}</Text>
     </Pressable>
+  );
+}
+
+function ScenarioExpectation({ scenario }: { scenario: Scenario }) {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.label}>Expected</Text>
+      {scenario.calls.map((call, index) => (
+        <Text key={index} style={styles.mono}>
+          {index + 1}. {call.tool}({json(call.args ?? {})})
+        </Text>
+      ))}
+      {scenario.forbid?.map((tool) => (
+        <Text key={tool} style={styles.mono}>
+          never call {tool}
+        </Text>
+      ))}
+      {scenario.answerMentions?.map((word) => (
+        <Text key={word} style={styles.mono}>
+          {`answer mentions "${word}"`}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
+function CallLog({ calls }: { calls: CallRecord[] }) {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.label}>Tool calls ({calls.length})</Text>
+      {calls.length === 0 && <Text style={styles.muted}>The model made no tool call.</Text>}
+      {calls.map((call, index) => (
+        <View key={call.id} style={styles.callRow}>
+          <Text style={[styles.mono, call.invalid && styles.error]}>
+            #{index + 1} {call.name}({json(call.input)}){call.invalid ? '  [INVALID]' : ''}
+          </Text>
+          {call.error !== undefined && (
+            <Text style={styles.error}>{compact(call.error, 300)}</Text>
+          )}
+          {call.output !== undefined && (
+            <Text style={styles.mono}>-&gt; {json(call.output)}</Text>
+          )}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function VerdictView({ scenario, verdict }: { scenario: Scenario; verdict: Verdict }) {
+  return (
+    <View style={styles.card}>
+      <Text style={verdict.pass ? styles.ok : styles.error}>
+        {verdict.pass ? 'PASS' : 'FAIL'} - {scenario.title}
+      </Text>
+      {verdict.checks.map((check) => (
+        <Text key={check.name} style={[styles.mono, !check.pass && styles.error]}>
+          {check.pass ? '[ok]' : '[x]'} {check.name}
+          {check.pass ? '' : `\n    ${compact(check.detail, 300)}`}
+        </Text>
+      ))}
+    </View>
   );
 }
 
@@ -270,5 +380,17 @@ const styles = StyleSheet.create({
   link: { color: '#2563eb', fontSize: 13 },
   error: { color: '#d33' },
   warning: { color: '#b45309' },
-  ok: { color: '#15803d' },
+  ok: { color: '#15803d', fontWeight: '700' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip: {
+    borderWidth: 1,
+    borderColor: '#2563eb',
+    borderRadius: 14,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  chipActive: { backgroundColor: '#2563eb' },
+  chipText: { color: '#2563eb', fontSize: 12 },
+  chipTextActive: { color: '#fff' },
+  callRow: { gap: 2 },
 });

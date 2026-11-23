@@ -1,11 +1,8 @@
 import { MockLanguageModelV4 } from 'ai/test';
 
-import {
-  generate,
-  tryParseJson,
-  type GenerateEvent,
-  type JsonSchema,
-} from '../generate';
+import { MockWallet } from '../../wallet/mockWallet';
+import { createWalletTools } from '../../wallet/tools';
+import { generate, type GenerateEvent } from '../generate';
 
 type Part = Record<string, unknown>;
 
@@ -198,69 +195,159 @@ describe('generate', () => {
       warnings: ['unsupported: reasoning: too big'],
     });
   });
-
-  describe('structured mode (schema)', () => {
-    const schema: JsonSchema = {
-      type: 'object',
-      properties: { name: { type: 'string' } },
-      required: ['name'],
-    };
-
-    it('requests JSON output with the schema', async () => {
-      const model = modelFrom([...text('{"name":"a"}'), finish(5)]);
-
-      await collect(generate(model, { prompt: 'hi', schema }));
-
-      expect(model.doStreamCalls[0].responseFormat).toMatchObject({
-        type: 'json',
-        schema: { properties: { name: { type: 'string' } } },
-      });
-    });
-
-    it('never forwards reasoning or provider options with a grammar', async () => {
-      const model = modelFrom([...text('{"name":"a"}'), finish(5)]);
-
-      await collect(
-        generate(model, { prompt: 'hi', schema, reasoning: 'provider-default' })
-      );
-
-      const call = model.doStreamCalls[0];
-      expect(call.reasoning).toBeUndefined();
-      expect(call.providerOptions).toBeUndefined();
-    });
-
-    it('reports no ttft or decode speed since output arrives at once', async () => {
-      const model = modelFrom([...text('{"name":"a"}'), finish(40)]);
-      const ticks = [0, 900, 1000]; // single delta lands right before the end
-
-      const events = await collect(
-        generate(model, { prompt: 'hi', schema }, () => ticks.shift() as number)
-      );
-
-      expect(events[events.length - 1]).toMatchObject({
-        metrics: {
-          ttftMs: null,
-          totalMs: 1000,
-          outputTokens: 40,
-          tokensPerSec: undefined,
-        },
-      });
-    });
-  });
 });
 
-describe('tryParseJson', () => {
-  it('parses valid JSON', () => {
-    expect(tryParseJson('{"a":[1,2]}')).toEqual({
-      valid: true,
-      value: { a: [1, 2] },
+describe('generate with tools', () => {
+  const toolCall = (toolName: string, input: unknown, id = 'c1'): Part[] => [
+    {
+      type: 'tool-call',
+      toolCallId: id,
+      toolName,
+      input: typeof input === 'string' ? input : JSON.stringify(input),
+    },
+    {
+      type: 'finish',
+      finishReason: { unified: 'tool-calls', raw: 'tool-calls' },
+      usage: usage(5),
+    },
+  ];
+
+  // One entry per model call (step).
+  const stepsModel = (steps: Part[][]) =>
+    new MockLanguageModelV4({
+      doStream: steps.map((parts) => ({
+        stream: new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: 'stream-start', warnings: [] });
+            parts.forEach((part) => controller.enqueue(part));
+            controller.close();
+          },
+        }) as never,
+      })),
     });
+
+  const run = async (
+    model: MockLanguageModelV4,
+    wallet: MockWallet,
+    maxSteps?: number
+  ) =>
+    collect(
+      generate(model, {
+        prompt: 'go',
+        tools: createWalletTools(wallet),
+        maxSteps,
+      })
+    );
+
+  it('runs the tool against the wallet and feeds the result to a second model call', async () => {
+    const wallet = new MockWallet();
+    const model = stepsModel([
+      toolCall('get_balance', { token: 'GNOT' }),
+      [...text('잔액은 10 GNOT입니다'), finish(8)],
+    ]);
+
+    const events = await run(model, wallet, 3);
+
+    expect(events.filter((e) => e.type !== 'done')).toEqual([
+      {
+        type: 'tool-call',
+        id: 'c1',
+        name: 'get_balance',
+        input: { token: 'GNOT' },
+        invalid: false,
+        error: undefined,
+      },
+      {
+        type: 'tool-result',
+        id: 'c1',
+        name: 'get_balance',
+        output: expect.objectContaining({ status: 'ok', balance: '10' }),
+      },
+      { type: 'text', delta: '잔액은 10 GNOT입니다' },
+    ]);
+    expect(wallet.calls.map((c) => c.tool)).toEqual(['get_balance']);
+    expect(model.doStreamCalls).toHaveLength(2);
   });
 
-  it('reports invalid JSON with a message', () => {
-    const result = tryParseJson('{"a":');
+  it('stops after one model call by default even when a tool ran', async () => {
+    const wallet = new MockWallet();
+    const model = stepsModel([toolCall('get_balance', { token: 'GNOT' })]);
 
-    expect(result.valid).toBe(false);
-    expect(result.valid === false && result.error.length > 0).toBe(true);
+    await run(model, wallet);
+
+    expect(wallet.calls).toHaveLength(1);
+    expect(model.doStreamCalls).toHaveLength(1);
+  });
+
+  it('caps model calls at maxSteps', async () => {
+    const wallet = new MockWallet();
+    const model = stepsModel([
+      toolCall('get_balance', { token: 'GNOT' }, 'a'),
+      toolCall('get_balance', { token: 'GNOT' }, 'b'),
+      toolCall('get_balance', { token: 'GNOT' }, 'c'),
+    ]);
+
+    await run(model, wallet, 2);
+
+    expect(model.doStreamCalls).toHaveLength(2);
+  });
+
+  it('flags arguments that fail schema validation and does not execute them', async () => {
+    const wallet = new MockWallet();
+    // amount must be a string
+    const model = stepsModel([
+      toolCall('transfer', {
+        to: 'g1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9',
+        amount: 0.5,
+        token: 'GNOT',
+      }),
+    ]);
+
+    const events = await run(model, wallet);
+
+    const call = events.find((e) => e.type === 'tool-call');
+    expect(call).toMatchObject({ name: 'transfer', invalid: true });
+    expect(call?.type === 'tool-call' && call.error).toBeTruthy();
+    expect(wallet.calls).toEqual([]);
+  });
+
+  it('flags calls to tools that do not exist', async () => {
+    const wallet = new MockWallet();
+    const model = stepsModel([toolCall('burn_everything', {})]);
+
+    const events = await run(model, wallet);
+
+    expect(events.find((e) => e.type === 'tool-call')).toMatchObject({
+      name: 'burn_everything',
+      invalid: true,
+    });
+    expect(wallet.calls).toEqual([]);
+  });
+
+  it('flags unparsable argument JSON', async () => {
+    const wallet = new MockWallet();
+    const model = stepsModel([toolCall('get_balance', '{"token": "GN')]);
+
+    const events = await run(model, wallet);
+
+    expect(events.find((e) => e.type === 'tool-call')).toMatchObject({
+      name: 'get_balance',
+      invalid: true,
+    });
+    expect(wallet.calls).toEqual([]);
+  });
+
+  it('passes well-formed but wrong values through so the wallet can reject them', async () => {
+    const wallet = new MockWallet();
+    const model = stepsModel([
+      toolCall('transfer', { to: 'alice', amount: '1', token: 'GNOT' }),
+    ]);
+
+    const events = await run(model, wallet);
+
+    expect(events.find((e) => e.type === 'tool-call')).toMatchObject({ invalid: false });
+    expect(events.find((e) => e.type === 'tool-result')).toMatchObject({
+      output: expect.objectContaining({ code: 'invalid_address' }),
+    });
   });
 });

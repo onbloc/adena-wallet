@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
+import { applyToolEvent, type CallRecord } from './calls';
 import { generate, type GenerateOptions, type Metrics } from './generate';
 import { llamaRuntime } from './runtime';
 
@@ -7,6 +8,7 @@ export type RunState = {
   running: boolean;
   text: string;
   reasoning: string;
+  calls: CallRecord[];
   metrics: Metrics | null;
   aborted: boolean;
   finishReason?: string;
@@ -18,6 +20,7 @@ const INITIAL_RUN: RunState = {
   running: false,
   text: '',
   reasoning: '',
+  calls: [],
   metrics: null,
   aborted: false,
   warnings: [],
@@ -60,7 +63,7 @@ export function useLlm() {
         } else if (event.type === 'reasoning') {
           reasoning += event.delta;
           setRun((prev) => ({ ...prev, reasoning }));
-        } else {
+        } else if (event.type === 'done') {
           setRun((prev) => ({
             ...prev,
             metrics: event.metrics,
@@ -68,6 +71,8 @@ export function useLlm() {
             finishReason: event.finishReason,
             warnings: event.warnings,
           }));
+        } else {
+          setRun((prev) => ({ ...prev, calls: applyToolEvent(prev.calls, event) }));
         }
       }
     } catch (error) {

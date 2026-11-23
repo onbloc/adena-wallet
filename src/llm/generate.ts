@@ -1,6 +1,4 @@
-import { jsonSchema, Output, streamText, type LanguageModel } from 'ai';
-
-export type JsonSchema = Parameters<typeof jsonSchema>[0];
+import { isStepCount, streamText, type LanguageModel, type ToolSet } from 'ai';
 
 export type GenerateOptions = {
   prompt: string;
@@ -9,29 +7,39 @@ export type GenerateOptions = {
   maxOutputTokens?: number;
   topP?: number;
   topK?: number;
-  /** Ignored when `schema` is set: thinking and grammar cannot be combined. */
+  seed?: number;
   reasoning?: 'none' | 'provider-default';
-  /** Structured mode: output is constrained by a grammar built from this schema. */
-  schema?: JsonSchema;
+  /** Tools with `execute` are run by the SDK and their results fed back to the model. */
+  tools?: ToolSet;
+  /** Max model calls when tools are used (SDK default: 1). */
+  maxSteps?: number;
   signal?: AbortSignal;
 };
 
 export type Metrics = {
-  /**
-   * Start -> first text or reasoning delta. Null if nothing was produced, and
-   * in structured mode, where the provider sends the whole output at once.
-   */
+  /** Start -> first text, reasoning or tool-call; null if nothing was produced. */
   ttftMs: number | null;
   totalMs: number;
-  /** From provider usage; undefined when the provider does not report it. */
+  /** From provider usage (summed over steps); undefined when not reported. */
   outputTokens?: number;
-  /** Decode speed after the first token: (tokens - 1) / (end - first delta). Text mode only. */
+  /** Decode speed after the first token: (tokens - 1) / (end - first delta). */
   tokensPerSec?: number;
 };
 
 export type GenerateEvent =
   | { type: 'text'; delta: string }
   | { type: 'reasoning'; delta: string }
+  | {
+      type: 'tool-call';
+      id: string;
+      name: string;
+      input: unknown;
+      /** Unparsable input, unknown tool, or input that failed schema validation. */
+      invalid: boolean;
+      error?: string;
+    }
+  | { type: 'tool-result'; id: string; name: string; output: unknown }
+  | { type: 'tool-error'; id: string; name: string; error: string }
   | {
       type: 'done';
       metrics: Metrics;
@@ -41,37 +49,22 @@ export type GenerateEvent =
       warnings: string[];
     };
 
-export type ParsedJson =
-  | { valid: true; value: unknown }
-  | { valid: false; error: string };
-
-export function tryParseJson(text: string): ParsedJson {
-  try {
-    return { valid: true, value: JSON.parse(text) };
-  } catch (error) {
-    return {
-      valid: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
-
 type Warning = { type: string; feature?: string; details?: string; message?: string };
 
 const describeWarning = (warning: Warning) =>
   warning.message ??
   [warning.type, warning.feature, warning.details].filter(Boolean).join(': ');
 
+const errorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : String(error);
+
 /**
  * Streams a completion. Always ends with one 'done' event, including after an
  * abort; any other failure is thrown.
- *
- * Structured mode (`schema`): the provider generates the full JSON first and
- * emits it as a single text event, so there is no TTFT / decode speed.
  */
 export async function* generate(
   model: LanguageModel,
-  { signal, schema, reasoning, ...options }: GenerateOptions,
+  { signal, maxSteps, ...options }: GenerateOptions,
   now: () => number = () => Date.now()
 ): AsyncGenerator<GenerateEvent> {
   const startedAt = now();
@@ -85,10 +78,7 @@ export async function* generate(
     const result = streamText({
       model,
       ...options,
-      // Never pass reasoning with a grammar: llama.rn crashes natively.
-      ...(schema
-        ? { output: Output.object({ schema: jsonSchema(schema) }) }
-        : { reasoning }),
+      ...(maxSteps !== undefined && { stopWhen: isStepCount(maxSteps) }),
       abortSignal: signal,
       onError: () => {}, // errors are rethrown from the stream below
     });
@@ -104,6 +94,33 @@ export async function* generate(
         case 'reasoning-delta':
           firstDeltaAt ??= now();
           yield { type: 'reasoning', delta: part.text };
+          break;
+        case 'tool-call':
+          firstDeltaAt ??= now();
+          yield {
+            type: 'tool-call',
+            id: part.toolCallId,
+            name: part.toolName,
+            input: part.input,
+            invalid: part.invalid === true,
+            error: part.error === undefined ? undefined : errorMessage(part.error),
+          };
+          break;
+        case 'tool-result':
+          yield {
+            type: 'tool-result',
+            id: part.toolCallId,
+            name: part.toolName,
+            output: part.output,
+          };
+          break;
+        case 'tool-error':
+          yield {
+            type: 'tool-error',
+            id: part.toolCallId,
+            name: part.toolName,
+            error: errorMessage(part.error),
+          };
           break;
         case 'finish':
           outputTokens = part.totalUsage.outputTokens;
@@ -122,8 +139,7 @@ export async function* generate(
   }
 
   const endedAt = now();
-  const streamed = schema === undefined && firstDeltaAt !== undefined;
-  const decodeMs = streamed ? endedAt - (firstDeltaAt as number) : 0;
+  const decodeMs = firstDeltaAt === undefined ? 0 : endedAt - firstDeltaAt;
   const tokensPerSec =
     outputTokens !== undefined && outputTokens > 1 && decodeMs > 0
       ? ((outputTokens - 1) * 1000) / decodeMs
@@ -135,7 +151,7 @@ export async function* generate(
     finishReason,
     warnings,
     metrics: {
-      ttftMs: streamed ? (firstDeltaAt as number) - startedAt : null,
+      ttftMs: firstDeltaAt === undefined ? null : firstDeltaAt - startedAt,
       totalMs: endedAt - startedAt,
       outputTokens,
       tokensPerSec,
