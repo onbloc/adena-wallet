@@ -1,10 +1,13 @@
 import { fromBaseUnits, toBaseUnits } from './amount';
+import { ToolName, TokenSymbol, WalletErrorCode, WalletStatus } from './constants';
 
-export const TOKEN_SYMBOLS = ['GNOT', 'GNS'] as const;
-export type TokenSymbol = (typeof TOKEN_SYMBOLS)[number];
+export const TOKEN_SYMBOLS = Object.values(TokenSymbol);
 
 // Assumed for the mock; not verified against the real tokens.
-export const TOKEN_DECIMALS: Record<TokenSymbol, number> = { GNOT: 6, GNS: 6 };
+export const TOKEN_DECIMALS: Record<TokenSymbol, number> = {
+  [TokenSymbol.Gnot]: 6,
+  [TokenSymbol.Gns]: 6,
+};
 
 // 'g1' + 38 bech32 chars. Format check only, no checksum (assumed format).
 const ADDRESS_PATTERN = /^g1[023456789acdefghjklmnpqrstuvwxyz]{38}$/;
@@ -23,13 +26,13 @@ export const FIXTURE = {
       index: 1,
       name: 'Account 1',
       address: 'g1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9',
-      balances: { GNOT: '10', GNS: '250' },
+      balances: { [TokenSymbol.Gnot]: '10', [TokenSymbol.Gns]: '250' },
     },
     {
       index: 2,
       name: 'Account 2',
       address: 'g19x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2',
-      balances: { GNOT: '1.5', GNS: '0' },
+      balances: { [TokenSymbol.Gnot]: '1.5', [TokenSymbol.Gns]: '0' },
     },
   ] satisfies MockAccount[],
   contacts: [
@@ -40,14 +43,14 @@ export const FIXTURE = {
 };
 
 export type WalletResult = {
-  status: 'ok' | 'pending_approval' | 'error';
+  status: WalletStatus;
   [key: string]: unknown;
 };
 
-export type WalletCall = { tool: string; args: unknown; result: WalletResult };
+export type WalletCall = { tool: ToolName; args: unknown; result: WalletResult };
 
-const fail = (code: string, message: string): WalletResult => ({
-  status: 'error',
+const fail = (code: WalletErrorCode, message: string): WalletResult => ({
+  status: WalletStatus.Error,
   code,
   message,
 });
@@ -55,7 +58,7 @@ const fail = (code: string, message: string): WalletResult => ({
 /**
  * In-memory wallet. Value checks live here (not in the tool schemas) so that a
  * well-formed but wrong argument is distinguishable from a malformed one.
- * Transfers and signatures never execute: they stop at 'pending_approval'.
+ * Transfers and signatures never execute: they stop at `WalletStatus.PendingApproval`.
  */
 export class MockWallet {
   private balances = new Map<string, bigint>();
@@ -82,7 +85,7 @@ export class MockWallet {
     this.log = [];
   }
 
-  private record(tool: string, args: unknown, result: WalletResult) {
+  private record(tool: ToolName, args: unknown, result: WalletResult) {
     this.log.push({ tool, args, result });
     return result;
   }
@@ -93,13 +96,13 @@ export class MockWallet {
 
   getBalance(args: { token: TokenSymbol; account?: number }): WalletResult {
     const { token, account: index = 1 } = args;
+    const done = (result: WalletResult) => this.record(ToolName.GetBalance, args, result);
+
     const account = this.account(index);
-    if (!account) {
-      return this.record('get_balance', args, fail('unknown_account', `No account ${index}`));
-    }
+    if (!account) return done(fail(WalletErrorCode.UnknownAccount, `No account ${index}`));
     const units = this.balances.get(`${index}:${token}`) ?? 0n;
-    return this.record('get_balance', args, {
-      status: 'ok',
+    return done({
+      status: WalletStatus.Ok,
       account: index,
       address: account.address,
       token,
@@ -114,27 +117,27 @@ export class MockWallet {
     account?: number;
   }): WalletResult {
     const { to, amount, token, account: index = 1 } = args;
-    const done = (result: WalletResult) => this.record('transfer', args, result);
+    const done = (result: WalletResult) => this.record(ToolName.Transfer, args, result);
 
     const account = this.account(index);
-    if (!account) return done(fail('unknown_account', `No account ${index}`));
+    if (!account) return done(fail(WalletErrorCode.UnknownAccount, `No account ${index}`));
     if (!isValidAddress(to)) {
-      return done(fail('invalid_address', 'Recipient is not a valid g1... address'));
+      return done(fail(WalletErrorCode.InvalidAddress, 'Recipient is not a valid g1... address'));
     }
     const decimals = TOKEN_DECIMALS[token];
     const units = toBaseUnits(amount, decimals);
     if (units === null || units <= 0n) {
-      return done(fail('invalid_amount', 'Amount must be a positive decimal'));
+      return done(fail(WalletErrorCode.InvalidAmount, 'Amount must be a positive decimal'));
     }
     const available = this.balances.get(`${index}:${token}`) ?? 0n;
     if (units > available) {
       return done({
-        ...fail('insufficient_balance', 'Balance is too low'),
+        ...fail(WalletErrorCode.InsufficientBalance, 'Balance is too low'),
         available: fromBaseUnits(available, decimals),
       });
     }
     return done({
-      status: 'pending_approval',
+      status: WalletStatus.PendingApproval,
       from: account.address,
       to,
       amount: fromBaseUnits(units, decimals),
@@ -145,13 +148,15 @@ export class MockWallet {
 
   signMessage(args: { message: string; account?: number }): WalletResult {
     const { message, account: index = 1 } = args;
-    const done = (result: WalletResult) => this.record('sign_message', args, result);
+    const done = (result: WalletResult) => this.record(ToolName.SignMessage, args, result);
 
     const account = this.account(index);
-    if (!account) return done(fail('unknown_account', `No account ${index}`));
-    if (message.trim() === '') return done(fail('empty_message', 'Message is empty'));
+    if (!account) return done(fail(WalletErrorCode.UnknownAccount, `No account ${index}`));
+    if (message.trim() === '') {
+      return done(fail(WalletErrorCode.EmptyMessage, 'Message is empty'));
+    }
     return done({
-      status: 'pending_approval',
+      status: WalletStatus.PendingApproval,
       signer: account.address,
       message: 'User approval is required before signing',
     });

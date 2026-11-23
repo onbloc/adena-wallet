@@ -1,11 +1,12 @@
 import type { CallRecord } from '../../llm/calls';
+import { ToolName, TokenSymbol } from '../constants';
 import { evaluateScenario, type Verdict } from '../evaluate';
 import { FIXTURE } from '../mockWallet';
 import { SCENARIOS, type Scenario } from '../scenarios';
 
 const to = FIXTURE.recipient;
 
-const call = (name: string, input: unknown, invalid = false): CallRecord => ({
+const call = (name: ToolName, input: unknown, invalid = false): CallRecord => ({
   id: `${name}-${Math.random()}`,
   name,
   input,
@@ -26,7 +27,7 @@ describe('evaluateScenario', () => {
   it('passes when the expected call is present, comparing amounts by value', () => {
     const verdict = evaluateScenario(
       scenario('transfer'),
-      [call('transfer', { to, amount: '0.50', token: 'GNOT' })],
+      [call(ToolName.Transfer, { to, amount: '0.50', token: TokenSymbol.Gnot })],
       ''
     );
 
@@ -36,7 +37,7 @@ describe('evaluateScenario', () => {
   it('ignores extra arguments such as an explicit account', () => {
     const verdict = evaluateScenario(
       scenario('balance'),
-      [call('get_balance', { token: 'GNOT', account: 1 })],
+      [call(ToolName.GetBalance, { token: TokenSymbol.Gnot, account: 1 })],
       ''
     );
 
@@ -44,11 +45,18 @@ describe('evaluateScenario', () => {
   });
 
   it.each([
-    ['wrong token', { to, amount: '0.5', token: 'GNS' }],
-    ['wrong amount', { to, amount: '5', token: 'GNOT' }],
-    ['wrong recipient', { to: FIXTURE.contacts[0].address, amount: '0.5', token: 'GNOT' }],
+    ['wrong token', { to, amount: '0.5', token: TokenSymbol.Gns }],
+    ['wrong amount', { to, amount: '5', token: TokenSymbol.Gnot }],
+    [
+      'wrong recipient',
+      { to: FIXTURE.contacts[0].address, amount: '0.5', token: TokenSymbol.Gnot },
+    ],
   ])('fails on %s', (_label, input) => {
-    const verdict = evaluateScenario(scenario('transfer'), [call('transfer', input)], '');
+    const verdict = evaluateScenario(
+      scenario('transfer'),
+      [call(ToolName.Transfer, input)],
+      ''
+    );
 
     expect(verdict.pass).toBe(false);
     expect(failed(verdict)).toHaveLength(1);
@@ -62,9 +70,9 @@ describe('evaluateScenario', () => {
   });
 
   it('requires the compound calls in order but tolerates other calls between them', () => {
-    const balance = call('get_balance', { token: 'GNOT' });
-    const transfer = call('transfer', { to, amount: '5', token: 'GNOT' });
-    const noise = call('get_balance', { token: 'GNS' });
+    const balance = call(ToolName.GetBalance, { token: TokenSymbol.Gnot });
+    const transfer = call(ToolName.Transfer, { to, amount: '5', token: TokenSymbol.Gnot });
+    const noise = call(ToolName.GetBalance, { token: TokenSymbol.Gns });
 
     expect(evaluateScenario(scenario('compound'), [balance, noise, transfer], '').pass).toBe(true);
     expect(evaluateScenario(scenario('compound'), [transfer, balance], '').pass).toBe(false);
@@ -74,19 +82,19 @@ describe('evaluateScenario', () => {
   it('does not let one call satisfy two expected calls', () => {
     const verdict = evaluateScenario(
       scenario('compound'),
-      [call('get_balance', { token: 'GNOT' })],
+      [call(ToolName.GetBalance, { token: TokenSymbol.Gnot })],
       ''
     );
 
-    expect(failed(verdict)).toEqual([expect.stringContaining('transfer')]);
+    expect(failed(verdict)).toEqual([expect.stringContaining(ToolName.Transfer)]);
   });
 
   it('is strict about invalid calls even if a retry succeeded', () => {
     const verdict = evaluateScenario(
       scenario('transfer'),
       [
-        call('transfer', { to, amount: 0.5, token: 'GNOT' }, true),
-        call('transfer', { to, amount: '0.5', token: 'GNOT' }),
+        call(ToolName.Transfer, { to, amount: 0.5, token: TokenSymbol.Gnot }, true),
+        call(ToolName.Transfer, { to, amount: '0.5', token: TokenSymbol.Gnot }),
       ],
       ''
     );
@@ -97,7 +105,7 @@ describe('evaluateScenario', () => {
   it('does not count an invalid call as the expected call', () => {
     const verdict = evaluateScenario(
       scenario('transfer'),
-      [call('transfer', { to, amount: '0.5', token: 'GNOT' }, true)],
+      [call(ToolName.Transfer, { to, amount: '0.5', token: TokenSymbol.Gnot }, true)],
       ''
     );
 
@@ -111,21 +119,21 @@ describe('evaluateScenario', () => {
     expect(
       evaluateScenario(
         scenario('missing-recipient'),
-        [call('transfer', { to: 'friend', amount: '10', token: 'GNS' })],
+        [call(ToolName.Transfer, { to: 'friend', amount: '10', token: TokenSymbol.Gns })],
         answer
       ).pass
     ).toBe(false);
     expect(
       evaluateScenario(
         scenario('missing-recipient'),
-        [call('transfer', { to: 'x', amount: 10, token: 'GNS' }, true)],
+        [call(ToolName.Transfer, { to: 'x', amount: 10, token: TokenSymbol.Gns }, true)],
         answer
       ).pass
     ).toBe(false);
   });
 
   it('checks that the answer mentions the required words', () => {
-    const transfer = call('transfer', { to, amount: '1', token: 'GNOT' });
+    const transfer = call(ToolName.Transfer, { to, amount: '1', token: TokenSymbol.Gnot });
 
     expect(evaluateScenario(scenario('approval'), [transfer], '승인이 필요합니다').pass).toBe(true);
     expect(failed(evaluateScenario(scenario('approval'), [transfer], '전송했습니다'))).toEqual([

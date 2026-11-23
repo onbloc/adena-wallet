@@ -26,11 +26,22 @@ export type Metrics = {
   tokensPerSec?: number;
 };
 
+/** Kinds of events `generate` yields. */
+export const GenerateEventType = {
+  Text: 'text',
+  Reasoning: 'reasoning',
+  ToolCall: 'tool-call',
+  ToolResult: 'tool-result',
+  ToolError: 'tool-error',
+  Done: 'done',
+} as const;
+export type GenerateEventType = (typeof GenerateEventType)[keyof typeof GenerateEventType];
+
 export type GenerateEvent =
-  | { type: 'text'; delta: string }
-  | { type: 'reasoning'; delta: string }
+  | { type: typeof GenerateEventType.Text; delta: string }
+  | { type: typeof GenerateEventType.Reasoning; delta: string }
   | {
-      type: 'tool-call';
+      type: typeof GenerateEventType.ToolCall;
       id: string;
       name: string;
       input: unknown;
@@ -38,10 +49,10 @@ export type GenerateEvent =
       invalid: boolean;
       error?: string;
     }
-  | { type: 'tool-result'; id: string; name: string; output: unknown }
-  | { type: 'tool-error'; id: string; name: string; error: string }
+  | { type: typeof GenerateEventType.ToolResult; id: string; name: string; output: unknown }
+  | { type: typeof GenerateEventType.ToolError; id: string; name: string; error: string }
   | {
-      type: 'done';
+      type: typeof GenerateEventType.Done;
       metrics: Metrics;
       aborted: boolean;
       finishReason?: string;
@@ -82,6 +93,7 @@ export async function* generate(
       abortSignal: signal,
       onError: () => {}, // errors are rethrown from the stream below
     });
+    // Part types in the cases below are the AI SDK's; yielded events use GenerateEventType.
     for await (const part of result.fullStream) {
       switch (part.type) {
         case 'start-step':
@@ -89,16 +101,16 @@ export async function* generate(
           break;
         case 'text-delta':
           firstDeltaAt ??= now();
-          yield { type: 'text', delta: part.text };
+          yield { type: GenerateEventType.Text, delta: part.text };
           break;
         case 'reasoning-delta':
           firstDeltaAt ??= now();
-          yield { type: 'reasoning', delta: part.text };
+          yield { type: GenerateEventType.Reasoning, delta: part.text };
           break;
         case 'tool-call':
           firstDeltaAt ??= now();
           yield {
-            type: 'tool-call',
+            type: GenerateEventType.ToolCall,
             id: part.toolCallId,
             name: part.toolName,
             input: part.input,
@@ -108,7 +120,7 @@ export async function* generate(
           break;
         case 'tool-result':
           yield {
-            type: 'tool-result',
+            type: GenerateEventType.ToolResult,
             id: part.toolCallId,
             name: part.toolName,
             output: part.output,
@@ -116,7 +128,7 @@ export async function* generate(
           break;
         case 'tool-error':
           yield {
-            type: 'tool-error',
+            type: GenerateEventType.ToolError,
             id: part.toolCallId,
             name: part.toolName,
             error: errorMessage(part.error),
@@ -146,7 +158,7 @@ export async function* generate(
       : undefined;
 
   yield {
-    type: 'done',
+    type: GenerateEventType.Done,
     aborted,
     finishReason,
     warnings,

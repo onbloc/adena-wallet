@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import { applyToolEvent, type CallRecord } from './calls';
-import { generate, type GenerateOptions, type Metrics } from './generate';
+import {
+  generate,
+  GenerateEventType,
+  type GenerateOptions,
+  type Metrics,
+} from './generate';
 import { llamaRuntime } from './runtime';
 
 export type RunState = {
@@ -57,22 +62,26 @@ export function useLlm() {
         ...options,
         signal: controller.signal,
       })) {
-        if (event.type === 'text') {
-          text += event.delta;
-          setRun((prev) => ({ ...prev, text }));
-        } else if (event.type === 'reasoning') {
-          reasoning += event.delta;
-          setRun((prev) => ({ ...prev, reasoning }));
-        } else if (event.type === 'done') {
-          setRun((prev) => ({
-            ...prev,
-            metrics: event.metrics,
-            aborted: event.aborted,
-            finishReason: event.finishReason,
-            warnings: event.warnings,
-          }));
-        } else {
-          setRun((prev) => ({ ...prev, calls: applyToolEvent(prev.calls, event) }));
+        switch (event.type) {
+          case GenerateEventType.Text:
+            text += event.delta;
+            setRun((prev) => ({ ...prev, text }));
+            break;
+          case GenerateEventType.Reasoning:
+            reasoning += event.delta;
+            setRun((prev) => ({ ...prev, reasoning }));
+            break;
+          case GenerateEventType.Done:
+            setRun((prev) => ({
+              ...prev,
+              metrics: event.metrics,
+              aborted: event.aborted,
+              finishReason: event.finishReason,
+              warnings: event.warnings,
+            }));
+            break;
+          default: // tool-call / tool-result / tool-error
+            setRun((prev) => ({ ...prev, calls: applyToolEvent(prev.calls, event) }));
         }
       }
     } catch (error) {

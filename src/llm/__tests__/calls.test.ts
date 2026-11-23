@@ -1,10 +1,12 @@
+import { ToolName, TokenSymbol, WalletStatus } from '../../wallet/constants';
 import { applyToolEvent, type CallRecord } from '../calls';
+import { GenerateEventType } from '../generate';
 
-const call = (id: string, name = 'get_balance') => ({
-  type: 'tool-call' as const,
+const call = (id: string, name: ToolName = ToolName.GetBalance) => ({
+  type: GenerateEventType.ToolCall,
   id,
   name,
-  input: { token: 'GNOT' },
+  input: { token: TokenSymbol.Gnot },
   invalid: false,
 });
 
@@ -12,17 +14,17 @@ describe('applyToolEvent', () => {
   it('keeps calls in order and attaches each result to its own call', () => {
     let calls: CallRecord[] = [];
     calls = applyToolEvent(calls, call('a'));
-    calls = applyToolEvent(calls, call('b', 'transfer'));
+    calls = applyToolEvent(calls, call('b', ToolName.Transfer));
     calls = applyToolEvent(calls, {
-      type: 'tool-result',
+      type: GenerateEventType.ToolResult,
       id: 'b',
-      name: 'transfer',
-      output: { status: 'pending_approval' },
+      name: ToolName.Transfer,
+      output: { status: WalletStatus.PendingApproval },
     });
 
     expect(calls.map((c) => [c.id, c.name, c.output])).toEqual([
-      ['a', 'get_balance', undefined],
-      ['b', 'transfer', { status: 'pending_approval' }],
+      ['a', ToolName.GetBalance, undefined],
+      ['b', ToolName.Transfer, { status: WalletStatus.PendingApproval }],
     ]);
   });
 
@@ -33,9 +35,9 @@ describe('applyToolEvent', () => {
       error: 'amount: expected string',
     });
     calls = applyToolEvent(calls, {
-      type: 'tool-error',
+      type: GenerateEventType.ToolError,
       id: 'a',
-      name: 'get_balance',
+      name: ToolName.GetBalance,
       error: 'AI_InvalidToolInputError: ...',
     });
 
@@ -45,9 +47,9 @@ describe('applyToolEvent', () => {
   it('records an execution error on a valid call', () => {
     let calls = applyToolEvent([], call('a'));
     calls = applyToolEvent(calls, {
-      type: 'tool-error',
+      type: GenerateEventType.ToolError,
       id: 'a',
-      name: 'get_balance',
+      name: ToolName.GetBalance,
       error: 'boom',
     });
 

@@ -1,4 +1,4 @@
-import type { GenerateEvent } from './generate';
+import { GenerateEventType, type GenerateEvent } from './generate';
 
 /** One tool call the model made, with what came back for it. */
 export type CallRecord = {
@@ -14,13 +14,18 @@ export type CallRecord = {
 
 export type ToolEvent = Extract<
   GenerateEvent,
-  { type: 'tool-call' | 'tool-result' | 'tool-error' }
+  {
+    type:
+      | typeof GenerateEventType.ToolCall
+      | typeof GenerateEventType.ToolResult
+      | typeof GenerateEventType.ToolError;
+  }
 >;
 
 /** Folds tool events into an ordered call list (results are matched by call id). */
 export function applyToolEvent(calls: CallRecord[], event: ToolEvent): CallRecord[] {
   switch (event.type) {
-    case 'tool-call':
+    case GenerateEventType.ToolCall:
       return [
         ...calls,
         {
@@ -31,11 +36,11 @@ export function applyToolEvent(calls: CallRecord[], event: ToolEvent): CallRecor
           error: event.error,
         },
       ];
-    case 'tool-result':
+    case GenerateEventType.ToolResult:
       return calls.map((call) =>
         call.id === event.id ? { ...call, output: event.output } : call
       );
-    case 'tool-error':
+    case GenerateEventType.ToolError:
       return calls.map((call) =>
         call.id === event.id ? { ...call, error: call.error ?? event.error } : call
       );

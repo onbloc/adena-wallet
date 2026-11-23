@@ -7,4 +7,9 @@ module.exports = defineConfig([
   {
     ignores: ['dist/*'],
   },
+  {
+    // `const ToolName = {...} as const; type ToolName = ...` is the enum-like
+    // pattern used for constants. tsc still rejects real redeclarations.
+    rules: { '@typescript-eslint/no-redeclare': 'off' },
+  },
 ]);

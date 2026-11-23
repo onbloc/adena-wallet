@@ -1,8 +1,9 @@
 import type { CallRecord } from '../../llm/calls';
+import { ToolName } from '../constants';
 import { summarize, type RunResult } from '../evalReport';
 import { SCENARIOS } from '../scenarios';
 
-const invalidCall: CallRecord = { id: 'x', name: 'transfer', input: {}, invalid: true };
+const invalidCall: CallRecord = { id: 'x', name: ToolName.Transfer, input: {}, invalid: true };
 
 const run = (scenarioId: string, overrides: Partial<RunResult> = {}): RunResult => ({
   scenarioId,

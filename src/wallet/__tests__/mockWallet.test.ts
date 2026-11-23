@@ -1,3 +1,4 @@
+import { ToolName, TokenSymbol, WalletErrorCode, WalletStatus } from '../constants';
 import { FIXTURE, isValidAddress, MockWallet } from '../mockWallet';
 
 const [acc1, acc2] = FIXTURE.accounts;
@@ -32,20 +33,22 @@ describe('MockWallet.getBalance', () => {
   it('defaults to account 1 and returns a canonical decimal', () => {
     const wallet = new MockWallet();
 
-    expect(wallet.getBalance({ token: 'GNOT' })).toMatchObject({
-      status: 'ok',
+    expect(wallet.getBalance({ token: TokenSymbol.Gnot })).toMatchObject({
+      status: WalletStatus.Ok,
       account: 1,
       balance: '10',
     });
-    expect(wallet.getBalance({ token: 'GNOT', account: 2 })).toMatchObject({
+    expect(wallet.getBalance({ token: TokenSymbol.Gnot, account: 2 })).toMatchObject({
       balance: '1.5',
     });
   });
 
   it('errors for an unknown account', () => {
-    expect(new MockWallet().getBalance({ token: 'GNOT', account: 9 })).toMatchObject({
-      status: 'error',
-      code: 'unknown_account',
+    expect(
+      new MockWallet().getBalance({ token: TokenSymbol.Gnot, account: 9 })
+    ).toMatchObject({
+      status: WalletStatus.Error,
+      code: WalletErrorCode.UnknownAccount,
     });
   });
 });
@@ -54,47 +57,51 @@ describe('MockWallet.transfer', () => {
   it('stops at pending approval with a normalized amount and does not move funds', () => {
     const wallet = new MockWallet();
 
-    const result = wallet.transfer({ to, amount: '0.50', token: 'GNOT' });
+    const result = wallet.transfer({ to, amount: '0.50', token: TokenSymbol.Gnot });
 
     expect(result).toMatchObject({
-      status: 'pending_approval',
+      status: WalletStatus.PendingApproval,
       from: acc1.address,
       to,
       amount: '0.5',
-      token: 'GNOT',
+      token: TokenSymbol.Gnot,
     });
-    expect(wallet.getBalance({ token: 'GNOT' })).toMatchObject({ balance: '10' });
+    expect(wallet.getBalance({ token: TokenSymbol.Gnot })).toMatchObject({ balance: '10' });
   });
 
   it.each([
-    ['not-an-address', '1', 'invalid_address'],
-    [to, '0', 'invalid_amount'],
-    [to, '-1', 'invalid_amount'],
-    [to, 'half', 'invalid_amount'],
-    [to, '0.0000001', 'invalid_amount'], // finer than 6 decimals
-    [to, '10.000001', 'insufficient_balance'],
+    ['not-an-address', '1', WalletErrorCode.InvalidAddress],
+    [to, '0', WalletErrorCode.InvalidAmount],
+    [to, '-1', WalletErrorCode.InvalidAmount],
+    [to, 'half', WalletErrorCode.InvalidAmount],
+    [to, '0.0000001', WalletErrorCode.InvalidAmount], // finer than 6 decimals
+    [to, '10.000001', WalletErrorCode.InsufficientBalance],
   ])('rejects to=%p amount=%p with %s', (address, amount, code) => {
-    const result = new MockWallet().transfer({ to: address, amount, token: 'GNOT' });
+    const result = new MockWallet().transfer({
+      to: address,
+      amount,
+      token: TokenSymbol.Gnot,
+    });
 
-    expect(result).toMatchObject({ status: 'error', code });
+    expect(result).toMatchObject({ status: WalletStatus.Error, code });
   });
 
   it('allows spending exactly the whole balance', () => {
-    expect(new MockWallet().transfer({ to, amount: '10', token: 'GNOT' })).toMatchObject({
-      status: 'pending_approval',
-    });
+    expect(
+      new MockWallet().transfer({ to, amount: '10', token: TokenSymbol.Gnot })
+    ).toMatchObject({ status: WalletStatus.PendingApproval });
   });
 
   it('checks the balance of the chosen account', () => {
     const result = new MockWallet().transfer({
       to,
       amount: '2',
-      token: 'GNOT',
+      token: TokenSymbol.Gnot,
       account: acc2.index,
     });
 
     expect(result).toMatchObject({
-      code: 'insufficient_balance',
+      code: WalletErrorCode.InsufficientBalance,
       available: '1.5',
     });
   });
@@ -103,14 +110,14 @@ describe('MockWallet.transfer', () => {
 describe('MockWallet.signMessage', () => {
   it('stops at pending approval', () => {
     expect(new MockWallet().signMessage({ message: 'hello' })).toMatchObject({
-      status: 'pending_approval',
+      status: WalletStatus.PendingApproval,
       signer: acc1.address,
     });
   });
 
   it('rejects a blank message', () => {
     expect(new MockWallet().signMessage({ message: '  ' })).toMatchObject({
-      code: 'empty_message',
+      code: WalletErrorCode.EmptyMessage,
     });
   });
 });
@@ -119,12 +126,12 @@ describe('MockWallet call log', () => {
   it('records every call including failures, in order, and reset clears it', () => {
     const wallet = new MockWallet();
 
-    wallet.getBalance({ token: 'GNOT' });
-    wallet.transfer({ to: 'bad', amount: '1', token: 'GNOT' });
+    wallet.getBalance({ token: TokenSymbol.Gnot });
+    wallet.transfer({ to: 'bad', amount: '1', token: TokenSymbol.Gnot });
 
     expect(wallet.calls.map((c) => [c.tool, c.result.status])).toEqual([
-      ['get_balance', 'ok'],
-      ['transfer', 'error'],
+      [ToolName.GetBalance, WalletStatus.Ok],
+      [ToolName.Transfer, WalletStatus.Error],
     ]);
     wallet.reset();
     expect(wallet.calls).toEqual([]);

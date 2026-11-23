@@ -1,8 +1,9 @@
 import { MockLanguageModelV4 } from 'ai/test';
 
+import { ToolName, TokenSymbol, WalletErrorCode, WalletStatus } from '../../wallet/constants';
 import { MockWallet } from '../../wallet/mockWallet';
 import { createWalletTools } from '../../wallet/tools';
-import { generate, type GenerateEvent } from '../generate';
+import { generate, GenerateEventType, type GenerateEvent } from '../generate';
 
 type Part = Record<string, unknown>;
 
@@ -68,10 +69,10 @@ describe('generate', () => {
     );
 
     expect(events).toEqual([
-      { type: 'reasoning', delta: 'think' },
-      { type: 'text', delta: 'answer' },
+      { type: GenerateEventType.Reasoning, delta: 'think' },
+      { type: GenerateEventType.Text, delta: 'answer' },
       {
-        type: 'done',
+        type: GenerateEventType.Done,
         aborted: false,
         finishReason: 'stop',
         warnings: [],
@@ -119,7 +120,7 @@ describe('generate', () => {
 
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
-      type: 'done',
+      type: GenerateEventType.Done,
       metrics: { ttftMs: null },
     });
   });
@@ -173,12 +174,12 @@ describe('generate', () => {
       signal: abort.signal,
     })) {
       events.push(event);
-      if (event.type === 'text') abort.abort();
+      if (event.type === GenerateEventType.Text) abort.abort();
     }
 
-    expect(events[0]).toEqual({ type: 'text', delta: 'partial' });
+    expect(events[0]).toEqual({ type: GenerateEventType.Text, delta: 'partial' });
     expect(events[events.length - 1]).toMatchObject({
-      type: 'done',
+      type: GenerateEventType.Done,
       aborted: true,
     });
   });
@@ -242,36 +243,36 @@ describe('generate with tools', () => {
   it('runs the tool against the wallet and feeds the result to a second model call', async () => {
     const wallet = new MockWallet();
     const model = stepsModel([
-      toolCall('get_balance', { token: 'GNOT' }),
+      toolCall(ToolName.GetBalance, { token: TokenSymbol.Gnot }),
       [...text('잔액은 10 GNOT입니다'), finish(8)],
     ]);
 
     const events = await run(model, wallet, 3);
 
-    expect(events.filter((e) => e.type !== 'done')).toEqual([
+    expect(events.filter((e) => e.type !== GenerateEventType.Done)).toEqual([
       {
-        type: 'tool-call',
+        type: GenerateEventType.ToolCall,
         id: 'c1',
-        name: 'get_balance',
-        input: { token: 'GNOT' },
+        name: ToolName.GetBalance,
+        input: { token: TokenSymbol.Gnot },
         invalid: false,
         error: undefined,
       },
       {
-        type: 'tool-result',
+        type: GenerateEventType.ToolResult,
         id: 'c1',
-        name: 'get_balance',
-        output: expect.objectContaining({ status: 'ok', balance: '10' }),
+        name: ToolName.GetBalance,
+        output: expect.objectContaining({ status: WalletStatus.Ok, balance: '10' }),
       },
-      { type: 'text', delta: '잔액은 10 GNOT입니다' },
+      { type: GenerateEventType.Text, delta: '잔액은 10 GNOT입니다' },
     ]);
-    expect(wallet.calls.map((c) => c.tool)).toEqual(['get_balance']);
+    expect(wallet.calls.map((c) => c.tool)).toEqual([ToolName.GetBalance]);
     expect(model.doStreamCalls).toHaveLength(2);
   });
 
   it('stops after one model call by default even when a tool ran', async () => {
     const wallet = new MockWallet();
-    const model = stepsModel([toolCall('get_balance', { token: 'GNOT' })]);
+    const model = stepsModel([toolCall(ToolName.GetBalance, { token: TokenSymbol.Gnot })]);
 
     await run(model, wallet);
 
@@ -282,9 +283,9 @@ describe('generate with tools', () => {
   it('caps model calls at maxSteps', async () => {
     const wallet = new MockWallet();
     const model = stepsModel([
-      toolCall('get_balance', { token: 'GNOT' }, 'a'),
-      toolCall('get_balance', { token: 'GNOT' }, 'b'),
-      toolCall('get_balance', { token: 'GNOT' }, 'c'),
+      toolCall(ToolName.GetBalance, { token: TokenSymbol.Gnot }, 'a'),
+      toolCall(ToolName.GetBalance, { token: TokenSymbol.Gnot }, 'b'),
+      toolCall(ToolName.GetBalance, { token: TokenSymbol.Gnot }, 'c'),
     ]);
 
     await run(model, wallet, 2);
@@ -296,18 +297,18 @@ describe('generate with tools', () => {
     const wallet = new MockWallet();
     // amount must be a string
     const model = stepsModel([
-      toolCall('transfer', {
+      toolCall(ToolName.Transfer, {
         to: 'g1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9',
         amount: 0.5,
-        token: 'GNOT',
+        token: TokenSymbol.Gnot,
       }),
     ]);
 
     const events = await run(model, wallet);
 
-    const call = events.find((e) => e.type === 'tool-call');
-    expect(call).toMatchObject({ name: 'transfer', invalid: true });
-    expect(call?.type === 'tool-call' && call.error).toBeTruthy();
+    const call = events.find((e) => e.type === GenerateEventType.ToolCall);
+    expect(call).toMatchObject({ name: ToolName.Transfer, invalid: true });
+    expect(call?.type === GenerateEventType.ToolCall && call.error).toBeTruthy();
     expect(wallet.calls).toEqual([]);
   });
 
@@ -317,7 +318,7 @@ describe('generate with tools', () => {
 
     const events = await run(model, wallet);
 
-    expect(events.find((e) => e.type === 'tool-call')).toMatchObject({
+    expect(events.find((e) => e.type === GenerateEventType.ToolCall)).toMatchObject({
       name: 'burn_everything',
       invalid: true,
     });
@@ -326,12 +327,12 @@ describe('generate with tools', () => {
 
   it('flags unparsable argument JSON', async () => {
     const wallet = new MockWallet();
-    const model = stepsModel([toolCall('get_balance', '{"token": "GN')]);
+    const model = stepsModel([toolCall(ToolName.GetBalance, '{"token": "GN')]);
 
     const events = await run(model, wallet);
 
-    expect(events.find((e) => e.type === 'tool-call')).toMatchObject({
-      name: 'get_balance',
+    expect(events.find((e) => e.type === GenerateEventType.ToolCall)).toMatchObject({
+      name: ToolName.GetBalance,
       invalid: true,
     });
     expect(wallet.calls).toEqual([]);
@@ -340,14 +341,14 @@ describe('generate with tools', () => {
   it('passes well-formed but wrong values through so the wallet can reject them', async () => {
     const wallet = new MockWallet();
     const model = stepsModel([
-      toolCall('transfer', { to: 'alice', amount: '1', token: 'GNOT' }),
+      toolCall(ToolName.Transfer, { to: 'alice', amount: '1', token: TokenSymbol.Gnot }),
     ]);
 
     const events = await run(model, wallet);
 
-    expect(events.find((e) => e.type === 'tool-call')).toMatchObject({ invalid: false });
-    expect(events.find((e) => e.type === 'tool-result')).toMatchObject({
-      output: expect.objectContaining({ code: 'invalid_address' }),
+    expect(events.find((e) => e.type === GenerateEventType.ToolCall)).toMatchObject({ invalid: false });
+    expect(events.find((e) => e.type === GenerateEventType.ToolResult)).toMatchObject({
+      output: expect.objectContaining({ code: WalletErrorCode.InvalidAddress }),
     });
   });
 });

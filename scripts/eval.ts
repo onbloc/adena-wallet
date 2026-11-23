@@ -12,7 +12,7 @@ import type { LanguageModel } from 'ai';
 
 import { applyToolEvent, type CallRecord } from '../src/llm/calls';
 import { DEFAULT_GENERATE_SETTINGS, MAX_STEPS } from '../src/llm/config';
-import { generate } from '../src/llm/generate';
+import { generate, GenerateEventType } from '../src/llm/generate';
 import { evaluateScenario } from '../src/wallet/evaluate';
 import { formatReport, summarize, type RunResult } from '../src/wallet/evalReport';
 import { MockWallet } from '../src/wallet/mockWallet';
@@ -116,14 +116,14 @@ async function runOnce(
       maxSteps: options.maxSteps,
     })) {
       switch (event.type) {
-        case 'text':
+        case GenerateEventType.Text:
           text += event.delta;
           break;
-        case 'done':
+        case GenerateEventType.Done:
           totalMs = event.metrics.totalMs;
           outputTokens = event.metrics.outputTokens;
           break;
-        case 'reasoning':
+        case GenerateEventType.Reasoning:
           break;
         default:
           calls = applyToolEvent(calls, event);
