@@ -166,7 +166,7 @@ describe('evaluateScenario: popups and balances', () => {
   const unchanged = { ...balances({ GNOT: '10', GNS: '250' }), ...balances({}, to) };
 
   it('fails the missing-recipient scenario when transfer is called, even invalidly', () => {
-    const clean = observe({ answer: '주소를 알려주세요', balances: unchanged });
+    const clean = observe({ answer: 'Please tell me the address', balances: unchanged });
 
     expect(evaluateScenario(scenario('missing-recipient'), clean).pass).toBe(true);
     expect(
@@ -218,7 +218,7 @@ describe('evaluateScenario: popups and balances', () => {
     const run = (b: RunObservation['balances']) =>
       evaluateScenario(
         scenario('missing-recipient'),
-        observe({ answer: '주소', balances: b })
+        observe({ answer: 'address', balances: b })
       );
 
     expect(run(balances({ GNS: '250.0' })).pass).toBe(true);
@@ -232,7 +232,19 @@ describe('evaluateScenario: popups and balances', () => {
         observe({ calls: [call(ToolName.GetBalance, {})], answer })
       );
 
-    expect(run('GNOT 잔액은 10입니다').pass).toBe(true);
-    expect(failed(run('모르겠어요'))).toEqual(['answer mentions "10" (heuristic)']);
+    expect(run('Your GNOT balance is 10').pass).toBe(true);
+    expect(failed(run("I don't know"))).toEqual(['answer mentions "10" (heuristic)']);
+  });
+
+  it('matches the required words regardless of letter case', () => {
+    const verdict = evaluateScenario(
+      scenario('missing-recipient'),
+      observe({
+        answer: 'Please give me the recipient ADDRESS',
+        balances: { ...balances({ GNS: '250' }) },
+      })
+    );
+
+    expect(verdict.pass).toBe(true);
   });
 });

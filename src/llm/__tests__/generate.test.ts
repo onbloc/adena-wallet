@@ -287,7 +287,7 @@ describe('generate with tools', () => {
     const sdk = newSdk();
     const model = stepsModel([
       toolCall(ToolName.GetBalance, {}),
-      [...text('잔액은 10 GNOT입니다'), finish(8)],
+      [...text('Your balance is 10 GNOT'), finish(8)],
     ]);
 
     const events = await run(model, sdk, 3);
@@ -310,7 +310,7 @@ describe('generate with tools', () => {
           balances: { GNOT: '10', GNS: '250' },
         }),
       },
-      { type: GenerateEventType.Text, delta: '잔액은 10 GNOT입니다' },
+      { type: GenerateEventType.Text, delta: 'Your balance is 10 GNOT' },
     ]);
     expect(model.doStreamCalls).toHaveLength(2);
   });
@@ -320,7 +320,7 @@ describe('generate with tools', () => {
     const model = stepsModel([
       toolCall(ToolName.GetBalance, {}, 'a'),
       toolCall(ToolName.Transfer, { to: recipient, amount: '5', token: gnot }, 'b'),
-      [...text('전송했습니다'), finish(4)],
+      [...text('Sent'), finish(4)],
     ]);
 
     const events = await run(model, sdk, 5);
@@ -411,7 +411,7 @@ describe('generate with tools', () => {
   it('returns the tool exchange as messages: call, result, then the answer', async () => {
     const model = stepsModel([
       toolCall(ToolName.GetBalance, {}),
-      [...text('잔액은 10 GNOT입니다'), finish(8)],
+      [...text('Your balance is 10 GNOT'), finish(8)],
     ]);
 
     const events = await run(model, newSdk(), 3);

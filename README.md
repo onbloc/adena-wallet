@@ -3,7 +3,7 @@
 On-device LLM PoC: run a GGUF model (default: Qwen3.5-2B Q4_K_M) in React Native via
 [Callstack React Native AI](https://www.react-native-ai.dev/docs/llama/getting-started)
 (`@react-native-ai/llama` on top of `llama.rn`) and test generation from a playground screen.
-It also checks whether the model turns plain-text wallet requests (Korean) into the right
+It also checks whether the model turns plain-text wallet requests into the right
 tool calls against a **mock wallet**.
 
 ## Stack
@@ -36,7 +36,7 @@ src/llm/useLlm.ts         React hook over runtime + generation
 src/wallet/sdk/              Wallet layer (holds the keys): types, MockWalletSdk, fixture, address/token helpers
 src/wallet/adapter/tools.ts  LLM layer: zod tools that call the SDK's public methods only
 src/wallet/constants.ts      Enum-like constants (ToolName, TokenSymbol, WalletStatus, ...)
-src/wallet/prompts.ts        Korean system prompt (contacts, rules)
+src/wallet/prompts.ts        System prompt (contacts, rules)
 src/wallet/scenarios.ts      Test scenarios: expected calls, popups, final balances
 src/wallet/evaluate.ts       Scenario pass/fail checks over a RunObservation
 src/wallet/observation.ts    What a run is judged on (calls, answer, popups, balances)
@@ -111,11 +111,13 @@ simulated user approves unless the scenario (or `--approval`) says to reject.
 
 To see how far the model gets with plain human language, talk to it yourself. It runs on this
 Mac through llama-server (same setup as the eval); by default it is the wallet assistant: the
-app's Korean prompt and tools against a mock wallet.
+app's prompt and tools against a mock wallet.
+It answers in the language you write in (English and Korean both work; the repo itself has no
+Korean text, but you can type any language into the chat).
 
 ```bash
 make chat                                        # interactive; the conversation is remembered
-make chat PROMPT="내 GNOT 잔액 알려줘"             # one question, then exit
+make chat PROMPT="Tell me my GNOT balance"        # one question, then exit
 make chat ARGS="--plain"                         # the bare model: no wallet prompt, no tools
 make chat ARGS="--approval approve"              # signing popups answer themselves (approve | reject)
 ```

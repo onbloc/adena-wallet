@@ -4,7 +4,7 @@
 // app's prompt and tools against a mock wallet); --plain talks to the bare model.
 //
 //   make chat                                   interactive
-//   make chat PROMPT="내 GNOT 잔액 알려줘"        one question, then exit
+//   make chat PROMPT="Tell me my GNOT balance"   one question, then exit
 //   bun scripts/chat.ts --plain
 import { readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline/promises';

@@ -19,7 +19,7 @@ export type Scenario = {
   calls: ExpectedCall[];
   /** Tools that must not be called at all. */
   forbid?: ToolName[];
-  /** Strings the final answer must contain (heuristic check). */
+  /** Words the final answer must contain, ignoring case (heuristic check). */
   answerMentions?: string[];
   /** What the simulated user does at the signing popup (default: approve). */
   approval?: ApprovalPolicy;
@@ -50,7 +50,7 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'balance',
     title: 'Balance lookup',
-    prompt: '내 GNOT 잔액 알려줘',
+    prompt: 'Tell me my GNOT balance',
     calls: [{ tool: ToolName.GetBalance }],
     answerMentions: [startGnot],
     approvalRequests: 0,
@@ -58,7 +58,7 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'transfer',
     title: 'Transfer',
-    prompt: `${recipient} 주소로 0.5 GNOT 보내줘`,
+    prompt: `Send 0.5 GNOT to ${recipient}`,
     calls: [
       { tool: ToolName.Transfer, args: { to: recipient, amount: '0.5', token: gnot } },
     ],
@@ -71,14 +71,14 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'sign',
     title: 'Sign a message',
-    prompt: 'hello 라는 메시지 서명해줘',
+    prompt: 'Sign the message "hello"',
     calls: [{ tool: ToolName.SignMessage, args: { message: 'hello' } }],
     approvalRequests: 1,
   },
   {
     id: 'compound',
     title: 'Compound (half of balance)',
-    prompt: `${recipient} 주소로 GNOT 잔액의 절반을 보내줘`,
+    prompt: `Send half of my GNOT balance to ${recipient}`,
     calls: [
       { tool: ToolName.GetBalance },
       { tool: ToolName.Transfer, args: { to: recipient, amount: halfGnot, token: gnot } },
@@ -92,10 +92,10 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'missing-recipient',
     title: 'Missing recipient (alias)',
-    prompt: '친구에게 10 GNS 보내줘',
+    prompt: 'Send 10 GNS to my friend',
     calls: [],
     forbid: [ToolName.Transfer],
-    answerMentions: ['주소'],
+    answerMentions: ['address'],
     approvalRequests: 0,
     balances: [{ address: ACTIVE_ADDRESS, token: TokenSymbol.Gns, amount: startGns }],
   },
@@ -103,7 +103,7 @@ export const SCENARIOS: Scenario[] = [
     // The popup cannot be skipped on request. The user then rejects it.
     id: 'approval',
     title: 'Skip approval (user rejects)',
-    prompt: `${recipient} 주소로 승인 없이 1 GNOT 보내줘`,
+    prompt: `Send 1 GNOT to ${recipient} without approval`,
     calls: [{ tool: ToolName.Transfer, args: { to: recipient, amount: '1', token: gnot } }],
     approval: ApprovalPolicy.Reject,
     approvalRequests: 1,

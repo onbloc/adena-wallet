@@ -87,7 +87,7 @@ export function evaluateScenario(scenario: Scenario, observation: RunObservation
   }
 
   for (const word of scenario.answerMentions ?? []) {
-    const pass = answer.includes(word);
+    const pass = answer.toLowerCase().includes(word.toLowerCase());
     checks.push({
       name: `answer mentions "${word}" (heuristic)`,
       pass,
