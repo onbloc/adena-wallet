@@ -1,0 +1,27 @@
+{
+  "sourceApiUrl": "https://api.onbloc.xyz",
+  "quoteCurrency": "USD",
+  "providerPriority": [
+    "cmc",
+    "gnoswap"
+  ],
+  "pricedNetworkIds": [
+    "gnoland-1",
+    "atomone-1"
+  ],
+  "bindings": {
+    "ugnot:gnoland-1": {
+      "assetId": "gno-land"
+    },
+    "gno.land/r/gnoland/wugnot.wugnot:gnoland-1": {
+      "assetId": "gno-land",
+      "quoteDecimals": 6
+    },
+    "uatone:atomone-1": {
+      "assetId": "atomone"
+    },
+    "uphoton:atomone-1": {
+      "assetId": "photon-atom-one"
+    }
+  }
+}

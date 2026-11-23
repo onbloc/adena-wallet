@@ -1,0 +1,54 @@
+[
+  {
+    "id": "gnoland-1",
+    "family": "gno",
+    "chainId": "gnoland-1",
+    "chainName": "Gno.land",
+    "networkName": "Mainnet",
+    "addressPrefix": "g",
+    "rpcUrl": "https://rpc.onbloc.xyz:443",
+    "fallbackRpcUrl": "https://rpc.gno.land:443",
+    "apiUrl": "https://api.onbloc.xyz",
+    "linkUrl": "https://gnoscan.io",
+    "nativeTokenId": "ugnot",
+    "isMainnet": true,
+    "feeTokenId": "ugnot",
+    "defaultTokenIds": [
+      "ugnot"
+    ]
+  },
+  {
+    "id": "onyx-1",
+    "family": "gno",
+    "chainId": "onyx-1",
+    "chainName": "Gno.land",
+    "networkName": "Onyx",
+    "addressPrefix": "g",
+    "rpcUrl": "https://rpc.onyx.testnets.gno.land:443",
+    "apiUrl": "https://onyx.api.onbloc.xyz",
+    "linkUrl": "https://gnoscan.io",
+    "nativeTokenId": "ugnot",
+    "isMainnet": false,
+    "feeTokenId": "ugnot",
+    "defaultTokenIds": [
+      "ugnot"
+    ]
+  },
+  {
+    "id": "gnoswap",
+    "family": "gno",
+    "chainId": "dev.gnoswap",
+    "chainName": "Gno.land",
+    "networkName": "GnoSwap Dev",
+    "addressPrefix": "g",
+    "rpcUrl": "https://dev.rpc.gnoswap.io",
+    "apiUrl": "",
+    "linkUrl": "https://gnoscan.io",
+    "nativeTokenId": "ugnot",
+    "isMainnet": false,
+    "feeTokenId": "ugnot",
+    "defaultTokenIds": [
+      "ugnot"
+    ]
+  }
+]

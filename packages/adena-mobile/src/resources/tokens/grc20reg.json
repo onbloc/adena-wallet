@@ -1,0 +1,62 @@
+{
+  "gnoland-1": {
+    "helperPath": "",
+    "registries": [
+      {
+        "path": "gno.land/r/nt/grc20reg/v0"
+      }
+    ],
+    "tokenPackages": [
+      {
+        "path": "gno.land/p/nt/grc20/v0",
+        "transferEvent": {
+          "type": "Transfer",
+          "tokenAttr": "token",
+          "fromAttr": "from",
+          "toAttr": "to",
+          "valueAttr": "value"
+        }
+      }
+    ]
+  },
+  "onyx-1": {
+    "helperPath": "",
+    "registries": [
+      {
+        "path": "gno.land/r/nt/grc20reg/v0"
+      }
+    ],
+    "tokenPackages": [
+      {
+        "path": "gno.land/p/nt/grc20/v0",
+        "transferEvent": {
+          "type": "Transfer",
+          "tokenAttr": "token",
+          "fromAttr": "from",
+          "toAttr": "to",
+          "valueAttr": "value"
+        }
+      }
+    ]
+  },
+  "default": {
+    "helperPath": "",
+    "registries": [
+      {
+        "path": "gno.land/r/nt/grc20reg/v0"
+      }
+    ],
+    "tokenPackages": [
+      {
+        "path": "gno.land/p/nt/grc20/v0",
+        "transferEvent": {
+          "type": "Transfer",
+          "tokenAttr": "token",
+          "fromAttr": "from",
+          "toAttr": "to",
+          "valueAttr": "value"
+        }
+      }
+    ]
+  }
+}
