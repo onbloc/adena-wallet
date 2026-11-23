@@ -1,5 +1,6 @@
 import type { CallRecord } from '../llm/calls';
 import { normalizeDecimal } from './amount';
+import type { RunObservation } from './observation';
 import type { ExpectedCall, Scenario } from './scenarios';
 
 export type Check = { name: string; pass: boolean; detail: string };
@@ -33,11 +34,8 @@ function matches(expected: ExpectedCall, call: CallRecord): boolean {
  * Compares what the model did with a scenario's expectations. Strict: an
  * invalid call fails the verdict even if a later retry succeeds.
  */
-export function evaluateScenario(
-  scenario: Scenario,
-  calls: CallRecord[],
-  answer: string
-): Verdict {
+export function evaluateScenario(scenario: Scenario, observation: RunObservation): Verdict {
+  const { calls, answer, approvals, balances } = observation;
   const checks: Check[] = [];
 
   // Greedy earliest match is optimal for ordered-subsequence matching.
@@ -67,6 +65,26 @@ export function evaluateScenario(
     pass: invalid.length === 0,
     detail: invalid.length === 0 ? 'ok' : invalid.map(describeCall).join(', '),
   });
+
+  if (scenario.approvalRequests !== undefined) {
+    checks.push({
+      name: `signing popup shown ${scenario.approvalRequests} time(s)`,
+      pass: approvals.length === scenario.approvalRequests,
+      detail: `shown ${approvals.length} time(s)`,
+    });
+  }
+
+  for (const expected of scenario.balances ?? []) {
+    const actual = balances[expected.address]?.[expected.token];
+    const pass =
+      actual !== undefined &&
+      normalizeDecimal(actual) === normalizeDecimal(expected.amount);
+    checks.push({
+      name: `balance ${expected.address.slice(0, 8)}... ${expected.token} = ${expected.amount}`,
+      pass,
+      detail: pass ? 'ok' : `got ${actual ?? 'not observed'}`,
+    });
+  }
 
   for (const word of scenario.answerMentions ?? []) {
     const pass = answer.includes(word);

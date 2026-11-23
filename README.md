@@ -33,32 +33,53 @@ src/llm/runtime.ts        LlamaRuntime: download -> load -> unload/remove, statu
 src/llm/generate.ts       Streaming generation + tool calling (multi-step): events, TTFT, tok/s, warnings
 src/llm/calls.ts          Folds tool events into an ordered call list
 src/llm/useLlm.ts         React hook over runtime + generation
-src/wallet/mockWallet.ts  In-memory accounts/balances; get_balance, transfer, sign_message; call log
-src/wallet/tools.ts       zod tool definitions whose execute calls the mock wallet
-src/wallet/prompts.ts     Korean system prompt (accounts, contacts, rules)
-src/wallet/scenarios.ts   Test scenarios with expected calls (from the PoC plan)
-src/wallet/evaluate.ts    Scenario pass/fail checks
-src/wallet/amount.ts      Decimal strings <-> bigint base units (no floats)
+src/wallet/sdk/              Wallet layer (holds the keys): types, MockWalletSdk, fixture, address/token helpers
+src/wallet/adapter/tools.ts  LLM layer: zod tools that call the SDK's public methods only
+src/wallet/constants.ts      Enum-like constants (ToolName, TokenSymbol, WalletStatus, ...)
+src/wallet/prompts.ts        Korean system prompt (contacts, rules)
+src/wallet/scenarios.ts      Test scenarios: expected calls, popups, final balances
+src/wallet/evaluate.ts       Scenario pass/fail checks over a RunObservation
+src/wallet/observation.ts    What a run is judged on (calls, answer, popups, balances)
+src/wallet/amount.ts         Decimal strings <-> bigint base units (no floats)
 src/ui/PlaygroundScreen   Model controls, scenarios, prompt, options, tool calls, verdict, metrics
 ```
 
-## Wallet tool calling
+## Wallet layers and tool calling
 
-With **Wallet tools** on (default), the model gets three tools, and the AI SDK runs the ones it
-calls against `MockWallet`, feeding results back for up to `MAX_STEPS` model calls (so
-"half of my balance" can be `get_balance` -> `transfer`).
+```
+model --tool call--> adapter (src/wallet/adapter)      LLM layer
+                       |  injects the user's address, maps wallet refusals to results,
+                       |  and passes a transfer's message on to be signed
+                       v  SDK public methods only: no key ever crosses this line
+                     WalletSdk (src/wallet/sdk)         wallet layer
+                       getBalance(address) -> { GNOT, GNS }
+                       transfer({from,to,amount,token}) -> message (moves nothing)
+                       sign(message) -> asks the user (popup) -> signed | rejected
+```
 
+- The model sees `get_balance()`, `transfer({to,amount,token})`, `sign_message({message})`.
+  No account or `from` is ever a model argument: the harness injects the user's own account.
+  (An optional `address` on `get_balance` made the 2B model pass the recipient's address or
+  `""`, which broke the transfer scenarios, so it was removed.)
+- After `transfer`, **the harness** (not the model) passes the wallet-created message to
+  `sdk.sign`. The popup shows exactly that message. Funds move only when the user approves
+  (signed); on reject nothing moves. The model gets a small `{status: signed | rejected}`.
+- The SDK only signs messages it created itself (altered or invented messages are refused
+  without asking the user), re-checks the balance at signing time, and applies a message once.
+- The private key (a stand-in secret in the mock) never appears in any result, error, popup
+  request or log; tests check this.
+- In the app, the signing popup is a modal (Approve / Reject). In tests and eval a simulated
+  user answers: `autoApproval(ApprovalPolicy.Approve | Reject)`.
 - Tool arguments are validated with zod before `execute`. A call that fails validation (wrong
   type, unknown tool, unparsable JSON) is shown as **[INVALID]** and never reaches the wallet;
   the SDK feeds the error back to the model, which may retry.
-- Value checks (address format, amount > 0, balance) live in `MockWallet`, so a well-formed but
-  wrong value shows up as a wallet error result instead.
-- `transfer` and `sign_message` never execute: they return `pending_approval`.
-- Pick a scenario chip to fill the prompt and see the expected calls; after the run you get
-  PASS/FAIL per check. The evaluation is strict: any invalid call fails it even if a retry
-  succeeds. The "answer mentions" checks are a keyword heuristic.
-- Mock data (addresses, balances, token decimals, address format) are assumptions, not real
-  Gno.land values. Scenarios that need a recipient include an address in the prompt.
+- Value checks (address format, amount > 0, balance) live in the SDK, so a well-formed but
+  wrong value shows up as an `error` result with a code instead.
+- Pick a scenario chip to fill the prompt and see what is expected (calls, popups, balances);
+  after the run you get PASS/FAIL per check. The evaluation is strict: any invalid call fails
+  it even if a retry succeeds. The "answer mentions" checks are a keyword heuristic.
+- Mock data (addresses, balances, token decimals, address format, chain id) are assumptions,
+  not real Gno.land values. Scenarios that need a recipient include an address in the prompt.
 
 ## Eval against a real model (desktop)
 
@@ -75,11 +96,16 @@ llama-server -hf bartowski/Qwen_Qwen3.5-2B-GGUF:Q4_K_M --jinja -c 4096 -np 1 --r
 npm run eval -- --runs 10 --verbose                 # all scenarios, 10 runs each
 npm run eval -- --scenario transfer,compound --runs 20 --out result.json
 npm run eval -- --system-file my-prompt.txt         # try another system prompt
+npm run eval -- --approval reject                   # a user who rejects every signing popup
 ```
 
 Results are probabilistic: read them as pass rates, not pass/fail. Run `i` uses `seed + i`, so
 an invocation is repeatable against the same server build. `--reasoning off` matches the app's
 default (thinking off); drop it to evaluate with thinking.
+
+Each run uses a fresh `MockWalletSdk`. A scenario is judged on the model's tool calls, how many
+signing popups were shown, and the balances afterwards (not only on what the model said). The
+simulated user approves unless the scenario (or `--approval`) says to reject.
 
 ## Metrics
 

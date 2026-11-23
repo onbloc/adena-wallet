@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 
+import type { CallRecord } from '../llm/calls';
 import {
   DEFAULT_GENERATE_SETTINGS,
   DEFAULT_MODEL_ID,
@@ -16,14 +17,20 @@ import {
   MAX_STEPS,
   TEMPERATURE_RANGE,
 } from '../llm/config';
-import type { CallRecord } from '../llm/calls';
 import type { RuntimeStatus } from '../llm/runtime';
 import { useLlm } from '../llm/useLlm';
+import { createWalletTools } from '../wallet/adapter/tools';
+import { ApprovalPolicy } from '../wallet/constants';
 import { evaluateScenario, type Verdict } from '../wallet/evaluate';
-import { MockWallet } from '../wallet/mockWallet';
+import { snapshotBalances, WATCHED } from '../wallet/observation';
 import { buildSystemPrompt } from '../wallet/prompts';
 import { SCENARIOS, type Scenario } from '../wallet/scenarios';
-import { createWalletTools } from '../wallet/tools';
+import { autoApproval } from '../wallet/sdk/approval';
+import { ACTIVE_ADDRESS, FIXTURE } from '../wallet/sdk/fixture';
+import { MockWalletSdk, type ApprovalRecord } from '../wallet/sdk/mockWalletSdk';
+import type { Balances } from '../wallet/sdk/types';
+import { ApprovalModal } from './ApprovalModal';
+import { useApprovalPrompt } from './useApprovalPrompt';
 
 /** Parses user input; null when empty, non-numeric, non-integer (if required) or out of range. */
 function parseBounded(
@@ -55,9 +62,7 @@ function describeStatus(status: RuntimeStatus): string {
 const fmt = (value: number | null | undefined, unit: string, digits = 0) =>
   value === null || value === undefined ? '-' : `${value.toFixed(digits)} ${unit}`;
 
-// One wallet for the screen; reset before every run.
-const wallet = new MockWallet();
-const DEFAULT_SYSTEM = buildSystemPrompt(wallet);
+const DEFAULT_SYSTEM = buildSystemPrompt({ contacts: FIXTURE.contacts });
 
 const json = (value: unknown) => JSON.stringify(value) ?? 'undefined';
 const compact = (text: string, max: number) => {
@@ -65,8 +70,15 @@ const compact = (text: string, max: number) => {
   return flat.length > max ? `${flat.slice(0, max)}...` : flat;
 };
 
+/** What a finished run left behind in the wallet. */
+type WalletSnapshot = {
+  approvals: readonly ApprovalRecord[];
+  balances: Record<string, Balances>;
+};
+
 export default function PlaygroundScreen() {
   const { status, run, start, stop, load, unload, remove } = useLlm();
+  const approvalPrompt = useApprovalPrompt();
   const [system, setSystem] = useState(DEFAULT_SYSTEM);
   const [prompt, setPrompt] = useState('');
   const [temperature, setTemperature] = useState(
@@ -81,6 +93,14 @@ export default function PlaygroundScreen() {
   const [scenarioId, setScenarioId] = useState<string | null>(null);
   // The scenario that was selected when the last run started.
   const [ranScenario, setRanScenario] = useState<Scenario | null>(null);
+  const [balances, setBalances] = useState<Record<string, Balances> | null>(null);
+  const [snapshot, setSnapshot] = useState<WalletSnapshot | null>(null);
+
+  // Initial balances, before any run.
+  useEffect(() => {
+    const sdk = new MockWalletSdk({ requestApproval: autoApproval(ApprovalPolicy.Reject) });
+    void snapshotBalances(sdk).then(setBalances);
+  }, []);
 
   const temperatureValue = parseBounded(temperature, TEMPERATURE_RANGE);
   const maxTokensValue = parseBounded(maxTokens, MAX_OUTPUT_TOKENS_RANGE, true);
@@ -97,11 +117,17 @@ export default function PlaygroundScreen() {
   const scenario = SCENARIOS.find((item) => item.id === scenarioId) ?? null;
   const verdict: Verdict | null =
     ranScenario !== null &&
+    snapshot !== null &&
     !run.running &&
     run.metrics !== null &&
     !run.aborted &&
     run.error === null
-      ? evaluateScenario(ranScenario, run.calls, run.text)
+      ? evaluateScenario(ranScenario, {
+          calls: run.calls,
+          answer: run.text,
+          approvals: snapshot.approvals,
+          balances: snapshot.balances,
+        })
       : null;
 
   const selectScenario = (item: Scenario) => {
@@ -113,154 +139,172 @@ export default function PlaygroundScreen() {
     if (scenario && text !== scenario.prompt) setScenarioId(null);
   };
 
-  const onRun = () => {
+  const onRun = async () => {
     if (temperatureValue === null || maxTokensValue === null) return;
-    wallet.reset();
+    // A fresh wallet per run: every run starts from the same balances.
+    const sdk = new MockWalletSdk({ requestApproval: approvalPrompt.requestApproval });
     setRanScenario(useTools ? scenario : null);
-    void start({
+    setSnapshot(null);
+    setBalances(await snapshotBalances(sdk));
+
+    await start({
       prompt,
       system: system.trim() === '' ? undefined : system,
       temperature: temperatureValue,
       maxOutputTokens: maxTokensValue,
       reasoning: thinking ? 'provider-default' : 'none',
-      tools: useTools ? createWalletTools(wallet) : undefined,
+      tools: useTools ? createWalletTools({ sdk, activeAddress: ACTIVE_ADDRESS }) : undefined,
       maxSteps: useTools ? MAX_STEPS : undefined,
     });
+
+    const after = await snapshotBalances(sdk);
+    setBalances(after);
+    setSnapshot({ approvals: [...sdk.approvals], balances: after });
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>On-device LLM Playground</Text>
+    <>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>On-device LLM Playground</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.mono}>{DEFAULT_MODEL_ID}</Text>
-        <Text style={styles.status}>{describeStatus(status)}</Text>
-        {status.state === 'downloading' && (
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${status.percentage}%` }]} />
+        <View style={styles.card}>
+          <Text style={styles.mono}>{DEFAULT_MODEL_ID}</Text>
+          <Text style={styles.status}>{describeStatus(status)}</Text>
+          {status.state === 'downloading' && (
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${status.percentage}%` }]} />
+            </View>
+          )}
+          <View style={styles.row}>
+            <Button label="Load" onPress={() => void load()} disabled={busy || ready} />
+            <Button
+              label="Unload"
+              onPress={() => void unload()}
+              disabled={busy || run.running || status.state === 'idle'}
+            />
+            <Button
+              label="Delete file"
+              onPress={() => void remove()}
+              disabled={busy || run.running}
+            />
+          </View>
+        </View>
+
+        <BalancesCard balances={balances} />
+
+        <Text style={styles.label}>System prompt (optional)</Text>
+        <TextInput style={styles.input} value={system} onChangeText={setSystem} multiline />
+
+        <Text style={styles.label}>Scenarios</Text>
+        <View style={styles.chips}>
+          {SCENARIOS.map((item) => (
+            <Pressable
+              key={item.id}
+              onPress={() => selectScenario(item)}
+              style={[styles.chip, item.id === scenarioId && styles.chipActive]}
+            >
+              <Text style={[styles.chipText, item.id === scenarioId && styles.chipTextActive]}>
+                {item.title}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        {scenario && <ScenarioExpectation scenario={scenario} />}
+
+        <Text style={styles.label}>Prompt</Text>
+        <TextInput style={styles.input} value={prompt} onChangeText={onPromptChange} multiline />
+
+        <View style={styles.row}>
+          <View style={styles.flex}>
+            <Text style={styles.label}>
+              Temperature ({TEMPERATURE_RANGE.min}-{TEMPERATURE_RANGE.max})
+            </Text>
+            <TextInput
+              style={[styles.input, temperatureValue === null && styles.invalid]}
+              value={temperature}
+              onChangeText={setTemperature}
+              keyboardType="decimal-pad"
+            />
+          </View>
+          <View style={styles.flex}>
+            <Text style={styles.label}>
+              Max tokens ({MAX_OUTPUT_TOKENS_RANGE.min}-{MAX_OUTPUT_TOKENS_RANGE.max})
+            </Text>
+            <TextInput
+              style={[styles.input, maxTokensValue === null && styles.invalid]}
+              value={maxTokens}
+              onChangeText={setMaxTokens}
+              keyboardType="number-pad"
+            />
+          </View>
+        </View>
+
+        <View style={styles.rowCenter}>
+          <Switch value={thinking} onValueChange={setThinking} />
+          <Text style={styles.switchLabel}>Thinking (reasoning)</Text>
+        </View>
+
+        <View style={styles.rowCenter}>
+          <Switch value={useTools} onValueChange={setUseTools} />
+          <Text style={styles.switchLabel}>Wallet tools (mock, max {MAX_STEPS} steps)</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Button label="Run" onPress={() => void onRun()} disabled={!canRun} />
+          <Button label="Stop" onPress={stop} disabled={!run.running} />
+        </View>
+
+        {run.error !== null && <Text style={styles.error}>{run.error}</Text>}
+        {run.warnings.map((warning, index) => (
+          <Text key={`${index}:${warning}`} style={styles.warning}>
+            Warning: {warning}
+          </Text>
+        ))}
+
+        {(run.calls.length > 0 || run.metrics !== null) && useTools && (
+          <CallLog calls={run.calls} />
+        )}
+
+        <Text style={styles.label}>
+          Output{run.aborted ? ' (stopped)' : ''}
+        </Text>
+        <Text style={styles.output} selectable>
+          {run.text}
+        </Text>
+
+        {verdict && ranScenario && <VerdictView scenario={ranScenario} verdict={verdict} />}
+
+        {run.reasoning !== '' && (
+          <>
+            <Pressable onPress={() => setShowReasoning((value) => !value)}>
+              <Text style={styles.link}>
+                {showReasoning ? 'Hide' : 'Show'} reasoning ({run.reasoning.length} chars)
+              </Text>
+            </Pressable>
+            {showReasoning && (
+              <Text style={[styles.output, styles.muted]} selectable>
+                {run.reasoning}
+              </Text>
+            )}
+          </>
+        )}
+
+        {run.metrics && (
+          <View style={styles.card}>
+            <Text style={styles.mono}>TTFT: {fmt(run.metrics.ttftMs, 'ms')}</Text>
+            <Text style={styles.mono}>Total: {fmt(run.metrics.totalMs, 'ms')}</Text>
+            <Text style={styles.mono}>Output tokens: {run.metrics.outputTokens ?? '-'}</Text>
+            <Text style={styles.mono}>Speed: {fmt(run.metrics.tokensPerSec, 'tok/s', 1)}</Text>
           </View>
         )}
-        <View style={styles.row}>
-          <Button label="Load" onPress={() => void load()} disabled={busy || ready} />
-          <Button
-            label="Unload"
-            onPress={() => void unload()}
-            disabled={busy || run.running || status.state === 'idle'}
-          />
-          <Button
-            label="Delete file"
-            onPress={() => void remove()}
-            disabled={busy || run.running}
-          />
-        </View>
-      </View>
+      </ScrollView>
 
-      <Text style={styles.label}>System prompt (optional)</Text>
-      <TextInput style={styles.input} value={system} onChangeText={setSystem} multiline />
-
-      <Text style={styles.label}>Scenarios</Text>
-      <View style={styles.chips}>
-        {SCENARIOS.map((item) => (
-          <Pressable
-            key={item.id}
-            onPress={() => selectScenario(item)}
-            style={[styles.chip, item.id === scenarioId && styles.chipActive]}
-          >
-            <Text style={[styles.chipText, item.id === scenarioId && styles.chipTextActive]}>
-              {item.title}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-      {scenario && <ScenarioExpectation scenario={scenario} />}
-
-      <Text style={styles.label}>Prompt</Text>
-      <TextInput style={styles.input} value={prompt} onChangeText={onPromptChange} multiline />
-
-      <View style={styles.row}>
-        <View style={styles.flex}>
-          <Text style={styles.label}>
-            Temperature ({TEMPERATURE_RANGE.min}-{TEMPERATURE_RANGE.max})
-          </Text>
-          <TextInput
-            style={[styles.input, temperatureValue === null && styles.invalid]}
-            value={temperature}
-            onChangeText={setTemperature}
-            keyboardType="decimal-pad"
-          />
-        </View>
-        <View style={styles.flex}>
-          <Text style={styles.label}>
-            Max tokens ({MAX_OUTPUT_TOKENS_RANGE.min}-{MAX_OUTPUT_TOKENS_RANGE.max})
-          </Text>
-          <TextInput
-            style={[styles.input, maxTokensValue === null && styles.invalid]}
-            value={maxTokens}
-            onChangeText={setMaxTokens}
-            keyboardType="number-pad"
-          />
-        </View>
-      </View>
-
-      <View style={styles.rowCenter}>
-        <Switch value={thinking} onValueChange={setThinking} />
-        <Text style={styles.switchLabel}>Thinking (reasoning)</Text>
-      </View>
-
-      <View style={styles.rowCenter}>
-        <Switch value={useTools} onValueChange={setUseTools} />
-        <Text style={styles.switchLabel}>Wallet tools (mock, max {MAX_STEPS} steps)</Text>
-      </View>
-
-      <View style={styles.row}>
-        <Button label="Run" onPress={onRun} disabled={!canRun} />
-        <Button label="Stop" onPress={stop} disabled={!run.running} />
-      </View>
-
-      {run.error !== null && <Text style={styles.error}>{run.error}</Text>}
-      {run.warnings.map((warning, index) => (
-        <Text key={`${index}:${warning}`} style={styles.warning}>
-          Warning: {warning}
-        </Text>
-      ))}
-
-      {(run.calls.length > 0 || run.metrics !== null) && useTools && (
-        <CallLog calls={run.calls} />
-      )}
-
-      <Text style={styles.label}>
-        Output{run.aborted ? ' (stopped)' : ''}
-      </Text>
-      <Text style={styles.output} selectable>
-        {run.text}
-      </Text>
-
-      {verdict && ranScenario && <VerdictView scenario={ranScenario} verdict={verdict} />}
-
-      {run.reasoning !== '' && (
-        <>
-          <Pressable onPress={() => setShowReasoning((value) => !value)}>
-            <Text style={styles.link}>
-              {showReasoning ? 'Hide' : 'Show'} reasoning ({run.reasoning.length} chars)
-            </Text>
-          </Pressable>
-          {showReasoning && (
-            <Text style={[styles.output, styles.muted]} selectable>
-              {run.reasoning}
-            </Text>
-          )}
-        </>
-      )}
-
-      {run.metrics && (
-        <View style={styles.card}>
-          <Text style={styles.mono}>TTFT: {fmt(run.metrics.ttftMs, 'ms')}</Text>
-          <Text style={styles.mono}>Total: {fmt(run.metrics.totalMs, 'ms')}</Text>
-          <Text style={styles.mono}>Output tokens: {run.metrics.outputTokens ?? '-'}</Text>
-          <Text style={styles.mono}>Speed: {fmt(run.metrics.tokensPerSec, 'tok/s', 1)}</Text>
-        </View>
-      )}
-    </ScrollView>
+      <ApprovalModal
+        request={approvalPrompt.current}
+        onApprove={approvalPrompt.approve}
+        onReject={approvalPrompt.reject}
+      />
+    </>
   );
 }
 
@@ -284,6 +328,27 @@ function Button({
   );
 }
 
+const formatBalances = (balances: Balances) =>
+  Object.entries(balances)
+    .map(([token, amount]) => `${amount} ${token}`)
+    .join(', ');
+
+function BalancesCard({ balances }: { balances: Record<string, Balances> | null }) {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.label}>Wallet balances (mock)</Text>
+      {balances === null && <Text style={styles.muted}>Loading...</Text>}
+      {balances !== null &&
+        WATCHED.map((watched) => (
+          <Text key={watched.address} style={styles.mono}>
+            {watched.label}
+            {watched.address === ACTIVE_ADDRESS ? ' (you)' : ''}: {formatBalances(balances[watched.address])}
+          </Text>
+        ))}
+    </View>
+  );
+}
+
 function ScenarioExpectation({ scenario }: { scenario: Scenario }) {
   return (
     <View style={styles.card}>
@@ -301,6 +366,19 @@ function ScenarioExpectation({ scenario }: { scenario: Scenario }) {
       {scenario.answerMentions?.map((word) => (
         <Text key={word} style={styles.mono}>
           {`answer mentions "${word}"`}
+        </Text>
+      ))}
+      {scenario.approvalRequests !== undefined && (
+        <Text style={styles.mono}>
+          signing popups: {scenario.approvalRequests}
+          {scenario.approvalRequests > 0
+            ? ` (press ${scenario.approval === ApprovalPolicy.Reject ? 'Reject' : 'Approve'})`
+            : ''}
+        </Text>
+      )}
+      {scenario.balances?.map((expected) => (
+        <Text key={`${expected.address}:${expected.token}`} style={styles.mono}>
+          {`balance ${expected.address.slice(0, 8)}... = ${expected.amount} ${expected.token}`}
         </Text>
       ))}
     </View>

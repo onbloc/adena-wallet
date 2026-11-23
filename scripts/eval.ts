@@ -13,12 +13,16 @@ import type { LanguageModel } from 'ai';
 import { applyToolEvent, type CallRecord } from '../src/llm/calls';
 import { DEFAULT_GENERATE_SETTINGS, MAX_STEPS } from '../src/llm/config';
 import { generate, GenerateEventType } from '../src/llm/generate';
+import { createWalletTools } from '../src/wallet/adapter/tools';
+import { ApprovalPolicy } from '../src/wallet/constants';
 import { evaluateScenario } from '../src/wallet/evaluate';
 import { formatReport, summarize, type RunResult } from '../src/wallet/evalReport';
-import { MockWallet } from '../src/wallet/mockWallet';
+import { snapshotBalances } from '../src/wallet/observation';
 import { buildSystemPrompt } from '../src/wallet/prompts';
 import { SCENARIOS, type Scenario } from '../src/wallet/scenarios';
-import { createWalletTools } from '../src/wallet/tools';
+import { autoApproval } from '../src/wallet/sdk/approval';
+import { ACTIVE_ADDRESS, FIXTURE } from '../src/wallet/sdk/fixture';
+import { MockWalletSdk } from '../src/wallet/sdk/mockWalletSdk';
 
 const USAGE = `Usage: bun scripts/eval.ts [options]
   --runs N           runs per scenario (default 10)
@@ -29,6 +33,8 @@ const USAGE = `Usage: bun scripts/eval.ts [options]
   --max-tokens N     per model call (default ${DEFAULT_GENERATE_SETTINGS.maxOutputTokens})
   --max-steps N      model calls per run (default ${MAX_STEPS})
   --seed N           base seed; run i uses seed+i (default 1)
+  --approval P       what the simulated user does at the signing popup: approve | reject
+                     (default: each scenario's own policy, else approve)
   --system-file P    use this file as the system prompt instead of the app's
   --out P            also write the full results as JSON
   --verbose          print calls and answer of every failed run`;
@@ -43,6 +49,7 @@ type Options = {
   maxSteps: number;
   seed: number;
   system: string;
+  approval?: ApprovalPolicy;
   out?: string;
   verbose: boolean;
 };
@@ -56,7 +63,7 @@ function parseOptions(argv: string[]): Options {
     else if (key.startsWith('--') && i + 1 < argv.length) raw.set(key.slice(2), argv[++i]);
     else throw new Error(`Unexpected argument: ${key}`);
   }
-  const known = ['runs', 'scenario', 'url', 'model', 'temperature', 'max-tokens', 'max-steps', 'seed', 'system-file', 'out'];
+  const known = ['runs', 'scenario', 'url', 'model', 'temperature', 'max-tokens', 'max-steps', 'seed', 'system-file', 'out', 'approval'];
   for (const key of raw.keys()) if (!known.includes(key)) throw new Error(`Unknown option: --${key}`);
 
   const num = (key: string, fallback: number, min: number, max: number, integer = true) => {
@@ -77,6 +84,10 @@ function parseOptions(argv: string[]): Options {
     return found;
   });
   const systemFile = raw.get('system-file');
+  const approval = raw.get('approval');
+  if (approval !== undefined && !Object.values(ApprovalPolicy).includes(approval as ApprovalPolicy)) {
+    throw new Error(`--approval must be one of: ${Object.values(ApprovalPolicy).join(', ')}`);
+  }
 
   return {
     runs: num('runs', 10, 1, 1000),
@@ -87,7 +98,8 @@ function parseOptions(argv: string[]): Options {
     maxTokens: num('max-tokens', DEFAULT_GENERATE_SETTINGS.maxOutputTokens, 1, 4095),
     maxSteps: num('max-steps', MAX_STEPS, 1, 20),
     seed: num('seed', 1, 0, 2 ** 31 - 1),
-    system: systemFile ? readFileSync(systemFile, 'utf8') : buildSystemPrompt(new MockWallet()),
+    system: systemFile ? readFileSync(systemFile, 'utf8') : buildSystemPrompt({ contacts: FIXTURE.contacts }),
+    approval: approval as ApprovalPolicy | undefined,
     out: raw.get('out'),
     verbose: flags.has('verbose'),
   };
@@ -99,7 +111,8 @@ async function runOnce(
   seed: number,
   options: Options
 ): Promise<RunResult> {
-  const wallet = new MockWallet();
+  const policy = options.approval ?? scenario.approval ?? ApprovalPolicy.Approve;
+  const sdk = new MockWalletSdk({ requestApproval: autoApproval(policy) });
   let calls: CallRecord[] = [];
   let text = '';
   let totalMs: number | null = null;
@@ -112,7 +125,7 @@ async function runOnce(
       temperature: options.temperature,
       maxOutputTokens: options.maxTokens,
       seed,
-      tools: createWalletTools(wallet),
+      tools: createWalletTools({ sdk, activeAddress: ACTIVE_ADDRESS }),
       maxSteps: options.maxSteps,
     })) {
       switch (event.type) {
@@ -134,7 +147,12 @@ async function runOnce(
     return { scenarioId: scenario.id, pass: false, failedChecks: ['run error'], calls, text, totalMs, error: message };
   }
 
-  const verdict = evaluateScenario(scenario, calls, text);
+  const verdict = evaluateScenario(scenario, {
+    calls,
+    answer: text,
+    approvals: sdk.approvals,
+    balances: await snapshotBalances(sdk),
+  });
   return {
     scenarioId: scenario.id,
     pass: verdict.pass,

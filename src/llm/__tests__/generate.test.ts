@@ -1,8 +1,16 @@
 import { MockLanguageModelV4 } from 'ai/test';
 
-import { ToolName, TokenSymbol, WalletErrorCode, WalletStatus } from '../../wallet/constants';
-import { MockWallet } from '../../wallet/mockWallet';
-import { createWalletTools } from '../../wallet/tools';
+import { createWalletTools } from '../../wallet/adapter/tools';
+import {
+  ApprovalPolicy,
+  ToolName,
+  TokenSymbol,
+  WalletErrorCode,
+  WalletStatus,
+} from '../../wallet/constants';
+import { autoApproval } from '../../wallet/sdk/approval';
+import { ACTIVE_ADDRESS, FIXTURE } from '../../wallet/sdk/fixture';
+import { MockWalletSdk } from '../../wallet/sdk/mockWalletSdk';
 import { generate, GenerateEventType, type GenerateEvent } from '../generate';
 
 type Part = Record<string, unknown>;
@@ -227,34 +235,38 @@ describe('generate with tools', () => {
       })),
     });
 
-  const run = async (
-    model: MockLanguageModelV4,
-    wallet: MockWallet,
-    maxSteps?: number
-  ) =>
+  const newSdk = (policy: ApprovalPolicy = ApprovalPolicy.Approve) =>
+    new MockWalletSdk({ requestApproval: autoApproval(policy) });
+
+  const run = async (model: MockLanguageModelV4, sdk: MockWalletSdk, maxSteps?: number) =>
     collect(
       generate(model, {
         prompt: 'go',
-        tools: createWalletTools(wallet),
+        tools: createWalletTools({ sdk, activeAddress: ACTIVE_ADDRESS }),
         maxSteps,
       })
     );
 
+  const gnot = TokenSymbol.Gnot;
+  const recipient = FIXTURE.recipient;
+  const callOf = (events: GenerateEvent[]) =>
+    events.find((e) => e.type === GenerateEventType.ToolCall);
+
   it('runs the tool against the wallet and feeds the result to a second model call', async () => {
-    const wallet = new MockWallet();
+    const sdk = newSdk();
     const model = stepsModel([
-      toolCall(ToolName.GetBalance, { token: TokenSymbol.Gnot }),
+      toolCall(ToolName.GetBalance, {}),
       [...text('잔액은 10 GNOT입니다'), finish(8)],
     ]);
 
-    const events = await run(model, wallet, 3);
+    const events = await run(model, sdk, 3);
 
     expect(events.filter((e) => e.type !== GenerateEventType.Done)).toEqual([
       {
         type: GenerateEventType.ToolCall,
         id: 'c1',
         name: ToolName.GetBalance,
-        input: { token: TokenSymbol.Gnot },
+        input: {},
         invalid: false,
         error: undefined,
       },
@@ -262,93 +274,106 @@ describe('generate with tools', () => {
         type: GenerateEventType.ToolResult,
         id: 'c1',
         name: ToolName.GetBalance,
-        output: expect.objectContaining({ status: WalletStatus.Ok, balance: '10' }),
+        output: expect.objectContaining({
+          status: WalletStatus.Ok,
+          balances: { GNOT: '10', GNS: '250' },
+        }),
       },
       { type: GenerateEventType.Text, delta: '잔액은 10 GNOT입니다' },
     ]);
-    expect(wallet.calls.map((c) => c.tool)).toEqual([ToolName.GetBalance]);
     expect(model.doStreamCalls).toHaveLength(2);
   });
 
+  it('chains get_balance and transfer: the transfer is signed in the popup and moves the funds', async () => {
+    const sdk = newSdk();
+    const model = stepsModel([
+      toolCall(ToolName.GetBalance, {}, 'a'),
+      toolCall(ToolName.Transfer, { to: recipient, amount: '5', token: gnot }, 'b'),
+      [...text('전송했습니다'), finish(4)],
+    ]);
+
+    const events = await run(model, sdk, 5);
+
+    expect(
+      events.find((e) => e.type === GenerateEventType.ToolResult && e.id === 'b')
+    ).toMatchObject({
+      output: expect.objectContaining({ status: WalletStatus.Signed }),
+    });
+    expect(sdk.approvals).toHaveLength(1);
+    expect(await sdk.getBalance(ACTIVE_ADDRESS)).toMatchObject({ GNOT: '5' });
+    expect(await sdk.getBalance(recipient)).toMatchObject({ GNOT: '5' });
+  });
+
   it('stops after one model call by default even when a tool ran', async () => {
-    const wallet = new MockWallet();
-    const model = stepsModel([toolCall(ToolName.GetBalance, { token: TokenSymbol.Gnot })]);
+    const model = stepsModel([toolCall(ToolName.GetBalance, {})]);
 
-    await run(model, wallet);
+    const events = await run(model, newSdk());
 
-    expect(wallet.calls).toHaveLength(1);
+    expect(events.some((e) => e.type === GenerateEventType.ToolResult)).toBe(true);
     expect(model.doStreamCalls).toHaveLength(1);
   });
 
   it('caps model calls at maxSteps', async () => {
-    const wallet = new MockWallet();
     const model = stepsModel([
-      toolCall(ToolName.GetBalance, { token: TokenSymbol.Gnot }, 'a'),
-      toolCall(ToolName.GetBalance, { token: TokenSymbol.Gnot }, 'b'),
-      toolCall(ToolName.GetBalance, { token: TokenSymbol.Gnot }, 'c'),
+      toolCall(ToolName.GetBalance, {}, 'a'),
+      toolCall(ToolName.GetBalance, {}, 'b'),
+      toolCall(ToolName.GetBalance, {}, 'c'),
     ]);
 
-    await run(model, wallet, 2);
+    await run(model, newSdk(), 2);
 
     expect(model.doStreamCalls).toHaveLength(2);
   });
 
   it('flags arguments that fail schema validation and does not execute them', async () => {
-    const wallet = new MockWallet();
+    const sdk = newSdk();
     // amount must be a string
     const model = stepsModel([
-      toolCall(ToolName.Transfer, {
-        to: 'g1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9',
-        amount: 0.5,
-        token: TokenSymbol.Gnot,
-      }),
+      toolCall(ToolName.Transfer, { to: recipient, amount: 0.5, token: gnot }),
     ]);
 
-    const events = await run(model, wallet);
+    const events = await run(model, sdk);
 
-    const call = events.find((e) => e.type === GenerateEventType.ToolCall);
+    const call = callOf(events);
     expect(call).toMatchObject({ name: ToolName.Transfer, invalid: true });
     expect(call?.type === GenerateEventType.ToolCall && call.error).toBeTruthy();
-    expect(wallet.calls).toEqual([]);
+    expect(sdk.approvals).toEqual([]);
+    expect(await sdk.getBalance(ACTIVE_ADDRESS)).toMatchObject({ GNOT: '10' });
   });
 
   it('flags calls to tools that do not exist', async () => {
-    const wallet = new MockWallet();
+    const sdk = newSdk();
     const model = stepsModel([toolCall('burn_everything', {})]);
 
-    const events = await run(model, wallet);
+    const events = await run(model, sdk);
 
-    expect(events.find((e) => e.type === GenerateEventType.ToolCall)).toMatchObject({
-      name: 'burn_everything',
-      invalid: true,
-    });
-    expect(wallet.calls).toEqual([]);
+    expect(callOf(events)).toMatchObject({ name: 'burn_everything', invalid: true });
+    expect(sdk.approvals).toEqual([]);
   });
 
   it('flags unparsable argument JSON', async () => {
-    const wallet = new MockWallet();
-    const model = stepsModel([toolCall(ToolName.GetBalance, '{"token": "GN')]);
+    const model = stepsModel([toolCall(ToolName.GetBalance, '{"address": "g1')]);
 
-    const events = await run(model, wallet);
+    const events = await run(model, newSdk());
 
-    expect(events.find((e) => e.type === GenerateEventType.ToolCall)).toMatchObject({
-      name: ToolName.GetBalance,
-      invalid: true,
-    });
-    expect(wallet.calls).toEqual([]);
+    expect(callOf(events)).toMatchObject({ name: ToolName.GetBalance, invalid: true });
   });
 
-  it('passes well-formed but wrong values through so the wallet can reject them', async () => {
-    const wallet = new MockWallet();
+  it('passes well-formed but wrong values through so the wallet can refuse them', async () => {
+    const sdk = newSdk();
     const model = stepsModel([
-      toolCall(ToolName.Transfer, { to: 'alice', amount: '1', token: TokenSymbol.Gnot }),
+      toolCall(ToolName.Transfer, { to: 'alice', amount: '1', token: gnot }),
     ]);
 
-    const events = await run(model, wallet);
+    const events = await run(model, sdk);
 
-    expect(events.find((e) => e.type === GenerateEventType.ToolCall)).toMatchObject({ invalid: false });
+    expect(callOf(events)).toMatchObject({ invalid: false });
     expect(events.find((e) => e.type === GenerateEventType.ToolResult)).toMatchObject({
-      output: expect.objectContaining({ code: WalletErrorCode.InvalidAddress }),
+      output: expect.objectContaining({
+        status: WalletStatus.Error,
+        code: WalletErrorCode.InvalidAddress,
+      }),
     });
+    expect(sdk.approvals).toEqual([]);
   });
 });

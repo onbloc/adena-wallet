@@ -19,12 +19,12 @@ describe('applyToolEvent', () => {
       type: GenerateEventType.ToolResult,
       id: 'b',
       name: ToolName.Transfer,
-      output: { status: WalletStatus.PendingApproval },
+      output: { status: WalletStatus.Signed },
     });
 
     expect(calls.map((c) => [c.id, c.name, c.output])).toEqual([
       ['a', ToolName.GetBalance, undefined],
-      ['b', ToolName.Transfer, { status: WalletStatus.PendingApproval }],
+      ['b', ToolName.Transfer, { status: WalletStatus.Signed }],
     ]);
   });
 

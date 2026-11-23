@@ -1,0 +1,188 @@
+import {
+  ApprovalPolicy,
+  SignRequestType,
+  TokenSymbol,
+  ToolName,
+  WalletErrorCode,
+  WalletStatus,
+} from '../../constants';
+import { autoApproval } from '../../sdk/approval';
+import { ACTIVE_ADDRESS, FIXTURE } from '../../sdk/fixture';
+import { MockWalletSdk } from '../../sdk/mockWalletSdk';
+import type { ApprovalHandler } from '../../sdk/types';
+import { createWalletTools, type ToolResult } from '../tools';
+
+const to = FIXTURE.recipient;
+const gnot = TokenSymbol.Gnot;
+const [, acc2] = FIXTURE.accounts;
+
+function setup(requestApproval: ApprovalHandler = autoApproval(ApprovalPolicy.Approve), secret?: string) {
+  const sdk = new MockWalletSdk({ requestApproval, secret });
+  const tools = createWalletTools({ sdk, activeAddress: ACTIVE_ADDRESS });
+  return { sdk, tools };
+}
+
+// Runs a tool the way the AI SDK does, minus schema parsing.
+type Tool = { execute?: unknown };
+const run = (tool: Tool, input: unknown, abortSignal?: AbortSignal) =>
+  (tool.execute as (input: unknown, options: unknown) => Promise<ToolResult>)(input, {
+    toolCallId: 'call',
+    messages: [],
+    abortSignal,
+  });
+
+describe('get_balance', () => {
+  it("returns the user's own balances", async () => {
+    const { tools } = setup();
+
+    expect(await run(tools[ToolName.GetBalance], {})).toEqual({
+      status: WalletStatus.Ok,
+      address: ACTIVE_ADDRESS,
+      balances: { GNOT: '10', GNS: '250' },
+    });
+  });
+
+  it('takes no model arguments, so the model cannot ask about another address', () => {
+    const { tools } = setup();
+    const schema = tools[ToolName.GetBalance].inputSchema as unknown as {
+      parse(value: unknown): object;
+    };
+
+    expect(schema.parse({ address: acc2.address })).toEqual({});
+  });
+});
+
+describe('transfer', () => {
+  const input = { to, amount: '0.5', token: gnot };
+
+  it('has the harness pass the wallet-created message to be signed, from the injected account', async () => {
+    const shown: unknown[] = [];
+    const { sdk, tools } = setup(async (request) => {
+      shown.push(request);
+      return true;
+    });
+
+    const result = await run(tools[ToolName.Transfer], input);
+
+    expect(shown).toEqual([
+      expect.objectContaining({ type: SignRequestType.Transfer, from: ACTIVE_ADDRESS, to, amount: '0.5' }),
+    ]);
+    expect(result).toEqual({
+      status: WalletStatus.Signed,
+      from: ACTIVE_ADDRESS,
+      to,
+      amount: '0.5',
+      token: gnot,
+    });
+    expect(await sdk.getBalance(ACTIVE_ADDRESS)).toMatchObject({ GNOT: '9.5' });
+    expect(await sdk.getBalance(to)).toMatchObject({ GNOT: '0.5' });
+  });
+
+  it('returns rejected and moves nothing when the user declines', async () => {
+    const { sdk, tools } = setup(autoApproval(ApprovalPolicy.Reject));
+
+    const result = await run(tools[ToolName.Transfer], input);
+
+    expect(result).toMatchObject({ status: WalletStatus.Rejected });
+    expect(await sdk.getBalance(ACTIVE_ADDRESS)).toMatchObject({ GNOT: '10' });
+  });
+
+  it.each([
+    ['a malformed recipient', { ...input, to: 'alice' }, WalletErrorCode.InvalidAddress],
+    ['an amount that is not a number', { ...input, amount: 'half' }, WalletErrorCode.InvalidAmount],
+    ['more than the balance', { ...input, amount: '11' }, WalletErrorCode.InsufficientBalance],
+  ])('turns %s into an error result without showing a popup', async (_label, bad, code) => {
+    const { sdk, tools } = setup();
+
+    const result = await run(tools[ToolName.Transfer], bad);
+
+    expect(result).toMatchObject({ status: WalletStatus.Error, code });
+    expect(sdk.approvals).toEqual([]);
+  });
+
+  it('does not let the model choose the sending account', () => {
+    const { tools } = setup();
+
+    // The tool's input schema is a zod object here; parsing drops unknown keys.
+    const schema = tools[ToolName.Transfer].inputSchema as unknown as {
+      parse(value: unknown): object;
+    };
+    const parsed = schema.parse({ ...input, from: acc2.address });
+
+    expect(parsed).not.toHaveProperty('from');
+  });
+
+  it('passes the abort signal on to the popup', async () => {
+    let received: AbortSignal | undefined;
+    const { tools } = setup(async (_request, options) => {
+      received = options.signal;
+      return true;
+    });
+    const controller = new AbortController();
+
+    await run(tools[ToolName.Transfer], input, controller.signal);
+
+    expect(received).toBe(controller.signal);
+  });
+
+  it('lets unexpected failures through as real errors, not as results', async () => {
+    const { tools } = setup(async () => {
+      throw new Error('popup crashed');
+    });
+
+    await expect(run(tools[ToolName.Transfer], input)).rejects.toThrow('popup crashed');
+  });
+});
+
+describe('sign_message', () => {
+  it('signs for the injected account after approval', async () => {
+    const shown: unknown[] = [];
+    const { tools } = setup(async (request) => {
+      shown.push(request);
+      return true;
+    });
+
+    const result = await run(tools[ToolName.SignMessage], { message: 'hello' });
+
+    expect(result).toEqual({ status: WalletStatus.Signed });
+    expect(shown).toEqual([
+      { type: SignRequestType.Message, signer: ACTIVE_ADDRESS, text: 'hello' },
+    ]);
+  });
+
+  it('returns rejected when the user declines', async () => {
+    const { tools } = setup(autoApproval(ApprovalPolicy.Reject));
+
+    expect(await run(tools[ToolName.SignMessage], { message: 'hello' })).toMatchObject({
+      status: WalletStatus.Rejected,
+    });
+  });
+
+  it('turns a blank message into an error result', async () => {
+    const { tools } = setup();
+
+    expect(await run(tools[ToolName.SignMessage], { message: ' ' })).toMatchObject({
+      status: WalletStatus.Error,
+      code: WalletErrorCode.EmptyMessage,
+    });
+  });
+});
+
+describe('what the model can see', () => {
+  it('never includes the private key, signatures or message internals in any result', async () => {
+    const secret = 'TOP-SECRET-KEY-0123456789';
+    const { tools } = setup(autoApproval(ApprovalPolicy.Approve), secret);
+
+    const results = [
+      await run(tools[ToolName.GetBalance], {}),
+      await run(tools[ToolName.Transfer], { to, amount: '1', token: gnot }),
+      await run(tools[ToolName.Transfer], { to: 'bad', amount: '1', token: gnot }),
+      await run(tools[ToolName.SignMessage], { message: 'hello' }),
+    ];
+
+    const seen = JSON.stringify(results);
+    expect(seen).not.toContain(secret);
+    expect(seen).not.toContain('mock-sig');
+    expect(seen).not.toContain('nonce');
+  });
+});
