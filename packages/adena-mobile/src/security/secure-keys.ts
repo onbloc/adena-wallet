@@ -1,0 +1,15 @@
+// Registry of every item kept in the platform keychain/keystore.
+export const SecureKey = {
+  // Password-encrypted mnemonic vault.
+  VAULT: 'vault',
+  // Wallet password guarded by biometric access control.
+  BIOMETRIC_PASSWORD: 'biometric-password',
+  // Encryption key for the general MMKV storage.
+  STORAGE_ENCRYPTION_KEY: 'storage-encryption-key',
+  // Failed password attempts and back-off deadline, shared by every password prompt.
+  PASSWORD_ATTEMPTS: 'password-attempts',
+  // Schema version of secure items, used by secure migrations.
+  SECURE_SCHEMA_VERSION: 'secure-schema-version',
+} as const;
+
+export type SecureKey = (typeof SecureKey)[keyof typeof SecureKey];
