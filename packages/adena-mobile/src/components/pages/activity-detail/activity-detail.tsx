@@ -1,0 +1,38 @@
+import React, { ReactElement } from 'react';
+import { View } from 'react-native';
+
+import { Badge, Button, Text, TextColor } from '../../atoms';
+import { Card, KeyValueRow, Screen, TopBar } from '../../molecules';
+import { styles } from './activity-detail.styles';
+
+export interface ActivityDetailPageProps {
+  title: string;
+  amountLabel?: string;
+  amountColor: TextColor;
+  status: 'Confirmed' | 'Failed';
+  rows: { label: string; value: string; multiline?: boolean }[];
+  onCopyHash: () => void;
+  onOpenExplorer?: () => void;
+  onBack: () => void;
+}
+
+export const ActivityDetailPage = ({ title, amountLabel, amountColor, status, rows, onCopyHash, onOpenExplorer, onBack }: ActivityDetailPageProps): ReactElement => (
+  <Screen
+    header={<TopBar title='Activity detail' onBack={onBack} />}
+    footer={(
+      <>
+        {onOpenExplorer && <Button label='View on Gnoscan' tone='secondary' trailingIcon='chevronRight' onPress={onOpenExplorer} />}
+        <Button label='Copy transaction hash' tone='tertiary' leadingIcon='copy' size='compact' onPress={onCopyHash} />
+      </>
+    )}
+  >
+    <View style={styles.hero}>
+      <Badge label={status} tone={status === 'Confirmed' ? 'success' : 'error'} />
+      <Text variant='section'>{title}</Text>
+      {amountLabel && <Text variant='display' tabular color={amountColor} adjustsFontSizeToFit numberOfLines={1}>{amountLabel}</Text>}
+    </View>
+    <Card>
+      {rows.map(row => <KeyValueRow key={row.label} label={row.label} value={row.value} multiline={row.multiline} />)}
+    </Card>
+  </Screen>
+);

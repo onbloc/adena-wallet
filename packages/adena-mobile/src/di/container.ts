@@ -8,6 +8,7 @@ import { ChainModule, ChainRegistry } from '../repositories/chain/chain-registry
 import { createCosmosModule } from '../repositories/chain/cosmos/cosmos-module';
 import { createGnoModule } from '../repositories/chain/gno/gno-module';
 import { createCachedGnoProviderFactory } from '../repositories/chain/gno/gno-provider';
+import { StorageConnectedAppRepository } from '../repositories/connected-app.repository';
 import { MarketDataRepository, MockMarketDataRepository } from '../repositories/market-data.repository';
 import { StorageNetworkRepository } from '../repositories/network.repository';
 import { StorageNftPreferenceRepository } from '../repositories/nft-preference.repository';
@@ -23,6 +24,7 @@ import { ActivityService } from '../services/activity.service';
 import { AddressBookService } from '../services/address-book.service';
 import { AppResetService } from '../services/app-reset.service';
 import { BalanceService } from '../services/balance.service';
+import { ConnectedAppService } from '../services/connected-app.service';
 import { ExploreService } from '../services/explore.service';
 import { KeyringSession } from '../services/keyring-session';
 import { MarketDataService } from '../services/market-data.service';
@@ -67,6 +69,7 @@ export interface Services {
   exploreService: ExploreService;
   appResetService: AppResetService;
   transactionService: TransactionService;
+  connectedAppService: ConnectedAppService;
   preferenceService: PreferenceService;
   migrationService: MigrationService;
 }
@@ -88,6 +91,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const biometricRepository = new SecureBiometricCredentialRepository(secureStore);
   const accountRepository = new StorageAccountRepository(keyValueStore);
   const networkRepository = new StorageNetworkRepository(keyValueStore);
+  const connectedAppRepository = new StorageConnectedAppRepository(keyValueStore);
   const preferenceRepository = new StoragePreferenceRepository(keyValueStore);
   const tokenListRepository = new StorageTokenListRepository(keyValueStore);
 
@@ -99,6 +103,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const balanceService = overrides.balanceService ?? new BalanceService(chainRegistry, accountService);
   const transactionService = overrides.transactionService
     ?? new TransactionService(chainRegistry, accountService, keyringSession);
+  const connectedAppService = overrides.connectedAppService ?? new ConnectedAppService(connectedAppRepository);
   const priceService = overrides.priceService ?? new PriceService(priceRepository);
   const tokenService = overrides.tokenService ?? new TokenService(chainRegistry, accountService, tokenListRepository);
   const nftService = overrides.nftService
@@ -113,6 +118,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     networkService,
     balanceService,
     transactionService,
+    connectedAppService,
     tokenService,
     priceService,
     marketDataService: overrides.marketDataService
@@ -124,7 +130,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService, resetMarker),
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),
     walletService: overrides.walletService
-      ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService], biometricRepository, preferenceRepository, resetMarker),
+      ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService], biometricRepository, preferenceRepository, resetMarker),
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
   };
