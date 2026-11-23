@@ -35,7 +35,7 @@ function matches(expected: ExpectedCall, call: CallRecord): boolean {
  * invalid call fails the verdict even if a later retry succeeds.
  */
 export function evaluateScenario(scenario: Scenario, observation: RunObservation): Verdict {
-  const { calls, answer, approvals, balances } = observation;
+  const { calls, answer, approvals, balances, allowances } = observation;
   const checks: Check[] = [];
 
   // Greedy earliest match is optimal for ordered-subsequence matching.
@@ -83,6 +83,18 @@ export function evaluateScenario(scenario: Scenario, observation: RunObservation
       name: `balance ${expected.address.slice(0, 8)}... ${expected.token} = ${expected.amount}`,
       pass,
       detail: pass ? 'ok' : `got ${actual ?? 'not observed'}`,
+    });
+  }
+
+  for (const expected of scenario.allowances ?? []) {
+    const actual =
+      allowances.find((a) => a.spender === expected.spender && a.token === expected.token)
+        ?.amount ?? '0';
+    const pass = normalizeDecimal(actual) === normalizeDecimal(expected.amount);
+    checks.push({
+      name: `allowance ${expected.spender.slice(0, 8)}... ${expected.token} = ${expected.amount}`,
+      pass,
+      detail: pass ? 'ok' : `got ${actual}`,
     });
   }
 

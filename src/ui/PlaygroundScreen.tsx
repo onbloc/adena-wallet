@@ -32,7 +32,7 @@ import { SCENARIOS, type Scenario } from '../wallet/scenarios';
 import { autoApproval } from '../wallet/sdk/approval';
 import { ACTIVE_ADDRESS, FIXTURE } from '../wallet/sdk/fixture';
 import { MockWalletSdk, type ApprovalRecord } from '../wallet/sdk/mockWalletSdk';
-import type { Balances } from '../wallet/sdk/types';
+import type { Allowance, Balances } from '../wallet/sdk/types';
 import { ApprovalModal } from './ApprovalModal';
 import { useApprovalPrompt } from './useApprovalPrompt';
 
@@ -78,6 +78,7 @@ const compact = (text: string, max: number) => {
 type WalletSnapshot = {
   approvals: readonly ApprovalRecord[];
   balances: Record<string, Balances>;
+  allowances: readonly Allowance[];
 };
 
 /** Balances of a wallet nobody has used yet. */
@@ -162,6 +163,7 @@ export default function PlaygroundScreen() {
           answer: run.text,
           approvals: snapshot.approvals,
           balances: snapshot.balances,
+          allowances: snapshot.allowances,
         })
       : null;
 
@@ -200,7 +202,11 @@ export default function PlaygroundScreen() {
 
     const after = await snapshotBalances(sdk);
     setBalances(after);
-    setSnapshot({ approvals: [...sdk.approvals], balances: after });
+    setSnapshot({
+      approvals: [...sdk.approvals],
+      balances: after,
+      allowances: await sdk.getAllowances(ACTIVE_ADDRESS),
+    });
   };
 
   const sendDisabled = !run.running && !canRun;

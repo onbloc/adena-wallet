@@ -23,6 +23,26 @@ export type TransferMessage = TransferParams & {
   nonce: number;
 };
 
+/** Lets `spender` use up to `amount` of the owner's `token`. */
+export type AllowanceParams = {
+  /** The owner: the account that gives the allowance. */
+  from: string;
+  spender: string;
+  /** Decimal string, e.g. "10". */
+  amount: string;
+  token: TokenSymbol;
+};
+
+/** Created by `approve`; the user signs exactly this. */
+export type AllowanceMessage = AllowanceParams & {
+  type: typeof SignRequestType.Allowance;
+  chainId: string;
+  nonce: number;
+};
+
+/** One allowance an account has given. */
+export type Allowance = { spender: string; token: TokenSymbol; amount: string };
+
 /** Free-text message signed by one of the wallet's accounts. */
 export type TextMessage = {
   type: typeof SignRequestType.Message;
@@ -30,7 +50,7 @@ export type TextMessage = {
   text: string;
 };
 
-export type SignRequest = TransferMessage | TextMessage;
+export type SignRequest = TransferMessage | AllowanceMessage | TextMessage;
 
 export type SignResult =
   | { status: typeof WalletStatus.Signed; signature: string }
@@ -63,6 +83,10 @@ export interface WalletSdk {
   getBalance(address: string): Promise<Balances>;
   /** Builds the message to sign. Moves no funds. */
   transfer(params: TransferParams): Promise<TransferMessage>;
+  /** Builds the allowance message to sign. Gives nothing yet. */
+  approve(params: AllowanceParams): Promise<AllowanceMessage>;
   /** Asks the user to approve, then signs. A signed transfer moves the funds. */
   sign(request: SignRequest, options?: SignOptions): Promise<SignResult>;
+  /** The allowances an account has given, oldest first. */
+  getAllowances(owner: string): Promise<Allowance[]>;
 }

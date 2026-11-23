@@ -4,8 +4,9 @@ import type { ContextParams } from '@react-native-ai/llama';
 export const DEFAULT_MODEL_ID =
   'bartowski/Qwen_Qwen3.5-2B-GGUF/Qwen_Qwen3.5-2B-Q4_K_M.gguf';
 
-// Library default is 2048; raised so prompts + reasoning fit.
-export const DEFAULT_CONTEXT_PARAMS: Partial<ContextParams> = { n_ctx: 4096 };
+// Library default is 2048. The prompt with all wallet tools is ~1.3k tokens; the rest is room
+// for tool results and multi-turn use. Keep the desktop llama-server `-c` in sync (with-server.sh).
+export const DEFAULT_CONTEXT_PARAMS: Partial<ContextParams> = { n_ctx: 8192 };
 
 // Low temperature: tool calls need stable names and arguments.
 export const DEFAULT_GENERATE_SETTINGS = {

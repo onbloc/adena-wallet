@@ -5,6 +5,9 @@ import { FIXTURE, type MockAccount } from './fixture';
 import { TOKEN_DECIMALS, TOKEN_SYMBOLS } from './tokens';
 import {
   WalletError,
+  type Allowance,
+  type AllowanceMessage,
+  type AllowanceParams,
   type ApprovalHandler,
   type Balances,
   type SignOptions,
@@ -29,11 +32,20 @@ export type MockWalletSdkOptions = {
   secret?: string;
 };
 
-const messageKey = (message: TransferMessage) => `${message.from}:${message.nonce}`;
+const messageKey = (message: TransferMessage | AllowanceMessage) =>
+  `${message.from}:${message.nonce}`;
 
 const sameTransfer = (a: TransferMessage, b: TransferMessage) =>
   a.from === b.from &&
   a.to === b.to &&
+  a.amount === b.amount &&
+  a.token === b.token &&
+  a.nonce === b.nonce &&
+  a.chainId === b.chainId;
+
+const sameAllowance = (a: AllowanceMessage, b: AllowanceMessage) =>
+  a.from === b.from &&
+  a.spender === b.spender &&
   a.amount === b.amount &&
   a.token === b.token &&
   a.nonce === b.nonce &&
@@ -50,8 +62,8 @@ function fakeDigest(input: string): string {
 }
 
 /**
- * In-memory wallet SDK. Balances move only when the user approves the signing
- * of a transfer message this SDK created itself.
+ * In-memory wallet SDK. Balances move and allowances change only when the user
+ * approves the signing of a message this SDK created itself.
  */
 export class MockWalletSdk implements WalletSdk {
   readonly #secret: string;
@@ -59,7 +71,12 @@ export class MockWalletSdk implements WalletSdk {
   readonly #owned = new Set<string>();
   readonly #balances = new Map<string, Map<TokenSymbol, bigint>>();
   readonly #nextNonce = new Map<string, number>();
-  readonly #issued = new Map<string, TransferMessage>();
+  readonly #issued = new Map<string, TransferMessage | AllowanceMessage>();
+  /** Allowances given, by owner and then `spender:token`. Overwritten on a new approval. */
+  readonly #allowances = new Map<
+    string,
+    Map<string, { spender: string; token: TokenSymbol; units: bigint }>
+  >();
   readonly #applied = new Set<string>();
   readonly #approvals: ApprovalRecord[] = [];
 
@@ -94,6 +111,27 @@ export class MockWalletSdk implements WalletSdk {
     this.#balances.set(address, tokens);
   }
 
+  #setAllowance(owner: string, spender: string, token: TokenSymbol, units: bigint) {
+    const given = this.#allowances.get(owner) ?? new Map();
+    given.set(`${spender}:${token}`, { spender, token, units });
+    this.#allowances.set(owner, given);
+  }
+
+  /** One nonce sequence per account, shared by transfers and allowances. */
+  #takeNonce(account: string): number {
+    const nonce = this.#nextNonce.get(account) ?? 0;
+    this.#nextNonce.set(account, nonce + 1);
+    return nonce;
+  }
+
+  #positiveUnits(amount: string, token: TokenSymbol): bigint {
+    const units = toBaseUnits(amount, TOKEN_DECIMALS[token]);
+    if (units === null || units <= 0n) {
+      throw new WalletError(WalletErrorCode.InvalidAmount, 'Amount must be a positive decimal');
+    }
+    return units;
+  }
+
   /** Throws InvalidAddress: a length message first, then `formatMessage` for other malformed input. */
   #assertAddress(address: string, formatMessage: string) {
     if (address.length !== ADDRESS_LENGTH) {
@@ -118,10 +156,7 @@ export class MockWalletSdk implements WalletSdk {
     }
     this.#assertAddress(to, 'Recipient is not a valid g1... address');
     const decimals = TOKEN_DECIMALS[token];
-    const units = toBaseUnits(amount, decimals);
-    if (units === null || units <= 0n) {
-      throw new WalletError(WalletErrorCode.InvalidAmount, 'Amount must be a positive decimal');
-    }
+    const units = this.#positiveUnits(amount, token);
     const available = this.#units(from, token);
     if (units > available) {
       throw new WalletError(
@@ -134,8 +169,7 @@ export class MockWalletSdk implements WalletSdk {
 
   async transfer(params: TransferParams): Promise<TransferMessage> {
     const { amount } = this.#checkTransfer(params);
-    const nonce = this.#nextNonce.get(params.from) ?? 0;
-    this.#nextNonce.set(params.from, nonce + 1);
+    const nonce = this.#takeNonce(params.from);
 
     const message: TransferMessage = {
       type: SignRequestType.Transfer,
@@ -150,10 +184,51 @@ export class MockWalletSdk implements WalletSdk {
     return { ...message };
   }
 
+  /** Throws a WalletError unless the allowance may be set right now. Like ERC-20, it may exceed the balance. */
+  #checkAllowance({ from, spender, amount, token }: AllowanceParams) {
+    if (!this.#owned.has(from)) {
+      throw new WalletError(WalletErrorCode.UnknownAccount, 'Owner is not an account of this wallet');
+    }
+    this.#assertAddress(spender, 'Spender is not a valid g1... address');
+    const units = this.#positiveUnits(amount, token);
+    return { units, amount: fromBaseUnits(units, TOKEN_DECIMALS[token]) };
+  }
+
+  async approve(params: AllowanceParams): Promise<AllowanceMessage> {
+    const { amount } = this.#checkAllowance(params);
+    const nonce = this.#takeNonce(params.from);
+
+    const message: AllowanceMessage = {
+      type: SignRequestType.Allowance,
+      chainId: MOCK_CHAIN_ID,
+      from: params.from,
+      spender: params.spender,
+      amount,
+      token: params.token,
+      nonce,
+    };
+    this.#issued.set(messageKey(message), message);
+    return { ...message };
+  }
+
+  async getAllowances(owner: string): Promise<Allowance[]> {
+    this.#assertAddress(owner, 'Not a valid g1... address');
+    return [...(this.#allowances.get(owner)?.values() ?? [])].map(({ spender, token, units }) => ({
+      spender,
+      token,
+      amount: fromBaseUnits(units, TOKEN_DECIMALS[token]),
+    }));
+  }
+
   async sign(request: SignRequest, options: SignOptions = {}): Promise<SignResult> {
-    return request.type === SignRequestType.Transfer
-      ? this.#signTransfer(request, options)
-      : this.#signText(request, options);
+    switch (request.type) {
+      case SignRequestType.Transfer:
+        return this.#signTransfer(request, options);
+      case SignRequestType.Allowance:
+        return this.#signAllowance(request, options);
+      default:
+        return this.#signText(request, options);
+    }
   }
 
   async #ask(request: SignRequest, options: SignOptions): Promise<boolean> {
@@ -175,7 +250,7 @@ export class MockWalletSdk implements WalletSdk {
       throw new WalletError(WalletErrorCode.AlreadyApplied, 'This transfer was already signed');
     }
     const issued = this.#issued.get(key);
-    if (!issued || !sameTransfer(issued, message)) {
+    if (!issued || issued.type !== SignRequestType.Transfer || !sameTransfer(issued, message)) {
       throw new WalletError(WalletErrorCode.InvalidMessage, 'Not a message created by this wallet');
     }
     this.#checkTransfer(issued); // fail before bothering the user
@@ -189,6 +264,29 @@ export class MockWalletSdk implements WalletSdk {
     const { units } = this.#checkTransfer(issued);
     this.#setUnits(issued.from, issued.token, this.#units(issued.from, issued.token) - units);
     this.#setUnits(issued.to, issued.token, this.#units(issued.to, issued.token) + units);
+    this.#applied.add(key);
+    return this.#signature(issued);
+  }
+
+  async #signAllowance(message: AllowanceMessage, options: SignOptions): Promise<SignResult> {
+    const key = messageKey(message);
+    if (this.#applied.has(key)) {
+      throw new WalletError(WalletErrorCode.AlreadyApplied, 'This approval was already signed');
+    }
+    const issued = this.#issued.get(key);
+    if (!issued || issued.type !== SignRequestType.Allowance || !sameAllowance(issued, message)) {
+      throw new WalletError(WalletErrorCode.InvalidMessage, 'Not a message created by this wallet');
+    }
+    this.#checkAllowance(issued); // fail before bothering the user
+
+    if (!(await this.#ask(issued, options))) return { status: WalletStatus.Rejected };
+
+    // State may have changed while the popup was open.
+    if (this.#applied.has(key)) {
+      throw new WalletError(WalletErrorCode.AlreadyApplied, 'This approval was already signed');
+    }
+    const { units } = this.#checkAllowance(issued);
+    this.#setAllowance(issued.from, issued.spender, issued.token, units);
     this.#applied.add(key);
     return this.#signature(issued);
   }

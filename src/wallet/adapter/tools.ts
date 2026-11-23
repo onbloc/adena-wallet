@@ -77,6 +77,37 @@ export function createWalletTools({ sdk, activeAddress }: WalletToolsContext) {
           return afterSigning(result, { from: message.from, to, amount: message.amount, token });
         }),
     }),
+    [ToolName.Approve]: tool({
+      description:
+        "Let another address (the spender) use up to an amount of one of the user's tokens (a token approval or allowance). A new approval for the same spender and token replaces the old one. The user must approve a signing popup; the result says whether it was signed or rejected.",
+      inputSchema: z.object({
+        spender: z.string().describe('Spender address starting with g1'),
+        amount: z.string().describe('Decimal amount as a string, e.g. "10"'),
+        token: z.enum(TokenSymbol).describe('Token symbol'),
+      }),
+      execute: ({ spender, amount, token }, { abortSignal }) =>
+        refusalsAsResults(async () => {
+          const message = await sdk.approve({ from: activeAddress, spender, amount, token });
+          // The harness, not the model, passes the message on to be signed.
+          const result = await sdk.sign(message, { signal: abortSignal });
+          return afterSigning(result, {
+            from: message.from,
+            spender,
+            amount: message.amount,
+            token,
+          });
+        }),
+    }),
+    [ToolName.GetApprovals]: tool({
+      description: 'List the token approvals the user has given to other addresses.',
+      inputSchema: z.object({}),
+      execute: () =>
+        refusalsAsResults(async () => ({
+          status: WalletStatus.Ok,
+          address: activeAddress,
+          approvals: await sdk.getAllowances(activeAddress),
+        })),
+    }),
     [ToolName.SignMessage]: tool({
       description:
         "Sign a text message with the user's account. The user must approve a signing popup.",

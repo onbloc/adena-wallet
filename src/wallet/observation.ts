@@ -1,7 +1,7 @@
 import type { CallRecord } from '../llm/calls';
 import { FIXTURE } from './sdk/fixture';
 import type { ApprovalRecord } from './sdk/mockWalletSdk';
-import type { Balances, WalletSdk } from './sdk/types';
+import type { Allowance, Balances, WalletSdk } from './sdk/types';
 
 /** Everything a scenario run is judged on. */
 export type RunObservation = {
@@ -12,6 +12,8 @@ export type RunObservation = {
   approvals: readonly ApprovalRecord[];
   /** Balances after the run, by address. */
   balances: Record<string, Balances>;
+  /** The user's allowances after the run. */
+  allowances: readonly Allowance[];
 };
 
 /** Accounts whose balances scenarios may check, with a label for the UI. */

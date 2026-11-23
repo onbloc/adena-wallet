@@ -28,6 +28,7 @@ const observe = (overrides: Partial<RunObservation> = {}): RunObservation => ({
   answer: '',
   approvals: [],
   balances: {},
+  allowances: [],
   ...overrides,
 });
 
@@ -246,5 +247,39 @@ describe('evaluateScenario: popups and balances', () => {
     );
 
     expect(verdict.pass).toBe(true);
+  });
+});
+
+describe('evaluateScenario: allowances', () => {
+  const gns = TokenSymbol.Gns;
+  const approveRun = (allowances: RunObservation['allowances']) =>
+    observe({
+      calls: [call(ToolName.Approve, { spender: to, amount: '5', token: gns })],
+      approvals: [popup],
+      balances: balances({ GNS: '250' }),
+      allowances,
+    });
+
+  it('passes when the allowance was stored, comparing amounts by value', () => {
+    const verdict = evaluateScenario(
+      scenario('approve-token'),
+      approveRun([{ spender: to, token: gns, amount: '5.0' }])
+    );
+
+    expect(verdict.pass).toBe(true);
+  });
+
+  it('fails when no allowance was stored or the amount differs', () => {
+    const check = `allowance ${to.slice(0, 8)}... GNS = 5`;
+
+    expect(failed(evaluateScenario(scenario('approve-token'), approveRun([])))).toEqual([check]);
+    expect(
+      failed(
+        evaluateScenario(
+          scenario('approve-token'),
+          approveRun([{ spender: to, token: gns, amount: '50' }])
+        )
+      )
+    ).toEqual([check]);
   });
 });

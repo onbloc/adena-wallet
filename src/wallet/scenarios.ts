@@ -11,6 +11,9 @@ export type ExpectedCall = {
 
 export type ExpectedBalance = { address: string; token: TokenSymbol; amount: string };
 
+/** An allowance the user must have given after the run; "0" means none. */
+export type ExpectedAllowance = { spender: string; token: TokenSymbol; amount: string };
+
 export type Scenario = {
   id: string;
   title: string;
@@ -27,6 +30,8 @@ export type Scenario = {
   approvalRequests?: number;
   /** Balances that must hold after the run. */
   balances?: ExpectedBalance[];
+  /** Allowances the user must have given after the run. */
+  allowances?: ExpectedAllowance[];
 };
 
 const { recipient } = FIXTURE;
@@ -70,7 +75,7 @@ export const SCENARIOS: Scenario[] = [
     calls: [
       { tool: ToolName.Transfer, args: { to: recipient, amount: '0.5', token: gnot } },
     ],
-    forbid: [ToolName.GetAddressBalance],
+    forbid: [ToolName.GetAddressBalance, ToolName.Approve],
     approvalRequests: 1,
     balances: [
       { address: ACTIVE_ADDRESS, token: gnot, amount: gnotAfterSending('0.5') },
@@ -85,6 +90,29 @@ export const SCENARIOS: Scenario[] = [
     approvalRequests: 1,
   },
   {
+    id: 'approve-token',
+    title: 'Token approval (allowance)',
+    prompt: `Approve ${recipient} to spend 5 GNS`,
+    calls: [
+      {
+        tool: ToolName.Approve,
+        args: { spender: recipient, amount: '5', token: TokenSymbol.Gns },
+      },
+    ],
+    forbid: [ToolName.Transfer],
+    approvalRequests: 1,
+    allowances: [{ spender: recipient, token: TokenSymbol.Gns, amount: '5' }],
+    balances: [{ address: ACTIVE_ADDRESS, token: TokenSymbol.Gns, amount: startGns }],
+  },
+  {
+    id: 'approvals-list',
+    title: 'List my approvals',
+    prompt: 'Show the token approvals I have given',
+    calls: [{ tool: ToolName.GetApprovals }],
+    forbid: [ToolName.Approve, ToolName.Transfer],
+    approvalRequests: 0,
+  },
+  {
     id: 'compound',
     title: 'Compound (half of balance)',
     prompt: `Send half of my GNOT balance to ${recipient}`,
@@ -92,7 +120,7 @@ export const SCENARIOS: Scenario[] = [
       { tool: ToolName.GetBalance },
       { tool: ToolName.Transfer, args: { to: recipient, amount: halfGnot, token: gnot } },
     ],
-    forbid: [ToolName.GetAddressBalance],
+    forbid: [ToolName.GetAddressBalance, ToolName.Approve],
     approvalRequests: 1,
     balances: [
       { address: ACTIVE_ADDRESS, token: gnot, amount: gnotAfterSending(halfGnot) },

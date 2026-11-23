@@ -20,6 +20,18 @@ export function describeRequest(request: SignRequest): RequestSummary {
       ],
     };
   }
+  if (request.type === SignRequestType.Allowance) {
+    return {
+      title: 'Sign approval',
+      rows: [
+        ['Owner', request.from],
+        ['Spender', request.spender],
+        ['Amount', `${request.amount} ${request.token}`],
+        ['Chain', request.chainId],
+        ['Nonce', String(request.nonce)],
+      ],
+    };
+  }
   return {
     title: 'Sign message',
     rows: [

@@ -335,3 +335,153 @@ describe('private key', () => {
     expect(JSON.stringify(seen)).not.toContain(secret);
   });
 });
+
+describe('allowances', () => {
+  const gns = TokenSymbol.Gns;
+  const give = (amount: string, token: TokenSymbol = gns, spender = other) => ({
+    from: acc1.address,
+    spender,
+    amount,
+    token,
+  });
+
+  it('stores nothing until the user signs', async () => {
+    const { sdk, shown } = makeSdk();
+
+    await sdk.approve(give('5'));
+
+    expect(await sdk.getAllowances(acc1.address)).toEqual([]);
+    expect(shown).toEqual([]);
+  });
+
+  it('stores the allowance once the user approves, shows the exact message, and moves no funds', async () => {
+    const { sdk, shown } = makeSdk(true);
+    const message = await sdk.approve(give('5'));
+
+    const result = await sdk.sign(message);
+
+    expect(result).toMatchObject({ status: WalletStatus.Signed });
+    expect(shown).toEqual([message]);
+    expect(await sdk.getAllowances(acc1.address)).toEqual([
+      { spender: other, token: gns, amount: '5' },
+    ]);
+    expect(await sdk.getBalance(acc1.address)).toEqual({ GNOT: '10', GNS: '250' });
+  });
+
+  it('stores nothing when the user rejects', async () => {
+    const { sdk } = makeSdk(false);
+
+    const result = await sdk.sign(await sdk.approve(give('5')));
+
+    expect(result).toEqual({ status: WalletStatus.Rejected });
+    expect(await sdk.getAllowances(acc1.address)).toEqual([]);
+  });
+
+  it('replaces the allowance for the same spender and token and keeps the others', async () => {
+    const { sdk } = makeSdk(true);
+
+    for (const params of [
+      give('5'),
+      give('7'),
+      give('1', gnot),
+      give('2', gns, to),
+    ]) {
+      await sdk.sign(await sdk.approve(params));
+    }
+
+    expect(await sdk.getAllowances(acc1.address)).toEqual([
+      { spender: other, token: gns, amount: '7' },
+      { spender: other, token: gnot, amount: '1' },
+      { spender: to, token: gns, amount: '2' },
+    ]);
+  });
+
+  it('allows an amount above the balance, like ERC-20', async () => {
+    const { sdk } = makeSdk(true);
+
+    await sdk.sign(await sdk.approve(give('1000')));
+
+    expect(await sdk.getAllowances(acc1.address)).toEqual([
+      { spender: other, token: gns, amount: '1000' },
+    ]);
+  });
+
+  it.each([
+    ['owner is not an account of the wallet', { ...give('5'), from: to }, WalletErrorCode.UnknownAccount],
+    ['spender is malformed', give('5', gns, to.toUpperCase()), WalletErrorCode.InvalidAddress],
+    ['spender has the wrong length', give('5', gns, to.slice(0, -1)), WalletErrorCode.InvalidAddress],
+    ['amount is zero', give('0'), WalletErrorCode.InvalidAmount],
+    ['amount is negative', give('-1'), WalletErrorCode.InvalidAmount],
+    ['amount is not a number', give('lots'), WalletErrorCode.InvalidAmount],
+  ])('refuses when %s, without asking to sign', async (_label, params, code) => {
+    const { sdk, shown } = makeSdk();
+
+    await expect(sdk.approve(params)).rejects.toMatchObject({ code });
+    expect(shown).toEqual([]);
+  });
+
+  it('tells the user the spender address length is invalid', async () => {
+    await expect(makeSdk().sdk.approve(give('5', gns, to.slice(0, -1)))).rejects.toMatchObject({
+      message: INVALID_ADDRESS_LENGTH_MESSAGE,
+    });
+  });
+
+  it('refuses a message that was altered after the wallet created it, without asking the user', async () => {
+    const { sdk, shown } = makeSdk();
+    const message = await sdk.approve(give('5'));
+
+    await expect(sdk.sign({ ...message, amount: '500' })).rejects.toMatchObject({
+      code: WalletErrorCode.InvalidMessage,
+    });
+    await expect(sdk.sign({ ...message, spender: to })).rejects.toMatchObject({
+      code: WalletErrorCode.InvalidMessage,
+    });
+
+    expect(shown).toEqual([]);
+    expect(await sdk.getAllowances(acc1.address)).toEqual([]);
+  });
+
+  it('refuses a transfer message dressed up as an approval, and the other way around', async () => {
+    const { sdk, shown } = makeSdk(true);
+    const transfer = await sdk.transfer(send('1'));
+    const approval = await sdk.approve(give('5'));
+
+    await expect(
+      sdk.sign({ ...approval, type: SignRequestType.Transfer, to: other } as never)
+    ).rejects.toMatchObject({ code: WalletErrorCode.InvalidMessage });
+    await expect(
+      sdk.sign({ ...transfer, type: SignRequestType.Allowance, spender: to } as never)
+    ).rejects.toMatchObject({ code: WalletErrorCode.InvalidMessage });
+
+    expect(shown).toEqual([]);
+  });
+
+  it('applies an approval only once', async () => {
+    const { sdk } = makeSdk(true);
+    const message = await sdk.approve(give('5'));
+    await sdk.sign(message);
+
+    await expect(sdk.sign(message)).rejects.toMatchObject({
+      code: WalletErrorCode.AlreadyApplied,
+    });
+  });
+
+  it('numbers transfers and approvals from one sequence per account', async () => {
+    const { sdk } = makeSdk();
+
+    const first = await sdk.transfer(send('1'));
+    const second = await sdk.approve(give('5'));
+    const third = await sdk.transfer(send('1'));
+
+    expect([first.nonce, second.nonce, third.nonce]).toEqual([0, 1, 2]);
+  });
+
+  it('lists allowances per owner and rejects a malformed owner', async () => {
+    const { sdk } = makeSdk();
+
+    expect(await sdk.getAllowances(other)).toEqual([]);
+    await expect(sdk.getAllowances('alice')).rejects.toMatchObject({
+      code: WalletErrorCode.InvalidAddress,
+    });
+  });
+});

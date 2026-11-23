@@ -71,17 +71,27 @@ model --tool call--> adapter (src/wallet/adapter)      LLM layer
                      WalletSdk (src/wallet/sdk)         wallet layer
                        getBalance(address) -> { GNOT, GNS }
                        transfer({from,to,amount,token}) -> message (moves nothing)
+                       approve({from,spender,amount,token}) -> message (stores nothing)
+                       getAllowances(owner) -> [{ spender, token, amount }]
                        sign(message) -> asks the user (popup) -> signed | rejected
 ```
 
 - The model sees `get_balance()`, `get_address_balance({address})`, `transfer({to,amount,token})`,
-  `sign_message({message})`. `get_balance` is the user's own (fixed) account;
+  `approve({spender,amount,token})`, `get_approvals()`, `sign_message({message})`.
+  `get_balance` is the user's own (fixed) account;
   `get_address_balance` reads any other address from the mock wallet, so tokens sent to an
   address show up when it is looked up later. No account or `from` is ever a model argument:
   the harness injects the user's own account. (An optional `address` on `get_balance` made the
   2B model invent endless addresses until the context was full, or look up a transfer's
   recipient instead of sending, so the two lookups are separate tools. Re-measure with
   `make eval` after prompt or tool changes.)
+- Token approvals (allowances, ERC-20 style) are kept in memory per owner, spender and token:
+  `approve` lets a spender use up to an amount and a new approval for the same spender and
+  token **replaces** the old one; `get_approvals` lists them, oldest first. Like `transfer`,
+  `approve` builds a message that the harness passes to `sdk.sign`; nothing is stored unless
+  the user approves the popup. An allowance may exceed the balance. Spending an allowance
+  (`transferFrom`) is not implemented. "Approval" in `ApprovalRecord` / `ApprovalPolicy` and
+  the `approval` scenario means the signing popup, not an allowance.
 - After `transfer`, **the harness** (not the model) passes the wallet-created message to
   `sdk.sign`. The popup shows exactly that message. Funds move only when the user approves
   (signed); on reject nothing moves. The model gets a small `{status: signed | rejected}`.
@@ -118,7 +128,7 @@ desktop's, not the phone's).
 
 ```bash
 brew install llama.cpp   # one time; needs bun for the runner
-llama-server -hf bartowski/Qwen_Qwen3.5-2B-GGUF:Q4_K_M --jinja -c 4096 -np 1 --reasoning off --port 8089
+llama-server -hf bartowski/Qwen_Qwen3.5-2B-GGUF:Q4_K_M --jinja -c 8192 -np 1 --reasoning off --port 8089
 
 npm run eval -- --runs 10 --verbose                 # all scenarios, 10 runs each
 npm run eval -- --scenario transfer,compound --runs 20 --out result.json
@@ -152,8 +162,8 @@ make chat ARGS="--approval approve"              # signing popups answer themsel
 In the chat: tool calls and their results are printed as `>` / `->` lines, a signing popup asks
 `Approve? [y/N]` at the terminal, and a note shows when wallet balances changed. `/balances`
 shows them, `/reset` forgets the conversation and resets the wallet, `/exit` quits; Ctrl-C stops
-an answer in progress. A stopped or failed question is not remembered. The context is 4096
-tokens, so a long chat eventually fails: `/reset`. Without a terminal (piped input), signing
+an answer in progress. A stopped or failed question is not remembered. The context is 8192
+tokens, so a very long chat eventually fails: `/reset`. Without a terminal (piped input), signing
 popups are rejected unless `--approval approve` is given.
 
 ## Metrics
@@ -168,8 +178,9 @@ popups are rejected unless `--approval approve` is given.
 
 - Qwen3.5 thinks by default, which adds latency; the **Thinking** switch is off by default
   (`reasoning: 'none'`).
-- `n_ctx` is 4096 (library default 2048). Max output tokens is capped below it.
-- Change the model or context size in `src/llm/config.ts`.
+- `n_ctx` is 8192 (library default 2048). Max output tokens is capped below it. The desktop
+  llama-server (`-c` in `scripts/with-server.sh` and the eval command above) must use the same
+  value to match the phone. Change the model or context size in `src/llm/config.ts`.
 
 ## Scripts
 

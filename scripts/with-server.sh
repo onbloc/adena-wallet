@@ -12,7 +12,7 @@ url="http://127.0.0.1:$PORT"
 
 if ! curl -sf "$url/health" >/dev/null; then
   echo "starting llama-server on :$PORT (first run downloads the model; log: $LOG)" >&2
-  llama-server -hf "$MODEL" --jinja -c 4096 -np 1 --reasoning off --host 127.0.0.1 --port "$PORT" >"$LOG" 2>&1 &
+  llama-server -hf "$MODEL" --jinja -c 8192 -np 1 --reasoning off --host 127.0.0.1 --port "$PORT" >"$LOG" 2>&1 &
   pid=$!
   trap 'kill "$pid" 2>/dev/null || true' EXIT INT TERM
 

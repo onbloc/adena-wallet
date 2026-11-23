@@ -10,7 +10,7 @@ import { INVALID_ADDRESS_LENGTH_MESSAGE } from '../../sdk/address';
 import { autoApproval } from '../../sdk/approval';
 import { ACTIVE_ADDRESS, FIXTURE } from '../../sdk/fixture';
 import { MockWalletSdk } from '../../sdk/mockWalletSdk';
-import type { ApprovalHandler } from '../../sdk/types';
+import type { ApprovalHandler, SignRequest } from '../../sdk/types';
 import { createWalletTools, type ToolResult } from '../tools';
 
 const to = FIXTURE.recipient;
@@ -215,5 +215,99 @@ describe('what the model can see', () => {
     expect(seen).not.toContain(secret);
     expect(seen).not.toContain('mock-sig');
     expect(seen).not.toContain('nonce');
+  });
+});
+
+describe('approve', () => {
+  const gns = TokenSymbol.Gns;
+  const input = { spender: other, amount: '5.0', token: gns };
+
+  it('has the harness pass the wallet-created allowance message to be signed, from the injected account', async () => {
+    const shown: SignRequest[] = [];
+    const { sdk, tools } = setup(async (request) => {
+      shown.push(request);
+      return true;
+    });
+
+    const result = await run(tools[ToolName.Approve], input);
+
+    expect(result).toEqual({
+      status: WalletStatus.Signed,
+      from: ACTIVE_ADDRESS,
+      spender: other,
+      amount: '5',
+      token: gns,
+    });
+    expect(shown).toEqual([
+      expect.objectContaining({
+        type: SignRequestType.Allowance,
+        from: ACTIVE_ADDRESS,
+        spender: other,
+        amount: '5',
+        token: gns,
+      }),
+    ]);
+    expect(await sdk.getAllowances(ACTIVE_ADDRESS)).toEqual([
+      { spender: other, token: gns, amount: '5' },
+    ]);
+  });
+
+  it('returns rejected and stores nothing when the user declines', async () => {
+    const { sdk, tools } = setup(autoApproval(ApprovalPolicy.Reject));
+
+    const result = await run(tools[ToolName.Approve], input);
+
+    expect(result).toMatchObject({ status: WalletStatus.Rejected });
+    expect(await sdk.getAllowances(ACTIVE_ADDRESS)).toEqual([]);
+  });
+
+  it.each([
+    ['a spender with the wrong length', { ...input, spender: to.slice(0, -1) }, WalletErrorCode.InvalidAddress],
+    ['a zero amount', { ...input, amount: '0' }, WalletErrorCode.InvalidAmount],
+  ])('turns %s into an error result without showing a popup', async (_label, bad, code) => {
+    const shown: SignRequest[] = [];
+    const { tools } = setup(async (request) => {
+      shown.push(request);
+      return true;
+    });
+
+    expect(await run(tools[ToolName.Approve], bad)).toMatchObject({
+      status: WalletStatus.Error,
+      code,
+    });
+    expect(shown).toEqual([]);
+  });
+
+  it('does not let the model choose the owner', () => {
+    const { tools } = setup();
+    const schema = tools[ToolName.Approve].inputSchema as unknown as {
+      parse(value: unknown): object;
+    };
+
+    expect(schema.parse({ ...input, from: other })).not.toHaveProperty('from');
+  });
+});
+
+describe('get_approvals', () => {
+  it('starts empty and lists what the user approved, oldest first', async () => {
+    const { tools } = setup();
+
+    expect(await run(tools[ToolName.GetApprovals], {})).toEqual({
+      status: WalletStatus.Ok,
+      address: ACTIVE_ADDRESS,
+      approvals: [],
+    });
+
+    await run(tools[ToolName.Approve], { spender: other, amount: '5', token: TokenSymbol.Gns });
+    await run(tools[ToolName.Approve], { spender: to, amount: '2', token: gnot });
+
+    expect(await run(tools[ToolName.GetApprovals], {})).toEqual({
+      status: WalletStatus.Ok,
+      address: ACTIVE_ADDRESS,
+      approvals: [
+        { spender: other, token: TokenSymbol.Gns, amount: '5' },
+        { spender: to, token: gnot, amount: '2' },
+      ],
+    });
   });
 });

@@ -6,6 +6,8 @@ export const ToolName = {
   GetBalance: 'get_balance',
   GetAddressBalance: 'get_address_balance',
   Transfer: 'transfer',
+  Approve: 'approve',
+  GetApprovals: 'get_approvals',
   SignMessage: 'sign_message',
 } as const;
 export type ToolName = (typeof ToolName)[keyof typeof ToolName];
@@ -45,6 +47,8 @@ export type WalletErrorCode = (typeof WalletErrorCode)[keyof typeof WalletErrorC
 /** What the wallet asks the user to sign. */
 export const SignRequestType = {
   Transfer: 'transfer',
+  /** A token allowance: the owner lets a spender use an amount of one token. */
+  Allowance: 'allowance',
   Message: 'message',
 } as const;
 export type SignRequestType = (typeof SignRequestType)[keyof typeof SignRequestType];

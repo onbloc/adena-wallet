@@ -3,7 +3,7 @@
 // prints pass rates. Uses the same harness code as the app (tools, prompt,
 // generate, evaluate). Not part of `npm test`: slow and non-deterministic.
 //
-//   llama-server -hf bartowski/Qwen_Qwen3.5-2B-GGUF:Q4_K_M --jinja -c 4096 -np 1 --reasoning off --port 8089
+//   llama-server -hf bartowski/Qwen_Qwen3.5-2B-GGUF:Q4_K_M --jinja -c 8192 -np 1 --reasoning off --port 8089
 //   bun scripts/eval.ts --runs 10
 import { readFileSync, writeFileSync } from 'node:fs';
 
@@ -138,6 +138,7 @@ async function runOnce(
     answer: text,
     approvals: sdk.approvals,
     balances: await snapshotBalances(sdk),
+    allowances: await sdk.getAllowances(ACTIVE_ADDRESS),
   });
   return {
     scenarioId: scenario.id,
