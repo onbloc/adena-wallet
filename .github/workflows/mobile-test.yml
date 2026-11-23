@@ -4,11 +4,16 @@ name: Mobile Test
 # workflow does not install or test it.
 on:
   pull_request:
-    branches: [main, develop, release/*]
+    # The epic branch collects the stacked mobile PRs before they reach main.
+    branches: [main, develop, release/*, ADN-846-adena-mobile]
     paths:
       - packages/adena-mobile/**
       - packages/adena-module/**
       - .github/workflows/mobile-test.yml
+
+# Read-only checks: the token never needs to write.
+permissions:
+  contents: read
 
 jobs:
   checks:
