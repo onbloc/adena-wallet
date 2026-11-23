@@ -1,0 +1,41 @@
+{
+  "name": "adena-ai-llm-poc",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "@react-native-ai/llama": "^0.13.0",
+    "@stardazed/streams-text-encoding": "^1.0.2",
+    "@ungap/structured-clone": "^1.4.0",
+    "ai": "^7.0.179",
+    "expo": "~58.0.26",
+    "expo-status-bar": "~58.0.5",
+    "llama.rn": "^0.13.0-rc.12",
+    "react": "19.3.0",
+    "react-native": "0.88.1"
+  },
+  "devDependencies": {
+    "@types/jest": "30.0.0",
+    "@types/react": "~19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~58.0.4",
+    "jest": "~30.5.2",
+    "jest-expo": "~58.0.15",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "prebuild": "expo prebuild",
+    "typecheck": "tsc --noEmit",
+    "lint": "expo lint",
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|ai/|@ai-sdk/.*|@workflow/.*|@standard-schema/.*|eventsource-parser/|zod/)"
+    ]
+  },
+  "private": true
+}
