@@ -4,7 +4,7 @@ import { applyToolEvent, type CallRecord } from './calls';
 import {
   generate,
   GenerateEventType,
-  type GenerateOptions,
+  type GenerateSettings,
   type Metrics,
 } from './generate';
 import { llamaRuntime } from './runtime';
@@ -43,7 +43,7 @@ export function useLlm() {
 
   useEffect(() => () => controllerRef.current?.abort(), []);
 
-  const start = useCallback(async (options: Omit<GenerateOptions, 'signal'>) => {
+  const start = useCallback(async (options: GenerateSettings) => {
     const model = llamaRuntime.model;
     if (controllerRef.current) return;
     if (!model) {

@@ -84,6 +84,7 @@ describe('generate', () => {
         aborted: false,
         finishReason: 'stop',
         warnings: [],
+        messages: [expect.objectContaining({ role: 'assistant' })],
         metrics: {
           ttftMs: 100,
           totalMs: 1100,
@@ -92,6 +93,35 @@ describe('generate', () => {
         },
       },
     ]);
+  });
+
+  it('returns what the model said as messages to append to a conversation', async () => {
+    const events = await collect(generate(modelFrom([...text('hello'), finish(2)]), { prompt: 'hi' }));
+
+    expect(events[events.length - 1]).toMatchObject({
+      messages: [
+        { role: 'assistant', content: [expect.objectContaining({ type: 'text', text: 'hello' })] },
+      ],
+    });
+  });
+
+  it('answers from earlier messages when a conversation is given', async () => {
+    const model = modelFrom([...text('x'), finish(1)]);
+
+    await collect(
+      generate(model, {
+        messages: [
+          { role: 'user', content: 'my name is Mina' },
+          { role: 'assistant', content: 'hello Mina' },
+          { role: 'user', content: 'what is my name?' },
+        ],
+      })
+    );
+
+    const sent = JSON.stringify(model.doStreamCalls[0].prompt);
+    expect(sent).toContain('my name is Mina');
+    expect(sent).toContain('hello Mina');
+    expect(sent).toContain('what is my name?');
   });
 
   it('leaves tokensPerSec undefined when usage is not reported', async () => {
@@ -189,6 +219,7 @@ describe('generate', () => {
     expect(events[events.length - 1]).toMatchObject({
       type: GenerateEventType.Done,
       aborted: true,
+      messages: [],
     });
   });
 
@@ -375,5 +406,21 @@ describe('generate with tools', () => {
       }),
     });
     expect(sdk.approvals).toEqual([]);
+  });
+
+  it('returns the tool exchange as messages: call, result, then the answer', async () => {
+    const model = stepsModel([
+      toolCall(ToolName.GetBalance, {}),
+      [...text('잔액은 10 GNOT입니다'), finish(8)],
+    ]);
+
+    const events = await run(model, newSdk(), 3);
+
+    const done = events[events.length - 1];
+    expect(done.type === GenerateEventType.Done && done.messages.map((m) => m.role)).toEqual([
+      'assistant',
+      'tool',
+      'assistant',
+    ]);
   });
 });

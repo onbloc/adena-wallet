@@ -107,6 +107,26 @@ Each run uses a fresh `MockWalletSdk`. A scenario is judged on the model's tool 
 signing popups were shown, and the balances afterwards (not only on what the model said). The
 simulated user approves unless the scenario (or `--approval`) says to reject.
 
+## Free chat (desktop)
+
+To see how far the model gets with plain human language, talk to it yourself. It runs on this
+Mac through llama-server (same setup as the eval); by default it is the wallet assistant: the
+app's Korean prompt and tools against a mock wallet.
+
+```bash
+make chat                                        # interactive; the conversation is remembered
+make chat PROMPT="내 GNOT 잔액 알려줘"             # one question, then exit
+make chat ARGS="--plain"                         # the bare model: no wallet prompt, no tools
+make chat ARGS="--approval approve"              # signing popups answer themselves (approve | reject)
+```
+
+In the chat: tool calls and their results are printed as `>` / `->` lines, a signing popup asks
+`Approve? [y/N]` at the terminal, and a note shows when wallet balances changed. `/balances`
+shows them, `/reset` forgets the conversation and resets the wallet, `/exit` quits; Ctrl-C stops
+an answer in progress. A stopped or failed question is not remembered. The context is 4096
+tokens, so a long chat eventually fails: `/reset`. Without a terminal (piped input), signing
+popups are rejected unless `--approval approve` is given.
+
 ## Metrics
 
 - **TTFT**: start -> first text or reasoning delta.
@@ -138,4 +158,5 @@ make init   # npm install; installs bun and llama.cpp via brew if missing
 make test   # typecheck + lint + jest (mock model, no LLM)
 make eval   # real-model scenarios on this Mac; starts llama-server if none is running,
             # stops it afterwards. e.g. make eval RUNS=20 ARGS="--scenario transfer --verbose"
+make chat   # talk to the model in your own words; PROMPT="..." asks once, ARGS="--plain" = bare model
 ```

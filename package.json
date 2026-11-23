@@ -32,7 +32,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "test": "jest",
-    "eval": "bun scripts/eval.ts"
+    "eval": "bun scripts/eval.ts",
+    "chat": "bun scripts/chat.ts"
   },
   "jest": {
     "preset": "jest-expo",

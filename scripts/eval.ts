@@ -7,7 +7,6 @@
 //   bun scripts/eval.ts --runs 10
 import { readFileSync, writeFileSync } from 'node:fs';
 
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModel } from 'ai';
 
 import { applyToolEvent, type CallRecord } from '../src/llm/calls';
@@ -23,6 +22,8 @@ import { SCENARIOS, type Scenario } from '../src/wallet/scenarios';
 import { autoApproval } from '../src/wallet/sdk/approval';
 import { ACTIVE_ADDRESS, FIXTURE } from '../src/wallet/sdk/fixture';
 import { MockWalletSdk } from '../src/wallet/sdk/mockWalletSdk';
+import { boundedNumber, parseArgs } from './lib/cli';
+import { connectModel, DEFAULT_MODEL_NAME, DEFAULT_SERVER_URL } from './lib/server';
 
 const USAGE = `Usage: bun scripts/eval.ts [options]
   --runs N           runs per scenario (default 10)
@@ -55,27 +56,12 @@ type Options = {
 };
 
 function parseOptions(argv: string[]): Options {
-  const raw = new Map<string, string>();
-  const flags = new Set<string>();
-  for (let i = 0; i < argv.length; i++) {
-    const key = argv[i];
-    if (key === '--verbose') flags.add('verbose');
-    else if (key.startsWith('--') && i + 1 < argv.length) raw.set(key.slice(2), argv[++i]);
-    else throw new Error(`Unexpected argument: ${key}`);
-  }
-  const known = ['runs', 'scenario', 'url', 'model', 'temperature', 'max-tokens', 'max-steps', 'seed', 'system-file', 'out', 'approval'];
-  for (const key of raw.keys()) if (!known.includes(key)) throw new Error(`Unknown option: --${key}`);
-
-  const num = (key: string, fallback: number, min: number, max: number, integer = true) => {
-    const text = raw.get(key);
-    if (text === undefined) return fallback;
-    const value = Number(text);
-    const ok = text.trim() !== '' && Number.isFinite(value) && value >= min && value <= max;
-    if (!ok || (integer && !Number.isInteger(value))) {
-      throw new Error(`--${key} must be ${integer ? 'an integer' : 'a number'} in [${min}, ${max}]`);
-    }
-    return value;
-  };
+  const { values: raw, flags } = parseArgs(argv, {
+    values: ['runs', 'scenario', 'url', 'model', 'temperature', 'max-tokens', 'max-steps', 'seed', 'system-file', 'out', 'approval'],
+    flags: ['verbose'],
+  });
+  const num = (key: string, fallback: number, min: number, max: number, integer = true) =>
+    boundedNumber(raw, key, fallback, min, max, integer);
 
   const ids = raw.get('scenario')?.split(',').map((id) => id.trim());
   const scenarios = ids === undefined ? SCENARIOS : ids.map((id) => {
@@ -92,8 +78,8 @@ function parseOptions(argv: string[]): Options {
   return {
     runs: num('runs', 10, 1, 1000),
     scenarios,
-    url: raw.get('url') ?? 'http://127.0.0.1:8089/v1',
-    model: raw.get('model') ?? 'qwen',
+    url: raw.get('url') ?? DEFAULT_SERVER_URL,
+    model: raw.get('model') ?? DEFAULT_MODEL_NAME,
     temperature: num('temperature', DEFAULT_GENERATE_SETTINGS.temperature, 0, 2, false),
     maxTokens: num('max-tokens', DEFAULT_GENERATE_SETTINGS.maxOutputTokens, 1, 4095),
     maxSteps: num('max-steps', MAX_STEPS, 1, 20),
@@ -166,16 +152,7 @@ async function runOnce(
 
 async function main() {
   const options = parseOptions(process.argv.slice(2));
-  const baseUrl = options.url.replace(/\/$/, '');
-
-  try {
-    const response = await fetch(`${baseUrl}/models`, { signal: AbortSignal.timeout(5000) });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  } catch (error) {
-    throw new Error(`Cannot reach the model server at ${baseUrl} (${String(error)}). Start llama-server first.`);
-  }
-
-  const model = createOpenAICompatible({ name: 'llama-server', baseURL: baseUrl }).chatModel(options.model);
+  const model = await connectModel(options.url, options.model);
   const results: RunResult[] = [];
 
   for (const scenario of options.scenarios) {

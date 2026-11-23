@@ -1,7 +1,18 @@
-import { isStepCount, streamText, type LanguageModel, type ToolSet } from 'ai';
+import {
+  isStepCount,
+  streamText,
+  type LanguageModel,
+  type ModelMessage,
+  type ToolSet,
+} from 'ai';
 
-export type GenerateOptions = {
-  prompt: string;
+/** What to answer: one prompt, or a whole conversation. */
+type GenerateInput =
+  | { prompt: string; messages?: undefined }
+  | { messages: ModelMessage[]; prompt?: undefined };
+
+/** Everything that shapes a generation except the abort signal. */
+export type GenerateSettings = GenerateInput & {
   system?: string;
   temperature?: number;
   maxOutputTokens?: number;
@@ -13,8 +24,9 @@ export type GenerateOptions = {
   tools?: ToolSet;
   /** Max model calls when tools are used (SDK default: 1). */
   maxSteps?: number;
-  signal?: AbortSignal;
 };
+
+export type GenerateOptions = GenerateSettings & { signal?: AbortSignal };
 
 export type Metrics = {
   /** Start -> first text, reasoning or tool-call; null if nothing was produced. */
@@ -58,6 +70,8 @@ export type GenerateEvent =
       finishReason?: string;
       /** Provider warnings, e.g. unsupported options. */
       warnings: string[];
+      /** What the model said and did (assistant and tool messages), to append to a conversation. Empty if aborted. */
+      messages: ModelMessage[];
     };
 
 type Warning = { type: string; feature?: string; details?: string; message?: string };
@@ -84,6 +98,7 @@ export async function* generate(
   let finishReason: string | undefined;
   let aborted = false;
   const warnings: string[] = [];
+  let responseMessages: ModelMessage[] = [];
 
   try {
     const result = streamText({
@@ -145,6 +160,7 @@ export async function* generate(
           throw part.error;
       }
     }
+    if (!aborted) responseMessages = await result.responseMessages;
   } catch (error) {
     if (!signal?.aborted) throw error;
     aborted = true;
@@ -162,6 +178,7 @@ export async function* generate(
     aborted,
     finishReason,
     warnings,
+    messages: responseMessages,
     metrics: {
       ttftMs: firstDeltaAt === undefined ? null : firstDeltaAt - startedAt,
       totalMs: endedAt - startedAt,
