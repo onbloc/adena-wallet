@@ -50,10 +50,18 @@ describe('fixtures and address check', () => {
     acc1.address.slice(1), // wrong prefix
     acc1.address + 'q', // too long
     acc1.address.slice(0, -1), // too short
-    'G1' + acc1.address.slice(2), // uppercase
-    'g1' + 'b'.repeat(38), // 'b' is not in the bech32 charset
+    'x1' + acc1.address.slice(2), // right length, wrong prefix
   ])('rejects %p', (address) => {
     expect(isValidAddress(address)).toBe(false);
+  });
+
+  it.each([
+    'g1' + 'b'.repeat(38),
+    'g1' + '1'.repeat(38),
+    'g1' + 'A'.repeat(38),
+  ])('accepts %p: only the prefix and the length are checked', async (address) => {
+    expect(isValidAddress(address)).toBe(true);
+    await expect(makeSdk().sdk.getBalance(address)).resolves.toEqual({ GNOT: '0', GNS: '0' });
   });
 });
 
@@ -86,7 +94,7 @@ describe('getBalance', () => {
   });
 
   it('keeps the generic message for a right-length address in the wrong format', async () => {
-    await expect(makeSdk().sdk.getBalance('G1' + acc1.address.slice(2))).rejects.toMatchObject({
+    await expect(makeSdk().sdk.getBalance('x1' + acc1.address.slice(2))).rejects.toMatchObject({
       code: WalletErrorCode.InvalidAddress,
       message: 'Not a valid g1... address',
     });
@@ -408,7 +416,7 @@ describe('allowances', () => {
 
   it.each([
     ['owner is not an account of the wallet', { ...give('5'), from: to }, WalletErrorCode.UnknownAccount],
-    ['spender is malformed', give('5', gns, to.toUpperCase()), WalletErrorCode.InvalidAddress],
+    ['spender is malformed', give('5', gns, 'x1' + to.slice(2)), WalletErrorCode.InvalidAddress],
     ['spender has the wrong length', give('5', gns, to.slice(0, -1)), WalletErrorCode.InvalidAddress],
     ['amount is zero', give('0'), WalletErrorCode.InvalidAmount],
     ['amount is negative', give('-1'), WalletErrorCode.InvalidAmount],
@@ -483,5 +491,79 @@ describe('allowances', () => {
     await expect(sdk.getAllowances('alice')).rejects.toMatchObject({
       code: WalletErrorCode.InvalidAddress,
     });
+  });
+});
+
+describe('address case', () => {
+  it('lowercases a recipient: the same address in any case is one wallet entry', async () => {
+    const { sdk, shown } = makeSdk(true);
+    const upper = to.toUpperCase();
+
+    const message = await sdk.transfer({ ...send('0.5'), to: upper });
+    await sdk.sign(message);
+
+    expect(message.to).toBe(to);
+    expect(shown).toEqual([message]);
+    expect(await sdk.getBalance(to)).toMatchObject({ GNOT: '0.5' });
+    expect(await sdk.getBalance(upper)).toMatchObject({ GNOT: '0.5' });
+    expect(await sdk.getBalance(acc1.address.toUpperCase())).toEqual({ GNOT: '9.5', GNS: '250' });
+  });
+
+  it('lowercases a spender, so a new approval in another case replaces the old one', async () => {
+    const { sdk } = makeSdk(true);
+
+    const first = await sdk.approve({
+      from: acc1.address,
+      spender: other.toUpperCase(),
+      amount: '5',
+      token: TokenSymbol.Gns,
+    });
+    await sdk.sign(first);
+    await sdk.sign(
+      await sdk.approve({ from: acc1.address, spender: other, amount: '7', token: TokenSymbol.Gns })
+    );
+
+    expect(first.spender).toBe(other);
+    expect(await sdk.getAllowances(acc1.address.toUpperCase())).toEqual([
+      { spender: other, token: TokenSymbol.Gns, amount: '7' },
+    ]);
+  });
+});
+
+describe('inspect', () => {
+  it('starts with only the user account funded and no allowances', () => {
+    expect(makeSdk().sdk.inspect()).toEqual({
+      balances: { [acc1.address]: { GNOT: '10', GNS: '250' } },
+      allowances: {},
+    });
+  });
+
+  it('shows every address that received funds and every allowance once the user approved', async () => {
+    const { sdk } = makeSdk(true);
+
+    await sdk.sign(await sdk.transfer(send('0.5')));
+    await sdk.sign(
+      await sdk.approve({ from: acc1.address, spender: other, amount: '5', token: TokenSymbol.Gns })
+    );
+
+    expect(sdk.inspect()).toEqual({
+      balances: {
+        [acc1.address]: { GNOT: '9.5', GNS: '250' },
+        [to]: { GNOT: '0.5', GNS: '0' },
+      },
+      allowances: { [acc1.address]: [{ spender: other, token: TokenSymbol.Gns, amount: '5' }] },
+    });
+  });
+
+  it('shows nothing new when the user rejects', async () => {
+    const { sdk } = makeSdk(false);
+    const before = sdk.inspect();
+
+    await sdk.sign(await sdk.transfer(send('0.5')));
+    await sdk.sign(
+      await sdk.approve({ from: acc1.address, spender: other, amount: '5', token: TokenSymbol.Gns })
+    );
+
+    expect(sdk.inspect()).toEqual(before);
   });
 });

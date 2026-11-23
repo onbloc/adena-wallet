@@ -311,3 +311,19 @@ describe('get_approvals', () => {
     });
   });
 });
+
+describe('address case in results', () => {
+  it('shows the lowercase address, whatever case the model wrote', async () => {
+    const { tools } = setup();
+
+    expect(await run(tools[ToolName.GetAddressBalance], { address: to.toUpperCase() })).toMatchObject({
+      address: to,
+    });
+    expect(
+      await run(tools[ToolName.Transfer], { to: to.toUpperCase(), amount: '1', token: gnot })
+    ).toMatchObject({ status: WalletStatus.Signed, to });
+    expect(
+      await run(tools[ToolName.Approve], { spender: other.toUpperCase(), amount: '1', token: gnot })
+    ).toMatchObject({ status: WalletStatus.Signed, spender: other });
+  });
+});

@@ -2,6 +2,7 @@ import { tool, type ToolSet } from 'ai';
 import { z } from 'zod';
 
 import { SignRequestType, TokenSymbol, ToolName, WalletStatus } from '../constants';
+import { normalizeAddress } from '../sdk/address';
 import { WalletError, type SignResult, type WalletSdk } from '../sdk/types';
 
 // The adapter is the only code between the model and the wallet SDK. It calls
@@ -57,7 +58,7 @@ export function createWalletTools({ sdk, activeAddress }: WalletToolsContext) {
       execute: ({ address }) =>
         refusalsAsResults(async () => ({
           status: WalletStatus.Ok,
-          address,
+          address: normalizeAddress(address),
           balances: await sdk.getBalance(address),
         })),
     }),
@@ -74,7 +75,12 @@ export function createWalletTools({ sdk, activeAddress }: WalletToolsContext) {
           const message = await sdk.transfer({ from: activeAddress, to, amount, token });
           // The harness, not the model, passes the message on to be signed.
           const result = await sdk.sign(message, { signal: abortSignal });
-          return afterSigning(result, { from: message.from, to, amount: message.amount, token });
+          return afterSigning(result, {
+            from: message.from,
+            to: message.to,
+            amount: message.amount,
+            token,
+          });
         }),
     }),
     [ToolName.Approve]: tool({
@@ -92,7 +98,7 @@ export function createWalletTools({ sdk, activeAddress }: WalletToolsContext) {
           const result = await sdk.sign(message, { signal: abortSignal });
           return afterSigning(result, {
             from: message.from,
-            spender,
+            spender: message.spender,
             amount: message.amount,
             token,
           });

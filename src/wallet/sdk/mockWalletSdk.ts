@@ -1,6 +1,11 @@
 import { fromBaseUnits, toBaseUnits } from '../amount';
 import { SignRequestType, WalletErrorCode, WalletStatus, type TokenSymbol } from '../constants';
-import { ADDRESS_LENGTH, INVALID_ADDRESS_LENGTH_MESSAGE, isValidAddress } from './address';
+import {
+  ADDRESS_LENGTH,
+  INVALID_ADDRESS_LENGTH_MESSAGE,
+  isValidAddress,
+  normalizeAddress,
+} from './address';
 import { FIXTURE, type MockAccount } from './fixture';
 import { TOKEN_DECIMALS, TOKEN_SYMBOLS } from './tokens';
 import {
@@ -23,6 +28,12 @@ const MOCK_CHAIN_ID = 'gnoland-1'; // assumption, not verified
 
 /** One signing popup the wallet showed. `approved` is null while it is open. */
 export type ApprovalRecord = { request: SignRequest; approved: boolean | null };
+
+/** What the wallet holds right now: balances and the allowances given, by address. */
+export type WalletState = {
+  balances: Record<string, Balances>;
+  allowances: Record<string, Allowance[]>;
+};
 
 export type MockWalletSdkOptions = {
   /** Shows the signing popup (the app's modal, or a simulated user in tests). */
@@ -132,16 +143,22 @@ export class MockWalletSdk implements WalletSdk {
     return units;
   }
 
-  /** Throws InvalidAddress: a length message first, then `formatMessage` for other malformed input. */
-  #assertAddress(address: string, formatMessage: string) {
-    if (address.length !== ADDRESS_LENGTH) {
+  /**
+   * Returns the address in lowercase. Throws InvalidAddress: a length message first, then
+   * `formatMessage` when the `g1` prefix is missing.
+   */
+  #assertAddress(address: string, formatMessage: string): string {
+    const normalized = normalizeAddress(address);
+    if (normalized.length !== ADDRESS_LENGTH) {
       throw new WalletError(WalletErrorCode.InvalidAddress, INVALID_ADDRESS_LENGTH_MESSAGE);
     }
-    if (!isValidAddress(address)) throw new WalletError(WalletErrorCode.InvalidAddress, formatMessage);
+    if (!isValidAddress(normalized)) {
+      throw new WalletError(WalletErrorCode.InvalidAddress, formatMessage);
+    }
+    return normalized;
   }
 
-  async getBalance(address: string): Promise<Balances> {
-    this.#assertAddress(address, 'Not a valid g1... address');
+  #balancesOf(address: string): Balances {
     const entries = TOKEN_SYMBOLS.map((token) => [
       token,
       fromBaseUnits(this.#units(address, token), TOKEN_DECIMALS[token]),
@@ -149,12 +166,24 @@ export class MockWalletSdk implements WalletSdk {
     return Object.fromEntries(entries) as Balances;
   }
 
+  #allowancesOf(owner: string): Allowance[] {
+    return [...(this.#allowances.get(owner)?.values() ?? [])].map(({ spender, token, units }) => ({
+      spender,
+      token,
+      amount: fromBaseUnits(units, TOKEN_DECIMALS[token]),
+    }));
+  }
+
+  async getBalance(address: string): Promise<Balances> {
+    return this.#balancesOf(this.#assertAddress(address, 'Not a valid g1... address'));
+  }
+
   /** Throws a WalletError unless the transfer is allowed right now. */
   #checkTransfer({ from, to, amount, token }: TransferParams) {
     if (!this.#owned.has(from)) {
       throw new WalletError(WalletErrorCode.UnknownAccount, 'Sender is not an account of this wallet');
     }
-    this.#assertAddress(to, 'Recipient is not a valid g1... address');
+    const recipient = this.#assertAddress(to, 'Recipient is not a valid g1... address');
     const decimals = TOKEN_DECIMALS[token];
     const units = this.#positiveUnits(amount, token);
     const available = this.#units(from, token);
@@ -164,18 +193,18 @@ export class MockWalletSdk implements WalletSdk {
         `Balance is too low (available ${fromBaseUnits(available, decimals)} ${token})`
       );
     }
-    return { units, amount: fromBaseUnits(units, decimals) };
+    return { units, amount: fromBaseUnits(units, decimals), to: recipient };
   }
 
   async transfer(params: TransferParams): Promise<TransferMessage> {
-    const { amount } = this.#checkTransfer(params);
+    const { amount, to } = this.#checkTransfer(params);
     const nonce = this.#takeNonce(params.from);
 
     const message: TransferMessage = {
       type: SignRequestType.Transfer,
       chainId: MOCK_CHAIN_ID,
       from: params.from,
-      to: params.to,
+      to,
       amount,
       token: params.token,
       nonce,
@@ -189,20 +218,20 @@ export class MockWalletSdk implements WalletSdk {
     if (!this.#owned.has(from)) {
       throw new WalletError(WalletErrorCode.UnknownAccount, 'Owner is not an account of this wallet');
     }
-    this.#assertAddress(spender, 'Spender is not a valid g1... address');
+    const recipient = this.#assertAddress(spender, 'Spender is not a valid g1... address');
     const units = this.#positiveUnits(amount, token);
-    return { units, amount: fromBaseUnits(units, TOKEN_DECIMALS[token]) };
+    return { units, amount: fromBaseUnits(units, TOKEN_DECIMALS[token]), spender: recipient };
   }
 
   async approve(params: AllowanceParams): Promise<AllowanceMessage> {
-    const { amount } = this.#checkAllowance(params);
+    const { amount, spender } = this.#checkAllowance(params);
     const nonce = this.#takeNonce(params.from);
 
     const message: AllowanceMessage = {
       type: SignRequestType.Allowance,
       chainId: MOCK_CHAIN_ID,
       from: params.from,
-      spender: params.spender,
+      spender,
       amount,
       token: params.token,
       nonce,
@@ -212,12 +241,23 @@ export class MockWalletSdk implements WalletSdk {
   }
 
   async getAllowances(owner: string): Promise<Allowance[]> {
-    this.#assertAddress(owner, 'Not a valid g1... address');
-    return [...(this.#allowances.get(owner)?.values() ?? [])].map(({ spender, token, units }) => ({
-      spender,
-      token,
-      amount: fromBaseUnits(units, TOKEN_DECIMALS[token]),
-    }));
+    return this.#allowancesOf(this.#assertAddress(owner, 'Not a valid g1... address'));
+  }
+
+  /**
+   * Everything the wallet holds, by address: each address that has a balance entry (the user's
+   * accounts and every recipient so far) and every allowance given. For the UI and tests; it is
+   * not part of `WalletSdk`, so the model cannot reach it.
+   */
+  inspect(): WalletState {
+    return {
+      balances: Object.fromEntries(
+        [...this.#balances.keys()].map((address) => [address, this.#balancesOf(address)])
+      ),
+      allowances: Object.fromEntries(
+        [...this.#allowances.keys()].map((owner) => [owner, this.#allowancesOf(owner)])
+      ),
+    };
   }
 
   async sign(request: SignRequest, options: SignOptions = {}): Promise<SignResult> {

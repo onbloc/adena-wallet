@@ -31,7 +31,7 @@ import { buildSystemPrompt } from '../wallet/prompts';
 import { SCENARIOS, type Scenario } from '../wallet/scenarios';
 import { autoApproval } from '../wallet/sdk/approval';
 import { ACTIVE_ADDRESS, FIXTURE } from '../wallet/sdk/fixture';
-import { MockWalletSdk, type ApprovalRecord } from '../wallet/sdk/mockWalletSdk';
+import { MockWalletSdk, type ApprovalRecord, type WalletState } from '../wallet/sdk/mockWalletSdk';
 import type { Allowance, Balances } from '../wallet/sdk/types';
 import { ApprovalModal } from './ApprovalModal';
 import { useApprovalPrompt } from './useApprovalPrompt';
@@ -81,9 +81,9 @@ type WalletSnapshot = {
   allowances: readonly Allowance[];
 };
 
-/** Balances of a wallet nobody has used yet. */
-const initialBalances = () =>
-  snapshotBalances(new MockWalletSdk({ requestApproval: autoApproval(ApprovalPolicy.Reject) }));
+/** The state of a wallet nobody has used yet. */
+const initialWallet = () =>
+  new MockWalletSdk({ requestApproval: autoApproval(ApprovalPolicy.Reject) }).inspect();
 
 export default function PlaygroundScreen() {
   const { status, run, start, stop, load, unload, remove } = useLlm();
@@ -102,7 +102,7 @@ export default function PlaygroundScreen() {
   const [scenarioId, setScenarioId] = useState<string | null>(null);
   // The scenario that was selected when the last run started.
   const [ranScenario, setRanScenario] = useState<Scenario | null>(null);
-  const [balances, setBalances] = useState<Record<string, Balances> | null>(null);
+  const [wallet, setWallet] = useState<WalletState>(initialWallet);
   const [snapshot, setSnapshot] = useState<WalletSnapshot | null>(null);
   // Prompt that started the last run, shown as the user message.
   const [submittedPrompt, setSubmittedPrompt] = useState<string | null>(null);
@@ -128,14 +128,14 @@ export default function PlaygroundScreen() {
     };
   }, []);
 
-  // Initial balances, before any run.
+  // Show a transfer or approval as soon as its tool call finishes, not only at the end of the run.
   useEffect(() => {
-    void initialBalances().then(setBalances);
-  }, []);
+    if (walletRef.current) setWallet(walletRef.current.inspect());
+  }, [run.calls]);
 
   const onResetWallet = () => {
     walletRef.current = null;
-    void initialBalances().then(setBalances);
+    setWallet(initialWallet());
   };
 
   const temperatureValue = parseBounded(temperature, TEMPERATURE_RANGE);
@@ -191,7 +191,7 @@ export default function PlaygroundScreen() {
     const sdk = walletRef.current;
     setRanScenario(scenarioRun ? scenario : null);
     setSnapshot(null);
-    setBalances(await snapshotBalances(sdk));
+    setWallet(sdk.inspect());
 
     await start({
       prompt,
@@ -204,7 +204,7 @@ export default function PlaygroundScreen() {
     });
 
     const after = await snapshotBalances(sdk);
-    setBalances(after);
+    setWallet(sdk.inspect());
     setSnapshot({
       approvals: [...sdk.approvals],
       balances: after,
@@ -268,7 +268,7 @@ export default function PlaygroundScreen() {
             />
           </View>
 
-          <BalancesCard balances={balances} />
+          <BalancesCard wallet={wallet} />
           <View style={styles.row}>
             <Button label="Reset wallet" onPress={onResetWallet} disabled={run.running} />
           </View>
@@ -452,18 +452,36 @@ const formatBalances = (balances: Balances) =>
     .map(([token, amount]) => `${amount} ${token}`)
     .join(', ');
 
-function BalancesCard({ balances }: { balances: Record<string, Balances> | null }) {
+const ZERO_BALANCES: Balances = { GNOT: '0', GNS: '0' };
+
+/** The name of a known address, else a shortened form. */
+const labelOf = (address: string) =>
+  WATCHED.find((watched) => watched.address === address)?.label ??
+  `${address.slice(0, 8)}...${address.slice(-6)}`;
+
+function BalancesCard({ wallet }: { wallet: WalletState }) {
+  const known = WATCHED.map((watched) => watched.address);
+  // Known addresses always show; any other address shows once the wallet holds something for it.
+  const addresses = [...known, ...Object.keys(wallet.balances).filter((a) => !known.includes(a))];
+  const approvals = wallet.allowances[ACTIVE_ADDRESS] ?? [];
+
   return (
     <View style={styles.card}>
       <Text style={styles.label}>Wallet balances (mock)</Text>
-      {balances === null && <Text style={styles.muted}>Loading...</Text>}
-      {balances !== null &&
-        WATCHED.map((watched) => (
-          <Text key={watched.address} style={styles.mono}>
-            {watched.label}
-            {watched.address === ACTIVE_ADDRESS ? ' (you)' : ''}: {formatBalances(balances[watched.address])}
-          </Text>
-        ))}
+      {addresses.map((address) => (
+        <Text key={address} style={styles.mono}>
+          {labelOf(address)}
+          {address === ACTIVE_ADDRESS ? ' (you)' : ''}:{' '}
+          {formatBalances(wallet.balances[address] ?? ZERO_BALANCES)}
+        </Text>
+      ))}
+      <Text style={styles.label}>Approvals given (you)</Text>
+      {approvals.length === 0 && <Text style={styles.muted}>None</Text>}
+      {approvals.map((approval) => (
+        <Text key={`${approval.spender}:${approval.token}`} style={styles.mono}>
+          {labelOf(approval.spender)}: {approval.amount} {approval.token}
+        </Text>
+      ))}
     </View>
   );
 }

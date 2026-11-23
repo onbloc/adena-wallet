@@ -105,9 +105,11 @@ model --tool call--> adapter (src/wallet/adapter)      LLM layer
   type, unknown tool, unparsable JSON) is shown as **[INVALID]** and never reaches the wallet;
   the SDK feeds the error back to the model, which may retry.
 - Value checks (address, amount > 0, balance) live in the SDK, so a well-formed but wrong
-  value shows up as an `error` result with a code instead. An address that is not 40 characters
-  long gets the message `The address length is not valid. Please check it again.`; other malformed
-  addresses get a generic invalid-address message.
+  value shows up as an `error` result with a code instead. An address is lowercased first, then
+  checked for its length and its `g1` prefix only (no character set, no checksum), so the same
+  address in any case is one wallet entry. One that is not 40 characters long gets the message
+  `The address length is not valid. Please check it again.`; one of the right length that does
+  not start with `g1` gets a generic invalid-address message.
 - Pick a scenario chip to fill the prompt and see what is expected (calls, popups, balances);
   after the run you get PASS/FAIL per check. The evaluation is strict: any invalid call fails
   it even if a retry succeeds. The "answer mentions" checks are a keyword heuristic.
@@ -117,6 +119,9 @@ model --tool call--> adapter (src/wallet/adapter)      LLM layer
   an address in the prompt.
 - In the app, free prompts keep using one wallet, so a transfer shows up in later balance
   lookups. Running a scenario starts a fresh wallet; **Reset wallet** (Settings) does too.
+  The Settings tab shows the wallet as it is now: the balances of the known addresses and of
+  every address that received something, plus the approvals the user has given. It updates as
+  soon as a transfer or approval is signed, even while the run is still going.
 
 ## Eval against a real model (desktop)
 
