@@ -1,0 +1,120 @@
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { CallToolResultSchema, ListToolsResultSchema } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
+import { z } from 'zod';
+import { GNO_MAINNET_CHAIN } from './gno';
+import type { Decision } from './tools';
+
+/** Supply the approved mainnet endpoint from trusted application configuration, not user input. */
+export type OnblocMcpConfig = Readonly<{ endpoint: string; fetcher?: typeof fetch; allowLoopbackHttp?: true }>;
+
+export type RemoteTool = Readonly<{
+  definition: { name: string; description: string; jsonSchema: Tool['inputSchema'] };
+  execute(raw: unknown): Promise<Decision>;
+}>;
+
+const record = z.record(z.string(), z.unknown());
+
+const invalidInput = { kind: 'denied', code: 'INVALID_INPUT' } as const;
+const invalidOutput = { kind: 'denied', code: 'INVALID_OUTPUT' } as const;
+const maxDiscoveryPages = 4;
+const maxDiscoveredTools = 32;
+const maxCatalogChars = 32_000;
+const maxResultChars = 12_000;
+
+export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp }: OnblocMcpConfig) {
+  const url = new URL(endpoint);
+  const simulator = allowLoopbackHttp === true && url.protocol === 'http:' && ['127.0.0.1', '10.0.2.2'].includes(url.hostname);
+  if ((!simulator && url.protocol !== 'https:') || url.username || url.password || url.pathname !== '/mcp' || url.search || url.hash) {
+    throw new TypeError('Use an approved HTTPS Onbloc MCP endpoint; HTTP requires explicit simulator configuration.');
+  }
+
+  return async (address: string, signal: AbortSignal) => {
+    const validator = new AjvJsonSchemaValidator();
+    const client = new Client({ name: 'adena-wallet-harness', version: '0.1.0' });
+    const transport = new StreamableHTTPClientTransport(url, { fetch: fetcher, requestInit: { redirect: 'error' } });
+    const options = { signal, timeout: 12000 };
+    const close = () => { void client.close().catch(() => {}); };
+    signal.addEventListener('abort', close, { once: true });
+    const tools = new Map<string, RemoteTool>();
+    try {
+      if (signal.aborted) throw new Error('Onbloc discovery cancelled.');
+      await client.connect(transport, options);
+      let cursor: string | undefined;
+      const cursors = new Set<string>();
+      let pages = 0;
+      let discovered = 0;
+      let catalogChars = 0;
+      do {
+        if (++pages > maxDiscoveryPages) throw new Error('Onbloc MCP discovery exceeded the page limit.');
+        const page = await client.request({ method: 'tools/list', params: cursor === undefined ? {} : { cursor } }, ListToolsResultSchema, options);
+        discovered += page.tools.length;
+        catalogChars += JSON.stringify(page.tools).length;
+        if (discovered > maxDiscoveredTools || catalogChars > maxCatalogChars) {
+          throw new Error('Onbloc MCP discovery exceeded the catalog limit.');
+        }
+        for (const { name, description, inputSchema, outputSchema, annotations, execution } of page.tools) {
+          // Trust the configured read-only service, not annotations as authorization.
+          // Honor explicit write hints as an additional guard against accidental exposure.
+          if (execution?.taskSupport === 'required' || annotations?.readOnlyHint === false || annotations?.destructiveHint === true ||
+            !/^[a-zA-Z0-9_-]{1,64}$/.test(name)) continue;
+          if (tools.has(name)) throw new Error('Duplicate Onbloc tool name.');
+
+          const { address: addressProperty, ...properties } = inputSchema.properties ?? {};
+          const walletScoped = addressProperty !== undefined || inputSchema.required?.includes('address') === true;
+          const tokenAlternative = walletScoped && !inputSchema.required?.includes('address') && Object.hasOwn(properties, 'tokenKey');
+          const jsonSchema = walletScoped ? {
+            ...inputSchema,
+            properties,
+            required: inputSchema.required?.filter(field => field !== 'address'),
+          } : inputSchema;
+          const validate = validator.getValidator(inputSchema);
+          const validateOutput = outputSchema && validator.getValidator(outputSchema);
+          tools.set(name, {
+            definition: { name, description: description ?? '', jsonSchema },
+            async execute(raw) {
+              const parsedInput = record.safeParse(raw);
+              if (!parsedInput.success || Object.hasOwn(parsedInput.data, 'address')) return invalidInput;
+              // An optional address alongside tokenKey is Onbloc's public token history selector.
+              const input = parsedInput.data;
+              const injectAddress = walletScoped && !(tokenAlternative && Object.hasOwn(input, 'tokenKey'));
+              const args = injectAddress ? { ...input, address } : input;
+              if (!validate(args).valid) return invalidInput;
+              const result = await client.request({ method: 'tools/call', params: { name, arguments: args } }, CallToolResultSchema, options);
+              if (result.isError) return { kind: 'denied', code: 'MCP_TOOL_ERROR' };
+              if (result.structuredContent && JSON.stringify(result.structuredContent).length > maxResultChars) {
+                return { kind: 'denied', code: 'MCP_RESULT_TOO_LARGE' };
+              }
+              if (validateOutput && !validateOutput(result.structuredContent).valid) return invalidOutput;
+              const parsed = record.safeParse(result.structuredContent);
+              if (!parsed.success) return invalidOutput;
+              const data = parsed.data;
+              const requestedHash = input.txHash;
+              if (typeof requestedHash === 'string' && typeof data.txHash === 'string' &&
+                requestedHash.toLowerCase() !== data.txHash.toLowerCase() && requestedHash !== data.txHashBase64) return invalidOutput;
+              if ((Object.hasOwn(data, 'network') && data.network !== GNO_MAINNET_CHAIN) ||
+                (injectAddress && ((Object.hasOwn(data, 'address') && data.address !== address) ||
+                  (Array.isArray(data.items) && data.items.some(item => item && typeof item === 'object' &&
+                    'address' in item && item.address !== address))))) return invalidOutput;
+              return { kind: 'result', value: { chainId: GNO_MAINNET_CHAIN, untrustedData: data } };
+            },
+          });
+        }
+        cursor = page.nextCursor;
+        if (cursor !== undefined) {
+          if (cursors.has(cursor)) throw new Error('Repeated Onbloc tools cursor.');
+          cursors.add(cursor);
+        }
+      } while (cursor !== undefined);
+      if (signal.aborted) throw new Error('Onbloc discovery cancelled.');
+      return tools;
+    } catch (error) {
+      signal.removeEventListener('abort', close);
+      await client.close();
+      throw error;
+    }
+  };
+}
+

@@ -266,6 +266,43 @@ describe('generate with tools', () => {
       })),
     });
 
+  it('discovers Onbloc tools and injects the configured address before executing', async () => {
+    const account = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
+    const name = 'get_native_balance';
+    const calls: unknown[] = [];
+    const fetcher: typeof fetch = async (_url, init) => {
+      if (init?.method !== 'POST') return new Response(null, { status: 405 });
+      const request = JSON.parse(String(init.body));
+      if (request.id === undefined) return new Response(null, { status: 202 });
+      let result;
+      switch (request.method) {
+        case 'initialize':
+          result = { protocolVersion: '2025-11-25', capabilities: { tools: {} }, serverInfo: { name: 'onbloc', version: '1' } };
+          break;
+        case 'tools/list':
+          result = { tools: [{ name, description: 'Get GNOT', inputSchema: { type: 'object', properties: { address: { type: 'string' } },
+            required: ['address'], additionalProperties: false }, annotations: { readOnlyHint: true } }] };
+          break;
+        case 'tools/call':
+          calls.push(request.params);
+          result = { content: [], structuredContent: { address: account, denom: 'ugnot', balance: '42000000' } };
+          break;
+        default:
+          throw new Error(`Unexpected method ${request.method}`);
+      }
+      return new Response(JSON.stringify({ jsonrpc: '2.0', id: request.id, result }), {
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+    const model = stepsModel([toolCall(name, {}), [...text('42 GNOT'), finish(3)]]);
+    const events = await collect(generate(model, { prompt: 'My balance', onbloc: {
+      endpoint: 'https://example.test/mcp', account, fetcher,
+    } }));
+    expect(calls).toEqual([{ name, arguments: { address: account } }]);
+    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: '42 GNOT' });
+    expect(JSON.stringify(model.doStreamCalls[1].prompt)).toContain('42000000');
+  });
+
   const newSdk = (policy: ApprovalPolicy = ApprovalPolicy.Approve) =>
     new MockWalletSdk({ requestApproval: autoApproval(policy) });
 
