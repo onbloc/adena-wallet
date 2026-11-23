@@ -179,6 +179,9 @@ export default function PlaygroundScreen() {
   const onRun = async () => {
     if (temperatureValue === null || maxTokensValue === null) return;
     setSubmittedPrompt(prompt);
+    // The prompt is now the user message in the chat: clear the composer and the scenario it came from.
+    setPrompt('');
+    setScenarioId(null);
     // Scenarios start from a fresh wallet so they are judged on the same balances;
     // free prompts continue on the session wallet.
     const scenarioRun = useTools && scenario !== null;
