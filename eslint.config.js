@@ -12,4 +12,9 @@ module.exports = defineConfig([
     // pattern used for constants. tsc still rejects real redeclarations.
     rules: { '@typescript-eslint/no-redeclare': 'off' },
   },
+  {
+    // eslint-plugin-import ignores package.json `exports`, so it cannot resolve the
+    // SDK's wildcard subpaths (e.g. `client/index.js`). tsc resolves them correctly.
+    rules: { 'import/no-unresolved': ['error', { ignore: ['^@modelcontextprotocol/sdk/'] }] },
+  },
 ]);

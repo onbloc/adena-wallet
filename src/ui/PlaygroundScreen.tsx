@@ -14,7 +14,6 @@ import {
   type ScrollViewInstance,
 } from 'react-native';
 
-import { gnoPublicAddress } from '../harness/gno';
 import type { CallRecord } from '../llm/calls';
 import {
   DEFAULT_GENERATE_SETTINGS,
@@ -39,14 +38,7 @@ import { MockWalletSdk, type ApprovalRecord, type WalletState } from '../wallet/
 import type { Allowance, Balances } from '../wallet/sdk/types';
 import { ApprovalModal } from './ApprovalModal';
 import { useApprovalPrompt } from './useApprovalPrompt';
-
-const onblocEndpoint = process.env.EXPO_PUBLIC_ONBLOC_MCP_URL?.trim();
-const onblocAccount = process.env.EXPO_PUBLIC_ONBLOC_ACCOUNT?.trim();
-const onblocMode = Boolean(onblocEndpoint || onblocAccount);
-const onbloc = onblocEndpoint && onblocAccount && gnoPublicAddress.safeParse(onblocAccount).success
-  ? { endpoint: onblocEndpoint, account: onblocAccount, fetcher: expoFetch,
-      ...(__DEV__ ? { allowLoopbackHttp: true as const } : {}) }
-  : undefined;
+import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL, resolveOnblocSettings } from './onblocSettings';
 
 /** Parses user input; null when empty, non-numeric, non-integer (if required) or out of range. */
 function parseBounded(
@@ -119,6 +111,20 @@ export default function PlaygroundScreen() {
   // Prompt that started the last run, shown as the user message.
   const [submittedPrompt, setSubmittedPrompt] = useState<string | null>(null);
   const [tab, setTab] = useState<'chat' | 'settings'>('chat');
+  // Editable Onbloc settings, in memory only. Clear both fields to use the mock wallet.
+  const [mcpUrl, setMcpUrl] = useState(DEFAULT_ONBLOC_MCP_URL);
+  const [myAddress, setMyAddress] = useState(DEFAULT_ONBLOC_ACCOUNT);
+  const onblocSettings = resolveOnblocSettings(mcpUrl, myAddress, __DEV__ ? true : undefined);
+  const onblocMode = onblocSettings.enabled;
+  const onbloc =
+    onblocMode && onblocSettings.endpointError === null && onblocSettings.accountError === null
+      ? {
+          endpoint: onblocSettings.endpoint,
+          account: onblocSettings.account,
+          fetcher: expoFetch,
+          ...(__DEV__ ? { allowLoopbackHttp: true as const } : {}),
+        }
+      : undefined;
   const [keyboardShown, setKeyboardShown] = useState(false);
   const scrollRef = useRef<ScrollViewInstance>(null);
   // Wallet kept across free-prompt runs, so a transfer shows up in later balance lookups.
@@ -288,6 +294,31 @@ export default function PlaygroundScreen() {
             />
           </View>
 
+          <Text style={styles.label}>MCP URL (api-v3)</Text>
+          <TextInput
+            style={[styles.input, onblocSettings.endpointError !== null && styles.invalid]}
+            value={mcpUrl}
+            onChangeText={setMcpUrl}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+            placeholder="https://.../mcp"
+          />
+          {onblocSettings.endpointError !== null && (
+            <Text style={styles.error}>{onblocSettings.endpointError}</Text>
+          )}
+          <Text style={styles.label}>My address</Text>
+          <TextInput
+            style={[styles.input, onblocSettings.accountError !== null && styles.invalid]}
+            value={myAddress}
+            onChangeText={setMyAddress}
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="g1..."
+          />
+          {onblocSettings.accountError !== null && (
+            <Text style={styles.error}>{onblocSettings.accountError}</Text>
+          )}
           {onblocMode ? (
             <Text style={styles.muted}>Onbloc MCP · indexed mainnet reads only</Text>
           ) : <>
@@ -364,7 +395,7 @@ export default function PlaygroundScreen() {
         }}
       >
         {onblocMode && !onbloc && <Text style={styles.error}>
-          Configure EXPO_PUBLIC_ONBLOC_MCP_URL and a public EXPO_PUBLIC_ONBLOC_ACCOUNT.
+          Fix the MCP URL and My address in Settings.
         </Text>}
         {submittedPrompt === null ? (
           <Text style={styles.muted}>Send a prompt to start.</Text>

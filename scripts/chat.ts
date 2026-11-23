@@ -16,6 +16,7 @@ import { generate, GenerateEventType } from '../src/llm/generate';
 import { gnoPublicAddress } from '../src/harness/gno';
 import { onblocInstructions, type OnblocRun } from '../src/llm/onblocRun';
 import { describeRequest } from '../src/ui/describeRequest';
+import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL } from '../src/ui/onblocSettings';
 import { createWalletTools } from '../src/wallet/adapter/tools';
 import { ApprovalPolicy } from '../src/wallet/constants';
 import { snapshotBalances, WATCHED } from '../src/wallet/observation';
@@ -39,7 +40,7 @@ const USAGE = `Usage: bun scripts/chat.ts [options]
   --max-tokens N     per model call (default ${DEFAULT_GENERATE_SETTINGS.maxOutputTokens})
   --max-steps N      model calls per question with tools (default ${MAX_STEPS})
   --system-file P    use this file as the system prompt
-  --onbloc           read-only Onbloc tools (EXPO_PUBLIC_ONBLOC_MCP_URL and EXPO_PUBLIC_ONBLOC_ACCOUNT)
+  --onbloc           read-only Onbloc tools (default MCP URL and address; override with EXPO_PUBLIC_ONBLOC_MCP_URL / EXPO_PUBLIC_ONBLOC_ACCOUNT)
 
 In the chat: /reset (forget the conversation, reset the wallet)  /balances  /help  /exit`;
 
@@ -71,8 +72,9 @@ function parseOptions(argv: string[]): Options {
     if (flags.has('plain') || values.has('approval') || values.has('max-steps')) {
       throw new Error('--onbloc cannot be combined with --plain, --approval or --max-steps.');
     }
-    const endpoint = process.env.EXPO_PUBLIC_ONBLOC_MCP_URL?.trim();
-    const account = process.env.EXPO_PUBLIC_ONBLOC_ACCOUNT?.trim();
+    // Env overrides the app's Settings defaults.
+    const endpoint = process.env.EXPO_PUBLIC_ONBLOC_MCP_URL?.trim() || DEFAULT_ONBLOC_MCP_URL;
+    const account = process.env.EXPO_PUBLIC_ONBLOC_ACCOUNT?.trim() || DEFAULT_ONBLOC_ACCOUNT;
     if (!endpoint || !gnoPublicAddress.safeParse(account).success) {
       throw new Error('Set EXPO_PUBLIC_ONBLOC_MCP_URL and a valid public EXPO_PUBLIC_ONBLOC_ACCOUNT.');
     }

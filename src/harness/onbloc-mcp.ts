@@ -4,6 +4,7 @@ import { CallToolResultSchema, ListToolsResultSchema } from '@modelcontextprotoc
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
 import { z } from 'zod';
+import { parseOnblocEndpoint } from './onbloc-endpoint';
 import { GNO_MAINNET_CHAIN } from './gno';
 import type { Decision } from './tools';
 
@@ -25,11 +26,7 @@ const maxCatalogChars = 32_000;
 const maxResultChars = 12_000;
 
 export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp }: OnblocMcpConfig) {
-  const url = new URL(endpoint);
-  const simulator = allowLoopbackHttp === true && url.protocol === 'http:' && ['127.0.0.1', '10.0.2.2'].includes(url.hostname);
-  if ((!simulator && url.protocol !== 'https:') || url.username || url.password || url.pathname !== '/mcp' || url.search || url.hash) {
-    throw new TypeError('Use an approved HTTPS Onbloc MCP endpoint; HTTP requires explicit simulator configuration.');
-  }
+  const url = parseOnblocEndpoint(endpoint, allowLoopbackHttp);
 
   return async (address: string, signal: AbortSignal) => {
     const validator = new AjvJsonSchemaValidator();
