@@ -104,3 +104,12 @@ npm run lint
 npm test
 npm run eval   # real-model scenarios; needs llama-server (see above), not part of npm test
 ```
+
+Shortcuts (`make help`):
+
+```bash
+make init   # npm install; installs bun and llama.cpp via brew if missing
+make test   # typecheck + lint + jest (mock model, no LLM)
+make eval   # real-model scenarios on this Mac; starts llama-server if none is running,
+            # stops it afterwards. e.g. make eval RUNS=20 ARGS="--scenario transfer --verbose"
+```
