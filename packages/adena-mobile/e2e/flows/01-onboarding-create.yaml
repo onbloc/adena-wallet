@@ -1,0 +1,66 @@
+appId: ${APP_ID}
+name: Create a new wallet
+tags: [onboarding, smoke]
+---
+- runFlow: ../subflows/fresh-launch.yaml
+- tapOn:
+    id: welcome-create
+- assertVisible: Never share this phrase
+- assertVisible:
+    id: backup-continue
+    enabled: false
+- tapOn: I saved my recovery phrase
+- tapOn:
+    id: backup-continue
+- assertVisible: Set a password
+# Too short, too simple, then mismatched, before the valid password.
+- tapOn:
+    id: password-input
+- inputText: short
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- tapOn:
+    id: password-confirm
+- inputText: short
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- tapOn:
+    id: password-submit
+- assertVisible: Password must be 8~256 characters
+- tapOn:
+    id: password-input
+- eraseText
+- inputText: password1
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- tapOn:
+    id: password-confirm
+- eraseText
+- inputText: password1
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- tapOn:
+    id: password-submit
+- assertVisible: Password is too simple\.?
+- tapOn:
+    id: password-input
+- eraseText
+- inputText: ${PASSWORD}
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- tapOn:
+    id: password-confirm
+- eraseText
+- inputText: ${PASSWORD}-typo
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- tapOn:
+    id: password-submit
+- assertVisible: Passwords do not match\.?
+- tapOn:
+    id: password-confirm
+- eraseText
+- inputText: ${PASSWORD}
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- tapOn:
+    id: password-submit
+- extendedWaitUntil:
+    visible:
+      id: home-send
+    timeout: 60000
+- assertVisible:
+    id: home-receive

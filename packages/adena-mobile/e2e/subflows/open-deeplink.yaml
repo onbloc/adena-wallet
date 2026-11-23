@@ -1,0 +1,9 @@
+appId: ${APP_ID}
+---
+# Expects URL. iOS asks before an app opens a custom scheme from outside; the prompt follows the device locale.
+- openLink: ${URL}
+- runFlow:
+    when:
+      visible: (Open|열기)
+    commands:
+      - tapOn: (Open|열기)

@@ -1,0 +1,16 @@
+appId: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible:
+      id: unlock-submit
+    timeout: 30000
+- tapOn:
+    id: unlock-password
+- inputText: ${PASSWORD}
+- runFlow: dismiss-keyboard.yaml
+- tapOn:
+    id: unlock-submit
+- extendedWaitUntil:
+    visible:
+      id: home-send
+    timeout: 60000

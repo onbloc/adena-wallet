@@ -44,9 +44,10 @@ describe('AppResetService', () => {
   it('wipes a full wallet, including the password lockout, so onboarding can start over', async () => {
     let now = 1_000_000;
     const { container, secureStore } = createTestContainer({ now: () => now });
+    const account = await container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+    const network = container.networkService.getCurrentNetwork();
 
-    await container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
-
+    container.connectedAppService.touch('https://dapp.example.com', { name: 'Example' }, account.id, network.id);
     container.walletService.lock();
 
     for (let i = 0; i < 6; i++) {
@@ -57,6 +58,7 @@ describe('AppResetService', () => {
     await container.appResetService.resetAll();
 
     expect(await container.walletService.getStatus()).toBe('empty');
+    expect(container.connectedAppService.getConnectedApps()).toEqual([]);
     expect(container.accountService.getAccounts()).toEqual([]);
     expect(await secureStore.hasItem(SecureKey.PASSWORD_ATTEMPTS)).toBe(false);
     now += 1;

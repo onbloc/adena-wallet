@@ -69,3 +69,56 @@ pnpm build:storybook    # static build in storybook-static/ (shareable)
 * Cross-cutting scenario tests stay at the top of `__tests__/` (dApp flow, migrations, hardening, adena-module parity).
 * Shared helpers: `createTestContainer` (in-memory DI container with fake chain/HTTP), `renderScreen`/`setupWallet` for containers, `query-wrapper` for query hooks.
 * Known bugs found while writing tests are recorded as `it.todo` / `it.skip` with the expected behavior.
+
+### E2E (Maestro)
+
+Flows live in `e2e/flows`, reusable steps in `e2e/subflows`. They drive an installed build through testIDs and visible text.
+
+```sh
+# Install the CLI once: https://docs.maestro.dev/getting-started/installing-maestro
+pnpm e2e                                  # every flow on the booted simulator/emulator
+pnpm e2e:smoke                            # onboarding + lock/unlock only
+pnpm e2e --device <udid> e2e/flows/07-dapp-connect.yaml
+```
+
+* `e2e/run.sh` derives the test account address and builds the dApp deep links with `scripts/dapp-request.mjs`, then passes them to Maestro as env vars. Override `E2E_MNEMONIC`, `E2E_PASSWORD`, `E2E_RECIPIENT`, `E2E_CHAIN` as needed.
+* Every flow starts from a wiped app (`clearState` plus `clearKeychain` on iOS). **Run it on a dedicated simulator**, not one holding wallets you care about: `xcrun simctl create "Adena E2E" ...`, then install the `.app` from DerivedData with `xcrun simctl install`.
+* Debug builds need Metro running (`pnpm start`). A release build embeds the bundle and needs nothing else.
+* Flows never broadcast a transaction; the dApp flow rejects the signing request, so the default account needs no balance.
+
+### Release builds (Android)
+
+Release signing is read from Gradle properties and never committed. Put these in `~/.gradle/gradle.properties` (or pass `ORG_GRADLE_PROJECT_<name>` in CI):
+
+```properties
+ADENA_UPLOAD_STORE_FILE=/absolute/path/to/upload.keystore
+ADENA_UPLOAD_STORE_PASSWORD=...
+ADENA_UPLOAD_KEY_ALIAS=...
+ADENA_UPLOAD_KEY_PASSWORD=...
+```
+
+`packageRelease` / `bundleRelease` fail if any is missing. Release builds are minified with R8 (`android/app/proguard-rules.pro`). Debug builds use the machine's `~/.android/debug.keystore`, which the Android Gradle plugin creates.
+
+### Trying the dApp flow
+
+`scripts/dapp-request.mjs` builds request links and decodes responses:
+
+```bash
+node scripts/dapp-request.mjs connect --chain dev.gnoswap
+node scripts/dapp-request.mjs send --chain dev.gnoswap --caller <g1 sender> --to <g1 recipient> --amount 1000ugnot
+node scripts/dapp-request.mjs call --chain dev.gnoswap --caller <g1 sender> --pkg gno.land/r/gnoswap/gns --func Transfer --args <g1 recipient>,1000000
+node scripts/dapp-request.mjs tx --chain dev.gnoswap --caller <g1 sender> --send <g1 recipient>:1ugnot --call gno.land/r/gnoswap/gns:Transfer:<g1 recipient>,1000
+node scripts/dapp-request.mjs decode '<callback url from the browser>'
+```
+
+Add `--sign-only` for `sign-transaction` (signed, not broadcast). `tx` builds one multi-message transaction (up to 16 messages); repeat `--send` / `--call` in the order the messages should run.
+
+
+```bash
+# Android: opens the overlay sheet on top of the current app
+adb shell am start -a android.intent.action.VIEW -d "adena://request?payload=<base64url JSON>"
+# iOS simulator: opens the in-app request screen
+xcrun simctl openurl booted "adena://request?payload=<base64url JSON>"
+```
+
+Build the payload with `buildDappRequestUrl` (`src/deeplink/dapp-protocol.ts`) or see the protocol section below.

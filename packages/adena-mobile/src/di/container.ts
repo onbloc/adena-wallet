@@ -30,6 +30,7 @@ import { AddressBookService } from '../services/address-book.service';
 import { AppResetService } from '../services/app-reset.service';
 import { BalanceService } from '../services/balance.service';
 import { ConnectedAppService } from '../services/connected-app.service';
+import { DappService } from '../services/dapp.service';
 import { ExploreService } from '../services/explore.service';
 import { HapticEngine, HapticsService, NOOP_HAPTIC_ENGINE } from '../services/haptics.service';
 import { KeyringSession } from '../services/keyring-session';
@@ -85,6 +86,7 @@ export interface Services {
   onrampService: OnrampService;
   appResetService: AppResetService;
   transactionService: TransactionService;
+  dappService: DappService;
   connectedAppService: ConnectedAppService;
   preferenceService: PreferenceService;
   migrationService: MigrationService;
@@ -157,6 +159,8 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),
     walletService: overrides.walletService
       ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker),
+    dappService: overrides.dappService
+      ?? new DappService(networkService, accountService, transactionService, connectedAppService),
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
   };

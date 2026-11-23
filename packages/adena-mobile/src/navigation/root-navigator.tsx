@@ -14,6 +14,7 @@ import { BuyCryptoScreen } from '../containers/main/buy-crypto-screen';
 import { ChangePasswordScreen } from '../containers/main/change-password-screen';
 import { CheckoutScreen } from '../containers/main/checkout-screen';
 import { ConnectedAppsScreen } from '../containers/main/connected-apps-screen';
+import { DappRequestScreen } from '../containers/main/dapp-request-screen';
 import { EditProfileScreen } from '../containers/main/edit-profile-screen';
 import { ImportAccountScreen } from '../containers/main/import-account-screen';
 import { ManageNftsScreen } from '../containers/main/manage-nfts-screen';
@@ -117,6 +118,11 @@ const MainNavigator = (): ReactElement => {
       <MainStack.Screen name='Search' component={SearchScreen} />
       <MainStack.Screen name='BuyCrypto' component={BuyCryptoScreen} />
       <MainStack.Screen name='Checkout' component={CheckoutScreen} />
+      <MainStack.Screen
+        name='DappRequest'
+        component={DappRequestScreen}
+        options={{ presentation: 'fullScreenModal', gestureEnabled: false }}
+      />
       {/* Hosts every BottomSheet of this stack (see molecules/bottom-sheet). */}
       <MainStack.Screen name={SHEET_ROUTE} component={SheetScreen} options={sheetOptions} />
     </MainStack.Navigator>

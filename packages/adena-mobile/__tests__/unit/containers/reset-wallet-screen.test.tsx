@@ -1,16 +1,13 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import React from 'react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 
 import { ResetWalletPageProps } from '../../../src/components/pages';
 import { ResetWalletScreen } from '../../../src/containers/reset-wallet-screen';
+import { useDappRequestStore } from '../../../src/stores/dapp-request.store';
 import { SessionStatus, useSessionStore } from '../../../src/stores/session.store';
-import { createWrapper } from '../../helpers/query-wrapper';
-import { wrapPage } from '../components/pages/render-page';
+import { useToastStore } from '../../../src/stores/toast.store';
+import { renderScreen, resetStores, setupWallet } from '../../helpers/render-screen';
 
-jest.mock('@react-navigation/native', () => ({
-  ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({ goBack: jest.fn() }),
-}));
+jest.setTimeout(30_000);
 
 const mockPage: { props?: ResetWalletPageProps } = {};
 
@@ -27,29 +24,36 @@ jest.mock('../../../src/components/pages', () => {
 });
 
 describe('ResetWalletScreen', () => {
-  const resetAll = jest.fn();
-  const getStatus = jest.fn();
+  beforeEach(resetStores);
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    useSessionStore.setState({ status: SessionStatus.LOCKED });
-    getStatus.mockResolvedValue(SessionStatus.LOCKED);
+  it('requires the acknowledgement, then wipes the wallet and returns to onboarding', async () => {
+    const { env } = await setupWallet();
+
+    useDappRequestStore.setState({ queue: ['adena://x'] });
+    useToastStore.getState().show('hello');
+    await renderScreen(ResetWalletScreen, { env });
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Reset wallet' }));
+    expect(useSessionStore.getState().status).toBe(SessionStatus.BOOTING);
+
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'I have backed up my recovery phrases' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Reset wallet' }));
+
+    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.EMPTY));
+    await expect(env.container.walletService.getStatus()).resolves.toBe(SessionStatus.EMPTY);
+    expect(useDappRequestStore.getState().queue).toEqual([]);
+    expect(useToastStore.getState().toast).toBeNull();
   });
 
-  const renderScreen = async (): Promise<void> => {
-    const { Wrapper } = createWrapper({ appResetService: { resetAll }, walletService: { getStatus } });
-
-    await render(wrapPage(<Wrapper><ResetWalletScreen /></Wrapper>));
-    await fireEvent.press(screen.getByRole('checkbox'));
-  };
-
   it('starts one reset for rapid repeated taps', async () => {
+    const { env } = await setupWallet();
     let finish: () => void = () => undefined;
-
-    resetAll.mockImplementation(() => new Promise<void>((resolve) => {
+    const resetAll = jest.spyOn(env.container.appResetService, 'resetAll').mockImplementation(() => new Promise<void>((resolve) => {
       finish = resolve;
     }));
-    await renderScreen();
+
+    await renderScreen(ResetWalletScreen, { env });
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'I have backed up my recovery phrases' }));
     // Both taps reach the same render's handler, before the button shows the loading state.
     await act(async () => {
       mockPage.props?.onReset();
@@ -60,14 +64,23 @@ describe('ResetWalletScreen', () => {
     await act(async () => finish());
   });
 
-  it('shows the error and allows a retry after a failure', async () => {
-    resetAll.mockRejectedValueOnce(new Error('Storage failed')).mockResolvedValueOnce(undefined);
-    await renderScreen();
+  it('shows the failure and lets the user retry', async () => {
+    const { env } = await setupWallet();
 
-    await fireEvent.press(screen.getByTestId('reset-confirm'));
-    expect(await screen.findByText('Storage failed')).toBeTruthy();
+    const resetAll = jest.spyOn(env.container.appResetService, 'resetAll').mockRejectedValueOnce(new Error('disk busy'));
+    const { navigation } = await renderScreen(ResetWalletScreen, { env });
 
-    await fireEvent.press(screen.getByTestId('reset-confirm'));
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'I have backed up my recovery phrases' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Reset wallet' }));
+
+    expect(await screen.findByText('disk busy')).toBeTruthy();
+    expect(screen.getByText('Reset failed')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Reset wallet' })).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Reset wallet' }));
     expect(resetAll).toHaveBeenCalledTimes(2);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(navigation.goBack).toHaveBeenCalled();
   });
 });

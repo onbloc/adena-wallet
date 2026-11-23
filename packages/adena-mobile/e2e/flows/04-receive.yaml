@@ -1,0 +1,13 @@
+appId: ${APP_ID}
+name: Show the receive sheet and copy the address
+tags: [wallet]
+---
+- runFlow: ../subflows/import-wallet.yaml
+- tapOn:
+    id: home-receive
+- assertVisible: Receive
+- assertVisible: ${ADDRESS_HEAD}.*
+- tapOn: Copy address
+- tapOn: Close
+- assertVisible:
+    id: home-send

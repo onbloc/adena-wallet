@@ -1,0 +1,9 @@
+appId: ${APP_ID}
+---
+# The dApp callback opens the browser asynchronously; let it take the foreground before switching back.
+- extendedWaitUntil:
+    visible: __adena_e2e_never__
+    timeout: 4000
+    optional: true
+- launchApp:
+    stopApp: false

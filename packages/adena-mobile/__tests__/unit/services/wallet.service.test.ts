@@ -517,6 +517,7 @@ describe('WalletService', () => {
       const imported = await wallet.importPrivateKey(PRIVATE_KEY);
 
       for (const owner of [account, imported]) {
+        container.connectedAppService.touch('https://dapp.example.com', { name: 'Example' }, owner.id, network.id);
         container.nftService.setPinned(owner, network, 'gno.land/r/demo/nft', true);
         container.tokenService.setVisibility(owner, network, 'x', true);
       }
@@ -525,6 +526,7 @@ describe('WalletService', () => {
       container.accountPhotoService.save(imported.id, 'data:image/jpeg;base64,BBBB');
 
       await wallet.removeAccount(imported.id, TEST_PASSWORD);
+      expect(container.connectedAppService.getConnectedApps().map(app => app.accountId)).toEqual([account.id]);
       expect(container.accountPhotoService.get(imported.id)).toBeUndefined();
       expect(container.accountPhotoService.get(account.id)).toBe('data:image/jpeg;base64,AAAA');
       expect(container.nftService.getPreferences(imported, network).pinned).toEqual([]);

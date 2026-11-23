@@ -1,0 +1,31 @@
+appId: ${APP_ID}
+name: Lock and unlock with the password
+tags: [security, smoke]
+---
+- runFlow: ../subflows/import-wallet.yaml
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: Lock wallet
+- extendedWaitUntil:
+    visible:
+      id: unlock-submit
+    timeout: 10000
+- assertVisible:
+    id: unlock-submit
+    enabled: false
+- tapOn:
+    id: unlock-password
+- inputText: wrong-password
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- tapOn:
+    id: unlock-submit
+- extendedWaitUntil:
+    visible: Incorrect password.
+    timeout: 30000
+- tapOn:
+    id: unlock-password
+- eraseText: 40
+- runFlow: ../subflows/unlock.yaml
+# A cold start must land on the unlock screen, never on the wallet.
+- stopApp
+- launchApp
+- runFlow: ../subflows/unlock.yaml

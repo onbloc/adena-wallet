@@ -9,3 +9,12 @@
 
 # Add any project specific keep options here:
 
+# App TurboModules and activities (codegen specs are looked up by name).
+-keep class com.adena.** { *; }
+
+# Nitro modules (react-native-mmkv) are bound from C++ through JNI.
+-keep class com.margelo.nitro.** { *; }
+-keep class com.mrousavy.mmkv.** { *; }
+
+# react-native-keychain cipher storage implementations.
+-keep class com.oblador.keychain.** { *; }

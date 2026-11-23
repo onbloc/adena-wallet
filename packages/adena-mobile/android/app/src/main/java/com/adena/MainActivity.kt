@@ -11,8 +11,10 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 class MainActivity : ReactActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
+    WindowProtection.apply(this)
     // react-native-screens cannot restore fragments, so saved state is not passed on.
     super.onCreate(null)
+    WindowProtection.filterObscuredTouches(this)
     applyNavigationBarAppearance(resources.configuration)
   }
 

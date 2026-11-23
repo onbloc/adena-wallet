@@ -1,0 +1,32 @@
+appId: ${APP_ID}
+name: Reveal the recovery phrase behind the password
+tags: [security]
+---
+- runFlow: ../subflows/import-wallet.yaml
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: Recovery phrase.*
+- assertVisible: Enter your password to show the recovery phrase.
+- assertVisible:
+    text: Reveal phrase
+    enabled: false
+- tapOn:
+    text: Password
+    below:
+      text: Password
+- inputText: wrong-password
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- tapOn: Reveal phrase
+- extendedWaitUntil:
+    visible: Incorrect password.*
+    timeout: 30000
+- tapOn:
+    text: Password
+    below:
+      text: Password
+- eraseText: 40
+- inputText: ${PASSWORD}
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- tapOn: Reveal phrase
+- extendedWaitUntil:
+    visible: .*abandon.*
+    timeout: 30000

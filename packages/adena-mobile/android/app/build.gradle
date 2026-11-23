@@ -55,9 +55,16 @@ react {
 }
 
 /**
- * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
+ * Release builds are minified with R8; keep rules live in proguard-rules.pro.
  */
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
+
+/**
+ * Release signing comes from Gradle properties (~/.gradle/gradle.properties, -P, or
+ * ORG_GRADLE_PROJECT_* env vars in CI). Nothing secret is committed.
+ */
+def releaseSigningProps = ['ADENA_UPLOAD_STORE_FILE', 'ADENA_UPLOAD_STORE_PASSWORD', 'ADENA_UPLOAD_KEY_ALIAS', 'ADENA_UPLOAD_KEY_PASSWORD']
+def hasReleaseSigning = releaseSigningProps.every { project.hasProperty(it) && project.property(it) }
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -85,11 +92,38 @@ android {
         versionCode 1
         versionName "1.0"
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(project.property('ADENA_UPLOAD_STORE_FILE'))
+                storePassword project.property('ADENA_UPLOAD_STORE_PASSWORD')
+                keyAlias project.property('ADENA_UPLOAD_KEY_ALIAS')
+                keyPassword project.property('ADENA_UPLOAD_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         // Debug builds use the per-machine ~/.android/debug.keystore that AGP generates.
         release {
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled enableProguardInReleaseBuilds
+            shrinkResources enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn rootProject.tasks.named('verifyPinnedNativeArtifacts')
+}
+
+// A release must never fall back to an unsigned or debug-signed artifact.
+tasks.matching { it.name in ['packageRelease', 'bundleRelease'] }.configureEach {
+    doFirst {
+        if (!hasReleaseSigning) {
+            throw new GradleException("Release signing is not configured. Set ${releaseSigningProps.join(', ')}.")
         }
     }
 }

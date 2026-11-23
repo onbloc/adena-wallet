@@ -1,0 +1,29 @@
+appId: ${APP_ID}
+name: Import a wallet with a recovery phrase
+tags: [onboarding, smoke]
+---
+- runFlow: ../subflows/fresh-launch.yaml
+- tapOn:
+    id: welcome-import
+- assertVisible:
+    id: import-submit
+    enabled: false
+- tapOn:
+    id: import-secret
+- inputText: abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- tapOn:
+    id: import-submit
+- assertVisible: Check the words and their order.
+# eraseText is unreliable in the multiline field; re-enter the screen for a clean input.
+- tapOn: Back
+- tapOn:
+    id: welcome-import
+- tapOn:
+    id: import-secret
+- inputText: ${MNEMONIC}
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- tapOn:
+    id: import-submit
+- runFlow: ../subflows/set-password.yaml
+- assertVisible: ${ADDRESS_HEAD}.*

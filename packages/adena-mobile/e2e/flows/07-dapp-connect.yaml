@@ -1,0 +1,44 @@
+appId: ${APP_ID}
+name: Gate dApp transactions behind connect
+tags: [dapp]
+---
+- runFlow: ../subflows/import-wallet.yaml
+# Without a connection the transaction request is refused.
+- runFlow:
+    file: ../subflows/open-deeplink.yaml
+    env:
+      URL: ${DAPP_TX_URL}
+- extendedWaitUntil:
+    visible: .*is not connected to.*
+    timeout: 30000
+- tapOn:
+    id: dapp-reject
+- runFlow: ../subflows/return-from-callback.yaml
+- runFlow:
+    file: ../subflows/open-deeplink.yaml
+    env:
+      URL: ${DAPP_CONNECT_URL}
+- extendedWaitUntil:
+    visible: Connect app
+    timeout: 30000
+- assertVisible: ${DAPP_ORIGIN}
+- tapOn:
+    id: dapp-approve
+- runFlow: ../subflows/return-from-callback.yaml
+- runFlow:
+    file: ../subflows/open-deeplink.yaml
+    env:
+      URL: ${DAPP_TX_URL}
+- extendedWaitUntil:
+    visible: Confirm transaction
+    timeout: 30000
+- assertNotVisible: .*is not connected to.*
+- assertVisible:
+    id: dapp-approve
+- tapOn:
+    id: dapp-reject
+- runFlow: ../subflows/return-from-callback.yaml
+- runFlow: ../subflows/open-settings.yaml
+- assertVisible: Connected apps, 1
+- tapOn: Connected apps.*
+- assertVisible: ${DAPP_ORIGIN}.*

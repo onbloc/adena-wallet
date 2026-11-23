@@ -6,6 +6,8 @@ import UIKit
 class SceneDelegate: RCTDefaultReactNativeFactoryDelegate, UIWindowSceneDelegate {
   var window: UIWindow?
   var reactNativeFactory: RCTReactNativeFactory?
+  // Hides wallet content in the app switcher snapshot and while the screen is captured.
+  private var privacyCover: UIView?
 
   func scene(
     _ scene: UIScene,
@@ -35,8 +37,49 @@ class SceneDelegate: RCTDefaultReactNativeFactoryDelegate, UIWindowSceneDelegate
       connectionOptions: connectionOptions
     )
 
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(screenCaptureChanged),
+      name: UIScreen.capturedDidChangeNotification,
+      object: nil
+    )
   }
 
+  func sceneWillResignActive(_ scene: UIScene) {
+    showPrivacyCover()
+  }
+
+  func sceneDidBecomeActive(_ scene: UIScene) {
+    if window?.windowScene?.screen.isCaptured != true {
+      hidePrivacyCover()
+    }
+  }
+
+  @objc private func screenCaptureChanged() {
+    if window?.windowScene?.screen.isCaptured == true {
+      showPrivacyCover()
+    } else if window?.windowScene?.activationState == .foregroundActive {
+      hidePrivacyCover()
+    }
+  }
+
+  private func showPrivacyCover() {
+    guard let window, privacyCover == nil else {
+      return
+    }
+    let cover = UIStoryboard(name: "LaunchScreen", bundle: nil).instantiateInitialViewController()?.view
+      ?? UIView()
+    cover.backgroundColor = cover.backgroundColor ?? .systemBackground
+    cover.frame = window.bounds
+    cover.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    window.addSubview(cover)
+    privacyCover = cover
+  }
+
+  private func hidePrivacyCover() {
+    privacyCover?.removeFromSuperview()
+    privacyCover = nil
+  }
 
   func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
     RCTLinkingManager.scene(scene, openURLContexts: URLContexts)

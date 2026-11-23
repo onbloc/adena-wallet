@@ -1,0 +1,20 @@
+appId: ${APP_ID}
+name: Reset the wallet from settings
+tags: [security]
+---
+- runFlow: ../subflows/import-wallet.yaml
+- runFlow: ../subflows/open-settings.yaml
+- scrollUntilVisible:
+    element: Reset wallet
+- tapOn: Reset wallet
+- assertVisible: This cannot be undone
+- assertVisible:
+    id: reset-confirm
+    enabled: false
+- tapOn: I have backed up my recovery phrases
+- tapOn:
+    id: reset-confirm
+- extendedWaitUntil:
+    visible:
+      id: welcome-create
+    timeout: 30000
