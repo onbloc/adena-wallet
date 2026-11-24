@@ -30,6 +30,8 @@ export type PolicyEvent = Readonly<{
 
 export type HarnessRun = Readonly<{
   operationId: string;
+  /** Immutable account and chain bound to this run. */
+  context: WalletContext;
   signal: AbortSignal;
   tools: readonly ToolDefinition[];
   dispatch(proposal: { name: string; input: unknown }): Promise<Decision>;
@@ -188,7 +190,7 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
         return decision;
       }
 
-      return { operationId, signal, tools, dispatch, canStartStep, beginStep, finishStep, close: cancel };
+      return { operationId, context, signal, tools, dispatch, canStartStep, beginStep, finishStep, close: cancel };
     },
   };
 }
