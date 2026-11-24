@@ -6,13 +6,15 @@ import {
   effectiveSlippage,
   encodeRoutes,
   estimatePriceImpact,
+  hopCount,
   isRawAmount,
-  minAmountOut,
   slippageToBps,
   swapDeadline,
+  swapLimits,
   SwapQuote,
   SwapSettings,
   SwapToken,
+  SwapType,
   validateRoutes,
 } from '../domain/swap';
 import { TokenType } from '../domain/token';
@@ -31,8 +33,9 @@ export interface SwapQuoteRequest {
   network: Network;
   input: SwapToken;
   output: SwapToken;
-  // Raw exact-in amount.
-  amountIn: string;
+  exactType: SwapType;
+  // Raw amount of the exact side.
+  amount: string;
 }
 
 export interface PrepareSwapInput {
@@ -52,6 +55,8 @@ export interface PreparedSwap {
   output: SwapToken;
   quote: SwapQuote;
   slippageBps: number;
+  // Wrapped, approved and checked against the balance (EXACT_OUT: amountInMax).
+  maxAmountIn: string;
   minAmountOut: string;
   deadlineMinutes: number;
   draft: TransactionDraft;
@@ -77,7 +82,7 @@ export interface SwapMaxResult {
 
 type SupportedConfig = DexApiConfig & { swap: DexSwapConfig };
 
-// GnoSwap exact-in swaps: route candidates -> router dry run -> wrap/approve/swap/unwrap transaction.
+// GnoSwap exact-in and exact-out swaps: route candidates -> router dry run -> wrap/approve/swap/unwrap transaction.
 export class SwapService {
   constructor(
     private readonly chainRegistry: ChainRegistry,
@@ -125,18 +130,22 @@ export class SwapService {
     return this.chainRegistry.assets(network).getBalances(address, tokens, network);
   }
 
-  async getQuote({ network, input, output, amountIn }: SwapQuoteRequest): Promise<SwapQuote> {
+  async getQuote({ network, input, output, exactType, amount }: SwapQuoteRequest): Promise<SwapQuote> {
     const { config, repository } = this.require(network);
 
     if (input.swapPath === output.swapPath) {
       throw new AppError(AppErrorCode.SWAP_INVALID_TOKEN, 'Choose two different tokens');
     }
 
-    if (!isRawAmount(amountIn) || BigInt(amountIn) <= 0n) {
+    if (!isRawAmount(amount) || BigInt(amount) <= 0n) {
       throw new AppError(AppErrorCode.INVALID_AMOUNT, 'Enter an amount greater than zero');
     }
 
-    const request = { inputPath: input.swapPath, outputPath: output.swapPath, amountIn };
+    if (exactType !== SwapType.EXACT_IN && exactType !== SwapType.EXACT_OUT) {
+      throw new AppError(AppErrorCode.INVALID_AMOUNT, 'Unsupported swap type');
+    }
+
+    const request = { inputPath: input.swapPath, outputPath: output.swapPath, exactType, amount };
     const [candidates, feeBps] = await Promise.all([
       repository.findRouteCandidates(network, config, request),
       repository.getRouterFeeBps(network, config).catch(() => null),
@@ -148,13 +157,12 @@ export class SwapService {
         const encoded = encodeRoutes(candidate.routes);
         const dry = await repository.drySwap(network, config, { ...request, ...encoded });
 
-        // Exact-in must consume the whole input; a partial fill means the route ran out of liquidity.
-        if (dry.amountIn !== amountIn || BigInt(dry.amountOut) <= 0n) {
+        if (!this.fills(exactType, amount, dry, hopCount(candidate.routes))) {
           routeRejected = true;
           return null;
         }
 
-        return { candidate, encoded, amountOut: dry.amountOut };
+        return { candidate, encoded, dry };
       }
       catch (error) {
         // Timeouts and transport failures say nothing about the route; anything else is the router (or the data) refusing it.
@@ -165,10 +173,10 @@ export class SwapService {
         return null;
       }
     }));
-    const best = results.reduce<(typeof results)[number]>(
-      (current, next) => (next && (!current || BigInt(next.amountOut) > BigInt(current.amountOut)) ? next : current),
-      null,
-    );
+    // EXACT_IN keeps the largest output, EXACT_OUT the smallest input.
+    const better = (next: NonNullable<(typeof results)[number]>, current: NonNullable<(typeof results)[number]>): boolean =>
+      exactType === SwapType.EXACT_IN ? BigInt(next.dry.amountOut) > BigInt(current.dry.amountOut) : BigInt(next.dry.amountIn) < BigInt(current.dry.amountIn);
+    const best = results.reduce<(typeof results)[number]>((current, next) => (next && (!current || better(next, current)) ? next : current), null);
 
     if (!best) {
       throw candidates.length === 0 || routeRejected
@@ -179,21 +187,39 @@ export class SwapService {
     const routerFeeBps = feeBps ?? 0;
 
     return {
+      exactType,
+      requestedAmount: amount,
       networkId: network.id,
       inputTokenId: input.id,
       outputTokenId: output.id,
       inputPath: request.inputPath,
       outputPath: request.outputPath,
-      amountIn,
-      amountOut: best.amountOut,
+      amountIn: best.dry.amountIn,
+      amountOut: best.dry.amountOut,
       routes: best.candidate.routes,
       routeArr: best.encoded.routeArr,
       quoteArr: best.encoded.quoteArr,
       routerFeeBps,
-      priceImpactPercent: estimatePriceImpact(best.candidate.routes, amountIn, best.amountOut, routerFeeBps),
+      priceImpactPercent: estimatePriceImpact(best.candidate.routes, best.dry.amountIn, best.dry.amountOut, routerFeeBps, exactType),
       source: best.candidate.source,
       quotedAt: this.now(),
     };
+  }
+
+  // Exact-in must consume the whole input (a partial fill means no liquidity); exact-out must deliver
+  // the target within the router's one-unit-per-hop tolerance.
+  private fills(exactType: SwapType, amount: string, dry: { amountIn: string; amountOut: string }, hops: number): boolean {
+    if (BigInt(dry.amountIn) <= 0n || BigInt(dry.amountOut) <= 0n) {
+      return false;
+    }
+
+    if (exactType === SwapType.EXACT_IN) {
+      return dry.amountIn === amount;
+    }
+
+    const diff = BigInt(dry.amountOut) - BigInt(amount);
+
+    return (diff < 0n ? -diff : diff) <= BigInt(hops);
   }
 
   // GRC20 metadata from the API is only trusted once the chain agrees on the registry entry and decimals.
@@ -220,7 +246,9 @@ export class SwapService {
       output,
       inputPath: quote.inputPath,
       outputPath: quote.outputPath,
-      amountIn: quote.amountIn,
+      exactType: quote.exactType,
+      amountIn: prepared.maxAmountIn,
+      amountOut: quote.exactType === SwapType.EXACT_OUT ? quote.amountOut : undefined,
       minAmountOut: prepared.minAmountOut,
       routeArr: quote.routeArr,
       quoteArr: quote.quoteArr,
@@ -242,10 +270,6 @@ export class SwapService {
       throw new AppError(AppErrorCode.SWAP_PRICE_MOVED, 'The quote expired. Fetch a new one.');
     }
 
-    if (input.type === TokenType.NATIVE && BigInt(quote.amountIn) < BigInt(config.swap.wrappedNative.minDeposit)) {
-      throw new AppError(AppErrorCode.INVALID_AMOUNT, 'The amount is below the minimum swap');
-    }
-
     // Recomputed locally from the dry run; validateRoutes again so a tampered quote object cannot be signed.
     validateRoutes(quote.routes, quote.inputPath, quote.outputPath, config.swap.feeTiers, isTokenPath);
 
@@ -256,16 +280,13 @@ export class SwapService {
     await this.assertOnChainTokens(network, [input, output]);
 
     const slippageBps = slippageToBps(effectiveSlippage(settings));
-    const base = {
-      account,
-      network,
-      input,
-      output,
-      quote,
-      slippageBps,
-      minAmountOut: minAmountOut(quote.amountOut, slippageBps),
-      deadlineMinutes: settings.deadlineMinutes,
-    };
+    const limits = swapLimits(quote, slippageBps);
+
+    if (input.type === TokenType.NATIVE && BigInt(limits.maxAmountIn) < BigInt(config.swap.wrappedNative.minDeposit)) {
+      throw new AppError(AppErrorCode.INVALID_AMOUNT, 'The amount is below the minimum swap');
+    }
+
+    const base = { account, network, input, output, quote, slippageBps, ...limits, deadlineMinutes: settings.deadlineMinutes };
     const draft = await this.buildDraft(base, { gasWanted: '0', gasFee: '' });
     const estimate = await this.transactionService.estimateFee(draft, account, network);
 
@@ -299,7 +320,7 @@ export class SwapService {
         throw new Error('no output token to simulate');
       }
 
-      const quote = await this.getQuote({ network, input, output, amountIn: probe.toString() });
+      const quote = await this.getQuote({ network, input, output, exactType: SwapType.EXACT_IN, amount: probe.toString() });
       const slippageBps = slippageToBps(effectiveSlippage(settings));
       const draft = await this.buildDraft({
         account,
@@ -308,7 +329,7 @@ export class SwapService {
         output,
         quote,
         slippageBps,
-        minAmountOut: minAmountOut(quote.amountOut, slippageBps),
+        ...swapLimits(quote, slippageBps),
         deadlineMinutes: settings.deadlineMinutes,
       }, { gasWanted: '0', gasFee: '' });
       const estimate = await this.transactionService.estimateFee(draft, account, network);
@@ -331,23 +352,28 @@ export class SwapService {
   async submit(prepared: PreparedSwap, fee: TransactionFee): Promise<BroadcastResult> {
     const { config, repository } = this.require(prepared.network);
     const { quote, account, network } = prepared;
+    const exactOut = quote.exactType === SwapType.EXACT_OUT;
     const dry = await repository.drySwap(network, config, {
       inputPath: quote.inputPath,
       outputPath: quote.outputPath,
-      amountIn: quote.amountIn,
+      exactType: quote.exactType,
+      amount: exactOut ? quote.amountOut : quote.amountIn,
       routeArr: quote.routeArr,
       quoteArr: quote.quoteArr,
     }).catch((error: unknown) => {
       throw new AppError(AppErrorCode.SWAP_PRICE_MOVED, 'The route can no longer fill this swap. Review a new quote.', { cause: error });
     });
+    const moved = exactOut
+      ? !this.fills(quote.exactType, quote.amountOut, dry, hopCount(quote.routes)) || BigInt(dry.amountIn) > BigInt(prepared.maxAmountIn)
+      : dry.amountIn !== quote.amountIn || BigInt(dry.amountOut) < BigInt(prepared.minAmountOut);
 
-    if (dry.amountIn !== quote.amountIn || BigInt(dry.amountOut) < BigInt(prepared.minAmountOut)) {
+    if (moved) {
       throw new AppError(AppErrorCode.SWAP_PRICE_MOVED, 'The price moved beyond your slippage. Review a new quote.');
     }
 
     const draft = await this.buildDraft(prepared, fee);
 
-    await this.transactionService.assertSufficientFunds(draft, account, network, { token: prepared.input, amount: quote.amountIn }, prepared.estimate.storageDeposit);
+    await this.transactionService.assertSufficientFunds(draft, account, network, { token: prepared.input, amount: prepared.maxAmountIn }, prepared.estimate.storageDeposit);
     return this.transactionService.signAndBroadcast(draft, account, network);
   }
 }

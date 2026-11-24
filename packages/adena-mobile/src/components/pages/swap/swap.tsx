@@ -27,7 +27,10 @@ export interface SwapSideView {
   fiatLabel?: string;
   balanceLabel?: string;
   insufficient?: boolean;
+  // Estimated side waiting for a quote.
   loading?: boolean;
+  // The card the keypad edits (the exact side).
+  focused?: boolean;
 }
 
 export interface SwapDetailsView {
@@ -35,14 +38,15 @@ export interface SwapDetailsView {
   priceImpactLabel: string;
   priceImpactHigh: boolean;
   slippageLabel: string;
-  minReceivedLabel: string;
+  // "Min. received" for exact-in, "Max. sent" for exact-out.
+  limit: { label: string; value: string };
   routerFeeLabel: string;
   routes: SwapRouteView[];
 }
 
 export interface SwapReviewView {
-  pay: { token: SwapTokenView; amountLabel: string; fiatLabel?: string };
-  receive: { token: SwapTokenView; amountLabel: string; fiatLabel?: string };
+  pay: { caption: string; token: SwapTokenView; amountLabel: string; fiatLabel?: string };
+  receive: { caption: string; token: SwapTokenView; amountLabel: string; fiatLabel?: string };
   rows: { label: string; value: string; multiline?: boolean; emphasis?: boolean }[];
   warning?: string;
   fee: FeeSelectorProps;
@@ -63,6 +67,8 @@ export interface SwapPageProps {
   onSelectSellToken: () => void;
   onSelectBuyToken: () => void;
   onPickBuyToken: (tokenId: string) => void;
+  onFocusSell: () => void;
+  onFocusBuy: () => void;
   onFlip: () => void;
   details?: SwapDetailsView;
   detailsExpanded: boolean;
@@ -134,16 +140,41 @@ const TokenPill = ({ token, onPress, label }: { token: SwapTokenView; onPress: (
   );
 };
 
-const SellCard = ({ side, onSelect }: { side: SwapSideView; onSelect: () => void }): ReactElement => {
+// Tapping the amount makes this card the one the keypad edits; the focused card shows a caret.
+const AmountField = ({ side, label, onFocus, testID }: { side: SwapSideView; label: string; onFocus: () => void; testID?: string }): ReactElement => {
   const styles = useStyles();
 
   return (
-    <View style={styles.card} testID='swap-sell'>
+    <Pressable
+      accessibilityRole='button'
+      accessibilityLabel={`${label} amount`}
+      accessibilityState={{ selected: Boolean(side.focused) }}
+      onPress={onFocus}
+      style={styles.amountField}
+      testID={testID}
+    >
+      <Text
+        variant='display'
+        tabular
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        style={[styles.amount, (!side.amount || side.loading) && styles.amountPlaceholder]}
+      >
+        {side.amount || '0'}
+      </Text>
+      {side.focused && <View style={styles.caret} />}
+    </Pressable>
+  );
+};
+
+const SellCard = ({ side, onSelect, onFocus }: { side: SwapSideView; onSelect: () => void; onFocus: () => void }): ReactElement => {
+  const styles = useStyles();
+
+  return (
+    <View style={[styles.card, side.focused && styles.cardFocused]} testID='swap-sell'>
       <Text variant='meta' color='secondary'>Sell</Text>
       <View style={styles.cardRow}>
-        <Text variant='display' tabular numberOfLines={1} adjustsFontSizeToFit style={[styles.amount, !side.amount && styles.amountPlaceholder]}>
-          {side.amount || '0'}
-        </Text>
+        <AmountField side={side} label='Sell' onFocus={onFocus} testID='swap-sell-amount' />
         {side.token
           ? <TokenPill token={side.token} onPress={onSelect} label='Token to sell' />
           : <Button label='Select token' size='compact' onPress={onSelect} />}
@@ -160,7 +191,15 @@ const SellCard = ({ side, onSelect }: { side: SwapSideView; onSelect: () => void
   );
 };
 
-const BuyCard = ({ side, suggestions, onSelect, onPick }: { side: SwapSideView; suggestions: SwapTokenView[]; onSelect: () => void; onPick: (id: string) => void }): ReactElement => {
+interface BuyCardProps {
+  side: SwapSideView;
+  suggestions: SwapTokenView[];
+  onSelect: () => void;
+  onPick: (id: string) => void;
+  onFocus: () => void;
+}
+
+const BuyCard = ({ side, suggestions, onSelect, onPick, onFocus }: BuyCardProps): ReactElement => {
   const styles = useStyles();
   const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [styles.suggestion, pressed && styles.suggestionPressed];
 
@@ -185,19 +224,10 @@ const BuyCard = ({ side, suggestions, onSelect, onPick }: { side: SwapSideView; 
   }
 
   return (
-    <View style={[styles.card, styles.buyCard]} testID='swap-buy'>
+    <View style={[styles.card, styles.buyCard, side.focused && styles.cardFocused]} testID='swap-buy'>
       <Text variant='meta' color='secondary'>Buy</Text>
       <View style={styles.cardRow}>
-        <Text
-          variant='display'
-          tabular
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          style={[styles.amount, (!side.amount || side.loading) && styles.amountPlaceholder]}
-          testID='swap-buy-amount'
-        >
-          {side.amount || '0'}
-        </Text>
+        <AmountField side={side} label='Buy' onFocus={onFocus} testID='swap-buy-amount' />
         <TokenPill token={side.token} onPress={onSelect} label='Token to buy' />
       </View>
       <View style={styles.cardRow}>
@@ -244,7 +274,7 @@ const Details = ({ details, expanded, onToggle }: { details: SwapDetailsView; ex
         <View style={styles.details}>
           <KeyValueRow label='Price impact' value={details.priceImpactLabel} emphasis={details.priceImpactHigh} />
           <KeyValueRow label='Max. slippage' value={details.slippageLabel} />
-          <KeyValueRow label='Min. received' value={details.minReceivedLabel} />
+          <KeyValueRow label={details.limit.label} value={details.limit.value} />
           <KeyValueRow label='Router fee' value={details.routerFeeLabel} />
           <Text variant='meta' color='secondary'>Route</Text>
           <RouteList routes={details.routes} />
@@ -293,13 +323,13 @@ export const SwapPage = (props: SwapPageProps): ReactElement => {
     >
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps='handled'>
         <View style={styles.cards}>
-          <SellCard side={props.sell} onSelect={props.onSelectSellToken} />
+          <SellCard side={props.sell} onSelect={props.onSelectSellToken} onFocus={props.onFocusSell} />
           <View style={styles.flipWrap}>
             <Pressable accessibilityRole='button' accessibilityLabel='Switch tokens' onPress={props.onFlip} style={flipStyle} testID='swap-flip'>
               <Icon name='arrowDown' size={20} color={colors.icon.primary} />
             </Pressable>
           </View>
-          <BuyCard side={props.buy} suggestions={props.suggestedTokens} onSelect={props.onSelectBuyToken} onPick={props.onPickBuyToken} />
+          <BuyCard side={props.buy} suggestions={props.suggestedTokens} onSelect={props.onSelectBuyToken} onPick={props.onPickBuyToken} onFocus={props.onFocusBuy} />
         </View>
         {props.details && <Details details={props.details} expanded={props.detailsExpanded} onToggle={props.onToggleDetails} />}
         {props.error && <InlineAlert tone='error' title={props.error} />}
@@ -337,7 +367,7 @@ export const SwapPage = (props: SwapPageProps): ReactElement => {
             <View style={styles.reviewSide}>
               <TokenImage symbol={props.review.pay.token.symbol} localIcon={props.review.pay.token.localIcon} imageUrl={props.review.pay.token.imageUrl} size={36} />
               <View style={styles.reviewSideText}>
-                <Text variant='meta' color='secondary'>You pay</Text>
+                <Text variant='meta' color='secondary'>{props.review.pay.caption}</Text>
                 <Text variant='section' tabular selectable>{props.review.pay.amountLabel}</Text>
                 {props.review.pay.fiatLabel && <Text variant='meta' color='secondary' tabular>{props.review.pay.fiatLabel}</Text>}
               </View>
@@ -345,7 +375,7 @@ export const SwapPage = (props: SwapPageProps): ReactElement => {
             <View style={styles.reviewSide}>
               <TokenImage symbol={props.review.receive.token.symbol} localIcon={props.review.receive.token.localIcon} imageUrl={props.review.receive.token.imageUrl} size={36} />
               <View style={styles.reviewSideText}>
-                <Text variant='meta' color='secondary'>You receive (estimated)</Text>
+                <Text variant='meta' color='secondary'>{props.review.receive.caption}</Text>
                 <Text variant='section' tabular selectable>{props.review.receive.amountLabel}</Text>
                 {props.review.receive.fiatLabel && <Text variant='meta' color='secondary' tabular>{props.review.receive.fiatLabel}</Text>}
               </View>

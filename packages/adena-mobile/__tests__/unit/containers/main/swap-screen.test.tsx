@@ -144,8 +144,8 @@ describe('SwapScreen', () => {
     expect(screen.getByRole('button', { name: 'Max' }).props.accessibilityState).toMatchObject({ busy: false });
   });
 
-  it('flips the tokens and sells the received amount', async () => {
-    await setup();
+  it('flips the tokens and keeps the typed amount with its token, like Uniswap', async () => {
+    const { routeBodies } = await setup();
 
     await pickGns();
     await typeAmount('1');
@@ -153,7 +153,69 @@ describe('SwapScreen', () => {
     await press('Switch tokens');
     expect(screen.getByRole('button', { name: 'Token to sell, GNS' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Token to buy, GNOT' })).toBeTruthy();
-    expect(screen.getByText('4.151365')).toBeTruthy();
+    // The typed 1 GNOT is now the exact output; the GNS to sell is quoted.
+    expect(screen.getByRole('button', { name: 'Buy amount' }).props.accessibilityState).toMatchObject({ selected: true });
+    expect(within(screen.getByTestId('swap-buy')).getByText('1')).toBeTruthy();
+    await waitFor(() => expect(routeBodies.at(-1)).toMatchObject({ exactType: 'EXACT_OUT', amount: '1000000', outputTokenPath: 'gno.land/r/gnoland/wugnot.wugnot' }), LOOKUP);
+  });
+
+  it('quotes the input when the buy card is typed and reviews with max sent', async () => {
+    const { routeBodies, dryExpressions } = await setup();
+
+    await pickGns();
+    await fireEvent.press(screen.getByRole('button', { name: 'Buy amount' }));
+    expect(screen.getByRole('button', { name: 'Buy amount' }).props.accessibilityState).toMatchObject({ selected: true });
+    await typeAmount('4');
+    expect(await within(screen.getByTestId('swap-sell')).findByText('0.962929', undefined, LOOKUP)).toBeTruthy();
+    expect(routeBodies.at(-1)).toEqual({ inputTokenPath: 'gno.land/r/gnoland/wugnot.wugnot', outputTokenPath: GNS, exactType: 'EXACT_OUT', amount: '4000000' });
+    expect(dryExpressions.at(-1)).toContain('"4000000", "EXACT_OUT"');
+    await fireEvent.press(screen.getByTestId('swap-details-toggle'));
+    expect(screen.getByText('Max. sent')).toBeTruthy();
+
+    await press('Review swap');
+    expect(await screen.findByText('Confirm swap', undefined, LOOKUP)).toBeTruthy();
+    expect(screen.getByText('You pay (max)')).toBeTruthy();
+    expect(screen.getByText('You receive (exact)')).toBeTruthy();
+    // ceil(962,929 x 1.005) = 967,744.
+    expect(screen.getAllByText('0.967744 GNOT').length).toBeGreaterThan(0);
+    expect(screen.getByText(/is wrapped for the swap; what it doesn’t use stays in your wallet as wugnot/)).toBeTruthy();
+  });
+
+  it('checks the balance against amountInMax for an exact output', async () => {
+    const { env, address } = await setup();
+
+    env.gno.state.balances[address] = '965000ugnot';
+    await pickGns();
+    await screen.findByText('Balance 0.965', undefined, LOOKUP);
+    await fireEvent.press(screen.getByRole('button', { name: 'Buy amount' }));
+    await typeAmount('4');
+    // 962,929 quoted fits, but the 967,744 maximum does not.
+    expect(await screen.findByText('Not enough GNOT', undefined, LOOKUP)).toBeTruthy();
+  });
+
+  it('switches back to an exact input when a percentage chip is used', async () => {
+    await setup();
+
+    await pickGns();
+    await fireEvent.press(screen.getByRole('button', { name: 'Buy amount' }));
+    await typeAmount('4');
+    await within(screen.getByTestId('swap-sell')).findByText('0.962929', undefined, LOOKUP);
+    await press('Max');
+    // Balance minus the simulated fee x1.2 of the fake node (no storage deposit).
+    expect(await within(screen.getByTestId('swap-sell')).findByText(/^99\.9998/, undefined, LOOKUP)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Sell amount' }).props.accessibilityState).toMatchObject({ selected: true });
+  });
+
+  it('keeps the shown estimate when focus moves to the other card', async () => {
+    await setup();
+
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    await fireEvent.press(screen.getByRole('button', { name: 'Buy amount' }));
+    expect(within(screen.getByTestId('swap-buy')).getByText('4.151365')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('keyboardkey', { name: 'Delete' }));
+    expect(within(screen.getByTestId('swap-buy')).getByText('4.15136')).toBeTruthy();
   });
 
   it('searches the token selector by symbol and package path', async () => {

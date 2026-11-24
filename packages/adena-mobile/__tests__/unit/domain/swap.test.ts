@@ -2,13 +2,16 @@ import {
   effectiveSlippage,
   encodeRoutes,
   estimatePriceImpact,
+  exactOutMinimum,
   formatFeeTier,
   isValidDeadline,
   isValidSlippage,
+  maxAmountIn,
   minAmountOut,
   routerFeeOf,
   slippageToBps,
   swapDeadline,
+  swapLimits,
   SwapRoute,
   validateRoutes,
 } from '../../../src/domain/swap';
@@ -47,6 +50,21 @@ describe('swap math', () => {
     expect(() => minAmountOut('1.5', 50)).toThrow();
     expect(() => minAmountOut('9223372036854775808', 50)).toThrow();
     expect(() => minAmountOut('100', 10_000)).toThrow();
+  });
+
+  it('rounds amountInMax up and caps it at int64', () => {
+    expect(maxAmountIn('962929', 50)).toBe('967744');
+    expect(maxAmountIn('1000', 50)).toBe('1005');
+    expect(maxAmountIn('1', 1)).toBe('2');
+    expect(maxAmountIn('1000000', 0)).toBe('1000000');
+    expect(maxAmountIn('9223372036854775807', 100)).toBe('9223372036854775807');
+    expect(() => maxAmountIn('0', 50)).toThrow();
+  });
+
+  it('derives the exact-out guaranteed output and both limits per side', () => {
+    expect(exactOutMinimum('4000000', SPLIT)).toBe('3999997');
+    expect(swapLimits({ exactType: 'EXACT_OUT', amountIn: '962929', amountOut: '4000000', routes: SPLIT }, 50)).toEqual({ maxAmountIn: '967744', minAmountOut: '3999997' });
+    expect(swapLimits({ exactType: 'EXACT_IN', amountIn: '1000000', amountOut: '4151365', routes: SPLIT }, 50)).toEqual({ maxAmountIn: '1000000', minAmountOut: '4130608' });
   });
 
   it('builds the deadline in unix seconds from minutes', () => {
@@ -94,5 +112,7 @@ describe('swap math', () => {
     // Gross 4,087,616 vs. mid 4,100,000: about -0.30% (mostly the 0.3% pool fee).
     expect(impact).toBeCloseTo(-0.302, 2);
     expect(estimatePriceImpact([{ percent: 100, hops: [{ tokenIn: WUGNOT, tokenOut: GNS, fee: 3000 }] }], '1', '1', 0)).toBeNull();
+    // EXACT_OUT: the mid price needs 4,006,010 / 4.1 = 977,076 for the 4 GNS; paying 980,000 is about -0.30%.
+    expect(estimatePriceImpact([{ percent: 100, hops: [{ tokenIn: WUGNOT, tokenOut: GNS, fee: 3000, midPrice: '4.1' }] }], '980000', '4000000', 15, 'EXACT_OUT')).toBeCloseTo(-0.298, 2);
   });
 });

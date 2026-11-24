@@ -1,5 +1,5 @@
 import { Network } from '../../domain/network';
-import { SwapQuoteSource, SwapRoute, SwapToken } from '../../domain/swap';
+import { SwapQuoteSource, SwapRoute, SwapToken, SwapType } from '../../domain/swap';
 import { Token } from '../../domain/token';
 import { DexApiConfig } from '../../resources';
 
@@ -11,8 +11,9 @@ export interface SwapRouteCandidate {
 export interface SwapRouteRequest {
   inputPath: string;
   outputPath: string;
-  // Raw exact-in amount.
-  amountIn: string;
+  exactType: SwapType;
+  // Raw amount of the exact side (input for EXACT_IN, output for EXACT_OUT).
+  amount: string;
 }
 
 export interface DrySwapRequest extends SwapRouteRequest {
@@ -28,7 +29,11 @@ export interface SwapMessagesRequest {
   output: Token;
   inputPath: string;
   outputPath: string;
+  exactType: SwapType;
+  // EXACT_IN: exact input. EXACT_OUT: amountInMax.
   amountIn: string;
+  // EXACT_OUT: exact output.
+  amountOut?: string;
   minAmountOut: string;
   routeArr: string;
   quoteArr: string;

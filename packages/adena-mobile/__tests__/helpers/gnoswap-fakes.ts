@@ -3,6 +3,7 @@ import poolsDev from '../fixtures/gnoswap/pools.gnoswap.json';
 import prices from '../fixtures/gnoswap/prices.gnoland-1.json';
 import qeval from '../fixtures/gnoswap/qeval.json';
 import routeMainnet from '../fixtures/gnoswap/route-mainnet.json';
+import routeOutMainnet from '../fixtures/gnoswap/route-out-mainnet.json';
 import metas from '../fixtures/gnoswap/token-metas.gnoland-1.json';
 import { TestEnv } from './render-screen';
 
@@ -43,7 +44,9 @@ export const installGnoswapFakes = (env: TestEnv, options: GnoswapFakeOptions = 
       const body = init?.body as Record<string, string>;
 
       routeBodies.push(body);
-      return typeof options.route === 'function' ? (options.route as (b: Record<string, string>) => unknown)(body) : options.route ?? routeMainnet;
+      return typeof options.route === 'function'
+        ? (options.route as (b: Record<string, string>) => unknown)(body)
+        : options.route ?? (body.exactType === 'EXACT_OUT' ? routeOutMainnet : routeMainnet);
     });
   }
 
@@ -59,10 +62,16 @@ export const installGnoswapFakes = (env: TestEnv, options: GnoswapFakeOptions = 
         return options.drySwap(expression);
       }
 
-      // The captured split answer, echoing the requested amount so any exact-in amount fills.
-      const amountIn = /^DrySwapRoute\("[^"]*", "[^"]*", "(\d+)"/.exec(expression)?.[1] ?? '1000000';
+      if (options.drySwap !== undefined) {
+        return options.drySwap;
+      }
 
-      return options.drySwap ?? qeval.drySwapSplit.replace('"1000000"', `"${amountIn}"`);
+      // The captured split answers, echoing the exact amount so any amount fills.
+      const amount = /^DrySwapRoute\("[^"]*", "[^"]*", "(\d+)"/.exec(expression)?.[1] ?? '1000000';
+
+      return expression.includes('"EXACT_OUT"')
+        ? qeval.drySwapExactOutSplit.replace('"4000000"', `"${amount}"`)
+        : qeval.drySwapSplit.replace('"1000000"', `"${amount}"`);
     }
 
     if (expression.includes('BalanceOf(')) {

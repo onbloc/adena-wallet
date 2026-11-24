@@ -16,6 +16,8 @@ import routeDevBtc from '../../../../fixtures/gnoswap/route-dev-btc.json';
 import routeDevNone from '../../../../fixtures/gnoswap/route-dev-none.json';
 import routeMainnet from '../../../../fixtures/gnoswap/route-mainnet.json';
 import routeOnyx from '../../../../fixtures/gnoswap/route-onyx.json';
+import routeOutDev from '../../../../fixtures/gnoswap/route-out-dev.json';
+import routeOutMainnet from '../../../../fixtures/gnoswap/route-out-mainnet.json';
 import metas from '../../../../fixtures/gnoswap/token-metas.gnoland-1.json';
 import metasDev from '../../../../fixtures/gnoswap/token-metas.gnoswap.json';
 
@@ -88,6 +90,14 @@ describe('parseRouteResponse', () => {
     expect(parseRouteResponse(routeDevNone, 'gno.land/r/gnoswap/test_token/test_atone.ATONE', BTC, TIERS)).toEqual([]);
   });
 
+  it('parses EXACT_OUT answers (route amounts are swapped there, only pools and shares are used)', () => {
+    const routes = parseRouteResponse(routeOutMainnet, WUGNOT, GNS, TIERS);
+
+    expect(routeOutMainnet.exactType).toBe('EXACT_OUT');
+    expect(routes.map(route => [route.percent, route.hops.length])).toEqual([[50, 2], [50, 1]]);
+    expect(parseRouteResponse(routeOutDev, WUGNOT, 'gno.land/r/gnoswap/test_token/test_usdc.USDC', TIERS)[0].hops[0].fee).toBe(3000);
+  });
+
   it('rejects tampered or malformed routes', () => {
     const tamper = (mutate: (route: typeof routeMainnet) => void) => (): unknown => {
       const copy = structuredClone(routeMainnet);
@@ -139,6 +149,9 @@ describe('router qeval results', () => {
   it('parses DrySwapRoute amounts and surfaces router errors', () => {
     expect(parseDrySwapResult(qeval.drySwapSplit)).toEqual({ amountIn: '1000000', amountOut: '4151365' });
     expect(parseDrySwapResult(qeval.drySwapDevBtc)).toEqual({ amountIn: '1000000', amountOut: '59' });
+    expect(parseDrySwapResult(qeval.drySwapExactOutSplit)).toEqual({ amountIn: '962929', amountOut: '4000000' });
+    expect(parseDrySwapResult(qeval.drySwapExactOutDevUsdc)).toEqual({ amountIn: '1089764', amountOut: '1000000' });
+    expect(() => parseDrySwapResult(qeval.drySwapExactOutTooMuch)).toThrow('too much spent');
     expect(() => parseDrySwapResult(qeval.drySwapMissingPool)).toThrow('pool does not exist');
     expect(() => parseDrySwapResult(qeval.drySwapTooFew)).toThrow('too few received');
     expect(() => parseDrySwapResult('("-1" string)\n("2" string)\n(undefined)')).toThrow('malformed amount');

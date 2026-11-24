@@ -1,4 +1,4 @@
-import { isRawAmount } from '../../../domain/swap';
+import { isRawAmount, SwapType } from '../../../domain/swap';
 import { DexSwapConfig, Grc20RegistryConfig, isTokenPath } from '../../../resources';
 import { isValidAddress } from '../../../utils/address';
 import { resolveRouteArgs } from './gno-grc20-transfer';
@@ -22,7 +22,12 @@ export interface SwapMessagesInput {
   registry: Grc20RegistryConfig;
   input: SwapMessageToken;
   output: SwapMessageToken;
+  exactType: SwapType;
+  // EXACT_IN: the exact input. EXACT_OUT: amountInMax, which is wrapped and approved.
   amountIn: string;
+  // EXACT_OUT only: the exact output requested from the router.
+  amountOut?: string;
+  // Guaranteed delivery: EXACT_IN amountOutMin, EXACT_OUT the output minus the router's rounding tolerance.
   minAmountOut: string;
   routeArr: string;
   quoteArr: string;
@@ -59,8 +64,8 @@ const registryApprove = (caller: string, registry: Grc20RegistryConfig, tokenPat
   };
 };
 
-const approveMessage = (input: SwapMessagesInput): GnoMessage => {
-  const { caller, config, registry, amountIn } = input;
+const approveMessage = (input: SwapMessagesInput, amountIn: string): GnoMessage => {
+  const { caller, config, registry } = input;
   const token = input.input;
   const spender = config.routerAddress;
 
@@ -79,17 +84,25 @@ const approveMessage = (input: SwapMessagesInput): GnoMessage => {
   return registryApprove(caller, registry, token.swapPath, spender, amountIn);
 };
 
-// [wugnot.Deposit] -> approve(router, amountIn) -> router.ExactInSwapRoute -> [wugnot.Withdraw(minOut)].
-// Withdraw must be a MsgCall (wugnot asserts an origin call), so only the guaranteed minimum is unwrapped.
+const isPositiveRaw = (value: string | undefined): value is string => isRawAmount(value) && BigInt(value) > 0n;
+
+// EXACT_IN: [wugnot.Deposit] -> approve(amountIn) -> ExactInSwapRoute -> [wugnot.Withdraw(minOut)].
+// EXACT_OUT: [wugnot.Deposit(max)] -> approve(max) -> ExactOutSwapRoute -> approve(0) -> [wugnot.Withdraw(minOut)].
+// Withdraw must be a MsgCall (wugnot asserts an origin call), so only the guaranteed output is unwrapped.
 export const buildSwapMessages = (input: SwapMessagesInput): GnoMessage[] => {
-  const { caller, config, amountIn, minAmountOut, routeArr, quoteArr, deadline } = input;
+  const { caller, config, exactType, amountIn, amountOut, minAmountOut, routeArr, quoteArr, deadline } = input;
+  const exactOut = exactType === SwapType.EXACT_OUT;
 
   if (!isValidAddress(caller) || !isValidAddress(config.routerAddress)) {
     throw new Error('invalid swap address');
   }
 
-  if (!isRawAmount(amountIn) || BigInt(amountIn) <= 0n || !isRawAmount(minAmountOut) || BigInt(minAmountOut) <= 0n) {
+  if (!isPositiveRaw(amountIn) || !isPositiveRaw(minAmountOut) || (exactOut && (!isPositiveRaw(amountOut) || BigInt(minAmountOut) > BigInt(amountOut)))) {
     throw new Error('invalid swap amount');
+  }
+
+  if (exactType !== SwapType.EXACT_IN && !exactOut) {
+    throw new Error('invalid swap type');
   }
 
   if (!isTokenPath(input.input.swapPath) || !isTokenPath(input.output.swapPath) || input.input.swapPath === input.output.swapPath) {
@@ -110,17 +123,15 @@ export const buildSwapMessages = (input: SwapMessagesInput): GnoMessage[] => {
     messages.push(call(caller, config.wrappedNative.packagePath, 'Deposit', null, `${amountIn}${config.wrappedNative.denom}`));
   }
 
-  messages.push(approveMessage(input));
-  messages.push(call(caller, config.routerPath, 'ExactInSwapRoute', [
-    input.input.swapPath,
-    input.output.swapPath,
-    amountIn,
-    routeArr,
-    quoteArr,
-    minAmountOut,
-    String(deadline),
-    '',
-  ]));
+  messages.push(approveMessage(input, amountIn));
+  messages.push(exactOut
+    ? call(caller, config.routerPath, 'ExactOutSwapRoute', [input.input.swapPath, input.output.swapPath, amountOut as string, routeArr, quoteArr, amountIn, String(deadline), ''])
+    : call(caller, config.routerPath, 'ExactInSwapRoute', [input.input.swapPath, input.output.swapPath, amountIn, routeArr, quoteArr, minAmountOut, String(deadline), '']));
+
+  // The router only pulls what it used; clear the rest of the allowance.
+  if (exactOut) {
+    messages.push(approveMessage(input, '0'));
+  }
 
   if (input.output.native) {
     messages.push(call(caller, config.wrappedNative.packagePath, 'Withdraw', [minAmountOut]));

@@ -3,5 +3,8 @@
   "drySwapMissingPool": "(\"0\" string)\n(\"0\" string)\n(&(struct{(\"[GNOSWAP-ROUTER-004] invalid input data || pool does not exist: gno.land/r/gnoland/wugnot.wugnot:gno.land/r/gnoswap/gns.GNS:500\" string)} gno.land/p/nt/ufmt/v0.errMsg) *gno.land/p/nt/ufmt/v0.errMsg)",
   "drySwapTooFew": "(\"1000000\" string)\n(\"4081485\" string)\n(&(struct{(\"ExactIn: too few received (min:999999999999, got:4081485)\" string)} gno.land/p/nt/ufmt/v0.errMsg) *gno.land/p/nt/ufmt/v0.errMsg)",
   "drySwapDevBtc": "(\"1000000\" string)\n(\"59\" string)\n(undefined)",
-  "getSwapFee": "(15 uint64)"
+  "getSwapFee": "(15 uint64)",
+  "drySwapExactOutSplit": "(\"962929\" string)\n(\"4000000\" string)\n(undefined)",
+  "drySwapExactOutTooMuch": "(\"962929\" string)\n(\"4000000\" string)\n(&(struct{(\"ExactOut: too much spent (max:900000, used:962929)\" string)} gno.land/p/nt/ufmt/v0.errMsg) *gno.land/p/nt/ufmt/v0.errMsg)",
+  "drySwapExactOutDevUsdc": "(\"1089764\" string)\n(\"1000000\" string)\n(undefined)"
 }

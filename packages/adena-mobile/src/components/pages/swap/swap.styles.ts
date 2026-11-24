@@ -17,6 +17,9 @@ export const useStyles = makeStyles(colors => ({
   },
   // The receiving side sits on a tinted card, as in the reference layout.
   buyCard: { backgroundColor: colors.background.subtle, borderColor: colors.background.subtle },
+  cardFocused: { borderColor: colors.border.focus },
+  amountField: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 2 },
+  caret: { width: 2, height: 36, borderRadius: 1, backgroundColor: colors.text.primary },
   cardRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.space12 },
   amount: { flexShrink: 1, fontSize: 36, lineHeight: 44, letterSpacing: -0.8 },
   amountPlaceholder: { color: colors.text.disabled },

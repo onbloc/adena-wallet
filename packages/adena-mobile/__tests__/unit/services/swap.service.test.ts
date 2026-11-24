@@ -51,7 +51,7 @@ describe('SwapService', () => {
 
   it('quotes from the route API and takes the amount from the router dry run', async () => {
     const { service, network, gnot, gns, routeBodies, dryExpressions } = await setup();
-    const quote = await service.getQuote({ network, input: gnot, output: gns, amountIn: '1000000' });
+    const quote = await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' });
 
     expect(routeBodies).toEqual([{ inputTokenPath: WUGNOT, outputTokenPath: GNS, exactType: 'EXACT_IN', amount: '1000000' }]);
     expect(dryExpressions).toEqual([
@@ -64,7 +64,7 @@ describe('SwapService', () => {
   it('uses the router amount even when the API claims more', async () => {
     const { service, network, gnot, gns } = await setup({ drySwap: '("1000000" string)\n("100" string)\n(undefined)' });
 
-    expect((await service.getQuote({ network, input: gnot, output: gns, amountIn: '1000000' })).amountOut).toBe('100');
+    expect((await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' })).amountOut).toBe('100');
   });
 
   it('falls back to pool-derived routes when the route API is down and keeps the best dry run', async () => {
@@ -73,7 +73,7 @@ describe('SwapService', () => {
       route: null,
       drySwap: () => `("1000000" string)\n("${outputs.shift() ?? '1'}" string)\n(undefined)`,
     });
-    const quote = await service.getQuote({ network, input: gnot, output: gns, amountIn: '1000000' });
+    const quote = await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' });
 
     expect(quote.source).toBe('pools');
     expect(dryExpressions.length).toBeGreaterThan(1);
@@ -84,28 +84,28 @@ describe('SwapService', () => {
   it('reports no route for an empty answer, failing dry runs or a partial fill', async () => {
     const empty = await setup({ route: { estimatedRoutes: [] } });
 
-    await expectCode(empty.service.getQuote({ network: empty.network, input: empty.gnot, output: empty.gns, amountIn: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
+    await expectCode(empty.service.getQuote({ network: empty.network, input: empty.gnot, output: empty.gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
 
     const failing = await setup({ drySwap: qeval.drySwapMissingPool });
 
-    await expectCode(failing.service.getQuote({ network: failing.network, input: failing.gnot, output: failing.gns, amountIn: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
+    await expectCode(failing.service.getQuote({ network: failing.network, input: failing.gnot, output: failing.gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
 
     const partial = await setup({ drySwap: '("999" string)\n("5" string)\n(undefined)' });
 
-    await expectCode(partial.service.getQuote({ network: partial.network, input: partial.gnot, output: partial.gns, amountIn: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
+    await expectCode(partial.service.getQuote({ network: partial.network, input: partial.gnot, output: partial.gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
   });
 
   it('rejects the same token on both sides and invalid amounts', async () => {
     const { service, network, gnot, tokens } = await setup();
     const wugnot = tokens.find(token => token.id === WUGNOT)!;
 
-    await expectCode(service.getQuote({ network, input: gnot, output: wugnot, amountIn: '1000' }), AppErrorCode.SWAP_INVALID_TOKEN);
-    await expectCode(service.getQuote({ network, input: gnot, output: tokens[2], amountIn: '0' }), AppErrorCode.INVALID_AMOUNT);
+    await expectCode(service.getQuote({ network, input: gnot, output: wugnot, exactType: 'EXACT_IN', amount: '1000' }), AppErrorCode.SWAP_INVALID_TOKEN);
+    await expectCode(service.getQuote({ network, input: gnot, output: tokens[2], exactType: 'EXACT_IN', amount: '0' }), AppErrorCode.INVALID_AMOUNT);
   });
 
   it('prepares wrap, approve and swap with a locally computed minimum and deadline, then broadcasts after a fresh dry run', async () => {
     const { service, network, account, gnot, gns, env, address } = await setup();
-    const quote = await service.getQuote({ network, input: gnot, output: gns, amountIn: '1000000' });
+    const quote = await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' });
     const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: { slippage: 1, deadlineMinutes: 20 } });
 
     expect(prepared.minAmountOut).toBe('4109851');
@@ -132,7 +132,7 @@ describe('SwapService', () => {
   it('refuses to sign when the fresh dry run falls below the minimum', async () => {
     const outputs = ['4151365', '4000000'];
     const { service, network, account, gnot, gns, env } = await setup({ drySwap: () => `("1000000" string)\n("${outputs.shift() ?? '4000000'}" string)\n(undefined)` });
-    const quote = await service.getQuote({ network, input: gnot, output: gns, amountIn: '1000000' });
+    const quote = await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' });
     const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: DEFAULT_SWAP_SETTINGS });
 
     await expectCode(service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' }), AppErrorCode.SWAP_PRICE_MOVED);
@@ -141,7 +141,7 @@ describe('SwapService', () => {
 
   it('blocks tokens whose API decimals disagree with the chain, expired quotes and tampered routes', async () => {
     const mismatch = await setup({ decimals: { [GNS]: 8 } });
-    const quote = await mismatch.service.getQuote({ network: mismatch.network, input: mismatch.gnot, output: mismatch.gns, amountIn: '1000000' });
+    const quote = await mismatch.service.getQuote({ network: mismatch.network, input: mismatch.gnot, output: mismatch.gns, exactType: 'EXACT_IN', amount: '1000000' });
     const input = { account: mismatch.account, network: mismatch.network, input: mismatch.gnot, output: mismatch.gns, settings: DEFAULT_SWAP_SETTINGS };
 
     await expectCode(mismatch.service.prepare({ ...input, quote }), AppErrorCode.SWAP_INVALID_TOKEN);
@@ -152,12 +152,74 @@ describe('SwapService', () => {
 
   it('checks the input balance together with the fee before signing', async () => {
     const { service, network, account, gnot, gns, env, address } = await setup();
-    const quote = await service.getQuote({ network, input: gnot, output: gns, amountIn: '1000000' });
+    const quote = await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' });
     const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: DEFAULT_SWAP_SETTINGS });
 
     env.gno.state.balances[address] = '1000500ugnot';
     await expectCode(service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' }), AppErrorCode.INSUFFICIENT_BALANCE);
     expect(env.gno.state.broadcasts).toHaveLength(0);
+  });
+
+  describe('EXACT_OUT', () => {
+    const quoteOut = async (options: Parameters<typeof installGnoswapFakes>[1] = {}) => {
+      const env = await setup(options);
+      const quote = await env.service.getQuote({ network: env.network, input: env.gnot, output: env.gns, exactType: 'EXACT_OUT', amount: '4000000' });
+
+      return { ...env, quote };
+    };
+
+    it('quotes the input with the output as the exact amount and an unbounded max in', async () => {
+      const { quote, routeBodies, dryExpressions } = await quoteOut();
+
+      expect(routeBodies).toEqual([{ inputTokenPath: WUGNOT, outputTokenPath: GNS, exactType: 'EXACT_OUT', amount: '4000000' }]);
+      expect(dryExpressions[0]).toMatch(/^DrySwapRoute\("[^"]+", "[^"]+", "4000000", "EXACT_OUT", "[^"]+", "50,50", "9223372036854775807"\)$/);
+      expect(quote).toMatchObject({ exactType: 'EXACT_OUT', requestedAmount: '4000000', amountIn: '962929', amountOut: '4000000' });
+    });
+
+    it('keeps the cheapest pool route and rejects an output outside the rounding tolerance', async () => {
+      const inputs = ['990000', '970000', '999999'];
+      const cheapest = await setup({ route: null, drySwap: () => `("${inputs.shift() ?? '1'}" string)\n("4000000" string)\n(undefined)` });
+
+      expect((await cheapest.service.getQuote({ network: cheapest.network, input: cheapest.gnot, output: cheapest.gns, exactType: 'EXACT_OUT', amount: '4000000' })).amountIn).toBe('970000');
+
+      const short = await setup({ drySwap: '("962929" string)\n("3999000" string)\n(undefined)' });
+
+      await expectCode(short.service.getQuote({ network: short.network, input: short.gnot, output: short.gns, exactType: 'EXACT_OUT', amount: '4000000' }), AppErrorCode.SWAP_NO_ROUTE);
+    });
+
+    it('wraps and approves amountInMax, swaps for the exact output and clears the allowance', async () => {
+      const { service, network, account, gnot, gns, env, quote } = await quoteOut();
+      const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: DEFAULT_SWAP_SETTINGS });
+
+      expect(prepared).toMatchObject({ maxAmountIn: '967744', minAmountOut: '3999997' });
+      await service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' });
+      const calls = Tx.decode(fromBase64(env.gno.state.broadcasts[0])).messages.map(message => MsgCall.decode(message.value));
+
+      expect(calls.map(call => [call.func, call.send, call.args])).toEqual([
+        ['Deposit', '967744ugnot', []],
+        ['Approve', '', [ROUTER_ADDRESS, '967744']],
+        ['ExactOutSwapRoute', '', [WUGNOT, GNS, '4000000', quote.routeArr, '50,50', '967744', String(now / 1000 + 600), '']],
+        ['Approve', '', [ROUTER_ADDRESS, '0']],
+      ]);
+    });
+
+    it('refuses to sign when the fresh dry run needs more than amountInMax', async () => {
+      const inputs = ['962929', '970000'];
+      const { service, network, account, gnot, gns, env } = await setup({ drySwap: () => `("${inputs.shift() ?? '970000'}" string)\n("4000000" string)\n(undefined)` });
+      const quote = await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_OUT', amount: '4000000' });
+      const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: DEFAULT_SWAP_SETTINGS });
+
+      await expectCode(service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' }), AppErrorCode.SWAP_PRICE_MOVED);
+      expect(env.gno.state.broadcasts).toHaveLength(0);
+    });
+
+    it('checks the balance against amountInMax plus the fee', async () => {
+      const { service, network, account, gnot, gns, env, address, quote } = await quoteOut();
+      const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: DEFAULT_SWAP_SETTINGS });
+
+      env.gno.state.balances[address] = '970000ugnot';
+      await expectCode(service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' }), AppErrorCode.INSUFFICIENT_BALANCE);
+    });
   });
 
   describe('maxInputAmount', () => {

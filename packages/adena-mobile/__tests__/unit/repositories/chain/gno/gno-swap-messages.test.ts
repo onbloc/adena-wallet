@@ -14,6 +14,7 @@ const base = (overrides: Partial<SwapMessagesInput> = {}): SwapMessagesInput => 
   registry: getGrc20RegistryConfig('gnoland-1'),
   input: { native: true, swapPath: WUGNOT },
   output: { native: false, swapPath: GNS },
+  exactType: 'EXACT_IN',
   amountIn: '1000000',
   minAmountOut: '4061077',
   routeArr: ROUTE,
@@ -64,6 +65,49 @@ describe('buildSwapMessages', () => {
     }));
 
     expect(approve).toEqual(call('gno.land/r/gnoswap/gns', 'Approve', [ROUTER_ADDRESS, '1000000']));
+  });
+
+  describe('EXACT_OUT', () => {
+    const GNOMIC = 'gno.land/r/nym-thegnomic001/gnomic.GNOMIC';
+    const exactOut = (overrides: Partial<SwapMessagesInput>): SwapMessagesInput =>
+      base({ exactType: 'EXACT_OUT', amountIn: '967744', amountOut: '4000000', minAmountOut: '3999997', ...overrides });
+    const swap = (input: string, output: string) =>
+      call('gno.land/r/gnoswap/router', 'ExactOutSwapRoute', [input, output, '4000000', ROUTE, '100', '967744', '1795500000', '']);
+
+    it('GNOT -> GRC20 wraps and approves amountInMax, then clears the allowance', () => {
+      expect(buildSwapMessages(exactOut({}))).toEqual([
+        call('gno.land/r/gnoland/wugnot', 'Deposit', null, '967744ugnot'),
+        call('gno.land/r/gnoland/wugnot', 'Approve', [ROUTER_ADDRESS, '967744']),
+        swap(WUGNOT, GNS),
+        call('gno.land/r/gnoland/wugnot', 'Approve', [ROUTER_ADDRESS, '0']),
+      ]);
+    });
+
+    it('GRC20 -> GNOT unwraps the exact output minus the rounding tolerance', () => {
+      const messages = buildSwapMessages(exactOut({ input: { native: false, swapPath: GNS }, output: { native: true, swapPath: WUGNOT } }));
+
+      expect(messages.map(message => message.type)).toEqual([GnoMessageType.VM_RUN, GnoMessageType.VM_CALL, GnoMessageType.VM_RUN, GnoMessageType.VM_CALL]);
+      expect(messages[1]).toEqual(swap(GNS, WUGNOT));
+      expect(JSON.stringify(messages[2])).toContain(`address(\\"${ROUTER_ADDRESS}\\"), 0)`);
+      expect(messages[3]).toEqual(call('gno.land/r/gnoland/wugnot', 'Withdraw', ['3999997']));
+    });
+
+    it('GRC20 -> GRC20 approves and clears through the token route', () => {
+      const approveRoute = { name: 'Approve', args: ['$spender', '$amount'] };
+
+      expect(buildSwapMessages(exactOut({ input: { native: false, swapPath: GNS, approveRoute }, output: { native: false, swapPath: GNOMIC } }))).toEqual([
+        call('gno.land/r/gnoswap/gns', 'Approve', [ROUTER_ADDRESS, '967744']),
+        swap(GNS, GNOMIC),
+        call('gno.land/r/gnoswap/gns', 'Approve', [ROUTER_ADDRESS, '0']),
+      ]);
+    });
+
+    it('GNOT -> GNOT and inconsistent limits are refused', () => {
+      expect(() => buildSwapMessages(exactOut({ output: { native: true, swapPath: WUGNOT } }))).toThrow('token');
+      expect(() => buildSwapMessages(exactOut({ amountOut: undefined }))).toThrow('amount');
+      expect(() => buildSwapMessages(exactOut({ minAmountOut: '4000001' }))).toThrow('amount');
+      expect(() => buildSwapMessages(exactOut({ amountIn: '999' }))).toThrow('wrap minimum');
+    });
   });
 
   it('refuses anything it should not sign', () => {

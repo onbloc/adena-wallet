@@ -14,11 +14,12 @@ import {
   HIGH_SLIPPAGE_PERCENT,
   isValidDeadline,
   isValidSlippage,
-  minAmountOut,
   routerFeeOf,
   slippageToBps,
+  swapLimits,
   SwapSettings,
   SwapToken,
+  SwapType,
 } from '../../../domain/swap';
 import { useDebouncedValue } from '../../../hooks/use-debounced-value';
 import { useFeeSelection } from '../../../hooks/use-fee-selection';
@@ -99,7 +100,9 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
 
   const [inputId, setInputId] = useState<string | undefined>(route.params?.inputTokenId ?? network.nativeToken.id);
   const [outputId, setOutputId] = useState<string | undefined>();
+  // The typed amount belongs to `exactSide`: sell = EXACT_IN, buy = EXACT_OUT (Uniswap's independent field).
   const [amount, setAmount] = useState('');
+  const [exactSide, setExactSide] = useState<Side>('sell');
   const [sheetSide, setSheetSide] = useState<Side | null>(null);
   const [query, setQuery] = useState('');
   const [detailsExpanded, setDetailsExpanded] = useState(false);
@@ -134,29 +137,36 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
 
   const input = tokens.find(token => token.id === inputId);
   const output = tokens.find(token => token.id === outputId);
-  const amountRaw = useMemo(() => (input && isPositiveAmount(amount) ? toBaseUnit(amount, input.decimals) : '0'), [amount, input]);
+  const exactType = exactSide === 'sell' ? SwapType.EXACT_IN : SwapType.EXACT_OUT;
+  const exactToken = exactSide === 'sell' ? input : output;
+  const amountRaw = useMemo(() => (exactToken && isPositiveAmount(amount) ? toBaseUnit(amount, exactToken.decimals) : '0'), [amount, exactToken]);
   const debouncedRaw = useDebouncedValue(amountRaw, QUOTE_DEBOUNCE_MS);
   const inputBalance = input ? balances?.[input.id] : undefined;
   const hasAmount = amountRaw !== '0';
-  const insufficient = inputBalance !== undefined && hasAmount && compareAmount(amountRaw, inputBalance) > 0;
   const minDeposit = swapConfig?.wrappedNative.minDeposit;
-  const belowMinimum = Boolean(input?.isNative && hasAmount && minDeposit && compareAmount(amountRaw, minDeposit) < 0);
   const sameToken = Boolean(input && output && input.swapPath === output.swapPath);
-  const quoteEnabled = supported && Boolean(input && output) && !sameToken && !belowMinimum && debouncedRaw !== '0' && debouncedRaw === amountRaw;
+  const quoteEnabled = supported && Boolean(input && output) && !sameToken && debouncedRaw !== '0' && debouncedRaw === amountRaw
+    && !(exactType === SwapType.EXACT_IN && input?.isNative && minDeposit && compareAmount(amountRaw, minDeposit) < 0);
 
   const quoteQuery = useQuery({
-    queryKey: queryKeys.swapQuote(network.id, input?.id ?? NO_ID_KEY, output?.id ?? NO_ID_KEY, debouncedRaw),
-    queryFn: () => swapService.getQuote({ network, input: input!, output: output!, amountIn: debouncedRaw }),
+    queryKey: queryKeys.swapQuote(network.id, input?.id ?? NO_ID_KEY, output?.id ?? NO_ID_KEY, `${exactType}:${debouncedRaw}`),
+    queryFn: () => swapService.getQuote({ network, input: input!, output: output!, exactType, amount: debouncedRaw }),
     enabled: quoteEnabled && !prepared,
     staleTime: QUOTE_STALE_MS,
     refetchInterval: prepared ? false : QUOTE_REFRESH_MS,
     retry: false,
   });
-  // A quote for another amount or pair (kept by the query while refetching) is never shown or used.
-  const quote = quoteQuery.data && quoteQuery.data.amountIn === amountRaw && quoteQuery.data.inputTokenId === input?.id
-    && quoteQuery.data.outputTokenId === output?.id
+  // A quote for another amount, side or pair is never shown or used.
+  const quote = quoteQuery.data && quoteQuery.data.exactType === exactType && quoteQuery.data.requestedAmount === amountRaw
+    && quoteQuery.data.inputTokenId === input?.id && quoteQuery.data.outputTokenId === output?.id
     ? quoteQuery.data
     : undefined;
+  const slippageBps = slippageToBps(effectiveSlippage(settings));
+  const limits = quote ? swapLimits(quote, slippageBps) : undefined;
+  // What may leave the wallet: the typed input, or EXACT_OUT's amountInMax once quoted.
+  const spendRaw = exactType === SwapType.EXACT_IN ? (hasAmount ? amountRaw : undefined) : limits?.maxAmountIn;
+  const insufficient = inputBalance !== undefined && spendRaw !== undefined && compareAmount(spendRaw, inputBalance) > 0;
+  const belowMinimum = Boolean(input?.isNative && spendRaw && minDeposit && compareAmount(spendRaw, minDeposit) < 0);
   const quoteStatus = ((): SwapQuoteStatus => {
     if (quote) {
       return SwapQuoteStatus.READY;
@@ -200,6 +210,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     showToast('Swap confirmed', 'success');
     setPrepared(null);
     setAmount('');
+    setExactSide('sell');
   }, [playHaptic, queryClient, showToast]);
 
   const pendingBroadcast = usePendingBroadcast(handleCommitted);
@@ -250,8 +261,33 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
   const maxKey = input ? `${network.id}|${account?.id ?? ''}|${input.id}|${output?.id ?? ''}|${inputBalance ?? ''}` : '';
 
   const handleKeyPress = (key: KeypadKey): void => {
+    if (!exactToken) {
+      return;
+    }
+
     resetQuoteState();
-    setAmount(current => applyKeypadKey(current, key, input?.decimals ?? 6));
+    setAmount(current => applyKeypadKey(current, key, exactToken.decimals));
+  };
+
+  // Focusing the other card makes it the exact side, keeping its shown estimate as the typed value.
+  const focusSide = (side: Side): void => {
+    if (side === exactSide) {
+      return;
+    }
+
+    const token = side === 'sell' ? input : output;
+
+    if (!token) {
+      setSheetSide(side);
+      return;
+    }
+
+    resetQuoteState();
+    playHaptic(HapticKind.SELECTION);
+    const estimate = quote ? (side === 'sell' ? quote.amountIn : quote.amountOut) : undefined;
+
+    setAmount(estimate ? toDisplayAmount(estimate, token.decimals) : '');
+    setExactSide(side);
   };
 
   const handlePercent = (percent: SwapPercent): void => {
@@ -265,6 +301,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
       const raw = percentOfBalance(inputBalance, percent, result?.amount);
 
       setMaxApproximate(Boolean(result?.approximate) && raw === result?.amount);
+      setExactSide('sell');
       setAmount(raw === '0' ? '' : toDisplayAmount(raw, input.decimals));
     };
 
@@ -313,8 +350,8 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
   const handleFlip = (): void => {
     resetQuoteState();
     playHaptic(HapticKind.SELECTION);
-    // The received amount becomes the new amount to sell.
-    setAmount(quote && output ? toDisplayAmount(quote.amountOut, output.decimals) : amount);
+    // Like Uniswap, the typed amount stays with its token, so the exact side flips with it.
+    setExactSide(side => (side === 'sell' ? 'buy' : 'sell'));
     setInputId(outputId);
     setOutputId(inputId);
   };
@@ -322,24 +359,22 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
   const selectToken = (side: Side, tokenId: string): void => {
     resetQuoteState();
 
-    if (side === 'sell') {
-      if (tokenId === outputId) {
-        setOutputId(inputId);
-      }
+    const otherId = side === 'sell' ? outputId : inputId;
+    const currentId = side === 'sell' ? inputId : outputId;
 
-      if (tokenId !== inputId) {
-        setAmount('');
-      }
-
-      setInputId(tokenId);
+    if (tokenId === otherId) {
+      // Picking the other side's token swaps the pair, like the flip button.
+      setExactSide(current => (current === 'sell' ? 'buy' : 'sell'));
+      setInputId(outputId);
+      setOutputId(inputId);
     }
     else {
-      if (tokenId === inputId) {
-        setInputId(outputId);
+      // A new token on the typed side invalidates the typed amount's decimals.
+      if (tokenId !== currentId && side === exactSide) {
         setAmount('');
       }
 
-      setOutputId(tokenId);
+      (side === 'sell' ? setInputId : setOutputId)(tokenId);
     }
 
     setSheetSide(null);
@@ -435,15 +470,15 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
 
   const slippagePercent = effectiveSlippage(settings);
   const slippageLabel = settings.slippage === null ? `Auto ${formatPercent(AUTO_SLIPPAGE_PERCENT)}` : formatPercent(slippagePercent);
-  const quoteMin = quote ? minAmountOut(quote.amountOut, slippageToBps(slippagePercent)) : undefined;
-
-  const details: SwapDetailsView | undefined = quote && input && output && quoteMin
+  const details: SwapDetailsView | undefined = quote && input && output && limits
     ? {
         rateLabel: formatSwapRate(quote, input, output),
         priceImpactLabel: formatPriceImpact(quote.priceImpactPercent),
         priceImpactHigh: isHighPriceImpact(quote.priceImpactPercent),
         slippageLabel,
-        minReceivedLabel: `${formatSwapAmount(displayAmount(quoteMin, output.decimals))} ${output.symbol}`,
+        limit: quote.exactType === SwapType.EXACT_OUT
+          ? { label: 'Max. sent', value: `${formatSwapAmount(displayAmount(limits.maxAmountIn, input.decimals))} ${input.symbol}` }
+          : { label: 'Min. received', value: `${formatSwapAmount(displayAmount(limits.minAmountOut, output.decimals))} ${output.symbol}` },
         routerFeeLabel: `${formatPercent(quote.routerFeeBps / 100)} · ${formatSwapAmount(displayAmount(routerFeeOf(quote.amountOut, quote.routerFeeBps), output.decimals))} ${output.symbol}`,
         routes: buildRouteViews(quote, tokens),
       }
@@ -455,21 +490,26 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     }
 
     const { input: paid, output: received, quote: signed } = prepared;
+    const exactOut = signed.exactType === SwapType.EXACT_OUT;
     const outLabel = `${formatSwapAmount(displayAmount(signed.amountOut, received.decimals))} ${received.symbol}`;
     const minLabel = `${formatSwapAmount(displayAmount(prepared.minAmountOut, received.decimals))} ${received.symbol}`;
+    const maxLabel = `${formatTokenAmount(prepared.maxAmountIn, paid.decimals)} ${paid.symbol}`;
     const routeLabel = buildRouteViews(signed, tokens)
       .map(view => `${view.share} ${view.steps.map(step => (step.fee ? `› ${step.symbol} (${step.fee})` : step.symbol)).join(' ')}`)
       .join('\n');
     const warnings = [
       isHighPriceImpact(signed.priceImpactPercent) ? `High price impact (${formatPriceImpact(signed.priceImpactPercent)}).` : undefined,
+      exactOut && paid.isNative ? `${maxLabel} is wrapped for the swap; what it doesn’t use stays in your wallet as wugnot.` : undefined,
       received.isNative ? `At least ${minLabel} arrives as ${received.symbol}; anything above it stays wrapped as wugnot.` : undefined,
     ].filter(Boolean);
 
     return {
-      pay: { token: toView(paid), amountLabel: `${formatTokenAmount(signed.amountIn, paid.decimals)} ${paid.symbol}`, fiatLabel: fiatOf(signed.amountIn, paid) },
-      receive: { token: toView(received), amountLabel: outLabel, fiatLabel: fiatOf(signed.amountOut, received) },
+      pay: exactOut
+        ? { caption: 'You pay (max)', token: toView(paid), amountLabel: maxLabel, fiatLabel: fiatOf(prepared.maxAmountIn, paid) }
+        : { caption: 'You pay', token: toView(paid), amountLabel: `${formatTokenAmount(signed.amountIn, paid.decimals)} ${paid.symbol}`, fiatLabel: fiatOf(signed.amountIn, paid) },
+      receive: { caption: exactOut ? 'You receive (exact)' : 'You receive (estimated)', token: toView(received), amountLabel: outLabel, fiatLabel: fiatOf(signed.amountOut, received) },
       rows: [
-        { label: 'Min. received', value: minLabel, emphasis: true },
+        exactOut ? { label: 'Max. sent', value: maxLabel, emphasis: true } : { label: 'Min. received', value: minLabel, emphasis: true },
         { label: 'Rate', value: formatSwapRate(signed, paid, received) ?? '—' },
         { label: 'Price impact', value: formatPriceImpact(signed.priceImpactPercent) },
         { label: 'Max. slippage', value: formatPercent(prepared.slippageBps / 100) },
@@ -507,18 +547,23 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
         : { title: 'Swap isn’t available here', description: `GnoSwap isn’t available on ${network.networkName}. Switch to a Gno.land network with GnoSwap to swap tokens.` }}
       sell={{
         token: input && toView(input),
-        amount,
-        fiatLabel: fiatOf(amountRaw, input),
+        amount: exactSide === 'sell' ? amount : quote && input ? formatSwapAmount(displayAmount(quote.amountIn, input.decimals)) : '',
+        fiatLabel: fiatOf(exactSide === 'sell' ? amountRaw : quote?.amountIn ?? '0', input),
         balanceLabel: input && inputBalance !== undefined ? formatTokenAmount(inputBalance, input.decimals, 6) : undefined,
         insufficient,
+        focused: exactSide === 'sell',
+        loading: exactSide === 'buy' && quoteStatus === SwapQuoteStatus.LOADING,
       }}
       buy={{
         token: output && toView(output),
-        amount: quote && output ? formatSwapAmount(displayAmount(quote.amountOut, output.decimals)) : '',
-        fiatLabel: quote ? fiatOf(quote.amountOut, output) : undefined,
+        amount: exactSide === 'buy' ? amount : quote && output ? formatSwapAmount(displayAmount(quote.amountOut, output.decimals)) : '',
+        fiatLabel: fiatOf(exactSide === 'buy' ? amountRaw : quote?.amountOut ?? '0', output),
         balanceLabel: output && balances?.[output.id] !== undefined ? formatTokenAmount(balances[output.id], output.decimals, 6) : undefined,
-        loading: quoteStatus === SwapQuoteStatus.LOADING,
+        focused: exactSide === 'buy',
+        loading: exactSide === 'sell' && quoteStatus === SwapQuoteStatus.LOADING,
       }}
+      onFocusSell={() => focusSide('sell')}
+      onFocusBuy={() => focusSide('buy')}
       suggestedTokens={suggestions.map(toView)}
       onSelectSellToken={() => setSheetSide('sell')}
       onSelectBuyToken={() => setSheetSide('buy')}

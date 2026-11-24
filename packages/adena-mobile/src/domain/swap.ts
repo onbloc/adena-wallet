@@ -38,6 +38,14 @@ export interface SwapRoute {
   percent: number;
 }
 
+// Which side the user typed: EXACT_IN fixes the input, EXACT_OUT the (post-router-fee) output.
+export const SwapType = {
+  EXACT_IN: 'EXACT_IN',
+  EXACT_OUT: 'EXACT_OUT',
+} as const;
+
+export type SwapType = (typeof SwapType)[keyof typeof SwapType];
+
 export const SwapQuoteSource = {
   ROUTER_API: 'router-api',
   POOLS: 'pools',
@@ -45,8 +53,11 @@ export const SwapQuoteSource = {
 
 export type SwapQuoteSource = (typeof SwapQuoteSource)[keyof typeof SwapQuoteSource];
 
-// Amounts are raw integers; `amountOut` is the router's own dry-run result, net of the router fee.
+// Amounts are raw integers from the router's own dry run; `amountOut` is net of the router fee.
 export interface SwapQuote {
+  exactType: SwapType;
+  // The typed amount of the exact side; EXACT_OUT's dry-run output may differ by rounding.
+  requestedAmount: string;
   networkId: string;
   inputTokenId: string;
   outputTokenId: string;
@@ -107,6 +118,28 @@ export const minAmountOut = (amountOut: string, slippageBps: number): string => 
   }
 
   const min = (out * (BPS_DENOMINATOR - BigInt(slippageBps))) / BPS_DENOMINATOR;
+
+  return (min > 0n ? min : 1n).toString();
+};
+
+// ceil(amountIn * (1 + slippage)), the EXACT_OUT amountInMax; capped at int64.
+export const maxAmountIn = (amountIn: string, slippageBps: number): string => {
+  const input = assertPositiveRaw(amountIn, 'amount in');
+
+  if (!Number.isInteger(slippageBps) || slippageBps < 0 || slippageBps >= Number(BPS_DENOMINATOR)) {
+    throw new Error(`invalid slippage bps: ${slippageBps}`);
+  }
+
+  const max = (input * (BPS_DENOMINATOR + BigInt(slippageBps)) + BPS_DENOMINATOR - 1n) / BPS_DENOMINATOR;
+
+  return (max > MAX_INT64 ? MAX_INT64 : max).toString();
+};
+
+export const hopCount = (routes: SwapRoute[]): number => routes.reduce((total, route) => total + route.hops.length, 0);
+
+// EXACT_OUT may deliver up to one unit per hop less than requested (router rounding tolerance).
+export const exactOutMinimum = (amountOut: string, routes: SwapRoute[]): string => {
+  const min = assertPositiveRaw(amountOut, 'amount out') - BigInt(hopCount(routes));
 
   return (min > 0n ? min : 1n).toString();
 };
@@ -190,33 +223,54 @@ export const validateRoutes = (routes: SwapRoute[], inputPath: string, outputPat
 };
 
 // Execution vs. mid price before the router fee, in percent (negative = worse); null without pool prices.
-export const estimatePriceImpact = (routes: SwapRoute[], amountIn: string, amountOutNet: string, routerFeeBps: number): number | null => {
+// Route shares split the input for EXACT_IN and the output for EXACT_OUT.
+export const estimatePriceImpact = (
+  routes: SwapRoute[],
+  amountIn: string,
+  amountOutNet: string,
+  routerFeeBps: number,
+  exactType: SwapType = SwapType.EXACT_IN,
+): number | null => {
   const input = Number(amountIn);
   const grossOut = Number(amountOutNet) / (1 - routerFeeBps / 10_000);
-  let midOut = 0;
+  let mid = 0;
 
   for (const route of routes) {
     let price = 1;
 
     for (const hop of route.hops) {
-      const mid = Number(hop.midPrice);
+      const hopPrice = Number(hop.midPrice);
 
-      if (!Number.isFinite(mid) || mid <= 0) {
+      if (!Number.isFinite(hopPrice) || hopPrice <= 0) {
         return null;
       }
 
-      price *= mid;
+      price *= hopPrice;
     }
 
-    midOut += (input * route.percent / 100) * price;
+    mid += exactType === SwapType.EXACT_IN ? (input * route.percent / 100) * price : (grossOut * route.percent / 100) / price;
   }
 
-  if (!Number.isFinite(midOut) || midOut <= 0 || !Number.isFinite(grossOut)) {
+  if (!Number.isFinite(mid) || mid <= 0 || !Number.isFinite(grossOut) || input <= 0) {
     return null;
   }
 
-  return ((grossOut - midOut) / midOut) * 100;
+  // EXACT_IN compares outputs, EXACT_OUT compares the input the mid price would need.
+  return exactType === SwapType.EXACT_IN ? ((grossOut - mid) / mid) * 100 : ((mid - input) / input) * 100;
 };
 
 // Distinct fee tiers as the GnoSwap UI labels them, e.g. 3000 -> "0.3%".
 export const formatFeeTier = (fee: number): string => `${Number((fee / 10_000).toFixed(4))}%`;
+
+export interface SwapLimits {
+  // What can leave the wallet: the exact input, or EXACT_OUT's amountInMax.
+  maxAmountIn: string;
+  // What is guaranteed to arrive: EXACT_IN's amountOutMin, or the exact output minus rounding tolerance.
+  minAmountOut: string;
+}
+
+// Slippage applies to the estimated side only; the exact side is taken as quoted.
+export const swapLimits = (quote: Pick<SwapQuote, 'exactType' | 'amountIn' | 'amountOut' | 'routes'>, slippageBps: number): SwapLimits =>
+  quote.exactType === SwapType.EXACT_OUT
+    ? { maxAmountIn: maxAmountIn(quote.amountIn, slippageBps), minAmountOut: exactOutMinimum(quote.amountOut, quote.routes) }
+    : { maxAmountIn: quote.amountIn, minAmountOut: minAmountOut(quote.amountOut, slippageBps) };

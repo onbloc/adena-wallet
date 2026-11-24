@@ -1,6 +1,6 @@
 import { AppError, AppErrorCode } from '../../../core/errors';
 import { Network } from '../../../domain/network';
-import { SwapQuoteSource, SwapToken } from '../../../domain/swap';
+import { MAX_INT64, SwapQuoteSource, SwapToken, SwapType } from '../../../domain/swap';
 import { Token, TokenType } from '../../../domain/token';
 import { GnoswapApiClient } from '../../../infrastructure/http/gnoswap-api.client';
 import { DexApiConfig, DexSwapConfig, getGrc20RegistryConfig } from '../../../resources';
@@ -55,8 +55,8 @@ export class GnoSwapRepository implements SwapRepository<GnoMessage> {
 
   async findRouteCandidates(_network: Network, config: DexApiConfig, request: SwapRouteRequest): Promise<SwapRouteCandidate[]> {
     const swap = swapConfigOf(config);
-    const { inputPath, outputPath, amountIn } = request;
-    const fromApi = await this.api.getRoute(config.apiUrl, { inputTokenPath: inputPath, outputTokenPath: outputPath, exactType: 'EXACT_IN', amount: amountIn })
+    const { inputPath, outputPath, exactType, amount } = request;
+    const fromApi = await this.api.getRoute(config.apiUrl, { inputTokenPath: inputPath, outputTokenPath: outputPath, exactType, amount })
       .then(raw => parseRouteResponse(raw, inputPath, outputPath, swap.feeTiers))
       .catch(() => null);
     const candidates: SwapRouteCandidate[] = fromApi?.length ? [{ routes: fromApi, source: SwapQuoteSource.ROUTER_API }] : [];
@@ -73,7 +73,9 @@ export class GnoSwapRepository implements SwapRepository<GnoMessage> {
 
   async drySwap(network: Network, config: DexApiConfig, request: DrySwapRequest): Promise<{ amountIn: string; amountOut: string }> {
     const swap = swapConfigOf(config);
-    const args = [request.inputPath, request.outputPath, request.amountIn, 'EXACT_IN', request.routeArr, request.quoteArr, '0'].map(gnoLiteral).join(', ');
+    // The limit is checked by the router; quotes run unbounded (0 min out, int64 max in) and the app applies slippage.
+    const limit = request.exactType === SwapType.EXACT_OUT ? MAX_INT64.toString() : '0';
+    const args = [request.inputPath, request.outputPath, request.amount, request.exactType, request.routeArr, request.quoteArr, limit].map(gnoLiteral).join(', ');
     const provider = await this.providerFactory(network.rpcUrl);
 
     return parseDrySwapResult(await provider.evaluateExpression(swap.routerPath, `DrySwapRoute(${args})`));
@@ -113,7 +115,9 @@ export class GnoSwapRepository implements SwapRepository<GnoMessage> {
       registry: getGrc20RegistryConfig(request.network.chainId),
       input: toMessageToken(request.input, request.inputPath),
       output: toMessageToken(request.output, request.outputPath),
+      exactType: request.exactType,
       amountIn: request.amountIn,
+      amountOut: request.amountOut,
       minAmountOut: request.minAmountOut,
       routeArr: request.routeArr,
       quoteArr: request.quoteArr,
