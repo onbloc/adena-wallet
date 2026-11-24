@@ -57,7 +57,7 @@ export const BottomSheet = ({ visible, title, description, onClose, dismissible 
           onPress={onClose}
         />
         <Animated.View
-          style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.space24), transform: [{ translateY }] }]}
+          style={[styles.sheet, { paddingBottom: insets.bottom + spacing.space20, transform: [{ translateY }] }]}
           accessibilityViewIsModal
         >
           <View style={styles.handle} />

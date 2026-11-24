@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { View } from 'react-native';
 
-import { shortenAddress } from '../../../utils/address';
+import { formatAddress } from '../../../utils/address';
 import { Avatar, IconButton } from '../../atoms';
 import { InlineAlert, ListRow, RecipientField, Screen, SectionLabel, TopBar } from '../../molecules';
 import { styles } from './send-recipient.styles';
@@ -50,7 +50,7 @@ export const SendRecipientPage = ({ query, onChangeQuery, onScan, result, error,
             testID='recipient-result'
             leading={<Avatar name={result.label} />}
             label={result.label}
-            description={shortenAddress(result.address)}
+            description={formatAddress(result.address)}
             onPress={handleListRowPress}
           />
         </View>
@@ -66,7 +66,7 @@ export const SendRecipientPage = ({ query, onChangeQuery, onScan, result, error,
                 key={entry.key}
                 leading={<Avatar name={entry.label} />}
                 label={entry.label}
-                description={shortenAddress(entry.address)}
+                description={formatAddress(entry.address)}
                 onPress={handlePress}
               />
             );
@@ -84,7 +84,7 @@ export const SendRecipientPage = ({ query, onChangeQuery, onScan, result, error,
                 key={account.key}
                 leading={<Avatar name={account.label} />}
                 label={account.label}
-                description={shortenAddress(account.address)}
+                description={formatAddress(account.address)}
                 onPress={handlePress}
               />
             );

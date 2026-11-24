@@ -3,7 +3,7 @@ import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } fro
 
 import { LocalTokenIcon } from '../../../domain/token';
 import { colors } from '../../../theme';
-import { shortenAddress } from '../../../utils/address';
+import { formatAddress } from '../../../utils/address';
 import { Avatar, Button, Chip, Divider, Icon, Text } from '../../atoms';
 import {
   BottomSheet,
@@ -127,7 +127,7 @@ export const SendAmountPage = (props: SendAmountPageProps): ReactElement => (
     <ListRow
       leading={<Avatar name={props.recipientLabel} />}
       label={props.recipientLabel}
-      description={shortenAddress(props.recipientAddress)}
+      description={formatAddress(props.recipientAddress)}
       onPress={props.onChangeRecipient}
     />
     <ListRow label='Memo' value={props.memo || 'Optional'} onPress={props.onOpenMemo} />

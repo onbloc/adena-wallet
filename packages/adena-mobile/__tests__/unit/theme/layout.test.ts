@@ -8,7 +8,8 @@ describe('layout tokens', () => {
   it('meets the minimum touch target', () => {
     expect(sizes.touchTarget).toBeGreaterThanOrEqual(44);
     expect(sizes.tab).toBeGreaterThanOrEqual(44);
-    expect(sizes.screenInset).toBe(spacing.space20);
+    expect(sizes.screenInset).toBe(spacing.space24);
+    expect(sizes.topBar).toBeGreaterThanOrEqual(sizes.touchTarget);
   });
 
   it('exposes radius, motion and elevation tokens', () => {

@@ -6,7 +6,7 @@ export const styles = StyleSheet.create({
   row: {
     minHeight: sizes.assetRow,
     borderRadius: radius.input,
-    paddingHorizontal: spacing.space16,
+    paddingHorizontal: spacing.space12,
     paddingVertical: spacing.space8,
     flexDirection: 'row',
     alignItems: 'center',

@@ -63,7 +63,7 @@ describe('activity presenter', () => {
   const base: Activity = { hash: 'h1', type: 'TRANSFER', title: 'Receive', status: 'SUCCESS', direction: 'in', from: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5', amount: { value: '1500000', denom: 'ugnot' }, timestamp: '2026-11-23T09:00:00' };
 
   it('formats amounts with token metadata and keeps unknown denoms raw', () => {
-    expect(toActivityView(base, tokens)).toMatchObject({ amountLabel: '+1.5 GNOT', tone: 'positive', description: 'From: g1jg8m…sqf5' });
+    expect(toActivityView(base, tokens)).toMatchObject({ amountLabel: '+1.5 GNOT', tone: 'positive', description: 'From: g1jg...sqf5' });
     expect(toActivityView({ ...base, amount: { value: '3', denom: 'gno.land/r/x/nft' } }, tokens).amountLabel).toBe('+3 nft');
   });
 

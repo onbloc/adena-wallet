@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-import { shortenAddress } from '../../../utils/address';
+import { formatAddress } from '../../../utils/address';
 import { Avatar, Button } from '../../atoms';
 import { EmptyState, ListRow, Screen, TopBar } from '../../molecules';
 
@@ -31,7 +31,7 @@ export const AddressBookPage = ({ entries, onAdd, onEdit, onBack }: AddressBookP
           key={entry.id}
           leading={<Avatar name={entry.name} />}
           label={entry.name}
-          description={shortenAddress(entry.address, 10, 6)}
+          description={formatAddress(entry.address)}
           onPress={handlePress}
         />
       );

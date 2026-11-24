@@ -49,7 +49,7 @@ describe('SendNftPage', () => {
     expect(screen.getByText('Gnophers')).toBeTruthy();
     expect(screen.getByText('Suggestions')).toBeTruthy();
     await fireEvent.changeText(screen.getByLabelText('Recipient address'), recipient);
-    await fireEvent.press(screen.getByRole('button', { name: 'Alice, g1us84…njlj' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Alice, g1us...njlj' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Scan QR code' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Review transfer' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));

@@ -1,6 +1,6 @@
 import { toBech32 } from '@cosmjs/encoding';
 
-import { getInitials, isValidAddress, shortenAddress } from '../../../src/utils/address';
+import { formatAddress, formatHash, getInitials, isValidAddress } from '../../../src/utils/address';
 
 const VALID = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
 
@@ -27,22 +27,31 @@ describe('isValidAddress', () => {
   });
 });
 
-describe('shortenAddress', () => {
-  it('shortens long values with the default head and tail', () => {
-    expect(shortenAddress(VALID)).toBe('g1jg8m…sqf5');
+describe('formatAddress', () => {
+  it('keeps the first and last four characters like the extension', () => {
+    expect(formatAddress(VALID)).toBe('g1jg...sqf5');
   });
 
-  it('keeps values at or below head + tail + 1 characters', () => {
-    expect(shortenAddress('12345678901')).toBe('12345678901');
-    expect(shortenAddress('123456789012')).toBe('123456…9012');
-    expect(shortenAddress('')).toBe('');
+  it('keeps values shorter than 40 characters', () => {
+    expect(formatAddress('1'.repeat(39))).toBe('1'.repeat(39));
+    expect(formatAddress('1234567890'.repeat(4))).toBe('1234...7890');
+    expect(formatAddress('')).toBe('');
   });
 
-  it('supports custom head and tail', () => {
-    expect(shortenAddress(VALID, 3, 3)).toBe('g1j…qf5');
+  it('supports a custom length', () => {
+    expect(formatAddress(VALID, 6)).toBe('g1jg8m...fvsqf5');
+  });
+});
+
+describe('formatHash', () => {
+  it('keeps the first and last four characters', () => {
+    expect(formatHash('A1B2C3D4E5F60718293A4B5C6D7E8F90')).toBe('A1B2...8F90');
   });
 
-  it.todo('tail = 0 should not append the full address (slice(-0) returns the whole string)');
+  it('keeps values shorter than 8 characters', () => {
+    expect(formatHash('1234567')).toBe('1234567');
+    expect(formatHash('12345678')).toBe('1234...5678');
+  });
 });
 
 describe('getInitials', () => {

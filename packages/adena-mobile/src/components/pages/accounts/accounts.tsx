@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
 
+import { formatAddress } from '../../../utils/address';
 import { Avatar, Button, Icon } from '../../atoms';
 import { ListRow, Screen, SectionLabel, TopBar } from '../../molecules';
 
@@ -46,7 +47,7 @@ export const AccountsPage = ({
           testID={`account-${account.id}`}
           leading={<Avatar name={account.name} />}
           label={account.name}
-          description={`${account.address.slice(0, 10)}…${account.address.slice(-4)} · ${account.sourceLabel}`}
+          description={`${formatAddress(account.address)} · ${account.sourceLabel}`}
           trailing={account.selected ? <Icon name='check' size={20} /> : undefined}
           showChevron={false}
           onPress={handlePress}

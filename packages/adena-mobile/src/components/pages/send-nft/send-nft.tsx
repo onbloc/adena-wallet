@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { View } from 'react-native';
 
-import { shortenAddress } from '../../../utils/address';
+import { formatAddress } from '../../../utils/address';
 import { Avatar, Button, Text } from '../../atoms';
 import { InlineAlert, ListRow, NftImage, RecipientField, ReviewSheet, ReviewSheetProps, Screen, SectionLabel, TopBar } from '../../molecules';
 import { RecipientItem } from '../send-recipient';
@@ -49,7 +49,7 @@ export const SendNftPage = (props: SendNftPageProps): ReactElement => (
           key={item.key}
           leading={<Avatar name={item.label} />}
           label={item.label}
-          description={shortenAddress(item.address)}
+          description={formatAddress(item.address)}
           onPress={handlePress}
         />
       );

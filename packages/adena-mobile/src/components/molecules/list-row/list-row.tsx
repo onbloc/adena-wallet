@@ -1,5 +1,5 @@
 import React, { ReactElement, ReactNode } from 'react';
-import { Pressable, PressableStateCallbackType, View } from 'react-native';
+import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } from 'react-native';
 
 import { colors } from '../../../theme';
 import { Icon, IconName, Text, TextColor } from '../../atoms';
@@ -54,7 +54,7 @@ export const ListRow = ({
     return <View testID={testID} style={[styles.row, styles.idle]}>{content}</View>;
   }
 
-  const stylePressable = ({ pressed }: PressableStateCallbackType): ({ minHeight: 60; borderRadius: 12; paddingHorizontal: 16; paddingVertical: 8; flexDirection: 'row'; alignItems: 'center'; gap: 12 } | { backgroundColor: '#F7F8F9' | '#F1F3F4' })[] => [styles.row, { backgroundColor: pressed ? colors.background.pressed : colors.background.subtle }];
+  const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [styles.row, { backgroundColor: pressed ? colors.background.pressed : colors.background.subtle }];
 
   return (
     <Pressable

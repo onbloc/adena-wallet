@@ -101,7 +101,7 @@ describe('toActivityView', () => {
     expect(toActivityView(item, TOKENS)).toEqual({
       key: 'h1',
       title: 'Send',
-      description: 'To: g1to00…000z',
+      description: 'To: g1to...000z',
       amountLabel: '-1.5 GNOT',
       tone: AmountTone.DEFAULT,
       statusLabel: 'Confirmed',
@@ -114,7 +114,7 @@ describe('toActivityView', () => {
   it('builds an incoming transfer view', () => {
     const view = toActivityView(activity({ direction: ActivityDirection.IN }), TOKENS);
 
-    expect(view.description).toBe('From: g1from…0000');
+    expect(view.description).toBe('From: g1from000000000000000000000000000000000');
     expect(view.amountLabel).toBe('+1.5 GNOT');
     expect(view.tone).toBe(AmountTone.POSITIVE);
   });
@@ -184,7 +184,7 @@ describe('toActivitySectionViews', () => {
     expect(section.items[0]).toEqual({
       key: '0',
       title: 'Send',
-      description: 'To: g1to00…000z',
+      description: 'To: g1to...000z',
       amountLabel: '-1.5 GNOT',
       tone: AmountTone.MUTED,
       failed: true,

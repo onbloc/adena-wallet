@@ -22,7 +22,7 @@ const props = (overrides: Partial<ActivityPageProps> = {}): ActivityPageProps =>
     {
       title: 'Today',
       items: [
-        { key: 'tx-1', title: 'Sent', description: 'To g1abc…wxyz', amountLabel: '-1 GNOT', tone: AmountTone.DEFAULT, failed: false, icon: 'swap' },
+        { key: 'tx-1', title: 'Sent', description: 'To: g1ab...wxyz', amountLabel: '-1 GNOT', tone: AmountTone.DEFAULT, failed: false, icon: 'swap' },
         { key: 'tx-2', title: 'Received', amountLabel: '+2 GNOT', tone: AmountTone.POSITIVE, failed: true, extraInfo: '+1', icon: 'activity' },
       ],
     },
@@ -46,7 +46,7 @@ describe('ActivityPage', () => {
 
     expect(screen.getByText('Activity')).toBeTruthy();
     expect(screen.getByText('Today')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Sent, To g1abc…wxyz, -1 GNOT' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Sent, To: g1ab...wxyz, -1 GNOT' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Received, +2 GNOT, Failed' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Load more' }));
     await act(() => refreshControlOf(screen.getByText('Today')).onRefresh());

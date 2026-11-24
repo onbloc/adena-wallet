@@ -18,7 +18,7 @@ export const TopBar = ({ title, onBack, variant = onBack ? 'drillDown' : 'root',
     {onBack && <IconButton icon='arrowLeft' accessibilityLabel='Back' onPress={onBack} />}
     {leading}
     {title !== undefined && (
-      <Text variant={variant === 'large' ? 'largeTitle' : 'title'} numberOfLines={1} accessibilityRole='header' style={styles.title}>
+      <Text variant={variant === 'large' ? 'largeTitle' : 'title'} numberOfLines={1} accessibilityRole='header' style={[styles.title, !onBack && !leading && styles.titleFlush]}>
         {title}
       </Text>
     )}

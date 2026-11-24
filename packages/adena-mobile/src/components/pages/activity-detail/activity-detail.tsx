@@ -10,21 +10,16 @@ export interface ActivityDetailPageProps {
   amountLabel?: string;
   amountColor: TextColor;
   status: 'Confirmed' | 'Failed';
-  rows: { label: string; value: string; multiline?: boolean }[];
-  onCopyHash: () => void;
+  // Truncated values carry `onCopy` so the full string stays reachable.
+  rows: { label: string; value: string; multiline?: boolean; onCopy?: () => void; copyLabel?: string }[];
   onOpenExplorer?: () => void;
   onBack: () => void;
 }
 
-export const ActivityDetailPage = ({ title, amountLabel, amountColor, status, rows, onCopyHash, onOpenExplorer, onBack }: ActivityDetailPageProps): ReactElement => (
+export const ActivityDetailPage = ({ title, amountLabel, amountColor, status, rows, onOpenExplorer, onBack }: ActivityDetailPageProps): ReactElement => (
   <Screen
     header={<TopBar title='Activity detail' onBack={onBack} />}
-    footer={(
-      <>
-        {onOpenExplorer && <Button label='View on Gnoscan' tone='secondary' trailingIcon='chevronRight' onPress={onOpenExplorer} />}
-        <Button label='Copy transaction hash' tone='tertiary' leadingIcon='copy' size='compact' onPress={onCopyHash} />
-      </>
-    )}
+    footer={onOpenExplorer && <Button label='View on Gnoscan' tone='secondary' trailingIcon='chevronRight' onPress={onOpenExplorer} />}
   >
     <View style={styles.hero}>
       <Badge label={status} tone={status === 'Confirmed' ? 'success' : 'error'} />
@@ -32,7 +27,7 @@ export const ActivityDetailPage = ({ title, amountLabel, amountColor, status, ro
       {amountLabel && <Text variant='display' tabular color={amountColor} adjustsFontSizeToFit numberOfLines={1}>{amountLabel}</Text>}
     </View>
     <Card>
-      {rows.map(row => <KeyValueRow key={row.label} label={row.label} value={row.value} multiline={row.multiline} />)}
+      {rows.map(row => <KeyValueRow key={row.label} {...row} />)}
     </Card>
   </Screen>
 );

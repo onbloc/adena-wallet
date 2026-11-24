@@ -1,4 +1,4 @@
-// 4px base / 8px rhythm on a 390 x 844 reference canvas.
+// 4px base / 8px rhythm on a 390 x 844 reference canvas (measured against the design crops).
 export const spacing = {
   space4: 4,
   space8: 8,
@@ -26,10 +26,14 @@ export const sizes = {
   chip: 32,
   assetRow: 60,
   expandedRow: 72,
-  topBar: 56,
+  topBar: 44,
   bottomNavigation: 64,
   tab: 44,
-  screenInset: spacing.space20,
+  screenInset: spacing.space24,
+  // Space between the top bar and the first content block.
+  contentTop: spacing.space20,
+  // Space between a pinned footer action and the bottom safe area.
+  footerBottom: spacing.space16,
 } as const;
 
 export const motion = {

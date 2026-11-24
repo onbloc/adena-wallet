@@ -25,25 +25,27 @@ export const ReceivePage = ({ accountName, address, networkName, onCopy, onShare
 
   return (
     <BottomSheet visible title='Receive' onClose={onClose}>
-      <View style={[styles.qr, compact && styles.qrCompact]}>
-        <QrCode value={address} size={compact ? 136 : 180} />
+      <View style={styles.body}>
+        <View style={[styles.qr, compact && styles.qrCompact]}>
+          <QrCode value={address} size={compact ? 136 : 180} />
+        </View>
+        <View style={styles.identity}>
+          <Text variant='row' numberOfLines={1} style={styles.accountName}>{accountName}</Text>
+          {onOpenNetworks
+            ? <Button label={networkName} tone='secondary' size='compact' fullWidth={false} onPress={onOpenNetworks} />
+            : <Badge label={networkName} />}
+        </View>
+        <View style={styles.addressBox}>
+          <Text variant='meta' color='secondary' align='center'>Wallet address</Text>
+          <Text variant='body' align='center' tabular selectable>{address}</Text>
+        </View>
+        <View style={styles.actions}>
+          <Button label='Copy address' leadingIcon='copy' style={styles.action} onPress={onCopy} />
+          <Button label='Share' tone='secondary' style={styles.action} onPress={onShare} />
+        </View>
+        <Text variant='meta' color='secondary' align='center'>{`Only send ${networkName} assets to this address.`}</Text>
+        {onScan && <Button label='Scan a QR code' leadingIcon='scan' tone='secondary' size='compact' onPress={onScan} />}
       </View>
-      <View style={styles.identity}>
-        <Text variant='row' numberOfLines={1} style={styles.accountName}>{accountName}</Text>
-        {onOpenNetworks
-          ? <Button label={networkName} tone='secondary' size='compact' fullWidth={false} onPress={onOpenNetworks} />
-          : <Badge label={networkName} />}
-      </View>
-      <View style={styles.addressBox}>
-        <Text variant='meta' color='secondary' align='center'>Wallet address</Text>
-        <Text variant='body' align='center' tabular selectable>{address}</Text>
-      </View>
-      <View style={styles.actions}>
-        <Button label='Copy address' leadingIcon='copy' style={styles.action} onPress={onCopy} />
-        <Button label='Share' tone='secondary' style={styles.action} onPress={onShare} />
-      </View>
-      <Text variant='meta' color='secondary' align='center'>{`Only send ${networkName} assets to this address.`}</Text>
-      {onScan && <Button label='Scan a QR code' leadingIcon='scan' tone='secondary' size='compact' onPress={onScan} />}
     </BottomSheet>
   );
 };

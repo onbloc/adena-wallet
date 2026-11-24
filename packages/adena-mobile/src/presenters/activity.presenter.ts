@@ -2,7 +2,7 @@ import { ActivityItemView, ActivitySectionView, AmountTone } from '../components
 import { Activity, ActivityAmount, ActivityDirection, ActivityStatus, ActivityType } from '../domain/activity';
 import { Network } from '../domain/network';
 import { Token, TokenType } from '../domain/token';
-import { shortenAddress } from '../utils/address';
+import { formatAddress } from '../utils/address';
 import { formatTokenAmount } from '../utils/amount';
 
 export interface ActivityView {
@@ -87,7 +87,7 @@ export const toActivityView = (activity: Activity, tokens: Token[]): ActivityVie
     key: activity.hash,
     title: activity.title,
     description: activity.type === ActivityType.TRANSFER && counterparty
-      ? `${activity.direction === ActivityDirection.IN ? 'From' : 'To'}: ${shortenAddress(counterparty)}`
+      ? `${activity.direction === ActivityDirection.IN ? 'From' : 'To'}: ${formatAddress(counterparty)}`
       : activity.typeName,
     amountLabel: signedAmount,
     tone: activity.status === ActivityStatus.FAIL ? AmountTone.MUTED : activity.direction === ActivityDirection.IN ? AmountTone.POSITIVE : AmountTone.DEFAULT,

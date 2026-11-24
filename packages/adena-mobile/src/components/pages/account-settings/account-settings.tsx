@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { View } from 'react-native';
 
-import { shortenAddress } from '../../../utils/address';
+import { formatAddress } from '../../../utils/address';
 import { Avatar, Button, IconButton } from '../../atoms';
 import { BottomSheet, ListRow, PasswordSheet, PasswordSheetProps, Screen, SectionLabel, TextField, TopBar } from '../../molecules';
 import { styles } from './account-settings.styles';
@@ -37,7 +37,7 @@ export const AccountSettingsPage = (props: AccountSettingsPageProps): ReactEleme
     <ListRow
       leading={<Avatar name={props.name} />}
       label={props.name}
-      description={shortenAddress(props.address)}
+      description={formatAddress(props.address)}
       value={props.sourceLabel}
       trailing={<IconButton icon='copy' accessibilityLabel='Copy address' size={32} onPress={props.onCopyAddress} />}
       showChevron={false}

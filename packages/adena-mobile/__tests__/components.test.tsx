@@ -70,7 +70,7 @@ describe('WalletHomePage', () => {
 
     expect(screen.getAllByText('$1,234.50').length).toBeGreaterThan(0);
     expect(screen.getByText('1,234.5 GNOT')).toBeTruthy();
-    expect(screen.getByText('g1jg8m…sqf5')).toBeTruthy();
+    expect(screen.getByText('g1jg...sqf5')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Send' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Copy address' }));
     expect(page.onSend).toHaveBeenCalled();

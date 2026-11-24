@@ -12,6 +12,7 @@ const props = (overrides: Partial<RecoveryPhrasePageProps> = {}): RecoveryPhrase
   onChangePassword: jest.fn(),
   verifying: false,
   onReveal: jest.fn(),
+  onCopy: jest.fn(),
   onBack: jest.fn(),
   ...overrides,
 });
@@ -23,6 +24,7 @@ describe('RecoveryPhrasePage', () => {
     await renderPage(<RecoveryPhrasePage {...page} />);
 
     expect(screen.getByLabelText('Recovery phrase hidden')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Copy' })).toBeNull();
     expect(screen.getAllByText('••••••')).toHaveLength(12);
     expect(screen.queryByLabelText('Password')).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'Show recovery phrase' }));
@@ -59,7 +61,9 @@ describe('RecoveryPhrasePage', () => {
   });
 
   it('shows the phrase with its word count once revealed', async () => {
-    await renderPage(<RecoveryPhrasePage {...props({ passwordSheetVisible: true, words: ['alpha', 'beta', 'gamma'] })} />);
+    const page = props({ passwordSheetVisible: true, words: ['alpha', 'beta', 'gamma'] });
+
+    await renderPage(<RecoveryPhrasePage {...page} />);
 
     expect(screen.getByText('3-word phrase')).toBeTruthy();
     expect(screen.getByText('alpha')).toBeTruthy();
@@ -67,5 +71,7 @@ describe('RecoveryPhrasePage', () => {
     expect(screen.queryByText('••••••')).toBeNull();
     expect(screen.queryByLabelText('Password')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show recovery phrase' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Copy' }));
+    expect(page.onCopy).toHaveBeenCalledTimes(1);
   });
 });

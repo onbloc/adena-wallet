@@ -8,6 +8,7 @@ import { useCopyToClipboard } from '../../../hooks/use-copy-to-clipboard';
 import { useWalletAssets } from '../../../hooks/use-wallet-assets';
 import { MainStackParamList } from '../../../navigation/types';
 import { formatActivityAmount, formatDateTime, toActivityView } from '../../../presenters/activity.presenter';
+import { formatAddress, formatHash } from '../../../utils/address';
 import { transactionExplorerUrl } from '../../../utils/explorer';
 
 export const ActivityDetailScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'ActivityDetail'>): ReactElement => {
@@ -17,18 +18,28 @@ export const ActivityDetailScreen = ({ navigation, route }: NativeStackScreenPro
   const view = toActivityView(activity, allTokens);
   const explorerUrl = transactionExplorerUrl(network, activity.hash);
 
+  const addressRow = (label: string, address: string): { label: string; value: string; onCopy: () => void; copyLabel: string } => ({
+    label,
+    value: formatAddress(address),
+    onCopy: (): void => copy(address),
+    copyLabel: `Copy ${label.toLowerCase()} address`,
+  });
+
   const rows = [
     { label: 'Date', value: formatDateTime(activity.timestamp) ?? '-' },
     { label: 'Type', value: activity.typeName ?? activity.title },
-    ...(activity.from ? [{ label: 'From', value: activity.from, multiline: true }] : []),
-    ...(activity.to ? [{ label: 'To', value: activity.to, multiline: true }] : []),
+    ...(activity.from ? [addressRow('From', activity.from)] : []),
+    ...(activity.to ? [addressRow('To', activity.to)] : []),
     ...(activity.networkFee ? [{ label: 'Network fee', value: formatActivityAmount(activity.networkFee, allTokens) }] : []),
     { label: 'Network', value: network.networkName },
     ...(activity.height ? [{ label: 'Block', value: String(activity.height) }] : []),
-    { label: 'Transaction hash', value: activity.hash, multiline: true },
+    {
+      label: 'Transaction hash',
+      value: formatHash(activity.hash),
+      onCopy: (): void => copy(activity.hash, 'Transaction hash copied'),
+      copyLabel: 'Copy transaction hash',
+    },
   ];
-
-  const handleCopyHash = (): void => copy(activity.hash, 'Transaction hash copied');
 
   return (
     <ActivityDetailPage
@@ -37,7 +48,6 @@ export const ActivityDetailScreen = ({ navigation, route }: NativeStackScreenPro
       amountColor={view.tone === AmountTone.POSITIVE ? 'success' : view.tone === AmountTone.MUTED ? 'disabled' : 'primary'}
       status={view.statusLabel}
       rows={rows}
-      onCopyHash={handleCopyHash}
       onOpenExplorer={explorerUrl ? (): Promise<void> => Linking.openURL(explorerUrl) : undefined}
       onBack={navigation.goBack}
     />

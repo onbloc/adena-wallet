@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { View } from 'react-native';
 
-import { shortenAddress } from '../../../utils/address';
+import { formatAddress } from '../../../utils/address';
 import { IconButton, Text } from '../../atoms';
 import { styles } from './address-row.styles';
 
@@ -15,7 +15,7 @@ export interface AddressRowProps {
 export const AddressRow = ({ address, onCopy, full = false }: AddressRowProps): ReactElement => (
   <View style={styles.row}>
     <Text variant='meta' color='secondary' selectable={full} style={full && styles.full}>
-      {full ? address : shortenAddress(address)}
+      {full ? address : formatAddress(address)}
     </Text>
     <IconButton icon='copy' accessibilityLabel='Copy address' size={32} onPress={onCopy} />
   </View>

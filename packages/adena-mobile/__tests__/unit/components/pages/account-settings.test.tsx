@@ -35,7 +35,7 @@ describe('AccountSettingsPage', () => {
 
     await renderPage(<AccountSettingsPage {...page} />);
 
-    expect(screen.getByText('g1jg8m…sqf5')).toBeTruthy();
+    expect(screen.getByText('g1jg...sqf5')).toBeTruthy();
     expect(screen.getAllByText('Recovery phrase')).toHaveLength(2);
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Copy address' }));

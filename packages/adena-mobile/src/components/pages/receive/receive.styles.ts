@@ -3,7 +3,8 @@ import { StyleSheet } from 'react-native';
 import { colors, radius, spacing } from '../../../theme';
 
 export const styles = StyleSheet.create({
-  qr: { alignItems: 'center', paddingVertical: spacing.space16 },
+  body: { gap: spacing.space16 },
+  qr: { alignItems: 'center', paddingVertical: spacing.space24 },
   qrCompact: { paddingVertical: spacing.space4 },
   identity: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.space12 },
   accountName: { flexShrink: 1 },

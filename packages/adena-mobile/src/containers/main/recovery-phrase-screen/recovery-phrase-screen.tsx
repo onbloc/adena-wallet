@@ -6,6 +6,7 @@ import { RecoveryPhrasePage } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
 import { AppErrorCode, isAppError } from '../../../core/errors';
 import { useContainer } from '../../../di/container-provider';
+import { useSensitiveClipboard } from '../../../hooks/use-sensitive-clipboard';
 import { MainStackParamList } from '../../../navigation/types';
 
 export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'RecoveryPhrase'>): ReactElement => {
@@ -17,12 +18,15 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
   const [sheetVisible, setSheetVisible] = useState(false);
   // Bumped on every hide so a reveal still in flight cannot show the phrase afterwards.
   const revealEpochRef = useRef(0);
+  const clipboard = useSensitiveClipboard();
+  const { clear: clearClipboard } = clipboard;
 
   // Drop the revealed phrase when leaving the screen or the app goes to the background.
   useEffect(() => {
     const hide = (): void => {
       revealEpochRef.current += 1;
       setWords(undefined);
+      clearClipboard();
     };
     const unsubscribeBlur = navigation.addListener('blur', hide);
     const appState = AppState.addEventListener('change', (state) => {
@@ -35,7 +39,7 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
       unsubscribeBlur();
       appState.remove();
     };
-  }, [navigation]);
+  }, [navigation, clearClipboard]);
 
   const handleChangePassword = (value: string): void => {
     setPassword(value);
@@ -66,6 +70,12 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
     }
   };
 
+  const handleCopy = (): void => {
+    if (words) {
+      clipboard.copy(words.join(' '), 'Recovery phrase copied. The clipboard clears in 60 seconds.');
+    }
+  };
+
   const handleOpenPasswordSheet = (): void => setSheetVisible(true);
 
   const handleClosePasswordSheet = (): void => {
@@ -85,6 +95,7 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
       error={error}
       verifying={verifying}
       onReveal={handleReveal}
+      onCopy={handleCopy}
       onBack={navigation.goBack}
     />
   );

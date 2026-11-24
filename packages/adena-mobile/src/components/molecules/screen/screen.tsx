@@ -11,7 +11,7 @@ export interface ScreenProps {
   testID?: string;
 }
 
-// Page template: safe area, 20px screen inset, optional pinned header and footer.
+// Page template: safe area, 24px screen inset, optional pinned header and footer.
 export const Screen = ({ header, footer, scrollable = true, testID, children }: PropsWithChildren<ScreenProps>): ReactElement => (
   <SafeAreaView testID={testID} style={styles.root} edges={['top', 'bottom']}>
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>

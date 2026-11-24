@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
 import { AddressRow } from '../../../../src/components/molecules';
-import { shortenAddress } from '../../../../src/utils/address';
+import { formatAddress } from '../../../../src/utils/address';
 
 const address = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
 
@@ -11,7 +11,7 @@ describe('AddressRow', () => {
     const onCopy = jest.fn();
 
     await render(<AddressRow address={address} onCopy={onCopy} />);
-    expect(screen.getByText(shortenAddress(address))).toBeTruthy();
+    expect(screen.getByText(formatAddress(address))).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Copy address' }));
     expect(onCopy).toHaveBeenCalledTimes(1);
   });
