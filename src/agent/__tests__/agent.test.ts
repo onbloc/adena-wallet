@@ -44,7 +44,7 @@ function setup(steps: Step[], { balance = '10000000', holdings }: { balance?: st
       { address: account, symbol: 'GNS', amount: '1000000', decimals: 6, tokenId: 'gno.land/r/gnoswap/gns' },
       { address: account, symbol: 'xGNS', amount: '17528000000', decimals: 6, tokenId: 'gno.land/r/xgns' },
     ] } },
-    { name: 'get_account_info', output: { address: account, label: 'active account' } },
+    { name: 'get_nfts_balance', output: { address: account, items: [] } },
   ]);
   const wallet = fakeWallet({ contacts: [FRIEND] });
   const prepared: PreparedTransaction[] = [];
@@ -100,14 +100,14 @@ describe('AIAgent', () => {
   it('keeps structured balances in mixed read results and carries the answer into a follow-up', async () => {
     const { real, model } = setup([
       nativeRead(),
-      call('get_account_info', {}),
-      answer('Account is active.'),
+      call('get_nfts_balance', {}),
+      answer('No NFTs were returned.'),
       answer('That was your balance.'),
     ]);
     const conversation = real.createConversation({ account });
 
-    const first = await collect(conversation.run({ prompt: 'Show my GNOT balance and account information' }));
-    expect(results(first).map(event => event.name)).toEqual(['get_balance', 'get_account_info']);
+    const first = await collect(conversation.run({ prompt: 'Show my GNOT balance and NFTs' }));
+    expect(results(first).map(event => event.name)).toEqual(['get_balance', 'get_nfts_balance']);
     expect(first).toContainEqual(expect.objectContaining({
       type: GenerateEventType.Text, delta: expect.stringContaining('10 GNOT'),
     }));
@@ -139,6 +139,141 @@ describe('AIAgent', () => {
     expect(JSON.stringify(model.doGenerateCalls[2].prompt)).toContain('func BalanceOf()');
     expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'BalanceOf reads the balance.' });
     expect(events[events.length - 1]).not.toHaveProperty('verifiedAnswer', true);
+  });
+
+  it('grounds a naturally referenced function in the discovered file before answering', async () => {
+    const path = 'gno.land/r/gnoswap/gns';
+    const signature = 'func BalanceOf(owner address) int64';
+    const source = [
+      'package gns',
+      '',
+      '// BalanceOf returns the GNS balance of a specific address.',
+      `${signature} { return token.BalanceOf(owner) }`,
+    ].join('\n');
+    const mcp = fakeOnblocMcp([
+      { name: 'get_realm_info', output: {
+        path, sourceFiles: ['gns.gno'],
+        functions: [{ filename: 'gns.gno', line: 4, name: 'BalanceOf', signature }],
+      } },
+      { name: 'get_realm_source', output: { path, filename: 'gns.gno', content: source } },
+    ]);
+    const model = new MockLanguageModelV4({ doGenerate: [
+      call('get_realm_info', { path }), answer('BalanceOf returns GNOT.'),
+    ] });
+    const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
+    const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })] });
+
+    const events = await collect(new AIAgent({ llm, harness }).run({
+      prompt: `${path}의 BalanceOf 함수는 어느 파일에 있고 무엇을 하나요?`,
+    }, { account }));
+
+    expect(mcp.calls).toEqual([
+      { name: 'get_realm_info', arguments: { path } },
+      { name: 'get_realm_source', arguments: { path, filename: 'gns.gno' } },
+    ]);
+    const evidence = JSON.stringify(results(events));
+    expect(evidence).toContain(signature);
+    expect(evidence).toContain('token.BalanceOf(owner)');
+    const text = events.filter(event => event.type === GenerateEventType.Text).map(event => event.delta).join('');
+    expect(text).toContain(`${path}/gns.gno:4`);
+    expect(text).toContain('GNS balance of a specific address');
+    expect(text).toContain('token.BalanceOf(owner)');
+    expect(text).not.toContain('GNOT');
+    expect(model.doGenerateCalls).toHaveLength(1);
+  });
+
+  it('grounds another function and path without assuming BalanceOf or GNS', async () => {
+    const path = 'gno.land/r/example/vault';
+    const signature = 'func Deposit(owner address, amount int64) int64';
+    const mcp = fakeOnblocMcp([
+      { name: 'get_realm_info', output: {
+        path, sourceFiles: ['vault.gno'],
+        functions: [{ filename: 'vault.gno', line: 3, name: 'Deposit', signature }],
+      } },
+      { name: 'get_realm_source', output: {
+        path, filename: 'vault.gno',
+        content: `package vault\n// Deposit adds funds.\n${signature} {\n return amount\n}`,
+      } },
+    ]);
+    const model = new MockLanguageModelV4({ doGenerate: [call('get_realm_info', { path })] });
+    const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })] });
+    const events = await collect(new AIAgent({
+      llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })), harness,
+    }).run({ prompt: `${path}: Deposit의 구현을 보여줘` }, { account }));
+
+    expect(mcp.calls[1]).toEqual({ name: 'get_realm_source', arguments: { path, filename: 'vault.gno' } });
+    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: expect.stringContaining('return amount') });
+    expect(JSON.stringify(events)).not.toContain('BalanceOf');
+  });
+
+  it('leaves general realm metadata reads unchanged when no function identifier was requested', async () => {
+    const path = 'gno.land/r/example/vault';
+    const mcp = fakeOnblocMcp([
+      { name: 'get_realm_info', output: {
+        path, functions: [{ filename: 'vault.gno', line: 1, name: 'Deposit', signature: 'func Deposit()' }],
+      } },
+      { name: 'get_realm_source', output: { path, filename: 'vault.gno', content: 'func Deposit() {}' } },
+    ]);
+    const model = new MockLanguageModelV4({ doGenerate: [
+      call('get_realm_info', { path }), answer('The realm exposes Deposit.'),
+    ] });
+    const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })] });
+    const events = await collect(new AIAgent({
+      llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })), harness,
+    }).run({ prompt: `List functions in ${path}` }, { account }));
+    expect(mcp.calls).toEqual([{ name: 'get_realm_info', arguments: { path } }]);
+    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'The realm exposes Deposit.' });
+  });
+
+  it.each([
+    ['different realm', { path: 'gno.land/r/example/other', filename: 'vault.gno', content: 'func Deposit() { return }' }],
+    ['different file', { path: 'gno.land/r/example/vault', filename: 'other.gno', content: 'func Deposit() { return }' }],
+    ['declaration in a comment', { path: 'gno.land/r/example/vault', filename: 'vault.gno', content: '// func Deposit() { return }' }],
+    ['different declaration', { path: 'gno.land/r/example/vault', filename: 'vault.gno', content: 'func Deposit() int { return 1 }' }],
+  ])('refuses unsupported source evidence from a %s', async (_label, source) => {
+    const path = 'gno.land/r/example/vault';
+    const mcp = fakeOnblocMcp([
+      { name: 'get_realm_info', output: {
+        path, sourceFiles: ['vault.gno'],
+        functions: [{ filename: 'vault.gno', line: 1, name: 'Deposit', signature: 'func Deposit()' }],
+      } },
+      { name: 'get_realm_source', output: source },
+    ]);
+    const model = new MockLanguageModelV4({ doGenerate: [
+      call('get_realm_info', { path }), answer('Deposit safely transfers GNOT.'),
+    ] });
+    const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })] });
+    const events = await collect(new AIAgent({
+      llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })), harness,
+    }).run({ prompt: `Explain ${path} Deposit` }, { account }));
+    const text = events.filter(event => event.type === GenerateEventType.Text).map(event => event.delta).join('');
+    expect(text).toContain('could not be verified');
+    expect(text).not.toContain('GNOT');
+    expect(events[events.length - 1]).toMatchObject({ type: GenerateEventType.Done, messages: [] });
+  });
+
+  it('does not follow a filename from another requested realm or an ambiguous identifier', async () => {
+    const path = 'gno.land/r/example/vault';
+    const metadata = { filename: 'vault.gno', line: 1, name: 'Deposit', signature: 'func Deposit()' };
+    for (const info of [
+      { path: 'gno.land/r/example/other', functions: [metadata] },
+      { path, functions: [metadata, { ...metadata, filename: 'other.gno' }] },
+    ]) {
+      const mcp = fakeOnblocMcp([
+        { name: 'get_realm_info', output: info },
+        { name: 'get_realm_source', output: { path, filename: 'vault.gno', content: 'func Deposit() {}' } },
+      ]);
+      const selectedPath = info.path;
+      const model = new MockLanguageModelV4({ doGenerate: [
+        call('get_realm_info', { path: selectedPath }), answer('Invented answer.'),
+      ] });
+      const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })] });
+      const events = await collect(new AIAgent({
+        llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })), harness,
+      }).run({ prompt: `${path} Deposit implementation?` }, { account }));
+      expect(mcp.calls).toEqual([{ name: 'get_realm_info', arguments: { path: selectedPath } }]);
+      expect(events).toContainEqual({ type: GenerateEventType.Text, delta: expect.stringContaining('could not be verified') });
+    }
   });
 
   it.each(['What is my xGNS balance?', '내 xGNS 잔액은 얼마야?'])(

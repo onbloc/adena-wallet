@@ -1,3 +1,4 @@
+import { realmEvidence } from './realmEvidence';
 import { createAiSdkRun } from './aiSdkBridge';
 import { guardAnswer } from './answerGuard';
 import { buildWalletPrompt } from './prompts';
@@ -114,8 +115,8 @@ export class AIAgent {
     const walletTools = wallet && onTransaction
       ? createWalletTools({ sdk: wallet, account, contacts, onTransaction })
       : {};
-    const { loop, isRead, balanceToolName } = await this.startLoop({
-      account,
+    const { loop, isRead, balanceToolName, evidence } = await this.startLoop({
+      account, userText,
       walletTools,
       allowTransactionPreparation: canPrepare,
       maxOutputTokens: settings.maxOutputTokens ?? 512,
@@ -131,7 +132,7 @@ export class AIAgent {
         this.llm.generate({ ...settings, system, tools: undefined }, { signal, loop }),
         isRead,
         balanceToolName,
-        userText
+        userText, evidence
       );
     } finally {
       loop.close();
@@ -141,15 +142,16 @@ export class AIAgent {
   /**
    * Starts one harness run for both read tools and unsigned wallet preparation.
    */
-  private async startLoop({ account, walletTools, maxOutputTokens, signal, contextTokens, onContextCompacted, allowTransactionPreparation }: {
+  private async startLoop({ account, userText, walletTools, maxOutputTokens, signal, contextTokens, onContextCompacted, allowTransactionPreparation }: {
     account: string;
+    userText: string;
     walletTools: Readonly<Record<string, WalletTool>>;
     maxOutputTokens: number;
     signal?: AbortSignal;
     contextTokens: number;
     onContextCompacted?: (droppedTurns: number) => void;
     allowTransactionPreparation: boolean;
-  }): Promise<{ loop: ToolLoop; isRead(toolName: string): boolean; balanceToolName?: string }> {
+  }): Promise<{ loop: ToolLoop; isRead(toolName: string): boolean; balanceToolName?: string; evidence?: ReturnType<typeof realmEvidence> }> {
     const run = await this.harness.startRun({
       account, chainId: this.chainId, operationId: `agent-${++this.runs}`,
       scope: allowTransactionPreparation ? 'prepare-wallet' : 'read-only', purpose: 'mainnet-read', walletTools, signal,
@@ -170,7 +172,9 @@ export class AIAgent {
           return run.signal.aborted ? { kind: 'denied', code: 'CANCELLED' } as const : { kind: 'result', value } as const;
         },
       }] : [];
+      const evidence = allowTransactionPreparation ? undefined : realmEvidence(userText, run);
       const options = createAiSdkRun({
+        evidence,
         run, maxOutputTokens: Math.min(maxOutputTokens, 512), budget: { kind: 'local' },
         contextWindow: contextTokens,
         onContextCompacted,
@@ -180,6 +184,7 @@ export class AIAgent {
         onInterrupt: () => run.close(),
       });
       return {
+        evidence,
         loop: { options, close: run.close },
         isRead: (toolName) => !Object.hasOwn(walletTools, toolName) || walletTools[toolName].effect === 'read',
         balanceToolName: available ? balanceToolDefinition.name : undefined,

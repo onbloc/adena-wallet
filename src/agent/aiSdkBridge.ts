@@ -15,11 +15,12 @@ type Operation = Readonly<{
   execute(input: unknown): Promise<Decision>;
 }>;
 
-function createAiSdkTools({ run, definitions, operations, onInterrupt, projectResult }: {
+function createAiSdkTools({ run, definitions, operations, onInterrupt, projectResult, observe }: {
   run: HarnessRun;
   definitions: readonly ToolDefinition[];
   operations: ReadonlyMap<string, Operation>;
   onInterrupt: (interruption: Interruption) => void;
+  observe?: (name: string, input: unknown, decision: Decision) => void;
   projectResult?: (name: string, output: unknown) => unknown;
 }): ToolSet {
   const tools: ToolSet = {};
@@ -36,6 +37,7 @@ function createAiSdkTools({ run, definitions, operations, onInterrupt, projectRe
       async execute(input) {
         const operation = operations.get(name);
         const decision = operation ? await operation.execute(input) : await run.dispatch({ name, input });
+        observe?.(name, input, decision);
         if (decision.kind === 'clarify' || decision.kind === 'approval-required') {
           onInterrupt(decision);
           // Keep approval actions and clarification choices on the application side.
@@ -49,7 +51,7 @@ function createAiSdkTools({ run, definitions, operations, onInterrupt, projectRe
 }
 
 /** Options for one AI SDK generation loop. Close the run in the consumer's finally block. */
-export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budget, onInterrupt, projectResult, contextWindow, onContextCompacted, hideTools, operations = [] }: {
+export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budget, onInterrupt, projectResult, contextWindow, onContextCompacted, hideTools, operations = [], evidence }: {
   run: HarnessRun;
   maxOutputTokens: number;
   contextWindow?: number;
@@ -68,6 +70,7 @@ export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budg
   hideTools?: ReadonlySet<string>;
   /** Composite operations must dispatch their underlying calls through this same run. */
   operations?: readonly Operation[];
+  evidence?: { observe(name: string, input: unknown, decision: Decision): void; selected(): boolean };
 }) {
   const byName = new Map(operations.map(operation => [operation.definition.name, operation]));
   if (byName.size !== operations.length) throw new Error('Duplicate operation name.');
@@ -78,7 +81,7 @@ export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budg
   if (new Set(definitions.map(definition => definition.name)).size !== definitions.length) {
     throw new Error('Operation name conflicts with a harness tool.');
   }
-  const tools = createAiSdkTools({ run, definitions, operations: byName, onInterrupt, projectResult });
+  const tools = createAiSdkTools({ run, definitions, operations: byName, onInterrupt, projectResult, observe: evidence?.observe });
   let schemasPromise: Promise<ModelToolDefinition[]> | undefined;
   const prepareStep: PrepareStepFunction<ToolSet> = async ({ stepNumber, model, messages, instructions }) => {
     schemasPromise ??= Promise.all(definitions.map(async ({ name, description }) => ({
@@ -103,6 +106,6 @@ export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budg
   const onStepEnd: GenerateTextOnStepEndCallback<ToolSet> = ({ usage }) => {
     run.finishStep(usage.totalTokens);
   };
-  const stopWhen: StopCondition<ToolSet> = () => !run.canStartStep();
+  const stopWhen: StopCondition<ToolSet> = () => !!evidence?.selected() || !run.canStartStep();
   return { tools, prepareStep, onStepEnd, stopWhen, abortSignal: run.signal, maxRetries: 0 };
 }

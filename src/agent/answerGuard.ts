@@ -29,7 +29,8 @@ export async function* guardAnswer(
   events: AsyncIterable<GenerateEvent>,
   isRead: (toolName: string) => boolean,
   balanceToolName?: string,
-  userText = ''
+  userText = '',
+  evidence?: { selected(): boolean; answer(): AsyncGenerator<GenerateEvent> }
 ): AsyncGenerator<GenerateEvent> {
   // Only the last step's text is the answer: earlier steps just announce tool calls.
   let text = '';
@@ -89,6 +90,7 @@ export async function* guardAnswer(
             : 'Transaction preparation was not confirmed.');
         }
         yield event;
+        if (event.name === 'get_realm_info' && evidence?.selected()) yield* evidence.answer();
         break;
       }
       case GenerateEventType.ToolError:
@@ -102,6 +104,10 @@ export async function* guardAnswer(
         const done = { ...event };
         delete done.verifiedAnswer;
         if (event.aborted && outcomes.length === 0) {
+          yield { ...done, messages: [] };
+          break;
+        }
+        if (evidence?.selected() && !outcomes.length) {
           yield { ...done, messages: [] };
           break;
         }
