@@ -1,11 +1,13 @@
 import {
   asSchema,
   isStepCount,
+  Output,
   streamText,
   type LanguageModel,
   type ModelMessage,
   type ToolSet,
 } from 'ai';
+import type { ZodType } from 'zod';
 import type { ToolLoop } from './loop';
 import { compactContext, estimateContextInput } from './session';
 
@@ -27,6 +29,8 @@ export type GenerateSettings = GenerateInput & {
   tools?: ToolSet;
   /** Max model calls when tools are used (SDK default: 1). A `loop` brings its own limit. */
   maxSteps?: number;
+  /** Constrains providers with structured-output support; callers still validate the result. */
+  outputSchema?: ZodType;
 };
 
 export type GenerateOptions = GenerateSettings & {
@@ -105,7 +109,7 @@ const errorMessage = (error: unknown) =>
  */
 export async function* generate(
   model: LanguageModel,
-  { signal, maxSteps, loop, contextTokens, onContextCompacted, ...options }: GenerateOptions,
+  { signal, maxSteps, loop, contextTokens, onContextCompacted, outputSchema, ...options }: GenerateOptions,
   now: () => number = () => Date.now()
 ): AsyncGenerator<GenerateEvent> {
   const startedAt = now();
@@ -127,16 +131,19 @@ export async function* generate(
       ? await Promise.all(Object.entries(tools).map(async ([name, definition]) =>
         [name, definition.description, await asSchema(definition.inputSchema).jsonSchema]))
       : [];
+    const formatSchemas = bounded && outputSchema
+      ? [...schemas, { responseFormat: await asSchema(outputSchema).jsonSchema }] : schemas;
     const result = streamText({
       model,
       ...options,
+      ...(outputSchema && { output: Output.object({ schema: outputSchema }) }),
       ...(maxSteps !== undefined && { stopWhen: isStepCount(maxSteps) }),
       abortSignal: signal,
       ...(bounded && {
         maxOutputTokens,
         prepareStep: ({ messages, instructions }) => {
           const context = compactContext(messages, candidate =>
-            estimateContextInput([instructions, schemas, candidate]) + maxOutputTokens <= (contextTokens ?? Infinity));
+            estimateContextInput([instructions, formatSchemas, candidate]) + maxOutputTokens <= (contextTokens ?? Infinity));
           if (!context) throw new Error('ADENA_CONTEXT_LIMIT: Current request and tool results exceed the model context.');
           const droppedTurns = (messages.length - context.length) / 2;
           if (droppedTurns > 0) onContextCompacted?.(droppedTurns);

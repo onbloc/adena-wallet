@@ -60,6 +60,7 @@ src/harness/                  Bounds and polices a tool-using run
 src/agent/                    AIAgent({ llm, harness, wallet }): the assistant
   agent.ts, aiSdkBridge.ts      a harness run turned into a ToolLoop for llm.generate
   conversation.ts               account-bound text history, turn lifecycle, context budget and reset
+  requestIntent.ts              schema-constrained request classification before wallet execution
   answerGuard.ts, prompts.ts    the answer checked against what the tools returned; the system prompt
   wallet/                       the WalletSdk port, ToolName/status constants, the zod tools
 src/adena/                    AdenaWalletSdk: the WalletSdk port over @adena-wallet/sdk (real wallet)
@@ -106,10 +107,11 @@ fails with `ADENA_CONTEXT_LIMIT`; shorten the question or start a larger support
 If the current tool exchange outgrows the budget, the run also fails rather than cutting tool
 arguments or results. Removed turns are forgotten by subsequent requests.
 
-Completed tool-free explanations and corrections are retained as conversation text. They carry
-a warning that no wallet lookup was performed; this is not verified wallet data. The guard
-does not semantically verify every statement in free-form model text. Current wallet facts
-must come from successful tool results, not from remembered explanations.
+Only requests classified as explanations or clarification questions can keep a tool-free model
+answer. They carry a warning that no wallet lookup was performed; this is not verified wallet
+data. A lookup or preparation request cannot be reinterpreted as an explanation merely because
+the model did not call a tool. Missing required results are explicit failures, not remembered
+answers. The guard does not semantically verify every statement in free-form explanation text.
 
 Cancelled, incomplete and failed-lookup turns are not committed. Persisted chat is text only:
 tool calls, transaction objects and signing authority are never restored or replayed. A prior
@@ -121,6 +123,39 @@ The app restores chats separately for each endpoint, chain and account; switchin
 aborts the old turn. Keep the same separation when using `saved` outside the app. Existing app
 storage uses an injected `ChatSession` through `createConversation({ account, session })`,
 so loading and saving do not create a second copy of the conversation.
+
+## Intent-first wallet execution
+
+Before accessing wallet tools, the agent makes a bounded, tool-free classification call. It
+uses the same conversation context, a fixed system prompt, and schema-constrained JSON output.
+The model returns a route such as `explanation`, `native_balance`, `transfer`, or `approve`;
+the agent validates it and maps it to a typed execution policy. The classification response
+itself is neither displayed as the answer nor appended to chat history.
+
+| Classified request | Available execution | Required outcome |
+| --- | --- | --- |
+| Explanation or missing-detail clarification | Answer model without wallet tools or MCP discovery | Completed conversational answer |
+| Native/token/portfolio balance lookup | Direct read-only calls for the classified balance target | Valid fresh results for every required balance tool |
+| Other wallet lookup | Read-only model/tool loop | A successful current lookup; model text alone is not enough |
+| Transfer or approval | Only the selected preparation action, plus reads | A matching actual preparation result or a reported refusal/failure |
+| Unsupported request | Fixed wallet-scope refusal | No wallet execution |
+
+An approval request never exposes `transfer` as a substitute. A plain-text "done" cannot satisfy
+a preparation request. Malformed, truncated or unrecognized classification output fails with
+`ADENA_INTENT_INVALID` before wallet discovery/execution; it is not repaired or treated as an
+explanation. Caller-supplied answer instructions, tools and output schemas do not override the
+classifier or expand the selected execution scope.
+
+Classification is still a model prediction, not authorization or a guarantee of semantic
+accuracy. Incorrect routes can cause unnecessary clarification or an inappropriate answer.
+Harness scope, schema checks, wallet validation and user review of unsigned transactions remain
+necessary. No signing or broadcasting is introduced.
+
+The classifier consumes an additional bounded model call. Balance routes then fetch and format
+their results directly, without another answer-model call. Explanation and preparation routes
+continue with a separate answer/tool phase. Context pruning applies to both phases and removed
+history is not reintroduced between them. Local llama-server is configured to accept structured
+output schemas; the existing native provider also supports that response format.
 
 ## Wallet layers and tool calling
 
@@ -264,12 +299,11 @@ Each scenario in `scenarios.ts` is a plain-language prompt and what it must prod
 - or no transaction at all (missing recipient, unknown token, GNOT approval, zero amount,
   insufficient balance).
 
-Only recognized standalone balance questions use the agent's read-only shortcut. A separate
-multi-turn scenario asks for all assets and then follows up about GNOT in the same conversation;
-it checks a fresh native balance result and that neither turn prepares a transaction, not the
-answer wording.
-Retaining history does not guarantee correct tool selection: a native-token follow-up must
-still obtain a fresh native balance, not GRC20 holdings or a value copied from an earlier answer.
+Balance routing now comes from the validated classification, not a whitelist of question
+spellings. Multi-turn scenarios query all assets, discuss terminology, and ask for GNOT again.
+They check fresh native balance results and absence of unintended preparation, not answer
+wording. A classified balance request is dispatched directly to its required balance tools;
+other classified lookups must produce actual successful read results.
 
 A failure prints the prompt, the model's tool calls and its answer. The model is not
 deterministic across builds or machines, so a failing scenario can be a model limit or a prompt
@@ -278,9 +312,10 @@ preset replaces `fetch` with a stub, hence the separate config.
 
 ## Metrics
 
-- **TTFT**: start -> first text or reasoning delta.
-- **tok/s**: decode speed, `(outputTokens - 1) / (end - first delta)`. Shown
-  as `-` when the provider reports no usage.
+- **TTFT**: start of classification -> first visible answer or tool event for wallet requests.
+- **tok/s**: decode speed for single-stage generation. Omitted for classified wallet requests
+  because their multiple model phases do not have one comparable decode interval. Their total
+  time and output-token count include classification.
 - Provider warnings (e.g. unsupported options) are shown under the output.
 - Memory / thermal are not measured in-app; use Xcode Instruments or Android Studio Profiler.
 

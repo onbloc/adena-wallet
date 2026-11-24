@@ -216,6 +216,16 @@ describe('generate', () => {
     );
   });
 
+  it('reserves structured-output schema space before calling the model', async () => {
+    const model = modelFrom([...text('{"route":"explanation"}'), finish(5)]);
+    const outputSchema = z.object({ route: z.string().describe('x'.repeat(6000)) });
+
+    await expect(collect(generate(model, {
+      prompt: 'Classify the request.', contextTokens: 2048, maxOutputTokens: 128, outputSchema,
+    }))).rejects.toThrow('ADENA_CONTEXT_LIMIT');
+    expect(model.doStreamCalls).toEqual([]);
+  });
+
   it('ends with an aborted done event when the signal fires mid-stream', async () => {
     const model = new MockLanguageModelV4({
       doStream: async ({ abortSignal }) => ({

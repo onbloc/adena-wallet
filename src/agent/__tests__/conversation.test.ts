@@ -8,6 +8,7 @@ import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
 import { createChatSession, GenerateEventType, LLMFromModel, type GenerateEvent, type LLM } from '../../llm/core';
 import { AIAgent } from '../agent';
 import { ACCOUNT, fakeWallet } from '../testing/fakeWallet';
+import { intentReplyText } from '../testing/intentReply';
 
 const usage = {
   inputTokens: { total: 5, noCache: 5, cacheRead: undefined, cacheWrite: undefined },
@@ -93,6 +94,7 @@ describe('agent conversations', () => {
       { name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: '10000000' } },
     ]);
     const model = new MockLanguageModelV4({ doGenerate: [
+      reply(intentReplyText({ kind: 'lookup', target: 'other' })),
       {
         content: [{ type: 'tool-call', toolCallId: 'current-read', toolName: 'get_native_balance', input: '{}' }],
         finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
@@ -114,7 +116,7 @@ describe('agent conversations', () => {
 
     await collect(conversation.run({ prompt: 'Please inspect my funds.', maxOutputTokens: 128 }));
 
-    const prompt = JSON.stringify(model.doGenerateCalls[1].prompt);
+    const prompt = JSON.stringify(model.doGenerateCalls[2].prompt);
     expect(prompt).not.toContain('obsolete topic');
     expect(prompt).toContain('Send one to Carol.');
     expect(prompt).toContain('current-read');
@@ -132,12 +134,10 @@ describe('agent conversations', () => {
     ]);
     const correction = 'GNOT is the native token; ugnot is its base unit.';
     const model = new MockLanguageModelV4({ doGenerate: [
+      reply(intentReplyText({ kind: 'lookup', target: 'portfolio' })),
+      reply(intentReplyText({ kind: 'explanation' })),
       reply(correction),
-      {
-        content: [{ type: 'tool-call', toolCallId: 'fresh-native', toolName: 'get_native_balance', input: '{}' }],
-        finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
-      },
-      reply('Current native balance'),
+      reply(intentReplyText({ kind: 'lookup', target: 'native_balance' })),
     ] });
     const wallet = fakeWallet();
     const handoff = jest.fn();
@@ -158,7 +158,7 @@ describe('agent conversations', () => {
     const fresh = await collect(conversation.run({ prompt: 'Look up that native balance again.' }));
 
     expect(fresh).toContainEqual({ type: GenerateEventType.Text, delta: '2 GNOT' });
-    expect(JSON.stringify(model.doGenerateCalls[1].prompt)).toContain(correction);
+    expect(JSON.stringify(model.doGenerateCalls[3].prompt)).toContain(correction);
     expect(mcp.calls.filter((call) => call.name === 'get_native_balance')).toHaveLength(2);
     expect(conversation.turns).toHaveLength(3);
     expect(wallet.calls).toEqual([]);

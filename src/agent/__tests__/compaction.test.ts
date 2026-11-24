@@ -7,6 +7,7 @@ import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
 import { createChatSession, LLMFromModel } from '../../llm/core';
 import { AIAgent } from '../agent';
 import { ACCOUNT, fakeWallet } from '../testing/fakeWallet';
+import { intentReplyText } from '../testing/intentReply';
 
 const usage = {
   inputTokens: { total: 5, noCache: 5, cacheRead: undefined, cacheWrite: undefined },
@@ -22,6 +23,8 @@ describe('agent context compaction', () => {
     const onTransaction = jest.fn();
     const model = new MockLanguageModelV4({
       doGenerate: [
+        { content: [{ type: 'text', text: intentReplyText({ kind: 'lookup', target: 'other' }) }],
+          finishReason: { unified: 'stop', raw: 'stop' }, usage, warnings: [] },
         { content: [{ type: 'tool-call', toolCallId: 'live-read', toolName: 'get_native_balance', input: '{}' }],
           finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [] },
         { content: [{ type: 'text', text: '42 GNOT' }],
@@ -46,14 +49,14 @@ describe('agent context compaction', () => {
     }
     expect(finished).toBe(true);
 
-    expect(model.doGenerateCalls).toHaveLength(2);
+    expect(model.doGenerateCalls).toHaveLength(3);
     for (const call of model.doGenerateCalls) {
       const prompt = JSON.stringify(call.prompt);
       expect(prompt).not.toContain('old request');
       expect(prompt).toContain('send one to alice');
       expect(prompt).toContain('What is my balance now?');
     }
-    const continuation = JSON.stringify(model.doGenerateCalls[1].prompt);
+    const continuation = JSON.stringify(model.doGenerateCalls[2].prompt);
     expect(continuation).toContain('live-read');
     expect(continuation).toContain('42000000');
     expect(mcp.calls).toHaveLength(1);
