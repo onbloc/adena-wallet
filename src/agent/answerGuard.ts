@@ -1,5 +1,5 @@
 import type { GenerateEvent } from '../llm/core';
-import { balanceRequestSchema, balanceResultSchema, balanceToolDefinition, formatBalance, type BalanceRequest, type BalanceResult } from './balanceOperation';
+import { balanceRequestSchema, balanceResultSchema, balanceToolDefinition, formatBalance, type BalanceAsset, type BalanceRequest, type BalanceResult } from './balanceOperation';
 import type { RealmEvidence } from './realmEvidence';
 import type { RequestIntent } from './requestIntent';
 import { ToolName, WalletStatus } from './wallet/constants';
@@ -25,7 +25,24 @@ function contradictsSymbolMention(text: string, symbol: string): boolean {
     embedded = true;
     offset = index + value.length;
   }
-  return embedded;
+  if (embedded) return true;
+
+  // A mixed-case prefix can distinguish a wrapped asset from the uppercase symbol it contains.
+  for (let i = 1; i <= symbol.length - 3; i++) {
+    const prefix = symbol.slice(0, i);
+    const suffix = symbol.slice(i);
+    if (prefix === prefix.toUpperCase() || suffix !== suffix.toUpperCase() || suffix === suffix.toLowerCase()) continue;
+    const candidate = suffix.toLowerCase();
+    let start = 0;
+    while (start <= message.length - candidate.length) {
+      const index = message.indexOf(candidate, start);
+      if (index < 0) break;
+      if (!character.test(message[index - 1] ?? '') &&
+        !character.test(message[index + candidate.length] ?? '')) return true;
+      start = index + candidate.length;
+    }
+  }
+  return false;
 }
 
 /** Completion is checked against the plan; fact rendering never depends on model summaries. */
@@ -40,10 +57,14 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
   let toolAttempted = false;
   let mismatch = false;
   let selectionConflict = false;
+  let balanceConflict = false;
   let prepared = false;
   let auditFailed = false;
   const pending = new Map<string, { name: string; input: unknown }>();
   const balances: BalanceResult[] = [];
+  const conflictedSelections = new Set<string>();
+  const seenAssets = new Map<string, BalanceAsset>();
+  let balanceContext: { account: string; chainId: string } | undefined;
   const reads = new Map<string, unknown[]>();
   const outcomes: string[] = [];
   const sourceAnswers: string[] = [];
@@ -57,7 +78,10 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
     if (event.name === balanceToolDefinition.name) {
       const request = balanceRequestSchema.safeParse(event.input);
       if (request.success && request.data.kind === 'one' && request.data.asset.kind === 'symbol'
-        && contradictsSymbolMention(userText, request.data.asset.value)) selectionConflict = true;
+        && contradictsSymbolMention(userText, request.data.asset.value)) {
+        selectionConflict = true;
+        conflictedSelections.add(event.id);
+      }
     }
   };
   const result = (event: Extract<GenerateEvent, { type: 'tool-result' }>) => {
@@ -87,10 +111,24 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
       const balance = parsed.data;
       const input = balanceRequestSchema.safeParse(called?.input);
       if (called && (!input.success || balanceKey(input.data) !== balanceKey(balance.request))) mismatch = true;
-      if (balance.request.kind === 'one' && balance.request.asset.kind === 'id'
-        && !userText.toLowerCase().includes(balance.request.asset.value.toLowerCase())
-        && balance.assets.some(asset => contradictsSymbolMention(userText, asset.symbol))) selectionConflict = true;
-      balances.push(balance);
+      if (balanceContext && (balanceContext.account !== balance.account || balanceContext.chainId !== balance.chainId)) balanceConflict = true;
+      balanceContext ??= { account: balance.account, chainId: balance.chainId };
+      for (const asset of balance.assets) {
+        const key = `${asset.kind}:${asset.assetId}`;
+        const previous = seenAssets.get(key);
+        if (previous && (BigInt(previous.amount) !== BigInt(asset.amount) || previous.decimals !== asset.decimals
+          || previous.symbol.toLowerCase() !== asset.symbol.toLowerCase())) balanceConflict = true;
+        else if (!previous) seenAssets.set(key, asset);
+      }
+      if (balance.request.kind === 'one' &&
+        (balance.request.asset.kind === 'symbol' && (contradictsSymbolMention(userText, balance.request.asset.value)
+          || balance.assets.some(asset => contradictsSymbolMention(userText, asset.symbol)))
+        || balance.request.asset.kind === 'id' && !userText.toLowerCase().includes(balance.request.asset.value.toLowerCase())
+          && balance.assets.some(asset => contradictsSymbolMention(userText, asset.symbol)))) {
+        selectionConflict = true;
+        conflictedSelections.add(event.id);
+      }
+      if (!conflictedSelections.has(event.id)) balances.push(balance);
       if (balance.status !== 'complete') readFailed = true;
     } else if (ok && status !== WalletStatus.Error && (event.name !== ToolName.GetApprovals || status === WalletStatus.Ok)) {
       const previous = reads.get(event.name);
@@ -138,8 +176,8 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         const explanationRequested = lookup?.explanation !== undefined;
         const explanationComplete = !explanationRequested || !!text.trim();
         const modelOnly = (intent.kind === 'explanation' || intent.kind === 'clarification') && !toolAttempted && !readFailed && !!text.trim();
-        const complete = lookupComplete && explanationComplete && !readFailed && !mismatch && !selectionConflict && !outcomes.length;
-        const facts = balances.map(formatBalance);
+        const complete = lookupComplete && explanationComplete && !readFailed && !mismatch && !selectionConflict && !balanceConflict && !outcomes.length;
+        const facts = balanceConflict ? [] : balances.map(formatBalance);
         for (const [name, values] of reads) {
           if (policy.evidence?.selected() && (name === 'get_realm_info' || name === 'get_realm_source')) continue;
           for (const value of values) facts.push(`${name}:\n${JSON.stringify(value, null, 2) ?? 'null'}`);
@@ -153,6 +191,7 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         if (intent.kind === 'prepare' && !prepared && !outcomes.length) sections.push('No transaction was prepared. The requested preparation did not complete.');
         if (mismatch) sections.push('Tool results did not match the requested action and are not trusted.');
         if (selectionConflict) sections.push('The selected asset differs from the asset mentioned. Please confirm which asset you want.');
+        if (balanceConflict) sections.push('Balance lookups returned conflicting results. Please try again.');
         yield { type: 'text', delta: sections.join('\n\n') || 'No wallet lookup or answer completed.' };
         const warnings = [...event.warnings];
         if (modelOnly) warnings.push('No wallet lookup was performed; this is an unverified model explanation.');

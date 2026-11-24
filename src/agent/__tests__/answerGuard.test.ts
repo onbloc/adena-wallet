@@ -80,6 +80,44 @@ describe('required normalized outcomes', () => {
     const answer = await guard(lookup, [result('get_balance', { kind: 'result', value: { status: 'complete', assets: [] } }), result('read', { kind: 'result', value: 1 }), done()]);
     expect(canRememberTurn(answer.done)).toBe(false);
   });
+  it('rejects contradictory balances and differing account or chain contexts', async () => {
+    for (const override of [
+      { assets: [{ ...value.assets[0], amount: '43000000' }] },
+      { account: 'another-account' },
+      { chainId: 'another-chain' },
+    ]) {
+      const answer = await guard(lookup, [balance(), balance(override), done({ verifiedAnswer: true })]);
+      expect(answer.text).toContain('Balance lookups returned conflicting results.');
+      expect(answer.text).not.toContain('42 GNOT');
+      expect(answer.text).not.toContain('43 GNOT');
+      expect(answer.done.verifiedAnswer).toBeUndefined();
+      expect(canRememberTurn(answer.done)).toBe(false);
+    }
+  });
+  it('accepts equivalent amounts with leading zeroes', async () => {
+    const answer = await guard(lookup, [balance(), balance({ assets: [{ ...value.assets[0], amount: '042000000' }] }), done()]);
+    expect(answer.text).not.toContain('conflicting');
+    expect(answer.done.verifiedAnswer).toBe(true);
+  });
+  it.each(['What is my GNS balance?', '내 gns 잔액은?'])('rejects a prefixed asset for %s', async userText => {
+    const wrapped = { kind: 'one', asset: { kind: 'symbol', value: 'XGNS' } } as const;
+    const intent: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request: wrapped }] };
+    const answer = await guard(intent, [call('get_balance', wrapped), balance({
+      request: wrapped, assets: [{ kind: 'token', assetId: 'realm/xgns', symbol: 'xGNS', amount: '17528', decimals: 0 }],
+    }), done()], { userText });
+    expect(answer.text).toContain('selected asset differs');
+    expect(answer.text).not.toContain('17528 xGNS');
+    expect(canRememberTurn(answer.done)).toBe(false);
+  });
+  it('allows both the underlying and prefixed asset to be mentioned', async () => {
+    const wrapped = { kind: 'one', asset: { kind: 'symbol', value: 'XGNS' } } as const;
+    const intent: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request: wrapped }] };
+    const answer = await guard(intent, [call('get_balance', wrapped), balance({
+      request: wrapped, assets: [{ kind: 'token', assetId: 'realm/xgns', symbol: 'xGNS', amount: '17528', decimals: 0 }],
+    }), done()], { userText: 'Compare GNS and xGNS' });
+    expect(answer.text).toContain('17528 xGNS');
+    expect(answer.done.verifiedAnswer).toBe(true);
+  });
   it('does not trust a symbol embedded inside the requested symbol or an unrelated ID', async () => {
     const gns = { kind: 'one', asset: { kind: 'symbol', value: 'GNS' } } as const;
     const intent: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request: gns }] };

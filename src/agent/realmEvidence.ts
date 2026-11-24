@@ -15,6 +15,42 @@ export interface RealmEvidence {
   answer(): AsyncGenerator<GenerateEvent>;
 }
 
+/** Find the end of the indexed function, ignoring braces in strings and comments. */
+function functionEnd(lines: string[], start: number, opening: number): number | undefined {
+  let depth = 0;
+  let mode: 'code' | 'block' | 'string' | 'rune' | 'raw' = 'code';
+  let escaped = false;
+  for (let line = start; line < lines.length && line - start < 18; line++) {
+    const content = lines[line];
+    for (let i = line === start ? opening : 0; i < content.length; i++) {
+      const char = content[i];
+      const next = content[i + 1];
+      if (mode === 'block') {
+        if (char === '*' && next === '/') { mode = 'code'; i++; }
+      } else if (mode === 'raw') {
+        if (char === '`') mode = 'code';
+      } else if (mode === 'string' || mode === 'rune') {
+        if (escaped) escaped = false;
+        else if (char === '\\') escaped = true;
+        else if (char === (mode === 'string' ? '"' : "'")) mode = 'code';
+      } else if (char === '/' && next === '/') {
+        break;
+      } else if (char === '/' && next === '*') {
+        mode = 'block';
+        i++;
+      } else if (char === '"' || char === "'" || char === '`') {
+        mode = char === '"' ? 'string' : char === "'" ? 'rune' : 'raw';
+      } else if (char === '{') {
+        depth++;
+      } else if (char === '}' && --depth === 0) {
+        return line + 1;
+      }
+    }
+    if (mode === 'string' || mode === 'rune') return undefined;
+  }
+  return undefined;
+}
+
 /** Only a named function in an explicitly requested realm can terminate a read-only turn. */
 export function realmEvidence(question: string, run: HarnessRun): RealmEvidence {
   const paths = new Set(question.match(/gno\.land\/r\/[a-zA-Z0-9_./-]+/g)?.map(path => path.replace(/\.+$/, '')));
@@ -56,15 +92,14 @@ export function realmEvidence(question: string, run: HarnessRun): RealmEvidence 
           const start = fn.line - 1;
           const decl = lines[start]?.trimEnd() ?? '';
           if (source.path === path && source.filename === fn.filename && fn.signature.startsWith(`func ${fn.name}(`) && decl.startsWith(fn.signature) && /^\s*\{/.test(decl.slice(fn.signature.length))) {
-            verified = true;
             let comment = start;
             while (comment > 0 && start - comment < 12 && lines[comment - 1].startsWith('//')) comment--;
-            let end = start + 1;
-            if (!decl.endsWith('}')) {
-              while (end < lines.length && end - start < 18 && !/^\S/.test(lines[end])) end++;
-              if (lines[end] === '}') end++;
+            const opening = decl.indexOf('{', fn.signature.length);
+            const end = functionEnd(lines, start, opening);
+            if (end !== undefined) {
+              verified = true;
+              answer = `${path}/${fn.filename}:${fn.line}\n${lines.slice(comment, end).join('\n')}`;
             }
-            answer = `${path}/${fn.filename}:${fn.line}\n${lines.slice(comment, end).join('\n')}`;
           }
         }
       }

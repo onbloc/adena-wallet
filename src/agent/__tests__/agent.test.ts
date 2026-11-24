@@ -167,6 +167,17 @@ describe('integrated request execution', () => {
     expect(textOf(await collect(agent.run({ prompt: 'My GNOT balance?' }, permission)))).toBe('42 GNOT');
     expect(prepared).toEqual([]);
   });
+  it.each(['transfer', 'approve'] as const)('rejects an unrequested %s target despite host permission', async operation => {
+    const planned = proposal({ operation, recipient: RECIPIENT, asset: { kind: 'symbol', value: 'GNOT' },
+      amount: { kind: 'exact', value: '1' } });
+    const { agent, wallet, prepared } = setup([planned], { intent: prepare });
+    const events = await collect(agent.run({ prompt: 'Send 1 GNOT to carol.' }, permission));
+    expect(events).toContainEqual(expect.objectContaining({
+      type: 'tool-result', name: operation, output: { kind: 'denied', code: 'TARGET_CHANGED' },
+    }));
+    expect(wallet.calls).toEqual([]);
+    expect(prepared).toEqual([]);
+  });
   it('prepares once without external reads or a fallible post-preparation model call', async () => {
     const { agent, model, prepared, wallet, fetcher } = setup([send], { intent: prepare, remote: false });
     const events = await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission));
@@ -384,11 +395,12 @@ describe('indexed source evidence', () => {
   const intent: RequestIntent = { kind: 'lookup', requests: [{ target: 'other', query: `${path}: show Deposit implementation.` }] };
   it('fetches only the indexed source and cites its implementation instead of model invention', async () => {
     const { agent, model, mcp } = setup([call('get_realm_info', { path })], { withWallet: false, intent, selection: ['get_realm_info', 'get_realm_source'], tools: [info,
-      { name: 'get_realm_source', output: { path, filename: 'vault.gno', content: `package vault\n// Deposit adds funds.\n${signature} {\n return amount\n}` } },
+      { name: 'get_realm_source', output: { path, filename: 'vault.gno', content: `package vault\n// Deposit adds funds.\n${signature} {\n _ = "}" // {\n if amount > 0 { return amount }\n return 0\n}` } },
     ] });
     const events = await collect(agent.run({ prompt: `${path}: Deposit의 구현을 보여줘` }, { account: ACCOUNT }));
     expect(textOf(events)).toContain(`${path}/vault.gno:3`);
     expect(textOf(events)).toContain('return amount');
+    expect(textOf(events)).toContain('return 0');
     expect(mcp.calls.map(call => call.name)).toEqual(['get_realm_info', 'get_realm_source']);
     expect(model.doGenerateCalls).toHaveLength(3);
   });
@@ -397,6 +409,9 @@ describe('indexed source evidence', () => {
     ['wrong file', { path, filename: 'other.gno', content: signature + ' {}' }],
     ['comment only', { path, filename: 'vault.gno', content: '\n\n// ' + signature + ' {}' }],
     ['wrong declaration', { path, filename: 'vault.gno', content: '\n\nfunc Deposit() {}' }],
+    ['missing closing brace', { path, filename: 'vault.gno', content: `\n\n${signature} {\n return amount` }],
+    ['nested closing brace only', { path, filename: 'vault.gno', content: `\n\n${signature} { if true { return amount }` }],
+    ['source longer than the excerpt limit', { path, filename: 'vault.gno', content: `\n\n${signature} {\n${' value++\n'.repeat(20)}}` }],
   ])('does not trust %s source evidence', async (_label, source) => {
     const { agent } = setup([call('get_realm_info', { path })], { withWallet: false, intent, selection: ['get_realm_info'], tools: [info, { name: 'get_realm_source', output: source }] });
     const chat = agent.createConversation({ account: ACCOUNT });
@@ -404,5 +419,33 @@ describe('indexed source evidence', () => {
     expect(textOf(events)).toContain('could not be verified');
     expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
     expect(chat.turns).toEqual([]);
+  });
+  it.each([false, true])('refuses missing indexed source or unavailable source tool (indexed: %s)', async indexed => {
+    const metadata: FakeOnblocTool = { name: 'get_realm_info', output: {
+      path, ...(indexed ? { sourceFiles: ['vault.gno'] } : {}),
+      functions: [{ filename: 'vault.gno', line: 3, name: 'Deposit', signature }],
+    } };
+    const { agent } = setup([call('get_realm_info', { path })], {
+      withWallet: false, intent, selection: ['get_realm_info'], tools: [metadata],
+    });
+    const chat = agent.createConversation({ account: ACCOUNT });
+    const events = await collect(chat.run({ prompt: `${path}: Deposit implementation?` }));
+    expect(textOf(events)).toContain('could not be verified');
+    expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
+    expect(chat.turns).toEqual([]);
+  });
+  it('preserves the balance alongside verified realm source in a mixed lookup', async () => {
+    const { agent } = setup([call('get_realm_info', { path })], { withWallet: false,
+      intent: { kind: 'lookup', requests: [{ target: 'balance', request: one('GNOT') }, { target: 'other', query: `${path} Deposit implementation` }] },
+      selection: ['get_realm_info'], tools: [info,
+        { name: 'get_realm_source', output: { path, filename: 'vault.gno', content: `package vault\n// Deposit adds funds.\n${signature} { return amount }` } },
+        { name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: '42000000' } },
+      ] });
+    const chat = agent.createConversation({ account: ACCOUNT });
+    const events = await collect(chat.run({ prompt: `Show my GNOT balance and ${path} Deposit implementation.` }));
+    expect(textOf(events)).toContain('42 GNOT');
+    expect(textOf(events)).toContain(`${path}/vault.gno:3`);
+    expect(textOf(events)).toContain('return amount');
+    expect(chat.turns[0].answer).toBe(textOf(events));
   });
 });
