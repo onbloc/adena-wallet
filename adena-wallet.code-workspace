@@ -11,6 +11,10 @@
     {
       "name": "adena-extension",
       "path": "packages/adena-extension"
+    },
+    {
+      "name": "adena-mobile",
+      "path": "packages/adena-mobile"
     }
   ],
   "settings": {
@@ -85,7 +89,12 @@
     "search.exclude": {
       "**/dist": true,
       "**/dist-firefox": true,
-      "**/storybook-static": true
+      "**/storybook-static": true,
+      "packages/adena-mobile/ios/Pods": true,
+      "packages/adena-mobile/ios/build": true,
+      "packages/adena-mobile/android/build": true,
+      "packages/adena-mobile/android/app/build": true,
+      "packages/adena-mobile/android/.gradle": true
     },
     "typescript.tsdk": "packages/adena-extension/node_modules/typescript/lib",
     "typescript.enablePromptUseWorkspaceTsdk": true

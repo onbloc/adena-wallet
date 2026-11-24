@@ -1,0 +1,34 @@
+name: Mobile Test
+
+# packages/adena-mobile is a standalone pnpm project (own lockfile), so the root
+# workflow does not install or test it.
+on:
+  pull_request:
+    branches: [main, develop, release/*]
+    paths:
+      - packages/adena-mobile/**
+      - packages/adena-module/**
+      - .github/workflows/mobile-test.yml
+
+# Read-only checks: the token never needs to write.
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      # adena-module is linked for the byte-compatibility tests and must be built first.
+      - run: |
+          pnpm install --frozen-lockfile
+          pnpm build:module
+      - working-directory: packages/adena-mobile
+        run: pnpm install --frozen-lockfile
+      - working-directory: packages/adena-mobile
+        run: |
+          pnpm typecheck
+          pnpm lint
+          pnpm test:ci
+          pnpm build:storybook

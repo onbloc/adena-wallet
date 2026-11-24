@@ -1,5 +1,7 @@
 packages:
   - packages/*
+  # The mobile app is a standalone pnpm project with its own lockfile (packages/adena-mobile/pnpm-workspace.yaml).
+  - '!packages/adena-mobile'
 
 # Mirrors the Renovate minimumReleaseAge policy (minutes; 7 days).
 minimumReleaseAge: 10080

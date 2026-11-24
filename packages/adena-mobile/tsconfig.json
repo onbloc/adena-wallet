@@ -1,0 +1,10 @@
+{
+  "extends": "@react-native/typescript-config",
+  "compilerOptions": {
+    "types": ["jest"],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["**/node_modules", "**/Pods", "ios", "android"]
+}
