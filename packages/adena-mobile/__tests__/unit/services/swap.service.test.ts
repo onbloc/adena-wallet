@@ -3,7 +3,9 @@ import { MsgCall } from '@gnolang/gno-js-client';
 import { Tx } from '@gnolang/tm2-js-client';
 
 import { AppErrorCode, isAppError } from '../../../src/core/errors';
+import { FeeEstimate, GNO_FEE_POLICY } from '../../../src/domain/fee';
 import { DEFAULT_SWAP_SETTINGS, SwapToken } from '../../../src/domain/swap';
+import { TransactionDraft } from '../../../src/domain/transaction';
 import { BUILT_IN_NETWORKS } from '../../../src/resources';
 import { SWAP_QUOTE_TTL_MS } from '../../../src/services/swap.service';
 import { GNS, installGnoswapFakes, qeval, ROUTER, ROUTER_ADDRESS, WUGNOT } from '../../helpers/gnoswap-fakes';
@@ -156,5 +158,59 @@ describe('SwapService', () => {
     env.gno.state.balances[address] = '1000500ugnot';
     await expectCode(service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' }), AppErrorCode.INSUFFICIENT_BALANCE);
     expect(env.gno.state.broadcasts).toHaveLength(0);
+  });
+
+  describe('maxInputAmount', () => {
+    const estimate = (storageDeposit = '0'): FeeEstimate => ({ gasUsed: '1000000', gasPrice: '0.001', denom: 'ugnot', policy: GNO_FEE_POLICY, storageDeposit });
+    const maxOf = async (balance: string, options: { estimate?: FeeEstimate | Error; output?: boolean } = {}) => {
+      const env = await setup();
+      const spy = jest.spyOn(env.env.container.transactionService, 'estimateFee');
+
+      if (options.estimate instanceof Error) {
+        spy.mockRejectedValue(options.estimate);
+      }
+      else {
+        spy.mockResolvedValue(options.estimate ?? estimate());
+      }
+
+      const result = env.service.maxInputAmount({
+        account: env.account, network: env.network, input: env.gnot, output: options.output === false ? undefined : env.gns, balance, settings: DEFAULT_SWAP_SETTINGS,
+      });
+
+      return { ...env, spy, result };
+    };
+
+    it('keeps back the simulated fee times the send margin plus the storage deposit', async () => {
+      const { result, spy } = await maxOf('100000000', { estimate: estimate('2500000') });
+
+      // AVERAGE: 1,100,000 gas at 0.001 = 1,100 ugnot, x1.2 = 1,320 ugnot; plus the 2.5 GNOT deposit.
+      await expect(result).resolves.toEqual({ amount: '97498680', approximate: false });
+      const draft = spy.mock.calls[0][0] as TransactionDraft<{ value: { func: string; send: string; args: string[] | null } }>;
+
+      // The probe is the real wrap/approve/swap tx for balance minus the bundled reserve.
+      expect(draft.messages.map(message => message.value.func)).toEqual(['Deposit', 'Approve', 'ExactInSwapRoute']);
+      expect(draft.messages[0].value.send).toBe('99000000ugnot');
+    });
+
+    it('refuses when the deposit or fee leaves nothing to swap', async () => {
+      await expectCode((await maxOf('100000000', { estimate: estimate('99999000') })).result, AppErrorCode.INSUFFICIENT_BALANCE);
+      await expectCode((await maxOf('1500')).result, AppErrorCode.INSUFFICIENT_BALANCE);
+      await expectCode((await maxOf('900')).result, AppErrorCode.INSUFFICIENT_BALANCE);
+    });
+
+    it('falls back to the bundled reserve and flags the amount as approximate', async () => {
+      await expect((await maxOf('100000000', { estimate: new Error('simulate failed') })).result).resolves.toEqual({ amount: '99000000', approximate: true });
+
+      const noOutput = await maxOf('100000000', { output: false });
+
+      await expect(noOutput.result).resolves.toEqual({ amount: '99000000', approximate: true });
+      expect(noOutput.spy).not.toHaveBeenCalled();
+    });
+
+    it('returns the whole balance for GRC20 input', async () => {
+      const { service, account, network, gns, gnot } = await setup();
+
+      await expect(service.maxInputAmount({ account, network, input: gns, output: gnot, balance: '5000000', settings: DEFAULT_SWAP_SETTINGS })).resolves.toEqual({ amount: '5000000', approximate: false });
+    });
   });
 });

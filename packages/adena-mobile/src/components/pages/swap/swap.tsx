@@ -68,6 +68,8 @@ export interface SwapPageProps {
   detailsExpanded: boolean;
   onToggleDetails: () => void;
   onPercent: (percent: SwapPercent) => void;
+  // Chip whose amount is being estimated (native max); every chip waits meanwhile.
+  percentLoading?: SwapPercent;
   onKeyPress: (key: KeypadKey) => void;
   action: SwapActionState;
   onAction: () => void;
@@ -270,7 +272,12 @@ export const SwapPage = (props: SwapPageProps): ReactElement => {
         <View style={styles.chips}>
           {SWAP_PERCENTS.map(percent => (
             <View key={percent} style={styles.chip}>
-              <Chip label={percent === 100 ? 'Max' : `${percent}%`} disabled={props.sell.balanceLabel === undefined} onPress={() => props.onPercent(percent)} />
+              <Chip
+                label={percent === 100 ? 'Max' : `${percent}%`}
+                loading={props.percentLoading === percent}
+                disabled={props.sell.balanceLabel === undefined || (props.percentLoading !== undefined && props.percentLoading !== percent)}
+                onPress={() => props.onPercent(percent)}
+              />
             </View>
           ))}
         </View>

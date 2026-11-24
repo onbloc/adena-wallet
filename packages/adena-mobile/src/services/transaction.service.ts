@@ -25,7 +25,15 @@ import { AccountService } from './account.service';
 import { KeyringSession } from './keyring-session';
 
 // Extension's GAS_FEE_SAFETY_MARGIN for the MAX amount.
-const MAX_FEE_SAFETY_MARGIN = 1.2;
+export const MAX_FEE_SAFETY_MARGIN = 1.2;
+
+// Fee-coin amount a MAX keeps back: the default-tier fee padded by the margin, plus the storage deposit.
+export const maxFeeReserve = (estimate: FeeEstimate): string => {
+  const { gasWanted } = computeFee(estimate, DEFAULT_FEE_SELECTION);
+  const fee = new BigNumber(gasWanted).multipliedBy(estimate.gasPrice).multipliedBy(MAX_FEE_SAFETY_MARGIN).integerValue(BigNumber.ROUND_UP);
+
+  return fee.plus(estimate.storageDeposit ?? '0').toFixed(0);
+};
 
 export interface TransferInput {
   account: Account;
@@ -157,9 +165,7 @@ export class TransactionService {
     const probeAmount = new BigNumber(balance).multipliedBy(0.9).integerValue(BigNumber.ROUND_DOWN).toFixed(0);
     const draft = await this.createTransferDraft({ account, network, token, toAddress, amount: probeAmount === '0' ? balance : probeAmount });
     const estimate = await this.estimateFee(draft, account, network);
-    const { gasWanted } = computeFee(estimate, DEFAULT_FEE_SELECTION);
-    const reservedFee = new BigNumber(gasWanted).multipliedBy(estimate.gasPrice).multipliedBy(MAX_FEE_SAFETY_MARGIN).integerValue(BigNumber.ROUND_UP);
-    const max = new BigNumber(balance).minus(reservedFee).minus(estimate.storageDeposit ?? '0');
+    const max = new BigNumber(balance).minus(maxFeeReserve(estimate));
 
     return BigNumber.max(max, 0).toFixed(0);
   }

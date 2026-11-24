@@ -40,7 +40,7 @@ import {
   SwapQuoteStatus,
 } from '../../../presenters/swap.presenter';
 import { NO_ID_KEY, queryKeys } from '../../../queries/query-keys';
-import { PreparedSwap } from '../../../services/swap.service';
+import { PreparedSwap, SwapMaxResult } from '../../../services/swap.service';
 import { useToastStore } from '../../../stores/toast.store';
 import { formatPackagePath } from '../../../utils/address';
 import { compareAmount, formatTokenAmount, isPositiveAmount, toBaseUnit, toDisplayAmount } from '../../../utils/amount';
@@ -69,12 +69,12 @@ export const sortSwapTokens = (tokens: SwapToken[], balances?: Record<string, st
 
 export const searchSwapTokens = (tokens: SwapToken[], query: string): SwapToken[] => tokens.filter(token => matches(token, query));
 
-// Raw share of the balance; the native coin keeps `reserve` back for the network fee.
-export const percentOfBalance = (balance: string, percent: SwapPercent, reserve?: string): string => {
+// Raw share of the balance, capped at the spendable maximum (the native coin's balance minus fee and deposit).
+export const percentOfBalance = (balance: string, percent: SwapPercent, cap?: string): string => {
   const share = (BigInt(balance) * BigInt(percent)) / 100n;
-  const cap = reserve === undefined ? share : BigInt(balance) - BigInt(reserve);
+  const limit = cap === undefined ? share : BigInt(cap);
 
-  return (share < cap ? share : cap > 0n ? cap : 0n).toString();
+  return (share < limit ? share : limit > 0n ? limit : 0n).toString();
 };
 
 const parseSlippageText = (text: string): number | null => (/^\d{1,2}(\.\d{1,2})?$/.test(text.trim()) ? Number(text) : null);
@@ -108,6 +108,12 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
   const [slippageText, setSlippageText] = useState('');
   const [deadlineText, setDeadlineText] = useState('');
   const [prepared, setPrepared] = useState<PreparedSwap | null>(null);
+  // Native max per input/output/balance; an edit bumps the epoch so a late estimate is dropped.
+  const [maxCache, setMaxCache] = useState<{ key: string; result: SwapMaxResult } | null>(null);
+  const [maxPercent, setMaxPercent] = useState<SwapPercent | null>(null);
+  const [maxError, setMaxError] = useState<string>();
+  const [maxApproximate, setMaxApproximate] = useState(false);
+  const maxEpochRef = useRef(0);
   const sendingRef = useRef(false);
   const feeSelection = useFeeSelection(prepared?.estimate ?? null, network);
 
@@ -235,7 +241,13 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
 
   const resetQuoteState = (): void => {
     prepare.reset();
+    maxEpochRef.current += 1;
+    setMaxPercent(null);
+    setMaxError(undefined);
+    setMaxApproximate(false);
   };
+
+  const maxKey = input ? `${network.id}|${account?.id ?? ''}|${input.id}|${output?.id ?? ''}|${inputBalance ?? ''}` : '';
 
   const handleKeyPress = (key: KeypadKey): void => {
     resetQuoteState();
@@ -248,9 +260,54 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     }
 
     resetQuoteState();
-    const raw = percentOfBalance(inputBalance, percent, input.isNative ? swapConfig?.nativeFeeReserve : undefined);
 
-    setAmount(raw === '0' ? '' : toDisplayAmount(raw, input.decimals));
+    const apply = (result?: SwapMaxResult): void => {
+      const raw = percentOfBalance(inputBalance, percent, result?.amount);
+
+      setMaxApproximate(Boolean(result?.approximate) && raw === result?.amount);
+      setAmount(raw === '0' ? '' : toDisplayAmount(raw, input.decimals));
+    };
+
+    if (!input.isNative) {
+      apply();
+      return;
+    }
+
+    if (maxCache?.key === maxKey) {
+      apply(maxCache.result);
+      return;
+    }
+
+    if (!account) {
+      return;
+    }
+
+    const epoch = maxEpochRef.current;
+    const key = maxKey;
+
+    setMaxPercent(percent);
+    swapService.maxInputAmount({ account, network, input, output, balance: inputBalance, settings })
+      .then((result) => {
+        if (epoch !== maxEpochRef.current) {
+          return;
+        }
+
+        setMaxCache({ key, result });
+        apply(result);
+      })
+      .catch((failure: unknown) => {
+        if (epoch !== maxEpochRef.current) {
+          return;
+        }
+
+        setAmount('');
+        setMaxError(toErrorMessage(failure));
+      })
+      .finally(() => {
+        if (epoch === maxEpochRef.current) {
+          setMaxPercent(null);
+        }
+      });
   };
 
   const handleFlip = (): void => {
@@ -434,9 +491,12 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
 
   const error = tokensQuery.isError
     ? 'Couldn’t load the token list. Try again later.'
-    : prepare.error
+    : maxError ?? (prepare.error
       ? toErrorMessage(prepare.error)
-      : quoteStatus === SwapQuoteStatus.ERROR ? toErrorMessage(quoteQuery.error) : undefined;
+      : quoteStatus === SwapQuoteStatus.ERROR ? toErrorMessage(quoteQuery.error) : undefined);
+  const approximateNotice = maxApproximate && input && swapConfig
+    ? `Couldn’t estimate the network fee, so ${toDisplayAmount(swapConfig.nativeFeeReserve, input.decimals)} ${input.symbol} is kept back. The amount is approximate.`
+    : undefined;
 
   return (
     <SwapPage
@@ -468,11 +528,12 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
       detailsExpanded={detailsExpanded}
       onToggleDetails={() => setDetailsExpanded(value => !value)}
       onPercent={handlePercent}
+      percentLoading={maxPercent ?? undefined}
       onKeyPress={handleKeyPress}
       action={action}
       onAction={handleAction}
       error={error}
-      notice={pendingBroadcast.notice}
+      notice={pendingBroadcast.notice ?? approximateNotice}
       tokenSheet={{
         visible: sheetSide !== null,
         title: sheetSide === 'buy' ? 'Select token to buy' : 'Select token to sell',

@@ -22,7 +22,7 @@ import { GnoRpcTimeoutError } from '../repositories/chain/gno/gno-provider';
 import { SwapRepository } from '../repositories/chain/swap-repository';
 import { DEX_API_CONFIG, DexApiConfig, DexApiConfigMap, DexSwapConfig, isTokenPath } from '../resources';
 import { AccountService } from './account.service';
-import { TransactionService } from './transaction.service';
+import { maxFeeReserve, TransactionService } from './transaction.service';
 
 // A quote older than this is fetched again before it can be reviewed.
 export const SWAP_QUOTE_TTL_MS = 60_000;
@@ -56,6 +56,23 @@ export interface PreparedSwap {
   deadlineMinutes: number;
   draft: TransactionDraft;
   estimate: FeeEstimate;
+}
+
+export interface SwapMaxInput {
+  account: Account;
+  network: Network;
+  input: SwapToken;
+  // Without an output token no swap tx can be simulated, so the bundled reserve is used.
+  output?: SwapToken;
+  // Raw balance of `input`.
+  balance: string;
+  settings: SwapSettings;
+}
+
+export interface SwapMaxResult {
+  amount: string;
+  // True when the fee could not be estimated and the bundled reserve was kept back instead.
+  approximate: boolean;
 }
 
 type SupportedConfig = DexApiConfig & { swap: DexSwapConfig };
@@ -253,6 +270,61 @@ export class SwapService {
     const estimate = await this.transactionService.estimateFee(draft, account, network);
 
     return { ...base, draft, estimate };
+  }
+
+  // Native input keeps back the simulated fee (default tier x MAX margin) and storage deposit of the real
+  // wrap/approve/swap[/unwrap] tx, probed at balance - reserve; the bundled reserve is only a fallback.
+  async maxInputAmount({ account, network, input, output, balance, settings }: SwapMaxInput): Promise<SwapMaxResult> {
+    if (input.type !== TokenType.NATIVE) {
+      return { amount: balance, approximate: false };
+    }
+
+    const { config } = this.require(network);
+    const { minDeposit } = config.swap.wrappedNative;
+    const balanceValue = BigInt(isRawAmount(balance) ? balance : '0');
+    const fallbackReserve = BigInt(config.swap.nativeFeeReserve);
+    const insufficient = (): AppError => new AppError(AppErrorCode.INSUFFICIENT_BALANCE, `Insufficient ${input.symbol} for the network fee`);
+    const reserved = balanceValue - fallbackReserve;
+    const probe = reserved >= BigInt(minDeposit) ? reserved : (balanceValue * 9n) / 10n;
+
+    if (probe < BigInt(minDeposit)) {
+      throw insufficient();
+    }
+
+    let max: bigint;
+    let approximate = false;
+
+    try {
+      if (!output) {
+        throw new Error('no output token to simulate');
+      }
+
+      const quote = await this.getQuote({ network, input, output, amountIn: probe.toString() });
+      const slippageBps = slippageToBps(effectiveSlippage(settings));
+      const draft = await this.buildDraft({
+        account,
+        network,
+        input,
+        output,
+        quote,
+        slippageBps,
+        minAmountOut: minAmountOut(quote.amountOut, slippageBps),
+        deadlineMinutes: settings.deadlineMinutes,
+      }, { gasWanted: '0', gasFee: '' });
+      const estimate = await this.transactionService.estimateFee(draft, account, network);
+
+      max = balanceValue - BigInt(maxFeeReserve(estimate));
+    }
+    catch {
+      max = reserved;
+      approximate = true;
+    }
+
+    if (max < BigInt(minDeposit)) {
+      throw insufficient();
+    }
+
+    return { amount: max.toString(), approximate };
   }
 
   // Re-quotes the exact signed route, refreshes the deadline, then signs and broadcasts.

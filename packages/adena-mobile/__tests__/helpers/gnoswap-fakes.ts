@@ -54,7 +54,15 @@ export const installGnoswapFakes = (env: TestEnv, options: GnoswapFakeOptions = 
 
     if (pkgPath === ROUTER && expression.startsWith('DrySwapRoute(')) {
       dryExpressions.push(expression);
-      return typeof options.drySwap === 'function' ? options.drySwap(expression) : options.drySwap ?? qeval.drySwapSplit;
+
+      if (typeof options.drySwap === 'function') {
+        return options.drySwap(expression);
+      }
+
+      // The captured split answer, echoing the requested amount so any exact-in amount fills.
+      const amountIn = /^DrySwapRoute\("[^"]*", "[^"]*", "(\d+)"/.exec(expression)?.[1] ?? '1000000';
+
+      return options.drySwap ?? qeval.drySwapSplit.replace('"1000000"', `"${amountIn}"`);
     }
 
     if (expression.includes('BalanceOf(')) {
