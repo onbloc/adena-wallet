@@ -1,7 +1,6 @@
-import { useIsFocused } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
-import React, { ReactElement, useCallback } from 'react';
+import React, { ReactElement, useCallback, useEffect, useReducer } from 'react';
 
 import packageJson from '../../../../package.json';
 import { SettingsBiometricView, SettingsOptionView, SettingsPage } from '../../../components/pages';
@@ -41,9 +40,11 @@ const LANGUAGE_VIEWS: SettingsOptionView[] = SUPPORTED_LANGUAGES.map(option => (
 export const SettingsScreen = ({ navigation }: NativeStackScreenProps<MainStackParamList, 'Settings'>): ReactElement => {
   const { walletService, preferenceService, connectedAppService, accountPhotoService, cloudBackupService } = useContainer();
   const { data: cloudBackupAvailable } = useCloudBackupAvailableQuery();
-  // Re-read on focus so returning from account changes shows an outdated backup.
-  const focused = useIsFocused();
-  const backupStatus = focused ? cloudBackupService.getLocalStatus() : null;
+  // Re-render on focus so returning from account changes shows an outdated backup.
+  const [, refreshOnFocus] = useReducer((count: number) => count + 1, 0);
+
+  useEffect(() => navigation.addListener('focus', refreshOnFocus), [navigation]);
+  const backupStatus = cloudBackupService.getLocalStatus();
   const { network, accounts, account, address } = useWalletSnapshot();
   const { setStatus } = useSessionStore();
   const queryClient = useQueryClient();

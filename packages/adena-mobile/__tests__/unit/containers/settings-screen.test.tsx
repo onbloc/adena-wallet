@@ -41,8 +41,7 @@ describe('SettingsScreen', () => {
     env.container.connectedAppService.touch('exampleapp:', { name: 'Example' }, account.id, network.id);
     const { navigation } = await renderScreen(SettingsScreen, { env });
 
-    await fireEvent.press(screen.getByRole('button', { name: `Network, ${network.networkName}` }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Accounts, 1' }));
+    await fireEvent.press(screen.getByRole('button', { name: `Networks, ${network.networkName}` }));
     await fireEvent.press(screen.getByRole('button', { name: 'Connected apps, 1' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Address book' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Recovery phrase' }));
@@ -51,7 +50,6 @@ describe('SettingsScreen', () => {
 
     expect(navigation.navigate.mock.calls).toEqual([
       ['Networks'],
-      ['Accounts'],
       ['ConnectedApps'],
       ['AddressBook'],
       ['RecoveryPhrase', { keyringId: account.keyringId }],

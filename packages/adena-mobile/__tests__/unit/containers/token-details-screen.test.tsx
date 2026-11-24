@@ -125,7 +125,7 @@ describe('TokenDetailsScreen', () => {
     expect(screen.getByText('Perun')).toBeTruthy();
     // Stats stay hidden until they have values.
     expect(screen.queryByText('Stats')).toBeNull();
-    expect(screen.getByText('–')).toBeTruthy();
+    expect(screen.getAllByLabelText('Loading').length).toBeGreaterThan(0);
     expect(env.http.calls).toContain(`${API_URL}/v1/accounts/${env.container.accountService.getAddress(env.container.accountService.getCurrentAccount()!, env.container.networkService.getCurrentNetwork())}/grc20-token/${encodeURIComponent(PERUN)}/transactions`);
   });
 
