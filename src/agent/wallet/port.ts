@@ -1,26 +1,12 @@
-import {
-  SignRequestType,
-  WalletErrorCode,
-  WalletStatus,
-  type TokenSymbol,
-} from './constants';
-
-/** Decimal-string balance per token. */
-export type Balances = Record<TokenSymbol, string>;
+import { TransactionType, WalletErrorCode } from './constants';
 
 export type TransferParams = {
   from: string;
   to: string;
   /** Decimal string, e.g. "0.5". */
   amount: string;
-  token: TokenSymbol;
-};
-
-/** Created by `transfer`; the user signs exactly this. */
-export type TransferMessage = TransferParams & {
-  type: typeof SignRequestType.Transfer;
-  chainId: string;
-  nonce: number;
+  /** A token symbol (any case) or package path; the wallet resolves it. */
+  token: string;
 };
 
 /** Lets `spender` use up to `amount` of the owner's `token`. */
@@ -30,42 +16,40 @@ export type AllowanceParams = {
   spender: string;
   /** Decimal string, e.g. "10". */
   amount: string;
-  token: TokenSymbol;
+  /** A token symbol (any case) or package path; the wallet resolves it. */
+  token: string;
 };
 
-/** Created by `approve`; the user signs exactly this. */
-export type AllowanceMessage = AllowanceParams & {
-  type: typeof SignRequestType.Allowance;
+/** A transfer as the wallet resolved it: canonical token symbol and amount, lowercase addresses. */
+export type TransferSummary = TransferParams & {
+  type: typeof TransactionType.Transfer;
   chainId: string;
-  nonce: number;
 };
+
+/** An allowance as the wallet resolved it. */
+export type AllowanceSummary = AllowanceParams & {
+  type: typeof TransactionType.Allowance;
+  chainId: string;
+};
+
+/**
+ * A transaction the wallet built. Nothing here is signed or sent: the app signs it. `summary` is
+ * what the model and the user are told; `tx` is the wallet SDK's own transaction object, passed
+ * on untouched (the model never sees it).
+ */
+export type PreparedTransaction<Summary = TransferSummary | AllowanceSummary> = {
+  summary: Summary;
+  tx: unknown;
+};
+
+/** Receives each transaction the agent's tools prepare. */
+export type TransactionHandler = (prepared: PreparedTransaction) => void | Promise<void>;
 
 /** One allowance an account has given. */
-export type Allowance = { spender: string; token: TokenSymbol; amount: string };
+export type Allowance = { spender: string; token: string; amount: string };
 
 /** A named address the user can send to. */
 export type Contact = { alias: string; address: string };
-
-/** Free-text message signed by one of the wallet's accounts. */
-export type TextMessage = {
-  type: typeof SignRequestType.Message;
-  signer: string;
-  text: string;
-};
-
-export type SignRequest = TransferMessage | AllowanceMessage | TextMessage;
-
-export type SignResult =
-  | { status: typeof WalletStatus.Signed; signature: string }
-  | { status: typeof WalletStatus.Rejected };
-
-export type SignOptions = { signal?: AbortSignal };
-
-/** Shows the signing popup; resolves true when the user approves. */
-export type ApprovalHandler = (
-  request: SignRequest,
-  options: SignOptions
-) => Promise<boolean>;
 
 /** A refusal the caller can show to the model or the user. */
 export class WalletError extends Error {
@@ -79,21 +63,18 @@ export class WalletError extends Error {
 }
 
 /**
- * What the agent needs from a wallet. A wallet app implements this over its own SDK. Keys never
- * cross this boundary: nothing here returns, accepts or logs a private key. Optional methods
- * are optional features: a tool is offered to the model only if the wallet implements its method.
+ * What the agent needs to build transactions. A wallet app implements this over its own SDK.
+ * It only builds transactions from the arguments it is given: it never signs, sends, or hands
+ * out a private key. Optional methods are optional features: a tool is offered to the model only
+ * if the wallet implements its method.
  */
 export interface WalletSdk {
-  /** The account the user acts as. Read for every run, so a switched account is picked up. */
-  getActiveAddress(): Promise<string>;
   /** The user's address book. The model may name a contact instead of writing its address. */
   getContacts?(): Promise<Contact[]>;
-  /** Builds the message to sign. Moves no funds. */
-  transfer(params: TransferParams): Promise<TransferMessage>;
-  /** Asks the user to approve, then signs. A signed transfer moves the funds. */
-  sign(request: SignRequest, options?: SignOptions): Promise<SignResult>;
-  /** Builds the allowance message to sign. Gives nothing yet. */
-  approve?(params: AllowanceParams): Promise<AllowanceMessage>;
+  /** Builds a transfer. Signs and sends nothing. */
+  transfer(params: TransferParams): Promise<PreparedTransaction<TransferSummary>>;
+  /** Builds a token allowance. Signs and sends nothing. */
+  approve?(params: AllowanceParams): Promise<PreparedTransaction<AllowanceSummary>>;
   /** The allowances an account has given, oldest first. */
   getAllowances?(owner: string): Promise<Allowance[]>;
 }

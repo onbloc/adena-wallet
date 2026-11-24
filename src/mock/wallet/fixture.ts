@@ -1,5 +1,4 @@
-import { TokenSymbol } from '../../agent';
-import type { Balances } from '../../agent';
+import { TokenSymbol, type Balances } from './tokens';
 
 export type MockAccount = {
   name: string;

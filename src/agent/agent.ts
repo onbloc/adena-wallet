@@ -2,7 +2,7 @@ import { asSchema, type ToolSet } from 'ai';
 import { createAiSdkRun } from './aiSdkBridge';
 import { guardAnswer } from './answerGuard';
 import { buildWalletPrompt } from './prompts';
-import type { WalletSdk } from './wallet/port';
+import type { TransactionHandler, WalletSdk } from './wallet/port';
 import { createWalletTools } from './wallet/tools';
 import type { Harness } from '../harness/core';
 import { GNO_MAINNET_CHAIN } from '../harness/mcp';
@@ -24,7 +24,7 @@ function compactHoldings(name: string, output: unknown): unknown {
 // 2.45 on a get_token_balances result. 2 keeps ~20% margin below the densest of those; counting
 // every byte as a token overshoots 2-4x and ran out of budget after one tool call.
 const BYTES_PER_TOKEN = 2;
-// The run also waits for the user to answer signing popups.
+// An on-device model is slow: the whole run, tool calls included, is bounded by this.
 const RUN_TIMEOUT_MS = 5 * 60_000;
 // Max model calls per run with wallet tools (e.g. a balance read -> transfer -> answer).
 const MAX_STEPS = 5;
@@ -34,27 +34,36 @@ export type AIAgentOptions = {
   llm: LLM;
   /** Bounds each run and brings the read tools (its tool sources, e.g. an MCP server). */
   harness: Harness;
-  /** The wallet the agent acts through. Without one the agent is the LLM alone. */
-  wallet?: WalletSdk;
-  /** The chain of the wallet's account. Defaults to Gno mainnet. */
+  /** The chain of the accounts. Defaults to Gno mainnet. */
   chainId?: string;
-};
+} & (
+  | { wallet?: undefined; onTransaction?: undefined }
+  | {
+      /** Builds the transactions the agent prepares. Without one the agent is the LLM alone. */
+      wallet: WalletSdk;
+      /** Gets each transaction the agent prepares. The agent signs and sends nothing: the app does. */
+      onTransaction: TransactionHandler;
+    }
+);
 
 /**
- * A wallet assistant: an LLM that reads through the harness's tool sources and acts through
- * a wallet, within the harness's budget, with its answer checked against what the tools returned.
+ * A wallet assistant: an LLM that reads through the harness's tool sources and prepares
+ * transactions through a wallet, within the harness's budget, with its answer checked against
+ * what the tools returned.
  */
 export class AIAgent {
   readonly llm: LLM;
   readonly harness: Harness;
   readonly wallet?: WalletSdk;
+  private readonly onTransaction?: TransactionHandler;
   private readonly chainId: string;
   private runs = 0;
 
-  constructor({ llm, harness, wallet, chainId = GNO_MAINNET_CHAIN }: AIAgentOptions) {
+  constructor({ llm, harness, wallet, onTransaction, chainId = GNO_MAINNET_CHAIN }: AIAgentOptions) {
     this.llm = llm;
     this.harness = harness;
     this.wallet = wallet;
+    this.onTransaction = onTransaction;
     this.chainId = chainId;
   }
 
@@ -62,19 +71,24 @@ export class AIAgent {
    * Answers one prompt or conversation. Same events as `llm.generate`; with a wallet the text is
    * held back until the answer is vetted (see `guardAnswer`). `settings.tools` are ignored: the
    * tools are the wallet's and the harness's. Use this, not `agent.llm.generate`, to stay bounded.
+   *
+   * With a wallet, `account` is required: the address the run acts for. The app picks it for each
+   * run (a wallet holds many accounts and the user switches between them). It is whose holdings
+   * the tools read and the `from` of every transaction; the model never chooses it. A run keeps
+   * the account it started with.
    */
   async *run(
     settings: GenerateSettings,
-    { signal }: { signal?: AbortSignal } = {}
+    { account, signal }: { account?: string; signal?: AbortSignal } = {}
   ): AsyncGenerator<GenerateEvent> {
-    const wallet = this.wallet;
-    if (!wallet) {
+    const { wallet, onTransaction } = this;
+    if (!wallet || !onTransaction) {
       yield* this.llm.generate(settings, { signal });
       return;
     }
-    const account = await wallet.getActiveAddress();
+    if (!account) throw new TypeError('An agent with a wallet needs the account to act for: run(settings, { account })');
     const contacts = (await wallet.getContacts?.()) ?? [];
-    const walletTools = createWalletTools({ sdk: wallet, activeAddress: account, contacts });
+    const walletTools = createWalletTools({ sdk: wallet, account, contacts, onTransaction });
     const { loop, isRead } = await this.startLoop({
       account,
       walletTools,
@@ -82,7 +96,7 @@ export class AIAgent {
       signal,
     });
     try {
-      const system = settings.system ?? buildWalletPrompt({ contacts });
+      const system = settings.system ?? buildWalletPrompt({ contacts, approvals: wallet.getAllowances !== undefined });
       yield* guardAnswer(
         this.llm.generate({ ...settings, system, tools: undefined }, { signal, loop }),
         isRead

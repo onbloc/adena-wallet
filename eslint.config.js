@@ -11,7 +11,7 @@ const ban = (...names) => names.flatMap((name) => [`**/${name}`, `**/${name}/**`
  */
 const deepImports = [
   [
-    ['**/agent/*', '**/agent/wallet/*', '**/llm/core/*', '**/llm/device/*', '**/harness/core/*', '**/harness/mcp/*', '!**/testing'],
+    ['**/agent/*', '**/agent/wallet/*', '**/adena/*', '**/llm/core/*', '**/llm/device/*', '**/harness/core/*', '**/harness/mcp/*', '!**/testing'],
     'Import a module through its index (e.g. ../agent), not its inner files.',
   ],
 ];
@@ -24,8 +24,8 @@ const restrict = (...groups) => ({
   ],
 });
 
-const llmBan = [ban('harness', 'agent', 'mock'), 'llm must not depend on harness, agent or mock.'];
-const harnessBan = [ban('llm', 'agent', 'mock'), 'harness must not depend on llm, agent or mock.'];
+const llmBan = [ban('harness', 'agent', 'mock', 'adena'), 'llm must not depend on harness, agent, mock or adena.'];
+const harnessBan = [ban('llm', 'agent', 'mock', 'adena'), 'harness must not depend on llm, agent, mock or adena.'];
 
 module.exports = defineConfig([
   expoConfig,
@@ -42,10 +42,11 @@ module.exports = defineConfig([
     // SDK's wildcard subpaths (e.g. `client/index.js`). tsc resolves them correctly.
     rules: { 'import/no-unresolved': ['error', { ignore: ['^@modelcontextprotocol/sdk/'] }] },
   },
-  // Module boundaries. llm, harness and agent are libraries, each used through its index; the
-  // mock is test-only code on top.
-  //   mock -> agent, llm, harness        agent -> llm/core, harness
-  //   llm and harness never import each other, the agent or the mock
+  // Module boundaries. llm, harness, agent and adena are libraries, each used through its index;
+  // the mock is an app that consumes them, standing in for the real Adena app.
+  //   mock -> agent, llm, harness, adena     agent -> llm/core, harness     adena -> agent, harness
+  //   nothing outside src/mock imports it, tests included; each library tests itself with its
+  //   own fakes (agent/testing, harness/mcp/testing)
   { files: ['src/**', 'App.tsx'], rules: restrict() },
   { files: ['src/llm/**'], rules: restrict(llmBan) },
   {
@@ -72,11 +73,11 @@ module.exports = defineConfig([
   },
   {
     files: ['src/agent/**'],
-    rules: restrict([[...ban('mock'), ...ban('device')], 'agent must not depend on the mock or the on-device runtime.']),
+    rules: restrict([[...ban('mock'), ...ban('device'), ...ban('adena')], 'agent must not depend on the mock, adena or the on-device runtime.']),
   },
   {
-    // Tests may use the mock wallet to exercise the agent.
-    files: ['src/agent/**/__tests__/**'],
-    rules: restrict(),
+    // The wallet adapter implements the agent's WalletSdk port over the Adena SDK.
+    files: ['src/adena/**'],
+    rules: restrict([[...ban('mock'), ...ban('llm')], 'adena must not depend on the mock or llm.']),
   },
 ]);

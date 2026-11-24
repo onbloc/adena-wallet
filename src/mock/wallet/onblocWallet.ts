@@ -1,13 +1,12 @@
 import { z } from 'zod';
 
 import { createOnblocReader, type OnblocMcpConfig } from '../../harness/mcp';
-import { fromBaseUnits, normalizeDecimal } from './amount';
-import { TokenSymbol } from '../../agent';
+import { fromBaseUnits, normalizeDecimal } from '../../agent';
 import { MockWalletSdk } from './mockWalletSdk';
-import type { ApprovalHandler, Balances } from '../../agent';
+import { TokenSymbol, type Balances } from './tokens';
 
-// The mock wallet starts from the account's real api-v3 balances; after that the two
-// are allowed to drift apart (transfers only move mock balances).
+// The mock wallet holds the account's real api-v3 balances as a read-only snapshot: it
+// prepares transactions but never signs, so balances do not change.
 
 const GNOT_DECIMALS = 6; // 1 GNOT = 1,000,000 ugnot
 const GNS_PACKAGE_PATH = 'gno.land/r/gnoswap/gns';
@@ -81,16 +80,13 @@ export async function fetchOnblocBalances(
 /** A mock wallet that owns `account`, funded with its current Onbloc balances. */
 export async function createOnblocMockWallet({
   onbloc,
-  requestApproval,
   signal,
 }: {
   onbloc: OnblocAccountConfig;
-  requestApproval: ApprovalHandler;
   signal?: AbortSignal;
 }): Promise<MockWalletSdk> {
   const balances = await fetchOnblocBalances(onbloc, signal);
   return new MockWalletSdk({
-    requestApproval,
     accounts: [{ name: 'My address', address: onbloc.account, balances }],
   });
 }

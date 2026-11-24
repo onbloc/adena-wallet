@@ -4,7 +4,8 @@ On-device LLM PoC: run a GGUF model (default: Qwen3.5-2B Q4_K_M) in React Native
 [Callstack React Native AI](https://www.react-native-ai.dev/docs/llama/getting-started)
 (`@react-native-ai/llama` on top of `llama.rn`) and test generation from a playground screen.
 It also checks whether the model turns plain-text wallet requests into the right tool calls:
-reads through the Onbloc MCP, transfer and approve against a **mock wallet**.
+reads through the Onbloc MCP; transfer and approve **build a transaction** and hand it to the
+app. Nothing is signed or sent here: the app (the user's wallet) signs it.
 
 ## Stack
 
@@ -60,9 +61,11 @@ src/agent/                    AIAgent({ llm, harness, wallet }): the assistant
   agent.ts, aiSdkBridge.ts      a harness run turned into a ToolLoop for llm.generate
   answerGuard.ts, prompts.ts    the answer checked against what the tools returned; the system prompt
   wallet/                       the WalletSdk port, ToolName/status constants, the zod tools
+src/adena/                    AdenaWalletSdk: the WalletSdk port over @adena-wallet/sdk (real wallet)
+  adenaWalletSdk.ts, tokens.ts  builds the transaction, hands it to Adena to approve; token symbol -> package path
 src/mock/                     Test-only code, nothing above depends on it
-  wallet/                       MockWalletSdk, fixture, tokens, amounts, funding the mock from Onbloc
-  app/                          Playground screen, signing modal, Settings (MCP URL, address)
+  wallet/                       MockWalletSdk (read-only), fixture, tokens, funding the mock from Onbloc
+  app/                          Playground screen, prepared-transaction cards, Settings (MCP URL, address)
   cli/                          make chat (chat.ts), with-server.sh
 ```
 
@@ -74,66 +77,96 @@ for await (const event of agent.run({ prompt })) { /* text, tool calls, done */ 
 ```
 
 Dependencies point down only, and `npm run lint` enforces it: `mock` may use everything; `agent`
-may use `llm/core` and `harness`, not `mock` or `llm/device`; `llm` and `harness` never import
-each other, the agent or the mock; `llm/core` runs without React Native; `harness/core` does not
-know its plugins in `harness/mcp`. Every module is imported through its `index.ts`.
+may use `llm/core` and `harness`, not `mock`, `adena` or `llm/device`; `adena` may use `agent` and
+`harness`, not `mock` or `llm`; `llm` and `harness` never import each other, the agent, adena or
+the mock; `llm/core` runs without React Native; `harness/core` does not know its plugins in
+`harness/mcp`. Every module is imported through its `index.ts`.
 
 ## Wallet layers and tool calling
 
 ```
 model --tool call--> adapter (src/agent/wallet/tools.ts)  agent layer
-                       |  injects the user's address, maps wallet refusals to results,
-                       |  turns contact names into addresses, passes a transfer's message on to be signed
+                       |  injects the user's address as `from`, maps wallet refusals to results,
+                       |  turns contact names into addresses, hands each transaction to onTransaction
                        v  WalletSdk methods only: no key ever crosses this line
-                     WalletSdk (src/agent/wallet/port.ts)   implemented by the wallet app (the mock: src/mock/wallet)
-                       getActiveAddress() -> address        getContacts?() -> [{ alias, address }]
-                       transfer({from,to,amount,token}) -> message (moves nothing)
-                       sign(message) -> asks the user (popup) -> signed | rejected
-                       approve?({from,spender,amount,token}) -> message (stores nothing)
+                     WalletSdk (src/agent/wallet/port.ts)   implemented over a wallet SDK (the mock: src/mock/wallet; Adena: src/adena)
+                       getContacts?() -> [{ alias, address }]
+                       transfer({from,to,amount,token}) -> { summary, tx }   (builds; signs and sends nothing)
+                       approve?({from,spender,amount,token}) -> { summary, tx }
                        getAllowances?(owner) -> [{ spender, token, amount }]
 ```
 
-`?` methods are optional: the model is offered `approve` and `get_approvals` only if the wallet
-implements them. A wallet app that wants an assistant implements `WalletSdk` over its own SDK and
-passes it to `AIAgent`.
+There is no account in the wallet or in the agent: each wallet method builds a transaction from
+the arguments it is given, and the user's address is an argument of each `run`. A wallet app holds
+many accounts and the user switches between them, so the app passes the one to act for every time.
+The agent reads its holdings and injects it as `from`; the model never chooses it.
 
-- The model sees `transfer({to,amount,token})`, `approve({spender,amount,token})`,
-  `get_approvals()` and `sign_message({message})`, next to the Onbloc read tools (balances,
-  tokens, transactions). There are no balance tools here: balances have one source, Onbloc. No
-  account or `from` is ever a model argument: the harness injects the user's own account.
-- Token approvals (allowances, ERC-20 style) are kept in memory per owner, spender and token:
-  `approve` lets a spender use up to an amount and a new approval for the same spender and
-  token **replaces** the old one; `get_approvals` lists them, oldest first. Like `transfer`,
-  `approve` builds a message that the harness passes to `sdk.sign`; nothing is stored unless
-  the user approves the popup. An allowance may exceed the balance. Spending an allowance
-  (`transferFrom`) is not implemented. "Approval" in `ApprovalRecord` / `ApprovalPolicy` means
-  the signing popup, not an allowance.
-- After `transfer`, **the harness** (not the model) passes the wallet-created message to
-  `sdk.sign`. The popup shows exactly that message. Funds move only when the user approves
-  (signed); on reject nothing moves. The model gets a small `{status: signed | rejected}`.
-- The SDK only signs messages it created itself (altered or invented messages are refused
-  without asking the user), re-checks the balance at signing time, and applies a message once.
-- The private key (a stand-in secret in the mock) never appears in any result, error, popup
-  request or log; tests check this.
-- In the app, the signing popup is a modal (Approve / Reject). In tests and `--approval
-  approve|reject` a simulated user answers: `autoApproval(ApprovalPolicy.Approve | Reject)`.
+```ts
+const agent = new AIAgent({
+  llm, harness, wallet,
+  onTransaction: ({ summary, tx }) => { /* sign `tx` in the user's wallet */ },
+});
+agent.run({ prompt }, { account: 'g1...' });          // the account for this run
+```
+
+A run keeps the account it started with. The conversation (`messages`) is the app's, and it holds
+what the model read for earlier accounts: start a new conversation when the account changes.
+
+`?` methods are optional: the model is offered `approve` and `get_approvals` only if the wallet
+implements them. `onTransaction` is required whenever there is a wallet. `token` is the symbol
+the user or model wrote (any case) or a package path; the wallet resolves it and answers with
+the canonical symbol.
+
+- The model sees `transfer({to,amount,token})`, `approve({spender,amount,token})` and
+  `get_approvals()` (only if the wallet lists allowances), next to the Onbloc read tools
+  (balances, tokens, transactions). There are no balance tools here: balances have one source,
+  Onbloc. No account or `from` is ever a model argument.
+- A prepared transaction is `{ summary, tx }`. `summary` is what the wallet resolved (type,
+  chain, from, to or spender, canonical amount and token). `tx` is the wallet SDK's own object
+  (for Adena an `AdenaTransaction`); it goes to `onTransaction` and **never to the model**. The
+  model gets `{status: 'prepared', from, to|spender, amount, token, message}` and is told to say
+  the transaction is ready to sign, never that it was sent.
+- A token approval (allowance, ERC-20 style) lets a spender use up to an amount; a new approval
+  for the same spender and token replaces the old one. An allowance may exceed the balance.
+  Spending an allowance (`transferFrom`) is not implemented.
 - Tool arguments are validated with zod before `execute`. A call that fails validation (wrong
   type, unknown tool, unparsable JSON) is shown as **[INVALID]** and never reaches the wallet;
   the SDK feeds the error back to the model, which may retry.
-- Value checks (address, amount > 0, balance) live in the SDK, so a well-formed but wrong
-  value shows up as an `error` result with a code instead. An address is lowercased first, then
-  checked for its length and its `g1` prefix only (no character set, no checksum), so the same
-  address in any case is one wallet entry. One that is not 40 characters long gets the message
-  `The address length is not valid. Please check it again.`; one of the right length that does
-  not start with `g1` gets a generic invalid-address message.
-- Mock data (token decimals, address format, chain id) are assumptions, not real Gno.land
-  values. The mock wallet starts from the account's Onbloc balances; any other address starts
-  at zero and gets what is sent to it.
-- In the app, runs keep using one wallet, so a transfer shows up in later runs. **Reset
-  wallet** (Settings) starts over. The Settings tab shows the wallet as it is now: the balances
-  of the account and of every address that received something, plus the approvals the user has
-  given. It updates as soon as a transfer or approval is signed, even while the run is still
-  going.
+- Value checks (address, amount > 0, token, balance) live in the wallet, so a well-formed but
+  wrong value shows up as an `error` result with a code instead. If `onTransaction` throws, the
+  tool call fails.
+
+### The mock wallet (`src/mock/wallet`)
+
+A read-only fixture: it checks the arguments like a wallet would (address, amount, token,
+balance for a transfer) and returns a summary with a copy of it as `tx`. It signs nothing and its
+balances never change. It starts from the account's Onbloc balances; an address with no entry
+has zero. It has no `getAllowances`, so `get_approvals` is not offered. Token decimals, address
+format and chain id are assumptions, not real Gno.land values.
+
+### The Adena wallet (`src/adena`)
+
+`new AdenaWalletSdk({ tokens, chainId? })` builds Adena transactions from its arguments. It has
+no account and no connection to a wallet. `tokens` resolves a token (`createOnblocTokenResolver`
+reads the sender's `get_token_balances`; GNOT is native and needs no lookup).
+
+- `transfer` builds a bank `MsgSend` (GNOT, in `ugnot`) or a GRC20 `Transfer` realm call;
+  `approve` builds a GRC20 `Approve` call (none for GNOT). The model never chooses the realm,
+  function or arguments: they come from the resolved token and the checked address and amount.
+  `tx` is an unsigned `TransactionBuilder.build()` result: pass it to `adenaSDK.signTransaction`.
+- Amounts are exact base units (`bigint`), at most int64.
+- No `getAllowances` (nothing here can list an owner's allowances), so `get_approvals` is not
+  offered; no contacts.
+- A token must be among the sender's holdings; a symbol shared by several is refused with their
+  package paths.
+- Jest: the SDK's dependencies need `uuid`, `@noble/*` and `@scure/*` transformed, and
+  `@web3auth/no-modal` is stubbed (`package.json` `jest`; `src/adena/testing`), like the SDK's
+  own tests.
+- **Not bundled into the app yet.** Metro cannot bundle `@adena-wallet/sdk` as is: its entry pulls
+  `@web3auth/no-modal` (-> `@metamask/connect-multichain` needs a native `async-storage`) and
+  Node built-ins (`crypto`, `events`, `buffer`, `url`). A probe bundle (702 modules) built with
+  `@web3auth/no-modal` and the Node built-ins replaced by empty modules in `metro.config.js`; it
+  has not run on Hermes. Add that config when the adapter is wired into the app.
 
 ## Free chat (desktop)
 
@@ -146,27 +179,24 @@ Korean both work; the repo itself has no Korean text, but you can type any langu
 make chat                                        # interactive plain chat; the conversation is remembered
 make chat PROMPT="Tell me a joke"                # one question, then exit
 make chat ARGS="--onbloc"                        # with the wallet (below)
-make chat ARGS="--onbloc --approval approve"     # signing popups answer themselves (approve | reject)
 ```
 
-In the chat: tool calls and their results are printed as `>` / `->` lines, a signing popup asks
-`Approve? [y/N]` at the terminal, and a note shows when wallet balances changed. `/balances`
-shows them, `/reset` forgets the conversation and resets the wallet, `/exit` quits; Ctrl-C stops
+In the chat: tool calls and their results are printed as `>` / `->` lines, and a prepared
+transaction as `[transaction prepared, not signed]` with its fields. `/balances` shows the mock
+balances, `/reset` forgets the conversation and resets the wallet, `/exit` quits; Ctrl-C stops
 an answer in progress. A stopped or failed question is not remembered. The context is 8192
-tokens, so a very long chat eventually fails: `/reset`. Without a terminal (piped input), signing
-popups are rejected unless `--approval approve` is given.
+tokens, so a very long chat eventually fails: `/reset`.
 
-### The wallet: Onbloc reads, mock actions
+### The wallet: Onbloc reads, mock transactions
 
 `make chat ARGS="--onbloc"` and the app's Settings tab (MCP URL and My address, both editable)
 read from the Onbloc api-v3 MCP: balances, tokens and transactions come from mainnet.
-`transfer`, `approve`, `get_approvals` and `sign_message` run on a mock wallet, behind the
-signing popup. The mock wallet starts with the address's real GNOT and GNS balances (read once
-when the wallet is created) and then drifts from the chain: a mock transfer changes the mock
-balances only. `/reset` and the app's Reset wallet read the balances again. Defaults are the dev
-endpoint and account in `src/mock/app/onblocSettings.ts`; for the CLI, `EXPO_PUBLIC_ONBLOC_MCP_URL` /
-`EXPO_PUBLIC_ONBLOC_ACCOUNT` override them. Clearing both fields in Settings gives a plain chat
-without the wallet.
+`transfer` and `approve` build a transaction with the mock wallet and show it (the app as a card:
+"Not signed. Sign it in your wallet."). The mock wallet starts with the address's real GNOT and
+GNS balances (read once when the wallet is created); `/reset` and the app's Reset wallet read
+them again. Defaults are the dev endpoint and account in `src/mock/app/onblocSettings.ts`; for
+the CLI, `EXPO_PUBLIC_ONBLOC_MCP_URL` / `EXPO_PUBLIC_ONBLOC_ACCOUNT` override them. Clearing both
+fields in Settings gives a plain chat without the wallet.
 
 ## Metrics
 

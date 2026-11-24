@@ -1,27 +1,26 @@
 import { tool, type ToolSet } from 'ai';
 import { z } from 'zod';
 
-import { SignRequestType, TokenSymbol, ToolName, WalletStatus } from './constants';
-import { WalletError, type Contact, type SignResult, type WalletSdk } from './port';
+import { ToolName, WalletStatus } from './constants';
+import { WalletError, type Contact, type TransactionHandler, type WalletSdk } from './port';
 
 // The adapter is the only code between the model and the wallet SDK. It calls
 // the SDK's public methods and hands the model small results: no keys, no raw
-// messages. Schemas stay simple on purpose: they are rendered into the prompt.
+// transactions. Schemas stay simple on purpose: they are rendered into the prompt.
 
 export type WalletToolsContext = {
   sdk: WalletSdk;
-  /** The account the user acts as. Injected here; the model never chooses it. */
-  activeAddress: string;
+  /** The user's address. Injected here as `from`; the model never chooses it. */
+  account: string;
   /** Address book: the model may name a contact instead of writing its address. */
   contacts: readonly Contact[];
+  /** Gets every transaction a tool prepares; the app signs it. The model never sees it. */
+  onTransaction: TransactionHandler;
 };
 
 export type ToolResult = { status: WalletStatus; [key: string]: unknown };
 
-const REJECTED: ToolResult = {
-  status: WalletStatus.Rejected,
-  message: 'The user rejected the signing request.',
-};
+const PREPARED_MESSAGE = 'The transaction is ready. The user signs it in their wallet; nothing was sent.';
 
 /** Wallet refusals become results the model can read; anything else is a real failure. */
 async function refusalsAsResults(run: () => Promise<ToolResult>): Promise<ToolResult> {
@@ -33,74 +32,76 @@ async function refusalsAsResults(run: () => Promise<ToolResult>): Promise<ToolRe
   }
 }
 
-const afterSigning = (result: SignResult, signed: Omit<ToolResult, 'status'> = {}): ToolResult =>
-  result.status === WalletStatus.Signed ? { status: WalletStatus.Signed, ...signed } : REJECTED;
-
 /** A contact's name (any case) becomes its address; anything else is left for the SDK to check. */
 const resolveContact = (contacts: readonly Contact[], recipient: string) =>
   contacts.find((contact) => contact.alias.toLowerCase() === recipient.trim().toLowerCase())?.address ??
   recipient;
 
 /**
- * Tools bound to one wallet session. They act through the wallet; balances are read through
- * the tool sources, so the model never has two sources for the same fact. `approve` and
- * `get_approvals` are offered only if the wallet implements them.
+ * Tools bound to one wallet session. They prepare transactions through the wallet and hand each
+ * to `onTransaction`; balances are read through the tool sources, so the model never has two
+ * sources for the same fact. `approve` and `get_approvals` are offered only if the wallet
+ * implements them.
  */
-export function createWalletTools({ sdk, activeAddress, contacts }: WalletToolsContext) {
+export function createWalletTools({ sdk, account, contacts, onTransaction }: WalletToolsContext) {
   const approve = sdk.approve?.bind(sdk);
   const getAllowances = sdk.getAllowances?.bind(sdk);
   return {
     [ToolName.Transfer]: tool({
       description:
-        "Send tokens from the user's account to a recipient. The user must approve a signing popup; the result says whether it was signed or rejected.",
+        "Prepare a transfer of tokens from the user's account to a recipient. Nothing is sent: the user signs the transaction in their wallet.",
       inputSchema: z.object({
         to: z.string().describe('Recipient: a g1... address, or a contact name'),
         amount: z.string().describe('Decimal amount as a string, e.g. "0.5"'),
-        token: z.enum(TokenSymbol).describe('Token symbol'),
+        token: z.string().describe('Token symbol, e.g. GNOT'),
       }),
-      execute: ({ to, amount, token }, { abortSignal }) =>
+      execute: ({ to, amount, token }) =>
         refusalsAsResults(async () => {
-          const message = await sdk.transfer({
-            from: activeAddress,
+          const prepared = await sdk.transfer({
+            from: account,
             to: resolveContact(contacts, to),
             amount,
             token,
           });
-          // The harness, not the model, passes the message on to be signed.
-          const result = await sdk.sign(message, { signal: abortSignal });
-          return afterSigning(result, {
-            from: message.from,
-            to: message.to,
-            amount: message.amount,
-            token,
-          });
+          await onTransaction(prepared);
+          const { summary } = prepared;
+          return {
+            status: WalletStatus.Prepared,
+            from: summary.from,
+            to: summary.to,
+            amount: summary.amount,
+            token: summary.token,
+            message: PREPARED_MESSAGE,
+          };
         }),
     }),
     ...(approve && {
       [ToolName.Approve]: tool({
         description:
-          "Let another address (the spender) use up to an amount of one of the user's tokens (a token approval or allowance). A new approval for the same spender and token replaces the old one. The user must approve a signing popup; the result says whether it was signed or rejected.",
+          "Prepare a token approval (allowance): let another address (the spender) use up to an amount of one of the user's tokens. A new approval for the same spender and token replaces the old one. Nothing is sent: the user signs the transaction in their wallet.",
         inputSchema: z.object({
           spender: z.string().describe('Spender: a g1... address, or a contact name'),
           amount: z.string().describe('Decimal amount as a string, e.g. "10"'),
-          token: z.enum(TokenSymbol).describe('Token symbol'),
+          token: z.string().describe('Token symbol, e.g. GNOT'),
         }),
-        execute: ({ spender, amount, token }, { abortSignal }) =>
+        execute: ({ spender, amount, token }) =>
           refusalsAsResults(async () => {
-            const message = await approve({
-              from: activeAddress,
+            const prepared = await approve({
+              from: account,
               spender: resolveContact(contacts, spender),
               amount,
               token,
             });
-            // The harness, not the model, passes the message on to be signed.
-            const result = await sdk.sign(message, { signal: abortSignal });
-            return afterSigning(result, {
-              from: message.from,
-              spender: message.spender,
-              amount: message.amount,
-              token,
-            });
+            await onTransaction(prepared);
+            const { summary } = prepared;
+            return {
+              status: WalletStatus.Prepared,
+              from: summary.from,
+              spender: summary.spender,
+              amount: summary.amount,
+              token: summary.token,
+              message: PREPARED_MESSAGE,
+            };
           }),
       }),
     }),
@@ -111,24 +112,10 @@ export function createWalletTools({ sdk, activeAddress, contacts }: WalletToolsC
         execute: () =>
           refusalsAsResults(async () => ({
             status: WalletStatus.Ok,
-            address: activeAddress,
-            approvals: await getAllowances(activeAddress),
+            address: account,
+            approvals: await getAllowances(account),
           })),
       }),
-    }),
-    [ToolName.SignMessage]: tool({
-      description:
-        "Sign a text message with the user's account. The user must approve a signing popup.",
-      inputSchema: z.object({ message: z.string().describe('The text to sign') }),
-      execute: ({ message }, { abortSignal }) =>
-        refusalsAsResults(async () =>
-          afterSigning(
-            await sdk.sign(
-              { type: SignRequestType.Message, signer: activeAddress, text: message },
-              { signal: abortSignal }
-            )
-          )
-        ),
     }),
   } satisfies ToolSet;
 }

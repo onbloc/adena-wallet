@@ -6,54 +6,38 @@ export const ToolName = {
   Transfer: 'transfer',
   Approve: 'approve',
   GetApprovals: 'get_approvals',
-  SignMessage: 'sign_message',
 } as const;
 export type ToolName = (typeof ToolName)[keyof typeof ToolName];
-
-export const TokenSymbol = {
-  Gnot: 'GNOT',
-  Gns: 'GNS',
-} as const;
-export type TokenSymbol = (typeof TokenSymbol)[keyof typeof TokenSymbol];
 
 /** Outcome of a wallet-facing call as the model sees it. */
 export const WalletStatus = {
   Ok: 'ok',
-  /** The user approved the signing popup. */
-  Signed: 'signed',
-  /** The user rejected the signing popup. */
-  Rejected: 'rejected',
+  /** The transaction was built and handed to the app. Nothing was signed or sent. */
+  Prepared: 'prepared',
   Error: 'error',
 } as const;
 export type WalletStatus = (typeof WalletStatus)[keyof typeof WalletStatus];
 
 /** Why the wallet refused a call (`status: 'error'`). */
 export const WalletErrorCode = {
-  /** `from` / `signer` is not an account of this wallet. */
-  UnknownAccount: 'unknown_account',
   InvalidAddress: 'invalid_address',
   InvalidAmount: 'invalid_amount',
+  /** No token with this symbol (or package path) in the wallet. */
+  UnknownToken: 'unknown_token',
+  /** Several tokens share this symbol; the message lists their package paths. */
+  AmbiguousToken: 'ambiguous_token',
+  /** The token cannot do this, e.g. an allowance for the native token. */
+  UnsupportedToken: 'unsupported_token',
+  /** The wallet app failed or refused for a reason of its own; the message says why. */
+  WalletFailed: 'wallet_failed',
   InsufficientBalance: 'insufficient_balance',
-  EmptyMessage: 'empty_message',
-  /** The message to sign was not created by this wallet, or was altered. */
-  InvalidMessage: 'invalid_message',
-  /** The transfer message was already signed and applied. */
-  AlreadyApplied: 'already_applied',
 } as const;
 export type WalletErrorCode = (typeof WalletErrorCode)[keyof typeof WalletErrorCode];
 
-/** What the wallet asks the user to sign. */
-export const SignRequestType = {
+/** What a prepared transaction does. */
+export const TransactionType = {
   Transfer: 'transfer',
   /** A token allowance: the owner lets a spender use an amount of one token. */
   Allowance: 'allowance',
-  Message: 'message',
 } as const;
-export type SignRequestType = (typeof SignRequestType)[keyof typeof SignRequestType];
-
-/** What the (simulated) user does at the signing popup. */
-export const ApprovalPolicy = {
-  Approve: 'approve',
-  Reject: 'reject',
-} as const;
-export type ApprovalPolicy = (typeof ApprovalPolicy)[keyof typeof ApprovalPolicy];
+export type TransactionType = (typeof TransactionType)[keyof typeof TransactionType];

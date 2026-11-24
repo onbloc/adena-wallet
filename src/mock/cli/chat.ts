@@ -11,7 +11,7 @@ import { createInterface } from 'node:readline/promises';
 
 import type { LanguageModel, ModelMessage } from 'ai';
 
-import { AIAgent, ApprovalPolicy, type ApprovalHandler, type Balances } from '../../agent';
+import { AIAgent, type PreparedTransaction } from '../../agent';
 import { Harness } from '../../harness/core';
 import { createOnblocToolSource, gnoPublicAddress, type OnblocMcpConfig } from '../../harness/mcp';
 import {
@@ -20,23 +20,20 @@ import {
   LLMFromModel,
   type GenerateSettings,
 } from '../../llm/core';
-import { describeRequest } from '../app/describeRequest';
+import { describeTransaction } from '../app/describeTransaction';
 import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL } from '../app/onblocSettings';
-import { autoApproval } from '../wallet/approval';
 import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk } from '../wallet/mockWalletSdk';
+import type { Balances } from '../wallet/tokens';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
 import { boundedNumber, parseArgs } from './lib/cli';
 import { connectModel, DEFAULT_MODEL_NAME, DEFAULT_SERVER_URL, SERVER_CONTEXT_TOKENS } from './lib/server';
-
-const ASK = 'ask';
 
 const USAGE = `Usage: bun src/mock/cli/chat.ts [options]
   --prompt TEXT      ask once and exit instead of chatting
   --onbloc           add the wallet: Onbloc reads (default MCP URL and address; override with
                      EXPO_PUBLIC_ONBLOC_MCP_URL / EXPO_PUBLIC_ONBLOC_ACCOUNT) plus mock
                      transfer/approve, funded from that address's Onbloc balances
-  --approval P       at a signing popup (with --onbloc): ask (default, you answer y/N) | approve | reject
   --url URL          OpenAI-compatible base URL (default ${DEFAULT_SERVER_URL})
   --model NAME       model name sent to the server (default ${DEFAULT_MODEL_NAME})
   --temperature T    (default ${DEFAULT_GENERATE_SETTINGS.temperature})
@@ -47,7 +44,6 @@ In the chat: /reset (forget the conversation, reset the wallet)  /balances  /hel
 
 type Options = {
   prompt?: string;
-  approval: typeof ASK | ApprovalPolicy;
   url: string;
   model: string;
   temperature: number;
@@ -58,13 +54,9 @@ type Options = {
 
 function parseOptions(argv: string[]): Options {
   const { values, flags } = parseArgs(argv, {
-    values: ['prompt', 'approval', 'url', 'model', 'temperature', 'max-tokens', 'system-file'],
+    values: ['prompt', 'url', 'model', 'temperature', 'max-tokens', 'system-file'],
     flags: ['onbloc'],
   });
-  const approval = values.get('approval') ?? ASK;
-  if (approval !== ASK && !Object.values(ApprovalPolicy).includes(approval as ApprovalPolicy)) {
-    throw new Error(`--approval must be one of: ${[ASK, ...Object.values(ApprovalPolicy)].join(', ')}`);
-  }
   const systemFile = values.get('system-file');
   let onbloc: Options['onbloc'];
   if (flags.has('onbloc')) {
@@ -80,7 +72,6 @@ function parseOptions(argv: string[]): Options {
   return {
     prompt: values.get('prompt'),
     onbloc,
-    approval: approval as Options['approval'],
     url: values.get('url') ?? DEFAULT_SERVER_URL,
     model: values.get('model') ?? DEFAULT_MODEL_NAME,
     temperature: boundedNumber(values, 'temperature', DEFAULT_GENERATE_SETTINGS.temperature, 0, 2, false),
@@ -149,28 +140,22 @@ async function main() {
 
   const you = options.onbloc?.account;
 
-  // You answer the signing popup at the terminal, unless told otherwise or
-  // there is no terminal to answer on.
-  const interactive = process.stdin.isTTY === true;
-  const requestApproval: ApprovalHandler =
-    options.approval === ASK && interactive
-      ? async (request) => {
-          const { title, rows } = describeRequest(request);
-          console.log(`\n  [signing popup] ${title}`);
-          for (const [label, value] of rows) console.log(`    ${label}: ${value}`);
-          const answer = await ask('  Approve? [y/N] ');
-          return /^y(es)?$/i.test((answer ?? '').trim());
-        }
-      : autoApproval(options.approval === ASK ? ApprovalPolicy.Reject : options.approval);
+  /** Prepared, never signed: the user signs in their own wallet. */
+  const printTransaction = ({ summary }: PreparedTransaction) => {
+    const { title, rows } = describeTransaction(summary);
+    console.log(`  [transaction prepared, not signed] ${title}`);
+    for (const [label, value] of rows) console.log(`    ${label}: ${value}`);
+  };
 
-  // The server's model; with --onbloc an agent reads through Onbloc and acts on a mock wallet.
+  // The server's model; with --onbloc an agent reads through Onbloc and prepares transactions on a mock wallet.
   const llm = new LLMFromModel(model, { contextTokens: SERVER_CONTEXT_TOKENS });
   const newSession = async (): Promise<Session> => {
     if (!options.onbloc) return { history: [] };
     console.error('loading balances from Onbloc...');
-    const sdk = await createOnblocMockWallet({ onbloc: options.onbloc, requestApproval });
+    const sdk = await createOnblocMockWallet({ onbloc: options.onbloc });
     const harness = new Harness({ toolSources: [createOnblocToolSource(options.onbloc)] });
-    return { sdk, agent: new AIAgent({ llm, harness, wallet: sdk }), history: [] };
+    const agent = new AIAgent({ llm, harness, wallet: sdk, onTransaction: printTransaction });
+    return { sdk, agent, history: [] };
   };
   let session = await newSession();
 
@@ -180,8 +165,6 @@ async function main() {
   /** One question and the model's whole answer, tools included. */
   async function ask1(text: string) {
     const messages: ModelMessage[] = [...session.history, { role: 'user', content: text }];
-    const sdk = session.sdk;
-    const before = sdk ? json(sdk.inspect().balances) : null;
     const controller = new AbortController();
     turnAbort = controller;
     let lineOpen = false;
@@ -198,7 +181,7 @@ async function main() {
         maxOutputTokens: options.maxTokens,
       };
       const events = session.agent
-        ? session.agent.run(settings, { signal: controller.signal })
+        ? session.agent.run(settings, { account: options.onbloc?.account, signal: controller.signal })
         : llm.generate(settings, { signal: controller.signal });
       for await (const event of events) {
         switch (event.type) {
@@ -238,14 +221,6 @@ async function main() {
       if (options.prompt !== undefined) process.exitCode = 1;
     } finally {
       turnAbort = null;
-    }
-
-    if (sdk && before !== null) {
-      const balances = sdk.inspect().balances;
-      if (json(balances) !== before) {
-        console.log('  wallet balances changed:');
-        printBalances(balances, you);
-      }
     }
   }
 

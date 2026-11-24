@@ -2,26 +2,21 @@
 export { AIAgent } from './agent';
 export type { AIAgentOptions } from './agent';
 export {
-  ApprovalPolicy,
-  SignRequestType,
-  TokenSymbol,
   ToolName,
+  TransactionType,
   WalletErrorCode,
   WalletStatus,
 } from './wallet/constants';
+export { fromBaseUnits, normalizeDecimal, toBaseUnits } from './wallet/amount';
 export { WalletError } from './wallet/port';
 export type {
   Allowance,
-  AllowanceMessage,
   AllowanceParams,
-  ApprovalHandler,
-  Balances,
+  AllowanceSummary,
   Contact,
-  SignOptions,
-  SignRequest,
-  SignResult,
-  TextMessage,
-  TransferMessage,
+  PreparedTransaction,
+  TransactionHandler,
   TransferParams,
+  TransferSummary,
   WalletSdk,
 } from './wallet/port';

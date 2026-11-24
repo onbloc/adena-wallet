@@ -1,331 +1,184 @@
-import {
-  ApprovalPolicy,
-  SignRequestType,
-  TokenSymbol,
-  ToolName,
-  WalletErrorCode,
-  WalletStatus,
-} from '../constants';
-import { autoApproval } from '../../../mock/wallet/approval';
-import { ACTIVE_ADDRESS, FIXTURE } from '../../../mock/wallet/fixture';
-import { MockWalletSdk } from '../../../mock/wallet/mockWalletSdk';
-import type { ApprovalHandler, SignRequest } from '../port';
+import { ACCOUNT, FRIEND, RECIPIENT, fakeWallet, type FakeWalletOptions } from '../../testing/fakeWallet';
+import { ToolName, TransactionType, WalletErrorCode, WalletStatus } from '../constants';
+import { WalletError, type PreparedTransaction } from '../port';
 import { createWalletTools, type ToolResult } from '../tools';
 
-const to = FIXTURE.recipient;
-const gnot = TokenSymbol.Gnot;
-const other = FIXTURE.contacts[0].address;
-
-function setup(requestApproval: ApprovalHandler = autoApproval(ApprovalPolicy.Approve), secret?: string) {
-  const sdk = new MockWalletSdk({ requestApproval, secret });
-  const tools = createWalletTools({ sdk, activeAddress: ACTIVE_ADDRESS, contacts: FIXTURE.contacts });
-  // The mock wallet implements every optional method, so every tool is offered.
-  return { sdk, tools: tools as Required<typeof tools> };
+function setup(options: FakeWalletOptions = {}) {
+  const wallet = fakeWallet(options);
+  const prepared: PreparedTransaction[] = [];
+  const tools = createWalletTools({
+    sdk: wallet,
+    account: ACCOUNT,
+    contacts: [FRIEND],
+    onTransaction: (transaction) => {
+      prepared.push(transaction);
+    },
+  });
+  return { tools: tools as Required<Omit<typeof tools, 'get_approvals'>>, all: tools, prepared, wallet };
 }
 
 // Runs a tool the way the AI SDK does, minus schema parsing.
 type Tool = { execute?: unknown };
-const run = (tool: Tool, input: unknown, abortSignal?: AbortSignal) =>
+const run = (tool: Tool, input: unknown) =>
   (tool.execute as (input: unknown, options: unknown) => Promise<ToolResult>)(input, {
-    toolCallId: 'call',
+    toolCallId: 't',
     messages: [],
-    abortSignal,
   });
+
+const input = { to: RECIPIENT, amount: '0.5', token: 'gnot' };
+const refusals = [
+  WalletErrorCode.InvalidAddress,
+  WalletErrorCode.InvalidAmount,
+  WalletErrorCode.InsufficientBalance,
+  WalletErrorCode.UnknownToken,
+  WalletErrorCode.AmbiguousToken,
+  WalletErrorCode.UnsupportedToken,
+  WalletErrorCode.WalletFailed,
+];
 
 describe('transfer', () => {
-  const input = { to, amount: '0.5', token: gnot };
+  it("asks the wallet for the user's account as sender, whatever the model says", async () => {
+    const { tools, wallet } = setup();
 
-  it('has the harness pass the wallet-created message to be signed, from the injected account', async () => {
-    const shown: unknown[] = [];
-    const { sdk, tools } = setup(async (request) => {
-      shown.push(request);
-      return true;
-    });
+    await run(tools[ToolName.Transfer], { ...input, from: 'g1someoneelse' });
 
-    const result = await run(tools[ToolName.Transfer], input);
+    expect(wallet.calls).toEqual([{ method: 'transfer', params: { from: ACCOUNT, ...input } }]);
+  });
 
-    expect(shown).toEqual([
-      expect.objectContaining({ type: SignRequestType.Transfer, from: ACTIVE_ADDRESS, to, amount: '0.5' }),
-    ]);
+  it('hands the transaction to the app and tells the model only what the wallet resolved', async () => {
+    const { tools, prepared } = setup();
+
+    const result = await run(tools[ToolName.Transfer], { ...input, to: RECIPIENT.toUpperCase() });
+
     expect(result).toEqual({
-      status: WalletStatus.Signed,
-      from: ACTIVE_ADDRESS,
-      to,
+      status: WalletStatus.Prepared,
+      from: ACCOUNT,
+      to: RECIPIENT,
       amount: '0.5',
-      token: gnot,
+      token: 'GNOT',
+      message: expect.stringContaining('nothing was sent'),
     });
-    expect(await sdk.getBalance(ACTIVE_ADDRESS)).toMatchObject({ GNOT: '9.5' });
-    expect(await sdk.getBalance(to)).toMatchObject({ GNOT: '0.5' });
+    expect(prepared).toEqual([
+      {
+        summary: expect.objectContaining({ type: TransactionType.Transfer, from: ACCOUNT, to: RECIPIENT }),
+        tx: { fake: 'transfer' },
+      },
+    ]);
+    expect(JSON.stringify(result)).not.toContain('"tx"');
   });
 
-  it('returns rejected and moves nothing when the user declines', async () => {
-    const { sdk, tools } = setup(autoApproval(ApprovalPolicy.Reject));
+  it.each(refusals)('turns a wallet refusal (%s) into an error result and prepares nothing', async (code) => {
+    const { tools, prepared } = setup({ failWith: new WalletError(code, 'because') });
 
-    const result = await run(tools[ToolName.Transfer], input);
-
-    expect(result).toMatchObject({ status: WalletStatus.Rejected });
-    expect(await sdk.getBalance(ACTIVE_ADDRESS)).toMatchObject({ GNOT: '10' });
+    expect(await run(tools[ToolName.Transfer], input)).toEqual({
+      status: WalletStatus.Error,
+      code,
+      message: 'because',
+    });
+    expect(prepared).toEqual([]);
   });
 
-  it.each([
-    ['a malformed recipient', { ...input, to: 'bob' }, WalletErrorCode.InvalidAddress],
-    ['an amount that is not a number', { ...input, amount: 'half' }, WalletErrorCode.InvalidAmount],
-    ['more than the balance', { ...input, amount: '11' }, WalletErrorCode.InsufficientBalance],
-  ])('turns %s into an error result without showing a popup', async (_label, bad, code) => {
-    const { sdk, tools } = setup();
+  it('lets a failure that is not a wallet refusal fail the call', async () => {
+    const { tools } = setup({ failWith: new Error('wallet crashed') });
 
-    const result = await run(tools[ToolName.Transfer], bad);
-
-    expect(result).toMatchObject({ status: WalletStatus.Error, code });
-    expect(sdk.approvals).toEqual([]);
+    await expect(run(tools[ToolName.Transfer], input)).rejects.toThrow('wallet crashed');
   });
 
   it('does not let the model choose the sending account', () => {
     const { tools } = setup();
+    const schema = tools[ToolName.Transfer].inputSchema as unknown as { shape: Record<string, unknown> };
 
-    // The tool's input schema is a zod object here; parsing drops unknown keys.
-    const schema = tools[ToolName.Transfer].inputSchema as unknown as {
-      parse(value: unknown): object;
-    };
-    const parsed = schema.parse({ ...input, from: other });
-
-    expect(parsed).not.toHaveProperty('from');
+    expect(Object.keys(schema.shape).sort()).toEqual(['amount', 'to', 'token']);
   });
 
-  it('passes the abort signal on to the popup', async () => {
-    let received: AbortSignal | undefined;
-    const { tools } = setup(async (_request, options) => {
-      received = options.signal;
-      return true;
-    });
-    const controller = new AbortController();
-
-    await run(tools[ToolName.Transfer], input, controller.signal);
-
-    expect(received).toBe(controller.signal);
-  });
-
-  it('lets unexpected failures through as real errors, not as results', async () => {
-    const { tools } = setup(async () => {
-      throw new Error('popup crashed');
+  it('fails the call when the app cannot take the transaction', async () => {
+    const tools = createWalletTools({
+      sdk: fakeWallet(),
+      account: ACCOUNT,
+      contacts: [],
+      onTransaction: () => {
+        throw new Error('app is gone');
+      },
     });
 
-    await expect(run(tools[ToolName.Transfer], input)).rejects.toThrow('popup crashed');
-  });
-});
-
-describe('sign_message', () => {
-  it('signs for the injected account after approval', async () => {
-    const shown: unknown[] = [];
-    const { tools } = setup(async (request) => {
-      shown.push(request);
-      return true;
-    });
-
-    const result = await run(tools[ToolName.SignMessage], { message: 'hello' });
-
-    expect(result).toEqual({ status: WalletStatus.Signed });
-    expect(shown).toEqual([
-      { type: SignRequestType.Message, signer: ACTIVE_ADDRESS, text: 'hello' },
-    ]);
-  });
-
-  it('returns rejected when the user declines', async () => {
-    const { tools } = setup(autoApproval(ApprovalPolicy.Reject));
-
-    expect(await run(tools[ToolName.SignMessage], { message: 'hello' })).toMatchObject({
-      status: WalletStatus.Rejected,
-    });
-  });
-
-  it('turns a blank message into an error result', async () => {
-    const { tools } = setup();
-
-    expect(await run(tools[ToolName.SignMessage], { message: ' ' })).toMatchObject({
-      status: WalletStatus.Error,
-      code: WalletErrorCode.EmptyMessage,
-    });
-  });
-});
-
-describe('what the model can see', () => {
-  it('never includes the private key, signatures or message internals in any result', async () => {
-    const secret = 'TOP-SECRET-KEY-0123456789';
-    const { tools } = setup(autoApproval(ApprovalPolicy.Approve), secret);
-
-    const results = [
-      await run(tools[ToolName.GetApprovals], {}),
-      await run(tools[ToolName.Transfer], { to, amount: '1', token: gnot }),
-      await run(tools[ToolName.Transfer], { to: 'bad', amount: '1', token: gnot }),
-      await run(tools[ToolName.SignMessage], { message: 'hello' }),
-    ];
-
-    const seen = JSON.stringify(results);
-    expect(seen).not.toContain(secret);
-    expect(seen).not.toContain('mock-sig');
-    expect(seen).not.toContain('nonce');
+    await expect(run(tools[ToolName.Transfer], input)).rejects.toThrow('app is gone');
   });
 });
 
 describe('approve', () => {
-  const gns = TokenSymbol.Gns;
-  const input = { spender: other, amount: '5.0', token: gns };
+  const approval = { spender: RECIPIENT, amount: '10', token: 'gns' };
 
-  it('has the harness pass the wallet-created allowance message to be signed, from the injected account', async () => {
-    const shown: SignRequest[] = [];
-    const { sdk, tools } = setup(async (request) => {
-      shown.push(request);
-      return true;
-    });
+  it('asks the wallet for an allowance from the user and tells the model only the summary', async () => {
+    const { tools, prepared, wallet } = setup();
 
-    const result = await run(tools[ToolName.Approve], input);
+    const result = await run(tools[ToolName.Approve], approval);
 
+    expect(wallet.calls).toEqual([{ method: 'approve', params: { from: ACCOUNT, ...approval } }]);
     expect(result).toEqual({
-      status: WalletStatus.Signed,
-      from: ACTIVE_ADDRESS,
-      spender: other,
-      amount: '5',
-      token: gns,
+      status: WalletStatus.Prepared,
+      from: ACCOUNT,
+      spender: RECIPIENT,
+      amount: '10',
+      token: 'GNS',
+      message: expect.stringContaining('nothing was sent'),
     });
-    expect(shown).toEqual([
-      expect.objectContaining({
-        type: SignRequestType.Allowance,
-        from: ACTIVE_ADDRESS,
-        spender: other,
-        amount: '5',
-        token: gns,
-      }),
-    ]);
-    expect(await sdk.getAllowances(ACTIVE_ADDRESS)).toEqual([
-      { spender: other, token: gns, amount: '5' },
+    expect(prepared).toEqual([
+      { summary: expect.objectContaining({ type: TransactionType.Allowance, spender: RECIPIENT }), tx: { fake: 'approve' } },
     ]);
   });
 
-  it('returns rejected and stores nothing when the user declines', async () => {
-    const { sdk, tools } = setup(autoApproval(ApprovalPolicy.Reject));
+  it.each(refusals)('turns a wallet refusal (%s) into an error result and prepares nothing', async (code) => {
+    const { tools, prepared } = setup({ failWith: new WalletError(code, 'because') });
 
-    const result = await run(tools[ToolName.Approve], input);
-
-    expect(result).toMatchObject({ status: WalletStatus.Rejected });
-    expect(await sdk.getAllowances(ACTIVE_ADDRESS)).toEqual([]);
-  });
-
-  it.each([
-    ['a spender with the wrong length', { ...input, spender: to.slice(0, -1) }, WalletErrorCode.InvalidAddress],
-    ['a zero amount', { ...input, amount: '0' }, WalletErrorCode.InvalidAmount],
-  ])('turns %s into an error result without showing a popup', async (_label, bad, code) => {
-    const shown: SignRequest[] = [];
-    const { tools } = setup(async (request) => {
-      shown.push(request);
-      return true;
-    });
-
-    expect(await run(tools[ToolName.Approve], bad)).toMatchObject({
+    expect(await run(tools[ToolName.Approve], approval)).toEqual({
       status: WalletStatus.Error,
       code,
+      message: 'because',
     });
-    expect(shown).toEqual([]);
-  });
-
-  it('does not let the model choose the owner', () => {
-    const { tools } = setup();
-    const schema = tools[ToolName.Approve].inputSchema as unknown as {
-      parse(value: unknown): object;
-    };
-
-    expect(schema.parse({ ...input, from: other })).not.toHaveProperty('from');
+    expect(prepared).toEqual([]);
   });
 });
 
 describe('get_approvals', () => {
-  it('starts empty and lists what the user approved, oldest first', async () => {
-    const { tools } = setup();
+  const allowances = [{ spender: RECIPIENT, token: 'GNS', amount: '5' }];
 
-    expect(await run(tools[ToolName.GetApprovals], {})).toEqual({
-      status: WalletStatus.Ok,
-      address: ACTIVE_ADDRESS,
-      approvals: [],
-    });
-
-    await run(tools[ToolName.Approve], { spender: other, amount: '5', token: TokenSymbol.Gns });
-    await run(tools[ToolName.Approve], { spender: to, amount: '2', token: gnot });
-
-    expect(await run(tools[ToolName.GetApprovals], {})).toEqual({
-      status: WalletStatus.Ok,
-      address: ACTIVE_ADDRESS,
-      approvals: [
-        { spender: other, token: TokenSymbol.Gns, amount: '5' },
-        { spender: to, token: gnot, amount: '2' },
-      ],
-    });
+  it('is not offered when the wallet cannot list allowances', () => {
+    expect(Object.keys(setup().all)).not.toContain(ToolName.GetApprovals);
   });
-});
 
-describe('address case in results', () => {
-  it('shows the lowercase address, whatever case the model wrote', async () => {
-    const { tools } = setup();
+  it("lists the user's allowances", async () => {
+    const { all } = setup({ allowances });
 
-    expect(
-      await run(tools[ToolName.Transfer], { to: to.toUpperCase(), amount: '1', token: gnot })
-    ).toMatchObject({ status: WalletStatus.Signed, to });
-    expect(
-      await run(tools[ToolName.Approve], { spender: other.toUpperCase(), amount: '1', token: gnot })
-    ).toMatchObject({ status: WalletStatus.Signed, spender: other });
+    expect(await run((all as Required<typeof all>)[ToolName.GetApprovals], {})).toEqual({
+      status: WalletStatus.Ok,
+      address: ACCOUNT,
+      approvals: allowances,
+    });
   });
 });
 
 describe('contact names', () => {
-  const alias = FIXTURE.contacts[0].alias;
+  it('turns a name, in any case, into its address for a transfer and an approval', async () => {
+    const { tools, wallet } = setup();
 
-  it.each([alias, ` ${alias.toUpperCase()} `])('sends to the address of the contact %p', async (name) => {
-    const { sdk, tools } = setup();
+    await run(tools[ToolName.Transfer], { ...input, to: ' Carol ' });
+    await run(tools[ToolName.Approve], { spender: 'CAROL', amount: '1', token: 'gns' });
 
-    const result = await run(tools[ToolName.Transfer], { to: name, amount: '1', token: gnot });
-
-    expect(result).toMatchObject({ status: WalletStatus.Signed, to: other });
-    expect(await sdk.getBalance(other)).toMatchObject({ GNOT: '1' });
+    expect(wallet.calls.map(({ params }) => params.to ?? params.spender)).toEqual([FRIEND.address, FRIEND.address]);
   });
 
-  it('approves for the address of the contact', async () => {
-    const { tools } = setup();
+  it('leaves a name that is not a contact for the wallet to refuse', async () => {
+    const { tools, wallet } = setup();
 
-    await run(tools[ToolName.Approve], { spender: alias, amount: '5', token: TokenSymbol.Gns });
+    await run(tools[ToolName.Transfer], { ...input, to: 'bob' });
 
-    expect(await run(tools[ToolName.GetApprovals], {})).toMatchObject({
-      approvals: [{ spender: other, token: TokenSymbol.Gns, amount: '5' }],
-    });
-  });
-
-  it('leaves a name that is no contact for the wallet to refuse', async () => {
-    const { sdk, tools } = setup();
-
-    const result = await run(tools[ToolName.Transfer], { to: 'bob', amount: '1', token: gnot });
-
-    expect(result).toMatchObject({ status: WalletStatus.Error, code: WalletErrorCode.InvalidAddress });
-    expect(sdk.approvals).toEqual([]);
+    expect(wallet.calls[0].params.to).toBe('bob');
   });
 });
 
 describe('createWalletTools', () => {
-  it('has no balance tools, so Onbloc is the only source for balances', () => {
-    const { tools } = setup();
-
-    expect(Object.keys(tools).sort()).toEqual(
-      [ToolName.Transfer, ToolName.Approve, ToolName.GetApprovals, ToolName.SignMessage].sort()
-    );
-  });
-
-  it('offers approve and get_approvals only if the wallet implements them', () => {
-    const mock = new MockWalletSdk({ requestApproval: autoApproval(ApprovalPolicy.Approve) });
-    // A wallet that only sends and signs: the optional methods are left out.
-    const minimal = {
-      getActiveAddress: () => mock.getActiveAddress(),
-      transfer: (params: Parameters<MockWalletSdk['transfer']>[0]) => mock.transfer(params),
-      sign: (request: SignRequest) => mock.sign(request),
-    };
-
-    const tools = createWalletTools({ sdk: minimal, activeAddress: ACTIVE_ADDRESS, contacts: [] });
-
-    expect(Object.keys(tools).sort()).toEqual([ToolName.SignMessage, ToolName.Transfer].sort());
+  it('offers approve only if the wallet implements it', () => {
+    expect(Object.keys(setup({ approve: false }).all)).toEqual([ToolName.Transfer]);
+    expect(Object.keys(setup().all).sort()).toEqual([ToolName.Approve, ToolName.Transfer]);
   });
 });

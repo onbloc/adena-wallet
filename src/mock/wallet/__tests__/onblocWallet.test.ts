@@ -1,8 +1,8 @@
 import { fakeOnblocMcp } from '../../../harness/mcp/testing/fakeOnblocMcp';
-import { ApprovalPolicy, TokenSymbol } from '../../../agent';
+import { TransactionType } from '../../../agent';
 import { balancesFromOnbloc, createOnblocMockWallet, fetchOnblocBalances } from '../onblocWallet';
-import { autoApproval } from '../approval';
 import { FIXTURE } from '../fixture';
+import { TokenSymbol } from '../tokens';
 
 const account = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
 const native = { address: account, denom: 'ugnot', balance: '44290358689' };
@@ -68,19 +68,25 @@ describe('Onbloc-funded mock wallet', () => {
     ).rejects.toThrow('get_token_balances is not available');
   });
 
-  it('owns the address and moves only mock balances on a transfer', async () => {
+  it('prepares a transfer from the address and leaves the mock balances unchanged', async () => {
     const { fetcher, calls } = server();
     const sdk = await createOnblocMockWallet({
       onbloc: { endpoint: 'https://example.test/mcp', account, fetcher },
-      requestApproval: autoApproval(ApprovalPolicy.Approve),
     });
     const to = FIXTURE.recipient;
 
-    const message = await sdk.transfer({ from: account, to, amount: '0.5', token: TokenSymbol.Gnot });
-    await sdk.sign(message);
+    const { summary } = await sdk.transfer({ from: account, to, amount: '0.5', token: TokenSymbol.Gnot });
 
-    expect(await sdk.getBalance(account)).toEqual({ GNOT: '44289.858689', GNS: '0.063607' });
-    expect(await sdk.getBalance(to)).toEqual({ GNOT: '0.5', GNS: '0' });
+    expect(summary).toEqual({
+      type: TransactionType.Transfer,
+      chainId: 'gnoland-1',
+      from: account,
+      to,
+      amount: '0.5',
+      token: TokenSymbol.Gnot,
+    });
+    expect(await sdk.getBalance(account)).toEqual({ GNOT: '44290.358689', GNS: '0.063607' });
+    expect(await sdk.getBalance(to)).toEqual({ GNOT: '0', GNS: '0' });
     // The chain is only read, never written, and not read again after the transfer.
     expect(calls).toHaveLength(2);
   });

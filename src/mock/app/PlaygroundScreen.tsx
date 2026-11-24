@@ -14,7 +14,7 @@ import {
   type ScrollViewInstance,
 } from 'react-native';
 
-import { AIAgent, type Balances } from '../../agent';
+import { AIAgent, type PreparedTransaction } from '../../agent';
 import { Harness } from '../../harness/core';
 import { createOnblocToolSource } from '../../harness/mcp';
 import {
@@ -33,8 +33,8 @@ import {
 import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk, WalletState } from '../wallet/mockWalletSdk';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
-import { ApprovalModal } from './ApprovalModal';
-import { useApprovalPrompt } from './useApprovalPrompt';
+import type { Balances } from '../wallet/tokens';
+import { describeTransaction } from './describeTransaction';
 import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL, resolveOnblocSettings } from './onblocSettings';
 
 /** Parses user input; null when empty, non-numeric, non-integer (if required) or out of range. */
@@ -73,14 +73,13 @@ const compact = (text: string, max: number) => {
   return flat.length > max ? `${flat.slice(0, max)}...` : flat;
 };
 
-const EMPTY_WALLET: WalletState = { balances: {}, allowances: {} };
+const EMPTY_WALLET: WalletState = { balances: {} };
 
 // One model for the app: a loaded model holds its memory.
 const llm = new LLMOnDevice();
 
 export default function PlaygroundScreen() {
   const { status, run, start, stop, load, unload, remove } = useLlm(llm);
-  const approvalPrompt = useApprovalPrompt();
   const [prompt, setPrompt] = useState('');
   const [temperature, setTemperature] = useState(
     String(DEFAULT_GENERATE_SETTINGS.temperature)
@@ -95,6 +94,8 @@ export default function PlaygroundScreen() {
   const [walletView, setWalletView] = useState<{ key: string; state: WalletState } | null>(null);
   // Prompt that started the last run, shown as the user message.
   const [submittedPrompt, setSubmittedPrompt] = useState<string | null>(null);
+  // Transactions the agent prepared in the current run; the user signs them in their own wallet.
+  const [prepared, setPrepared] = useState<PreparedTransaction[]>([]);
   const [tab, setTab] = useState<'chat' | 'settings'>('chat');
   // Editable Onbloc settings, in memory only. Clear both fields for a plain chat without the wallet.
   const [mcpUrl, setMcpUrl] = useState(DEFAULT_ONBLOC_MCP_URL);
@@ -115,7 +116,7 @@ export default function PlaygroundScreen() {
   const [setupError, setSetupError] = useState<string | null>(null);
   const [keyboardShown, setKeyboardShown] = useState(false);
   const scrollRef = useRef<ScrollViewInstance>(null);
-  // Wallet kept across runs, so a transfer shows up in later balance lookups. One per address.
+  // Wallet kept across runs, so later runs reuse the loaded balances. One per address.
   const walletRef = useRef<{ key: string; sdk: MockWalletSdk } | null>(null);
   const chat = tab === 'chat';
 
@@ -133,13 +134,6 @@ export default function PlaygroundScreen() {
       hide.remove();
     };
   }, []);
-
-  // Show a transfer or approval as soon as its tool call finishes, not only at the end of the run.
-  useEffect(() => {
-    if (walletRef.current) {
-      setWalletView({ key: walletRef.current.key, state: walletRef.current.sdk.inspect() });
-    }
-  }, [run.calls]);
 
   const onResetWallet = () => {
     walletRef.current = null;
@@ -165,11 +159,9 @@ export default function PlaygroundScreen() {
     if (walletRef.current?.key === config.account) return walletRef.current.sdk;
     setPreparing(true);
     try {
-      const sdk = await createOnblocMockWallet({
-        onbloc: config,
-        requestApproval: approvalPrompt.requestApproval,
-      });
+      const sdk = await createOnblocMockWallet({ onbloc: config });
       walletRef.current = { key: config.account, sdk };
+      setWalletView({ key: config.account, state: sdk.inspect() });
       return sdk;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
@@ -187,6 +179,7 @@ export default function PlaygroundScreen() {
     const onblocWallet = onbloc && useTools ? await ensureOnblocWallet(onbloc) : null;
     if (onbloc && useTools && !onblocWallet) return;
     setSubmittedPrompt(prompt);
+    setPrepared([]);
     // The prompt is now the user message in the chat: clear the composer.
     setPrompt('');
     const settings: GenerateSettings = {
@@ -202,12 +195,16 @@ export default function PlaygroundScreen() {
     };
     await start((signal) => {
       if (!onbloc || !onblocWallet) return llm.generate(settings, { signal });
-      // The agent reads through Onbloc, acts on the wallet, stays within the harness budget and
-      // checks its answer against what the tools returned.
+      // The agent reads through Onbloc, prepares transactions on the wallet, stays within the
+      // harness budget and checks its answer against what the tools returned.
       const harness = new Harness({ toolSources: [createOnblocToolSource(onbloc)] });
-      return new AIAgent({ llm, harness, wallet: onblocWallet }).run(settings, { signal });
+      const onTransaction = (transaction: PreparedTransaction) =>
+        setPrepared((list) => [...list, transaction]);
+      return new AIAgent({ llm, harness, wallet: onblocWallet, onTransaction }).run(settings, {
+        account: onbloc.account,
+        signal,
+      });
     });
-    if (onbloc && onblocWallet) setWalletView({ key: onbloc.account, state: onblocWallet.inspect() });
   };
 
   const sendDisabled = !run.running && !canRun;
@@ -296,8 +293,8 @@ export default function PlaygroundScreen() {
           {onblocMode ? (
             <>
               <Text style={styles.muted}>
-                Reads: Onbloc api-v3 (mainnet). transfer, approve and sign: mock wallet funded from the
-                Onbloc balances.
+                Reads: Onbloc api-v3 (mainnet). transfer and approve: mock wallet funded from the
+                Onbloc balances; it only prepares transactions and never signs.
               </Text>
               {onbloc && <BalancesCard wallet={wallet} activeAddress={onbloc.account} />}
               <View style={styles.row}>
@@ -391,6 +388,10 @@ export default function PlaygroundScreen() {
             </Text>
             {run.aborted && <Text style={styles.muted}>(stopped)</Text>}
 
+            {prepared.map(({ summary }, index) => (
+              <TransactionCard key={index} summary={summary} />
+            ))}
+
             {run.reasoning !== '' && (
               <>
                 <Pressable onPress={() => setShowReasoning((value) => !value)}>
@@ -440,12 +441,6 @@ export default function PlaygroundScreen() {
           </Pressable>
         </View>
       </View>
-
-      <ApprovalModal
-        request={approvalPrompt.current}
-        onApprove={approvalPrompt.approve}
-        onReject={approvalPrompt.reject}
-      />
     </KeyboardAvoidingView>
   );
 }
@@ -486,7 +481,6 @@ function BalancesCard({ wallet, activeAddress }: { wallet: WalletState; activeAd
     activeAddress,
     ...Object.keys(wallet.balances).filter((address) => address !== activeAddress),
   ];
-  const approvals = wallet.allowances[activeAddress] ?? [];
 
   return (
     <View style={styles.card}>
@@ -500,13 +494,21 @@ function BalancesCard({ wallet, activeAddress }: { wallet: WalletState; activeAd
           </Text>
         );
       })}
-      <Text style={styles.label}>Approvals given (you)</Text>
-      {approvals.length === 0 && <Text style={styles.muted}>None</Text>}
-      {approvals.map((approval) => (
-        <Text key={`${approval.spender}:${approval.token}`} style={styles.mono}>
-          {labelOf(approval.spender)}: {approval.amount} {approval.token}
+    </View>
+  );
+}
+
+function TransactionCard({ summary }: { summary: PreparedTransaction['summary'] }) {
+  const { title, rows } = describeTransaction(summary);
+  return (
+    <View style={styles.card}>
+      <Text style={styles.label}>{title}</Text>
+      {rows.map(([label, value]) => (
+        <Text key={label} style={styles.mono} selectable>
+          {label}: {value}
         </Text>
       ))}
+      <Text style={styles.muted}>Not signed. Sign it in your wallet.</Text>
     </View>
   );
 }

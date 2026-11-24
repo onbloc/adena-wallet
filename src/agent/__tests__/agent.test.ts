@@ -4,14 +4,13 @@ import { MockLanguageModelV4 } from 'ai/test';
 import { Harness } from '../../harness/core';
 import { createOnblocToolSource } from '../../harness/mcp';
 import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
-import { GenerateEventType, LLMFromModel, type GenerateEvent } from '../../llm/core';
-import { autoApproval } from '../../mock/wallet/approval';
-import { FIXTURE } from '../../mock/wallet/fixture';
-import { MockWalletSdk } from '../../mock/wallet/mockWalletSdk';
+import { GenerateEventType, LLMFromModel, type GenerateEvent, type GenerateSettings } from '../../llm/core';
 import { AIAgent } from '../agent';
-import { ApprovalPolicy, ToolName, TokenSymbol, WalletStatus } from '../wallet/constants';
+import { ACCOUNT, FRIEND, RECIPIENT, fakeWallet } from '../testing/fakeWallet';
+import { ToolName, WalletStatus } from '../wallet/constants';
+import type { PreparedTransaction } from '../wallet/port';
 
-const account = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
+const account = ACCOUNT;
 
 const usage = (outputTokens: number) => ({
   inputTokens: { total: 5, noCache: 5, cacheRead: undefined, cacheWrite: undefined },
@@ -36,18 +35,13 @@ const collect = async (events: AsyncIterable<GenerateEvent>) => {
 const results = (events: GenerateEvent[]) =>
   events.filter((event) => event.type === GenerateEventType.ToolResult);
 
-/** An agent over a scripted model, a fake Onbloc MCP and a mock wallet that owns `account`. */
-function setup(
-  steps: Step[],
-  { policy = ApprovalPolicy.Approve, balance = '10000000' }: { policy?: ApprovalPolicy; balance?: string } = {}
-) {
+/** An agent over a scripted model, a fake Onbloc MCP and a fake wallet; `prepared` collects what it builds. */
+function setup(steps: Step[], { balance = '10000000' }: { balance?: string } = {}) {
   const mcp = fakeOnblocMcp([
     { name: 'get_native_balance', output: { address: account, denom: 'ugnot', balance } },
   ]);
-  const wallet = new MockWalletSdk({
-    requestApproval: autoApproval(policy),
-    accounts: [{ name: 'me', address: account, balances: { GNOT: '10', GNS: '0' } }],
-  });
+  const wallet = fakeWallet({ contacts: [FRIEND] });
+  const prepared: PreparedTransaction[] = [];
   // A native llama stream would emit partial tool arguments; completing each step first avoids it.
   const model = new MockLanguageModelV4({
     doStream: async () => {
@@ -59,13 +53,26 @@ function setup(
   const harness = new Harness({
     toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })],
   });
-  return { agent: new AIAgent({ llm, harness, wallet }), wallet, model, mcp };
+  const real = new AIAgent({
+    llm,
+    harness,
+    wallet,
+    onTransaction: (transaction) => {
+      prepared.push(transaction);
+    },
+  });
+  // Runs for `account` unless a test passes another.
+  const agent = {
+    run: (settings: GenerateSettings, options: { account?: string; signal?: AbortSignal } = {}) =>
+      real.run(settings, { account, ...options }),
+  };
+  return { agent, real, wallet, model, mcp, prepared };
 }
 
 describe('AIAgent', () => {
-  const send = call(ToolName.Transfer, { to: FIXTURE.recipient, amount: '1', token: TokenSymbol.Gnot });
+  const send = call(ToolName.Transfer, { to: RECIPIENT, amount: '1', token: 'GNOT' });
 
-  it("reads for the wallet's active address and feeds the result to the model", async () => {
+  it("reads for the agent's account and feeds the result to the model", async () => {
     const { agent, model, mcp } = setup([call('get_native_balance', {}), answer('42 GNOT')], { balance: '42000000' });
 
     const events = await collect(agent.run({ prompt: 'My balance' }));
@@ -75,17 +82,19 @@ describe('AIAgent', () => {
     expect(JSON.stringify(model.doGenerateCalls[1].prompt)).toContain('42000000');
   });
 
-  it('reads through the harness and transfers on the wallet in one run', async () => {
-    const { agent, wallet } = setup([call('get_native_balance', {}), send, answer('Sent 1 GNOT')]);
+  it('reads through the harness and prepares a transfer in one run', async () => {
+    const { agent, prepared } = setup([call('get_native_balance', {}), send, answer('Ready to sign 1 GNOT')]);
 
     const events = await collect(agent.run({ prompt: 'go' }));
 
     expect(results(events)).toEqual([
       expect.objectContaining({ name: 'get_native_balance', output: expect.objectContaining({ kind: 'result' }) }),
-      expect.objectContaining({ name: ToolName.Transfer, output: expect.objectContaining({ status: WalletStatus.Signed }) }),
+      expect.objectContaining({ name: ToolName.Transfer, output: expect.objectContaining({ status: WalletStatus.Prepared }) }),
     ]);
-    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'Sent 1 GNOT' });
-    expect(await wallet.getBalance(account)).toMatchObject({ GNOT: '9' });
+    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'Ready to sign 1 GNOT' });
+    expect(prepared).toEqual([
+      { summary: expect.objectContaining({ from: account, to: RECIPIENT, amount: '1', token: 'GNOT' }), tx: expect.anything() },
+    ]);
     const done = events[events.length - 1];
     expect(done.type === GenerateEventType.Done && done.messages.length).toBeGreaterThan(0);
   });
@@ -95,7 +104,7 @@ describe('AIAgent', () => {
 
     await collect(agent.run({ prompt: 'go' }));
 
-    expect(JSON.stringify(model.doGenerateCalls[0].prompt)).toContain('Contacts: alice');
+    expect(JSON.stringify(model.doGenerateCalls[0].prompt)).toContain(`Contacts: ${FRIEND.alias}`);
   });
 
   it('keeps a system prompt the caller gives', async () => {
@@ -117,16 +126,23 @@ describe('AIAgent', () => {
     });
   });
 
-  it('does not treat a rejected transfer as a failed lookup', async () => {
-    const { agent, wallet } = setup([send, answer('Cancelled')], { policy: ApprovalPolicy.Reject });
+  it('hands the transaction to the app and keeps it out of what the model reads', async () => {
+    const { agent, model, prepared } = setup([send, answer('Ready')]);
 
-    const events = await collect(agent.run({ prompt: 'go' }));
+    await collect(agent.run({ prompt: 'go' }));
 
-    expect(results(events)).toEqual([
-      expect.objectContaining({ output: expect.objectContaining({ status: WalletStatus.Rejected }) }),
-    ]);
-    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'Cancelled' });
-    expect(await wallet.getBalance(account)).toMatchObject({ GNOT: '10' });
+    expect(prepared).toHaveLength(1);
+    expect(JSON.stringify(model.doGenerateCalls[1].prompt)).not.toContain('"tx"');
+  });
+
+  it('tells the model nothing is sent and offers get_approvals only when the wallet can list approvals', async () => {
+    const { agent, model } = setup([answer('hi')]);
+
+    await collect(agent.run({ prompt: 'go' }));
+
+    const prompt = JSON.stringify(model.doGenerateCalls[0].prompt);
+    expect(prompt).toContain('nothing is sent');
+    expect(prompt).not.toContain('get_approvals');
   });
 
   it('replaces an answer that rests on no lookup and no action', async () => {
@@ -186,8 +202,26 @@ describe('AIAgent', () => {
   it('fails when the harness offers no read tools', async () => {
     const { wallet } = setup([]);
     const llm = new LLMFromModel(new MockLanguageModelV4({ doGenerate: [answer('x')] }));
-    const agent = new AIAgent({ llm, harness: new Harness(), wallet });
+    const agent = new AIAgent({ llm, harness: new Harness(), wallet, onTransaction: () => {} });
 
-    await expect(collect(agent.run({ prompt: 'go' }))).rejects.toThrow('No read tools are available');
+    await expect(collect(agent.run({ prompt: 'go' }, { account }))).rejects.toThrow('No read tools are available');
+  });
+
+  it('acts for the account each run is given, so the app can switch accounts', async () => {
+    const other = 'g1tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s';
+    const { real, wallet, prepared } = setup([send, answer('One'), send, answer('Two')]);
+
+    await collect(real.run({ prompt: 'go' }, { account }));
+    await collect(real.run({ prompt: 'go' }, { account: other }));
+
+    expect(wallet.calls.map(({ params }) => params.from)).toEqual([account, other]);
+    expect(prepared.map(({ summary }) => summary.from)).toEqual([account, other]);
+  });
+
+  it('refuses to run a wallet agent without an account', async () => {
+    const { real, wallet } = setup([send, answer('x')]);
+
+    await expect(collect(real.run({ prompt: 'go' }))).rejects.toThrow('needs the account');
+    expect(wallet.calls).toEqual([]);
   });
 });
