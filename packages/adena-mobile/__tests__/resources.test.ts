@@ -2,14 +2,15 @@ import {
   BUILT_IN_NETWORKS,
   DEFAULT_NETWORK_ID,
   DEX_API_CONFIG,
-  EXPLORE_APPS,
   getDefaultTokensFor,
   getGrc20RegistryConfig,
   getNativeTokenFor,
   ONRAMP_CONFIG,
   PRICE_CONFIG,
+  toDexApiConfigMap,
   toOnrampConfig,
 } from '../src/resources';
+import dexApis from '../src/resources/dex/dex-apis.json';
 
 describe('bundled resources', () => {
   it('defines https Gno and AtomOne networks with resolvable coins', () => {
@@ -41,9 +42,32 @@ describe('bundled resources', () => {
     expect(DEX_API_CONFIG['gnoland-1'].wrappedPaths).toEqual({ ugnot: 'gno.land/r/gnoland/wugnot.wugnot' });
   });
 
-  it('lists https-only explore apps for Gno', () => {
-    expect(EXPLORE_APPS.length).toBeGreaterThan(0);
-    EXPLORE_APPS.forEach(app => expect(app.url.startsWith('https://')).toBe(true));
+  it('bundles GnoSwap hosts and router contracts for the Gno networks only', () => {
+    expect(Object.fromEntries(Object.entries(DEX_API_CONFIG).map(([id, config]) => [id, config.apiUrl]))).toEqual({
+      'gnoland-1': 'https://api.gnoswap.io/v1',
+      'onyx-1': 'https://onyx.api.gnoswap.io/v1',
+      gnoswap: 'https://dev-interface-v2.api.gnoswap.io/v1',
+    });
+    expect(DEX_API_CONFIG['gnoland-1'].swap).toMatchObject({
+      routerPath: 'gno.land/r/gnoswap/router',
+      routerAddress: 'g1vc883gshu5z7ytk5cdynhc8c2dh67pdp4cszkp',
+      wrappedNative: { denom: 'ugnot', tokenPath: 'gno.land/r/gnoland/wugnot.wugnot', packagePath: 'gno.land/r/gnoland/wugnot' },
+    });
+    expect(DEX_API_CONFIG['atomone-1']).toBeUndefined();
+  });
+
+  it('rejects swap metadata that does not match the router realm or uses foreign paths', () => {
+    const swap = dexApis['gnoland-1'].swap;
+    const parse = (patch: Record<string, unknown>) => (): unknown => toDexApiConfigMap({ net: { ...dexApis['gnoland-1'], swap: { ...swap, ...patch } } });
+
+    expect(parse({})).not.toThrow();
+    expect(parse({ routerAddress: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5' })).toThrow('routerAddress');
+    expect(parse({ routerPath: 'gno.land/p/gnoswap/router' })).toThrow('routerPath');
+    expect(parse({ wrappedNative: { ...swap.wrappedNative, tokenPath: 'gno.land/r/evil/wugnot.wugnot' } })).toThrow('tokenPath');
+    expect(parse({ feeTiers: [] })).toThrow('feeTiers');
+    expect(parse({ nativeFeeReserve: '1.5' })).toThrow('nativeFeeReserve');
+    expect(parse({ popularTokens: ['https://evil'] })).toThrow('popularTokens');
+    expect(() => toDexApiConfigMap({ net: { ...dexApis['gnoland-1'], apiUrl: 'http://api.gnoswap.io/v1' } })).toThrow('https');
   });
 });
 

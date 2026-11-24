@@ -1,6 +1,6 @@
 import { ChainFamily, NativeToken, Network } from '../domain/network';
 import { LocalTokenIcon, Token, TokenType } from '../domain/token';
-import exploreApps from './apps/apps.json';
+import { derivePackageAddress } from '../utils/address';
 import atomoneNetworks from './chains/atomone-networks.json';
 import gnoNetworks from './chains/gno-networks.json';
 import dexApis from './dex/dex-apis.json';
@@ -167,41 +167,90 @@ export const DexProvider = {
 
 export type DexProvider = (typeof DexProvider)[keyof typeof DexProvider];
 
+// GnoSwap contracts used to build swap transactions; validated so nothing is hardcoded in code.
+export interface DexSwapConfig {
+  // Router proxy realm that exposes ExactInSwapRoute / DrySwapRoute.
+  routerPath: string;
+  // Router realm address, the GRC20 approve spender (checked against routerPath).
+  routerAddress: string;
+  // Native coin wrapper the router trades instead of the coin itself.
+  wrappedNative: { denom: string; tokenPath: string; packagePath: string; minDeposit: string };
+  feeTiers: number[];
+  // Native amount kept back by the Max chip for the network fee and storage deposit.
+  nativeFeeReserve: string;
+  // Token ids offered as quick picks in the token selector.
+  popularTokens: string[];
+}
+
 export interface DexApiConfig {
   provider: DexProvider;
-  // Base URL without a trailing slash, e.g. https://gnoswap.io/api/v1.
+  // Base URL without a trailing slash, e.g. https://api.gnoswap.io/v1.
   apiUrl: string;
   // GRC20 carrying the market for a native denom, used when the token meta is unavailable.
   wrappedPaths?: Record<string, string>;
+  // Absent on networks where swaps are not offered.
+  swap?: DexSwapConfig;
 }
 
-// Market data (token metadata, prices, OHLCV) per network, keyed by network id.
+// Market data (token metadata, prices, OHLCV) and swap contracts per network, keyed by network id.
 export type DexApiConfigMap = Record<string, DexApiConfig>;
 
-const toDexApiConfigMap = (resource: Record<string, DexApiConfig>): DexApiConfigMap =>
-  Object.fromEntries(Object.entries(resource).map(([networkId, config]) => {
-    assert(Object.values(DexProvider).includes(config.provider), `${networkId} dex provider ${config.provider} is not supported`);
-    assert(/^https:\/\/[^/]+/.test(config.apiUrl), `${networkId} dex apiUrl must be https`);
+const SEGMENT = '[a-z0-9_][a-z0-9_-]*';
+const REALM_PATH = new RegExp(`^gno\\.land/r/${SEGMENT}(/${SEGMENT})*$`);
+// GRC20 registry key "{realmPath}.{symbol}".
+const TOKEN_PATH = new RegExp(`^gno\\.land/r/${SEGMENT}(/${SEGMENT})*\\.[A-Za-z0-9_]+$`);
+
+export const isRealmPath = (value: unknown): value is string => typeof value === 'string' && REALM_PATH.test(value);
+
+export const isTokenPath = (value: unknown): value is string => typeof value === 'string' && TOKEN_PATH.test(value);
+
+const toDexSwapConfig = (networkId: string, resource: unknown): DexSwapConfig | undefined => {
+  if (resource === undefined) {
+    return undefined;
+  }
+
+  const swap = (resource ?? {}) as Partial<DexSwapConfig>;
+  const wrapped = (swap.wrappedNative ?? {}) as Partial<DexSwapConfig['wrappedNative']>;
+
+  assert(isRealmPath(swap.routerPath), `${networkId} swap routerPath must be a realm path`);
+  assert(swap.routerAddress === derivePackageAddress(swap.routerPath as string), `${networkId} swap routerAddress must be the routerPath realm address`);
+  assert(isNonEmptyString(wrapped.denom), `${networkId} swap wrappedNative.denom is required`);
+  assert(isRealmPath(wrapped.packagePath), `${networkId} swap wrappedNative.packagePath must be a realm path`);
+  assert(isTokenPath(wrapped.tokenPath) && (wrapped.tokenPath as string).startsWith(`${wrapped.packagePath}.`), `${networkId} swap wrappedNative.tokenPath must belong to its package`);
+  assert(/^\d+$/.test(wrapped.minDeposit ?? ''), `${networkId} swap wrappedNative.minDeposit must be an integer`);
+  assert(Array.isArray(swap.feeTiers) && swap.feeTiers.length > 0 && swap.feeTiers.every(fee => Number.isInteger(fee) && fee > 0 && fee < 1_000_000), `${networkId} swap feeTiers must be positive integers`);
+  assert(/^\d+$/.test(swap.nativeFeeReserve ?? ''), `${networkId} swap nativeFeeReserve must be an integer`);
+  assert(Array.isArray(swap.popularTokens) && swap.popularTokens.every(id => id === wrapped.denom || isTokenPath(id)), `${networkId} swap popularTokens must be token ids`);
+
+  return {
+    routerPath: swap.routerPath as string,
+    routerAddress: swap.routerAddress as string,
+    wrappedNative: { denom: wrapped.denom as string, tokenPath: wrapped.tokenPath as string, packagePath: wrapped.packagePath as string, minDeposit: wrapped.minDeposit as string },
+    feeTiers: [...(swap.feeTiers as number[])],
+    nativeFeeReserve: swap.nativeFeeReserve as string,
+    popularTokens: [...(swap.popularTokens as string[])],
+  };
+};
+
+export const toDexApiConfigMap = (resource: Record<string, unknown>): DexApiConfigMap =>
+  Object.fromEntries(Object.entries(resource).map(([networkId, raw]) => {
+    const config = (raw ?? {}) as Partial<DexApiConfig>;
+
+    assert(Object.values(DexProvider).includes(config.provider as DexProvider), `${networkId} dex provider ${config.provider} is not supported`);
+    assert(/^https:\/\/[^/]+/.test(config.apiUrl ?? ''), `${networkId} dex apiUrl must be https`);
     Object.entries(config.wrappedPaths ?? {}).forEach(([denom, path]) =>
       assert(isNonEmptyString(denom) && isNonEmptyString(path), `${networkId} dex wrappedPaths must map denoms to paths`));
-    return [networkId, { provider: config.provider, apiUrl: config.apiUrl.replace(/\/+$/, ''), wrappedPaths: config.wrappedPaths }];
+    const swap = toDexSwapConfig(networkId, config.swap);
+
+    return [networkId, {
+      provider: config.provider as DexProvider,
+      apiUrl: (config.apiUrl as string).replace(/\/+$/, ''),
+      wrappedPaths: config.wrappedPaths,
+      ...(swap ? { swap } : {}),
+    }];
   }));
 
-export const DEX_API_CONFIG: DexApiConfigMap = toDexApiConfigMap(dexApis as Record<string, DexApiConfig>);
-
-export interface ExploreApp {
-  id: string;
-  name: string;
-  description: string;
-  logo: string;
-  url: string;
-  families: ChainFamily[];
-  order: number;
-}
-
-export const EXPLORE_APPS: ExploreApp[] = (exploreApps as ExploreApp[])
-  .filter(app => /^https:\/\//.test(app.url))
-  .sort((a, b) => a.order - b.order);
+export const DEX_API_CONFIG: DexApiConfigMap = toDexApiConfigMap(dexApis as Record<string, unknown>);
 
 // URL template placeholders an onramp provider may use; values are URL-encoded on substitution.
 export const ONRAMP_PLACEHOLDERS = ['address', 'amount', 'currency', 'asset'] as const;

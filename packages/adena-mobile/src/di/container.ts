@@ -38,7 +38,6 @@ import { BalanceService } from '../services/balance.service';
 import { CloudBackupService } from '../services/cloud-backup.service';
 import { ConnectedAppService } from '../services/connected-app.service';
 import { DappService } from '../services/dapp.service';
-import { ExploreService } from '../services/explore.service';
 import { HapticEngine, HapticsService, NOOP_HAPTIC_ENGINE } from '../services/haptics.service';
 import { KeyringSession } from '../services/keyring-session';
 import { MarketDataService } from '../services/market-data.service';
@@ -51,6 +50,7 @@ import { PreferenceService } from '../services/preference.service';
 import { PriceService } from '../services/price.service';
 import { ResetMarker } from '../services/reset-marker';
 import { RestoreMarker } from '../services/restore-marker';
+import { SwapService } from '../services/swap.service';
 import { TokenService } from '../services/token.service';
 import { TransactionService } from '../services/transaction.service';
 import { VaultService } from '../services/vault.service';
@@ -102,10 +102,10 @@ export interface Services {
   nftService: NftService;
   activityService: ActivityService;
   addressBookService: AddressBookService;
-  exploreService: ExploreService;
   onrampService: OnrampService;
   appResetService: AppResetService;
   transactionService: TransactionService;
+  swapService: SwapService;
   dappService: DappService;
   connectedAppService: ConnectedAppService;
   preferenceService: PreferenceService;
@@ -179,6 +179,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     networkService,
     balanceService,
     transactionService,
+    swapService: overrides.swapService ?? new SwapService(chainRegistry, accountService, transactionService, DEX_API_CONFIG, infra.now),
     connectedAppService,
     tokenService,
     priceService,
@@ -187,7 +188,6 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     nftService,
     addressBookService: overrides.addressBookService
       ?? new AddressBookService(new StorageAddressBookRepository(keyValueStore), chainRegistry),
-    exploreService: overrides.exploreService ?? new ExploreService(),
     onrampService: overrides.onrampService ?? new OnrampService(infra.onrampConfig ?? ONRAMP_CONFIG),
     appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService, resetMarker),
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),

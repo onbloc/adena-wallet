@@ -1,0 +1,8 @@
+{
+  "protocolFee": "0.15",
+  "originAmount": "0",
+  "amount": "0",
+  "feeAmount": "0",
+  "exactType": "EXACT_IN",
+  "estimatedRoutes": []
+}

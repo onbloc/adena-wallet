@@ -26,7 +26,6 @@ export type LockedStackParamList = {
 // Root tabs are siblings; switching tabs never pushes onto the stack.
 export type MainTabParamList = {
   Wallet: undefined;
-  Explore: undefined;
   Activity: undefined;
 };
 
@@ -68,4 +67,6 @@ export type MainStackParamList = {
   Checkout: { tokenId: string; amount: string };
   // Generic native sheet route used by BottomSheet.
   Sheet: SheetRouteParams;
+  // `inputTokenId` preselects the token to sell (e.g. from token details).
+  Swap: { inputTokenId?: string } | undefined;
 };

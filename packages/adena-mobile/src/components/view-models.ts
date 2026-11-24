@@ -53,7 +53,6 @@ export interface ActivitySectionView {
 
 export const MainTab = {
   WALLET: 'wallet',
-  EXPLORE: 'explore',
   ACTIVITY: 'activity',
 } as const;
 

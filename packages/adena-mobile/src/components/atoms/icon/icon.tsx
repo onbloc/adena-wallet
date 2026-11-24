@@ -1,4 +1,5 @@
 import {
+  ArrowDown,
   ArrowLeft,
   ArrowLeftRight,
   Camera,
@@ -41,6 +42,7 @@ import {
 import React, { ReactElement } from 'react';
 
 import { sizes, useThemeColors } from '../../../theme';
+import { GlyphProps, TokenSwapGlyph } from './token-swap-glyph';
 
 // 13 guide icon families plus wallet-specific glyphs, all on a 24px / 2px-stroke grid.
 const ICONS = {
@@ -48,6 +50,8 @@ const ICONS = {
   search: Search,
   activity: History,
   swap: ArrowLeftRight,
+  tokenSwap: TokenSwapGlyph,
+  arrowDown: ArrowDown,
   settings: Settings,
   close: X,
   check: Check,
@@ -81,7 +85,7 @@ const ICONS = {
   camera: Camera,
   cloud: Cloud,
   shield: Shield,
-} satisfies Record<string, LucideIcon>;
+} satisfies Record<string, LucideIcon | ((props: GlyphProps) => ReactElement)>;
 
 export type IconName = keyof typeof ICONS;
 

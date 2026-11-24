@@ -1,0 +1,320 @@
+{
+  "data": [
+    {
+      "poolPath": "gno.land/r/gnoland/wugnot.wugnot:gno.land/r/gnoswap/gns.GNS:3000",
+      "fee": "3000",
+      "price": "0.07366158751963239030241270744138455186051370216839981424592",
+      "tvl": "123181.6636291218",
+      "liquidity": "1848082228905",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "wrapped GNOT",
+        "path": "gno.land/r/gnoland/wugnot.wugnot",
+        "symbol": "wugnot",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "GnoSwap",
+        "path": "gno.land/r/gnoswap/gns.GNS",
+        "symbol": "GNS",
+        "decimals": 6
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoswap/test_token/test_trx.TRX:gno.land/r/gnoswap/test_token/test_usdc.USDC:3000",
+      "fee": "3000",
+      "price": "1.0516617979127433981270294051080661265631460782628025520645",
+      "tvl": "364468.1022035425",
+      "liquidity": "210669300184",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "Tron",
+        "path": "gno.land/r/gnoswap/test_token/test_trx.TRX",
+        "symbol": "TRX",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "Usd Coin",
+        "path": "gno.land/r/gnoswap/test_token/test_usdc.USDC",
+        "symbol": "USDC",
+        "decimals": 6
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoland/wugnot.wugnot:gno.land/r/gnoswap/test_token/test_sol.SOL:500",
+      "fee": "500",
+      "price": "9.996499815515587655914086955691830641030782322997933006682",
+      "tvl": "5786.6110703859",
+      "liquidity": "1079744315977",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "wrapped GNOT",
+        "path": "gno.land/r/gnoland/wugnot.wugnot",
+        "symbol": "wugnot",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "Solana",
+        "path": "gno.land/r/gnoswap/test_token/test_sol.SOL",
+        "symbol": "SOL",
+        "decimals": 9
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoswap/test_token/test_atom.ATOM:gno.land/r/gnoswap/test_token/test_trx.TRX:3000",
+      "fee": "3000",
+      "price": "15.988367308838054794805433172356970216388535212744891440612",
+      "tvl": "0.0031970824",
+      "liquidity": "385368208604",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "Cosmos",
+        "path": "gno.land/r/gnoswap/test_token/test_atom.ATOM",
+        "symbol": "ATOM",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "Tron",
+        "path": "gno.land/r/gnoswap/test_token/test_trx.TRX",
+        "symbol": "TRX",
+        "decimals": 6
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoswap/test_token/test_trx.TRX:gno.land/r/gnoswap/test_token/test_usdc.USDC:100",
+      "fee": "100",
+      "price": "1.0016074142595092122281739662490306915414514477240515509883",
+      "tvl": "12365.0801518562",
+      "liquidity": "49048000174",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "Tron",
+        "path": "gno.land/r/gnoswap/test_token/test_trx.TRX",
+        "symbol": "TRX",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "Usd Coin",
+        "path": "gno.land/r/gnoswap/test_token/test_usdc.USDC",
+        "symbol": "USDC",
+        "decimals": 6
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoland/wugnot.wugnot:gno.land/r/gnoswap/gns.GNS:100",
+      "fee": "100",
+      "price": "0.07399028441115722858256523537577922217775327316574073641063",
+      "tvl": "3869.5823425883",
+      "liquidity": "9999999999",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "wrapped GNOT",
+        "path": "gno.land/r/gnoland/wugnot.wugnot",
+        "symbol": "wugnot",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "GnoSwap",
+        "path": "gno.land/r/gnoswap/gns.GNS",
+        "symbol": "GNS",
+        "decimals": 6
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoland/wugnot.wugnot:gno.land/r/gnoswap/test_token/test_sol.SOL:3000",
+      "fee": "3000",
+      "price": "937.4876186338125958169704072958303814359938723745767691765",
+      "tvl": "55708.7436990019",
+      "liquidity": "10492101994561",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "wrapped GNOT",
+        "path": "gno.land/r/gnoland/wugnot.wugnot",
+        "symbol": "wugnot",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "Solana",
+        "path": "gno.land/r/gnoswap/test_token/test_sol.SOL",
+        "symbol": "SOL",
+        "decimals": 9
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoland/wugnot.wugnot:gno.land/r/gnoswap/gns.GNS:10000",
+      "fee": "10000",
+      "price": "0.1253630647992190305660510968492400375000850019227969235954",
+      "tvl": "75.8071354027",
+      "liquidity": "0",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "wrapped GNOT",
+        "path": "gno.land/r/gnoland/wugnot.wugnot",
+        "symbol": "wugnot",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "GnoSwap",
+        "path": "gno.land/r/gnoswap/gns.GNS",
+        "symbol": "GNS",
+        "decimals": 6
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoland/wugnot.wugnot:gno.land/r/gnoswap/test_token/test_usdc.USDC:3000",
+      "fee": "3000",
+      "price": "0.92273632975782361837062700032157123797700220971128435346",
+      "tvl": "109.0580255514",
+      "liquidity": "999999999",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "wrapped GNOT",
+        "path": "gno.land/r/gnoland/wugnot.wugnot",
+        "symbol": "wugnot",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "Usd Coin",
+        "path": "gno.land/r/gnoswap/test_token/test_usdc.USDC",
+        "symbol": "USDC",
+        "decimals": 6
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoswap/test_token/test_sol.SOL:gno.land/r/gnoswap/test_token/test_usdc.USDC:3000",
+      "fee": "3000",
+      "price": "0.000334257191567800439271127839509856624950355636670380544034",
+      "tvl": "16709425.0531664059",
+      "liquidity": "1861129220396725",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "Solana",
+        "path": "gno.land/r/gnoswap/test_token/test_sol.SOL",
+        "symbol": "SOL",
+        "decimals": 9
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "Usd Coin",
+        "path": "gno.land/r/gnoswap/test_token/test_usdc.USDC",
+        "symbol": "USDC",
+        "decimals": 6
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoswap/gns.GNS:gno.land/r/gnoswap/test_token/test_photon.PHOTON:3000",
+      "fee": "3000",
+      "price": "1.1771289880636641441461479414044158629360900630430827136206",
+      "tvl": "1180.2577733545",
+      "liquidity": "3505105559",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "GnoSwap",
+        "path": "gno.land/r/gnoswap/gns.GNS",
+        "symbol": "GNS",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "Photon",
+        "path": "gno.land/r/gnoswap/test_token/test_photon.PHOTON",
+        "symbol": "PHOTON",
+        "decimals": 6
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoswap/test_token/test_atom.ATOM:gno.land/r/gnoswap/test_token/test_photon.PHOTON:3000",
+      "fee": "3000",
+      "price": "0.9124341622826776542883003445760992965581723721241391274747",
+      "tvl": "107130.4991988967",
+      "liquidity": "310329285633",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "Cosmos",
+        "path": "gno.land/r/gnoswap/test_token/test_atom.ATOM",
+        "symbol": "ATOM",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "Photon",
+        "path": "gno.land/r/gnoswap/test_token/test_photon.PHOTON",
+        "symbol": "PHOTON",
+        "decimals": 6
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoswap/test_token/test_atone.ATONE:gno.land/r/gnoswap/test_token/test_dai.DAI:3000",
+      "fee": "3000",
+      "price": "1.0000000007595909612356010936203866227591791883324147934058",
+      "tvl": "",
+      "liquidity": "999999999",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "AtomOne",
+        "path": "gno.land/r/gnoswap/test_token/test_atone.ATONE",
+        "symbol": "ATONE",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "Dai",
+        "path": "gno.land/r/gnoswap/test_token/test_dai.DAI",
+        "symbol": "DAI",
+        "decimals": 6
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoswap/gns.GNS:gno.land/r/gnoswap/test_token/test_trx.TRX:3000",
+      "fee": "3000",
+      "price": "0.9219573446567942305812830997657525942439471171776041407879",
+      "tvl": "0.0148580892",
+      "liquidity": "34053",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "GnoSwap",
+        "path": "gno.land/r/gnoswap/gns.GNS",
+        "symbol": "GNS",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "Tron",
+        "path": "gno.land/r/gnoswap/test_token/test_trx.TRX",
+        "symbol": "TRX",
+        "decimals": 6
+      }
+    },
+    {
+      "poolPath": "gno.land/r/gnoland/wugnot.wugnot:gno.land/r/gnoswap/test_token/test_btc.BTC:3000",
+      "fee": "3000",
+      "price": "0.00006010030157837327316541390367814044401172202318254932677852",
+      "tvl": "523.7548436749",
+      "liquidity": "846960543",
+      "tokenA": {
+        "type": "GRC20",
+        "name": "wrapped GNOT",
+        "path": "gno.land/r/gnoland/wugnot.wugnot",
+        "symbol": "wugnot",
+        "decimals": 6
+      },
+      "tokenB": {
+        "type": "GRC20",
+        "name": "Bitcoin",
+        "path": "gno.land/r/gnoswap/test_token/test_btc.BTC",
+        "symbol": "BTC",
+        "decimals": 8
+      }
+    }
+  ],
+  "message": "Success"
+}

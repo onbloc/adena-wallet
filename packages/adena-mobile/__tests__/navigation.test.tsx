@@ -34,7 +34,7 @@ describe('main tabs', () => {
       </SafeAreaProvider>,
     );
 
-    for (const tab of ['Activity', 'Wallet', 'Explore', 'Wallet', 'Activity', 'Wallet']) {
+    for (const tab of ['Activity', 'Wallet', 'Activity', 'Wallet']) {
       await fireEvent.press(await screen.findByRole('button', { name: tab }));
     }
 
@@ -44,7 +44,7 @@ describe('main tabs', () => {
       expect(root.routes).toHaveLength(1);
       const tabs = root.routes[0].state;
 
-      expect(tabs?.routes.map(route => route.name)).toEqual(['Wallet', 'Explore', 'Activity']);
+      expect(tabs?.routes.map(route => route.name)).toEqual(['Wallet', 'Activity']);
       expect(tabs?.routes[tabs.index ?? 0].name).toBe('Wallet');
     });
   });

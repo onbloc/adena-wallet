@@ -36,6 +36,7 @@ jest.mock('../../../src/containers/main/send-amount-screen', () => ({ SendAmount
 jest.mock('../../../src/containers/main/send-nft-screen', () => ({ SendNftScreen: () => mockScreen('SendNftScreen') }));
 jest.mock('../../../src/containers/main/send-recipient-screen', () => ({ SendRecipientScreen: () => mockScreen('SendRecipientScreen') }));
 jest.mock('../../../src/containers/main/settings-screen', () => ({ SettingsScreen: () => mockScreen('SettingsScreen') }));
+jest.mock('../../../src/containers/main/swap-screen', () => ({ SwapScreen: () => mockScreen('SwapScreen') }));
 jest.mock('../../../src/containers/main/token-details-screen', () => ({ TokenDetailsScreen: () => mockScreen('TokenDetailsScreen') }));
 jest.mock('../../../src/containers/onboarding/backup-phrase-screen', () => ({ BackupPhraseScreen: () => mockScreen('BackupPhraseScreen') }));
 jest.mock('../../../src/containers/onboarding/create-password-screen', () => ({ CreatePasswordScreen: () => mockScreen('CreatePasswordScreen') }));
@@ -90,7 +91,7 @@ describe('RootNavigator', () => {
     useSessionStore.setState({ status: SessionStatus.UNLOCKED });
     await renderRoot();
     expect(screen.getByText('MainTabs')).toBeTruthy();
-    expect(navigationRef.getRootState()?.routeNames).toHaveLength(32);
+    expect(navigationRef.getRootState()?.routeNames).toHaveLength(33);
 
     await act(async () => navigationRef.navigate('DappRequest'));
     expect(await screen.findByText('DappRequestScreen')).toBeTruthy();

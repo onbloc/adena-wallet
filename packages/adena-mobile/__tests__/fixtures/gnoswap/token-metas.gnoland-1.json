@@ -1,0 +1,299 @@
+{
+  "data": [
+    {
+      "description": "Gno.land is a platform to write smart contracts in Gnolang (Gno). Using an inter",
+      "displayPath": "gno.land/r/gnoland/wugnot.wugnot",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/gno-native/images/ugnot.svg",
+      "name": "Gno.land",
+      "path": "ugnot",
+      "priceID": "ugnot",
+      "createdAt": "2026-09-16T04:53:34Z",
+      "symbol": "GNOT",
+      "type": "Native",
+      "websiteURL": "https://gno.land/",
+      "twitterURL": "https://x.com/_gnoland",
+      "discordURL": "https://discord.gg/CMHMzbjNxv",
+      "docsURL": "https://docs.gno.land",
+      "wrappedPath": "gno.land/r/gnoland/wugnot.wugnot",
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "wugnot is a wrapped GRC20 version of GNOT, the native coin of Gno.land.",
+      "displayPath": "gno.land/r/gnoland/wugnot.wugnot",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/gno_land_r_demo_wugnot.svg",
+      "name": "wGNOT",
+      "path": "gno.land/r/gnoland/wugnot.wugnot",
+      "priceID": "gno.land/r/gnoland/wugnot.wugnot",
+      "createdAt": "2026-09-16T05:31:12Z",
+      "symbol": "wugnot",
+      "type": "GRC20",
+      "websiteURL": "https://gno.land/r/gnoland/wugnot",
+      "twitterURL": "",
+      "discordURL": "",
+      "docsURL": "https://gno.land/r/gnoland/wugnot",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/gnoland/wugnot",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "GnoSwap is the first decentralized exchange (DEX) built using Gnolang \u2013 an inter",
+      "displayPath": "gno.land/r/gnoswap/gns.GNS",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/gno_land_r_gnoswap_gns.svg",
+      "name": "GnoSwap",
+      "path": "gno.land/r/gnoswap/gns.GNS",
+      "priceID": "gno.land/r/gnoswap/gns.GNS",
+      "createdAt": "2026-09-16T05:43:59Z",
+      "symbol": "GNS",
+      "type": "GRC20",
+      "websiteURL": "https://gnoswap.io",
+      "twitterURL": "https://x.com/gnoswaplabs",
+      "discordURL": "https://discord.com/invite/u4bdGHStb2",
+      "docsURL": "https://docs.gnoswap.io",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/gnoswap/gns",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "GNOMIC is a fixed-supply GRC20 token on gno.land: 21,000,000 minted once and nev",
+      "displayPath": "gno.land/r/nym-thegnomic001/gnomic.GNOMIC",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/gno_land_r_nym-thegnomic001_gnomic.svg",
+      "name": "Gnomic",
+      "path": "gno.land/r/nym-thegnomic001/gnomic.GNOMIC",
+      "priceID": "gno.land/r/nym-thegnomic001/gnomic.GNOMIC",
+      "createdAt": "2026-09-19T20:49:20Z",
+      "symbol": "GNOMIC",
+      "type": "GRC20",
+      "websiteURL": "https://gnomic.wtf",
+      "twitterURL": "https://x.com/gnomic_gnoland",
+      "discordURL": "",
+      "docsURL": "https://gnomic.wtf/gnomic",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/nym-thegnomic001/gnomic",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "PERUN is a GRC20 token on Gnoland.",
+      "displayPath": "gno.land/r/demo/defi/grc20factory.PERUN",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/perun.svg",
+      "name": "Perun",
+      "path": "gno.land/r/demo/defi/grc20factory.PERUN",
+      "priceID": "gno.land/r/demo/defi/grc20factory.PERUN",
+      "createdAt": "2026-09-20T17:12:08Z",
+      "symbol": "PERUN",
+      "type": "GRC20",
+      "websiteURL": "https://pe-run.github.io/perun-ipfs-browser",
+      "twitterURL": "https://x.com/search?q=%24PERUN",
+      "discordURL": "",
+      "docsURL": "https://gno.land/r/g1s2g47cas6gxamxlkpxu65zu2g4aqma38tx36yv/perun",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/demo/defi/grc20factory",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "PERUN",
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "PERUN",
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "PERUN",
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "GNOMI is the GRC20 token launched on gnomi.fun, the meme launchpad on gno.land.",
+      "displayPath": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.GNOMI",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/r_g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt_gnomi_padv3_gnomi.svg",
+      "name": "Gnomi",
+      "path": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.GNOMI",
+      "priceID": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.GNOMI",
+      "createdAt": "2026-09-21T07:00:33Z",
+      "symbol": "GNOMI",
+      "type": "GRC20",
+      "websiteURL": "https://gnomi.fun",
+      "twitterURL": "https://x.com/gnomidotfun",
+      "discordURL": "",
+      "docsURL": "https://gnomi.fun/docs",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "0000001",
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "0000001",
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "0000001",
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 0,
+      "isVerified": true
+    },
+    {
+      "description": "Wrapped BUBBLE is a registered GRC20 token backed 1:1 by the original Bubble Rum",
+      "displayPath": "gno.land/r/g1leu8d2vsplhehcfkjg50mwgdpxdkt8tztu95wr/wbubble.BUBBLE",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/gno_land_r_g1leu8d2vsplhehcfkjg50mwgdpxdkt8tztu95wr_wbubble.svg",
+      "name": "BUBBLE (wrapped)",
+      "path": "gno.land/r/g1leu8d2vsplhehcfkjg50mwgdpxdkt8tztu95wr/wbubble.BUBBLE",
+      "priceID": "gno.land/r/g1leu8d2vsplhehcfkjg50mwgdpxdkt8tztu95wr/wbubble.BUBBLE",
+      "createdAt": "2026-09-27T19:06:12Z",
+      "symbol": "BUBBLE",
+      "type": "GRC20",
+      "websiteURL": "https://bubblerumble.net",
+      "twitterURL": "",
+      "discordURL": "",
+      "docsURL": "https://bubblerumble.net/bubble.html",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/g1leu8d2vsplhehcfkjg50mwgdpxdkt8tztu95wr/wbubble",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    }
+  ],
+  "message": "Success"
+}

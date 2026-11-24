@@ -1,0 +1,160 @@
+import { fromBase64 } from '@cosmjs/encoding';
+import { MsgCall } from '@gnolang/gno-js-client';
+import { Tx } from '@gnolang/tm2-js-client';
+
+import { AppErrorCode, isAppError } from '../../../src/core/errors';
+import { DEFAULT_SWAP_SETTINGS, SwapToken } from '../../../src/domain/swap';
+import { BUILT_IN_NETWORKS } from '../../../src/resources';
+import { SWAP_QUOTE_TTL_MS } from '../../../src/services/swap.service';
+import { GNS, installGnoswapFakes, qeval, ROUTER, ROUTER_ADDRESS, WUGNOT } from '../../helpers/gnoswap-fakes';
+import { setupWallet } from '../../helpers/render-screen';
+import { createTestContainer } from '../../helpers/test-container';
+
+const expectCode = async (promise: Promise<unknown>, code: AppErrorCode): Promise<void> => {
+  const error = await promise.then(() => null, (caught: unknown) => caught);
+
+  expect(isAppError(error, code)).toBe(true);
+};
+
+describe('SwapService', () => {
+  let now = Date.parse('2026-11-24T10:00:00Z');
+
+  const setup = async (options: Parameters<typeof installGnoswapFakes>[1] = {}) => {
+    const env = createTestContainer({ now: () => now });
+    const fakes = installGnoswapFakes(env, options);
+    const wallet = await setupWallet(env);
+    const service = env.container.swapService;
+    const tokens = await service.getTokens(wallet.network);
+    const token = (id: string): SwapToken => tokens.find(item => item.id === id)!;
+
+    env.gno.state.balances[wallet.address] = '100000000ugnot';
+    return { ...wallet, ...fakes, env, service, tokens, gnot: token('ugnot'), gns: token(GNS) };
+  };
+
+  beforeEach(() => {
+    now = Date.parse('2026-11-24T10:00:00Z');
+  });
+
+  it('is offered only on built-in Gno networks with GnoSwap metadata', async () => {
+    const { service, network } = await setup();
+    const atomone = BUILT_IN_NETWORKS.find(item => item.id === 'atomone-1')!;
+
+    expect(service.isSupported(network)).toBe(true);
+    expect(service.isSupported(BUILT_IN_NETWORKS.find(item => item.id === 'onyx-1')!)).toBe(true);
+    expect(service.isSupported(BUILT_IN_NETWORKS.find(item => item.id === 'gnoswap')!)).toBe(true);
+    expect(service.isSupported(atomone)).toBe(false);
+    expect(service.isSupported({ ...network, isCustom: true })).toBe(false);
+    await expectCode(service.getTokens(atomone), AppErrorCode.UNSUPPORTED_NETWORK);
+  });
+
+  it('quotes from the route API and takes the amount from the router dry run', async () => {
+    const { service, network, gnot, gns, routeBodies, dryExpressions } = await setup();
+    const quote = await service.getQuote({ network, input: gnot, output: gns, amountIn: '1000000' });
+
+    expect(routeBodies).toEqual([{ inputTokenPath: WUGNOT, outputTokenPath: GNS, exactType: 'EXACT_IN', amount: '1000000' }]);
+    expect(dryExpressions).toEqual([
+      `DrySwapRoute("${WUGNOT}", "${GNS}", "1000000", "EXACT_IN", "${WUGNOT}:gno.land/r/nym-thegnomic001/gnomic.GNOMIC:3000*POOL*gno.land/r/nym-thegnomic001/gnomic.GNOMIC:${GNS}:10000,${WUGNOT}:${GNS}:3000", "50,50", "0")`,
+    ]);
+    expect(quote).toMatchObject({ amountIn: '1000000', amountOut: '4151365', quoteArr: '50,50', routerFeeBps: 15, source: 'router-api', inputPath: WUGNOT, outputPath: GNS });
+    expect(quote.priceImpactPercent).toEqual(expect.any(Number));
+  });
+
+  it('uses the router amount even when the API claims more', async () => {
+    const { service, network, gnot, gns } = await setup({ drySwap: '("1000000" string)\n("100" string)\n(undefined)' });
+
+    expect((await service.getQuote({ network, input: gnot, output: gns, amountIn: '1000000' })).amountOut).toBe('100');
+  });
+
+  it('falls back to pool-derived routes when the route API is down and keeps the best dry run', async () => {
+    const outputs = ['4000000', '4100000', '3000000'];
+    const { service, network, gnot, gns, dryExpressions } = await setup({
+      route: null,
+      drySwap: () => `("1000000" string)\n("${outputs.shift() ?? '1'}" string)\n(undefined)`,
+    });
+    const quote = await service.getQuote({ network, input: gnot, output: gns, amountIn: '1000000' });
+
+    expect(quote.source).toBe('pools');
+    expect(dryExpressions.length).toBeGreaterThan(1);
+    expect(quote.amountOut).toBe('4100000');
+    expect(quote.quoteArr).toBe('100');
+  });
+
+  it('reports no route for an empty answer, failing dry runs or a partial fill', async () => {
+    const empty = await setup({ route: { estimatedRoutes: [] } });
+
+    await expectCode(empty.service.getQuote({ network: empty.network, input: empty.gnot, output: empty.gns, amountIn: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
+
+    const failing = await setup({ drySwap: qeval.drySwapMissingPool });
+
+    await expectCode(failing.service.getQuote({ network: failing.network, input: failing.gnot, output: failing.gns, amountIn: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
+
+    const partial = await setup({ drySwap: '("999" string)\n("5" string)\n(undefined)' });
+
+    await expectCode(partial.service.getQuote({ network: partial.network, input: partial.gnot, output: partial.gns, amountIn: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
+  });
+
+  it('rejects the same token on both sides and invalid amounts', async () => {
+    const { service, network, gnot, tokens } = await setup();
+    const wugnot = tokens.find(token => token.id === WUGNOT)!;
+
+    await expectCode(service.getQuote({ network, input: gnot, output: wugnot, amountIn: '1000' }), AppErrorCode.SWAP_INVALID_TOKEN);
+    await expectCode(service.getQuote({ network, input: gnot, output: tokens[2], amountIn: '0' }), AppErrorCode.INVALID_AMOUNT);
+  });
+
+  it('prepares wrap, approve and swap with a locally computed minimum and deadline, then broadcasts after a fresh dry run', async () => {
+    const { service, network, account, gnot, gns, env, address } = await setup();
+    const quote = await service.getQuote({ network, input: gnot, output: gns, amountIn: '1000000' });
+    const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: { slippage: 1, deadlineMinutes: 20 } });
+
+    expect(prepared.minAmountOut).toBe('4109851');
+    expect(prepared.slippageBps).toBe(100);
+    expect(prepared.estimate.gasUsed).toEqual(expect.any(String));
+
+    now += 30_000;
+    await service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' });
+    const tx = Tx.decode(fromBase64(env.gno.state.broadcasts[0]));
+    const calls = tx.messages.map(message => MsgCall.decode(message.value));
+
+    expect(tx.messages.map(message => message.type_url)).toEqual(['/vm.m_call', '/vm.m_call', '/vm.m_call']);
+    expect(calls.map(call => [call.pkg_path, call.func, call.send])).toEqual([
+      ['gno.land/r/gnoland/wugnot', 'Deposit', '1000000ugnot'],
+      ['gno.land/r/gnoland/wugnot', 'Approve', ''],
+      [ROUTER, 'ExactInSwapRoute', ''],
+    ]);
+    expect(calls[1].args).toEqual([ROUTER_ADDRESS, '1000000']);
+    // The deadline is refreshed at confirm time: now (+30s) + 20 minutes.
+    expect(calls[2].args).toEqual([WUGNOT, GNS, '1000000', quote.routeArr, '50,50', '4109851', String(now / 1000 + 1200), '']);
+    expect(calls.every(call => call.caller === address)).toBe(true);
+  });
+
+  it('refuses to sign when the fresh dry run falls below the minimum', async () => {
+    const outputs = ['4151365', '4000000'];
+    const { service, network, account, gnot, gns, env } = await setup({ drySwap: () => `("1000000" string)\n("${outputs.shift() ?? '4000000'}" string)\n(undefined)` });
+    const quote = await service.getQuote({ network, input: gnot, output: gns, amountIn: '1000000' });
+    const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: DEFAULT_SWAP_SETTINGS });
+
+    await expectCode(service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' }), AppErrorCode.SWAP_PRICE_MOVED);
+    expect(env.gno.state.broadcasts).toHaveLength(0);
+  });
+
+  it('blocks tokens whose API decimals disagree with the chain, expired quotes and tampered routes', async () => {
+    const mismatch = await setup({ decimals: { [GNS]: 8 } });
+    const quote = await mismatch.service.getQuote({ network: mismatch.network, input: mismatch.gnot, output: mismatch.gns, amountIn: '1000000' });
+    const input = { account: mismatch.account, network: mismatch.network, input: mismatch.gnot, output: mismatch.gns, settings: DEFAULT_SWAP_SETTINGS };
+
+    await expectCode(mismatch.service.prepare({ ...input, quote }), AppErrorCode.SWAP_INVALID_TOKEN);
+    await expectCode(mismatch.service.prepare({ ...input, quote: { ...quote, routeArr: `${WUGNOT}:${GNS}:500` } }), AppErrorCode.SWAP_PRICE_MOVED);
+    now += SWAP_QUOTE_TTL_MS + 1;
+    await expectCode(mismatch.service.prepare({ ...input, quote }), AppErrorCode.SWAP_PRICE_MOVED);
+  });
+
+  it('checks the input balance together with the fee before signing', async () => {
+    const { service, network, account, gnot, gns, env, address } = await setup();
+    const quote = await service.getQuote({ network, input: gnot, output: gns, amountIn: '1000000' });
+    const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: DEFAULT_SWAP_SETTINGS });
+
+    env.gno.state.balances[address] = '1000500ugnot';
+    await expectCode(service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' }), AppErrorCode.INSUFFICIENT_BALANCE);
+    expect(env.gno.state.broadcasts).toHaveLength(0);
+  });
+});

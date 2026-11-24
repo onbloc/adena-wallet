@@ -45,7 +45,7 @@ describe('AtomOne (cosmos module)', () => {
     await expect(container.tokenService.getBalances(account, network, tokens)).resolves.toEqual({ uatone: '5000000', uphoton: '30000' });
     expect(container.activityService.isSupported(network)).toBe(false);
     expect(container.nftService.isSupported(network)).toBe(false);
-    expect(container.exploreService.getApps(network)).toHaveLength(0);
+    expect(container.swapService.isSupported(network)).toBe(false);
   });
 
   it('pays fees in PHOTON with the extension tier formula', async () => {
