@@ -22,7 +22,9 @@ CHAIN="${E2E_CHAIN:-gnoland-1}"
 
 ADDRESS="$(node e2e/scripts/derive-address.mjs "$MNEMONIC")"
 DAPP_CONNECT_URL="$(node scripts/dapp-request.mjs connect --chain "$CHAIN")"
-DAPP_TX_URL="$(node scripts/dapp-request.mjs send --chain "$CHAIN" --caller "$ADDRESS" --to "$RECIPIENT" --amount 1ugnot)"
+DAPP_TX_URL="$(node scripts/dapp-request.mjs send --chain "$CHAIN" --caller "$ADDRESS" --to "$RECIPIENT" --amount 1ugnot --id "e2e-tx-$(date +%s)-1")"
+# Answered request ids are remembered, so the retry after connecting needs its own id.
+DAPP_TX_URL_2="$(node scripts/dapp-request.mjs send --chain "$CHAIN" --caller "$ADDRESS" --to "$RECIPIENT" --amount 1ugnot --id "e2e-tx-$(date +%s)-2")"
 
 # Default to the whole workspace unless a flow file or folder was given.
 TARGET=e2e
@@ -42,4 +44,5 @@ exec "$MAESTRO_BIN" test \
   -e DAPP_ORIGIN=https://example.com \
   -e DAPP_CONNECT_URL="$DAPP_CONNECT_URL" \
   -e DAPP_TX_URL="$DAPP_TX_URL" \
+  -e DAPP_TX_URL_2="$DAPP_TX_URL_2" \
   "$@" ${TARGET}

@@ -1,6 +1,10 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
 import { AppErrorCode, isAppError } from '../../../src/core/errors';
 import { decodeBase64Url, encodeBase64Url } from '../../../src/deeplink/base64url';
 import {
+  BLOCKED_CALLBACK_SCHEMES,
   buildCallbackUrl,
   buildDappRequestUrl,
   DappRequestPayload,
@@ -78,6 +82,13 @@ describe('getCallbackOrigin', () => {
     'intent://x#Intent;end',
     'content://x',
     'android-app://x',
+    'itms-services://?action=download-manifest&url=https://x',
+    'itms-apps://x',
+    'tel:+100',
+    'sms:+100',
+    'mailto:a@b.c',
+    'market://details?id=x',
+    'facetime:x',
     'adena://request',
     'ADENA://request',
     'no-scheme',
@@ -249,5 +260,21 @@ describe('buildDappRequestUrl', () => {
 
     expect(url.startsWith('adena://request?payload=')).toBe(true);
     expect(parseDappRequestUrl(url, NOW).requestId).toBe('req-1');
+  });
+});
+
+describe('callback scheme blocklist', () => {
+  it('keeps custom app callback schemes allowed', () => {
+    expect(getCallbackOrigin('exampleapp://adena/cb')).toBe('exampleapp:');
+    expect(getCallbackOrigin('com.example.app://cb')).toBe('com.example.app:');
+  });
+
+  it('matches the Android inject sheet blocklist', () => {
+    const kotlin = readFileSync(join(__dirname, '../../../android/app/src/main/java/com/adena/injectsheet/AdenaInjectSheetModule.kt'), 'utf8');
+    const block = /BLOCKED_SCHEMES = setOf\(([\s\S]*?)\)/.exec(kotlin)?.[1] ?? '';
+    const native = [...block.matchAll(/"([^"]+)"/g)].map(match => match[1]);
+
+    expect(native.length).toBeGreaterThan(10);
+    expect([...native].sort()).toEqual([...BLOCKED_CALLBACK_SCHEMES].sort());
   });
 });

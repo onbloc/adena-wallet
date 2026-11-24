@@ -72,12 +72,17 @@ const DappRequestContent = ({ navigation }: Props): ReactElement | null => {
       title={flow.title}
       dappName={request.dapp.name}
       origin={request.callbackOrigin}
+      callerPackage={request.callerPackage}
       networkName={context?.network.networkName ?? request.chainId ?? '-'}
       accountName={context?.account.name ?? '-'}
       address={context?.address ?? '-'}
       messages={flow.messages}
       memo={request.method !== DappMethod.CONNECT ? request.memo : undefined}
       fee={flow.feeLabel}
+      feeWarning={flow.feeWarning}
+      expandedCode={flow.expandedCode}
+      onToggleCode={flow.toggleCode}
+      codeReviewPending={flow.codeReviewPending}
       loading={flow.loading}
       error={flow.error}
       approveLabel={flow.approveLabel}
@@ -106,7 +111,7 @@ const DappRequestContent = ({ navigation }: Props): ReactElement | null => {
 // A crash while reviewing answers the dApp with an error instead of leaving it waiting.
 export const DappRequestScreen = (props: Props): ReactElement => {
   const { dappService } = useContainer();
-  const failRequest = (error: unknown): void => {
+  const failRequest = (): void => {
     const { active, inFlight, setActive } = useDappRequestStore.getState();
 
     if (!active || inFlight) {
@@ -119,8 +124,8 @@ export const DappRequestScreen = (props: Props): ReactElement => {
       props.navigation.goBack();
     }
 
-    Linking.openURL(dappService.fail(active.request, error instanceof Error ? error : new Error(String(error))))
-      .catch(() => undefined);
+    // A crash's message is internal; the dApp only gets a generic failure.
+    Linking.openURL(dappService.failUnexpected(active.request)).catch(() => undefined);
   };
 
   const fallbackErrorBoundary = (): null => null;

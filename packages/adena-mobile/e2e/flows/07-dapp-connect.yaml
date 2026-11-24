@@ -21,14 +21,14 @@ tags: [dapp]
 - extendedWaitUntil:
     visible: Connect app
     timeout: 30000
-- assertVisible: ${DAPP_ORIGIN}
+- assertVisible: Return to ${DAPP_ORIGIN} · unverified
 - tapOn:
     id: dapp-approve
 - runFlow: ../subflows/return-from-callback.yaml
 - runFlow:
     file: ../subflows/open-deeplink.yaml
     env:
-      URL: ${DAPP_TX_URL}
+      URL: ${DAPP_TX_URL_2}
 - extendedWaitUntil:
     visible: Confirm transaction
     timeout: 30000

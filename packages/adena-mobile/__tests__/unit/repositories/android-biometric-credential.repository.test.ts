@@ -31,7 +31,7 @@ describe('AndroidBiometricCredentialRepository', () => {
     await repository.saveCredential('pw');
 
     expect(vault.seal).toHaveBeenCalledWith('adena.biometric-password', 'pw', 'Turn on biometric unlock', '', 'Cancel');
-    expect(setSpy).toHaveBeenCalledWith(SecureKey.BIOMETRIC_PASSWORD, 'bv1:sealed(pw)');
+    expect(setSpy).toHaveBeenCalledWith(SecureKey.BIOMETRIC_PASSWORD, 'bv2:0:sealed(pw)');
     await expect(repository.hasCredential()).resolves.toBe(true);
   });
 
@@ -39,6 +39,37 @@ describe('AndroidBiometricCredentialRepository', () => {
     await repository.saveCredential('pw', { title: 'Use Face ID', subtitle: 'Adena', cancel: 'Later' });
 
     expect(vault.seal).toHaveBeenCalledWith('adena.biometric-password', 'pw', 'Use Face ID', 'Adena', 'Later');
+  });
+
+  it('re-seals under the other key slot and drops the old key only after success', async () => {
+    await repository.saveCredential('pw');
+    vault.deleteKey.mockClear();
+    await repository.saveCredential('pw2');
+
+    expect(vault.seal).toHaveBeenLastCalledWith('adena.biometric-password.b', 'pw2', 'Turn on biometric unlock', '', 'Cancel');
+    expect(vault.deleteKey).toHaveBeenCalledWith('adena.biometric-password');
+    await expect(repository.readCredential({ title: 'Unlock' })).resolves.toBe('pw2');
+    expect(vault.unseal).toHaveBeenLastCalledWith('adena.biometric-password.b', 'sealed(pw2)', 'Unlock', '', 'Cancel');
+  });
+
+  it('keeps the previous credential when re-sealing is cancelled', async () => {
+    await repository.saveCredential('pw');
+    vault.deleteKey.mockClear();
+    vault.seal.mockRejectedValueOnce(vaultError(BIOMETRIC_VAULT_ERROR.CANCELED));
+
+    expect((await catchError(() => repository.saveCredential('pw2')) as { code?: string }).code).toBe('BIOMETRICS_CANCELED');
+    expect(vault.deleteKey).not.toHaveBeenCalled();
+    await expect(repository.readCredential({ title: 'Unlock' })).resolves.toBe('pw');
+    expect(vault.unseal).toHaveBeenLastCalledWith('adena.biometric-password', 'sealed(pw)', 'Unlock', '', 'Cancel');
+  });
+
+  it('still reads values sealed in the v1 format', async () => {
+    await secureStore.setItem(SecureKey.BIOMETRIC_PASSWORD, 'bv1:sealed(old)');
+
+    await expect(repository.readCredential({ title: 'Unlock' })).resolves.toBe('old');
+    expect(vault.unseal).toHaveBeenCalledWith('adena.biometric-password', 'sealed(old)', 'Unlock', '', 'Cancel');
+    await repository.saveCredential('new');
+    expect(vault.seal).toHaveBeenLastCalledWith('adena.biometric-password.b', 'new', 'Turn on biometric unlock', '', 'Cancel');
   });
 
   it('opens the sealed password behind the given prompt', async () => {

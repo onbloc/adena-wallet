@@ -52,7 +52,16 @@ export const useDeepLinkHandler = (navigationReady: boolean): void => {
     }
 
     try {
-      setActive({ url, request: dappService.parseRequestUrl(url) });
+      const request = dappService.parseRequestUrl(url);
+
+      // Reopening an answered link gets an error response instead of a second prompt.
+      if (dappService.isProcessed(request)) {
+        showToast('This request was already handled.', 'error');
+        Linking.openURL(dappService.rejectDuplicate(request)).catch(() => undefined);
+        return;
+      }
+
+      setActive({ url, request });
       navigationRef.navigate('DappRequest');
     }
     catch (error) {

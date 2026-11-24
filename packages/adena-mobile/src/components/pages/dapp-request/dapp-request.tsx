@@ -1,25 +1,27 @@
 import React, { ReactElement } from 'react';
 import { View } from 'react-native';
 
-import { Badge, Button, Skeleton, Text } from '../../atoms';
+import { Button, Skeleton } from '../../atoms';
 import { Card, Dialog, InlineAlert, KeyValueRow, Screen, TopBar } from '../../molecules';
+import { DappMessageList, DappMessageView } from './dapp-message-list';
 import { styles } from './dapp-request.styles';
-
-export interface DappMessageView {
-  title: string;
-  details: { label: string; value: string }[];
-}
+import { DappRequester } from './dapp-requester';
 
 export interface DappRequestPageProps {
   title: string;
   dappName: string;
   origin: string;
+  callerPackage?: string;
   networkName: string;
   accountName: string;
   address: string;
   messages: DappMessageView[];
   fee?: string;
+  feeWarning?: string;
   memo?: string;
+  expandedCode?: string[];
+  onToggleCode?: (id: string) => void;
+  codeReviewPending?: boolean;
   loading: boolean;
   error?: string;
   approveLabel: string;
@@ -47,27 +49,22 @@ export const DappRequestPage = (props: DappRequestPageProps): ReactElement => (
       </View>
     )}
   >
-    <View style={styles.origin}>
-      <Text variant='section'>{props.dappName}</Text>
-      <Text variant='meta' color='secondary'>{props.origin}</Text>
-      <Text variant='meta' color='secondary'>The name is provided by the app. Confirm the address above before approving.</Text>
-    </View>
+    <DappRequester style={styles.origin} dappName={props.dappName} origin={props.origin} callerPackage={props.callerPackage} />
     <Card>
       <KeyValueRow label='Account' value={props.accountName} />
       <KeyValueRow label='Address' value={props.address} multiline />
       <KeyValueRow label='Network' value={props.networkName} />
     </Card>
     {props.loading && <Skeleton height={120} />}
-    {props.messages.map((message, position) => ({ ...message, id: `${position}:${message.title}` })).map(message => (
-      <View key={message.id} style={styles.message}>
-        <Badge label={message.title} tone='info' />
-        {message.details.map(detail => (
-          <KeyValueRow key={detail.label} label={detail.label} value={detail.value} multiline={detail.value.length > 28} />
-        ))}
-      </View>
-    ))}
+    <DappMessageList
+      messages={props.messages}
+      expandedCode={props.expandedCode}
+      onToggleCode={props.onToggleCode}
+      codeReviewPending={props.codeReviewPending}
+    />
     {props.memo ? <KeyValueRow label='Memo' value={props.memo} multiline /> : null}
     {props.fee && <KeyValueRow label='Network fee' value={props.fee} emphasis />}
+    {props.feeWarning && <InlineAlert tone='warning' title='High network fee' description={props.feeWarning} />}
     {props.error && <InlineAlert tone='error' title='This request cannot be completed' description={props.error} />}
     {props.networkSwitch && (
       <Dialog

@@ -44,7 +44,15 @@ export type TransactionStatus = 'committed' | 'failed' | 'pending';
 export type TransactionLookup = 'committed' | 'failed' | null;
 
 // Human-readable message description used by review screens.
+export interface MessageSourceFile {
+  name: string;
+  body: string;
+}
+
 export interface MessageSummary {
   title: string;
   details: { label: string; value: string }[];
+  // Source executed or published by the message; the review must show all of it.
+  code?: MessageSourceFile[];
+  warning?: string;
 }

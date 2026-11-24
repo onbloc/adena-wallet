@@ -8,6 +8,7 @@ import { FeeEstimate, GNO_FEE_POLICY } from '../../../domain/fee';
 import { ChainFamily, Network } from '../../../domain/network';
 import {
   BroadcastResult,
+  MessageSourceFile,
   MessageSummary,
   SignedTransaction,
   SignerSequence,
@@ -21,7 +22,7 @@ import { formatTokenAmount, parseCoin } from '../../../utils/amount';
 import { BigNumber } from '../../../utils/big-number';
 import { ChainRepository, SigningKey, SimulationSigner } from '../chain-repository';
 import { parseGnoMessages } from './gno-message-parser';
-import { GnoMessage, GnoMessageType } from './gno-messages';
+import { GnoMemPackage, GnoMessage, GnoMessageType } from './gno-messages';
 import { GnoProvider, GnoProviderFactory } from './gno-provider';
 import { requiresSignedSimulation, simulateGnoTx, staticCodeGasUsed } from './gno-simulation';
 import {
@@ -66,6 +67,12 @@ const decodeAbciData = (data: string | null): string => {
     return text;
   }
 };
+
+// One argument per line and JSON-quoted, so commas or spaces inside an argument stay unambiguous.
+const formatArgs = (args: string[] | null): string =>
+  args?.length ? args.map((arg, index) => `${index + 1}. ${JSON.stringify(arg)}`).join('\n') : '-';
+
+const sourceFiles = (pkg: GnoMemPackage): MessageSourceFile[] => pkg.files.map(file => ({ name: file.name, body: file.body }));
 
 const toNetworkError = (error: unknown): AppError =>
   error instanceof AppError ? error : new AppError(AppErrorCode.NETWORK_ERROR, (error as Error)?.message, { cause: error });
@@ -166,7 +173,7 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
             details: [
               { label: 'Package', value: message.value.pkg_path },
               { label: 'Function', value: message.value.func },
-              { label: 'Arguments', value: (message.value.args ?? []).join(', ') || '-' },
+              { label: 'Arguments', value: formatArgs(message.value.args) },
               { label: 'Send', value: formatCoins(message.value.send) },
               ...maxDeposit(message.value.max_deposit),
             ],
@@ -180,6 +187,8 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
               { label: 'Send', value: formatCoins(message.value.send) },
               ...maxDeposit(message.value.max_deposit),
             ],
+            code: sourceFiles(message.value.package),
+            warning: 'This publishes the code below on chain under your address. Review every file.',
           };
         case GnoMessageType.VM_RUN:
           return {
@@ -189,6 +198,8 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
               { label: 'Send', value: formatCoins(message.value.send) },
               ...maxDeposit(message.value.max_deposit),
             ],
+            code: sourceFiles(message.value.package),
+            warning: 'This runs code with your account\'s permissions. It can move your funds and act as you. Review every file.',
           };
       }
     });

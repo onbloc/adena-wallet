@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorBoundary } from '../../app/error-boundary';
@@ -8,24 +8,46 @@ import { ContainerProvider } from '../../di/container-provider';
 import NativeAdenaInjectSheet from '../../native/NativeAdenaInjectSheet';
 import { useNativeContainerQuery } from '../../queries/boot.queries';
 import { createQueryClient } from '../../queries/query-client';
-import { finishSheet, InjectSheetScreen, sheetApproval } from '../inject-sheet-screen';
+import { createSheetSession, finishSheet, InjectSheetScreen } from '../inject-sheet-screen';
 
+// Launch options from InjectSheetActivity.
 export interface InjectSheetAppProps {
   requestUrl?: string;
+  sheetToken?: string;
+  callerPackage?: string;
 }
 
 // Separate root for the Android overlay. It owns its own container, so its keyring
 // session is independent of (and never unlocked by) the main wallet UI.
-const InjectSheetRoot = ({ requestUrl }: InjectSheetAppProps): ReactElement | null => {
+const InjectSheetRoot = ({ requestUrl, sheetToken, callerPackage }: InjectSheetAppProps): ReactElement | null => {
   const boot = useNativeContainerQuery();
   const container = boot.data ?? null;
   const bootError = boot.isError ? String((boot.error as Error)?.message ?? boot.error) : undefined;
   const [queryClient] = useState(createQueryClient);
+  const [session] = useState(() => createSheetSession(sheetToken));
+
+  // Back press: the mounted screen answers the dApp; before boot there is nobody to answer yet.
+  useEffect(() => {
+    const subscription = NativeAdenaInjectSheet?.onDismissRequest?.((token) => {
+      if (token !== session.token) {
+        return;
+      }
+
+      if (session.onDismissRequest) {
+        session.onDismissRequest();
+      }
+      else {
+        finishSheet(session.token, null);
+      }
+    });
+
+    return (): void => subscription?.remove();
+  }, [session]);
 
   // The window is transparent, so a failed boot must still render something the user can close.
   const handleApprove = (): void => undefined;
 
-  const handleReject = (): void | undefined => NativeAdenaInjectSheet?.dismiss();
+  const handleReject = (): void => finishSheet(session.token, null);
 
   if (bootError) {
     return (
@@ -52,18 +74,21 @@ const InjectSheetRoot = ({ requestUrl }: InjectSheetAppProps): ReactElement | nu
 
   const fallbackErrorBoundary = (): null => null;
 
-  const handleError = (error: unknown): void => {
-    if (sheetApproval.inFlight) {
+  // A crash's message is internal, so the dApp only gets a generic failure.
+  const handleError = (): void => {
+    if (session.inFlight || session.done) {
       return;
     }
 
-    try {
-      const request = requestUrl ? container.dappService.parseRequestUrl(requestUrl) : null;
+    session.done = true;
 
-      finishSheet(request ? container.dappService.fail(request, error) : null);
+    try {
+      const request = requestUrl ? container.dappService.parseRequestUrl(requestUrl, callerPackage) : null;
+
+      finishSheet(session.token, request ? container.dappService.failUnexpected(request) : null);
     }
     catch {
-      finishSheet(null);
+      finishSheet(session.token, null);
     }
   };
 
@@ -75,7 +100,7 @@ const InjectSheetRoot = ({ requestUrl }: InjectSheetAppProps): ReactElement | nu
             fallback={fallbackErrorBoundary}
             onError={handleError}
           >
-            <InjectSheetScreen requestUrl={requestUrl} />
+            <InjectSheetScreen requestUrl={requestUrl} callerPackage={callerPackage} session={session} />
           </ErrorBoundary>
         </QueryClientProvider>
       </ContainerProvider>

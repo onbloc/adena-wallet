@@ -21,6 +21,7 @@ import { SecurePasswordAttemptRepository } from '../repositories/password-attemp
 import { PendingBroadcastRepository, StoragePendingBroadcastRepository } from '../repositories/pending-broadcast.repository';
 import { StoragePreferenceRepository } from '../repositories/preference.repository';
 import { ApiPriceRepository, PriceRepository } from '../repositories/price.repository';
+import { StorageProcessedDappRequestRepository } from '../repositories/processed-dapp-request.repository';
 import { StorageTokenListRepository } from '../repositories/token-list.repository';
 import { SecureVaultRepository } from '../repositories/vault.repository';
 import { DEX_API_CONFIG, ONRAMP_CONFIG, OnrampConfig } from '../resources';
@@ -147,7 +148,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const resetMarker = new ResetMarker(keyValueStore);
   const migrationService = overrides.migrationService ?? new MigrationService(keyValueStore, secureStore);
   const walletService = overrides.walletService
-    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService], biometricRepository, preferenceRepository, resetMarker);
+    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker);
   const cloudBackupService = overrides.cloudBackupService ?? new CloudBackupService(
     infra.cloudBackupStore ?? new NativeCloudBackupStore(null, CloudBackupProvider.ICLOUD),
     infra.backupCodec ?? new BackupCodec(new ScryptXChaChaVaultCipher(BACKUP_KDF_SETTINGS)),
@@ -183,7 +184,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),
     walletService,
     dappService: overrides.dappService
-      ?? new DappService(networkService, accountService, transactionService, connectedAppService),
+      ?? new DappService(networkService, accountService, transactionService, connectedAppService, new StorageProcessedDappRequestRepository(keyValueStore, infra.now)),
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
     cloudBackupService,

@@ -109,7 +109,8 @@
     },
     "ios": {
       "modulesProvider": {
-        "AdenaCloudBackup": "AdenaCloudBackup"
+        "AdenaCloudBackup": "AdenaCloudBackup",
+        "AdenaSecureClipboard": "AdenaSecureClipboard"
       }
     }
   },

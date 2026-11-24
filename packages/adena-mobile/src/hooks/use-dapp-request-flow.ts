@@ -1,11 +1,12 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
 import { DappMessageView } from '../components/pages';
 import { toErrorMessage } from '../core/error-message';
 import { useContainer } from '../di/container-provider';
 import { DappMethod, DappRequest } from '../domain/dapp';
 import { queryKeys } from '../queries/query-keys';
-import { DappRequestContext } from '../services/dapp.service';
+import { DAPP_FEE_WARNING_MULTIPLIER, DappRequestContext } from '../services/dapp.service';
 import { formatTokenAmount, parseCoin } from '../utils/amount';
 
 const TITLES: Record<DappRequest['method'], { title: string; approve: string }> = {
@@ -17,7 +18,7 @@ const TITLES: Record<DappRequest['method'], { title: string; approve: string }> 
 export interface DappRequestFlowOptions {
   // The overlay sheet signs on the requested network without changing the wallet's selection.
   allowCrossNetwork: boolean;
-  // Runs right before signing, e.g. biometric unlock; throwing aborts the approval.
+  // Runs right before connecting or signing, e.g. biometric unlock; throwing aborts the approval.
   authorize?: () => Promise<void>;
   // Runs after approval settles, e.g. re-locking the overlay's session.
   release?: () => void;
@@ -33,6 +34,12 @@ export interface DappRequestFlow {
   approveLabel: string;
   messages: DappMessageView[];
   feeLabel: string | undefined;
+  // Set when the dApp's fee is far above the wallet's estimate; approval stays possible.
+  feeWarning: string | undefined;
+  // Code files are `${messageIndex}:${fileIndex}`; Approve waits until every one was opened.
+  expandedCode: string[];
+  toggleCode: (id: string) => void;
+  codeReviewPending: boolean;
   loading: boolean;
   error: string | undefined;
   canApprove: boolean;
@@ -82,28 +89,42 @@ export const useDappRequestFlow = (request: DappRequest | null, options: DappReq
         throw new Error('Request is not ready');
       }
 
+      // A failure after authorize opened the session (e.g. while restoring accounts) must still release it.
+      const authorized = async (run: () => Promise<string> | string): Promise<string> => {
+        try {
+          await options.authorize?.();
+          return await run();
+        }
+        finally {
+          options.release?.();
+        }
+      };
+
       if (request.method === DappMethod.CONNECT) {
-        return dappService.approveConnect(request, context);
+        return authorized(() => dappService.approveConnect(request, context));
       }
 
-      if (!prepared.data) {
+      const draft = prepared.data?.draft;
+
+      if (!draft) {
         throw new Error('Transaction is not ready');
       }
 
-      // A failure after authorize opened the session (e.g. while restoring accounts) must still release it.
-      try {
-        await options.authorize?.();
-        return await dappService.approveTransaction(request, context, prepared.data.draft);
-      }
-      finally {
-        options.release?.();
-      }
+      return authorized(() => dappService.approveTransaction(request, context, draft));
     },
   });
 
   const feeToken = context?.network.feeToken;
   const fee = prepared.data ? parseCoin(prepared.data.draft.fee.gasFee) : null;
   const messages: DappMessageView[] = prepared.data?.summaries ?? [];
+  const estimated = prepared.data?.estimatedFee ? parseCoin(prepared.data.estimatedFee.gasFee) : null;
+  const codeIds = messages.flatMap((message, position) => (message.code ?? []).map((_, file) => `${position}:${file}`));
+  const reviewKey = request?.requestId ?? '';
+  const [review, setReview] = useState<{ key: string; expanded: string[]; viewed: string[] }>({ key: reviewKey, expanded: [], viewed: [] });
+  const current = review.key === reviewKey ? review : { key: reviewKey, expanded: [], viewed: [] };
+  const codeReviewPending = codeIds.some(id => !current.viewed.includes(id));
+  const formatFee = (amount: string): string | undefined =>
+    feeToken ? `${formatTokenAmount(amount, feeToken.decimals)} ${feeToken.symbol}` : undefined;
 
   return {
     request,
@@ -113,12 +134,22 @@ export const useDappRequestFlow = (request: DappRequest | null, options: DappReq
     title: request ? TITLES[request.method].title : '',
     approveLabel: request ? TITLES[request.method].approve : '',
     messages,
-    feeLabel: fee && feeToken ? `${formatTokenAmount(fee.amount, feeToken.decimals)} ${feeToken.symbol}` : undefined,
+    feeLabel: fee ? formatFee(fee.amount) : undefined,
+    feeWarning: estimated
+      ? `The app set a fee more than ${DAPP_FEE_WARNING_MULTIPLIER}x the estimated ${formatFee(estimated.amount) ?? estimated.amount}. Approve only if you expect it.`
+      : undefined,
+    expandedCode: current.expanded,
+    toggleCode: (id: string): void => setReview(() => ({
+      key: reviewKey,
+      expanded: current.expanded.includes(id) ? current.expanded.filter(item => item !== id) : [...current.expanded, id],
+      viewed: current.viewed.includes(id) ? current.viewed : [...current.viewed, id],
+    })),
+    codeReviewPending,
     loading: isTransaction && prepared.isFetching,
     error: resolveError
       ?? (prepared.error ? toErrorMessage(prepared.error) : undefined)
       ?? (approve.error ? toErrorMessage(approve.error) : undefined),
-    canApprove: Boolean(context) && !needsSwitch && (!isTransaction || Boolean(prepared.data)) && !approve.isPending,
+    canApprove: Boolean(context) && !needsSwitch && (!isTransaction || Boolean(prepared.data)) && !codeReviewPending && !approve.isPending,
     approving: approve.isPending,
     approve: (): Promise<string> => approve.mutateAsync(),
     resetApproval: (): void => approve.reset(),

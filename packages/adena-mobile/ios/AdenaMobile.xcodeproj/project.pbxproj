@@ -19,6 +19,7 @@
 		ECA4983C50E9B365C922C917 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6C4A1DB47C2AE8F4B6C903CA /* Inter-SemiBold.ttf */; };
 		A0C1D2E3F4051627384950A1 /* AdenaCloudBackupStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C1D2E3F4051627384950A2 /* AdenaCloudBackupStore.swift */; };
 		A0C1D2E3F4051627384950A3 /* AdenaCloudBackup.mm in Sources */ = {isa = PBXBuildFile; fileRef = A0C1D2E3F4051627384950A4 /* AdenaCloudBackup.mm */; };
+		B1D2E3F405162738495A6B01 /* AdenaSecureClipboard.mm in Sources */ = {isa = PBXBuildFile; fileRef = B1D2E3F405162738495A6B02 /* AdenaSecureClipboard.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,7 @@
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		A0C1D2E3F4051627384950A2 /* AdenaCloudBackupStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AdenaCloudBackupStore.swift; path = AdenaMobile/AdenaCloudBackupStore.swift; sourceTree = "<group>"; };
 		A0C1D2E3F4051627384950A4 /* AdenaCloudBackup.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = AdenaCloudBackup.mm; path = AdenaMobile/AdenaCloudBackup.mm; sourceTree = "<group>"; };
+		B1D2E3F405162738495A6B02 /* AdenaSecureClipboard.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = AdenaSecureClipboard.mm; path = AdenaMobile/AdenaSecureClipboard.mm; sourceTree = "<group>"; };
 		A0C1D2E3F4051627384950A5 /* AdenaMobile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AdenaMobile.entitlements; path = AdenaMobile/AdenaMobile.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -62,6 +64,7 @@
 				761780EE2CA45674006654EF /* SceneDelegate.swift */,
 				A0C1D2E3F4051627384950A2 /* AdenaCloudBackupStore.swift */,
 				A0C1D2E3F4051627384950A4 /* AdenaCloudBackup.mm */,
+				B1D2E3F405162738495A6B02 /* AdenaSecureClipboard.mm */,
 				A0C1D2E3F4051627384950A5 /* AdenaMobile.entitlements */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
@@ -277,6 +280,7 @@
 				761780EF2CA45674006654EF /* SceneDelegate.swift in Sources */,
 				A0C1D2E3F4051627384950A1 /* AdenaCloudBackupStore.swift in Sources */,
 				A0C1D2E3F4051627384950A3 /* AdenaCloudBackup.mm in Sources */,
+				B1D2E3F405162738495A6B01 /* AdenaSecureClipboard.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

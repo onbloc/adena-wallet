@@ -3,9 +3,9 @@ import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { spacing } from '../../../theme';
-import { Badge, Button, Skeleton, Text } from '../../atoms';
+import { Button, Skeleton, Text } from '../../atoms';
 import { InlineAlert, KeyValueRow, TextField } from '../../molecules';
-import { DappMessageView } from '../dapp-request';
+import { DappMessageList, DappMessageView, DappRequester } from '../dapp-request';
 import { styles } from './inject-sheet.styles';
 
 export const SheetAuthMode = {
@@ -20,16 +20,24 @@ export interface InjectSheetAuthView {
   biometricLabel?: string;
   password: string;
   onChangePassword: (value: string) => void;
+  // Switches between biometrics and the password (offered when biometrics are enabled).
+  onUsePassword?: () => void;
+  onUseBiometrics?: () => void;
 }
 
 export interface InjectSheetPageProps {
   title: string;
   dappName?: string;
   origin?: string;
+  callerPackage?: string;
   rows: { label: string; value: string; multiline?: boolean }[];
   messages: DappMessageView[];
   fee?: string;
+  feeWarning?: string;
   memo?: string;
+  expandedCode?: string[];
+  onToggleCode?: (id: string) => void;
+  codeReviewPending?: boolean;
   loading: boolean;
   error?: string;
   // Blocking state (invalid link, no wallet): only a close action is offered.
@@ -45,9 +53,6 @@ export interface InjectSheetPageProps {
 // Bottom sheet drawn by the translucent Android activity on top of the calling dApp.
 export const InjectSheetPage = (props: InjectSheetPageProps): ReactElement => {
   const insets = useSafeAreaInsets();
-  const approveLabel = props.auth?.mode === SheetAuthMode.BIOMETRIC && props.auth.biometricLabel
-    ? `${props.approveLabel} with ${props.auth.biometricLabel}`
-    : props.approveLabel;
 
   return (
     <View style={styles.root}>
@@ -65,23 +70,18 @@ export const InjectSheetPage = (props: InjectSheetPageProps): ReactElement => {
           : (
               <>
                 <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-                  <View style={styles.origin}>
-                    <Text variant='section'>{props.dappName}</Text>
-                    <Text variant='meta' color='secondary'>{props.origin}</Text>
-                    <Text variant='meta' color='secondary'>The name is provided by the app. Confirm the details before approving.</Text>
-                  </View>
+                  <DappRequester style={styles.origin} dappName={props.dappName} origin={props.origin} callerPackage={props.callerPackage} />
                   {props.rows.map(row => <KeyValueRow key={row.label} label={row.label} value={row.value} multiline={row.multiline} />)}
                   {props.loading && <Skeleton height={96} />}
-                  {props.messages.map((message, position) => ({ ...message, id: `${position}:${message.title}` })).map(message => (
-                    <View key={message.id} style={styles.message}>
-                      <Badge label={message.title} tone='info' />
-                      {message.details.map(detail => (
-                        <KeyValueRow key={detail.label} label={detail.label} value={detail.value} multiline={detail.value.length > 28} />
-                      ))}
-                    </View>
-                  ))}
+                  <DappMessageList
+                    messages={props.messages}
+                    expandedCode={props.expandedCode}
+                    onToggleCode={props.onToggleCode}
+                    codeReviewPending={props.codeReviewPending}
+                  />
                   {props.memo ? <KeyValueRow label='Memo' value={props.memo} multiline /> : null}
                   {props.fee && <KeyValueRow label='Network fee' value={props.fee} emphasis />}
+                  {props.feeWarning && <InlineAlert tone='warning' title='High network fee' description={props.feeWarning} />}
                   {props.auth?.mode === SheetAuthMode.PASSWORD && (
                     <TextField
                       label='Wallet password'
@@ -92,12 +92,28 @@ export const InjectSheetPage = (props: InjectSheetPageProps): ReactElement => {
                       autoCapitalize='none'
                     />
                   )}
+                  {props.auth?.mode === SheetAuthMode.BIOMETRIC && props.auth.biometricLabel && (
+                    <Text variant='meta' color='secondary' testID='inject-sheet-auth-hint'>{`You will confirm with ${props.auth.biometricLabel}.`}</Text>
+                  )}
+                  {props.auth?.mode === SheetAuthMode.BIOMETRIC && props.auth.onUsePassword && (
+                    <Button label='Use password' tone='tertiary' size='compact' onPress={props.auth.onUsePassword} testID='inject-sheet-use-password' />
+                  )}
+                  {props.auth?.mode === SheetAuthMode.PASSWORD && props.auth.onUseBiometrics && (
+                    <Button
+                      label={`Use ${props.auth.biometricLabel ?? 'biometrics'}`}
+                      tone='tertiary'
+                      size='compact'
+                      onPress={props.auth.onUseBiometrics}
+                      testID='inject-sheet-use-biometrics'
+                    />
+                  )}
                   {props.error && <InlineAlert tone='error' title='This request cannot be completed' description={props.error} />}
                 </ScrollView>
                 <View style={styles.actions}>
                   <Button label='Reject' tone='secondary' style={styles.action} disabled={props.approving} onPress={props.onReject} />
                   <Button
-                    label={approveLabel}
+                    // The auth method stays out of the label so it never truncates; the hint and icon show it.
+                    label={props.approveLabel}
                     style={styles.action}
                     leadingIcon={props.auth?.mode === SheetAuthMode.BIOMETRIC ? 'fingerprint' : undefined}
                     disabled={!props.canApprove}

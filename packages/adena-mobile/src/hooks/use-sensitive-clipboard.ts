@@ -2,6 +2,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 
+import NativeAdenaSecureClipboard from '../native/NativeAdenaSecureClipboard';
 import { useToastStore } from '../stores/toast.store';
 
 export const SENSITIVE_CLIPBOARD_TTL_MS = 60_000;
@@ -20,13 +21,23 @@ interface CopiedSecret {
   expiresNatively: boolean;
 }
 
-// The plain clipboard has no expiry of its own, and JS timers pause in the background.
-const writeSecret = (value: string): boolean => {
+// The native copy expires on its own, also while backgrounded; the plain clipboard is the fallback.
+const writeSecret = (value: string, ttlMs: number): boolean => {
+  if (NativeAdenaSecureClipboard) {
+    try {
+      NativeAdenaSecureClipboard.setSensitiveString(value, ttlMs);
+      return true;
+    }
+    catch {
+      // Falls back to the plain clipboard below.
+    }
+  }
+
   Clipboard.setString(value);
   return false;
 };
 
-const OUTLIVES_BACKGROUND = false;
+const OUTLIVES_BACKGROUND = Boolean(NativeAdenaSecureClipboard);
 
 const wipeClipboard = (): boolean => {
   try {
@@ -106,7 +117,7 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
   }, [forget]);
 
   const copy = useCallback((value: string, message: string): void => {
-    const expiresNatively = writeSecret(value);
+    const expiresNatively = writeSecret(value, ttlMs);
 
     showToast(message, 'success');
     clearTimeout(timerRef.current);

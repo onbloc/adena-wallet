@@ -27,6 +27,7 @@ describe('AppResetService', () => {
     keyValueStore.setString(`${ACCOUNT_PHOTO_KEY_PREFIX}acc-1`, 'data:image/jpeg;base64,AAAA');
     // The local backup record goes too; the cloud copy itself is kept.
     keyValueStore.setString(StorageKey.CLOUD_BACKUP, '{}');
+    keyValueStore.setString(StorageKey.PROCESSED_DAPP_REQUESTS, '{}');
     const vaultService = new VaultService(new SecureVaultRepository(secureStore), new ScryptXChaChaVaultCipher(), new PasswordAttemptLimiter(new SecurePasswordAttemptRepository(secureStore)));
 
     await new AppResetService(session, vaultService, secureStore, keyValueStore, new MigrationService(keyValueStore, secureStore)).resetAll();

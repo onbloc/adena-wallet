@@ -45,7 +45,7 @@ if (command === 'decode') {
 
 const base = {
   version: 1,
-  id: `req-${Date.now()}`,
+  id: flag('id', `req-${Date.now()}`),
   callback: flag('callback', 'https://example.com/adena-callback'),
   dapp: { name: flag('name', 'Adena Test dApp'), url: 'https://example.com' },
 };

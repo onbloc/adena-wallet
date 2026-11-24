@@ -3,14 +3,31 @@ import { buildCallbackUrl, parseDappRequestUrl } from '../deeplink/dapp-protocol
 import { Account } from '../domain/account';
 import { DappMethod, DappRequest, DappResponse, DappResponseStatus, DappTransactionRequest } from '../domain/dapp';
 import { Network } from '../domain/network';
-import { MessageSummary, TransactionDraft } from '../domain/transaction';
+import { MessageSummary, TransactionDraft, TransactionFee } from '../domain/transaction';
+import { MemoryProcessedDappRequestRepository, ProcessedDappRequestRepository } from '../repositories/processed-dapp-request.repository';
 import { parseCoin } from '../utils/amount';
+import { BigNumber } from '../utils/big-number';
 import { AccountService } from './account.service';
 import { ConnectedAppService } from './connected-app.service';
 import { NetworkService } from './network.service';
 import { TransactionService } from './transaction.service';
 
 const GAS_WANTED_PATTERN = /^[1-9]\d{0,17}$/;
+// Android package names; anything else from the native side is ignored.
+const PACKAGE_NAME_PATTERN = /^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i;
+
+// A dApp fee above this multiple of the wallet's estimate is flagged (never blocked).
+export const DAPP_FEE_WARNING_MULTIPLIER = 3;
+
+const processedKey = (request: DappRequest): string => `${request.callbackOrigin}\n${request.requestId}`;
+
+const exceedsEstimate = (requested: TransactionFee, estimated: TransactionFee): boolean => {
+  const fee = parseCoin(requested.gasFee);
+  const estimate = parseCoin(estimated.gasFee);
+
+  return Boolean(fee && estimate && fee.denom === estimate.denom && new BigNumber(estimate.amount).gt(0)
+    && new BigNumber(fee.amount).gt(new BigNumber(estimate.amount).times(DAPP_FEE_WARNING_MULTIPLIER)));
+};
 
 export interface DappRequestContext {
   network: Network;
@@ -23,6 +40,8 @@ export interface DappRequestContext {
 export interface PreparedDappTransaction {
   draft: TransactionDraft;
   summaries: MessageSummary[];
+  // Set when the dApp's fee exceeds DAPP_FEE_WARNING_MULTIPLIER x the estimate.
+  estimatedFee?: TransactionFee;
 }
 
 // Handles external dApp requests received through deep links.
@@ -32,10 +51,23 @@ export class DappService {
     private readonly accountService: AccountService,
     private readonly transactionService: TransactionService,
     private readonly connectedAppService: ConnectedAppService,
+    private readonly processedRequests: ProcessedDappRequestRepository = new MemoryProcessedDappRequestRepository(),
   ) {}
 
-  parseRequestUrl(url: string): DappRequest {
-    return parseDappRequestUrl(url);
+  // callerPackage: Android's launching package (InjectSheetActivity), never a payload field.
+  parseRequestUrl(url: string, callerPackage?: string): DappRequest {
+    const request = parseDappRequestUrl(url);
+
+    return callerPackage && PACKAGE_NAME_PATTERN.test(callerPackage) ? { ...request, callerPackage } : request;
+  }
+
+  // True when this request id from this origin was already answered.
+  isProcessed(request: DappRequest): boolean {
+    return this.processedRequests.has(processedKey(request));
+  }
+
+  rejectDuplicate(request: DappRequest): string {
+    return this.fail(request, new AppError(AppErrorCode.DUPLICATE_REQUEST, 'This request was already handled. Send a new request.'));
   }
 
   resolveContext(request: DappRequest): DappRequestContext {
@@ -52,8 +84,9 @@ export class DappService {
       throw new AppError(AppErrorCode.WALLET_NOT_FOUND, 'No account available');
     }
 
-    // Like the extension's checkEstablished: transactions need a prior connect from this origin.
-    if (request.method !== DappMethod.CONNECT && !this.connectedAppService.isConnected(request.callbackOrigin, account.id)) {
+    // Like the extension's checkEstablished: transactions need a prior connect from this origin
+    // (and, on Android, the same launching package).
+    if (request.method !== DappMethod.CONNECT && !this.connectedAppService.isConnected(request.callbackOrigin, account.id, request.callerPackage)) {
       // The message reaches the dApp, so it must not reveal the account name.
       throw new AppError(AppErrorCode.NOT_CONNECTED, `${request.callbackOrigin} is not connected to this account. Connect the app first.`);
     }
@@ -74,15 +107,27 @@ export class DappService {
     const requestedFee = request.gasWanted && GAS_WANTED_PATTERN.test(request.gasWanted) && requestedCoin?.denom === network.feeToken.denom
       ? { gasWanted: request.gasWanted, gasFee: `${requestedCoin.amount}${requestedCoin.denom}` }
       : null;
-    const priced = requestedFee
-      ? { ...draft, fee: requestedFee }
-      : await this.transactionService.withEstimatedFee(draft, account, network);
+    const summaries = (priced: TransactionDraft): MessageSummary[] => this.transactionService.describe(priced, network);
 
-    return { draft: priced, summaries: this.transactionService.describe(priced, network) };
+    if (!requestedFee) {
+      const priced = await this.transactionService.withEstimatedFee(draft, account, network);
+
+      return { draft: priced, summaries: summaries(priced) };
+    }
+
+    const priced = { ...draft, fee: requestedFee };
+    // The estimate only informs a warning; a failed estimate keeps the dApp's fee as before.
+    const estimated = await this.transactionService.withEstimatedFee(draft, account, network).catch(() => null);
+
+    return {
+      draft: priced,
+      summaries: summaries(priced),
+      ...(estimated && exceedsEstimate(requestedFee, estimated.fee) ? { estimatedFee: estimated.fee } : {}),
+    };
   }
 
   approveConnect(request: DappRequest, context: DappRequestContext): string {
-    this.connectedAppService.touch(request.callbackOrigin, request.dapp, context.account.id, context.network.id);
+    this.connectedAppService.touch(request.callbackOrigin, request.dapp, context.account.id, context.network.id, request.callerPackage);
     return this.respond(request, {
       status: DappResponseStatus.SUCCESS,
       data: {
@@ -100,7 +145,7 @@ export class DappService {
   ): Promise<string> {
     const { account, network } = context;
 
-    this.connectedAppService.touch(request.callbackOrigin, request.dapp, account.id, network.id);
+    this.connectedAppService.markUsed(request.callbackOrigin, account.id, network.id, request.callerPackage);
 
     if (request.method === DappMethod.SIGN_TRANSACTION) {
       const signed = await this.transactionService.sign(draft, account, network);
@@ -117,14 +162,22 @@ export class DappService {
     return this.respond(request, { status: DappResponseStatus.FAILURE, error: { code: AppErrorCode.USER_REJECTED, message: 'User rejected the request' } });
   }
 
+  // Only AppError messages (written for dApps) are forwarded; anything else stays generic.
   fail(request: DappRequest, error: unknown): string {
-    const code = isAppError(error) ? error.code : 'TRANSACTION_FAILED';
-    const message = error instanceof Error ? error.message : 'Request failed';
+    if (!isAppError(error)) {
+      return this.failUnexpected(request);
+    }
 
-    return this.respond(request, { status: DappResponseStatus.FAILURE, error: { code, message } });
+    return this.respond(request, { status: DappResponseStatus.FAILURE, error: { code: error.code, message: error.message } });
+  }
+
+  // Crashes (error boundaries) must not leak internal error text to the dApp.
+  failUnexpected(request: DappRequest): string {
+    return this.respond(request, { status: DappResponseStatus.FAILURE, error: { code: AppErrorCode.UNEXPECTED_ERROR, message: 'The request could not be completed' } });
   }
 
   private respond(request: DappRequest, response: Omit<DappResponse, 'requestId'>): string {
+    this.processedRequests.add(processedKey(request));
     return buildCallbackUrl(request.callbackUrl, { requestId: request.requestId, ...response });
   }
 }

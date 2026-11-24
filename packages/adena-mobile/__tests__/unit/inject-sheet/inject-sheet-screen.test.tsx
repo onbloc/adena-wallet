@@ -4,10 +4,11 @@ import React from 'react';
 import { Linking } from 'react-native';
 
 import { InjectSheetPage, InjectSheetPageProps, SheetAuthMode } from '../../../src/components/pages';
+import { AppError, AppErrorCode } from '../../../src/core/errors';
 import { AppContainer } from '../../../src/di/container';
 import { ContainerProvider } from '../../../src/di/container-provider';
 import { DappRequestFlowOptions, useDappRequestFlow } from '../../../src/hooks/use-dapp-request-flow';
-import { finishSheet, InjectSheetScreen, sheetApproval } from '../../../src/inject-sheet/inject-sheet-screen';
+import { createSheetSession, finishSheet, InjectSheetScreen, SheetSession } from '../../../src/inject-sheet/inject-sheet-screen';
 import { useBiometricStatusQuery, useWalletStatusQuery } from '../../../src/queries/wallet.queries';
 import { BiometryKind } from '../../../src/security/secure-store';
 import { WalletStatus } from '../../../src/services/wallet.service';
@@ -41,6 +42,10 @@ const flow = (overrides: object = {}) => ({
   approveLabel: 'Approve',
   messages: [],
   feeLabel: '0.1 GNOT',
+  feeWarning: undefined,
+  expandedCode: [],
+  toggleCode: jest.fn(),
+  codeReviewPending: false,
   loading: false,
   error: undefined,
   canApprove: true,
@@ -60,22 +65,22 @@ describe('finishSheet', () => {
     mockNative.current = { complete: jest.fn(), dismiss: jest.fn() };
   });
 
-  it('completes natively with a callback url', () => {
-    finishSheet('cb://x');
-    expect(mockNative.current?.complete).toHaveBeenCalledWith('cb://x');
+  it('completes natively the sheet with the token', () => {
+    finishSheet('sheet-1', 'cb://x');
+    expect(mockNative.current?.complete).toHaveBeenCalledWith('sheet-1', 'cb://x');
   });
 
-  it('dismisses natively without a callback url', () => {
-    finishSheet(null);
-    expect(mockNative.current?.dismiss).toHaveBeenCalled();
+  it('dismisses natively the sheet with the token', () => {
+    finishSheet('sheet-1', null);
+    expect(mockNative.current?.dismiss).toHaveBeenCalledWith('sheet-1');
   });
 
   it('opens the callback url without the native module and ignores failures', async () => {
     mockNative.current = null;
     const openURL = jest.spyOn(Linking, 'openURL').mockRejectedValue(new Error('no handler'));
 
-    finishSheet('cb://x');
-    finishSheet(null);
+    finishSheet('sheet-1', 'cb://x');
+    finishSheet('sheet-1', null);
     await act(async () => undefined);
     expect(openURL).toHaveBeenCalledTimes(1);
     openURL.mockRestore();
@@ -83,14 +88,17 @@ describe('finishSheet', () => {
 });
 
 describe('InjectSheetScreen', () => {
-  const parseRequestUrl = jest.fn((url: string) => ({ requestId: url }));
+  const parseRequestUrl = jest.fn((url: string, _caller?: string) => ({ requestId: url }));
+  const isProcessed = jest.fn((_request: unknown) => false);
+  const rejectDuplicate = jest.fn((_request: unknown) => 'cb://duplicate');
   const walletService = { unlock: jest.fn(), unlockWithBiometrics: jest.fn(), lock: jest.fn() };
-  const container = { dappService: { parseRequestUrl }, walletService } as unknown as AppContainer;
+  const container = { dappService: { parseRequestUrl, isProcessed, rejectDuplicate }, walletService } as unknown as AppContainer;
+  let session: SheetSession;
 
-  const renderScreen = (requestUrl?: string) => render(
+  const renderScreen = (requestUrl?: string, callerPackage?: string) => render(
     <ContainerProvider container={container}>
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } })}>
-        <InjectSheetScreen requestUrl={requestUrl} />
+        <InjectSheetScreen requestUrl={requestUrl} callerPackage={callerPackage} session={session} />
       </QueryClientProvider>
     </ContainerProvider>,
   );
@@ -98,7 +106,8 @@ describe('InjectSheetScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockNative.current = { complete: jest.fn(), dismiss: jest.fn() };
-    sheetApproval.inFlight = false;
+    session = createSheetSession('sheet-1');
+    isProcessed.mockReturnValue(false);
     (useWalletStatusQuery as jest.Mock).mockReturnValue({ data: WalletStatus.LOCKED });
     (useBiometricStatusQuery as jest.Mock).mockReturnValue({ data: undefined });
     (useDappRequestFlow as jest.Mock).mockReturnValue(flow());
@@ -107,6 +116,7 @@ describe('InjectSheetScreen', () => {
   it('renders the request with account rows and password auth', async () => {
     await renderScreen('adena://request?payload=x');
     expect(flowRequest()).toEqual({ requestId: 'adena://request?payload=x' });
+    expect(parseRequestUrl).toHaveBeenCalledWith('adena://request?payload=x', undefined);
     expect(flowOptions().allowCrossNetwork).toBe(true);
     expect(page()).toMatchObject({
       title: 'Confirm transaction',
@@ -168,9 +178,9 @@ describe('InjectSheetScreen', () => {
     await act(async () => page().auth?.onChangePassword('pw'));
     await act(async () => page().onApprove());
     expect(approved.resetApproval).toHaveBeenCalled();
-    expect(mockNative.current?.complete).toHaveBeenCalledWith('cb://ok');
+    expect(mockNative.current?.complete).toHaveBeenCalledWith('sheet-1', 'cb://ok');
     expect(page().auth?.password).toBe('');
-    expect(sheetApproval.inFlight).toBe(false);
+    expect(session.inFlight).toBe(false);
   });
 
   it('stays open when approval fails', async () => {
@@ -182,14 +192,14 @@ describe('InjectSheetScreen', () => {
     await act(async () => page().onApprove());
     expect(mockNative.current?.complete).not.toHaveBeenCalled();
     expect(page().auth?.password).toBe('pw');
-    expect(sheetApproval.inFlight).toBe(false);
+    expect(session.inFlight).toBe(false);
   });
 
   it('marks the approval in flight while signing', async () => {
     let inFlight = false;
     const signing = flow({
       approve: jest.fn(async () => {
-        inFlight = sheetApproval.inFlight;
+        inFlight = session.inFlight;
 
         return 'cb://ok';
       }),
@@ -227,7 +237,7 @@ describe('InjectSheetScreen', () => {
       await first;
     });
     expect(mockNative.current?.complete).toHaveBeenCalledTimes(1);
-    expect(mockNative.current?.complete).toHaveBeenCalledWith('cb://ok');
+    expect(mockNative.current?.complete).toHaveBeenCalledWith('sheet-1', 'cb://ok');
   });
 
   it('shows the memo that will be signed', async () => {
@@ -239,7 +249,7 @@ describe('InjectSheetScreen', () => {
   it('rejects through the dApp callback', async () => {
     await renderScreen('adena://request?payload=x');
     await act(async () => page().onReject());
-    expect(mockNative.current?.complete).toHaveBeenCalledWith('cb://reject');
+    expect(mockNative.current?.complete).toHaveBeenCalledWith('sheet-1', 'cb://reject');
   });
 
   it('reports a missing request and only closes', async () => {
@@ -247,7 +257,7 @@ describe('InjectSheetScreen', () => {
     expect(page().unavailable).toEqual({ title: 'Invalid request', description: 'No request was received.' });
     expect(flowRequest()).toBeNull();
     await act(async () => page().onReject());
-    expect(mockNative.current?.dismiss).toHaveBeenCalled();
+    expect(mockNative.current?.dismiss).toHaveBeenCalledWith('sheet-1');
   });
 
   it('reports an unparsable request', async () => {
@@ -269,5 +279,86 @@ describe('InjectSheetScreen', () => {
     (useWalletStatusQuery as jest.Mock).mockReturnValue({ data: undefined });
     await renderScreen('adena://request?payload=x');
     expect(page().loading).toBe(true);
+  });
+  it('passes the Android caller package to the parser and the page', async () => {
+    (useDappRequestFlow as jest.Mock).mockReturnValue(flow({ request: { dapp: { name: 'Example' }, callbackOrigin: 'exampleapp:', callerPackage: 'com.example.app' } }));
+    await renderScreen('adena://request?payload=x', 'com.example.app');
+    expect(parseRequestUrl).toHaveBeenCalledWith('adena://request?payload=x', 'com.example.app');
+    expect(page()).toMatchObject({ origin: 'exampleapp:', callerPackage: 'com.example.app' });
+  });
+
+  it('requires authentication for a connect request too', async () => {
+    (useDappRequestFlow as jest.Mock).mockReturnValue(flow({ isTransaction: false, title: 'Connect app', approveLabel: 'Connect' }));
+    await renderScreen('adena://request?payload=x');
+    expect(page()).toMatchObject({ auth: { mode: SheetAuthMode.PASSWORD }, canApprove: false });
+    await expect(flowOptions().authorize?.()).rejects.toMatchObject({ message: 'Enter your wallet password' });
+  });
+
+  it('offers the password instead of biometrics and back', async () => {
+    (useBiometricStatusQuery as jest.Mock).mockReturnValue({ data: { enabled: true, kind: BiometryKind.FINGERPRINT } });
+    await renderScreen('adena://request?payload=x');
+    await act(async () => page().auth?.onUsePassword?.());
+    expect(page().auth).toMatchObject({ mode: SheetAuthMode.PASSWORD, onUsePassword: undefined });
+    expect(page().canApprove).toBe(false);
+    await act(async () => page().auth?.onChangePassword('pw'));
+    await flowOptions().authorize?.();
+    expect(walletService.unlock).toHaveBeenCalledWith('pw');
+    expect(walletService.unlockWithBiometrics).not.toHaveBeenCalled();
+    await act(async () => page().auth?.onUseBiometrics?.());
+    expect(page().auth?.mode).toBe(SheetAuthMode.BIOMETRIC);
+  });
+
+  it('switches to the password when biometrics are locked out or invalidated', async () => {
+    (useBiometricStatusQuery as jest.Mock).mockReturnValue({ data: { enabled: true, kind: BiometryKind.FINGERPRINT } });
+    (useDappRequestFlow as jest.Mock).mockReturnValue(flow({ approve: jest.fn().mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'locked out')) }));
+    await renderScreen('adena://request?payload=x');
+    await act(async () => page().onApprove());
+    expect(page().auth?.mode).toBe(SheetAuthMode.PASSWORD);
+    expect(mockNative.current?.complete).not.toHaveBeenCalled();
+  });
+
+  it('locks into a done state after success so nothing is approved or answered twice', async () => {
+    const approved = flow();
+
+    (useDappRequestFlow as jest.Mock).mockReturnValue(approved);
+    await renderScreen('adena://request?payload=x');
+    await act(async () => page().auth?.onChangePassword('pw'));
+    await act(async () => page().onApprove());
+    expect(page()).toMatchObject({ unavailable: { title: 'Response sent' }, canApprove: false });
+    expect(flowRequest()).toBeNull();
+    await act(async () => page().onApprove());
+    await act(async () => page().onReject());
+    expect(approved.approve).toHaveBeenCalledTimes(1);
+    expect(approved.rejectionUrl).not.toHaveBeenCalled();
+    expect(mockNative.current?.complete).toHaveBeenCalledTimes(1);
+    expect(mockNative.current?.dismiss).toHaveBeenCalledWith('sheet-1');
+  });
+
+  it('keeps approval state per sheet session', async () => {
+    const other = createSheetSession('sheet-2');
+
+    other.inFlight = true;
+    await renderScreen('adena://request?payload=x');
+    await act(async () => page().auth?.onChangePassword('pw'));
+    await act(async () => page().onApprove());
+    expect(mockNative.current?.complete).toHaveBeenCalledWith('sheet-1', 'cb://ok');
+    expect(other).toMatchObject({ inFlight: true, done: false });
+  });
+
+  it('answers an already handled request with a duplicate error', async () => {
+    isProcessed.mockReturnValue(true);
+    await renderScreen('adena://request?payload=x');
+    expect(flowRequest()).toBeNull();
+    expect(page().unavailable?.title).toBe('Request already handled');
+    await act(async () => page().onReject());
+    expect(rejectDuplicate).toHaveBeenCalledWith({ requestId: 'adena://request?payload=x' });
+    expect(mockNative.current?.complete).toHaveBeenCalledWith('sheet-1', 'cb://duplicate');
+  });
+
+  it('rejects through the dApp callback on back press', async () => {
+    await renderScreen('adena://request?payload=x');
+    await act(async () => session.onDismissRequest?.());
+    expect(mockNative.current?.complete).toHaveBeenCalledWith('sheet-1', 'cb://reject');
+    expect(session.done).toBe(true);
   });
 });

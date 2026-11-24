@@ -44,10 +44,12 @@ describe('InjectSheetPage', () => {
     expect(page.onApprove).toHaveBeenCalledTimes(1);
   });
 
-  it('labels the approve button with the biometric method', async () => {
+  it('keeps the approve label short and names the biometric method in a hint', async () => {
     await renderPage(<InjectSheetPage {...props({ auth: { mode: SheetAuthMode.BIOMETRIC, biometricLabel: 'Face ID', password: '', onChangePassword: jest.fn() } })} />);
 
-    expect(screen.getByRole('button', { name: 'Approve with Face ID' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Approve with/ })).toBeNull();
+    expect(screen.getByText('You will confirm with Face ID.')).toBeTruthy();
     expect(screen.queryByLabelText('Wallet password')).toBeNull();
   });
 

@@ -137,7 +137,29 @@ describe('DappService', () => {
       const prepared = await service.prepareTransaction(request, service.resolveContext(request));
 
       expect(prepared.draft).toMatchObject({ fee: { gasWanted: '500000', gasFee: '600ugnot' }, memo: 'from dapp' });
-      expect(spy).not.toHaveBeenCalled();
+      // 600ugnot is over 3x the 111ugnot estimate, so the estimate is returned for a warning.
+      expect(spy).toHaveBeenCalled();
+      expect(prepared.estimatedFee).toMatchObject({ gasFee: '111ugnot' });
+    });
+
+    it('does not flag a dApp fee within 3x the estimate', async () => {
+      const { service, txRequest, call } = await setup();
+      const request = txRequest({}, { messages: [call()], gasWanted: '500000', gasFee: '333ugnot' });
+      const prepared = await service.prepareTransaction(request, service.resolveContext(request));
+
+      expect(prepared.draft.fee.gasFee).toBe('333ugnot');
+      expect(prepared.estimatedFee).toBeUndefined();
+    });
+
+    it('keeps the dApp fee without a warning when the estimate fails', async () => {
+      const { service, txRequest, call, container } = await setup();
+
+      jest.spyOn(container.transactionService, 'withEstimatedFee').mockRejectedValue(new Error('rpc down'));
+      const request = txRequest({}, { messages: [call()], gasWanted: '500000', gasFee: '600000ugnot' });
+      const prepared = await service.prepareTransaction(request, service.resolveContext(request));
+
+      expect(prepared.draft.fee.gasFee).toBe('600000ugnot');
+      expect(prepared.estimatedFee).toBeUndefined();
     });
 
     it.each([
@@ -229,8 +251,76 @@ describe('DappService', () => {
       const request = service.parseRequestUrl(buildDappRequestUrl(payload()));
 
       expect(readResponse(service.fail(request, new AppError('INSUFFICIENT_BALANCE', 'Not enough'))).error).toEqual({ code: 'INSUFFICIENT_BALANCE', message: 'Not enough' });
-      expect(readResponse(service.fail(request, new Error('rpc down'))).error).toEqual({ code: 'TRANSACTION_FAILED', message: 'rpc down' });
-      expect(readResponse(service.fail(request, 'weird')).error).toEqual({ code: 'TRANSACTION_FAILED', message: 'Request failed' });
+      expect(readResponse(service.fail(request, new Error('rpc down at http://10.0.0.1'))).error).toEqual({ code: 'UNEXPECTED_ERROR', message: 'The request could not be completed' });
+      expect(readResponse(service.fail(request, 'weird')).error).toEqual({ code: 'UNEXPECTED_ERROR', message: 'The request could not be completed' });
+    });
+
+    it('answers crashes generically', async () => {
+      const { service } = await setup();
+      const request = service.parseRequestUrl(buildDappRequestUrl(payload()));
+
+      expect(readResponse(service.failUnexpected(request)).error).toEqual({ code: 'UNEXPECTED_ERROR', message: 'The request could not be completed' });
+    });
+  });
+
+  describe('processed requests', () => {
+    it('remembers answered requests per origin and answers duplicates with an error', async () => {
+      const { service } = await setup();
+      const request = service.parseRequestUrl(buildDappRequestUrl(payload()));
+      const otherOrigin = service.parseRequestUrl(buildDappRequestUrl(payload({ callback: 'exampleapp://cb' })));
+
+      expect(service.isProcessed(request)).toBe(false);
+      service.reject(request);
+      expect(service.isProcessed(service.parseRequestUrl(buildDappRequestUrl(payload())))).toBe(true);
+      expect(service.isProcessed(otherOrigin)).toBe(false);
+      expect(readResponse(service.rejectDuplicate(request))).toMatchObject({ requestId: 'req-1', status: 'failure', error: { code: 'DUPLICATE_REQUEST' } });
+    });
+
+    it('persists processed requests in storage', async () => {
+      const env = createTestContainer();
+      const request = env.container.dappService.parseRequestUrl(buildDappRequestUrl(payload()));
+
+      env.container.dappService.reject(request);
+      expect(env.keyValueStore.getString('processed-dapp-requests')).toContain('req-1');
+    });
+  });
+
+  describe('caller package', () => {
+    it('attaches a well-formed Android caller package only', async () => {
+      const { service } = await setup();
+      const url = buildDappRequestUrl(payload());
+
+      expect(service.parseRequestUrl(url, 'com.android.chrome').callerPackage).toBe('com.android.chrome');
+      expect(service.parseRequestUrl(url, 'not a package').callerPackage).toBeUndefined();
+      expect(service.parseRequestUrl(url).callerPackage).toBeUndefined();
+    });
+
+    it('scopes a connection to the caller package that connected', async () => {
+      const { service, txRequest, container, account, network } = await setup({ connected: false });
+      const connectUrl = buildDappRequestUrl(payload({ id: 'connect-1' }));
+      const connect = service.parseRequestUrl(connectUrl, 'com.example.wallet');
+
+      service.approveConnect(connect, service.resolveContext(connect));
+      const sameCaller = { ...txRequest({ id: 'tx-1' }), callerPackage: 'com.example.wallet' };
+      const otherCaller = { ...txRequest({ id: 'tx-2' }), callerPackage: 'com.evil.app' };
+      const noCaller = txRequest({ id: 'tx-3' });
+
+      expect(() => service.resolveContext(sameCaller)).not.toThrow();
+      expect(await codeOf(() => service.resolveContext(otherCaller))).toBe('NOT_CONNECTED');
+      expect(await codeOf(() => service.resolveContext(noCaller))).toBe('NOT_CONNECTED');
+      expect(container.connectedAppService.find(ORIGIN, account.id, network.id, 'com.example.wallet')).toMatchObject({ callerPackage: 'com.example.wallet' });
+    });
+  });
+
+  describe('connected app metadata', () => {
+    it('keeps the name and icon stored at connect time when a transaction is approved', async () => {
+      const { container, service, txRequest, account, network } = await setup();
+      const request = txRequest({ dapp: { name: 'Impostor', icon: 'https://evil.example/icon.png' } });
+      const context = service.resolveContext(request);
+      const { draft } = await service.prepareTransaction(request, context);
+
+      await service.approveTransaction(request, context, draft);
+      expect(container.connectedAppService.find(ORIGIN, account.id, network.id)).toMatchObject({ name: 'Example' });
     });
   });
 });

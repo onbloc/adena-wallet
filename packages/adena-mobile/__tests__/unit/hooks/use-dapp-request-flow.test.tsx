@@ -187,4 +187,46 @@ describe('useDappRequestFlow', () => {
 
     await expect(query.fetch()).rejects.toThrow('Nothing to prepare');
   });
+  it('authorizes a connect before answering and releases afterwards', async () => {
+    const dapp = createDapp();
+    const authorize = jest.fn().mockRejectedValueOnce(new AppError(AppErrorCode.INVALID_PASSWORD, 'Wrong password')).mockResolvedValue(undefined);
+    const release = jest.fn();
+    const { result } = await setup(dapp, request(DappMethod.CONNECT), { allowCrossNetwork: true, authorize, release });
+
+    await act(async () => {
+      await expect(result.current.approve()).rejects.toThrow('Wrong password');
+    });
+    expect(dapp.approveConnect).not.toHaveBeenCalled();
+    await act(async () => {
+      await expect(result.current.approve()).resolves.toBe('cb://connect');
+    });
+    expect(release).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps Approve disabled until every code file was opened', async () => {
+    const dapp = createDapp();
+    const code = [{ name: 'a.gno', body: 'package main' }, { name: 'b.gno', body: 'func main() {}' }];
+
+    dapp.prepareTransaction.mockResolvedValue({ ...prepared, summaries: [{ title: 'Run', details: [], code }] });
+    const { result } = await setup(dapp, request(DappMethod.SIGN_AND_BROADCAST));
+
+    await waitFor(() => expect(result.current.messages).toHaveLength(1));
+    expect(result.current).toMatchObject({ codeReviewPending: true, canApprove: false, expandedCode: [] });
+    await act(async () => result.current.toggleCode('0:0'));
+    expect(result.current).toMatchObject({ codeReviewPending: true, expandedCode: ['0:0'] });
+    await act(async () => result.current.toggleCode('0:0'));
+    await act(async () => result.current.toggleCode('0:1'));
+    // A file stays reviewed after it is collapsed again.
+    expect(result.current).toMatchObject({ codeReviewPending: false, canApprove: true, expandedCode: ['0:1'] });
+  });
+
+  it('warns about a dApp fee far above the estimate', async () => {
+    const dapp = createDapp();
+
+    dapp.prepareTransaction.mockResolvedValue({ ...prepared, estimatedFee: { gasWanted: '1', gasFee: '100000ugnot' } });
+    const { result } = await setup(dapp, request(DappMethod.SIGN_AND_BROADCAST));
+
+    await waitFor(() => expect(result.current.feeWarning).toBe('The app set a fee more than 3x the estimated 0.1 GNOT. Approve only if you expect it.'));
+    expect(result.current.canApprove).toBe(true);
+  });
 });

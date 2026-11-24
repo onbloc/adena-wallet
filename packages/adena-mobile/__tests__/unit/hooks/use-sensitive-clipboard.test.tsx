@@ -7,6 +7,15 @@ import { useToastStore } from '../../../src/stores/toast.store';
 
 const SECRET = 'abandon ability able about above absent absorb abstract absurd abuse access accident';
 
+const mockNative = { current: null as { setSensitiveString: jest.Mock } | null };
+
+jest.mock('../../../src/native/NativeAdenaSecureClipboard', () => ({
+  __esModule: true,
+  get default() {
+    return mockNative.current;
+  },
+}));
+
 describe('useSensitiveClipboard', () => {
   let appStateListeners: ((state: AppStateStatus) => void)[];
   const emitAppState = (state: AppStateStatus): void => appStateListeners.forEach(listener => listener(state));
@@ -19,6 +28,7 @@ describe('useSensitiveClipboard', () => {
       return { remove: jest.fn() } as unknown as ReturnType<typeof AppState.addEventListener>;
     });
     useToastStore.setState({ toast: null });
+    mockNative.current = null;
   });
 
   afterEach(async () => {
@@ -170,5 +180,47 @@ describe('useSensitiveClipboard', () => {
     await rerender({ ttl: SENSITIVE_CLIPBOARD_TTL_MS * 2 });
 
     expect(Clipboard.setString).toHaveBeenCalledTimes(1);
+  });
+
+  describe('native sensitive copy', () => {
+    it('marks the secret sensitive through the native module', async () => {
+      mockNative.current = { setSensitiveString: jest.fn() };
+      const { result } = await renderHook(() => useSensitiveClipboard());
+
+      await act(async () => result.current.copy(SECRET, 'Copied'));
+      expect(mockNative.current.setSensitiveString).toHaveBeenCalledWith(SECRET, SENSITIVE_CLIPBOARD_TTL_MS);
+      expect(Clipboard.setString).not.toHaveBeenCalled();
+      expect(useToastStore.getState().toast).toMatchObject({ message: 'Copied', tone: 'success' });
+    });
+
+    it('keeps the background, deferred-active and unmount handling', async () => {
+      mockNative.current = { setSensitiveString: jest.fn() };
+      const { result, unmount } = await renderHook(() => useSensitiveClipboard());
+
+      await act(async () => result.current.copy(SECRET, 'Copied'));
+      await act(async () => emitAppState('background'));
+      await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
+      expect(Clipboard.setString).not.toHaveBeenCalled();
+
+      jest.mocked(Clipboard.getString).mockResolvedValue(SECRET);
+      await act(async () => emitAppState('active'));
+      expect(Clipboard.setString).toHaveBeenLastCalledWith('');
+
+      await act(async () => result.current.copy(SECRET, 'Copied'));
+      await unmount();
+      expect(Clipboard.setString).toHaveBeenCalledTimes(2);
+    });
+
+    it('falls back to the plain clipboard when the module throws', async () => {
+      mockNative.current = {
+        setSensitiveString: jest.fn(() => {
+          throw new Error('unavailable');
+        }),
+      };
+      const { result } = await renderHook(() => useSensitiveClipboard());
+
+      await act(async () => result.current.copy(SECRET, 'Copied'));
+      expect(Clipboard.setString).toHaveBeenCalledWith(SECRET);
+    });
   });
 });

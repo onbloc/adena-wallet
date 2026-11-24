@@ -86,4 +86,26 @@ describe('ConnectedAppService', () => {
 
     expect(service.getConnectedApps()).toEqual([]);
   });
+  it('marks a transaction without replacing the metadata stored at connect time', () => {
+    service.touch(ORIGIN, { name: 'Example', icon: 'https://dapp.example.com/icon.png' }, 'a', 'net-1');
+    now = 5000;
+
+    expect(service.markUsed(ORIGIN, 'a', 'net-1')).toMatchObject({ name: 'Example', icon: 'https://dapp.example.com/icon.png', connectedAt: 1000, lastUsedAt: 5000 });
+    expect(service.markUsed(ORIGIN, 'a', 'net-2')).toMatchObject({ name: 'Example', networkId: 'net-2', connectedAt: 5000 });
+    expect(service.markUsed(OTHER, 'a', 'net-1')).toBeUndefined();
+    expect(service.getConnectedApps()).toHaveLength(2);
+  });
+
+  it('keeps connections of different caller packages apart', () => {
+    service.touch(ORIGIN, { name: 'Example' }, 'a', 'net-1', 'com.example.app');
+
+    expect(service.isConnected(ORIGIN, 'a', 'com.example.app')).toBe(true);
+    expect(service.isConnected(ORIGIN, 'a', 'com.other.app')).toBe(false);
+    expect(service.isConnected(ORIGIN, 'a')).toBe(false);
+    expect(service.markUsed(ORIGIN, 'a', 'net-1', 'com.other.app')).toBeUndefined();
+    service.touch(ORIGIN, { name: 'Example' }, 'a', 'net-1');
+    expect(service.getConnectedApps()).toHaveLength(2);
+    expect(service.find(ORIGIN, 'a', 'net-1', 'com.example.app')).toMatchObject({ callerPackage: 'com.example.app' });
+    expect(service.find(ORIGIN, 'a', 'net-1')?.callerPackage).toBeUndefined();
+  });
 });

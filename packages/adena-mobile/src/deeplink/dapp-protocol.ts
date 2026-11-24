@@ -13,8 +13,15 @@ export const PROTOCOL_VERSION = 1;
 export const REQUEST_HOST = 'request';
 
 const METHODS: DappMethod[] = Object.values(DappMethod);
-// intent/content/android-app could launch arbitrary Android components.
-const BLOCKED_CALLBACK_SCHEMES = new Set(['http', 'javascript', 'data', 'file', 'about', 'blob', 'intent', 'content', 'android-app', APP_CONFIG.deepLinkScheme]);
+
+// Schemes that load content, launch components, install apps or start calls/messages.
+// Mirrored by AdenaInjectSheetModule.BLOCKED_SCHEMES (a test keeps both lists equal).
+export const BLOCKED_CALLBACK_SCHEMES: ReadonlySet<string> = new Set([
+  'http', 'javascript', 'vbscript', 'data', 'file', 'about', 'blob', 'filesystem', 'content',
+  'intent', 'android-app', 'market', 'itms', 'itms-apps', 'itms-appss', 'itms-services',
+  'tel', 'telprompt', 'sms', 'smsto', 'mms', 'mmsto', 'mailto', 'facetime', 'facetime-audio',
+  APP_CONFIG.deepLinkScheme,
+]);
 
 interface RequestPayload {
   version: number;

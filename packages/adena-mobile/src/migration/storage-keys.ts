@@ -4,6 +4,7 @@ export const StorageKey = {
   ACCOUNTS: 'accounts',
   NETWORKS: 'networks',
   CONNECTED_APPS: 'connected-apps',
+  PROCESSED_DAPP_REQUESTS: 'processed-dapp-requests',
   PREFERENCES: 'preferences',
   TOKEN_LISTS: 'token-lists',
   ADDRESS_BOOK: 'address-book',

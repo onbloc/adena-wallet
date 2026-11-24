@@ -4,9 +4,26 @@ import { SecureKey } from '../security/secure-keys';
 import { BiometryKind, SecurePrompt, SecureStore } from '../security/secure-store';
 import { BiometricCredentialRepository } from './biometric-credential.repository';
 
-const KEY_ALIAS = 'adena.biometric-password';
-// Marks a vault-sealed value; anything else is a legacy keychain entry and is discarded.
-const SEALED_PREFIX = 'bv1:';
+// Two key slots: a new key is sealed under the unused one, so a cancelled prompt keeps the old credential.
+export const KEY_ALIASES = ['adena.biometric-password', 'adena.biometric-password.b'] as const;
+// bv1: sealed with KEY_ALIASES[0]; bv2:<slot>: names the slot. Anything else is a legacy keychain entry.
+const SEALED_PREFIX_V1 = 'bv1:';
+const SEALED_PREFIX_V2 = 'bv2:';
+
+interface SealedValue {
+  slot: number;
+  sealed: string;
+}
+
+const parseSealed = (stored: string): SealedValue | null => {
+  if (stored.startsWith(SEALED_PREFIX_V1)) {
+    return { slot: 0, sealed: stored.slice(SEALED_PREFIX_V1.length) };
+  }
+
+  const match = /^bv2:([01]):/.exec(stored);
+
+  return match ? { slot: Number(match[1]), sealed: stored.slice(match[0].length) } : null;
+};
 
 const DEFAULT_SAVE_PROMPT: SecurePrompt = { title: 'Turn on biometric unlock', cancel: 'Cancel' };
 
@@ -43,11 +60,16 @@ export class AndroidBiometricCredentialRepository implements BiometricCredential
   async saveCredential(password: string, prompt: SecurePrompt = this.savePrompt): Promise<void> {
     const vault = this.requireVault();
     const { title, subtitle, cancel } = prompt;
-    const sealed = await vault.seal(KEY_ALIAS, password, title, subtitle ?? '', cancel ?? 'Cancel').catch((error) => {
+    const stored = await this.secureStore.getItem(SecureKey.BIOMETRIC_PASSWORD);
+    const current = stored ? parseSealed(stored) : null;
+    const slot = current?.slot === 0 ? 1 : 0;
+    const sealed = await vault.seal(KEY_ALIASES[slot], password, title, subtitle ?? '', cancel ?? 'Cancel').catch((error) => {
       throw toAppError(error);
     });
 
-    await this.secureStore.setItem(SecureKey.BIOMETRIC_PASSWORD, `${SEALED_PREFIX}${sealed}`);
+    await this.secureStore.setItem(SecureKey.BIOMETRIC_PASSWORD, `${SEALED_PREFIX_V2}${slot}:${sealed}`);
+    // Only now is the previous key unused.
+    await vault.deleteKey(KEY_ALIASES[slot === 0 ? 1 : 0]).catch(() => undefined);
   }
 
   async readCredential(prompt: SecurePrompt): Promise<string | null> {
@@ -58,13 +80,15 @@ export class AndroidBiometricCredentialRepository implements BiometricCredential
       return null;
     }
 
-    if (!stored.startsWith(SEALED_PREFIX)) {
+    const value = parseSealed(stored);
+
+    if (!value) {
       await this.clear();
       return null;
     }
 
     try {
-      return await vault.unseal(KEY_ALIAS, stored.slice(SEALED_PREFIX.length), prompt.title, prompt.subtitle ?? '', prompt.cancel ?? 'Cancel');
+      return await vault.unseal(KEY_ALIASES[value.slot], value.sealed, prompt.title, prompt.subtitle ?? '', prompt.cancel ?? 'Cancel');
     }
     catch (error) {
       // The key is gone for good after an enrollment change; the stale ciphertext goes with it.
@@ -78,7 +102,7 @@ export class AndroidBiometricCredentialRepository implements BiometricCredential
 
   async clear(): Promise<void> {
     await this.secureStore.removeItem(SecureKey.BIOMETRIC_PASSWORD);
-    await this.vault?.deleteKey(KEY_ALIAS).catch(() => undefined);
+    await Promise.all(KEY_ALIASES.map(alias => this.vault?.deleteKey(alias).catch(() => undefined)));
   }
 
   private requireVault(): BiometricVault {

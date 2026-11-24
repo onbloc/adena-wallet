@@ -18,7 +18,6 @@ export const styles = StyleSheet.create({
   body: { flexGrow: 0 },
   bodyContent: { gap: spacing.space8 },
   origin: { gap: 2, paddingBottom: spacing.space4 },
-  message: { borderRadius: radius.input, backgroundColor: colors.background.subtle, padding: spacing.space12, gap: spacing.space4 },
   actions: { flexDirection: 'row', gap: spacing.space8 },
   action: { flex: 1 },
 });

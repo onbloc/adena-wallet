@@ -17,11 +17,13 @@ describe('useDeepLinkHandler', () => {
   let urlListener: (event: { url: string }) => void;
   const remove = jest.fn();
   const parseRequestUrl = jest.fn((url: string) => ({ requestId: url }));
+  const isProcessed = jest.fn((_request: unknown) => false);
+  const rejectDuplicate = jest.fn((request: { requestId: string }) => `cb://duplicate?${request.requestId}`);
   let initialUrl: string | null;
   let navigate: jest.SpyInstance;
 
   const setup = (navigationReady = true) => {
-    const container = { dappService: { parseRequestUrl } } as unknown as AppContainer;
+    const container = { dappService: { parseRequestUrl, isProcessed, rejectDuplicate } } as unknown as AppContainer;
     const wrapper = ({ children }: PropsWithChildren) => <ContainerProvider container={container}>{children}</ContainerProvider>;
 
     return renderHook((ready: boolean) => useDeepLinkHandler(ready), { wrapper, initialProps: navigationReady });
@@ -31,6 +33,7 @@ describe('useDeepLinkHandler', () => {
     initialUrl = null;
     remove.mockClear();
     parseRequestUrl.mockClear();
+    isProcessed.mockReset().mockReturnValue(false);
     jest.spyOn(Linking, 'getInitialURL').mockImplementation(() => Promise.resolve(initialUrl));
     jest.spyOn(Linking, 'addEventListener').mockImplementation((_type, handler) => {
       urlListener = handler as (event: { url: string }) => void;
@@ -52,6 +55,21 @@ describe('useDeepLinkHandler', () => {
     await act(async () => undefined);
     expect(useDappRequestStore.getState().active).toEqual({ url: link('initial'), request: { requestId: link('initial') } });
     expect(navigate).toHaveBeenCalledWith('DappRequest');
+  });
+
+  it('answers an already handled link with an error instead of prompting again', async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+
+    isProcessed.mockImplementation(request => (request as { requestId: string }).requestId === link('done'));
+    await setup();
+    await act(async () => {
+      urlListener({ url: link('done') });
+      urlListener({ url: link('fresh') });
+    });
+    expect(openURL).toHaveBeenCalledWith(`cb://duplicate?${link('done')}`);
+    expect(useToastStore.getState().toast).toMatchObject({ message: 'This request was already handled.' });
+    expect(useDappRequestStore.getState().active?.url).toBe(link('fresh'));
+    expect(navigate).toHaveBeenCalledTimes(1);
   });
 
   it('ignores empty and non-dApp links', async () => {
