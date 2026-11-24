@@ -8,6 +8,7 @@ export * from './address-book';
 export * from './address-book-edit';
 export * from './app-failure';
 export * from './backup-phrase';
+export * from './change-password';
 export * from './connected-apps';
 export * from './create-password';
 export * from './explore';

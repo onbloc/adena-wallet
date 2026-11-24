@@ -8,6 +8,7 @@ import { AddNetworkScreen } from '../containers/main/add-network-screen';
 import { AddTokenScreen } from '../containers/main/add-token-screen';
 import { AddressBookEditScreen } from '../containers/main/address-book-edit-screen';
 import { AddressBookScreen } from '../containers/main/address-book-screen';
+import { ChangePasswordScreen } from '../containers/main/change-password-screen';
 import { ConnectedAppsScreen } from '../containers/main/connected-apps-screen';
 import { ImportAccountScreen } from '../containers/main/import-account-screen';
 import { ManageNftsScreen } from '../containers/main/manage-nfts-screen';
@@ -85,6 +86,7 @@ const MainNavigator = (): ReactElement => (
     />
     <MainStack.Screen name='Settings' component={SettingsScreen} />
     <MainStack.Screen name='RecoveryPhrase' component={RecoveryPhraseScreen} />
+    <MainStack.Screen name='ChangePassword' component={ChangePasswordScreen} />
     <MainStack.Screen name='ConnectedApps' component={ConnectedAppsScreen} />
     <MainStack.Screen name='Networks' component={NetworksScreen} />
     <MainStack.Screen name='AddNetwork' component={AddNetworkScreen} />

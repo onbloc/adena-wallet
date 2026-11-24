@@ -45,6 +45,7 @@ export type MainStackParamList = {
   Receive: undefined;
   Settings: undefined;
   RecoveryPhrase: { keyringId: string };
+  ChangePassword: undefined;
   ConnectedApps: undefined;
   Networks: undefined;
   AddNetwork: undefined;

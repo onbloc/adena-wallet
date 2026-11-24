@@ -314,6 +314,52 @@ describe('WalletService', () => {
     });
   });
 
+  describe('changePassword', () => {
+    const NEXT_PASSWORD = 'another sturdy passphrase 42';
+
+    it('re-encrypts the vault with the new password', async () => {
+      const { wallet } = await setup();
+
+      await wallet.changePassword(TEST_PASSWORD, NEXT_PASSWORD);
+      wallet.lock();
+      expect(await codeOf(() => wallet.unlock(TEST_PASSWORD))).toBe('INVALID_PASSWORD');
+      await expect(wallet.unlock(NEXT_PASSWORD)).resolves.toBeUndefined();
+    });
+
+    it('rejects a wrong current password and a weak or unchanged new one', async () => {
+      const { wallet } = await setup();
+
+      expect(await codeOf(() => wallet.changePassword('wrong password', NEXT_PASSWORD))).toBe('INVALID_PASSWORD');
+      expect(await codeOf(() => wallet.changePassword(TEST_PASSWORD, '12345678'))).toBe('WEAK_PASSWORD');
+      expect(await codeOf(() => wallet.changePassword(TEST_PASSWORD, TEST_PASSWORD))).toBe('WEAK_PASSWORD');
+      wallet.lock();
+      await expect(wallet.unlock(TEST_PASSWORD)).resolves.toBeUndefined();
+    });
+
+    it('drops a change queued before a lock', async () => {
+      const { wallet } = await setup();
+      const changing = wallet.changePassword(TEST_PASSWORD, NEXT_PASSWORD);
+
+      wallet.lock();
+      expect(await codeOf(() => changing)).toBe('WALLET_LOCKED');
+      await expect(wallet.unlock(TEST_PASSWORD)).resolves.toBeUndefined();
+    });
+
+    it('replaces the stale escrowed password when biometrics are re-enabled', async () => {
+      const { wallet } = await setup();
+
+      await wallet.enableBiometricUnlock(TEST_PASSWORD);
+      await wallet.changePassword(TEST_PASSWORD, NEXT_PASSWORD);
+      wallet.lock();
+      expect(await codeOf(() => wallet.unlockWithBiometrics({ title: 'Unlock' }))).toBe('INVALID_PASSWORD');
+
+      await wallet.unlock(NEXT_PASSWORD);
+      await wallet.enableBiometricUnlock(NEXT_PASSWORD);
+      wallet.lock();
+      await expect(wallet.unlockWithBiometrics({ title: 'Unlock' })).resolves.toBeUndefined();
+    });
+  });
+
   describe('revealMnemonic', () => {
     it('requires the password and an HD keyring', async () => {
       const { wallet, account } = await setup();

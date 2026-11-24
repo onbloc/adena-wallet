@@ -225,6 +225,11 @@ export class WalletService {
     this.preferenceRepository.update({ biometricUnlockEnabled: false });
   }
 
+  // Biometric unlock keeps the old escrowed password; callers re-enable it with the new one.
+  changePassword(currentPassword: string, nextPassword: string): Promise<void> {
+    return this.runCurrent(() => this.vaultService.changePassword(currentPassword, nextPassword));
+  }
+
   async revealMnemonic(keyringId: string, password: string): Promise<string> {
     await this.vaultService.verifyPassword(password);
     return this.keyringSession.getMnemonic(keyringId);
