@@ -3,6 +3,7 @@
     <!-- Base application theme; DayNight picks values-night when the system or the app forces dark. -->
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+        <!-- Theme canvas color (values-night for dark), also the Android 12+ splash background; avoids a flash at launch. -->
         <item name="android:windowBackground">@color/window_background</item>
     </style>
 
