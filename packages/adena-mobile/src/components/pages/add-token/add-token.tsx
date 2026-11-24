@@ -49,6 +49,7 @@ export const AddTokenPage = (props: AddTokenPageProps): ReactElement => (
             tone={token.added ? 'tertiary' : 'primary'}
             size='compact'
             fullWidth={false}
+            style={styles.action}
             disabled={token.added}
             loading={props.addingKey === token.key}
             loadingLabel='Adding'

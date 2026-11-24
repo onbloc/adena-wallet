@@ -3,6 +3,7 @@ import { GnoswapApiClient } from '../infrastructure/http/gnoswap-api.client';
 import { FetchHttpClient, HttpClient } from '../infrastructure/http/http-client';
 import { OnblocApiClient } from '../infrastructure/http/onbloc-api.client';
 import { StorageAccountRepository } from '../repositories/account.repository';
+import { StorageAccountPhotoRepository } from '../repositories/account-photo.repository';
 import { StorageAddressBookRepository } from '../repositories/address-book.repository';
 import { SecureBiometricCredentialRepository } from '../repositories/biometric-credential.repository';
 import { ChainModule, ChainRegistry } from '../repositories/chain/chain-registry';
@@ -22,12 +23,14 @@ import { DEX_API_CONFIG, ONRAMP_CONFIG, OnrampConfig } from '../resources';
 import { SecureStore } from '../security/secure-store';
 import { ScryptXChaChaVaultCipher, VaultCipher } from '../security/vault-cipher';
 import { AccountService } from '../services/account.service';
+import { AccountPhotoService } from '../services/account-photo.service';
 import { ActivityService } from '../services/activity.service';
 import { AddressBookService } from '../services/address-book.service';
 import { AppResetService } from '../services/app-reset.service';
 import { BalanceService } from '../services/balance.service';
 import { ConnectedAppService } from '../services/connected-app.service';
 import { ExploreService } from '../services/explore.service';
+import { HapticEngine, HapticsService, NOOP_HAPTIC_ENGINE } from '../services/haptics.service';
 import { KeyringSession } from '../services/keyring-session';
 import { MarketDataService } from '../services/market-data.service';
 import { MigrationService } from '../services/migration.service';
@@ -58,11 +61,17 @@ export interface Infrastructure {
   now?: () => number;
   // Bundled onramp providers unless a test passes its own.
   onrampConfig?: OnrampConfig;
+  // Silent unless the native container passes the device engine.
+  hapticEngine?: HapticEngine;
+  // Picks new accounts' avatar colors; injectable for deterministic tests.
+  random?: () => number;
 }
 
 export interface Services {
   walletService: WalletService;
   accountService: AccountService;
+  accountPhotoService: AccountPhotoService;
+  hapticsService: HapticsService;
   networkService: NetworkService;
   balanceService: BalanceService;
   tokenService: TokenService;
@@ -104,7 +113,8 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const keyringSession = new KeyringSession();
   const attemptLimiter = new PasswordAttemptLimiter(new SecurePasswordAttemptRepository(secureStore), infra.now);
   const vaultService = new VaultService(vaultRepository, infra.vaultCipher ?? new ScryptXChaChaVaultCipher(), attemptLimiter);
-  const accountService = overrides.accountService ?? new AccountService(accountRepository, keyringSession, chainRegistry);
+  const accountService = overrides.accountService ?? new AccountService(accountRepository, keyringSession, chainRegistry, infra.random);
+  const accountPhotoService = overrides.accountPhotoService ?? new AccountPhotoService(new StorageAccountPhotoRepository(keyValueStore));
   const networkService = overrides.networkService ?? new NetworkService(networkRepository, chainRegistry);
   const balanceService = overrides.balanceService ?? new BalanceService(chainRegistry, accountService);
   const transactionService = overrides.transactionService
@@ -121,6 +131,8 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     keyringSession,
     chainRegistry,
     accountService,
+    accountPhotoService,
+    hapticsService: overrides.hapticsService ?? new HapticsService(preferenceRepository, infra.hapticEngine ?? NOOP_HAPTIC_ENGINE),
     networkService,
     balanceService,
     transactionService,
@@ -137,7 +149,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService, resetMarker),
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),
     walletService: overrides.walletService
-      ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService], biometricRepository, preferenceRepository, resetMarker),
+      ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService], biometricRepository, preferenceRepository, resetMarker),
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
   };

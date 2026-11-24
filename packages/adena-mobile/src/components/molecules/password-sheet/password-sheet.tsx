@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-import { Button } from '../../atoms';
+import { Button, IconName } from '../../atoms';
 import { BottomSheet } from '../bottom-sheet';
 import { TextField } from '../text-field';
 
@@ -15,6 +15,8 @@ export interface PasswordSheetProps {
   confirmLabel?: string;
   onConfirm: () => void;
   onClose: () => void;
+  // Optional biometric alternative; the password field stays as the fallback.
+  biometric?: { label: string; icon: IconName; onPress: () => void };
 }
 
 // Shared password gate used by sensitive actions on several pages.
@@ -29,6 +31,7 @@ export const PasswordSheet = ({
   confirmLabel = 'Confirm',
   onConfirm,
   onClose,
+  biometric,
 }: PasswordSheetProps): ReactElement => {
   // Return and the button share one guard: no empty password, no second submission in flight.
   const handleConfirm = (): void => {
@@ -55,6 +58,9 @@ export const PasswordSheet = ({
         testID='password-sheet-input'
       />
       <Button label={confirmLabel} disabled={!password} loading={submitting} loadingLabel='Verifying…' onPress={handleConfirm} />
+      {biometric && (
+        <Button label={`Use ${biometric.label}`} tone='secondary' leadingIcon={biometric.icon} disabled={submitting} onPress={biometric.onPress} />
+      )}
     </BottomSheet>
   );
 };

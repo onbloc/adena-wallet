@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import { fn } from 'storybook/test';
 
-import { SAMPLE_ADDRESS, SAMPLE_ASSETS, SAMPLE_COLLECTIONS } from '../../../stories/fixtures';
+import { SAMPLE_ADDRESS, SAMPLE_ASSETS, SAMPLE_AVATAR_PHOTO, SAMPLE_COLLECTIONS } from '../../../stories/fixtures';
 import { WalletHomePage } from './wallet-home';
 
 const meta = {
@@ -55,3 +55,8 @@ export const Loading: Story = { args: { headlineLoading: true, assets: SAMPLE_AS
 export const Empty: Story = { args: { headline: '$0.00', headlineCaption: undefined, assets: [], collections: [] } };
 
 export const Error: Story = { args: { error: 'Network request failed' } };
+
+// Production state until an on-ramp provider is available.
+export const BuyUnavailable: Story = { args: { onBuy: undefined } };
+
+export const ProfilePhoto: Story = { args: { accountAvatarPhoto: SAMPLE_AVATAR_PHOTO } };

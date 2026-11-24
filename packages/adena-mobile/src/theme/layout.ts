@@ -27,7 +27,8 @@ export const sizes = {
   assetRow: 60,
   expandedRow: 72,
   topBar: 44,
-  bottomNavigation: 64,
+  // Height of the floating navigation pill and its primary action.
+  bottomNavigation: 56,
   tab: 44,
   screenInset: spacing.space24,
   // Space between the top bar and the first content block.

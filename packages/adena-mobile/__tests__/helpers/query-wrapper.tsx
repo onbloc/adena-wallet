@@ -27,9 +27,9 @@ export const ACCOUNT: Account = { id: 'acc-1', keyringId: 'k', keyringType: Keyr
 export const createTestQueryClient = (): QueryClient =>
   new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
 
-// Wraps hooks with a fresh query client and a partial fake container.
+// Wraps hooks with a fresh query client and a partial fake container; photos and haptics default to none.
 export const createWrapper = (services: Partial<Record<keyof AppContainer, unknown>>, client = createTestQueryClient()) => {
-  const container = services as unknown as AppContainer;
+  const container = { accountPhotoService: { get: () => undefined }, hapticsService: { play: () => undefined }, ...services } as unknown as AppContainer;
   const Wrapper = ({ children }: PropsWithChildren): ReactElement => (
     <QueryClientProvider client={client}>
       <ContainerProvider container={container}>{children}</ContainerProvider>

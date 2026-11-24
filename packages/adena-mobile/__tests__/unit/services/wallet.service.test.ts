@@ -1,6 +1,7 @@
 import { isAppError } from '../../../src/core/errors';
 import { deriveKeyPair } from '../../../src/crypto/key-pair';
 import { isValidMnemonic, mnemonicToSeed } from '../../../src/crypto/mnemonic';
+import { isAvatarColor } from '../../../src/domain/account';
 import { StorageAccountRepository } from '../../../src/repositories/account.repository';
 import { SecureBiometricCredentialRepository } from '../../../src/repositories/biometric-credential.repository';
 import { StoragePreferenceRepository } from '../../../src/repositories/preference.repository';
@@ -396,6 +397,35 @@ describe('WalletService', () => {
       wallet.lock();
       expect(await codeOf(() => wallet.revealMnemonic(account.keyringId, TEST_PASSWORD))).toBe('WALLET_LOCKED');
     });
+
+    it('reveals with the biometric credential once biometric unlock is enabled', async () => {
+      const { wallet, account } = await setup();
+
+      expect(await codeOf(() => wallet.revealMnemonicWithBiometrics(account.keyringId, { title: 'Reveal' }))).toBe('BIOMETRICS_UNAVAILABLE');
+      await wallet.enableBiometricUnlock(TEST_PASSWORD);
+      await expect(wallet.revealMnemonicWithBiometrics(account.keyringId, { title: 'Reveal' })).resolves.toBe(TEST_MNEMONIC);
+    });
+
+    it('surfaces a canceled prompt and a stale escrowed password from the biometric reveal', async () => {
+      const { wallet, account, secureStore } = await setup();
+
+      await wallet.enableBiometricUnlock(TEST_PASSWORD);
+      secureStore.biometricOutcome = BiometricOutcome.CANCEL;
+      expect(await codeOf(() => wallet.revealMnemonicWithBiometrics(account.keyringId, { title: 'Reveal' }))).toBe('BIOMETRICS_CANCELED');
+      secureStore.biometricOutcome = BiometricOutcome.SUCCESS;
+      await secureStore.setItem(SecureKey.BIOMETRIC_PASSWORD, 'old password');
+      expect(await codeOf(() => wallet.revealMnemonicWithBiometrics(account.keyringId, { title: 'Reveal' }))).toBe('INVALID_PASSWORD');
+    });
+  });
+
+  it('gives the wallet\'s first account the default color and later created or imported ones a preset', async () => {
+    const { wallet, account } = await setup();
+    const added = await wallet.addMnemonicKeyring(OTHER_MNEMONIC, TEST_PASSWORD);
+    const imported = await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+
+    expect(account.avatarColor).toBeUndefined();
+    expect(isAvatarColor(added.avatarColor)).toBe(true);
+    expect(isAvatarColor(imported.avatarColor)).toBe(true);
   });
 
   describe('addMnemonicKeyring', () => {
@@ -509,7 +539,12 @@ describe('WalletService', () => {
         container.tokenService.setVisibility(owner, network, 'x', true);
       }
 
+      container.accountPhotoService.save(account.id, 'data:image/jpeg;base64,AAAA');
+      container.accountPhotoService.save(imported.id, 'data:image/jpeg;base64,BBBB');
+
       await wallet.removeAccount(imported.id, TEST_PASSWORD);
+      expect(container.accountPhotoService.get(imported.id)).toBeUndefined();
+      expect(container.accountPhotoService.get(account.id)).toBe('data:image/jpeg;base64,AAAA');
       expect(container.nftService.getPreferences(imported, network).pinned).toEqual([]);
       expect(container.nftService.getPreferences(account, network).pinned).toEqual(['gno.land/r/demo/nft']);
       expect(container.tokenService.getStoredToken(imported, network, 'x')).toBeUndefined();

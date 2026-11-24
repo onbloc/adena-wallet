@@ -1,6 +1,7 @@
 import React, { ReactElement, useState } from 'react';
 
 import { HomeTab, WalletHomePage } from '../../../components/pages';
+import { FEATURES } from '../../../config/features';
 import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
 import { useCopyToClipboard } from '../../../hooks/use-copy-to-clipboard';
@@ -19,7 +20,7 @@ import { formatUSD, formatUSDChange } from '../../../utils/price';
 export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactElement => {
   const { account, network, address } = useWalletSnapshot();
   const wallet = useWalletAssets();
-  const { nftService } = useContainer();
+  const { nftService, accountPhotoService } = useContainer();
 
   useSessionStore(state => state.revision);
   const collectionsQuery = useNftCollectionsQuery(account, network);
@@ -89,6 +90,7 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
     <WalletHomePage
       accountName={account?.name ?? ''}
       accountAvatarColor={toAvatarColor(account)}
+      accountAvatarPhoto={account ? accountPhotoService.get(account.id) : undefined}
       address={address}
       networkName={`${network.chainName} ${network.networkName}`}
       isTestnet={!network.isMainnet}
@@ -124,7 +126,7 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
       onOpenCollection={handleOpenCollection}
       onManageTokens={handleManageTokens}
       onManageNfts={handleManageNfts}
-      onBuy={handleBuy}
+      onBuy={FEATURES.buy ? handleBuy : undefined}
       onSend={handleSend}
       onReceive={handleReceive}
     />

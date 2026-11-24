@@ -14,7 +14,7 @@ import { useToastStore } from '../../../stores/toast.store';
 
 export const AccountSettingsScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'AccountSettings'>): ReactElement | null => {
   const { accountId } = route.params;
-  const { accountService, walletService, connectedAppService } = useContainer();
+  const { accountService, accountPhotoService, walletService, connectedAppService } = useContainer();
   const { accounts, network } = useWalletSnapshot();
   const bumpRevision = useSessionStore(state => state.bumpRevision);
   const showToast = useToastStore(state => state.show);
@@ -49,6 +49,7 @@ export const AccountSettingsScreen = ({ navigation, route }: NativeStackScreenPr
       address={address}
       sourceLabel={account.keyringType === KeyringType.HD_WALLET ? `Recovery phrase · #${account.hdIndex + 1}` : 'Imported key'}
       avatarColor={toAvatarColor(account)}
+      avatarPhoto={accountPhotoService.get(account.id)}
       onEditProfile={handleEditProfile}
       connectedAppCount={new Set(connectedAppService.getConnectedApps().map(app => app.origin)).size}
       hasRecoveryPhrase={account.keyringType === KeyringType.HD_WALLET}

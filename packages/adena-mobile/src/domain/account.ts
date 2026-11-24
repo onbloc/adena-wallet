@@ -35,6 +35,10 @@ export const ACCOUNT_NAME_MAX_LENGTH = 23;
 
 export const isAvatarColor = (value: unknown): value is AvatarColor => AVATAR_COLORS.includes(value as AvatarColor);
 
+// Not security sensitive, so any [0, 1) source (Math.random) works.
+export const pickAvatarColor = (random: () => number = Math.random): AvatarColor =>
+  AVATAR_COLORS[Math.min(AVATAR_COLORS.length - 1, Math.max(0, Math.floor(random() * AVATAR_COLORS.length)))];
+
 export interface TokenBalance {
   denom: string;
   symbol: string;

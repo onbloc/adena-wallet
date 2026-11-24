@@ -2,6 +2,8 @@ import { fireEvent, render, screen, userEvent } from '@testing-library/react-nat
 import React from 'react';
 
 import { Button, ButtonTone } from '../../../../src/components/atoms';
+import { HapticKind } from '../../../../src/domain/haptics';
+import { HapticsContext } from '../../../../src/hooks/use-haptics';
 import { colors } from '../../../../src/theme';
 
 describe('Button', () => {
@@ -43,5 +45,28 @@ describe('Button', () => {
 
     await render(<Button label={label} />);
     expect(screen.getByText(label).props.numberOfLines).toBe(1);
+  });
+});
+
+describe('Button haptics', () => {
+  it.each<[ButtonTone, boolean | undefined, number]>([
+    ['primary', undefined, 1],
+    ['destructive', undefined, 1],
+    ['secondary', undefined, 0],
+    ['secondary', true, 1],
+    ['primary', false, 0],
+  ])('plays a light impact for %s (haptic=%s)', async (tone, haptic, expected) => {
+    const play = jest.fn();
+    const onPress = jest.fn();
+
+    await render(<HapticsContext value={play}><Button label='Go' tone={tone} haptic={haptic} onPress={onPress} /></HapticsContext>);
+    await fireEvent.press(screen.getByRole('button', { name: 'Go' }));
+
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(play).toHaveBeenCalledTimes(expected);
+
+    if (expected) {
+      expect(play).toHaveBeenCalledWith(HapticKind.IMPACT);
+    }
   });
 });

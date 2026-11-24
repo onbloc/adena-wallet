@@ -66,12 +66,35 @@ describe('BottomSheet', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('skips keyboard padding on Android', async () => {
+  it('reports onDismissed after the exit animation on Android', async () => {
     const original = Platform.OS;
+    const onDismissed = jest.fn();
 
     Platform.OS = 'android';
-    await render(renderSheet());
-    Platform.OS = original;
-    expect(screen.getByText('Body')).toBeTruthy();
+
+    try {
+      const { rerender } = await render(renderSheet({ onDismissed }));
+
+      await rerender(renderSheet({ visible: false, onDismissed }));
+      expect(onDismissed).not.toHaveBeenCalled();
+      await act(async () => {
+        jest.runAllTimers();
+      });
+      expect(onDismissed).toHaveBeenCalledTimes(1);
+    }
+    finally {
+      Platform.OS = original;
+    }
+  });
+
+  it('leaves onDismissed to the iOS modal once the exit animation ends', async () => {
+    const onDismissed = jest.fn();
+    const { rerender } = await render(renderSheet({ onDismissed }));
+
+    await rerender(renderSheet({ visible: false, onDismissed }));
+    await act(async () => {
+      jest.runAllTimers();
+    });
+    expect(onDismissed).not.toHaveBeenCalled();
   });
 });

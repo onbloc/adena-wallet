@@ -26,3 +26,13 @@ describe('Avatar color', () => {
     expect(JSON.stringify(screen.toJSON())).toContain('#0E7490');
   });
 });
+
+describe('Avatar photo', () => {
+  it('shows the photo instead of the initials', async () => {
+    const uri = 'data:image/jpeg;base64,AAAA';
+
+    await render(<Avatar name='Adena' color='#0E7490' imageUri={uri} size={48} />);
+    expect(screen.getByTestId('avatar-photo').props.source).toEqual({ uri });
+    expect(screen.queryByText('AD')).toBeNull();
+  });
+});

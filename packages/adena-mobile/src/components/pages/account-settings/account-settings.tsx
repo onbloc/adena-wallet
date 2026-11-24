@@ -11,6 +11,7 @@ export interface AccountSettingsPageProps {
   address: string;
   sourceLabel: string;
   avatarColor?: string;
+  avatarPhoto?: string;
   onEditProfile: () => void;
   connectedAppCount: number;
   hasRecoveryPhrase: boolean;
@@ -30,7 +31,7 @@ export const AccountSettingsPage = (props: AccountSettingsPageProps): ReactEleme
     footer={props.canRemove && <Button label='Remove account' tone='destructiveText' onPress={props.onRequestRemove} />}
   >
     <ListRow
-      leading={<Avatar name={props.name} color={props.avatarColor} />}
+      leading={<Avatar name={props.name} color={props.avatarColor} imageUri={props.avatarPhoto} />}
       label={props.name}
       description={formatAddress(props.address)}
       value={props.sourceLabel}

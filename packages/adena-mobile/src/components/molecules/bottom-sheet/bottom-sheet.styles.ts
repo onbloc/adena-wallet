@@ -12,8 +12,9 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.space24,
     paddingTop: spacing.space8,
     gap: spacing.space8,
-    maxHeight: '90%',
+    flexShrink: 1,
   },
+  keyboardAvoider: { maxHeight: '90%' },
   handle: {
     alignSelf: 'center',
     width: 36,

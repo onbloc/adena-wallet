@@ -2,7 +2,7 @@ import { fromBase64, toBase64 } from '@cosmjs/encoding';
 
 import { AppError, AppErrorCode } from '../core/errors';
 import { KeyringType } from '../crypto/keyring';
-import { Account, ACCOUNT_NAME_MAX_LENGTH, AvatarColor, isAvatarColor } from '../domain/account';
+import { Account, ACCOUNT_NAME_MAX_LENGTH, AvatarColor, isAvatarColor, pickAvatarColor } from '../domain/account';
 import { Network } from '../domain/network';
 import { AccountRepository } from '../repositories/account.repository';
 import { ChainRegistry } from '../repositories/chain/chain-registry';
@@ -24,6 +24,7 @@ export class AccountService {
     private readonly accountRepository: AccountRepository,
     private readonly keyringSession: KeyringSession,
     private readonly chainRegistry: ChainRegistry,
+    private readonly random: () => number = Math.random,
   ) {}
 
   getAccounts(): Account[] {
@@ -72,7 +73,9 @@ export class AccountService {
   }
 
   // createAccount for callers already inside runExclusive (queuing again would deadlock).
-  async appendAccount(keyringId: string, keyringType: KeyringType, name?: string): Promise<Account> {
+  // A given (e.g. backed-up) avatarColor is kept; otherwise the wallet's first account uses the
+  // default color and later ones get a random preset.
+  async appendAccount(keyringId: string, keyringType: KeyringType, name?: string, avatarColor?: AvatarColor): Promise<Account> {
     const epoch = this.keyringSession.epoch;
     const keyringAccounts = this.getAccounts().filter(account => account.keyringId === keyringId);
 
@@ -103,6 +106,7 @@ export class AccountService {
       hdIndex,
       publicKey,
       createdAt: Date.now(),
+      ...this.resolveAvatarColor(accounts, avatarColor),
     };
 
     this.accountRepository.saveAccounts([...accounts, account]);
@@ -112,6 +116,14 @@ export class AccountService {
     }
 
     return account;
+  }
+
+  private resolveAvatarColor(existing: Account[], avatarColor?: AvatarColor): Pick<Account, 'avatarColor'> {
+    if (isAvatarColor(avatarColor)) {
+      return { avatarColor };
+    }
+
+    return existing.length === 0 ? {} : { avatarColor: pickAvatarColor(this.random) };
   }
 
   isDuplicatePublicKey(publicKey: string): boolean {

@@ -7,6 +7,7 @@ import { AppFailurePage } from '../components/pages';
 import { toErrorMessage } from '../core/error-message';
 import { useContainer } from '../di/container-provider';
 import { useAutoLock } from '../hooks/use-auto-lock';
+import { HapticsContext } from '../hooks/use-haptics';
 import { navigationRef } from '../navigation/navigation-ref';
 import { RootNavigator } from '../navigation/root-navigator';
 import { queryKeys } from '../queries/query-keys';
@@ -14,7 +15,7 @@ import { SessionStatus, useSessionStore } from '../stores/session.store';
 import { ToastHost } from './toast-host';
 
 export const AppShell = (): ReactElement => {
-  const { walletService } = useContainer();
+  const { walletService, hapticsService } = useContainer();
   const status = useSessionStore(state => state.status);
 
   // Hydrates the session store from the persisted wallet state. A refetch after the cache is
@@ -53,12 +54,14 @@ export const AppShell = (): ReactElement => {
   // Touch events bubble here from every screen and reset the idle timer.
 
   return (
-    <View style={styles.root} onTouchStart={recordActivity}>
-      <NavigationContainer ref={navigationRef}>
-        <RootNavigator />
-        <ToastHost />
-      </NavigationContainer>
-    </View>
+    <HapticsContext value={hapticsService.play}>
+      <View style={styles.root} onTouchStart={recordActivity}>
+        <NavigationContainer ref={navigationRef}>
+          <RootNavigator />
+          <ToastHost />
+        </NavigationContainer>
+      </View>
+    </HapticsContext>
   );
 };
 

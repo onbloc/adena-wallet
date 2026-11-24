@@ -93,6 +93,16 @@ describe('WalletHomePage', () => {
     expect(screen.queryByRole('button', { name: 'Manage NFTs' })).toBeNull();
   });
 
+  it('shows Buy disabled when no buy action is wired', async () => {
+    await renderPage(<WalletHomePage {...props({ onBuy: undefined })} />);
+
+    const buy = screen.getByRole('button', { name: 'Buy' });
+
+    expect(buy.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
+    await fireEvent.press(buy);
+    expect(screen.getByRole('button', { name: 'Send' }).props.accessibilityState).toEqual(expect.objectContaining({ disabled: false }));
+  });
+
   it('shows the balance error, testnet badge and loading skeletons', async () => {
     await renderPage(
       <WalletHomePage {...props({

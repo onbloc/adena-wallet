@@ -236,6 +236,22 @@ export class WalletService {
     return this.keyringSession.getMnemonic(keyringId);
   }
 
+  async revealMnemonicWithBiometrics(keyringId: string, prompt: SecurePrompt): Promise<string> {
+    if (!(await this.isBiometricUnlockEnabled())) {
+      throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
+    }
+
+    const password = await this.biometricRepository.readCredential(prompt);
+
+    if (!password) {
+      throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
+    }
+
+    // An escrowed password is not a typed guess, so it skips the attempt limit like biometric unlock.
+    await this.vaultService.openWithEscrowedPassword(password);
+    return this.keyringSession.getMnemonic(keyringId);
+  }
+
   addMnemonicKeyring(mnemonic: string, password: string, accountName?: string): Promise<Account> {
     return this.runCurrent(() => this.addMnemonic(mnemonic, password, accountName));
   }

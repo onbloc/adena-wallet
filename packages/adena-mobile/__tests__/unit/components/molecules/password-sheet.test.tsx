@@ -56,6 +56,25 @@ describe('PasswordSheet', () => {
     expect(sheet.onClose).not.toHaveBeenCalled();
   });
 
+  it('offers the biometric alternative next to the password field', async () => {
+    const onPress = jest.fn();
+    const sheet = props({ biometric: { label: 'Face ID', icon: 'faceId', onPress } });
+
+    await renderSheet(sheet);
+    await fireEvent.press(screen.getByRole('button', { name: 'Use Face ID', includeHiddenElements: true }));
+
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('password-sheet-input', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('blocks the biometric alternative while a password check runs', async () => {
+    const onPress = jest.fn();
+
+    await renderSheet(props({ password: 'x', submitting: true, biometric: { label: 'Fingerprint', icon: 'fingerprint', onPress } }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Use Fingerprint', includeHiddenElements: true }));
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
   it('guards Return like the button: no empty password and no second submission', async () => {
     const empty = props();
 

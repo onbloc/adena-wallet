@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   ArrowLeftRight,
+  Camera,
   Check,
   ChevronDown,
   ChevronRight,
@@ -75,6 +76,7 @@ const ICONS = {
   user: User,
   trash: Trash2,
   palette: Palette,
+  camera: Camera,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

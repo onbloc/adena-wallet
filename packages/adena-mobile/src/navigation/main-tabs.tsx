@@ -3,7 +3,7 @@ import React, { ReactElement } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { MainTabBar } from '../components/molecules';
+import { getFloatingNavigationOffset, MainTabBar } from '../components/molecules';
 import { MainTab } from '../components/view-models';
 import { ActivityScreen } from '../containers/main/activity-screen';
 import { ExploreScreen } from '../containers/main/explore-screen';
@@ -28,7 +28,7 @@ const TabBar = ({ state, navigation, showExplore }: BottomTabBarProps & { showEx
   const handleSearch = (): void => navigation.navigate('Search');
 
   return (
-    <View style={[styles.bar, { paddingBottom: insets.bottom }]}>
+    <View pointerEvents='box-none' style={[styles.bar, { bottom: getFloatingNavigationOffset(insets.bottom) }]}>
       <MainTabBar
         selected={TAB_BY_ROUTE[current]}
         showExplore={showExplore}
@@ -59,6 +59,7 @@ export const MainTabs = (): ReactElement => {
   );
 };
 
+// Floats over the scenes instead of reserving a bar; tab pages pad their content to clear it.
 const styles = StyleSheet.create({
-  bar: { backgroundColor: colors.background.canvas, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border.subtle },
+  bar: { position: 'absolute', left: 0, right: 0 },
 });

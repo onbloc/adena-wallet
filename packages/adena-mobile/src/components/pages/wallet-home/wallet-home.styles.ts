@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
   topBar: { height: sizes.topBar, flexDirection: 'row', alignItems: 'center', gap: spacing.space8, paddingHorizontal: sizes.screenInset },
   identity: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.space8, minHeight: sizes.touchTarget },
   identityName: { flexShrink: 1 },
-  content: { paddingHorizontal: sizes.screenInset, paddingTop: sizes.contentTop, paddingBottom: spacing.space32, gap: spacing.space12 },
+  content: { paddingHorizontal: sizes.screenInset, paddingTop: sizes.contentTop, gap: spacing.space12 },
   network: { flexDirection: 'row' },
   actions: { flexDirection: 'row', gap: spacing.space16, marginTop: spacing.space8 },
   action: { flex: 1 },

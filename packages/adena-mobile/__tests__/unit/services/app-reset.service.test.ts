@@ -1,6 +1,6 @@
 import { AppErrorCode } from '../../../src/core/errors';
 import { createContainer } from '../../../src/di/container';
-import { StorageKey } from '../../../src/migration/storage-keys';
+import { ACCOUNT_PHOTO_KEY_PREFIX, StorageKey } from '../../../src/migration/storage-keys';
 import { SecurePasswordAttemptRepository } from '../../../src/repositories/password-attempt.repository';
 import { SecureVaultRepository } from '../../../src/repositories/vault.repository';
 import { MemorySecureStore } from '../../../src/security/memory-secure-store';
@@ -24,6 +24,7 @@ describe('AppResetService', () => {
     await Promise.all(Object.values(SecureKey).map(key => secureStore.setItem(key, 'x')));
     keyValueStore.setString(StorageKey.ACCOUNTS, '{}');
     keyValueStore.setString('anything', '1');
+    keyValueStore.setString(`${ACCOUNT_PHOTO_KEY_PREFIX}acc-1`, 'data:image/jpeg;base64,AAAA');
     const vaultService = new VaultService(new SecureVaultRepository(secureStore), new ScryptXChaChaVaultCipher(), new PasswordAttemptLimiter(new SecurePasswordAttemptRepository(secureStore)));
 
     await new AppResetService(session, vaultService, secureStore, keyValueStore, new MigrationService(keyValueStore, secureStore)).resetAll();

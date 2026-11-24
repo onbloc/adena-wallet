@@ -2,7 +2,7 @@ import { fromBase64, toBase64 } from '@cosmjs/encoding';
 
 import { isAppError } from '../../../src/core/errors';
 import { KeyringType } from '../../../src/crypto/keyring';
-import { ACCOUNT_NAME_MAX_LENGTH, AvatarColor } from '../../../src/domain/account';
+import { ACCOUNT_NAME_MAX_LENGTH, AVATAR_COLORS, AvatarColor, pickAvatarColor } from '../../../src/domain/account';
 import { StorageAccountRepository } from '../../../src/repositories/account.repository';
 import { AccountService } from '../../../src/services/account.service';
 import { KeyringSession } from '../../../src/services/keyring-session';
@@ -12,7 +12,7 @@ import { TEST_MNEMONIC } from '../../helpers/test-container';
 
 const PRIVATE_KEY = '1'.repeat(64);
 
-const setup = ({ unlocked = true } = {}) => {
+const setup = ({ unlocked = true, random = Math.random }: { unlocked?: boolean; random?: () => number } = {}) => {
   const store = new MemoryKeyValueStore();
   const repository = new StorageAccountRepository(store);
   const session = new KeyringSession();
@@ -25,7 +25,7 @@ const setup = ({ unlocked = true } = {}) => {
     ]);
   }
 
-  return { service: new AccountService(repository, session, registry), repository, session };
+  return { service: new AccountService(repository, session, registry, random), repository, session };
 };
 
 describe('AccountService', () => {
@@ -147,6 +147,39 @@ describe('AccountService', () => {
 
       expect(isAppError(await catchError(() => service.createAccount('unknown', KeyringType.HD_WALLET)), 'WALLET_NOT_FOUND')).toBe(true);
     });
+
+    it('keeps the default color for the first account and picks a random preset for later ones', async () => {
+      const random = jest.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0.3);
+      const { service } = setup({ random });
+      const first = await service.createAccount('hd', KeyringType.HD_WALLET);
+      const second = await service.createAccount('hd', KeyringType.HD_WALLET);
+      const imported = await service.createAccount('pk', KeyringType.PRIVATE_KEY);
+
+      expect(first.avatarColor).toBeUndefined();
+      expect(second.avatarColor).toBe(AvatarColor.TEAL);
+      expect(imported.avatarColor).toBe(AVATAR_COLORS[2]);
+      expect(random).toHaveBeenCalledTimes(2);
+      expect(service.getAccount(second.id).avatarColor).toBe(AvatarColor.TEAL);
+    });
+
+    it('keeps a given (backed-up) color instead of picking one', async () => {
+      const random = jest.fn(() => 0);
+      const { service } = setup({ random });
+
+      const first = await service.appendAccount('hd', KeyringType.HD_WALLET, undefined, AvatarColor.PINK);
+      const second = await service.appendAccount('hd', KeyringType.HD_WALLET, undefined, AvatarColor.GREEN);
+
+      expect([first.avatarColor, second.avatarColor]).toEqual([AvatarColor.PINK, AvatarColor.GREEN]);
+      expect(random).not.toHaveBeenCalled();
+    });
+  });
+
+  it('maps any [0, 1) random value onto a preset color', () => {
+    expect(pickAvatarColor(() => 0)).toBe(AVATAR_COLORS[0]);
+    expect(pickAvatarColor(() => 0.999999)).toBe(AVATAR_COLORS[AVATAR_COLORS.length - 1]);
+    expect(pickAvatarColor(() => 1)).toBe(AVATAR_COLORS[AVATAR_COLORS.length - 1]);
+    expect(pickAvatarColor(() => -1)).toBe(AVATAR_COLORS[0]);
+    expect(AVATAR_COLORS).toContain(pickAvatarColor());
   });
 
   it('detects duplicate public keys', async () => {

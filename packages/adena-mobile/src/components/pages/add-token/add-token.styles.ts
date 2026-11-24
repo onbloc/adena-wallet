@@ -13,4 +13,6 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.background.subtle,
   },
   texts: { flex: 1, gap: 2 },
+  // The hugging button defaults to flex-start, which pins it to the top of the row.
+  action: { alignSelf: 'center' },
 });

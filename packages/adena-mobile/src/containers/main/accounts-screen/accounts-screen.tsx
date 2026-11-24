@@ -15,7 +15,7 @@ import { useToastStore } from '../../../stores/toast.store';
 const SOURCE_LABEL = { HD_WALLET: 'Recovery phrase', PRIVATE_KEY: 'Imported key' } as const;
 
 export const AccountsScreen = ({ navigation }: NativeStackScreenProps<MainStackParamList, 'Accounts'>): ReactElement => {
-  const { accountService } = useContainer();
+  const { accountService, accountPhotoService } = useContainer();
   const { accounts, account: current, network } = useWalletSnapshot();
   const bumpRevision = useSessionStore(state => state.bumpRevision);
   const showToast = useToastStore(state => state.show);
@@ -68,6 +68,7 @@ export const AccountsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
         sourceLabel: SOURCE_LABEL[item.keyringType],
         selected: item.id === current?.id,
         avatarColor: toAvatarColor(item),
+        avatarPhoto: accountPhotoService.get(item.id),
       }))}
       adding={adding}
       onSelect={handleSelect}

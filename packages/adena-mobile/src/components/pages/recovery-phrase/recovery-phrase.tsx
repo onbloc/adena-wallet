@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { View } from 'react-native';
 
 import { Button, Text } from '../../atoms';
-import { InlineAlert, MnemonicGrid, PasswordSheet, Screen, TopBar } from '../../molecules';
+import { InlineAlert, MnemonicGrid, PasswordSheet, PasswordSheetProps, Screen, TopBar } from '../../molecules';
 import { styles } from './recovery-phrase.styles';
 
 export interface RecoveryPhrasePageProps {
@@ -15,6 +15,8 @@ export interface RecoveryPhrasePageProps {
   error?: string;
   verifying: boolean;
   onReveal: () => void;
+  // Offered when biometric unlock is enabled.
+  biometric?: PasswordSheetProps['biometric'];
   onCopy: () => void;
   onBack: () => void;
 }
@@ -47,6 +49,7 @@ export const RecoveryPhrasePage = (props: RecoveryPhrasePageProps): ReactElement
       confirmLabel='Reveal phrase'
       onConfirm={props.onReveal}
       onClose={props.onClosePasswordSheet}
+      biometric={props.biometric}
     />
   </Screen>
 );

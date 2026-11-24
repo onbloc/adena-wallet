@@ -39,7 +39,7 @@ const includes = (needle: string, ...values: (string | undefined)[]): boolean =>
 
 // Searches data the wallet already loads (token lists, registry, collections) plus local accounts and contacts.
 export const SearchScreen = ({ navigation }: NativeStackScreenProps<MainStackParamList, 'Search'>): ReactElement => {
-  const { tokenService, accountService, addressBookService, networkService, chainRegistry, nftService } = useContainer();
+  const { tokenService, accountService, accountPhotoService, addressBookService, networkService, chainRegistry, nftService } = useContainer();
   const { account, accounts, network, networks } = useWalletSnapshot();
   const bumpRevision = useSessionStore(state => state.bumpRevision);
   const [query, setQuery] = useState('');
@@ -93,7 +93,7 @@ export const SearchScreen = ({ navigation }: NativeStackScreenProps<MainStackPar
       .map(item => ({ item, address: accountService.getAddress(item, network) }))
       .filter(({ item, address }) => includes(needle, item.name, address))
       .map(({ item, address }): SearchResult<SearchWalletView> => ({
-        view: { key: `account:${item.id}`, name: item.name, address, avatarColor: toAvatarColor(item) },
+        view: { key: `account:${item.id}`, name: item.name, address, avatarColor: toAvatarColor(item), avatarPhoto: accountPhotoService.get(item.id) },
         destination: { kind: 'account', accountId: item.id },
       }));
     const contacts = (allNetworks ? addressBookService.getEntries() : addressBookService.getEntriesFor(network))
@@ -109,7 +109,7 @@ export const SearchScreen = ({ navigation }: NativeStackScreenProps<MainStackPar
       });
 
     return [...own, ...contacts];
-  }, [accountService, accounts, addressBookService, allNetworks, chainRegistry, needle, network, networks]);
+  }, [accountPhotoService, accountService, accounts, addressBookService, allNetworks, chainRegistry, needle, network, networks]);
 
   // Collections hidden on the home grid stay hidden here too.
   const matchedCollections = useMemo(

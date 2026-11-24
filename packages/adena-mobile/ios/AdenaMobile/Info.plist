@@ -48,7 +48,9 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Adena uses the camera to scan wallet address QR codes.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Adena uses Face ID to unlock your wallet.</string>
+	<string>Adena uses Face ID to unlock your wallet and to show your recovery phrase.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Adena lets you choose a photo for your account profile. The photo stays on this device.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>

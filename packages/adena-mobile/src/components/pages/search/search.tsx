@@ -22,6 +22,7 @@ export interface SearchWalletView {
   name: string;
   address: string;
   avatarColor?: string;
+  avatarPhoto?: string;
 }
 
 export interface SearchCollectionView {
@@ -112,7 +113,7 @@ export const SearchPage = (props: SearchPageProps): ReactElement => {
             return (
               <ListRow
                 key={wallet.key}
-                leading={<Avatar name={wallet.name} color={wallet.avatarColor} />}
+                leading={<Avatar name={wallet.name} color={wallet.avatarColor} imageUri={wallet.avatarPhoto} />}
                 label={wallet.name}
                 description={formatAddress(wallet.address)}
                 onPress={handlePress}

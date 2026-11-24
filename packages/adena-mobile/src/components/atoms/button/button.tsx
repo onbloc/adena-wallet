@@ -1,6 +1,8 @@
 import React, { ReactElement } from 'react';
 import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } from 'react-native';
 
+import { HapticKind } from '../../../domain/haptics';
+import { useHaptics } from '../../../hooks/use-haptics';
 import { colors, sizes } from '../../../theme';
 import { Icon, IconName } from '../icon';
 import { Spinner } from '../spinner';
@@ -23,6 +25,8 @@ export interface ButtonProps {
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  // Light tap on press; on by default for the primary and destructive (key) actions.
+  haptic?: boolean;
 }
 
 const TONES: Record<ButtonTone, { background: string; pressed: string; text: string }> = {
@@ -47,8 +51,10 @@ export const Button = ({
   fullWidth = true,
   style,
   testID,
+  haptic = tone === 'primary' || tone === 'destructive',
 }: ButtonProps): ReactElement => {
   const palette = TONES[tone];
+  const playHaptic = useHaptics();
   const inactive = disabled && !loading;
   const textColor = inactive ? colors.text.disabled : palette.text;
 
@@ -62,6 +68,14 @@ export const Button = ({
     style,
   ];
 
+  const handlePress = (): void => {
+    if (haptic) {
+      playHaptic(HapticKind.IMPACT);
+    }
+
+    onPress?.();
+  };
+
   return (
     <Pressable
       testID={testID}
@@ -69,7 +83,7 @@ export const Button = ({
       accessibilityLabel={label}
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
       disabled={disabled || loading}
-      onPress={onPress}
+      onPress={handlePress}
       style={stylePressable}
     >
       {loading
