@@ -9,7 +9,6 @@ import { createChatSession, GenerateEventType, LLMFromModel, type GenerateEvent,
 import { AIAgent } from '../agent';
 import { intentReplyText } from '../testing/intentReply';
 import { ACCOUNT, RECIPIENT, fakeWallet } from '../testing/fakeWallet';
-import { ToolName } from '../wallet/constants';
 
 const usage = {
   inputTokens: { total: 5, noCache: 5, cacheRead: undefined, cacheWrite: undefined },
@@ -219,14 +218,11 @@ describe('agent conversations', () => {
     const mcp = fakeOnblocMcp([
       { name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: '10000000' } },
     ]);
-    const transfer = () => ({
-      content: [{ type: 'tool-call' as const, toolCallId: 'transfer', toolName: ToolName.Transfer,
-        input: JSON.stringify({ to: RECIPIENT, amount: '1', token: 'GNOT' }) }],
-      finishReason: { unified: 'tool-calls' as const, raw: 'tool-calls' }, usage, warnings: [],
-    });
-    const classification = () => reply(intentReplyText({ kind: 'prepare', action: 'transfer' }));
+    const transfer = reply(JSON.stringify({ operation: 'transfer', recipient: RECIPIENT,
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: '1' } }));
+    const classification = reply(intentReplyText({ kind: 'prepare' }));
     const model = new MockLanguageModelV4({ doGenerate: enabled
-      ? [classification(), transfer(), classification(), transfer()] : [classification(), classification()] });
+      ? [classification, transfer, classification, transfer] : [classification, classification] });
     const wallet = fakeWallet();
     const handoff = jest.fn();
     const agent = new AIAgent({
@@ -238,11 +234,17 @@ describe('agent conversations', () => {
       account: ACCOUNT, ...(enabled === undefined ? {} : { allowTransactionPreparation: enabled }),
     });
 
-    await collect(conversation.run({ prompt: 'Send 1 GNOT.' }));
-    await collect(conversation.run({ prompt: 'Send 1 GNOT again.' }));
+    await collect(conversation.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }));
+    await collect(conversation.run({ prompt: `Send 1 GNOT to ${RECIPIENT} again.` }));
 
     expect(wallet.calls).toHaveLength(enabled ? 2 : 0);
     expect(handoff).toHaveBeenCalledTimes(enabled ? 2 : 0);
+    expect(wallet.calls).toEqual(enabled ? [
+      { method: 'transfer', params: { from: ACCOUNT, to: RECIPIENT, amount: '1', token: 'GNOT' } },
+      { method: 'transfer', params: { from: ACCOUNT, to: RECIPIENT, amount: '1', token: 'GNOT' } },
+    ] : []);
+    expect(model.doGenerateCalls).toHaveLength(enabled ? 4 : 2);
+    expect(mcp.calls).toEqual([]);
   });
 
   it('does not expose or execute caller-provided tools in an accountless conversation', async () => {

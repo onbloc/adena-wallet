@@ -9,9 +9,6 @@ export function intentReplyText(intent: RequestIntent): string {
         requests: intent.requests,
         ...(intent.explanation === undefined ? {} : { explanation: intent.explanation }),
       });
-    case 'prepare':
-      return JSON.stringify(intent.action === 'transfer' && intent.balance !== undefined
-        ? { route: 'transfer', balance: intent.balance } : { route: intent.action });
     default:
       return JSON.stringify({ route: intent.kind });
   }

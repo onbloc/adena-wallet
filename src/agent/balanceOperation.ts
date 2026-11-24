@@ -8,7 +8,7 @@ const symbol = z.string().trim().min(1).max(64).regex(/^[\p{L}\p{N}._-]+$/u)
   .meta({ pattern: '^[\\p{L}\\p{N}._-]+$' });
 const assetId = z.string().trim().min(1).max(256).regex(/^[\p{L}\p{N}._:/-]+$/u)
   .meta({ pattern: '^[\\p{L}\\p{N}._:/-]+$' });
-const assetReference = z.discriminatedUnion('kind', [
+export const assetReferenceSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('symbol'), value: symbol }),
   z.strictObject({ kind: z.literal('id'), value: assetId }),
 ]);
@@ -16,7 +16,7 @@ const assetReference = z.discriminatedUnion('kind', [
 /** A structured request, independent of how a user expressed it. */
 export const balanceRequestSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('all') }),
-  z.strictObject({ kind: z.literal('one'), asset: assetReference }),
+  z.strictObject({ kind: z.literal('one'), asset: assetReferenceSchema }),
 ]);
 export type BalanceRequest = z.infer<typeof balanceRequestSchema>;
 

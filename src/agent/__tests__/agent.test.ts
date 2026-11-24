@@ -6,21 +6,26 @@ import { fakeOnblocMcp, type FakeOnblocTool } from '../../harness/mcp/testing/fa
 import { LLMFromModel, type GenerateEvent } from '../../llm/core';
 import { AIAgent } from '../agent';
 import type { BalanceRequest } from '../balanceOperation';
-import type { RequestIntent } from '../requestIntent';
+import type { PreparationProposal, RequestIntent } from '../requestIntent';
 import { ACCOUNT, FRIEND, RECIPIENT, fakeWallet, type FakeWalletOptions } from '../testing/fakeWallet';
 import { intentReplyText } from '../testing/intentReply';
 import { WalletError, type PreparedTransaction } from '../wallet/port';
 
 const usage = { inputTokens: { total: 5, noCache: 5, cacheRead: undefined, cacheWrite: undefined }, outputTokens: { total: 5, text: 5, reasoning: undefined } };
 type Content = { type: 'text'; text: string } | { type: 'tool-call'; toolCallId: string; toolName: string; input: string };
-type Step = { content: Content[]; finishReason: { unified: 'stop' | 'tool-calls'; raw: string }; usage: typeof usage; warnings: [] };
+type Step = { content: Content[]; finishReason: { unified: 'stop' | 'tool-calls' | 'length'; raw: string }; usage: typeof usage; warnings: [] };
 const step = (content: Content[], reason: 'stop' | 'tool-calls'): Step => ({ content, finishReason: { unified: reason, raw: reason }, usage, warnings: [] });
 const answer = (text: string) => step([{ type: 'text', text }], 'stop');
 const call = (toolName: string, input: unknown = {}, id = toolName) => step([{ type: 'tool-call', toolName, toolCallId: id, input: JSON.stringify(input) }], 'tool-calls');
 const one = (value: string): BalanceRequest => ({ kind: 'one', asset: { kind: 'symbol', value } });
 const native: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request: one('GNOT') }] };
-const prepare: RequestIntent = { kind: 'prepare', action: 'transfer' };
-const send = call('transfer', { to: RECIPIENT, amount: '1', token: 'GNOT' });
+const prepare: RequestIntent = { kind: 'prepare' };
+const proposal = (value: PreparationProposal) => answer(JSON.stringify(value));
+const transferProposal: PreparationProposal = { operation: 'transfer', recipient: RECIPIENT,
+  asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: '1' } };
+const send = proposal(transferProposal);
+const half = proposal({ operation: 'transfer', recipient: FRIEND.alias,
+  asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'fraction', numerator: '1', denominator: '2' } });
 const permission = { account: ACCOUNT, allowTransactionPreparation: true };
 async function collect(events: AsyncIterable<GenerateEvent>) { const out: GenerateEvent[] = []; for await (const event of events) out.push(event); return out; }
 const textOf = (events: GenerateEvent[]) => events.filter(event => event.type === 'text').map(event => event.delta).join('');
@@ -119,11 +124,9 @@ describe('integrated request execution', () => {
       intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }] }, selection: ['list_account_transactions'],
     });
     const chat = agent.createConversation({ account: ACCOUNT });
-    const events = await collect(chat.run({ prompt: 'Recent transactions.' }));
+    await expect(collect(chat.run({ prompt: 'Recent transactions.' }))).rejects.toThrow();
     expect(mcp.calls).toEqual([]);
-    expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
     expect(chat.turns).toEqual([]);
-    expect(textOf(events)).not.toContain('All history returned.');
   });
   it('renders every selected history result and stops without a summary model call', async () => {
     const { agent, model } = setup([call('list_account_transactions', { limit: 5 })], {
@@ -165,17 +168,21 @@ describe('integrated request execution', () => {
     expect(prepared).toEqual([]);
   });
   it('prepares once without external reads or a fallible post-preparation model call', async () => {
-    const { agent, model, prepared } = setup([send], { intent: prepare, remote: false });
-    const events = await collect(agent.run({ prompt: 'Send 1 GNOT to recipient.' }, permission));
+    const { agent, model, prepared, wallet, fetcher } = setup([send], { intent: prepare, remote: false });
+    const events = await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission));
+    expect(prepared).toHaveLength(1);
     expect(prepared[0].summary).toMatchObject({ from: ACCOUNT, to: RECIPIENT, amount: '1' });
+    expect(wallet.calls).toEqual([{ method: 'transfer', params: { from: ACCOUNT, to: RECIPIENT, amount: '1', token: 'GNOT' } }]);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(events).toContainEqual(expect.objectContaining({ type: 'tool-call', name: 'transfer', input: { to: RECIPIENT, amount: '1', token: 'GNOT' } }));
+    expect(events).toContainEqual(expect.objectContaining({ type: 'tool-result', name: 'transfer', output: expect.objectContaining({ kind: 'result' }) }));
     expect(textOf(events)).toContain('Unsigned transaction prepared');
+    expect(doneOf(events)?.messages).toEqual([]);
     expect(model.doGenerateCalls).toHaveLength(2);
-    expect(model.doGenerateCalls[1].toolChoice).toEqual({ type: 'tool', toolName: 'transfer' });
-    expect(model.doGenerateCalls[1].tools?.map(tool => tool.name)).toEqual(['transfer']);
   });
   it('preserves a completed handoff and reports auditing failure separately', async () => {
     const { agent, prepared, model } = setup([send], { intent: prepare, failAudit: true });
-    const events = await collect(agent.run({ prompt: 'Send 1 GNOT.' }, permission));
+    const events = await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission));
     expect(prepared).toHaveLength(1);
     expect(textOf(events)).toContain('Unsigned transaction prepared');
     expect(doneOf(events)?.warnings.some(warning => warning.includes('Audit'))).toBe(true);
@@ -183,44 +190,171 @@ describe('integrated request execution', () => {
     expect(model.doGenerateCalls).toHaveLength(2);
   });
   it('obtains a normalized prerequisite and its exact units before a relative transfer', async () => {
-    const { agent, model, prepared, mcp } = setup([call('transfer', { to: FRIEND.alias, amount: '21', token: 'GNOT' })], {
-      intent: { kind: 'prepare', action: 'transfer', balance: one('GNOT') },
-    });
-    await collect(agent.run({ prompt: 'Send half my GNOT to carol.' }, permission));
-    expect(mcp.calls.map(call => call.name)).toEqual(['get_native_balance']);
-    expect(JSON.stringify(model.doGenerateCalls[1].prompt)).toContain('42 GNOT');
+    const { agent, model, prepared, mcp } = setup([half], { intent: prepare });
+    const events = await collect(agent.run({ prompt: 'Send half my GNOT to carol.' }, permission));
+    expect(mcp.calls).toEqual([{ name: 'get_native_balance', arguments: { address: ACCOUNT } }]);
+    expect(events).toContainEqual(expect.objectContaining({ type: 'tool-call', name: 'get_balance', input: one('GNOT') }));
+    expect(prepared).toHaveLength(1);
     expect(prepared[0].summary).toMatchObject({ to: FRIEND.address, amount: '21', from: ACCOUNT });
+    expect(model.doGenerateCalls).toHaveLength(2);
   });
   it('respects the host call budget across the prerequisite and preparation', async () => {
-    const { agent, prepared, wallet } = setup([send], { intent: { kind: 'prepare', action: 'transfer', balance: one('GNOT') }, budget: { maxToolCalls: 1 } });
-    const events = await collect(agent.run({ prompt: 'Send half my GNOT.' }, permission));
+    const { agent, prepared, wallet, mcp } = setup([half], { intent: prepare, budget: { maxToolCalls: 1 } });
+    const events = await collect(agent.run({ prompt: 'Send half my GNOT to carol.' }, permission));
     expect(prepared).toEqual([]);
     expect(wallet.calls).toEqual([]);
+    expect(mcp.calls.map(call => call.name)).toEqual(['get_native_balance']);
     expect(events).toContainEqual(expect.objectContaining({ type: 'tool-result', name: 'transfer', output: { kind: 'denied', code: 'BUDGET_EXHAUSTED' } }));
   });
   it('reports definitive wallet refusals without letting the model substitute a new amount', async () => {
-    const { agent, prepared, model } = setup([send, call('transfer', { to: RECIPIENT, amount: '0.1', token: 'GNOT' })], {
+    const { agent, prepared, model, wallet } = setup([send, proposal({ ...transferProposal, amount: { kind: 'exact', value: '0.1' } })], {
       intent: prepare, walletOptions: { failWith: new WalletError('insufficient_balance', 'Available balance is zero.') },
     });
-    const events = await collect(agent.run({ prompt: 'Send 1 GNOT.' }, permission));
+    const events = await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission));
     expect(prepared).toEqual([]);
     expect(textOf(events)).toContain('Available balance is zero.');
+    expect(wallet.calls).toEqual([{ method: 'transfer', params: { from: ACCOUNT, to: RECIPIENT, amount: '1', token: 'GNOT' } }]);
     expect(model.doGenerateCalls).toHaveLength(2);
   });
-  it('exposes only the requested approval action and never substitutes a transfer', async () => {
-    const { agent, prepared, model } = setup([call('approve', { spender: FRIEND.alias, amount: '10', token: 'GNS' })], { intent: { kind: 'prepare', action: 'approve' } });
-    await collect(agent.run({ prompt: 'Let carol spend 10 GNS.' }, permission));
+  it('prepares the requested approval with the recipient alias and never substitutes a transfer', async () => {
+    const { agent, prepared, model, wallet, fetcher } = setup([proposal({ operation: 'approve', recipient: FRIEND.alias,
+      asset: { kind: 'symbol', value: 'GNS' }, amount: { kind: 'exact', value: '10' } })], { intent: prepare, remote: false });
+    const events = await collect(agent.run({ prompt: 'Let carol spend 10 GNS.' }, permission));
+    expect(prepared).toHaveLength(1);
     expect(prepared[0].summary).toMatchObject({ type: 'allowance', spender: FRIEND.address, amount: '10' });
-    expect(model.doGenerateCalls[1].tools?.map(tool => tool.name)).toEqual(['approve']);
-  });
-  it('retains clarification context but no preparation authority before the next request', async () => {
-    const { agent, prepared, fetcher } = setup([answer('Who should receive 1 GNOT?'), answer(intentReplyText(prepare)), call('transfer', { to: FRIEND.alias, amount: '1', token: 'GNOT' })], { intent: { kind: 'clarification' } });
-    const chat = agent.createConversation({ account: ACCOUNT, allowTransactionPreparation: true });
-    await collect(chat.run({ prompt: 'Send 1 GNOT.' }));
+    expect(wallet.calls).toEqual([{ method: 'approve', params: { from: ACCOUNT, spender: FRIEND.address, amount: '10', token: 'GNS' } }]);
+    expect(events).toContainEqual(expect.objectContaining({ type: 'tool-result', name: 'approve', output: expect.objectContaining({ kind: 'result' }) }));
+    expect(textOf(events)).toContain('Unsigned transaction prepared');
     expect(fetcher).not.toHaveBeenCalled();
-    expect(chat.turns[0].prompt).toBe('Send 1 GNOT.');
+    expect(model.doGenerateCalls).toHaveLength(2);
+  });
+  it('does not substitute a transfer when the wallet cannot prepare approvals', async () => {
+    const { agent, prepared, wallet, model, fetcher } = setup([proposal({ operation: 'approve', recipient: FRIEND.alias,
+      asset: { kind: 'symbol', value: 'GNS' }, amount: { kind: 'exact', value: '10' } })], { intent: prepare, walletOptions: { approve: false } });
+    const events = await collect(agent.run({ prompt: 'Let carol spend 10 GNS.' }, permission));
+    expect(prepared).toEqual([]);
+    expect(wallet.calls).toEqual([]);
+    expect(textOf(events)).not.toContain('Unsigned transaction prepared');
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(model.doGenerateCalls).toHaveLength(2);
+  });
+  it('retains planner clarification and resolves a follow-up without replaying preparation authority', async () => {
+    const question = 'Who should receive 1 GNOT?';
+    const { agent, prepared, wallet, fetcher, model } = setup([
+      proposal({ operation: 'clarification', question }), answer(intentReplyText(prepare)),
+      proposal({ ...transferProposal, recipient: FRIEND.alias }), answer(intentReplyText({ kind: 'explanation' })), answer('You are welcome.'),
+    ], { intent: prepare });
+    wallet.getContacts = jest.fn().mockRejectedValue(new Error('Address book unavailable'));
+    const chat = agent.createConversation({ account: ACCOUNT, allowTransactionPreparation: true });
+    const clarification = await collect(chat.run({ prompt: 'Send 1 GNOT.' }));
+    expect(textOf(clarification)).toBe(question);
+    expect(prepared).toEqual([]);
+    expect(wallet.calls).toEqual([]);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(chat.turns[0]).toEqual({ prompt: 'Send 1 GNOT.', answer: question });
+    expect(wallet.getContacts).not.toHaveBeenCalled();
+    wallet.getContacts = async () => [FRIEND];
     await collect(chat.run({ prompt: 'To carol.' }));
+    expect(prepared).toHaveLength(1);
     expect(prepared[0].summary).toMatchObject({ to: FRIEND.address, amount: '1' });
+    expect(JSON.stringify(model.doGenerateCalls[3].prompt)).toContain(question);
+    await collect(chat.run({ prompt: 'Thanks.' }));
+    expect(wallet.calls).toHaveLength(1);
+    expect(prepared).toHaveLength(1);
+    expect(model.doGenerateCalls).toHaveLength(6);
+  });
+  it.each([
+    { units: '9223372036854775806', numerator: '1', denominator: '2', expected: '4611686018427.387903' },
+    { units: '42000000', numerator: '125', denominator: '1000', expected: '5.25' },
+  ])('calculates $numerator/$denominator of $units base units without floating-point loss', async ({ units, numerator, denominator, expected }) => {
+    const { agent, prepared, wallet } = setup([proposal({ ...transferProposal,
+      amount: { kind: 'fraction', numerator, denominator } })], { intent: prepare,
+      tools: [{ name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: units } }] });
+    await collect(agent.run({ prompt: `Send ${numerator}/${denominator} of my GNOT to ${RECIPIENT}.` }, permission));
+    expect(prepared).toHaveLength(1);
+    expect(wallet.calls).toEqual([{ method: 'transfer', params: { from: ACCOUNT, to: RECIPIENT, amount: expected, token: 'GNOT' } }]);
+    expect(prepared[0].summary.amount).toBe(expected);
+  });
+  it('rejects a fractional base-unit remainder instead of rounding the transfer', async () => {
+    const { agent, wallet, prepared, model } = setup([half], { intent: prepare,
+      tools: [{ name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: '42000001' } }] });
+    const events = await collect(agent.run({ prompt: 'Send half my GNOT to carol.' }, permission));
+    expect(events).toContainEqual(expect.objectContaining({ type: 'tool-result', name: 'get_balance' }));
+    expect(wallet.calls).toEqual([]);
+    expect(prepared).toEqual([]);
+    expect(textOf(events)).not.toContain('Unsigned transaction prepared');
+    expect(model.doGenerateCalls).toHaveLength(2);
+  });
+  it.each<{ status: string; tools: FakeOnblocTool[] }>([
+    { status: 'partial', tools: [{ name: 'get_token_balances', output: { address: ACCOUNT, hasMore: true,
+      items: [{ symbol: 'GNS', tokenId: 'gno.land/r/gns', amount: '42000000', decimals: 6 }] } }] },
+    { status: 'ambiguous', tools: [{ name: 'get_token_balances', output: { address: ACCOUNT, items: [
+      { symbol: 'GNS', tokenId: 'gno.land/r/gns', amount: '42000000', decimals: 6 },
+      { symbol: 'GNS', tokenId: 'gno.land/r/other', amount: '10000000', decimals: 6 },
+    ] } }] },
+    { status: 'unavailable', tools: [] },
+  ])('does not prepare from a $status normalized balance', async ({ status, tools }) => {
+    const { agent, wallet, prepared } = setup([proposal({ operation: 'transfer', recipient: FRIEND.alias,
+      asset: { kind: 'symbol', value: 'GNS' }, amount: { kind: 'fraction', numerator: '1', denominator: '2' } })],
+    { intent: prepare, tools });
+    const events = await collect(agent.run({ prompt: 'Send half my GNS to carol.' }, permission));
+    expect(events).toContainEqual(expect.objectContaining({ type: 'tool-result', name: 'get_balance',
+      output: expect.objectContaining({ kind: 'result', value: expect.objectContaining({ status }) }) }));
+    expect(wallet.calls).toEqual([]);
+    expect(prepared).toEqual([]);
+    expect(textOf(events)).not.toContain('Unsigned transaction prepared');
+  });
+  it('does not prepare a relative transfer after its prerequisite audit fails', async () => {
+    const { agent, wallet, prepared } = setup([half], { intent: prepare, failAudit: true });
+    const events = await collect(agent.run({ prompt: 'Send half my GNOT to carol.' }, permission));
+    expect(wallet.calls).toEqual([]);
+    expect(prepared).toEqual([]);
+    expect(textOf(events)).not.toContain('Unsigned transaction prepared');
+  });
+  it.each([
+    'not JSON',
+    '{"operation":"transfer"',
+    JSON.stringify({ operation: 'transfer' }),
+    JSON.stringify({ ...transferProposal, from: ACCOUNT }),
+    JSON.stringify({ ...transferProposal, amount: { kind: 'fraction', numerator: '1', denominator: '0' } }),
+    JSON.stringify([transferProposal, transferProposal]),
+  ])('rejects malformed preparation output before discovery or execution: %s', async output => {
+    const { agent, wallet, prepared, fetcher, model } = setup([answer(output)], { intent: prepare });
+    await expect(collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission))).rejects.toThrow('ADENA_PREPARATION_INVALID');
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(wallet.calls).toEqual([]);
+    expect(prepared).toEqual([]);
+    expect(model.doGenerateCalls).toHaveLength(2);
+  });
+  it('rejects a length-truncated proposal even when its JSON is otherwise valid', async () => {
+    const { agent, wallet, prepared, fetcher, model } = setup([{ ...send,
+      finishReason: { unified: 'length', raw: 'length' } }], { intent: prepare });
+    await expect(collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission))).rejects.toThrow('ADENA_PREPARATION_INVALID');
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(wallet.calls).toEqual([]);
+    expect(prepared).toEqual([]);
+    expect(model.doGenerateCalls).toHaveLength(2);
+  });
+  it('performs no discovery or wallet work when proposal generation is cancelled', async () => {
+    const controller = new AbortController();
+    const { agent, llm, fetcher, wallet, prepared } = setup([send], { intent: prepare });
+    const generate = llm.generate.bind(llm);
+    let calls = 0;
+    jest.spyOn(llm, 'generate').mockImplementation((settings, options) => {
+      if (++calls === 1) return generate(settings, options);
+      return (async function* (): AsyncGenerator<GenerateEvent> {
+        yield { type: 'text', delta: '{"operation":' };
+        controller.abort();
+        yield { type: 'done', aborted: true, warnings: [], messages: [],
+          metrics: { totalMs: 1, ttftMs: null, outputTokens: 1 } };
+      })();
+    });
+    const events = await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, { ...permission, signal: controller.signal }));
+    expect(calls).toBe(2);
+    expect(doneOf(events)?.aborted).toBe(true);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(wallet.calls).toEqual([]);
+    expect(prepared).toEqual([]);
   });
   it('avoids discovery for pure explanations and invalid or cancelled classifications', async () => {
     const plain = setup([answer('GNOT is native to Gno.land.')], { intent: { kind: 'explanation' } });

@@ -1,19 +1,19 @@
 import { canRememberTurn, type GenerateEvent } from '../../llm/core';
-import { guardAnswer } from '../answerGuard';
+import { guardAnswer, type AnswerIntent } from '../answerGuard';
 import type { BalanceRequest, BalanceResult } from '../balanceOperation';
 import type { RequestIntent } from '../requestIntent';
 
 const request: BalanceRequest = { kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } };
 const lookup: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request }] };
 const history: RequestIntent = { kind: 'lookup', requests: [{ target: 'other', query: 'List transactions.' }] };
-const prepare: RequestIntent = { kind: 'prepare', action: 'transfer' };
+const prepare: AnswerIntent = { kind: 'prepare', action: 'transfer' };
 const value: BalanceResult = { account: 'account', chainId: 'chain', request, status: 'complete', missing: [], assets: [{ kind: 'native', assetId: 'ugnot', symbol: 'GNOT', amount: '42000000', decimals: 6 }] };
 const done = (overrides: Partial<Extract<GenerateEvent, { type: 'done' }>> = {}): GenerateEvent => ({ type: 'done', aborted: false, finishReason: 'stop', warnings: [], messages: [], metrics: { totalMs: 1, ttftMs: null }, ...overrides });
 const call = (name: string, input: unknown = {}, id = name): GenerateEvent => ({ type: 'tool-call', name, input, id, invalid: false });
 const result = (name: string, output: unknown, id = name): GenerateEvent => ({ type: 'tool-result', name, output, id });
 const balance = (overrides: Partial<BalanceResult> = {}): GenerateEvent => result('get_balance', { kind: 'result', value: { ...value, ...overrides } });
 const text = (delta: string): GenerateEvent => ({ type: 'text', delta });
-async function guard(intent: RequestIntent, events: GenerateEvent[], policy: { requiredReads?: string[]; userText?: string } = {}) {
+async function guard(intent: AnswerIntent, events: GenerateEvent[], policy: { requiredReads?: string[]; userText?: string } = {}) {
   const output: GenerateEvent[] = [];
   for await (const event of guardAnswer((async function* () { yield* events; })(), name => name !== 'transfer' && name !== 'approve', intent, policy)) output.push(event);
   return { text: output.filter(event => event.type === 'text').map(event => event.delta).join(''), done: output.find(event => event.type === 'done') as Extract<GenerateEvent, { type: 'done' }> };
@@ -106,7 +106,7 @@ describe('required normalized outcomes', () => {
     expect(complete.text).toContain('42 GNOT');
     expect(canRememberTurn(complete.done)).toBe(true);
   });
-  it.each<RequestIntent>([{ kind: 'explanation' }, { kind: 'clarification' }])('retains tool-free $kind as unverified text', async intent => {
+  it.each<AnswerIntent>([{ kind: 'explanation' }, { kind: 'clarification' }])('retains tool-free $kind as unverified text', async intent => {
     const answer = await guard(intent, [text('Which recipient?'), done({ messages: [{ role: 'assistant', content: 'Which recipient?' }] })]);
     expect(answer.done.verifiedAnswer).toBeUndefined();
     expect(canRememberTurn(answer.done)).toBe(true);

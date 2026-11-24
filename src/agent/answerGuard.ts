@@ -4,6 +4,9 @@ import type { RealmEvidence } from './realmEvidence';
 import type { RequestIntent } from './requestIntent';
 import { ToolName, WalletStatus } from './wallet/constants';
 
+export type AnswerIntent = Exclude<RequestIntent, { kind: 'prepare' }>
+  | { kind: 'prepare'; action: 'transfer' | 'approve' };
+
 function balanceKey(request: BalanceRequest): string {
   return request.kind === 'all' ? 'all' : `${request.asset.kind}:${request.asset.kind === 'symbol' ? request.asset.value.toLowerCase() : request.asset.value}`;
 }
@@ -26,7 +29,7 @@ function contradictsSymbolMention(text: string, symbol: string): boolean {
 }
 
 /** Completion is checked against the plan; fact rendering never depends on model summaries. */
-export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead: (name: string) => boolean, intent: RequestIntent, policy: {
+export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead: (name: string) => boolean, intent: AnswerIntent, policy: {
   requiredReads?: readonly string[];
   userText?: string;
   evidence?: RealmEvidence;

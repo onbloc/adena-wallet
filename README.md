@@ -129,7 +129,7 @@ so loading and saving do not create a second copy of the conversation.
 Before accessing wallet tools, the agent makes a bounded, tool-free classification call. It
 uses the same conversation context, a fixed system prompt, and schema-constrained JSON output.
 The model returns `lookup` requirements, optional requested conceptual explanation, or an
-`explanation`, `transfer`, `approve`, `clarification`, or `unsupported` route;
+`explanation`, `prepare`, `clarification`, or `unsupported` route;
 the agent validates it and maps it to a typed execution policy. The classification response
 itself is neither displayed as the answer nor appended to chat history.
 
@@ -138,19 +138,25 @@ itself is neither displayed as the answer nor appended to chat history.
 | Explanation or missing-detail clarification | Answer model without wallet tools or MCP discovery | Completed conversational answer |
 | Balance lookup | Normalized `get_balance` operation for each classified asset requirement | Complete fresh results for every required balance |
 | Other wallet lookup | Exact read-only catalog selection, then scoped model/tool execution | Every selected read succeeds; unrelated balances or model text do not complete it |
-| Transfer or approval | Host opt-in, then only the selected action and any normalized balance prerequisite | A matching actual preparation result or a reported refusal/failure |
+| Transaction preparation | Host opt-in, strict structured proposal, then selected action dispatch with any normalized balance prerequisite | A matching actual preparation result or a reported refusal/failure |
 | Unsupported request | Fixed wallet-scope refusal | No wallet execution |
 
-An approval request never exposes `transfer` as a substitute. A plain-text "done" cannot satisfy
-a preparation request. Malformed, truncated or unrecognized classification output fails with
-`ADENA_INTENT_INVALID` before wallet discovery/execution; it is not repaired or treated as an
-explanation. Caller-supplied answer instructions, tools and output schemas do not override the
-classifier or expand the selected execution scope.
+Preparation requests, including incomplete ones, use a focused tool-free parser. Its proposal
+contains the operation (`transfer` or `approve`), a supplied recipient/address alias, a symbol
+or asset ID, and an exact decimal amount or explicit balance fraction. Missing details return
+a clarification question without wallet discovery. No address book is supplied to the parser;
+only the wallet adapter resolves the requested alias after parsing.
 
-Classification is still a model prediction, not authorization or a guarantee of semantic
-accuracy. Incorrect routes can cause unnecessary clarification or an inappropriate answer.
-Harness scope, schema checks, wallet validation and user review of unsigned transactions remain
-necessary. No signing or broadcasting is introduced.
+Malformed, truncated or unrecognized routing/proposal JSON fails with `ADENA_INTENT_INVALID`
+or `ADENA_PREPARATION_INVALID` before discovery/execution; there is no repair or native-call
+fallback. Caller-supplied answer instructions, tools and output schemas cannot expand this scope.
+The agent dispatches only the selected wallet action through the harness. A plain-text "done"
+does not prove preparation, and approval never exposes transfer as an alternative action.
+
+Classification and proposals remain model predictions, not authorization or semantic proof.
+Incorrect predictions can cause clarification or the wrong proposal. Harness scope, schema
+checks, wallet validation and user review of the exact unsigned transaction remain necessary.
+No signing or broadcasting is introduced.
 
 Transaction preparation additionally requires host permission:
 `agent.run(settings, { account, allowTransactionPreparation: true })` or
@@ -169,17 +175,23 @@ The selected preparation stops at its result, including a refusal; there is no f
 call that can erase a completed handoff or substitute another amount. Audit failures pause new
 execution but preserve completed results and surface a separate warning.
 
+Relative amounts use a fresh complete, unambiguous one-asset balance in the same execution run.
+Code multiplies/divides bounded `bigint` base units; the model never computes the balance or
+amount. A fractional base-unit remainder is refused rather than rounded. The wallet still
+validates precision, supported assets, funds and its int64 limit. Fractions use the balance
+snapshot, not a reservation; the signing wallet must recheck funds and fees.
 
-The classifier consumes an additional bounded model call. Balance requirements then fetch and
-format results directly, without an answer-model call. Generic reads add a tool-selection call;
-requested conceptual explanations use a separate tool-free answer. Preparation uses a selected
-tool phase. Context pruning applies throughout; removed history is not reintroduced. Local
-llama-server and the native provider support schema-constrained classification output.
+Classification and preparation parsing each use one bounded model call (at most 512 output
+tokens), with context pruning and the agent request deadline. Preparation parsing precedes the
+execution run; the harness polices dispatch permissions, call budgets, cancellation and audit.
+Balance requirements fetch/format directly. Generic reads add catalog selection and a read-only
+tool loop; conceptual explanations use a tool-free answer. Preparation has no native tool-call
+model loop and makes no further model call after a wallet outcome.
 
 ## Wallet layers and tool calling
 
 ```
-model --tool call--> adapter (src/agent/wallet/tools.ts)  agent layer
+structured proposal --> harness dispatch --> adapter (src/agent/wallet/tools.ts)  agent layer
                        |  injects the user's address as `from`, maps wallet refusals to results,
                        |  turns contact names into addresses, hands each transaction to onTransaction
                        v  WalletSdk methods only: no key ever crosses this line
@@ -207,26 +219,26 @@ conversation.run({ prompt });                       // subsequent calls retain t
 A run keeps the account it started with. The low-level `agent.run(settings, { account })` API
 still accepts an explicit conversation, but the CLI and app use the managed conversation API.
 
-`?` methods are optional: the model is offered `approve` and `get_approvals` only if the wallet
-implements them. `onTransaction` is required whenever there is a wallet. `token` is the symbol
-the user or model wrote (any case) or a package path; the wallet resolves it and answers with
-the canonical symbol.
+`?` methods are optional: `approve` is executable only when the wallet implements it;
+`get_approvals` is offered to read-only model execution only when the wallet lists allowances.
+`onTransaction` is required whenever there is a wallet. `token` is the supplied symbol (any
+case) or package path; the wallet resolves it and returns the canonical symbol.
 
-- The model sees `transfer({to,amount,token})`, `approve({spender,amount,token})` and
-  `get_approvals()` (only if the wallet lists allowances), next to the Onbloc read tools
-  (balances, tokens, transactions). There are no balance tools here: balances have one source,
-  Onbloc. No account or `from` is ever a model argument.
+- The preparation parser returns data, not native tool calls. The agent validates the proposal,
+  obtains any normalized balance prerequisite, and dispatches exactly one selected action.
+  Read-only execution can use `get_approvals()` alongside permitted remote reads. No account or
+  `from` is ever a model argument.
 - A prepared transaction is `{ summary, tx }`. `summary` is what the wallet resolved (type,
   chain, from, to or spender, canonical amount and token). `tx` is the wallet SDK's own object
   (for Adena an `AdenaTransaction`); it goes to `onTransaction` and **never to the model**. The
-  model gets `{status: 'prepared', from, to|spender, amount, token, message}` and is told to say
-  the transaction is ready to sign, never that it was sent.
+  agent renders the small preparation result directly; the model receives neither the transaction
+  object nor a follow-up opportunity to change the action.
 - A token approval (allowance, ERC-20 style) lets a spender use up to an amount; a new approval
   for the same spender and token replaces the old one. An allowance may exceed the balance.
   Spending an allowance (`transferFrom`) is not implemented.
-- Tool arguments are validated with zod before `execute`. A call that fails validation (wrong
-  type, unknown tool, unparsable JSON) is shown as **[INVALID]** and never reaches the wallet;
-  the SDK feeds the error back to the model, which may retry.
+- Preparation proposals are validated before dispatch, and adapter arguments are checked again
+  before `execute`. Invalid proposals never reach the wallet. Wallet refusals are terminal:
+  the model cannot retry with a different amount. Generic read-only tool loops remain separate.
 - Value checks (address, amount > 0, token, balance) live in the wallet, so a well-formed but
   wrong value shows up as an `error` result with a code instead. If `onTransaction` throws, the
   tool call fails.
