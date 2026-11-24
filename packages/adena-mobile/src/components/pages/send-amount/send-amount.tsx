@@ -1,5 +1,5 @@
-import React, { ReactElement } from 'react';
-import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } from 'react-native';
+import React, { ReactElement, useRef } from 'react';
+import { Pressable, PressableStateCallbackType, StyleProp, TextInputInstance, View, ViewStyle } from 'react-native';
 
 import { LocalTokenIcon } from '../../../domain/token';
 import { colors } from '../../../theme';
@@ -97,6 +97,35 @@ const TokenSelector = ({ symbol, localIcon, imageUrl, onPress }: TokenSelectorPr
   );
 };
 
+interface MemoSheetProps {
+  visible: boolean;
+  memo: string;
+  onChangeMemo: (value: string) => void;
+  onClose: () => void;
+}
+
+// Focuses once the sheet settles, so the keyboard does not race the slide.
+const MemoSheet = ({ visible, memo, onChangeMemo, onClose }: MemoSheetProps): ReactElement => {
+  const inputRef = useRef<TextInputInstance>(null);
+
+  return (
+    <BottomSheet visible={visible} title='Memo' onClose={onClose} onOpened={() => inputRef.current?.focus()}>
+      <TextField
+        ref={inputRef}
+        label='Memo (optional)'
+        value={memo}
+        onChangeText={onChangeMemo}
+        placeholder='Add a note'
+        maxLength={256}
+        returnKeyType='done'
+        submitBehavior='blurAndSubmit'
+        onSubmitEditing={onClose}
+      />
+      <Button label='Done' onPress={onClose} />
+    </BottomSheet>
+  );
+};
+
 export const SendAmountPage = (props: SendAmountPageProps): ReactElement => (
   <Screen
     scrollable={false}
@@ -179,10 +208,7 @@ export const SendAmountPage = (props: SendAmountPageProps): ReactElement => (
         </View>
       </ReviewSheet>
     )}
-    <BottomSheet visible={props.memoSheetVisible} title='Memo' onClose={props.onCloseMemo}>
-      <TextField label='Memo (optional)' value={props.memo} onChangeText={props.onChangeMemo} placeholder='Add a note' maxLength={256} autoFocus />
-      <Button label='Done' onPress={props.onCloseMemo} />
-    </BottomSheet>
+    <MemoSheet visible={props.memoSheetVisible} memo={props.memo} onChangeMemo={props.onChangeMemo} onClose={props.onCloseMemo} />
     <BottomSheet visible={props.tokenPickerVisible} title='Select token' onClose={props.onCloseTokenPicker}>
       {props.tokenOptions.map((option) => {
         const handlePress = (): void => props.onSelectToken(option.key);

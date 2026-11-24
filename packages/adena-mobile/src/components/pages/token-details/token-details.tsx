@@ -61,7 +61,7 @@ export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <TopBar title='Token details' onBack={props.onBack} />
-      <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={props.refreshing} onRefresh={props.onRefresh} />}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled' refreshControl={<RefreshControl refreshing={props.refreshing} onRefresh={props.onRefresh} />}>
         <View style={styles.identity}>
           <TokenImage symbol={asset.symbol} localIcon={asset.localIcon} imageUrl={asset.imageUrl} size={40} />
           <View style={styles.names}>

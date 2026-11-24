@@ -96,6 +96,7 @@ export const WalletHomePage = (props: WalletHomePageProps): ReactElement => {
       </View>
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: bottomClearance }]}
+        keyboardShouldPersistTaps='handled'
         refreshControl={<RefreshControl refreshing={props.refreshing} onRefresh={props.onRefresh} />}
       >
         {props.isTestnet && (

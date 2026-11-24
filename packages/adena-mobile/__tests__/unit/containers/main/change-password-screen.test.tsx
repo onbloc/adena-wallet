@@ -5,6 +5,7 @@ import { ChangePasswordScreen } from '../../../../src/containers/main/change-pas
 import { AppError, AppErrorCode } from '../../../../src/core/errors';
 import { BiometryKind } from '../../../../src/security/secure-store';
 import { useToastStore } from '../../../../src/stores/toast.store';
+import { focusedTestIds, focusMock } from '../../../helpers/focus';
 import { createWrapper } from '../../../helpers/query-wrapper';
 import { TEST_PASSWORD } from '../../../helpers/test-container';
 import { wrapPage } from '../../components/pages/render-page';
@@ -20,6 +21,7 @@ describe('ChangePasswordScreen', () => {
     disableBiometricUnlock: jest.fn(),
     getBiometryKind: jest.fn(),
     isBiometricUnlockEnabled: jest.fn(),
+    readBiometricPassword: jest.fn(),
   };
   const listeners: Record<string, (event?: unknown) => void> = {};
   const blurListener = (): void => listeners.blur();
@@ -53,6 +55,9 @@ describe('ChangePasswordScreen', () => {
     walletService.disableBiometricUnlock.mockResolvedValue(undefined);
     walletService.getBiometryKind.mockResolvedValue(BiometryKind.FACE);
     walletService.isBiometricUnlockEnabled.mockResolvedValue(true);
+    // A canceled prompt by default, so the typed current password is used.
+    walletService.readBiometricPassword.mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_CANCELED, 'canceled'));
+    focusMock().mockClear();
     useToastStore.getState().dismiss();
   });
 
@@ -217,5 +222,55 @@ describe('ChangePasswordScreen', () => {
 
     listeners.beforeRemove(afterwards);
     expect(afterwards.preventDefault).not.toHaveBeenCalled();
+  });
+
+  describe('biometrics first for the current password', () => {
+    it('prompts once on open and changes the password with the released current password', async () => {
+      walletService.readBiometricPassword.mockResolvedValue(TEST_PASSWORD);
+      await setup();
+
+      expect(await screen.findByText('Current password verified with Face ID')).toBeTruthy();
+      expect(walletService.readBiometricPassword).toHaveBeenCalledTimes(1);
+      expect(screen.queryByTestId('current-password-input')).toBeNull();
+      expect(focusedTestIds()).toEqual(['new-password-input']);
+
+      await fireEvent.changeText(screen.getByTestId('new-password-input'), NEXT_PASSWORD);
+      await fireEvent.changeText(screen.getByTestId('new-password-confirm'), NEXT_PASSWORD);
+      await fireEvent(screen.getByTestId('new-password-confirm'), 'submitEditing');
+
+      await waitFor(() => expect(navigation.goBack).toHaveBeenCalledTimes(1));
+      expect(walletService.changePassword).toHaveBeenCalledWith(TEST_PASSWORD, NEXT_PASSWORD);
+    });
+
+    it('falls back to the focused current password field after a cancel, and retries from the button', async () => {
+      await setup();
+
+      await waitFor(() => expect(focusedTestIds()).toEqual(['current-password-input']));
+      expect(walletService.readBiometricPassword).toHaveBeenCalledTimes(1);
+      walletService.readBiometricPassword.mockResolvedValueOnce(TEST_PASSWORD);
+      await fireEvent.press(screen.getByRole('button', { name: 'Use Face ID' }));
+
+      expect(walletService.readBiometricPassword).toHaveBeenCalledTimes(2);
+      expect(await screen.findByText('Current password verified with Face ID')).toBeTruthy();
+    });
+
+    it('explains a lockout and keeps the typed path', async () => {
+      walletService.readBiometricPassword.mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'lockout'));
+      await setup();
+
+      expect(await screen.findByText('Face ID is unavailable. Enter your password.')).toBeTruthy();
+      await fill();
+      await submit();
+      await waitFor(() => expect(walletService.changePassword).toHaveBeenCalledWith(TEST_PASSWORD, NEXT_PASSWORD));
+    });
+
+    it('focuses the current password without prompting when biometric unlock is off', async () => {
+      walletService.isBiometricUnlockEnabled.mockResolvedValue(false);
+      await setup();
+
+      await waitFor(() => expect(focusedTestIds()).toEqual(['current-password-input']));
+      expect(walletService.readBiometricPassword).not.toHaveBeenCalled();
+      expect(screen.queryByRole('button', { name: 'Use Face ID' })).toBeNull();
+    });
   });
 });

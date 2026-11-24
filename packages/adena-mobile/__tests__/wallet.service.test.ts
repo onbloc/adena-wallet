@@ -53,12 +53,12 @@ describe('WalletService', () => {
 
     await container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
 
-    const imported = await container.walletService.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD, 'Imported');
+    const imported = await container.walletService.importPrivateKey(PRIVATE_KEY, 'Imported');
 
     expect(imported.keyringType).toBe('PRIVATE_KEY');
     expect(container.accountService.getCurrentAccount()?.id).toBe(imported.id);
 
-    const duplicate = await container.walletService.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD).catch(error => error);
+    const duplicate = await container.walletService.importPrivateKey(PRIVATE_KEY).catch(error => error);
 
     expect(isAppError(duplicate, 'WALLET_ALREADY_EXISTS')).toBe(true);
 
@@ -72,7 +72,7 @@ describe('WalletService', () => {
     const { container } = createTestContainer();
 
     await container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
-    const imported = await container.walletService.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+    const imported = await container.walletService.importPrivateKey(PRIVATE_KEY);
 
     await container.walletService.removeAccount(imported.id, TEST_PASSWORD);
     container.walletService.lock();

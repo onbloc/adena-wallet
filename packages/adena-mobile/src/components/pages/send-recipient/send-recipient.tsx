@@ -41,7 +41,14 @@ export const SendRecipientPage = ({ query, onChangeQuery, onScan, result, error,
         />
       )}
     >
-      <RecipientField value={query} onChangeText={onChangeQuery} onScan={onScan} testID='recipient-search' />
+      <RecipientField
+        value={query}
+        onChangeText={onChangeQuery}
+        onScan={onScan}
+        returnKeyType={result ? 'next' : 'done'}
+        onSubmitEditing={result ? handleListRowPress : undefined}
+        testID='recipient-search'
+      />
       {error && <InlineAlert tone='error' title={error} />}
       {result && (
         <View style={styles.section}>

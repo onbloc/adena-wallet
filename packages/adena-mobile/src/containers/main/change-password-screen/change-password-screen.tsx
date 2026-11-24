@@ -1,11 +1,13 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
-import React, { ReactElement, useEffect, useRef, useState } from 'react';
+import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
+import { TextInputInstance } from 'react-native';
 
 import { ChangePasswordPage, PasswordStrengthView } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
 import { AppErrorCode, isAppError } from '../../../core/errors';
 import { useContainer } from '../../../di/container-provider';
+import { useBiometricPassword } from '../../../hooks/use-biometric-password';
 import { MainStackParamList } from '../../../navigation/types';
 import { queryKeys } from '../../../queries/query-keys';
 import { useBiometricStatusQuery } from '../../../queries/wallet.queries';
@@ -31,6 +33,14 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
   const biometricEnabled = biometricChoice ?? Boolean(biometric.data?.enabled);
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  const biometricPassword = useBiometricPassword();
+  const { option: biometricOption, read: readBiometricPassword } = biometricPassword;
+  // The current password released by biometrics; never rendered, cleared with the other passwords.
+  const verifiedPasswordRef = useRef<string | null>(null);
+  const [verifiedWith, setVerifiedWith] = useState<string>();
+  const autoPromptedRef = useRef(false);
+  const currentInputRef = useRef<TextInputInstance>(null);
+  const newInputRef = useRef<TextInputInstance>(null);
 
   // Passwords do not outlive the screen's focus.
   useEffect(() => {
@@ -38,6 +48,8 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      verifiedPasswordRef.current = null;
+      setVerifiedWith(undefined);
     };
     const unsubscribeBlur = navigation.addListener('blur', clearPasswords);
     // Leaving mid-change would let the completion's goBack pop the screen below.
@@ -53,6 +65,47 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
       clearPasswords();
     };
   }, [navigation]);
+
+  const verifyCurrentWithBiometrics = useCallback(async (): Promise<void> => {
+    if (!biometricOption || submittingRef.current) {
+      return;
+    }
+
+    submittingRef.current = true;
+    setSubmitting(true);
+    setCurrentError(undefined);
+    const result = await readBiometricPassword({ title: 'Change password', cancel: 'Use password' });
+
+    submittingRef.current = false;
+    setSubmitting(false);
+
+    if (result.ok) {
+      verifiedPasswordRef.current = result.password;
+      setCurrentPassword('');
+      setVerifiedWith(biometricOption.label);
+      newInputRef.current?.focus();
+      return;
+    }
+
+    setCurrentError(result.message);
+    currentInputRef.current?.focus();
+  }, [biometricOption, readBiometricPassword]);
+
+  // Biometrics first for the current password, once; the focused field is the fallback.
+  useEffect(() => {
+    if (!biometricPassword.ready || autoPromptedRef.current) {
+      return;
+    }
+
+    autoPromptedRef.current = true;
+
+    if (biometricOption) {
+      void verifyCurrentWithBiometrics();
+    }
+    else {
+      currentInputRef.current?.focus();
+    }
+  }, [biometricOption, biometricPassword.ready, verifyCurrentWithBiometrics]);
 
   const evaluation = newPassword ? evaluatePassword(newPassword) : null;
   const strength: PasswordStrengthView | undefined = evaluation?.valid
@@ -90,7 +143,13 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
       return;
     }
 
-    const issue = findPasswordIssue(newPassword, { current: currentPassword, confirm: confirmPassword });
+    const current = verifiedPasswordRef.current ?? currentPassword;
+
+    if (!current) {
+      return;
+    }
+
+    const issue = findPasswordIssue(newPassword, { current, confirm: confirmPassword });
 
     if (issue === PasswordIssue.NOT_MATCH) {
       setConfirmError(PASSWORD_ISSUE_MESSAGE[issue]);
@@ -106,7 +165,7 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
     setSubmitting(true);
 
     try {
-      await walletService.changePassword(currentPassword, newPassword);
+      await walletService.changePassword(current, newPassword);
     }
     catch (error) {
       // The biometric credential may already be gone (it is removed before re-encrypting).
@@ -116,6 +175,11 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
         setNewError(error.message);
       }
       else {
+        if (isAppError(error, AppErrorCode.INVALID_PASSWORD)) {
+          verifiedPasswordRef.current = null;
+          setVerifiedWith(undefined);
+        }
+
         setCurrentError(isAppError(error, AppErrorCode.INVALID_PASSWORD) ? 'Incorrect password.' : toErrorMessage(error));
       }
 
@@ -171,6 +235,10 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
       submitting={submitting}
       onSubmit={submit}
       onBack={handleBack}
+      currentVerifiedWith={verifiedWith}
+      currentBiometric={biometricOption && { ...biometricOption, onPress: verifyCurrentWithBiometrics }}
+      currentPasswordRef={currentInputRef}
+      newPasswordRef={newInputRef}
     />
   );
 };

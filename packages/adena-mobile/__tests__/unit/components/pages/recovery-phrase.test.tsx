@@ -4,14 +4,19 @@ import React from 'react';
 import { RecoveryPhrasePage, RecoveryPhrasePageProps } from '../../../../src/components/pages';
 import { renderPage, wrapPage } from './render-page';
 
-const props = (overrides: Partial<RecoveryPhrasePageProps> = {}): RecoveryPhrasePageProps => ({
-  passwordSheetVisible: false,
+type SheetOverrides = Partial<RecoveryPhrasePageProps['passwordSheet']>;
+
+const props = (overrides: Partial<RecoveryPhrasePageProps> = {}, sheet: SheetOverrides = {}): RecoveryPhrasePageProps => ({
   onOpenPasswordSheet: jest.fn(),
-  onClosePasswordSheet: jest.fn(),
-  password: 'secret',
-  onChangePassword: jest.fn(),
-  verifying: false,
-  onReveal: jest.fn(),
+  passwordSheet: {
+    visible: false,
+    password: 'secret',
+    onChangePassword: jest.fn(),
+    submitting: false,
+    onConfirm: jest.fn(),
+    onClose: jest.fn(),
+    ...sheet,
+  },
   onCopy: jest.fn(),
   onBack: jest.fn(),
   ...overrides,
@@ -35,7 +40,7 @@ describe('RecoveryPhrasePage', () => {
   });
 
   it('asks for the password in the sheet and reports every action', async () => {
-    const page = props({ passwordSheetVisible: true, error: 'Incorrect password' });
+    const page = props({}, { visible: true, error: 'Incorrect password' });
 
     await renderPage(<RecoveryPhrasePage {...page} />);
 
@@ -44,24 +49,24 @@ describe('RecoveryPhrasePage', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Reveal phrase' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
 
-    expect(page.onChangePassword).toHaveBeenCalledWith('next');
-    expect(page.onReveal).toHaveBeenCalledTimes(1);
-    expect(page.onClosePasswordSheet).toHaveBeenCalledTimes(1);
+    expect(page.passwordSheet.onChangePassword).toHaveBeenCalledWith('next');
+    expect(page.passwordSheet.onConfirm).toHaveBeenCalledTimes(1);
+    expect(page.passwordSheet.onClose).toHaveBeenCalledTimes(1);
   });
 
   it('disables reveal without a password and shows verifying', async () => {
-    const page = props({ passwordSheetVisible: true, password: '' });
+    const page = props({}, { visible: true, password: '' });
     const { rerender } = await renderPage(<RecoveryPhrasePage {...page} />);
 
     await fireEvent.press(screen.getByRole('button', { name: 'Reveal phrase' }));
-    expect(page.onReveal).not.toHaveBeenCalled();
+    expect(page.passwordSheet.onConfirm).not.toHaveBeenCalled();
 
-    await rerender(wrapPage(<RecoveryPhrasePage {...props({ passwordSheetVisible: true, verifying: true })} />));
+    await rerender(wrapPage(<RecoveryPhrasePage {...props({}, { visible: true, submitting: true })} />));
     expect(screen.getByText('Verifying…')).toBeTruthy();
   });
 
   it('shows the phrase with its word count once revealed', async () => {
-    const page = props({ passwordSheetVisible: true, words: ['alpha', 'beta', 'gamma'] });
+    const page = props({ words: ['alpha', 'beta', 'gamma'] }, { visible: true });
 
     await renderPage(<RecoveryPhrasePage {...page} />);
 

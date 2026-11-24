@@ -5,6 +5,7 @@ import { UnlockScreen } from '../../../src/containers/unlock-screen';
 import { AppError, AppErrorCode, BIOMETRICS_INVALIDATED_MESSAGE } from '../../../src/core/errors';
 import { BiometryKind } from '../../../src/security/secure-store';
 import { SessionStatus, useSessionStore } from '../../../src/stores/session.store';
+import { focusedTestIds, focusMock } from '../../helpers/focus';
 import { createWrapper } from '../../helpers/query-wrapper';
 import { wrapPage } from '../components/pages/render-page';
 
@@ -42,6 +43,21 @@ describe('UnlockScreen', () => {
     walletService.unlockWithBiometrics.mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_CANCELED));
     walletService.disableBiometricUnlock.mockResolvedValue(undefined);
     useSessionStore.setState({ status: SessionStatus.LOCKED });
+    focusMock().mockClear();
+  });
+
+  it('focuses the password field after a canceled biometric prompt', async () => {
+    await setup();
+    await waitFor(() => expect(focusedTestIds()).toEqual(['unlock-password']));
+    expect(walletService.unlockWithBiometrics).toHaveBeenCalledTimes(1);
+  });
+
+  it('focuses the password field right away without biometrics', async () => {
+    walletService.isBiometricUnlockEnabled.mockResolvedValue(false);
+    await setup();
+    await waitFor(() => expect(focusedTestIds()).toEqual(['unlock-password']));
+    expect(walletService.unlockWithBiometrics).not.toHaveBeenCalled();
+    expect(screen.getByTestId('unlock-password').props).toMatchObject({ returnKeyType: 'go', secureTextEntry: true });
   });
 
   it('runs one unlock at a time across the keyboard, the button and biometrics', async () => {

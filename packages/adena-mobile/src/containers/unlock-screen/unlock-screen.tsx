@@ -1,6 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
+import { TextInputInstance } from 'react-native';
 
 import { UnlockPage } from '../../components/pages';
 import { toErrorMessage } from '../../core/error-message';
@@ -9,6 +10,7 @@ import { useContainer } from '../../di/container-provider';
 import { LockedStackParamList } from '../../navigation/types';
 import { queryKeys } from '../../queries/query-keys';
 import { useBiometricStatusQuery } from '../../queries/wallet.queries';
+import { BiometryKind } from '../../security/secure-store';
 import { SessionStatus, useSessionStore } from '../../stores/session.store';
 import { getBiometryLabel } from '../../utils/biometry';
 
@@ -22,6 +24,7 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
   const biometric = useBiometricStatusQuery();
   const biometricLabel = biometric.data?.enabled ? getBiometryLabel(biometric.data.kind) : undefined;
   const autoPromptedRef = useRef(false);
+  const passwordRef = useRef<TextInputInstance>(null);
   // Password and biometric unlocks share one in-flight slot, so they never queue up behind each other.
   const unlockingRef = useRef(false);
 
@@ -51,6 +54,8 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
       if (!isAppError(unlockError, AppErrorCode.BIOMETRICS_CANCELED)) {
         setError(toErrorMessage(unlockError));
       }
+
+      passwordRef.current?.focus();
     }
     finally {
       unlockingRef.current = false;
@@ -58,12 +63,21 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
   }, [onUnlocked, queryClient, walletService]);
 
   // Offer the biometric prompt once as soon as the status query reports it is enabled.
+  // Without biometrics the password field takes focus instead.
   useEffect(() => {
-    if (biometric.data?.enabled && !autoPromptedRef.current) {
-      autoPromptedRef.current = true;
+    if (biometric.isPending || autoPromptedRef.current) {
+      return;
+    }
+
+    autoPromptedRef.current = true;
+
+    if (biometric.data?.enabled) {
       unlockWithBiometrics();
     }
-  }, [biometric.data?.enabled, unlockWithBiometrics]);
+    else {
+      passwordRef.current?.focus();
+    }
+  }, [biometric.data?.enabled, biometric.isPending, unlockWithBiometrics]);
 
   const unlock = async (): Promise<void> => {
     if (!password || unlockingRef.current) {
@@ -102,6 +116,8 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
       submitting={submitting}
       onUnlock={unlock}
       biometricLabel={biometricLabel}
+      biometricIcon={biometric.data?.kind === BiometryKind.FINGERPRINT ? 'fingerprint' : 'faceId'}
+      passwordRef={passwordRef}
       onBiometricUnlock={biometricLabel ? unlockWithBiometrics : undefined}
       onResetWallet={handleResetWallet}
     />

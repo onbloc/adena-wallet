@@ -3,28 +3,28 @@ import React, { ReactElement, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { RecoveryPhrasePage } from '../../../components/pages';
-import { toErrorMessage } from '../../../core/error-message';
-import { AppErrorCode, isAppError } from '../../../core/errors';
 import { useContainer } from '../../../di/container-provider';
+import { usePasswordGate } from '../../../hooks/use-password-gate';
 import { useSensitiveClipboard } from '../../../hooks/use-sensitive-clipboard';
 import { MainStackParamList } from '../../../navigation/types';
-import { useBiometricStatusQuery } from '../../../queries/wallet.queries';
-import { BiometryKind } from '../../../security/secure-store';
-import { getBiometryLabel } from '../../../utils/biometry';
 
 export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'RecoveryPhrase'>): ReactElement => {
   const { walletService } = useContainer();
-  const [password, setPassword] = useState('');
   const [words, setWords] = useState<string[]>();
-  const [error, setError] = useState<string>();
-  const [verifying, setVerifying] = useState(false);
-  const [sheetVisible, setSheetVisible] = useState(false);
   // Bumped on every hide so a reveal still in flight cannot show the phrase afterwards.
   const revealEpochRef = useRef(0);
   const clipboard = useSensitiveClipboard();
-  const biometricStatus = useBiometricStatusQuery();
-  const biometricLabel = biometricStatus.data?.enabled ? getBiometryLabel(biometricStatus.data.kind) : undefined;
   const { clear: clearClipboard } = clipboard;
+
+  const reveal = usePasswordGate(async (password) => {
+    const epoch = revealEpochRef.current;
+    const mnemonic = await walletService.revealMnemonic(route.params.keyringId, password);
+
+    if (epoch === revealEpochRef.current) {
+      setWords(mnemonic.split(' '));
+    }
+  }, { prompt: { title: 'Show recovery phrase', cancel: 'Use password' } });
+  const { onClose: closeRevealSheet } = reveal.sheetProps;
 
   // Drop the revealed phrase when leaving the screen or the app stops being active (app switcher snapshot).
   // The clipboard hook handles app state on its own; FLAG_SECURE arrives with the native module work.
@@ -35,6 +35,7 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
     };
     const unsubscribeBlur = navigation.addListener('blur', () => {
       hideWords();
+      closeRevealSheet();
       clearClipboard();
     });
     const appState = AppState.addEventListener('change', (state) => {
@@ -47,68 +48,7 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
       unsubscribeBlur();
       appState.remove();
     };
-  }, [navigation, clearClipboard]);
-
-  const handleChangePassword = (value: string): void => {
-    setPassword(value);
-    setError(undefined);
-  };
-
-  const handleReveal = async (): Promise<void> => {
-    const epoch = revealEpochRef.current;
-
-    setVerifying(true);
-
-    try {
-      const mnemonic = await walletService.revealMnemonic(route.params.keyringId, password);
-
-      if (epoch !== revealEpochRef.current) {
-        return;
-      }
-
-      setWords(mnemonic.split(' '));
-      setPassword('');
-      setSheetVisible(false);
-    }
-    catch (revealError) {
-      setError(isAppError(revealError, AppErrorCode.INVALID_PASSWORD) ? 'Incorrect password.' : toErrorMessage(revealError));
-    }
-    finally {
-      setVerifying(false);
-    }
-  };
-
-  // Same epoch guard as the password reveal; a cancel or failure leaves the password field in place.
-  const handleRevealWithBiometrics = async (): Promise<void> => {
-    const epoch = revealEpochRef.current;
-
-    if (verifying) {
-      return;
-    }
-
-    setVerifying(true);
-
-    try {
-      const mnemonic = await walletService.revealMnemonicWithBiometrics(route.params.keyringId, { title: 'Show recovery phrase', cancel: 'Use password' });
-
-      if (epoch !== revealEpochRef.current) {
-        return;
-      }
-
-      setWords(mnemonic.split(' '));
-      setPassword('');
-      setSheetVisible(false);
-    }
-    catch (revealError) {
-      if (!isAppError(revealError, AppErrorCode.BIOMETRICS_CANCELED)) {
-        // A stale escrowed password (changed since biometrics were enabled) needs the typed one.
-        setError(isAppError(revealError, AppErrorCode.INVALID_PASSWORD) ? 'Biometric password is out of date. Enter your password.' : toErrorMessage(revealError));
-      }
-    }
-    finally {
-      setVerifying(false);
-    }
-  };
+  }, [navigation, clearClipboard, closeRevealSheet]);
 
   const handleCopy = (): void => {
     if (words) {
@@ -116,28 +56,11 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
     }
   };
 
-  const handleOpenPasswordSheet = (): void => setSheetVisible(true);
-
-  const handleClosePasswordSheet = (): void => {
-    setSheetVisible(false);
-    setPassword('');
-    setError(undefined);
-  };
-
   return (
     <RecoveryPhrasePage
       words={words}
-      passwordSheetVisible={sheetVisible}
-      onOpenPasswordSheet={handleOpenPasswordSheet}
-      onClosePasswordSheet={handleClosePasswordSheet}
-      password={password}
-      onChangePassword={handleChangePassword}
-      error={error}
-      verifying={verifying}
-      onReveal={handleReveal}
-      biometric={biometricLabel
-        ? { label: biometricLabel, icon: biometricStatus.data?.kind === BiometryKind.FINGERPRINT ? 'fingerprint' : 'faceId', onPress: handleRevealWithBiometrics }
-        : undefined}
+      onOpenPasswordSheet={reveal.open}
+      passwordSheet={reveal.sheetProps}
       onCopy={handleCopy}
       onBack={navigation.goBack}
     />

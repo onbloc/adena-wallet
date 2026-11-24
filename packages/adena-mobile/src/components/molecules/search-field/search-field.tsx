@@ -1,5 +1,5 @@
-import React, { ReactElement, useState } from 'react';
-import { TextInput, TextInputProps, View } from 'react-native';
+import React, { ReactElement, Ref, useState } from 'react';
+import { TextInput, TextInputInstance, TextInputProps, View } from 'react-native';
 
 import { colors } from '../../../theme';
 import { Icon, IconButton } from '../../atoms';
@@ -10,9 +10,10 @@ export interface SearchFieldProps extends Omit<TextInputProps, 'style' | 'value'
   onChangeText: (value: string) => void;
   placeholder: string;
   disabled?: boolean;
+  ref?: Ref<TextInputInstance>;
 }
 
-export const SearchField = ({ value, onChangeText, placeholder, disabled = false, ...rest }: SearchFieldProps): ReactElement => {
+export const SearchField = ({ value, onChangeText, placeholder, disabled = false, ref, ...rest }: SearchFieldProps): ReactElement => {
   const [focused, setFocused] = useState(false);
   const muted = disabled ? colors.text.disabled : colors.icon.primary;
 
@@ -26,7 +27,10 @@ export const SearchField = ({ value, onChangeText, placeholder, disabled = false
     <View style={[styles.field, focused && styles.focused]}>
       <Icon name='search' size={20} color={muted} />
       <TextInput
+        returnKeyType='search'
+        submitBehavior='blurAndSubmit'
         {...rest}
+        ref={ref}
         value={value}
         onChangeText={onChangeText}
         editable={!disabled}

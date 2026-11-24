@@ -37,7 +37,7 @@ export const ExplorePage = ({ apps, onOpenApp }: ExplorePageProps): ReactElement
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <TopBar title='Explore' />
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomClearance }]}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomClearance }]} keyboardShouldPersistTaps='handled'>
         {apps.map((app) => {
           const handlePress = (): void => onOpenApp(app.id);
 

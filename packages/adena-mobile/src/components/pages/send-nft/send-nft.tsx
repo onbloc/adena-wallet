@@ -39,7 +39,14 @@ export const SendNftPage = (props: SendNftPageProps): ReactElement => (
         <Text variant='meta' color='secondary'>{props.collectionName}</Text>
       </View>
     </View>
-    <RecipientField value={props.recipient} onChangeText={props.onChangeRecipient} onScan={props.onScanRecipient} placeholder='Recipient address' />
+    <RecipientField
+      value={props.recipient}
+      onChangeText={props.onChangeRecipient}
+      onScan={props.onScanRecipient}
+      placeholder='Recipient address'
+      returnKeyType={props.canReview ? 'go' : 'done'}
+      onSubmitEditing={props.canReview && !props.preparing ? props.onReview : undefined}
+    />
     {props.recipientError && <InlineAlert tone='error' title={props.recipientError} />}
     {props.prepareError && <InlineAlert tone='error' title='Unable to prepare the transfer' description={props.prepareError} />}
     {props.notice && <InlineAlert tone='warning' title={props.notice} />}

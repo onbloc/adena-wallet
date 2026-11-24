@@ -190,3 +190,42 @@ describe('VaultService', () => {
     expect(await codeOf(() => service.open(TEST_PASSWORD))).toBe('WALLET_NOT_FOUND');
   });
 });
+
+describe('VaultService session key', () => {
+  it('adds a keyring with the key of the last password check, without counting an attempt', async () => {
+    const { service, secureStore } = setup();
+
+    await service.create([HD], TEST_PASSWORD);
+    const content = await service.addKeyringWithSessionKey(PK);
+
+    expect(content.keyrings.map(keyring => keyring.id)).toEqual(['hd', 'pk']);
+    expect(await attempts(secureStore)).toBe(0);
+    expect(await codeOf(() => service.addKeyringWithSessionKey(PK))).toBe('WALLET_ALREADY_EXISTS');
+    service.forgetSessionKey();
+    expect((await service.open(TEST_PASSWORD)).keyrings.map(keyring => keyring.id)).toEqual(['hd', 'pk']);
+  });
+
+  it('needs a key, and refuses one that no longer matches the stored vault', async () => {
+    const { service, cipher, repository } = setup();
+
+    await service.create([HD], TEST_PASSWORD);
+    service.forgetSessionKey();
+    expect(await codeOf(() => service.addKeyringWithSessionKey(PK))).toBe('WALLET_LOCKED');
+
+    await service.open(TEST_PASSWORD);
+    // Another writer re-encrypted the vault under a new salt.
+    const record = (await repository.read())!;
+
+    await repository.write({ ...record, payload: await cipher.encrypt(await cipher.decrypt(record.payload, TEST_PASSWORD), TEST_PASSWORD) });
+    expect(await codeOf(() => service.addKeyringWithSessionKey(PK))).toBe('WALLET_LOCKED');
+  });
+
+  it('is wiped by destroy', async () => {
+    const { service } = setup();
+
+    await service.create([HD], TEST_PASSWORD);
+    expect(service.hasSessionKey()).toBe(true);
+    await service.destroy();
+    expect(service.hasSessionKey()).toBe(false);
+  });
+});

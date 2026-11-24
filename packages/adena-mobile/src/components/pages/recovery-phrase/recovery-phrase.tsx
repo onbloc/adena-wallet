@@ -7,16 +7,9 @@ import { styles } from './recovery-phrase.styles';
 
 export interface RecoveryPhrasePageProps {
   words?: string[];
-  passwordSheetVisible: boolean;
   onOpenPasswordSheet: () => void;
-  onClosePasswordSheet: () => void;
-  password: string;
-  onChangePassword: (value: string) => void;
-  error?: string;
-  verifying: boolean;
-  onReveal: () => void;
-  // Offered when biometric unlock is enabled.
-  biometric?: PasswordSheetProps['biometric'];
+  // Biometrics first when enabled, with the password field as the fallback.
+  passwordSheet: Omit<PasswordSheetProps, 'title' | 'description' | 'confirmLabel'>;
   onCopy: () => void;
   onBack: () => void;
 }
@@ -39,17 +32,11 @@ export const RecoveryPhrasePage = (props: RecoveryPhrasePageProps): ReactElement
     {props.words ? <MnemonicGrid words={props.words} /> : <MnemonicGrid words={MASKED_WORDS} masked />}
     <Text variant='body' color='secondary'>Write down the words in order and store them offline in a safe place.</Text>
     <PasswordSheet
-      visible={props.passwordSheetVisible && !props.words}
+      {...props.passwordSheet}
+      visible={props.passwordSheet.visible && !props.words}
       title='Show recovery phrase'
       description='Enter your password to show the recovery phrase.'
-      password={props.password}
-      onChangePassword={props.onChangePassword}
-      error={props.error}
-      submitting={props.verifying}
       confirmLabel='Reveal phrase'
-      onConfirm={props.onReveal}
-      onClose={props.onClosePasswordSheet}
-      biometric={props.biometric}
     />
   </Screen>
 );

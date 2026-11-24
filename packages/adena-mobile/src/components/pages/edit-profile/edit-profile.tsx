@@ -50,6 +50,9 @@ export const EditProfilePage = (props: EditProfilePageProps): ReactElement => (
       value={props.name}
       onChangeText={props.onChangeName}
       maxLength={ACCOUNT_NAME_MAX_LENGTH}
+      returnKeyType='done'
+      submitBehavior='blurAndSubmit'
+      onSubmitEditing={props.canSave ? props.onSave : undefined}
       error={props.nameError}
     />
     <BottomSheet visible={props.photoSheetVisible} title='Profile photo' onClose={props.onClosePhotoSheet} onDismissed={props.onPhotoSheetDismissed}>

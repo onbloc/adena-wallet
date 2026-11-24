@@ -27,7 +27,7 @@ export const AccountSettingsScreen = ({ navigation, route }: NativeStackScreenPr
     showToast('Account removed', 'success');
     navigation.popToTop();
   }, [accountId, bumpRevision, navigation, showToast, walletService]);
-  const removeGate = usePasswordGate(removeAccount);
+  const removeGate = usePasswordGate(removeAccount, { prompt: { title: 'Remove account', cancel: 'Use password' } });
 
   if (!account) {
     return null;

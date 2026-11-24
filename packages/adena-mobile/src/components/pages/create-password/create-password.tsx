@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useRef } from 'react';
+import { TextInputInstance } from 'react-native';
 
 import { Button, Text, TextColor } from '../../atoms';
 import { Screen, TextField, TopBar } from '../../molecules';
@@ -34,49 +35,62 @@ export const CreatePasswordPage = ({
   submitting,
   onSubmit,
   onBack,
-}: CreatePasswordPageProps): ReactElement => (
-  <Screen
-    header={<TopBar title='Set a password' onBack={onBack} />}
-    footer={(
-      <Button
-        label='Create wallet'
-        loadingLabel='Creating wallet…'
-        disabled={!password || !confirmPassword}
-        loading={submitting}
-        onPress={onSubmit}
-        testID='password-submit'
+}: CreatePasswordPageProps): ReactElement => {
+  const confirmRef = useRef<TextInputInstance>(null);
+
+  const handleConfirmSubmit = (): void => {
+    if (password && confirmPassword && !submitting) {
+      onSubmit();
+    }
+  };
+
+  return (
+    <Screen
+      header={<TopBar title='Set a password' onBack={onBack} />}
+      footer={(
+        <Button
+          label='Create wallet'
+          loadingLabel='Creating wallet…'
+          disabled={!password || !confirmPassword}
+          loading={submitting}
+          onPress={onSubmit}
+          testID='password-submit'
+        />
+      )}
+    >
+      <Text variant='body' color='secondary'>This password unlocks Adena on this device. It cannot recover your wallet.</Text>
+      <TextField
+        label='Password'
+        value={password}
+        onChangeText={onChangePassword}
+        placeholder='At least 8 characters'
+        secure
+        autoFocus
+        returnKeyType='next'
+        submitBehavior='submit'
+        onSubmitEditing={() => confirmRef.current?.focus()}
+        disabled={submitting}
+        error={passwordError}
+        testID='password-input'
       />
-    )}
-  >
-    <Text variant='body' color='secondary'>This password unlocks Adena on this device. It cannot recover your wallet.</Text>
-    <TextField
-      label='Password'
-      value={password}
-      onChangeText={onChangePassword}
-      placeholder='At least 8 characters'
-      secure
-      autoCapitalize='none'
-      textContentType='newPassword'
-      disabled={submitting}
-      error={passwordError}
-      testID='password-input'
-    />
-    {strength && !passwordError && (
-      <Text variant='meta' color={strength.color} style={styles.strength} testID='password-strength'>
-        {`Password strength: ${strength.label}`}
-      </Text>
-    )}
-    <TextField
-      label='Confirm password'
-      value={confirmPassword}
-      onChangeText={onChangeConfirmPassword}
-      placeholder='Enter the password again'
-      secure
-      autoCapitalize='none'
-      textContentType='newPassword'
-      disabled={submitting}
-      error={confirmError}
-      testID='password-confirm'
-    />
-  </Screen>
-);
+      {strength && !passwordError && (
+        <Text variant='meta' color={strength.color} style={styles.strength} testID='password-strength'>
+          {`Password strength: ${strength.label}`}
+        </Text>
+      )}
+      <TextField
+        ref={confirmRef}
+        label='Confirm password'
+        value={confirmPassword}
+        onChangeText={onChangeConfirmPassword}
+        placeholder='Enter the password again'
+        secure
+        returnKeyType='done'
+        onSubmitEditing={handleConfirmSubmit}
+        disabled={submitting}
+        error={confirmError}
+        testID='password-confirm'
+      />
+    </Screen>
+  );
+};

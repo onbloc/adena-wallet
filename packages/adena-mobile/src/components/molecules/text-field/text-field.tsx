@@ -1,9 +1,21 @@
-import React, { ReactElement, useState } from 'react';
-import { TextInput, TextInputBlurEvent, TextInputFocusEvent, TextInputProps, View } from 'react-native';
+import React, { ReactElement, Ref, useState } from 'react';
+import { Platform, TextInput, TextInputBlurEvent, TextInputFocusEvent, TextInputInstance, TextInputProps, View } from 'react-native';
 
 import { colors } from '../../../theme';
 import { Icon, IconButton, IconName, Text } from '../../atoms';
+import { useSheetKeyboardHandle } from '../bottom-sheet/sheet-keyboard';
 import { styles } from './text-field.styles';
+
+// Keeps secrets out of iOS Passwords / Google Password Manager and keyboard learning. Applied after the
+// caller's props, so a secret field can never be turned back into an autofill target.
+export const SECRET_INPUT_PROPS = {
+  textContentType: 'none',
+  autoComplete: 'off',
+  importantForAutofill: 'noExcludeDescendants',
+  autoCorrect: false,
+  spellCheck: false,
+  autoCapitalize: 'none',
+} as const satisfies Partial<TextInputProps>;
 
 // `secure` is the only masking API; the native `secureTextEntry` is not accepted so it cannot be overridden silently.
 export interface TextFieldProps extends Omit<TextInputProps, 'style' | 'editable' | 'secureTextEntry'> {
@@ -13,7 +25,11 @@ export interface TextFieldProps extends Omit<TextInputProps, 'style' | 'editable
   disabled?: boolean;
   leadingIcon?: IconName;
   secure?: boolean;
+  // A secret shown in plain text (recovery phrase, private key): no autofill, saving or learning.
+  sensitive?: boolean;
   multiline?: boolean;
+  // Lets a form move focus to this field, e.g. from the previous field's return key.
+  ref?: Ref<TextInputInstance>;
 }
 
 export const TextField = ({
@@ -23,22 +39,27 @@ export const TextField = ({
   disabled = false,
   leadingIcon,
   secure = false,
+  sensitive = false,
   multiline = false,
   onFocus,
   onBlur,
+  ref,
   ...inputProps
 }: TextFieldProps): ReactElement => {
   const [focused, setFocused] = useState(false);
+  const sheetKeyboard = useSheetKeyboardHandle();
   const [revealed, setRevealed] = useState(false);
   const borderColor = error ? colors.status.error : focused ? colors.border.focus : colors.border.input;
 
   const handleFocus = (event: TextInputFocusEvent): void => {
     setFocused(true);
+    sheetKeyboard?.onInputFocus();
     onFocus?.(event);
   };
 
   const handleBlur = (event: TextInputBlurEvent): void => {
     setFocused(false);
+    sheetKeyboard?.onInputBlur();
     onBlur?.(event);
   };
 
@@ -58,6 +79,10 @@ export const TextField = ({
         {leadingIcon && <Icon name={leadingIcon} size={20} color={colors.icon.secondary} />}
         <TextInput
           {...inputProps}
+          {...((secure || sensitive) && SECRET_INPUT_PROPS)}
+          // Android keyboards do not learn or suggest from a visible-password field; never with masking.
+          {...(sensitive && !secure && Platform.OS === 'android' && { keyboardType: 'visible-password' as const })}
+          ref={ref}
           accessibilityLabel={label}
           editable={!disabled}
           multiline={multiline}

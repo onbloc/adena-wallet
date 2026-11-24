@@ -5,7 +5,7 @@ import { migrateData } from '../migration/migration-runner';
 import { VAULT_CONTENT_VERSION, VAULT_MIGRATIONS, VaultContent } from '../migration/vault-migrations';
 import { VaultRepository } from '../repositories/vault.repository';
 import { findPasswordIssue, PASSWORD_ISSUE_MESSAGE } from '../security/password-policy';
-import { VaultCipher } from '../security/vault-cipher';
+import { VaultCipher, VaultKey, wipeVaultKey } from '../security/vault-cipher';
 import { SerialQueue } from '../utils/serial-queue';
 import { PasswordAttemptLimiter } from './password-attempt-limiter';
 
@@ -14,6 +14,9 @@ import { PasswordAttemptLimiter } from './password-attempt-limiter';
 export class VaultService {
   private readonly queue = new SerialQueue();
   private writes = 0;
+  // Key of the stored vault from the last password check or write, so an unlocked session can
+  // write without the password. Never persisted; WalletService wipes it on lock, reset wipes it too.
+  private sessionKey: VaultKey | null = null;
 
   constructor(
     private readonly vaultRepository: VaultRepository,
@@ -96,8 +99,45 @@ export class VaultService {
     });
   }
 
-  destroy(): Promise<void> {
+  hasSessionKey(): boolean {
+    return this.sessionKey !== null;
+  }
+
+  forgetSessionKey(): void {
+    wipeVaultKey(this.sessionKey);
+    this.sessionKey = null;
+  }
+
+  // Adds a keyring with the session key instead of a password. Not a password guess, so not throttled.
+  addKeyringWithSessionKey(keyring: KeyringRecord): Promise<VaultContent> {
     return this.queue.run(async () => {
+      const key = this.sessionKey;
+      const record = await this.vaultRepository.read();
+
+      if (!key || !record) {
+        throw new AppError(AppErrorCode.WALLET_LOCKED, 'Unlock the wallet again');
+      }
+
+      const migrated = migrateData<VaultContent>(JSON.parse(this.cipher.decryptWithKey(record.payload, key)), record.contentVersion, VAULT_MIGRATIONS);
+      const content = migrated.data;
+
+      if (content.keyrings.some(existing => isSameSecret(existing, keyring))) {
+        throw new AppError(AppErrorCode.WALLET_ALREADY_EXISTS, 'This wallet is already added');
+      }
+
+      const seeded = await withCachedSeeds({ ...content, keyrings: [...content.keyrings, keyring] });
+
+      this.writes += 1;
+      await this.vaultRepository.write({ contentVersion: VAULT_CONTENT_VERSION, payload: this.cipher.encryptWithKey(JSON.stringify(seeded), key) });
+      return seeded;
+    });
+  }
+
+  destroy(): Promise<void> {
+    this.forgetSessionKey();
+
+    return this.queue.run(async () => {
+      this.forgetSessionKey();
       this.writes += 1;
       await this.vaultRepository.clear();
     });
@@ -116,7 +156,9 @@ export class VaultService {
       throw new AppError(AppErrorCode.WALLET_NOT_FOUND, 'No wallet on this device');
     }
 
-    const plaintext = await this.cipher.decrypt(record.payload, password);
+    const { plaintext, key } = await this.cipher.decryptKeyed(record.payload, password);
+
+    this.rememberKey(key);
     const migrated = migrateData<VaultContent>(JSON.parse(plaintext), record.contentVersion, VAULT_MIGRATIONS);
     const missingSeed = !migrated.data.keyrings.every(hasCachedSeed);
 
@@ -143,11 +185,29 @@ export class VaultService {
     return seeded;
   }
 
+  // A write re-salts the vault, so the session key follows it once the write landed.
   private async write(content: VaultContent, password: string): Promise<void> {
-    const payload = await this.cipher.encrypt(JSON.stringify(content), password);
+    const { payload, key } = await this.cipher.encryptKeyed(JSON.stringify(content), password);
 
     this.writes += 1;
-    await this.vaultRepository.write({ contentVersion: VAULT_CONTENT_VERSION, payload });
+
+    try {
+      await this.vaultRepository.write({ contentVersion: VAULT_CONTENT_VERSION, payload });
+    }
+    catch (error) {
+      wipeVaultKey(key);
+      throw error;
+    }
+
+    this.rememberKey(key);
+  }
+
+  private rememberKey(key: VaultKey): void {
+    if (this.sessionKey !== key) {
+      wipeVaultKey(this.sessionKey);
+    }
+
+    this.sessionKey = key;
   }
 }
 
