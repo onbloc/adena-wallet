@@ -25,7 +25,7 @@ const deferred = <T,>(): { promise: Promise<T>; resolve: (value: T) => void } =>
   return { promise, resolve };
 };
 
-const setup = async () => {
+const setup = async (prices?: Record<string, unknown>) => {
   jest.mocked(useWalletAssets).mockReturnValue({
     account: ACCOUNT,
     network: NETWORK,
@@ -33,6 +33,7 @@ const setup = async () => {
     allTokens: [],
     assets: [{ token: GNOT, amount: '100000000', quantityLabel: '100 GNOT', trend: 'neutral', usdValue: null, loading: false }],
     portfolio: null,
+    prices,
     error: null,
     loading: false,
     refreshing: false,
@@ -103,6 +104,21 @@ describe('SendAmountScreen', () => {
     await act(async () => slow.resolve(ESTIMATE));
 
     expect(screen.queryByText('Confirm send')).toBeNull();
+  });
+
+  it('shows fiat estimates from the cached prices and goes back to change the recipient', async () => {
+    const { navigation } = await setup({ 'ugnot:gno-test': { tokenId: 'ugnot', networkId: NETWORK.id, usd: 2, change24h: null } });
+
+    expect(screen.getByText('≈ $0.00')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('keyboardkey', { name: '3' }));
+    expect(screen.getByText('≈ $6.00')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Recipient, g1jg8m…sqf5' }));
+    expect(navigation.goBack).toHaveBeenCalledTimes(1);
+
+    await fireEvent.press(screen.getByTestId('send-review'));
+    expect(await screen.findByText('3 GNOT')).toBeTruthy();
+    expect(screen.getAllByText('≈ $6.00').length).toBeGreaterThan(1);
+    expect(screen.getByText(/including network fee$/)).toBeTruthy();
   });
 
   it('broadcasts once when confirm is pressed twice before a re-render', async () => {

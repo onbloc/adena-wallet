@@ -1,7 +1,10 @@
 import React, { ReactElement } from 'react';
+import { View } from 'react-native';
 
-import { Avatar, Button } from '../../atoms';
-import { AddressRow, Card, ListRow, PasswordSheet, PasswordSheetProps, Screen, SectionLabel, TextField, TopBar } from '../../molecules';
+import { shortenAddress } from '../../../utils/address';
+import { Avatar, Button, IconButton } from '../../atoms';
+import { BottomSheet, ListRow, PasswordSheet, PasswordSheetProps, Screen, SectionLabel, TextField, TopBar } from '../../molecules';
+import { styles } from './account-settings.styles';
 
 export interface AccountSettingsPageProps {
   name: string;
@@ -11,6 +14,10 @@ export interface AccountSettingsPageProps {
   onChangeEditingName: (value: string) => void;
   onSaveName: () => void;
   canSaveName: boolean;
+  renameSheetVisible: boolean;
+  onOpenRename: () => void;
+  onCloseRename: () => void;
+  connectedAppCount: number;
   hasRecoveryPhrase: boolean;
   canRemove: boolean;
   onCopyAddress: () => void;
@@ -23,17 +30,30 @@ export interface AccountSettingsPageProps {
 }
 
 export const AccountSettingsPage = (props: AccountSettingsPageProps): ReactElement => (
-  <Screen header={<TopBar title='Account settings' onBack={props.onBack} />}>
-    <Card>
-      <ListRow leading={<Avatar name={props.name} />} label={props.name} description={props.sourceLabel} showChevron={false} />
-      <AddressRow address={props.address} onCopy={props.onCopyAddress} full />
-    </Card>
-    <TextField label='Account name' value={props.editingName} onChangeText={props.onChangeEditingName} helper='Shown only on this device.' />
-    <Button label='Save name' tone='secondary' disabled={!props.canSaveName} onPress={props.onSaveName} />
-    <SectionLabel label='Account preferences' />
-    <ListRow label='Manage connections' onPress={props.onOpenConnectedApps} />
-    {props.hasRecoveryPhrase && <ListRow label='Recovery phrase' onPress={props.onOpenRecoveryPhrase} />}
-    {props.canRemove && <ListRow label='Remove account' destructive showChevron={false} onPress={props.onRequestRemove} />}
+  <Screen
+    header={<TopBar title='Account settings' onBack={props.onBack} />}
+    footer={props.canRemove && <Button label='Remove account' tone='destructiveText' onPress={props.onRequestRemove} />}
+  >
+    <ListRow
+      leading={<Avatar name={props.name} />}
+      label={props.name}
+      description={shortenAddress(props.address)}
+      value={props.sourceLabel}
+      trailing={<IconButton icon='copy' accessibilityLabel='Copy address' size={32} onPress={props.onCopyAddress} />}
+      showChevron={false}
+    />
+    <Button label='Edit name' tone='secondary' onPress={props.onOpenRename} />
+    <View style={styles.section}>
+      <SectionLabel label='Account preferences' />
+      <View style={styles.rows}>
+        <ListRow label='Manage connections' value={String(props.connectedAppCount)} onPress={props.onOpenConnectedApps} />
+        {props.hasRecoveryPhrase && <ListRow label='Recovery phrase' onPress={props.onOpenRecoveryPhrase} />}
+      </View>
+    </View>
+    <BottomSheet visible={props.renameSheetVisible} title='Edit name' onClose={props.onCloseRename}>
+      <TextField label='Account name' value={props.editingName} onChangeText={props.onChangeEditingName} helper='Shown only on this device.' autoFocus />
+      <Button label='Save name' disabled={!props.canSaveName} onPress={props.onSaveName} />
+    </BottomSheet>
     <PasswordSheet
       {...props.removeSheet}
       title='Remove account?'

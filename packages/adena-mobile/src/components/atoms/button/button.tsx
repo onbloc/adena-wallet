@@ -7,7 +7,7 @@ import { Spinner } from '../spinner';
 import { Text } from '../text';
 import { styles } from './button.styles';
 
-export type ButtonTone = 'primary' | 'secondary' | 'tertiary' | 'destructive';
+export type ButtonTone = 'primary' | 'secondary' | 'tertiary' | 'destructive' | 'destructiveOutline' | 'destructiveText';
 export type ButtonSize = 'default' | 'compact';
 
 export interface ButtonProps {
@@ -30,6 +30,8 @@ const TONES: Record<ButtonTone, { background: string; pressed: string; text: str
   secondary: { background: colors.action.secondary, pressed: colors.action.secondaryPressed, text: colors.text.primary },
   tertiary: { background: 'transparent', pressed: colors.action.secondaryPressed, text: colors.text.primary },
   destructive: { background: colors.status.error, pressed: colors.status.error, text: colors.text.inverse },
+  destructiveOutline: { background: 'transparent', pressed: colors.background.pressed, text: colors.status.error },
+  destructiveText: { background: 'transparent', pressed: colors.background.pressed, text: colors.status.error },
 };
 
 export const Button = ({
@@ -56,6 +58,7 @@ export const Button = ({
     fullWidth ? styles.fullWidth : styles.hug,
     { backgroundColor: inactive ? colors.action.disabled : pressed ? palette.pressed : palette.background },
     tone === 'destructive' && pressed && styles.destructivePressed,
+    tone === 'destructiveOutline' && { borderWidth: 1.5, borderColor: inactive ? colors.action.disabled : colors.status.error },
     style,
   ];
 

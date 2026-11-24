@@ -33,7 +33,7 @@ export const NumericKeypad = ({ onKeyPress }: { onKeyPress: (key: KeypadKey) => 
             >
               {key === 'backspace'
                 ? <Icon name='backspace' color={colors.icon.primary} />
-                : <Text variant='section' tabular>{key}</Text>}
+                : <Text tabular style={styles.digit}>{key}</Text>}
             </Pressable>
           );
         })}

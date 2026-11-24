@@ -63,7 +63,7 @@ export const BottomSheet = ({ visible, title, description, onClose, dismissible 
           <View style={styles.handle} />
           <View style={styles.header}>
             <Text variant='title' style={styles.title} accessibilityRole='header'>{title}</Text>
-            {dismissible && <IconButton icon='close' variant='primary' accessibilityLabel='Close' size={36} onPress={onClose} />}
+            {dismissible && <IconButton icon='close' variant='primary' accessibilityLabel='Close' onPress={onClose} />}
           </View>
           {description && <Text variant='body' color='secondary'>{description}</Text>}
           <View style={styles.content}>{children}</View>

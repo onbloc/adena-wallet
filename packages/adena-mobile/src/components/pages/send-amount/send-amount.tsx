@@ -1,8 +1,10 @@
 import React, { ReactElement } from 'react';
-import { View } from 'react-native';
+import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } from 'react-native';
 
+import { LocalTokenIcon } from '../../../domain/token';
+import { colors } from '../../../theme';
 import { shortenAddress } from '../../../utils/address';
-import { Avatar, Button, Chip, Text } from '../../atoms';
+import { Avatar, Button, Chip, Divider, Icon, Text } from '../../atoms';
 import {
   BottomSheet,
   FeeSelectorProps,
@@ -13,6 +15,7 @@ import {
   ReviewSheet,
   Screen,
   TextField,
+  TokenImage,
   TopBar,
 } from '../../molecules';
 import { styles } from './send-amount.styles';
@@ -20,10 +23,13 @@ import { styles } from './send-amount.styles';
 // All labels are pre-formatted with their symbols (fees are always in the native token).
 export interface TransferReview {
   amountLabel: string;
+  amountFiatLabel?: string;
+  recipientName?: string;
   recipientAddress: string;
   networkName: string;
   memo?: string;
   totalLabel?: string;
+  totalFiatLabel?: string;
   fee: FeeSelectorProps;
 }
 
@@ -37,9 +43,14 @@ export interface TokenOptionView {
 export interface SendAmountPageProps {
   amount: string;
   symbol: string;
+  tokenLocalIcon?: LocalTokenIcon;
+  tokenImageUrl?: string;
+  // Pre-formatted fiat estimate of the amount, e.g. "≈ $12.30".
+  fiatLabel?: string;
   available?: string;
   recipientAddress: string;
   recipientLabel: string;
+  onChangeRecipient?: () => void;
   error?: string;
   canReview: boolean;
   preparing: boolean;
@@ -64,6 +75,26 @@ export interface SendAmountPageProps {
   onSelectToken: (tokenId: string) => void;
 }
 
+interface TokenSelectorProps {
+  symbol: string;
+  localIcon?: LocalTokenIcon;
+  imageUrl?: string;
+  onPress: () => void;
+}
+
+// Pill beside the amount that opens the token picker.
+const TokenSelector = ({ symbol, localIcon, imageUrl, onPress }: TokenSelectorProps): ReactElement => {
+  const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [styles.tokenSelector, pressed && styles.tokenSelectorPressed];
+
+  return (
+    <Pressable accessibilityRole='button' accessibilityLabel={`Select token, ${symbol}`} onPress={onPress} style={stylePressable}>
+      <TokenImage symbol={symbol} localIcon={localIcon} imageUrl={imageUrl} size={24} />
+      <Text variant='row'>{symbol}</Text>
+      <Icon name='chevronDown' size={20} color={colors.icon.primary} />
+    </Pressable>
+  );
+};
+
 export const SendAmountPage = (props: SendAmountPageProps): ReactElement => (
   <Screen
     scrollable={false}
@@ -85,18 +116,19 @@ export const SendAmountPage = (props: SendAmountPageProps): ReactElement => (
         <Text variant='display' tabular numberOfLines={1} adjustsFontSizeToFit style={styles.amount}>
           {props.amount || '0'}
         </Text>
-        <Chip label={props.symbol} trailingIcon='chevronDown' onPress={props.onOpenTokenPicker} />
+        <TokenSelector symbol={props.symbol} localIcon={props.tokenLocalIcon} imageUrl={props.tokenImageUrl} onPress={props.onOpenTokenPicker} />
       </View>
-      <View style={styles.availableRow}>
-        <Text variant='meta' color='secondary' tabular>{`Available ${props.available ?? '…'} ${props.symbol}`}</Text>
-        <Chip label='Max' onPress={props.onMax} disabled={props.available === undefined} />
-      </View>
+      {props.fiatLabel ? <Text variant='meta' color='secondary' tabular>{props.fiatLabel}</Text> : null}
+    </View>
+    <View style={styles.availableRow}>
+      <Text variant='meta' color='secondary' tabular>{`Available ${props.available ?? '…'} ${props.symbol}`}</Text>
+      <Chip label='Max' onPress={props.onMax} disabled={props.available === undefined} />
     </View>
     <ListRow
       leading={<Avatar name={props.recipientLabel} />}
       label={props.recipientLabel}
       description={shortenAddress(props.recipientAddress)}
-      showChevron={false}
+      onPress={props.onChangeRecipient}
     />
     <ListRow label='Memo' value={props.memo || 'Optional'} onPress={props.onOpenMemo} />
     {props.error && <InlineAlert tone='error' title={props.error} />}
@@ -108,19 +140,40 @@ export const SendAmountPage = (props: SendAmountPageProps): ReactElement => (
         visible
         title='Review transfer'
         rows={[
-          { label: 'To', value: props.review.recipientAddress, multiline: true },
-          { label: 'Network', value: props.review.networkName },
+          { label: 'Network', value: props.review.networkName, emphasis: true },
           ...(props.review.memo ? [{ label: 'Memo', value: props.review.memo, multiline: true }] : []),
-          ...(props.review.totalLabel ? [{ label: 'Total', value: props.review.totalLabel, emphasis: true }] : []),
         ]}
         fee={props.review.fee}
+        totals={props.review.totalLabel !== undefined && (
+          <>
+            <Divider />
+            <View style={styles.totalRow}>
+              <Text variant='meta' color='secondary'>Total</Text>
+              <Text variant='row' tabular selectable style={styles.totalValue}>{props.review.totalLabel}</Text>
+            </View>
+            {props.review.totalFiatLabel && (
+              <Text variant='meta' color='secondary' tabular align='right'>{`${props.review.totalFiatLabel} including network fee`}</Text>
+            )}
+          </>
+        )}
         error={props.reviewError}
         confirmLabel='Confirm send'
         confirming={props.confirming}
         onConfirm={props.onConfirm}
         onClose={props.onCloseReview}
       >
-        <Text variant='display' tabular align='center' adjustsFontSizeToFit numberOfLines={1}>{props.review.amountLabel}</Text>
+        <View style={styles.reviewAmount}>
+          <View style={styles.reviewAmountRow}>
+            <TokenImage symbol={props.symbol} localIcon={props.tokenLocalIcon} imageUrl={props.tokenImageUrl} size={32} />
+            <Text variant='display' tabular adjustsFontSizeToFit numberOfLines={1} style={styles.reviewAmountLabel}>{props.review.amountLabel}</Text>
+          </View>
+          {props.review.amountFiatLabel ? <Text variant='meta' color='secondary' tabular align='center'>{props.review.amountFiatLabel}</Text> : null}
+        </View>
+        <View style={styles.reviewRecipient}>
+          <Text variant='meta' color='secondary'>To</Text>
+          {props.review.recipientName ? <Text variant='row'>{props.review.recipientName}</Text> : null}
+          <Text variant='meta' color='secondary' tabular selectable>{props.review.recipientAddress}</Text>
+        </View>
       </ReviewSheet>
     )}
     <BottomSheet visible={props.memoSheetVisible} title='Memo' onClose={props.onCloseMemo}>

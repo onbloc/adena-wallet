@@ -22,6 +22,9 @@ export const SettingsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
     ? account.keyringId
     : accounts.find(item => item.keyringType === KeyringType.HD_WALLET)?.keyringId;
 
+  // Counted per origin, matching the Connected apps list.
+  const connectedAppCount = new Set(connectedAppService.getConnectedApps().map(app => app.origin)).size;
+
   const handleToggleHaptics = (value: boolean): void => setHaptics(preferenceService.update({ hapticsEnabled: value }).hapticsEnabled);
 
   const handleOpenNetworks = (): void => navigation.navigate('Networks');
@@ -48,7 +51,7 @@ export const SettingsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
     <SettingsPage
       networkName={network.networkName}
       accountCount={accounts.length}
-      connectedAppCount={connectedAppService.getConnectedApps().length}
+      connectedAppCount={connectedAppCount}
       hapticsEnabled={haptics}
       onToggleHaptics={handleToggleHaptics}
       appVersion={packageJson.version}

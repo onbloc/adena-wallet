@@ -87,6 +87,39 @@ describe('SendAmountPage', () => {
     expect(screen.queryByText('Confirm send')).toBeNull();
   });
 
+  it('shows the fiat estimate and changes the recipient from its card', async () => {
+    const page = props({ fiatLabel: '≈ $4.20', onChangeRecipient: jest.fn() });
+
+    await renderPage(<SendAmountPage {...page} />);
+
+    expect(screen.getByText('≈ $4.20')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Select token, GNOT' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Alice, g1jg8m…sqf5' }));
+
+    expect(page.onOpenTokenPicker).toHaveBeenCalledTimes(1);
+    expect(page.onChangeRecipient).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the recipient card static without a change handler', async () => {
+    await renderPage(<SendAmountPage {...props()} />);
+
+    expect(screen.queryByRole('button', { name: 'Alice, g1jg8m…sqf5' })).toBeNull();
+    expect(screen.getByText('Alice')).toBeTruthy();
+  });
+
+  it('reviews the recipient name, fiat values and the total below the fee', async () => {
+    const transfer = review({ recipientName: 'Alice', amountFiatLabel: '≈ $5.00', totalFiatLabel: '≈ $5.01' });
+
+    await renderPage(<SendAmountPage {...props({ review: transfer })} />);
+
+    expect(screen.getByText('To')).toBeTruthy();
+    expect(screen.getAllByText('Alice')).toHaveLength(2);
+    expect(screen.getByText(recipient)).toBeTruthy();
+    expect(screen.getByText('≈ $5.00')).toBeTruthy();
+    expect(screen.getByText('Total')).toBeTruthy();
+    expect(screen.getByText('≈ $5.01 including network fee')).toBeTruthy();
+  });
+
   it('shows placeholders, the error and blocks review while unavailable', async () => {
     const page = props({ amount: '', available: undefined, canReview: false, error: 'Insufficient balance' });
 

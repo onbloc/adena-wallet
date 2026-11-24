@@ -14,6 +14,7 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
   const [words, setWords] = useState<string[]>();
   const [error, setError] = useState<string>();
   const [verifying, setVerifying] = useState(false);
+  const [sheetVisible, setSheetVisible] = useState(false);
   // Bumped on every hide so a reveal still in flight cannot show the phrase afterwards.
   const revealEpochRef = useRef(0);
 
@@ -55,6 +56,7 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
 
       setWords(mnemonic.split(' '));
       setPassword('');
+      setSheetVisible(false);
     }
     catch (revealError) {
       setError(isAppError(revealError, AppErrorCode.INVALID_PASSWORD) ? 'Incorrect password.' : toErrorMessage(revealError));
@@ -64,9 +66,20 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
     }
   };
 
+  const handleOpenPasswordSheet = (): void => setSheetVisible(true);
+
+  const handleClosePasswordSheet = (): void => {
+    setSheetVisible(false);
+    setPassword('');
+    setError(undefined);
+  };
+
   return (
     <RecoveryPhrasePage
       words={words}
+      passwordSheetVisible={sheetVisible}
+      onOpenPasswordSheet={handleOpenPasswordSheet}
+      onClosePasswordSheet={handleClosePasswordSheet}
       password={password}
       onChangePassword={handleChangePassword}
       error={error}

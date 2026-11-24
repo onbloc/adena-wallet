@@ -17,9 +17,12 @@ const meta = {
   args: {
     amount: '1',
     symbol: 'GNOT',
+    tokenLocalIcon: 'gnot',
+    fiatLabel: '≈ $0.42',
     available: '11,301.850689',
     recipientAddress: SAMPLE_RECIPIENT,
     recipientLabel: '123123123',
+    onChangeRecipient: fn(),
     canReview: true,
     preparing: false,
     onKeyPress: fn(),
@@ -61,9 +64,12 @@ export const Review: Story = {
   args: {
     review: {
       amountLabel: '1 GNOT',
+      amountFiatLabel: '≈ $0.42',
+      recipientName: '123123123',
       recipientAddress: SAMPLE_RECIPIENT,
       networkName: 'Gno.land Mainnet',
       totalLabel: '1.010554 GNOT',
+      totalFiatLabel: '≈ $0.43',
       fee: { options: feeOptions, selected: 'AVERAGE', onSelect: fn(), customAdjustment: '1', onChangeCustomAdjustment: fn(), tooLow: false },
     },
   },

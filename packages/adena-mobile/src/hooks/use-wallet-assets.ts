@@ -5,7 +5,7 @@ import { Network } from '../domain/network';
 import { ManagedToken } from '../domain/token';
 import { AssetView, buildAssetViews } from '../presenters/asset.presenter';
 import { useTokenBalancesQuery, useTokenListQuery, useTokenPricesQuery } from '../queries/token.queries';
-import { PortfolioValue, PriceService } from '../services/price.service';
+import { PortfolioValue, PriceService, TokenPriceMap } from '../services/price.service';
 import { useWalletSnapshot } from './use-wallet-snapshot';
 
 // Visible tokens of the current account/network with balances, prices and the portfolio total.
@@ -16,6 +16,7 @@ export interface UseWalletAssetsReturn {
   allTokens: ManagedToken[];
   assets: AssetView[];
   portfolio: PortfolioValue | null;
+  prices?: TokenPriceMap;
   error: Error | null;
   loading: boolean;
   refreshing: boolean;
@@ -47,6 +48,7 @@ export const useWalletAssets = (): UseWalletAssetsReturn => {
     allTokens: tokenList.data ?? [],
     assets,
     portfolio,
+    prices: prices.data,
     error: tokenList.error ?? balances.error,
     loading: tokenList.isPending || balances.isPending,
     refreshing: balances.isRefetching || tokenList.isRefetching,

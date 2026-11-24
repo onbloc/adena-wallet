@@ -44,6 +44,15 @@ describe('ReviewSheet', () => {
     expect(screen.queryByText('Transaction failed', hidden)).toBeNull();
   });
 
+  it('renders the totals below the fee', async () => {
+    await render(
+      <SafeAreaProvider initialMetrics={metrics}>
+        <ReviewSheet {...props()} totals={<Text>Total 1.1 GNOT</Text>} />
+      </SafeAreaProvider>,
+    );
+    expect(screen.getByText('Total 1.1 GNOT', hidden)).toBeTruthy();
+  });
+
   it('shows the error and blocks confirm when the fee is too low', async () => {
     const base = props();
     const sheet = props({ error: 'Out of gas', fee: { ...base.fee, tooLow: true } });

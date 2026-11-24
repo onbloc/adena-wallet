@@ -16,6 +16,7 @@ describe('ConnectedAppsPage', () => {
     await renderPage(<ConnectedAppsPage apps={apps} onDisconnect={onDisconnect} onBack={onBack} />);
 
     expect(screen.getByText('2 connected apps')).toBeTruthy();
+    expect(screen.getByText('Disconnecting ends the active connection.')).toBeTruthy();
     expect(screen.getByText('https://gnoscan.io')).toBeTruthy();
     expect(screen.getByText('Connected today')).toBeTruthy();
     await fireEvent.press(screen.getAllByRole('button', { name: 'Disconnect' })[1]);

@@ -14,6 +14,10 @@ const props = (overrides: Partial<AccountSettingsPageProps> = {}): AccountSettin
   onChangeEditingName: jest.fn(),
   onSaveName: jest.fn(),
   canSaveName: true,
+  renameSheetVisible: true,
+  onOpenRename: jest.fn(),
+  onCloseRename: jest.fn(),
+  connectedAppCount: 2,
   hasRecoveryPhrase: true,
   canRemove: true,
   onCopyAddress: jest.fn(),
@@ -31,19 +35,24 @@ describe('AccountSettingsPage', () => {
 
     await renderPage(<AccountSettingsPage {...page} />);
 
-    expect(screen.getByText(address)).toBeTruthy();
+    expect(screen.getByText('g1jg8m…sqf5')).toBeTruthy();
+    expect(screen.getAllByText('Recovery phrase')).toHaveLength(2);
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Copy address' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Edit name' }));
     await fireEvent.changeText(screen.getByLabelText('Account name'), 'Renamed');
     await fireEvent.press(screen.getByRole('button', { name: 'Save name' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Manage connections' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Manage connections, 2' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Recovery phrase' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Remove account' }));
+    await fireEvent.press(screen.getAllByRole('button', { name: 'Close' })[0]);
     await fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
     await fireEvent.press(screen.getByRole('button', { name: 'Remove' }));
 
     expect(page.onBack).toHaveBeenCalledTimes(1);
     expect(page.onCopyAddress).toHaveBeenCalledTimes(1);
+    expect(page.onOpenRename).toHaveBeenCalledTimes(1);
+    expect(page.onCloseRename).toHaveBeenCalledTimes(1);
     expect(page.onChangeEditingName).toHaveBeenCalledWith('Renamed');
     expect(page.onSaveName).toHaveBeenCalledTimes(1);
     expect(page.onOpenConnectedApps).toHaveBeenCalledTimes(1);

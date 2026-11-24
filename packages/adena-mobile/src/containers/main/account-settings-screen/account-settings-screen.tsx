@@ -13,13 +13,14 @@ import { useToastStore } from '../../../stores/toast.store';
 
 export const AccountSettingsScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'AccountSettings'>): ReactElement | null => {
   const { accountId } = route.params;
-  const { accountService, walletService } = useContainer();
+  const { accountService, walletService, connectedAppService } = useContainer();
   const { accounts, network } = useWalletSnapshot();
   const bumpRevision = useSessionStore(state => state.bumpRevision);
   const showToast = useToastStore(state => state.show);
   const copy = useCopyToClipboard();
   const account = accounts.find(item => item.id === accountId);
   const [editingName, setEditingName] = useState(account?.name ?? '');
+  const [renameVisible, setRenameVisible] = useState(false);
 
   const removeAccount = useCallback(async (password: string) => {
     await walletService.removeAccount(accountId, password);
@@ -39,7 +40,15 @@ export const AccountSettingsScreen = ({ navigation, route }: NativeStackScreenPr
     accountService.renameAccount(account.id, editingName);
     bumpRevision();
     showToast('Name updated', 'success');
+    setRenameVisible(false);
   };
+
+  const handleOpenRename = (): void => {
+    setEditingName(account.name);
+    setRenameVisible(true);
+  };
+
+  const handleCloseRename = (): void => setRenameVisible(false);
 
   const handleCopyAddress = (): void => copy(address);
 
@@ -56,6 +65,10 @@ export const AccountSettingsScreen = ({ navigation, route }: NativeStackScreenPr
       onChangeEditingName={setEditingName}
       canSaveName={editingName.trim().length > 0 && editingName.trim() !== account.name}
       onSaveName={handleSaveName}
+      renameSheetVisible={renameVisible}
+      onOpenRename={handleOpenRename}
+      onCloseRename={handleCloseRename}
+      connectedAppCount={new Set(connectedAppService.getConnectedApps().map(app => app.origin)).size}
       hasRecoveryPhrase={account.keyringType === KeyringType.HD_WALLET}
       canRemove={accounts.length > 1}
       onCopyAddress={handleCopyAddress}

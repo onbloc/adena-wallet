@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import React, { ReactElement, useMemo, useRef, useState } from 'react';
+import React, { ReactElement, useCallback, useMemo, useRef, useState } from 'react';
 
 import { applyKeypadKey, KeypadKey } from '../../../components/molecules';
 import { SendAmountPage, TransferReview } from '../../../components/pages';
@@ -9,14 +9,16 @@ import { useContainer } from '../../../di/container-provider';
 import { Account } from '../../../domain/account';
 import { FeeEstimate } from '../../../domain/fee';
 import { Network } from '../../../domain/network';
-import { Token } from '../../../domain/token';
+import { Token, tokenPriceKey } from '../../../domain/token';
 import { TransactionDraft } from '../../../domain/transaction';
 import { useFeeSelection } from '../../../hooks/use-fee-selection';
 import { useWalletAssets } from '../../../hooks/use-wallet-assets';
 import { MainStackParamList } from '../../../navigation/types';
 import { queryKeys } from '../../../queries/query-keys';
+import { PriceService } from '../../../services/price.service';
 import { useToastStore } from '../../../stores/toast.store';
 import { addAmount, compareAmount, formatTokenAmount, isPositiveAmount, parseCoin, toBaseUnit, toDisplayAmount } from '../../../utils/amount';
+import { formatUSD } from '../../../utils/price';
 
 // Everything the review shows and the broadcast signs, captured when the fee was estimated.
 interface PreparedTransfer {
@@ -45,6 +47,13 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
   const [prepared, setPrepared] = useState<PreparedTransfer | null>(null);
   const sendingRef = useRef(false);
   const feeSelection = useFeeSelection(prepared?.estimate ?? null, network);
+  const { prices } = wallet;
+
+  const fiatOf = useCallback((value: string, of: Token): string | undefined => {
+    const usd = PriceService.valueOf(value, of, prices?.[tokenPriceKey(of.id, of.networkId)]);
+
+    return usd === null ? undefined : `≈ ${formatUSD(usd)}`;
+  }, [prices]);
 
   const asset = wallet.assets.find(item => item.token.id === tokenId) ?? wallet.assets.find(item => item.token.isNative);
   const token = asset?.token;
@@ -113,16 +122,21 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
     const feeToken = sentNetwork.feeToken;
     const fee = addAmount(parseCoin(feeSelection.fee.gasFee)?.amount ?? '0', prepared.estimate.storageDeposit ?? '0');
 
+    // A total only makes sense when the amount and the fee are the same coin.
+    const total = sent.denom === feeToken.denom ? addAmount(sentAmount, fee) : undefined;
+
     return {
       amountLabel: `${formatTokenAmount(sentAmount, sent.decimals)} ${sent.symbol}`,
+      amountFiatLabel: fiatOf(sentAmount, sent),
+      recipientName,
       recipientAddress: toAddress,
       networkName: sentNetwork.networkName,
       memo: prepared.memo,
-      // A total only makes sense when the amount and the fee are the same coin.
-      totalLabel: sent.denom === feeToken.denom ? `${formatTokenAmount(addAmount(sentAmount, fee), feeToken.decimals)} ${feeToken.symbol}` : undefined,
+      totalLabel: total !== undefined ? `${formatTokenAmount(total, feeToken.decimals)} ${feeToken.symbol}` : undefined,
+      totalFiatLabel: total !== undefined ? fiatOf(total, sent) : undefined,
       fee: feeSelection.selectorProps,
     };
-  }, [feeSelection.fee, feeSelection.selectorProps, prepared, toAddress]);
+  }, [feeSelection.fee, feeSelection.selectorProps, prepared, toAddress, recipientName, fiatOf]);
 
   const handleKeyPress = (key: KeypadKey): void => {
     prepare.reset();
@@ -186,9 +200,13 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
     <SendAmountPage
       amount={amount}
       symbol={token?.symbol ?? network.nativeToken.symbol}
+      tokenLocalIcon={token?.localIcon}
+      tokenImageUrl={token?.imageUrl}
+      fiatLabel={token ? fiatOf(baseAmount, token) : undefined}
       available={balance !== undefined ? formatTokenAmount(balance, decimals) : undefined}
       recipientAddress={toAddress}
       recipientLabel={recipientName ?? 'Recipient'}
+      onChangeRecipient={navigation.goBack}
       error={exceedsBalance
         ? 'Insufficient balance'
         : prepare.error

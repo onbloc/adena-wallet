@@ -30,6 +30,7 @@ describe('RecoveryPhraseScreen', () => {
         <Wrapper><Screen navigation={navigation} route={route} /></Wrapper>
       </SafeAreaProvider>,
     );
+    await fireEvent.press(screen.getByRole('button', { name: 'Show recovery phrase' }));
     await fireEvent.changeText(screen.getByPlaceholderText('Password'), 'secret');
   };
 
@@ -52,7 +53,7 @@ describe('RecoveryPhraseScreen', () => {
     await act(async () => appStateListener('background'));
 
     expect(screen.queryByText('abandon')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Reveal phrase' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Show recovery phrase' })).toBeTruthy();
   });
 
   it('does not show a phrase whose reveal finished after leaving the screen', async () => {

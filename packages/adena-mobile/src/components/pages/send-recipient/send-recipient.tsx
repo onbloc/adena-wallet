@@ -1,8 +1,10 @@
 import React, { ReactElement } from 'react';
+import { View } from 'react-native';
 
 import { shortenAddress } from '../../../utils/address';
 import { Avatar, IconButton } from '../../atoms';
 import { InlineAlert, ListRow, RecipientField, Screen, SectionLabel, TopBar } from '../../molecules';
+import { styles } from './send-recipient.styles';
 
 export interface RecipientItem {
   key: string;
@@ -34,14 +36,15 @@ export const SendRecipientPage = ({ query, onChangeQuery, onScan, result, error,
       header={(
         <TopBar
           title='Send to'
-          trailing={<IconButton icon='close' variant='primary' accessibilityLabel='Close' size={36} onPress={onClose} />}
+          variant='large'
+          trailing={<IconButton icon='close' variant='primary' accessibilityLabel='Close' onPress={onClose} />}
         />
       )}
     >
       <RecipientField value={query} onChangeText={onChangeQuery} onScan={onScan} testID='recipient-search' />
       {error && <InlineAlert tone='error' title={error} />}
       {result && (
-        <>
+        <View style={styles.section}>
           <SectionLabel label='Results' />
           <ListRow
             testID='recipient-result'
@@ -50,10 +53,10 @@ export const SendRecipientPage = ({ query, onChangeQuery, onScan, result, error,
             description={shortenAddress(result.address)}
             onPress={handleListRowPress}
           />
-        </>
+        </View>
       )}
       {addressBook.length > 0 && (
-        <>
+        <View style={styles.section}>
           <SectionLabel label='Address book' />
           {addressBook.map((entry) => {
             const handlePress = (): void => onSelectRecipient(entry.address);
@@ -68,10 +71,10 @@ export const SendRecipientPage = ({ query, onChangeQuery, onScan, result, error,
               />
             );
           })}
-        </>
+        </View>
       )}
       {myAccounts.length > 0 && (
-        <>
+        <View style={styles.section}>
           <SectionLabel label='My accounts' />
           {myAccounts.map((account) => {
             const handlePress = (): void => onSelectRecipient(account.address);
@@ -86,7 +89,7 @@ export const SendRecipientPage = ({ query, onChangeQuery, onScan, result, error,
               />
             );
           })}
-        </>
+        </View>
       )}
     </Screen>
   );

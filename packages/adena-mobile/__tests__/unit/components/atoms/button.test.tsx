@@ -5,7 +5,7 @@ import { Button, ButtonTone } from '../../../../src/components/atoms';
 import { colors } from '../../../../src/theme';
 
 describe('Button', () => {
-  it.each<ButtonTone>(['primary', 'secondary', 'tertiary', 'destructive'])('presses with %s tone feedback', async (tone) => {
+  it.each<ButtonTone>(['primary', 'secondary', 'tertiary', 'destructive', 'destructiveOutline', 'destructiveText'])('presses with %s tone feedback', async (tone) => {
     const onPress = jest.fn();
 
     await render(<Button label='Go' tone={tone} leadingIcon='plus' trailingIcon='chevronRight' onPress={onPress} />);
@@ -30,6 +30,12 @@ describe('Button', () => {
     expect(screen.getByRole('button', { busy: true })).toBeTruthy();
     await fireEvent.press(screen.getByRole('button'));
     expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it('draws the destructive outline and keeps the label red', async () => {
+    await render(<Button label='Disconnect' tone='destructiveOutline' testID='btn' />);
+    expect(screen.getByTestId('btn')).toHaveStyle({ borderColor: colors.status.error, backgroundColor: 'transparent' });
+    expect(screen.getByText('Disconnect')).toHaveStyle({ color: colors.status.error });
   });
 
   it('truncates long labels to one line', async () => {

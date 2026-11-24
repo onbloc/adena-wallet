@@ -18,24 +18,31 @@ export interface ConnectedAppsPageProps {
 }
 
 export const ConnectedAppsPage = ({ apps, onDisconnect, onBack }: ConnectedAppsPageProps): ReactElement => (
-  <Screen header={<TopBar title='Connected apps' onBack={onBack} />}>
-    <Text variant='section'>{`${apps.length} connected apps`}</Text>
-    <Text variant='meta' color='secondary'>Manage access to Adena wallet. Disconnecting ends the active connection.</Text>
-    {apps.map((app) => {
-      const handlePress = (): void => onDisconnect(app.origin);
+  <Screen
+    header={<TopBar title='Connected apps' onBack={onBack} />}
+    footer={<Text variant='meta' color='secondary'>Disconnecting ends the active connection.</Text>}
+  >
+    <View style={styles.intro}>
+      <Text variant='title'>{`${apps.length} connected apps`}</Text>
+      <Text variant='meta' color='secondary'>Manage access to Adena wallet.</Text>
+    </View>
+    <View style={styles.list}>
+      {apps.map((app) => {
+        const handlePress = (): void => onDisconnect(app.origin);
 
-      return (
-        <View key={app.origin} style={styles.card}>
-          <View style={styles.header}>
-            <View style={styles.texts}>
-              <Text variant='row'>{app.name}</Text>
-              <Text variant='meta' color='secondary'>{app.origin}</Text>
+        return (
+          <View key={app.origin} style={styles.card}>
+            <View style={styles.header}>
+              <View style={styles.texts}>
+                <Text variant='row'>{app.name}</Text>
+                <Text variant='meta' color='secondary'>{app.origin}</Text>
+              </View>
+              <Button label='Disconnect' tone='destructiveOutline' size='compact' fullWidth={false} onPress={handlePress} />
             </View>
-            <Button label='Disconnect' tone='tertiary' size='compact' fullWidth={false} onPress={handlePress} />
+            <Text variant='meta' color='secondary'>{app.detail}</Text>
           </View>
-          <Text variant='meta' color='secondary'>{app.detail}</Text>
-        </View>
-      );
-    })}
+        );
+      })}
+    </View>
   </Screen>
 );

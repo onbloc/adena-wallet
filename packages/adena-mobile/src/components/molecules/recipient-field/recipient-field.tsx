@@ -1,7 +1,6 @@
 import React, { ReactElement } from 'react';
 import { View } from 'react-native';
 
-import { sizes } from '../../../theme';
 import { IconButton } from '../../atoms';
 import { SearchField } from '../search-field';
 import { styles } from './recipient-field.styles';
@@ -28,6 +27,6 @@ export const RecipientField = ({ value, onChangeText, onScan, placeholder = 'Add
         returnKeyType='done'
       />
     </View>
-    <IconButton icon='scan' variant='surface' size={sizes.control} accessibilityLabel='Scan QR code' onPress={onScan} />
+    <IconButton icon='scan' variant='surface' accessibilityLabel='Scan QR code' onPress={onScan} />
   </View>
 );
