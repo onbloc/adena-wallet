@@ -18,7 +18,7 @@ import { StoragePreferenceRepository } from '../repositories/preference.reposito
 import { ApiPriceRepository, PriceRepository } from '../repositories/price.repository';
 import { StorageTokenListRepository } from '../repositories/token-list.repository';
 import { SecureVaultRepository } from '../repositories/vault.repository';
-import { DEX_API_CONFIG } from '../resources';
+import { DEX_API_CONFIG, ONRAMP_CONFIG, OnrampConfig } from '../resources';
 import { SecureStore } from '../security/secure-store';
 import { ScryptXChaChaVaultCipher, VaultCipher } from '../security/vault-cipher';
 import { AccountService } from '../services/account.service';
@@ -33,6 +33,7 @@ import { MarketDataService } from '../services/market-data.service';
 import { MigrationService } from '../services/migration.service';
 import { NetworkService } from '../services/network.service';
 import { NftService } from '../services/nft.service';
+import { OnrampService } from '../services/onramp.service';
 import { PasswordAttemptLimiter } from '../services/password-attempt-limiter';
 import { PreferenceService } from '../services/preference.service';
 import { PriceService } from '../services/price.service';
@@ -55,6 +56,8 @@ export interface Infrastructure {
   marketDataRepository?: MarketDataRepository;
   // Wall clock, injectable for tests.
   now?: () => number;
+  // Bundled onramp providers unless a test passes its own.
+  onrampConfig?: OnrampConfig;
 }
 
 export interface Services {
@@ -69,6 +72,7 @@ export interface Services {
   activityService: ActivityService;
   addressBookService: AddressBookService;
   exploreService: ExploreService;
+  onrampService: OnrampService;
   appResetService: AppResetService;
   transactionService: TransactionService;
   connectedAppService: ConnectedAppService;
@@ -129,6 +133,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     addressBookService: overrides.addressBookService
       ?? new AddressBookService(new StorageAddressBookRepository(keyValueStore), chainRegistry),
     exploreService: overrides.exploreService ?? new ExploreService(),
+    onrampService: overrides.onrampService ?? new OnrampService(infra.onrampConfig ?? ONRAMP_CONFIG),
     appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService, resetMarker),
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),
     walletService: overrides.walletService

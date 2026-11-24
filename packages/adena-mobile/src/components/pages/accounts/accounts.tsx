@@ -10,6 +10,7 @@ export interface AccountListItem {
   address: string;
   sourceLabel: string;
   selected: boolean;
+  avatarColor?: string;
 }
 
 export interface AccountsPageProps {
@@ -45,7 +46,7 @@ export const AccountsPage = ({
         <ListRow
           key={account.id}
           testID={`account-${account.id}`}
-          leading={<Avatar name={account.name} />}
+          leading={<Avatar name={account.name} color={account.avatarColor} />}
           label={account.name}
           description={`${formatAddress(account.address)} · ${account.sourceLabel}`}
           trailing={account.selected ? <Icon name='check' size={20} /> : undefined}

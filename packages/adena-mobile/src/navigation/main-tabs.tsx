@@ -24,12 +24,16 @@ const TabBar = ({ state, navigation, showExplore }: BottomTabBarProps & { showEx
 
   const handleNavigate = (tab: MainTab): void => navigation.navigate(ROUTE_BY_TAB[tab]);
 
+  // Bubbles up to the main stack, which owns the Search page.
+  const handleSearch = (): void => navigation.navigate('Search');
+
   return (
     <View style={[styles.bar, { paddingBottom: insets.bottom }]}>
       <MainTabBar
         selected={TAB_BY_ROUTE[current]}
         showExplore={showExplore}
         onNavigate={handleNavigate}
+        onSearch={handleSearch}
       />
     </View>
   );

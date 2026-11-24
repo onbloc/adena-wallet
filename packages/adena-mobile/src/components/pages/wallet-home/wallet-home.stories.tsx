@@ -33,6 +33,7 @@ const meta = {
     onOpenToken: fn(),
     onOpenCollection: fn(),
     onManageTokens: fn(),
+    onBuy: fn(),
     onSend: fn(),
     onReceive: fn(),
     onManageNfts: fn(),

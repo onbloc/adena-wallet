@@ -8,6 +8,7 @@ import { useContainer } from '../../../di/container-provider';
 import { SecretImportMode } from '../../../domain/account';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
 import { MainStackParamList } from '../../../navigation/types';
+import { toAvatarColor } from '../../../presenters/account.presenter';
 import { useSessionStore } from '../../../stores/session.store';
 import { useToastStore } from '../../../stores/toast.store';
 
@@ -66,6 +67,7 @@ export const AccountsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
         address: accountService.getAddress(item, network),
         sourceLabel: SOURCE_LABEL[item.keyringType],
         selected: item.id === current?.id,
+        avatarColor: toAvatarColor(item),
       }))}
       adding={adding}
       onSelect={handleSelect}

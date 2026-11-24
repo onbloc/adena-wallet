@@ -1,3 +1,5 @@
+import type { AvatarColor } from '../domain/account';
+
 // ADENA / Bold Monochrome color primitives (12) and semantic aliases (23).
 export const palette = {
   neutral0: '#FFFFFF',
@@ -57,6 +59,18 @@ export const colors = {
     shadow: '#000000',
   },
 } as const;
+
+// User-picked avatar backgrounds; each keeps inverse text above 4.5:1 contrast.
+export const avatarColors: Record<AvatarColor, string> = {
+  ink: palette.neutral900,
+  blue: '#1D4ED8',
+  violet: '#6D28D9',
+  pink: '#BE185D',
+  red: palette.red700,
+  amber: palette.amber700,
+  green: palette.green700,
+  teal: '#0E7490',
+};
 
 export const StatusTone = {
   NEUTRAL: 'neutral',

@@ -3,20 +3,15 @@ import { View } from 'react-native';
 
 import { formatAddress } from '../../../utils/address';
 import { Avatar, Button, IconButton } from '../../atoms';
-import { BottomSheet, ListRow, PasswordSheet, PasswordSheetProps, Screen, SectionLabel, TextField, TopBar } from '../../molecules';
+import { ListRow, PasswordSheet, PasswordSheetProps, Screen, SectionLabel, TopBar } from '../../molecules';
 import { styles } from './account-settings.styles';
 
 export interface AccountSettingsPageProps {
   name: string;
   address: string;
   sourceLabel: string;
-  editingName: string;
-  onChangeEditingName: (value: string) => void;
-  onSaveName: () => void;
-  canSaveName: boolean;
-  renameSheetVisible: boolean;
-  onOpenRename: () => void;
-  onCloseRename: () => void;
+  avatarColor?: string;
+  onEditProfile: () => void;
   connectedAppCount: number;
   hasRecoveryPhrase: boolean;
   canRemove: boolean;
@@ -35,14 +30,14 @@ export const AccountSettingsPage = (props: AccountSettingsPageProps): ReactEleme
     footer={props.canRemove && <Button label='Remove account' tone='destructiveText' onPress={props.onRequestRemove} />}
   >
     <ListRow
-      leading={<Avatar name={props.name} />}
+      leading={<Avatar name={props.name} color={props.avatarColor} />}
       label={props.name}
       description={formatAddress(props.address)}
       value={props.sourceLabel}
       trailing={<IconButton icon='copy' accessibilityLabel='Copy address' size={32} onPress={props.onCopyAddress} />}
       showChevron={false}
     />
-    <Button label='Edit name' tone='secondary' onPress={props.onOpenRename} />
+    <Button label='Edit profile' tone='secondary' onPress={props.onEditProfile} />
     <View style={styles.section}>
       <SectionLabel label='Account preferences' />
       <View style={styles.rows}>
@@ -50,10 +45,6 @@ export const AccountSettingsPage = (props: AccountSettingsPageProps): ReactEleme
         {props.hasRecoveryPhrase && <ListRow label='Recovery phrase' onPress={props.onOpenRecoveryPhrase} />}
       </View>
     </View>
-    <BottomSheet visible={props.renameSheetVisible} title='Edit name' onClose={props.onCloseRename}>
-      <TextField label='Account name' value={props.editingName} onChangeText={props.onChangeEditingName} helper='Shown only on this device.' autoFocus />
-      <Button label='Save name' disabled={!props.canSaveName} onPress={props.onSaveName} />
-    </BottomSheet>
     <PasswordSheet
       {...props.removeSheet}
       title='Remove account?'

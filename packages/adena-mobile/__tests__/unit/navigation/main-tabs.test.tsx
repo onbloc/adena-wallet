@@ -21,6 +21,7 @@ jest.mock('../../../src/hooks/use-wallet-snapshot', () => ({ useWalletSnapshot: 
 
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 20 } };
 const Stack = createNativeStackNavigator();
+const SearchStub = (): ReactElement => mockScreen('SearchScreen');
 
 const renderTabs = (apps: unknown[]) => {
   const container = { exploreService: { getApps: jest.fn(() => apps) } } as unknown as AppContainer;
@@ -31,6 +32,7 @@ const renderTabs = (apps: unknown[]) => {
         <NavigationContainer>
           <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name='Main' component={MainTabs} />
+            <Stack.Screen name='Search' component={SearchStub} />
           </Stack.Navigator>
         </NavigationContainer>
       </ContainerProvider>
@@ -49,6 +51,12 @@ describe('MainTabs', () => {
     expect(await screen.findByText('ActivityScreen')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Wallet' }));
     expect(screen.getByText('HomeScreen')).toBeTruthy();
+  });
+
+  it('opens the stacked Search page from the search icon', async () => {
+    await renderTabs([]);
+    await fireEvent.press(screen.getByRole('button', { name: 'Search' }));
+    expect(await screen.findByText('SearchScreen')).toBeTruthy();
   });
 
   it('hides Explore when the network has no curated apps', async () => {

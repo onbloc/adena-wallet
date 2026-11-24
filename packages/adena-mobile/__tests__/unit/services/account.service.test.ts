@@ -2,6 +2,7 @@ import { fromBase64, toBase64 } from '@cosmjs/encoding';
 
 import { isAppError } from '../../../src/core/errors';
 import { KeyringType } from '../../../src/crypto/keyring';
+import { AvatarColor } from '../../../src/domain/account';
 import { StorageAccountRepository } from '../../../src/repositories/account.repository';
 import { AccountService } from '../../../src/services/account.service';
 import { KeyringSession } from '../../../src/services/keyring-session';
@@ -177,6 +178,27 @@ describe('AccountService', () => {
       const { service } = setup();
 
       expect(() => service.renameAccount('nope', 'Name')).toThrow('Account nope not found');
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('saves the name and avatar color and keeps the color when omitted', () => {
+      const { service, repository } = setup();
+
+      repository.saveAccounts([makeAccount({ id: 'a' })]);
+      expect(service.updateProfile('a', { name: ' Main ', avatarColor: AvatarColor.TEAL })).toMatchObject({ name: 'Main', avatarColor: 'teal' });
+      expect(service.updateProfile('a', { name: 'Renamed' })).toMatchObject({ name: 'Renamed', avatarColor: 'teal' });
+      expect(service.renameAccount('a', 'Again').avatarColor).toBe('teal');
+    });
+
+    it('rejects an unknown color, a blank name and an unknown account', () => {
+      const { service, repository } = setup();
+
+      repository.saveAccounts([makeAccount({ id: 'a' })]);
+      expect(() => service.updateProfile('a', { name: 'Main', avatarColor: 'neon' as AvatarColor })).toThrow('Unknown avatar color');
+      expect(() => service.updateProfile('a', { name: ' ' })).toThrow('Account name is required');
+      expect(() => service.updateProfile('nope', { name: 'Main' })).toThrow('Account nope not found');
+      expect(service.getAccount('a').avatarColor).toBeUndefined();
     });
   });
 

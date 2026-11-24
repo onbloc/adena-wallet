@@ -34,12 +34,14 @@ export type MainStackParamList = {
   ActivityDetail: { activity: Activity };
   TokenDetails: { tokenId: string };
   ManageTokens: undefined;
-  AddToken: undefined;
+  // `query` prefills the registry search (e.g. from a Search result that is not in the wallet yet).
+  AddToken: { query?: string } | undefined;
   NftCollection: { collection: NftCollection };
   NftDetail: { collection: NftCollection; item: NftItem };
   Accounts: undefined;
   ImportAccount: { mode: SecretImportMode };
   AccountSettings: { accountId: string };
+  EditProfile: { accountId: string };
   SendRecipient: { tokenId?: string; scannedAddress?: string } | undefined;
   SendAmount: { toAddress: string; tokenId?: string };
   Receive: undefined;
@@ -53,4 +55,8 @@ export type MainStackParamList = {
   Networks: undefined;
   AddNetwork: undefined;
   DappRequest: undefined;
+  Search: undefined;
+  BuyCrypto: { tokenId?: string } | undefined;
+  // `amount` is the fiat amount in USD as a plain decimal string.
+  Checkout: { tokenId: string; amount: string };
 };

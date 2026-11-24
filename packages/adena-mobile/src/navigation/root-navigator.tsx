@@ -8,8 +8,11 @@ import { AddNetworkScreen } from '../containers/main/add-network-screen';
 import { AddTokenScreen } from '../containers/main/add-token-screen';
 import { AddressBookEditScreen } from '../containers/main/address-book-edit-screen';
 import { AddressBookScreen } from '../containers/main/address-book-screen';
+import { BuyCryptoScreen } from '../containers/main/buy-crypto-screen';
 import { ChangePasswordScreen } from '../containers/main/change-password-screen';
+import { CheckoutScreen } from '../containers/main/checkout-screen';
 import { ConnectedAppsScreen } from '../containers/main/connected-apps-screen';
+import { EditProfileScreen } from '../containers/main/edit-profile-screen';
 import { ImportAccountScreen } from '../containers/main/import-account-screen';
 import { ManageNftsScreen } from '../containers/main/manage-nfts-screen';
 import { ManageTokensScreen } from '../containers/main/manage-tokens-screen';
@@ -19,6 +22,7 @@ import { NftDetailScreen } from '../containers/main/nft-detail-screen';
 import { QrScannerScreen } from '../containers/main/qr-scanner-screen';
 import { ReceiveScreen } from '../containers/main/receive-screen';
 import { RecoveryPhraseScreen } from '../containers/main/recovery-phrase-screen';
+import { SearchScreen } from '../containers/main/search-screen';
 import { SendAmountScreen } from '../containers/main/send-amount-screen';
 import { SendNftScreen } from '../containers/main/send-nft-screen';
 import { SendRecipientScreen } from '../containers/main/send-recipient-screen';
@@ -78,6 +82,7 @@ const MainNavigator = (): ReactElement => (
     <MainStack.Screen name='Accounts' component={AccountsScreen} />
     <MainStack.Screen name='ImportAccount' component={ImportAccountScreen} />
     <MainStack.Screen name='AccountSettings' component={AccountSettingsScreen} />
+    <MainStack.Screen name='EditProfile' component={EditProfileScreen} />
     <MainStack.Screen name='SendRecipient' component={SendRecipientScreen} options={{ presentation: 'modal' }} />
     <MainStack.Screen name='SendAmount' component={SendAmountScreen} />
     <MainStack.Screen
@@ -92,6 +97,9 @@ const MainNavigator = (): ReactElement => (
     <MainStack.Screen name='ConnectedApps' component={ConnectedAppsScreen} />
     <MainStack.Screen name='Networks' component={NetworksScreen} />
     <MainStack.Screen name='AddNetwork' component={AddNetworkScreen} />
+    <MainStack.Screen name='Search' component={SearchScreen} />
+    <MainStack.Screen name='BuyCrypto' component={BuyCryptoScreen} />
+    <MainStack.Screen name='Checkout' component={CheckoutScreen} />
   </MainStack.Navigator>
 );
 

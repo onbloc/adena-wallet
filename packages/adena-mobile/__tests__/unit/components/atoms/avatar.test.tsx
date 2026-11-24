@@ -18,3 +18,11 @@ describe('Avatar', () => {
     expect(screen.toJSON()).toBeTruthy();
   });
 });
+
+describe('Avatar color', () => {
+  it('uses the given background color', async () => {
+    await render(<Avatar name='Adena' color='#0E7490' />);
+    expect(screen.getByText('AD')).toBeTruthy();
+    expect(JSON.stringify(screen.toJSON())).toContain('#0E7490');
+  });
+});

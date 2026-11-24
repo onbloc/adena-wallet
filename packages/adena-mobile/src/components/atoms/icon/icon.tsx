@@ -21,6 +21,7 @@ import {
   LoaderCircle,
   Lock,
   LucideIcon,
+  Palette,
   Plus,
   QrCode,
   ScanFace,
@@ -73,6 +74,7 @@ const ICONS = {
   globe: Globe,
   user: User,
   trash: Trash2,
+  palette: Palette,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

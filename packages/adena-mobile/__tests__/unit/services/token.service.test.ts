@@ -29,6 +29,18 @@ describe('TokenService', () => {
   const address = fakeAddress(fromBase64(account.publicKey), GNO_NETWORK);
   const gnot = getDefaultTokensFor(GNO_NETWORK)[0];
 
+  describe('getCachedTokenList', () => {
+    it('lists the network coins and the saved tokens without network calls', () => {
+      const { service, repository, assets } = setup();
+
+      repository.save(account.id, GNO_NETWORK.id, [managed({ ...gnot, isNative: true, visible: true }), managed({ id: 'foo' })]);
+
+      expect(service.getCachedTokenList(account, GNO_NETWORK).map(token => token.id)).toEqual([gnot.id, 'foo']);
+      expect(service.getCachedTokenList(account, COSMOS_NETWORK).map(token => token.symbol)).toEqual(['ATONE', 'PHOTON']);
+      expect(assets.getCuratedTokens).not.toHaveBeenCalled();
+    });
+  });
+
   describe('getTokenList', () => {
     it('does not write back the list of an account removed during the refresh', async () => {
       const { service, repository, assets, accounts } = setup();

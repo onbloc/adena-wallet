@@ -1,0 +1,20 @@
+import { StyleSheet } from 'react-native';
+
+import { colors, radius, spacing } from '../../../theme';
+
+const AVATAR = 72;
+const RING = 4;
+const SWATCH = 44;
+
+export const styles = StyleSheet.create({
+  identity: { gap: spacing.space8 },
+  banner: { height: 96, borderRadius: radius.surface, backgroundColor: colors.background.subtle },
+  avatarAnchor: { marginTop: -(AVATAR / 2 + RING), marginLeft: spacing.space16, alignSelf: 'flex-start' },
+  avatarRing: { padding: RING, borderRadius: radius.circle, backgroundColor: colors.background.canvas },
+  badge: { position: 'absolute', right: -spacing.space8, bottom: -spacing.space4, borderRadius: radius.circle, borderWidth: 2, borderColor: colors.background.canvas },
+  swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.space16, justifyContent: 'center', paddingVertical: spacing.space8 },
+  swatch: { width: SWATCH, height: SWATCH, borderRadius: radius.circle, alignItems: 'center', justifyContent: 'center' },
+  swatchPressed: { opacity: 0.8 },
+});
+
+export const AVATAR_SIZE = AVATAR;

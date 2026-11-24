@@ -2,7 +2,7 @@ import { fromBase64, toBase64 } from '@cosmjs/encoding';
 
 import { AppError, AppErrorCode } from '../core/errors';
 import { KeyringType } from '../crypto/keyring';
-import { Account } from '../domain/account';
+import { Account, AvatarColor, isAvatarColor } from '../domain/account';
 import { Network } from '../domain/network';
 import { AccountRepository } from '../repositories/account.repository';
 import { ChainRegistry } from '../repositories/chain/chain-registry';
@@ -119,13 +119,25 @@ export class AccountService {
   }
 
   renameAccount(accountId: string, name: string): Account {
-    const trimmed = name.trim();
+    return this.updateProfile(accountId, { name });
+  }
+
+  // Local profile edits; the avatar color is kept when not given.
+  updateProfile(accountId: string, profile: { name: string; avatarColor?: AvatarColor }): Account {
+    const trimmed = profile.name.trim();
 
     if (!trimmed) {
       throw new AppError(AppErrorCode.INVALID_REQUEST, 'Account name is required');
     }
 
-    const accounts = this.getAccounts().map(account => (account.id === accountId ? { ...account, name: trimmed } : account));
+    if (profile.avatarColor !== undefined && !isAvatarColor(profile.avatarColor)) {
+      throw new AppError(AppErrorCode.INVALID_REQUEST, 'Unknown avatar color');
+    }
+
+    this.getAccount(accountId);
+    const accounts = this.getAccounts().map(account => (account.id === accountId
+      ? { ...account, name: trimmed, ...(profile.avatarColor !== undefined && { avatarColor: profile.avatarColor }) }
+      : account));
 
     this.accountRepository.saveAccounts(accounts);
     return this.getAccount(accountId);

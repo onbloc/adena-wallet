@@ -4,6 +4,7 @@ import exploreApps from './apps/apps.json';
 import atomoneNetworks from './chains/atomone-networks.json';
 import gnoNetworks from './chains/gno-networks.json';
 import dexApis from './dex/dex-apis.json';
+import onrampProviders from './onramp/onramp-providers.json';
 import grc20Registry from './tokens/grc20reg.json';
 import nativeTokens from './tokens/native-tokens.json';
 import priceBindings from './tokens/price-bindings.json';
@@ -195,3 +196,64 @@ export interface ExploreApp {
 export const EXPLORE_APPS: ExploreApp[] = (exploreApps as ExploreApp[])
   .filter(app => /^https:\/\//.test(app.url))
   .sort((a, b) => a.order - b.order);
+
+// URL template placeholders an onramp provider may use; values are URL-encoded on substitution.
+export const ONRAMP_PLACEHOLDERS = ['address', 'amount', 'currency', 'asset'] as const;
+
+export type OnrampPlaceholder = (typeof ONRAMP_PLACEHOLDERS)[number];
+
+export interface OnrampProvider {
+  id: string;
+  name: string;
+  paymentMethods: string[];
+  // e.g. "https://buy.example/?wallet={address}&amount={amount}&fiat={currency}&asset={asset}".
+  urlTemplate: string;
+  // Provider asset code keyed by "<networkId>:<tokenId>".
+  assets: Record<string, string>;
+}
+
+export interface OnrampConfig {
+  providers: OnrampProvider[];
+}
+
+const isNonEmptyString = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
+
+const toOnrampProvider = (resource: unknown, index: number): OnrampProvider => {
+  const provider = (resource ?? {}) as Partial<OnrampProvider>;
+  const label = isNonEmptyString(provider.id) ? provider.id : `#${index}`;
+
+  assert(isNonEmptyString(provider.id), `onramp provider ${label} needs an id`);
+  assert(isNonEmptyString(provider.name), `onramp provider ${label} needs a name`);
+  assert(Array.isArray(provider.paymentMethods) && provider.paymentMethods.every(isNonEmptyString), `onramp provider ${label} paymentMethods must be strings`);
+  assert(isNonEmptyString(provider.urlTemplate) && /^https:\/\/[^/{}\s]+/.test(provider.urlTemplate), `onramp provider ${label} urlTemplate must be https`);
+  const placeholders = [...(provider.urlTemplate as string).matchAll(/\{([^}]*)\}/g)].map(match => match[1]);
+
+  placeholders.forEach(name => assert((ONRAMP_PLACEHOLDERS as readonly string[]).includes(name), `onramp provider ${label} uses unknown placeholder {${name}}`));
+  assert(!/[{}]/.test((provider.urlTemplate as string).replace(/\{[^}]*\}/g, '')), `onramp provider ${label} urlTemplate has unbalanced braces`);
+  assert(typeof provider.assets === 'object' && provider.assets !== null && !Array.isArray(provider.assets), `onramp provider ${label} assets must be an object`);
+  Object.entries(provider.assets as Record<string, unknown>).forEach(([key, code]) => {
+    assert(/^[^:\s]+:\S+$/.test(key), `onramp provider ${label} asset key ${key} must be "<networkId>:<tokenId>"`);
+    assert(isNonEmptyString(code), `onramp provider ${label} asset ${key} needs a code`);
+  });
+
+  return {
+    id: provider.id as string,
+    name: provider.name as string,
+    paymentMethods: provider.paymentMethods as string[],
+    urlTemplate: provider.urlTemplate as string,
+    assets: provider.assets as Record<string, string>,
+  };
+};
+
+export const toOnrampConfig = (resource: unknown): OnrampConfig => {
+  const providers = (resource as Partial<OnrampConfig> | null)?.providers;
+
+  assert(Array.isArray(providers), 'onramp providers must be an array');
+  const parsed = (providers as unknown[]).map(toOnrampProvider);
+
+  assert(new Set(parsed.map(provider => provider.id)).size === parsed.length, 'onramp provider ids must be unique');
+  return { providers: parsed };
+};
+
+// No provider is contracted yet, so the bundled list is empty and Buy shows its unavailable state.
+export const ONRAMP_CONFIG: OnrampConfig = toOnrampConfig(onrampProviders);

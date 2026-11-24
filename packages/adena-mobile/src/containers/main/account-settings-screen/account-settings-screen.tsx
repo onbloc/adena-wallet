@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { ReactElement, useCallback, useState } from 'react';
+import React, { ReactElement, useCallback } from 'react';
 
 import { AccountSettingsPage } from '../../../components/pages';
 import { KeyringType } from '../../../crypto/keyring';
@@ -8,6 +8,7 @@ import { useCopyToClipboard } from '../../../hooks/use-copy-to-clipboard';
 import { usePasswordGate } from '../../../hooks/use-password-gate';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
 import { MainStackParamList } from '../../../navigation/types';
+import { toAvatarColor } from '../../../presenters/account.presenter';
 import { useSessionStore } from '../../../stores/session.store';
 import { useToastStore } from '../../../stores/toast.store';
 
@@ -19,8 +20,6 @@ export const AccountSettingsScreen = ({ navigation, route }: NativeStackScreenPr
   const showToast = useToastStore(state => state.show);
   const copy = useCopyToClipboard();
   const account = accounts.find(item => item.id === accountId);
-  const [editingName, setEditingName] = useState(account?.name ?? '');
-  const [renameVisible, setRenameVisible] = useState(false);
 
   const removeAccount = useCallback(async (password: string) => {
     await walletService.removeAccount(accountId, password);
@@ -36,19 +35,7 @@ export const AccountSettingsScreen = ({ navigation, route }: NativeStackScreenPr
 
   const address = accountService.getAddress(account, network);
 
-  const handleSaveName = (): void => {
-    accountService.renameAccount(account.id, editingName);
-    bumpRevision();
-    showToast('Name updated', 'success');
-    setRenameVisible(false);
-  };
-
-  const handleOpenRename = (): void => {
-    setEditingName(account.name);
-    setRenameVisible(true);
-  };
-
-  const handleCloseRename = (): void => setRenameVisible(false);
+  const handleEditProfile = (): void => navigation.navigate('EditProfile', { accountId: account.id });
 
   const handleCopyAddress = (): void => copy(address);
 
@@ -61,13 +48,8 @@ export const AccountSettingsScreen = ({ navigation, route }: NativeStackScreenPr
       name={account.name}
       address={address}
       sourceLabel={account.keyringType === KeyringType.HD_WALLET ? `Recovery phrase · #${account.hdIndex + 1}` : 'Imported key'}
-      editingName={editingName}
-      onChangeEditingName={setEditingName}
-      canSaveName={editingName.trim().length > 0 && editingName.trim() !== account.name}
-      onSaveName={handleSaveName}
-      renameSheetVisible={renameVisible}
-      onOpenRename={handleOpenRename}
-      onCloseRename={handleCloseRename}
+      avatarColor={toAvatarColor(account)}
+      onEditProfile={handleEditProfile}
       connectedAppCount={new Set(connectedAppService.getConnectedApps().map(app => app.origin)).size}
       hasRecoveryPhrase={account.keyringType === KeyringType.HD_WALLET}
       canRemove={accounts.length > 1}

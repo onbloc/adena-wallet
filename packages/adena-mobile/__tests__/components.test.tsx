@@ -58,6 +58,7 @@ describe('WalletHomePage', () => {
     onOpenCollection: jest.fn(),
     onManageTokens: jest.fn(),
     onManageNfts: jest.fn(),
+    onBuy: jest.fn(),
     onSend: jest.fn(),
     onReceive: jest.fn(),
     ...overrides,

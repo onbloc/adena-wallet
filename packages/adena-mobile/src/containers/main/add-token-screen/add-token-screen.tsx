@@ -13,14 +13,14 @@ import { useToastStore } from '../../../stores/toast.store';
 
 const looksLikeTokenKey = (value: string): boolean => /\/[^/]+\.[^./]+$/.test(value);
 
-export const AddTokenScreen = ({ navigation }: NativeStackScreenProps<MainStackParamList, 'AddToken'>): ReactElement => {
+export const AddTokenScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'AddToken'>): ReactElement => {
   const { tokenService, chainRegistry } = useContainer();
   const { account, network } = useWalletSnapshot();
   const queryClient = useQueryClient();
   const showToast = useToastStore(state => state.show);
   const registry = useTokenRegistryQuery(network);
   const tokenList = useTokenListQuery(account, network);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(route.params?.query ?? '');
   const trimmed = query.trim();
 
   // A full "{pkgPath}.{symbol}" key is resolved directly, even beyond the loaded registry pages.

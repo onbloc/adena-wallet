@@ -55,6 +55,14 @@ export class TokenService {
     return merged;
   }
 
+  // Network coins plus the last saved list, without any network call (e.g. for local search).
+  getCachedTokenList(account: Account, network: Network): ManagedToken[] {
+    const coins = getDefaultTokensFor(network).map(token => toManaged(token, TokenSource.DEFAULT));
+    const stored = (this.tokenListRepository.get(account.id, network.id) ?? []).filter(token => !coins.some(coin => coin.id === token.id));
+
+    return [...coins, ...stored];
+  }
+
   getStoredToken(account: Account, network: Network, tokenId: string): ManagedToken | undefined {
     const coin = getDefaultTokensFor(network).find(token => token.id === tokenId);
 

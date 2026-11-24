@@ -49,6 +49,7 @@ const props = (overrides: Partial<WalletHomePageProps> = {}): WalletHomePageProp
   onOpenCollection: jest.fn(),
   onManageTokens: jest.fn(),
   onManageNfts: jest.fn(),
+  onBuy: jest.fn(),
   onSend: jest.fn(),
   onReceive: jest.fn(),
   ...overrides,
@@ -68,6 +69,7 @@ describe('WalletHomePage', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Scan QR code' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Settings' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Copy address' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Buy' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Send' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Receive' }));
     await fireEvent.press(screen.getByText('Gno.land'));
@@ -80,6 +82,7 @@ describe('WalletHomePage', () => {
     expect(page.onScan).toHaveBeenCalledTimes(1);
     expect(page.onOpenSettings).toHaveBeenCalledTimes(1);
     expect(page.onCopyAddress).toHaveBeenCalledTimes(1);
+    expect(page.onBuy).toHaveBeenCalledTimes(1);
     expect(page.onSend).toHaveBeenCalledTimes(1);
     expect(page.onReceive).toHaveBeenCalledTimes(1);
     expect(page.onOpenToken).toHaveBeenNthCalledWith(1, 'ugnot');

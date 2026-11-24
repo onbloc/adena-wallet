@@ -9,6 +9,7 @@ import { usePullToRefresh } from '../../../hooks/use-pull-to-refresh';
 import { useWalletAssets } from '../../../hooks/use-wallet-assets';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
 import { MainTabScreenProps } from '../../../navigation/screen-props';
+import { toAvatarColor } from '../../../presenters/account.presenter';
 import { toAssetItem } from '../../../presenters/asset.presenter';
 import { useNftCollectionsQuery } from '../../../queries/nft.queries';
 import { NftService } from '../../../services/nft.service';
@@ -74,6 +75,8 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
 
   const handleManageNfts = (): void => navigation.navigate('ManageNfts');
 
+  const handleBuy = (): void => navigation.navigate('BuyCrypto');
+
   const handleSend = (): void => navigation.navigate('SendRecipient');
 
   const handleReceive = (): void => navigation.navigate('Receive');
@@ -81,6 +84,7 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
   return (
     <WalletHomePage
       accountName={account?.name ?? ''}
+      accountAvatarColor={toAvatarColor(account)}
       address={address}
       networkName={`${network.chainName} ${network.networkName}`}
       isTestnet={!network.isMainnet}
@@ -114,6 +118,7 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
       onOpenCollection={handleOpenCollection}
       onManageTokens={handleManageTokens}
       onManageNfts={handleManageNfts}
+      onBuy={handleBuy}
       onSend={handleSend}
       onReceive={handleReceive}
     />

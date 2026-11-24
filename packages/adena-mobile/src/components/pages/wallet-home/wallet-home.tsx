@@ -20,6 +20,7 @@ export type HomeTab = 'tokens' | 'nfts';
 
 export interface WalletHomePageProps {
   accountName: string;
+  accountAvatarColor?: string;
   address: string;
   networkName: string;
   isTestnet: boolean;
@@ -45,6 +46,7 @@ export interface WalletHomePageProps {
   onOpenToken: (tokenId: string) => void;
   onOpenCollection: (collectionId: string) => void;
   onManageTokens: () => void;
+  onBuy: () => void;
   onSend: () => void;
   onReceive: () => void;
   onManageNfts: () => void;
@@ -74,7 +76,7 @@ export const WalletHomePage = (props: WalletHomePageProps): ReactElement => (
   <SafeAreaView style={styles.root} edges={['top']}>
     <View style={styles.topBar}>
       <Pressable accessibilityRole='button' accessibilityLabel='Switch account' onPress={props.onOpenAccounts} style={styles.identity}>
-        <Avatar name={props.accountName} />
+        <Avatar name={props.accountName} color={props.accountAvatarColor} />
         <Text variant='row' numberOfLines={1} style={styles.identityName}>{props.accountName}</Text>
       </Pressable>
       <IconButton icon='scan' variant='surface' accessibilityLabel='Scan QR code' onPress={props.onScan} />
@@ -98,6 +100,7 @@ export const WalletHomePage = (props: WalletHomePageProps): ReactElement => (
       <AddressRow address={props.address} onCopy={props.onCopyAddress} />
       {props.error && <InlineAlert tone='error' title='Unable to load balances' description={props.error} />}
       <View style={styles.actions}>
+        <Button label='Buy' tone='secondary' size='compact' style={styles.action} onPress={props.onBuy} testID='home-buy' />
         <Button label='Send' tone='secondary' size='compact' style={styles.action} onPress={props.onSend} testID='home-send' />
         <Button label='Receive' tone='secondary' size='compact' style={styles.action} onPress={props.onReceive} testID='home-receive' />
       </View>

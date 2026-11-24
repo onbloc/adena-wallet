@@ -10,13 +10,7 @@ const props = (overrides: Partial<AccountSettingsPageProps> = {}): AccountSettin
   name: 'Account 1',
   address,
   sourceLabel: 'Recovery phrase',
-  editingName: 'Account 1',
-  onChangeEditingName: jest.fn(),
-  onSaveName: jest.fn(),
-  canSaveName: true,
-  renameSheetVisible: true,
-  onOpenRename: jest.fn(),
-  onCloseRename: jest.fn(),
+  onEditProfile: jest.fn(),
   connectedAppCount: 2,
   hasRecoveryPhrase: true,
   canRemove: true,
@@ -39,22 +33,16 @@ describe('AccountSettingsPage', () => {
     expect(screen.getAllByText('Recovery phrase')).toHaveLength(2);
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Copy address' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Edit name' }));
-    await fireEvent.changeText(screen.getByLabelText('Account name'), 'Renamed');
-    await fireEvent.press(screen.getByRole('button', { name: 'Save name' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Edit profile' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Manage connections, 2' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Recovery phrase' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Remove account' }));
-    await fireEvent.press(screen.getAllByRole('button', { name: 'Close' })[0]);
     await fireEvent.changeText(screen.getByLabelText('Password'), 'secret');
     await fireEvent.press(screen.getByRole('button', { name: 'Remove' }));
 
     expect(page.onBack).toHaveBeenCalledTimes(1);
     expect(page.onCopyAddress).toHaveBeenCalledTimes(1);
-    expect(page.onOpenRename).toHaveBeenCalledTimes(1);
-    expect(page.onCloseRename).toHaveBeenCalledTimes(1);
-    expect(page.onChangeEditingName).toHaveBeenCalledWith('Renamed');
-    expect(page.onSaveName).toHaveBeenCalledTimes(1);
+    expect(page.onEditProfile).toHaveBeenCalledTimes(1);
     expect(page.onOpenConnectedApps).toHaveBeenCalledTimes(1);
     expect(page.onOpenRecoveryPhrase).toHaveBeenCalledTimes(1);
     expect(page.onRequestRemove).toHaveBeenCalledTimes(1);
@@ -63,13 +51,11 @@ describe('AccountSettingsPage', () => {
     expect(screen.getByText('Remove account?')).toBeTruthy();
   });
 
-  it('hides optional rows and disables saving', async () => {
-    const page = props({ canSaveName: false, hasRecoveryPhrase: false, canRemove: false });
+  it('hides optional rows', async () => {
+    const page = props({ hasRecoveryPhrase: false, canRemove: false });
 
     await renderPage(<AccountSettingsPage {...page} />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Save name' }));
 
-    expect(page.onSaveName).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Recovery phrase' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove account' })).toBeNull();
   });

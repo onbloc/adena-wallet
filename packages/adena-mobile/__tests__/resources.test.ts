@@ -1,4 +1,14 @@
-import { BUILT_IN_NETWORKS, DEFAULT_NETWORK_ID, EXPLORE_APPS, getDefaultTokensFor, getGrc20RegistryConfig, getNativeTokenFor, PRICE_CONFIG } from '../src/resources';
+import {
+  BUILT_IN_NETWORKS,
+  DEFAULT_NETWORK_ID,
+  EXPLORE_APPS,
+  getDefaultTokensFor,
+  getGrc20RegistryConfig,
+  getNativeTokenFor,
+  ONRAMP_CONFIG,
+  PRICE_CONFIG,
+  toOnrampConfig,
+} from '../src/resources';
 
 describe('bundled resources', () => {
   it('defines https Gno and AtomOne networks with resolvable coins', () => {
@@ -29,6 +39,44 @@ describe('bundled resources', () => {
   it('lists https-only explore apps for Gno', () => {
     expect(EXPLORE_APPS.length).toBeGreaterThan(0);
     EXPLORE_APPS.forEach(app => expect(app.url.startsWith('https://')).toBe(true));
+  });
+});
+
+describe('onramp providers', () => {
+  const valid = {
+    id: 'fixture',
+    name: 'Fixture Pay',
+    paymentMethods: ['Debit card', 'Apple Pay'],
+    urlTemplate: 'https://buy.example/?wallet={address}&amount={amount}&fiat={currency}&asset={asset}',
+    assets: { 'gnoland-1:ugnot': 'GNOT' },
+  };
+  const parse = (overrides: Record<string, unknown>) => () => toOnrampConfig({ providers: [{ ...valid, ...overrides }] });
+
+  it('ships an empty provider list until providers are chosen', () => {
+    expect(ONRAMP_CONFIG).toEqual({ providers: [] });
+  });
+
+  it('accepts a well-formed provider', () => {
+    expect(toOnrampConfig({ providers: [valid] }).providers).toEqual([valid]);
+  });
+
+  it('rejects malformed documents and providers', () => {
+    expect(() => toOnrampConfig({})).toThrow('onramp providers must be an array');
+    expect(() => toOnrampConfig(null)).toThrow('onramp providers must be an array');
+    expect(() => toOnrampConfig({ providers: [valid, valid] })).toThrow('onramp provider ids must be unique');
+    expect(parse({ id: '' })).toThrow('needs an id');
+    expect(parse({ name: ' ' })).toThrow('needs a name');
+    expect(parse({ paymentMethods: [1] })).toThrow('paymentMethods must be strings');
+    expect(parse({ assets: [] })).toThrow('assets must be an object');
+    expect(parse({ assets: { ugnot: 'GNOT' } })).toThrow('must be "<networkId>:<tokenId>"');
+    expect(parse({ assets: { 'gnoland-1:ugnot': '' } })).toThrow('needs a code');
+  });
+
+  it('accepts only https templates with known placeholders', () => {
+    expect(parse({ urlTemplate: 'http://buy.example/?a={asset}' })).toThrow('urlTemplate must be https');
+    expect(parse({ urlTemplate: 'https://{address}.example' })).toThrow('urlTemplate must be https');
+    expect(parse({ urlTemplate: 'https://buy.example/?k={apiKey}' })).toThrow('unknown placeholder {apiKey}');
+    expect(parse({ urlTemplate: 'https://buy.example/?a={asset' })).toThrow('unbalanced braces');
   });
 });
 
