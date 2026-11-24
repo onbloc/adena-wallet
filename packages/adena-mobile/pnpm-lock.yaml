@@ -80,9 +80,6 @@ importers:
       react-native:
         specifier: 0.88.1
         version: 0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native-community/cli@20.2.0(supports-color@8.1.1)(typescript@6.0.3))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1)
-      react-native-avoid-softinput:
-        specifier: 9.0.1
-        version: 9.0.1(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native-community/cli@20.2.0(supports-color@8.1.1)(typescript@6.0.3))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)
       react-native-get-random-values:
         specifier: 2.1.0
         version: 2.1.0(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native-community/cli@20.2.0(supports-color@8.1.1)(typescript@6.0.3))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))
@@ -4520,12 +4517,6 @@ packages:
   react-is@19.3.1:
     resolution: {integrity: sha512-RRieF6IyxQBkcK6pP8xOHprLTPW6QjRkbGdImtqNme+/hYVwCZkLQLdlZGOhUqXwkS9IEynaGvPJtv6XB/cz0Q==}
 
-  react-native-avoid-softinput@9.0.1:
-    resolution: {integrity: sha512-vS5TnFZ8YPCt1xjLxIIwaqsmeP8MSD3f3odp683Shkow0zHFYc8E7iEZR8nLMUuZIW8EEd41ZFdI2+3QzAGLwg==}
-    peerDependencies:
-      react: '>=19.1.0'
-      react-native: '>=0.81.0'
-
   react-native-get-random-values@2.1.0:
     resolution: {integrity: sha512-ooSUj9zTICGZ/eDFzNCnC+Pyb0SxE6y2QtC8S8z/BBJY+9dUjjNWD0DgRCSfXuC/c2k9V03xLMF6y/yUYEk4ew==}
     peerDependencies:
@@ -4542,12 +4533,6 @@ packages:
 
   react-native-image-picker@8.3.0:
     resolution: {integrity: sha512-f45QERBBWAFS8BEIKeQ9bcuBQFr3myWaNlkTnG4bY8BtsYJa/ChM0jzN6V9xBKzNPjMo9uFyUuNKjQWddNKZ9w==}
-    peerDependencies:
-      react: '*'
-      react-native: '*'
-
-  react-native-is-edge-to-edge@1.3.1:
-    resolution: {integrity: sha512-NIXU/iT5+ORyCc7p0z2nnlkouYKX425vuU1OEm6bMMtWWR9yvb+Xg5AZmImTKoF9abxCPqrKC3rOZsKzUYgYZA==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -10481,12 +10466,6 @@ snapshots:
 
   react-is@19.3.1: {}
 
-  react-native-avoid-softinput@9.0.1(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native-community/cli@20.2.0(supports-color@8.1.1)(typescript@6.0.3))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0):
-    dependencies:
-      react: 19.3.0
-      react-native: 0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native-community/cli@20.2.0(supports-color@8.1.1)(typescript@6.0.3))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1)
-      react-native-is-edge-to-edge: 1.3.1(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native-community/cli@20.2.0(supports-color@8.1.1)(typescript@6.0.3))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)
-
   react-native-get-random-values@2.1.0(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native-community/cli@20.2.0(supports-color@8.1.1)(typescript@6.0.3))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1)):
     dependencies:
       fast-base64-decode: 1.0.0
@@ -10499,11 +10478,6 @@ snapshots:
       react: 19.3.0
 
   react-native-image-picker@8.3.0(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native-community/cli@20.2.0(supports-color@8.1.1)(typescript@6.0.3))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0):
-    dependencies:
-      react: 19.3.0
-      react-native: 0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native-community/cli@20.2.0(supports-color@8.1.1)(typescript@6.0.3))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1)
-
-  react-native-is-edge-to-edge@1.3.1(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native-community/cli@20.2.0(supports-color@8.1.1)(typescript@6.0.3))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0):
     dependencies:
       react: 19.3.0
       react-native: 0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native-community/cli@20.2.0(supports-color@8.1.1)(typescript@6.0.3))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1)
