@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help init test chat build deploy ios android
+.PHONY: help init test scenario chat build deploy ios android
 
 PORT   ?= 8089
 MODEL  ?= bartowski/Qwen_Qwen3.5-2B-GGUF:Q4_K_M
@@ -22,6 +22,9 @@ test: ## Typecheck + lint + all jest tests (mock model, no LLM)
 	npm run typecheck
 	npm run lint
 	npm test
+
+scenario: ## Run the plain-language -> transaction scenarios against the local model (slow; not part of make test)
+	$(WITH_SERVER) env SCENARIO_URL=$(URL) npm run scenario
 
 chat: ## Chat with the local model. Vars: PROMPT="..." asks once; ARGS="--onbloc" adds the wallet (Onbloc reads, mock transfer/approve)
 	$(WITH_SERVER) bun src/mock/cli/chat.ts --url $(URL) $(if $(PROMPT),--prompt "$$PROMPT") $(ARGS)

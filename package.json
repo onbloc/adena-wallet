@@ -35,6 +35,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "test": "jest",
+    "scenario": "jest --config jest.scenario.config.js --runInBand",
     "chat": "bun src/mock/cli/chat.ts"
   },
   "jest": {

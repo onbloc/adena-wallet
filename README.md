@@ -198,6 +198,26 @@ them again. Defaults are the dev endpoint and account in `src/mock/app/onblocSet
 the CLI, `EXPO_PUBLIC_ONBLOC_MCP_URL` / `EXPO_PUBLIC_ONBLOC_ACCOUNT` override them. Clearing both
 fields in Settings gives a plain chat without the wallet.
 
+## Scenario tests (real model)
+
+`npm test` scripts the model, so it checks the wiring, not what the model does with a human
+sentence. `make scenario` (jest, `jest.scenario.config.js`, `src/mock/scenario/*.scenario.ts`)
+runs the real agent against llama-server at temperature 0, once per scenario: the Onbloc reads
+are a fixed fake (10 GNOT, 250 GNS), the wallet is `AdenaWalletSdk` with one contact (`carol`).
+Each scenario in `scenarios.ts` is a plain-language prompt and what it must produce:
+
+- a transfer or an approval: the prepared transaction's summary **and** its decoded Adena
+  message (`MsgSend` in ugnot, or a GRC20 `Transfer` / `Approve` call with the exact base-unit
+  args) must match, the sender is the account, and nothing is signed;
+- or no transaction at all (missing recipient, unknown token, GNOT approval, zero amount).
+
+Balance questions are answered by the agent without the model, so they are not scenarios.
+
+A failure prints the prompt, the model's tool calls and its answer. The model is not
+deterministic across builds or machines, so a failing scenario can be a model limit or a prompt
+problem, not necessarily a code bug. Set `SCENARIO_URL` to use another server. The jest-expo
+preset replaces `fetch` with a stub, hence the separate config.
+
 ## Metrics
 
 - **TTFT**: start -> first text or reasoning delta.
@@ -220,6 +240,7 @@ fields in Settings gives a plain chat without the wallet.
 ```bash
 npm run typecheck
 npm run lint
+npm run scenario   # needs a running llama-server (make scenario starts one)
 npm test
 ```
 
@@ -228,6 +249,7 @@ Shortcuts (`make help`):
 ```bash
 make init   # npm install; installs bun and llama.cpp via brew if missing
 make test   # typecheck + lint + jest (mock model, no LLM)
+make scenario # plain-language requests -> transactions, against the local model (slow; not in make test)
 make chat   # talk to the local model; PROMPT="..." asks once, ARGS="--onbloc" adds the wallet
 make build  # Release build only: make build ios|android
 make deploy # Release build + install on a connected phone: make deploy ios|android
