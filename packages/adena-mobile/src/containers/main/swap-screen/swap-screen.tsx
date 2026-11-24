@@ -450,13 +450,15 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     }
 
     if (parsedSlippage > HIGH_SLIPPAGE_PERCENT) {
-      return 'High slippage: you may receive much less than quoted.';
+      return 'High slippage: your swap may be front-run and fill at a worse price.';
     }
 
     return parsedSlippage < 0.05 ? 'Very low slippage: the swap may fail.' : undefined;
   })();
   const deadlineError = deadlineText.length > 0 && !isValidDeadline(parsedDeadline) ? 'Enter 1 to 180 minutes.' : undefined;
-  const canSaveSettings = isValidDeadline(parsedDeadline) && (draftAuto || isValidSlippage(parsedSlippage));
+  const draftSlippage = draftAuto ? null : parsedSlippage;
+  const settingsChanged = draftSlippage !== settings.slippage || parsedDeadline !== settings.deadlineMinutes;
+  const canSaveSettings = settingsChanged && isValidDeadline(parsedDeadline) && (draftAuto || isValidSlippage(parsedSlippage));
 
   const saveSettings = (): void => {
     if (!canSaveSettings) {
@@ -464,7 +466,8 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     }
 
     resetQuoteState();
-    preferenceService.update({ swapSlippage: draftAuto ? null : parsedSlippage, swapDeadlineMinutes: parsedDeadline as number });
+    preferenceService.update({ swapSlippage: draftSlippage, swapDeadlineMinutes: parsedDeadline as number });
+    playHaptic(HapticKind.SUCCESS);
     setSettingsVisible(false);
   };
 
@@ -598,11 +601,15 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
         visible: settingsVisible,
         autoSlippage: draftAuto,
         autoSlippageLabel: formatPercent(AUTO_SLIPPAGE_PERCENT),
+        slippageValueLabel: `${(draftAuto ? AUTO_SLIPPAGE_PERCENT : parsedSlippage ?? 0).toFixed(2)}%`,
+        deadlineValueLabel: isValidDeadline(parsedDeadline) ? `${parsedDeadline} ${parsedDeadline === 1 ? 'minute' : 'minutes'}` : '—',
         slippageText,
         deadlineText,
         slippageError,
         slippageWarning,
         deadlineError,
+        slippageValid: draftAuto || isValidSlippage(parsedSlippage),
+        deadlineValid: isValidDeadline(parsedDeadline),
         canSave: canSaveSettings,
         onSelectAuto: () => setDraftAuto(true),
         onSelectCustom: () => setDraftAuto(false),

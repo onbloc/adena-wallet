@@ -255,19 +255,67 @@ describe('SwapScreen', () => {
     expect(env.gno.state.broadcasts).toHaveLength(1);
   });
 
-  it('saves custom slippage and deadline', async () => {
+  it('edits slippage and deadline in second-level views and persists them on Save', async () => {
     const { env } = await setup();
 
     await fireEvent.press(screen.getByTestId('swap-settings'));
-    await press('Custom');
-    await fireEvent.changeText(screen.getByTestId('swap-settings-slippage'), '1.5');
-    await fireEvent.changeText(screen.getByTestId('swap-settings-deadline'), '30');
-    await fireEvent.press(screen.getByTestId('swap-settings-save'));
-    expect(env.container.preferenceService.get()).toMatchObject({ swapSlippage: 1.5, swapDeadlineMinutes: 30 });
+    expect(screen.getByText('Swap settings')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Max slippage, Auto 0.50%' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Swap deadline, 10 minutes' })).toBeTruthy();
+    expect(screen.getByTestId('swap-settings-save').props.accessibilityState).toMatchObject({ disabled: true });
 
-    await fireEvent.press(screen.getByTestId('swap-settings'));
+    await fireEvent.press(screen.getByTestId('swap-settings-slippage-row'));
+    expect(screen.getByText('Max slippage')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('radio', { name: 'Custom' }));
     await fireEvent.changeText(screen.getByTestId('swap-settings-slippage'), '80');
     expect(screen.getByText('Enter 0.01% to 50% with up to two decimals.')).toBeTruthy();
+    expect(screen.getByTestId('swap-settings-done').props.accessibilityState).toMatchObject({ disabled: true });
+    await fireEvent.changeText(screen.getByTestId('swap-settings-slippage'), '10');
+    expect(screen.getByText(/may be front-run/)).toBeTruthy();
+    await fireEvent.changeText(screen.getByTestId('swap-settings-slippage'), '0.01');
+    expect(screen.getByText('Very low slippage: the swap may fail.')).toBeTruthy();
+    await fireEvent.changeText(screen.getByTestId('swap-settings-slippage'), '1');
+    await fireEvent.press(screen.getByTestId('swap-settings-done'));
+    expect(screen.getByRole('button', { name: 'Max slippage, 1.00%' })).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('swap-settings-deadline-row'));
+    await fireEvent.changeText(screen.getByTestId('swap-settings-deadline'), '0');
+    expect(screen.getByText('Enter 1 to 180 minutes.')).toBeTruthy();
+    await fireEvent.changeText(screen.getByTestId('swap-settings-deadline'), '30');
+    await fireEvent(screen.getByTestId('swap-settings-deadline'), 'submitEditing');
+    expect(screen.getByRole('button', { name: 'Swap deadline, 30 minutes' })).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('swap-settings-save'));
+    expect(env.container.preferenceService.get()).toMatchObject({ swapSlippage: 1, swapDeadlineMinutes: 30 });
+    expect(screen.queryByText('Swap settings')).toBeNull();
+  });
+
+  it('applies saved slippage to the quote limits', async () => {
+    const { env } = await setup();
+
+    env.container.preferenceService.update({ swapSlippage: 1 });
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    await fireEvent.press(screen.getByTestId('swap-details-toggle'));
+    // 4,151,365 x 0.99 = 4,109,851.
+    expect(screen.getByText('4.10985 GNS')).toBeTruthy();
+    expect(screen.getByText('1%')).toBeTruthy();
+  });
+
+  it('discards edits when the sheet closes without saving', async () => {
+    const { env } = await setup();
+
+    await fireEvent.press(screen.getByTestId('swap-settings'));
+    await fireEvent.press(screen.getByTestId('swap-settings-deadline-row'));
+    await fireEvent.changeText(screen.getByTestId('swap-settings-deadline'), '45');
+    await fireEvent.press(screen.getByTestId('swap-settings-back'));
+    expect(screen.getByRole('button', { name: 'Swap deadline, 45 minutes' })).toBeTruthy();
+    await fireEvent.press(screen.getAllByRole('button', { name: 'Close' }).at(-1)!);
+    expect(env.container.preferenceService.get().swapDeadlineMinutes).toBe(10);
+
+    await fireEvent.press(screen.getByTestId('swap-settings'));
+    expect(screen.getByRole('button', { name: 'Swap deadline, 10 minutes' })).toBeTruthy();
   });
 
   it('explains that swap is unavailable on networks without GnoSwap', async () => {

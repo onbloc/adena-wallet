@@ -91,7 +91,12 @@ export const useStyles = makeStyles(colors => ({
   tokenRowText: { flex: 1, gap: 2 },
   tokenRowTitle: { flexDirection: 'row', alignItems: 'center', gap: spacing.space8 },
   tokenRowBalance: { alignItems: 'flex-end' },
-  settingsRow: { gap: spacing.space8 },
-  settingsInline: { flexDirection: 'row', alignItems: 'center', gap: spacing.space8 },
-  settingsField: { flex: 1 },
+  settingsContent: { gap: spacing.space16 },
+  settingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.space8, minHeight: sizes.assetRow, borderRadius: radius.input },
+  settingRowPressed: { backgroundColor: colors.background.pressed },
+  settingLabel: { flex: 1 },
+  // Accent pill marking Auto slippage.
+  autoBadge: { borderRadius: radius.circle, paddingHorizontal: spacing.space8, paddingVertical: 2, backgroundColor: colors.action.primary },
+  autoBadgeText: { color: colors.text.inverse },
+  settingsOptions: { gap: spacing.space8 },
 }));
