@@ -86,19 +86,28 @@ export class AIAgent {
     const last = settings.messages?.at(-1);
     const question = settings.prompt ?? (last?.role === 'user' && typeof last.content === 'string' ? last.content : '');
     const symbol = requestedBalanceSymbol(question);
-    if (symbol) {
+    const portfolio = /^(?:(?:show(?: me)?|list) (?:all )?my (?:assets|holdings|balances)|(?:내\s*)?(?:모든|전체)\s*(?:자산|잔액)(?:을)?\s*(?:보여\s*줘|알려\s*줘)?)[.!?]?$/i.test(question.trim());
+    if (symbol || portfolio) {
       const started = Date.now();
       const run = await this.harness.startRun({ account, chainId: this.chainId, operationId: `balance-${++this.runs}`,
-        scope: 'read-only', purpose: 'mainnet-read', signal, budget: { maxToolCalls: 1, timeoutMs: RUN_TIMEOUT_MS } });
+        scope: 'read-only', purpose: 'mainnet-read', signal, budget: { maxToolCalls: portfolio ? 2 : 1, timeoutMs: RUN_TIMEOUT_MS } });
       try {
-        const name = symbol.toUpperCase() === 'GNOT' ? 'get_native_balance' : 'get_token_balances';
-        const id = run.operationId;
-        yield { type: 'tool-call', id, name, input: {}, invalid: false };
-        const output = await run.dispatch({ name, input: {} });
-        yield { type: 'tool-result', id, name, output };
-        const answer = formatOnblocBalance(name, output, symbol);
-        if (!run.signal.aborted) yield { type: 'text', delta: answer ?? `Could not verify the ${symbol} balance.` };
-        yield { type: 'done', aborted: run.signal.aborted, verifiedAnswer: answer !== undefined && !run.signal.aborted ? true : undefined,
+        const names = portfolio ? ['get_native_balance', 'get_token_balances']
+          : [symbol?.toUpperCase() === 'GNOT' ? 'get_native_balance' : 'get_token_balances'];
+        const sections: string[] = [];
+        let complete = true;
+        for (const name of names) {
+          if (run.signal.aborted) break;
+          const id = `${run.operationId}:${name}`;
+          yield { type: 'tool-call', id, name, input: {}, invalid: false };
+          const output = await run.dispatch({ name, input: {} });
+          yield { type: 'tool-result', id, name, output };
+          const answer = formatOnblocBalance(name, output, symbol);
+          if (answer === undefined) complete = false;
+          sections.push(answer ?? `Could not verify ${symbol ?? (name === 'get_native_balance' ? 'GNOT' : 'GRC20')} balances.`);
+        }
+        if (!run.signal.aborted) yield { type: 'text', delta: sections.join('\n\n') };
+        yield { type: 'done', aborted: run.signal.aborted, verifiedAnswer: complete && !run.signal.aborted ? true : undefined,
           warnings: [], messages: [], metrics: { totalMs: Date.now() - started, ttftMs: null } };
       } finally {
         run.close();
