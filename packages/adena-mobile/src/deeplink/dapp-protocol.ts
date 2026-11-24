@@ -57,7 +57,8 @@ export const getCallbackOrigin = (callbackUrl: string): string => {
   }
 
   if (scheme === 'https') {
-    const host = /^https:\/\/([^/?#@\s]+)(?:[/?#]|$)/i.exec(callbackUrl)?.[1];
+    // Plain ASCII host only: browsers read `\`, `%` or unicode differently from what would be shown.
+    const host = /^https:\/\/([a-z0-9-]+(?:\.[a-z0-9-]+)*(?::\d{1,5})?)(?:[/?#]|$)/i.exec(callbackUrl)?.[1];
 
     return host ? `https://${host.toLowerCase()}` : invalid('callback is not a valid https URL');
   }

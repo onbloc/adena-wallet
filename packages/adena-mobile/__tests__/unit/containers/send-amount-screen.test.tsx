@@ -157,9 +157,9 @@ describe('SendAmountScreen', () => {
     await render(env);
     await waitForBalance('Available 2.5 GNOT');
     await press('1');
-    await fireEvent.press(screen.getByRole('button', { name: 'GNOT' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Select token, GNOT' }));
     await fireEvent.press(screen.getAllByRole('button', { name: 'Close' }).at(-1)!);
-    await fireEvent.press(screen.getByRole('button', { name: 'GNOT' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Select token, GNOT' }));
     await fireEvent.press(await screen.findByRole('button', { name: /^Perun/ }));
 
     await waitForBalance('Available 7 PERUN');
@@ -182,11 +182,11 @@ describe('SendAmountScreen', () => {
     await waitForBalance('Available 7 PERUN');
   });
 
-  it('falls back to the native token for an unknown token id', async () => {
+  it('reports an unknown token id instead of falling back to the native token', async () => {
     const { env } = await setup();
 
     await render(env, { tokenId: 'gno.land/r/unknown.X' });
-    await waitForBalance('Available 2.5 GNOT');
+    expect(await screen.findByText(/This token isn’t in your token list/)).toBeTruthy();
   });
 
   it('cannot review without an account', async () => {

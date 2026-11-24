@@ -1,4 +1,8 @@
+import { Platform } from 'react-native';
+
 import { nativeHapticEngine } from '../infrastructure/haptics/native-haptic-engine';
+import NativeAdenaBiometricVault from '../native/NativeAdenaBiometricVault';
+import { AndroidBiometricCredentialRepository } from '../repositories/android-biometric-credential.repository';
 import { KeychainSecureStore } from '../security/keychain-secure-store';
 import { createNativeScryptKdf } from '../security/native-scrypt-kdf';
 import { DEFAULT_KDF_SETTINGS, ScryptXChaChaVaultCipher } from '../security/vault-cipher';
@@ -20,6 +24,10 @@ export const createNativeContainer = async (): Promise<AppContainer> => {
     keyValueStore,
     vaultCipher: new ScryptXChaChaVaultCipher(DEFAULT_KDF_SETTINGS, kdf),
     hapticEngine: nativeHapticEngine,
+    // iOS keeps react-native-keychain (BIOMETRY_CURRENT_SET is enforced by the Keychain there).
+    biometricRepository: Platform.OS === 'android'
+      ? new AndroidBiometricCredentialRepository(secureStore, NativeAdenaBiometricVault)
+      : undefined,
   });
 
   await container.migrationService.migrateAll();

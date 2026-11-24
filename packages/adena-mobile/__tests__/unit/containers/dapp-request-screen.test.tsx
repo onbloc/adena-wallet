@@ -1,7 +1,8 @@
 import { QueryClient } from '@tanstack/react-query';
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
+import { DappRequestPage, DappRequestPageProps } from '../../../src/components/pages';
 import { DappRequestScreen } from '../../../src/containers/main/dapp-request-screen';
 import { decodeBase64Url } from '../../../src/deeplink/base64url';
 import { buildDappRequestUrl, DappRequestPayload, parseDappRequestUrl } from '../../../src/deeplink/dapp-protocol';
@@ -10,7 +11,14 @@ import { useDappRequestStore } from '../../../src/stores/dapp-request.store';
 import { useSessionStore } from '../../../src/stores/session.store';
 import { createMockNavigation, renderScreen, resetStores, setupWallet, TestEnv } from '../../helpers/render-screen';
 
+jest.mock('../../../src/components/pages', () => {
+  const actual = jest.requireActual('../../../src/components/pages');
+
+  return { ...actual, DappRequestPage: jest.fn(actual.DappRequestPage) };
+});
+
 const ORIGIN = 'https://dapp.example.com';
+const pageProps = (): DappRequestPageProps => jest.mocked(DappRequestPage).mock.calls.at(-1)![0];
 const client = (): QueryClient => new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { gcTime: Infinity } } });
 
 const readResponse = (callbackUrl: string) => JSON.parse(decodeBase64Url(decodeURIComponent(new URL(callbackUrl).searchParams.get('response') ?? '')));
@@ -95,7 +103,7 @@ describe('DappRequestScreen', () => {
     activate(callRequest(address));
     await renderScreen(DappRequestScreen, { env, client: client() });
 
-    expect(screen.getByText(`${ORIGIN} is not connected to Account 1. Connect the app first.`)).toBeTruthy();
+    expect(screen.getByText(`${ORIGIN} is not connected to this account. Connect the app first.`)).toBeTruthy();
     expect(screen.getByText('gnoland-1')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
     await fireEvent.press(screen.getByRole('button', { name: 'Reject' }));
@@ -129,6 +137,32 @@ describe('DappRequestScreen', () => {
     await waitFor(() => expect(openURL).toHaveBeenCalledTimes(1));
     expect(readResponse(openURL.mock.calls[0][0])).toMatchObject({ status: 'success', data: { hash: 'HASH' } });
     expect(env.gno.state.broadcasts).toHaveLength(1);
+  });
+
+  it('signs once and ignores reject when approve is tapped twice before re-rendering', async () => {
+    const { env, address } = await setupWallet();
+    let settle: (url: string) => void = () => undefined;
+    const approveTransaction = jest.spyOn(env.container.dappService, 'approveTransaction')
+      .mockImplementation(() => new Promise<string>((resolve) => {
+        settle = resolve;
+      }));
+
+    connect(env);
+    activate(callRequest(address));
+    await renderScreen(DappRequestScreen, { env, client: client() });
+    await screen.findByText('Network fee', {}, { timeout: 10_000 });
+    const { onApprove, onReject } = pageProps();
+
+    await act(async () => {
+      onApprove();
+      onApprove();
+      onReject();
+    });
+    await waitFor(() => expect(approveTransaction).toHaveBeenCalledTimes(1));
+    expect(openURL).not.toHaveBeenCalled();
+    await act(async () => settle(`${ORIGIN}/cb?response=ok`));
+    await waitFor(() => expect(openURL).toHaveBeenCalledTimes(1));
+    expect(approveTransaction).toHaveBeenCalledTimes(1);
   });
 
   it('stays on the request when the broadcast fails', async () => {

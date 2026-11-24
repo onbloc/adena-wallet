@@ -53,7 +53,7 @@ const boot = (overrides: object) => ({ data: undefined, isError: false, error: n
 describe('App', () => {
   const getStatus = jest.fn();
   const lock = jest.fn();
-  const container = { walletService: { getStatus, lock } };
+  const container = { walletService: { getStatus, lock }, hapticsService: { play: jest.fn() } };
 
   beforeEach(() => {
     jest.clearAllMocks();

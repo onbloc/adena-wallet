@@ -87,7 +87,18 @@ describe('getCallbackOrigin', () => {
     expectInvalid(() => getCallbackOrigin(url), 'callback must use https or an app scheme');
   });
 
-  it.each(['https://', 'https://user@example.com', 'https:example.com', 'https:// example.com'])('rejects malformed https url %p', (url) => {
+  it.each([
+    'https://',
+    'https://user@example.com',
+    'https:example.com',
+    'https:// example.com',
+    'https://evil.example\\.gnoswap.io/cb',
+    'https://evil.example%2f.gnoswap.io',
+    'https://gnoswap.io\tevil.example',
+    'https://gnosw\u0430p.io/cb',
+    'https://gnoswap..io',
+    'https://gnoswap.io:/cb',
+  ])('rejects malformed https url %p', (url) => {
     expectInvalid(() => getCallbackOrigin(url), 'callback is not a valid https URL');
   });
 });

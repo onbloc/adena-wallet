@@ -38,7 +38,7 @@ export const Connect: Story = { args: { title: 'Connect app', approveLabel: 'Con
 export const Simulating: Story = { args: { loading: true, canApprove: false, fee: undefined } };
 
 export const NotConnected: Story = {
-  args: { canApprove: false, fee: undefined, error: 'https://gnoswap.io is not connected to 123123123. Connect the app first.' },
+  args: { canApprove: false, fee: undefined, error: 'https://gnoswap.io is not connected to this account. Connect the app first.' },
 };
 
 export const SimulationFailed: Story = { args: { canApprove: false, error: 'signature is unauthorized' } };

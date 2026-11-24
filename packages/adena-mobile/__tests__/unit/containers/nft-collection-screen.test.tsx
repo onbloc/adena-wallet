@@ -33,7 +33,8 @@ describe('NftCollectionScreen', () => {
     const getTokenUri = jest.spyOn(env.container.nftService, 'getTokenUri').mockResolvedValue('https://x.io/7.png');
     const { navigation } = await renderScreen(NftCollectionScreen, { env, params: { collection } });
 
-    expect(screen.getByText('2 owned · NFT')).toBeTruthy();
+    expect(screen.getByText('Owned')).toBeTruthy();
+    expect(screen.getByText('2')).toBeTruthy();
     await fireEvent.press(await screen.findByRole('button', { name: 'Demo #7' }));
     expect(navigation.navigate).toHaveBeenCalledWith('NftDetail', { collection, item: item('7') });
     expect(getTokenUri).toHaveBeenCalledWith(expect.anything(), collection.packagePath, '7');

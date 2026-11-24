@@ -146,6 +146,10 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
           }).join(', ')
         : `0 ${symbol}`;
 
+    // The storage deposit cap is spendable too, so it is shown whenever the message sets one.
+    const maxDeposit = (coins: string): { label: string; value: string }[] =>
+      coins ? [{ label: 'Max deposit', value: formatCoins(coins) }] : [];
+
     return messages.map((message) => {
       switch (message.type) {
         case GnoMessageType.BANK_MSG_SEND:
@@ -164,6 +168,7 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
               { label: 'Function', value: message.value.func },
               { label: 'Arguments', value: (message.value.args ?? []).join(', ') || '-' },
               { label: 'Send', value: formatCoins(message.value.send) },
+              ...maxDeposit(message.value.max_deposit),
             ],
           };
         case GnoMessageType.VM_ADDPKG:
@@ -173,6 +178,7 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
               { label: 'Package', value: message.value.package.path },
               { label: 'Files', value: String(message.value.package.files.length) },
               { label: 'Send', value: formatCoins(message.value.send) },
+              ...maxDeposit(message.value.max_deposit),
             ],
           };
         case GnoMessageType.VM_RUN:
@@ -181,6 +187,7 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
             details: [
               { label: 'Files', value: message.value.package.files.map(file => file.name).join(', ') },
               { label: 'Send', value: formatCoins(message.value.send) },
+              ...maxDeposit(message.value.max_deposit),
             ],
           };
       }

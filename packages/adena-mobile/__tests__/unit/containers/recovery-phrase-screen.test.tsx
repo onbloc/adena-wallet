@@ -10,6 +10,9 @@ describe('RecoveryPhraseScreen', () => {
   it('reveals the phrase with the right password and forgets it on blur', async () => {
     const { env, account } = await setupWallet();
     const { navigation } = await renderScreen(RecoveryPhraseScreen, { env, params: { keyringId: account.keyringId } });
+
+    expect(screen.queryByText('about')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Show recovery phrase' }));
     const input = screen.getByLabelText('Password');
 
     await fireEvent.changeText(input, 'wrong password');
@@ -21,10 +24,12 @@ describe('RecoveryPhraseScreen', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Reveal phrase' }));
 
     expect(await screen.findByText('about')).toBeTruthy();
-    expect(screen.queryByLabelText('Password')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show recovery phrase' })).toBeNull();
 
     await act(() => navigation.emit('blur'));
     expect(screen.queryByText('about')).toBeNull();
+    // Revealing again asks for the password from an empty field.
+    await fireEvent.press(screen.getByRole('button', { name: 'Show recovery phrase' }));
     expect(screen.getByLabelText('Password').props.value).toBe('');
 
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
@@ -36,6 +41,7 @@ describe('RecoveryPhraseScreen', () => {
 
     await renderScreen(RecoveryPhraseScreen, { env, params: { keyringId: 'missing' } });
     jest.spyOn(env.container.walletService, 'revealMnemonic').mockRejectedValueOnce(new Error('Keyring not found'));
+    await fireEvent.press(screen.getByRole('button', { name: 'Show recovery phrase' }));
     await fireEvent.changeText(screen.getByLabelText('Password'), TEST_PASSWORD);
     await fireEvent.press(screen.getByRole('button', { name: 'Reveal phrase' }));
 

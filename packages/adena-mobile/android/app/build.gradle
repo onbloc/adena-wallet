@@ -131,6 +131,8 @@ tasks.matching { it.name in ['packageRelease', 'bundleRelease'] }.configureEach 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    // BiometricPrompt + CryptoObject for the per-use biometric key (same version react-native-keychain uses).
+    implementation("androidx.biometric:biometric:1.1.0")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

@@ -10,6 +10,8 @@ import { ConnectedAppService } from './connected-app.service';
 import { NetworkService } from './network.service';
 import { TransactionService } from './transaction.service';
 
+const GAS_WANTED_PATTERN = /^[1-9]\d{0,17}$/;
+
 export interface DappRequestContext {
   network: Network;
   account: Account;
@@ -52,7 +54,8 @@ export class DappService {
 
     // Like the extension's checkEstablished: transactions need a prior connect from this origin.
     if (request.method !== DappMethod.CONNECT && !this.connectedAppService.isConnected(request.callbackOrigin, account.id)) {
-      throw new AppError(AppErrorCode.NOT_CONNECTED, `${request.callbackOrigin} is not connected to ${account.name}. Connect the app first.`);
+      // The message reaches the dApp, so it must not reveal the account name.
+      throw new AppError(AppErrorCode.NOT_CONNECTED, `${request.callbackOrigin} is not connected to this account. Connect the app first.`);
     }
 
     return {
@@ -66,8 +69,10 @@ export class DappService {
   async prepareTransaction(request: DappTransactionRequest, context: DappRequestContext): Promise<PreparedDappTransaction> {
     const { account, network } = context;
     const draft = this.transactionService.createDraft(account, network, request.messages, request.memo);
-    const requestedFee = request.gasWanted && request.gasFee && parseCoin(request.gasFee)
-      ? { gasWanted: request.gasWanted, gasFee: request.gasFee }
+    // A dApp fee is kept only in the network's fee token, so the review shows what is signed.
+    const requestedCoin = request.gasFee ? parseCoin(request.gasFee) : null;
+    const requestedFee = request.gasWanted && GAS_WANTED_PATTERN.test(request.gasWanted) && requestedCoin?.denom === network.feeToken.denom
+      ? { gasWanted: request.gasWanted, gasFee: `${requestedCoin.amount}${requestedCoin.denom}` }
       : null;
     const priced = requestedFee
       ? { ...draft, fee: requestedFee }

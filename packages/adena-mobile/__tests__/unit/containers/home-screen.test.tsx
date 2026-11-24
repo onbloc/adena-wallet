@@ -68,7 +68,7 @@ describe('HomeScreen', () => {
     const presses: [string, unknown[]][] = [
       ['Switch account', ['Accounts']],
       ['Settings', ['Settings']],
-      ['Select network', ['Networks']],
+      ['Scan QR code', ['QrScanner']],
       ['Manage tokens', ['ManageTokens']],
       ['Send', ['SendRecipient']],
       ['Receive', ['Receive']],

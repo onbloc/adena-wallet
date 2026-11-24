@@ -45,12 +45,11 @@ describe('CreatePasswordScreen', () => {
     expect(navigation.popToTop).toHaveBeenCalled();
   });
 
-  it('creates the wallet with biometrics on by default and unlocks the session', async () => {
+  it('creates the wallet, turns on biometric unlock automatically and unlocks the session', async () => {
     useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC });
     const { env } = await renderScreen(CreatePasswordScreen);
-    const toggle = await screen.findByRole('switch', { name: /^Unlock with / });
 
-    expect(toggle.props.accessibilityState.checked).toBe(true);
+    expect(screen.queryByRole('switch')).toBeNull();
     await fill(TEST_PASSWORD, TEST_PASSWORD);
 
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
@@ -60,31 +59,19 @@ describe('CreatePasswordScreen', () => {
     await expect(env.container.walletService.isBiometricUnlockEnabled()).resolves.toBe(true);
   });
 
-  it('skips biometrics when the user turns them off', async () => {
-    useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC });
-    const { env } = await renderScreen(CreatePasswordScreen);
-
-    await fireEvent.press(await screen.findByRole('switch', { name: /^Unlock with / }));
-    await fill(TEST_PASSWORD, TEST_PASSWORD);
-
-    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
-    await expect(env.container.walletService.isBiometricUnlockEnabled()).resolves.toBe(false);
-  });
-
   it('warns but still finishes when biometrics cannot be enabled', async () => {
     useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC });
     const env = createTestContainer();
 
     jest.spyOn(env.container.walletService, 'enableBiometricUnlock').mockRejectedValue(new Error('denied'));
     await renderScreen(CreatePasswordScreen, { env });
-    await screen.findByRole('switch', { name: /^Unlock with / });
     await fill(TEST_PASSWORD, TEST_PASSWORD);
 
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
     expect(toastMessage()).toBe('Biometric unlock could not be enabled');
   });
 
-  it('hides the biometric option without hardware and surfaces creation errors', async () => {
+  it('skips biometrics without hardware and surfaces creation errors', async () => {
     useOnboardingStore.setState({ mnemonic: 'not a valid phrase' });
     const env = createTestContainer();
 

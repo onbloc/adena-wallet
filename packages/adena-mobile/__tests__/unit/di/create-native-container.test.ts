@@ -1,5 +1,8 @@
+import { Platform } from 'react-native';
+
 import * as containerModule from '../../../src/di/container';
 import { createNativeContainer, resetNativeGeneralStorage } from '../../../src/di/create-native-container';
+import { AndroidBiometricCredentialRepository } from '../../../src/repositories/android-biometric-credential.repository';
 import { KeychainSecureStore } from '../../../src/security/keychain-secure-store';
 import { createNativeScryptKdf } from '../../../src/security/native-scrypt-kdf';
 import { DEFAULT_KDF_SETTINGS, ScryptXChaChaVaultCipher } from '../../../src/security/vault-cipher';
@@ -50,6 +53,18 @@ describe('createNativeContainer', () => {
     expect(infra.vaultCipher!.needsRehash({ kdf: { name: 'scrypt', ...DEFAULT_KDF_SETTINGS, dkLen: 32, salt: '' } } as never)).toBe(false);
     await expect(container.migrationService.migrateAll()).resolves.toBeDefined();
     createSpy.mockRestore();
+  });
+
+  it('uses the Keystore biometric vault only on Android', async () => {
+    createKdf.mockReturnValue({ assertWorking: jest.fn(async () => undefined), derive: jest.fn(nobleScryptKdf.derive) });
+    const createSpy = jest.spyOn(containerModule, 'createContainer');
+
+    await createNativeContainer();
+    expect(createSpy.mock.calls[0][0].biometricRepository).toBeUndefined();
+    jest.replaceProperty(Platform, 'OS', 'android');
+    await createNativeContainer();
+    expect(createSpy.mock.calls[1][0].biometricRepository).toBeInstanceOf(AndroidBiometricCredentialRepository);
+    jest.restoreAllMocks();
   });
 
   it('fails closed before opening storage when native crypto is missing or wrong', async () => {

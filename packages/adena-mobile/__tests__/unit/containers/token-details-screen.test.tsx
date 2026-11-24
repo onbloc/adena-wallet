@@ -36,13 +36,13 @@ const market = (range: ChartRange, changePercent: number, extra: Partial<TokenMa
   ...extra,
 });
 
-const info = (): TokenMarketInfo => ({
+const info: TokenMarketInfo = {
   tokenId: 'ugnot',
   networkId: 'gnoland-1',
   stats: { marketCapUsd: 10_000_000, high52wUsd: 0.09, low52wUsd: 0.01 },
   links: [{ label: 'Website', url: 'https://gno.land' }, { label: 'Insecure', url: 'http://gno.land' }],
   about: 'Gno.land is a platform for smart contracts.',
-});
+};
 
 const setup = async () => {
   const wallet = await setupWallet();
@@ -76,12 +76,12 @@ describe('TokenDetailsScreen', () => {
     const changes: Partial<Record<ChartRange, number>> = { '1D': 5, '1W': -3, '1M': 0.001 };
     const getMarketData = jest.spyOn(env.container.marketDataService, 'getMarketData')
       .mockImplementation(async (_token, _network, range) => market(range, changes[range] ?? 0));
-
-    jest.spyOn(env.container.marketDataService, 'getTokenInfo').mockResolvedValue(info());
+    const getTokenInfo = jest.spyOn(env.container.marketDataService, 'getTokenInfo').mockResolvedValue(info);
     const { navigation, container } = await renderScreen(TokenDetailsScreen, { env, client: client(), params: { tokenId: 'ugnot' } });
 
     expect(await screen.findByText('+5.00% · Today', {}, { timeout: 5000 })).toBeTruthy();
-    expect(screen.getByText('$0.09')).toBeTruthy();
+    expect(await screen.findByText('$0.09')).toBeTruthy();
+    expect(screen.getByText('About Gno.land')).toBeTruthy();
     expect(screen.getByText('2.5 GNOT')).toBeTruthy();
 
     await fireEvent.press(screen.getByRole('tab', { name: '1W' }));
@@ -107,6 +107,8 @@ describe('TokenDetailsScreen', () => {
 
     await fireEvent(refresh, 'refresh');
     await waitFor(() => expect(getMarketData.mock.calls.length).toBeGreaterThan(calls));
+    // Range switches reuse the token info; only the pull-to-refresh refetches it.
+    expect(getTokenInfo).toHaveBeenCalledTimes(2);
 
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     expect(navigation.goBack).toHaveBeenCalled();
@@ -121,15 +123,17 @@ describe('TokenDetailsScreen', () => {
 
     expect(await screen.findByText('No activity yet')).toBeTruthy();
     expect(screen.getByText('Perun')).toBeTruthy();
-    expect(screen.getAllByText('-').length).toBeGreaterThanOrEqual(5);
+    // Stats stay hidden until they have values.
+    expect(screen.queryByText('Stats')).toBeNull();
+    expect(screen.getByText('–')).toBeTruthy();
     expect(env.http.calls).toContain(`${API_URL}/v1/accounts/${env.container.accountService.getAddress(env.container.accountService.getCurrentAccount()!, env.container.networkService.getCurrentNetwork())}/grc20-token/${encodeURIComponent(PERUN)}/transactions`);
   });
 
-  it('renders nothing for an unknown token', async () => {
+  it('shows the unavailable state for an unknown token', async () => {
     const { env } = await setup();
 
     await renderScreen(TokenDetailsScreen, { env, client: client(), params: { tokenId: 'unknown' } });
 
-    expect(screen.queryByText('Token details')).toBeNull();
+    expect(await screen.findByText('Token not found')).toBeTruthy();
   });
 });

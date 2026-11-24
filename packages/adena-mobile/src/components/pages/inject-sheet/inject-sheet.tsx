@@ -29,6 +29,7 @@ export interface InjectSheetPageProps {
   rows: { label: string; value: string; multiline?: boolean }[];
   messages: DappMessageView[];
   fee?: string;
+  memo?: string;
   loading: boolean;
   error?: string;
   // Blocking state (invalid link, no wallet): only a close action is offered.
@@ -67,6 +68,7 @@ export const InjectSheetPage = (props: InjectSheetPageProps): ReactElement => {
                   <View style={styles.origin}>
                     <Text variant='section'>{props.dappName}</Text>
                     <Text variant='meta' color='secondary'>{props.origin}</Text>
+                    <Text variant='meta' color='secondary'>The name is provided by the app. Confirm the details before approving.</Text>
                   </View>
                   {props.rows.map(row => <KeyValueRow key={row.label} label={row.label} value={row.value} multiline={row.multiline} />)}
                   {props.loading && <Skeleton height={96} />}
@@ -78,6 +80,7 @@ export const InjectSheetPage = (props: InjectSheetPageProps): ReactElement => {
                       ))}
                     </View>
                   ))}
+                  {props.memo ? <KeyValueRow label='Memo' value={props.memo} multiline /> : null}
                   {props.fee && <KeyValueRow label='Network fee' value={props.fee} emphasis />}
                   {props.auth?.mode === SheetAuthMode.PASSWORD && (
                     <TextField

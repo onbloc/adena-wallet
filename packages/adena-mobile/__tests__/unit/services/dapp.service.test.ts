@@ -90,6 +90,7 @@ describe('DappService', () => {
 
       expect(isAppError(error, 'NOT_CONNECTED')).toBe(true);
       expect(readResponse(service.fail(request, error))).toEqual({ requestId: 'req-1', status: 'failure', error: { code: 'NOT_CONNECTED', message: (error as Error).message } });
+      expect((error as Error).message).not.toContain('Account 1');
     });
 
     it('scopes connections to the account that approved them', async () => {
@@ -143,11 +144,23 @@ describe('DappService', () => {
       [{ gasWanted: '500000' }],
       [{ gasFee: '600ugnot' }],
       [{ gasWanted: '500000', gasFee: 'lots' }],
+      [{ gasWanted: '500000', gasFee: '600uatom' }],
+      [{ gasWanted: 'lots', gasFee: '600ugnot' }],
+      [{ gasWanted: '0', gasFee: '600ugnot' }],
     ])('estimates when the requested fee is incomplete or malformed: %p', async (fee) => {
       const { service, txRequest, call } = await setup();
       const request = txRequest({}, { messages: [call()], ...fee });
 
       expect((await service.prepareTransaction(request, service.resolveContext(request))).draft.fee.gasFee).toBe('111ugnot');
+    });
+
+    it('shows the storage deposit cap of a call', async () => {
+      const { service, txRequest, call } = await setup();
+      const message = call();
+      const request = txRequest({}, { messages: [{ ...message, value: { ...message.value, max_deposit: '2000000ugnot' } }] });
+      const [summary] = (await service.prepareTransaction(request, service.resolveContext(request))).summaries;
+
+      expect(summary.details).toContainEqual({ label: 'Max deposit', value: '2 GNOT' });
     });
 
     it('rejects a message with another signer', async () => {

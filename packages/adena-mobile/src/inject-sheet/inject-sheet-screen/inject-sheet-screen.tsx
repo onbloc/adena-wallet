@@ -5,7 +5,7 @@ import { InjectSheetAuthView, InjectSheetPage, SheetAuthMode } from '../../compo
 import { toErrorMessage } from '../../core/error-message';
 import { AppError, AppErrorCode } from '../../core/errors';
 import { useContainer } from '../../di/container-provider';
-import { DappRequest } from '../../domain/dapp';
+import { DappMethod, DappRequest } from '../../domain/dapp';
 import { useDappRequestFlow } from '../../hooks/use-dapp-request-flow';
 import NativeAdenaInjectSheet from '../../native/NativeAdenaInjectSheet';
 import { useBiometricStatusQuery, useWalletStatusQuery } from '../../queries/wallet.queries';
@@ -79,7 +79,12 @@ export const InjectSheetScreen = ({ requestUrl }: { requestUrl?: string }): Reac
 
   const { request, context } = flow;
 
+  // A second tap before the re-render must not authorize, sign or answer twice.
   const handleApprove = async (): Promise<void> => {
+    if (sheetApproval.inFlight) {
+      return;
+    }
+
     flow.resetApproval();
     sheetApproval.inFlight = true;
     const callbackUrl = await flow.approve().catch(() => null);
@@ -92,7 +97,11 @@ export const InjectSheetScreen = ({ requestUrl }: { requestUrl?: string }): Reac
     }
   };
 
-  const handleReject = (): void => finishSheet(unavailable ? null : flow.rejectionUrl());
+  const handleReject = (): void => {
+    if (!sheetApproval.inFlight) {
+      finishSheet(unavailable ? null : flow.rejectionUrl());
+    }
+  };
 
   return (
     <InjectSheetPage
@@ -107,6 +116,7 @@ export const InjectSheetScreen = ({ requestUrl }: { requestUrl?: string }): Reac
           ]
         : []}
       messages={flow.messages}
+      memo={request && request.method !== DappMethod.CONNECT ? request.memo : undefined}
       fee={flow.feeLabel}
       loading={flow.loading || status === null}
       error={flow.error}

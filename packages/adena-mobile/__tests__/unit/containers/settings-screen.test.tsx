@@ -1,8 +1,8 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 
 import { SettingsScreen } from '../../../src/containers/main/settings-screen';
 import { SessionStatus, useSessionStore } from '../../../src/stores/session.store';
-import { renderScreen, resetStores, setupWallet, toastMessage } from '../../helpers/render-screen';
+import { renderScreen, resetStores, setupWallet } from '../../helpers/render-screen';
 import { TEST_PASSWORD } from '../../helpers/test-container';
 
 const PRIVATE_KEY = '01'.repeat(32);
@@ -10,40 +10,11 @@ const PRIVATE_KEY = '01'.repeat(32);
 describe('SettingsScreen', () => {
   beforeEach(resetStores);
 
-  it('enables biometrics behind the password sheet and disables them again', async () => {
+  it('has no biometric switch; biometrics are set on the change password page', async () => {
     const { env } = await setupWallet();
 
     await renderScreen(SettingsScreen, { env });
-    const toggle = await screen.findByRole('switch', { name: 'Face ID' });
-
-    expect(toggle).not.toBeChecked();
-    await fireEvent.press(toggle);
-    const input = await screen.findByTestId('password-sheet-input');
-
-    expect(screen.getByText('Enable Face ID')).toBeTruthy();
-    await fireEvent.changeText(input, 'wrong password');
-    await fireEvent.press(screen.getByRole('button', { name: 'Enable' }));
-    expect(await screen.findByText('Incorrect password.')).toBeTruthy();
-
-    await fireEvent.changeText(input, TEST_PASSWORD);
-    await fireEvent.press(screen.getByRole('button', { name: 'Enable' }));
-
-    await waitFor(() => expect(screen.getByRole('switch', { name: 'Face ID' })).toBeChecked());
-    expect(toastMessage()).toBe('Face ID unlock enabled');
-    await expect(env.container.walletService.isBiometricUnlockEnabled()).resolves.toBe(true);
-
-    await fireEvent.press(screen.getByRole('switch', { name: 'Face ID' }));
-    await waitFor(() => expect(screen.getByRole('switch', { name: 'Face ID' })).not.toBeChecked());
-    await expect(env.container.walletService.isBiometricUnlockEnabled()).resolves.toBe(false);
-  });
-
-  it('hides the biometric switch on devices without biometrics', async () => {
-    const { env } = await setupWallet();
-
-    env.secureStore.biometryKind = null;
-    const { client } = await renderScreen(SettingsScreen, { env });
-
-    await waitFor(() => expect(client.isFetching()).toBe(0));
+    expect(await screen.findByRole('button', { name: 'Change password' })).toBeTruthy();
     expect(screen.queryByRole('switch', { name: 'Face ID' })).toBeNull();
   });
 

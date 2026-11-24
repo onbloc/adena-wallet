@@ -5,7 +5,7 @@ import { OnblocApiClient } from '../infrastructure/http/onbloc-api.client';
 import { StorageAccountRepository } from '../repositories/account.repository';
 import { StorageAccountPhotoRepository } from '../repositories/account-photo.repository';
 import { StorageAddressBookRepository } from '../repositories/address-book.repository';
-import { SecureBiometricCredentialRepository } from '../repositories/biometric-credential.repository';
+import { BiometricCredentialRepository, SecureBiometricCredentialRepository } from '../repositories/biometric-credential.repository';
 import { ChainModule, ChainRegistry } from '../repositories/chain/chain-registry';
 import { createCosmosModule } from '../repositories/chain/cosmos/cosmos-module';
 import { createGnoModule } from '../repositories/chain/gno/gno-module';
@@ -53,6 +53,8 @@ import { KeyValueStore } from '../storage/key-value-store';
 export interface Infrastructure {
   secureStore: SecureStore;
   keyValueStore: KeyValueStore;
+  // Platform override for the biometric password escrow (Android uses its own Keystore vault).
+  biometricRepository?: BiometricCredentialRepository;
   vaultCipher?: VaultCipher;
   http?: HttpClient;
   chainModules?: ChainModule[];
@@ -110,7 +112,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const chainRegistry = new ChainRegistry(infra.chainModules ?? defaultModules);
   const priceRepository = infra.priceRepository ?? new ApiPriceRepository(new OnblocApiClient(http));
   const vaultRepository = new SecureVaultRepository(secureStore);
-  const biometricRepository = new SecureBiometricCredentialRepository(secureStore);
+  const biometricRepository = infra.biometricRepository ?? new SecureBiometricCredentialRepository(secureStore);
   const accountRepository = new StorageAccountRepository(keyValueStore);
   const networkRepository = new StorageNetworkRepository(keyValueStore);
   const connectedAppRepository = new StorageConnectedAppRepository(keyValueStore);

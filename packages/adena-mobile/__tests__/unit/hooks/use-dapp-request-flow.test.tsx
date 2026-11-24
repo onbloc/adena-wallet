@@ -139,13 +139,16 @@ describe('useDappRequestFlow', () => {
   it('aborts when authorization throws, without signing', async () => {
     const dapp = createDapp();
     const authorize = jest.fn().mockRejectedValue(new Error('Biometrics cancelled'));
-    const { result } = await setup(dapp, request(DappMethod.SIGN_TRANSACTION), { allowCrossNetwork: false, authorize });
+    const release = jest.fn();
+    const { result } = await setup(dapp, request(DappMethod.SIGN_TRANSACTION), { allowCrossNetwork: false, authorize, release });
 
     await waitFor(() => expect(result.current.canApprove).toBe(true));
     await act(async () => {
       await expect(result.current.approve()).rejects.toThrow('Biometrics cancelled');
     });
     expect(dapp.approveTransaction).not.toHaveBeenCalled();
+    // authorize may have opened the session before failing, so it is released too.
+    expect(release).toHaveBeenCalled();
   });
 
   it('refuses to sign before the transaction is prepared', async () => {

@@ -90,9 +90,9 @@ export const useDappRequestFlow = (request: DappRequest | null, options: DappReq
         throw new Error('Transaction is not ready');
       }
 
-      await options.authorize?.();
-
+      // A failure after authorize opened the session (e.g. while restoring accounts) must still release it.
       try {
+        await options.authorize?.();
         return await dappService.approveTransaction(request, context, prepared.data.draft);
       }
       finally {

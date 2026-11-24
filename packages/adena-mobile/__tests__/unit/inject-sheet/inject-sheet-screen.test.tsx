@@ -201,6 +201,41 @@ describe('InjectSheetScreen', () => {
     expect(inFlight).toBe(true);
   });
 
+  it('ignores approve and reject taps while an approval is in flight', async () => {
+    let settle: (url: string) => void = () => undefined;
+    const signing = flow({
+      approve: jest.fn(() => new Promise<string>((resolve) => {
+        settle = resolve;
+      })),
+    });
+
+    (useDappRequestFlow as jest.Mock).mockReturnValue(signing);
+    await renderScreen('adena://request?payload=x');
+    await act(async () => page().auth?.onChangePassword('pw'));
+    const { onApprove, onReject } = page();
+    let first: Promise<void> | void = undefined;
+
+    await act(async () => {
+      first = onApprove();
+      await onApprove();
+      onReject();
+    });
+    expect(signing.approve).toHaveBeenCalledTimes(1);
+    expect(signing.rejectionUrl).not.toHaveBeenCalled();
+    await act(async () => {
+      settle('cb://ok');
+      await first;
+    });
+    expect(mockNative.current?.complete).toHaveBeenCalledTimes(1);
+    expect(mockNative.current?.complete).toHaveBeenCalledWith('cb://ok');
+  });
+
+  it('shows the memo that will be signed', async () => {
+    (useDappRequestFlow as jest.Mock).mockReturnValue(flow({ request: { method: 'sign-and-broadcast', memo: 'signed memo', dapp: { name: 'Example' }, callbackOrigin: 'exampleapp:' } }));
+    await renderScreen('adena://request?payload=x');
+    expect(page().memo).toBe('signed memo');
+  });
+
   it('rejects through the dApp callback', async () => {
     await renderScreen('adena://request?payload=x');
     await act(async () => page().onReject());

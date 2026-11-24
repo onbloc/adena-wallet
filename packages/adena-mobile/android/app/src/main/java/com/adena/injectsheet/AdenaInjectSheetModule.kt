@@ -7,7 +7,7 @@ import android.net.Uri
 import com.adena.specs.NativeAdenaInjectSheetSpec
 import com.facebook.react.bridge.ReactApplicationContext
 
-/** Ends the inject sheet: returns the response to the caller or opens the dApp callback. */
+/** Ends the inject sheet: opens the dApp callback with the response, or just closes. */
 class AdenaInjectSheetModule(reactContext: ReactApplicationContext) : NativeAdenaInjectSheetSpec(reactContext) {
 
   override fun getName(): String = NAME
@@ -15,12 +15,10 @@ class AdenaInjectSheetModule(reactContext: ReactApplicationContext) : NativeAden
   override fun complete(callbackUrl: String) {
     val activity = sheetActivity() ?: return
     activity.runOnUiThread {
-      if (activity.callingActivity != null) {
-        activity.setResult(
-            Activity.RESULT_OK,
-            Intent().setData(Uri.parse(callbackUrl)).putExtra(EXTRA_RESPONSE_URL, callbackUrl),
-        )
-      } else if (isAllowedCallback(callbackUrl)) {
+      // The response goes only to the callback the user reviewed, never back to the launching app:
+      // a caller can claim any callback origin, so a result intent would hand it another origin's response.
+      activity.setResult(Activity.RESULT_OK)
+      if (isAllowedCallback(callbackUrl)) {
         try {
           activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(callbackUrl)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (_: ActivityNotFoundException) {
@@ -50,7 +48,6 @@ class AdenaInjectSheetModule(reactContext: ReactApplicationContext) : NativeAden
 
   companion object {
     const val NAME = "AdenaInjectSheet"
-    const val EXTRA_RESPONSE_URL = "com.adena.extra.RESPONSE_URL"
     private val BLOCKED_SCHEMES = setOf("http", "javascript", "data", "file", "content", "intent", "android-app", "adena")
   }
 }

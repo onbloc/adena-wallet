@@ -102,6 +102,6 @@ describe('SendNftScreen', () => {
     await enterRecipient(RECIPIENT);
     await fireEvent.press(screen.getByRole('button', { name: 'Review transfer' }));
 
-    expect(await screen.findByText('No account selected')).toBeTruthy();
+    expect(await screen.findByText('Enter a valid recipient')).toBeTruthy();
   });
 });

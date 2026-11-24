@@ -33,9 +33,13 @@ describe('AddNetworkScreen', () => {
     await waitFor(() => expect(navigation.pop).toHaveBeenCalledWith(2));
     expect(env.container.networkService.getCurrentNetwork()).toMatchObject({ networkName: 'My node', chainId: 'gnoland-1', isCustom: true });
 
+    // The submit guard stays set once the screen is leaving, so the duplicate goes through a fresh screen.
+    const again = await renderScreen(AddNetworkScreen, { env });
+
+    await fill('My node', 'https://my.node/');
     await fireEvent.press(screen.getByRole('button', { name: 'Add network' }));
     expect(await screen.findByText('This network is already added')).toBeTruthy();
-    expect(navigation.pop).toHaveBeenCalledTimes(1);
+    expect(again.navigation.pop).not.toHaveBeenCalled();
   });
 
   it('cycles through base networks and labels Cosmos endpoints as REST', async () => {

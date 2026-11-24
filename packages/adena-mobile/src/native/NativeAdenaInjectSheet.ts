@@ -3,7 +3,7 @@ import { TurboModuleRegistry } from 'react-native';
 
 // Android-only module that finishes the overlay inject sheet (InjectSheetActivity).
 export interface Spec extends TurboModule {
-  // Returns the response to a startActivityForResult caller, or opens the callback URL.
+  // Opens the callback URL (never returned as an activity result) and closes the sheet.
   complete(callbackUrl: string): void;
   dismiss(): void;
 }

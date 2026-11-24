@@ -11,22 +11,13 @@ const PRIVATE_KEY = '01'.repeat(32);
 describe('AccountSettingsScreen', () => {
   beforeEach(resetStores);
 
-  it('renames the account only when the name changes', async () => {
+  it('opens Edit profile for renaming', async () => {
     const { env, account } = await setupWallet();
+    const { navigation } = await renderScreen(AccountSettingsScreen, { env, params: { accountId: account.id } });
 
-    await renderScreen(AccountSettingsScreen, { env, params: { accountId: account.id } });
     expect(screen.getByText('Recovery phrase · #1')).toBeTruthy();
-    const save = screen.getByRole('button', { name: 'Save name' });
-
-    expect(save).toBeDisabled();
-    await fireEvent.changeText(screen.getByLabelText('Account name'), '   ');
-    expect(save).toBeDisabled();
-    await fireEvent.changeText(screen.getByLabelText('Account name'), 'Savings');
-    await fireEvent.press(screen.getByRole('button', { name: 'Save name' }));
-
-    expect(env.container.accountService.getAccounts()[0].name).toBe('Savings');
-    expect(toastMessage()).toBe('Name updated');
-    expect(screen.getAllByText('Savings').length).toBeGreaterThan(0);
+    await fireEvent.press(screen.getByRole('button', { name: 'Edit profile' }));
+    expect(navigation.navigate).toHaveBeenCalledWith('EditProfile', { accountId: account.id });
   });
 
   it('copies the address and opens related screens', async () => {
@@ -37,7 +28,7 @@ describe('AccountSettingsScreen', () => {
     expect(Clipboard.setString).toHaveBeenCalledWith(address);
     expect(toastMessage()).toBe('Address copied');
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Manage connections' }));
+    await fireEvent.press(screen.getByRole('button', { name: /^Manage connections/ }));
     expect(navigation.navigate).toHaveBeenCalledWith('ConnectedApps');
     await fireEvent.press(screen.getByRole('button', { name: 'Recovery phrase' }));
     expect(navigation.navigate).toHaveBeenCalledWith('RecoveryPhrase', { keyringId: account.keyringId });

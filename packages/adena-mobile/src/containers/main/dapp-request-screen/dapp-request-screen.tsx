@@ -44,9 +44,18 @@ const DappRequestContent = ({ navigation }: Props): ReactElement | null => {
   }
 
   const { context } = flow;
-  const reject = (): Promise<void> => finish(flow.rejectionUrl());
+  // The store flag is read synchronously: a second tap before the re-render must not sign twice or answer twice.
+  const reject = async (): Promise<void> => {
+    if (!useDappRequestStore.getState().inFlight) {
+      await finish(flow.rejectionUrl());
+    }
+  };
 
   const handleApprove = async (): Promise<void> => {
+    if (useDappRequestStore.getState().inFlight) {
+      return;
+    }
+
     setInFlight(true);
     const callbackUrl = await flow.approve().catch(() => null);
 
