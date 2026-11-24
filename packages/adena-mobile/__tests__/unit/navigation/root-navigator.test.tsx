@@ -83,14 +83,14 @@ describe('RootNavigator', () => {
     expect(await screen.findByText('UnlockScreen')).toBeTruthy();
     await act(async () => (navigationRef.navigate as (route: string) => void)('ResetWallet'));
     expect(await screen.findByText('ResetWalletScreen')).toBeTruthy();
-    expect(navigationRef.getRootState()?.routeNames).toEqual(['Splash', 'Unlock', 'ResetWallet']);
+    expect(navigationRef.getRootState()?.routeNames).toEqual(['Splash', 'Unlock', 'ResetWallet', 'Sheet']);
   });
 
   it('mounts the main stack when unlocked and swaps stacks on lock', async () => {
     useSessionStore.setState({ status: SessionStatus.UNLOCKED });
     await renderRoot();
     expect(screen.getByText('MainTabs')).toBeTruthy();
-    expect(navigationRef.getRootState()?.routeNames).toHaveLength(31);
+    expect(navigationRef.getRootState()?.routeNames).toHaveLength(32);
 
     await act(async () => navigationRef.navigate('DappRequest'));
     expect(await screen.findByText('DappRequestScreen')).toBeTruthy();

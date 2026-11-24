@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import React, { ReactElement, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
+import { isCoveredBySheet } from '../../../components/molecules';
 import { CloudBackupPage, CloudBackupPageState, StrengthColor } from '../../../components/pages';
 import { AppErrorCode, isAppError } from '../../../core/errors';
 import { useContainer } from '../../../di/container-provider';
@@ -63,7 +64,12 @@ export const CloudBackupScreen = ({ navigation }: NativeStackScreenProps<MainSta
       setForm(null);
       setOverwriteDescription(null);
     };
-    const unsubscribeBlur = navigation.addListener('blur', discard);
+    // Its password sheets are routes over this screen, not a departure from it.
+    const unsubscribeBlur = navigation.addListener('blur', () => {
+      if (!isCoveredBySheet(navigation)) {
+        discard();
+      }
+    });
     const appState = AppState.addEventListener('change', (state) => {
       if (state === 'background') {
         discard();
