@@ -1,10 +1,17 @@
 import { toHex } from '@cosmjs/encoding';
-import { MsgAddPackage, MsgCall, MsgRun, MsgSend } from '@gnolang/gno-js-client';
-import { PubKeySecp256k1, Tx } from '@gnolang/tm2-js-client';
+import { decodeTxMessages, MsgAddPackage, MsgCall, MsgRun, MsgSend } from '@gnolang/gno-js-client';
+import { Provider, PubKeySecp256k1, Tx, TxFee, Wallet } from '@gnolang/tm2-js-client';
 import { documentToTx } from 'adena-module';
 
 import { GnoMessage } from '../../../../../src/repositories/chain/gno/gno-messages';
-import { buildSimulationGnoTx, buildUnsignedGnoTx, encodeGnoMessage } from '../../../../../src/repositories/chain/gno/gno-tx-encoder';
+import {
+  buildGnoSignBytes,
+  buildGnoTxSignature,
+  buildSimulationGnoTx,
+  buildUnsignedGnoTx,
+  encodeGnoMessage,
+  feeSizeHeadroomBytes,
+} from '../../../../../src/repositories/chain/gno/gno-tx-encoder';
 
 const CALLER = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
 const memPackage = { name: 'main', path: 'gno.land/r/demo/x', files: [{ name: 'a.gno', body: 'package main' }, { name: 'b.gno', body: '// 한글' }] };
@@ -82,14 +89,64 @@ describe('buildUnsignedGnoTx', () => {
 });
 
 describe('buildSimulationGnoTx', () => {
-  it('attaches the public key with an empty signature', () => {
+  it('attaches the public key with a zeroed 64-byte signature', () => {
     const publicKey = new Uint8Array(33).fill(2);
     const tx = Tx.decode(Tx.encode(buildSimulationGnoTx([messages.send], FEE, 'm', publicKey)).finish());
 
     expect(tx.signatures).toHaveLength(1);
-    expect(tx.signatures[0].signature).toEqual(new Uint8Array());
+    expect(tx.signatures[0].signature).toEqual(new Uint8Array(64));
     expect(tx.signatures[0].pub_key?.type_url).toBe('/tm.PubKeySecp256k1');
     expect(PubKeySecp256k1.decode(tx.signatures[0].pub_key!.value).key).toEqual(publicKey);
     expect(tx.memo).toBe('m');
+  });
+
+  it('encodes to the same size as the signed tx with the same fee', () => {
+    const publicKey = new Uint8Array(33).fill(2);
+    const simulated = buildSimulationGnoTx([messages.send], FEE, 'm', publicKey);
+    const signed = { ...buildUnsignedGnoTx([messages.send], FEE, 'm'), signatures: [buildGnoTxSignature(publicKey, new Uint8Array(64).fill(7))] };
+
+    expect(Tx.encode(simulated).finish().length).toBe(Tx.encode(signed).finish().length);
+  });
+});
+
+describe('buildGnoSignBytes', () => {
+  const PRIVATE_KEY = new Uint8Array(32).fill(1);
+
+  it('matches the tm2-js-client Wallet payload for the same chain, account and sequence', async () => {
+    const wallet = await Wallet.fromPrivateKey(PRIVATE_KEY);
+    const tx = buildUnsignedGnoTx([messages.call, messages.send], FEE, 'memo <&>');
+
+    wallet.connect({ getStatus: async () => ({ node_info: { network: 'test-chain' } }) } as unknown as Provider);
+    const expected = await wallet.signTransaction(tx, decodeTxMessages, { accountNumber: '7', sequence: '3' });
+    const signature = await wallet.getSigner().signData(buildGnoSignBytes(tx, 'test-chain', '7', '3'));
+
+    expect(signature).toEqual(expected.signatures[0].signature);
+  });
+
+  it('binds the payload to the given chain id', () => {
+    const tx = buildUnsignedGnoTx([messages.send], FEE, '');
+    const text = new TextDecoder().decode(buildGnoSignBytes(tx, 'gnoland-1', '7', '3'));
+
+    expect(JSON.parse(text)).toMatchObject({ chain_id: 'gnoland-1', account_number: '7', sequence: '3', fee: { gas: '200000', amount: [{ denom: 'ugnot', amount: '200' }] } });
+  });
+
+  it('requires a fee', () => {
+    expect(() => buildGnoSignBytes({ ...buildUnsignedGnoTx([messages.send], FEE, ''), fee: undefined }, 'c', '0', '0')).toThrow('invalid transaction fee');
+  });
+});
+
+describe('feeSizeHeadroomBytes', () => {
+  const length = (gasWanted: string, gasFee: string): number => TxFee.encode(TxFee.create({ gas_wanted: BigInt(gasWanted), gas_fee: gasFee })).finish().length;
+
+  it('covers the largest fee the probe can be replaced with', () => {
+    const probe = { gasWanted: '100000000', gasFee: '1ugnot' };
+    const headroom = feeSizeHeadroomBytes(probe, 'ugnot');
+
+    expect(length(probe.gasWanted, probe.gasFee) + headroom).toBe(length('9223372036854775807', '9223372036854775807ugnot'));
+    expect(headroom).toBeGreaterThanOrEqual(length('3000000000', '3000000ugnot') - length(probe.gasWanted, probe.gasFee));
+  });
+
+  it('is never negative', () => {
+    expect(feeSizeHeadroomBytes({ gasWanted: '9223372036854775807', gasFee: '9223372036854775807ugnot' }, 'u')).toBe(0);
   });
 });

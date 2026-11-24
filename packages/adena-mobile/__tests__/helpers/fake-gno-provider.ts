@@ -9,6 +9,8 @@ export interface FakeGnoProviderState {
   accountNumber: string;
   sequence: string;
   gasUsed: bigint;
+  // Consensus Block.MaxGas; null makes consensus_params fail.
+  maxGas: string | null;
   broadcasts: string[];
   // vm/qeval responder: (pkgPath, expression) => raw node output.
   evaluate: (pkgPath: string, expression: string) => string;
@@ -34,6 +36,7 @@ export const createFakeGnoProvider = (overrides: Partial<FakeGnoProviderState> =
     accountNumber: '7',
     sequence: '3',
     gasUsed: 100_000n,
+    maxGas: '3000000000',
     broadcasts: [],
     evaluate: () => '',
     signatures: {},
@@ -43,6 +46,14 @@ export const createFakeGnoProvider = (overrides: Partial<FakeGnoProviderState> =
 
   const provider = {
     getStatus: async () => ({ node_info: { network: state.chainId } }),
+    getBlockNumber: async () => 10,
+    getConsensusParams: async () => {
+      if (state.maxGas === null) {
+        throw new Error('consensus_params unavailable');
+      }
+
+      return { block_height: '10', consensus_params: { Block: { MaxGas: state.maxGas } } };
+    },
     getGasPrice: async () => ({ amount: 1, denom: 'ugnot', gas: 1000 }),
     abciQuery: async ({ path, data }: { path: string; data?: Uint8Array }) => {
       if (path === '.app/simulate') {

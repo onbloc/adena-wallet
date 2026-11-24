@@ -7,6 +7,17 @@ import { GnoProviderFactory } from './gno-provider';
 import { decodeGoString, gnoLiteral, parseQEvalResult } from './gno-qeval';
 
 const MAX_URI_LENGTH = 2 * 1024 * 1024;
+// Bounds how many API pages one getItems call reads while skipping empty or operated-only pages.
+const MAX_PAGES_PER_CALL = 10;
+
+// getItems cursor: index into collectionIds plus that collection's own API cursor.
+const encodeCursor = (index: number, cursor: string | null): string => `${index}:${cursor ?? ''}`;
+
+const decodeCursor = (cursor: string | null | undefined): { index: number; cursor: string | null } => {
+  const match = cursor ? /^(\d+):(.*)$/s.exec(cursor) : null;
+
+  return match ? { index: Number(match[1]), cursor: match[2] || null } : { index: 0, cursor: null };
+};
 
 // A trailing error tuple other than a nil `(undefined)` means the call failed.
 const readStringResult = (raw: string): string | null => {
@@ -46,62 +57,79 @@ export class GnoNftRepository implements NftRepository {
   constructor(private readonly providerFactory: GnoProviderFactory, private readonly api: OnblocApiClient) {}
 
   // Collections come from the account API, as in the extension; no API means no NFT listing.
+  // Realms are grouped into one entry that keeps every collection id. Tokens the account only
+  // operates (e.g. staked) are excluded: their transfer needs the owner, not this account.
   async getCollections(address: string, network: Network): Promise<NftCollection[]> {
     if (!network.apiUrl) {
       return [];
     }
 
     const apiUrl = network.apiUrl;
-    const owned = (await this.api.getAccountCollections(apiUrl, address)).filter(item => item.tokenCount > 0);
-    const byPackage = new Map<string, { id: string; name: string; symbol: string; count: number }>();
+    const owned = (await this.api.getAccountCollections(apiUrl, address)).filter(item => item.ownedCount > 0);
+    const byPackage = new Map<string, { ids: string[]; name: string; symbol: string; count: number }>();
 
     owned.forEach((item) => {
       const current = byPackage.get(item.packagePath);
+      const id = item.tokenId || item.packagePath;
 
       byPackage.set(item.packagePath, {
-        id: current?.id ?? (item.tokenId || item.packagePath),
+        ids: current ? (current.ids.includes(id) ? current.ids : [...current.ids, id]) : [id],
         name: current?.name ?? item.name,
         symbol: current?.symbol ?? item.symbol,
-        count: (current?.count ?? 0) + item.tokenCount,
+        count: (current?.count ?? 0) + item.ownedCount,
       });
     });
 
     return Promise.all([...byPackage.entries()].map(async ([packagePath, info]) => {
       const [thumbnail, capabilities] = await Promise.all([
-        this.api.getCollectionItems(apiUrl, address, info.id, null, 1).catch(() => null),
+        this.api.getCollectionItems(apiUrl, address, info.ids[0], null, 1).catch(() => null),
         this.getCapabilities(packagePath, network),
       ]);
+      const first = thumbnail?.items[0];
 
       return {
-        id: info.id,
+        id: info.ids[0],
+        collectionIds: info.ids,
         packagePath,
         name: info.name,
         symbol: info.symbol,
         ownedCount: info.count,
-        thumbnailNftId: thumbnail?.items[0]?.nftId,
+        thumbnailNftId: first && first.isOwned !== false ? first.nftId : undefined,
         ...capabilities,
       };
     }));
   }
 
+  // Walks the collection's ids in order; the returned cursor is opaque to callers.
   async getItems(address: string, collection: NftCollection, network: Network, cursor?: string | null): Promise<Page<NftItem>> {
     if (!network.apiUrl) {
       return { items: [], cursor: null, hasNext: false };
     }
 
-    const { items, page } = await this.api.getCollectionItems(network.apiUrl, address, collection.id, cursor);
+    const ids = collection.collectionIds?.length ? collection.collectionIds : [collection.id];
+    let position = decodeCursor(cursor);
+    const items: NftItem[] = [];
 
-    return {
-      items: items.map(item => ({
+    for (let pages = 0; pages < MAX_PAGES_PER_CALL && position.index < ids.length; pages++) {
+      const { items: page, page: info } = await this.api.getCollectionItems(network.apiUrl, address, ids[position.index], position.cursor);
+
+      items.push(...page.filter(item => item.isOwned !== false).map(item => ({
         collectionId: collection.id,
         packagePath: item.packagePath || collection.packagePath,
         nftId: item.nftId,
         name: item.name || collection.name,
         symbol: item.symbol || collection.symbol,
-      })),
-      cursor: page.cursor ?? null,
-      hasNext: page.hasNext,
-    };
+      })));
+      position = info.hasNext && info.cursor ? { index: position.index, cursor: info.cursor } : { index: position.index + 1, cursor: null };
+
+      if (items.length > 0) {
+        break;
+      }
+    }
+
+    const hasNext = position.index < ids.length;
+
+    return { items, cursor: hasNext ? encodeCursor(position.index, position.cursor) : null, hasNext };
   }
 
   async getTokenUri(packagePath: string, nftId: string, network: Network): Promise<string | null> {

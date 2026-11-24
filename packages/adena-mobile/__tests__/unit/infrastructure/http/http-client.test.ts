@@ -1,6 +1,6 @@
 import { HTTP_TIMEOUT_MS } from '../../../../src/config/endpoints';
 import { isAppError } from '../../../../src/core/errors';
-import { FetchHttpClient } from '../../../../src/infrastructure/http/http-client';
+import { FetchHttpClient, HttpStatusError } from '../../../../src/infrastructure/http/http-client';
 
 const jsonResponse = (body: unknown, init: { ok?: boolean; status?: number } = {}) => ({
   ok: init.ok ?? true,
@@ -62,6 +62,21 @@ describe('FetchHttpClient', () => {
 
     expect(isAppError(error, 'NETWORK_ERROR')).toBe(true);
     expect((error as Error).message).toBe(`Request failed with status ${status}`);
+  });
+
+  it('keeps the status and parsed error body, or null when the body is not JSON', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ code: 5, message: 'not found' }, { ok: false, status: 404 }));
+    const error = await capture(client.request('https://x'));
+
+    expect(error).toBeInstanceOf(HttpStatusError);
+    expect(error).toMatchObject({ status: 404, body: { code: 5, message: 'not found' } });
+
+    const notJson = async (): Promise<never> => {
+      throw new SyntaxError('Unexpected token <');
+    };
+
+    fetchMock.mockResolvedValue({ ok: false, status: 503, json: notJson });
+    expect(await capture(client.request('https://x'))).toMatchObject({ status: 503, body: null, message: 'Request failed with status 503' });
   });
 
   it('maps invalid JSON to NETWORK_ERROR with the parser cause', async () => {

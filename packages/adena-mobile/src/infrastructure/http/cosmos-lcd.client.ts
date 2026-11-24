@@ -1,5 +1,5 @@
 import { AppError, AppErrorCode } from '../../core/errors';
-import { HttpClient } from './http-client';
+import { HttpClient, HttpStatusError } from './http-client';
 
 export interface CosmosCoin {
   denom: string;
@@ -10,6 +10,22 @@ export interface CosmosAccountInfo {
   accountNumber: string;
   sequence: string;
 }
+
+type RawAccount = Record<string, unknown> & { account_number?: string; sequence?: string };
+
+const MAX_BALANCE_PAGES = 50;
+const GRPC_NOT_FOUND = 5;
+
+// Module and vesting accounts nest the BaseAccount (vesting: base_vesting_account.base_account).
+const baseAccountOf = (account: RawAccount): RawAccount => {
+  const vesting = account.base_vesting_account as RawAccount | undefined;
+
+  return (vesting?.base_account ?? account.base_account ?? account) as RawAccount;
+};
+
+// grpc-gateway maps codes.NotFound to HTTP 404 with `{ code: 5 }`; a bare 404 may be a wrong URL.
+const isAccountNotFound = (error: unknown): boolean =>
+  error instanceof HttpStatusError && error.status === 404 && (error.body as { code?: unknown } | null)?.code === GRPC_NOT_FOUND;
 
 // Cosmos SDK LCD (REST) contract used by AtomOne, mirroring the extension's CosmosQueryClient.
 export class CosmosLcdClient {
@@ -32,26 +48,58 @@ export class CosmosLcdClient {
     return chainId;
   }
 
+  // Follows pagination.next_key: a denom on a later page must not read as a zero balance.
   async getBalances(restUrl: string, address: string): Promise<CosmosCoin[]> {
-    const body = await this.http.request<{ balances?: CosmosCoin[] }>(this.url(restUrl, `/cosmos/bank/v1beta1/balances/${address}`));
+    const balances: CosmosCoin[] = [];
+    const seenKeys = new Set<string>();
+    let nextKey: string | null = null;
 
-    return body.balances ?? [];
+    for (let page = 0; page < MAX_BALANCE_PAGES; page++) {
+      const query: string = nextKey ? `?pagination.key=${encodeURIComponent(nextKey)}` : '';
+      const body: { balances?: CosmosCoin[]; pagination?: { next_key?: string | null } } = await this.http.request(
+        this.url(restUrl, `/cosmos/bank/v1beta1/balances/${address}${query}`),
+      );
+
+      balances.push(...(body.balances ?? []));
+      nextKey = body.pagination?.next_key || null;
+
+      if (!nextKey) {
+        return balances;
+      }
+
+      if (seenKeys.has(nextKey)) {
+        throw new AppError(AppErrorCode.NETWORK_ERROR, 'Balance pagination repeated a page key');
+      }
+
+      seenKeys.add(nextKey);
+    }
+
+    throw new AppError(AppErrorCode.NETWORK_ERROR, `Balances span more than ${MAX_BALANCE_PAGES} pages`);
   }
 
-  // Unknown (never funded) accounts return 404; the first transaction then starts at 0/0.
+  // Only a gRPC NotFound means a never-funded account (first tx starts at 0/0); other failures propagate.
   async getAccount(restUrl: string, address: string): Promise<CosmosAccountInfo | null> {
-    try {
-      const body = await this.http.request<{ account?: Record<string, unknown> }>(
-        this.url(restUrl, `/cosmos/auth/v1beta1/accounts/${address}`),
-      );
-      const account = body.account ?? {};
-      const inner = (account.base_account ?? account) as { account_number?: string; sequence?: string };
+    let body: { account?: unknown };
 
-      return { accountNumber: inner.account_number ?? '0', sequence: inner.sequence ?? '0' };
+    try {
+      body = await this.http.request<{ account?: unknown }>(this.url(restUrl, `/cosmos/auth/v1beta1/accounts/${address}`));
     }
-    catch {
-      return null;
+    catch (error) {
+      if (isAccountNotFound(error)) {
+        return null;
+      }
+
+      throw error;
     }
+
+    if (!body?.account || typeof body.account !== 'object') {
+      throw new AppError(AppErrorCode.NETWORK_ERROR, 'Account response has no account');
+    }
+
+    const inner = baseAccountOf(body.account as RawAccount);
+
+    // proto3 JSON may omit zero values.
+    return { accountNumber: inner.account_number ?? '0', sequence: inner.sequence ?? '0' };
   }
 
   // "0.0225uatone,0.225uphoton" → [{ denom, amount }].

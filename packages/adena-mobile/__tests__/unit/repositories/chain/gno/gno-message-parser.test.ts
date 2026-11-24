@@ -60,8 +60,28 @@ describe('parseGnoMessages', () => {
 
   describe('/bank.MsgSend', () => {
     it('parses a valid send', () => {
-      expect(parseGnoMessages([{ type: '/bank.MsgSend', value: { from_address: SIGNER, to_address: OTHER, amount: '1000ugnot,5foo' } }], SIGNER))
-        .toEqual([{ type: '/bank.MsgSend', value: { from_address: SIGNER, to_address: OTHER, amount: '1000ugnot,5foo' } }]);
+      expect(parseGnoMessages([{ type: '/bank.MsgSend', value: { from_address: SIGNER, to_address: OTHER, amount: '5foo,1000ugnot' } }], SIGNER))
+        .toEqual([{ type: '/bank.MsgSend', value: { from_address: SIGNER, to_address: OTHER, amount: '5foo,1000ugnot' } }]);
+    });
+
+    it('emits the canonical tm2 coin list (denom-sorted, normalized amounts)', () => {
+      const parse = (amount: string): string =>
+        (parseGnoMessages([{ type: '/bank.MsgSend', value: { from_address: SIGNER, to_address: OTHER, amount } }], SIGNER)[0].value as { amount: string }).amount;
+
+      expect(parse('1000ugnot,5foo')).toBe('5foo,1000ugnot');
+      expect(parse(' 007 ugnot , 1/gno.land/r/demo/foo:bar ')).toBe('1/gno.land/r/demo/foo:bar,7ugnot');
+      expect(parse('9223372036854775807ugnot')).toBe('9223372036854775807ugnot');
+    });
+
+    it('rejects coin lists tm2 would not accept', () => {
+      const send = (amount: string) => [{ type: '/bank.MsgSend', value: { from_address: SIGNER, to_address: OTHER, amount } }];
+
+      expectInvalid(send('1ugnot,2ugnot'), 'amount must not repeat a denomination');
+      expectInvalid(send('0ugnot'), 'amount must be a coin list');
+      expectInvalid(send('9223372036854775808ugnot'), 'amount must be a coin list');
+      expectInvalid(send('1UGNOT'), 'amount must be a coin list');
+      expectInvalid(send('1ab'), 'amount must be a coin list');
+      expectInvalid(send(`1${'a'.repeat(275)}`), 'amount must be a coin list');
     });
 
     it('rejects a signer mismatch', () => {

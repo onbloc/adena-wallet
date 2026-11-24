@@ -1,7 +1,6 @@
-import { ripemd160, sha256 } from '@cosmjs/crypto';
+import { ripemd160, Secp256k1, sha256 } from '@cosmjs/crypto';
 import { fromBase64, toBase64, toBech32 } from '@cosmjs/encoding';
-import { decodeTxMessages } from '@gnolang/gno-js-client';
-import { TransactionEndpoint, Tx, Wallet } from '@gnolang/tm2-js-client';
+import { KeySigner, TransactionEndpoint, Tx } from '@gnolang/tm2-js-client';
 
 import { AppError, AppErrorCode } from '../../../core/errors';
 import { TokenBalance } from '../../../domain/account';
@@ -22,17 +21,30 @@ import { parseGnoMessages } from './gno-message-parser';
 import { GnoMessage, GnoMessageType } from './gno-messages';
 import { GnoProvider, GnoProviderFactory } from './gno-provider';
 import { requiresSignedSimulation, simulateGnoTx, staticCodeGasUsed } from './gno-simulation';
-import { buildSimulationGnoTx, buildUnsignedGnoTx } from './gno-tx-encoder';
+import {
+  buildGnoSignBytes,
+  buildGnoTxSignature,
+  buildSimulationGnoTx,
+  buildUnsignedGnoTx,
+  feeSizeHeadroomBytes,
+} from './gno-tx-encoder';
 
 export interface GnoFeePolicy {
   // Gno default gas price: 1ugnot per 1000 gas.
   defaultGasPrice: { amount: number; gas: number };
+  // Probe budget when the node's Block.MaxGas cannot be read.
   simulationGasWanted: string;
+  // Probe budget when Block.MaxGas is -1 (unbounded); tm2's default block limit.
+  unboundedSimulationGasWanted: string;
+  // auth param TxSizeCostPerByte (tm2 default 10).
+  txSizeCostPerByte: number;
 }
 
 export const DEFAULT_GNO_FEE_POLICY: GnoFeePolicy = {
   defaultGasPrice: { amount: 1, gas: 1000 },
   simulationGasWanted: '100000000',
+  unboundedSimulationGasWanted: '3000000000',
+  txSizeCostPerByte: 10,
 };
 
 const decodeAbciData = (data: string | null): string => {
@@ -170,7 +182,7 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
     const chainPrice = await provider.getGasPrice().catch(() => null);
     const gasPrice = chainPrice ?? this.feePolicy.defaultGasPrice;
     const denom = network.nativeToken.denom;
-    const probeFee: TransactionFee = { gasWanted: this.feePolicy.simulationGasWanted, gasFee: `1${denom}` };
+    const probeFee: TransactionFee = { gasWanted: await this.simulationGasWanted(provider), gasFee: `1${denom}` };
     const toEstimate = (gasUsed: bigint, storageDeposit = '0'): FeeEstimate => ({
       gasUsed: gasUsed.toString(),
       storageDeposit,
@@ -192,8 +204,10 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
         ? await signer.withKey(key => this.signGnoTx(provider, { ...draft, fee: probeFee }, key, network))
         : buildSimulationGnoTx(draft.messages, probeFee, draft.memo, signer.publicKey);
       const simulation = await simulateGnoTx(provider, tx, denom);
+      // The final fee can encode longer than the probe fee, and tx bytes are charged as gas.
+      const sizeHeadroom = BigInt(feeSizeHeadroomBytes(probeFee, network.feeToken.denom) * this.feePolicy.txSizeCostPerByte);
 
-      return toEstimate(simulation.gasUsed, simulation.storageDeposit);
+      return toEstimate(simulation.gasUsed + sizeHeadroom, simulation.storageDeposit);
     }
     catch (error) {
       if (error instanceof AppError) {
@@ -204,11 +218,32 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
     }
   }
 
-  private async signGnoTx(provider: GnoProvider, draft: TransactionDraft<GnoMessage>, key: SigningKey, network: Network): Promise<Tx> {
-    const wallet = await Wallet.fromPrivateKey(key.privateKey, { addressPrefix: network.addressPrefix });
+  // Gno rejects a probe whose gas_wanted exceeds the block's MaxGas, even when simulating.
+  private async simulationGasWanted(provider: GnoProvider): Promise<string> {
+    try {
+      const params = await provider.getConsensusParams(await provider.getBlockNumber());
+      const maxGas = BigInt(params.consensus_params.Block.MaxGas);
 
-    wallet.connect(provider);
-    return wallet.signTransaction(buildUnsignedGnoTx(draft.messages, draft.fee, draft.memo), decodeTxMessages);
+      if (maxGas === -1n) {
+        return this.feePolicy.unboundedSimulationGasWanted;
+      }
+
+      return maxGas > 0n ? maxGas.toString() : this.feePolicy.simulationGasWanted;
+    }
+    catch {
+      return this.feePolicy.simulationGasWanted;
+    }
+  }
+
+  // Signs with draft.chainId; Wallet.signTransaction would re-read the chain id from the RPC.
+  private async signGnoTx(provider: GnoProvider, draft: TransactionDraft<GnoMessage>, key: SigningKey, network: Network): Promise<Tx> {
+    const publicKey = Secp256k1.compressPubkey((await Secp256k1.makeKeypair(key.privateKey)).pubkey);
+    const signer = new KeySigner(key.privateKey, publicKey, network.addressPrefix);
+    const account = await provider.getAccount(await signer.getAddress());
+    const tx = buildUnsignedGnoTx(draft.messages, draft.fee, draft.memo);
+    const signBytes = buildGnoSignBytes(tx, draft.chainId, account.BaseAccount.account_number, account.BaseAccount.sequence);
+
+    return { ...tx, signatures: [buildGnoTxSignature(publicKey, await signer.signData(signBytes))] };
   }
 
   async signTransaction(draft: TransactionDraft<GnoMessage>, key: SigningKey, network: Network): Promise<SignedTransaction> {

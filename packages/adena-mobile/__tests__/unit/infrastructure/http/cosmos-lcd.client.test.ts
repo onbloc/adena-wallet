@@ -1,6 +1,6 @@
 import { isAppError } from '../../../../src/core/errors';
 import { CosmosLcdClient } from '../../../../src/infrastructure/http/cosmos-lcd.client';
-import { HttpRequest } from '../../../../src/infrastructure/http/http-client';
+import { HttpRequest, HttpStatusError } from '../../../../src/infrastructure/http/http-client';
 import { FakeHttpClient } from '../../../helpers/fake-http';
 
 const REST = 'https://rest.test';
@@ -42,6 +42,31 @@ describe('CosmosLcdClient', () => {
     it('propagates transport errors', async () => {
       await expect(client.getBalances(REST, 'atone1x')).rejects.toThrow('404');
     });
+
+    it('follows pagination.next_key across pages', async () => {
+      http
+        .on(url, { balances: [{ denom: 'ibc/A', amount: '1' }], pagination: { next_key: 'k+/1=', total: '0' } })
+        .on(`${url}?pagination.key=${encodeURIComponent('k+/1=')}`, { balances: [{ denom: 'uatone', amount: '7' }], pagination: { next_key: null } });
+      await expect(client.getBalances(REST, 'atone1x')).resolves.toEqual([{ denom: 'ibc/A', amount: '1' }, { denom: 'uatone', amount: '7' }]);
+    });
+
+    it('stops on a repeated page key', async () => {
+      http
+        .on(url, { balances: [], pagination: { next_key: 'a' } })
+        .on(`${url}?pagination.key=a`, { balances: [], pagination: { next_key: 'a' } });
+      await expect(client.getBalances(REST, 'atone1x')).rejects.toThrow('repeated a page key');
+    });
+
+    it('caps the number of pages', async () => {
+      http.on(url, { balances: [], pagination: { next_key: 'k0' } });
+
+      for (let page = 0; page < 60; page++) {
+        http.on(`${url}?pagination.key=k${page}`, { balances: [], pagination: { next_key: `k${page + 1}` } });
+      }
+
+      await expect(client.getBalances(REST, 'atone1x')).rejects.toThrow('more than 50 pages');
+      expect(http.calls).toHaveLength(50);
+    });
   });
 
   describe('getAccount', () => {
@@ -52,18 +77,58 @@ describe('CosmosLcdClient', () => {
       await expect(client.getAccount(REST, 'atone1x')).resolves.toEqual({ accountNumber: '12', sequence: '3' });
     });
 
-    it('reads a vesting account through base_account', async () => {
-      http.on(url, { account: { base_account: { account_number: '4', sequence: '9' } } });
+    it('reads a module account through base_account', async () => {
+      http.on(url, { account: { '@type': '/cosmos.auth.v1beta1.ModuleAccount', base_account: { account_number: '4', sequence: '9' }, name: 'gov' } });
       await expect(client.getAccount(REST, 'atone1x')).resolves.toEqual({ accountNumber: '4', sequence: '9' });
     });
 
-    it('defaults missing fields to zero', async () => {
-      http.on(url, {});
+    it.each(['ContinuousVestingAccount', 'DelayedVestingAccount', 'PeriodicVestingAccount', 'PermanentLockedAccount'])(
+      'reads a %s through base_vesting_account.base_account',
+      async (type) => {
+        http.on(url, {
+          account: {
+            '@type': `/cosmos.vesting.v1beta1.${type}`,
+            base_vesting_account: {
+              base_account: { address: 'atone1x', pub_key: null, account_number: '12', sequence: '3' },
+              original_vesting: [{ denom: 'uatone', amount: '100' }],
+              delegated_free: [],
+              delegated_vesting: [],
+              end_time: '1900000000',
+            },
+            start_time: '1700000000',
+          },
+        });
+        await expect(client.getAccount(REST, 'atone1x')).resolves.toEqual({ accountNumber: '12', sequence: '3' });
+      },
+    );
+
+    it('defaults omitted zero fields', async () => {
+      http.on(url, { account: { '@type': '/cosmos.auth.v1beta1.BaseAccount' } });
       await expect(client.getAccount(REST, 'atone1x')).resolves.toEqual({ accountNumber: '0', sequence: '0' });
     });
 
-    it('returns null for unknown accounts', async () => {
+    it('rejects a response without an account', async () => {
+      http.on(url, {});
+      expect(isAppError(await capture(client.getAccount(REST, 'atone1x')), 'NETWORK_ERROR')).toBe(true);
+    });
+
+    it('returns null only for a gRPC NotFound', async () => {
+      http.on(url, () => {
+        throw new HttpStatusError(404, { code: 5, message: 'rpc error: code = NotFound desc = account atone1x not found', details: [] });
+      });
       await expect(client.getAccount(REST, 'atone1x')).resolves.toBeNull();
+    });
+
+    it.each([
+      ['a bare 404', new HttpStatusError(404, null)],
+      ['a 404 with another gRPC code', new HttpStatusError(404, { code: 12 })],
+      ['a 503', new HttpStatusError(503, { code: 5 })],
+      ['a timeout', new Error('Aborted')],
+    ])('propagates %s', async (_, failure) => {
+      http.on(url, () => {
+        throw failure;
+      });
+      await expect(client.getAccount(REST, 'atone1x')).rejects.toBe(failure);
     });
   });
 

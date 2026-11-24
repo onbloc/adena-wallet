@@ -1,4 +1,4 @@
-import { HttpClient, HttpRequest } from '../../src/infrastructure/http/http-client';
+import { HttpClient, HttpRequest, HttpStatusError } from '../../src/infrastructure/http/http-client';
 
 type Responder = unknown | ((init?: HttpRequest) => unknown);
 
@@ -16,7 +16,7 @@ export class FakeHttpClient implements HttpClient {
     this.calls.push(url);
 
     if (!this.routes.has(url)) {
-      throw new Error(`404 ${url}`);
+      throw new HttpStatusError(404, null, `404 ${url}`);
     }
 
     const responder = this.routes.get(url);

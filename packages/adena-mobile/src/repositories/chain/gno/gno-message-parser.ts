@@ -1,10 +1,13 @@
 import { AppError, AppErrorCode } from '../../../core/errors';
-import { parseCoin } from '../../../utils/amount';
 import { GnoMemPackage, GnoMessage, GnoMessageType } from './gno-messages';
 
 const MAX_MESSAGES = 16;
 const MAX_ARGS = 64;
 const MAX_FILES = 64;
+// tm2 std.ParseCoin: int64 amount, optional spaces, denom up to 274 bytes.
+const COIN_PATTERN = /^(\d+)\s*([a-z/][a-z0-9_.:/-]{2,})$/;
+const MAX_DENOM_LENGTH = 274;
+const MAX_COIN_AMOUNT = 9223372036854775807n;
 
 type RawRecord = Record<string, unknown>;
 
@@ -23,14 +26,34 @@ const asString = (value: unknown, field: string, { optional = false } = {}): str
   return typeof value === 'string' ? value : fail(`${field} must be a string`);
 };
 
+// Re-emits the list as tm2 Coins.String() does (denom-sorted, normalized amounts): the node
+// signs its decoded form, so any other spelling of the same coins fails signature checks.
 const asCoins = (value: unknown, field: string): string => {
-  const coins = asString(value, field, { optional: true });
+  const coins = asString(value, field, { optional: true }).trim();
 
-  if (coins && coins.split(',').some(coin => parseCoin(coin) === null)) {
-    fail(`${field} must be a coin list such as 1000ugnot`);
+  if (!coins) {
+    return '';
   }
 
-  return coins;
+  const invalid = (): never => fail(`${field} must be a coin list such as 1000ugnot`);
+  const parsed = coins.split(',').map((coin) => {
+    const match = COIN_PATTERN.exec(coin.trim()) ?? invalid();
+    const amount = BigInt(match[1]);
+
+    if (amount <= 0n || amount > MAX_COIN_AMOUNT || match[2].length > MAX_DENOM_LENGTH) {
+      invalid();
+    }
+
+    return { amount, denom: match[2] };
+  });
+
+  parsed.sort((a, b) => (a.denom < b.denom ? -1 : a.denom > b.denom ? 1 : 0));
+
+  if (parsed.some((coin, index) => index > 0 && coin.denom === parsed[index - 1].denom)) {
+    fail(`${field} must not repeat a denomination`);
+  }
+
+  return parsed.map(coin => `${coin.amount.toString()}${coin.denom}`).join(',');
 };
 
 const asSigner = (value: unknown, field: string, signerAddress: string): string => {

@@ -1,6 +1,8 @@
 export interface NftCollection {
   // On-chain collection id "{pkgPath}.{symbol}.{seq}" when known, else the package path.
   id: string;
+  // Every collection id the account holds in this realm; `id` is the first. Absent means [id].
+  collectionIds?: string[];
   packagePath: string;
   name: string;
   symbol: string;

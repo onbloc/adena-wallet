@@ -40,10 +40,11 @@ describe('GnoNftRepository', () => {
         .on(collectionsUrl, {
           data: {
             items: [
-              collection({ tokenCount: 2 }),
-              collection({ tokenId: `${PKG}.NFT.2`, name: 'Later', symbol: 'L', tokenCount: 3 }),
+              collection({ tokenCount: 2, ownedCount: 2 }),
+              collection({ tokenId: `${PKG}.NFT.2`, name: 'Later', symbol: 'L', tokenCount: 3, ownedCount: 3 }),
               collection({ tokenId: '', packagePath: 'gno.land/r/demo/other', name: 'Other', symbol: 'O' }),
-              collection({ packagePath: 'gno.land/r/demo/empty', tokenCount: 0 }),
+              collection({ packagePath: 'gno.land/r/demo/empty', tokenCount: 0, ownedCount: 0 }),
+              collection({ packagePath: 'gno.land/r/demo/staked', tokenCount: 1, ownedCount: 0 }),
             ],
           },
         })
@@ -61,8 +62,8 @@ describe('GnoNftRepository', () => {
       const collections = await repository.getCollections(OWNER, network);
 
       expect(collections).toEqual([
-        { id: `${PKG}.NFT.1`, packagePath: PKG, name: 'Demo', symbol: 'NFT', ownedCount: 5, thumbnailNftId: '9', supportsTokenUri: true, supportsMetadata: true },
-        { id: 'gno.land/r/demo/other', packagePath: 'gno.land/r/demo/other', name: 'Other', symbol: 'O', ownedCount: 1, thumbnailNftId: undefined, supportsTokenUri: false, supportsMetadata: false },
+        { id: `${PKG}.NFT.1`, collectionIds: [`${PKG}.NFT.1`, `${PKG}.NFT.2`], packagePath: PKG, name: 'Demo', symbol: 'NFT', ownedCount: 5, thumbnailNftId: '9', supportsTokenUri: true, supportsMetadata: true },
+        { id: 'gno.land/r/demo/other', collectionIds: ['gno.land/r/demo/other'], packagePath: 'gno.land/r/demo/other', name: 'Other', symbol: 'O', ownedCount: 1, thumbnailNftId: undefined, supportsTokenUri: false, supportsMetadata: false },
       ]);
     });
 
@@ -75,8 +76,18 @@ describe('GnoNftRepository', () => {
       };
 
       await expect(repository.getCollections(OWNER, network)).resolves.toEqual([
-        { id: `${PKG}.NFT.1`, packagePath: PKG, name: 'Demo', symbol: 'NFT', ownedCount: 1, thumbnailNftId: undefined, supportsTokenUri: true, supportsMetadata: true },
+        { id: `${PKG}.NFT.1`, collectionIds: [`${PKG}.NFT.1`], packagePath: PKG, name: 'Demo', symbol: 'NFT', ownedCount: 1, thumbnailNftId: undefined, supportsTokenUri: true, supportsMetadata: true },
       ]);
+    });
+
+    it('counts owned tokens only and skips an operated-only thumbnail', async () => {
+      const { repository, http } = setup();
+
+      http
+        .on(collectionsUrl, { data: { items: [collection({ tokenCount: 3, ownedCount: 1 })] } })
+        .on(itemsUrl(`${PKG}.NFT.1`, '?limit=1'), { data: { items: [{ nftId: '9', isOwned: false, ownerAddress: 'g1staker' }], page: { hasNext: true } } });
+
+      await expect(repository.getCollections(OWNER, network)).resolves.toMatchObject([{ ownedCount: 1, thumbnailNftId: undefined }]);
     });
 
     it('returns [] for an empty listing and propagates listing failures', async () => {
@@ -115,10 +126,38 @@ describe('GnoNftRepository', () => {
           { collectionId: owned.id, packagePath: PKG, nftId: '1', name: 'Demo', symbol: 'NFT' },
           { collectionId: owned.id, packagePath: 'gno.land/r/demo/alt', nftId: '2', name: 'Named', symbol: 'N2' },
         ],
-        cursor: 'next',
+        cursor: '0:next',
         hasNext: true,
       });
-      await expect(repository.getItems(OWNER, owned, network, 'next')).resolves.toMatchObject({ cursor: null, hasNext: false, items: [{ nftId: '3' }] });
+      await expect(repository.getItems(OWNER, owned, network, '0:next')).resolves.toMatchObject({ cursor: null, hasNext: false, items: [{ nftId: '3' }] });
+    });
+
+    it('walks every collection of the realm in turn', async () => {
+      const { repository, http } = setup();
+      const realm = { ...owned, collectionIds: [`${PKG}.NFT.1`, `${PKG}.NFT.2`] };
+
+      http
+        .on(itemsUrl(`${PKG}.NFT.1`, '?limit=100'), { data: { items: [{ nftId: '1' }], page: { hasNext: false } } })
+        .on(itemsUrl(`${PKG}.NFT.2`, '?limit=100'), { data: { items: [{ nftId: '2' }], page: { hasNext: false } } });
+
+      const first = await repository.getItems(OWNER, realm, network);
+
+      expect(first).toMatchObject({ items: [{ nftId: '1' }], cursor: '1:', hasNext: true });
+      await expect(repository.getItems(OWNER, realm, network, first.cursor)).resolves.toMatchObject({ items: [{ nftId: '2' }], cursor: null, hasNext: false });
+    });
+
+    it('excludes operated-only tokens and reads past pages left empty by them', async () => {
+      const { repository, http } = setup();
+
+      http
+        .on(itemsUrl(owned.id, '?limit=100'), { data: { items: [{ nftId: '1', isOwned: false, ownerAddress: 'g1staker' }], page: { hasNext: true, cursor: 'c2' } } })
+        .on(itemsUrl(owned.id, '?limit=100&cursor=c2'), { data: { items: [{ nftId: '2', isOwned: true }, { nftId: '3', isOwned: false }], page: { hasNext: false } } });
+
+      await expect(repository.getItems(OWNER, owned, network)).resolves.toEqual({
+        items: [{ collectionId: owned.id, packagePath: PKG, nftId: '2', name: 'Demo', symbol: 'NFT' }],
+        cursor: null,
+        hasNext: false,
+      });
     });
 
     it('treats a missing page as the end', async () => {

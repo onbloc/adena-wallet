@@ -13,6 +13,13 @@ export interface HttpClient {
   request<T>(url: string, init?: HttpRequest): Promise<T>;
 }
 
+// Non-2xx response; keeps the status and parsed body so callers can tell a real not-found apart.
+export class HttpStatusError extends AppError {
+  constructor(readonly status: number, readonly body: unknown = null, message = `Request failed with status ${status}`) {
+    super(AppErrorCode.NETWORK_ERROR, message);
+  }
+}
+
 export class FetchHttpClient implements HttpClient {
   async request<T>(url: string, init: HttpRequest = {}): Promise<T> {
     const controller = new AbortController();
@@ -27,7 +34,7 @@ export class FetchHttpClient implements HttpClient {
       });
 
       if (!response.ok) {
-        throw new AppError(AppErrorCode.NETWORK_ERROR, `Request failed with status ${response.status}`);
+        throw new HttpStatusError(response.status, await response.json().catch(() => null));
       }
 
       return (await response.json()) as T;
