@@ -1,0 +1,29 @@
+[
+  {
+    "id": "ugnot",
+    "family": "gno",
+    "denom": "ugnot",
+    "name": "Gno.land",
+    "symbol": "GNOT",
+    "decimals": 6,
+    "icon": "gnot"
+  },
+  {
+    "id": "uatone",
+    "family": "cosmos",
+    "denom": "uatone",
+    "name": "AtomOne",
+    "symbol": "ATONE",
+    "decimals": 6,
+    "icon": "atone"
+  },
+  {
+    "id": "uphoton",
+    "family": "cosmos",
+    "denom": "uphoton",
+    "name": "Photon",
+    "symbol": "PHOTON",
+    "decimals": 6,
+    "icon": "photon"
+  }
+]

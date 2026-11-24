@@ -1,0 +1,39 @@
+[
+  {
+    "id": "atomone-1",
+    "family": "cosmos",
+    "chainId": "atomone-1",
+    "chainName": "AtomOne",
+    "networkName": "Mainnet",
+    "addressPrefix": "atone",
+    "rpcUrl": "https://atomone-rpc.allinbits.com",
+    "restUrl": "https://atomone-api.allinbits.com",
+    "linkUrl": "https://www.mintscan.io/atomone",
+    "nativeTokenId": "uatone",
+    "feeTokenId": "uphoton",
+    "defaultTokenIds": [
+      "uatone",
+      "uphoton"
+    ],
+    "fallbackGasPrice": "0.225",
+    "isMainnet": true
+  },
+  {
+    "id": "atomone-testnet-1",
+    "family": "cosmos",
+    "chainId": "atomone-testnet-1",
+    "chainName": "AtomOne",
+    "networkName": "Testnet",
+    "addressPrefix": "atone",
+    "rpcUrl": "https://atomone-testnet-1-rpc.allinbits.services",
+    "restUrl": "https://atomone-testnet-1-api.allinbits.services",
+    "nativeTokenId": "uatone",
+    "feeTokenId": "uphoton",
+    "defaultTokenIds": [
+      "uatone",
+      "uphoton"
+    ],
+    "fallbackGasPrice": "0.025",
+    "isMainnet": false
+  }
+]
