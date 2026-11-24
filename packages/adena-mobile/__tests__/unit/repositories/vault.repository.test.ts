@@ -83,13 +83,48 @@ describe('SecureVaultRepository', () => {
     await expect(repository.read()).resolves.toEqual(next);
   });
 
+  it('never replaces the only complete copy first, even when retries are interrupted', async () => {
+    const versions = [3, 4, 5].map(contentVersion => ({ ...record, contentVersion }));
+    const original = secureStore.setItem.bind(secureStore);
+    // Delete-then-add interrupted after the delete on the given call of this write.
+    const interruptAt = (call: number): void => {
+      let calls = 0;
+
+      jest.spyOn(secureStore, 'setItem').mockImplementation(async (key, value) => {
+        calls += 1;
+
+        if (calls === call) {
+          await secureStore.removeItem(key);
+          throw new Error('killed');
+        }
+
+        return original(key, value);
+      });
+    };
+
+    await repository.write(record);
+    interruptAt(2);
+    await expect(repository.write(versions[0])).rejects.toThrow('killed');
+    await expect(repository.read()).resolves.toEqual(versions[0]);
+
+    interruptAt(1);
+    await expect(repository.write(versions[1])).rejects.toThrow('killed');
+    await expect(repository.read()).resolves.toEqual(versions[0]);
+
+    interruptAt(2);
+    await expect(repository.write(versions[2])).rejects.toThrow('killed');
+    await expect(repository.read()).resolves.toEqual(versions[2]);
+  });
+
   it('continues the sequence from the newest copy', async () => {
     await secureStore.setItem(SecureKey.VAULT_STAGING, JSON.stringify({ seq: 7, record: { ...record, contentVersion: 9 } }));
     await secureStore.setItem(SecureKey.VAULT, JSON.stringify({ seq: 6, record }));
     await expect(repository.read()).resolves.toEqual({ ...record, contentVersion: 9 });
 
     await repository.write(record);
-    expect(JSON.parse((await secureStore.getItem(SecureKey.VAULT))!).seq).toBe(9);
+    // The older primary is replaced first (8), then the staging copy that was newest (9).
+    expect(JSON.parse((await secureStore.getItem(SecureKey.VAULT))!).seq).toBe(8);
+    expect(JSON.parse((await secureStore.getItem(SecureKey.VAULT_STAGING))!).seq).toBe(9);
   });
 
   it('clears both copies', async () => {
