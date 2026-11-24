@@ -2,13 +2,19 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { CallToolResultSchema, ListToolsResultSchema } from '@modelcontextprotocol/sdk/types.js';
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
-import { z } from 'zod';
+import { discoveredReadTool, type DiscoveredReadPermission } from './discovered-read-tool';
 import { parseOnblocEndpoint } from './onbloc-endpoint';
 import { gnoPublicAddress, GNO_MAINNET_CHAIN } from './gno';
 import type { RemoteTool, ToolSource } from '../core';
 
 /** Supply the approved mainnet endpoint from trusted application configuration, not user input. */
-export type OnblocMcpConfig = Readonly<{ endpoint: string; fetcher?: typeof fetch; allowLoopbackHttp?: true }>;
+export type OnblocMcpConfig = Readonly<{
+  endpoint: string;
+  fetcher?: typeof fetch;
+  allowLoopbackHttp?: true;
+  /** Host assertion that this specific server enforces read-only access. Never derive from endpoint input or server hints. */
+  trustedServerEnforcesReadOnly?: true;
+}>;
 
 /** The harness tool source for an Onbloc MCP: mainnet reads for a valid public address. */
 export function createOnblocToolSource(config: OnblocMcpConfig): ToolSource {
@@ -17,16 +23,27 @@ export function createOnblocToolSource(config: OnblocMcpConfig): ToolSource {
     chainId === GNO_MAINNET_CHAIN && gnoPublicAddress.safeParse(account).success ? read(account, signal) : new Map();
 }
 
-const record = z.record(z.string(), z.unknown());
-
-const invalidInput = { kind: 'denied', code: 'INVALID_INPUT' } as const;
-const invalidOutput = { kind: 'denied', code: 'INVALID_OUTPUT' } as const;
+// Discovery supplies schemas, not authority. Only these host-reviewed reads may be exposed.
+const account = { field: 'address' } as const;
+const permissions: Readonly<Record<string, DiscoveredReadPermission>> = {
+  get_native_balance: { requiredFields: [], account },
+  get_nfts_balance: { requiredFields: [], account },
+  get_token_balances: { requiredFields: [], account },
+  list_account_transactions: { requiredFields: ['cursor', 'limit'], account },
+  list_native_transfers: { requiredFields: ['page', 'limit'], account },
+  list_token_transfers: {
+    requiredFields: ['page', 'limit', 'tokenKey'], account: { ...account, unlessProvided: 'tokenKey' },
+  },
+  get_realm_info: { requiredFields: ['path'] },
+  get_realm_source: { requiredFields: ['path', 'filename'] },
+  get_token_info: { requiredFields: ['tokenKey'] },
+  get_transaction: { requiredFields: ['txHash'] },
+};
 const maxDiscoveryPages = 4;
 const maxDiscoveredTools = 32;
 const maxCatalogChars = 32_000;
-const maxResultChars = 12_000;
 
-export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp }: OnblocMcpConfig) {
+export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp, trustedServerEnforcesReadOnly }: OnblocMcpConfig) {
   const url = parseOnblocEndpoint(endpoint, allowLoopbackHttp);
 
   return async (address: string, signal: AbortSignal) => {
@@ -45,6 +62,7 @@ export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp }: Onb
       let pages = 0;
       let discovered = 0;
       let catalogChars = 0;
+      const seen = new Set<string>();
       do {
         if (++pages > maxDiscoveryPages) throw new Error('Onbloc MCP discovery exceeded the page limit.');
         const page = await client.request({ method: 'tools/list', params: cursor === undefined ? {} : { cursor } }, ListToolsResultSchema, options);
@@ -53,52 +71,29 @@ export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp }: Onb
         if (discovered > maxDiscoveredTools || catalogChars > maxCatalogChars) {
           throw new Error('Onbloc MCP discovery exceeded the catalog limit.');
         }
-        for (const { name, description, inputSchema, outputSchema, annotations, execution } of page.tools) {
-          // Trust the configured read-only service, not annotations as authorization.
-          // Honor explicit write hints as an additional guard against accidental exposure.
-          if (execution?.taskSupport === 'required' || annotations?.readOnlyHint === false || annotations?.destructiveHint === true ||
-            !/^[a-zA-Z0-9_-]{1,64}$/.test(name)) continue;
-          if (tools.has(name)) throw new Error('Duplicate Onbloc tool name.');
-
-          const { address: addressProperty, ...properties } = inputSchema.properties ?? {};
-          const walletScoped = addressProperty !== undefined || inputSchema.required?.includes('address') === true;
-          const tokenAlternative = walletScoped && !inputSchema.required?.includes('address') && Object.hasOwn(properties, 'tokenKey');
-          const jsonSchema = walletScoped ? {
-            ...inputSchema,
-            properties,
-            required: inputSchema.required?.filter(field => field !== 'address'),
-          } : inputSchema;
-          const validate = validator.getValidator(inputSchema);
-          const validateOutput = outputSchema && validator.getValidator(outputSchema);
-          tools.set(name, {
-            definition: { name, description: description ?? '', jsonSchema },
-            async execute(raw) {
-              const parsedInput = record.safeParse(raw);
-              if (!parsedInput.success || Object.hasOwn(parsedInput.data, 'address')) return invalidInput;
-              // An optional address alongside tokenKey is Onbloc's public token history selector.
-              const input = parsedInput.data;
-              const injectAddress = walletScoped && !(tokenAlternative && Object.hasOwn(input, 'tokenKey'));
-              const args = injectAddress ? { ...input, address } : input;
-              if (!validate(args).valid) return invalidInput;
-              const result = await client.request({ method: 'tools/call', params: { name, arguments: args } }, CallToolResultSchema, options);
-              if (result.isError) return { kind: 'denied', code: 'MCP_TOOL_ERROR' };
-              if (result.structuredContent && JSON.stringify(result.structuredContent).length > maxResultChars) {
-                return { kind: 'denied', code: 'MCP_RESULT_TOO_LARGE' };
-              }
-              if (validateOutput && !validateOutput(result.structuredContent).valid) return invalidOutput;
-              const parsed = record.safeParse(result.structuredContent);
-              if (!parsed.success) return invalidOutput;
-              const data = parsed.data;
+        for (const tool of page.tools) {
+          const { name } = tool;
+          if (!Object.hasOwn(permissions, name) && !trustedServerEnforcesReadOnly) continue;
+          if (seen.has(name)) throw new Error('Duplicate Onbloc tool name.');
+          seen.add(name);
+          const remote = discoveredReadTool({
+            tool,
+            permission: Object.hasOwn(permissions, name) ? permissions[name] : undefined,
+            trustedServerEnforcesReadOnly,
+            context: { account: address, chainId: GNO_MAINNET_CHAIN },
+            validator,
+            call: args => client.request({ method: 'tools/call', params: { name, arguments: args } }, CallToolResultSchema, options),
+            accepts(data, input, accountBound) {
               const requestedHash = input.txHash;
               if (typeof requestedHash === 'string' && typeof data.txHash === 'string' &&
-                requestedHash.toLowerCase() !== data.txHash.toLowerCase() && requestedHash !== data.txHashBase64) return invalidOutput;
-              if ((Object.hasOwn(data, 'network') && data.network !== GNO_MAINNET_CHAIN) ||
-                (injectAddress && ((Object.hasOwn(data, 'address') && data.address !== address) ||
+                requestedHash.toLowerCase() !== data.txHash.toLowerCase() && requestedHash !== data.txHashBase64) return false;
+              return !((Object.hasOwn(data, 'network') && data.network !== GNO_MAINNET_CHAIN) ||
+                (accountBound && ((Object.hasOwn(data, 'address') && data.address !== address) ||
                   (Array.isArray(data.items) && data.items.some(item => item && typeof item === 'object' &&
-                    'address' in item && item.address !== address))))) return invalidOutput;
-              return { kind: 'result', value: { chainId: GNO_MAINNET_CHAIN, untrustedData: data } };
+                    'address' in item && item.address !== address)))));
             },
           });
+          if (remote) tools.set(name, remote);
         }
         cursor = page.nextCursor;
         if (cursor !== undefined) {

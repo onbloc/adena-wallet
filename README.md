@@ -128,16 +128,17 @@ so loading and saving do not create a second copy of the conversation.
 
 Before accessing wallet tools, the agent makes a bounded, tool-free classification call. It
 uses the same conversation context, a fixed system prompt, and schema-constrained JSON output.
-The model returns a route such as `explanation`, `native_balance`, `transfer`, or `approve`;
+The model returns `lookup` requirements, optional requested conceptual explanation, or an
+`explanation`, `transfer`, `approve`, `clarification`, or `unsupported` route;
 the agent validates it and maps it to a typed execution policy. The classification response
 itself is neither displayed as the answer nor appended to chat history.
 
 | Classified request | Available execution | Required outcome |
 | --- | --- | --- |
 | Explanation or missing-detail clarification | Answer model without wallet tools or MCP discovery | Completed conversational answer |
-| Native/token/portfolio balance lookup | Direct read-only calls for the classified balance target | Valid fresh results for every required balance tool |
-| Other wallet lookup | Read-only model/tool loop | A successful current lookup; model text alone is not enough |
-| Transfer or approval | Only the selected preparation action, plus reads | A matching actual preparation result or a reported refusal/failure |
+| Balance lookup | Normalized `get_balance` operation for each classified asset requirement | Complete fresh results for every required balance |
+| Other wallet lookup | Exact read-only catalog selection, then scoped model/tool execution | Every selected read succeeds; unrelated balances or model text do not complete it |
+| Transfer or approval | Host opt-in, then only the selected action and any normalized balance prerequisite | A matching actual preparation result or a reported refusal/failure |
 | Unsupported request | Fixed wallet-scope refusal | No wallet execution |
 
 An approval request never exposes `transfer` as a substitute. A plain-text "done" cannot satisfy
@@ -151,11 +152,29 @@ accuracy. Incorrect routes can cause unnecessary clarification or an inappropria
 Harness scope, schema checks, wallet validation and user review of unsigned transactions remain
 necessary. No signing or broadcasting is introduced.
 
-The classifier consumes an additional bounded model call. Balance routes then fetch and format
-their results directly, without another answer-model call. Explanation and preparation routes
-continue with a separate answer/tool phase. Context pruning applies to both phases and removed
-history is not reintroduced between them. Local llama-server is configured to accept structured
-output schemas; the existing native provider also supports that response format.
+Transaction preparation additionally requires host permission:
+`agent.run(settings, { account, allowTransactionPreparation: true })` or
+`agent.createConversation({ account, allowTransactionPreparation: true })`. The default is false;
+classification never grants that permission. Wallet reads and preparation do not require an
+unrelated MCP server to exist.
+
+Balance requirements use provider-independent one-asset/all-assets requests. The Onbloc adapter
+belongs to the agent layer; harness sources still enforce host permissions on every provider
+call. `agent.getBalance(request, { account })` exposes the same structured operation without a
+model. Compound lookup answers preserve every returned result, with conceptual model explanation
+separate from deterministically rendered facts. Completion verifies the planned results, not
+the semantic correctness of the model's plan or explanation.
+
+The selected preparation stops at its result, including a refusal; there is no follow-up model
+call that can erase a completed handoff or substitute another amount. Audit failures pause new
+execution but preserve completed results and surface a separate warning.
+
+
+The classifier consumes an additional bounded model call. Balance requirements then fetch and
+format results directly, without an answer-model call. Generic reads add a tool-selection call;
+requested conceptual explanations use a separate tool-free answer. Preparation uses a selected
+tool phase. Context pruning applies throughout; removed history is not reintroduced. Local
+llama-server and the native provider support schema-constrained classification output.
 
 ## Wallet layers and tool calling
 

@@ -7,7 +7,7 @@ type Loaded = { key: string; persistent: boolean; session: ChatSession };
 type Failure = { kind: 'load' | 'save'; message: string };
 type ActiveRun = { entry: Loaded; conversation: AgentConversation; controller: AbortController };
 
-export type ChatSessionRunOptions = { account?: string; contextTokens?: number; signal?: AbortSignal };
+export type ChatSessionRunOptions = { account?: string; contextTokens?: number; signal?: AbortSignal; allowTransactionPreparation?: boolean };
 export type ChatSessionState = {
   readonly ready: boolean;
   readonly turns: readonly ChatTurn[];
@@ -104,6 +104,7 @@ export function useChatSession(scope: ChatScope): ChatSessionState {
       const controller = new AbortController();
       const conversation = agent.createConversation({
         session: entry.session, account: options.account, contextTokens: options.contextTokens,
+        allowTransactionPreparation: options.allowTransactionPreparation,
       });
       const active = { entry, conversation, controller };
       const abort = () => controller.abort();

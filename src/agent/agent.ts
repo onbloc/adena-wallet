@@ -1,250 +1,288 @@
+import type { ModelMessage } from 'ai';
 import { createAiSdkRun } from './aiSdkBridge';
 import { guardAnswer } from './answerGuard';
-import { buildWalletPrompt } from './prompts';
-import { classifyRequest, type RequestIntent } from './requestIntent';
+import { balanceRequestSchema, balanceResultSchema, balanceToolDefinition, formatBalance, getBalance as readBalance } from './balanceOperation';
+import type { BalanceAdapter, BalanceRequest, BalanceResult } from './balanceOperation';
 import { AgentConversation, type ConversationOptions } from './conversation';
-import type { TransactionHandler, WalletSdk } from './wallet/port';
+import { buildWalletPrompt } from './prompts';
+import { realmEvidence } from './realmEvidence';
+import type { RealmEvidence } from './realmEvidence';
+import { classifyRequest, selectLookupTools, type LookupToolSelection, type RequestIntent } from './requestIntent';
+import type { Contact, TransactionHandler, WalletSdk } from './wallet/port';
 import { createWalletTools } from './wallet/tools';
-import type { Harness, WalletTool } from '../harness/core';
+import type { Decision, Harness, HarnessRun } from '../harness/core';
 import { GNO_MAINNET_CHAIN } from '../harness/mcp';
-import { estimateContextInput, GenerateEventType, type GenerateEvent, type GenerateSettings, type LLM, type ToolLoop } from '../llm/core';
-
-function compactHoldings(name: string, output: unknown): unknown {
-  if (name !== 'get_token_balances' || !output || typeof output !== 'object' ||
-    !('value' in output) || !output.value || typeof output.value !== 'object' ||
-    !('untrustedData' in output.value)) return output;
-  const data = output.value.untrustedData;
-  if (!data || typeof data !== 'object' || !('items' in data) || !Array.isArray(data.items)) return output;
-  const items = data.items.map(item => item && typeof item === 'object'
-    ? { tokenId: item.tokenId, symbol: item.symbol, amount: item.amount, decimals: item.decimals } : item);
-  return { ...output, value: { ...output.value, untrustedData: { ...data, items } } };
-}
-
-const RUN_TIMEOUT_MS = 5 * 60_000;
-const MAX_STEPS = 5;
+import { onblocBalanceAdapter } from './onblocBalanceAdapter';
+import { estimateContextInput, type GenerateEvent, type GenerateSettings, type LLM, type ToolLoop } from '../llm/core';
 
 export type AIAgentOptions = {
   llm: LLM;
   harness: Harness;
   chainId?: string;
+  balanceAdapter?: BalanceAdapter;
 } & (
   | { wallet?: undefined; onTransaction?: undefined }
   | { wallet: WalletSdk; onTransaction: TransactionHandler }
 );
-
 export type AgentRunOptions = {
   account?: string;
   signal?: AbortSignal;
   contextTokens?: number;
+  /** Host permission, independent of the model's classification. Defaults to false. */
+  allowTransactionPreparation?: boolean;
   onContextCompacted?: (droppedTurns: number) => void;
 };
+type RunOptions = AgentRunOptions & { account: string; contextTokens: number; signal: AbortSignal };
+type AnswerSettings = Omit<GenerateSettings, 'prompt' | 'messages'> & { messages: ModelMessage[] };
+type DoneEvent = Extract<GenerateEvent, { type: 'done' }>;
+const REQUEST_TIMEOUT_MS = 5 * 60_000;
 
-type WalletIntent = Exclude<RequestIntent, { kind: 'explanation' | 'clarification' | 'unsupported' }>;
-
-/** Classifies each wallet request before selecting its tools and required outcomes. */
+/** Composes domain policy with provider-independent operations and the host's harness limits. */
 export class AIAgent {
   readonly llm: LLM;
   readonly harness: Harness;
   readonly wallet?: WalletSdk;
   private readonly onTransaction?: TransactionHandler;
   private readonly chainId: string;
+  private readonly balanceAdapter: BalanceAdapter;
   private runs = 0;
 
-  constructor({ llm, harness, wallet, onTransaction, chainId = GNO_MAINNET_CHAIN }: AIAgentOptions) {
+  constructor({ llm, harness, wallet, onTransaction, chainId = GNO_MAINNET_CHAIN, balanceAdapter = onblocBalanceAdapter }: AIAgentOptions) {
     this.llm = llm;
     this.harness = harness;
     this.wallet = wallet;
     this.onTransaction = onTransaction;
     this.chainId = chainId;
+    this.balanceAdapter = balanceAdapter;
   }
 
   createConversation(options: ConversationOptions = {}): AgentConversation {
     return new AgentConversation(this, options);
   }
 
-  /** Stateless execution; createConversation owns history. Classification never executes wallet tools. */
-  async *run(
-    settings: GenerateSettings,
-    { account, signal, contextTokens = this.llm.contextTokens, onContextCompacted }: AgentRunOptions = {}
-  ): AsyncGenerator<GenerateEvent> {
-    if (!Number.isSafeInteger(contextTokens) || contextTokens <= 0 || contextTokens > this.llm.contextTokens) {
-      throw new RangeError('contextTokens must be a positive integer within the model context.');
+  /** Structured queries need no model; every provider call stays in the same run. */
+  async getBalance(request: BalanceRequest, { account, signal }: { account: string; signal?: AbortSignal }): Promise<BalanceResult> {
+    const parsed = balanceRequestSchema.parse(request);
+    const run = await this.harness.startRun({ account, chainId: this.chainId, operationId: `balance-${++this.runs}`, scope: 'read-only', purpose: 'mainnet-read', signal });
+    try {
+      return await readBalance(run, parsed, { account, chainId: this.chainId, adapter: this.balanceAdapter });
+    } finally {
+      run.close();
     }
-    if (!this.wallet || !this.onTransaction) {
-      yield* this.llm.generate(settings, { signal, contextTokens, onContextCompacted });
+  }
+
+  async *run(settings: GenerateSettings, {
+    account, signal, contextTokens = this.llm.contextTokens, onContextCompacted, allowTransactionPreparation = false,
+  }: AgentRunOptions = {}): AsyncGenerator<GenerateEvent> {
+    if (!Number.isSafeInteger(contextTokens) || contextTokens <= 0 || contextTokens > this.llm.contextTokens) throw new RangeError('contextTokens must be a positive integer within the model context.');
+    if (!account) {
+      if (this.wallet) throw new TypeError('An agent with a wallet needs the account to act for: run(settings, { account })');
+      yield* this.llm.generate({ ...settings, tools: undefined }, { signal, contextTokens, onContextCompacted });
       return;
     }
-    if (!account) throw new TypeError('An agent with a wallet needs the account to act for: run(settings, { account })');
-
     const started = Date.now();
     const controller = new AbortController();
     const abort = () => controller.abort(signal?.reason);
-    const timeout = setTimeout(() => controller.abort(new Error('Wallet request timed out.')), RUN_TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(new Error('Wallet request timed out.')), REQUEST_TIMEOUT_MS);
     signal?.addEventListener('abort', abort, { once: true });
     if (signal?.aborted) abort();
     let firstVisibleAt: number | undefined;
     try {
-      const classified = await classifyRequest(this.llm, settings, {
-        signal: controller.signal, contextTokens, onContextCompacted,
-      });
+      const classified = await classifyRequest(this.llm, settings, { signal: controller.signal, contextTokens, onContextCompacted });
       if (classified.aborted || controller.signal.aborted) {
-        yield {
-          type: GenerateEventType.Done, aborted: true, warnings: classified.warnings, messages: [],
-          metrics: { ...classified.metrics, totalMs: Date.now() - started, ttftMs: null, tokensPerSec: undefined },
-        };
+        yield { ...this.done(controller.signal), warnings: classified.warnings, metrics: { ...classified.metrics, totalMs: Date.now() - started, ttftMs: null } };
         return;
       }
-      const answerSettings: GenerateSettings = { ...settings, prompt: undefined, messages: classified.messages };
-      const events = this.answerRequest(classified.intent, answerSettings, {
-        account, signal: controller.signal, contextTokens, onContextCompacted,
-      });
+      const options: RunOptions = { account, signal: controller.signal, contextTokens, onContextCompacted, allowTransactionPreparation };
+      const { prompt: _prompt, ...answerSettings } = settings;
+      const events = this.answerRequest(classified.intent, { ...answerSettings, messages: classified.messages }, options);
       for await (const event of events) {
-        if (firstVisibleAt === undefined && (event.type === GenerateEventType.Text ||
-          event.type === GenerateEventType.Reasoning || event.type === GenerateEventType.ToolCall)) firstVisibleAt = Date.now();
-        if (event.type === GenerateEventType.Done) {
-          const outputTokens = classified.metrics.outputTokens !== undefined && event.metrics.outputTokens !== undefined
-            ? classified.metrics.outputTokens + event.metrics.outputTokens : undefined;
-          yield {
-            ...event,
-            warnings: [...classified.warnings, ...event.warnings],
-            metrics: {
-              ...event.metrics, totalMs: Date.now() - started,
-              ttftMs: firstVisibleAt === undefined ? null : firstVisibleAt - started,
-              outputTokens, tokensPerSec: undefined,
-            },
-          };
-        } else yield event;
+        if (firstVisibleAt === undefined && (event.type === 'text' || event.type === 'reasoning' || event.type === 'tool-call')) firstVisibleAt = Date.now();
+        if (event.type !== 'done') { yield event; continue; }
+        const outputTokens = classified.metrics.outputTokens !== undefined && event.metrics.outputTokens !== undefined
+          ? classified.metrics.outputTokens + event.metrics.outputTokens : undefined;
+        yield { ...event, warnings: [...classified.warnings, ...event.warnings], metrics: {
+          ...event.metrics, totalMs: Date.now() - started, ttftMs: firstVisibleAt === undefined ? null : firstVisibleAt - started,
+          outputTokens, tokensPerSec: undefined,
+        } };
       }
     } catch (error) {
       if (!controller.signal.aborted) throw error;
-      yield {
-        type: GenerateEventType.Done, aborted: true, warnings: [], messages: [],
-        metrics: { totalMs: Date.now() - started, ttftMs: firstVisibleAt === undefined ? null : firstVisibleAt - started },
-      };
+      yield { ...this.done(controller.signal), metrics: { totalMs: Date.now() - started, ttftMs: firstVisibleAt === undefined ? null : firstVisibleAt - started } };
     } finally {
-      clearTimeout(timeout);
+      clearTimeout(timer);
       signal?.removeEventListener('abort', abort);
       controller.abort();
     }
   }
 
-  private async *answerRequest(
-    intent: RequestIntent,
-    settings: GenerateSettings,
-    options: AgentRunOptions & { account: string; contextTokens: number }
-  ): AsyncGenerator<GenerateEvent> {
+  private async *answerRequest(intent: RequestIntent, settings: AnswerSettings, options: RunOptions): AsyncGenerator<GenerateEvent> {
     if (intent.kind === 'unsupported') {
-      yield { type: GenerateEventType.Text, delta: 'I can help with wallet explanations, wallet lookups, and unsigned transfers or approvals.' };
-      yield {
-        type: GenerateEventType.Done, aborted: false, finishReason: 'stop', warnings: [], messages: [],
-        metrics: { totalMs: 0, ttftMs: null, outputTokens: 0 },
-      };
-      return;
-    }
-    if (intent.kind === 'explanation' || intent.kind === 'clarification') {
+      yield { type: 'text', delta: 'I can help with wallet explanations, current read-only data, and explicitly enabled unsigned transaction preparation.' };
+      yield this.done(options.signal);
+    } else if (intent.kind === 'explanation' || intent.kind === 'clarification') {
       yield* guardAnswer(this.llm.generate({
         ...settings, tools: undefined, outputSchema: undefined,
-        system: [
-          settings.system ?? buildWalletPrompt({ contacts: [], approvals: this.wallet?.getAllowances !== undefined }),
-          intent.kind === 'explanation'
-            ? 'This turn asks for an explanation, not current wallet data. Answer directly without tools.'
-            : 'This turn is missing transaction details. Ask a concise clarification question; do not prepare a transaction.',
-        ].join('\n\n'),
+        system: [settings.system ?? this.prompt([], false), intent.kind === 'explanation'
+          ? 'Explain only concepts, not current wallet or chain facts. Use no tools.'
+          : 'Ask a concise clarification about missing details, ambiguous tasks, or which independent action to perform first. Prepare nothing.'].join('\n\n'),
       }, options), () => true, intent);
-      return;
-    }
-    if (intent.kind === 'lookup' && intent.target !== 'other') {
-      yield* guardAnswer(this.lookupBalances(intent, options), () => true, intent);
-      return;
-    }
-
-    const wallet = this.wallet;
-    const onTransaction = this.onTransaction;
-    if (!wallet || !onTransaction) throw new Error('Wallet execution is unavailable.');
-    const contacts = (await wallet.getContacts?.()) ?? [];
-    const all = createWalletTools({ sdk: wallet, account: options.account, contacts, onTransaction });
-    if (intent.kind === 'prepare' && !Object.hasOwn(all, intent.action)) {
-      yield { type: GenerateEventType.Text, delta: `The wallet does not support the requested ${intent.action} operation. No transaction was prepared.` };
-      yield {
-        type: GenerateEventType.Done, aborted: false, finishReason: 'stop', warnings: [], messages: [],
-        metrics: { totalMs: 0, ttftMs: null, outputTokens: 0 },
-      };
-      return;
-    }
-    const walletTools = Object.fromEntries(Object.entries(all).filter(([name, tool]) =>
-      tool.effect === 'read' || (intent.kind === 'prepare' && name === intent.action)));
-    const { loop, isRead } = await this.startLoop({
-      ...options, walletTools, intent, maxOutputTokens: settings.maxOutputTokens ?? 512,
-    });
-    try {
-      yield* guardAnswer(this.llm.generate({
-        ...settings, tools: undefined, outputSchema: undefined,
-        system: [
-          settings.system ?? buildWalletPrompt({ contacts, approvals: wallet.getAllowances !== undefined }),
-          intent.kind === 'prepare'
-            ? `This turn requests ${intent.action}. Prepare it with the ${intent.action} tool; reads alone do not complete the request. Do not substitute another action.`
-            : 'This turn requires a fresh wallet lookup. Use the read-only tools; a remembered answer is not current data.',
-        ].join('\n\n'),
-      }, { ...options, loop }), isRead, intent);
-    } finally {
-      loop.close();
-    }
-  }
-
-  private async *lookupBalances(
-    intent: Extract<RequestIntent, { kind: 'lookup' }>,
-    { account, signal, contextTokens }: AgentRunOptions & { account: string; contextTokens: number }
-  ): AsyncGenerator<GenerateEvent> {
-    const names = intent.target === 'portfolio' ? ['get_native_balance', 'get_token_balances']
-      : [intent.target === 'native_balance' ? 'get_native_balance' : 'get_token_balances'];
-    const run = await this.harness.startRun({
-      account, chainId: this.chainId, operationId: `lookup-${++this.runs}`, scope: 'read-only', purpose: 'mainnet-read', signal,
-      budget: { maxToolCalls: names.length, maxTokens: 2 * contextTokens, timeoutMs: RUN_TIMEOUT_MS },
-    });
-    try {
-      for (const name of names) {
-        if (run.signal.aborted) break;
-        const id = `${run.operationId}:${name}`;
-        yield { type: GenerateEventType.ToolCall, id, name, input: {}, invalid: false };
-        const output = await run.dispatch({ name, input: {} });
-        yield { type: GenerateEventType.ToolResult, id, name, output };
+    } else if (intent.kind === 'lookup') {
+      yield* this.answerLookups(intent, settings, options);
+    } else {
+      if (!options.allowTransactionPreparation || !this.wallet || !this.onTransaction) {
+        yield { type: 'text', delta: 'Transaction preparation is not enabled for this run. No transaction was prepared.' };
+        yield this.done(options.signal);
+        return;
       }
-      yield {
-        type: GenerateEventType.Done, aborted: run.signal.aborted, finishReason: 'stop', warnings: [], messages: [],
-        metrics: { totalMs: 0, ttftMs: null, outputTokens: 0 },
-      };
-    } finally {
-      run.close();
+      const contacts = (await this.wallet.getContacts?.()) ?? [];
+      const all = createWalletTools({ sdk: this.wallet, account: options.account, contacts, onTransaction: this.onTransaction });
+      if (!Object.hasOwn(all, intent.action)) {
+        yield { type: 'text', delta: `The wallet does not support ${intent.action}. No transaction was prepared.` };
+        yield this.done(options.signal);
+        return;
+      }
+      const run = await this.harness.startRun({ account: options.account, chainId: this.chainId, operationId: `prepare-${++this.runs}`,
+        scope: 'prepare-wallet', purpose: 'mainnet-read', walletTools: { [intent.action]: all[intent.action] }, signal: options.signal });
+      try {
+        yield* guardAnswer(this.prepareEvents(intent, settings, options, run, contacts), name => name !== intent.action, intent,
+          { userText: this.userText(settings), auditFailed: () => run.auditFailed });
+      } finally { run.close(); }
     }
   }
 
-  private async startLoop({ account, walletTools, intent, maxOutputTokens, signal, contextTokens, onContextCompacted }: {
-    account: string;
-    walletTools: Readonly<Record<string, WalletTool>>;
-    intent: WalletIntent;
-    maxOutputTokens: number;
-    signal?: AbortSignal;
-    contextTokens: number;
-    onContextCompacted?: (droppedTurns: number) => void;
-  }): Promise<{ loop: ToolLoop; isRead(toolName: string): boolean }> {
-    const run = await this.harness.startRun({
-      account, chainId: this.chainId, operationId: `agent-${++this.runs}`,
-      scope: intent.kind === 'prepare' ? 'prepare-wallet' : 'read-only', purpose: 'mainnet-read', walletTools, signal,
-      budget: { maxSteps: MAX_STEPS, maxToolCalls: MAX_STEPS - 1, maxTokens: 2 * contextTokens, timeoutMs: RUN_TIMEOUT_MS },
-    });
-    if (!run.tools.some(tool => !Object.hasOwn(walletTools, tool.name))) {
-      run.close();
-      throw new Error('No read tools are available. Check the account, the chain and the harness tool sources.');
+  private async *prepareEvents(intent: Extract<RequestIntent, { kind: 'prepare' }>, settings: AnswerSettings, options: RunOptions,
+    run: HarnessRun, contacts: readonly Contact[]): AsyncGenerator<GenerateEvent> {
+    let messages = settings.messages;
+    if (intent.action === 'transfer' && intent.balance !== undefined) {
+      const id = `${run.operationId}:balance`;
+      const name = balanceToolDefinition.name;
+      yield { type: 'tool-call', id, name, input: intent.balance, invalid: false };
+      const output = await this.balanceDecision(run, intent.balance);
+      yield { type: 'tool-result', id, name, output };
+      const result = output.kind === 'result' ? balanceResultSchema.safeParse(output.value) : undefined;
+      if (!result?.success || result.data.status !== 'complete' || !run.canStartStep()) { yield this.done(run.signal); return; }
+      messages = [...messages,
+        { role: 'assistant', content: [{ type: 'tool-call', toolCallId: id, toolName: name, input: intent.balance }] },
+        { role: 'tool', content: [{ type: 'tool-result', toolCallId: id, toolName: name, output: {
+          type: 'text', value: JSON.stringify({ ...output, formattedBalance: formatBalance(result.data) }),
+        } }] },
+      ];
     }
-    const options = createAiSdkRun({
-      run, maxOutputTokens: Math.min(maxOutputTokens, 512), budget: { kind: 'local' },
-      contextWindow: contextTokens, onContextCompacted,
-      estimateInputTokens: ({ instructions, messages, tools }) => estimateContextInput([instructions, messages, tools]),
-      projectResult: compactHoldings, onInterrupt: () => run.close(),
+    if (!run.canStartStep()) { yield this.done(run.signal); return; }
+    const loop = this.createLoop(run, settings, options, {
+      hideTools: new Set(run.tools.filter(tool => tool.name !== intent.action).map(tool => tool.name)),
+      stopAfterResult: name => name === intent.action,
+      nextTool: () => intent.action,
     });
-    return {
-      loop: { options, close: run.close },
-      isRead: (name) => !Object.hasOwn(walletTools, name) || walletTools[name].effect === 'read',
+    yield* this.llm.generate({ ...settings, messages, tools: undefined, outputSchema: undefined,
+      system: [`Prepare the requested ${intent.action} with its tool now. Exact amounts need no lookup. Use the provided normalized balance for relative amounts. A contact name is a valid recipient/spender.`,
+        settings.system ?? this.prompt(contacts, true)].join('\n\n'),
+    }, { ...options, loop });
+  }
+
+  private async *answerLookups(intent: Extract<RequestIntent, { kind: 'lookup' }>, settings: AnswerSettings, options: RunOptions): AsyncGenerator<GenerateEvent> {
+    const other = intent.requests.find(request => request.target === 'other');
+    const walletTools = this.wallet && this.onTransaction && other
+      ? Object.fromEntries(Object.entries(createWalletTools({ sdk: this.wallet, account: options.account, contacts: [], onTransaction: this.onTransaction })).filter(([, tool]) => tool.effect === 'read')) : {};
+    const run = await this.harness.startRun({ account: options.account, chainId: this.chainId, operationId: `lookup-${++this.runs}`,
+      scope: 'read-only', purpose: 'mainnet-read', walletTools, signal: options.signal });
+    try {
+      const hidden = new Set([...onblocBalanceAdapter.toolNames, ...this.balanceAdapter.toolNames]);
+      const catalog = run.tools.filter(tool => !hidden.has(tool.name));
+      const selection = other ? await selectLookupTools(this.llm, other.query, catalog, { signal: run.signal, contextTokens: options.contextTokens }) : undefined;
+      if (selection?.aborted || run.signal.aborted) { yield { ...this.done(run.signal), warnings: selection?.warnings ?? [] }; return; }
+      const requiredReads = selection && !selection.aborted ? selection.toolNames : [];
+      const evidence = realmEvidence(this.userText(settings), run);
+      yield* guardAnswer(this.lookupEvents(intent, settings, options, run, requiredReads, hidden, evidence, selection), () => true, intent,
+        { requiredReads, userText: this.userText(settings), evidence, auditFailed: () => run.auditFailed });
+    } finally { run.close(); }
+  }
+
+  private async *lookupEvents(intent: Extract<RequestIntent, { kind: 'lookup' }>, settings: AnswerSettings, options: RunOptions,
+    run: HarnessRun, requiredReads: readonly string[], hidden: ReadonlySet<string>, evidence: RealmEvidence,
+    selection: LookupToolSelection | undefined): AsyncGenerator<GenerateEvent> {
+    let done = this.done(run.signal);
+    let outputTokens = selection?.metrics.outputTokens ?? (selection ? undefined : 0);
+    const warnings = [...(selection?.warnings ?? [])];
+    const record = (event: DoneEvent) => {
+      done = event;
+      outputTokens = outputTokens !== undefined && event.metrics.outputTokens !== undefined ? outputTokens + event.metrics.outputTokens : undefined;
+      warnings.push(...event.warnings);
     };
+    let index = 0;
+    for (const request of intent.requests) {
+      if (request.target !== 'balance' || run.signal.aborted) continue;
+      const id = `${run.operationId}:balance-${++index}`;
+      yield { type: 'tool-call', id, name: balanceToolDefinition.name, input: request.request, invalid: false };
+      const output = await this.balanceDecision(run, request.request);
+      yield { type: 'tool-result', id, name: balanceToolDefinition.name, output };
+    }
+    if (requiredReads.length && run.canStartStep()) {
+      const completed = new Set<string>();
+      const loop = this.createLoop(run, settings, options, {
+        hideTools: new Set(run.tools.filter(tool => hidden.has(tool.name) || !requiredReads.includes(tool.name)).map(tool => tool.name)), evidence,
+        nextTool: () => requiredReads.find(name => !completed.has(name)),
+        stopAfterResult: (name, decision) => {
+          if (decision.kind === 'result' && !(typeof decision.value === 'object' && decision.value !== null && 'status' in decision.value && decision.value.status === 'error')) completed.add(name);
+          return requiredReads.every(name => completed.has(name));
+        },
+      });
+      for await (const event of this.llm.generate({ ...settings, tools: undefined, outputSchema: undefined,
+        system: [settings.system ?? this.prompt([], false), `Obtain fresh results from every required read: ${requiredReads.join(', ')}. Unrelated reads do not complete this task.`].join('\n\n'),
+      }, { ...options, loop })) {
+        if (event.type === 'done') record(event);
+        else if (event.type !== 'text') yield event;
+      }
+    }
+    if (intent.explanation && !done.aborted && !options.signal.aborted) {
+      try {
+        for await (const event of this.llm.generate({ ...settings, messages: [{ role: 'user', content: intent.explanation }], tools: undefined, outputSchema: undefined,
+          system: [settings.system ?? this.prompt([], false), 'Answer only the conceptual question. Current facts are rendered separately; do not claim balances, source implementation details, or wallet actions.'].join('\n\n'),
+        }, { signal: options.signal, contextTokens: options.contextTokens })) {
+          if (event.type === 'done') record(event); else yield event;
+        }
+      } catch (error) {
+        if (options.signal.aborted) throw error;
+        warnings.push(`The requested explanation failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    yield { ...done, aborted: done.aborted || options.signal.aborted, warnings, metrics: { ...done.metrics, outputTokens } };
+  }
+
+  private async balanceDecision(run: HarnessRun, request: BalanceRequest): Promise<Decision> {
+    const value = await readBalance(run, request, { account: run.context.account, chainId: run.context.chainId, adapter: this.balanceAdapter });
+    return { kind: 'result', value, ...(run.auditFailed ? { auditFailed: true as const } : {}) };
+  }
+
+  private createLoop(run: HarnessRun, settings: AnswerSettings, options: RunOptions, policy: {
+    hideTools: ReadonlySet<string>;
+    evidence?: RealmEvidence;
+    stopAfterResult(name: string, decision: Decision): boolean;
+    nextTool(): string | undefined;
+  }): ToolLoop {
+    const sdk = createAiSdkRun({ run, maxOutputTokens: Math.min(settings.maxOutputTokens ?? 512, 512), budget: { kind: 'local' },
+      contextWindow: options.contextTokens, onContextCompacted: options.onContextCompacted,
+      estimateInputTokens: ({ instructions, messages, tools }) => estimateContextInput([instructions, messages, tools]),
+      hideTools: policy.hideTools, evidence: policy.evidence, stopAfterResult: policy.stopAfterResult, onInterrupt: () => run.close(),
+    });
+    return { options: { ...sdk, prepareStep: async input => {
+      const step = await sdk.prepareStep(input);
+      const name = policy.nextTool();
+      return name ? { ...step, activeTools: [name], toolChoice: { type: 'tool', toolName: name } } : step;
+    } }, close: run.close };
+  }
+
+  private prompt(contacts: readonly Contact[], allowTransactionPreparation: boolean) {
+    return buildWalletPrompt({ contacts, approvals: this.wallet?.getAllowances !== undefined, allowTransactionPreparation });
+  }
+
+  private userText(settings: AnswerSettings) {
+    const last = settings.messages.at(-1);
+    return last?.role === 'user' ? typeof last.content === 'string' ? last.content : last.content.flatMap(part => part.type === 'text' ? [part.text] : []).join('\n') : '';
+  }
+
+  private done(signal?: AbortSignal): DoneEvent {
+    return { type: 'done', aborted: signal?.aborted === true, finishReason: 'stop', warnings: [], messages: [], metrics: { totalMs: 0, ttftMs: null, outputTokens: 0 } };
   }
 }

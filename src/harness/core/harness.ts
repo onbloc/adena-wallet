@@ -6,7 +6,7 @@ export type HarnessOptions = {
   budget?: Budget;
   /** Where the runs' remote tools come from, e.g. MCP servers. */
   toolSources?: readonly ToolSource[];
-  /** Called for every decision, for an audit log. */
+  /** Called for every decision; failure flags that decision and pauses new work without discarding it. */
   audit?: (event: PolicyEvent) => void | Promise<void>;
   wallet?: WalletReader;
 };

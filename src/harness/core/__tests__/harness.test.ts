@@ -100,6 +100,95 @@ describe('Harness', () => {
     started.close();
   });
 
+  it.each(['throw', 'reject'] as const)('preserves a prepared result and pauses after an audit callback %s', async failure => {
+    const prepared = { status: 'prepared', transactionId: 'tx-1' };
+    const execute = jest.fn(async () => ({ kind: 'result' as const, value: prepared }));
+    const transfer: WalletTool = { ...walletTool('transfer', 'prepare'), execute };
+    const audit = jest.fn((_event: PolicyEvent): void | Promise<void> => {
+      if (failure === 'throw') throw new Error('Private audit failure');
+      return Promise.reject(new Error('Private audit failure'));
+    });
+    const started = await new Harness({ audit }).startRun({
+      ...run, scope: 'prepare-wallet', walletTools: { transfer },
+    });
+
+    try {
+      expect(started.auditFailed).toBe(false);
+      expect(started.beginStep(100, 10)).toBeDefined();
+      const decision = await started.dispatch({ name: 'transfer', input: {} });
+      expect(decision).toEqual({ kind: 'result', value: prepared, auditFailed: true });
+      if (decision.kind === 'result') expect(decision.value).toBe(prepared);
+      expect(started.auditFailed).toBe(true);
+      started.finishStep(20);
+      expect(started.canStartStep()).toBe(false);
+      expect(started.beginStep(100, 10)).toBeUndefined();
+      expect(started.signal.aborted).toBe(false);
+      expect(await started.dispatch({ name: 'transfer', input: {} })).toEqual({
+        kind: 'denied', code: 'RUN_PAUSED', auditFailed: true,
+      });
+      expect(execute).toHaveBeenCalledTimes(1);
+      expect(audit.mock.calls.map(([event]) => [event.tool, event.decision, event.denial])).toEqual([
+        ['transfer', 'result', undefined], ['transfer', 'denied', 'RUN_PAUSED'],
+      ]);
+    } finally {
+      started.close();
+    }
+  });
+
+  it('retains an in-flight read when another completed call fails audit', async () => {
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const slow: RemoteTool = {
+      ...tool('slow'),
+      async execute() {
+        entered.resolve();
+        await release.promise;
+        return { kind: 'result', value: 'completed read' };
+      },
+    };
+    const started = await new Harness({
+      toolSources: [async () => new Map([['slow', slow], ['ping', tool('ping')]])],
+      audit: event => { if (event.tool === 'ping') throw new Error('Private audit failure'); },
+    }).startRun(run);
+
+    try {
+      const pending = started.dispatch({ name: 'slow', input: {} });
+      await entered.promise;
+      expect(await started.dispatch({ name: 'ping', input: {} })).toEqual({
+        kind: 'result', value: 'ping ran', auditFailed: true,
+      });
+      release.resolve();
+      expect(await pending).toEqual({ kind: 'result', value: 'completed read' });
+      expect(started.auditFailed).toBe(true);
+      expect(started.canStartStep()).toBe(false);
+      expect(await started.dispatch({ name: 'slow', input: {} })).toEqual({ kind: 'denied', code: 'RUN_PAUSED' });
+    } finally {
+      release.resolve();
+      started.close();
+    }
+  });
+
+  it('retains a completed wallet handoff after cancellation even when its audit fails', async () => {
+    const controller = new AbortController();
+    const prepared = { status: 'prepared', transactionId: 'tx-1' };
+    const transfer: WalletTool = {
+      ...walletTool('transfer', 'prepare'),
+      async execute() {
+        controller.abort();
+        return { kind: 'result', value: prepared };
+      },
+    };
+    const started = await new Harness({ audit: () => { throw new Error('Private audit failure'); } }).startRun({
+      ...run, scope: 'prepare-wallet', walletTools: { transfer }, signal: controller.signal,
+    });
+
+    expect(await started.dispatch({ name: 'transfer', input: {} })).toEqual({
+      kind: 'result', value: prepared, auditFailed: true,
+    });
+    expect(started.auditFailed).toBe(true);
+    expect(started.signal.aborted).toBe(true);
+  });
+
   it('drops an allowance read that finishes after cancellation', async () => {
     const entered = Promise.withResolvers<void>();
     const release = Promise.withResolvers<void>();

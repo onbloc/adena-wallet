@@ -2,13 +2,14 @@ import { simulateStreamingMiddleware, tool, wrapLanguageModel } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { z } from 'zod';
 
-import { Harness } from '../../harness/core';
+import { Harness, type RemoteTool } from '../../harness/core';
 import { createOnblocToolSource } from '../../harness/mcp';
 import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
 import { createChatSession, GenerateEventType, LLMFromModel, type GenerateEvent, type LLM } from '../../llm/core';
 import { AIAgent } from '../agent';
-import { ACCOUNT, fakeWallet } from '../testing/fakeWallet';
 import { intentReplyText } from '../testing/intentReply';
+import { ACCOUNT, RECIPIENT, fakeWallet } from '../testing/fakeWallet';
+import { ToolName } from '../wallet/constants';
 
 const usage = {
   inputTokens: { total: 5, noCache: 5, cacheRead: undefined, cacheWrite: undefined },
@@ -91,15 +92,20 @@ describe('agent conversations', () => {
 
   it('keeps the live tool exchange while pruning stored turns and never replays an earlier transfer', async () => {
     const mcp = fakeOnblocMcp([
-      { name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: '10000000' } },
+      { name: 'get_nfts_balance', output: { address: ACCOUNT, items: [{ tokenId: 'nft-1' }] } },
+      { name: 'list_account_transactions', output: { address: ACCOUNT, items: [{ hash: 'tx-123' }] } },
     ]);
     const model = new MockLanguageModelV4({ doGenerate: [
-      reply(intentReplyText({ kind: 'lookup', target: 'other' })),
+      reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'other', query: 'Inspect NFTs and recent transactions.' }] })),
+      reply(JSON.stringify({ toolNames: ['get_nfts_balance', 'list_account_transactions'] })),
       {
-        content: [{ type: 'tool-call', toolCallId: 'current-read', toolName: 'get_native_balance', input: '{}' }],
+        content: [{ type: 'tool-call', toolCallId: 'current-read', toolName: 'get_nfts_balance', input: '{}' }],
         finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
       },
-      reply('Current funds'),
+      {
+        content: [{ type: 'tool-call', toolCallId: 'history', toolName: 'list_account_transactions', input: '{"limit":5}' }],
+        finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
+      },
     ] });
     const wallet = fakeWallet();
     const handoff = jest.fn();
@@ -116,11 +122,11 @@ describe('agent conversations', () => {
 
     await collect(conversation.run({ prompt: 'Please inspect my funds.', maxOutputTokens: 128 }));
 
-    const prompt = JSON.stringify(model.doGenerateCalls[2].prompt);
+    const prompt = JSON.stringify(model.doGenerateCalls[3].prompt);
     expect(prompt).not.toContain('obsolete topic');
     expect(prompt).toContain('Send one to Carol.');
     expect(prompt).toContain('current-read');
-    expect(prompt).toContain('10000000');
+    expect(prompt).toContain('nft-1');
     expect(conversation.turns.map((turn) => turn.prompt)).toEqual(['Send one to Carol.', 'Please inspect my funds.']);
     expect(wallet.calls).toEqual([]);
     expect(handoff).not.toHaveBeenCalled();
@@ -134,10 +140,10 @@ describe('agent conversations', () => {
     ]);
     const correction = 'GNOT is the native token; ugnot is its base unit.';
     const model = new MockLanguageModelV4({ doGenerate: [
-      reply(intentReplyText({ kind: 'lookup', target: 'portfolio' })),
+      reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'balance', request: { kind: 'all' } }] })),
       reply(intentReplyText({ kind: 'explanation' })),
       reply(correction),
-      reply(intentReplyText({ kind: 'lookup', target: 'native_balance' })),
+      reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'balance', request: { kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } } }] })),
     ] });
     const wallet = fakeWallet();
     const handoff = jest.fn();
@@ -167,31 +173,91 @@ describe('agent conversations', () => {
 
   it('persists additional history eviction when a tool result fills the next model step', async () => {
     const model = new MockLanguageModelV4({ doGenerate: [
+      reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'other', query: 'Look up current data and its status.' }] })),
+      reply(JSON.stringify({ toolNames: ['lookup', 'status'] })),
       {
         content: [{ type: 'tool-call', toolCallId: 'lookup-now', toolName: 'lookup', input: '{}' }],
         finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
       },
-      reply('Lookup completed.'),
+      {
+        content: [{ type: 'tool-call', toolCallId: 'status-now', toolName: 'status', input: '{}' }],
+        finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
+      },
     ] });
     const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
-    const agent = new AIAgent({ llm, harness: new Harness() });
+    const harness = new Harness({ toolSources: [async () => new Map<string, RemoteTool>([[
+      'lookup',
+      {
+        definition: { name: 'lookup', description: 'Look up data', jsonSchema: { type: 'object', properties: {} } },
+        execute: async () => ({ kind: 'result', value: { data: 'data'.repeat(3000) } }),
+      },
+    ], [
+      'status',
+      {
+        definition: { name: 'status', description: 'Read current status', jsonSchema: { type: 'object', properties: {} } },
+        execute: async () => ({ kind: 'result', value: { status: 'complete' } }),
+      },
+    ]])] });
+    const agent = new AIAgent({ llm, harness });
     const session = createChatSession();
-    session.complete('obsolete topic', 'x'.repeat(6000));
-    session.complete('recent topic', 'r'.repeat(1800));
-    const conversation = agent.createConversation({ session, contextTokens: 2000 });
-    const tools = {
-      lookup: tool({ inputSchema: z.object({}), execute: async () => ({ data: 'data'.repeat(300) }) }),
-    };
+    session.complete('obsolete topic', 'x'.repeat(12000));
+    session.complete('recent topic', 'r'.repeat(2500));
+    const conversation = agent.createConversation({ account: ACCOUNT, session, contextTokens: 8192 });
 
-    await collect(conversation.run({ prompt: 'Look up current data.', tools, maxSteps: 3, maxOutputTokens: 128 }));
+    await collect(conversation.run({ prompt: 'Look up current data.', system: 'Be concise.', maxOutputTokens: 128 }));
 
-    expect(JSON.stringify(model.doGenerateCalls[0].prompt)).toContain('recent topic');
-    const continuation = JSON.stringify(model.doGenerateCalls[1].prompt);
+    expect(JSON.stringify(model.doGenerateCalls[2].prompt)).toContain('recent topic');
+    const continuation = JSON.stringify(model.doGenerateCalls[3].prompt);
     expect(continuation).not.toContain('recent topic');
     expect(continuation).toContain('lookup-now');
-    expect(continuation).toContain('data'.repeat(300));
+    expect(continuation).toContain('data'.repeat(3000));
     expect(conversation.turns.map((turn) => turn.prompt)).toEqual(['Look up current data.']);
     expect(conversation.serialize()).not.toContain('recent topic');
+  });
+
+  it.each([undefined, false, true])('forwards transaction preparation opt-in %s to every conversation turn', async (enabled) => {
+    const mcp = fakeOnblocMcp([
+      { name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: '10000000' } },
+    ]);
+    const transfer = () => ({
+      content: [{ type: 'tool-call' as const, toolCallId: 'transfer', toolName: ToolName.Transfer,
+        input: JSON.stringify({ to: RECIPIENT, amount: '1', token: 'GNOT' }) }],
+      finishReason: { unified: 'tool-calls' as const, raw: 'tool-calls' }, usage, warnings: [],
+    });
+    const classification = () => reply(intentReplyText({ kind: 'prepare', action: 'transfer' }));
+    const model = new MockLanguageModelV4({ doGenerate: enabled
+      ? [classification(), transfer(), classification(), transfer()] : [classification(), classification()] });
+    const wallet = fakeWallet();
+    const handoff = jest.fn();
+    const agent = new AIAgent({
+      llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })),
+      harness: new Harness({ toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })] }),
+      wallet, onTransaction: handoff,
+    });
+    const conversation = agent.createConversation({
+      account: ACCOUNT, ...(enabled === undefined ? {} : { allowTransactionPreparation: enabled }),
+    });
+
+    await collect(conversation.run({ prompt: 'Send 1 GNOT.' }));
+    await collect(conversation.run({ prompt: 'Send 1 GNOT again.' }));
+
+    expect(wallet.calls).toHaveLength(enabled ? 2 : 0);
+    expect(handoff).toHaveBeenCalledTimes(enabled ? 2 : 0);
+  });
+
+  it('does not expose or execute caller-provided tools in an accountless conversation', async () => {
+    const execute = jest.fn(async () => ({ secret: 'unexpected' }));
+    const model = new MockLanguageModelV4({ doGenerate: [reply('Done')] });
+    const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
+    const conversation = new AIAgent({ llm, harness: new Harness() }).createConversation();
+
+    await collect(conversation.run({
+      prompt: 'Try the supplied tool.', maxSteps: 3,
+      tools: { caller_tool: tool({ inputSchema: z.object({}), execute }) },
+    }));
+
+    expect(model.doGenerateCalls[0].tools ?? []).toEqual([]);
+    expect(execute).not.toHaveBeenCalled();
   });
 
   it.each([0, -1, 1.5, NaN, Infinity, 8193])('rejects a context budget outside the model limits: %p', (contextTokens) => {

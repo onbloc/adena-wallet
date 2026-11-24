@@ -1,293 +1,139 @@
-import { canRememberTurn, GenerateEventType, type GenerateEvent } from '../../llm/core';
+import { canRememberTurn, type GenerateEvent } from '../../llm/core';
 import { guardAnswer } from '../answerGuard';
+import type { BalanceRequest, BalanceResult } from '../balanceOperation';
 import type { RequestIntent } from '../requestIntent';
 
-const lookup: RequestIntent = { kind: 'lookup', target: 'other' };
-const explanation: RequestIntent = { kind: 'explanation' };
-const transfer: RequestIntent = { kind: 'prepare', action: 'transfer' };
-
-const isRead = (name: string) => name !== 'transfer' && name !== 'approve';
-
-const metrics = { totalMs: 1 } as Extract<GenerateEvent, { type: 'done' }>['metrics'];
-const done = (overrides: Partial<Extract<GenerateEvent, { type: 'done' }>> = {}): GenerateEvent => ({
-  type: GenerateEventType.Done,
-  metrics,
-  aborted: false,
-  warnings: [],
-  messages: [{ role: 'assistant', content: 'kept' }],
-  ...overrides,
-});
-const text = (delta: string): GenerateEvent => ({ type: GenerateEventType.Text, delta });
-const toolCall = (name: string, invalid = false): Extract<GenerateEvent, { type: typeof GenerateEventType.ToolCall }> => ({
-  type: GenerateEventType.ToolCall,
-  id: name,
-  name,
-  input: {},
-  invalid,
-});
-const toolResult = (name: string, output: unknown): Extract<GenerateEvent, { type: typeof GenerateEventType.ToolResult }> => ({
-  type: GenerateEventType.ToolResult,
-  id: name,
-  name,
-  output,
-});
-const readOk = toolResult('read', { kind: 'result', value: 1 });
-const prepared = toolResult('transfer', { kind: 'result', value: { status: 'prepared' } });
-
-async function guard(intent: RequestIntent, ...events: GenerateEvent[]) {
-  const out: GenerateEvent[] = [];
-  for await (const event of guardAnswer(
-    (async function* () {
-      yield* events;
-    })(),
-    isRead,
-    intent
-  )) {
-    out.push(event);
-  }
-  const answer = out.filter((event) => event.type === GenerateEventType.Text).map((event) => event.delta);
-  return { out, answer, last: out[out.length - 1] as Extract<GenerateEvent, { type: 'done' }> };
+const request: BalanceRequest = { kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } };
+const lookup: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request }] };
+const history: RequestIntent = { kind: 'lookup', requests: [{ target: 'other', query: 'List transactions.' }] };
+const prepare: RequestIntent = { kind: 'prepare', action: 'transfer' };
+const value: BalanceResult = { account: 'account', chainId: 'chain', request, status: 'complete', missing: [], assets: [{ kind: 'native', assetId: 'ugnot', symbol: 'GNOT', amount: '42000000', decimals: 6 }] };
+const done = (overrides: Partial<Extract<GenerateEvent, { type: 'done' }>> = {}): GenerateEvent => ({ type: 'done', aborted: false, finishReason: 'stop', warnings: [], messages: [], metrics: { totalMs: 1, ttftMs: null }, ...overrides });
+const call = (name: string, input: unknown = {}, id = name): GenerateEvent => ({ type: 'tool-call', name, input, id, invalid: false });
+const result = (name: string, output: unknown, id = name): GenerateEvent => ({ type: 'tool-result', name, output, id });
+const balance = (overrides: Partial<BalanceResult> = {}): GenerateEvent => result('get_balance', { kind: 'result', value: { ...value, ...overrides } });
+const text = (delta: string): GenerateEvent => ({ type: 'text', delta });
+async function guard(intent: RequestIntent, events: GenerateEvent[], policy: { requiredReads?: string[]; userText?: string } = {}) {
+  const output: GenerateEvent[] = [];
+  for await (const event of guardAnswer((async function* () { yield* events; })(), name => name !== 'transfer' && name !== 'approve', intent, policy)) output.push(event);
+  return { text: output.filter(event => event.type === 'text').map(event => event.delta).join(''), done: output.find(event => event.type === 'done') as Extract<GenerateEvent, { type: 'done' }> };
 }
 
-describe('guardAnswer', () => {
-  it('shows the model text and remembers the turn when a read succeeded', async () => {
-    const { answer, last } = await guard(lookup, toolCall('read'), readOk, text('You have 5 GNOT'), done());
-
-    expect(answer).toEqual(['You have 5 GNOT']);
-    expect(last.messages).toHaveLength(1);
+describe('required normalized outcomes', () => {
+  it('renders exact validated units rather than model arithmetic or settlement claims', async () => {
+    const answer = await guard(lookup, [call('get_balance', request), balance(), text('You have 42000000 GNOT. Payment sent.'), done()]);
+    expect(answer.text).toBe('42 GNOT');
+    expect(answer.done.verifiedAnswer).toBe(true);
+    expect(canRememberTurn(answer.done)).toBe(true);
   });
-
-  it('keeps a tool-free explanation in the conversation without marking it as verified wallet data', async () => {
-    const { answer, last } = await guard(explanation, text('GNOT is the native token; ugnot is its base unit.'), done({ finishReason: 'stop' }));
-
-    expect(answer).toEqual(['GNOT is the native token; ugnot is its base unit.']);
-    expect(last.verifiedAnswer).toBeUndefined();
-    expect(canRememberTurn(last)).toBe(true);
+  it('requires every distinct balance request and preserves all amounts', async () => {
+    const token: BalanceRequest = { kind: 'one', asset: { kind: 'symbol', value: 'xGNS' } };
+    const intent: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request }, { target: 'balance', request: token }] };
+    const incomplete = await guard(intent, [balance(), done()]);
+    expect(incomplete.text).toContain('42 GNOT');
+    expect(canRememberTurn(incomplete.done)).toBe(false);
+    const complete = await guard(intent, [balance(), balance({ request: token, assets: [{ kind: 'token', assetId: 'realm/xgns', symbol: 'xGNS', amount: '17528', decimals: 0 }] }), done({ finishReason: 'tool-calls' })]);
+    expect(complete.text).toContain('17528 xGNS (realm/xgns)');
+    expect(complete.text).toContain('42 GNOT');
+    expect(canRememberTurn(complete.done)).toBe(true);
   });
-
-  it('reports a failed lookup even when no lookup succeeded, and does not remember it', async () => {
-    const { answer, last } = await guard(lookup,
-      toolCall('read'), toolResult('read', { kind: 'denied', code: 'MCP_UNAVAILABLE' }),
-      text('Your balance is zero.'), done({ finishReason: 'stop' })
-    );
-
-    expect(answer).toEqual(['Some Onbloc lookups failed. Review the individual tool results.']);
-    expect(canRememberTurn(last)).toBe(false);
+  it('does not accept a balance as completion of an unrelated history request', async () => {
+    const answer = await guard(history, [balance(), text('All transactions shown.'), done()], { requiredReads: ['list_account_transactions'] });
+    expect(answer.done.verifiedAnswer).toBeUndefined();
+    expect(canRememberTurn(answer.done)).toBe(false);
+    expect(answer.text).not.toContain('All transactions shown.');
   });
-
-  it('does not treat an unfinished tool call as a tool-free explanation', async () => {
-    const { answer, last } = await guard(lookup, toolCall('read'), text('Everything is fine.'), done({ finishReason: 'stop' }));
-
-    expect(answer).not.toContain('Everything is fine.');
-    expect(canRememberTurn(last)).toBe(false);
+  it('requires an explicit nonempty selection for generic queries', async () => {
+    const answer = await guard(history, [result('unrelated', { kind: 'result', value: 1 }), done()]);
+    expect(canRememberTurn(answer.done)).toBe(false);
   });
-
-  it('formats balances even when another successful read would otherwise allow the model summary through', async () => {
-    const { answer, last } = await guard({ kind: 'lookup', target: 'portfolio' },
-      toolResult('get_native_balance', { kind: 'result', value: { untrustedData: { denom: 'ugnot', balance: '44289888655' } } }),
-      toolResult('get_nfts_balance', { kind: 'result', value: { untrustedData: { items: [] } } }),
-      toolResult('get_token_balances', { kind: 'result', value: { untrustedData: {
-        items: [{ symbol: 'xGNS', tokenId: 'gno.land/r/xgns', amount: '17528000000', decimals: 6 }],
-      } } }),
-      text('Networking token: 44289888655. xGNS: 17528000000.'), done({ finishReason: 'stop' })
-    );
-
-    expect(answer).toEqual(['44289.888655 GNOT\n\nGRC20 balances:\n- 17528 xGNS (gno.land/r/xgns)']);
-    expect(last.verifiedAnswer).toBe(true);
-    expect(canRememberTurn(last)).toBe(true);
+  it('preserves nonbalance facts next to exact amounts without using model summaries', async () => {
+    const intent: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request }, { target: 'other', query: 'List history.' }] };
+    const answer = await guard(intent, [balance(), result('list_account_transactions', { kind: 'result', value: { items: [{ hash: 'tx-123', status: 'pending' }] } }), text('Confirmed tx-999.'), done()], { requiredReads: ['list_account_transactions'] });
+    expect(answer.text).toContain('42 GNOT');
+    expect(answer.text).toContain('tx-123');
+    expect(answer.text).toContain('pending');
+    expect(answer.text).not.toContain('tx-999');
+    expect(canRememberTurn(answer.done)).toBe(true);
   });
-
-  it('shows the verified part of a mixed lookup but does not save a partially failed turn', async () => {
-    const { answer, last } = await guard(lookup,
-      toolResult('get_native_balance', { kind: 'result', value: { untrustedData: { denom: 'ugnot', balance: '1000000' } } }),
-      toolResult('get_nfts_balance', { kind: 'denied', code: 'MCP_UNAVAILABLE' }),
-      text('Everything succeeded.'), done({ finishReason: 'stop' })
-    );
-
-    expect(answer).toEqual(['1 GNOT\n\nSome Onbloc lookups failed. Review the individual tool results.']);
-    expect(last.verifiedAnswer).toBeUndefined();
-    expect(canRememberTurn(last)).toBe(false);
+  it('preserves different pages returned by the same tool in one step', async () => {
+    const answer = await guard(history, [
+      call('list_account_transactions', { cursor: null }, 'first'), call('list_account_transactions', { cursor: 'next' }, 'next'),
+      result('list_account_transactions', { kind: 'result', value: { hash: 'tx-first' } }, 'first'),
+      result('list_account_transactions', { kind: 'result', value: { hash: 'tx-next' } }, 'next'), done(),
+    ], { requiredReads: ['list_account_transactions'] });
+    expect(answer.text).toContain('tx-first');
+    expect(answer.text).toContain('tx-next');
+    expect(canRememberTurn(answer.done)).toBe(true);
   });
-
-  it('does not remember a balance turn while another lookup remains unfinished', async () => {
-    const { last } = await guard(lookup,
-      toolResult('get_native_balance', { kind: 'result', value: { untrustedData: { denom: 'ugnot', balance: '1000000' } } }),
-      toolCall('get_nfts_balance'), text('Everything succeeded.'), done({ finishReason: 'stop' })
-    );
-
-    expect(last.verifiedAnswer).toBeUndefined();
-    expect(canRememberTurn(last)).toBe(false);
+  it.each<Partial<BalanceResult>>([
+    { request: { kind: 'all' }, status: 'partial', missing: ['tokens'] },
+    { request: { kind: 'all' }, status: 'unavailable', missing: ['native', 'tokens'], assets: [] },
+    { status: 'ambiguous', assets: [{ ...value.assets[0], assetId: 'first' }, { ...value.assets[0], assetId: 'second' }] },
+  ])('does not trust a $status result', async override => {
+    const intent: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request: override.request ?? request }] };
+    const answer = await guard(intent, [balance(override), done({ verifiedAnswer: true })]);
+    expect(answer.done.verifiedAnswer).toBeUndefined();
+    expect(canRememberTurn(answer.done)).toBe(false);
   });
-
-  it('reports a prepared transaction in its own words, whatever the model says, and does not remember the turn', async () => {
-    const { answer, last } = await guard(transfer, toolCall('transfer'), prepared, text('Payment confirmed on chain.'), done());
-
-    expect(answer).toEqual(['Unsigned transaction prepared. Nothing was sent.']);
-    expect(last.messages).toEqual([]);
+  it('rejects malformed balances even beside another successful read', async () => {
+    const answer = await guard(lookup, [result('get_balance', { kind: 'result', value: { status: 'complete', assets: [] } }), result('read', { kind: 'result', value: 1 }), done()]);
+    expect(canRememberTurn(answer.done)).toBe(false);
   });
-
-  it.each([
-    ['an error result', toolResult('transfer', { kind: 'result', value: { status: 'error', code: 'invalid_address' } })],
-    ['a denied call', toolResult('transfer', { kind: 'denied', code: 'BUDGET_EXHAUSTED' })],
-    ['a tool error', { type: GenerateEventType.ToolError, id: 'transfer', name: 'transfer', error: 'boom' } as GenerateEvent],
-  ])('does not claim a preparation after %s', async (_label, failure) => {
-    const { answer } = await guard(transfer, toolCall('transfer'), failure, text('Done'), done());
-
-    expect(answer).toEqual(['Transaction preparation was not confirmed.']);
+  it('does not trust a symbol embedded inside the requested symbol or an unrelated ID', async () => {
+    const gns = { kind: 'one', asset: { kind: 'symbol', value: 'GNS' } } as const;
+    const intent: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request: gns }] };
+    const gnsResult = { request: gns, assets: [{ kind: 'token' as const, assetId: 'realm/gns', symbol: 'GNS', amount: '1', decimals: 0 }] };
+    const conflict = await guard(intent, [call('get_balance', gns), balance(gnsResult), done()], { userText: 'What is my xGNS balance?' });
+    expect(canRememberTurn(conflict.done)).toBe(false);
+    expect(conflict.text).toContain('selected asset differs');
+    const byId = { kind: 'one', asset: { kind: 'id', value: 'realm/gns' } } as const;
+    const explicit = await guard({ kind: 'lookup', requests: [{ target: 'balance', request: byId }] }, [call('get_balance', byId), balance({ ...gnsResult, request: byId }), done()], { userText: 'Compare xGNS with realm/gns.' });
+    expect(canRememberTurn(explicit.done)).toBe(true);
   });
-
-  it.each([
-    ['a read that was denied', toolResult('read', { kind: 'denied', code: 'MCP_UNAVAILABLE' })],
-    ['a read returning an error status', toolResult('read', { kind: 'result', value: { status: 'error' } })],
-    ['a tool error', { type: GenerateEventType.ToolError, id: 'x', name: 'read', error: 'boom' } as GenerateEvent],
-    ['an invalid tool call', toolCall('transfer', true)],
-  ])('replaces the answer and forgets the turn after %s, even next to a good read', async (_label, failure) => {
-    const { answer, last } = await guard(lookup, readOk, failure, text('All good'), done());
-
-    expect(answer).toEqual(['Some Onbloc lookups failed. Review the individual tool results.']);
-    expect(last.messages).toEqual([]);
+  it('matches returned balance requests to their originating calls', async () => {
+    const other = { kind: 'one', asset: { kind: 'symbol', value: 'xGNS' } } as const;
+    const answer = await guard(lookup, [call('get_balance', other), balance(), done()]);
+    expect(canRememberTurn(answer.done)).toBe(false);
   });
-
-  it('says so when a read ran but the model wrote nothing', async () => {
-    expect((await guard(lookup, readOk, done())).answer).toEqual(['Onbloc returned data; no model summary was produced.']);
+  it('requires requested explanation text without replacing current facts', async () => {
+    const intent: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request }], explanation: 'What is GNOT?' };
+    const missing = await guard(intent, [balance(), done()]);
+    expect(missing.text).toContain('42 GNOT');
+    expect(canRememberTurn(missing.done)).toBe(false);
+    const complete = await guard(intent, [balance(), text('GNOT is native to Gno.land.'), done()]);
+    expect(complete.text).toContain('GNOT is native to Gno.land.');
+    expect(complete.text).toContain('42 GNOT');
+    expect(canRememberTurn(complete.done)).toBe(true);
   });
-
-  it('uses only the text of the last step', async () => {
-    const { answer } = await guard(lookup, text('Let me check'), { type: GenerateEventType.StepStart }, readOk, text('Final'), done());
-
-    expect(answer).toEqual(['Final']);
+  it.each<RequestIntent>([{ kind: 'explanation' }, { kind: 'clarification' }])('retains tool-free $kind as unverified text', async intent => {
+    const answer = await guard(intent, [text('Which recipient?'), done({ messages: [{ role: 'assistant', content: 'Which recipient?' }] })]);
+    expect(answer.done.verifiedAnswer).toBeUndefined();
+    expect(canRememberTurn(answer.done)).toBe(true);
+    expect(answer.done.warnings.length).toBeGreaterThan(0);
   });
-
-  it('passes an aborted run through without an answer of its own', async () => {
-    const { answer, last } = await guard(explanation, text('half an ans'), done({ aborted: true }));
-
-    expect(answer).toEqual([]);
-    expect(last.aborted).toBe(true);
+  it('keeps preparation results and audit failure independent of model settlement claims', async () => {
+    const answer = await guard(prepare, [call('transfer'), result('transfer', { kind: 'result', value: { status: 'prepared' }, auditFailed: true }), text('Payment confirmed.'), done()]);
+    expect(answer.text).toContain('Unsigned transaction prepared');
+    expect(answer.text).not.toContain('Payment confirmed');
+    expect(answer.done.warnings.some(warning => warning.includes('Audit'))).toBe(true);
+    expect(canRememberTurn(answer.done)).toBe(false);
   });
-
-  it('still reports a transaction that was prepared before the run was aborted', async () => {
-    const { answer } = await guard(transfer, prepared, done({ aborted: true }));
-
-    expect(answer).toEqual(['Unsigned transaction prepared. Nothing was sent.']);
+  it('never converts wallet refusal or successful reads into preparation success', async () => {
+    const refusal = await guard(prepare, [result('transfer', { kind: 'result', value: { status: 'error', message: 'Insufficient balance.' } }), text('Success.'), done()]);
+    expect(refusal.text).toContain('Insufficient balance.');
+    expect(refusal.text).not.toContain('Unsigned transaction prepared');
+    const readOnly = await guard(prepare, [balance(), text('Ready.'), done()]);
+    expect(readOnly.text).not.toContain('Ready.');
+    expect(canRememberTurn(readOnly.done)).toBe(false);
   });
-
-  it('reports the requested approval outcome without claiming it was sent', async () => {
-    const { answer, last } = await guard({ kind: 'prepare', action: 'approve' },
-      toolCall('approve'), toolResult('approve', { kind: 'result', value: { status: 'prepared' } }),
-      text('The approval was sent.'), done({ finishReason: 'stop' }));
-
-    expect(answer).toEqual(['Unsigned transaction prepared. Nothing was sent.']);
-    expect(last.verifiedAnswer).toBeUndefined();
-    expect(canRememberTurn(last)).toBe(false);
-  });
-
-  it.each<RequestIntent>([{ kind: 'explanation' }, { kind: 'clarification' }])(
-    'allows tool-free model text for $kind',
-    async intent => {
-      const { answer, last } = await guard(intent, text('Which recipient should receive the transfer?'), done({ finishReason: 'stop' }));
-
-      expect(answer).toEqual(['Which recipient should receive the transfer?']);
-      expect(last.warnings).toContain('No wallet lookup was performed; this is an unverified model explanation.');
-      expect(last.verifiedAnswer).toBeUndefined();
-      expect(canRememberTurn(last)).toBe(true);
-    }
-  );
-
-  it.each<RequestIntent>([
-    { kind: 'lookup', target: 'native_balance' },
-    { kind: 'lookup', target: 'token_balances' },
-    { kind: 'lookup', target: 'portfolio' },
-    { kind: 'lookup', target: 'other' },
-  ])('rejects a tool-free $target lookup instead of remembering model balances', async intent => {
-    const { answer, last } = await guard(intent, text('Your balance is 10 GNOT.'), done({ finishReason: 'stop', verifiedAnswer: true }));
-
-    expect(answer).toEqual(['The required wallet lookup did not complete successfully.']);
-    expect(last.messages).toEqual([]);
-    expect(last.verifiedAnswer).toBeUndefined();
-    expect(canRememberTurn(last)).toBe(false);
-  });
-
-  it.each(['transfer', 'approve'] as const)('rejects model-only %s preparation claims', async action => {
-    const { answer, last } = await guard({ kind: 'prepare', action }, text('Done. The transaction is ready.'), done({ finishReason: 'stop' }));
-
-    expect(answer).toEqual(['No transaction was prepared. The requested preparation did not complete.']);
-    expect(last.messages).toEqual([]);
-    expect(last.verifiedAnswer).toBeUndefined();
-    expect(canRememberTurn(last)).toBe(false);
-  });
-
-  it('does not let a successful read satisfy a requested preparation', async () => {
-    const { answer, last } = await guard(transfer, readOk, text('Done.'), done({ finishReason: 'stop' }));
-
-    expect(answer).toEqual(['No transaction was prepared. The requested preparation did not complete.']);
-    expect(canRememberTurn(last)).toBe(false);
-  });
-
-  it.each([
-    ['native_balance', 'get_token_balances', { items: [] }, 'No GRC20 balances returned.'],
-    ['token_balances', 'get_native_balance', { denom: 'ugnot', balance: '1000000' }, '1 GNOT'],
-    ['portfolio', 'get_native_balance', { denom: 'ugnot', balance: '1000000' }, '1 GNOT'],
-  ] as const)('does not trust %s when only %s succeeded', async (target, name, untrustedData, formatted) => {
-    const { answer, last } = await guard({ kind: 'lookup', target },
-      toolResult(name, { kind: 'result', value: { untrustedData } }), text('Everything succeeded.'), done({ finishReason: 'stop' }));
-
-    expect(answer).toEqual([`${formatted}\n\nThe required wallet lookup did not complete successfully.`]);
-    expect(last.verifiedAnswer).toBeUndefined();
-    expect(canRememberTurn(last)).toBe(false);
-  });
-
-  it('does not treat malformed required balances as a successful lookup', async () => {
-    const { answer, last } = await guard({ kind: 'lookup', target: 'native_balance' },
-      toolResult('get_native_balance', { kind: 'result', value: { untrustedData: { balance: '-1', denom: 'ugnot' } } }),
-      text('You have zero GNOT.'), done({ finishReason: 'stop' }));
-
-    expect(answer).toEqual(['Some Onbloc lookups failed. Review the individual tool results.']);
-    expect(last.verifiedAnswer).toBeUndefined();
-    expect(canRememberTurn(last)).toBe(false);
-  });
-
-  it('filters a requested token balance before rendering it', async () => {
-    const { answer, last } = await guard({ kind: 'lookup', target: 'token_balances', token: 'xGNS' },
-      toolResult('get_token_balances', { kind: 'result', value: { untrustedData: { items: [
-        { symbol: 'xGNS', tokenId: 'gno.land/r/xgns', amount: '17528000000', decimals: 6 },
-        { symbol: 'OTHER', tokenId: 'gno.land/r/other', amount: '1000000', decimals: 6 },
-      ] } } }), done({ finishReason: 'stop', messages: [] }));
-
-    expect(answer).toEqual(['17528 xGNS (gno.land/r/xgns)']);
-    expect(last.verifiedAnswer).toBe(true);
-    expect(canRememberTurn(last)).toBe(true);
-  });
-
-  it.each<RequestIntent>([
-    { kind: 'prepare', action: 'approve' },
-    { kind: 'lookup', target: 'other' },
-    { kind: 'explanation' },
-  ])('surfaces unexpected prepared effects for $kind without trusting them', async intent => {
-    const { answer, last } = await guard(intent, readOk, prepared, text('Approval completed.'), done({ finishReason: 'stop' }));
-
-    expect(answer[0]).toContain('Unsigned transaction prepared. Nothing was sent.');
-    expect(answer[0]).toContain('Tool results did not match the requested action and are not trusted.');
-    expect(answer[0]).not.toContain('Approval completed.');
-    expect(last.verifiedAnswer).toBeUndefined();
-    expect(canRememberTurn(last)).toBe(false);
-  });
-
-  it('does not trust a result whose tool name differs from its call', async () => {
-    const { answer, last } = await guard(transfer,
-      { ...toolCall('approve'), id: 'operation' },
-      { ...prepared, id: 'operation' }, text('Done.'), done({ finishReason: 'stop' }));
-
-    expect(answer[0]).toContain('Unsigned transaction prepared. Nothing was sent.');
-    expect(answer[0]).toContain('Tool results did not match the requested action and are not trusted.');
-    expect(canRememberTurn(last)).toBe(false);
-  });
-
-  it('surfaces a prepared status even when returned under a read tool name', async () => {
-    const { answer, last } = await guard(lookup,
-      toolResult('read', { kind: 'result', value: { status: 'prepared' } }), done({ finishReason: 'stop' }));
-
-    expect(answer[0]).toContain('Unsigned transaction prepared. Nothing was sent.');
-    expect(answer[0]).toContain('Tool results did not match the requested action and are not trusted.');
-    expect(canRememberTurn(last)).toBe(false);
+  it('does not remember unfinished or aborted work, but reports an already handed-off transaction', async () => {
+    expect(canRememberTurn((await guard(lookup, [balance(), call('read'), done()])).done)).toBe(false);
+    const aborted = await guard(lookup, [balance(), done({ aborted: true, verifiedAnswer: true })]);
+    expect(aborted.text).toBe('');
+    expect(canRememberTurn(aborted.done)).toBe(false);
+    const handedOff = await guard(prepare, [result('transfer', { kind: 'result', value: { status: 'prepared' } }), done({ aborted: true })]);
+    expect(handedOff.text).toContain('Unsigned transaction prepared');
+    expect(canRememberTurn(handedOff.done)).toBe(false);
   });
 });
