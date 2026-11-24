@@ -479,8 +479,11 @@ describe('WalletService', () => {
       const unlocking = wallet.unlock(TEST_PASSWORD);
 
       await reading;
-      await container.appResetService.resetAll();
+      // The reset closes the session right away and waits for the vault queue.
+      const resetting = container.appResetService.resetAll();
+
       release();
+      await resetting;
       expect(await codeOf(() => unlocking)).toBe('WALLET_LOCKED');
       expect(container.keyringSession.isUnlocked()).toBe(false);
       expect(accounts.getAccounts()).toEqual([]);

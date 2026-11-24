@@ -119,7 +119,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     addressBookService: overrides.addressBookService
       ?? new AddressBookService(new StorageAddressBookRepository(keyValueStore), chainRegistry),
     exploreService: overrides.exploreService ?? new ExploreService(),
-    appResetService: overrides.appResetService ?? new AppResetService(keyringSession, secureStore, keyValueStore, migrationService),
+    appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService),
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),
     walletService: overrides.walletService
       ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService], biometricRepository, preferenceRepository),

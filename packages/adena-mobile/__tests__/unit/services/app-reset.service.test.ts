@@ -1,9 +1,14 @@
 import { StorageKey } from '../../../src/migration/storage-keys';
+import { SecurePasswordAttemptRepository } from '../../../src/repositories/password-attempt.repository';
+import { SecureVaultRepository } from '../../../src/repositories/vault.repository';
 import { MemorySecureStore } from '../../../src/security/memory-secure-store';
 import { SecureKey } from '../../../src/security/secure-keys';
+import { ScryptXChaChaVaultCipher } from '../../../src/security/vault-cipher';
 import { AppResetService } from '../../../src/services/app-reset.service';
 import { KeyringSession } from '../../../src/services/keyring-session';
 import { MigrationService } from '../../../src/services/migration.service';
+import { PasswordAttemptLimiter } from '../../../src/services/password-attempt-limiter';
+import { VaultService } from '../../../src/services/vault.service';
 import { MemoryKeyValueStore } from '../../../src/storage/memory-key-value-store';
 import { createTestContainer, TEST_MNEMONIC, TEST_PASSWORD } from '../../helpers/test-container';
 
@@ -17,7 +22,9 @@ describe('AppResetService', () => {
     await Promise.all(Object.values(SecureKey).map(key => secureStore.setItem(key, 'x')));
     keyValueStore.setString(StorageKey.ACCOUNTS, '{}');
     keyValueStore.setString('anything', '1');
-    await new AppResetService(session, secureStore, keyValueStore, new MigrationService(keyValueStore, secureStore)).resetAll();
+    const vaultService = new VaultService(new SecureVaultRepository(secureStore), new ScryptXChaChaVaultCipher(), new PasswordAttemptLimiter(new SecurePasswordAttemptRepository(secureStore)));
+
+    await new AppResetService(session, vaultService, secureStore, keyValueStore, new MigrationService(keyValueStore, secureStore)).resetAll();
 
     expect(session.isUnlocked()).toBe(false);
     expect(await secureStore.getItem(SecureKey.STORAGE_ENCRYPTION_KEY)).toBe('x');
@@ -53,5 +60,23 @@ describe('AppResetService', () => {
     await container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: 'brand new password' });
     container.walletService.lock();
     await expect(container.walletService.unlock('brand new password')).resolves.toBeUndefined();
+  });
+
+  it('waits for an in-flight unlock re-save so the vault cannot come back after the reset', async () => {
+    const secureStore = new MemorySecureStore();
+    const keyValueStore = new MemoryKeyValueStore();
+    const limiter = new PasswordAttemptLimiter(new SecurePasswordAttemptRepository(secureStore));
+    const repository = new SecureVaultRepository(secureStore);
+    const pk = { id: 'pk', type: 'PRIVATE_KEY' as const, privateKey: '1'.repeat(64), createdAt: 1 };
+
+    await new VaultService(repository, new ScryptXChaChaVaultCipher({ N: 2 ** 9, r: 8, p: 1 }), limiter).create([pk], TEST_PASSWORD);
+    // Stronger settings make the unlock re-encrypt and re-save the vault.
+    const vaultService = new VaultService(repository, new ScryptXChaChaVaultCipher({ N: 2 ** 10, r: 8, p: 1 }), limiter);
+    const reset = new AppResetService(new KeyringSession(), vaultService, secureStore, keyValueStore, new MigrationService(keyValueStore, secureStore));
+    const unlocking = vaultService.open(TEST_PASSWORD);
+
+    await reset.resetAll();
+    await unlocking;
+    expect(await repository.exists()).toBe(false);
   });
 });
