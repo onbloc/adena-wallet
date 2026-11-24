@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import React, { ReactElement, useState } from 'react';
 
 import { HomeTab, WalletHomePage } from '../../../components/pages';
@@ -12,7 +13,7 @@ import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
 import { MainTabScreenProps } from '../../../navigation/screen-props';
 import { toAvatarColor } from '../../../presenters/account.presenter';
 import { toAssetItem } from '../../../presenters/asset.presenter';
-import { useNftCollectionsQuery } from '../../../queries/nft.queries';
+import { refetchUnresolvedNftUris, useNftCollectionsQuery } from '../../../queries/nft.queries';
 import { NftService } from '../../../services/nft.service';
 import { useSessionStore } from '../../../stores/session.store';
 import { formatUSD, formatUSDChange } from '../../../utils/price';
@@ -32,7 +33,12 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
   };
   const copy = useCopyToClipboard();
   const [tab, setTab] = useState<HomeTab>('tokens');
-  const pull = usePullToRefresh(() => Promise.all([wallet.refetch(), collectionsQuery.refetch()]));
+  const queryClient = useQueryClient();
+  const [imageRetryKey, setImageRetryKey] = useState(0);
+  const pull = usePullToRefresh(() => {
+    setImageRetryKey(key => key + 1);
+    return Promise.all([wallet.refetch(), collectionsQuery.refetch(), refetchUnresolvedNftUris(queryClient, network.id)]);
+  });
 
   const thumbnails = useNftImages(network, (collections.data ?? []).map(collection => ({
     key: collection.id,
@@ -116,6 +122,7 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
       onRetryNfts={handleRetryNfts}
       tab={tab}
       refreshing={pull.refreshing}
+      imageRetryKey={imageRetryKey}
       onRefresh={pull.onRefresh}
       onTabChange={setTab}
       onCopyAddress={handleCopyAddress}

@@ -1,12 +1,14 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { ReactElement, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import React, { ReactElement, useMemo, useState } from 'react';
 
 import { NftCollectionPage } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
 import { useNftImages } from '../../../hooks/use-nft-images';
+import { usePullToRefresh } from '../../../hooks/use-pull-to-refresh';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
 import { MainStackParamList } from '../../../navigation/types';
-import { useNftItemsQuery } from '../../../queries/nft.queries';
+import { refetchUnresolvedNftUris, useNftItemsQuery } from '../../../queries/nft.queries';
 
 export const NftCollectionScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'NftCollection'>): ReactElement => {
   const { collection } = route.params;
@@ -25,6 +27,13 @@ export const NftCollectionScreen = ({ navigation, route }: NativeStackScreenProp
     nftId: collection.thumbnailNftId,
     enabled: collection.supportsTokenUri,
   }])[collection.id];
+
+  const queryClient = useQueryClient();
+  const [imageRetryKey, setImageRetryKey] = useState(0);
+  const pull = usePullToRefresh(() => {
+    setImageRetryKey(key => key + 1);
+    return Promise.all([itemsQuery.refetch(), refetchUnresolvedNftUris(queryClient, network.id)]);
+  });
 
   const handleLoadMore = (): void => {
     itemsQuery.fetchNextPage();
@@ -63,6 +72,9 @@ export const NftCollectionScreen = ({ navigation, route }: NativeStackScreenProp
       onLoadMore={handleLoadMore}
       onOpen={handleOpen}
       onBack={navigation.goBack}
+      refreshing={pull.refreshing}
+      onRefresh={pull.onRefresh}
+      imageRetryKey={imageRetryKey}
     />
   );
 };

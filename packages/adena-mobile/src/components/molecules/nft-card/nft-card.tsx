@@ -10,19 +10,20 @@ export interface NftCardProps {
   subtitle?: string;
   imageUri?: string | null;
   imageLoading?: boolean;
+  imageRetryKey?: string | number;
   // Dense grids lead with a small subtitle label above an emphasized title.
   compact?: boolean;
   onPress?: () => void;
 }
 
-export const NftCard = ({ title, subtitle, imageUri, imageLoading, compact = false, onPress }: NftCardProps): ReactElement => (
+export const NftCard = ({ title, subtitle, imageUri, imageLoading, imageRetryKey, compact = false, onPress }: NftCardProps): ReactElement => (
   <Pressable
     accessibilityRole='button'
     accessibilityLabel={compact && subtitle ? `${subtitle} ${title}` : title}
     onPress={onPress}
     style={styles.card}
   >
-    <NftImage uri={imageUri} loading={imageLoading} />
+    <NftImage uri={imageUri} loading={imageLoading} retryKey={imageRetryKey} />
     {compact
       ? (
           <View style={styles.texts}>

@@ -57,4 +57,16 @@ describe('NftImage', () => {
     await view.rerender(<NftImage uri='https://x.io/c.svg' />);
     expect(screen.getByTestId('svg-uri').props.uri).toBe('https://x.io/c.svg');
   });
+
+  it('retries a failed source when the retry key changes', async () => {
+    const uri = 'https://x.io/a.svg';
+    const view = await render(<NftImage uri={uri} retryKey={0} />);
+
+    await fireEvent(screen.getByTestId('svg-uri'), 'error');
+    expect(screen.queryByTestId('svg-uri')).toBeNull();
+    await view.rerender(<NftImage uri={uri} retryKey={0} />);
+    expect(screen.queryByTestId('svg-uri')).toBeNull();
+    await view.rerender(<NftImage uri={uri} retryKey={1} />);
+    expect(screen.getByTestId('svg-uri').props.uri).toBe(uri);
+  });
 });

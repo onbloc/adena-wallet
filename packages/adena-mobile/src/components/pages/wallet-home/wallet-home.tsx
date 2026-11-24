@@ -42,6 +42,8 @@ export interface WalletHomePageProps {
   onRetryNfts?: () => void;
   tab: HomeTab;
   refreshing: boolean;
+  // Bumped per refresh so artwork that failed to render is tried again.
+  imageRetryKey?: number;
   onRefresh: () => void;
   onTabChange: (tab: HomeTab) => void;
   onCopyAddress: () => void;
@@ -58,7 +60,7 @@ export interface WalletHomePageProps {
   onManageNfts: () => void;
 }
 
-const NftGrid = ({ collections, onOpen }: { collections: NftCardView[]; onOpen: (key: string) => void }): ReactElement => (
+const NftGrid = ({ collections, imageRetryKey, onOpen }: { collections: NftCardView[]; imageRetryKey?: number; onOpen: (key: string) => void }): ReactElement => (
   <View style={styles.grid}>
     {collections.map((collection) => {
       const handlePress = (): void => onOpen(collection.key);
@@ -70,6 +72,7 @@ const NftGrid = ({ collections, onOpen }: { collections: NftCardView[]; onOpen: 
             subtitle={collection.subtitle}
             imageUri={collection.imageUri}
             imageLoading={collection.imageLoading}
+            imageRetryKey={imageRetryKey}
             onPress={handlePress}
           />
         </View>
@@ -151,7 +154,7 @@ export const WalletHomePage = (props: WalletHomePageProps): ReactElement => {
                 : (
                     <>
                       {props.nftSummary && <Text variant='meta' color='secondary'>{props.nftSummary}</Text>}
-                      <NftGrid collections={props.collections} onOpen={props.onOpenCollection} />
+                      <NftGrid collections={props.collections} imageRetryKey={props.imageRetryKey} onOpen={props.onOpenCollection} />
                     </>
                   )
         )}

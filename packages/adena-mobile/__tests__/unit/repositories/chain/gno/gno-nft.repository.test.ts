@@ -1,3 +1,5 @@
+import { TM2Error } from '@gnolang/tm2-js-client';
+
 import { NftCollection } from '../../../../../src/domain/nft';
 import { OnblocApiClient } from '../../../../../src/infrastructure/http/onbloc-api.client';
 import { GnoNftRepository } from '../../../../../src/repositories/chain/gno/gno-nft.repository';
@@ -48,8 +50,8 @@ describe('GnoNftRepository', () => {
             ],
           },
         })
-        .on(itemsUrl(`${PKG}.NFT.1`, '?limit=1'), { data: { items: [{ nftId: '9' }], page: { hasNext: true } } })
-        .on(itemsUrl('gno.land/r/demo/other', '?limit=1'), { data: { items: [], page: { hasNext: false } } });
+        .on(itemsUrl(`${PKG}.NFT.1`, '?limit=20'), { data: { items: [{ nftId: '9' }], page: { hasNext: true } } })
+        .on(itemsUrl('gno.land/r/demo/other', '?limit=20'), { data: { items: [], page: { hasNext: false } } });
       gno.state.signatures[PKG] = [
         { FuncName: 'TokenURI', Results: [{ Type: 'string' }] },
         { FuncName: 'TokenMetadata', Results: [{ Type: 'string' }] },
@@ -80,14 +82,50 @@ describe('GnoNftRepository', () => {
       ]);
     });
 
-    it('counts owned tokens only and skips an operated-only thumbnail', async () => {
+    it('picks the first owned token when the first item is staked (operated only)', async () => {
       const { repository, http } = setup();
 
       http
         .on(collectionsUrl, { data: { items: [collection({ tokenCount: 3, ownedCount: 1 })] } })
-        .on(itemsUrl(`${PKG}.NFT.1`, '?limit=1'), { data: { items: [{ nftId: '9', isOwned: false, ownerAddress: 'g1staker' }], page: { hasNext: true } } });
+        .on(itemsUrl(`${PKG}.NFT.1`, '?limit=20'), {
+          data: { items: [{ nftId: '5', isOwned: false, ownerAddress: 'g1staker' }, { nftId: '4', isOwned: true }], page: { hasNext: false } },
+        });
 
-      await expect(repository.getCollections(OWNER, network)).resolves.toMatchObject([{ ownedCount: 1, thumbnailNftId: undefined }]);
+      await expect(repository.getCollections(OWNER, network)).resolves.toMatchObject([{ ownedCount: 1, thumbnailNftId: '4' }]);
+    });
+
+    it('follows the cursor and the realm ids for an owned thumbnail, within a page bound', async () => {
+      const { repository, http } = setup();
+      const staked = (nftId: string) => ({ nftId, isOwned: false });
+
+      http
+        .on(collectionsUrl, { data: { items: [collection(), collection({ tokenId: `${PKG}.NFT.2` })] } })
+        .on(itemsUrl(`${PKG}.NFT.1`, '?limit=20'), { data: { items: [staked('1')], page: { hasNext: true, cursor: 'c2' } } })
+        .on(itemsUrl(`${PKG}.NFT.1`, '?limit=20&cursor=c2'), { data: { items: [staked('2')], page: { hasNext: false } } })
+        .on(itemsUrl(`${PKG}.NFT.2`, '?limit=20'), { data: { items: [{ nftId: '3' }], page: { hasNext: false } } });
+
+      await expect(repository.getCollections(OWNER, network)).resolves.toMatchObject([{ thumbnailNftId: '3' }]);
+    });
+
+    it('stops after three pages and falls back to the first token seen for display', async () => {
+      const { repository, http } = setup();
+
+      http.on(collectionsUrl, { data: { items: [collection()] } });
+      ['', '&cursor=c1', '&cursor=c2', '&cursor=c3'].forEach((query, index) => {
+        http.on(itemsUrl(`${PKG}.NFT.1`, `?limit=20${query}`), { data: { items: [{ nftId: `s${index}`, isOwned: false }], page: { hasNext: true, cursor: `c${index + 1}` } } });
+      });
+
+      await expect(repository.getCollections(OWNER, network)).resolves.toMatchObject([{ thumbnailNftId: 's0' }]);
+      expect(http.calls.filter(url => url.includes('/items'))).toHaveLength(3);
+    });
+
+    it('does not remember a failed thumbnail lookup', async () => {
+      const { repository, http } = setup();
+
+      http.on(collectionsUrl, { data: { items: [collection()] } });
+      await expect(repository.getCollections(OWNER, network)).resolves.toMatchObject([{ thumbnailNftId: undefined }]);
+      http.on(itemsUrl(`${PKG}.NFT.1`, '?limit=20'), { data: { items: [{ nftId: '4' }], page: { hasNext: false } } });
+      await expect(repository.getCollections(OWNER, network)).resolves.toMatchObject([{ thumbnailNftId: '4' }]);
     });
 
     it('returns [] for an empty listing and propagates listing failures', async () => {
@@ -182,7 +220,7 @@ describe('GnoNftRepository', () => {
       expect(calls).toEqual([`${PKG}|TokenURI("1\\"x")`]);
     });
 
-    it('returns null for error tuples, empty results and failures', async () => {
+    it('returns null for error tuples, empty results and chain errors', async () => {
       const { repository, gno } = setup();
 
       gno.state.evaluate = () => '("" string)\n(&errors.errorString{s:"invalid"} *errors.errorString)';
@@ -194,10 +232,20 @@ describe('GnoNftRepository', () => {
       gno.state.evaluate = () => 'garbage without tuples';
       await expect(repository.getTokenUri(PKG, '1', network)).resolves.toBeNull();
       gno.state.evaluate = () => {
-        throw new Error('panic');
+        throw new TM2Error('panic');
       };
 
       await expect(repository.getTokenUri(PKG, '1', network)).resolves.toBeNull();
+    });
+
+    it('rejects on transport failures instead of reporting no URI', async () => {
+      const { repository, gno } = setup();
+
+      gno.state.evaluate = () => {
+        throw new TypeError('Network request failed');
+      };
+
+      await expect(repository.getTokenUri(PKG, '1', network)).rejects.toThrow('Network request failed');
     });
 
     it('accepts a result without an error tuple', async () => {
@@ -249,7 +297,7 @@ describe('GnoNftRepository', () => {
         .resolves.toEqual({ name: undefined, description: undefined, image: 'data:x', externalUrl: undefined, attributes: [] });
     });
 
-    it('returns null for invalid JSON, empty results and query failures', async () => {
+    it('returns null for invalid JSON, empty results and chain errors, and rejects on transport failures', async () => {
       await expect(metadataOf('{not json')).resolves.toBeNull();
       await expect(metadataOf('')).resolves.toBeNull();
       await expect(metadataOf('null')).resolves.toBeNull();
@@ -257,10 +305,15 @@ describe('GnoNftRepository', () => {
       const { repository, gno } = setup();
 
       gno.state.evaluate = () => {
-        throw new Error('panic');
+        throw new TM2Error('panic');
       };
 
       await expect(repository.getMetadata(PKG, '1', network)).resolves.toBeNull();
+      gno.state.evaluate = () => {
+        throw new TypeError('Network request failed');
+      };
+
+      await expect(repository.getMetadata(PKG, '1', network)).rejects.toThrow('Network request failed');
     });
 
     // A single null attribute makes `item.trait_type` throw, so the whole metadata is dropped.

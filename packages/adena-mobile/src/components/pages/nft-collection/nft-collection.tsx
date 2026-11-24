@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { View } from 'react-native';
+import { RefreshControl, View } from 'react-native';
 
 import { Avatar, Button, Text } from '../../atoms';
 import { EmptyState, InlineAlert, NftCard, NftImage, Screen, TopBar } from '../../molecules';
@@ -22,17 +22,24 @@ export interface NftCollectionPageProps {
   onLoadMore: () => void;
   onOpen: (nftId: string) => void;
   onBack: () => void;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  // Bumped per refresh so artwork that failed to render is tried again.
+  imageRetryKey?: number;
 }
 
 const toRows = (items: NftCardView[]): NftCardView[][] =>
   Array.from({ length: Math.ceil(items.length / COLUMNS) }, (_, index) => items.slice(index * COLUMNS, (index + 1) * COLUMNS));
 
 export const NftCollectionPage = (props: NftCollectionPageProps): ReactElement => (
-  <Screen header={<TopBar title='NFT collection' variant='root' onBack={props.onBack} />}>
+  <Screen
+    header={<TopBar title='NFT collection' variant='root' onBack={props.onBack} />}
+    refreshControl={props.onRefresh ? <RefreshControl refreshing={props.refreshing ?? false} onRefresh={props.onRefresh} /> : undefined}
+  >
     <View style={styles.identity}>
       <View style={styles.thumbnail}>
         {props.thumbnailUri || props.thumbnailLoading
-          ? <NftImage uri={props.thumbnailUri} loading={props.thumbnailLoading} />
+          ? <NftImage uri={props.thumbnailUri} loading={props.thumbnailLoading} retryKey={props.imageRetryKey} />
           : <Avatar name={props.name} size={styles.thumbnail.width} />}
       </View>
       <View style={styles.names}>
@@ -60,7 +67,7 @@ export const NftCollectionPage = (props: NftCollectionPageProps): ReactElement =
 
           return (
             <View key={item.key} style={styles.cell}>
-              <NftCard compact title={item.title} subtitle={item.subtitle} imageUri={item.imageUri} imageLoading={item.imageLoading} onPress={handlePress} />
+              <NftCard compact title={item.title} subtitle={item.subtitle} imageUri={item.imageUri} imageLoading={item.imageLoading} imageRetryKey={props.imageRetryKey} onPress={handlePress} />
             </View>
           );
         })}

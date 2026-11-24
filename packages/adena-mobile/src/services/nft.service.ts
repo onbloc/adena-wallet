@@ -4,11 +4,16 @@ import { NftCollection, NftItem, NftMetadata, Page } from '../domain/nft';
 import { TransactionDraft } from '../domain/transaction';
 import { ChainRegistry } from '../repositories/chain/chain-registry';
 import { NftPreferenceRepository, NftPreferences } from '../repositories/nft-preference.repository';
+import { ConcurrencyLimiter } from '../utils/concurrency-limiter';
 import { AccountService } from './account.service';
+
+// A collection page can request a URI per item at once; bound the in-flight RPC lookups.
+export const MAX_CONCURRENT_URI_LOOKUPS = 6;
 
 export class NftService {
   // Token URIs are immutable per chain, so found ones are cached for the session.
   private readonly uriCache = new Map<string, Promise<string | null>>();
+  private readonly lookups = new ConcurrencyLimiter(MAX_CONCURRENT_URI_LOOKUPS);
 
   constructor(
     private readonly chainRegistry: ChainRegistry,
@@ -33,8 +38,8 @@ export class NftService {
     let cached = this.uriCache.get(key);
 
     if (!cached) {
-      cached = this.chainRegistry.nfts(network).getTokenUri(packagePath, nftId, network);
-      // The repository reports RPC failures as null, so a miss is retried next time.
+      cached = this.lookups.run(() => this.chainRegistry.nfts(network).getTokenUri(packagePath, nftId, network));
+      // Neither a miss nor a failure is kept, so the next request asks the chain again.
       cached.then(uri => uri === null && this.uriCache.delete(key), () => this.uriCache.delete(key));
       this.uriCache.set(key, cached);
     }
@@ -43,7 +48,7 @@ export class NftService {
   }
 
   getMetadata(network: Network, packagePath: string, nftId: string): Promise<NftMetadata | null> {
-    return this.chainRegistry.nfts(network).getMetadata(packagePath, nftId, network);
+    return this.lookups.run(() => this.chainRegistry.nfts(network).getMetadata(packagePath, nftId, network));
   }
 
   getPreferences(account: Account, network: Network): NftPreferences {

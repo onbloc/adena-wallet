@@ -2,6 +2,7 @@ import { useQueries } from '@tanstack/react-query';
 
 import { useContainer } from '../di/container-provider';
 import { Network } from '../domain/network';
+import { nftLookupStaleTime } from '../queries/nft.queries';
 import { queryKeys } from '../queries/query-keys';
 
 export interface NftImageRequest {
@@ -11,7 +12,7 @@ export interface NftImageRequest {
   enabled: boolean;
 }
 
-// Resolves token URIs for a list of NFTs; results are cached for the session.
+// Resolves token URIs for a list of NFTs; found ones are cached for the session.
 export interface NftImageState {
   uri: string | null;
   loading: boolean;
@@ -24,7 +25,7 @@ export const useNftImages = (network: Network, requests: NftImageRequest[]): Rec
       queryKey: queryKeys.nftUri(network.id, request.packagePath, request.nftId ?? ''),
       queryFn: (): Promise<string | null> => nftService.getTokenUri(network, request.packagePath, request.nftId as string),
       enabled: request.enabled && Boolean(request.nftId),
-      staleTime: Infinity,
+      staleTime: nftLookupStaleTime,
     })),
   });
 

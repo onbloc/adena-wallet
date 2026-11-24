@@ -11,23 +11,26 @@ export interface NftImageProps {
   uri?: string | null;
   loading?: boolean;
   size?: DimensionValue;
+  // Changing this (e.g. on pull-to-refresh) retries a source that failed before.
+  retryKey?: string | number;
 }
 
 // Square artwork frame; renders SVG (inline or remote) and raster images, with a placeholder on failure.
-export const NftImage = ({ uri, loading = false, size = '100%' }: NftImageProps): ReactElement => {
-  // Failure belongs to one source; keyed elements remount per URI so an old element cannot report late errors.
-  const [failedSource, setFailedSource] = useState<string | null | undefined>(null);
-  const source = failedSource !== null && failedSource === uri ? { kind: ImageSourceKind.NONE } : resolveImageSource(uri);
+export const NftImage = ({ uri, loading = false, size = '100%', retryKey }: NftImageProps): ReactElement => {
+  // Failure belongs to one source and retry key; keyed elements remount per URI so an old element cannot report late errors.
+  const [failure, setFailure] = useState<{ uri?: string | null; retryKey?: string | number } | null>(null);
+  const failed = failure !== null && failure.uri === uri && failure.retryKey === retryKey;
+  const source = failed ? { kind: ImageSourceKind.NONE } : resolveImageSource(uri);
 
   if (loading) {
     return <View style={[styles.frame, { width: size }]}><Skeleton height={400} /></View>;
   }
 
-  const handleError = (): void => setFailedSource(uri);
+  const handleError = (): void => setFailure({ uri, retryKey });
 
-  const handleSvgUriError = (): void => setFailedSource(uri);
+  const handleSvgUriError = (): void => setFailure({ uri, retryKey });
 
-  const handleImageError = (): void => setFailedSource(uri);
+  const handleImageError = (): void => setFailure({ uri, retryKey });
 
   return (
     <View style={[styles.frame, { width: size }]}>

@@ -91,7 +91,7 @@ describe('NFT data', () => {
           ],
         },
       })
-      .on(`${API_URL}/v1/accounts/${address}/grc721-tokens/${encodeURIComponent('gno.land/r/demo/nft.NFT.1')}/items?limit=1`, {
+      .on(`${API_URL}/v1/accounts/${address}/grc721-tokens/${encodeURIComponent('gno.land/r/demo/nft.NFT.1')}/items?limit=20`, {
         data: { items: [{ nftId: '7', packagePath: 'gno.land/r/demo/nft', name: 'Demo', symbol: 'NFT' }], page: { hasNext: true, cursor: 'c1' } },
       });
     env.gno.state.signatures['gno.land/r/demo/nft'] = [{ FuncName: 'TokenURI', Results: [{ Type: 'string' }] }];

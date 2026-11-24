@@ -1,10 +1,23 @@
-import { InfiniteData, useInfiniteQuery, UseInfiniteQueryResult, useQuery, UseQueryResult } from '@tanstack/react-query';
+import { InfiniteData, QueryClient, useInfiniteQuery, UseInfiniteQueryResult, useQuery, UseQueryResult } from '@tanstack/react-query';
 
 import { useContainer } from '../di/container-provider';
 import { Account } from '../domain/account';
 import { Network } from '../domain/network';
 import { NftCollection, NftItem, NftMetadata, Page } from '../domain/nft';
 import { NO_ID_KEY, queryKeys } from './query-keys';
+
+// Found URIs and metadata never change; an empty answer is re-checked soon in case it was transient.
+export const NFT_MISS_STALE_TIME = 30_000;
+
+export const nftLookupStaleTime = (query: { state: { data: unknown } }): number =>
+  query.state.data === null ? NFT_MISS_STALE_TIME : Infinity;
+
+// Pull-to-refresh: refetch token URIs that came back empty or failed; resolved ones stay cached.
+export const refetchUnresolvedNftUris = (client: QueryClient, networkId: string): Promise<void> =>
+  client.invalidateQueries({
+    queryKey: queryKeys.nftUris(networkId),
+    predicate: query => query.state.status === 'error' || query.state.data === null,
+  });
 
 export const useNftCollectionsQuery = (account: Account | null, network: Network): UseQueryResult<NftCollection[], Error> => {
   const { nftService } = useContainer();
@@ -36,7 +49,7 @@ export const useNftTokenUriQuery = (network: Network, packagePath: string, nftId
     queryKey: queryKeys.nftUri(network.id, packagePath, nftId ?? ''),
     queryFn: () => nftService.getTokenUri(network, packagePath, nftId as string),
     enabled: enabled && Boolean(nftId),
-    staleTime: Infinity,
+    staleTime: nftLookupStaleTime,
   });
 };
 
@@ -47,6 +60,6 @@ export const useNftMetadataQuery = (network: Network, packagePath: string, nftId
     queryKey: queryKeys.nftMetadata(network.id, packagePath, nftId),
     queryFn: () => nftService.getMetadata(network, packagePath, nftId),
     enabled,
-    staleTime: Infinity,
+    staleTime: nftLookupStaleTime,
   });
 };

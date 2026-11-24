@@ -1,3 +1,5 @@
+import { TM2Error } from '@gnolang/tm2-js-client';
+
 import { ChainFamily, Network } from '../../../domain/network';
 import { NftCollection, NftItem, NftMetadata, Page } from '../../../domain/nft';
 import { OnblocApiClient } from '../../../infrastructure/http/onbloc-api.client';
@@ -9,6 +11,9 @@ import { decodeGoString, gnoLiteral, parseQEvalResult } from './gno-qeval';
 const MAX_URI_LENGTH = 2 * 1024 * 1024;
 // Bounds how many API pages one getItems call reads while skipping empty or operated-only pages.
 const MAX_PAGES_PER_CALL = 10;
+// Thumbnail lookup reads a few small pages looking for an owned token before giving up.
+const THUMBNAIL_PAGE_SIZE = 20;
+const THUMBNAIL_MAX_PAGES = 3;
 
 // getItems cursor: index into collectionIds plus that collection's own API cursor.
 const encodeCursor = (index: number, cursor: string | null): string => `${index}:${cursor ?? ''}`;
@@ -30,6 +35,23 @@ const readStringResult = (raw: string): string | null => {
   const decoded = decodeGoString(value.value);
 
   return decoded && decoded.length <= MAX_URI_LENGTH ? decoded : null;
+};
+
+// The node answered with an ABCI error (e.g. a realm panic): a genuine "no value", not a transport failure.
+const isChainAnswer = (error: unknown): boolean => error instanceof TM2Error;
+
+// Transport failures and timeouts propagate so callers can retry; chain-level errors read as empty.
+const evaluateOrEmpty = async (evaluate: () => Promise<string>): Promise<string> => {
+  try {
+    return await evaluate();
+  }
+  catch (error) {
+    if (isChainAnswer(error)) {
+      return '';
+    }
+
+    throw error;
+  }
 };
 
 const toMetadata = (json: Record<string, unknown>): NftMetadata => {
@@ -81,11 +103,10 @@ export class GnoNftRepository implements NftRepository {
     });
 
     return Promise.all([...byPackage.entries()].map(async ([packagePath, info]) => {
-      const [thumbnail, capabilities] = await Promise.all([
-        this.api.getCollectionItems(apiUrl, address, info.ids[0], null, 1).catch(() => null),
+      const [thumbnailNftId, capabilities] = await Promise.all([
+        this.findThumbnail(apiUrl, address, info.ids).catch(() => undefined),
         this.getCapabilities(packagePath, network),
       ]);
-      const first = thumbnail?.items[0];
 
       return {
         id: info.ids[0],
@@ -94,7 +115,7 @@ export class GnoNftRepository implements NftRepository {
         name: info.name,
         symbol: info.symbol,
         ownedCount: info.count,
-        thumbnailNftId: first && first.isOwned !== false ? first.nftId : undefined,
+        thumbnailNftId,
         ...capabilities,
       };
     }));
@@ -134,14 +155,14 @@ export class GnoNftRepository implements NftRepository {
 
   async getTokenUri(packagePath: string, nftId: string, network: Network): Promise<string | null> {
     const provider = await this.providerFactory(network.rpcUrl);
-    const raw = await provider.evaluateExpression(packagePath, `TokenURI(${gnoLiteral(nftId)})`).catch(() => '');
+    const raw = await evaluateOrEmpty(() => provider.evaluateExpression(packagePath, `TokenURI(${gnoLiteral(nftId)})`));
 
     return raw ? readStringResult(raw) : null;
   }
 
   async getMetadata(packagePath: string, nftId: string, network: Network): Promise<NftMetadata | null> {
     const provider = await this.providerFactory(network.rpcUrl);
-    const raw = await provider.evaluateExpression(packagePath, `TokenMetadata(${gnoLiteral(nftId)})`).catch(() => '');
+    const raw = await evaluateOrEmpty(() => provider.evaluateExpression(packagePath, `TokenMetadata(${gnoLiteral(nftId)})`));
     const text = raw ? readStringResult(raw) : null;
 
     if (!text) {
@@ -162,6 +183,28 @@ export class GnoNftRepository implements NftRepository {
       type: GnoMessageType.VM_CALL,
       value: { caller: fromAddress, send: '', max_deposit: '', pkg_path: packagePath, func: 'TransferFrom', args: [fromAddress, toAddress, nftId] },
     }];
+  }
+
+  // First owned token within a few pages, skipping staked tokens the account only operates.
+  // When none is found the first token seen is used for display only.
+  private async findThumbnail(apiUrl: string, address: string, ids: string[]): Promise<string | undefined> {
+    let fallback: string | undefined;
+    let index = 0;
+    let cursor: string | null = null;
+
+    for (let pages = 0; pages < THUMBNAIL_MAX_PAGES && index < ids.length; pages++) {
+      const { items, page } = await this.api.getCollectionItems(apiUrl, address, ids[index], cursor, THUMBNAIL_PAGE_SIZE);
+      const owned = items.find(item => item.isOwned !== false);
+
+      if (owned) {
+        return owned.nftId;
+      }
+
+      fallback ??= items[0]?.nftId;
+      [index, cursor] = page.hasNext && page.cursor ? [index, page.cursor] : [index + 1, null];
+    }
+
+    return fallback;
   }
 
   // Detection failures keep both capabilities on, so images still get a best-effort attempt.
