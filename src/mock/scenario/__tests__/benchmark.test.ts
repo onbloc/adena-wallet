@@ -1,0 +1,175 @@
+import { TransactionType, type PreparedTransaction } from '../../../agent';
+import { formatReport, runBenchmark } from '../benchmark';
+import { ACCOUNT, CAROL, RECIPIENT } from '../fixture';
+import type { ScenarioRun, ScenarioRunner } from '../runner';
+import type { Scenario } from '../scenarios';
+
+const transfer = (to: string, amount: string): PreparedTransaction => ({
+  summary: { type: TransactionType.Transfer, chainId: 'c', from: ACCOUNT, to, amount, token: 'GNOT' },
+  tx: {},
+});
+const run = (...prepared: PreparedTransaction[]): ScenarioRun => ({ prepared, calls: [], results: [], text: '' });
+
+const send: Scenario = { name: 'send to carol', prompt: 'send 1 to carol', expected: { kind: 'transfer', to: CAROL, amount: '1', token: 'GNOT' } };
+const ask: Scenario = { name: 'no recipient', prompt: 'send 1', expected: { kind: 'none' } };
+
+let clock = { t: 0 };
+type BenchOptions = Parameters<typeof runBenchmark>[0];
+/** Runs the benchmark on the fake runner's clock, so run times are the ones the runner reports. */
+const bench = (options: Omit<BenchOptions, 'now'>) => runBenchmark({ ...options, now: () => clock.t });
+
+/** Answers each call from `answers` (an Error is thrown) and moves the fake clock by `ms`. */
+function fakeRunner(answers: (ScenarioRun | Error)[], { ms = 1000, onAsk }: { ms?: number | number[]; onAsk?: (call: number) => void } = {}) {
+  clock = { t: 0 };
+  const prompts: string[] = [];
+  const signals: (AbortSignal | undefined)[] = [];
+  const runner: ScenarioRunner = {
+    async ask(prompt, signal) {
+      const call = prompts.length;
+      prompts.push(prompt);
+      signals.push(signal);
+      clock.t += Array.isArray(ms) ? ms[call] : ms;
+      onAsk?.(call);
+      const answer = answers[Math.min(call, answers.length - 1)];
+      if (answer instanceof Error) throw answer;
+      return answer;
+    },
+    chat: async () => [],
+  };
+  return { runner, prompts, signals, clock };
+}
+
+const collect = () => {
+  const lines: string[] = [];
+  return { lines, onLog: (line: string) => { lines.push(line); } };
+};
+
+describe('runBenchmark over scenarios', () => {
+  it('runs round by round, so every scenario is spread over the whole benchmark', async () => {
+    const { runner, prompts } = fakeRunner([run(transfer(CAROL, '1')), run()]);
+    const { onLog } = collect();
+
+    await bench({ runner, target: { kind: 'scenarios', scenarios: [send, ask] }, runs: 2, onLog });
+
+    expect(prompts).toEqual([send.prompt, ask.prompt, send.prompt, ask.prompt]);
+  });
+
+  it('counts passes per scenario and says what the model got wrong', async () => {
+    const answers = [run(transfer(CAROL, '1')), run(), run(transfer(CAROL, '2')), run()];
+    const { runner } = fakeRunner(answers);
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [send, ask] }, runs: 2, onLog });
+
+    expect(report).toMatchObject({ planned: 4, completed: 4, aborted: false, passed: 3, errored: 0 });
+    expect(report.items[0]).toMatchObject({ name: send.name, runs: 2, passed: 1, reasons: [{ text: 'amount: got 2, expected 1', count: 1 }] });
+    expect(report.items[1]).toMatchObject({ runs: 2, passed: 2, reasons: [] });
+    expect(lines).toContain('[1/4] PASS send to carol  1.0s');
+    expect(lines.find((line) => line.startsWith('[3/4]'))).toBe('[3/4] FAIL send to carol  1.0s  - amount: got 2, expected 1');
+    expect(lines).toContain('round 1/2: 2/2 passed, 2.0s elapsed');
+    expect(lines).toContain('round 2/2: 1/2 passed, 4.0s elapsed');
+  });
+
+  it('counts an error by its code, fails that run and carries on', async () => {
+    const { runner } = fakeRunner([new Error('ADENA_INTENT_INVALID: The model did not return a valid request classification.\nmore'), run(transfer(CAROL, '1'))]);
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [send] }, runs: 3, onLog });
+
+    expect(report).toMatchObject({ completed: 3, passed: 2, errored: 1, errors: [{ code: 'ADENA_INTENT_INVALID', count: 1 }] });
+    expect(lines.find((line) => line.startsWith('[1/3]'))).toBe(
+      '[1/3] FAIL send to carol  1.0s  - ADENA_INTENT_INVALID: The model did not return a valid request classification.'
+    );
+  });
+
+  it('measures run times and compares the two halves', async () => {
+    const { runner } = fakeRunner([run(transfer(CAROL, '1'))], { ms: [1000, 1000, 2000, 5000] });
+    const { onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [send] }, runs: 4, onLog });
+
+    expect(report.timing).toEqual({ meanMs: 2250, p50Ms: 1000, p95Ms: 5000, maxMs: 5000 });
+    expect(report.halves).toEqual({ firstMs: 1000, secondMs: 3500 });
+    expect(report.totalMs).toBe(9000);
+    expect(formatReport(report)).toContain('first half 1.0s -> second half 3.5s (+250%)');
+  });
+});
+
+describe('runBenchmark over one prompt', () => {
+  it('reports a single outcome as consistent', async () => {
+    const { runner } = fakeRunner([run(transfer(CAROL, '1'))]);
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'prompt', prompt: ' send 1 to carol ' }, runs: 3, onLog });
+
+    expect(report).toMatchObject({ target: 'prompt', passed: 3, outcomes: [{ text: `transfer 1 GNOT to ${CAROL}`, count: 3 }] });
+    expect(lines).toContain('consistent: yes - 1 distinct outcome(s), 0 error(s)');
+  });
+
+  it('groups different outcomes, most common first, and flags the first time each appears', async () => {
+    const { runner } = fakeRunner([run(transfer(CAROL, '1')), run(transfer(CAROL, '1')), run(transfer(RECIPIENT, '1')), run(transfer(CAROL, '1'))]);
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'prompt', prompt: 'send' }, runs: 4, onLog });
+
+    expect(report.outcomes).toEqual([
+      { text: `transfer 1 GNOT to ${CAROL}`, count: 3 },
+      { text: `transfer 1 GNOT to ${RECIPIENT}`, count: 1 },
+    ]);
+    expect(lines.filter((line) => line.includes('(new outcome)'))).toHaveLength(2);
+    expect(lines).toContain('consistent: NO - 2 distinct outcome(s), 0 error(s)');
+  });
+
+  it('is not consistent when a run fails, even if the others agree', async () => {
+    const { runner } = fakeRunner([run(transfer(CAROL, '1')), new Error('ADENA_PREPARATION_INVALID: x')]);
+    const { lines, onLog } = collect();
+
+    await bench({ runner, target: { kind: 'prompt', prompt: 'send' }, runs: 2, onLog });
+
+    expect(lines).toContain('consistent: NO - 1 distinct outcome(s), 1 error(s)');
+  });
+});
+
+describe('runBenchmark control', () => {
+  it('stops at once when aborted, and does not count the run that was cut off', async () => {
+    const controller = new AbortController();
+    const { runner, signals } = fakeRunner([run(transfer(CAROL, '1'))], { onAsk: (call) => { if (call === 2) controller.abort(); } });
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [send] }, runs: 10, signal: controller.signal, onLog });
+
+    expect(report).toMatchObject({ planned: 10, completed: 2, aborted: true });
+    expect(signals.every((signal) => signal === controller.signal)).toBe(true);
+    // The run that was cut off took 1.0s of wall time, though it is not counted as a run.
+    expect(lines).toContain('runs: 2/10 completed (stopped early) in 3.0s');
+  });
+
+  it('does not start when preflight fails, and logs why', async () => {
+    const { runner, prompts } = fakeRunner([run()]);
+    const { lines, onLog } = collect();
+
+    await expect(
+      bench({ runner, target: { kind: 'scenarios', scenarios: [send] }, runs: 1, onLog, preflight: async () => { throw new Error('fake reads failed'); } })
+    ).rejects.toThrow('fake reads failed');
+
+    expect(prompts).toEqual([]);
+    expect(lines).toContain('preflight failed: fake reads failed');
+  });
+
+  it('logs the header and preflight result before the first run', async () => {
+    const { runner } = fakeRunner([run(transfer(CAROL, '1'))]);
+    const { lines, onLog } = collect();
+
+    await bench({ runner, target: { kind: 'scenarios', scenarios: [send] }, runs: 1, onLog, header: ['device: test'], preflight: async () => 'reads ok' });
+
+    expect(lines.slice(0, 3)).toEqual(['device: test', 'Benchmark: 1 scenarios x 1 runs = 1 runs', 'preflight: reads ok']);
+  });
+
+  it.each([0, -1, 1.5, NaN])('rejects %s runs', async (runs) => {
+    await expect(bench({ runner: fakeRunner([run()]).runner, target: { kind: 'prompt', prompt: 'x' }, runs, onLog: () => {} })).rejects.toThrow(RangeError);
+  });
+
+  it('rejects an empty prompt', async () => {
+    await expect(bench({ runner: fakeRunner([run()]).runner, target: { kind: 'prompt', prompt: '  ' }, runs: 1, onLog: () => {} })).rejects.toThrow(TypeError);
+  });
+});

@@ -68,8 +68,9 @@ src/adena/                    AdenaWalletSdk: the WalletSdk port over @adena-wal
   adenaWalletSdk.ts, tokens.ts  builds the transaction, hands it to Adena to approve; token symbol -> package path
 src/mock/                     Test-only code, nothing above depends on it
   wallet/                       MockWalletSdk (read-only), fixture, tokens, funding the mock from Onbloc
-  app/                          Playground screen, prepared-transaction cards, Settings (MCP URL, address)
+  app/                          Playground screen, prepared-transaction cards, Settings (MCP URL, address), benchmark log
   cli/                          make chat (chat.ts), with-server.sh
+  scenario/                     scenarios, their check, the runner and the benchmark engine (portable: jest and app)
 ```
 
 ```ts
@@ -341,6 +342,36 @@ A failure prints the prompt, the model's tool calls and its answer. The model is
 deterministic across builds or machines, so a failing scenario can be a model limit or a prompt
 problem, not necessarily a code bug. Set `SCENARIO_URL` to use another server. The jest-expo
 preset replaces `fetch` with a stub, hence the separate config.
+
+## Benchmark in the app (on a phone)
+
+The Chat tab has a **Benchmark** button next to Run. It runs on the loaded model and shows a live
+log; when it ends, **Copy** puts the whole log (conditions, every run, the result) on the clipboard.
+It stops with **Stop benchmark**; a stopped run can be copied too.
+
+- **Empty prompt box:** every scenario in `scenarios.ts` runs *Benchmark runs* times (Settings,
+  default 10), round by round so heat spreads over the whole run. Each run is PASS or FAIL against
+  the scenario's expected transaction, and a FAIL says which field the model got wrong.
+- **Text in the prompt box:** that prompt runs *Benchmark runs* times and the transactions it
+  prepared are counted by outcome (`consistent: yes` only if every run prepared the same one).
+- **Judged on summaries** (recipient or spender, amount, token, kind of transaction): what the model
+  chose. The transaction builder is deterministic, so the same summary gives the same transaction.
+  The decoded Adena message is checked only by `make scenario`, because the Adena SDK is not
+  bundled into the app.
+- **Fixed conditions**, so numbers compare across devices and builds: temperature 0, 512 output
+  tokens, no thinking, a fresh conversation per run, a mock wallet (10 GNOT, 250 GNS, contact `carol`)
+  and fake Onbloc reads in process. Settings values, the Settings address and the Onbloc and
+  transaction-preparation switches do not apply. No network.
+- **Report:** passes per scenario (or outcomes per prompt), errors by code (`ADENA_INTENT_INVALID`,
+  ...), time per run (mean, p50, p95, max) and the first half against the second half, which
+  shows thermal throttling. A development build is slower on the JavaScript side than a release
+  build; the log says which one ran.
+- Before the first run it reads the fake Onbloc once, to fail early if that does not work in the
+  phone's runtime. The fake builds its replies with the global `Response`; this has not been run on
+  Hermes yet.
+
+The engine (`src/mock/scenario/benchmark.ts`) needs only a `ScenarioRunner`, so the same code runs
+against any `LLM`; `make scenario` shares the same summary check (`check.ts`).
 
 ## Metrics
 

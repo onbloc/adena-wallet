@@ -1,11 +1,12 @@
 // Scenario tests: a real model turns plain-language requests into transactions. They need a
 // running llama-server and are not part of `npm test`; run them with `make scenario`.
-import { TransactionType, toBaseUnits } from '../../agent';
+import { toBaseUnits } from '../../agent';
+import { checkSummaries } from './check';
 import {
-  ACCOUNT,
   GNS_PATH,
+  ACCOUNT,
   adenaTransaction,
-  createScenarioRunner,
+  createServerScenarioRunner,
   firstMessage,
   serverUrl,
   type ScenarioRun,
@@ -19,33 +20,18 @@ jest.setTimeout(5 * 60_000);
 // Every token in the scenarios has 6 decimals.
 const DECIMALS = 6;
 
-/** The prepared transaction is exactly the requested one, in its summary and in the message it will sign. */
-function expectTransaction(run: ScenarioRun, expected: Exclude<Expected, { kind: 'none' }>) {
-  expect(run.prepared).toHaveLength(1);
+/** The message the prepared transaction will sign is exactly the requested one. */
+function expectMessage(run: ScenarioRun, expected: Exclude<Expected, { kind: 'none' }>) {
   const [prepared] = run.prepared;
   const base = String(toBaseUnits(expected.amount, DECIMALS));
 
   if (expected.kind === 'transfer') {
-    expect(prepared.summary).toMatchObject({
-      type: TransactionType.Transfer,
-      from: ACCOUNT,
-      to: expected.to,
-      amount: expected.amount,
-      token: expected.token,
-    });
     expect(firstMessage(prepared)).toMatchObject(
       expected.token === 'GNOT'
         ? { type: '/bank.MsgSend', value: { from_address: ACCOUNT, to_address: expected.to, amount: `${base}ugnot` } }
         : { type: '/vm.m_call', value: { caller: ACCOUNT, pkg_path: GNS_PATH, func: 'Transfer', args: [expected.to, base] } }
     );
   } else {
-    expect(prepared.summary).toMatchObject({
-      type: TransactionType.Allowance,
-      from: ACCOUNT,
-      spender: expected.spender,
-      amount: expected.amount,
-      token: expected.token,
-    });
     expect(firstMessage(prepared)).toMatchObject({
       type: '/vm.m_call',
       value: { caller: ACCOUNT, pkg_path: GNS_PATH, func: 'Approve', args: [expected.spender, base] },
@@ -58,7 +44,7 @@ describe('plain-language requests become transactions', () => {
 
   beforeAll(async () => {
     try {
-      runner = await createScenarioRunner();
+      runner = await createServerScenarioRunner();
     } catch (error) {
       throw new Error(`${String(error)}\nStart the server with \`make scenario\`, or set SCENARIO_URL (now ${serverUrl()}).`);
     }
@@ -72,11 +58,9 @@ describe('plain-language requests become transactions', () => {
       // Only outcomes matter; a corrected tool-call retry must not fail the scenario.
       for (const prepared of run.prepared) expect(adenaTransaction(prepared).signatures).toEqual([]);
 
-      if (expected.kind === 'none') {
-        expect(run.prepared).toEqual([]);
-      } else {
-        expectTransaction(run, expected);
-      }
+      // The summaries first (what the model chose), then the message that will be signed.
+      expect(checkSummaries(run.prepared.map(({ summary }) => summary), expected)).toEqual({ ok: true });
+      if (expected.kind !== 'none') expectMessage(run, expected);
     } catch (error) {
       if (error instanceof Error) error.message += `\n\n${context}`;
       throw error;

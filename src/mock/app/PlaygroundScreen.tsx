@@ -34,9 +34,12 @@ import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk, WalletState } from '../wallet/mockWalletSdk';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
 import type { Balances } from '../wallet/tokens';
+import { SCENARIOS } from '../scenario/scenarios';
 import { describeTransaction } from './describeTransaction';
 import { useChatSession } from './useChatSession';
 import { usePreparationHistory } from './usePreparationHistory';
+import { BenchmarkLog } from './BenchmarkLog';
+import { BENCHMARK_RUNS_RANGE, DEFAULT_BENCHMARK_RUNS, useBenchmark } from './useBenchmark';
 import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL, resolveOnblocSettings } from './onblocSettings';
 
 /** Parses user input; null when empty, non-numeric, non-integer (if required) or out of range. */
@@ -82,6 +85,8 @@ const llm = new LLMOnDevice();
 
 export default function PlaygroundScreen() {
   const { status, run, start, stop, load, unload, remove } = useLlm(llm);
+  const bench = useBenchmark(llm, DEFAULT_MODEL_ID);
+  const [benchRuns, setBenchRuns] = useState(String(DEFAULT_BENCHMARK_RUNS));
   const [prompt, setPrompt] = useState('');
   const [temperature, setTemperature] = useState(
     String(DEFAULT_GENERATE_SETTINGS.temperature)
@@ -173,6 +178,7 @@ export default function PlaygroundScreen() {
 
   const temperatureValue = parseBounded(temperature, TEMPERATURE_RANGE);
   const maxTokensValue = parseBounded(maxTokens, MAX_OUTPUT_TOKENS_RANGE, true);
+  const benchRunsValue = parseBounded(benchRuns, BENCHMARK_RUNS_RANGE, true);
 
   const busy = status.state === 'downloading' || status.state === 'loading';
   const ready = status.state === 'ready';
@@ -183,9 +189,11 @@ export default function PlaygroundScreen() {
     (!onblocMode || onbloc !== undefined) &&
     !preparing &&
     !run.running &&
+    !bench.running &&
     prompt.trim() !== '' &&
     temperatureValue !== null &&
     maxTokensValue !== null;
+  const canBenchmark = ready && !preparing && !run.running && !bench.running && benchRunsValue !== null;
 
   /** The mock wallet funded with the account's Onbloc balances; null (reason shown) if they cannot be read. */
   const ensureOnblocWallet = async (config: NonNullable<typeof onbloc>) => {
@@ -261,6 +269,17 @@ export default function PlaygroundScreen() {
   };
 
   const sendDisabled = !run.running && !canRun;
+  const benchDisabled = !bench.running && !canBenchmark;
+
+  /** An empty prompt box runs every scenario; text in it runs that prompt alone. */
+  const onBenchmark = () => {
+    if (benchRunsValue === null) return;
+    const text = prompt.trim();
+    void bench.start(
+      text === '' ? { kind: 'scenarios', scenarios: SCENARIOS } : { kind: 'prompt', prompt: text },
+      benchRunsValue
+    );
+  };
 
   return (
     <KeyboardAvoidingView
@@ -415,6 +434,19 @@ export default function PlaygroundScreen() {
             <Button label="Clear conversation" onPress={clearChat}
               disabled={preparing || run.running || !session.turns.length} />
           </View>
+          <Text style={styles.label}>Benchmark runs ({BENCHMARK_RUNS_RANGE.min}-{BENCHMARK_RUNS_RANGE.max})</Text>
+          <TextInput
+            style={[styles.input, benchRunsValue === null && styles.invalid]}
+            value={benchRuns}
+            onChangeText={setBenchRuns}
+            keyboardType="number-pad"
+            editable={!bench.running}
+          />
+          <Text style={styles.muted}>
+            Benchmark button: with an empty prompt box it runs every scenario this many times; with text
+            in the box it runs that prompt this many times and counts the different transactions. Fixed:
+            temperature 0, 512 output tokens, no thinking, a mock wallet and fake Onbloc reads (no network).
+          </Text>
         </ScrollView>
       )}
 
@@ -531,6 +563,15 @@ export default function PlaygroundScreen() {
             )}
           </>
         )}
+        {bench.total > 0 && (
+          <BenchmarkLog
+            tail={bench.tail}
+            total={bench.total}
+            running={bench.running}
+            getText={bench.text}
+            onClear={bench.clear}
+          />
+        )}
       </ScrollView>
 
       <View style={[styles.composer, keyboardShown && styles.composerKeyboard, !chat && styles.hidden]}>
@@ -546,6 +587,16 @@ export default function PlaygroundScreen() {
           {(temperatureValue === null || maxTokensValue === null) && (
             <Text style={[styles.error, styles.flex]}>Check Temperature / Max tokens in Settings</Text>
           )}
+          {benchRunsValue === null && (
+            <Text style={[styles.error, styles.flex]}>Check Benchmark runs in Settings</Text>
+          )}
+          <Pressable
+            onPress={() => (bench.running ? bench.stop() : onBenchmark())}
+            disabled={benchDisabled}
+            style={[styles.benchButton, benchDisabled && styles.buttonDisabled]}
+          >
+            <Text style={styles.buttonText}>{bench.running ? 'Stop benchmark' : 'Benchmark'}</Text>
+          </Pressable>
           <Pressable
             onPress={() => (run.running ? stop() : void onRun())}
             disabled={sendDisabled}
@@ -696,6 +747,12 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   composerFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 },
+  benchButton: {
+    backgroundColor: '#6b7280',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+  },
   sendButton: {
     backgroundColor: '#2563eb',
     paddingVertical: 8,

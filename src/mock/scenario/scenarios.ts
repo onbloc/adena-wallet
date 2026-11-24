@@ -1,4 +1,4 @@
-import { CAROL, RECIPIENT } from './harness';
+import { CAROL, RECIPIENT } from './fixture';
 
 /** What the prepared transaction must be. `none`: the model must not prepare any. */
 export type Expected =
