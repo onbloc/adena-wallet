@@ -30,7 +30,11 @@ export function checkSummaries(prepared: readonly PreparedSummary[], expected: E
     return prepared.length === 0 ? { ok: true } : fail(`prepared ${describeSummaries(prepared)}, expected nothing`);
   }
   if (prepared.length !== 1) {
-    return fail(`prepared ${prepared.length} transactions (${describeSummaries(prepared)}), expected 1`);
+    return fail(
+      prepared.length === 0
+        ? 'prepared nothing, expected 1'
+        : `prepared ${prepared.length} transactions (${describeSummaries(prepared)}), expected 1`
+    );
   }
 
   const [summary] = prepared;
@@ -51,4 +55,34 @@ export function checkSummaries(prepared: readonly PreparedSummary[], expected: E
   compare('amount', summary.amount, expected.amount);
   compare('token', summary.token, expected.token);
   return wrong.length === 0 ? { ok: true } : fail(wrong.join('; '));
+}
+
+const WALLET_ACTIONS = ['transfer', 'approve'];
+
+/** The wallet's refusal in a tool result (`{ kind: 'result', value: { status: 'error', code, message } }`), as text. */
+function refusalOf(output: unknown): string | undefined {
+  if (output === null || typeof output !== 'object' || !('value' in output)) return undefined;
+  const { value } = output;
+  if (value === null || typeof value !== 'object' || !('status' in value) || value.status !== 'error') return undefined;
+  const code = 'code' in value && typeof value.code === 'string' ? value.code : 'error';
+  const message = 'message' in value && typeof value.message === 'string' ? value.message : '';
+  return message === '' ? code : `${code} - ${message}`;
+}
+
+/**
+ * Why a run that was expected to prepare something prepared nothing: what the model asked the
+ * wallet for and how the wallet answered, else what the model said instead.
+ */
+export function explainNothing(run: {
+  calls: readonly { name: string; input: unknown }[];
+  results: readonly { name: string; output: unknown }[];
+  text: string;
+}): string | undefined {
+  const call = run.calls.filter((c) => WALLET_ACTIONS.includes(c.name)).at(-1);
+  if (call !== undefined) {
+    const refusal = run.results.filter((r) => r.name === call.name).map((r) => refusalOf(r.output)).at(-1);
+    return `the model asked ${call.name}(${JSON.stringify(call.input)})${refusal ? `; the wallet refused: ${refusal}` : ''}`;
+  }
+  const said = run.text.trim().replace(/\s+/g, ' ');
+  return said === '' ? undefined : `the model replied: ${JSON.stringify(said.length > 120 ? `${said.slice(0, 120)}...` : said)}`;
 }

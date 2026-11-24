@@ -204,3 +204,47 @@ describe('LLMOnDevice', () => {
     expect(new LLMOnDevice({ contextParams: { n_ctx: 4096 } }).contextTokens).toBe(4096);
   });
 });
+
+describe('LLMOnDevice.runtimeInfo', () => {
+  const context = {
+    gpu: false,
+    reasonNoGPU: 'No GPU backend',
+    devices: undefined,
+    systemInfo: 'CPU : NEON = 1',
+    androidLib: 'rnllama_v8',
+    model: { desc: 'qwen3.5 2B Q4_K - Medium', nParams: 2_000_000_000, size: 1_500_000_000 },
+  };
+
+  it('is null until a model is loaded', () => {
+    expect(new LLMOnDevice().runtimeInfo()).toBeNull();
+  });
+
+  it('reports what the native runtime says about the loaded model', async () => {
+    mocked.isModelDownloaded.mockResolvedValue(true);
+    mocked.llama.languageModel.mockReturnValue(
+      Object.assign(llamaModel(streaming()), { getContext: () => context }) as never
+    );
+    const llm = new LLMOnDevice();
+    await llm.load();
+
+    expect(llm.runtimeInfo()).toEqual({
+      gpu: false,
+      reasonNoGPU: 'No GPU backend',
+      devices: [],
+      systemInfo: 'CPU : NEON = 1',
+      androidLib: 'rnllama_v8',
+      model: { description: 'qwen3.5 2B Q4_K - Medium', parameters: 2_000_000_000, sizeBytes: 1_500_000_000 },
+    });
+  });
+
+  it('is null when the model has no native context yet', async () => {
+    mocked.isModelDownloaded.mockResolvedValue(true);
+    mocked.llama.languageModel.mockReturnValue(
+      Object.assign(llamaModel(streaming()), { getContext: () => null }) as never
+    );
+    const llm = new LLMOnDevice();
+    await llm.load();
+
+    expect(llm.runtimeInfo()).toBeNull();
+  });
+});

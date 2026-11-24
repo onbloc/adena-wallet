@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
-import type { LLM } from '../../llm/core';
+import type { LLMOnDevice } from '../../llm/device';
+import { describeRuntime } from './describeRuntime';
 import { runBenchmark, type BenchmarkTarget } from '../scenario/benchmark';
 import { createBenchmarkWallet } from '../scenario/benchmarkWallet';
 import { ACCOUNT, FAKE_ENDPOINT, fakeReads } from '../scenario/fixture';
@@ -19,7 +20,7 @@ const TAIL_LINES = 300;
 const REDRAW_MS = 150;
 
 /** Runs the benchmark on the loaded model and keeps its log for the screen. */
-export function useBenchmark(llm: LLM, modelId: string) {
+export function useBenchmark(llm: LLMOnDevice, modelId: string) {
   const [running, setRunning] = useState(false);
   // What the screen draws; `lines` below keeps every line.
   const [view, setView] = useState<{ total: number; tail: readonly string[] }>({ total: 0, tail: [] });
@@ -75,6 +76,7 @@ export function useBenchmark(llm: LLM, modelId: string) {
             `build: ${__DEV__ ? 'development (slower JavaScript side)' : 'release'}`,
             `model: ${modelId}`,
             `context: n_ctx ${llm.contextTokens}`,
+            ...describeRuntime(llm.runtimeInfo(), llm.status.state === 'ready' ? llm.status.loadMs : undefined),
             `settings: temperature ${BENCHMARK_SETTINGS.temperature}, max output tokens ${BENCHMARK_SETTINGS.maxOutputTokens}, reasoning ${BENCHMARK_SETTINGS.reasoning} (fixed)`,
             'wallet: mock wallet, fake Onbloc reads (10 GNOT, 250 GNS), contact carol',
             `started: ${new Date().toISOString()}`,

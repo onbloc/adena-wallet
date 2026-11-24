@@ -289,7 +289,7 @@ base units (`ResolvedToken.balance: bigint`). `createOnblocTokenResolver` reads
 To see how far the model gets with plain human language, talk to it yourself. It runs on this
 Mac through llama-server; by default it is a plain chat with no wallet. `--onbloc` adds the
 wallet: the app's prompt and tools. It answers in the language you write in (English and
-Korean both work; the repo itself has no Korean text, but you can type any language into the chat).
+Korean both work; the scenarios in `src/mock/scenario/scenarios.ts` include Korean prompts, and you can type any language into the chat).
 
 ```bash
 make chat                                        # interactive plain chat; the conversation is remembered
@@ -349,11 +349,13 @@ The Chat tab has a **Benchmark** button next to Run. It runs on the loaded model
 log; when it ends, **Copy** puts the whole log (conditions, every run, the result) on the clipboard.
 It stops with **Stop benchmark**; a stopped run can be copied too.
 
-- **Empty prompt box:** every scenario in `scenarios.ts` runs *Benchmark runs* times (Settings,
-  default 10), round by round so heat spreads over the whole run. Each run is PASS or FAIL against
-  the scenario's expected transaction, and a FAIL says which field the model got wrong.
-- **Text in the prompt box:** that prompt runs *Benchmark runs* times and the transactions it
-  prepared are counted by outcome (`consistent: yes` only if every run prepared the same one).
+- **Empty prompt box:** the scenarios chosen in Settings (*Benchmark scenarios*: English 15, Korean 15,
+  or both) run *Benchmark runs* times (default 10), round by round so heat spreads over the whole
+  run. Each Korean scenario is the twin of an English one and expects the same transaction. Each run
+  is PASS or FAIL against the expected transaction, and a FAIL says which field the model got wrong.
+- **Text in the prompt box:** that prompt, in any language, runs *Benchmark runs* times and the
+  transactions it prepared are counted by outcome (`consistent: yes` only if every run prepared the
+  same one).
 - **Judged on summaries** (recipient or spender, amount, token, kind of transaction): what the model
   chose. The transaction builder is deterministic, so the same summary gives the same transaction.
   The decoded Adena message is checked only by `make scenario`, because the Adena SDK is not
@@ -366,9 +368,21 @@ It stops with **Stop benchmark**; a stopped run can be copied too.
   ...), time per run (mean, p50, p95, max) and the first half against the second half, which
   shows thermal throttling. A development build is slower on the JavaScript side than a release
   build; the log says which one ran.
+- **Time per model call:** every run line ends with the time of each model call, e.g.
+  `[classify 1.9s, extract 3.2s]`, and the report adds mean, p50, p95 and output tokens per call and
+  the time spent outside the model (wallet, MCP reads, JavaScript). The labels come from the
+  order of the agent's structured calls (first `classify`, then `extract`; a call without an output
+  schema is `answer`), not from the agent itself.
+- **Why a run failed:** a FAIL that prepared nothing says what the model asked the wallet for and
+  how the wallet answered (or what the model said instead), e.g. `the model asked approve({"spender":
+  "g1...가",...}); the wallet refused: invalid_address`. On Mac the Korean scenarios exposed this: the
+  model copies a particle written right after an address (`...주소가`) into the recipient.
+- **Runtime in the header:** whether a GPU is used (and why not), the devices, the CPU features
+  llama.cpp prints, the model file and the model load time. This is what tells an Android result on
+  the CPU from one on a GPU. Device model, chipset, power mode and the device's temperature are not
+  available to the app: write them down with the log.
 - Before the first run it reads the fake Onbloc once, to fail early if that does not work in the
-  phone's runtime. The fake builds its replies with the global `Response`; this has not been run on
-  Hermes yet.
+  phone's runtime. This works on iOS (Hermes); it has not been run on Android yet.
 
 The engine (`src/mock/scenario/benchmark.ts`) needs only a `ScenarioRunner`, so the same code runs
 against any `LLM`; `make scenario` shares the same summary check (`check.ts`).

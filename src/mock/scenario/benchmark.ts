@@ -1,15 +1,18 @@
 // Runs scenarios or one prompt many times and reports how often the agent prepares exactly the
 // expected transaction. Judged on the summaries alone (what the model chose). Portable: it needs
 // only a ScenarioRunner, so it runs in the app on a phone and in a CLI.
-import { checkSummaries, describeSummaries, type Verdict } from './check';
+import { checkSummaries, describeSummaries, explainNothing, type Verdict } from './check';
 import type { ScenarioRunner } from './runner';
 import type { Scenario } from './scenarios';
+import type { Stage, StageLabel } from './timing';
 
 export type BenchmarkTarget =
   | { kind: 'scenarios'; scenarios: readonly Scenario[] }
   | { kind: 'prompt'; prompt: string };
 
 type ItemStats = { name: string; prompt: string; runs: number; passed: number; reasons: { text: string; count: number }[] };
+
+type StageStats = { label: StageLabel; count: number; meanMs: number; p50Ms: number; p95Ms: number; meanTokens?: number };
 
 export type BenchmarkReport = {
   target: BenchmarkTarget['kind'];
@@ -30,17 +33,26 @@ export type BenchmarkReport = {
   timing: { meanMs: number; p50Ms: number; p95Ms: number; maxMs: number };
   /** Mean run time of the first and the second half of the runs: a rise hints at thermal throttling. */
   halves?: { firstMs: number; secondMs: number };
+  /** Time per model call, in the order the calls come in a run. */
+  stages: StageStats[];
+  /** Mean time per run outside the model calls (wallet, MCP reads, JavaScript). */
+  outsideModelMs?: number;
 };
 
 const seconds = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
 const percent = (part: number, whole: number) => (whole === 0 ? '-' : `${((part / whole) * 100).toFixed(1)}%`);
 const clip = (text: string, max = 160) => (text.length > max ? `${text.slice(0, max)}...` : text);
+// A failure reason names what the model asked and how the wallet answered: more than a short error line.
+const REASON_CHARS = 360;
 
-const mean = (values: readonly number[]) => (values.length === 0 ? 0 : values.reduce((sum, v) => sum + v, 0) / values.length);
+const sum = (values: readonly number[]) => values.reduce((total, value) => total + value, 0);
+const mean = (values: readonly number[]) => (values.length === 0 ? 0 : sum(values) / values.length);
 
 /** Nearest rank on an ascending list. */
 const percentile = (sorted: readonly number[], p: number) =>
   sorted.length === 0 ? 0 : sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil((p / 100) * sorted.length) - 1))];
+
+const ascending = (values: readonly number[]) => [...values].sort((a, b) => a - b);
 
 const bump = (counts: Map<string, number>, key: string) => counts.set(key, (counts.get(key) ?? 0) + 1);
 const ranked = (counts: Map<string, number>) =>
@@ -54,7 +66,39 @@ function describeError(error: unknown): { code: string; text: string } {
   return { code, text: clip(firstLine) };
 }
 
-type RunRecord = { ms: number; error?: string; outcome?: string; verdict?: Verdict };
+/** ` [classify 1.9s, extract 3.2s]`, or nothing when the run has no timed calls. */
+const stagesText = (stages: readonly Stage[] | undefined) =>
+  stages && stages.length > 0 ? `  [${stages.map((stage) => `${stage.label} ${seconds(stage.ms)}`).join(', ')}]` : '';
+
+type RunRecord = { ms: number; stages?: Stage[]; error?: string; outcome?: string; verdict?: Verdict };
+
+function summarizeStages(records: readonly RunRecord[]): { stages: StageStats[]; outsideModelMs?: number } {
+  const byLabel = new Map<StageLabel, { ms: number[]; tokens: number[] }>();
+  for (const record of records) {
+    for (const stage of record.stages ?? []) {
+      const entry = byLabel.get(stage.label) ?? { ms: [], tokens: [] };
+      entry.ms.push(stage.ms);
+      if (stage.outputTokens !== undefined) entry.tokens.push(stage.outputTokens);
+      byLabel.set(stage.label, entry);
+    }
+  }
+  const stages = [...byLabel].map(([label, { ms, tokens }]): StageStats => {
+    const sorted = ascending(ms);
+    return {
+      label,
+      count: ms.length,
+      meanMs: mean(ms),
+      p50Ms: percentile(sorted, 50),
+      p95Ms: percentile(sorted, 95),
+      ...(tokens.length > 0 && { meanTokens: mean(tokens) }),
+    };
+  });
+  const timed = records.filter((record) => record.stages !== undefined && record.stages.length > 0);
+  return {
+    stages,
+    ...(timed.length > 0 && { outsideModelMs: mean(timed.map((record) => record.ms - sum((record.stages ?? []).map((stage) => stage.ms)))) }),
+  };
+}
 
 export async function runBenchmark({
   runner,
@@ -125,7 +169,13 @@ export async function runBenchmark({
         if (signal?.aborted) { aborted = true; break rounds; }
         const summaries = result.prepared.map((prepared) => prepared.summary);
         record.outcome = describeSummaries(summaries);
-        if (scenario) record.verdict = checkSummaries(summaries, scenario.expected);
+        record.stages = result.stages;
+        if (scenario) {
+          record.verdict = checkSummaries(summaries, scenario.expected);
+          // Nothing prepared: say what the model asked for and what the wallet answered.
+          const why = !record.verdict.ok && result.prepared.length === 0 ? explainNothing(result) : undefined;
+          if (!record.verdict.ok && why !== undefined) record.verdict = { ok: false, reason: `${record.verdict.reason} (${why})` };
+        }
       } catch (error) {
         if (signal?.aborted) { aborted = true; break rounds; }
         const { code, text } = describeError(error);
@@ -137,20 +187,25 @@ export async function runBenchmark({
 
       const index = String(records.length).padStart(width, '0');
       const tag = `[${index}/${planned}]`;
+      const timed = stagesText(record.stages);
       stats[i].runs++;
       if (scenario) {
         const ok = record.error === undefined && record.verdict?.ok === true;
         if (ok) { stats[i].passed++; roundPassed++; }
         const reason = record.error ?? (record.verdict && !record.verdict.ok ? record.verdict.reason : undefined);
-        if (reason !== undefined) bump(reasons[i], clip(reason));
-        onLog(ok ? `${tag} PASS ${name}  ${seconds(record.ms)}` : `${tag} FAIL ${name}  ${seconds(record.ms)}  - ${clip(reason ?? 'unknown')}`);
+        if (reason !== undefined) bump(reasons[i], clip(reason, REASON_CHARS));
+        onLog(
+          ok
+            ? `${tag} PASS ${name}  ${seconds(record.ms)}${timed}`
+            : `${tag} FAIL ${name}  ${seconds(record.ms)}${timed}  - ${clip(reason ?? 'unknown', REASON_CHARS)}`
+        );
       } else if (record.error !== undefined) {
         onLog(`${tag} ERROR  ${seconds(record.ms)}  - ${record.error}`);
       } else {
         const outcome = record.outcome ?? '';
         const isNew = !outcomes.has(outcome);
         bump(outcomes, outcome);
-        onLog(`${tag} ${outcome}  ${seconds(record.ms)}${isNew ? '  (new outcome)' : ''}`);
+        onLog(`${tag} ${outcome}  ${seconds(record.ms)}${timed}${isNew ? '  (new outcome)' : ''}`);
       }
     }
     if (target.kind === 'scenarios') {
@@ -159,10 +214,10 @@ export async function runBenchmark({
   }
 
   const times = records.map((record) => record.ms);
-  const sorted = [...times].sort((a, b) => a - b);
+  const sorted = ascending(times);
   const outcomeList = ranked(outcomes);
   const half = Math.floor(times.length / 2);
-  const passed = target.kind === 'scenarios' ? stats.reduce((sum, item) => sum + item.passed, 0) : (outcomeList[0]?.count ?? 0);
+  const passed = target.kind === 'scenarios' ? sum(stats.map((item) => item.passed)) : (outcomeList[0]?.count ?? 0);
   const report: BenchmarkReport = {
     target: target.kind,
     runsPerItem: runs,
@@ -177,6 +232,7 @@ export async function runBenchmark({
     errors: ranked(errors).map(({ text, count }) => ({ code: text, count })),
     timing: { meanMs: mean(times), p50Ms: percentile(sorted, 50), p95Ms: percentile(sorted, 95), maxMs: sorted.at(-1) ?? 0 },
     ...(times.length >= 4 && { halves: { firstMs: mean(times.slice(0, half)), secondMs: mean(times.slice(times.length - half)) } }),
+    ...summarizeStages(records),
   };
   for (const line of formatReport(report)) onLog(line);
   return report;
@@ -201,6 +257,17 @@ export function formatReport(report: BenchmarkReport): string[] {
     const { firstMs, secondMs } = report.halves;
     const change = firstMs === 0 ? 0 : ((secondMs - firstMs) / firstMs) * 100;
     lines.push(`first half ${seconds(firstMs)} -> second half ${seconds(secondMs)} (${change >= 0 ? '+' : ''}${change.toFixed(0)}%)`);
+  }
+
+  if (report.stages.length > 0) {
+    lines.push('', '-- time per model call --');
+    for (const stage of report.stages) {
+      const tokens = stage.meanTokens === undefined ? '' : `  output tokens ${stage.meanTokens.toFixed(1)}`;
+      lines.push(
+        `${stage.label.padEnd(8)} calls ${stage.count}  mean ${seconds(stage.meanMs)}  p50 ${seconds(stage.p50Ms)}  p95 ${seconds(stage.p95Ms)}${tokens}`
+      );
+    }
+    if (report.outsideModelMs !== undefined) lines.push(`outside the model: mean ${seconds(report.outsideModelMs)} per run`);
   }
 
   if (report.target === 'scenarios') {

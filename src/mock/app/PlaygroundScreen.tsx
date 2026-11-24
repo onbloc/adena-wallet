@@ -34,7 +34,7 @@ import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk, WalletState } from '../wallet/mockWalletSdk';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
 import type { Balances } from '../wallet/tokens';
-import { SCENARIOS } from '../scenario/scenarios';
+import { ENGLISH_SCENARIOS, KOREAN_SCENARIOS, SCENARIOS } from '../scenario/scenarios';
 import { describeTransaction } from './describeTransaction';
 import { useChatSession } from './useChatSession';
 import { usePreparationHistory } from './usePreparationHistory';
@@ -83,10 +83,18 @@ const EMPTY_WALLET: WalletState = { balances: {} };
 // One model for the app: a loaded model holds its memory.
 const llm = new LLMOnDevice();
 
+/** The scenarios the Benchmark button runs, chosen in Settings. */
+const BENCHMARK_SETS = {
+  en: { label: 'English', scenarios: ENGLISH_SCENARIOS },
+  ko: { label: 'Korean', scenarios: KOREAN_SCENARIOS },
+  all: { label: 'Both', scenarios: SCENARIOS },
+} as const;
+
 export default function PlaygroundScreen() {
   const { status, run, start, stop, load, unload, remove } = useLlm(llm);
   const bench = useBenchmark(llm, DEFAULT_MODEL_ID);
   const [benchRuns, setBenchRuns] = useState(String(DEFAULT_BENCHMARK_RUNS));
+  const [benchSet, setBenchSet] = useState<keyof typeof BENCHMARK_SETS>('all');
   const [prompt, setPrompt] = useState('');
   const [temperature, setTemperature] = useState(
     String(DEFAULT_GENERATE_SETTINGS.temperature)
@@ -276,7 +284,7 @@ export default function PlaygroundScreen() {
     if (benchRunsValue === null) return;
     const text = prompt.trim();
     void bench.start(
-      text === '' ? { kind: 'scenarios', scenarios: SCENARIOS } : { kind: 'prompt', prompt: text },
+      text === '' ? { kind: 'scenarios', scenarios: BENCHMARK_SETS[benchSet].scenarios } : { kind: 'prompt', prompt: text },
       benchRunsValue
     );
   };
@@ -442,10 +450,22 @@ export default function PlaygroundScreen() {
             keyboardType="number-pad"
             editable={!bench.running}
           />
+          <Text style={styles.label}>Benchmark scenarios</Text>
+          <View style={styles.row}>
+            {(Object.keys(BENCHMARK_SETS) as (keyof typeof BENCHMARK_SETS)[]).map((id) => (
+              <Button
+                key={id}
+                label={`${benchSet === id ? '● ' : ''}${BENCHMARK_SETS[id].label} (${BENCHMARK_SETS[id].scenarios.length})`}
+                onPress={() => setBenchSet(id)}
+                disabled={bench.running}
+              />
+            ))}
+          </View>
           <Text style={styles.muted}>
-            Benchmark button: with an empty prompt box it runs every scenario this many times; with text
-            in the box it runs that prompt this many times and counts the different transactions. Fixed:
-            temperature 0, 512 output tokens, no thinking, a mock wallet and fake Onbloc reads (no network).
+            Benchmark button: with an empty prompt box it runs the chosen scenarios this many times; with
+            text in the box it runs that prompt (any language) this many times and counts the different
+            transactions. Fixed: temperature 0, 512 output tokens, no thinking, a mock wallet and fake
+            Onbloc reads (no network).
           </Text>
         </ScrollView>
       )}

@@ -6,12 +6,15 @@ import { DEFAULT_BUDGET, Harness } from '../../harness/core';
 import { createOnblocToolSource, type OnblocMcpConfig } from '../../harness/mcp';
 import { GenerateEventType, type LLM } from '../../llm/core';
 import { ACCOUNT, FAKE_ENDPOINT, fakeReads } from './fixture';
+import { TimingLLM, type Stage } from './timing';
 
 export type ScenarioRun = {
   prepared: PreparedTransaction[];
   calls: { name: string; input: unknown; invalid: boolean }[];
   results: { name: string; output: unknown }[];
   text: string;
+  /** The model calls of this turn, in order, with their times. */
+  stages: Stage[];
 };
 
 export type ScenarioRunner = {
@@ -30,12 +33,14 @@ export type ScenarioWalletFactory = (onbloc: OnblocMcpConfig) => WalletSdk;
 async function collectTurn(
   conversation: AgentConversation,
   transactions: PreparedTransaction[],
+  timing: TimingLLM,
   prompt: string,
   settings: ScenarioSettings,
   signal?: AbortSignal
 ) {
   const start = transactions.length;
-  const run: ScenarioRun = { prepared: [], calls: [], results: [], text: '' };
+  const run: ScenarioRun = { prepared: [], calls: [], results: [], text: '', stages: [] };
+  timing.take();
   for await (const event of conversation.run({ prompt, ...settings }, { signal })) {
     if (event.type === GenerateEventType.ToolCall) {
       run.calls.push({ name: event.name, input: event.input, invalid: Boolean(event.invalid) });
@@ -46,6 +51,7 @@ async function collectTurn(
     }
   }
   run.prepared = transactions.slice(start);
+  run.stages = timing.take();
   return run;
 }
 
@@ -58,12 +64,14 @@ export function createScenarioRunner({
   createWallet: ScenarioWalletFactory;
   settings?: ScenarioSettings;
 }): ScenarioRunner {
+  const timing = new TimingLLM(llm);
+
   function startConversation() {
     const mcp = fakeReads();
     const onbloc = { endpoint: FAKE_ENDPOINT, fetcher: mcp.fetcher };
     const prepared: PreparedTransaction[] = [];
     const agent = new AIAgent({
-      llm,
+      llm: timing,
       harness: new Harness({
         toolSources: [createOnblocToolSource(onbloc)],
         budget: { ...DEFAULT_BUDGET, timeoutMs: 5 * 60_000 },
@@ -77,12 +85,12 @@ export function createScenarioRunner({
   return {
     async ask(prompt, signal) {
       const { conversation, prepared } = startConversation();
-      return collectTurn(conversation, prepared, prompt, settings, signal);
+      return collectTurn(conversation, prepared, timing, prompt, settings, signal);
     },
     async chat(prompts, signal) {
       const { conversation, prepared } = startConversation();
       const turns: ScenarioRun[] = [];
-      for (const prompt of prompts) turns.push(await collectTurn(conversation, prepared, prompt, settings, signal));
+      for (const prompt of prompts) turns.push(await collectTurn(conversation, prepared, timing, prompt, settings, signal));
       return turns;
     },
   };

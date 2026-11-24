@@ -3,12 +3,13 @@ import { formatReport, runBenchmark } from '../benchmark';
 import { ACCOUNT, CAROL, RECIPIENT } from '../fixture';
 import type { ScenarioRun, ScenarioRunner } from '../runner';
 import type { Scenario } from '../scenarios';
+import type { Stage } from '../timing';
 
 const transfer = (to: string, amount: string): PreparedTransaction => ({
   summary: { type: TransactionType.Transfer, chainId: 'c', from: ACCOUNT, to, amount, token: 'GNOT' },
   tx: {},
 });
-const run = (...prepared: PreparedTransaction[]): ScenarioRun => ({ prepared, calls: [], results: [], text: '' });
+const run = (...prepared: PreparedTransaction[]): ScenarioRun => ({ prepared, calls: [], results: [], text: '', stages: [] });
 
 const send: Scenario = { name: 'send to carol', prompt: 'send 1 to carol', expected: { kind: 'transfer', to: CAROL, amount: '1', token: 'GNOT' } };
 const ask: Scenario = { name: 'no recipient', prompt: 'send 1', expected: { kind: 'none' } };
@@ -171,5 +172,73 @@ describe('runBenchmark control', () => {
 
   it('rejects an empty prompt', async () => {
     await expect(bench({ runner: fakeRunner([run()]).runner, target: { kind: 'prompt', prompt: '  ' }, runs: 1, onLog: () => {} })).rejects.toThrow(TypeError);
+  });
+});
+
+describe('runBenchmark per model call', () => {
+  const timed = (stages: Stage[], ...prepared: PreparedTransaction[]): ScenarioRun => ({ ...run(...prepared), stages });
+
+  it('shows each call of a run in the log and summarizes them per call', async () => {
+    const { runner, } = fakeRunner(
+      [
+        timed([{ label: 'classify', ms: 400, outputTokens: 6 }, { label: 'extract', ms: 600, outputTokens: 40 }], transfer(CAROL, '1')),
+        timed([{ label: 'classify', ms: 600, outputTokens: 6 }, { label: 'extract', ms: 1000, outputTokens: 44 }], transfer(CAROL, '1')),
+      ],
+      { ms: [1000, 2000] }
+    );
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [send] }, runs: 2, onLog });
+
+    expect(lines).toContain('[1/2] PASS send to carol  1.0s  [classify 0.4s, extract 0.6s]');
+    expect(report.stages).toEqual([
+      { label: 'classify', count: 2, meanMs: 500, p50Ms: 400, p95Ms: 600, meanTokens: 6 },
+      { label: 'extract', count: 2, meanMs: 800, p50Ms: 600, p95Ms: 1000, meanTokens: 42 },
+    ]);
+    // Run 1 took 1000 ms of which the model 1000; run 2 took 2000 of which 1600: 200 ms outside on average.
+    expect(report.outsideModelMs).toBe(200);
+    expect(lines).toContain('classify calls 2  mean 0.5s  p50 0.4s  p95 0.6s  output tokens 6.0');
+    expect(lines).toContain('outside the model: mean 0.2s per run');
+  });
+
+  it('leaves the per-call section out when the runner reports no calls', async () => {
+    const { runner } = fakeRunner([run(transfer(CAROL, '1'))]);
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [send] }, runs: 2, onLog });
+
+    expect(report.stages).toEqual([]);
+    expect(report.outsideModelMs).toBeUndefined();
+    expect(lines).not.toContain('-- time per model call --');
+  });
+});
+
+describe('runBenchmark explains a run that prepared nothing', () => {
+  const refused: ScenarioRun = {
+    prepared: [],
+    calls: [{ name: 'transfer', input: { to: 'g1x가' }, invalid: false }],
+    results: [{ name: 'transfer', output: { kind: 'result', value: { status: 'error', code: 'invalid_address', message: 'bad address' } } }],
+    text: '',
+    stages: [],
+  };
+
+  it('adds what the model asked and how the wallet answered to the FAIL line and the report', async () => {
+    const { runner } = fakeRunner([refused]);
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [send] }, runs: 1, onLog });
+
+    const why = 'prepared nothing, expected 1 (the model asked transfer({"to":"g1x가"}); the wallet refused: invalid_address - bad address)';
+    expect(lines).toContain(`[1/1] FAIL send to carol  1.0s  - ${why}`);
+    expect(report.items[0].reasons).toEqual([{ text: why, count: 1 }]);
+  });
+
+  it('does not add an explanation to a wrong transaction, whose summary already says what is wrong', async () => {
+    const { runner } = fakeRunner([run(transfer(CAROL, '2'))]);
+    const { onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [send] }, runs: 1, onLog });
+
+    expect(report.items[0].reasons).toEqual([{ text: 'amount: got 2, expected 1', count: 1 }]);
   });
 });

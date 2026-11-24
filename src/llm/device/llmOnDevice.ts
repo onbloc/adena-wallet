@@ -19,6 +19,21 @@ export type LLMOnDeviceOptions = {
   runtime?: LlamaRuntime;
 };
 
+/** What the loaded model runs on, as the native runtime reports it. */
+export type RuntimeInfo = {
+  /** Whether a GPU does the work. */
+  gpu: boolean;
+  /** Why it does not, when `gpu` is false. */
+  reasonNoGPU: string;
+  /** The devices of the backend, e.g. the Metal GPU. */
+  devices: string[];
+  /** The native library or CPU features in use, as llama.cpp prints them. */
+  systemInfo: string;
+  /** The native library name on Android. */
+  androidLib?: string;
+  model: { description: string; parameters: number; sizeBytes: number };
+};
+
 /**
  * A model that runs on this device (llama.rn): download, load, unload and generate behind one
  * object. Make one per app: each loaded model holds its memory. Needs React Native.
@@ -61,6 +76,20 @@ export class LLMOnDevice implements LLM {
   /** Unloads and deletes the GGUF file. */
   remove(): Promise<void> {
     return this.runtime.remove(this.modelId);
+  }
+
+  /** What the loaded model runs on (GPU, devices, CPU features); null while no model is loaded. */
+  runtimeInfo(): RuntimeInfo | null {
+    const context = this.runtime.model?.getContext();
+    if (!context) return null;
+    return {
+      gpu: context.gpu,
+      reasonNoGPU: context.reasonNoGPU,
+      devices: context.devices ?? [],
+      systemInfo: context.systemInfo,
+      ...(context.androidLib !== undefined && { androidLib: context.androidLib }),
+      model: { description: context.model.desc, parameters: context.model.nParams, sizeBytes: context.model.size },
+    };
   }
 
   async *generate(
