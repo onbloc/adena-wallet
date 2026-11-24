@@ -47,7 +47,11 @@ export class TokenService {
       return fresh ? { ...token, ...fresh, visible: token.isNative || token.visible, source: token.source } : token;
     });
 
-    this.tokenListRepository.save(account.id, network.id, merged);
+    // A refresh that outlived the account (removal, reset) must not write its list back.
+    if (this.accountService.getAccounts().some(item => item.id === account.id)) {
+      this.tokenListRepository.save(account.id, network.id, merged);
+    }
+
     return merged;
   }
 

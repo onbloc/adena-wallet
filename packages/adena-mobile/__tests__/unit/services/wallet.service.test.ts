@@ -410,6 +410,28 @@ describe('WalletService', () => {
   });
 
   describe('concurrency', () => {
+    it('does not let an account creation outlive the removal of its keyring', async () => {
+      const { wallet, accounts, container } = await setup();
+      const other = await wallet.addMnemonicKeyring(OTHER_MNEMONIC, TEST_PASSWORD);
+      const removing = wallet.removeAccount(other.id, TEST_PASSWORD);
+      const creating = accounts.createAccount(other.keyringId, 'HD_WALLET');
+
+      await removing;
+      expect(await codeOf(() => creating)).toBe('WALLET_NOT_FOUND');
+      expect(accounts.getAccounts().some(item => item.keyringId === other.keyringId)).toBe(false);
+      expect((await container.walletService.getStatus())).toBe('unlocked');
+    });
+
+    it('drops a wallet creation queued before a reset instead of recreating the vault', async () => {
+      const { container, secureStore } = createTestContainer();
+      const creating = container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+
+      await container.appResetService.resetAll();
+      expect(await codeOf(() => creating)).toBe('WALLET_LOCKED');
+      expect(await secureStore.hasItem(SecureKey.VAULT)).toBe(false);
+      expect(await secureStore.hasItem(SecureKey.VAULT_STAGING)).toBe(false);
+    });
+
     it('gives overlapping account creations distinct indexes and keeps both', async () => {
       const { accounts, account } = await setup();
       const created = await Promise.all([

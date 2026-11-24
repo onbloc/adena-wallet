@@ -19,7 +19,7 @@ const setup = async () => {
 
   env.http
     .on(`${REST}/cosmos/base/tendermint/v1beta1/node_info`, { default_node_info: { network: 'atomone-1' } })
-    .on(`${REST}/cosmos/auth/v1beta1/accounts/${address}`, { account: { '@type': '/cosmos.auth.v1beta1.BaseAccount', account_number: '12', sequence: '4' } })
+    .on(`${REST}/cosmos/auth/v1beta1/accounts/${address}`, { account: { '@type': '/cosmos.auth.v1beta1.BaseAccount', address, account_number: '12', sequence: '4' } })
     .on(`${REST}/cosmos/bank/v1beta1/balances/${address}`, { balances: [{ denom: 'uatone', amount: '5000000' }, { denom: 'uphoton', amount: '30000' }] })
     .on(`${REST}/cosmos/base/node/v1beta1/config`, { minimum_gas_price: '0.0225uatone,0.225uphoton' })
     .on(`${REST}/cosmos/tx/v1beta1/simulate`, { gas_info: { gas_used: '80000' } })

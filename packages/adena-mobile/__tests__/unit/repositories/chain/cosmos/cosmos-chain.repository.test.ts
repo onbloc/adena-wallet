@@ -144,7 +144,7 @@ describe('CosmosChainRepository', () => {
       let simulated: HttpRequest | undefined;
 
       http
-        .on(urls().account, { account: { account_number: '12', sequence: '4' } })
+        .on(urls().account, { account: { '@type': '/cosmos.auth.v1beta1.BaseAccount', address, account_number: '12', sequence: '4' } })
         .on(urls().simulate, (init?: HttpRequest) => {
           simulated = init;
           return { gas_info: { gas_used: '80000' } };
@@ -234,7 +234,7 @@ describe('CosmosChainRepository', () => {
     it('signs SIGN_MODE_DIRECT with the account number and sequence', async () => {
       const { repository, http } = withChain();
 
-      http.on(urls().account, { account: { base_account: { account_number: '12', sequence: '4' } } });
+      http.on(urls().account, { account: { '@type': '/cosmos.auth.v1beta1.ModuleAccount', base_account: { address, account_number: '12', sequence: '4' } } });
       const signed = await repository.signTransaction(draftOf([send()]), keyPair, network);
       const raw = TxRaw.decode(fromBase64(signed.encoded));
       const fee = { amount: [{ amount: '28080', denom: 'uphoton' }], gas: '104000' };

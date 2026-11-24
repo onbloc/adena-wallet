@@ -16,8 +16,9 @@ export interface AccountWithAddress extends Account {
 
 // Manages account metadata across keyrings; addresses are resolved per network.
 export class AccountService {
-  // Index allocation, derivation and the save run as one step, so concurrent creations cannot alias.
-  private readonly creations = new SerialQueue();
+  // Account and keyring mutations share this queue (WalletService runs on it too), so index
+  // allocation and keyring removal always see each other's result.
+  private readonly mutations = new SerialQueue();
 
   constructor(
     private readonly accountRepository: AccountRepository,
@@ -63,10 +64,15 @@ export class AccountService {
 
   // Derives the account at the next free index of an HD keyring (requires an unlocked session).
   createAccount(keyringId: string, keyringType: KeyringType, name?: string): Promise<Account> {
-    return this.creations.run(() => this.deriveNextAccount(keyringId, keyringType, name));
+    return this.mutations.run(() => this.appendAccount(keyringId, keyringType, name));
   }
 
-  private async deriveNextAccount(keyringId: string, keyringType: KeyringType, name?: string): Promise<Account> {
+  runExclusive<T>(task: () => Promise<T>): Promise<T> {
+    return this.mutations.run(task);
+  }
+
+  // createAccount for callers already inside runExclusive (queuing again would deadlock).
+  async appendAccount(keyringId: string, keyringType: KeyringType, name?: string): Promise<Account> {
     const epoch = this.keyringSession.epoch;
     const keyringAccounts = this.getAccounts().filter(account => account.keyringId === keyringId);
 

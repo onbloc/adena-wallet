@@ -13,10 +13,13 @@ import { catchError, COSMOS_NETWORK, createFakeRegistry, fakeAddress, GNO_NETWOR
 
 const setup = () => {
   const { registry, modules } = createFakeRegistry();
-  const accountService = new AccountService(new StorageAccountRepository(new MemoryKeyValueStore()), new KeyringSession(), registry);
+  const accounts = new StorageAccountRepository(new MemoryKeyValueStore());
+  const accountService = new AccountService(accounts, new KeyringSession(), registry);
   const repository = new StorageTokenListRepository(new MemoryKeyValueStore());
 
-  return { service: new TokenService(registry, accountService, repository), repository, assets: modules.gno.assets, cosmosAssets: modules.cosmos.assets };
+  accounts.saveAccounts([makeAccount()]);
+
+  return { service: new TokenService(registry, accountService, repository), repository, accounts, assets: modules.gno.assets, cosmosAssets: modules.cosmos.assets };
 };
 
 const managed = (overrides: Partial<ManagedToken> = {}): ManagedToken => ({ ...makeToken(), visible: true, source: TokenSource.CUSTOM, ...overrides });
@@ -27,6 +30,22 @@ describe('TokenService', () => {
   const gnot = getDefaultTokensFor(GNO_NETWORK)[0];
 
   describe('getTokenList', () => {
+    it('does not write back the list of an account removed during the refresh', async () => {
+      const { service, repository, assets, accounts } = setup();
+      let finish!: (tokens: Token[]) => void;
+
+      assets.getCuratedTokens.mockReturnValue(new Promise<Token[]>((resolve) => {
+        finish = resolve;
+      }));
+      const refreshing = service.getTokenList(account, GNO_NETWORK);
+
+      accounts.clear();
+      service.removeAccount(account.id);
+      finish([]);
+      await refreshing;
+      expect(repository.get(account.id, GNO_NETWORK.id)).toBeUndefined();
+    });
+
     it('keeps a visibility change made while the refresh was loading', async () => {
       const { service, repository, assets } = setup();
       const foo = managed({ id: 'foo' });

@@ -12,7 +12,6 @@ import { PreferenceRepository } from '../repositories/preference.repository';
 import { findPasswordIssue, PASSWORD_ISSUE_MESSAGE } from '../security/password-policy';
 import { BiometryKind, SecurePrompt } from '../security/secure-store';
 import { createId } from '../utils/id';
-import { SerialQueue } from '../utils/serial-queue';
 import { AccountService } from './account.service';
 import { KeyringSession } from './keyring-session';
 import { VaultService } from './vault.service';
@@ -37,10 +36,9 @@ export interface CreateWalletInput {
 }
 
 // Wallet lifecycle: create/import, lock/unlock, biometrics and keyring management.
-// Keyring and account changes run on one queue, so duplicate checks and index allocation see each other.
+// Keyring and account changes run on AccountService's mutation queue, so duplicate checks,
+// index allocation and keyring removal see each other.
 export class WalletService {
-  private readonly queue = new SerialQueue();
-
   constructor(
     private readonly vaultService: VaultService,
     private readonly keyringSession: KeyringSession,
@@ -85,13 +83,15 @@ export class WalletService {
     };
     const epoch = this.keyringSession.epoch;
 
-    return this.queue.run(async () => {
+    return this.accountService.runExclusive(async () => {
+      // Checked before writing too: a create queued before a reset must not recreate the vault.
+      this.assertCurrent(epoch);
       const content = await this.vaultService.create([record], password);
 
       this.assertCurrent(epoch);
       this.accountService.clear();
       this.keyringSession.open(content.keyrings);
-      return this.accountService.createAccount(record.id, record.type, accountName ?? 'Account 1');
+      return this.accountService.appendAccount(record.id, record.type, accountName ?? 'Account 1');
     });
   }
 
@@ -99,7 +99,7 @@ export class WalletService {
   unlock(password: string): Promise<void> {
     const epoch = this.keyringSession.epoch;
 
-    return this.queue.run(async () => {
+    return this.accountService.runExclusive(async () => {
       await this.openSession(await this.vaultService.open(password), epoch);
     });
   }
@@ -112,7 +112,7 @@ export class WalletService {
   unlockWithBiometrics(prompt: SecurePrompt): Promise<void> {
     const epoch = this.keyringSession.epoch;
 
-    return this.queue.run(async () => {
+    return this.accountService.runExclusive(async () => {
       const password = await this.biometricRepository.readCredential(prompt);
 
       if (!password) {
@@ -165,11 +165,21 @@ export class WalletService {
   }
 
   addMnemonicKeyring(mnemonic: string, password: string, accountName?: string): Promise<Account> {
-    return this.queue.run(() => this.addMnemonic(mnemonic, password, accountName));
+    return this.runCurrent(() => this.addMnemonic(mnemonic, password, accountName));
   }
 
   importPrivateKey(privateKeyHex: string, password: string, accountName?: string): Promise<Account> {
-    return this.queue.run(() => this.addPrivateKey(privateKeyHex, password, accountName));
+    return this.runCurrent(() => this.addPrivateKey(privateKeyHex, password, accountName));
+  }
+
+  // Queued work issued before a lock or reset is dropped before it touches storage.
+  private runCurrent<T>(task: () => Promise<T>): Promise<T> {
+    const epoch = this.keyringSession.epoch;
+
+    return this.accountService.runExclusive(() => {
+      this.assertCurrent(epoch);
+      return task();
+    });
   }
 
   // Early check for a clear message; the vault re-checks against every stored keyring.
@@ -222,7 +232,7 @@ export class WalletService {
 
   // The vault is updated first: if that fails, the account stays instead of coming back on the next unlock.
   removeAccount(accountId: string, password: string): Promise<void> {
-    return this.queue.run(async () => {
+    return this.runCurrent(async () => {
       const { removed, keyringEmpty } = this.accountService.planRemoval(accountId);
 
       if (keyringEmpty) {
@@ -244,7 +254,7 @@ export class WalletService {
 
     for (const keyring of keyrings) {
       if (!accounts.some(account => account.keyringId === keyring.id)) {
-        await this.accountService.createAccount(keyring.id, keyring.type);
+        await this.accountService.appendAccount(keyring.id, keyring.type);
       }
     }
   }
@@ -253,7 +263,7 @@ export class WalletService {
     const content = await this.vaultService.addKeyring(record, password);
 
     this.keyringSession.add(content.keyrings.find(keyring => keyring.id === record.id) ?? record);
-    const account = await this.accountService.createAccount(record.id, record.type, accountName);
+    const account = await this.accountService.appendAccount(record.id, record.type, accountName);
 
     this.accountService.selectAccount(account.id);
     return account;
