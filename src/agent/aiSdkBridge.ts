@@ -101,7 +101,7 @@ export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budg
     const estimate = (candidate: ModelMessage[]) => estimateInputTokens({ model, messages: candidate, instructions, tools: schemas });
     const context = contextWindow === undefined ? messages
       : compactContext(messages, candidate => estimate(candidate) + maxOutputTokens <= contextWindow);
-    if (!context) throw new Error('ADENA_CONTEXT_LIMIT: Current request and tool results exceed the model context.');
+    if (!context) throw new Error(`ADENA_CONTEXT_LIMIT: step=${stepNumber}, window=${contextWindow}, inputEstimate=${estimate(messages)}, outputReserve=${maxOutputTokens}; message sizes=${messages.map(m => `${m.role}:${JSON.stringify(m).length}`).join(',')}`);
     if (context.length < messages.length) onContextCompacted?.((messages.length - context.length) / 2);
     const inputTokenUpperBound = estimate(context);
     const limit = run.beginStep(maxOutputTokens, inputTokenUpperBound);
