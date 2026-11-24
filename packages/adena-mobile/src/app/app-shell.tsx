@@ -12,6 +12,7 @@ import { navigationRef } from '../navigation/navigation-ref';
 import { RootNavigator } from '../navigation/root-navigator';
 import { queryKeys } from '../queries/query-keys';
 import { SessionStatus, useSessionStore } from '../stores/session.store';
+import { AppThemeProvider } from './app-theme-provider';
 import { ToastHost } from './toast-host';
 
 export const AppShell = (): ReactElement => {
@@ -54,14 +55,16 @@ export const AppShell = (): ReactElement => {
   // Touch events bubble here from every screen and reset the idle timer.
 
   return (
-    <HapticsContext value={hapticsService.play}>
-      <View style={styles.root} onTouchStart={recordActivity}>
-        <NavigationContainer ref={navigationRef}>
-          <RootNavigator />
-          <ToastHost />
-        </NavigationContainer>
-      </View>
-    </HapticsContext>
+    <AppThemeProvider>
+      <HapticsContext value={hapticsService.play}>
+        <View style={styles.root} onTouchStart={recordActivity}>
+          <NavigationContainer ref={navigationRef}>
+            <RootNavigator />
+            <ToastHost />
+          </NavigationContainer>
+        </View>
+      </HapticsContext>
+    </AppThemeProvider>
   );
 };
 

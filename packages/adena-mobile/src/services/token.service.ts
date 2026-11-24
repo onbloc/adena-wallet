@@ -44,7 +44,13 @@ export class TokenService {
     const merged = [...byId.values()].map((token) => {
       const fresh = curated.find(item => item.id === token.id);
 
-      return fresh ? { ...token, ...fresh, visible: token.isNative || token.visible, source: token.source } : token;
+      if (fresh) {
+        return { ...token, ...fresh, visible: token.isNative || token.visible, source: token.source, listed: true };
+      }
+
+      const { listed: _listed, ...rest } = token;
+
+      return rest;
     });
 
     // A refresh that outlived the account (removal, reset) must not write its list back.

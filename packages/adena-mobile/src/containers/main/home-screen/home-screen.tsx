@@ -7,12 +7,13 @@ import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
 import { useCopyToClipboard } from '../../../hooks/use-copy-to-clipboard';
 import { useNftImages } from '../../../hooks/use-nft-images';
+import { usePreference } from '../../../hooks/use-preference';
 import { usePullToRefresh } from '../../../hooks/use-pull-to-refresh';
 import { useWalletAssets } from '../../../hooks/use-wallet-assets';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
 import { MainTabScreenProps } from '../../../navigation/screen-props';
 import { toAvatarColor } from '../../../presenters/account.presenter';
-import { toAssetItem } from '../../../presenters/asset.presenter';
+import { filterPortfolioAssets, toAssetItem } from '../../../presenters/asset.presenter';
 import { refetchUnresolvedNftUris, useNftCollectionsQuery } from '../../../queries/nft.queries';
 import { NftService } from '../../../services/nft.service';
 import { useSessionStore } from '../../../stores/session.store';
@@ -23,6 +24,8 @@ const MAX_PLACEHOLDER_ROWS = 6;
 export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactElement => {
   const { account, network, address } = useWalletSnapshot();
   const wallet = useWalletAssets();
+  const hideSmallBalances = usePreference('hideSmallBalances');
+  const hideUnknownTokens = usePreference('hideUnknownTokens');
   const { nftService, accountPhotoService } = useContainer();
 
   useSessionStore(state => state.revision);
@@ -54,7 +57,9 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
   const assetsLoading = wallet.status === 'loading';
   const headlineLoading = assetsLoading || wallet.pricesLoading;
   const native = wallet.assets.find(asset => asset.token.isNative);
+  // The total keeps every visible token; the filters only declutter the list.
   const portfolio = wallet.portfolio;
+  const listedAssets = filterPortfolioAssets(wallet.assets, wallet.tokens, { hideSmallBalances, hideUnknownTokens });
   const changeAmount = portfolio && portfolio.change24h !== null
     ? portfolio.usd - portfolio.usd / (1 + portfolio.change24h / 100)
     : null;
@@ -114,7 +119,7 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
       error={wallet.error ? toErrorMessage(wallet.error) : undefined}
       assetsLoading={assetsLoading}
       assetPlaceholderCount={Math.min(wallet.tokens.length, MAX_PLACEHOLDER_ROWS)}
-      assets={wallet.assets.map(toAssetItem)}
+      assets={listedAssets.map(toAssetItem)}
       collections={(collections.data ?? []).map(collection => ({
         key: collection.id,
         title: collection.name,

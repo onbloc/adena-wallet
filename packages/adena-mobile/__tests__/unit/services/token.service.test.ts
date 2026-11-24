@@ -81,9 +81,20 @@ describe('TokenService', () => {
       assets.getCuratedTokens.mockResolvedValue([{ ...gnot, description: 'Native coin' }]);
       const list = await service.getTokenList(account, GNO_NETWORK);
 
-      expect(list).toEqual([{ ...gnot, description: 'Native coin', visible: true, source: 'default' }]);
+      expect(list).toEqual([{ ...gnot, description: 'Native coin', visible: true, source: 'default', listed: true }]);
       expect(repository.get(account.id, GNO_NETWORK.id)).toEqual(list);
       expect(assets.discoverHeldTokens).toHaveBeenCalledWith(address, GNO_NETWORK);
+    });
+
+    it('marks tokens found in the curated resources as listed and clears a stale flag', async () => {
+      const { service, repository, assets } = setup();
+
+      repository.save(account.id, GNO_NETWORK.id, [managed({ id: 'dropped', source: 'discovered', listed: true })]);
+      assets.getCuratedTokens.mockResolvedValue([makeToken({ id: 'curated' })]);
+      assets.discoverHeldTokens.mockResolvedValue([makeToken({ id: 'curated' }), makeToken({ id: 'spam' })]);
+      const list = await service.getTokenList(account, GNO_NETWORK);
+
+      expect(Object.fromEntries(list.map(token => [token.id, token.listed]))).toEqual({ ugnot: undefined, dropped: undefined, curated: true, spam: undefined });
     });
 
     it('lists both coins on AtomOne', async () => {

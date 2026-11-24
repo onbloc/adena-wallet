@@ -1,6 +1,10 @@
 import { PreferenceRepository, Preferences } from '../repositories/preference.repository';
 
+export type PreferenceListener = () => void;
+
 export class PreferenceService {
+  private readonly listeners = new Set<PreferenceListener>();
+
   constructor(private readonly preferenceRepository: PreferenceRepository) {}
 
   get(): Preferences {
@@ -8,6 +12,17 @@ export class PreferenceService {
   }
 
   update(patch: Partial<Omit<Preferences, 'biometricUnlockEnabled'>>): Preferences {
-    return this.preferenceRepository.update(patch);
+    const next = this.preferenceRepository.update(patch);
+
+    this.listeners.forEach(listener => listener());
+    return next;
+  }
+
+  // Notified after every update through this service (e.g. theme or balance filters).
+  subscribe(listener: PreferenceListener): () => void {
+    this.listeners.add(listener);
+    return (): void => {
+      this.listeners.delete(listener);
+    };
   }
 }

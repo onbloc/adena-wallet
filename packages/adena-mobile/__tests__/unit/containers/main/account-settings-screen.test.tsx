@@ -27,6 +27,10 @@ describe('AccountSettingsScreen', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Edit profile' }));
 
     expect(navigation.navigate).toHaveBeenCalledWith('EditProfile', { accountId: ACCOUNT.id });
+
+    // Same destination as Settings > Manage > Connected apps.
+    await fireEvent.press(screen.getByRole('button', { name: 'Manage connections, 0' }));
+    expect(navigation.navigate).toHaveBeenLastCalledWith('ConnectedApps');
   });
 
   it('removes the account with biometrics as soon as the confirmation sheet opens', async () => {

@@ -1,5 +1,6 @@
 import { AssetItemView } from '../components/view-models';
-import { Token, TokenPrice, tokenPriceKey } from '../domain/token';
+import { SMALL_BALANCE_USD } from '../domain/preferences';
+import { isUnknownToken, ManagedToken, Token, TokenPrice, tokenPriceKey, TokenSource } from '../domain/token';
 import { PriceService, TokenPriceMap } from '../services/price.service';
 import { formatTokenAmount } from '../utils/amount';
 import { changeTrend, formatChangeRate, formatUSD, Trend } from '../utils/price';
@@ -76,3 +77,24 @@ export const toAssetItem = (view: AssetView): AssetItemView => ({
   loading: view.loading,
   valueLoading: view.valueLoading,
 });
+
+export interface PortfolioFilter {
+  hideSmallBalances: boolean;
+  hideUnknownTokens: boolean;
+}
+
+// Home list filter: small means a known USD value under the threshold; the native coin and user-added tokens always stay.
+export const filterPortfolioAssets = (assets: AssetView[], tokens: ManagedToken[], filter: PortfolioFilter): AssetView[] =>
+  assets.filter((asset) => {
+    const managed = tokens.find(token => token.id === asset.token.id);
+
+    if (asset.token.isNative || managed?.source === TokenSource.CUSTOM) {
+      return true;
+    }
+
+    if (filter.hideUnknownTokens && managed && isUnknownToken(managed)) {
+      return false;
+    }
+
+    return !(filter.hideSmallBalances && asset.usdValue !== null && asset.usdValue < SMALL_BALANCE_USD);
+  });

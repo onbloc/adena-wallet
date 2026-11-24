@@ -39,7 +39,13 @@ export type TokenSource = (typeof TokenSource)[keyof typeof TokenSource];
 export interface ManagedToken extends Token {
   visible: boolean;
   source: TokenSource;
+  // Present in the bundled/curated token resources at the last refresh.
+  listed?: boolean;
 }
+
+// Discovered tokens outside the curated resources; never the native coin or a token the user added.
+export const isUnknownToken = (token: ManagedToken): boolean =>
+  !token.isNative && token.source === TokenSource.DISCOVERED && !token.listed;
 
 export interface TokenHolding {
   token: Token;
