@@ -30,6 +30,9 @@ export type AvatarColor = (typeof AvatarColor)[keyof typeof AvatarColor];
 
 export const AVATAR_COLORS: AvatarColor[] = Object.values(AvatarColor);
 
+// Same limit as the extension's account name field.
+export const ACCOUNT_NAME_MAX_LENGTH = 23;
+
 export const isAvatarColor = (value: unknown): value is AvatarColor => AVATAR_COLORS.includes(value as AvatarColor);
 
 export interface TokenBalance {

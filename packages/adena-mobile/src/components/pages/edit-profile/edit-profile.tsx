@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } from 'react-native';
 
+import { ACCOUNT_NAME_MAX_LENGTH } from '../../../domain/account';
 import { colors } from '../../../theme';
 import { formatAddress } from '../../../utils/address';
 import { Avatar, Button, Icon, IconButton, Text } from '../../atoms';
@@ -64,6 +65,7 @@ export const EditProfilePage = (props: EditProfilePageProps): ReactElement => (
       label='Account name'
       value={props.name}
       onChangeText={props.onChangeName}
+      maxLength={ACCOUNT_NAME_MAX_LENGTH}
       error={props.nameError}
       helper='Shown only on this device.'
     />

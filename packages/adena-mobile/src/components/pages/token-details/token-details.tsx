@@ -2,11 +2,12 @@ import React, { ReactElement, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Text, TextColor } from '../../atoms';
+import { Button, Spinner, Text, TextColor } from '../../atoms';
 import {
   ActivityList,
   ActivityListProps,
   Card,
+  EmptyState,
   KeyValueRow,
   ListRow,
   PriceChart,
@@ -27,7 +28,8 @@ export interface TokenMarketView {
   // Shown in place of the chart when there is no price history.
   emptyLabel?: string;
   stats: { label: string; value: string }[];
-  links: { label: string; url: string }[];
+  // `host` is shown under the label so the destination is visible before opening.
+  links: { label: string; url: string; host?: string }[];
 }
 
 export interface TokenDetailsPageProps<R extends string> {
@@ -99,7 +101,7 @@ export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<
               const handlePress = (): void => props.onOpenLink(link.url);
 
               return (
-                <ListRow key={link.url} label={link.label} leadingIcon='link' onPress={handlePress} />
+                <ListRow key={link.url} label={link.label} description={link.host} leadingIcon='link' onPress={handlePress} />
               );
             })}
           </View>
@@ -122,3 +124,20 @@ export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<
     </SafeAreaView>
   );
 };
+
+export interface TokenDetailsUnavailablePageProps {
+  // `true` while the token list is still loading; otherwise the token is not on this network.
+  loading: boolean;
+  onBack: () => void;
+}
+
+export const TokenDetailsUnavailablePage = ({ loading, onBack }: TokenDetailsUnavailablePageProps): ReactElement => (
+  <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+    <TopBar title='Token details' onBack={onBack} />
+    <View style={styles.content}>
+      {loading
+        ? <View style={styles.unavailable} accessibilityLabel='Loading token'><Spinner /></View>
+        : <EmptyState title='Token not found' description='This token isn’t available on the current network.' actionLabel='Go back' onAction={onBack} />}
+    </View>
+  </SafeAreaView>
+);

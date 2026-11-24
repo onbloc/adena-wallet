@@ -74,6 +74,8 @@ const assert = (condition: unknown, message: string): void => {
   }
 };
 
+const isNonEmptyString = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
+
 const NATIVE_TOKENS = nativeTokens as NativeTokenResource[];
 
 const findNativeToken = (id: string, family?: ChainFamily): NativeTokenResource => {
@@ -169,6 +171,8 @@ export interface DexApiConfig {
   provider: DexProvider;
   // Base URL without a trailing slash, e.g. https://gnoswap.io/api/v1.
   apiUrl: string;
+  // GRC20 carrying the market for a native denom, used when the token meta is unavailable.
+  wrappedPaths?: Record<string, string>;
 }
 
 // Market data (token metadata, prices, OHLCV) per network, keyed by network id.
@@ -178,7 +182,9 @@ const toDexApiConfigMap = (resource: Record<string, DexApiConfig>): DexApiConfig
   Object.fromEntries(Object.entries(resource).map(([networkId, config]) => {
     assert(Object.values(DexProvider).includes(config.provider), `${networkId} dex provider ${config.provider} is not supported`);
     assert(/^https:\/\/[^/]+/.test(config.apiUrl), `${networkId} dex apiUrl must be https`);
-    return [networkId, { provider: config.provider, apiUrl: config.apiUrl.replace(/\/+$/, '') }];
+    Object.entries(config.wrappedPaths ?? {}).forEach(([denom, path]) =>
+      assert(isNonEmptyString(denom) && isNonEmptyString(path), `${networkId} dex wrappedPaths must map denoms to paths`));
+    return [networkId, { provider: config.provider, apiUrl: config.apiUrl.replace(/\/+$/, ''), wrappedPaths: config.wrappedPaths }];
   }));
 
 export const DEX_API_CONFIG: DexApiConfigMap = toDexApiConfigMap(dexApis as Record<string, DexApiConfig>);
@@ -216,7 +222,23 @@ export interface OnrampConfig {
   providers: OnrampProvider[];
 }
 
-const isNonEmptyString = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
+// https with a plain host (no userinfo, no placeholders before the path), checked by hand and by URL.
+const isSafeUrlTemplate = (template: string): boolean => {
+  const authority = /^https:\/\/([^/?#]*)/.exec(template)?.[1];
+
+  if (!authority || !/^[A-Za-z0-9.-]+(:\d+)?$/.test(authority) || /\s/.test(template)) {
+    return false;
+  }
+
+  try {
+    const url = new URL(template.replace(/\{[^}]*\}/g, 'x'));
+
+    return url.protocol === 'https:' && url.username === '' && url.password === '' && url.hostname.toLowerCase() === authority.replace(/:\d+$/, '').toLowerCase();
+  }
+  catch {
+    return false;
+  }
+};
 
 const toOnrampProvider = (resource: unknown, index: number): OnrampProvider => {
   const provider = (resource ?? {}) as Partial<OnrampProvider>;
@@ -225,7 +247,7 @@ const toOnrampProvider = (resource: unknown, index: number): OnrampProvider => {
   assert(isNonEmptyString(provider.id), `onramp provider ${label} needs an id`);
   assert(isNonEmptyString(provider.name), `onramp provider ${label} needs a name`);
   assert(Array.isArray(provider.paymentMethods) && provider.paymentMethods.every(isNonEmptyString), `onramp provider ${label} paymentMethods must be strings`);
-  assert(isNonEmptyString(provider.urlTemplate) && /^https:\/\/[^/{}\s]+/.test(provider.urlTemplate), `onramp provider ${label} urlTemplate must be https`);
+  assert(isNonEmptyString(provider.urlTemplate) && isSafeUrlTemplate(provider.urlTemplate), `onramp provider ${label} urlTemplate must be https`);
   const placeholders = [...(provider.urlTemplate as string).matchAll(/\{([^}]*)\}/g)].map(match => match[1]);
 
   placeholders.forEach(name => assert((ONRAMP_PLACEHOLDERS as readonly string[]).includes(name), `onramp provider ${label} uses unknown placeholder {${name}}`));

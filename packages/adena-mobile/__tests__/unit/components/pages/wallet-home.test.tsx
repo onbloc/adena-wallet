@@ -149,6 +149,18 @@ describe('WalletHomePage', () => {
     expect(screen.getByRole('button', { name: 'Manage NFTs' })).toBeTruthy();
   });
 
+  it('shows a retryable error instead of the empty state when collectibles fail to load', async () => {
+    const onRetryNfts = jest.fn();
+
+    await renderPage(<WalletHomePage {...props({ tab: 'nfts', collections: [], nftError: 'Indexer down', onRetryNfts })} />);
+
+    expect(screen.getByText('Couldn’t load collectibles')).toBeTruthy();
+    expect(screen.getByText('Indexer down')).toBeTruthy();
+    expect(screen.queryByText('No collectibles yet')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+    expect(onRetryNfts).toHaveBeenCalledTimes(1);
+  });
+
   it('explains unsupported NFTs and hides the manage action', async () => {
     await renderPage(<WalletHomePage {...props({ tab: 'nfts', nftSupported: false })} />);
 

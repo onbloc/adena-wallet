@@ -2,7 +2,7 @@ import { fromBase64, toBase64 } from '@cosmjs/encoding';
 
 import { isAppError } from '../../../src/core/errors';
 import { KeyringType } from '../../../src/crypto/keyring';
-import { AvatarColor } from '../../../src/domain/account';
+import { ACCOUNT_NAME_MAX_LENGTH, AvatarColor } from '../../../src/domain/account';
 import { StorageAccountRepository } from '../../../src/repositories/account.repository';
 import { AccountService } from '../../../src/services/account.service';
 import { KeyringSession } from '../../../src/services/keyring-session';
@@ -199,6 +199,16 @@ describe('AccountService', () => {
       expect(() => service.updateProfile('a', { name: ' ' })).toThrow('Account name is required');
       expect(() => service.updateProfile('nope', { name: 'Main' })).toThrow('Account nope not found');
       expect(service.getAccount('a').avatarColor).toBeUndefined();
+    });
+
+    it('limits new names to the account name length but keeps an unchanged legacy name editable', () => {
+      const { service, repository } = setup();
+      const legacy = 'L'.repeat(ACCOUNT_NAME_MAX_LENGTH + 5);
+
+      repository.saveAccounts([makeAccount({ id: 'a', name: legacy })]);
+      expect(() => service.updateProfile('a', { name: 'N'.repeat(ACCOUNT_NAME_MAX_LENGTH + 1) })).toThrow(`up to ${ACCOUNT_NAME_MAX_LENGTH} characters`);
+      expect(service.updateProfile('a', { name: legacy, avatarColor: AvatarColor.TEAL }).avatarColor).toBe('teal');
+      expect(service.updateProfile('a', { name: 'N'.repeat(ACCOUNT_NAME_MAX_LENGTH) }).name).toHaveLength(ACCOUNT_NAME_MAX_LENGTH);
     });
   });
 

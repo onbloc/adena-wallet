@@ -19,6 +19,8 @@ export interface UseWalletAssetsReturn {
   prices?: TokenPriceMap;
   error: Error | null;
   loading: boolean;
+  // Only the token list, so screens can tell "still loading" from "not on this network".
+  tokensLoading: boolean;
   refreshing: boolean;
   refetch: () => Promise<void>;
 }
@@ -51,6 +53,7 @@ export const useWalletAssets = (): UseWalletAssetsReturn => {
     prices: prices.data,
     error: tokenList.error ?? balances.error,
     loading: tokenList.isPending || balances.isPending,
+    tokensLoading: tokenList.isPending,
     refreshing: balances.isRefetching || tokenList.isRefetching,
     refetch: async (): Promise<void> => {
       await tokenList.refetch();

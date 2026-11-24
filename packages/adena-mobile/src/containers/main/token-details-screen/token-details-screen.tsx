@@ -2,7 +2,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { ReactElement, useMemo, useState } from 'react';
 import { Linking } from 'react-native';
 
-import { TokenDetailsPage, TokenMarketView } from '../../../components/pages';
+import { TokenDetailsPage, TokenDetailsUnavailablePage, TokenMarketView } from '../../../components/pages';
 import { useContainer } from '../../../di/container-provider';
 import { ActivityFilter, ActivityFilterKind } from '../../../domain/activity';
 import { CHART_RANGES, ChartRange } from '../../../domain/market';
@@ -14,13 +14,16 @@ import { MainStackParamList } from '../../../navigation/types';
 import { toAssetItem, toAssetView } from '../../../presenters/asset.presenter';
 import { useMarketDataQuery, useTokenInfoQuery } from '../../../queries/market.queries';
 import { useTokenBalancesQuery, useTokenPricesQuery } from '../../../queries/token.queries';
+import { useToastStore } from '../../../stores/toast.store';
 import { formatChangeRate, formatCompactUSD, formatTokenPriceUSD } from '../../../utils/price';
+import { hostOf } from '../../../utils/url';
 
 const RANGE_CAPTION: Record<ChartRange, string> = { [ChartRange.ONE_HOUR]: 'Past hour', [ChartRange.ONE_DAY]: 'Today', [ChartRange.ONE_WEEK]: 'Past week', [ChartRange.ONE_MONTH]: 'Past month', [ChartRange.ONE_YEAR]: 'Past year' };
 
-export const TokenDetailsScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'TokenDetails'>): ReactElement | null => {
+export const TokenDetailsScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'TokenDetails'>): ReactElement => {
   const { tokenId } = route.params;
-  const { account, network, allTokens } = useWalletAssets();
+  const { account, network, allTokens, tokensLoading } = useWalletAssets();
+  const showToast = useToastStore(state => state.show);
   const { marketDataService } = useContainer();
   const token = allTokens.find(item => item.id === tokenId);
   const tokens = useMemo(() => (token ? [token] : []), [token]);
@@ -38,7 +41,7 @@ export const TokenDetailsScreen = ({ navigation, route }: NativeStackScreenProps
   const pull = usePullToRefresh(() => Promise.all([balances.refetch(), market.refetch(), info.refetch(), activity.refetch()]));
 
   if (!token) {
-    return null;
+    return <TokenDetailsUnavailablePage loading={tokensLoading} onBack={navigation.goBack} />;
   }
 
   const view = toAssetView(token, balances.data?.[token.id], prices.data?.[tokenPriceKey(token.id, network.id)], balances.isPending);
@@ -62,14 +65,18 @@ export const TokenDetailsScreen = ({ navigation, route }: NativeStackScreenProps
     emptyLabel: market.isError ? 'Price history could not be loaded' : marketDataService.isSupported(network) ? 'No price history yet' : 'Price history is not available on this network',
     // Rows without a value are hidden rather than shown as placeholders.
     stats: statRows.flatMap(row => (row.value === undefined ? [] : [{ label: row.label, value: row.format(row.value) }])),
-    links: info.data?.links ?? [],
+    links: (info.data?.links ?? []).map(link => ({ ...link, host: hostOf(link.url) })),
   };
 
   const handleSend = (): void => navigation.navigate('SendRecipient', { tokenId: token.id });
 
   const handleReceive = (): void => navigation.navigate('Receive');
 
-  const handleOpenLink = (url: string): false | Promise<void> => url.startsWith('https://') && Linking.openURL(url);
+  const handleOpenLink = (url: string): void => {
+    if (url.startsWith('https://')) {
+      Linking.openURL(url).catch(() => showToast('Couldn’t open the link', 'error'));
+    }
+  };
 
   return (
     <TokenDetailsPage

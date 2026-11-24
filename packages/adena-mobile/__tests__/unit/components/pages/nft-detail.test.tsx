@@ -39,6 +39,16 @@ describe('NftDetailPage', () => {
     expect(page.onBack).toHaveBeenCalledTimes(1);
   });
 
+  it('renders duplicate traits without key collisions', async () => {
+    const errors = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await renderPage(<NftDetailPage {...props({ traits: [{ label: 'Hat', value: 'Cap' }, { label: 'Hat', value: 'Cap' }] })} />);
+
+    expect(screen.getAllByText('Cap')).toHaveLength(2);
+    expect(errors.mock.calls.some(args => String(args[0]).includes('same key'))).toBe(false);
+    errors.mockRestore();
+  });
+
   it('omits description, traits and send when absent', async () => {
     await renderPage(<NftDetailPage {...props({ description: undefined, traits: [], rows: [], onSend: undefined, onOpenCollection: undefined, imageUri: null, imageLoading: true })} />);
 

@@ -2,7 +2,7 @@ import { fromBase64, toBase64 } from '@cosmjs/encoding';
 
 import { AppError, AppErrorCode } from '../core/errors';
 import { KeyringType } from '../crypto/keyring';
-import { Account, AvatarColor, isAvatarColor } from '../domain/account';
+import { Account, ACCOUNT_NAME_MAX_LENGTH, AvatarColor, isAvatarColor } from '../domain/account';
 import { Network } from '../domain/network';
 import { AccountRepository } from '../repositories/account.repository';
 import { ChainRegistry } from '../repositories/chain/chain-registry';
@@ -128,6 +128,11 @@ export class AccountService {
 
     if (!trimmed) {
       throw new AppError(AppErrorCode.INVALID_REQUEST, 'Account name is required');
+    }
+
+    // An unchanged legacy name stays valid so its color can still be edited.
+    if (trimmed.length > ACCOUNT_NAME_MAX_LENGTH && trimmed !== this.getAccount(accountId).name) {
+      throw new AppError(AppErrorCode.INVALID_REQUEST, `Enter a name up to ${ACCOUNT_NAME_MAX_LENGTH} characters`);
     }
 
     if (profile.avatarColor !== undefined && !isAvatarColor(profile.avatarColor)) {

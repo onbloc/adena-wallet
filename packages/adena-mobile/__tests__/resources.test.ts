@@ -1,6 +1,7 @@
 import {
   BUILT_IN_NETWORKS,
   DEFAULT_NETWORK_ID,
+  DEX_API_CONFIG,
   EXPLORE_APPS,
   getDefaultTokensFor,
   getGrc20RegistryConfig,
@@ -34,6 +35,10 @@ describe('bundled resources', () => {
     expect(PRICE_CONFIG.pricedNetworkIds).toEqual(['gnoland-1', 'atomone-1']);
     expect(PRICE_CONFIG.bindings['uatone:atomone-1'].assetId).toBe('atomone');
     expect(PRICE_CONFIG.bindings['ugnot:gnoland-1'].assetId).toBe('gno-land');
+  });
+
+  it('bundles the wrapped market path for native GNOT', () => {
+    expect(DEX_API_CONFIG['gnoland-1'].wrappedPaths).toEqual({ ugnot: 'gno.land/r/gnoland/wugnot.wugnot' });
   });
 
   it('lists https-only explore apps for Gno', () => {
@@ -77,6 +82,17 @@ describe('onramp providers', () => {
     expect(parse({ urlTemplate: 'https://{address}.example' })).toThrow('urlTemplate must be https');
     expect(parse({ urlTemplate: 'https://buy.example/?k={apiKey}' })).toThrow('unknown placeholder {apiKey}');
     expect(parse({ urlTemplate: 'https://buy.example/?a={asset' })).toThrow('unbalanced braces');
+  });
+
+  it('rejects placeholders or userinfo in the host', () => {
+    ['https://pay{asset}.example/', 'https://good.com@evil.com/', 'https://{address}@evil.com/', 'https://user:pass@buy.example/',
+      'https://buy.example:{amount}/', 'https://buy.example\\@evil.com/', 'https:/buy.example/', 'https://buy.example/ ?a={asset}']
+      .forEach(urlTemplate => expect(parse({ urlTemplate })).toThrow('urlTemplate must be https'));
+  });
+
+  it('accepts placeholders in the path, query and fragment', () => {
+    ['https://buy.example/{asset}/buy?to={address}#amount={amount}', 'https://Buy.Example:8443/?fiat={currency}']
+      .forEach(urlTemplate => expect(parse({ urlTemplate })).not.toThrow());
   });
 });
 

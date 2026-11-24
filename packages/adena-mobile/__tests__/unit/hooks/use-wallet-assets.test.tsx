@@ -38,7 +38,7 @@ describe('useWalletAssets', () => {
     (useTokenPricesQuery as jest.Mock).mockReturnValue(query());
     const { result } = await renderHook(() => useWalletAssets());
 
-    expect(result.current).toMatchObject({ tokens: [], allTokens: [], portfolio: null, loading: true, refreshing: false, error: null });
+    expect(result.current).toMatchObject({ tokens: [], allTokens: [], portfolio: null, loading: true, tokensLoading: true, refreshing: false, error: null });
     expect(buildAssetViews).toHaveBeenCalledWith([], undefined, undefined, true);
   });
 

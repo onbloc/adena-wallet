@@ -81,6 +81,10 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
 
   const handleReceive = (): void => navigation.navigate('Receive');
 
+  const handleRetryNfts = (): void => {
+    collectionsQuery.refetch();
+  };
+
   return (
     <WalletHomePage
       accountName={account?.name ?? ''}
@@ -106,6 +110,8 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
       nftSummary={nftSummary}
       nftSupported={Boolean(network.apiUrl)}
       nftLoading={collections.isPending && collections.fetchStatus !== 'idle'}
+      nftError={collectionsQuery.error ? toErrorMessage(collectionsQuery.error) : undefined}
+      onRetryNfts={handleRetryNfts}
       tab={tab}
       refreshing={pull.refreshing}
       onRefresh={pull.onRefresh}

@@ -21,4 +21,17 @@ describe('useDebouncedValue', () => {
     await rerender({ value: '' });
     expect(result.current).toBe('');
   });
+
+  it('does not revive the previous value when retyping right after clearing', async () => {
+    const { result, rerender } = await renderHook(({ value }: { value: string }) => useDebouncedValue(value, 200), { initialProps: { value: 'abc' } });
+
+    await rerender({ value: '' });
+    await rerender({ value: 'x' });
+    expect(result.current).toBe('');
+
+    await act(async () => {
+      jest.advanceTimersByTime(200);
+    });
+    expect(result.current).toBe('x');
+  });
 });

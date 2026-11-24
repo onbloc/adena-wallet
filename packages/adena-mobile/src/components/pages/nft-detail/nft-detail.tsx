@@ -20,6 +20,19 @@ export interface NftDetailPageProps {
   onBack: () => void;
 }
 
+// Traits can repeat, so each key carries its occurrence count.
+const traitKeys = <T extends { label: string; value: string }>(traits: T[]): { key: string; trait: T }[] => {
+  const seen = new Map<string, number>();
+
+  return traits.map((trait) => {
+    const base = `${trait.label}:${trait.value}`;
+    const count = seen.get(base) ?? 0;
+
+    seen.set(base, count + 1);
+    return { key: `${base}:${count}`, trait };
+  });
+};
+
 export const NftDetailPage = ({
   name,
   collectionName,
@@ -52,8 +65,8 @@ export const NftDetailPage = ({
       <>
         <SectionLabel label='Traits' />
         <View style={styles.traits}>
-          {traits.map(trait => (
-            <View key={`${trait.label}:${trait.value}`} style={styles.trait}>
+          {traitKeys(traits).map(({ key, trait }) => (
+            <View key={key} style={styles.trait}>
               <Text variant='meta' color='secondary'>{trait.label}</Text>
               <Text variant='row'>{trait.value}</Text>
             </View>

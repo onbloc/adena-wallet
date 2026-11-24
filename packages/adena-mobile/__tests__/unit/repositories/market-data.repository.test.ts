@@ -155,6 +155,41 @@ describe('DexMarketDataRepository', () => {
     expect(http.calls.filter(url => url === metaUrl(gns.id))).toHaveLength(1);
   });
 
+  it('falls back to the bundled wrapped path when a native meta request fails', async () => {
+    const http = new FakeHttpClient();
+    const repository = new DexMarketDataRepository(new GnoswapApiClient(http), { 'gnoland-1': { ...CONFIG['gnoland-1'], wrappedPaths: { ugnot: WUGNOT } } }, () => NOW);
+    const end = Math.floor(NOW / 1000 / 300) * 300 + 300;
+
+    http.on(ohlcvUrl(WUGNOT, 300, end - 3600, end), { data: [candle(end - 600, '0.05', '0.06')] });
+
+    expect((await repository.getMarketData({ token: gnot, network, range: ChartRange.ONE_HOUR })).priceUsd).toBe(0.06);
+  });
+
+  it('surfaces a native meta failure instead of charting the bare denom', async () => {
+    const { http, repository } = setup();
+
+    await expect(repository.getMarketData({ token: gnot, network, range: ChartRange.ONE_HOUR })).rejects.toThrow('404');
+    expect(http.calls.some(url => url.includes('/ohlcv'))).toBe(false);
+  });
+
+  it('keeps stats when the token meta request fails', async () => {
+    const { http, repository } = setup();
+
+    http.on(`${API}/tokens/prices`, { data: [{ path: gns.id, usd: '1', marketCap: '100', volumeUsd24h: '5' }] });
+
+    await expect(repository.getTokenInfo({ token: gns, network }))
+      .resolves.toEqual({ tokenId: gns.id, networkId: 'gnoland-1', about: undefined, stats: { marketCapUsd: 100, volume24hUsd: 5 }, links: [] });
+  });
+
+  it('drops links from unverified token metas', async () => {
+    const { http, repository } = setup();
+
+    http.on(metaUrl(gns.id), { data: meta({ path: gns.id, isVerified: false }) });
+    http.on(`${API}/tokens/prices`, { data: [] });
+
+    expect((await repository.getTokenInfo({ token: gns, network })).links).toEqual([]);
+  });
+
   it('makes no requests on networks without a configured DEX API', async () => {
     const { http, repository } = setup();
 

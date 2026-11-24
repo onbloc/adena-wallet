@@ -12,4 +12,5 @@ export const styles = StyleSheet.create({
   readMore: { alignSelf: 'center', paddingVertical: spacing.space8, minHeight: sizes.touchTarget, justifyContent: 'center' },
   footer: { flexDirection: 'row', gap: spacing.space8, paddingHorizontal: sizes.screenInset, paddingTop: spacing.space12, paddingBottom: sizes.footerBottom },
   action: { flex: 1 },
+  unavailable: { alignItems: 'center', paddingVertical: spacing.space32 },
 });

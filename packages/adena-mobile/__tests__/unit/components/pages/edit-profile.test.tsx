@@ -2,6 +2,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import React from 'react';
 
 import { EditProfilePage, EditProfilePageProps } from '../../../../src/components/pages';
+import { ACCOUNT_NAME_MAX_LENGTH } from '../../../../src/domain/account';
 import { renderPage } from './render-page';
 
 const address = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
@@ -43,6 +44,7 @@ describe('EditProfilePage', () => {
     expect(page.onSelectColor).toHaveBeenCalledWith('ink');
     expect(page.onCloseColorSheet).toHaveBeenCalled();
     expect(page.onChangeName).toHaveBeenCalledWith('Main');
+    expect(screen.getByLabelText('Account name').props.maxLength).toBe(ACCOUNT_NAME_MAX_LENGTH);
     expect(page.onSave).toHaveBeenCalledTimes(1);
     expect(page.onBack).toHaveBeenCalledTimes(1);
   });

@@ -97,8 +97,16 @@ export class DexMarketDataRepository implements MarketDataRepository {
       return empty;
     }
 
-    const meta = await this.getMeta(config, token).catch(() => null);
-    const path = meta?.wrappedPath || this.pathOf(token);
+    const bundledPath = token.type === TokenType.NATIVE ? config.wrappedPaths?.[this.pathOf(token)] : undefined;
+    // A native coin's own denom has no candles, so without a wrapped path the failure must surface.
+    const meta = await this.getMeta(config, token).catch((error: unknown) => {
+      if (token.type === TokenType.NATIVE && !bundledPath) {
+        throw error;
+      }
+
+      return null;
+    });
+    const path = meta?.wrappedPath || bundledPath || this.pathOf(token);
     const { interval, span } = RANGE_WINDOWS[range];
     const nowSec = Math.floor(this.now() / 1000);
     // Include the candle that is still forming.
@@ -131,7 +139,7 @@ export class DexMarketDataRepository implements MarketDataRepository {
     }
 
     const [meta, prices] = await Promise.all([
-      this.getMeta(config, token),
+      this.getMeta(config, token).catch(() => null),
       this.gnoswap.getTokenPrices(config.apiUrl).catch(() => []),
     ]);
     const price = prices.find(item => item.path === this.pathOf(token));
@@ -140,7 +148,7 @@ export class DexMarketDataRepository implements MarketDataRepository {
       volume24hUsd: toPositive(price?.volumeUsd24h),
     };
 
-    return { ...info, about: meta?.description?.trim() || undefined, stats, links: meta ? this.linksOf(meta) : [] };
+    return { ...info, about: meta?.description?.trim() || undefined, stats, links: meta?.isVerified ? this.linksOf(meta) : [] };
   }
 
   private configFor(network: Network): DexApiConfig | undefined {
@@ -171,6 +179,7 @@ export class DexMarketDataRepository implements MarketDataRepository {
     return meta;
   }
 
+  // Only verified metas; unverified tokens can list any URL.
   private linksOf(meta: GnoswapTokenMeta): MarketLink[] {
     const candidates: [string, string | undefined][] = [
       ['Website', httpsUrl(meta.websiteURL)],

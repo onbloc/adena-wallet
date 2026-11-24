@@ -35,6 +35,9 @@ export interface WalletHomePageProps {
   nftSummary?: string;
   nftSupported: boolean;
   nftLoading: boolean;
+  // Load failure with nothing to show; replaces the empty state with a retry.
+  nftError?: string;
+  onRetryNfts?: () => void;
   tab: HomeTab;
   refreshing: boolean;
   onRefresh: () => void;
@@ -136,7 +139,9 @@ export const WalletHomePage = (props: WalletHomePageProps): ReactElement => (
           : props.nftLoading
             ? <Text variant='meta' color='secondary' align='center' style={styles.loading}>Loading collectibles…</Text>
             : props.collections.length === 0
-              ? <EmptyState title='No collectibles yet' />
+              ? props.nftError
+                ? <EmptyState title='Couldn’t load collectibles' description={props.nftError} actionLabel='Try again' onAction={props.onRetryNfts} />
+                : <EmptyState title='No collectibles yet' />
               : (
                   <>
                     {props.nftSummary && <Text variant='meta' color='secondary'>{props.nftSummary}</Text>}
