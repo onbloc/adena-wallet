@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { ReactElement, useCallback } from 'react';
@@ -19,6 +20,8 @@ import { usePreference } from '../../../hooks/use-preference';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
 import { MainStackParamList } from '../../../navigation/types';
 import { toAvatarColor } from '../../../presenters/account.presenter';
+import { cloudProviderName } from '../../../presenters/cloud-backup.presenter';
+import { useCloudBackupAvailableQuery } from '../../../queries/cloud-backup.queries';
 import { queryKeys } from '../../../queries/query-keys';
 import { useBiometricStatusQuery } from '../../../queries/wallet.queries';
 import { SessionStatus, useSessionStore } from '../../../stores/session.store';
@@ -36,7 +39,11 @@ const CURRENCY_VIEWS: SettingsOptionView[] = SUPPORTED_CURRENCIES.map(option => 
 const LANGUAGE_VIEWS: SettingsOptionView[] = SUPPORTED_LANGUAGES.map(option => ({ value: option.code, title: option.name }));
 
 export const SettingsScreen = ({ navigation }: NativeStackScreenProps<MainStackParamList, 'Settings'>): ReactElement => {
-  const { walletService, preferenceService, connectedAppService, accountPhotoService } = useContainer();
+  const { walletService, preferenceService, connectedAppService, accountPhotoService, cloudBackupService } = useContainer();
+  const { data: cloudBackupAvailable } = useCloudBackupAvailableQuery();
+  // Re-read on focus so returning from account changes shows an outdated backup.
+  const focused = useIsFocused();
+  const backupStatus = focused ? cloudBackupService.getLocalStatus() : null;
   const { network, accounts, account, address } = useWalletSnapshot();
   const { setStatus } = useSessionStore();
   const queryClient = useQueryClient();
@@ -133,6 +140,8 @@ export const SettingsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
 
   const handleOpenReset = (): void => navigation.navigate('ResetWallet');
 
+  const handleOpenCloudBackup = (): void => navigation.navigate('CloudBackup');
+
   return (
     <SettingsPage
       account={account
@@ -165,6 +174,9 @@ export const SettingsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
       onLock={handleLock}
       onOpenAddressBook={handleOpenAddressBook}
       onOpenReset={handleOpenReset}
+      cloudBackupLabel={cloudBackupAvailable ? `${cloudProviderName(cloudBackupService.provider)} backup` : undefined}
+      cloudBackupValue={backupStatus?.kind === 'backedUp' && backupStatus.outdated ? 'Out of date' : undefined}
+      onOpenCloudBackup={handleOpenCloudBackup}
       onBack={navigation.goBack}
     />
   );

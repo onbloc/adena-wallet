@@ -23,7 +23,9 @@ export class AppResetService {
     // Queued behind in-flight vault work, so an unlock-time re-save cannot write the vault back afterwards.
     await this.vaultService.destroy();
     // The MMKV encryption key stays so the already-open store keeps working; its contents are wiped.
-    const secrets = Object.values(SecureKey).filter(key => key !== SecureKey.STORAGE_ENCRYPTION_KEY);
+    // The backup restore throttle stays too, so a reset cannot be used to skip its back-off.
+    const kept: SecureKey[] = [SecureKey.STORAGE_ENCRYPTION_KEY, SecureKey.BACKUP_PASSWORD_ATTEMPTS];
+    const secrets = Object.values(SecureKey).filter(key => !kept.includes(key));
 
     await Promise.all(secrets.map(key => this.secureStore.removeItem(key)));
     // Clears the reset marker too, so it goes only after every secret is gone.

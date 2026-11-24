@@ -11,6 +11,7 @@ export type OnboardingStackParamList = {
   BackupPhrase: undefined;
   ImportWallet: undefined;
   CreatePassword: undefined;
+  RestoreBackup: undefined;
   Sheet: SheetRouteParams;
 };
 
@@ -56,6 +57,7 @@ export type MainStackParamList = {
   Settings: undefined;
   RecoveryPhrase: { keyringId: string };
   ChangePassword: undefined;
+  CloudBackup: undefined;
   ConnectedApps: undefined;
   Networks: undefined;
   AddNetwork: undefined;

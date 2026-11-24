@@ -4,10 +4,10 @@ import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
 
 import { APP_CONFIG } from '../config/app';
 import { AppError, AppErrorCode, BIOMETRICS_INVALIDATED_MESSAGE, isAppError } from '../core/errors';
-import { deriveKeyPair, keyPairFromPrivateKey, wipeKeyPair } from '../crypto/key-pair';
+import { deriveKeyPair, isHdIndex, keyPairFromPrivateKey, wipeKeyPair } from '../crypto/key-pair';
 import { isValidPrivateKeyHex, KeyringRecord, KeyringType } from '../crypto/keyring';
 import { generateMnemonic, isValidMnemonic, mnemonicToSeed, normalizeMnemonic } from '../crypto/mnemonic';
-import { Account } from '../domain/account';
+import { Account, AvatarColor } from '../domain/account';
 import { VaultContent } from '../migration/vault-migrations';
 import { BiometricCredentialRepository } from '../repositories/biometric-credential.repository';
 import { PreferenceRepository } from '../repositories/preference.repository';
@@ -51,6 +51,15 @@ export interface CreateWalletInput {
   mnemonic: string;
   password: string;
   accountName?: string;
+}
+
+export interface RestoreWalletInput {
+  keyrings: KeyringRecord[];
+  // Accounts in display order.
+  accounts: { keyringId: string; name: string; hdIndex: number; avatarColor?: AvatarColor }[];
+  // Falls back to the first account when missing or not restored.
+  selected?: { keyringId: string; hdIndex: number };
+  password: string;
 }
 
 // Wallet lifecycle: create/import, lock/unlock, biometrics and keyring management.
@@ -120,6 +129,66 @@ export class WalletService {
       this.createdWith = { digest: digestPassword(password), epoch: this.keyringSession.epoch, vaultRevision: this.vaultService.revision };
       return this.accountService.appendAccount(record.id, record.type, accountName ?? 'Account 1');
     });
+  }
+
+  // Rebuilds a wallet from a decrypted backup: one new vault holding every keyring, then each account at its index.
+  // All or nothing: if any account cannot be rebuilt, the new vault is removed again.
+  restoreWallet({ keyrings, accounts, selected, password }: RestoreWalletInput): Promise<Account> {
+    this.validateRestoreInput(keyrings, accounts);
+    this.validatePassword(password);
+    const epoch = this.keyringSession.epoch;
+
+    return this.accountService.runExclusive(async () => {
+      this.assertCurrent(epoch);
+      const content = await this.vaultService.create(keyrings, password);
+
+      try {
+        this.assertCurrent(epoch);
+        this.accountService.clear();
+        this.keyringSession.open(content.keyrings);
+        const types = new Map(keyrings.map(keyring => [keyring.id, keyring.type]));
+        const restored: Account[] = [];
+
+        for (const account of accounts) {
+          // A backed-up account without a color keeps the default instead of getting a random one.
+          restored.push(await this.accountService.appendAccount(account.keyringId, types.get(account.keyringId)!, account.name, { hdIndex: account.hdIndex, avatarColor: account.avatarColor ?? null }));
+        }
+
+        await this.restoreMissingAccounts(content.keyrings);
+        const current = restored.find(account => account.keyringId === selected?.keyringId && account.hdIndex === selected.hdIndex)
+          ?? restored[0]
+          ?? this.accountService.getAccounts()[0];
+        const selectedAccount = this.accountService.selectAccount(current.id);
+
+        // Like createWallet, enabling biometrics right after the restore can skip another scrypt run.
+        this.createdWith = { digest: digestPassword(password), epoch: this.keyringSession.epoch, vaultRevision: this.vaultService.revision };
+        return selectedAccount;
+      }
+      catch (error) {
+        this.keyringSession.close();
+        this.accountService.clear();
+        // The restore error is what the user needs to see, even if the cleanup fails too.
+        await this.vaultService.destroy().catch(() => undefined);
+        throw error;
+      }
+    });
+  }
+
+  private validateRestoreInput(keyrings: KeyringRecord[], accounts: RestoreWalletInput['accounts']): void {
+    const ids = new Set(keyrings.map(keyring => keyring.id));
+    const slots = new Set(accounts.map(account => `${account.keyringId}:${account.hdIndex}`));
+
+    if (ids.size === 0 || ids.size !== keyrings.length || accounts.some(account => !ids.has(account.keyringId)) || slots.size !== accounts.length) {
+      throw new AppError(AppErrorCode.INVALID_REQUEST, 'The backup does not describe a valid wallet');
+    }
+
+    if (accounts.some(account => !isHdIndex(account.hdIndex))) {
+      throw new AppError(AppErrorCode.INVALID_REQUEST, 'The backup contains an invalid account index');
+    }
+
+    if (keyrings.some(keyring => (keyring.type === KeyringType.HD_WALLET ? !isValidMnemonic(keyring.mnemonic) : !isValidPrivateKeyHex(keyring.privateKey)))) {
+      throw new AppError(AppErrorCode.INVALID_REQUEST, 'The backup contains an invalid key');
+    }
   }
 
   // The epoch is taken at call time: a lock issued after this call, even while it waits in the queue, wins.

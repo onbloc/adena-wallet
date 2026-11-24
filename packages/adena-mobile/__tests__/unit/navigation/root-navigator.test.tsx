@@ -21,6 +21,7 @@ jest.mock('../../../src/containers/main/add-network-screen', () => ({ AddNetwork
 jest.mock('../../../src/containers/main/add-token-screen', () => ({ AddTokenScreen: () => mockScreen('AddTokenScreen') }));
 jest.mock('../../../src/containers/main/address-book-edit-screen', () => ({ AddressBookEditScreen: () => mockScreen('AddressBookEditScreen') }));
 jest.mock('../../../src/containers/main/address-book-screen', () => ({ AddressBookScreen: () => mockScreen('AddressBookScreen') }));
+jest.mock('../../../src/containers/main/cloud-backup-screen', () => ({ CloudBackupScreen: () => mockScreen('CloudBackupScreen') }));
 jest.mock('../../../src/containers/main/connected-apps-screen', () => ({ ConnectedAppsScreen: () => mockScreen('ConnectedAppsScreen') }));
 jest.mock('../../../src/containers/main/dapp-request-screen', () => ({ DappRequestScreen: () => mockScreen('DappRequestScreen') }));
 jest.mock('../../../src/containers/main/import-account-screen', () => ({ ImportAccountScreen: () => mockScreen('ImportAccountScreen') }));
@@ -39,6 +40,7 @@ jest.mock('../../../src/containers/main/token-details-screen', () => ({ TokenDet
 jest.mock('../../../src/containers/onboarding/backup-phrase-screen', () => ({ BackupPhraseScreen: () => mockScreen('BackupPhraseScreen') }));
 jest.mock('../../../src/containers/onboarding/create-password-screen', () => ({ CreatePasswordScreen: () => mockScreen('CreatePasswordScreen') }));
 jest.mock('../../../src/containers/onboarding/import-wallet-screen', () => ({ ImportWalletScreen: () => mockScreen('ImportWalletScreen') }));
+jest.mock('../../../src/containers/onboarding/restore-backup-screen', () => ({ RestoreBackupScreen: () => mockScreen('RestoreBackupScreen') }));
 jest.mock('../../../src/containers/onboarding/welcome-screen', () => ({ WelcomeScreen: () => mockScreen('WelcomeScreen') }));
 jest.mock('../../../src/containers/reset-wallet-screen', () => ({ ResetWalletScreen: () => mockScreen('ResetWalletScreen') }));
 jest.mock('../../../src/containers/unlock-screen', () => ({ UnlockScreen: () => mockScreen('UnlockScreen') }));
@@ -66,7 +68,7 @@ describe('RootNavigator', () => {
     await renderRoot();
     expect(screen.getByText('WelcomeScreen')).toBeTruthy();
 
-    for (const [route, name] of [['BackupPhrase', 'BackupPhraseScreen'], ['ImportWallet', 'ImportWalletScreen'], ['CreatePassword', 'CreatePasswordScreen']]) {
+    for (const [route, name] of [['BackupPhrase', 'BackupPhraseScreen'], ['ImportWallet', 'ImportWalletScreen'], ['CreatePassword', 'CreatePasswordScreen'], ['RestoreBackup', 'RestoreBackupScreen']]) {
       await act(async () => (navigationRef.navigate as (route: string) => void)(route));
       expect(await screen.findByText(name)).toBeTruthy();
     }
@@ -85,14 +87,14 @@ describe('RootNavigator', () => {
     useSessionStore.setState({ status: SessionStatus.UNLOCKED });
     await renderRoot();
     expect(screen.getByText('MainTabs')).toBeTruthy();
-    expect(navigationRef.getRootState()?.routeNames).toHaveLength(30);
+    expect(navigationRef.getRootState()?.routeNames).toHaveLength(31);
 
     await act(async () => navigationRef.navigate('DappRequest'));
     expect(await screen.findByText('DappRequestScreen')).toBeTruthy();
     await act(async () => navigationRef.navigate('Receive'));
     expect(await screen.findByText('ReceiveScreen')).toBeTruthy();
 
-    const routes: (keyof MainStackParamList)[] = ['SendRecipient', 'Settings', 'Networks'];
+    const routes: (keyof MainStackParamList)[] = ['SendRecipient', 'Settings', 'Networks', 'CloudBackup'];
 
     for (const route of routes) {
       await act(async () => (navigationRef.navigate as (route: string) => void)(route));

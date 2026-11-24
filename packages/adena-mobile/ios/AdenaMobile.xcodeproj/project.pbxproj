@@ -17,6 +17,8 @@
 		88700E0C8C2208FCA69EA4E6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		E5B26D17A257A9AE12CE8A37 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5181AA330E86C988E6E73B72 /* Inter-Regular.ttf */; };
 		ECA4983C50E9B365C922C917 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6C4A1DB47C2AE8F4B6C903CA /* Inter-SemiBold.ttf */; };
+		A0C1D2E3F4051627384950A1 /* AdenaCloudBackupStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C1D2E3F4051627384950A2 /* AdenaCloudBackupStore.swift */; };
+		A0C1D2E3F4051627384950A3 /* AdenaCloudBackup.mm in Sources */ = {isa = PBXBuildFile; fileRef = A0C1D2E3F4051627384950A4 /* AdenaCloudBackup.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +37,9 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = AdenaMobile/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A1394A8876A1B078108B7C86 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Inter-Bold.ttf"; path = "../src/assets/fonts/Inter-Bold.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		A0C1D2E3F4051627384950A2 /* AdenaCloudBackupStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AdenaCloudBackupStore.swift; path = AdenaMobile/AdenaCloudBackupStore.swift; sourceTree = "<group>"; };
+		A0C1D2E3F4051627384950A4 /* AdenaCloudBackup.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = AdenaCloudBackup.mm; path = AdenaMobile/AdenaCloudBackup.mm; sourceTree = "<group>"; };
+		A0C1D2E3F4051627384950A5 /* AdenaMobile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AdenaMobile.entitlements; path = AdenaMobile/AdenaMobile.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,6 +60,9 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				761780EE2CA45674006654EF /* SceneDelegate.swift */,
+				A0C1D2E3F4051627384950A2 /* AdenaCloudBackupStore.swift */,
+				A0C1D2E3F4051627384950A4 /* AdenaCloudBackup.mm */,
+				A0C1D2E3F4051627384950A5 /* AdenaMobile.entitlements */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
@@ -267,6 +275,8 @@
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
 				761780EF2CA45674006654EF /* SceneDelegate.swift in Sources */,
+				A0C1D2E3F4051627384950A1 /* AdenaCloudBackupStore.swift in Sources */,
+				A0C1D2E3F4051627384950A3 /* AdenaCloudBackup.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -279,6 +289,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = AdenaMobile/AdenaMobile.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = AdenaMobile/Info.plist;
@@ -309,6 +320,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = AdenaMobile/AdenaMobile.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = AdenaMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.5;

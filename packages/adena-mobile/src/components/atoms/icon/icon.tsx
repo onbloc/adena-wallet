@@ -8,6 +8,7 @@ import {
   CircleAlert,
   CircleCheck,
   CircleX,
+  Cloud,
   Copy,
   Delete,
   Eye,
@@ -30,6 +31,7 @@ import {
   Search,
   Settings,
   Share2,
+  Shield,
   Trash2,
   TriangleAlert,
   User,
@@ -77,6 +79,8 @@ const ICONS = {
   trash: Trash2,
   palette: Palette,
   camera: Camera,
+  cloud: Cloud,
+  shield: Shield,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

@@ -55,7 +55,14 @@ describe('ScryptXChaChaVaultCipher', () => {
     bytes[0] ^= 0xff;
     expect(isAppError(await capture(cipher.decrypt(payload, 'wrong')), 'INVALID_PASSWORD')).toBe(true);
     expect(isAppError(await capture(cipher.decrypt({ ...payload, ciphertext: toBase64(bytes) }, 'pw')), 'INVALID_PASSWORD')).toBe(true);
-    expect(isAppError(await capture(cipher.decrypt({ ...payload, cipher: { ...payload.cipher, nonce: toBase64(new Uint8Array(3)) } }, 'pw')), 'INVALID_PASSWORD')).toBe(true);
+  });
+
+  // A malformed field is a storage fault: it must not count against the password attempt limit.
+  it('rejects a malformed nonce or ciphertext as STORAGE_ERROR, not as a wrong password', async () => {
+    const payload = await cipher.encrypt('secret', 'pw');
+
+    expect(isAppError(await capture(cipher.decrypt({ ...payload, cipher: { ...payload.cipher, nonce: toBase64(new Uint8Array(3)) } }, 'pw')), 'STORAGE_ERROR')).toBe(true);
+    expect(isAppError(await capture(cipher.decrypt({ ...payload, ciphertext: toBase64(new Uint8Array(15)) }, 'pw')), 'STORAGE_ERROR')).toBe(true);
   });
 
   it('wipes password bytes and derived keys', async () => {

@@ -58,4 +58,9 @@ describe('CreatePasswordPage', () => {
 
     expect(screen.getByText('Creating wallet…')).toBeTruthy();
   });
+
+  it('uses restore wording when asked', async () => {
+    await renderPage(<CreatePasswordPage {...props({ submitLabel: 'Restore wallet', submittingLabel: 'Restoring wallet…' })} />);
+    expect(screen.getByRole('button', { name: 'Restore wallet' })).toBeTruthy();
+  });
 });

@@ -57,6 +57,16 @@ export interface VaultCipher {
 const KEY_LENGTH = 32;
 const SALT_LENGTH = 16;
 const NONCE_LENGTH = 24;
+const TAG_LENGTH = 16;
+
+const decodeField = (value: string): Uint8Array => {
+  try {
+    return fromBase64(value);
+  }
+  catch (error) {
+    throw new AppError(AppErrorCode.STORAGE_ERROR, 'Malformed vault encryption', { cause: error });
+  }
+};
 
 export class ScryptXChaChaVaultCipher implements VaultCipher {
   constructor(
@@ -106,7 +116,7 @@ export class ScryptXChaChaVaultCipher implements VaultCipher {
   async decryptKeyed(payload: EncryptedPayload, password: string): Promise<{ plaintext: string; key: VaultKey }> {
     this.assertSupported(payload);
     const { N, r, p } = payload.kdf;
-    const key = { bytes: await this.deriveKey(password, fromBase64(payload.kdf.salt), { N, r, p }), kdf: payload.kdf };
+    const key = { bytes: await this.deriveKey(password, decodeField(payload.kdf.salt), { N, r, p }), kdf: payload.kdf };
 
     try {
       return { plaintext: this.open(payload, key, AppErrorCode.INVALID_PASSWORD), key };
@@ -119,9 +129,16 @@ export class ScryptXChaChaVaultCipher implements VaultCipher {
 
   encryptWithKey(plaintext: string, key: VaultKey): EncryptedPayload {
     const nonce = randomBytes(NONCE_LENGTH);
-    const ciphertext = xchacha20poly1305(key.bytes, nonce).encrypt(new TextEncoder().encode(plaintext));
+    const plaintextBytes = new TextEncoder().encode(plaintext);
 
-    return { kdf: { ...key.kdf }, cipher: { name: 'xchacha20poly1305', nonce: toBase64(nonce) }, ciphertext: toBase64(ciphertext) };
+    try {
+      const ciphertext = xchacha20poly1305(key.bytes, nonce).encrypt(plaintextBytes);
+
+      return { kdf: { ...key.kdf }, cipher: { name: 'xchacha20poly1305', nonce: toBase64(nonce) }, ciphertext: toBase64(ciphertext) };
+    }
+    finally {
+      plaintextBytes.fill(0);
+    }
   }
 
   decryptWithKey(payload: EncryptedPayload, key: VaultKey): string {
@@ -141,14 +158,30 @@ export class ScryptXChaChaVaultCipher implements VaultCipher {
     }
   }
 
+  // Malformed fields are a storage fault, not a wrong password, so they never count as a failed attempt.
   private open(payload: EncryptedPayload, key: VaultKey, failure: AppErrorCode): string {
-    try {
-      const plaintext = xchacha20poly1305(key.bytes, fromBase64(payload.cipher.nonce)).decrypt(fromBase64(payload.ciphertext));
+    const nonce = decodeField(payload.cipher.nonce);
+    const ciphertext = decodeField(payload.ciphertext);
 
-      return new TextDecoder().decode(plaintext);
+    if (nonce.length !== NONCE_LENGTH || ciphertext.length < TAG_LENGTH) {
+      throw new AppError(AppErrorCode.STORAGE_ERROR, 'Malformed vault encryption');
+    }
+
+    let plaintext: Uint8Array;
+
+    try {
+      plaintext = xchacha20poly1305(key.bytes, nonce).decrypt(ciphertext);
     }
     catch (error) {
       throw new AppError(failure, failure === AppErrorCode.INVALID_PASSWORD ? 'Incorrect password' : 'The vault could not be opened', { cause: error });
+    }
+
+    // The decoded string cannot be wiped in JS; the byte copy can.
+    try {
+      return new TextDecoder().decode(plaintext);
+    }
+    finally {
+      plaintext.fill(0);
     }
   }
 

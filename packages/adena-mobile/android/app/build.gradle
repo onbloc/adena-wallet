@@ -133,6 +133,8 @@ dependencies {
     implementation("com.facebook.react:react-android")
     // BiometricPrompt + CryptoObject for the per-use biometric key (same version react-native-keychain uses).
     implementation("androidx.biometric:biometric:1.1.0")
+    // Authorization API for the Google Drive appDataFolder backup (drive.appdata scope).
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

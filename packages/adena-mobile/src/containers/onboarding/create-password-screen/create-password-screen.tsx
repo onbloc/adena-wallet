@@ -12,8 +12,11 @@ import { SessionStatus, useSessionStore } from '../../../stores/session.store';
 import { useToastStore } from '../../../stores/toast.store';
 
 export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<OnboardingStackParamList, 'CreatePassword'>): ReactElement => {
-  const { walletService } = useContainer();
+  const { walletService, cloudBackupService } = useContainer();
   const mnemonic = useOnboardingStore(state => state.mnemonic);
+  const restoreBackup = useOnboardingStore(state => state.restoreBackup);
+  // Fixed at mount: the store is cleared on success while the button still shows its progress label.
+  const [restoring] = useState(restoreBackup !== null);
   const clearOnboarding = useOnboardingStore(state => state.clear);
   const { setStatus, bumpRevision } = useSessionStore();
   const showToast = useToastStore(state => state.show);
@@ -78,7 +81,7 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
       return;
     }
 
-    if (!mnemonic) {
+    if (!mnemonic && !restoreBackup) {
       navigation.popToTop();
       return;
     }
@@ -87,7 +90,13 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
     setSubmitting(true);
 
     try {
-      await walletService.createWallet({ mnemonic, password });
+      // A decrypted cloud backup is rebuilt with every keyring; otherwise one phrase becomes the wallet.
+      if (restoreBackup) {
+        await cloudBackupService.restoreWallet(restoreBackup, password);
+      }
+      else if (mnemonic) {
+        await walletService.createWallet({ mnemonic, password });
+      }
 
       await enableBiometricsIfSupported();
 
@@ -161,6 +170,8 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
       submitting={submitting}
       onSubmit={submit}
       onBack={handleBack}
+      submitLabel={restoring ? 'Restore wallet' : undefined}
+      submittingLabel={restoring ? 'Restoring wallet…' : undefined}
     />
   );
 };

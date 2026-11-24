@@ -2,6 +2,7 @@ package com.adena
 
 import android.app.Application
 import com.adena.biometric.AdenaBiometricVaultPackage
+import com.adena.cloudbackup.AdenaCloudBackupPackage
 import com.adena.injectsheet.AdenaInjectSheetPackage
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -18,6 +19,7 @@ class MainApplication : Application(), ReactApplication {
         PackageList(this).packages.apply {
           add(AdenaInjectSheetPackage())
           add(AdenaBiometricVaultPackage())
+          add(AdenaCloudBackupPackage())
         },
     )
   }

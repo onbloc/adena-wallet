@@ -10,6 +10,9 @@ import { ChainModule, ChainRegistry } from '../repositories/chain/chain-registry
 import { createCosmosModule } from '../repositories/chain/cosmos/cosmos-module';
 import { createGnoModule } from '../repositories/chain/gno/gno-module';
 import { createCachedGnoProviderFactory } from '../repositories/chain/gno/gno-provider';
+import { StorageCloudBackupStateRepository } from '../repositories/cloud-backup/backup-state.repository';
+import { CloudBackupProvider, CloudBackupStore } from '../repositories/cloud-backup/cloud-backup-store';
+import { NativeCloudBackupStore } from '../repositories/cloud-backup/native-cloud-backup-store';
 import { StorageConnectedAppRepository } from '../repositories/connected-app.repository';
 import { DexMarketDataRepository, MarketDataRepository } from '../repositories/market-data.repository';
 import { StorageNetworkRepository } from '../repositories/network.repository';
@@ -21,6 +24,8 @@ import { ApiPriceRepository, PriceRepository } from '../repositories/price.repos
 import { StorageTokenListRepository } from '../repositories/token-list.repository';
 import { SecureVaultRepository } from '../repositories/vault.repository';
 import { DEX_API_CONFIG, ONRAMP_CONFIG, OnrampConfig } from '../resources';
+import { BACKUP_KDF_SETTINGS, BackupCodec } from '../security/backup-codec';
+import { SecureKey } from '../security/secure-keys';
 import { SecureStore } from '../security/secure-store';
 import { ScryptXChaChaVaultCipher, VaultCipher } from '../security/vault-cipher';
 import { AccountService } from '../services/account.service';
@@ -29,6 +34,7 @@ import { ActivityService } from '../services/activity.service';
 import { AddressBookService } from '../services/address-book.service';
 import { AppResetService } from '../services/app-reset.service';
 import { BalanceService } from '../services/balance.service';
+import { CloudBackupService } from '../services/cloud-backup.service';
 import { ConnectedAppService } from '../services/connected-app.service';
 import { DappService } from '../services/dapp.service';
 import { ExploreService } from '../services/explore.service';
@@ -61,6 +67,9 @@ export interface Infrastructure {
   priceRepository?: PriceRepository;
   // Mock by default until a market data source is chosen.
   marketDataRepository?: MarketDataRepository;
+  // iCloud on iOS, Google Drive on Android; unavailable when omitted.
+  cloudBackupStore?: CloudBackupStore;
+  backupCodec?: BackupCodec;
   // Wall clock, injectable for tests.
   now?: () => number;
   // Bundled onramp providers unless a test passes its own.
@@ -92,6 +101,7 @@ export interface Services {
   connectedAppService: ConnectedAppService;
   preferenceService: PreferenceService;
   migrationService: MigrationService;
+  cloudBackupService: CloudBackupService;
 }
 
 export type AppContainer = Services & {
@@ -136,6 +146,18 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     ?? new NftService(chainRegistry, accountService, new StorageNftPreferenceRepository(keyValueStore));
   const resetMarker = new ResetMarker(keyValueStore);
   const migrationService = overrides.migrationService ?? new MigrationService(keyValueStore, secureStore);
+  const walletService = overrides.walletService
+    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService], biometricRepository, preferenceRepository, resetMarker);
+  const cloudBackupService = overrides.cloudBackupService ?? new CloudBackupService(
+    infra.cloudBackupStore ?? new NativeCloudBackupStore(null, CloudBackupProvider.ICLOUD),
+    infra.backupCodec ?? new BackupCodec(new ScryptXChaChaVaultCipher(BACKUP_KDF_SETTINGS)),
+    new StorageCloudBackupStateRepository(keyValueStore),
+    vaultService,
+    accountService,
+    walletService,
+    new PasswordAttemptLimiter(new SecurePasswordAttemptRepository(secureStore, SecureKey.BACKUP_PASSWORD_ATTEMPTS), infra.now),
+    infra.now,
+  );
 
   return {
     keyringSession,
@@ -159,11 +181,11 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     onrampService: overrides.onrampService ?? new OnrampService(infra.onrampConfig ?? ONRAMP_CONFIG),
     appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService, resetMarker),
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),
-    walletService: overrides.walletService
-      ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker),
+    walletService,
     dappService: overrides.dappService
       ?? new DappService(networkService, accountService, transactionService, connectedAppService),
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
+    cloudBackupService,
   };
 };

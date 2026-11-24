@@ -8,6 +8,9 @@ describe('queryKeys', () => {
     expect(queryKeys.sessionBootstrap()).toEqual(['adena', 'session-bootstrap']);
     expect(queryKeys.walletStatus()).toEqual(['adena', 'wallet-status']);
     expect(queryKeys.biometric()).toEqual(['adena', 'biometric']);
+    expect(queryKeys.cloudBackupAvailable()).toEqual(['adena', 'cloud-backup', 'available']);
+    expect(queryKeys.cloudBackupStatus()).toEqual(['adena', 'cloud-backup', 'status']);
+    expect(queryKeys.restorableBackups(true)).toEqual(['adena', 'cloud-backup', 'restorable', true]);
   });
 
   it('nests balance keys under balances', () => {

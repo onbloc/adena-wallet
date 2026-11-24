@@ -25,12 +25,15 @@ describe('AppResetService', () => {
     keyValueStore.setString(StorageKey.ACCOUNTS, '{}');
     keyValueStore.setString('anything', '1');
     keyValueStore.setString(`${ACCOUNT_PHOTO_KEY_PREFIX}acc-1`, 'data:image/jpeg;base64,AAAA');
+    // The local backup record goes too; the cloud copy itself is kept.
+    keyValueStore.setString(StorageKey.CLOUD_BACKUP, '{}');
     const vaultService = new VaultService(new SecureVaultRepository(secureStore), new ScryptXChaChaVaultCipher(), new PasswordAttemptLimiter(new SecurePasswordAttemptRepository(secureStore)));
 
     await new AppResetService(session, vaultService, secureStore, keyValueStore, new MigrationService(keyValueStore, secureStore)).resetAll();
 
     expect(session.isUnlocked()).toBe(false);
     expect(await secureStore.getItem(SecureKey.STORAGE_ENCRYPTION_KEY)).toBe('x');
+    expect(await secureStore.getItem(SecureKey.BACKUP_PASSWORD_ATTEMPTS)).toBe('x');
 
     for (const key of [SecureKey.VAULT, SecureKey.BIOMETRIC_PASSWORD, SecureKey.PASSWORD_ATTEMPTS]) {
       expect(await secureStore.hasItem(key)).toBe(false);
