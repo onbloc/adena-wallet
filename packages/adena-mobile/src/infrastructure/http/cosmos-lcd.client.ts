@@ -16,11 +16,41 @@ type RawAccount = Record<string, unknown> & { account_number?: string; sequence?
 const MAX_BALANCE_PAGES = 50;
 const GRPC_NOT_FOUND = 5;
 
-// Module and vesting accounts nest the BaseAccount (vesting: base_vesting_account.base_account).
-const baseAccountOf = (account: RawAccount): RawAccount => {
-  const vesting = account.base_vesting_account as RawAccount | undefined;
+const VESTING_TYPES = new Set([
+  '/cosmos.vesting.v1beta1.ContinuousVestingAccount',
+  '/cosmos.vesting.v1beta1.DelayedVestingAccount',
+  '/cosmos.vesting.v1beta1.PeriodicVestingAccount',
+  '/cosmos.vesting.v1beta1.PermanentLockedAccount',
+]);
 
-  return (vesting?.base_account ?? account.base_account ?? account) as RawAccount;
+const isObject = (value: unknown): value is RawAccount => typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isUint = (value: unknown): boolean => value === undefined || (typeof value === 'string' && /^\d+$/.test(value));
+
+// Returns the BaseAccount of a supported account type, or null for any other shape.
+// Module accounts nest it in base_account, vesting accounts in base_vesting_account.base_account.
+const baseAccountOf = (account: unknown): RawAccount | null => {
+  if (!isObject(account)) {
+    return null;
+  }
+
+  const type = account['@type'];
+
+  if (type === '/cosmos.auth.v1beta1.BaseAccount') {
+    return account;
+  }
+
+  if (type === '/cosmos.auth.v1beta1.ModuleAccount') {
+    return isObject(account.base_account) ? account.base_account : null;
+  }
+
+  if (typeof type === 'string' && VESTING_TYPES.has(type) && isObject(account.base_vesting_account)) {
+    const base = account.base_vesting_account.base_account;
+
+    return isObject(base) ? base : null;
+  }
+
+  return null;
 };
 
 // grpc-gateway maps codes.NotFound to HTTP 404 with `{ code: 5 }`; a bare 404 may be a wrong URL.
@@ -92,13 +122,14 @@ export class CosmosLcdClient {
       throw error;
     }
 
-    if (!body?.account || typeof body.account !== 'object') {
-      throw new AppError(AppErrorCode.NETWORK_ERROR, 'Account response has no account');
+    const inner = baseAccountOf(body?.account);
+
+    // Signer state is never invented from an unexpected body: the account must be this address.
+    if (!inner || inner.address !== address || !isUint(inner.account_number) || !isUint(inner.sequence)) {
+      throw new AppError(AppErrorCode.NETWORK_ERROR, 'Account response is not a supported account for this address');
     }
 
-    const inner = baseAccountOf(body.account as RawAccount);
-
-    // proto3 JSON may omit zero values.
+    // proto3 JSON omits zero values.
     return { accountNumber: inner.account_number ?? '0', sequence: inner.sequence ?? '0' };
   }
 

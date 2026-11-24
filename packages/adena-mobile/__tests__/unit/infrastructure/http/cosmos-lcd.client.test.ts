@@ -73,12 +73,12 @@ describe('CosmosLcdClient', () => {
     const url = `${REST}/cosmos/auth/v1beta1/accounts/atone1x`;
 
     it('reads a flat account', async () => {
-      http.on(url, { account: { account_number: '12', sequence: '3' } });
+      http.on(url, { account: { '@type': '/cosmos.auth.v1beta1.BaseAccount', address: 'atone1x', account_number: '12', sequence: '3' } });
       await expect(client.getAccount(REST, 'atone1x')).resolves.toEqual({ accountNumber: '12', sequence: '3' });
     });
 
     it('reads a module account through base_account', async () => {
-      http.on(url, { account: { '@type': '/cosmos.auth.v1beta1.ModuleAccount', base_account: { account_number: '4', sequence: '9' }, name: 'gov' } });
+      http.on(url, { account: { '@type': '/cosmos.auth.v1beta1.ModuleAccount', base_account: { address: 'atone1x', account_number: '4', sequence: '9' }, name: 'gov' } });
       await expect(client.getAccount(REST, 'atone1x')).resolves.toEqual({ accountNumber: '4', sequence: '9' });
     });
 
@@ -103,8 +103,20 @@ describe('CosmosLcdClient', () => {
     );
 
     it('defaults omitted zero fields', async () => {
-      http.on(url, { account: { '@type': '/cosmos.auth.v1beta1.BaseAccount' } });
+      http.on(url, { account: { '@type': '/cosmos.auth.v1beta1.BaseAccount', address: 'atone1x' } });
       await expect(client.getAccount(REST, 'atone1x')).resolves.toEqual({ accountNumber: '0', sequence: '0' });
+    });
+
+    it.each([
+      ['an array', []],
+      ['an incomplete vesting wrapper', { '@type': '/cosmos.vesting.v1beta1.ContinuousVestingAccount', base_vesting_account: {} }],
+      ['an unknown account type', { '@type': '/x.Unknown', address: 'atone1x', account_number: '1' }],
+      ['an untyped account', { address: 'atone1x', account_number: '1', sequence: '1' }],
+      ['another address', { '@type': '/cosmos.auth.v1beta1.BaseAccount', address: 'atone1y', account_number: '1' }],
+      ['a non-numeric sequence', { '@type': '/cosmos.auth.v1beta1.BaseAccount', address: 'atone1x', sequence: 'x' }],
+    ])('rejects %s instead of signing with 0/0', async (_, account) => {
+      http.on(url, { account });
+      expect(isAppError(await capture(client.getAccount(REST, 'atone1x')), 'NETWORK_ERROR')).toBe(true);
     });
 
     it('rejects a response without an account', async () => {
