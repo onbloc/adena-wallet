@@ -94,6 +94,16 @@ describe('AIAgent', () => {
     expect(model.doGenerateCalls).toHaveLength(0);
   });
 
+  it.each(['Show me all my assets.', '내 모든 자산을 보여줘'])('combines native and token balances for %s', async prompt => {
+    const { agent, mcp } = setup([]);
+    const events = await collect(agent.run({ prompt }));
+    expect(mcp.calls.map(call => call.name)).toEqual(['get_native_balance', 'get_token_balances']);
+    expect(events.filter(e => e.type === GenerateEventType.Text)).toEqual([{
+      type: GenerateEventType.Text,
+      delta: '10 GNOT\n\nGRC20 balances:\n- 300 WIZ (gno.land/r/wiz)\n- 17528 xGNS (gno.land/r/xgns)',
+    }]);
+  });
+
   it('reads through the harness and prepares a transfer in one run', async () => {
     const { agent, prepared } = setup([call('get_native_balance', {}), send, answer('Ready to sign 1 GNOT')]);
 
