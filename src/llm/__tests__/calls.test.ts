@@ -2,7 +2,7 @@ import { ToolName, TokenSymbol, WalletStatus } from '../../wallet/constants';
 import { applyToolEvent, type CallRecord } from '../calls';
 import { GenerateEventType } from '../generate';
 
-const call = (id: string, name: ToolName = ToolName.GetBalance) => ({
+const call = (id: string, name: ToolName = ToolName.GetApprovals) => ({
   type: GenerateEventType.ToolCall,
   id,
   name,
@@ -23,7 +23,7 @@ describe('applyToolEvent', () => {
     });
 
     expect(calls.map((c) => [c.id, c.name, c.output])).toEqual([
-      ['a', ToolName.GetBalance, undefined],
+      ['a', ToolName.GetApprovals, undefined],
       ['b', ToolName.Transfer, { status: WalletStatus.Signed }],
     ]);
   });
@@ -37,7 +37,7 @@ describe('applyToolEvent', () => {
     calls = applyToolEvent(calls, {
       type: GenerateEventType.ToolError,
       id: 'a',
-      name: ToolName.GetBalance,
+      name: ToolName.GetApprovals,
       error: 'AI_InvalidToolInputError: ...',
     });
 
@@ -49,7 +49,7 @@ describe('applyToolEvent', () => {
     calls = applyToolEvent(calls, {
       type: GenerateEventType.ToolError,
       id: 'a',
-      name: ToolName.GetBalance,
+      name: ToolName.GetApprovals,
       error: 'boom',
     });
 

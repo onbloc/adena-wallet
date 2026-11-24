@@ -2,8 +2,7 @@ import { tool, type ToolSet } from 'ai';
 import { z } from 'zod';
 
 import { SignRequestType, TokenSymbol, ToolName, WalletStatus } from '../constants';
-import { normalizeAddress } from '../sdk/address';
-import { WalletError, type SignResult, type WalletSdk } from '../sdk/types';
+import { WalletError, type Contact, type SignResult, type WalletSdk } from '../sdk/types';
 
 // The adapter is the only code between the model and the wallet SDK. It calls
 // the SDK's public methods and hands the model small results: no keys, no raw
@@ -13,6 +12,8 @@ export type WalletToolsContext = {
   sdk: WalletSdk;
   /** The account the user acts as. Injected here; the model never chooses it. */
   activeAddress: string;
+  /** Address book: the model may name a contact instead of writing its address. */
+  contacts: readonly Contact[];
 };
 
 export type ToolResult = { status: WalletStatus; [key: string]: unknown };
@@ -35,44 +36,33 @@ async function refusalsAsResults(run: () => Promise<ToolResult>): Promise<ToolRe
 const afterSigning = (result: SignResult, signed: Omit<ToolResult, 'status'> = {}): ToolResult =>
   result.status === WalletStatus.Signed ? { status: WalletStatus.Signed, ...signed } : REJECTED;
 
-/** Tools bound to one wallet session. */
-export function createWalletTools({ sdk, activeAddress }: WalletToolsContext) {
+/** A contact's name (any case) becomes its address; anything else is left for the SDK to check. */
+const resolveContact = (contacts: readonly Contact[], recipient: string) =>
+  contacts.find((contact) => contact.alias.toLowerCase() === recipient.trim().toLowerCase())?.address ??
+  recipient;
+
+/**
+ * Tools bound to one wallet session. They act on the mock wallet; balances are read through
+ * the Onbloc MCP, so the model never has two sources for the same fact.
+ */
+export function createWalletTools({ sdk, activeAddress, contacts }: WalletToolsContext) {
   return {
-    // No arguments: the model only sees the user's own balances here. An optional address
-    // on this tool made the 2B model invent endless addresses (filling the context) or look
-    // up a transfer's recipient instead of sending, so other addresses have their own tool.
-    [ToolName.GetBalance]: tool({
-      description: "Get the token balances of the user's own account.",
-      inputSchema: z.object({}),
-      execute: () =>
-        refusalsAsResults(async () => ({
-          status: WalletStatus.Ok,
-          address: activeAddress,
-          balances: await sdk.getBalance(activeAddress),
-        })),
-    }),
-    [ToolName.GetAddressBalance]: tool({
-      description:
-        "Get the token balances of another address, only when the user asks about that address. Never use it for the user's own balance.",
-      inputSchema: z.object({ address: z.string().describe('Address starting with g1') }),
-      execute: ({ address }) =>
-        refusalsAsResults(async () => ({
-          status: WalletStatus.Ok,
-          address: normalizeAddress(address),
-          balances: await sdk.getBalance(address),
-        })),
-    }),
     [ToolName.Transfer]: tool({
       description:
         "Send tokens from the user's account to a recipient. The user must approve a signing popup; the result says whether it was signed or rejected.",
       inputSchema: z.object({
-        to: z.string().describe('Recipient address starting with g1'),
+        to: z.string().describe('Recipient: a g1... address, or a contact name'),
         amount: z.string().describe('Decimal amount as a string, e.g. "0.5"'),
         token: z.enum(TokenSymbol).describe('Token symbol'),
       }),
       execute: ({ to, amount, token }, { abortSignal }) =>
         refusalsAsResults(async () => {
-          const message = await sdk.transfer({ from: activeAddress, to, amount, token });
+          const message = await sdk.transfer({
+            from: activeAddress,
+            to: resolveContact(contacts, to),
+            amount,
+            token,
+          });
           // The harness, not the model, passes the message on to be signed.
           const result = await sdk.sign(message, { signal: abortSignal });
           return afterSigning(result, {
@@ -87,13 +77,18 @@ export function createWalletTools({ sdk, activeAddress }: WalletToolsContext) {
       description:
         "Let another address (the spender) use up to an amount of one of the user's tokens (a token approval or allowance). A new approval for the same spender and token replaces the old one. The user must approve a signing popup; the result says whether it was signed or rejected.",
       inputSchema: z.object({
-        spender: z.string().describe('Spender address starting with g1'),
+        spender: z.string().describe('Spender: a g1... address, or a contact name'),
         amount: z.string().describe('Decimal amount as a string, e.g. "10"'),
         token: z.enum(TokenSymbol).describe('Token symbol'),
       }),
       execute: ({ spender, amount, token }, { abortSignal }) =>
         refusalsAsResults(async () => {
-          const message = await sdk.approve({ from: activeAddress, spender, amount, token });
+          const message = await sdk.approve({
+            from: activeAddress,
+            spender: resolveContact(contacts, spender),
+            amount,
+            token,
+          });
           // The harness, not the model, passes the message on to be signed.
           const result = await sdk.sign(message, { signal: abortSignal });
           return afterSigning(result, {

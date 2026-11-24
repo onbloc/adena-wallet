@@ -19,23 +19,16 @@ import {
   DEFAULT_GENERATE_SETTINGS,
   DEFAULT_MODEL_ID,
   MAX_OUTPUT_TOKENS_RANGE,
-  MAX_STEPS,
   TEMPERATURE_RANGE,
 } from '../llm/config';
 import type { RuntimeStatus } from '../llm/runtime';
-import type { GenerateSettings } from '../llm/generate';
-import { onblocInstructions } from '../llm/onblocRun';
 import { useLlm } from '../llm/useLlm';
 import { createWalletTools } from '../wallet/adapter/tools';
-import { ApprovalPolicy } from '../wallet/constants';
-import { evaluateScenario, type Verdict } from '../wallet/evaluate';
-import { snapshotBalances, WATCHED } from '../wallet/observation';
-import { buildSystemPrompt } from '../wallet/prompts';
-import { SCENARIOS, type Scenario } from '../wallet/scenarios';
-import { autoApproval } from '../wallet/sdk/approval';
-import { ACTIVE_ADDRESS, FIXTURE } from '../wallet/sdk/fixture';
-import { MockWalletSdk, type ApprovalRecord, type WalletState } from '../wallet/sdk/mockWalletSdk';
-import type { Allowance, Balances } from '../wallet/sdk/types';
+import { createOnblocMockWallet } from '../wallet/onblocWallet';
+import { buildWalletPrompt } from '../wallet/prompts';
+import { FIXTURE } from '../wallet/sdk/fixture';
+import type { MockWalletSdk, WalletState } from '../wallet/sdk/mockWalletSdk';
+import type { Balances } from '../wallet/sdk/types';
 import { ApprovalModal } from './ApprovalModal';
 import { useApprovalPrompt } from './useApprovalPrompt';
 import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL, resolveOnblocSettings } from './onblocSettings';
@@ -70,29 +63,17 @@ function describeStatus(status: RuntimeStatus): string {
 const fmt = (value: number | null | undefined, unit: string, digits = 0) =>
   value === null || value === undefined ? '-' : `${value.toFixed(digits)} ${unit}`;
 
-const DEFAULT_SYSTEM = buildSystemPrompt({ contacts: FIXTURE.contacts });
-
 const json = (value: unknown) => JSON.stringify(value) ?? 'undefined';
 const compact = (text: string, max: number) => {
   const flat = text.replace(/\s+/g, ' ');
   return flat.length > max ? `${flat.slice(0, max)}...` : flat;
 };
 
-/** What a finished run left behind in the wallet. */
-type WalletSnapshot = {
-  approvals: readonly ApprovalRecord[];
-  balances: Record<string, Balances>;
-  allowances: readonly Allowance[];
-};
-
-/** The state of a wallet nobody has used yet. */
-const initialWallet = () =>
-  new MockWalletSdk({ requestApproval: autoApproval(ApprovalPolicy.Reject) }).inspect();
+const EMPTY_WALLET: WalletState = { balances: {}, allowances: {} };
 
 export default function PlaygroundScreen() {
   const { status, run, start, stop, load, unload, remove } = useLlm();
   const approvalPrompt = useApprovalPrompt();
-  const [system, setSystem] = useState(DEFAULT_SYSTEM);
   const [prompt, setPrompt] = useState('');
   const [temperature, setTemperature] = useState(
     String(DEFAULT_GENERATE_SETTINGS.temperature)
@@ -103,15 +84,12 @@ export default function PlaygroundScreen() {
   const [thinking, setThinking] = useState(false);
   const [showReasoning, setShowReasoning] = useState(false);
   const [useTools, setUseTools] = useState(true);
-  const [scenarioId, setScenarioId] = useState<string | null>(null);
-  // The scenario that was selected when the last run started.
-  const [ranScenario, setRanScenario] = useState<Scenario | null>(null);
-  const [wallet, setWallet] = useState<WalletState>(initialWallet);
-  const [snapshot, setSnapshot] = useState<WalletSnapshot | null>(null);
+  // The mock wallet shown in Settings; `key` is the address it was created for.
+  const [walletView, setWalletView] = useState<{ key: string; state: WalletState } | null>(null);
   // Prompt that started the last run, shown as the user message.
   const [submittedPrompt, setSubmittedPrompt] = useState<string | null>(null);
   const [tab, setTab] = useState<'chat' | 'settings'>('chat');
-  // Editable Onbloc settings, in memory only. Clear both fields to use the mock wallet.
+  // Editable Onbloc settings, in memory only. Clear both fields for a plain chat without the wallet.
   const [mcpUrl, setMcpUrl] = useState(DEFAULT_ONBLOC_MCP_URL);
   const [myAddress, setMyAddress] = useState(DEFAULT_ONBLOC_ACCOUNT);
   const onblocSettings = resolveOnblocSettings(mcpUrl, myAddress, __DEV__ ? true : undefined);
@@ -125,10 +103,13 @@ export default function PlaygroundScreen() {
           ...(__DEV__ ? { allowLoopbackHttp: true as const } : {}),
         }
       : undefined;
+  const wallet = onbloc && walletView?.key === onbloc.account ? walletView.state : EMPTY_WALLET;
+  const [preparing, setPreparing] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
   const [keyboardShown, setKeyboardShown] = useState(false);
   const scrollRef = useRef<ScrollViewInstance>(null);
-  // Wallet kept across free-prompt runs, so a transfer shows up in later balance lookups.
-  const walletRef = useRef<MockWalletSdk | null>(null);
+  // Wallet kept across runs, so a transfer shows up in later balance lookups. One per address.
+  const walletRef = useRef<{ key: string; sdk: MockWalletSdk } | null>(null);
   const chat = tab === 'chat';
 
   // Drops the home-indicator padding while the keyboard covers it.
@@ -148,12 +129,14 @@ export default function PlaygroundScreen() {
 
   // Show a transfer or approval as soon as its tool call finishes, not only at the end of the run.
   useEffect(() => {
-    if (walletRef.current) setWallet(walletRef.current.inspect());
+    if (walletRef.current) {
+      setWalletView({ key: walletRef.current.key, state: walletRef.current.sdk.inspect() });
+    }
   }, [run.calls]);
 
   const onResetWallet = () => {
     walletRef.current = null;
-    setWallet(initialWallet());
+    setWalletView(null);
   };
 
   const temperatureValue = parseBounded(temperature, TEMPERATURE_RANGE);
@@ -164,78 +147,63 @@ export default function PlaygroundScreen() {
   const canRun =
     ready &&
     (!onblocMode || onbloc !== undefined) &&
+    !preparing &&
     !run.running &&
     prompt.trim() !== '' &&
     temperatureValue !== null &&
     maxTokensValue !== null;
 
-  const scenario = SCENARIOS.find((item) => item.id === scenarioId) ?? null;
-  const verdict: Verdict | null =
-    ranScenario !== null &&
-    snapshot !== null &&
-    !run.running &&
-    run.metrics !== null &&
-    !run.aborted &&
-    run.error === null
-      ? evaluateScenario(ranScenario, {
-          calls: run.calls,
-          answer: run.text,
-          approvals: snapshot.approvals,
-          balances: snapshot.balances,
-          allowances: snapshot.allowances,
-        })
-      : null;
-
-  const selectScenario = (item: Scenario) => {
-    setScenarioId(item.id);
-    setPrompt(item.prompt);
-  };
-  const onPromptChange = (text: string) => {
-    setPrompt(text);
-    if (scenario && text !== scenario.prompt) setScenarioId(null);
+  /** The mock wallet funded with the account's Onbloc balances; null (reason shown) if they cannot be read. */
+  const ensureOnblocWallet = async (config: NonNullable<typeof onbloc>) => {
+    if (walletRef.current?.key === config.account) return walletRef.current.sdk;
+    setPreparing(true);
+    try {
+      const sdk = await createOnblocMockWallet({
+        onbloc: config,
+        requestApproval: approvalPrompt.requestApproval,
+      });
+      walletRef.current = { key: config.account, sdk };
+      return sdk;
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      setSetupError(`Could not load balances from Onbloc: ${reason}`);
+      return null;
+    } finally {
+      setPreparing(false);
+    }
   };
 
   const onRun = async () => {
     if (temperatureValue === null || maxTokensValue === null || (onblocMode && !onbloc)) return;
+    setSetupError(null);
+    // Load the balances before the prompt is sent, so a failure keeps the prompt in the composer.
+    const onblocWallet = onbloc && useTools ? await ensureOnblocWallet(onbloc) : null;
+    if (onbloc && useTools && !onblocWallet) return;
     setSubmittedPrompt(prompt);
-    // The prompt is now the user message in the chat: clear the composer and the scenario it came from.
+    // The prompt is now the user message in the chat: clear the composer.
     setPrompt('');
-    setScenarioId(null);
-    const settings: GenerateSettings = {
+    await start({
       prompt,
-      system: onblocMode ? (useTools ? onblocInstructions : 'Wallet tools are disabled. Do not claim to have checked wallet data.') : system.trim() || undefined,
+      // No Onbloc settings: a plain chat without a system prompt.
+      system: !onbloc
+        ? undefined
+        : onblocWallet
+          ? buildWalletPrompt({ contacts: FIXTURE.contacts })
+          : 'Wallet tools are disabled. Do not claim to have checked wallet data.',
       temperature: temperatureValue,
       maxOutputTokens: maxTokensValue,
       reasoning: thinking ? 'provider-default' : 'none',
-    };
-    if (onbloc) {
-      await start({ ...settings, onbloc: useTools ? onbloc : undefined });
-      return;
-    }
-    // Scenarios start from a fresh wallet so they are judged on the same balances;
-    // free prompts continue on the session wallet.
-    const scenarioRun = useTools && scenario !== null;
-    if (scenarioRun || walletRef.current === null) {
-      walletRef.current = new MockWalletSdk({ requestApproval: approvalPrompt.requestApproval });
-    }
-    const sdk = walletRef.current;
-    setRanScenario(scenarioRun ? scenario : null);
-    setSnapshot(null);
-    setWallet(sdk.inspect());
-
-    await start({
-      ...settings,
-      tools: useTools ? createWalletTools({ sdk, activeAddress: ACTIVE_ADDRESS }) : undefined,
-      maxSteps: useTools ? MAX_STEPS : undefined,
+      ...(onbloc &&
+        onblocWallet && {
+          onbloc,
+          tools: createWalletTools({
+            sdk: onblocWallet,
+            activeAddress: onbloc.account,
+            contacts: FIXTURE.contacts,
+          }),
+        }),
     });
-
-    const after = await snapshotBalances(sdk);
-    setWallet(sdk.inspect());
-    setSnapshot({
-      approvals: [...sdk.approvals],
-      balances: after,
-      allowances: await sdk.getAllowances(ACTIVE_ADDRESS),
-    });
+    if (onbloc && onblocWallet) setWalletView({ key: onbloc.account, state: onblocWallet.inspect() });
   };
 
   const sendDisabled = !run.running && !canRun;
@@ -303,6 +271,7 @@ export default function PlaygroundScreen() {
             autoCorrect={false}
             keyboardType="url"
             placeholder="https://.../mcp"
+            editable={!preparing}
           />
           {onblocSettings.endpointError !== null && (
             <Text style={styles.error}>{onblocSettings.endpointError}</Text>
@@ -315,35 +284,27 @@ export default function PlaygroundScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             placeholder="g1..."
+            editable={!preparing}
           />
           {onblocSettings.accountError !== null && (
             <Text style={styles.error}>{onblocSettings.accountError}</Text>
           )}
           {onblocMode ? (
-            <Text style={styles.muted}>Onbloc MCP · indexed mainnet reads only</Text>
-          ) : <>
-            <BalancesCard wallet={wallet} />
-            <View style={styles.row}>
-              <Button label="Reset wallet" onPress={onResetWallet} disabled={run.running} />
-            </View>
-            <Text style={styles.label}>System prompt (optional)</Text>
-            <TextInput style={styles.input} value={system} onChangeText={setSystem} multiline />
-            <Text style={styles.label}>Scenarios</Text>
-            <View style={styles.chips}>
-              {SCENARIOS.map((item) => (
-                <Pressable
-                  key={item.id}
-                  onPress={() => selectScenario(item)}
-                  style={[styles.chip, item.id === scenarioId && styles.chipActive]}
-                >
-                  <Text style={[styles.chipText, item.id === scenarioId && styles.chipTextActive]}>
-                    {item.title}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            {scenario && <ScenarioExpectation scenario={scenario} />}
-          </>}
+            <>
+              <Text style={styles.muted}>
+                Reads: Onbloc api-v3 (mainnet). transfer, approve and sign: mock wallet funded from the
+                Onbloc balances.
+              </Text>
+              {onbloc && <BalancesCard wallet={wallet} activeAddress={onbloc.account} />}
+              <View style={styles.row}>
+                <Button label="Reset wallet" onPress={onResetWallet} disabled={run.running || preparing} />
+              </View>
+            </>
+          ) : (
+            <Text style={styles.muted}>
+              No wallet: plain chat. Fill in both fields to enable the wallet tools.
+            </Text>
+          )}
 
           <View style={styles.row}>
             <View style={styles.flex}>
@@ -375,12 +336,12 @@ export default function PlaygroundScreen() {
             <Text style={styles.switchLabel}>Thinking (reasoning)</Text>
           </View>
 
-          <View style={styles.rowCenter}>
-            <Switch value={useTools} onValueChange={setUseTools} />
-            <Text style={styles.switchLabel}>
-              {onblocMode ? 'Wallet tools (Onbloc mainnet, read-only)' : `Wallet tools (mock, max ${MAX_STEPS} steps)`}
-            </Text>
-          </View>
+          {onblocMode && (
+            <View style={styles.rowCenter}>
+              <Switch value={useTools} onValueChange={setUseTools} />
+              <Text style={styles.switchLabel}>Wallet tools (Onbloc reads + mock wallet actions)</Text>
+            </View>
+          )}
         </ScrollView>
       )}
 
@@ -397,6 +358,8 @@ export default function PlaygroundScreen() {
         {onblocMode && !onbloc && <Text style={styles.error}>
           Fix the MCP URL and My address in Settings.
         </Text>}
+        {preparing && <Text style={styles.muted}>Loading balances from Onbloc...</Text>}
+        {setupError !== null && <Text style={styles.error}>{setupError}</Text>}
         {submittedPrompt === null ? (
           <Text style={styles.muted}>Send a prompt to start.</Text>
         ) : (
@@ -414,7 +377,7 @@ export default function PlaygroundScreen() {
               </Text>
             ))}
 
-            {(run.calls.length > 0 || run.metrics !== null) && useTools && (
+            {(run.calls.length > 0 || run.metrics !== null) && onblocMode && useTools && (
               <CallLog calls={run.calls} />
             )}
 
@@ -423,8 +386,6 @@ export default function PlaygroundScreen() {
               {run.text}
             </Text>
             {run.aborted && <Text style={styles.muted}>(stopped)</Text>}
-
-            {verdict && ranScenario && <VerdictView scenario={ranScenario} verdict={verdict} />}
 
             {run.reasoning !== '' && (
               <>
@@ -457,7 +418,7 @@ export default function PlaygroundScreen() {
         <TextInput
           style={styles.composerInput}
           value={prompt}
-          onChangeText={onPromptChange}
+          onChangeText={setPrompt}
           placeholder="Ask anything"
           placeholderTextColor="#999"
           multiline
@@ -510,70 +471,36 @@ const formatBalances = (balances: Balances) =>
     .map(([token, amount]) => `${amount} ${token}`)
     .join(', ');
 
-const ZERO_BALANCES: Balances = { GNOT: '0', GNS: '0' };
-
-/** The name of a known address, else a shortened form. */
+/** The name of a contact, else a shortened address. */
 const labelOf = (address: string) =>
-  WATCHED.find((watched) => watched.address === address)?.label ??
+  FIXTURE.contacts.find((contact) => contact.address === address)?.alias ??
   `${address.slice(0, 8)}...${address.slice(-6)}`;
 
-function BalancesCard({ wallet }: { wallet: WalletState }) {
-  const known = WATCHED.map((watched) => watched.address);
-  // Known addresses always show; any other address shows once the wallet holds something for it.
-  const addresses = [...known, ...Object.keys(wallet.balances).filter((a) => !known.includes(a))];
-  const approvals = wallet.allowances[ACTIVE_ADDRESS] ?? [];
+function BalancesCard({ wallet, activeAddress }: { wallet: WalletState; activeAddress: string }) {
+  // The own address first, then every other address the wallet holds something for.
+  const addresses = [
+    activeAddress,
+    ...Object.keys(wallet.balances).filter((address) => address !== activeAddress),
+  ];
+  const approvals = wallet.allowances[activeAddress] ?? [];
 
   return (
     <View style={styles.card}>
-      <Text style={styles.label}>Wallet balances (mock)</Text>
-      {addresses.map((address) => (
-        <Text key={address} style={styles.mono}>
-          {labelOf(address)}
-          {address === ACTIVE_ADDRESS ? ' (you)' : ''}:{' '}
-          {formatBalances(wallet.balances[address] ?? ZERO_BALANCES)}
-        </Text>
-      ))}
+      <Text style={styles.label}>Mock wallet (funded from Onbloc)</Text>
+      {addresses.map((address) => {
+        const balances = wallet.balances[address];
+        return (
+          <Text key={address} style={styles.mono}>
+            {address === activeAddress ? 'My address (you)' : labelOf(address)}:{' '}
+            {balances ? formatBalances(balances) : 'loaded on the first run'}
+          </Text>
+        );
+      })}
       <Text style={styles.label}>Approvals given (you)</Text>
       {approvals.length === 0 && <Text style={styles.muted}>None</Text>}
       {approvals.map((approval) => (
         <Text key={`${approval.spender}:${approval.token}`} style={styles.mono}>
           {labelOf(approval.spender)}: {approval.amount} {approval.token}
-        </Text>
-      ))}
-    </View>
-  );
-}
-
-function ScenarioExpectation({ scenario }: { scenario: Scenario }) {
-  return (
-    <View style={styles.card}>
-      <Text style={styles.label}>Expected</Text>
-      {scenario.calls.map((call, index) => (
-        <Text key={index} style={styles.mono}>
-          {index + 1}. {call.tool}({json(call.args ?? {})})
-        </Text>
-      ))}
-      {scenario.forbid?.map((tool) => (
-        <Text key={tool} style={styles.mono}>
-          never call {tool}
-        </Text>
-      ))}
-      {scenario.answerMentions?.map((word) => (
-        <Text key={word} style={styles.mono}>
-          {`answer mentions "${word}"`}
-        </Text>
-      ))}
-      {scenario.approvalRequests !== undefined && (
-        <Text style={styles.mono}>
-          signing popups: {scenario.approvalRequests}
-          {scenario.approvalRequests > 0
-            ? ` (press ${scenario.approval === ApprovalPolicy.Reject ? 'Reject' : 'Approve'})`
-            : ''}
-        </Text>
-      )}
-      {scenario.balances?.map((expected) => (
-        <Text key={`${expected.address}:${expected.token}`} style={styles.mono}>
-          {`balance ${expected.address.slice(0, 8)}... = ${expected.amount} ${expected.token}`}
         </Text>
       ))}
     </View>
@@ -606,22 +533,6 @@ function CallLog({ calls }: { calls: CallRecord[] }) {
             )}
           </View>
         ))}
-    </View>
-  );
-}
-
-function VerdictView({ scenario, verdict }: { scenario: Scenario; verdict: Verdict }) {
-  return (
-    <View style={styles.card}>
-      <Text style={verdict.pass ? styles.ok : styles.error}>
-        {verdict.pass ? 'PASS' : 'FAIL'} - {scenario.title}
-      </Text>
-      {verdict.checks.map((check) => (
-        <Text key={check.name} style={[styles.mono, !check.pass && styles.error]}>
-          {check.pass ? '[ok]' : '[x]'} {check.name}
-          {check.pass ? '' : `\n    ${compact(check.detail, 300)}`}
-        </Text>
-      ))}
     </View>
   );
 }
@@ -704,17 +615,5 @@ const styles = StyleSheet.create({
   link: { color: '#2563eb', fontSize: 13 },
   error: { color: '#d33' },
   warning: { color: '#b45309' },
-  ok: { color: '#15803d', fontWeight: '700' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: {
-    borderWidth: 1,
-    borderColor: '#2563eb',
-    borderRadius: 14,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-  },
-  chipActive: { backgroundColor: '#2563eb' },
-  chipText: { color: '#2563eb', fontSize: 12 },
-  chipTextActive: { color: '#fff' },
   callRow: { gap: 2 },
 });

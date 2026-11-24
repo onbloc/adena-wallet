@@ -6,7 +6,6 @@ import {
   WalletErrorCode,
   WalletStatus,
 } from '../../constants';
-import { INVALID_ADDRESS_LENGTH_MESSAGE } from '../../sdk/address';
 import { autoApproval } from '../../sdk/approval';
 import { ACTIVE_ADDRESS, FIXTURE } from '../../sdk/fixture';
 import { MockWalletSdk } from '../../sdk/mockWalletSdk';
@@ -19,7 +18,7 @@ const other = FIXTURE.contacts[0].address;
 
 function setup(requestApproval: ApprovalHandler = autoApproval(ApprovalPolicy.Approve), secret?: string) {
   const sdk = new MockWalletSdk({ requestApproval, secret });
-  const tools = createWalletTools({ sdk, activeAddress: ACTIVE_ADDRESS });
+  const tools = createWalletTools({ sdk, activeAddress: ACTIVE_ADDRESS, contacts: FIXTURE.contacts });
   return { sdk, tools };
 }
 
@@ -31,57 +30,6 @@ const run = (tool: Tool, input: unknown, abortSignal?: AbortSignal) =>
     messages: [],
     abortSignal,
   });
-
-describe('get_balance', () => {
-  it("returns the user's own balances", async () => {
-    const { tools } = setup();
-
-    expect(await run(tools[ToolName.GetBalance], {})).toEqual({
-      status: WalletStatus.Ok,
-      address: ACTIVE_ADDRESS,
-      balances: { GNOT: '10', GNS: '250' },
-    });
-  });
-
-  it('takes no model arguments, so the model cannot redirect it to another address', () => {
-    const { tools } = setup();
-    const schema = tools[ToolName.GetBalance].inputSchema as unknown as {
-      parse(value: unknown): object;
-    };
-
-    expect(schema.parse({ address: other })).toEqual({});
-  });
-});
-
-describe('get_address_balance', () => {
-  it('looks up the address the model names, including what was sent to it', async () => {
-    const { tools } = setup();
-    await run(tools[ToolName.Transfer], { to, amount: '0.5', token: gnot });
-
-    expect(await run(tools[ToolName.GetAddressBalance], { address: to })).toEqual({
-      status: WalletStatus.Ok,
-      address: to,
-      balances: { GNOT: '0.5', GNS: '0' },
-    });
-    expect(await run(tools[ToolName.GetBalance], {})).toMatchObject({
-      address: ACTIVE_ADDRESS,
-      balances: { GNOT: '9.5' },
-    });
-  });
-
-  it.each(['', to.slice(0, -1), to + 'q'])(
-    'turns the wrong-length address %p into an error result with the length message',
-    async (address) => {
-      const { tools } = setup();
-
-      expect(await run(tools[ToolName.GetAddressBalance], { address })).toEqual({
-        status: WalletStatus.Error,
-        code: WalletErrorCode.InvalidAddress,
-        message: INVALID_ADDRESS_LENGTH_MESSAGE,
-      });
-    }
-  );
-});
 
 describe('transfer', () => {
   const input = { to, amount: '0.5', token: gnot };
@@ -119,7 +67,7 @@ describe('transfer', () => {
   });
 
   it.each([
-    ['a malformed recipient', { ...input, to: 'alice' }, WalletErrorCode.InvalidAddress],
+    ['a malformed recipient', { ...input, to: 'bob' }, WalletErrorCode.InvalidAddress],
     ['an amount that is not a number', { ...input, amount: 'half' }, WalletErrorCode.InvalidAmount],
     ['more than the balance', { ...input, amount: '11' }, WalletErrorCode.InsufficientBalance],
   ])('turns %s into an error result without showing a popup', async (_label, bad, code) => {
@@ -205,7 +153,7 @@ describe('what the model can see', () => {
     const { tools } = setup(autoApproval(ApprovalPolicy.Approve), secret);
 
     const results = [
-      await run(tools[ToolName.GetBalance], {}),
+      await run(tools[ToolName.GetApprovals], {}),
       await run(tools[ToolName.Transfer], { to, amount: '1', token: gnot }),
       await run(tools[ToolName.Transfer], { to: 'bad', amount: '1', token: gnot }),
       await run(tools[ToolName.SignMessage], { message: 'hello' }),
@@ -316,14 +264,53 @@ describe('address case in results', () => {
   it('shows the lowercase address, whatever case the model wrote', async () => {
     const { tools } = setup();
 
-    expect(await run(tools[ToolName.GetAddressBalance], { address: to.toUpperCase() })).toMatchObject({
-      address: to,
-    });
     expect(
       await run(tools[ToolName.Transfer], { to: to.toUpperCase(), amount: '1', token: gnot })
     ).toMatchObject({ status: WalletStatus.Signed, to });
     expect(
       await run(tools[ToolName.Approve], { spender: other.toUpperCase(), amount: '1', token: gnot })
     ).toMatchObject({ status: WalletStatus.Signed, spender: other });
+  });
+});
+
+describe('contact names', () => {
+  const alias = FIXTURE.contacts[0].alias;
+
+  it.each([alias, ` ${alias.toUpperCase()} `])('sends to the address of the contact %p', async (name) => {
+    const { sdk, tools } = setup();
+
+    const result = await run(tools[ToolName.Transfer], { to: name, amount: '1', token: gnot });
+
+    expect(result).toMatchObject({ status: WalletStatus.Signed, to: other });
+    expect(await sdk.getBalance(other)).toMatchObject({ GNOT: '1' });
+  });
+
+  it('approves for the address of the contact', async () => {
+    const { tools } = setup();
+
+    await run(tools[ToolName.Approve], { spender: alias, amount: '5', token: TokenSymbol.Gns });
+
+    expect(await run(tools[ToolName.GetApprovals], {})).toMatchObject({
+      approvals: [{ spender: other, token: TokenSymbol.Gns, amount: '5' }],
+    });
+  });
+
+  it('leaves a name that is no contact for the wallet to refuse', async () => {
+    const { sdk, tools } = setup();
+
+    const result = await run(tools[ToolName.Transfer], { to: 'bob', amount: '1', token: gnot });
+
+    expect(result).toMatchObject({ status: WalletStatus.Error, code: WalletErrorCode.InvalidAddress });
+    expect(sdk.approvals).toEqual([]);
+  });
+});
+
+describe('createWalletTools', () => {
+  it('has no balance tools, so Onbloc is the only source for balances', () => {
+    const { tools } = setup();
+
+    expect(Object.keys(tools).sort()).toEqual(
+      [ToolName.Transfer, ToolName.Approve, ToolName.GetApprovals, ToolName.SignMessage].sort()
+    );
   });
 });

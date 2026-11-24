@@ -43,6 +43,9 @@ export type AllowanceMessage = AllowanceParams & {
 /** One allowance an account has given. */
 export type Allowance = { spender: string; token: TokenSymbol; amount: string };
 
+/** A named address the user can send to. */
+export type Contact = { alias: string; address: string };
+
 /** Free-text message signed by one of the wallet's accounts. */
 export type TextMessage = {
   type: typeof SignRequestType.Message;

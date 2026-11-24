@@ -7,7 +7,7 @@ export type MockAccount = {
   balances: Balances;
 };
 
-// Example data for scenarios; the values are assumptions, not real Gno.land data.
+// Example data for tests and the prompt's contacts; the values are assumptions, not real Gno.land data.
 export const FIXTURE = {
   // Only the user's own account has funds; every other address starts at zero.
   accounts: [
@@ -20,7 +20,7 @@ export const FIXTURE = {
   contacts: [
     { alias: 'alice', address: 'g1tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s' },
   ],
-  /** An address that is in nobody's contacts; used as a recipient in scenarios. */
+  /** An address that is in nobody's contacts; used as a recipient in tests. */
   recipient: 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6',
 };
 

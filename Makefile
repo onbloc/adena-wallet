@@ -1,8 +1,7 @@
 .DEFAULT_GOAL := help
-.PHONY: help init test eval chat build deploy ios android
+.PHONY: help init test chat build deploy ios android
 
 PORT   ?= 8089
-RUNS   ?= 10
 MODEL  ?= bartowski/Qwen_Qwen3.5-2B-GGUF:Q4_K_M
 ARGS   ?=
 PROMPT ?=
@@ -24,10 +23,7 @@ test: ## Typecheck + lint + all jest tests (mock model, no LLM)
 	npm run lint
 	npm test
 
-eval: ## Run wallet scenarios on a real model via llama.cpp on this Mac. Vars: RUNS=10 ARGS="--scenario transfer --verbose"
-	$(WITH_SERVER) bun scripts/eval.ts --runs $(RUNS) --url $(URL) $(ARGS)
-
-chat: ## Chat with the model in your own words (wallet assistant). Vars: PROMPT="..." asks once; ARGS="--plain" for the bare model
+chat: ## Chat with the local model. Vars: PROMPT="..." asks once; ARGS="--onbloc" adds the wallet (Onbloc reads, mock transfer/approve)
 	$(WITH_SERVER) bun scripts/chat.ts --url $(URL) $(if $(PROMPT),--prompt "$$PROMPT") $(ARGS)
 
 # `ios` / `android` are only arguments of `build` / `deploy`.

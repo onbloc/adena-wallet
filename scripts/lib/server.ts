@@ -13,7 +13,7 @@ export async function connectModel(url: string, modelName: string): Promise<Lang
   } catch (error) {
     throw new Error(
       `Cannot reach the model server at ${baseURL} (${String(error)}). ` +
-        'Start llama-server first (make eval and make chat start one for you).'
+        'Start llama-server first (make chat starts one for you).'
     );
   }
   return createOpenAICompatible({ name: 'llama-server', baseURL, includeUsage: true }).chatModel(modelName);

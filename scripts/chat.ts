@@ -1,29 +1,29 @@
 /// <reference types="node" />
 // Talk to the model in your own words, to see how far it gets. The model runs
-// on this Mac via llama-server. By default it is the wallet assistant (the
-// app's prompt and tools against a mock wallet); --plain talks to the bare model.
+// on this Mac via llama-server. By default it is a plain chat; --onbloc adds the
+// wallet (the app's prompt and tools: Onbloc reads, mock transfer/approve).
 //
 //   make chat                                   interactive
-//   make chat PROMPT="Tell me my GNOT balance"   one question, then exit
-//   bun scripts/chat.ts --plain
+//   make chat PROMPT="Tell me a joke"            one question, then exit
+//   make chat ARGS="--onbloc"                    with the wallet
 import { readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline/promises';
 
 import type { LanguageModel, ModelMessage } from 'ai';
 
-import { DEFAULT_GENERATE_SETTINGS, MAX_STEPS } from '../src/llm/config';
+import { DEFAULT_GENERATE_SETTINGS } from '../src/llm/config';
 import { generate, GenerateEventType } from '../src/llm/generate';
 import { gnoPublicAddress } from '../src/harness/gno';
-import { onblocInstructions, type OnblocRun } from '../src/llm/onblocRun';
+import type { OnblocRun } from '../src/llm/onblocRun';
 import { describeRequest } from '../src/ui/describeRequest';
 import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL } from '../src/ui/onblocSettings';
 import { createWalletTools } from '../src/wallet/adapter/tools';
 import { ApprovalPolicy } from '../src/wallet/constants';
-import { snapshotBalances, WATCHED } from '../src/wallet/observation';
-import { buildSystemPrompt } from '../src/wallet/prompts';
+import { createOnblocMockWallet } from '../src/wallet/onblocWallet';
+import { buildWalletPrompt } from '../src/wallet/prompts';
 import { autoApproval } from '../src/wallet/sdk/approval';
-import { ACTIVE_ADDRESS, FIXTURE } from '../src/wallet/sdk/fixture';
-import { MockWalletSdk } from '../src/wallet/sdk/mockWalletSdk';
+import { FIXTURE } from '../src/wallet/sdk/fixture';
+import type { MockWalletSdk } from '../src/wallet/sdk/mockWalletSdk';
 import type { ApprovalHandler, Balances } from '../src/wallet/sdk/types';
 import { boundedNumber, parseArgs } from './lib/cli';
 import { connectModel, DEFAULT_MODEL_NAME, DEFAULT_SERVER_URL } from './lib/server';
@@ -32,35 +32,33 @@ const ASK = 'ask';
 
 const USAGE = `Usage: bun scripts/chat.ts [options]
   --prompt TEXT      ask once and exit instead of chatting
-  --plain            the bare model: no wallet prompt, no tools
-  --approval P       at a signing popup: ask (default, you answer y/N) | approve | reject
+  --onbloc           add the wallet: Onbloc reads (default MCP URL and address; override with
+                     EXPO_PUBLIC_ONBLOC_MCP_URL / EXPO_PUBLIC_ONBLOC_ACCOUNT) plus mock
+                     transfer/approve, funded from that address's Onbloc balances
+  --approval P       at a signing popup (with --onbloc): ask (default, you answer y/N) | approve | reject
   --url URL          OpenAI-compatible base URL (default ${DEFAULT_SERVER_URL})
   --model NAME       model name sent to the server (default ${DEFAULT_MODEL_NAME})
   --temperature T    (default ${DEFAULT_GENERATE_SETTINGS.temperature})
   --max-tokens N     per model call (default ${DEFAULT_GENERATE_SETTINGS.maxOutputTokens})
-  --max-steps N      model calls per question with tools (default ${MAX_STEPS})
   --system-file P    use this file as the system prompt
-  --onbloc           read-only Onbloc tools (default MCP URL and address; override with EXPO_PUBLIC_ONBLOC_MCP_URL / EXPO_PUBLIC_ONBLOC_ACCOUNT)
 
 In the chat: /reset (forget the conversation, reset the wallet)  /balances  /help  /exit`;
 
 type Options = {
   prompt?: string;
-  plain: boolean;
   approval: typeof ASK | ApprovalPolicy;
   url: string;
   model: string;
   temperature: number;
   maxTokens: number;
-  maxSteps: number;
   system?: string;
   onbloc?: OnblocRun;
 };
 
 function parseOptions(argv: string[]): Options {
   const { values, flags } = parseArgs(argv, {
-    values: ['prompt', 'approval', 'url', 'model', 'temperature', 'max-tokens', 'max-steps', 'system-file'],
-    flags: ['plain', 'onbloc'],
+    values: ['prompt', 'approval', 'url', 'model', 'temperature', 'max-tokens', 'system-file'],
+    flags: ['onbloc'],
   });
   const approval = values.get('approval') ?? ASK;
   if (approval !== ASK && !Object.values(ApprovalPolicy).includes(approval as ApprovalPolicy)) {
@@ -69,9 +67,6 @@ function parseOptions(argv: string[]): Options {
   const systemFile = values.get('system-file');
   let onbloc: OnblocRun | undefined;
   if (flags.has('onbloc')) {
-    if (flags.has('plain') || values.has('approval') || values.has('max-steps')) {
-      throw new Error('--onbloc cannot be combined with --plain, --approval or --max-steps.');
-    }
     // Env overrides the app's Settings defaults.
     const endpoint = process.env.EXPO_PUBLIC_ONBLOC_MCP_URL?.trim() || DEFAULT_ONBLOC_MCP_URL;
     const account = process.env.EXPO_PUBLIC_ONBLOC_ACCOUNT?.trim() || DEFAULT_ONBLOC_ACCOUNT;
@@ -83,14 +78,12 @@ function parseOptions(argv: string[]): Options {
 
   return {
     prompt: values.get('prompt'),
-    plain: flags.has('plain'),
     onbloc,
     approval: approval as Options['approval'],
     url: values.get('url') ?? DEFAULT_SERVER_URL,
     model: values.get('model') ?? DEFAULT_MODEL_NAME,
     temperature: boundedNumber(values, 'temperature', DEFAULT_GENERATE_SETTINGS.temperature, 0, 2, false),
     maxTokens: boundedNumber(values, 'max-tokens', DEFAULT_GENERATE_SETTINGS.maxOutputTokens, 1, 4095),
-    maxSteps: boundedNumber(values, 'max-steps', MAX_STEPS, 1, 20),
     system: systemFile ? readFileSync(systemFile, 'utf8') : undefined,
   };
 }
@@ -103,14 +96,15 @@ const formatBalances = (balances: Balances) =>
     .map(([token, amount]) => `${amount} ${token}`)
     .join(', ');
 
-function printBalances(balances: Record<string, Balances>) {
-  for (const { label, address } of WATCHED) {
-    const you = address === ACTIVE_ADDRESS ? ' (you)' : '';
-    console.log(`  ${label}${you}: ${formatBalances(balances[address])}`);
+function printBalances(balances: Record<string, Balances>, you: string | undefined) {
+  for (const [address, held] of Object.entries(balances)) {
+    const label =
+      address === you ? 'My address (you)' : (FIXTURE.contacts.find((c) => c.address === address)?.alias ?? address);
+    console.log(`  ${label}: ${formatBalances(held)}`);
   }
 }
 
-/** A wallet session: the mock wallet and the conversation so far. */
+/** The conversation so far and, with --onbloc, the mock wallet. */
 type Session = { sdk?: MockWalletSdk; history: ModelMessage[] };
 
 async function main() {
@@ -152,6 +146,8 @@ async function main() {
     });
   };
 
+  const you = options.onbloc?.account;
+
   // You answer the signing popup at the terminal, unless told otherwise or
   // there is no terminal to answer on.
   const interactive = process.stdin.isTTY === true;
@@ -166,14 +162,14 @@ async function main() {
         }
       : autoApproval(options.approval === ASK ? ApprovalPolicy.Reject : options.approval);
 
-  const newSession = (): Session => ({
-    sdk: options.plain || options.onbloc ? undefined : new MockWalletSdk({ requestApproval }),
-    history: [],
-  });
-  let session = newSession();
+  const newSession = async (): Promise<Session> => {
+    if (!options.onbloc) return { history: [] };
+    console.error('loading balances from Onbloc...');
+    return { sdk: await createOnblocMockWallet({ onbloc: options.onbloc, requestApproval }), history: [] };
+  };
+  let session = await newSession();
 
-  const system = options.system ?? (options.onbloc ? onblocInstructions
-    : options.plain ? undefined : buildSystemPrompt({ contacts: FIXTURE.contacts }));
+  const system = options.system ?? (options.onbloc ? buildWalletPrompt({ contacts: FIXTURE.contacts }) : undefined);
   let turnAbort: AbortController | null = null;
   rl.on('SIGINT', () => (turnAbort ? turnAbort.abort() : rl.close()));
 
@@ -181,7 +177,7 @@ async function main() {
   async function ask1(text: string) {
     const messages: ModelMessage[] = [...session.history, { role: 'user', content: text }];
     const sdk = session.sdk;
-    const before = sdk ? await snapshotBalances(sdk) : null;
+    const before = sdk ? json(sdk.inspect().balances) : null;
     const controller = new AbortController();
     turnAbort = controller;
     let lineOpen = false;
@@ -196,8 +192,10 @@ async function main() {
         system,
         temperature: options.temperature,
         maxOutputTokens: options.maxTokens,
-        tools: sdk ? createWalletTools({ sdk, activeAddress: ACTIVE_ADDRESS }) : undefined,
-        maxSteps: sdk ? options.maxSteps : undefined,
+        tools:
+          sdk && options.onbloc
+            ? createWalletTools({ sdk, activeAddress: options.onbloc.account, contacts: FIXTURE.contacts })
+            : undefined,
         onbloc: options.onbloc,
         signal: controller.signal,
       })) {
@@ -240,17 +238,18 @@ async function main() {
       turnAbort = null;
     }
 
-    if (sdk && before) {
-      const after = await snapshotBalances(sdk);
-      if (json(after) !== json(before)) {
+    if (sdk && before !== null) {
+      const balances = sdk.inspect().balances;
+      if (json(balances) !== before) {
         console.log('  wallet balances changed:');
-        printBalances(after);
+        printBalances(balances, you);
       }
     }
   }
 
-  const mode = options.onbloc ? 'Onbloc indexed reads (no mock wallet)'
-    : options.plain ? 'bare model' : 'wallet assistant (mock wallet, tools on)';
+  const mode = options.onbloc
+    ? 'wallet (Onbloc reads + mock transfer/approve, funded from your Onbloc balances)'
+    : 'plain chat (no wallet; --onbloc adds it)';
   console.error(`model: ${options.model} @ ${options.url} - ${mode}`);
 
   if (options.prompt !== undefined) {
@@ -270,11 +269,11 @@ async function main() {
     if (text === '/help') {
       console.log(USAGE.slice(USAGE.indexOf('In the chat:')));
     } else if (text === '/reset') {
-      session = newSession();
-      console.log('  conversation and wallet reset');
+      session = await newSession();
+      console.log(options.onbloc ? '  conversation and wallet reset' : '  conversation reset');
     } else if (text === '/balances') {
-      if (session.sdk) printBalances(await snapshotBalances(session.sdk));
-      else console.log('  No mock wallet in this mode. Ask a balance question to use Onbloc.');
+      if (session.sdk) printBalances(session.sdk.inspect().balances, you);
+      else console.log('  No wallet: start with --onbloc.');
     } else if (text.startsWith('/')) {
       console.log(`  unknown command: ${text} (try /help)`);
     } else {

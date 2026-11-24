@@ -1,10 +1,8 @@
 // Enum-like constants: `ToolName.Transfer` reads like an enum, the derived union
 // type accepts plain strings from the model, and nothing extra is emitted.
 
-/** Tools the model may call. Values are the names the model sees. */
+/** Wallet tools the model may call. Values are the names the model sees. */
 export const ToolName = {
-  GetBalance: 'get_balance',
-  GetAddressBalance: 'get_address_balance',
   Transfer: 'transfer',
   Approve: 'approve',
   GetApprovals: 'get_approvals',

@@ -25,7 +25,7 @@ export type GenerateSettings = GenerateInput & {
   tools?: ToolSet;
   /** Max model calls when tools are used (SDK default: 1). */
   maxSteps?: number;
-  /** Read-only mainnet mode; mutually exclusive with the playground's mock tools. */
+  /** Read-only mainnet mode. `tools` then holds the wallet action tools that run beside the reads. */
   onbloc?: OnblocRun;
 };
 
@@ -106,11 +106,12 @@ export async function* generate(
   let onblocText = '';
   let readSucceeded = false;
   let readFailed = false;
+  // A wallet action tool (not an Onbloc read) returned a result.
+  let actionRan = false;
 
   try {
     if (onbloc) {
-      if (options.tools || maxSteps !== undefined) throw new TypeError('Cannot combine Onbloc and mock wallet tools.');
-      managed = await startOnblocRun(onbloc, options.maxOutputTokens ?? 512, signal);
+      managed = await startOnblocRun(onbloc, options.maxOutputTokens ?? 512, signal, options.tools);
     }
     const result = streamText({
       model,
@@ -149,9 +150,11 @@ export async function* generate(
           };
           break;
         case 'tool-result':
-          if (managed && part.output && typeof part.output === 'object' && 'kind' in part.output && part.output.kind === 'result') {
-            readSucceeded = true;
-          } else if (managed) readFailed = true;
+          if (managed?.isRead(part.toolName)) {
+            if (part.output && typeof part.output === 'object' && 'kind' in part.output && part.output.kind === 'result') {
+              readSucceeded = true;
+            } else readFailed = true;
+          } else if (managed) actionRan = true;
           yield {
             type: GenerateEventType.ToolResult,
             id: part.toolCallId,
@@ -179,7 +182,7 @@ export async function* generate(
           throw part.error;
       }
     }
-    if (!aborted && (!managed || (readSucceeded && !readFailed))) responseMessages = await result.responseMessages;
+    if (!aborted && (!managed || ((readSucceeded || actionRan) && !readFailed))) responseMessages = await result.responseMessages;
   } catch (error) {
     if (!signal?.aborted && !managed?.options.abortSignal.aborted) throw error;
     aborted = true;
@@ -195,9 +198,10 @@ export async function* generate(
       : undefined;
 
   if (onbloc && !aborted) {
-    const answer = !readSucceeded ? 'No Onbloc lookup returned verified data.'
+    const answer = !readSucceeded && !actionRan ? 'No Onbloc lookup returned verified data.'
       : readFailed ? 'Some Onbloc lookups failed. Review the individual tool results.'
-        : onblocText || 'Onbloc returned data; no model summary was produced.';
+        : onblocText || (readSucceeded ? 'Onbloc returned data; no model summary was produced.'
+          : 'The wallet action ran; no model summary was produced.');
     yield { type: GenerateEventType.Text, delta: answer };
   }
 

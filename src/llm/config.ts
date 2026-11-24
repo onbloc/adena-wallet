@@ -15,7 +15,7 @@ export const DEFAULT_GENERATE_SETTINGS = {
   reasoning: 'none' as 'none' | 'provider-default',
 };
 
-// Max model calls per run with wallet tools (e.g. get_balance -> transfer -> answer).
+// Max model calls per run with wallet tools (e.g. a balance read -> transfer -> answer).
 export const MAX_STEPS = 5;
 
 // Bounds for UI input; output tokens must fit in the context window.

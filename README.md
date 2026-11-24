@@ -3,8 +3,8 @@
 On-device LLM PoC: run a GGUF model (default: Qwen3.5-2B Q4_K_M) in React Native via
 [Callstack React Native AI](https://www.react-native-ai.dev/docs/llama/getting-started)
 (`@react-native-ai/llama` on top of `llama.rn`) and test generation from a playground screen.
-It also checks whether the model turns plain-text wallet requests into the right
-tool calls against a **mock wallet**.
+It also checks whether the model turns plain-text wallet requests into the right tool calls:
+reads through the Onbloc MCP, transfer and approve against a **mock wallet**.
 
 ## Stack
 
@@ -52,13 +52,12 @@ src/llm/calls.ts          Folds tool events into an ordered call list
 src/llm/useLlm.ts         React hook over runtime + generation
 src/wallet/sdk/              Wallet layer (holds the keys): types, MockWalletSdk, fixture, address/token helpers
 src/wallet/adapter/tools.ts  LLM layer: zod tools that call the SDK's public methods only
+src/wallet/onblocWallet.ts   Funds the mock wallet from the account's Onbloc balances
 src/wallet/constants.ts      Enum-like constants (ToolName, TokenSymbol, WalletStatus, ...)
 src/wallet/prompts.ts        System prompt (contacts, rules)
-src/wallet/scenarios.ts      Test scenarios: expected calls, popups, final balances
-src/wallet/evaluate.ts       Scenario pass/fail checks over a RunObservation
-src/wallet/observation.ts    What a run is judged on (calls, answer, popups, balances)
 src/wallet/amount.ts         Decimal strings <-> bigint base units (no floats)
-src/ui/PlaygroundScreen   Model controls, scenarios, prompt, options, tool calls, verdict, metrics
+src/harness/                 Onbloc MCP client and the run budget (steps, tokens, time)
+src/ui/PlaygroundScreen      Model controls, Settings (MCP URL, address, wallet), chat, tool calls, metrics
 ```
 
 ## Wallet layers and tool calling
@@ -76,22 +75,17 @@ model --tool call--> adapter (src/wallet/adapter)      LLM layer
                        sign(message) -> asks the user (popup) -> signed | rejected
 ```
 
-- The model sees `get_balance()`, `get_address_balance({address})`, `transfer({to,amount,token})`,
-  `approve({spender,amount,token})`, `get_approvals()`, `sign_message({message})`.
-  `get_balance` is the user's own (fixed) account;
-  `get_address_balance` reads any other address from the mock wallet, so tokens sent to an
-  address show up when it is looked up later. No account or `from` is ever a model argument:
-  the harness injects the user's own account. (An optional `address` on `get_balance` made the
-  2B model invent endless addresses until the context was full, or look up a transfer's
-  recipient instead of sending, so the two lookups are separate tools. Re-measure with
-  `make eval` after prompt or tool changes.)
+- The model sees `transfer({to,amount,token})`, `approve({spender,amount,token})`,
+  `get_approvals()` and `sign_message({message})`, next to the Onbloc read tools (balances,
+  tokens, transactions). There are no balance tools here: balances have one source, Onbloc. No
+  account or `from` is ever a model argument: the harness injects the user's own account.
 - Token approvals (allowances, ERC-20 style) are kept in memory per owner, spender and token:
   `approve` lets a spender use up to an amount and a new approval for the same spender and
   token **replaces** the old one; `get_approvals` lists them, oldest first. Like `transfer`,
   `approve` builds a message that the harness passes to `sdk.sign`; nothing is stored unless
   the user approves the popup. An allowance may exceed the balance. Spending an allowance
-  (`transferFrom`) is not implemented. "Approval" in `ApprovalRecord` / `ApprovalPolicy` and
-  the `approval` scenario means the signing popup, not an allowance.
+  (`transferFrom`) is not implemented. "Approval" in `ApprovalRecord` / `ApprovalPolicy` means
+  the signing popup, not an allowance.
 - After `transfer`, **the harness** (not the model) passes the wallet-created message to
   `sdk.sign`. The popup shows exactly that message. Funds move only when the user approves
   (signed); on reject nothing moves. The model gets a small `{status: signed | rejected}`.
@@ -99,8 +93,8 @@ model --tool call--> adapter (src/wallet/adapter)      LLM layer
   without asking the user), re-checks the balance at signing time, and applies a message once.
 - The private key (a stand-in secret in the mock) never appears in any result, error, popup
   request or log; tests check this.
-- In the app, the signing popup is a modal (Approve / Reject). In tests and eval a simulated
-  user answers: `autoApproval(ApprovalPolicy.Approve | Reject)`.
+- In the app, the signing popup is a modal (Approve / Reject). In tests and `--approval
+  approve|reject` a simulated user answers: `autoApproval(ApprovalPolicy.Approve | Reject)`.
 - Tool arguments are validated with zod before `execute`. A call that fails validation (wrong
   type, unknown tool, unparsable JSON) is shown as **[INVALID]** and never reaches the wallet;
   the SDK feeds the error back to the model, which may retry.
@@ -110,58 +104,27 @@ model --tool call--> adapter (src/wallet/adapter)      LLM layer
   address in any case is one wallet entry. One that is not 40 characters long gets the message
   `The address length is not valid. Please check it again.`; one of the right length that does
   not start with `g1` gets a generic invalid-address message.
-- Pick a scenario chip to fill the prompt and see what is expected (calls, popups, balances);
-  after the run you get PASS/FAIL per check. The evaluation is strict: any invalid call fails
-  it even if a retry succeeds. The "answer mentions" checks are a keyword heuristic.
-- Mock data (addresses, balances, token decimals, address format, chain id) are assumptions,
-  not real Gno.land values. Only the user's own account has a starting balance; any other
-  address starts at zero and gets what is sent to it. Scenarios that need a recipient include
-  an address in the prompt.
-- In the app, free prompts keep using one wallet, so a transfer shows up in later balance
-  lookups. Running a scenario starts a fresh wallet; **Reset wallet** (Settings) does too.
-  The Settings tab shows the wallet as it is now: the balances of the known addresses and of
-  every address that received something, plus the approvals the user has given. It updates as
-  soon as a transfer or approval is signed, even while the run is still going.
-
-## Eval against a real model (desktop)
-
-`npm test` uses a mock model, so it only proves the harness and wallet code are correct.
-To measure what the model itself does, run the scenarios against the same GGUF served by
-llama.cpp on your machine. This exercises the real tool-calling behavior with the app's own
-tools, prompt, and scoring (not the on-device runtime: no `llama.rn`, speed/memory are the
-desktop's, not the phone's).
-
-```bash
-brew install llama.cpp   # one time; needs bun for the runner
-llama-server -hf bartowski/Qwen_Qwen3.5-2B-GGUF:Q4_K_M --jinja -c 8192 -np 1 --reasoning off --port 8089
-
-npm run eval -- --runs 10 --verbose                 # all scenarios, 10 runs each
-npm run eval -- --scenario transfer,compound --runs 20 --out result.json
-npm run eval -- --system-file my-prompt.txt         # try another system prompt
-npm run eval -- --approval reject                   # a user who rejects every signing popup
-```
-
-Results are probabilistic: read them as pass rates, not pass/fail. Run `i` uses `seed + i`, so
-an invocation is repeatable against the same server build. `--reasoning off` matches the app's
-default (thinking off); drop it to evaluate with thinking.
-
-Each run uses a fresh `MockWalletSdk`. A scenario is judged on the model's tool calls, how many
-signing popups were shown, and the balances afterwards (not only on what the model said). The
-simulated user approves unless the scenario (or `--approval`) says to reject.
+- Mock data (token decimals, address format, chain id) are assumptions, not real Gno.land
+  values. The mock wallet starts from the account's Onbloc balances; any other address starts
+  at zero and gets what is sent to it.
+- In the app, runs keep using one wallet, so a transfer shows up in later runs. **Reset
+  wallet** (Settings) starts over. The Settings tab shows the wallet as it is now: the balances
+  of the account and of every address that received something, plus the approvals the user has
+  given. It updates as soon as a transfer or approval is signed, even while the run is still
+  going.
 
 ## Free chat (desktop)
 
 To see how far the model gets with plain human language, talk to it yourself. It runs on this
-Mac through llama-server (same setup as the eval); by default it is the wallet assistant: the
-app's prompt and tools against a mock wallet.
-It answers in the language you write in (English and Korean both work; the repo itself has no
-Korean text, but you can type any language into the chat).
+Mac through llama-server; by default it is a plain chat with no wallet. `--onbloc` adds the
+wallet: the app's prompt and tools. It answers in the language you write in (English and
+Korean both work; the repo itself has no Korean text, but you can type any language into the chat).
 
 ```bash
-make chat                                        # interactive; the conversation is remembered
-make chat PROMPT="Tell me my GNOT balance"        # one question, then exit
-make chat ARGS="--plain"                         # the bare model: no wallet prompt, no tools
-make chat ARGS="--approval approve"              # signing popups answer themselves (approve | reject)
+make chat                                        # interactive plain chat; the conversation is remembered
+make chat PROMPT="Tell me a joke"                # one question, then exit
+make chat ARGS="--onbloc"                        # with the wallet (below)
+make chat ARGS="--onbloc --approval approve"     # signing popups answer themselves (approve | reject)
 ```
 
 In the chat: tool calls and their results are printed as `>` / `->` lines, a signing popup asks
@@ -170,6 +133,18 @@ shows them, `/reset` forgets the conversation and resets the wallet, `/exit` qui
 an answer in progress. A stopped or failed question is not remembered. The context is 8192
 tokens, so a very long chat eventually fails: `/reset`. Without a terminal (piped input), signing
 popups are rejected unless `--approval approve` is given.
+
+### The wallet: Onbloc reads, mock actions
+
+`make chat ARGS="--onbloc"` and the app's Settings tab (MCP URL and My address, both editable)
+read from the Onbloc api-v3 MCP: balances, tokens and transactions come from mainnet.
+`transfer`, `approve`, `get_approvals` and `sign_message` run on a mock wallet, behind the
+signing popup. The mock wallet starts with the address's real GNOT and GNS balances (read once
+when the wallet is created) and then drifts from the chain: a mock transfer changes the mock
+balances only. `/reset` and the app's Reset wallet read the balances again. Defaults are the dev
+endpoint and account in `src/ui/onblocSettings.ts`; for the CLI, `EXPO_PUBLIC_ONBLOC_MCP_URL` /
+`EXPO_PUBLIC_ONBLOC_ACCOUNT` override them. Clearing both fields in Settings gives a plain chat
+without the wallet.
 
 ## Metrics
 
@@ -184,7 +159,7 @@ popups are rejected unless `--approval approve` is given.
 - Qwen3.5 thinks by default, which adds latency; the **Thinking** switch is off by default
   (`reasoning: 'none'`).
 - `n_ctx` is 8192 (library default 2048). Max output tokens is capped below it. The desktop
-  llama-server (`-c` in `scripts/with-server.sh` and the eval command above) must use the same
+  llama-server (`-c` in `scripts/with-server.sh`) must use the same
   value to match the phone. Change the model or context size in `src/llm/config.ts`.
 
 ## Scripts
@@ -193,7 +168,6 @@ popups are rejected unless `--approval approve` is given.
 npm run typecheck
 npm run lint
 npm test
-npm run eval   # real-model scenarios; needs llama-server (see above), not part of npm test
 ```
 
 Shortcuts (`make help`):
@@ -201,9 +175,7 @@ Shortcuts (`make help`):
 ```bash
 make init   # npm install; installs bun and llama.cpp via brew if missing
 make test   # typecheck + lint + jest (mock model, no LLM)
-make eval   # real-model scenarios on this Mac; starts llama-server if none is running,
-            # stops it afterwards. e.g. make eval RUNS=20 ARGS="--scenario transfer --verbose"
-make chat   # talk to the model in your own words; PROMPT="..." asks once, ARGS="--plain" = bare model
+make chat   # talk to the local model; PROMPT="..." asks once, ARGS="--onbloc" adds the wallet
 make build  # Release build only: make build ios|android
 make deploy # Release build + install on a connected phone: make deploy ios|android
 ```
