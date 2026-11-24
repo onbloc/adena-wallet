@@ -14,6 +14,7 @@ export type ChatSession = {
   readonly turns: readonly ChatTurn[];
   messages(prompt: string): ModelMessage[];
   complete(prompt: string, answer: string): boolean;
+  trimOldest(count: number): void;
   reset(): void;
   serialize(): string;
 };
@@ -50,6 +51,10 @@ export function createChatSession(saved?: string | null): ChatSession {
       if (!parsed.success || !prompt.trim() || !answer.trim()) return false;
       turns = [...turns.slice(-(maxTurns - 1)), parsed.data];
       return true;
+    },
+    trimOldest(count: number) {
+      if (!Number.isSafeInteger(count) || count < 0) throw new RangeError('Turn count must be a nonnegative safe integer.');
+      if (count > 0) turns = turns.slice(count);
     },
     reset() { turns = []; },
     serialize() { return JSON.stringify({ version: 1, turns }); },

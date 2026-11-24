@@ -1,6 +1,7 @@
 import type { ContextParams } from '@react-native-ai/llama';
 import {
   generate,
+  resolveContextTokens,
   type GenerateEvent,
   type GenerateSettings,
   type LLM,
@@ -35,7 +36,7 @@ export class LLMOnDevice implements LLM {
     this.modelId = modelId;
     this.contextParams = contextParams;
     this.runtime = runtime;
-    this.contextTokens = contextParams.n_ctx ?? 2048;
+    this.contextTokens = resolveContextTokens(contextParams.n_ctx ?? 2048, contextParams.n_ctx ?? 2048);
   }
 
   /** Where the model is: idle, downloading, loading, ready (with its load time) or error. */
@@ -70,7 +71,7 @@ export class LLMOnDevice implements LLM {
     // With tools on, native llama may publish a tool call before its arguments are complete.
     const toolsOn = options.loop !== undefined || settings.tools !== undefined;
     yield* generate(toolsOn ? withCompletedToolCalls(model) : model, {
-      ...settings, ...options, contextTokens: this.contextTokens,
+      ...settings, ...options, contextTokens: resolveContextTokens(options.contextTokens, this.contextTokens),
     });
   }
 }

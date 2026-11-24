@@ -48,6 +48,38 @@ describe('chat sessions', () => {
     restored.reset();
     expect(restored.messages('new')).toEqual([{ role: 'user', content: 'new' }]);
   });
+
+  it('trims only the oldest completed turns and preserves version-one snapshots', () => {
+    const chat = createChatSession('{"version":1,"turns":[{"prompt":"old","answer":"old answer"},{"prompt":"recent","answer":"recent answer"}]}');
+    const original = chat.turns;
+    chat.trimOldest(0);
+    expect(chat.turns).toBe(original);
+    chat.trimOldest(1);
+    expect(chat.messages('current')).toEqual([
+      { role: 'user', content: 'recent' },
+      { role: 'assistant', content: 'recent answer' },
+      { role: 'user', content: 'current' },
+    ]);
+    expect(JSON.parse(chat.serialize())).toEqual({
+      version: 1, turns: [{ prompt: 'recent', answer: 'recent answer' }],
+    });
+    expect(createChatSession(chat.serialize()).turns).toEqual(chat.turns);
+    expect(original).toHaveLength(2);
+    chat.trimOldest(Number.MAX_SAFE_INTEGER);
+    expect(chat.turns).toEqual([]);
+    expect(chat.complete('next', 'next answer')).toBe(true);
+    expect(chat.turns).toEqual([{ prompt: 'next', answer: 'next answer' }]);
+  });
+
+  it.each([-1, 0.5, NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER + 1])(
+    'rejects invalid trim counts without changing history: %s',
+    count => {
+      const chat = createChatSession();
+      chat.complete('question', 'answer');
+      expect(() => chat.trimOldest(count)).toThrow(RangeError);
+      expect(chat.turns).toEqual([{ prompt: 'question', answer: 'answer' }]);
+    }
+  );
 });
 
 describe('context compaction', () => {

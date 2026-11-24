@@ -3,6 +3,7 @@ import { MockLanguageModelV4 } from 'ai/test';
 import { z } from 'zod';
 
 import { generate, GenerateEventType, type GenerateEvent } from '../generate';
+import { createChatSession } from '../session';
 
 type Part = Record<string, unknown>;
 
@@ -117,6 +118,37 @@ describe('generate', () => {
     expect(sent).toContain('hello Mina');
     expect(sent).toContain('what is my name?');
   });
+
+  it('does not notify when the complete input fits without compaction', async () => {
+    const onContextCompacted = jest.fn();
+    const model = modelFrom([...text('answer'), finish(1)]);
+    await collect(generate(model, {
+      messages: [
+        { role: 'user', content: 'earlier question' },
+        { role: 'assistant', content: 'earlier answer' },
+        { role: 'user', content: 'current question' },
+      ],
+      contextTokens: 2000,
+      onContextCompacted,
+    }));
+    expect(onContextCompacted).not.toHaveBeenCalled();
+    expect(JSON.stringify(model.doStreamCalls[0].prompt)).toContain('earlier question');
+  });
+
+  it.each([0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])(
+    'rejects invalid context budgets and closes the loop: %s',
+    async contextTokens => {
+      const model = modelFrom([...text('answer'), finish(1)]);
+      const close = jest.fn();
+      const onContextCompacted = jest.fn();
+      await expect(collect(generate(model, {
+        prompt: 'question', contextTokens, onContextCompacted, loop: { options: {}, close },
+      }))).rejects.toThrow(RangeError);
+      expect(close).toHaveBeenCalledTimes(1);
+      expect(onContextCompacted).not.toHaveBeenCalled();
+      expect(model.doStreamCalls).toHaveLength(0);
+    }
+  );
 
   it('leaves tokensPerSec undefined when usage is not reported', async () => {
     const model = modelFrom([...text('x'), finish(undefined)]);
@@ -304,16 +336,14 @@ describe('generate with tools', () => {
 
   it('compacts earlier text turns on each step without losing the current tool exchange', async () => {
     const { ran, tools } = setup();
+    const session = createChatSession();
+    session.complete('old-prompt', 'x'.repeat(5000));
+    session.complete('recent-prompt', 'recent-answer');
+    const onContextCompacted = (count: number) => session.trimOldest(count);
     const model = stepsModel([toolCall('lookup', { key: 'abc' }), answer]);
     await collect(generate(model, {
-      messages: [
-        { role: 'user', content: 'old-prompt' },
-        { role: 'assistant', content: 'x'.repeat(5000) },
-        { role: 'user', content: 'recent-prompt' },
-        { role: 'assistant', content: 'recent-answer' },
-        { role: 'user', content: 'current-request' },
-      ],
-      tools, maxSteps: 3, contextTokens: 1800, maxOutputTokens: 128,
+      messages: session.messages('current-request'),
+      tools, maxSteps: 3, contextTokens: 1800, maxOutputTokens: 128, onContextCompacted,
     }));
     expect(ran).toEqual(['abc']);
     expect(model.doStreamCalls).toHaveLength(2);
@@ -328,6 +358,73 @@ describe('generate with tools', () => {
     expect(continuation).toContain('tool-result');
     expect(continuation).toContain('c1');
     expect(continuation).toContain('ABC');
+    expect(session.turns).toEqual([{ prompt: 'recent-prompt', answer: 'recent-answer' }]);
+  });
+
+  it('rejects an oversized current request without truncating it or executing a tool', async () => {
+    const { ran, tools } = setup();
+    const model = stepsModel([toolCall('lookup', { key: 'abc' }), answer]);
+    const onContextCompacted = jest.fn();
+    const messages = [
+      { role: 'user' as const, content: 'old question' },
+      { role: 'assistant' as const, content: 'old answer' },
+      { role: 'user' as const, content: 'current request '.repeat(1000) },
+    ];
+    const original = JSON.stringify(messages);
+    await expect(collect(generate(model, {
+      messages, tools, maxSteps: 3, contextTokens: 1800, maxOutputTokens: 128, onContextCompacted,
+    }))).rejects.toThrow('ADENA_CONTEXT_LIMIT');
+    expect(JSON.stringify(messages)).toBe(original);
+    expect(onContextCompacted).not.toHaveBeenCalled();
+    expect(model.doStreamCalls).toHaveLength(0);
+    expect(ran).toEqual([]);
+  });
+
+  it.each(['system', 'schema', 'output'] as const)(
+    'reserves the context budget for %s before any tool executes',
+    async reservation => {
+      const execute = jest.fn(async () => 'result');
+      const tools = {
+        lookup: tool({
+          description: reservation === 'schema' ? 'x'.repeat(5000) : 'Lookup',
+          inputSchema: z.object({}),
+          execute,
+        }),
+      };
+      const model = stepsModel([toolCall('lookup', {}), answer]);
+      const onContextCompacted = jest.fn();
+      await expect(collect(generate(model, {
+        prompt: 'current request',
+        system: reservation === 'system' ? 'x'.repeat(5000) : undefined,
+        tools,
+        contextTokens: 1000,
+        maxOutputTokens: reservation === 'output' ? 1000 : 128,
+        onContextCompacted,
+      }))).rejects.toThrow('ADENA_CONTEXT_LIMIT');
+      expect(execute).not.toHaveBeenCalled();
+      expect(model.doStreamCalls).toHaveLength(0);
+      expect(onContextCompacted).not.toHaveBeenCalled();
+    }
+  );
+
+  it('rejects an oversized live tool result instead of cutting the active exchange', async () => {
+    const execute = jest.fn(async () => 'x'.repeat(5000));
+    const tools = {
+      lookup: tool({ description: 'Lookup', inputSchema: z.object({}), execute }),
+    };
+    const model = stepsModel([toolCall('lookup', {}), answer]);
+    const onContextCompacted = jest.fn();
+    await expect(collect(generate(model, {
+      messages: [
+        { role: 'user', content: 'old question' },
+        { role: 'assistant', content: 'old answer' },
+        { role: 'user', content: 'current request' },
+      ],
+      tools, maxSteps: 3, contextTokens: 1800, maxOutputTokens: 128, onContextCompacted,
+    }))).rejects.toThrow('ADENA_CONTEXT_LIMIT');
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(model.doStreamCalls).toHaveLength(1);
+    expect(onContextCompacted).not.toHaveBeenCalled();
   });
 
   it('stops after one model call by default even when a tool ran', async () => {
@@ -434,6 +531,36 @@ describe('generate with tools', () => {
       expect(events.some((e) => e.type === GenerateEventType.ToolResult)).toBe(true);
       expect(ran).toEqual(['abc']);
       expect(model.doStreamCalls).toHaveLength(2);
+      expect(close).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves managed compaction and its notifications to the loop prepareStep', async () => {
+      const close = jest.fn();
+      const prepared = jest.fn();
+      const onContextCompacted = jest.fn();
+      const model = modelFrom([...text('answer'), finish(1)]);
+      await collect(generate(model, {
+        messages: [
+          { role: 'user', content: 'old question' },
+          { role: 'assistant', content: 'x'.repeat(5000) },
+          { role: 'user', content: 'current request' },
+        ],
+        contextTokens: 1800,
+        onContextCompacted,
+        loop: {
+          options: {
+            prepareStep: ({ messages }) => {
+              prepared();
+              return { messages: messages.slice(2) };
+            },
+          },
+          close,
+        },
+      }));
+      expect(prepared).toHaveBeenCalledTimes(1);
+      expect(onContextCompacted).not.toHaveBeenCalled();
+      expect(JSON.stringify(model.doStreamCalls[0].prompt)).not.toContain('old question');
+      expect(JSON.stringify(model.doStreamCalls[0].prompt)).toContain('current request');
       expect(close).toHaveBeenCalledTimes(1);
     });
 

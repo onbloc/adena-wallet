@@ -59,6 +59,7 @@ src/harness/                  Bounds and polices a tool-using run
   mcp/                          tool sources backed by MCP servers (Onbloc), and a fake one for tests
 src/agent/                    AIAgent({ llm, harness, wallet }): the assistant
   agent.ts, aiSdkBridge.ts      a harness run turned into a ToolLoop for llm.generate
+  conversation.ts               account-bound text history, turn lifecycle, context budget and reset
   answerGuard.ts, prompts.ts    the answer checked against what the tools returned; the system prompt
   wallet/                       the WalletSdk port, ToolName/status constants, the zod tools
 src/adena/                    AdenaWalletSdk: the WalletSdk port over @adena-wallet/sdk (real wallet)
@@ -72,8 +73,9 @@ src/mock/                     Test-only code, nothing above depends on it
 ```ts
 const llm = new LLMOnDevice();                        // or new LLMFromModel(model) on a desktop
 const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint })] });
-const agent = new AIAgent({ llm, harness, wallet });  // without a wallet it is the LLM alone
-for await (const event of agent.run({ prompt })) { /* text, tool calls, done */ }
+const agent = new AIAgent({ llm, harness, wallet, onTransaction });
+const conversation = agent.createConversation({ account, contextTokens: 8192 });
+for await (const event of conversation.run({ prompt })) { /* text, tool calls, done */ }
 ```
 
 Dependencies point down only, and `npm run lint` enforces it: `mock` may use everything; `agent`
@@ -81,6 +83,39 @@ may use `llm/core` and `harness`, not `mock`, `adena` or `llm/device`; `adena` m
 `harness`, not `mock` or `llm`; `llm` and `harness` never import each other, the agent, adena or
 the mock; `llm/core` runs without React Native; `harness/core` does not know its plugins in
 `harness/mcp`. Every module is imported through its `index.ts`.
+
+## Conversations and context limits
+
+`agent.createConversation({ account?, contextTokens?, saved? })` owns the history of one chat.
+Call `conversation.run({ prompt, ...generationSettings })` repeatedly; callers no longer need
+to assemble `messages` or append answers. `turns` exposes retained text turns, `serialize()`
+saves a version-1 snapshot, and `reset()` aborts the active turn and clears history. Concurrent
+turns on the same conversation are rejected. `agent.run` remains the lower-level, stateless
+single-run API for explicit messages and isolated integrations.
+
+The conversation defaults to the model's context window (8192 for the default model).
+`contextTokens` can be set lower, never above that window. Each model step reserves room for
+system instructions, tool schemas, the current question and live tool results, plus the output
+budget. Counts use the existing conservative byte-based estimate, not an exact tokenizer.
+When the input does not fit, the oldest complete user/answer pairs are removed from both the
+model input and retained session history. Recent turns stay verbatim; no LLM summarization is
+performed. The snapshot also retains the existing maximum of 50 completed turns.
+
+The current question is never truncated. If it cannot fit even without history, the request
+fails with `ADENA_CONTEXT_LIMIT`; shorten the question or start a larger supported context.
+If the current tool exchange outgrows the budget, the run also fails rather than cutting tool
+arguments or results. Removed turns are forgotten by subsequent requests.
+
+Only completed trusted/verified answer turns are remembered. Cancelled, incomplete and
+unverified turns are not committed. Persisted chat is text only: tool calls, transaction
+objects and signing authority are never restored or replayed. A prior balance answer is
+conversation context, not proof of the current balance; current wallet facts still require
+a fresh successful lookup.
+
+The app restores chats separately for each endpoint, chain and account; switching scopes
+aborts the old turn. Keep the same separation when using `saved` outside the app. Existing app
+storage uses an injected `ChatSession` through `createConversation({ account, session })`,
+so loading and saving do not create a second copy of the conversation.
 
 ## Wallet layers and tool calling
 
@@ -97,20 +132,21 @@ model --tool call--> adapter (src/agent/wallet/tools.ts)  agent layer
 ```
 
 There is no account in the wallet or in the agent: each wallet method builds a transaction from
-the arguments it is given, and the user's address is an argument of each `run`. A wallet app holds
-many accounts and the user switches between them, so the app passes the one to act for every time.
-The agent reads its holdings and injects it as `from`; the model never chooses it.
+the arguments it is given. A conversation binds the account selected by the app, and the agent
+injects it as `from`; the model never chooses it. Create a separate conversation when switching
+accounts.
 
 ```ts
 const agent = new AIAgent({
   llm, harness, wallet,
   onTransaction: ({ summary, tx }) => { /* sign `tx` in the user's wallet */ },
 });
-agent.run({ prompt }, { account: 'g1...' });          // the account for this run
+const conversation = agent.createConversation({ account: 'g1...', contextTokens: 8192 });
+conversation.run({ prompt });                       // subsequent calls retain this chat's context
 ```
 
-A run keeps the account it started with. The conversation (`messages`) is the app's, and it holds
-what the model read for earlier accounts: start a new conversation when the account changes.
+A run keeps the account it started with. The low-level `agent.run(settings, { account })` API
+still accepts an explicit conversation, but the CLI and app use the managed conversation API.
 
 `?` methods are optional: the model is offered `approve` and `get_approvals` only if the wallet
 implements them. `onTransaction` is required whenever there is a wallet. `token` is the symbol
@@ -186,13 +222,16 @@ Korean both work; the repo itself has no Korean text, but you can type any langu
 make chat                                        # interactive plain chat; the conversation is remembered
 make chat PROMPT="Tell me a joke"                # one question, then exit
 make chat ARGS="--onbloc"                        # with the wallet (below)
+make chat ARGS="--context-tokens 4096"           # lower the chat's context budget
 ```
 
 In the chat: tool calls and their results are printed as `>` / `->` lines, and a prepared
 transaction as `[transaction prepared, not signed]` with its fields. `/balances` shows the mock
 balances, `/reset` forgets the conversation and resets the wallet, `/exit` quits; Ctrl-C stops
-an answer in progress. A stopped or failed question is not remembered. The context is 8192
-tokens, so a very long chat eventually fails: `/reset`.
+an answer in progress. A stopped or failed question is not remembered. The context defaults to
+8192 tokens; older completed turns are automatically discarded when needed. `--context-tokens`
+sets a smaller budget; `/reset` explicitly forgets the chat. An oversized current question is
+rejected rather than truncated.
 
 ### The wallet: Onbloc reads, mock transactions
 
@@ -220,7 +259,12 @@ Each scenario in `scenarios.ts` is a plain-language prompt and what it must prod
 - or no transaction at all (missing recipient, unknown token, GNOT approval, zero amount,
   insufficient balance).
 
-Balance questions are answered by the agent without the model, so they are not scenarios.
+Only recognized standalone balance questions use the agent's read-only shortcut. A separate
+multi-turn scenario asks for all assets and then follows up about GNOT in the same conversation;
+it checks a fresh native balance result and that neither turn prepares a transaction, not the
+answer wording.
+Retaining history does not guarantee correct tool selection: a native-token follow-up must
+still obtain a fresh native balance, not GRC20 holdings or a value copied from an earlier answer.
 
 A failure prints the prompt, the model's tool calls and its answer. The model is not
 deterministic across builds or machines, so a failing scenario can be a model limit or a prompt

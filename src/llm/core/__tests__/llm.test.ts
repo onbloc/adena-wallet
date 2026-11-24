@@ -59,6 +59,41 @@ describe('LLMFromModel', () => {
     expect(prompt).toContain('current question');
   });
 
+  it('honors a smaller per-generation budget and forwards compaction notifications', async () => {
+    const model = answering('hello');
+    const llm = new LLMFromModel(model, { contextTokens: 8192 });
+    const onContextCompacted = jest.fn();
+    await collect(llm.generate({
+      messages: [
+        { role: 'user', content: 'old question' },
+        { role: 'assistant', content: 'x'.repeat(5000) },
+        { role: 'user', content: 'current question' },
+      ],
+      maxOutputTokens: 128,
+    }, { contextTokens: 1200, onContextCompacted }));
+    expect(JSON.stringify(model.doStreamCalls[0].prompt)).not.toContain('old question');
+    expect(JSON.stringify(model.doStreamCalls[0].prompt)).toContain('current question');
+    expect(onContextCompacted).toHaveBeenCalledWith(1);
+    expect(llm.contextTokens).toBe(8192);
+  });
+
+  it.each([0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1, 8193])(
+    'rejects invalid or increased generation budgets before calling the model: %s',
+    async contextTokens => {
+      const model = answering('hello');
+      const llm = new LLMFromModel(model);
+      await expect(async () => collect(llm.generate({ prompt: 'hi' }, { contextTokens }))).rejects.toThrow(RangeError);
+      expect(model.doStreamCalls).toHaveLength(0);
+    }
+  );
+
+  it.each([0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])(
+    'rejects invalid configured model windows: %s',
+    contextTokens => {
+      expect(() => new LLMFromModel(answering('hello'), { contextTokens })).toThrow(RangeError);
+    }
+  );
+
   it('closes the tool loop it is handed when the generation ends', async () => {
     const close = jest.fn();
     const llm = new LLMFromModel(answering('hello'));

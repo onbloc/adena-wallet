@@ -1,6 +1,8 @@
 // Public API of agent: an LLM, a harness and a wallet wired into one assistant.
 export { AIAgent } from './agent';
-export type { AIAgentOptions } from './agent';
+export type { AIAgentOptions, AgentRunOptions } from './agent';
+export { AgentConversation } from './conversation';
+export type { ConversationOptions, ConversationSettings } from './conversation';
 export {
   ToolName,
   TransactionType,

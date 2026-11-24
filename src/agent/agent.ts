@@ -7,6 +7,7 @@ import { createWalletTools } from './wallet/tools';
 import type { Harness, WalletTool } from '../harness/core';
 import { GNO_MAINNET_CHAIN } from '../harness/mcp';
 import { estimateContextInput, type GenerateEvent, type GenerateSettings, type LLM, type ToolLoop } from '../llm/core';
+import { AgentConversation, type ConversationOptions } from './conversation';
 
 function compactHoldings(name: string, output: unknown): unknown {
   if (name !== 'get_token_balances' || !output || typeof output !== 'object' ||
@@ -42,6 +43,13 @@ export type AIAgentOptions = {
     }
 );
 
+export type AgentRunOptions = {
+  account?: string;
+  signal?: AbortSignal;
+  contextTokens?: number;
+  onContextCompacted?: (droppedTurns: number) => void;
+};
+
 /**
  * A wallet assistant: an LLM that reads through the harness's tool sources and prepares
  * transactions through a wallet, within the harness's budget, with its answer checked against
@@ -63,6 +71,11 @@ export class AIAgent {
     this.chainId = chainId;
   }
 
+  /** Starts an independent account-bound conversation with bounded text history. */
+  createConversation(options: ConversationOptions = {}): AgentConversation {
+    return new AgentConversation(this, options);
+  }
+
   /**
    * Answers one prompt or conversation. Same events as `llm.generate`; with a wallet the text is
    * held back until the answer is vetted (see `guardAnswer`). `settings.tools` are ignored: the
@@ -75,11 +88,14 @@ export class AIAgent {
    */
   async *run(
     settings: GenerateSettings,
-    { account, signal }: { account?: string; signal?: AbortSignal } = {}
+    { account, signal, contextTokens = this.llm.contextTokens, onContextCompacted }: AgentRunOptions = {}
   ): AsyncGenerator<GenerateEvent> {
+    if (!Number.isSafeInteger(contextTokens) || contextTokens <= 0 || contextTokens > this.llm.contextTokens) {
+      throw new RangeError('contextTokens must be a positive integer within the model context.');
+    }
     const { wallet, onTransaction } = this;
     if (!wallet || !onTransaction) {
-      yield* this.llm.generate(settings, { signal });
+      yield* this.llm.generate(settings, { signal, contextTokens, onContextCompacted });
       return;
     }
     if (!account) throw new TypeError('An agent with a wallet needs the account to act for: run(settings, { account })');
@@ -121,6 +137,8 @@ export class AIAgent {
       walletTools,
       maxOutputTokens: settings.maxOutputTokens ?? 512,
       signal,
+      contextTokens,
+      onContextCompacted,
     });
     try {
       const system = settings.system ?? buildWalletPrompt({ contacts, approvals: wallet.getAllowances !== undefined });
@@ -136,13 +154,14 @@ export class AIAgent {
   /**
    * Starts one harness run for both read tools and unsigned wallet preparation.
    */
-  private async startLoop({ account, walletTools, maxOutputTokens, signal }: {
+  private async startLoop({ account, walletTools, maxOutputTokens, signal, contextTokens, onContextCompacted }: {
     account: string;
     walletTools: Readonly<Record<string, WalletTool>>;
     maxOutputTokens: number;
     signal?: AbortSignal;
+    contextTokens: number;
+    onContextCompacted?: (droppedTurns: number) => void;
   }): Promise<{ loop: ToolLoop; isRead(toolName: string): boolean }> {
-    const contextTokens = this.llm.contextTokens;
     const totalTokens = 2 * contextTokens;
     const run = await this.harness.startRun({
       account, chainId: this.chainId, operationId: `agent-${++this.runs}`,
@@ -156,6 +175,7 @@ export class AIAgent {
     const options = createAiSdkRun({
       run, maxOutputTokens: Math.min(maxOutputTokens, 512), budget: { kind: 'local' },
       contextWindow: contextTokens,
+      onContextCompacted,
       estimateInputTokens: ({ instructions, messages, tools }) => estimateContextInput([instructions, messages, tools]),
       projectResult: compactHoldings,
       onInterrupt: () => run.close(),

@@ -14,7 +14,7 @@ import {
   type ScrollViewInstance,
 } from 'react-native';
 
-import { AIAgent, type PreparedTransaction } from '../../agent';
+import { AIAgent, type ConversationSettings, type PreparedTransaction } from '../../agent';
 import { Harness } from '../../harness/core';
 import { createOnblocToolSource, GNO_MAINNET_CHAIN } from '../../harness/mcp';
 import {
@@ -22,7 +22,6 @@ import {
   DEFAULT_GENERATE_SETTINGS,
   TEMPERATURE_RANGE,
   type CallRecord,
-  type GenerateSettings,
 } from '../../llm/core';
 import {
   DEFAULT_MODEL_ID,
@@ -209,12 +208,12 @@ export default function PlaygroundScreen() {
   const onRun = async () => {
     if (!canRun || temperatureValue === null || maxTokensValue === null || (onblocMode && !onbloc)) return;
     const text = prompt.trim();
-    const messages = session.messages(text);
-    if (!messages || !text) return;
+    if (!text) return;
     setSetupError(null);
     // Load the balances before the prompt is sent, so a failure keeps the prompt in the composer.
     const onblocWallet = onbloc && useTools ? await ensureOnblocWallet(onbloc) : null;
     if (onbloc && useTools && !onblocWallet) return;
+    if (visibleScope.current !== scopeKey) return;
     const view = { scope: scopeKey };
     displayedRun.current = view;
     setSubmittedPrompt(text);
@@ -222,8 +221,8 @@ export default function PlaygroundScreen() {
     setPrepared([]);
     // The prompt is now the user message in the chat: clear the composer.
     setPrompt('');
-    const settings: GenerateSettings = {
-      messages,
+    const settings: ConversationSettings = {
+      prompt: text,
       // With the wallet on the agent brings its own system prompt; with no Onbloc settings it is a plain chat.
       system:
         onbloc && !onblocWallet
@@ -233,11 +232,11 @@ export default function PlaygroundScreen() {
       maxOutputTokens: maxTokensValue,
       reasoning: thinking ? 'provider-default' : 'none',
     };
-    const answer = await start((signal) => {
-      if (!onbloc || !onblocWallet) return llm.generate(settings, { signal });
-      // The agent reads through Onbloc, prepares transactions on the wallet, stays within the
-      // harness budget and checks its answer against what the tools returned.
-      const harness = new Harness({ toolSources: [createOnblocToolSource(onbloc)] });
+    const previousTurn = session.turns.at(-1);
+    await start((signal) => {
+      const harness = new Harness({
+        toolSources: onbloc && onblocWallet ? [createOnblocToolSource(onbloc)] : [],
+      });
       const onTransaction = async ({ summary }: PreparedTransaction) => {
         // The persisted record is bound to this run's original scope, even after a switch.
         await preparation.record(summary.type);
@@ -245,14 +244,14 @@ export default function PlaygroundScreen() {
           displayedRun.current === view && visibleScope.current === view.scope ? [...list, summary] : list
         );
       };
-      return new AIAgent({ llm, harness, wallet: onblocWallet, onTransaction }).run(settings, {
-        account: onbloc.account,
-        signal,
-      });
+      const agent = onblocWallet
+        ? new AIAgent({ llm, harness, wallet: onblocWallet, onTransaction })
+        : new AIAgent({ llm, harness });
+      return session.run(agent, settings, { account: onblocWallet ? onbloc?.account : undefined, signal });
     });
-    if (answer) {
-      const stored = session.complete(text, answer);
-      if (displayedRun.current === view && visibleScope.current === view.scope) setRemembered(stored);
+    if (displayedRun.current === view && visibleScope.current === view.scope) {
+      const lastTurn = session.turns.at(-1);
+      setRemembered(lastTurn !== undefined && lastTurn !== previousTurn && lastTurn.prompt === text);
     }
   };
 

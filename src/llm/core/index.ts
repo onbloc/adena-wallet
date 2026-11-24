@@ -4,7 +4,7 @@ export type { CallRecord, ToolEvent } from './calls';
 export { DEFAULT_GENERATE_SETTINGS, TEMPERATURE_RANGE } from './config';
 export { generate, GenerateEventType } from './generate';
 export type { GenerateEvent, GenerateOptions, GenerateSettings, Metrics } from './generate';
-export { LLMFromModel } from './llm';
+export { LLMFromModel, resolveContextTokens } from './llm';
 export type { LLM, LLMGenerateOptions } from './llm';
 export type { ToolLoop } from './loop';
 export { canRememberTurn, chatSessionKey, compactContext, createChatSession, estimateContextInput } from './session';

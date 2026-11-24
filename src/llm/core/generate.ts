@@ -35,6 +35,8 @@ export type GenerateOptions = GenerateSettings & {
   loop?: ToolLoop;
   /** Bound each model step to this context window. Managed loops apply their own budget. */
   contextTokens?: number;
+  /** History user/assistant pairs removed from a successful step's input. */
+  onContextCompacted?: (droppedTurns: number) => void;
 };
 
 export type Metrics = {
@@ -103,7 +105,7 @@ const errorMessage = (error: unknown) =>
  */
 export async function* generate(
   model: LanguageModel,
-  { signal, maxSteps, loop, contextTokens, ...options }: GenerateOptions,
+  { signal, maxSteps, loop, contextTokens, onContextCompacted, ...options }: GenerateOptions,
   now: () => number = () => Date.now()
 ): AsyncGenerator<GenerateEvent> {
   const startedAt = now();
@@ -115,6 +117,9 @@ export async function* generate(
   let responseMessages: ModelMessage[] = [];
 
   try {
+    if (contextTokens !== undefined && (!Number.isSafeInteger(contextTokens) || contextTokens <= 0)) {
+      throw new RangeError('Context tokens must be a positive safe integer.');
+    }
     const bounded = contextTokens !== undefined && !loop?.options.prepareStep;
     const maxOutputTokens = options.maxOutputTokens ?? 512;
     const tools = loop?.options.tools ?? options.tools;
@@ -133,6 +138,8 @@ export async function* generate(
           const context = compactContext(messages, candidate =>
             estimateContextInput([instructions, schemas, candidate]) + maxOutputTokens <= (contextTokens ?? Infinity));
           if (!context) throw new Error('ADENA_CONTEXT_LIMIT: Current request and tool results exceed the model context.');
+          const droppedTurns = (messages.length - context.length) / 2;
+          if (droppedTurns > 0) onContextCompacted?.(droppedTurns);
           return { messages: context };
         },
       }),

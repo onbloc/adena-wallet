@@ -135,6 +135,42 @@ describe('LLMOnDevice', () => {
     expect(prompt).toContain('current question');
   });
 
+  it('honors a smaller generation budget and forwards compaction notifications', async () => {
+    const model = streaming();
+    const llm = await loaded(model);
+    const onContextCompacted = jest.fn();
+    await collect(llm.generate({
+      messages: [
+        { role: 'user', content: 'old question' },
+        { role: 'assistant', content: 'x'.repeat(5000) },
+        { role: 'user', content: 'current question' },
+      ],
+      maxOutputTokens: 128,
+    }, { contextTokens: 1200, onContextCompacted }));
+    expect(JSON.stringify(model.doStreamCalls[0].prompt)).not.toContain('old question');
+    expect(JSON.stringify(model.doStreamCalls[0].prompt)).toContain('current question');
+    expect(onContextCompacted).toHaveBeenCalledWith(1);
+    expect(llm.contextTokens).toBe(8192);
+  });
+
+  it.each([0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1, 8193])(
+    'rejects invalid or increased generation budgets before native generation: %s',
+    async contextTokens => {
+      const model = streaming();
+      const llm = await loaded(model);
+      await expect(collect(llm.generate({ prompt: 'hi' }, { contextTokens }))).rejects.toThrow(RangeError);
+      expect(model.doStreamCalls).toHaveLength(0);
+      expect(model.doGenerateCalls).toHaveLength(0);
+    }
+  );
+
+  it.each([0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])(
+    'rejects invalid native model windows: %s',
+    n_ctx => {
+      expect(() => new LLMOnDevice({ contextParams: { n_ctx } })).toThrow(RangeError);
+    }
+  );
+
   it('completes each step before its tool calls are streamed when tools are on', async () => {
     const llm = await loaded(toolCalling());
     const tools = {

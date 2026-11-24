@@ -11,17 +11,13 @@ import { createInterface } from 'node:readline/promises';
 
 import type { LanguageModel } from 'ai';
 
-import { AIAgent, type PreparedTransaction } from '../../agent';
+import { AIAgent, type AgentConversation, type ConversationSettings, type PreparedTransaction } from '../../agent';
 import { Harness } from '../../harness/core';
 import { createOnblocToolSource, gnoPublicAddress, type OnblocMcpConfig } from '../../harness/mcp';
 import {
-  canRememberTurn,
-  createChatSession,
   DEFAULT_GENERATE_SETTINGS,
   GenerateEventType,
   LLMFromModel,
-  type ChatSession,
-  type GenerateSettings,
 } from '../../llm/core';
 import { describeTransaction } from '../app/describeTransaction';
 import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL } from '../app/onblocSettings';
@@ -41,6 +37,7 @@ const USAGE = `Usage: bun src/mock/cli/chat.ts [options]
   --model NAME       model name sent to the server (default ${DEFAULT_MODEL_NAME})
   --temperature T    (default ${DEFAULT_GENERATE_SETTINGS.temperature})
   --max-tokens N     per model call (default ${DEFAULT_GENERATE_SETTINGS.maxOutputTokens})
+  --context-tokens N conversation limit (default ${SERVER_CONTEXT_TOKENS}; max ${SERVER_CONTEXT_TOKENS})
   --system-file P    use this file as the system prompt
 
 In the chat: /reset (forget the conversation, reset the wallet)  /balances  /help  /exit`;
@@ -51,13 +48,14 @@ type Options = {
   model: string;
   temperature: number;
   maxTokens: number;
+  contextTokens: number;
   system?: string;
   onbloc?: OnblocMcpConfig & { account: string };
 };
 
 function parseOptions(argv: string[]): Options {
   const { values, flags } = parseArgs(argv, {
-    values: ['prompt', 'url', 'model', 'temperature', 'max-tokens', 'system-file'],
+    values: ['prompt', 'url', 'model', 'temperature', 'max-tokens', 'context-tokens', 'system-file'],
     flags: ['onbloc'],
   });
   const systemFile = values.get('system-file');
@@ -79,6 +77,7 @@ function parseOptions(argv: string[]): Options {
     model: values.get('model') ?? DEFAULT_MODEL_NAME,
     temperature: boundedNumber(values, 'temperature', DEFAULT_GENERATE_SETTINGS.temperature, 0, 2, false),
     maxTokens: boundedNumber(values, 'max-tokens', DEFAULT_GENERATE_SETTINGS.maxOutputTokens, 1, 4095),
+    contextTokens: boundedNumber(values, 'context-tokens', SERVER_CONTEXT_TOKENS, 1, SERVER_CONTEXT_TOKENS),
     system: systemFile ? readFileSync(systemFile, 'utf8') : undefined,
   };
 }
@@ -100,7 +99,7 @@ function printBalances(balances: Record<string, Balances>, you: string | undefin
 }
 
 /** The conversation so far and, with --onbloc, the agent and its mock wallet. */
-type Session = { agent?: AIAgent; sdk?: MockWalletSdk; chat: ChatSession };
+type Session = { sdk?: MockWalletSdk; chat: AgentConversation };
 
 async function main() {
   const options = parseOptions(process.argv.slice(2));
@@ -153,12 +152,15 @@ async function main() {
   // The server's model; with --onbloc an agent reads through Onbloc and prepares transactions on a mock wallet.
   const llm = new LLMFromModel(model, { contextTokens: SERVER_CONTEXT_TOKENS });
   const newSession = async (): Promise<Session> => {
-    if (!options.onbloc) return { chat: createChatSession() };
+    if (!options.onbloc) {
+      const agent = new AIAgent({ llm, harness: new Harness() });
+      return { chat: agent.createConversation({ contextTokens: options.contextTokens }) };
+    }
     console.error('loading balances from Onbloc...');
     const sdk = await createOnblocMockWallet({ onbloc: options.onbloc });
     const harness = new Harness({ toolSources: [createOnblocToolSource(options.onbloc)] });
     const agent = new AIAgent({ llm, harness, wallet: sdk, onTransaction: printTransaction });
-    return { sdk, agent, chat: createChatSession() };
+    return { sdk, chat: agent.createConversation({ account: options.onbloc.account, contextTokens: options.contextTokens }) };
   };
   let session = await newSession();
 
@@ -167,11 +169,8 @@ async function main() {
 
   /** One question and the model's whole answer, tools included. */
   async function ask1(text: string) {
-    const messages = session.chat.messages(text);
     const controller = new AbortController();
     turnAbort = controller;
-    let answer = '';
-    let remember = false;
     let lineOpen = false;
     const endLine = () => {
       if (lineOpen) process.stdout.write('\n');
@@ -179,19 +178,16 @@ async function main() {
     };
 
     try {
-      const settings: GenerateSettings = {
-        messages,
+      const settings: ConversationSettings = {
+        prompt: text,
         system: options.system,
         temperature: options.temperature,
         maxOutputTokens: options.maxTokens,
       };
-      const events = session.agent
-        ? session.agent.run(settings, { account: options.onbloc?.account, signal: controller.signal })
-        : llm.generate(settings, { signal: controller.signal });
+      const events = session.chat.run(settings, { signal: controller.signal });
       for await (const event of events) {
         switch (event.type) {
           case GenerateEventType.Text:
-            answer += event.delta;
             process.stdout.write(event.delta);
             lineOpen = true;
             break;
@@ -215,11 +211,9 @@ async function main() {
             if (tokensPerSec !== undefined) stats.push(`${tokensPerSec.toFixed(1)} tok/s`);
             console.log(dim(`  (${event.aborted ? 'stopped, ' : ''}${stats.join(', ')})`));
             for (const warning of event.warnings) console.log(dim(`  warning: ${warning}`));
-            remember = canRememberTurn(event);
           }
         }
       }
-      if (remember && !controller.signal.aborted) session.chat.complete(text, answer);
     } catch (error) {
       endLine();
       console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
@@ -252,6 +246,7 @@ async function main() {
     if (text === '/help') {
       console.log(USAGE.slice(USAGE.indexOf('In the chat:')));
     } else if (text === '/reset') {
+      session.chat.reset();
       session = await newSession();
       console.log(options.onbloc ? '  conversation and wallet reset' : '  conversation reset');
     } else if (text === '/balances') {

@@ -41,10 +41,11 @@ function createAiSdkTools({ run, onInterrupt, projectResult }: {
 }
 
 /** Options for one AI SDK generation loop. Close the run in the consumer's finally block. */
-export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budget, onInterrupt, projectResult, contextWindow }: {
+export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budget, onInterrupt, projectResult, contextWindow, onContextCompacted }: {
   run: HarnessRun;
   maxOutputTokens: number;
   contextWindow?: number;
+  onContextCompacted?: (droppedTurns: number) => void;
   /** Include instructions, tool schema and provider formatting overhead for this step. */
   estimateInputTokens: (input: Readonly<{
     model: LanguageModel;
@@ -67,6 +68,7 @@ export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budg
     const context = contextWindow === undefined ? messages
       : compactContext(messages, candidate => estimate(candidate) + maxOutputTokens <= contextWindow);
     if (!context) throw new Error('ADENA_CONTEXT_LIMIT: Current request and tool results exceed the model context.');
+    if (context.length < messages.length) onContextCompacted?.((messages.length - context.length) / 2);
     const inputTokenUpperBound = estimate(context);
     const limit = run.beginStep(maxOutputTokens, inputTokenUpperBound);
     if (limit === undefined) throw new Error('ADENA_RUN_CANNOT_START_STEP');
