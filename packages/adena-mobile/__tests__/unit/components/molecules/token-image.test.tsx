@@ -34,4 +34,13 @@ describe('TokenImage', () => {
     await render(<TokenImage symbol='' />);
     expect(screen.queryByText(/./)).toBeNull();
   });
+
+  it('tries a new image URL after the previous one failed', async () => {
+    const view = await render(<TokenImage symbol='GNS' imageUrl='https://x.io/a.svg' />);
+
+    await fireEvent(screen.getByTestId('svg-uri'), 'error');
+    expect(screen.queryByTestId('svg-uri')).toBeNull();
+    await view.rerender(<TokenImage symbol='GNS' imageUrl='https://x.io/b.svg' />);
+    expect(screen.getByTestId('svg-uri').props.uri).toBe('https://x.io/b.svg');
+  });
 });

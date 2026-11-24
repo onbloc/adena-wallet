@@ -147,6 +147,12 @@ importers:
       '@react-native/babel-preset':
         specifier: 0.88.1
         version: 0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1)
+      '@react-native/codegen':
+        specifier: 0.88.1
+        version: 0.88.1(@babel/core@7.29.13(supports-color@8.1.1))
+      '@react-native/gradle-plugin':
+        specifier: 0.88.1
+        version: 0.88.1
       '@react-native/jest-preset':
         specifier: 0.88.1
         version: 0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(react@19.3.0)(supports-color@8.1.1)
@@ -186,6 +192,9 @@ importers:
       eslint-plugin-simple-import-sort:
         specifier: 14.0.0
         version: 14.0.0(eslint@10.14.0(supports-color@8.1.1))
+      hermes-compiler:
+        specifier: 260318099.0.5
+        version: 260318099.0.5
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@26.6.6)(supports-color@8.1.1)

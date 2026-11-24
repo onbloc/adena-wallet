@@ -18,7 +18,8 @@ export interface TokenImageProps {
 
 // Bundled icon → remote image → monogram fallback.
 export const TokenImage = ({ symbol, localIcon, imageUrl, size = 32 }: TokenImageProps): ReactElement => {
-  const [failed, setFailed] = useState(false);
+  // Failure belongs to one source; keyed elements remount per URI so an old element cannot report late errors.
+  const [failedSource, setFailedSource] = useState<string | null | undefined>(null);
   const frame = { width: size, height: size, borderRadius: radius.circle };
 
   if (localIcon) {
@@ -27,22 +28,22 @@ export const TokenImage = ({ symbol, localIcon, imageUrl, size = 32 }: TokenImag
     return <Icon width={size} height={size} />;
   }
 
-  const source = failed ? { kind: ImageSourceKind.NONE } : resolveImageSource(imageUrl);
+  const source = failedSource !== null && failedSource === imageUrl ? { kind: ImageSourceKind.NONE } : resolveImageSource(imageUrl);
 
-  const handleError = (): void => setFailed(true);
+  const handleError = (): void => setFailedSource(imageUrl);
 
   if (source.kind === ImageSourceKind.SVG_URI) {
     return (
       <View style={[styles.clip, frame]}>
-        <SvgUri uri={source.uri} width={size} height={size} onError={handleError} />
+        <SvgUri key={source.uri} uri={source.uri} width={size} height={size} onError={handleError} />
       </View>
     );
   }
 
-  const handleImageError = (): void => setFailed(true);
+  const handleImageError = (): void => setFailedSource(imageUrl);
 
   if (source.kind === ImageSourceKind.RASTER) {
-    return <Image source={{ uri: source.uri }} style={frame} onError={handleImageError} accessibilityIgnoresInvertColors />;
+    return <Image key={source.uri} source={{ uri: source.uri }} style={frame} onError={handleImageError} accessibilityIgnoresInvertColors />;
   }
 
   if (!symbol) {

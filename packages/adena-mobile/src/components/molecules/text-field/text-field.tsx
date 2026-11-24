@@ -5,7 +5,8 @@ import { colors } from '../../../theme';
 import { Icon, IconButton, IconName, Text } from '../../atoms';
 import { styles } from './text-field.styles';
 
-export interface TextFieldProps extends Omit<TextInputProps, 'style' | 'editable'> {
+// `secure` is the only masking API; the native `secureTextEntry` is not accepted so it cannot be overridden silently.
+export interface TextFieldProps extends Omit<TextInputProps, 'style' | 'editable' | 'secureTextEntry'> {
   label: string;
   helper?: string;
   error?: string;

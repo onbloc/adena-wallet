@@ -55,4 +55,20 @@ describe('PasswordSheet', () => {
     await fireEvent.press(closers[0]);
     expect(sheet.onClose).not.toHaveBeenCalled();
   });
+
+  it('guards Return like the button: no empty password and no second submission', async () => {
+    const empty = props();
+
+    await renderSheet(empty);
+    await fireEvent(screen.getByTestId('password-sheet-input'), 'submitEditing');
+    expect(empty.onConfirm).not.toHaveBeenCalled();
+    screen.unmount();
+
+    const busy = props({ password: 'correct horse battery', submitting: true });
+
+    await renderSheet(busy);
+    await fireEvent(screen.getByTestId('password-sheet-input'), 'submitEditing');
+    expect(busy.onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByTestId('password-sheet-input').props.editable).toBe(false);
+  });
 });
