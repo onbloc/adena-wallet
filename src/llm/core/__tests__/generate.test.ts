@@ -1,19 +1,8 @@
+import { tool } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
+import { z } from 'zod';
 
-import { fakeOnblocMcp } from '../../../harness/mcp/testing/fakeOnblocMcp';
-import { createWalletTools } from '../../../agent/wallet/tools';
-import {
-  ApprovalPolicy,
-  ToolName,
-  TokenSymbol,
-  WalletErrorCode,
-  WalletStatus,
-} from '../../../agent/wallet/constants';
-import { autoApproval } from '../../../mock/wallet/approval';
-import { ACTIVE_ADDRESS, FIXTURE } from '../../../mock/wallet/fixture';
-import { MockWalletSdk } from '../../../mock/wallet/mockWalletSdk';
 import { generate, GenerateEventType, type GenerateEvent } from '../generate';
-import { withCompletedToolCalls } from '../../../agent/run';
 
 type Part = Record<string, unknown>;
 
@@ -58,11 +47,14 @@ const modelFrom = (parts: Part[], warnings: Part[] = []) =>
     }),
   });
 
-const collect = async (events: AsyncGenerator<GenerateEvent>) => {
+// Step markers are checked on their own; the other tests read the content events.
+const collectAll = async (events: AsyncGenerator<GenerateEvent>) => {
   const out: GenerateEvent[] = [];
   for await (const event of events) out.push(event);
   return out;
 };
+const collect = async (events: AsyncGenerator<GenerateEvent>) =>
+  (await collectAll(events)).filter((event) => event.type !== GenerateEventType.StepStart);
 
 describe('generate', () => {
   it('separates reasoning from text and computes metrics', async () => {
@@ -217,7 +209,7 @@ describe('generate', () => {
       if (event.type === GenerateEventType.Text) abort.abort();
     }
 
-    expect(events[0]).toEqual({ type: GenerateEventType.Text, delta: 'partial' });
+    expect(events[1]).toEqual({ type: GenerateEventType.Text, delta: 'partial' });
     expect(events[events.length - 1]).toMatchObject({
       type: GenerateEventType.Done,
       aborted: true,
@@ -268,287 +260,121 @@ describe('generate with tools', () => {
       })),
     });
 
-  it('discovers Onbloc tools and injects the configured address before executing', async () => {
-    const account = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
-    const name = 'get_native_balance';
-    const calls: unknown[] = [];
-    const fetcher: typeof fetch = async (_url, init) => {
-      if (init?.method !== 'POST') return new Response(null, { status: 405 });
-      const request = JSON.parse(String(init.body));
-      if (request.id === undefined) return new Response(null, { status: 202 });
-      let result;
-      switch (request.method) {
-        case 'initialize':
-          result = { protocolVersion: '2025-11-25', capabilities: { tools: {} }, serverInfo: { name: 'onbloc', version: '1' } };
-          break;
-        case 'tools/list':
-          result = { tools: [{ name, description: 'Get GNOT', inputSchema: { type: 'object', properties: { address: { type: 'string' } },
-            required: ['address'], additionalProperties: false }, annotations: { readOnlyHint: true } }] };
-          break;
-        case 'tools/call':
-          calls.push(request.params);
-          result = { content: [], structuredContent: { address: account, denom: 'ugnot', balance: '42000000' } };
-          break;
-        default:
-          throw new Error(`Unexpected method ${request.method}`);
-      }
-      return new Response(JSON.stringify({ jsonrpc: '2.0', id: request.id, result }), {
-        headers: { 'content-type': 'application/json' },
-      });
+  // `lookup` needs a string; `fail` always throws. `ran` records what executed.
+  const setup = () => {
+    const ran: string[] = [];
+    const tools = {
+      lookup: tool({
+        description: 'Looks a key up',
+        inputSchema: z.object({ key: z.string() }),
+        execute: async ({ key }) => {
+          ran.push(key);
+          return { value: key.toUpperCase() };
+        },
+      }),
+      fail: tool({
+        description: 'Always fails',
+        inputSchema: z.object({}),
+        execute: async (): Promise<string> => {
+          throw new Error('boom');
+        },
+      }),
     };
-    const model = new MockLanguageModelV4({
-      doStream: async () => { throw new Error('Native stream would emit a partial { argument'); },
-      doGenerate: [
-        { content: [{ type: 'tool-call', toolCallId: 'native', toolName: name, input: '{}' }],
-          finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage: usage(5), warnings: [] },
-        { content: [{ type: 'text', text: '42 GNOT' }],
-          finishReason: { unified: 'stop', raw: 'stop' }, usage: usage(3), warnings: [] },
-      ],
-    });
-    const events = await collect(generate(withCompletedToolCalls(model), { prompt: 'My balance', onbloc: {
-      endpoint: 'https://example.test/mcp', account, fetcher,
-    } }));
-    expect(calls).toEqual([{ name, arguments: { address: account } }]);
-    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: '42 GNOT' });
-    expect(JSON.stringify(model.doGenerateCalls[1].prompt)).toContain('42000000');
-    expect(events.filter(event => event.type === GenerateEventType.ToolCall)).toEqual([
-      expect.objectContaining({ name, input: {}, invalid: false }),
-    ]);
-  });
-
-  describe('Onbloc reads with mock wallet actions', () => {
-    const account = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
-    const step = (content: unknown[], unified: 'tool-calls' | 'stop') => ({
-      content: content as never,
-      finishReason: { unified, raw: unified },
-      usage: usage(5),
-      warnings: [],
-    });
-    const call = (toolName: string, input: unknown) =>
-      step([{ type: 'tool-call', toolCallId: toolName, toolName, input: JSON.stringify(input) }], 'tool-calls');
-    const answer = (value: string) => step([{ type: 'text', text: value }], 'stop');
-    const send = call(ToolName.Transfer, { to: FIXTURE.recipient, amount: '1', token: TokenSymbol.Gnot });
-
-    const setup = (steps: ReturnType<typeof step>[], policy: ApprovalPolicy = ApprovalPolicy.Approve) => {
-      const { fetcher } = fakeOnblocMcp([
-        { name: 'get_native_balance', output: { address: account, denom: 'ugnot', balance: '10000000' } },
-      ]);
-      const sdk = new MockWalletSdk({
-        requestApproval: autoApproval(policy),
-        accounts: [{ name: 'me', address: account, balances: { GNOT: '10', GNS: '0' } }],
-      });
-      const model = new MockLanguageModelV4({
-        doStream: async () => { throw new Error('Native stream would emit a partial { argument'); },
-        doGenerate: steps,
-      });
-      const events = collect(generate(withCompletedToolCalls(model), {
-        prompt: 'go',
-        onbloc: { endpoint: 'https://example.test/mcp', account, fetcher },
-        tools: createWalletTools({ sdk, activeAddress: account, contacts: FIXTURE.contacts }),
-      }));
-      return { sdk, events };
-    };
-    const results = (events: GenerateEvent[]) =>
-      events.filter((event) => event.type === GenerateEventType.ToolResult);
-
-    it('reads through Onbloc and transfers on the mock wallet in one run', async () => {
-      const { sdk, events: pending } = setup([call('get_native_balance', {}), send, answer('Sent 1 GNOT')]);
-
-      const events = await pending;
-
-      expect(results(events)).toEqual([
-        expect.objectContaining({ name: 'get_native_balance', output: expect.objectContaining({ kind: 'result' }) }),
-        expect.objectContaining({ name: ToolName.Transfer, output: expect.objectContaining({ status: WalletStatus.Signed }) }),
-      ]);
-      expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'Sent 1 GNOT' });
-      expect(await sdk.getBalance(account)).toMatchObject({ GNOT: '9' });
-      const done = events[events.length - 1];
-      expect(done.type === GenerateEventType.Done && done.messages.length).toBeGreaterThan(0);
-    });
-
-    it('keeps the model answer when only a wallet action ran', async () => {
-      const { events } = setup([send, answer('Done')]);
-
-      expect(await events).toContainEqual({ type: GenerateEventType.Text, delta: 'Done' });
-    });
-
-    it('does not treat a rejected transfer as a failed lookup', async () => {
-      const { sdk, events: pending } = setup([send, answer('Cancelled')], ApprovalPolicy.Reject);
-
-      const events = await pending;
-
-      expect(results(events)).toEqual([
-        expect.objectContaining({ output: expect.objectContaining({ status: WalletStatus.Rejected }) }),
-      ]);
-      expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'Cancelled' });
-      expect(await sdk.getBalance(account)).toMatchObject({ GNOT: '10' });
-    });
-
-    it('still replaces an answer that rests on no lookup and no action', async () => {
-      const { events } = setup([answer('You have 5 GNOT')]);
-
-      expect(await events).toContainEqual({
-        type: GenerateEventType.Text,
-        delta: 'No Onbloc lookup returned verified data.',
-      });
-    });
-
-    it('reports a failed lookup even when a wallet action ran', async () => {
-      const { events } = setup([send, call('no_such_tool', {}), answer('All good')]);
-
-      expect(await events).toContainEqual({
-        type: GenerateEventType.Text,
-        delta: 'Some Onbloc lookups failed. Review the individual tool results.',
-      });
-    });
-  });
-
-  const newSdk = (policy: ApprovalPolicy = ApprovalPolicy.Approve) =>
-    new MockWalletSdk({ requestApproval: autoApproval(policy) });
-
-  const run = async (model: MockLanguageModelV4, sdk: MockWalletSdk, maxSteps?: number) =>
-    collect(
-      generate(model, {
-        prompt: 'go',
-        tools: createWalletTools({ sdk, activeAddress: ACTIVE_ADDRESS, contacts: FIXTURE.contacts }),
-        maxSteps,
-      })
-    );
-
-  const gnot = TokenSymbol.Gnot;
-  const recipient = FIXTURE.recipient;
+    return { ran, tools };
+  };
+  const answer = [...text('done'), finish(3)];
   const callOf = (events: GenerateEvent[]) =>
     events.find((e) => e.type === GenerateEventType.ToolCall);
 
-  it('runs the tool against the wallet and feeds the result to a second model call', async () => {
-    const sdk = newSdk();
-    const model = stepsModel([
-      toolCall(ToolName.GetApprovals, {}),
-      [...text('You have no approvals'), finish(8)],
-    ]);
+  it('runs the tool and feeds the result to a second model call', async () => {
+    const { ran, tools } = setup();
+    const model = stepsModel([toolCall('lookup', { key: 'abc' }), answer]);
 
-    const events = await run(model, sdk, 3);
+    const events = await collect(generate(model, { prompt: 'go', tools, maxSteps: 3 }));
 
     expect(events.filter((e) => e.type !== GenerateEventType.Done)).toEqual([
-      {
-        type: GenerateEventType.ToolCall,
-        id: 'c1',
-        name: ToolName.GetApprovals,
-        input: {},
-        invalid: false,
-        error: undefined,
-      },
-      {
-        type: GenerateEventType.ToolResult,
-        id: 'c1',
-        name: ToolName.GetApprovals,
-        output: { status: WalletStatus.Ok, address: ACTIVE_ADDRESS, approvals: [] },
-      },
-      { type: GenerateEventType.Text, delta: 'You have no approvals' },
+      { type: GenerateEventType.ToolCall, id: 'c1', name: 'lookup', input: { key: 'abc' }, invalid: false, error: undefined },
+      { type: GenerateEventType.ToolResult, id: 'c1', name: 'lookup', output: { value: 'ABC' } },
+      { type: GenerateEventType.Text, delta: 'done' },
     ]);
+    expect(ran).toEqual(['abc']);
     expect(model.doStreamCalls).toHaveLength(2);
-  });
-
-  it('chains get_approvals and transfer: the transfer is signed in the popup and moves the funds', async () => {
-    const sdk = newSdk();
-    const model = stepsModel([
-      toolCall(ToolName.GetApprovals, {}, 'a'),
-      toolCall(ToolName.Transfer, { to: recipient, amount: '5', token: gnot }, 'b'),
-      [...text('Sent'), finish(4)],
-    ]);
-
-    const events = await run(model, sdk, 5);
-
-    expect(
-      events.find((e) => e.type === GenerateEventType.ToolResult && e.id === 'b')
-    ).toMatchObject({
-      output: expect.objectContaining({ status: WalletStatus.Signed }),
-    });
-    expect(sdk.approvals).toHaveLength(1);
-    expect(await sdk.getBalance(ACTIVE_ADDRESS)).toMatchObject({ GNOT: '5' });
-    expect(await sdk.getBalance(recipient)).toMatchObject({ GNOT: '5' });
+    expect(JSON.stringify(model.doStreamCalls[1].prompt)).toContain('ABC');
   });
 
   it('stops after one model call by default even when a tool ran', async () => {
-    const model = stepsModel([toolCall(ToolName.GetApprovals, {})]);
+    const { tools } = setup();
+    const model = stepsModel([toolCall('lookup', { key: 'abc' })]);
 
-    const events = await run(model, newSdk());
+    const events = await collect(generate(model, { prompt: 'go', tools }));
 
     expect(events.some((e) => e.type === GenerateEventType.ToolResult)).toBe(true);
     expect(model.doStreamCalls).toHaveLength(1);
   });
 
   it('caps model calls at maxSteps', async () => {
+    const { tools } = setup();
     const model = stepsModel([
-      toolCall(ToolName.GetApprovals, {}, 'a'),
-      toolCall(ToolName.GetApprovals, {}, 'b'),
-      toolCall(ToolName.GetApprovals, {}, 'c'),
+      toolCall('lookup', { key: 'a' }, 'a'),
+      toolCall('lookup', { key: 'b' }, 'b'),
+      toolCall('lookup', { key: 'c' }, 'c'),
     ]);
 
-    await run(model, newSdk(), 2);
+    await collect(generate(model, { prompt: 'go', tools, maxSteps: 2 }));
 
     expect(model.doStreamCalls).toHaveLength(2);
   });
 
   it('flags arguments that fail schema validation and does not execute them', async () => {
-    const sdk = newSdk();
-    // amount must be a string
-    const model = stepsModel([
-      toolCall(ToolName.Transfer, { to: recipient, amount: 0.5, token: gnot }),
-    ]);
+    const { ran, tools } = setup();
+    // key must be a string
+    const model = stepsModel([toolCall('lookup', { key: 5 })]);
 
-    const events = await run(model, sdk);
+    const events = await collect(generate(model, { prompt: 'go', tools }));
 
     const call = callOf(events);
-    expect(call).toMatchObject({ name: ToolName.Transfer, invalid: true });
+    expect(call).toMatchObject({ name: 'lookup', invalid: true });
     expect(call?.type === GenerateEventType.ToolCall && call.error).toBeTruthy();
-    expect(sdk.approvals).toEqual([]);
-    expect(await sdk.getBalance(ACTIVE_ADDRESS)).toMatchObject({ GNOT: '10' });
+    expect(ran).toEqual([]);
   });
 
   it('flags calls to tools that do not exist', async () => {
-    const sdk = newSdk();
+    const { ran, tools } = setup();
     const model = stepsModel([toolCall('burn_everything', {})]);
 
-    const events = await run(model, sdk);
+    const events = await collect(generate(model, { prompt: 'go', tools }));
 
     expect(callOf(events)).toMatchObject({ name: 'burn_everything', invalid: true });
-    expect(sdk.approvals).toEqual([]);
+    expect(ran).toEqual([]);
   });
 
   it('flags unparsable argument JSON', async () => {
-    const model = stepsModel([toolCall(ToolName.GetApprovals, '{"x": "g1')]);
+    const { tools } = setup();
+    const model = stepsModel([toolCall('lookup', '{"key": "g1')]);
 
-    const events = await run(model, newSdk());
+    const events = await collect(generate(model, { prompt: 'go', tools }));
 
-    expect(callOf(events)).toMatchObject({ name: ToolName.GetApprovals, invalid: true });
+    expect(callOf(events)).toMatchObject({ name: 'lookup', invalid: true });
   });
 
-  it('passes well-formed but wrong values through so the wallet can refuse them', async () => {
-    const sdk = newSdk();
-    const model = stepsModel([
-      toolCall(ToolName.Transfer, { to: 'bob', amount: '1', token: gnot }),
-    ]);
+  it('reports a tool that throws as a tool error on a valid call', async () => {
+    const { tools } = setup();
+    const model = stepsModel([toolCall('fail', {})]);
 
-    const events = await run(model, sdk);
+    const events = await collect(generate(model, { prompt: 'go', tools }));
 
-    expect(callOf(events)).toMatchObject({ invalid: false });
-    expect(events.find((e) => e.type === GenerateEventType.ToolResult)).toMatchObject({
-      output: expect.objectContaining({
-        status: WalletStatus.Error,
-        code: WalletErrorCode.InvalidAddress,
-      }),
+    expect(callOf(events)).toMatchObject({ name: 'fail', invalid: false });
+    expect(events.find((e) => e.type === GenerateEventType.ToolError)).toMatchObject({
+      name: 'fail',
+      error: 'boom',
     });
-    expect(sdk.approvals).toEqual([]);
   });
 
   it('returns the tool exchange as messages: call, result, then the answer', async () => {
-    const model = stepsModel([
-      toolCall(ToolName.GetApprovals, {}),
-      [...text('You have no approvals'), finish(8)],
-    ]);
+    const { tools } = setup();
+    const model = stepsModel([toolCall('lookup', { key: 'abc' }), answer]);
 
-    const events = await run(model, newSdk(), 3);
+    const events = await collect(generate(model, { prompt: 'go', tools, maxSteps: 3 }));
 
     const done = events[events.length - 1];
     expect(done.type === GenerateEventType.Done && done.messages.map((m) => m.role)).toEqual([
@@ -556,5 +382,63 @@ describe('generate with tools', () => {
       'tool',
       'assistant',
     ]);
+  });
+
+  it('marks the start of each model call', async () => {
+    const { tools } = setup();
+    const model = stepsModel([toolCall('lookup', { key: 'abc' }), answer]);
+
+    const events = await collectAll(generate(model, { prompt: 'go', tools, maxSteps: 3 }));
+
+    expect(events.filter((e) => e.type === GenerateEventType.StepStart)).toHaveLength(2);
+  });
+
+  describe('with a tool loop from the layer above', () => {
+    it('runs the loop tools and closes it when the generation ends', async () => {
+      const close = jest.fn();
+      const { ran, tools } = setup();
+      const model = stepsModel([toolCall('lookup', { key: 'abc' }), answer]);
+
+      const events = await collect(
+        generate(model, { prompt: 'go', loop: { options: { tools, stopWhen: () => false }, close } })
+      );
+
+      expect(events.some((e) => e.type === GenerateEventType.ToolResult)).toBe(true);
+      expect(ran).toEqual(['abc']);
+      expect(model.doStreamCalls).toHaveLength(2);
+      expect(close).toHaveBeenCalledTimes(1);
+    });
+
+    it('closes the loop when the model call fails', async () => {
+      const close = jest.fn();
+      const model = new MockLanguageModelV4({
+        doStream: async () => {
+          throw new Error('boom');
+        },
+      });
+
+      await expect(
+        collect(generate(model, { prompt: 'go', loop: { options: {}, close } }))
+      ).rejects.toThrow('boom');
+      expect(close).toHaveBeenCalledTimes(1);
+    });
+
+    it("treats the loop's abort signal as a stop, not a failure", async () => {
+      const controller = new AbortController();
+      controller.abort();
+      const close = jest.fn();
+      const model = modelFrom([...text('x'), finish(1)]);
+
+      const events = await collect(
+        generate(model, { prompt: 'go', loop: { options: { abortSignal: controller.signal }, close } })
+      );
+
+      expect(events[events.length - 1]).toMatchObject({
+        type: GenerateEventType.Done,
+        aborted: true,
+        messages: [],
+      });
+      expect(close).toHaveBeenCalledTimes(1);
+    });
   });
 });

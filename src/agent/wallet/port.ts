@@ -79,17 +79,21 @@ export class WalletError extends Error {
 }
 
 /**
- * What the LLM layer may call. Keys never cross this boundary: nothing here
- * returns, accepts or logs a private key.
+ * What the agent needs from a wallet. A wallet app implements this over its own SDK. Keys never
+ * cross this boundary: nothing here returns, accepts or logs a private key. Optional methods
+ * are optional features: a tool is offered to the model only if the wallet implements its method.
  */
 export interface WalletSdk {
-  getBalance(address: string): Promise<Balances>;
+  /** The account the user acts as. Read for every run, so a switched account is picked up. */
+  getActiveAddress(): Promise<string>;
+  /** The user's address book. The model may name a contact instead of writing its address. */
+  getContacts?(): Promise<Contact[]>;
   /** Builds the message to sign. Moves no funds. */
   transfer(params: TransferParams): Promise<TransferMessage>;
-  /** Builds the allowance message to sign. Gives nothing yet. */
-  approve(params: AllowanceParams): Promise<AllowanceMessage>;
   /** Asks the user to approve, then signs. A signed transfer moves the funds. */
   sign(request: SignRequest, options?: SignOptions): Promise<SignResult>;
+  /** Builds the allowance message to sign. Gives nothing yet. */
+  approve?(params: AllowanceParams): Promise<AllowanceMessage>;
   /** The allowances an account has given, oldest first. */
-  getAllowances(owner: string): Promise<Allowance[]>;
+  getAllowances?(owner: string): Promise<Allowance[]>;
 }

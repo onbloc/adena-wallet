@@ -1,5 +1,4 @@
-import { gnoPublicAddress } from '../../harness/mcp/gno';
-import { parseOnblocEndpoint } from '../../harness/mcp/onbloc-endpoint';
+import { gnoPublicAddress, parseOnblocEndpoint } from '../../harness/mcp';
 
 export const DEFAULT_ONBLOC_MCP_URL = 'https://dev-gnoscan-v2.api.onbloc.xyz/mcp';
 export const DEFAULT_ONBLOC_ACCOUNT = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';

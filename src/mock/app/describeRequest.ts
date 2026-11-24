@@ -1,5 +1,5 @@
-import { SignRequestType } from '../../agent/wallet/constants';
-import type { SignRequest } from '../../agent/wallet/port';
+import { SignRequestType } from '../../agent';
+import type { SignRequest } from '../../agent';
 
 export type RequestSummary = {
   title: string;

@@ -1,7 +1,6 @@
 import { asSchema, jsonSchema, tool } from 'ai';
 import type { GenerateTextOnStepEndCallback, Instructions, JSONSchema7, LanguageModel, ModelMessage, PrepareStepFunction, StopCondition, ToolSet } from 'ai';
-import type { HarnessRun } from '../harness/core/dispatch';
-import type { Decision } from '../harness/core/tools';
+import type { Decision, HarnessRun } from '../harness/core';
 
 export type Interruption = Extract<Decision, { kind: 'clarify' | 'approval-required' }>;
 export type AiSdkBudget =

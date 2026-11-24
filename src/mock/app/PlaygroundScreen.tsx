@@ -14,21 +14,25 @@ import {
   type ScrollViewInstance,
 } from 'react-native';
 
-import type { CallRecord } from '../../llm/core/calls';
+import { AIAgent, type Balances } from '../../agent';
+import { Harness } from '../../harness/core';
+import { createOnblocToolSource } from '../../harness/mcp';
 import {
   DEFAULT_GENERATE_SETTINGS,
-  DEFAULT_MODEL_ID,
-  MAX_OUTPUT_TOKENS_RANGE,
   TEMPERATURE_RANGE,
-} from '../../llm/core/config';
-import type { RuntimeStatus } from '../../llm/device/runtime';
-import { useLlm } from '../../llm/device/useLlm';
-import { createWalletTools } from '../../agent/wallet/tools';
-import { createOnblocMockWallet } from '../wallet/onblocWallet';
-import { buildWalletPrompt } from '../../agent/prompts';
+  type CallRecord,
+  type GenerateSettings,
+} from '../../llm/core';
+import {
+  DEFAULT_MODEL_ID,
+  LLMOnDevice,
+  MAX_OUTPUT_TOKENS_RANGE,
+  useLlm,
+  type RuntimeStatus,
+} from '../../llm/device';
 import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk, WalletState } from '../wallet/mockWalletSdk';
-import type { Balances } from '../../agent/wallet/port';
+import { createOnblocMockWallet } from '../wallet/onblocWallet';
 import { ApprovalModal } from './ApprovalModal';
 import { useApprovalPrompt } from './useApprovalPrompt';
 import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL, resolveOnblocSettings } from './onblocSettings';
@@ -71,8 +75,11 @@ const compact = (text: string, max: number) => {
 
 const EMPTY_WALLET: WalletState = { balances: {}, allowances: {} };
 
+// One model for the app: a loaded model holds its memory.
+const llm = new LLMOnDevice();
+
 export default function PlaygroundScreen() {
-  const { status, run, start, stop, load, unload, remove } = useLlm();
+  const { status, run, start, stop, load, unload, remove } = useLlm(llm);
   const approvalPrompt = useApprovalPrompt();
   const [prompt, setPrompt] = useState('');
   const [temperature, setTemperature] = useState(
@@ -182,26 +189,23 @@ export default function PlaygroundScreen() {
     setSubmittedPrompt(prompt);
     // The prompt is now the user message in the chat: clear the composer.
     setPrompt('');
-    await start({
+    const settings: GenerateSettings = {
       prompt,
-      // No Onbloc settings: a plain chat without a system prompt.
-      system: !onbloc
-        ? undefined
-        : onblocWallet
-          ? buildWalletPrompt({ contacts: FIXTURE.contacts })
-          : 'Wallet tools are disabled. Do not claim to have checked wallet data.',
+      // With the wallet on the agent brings its own system prompt; with no Onbloc settings it is a plain chat.
+      system:
+        onbloc && !onblocWallet
+          ? 'Wallet tools are disabled. Do not claim to have checked wallet data.'
+          : undefined,
       temperature: temperatureValue,
       maxOutputTokens: maxTokensValue,
       reasoning: thinking ? 'provider-default' : 'none',
-      ...(onbloc &&
-        onblocWallet && {
-          onbloc,
-          tools: createWalletTools({
-            sdk: onblocWallet,
-            activeAddress: onbloc.account,
-            contacts: FIXTURE.contacts,
-          }),
-        }),
+    };
+    await start((signal) => {
+      if (!onbloc || !onblocWallet) return llm.generate(settings, { signal });
+      // The agent reads through Onbloc, acts on the wallet, stays within the harness budget and
+      // checks its answer against what the tools returned.
+      const harness = new Harness({ toolSources: [createOnblocToolSource(onbloc)] });
+      return new AIAgent({ llm, harness, wallet: onblocWallet }).run(settings, { signal });
     });
     if (onbloc && onblocWallet) setWalletView({ key: onbloc.account, state: onblocWallet.inspect() });
   };

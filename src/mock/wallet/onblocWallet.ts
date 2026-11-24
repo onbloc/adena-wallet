@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-import { createOnblocReader, type OnblocMcpConfig } from '../../harness/mcp/onbloc-mcp';
+import { createOnblocReader, type OnblocMcpConfig } from '../../harness/mcp';
 import { fromBaseUnits, normalizeDecimal } from './amount';
-import { TokenSymbol } from '../../agent/wallet/constants';
+import { TokenSymbol } from '../../agent';
 import { MockWalletSdk } from './mockWalletSdk';
-import type { ApprovalHandler, Balances } from '../../agent/wallet/port';
+import type { ApprovalHandler, Balances } from '../../agent';
 
 // The mock wallet starts from the account's real api-v3 balances; after that the two
 // are allowed to drift apart (transfers only move mock balances).

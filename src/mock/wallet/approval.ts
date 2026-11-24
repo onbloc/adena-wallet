@@ -1,5 +1,5 @@
-import { ApprovalPolicy } from '../../agent/wallet/constants';
-import type { ApprovalHandler } from '../../agent/wallet/port';
+import { ApprovalPolicy } from '../../agent';
+import type { ApprovalHandler } from '../../agent';
 
 /** A simulated user for tests and eval: always approves, or always rejects. */
 export const autoApproval =

@@ -1,20 +1,21 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { CallToolResultSchema, ListToolsResultSchema } from '@modelcontextprotocol/sdk/types.js';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
 import { z } from 'zod';
 import { parseOnblocEndpoint } from './onbloc-endpoint';
-import { GNO_MAINNET_CHAIN } from './gno';
-import type { Decision } from '../core/tools';
+import { gnoPublicAddress, GNO_MAINNET_CHAIN } from './gno';
+import type { RemoteTool, ToolSource } from '../core';
 
 /** Supply the approved mainnet endpoint from trusted application configuration, not user input. */
 export type OnblocMcpConfig = Readonly<{ endpoint: string; fetcher?: typeof fetch; allowLoopbackHttp?: true }>;
 
-export type RemoteTool = Readonly<{
-  definition: { name: string; description: string; jsonSchema: Tool['inputSchema'] };
-  execute(raw: unknown): Promise<Decision>;
-}>;
+/** The harness tool source for an Onbloc MCP: mainnet reads for a valid public address. */
+export function createOnblocToolSource(config: OnblocMcpConfig): ToolSource {
+  const read = createOnblocReader(config);
+  return async ({ account, chainId }, signal) =>
+    chainId === GNO_MAINNET_CHAIN && gnoPublicAddress.safeParse(account).success ? read(account, signal) : new Map();
+}
 
 const record = z.record(z.string(), z.unknown());
 

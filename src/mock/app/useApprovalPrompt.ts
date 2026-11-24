@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import type { ApprovalHandler, SignRequest } from '../../agent/wallet/port';
+import type { ApprovalHandler, SignRequest } from '../../agent';
 
 type Pending = { request: SignRequest; settle: (approved: boolean) => void };
 

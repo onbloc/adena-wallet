@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
-import { applyToolEvent, type CallRecord } from '../core/calls';
 import {
-  generate,
+  applyToolEvent,
   GenerateEventType,
-  type GenerateSettings,
+  type CallRecord,
+  type GenerateEvent,
   type Metrics,
-} from '../core/generate';
-import { withCompletedToolCalls } from '../../agent/run';
-import { llamaRuntime } from './runtime';
+} from '../core';
+import type { LLMOnDevice } from './llmOnDevice';
 
 export type RunState = {
   running: boolean;
@@ -33,24 +32,20 @@ const INITIAL_RUN: RunState = {
   error: null,
 };
 
-/** Runtime status + one generation at a time, for the UI. */
-export function useLlm() {
-  const status = useSyncExternalStore(
-    llamaRuntime.subscribe,
-    () => llamaRuntime.status
-  );
+/** Produces the events of one generation: `llm.generate`, or an agent that wraps it. */
+export type GenerationSource = (signal: AbortSignal) => AsyncIterable<GenerateEvent>;
+
+/** The model's status and one generation at a time, for the UI. */
+export function useLlm(llm: LLMOnDevice) {
+  const status = useSyncExternalStore(llm.subscribe, () => llm.status);
   const [run, setRun] = useState<RunState>(INITIAL_RUN);
   const controllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => controllerRef.current?.abort(), []);
 
-  const start = useCallback(async (options: GenerateSettings) => {
-    const model = llamaRuntime.model;
+  /** Runs one generation. Aborting its signal (see `stop`) ends it. */
+  const start = useCallback(async (source: GenerationSource) => {
     if (controllerRef.current) return;
-    if (!model) {
-      setRun({ ...INITIAL_RUN, error: 'Model is not loaded' });
-      return;
-    }
 
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -59,11 +54,7 @@ export function useLlm() {
     setRun({ ...INITIAL_RUN, running: true });
 
     try {
-      const generationModel = options.onbloc ? withCompletedToolCalls(model) : model;
-      for await (const event of generate(generationModel, {
-        ...options,
-        signal: controller.signal,
-      })) {
+      for await (const event of source(controller.signal)) {
         switch (event.type) {
           case GenerateEventType.Text:
             text += event.delta;
@@ -81,6 +72,8 @@ export function useLlm() {
               finishReason: event.finishReason,
               warnings: event.warnings,
             }));
+            break;
+          case GenerateEventType.StepStart:
             break;
           default: // tool-call / tool-result / tool-error
             setRun((prev) => ({ ...prev, calls: applyToolEvent(prev.calls, event) }));
@@ -102,8 +95,8 @@ export function useLlm() {
     run,
     start,
     stop,
-    load: llamaRuntime.load.bind(llamaRuntime),
-    unload: llamaRuntime.unload.bind(llamaRuntime),
-    remove: llamaRuntime.remove.bind(llamaRuntime),
+    load: () => llm.load(),
+    unload: () => llm.unload(),
+    remove: () => llm.remove(),
   };
 }

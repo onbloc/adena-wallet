@@ -43,37 +43,59 @@ trust the developer in Settings > General > VPN & Device Management.
 
 ## Structure
 
+Three libraries, each with one main class, and the test-only code on top of them:
+
 ```
-polyfills.js              Web APIs the AI SDK needs (imported first in index.ts)
-src/llm/config.ts         Model ID, context size, default generation settings, MAX_STEPS
-src/llm/runtime.ts        LlamaRuntime: download -> load -> unload/remove, status + load time
-src/llm/generate.ts       Streaming generation + tool calling (multi-step): events, TTFT, tok/s, warnings
-src/llm/calls.ts          Folds tool events into an ordered call list
-src/llm/useLlm.ts         React hook over runtime + generation
-src/wallet/sdk/              Wallet layer (holds the keys): types, MockWalletSdk, fixture, address/token helpers
-src/wallet/adapter/tools.ts  LLM layer: zod tools that call the SDK's public methods only
-src/wallet/onblocWallet.ts   Funds the mock wallet from the account's Onbloc balances
-src/wallet/constants.ts      Enum-like constants (ToolName, TokenSymbol, WalletStatus, ...)
-src/wallet/prompts.ts        System prompt (contacts, rules)
-src/wallet/amount.ts         Decimal strings <-> bigint base units (no floats)
-src/harness/                 Onbloc MCP client and the run budget (steps, tokens, time)
-src/ui/PlaygroundScreen      Model controls, Settings (MCP URL, address, wallet), chat, tool calls, metrics
+polyfills.js                  Web APIs the AI SDK needs (imported first in index.ts)
+src/llm/                      The language model
+  core/                         portable, no React Native: LLM (interface), LLMFromModel (any AI SDK
+                                model), generate (events, TTFT, tok/s, warnings), ToolLoop (the hook
+                                an agent drives the tool loop with), index.ts
+  device/                       LLMOnDevice (llama.rn): load/unload/generate, status for React;
+                                useLlm(llm) hook; runtime.ts, config.ts (model, context size)
+src/harness/                  Bounds and polices a tool-using run
+  core/                         Harness: step/token/time budget, scopes, decisions. No model, no AI SDK
+  mcp/                          tool sources backed by MCP servers (Onbloc), and a fake one for tests
+src/agent/                    AIAgent({ llm, harness, wallet }): the assistant
+  agent.ts, aiSdkBridge.ts      a harness run turned into a ToolLoop for llm.generate
+  answerGuard.ts, prompts.ts    the answer checked against what the tools returned; the system prompt
+  wallet/                       the WalletSdk port, ToolName/status constants, the zod tools
+src/mock/                     Test-only code, nothing above depends on it
+  wallet/                       MockWalletSdk, fixture, tokens, amounts, funding the mock from Onbloc
+  app/                          Playground screen, signing modal, Settings (MCP URL, address)
+  cli/                          make chat (chat.ts), with-server.sh
 ```
+
+```ts
+const llm = new LLMOnDevice();                        // or new LLMFromModel(model) on a desktop
+const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint })] });
+const agent = new AIAgent({ llm, harness, wallet });  // without a wallet it is the LLM alone
+for await (const event of agent.run({ prompt })) { /* text, tool calls, done */ }
+```
+
+Dependencies point down only, and `npm run lint` enforces it: `mock` may use everything; `agent`
+may use `llm/core` and `harness`, not `mock` or `llm/device`; `llm` and `harness` never import
+each other, the agent or the mock; `llm/core` runs without React Native; `harness/core` does not
+know its plugins in `harness/mcp`. Every module is imported through its `index.ts`.
 
 ## Wallet layers and tool calling
 
 ```
-model --tool call--> adapter (src/wallet/adapter)      LLM layer
+model --tool call--> adapter (src/agent/wallet/tools.ts)  agent layer
                        |  injects the user's address, maps wallet refusals to results,
-                       |  and passes a transfer's message on to be signed
-                       v  SDK public methods only: no key ever crosses this line
-                     WalletSdk (src/wallet/sdk)         wallet layer
-                       getBalance(address) -> { GNOT, GNS }
+                       |  turns contact names into addresses, passes a transfer's message on to be signed
+                       v  WalletSdk methods only: no key ever crosses this line
+                     WalletSdk (src/agent/wallet/port.ts)   implemented by the wallet app (the mock: src/mock/wallet)
+                       getActiveAddress() -> address        getContacts?() -> [{ alias, address }]
                        transfer({from,to,amount,token}) -> message (moves nothing)
-                       approve({from,spender,amount,token}) -> message (stores nothing)
-                       getAllowances(owner) -> [{ spender, token, amount }]
                        sign(message) -> asks the user (popup) -> signed | rejected
+                       approve?({from,spender,amount,token}) -> message (stores nothing)
+                       getAllowances?(owner) -> [{ spender, token, amount }]
 ```
+
+`?` methods are optional: the model is offered `approve` and `get_approvals` only if the wallet
+implements them. A wallet app that wants an assistant implements `WalletSdk` over its own SDK and
+passes it to `AIAgent`.
 
 - The model sees `transfer({to,amount,token})`, `approve({spender,amount,token})`,
   `get_approvals()` and `sign_message({message})`, next to the Onbloc read tools (balances,
@@ -142,7 +164,7 @@ read from the Onbloc api-v3 MCP: balances, tokens and transactions come from mai
 signing popup. The mock wallet starts with the address's real GNOT and GNS balances (read once
 when the wallet is created) and then drifts from the chain: a mock transfer changes the mock
 balances only. `/reset` and the app's Reset wallet read the balances again. Defaults are the dev
-endpoint and account in `src/ui/onblocSettings.ts`; for the CLI, `EXPO_PUBLIC_ONBLOC_MCP_URL` /
+endpoint and account in `src/mock/app/onblocSettings.ts`; for the CLI, `EXPO_PUBLIC_ONBLOC_MCP_URL` /
 `EXPO_PUBLIC_ONBLOC_ACCOUNT` override them. Clearing both fields in Settings gives a plain chat
 without the wallet.
 
@@ -159,8 +181,9 @@ without the wallet.
 - Qwen3.5 thinks by default, which adds latency; the **Thinking** switch is off by default
   (`reasoning: 'none'`).
 - `n_ctx` is 8192 (library default 2048). Max output tokens is capped below it. The desktop
-  llama-server (`-c` in `scripts/with-server.sh`) must use the same
-  value to match the phone. Change the model or context size in `src/llm/config.ts`.
+  llama-server (`-c` in `src/mock/cli/with-server.sh`, `SERVER_CONTEXT_TOKENS` in
+  `src/mock/cli/lib/server.ts`) must use the same value to match the phone. Change the model or
+  context size in `src/llm/device/config.ts`.
 
 ## Scripts
 

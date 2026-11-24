@@ -11,22 +11,23 @@ import { createInterface } from 'node:readline/promises';
 
 import type { LanguageModel, ModelMessage } from 'ai';
 
-import { DEFAULT_GENERATE_SETTINGS } from '../../llm/core/config';
-import { generate, GenerateEventType } from '../../llm/core/generate';
-import { gnoPublicAddress } from '../../harness/mcp/gno';
-import type { OnblocRun } from '../../agent/run';
+import { AIAgent, ApprovalPolicy, type ApprovalHandler, type Balances } from '../../agent';
+import { Harness } from '../../harness/core';
+import { createOnblocToolSource, gnoPublicAddress, type OnblocMcpConfig } from '../../harness/mcp';
+import {
+  DEFAULT_GENERATE_SETTINGS,
+  GenerateEventType,
+  LLMFromModel,
+  type GenerateSettings,
+} from '../../llm/core';
 import { describeRequest } from '../app/describeRequest';
 import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL } from '../app/onblocSettings';
-import { createWalletTools } from '../../agent/wallet/tools';
-import { ApprovalPolicy } from '../../agent/wallet/constants';
-import { createOnblocMockWallet } from '../wallet/onblocWallet';
-import { buildWalletPrompt } from '../../agent/prompts';
 import { autoApproval } from '../wallet/approval';
 import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk } from '../wallet/mockWalletSdk';
-import type { ApprovalHandler, Balances } from '../../agent/wallet/port';
+import { createOnblocMockWallet } from '../wallet/onblocWallet';
 import { boundedNumber, parseArgs } from './lib/cli';
-import { connectModel, DEFAULT_MODEL_NAME, DEFAULT_SERVER_URL } from './lib/server';
+import { connectModel, DEFAULT_MODEL_NAME, DEFAULT_SERVER_URL, SERVER_CONTEXT_TOKENS } from './lib/server';
 
 const ASK = 'ask';
 
@@ -52,7 +53,7 @@ type Options = {
   temperature: number;
   maxTokens: number;
   system?: string;
-  onbloc?: OnblocRun;
+  onbloc?: OnblocMcpConfig & { account: string };
 };
 
 function parseOptions(argv: string[]): Options {
@@ -65,7 +66,7 @@ function parseOptions(argv: string[]): Options {
     throw new Error(`--approval must be one of: ${[ASK, ...Object.values(ApprovalPolicy)].join(', ')}`);
   }
   const systemFile = values.get('system-file');
-  let onbloc: OnblocRun | undefined;
+  let onbloc: Options['onbloc'];
   if (flags.has('onbloc')) {
     // Env overrides the app's Settings defaults.
     const endpoint = process.env.EXPO_PUBLIC_ONBLOC_MCP_URL?.trim() || DEFAULT_ONBLOC_MCP_URL;
@@ -104,8 +105,8 @@ function printBalances(balances: Record<string, Balances>, you: string | undefin
   }
 }
 
-/** The conversation so far and, with --onbloc, the mock wallet. */
-type Session = { sdk?: MockWalletSdk; history: ModelMessage[] };
+/** The conversation so far and, with --onbloc, the agent and its mock wallet. */
+type Session = { agent?: AIAgent; sdk?: MockWalletSdk; history: ModelMessage[] };
 
 async function main() {
   const options = parseOptions(process.argv.slice(2));
@@ -162,14 +163,17 @@ async function main() {
         }
       : autoApproval(options.approval === ASK ? ApprovalPolicy.Reject : options.approval);
 
+  // The server's model; with --onbloc an agent reads through Onbloc and acts on a mock wallet.
+  const llm = new LLMFromModel(model, { contextTokens: SERVER_CONTEXT_TOKENS });
   const newSession = async (): Promise<Session> => {
     if (!options.onbloc) return { history: [] };
     console.error('loading balances from Onbloc...');
-    return { sdk: await createOnblocMockWallet({ onbloc: options.onbloc, requestApproval }), history: [] };
+    const sdk = await createOnblocMockWallet({ onbloc: options.onbloc, requestApproval });
+    const harness = new Harness({ toolSources: [createOnblocToolSource(options.onbloc)] });
+    return { sdk, agent: new AIAgent({ llm, harness, wallet: sdk }), history: [] };
   };
   let session = await newSession();
 
-  const system = options.system ?? (options.onbloc ? buildWalletPrompt({ contacts: FIXTURE.contacts }) : undefined);
   let turnAbort: AbortController | null = null;
   rl.on('SIGINT', () => (turnAbort ? turnAbort.abort() : rl.close()));
 
@@ -187,18 +191,16 @@ async function main() {
     };
 
     try {
-      for await (const event of generate(model, {
+      const settings: GenerateSettings = {
         messages,
-        system,
+        system: options.system,
         temperature: options.temperature,
         maxOutputTokens: options.maxTokens,
-        tools:
-          sdk && options.onbloc
-            ? createWalletTools({ sdk, activeAddress: options.onbloc.account, contacts: FIXTURE.contacts })
-            : undefined,
-        onbloc: options.onbloc,
-        signal: controller.signal,
-      })) {
+      };
+      const events = session.agent
+        ? session.agent.run(settings, { signal: controller.signal })
+        : llm.generate(settings, { signal: controller.signal });
+      for await (const event of events) {
         switch (event.type) {
           case GenerateEventType.Text:
             process.stdout.write(event.delta);

@@ -1,4 +1,4 @@
-import { TokenSymbol } from '../../agent/wallet/constants';
+import { TokenSymbol } from '../../agent';
 
 export const TOKEN_SYMBOLS = Object.values(TokenSymbol);
 

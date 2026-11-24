@@ -1,5 +1,5 @@
 import { fakeOnblocMcp } from '../../../harness/mcp/testing/fakeOnblocMcp';
-import { ApprovalPolicy, TokenSymbol } from '../../../agent/wallet/constants';
+import { ApprovalPolicy, TokenSymbol } from '../../../agent';
 import { balancesFromOnbloc, createOnblocMockWallet, fetchOnblocBalances } from '../onblocWallet';
 import { autoApproval } from '../approval';
 import { FIXTURE } from '../fixture';

@@ -5,7 +5,7 @@ import {
   type ModelMessage,
   type ToolSet,
 } from 'ai';
-import { startOnblocRun, type OnblocRun } from '../../agent/run';
+import type { ToolLoop } from './loop';
 
 /** What to answer: one prompt, or a whole conversation. */
 type GenerateInput =
@@ -23,13 +23,15 @@ export type GenerateSettings = GenerateInput & {
   reasoning?: 'none' | 'provider-default';
   /** Tools with `execute` are run by the SDK and their results fed back to the model. */
   tools?: ToolSet;
-  /** Max model calls when tools are used (SDK default: 1). */
+  /** Max model calls when tools are used (SDK default: 1). A `loop` brings its own limit. */
   maxSteps?: number;
-  /** Read-only mainnet mode. `tools` then holds the wallet action tools that run beside the reads. */
-  onbloc?: OnblocRun;
 };
 
-export type GenerateOptions = GenerateSettings & { signal?: AbortSignal };
+export type GenerateOptions = GenerateSettings & {
+  signal?: AbortSignal;
+  /** Tools and per-step hooks from the layer above; closed when the generation ends. */
+  loop?: ToolLoop;
+};
 
 export type Metrics = {
   /** Start -> first text, reasoning or tool-call; null if nothing was produced. */
@@ -48,6 +50,8 @@ export const GenerateEventType = {
   ToolCall: 'tool-call',
   ToolResult: 'tool-result',
   ToolError: 'tool-error',
+  /** A model call (step) of the tool loop begins. */
+  StepStart: 'step-start',
   Done: 'done',
 } as const;
 export type GenerateEventType = (typeof GenerateEventType)[keyof typeof GenerateEventType];
@@ -66,6 +70,7 @@ export type GenerateEvent =
     }
   | { type: typeof GenerateEventType.ToolResult; id: string; name: string; output: unknown }
   | { type: typeof GenerateEventType.ToolError; id: string; name: string; error: string }
+  | { type: typeof GenerateEventType.StepStart }
   | {
       type: typeof GenerateEventType.Done;
       metrics: Metrics;
@@ -92,7 +97,7 @@ const errorMessage = (error: unknown) =>
  */
 export async function* generate(
   model: LanguageModel,
-  { signal, maxSteps, onbloc, ...options }: GenerateOptions,
+  { signal, maxSteps, loop, ...options }: GenerateOptions,
   now: () => number = () => Date.now()
 ): AsyncGenerator<GenerateEvent> {
   const startedAt = now();
@@ -102,36 +107,26 @@ export async function* generate(
   let aborted = false;
   const warnings: string[] = [];
   let responseMessages: ModelMessage[] = [];
-  let managed: Awaited<ReturnType<typeof startOnblocRun>> | undefined;
-  let onblocText = '';
-  let readSucceeded = false;
-  let readFailed = false;
-  // A wallet action tool (not an Onbloc read) returned a result.
-  let actionRan = false;
 
   try {
-    if (onbloc) {
-      managed = await startOnblocRun(onbloc, options.maxOutputTokens ?? 512, signal, options.tools);
-    }
     const result = streamText({
       model,
       ...options,
       ...(maxSteps !== undefined && { stopWhen: isStepCount(maxSteps) }),
       abortSignal: signal,
-      ...managed?.options,
+      ...loop?.options,
       onError: () => {}, // errors are rethrown from the stream below
     });
     // Part types in the cases below are the AI SDK's; yielded events use GenerateEventType.
     for await (const part of result.fullStream) {
       switch (part.type) {
         case 'start-step':
-          if (managed) onblocText = '';
           warnings.push(...part.warnings.map(describeWarning));
+          yield { type: GenerateEventType.StepStart };
           break;
         case 'text-delta':
           firstDeltaAt ??= now();
-          if (managed) onblocText += part.text;
-          else yield { type: GenerateEventType.Text, delta: part.text };
+          yield { type: GenerateEventType.Text, delta: part.text };
           break;
         case 'reasoning-delta':
           firstDeltaAt ??= now();
@@ -139,7 +134,6 @@ export async function* generate(
           break;
         case 'tool-call':
           firstDeltaAt ??= now();
-          if (part.invalid) readFailed = true;
           yield {
             type: GenerateEventType.ToolCall,
             id: part.toolCallId,
@@ -150,11 +144,6 @@ export async function* generate(
           };
           break;
         case 'tool-result':
-          if (managed?.isRead(part.toolName)) {
-            if (part.output && typeof part.output === 'object' && 'kind' in part.output && part.output.kind === 'result') {
-              readSucceeded = true;
-            } else readFailed = true;
-          } else if (managed) actionRan = true;
           yield {
             type: GenerateEventType.ToolResult,
             id: part.toolCallId,
@@ -163,7 +152,6 @@ export async function* generate(
           };
           break;
         case 'tool-error':
-          readFailed = true;
           yield {
             type: GenerateEventType.ToolError,
             id: part.toolCallId,
@@ -182,12 +170,12 @@ export async function* generate(
           throw part.error;
       }
     }
-    if (!aborted && (!managed || ((readSucceeded || actionRan) && !readFailed))) responseMessages = await result.responseMessages;
+    if (!aborted) responseMessages = await result.responseMessages;
   } catch (error) {
-    if (!signal?.aborted && !managed?.options.abortSignal.aborted) throw error;
+    if (!signal?.aborted && !loop?.options.abortSignal?.aborted) throw error;
     aborted = true;
   } finally {
-    managed?.close();
+    loop?.close();
   }
 
   const endedAt = now();
@@ -196,14 +184,6 @@ export async function* generate(
     outputTokens !== undefined && outputTokens > 1 && decodeMs > 0
       ? ((outputTokens - 1) * 1000) / decodeMs
       : undefined;
-
-  if (onbloc && !aborted) {
-    const answer = !readSucceeded && !actionRan ? 'No Onbloc lookup returned verified data.'
-      : readFailed ? 'Some Onbloc lookups failed. Review the individual tool results.'
-        : onblocText || (readSucceeded ? 'Onbloc returned data; no model summary was produced.'
-          : 'The wallet action ran; no model summary was produced.');
-    yield { type: GenerateEventType.Text, delta: answer };
-  }
 
   yield {
     type: GenerateEventType.Done,

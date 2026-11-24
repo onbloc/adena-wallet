@@ -7,7 +7,7 @@ import {
   type LlamaLanguageModel,
 } from '@react-native-ai/llama';
 
-import { DEFAULT_CONTEXT_PARAMS, DEFAULT_MODEL_ID } from '../core/config';
+import { DEFAULT_CONTEXT_PARAMS, DEFAULT_MODEL_ID } from './config';
 
 export type RuntimeStatus =
   | { state: 'idle' }
@@ -135,5 +135,3 @@ export class LlamaRuntime {
     }
   }
 }
-
-export const llamaRuntime = new LlamaRuntime();

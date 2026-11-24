@@ -1,6 +1,6 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { SignRequest } from '../../agent/wallet/port';
+import type { SignRequest } from '../../agent';
 import { describeRequest } from './describeRequest';
 
 /** The wallet's signing popup. Visible while there is a request to sign. */

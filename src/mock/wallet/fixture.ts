@@ -1,5 +1,5 @@
-import { TokenSymbol } from '../../agent/wallet/constants';
-import type { Balances } from '../../agent/wallet/port';
+import { TokenSymbol } from '../../agent';
+import type { Balances } from '../../agent';
 
 export type MockAccount = {
   name: string;

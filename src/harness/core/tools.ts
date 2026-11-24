@@ -53,6 +53,18 @@ export type Decision =
   | { kind: 'approval-required'; action: WalletAction }
   | { kind: 'denied'; code: 'UNKNOWN_TOOL' | 'OUT_OF_SCOPE' | 'INVALID_INPUT' | 'INVALID_OUTPUT' | 'TARGET_CHANGED' | 'CANCELLED' | 'BUDGET_EXHAUSTED' | 'RUN_PAUSED' | 'WALLET_UNAVAILABLE' | 'MCP_UNAVAILABLE' | 'MCP_TOOL_ERROR' | 'MCP_RESULT_TOO_LARGE' };
 
+/** A tool offered by an external source (an MCP server): how it looks to the model, and how to run it. */
+export type RemoteTool = Readonly<{
+  definition: { name: string; description: string; jsonSchema: Tool['inputSchema'] };
+  execute(raw: unknown): Promise<Decision>;
+}>;
+
+/**
+ * Finds the remote tools for a run's account and chain. Returns none when the source does not
+ * serve them (another chain, an invalid account). Closes its connection when `signal` aborts.
+ */
+export type ToolSource = (context: WalletContext, signal: AbortSignal) => Promise<ReadonlyMap<string, RemoteTool>>;
+
 const names = Object.keys(definitions) as ToolName[];
 export function isTool(name: string): name is ToolName {
   return Object.hasOwn(definitions, name);

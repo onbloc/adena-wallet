@@ -3,11 +3,11 @@ import {
   TokenSymbol,
   WalletErrorCode,
   WalletStatus,
-} from '../../../agent/wallet/constants';
+} from '../../../agent';
 import { INVALID_ADDRESS_LENGTH_MESSAGE, isValidAddress } from '../address';
 import { FIXTURE } from '../fixture';
 import { MockWalletSdk } from '../mockWalletSdk';
-import type { SignRequest, TextMessage } from '../../../agent/wallet/port';
+import type { SignRequest, TextMessage } from '../../../agent';
 
 const [acc1] = FIXTURE.accounts;
 const other = FIXTURE.contacts[0].address;

@@ -19,7 +19,8 @@ const other = FIXTURE.contacts[0].address;
 function setup(requestApproval: ApprovalHandler = autoApproval(ApprovalPolicy.Approve), secret?: string) {
   const sdk = new MockWalletSdk({ requestApproval, secret });
   const tools = createWalletTools({ sdk, activeAddress: ACTIVE_ADDRESS, contacts: FIXTURE.contacts });
-  return { sdk, tools };
+  // The mock wallet implements every optional method, so every tool is offered.
+  return { sdk, tools: tools as Required<typeof tools> };
 }
 
 // Runs a tool the way the AI SDK does, minus schema parsing.
@@ -312,5 +313,19 @@ describe('createWalletTools', () => {
     expect(Object.keys(tools).sort()).toEqual(
       [ToolName.Transfer, ToolName.Approve, ToolName.GetApprovals, ToolName.SignMessage].sort()
     );
+  });
+
+  it('offers approve and get_approvals only if the wallet implements them', () => {
+    const mock = new MockWalletSdk({ requestApproval: autoApproval(ApprovalPolicy.Approve) });
+    // A wallet that only sends and signs: the optional methods are left out.
+    const minimal = {
+      getActiveAddress: () => mock.getActiveAddress(),
+      transfer: (params: Parameters<MockWalletSdk['transfer']>[0]) => mock.transfer(params),
+      sign: (request: SignRequest) => mock.sign(request),
+    };
+
+    const tools = createWalletTools({ sdk: minimal, activeAddress: ACTIVE_ADDRESS, contacts: [] });
+
+    expect(Object.keys(tools).sort()).toEqual([ToolName.SignMessage, ToolName.Transfer].sort());
   });
 });

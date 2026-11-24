@@ -1,5 +1,4 @@
 import { fromBaseUnits, toBaseUnits } from './amount';
-import { SignRequestType, WalletErrorCode, WalletStatus, type TokenSymbol } from '../../agent/wallet/constants';
 import {
   ADDRESS_LENGTH,
   INVALID_ADDRESS_LENGTH_MESSAGE,
@@ -9,20 +8,25 @@ import {
 import { FIXTURE, type MockAccount } from './fixture';
 import { TOKEN_DECIMALS, TOKEN_SYMBOLS } from './tokens';
 import {
+  SignRequestType,
   WalletError,
+  WalletErrorCode,
+  WalletStatus,
   type Allowance,
   type AllowanceMessage,
   type AllowanceParams,
   type ApprovalHandler,
   type Balances,
+  type Contact,
   type SignOptions,
   type SignRequest,
   type SignResult,
   type TextMessage,
+  type TokenSymbol,
   type TransferMessage,
   type TransferParams,
   type WalletSdk,
-} from '../../agent/wallet/port';
+} from '../../agent';
 
 const MOCK_CHAIN_ID = 'gnoland-1'; // assumption, not verified
 
@@ -39,6 +43,8 @@ export type MockWalletSdkOptions = {
   /** Shows the signing popup (the app's modal, or a simulated user in tests). */
   requestApproval: ApprovalHandler;
   accounts?: MockAccount[];
+  /** The address book. Defaults to the fixture's. */
+  contacts?: readonly Contact[];
   /** Stand-in for the private key. It must never appear in any output. */
   secret?: string;
 };
@@ -90,14 +96,20 @@ export class MockWalletSdk implements WalletSdk {
   >();
   readonly #applied = new Set<string>();
   readonly #approvals: ApprovalRecord[] = [];
+  readonly #active: string;
+  readonly #contacts: readonly Contact[];
 
   constructor({
     requestApproval,
     accounts = FIXTURE.accounts,
+    contacts = FIXTURE.contacts,
     secret = 'mock-private-key',
   }: MockWalletSdkOptions) {
+    if (accounts.length === 0) throw new Error('MockWalletSdk needs an account');
     this.#requestApproval = requestApproval;
     this.#secret = secret;
+    this.#active = accounts[0].address;
+    this.#contacts = contacts;
     for (const account of accounts) {
       this.#owned.add(account.address);
       for (const token of TOKEN_SYMBOLS) {
@@ -105,6 +117,15 @@ export class MockWalletSdk implements WalletSdk {
         this.#setUnits(account.address, token, units ?? 0n);
       }
     }
+  }
+
+  /** The first account. */
+  async getActiveAddress(): Promise<string> {
+    return this.#active;
+  }
+
+  async getContacts(): Promise<Contact[]> {
+    return [...this.#contacts];
   }
 
   /** Every signing popup requested so far, oldest first. */

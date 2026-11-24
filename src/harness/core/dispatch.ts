@@ -1,8 +1,5 @@
 import { allowed, evaluate, isTool, selectionSchema, toolsFor } from './tools';
-import type { Decision, RunPurpose, Scope, Selection, ToolDefinition, WalletContext, WalletReader } from './tools';
-import { GNO_MAINNET_CHAIN, gnoPublicAddress } from '../mcp/gno';
-import { createOnblocReader } from '../mcp/onbloc-mcp';
-import type { OnblocMcpConfig, RemoteTool } from '../mcp/onbloc-mcp';
+import type { Decision, RemoteTool, RunPurpose, Scope, Selection, ToolDefinition, ToolSource, WalletContext, WalletReader } from './tools';
 
 export type RunContext = WalletContext & Readonly<{
   operationId: string;
@@ -10,6 +7,8 @@ export type RunContext = WalletContext & Readonly<{
   purpose?: RunPurpose;
   selection?: Selection;
   signal?: AbortSignal;
+  /** Overrides the harness's budget for this run. */
+  budget?: Partial<Budget>;
 }>;
 
 export type Budget = Readonly<{
@@ -38,23 +37,31 @@ export type HarnessRun = Readonly<{
   close(): void;
 }>;
 
-export function createHarness({ wallet, budget, audit, onblocMcp }: {
-  wallet: WalletReader;
-  budget: Budget;
-  audit?: (event: PolicyEvent) => void | Promise<void>;
-  onblocMcp?: OnblocMcpConfig;
-}) {
+/** Limits that fit a small on-device model. A run can override any of them. */
+export const DEFAULT_BUDGET: Budget = { maxSteps: 5, maxToolCalls: 4, maxTokens: 16_384, timeoutMs: 60_000 };
+
+function checked(budget: Budget): Budget {
   for (const limit of [budget.maxSteps, budget.maxToolCalls, budget.maxTokens, budget.timeoutMs]) {
     if (!Number.isSafeInteger(limit) || limit <= 0) throw new RangeError('Invalid execution budget');
   }
   if (budget.timeoutMs > 2_147_483_647) throw new RangeError('Timeout exceeds timer range');
-  const { maxSteps, maxToolCalls, maxTokens, timeoutMs } = budget;
-  const onbloc = onblocMcp && createOnblocReader(onblocMcp);
+  return budget;
+}
+
+export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, toolSources = [] }: {
+  wallet?: WalletReader;
+  budget?: Budget;
+  audit?: (event: PolicyEvent) => void | Promise<void>;
+  /** Where the run's remote tools come from, e.g. an MCP server. */
+  toolSources?: readonly ToolSource[];
+}) {
+  checked(budget);
 
   return {
     async startRun(run: RunContext): Promise<HarnessRun> {
       const { scope, operationId } = run;
       if (!operationId || !run.account || !run.chainId) throw new TypeError('Missing run identity');
+      const { maxSteps, maxToolCalls, maxTokens, timeoutMs } = checked({ ...budget, ...run.budget });
       const context: WalletContext = Object.freeze({ account: run.account, chainId: run.chainId });
       const selection = run.selection === undefined ? undefined : selectionSchema.parse(run.selection);
       const controller = new AbortController();
@@ -72,16 +79,22 @@ export function createHarness({ wallet, budget, audit, onblocMcp }: {
 
       let remote: ReadonlyMap<string, RemoteTool> | undefined;
       try {
-        if (onbloc && scope === 'read-only' && run.purpose === 'mainnet-read' &&
-          context.chainId === GNO_MAINNET_CHAIN && gnoPublicAddress.safeParse(context.account).success) {
-          remote = await onbloc(context.account, signal);
-          for (const name of remote.keys()) {
-            if (isTool(name) || Object.hasOwn(Object.prototype, name)) throw new Error('Onbloc tool name conflicts with a reserved name.');
+        if (toolSources.length > 0 && scope === 'read-only' && run.purpose === 'mainnet-read') {
+          const found = new Map<string, RemoteTool>();
+          for (const source of toolSources) {
+            for (const [name, tool] of await source(context, signal)) {
+              if (found.has(name)) throw new Error('Two tool sources offer the same tool name.');
+              found.set(name, tool);
+            }
           }
+          for (const name of found.keys()) {
+            if (isTool(name) || Object.hasOwn(Object.prototype, name)) throw new Error('Remote tool name conflicts with a reserved name.');
+          }
+          remote = found;
         }
       } catch (cause) {
         cancel();
-        throw new Error('Could not discover Onbloc MCP tools.', { cause });
+        throw new Error('Could not discover remote tools.', { cause });
       }
       const tools = Object.freeze(remote ? Array.from(remote.values(), tool => tool.definition) : toolsFor(scope, wallet, run.purpose));
       const enabled = new Set(tools.map(tool => tool.name));

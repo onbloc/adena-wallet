@@ -1,4 +1,4 @@
-import { SignRequestType, TokenSymbol } from '../../../agent/wallet/constants';
+import { SignRequestType, TokenSymbol } from '../../../agent';
 import { describeRequest } from '../describeRequest';
 
 describe('describeRequest', () => {

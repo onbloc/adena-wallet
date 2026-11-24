@@ -42,10 +42,13 @@ const resolveContact = (contacts: readonly Contact[], recipient: string) =>
   recipient;
 
 /**
- * Tools bound to one wallet session. They act on the mock wallet; balances are read through
- * the Onbloc MCP, so the model never has two sources for the same fact.
+ * Tools bound to one wallet session. They act through the wallet; balances are read through
+ * the tool sources, so the model never has two sources for the same fact. `approve` and
+ * `get_approvals` are offered only if the wallet implements them.
  */
 export function createWalletTools({ sdk, activeAddress, contacts }: WalletToolsContext) {
+  const approve = sdk.approve?.bind(sdk);
+  const getAllowances = sdk.getAllowances?.bind(sdk);
   return {
     [ToolName.Transfer]: tool({
       description:
@@ -73,41 +76,45 @@ export function createWalletTools({ sdk, activeAddress, contacts }: WalletToolsC
           });
         }),
     }),
-    [ToolName.Approve]: tool({
-      description:
-        "Let another address (the spender) use up to an amount of one of the user's tokens (a token approval or allowance). A new approval for the same spender and token replaces the old one. The user must approve a signing popup; the result says whether it was signed or rejected.",
-      inputSchema: z.object({
-        spender: z.string().describe('Spender: a g1... address, or a contact name'),
-        amount: z.string().describe('Decimal amount as a string, e.g. "10"'),
-        token: z.enum(TokenSymbol).describe('Token symbol'),
-      }),
-      execute: ({ spender, amount, token }, { abortSignal }) =>
-        refusalsAsResults(async () => {
-          const message = await sdk.approve({
-            from: activeAddress,
-            spender: resolveContact(contacts, spender),
-            amount,
-            token,
-          });
-          // The harness, not the model, passes the message on to be signed.
-          const result = await sdk.sign(message, { signal: abortSignal });
-          return afterSigning(result, {
-            from: message.from,
-            spender: message.spender,
-            amount: message.amount,
-            token,
-          });
+    ...(approve && {
+      [ToolName.Approve]: tool({
+        description:
+          "Let another address (the spender) use up to an amount of one of the user's tokens (a token approval or allowance). A new approval for the same spender and token replaces the old one. The user must approve a signing popup; the result says whether it was signed or rejected.",
+        inputSchema: z.object({
+          spender: z.string().describe('Spender: a g1... address, or a contact name'),
+          amount: z.string().describe('Decimal amount as a string, e.g. "10"'),
+          token: z.enum(TokenSymbol).describe('Token symbol'),
         }),
+        execute: ({ spender, amount, token }, { abortSignal }) =>
+          refusalsAsResults(async () => {
+            const message = await approve({
+              from: activeAddress,
+              spender: resolveContact(contacts, spender),
+              amount,
+              token,
+            });
+            // The harness, not the model, passes the message on to be signed.
+            const result = await sdk.sign(message, { signal: abortSignal });
+            return afterSigning(result, {
+              from: message.from,
+              spender: message.spender,
+              amount: message.amount,
+              token,
+            });
+          }),
+      }),
     }),
-    [ToolName.GetApprovals]: tool({
-      description: 'List the token approvals the user has given to other addresses.',
-      inputSchema: z.object({}),
-      execute: () =>
-        refusalsAsResults(async () => ({
-          status: WalletStatus.Ok,
-          address: activeAddress,
-          approvals: await sdk.getAllowances(activeAddress),
-        })),
+    ...(getAllowances && {
+      [ToolName.GetApprovals]: tool({
+        description: 'List the token approvals the user has given to other addresses.',
+        inputSchema: z.object({}),
+        execute: () =>
+          refusalsAsResults(async () => ({
+            status: WalletStatus.Ok,
+            address: activeAddress,
+            approvals: await getAllowances(activeAddress),
+          })),
+      }),
     }),
     [ToolName.SignMessage]: tool({
       description:
