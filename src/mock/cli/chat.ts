@@ -1,0 +1,294 @@
+/// <reference types="node" />
+// Talk to the model in your own words, to see how far it gets. The model runs
+// on this Mac via llama-server. By default it is a plain chat; --onbloc adds the
+// wallet (the app's prompt and tools: Onbloc reads, mock transfer/approve).
+//
+//   make chat                                   interactive
+//   make chat PROMPT="Tell me a joke"            one question, then exit
+//   make chat ARGS="--onbloc"                    with the wallet
+import { readFileSync } from 'node:fs';
+import { createInterface } from 'node:readline/promises';
+
+import type { LanguageModel, ModelMessage } from 'ai';
+
+import { DEFAULT_GENERATE_SETTINGS } from '../../llm/core/config';
+import { generate, GenerateEventType } from '../../llm/core/generate';
+import { gnoPublicAddress } from '../../harness/mcp/gno';
+import type { OnblocRun } from '../../agent/run';
+import { describeRequest } from '../app/describeRequest';
+import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL } from '../app/onblocSettings';
+import { createWalletTools } from '../../agent/wallet/tools';
+import { ApprovalPolicy } from '../../agent/wallet/constants';
+import { createOnblocMockWallet } from '../wallet/onblocWallet';
+import { buildWalletPrompt } from '../../agent/prompts';
+import { autoApproval } from '../wallet/approval';
+import { FIXTURE } from '../wallet/fixture';
+import type { MockWalletSdk } from '../wallet/mockWalletSdk';
+import type { ApprovalHandler, Balances } from '../../agent/wallet/port';
+import { boundedNumber, parseArgs } from './lib/cli';
+import { connectModel, DEFAULT_MODEL_NAME, DEFAULT_SERVER_URL } from './lib/server';
+
+const ASK = 'ask';
+
+const USAGE = `Usage: bun src/mock/cli/chat.ts [options]
+  --prompt TEXT      ask once and exit instead of chatting
+  --onbloc           add the wallet: Onbloc reads (default MCP URL and address; override with
+                     EXPO_PUBLIC_ONBLOC_MCP_URL / EXPO_PUBLIC_ONBLOC_ACCOUNT) plus mock
+                     transfer/approve, funded from that address's Onbloc balances
+  --approval P       at a signing popup (with --onbloc): ask (default, you answer y/N) | approve | reject
+  --url URL          OpenAI-compatible base URL (default ${DEFAULT_SERVER_URL})
+  --model NAME       model name sent to the server (default ${DEFAULT_MODEL_NAME})
+  --temperature T    (default ${DEFAULT_GENERATE_SETTINGS.temperature})
+  --max-tokens N     per model call (default ${DEFAULT_GENERATE_SETTINGS.maxOutputTokens})
+  --system-file P    use this file as the system prompt
+
+In the chat: /reset (forget the conversation, reset the wallet)  /balances  /help  /exit`;
+
+type Options = {
+  prompt?: string;
+  approval: typeof ASK | ApprovalPolicy;
+  url: string;
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  system?: string;
+  onbloc?: OnblocRun;
+};
+
+function parseOptions(argv: string[]): Options {
+  const { values, flags } = parseArgs(argv, {
+    values: ['prompt', 'approval', 'url', 'model', 'temperature', 'max-tokens', 'system-file'],
+    flags: ['onbloc'],
+  });
+  const approval = values.get('approval') ?? ASK;
+  if (approval !== ASK && !Object.values(ApprovalPolicy).includes(approval as ApprovalPolicy)) {
+    throw new Error(`--approval must be one of: ${[ASK, ...Object.values(ApprovalPolicy)].join(', ')}`);
+  }
+  const systemFile = values.get('system-file');
+  let onbloc: OnblocRun | undefined;
+  if (flags.has('onbloc')) {
+    // Env overrides the app's Settings defaults.
+    const endpoint = process.env.EXPO_PUBLIC_ONBLOC_MCP_URL?.trim() || DEFAULT_ONBLOC_MCP_URL;
+    const account = process.env.EXPO_PUBLIC_ONBLOC_ACCOUNT?.trim() || DEFAULT_ONBLOC_ACCOUNT;
+    if (!endpoint || !gnoPublicAddress.safeParse(account).success) {
+      throw new Error('Set EXPO_PUBLIC_ONBLOC_MCP_URL and a valid public EXPO_PUBLIC_ONBLOC_ACCOUNT.');
+    }
+    onbloc = { endpoint, account: gnoPublicAddress.parse(account) };
+  }
+
+  return {
+    prompt: values.get('prompt'),
+    onbloc,
+    approval: approval as Options['approval'],
+    url: values.get('url') ?? DEFAULT_SERVER_URL,
+    model: values.get('model') ?? DEFAULT_MODEL_NAME,
+    temperature: boundedNumber(values, 'temperature', DEFAULT_GENERATE_SETTINGS.temperature, 0, 2, false),
+    maxTokens: boundedNumber(values, 'max-tokens', DEFAULT_GENERATE_SETTINGS.maxOutputTokens, 1, 4095),
+    system: systemFile ? readFileSync(systemFile, 'utf8') : undefined,
+  };
+}
+
+const dim = (text: string) => (process.stdout.isTTY ? `\x1b[2m${text}\x1b[0m` : text);
+const json = (value: unknown) => JSON.stringify(value) ?? 'undefined';
+
+const formatBalances = (balances: Balances) =>
+  Object.entries(balances)
+    .map(([token, amount]) => `${amount} ${token}`)
+    .join(', ');
+
+function printBalances(balances: Record<string, Balances>, you: string | undefined) {
+  for (const [address, held] of Object.entries(balances)) {
+    const label =
+      address === you ? 'My address (you)' : (FIXTURE.contacts.find((c) => c.address === address)?.alias ?? address);
+    console.log(`  ${label}: ${formatBalances(held)}`);
+  }
+}
+
+/** The conversation so far and, with --onbloc, the mock wallet. */
+type Session = { sdk?: MockWalletSdk; history: ModelMessage[] };
+
+async function main() {
+  const options = parseOptions(process.argv.slice(2));
+  const model: LanguageModel = await connectModel(options.url, options.model);
+
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+
+  // Lines go through a queue: with piped input, all of them arrive (and the
+  // input closes) while an answer is still being written.
+  const queued: string[] = [];
+  let waiting: ((line: string | null) => void) | null = null;
+  let inputEnded = false;
+  rl.on('line', (line) => {
+    if (waiting) {
+      const resolve = waiting;
+      waiting = null;
+      resolve(line);
+    } else {
+      queued.push(line);
+    }
+  });
+  rl.on('close', () => {
+    inputEnded = true;
+    waiting?.(null);
+    waiting = null;
+  });
+  /** The next line the user types; null once the input is over. */
+  const ask = (prompt: string): Promise<string | null> => {
+    if (!inputEnded) {
+      rl.setPrompt(prompt);
+      rl.prompt();
+    }
+    const next = queued.shift();
+    if (next !== undefined) return Promise.resolve(next);
+    if (inputEnded) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      waiting = resolve;
+    });
+  };
+
+  const you = options.onbloc?.account;
+
+  // You answer the signing popup at the terminal, unless told otherwise or
+  // there is no terminal to answer on.
+  const interactive = process.stdin.isTTY === true;
+  const requestApproval: ApprovalHandler =
+    options.approval === ASK && interactive
+      ? async (request) => {
+          const { title, rows } = describeRequest(request);
+          console.log(`\n  [signing popup] ${title}`);
+          for (const [label, value] of rows) console.log(`    ${label}: ${value}`);
+          const answer = await ask('  Approve? [y/N] ');
+          return /^y(es)?$/i.test((answer ?? '').trim());
+        }
+      : autoApproval(options.approval === ASK ? ApprovalPolicy.Reject : options.approval);
+
+  const newSession = async (): Promise<Session> => {
+    if (!options.onbloc) return { history: [] };
+    console.error('loading balances from Onbloc...');
+    return { sdk: await createOnblocMockWallet({ onbloc: options.onbloc, requestApproval }), history: [] };
+  };
+  let session = await newSession();
+
+  const system = options.system ?? (options.onbloc ? buildWalletPrompt({ contacts: FIXTURE.contacts }) : undefined);
+  let turnAbort: AbortController | null = null;
+  rl.on('SIGINT', () => (turnAbort ? turnAbort.abort() : rl.close()));
+
+  /** One question and the model's whole answer, tools included. */
+  async function ask1(text: string) {
+    const messages: ModelMessage[] = [...session.history, { role: 'user', content: text }];
+    const sdk = session.sdk;
+    const before = sdk ? json(sdk.inspect().balances) : null;
+    const controller = new AbortController();
+    turnAbort = controller;
+    let lineOpen = false;
+    const endLine = () => {
+      if (lineOpen) process.stdout.write('\n');
+      lineOpen = false;
+    };
+
+    try {
+      for await (const event of generate(model, {
+        messages,
+        system,
+        temperature: options.temperature,
+        maxOutputTokens: options.maxTokens,
+        tools:
+          sdk && options.onbloc
+            ? createWalletTools({ sdk, activeAddress: options.onbloc.account, contacts: FIXTURE.contacts })
+            : undefined,
+        onbloc: options.onbloc,
+        signal: controller.signal,
+      })) {
+        switch (event.type) {
+          case GenerateEventType.Text:
+            process.stdout.write(event.delta);
+            lineOpen = true;
+            break;
+          case GenerateEventType.Reasoning:
+            break;
+          case GenerateEventType.ToolCall:
+            endLine();
+            console.log(dim(`  > ${event.name}(${json(event.input)})${event.invalid ? '  [INVALID]' : ''}`));
+            break;
+          case GenerateEventType.ToolResult:
+            console.log(dim(`    -> ${json(event.output)}`));
+            break;
+          case GenerateEventType.ToolError:
+            console.log(dim(`    ! ${event.error}`));
+            break;
+          case GenerateEventType.Done: {
+            endLine();
+            const { totalMs, outputTokens, tokensPerSec } = event.metrics;
+            const stats = [`${(totalMs / 1000).toFixed(1)}s`];
+            if (outputTokens !== undefined) stats.push(`${outputTokens} tokens`);
+            if (tokensPerSec !== undefined) stats.push(`${tokensPerSec.toFixed(1)} tok/s`);
+            console.log(dim(`  (${event.aborted ? 'stopped, ' : ''}${stats.join(', ')})`));
+            for (const warning of event.warnings) console.log(dim(`  warning: ${warning}`));
+            // A stopped turn is not remembered.
+            if (!event.aborted && event.messages.length) session.history = [...messages, ...event.messages];
+          }
+        }
+      }
+    } catch (error) {
+      endLine();
+      console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
+      console.error('(this question was dropped; /reset starts over if the conversation got too long)');
+      if (options.prompt !== undefined) process.exitCode = 1;
+    } finally {
+      turnAbort = null;
+    }
+
+    if (sdk && before !== null) {
+      const balances = sdk.inspect().balances;
+      if (json(balances) !== before) {
+        console.log('  wallet balances changed:');
+        printBalances(balances, you);
+      }
+    }
+  }
+
+  const mode = options.onbloc
+    ? 'wallet (Onbloc reads + mock transfer/approve, funded from your Onbloc balances)'
+    : 'plain chat (no wallet; --onbloc adds it)';
+  console.error(`model: ${options.model} @ ${options.url} - ${mode}`);
+
+  if (options.prompt !== undefined) {
+    await ask1(options.prompt);
+    rl.close();
+    return;
+  }
+
+  console.error('Type a question. /help for commands, Ctrl-C to stop an answer or to quit.\n');
+  while (true) {
+    const line = await ask('> ');
+    if (line === null) break;
+    const text = line.trim();
+    if (text === '') continue;
+
+    if (text === '/exit' || text === '/quit') break;
+    if (text === '/help') {
+      console.log(USAGE.slice(USAGE.indexOf('In the chat:')));
+    } else if (text === '/reset') {
+      session = await newSession();
+      console.log(options.onbloc ? '  conversation and wallet reset' : '  conversation reset');
+    } else if (text === '/balances') {
+      if (session.sdk) printBalances(session.sdk.inspect().balances, you);
+      else console.log('  No wallet: start with --onbloc.');
+    } else if (text.startsWith('/')) {
+      console.log(`  unknown command: ${text} (try /help)`);
+    } else {
+      await ask1(text);
+    }
+  }
+  rl.close();
+}
+
+main().then(
+  // Exit explicitly: after Ctrl-C the aborted request keeps the process alive.
+  () => process.exit(process.exitCode ?? 0),
+  (error) => {
+    console.error(error instanceof Error ? error.message : error);
+    console.error(`\n${USAGE}`);
+    process.exit(1);
+  }
+);

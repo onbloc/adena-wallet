@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 
-import PlaygroundScreen from './src/ui/PlaygroundScreen';
+import PlaygroundScreen from './src/mock/app/PlaygroundScreen';
 
 export default function App() {
   return (

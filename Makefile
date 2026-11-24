@@ -7,7 +7,7 @@ ARGS   ?=
 PROMPT ?=
 
 # Runs a command with llama-server up: reuses a running one, else starts and stops its own.
-WITH_SERVER := PORT=$(PORT) MODEL=$(MODEL) scripts/with-server.sh
+WITH_SERVER := PORT=$(PORT) MODEL=$(MODEL) src/mock/cli/with-server.sh
 URL         := http://127.0.0.1:$(PORT)/v1
 
 help: ## Show targets
@@ -24,7 +24,7 @@ test: ## Typecheck + lint + all jest tests (mock model, no LLM)
 	npm test
 
 chat: ## Chat with the local model. Vars: PROMPT="..." asks once; ARGS="--onbloc" adds the wallet (Onbloc reads, mock transfer/approve)
-	$(WITH_SERVER) bun scripts/chat.ts --url $(URL) $(if $(PROMPT),--prompt "$$PROMPT") $(ARGS)
+	$(WITH_SERVER) bun src/mock/cli/chat.ts --url $(URL) $(if $(PROMPT),--prompt "$$PROMPT") $(ARGS)
 
 # `ios` / `android` are only arguments of `build` / `deploy`.
 PLATFORM := $(firstword $(filter ios android,$(MAKECMDGOALS)))

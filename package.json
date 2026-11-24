@@ -33,7 +33,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "test": "jest",
-    "chat": "bun scripts/chat.ts"
+    "chat": "bun src/mock/cli/chat.ts"
   },
   "jest": {
     "preset": "jest-expo",
