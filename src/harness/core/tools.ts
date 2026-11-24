@@ -63,7 +63,8 @@ export type RemoteTool = Readonly<{
 export type WalletTool = Readonly<{
   definition: ToolDefinition;
   effect: 'read' | 'prepare';
-  execute(raw: unknown, signal: AbortSignal): Promise<Decision>;
+  /** The run deadline is epoch milliseconds; check it again immediately before handoff. */
+  execute(raw: unknown, signal: AbortSignal, deadline?: number): Promise<Decision>;
 }>;
 
 /**

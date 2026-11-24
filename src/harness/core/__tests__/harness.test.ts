@@ -135,7 +135,7 @@ describe('Harness', () => {
     }
   });
 
-  it('retains an in-flight read when another completed call fails audit', async () => {
+  it('serializes reads and pauses queued calls after an audit failure', async () => {
     const entered = Promise.withResolvers<void>();
     const release = Promise.withResolvers<void>();
     const slow: RemoteTool = {
@@ -154,14 +154,16 @@ describe('Harness', () => {
     try {
       const pending = started.dispatch({ name: 'slow', input: {} });
       await entered.promise;
-      expect(await started.dispatch({ name: 'ping', input: {} })).toEqual({
-        kind: 'result', value: 'ping ran', auditFailed: true,
-      });
+      const queued = started.dispatch({ name: 'ping', input: {} });
+      const afterFailure = started.dispatch({ name: 'slow', input: {} });
       release.resolve();
       expect(await pending).toEqual({ kind: 'result', value: 'completed read' });
+      expect(await queued).toEqual({
+        kind: 'result', value: 'ping ran', auditFailed: true,
+      });
       expect(started.auditFailed).toBe(true);
       expect(started.canStartStep()).toBe(false);
-      expect(await started.dispatch({ name: 'slow', input: {} })).toEqual({ kind: 'denied', code: 'RUN_PAUSED' });
+      expect(await afterFailure).toEqual({ kind: 'denied', code: 'RUN_PAUSED' });
     } finally {
       release.resolve();
       started.close();
@@ -215,6 +217,95 @@ describe('Harness', () => {
     expect(await pending).toEqual({ kind: 'denied', code: 'CANCELLED' });
     expect(events.map(event => [event.tool, event.decision, event.denial]))
       .toEqual([['get_approvals', 'denied', 'CANCELLED']]);
+  });
+
+  it('does not start a concurrent preparation before an earlier clarification is resolved', async () => {
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const clarify: WalletTool = {
+      ...walletTool('check', 'read'),
+      async execute() {
+        entered.resolve();
+        await release.promise;
+        return { kind: 'clarify', reason: 'CONFIRM_TRANSFER' };
+      },
+    };
+    const prepare = jest.fn(async () => ({ kind: 'result' as const, value: 'prepared' }));
+    const started = await new Harness().startRun({
+      ...run, scope: 'prepare-wallet',
+      walletTools: { check: clarify, transfer: { ...walletTool('transfer', 'prepare'), execute: prepare } },
+    });
+    const first = started.dispatch({ name: 'check', input: {} });
+    await entered.promise;
+    const second = started.dispatch({ name: 'transfer', input: {} });
+    await Promise.resolve();
+    expect(prepare).not.toHaveBeenCalled();
+    release.resolve();
+    expect(await first).toEqual({ kind: 'clarify', reason: 'CONFIRM_TRANSFER' });
+    expect(await second).toEqual({ kind: 'denied', code: 'RUN_PAUSED' });
+    expect(prepare).not.toHaveBeenCalled();
+    started.close();
+  });
+
+  it('counts concurrent proposals against the same tool-call budget', async () => {
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const execute = jest.fn(async () => {
+      entered.resolve();
+      await release.promise;
+      return { kind: 'result' as const, value: 'done' };
+    });
+    const started = await new Harness().startRun({
+      ...run, walletTools: { check: { ...walletTool('check', 'read'), execute } }, budget: { maxToolCalls: 1 },
+    });
+    const first = started.dispatch({ name: 'check', input: {} });
+    await entered.promise;
+    const second = started.dispatch({ name: 'check', input: {} });
+    release.resolve();
+    expect(await first).toEqual({ kind: 'result', value: 'done' });
+    expect(await second).toEqual({ kind: 'denied', code: 'BUDGET_EXHAUSTED' });
+    expect(execute).toHaveBeenCalledTimes(1);
+    started.close();
+  });
+
+  it('settles a pending read on cancellation even if the tool ignores its signal', async () => {
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const read: WalletTool = {
+      ...walletTool('check', 'read'),
+      async execute() {
+        entered.resolve();
+        await release.promise;
+        throw new Error('late failure');
+      },
+    };
+    const events: PolicyEvent[] = [];
+    const controller = new AbortController();
+    const started = await new Harness({ audit: event => { events.push(event); } }).startRun({
+      ...run, walletTools: { check: read }, signal: controller.signal,
+    });
+    const pending = started.dispatch({ name: 'check', input: {} });
+    await entered.promise;
+    controller.abort();
+    expect(await pending).toEqual({ kind: 'denied', code: 'CANCELLED' });
+    expect(events.map(event => [event.tool, event.decision, event.denial]))
+      .toEqual([['check', 'denied', 'CANCELLED']]);
+    release.resolve();
+  });
+
+  it('settles discovery on cancellation even if a source ignores its signal', async () => {
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<ReadonlyMap<string, RemoteTool>>();
+    const source: ToolSource = async () => {
+      entered.resolve();
+      return release.promise;
+    };
+    const controller = new AbortController();
+    const pending = new Harness({ toolSources: [source] }).startRun({ ...run, signal: controller.signal });
+    await entered.promise;
+    controller.abort();
+    await expect(pending).rejects.toThrow('Could not discover remote tools.');
+    release.resolve(new Map());
   });
 
   it('denies a tool the model invents', async () => {

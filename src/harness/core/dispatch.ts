@@ -68,6 +68,28 @@ function bindLifetime(source: AbortSignal | undefined, timeoutMs: number) {
   return { signal: controller.signal, deadline, cancel };
 }
 
+function untilCancelled<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
+  // React Native can supply a Promise implementation without withResolvers.
+  return new Promise((resolve, reject) => {
+    const abort = () => {
+      signal.removeEventListener('abort', abort);
+      reject(new Error('Run cancelled.'));
+    };
+    signal.addEventListener('abort', abort, { once: true });
+    operation.then(
+      value => {
+        signal.removeEventListener('abort', abort);
+        resolve(value);
+      },
+      error => {
+        signal.removeEventListener('abort', abort);
+        reject(error);
+      },
+    );
+    if (signal.aborted) abort();
+  });
+}
+
 function collectWalletTools(tools: RunContext['walletTools']) {
   const offered = new Map(Object.entries(tools ?? {}));
   for (const [name, tool] of offered) {
@@ -83,7 +105,10 @@ async function discoverReads(sources: readonly ToolSource[], context: WalletCont
   offered: ReadonlyMap<string, WalletTool>) {
   const found = new Map<string, RemoteTool>();
   for (const source of sources) {
-    for (const [name, tool] of await source(context, signal)) {
+    if (signal.aborted) throw new Error('Run cancelled.');
+    const tools = await source(context, signal);
+    if (signal.aborted) throw new Error('Run cancelled.');
+    for (const [name, tool] of tools) {
       if (name !== tool.definition.name || found.has(name)) throw new Error('Invalid or duplicate remote tool name.');
       if (isTool(name) || offered.has(name) || Object.hasOwn(Object.prototype, name)) {
         throw new Error('Remote tool name conflicts with a reserved name.');
@@ -116,7 +141,7 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
       let remote: ReadonlyMap<string, RemoteTool> | undefined;
       try {
         if (toolSources.length > 0 && (scope === 'read-only' || scope === 'prepare-wallet') && run.purpose === 'mainnet-read') {
-          remote = await discoverReads(toolSources, context, signal, offered);
+          remote = await untilCancelled(discoverReads(toolSources, context, signal, offered), signal);
         }
       } catch (cause) {
         cancel();
@@ -178,8 +203,10 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
         if (calls >= maxToolCalls || remainingTokens <= 0) return { kind: 'denied', code: 'BUDGET_EXHAUSTED' };
         calls++;
         try {
-          const decision = local ? await evaluate(name, proposal.input, context, selection, wallet, signal)
-            : walletTool ? await walletTool.execute(proposal.input, signal) : await tool?.execute(proposal.input);
+          const operation = local ? evaluate(name, proposal.input, context, selection, wallet, signal)
+            : walletTool ? walletTool.execute(proposal.input, signal, deadline) : tool!.execute(proposal.input);
+          const decision = walletTool?.effect === 'prepare'
+            ? await operation : await untilCancelled(operation, signal);
           if (!decision) return { kind: 'denied', code: 'UNKNOWN_TOOL' };
           // Once a transaction is handed to the app, cancellation cannot undo the handoff.
           if (walletTool?.effect !== 'prepare') {
@@ -189,27 +216,35 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
           if (decision.kind === 'clarify' || decision.kind === 'approval-required') paused = true;
           return decision;
         } catch {
-          if (signal.aborted && walletTool?.effect !== 'prepare') return { kind: 'denied', code: 'CANCELLED' };
+          if ((signal.aborted || Date.now() >= deadline) && walletTool?.effect !== 'prepare') {
+            return { kind: 'denied', code: 'CANCELLED' };
+          }
           return { kind: 'denied', code: local || walletTool ? 'WALLET_UNAVAILABLE' : 'MCP_UNAVAILABLE' };
         }
       }
 
-      async function dispatch(proposal: { name: string; input: unknown }): Promise<Decision> {
-        const name = proposal.name;
-        const decision = await evaluateProposal(proposal);
-        try {
-          if (audit) await audit({
-            operationId,
-            at: Date.now(),
-            ...(isTool(name) || remote?.has(name) || offered.has(name) ? { tool: name } : {}),
-            decision: decision.kind,
-            ...(decision.kind === 'denied' ? { denial: decision.code } : {}),
-          });
-        } catch {
-          auditFailed = true;
-          return { ...decision, auditFailed: true };
-        }
-        return decision;
+      let queue: Promise<void> = Promise.resolve();
+
+      function dispatch(proposal: { name: string; input: unknown }): Promise<Decision> {
+        const result = queue.then(async () => {
+          const name = proposal.name;
+          const decision = await evaluateProposal(proposal);
+          try {
+            if (audit) await audit({
+              operationId,
+              at: Date.now(),
+              ...(isTool(name) || remote?.has(name) || offered.has(name) ? { tool: name } : {}),
+              decision: decision.kind,
+              ...(decision.kind === 'denied' ? { denial: decision.code } : {}),
+            });
+          } catch {
+            auditFailed = true;
+            return { ...decision, auditFailed: true as const };
+          }
+          return decision;
+        });
+        queue = result.then(() => undefined, () => undefined);
+        return result;
       }
 
       return { operationId, context, signal, tools, dispatch, canStartStep, beginStep, finishStep, close: cancel,
