@@ -1,11 +1,12 @@
 import { StyleSheet } from 'react-native';
 
-import { colors, radius, sizes } from '../../../theme';
+import { colors, radius, sizes, spacing } from '../../../theme';
 
 export const styles = StyleSheet.create({
-  row: { flexDirection: 'row', justifyContent: 'space-between' },
+  // Pills share the row width equally, as in the token details design.
+  row: { flexDirection: 'row', gap: spacing.space8 },
   pill: {
-    minWidth: 52,
+    flex: 1,
     height: sizes.chip,
     paddingHorizontal: 12,
     borderRadius: radius.smallControl,

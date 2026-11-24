@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Pressable, PressableStateCallbackType, View } from 'react-native';
+import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } from 'react-native';
 
 import { Text } from '../../atoms';
 import { styles } from './range-selector.styles';
@@ -18,7 +18,7 @@ export const RangeSelector = <T extends string>({ options, selected, onSelect }:
 
       const handlePress = (): void => onSelect(option);
 
-      const stylePressable = ({ pressed }: PressableStateCallbackType): (false | { minWidth: number; height: 32; paddingHorizontal: number; borderRadius: 8; alignItems: 'center'; justifyContent: 'center'; backgroundColor: '#F7F8F9' } | { backgroundColor: '#121212' } | { backgroundColor: '#E6E6E6' })[] => [styles.pill, active ? styles.active : pressed && styles.pressed];
+      const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [styles.pill, active ? styles.active : pressed && styles.pressed];
 
       return (
         <Pressable

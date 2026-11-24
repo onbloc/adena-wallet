@@ -15,7 +15,6 @@ const props = (overrides: Partial<TokenDetailsPageProps<Range>> = {}): TokenDeta
     changeColor: 'success',
     chart: [1, 2, 3],
     loading: false,
-    isSample: true,
     stats: [{ label: 'Market cap', value: '$1M' }],
     links: [{ label: 'Website', url: 'https://gno.land' }, { label: 'Docs', url: 'https://docs.gno.land' }],
   },
@@ -49,7 +48,6 @@ describe('TokenDetailsPage', () => {
 
     expect(screen.getByText('$1.23')).toBeTruthy();
     expect(screen.getByText('+2.0%')).toBeTruthy();
-    expect(screen.getByText('Sample data')).toBeTruthy();
     expect(screen.getByText('$1,518.43')).toBeTruthy();
     expect(screen.getByText('$1M')).toBeTruthy();
     expect(screen.getByText('About Gno.land')).toBeTruthy();
@@ -82,14 +80,14 @@ describe('TokenDetailsPage', () => {
       asset: { key: 'x', symbol: 'TKN', name: 'A very long token name that keeps going and going', trend: 'neutral', loading: true },
       about: undefined,
       balanceValueLabel: undefined,
-      market: { changeColor: 'secondary', chart: [], loading: true, isSample: false, stats: [], links: [] },
+      market: { changeColor: 'secondary', chart: [], loading: true, stats: [], links: [] },
       activity: { sections: [], loading: false, supported: true, hasMore: false, loadingMore: false, onLoadMore: jest.fn(), onOpen: jest.fn() },
     });
 
     await renderPage(<TokenDetailsPage {...page} />);
 
     expect(screen.getAllByText('–')).toHaveLength(2);
-    expect(screen.queryByText('Sample data')).toBeNull();
+    expect(screen.queryByText('Stats')).toBeNull();
     expect(screen.queryByText('Value')).toBeNull();
     expect(screen.queryByText('Read more')).toBeNull();
     expect(screen.queryByText('Links')).toBeNull();
@@ -104,5 +102,13 @@ describe('TokenDetailsPage', () => {
 
     await rerender(<TokenDetailsPage {...props({ activity: { ...base.activity, supported: false } })} />);
     expect(screen.queryByText('History is not available')).toBeTruthy();
+  });
+
+  it('shows the empty label instead of a chart when there is no history', async () => {
+    const page = props();
+
+    await renderPage(<TokenDetailsPage {...page} market={{ ...page.market, chart: [], loading: false, emptyLabel: 'Price history is not available on this network' }} />);
+
+    expect(screen.getByText('Price history is not available on this network')).toBeTruthy();
   });
 });

@@ -1,7 +1,7 @@
 import { Query, useQuery, UseQueryResult } from '@tanstack/react-query';
 
 import { useContainer } from '../di/container-provider';
-import { ChartRange, TokenMarketData } from '../domain/market';
+import { ChartRange, TokenMarketData, TokenMarketInfo } from '../domain/market';
 import { Network } from '../domain/network';
 import { Token } from '../domain/token';
 import { NO_ID_KEY, queryKeys } from './query-keys';
@@ -26,5 +26,16 @@ export const useMarketDataQuery = (token: Token | undefined, network: Network, r
     enabled: Boolean(token),
     placeholderData: keepSameAsset,
     staleTime: 60_000,
+  });
+};
+
+export const useTokenInfoQuery = (token: Token | undefined, network: Network): UseQueryResult<TokenMarketInfo, Error> => {
+  const { marketDataService } = useContainer();
+
+  return useQuery({
+    queryKey: queryKeys.tokenInfo(network.id, token?.id ?? NO_ID_KEY),
+    queryFn: () => marketDataService.getTokenInfo(token as Token, network),
+    enabled: Boolean(token),
+    staleTime: 5 * 60_000,
   });
 };

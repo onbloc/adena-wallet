@@ -1,4 +1,5 @@
 import { FEATURES } from '../config/features';
+import { GnoswapApiClient } from '../infrastructure/http/gnoswap-api.client';
 import { FetchHttpClient, HttpClient } from '../infrastructure/http/http-client';
 import { OnblocApiClient } from '../infrastructure/http/onbloc-api.client';
 import { StorageAccountRepository } from '../repositories/account.repository';
@@ -9,7 +10,7 @@ import { createCosmosModule } from '../repositories/chain/cosmos/cosmos-module';
 import { createGnoModule } from '../repositories/chain/gno/gno-module';
 import { createCachedGnoProviderFactory } from '../repositories/chain/gno/gno-provider';
 import { StorageConnectedAppRepository } from '../repositories/connected-app.repository';
-import { MarketDataRepository, MockMarketDataRepository } from '../repositories/market-data.repository';
+import { DexMarketDataRepository, MarketDataRepository } from '../repositories/market-data.repository';
 import { StorageNetworkRepository } from '../repositories/network.repository';
 import { StorageNftPreferenceRepository } from '../repositories/nft-preference.repository';
 import { SecurePasswordAttemptRepository } from '../repositories/password-attempt.repository';
@@ -17,6 +18,7 @@ import { StoragePreferenceRepository } from '../repositories/preference.reposito
 import { ApiPriceRepository, PriceRepository } from '../repositories/price.repository';
 import { StorageTokenListRepository } from '../repositories/token-list.repository';
 import { SecureVaultRepository } from '../repositories/vault.repository';
+import { DEX_API_CONFIG } from '../resources';
 import { SecureStore } from '../security/secure-store';
 import { ScryptXChaChaVaultCipher, VaultCipher } from '../security/vault-cipher';
 import { AccountService } from '../services/account.service';
@@ -122,7 +124,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     tokenService,
     priceService,
     marketDataService: overrides.marketDataService
-      ?? new MarketDataService(infra.marketDataRepository ?? new MockMarketDataRepository(), priceService),
+      ?? new MarketDataService(infra.marketDataRepository ?? new DexMarketDataRepository(new GnoswapApiClient(http), DEX_API_CONFIG, infra.now)),
     nftService,
     addressBookService: overrides.addressBookService
       ?? new AddressBookService(new StorageAddressBookRepository(keyValueStore), chainRegistry),

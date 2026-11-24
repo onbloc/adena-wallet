@@ -2,7 +2,7 @@ import React, { ReactElement, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Badge, Button, Text, TextColor } from '../../atoms';
+import { Button, Text, TextColor } from '../../atoms';
 import {
   ActivityList,
   ActivityListProps,
@@ -24,7 +24,8 @@ export interface TokenMarketView {
   changeColor: TextColor;
   chart: number[];
   loading: boolean;
-  isSample: boolean;
+  // Shown in place of the chart when there is no price history.
+  emptyLabel?: string;
   stats: { label: string; value: string }[];
   links: { label: string; url: string }[];
 }
@@ -48,7 +49,7 @@ export interface TokenDetailsPageProps<R extends string> {
 
 const ABOUT_PREVIEW_LINES = 3;
 
-// Layout follows the "Token details" sample: price, chart, ranges, About, Stats, Links.
+// Layout follows the "Token details" design: price, chart, ranges, About, Stats, Links, then balance and activity.
 export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<R>): ReactElement => {
   const [aboutExpanded, setAboutExpanded] = useState(false);
   const { asset, market } = props;
@@ -65,35 +66,31 @@ export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<
             <Text variant='row'>{asset.name}</Text>
             <Text variant='meta' color='secondary'>{asset.symbol}</Text>
           </View>
-          {market.isSample && <Badge label='Sample data' tone='warning' />}
         </View>
 
         <View style={styles.price}>
           <Text variant='display' tabular adjustsFontSizeToFit numberOfLines={1}>{market.priceLabel ?? '–'}</Text>
           {market.changeLabel && <Text variant='meta' color={market.changeColor} tabular>{market.changeLabel}</Text>}
         </View>
-        <PriceChart values={market.chart} loading={market.loading} accessibilityLabel={`${asset.symbol} price chart`} />
+        <PriceChart values={market.chart} loading={market.loading} emptyLabel={market.emptyLabel} accessibilityLabel={`${asset.symbol} price chart`} />
         <RangeSelector options={props.ranges} selected={props.range} onSelect={props.onRangeChange} />
-
-        <Card title='Your balance'>
-          <KeyValueRow label={asset.symbol} value={asset.quantity ?? '–'} emphasis />
-          {props.balanceValueLabel && <KeyValueRow label='Value' value={props.balanceValueLabel} />}
-        </Card>
 
         {props.about && (
           <View style={styles.section}>
             <Text variant='section'>{`About ${asset.name}`}</Text>
-            <Text variant='body' color='secondary' numberOfLines={aboutExpanded ? undefined : ABOUT_PREVIEW_LINES}>{props.about}</Text>
+            <Text variant='body' numberOfLines={aboutExpanded ? undefined : ABOUT_PREVIEW_LINES}>{props.about}</Text>
             <Pressable accessibilityRole='button' onPress={handlePressablePress} style={styles.readMore}>
               <Text variant='button'>{aboutExpanded ? 'Show less' : 'Read more'}</Text>
             </Pressable>
           </View>
         )}
 
-        <View style={styles.section}>
-          <SectionLabel label='Stats' />
-          {market.stats.map(stat => <KeyValueRow key={stat.label} label={stat.label} value={stat.value} emphasis />)}
-        </View>
+        {market.stats.length > 0 && (
+          <View style={styles.section}>
+            <SectionLabel label='Stats' />
+            {market.stats.map(stat => <KeyValueRow key={stat.label} label={stat.label} value={stat.value} emphasis />)}
+          </View>
+        )}
 
         {market.links.length > 0 && (
           <View style={styles.section}>
@@ -102,11 +99,16 @@ export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<
               const handlePress = (): void => props.onOpenLink(link.url);
 
               return (
-                <ListRow key={link.label} label={link.label} leadingIcon='link' onPress={handlePress} />
+                <ListRow key={link.url} label={link.label} leadingIcon='link' onPress={handlePress} />
               );
             })}
           </View>
         )}
+
+        <Card title='Your balance'>
+          <KeyValueRow label={asset.symbol} value={asset.quantity ?? '–'} emphasis />
+          {props.balanceValueLabel && <KeyValueRow label='Value' value={props.balanceValueLabel} />}
+        </Card>
 
         <View style={styles.section}>
           <SectionLabel label='Activity' />

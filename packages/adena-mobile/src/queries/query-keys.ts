@@ -22,6 +22,7 @@ export const queryKeys = {
   nftMetadata: (networkId: string, packagePath: string, nftId: string) =>
     [...queryKeys.all, 'nft-metadata', networkId, packagePath, nftId] as const,
   marketData: (networkId: string, tokenId: string, range: string) => [...queryKeys.all, 'market', networkId, tokenId, range] as const,
+  tokenInfo: (networkId: string, tokenId: string) => [...queryKeys.all, 'token-info', networkId, tokenId] as const,
   activities: (networkId: string, accountId: string, filterKey: string) =>
     [...queryKeys.all, 'activities', networkId, accountId, filterKey] as const,
 };

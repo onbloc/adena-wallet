@@ -1,0 +1,6 @@
+{
+  "gnoland-1": {
+    "provider": "gnoswap",
+    "apiUrl": "https://gnoswap.io/api/v1"
+  }
+}

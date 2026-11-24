@@ -3,6 +3,7 @@ import { LocalTokenIcon, Token, TokenType } from '../domain/token';
 import exploreApps from './apps/apps.json';
 import atomoneNetworks from './chains/atomone-networks.json';
 import gnoNetworks from './chains/gno-networks.json';
+import dexApis from './dex/dex-apis.json';
 import grc20Registry from './tokens/grc20reg.json';
 import nativeTokens from './tokens/native-tokens.json';
 import priceBindings from './tokens/price-bindings.json';
@@ -156,6 +157,30 @@ export const getGrc20RegistryConfig = (chainId: string): Grc20RegistryConfig =>
   GRC20_REGISTRY[chainId] ?? GRC20_REGISTRY.default;
 
 export const PRICE_CONFIG = priceBindings as PriceConfig;
+
+export const DexProvider = {
+  GNOSWAP: 'gnoswap',
+} as const;
+
+export type DexProvider = (typeof DexProvider)[keyof typeof DexProvider];
+
+export interface DexApiConfig {
+  provider: DexProvider;
+  // Base URL without a trailing slash, e.g. https://gnoswap.io/api/v1.
+  apiUrl: string;
+}
+
+// Market data (token metadata, prices, OHLCV) per network, keyed by network id.
+export type DexApiConfigMap = Record<string, DexApiConfig>;
+
+const toDexApiConfigMap = (resource: Record<string, DexApiConfig>): DexApiConfigMap =>
+  Object.fromEntries(Object.entries(resource).map(([networkId, config]) => {
+    assert(Object.values(DexProvider).includes(config.provider), `${networkId} dex provider ${config.provider} is not supported`);
+    assert(/^https:\/\/[^/]+/.test(config.apiUrl), `${networkId} dex apiUrl must be https`);
+    return [networkId, { provider: config.provider, apiUrl: config.apiUrl.replace(/\/+$/, '') }];
+  }));
+
+export const DEX_API_CONFIG: DexApiConfigMap = toDexApiConfigMap(dexApis as Record<string, DexApiConfig>);
 
 export interface ExploreApp {
   id: string;

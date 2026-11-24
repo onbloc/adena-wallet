@@ -41,7 +41,7 @@ describe('createContainer', () => {
     const gno = createFakeGnoProvider();
     const http = new FakeHttpClient();
     const priceRepository = { isSupported: jest.fn(() => true), getPrices: jest.fn(async () => []) };
-    const marketDataRepository = { getMarketData: jest.fn(async () => ({}) as never) };
+    const marketDataRepository = { isSupported: jest.fn(() => true), getMarketData: jest.fn(async () => ({}) as never), getTokenInfo: jest.fn(async () => ({}) as never) };
     const container = createContainer({
       ...baseInfra(),
       http,
