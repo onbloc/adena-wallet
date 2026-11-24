@@ -26,7 +26,7 @@ describe('AccountsPage', () => {
     await renderPage(<AccountsPage {...page} />);
 
     expect(screen.getByText('2 accounts')).toBeTruthy();
-    expect(screen.getByText('g1jg...sqf5 · Recovery phrase')).toBeTruthy();
+    expect(screen.getByText('g1jg8m...fvsqf5 · Recovery phrase')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('account-a1'));
     await fireEvent.press(screen.getByTestId('account-a2'));
     await fireEvent.press(screen.getByRole('button', { name: 'Add account' }));

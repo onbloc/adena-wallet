@@ -15,8 +15,8 @@ const props = (overrides: Partial<ActivityDetailPageProps> = {}): ActivityDetail
   amountColor: 'primary',
   status: 'Confirmed',
   rows: [
-    { label: 'To', value: 'g1jg...sqf5', onCopy: onCopyAddress, copyLabel: 'Copy to address' },
-    { label: 'Transaction hash', value: 'A1B2...EEFF', onCopy: onCopyHash, copyLabel: 'Copy transaction hash' },
+    { label: 'To', value: 'g1jg8m...fvsqf5', onCopy: onCopyAddress, copyLabel: 'Copy to address' },
+    { label: 'Transaction hash', value: 'A1B2C3...DDEEFF', onCopy: onCopyHash, copyLabel: 'Copy transaction hash' },
     { label: 'Fee', value: '0.0001 GNOT' },
   ],
   onOpenExplorer: jest.fn(),
@@ -34,9 +34,9 @@ describe('ActivityDetailPage', () => {
     expect(screen.getByText('Confirmed')).toBeTruthy();
     expect(screen.getByText('Sent GNOT')).toBeTruthy();
     expect(screen.getByText('-1,000,000,000.123456 GNOT')).toBeTruthy();
-    expect(screen.getByText('A1B2...EEFF')).toBeTruthy();
+    expect(screen.getByText('A1B2C3...DDEEFF')).toBeTruthy();
     expect(screen.queryByText(hash)).toBeNull();
-    expect(screen.getByText('g1jg...sqf5')).toBeTruthy();
+    expect(screen.getByText('g1jg8m...fvsqf5')).toBeTruthy();
     expect(screen.getByText('0.0001 GNOT')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     await fireEvent.press(screen.getByRole('button', { name: 'View on Gnoscan' }));

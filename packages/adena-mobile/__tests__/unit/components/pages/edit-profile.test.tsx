@@ -30,7 +30,7 @@ describe('EditProfilePage', () => {
 
     await renderPage(<EditProfilePage {...page} />);
 
-    expect(screen.getByText('g1jg...sqf5')).toBeTruthy();
+    expect(screen.getByText('g1jg8m...fvsqf5')).toBeTruthy();
     expect(screen.getByText('A1')).toBeTruthy();
     expect(screen.queryByTestId('avatar-photo')).toBeNull();
     expect(screen.queryByText('Shown only on this device.')).toBeNull();

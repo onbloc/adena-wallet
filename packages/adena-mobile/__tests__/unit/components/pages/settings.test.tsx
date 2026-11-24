@@ -54,7 +54,7 @@ describe('SettingsPage', () => {
     const pattern = new RegExp(`^(${ORDER.join('|')})$`);
 
     expect(screen.getAllByText(pattern).map(node => node.props.children)).toEqual(ORDER);
-    expect(screen.getByText('g1jg...sqf5')).toBeTruthy();
+    expect(screen.getByText('g1jg8m...fvsqf5')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Theme, Auto' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Local currency, USD' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Language, English' })).toBeTruthy();
@@ -73,7 +73,7 @@ describe('SettingsPage', () => {
     await renderPage(<SettingsPage {...page} />);
 
     expect(screen.getByText('Version 1.0.0')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Account 1, g1jg...sqf5' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Account 1, g1jg8m...fvsqf5' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Networks, Mainnet' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Connected apps, 0' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Address book' }));

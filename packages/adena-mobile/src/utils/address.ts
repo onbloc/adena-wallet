@@ -17,12 +17,13 @@ export const normalizeAddress = (address: string, prefix = 'g'): string | null =
 // Only the canonical form is valid, so anything signed or compared is already normalized.
 export const isValidAddress = (address: string, prefix = 'g'): boolean => normalizeAddress(address, prefix) === address;
 
-// Display-only truncation matching the Adena extension; copy and signing always use the full string.
-export const formatAddress = (address: string, length = 4): string =>
+// Display-only truncation; copy and signing always use the full string.
+export const formatAddress = (address: string, length = 6): string =>
   address.length < 40 ? address : `${address.slice(0, length)}...${address.slice(-length)}`;
 
-export const formatHash = (hash: string, length = 4): string =>
-  hash.length < 8 ? hash : `${hash.slice(0, length)}...${hash.slice(-length)}`;
+// Shorter values stay whole rather than coming out no shorter with the ellipsis.
+export const formatHash = (hash: string, length = 6): string =>
+  hash.length <= length * 2 + 3 ? hash : `${hash.slice(0, length)}...${hash.slice(-length)}`;
 
 export const getInitials = (name: string): string => {
   const words = name.trim().split(/\s+/).filter(Boolean);

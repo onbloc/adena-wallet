@@ -32,8 +32,8 @@ describe('SendRecipientPage', () => {
     await fireEvent.changeText(screen.getByLabelText('Address'), resultAddress);
     await fireEvent.press(screen.getByRole('button', { name: 'Clear' }));
     await fireEvent.press(screen.getByTestId('recipient-result'));
-    await fireEvent.press(screen.getByRole('button', { name: 'Alice, g1us...njlj' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Account 2, g1ma...dlf5' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Alice, g1us84...5anjlj' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Account 2, g1manf...cedlf5' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Scan QR code' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
 

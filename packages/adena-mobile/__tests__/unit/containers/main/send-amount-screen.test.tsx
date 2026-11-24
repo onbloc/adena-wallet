@@ -115,7 +115,7 @@ describe('SendAmountScreen', () => {
     expect(screen.getByText('≈ $0.00')).toBeTruthy();
     await fireEvent.press(screen.getByRole('keyboardkey', { name: '3' }));
     expect(screen.getByText('≈ $6.00')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Recipient, g1jg...sqf5' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Recipient, g1jg8m...fvsqf5' }));
     expect(navigation.goBack).toHaveBeenCalledTimes(1);
 
     await fireEvent.press(screen.getByTestId('send-review'));

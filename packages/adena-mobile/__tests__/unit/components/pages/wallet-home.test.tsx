@@ -63,7 +63,7 @@ describe('WalletHomePage', () => {
 
     expect(screen.queryByText('Mainnet')).toBeNull();
     expect(screen.getByText('+1.2%')).toBeTruthy();
-    expect(screen.getByText('g1jg...sqf5')).toBeTruthy();
+    expect(screen.getByText('g1jg8m...fvsqf5')).toBeTruthy();
     expect(screen.queryByText('Unable to load balances')).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'Switch account' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Scan QR code' }));

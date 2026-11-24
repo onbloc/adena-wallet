@@ -65,7 +65,7 @@ describe('SendAmountPage', () => {
 
     expect(screen.getByText('12.5')).toBeTruthy();
     expect(screen.getByText('Available 1,000 GNOT')).toBeTruthy();
-    expect(screen.getByText('g1jg...sqf5')).toBeTruthy();
+    expect(screen.getByText('g1jg8m...fvsqf5')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Memo, Optional' })).toBeTruthy();
     await fireEvent.press(screen.getByRole('keyboardkey', { name: '7' }));
     await fireEvent.press(screen.getByRole('keyboardkey', { name: 'Decimal point' }));
@@ -94,7 +94,7 @@ describe('SendAmountPage', () => {
 
     expect(screen.getByText('≈ $4.20')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Select token, GNOT' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Alice, g1jg...sqf5' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Alice, g1jg8m...fvsqf5' }));
 
     expect(page.onOpenTokenPicker).toHaveBeenCalledTimes(1);
     expect(page.onChangeRecipient).toHaveBeenCalledTimes(1);
@@ -103,7 +103,7 @@ describe('SendAmountPage', () => {
   it('keeps the recipient card static without a change handler', async () => {
     await renderPage(<SendAmountPage {...props()} />);
 
-    expect(screen.queryByRole('button', { name: 'Alice, g1jg...sqf5' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Alice, g1jg8m...fvsqf5' })).toBeNull();
     expect(screen.getByText('Alice')).toBeTruthy();
   });
 

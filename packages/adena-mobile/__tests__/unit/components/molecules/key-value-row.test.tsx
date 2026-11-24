@@ -19,7 +19,7 @@ describe('KeyValueRow', () => {
   it('offers a copy action for truncated values', async () => {
     const onCopy = jest.fn();
 
-    await render(<KeyValueRow label='Transaction hash' value='A1B2...EEFF' onCopy={onCopy} />);
+    await render(<KeyValueRow label='Transaction hash' value='A1B2C3...DDEEFF' onCopy={onCopy} />);
     await fireEvent.press(screen.getByRole('button', { name: 'Copy transaction hash' }));
     expect(onCopy).toHaveBeenCalledTimes(1);
   });

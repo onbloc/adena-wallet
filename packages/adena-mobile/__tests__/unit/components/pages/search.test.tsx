@@ -33,12 +33,12 @@ describe('SearchPage', () => {
     expect(screen.getByText('Tokens')).toBeTruthy();
     expect(screen.getByText('Wallets')).toBeTruthy();
     expect(screen.getByText('NFT collections')).toBeTruthy();
-    expect(screen.getByText('g1jg...sqf5')).toBeTruthy();
+    expect(screen.getByText('g1jg8m...fvsqf5')).toBeTruthy();
     await fireEvent.changeText(screen.getByLabelText('Tokens, wallets or collections'), 'gno');
     await fireEvent.press(screen.getByRole('button', { name: 'Clear' }));
     await fireEvent.press(screen.getByRole('button', { name: 'All networks' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Gno.land, GNOT' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Gnome, g1jg...sqf5' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Gnome, g1jg8m...fvsqf5' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Gnome Punks, Gno.land · NFT collection' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
 

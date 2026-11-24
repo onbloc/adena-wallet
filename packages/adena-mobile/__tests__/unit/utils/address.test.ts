@@ -45,29 +45,29 @@ describe('normalizeAddress', () => {
 });
 
 describe('formatAddress', () => {
-  it('keeps the first and last four characters like the extension', () => {
-    expect(formatAddress(VALID)).toBe('g1jg...sqf5');
+  it('keeps the first and last six characters', () => {
+    expect(formatAddress(VALID)).toBe('g1jg8m...fvsqf5');
   });
 
   it('keeps values shorter than 40 characters', () => {
     expect(formatAddress('1'.repeat(39))).toBe('1'.repeat(39));
-    expect(formatAddress('1234567890'.repeat(4))).toBe('1234...7890');
+    expect(formatAddress('1234567890'.repeat(4))).toBe('123456...567890');
     expect(formatAddress('')).toBe('');
   });
 
   it('supports a custom length', () => {
-    expect(formatAddress(VALID, 6)).toBe('g1jg8m...fvsqf5');
+    expect(formatAddress(VALID, 4)).toBe('g1jg...sqf5');
   });
 });
 
 describe('formatHash', () => {
-  it('keeps the first and last four characters', () => {
-    expect(formatHash('A1B2C3D4E5F60718293A4B5C6D7E8F90')).toBe('A1B2...8F90');
+  it('keeps the first and last six characters', () => {
+    expect(formatHash('A1B2C3D4E5F60718293A4B5C6D7E8F90')).toBe('A1B2C3...7E8F90');
   });
 
-  it('keeps values shorter than 8 characters', () => {
-    expect(formatHash('1234567')).toBe('1234567');
-    expect(formatHash('12345678')).toBe('1234...5678');
+  it('keeps values too short to gain from the ellipsis', () => {
+    expect(formatHash('123456789012345')).toBe('123456789012345');
+    expect(formatHash('1234567890123456')).toBe('123456...123456');
   });
 });
 

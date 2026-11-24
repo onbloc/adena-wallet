@@ -50,7 +50,7 @@ describe('EditProfileScreen', () => {
   it('enables Save only after a change and saves the name without touching the photo', async () => {
     const { navigation, updateProfile, accountPhotoService } = await setup();
 
-    expect(screen.getByText('g1jg...sqf5')).toBeTruthy();
+    expect(screen.getByText('g1jg8m...fvsqf5')).toBeTruthy();
     expect(save().props.accessibilityState).toMatchObject({ disabled: true });
 
     await fireEvent.changeText(screen.getByLabelText('Account name'), '  Savings ');

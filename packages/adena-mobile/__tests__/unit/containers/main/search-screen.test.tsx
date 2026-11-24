@@ -94,7 +94,7 @@ describe('SearchScreen', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Gno.land, GNOT' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Gnome Token, GNOME · Not added' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Gnome Savings, g1acc-2' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Gnad, g1jg...sqf5' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Gnad, g1jg8m...fvsqf5' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Gnome Punks, Gno.land · NFT collection' }));
 
     expect(screen.queryByText('Gnome Hidden')).toBeNull();

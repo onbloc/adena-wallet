@@ -101,7 +101,7 @@ describe('toActivityView', () => {
     expect(toActivityView(item, TOKENS)).toEqual({
       key: 'h1',
       title: 'Send',
-      description: 'To: g1to...000z',
+      description: 'To: g1to00...00000z',
       amountLabel: '-1.5 GNOT',
       tone: AmountTone.DEFAULT,
       statusLabel: 'Confirmed',
@@ -184,7 +184,7 @@ describe('toActivitySectionViews', () => {
     expect(section.items[0]).toEqual({
       key: '0',
       title: 'Send',
-      description: 'To: g1to...000z',
+      description: 'To: g1to00...00000z',
       amountLabel: '-1.5 GNOT',
       tone: AmountTone.MUTED,
       failed: true,

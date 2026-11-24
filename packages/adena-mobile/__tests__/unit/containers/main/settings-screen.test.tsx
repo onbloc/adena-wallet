@@ -37,7 +37,7 @@ describe('SettingsScreen', () => {
   it('opens account settings from the header and the shared Connected apps screen', async () => {
     const { navigation } = await setup();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'A, g1jg...sqf5' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'A, g1jg8m...fvsqf5' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Networks, Testnet' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Connected apps, 0' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Address book' }));
