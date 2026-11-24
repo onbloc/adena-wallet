@@ -9,9 +9,9 @@ const invalidInput = { kind: 'denied', code: 'INVALID_INPUT' };
 const invalidOutput = { kind: 'denied', code: 'INVALID_OUTPUT' };
 const realm = 'gno.land/r/gnoswap/gns';
 
-async function open(tools: FakeOnblocTool[]) {
+async function open(tools: FakeOnblocTool[], trustedServerEnforcesReadOnly?: true) {
   const { fetcher, calls } = fakeOnblocMcp(tools);
-  const run = await new Harness({ toolSources: [createOnblocToolSource({ endpoint, fetcher })] }).startRun({
+  const run = await new Harness({ toolSources: [createOnblocToolSource({ endpoint, fetcher, trustedServerEnforcesReadOnly })] }).startRun({
     account, chainId: GNO_MAINNET_CHAIN, operationId: 'onbloc-test', scope: 'read-only', purpose: 'mainnet-read',
     budget: { maxToolCalls: 30 },
   });
@@ -182,4 +182,25 @@ describe('Onbloc discovered read policy', () => {
       expect(await run.dispatch({ name: 'get_transaction', input: { txHash: 'hash' } })).toEqual({ kind: 'denied', code: 'MCP_TOOL_ERROR' });
     } finally { run.close(); }
   });
+  it('allows dynamically discovered reads only with host trust and never injects identity into new tools', async () => {
+    const catalog: FakeOnblocTool[] = [
+      { name: 'find_realm', inputSchema: { type: 'object', properties: { query: { type: 'string' } },
+        required: ['query'], additionalProperties: false }, output: { found: true } },
+      { name: 'unsafe', annotations: { readOnlyHint: false }, output: {} },
+      { name: 'destructive', annotations: { destructiveHint: true }, output: {} },
+    ];
+    const { run, calls } = await open(catalog, true);
+    try {
+      expect(run.tools.map(tool => tool.name)).toContain('find_realm');
+      expect(run.tools.map(tool => tool.name)).not.toContain('unsafe');
+      expect(run.tools.map(tool => tool.name)).not.toContain('destructive');
+      expect(await run.dispatch({ name: 'find_realm', input: { query: 'public' } })).toEqual({
+        kind: 'result', value: { chainId: GNO_MAINNET_CHAIN, untrustedData: { found: true } },
+      });
+      expect(await run.dispatch({ name: 'find_realm', input: { query: account } })).toEqual(invalidInput);
+      expect(await run.dispatch({ name: 'find_realm', input: { query: 'public', address: account } })).toEqual(invalidInput);
+      expect(calls).toEqual([{ name: 'find_realm', arguments: { query: 'public' } }]);
+    } finally { run.close(); }
+  });
+
 });

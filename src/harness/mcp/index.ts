@@ -1,5 +1,5 @@
 // MCP-backed read tools; the host selects providers and owns their configuration.
-export { createMcpReadToolSource, type McpReadOperation } from './read-tool-source';
+export { createMcpReadToolSource, createTrustedMcpReadToolSource, type McpReadOperation } from './read-tool-source';
 export { discoveredReadTool, type DiscoveredReadPermission } from './discovered-read-tool';
 export { GNO_MAINNET_CHAIN, gnoPublicAddress } from './gno';
 export { parseOnblocEndpoint } from './onbloc-endpoint';

@@ -8,7 +8,13 @@ import { gnoPublicAddress, GNO_MAINNET_CHAIN } from './gno';
 import type { RemoteTool, ToolSource } from '../core';
 
 /** Supply the approved mainnet endpoint from trusted application configuration, not user input. */
-export type OnblocMcpConfig = Readonly<{ endpoint: string; fetcher?: typeof fetch; allowLoopbackHttp?: true }>;
+export type OnblocMcpConfig = Readonly<{
+  endpoint: string;
+  fetcher?: typeof fetch;
+  allowLoopbackHttp?: true;
+  /** Host assertion that this specific server enforces read-only access. Never derive from endpoint input or server hints. */
+  trustedServerEnforcesReadOnly?: true;
+}>;
 
 /** The harness tool source for an Onbloc MCP: mainnet reads for a valid public address. */
 export function createOnblocToolSource(config: OnblocMcpConfig): ToolSource {
@@ -37,7 +43,7 @@ const maxDiscoveryPages = 4;
 const maxDiscoveredTools = 32;
 const maxCatalogChars = 32_000;
 
-export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp }: OnblocMcpConfig) {
+export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp, trustedServerEnforcesReadOnly }: OnblocMcpConfig) {
   const url = parseOnblocEndpoint(endpoint, allowLoopbackHttp);
 
   return async (address: string, signal: AbortSignal) => {
@@ -67,12 +73,13 @@ export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp }: Onb
         }
         for (const tool of page.tools) {
           const { name } = tool;
-          if (!Object.hasOwn(permissions, name)) continue;
+          if (!Object.hasOwn(permissions, name) && !trustedServerEnforcesReadOnly) continue;
           if (seen.has(name)) throw new Error('Duplicate Onbloc tool name.');
           seen.add(name);
           const remote = discoveredReadTool({
             tool,
-            permission: permissions[name],
+            permission: Object.hasOwn(permissions, name) ? permissions[name] : undefined,
+            trustedServerEnforcesReadOnly,
             context: { account: address, chainId: GNO_MAINNET_CHAIN },
             validator,
             call: args => client.request({ method: 'tools/call', params: { name, arguments: args } }, CallToolResultSchema, options),

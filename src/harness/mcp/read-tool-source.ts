@@ -1,4 +1,7 @@
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
+import { CallToolResultSchema } from '@modelcontextprotocol/sdk/types.js';
+import { discoveredReadTool } from './discovered-read-tool';
 import type { RemoteTool, ToolSource, WalletContext } from '../core';
 
 /** Only host-reviewed, read-only operations belong here; never derive this list from server hints. */
@@ -44,6 +47,62 @@ export function createMcpReadToolSource(config: {
         },
       });
     }
+    return tools;
+  };
+}
+
+/**
+ * Discover a catalog from a server the host independently trusts to enforce read-only access.
+ * Never enable this based on a server annotation or a user-supplied endpoint.
+ * The host owns the client and its transport.
+ */
+export function createTrustedMcpReadToolSource(config: {
+  namespace: string;
+  client: Pick<Client, 'listTools' | 'callTool'>;
+  supports(context: WalletContext): boolean;
+  trustedServerEnforcesReadOnly: true;
+}): ToolSource {
+  if (!/^[a-z][a-z0-9_]*$/.test(config.namespace)) throw new TypeError('Invalid MCP namespace');
+  if (config.trustedServerEnforcesReadOnly !== true) throw new TypeError('Trusted read-only server required');
+  return async (context, signal) => {
+    const tools = new Map<string, RemoteTool>();
+    if (!config.supports(context)) return tools;
+    const validator = new AjvJsonSchemaValidator();
+    const seen = new Set<string>();
+    const cursors = new Set<string>();
+    let cursor: string | undefined;
+    let pages = 0;
+    let count = 0;
+    let chars = 0;
+    const options = { signal, timeout: 12000 };
+    do {
+      if (signal.aborted) throw new Error('MCP discovery cancelled.');
+      if (++pages > 4) throw new Error('MCP discovery exceeded the page limit.');
+      const page = await config.client.listTools(cursor === undefined ? {} : { cursor }, options);
+      count += page.tools.length;
+      chars += JSON.stringify(page.tools).length;
+      if (count > 32 || chars > 32_000) throw new Error('MCP discovery exceeded the catalog limit.');
+      for (const tool of page.tools) {
+        if (seen.has(tool.name)) throw new Error('Duplicate MCP tool name.');
+        seen.add(tool.name);
+        const qualified = `${config.namespace}__${tool.name}`;
+        if (qualified.length > 64) continue;
+        const remote = discoveredReadTool({
+          tool,
+          trustedServerEnforcesReadOnly: true,
+          context,
+          validator,
+          call: async args => CallToolResultSchema.parse(await config.client.callTool({ name: tool.name, arguments: args }, undefined, options)),
+        });
+        if (remote) tools.set(qualified, { ...remote, definition: { ...remote.definition, name: qualified } });
+      }
+      cursor = page.nextCursor;
+      if (cursor !== undefined) {
+        if (cursors.has(cursor)) throw new Error('Repeated MCP tools cursor.');
+        cursors.add(cursor);
+      }
+    } while (cursor !== undefined);
+    if (signal.aborted) throw new Error('MCP discovery cancelled.');
     return tools;
   };
 }

@@ -39,9 +39,11 @@ function containsAccount(value: unknown, account: string): boolean {
 }
 
 /** Builds a discovered tool only when its data requirements fit the host's permission. */
-export function discoveredReadTool({ tool, permission, context, validator, call, accepts }: {
+export function discoveredReadTool({ tool, permission, trustedServerEnforcesReadOnly, context, validator, call, accepts }: {
   tool: Tool;
-  permission: DiscoveredReadPermission;
+  permission?: DiscoveredReadPermission;
+  /** Set only by a host that trusts the server to enforce read-only behavior. */
+  trustedServerEnforcesReadOnly?: true;
   context: WalletContext;
   validator: AjvJsonSchemaValidator;
   call: (args: Record<string, unknown>) => Promise<CallToolResult>;
@@ -50,10 +52,12 @@ export function discoveredReadTool({ tool, permission, context, validator, call,
   const { name, description, inputSchema, outputSchema, annotations, execution } = tool;
   if (!/^[a-zA-Z0-9_-]{1,64}$/.test(name) || execution?.taskSupport === 'required' ||
     annotations?.readOnlyHint === false || annotations?.destructiveHint === true) return undefined;
-  const field = permission.account?.field;
+  if (!permission && !trustedServerEnforcesReadOnly) return undefined;
+  const field = permission?.account?.field;
   if ((field && !Object.hasOwn(inputSchema.properties ?? {}, field)) ||
-    inputSchema.required?.some(required => !permission.requiredFields.includes(required) && required !== field) ||
-    hasUnreviewedIdentity(inputSchema, field)) return undefined;
+    (permission && ((!trustedServerEnforcesReadOnly &&
+      inputSchema.required?.some(required => !permission.requiredFields.includes(required) && required !== field)) ||
+      hasUnreviewedIdentity(inputSchema, field)))) return undefined;
 
   let validate: JsonSchemaValidator<unknown>;
   let validateOutput: JsonSchemaValidator<unknown> | undefined;
@@ -78,7 +82,7 @@ export function discoveredReadTool({ tool, permission, context, validator, call,
       const parsed = record.safeParse(raw);
       if (!parsed.success || containsAccount(parsed.data, context.account)) return invalidInput;
       const input = parsed.data;
-      const alternative = permission.account?.unlessProvided;
+      const alternative = permission?.account?.unlessProvided;
       const alternativeValue = alternative ? input[alternative] : undefined;
       if (alternativeValue != null && (typeof alternativeValue !== 'string' || alternativeValue.trim() === '')) return invalidInput;
       const accountBound = field !== undefined && (alternativeValue == null);

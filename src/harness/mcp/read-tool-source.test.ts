@@ -4,7 +4,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
 import { z } from 'zod';
 import { Harness } from '../core';
-import { createMcpReadToolSource } from './read-tool-source';
+import { createMcpReadToolSource, createTrustedMcpReadToolSource } from './read-tool-source';
 import { discoveredReadTool } from './discovered-read-tool';
 
 it('routes same-named reads to their configured server and rejects model-supplied accounts', async () => {
@@ -74,4 +74,48 @@ it('reuses discovered schemas with host-owned account permissions for another pr
       .toEqual({ kind: 'denied', code: 'INVALID_INPUT' });
     expect(calls).toEqual([{ query: 'item', ownerAccount: 'active-account' }]);
   } finally { run.close(); }
+});
+
+it('discovers a trusted server catalog without replicating tool specifications', async () => {
+  const server = new McpServer({ name: 'public', version: '1' });
+  const client = new Client({ name: 'wallet', version: '1' });
+  const calls: unknown[] = [];
+  server.registerTool('search', { inputSchema: { query: z.string() }, outputSchema: { answer: z.string() } }, input => {
+    calls.push(input);
+    return { content: [], structuredContent: { answer: input.query } };
+  });
+  const [local, remote] = InMemoryTransport.createLinkedPair();
+  try {
+    await server.connect(remote);
+    await client.connect(local);
+    const source = createTrustedMcpReadToolSource({
+      namespace: 'public', client, supports: () => true, trustedServerEnforcesReadOnly: true,
+    });
+    const run = await new Harness({ toolSources: [source] }).startRun({
+      account: 'active-account', chainId: 'example', operationId: 'trusted', scope: 'read-only', purpose: 'mainnet-read',
+    });
+    try {
+      expect(run.tools.map(tool => tool.name)).toContain('public__search');
+      expect(await run.dispatch({ name: 'public__search', input: { query: 'hello' } })).toEqual({
+        kind: 'result', value: { chainId: 'example', untrustedData: { answer: 'hello' } },
+      });
+      expect(await run.dispatch({ name: 'public__search', input: { query: 'active-account' } }))
+        .toEqual({ kind: 'denied', code: 'INVALID_INPUT' });
+      expect(await run.dispatch({ name: 'public__search', input: { query: 'hello', address: 'other' } }))
+        .toEqual({ kind: 'denied', code: 'INVALID_INPUT' });
+      expect(calls).toEqual([{ query: 'hello' }]);
+    } finally { run.close(); }
+  } finally { await Promise.all([client.close(), server.close()]); }
+});
+
+it('bounds trusted discovery and rejects repeated cursors', async () => {
+  const client = {
+    listTools: async () => ({ tools: [], nextCursor: 'again' }),
+    callTool: async () => ({ content: [] }),
+  } as unknown as Client;
+  const source = createTrustedMcpReadToolSource({
+    namespace: 'public', client, supports: () => true, trustedServerEnforcesReadOnly: true,
+  });
+  await expect(source({ account: 'active', chainId: 'example' }, new AbortController().signal))
+    .rejects.toThrow('Repeated MCP tools cursor');
 });
