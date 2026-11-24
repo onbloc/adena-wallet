@@ -15,24 +15,55 @@ export interface VaultRepository {
   clear(): Promise<void>;
 }
 
+interface VaultCopy {
+  seq: number;
+  record: VaultRecord;
+}
+
+const COPIES = [SecureKey.VAULT_STAGING, SecureKey.VAULT] as const;
+
+// Keychain replaces an item by delete-then-add, so the vault is kept in two items written in
+// turn (staging, then primary). Each holds a sequence number and the newest complete copy wins.
 export class SecureVaultRepository implements VaultRepository {
   constructor(private readonly secureStore: SecureStore) {}
 
-  exists(): Promise<boolean> {
-    return this.secureStore.hasItem(SecureKey.VAULT);
+  async exists(): Promise<boolean> {
+    return (await this.latest()) !== null;
   }
 
   async read(): Promise<VaultRecord | null> {
-    const raw = await this.secureStore.getItem(SecureKey.VAULT);
-
-    return raw ? (JSON.parse(raw) as VaultRecord) : null;
+    return (await this.latest())?.record ?? null;
   }
 
-  write(record: VaultRecord): Promise<void> {
-    return this.secureStore.setItem(SecureKey.VAULT, JSON.stringify(record));
+  async write(record: VaultRecord): Promise<void> {
+    const seq = ((await this.latest())?.seq ?? 0) + 1;
+
+    await this.secureStore.setItem(SecureKey.VAULT_STAGING, JSON.stringify({ seq, record }));
+    // The primary gets the same record with a higher number; the old secrets survive nowhere.
+    await this.secureStore.setItem(SecureKey.VAULT, JSON.stringify({ seq: seq + 1, record }));
   }
 
-  clear(): Promise<void> {
-    return this.secureStore.removeItem(SecureKey.VAULT);
+  async clear(): Promise<void> {
+    await this.secureStore.removeItem(SecureKey.VAULT);
+    await this.secureStore.removeItem(SecureKey.VAULT_STAGING);
+  }
+
+  // Corrupt data is surfaced rather than silently replaced by the other copy.
+  private async latest(): Promise<VaultCopy | null> {
+    let latest: VaultCopy | null = null;
+
+    for (const key of COPIES) {
+      const raw = await this.secureStore.getItem(key);
+
+      if (raw) {
+        const copy = JSON.parse(raw) as VaultCopy;
+
+        if (!latest || copy.seq > latest.seq) {
+          latest = copy;
+        }
+      }
+    }
+
+    return latest;
   }
 }

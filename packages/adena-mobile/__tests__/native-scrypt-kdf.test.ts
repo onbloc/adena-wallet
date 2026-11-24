@@ -55,19 +55,17 @@ describe('native scrypt adapter', () => {
     expect(new Uint8Array(calls[0].password).every(byte => byte === 0)).toBe(true);
   });
 
-  it('fails closed with CRYPTO_UNAVAILABLE when the native module is missing', () => {
+  it('fails closed with CRYPTO_UNAVAILABLE when the native module is missing', async () => {
     createHybridObject.mockImplementation(() => {
       throw new Error('HybridObject "Scrypt" not found');
     });
-    const error = ((): unknown => {
-      try {
-        createNativeScryptKdf().assertAvailable();
-      }
-      catch (caught) {
-        return caught;
-      }
-    })();
+    const error = await createNativeScryptKdf().assertWorking().catch((caught: unknown) => caught);
 
     expect(isAppError(error, 'CRYPTO_UNAVAILABLE')).toBe(true);
+  });
+
+  it('passes the startup known-answer check through the OpenSSL argument mapping', async () => {
+    fakeOpenSsl();
+    await expect(createNativeScryptKdf().assertWorking()).resolves.toBeUndefined();
   });
 });

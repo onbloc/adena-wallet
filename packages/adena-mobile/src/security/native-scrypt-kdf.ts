@@ -1,3 +1,4 @@
+import { toHex } from '@cosmjs/encoding';
 import { HybridObject, NitroModules } from 'react-native-nitro-modules';
 
 import { AppError, AppErrorCode } from '../core/errors';
@@ -39,14 +40,25 @@ const loadNativeScrypt = (): NativeScrypt => {
   }
 };
 
-// Output correctness and argument mapping are covered by __tests__/native-scrypt-kdf.test.ts;
-// at startup only the presence of the native module is checked, so a broken build fails closed.
-export const createNativeScryptKdf = (): ScryptKdf & { assertAvailable(): void } => {
+// RFC 7914 section 12, first vector: empty password and salt, N=16, r=1, p=1, 64 bytes.
+const KNOWN_ANSWER_PARAMS: ScryptParameters = { N: 16, r: 1, p: 1, dkLen: 64 };
+const KNOWN_ANSWER = '77d6576238657b203b19ca42c18a0497f16b4844e3074ae8dfdffa3fede21442fcd0069ded0948f8326a753a0fc81f17e8d3e0fb2e0d3628cf35e20c38d18906';
+
+export interface NativeScryptKdf extends ScryptKdf {
+  // Startup check: a missing module or a wrong derivation fails closed before any vault is touched.
+  assertWorking(): Promise<void>;
+}
+
+export const createNativeScryptKdf = (): NativeScryptKdf => {
   let native: NativeScrypt | null = null;
 
-  return {
-    assertAvailable(): void {
-      native ??= loadNativeScrypt();
+  const kdf: NativeScryptKdf = {
+    async assertWorking(): Promise<void> {
+      const derived = await kdf.derive(new Uint8Array(), new Uint8Array(), KNOWN_ANSWER_PARAMS);
+
+      if (toHex(derived) !== KNOWN_ANSWER) {
+        throw new AppError(AppErrorCode.CRYPTO_UNAVAILABLE, 'Native cryptography returned an unexpected result on this build.');
+      }
     },
     async derive(password, salt, params): Promise<Uint8Array<ArrayBuffer>> {
       native ??= loadNativeScrypt();
@@ -74,4 +86,6 @@ export const createNativeScryptKdf = (): ScryptKdf & { assertAvailable(): void }
       }
     },
   };
+
+  return kdf;
 };

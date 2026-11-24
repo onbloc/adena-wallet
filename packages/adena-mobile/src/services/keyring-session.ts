@@ -6,9 +6,15 @@ import { HDKeyring, Keyring, keyringFromRecord, KeyringRecord } from '../crypto/
 export class KeyringSession {
   private keyrings = new Map<string, Keyring>();
   private unlocked = false;
+  private closes = 0;
 
   isUnlocked(): boolean {
     return this.unlocked;
+  }
+
+  // Changes on every lock or reset, so work started before one can tell it is stale.
+  get epoch(): number {
+    return this.closes;
   }
 
   open(records: KeyringRecord[]): void {
@@ -22,10 +28,17 @@ export class KeyringSession {
     this.keyrings.set(record.id, keyringFromRecord(record));
   }
 
+  // Wipes one keyring after it left the vault; signing with it fails from here on.
+  remove(keyringId: string): void {
+    this.keyrings.get(keyringId)?.destroy();
+    this.keyrings.delete(keyringId);
+  }
+
   close(): void {
     this.keyrings.forEach(keyring => keyring.destroy());
     this.keyrings.clear();
     this.unlocked = false;
+    this.closes += 1;
   }
 
   getMnemonic(keyringId: string): string {

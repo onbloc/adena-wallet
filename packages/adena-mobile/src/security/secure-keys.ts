@@ -1,7 +1,9 @@
 // Registry of every item kept in the platform keychain/keystore.
 export const SecureKey = {
-  // Password-encrypted mnemonic vault.
+  // Password-encrypted mnemonic vault (primary copy).
   VAULT: 'vault',
+  // Copy written before the primary, so a vault update never leaves zero complete copies.
+  VAULT_STAGING: 'vault-staging',
   // Wallet password guarded by biometric access control.
   BIOMETRIC_PASSWORD: 'biometric-password',
   // Encryption key for the general MMKV storage.

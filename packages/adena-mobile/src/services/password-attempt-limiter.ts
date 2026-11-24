@@ -1,5 +1,6 @@
 import { AppError, AppErrorCode, isAppError } from '../core/errors';
 import { PasswordAttemptRepository } from '../repositories/password-attempt.repository';
+import { SerialQueue } from '../utils/serial-queue';
 
 export const FREE_PASSWORD_ATTEMPTS = 4;
 const BASE_DELAY_MS = 30 * 1000;
@@ -22,6 +23,8 @@ const formatWait = (ms: number): string => {
 
 // One persisted attempt limit for every password check (unlock, reveal, remove, settings, inject sheet).
 export class PasswordAttemptLimiter {
+  private readonly queue = new SerialQueue();
+
   constructor(
     private readonly repository: PasswordAttemptRepository,
     private readonly now: () => number = Date.now,
@@ -42,7 +45,13 @@ export class PasswordAttemptLimiter {
     return Math.max(0, lockedUntil - now);
   }
 
-  async run<T>(check: () => Promise<T>): Promise<T> {
+  // Deadline check, password check and failure update run as one queued step, so overlapping
+  // attempts each see the failures recorded before them.
+  run<T>(check: () => Promise<T>): Promise<T> {
+    return this.queue.run(() => this.attempt(check));
+  }
+
+  private async attempt<T>(check: () => Promise<T>): Promise<T> {
     const remaining = await this.remainingMs();
 
     if (remaining > 0) {
