@@ -8,7 +8,7 @@ import { SecureKey } from '../../../src/security/secure-keys';
 import { AccountService } from '../../../src/services/account.service';
 import { KeyringSession } from '../../../src/services/keyring-session';
 import { VaultService } from '../../../src/services/vault.service';
-import { WalletService } from '../../../src/services/wallet.service';
+import { ENABLE_BIOMETRICS_PROMPT, WalletService } from '../../../src/services/wallet.service';
 import { MemoryKeyValueStore } from '../../../src/storage/memory-key-value-store';
 import { catchError, createFakeRegistry } from '../../helpers/service-fakes';
 import { createTestContainer, TEST_MNEMONIC, TEST_PASSWORD } from '../../helpers/test-container';
@@ -213,6 +213,54 @@ describe('WalletService', () => {
       expect(await wallet.isBiometricUnlockEnabled()).toBe(false);
       expect(container.preferenceService.get().biometricUnlockEnabled).toBe(false);
       expect(await secureStore.hasItem(SecureKey.BIOMETRIC_PASSWORD)).toBe(false);
+    });
+
+    describe('right after creation', () => {
+      let verify: jest.SpyInstance;
+
+      beforeEach(() => {
+        verify = jest.spyOn(VaultService.prototype, 'verifyPassword');
+      });
+
+      afterEach(() => verify.mockRestore());
+
+      it('skips the second password check and asks with the enable prompt', async () => {
+        const { wallet, secureStore } = await setup();
+        const setItem = jest.spyOn(secureStore, 'setItem');
+
+        await wallet.enableBiometricUnlock(TEST_PASSWORD);
+        expect(verify).not.toHaveBeenCalled();
+        expect(setItem).toHaveBeenCalledWith(SecureKey.BIOMETRIC_PASSWORD, TEST_PASSWORD, expect.objectContaining({ prompt: ENABLE_BIOMETRICS_PROMPT }));
+        expect(await wallet.isBiometricUnlockEnabled()).toBe(true);
+
+        // One-shot: the next call verifies again.
+        await wallet.enableBiometricUnlock(TEST_PASSWORD);
+        expect(verify).toHaveBeenCalledTimes(1);
+      });
+
+      it('verifies again after a lock', async () => {
+        const { wallet } = await setup();
+
+        wallet.lock();
+        await wallet.unlock(TEST_PASSWORD);
+        await wallet.enableBiometricUnlock(TEST_PASSWORD);
+        expect(verify).toHaveBeenCalledTimes(1);
+      });
+
+      it('verifies again after another vault write', async () => {
+        const { wallet } = await setup();
+
+        await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+        await wallet.enableBiometricUnlock(TEST_PASSWORD);
+        expect(verify).toHaveBeenCalledTimes(1);
+      });
+
+      it('still rejects a different password', async () => {
+        const { wallet } = await setup();
+
+        expect(await codeOf(() => wallet.enableBiometricUnlock('wrong password'))).toBe('INVALID_PASSWORD');
+        expect(verify).toHaveBeenCalledTimes(1);
+      });
     });
 
     it('rejects a stale escrowed password after a password change', async () => {

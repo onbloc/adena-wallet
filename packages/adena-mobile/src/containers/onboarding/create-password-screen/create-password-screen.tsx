@@ -1,11 +1,12 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { ReactElement, useRef, useState } from 'react';
+import React, { ReactElement, useEffect, useRef, useState } from 'react';
 
 import { CreatePasswordPage, PasswordStrengthView } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
 import { OnboardingStackParamList } from '../../../navigation/types';
 import { evaluatePassword, findPasswordIssue, PASSWORD_ISSUE_MESSAGE, PasswordIssue, PasswordStrength } from '../../../security/password-policy';
+import { ENABLE_BIOMETRICS_PROMPT } from '../../../services/wallet.service';
 import { useOnboardingStore } from '../../../stores/onboarding.store';
 import { SessionStatus, useSessionStore } from '../../../stores/session.store';
 import { useToastStore } from '../../../stores/toast.store';
@@ -24,18 +25,35 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
 
-  const evaluation = password ? evaluatePassword(password) : null;
-  const strength: PasswordStrengthView | undefined = evaluation?.valid
-    ? evaluation.strength === PasswordStrength.STRONG
+  // Follows the full policy (length too), so a label never shows for a password submit would reject.
+  const strength: PasswordStrengthView | undefined = password && !findPasswordIssue(password)
+    ? evaluatePassword(password).strength === PasswordStrength.STRONG
       ? { label: 'Strong', color: 'success' }
       : { label: 'Medium', color: 'warning' }
     : undefined;
+
+  // Leaving mid-submit would let the stale phrase still create the wallet behind the user's back.
+  useEffect(() => navigation.addListener('beforeRemove', (event) => {
+    if (submittingRef.current) {
+      event.preventDefault();
+    }
+  }), [navigation]);
+
+  useEffect(() => {
+    navigation.setOptions({ gestureEnabled: !submitting });
+  }, [navigation, submitting]);
+
+  const handleBack = (): void => {
+    if (!submittingRef.current) {
+      navigation.goBack();
+    }
+  };
 
   // Like MetaMask, biometrics turn on by default when supported; a failure or cancel never blocks onboarding.
   const enableBiometricsIfSupported = async (): Promise<void> => {
     try {
       if (await walletService.getBiometryKind()) {
-        await walletService.enableBiometricUnlock(password);
+        await walletService.enableBiometricUnlock(password, ENABLE_BIOMETRICS_PROMPT);
       }
     }
     catch {
@@ -73,8 +91,27 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
 
       await enableBiometricsIfSupported();
 
+      // The biometric prompt can outlive a lock (e.g. the error boundary); never reopen a closed session.
+      const status = await walletService.getStatus().catch(() => SessionStatus.LOCKED);
+
       clearOnboarding();
       bumpRevision();
+
+      if (status === SessionStatus.EMPTY) {
+        // A reset removed the new wallet meanwhile; start onboarding over.
+        submittingRef.current = false;
+        setSubmitting(false);
+        navigation.popToTop();
+        return;
+      }
+
+      if (status !== SessionStatus.UNLOCKED) {
+        walletService.lock();
+        showToast('Your wallet was saved. Unlock it to continue.', 'warning');
+        setStatus(SessionStatus.LOCKED);
+        return;
+      }
+
       setStatus(SessionStatus.UNLOCKED);
     }
     catch (error) {
@@ -114,7 +151,7 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
       confirmError={confirmError}
       submitting={submitting}
       onSubmit={submit}
-      onBack={navigation.goBack}
+      onBack={handleBack}
     />
   );
 };

@@ -49,6 +49,21 @@ describe('useFactoryReset', () => {
 
     expect(client.getQueryData(['secret'])).toBeUndefined();
     expect(useSessionStore.getState().status).toBe(SessionStatus.LOCKED);
+    // Started unlocked: the reset screen unmounts with the navigator, so the toast carries the error.
+    expect(useToastStore.getState().toast).toMatchObject({ tone: 'error', message: 'Reset failed: Keychain locked' });
+  });
+
+  it('leaves the error to the reset screen when the navigator stays', async () => {
+    useSessionStore.setState({ status: SessionStatus.LOCKED });
+    resetAll.mockRejectedValue(new Error('Keychain locked'));
+    getStatus.mockResolvedValue(SessionStatus.LOCKED);
+    const { result } = await setup().hook;
+
+    await act(async () => {
+      await expect(result.current()).rejects.toThrow('Keychain locked');
+    });
+
+    expect(useToastStore.getState().toast?.message).toBe('Copied');
   });
 
   it('lands on onboarding when the wallet is already gone, and locks when the status is unreadable', async () => {

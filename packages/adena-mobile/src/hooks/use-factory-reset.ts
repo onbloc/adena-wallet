@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
+import { toErrorMessage } from '../core/error-message';
 import { useContainer } from '../di/container-provider';
 import { useOnboardingStore } from '../stores/onboarding.store';
 import { SessionStatus, useSessionStore } from '../stores/session.store';
@@ -12,6 +13,8 @@ export const useFactoryReset = (): (() => Promise<void>) => {
   const queryClient = useQueryClient();
 
   return useCallback(async () => {
+    const statusBefore = useSessionStore.getState().status;
+
     try {
       await appResetService.resetAll();
     }
@@ -21,6 +24,12 @@ export const useFactoryReset = (): (() => Promise<void>) => {
       const status = await walletService.getStatus().catch(() => SessionStatus.LOCKED);
 
       useSessionStore.getState().setStatus(status);
+
+      // A status change swaps the navigator and unmounts the reset screen, so report it globally.
+      if (status !== statusBefore) {
+        useToastStore.getState().show(`Reset failed: ${toErrorMessage(error)}`, 'error');
+      }
+
       throw error;
     }
 

@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useRef, useState } from 'react';
 
 import { ResetWalletPage } from '../../components/pages';
 import { toErrorMessage } from '../../core/error-message';
@@ -12,8 +12,15 @@ export const ResetWalletScreen = (): ReactElement => {
   const [acknowledged, setAcknowledged] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string>();
+  const resettingRef = useRef(false);
 
   const handleReset = async (): Promise<void> => {
+    // State updates land after the next render, so a quick second tap would start another reset.
+    if (resettingRef.current) {
+      return;
+    }
+
+    resettingRef.current = true;
     setResetting(true);
     setError(undefined);
 
@@ -21,6 +28,7 @@ export const ResetWalletScreen = (): ReactElement => {
       await reset();
     }
     catch (resetError) {
+      resettingRef.current = false;
       setError(toErrorMessage(resetError));
       setResetting(false);
     }

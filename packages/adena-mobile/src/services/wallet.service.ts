@@ -1,4 +1,6 @@
 import { fromHex, toBase64 } from '@cosmjs/encoding';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
 
 import { APP_CONFIG } from '../config/app';
 import { AppError, AppErrorCode } from '../core/errors';
@@ -29,6 +31,21 @@ export const WalletStatus = {
 
 export type WalletStatus = (typeof WalletStatus)[keyof typeof WalletStatus];
 
+export const ENABLE_BIOMETRICS_PROMPT: SecurePrompt = {
+  title: 'Enable biometric unlock',
+  subtitle: 'Confirm to unlock Adena with biometrics',
+  cancel: 'Not now',
+};
+
+// The password a wallet was just created with, as a digest, valid only for that session and vault write.
+interface CreatedWithPassword {
+  digest: string;
+  epoch: number;
+  vaultRevision: number;
+}
+
+const digestPassword = (password: string): string => bytesToHex(sha256(utf8ToBytes(password)));
+
 export interface CreateWalletInput {
   mnemonic: string;
   password: string;
@@ -39,6 +56,8 @@ export interface CreateWalletInput {
 // Keyring and account changes run on AccountService's mutation queue, so duplicate checks,
 // index allocation and keyring removal see each other.
 export class WalletService {
+  private createdWith: CreatedWithPassword | null = null;
+
   constructor(
     private readonly vaultService: VaultService,
     private readonly keyringSession: KeyringSession,
@@ -91,6 +110,7 @@ export class WalletService {
       this.assertCurrent(epoch);
       this.accountService.clear();
       this.keyringSession.open(content.keyrings);
+      this.createdWith = { digest: digestPassword(password), epoch: this.keyringSession.epoch, vaultRevision: this.vaultService.revision };
       return this.accountService.appendAccount(record.id, record.type, accountName ?? 'Account 1');
     });
   }
@@ -105,6 +125,7 @@ export class WalletService {
   }
 
   lock(): void {
+    this.createdWith = null;
     this.keyringSession.close();
   }
 
@@ -144,14 +165,31 @@ export class WalletService {
     return this.preferenceRepository.get().biometricUnlockEnabled && (await this.biometricRepository.hasCredential());
   }
 
-  async enableBiometricUnlock(password: string): Promise<void> {
+  async enableBiometricUnlock(password: string, prompt: SecurePrompt = ENABLE_BIOMETRICS_PROMPT): Promise<void> {
+    const justCreated = this.consumeCreatedWith(password);
+
     if (!(await this.biometricRepository.getBiometryKind())) {
       throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric authentication is not available');
     }
 
-    await this.vaultService.verifyPassword(password);
-    await this.biometricRepository.saveCredential(password);
+    // Skips a second scrypt run right after creation; any lock, reset or vault write since then forces it.
+    if (!justCreated) {
+      await this.vaultService.verifyPassword(password);
+    }
+
+    await this.biometricRepository.saveCredential(password, prompt);
     this.preferenceRepository.update({ biometricUnlockEnabled: true });
+  }
+
+  // One-shot: true only for the creation password while that session and vault are unchanged.
+  private consumeCreatedWith(password: string): boolean {
+    const created = this.createdWith;
+
+    this.createdWith = null;
+    return created !== null
+      && created.epoch === this.keyringSession.epoch
+      && created.vaultRevision === this.vaultService.revision
+      && created.digest === digestPassword(password);
   }
 
   async disableBiometricUnlock(): Promise<void> {

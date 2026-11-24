@@ -1,9 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
+import { CreatePasswordPageProps } from '../../../../src/components/pages';
 import { CreatePasswordScreen } from '../../../../src/containers/onboarding/create-password-screen';
 import { AppError, AppErrorCode } from '../../../../src/core/errors';
 import { BiometryKind } from '../../../../src/security/secure-store';
+import { ENABLE_BIOMETRICS_PROMPT } from '../../../../src/services/wallet.service';
 import { useOnboardingStore } from '../../../../src/stores/onboarding.store';
 import { SessionStatus, useSessionStore } from '../../../../src/stores/session.store';
 import { useToastStore } from '../../../../src/stores/toast.store';
@@ -12,6 +14,20 @@ import { TEST_MNEMONIC, TEST_PASSWORD } from '../../../helpers/test-container';
 import { wrapPage } from '../../components/pages/render-page';
 
 type CreatePasswordProps = Parameters<typeof CreatePasswordScreen>[0];
+
+const mockPage: { props?: CreatePasswordPageProps } = {};
+
+jest.mock('../../../../src/components/pages', () => {
+  const actual = jest.requireActual('../../../../src/components/pages');
+
+  return {
+    ...actual,
+    CreatePasswordPage: (props: CreatePasswordPageProps) => {
+      mockPage.props = props;
+      return actual.CreatePasswordPage(props);
+    },
+  };
+});
 
 describe('CreatePasswordScreen', () => {
   const walletService = {
@@ -22,12 +38,26 @@ describe('CreatePasswordScreen', () => {
     getBiometryKind: jest.fn(),
     isBiometricUnlockEnabled: jest.fn(),
   };
-  const props = { navigation: { goBack: jest.fn(), popToTop: jest.fn() }, route: { key: 'CreatePassword', name: 'CreatePassword' } } as unknown as CreatePasswordProps;
+  let beforeRemove: ((event: { preventDefault: () => void }) => void) | undefined;
+  const navigation = {
+    goBack: jest.fn(),
+    popToTop: jest.fn(),
+    setOptions: jest.fn(),
+    addListener: jest.fn((_type: string, handler: typeof beforeRemove) => {
+      beforeRemove = handler;
+      return jest.fn();
+    }),
+  };
+  const props = { navigation, route: { key: 'CreatePassword', name: 'CreatePassword' } } as unknown as CreatePasswordProps;
 
-  const fillAndSubmit = async (): Promise<void> => {
+  const renderScreen = async (): Promise<void> => {
     const { Wrapper } = createWrapper({ walletService });
 
     await render(wrapPage(<Wrapper><CreatePasswordScreen {...props} /></Wrapper>));
+  };
+
+  const fillAndSubmit = async (): Promise<void> => {
+    await renderScreen();
     await fireEvent.changeText(screen.getByTestId('password-input'), TEST_PASSWORD);
     await fireEvent.changeText(screen.getByTestId('password-confirm'), TEST_PASSWORD);
     await fireEvent.press(screen.getByTestId('password-submit'));
@@ -37,6 +67,8 @@ describe('CreatePasswordScreen', () => {
     jest.clearAllMocks();
     walletService.getBiometryKind.mockResolvedValue(null);
     walletService.isBiometricUnlockEnabled.mockResolvedValue(false);
+    walletService.getStatus.mockResolvedValue(SessionStatus.UNLOCKED);
+    beforeRemove = undefined;
     useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC });
     useSessionStore.setState({ status: SessionStatus.EMPTY });
     useToastStore.getState().dismiss();
@@ -60,7 +92,7 @@ describe('CreatePasswordScreen', () => {
 
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
     expect(screen.queryByRole('switch')).toBeNull();
-    expect(walletService.enableBiometricUnlock).toHaveBeenCalledWith(TEST_PASSWORD);
+    expect(walletService.enableBiometricUnlock).toHaveBeenCalledWith(TEST_PASSWORD, ENABLE_BIOMETRICS_PROMPT);
     expect(walletService.createWallet.mock.invocationCallOrder[0]).toBeLessThan(walletService.enableBiometricUnlock.mock.invocationCallOrder[0]);
     expect(useToastStore.getState().toast).toBeNull();
   });
@@ -107,5 +139,75 @@ describe('CreatePasswordScreen', () => {
     expect(walletService.lock).toHaveBeenCalledTimes(1);
     expect(useOnboardingStore.getState().mnemonic).toBeNull();
     expect(useToastStore.getState().toast?.message).toBe('Your wallet was saved. Unlock it to continue.');
+  });
+
+  it('does not reopen the wallet when it was locked during the biometric prompt', async () => {
+    walletService.getBiometryKind.mockResolvedValue(BiometryKind.FACE);
+    walletService.createWallet.mockResolvedValue(undefined);
+    // e.g. the error boundary locked the keyring while the prompt was open.
+    walletService.enableBiometricUnlock.mockImplementation(async () => {
+      walletService.getStatus.mockResolvedValue(SessionStatus.LOCKED);
+    });
+    await fillAndSubmit();
+
+    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.LOCKED));
+    expect(useOnboardingStore.getState().mnemonic).toBeNull();
+    expect(useToastStore.getState().toast?.message).toBe('Your wallet was saved. Unlock it to continue.');
+  });
+
+  it('starts onboarding over when the new wallet was removed meanwhile', async () => {
+    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.getStatus.mockResolvedValue(SessionStatus.EMPTY);
+    await fillAndSubmit();
+
+    await waitFor(() => expect(navigation.popToTop).toHaveBeenCalledTimes(1));
+    expect(useSessionStore.getState().status).toBe(SessionStatus.EMPTY);
+  });
+
+  it('blocks leaving the screen while the wallet is being created', async () => {
+    let finish: () => void = () => undefined;
+
+    walletService.createWallet.mockImplementation(() => new Promise<void>((resolve) => {
+      finish = resolve;
+    }));
+    await renderScreen();
+    await fireEvent.changeText(screen.getByTestId('password-input'), TEST_PASSWORD);
+    await fireEvent.changeText(screen.getByTestId('password-confirm'), TEST_PASSWORD);
+    // Pressed without awaiting the submit, which stays pending until finish().
+    await act(async () => {
+      mockPage.props?.onSubmit();
+    });
+
+    const event = { preventDefault: jest.fn() };
+
+    beforeRemove?.(event);
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(navigation.goBack).not.toHaveBeenCalled();
+    expect(navigation.setOptions).toHaveBeenLastCalledWith({ gestureEnabled: false });
+
+    await act(async () => finish());
+    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
+  });
+
+  it('allows leaving the screen when not submitting', async () => {
+    await renderScreen();
+    const event = { preventDefault: jest.fn() };
+
+    beforeRemove?.(event);
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(navigation.goBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a strength label only for passwords the policy accepts', async () => {
+    await renderScreen();
+
+    // 7 characters: zxcvbn rates it medium, but the length rule rejects it.
+    await fireEvent.changeText(screen.getByTestId('password-input'), 'aaaZq7!');
+    expect(screen.queryByTestId('password-strength')).toBeNull();
+
+    await fireEvent.changeText(screen.getByTestId('password-input'), TEST_PASSWORD);
+    expect(screen.getByTestId('password-strength')).toBeTruthy();
   });
 });

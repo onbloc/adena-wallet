@@ -25,6 +25,8 @@ export interface SecurePrompt {
 
 export interface SecureWriteOptions {
   policy?: SecureAccessPolicy;
+  // Android asks for biometrics when it encrypts a biometric item; iOS ignores this on write.
+  prompt?: SecurePrompt;
 }
 
 export interface SecureReadOptions {

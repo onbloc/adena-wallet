@@ -43,3 +43,15 @@ describe('BackupPhrasePage', () => {
     expect(page.onToggleAcknowledged).toHaveBeenCalledWith(true);
   });
 });
+
+describe('BackupPhrasePage masked state', () => {
+  it('renders no words while hidden and reveals on request', async () => {
+    const onReveal = jest.fn();
+
+    await renderPage(<BackupPhrasePage {...props({ hidden: true, onReveal })} />);
+
+    expect(screen.queryByText('word1')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Show phrase' }));
+    expect(onReveal).toHaveBeenCalledTimes(1);
+  });
+});

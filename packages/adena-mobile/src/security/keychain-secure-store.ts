@@ -82,6 +82,7 @@ export class KeychainSecureStore implements SecureStore {
         accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
         accessControl: biometric ? Keychain.ACCESS_CONTROL.BIOMETRY_CURRENT_SET : undefined,
         storage: biometric ? Keychain.STORAGE_TYPE.AES_GCM : Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
+        authenticationPrompt: biometric ? options?.prompt : undefined,
       });
 
       if (!result) {

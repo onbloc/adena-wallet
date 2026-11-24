@@ -4,7 +4,7 @@ import { BiometryKind, SecureAccessPolicy, SecurePrompt, SecureStore } from '../
 export interface BiometricCredentialRepository {
   getBiometryKind(): Promise<BiometryKind | null>;
   hasCredential(): Promise<boolean>;
-  saveCredential(password: string): Promise<void>;
+  saveCredential(password: string, prompt?: SecurePrompt): Promise<void>;
   readCredential(prompt: SecurePrompt): Promise<string | null>;
   clear(): Promise<void>;
 }
@@ -20,8 +20,8 @@ export class SecureBiometricCredentialRepository implements BiometricCredentialR
     return this.secureStore.hasItem(SecureKey.BIOMETRIC_PASSWORD);
   }
 
-  saveCredential(password: string): Promise<void> {
-    return this.secureStore.setItem(SecureKey.BIOMETRIC_PASSWORD, password, { policy: SecureAccessPolicy.BIOMETRIC });
+  saveCredential(password: string, prompt?: SecurePrompt): Promise<void> {
+    return this.secureStore.setItem(SecureKey.BIOMETRIC_PASSWORD, password, { policy: SecureAccessPolicy.BIOMETRIC, prompt });
   }
 
   readCredential(prompt: SecurePrompt): Promise<string | null> {
