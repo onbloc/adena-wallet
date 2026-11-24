@@ -3,6 +3,7 @@ import React from 'react';
 
 import { CreatePasswordScreen } from '../../../../src/containers/onboarding/create-password-screen';
 import { AppError, AppErrorCode } from '../../../../src/core/errors';
+import { BiometryKind } from '../../../../src/security/secure-store';
 import { useOnboardingStore } from '../../../../src/stores/onboarding.store';
 import { SessionStatus, useSessionStore } from '../../../../src/stores/session.store';
 import { useToastStore } from '../../../../src/stores/toast.store';
@@ -48,6 +49,42 @@ describe('CreatePasswordScreen', () => {
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
     expect(walletService.createWallet).toHaveBeenCalledWith({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
     expect(useOnboardingStore.getState().mnemonic).toBeNull();
+    expect(walletService.enableBiometricUnlock).not.toHaveBeenCalled();
+  });
+
+  it('enables biometric unlock automatically when the device supports it', async () => {
+    walletService.getBiometryKind.mockResolvedValue(BiometryKind.FACE);
+    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.enableBiometricUnlock.mockResolvedValue(undefined);
+    await fillAndSubmit();
+
+    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
+    expect(screen.queryByRole('switch')).toBeNull();
+    expect(walletService.enableBiometricUnlock).toHaveBeenCalledWith(TEST_PASSWORD);
+    expect(walletService.createWallet.mock.invocationCallOrder[0]).toBeLessThan(walletService.enableBiometricUnlock.mock.invocationCallOrder[0]);
+    expect(useToastStore.getState().toast).toBeNull();
+  });
+
+  it('still opens the wallet when enabling biometrics fails or is cancelled', async () => {
+    walletService.getBiometryKind.mockResolvedValue(BiometryKind.FACE);
+    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.enableBiometricUnlock.mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Cancelled'));
+    await fillAndSubmit();
+
+    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
+    expect(useOnboardingStore.getState().mnemonic).toBeNull();
+    expect(walletService.lock).not.toHaveBeenCalled();
+    expect(useToastStore.getState().toast?.message).toBe('Biometric unlock could not be enabled');
+  });
+
+  it('still opens the wallet when the biometry check fails', async () => {
+    walletService.getBiometryKind.mockRejectedValue(new Error('Keychain unavailable'));
+    walletService.createWallet.mockResolvedValue(undefined);
+    await fillAndSubmit();
+
+    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
+    expect(walletService.enableBiometricUnlock).not.toHaveBeenCalled();
+    expect(useToastStore.getState().toast?.message).toBe('Biometric unlock could not be enabled');
   });
 
   it('stays on the form when nothing was stored', async () => {

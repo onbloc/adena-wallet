@@ -1,7 +1,6 @@
 import React, { ReactElement } from 'react';
-import { View } from 'react-native';
 
-import { Button, Switch, Text, TextColor } from '../../atoms';
+import { Button, Text, TextColor } from '../../atoms';
 import { Screen, TextField, TopBar } from '../../molecules';
 import { styles } from './create-password.styles';
 
@@ -19,9 +18,6 @@ export interface CreatePasswordPageProps {
   onChangeConfirmPassword: (value: string) => void;
   passwordError?: string;
   confirmError?: string;
-  biometricLabel?: string;
-  biometricEnabled: boolean;
-  onToggleBiometric: (value: boolean) => void;
   submitting: boolean;
   onSubmit: () => void;
   onBack: () => void;
@@ -35,9 +31,6 @@ export const CreatePasswordPage = ({
   onChangeConfirmPassword,
   passwordError,
   confirmError,
-  biometricLabel,
-  biometricEnabled,
-  onToggleBiometric,
   submitting,
   onSubmit,
   onBack,
@@ -83,11 +76,5 @@ export const CreatePasswordPage = ({
       error={confirmError}
       testID='password-confirm'
     />
-    {biometricLabel && (
-      <View style={styles.row}>
-        <Text variant='row' style={styles.label}>{`Unlock with ${biometricLabel}`}</Text>
-        <Switch value={biometricEnabled} onValueChange={onToggleBiometric} accessibilityLabel={`Unlock with ${biometricLabel}`} />
-      </View>
-    )}
   </Screen>
 );

@@ -12,8 +12,6 @@ const meta = {
     confirmPassword: '',
     onChangePassword: fn(),
     onChangeConfirmPassword: fn(),
-    biometricEnabled: false,
-    onToggleBiometric: fn(),
     submitting: false,
     onSubmit: fn(),
     onBack: fn(),
@@ -25,8 +23,6 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Empty: Story = {};
-
-export const WithBiometrics: Story = { args: { biometricLabel: 'Face ID', biometricEnabled: true } };
 
 export const Errors: Story = {
   args: { password: 'short', confirmPassword: 'other', passwordError: 'Use at least 8 characters.', confirmError: 'Passwords do not match.' },

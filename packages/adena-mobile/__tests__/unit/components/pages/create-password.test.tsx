@@ -9,9 +9,6 @@ const props = (overrides: Partial<CreatePasswordPageProps> = {}): CreatePassword
   confirmPassword: 'password1',
   onChangePassword: jest.fn(),
   onChangeConfirmPassword: jest.fn(),
-  biometricLabel: 'Face ID',
-  biometricEnabled: false,
-  onToggleBiometric: jest.fn(),
   submitting: false,
   onSubmit: jest.fn(),
   onBack: jest.fn(),
@@ -26,19 +23,17 @@ describe('CreatePasswordPage', () => {
 
     await fireEvent.changeText(screen.getByTestId('password-input'), 'abc');
     await fireEvent.changeText(screen.getByTestId('password-confirm'), 'abcd');
-    await fireEvent.press(screen.getByRole('switch', { name: 'Unlock with Face ID' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Create wallet' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
 
     expect(page.onChangePassword).toHaveBeenCalledWith('abc');
     expect(page.onChangeConfirmPassword).toHaveBeenCalledWith('abcd');
-    expect(page.onToggleBiometric).toHaveBeenCalledWith(true);
     expect(page.onSubmit).toHaveBeenCalledTimes(1);
     expect(page.onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('shows validation messages and hides biometrics when unavailable', async () => {
-    const page = props({ passwordError: 'Use at least 8 characters', confirmError: 'Passwords do not match', biometricLabel: undefined });
+  it('shows validation messages without a biometric switch', async () => {
+    const page = props({ passwordError: 'Use at least 8 characters', confirmError: 'Passwords do not match' });
 
     await renderPage(<CreatePasswordPage {...page} />);
 

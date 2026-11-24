@@ -5,12 +5,10 @@ import { CreatePasswordPage, PasswordStrengthView } from '../../../components/pa
 import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
 import { OnboardingStackParamList } from '../../../navigation/types';
-import { useBiometricStatusQuery } from '../../../queries/wallet.queries';
 import { evaluatePassword, findPasswordIssue, PASSWORD_ISSUE_MESSAGE, PasswordIssue, PasswordStrength } from '../../../security/password-policy';
 import { useOnboardingStore } from '../../../stores/onboarding.store';
 import { SessionStatus, useSessionStore } from '../../../stores/session.store';
 import { useToastStore } from '../../../stores/toast.store';
-import { getBiometryLabel } from '../../../utils/biometry';
 
 export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<OnboardingStackParamList, 'CreatePassword'>): ReactElement => {
   const { walletService } = useContainer();
@@ -23,11 +21,6 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string>();
   const [confirmError, setConfirmError] = useState<string>();
-  const biometric = useBiometricStatusQuery();
-  const biometricLabel = getBiometryLabel(biometric.data?.kind ?? null);
-  // Defaults to on when the device supports biometrics, until the user decides.
-  const [biometricChoice, setBiometricChoice] = useState<boolean>();
-  const biometricEnabled = biometricChoice ?? Boolean(biometric.data?.kind);
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
 
@@ -37,6 +30,18 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
       ? { label: 'Strong', color: 'success' }
       : { label: 'Medium', color: 'warning' }
     : undefined;
+
+  // Like MetaMask, biometrics turn on by default when supported; a failure or cancel never blocks onboarding.
+  const enableBiometricsIfSupported = async (): Promise<void> => {
+    try {
+      if (await walletService.getBiometryKind()) {
+        await walletService.enableBiometricUnlock(password);
+      }
+    }
+    catch {
+      showToast('Biometric unlock could not be enabled', 'warning');
+    }
+  };
 
   const submit = async (): Promise<void> => {
     if (submittingRef.current) {
@@ -66,11 +71,7 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
     try {
       await walletService.createWallet({ mnemonic, password });
 
-      if (biometricEnabled) {
-        await walletService.enableBiometricUnlock(password).catch(() => {
-          showToast('Biometric unlock could not be enabled', 'warning');
-        });
-      }
+      await enableBiometricsIfSupported();
 
       clearOnboarding();
       bumpRevision();
@@ -111,9 +112,6 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
       onChangeConfirmPassword={handleChangeConfirmPassword}
       passwordError={passwordError}
       confirmError={confirmError}
-      biometricLabel={biometricLabel}
-      biometricEnabled={biometricEnabled}
-      onToggleBiometric={setBiometricChoice}
       submitting={submitting}
       onSubmit={submit}
       onBack={navigation.goBack}
