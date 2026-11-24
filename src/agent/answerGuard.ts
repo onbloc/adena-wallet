@@ -1,4 +1,5 @@
 import { GenerateEventType, type GenerateEvent } from '../llm/core';
+import { ToolName, WalletStatus } from './wallet/constants';
 
 /**
  * Holds the model's text back and shows it only if the tools support it. Answers that rest on
@@ -13,8 +14,7 @@ export async function* guardAnswer(
   let text = '';
   let readSucceeded = false;
   let readFailed = false;
-  // A wallet action tool (not a read) returned a result.
-  let actionRan = false;
+  const outcomes: string[] = [];
 
   for await (const event of events) {
     switch (event.type) {
@@ -35,24 +35,33 @@ export async function* guardAnswer(
           if (ok) readSucceeded = true;
           else readFailed = true;
         } else {
-          actionRan = true;
+          const output = event.output;
+          const status = typeof output === 'object' && output !== null && 'status' in output ? output.status : undefined;
+          if (event.name === ToolName.GetApprovals) {
+            if (status === WalletStatus.Ok) readSucceeded = true;
+            else readFailed = true;
+          } else {
+            outcomes.push(status === WalletStatus.Prepared ? 'Unsigned transaction prepared. Nothing was sent.'
+              : 'Transaction preparation was not confirmed.');
+          }
         }
         yield event;
         break;
       case GenerateEventType.ToolError:
-        readFailed = true;
+        if (event.name === ToolName.Transfer || event.name === ToolName.Approve) outcomes.push('Transaction preparation was not confirmed.');
+        else readFailed = true;
         yield event;
         break;
       case GenerateEventType.Done: {
-        if (event.aborted) {
+        if (event.aborted && outcomes.length === 0) {
           yield event;
           break;
         }
-        const trusted = (readSucceeded || actionRan) && !readFailed;
-        const answer = !readSucceeded && !actionRan ? 'No Onbloc lookup returned verified data.'
-          : readFailed ? 'Some Onbloc lookups failed. Review the individual tool results.'
-            : text || (readSucceeded ? 'Onbloc returned data; no model summary was produced.'
-              : 'The wallet action ran; no model summary was produced.');
+        const trusted = readSucceeded && !readFailed && !outcomes.length;
+        const lookupFailure = 'Some Onbloc lookups failed. Review the individual tool results.';
+        const answer = outcomes.length ? [...outcomes, ...(readFailed ? [lookupFailure] : [])].join(' ')
+          : !readSucceeded ? 'No Onbloc lookup returned verified data.'
+            : readFailed ? lookupFailure : text || 'Onbloc returned data; no model summary was produced.';
         yield { type: GenerateEventType.Text, delta: answer };
         yield trusted ? event : { ...event, messages: [] };
         break;

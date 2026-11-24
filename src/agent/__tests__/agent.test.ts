@@ -91,12 +91,12 @@ describe('AIAgent', () => {
       expect.objectContaining({ name: 'get_native_balance', output: expect.objectContaining({ kind: 'result' }) }),
       expect.objectContaining({ name: ToolName.Transfer, output: expect.objectContaining({ status: WalletStatus.Prepared }) }),
     ]);
-    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'Ready to sign 1 GNOT' });
+    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'Unsigned transaction prepared. Nothing was sent.' });
     expect(prepared).toEqual([
       { summary: expect.objectContaining({ from: account, to: RECIPIENT, amount: '1', token: 'GNOT' }), tx: expect.anything() },
     ]);
     const done = events[events.length - 1];
-    expect(done.type === GenerateEventType.Done && done.messages.length).toBeGreaterThan(0);
+    expect(done).toMatchObject({ type: GenerateEventType.Done, messages: [] });
   });
 
   it("gives the model the wallet's contacts by name", async () => {
@@ -117,12 +117,12 @@ describe('AIAgent', () => {
     expect(prompt).not.toContain('Contacts:');
   });
 
-  it('keeps the model answer when only a wallet action ran', async () => {
-    const { agent } = setup([send, answer('Done')]);
+  it('does not present a model claim of settlement as the outcome of preparation', async () => {
+    const { agent } = setup([send, answer('Payment confirmed on chain.')]);
 
     expect(await collect(agent.run({ prompt: 'go' }))).toContainEqual({
       type: GenerateEventType.Text,
-      delta: 'Done',
+      delta: 'Unsigned transaction prepared. Nothing was sent.',
     });
   });
 
@@ -164,7 +164,7 @@ describe('AIAgent', () => {
 
     expect(events).toContainEqual({
       type: GenerateEventType.Text,
-      delta: 'Some Onbloc lookups failed. Review the individual tool results.',
+      delta: 'Unsigned transaction prepared. Nothing was sent. Some Onbloc lookups failed. Review the individual tool results.',
     });
     expect(events[events.length - 1]).toMatchObject({ type: GenerateEventType.Done, messages: [] });
   });
