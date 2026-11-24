@@ -1,12 +1,10 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 import React, { createRef } from 'react';
-import { Animated, Dimensions, Keyboard, KeyboardEvent, Platform, TextInput, TextInputInstance } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Platform, TextInputInstance } from 'react-native';
 
-import { Button } from '../../../src/components/atoms';
-import { BottomSheet, MnemonicGrid, PasswordSheet, TextField } from '../../../src/components/molecules';
+import { MnemonicGrid, PasswordSheet, TextField } from '../../../src/components/molecules';
 import { AddNetworkPage, AddressBookEditPage, ChangePasswordPage, CreatePasswordPage, ImportWalletPage, UnlockPage } from '../../../src/components/pages';
 import { SecretImportMode } from '../../../src/domain/account';
 import { focusedTestIds, focusMock } from '../../helpers/focus';
@@ -258,114 +256,5 @@ describe('form submit chaining', () => {
     expect(screen.getByLabelText('Address').props).toMatchObject({ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' });
     await fireEvent(screen.getByLabelText('Address'), 'submitEditing');
     expect(onSave).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('BottomSheet keyboard', () => {
-  const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 34 } };
-  const originalOS = Platform.OS;
-
-  beforeEach(() => jest.useFakeTimers());
-
-  afterEach(() => {
-    jest.useRealTimers();
-    jest.restoreAllMocks();
-    Platform.OS = originalOS;
-  });
-
-  const renderSheet = (onOpened = jest.fn(), onPress = jest.fn()) => render(
-    <SafeAreaProvider initialMetrics={metrics}>
-      <BottomSheet visible title='Sheet' onClose={jest.fn()} onOpened={onOpened}>
-        <TextField label='Field' value='' onChangeText={jest.fn()} returnKeyType='done' testID='sheet-field' />
-        <Button label='Act' onPress={onPress} />
-      </BottomSheet>
-    </SafeAreaProvider>,
-  );
-
-  it('reports onOpened once the open animation settles', async () => {
-    const onOpened = jest.fn();
-
-    await renderSheet(onOpened);
-    expect(onOpened).not.toHaveBeenCalled();
-    await act(async () => {
-      jest.runAllTimers();
-    });
-    expect(onOpened).toHaveBeenCalledTimes(1);
-  });
-
-  it('follows the iOS keyboard frame with the keyboard\'s own duration and curve', async () => {
-    const handlers: Record<string, (event: KeyboardEvent) => void> = {};
-
-    jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, handler: (event: KeyboardEvent) => void) => {
-      handlers[event] = handler;
-      return { remove: jest.fn() };
-    }) as unknown as typeof Keyboard.addListener);
-    const timing = jest.spyOn(Animated, 'timing');
-
-    await renderSheet();
-    const frame = { screenX: 0, screenY: Dimensions.get('screen').height - 336, width: 390, height: 336 };
-
-    timing.mockClear();
-    await act(async () => handlers.keyboardWillChangeFrame({ duration: 250, easing: 'keyboard', endCoordinates: frame, startCoordinates: frame } as KeyboardEvent));
-    // Lifted by the keyboard height minus the home indicator inset the sheet already pads for.
-    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ toValue: 302, duration: 250, useNativeDriver: true }));
-
-    timing.mockClear();
-    await act(async () => handlers.keyboardWillHide({ duration: 200, easing: 'keyboard', endCoordinates: frame, startCoordinates: frame } as KeyboardEvent));
-    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ toValue: 0, duration: 200 }));
-  });
-
-  it('lifts on Android from the modal\'s soft input height, and moves on focus once the height is known', async () => {
-    Platform.OS = 'android';
-    const timing = jest.spyOn(Animated, 'timing');
-    const { container } = await renderSheet();
-    const source = container.queryAll(node => typeof node.props.onSoftInputHeightChange === 'function')[0];
-
-    expect(source.props.enabled).toBe(false);
-    timing.mockClear();
-    await act(async () => source.props.onSoftInputHeightChange({ nativeEvent: { softInputHeight: 280 } }));
-    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ toValue: 280, useNativeDriver: true }));
-
-    await act(async () => source.props.onSoftInputHeightChange({ nativeEvent: { softInputHeight: 0 } }));
-    timing.mockClear();
-    await fireEvent(screen.getByTestId('sheet-field'), 'focus');
-    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ toValue: 280 }));
-
-    // A hardware keyboard never reports a height: the guess is undone.
-    timing.mockClear();
-    await act(async () => {
-      jest.advanceTimersByTime(1000);
-    });
-    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ toValue: 0 }));
-  });
-
-  it('dismisses the keyboard of its own field when the sheet closes, and leaves other fields alone', async () => {
-    const dismiss = jest.spyOn(Keyboard, 'dismiss');
-    const currentlyFocused = jest.spyOn(TextInput.State, 'currentlyFocusedInput');
-    const sheet = (visible: boolean) => (
-      <SafeAreaProvider initialMetrics={metrics}>
-        <BottomSheet visible={visible} title='Sheet' onClose={jest.fn()}>
-          <TextField label='Field' value='' onChangeText={jest.fn()} returnKeyType='done' testID='sheet-field' />
-        </BottomSheet>
-      </SafeAreaProvider>
-    );
-    const sheetInput = { id: 'sheet' } as unknown as ReturnType<typeof TextInput.State.currentlyFocusedInput>;
-    const screenInput = { id: 'screen' } as unknown as ReturnType<typeof TextInput.State.currentlyFocusedInput>;
-    const { rerender } = await render(sheet(false));
-
-    // A hidden sheet mounting next to an autofocused field must not take its keyboard away.
-    expect(dismiss).not.toHaveBeenCalled();
-    await rerender(sheet(true));
-    currentlyFocused.mockReturnValue(sheetInput);
-    await fireEvent(screen.getByTestId('sheet-field', { includeHiddenElements: true }), 'focus');
-    await rerender(sheet(false));
-    expect(dismiss).toHaveBeenCalledTimes(1);
-
-    await rerender(sheet(true));
-    await fireEvent(screen.getByTestId('sheet-field', { includeHiddenElements: true }), 'focus');
-    // The screen below focuses its own field while the sheet closes.
-    currentlyFocused.mockReturnValue(screenInput);
-    await rerender(sheet(false));
-    expect(dismiss).toHaveBeenCalledTimes(1);
   });
 });

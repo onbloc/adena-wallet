@@ -18,7 +18,7 @@ export interface PasswordSheetProps {
   onClose: () => void;
   // Optional biometric alternative; the password field stays as the fallback.
   biometric?: { label: string; icon: IconName; onPress: () => void };
-  // Each change focuses the field once the sheet is open. Without it the field focuses on open.
+  // Each change focuses the field once the sheet presents. Without it the field focuses on open.
   focusRequest?: number;
 }
 
@@ -38,15 +38,19 @@ export const PasswordSheet = ({
   focusRequest,
 }: PasswordSheetProps): ReactElement => {
   const inputRef = useRef<TextInputInstance>(null);
-  const openedRef = useRef(false);
+  // `presenting` once the sheet starts to slide in, `settled` once it has.
+  const presentingRef = useRef(false);
+  const settledRef = useRef(false);
+  const retryOnSettleRef = useRef(false);
   const pendingFocusRef = useRef(false);
   const wasVisibleRef = useRef(false);
   const lastRequestRef = useRef(focusRequest);
 
-  // Focus waits for the open animation and for a running check, so the keyboard never races the slide.
+  // Focus starts with the presentation so the keyboard rises with the sheet, and waits for a running check.
   const focusIfReady = (): void => {
-    if (pendingFocusRef.current && openedRef.current && !submitting) {
+    if (pendingFocusRef.current && presentingRef.current && !submitting) {
       pendingFocusRef.current = false;
+      retryOnSettleRef.current = !settledRef.current;
       inputRef.current?.focus();
     }
   };
@@ -59,7 +63,9 @@ export const PasswordSheet = ({
     wasVisibleRef.current = visible;
 
     if (!visible) {
-      openedRef.current = false;
+      presentingRef.current = false;
+      settledRef.current = false;
+      retryOnSettleRef.current = false;
       pendingFocusRef.current = false;
       return;
     }
@@ -71,8 +77,21 @@ export const PasswordSheet = ({
     focusIfReady();
   });
 
+  const handleWillOpen = (): void => {
+    presentingRef.current = true;
+    focusIfReady();
+  };
+
+  // iOS can refuse focus while the sheet is still entering the window; one retry once it has.
   const handleOpened = (): void => {
-    openedRef.current = true;
+    presentingRef.current = true;
+    settledRef.current = true;
+
+    if (retryOnSettleRef.current && !inputRef.current?.isFocused()) {
+      inputRef.current?.focus();
+    }
+
+    retryOnSettleRef.current = false;
     focusIfReady();
   };
 
@@ -91,7 +110,7 @@ export const PasswordSheet = ({
   };
 
   return (
-    <BottomSheet visible={visible} title={title} description={description} onClose={onClose} dismissible={!submitting} onOpened={handleOpened}>
+    <BottomSheet visible={visible} title={title} description={description} onClose={onClose} dismissible={!submitting} onWillOpen={handleWillOpen} onOpened={handleOpened}>
       <TextField
         ref={inputRef}
         label='Password'

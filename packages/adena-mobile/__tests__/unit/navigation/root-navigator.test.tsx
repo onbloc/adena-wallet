@@ -23,14 +23,14 @@ describe('RootNavigator', () => {
     useSessionStore.setState({ status: SessionStatus.UNLOCKED });
     await render(<RootNavigator />);
 
-    expect(routes()).toHaveLength(29);
+    expect(routes()).toHaveLength(30);
     expect(routes()).toEqual(expect.arrayContaining(['Search', 'EditProfile', 'BuyCrypto', 'Checkout', 'AccountSettings', 'AddToken']));
   });
 
   it('mounts only the stack of the session status', async () => {
     useSessionStore.setState({ status: SessionStatus.LOCKED });
     await render(<RootNavigator />);
-    expect(routes()).toEqual(['Splash', 'Unlock', 'ResetWallet']);
+    expect(routes()).toEqual(['Splash', 'Unlock', 'ResetWallet', 'Sheet']);
   });
 
   it('holds the launch logo while the wallet status is read', async () => {
@@ -43,6 +43,6 @@ describe('RootNavigator', () => {
   it('starts onboarding without the splash when there is no wallet', async () => {
     useSessionStore.setState({ status: SessionStatus.EMPTY });
     await render(<RootNavigator />);
-    expect(routes()).toEqual(['Welcome', 'BackupPhrase', 'ImportWallet', 'CreatePassword']);
+    expect(routes()).toEqual(['Welcome', 'BackupPhrase', 'ImportWallet', 'CreatePassword', 'Sheet']);
   });
 });

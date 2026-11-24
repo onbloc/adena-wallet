@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { SHEET_EXIT_MS } from '../../../../src/components/molecules';
 import { EditProfileScreen } from '../../../../src/containers/main/edit-profile-screen';
 import { Account } from '../../../../src/domain/account';
 import { pickProfilePhoto } from '../../../../src/infrastructure/media/profile-photo-picker';
@@ -37,19 +38,6 @@ const setup = async ({ account = { ...ACCOUNT, name: 'Main' }, photo }: { accoun
 };
 
 const save = (): ReturnType<typeof screen.getByTestId> => screen.getByTestId('edit-profile-save');
-
-type Node = { parent: Node | null; props: { onDismiss?: () => void } };
-
-// The sheet's Modal reports onDismiss on iOS (the jest platform) once it is gone.
-const dismissSheetContaining = (start: Node): void => {
-  let node: Node | null = start;
-
-  while (node && !node.props.onDismiss) {
-    node = node.parent;
-  }
-
-  node!.props.onDismiss!();
-};
 
 const changePhoto = (): Promise<void> => fireEvent.press(screen.getByRole('button', { name: 'Change profile photo' }));
 
@@ -111,16 +99,19 @@ describe('EditProfileScreen', () => {
 
   it('opens the picker only after the options sheet is dismissed', async () => {
     pickMock.mockResolvedValue(PICKED);
+    jest.useFakeTimers();
     await setup({ photo: SAVED });
 
     await changePhoto();
-    const choose = screen.getByRole('button', { name: 'Choose photo' });
-
-    await fireEvent.press(choose);
+    await fireEvent.press(screen.getByRole('button', { name: 'Choose photo' }));
     expect(pickMock).not.toHaveBeenCalled();
 
-    await act(async () => dismissSheetContaining(choose as unknown as Node));
+    // The sheet reports it is gone once its exit has run.
+    await act(async () => jest.advanceTimersByTime(SHEET_EXIT_MS - 1));
+    expect(pickMock).not.toHaveBeenCalled();
+    await act(async () => jest.advanceTimersByTime(1));
     expect(pickMock).toHaveBeenCalledTimes(1);
+    jest.useRealTimers();
     expect(screen.getByTestId('avatar-photo').props.source).toEqual({ uri: PICKED });
   });
 

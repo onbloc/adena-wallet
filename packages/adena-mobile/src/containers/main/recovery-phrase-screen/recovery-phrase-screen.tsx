@@ -2,6 +2,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { ReactElement, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
+import { isCoveredBySheet } from '../../../components/molecules';
 import { RecoveryPhrasePage } from '../../../components/pages';
 import { useContainer } from '../../../di/container-provider';
 import { usePasswordGate } from '../../../hooks/use-password-gate';
@@ -34,6 +35,11 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
       setWords(undefined);
     };
     const unsubscribeBlur = navigation.addListener('blur', () => {
+      // The password sheet is a route over this screen, not a departure from it.
+      if (isCoveredBySheet(navigation)) {
+        return;
+      }
+
       hideWords();
       closeRevealSheet();
       clearClipboard();

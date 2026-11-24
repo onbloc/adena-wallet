@@ -4,7 +4,6 @@ import { Platform, TextInput, TextInputBlurEvent, TextInputFocusEvent, TextInput
 import { useAppTheme } from '../../../hooks/use-app-theme';
 import { useThemeColors } from '../../../theme';
 import { Icon, IconButton, IconName, Text } from '../../atoms';
-import { useSheetKeyboardHandle } from '../bottom-sheet/sheet-keyboard';
 import { useStyles } from './text-field.styles';
 
 // Keeps secrets out of iOS Passwords / Google Password Manager and keyboard learning. Applied after the
@@ -51,19 +50,16 @@ export const TextField = ({
   const colors = useThemeColors();
   const { scheme } = useAppTheme();
   const [focused, setFocused] = useState(false);
-  const sheetKeyboard = useSheetKeyboardHandle();
   const [revealed, setRevealed] = useState(false);
   const borderColor = error ? colors.status.error : focused ? colors.border.focus : colors.border.input;
 
   const handleFocus = (event: TextInputFocusEvent): void => {
     setFocused(true);
-    sheetKeyboard?.onInputFocus();
     onFocus?.(event);
   };
 
   const handleBlur = (event: TextInputBlurEvent): void => {
     setFocused(false);
-    sheetKeyboard?.onInputBlur();
     onBlur?.(event);
   };
 

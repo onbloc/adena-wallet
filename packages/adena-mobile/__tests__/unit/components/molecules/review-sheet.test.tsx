@@ -66,6 +66,7 @@ describe('ReviewSheet', () => {
   it('shows the broadcasting state and is not dismissible', async () => {
     await renderSheet(props({ confirming: true }));
     expect(screen.getByText('Broadcasting…', hidden)).toBeTruthy();
-    expect(screen.getAllByLabelText('Close', hidden)).toHaveLength(1);
+    // No close button; the native sheet blocks swipe, scrim and back while broadcasting.
+    expect(screen.queryByLabelText('Close', hidden)).toBeNull();
   });
 });

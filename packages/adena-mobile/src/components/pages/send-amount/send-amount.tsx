@@ -106,12 +106,18 @@ interface MemoSheetProps {
   onClose: () => void;
 }
 
-// Focuses once the sheet settles, so the keyboard does not race the slide.
+// Focuses as the sheet presents so the keyboard rises with it; retried once it settles.
 const MemoSheet = ({ visible, memo, onChangeMemo, onClose }: MemoSheetProps): ReactElement => {
   const inputRef = useRef<TextInputInstance>(null);
 
+  const focus = (): void => {
+    if (!inputRef.current?.isFocused()) {
+      inputRef.current?.focus();
+    }
+  };
+
   return (
-    <BottomSheet visible={visible} title='Memo' onClose={onClose} onOpened={() => inputRef.current?.focus()}>
+    <BottomSheet visible={visible} title='Memo' onClose={onClose} onWillOpen={focus} onOpened={focus}>
       <TextField
         ref={inputRef}
         label='Memo (optional)'

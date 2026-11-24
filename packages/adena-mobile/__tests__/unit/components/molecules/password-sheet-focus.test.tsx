@@ -1,8 +1,11 @@
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { act, render, screen } from '@testing-library/react-native';
-import React from 'react';
+import React, { ReactElement } from 'react';
+import { TextInput } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { PasswordSheet, PasswordSheetProps } from '../../../../src/components/molecules';
+import { PasswordSheet, PasswordSheetProps, resetSheetStore, SHEET_ROUTE, SheetRouteParams, SheetScreen } from '../../../../src/components/molecules';
 import { focusedTestIds, focusMock } from '../../../helpers/focus';
 
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
@@ -22,6 +25,49 @@ const wrap = (sheet: PasswordSheetProps) => <SafeAreaProvider initialMetrics={me
 
 const renderSheet = (sheet: PasswordSheetProps) => render(wrap(sheet));
 
+describe('PasswordSheet focus in the native sheet', () => {
+  const Stack = createNativeStackNavigator<{ Owner: undefined; Sheet: SheetRouteParams }>();
+  let view: Awaited<ReturnType<typeof render>>;
+  const isFocused = (): jest.Mock => (TextInput as unknown as { prototype: { isFocused: jest.Mock } }).prototype.isFocused;
+  // The last native screen in the tree is the sheet route.
+  const sheetScreen = (): { props: Record<string, () => void> } => view.container.queryAll(node => typeof node.props.onWillAppear === 'function').at(-1)!;
+
+  const Owner = (): ReactElement => <PasswordSheet {...props()} />;
+
+  beforeEach(async () => {
+    resetSheetStore();
+    focusMock().mockClear();
+    isFocused().mockReset();
+    view = await render(
+      <SafeAreaProvider initialMetrics={metrics}>
+        <NavigationContainer>
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name='Owner' component={Owner} />
+            <Stack.Screen name={SHEET_ROUTE} component={SheetScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>,
+    );
+  });
+
+  it('focuses as the sheet starts to present, so the keyboard rises with it', async () => {
+    expect(focusMock()).not.toHaveBeenCalled();
+    await act(async () => sheetScreen().props.onWillAppear());
+    expect(focusedTestIds()).toEqual(['password-sheet-input']);
+
+    isFocused().mockReturnValue(true);
+    await act(async () => sheetScreen().props.onAppear());
+    expect(focusMock()).toHaveBeenCalledTimes(1);
+  });
+
+  it('focuses again once settled when the early focus did not take', async () => {
+    await act(async () => sheetScreen().props.onWillAppear());
+    isFocused().mockReturnValue(false);
+    await act(async () => sheetScreen().props.onAppear());
+    expect(focusMock()).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('PasswordSheet focus', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -34,9 +80,8 @@ describe('PasswordSheet focus', () => {
     jest.runAllTimers();
   });
 
-  it('focuses the field once the sheet has slid in, not while it slides', async () => {
+  it('focuses the field once when shown in place', async () => {
     await renderSheet(props());
-    expect(focusMock()).not.toHaveBeenCalled();
     await settle();
     expect(focusedTestIds()).toEqual(['password-sheet-input']);
   });

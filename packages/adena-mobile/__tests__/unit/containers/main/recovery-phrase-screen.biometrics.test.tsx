@@ -21,6 +21,7 @@ const setup = async ({ enabled = true, readBiometricPassword = jest.fn(async () 
   const { Wrapper } = createWrapper({ walletService });
   const navigation = {
     goBack: jest.fn(),
+    getState: jest.fn(),
     addListener: jest.fn((_event: string, handler: () => void) => {
       blurListener = handler;
       return jest.fn();

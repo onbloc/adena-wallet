@@ -49,11 +49,8 @@ describe('PasswordSheet', () => {
 
     await renderSheet(sheet);
     expect(screen.getByText('Verifying…', { includeHiddenElements: true })).toBeTruthy();
-    const closers = screen.getAllByLabelText('Close', { includeHiddenElements: true });
-
-    expect(closers).toHaveLength(1);
-    await fireEvent.press(closers[0]);
-    expect(sheet.onClose).not.toHaveBeenCalled();
+    // No close button; the native sheet blocks swipe, scrim and back while verifying.
+    expect(screen.queryByLabelText('Close', { includeHiddenElements: true })).toBeNull();
   });
 
   it('offers the biometric alternative next to the password field', async () => {

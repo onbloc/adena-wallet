@@ -1,6 +1,7 @@
 import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import React, { ReactElement, useMemo } from 'react';
 
+import { SHEET_ROUTE, SheetScreen, useSheetScreenOptions } from '../components/molecules';
 import { SplashPage } from '../components/pages';
 import { AccountSettingsScreen } from '../containers/main/account-settings-screen';
 import { AccountsScreen } from '../containers/main/accounts-screen';
@@ -53,6 +54,7 @@ const useScreenOptions = (): NativeStackNavigationOptions => {
 
 const OnboardingNavigator = (): ReactElement => {
   const screenOptions = useScreenOptions();
+  const sheetOptions = useSheetScreenOptions();
 
   return (
     <OnboardingStack.Navigator screenOptions={screenOptions}>
@@ -60,12 +62,14 @@ const OnboardingNavigator = (): ReactElement => {
       <OnboardingStack.Screen name='BackupPhrase' component={BackupPhraseScreen} />
       <OnboardingStack.Screen name='ImportWallet' component={ImportWalletScreen} />
       <OnboardingStack.Screen name='CreatePassword' component={CreatePasswordScreen} />
+      <OnboardingStack.Screen name={SHEET_ROUTE} component={SheetScreen} options={sheetOptions} />
     </OnboardingStack.Navigator>
   );
 };
 
 const LockedNavigator = (): ReactElement => {
   const screenOptions = useScreenOptions();
+  const sheetOptions = useSheetScreenOptions();
 
   return (
     <LockedStack.Navigator screenOptions={screenOptions}>
@@ -73,12 +77,14 @@ const LockedNavigator = (): ReactElement => {
       {/* Fades in from the splash rather than sliding over it. */}
       <LockedStack.Screen name='Unlock' component={UnlockScreen} options={{ animation: 'fade' }} />
       <LockedStack.Screen name='ResetWallet' component={ResetWalletScreen} />
+      <LockedStack.Screen name={SHEET_ROUTE} component={SheetScreen} options={sheetOptions} />
     </LockedStack.Navigator>
   );
 };
 
 const MainNavigator = (): ReactElement => {
   const screenOptions = useScreenOptions();
+  const sheetOptions = useSheetScreenOptions();
 
   return (
     <MainStack.Navigator screenOptions={screenOptions}>
@@ -100,11 +106,7 @@ const MainNavigator = (): ReactElement => {
       <MainStack.Screen name='EditProfile' component={EditProfileScreen} />
       <MainStack.Screen name='SendRecipient' component={SendRecipientScreen} options={{ presentation: 'modal' }} />
       <MainStack.Screen name='SendAmount' component={SendAmountScreen} />
-      <MainStack.Screen
-        name='Receive'
-        component={ReceiveScreen}
-        options={{ presentation: 'transparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } }}
-      />
+      <MainStack.Screen name='Receive' component={ReceiveScreen} options={sheetOptions} />
       <MainStack.Screen name='QrScanner' component={QrScannerScreen} options={{ presentation: 'fullScreenModal' }} />
       <MainStack.Screen name='Settings' component={SettingsScreen} />
       <MainStack.Screen name='RecoveryPhrase' component={RecoveryPhraseScreen} />
@@ -115,6 +117,8 @@ const MainNavigator = (): ReactElement => {
       <MainStack.Screen name='Search' component={SearchScreen} />
       <MainStack.Screen name='BuyCrypto' component={BuyCryptoScreen} />
       <MainStack.Screen name='Checkout' component={CheckoutScreen} />
+      {/* Hosts every BottomSheet of this stack (see molecules/bottom-sheet). */}
+      <MainStack.Screen name={SHEET_ROUTE} component={SheetScreen} options={sheetOptions} />
     </MainStack.Navigator>
   );
 };

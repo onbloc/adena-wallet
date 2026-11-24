@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
 import { Badge, Button, Text } from '../../atoms';
-import { BottomSheet, QrCode } from '../../molecules';
+import { QrCode, SheetFrame } from '../../molecules';
 import { useStyles } from './receive.styles';
 
 export interface ReceivePageProps {
@@ -16,7 +16,7 @@ export interface ReceivePageProps {
   onScan?: () => void;
 }
 
-// The sheet does not scroll, so short screens get a smaller code to keep every action visible.
+// Presented as a native form sheet (see the Receive route). The sheet does not scroll, so short screens get a smaller code to keep every action visible.
 const COMPACT_HEIGHT = 720;
 
 export const ReceivePage = ({ accountName, address, networkName, onCopy, onShare, onClose, onOpenNetworks, onScan }: ReceivePageProps): ReactElement => {
@@ -25,7 +25,7 @@ export const ReceivePage = ({ accountName, address, networkName, onCopy, onShare
   const compact = height < COMPACT_HEIGHT;
 
   return (
-    <BottomSheet visible title='Receive' onClose={onClose}>
+    <SheetFrame title='Receive' onClose={onClose}>
       <View style={styles.body}>
         <View style={[styles.qr, compact && styles.qrCompact]}>
           <QrCode value={address} size={compact ? 136 : 180} />
@@ -47,6 +47,6 @@ export const ReceivePage = ({ accountName, address, networkName, onCopy, onShare
         <Text variant='meta' color='secondary' align='center'>{`Only send ${networkName} assets to this address.`}</Text>
         {onScan && <Button label='Scan a QR code' leadingIcon='scan' tone='secondary' size='compact' onPress={onScan} />}
       </View>
-    </BottomSheet>
+    </SheetFrame>
   );
 };

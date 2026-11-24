@@ -15,11 +15,13 @@ describe('RecoveryPhraseScreen', () => {
   let appStateListeners: ((state: AppStateStatus) => void)[];
   const emitAppState = (state: AppStateStatus): void => appStateListeners.forEach(listener => listener(state));
   let blurListener: () => void;
+  let navigationState: unknown;
 
   const setup = async (revealMnemonic: jest.Mock) => {
     const { Wrapper } = createWrapper({ walletService: { revealMnemonic } });
     const navigation = {
       goBack: jest.fn(),
+      getState: jest.fn(() => navigationState),
       addListener: jest.fn((_event: string, handler: () => void) => {
         blurListener = handler;
         return jest.fn();
@@ -38,6 +40,7 @@ describe('RecoveryPhraseScreen', () => {
   };
 
   beforeEach(() => {
+    navigationState = undefined;
     appStateListeners = [];
     jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, handler) => {
       appStateListeners.push(handler as (state: AppStateStatus) => void);
@@ -96,6 +99,14 @@ describe('RecoveryPhraseScreen', () => {
     // The pending timer was cancelled together with the clear.
     await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
     expect(Clipboard.setString).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the password sheet open when its own sheet route takes focus', async () => {
+    await setup(jest.fn(async () => MNEMONIC));
+    navigationState = { index: 1, routes: [{ name: 'RecoveryPhrase' }, { name: 'Sheet' }] };
+
+    await act(async () => blurListener());
+    expect(screen.getByPlaceholderText('Password')).toBeTruthy();
   });
 
   it('hides the revealed phrase as soon as the app is inactive (app switcher snapshot)', async () => {
