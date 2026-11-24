@@ -1,31 +1,26 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 
 import { APP_CONFIG } from '../config/app';
-import { useContainer } from '../di/container-provider';
 import { SessionStatus, useSessionStore } from '../stores/session.store';
 import { shouldAutoLock } from './auto-lock-policy';
+import { useLockWallet } from './use-lock-wallet';
 
 const IDLE_CHECK_INTERVAL_MS = 15 * 1000;
 
 // Locks after the auto-lock window without touches, or after that long in the background.
 // Returns the handler the root view calls on every touch.
 export const useAutoLock = (): (() => void) => {
-  const { walletService } = useContainer();
-  const setStatus = useSessionStore(state => state.setStatus);
+  const lockWallet = useLockWallet();
   const status = useSessionStore(state => state.status);
-  const queryClient = useQueryClient();
   const lastActiveAtRef = useRef(0);
   const backgroundedAtRef = useRef<number | null>(null);
 
   const lockIfExpired = useCallback((since: number) => {
     if (useSessionStore.getState().status === SessionStatus.UNLOCKED && shouldAutoLock(since, Date.now(), APP_CONFIG.autoLockMs)) {
-      walletService.lock();
-      queryClient.clear();
-      setStatus(SessionStatus.LOCKED);
+      lockWallet();
     }
-  }, [queryClient, setStatus, walletService]);
+  }, [lockWallet]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {

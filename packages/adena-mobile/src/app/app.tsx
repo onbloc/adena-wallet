@@ -1,54 +1,18 @@
-import { NavigationContainer } from '@react-navigation/native';
-import { QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import React, { ReactElement, useState } from 'react';
-import { Alert, StatusBar, StyleSheet, View } from 'react-native';
+import { Alert, StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppFailurePage } from '../components/pages';
 import { AppErrorCode, isAppError } from '../core/errors';
-import { ContainerProvider, useContainer } from '../di/container-provider';
+import { ContainerProvider } from '../di/container-provider';
 import { resetNativeGeneralStorage } from '../di/create-native-container';
-import { useAutoLock } from '../hooks/use-auto-lock';
-import { navigationRef } from '../navigation/navigation-ref';
-import { RootNavigator } from '../navigation/root-navigator';
 import { useNativeContainerQuery } from '../queries/boot.queries';
 import { createQueryClient } from '../queries/query-client';
-import { queryKeys } from '../queries/query-keys';
-import { useSessionStore } from '../stores/session.store';
-import { ErrorBoundary } from './error-boundary';
-import { ToastHost } from './toast-host';
+import { AppErrorBoundary } from './app-error-boundary';
+import { AppShell } from './app-shell';
 
 const queryClient = createQueryClient();
-
-const AppShell = (): ReactElement => {
-  const { walletService } = useContainer();
-  const setStatus = useSessionStore(state => state.setStatus);
-
-  // Hydrates the session store once per container from the persisted wallet state.
-  useQuery({
-    queryKey: queryKeys.sessionBootstrap(),
-    queryFn: async () => {
-      const status = await walletService.getStatus();
-
-      setStatus(status);
-      return status;
-    },
-    staleTime: Infinity,
-  });
-
-  const recordActivity = useAutoLock();
-
-  // Touch events bubble here from every screen and reset the idle timer.
-
-  return (
-    <View style={styles.root} onTouchStart={recordActivity}>
-      <NavigationContainer ref={navigationRef}>
-        <RootNavigator />
-        <ToastHost />
-      </NavigationContainer>
-    </View>
-  );
-};
 
 const confirmStorageReset = (onConfirm: () => void): void =>
   Alert.alert(
@@ -102,14 +66,6 @@ const AppRoot = (): ReactElement => {
     );
   };
 
-  const fallbackErrorBoundary = (reset: () => void): React.JSX.Element => (
-    <AppFailurePage
-      title='Something went wrong'
-      description='The screen hit an unexpected error.'
-      actions={[{ label: 'Reload', onPress: reset }]}
-    />
-  );
-
   return (
     <SafeAreaProvider>
       <StatusBar barStyle='dark-content' />
@@ -117,11 +73,9 @@ const AppRoot = (): ReactElement => {
       {container && (
         <ContainerProvider container={container}>
           <QueryClientProvider client={queryClient}>
-            <ErrorBoundary
-              fallback={fallbackErrorBoundary}
-            >
+            <AppErrorBoundary>
               <AppShell />
-            </ErrorBoundary>
+            </AppErrorBoundary>
           </QueryClientProvider>
         </ContainerProvider>
       )}
@@ -134,9 +88,5 @@ const App = (): ReactElement => (
     <AppRoot />
   </QueryClientProvider>
 );
-
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-});
 
 export default App;

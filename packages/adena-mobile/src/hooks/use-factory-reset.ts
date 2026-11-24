@@ -8,14 +8,25 @@ import { useToastStore } from '../stores/toast.store';
 
 // Wipes persisted data, caches and client stores, then returns the app to onboarding.
 export const useFactoryReset = (): (() => Promise<void>) => {
-  const { appResetService } = useContainer();
+  const { appResetService, walletService } = useContainer();
   const queryClient = useQueryClient();
 
   return useCallback(async () => {
-    await appResetService.resetAll();
+    try {
+      await appResetService.resetAll();
+    }
+    catch (error) {
+      // The session is already closed and data may be half removed: follow what is actually stored.
+      queryClient.clear();
+      const status = await walletService.getStatus().catch(() => SessionStatus.LOCKED);
+
+      useSessionStore.getState().setStatus(status);
+      throw error;
+    }
+
     queryClient.clear();
     useOnboardingStore.getState().clear();
     useToastStore.getState().dismiss();
     useSessionStore.setState(state => ({ status: SessionStatus.EMPTY, revision: state.revision + 1 }));
-  }, [appResetService, queryClient]);
+  }, [appResetService, queryClient, walletService]);
 };

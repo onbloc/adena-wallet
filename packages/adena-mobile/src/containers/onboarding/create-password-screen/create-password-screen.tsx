@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useRef, useState } from 'react';
 
 import { CreatePasswordPage, PasswordStrengthView } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
@@ -29,6 +29,7 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
   const [biometricChoice, setBiometricChoice] = useState<boolean>();
   const biometricEnabled = biometricChoice ?? Boolean(biometric.data?.kind);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const evaluation = password ? evaluatePassword(password) : null;
   const strength: PasswordStrengthView | undefined = evaluation?.valid
@@ -38,6 +39,10 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
     : undefined;
 
   const submit = async (): Promise<void> => {
+    if (submittingRef.current) {
+      return;
+    }
+
     const issue = findPasswordIssue(password, { confirm: confirmPassword });
 
     if (issue === PasswordIssue.NOT_MATCH) {
@@ -55,6 +60,7 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
 
     try {
@@ -71,6 +77,16 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
       setStatus(SessionStatus.UNLOCKED);
     }
     catch (error) {
+      // A failure after the vault was written must not leave onboarding over an existing wallet.
+      if (await walletService.getStatus().then(status => status !== SessionStatus.EMPTY, () => false)) {
+        walletService.lock();
+        clearOnboarding();
+        showToast('Your wallet was saved. Unlock it to continue.', 'warning');
+        setStatus(SessionStatus.LOCKED);
+        return;
+      }
+
+      submittingRef.current = false;
       setPasswordError(toErrorMessage(error));
       setSubmitting(false);
     }

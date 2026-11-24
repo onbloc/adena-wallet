@@ -19,6 +19,8 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
   const biometric = useBiometricStatusQuery();
   const biometricLabel = biometric.data?.enabled ? getBiometryLabel(biometric.data.kind) : undefined;
   const autoPromptedRef = useRef(false);
+  // Password and biometric unlocks share one in-flight slot, so they never queue up behind each other.
+  const unlockingRef = useRef(false);
 
   const onUnlocked = useCallback(() => {
     bumpRevision();
@@ -26,6 +28,12 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
   }, [bumpRevision, setStatus]);
 
   const unlockWithBiometrics = useCallback(async () => {
+    if (unlockingRef.current) {
+      return;
+    }
+
+    unlockingRef.current = true;
+
     try {
       await walletService.unlockWithBiometrics({ title: 'Unlock Adena', cancel: 'Use password' });
       onUnlocked();
@@ -34,6 +42,9 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
       if (!isAppError(unlockError, AppErrorCode.BIOMETRICS_CANCELED)) {
         setError(toErrorMessage(unlockError));
       }
+    }
+    finally {
+      unlockingRef.current = false;
     }
   }, [onUnlocked, walletService]);
 
@@ -46,10 +57,11 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
   }, [biometric.data?.enabled, unlockWithBiometrics]);
 
   const unlock = async (): Promise<void> => {
-    if (!password || submitting) {
+    if (!password || unlockingRef.current) {
       return;
     }
 
+    unlockingRef.current = true;
     setSubmitting(true);
 
     try {
@@ -61,6 +73,7 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
       setError(isAppError(unlockError, AppErrorCode.INVALID_PASSWORD) ? 'Incorrect password.' : toErrorMessage(unlockError));
     }
     finally {
+      unlockingRef.current = false;
       setSubmitting(false);
     }
   };
