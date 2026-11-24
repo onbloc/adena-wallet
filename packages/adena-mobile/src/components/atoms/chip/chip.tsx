@@ -3,7 +3,6 @@ import { Pressable, PressableStateCallbackType, StyleProp, ViewStyle } from 'rea
 
 import { sizes, useThemeColors } from '../../../theme';
 import { Icon, IconName } from '../icon';
-import { Spinner } from '../spinner';
 import { Text } from '../text';
 import { styles } from './chip.styles';
 
@@ -12,13 +11,11 @@ export interface ChipProps {
   selected?: boolean;
   disabled?: boolean;
   trailingIcon?: IconName;
-  // Shows a spinner and blocks presses while the chip's action runs.
-  loading?: boolean;
   onPress?: () => void;
 }
 
 // 32px visible surface inside a 44px hit area.
-export const Chip = ({ label, selected = false, disabled = false, trailingIcon, loading = false, onPress }: ChipProps): ReactElement => {
+export const Chip = ({ label, selected = false, disabled = false, trailingIcon, onPress }: ChipProps): ReactElement => {
   const colors = useThemeColors();
   const textColor = disabled ? colors.text.disabled : selected ? colors.text.inverse : colors.text.primary;
 
@@ -34,14 +31,14 @@ export const Chip = ({ label, selected = false, disabled = false, trailingIcon, 
   return (
     <Pressable
       accessibilityRole='button'
-      accessibilityState={{ selected, disabled, busy: loading }}
-      disabled={disabled || loading}
+      accessibilityState={{ selected, disabled }}
+      disabled={disabled}
       hitSlop={(sizes.touchTarget - sizes.chip) / 2}
       onPress={onPress}
       style={stylePressable}
     >
       <Text variant='meta' style={{ color: textColor }}>{label}</Text>
-      {loading ? <Spinner size={14} tone={selected ? 'inverse' : 'primary'} /> : trailingIcon && <Icon name={trailingIcon} size={16} color={textColor} />}
+      {trailingIcon && <Icon name={trailingIcon} size={16} color={textColor} />}
     </Pressable>
   );
 };

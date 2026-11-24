@@ -1,9 +1,9 @@
 import React, { ReactElement } from 'react';
-import { Pressable, PressableStateCallbackType, ScrollView, StyleProp, View, ViewStyle } from 'react-native';
+import { Pressable, PressableStateCallbackType, ScrollView, StyleProp, useWindowDimensions, View, ViewStyle } from 'react-native';
 
 import { SwapActionState, SwapRouteView } from '../../../presenters/swap.presenter';
 import { useThemeColors } from '../../../theme';
-import { Button, Chip, Divider, Icon, IconButton, Text } from '../../atoms';
+import { Button, Divider, Icon, IconButton, Spinner, Text } from '../../atoms';
 import {
   EmptyState,
   FeeSelectorProps,
@@ -83,6 +83,42 @@ export interface SwapPageProps {
   onConfirm: () => void;
   onCloseReview: () => void;
 }
+
+// iPhone SE-class heights get shorter keypad rows so cards, chips, keypad and button still fit.
+const COMPACT_HEIGHT = 700;
+const COMPACT_KEY_HEIGHT = 44;
+
+interface PercentChipProps {
+  percent: SwapPercent;
+  loading: boolean;
+  disabled: boolean;
+  onPress: (percent: SwapPercent) => void;
+}
+
+// Equal-width secondary pill; the one being estimated shows a spinner.
+const PercentChip = ({ percent, loading, disabled, onPress }: PercentChipProps): ReactElement => {
+  const styles = useStyles();
+  const label = percent === 100 ? 'Max' : `${percent}%`;
+  const inactive = disabled || loading;
+  const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [
+    styles.percentChip,
+    disabled && styles.percentChipDisabled,
+    pressed && !inactive && styles.percentChipPressed,
+  ];
+
+  return (
+    <Pressable
+      accessibilityRole='button'
+      accessibilityLabel={label}
+      accessibilityState={{ disabled, busy: loading }}
+      disabled={inactive}
+      onPress={() => onPress(percent)}
+      style={stylePressable}
+    >
+      {loading ? <Spinner size={16} /> : <Text variant='meta' color={disabled ? 'disabled' : 'primary'}>{label}</Text>}
+    </Pressable>
+  );
+};
 
 const TokenPill = ({ token, onPress, label }: { token: SwapTokenView; onPress: () => void; label: string }): ReactElement => {
   const styles = useStyles();
@@ -220,6 +256,7 @@ const Details = ({ details, expanded, onToggle }: { details: SwapDetailsView; ex
 
 export const SwapPage = (props: SwapPageProps): ReactElement => {
   const styles = useStyles();
+  const { height } = useWindowDimensions();
   const colors = useThemeColors();
   const flipStyle = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [styles.flip, pressed && styles.flipPressed];
   const header = (
@@ -268,22 +305,19 @@ export const SwapPage = (props: SwapPageProps): ReactElement => {
         {props.error && <InlineAlert tone='error' title={props.error} />}
         {!props.error && props.notice && <InlineAlert tone='warning' title={props.notice} />}
       </ScrollView>
-      {props.sell.token && (
+      <View style={styles.dock}>
         <View style={styles.chips}>
           {SWAP_PERCENTS.map(percent => (
-            <View key={percent} style={styles.chip}>
-              <Chip
-                label={percent === 100 ? 'Max' : `${percent}%`}
-                loading={props.percentLoading === percent}
-                disabled={props.sell.balanceLabel === undefined || (props.percentLoading !== undefined && props.percentLoading !== percent)}
-                onPress={() => props.onPercent(percent)}
-              />
-            </View>
+            <PercentChip
+              key={percent}
+              percent={percent}
+              loading={props.percentLoading === percent}
+              disabled={!props.sell.token || props.sell.balanceLabel === undefined || (props.percentLoading !== undefined && props.percentLoading !== percent)}
+              onPress={props.onPercent}
+            />
           ))}
         </View>
-      )}
-      <View style={styles.keypad}>
-        <NumericKeypad onKeyPress={props.onKeyPress} />
+        <NumericKeypad onKeyPress={props.onKeyPress} keyHeight={height < COMPACT_HEIGHT ? COMPACT_KEY_HEIGHT : undefined} />
       </View>
       <SwapTokenSheet {...props.tokenSheet} />
       <SwapSettingsSheet {...props.settingsSheet} />

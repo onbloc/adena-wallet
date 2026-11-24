@@ -1,6 +1,7 @@
 import { makeStyles, radius, sizes, spacing } from '../../../theme';
 
 const FLIP_SIZE = 40;
+const PERCENT_CHIP_HEIGHT = 38;
 
 export const useStyles = makeStyles(colors => ({
   body: { flex: 1 },
@@ -51,9 +52,19 @@ export const useStyles = makeStyles(colors => ({
   details: { gap: spacing.space4 },
   route: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.space4 },
   routeStep: { flexDirection: 'row', alignItems: 'center', gap: spacing.space4 },
-  chips: { flexDirection: 'row', gap: spacing.space8, justifyContent: 'space-between' },
-  chip: { flex: 1 },
-  keypad: { paddingTop: spacing.space4 },
+  // Chips -> keypad, docked above the footer button; the cards keep the top and free space sits between.
+  dock: { gap: spacing.space12 },
+  chips: { flexDirection: 'row', gap: spacing.space8 },
+  percentChip: {
+    flex: 1,
+    height: PERCENT_CHIP_HEIGHT,
+    borderRadius: radius.circle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.action.secondary,
+  },
+  percentChipPressed: { backgroundColor: colors.action.secondaryPressed },
+  percentChipDisabled: { backgroundColor: colors.action.disabled },
   reviewAmounts: { gap: spacing.space8 },
   reviewSide: { flexDirection: 'row', alignItems: 'center', gap: spacing.space12 },
   reviewSideText: { flex: 1, gap: spacing.space4 },

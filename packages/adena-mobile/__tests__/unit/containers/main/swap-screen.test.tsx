@@ -47,6 +47,15 @@ describe('SwapScreen', () => {
     setTimeout(done, 0);
   })));
 
+  it('docks four equal-width percentage chips above the keypad', async () => {
+    await setup();
+    await screen.findByText('Balance 100', undefined, LOOKUP);
+    const labels = ['25%', '50%', '75%', 'Max'];
+
+    labels.forEach(label => expect(screen.getByRole('button', { name: label }).props.accessibilityState).toMatchObject({ disabled: false }));
+    expect(new Set(labels.map(label => JSON.stringify(screen.getByRole('button', { name: label }).props.style)))).toHaveProperty('size', 1);
+  });
+
   it('starts with GNOT to sell and asks for a token to buy', async () => {
     await setup();
 

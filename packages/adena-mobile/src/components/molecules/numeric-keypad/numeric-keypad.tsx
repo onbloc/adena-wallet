@@ -16,7 +16,8 @@ const ROWS: KeypadKey[][] = [
   ['.', '0', 'backspace'],
 ];
 
-export const NumericKeypad = ({ onKeyPress }: { onKeyPress: (key: KeypadKey) => void }): ReactElement => {
+// `keyHeight` lets dense screens (e.g. Swap on an iPhone SE) shrink the rows.
+export const NumericKeypad = ({ onKeyPress, keyHeight }: { onKeyPress: (key: KeypadKey) => void; keyHeight?: number }): ReactElement => {
   const styles = useStyles();
   const colors = useThemeColors();
   const playHaptic = useHaptics();
@@ -31,7 +32,7 @@ export const NumericKeypad = ({ onKeyPress }: { onKeyPress: (key: KeypadKey) => 
               onKeyPress(key);
             };
 
-            const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [styles.key, pressed && styles.pressed];
+            const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [styles.key, keyHeight !== undefined && { height: keyHeight }, pressed && styles.pressed];
 
             return (
               <Pressable
