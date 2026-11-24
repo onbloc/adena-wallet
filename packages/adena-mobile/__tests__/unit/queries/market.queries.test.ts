@@ -42,6 +42,23 @@ describe('useMarketDataQuery', () => {
     await waitFor(() => expect(result.current.data).toEqual({ range: '1W' }));
   });
 
+  it('does not show another token\'s data while the next token loads', async () => {
+    const OTHER: Token = { ...TOKEN, id: 'gno.land/r/gnoswap/gns', symbol: 'GNS', isNative: false, type: TokenType.GRC20 };
+    const marketDataService = {
+      getMarketData: jest.fn()
+        .mockResolvedValueOnce({ tokenId: 'ugnot' })
+        .mockImplementationOnce(() => new Promise(() => undefined)),
+    };
+    const { Wrapper } = createWrapper({ marketDataService });
+    const { result, rerender } = await renderHook(({ token }: { token: Token }) => useMarketDataQuery(token, NETWORK, ChartRange.ONE_DAY), { wrapper: Wrapper, initialProps: { token: TOKEN } });
+
+    await waitFor(() => expect(result.current.data).toEqual({ tokenId: 'ugnot' }));
+    await rerender({ token: OTHER });
+    await waitFor(() => expect(marketDataService.getMarketData).toHaveBeenCalledTimes(2));
+    expect(result.current.data).toBeUndefined();
+    expect(result.current.isPlaceholderData).toBe(false);
+  });
+
   it('stays idle without a token', async () => {
     const marketDataService = { getMarketData: jest.fn() };
     const { Wrapper, client } = createWrapper({ marketDataService });

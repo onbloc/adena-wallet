@@ -56,6 +56,15 @@ describe('NftService', () => {
     expect(nfts.getTokenUri).toHaveBeenCalledTimes(3);
   });
 
+  it('retries a lookup that found no URI (RPC failures surface as null)', async () => {
+    const { service, nfts } = setup();
+
+    nfts.getTokenUri.mockResolvedValueOnce(null).mockResolvedValueOnce('https://img/1');
+    await expect(service.getTokenUri(GNO_NETWORK, 'pkg', '1')).resolves.toBeNull();
+    await expect(service.getTokenUri(GNO_NETWORK, 'pkg', '1')).resolves.toBe('https://img/1');
+    expect(nfts.getTokenUri).toHaveBeenCalledTimes(2);
+  });
+
   it('does not cache failed token URI lookups', async () => {
     const { service, nfts } = setup();
 

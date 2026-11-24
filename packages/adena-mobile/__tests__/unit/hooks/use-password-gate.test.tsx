@@ -70,6 +70,26 @@ describe('usePasswordGate', () => {
     expect(result.current.sheetProps.submitting).toBe(false);
   });
 
+  it('runs the action once when confirm is called twice before a re-render', async () => {
+    let finish: () => void = () => undefined;
+    const action = jest.fn(() => new Promise<void>((resolve) => {
+      finish = resolve;
+    }));
+    const { result } = await renderHook(() => usePasswordGate(action));
+
+    await act(async () => result.current.sheetProps.onChangePassword('pw'));
+    const { onConfirm } = result.current.sheetProps;
+
+    await act(async () => {
+      const first = onConfirm();
+      const second = onConfirm();
+
+      finish();
+      await Promise.all([first, second]);
+    });
+    expect(action).toHaveBeenCalledTimes(1);
+  });
+
   it('closes and resets the form', async () => {
     const { result } = await renderHook(() => usePasswordGate(jest.fn()));
 

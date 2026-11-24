@@ -1,7 +1,7 @@
 import { fromBase64 } from '@cosmjs/encoding';
 
 import { isAppError } from '../../../src/core/errors';
-import { ManagedToken, TokenSource } from '../../../src/domain/token';
+import { ManagedToken, Token, TokenSource } from '../../../src/domain/token';
 import { StorageAccountRepository } from '../../../src/repositories/account.repository';
 import { StorageTokenListRepository } from '../../../src/repositories/token-list.repository';
 import { getDefaultTokensFor } from '../../../src/resources';
@@ -27,6 +27,23 @@ describe('TokenService', () => {
   const gnot = getDefaultTokensFor(GNO_NETWORK)[0];
 
   describe('getTokenList', () => {
+    it('keeps a visibility change made while the refresh was loading', async () => {
+      const { service, repository, assets } = setup();
+      const foo = managed({ id: 'foo' });
+      let finish!: (tokens: Token[]) => void;
+
+      repository.save(account.id, GNO_NETWORK.id, [foo]);
+      assets.getCuratedTokens.mockReturnValue(new Promise<Token[]>((resolve) => {
+        finish = resolve;
+      }));
+      const refreshing = service.getTokenList(account, GNO_NETWORK);
+
+      service.setVisibility(account, GNO_NETWORK, 'foo', false);
+      finish([]);
+      await refreshing;
+      expect(repository.get(account.id, GNO_NETWORK.id)?.find(token => token.id === 'foo')?.visible).toBe(false);
+    });
+
     it('always lists the network coins first, enriched by curated metadata', async () => {
       const { service, repository, assets } = setup();
 

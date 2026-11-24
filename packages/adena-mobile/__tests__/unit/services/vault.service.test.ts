@@ -44,7 +44,7 @@ describe('VaultService', () => {
 
     expect(raw).not.toContain('abandon');
     expect(raw).not.toContain('1111111111');
-    expect(JSON.parse(raw).contentVersion).toBe(1);
+    expect(JSON.parse(raw).record.contentVersion).toBe(1);
   });
 
   it('refuses to overwrite an existing vault', async () => {

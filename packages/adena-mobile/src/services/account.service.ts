@@ -7,6 +7,7 @@ import { Network } from '../domain/network';
 import { AccountRepository } from '../repositories/account.repository';
 import { ChainRegistry } from '../repositories/chain/chain-registry';
 import { createId } from '../utils/id';
+import { SerialQueue } from '../utils/serial-queue';
 import { KeyringSession } from './keyring-session';
 
 export interface AccountWithAddress extends Account {
@@ -15,6 +16,9 @@ export interface AccountWithAddress extends Account {
 
 // Manages account metadata across keyrings; addresses are resolved per network.
 export class AccountService {
+  // Index allocation, derivation and the save run as one step, so concurrent creations cannot alias.
+  private readonly creations = new SerialQueue();
+
   constructor(
     private readonly accountRepository: AccountRepository,
     private readonly keyringSession: KeyringSession,
@@ -58,23 +62,40 @@ export class AccountService {
   }
 
   // Derives the account at the next free index of an HD keyring (requires an unlocked session).
-  async createAccount(keyringId: string, keyringType: KeyringType, name?: string): Promise<Account> {
-    const accounts = this.getAccounts();
-    const keyringAccounts = accounts.filter(account => account.keyringId === keyringId);
+  createAccount(keyringId: string, keyringType: KeyringType, name?: string): Promise<Account> {
+    return this.creations.run(() => this.deriveNextAccount(keyringId, keyringType, name));
+  }
+
+  private async deriveNextAccount(keyringId: string, keyringType: KeyringType, name?: string): Promise<Account> {
+    const epoch = this.keyringSession.epoch;
+    const keyringAccounts = this.getAccounts().filter(account => account.keyringId === keyringId);
 
     if (keyringType !== KeyringType.HD_WALLET && keyringAccounts.length > 0) {
       throw new AppError(AppErrorCode.INVALID_REQUEST, 'Single-key keyrings hold exactly one account');
     }
 
     const hdIndex = keyringAccounts.reduce((max, account) => Math.max(max, account.hdIndex + 1), 0);
-    const publicKey = await this.keyringSession.withKeyPair(keyringId, hdIndex, async keyPair => keyPair.publicKey);
+    const publicKey = toBase64(await this.keyringSession.withKeyPair(keyringId, hdIndex, async keyPair => keyPair.publicKey));
+
+    // A lock or reset while deriving must not write the account into the next session's storage.
+    if (this.keyringSession.epoch !== epoch) {
+      throw new AppError(AppErrorCode.WALLET_LOCKED, 'Wallet is locked');
+    }
+
+    // Re-read so edits made during the derivation (rename, removal) are kept.
+    const accounts = this.getAccounts();
+
+    if (accounts.some(account => account.publicKey === publicKey)) {
+      throw new AppError(AppErrorCode.WALLET_ALREADY_EXISTS, 'This account is already added');
+    }
+
     const account: Account = {
       id: createId(),
       keyringId,
       keyringType,
       name: name?.trim() || `Account ${accounts.length + 1}`,
       hdIndex,
-      publicKey: toBase64(publicKey),
+      publicKey,
       createdAt: Date.now(),
     };
 
@@ -104,8 +125,8 @@ export class AccountService {
     return this.getAccount(accountId);
   }
 
-  // Removing the last account of a keyring is the caller's signal to drop the keyring as well.
-  removeAccount(accountId: string): { removed: Account; keyringEmpty: boolean } {
+  // Validates a removal without saving it; keyringEmpty tells the caller to drop the keyring first.
+  planRemoval(accountId: string): { removed: Account; keyringEmpty: boolean } {
     const accounts = this.getAccounts();
 
     if (accounts.length <= 1) {
@@ -113,7 +134,13 @@ export class AccountService {
     }
 
     const removed = this.getAccount(accountId);
-    const remaining = accounts.filter(account => account.id !== accountId);
+
+    return { removed, keyringEmpty: !accounts.some(account => account.id !== accountId && account.keyringId === removed.keyringId) };
+  }
+
+  removeAccount(accountId: string): { removed: Account; keyringEmpty: boolean } {
+    const plan = this.planRemoval(accountId);
+    const remaining = this.getAccounts().filter(account => account.id !== accountId);
 
     this.accountRepository.saveAccounts(remaining);
 
@@ -121,7 +148,7 @@ export class AccountService {
       this.accountRepository.setCurrentAccountId(remaining[0].id);
     }
 
-    return { removed, keyringEmpty: !remaining.some(account => account.keyringId === removed.keyringId) };
+    return plan;
   }
 
   clear(): void {

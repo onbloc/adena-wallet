@@ -8,7 +8,7 @@ import { deriveKeyPair, KeyPair } from '../../../../../src/crypto/key-pair';
 import { mnemonicToSeed } from '../../../../../src/crypto/mnemonic';
 import { COSMOS_FEE_POLICY } from '../../../../../src/domain/fee';
 import { CosmosLcdClient } from '../../../../../src/infrastructure/http/cosmos-lcd.client';
-import { HttpRequest } from '../../../../../src/infrastructure/http/http-client';
+import { HttpRequest, HttpStatusError } from '../../../../../src/infrastructure/http/http-client';
 import { CosmosChainRepository } from '../../../../../src/repositories/chain/cosmos/cosmos-chain.repository';
 import { CosmosMessage } from '../../../../../src/repositories/chain/cosmos/cosmos-messages';
 import { encodeAuthInfo, encodeSignDoc, encodeTxBody } from '../../../../../src/repositories/chain/cosmos/cosmos-tx-encoder';
@@ -42,6 +42,11 @@ const setup = () => {
 
   return { http, repository: new CosmosChainRepository(new CosmosLcdClient(http)) };
 };
+
+// What the LCD returns for a never-funded account: HTTP 404 with gRPC NotFound.
+const unknownAccount = (http: FakeHttpClient): FakeHttpClient => http.on(urls().account, () => {
+  throw new HttpStatusError(404, { code: 5, message: `rpc error: code = NotFound desc = account ${address} not found`, details: [] });
+});
 
 const errorOf = async (promise: Promise<unknown>): Promise<AppError> => promise.then(
   () => {
@@ -162,7 +167,7 @@ describe('CosmosChainRepository', () => {
       const { repository, http } = setup();
       let sequence: bigint | undefined;
 
-      http
+      unknownAccount(http)
         .on(urls().simulate, (init?: HttpRequest) => {
           const raw = TxRaw.decode(fromBase64((init?.body as { tx_bytes: string }).tx_bytes));
 
@@ -178,14 +183,14 @@ describe('CosmosChainRepository', () => {
     it('falls back when the config query fails', async () => {
       const { repository, http } = setup();
 
-      http.on(urls().simulate, { gas_info: { gas_used: '10' } });
+      unknownAccount(http).on(urls().simulate, { gas_info: { gas_used: '10' } });
       await expect(repository.estimateFee(draftOf([send()]), signer(), network)).resolves.toMatchObject({ gasPrice: '0.225' });
     });
 
     it('fails without any gas price', async () => {
       const { repository, http } = setup();
 
-      http.on(urls().simulate, { gas_info: { gas_used: '10' } });
+      unknownAccount(http).on(urls().simulate, { gas_info: { gas_used: '10' } });
       await expect(errorOf(repository.estimateFee(draftOf([send()]), signer(), { ...network, fallbackGasPrice: undefined })))
         .resolves.toMatchObject({ code: 'NETWORK_ERROR', message: 'No minimum gas price for uphoton' });
     });
@@ -193,6 +198,7 @@ describe('CosmosChainRepository', () => {
     it('maps simulation failures to TRANSACTION_FAILED', async () => {
       const { repository, http } = setup();
 
+      unknownAccount(http);
       await expect(errorOf(repository.estimateFee(draftOf([send()]), signer(), network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: `404 ${urls().simulate}` });
       http.on(urls().simulate, { gas_info: { gas_used: '0' } });
       await expect(errorOf(repository.estimateFee(draftOf([send()]), signer(), network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: 'Simulation returned no gas usage' });
@@ -200,6 +206,16 @@ describe('CosmosChainRepository', () => {
         throw undefined;
       });
       await expect(errorOf(repository.estimateFee(draftOf([send()]), signer(), network))).resolves.toMatchObject({ message: 'Transaction simulation failed' });
+    });
+
+    it('propagates account lookup failures instead of assuming a new account', async () => {
+      const { repository, http } = setup();
+
+      http.on(urls().account, () => {
+        throw new HttpStatusError(503, null);
+      });
+      http.on(urls().simulate, { gas_info: { gas_used: '10' } });
+      await expect(errorOf(repository.estimateFee(draftOf([send()]), signer(), network))).resolves.toMatchObject({ code: 'NETWORK_ERROR', message: 'Request failed with status 503' });
     });
 
     it('requires a REST endpoint', async () => {
@@ -233,7 +249,9 @@ describe('CosmosChainRepository', () => {
     });
 
     it('uses 0/0 for unknown accounts and an empty fee for malformed gas fees', async () => {
-      const { repository } = withChain();
+      const { repository, http } = withChain();
+
+      unknownAccount(http);
       const signed = await repository.signTransaction(draftOf([send()], { gasWanted: '1', gasFee: 'bad' }), keyPair, network);
       const authInfo = AuthInfo.decode(TxRaw.decode(fromBase64(signed.encoded)).authInfoBytes);
 
@@ -283,7 +301,12 @@ describe('CosmosChainRepository', () => {
     it('keeps AppErrors and wraps other failures as TRANSACTION_FAILED', async () => {
       const { repository, http } = setup();
 
-      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: `404 ${urls().txs}` });
+      // HTTP failures are already NETWORK_ERROR AppErrors (as FetchHttpClient raises them) and pass through.
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'NETWORK_ERROR', message: `404 ${urls().txs}` });
+      http.on(urls().txs, () => {
+        throw new Error('socket hang up');
+      });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: 'socket hang up' });
       http.on(urls().txs, { tx_response: { txhash: 'X', code: 5, raw_log: 'insufficient funds', height: '0' } });
       await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: 'Broadcast failed (code 5): insufficient funds' });
       http.on(urls().txs, {});

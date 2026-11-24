@@ -7,7 +7,7 @@ import { NftPreferenceRepository, NftPreferences } from '../repositories/nft-pre
 import { AccountService } from './account.service';
 
 export class NftService {
-  // Token URIs are immutable per chain, so they are cached for the session.
+  // Token URIs are immutable per chain, so found ones are cached for the session.
   private readonly uriCache = new Map<string, Promise<string | null>>();
 
   constructor(
@@ -34,7 +34,8 @@ export class NftService {
 
     if (!cached) {
       cached = this.chainRegistry.nfts(network).getTokenUri(packagePath, nftId, network);
-      cached.catch(() => this.uriCache.delete(key));
+      // The repository reports RPC failures as null, so a miss is retried next time.
+      cached.then(uri => uri === null && this.uriCache.delete(key), () => this.uriCache.delete(key));
       this.uriCache.set(key, cached);
     }
 

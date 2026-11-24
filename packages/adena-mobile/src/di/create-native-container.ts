@@ -12,7 +12,7 @@ export const createNativeContainer = async (): Promise<AppContainer> => {
   const secureStore = new KeychainSecureStore(SECURE_NAMESPACE);
   const kdf = createNativeScryptKdf();
 
-  kdf.assertAvailable();
+  await kdf.assertWorking();
   const keyValueStore = await createEncryptedMmkvStore(STORAGE_ID, secureStore);
   const container = createContainer({
     secureStore,

@@ -134,9 +134,16 @@ describe('GnoChainRepository', () => {
 
     it('rejects malformed coin amounts', () => {
       expect(() => repository.parseMessages(
-        [{ type: '/vm.m_call', value: { caller: RECIPIENT, pkg_path: 'p', func: 'f', send: '10 gnot' } }],
+        [{ type: '/vm.m_call', value: { caller: RECIPIENT, pkg_path: 'p', func: 'f', send: '1.5ugnot' } }],
         RECIPIENT,
       )).toThrow('coin list');
+    });
+
+    // tm2 std.ParseCoin allows spaces between amount and denom; the parser re-emits the canonical form.
+    it('normalizes spaced coin amounts', () => {
+      const [message] = repository.parseMessages([{ type: '/vm.m_call', value: { caller: RECIPIENT, pkg_path: 'p', func: 'f', send: '10 gnot' } }], RECIPIENT);
+
+      expect((message.value as { send: string }).send).toBe('10gnot');
     });
   });
 });

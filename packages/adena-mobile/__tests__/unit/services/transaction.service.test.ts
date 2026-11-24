@@ -98,7 +98,8 @@ describe('TransactionService', () => {
 
       expect(service.applyFee(draft, estimate()).fee).toEqual({ gasWanted: '110000', gasFee: '110ugnot' });
       expect(service.applyFee(draft, estimate(), { tier: 'FAST', adjustment: 2 }).fee).toEqual({ gasWanted: '240000', gasFee: '240ugnot' });
-      expect((await service.withEstimatedFee(draft, account, network, { tier: 'SLOW', adjustment: 1 })).fee).toEqual({ gasWanted: '100000', gasFee: '100ugnot' });
+      // Simulated 100000 gas plus 230 gas of fee-size headroom.
+      expect((await service.withEstimatedFee(draft, account, network, { tier: 'SLOW', adjustment: 1 })).fee).toEqual({ gasWanted: '100230', gasFee: '101ugnot' });
     });
   });
 

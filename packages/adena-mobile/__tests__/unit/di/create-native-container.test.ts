@@ -35,14 +35,14 @@ describe('createNativeContainer', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('wires keychain, encrypted storage and native scrypt, then runs migrations', async () => {
-    const kdf = { assertAvailable: jest.fn(), derive: jest.fn(nobleScryptKdf.derive) };
+    const kdf = { assertWorking: jest.fn(async () => undefined), derive: jest.fn(nobleScryptKdf.derive) };
 
     createKdf.mockReturnValue(kdf);
     const createSpy = jest.spyOn(containerModule, 'createContainer');
     const container = await createNativeContainer();
 
     expect(KeychainSecureStore).toHaveBeenCalledWith('adena.wallet');
-    expect(kdf.assertAvailable).toHaveBeenCalledTimes(1);
+    expect(kdf.assertWorking).toHaveBeenCalledTimes(1);
     expect(createEncryptedMmkvStore).toHaveBeenCalledWith('adena.general', expect.objectContaining({ namespace: 'adena.wallet' }));
     const infra = createSpy.mock.calls[0][0];
 
@@ -52,9 +52,9 @@ describe('createNativeContainer', () => {
     createSpy.mockRestore();
   });
 
-  it('fails closed before opening storage when native crypto is missing', async () => {
+  it('fails closed before opening storage when native crypto is missing or wrong', async () => {
     createKdf.mockReturnValue({
-      assertAvailable: () => {
+      assertWorking: async () => {
         throw new Error('CRYPTO_UNAVAILABLE');
       },
       derive: jest.fn(),
@@ -65,7 +65,7 @@ describe('createNativeContainer', () => {
   });
 
   it('propagates storage open failures', async () => {
-    createKdf.mockReturnValue({ assertAvailable: jest.fn(), derive: jest.fn() });
+    createKdf.mockReturnValue({ assertWorking: jest.fn(async () => undefined), derive: jest.fn() });
     (createEncryptedMmkvStore as jest.Mock).mockRejectedValueOnce(new Error('STORAGE_UNREADABLE'));
     await expect(createNativeContainer()).rejects.toThrow('STORAGE_UNREADABLE');
   });

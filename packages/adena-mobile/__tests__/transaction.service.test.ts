@@ -19,16 +19,16 @@ describe('TransactionService', () => {
     const draft = await container.transactionService.createTransferDraft({ account, network, token, toAddress: RECIPIENT, amount: '1000' });
     const priced = await container.transactionService.withEstimatedFee(draft, account, network);
 
-    // 100000 gas * 1.1 (AVERAGE) at 1ugnot / 1000 gas.
-    expect(priced.fee).toEqual({ gasWanted: '110000', gasFee: '110ugnot' });
+    // (100000 simulated + 230 fee-size headroom) gas * 1.1 (AVERAGE) at 1ugnot / 1000 gas.
+    expect(priced.fee).toEqual({ gasWanted: '110253', gasFee: '111ugnot' });
   });
 
   it('fills MAX for the fee coin minus the padded fee, and the full balance otherwise', async () => {
     const { container, account, network, token } = await setup();
-    // AVERAGE: 110000 gas at 1ugnot / 1000 gas = 110ugnot, padded 1.2x = 132ugnot.
+    // AVERAGE: 110253 gas at 1ugnot / 1000 gas = 111ugnot, padded 1.2x = 133ugnot.
     const max = await container.transactionService.maxTransferAmount({ account, network, token, toAddress: RECIPIENT, balance: '1000000' });
 
-    expect(max).toBe('999868');
+    expect(max).toBe('999867');
     const grc20 = { ...token, id: 'gno.land/r/demo/foo.FOO', type: 'grc20' as const, denom: 'foo', isNative: false };
 
     expect(await container.transactionService.maxTransferAmount({ account, network, token: grc20, toAddress: RECIPIENT, balance: '500' })).toBe('500');
@@ -37,7 +37,8 @@ describe('TransactionService', () => {
   it('counts the storage deposit when checking the fee coin balance', async () => {
     const { container, account, network, address, gno, token } = await setup();
 
-    gno.state.balances[address] = '1110ugnot';
+    // Exactly amount (1000) + fee (111).
+    gno.state.balances[address] = '1111ugnot';
     const draft = await container.transactionService.withEstimatedFee(
       await container.transactionService.createTransferDraft({ account, network, token, toAddress: RECIPIENT, amount: '1000' }),
       account,

@@ -268,8 +268,7 @@ describe('WalletService', () => {
       expect(accounts.getAccounts()).toHaveLength(1);
     });
 
-    // BUG: the duplicate check only derives index 0, so a phrase whose first account was removed is accepted again.
-    it.skip('rejects a phrase that is already loaded even after its first account was removed', async () => {
+    it('rejects a phrase that is already loaded even after its first account was removed', async () => {
       const { wallet, accounts, account } = await setup();
 
       await accounts.createAccount(account.keyringId, 'HD_WALLET');
@@ -381,6 +380,111 @@ describe('WalletService', () => {
       await wallet.unlock(TEST_PASSWORD);
       expect(accounts.getAccounts()).toHaveLength(1);
       expect(await codeOf(() => container.keyringSession.withKeyPair(imported.keyringId, 0, async () => 0))).toBe('WALLET_NOT_FOUND');
+    });
+
+    it('wipes the removed keyring from the live session without a lock', async () => {
+      const { container, wallet } = await setup();
+      const imported = await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+
+      await wallet.removeAccount(imported.id, TEST_PASSWORD);
+      expect(await codeOf(() => container.keyringSession.withKeyPair(imported.keyringId, 0, async () => 0))).toBe('WALLET_NOT_FOUND');
+    });
+
+    it('keeps the account when the vault update fails', async () => {
+      const { container, wallet, accounts, secureStore } = await setup();
+      const imported = await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+
+      const setItem = secureStore.setItem.bind(secureStore);
+
+      jest.spyOn(secureStore, 'setItem').mockImplementation(async (key, value, options) => {
+        if (key === SecureKey.VAULT_STAGING) {
+          throw new Error('keychain write failed');
+        }
+
+        return setItem(key, value, options);
+      });
+      await expect(wallet.removeAccount(imported.id, TEST_PASSWORD)).rejects.toThrow('keychain write failed');
+      expect(accounts.getAccounts().map(item => item.id)).toContain(imported.id);
+      await expect(container.keyringSession.withKeyPair(imported.keyringId, 0, async () => 'ok')).resolves.toBe('ok');
+    });
+  });
+
+  describe('concurrency', () => {
+    it('gives overlapping account creations distinct indexes and keeps both', async () => {
+      const { accounts, account } = await setup();
+      const created = await Promise.all([
+        accounts.createAccount(account.keyringId, 'HD_WALLET'),
+        accounts.createAccount(account.keyringId, 'HD_WALLET'),
+      ]);
+
+      expect(created.map(item => item.hdIndex).sort()).toEqual([1, 2]);
+      expect(accounts.getAccounts().map(item => item.id)).toEqual([account.id, ...created.map(item => item.id)]);
+    });
+
+    it('keeps a rename made while an account is being derived', async () => {
+      const { accounts, account } = await setup();
+      const creating = accounts.createAccount(account.keyringId, 'HD_WALLET');
+
+      accounts.renameAccount(account.id, 'Renamed');
+      await creating;
+      expect(accounts.getAccount(account.id).name).toBe('Renamed');
+    });
+
+    it('accepts only one of two overlapping imports of the same key', async () => {
+      const { wallet, accounts } = await setup();
+      const results = await Promise.allSettled([
+        wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD),
+        wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD),
+      ]);
+
+      expect(results.map(result => result.status).sort()).toEqual(['fulfilled', 'rejected']);
+      expect(accounts.getAccounts()).toHaveLength(2);
+    });
+
+    it('does not reopen the session when a lock lands during an unlock', async () => {
+      const { container, wallet } = await setup();
+
+      wallet.lock();
+      const unlocking = wallet.unlock(TEST_PASSWORD);
+
+      wallet.lock();
+      expect(await codeOf(() => unlocking)).toBe('WALLET_LOCKED');
+      expect(container.keyringSession.isUnlocked()).toBe(false);
+    });
+
+    it('does not restore old accounts after a reset that lands during an unlock', async () => {
+      const { container, wallet, accounts, secureStore } = await setup();
+      const getItem = secureStore.getItem.bind(secureStore);
+      let release!: () => void;
+      let vaultRead!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const reading = new Promise<void>((resolve) => {
+        vaultRead = resolve;
+      });
+
+      // The old vault is read, then the unlock stalls (scrypt) while the reset runs.
+      jest.spyOn(secureStore, 'getItem').mockImplementation(async (key) => {
+        const value = await getItem(key);
+
+        if (key === SecureKey.VAULT) {
+          vaultRead();
+          await gate;
+        }
+
+        return value;
+      });
+      wallet.lock();
+      const unlocking = wallet.unlock(TEST_PASSWORD);
+
+      await reading;
+      await container.appResetService.resetAll();
+      release();
+      expect(await codeOf(() => unlocking)).toBe('WALLET_LOCKED');
+      expect(container.keyringSession.isUnlocked()).toBe(false);
+      expect(accounts.getAccounts()).toEqual([]);
+      expect(await wallet.getStatus()).toBe('empty');
     });
   });
 });

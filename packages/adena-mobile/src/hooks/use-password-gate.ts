@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { toErrorMessage } from '../core/error-message';
 import { AppErrorCode, isAppError } from '../core/errors';
@@ -22,6 +22,8 @@ export const usePasswordGate = (action: (password: string) => Promise<void>): Us
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
+  // Render state lags a second call made before React commits; the ref does not.
+  const inFlightRef = useRef(false);
 
   const close = useCallback(() => {
     setVisible(false);
@@ -30,10 +32,11 @@ export const usePasswordGate = (action: (password: string) => Promise<void>): Us
   }, []);
 
   const confirm = useCallback(async () => {
-    if (!password || submitting) {
+    if (!password || inFlightRef.current) {
       return;
     }
 
+    inFlightRef.current = true;
     setSubmitting(true);
 
     try {
@@ -44,9 +47,10 @@ export const usePasswordGate = (action: (password: string) => Promise<void>): Us
       setError(isAppError(actionError, AppErrorCode.INVALID_PASSWORD) ? 'Incorrect password.' : toErrorMessage(actionError));
     }
     finally {
+      inFlightRef.current = false;
       setSubmitting(false);
     }
-  }, [action, close, password, submitting]);
+  }, [action, close, password]);
 
   return {
     open: (): void => setVisible(true),

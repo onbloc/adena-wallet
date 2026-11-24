@@ -21,11 +21,12 @@ export class TokenService {
   async getTokenList(account: Account, network: Network): Promise<ManagedToken[]> {
     const assets = this.chainRegistry.assets(network);
     const address = this.accountService.getAddress(account, network);
-    const stored = this.tokenListRepository.get(account.id, network.id) ?? [];
     const [curated, discovered] = await Promise.all([
       assets.getCuratedTokens(network).catch(() => [] as Token[]),
       assets.discoverHeldTokens(address, network).catch(() => [] as Token[]),
     ]);
+    // Read after the network calls so visibility or custom-token changes made meanwhile are kept.
+    const stored = this.tokenListRepository.get(account.id, network.id) ?? [];
 
     const byId = new Map<string, ManagedToken>();
 

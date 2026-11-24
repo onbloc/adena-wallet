@@ -9,12 +9,18 @@ import { mnemonicToSeed } from '../../../../../src/crypto/mnemonic';
 import { GNO_FEE_POLICY } from '../../../../../src/domain/fee';
 import { DEFAULT_GNO_FEE_POLICY, GnoChainRepository } from '../../../../../src/repositories/chain/gno/gno-chain.repository';
 import { GnoMessage } from '../../../../../src/repositories/chain/gno/gno-messages';
+import { feeSizeHeadroomBytes } from '../../../../../src/repositories/chain/gno/gno-tx-encoder';
 import { BUILT_IN_NETWORKS } from '../../../../../src/resources';
 import { createFakeGnoProvider } from '../../../../helpers/fake-gno-provider';
 import { TEST_MNEMONIC } from '../../../../helpers/test-container';
 
 const network = { ...BUILT_IN_NETWORKS[0], chainId: 'test-chain' };
 const RECIPIENT = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
+
+// The fake node reports Block.MaxGas 3B, which becomes the probe gas_wanted.
+const PROBE_GAS_WANTED = 3_000_000_000n;
+// Gas added for the final fee encoding longer than the probe fee (10 gas per byte).
+const FEE_HEADROOM_GAS = feeSizeHeadroomBytes({ gasWanted: PROBE_GAS_WANTED.toString(), gasFee: '1ugnot' }, 'ugnot') * 10;
 
 type MutableProvider = Record<string, (...args: never[]) => unknown>;
 
@@ -63,7 +69,12 @@ const storageEvent = (typeUrl: string, fee: string): Any => {
 describe('GnoChainRepository', () => {
   it('exposes the family and default fee policy', () => {
     expect(setup().repository.family).toBe('gno');
-    expect(DEFAULT_GNO_FEE_POLICY).toEqual({ defaultGasPrice: { amount: 1, gas: 1000 }, simulationGasWanted: '100000000' });
+    expect(DEFAULT_GNO_FEE_POLICY).toEqual({
+      defaultGasPrice: { amount: 1, gas: 1000 },
+      simulationGasWanted: '100000000',
+      unboundedSimulationGasWanted: '3000000000',
+      txSizeCostPerByte: 10,
+    });
   });
 
   describe('addresses', () => {
@@ -211,12 +222,12 @@ describe('GnoChainRepository', () => {
       const { repository, state } = setup({ gasUsed: 54_321n });
       const estimate = await repository.estimateFee(draftOf([send()], 'memo'), { publicKey: keyPair.publicKey }, network);
 
-      expect(estimate).toEqual({ gasUsed: '54321', storageDeposit: '0', gasPrice: '0.001', denom: 'ugnot', policy: GNO_FEE_POLICY });
+      expect(estimate).toEqual({ gasUsed: String(54_321 + FEE_HEADROOM_GAS), storageDeposit: '0', gasPrice: '0.001', denom: 'ugnot', policy: GNO_FEE_POLICY });
       const [tx] = state.simulated;
 
-      expect(tx.fee).toMatchObject({ gas_wanted: 100_000_000n, gas_fee: '1ugnot' });
+      expect(tx.fee).toMatchObject({ gas_wanted: PROBE_GAS_WANTED, gas_fee: '1ugnot' });
       expect(tx.memo).toBe('memo');
-      expect(tx.signatures[0].signature).toEqual(new Uint8Array());
+      expect(tx.signatures[0].signature).toEqual(new Uint8Array(64));
       expect(PubKeySecp256k1.decode(tx.signatures[0].pub_key!.value).key).toEqual(keyPair.publicKey);
     });
 
@@ -237,12 +248,20 @@ describe('GnoChainRepository', () => {
     });
 
     it('honors a custom fee policy', async () => {
-      const fake = setup();
-      const custom = new GnoChainRepository(fake.factory, { defaultGasPrice: { amount: 1, gas: 4 }, simulationGasWanted: '5' });
+      const fake = setup({ maxGas: null });
+      const custom = new GnoChainRepository(fake.factory, {
+        defaultGasPrice: { amount: 1, gas: 4 },
+        simulationGasWanted: '5',
+        unboundedSimulationGasWanted: '6',
+        txSizeCostPerByte: 0,
+      });
 
       fake.mutable.getGasPrice = async () => null;
-      await expect(custom.estimateFee(draftOf([send()]), { publicKey: keyPair.publicKey }, network)).resolves.toMatchObject({ gasPrice: '0.25' });
+      await expect(custom.estimateFee(draftOf([send()]), { publicKey: keyPair.publicKey }, network)).resolves.toMatchObject({ gasPrice: '0.25', gasUsed: '100000' });
       expect(fake.state.simulated[0].fee?.gas_wanted).toBe(5n);
+      fake.state.maxGas = '-1';
+      await custom.estimateFee(draftOf([send()]), { publicKey: keyPair.publicKey }, network);
+      expect(fake.state.simulated[1].fee?.gas_wanted).toBe(6n);
     });
 
     it('reports the net storage deposit', async () => {
@@ -253,7 +272,7 @@ describe('GnoChainRepository', () => {
         }),
       });
 
-      await expect(repository.estimateFee(draftOf([send()]), { publicKey: keyPair.publicKey }, network)).resolves.toMatchObject({ gasUsed: '10', storageDeposit: '800' });
+      await expect(repository.estimateFee(draftOf([send()]), { publicKey: keyPair.publicKey }, network)).resolves.toMatchObject({ gasUsed: String(10 + FEE_HEADROOM_GAS), storageDeposit: '800' });
     });
 
     it('uses the static gas table for code messages while locked', async () => {
@@ -269,10 +288,10 @@ describe('GnoChainRepository', () => {
     it('signs the simulation of code messages when a key is available', async () => {
       const { repository, state } = setup({ gasUsed: 777n });
 
-      await expect(repository.estimateFee(draftOf([run()]), unlocked(), network)).resolves.toMatchObject({ gasUsed: '777' });
+      await expect(repository.estimateFee(draftOf([run()]), unlocked(), network)).resolves.toMatchObject({ gasUsed: String(777 + FEE_HEADROOM_GAS) });
       const [tx] = state.simulated;
 
-      expect(tx.fee).toMatchObject({ gas_wanted: 100_000_000n, gas_fee: '1ugnot' });
+      expect(tx.fee).toMatchObject({ gas_wanted: PROBE_GAS_WANTED, gas_fee: '1ugnot' });
       expect(tx.signatures[0].signature).toHaveLength(64);
       expect(PubKeySecp256k1.decode(tx.signatures[0].pub_key!.value).key).toEqual(keyPair.publicKey);
     });
@@ -281,7 +300,8 @@ describe('GnoChainRepository', () => {
       const { repository, state } = setup();
 
       await repository.estimateFee(draftOf([send()]), unlocked(), network);
-      expect(state.simulated[0].signatures[0].signature).toHaveLength(0);
+      // Zeroed placeholder, not a real signature.
+      expect(state.simulated[0].signatures[0].signature).toEqual(new Uint8Array(64));
     });
 
     it('surfaces simulation errors as TRANSACTION_FAILED with the node reason', async () => {

@@ -6,20 +6,21 @@ import { deriveKeyPair, keyPairFromPrivateKey, wipeKeyPair } from '../crypto/key
 import { isValidPrivateKeyHex, KeyringRecord, KeyringType } from '../crypto/keyring';
 import { generateMnemonic, isValidMnemonic, mnemonicToSeed, normalizeMnemonic } from '../crypto/mnemonic';
 import { Account } from '../domain/account';
+import { VaultContent } from '../migration/vault-migrations';
 import { BiometricCredentialRepository } from '../repositories/biometric-credential.repository';
 import { PreferenceRepository } from '../repositories/preference.repository';
 import { findPasswordIssue, PASSWORD_ISSUE_MESSAGE } from '../security/password-policy';
 import { BiometryKind, SecurePrompt } from '../security/secure-store';
 import { createId } from '../utils/id';
+import { SerialQueue } from '../utils/serial-queue';
 import { AccountService } from './account.service';
 import { KeyringSession } from './keyring-session';
+import { VaultService } from './vault.service';
 
 // Any store that keeps data per account and must drop it when the account is removed.
 export interface AccountScopedData {
   removeAccount(accountId: string): void;
 }
-import { VaultContent } from '../migration/vault-migrations';
-import { VaultService } from './vault.service';
 
 export const WalletStatus = {
   EMPTY: 'empty',
@@ -36,7 +37,10 @@ export interface CreateWalletInput {
 }
 
 // Wallet lifecycle: create/import, lock/unlock, biometrics and keyring management.
+// Keyring and account changes run on one queue, so duplicate checks and index allocation see each other.
 export class WalletService {
+  private readonly queue = new SerialQueue();
+
   constructor(
     private readonly vaultService: VaultService,
     private readonly keyringSession: KeyringSession,
@@ -79,15 +83,25 @@ export class WalletService {
       mnemonic: normalizeMnemonic(mnemonic),
       createdAt: Date.now(),
     };
-    const content = await this.vaultService.create([record], password);
+    const epoch = this.keyringSession.epoch;
 
-    this.accountService.clear();
-    this.keyringSession.open(content.keyrings);
-    return this.accountService.createAccount(record.id, record.type, accountName ?? 'Account 1');
+    return this.queue.run(async () => {
+      const content = await this.vaultService.create([record], password);
+
+      this.assertCurrent(epoch);
+      this.accountService.clear();
+      this.keyringSession.open(content.keyrings);
+      return this.accountService.createAccount(record.id, record.type, accountName ?? 'Account 1');
+    });
   }
 
-  async unlock(password: string): Promise<void> {
-    await this.openSession(await this.vaultService.open(password));
+  // The epoch is taken at call time: a lock issued after this call, even while it waits in the queue, wins.
+  unlock(password: string): Promise<void> {
+    const epoch = this.keyringSession.epoch;
+
+    return this.queue.run(async () => {
+      await this.openSession(await this.vaultService.open(password), epoch);
+    });
   }
 
   lock(): void {
@@ -95,19 +109,31 @@ export class WalletService {
   }
 
   // Biometric unlock reads the password from a biometry-bound keychain item.
-  async unlockWithBiometrics(prompt: SecurePrompt): Promise<void> {
-    const password = await this.biometricRepository.readCredential(prompt);
+  unlockWithBiometrics(prompt: SecurePrompt): Promise<void> {
+    const epoch = this.keyringSession.epoch;
 
-    if (!password) {
-      throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
-    }
+    return this.queue.run(async () => {
+      const password = await this.biometricRepository.readCredential(prompt);
 
-    await this.openSession(await this.vaultService.openWithEscrowedPassword(password));
+      if (!password) {
+        throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
+      }
+
+      await this.openSession(await this.vaultService.openWithEscrowedPassword(password), epoch);
+    });
   }
 
-  private async openSession(content: VaultContent): Promise<void> {
+  // A lock or reset that happened while the vault was being read wins over this unlock.
+  private async openSession(content: VaultContent, epoch: number): Promise<void> {
+    this.assertCurrent(epoch);
     this.keyringSession.open(content.keyrings);
     await this.restoreMissingAccounts(content.keyrings);
+  }
+
+  private assertCurrent(epoch: number): void {
+    if (this.keyringSession.epoch !== epoch) {
+      throw new AppError(AppErrorCode.WALLET_LOCKED, 'Wallet was locked while unlocking');
+    }
   }
 
   getBiometryKind(): Promise<BiometryKind | null> {
@@ -138,7 +164,16 @@ export class WalletService {
     return this.keyringSession.getMnemonic(keyringId);
   }
 
-  async addMnemonicKeyring(mnemonic: string, password: string, accountName?: string): Promise<Account> {
+  addMnemonicKeyring(mnemonic: string, password: string, accountName?: string): Promise<Account> {
+    return this.queue.run(() => this.addMnemonic(mnemonic, password, accountName));
+  }
+
+  importPrivateKey(privateKeyHex: string, password: string, accountName?: string): Promise<Account> {
+    return this.queue.run(() => this.addPrivateKey(privateKeyHex, password, accountName));
+  }
+
+  // Early check for a clear message; the vault re-checks against every stored keyring.
+  private async addMnemonic(mnemonic: string, password: string, accountName?: string): Promise<Account> {
     if (!isValidMnemonic(mnemonic)) {
       throw new AppError(AppErrorCode.INVALID_MNEMONIC, 'Invalid recovery phrase');
     }
@@ -162,7 +197,7 @@ export class WalletService {
     );
   }
 
-  async importPrivateKey(privateKeyHex: string, password: string, accountName?: string): Promise<Account> {
+  private async addPrivateKey(privateKeyHex: string, password: string, accountName?: string): Promise<Account> {
     const normalized = privateKeyHex.trim().replace(/^0x/, '').toLowerCase();
 
     if (!isValidPrivateKeyHex(normalized)) {
@@ -185,15 +220,22 @@ export class WalletService {
     );
   }
 
-  async removeAccount(accountId: string, password: string): Promise<void> {
-    await this.vaultService.verifyPassword(password);
-    const { removed, keyringEmpty } = this.accountService.removeAccount(accountId);
+  // The vault is updated first: if that fails, the account stays instead of coming back on the next unlock.
+  removeAccount(accountId: string, password: string): Promise<void> {
+    return this.queue.run(async () => {
+      const { removed, keyringEmpty } = this.accountService.planRemoval(accountId);
 
-    this.accountScopedData.forEach(store => store.removeAccount(accountId));
+      if (keyringEmpty) {
+        await this.vaultService.removeKeyring(removed.keyringId, password);
+        this.keyringSession.remove(removed.keyringId);
+      }
+      else {
+        await this.vaultService.verifyPassword(password);
+      }
 
-    if (keyringEmpty) {
-      await this.vaultService.removeKeyring(removed.keyringId, password);
-    }
+      this.accountService.removeAccount(accountId);
+      this.accountScopedData.forEach(store => store.removeAccount(accountId));
+    });
   }
 
   // Keychain items survive an iOS reinstall while general storage does not; rebuild index 0 per keyring.
