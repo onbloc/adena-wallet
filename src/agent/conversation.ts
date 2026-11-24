@@ -16,6 +16,8 @@ export type ConversationSettings = Omit<GenerateSettings, 'prompt' | 'messages'>
 export type ConversationOptions = {
   account?: string;
   contextTokens?: number;
+  /** Permit unsigned transaction preparation for each turn; defaults to false. */
+  allowTransactionPreparation?: boolean;
 } & (
   | { saved?: string | null; session?: undefined }
   | { session: ChatSession; saved?: undefined }
@@ -26,6 +28,7 @@ export class AgentConversation {
   readonly contextTokens: number;
   private readonly session: ChatSession;
   private readonly account?: string;
+  private readonly allowTransactionPreparation: boolean;
   private active?: AbortController;
   private revision = 0;
 
@@ -36,6 +39,7 @@ export class AgentConversation {
     }
     if (agent.wallet && !options.account) throw new TypeError('A wallet conversation needs an account.');
     this.account = options.account;
+    this.allowTransactionPreparation = options.allowTransactionPreparation === true;
     this.session = options.session ?? createChatSession(options.saved);
   }
 
@@ -61,7 +65,7 @@ export class AgentConversation {
     if (!settings.prompt.trim()) throw new TypeError('A conversation prompt must not be empty.');
     const outputTokens = settings.maxOutputTokens ?? DEFAULT_GENERATE_SETTINGS.maxOutputTokens;
     if (!Number.isSafeInteger(outputTokens) || outputTokens <= 0) throw new RangeError('maxOutputTokens must be a positive integer.');
-    const reservedOutput = this.agent.wallet ? Math.min(outputTokens, 512) : outputTokens;
+    const reservedOutput = this.account ? Math.min(outputTokens, 512) : outputTokens;
     const current: ModelMessage[] = [{ role: 'user', content: settings.prompt }];
     // Reject an oversized current request unchanged, before discovery or wallet access.
     if (estimateContextInput([settings.system, current]) + reservedOutput > this.contextTokens) {
@@ -83,6 +87,7 @@ export class AgentConversation {
         {
           account: this.account,
           signal: controller.signal,
+          allowTransactionPreparation: this.allowTransactionPreparation,
           contextTokens: this.contextTokens,
           onContextCompacted: (count) => {
             if (revision !== this.revision || controller.signal.aborted) return;

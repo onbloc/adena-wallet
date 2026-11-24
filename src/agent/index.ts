@@ -3,6 +3,8 @@ export { AIAgent } from './agent';
 export type { AIAgentOptions, AgentRunOptions } from './agent';
 export { AgentConversation } from './conversation';
 export type { ConversationOptions, ConversationSettings } from './conversation';
+export { formatBalance } from './balanceOperation';
+export type { BalanceAdapter, BalanceAsset, BalanceRead, BalanceRequest, BalanceResult, BalanceScope } from './balanceOperation';
 export {
   ToolName,
   TransactionType,

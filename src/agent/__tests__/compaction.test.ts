@@ -22,7 +22,8 @@ describe('agent context compaction', () => {
     const onTransaction = jest.fn();
     const model = new MockLanguageModelV4({
       doGenerate: [
-        { content: [{ type: 'tool-call', toolCallId: 'live-read', toolName: 'get_native_balance', input: '{}' }],
+        { content: [{ type: 'tool-call', toolCallId: 'live-read', toolName: 'get_balance',
+          input: JSON.stringify({ kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } }) }],
           finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [] },
         { content: [{ type: 'text', text: '42 GNOT' }],
           finishReason: { unified: 'stop', raw: 'stop' }, usage, warnings: [] },

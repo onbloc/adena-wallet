@@ -3,7 +3,7 @@ import { decodeTransactionMessage } from '@adena-wallet/sdk';
 
 import { AdenaWalletSdk, createOnblocTokenResolver, type AdenaTransaction } from '../../adena';
 import { AIAgent, type AgentConversation, type PreparedTransaction, type WalletSdk } from '../../agent';
-import { Harness } from '../../harness/core';
+import { DEFAULT_BUDGET, Harness } from '../../harness/core';
 import { createOnblocToolSource } from '../../harness/mcp';
 import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
 import { GenerateEventType, LLMFromModel } from '../../llm/core';
@@ -73,11 +73,14 @@ export async function createScenarioRunner(url = serverUrl()): Promise<ScenarioR
     const prepared: PreparedTransaction[] = [];
     const agent = new AIAgent({
       llm,
-      harness: new Harness({ toolSources: [createOnblocToolSource(onbloc)] }),
+      harness: new Harness({
+        toolSources: [createOnblocToolSource(onbloc)],
+        budget: { ...DEFAULT_BUDGET, timeoutMs: 5 * 60_000 },
+      }),
       wallet,
       onTransaction: (transaction) => { prepared.push(transaction); },
     });
-    return { conversation: agent.createConversation({ account: ACCOUNT }), prepared };
+    return { conversation: agent.createConversation({ account: ACCOUNT, allowTransactionPreparation: true }), prepared };
   }
 
   return {

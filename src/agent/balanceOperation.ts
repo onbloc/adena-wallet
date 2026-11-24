@@ -2,8 +2,12 @@ import { z } from 'zod';
 import type { HarnessRun, ToolDefinition } from '../harness/core';
 import { fromBaseUnits } from './wallet/amount';
 
-const symbol = z.string().trim().min(1).max(64).regex(/^[\p{L}\p{N}._-]+$/u);
-const assetId = z.string().trim().min(1).max(256).regex(/^[\p{L}\p{N}._:/-]+$/u);
+// Babel expands Unicode property escapes in regex literals into enormous character classes.
+// Keep runtime validation intact while presenting the equivalent compact pattern to the model.
+const symbol = z.string().trim().min(1).max(64).regex(/^[\p{L}\p{N}._-]+$/u)
+  .meta({ pattern: '^[\\p{L}\\p{N}._-]+$' });
+const assetId = z.string().trim().min(1).max(256).regex(/^[\p{L}\p{N}._:/-]+$/u)
+  .meta({ pattern: '^[\\p{L}\\p{N}._:/-]+$' });
 const assetReference = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('symbol'), value: symbol }),
   z.strictObject({ kind: z.literal('id'), value: assetId }),

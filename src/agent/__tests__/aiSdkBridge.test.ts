@@ -2,7 +2,7 @@ import { Harness, type HarnessRun } from '../../harness/core';
 import { createAiSdkRun, type AiSdkBudget } from '../aiSdkBridge';
 
 type Execute = (input: unknown, options: unknown) => Promise<unknown>;
-type PrepareStep = (options: unknown) => Promise<{ maxOutputTokens: number }>;
+type PrepareStep = (options: unknown) => Promise<{ maxOutputTokens: number; messages?: unknown }>;
 
 const ACCOUNT = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
 
@@ -43,6 +43,61 @@ describe('createAiSdkRun', () => {
     const { tools } = bridge(run);
 
     expect(await (tools.ping.execute as Execute)({}, {})).toEqual({ kind: 'result', value: 'pong' });
+    run.close();
+  });
+
+  it('compacts context while exposing a composite operation instead of its budgeted underlying tool', async () => {
+    const run = await startRun();
+    const onContextCompacted = jest.fn();
+    let advertisedTools: string[] = [];
+    const { tools, prepareStep } = createAiSdkRun({
+      run,
+      maxOutputTokens: 100,
+      contextWindow: 130,
+      onContextCompacted,
+      hideTools: new Set(['ping']),
+      operations: [{
+        definition: { name: 'get_ping', description: 'Read a ping', jsonSchema: { type: 'object', properties: {} } },
+        execute: async input => run.dispatch({ name: 'ping', input }),
+      }],
+      budget: { kind: 'local' },
+      onInterrupt: () => {},
+      estimateInputTokens: ({ messages, tools: definitions }) => {
+        advertisedTools = definitions.map(definition => definition.name);
+        return messages.length * 20;
+      },
+    });
+    const messages = [
+      { role: 'user', content: 'old one' }, { role: 'assistant', content: 'answer one' },
+      { role: 'user', content: 'old two' }, { role: 'assistant', content: 'answer two' },
+      { role: 'user', content: 'current' },
+    ];
+    const prepared = await (prepareStep as PrepareStep)({ ...step, messages });
+
+    expect(prepared.messages).toEqual([messages[4]]);
+    expect(onContextCompacted).toHaveBeenCalledWith(2);
+    expect(advertisedTools).toEqual(['get_ping']);
+    expect(tools.ping).toBeUndefined();
+    expect(await (tools.get_ping.execute as Execute)({}, {})).toEqual({ kind: 'result', value: 'pong' });
+    expect(await (tools.get_ping.execute as Execute)({}, {})).toEqual({ kind: 'result', value: 'pong' });
+    expect(await (tools.get_ping.execute as Execute)({}, {})).toEqual({ kind: 'denied', code: 'BUDGET_EXHAUSTED' });
+    run.close();
+  });
+
+  it('rejects duplicate composite operations and collisions with visible harness tools', async () => {
+    const run = await startRun();
+    const options = {
+      run, maxOutputTokens: 100, budget: { kind: 'local' as const },
+      onInterrupt: () => {}, estimateInputTokens: () => 1,
+    };
+    const operation = {
+      definition: { name: 'ping', description: 'duplicate', jsonSchema: { type: 'object' as const, properties: {} } },
+      execute: async (input: unknown) => run.dispatch({ name: 'ping', input }),
+    };
+    expect(() => createAiSdkRun({ ...options, operations: [operation] }))
+      .toThrow('Operation name conflicts with a harness tool.');
+    expect(() => createAiSdkRun({ ...options, operations: [operation, operation] }))
+      .toThrow('Duplicate operation name.');
     run.close();
   });
 

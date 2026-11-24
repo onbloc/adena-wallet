@@ -96,11 +96,14 @@ describe('plain-language requests become transactions', () => {
     try {
       expect(turns.flatMap((turn) => turn.prepared)).toEqual([]);
       expect(followUp.results).toContainEqual({
-        name: 'get_native_balance',
+        name: 'get_balance',
         output: expect.objectContaining({
           kind: 'result',
           value: expect.objectContaining({
-            untrustedData: expect.objectContaining({ denom: 'ugnot', balance: '10000000' }),
+            status: 'complete',
+            assets: expect.arrayContaining([
+              expect.objectContaining({ kind: 'native', assetId: 'ugnot', symbol: 'GNOT', amount: '10000000', decimals: 6 }),
+            ]),
           }),
         }),
       });
