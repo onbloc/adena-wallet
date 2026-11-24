@@ -18,6 +18,8 @@ import { NftService } from '../../../services/nft.service';
 import { useSessionStore } from '../../../stores/session.store';
 import { formatUSD, formatUSDChange } from '../../../utils/price';
 
+const MAX_PLACEHOLDER_ROWS = 6;
+
 export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactElement => {
   const { account, network, address } = useWalletSnapshot();
   const wallet = useWalletAssets();
@@ -48,6 +50,9 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
   })));
 
   // Portfolio value leads when prices exist; otherwise the native balance is the headline.
+  // The header waits for prices too, so it never shows the native balance and then jumps to USD.
+  const assetsLoading = wallet.status === 'loading';
+  const headlineLoading = assetsLoading || wallet.pricesLoading;
   const native = wallet.assets.find(asset => asset.token.isNative);
   const portfolio = wallet.portfolio;
   const changeAmount = portfolio && portfolio.change24h !== null
@@ -105,8 +110,10 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
         ? `${formatUSDChange(changeAmount)} (${portfolio.change24h >= 0 ? '+' : ''}${portfolio.change24h.toFixed(2)}%) today`
         : undefined}
       headlineCaptionColor={changeAmount === null ? 'secondary' : changeAmount >= 0 ? 'success' : 'error'}
-      headlineLoading={wallet.loading}
+      headlineLoading={headlineLoading}
       error={wallet.error ? toErrorMessage(wallet.error) : undefined}
+      assetsLoading={assetsLoading}
+      assetPlaceholderCount={Math.min(wallet.tokens.length, MAX_PLACEHOLDER_ROWS)}
       assets={wallet.assets.map(toAssetItem)}
       collections={(collections.data ?? []).map(collection => ({
         key: collection.id,

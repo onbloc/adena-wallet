@@ -3,7 +3,7 @@ import React from 'react';
 
 import { WalletHomePage, WalletHomePageProps } from '../../../../src/components/pages';
 import { Trend } from '../../../../src/components/view-models';
-import { renderPage } from './render-page';
+import { renderPage, wrapPage } from './render-page';
 
 type Node = { parent: Node | null; props: { refreshControl?: { props: { onRefresh: () => void } } } };
 
@@ -120,6 +120,19 @@ describe('WalletHomePage', () => {
     expect(screen.getByText('Testnet 13')).toBeTruthy();
     expect(screen.getByText('Unable to load balances')).toBeTruthy();
     expect(screen.getByText('Network unreachable')).toBeTruthy();
+  });
+
+  it('shows a busy skeleton list instead of rows while assets load', async () => {
+    const { rerender } = await renderPage(<WalletHomePage {...props({ assetsLoading: true, assetPlaceholderCount: 2 })} />);
+
+    expect(screen.getByLabelText('Loading tokens').props.accessibilityState).toEqual({ busy: true });
+    expect(screen.queryByText('Gno.land')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Manage tokens' })).toBeTruthy();
+
+    await rerender(wrapPage(<WalletHomePage {...props()} />));
+    expect(screen.queryByLabelText('Loading tokens')).toBeNull();
+    expect(screen.getByText('1,234.5 GNOT')).toBeTruthy();
+    expect(screen.getByText('0 GNS')).toBeTruthy();
   });
 
   it('renders an empty token list with only the manage action', async () => {

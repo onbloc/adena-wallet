@@ -28,6 +28,7 @@ describe('toAssetView', () => {
       trend: Trend.POSITIVE,
       usdValue: 5,
       loading: false,
+      valueLoading: false,
     });
   });
 
@@ -61,7 +62,7 @@ describe('toAssetView', () => {
 
 describe('sortAssets', () => {
   const view = (symbol: string, isNative: boolean, usdValue: number | null): AssetView =>
-    ({ token: token({ id: symbol, symbol, isNative }), trend: Trend.NEUTRAL, usdValue, loading: false });
+    ({ token: token({ id: symbol, symbol, isNative }), trend: Trend.NEUTRAL, usdValue, loading: false, valueLoading: false });
 
   it('puts native first, then by value desc, then by symbol', () => {
     const input = [view('B', false, 1), view('A', false, 1), view('C', false, 10), view('Z', false, null), view('N', true, 0)];
@@ -103,6 +104,20 @@ describe('buildAssetViews', () => {
     expect(buildAssetViews([token()], undefined, undefined, false)[0].loading).toBe(false);
   });
 
+  it('loads a token missing from placeholder balances on its own', () => {
+    const views = buildAssetViews([foo, token()], { ugnot: '1000000' }, undefined, true);
+
+    expect(views.map(item => [item.token.id, item.loading])).toEqual([['ugnot', false], ['foo', true]]);
+  });
+
+  it('marks only the value cell as loading while prices are expected', () => {
+    const [pending] = buildAssetViews([token()], { ugnot: '1000000' }, undefined, false, true);
+    const [priced] = buildAssetViews([token()], { ugnot: '1000000' }, { 'ugnot:n1': price(1) }, false, true);
+
+    expect(pending).toMatchObject({ loading: false, valueLoading: true, quantityLabel: '1 GNOT' });
+    expect(priced.valueLoading).toBe(false);
+  });
+
   it('returns nothing for no tokens', () => {
     expect(buildAssetViews([], {}, {}, false)).toEqual([]);
   });
@@ -123,6 +138,7 @@ describe('toAssetItem', () => {
       change: '+1.00%',
       trend: Trend.POSITIVE,
       loading: false,
+      valueLoading: false,
     });
   });
 });

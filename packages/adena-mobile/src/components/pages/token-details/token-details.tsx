@@ -2,7 +2,7 @@ import React, { ReactElement, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Spinner, Text, TextColor } from '../../atoms';
+import { Button, Skeleton, Spinner, Text, TextColor } from '../../atoms';
 import {
   ActivityList,
   ActivityListProps,
@@ -24,7 +24,10 @@ export interface TokenMarketView {
   changeLabel?: string;
   changeColor: TextColor;
   chart: number[];
+  // First load: price, change, chart and the sections below appear together.
   loading: boolean;
+  // A range switch is loading; the previous values stay dimmed.
+  updating?: boolean;
   // Shown in place of the chart when there is no price history.
   emptyLabel?: string;
   stats: { label: string; value: string }[];
@@ -50,6 +53,8 @@ export interface TokenDetailsPageProps<R extends string> {
 }
 
 const ABOUT_PREVIEW_LINES = 3;
+const PRICE_LINE_HEIGHT = 44;
+const CHANGE_LINE_HEIGHT = 18;
 
 // Layout follows the "Token details" design: price, chart, ranges, About, Stats, Links, then balance and activity.
 export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<R>): ReactElement => {
@@ -70,11 +75,28 @@ export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<
           </View>
         </View>
 
-        <View style={styles.price}>
-          <Text variant='display' tabular adjustsFontSizeToFit numberOfLines={1}>{market.priceLabel ?? '–'}</Text>
-          {market.changeLabel && <Text variant='meta' color={market.changeColor} tabular>{market.changeLabel}</Text>}
+        <View style={[styles.price, market.updating && styles.dimmed]} accessibilityState={{ busy: market.loading || market.updating }}>
+          {market.loading
+            ? (
+                <>
+                  <Skeleton width={180} height={PRICE_LINE_HEIGHT} />
+                  <Skeleton width={140} height={CHANGE_LINE_HEIGHT} />
+                </>
+              )
+            : (
+                <>
+                  <Text variant='display' tabular adjustsFontSizeToFit numberOfLines={1}>{market.priceLabel ?? '–'}</Text>
+                  {market.changeLabel && <Text variant='meta' color={market.changeColor} tabular>{market.changeLabel}</Text>}
+                </>
+              )}
         </View>
-        <PriceChart values={market.chart} loading={market.loading} emptyLabel={market.emptyLabel} accessibilityLabel={`${asset.symbol} price chart`} />
+        <PriceChart
+          values={market.chart}
+          loading={market.loading}
+          updating={market.updating}
+          emptyLabel={market.emptyLabel}
+          accessibilityLabel={`${asset.symbol} price chart`}
+        />
         <RangeSelector options={props.ranges} selected={props.range} onSelect={props.onRangeChange} />
 
         {props.about && (

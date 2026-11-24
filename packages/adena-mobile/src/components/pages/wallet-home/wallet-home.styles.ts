@@ -11,6 +11,7 @@ export const styles = StyleSheet.create({
   network: { flexDirection: 'row' },
   actions: { flexDirection: 'row', gap: spacing.space16, marginTop: spacing.space8 },
   action: { flex: 1 },
+  assetList: { gap: spacing.space12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: spacing.space16 },
   gridCell: { width: '48%' },
   loading: { paddingVertical: spacing.space32 },

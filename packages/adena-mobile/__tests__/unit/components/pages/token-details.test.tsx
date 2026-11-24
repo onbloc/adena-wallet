@@ -80,7 +80,7 @@ describe('TokenDetailsPage', () => {
       asset: { key: 'x', symbol: 'TKN', name: 'A very long token name that keeps going and going', trend: 'neutral', loading: true },
       about: undefined,
       balanceValueLabel: undefined,
-      market: { changeColor: 'secondary', chart: [], loading: true, stats: [], links: [] },
+      market: { changeColor: 'secondary', chart: [], loading: false, stats: [], links: [] },
       activity: { sections: [], loading: false, supported: true, hasMore: false, loadingMore: false, onLoadMore: jest.fn(), onOpen: jest.fn() },
     });
 

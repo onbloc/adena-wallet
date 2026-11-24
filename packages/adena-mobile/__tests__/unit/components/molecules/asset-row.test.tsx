@@ -2,7 +2,7 @@ import { render, screen, userEvent } from '@testing-library/react-native';
 import React from 'react';
 
 import { Text } from '../../../../src/components/atoms';
-import { AssetRow } from '../../../../src/components/molecules';
+import { AssetRow, AssetRowSkeleton } from '../../../../src/components/molecules';
 import { Trend } from '../../../../src/components/view-models';
 import { colors } from '../../../../src/theme';
 
@@ -29,6 +29,18 @@ describe('AssetRow', () => {
     expect(screen.getAllByLabelText('Loading')).toHaveLength(2);
     expect(screen.queryByText('chg')).toBeNull();
     expect(screen.queryByText('$1')).toBeNull();
+  });
+
+  it('keeps the quantity and holds the value cell with a fixed placeholder', async () => {
+    await render(<AssetRow name='A' quantity='1 GNOT' change={{ label: 'chg', trend: Trend.POSITIVE }} icon={null} valueLoading />);
+    expect(screen.getByText('1 GNOT')).toBeTruthy();
+    expect(screen.getByLabelText('Loading')).toHaveStyle({ width: 72, height: 16 });
+    expect(screen.queryByText('chg')).toBeNull();
+  });
+
+  it('renders a skeleton row with the loaded row frame', async () => {
+    await render(<AssetRowSkeleton />);
+    expect(screen.getAllByLabelText('Loading')).toHaveLength(4);
   });
 
   it('renders without quantity or value', async () => {

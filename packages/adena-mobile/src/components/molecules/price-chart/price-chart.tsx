@@ -3,12 +3,14 @@ import { LayoutChangeEvent, View } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 
 import { colors } from '../../../theme';
-import { Skeleton, Text } from '../../atoms';
+import { Skeleton, Spinner, Text } from '../../atoms';
 import { CHART_HEIGHT, CHART_PADDING, styles } from './price-chart.styles';
 
 export interface PriceChartProps {
   values: number[];
   loading?: boolean;
+  // Another range is loading: the current line stays dimmed under a spinner.
+  updating?: boolean;
   // Shown instead of the line when there is nothing to draw.
   emptyLabel?: string;
   accessibilityLabel?: string;
@@ -17,11 +19,11 @@ export interface PriceChartProps {
 const GRID_LINES = [CHART_PADDING, CHART_HEIGHT / 2, CHART_HEIGHT - CHART_PADDING];
 
 // Line chart over three grid lines (top, middle, bottom), ending with a dot on the latest value.
-export const PriceChart = ({ values, loading = false, emptyLabel = 'No price history', accessibilityLabel }: PriceChartProps): ReactElement => {
+export const PriceChart = ({ values, loading = false, updating = false, emptyLabel = 'No price history', accessibilityLabel }: PriceChartProps): ReactElement => {
   const [width, setWidth] = useState(0);
   const onLayout = (event: LayoutChangeEvent): void => setWidth(event.nativeEvent.layout.width);
 
-  if (loading) {
+  if (loading || (updating && values.length < 2)) {
     return <View style={styles.container}><Skeleton height={CHART_HEIGHT} /></View>;
   }
 
@@ -47,13 +49,20 @@ export const PriceChart = ({ values, loading = false, emptyLabel = 'No price his
   const last = points[points.length - 1];
 
   return (
-    <View style={styles.container} onLayout={onLayout} accessibilityRole='image' accessibilityLabel={accessibilityLabel}>
+    <View style={styles.container} onLayout={onLayout} accessibilityRole='image' accessibilityLabel={accessibilityLabel} accessibilityState={{ busy: updating }}>
       {width > 0 && (
-        <Svg width={width} height={CHART_HEIGHT}>
-          {GRID_LINES.map(y => <Line key={y} x1={0} x2={width} y1={y} y2={y} stroke={colors.chart.grid} strokeWidth={1} />)}
-          <Path d={path} stroke={colors.chart.line} strokeWidth={2} fill='none' strokeLinejoin='round' strokeLinecap='round' />
-          <Circle cx={last.x} cy={last.y} r={4} fill={colors.chart.line} />
-        </Svg>
+        <View style={updating ? styles.dimmed : undefined}>
+          <Svg width={width} height={CHART_HEIGHT}>
+            {GRID_LINES.map(y => <Line key={y} x1={0} x2={width} y1={y} y2={y} stroke={colors.chart.grid} strokeWidth={1} />)}
+            <Path d={path} stroke={colors.chart.line} strokeWidth={2} fill='none' strokeLinejoin='round' strokeLinecap='round' />
+            <Circle cx={last.x} cy={last.y} r={4} fill={colors.chart.line} />
+          </Svg>
+        </View>
+      )}
+      {updating && (
+        <View style={styles.overlay} accessibilityLabel='Updating chart'>
+          <Spinner tone='muted' />
+        </View>
       )}
     </View>
   );

@@ -39,6 +39,15 @@ describe('PriceChart', () => {
     expect(screen.getByTestId('circle').props.cx).toBeGreaterThan(0);
   });
 
+  it('dims the line under a spinner while updating', async () => {
+    const { rerender } = await render(<PriceChart values={[1, 2]} updating accessibilityLabel='chart' />);
+
+    expect(screen.getByLabelText('Updating chart')).toBeTruthy();
+    expect(screen.getByLabelText('chart').props.accessibilityState).toEqual({ busy: true });
+    await rerender(<PriceChart values={[1, 2]} accessibilityLabel='chart' />);
+    expect(screen.queryByLabelText('Updating chart')).toBeNull();
+  });
+
   it('handles a flat series without dividing by zero', async () => {
     await render(<PriceChart values={[5, 5, 5]} accessibilityLabel='flat' />);
     await fireEvent(screen.getByLabelText('flat'), 'layout', layout(100));

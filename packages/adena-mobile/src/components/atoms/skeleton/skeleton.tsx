@@ -27,6 +27,7 @@ export const Skeleton = ({ width = '100%', height = 16, rounded = false }: Skele
   return (
     <Animated.View
       accessibilityLabel='Loading'
+      accessibilityState={{ busy: true }}
       style={[styles.base, { width, height, opacity, borderRadius: rounded ? radius.circle : radius.smallControl }]}
     />
   );

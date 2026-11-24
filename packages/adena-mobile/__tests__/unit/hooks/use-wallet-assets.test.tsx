@@ -19,6 +19,9 @@ const query = (overrides: object = {}) => ({
   error: null,
   isPending: false,
   isRefetching: false,
+  isPlaceholderData: false,
+  isError: false,
+  fetchStatus: 'idle',
   refetch: jest.fn().mockResolvedValue(undefined),
   ...overrides,
 });
@@ -38,8 +41,8 @@ describe('useWalletAssets', () => {
     (useTokenPricesQuery as jest.Mock).mockReturnValue(query());
     const { result } = await renderHook(() => useWalletAssets());
 
-    expect(result.current).toMatchObject({ tokens: [], allTokens: [], portfolio: null, loading: true, tokensLoading: true, refreshing: false, error: null });
-    expect(buildAssetViews).toHaveBeenCalledWith([], undefined, undefined, true);
+    expect(result.current).toMatchObject({ status: 'loading', tokens: [], allTokens: [], portfolio: null, loading: true, tokensLoading: true, refreshing: false, error: null });
+    expect(buildAssetViews).toHaveBeenCalledWith([], undefined, undefined, true, true);
   });
 
   it('filters visible tokens, values the portfolio and refetches in order', async () => {
@@ -77,5 +80,41 @@ describe('useWalletAssets', () => {
     (useTokenListQuery as jest.Mock).mockReturnValue(query());
     await rerender(undefined);
     expect(result.current.error?.message).toBe('balances');
+  });
+
+  it('is ready once the list and balances are in, and stays ready while refetching', async () => {
+    (useTokenListQuery as jest.Mock).mockReturnValue(query({ data: [visible] }));
+    (useTokenBalancesQuery as jest.Mock).mockReturnValue(query({ data: { ugnot: '1' }, isRefetching: true, isPlaceholderData: true, fetchStatus: 'fetching' }));
+    (useTokenPricesQuery as jest.Mock).mockReturnValue(query({ data: {}, fetchStatus: 'fetching' }));
+    const { result } = await renderHook(() => useWalletAssets());
+
+    expect(result.current).toMatchObject({ status: 'ready', loading: false, pricesLoading: false });
+  });
+
+  it('treats a disabled price query as settled', async () => {
+    (useTokenListQuery as jest.Mock).mockReturnValue(query({ data: [visible] }));
+    (useTokenBalancesQuery as jest.Mock).mockReturnValue(query({ data: { ugnot: '1' } }));
+    (useTokenPricesQuery as jest.Mock).mockReturnValue(query({ isPending: true, fetchStatus: 'idle' }));
+    const { result } = await renderHook(() => useWalletAssets());
+
+    expect(result.current).toMatchObject({ status: 'ready', pricesLoading: false });
+  });
+
+  it('is ready with no visible tokens even though balances never run', async () => {
+    (useTokenListQuery as jest.Mock).mockReturnValue(query({ data: [hidden] }));
+    (useTokenBalancesQuery as jest.Mock).mockReturnValue(query({ isPending: true }));
+    (useTokenPricesQuery as jest.Mock).mockReturnValue(query({ isPending: true }));
+    const { result } = await renderHook(() => useWalletAssets());
+
+    expect(result.current.status).toBe('ready');
+  });
+
+  it('reports an error status only when there is nothing to show', async () => {
+    (useTokenListQuery as jest.Mock).mockReturnValue(query({ error: new Error('list') }));
+    (useTokenBalancesQuery as jest.Mock).mockReturnValue(query({ isPending: true }));
+    (useTokenPricesQuery as jest.Mock).mockReturnValue(query());
+    const { result } = await renderHook(() => useWalletAssets());
+
+    expect(result.current).toMatchObject({ status: 'error', loading: false });
   });
 });

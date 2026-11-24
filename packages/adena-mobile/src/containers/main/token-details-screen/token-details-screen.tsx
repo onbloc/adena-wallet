@@ -45,6 +45,8 @@ export const TokenDetailsScreen = ({ navigation, route }: NativeStackScreenProps
   }
 
   const view = toAssetView(token, balances.data?.[token.id], prices.data?.[tokenPriceKey(token.id, network.id)], balances.isPending);
+  // Header, chart and info sections wait for both first loads; a range switch only dims the current values.
+  const firstLoad = market.isPending || info.isPending;
   const data = market.data;
   const stats = info.data?.stats;
   const priceUsd = data?.priceUsd ?? prices.data?.[tokenPriceKey(token.id, network.id)]?.usd;
@@ -61,11 +63,12 @@ export const TokenDetailsScreen = ({ navigation, route }: NativeStackScreenProps
     changeLabel: change === undefined ? undefined : `${formatChangeRate(change)} · ${RANGE_CAPTION[range]}`,
     changeColor: change === undefined || Math.abs(change) < 0.01 ? 'secondary' : change > 0 ? 'success' : 'error',
     chart: data?.chart.map(point => point.priceUsd) ?? [],
-    loading: market.isPending,
+    loading: firstLoad,
+    updating: !firstLoad && market.isPlaceholderData && market.isFetching,
     emptyLabel: market.isError ? 'Price history could not be loaded' : marketDataService.isSupported(network) ? 'No price history yet' : 'Price history is not available on this network',
     // Rows without a value are hidden rather than shown as placeholders.
-    stats: statRows.flatMap(row => (row.value === undefined ? [] : [{ label: row.label, value: row.format(row.value) }])),
-    links: (info.data?.links ?? []).map(link => ({ ...link, host: hostOf(link.url) })),
+    stats: firstLoad ? [] : statRows.flatMap(row => (row.value === undefined ? [] : [{ label: row.label, value: row.format(row.value) }])),
+    links: firstLoad ? [] : (info.data?.links ?? []).map(link => ({ ...link, host: hostOf(link.url) })),
   };
 
   const handleSend = (): void => navigation.navigate('SendRecipient', { tokenId: token.id });
@@ -81,7 +84,7 @@ export const TokenDetailsScreen = ({ navigation, route }: NativeStackScreenProps
   return (
     <TokenDetailsPage
       asset={toAssetItem(view)}
-      about={info.data?.about ?? token.description}
+      about={firstLoad ? undefined : info.data?.about ?? token.description}
       market={marketView}
       ranges={CHART_RANGES}
       range={range}

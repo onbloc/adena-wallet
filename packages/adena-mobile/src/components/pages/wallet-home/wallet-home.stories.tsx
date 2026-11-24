@@ -50,7 +50,9 @@ export const Nfts: Story = { args: { tab: 'nfts' } };
 
 export const Testnet: Story = { args: { networkName: 'Onyx Testnet', isTestnet: true, headline: '11,301.850689 GNOT', headlineCaption: undefined } };
 
-export const Loading: Story = { args: { headlineLoading: true, assets: SAMPLE_ASSETS.map(asset => ({ ...asset, loading: true })) } };
+export const Loading: Story = { args: { headlineLoading: true, assetsLoading: true, assetPlaceholderCount: SAMPLE_ASSETS.length } };
+
+export const PricesLoading: Story = { args: { headlineLoading: true, assets: SAMPLE_ASSETS.map(asset => ({ ...asset, valueLoading: true })) } };
 
 export const Empty: Story = { args: { headline: '$0.00', headlineCaption: undefined, assets: [], collections: [] } };
 

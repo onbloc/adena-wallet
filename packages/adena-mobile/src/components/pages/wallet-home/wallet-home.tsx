@@ -6,6 +6,7 @@ import { Avatar, Badge, Button, IconButton, Text, TextColor } from '../../atoms'
 import {
   AddressRow,
   AssetRow,
+  AssetRowSkeleton,
   BalanceHeader,
   EmptyState,
   InlineAlert,
@@ -31,6 +32,9 @@ export interface WalletHomePageProps {
   headlineCaptionColor?: TextColor;
   headlineLoading: boolean;
   error?: string;
+  // Until the list and balances are in, a skeleton list replaces the rows.
+  assetsLoading?: boolean;
+  assetPlaceholderCount?: number;
   assets: AssetItemView[];
   collections: NftCardView[];
   // Caption above the NFT grid, e.g. "3 collectibles · 2 collections".
@@ -81,6 +85,14 @@ const NftGrid = ({ collections, imageRetryKey, onOpen }: { collections: NftCardV
   </View>
 );
 
+const DEFAULT_PLACEHOLDER_ROWS = 3;
+
+const AssetListSkeleton = ({ count }: { count: number }): ReactElement => (
+  <View accessibilityLabel='Loading tokens' accessibilityState={{ busy: true }} style={styles.assetList}>
+    {Array.from({ length: count }, (_, index) => <AssetRowSkeleton key={index} />)}
+  </View>
+);
+
 export const WalletHomePage = (props: WalletHomePageProps): ReactElement => {
   const bottomClearance = useFloatingNavigationClearance();
 
@@ -124,7 +136,8 @@ export const WalletHomePage = (props: WalletHomePageProps): ReactElement => {
         />
         {props.tab === 'tokens' && (
           <>
-            {props.assets.map((asset) => {
+            {props.assetsLoading && <AssetListSkeleton count={props.assetPlaceholderCount || DEFAULT_PLACEHOLDER_ROWS} />}
+            {!props.assetsLoading && props.assets.map((asset) => {
               const handlePress = (): void => props.onOpenToken(asset.key);
 
               return (
@@ -135,6 +148,7 @@ export const WalletHomePage = (props: WalletHomePageProps): ReactElement => {
                   value={asset.value}
                   change={asset.change ? { label: asset.change, trend: asset.trend } : undefined}
                   loading={asset.loading}
+                  valueLoading={asset.valueLoading}
                   icon={<TokenImage symbol={asset.symbol} localIcon={asset.localIcon} imageUrl={asset.imageUrl} />}
                   onPress={handlePress}
                 />
