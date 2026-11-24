@@ -43,6 +43,7 @@ jest.mock('../../../src/containers/onboarding/import-wallet-screen', () => ({ Im
 jest.mock('../../../src/containers/onboarding/restore-backup-screen', () => ({ RestoreBackupScreen: () => mockScreen('RestoreBackupScreen') }));
 jest.mock('../../../src/containers/onboarding/welcome-screen', () => ({ WelcomeScreen: () => mockScreen('WelcomeScreen') }));
 jest.mock('../../../src/containers/reset-wallet-screen', () => ({ ResetWalletScreen: () => mockScreen('ResetWalletScreen') }));
+jest.mock('../../../src/containers/splash-screen', () => ({ SplashScreen: () => mockScreen('SplashScreen') }));
 jest.mock('../../../src/containers/unlock-screen', () => ({ UnlockScreen: () => mockScreen('UnlockScreen') }));
 jest.mock('../../../src/navigation/main-tabs', () => ({ MainTabs: () => mockScreen('MainTabs') }));
 
@@ -74,13 +75,15 @@ describe('RootNavigator', () => {
     }
   });
 
-  it('shows only the unlock stack while locked', async () => {
+  it('opens the locked stack on the splash', async () => {
     useSessionStore.setState({ status: SessionStatus.LOCKED });
     await renderRoot();
-    expect(screen.getByText('UnlockScreen')).toBeTruthy();
+    expect(screen.getByText('SplashScreen')).toBeTruthy();
+    await act(async () => (navigationRef.navigate as (route: string) => void)('Unlock'));
+    expect(await screen.findByText('UnlockScreen')).toBeTruthy();
     await act(async () => (navigationRef.navigate as (route: string) => void)('ResetWallet'));
     expect(await screen.findByText('ResetWalletScreen')).toBeTruthy();
-    expect(navigationRef.getRootState()?.routeNames).toEqual(['Unlock', 'ResetWallet']);
+    expect(navigationRef.getRootState()?.routeNames).toEqual(['Splash', 'Unlock', 'ResetWallet']);
   });
 
   it('mounts the main stack when unlocked and swaps stacks on lock', async () => {
@@ -102,7 +105,7 @@ describe('RootNavigator', () => {
     }
 
     await act(async () => useSessionStore.setState({ status: SessionStatus.LOCKED }));
-    expect(await screen.findByText('UnlockScreen')).toBeTruthy();
+    expect(await screen.findByText('SplashScreen')).toBeTruthy();
     expect(screen.queryByText('MainTabs')).toBeNull();
   });
 });

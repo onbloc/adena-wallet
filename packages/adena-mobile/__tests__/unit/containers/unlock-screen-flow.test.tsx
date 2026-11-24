@@ -1,7 +1,6 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 
 import { UnlockScreen } from '../../../src/containers/unlock-screen';
-import { AppErrorCode } from '../../../src/core/errors';
 import { BiometricOutcome } from '../../../src/security/memory-secure-store';
 import { SessionStatus, useSessionStore } from '../../../src/stores/session.store';
 import { renderScreen, resetStores, setupWallet } from '../../helpers/render-screen';
@@ -77,15 +76,15 @@ describe('UnlockScreen', () => {
     expect(await screen.findByText('Vault is damaged')).toBeTruthy();
   });
 
-  it('auto-prompts biometrics once and unlocks', async () => {
+  it('leaves the automatic biometric prompt to the splash', async () => {
     const { env } = await lockedWallet(true);
     const biometric = jest.spyOn(env.container.walletService, 'unlockWithBiometrics');
 
     await renderScreen(UnlockScreen, { env });
 
-    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
-    expect(biometric).toHaveBeenCalledTimes(1);
-    expect(biometric).toHaveBeenCalledWith({ title: 'Unlock Adena', cancel: 'Use password' });
+    expect(await screen.findByRole('button', { name: /^Use / })).toBeTruthy();
+    expect(biometric).not.toHaveBeenCalled();
+    expect(useSessionStore.getState().status).toBe(SessionStatus.BOOTING);
   });
 
   it('stays quiet when the prompt is canceled and retries from the button', async () => {
@@ -108,8 +107,9 @@ describe('UnlockScreen', () => {
     env.secureStore.biometryKind = null;
     jest.spyOn(env.container.walletService, 'getBiometryKind').mockResolvedValue('face' as never);
     await renderScreen(UnlockScreen, { env });
+    await fireEvent.press(await screen.findByRole('button', { name: /^Use / }));
 
-    expect(await screen.findByText(AppErrorCode.BIOMETRICS_UNAVAILABLE)).toBeTruthy();
+    expect(await screen.findByText(/unavailable/i)).toBeTruthy();
     expect(useSessionStore.getState().status).toBe(SessionStatus.BOOTING);
   });
 
