@@ -52,6 +52,46 @@ function checked(budget: Budget): Budget {
   return budget;
 }
 
+function bindLifetime(source: AbortSignal | undefined, timeoutMs: number) {
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  const deadline = Date.now() + timeoutMs;
+  const timer = setTimeout(cancel, timeoutMs);
+  controller.signal.addEventListener('abort', () => {
+    clearTimeout(timer);
+    source?.removeEventListener('abort', cancel);
+  }, { once: true });
+  source?.addEventListener('abort', cancel, { once: true });
+  if (source?.aborted) cancel();
+  return { signal: controller.signal, deadline, cancel };
+}
+
+function collectWalletTools(tools: RunContext['walletTools']) {
+  const offered = new Map(Object.entries(tools ?? {}));
+  for (const [name, tool] of offered) {
+    if (name !== tool.definition.name || isTool(name) || Object.hasOwn(Object.prototype, name)) {
+      throw new Error('Wallet tool name conflicts with a reserved name.');
+    }
+    if (tool.effect !== 'read' && tool.effect !== 'prepare') throw new Error('Invalid wallet tool effect.');
+  }
+  return offered;
+}
+
+async function discoverReads(sources: readonly ToolSource[], context: WalletContext, signal: AbortSignal,
+  offered: ReadonlyMap<string, WalletTool>) {
+  const found = new Map<string, RemoteTool>();
+  for (const source of sources) {
+    for (const [name, tool] of await source(context, signal)) {
+      if (name !== tool.definition.name || found.has(name)) throw new Error('Invalid or duplicate remote tool name.');
+      if (isTool(name) || offered.has(name) || Object.hasOwn(Object.prototype, name)) {
+        throw new Error('Remote tool name conflicts with a reserved name.');
+      }
+      found.set(name, tool);
+    }
+  }
+  return found;
+}
+
 export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, toolSources = [] }: {
   wallet?: WalletReader;
   budget?: Budget;
@@ -68,40 +108,13 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
       const { maxSteps, maxToolCalls, maxTokens, timeoutMs } = checked({ ...budget, ...run.budget });
       const context: WalletContext = Object.freeze({ account: run.account, chainId: run.chainId });
       const selection = run.selection === undefined ? undefined : selectionSchema.parse(run.selection);
-      const offered = new Map(Object.entries(run.walletTools ?? {}));
-      for (const [name, tool] of offered) {
-        if (name !== tool.definition.name || isTool(name) || Object.hasOwn(Object.prototype, name)) {
-          throw new Error('Wallet tool name conflicts with a reserved name.');
-        }
-        if (tool.effect !== 'read' && tool.effect !== 'prepare') throw new Error('Invalid wallet tool effect.');
-      }
-      const controller = new AbortController();
-      const signal = controller.signal;
-      const sourceSignal = run.signal;
-      const deadline = Date.now() + timeoutMs;
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-      const cancel = () => controller.abort();
-      signal.addEventListener('abort', () => {
-        clearTimeout(timer);
-        sourceSignal?.removeEventListener('abort', cancel);
-      }, { once: true });
-      sourceSignal?.addEventListener('abort', cancel, { once: true });
-      if (sourceSignal?.aborted) cancel();
+      const offered = collectWalletTools(run.walletTools);
+      const { signal, deadline, cancel } = bindLifetime(run.signal, timeoutMs);
 
       let remote: ReadonlyMap<string, RemoteTool> | undefined;
       try {
         if (toolSources.length > 0 && (scope === 'read-only' || scope === 'prepare-wallet') && run.purpose === 'mainnet-read') {
-          const found = new Map<string, RemoteTool>();
-          for (const source of toolSources) {
-            for (const [name, tool] of await source(context, signal)) {
-              if (name !== tool.definition.name || found.has(name)) throw new Error('Invalid or duplicate remote tool name.');
-              found.set(name, tool);
-            }
-          }
-          for (const name of found.keys()) {
-            if (isTool(name) || offered.has(name) || Object.hasOwn(Object.prototype, name)) throw new Error('Remote tool name conflicts with a reserved name.');
-          }
-          remote = found;
+          remote = await discoverReads(toolSources, context, signal, offered);
         }
       } catch (cause) {
         cancel();
@@ -173,7 +186,8 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
           if (decision.kind === 'clarify' || decision.kind === 'approval-required') paused = true;
           return decision;
         } catch {
-          return { kind: 'denied', code: signal.aborted && walletTool?.effect !== 'prepare' ? 'CANCELLED' : local || walletTool ? 'WALLET_UNAVAILABLE' : 'MCP_UNAVAILABLE' };
+          if (signal.aborted && walletTool?.effect !== 'prepare') return { kind: 'denied', code: 'CANCELLED' };
+          return { kind: 'denied', code: local || walletTool ? 'WALLET_UNAVAILABLE' : 'MCP_UNAVAILABLE' };
         }
       }
 
