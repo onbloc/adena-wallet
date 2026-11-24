@@ -7,6 +7,7 @@ import { UnlockPage } from '../../components/pages';
 import { toErrorMessage } from '../../core/error-message';
 import { AppErrorCode, isAppError } from '../../core/errors';
 import { useContainer } from '../../di/container-provider';
+import { describeBiometricFailure } from '../../hooks/use-biometric-password';
 import { LockedStackParamList } from '../../navigation/types';
 import { queryKeys } from '../../queries/query-keys';
 import { useBiometricStatusQuery } from '../../queries/wallet.queries';
@@ -14,16 +15,16 @@ import { BiometryKind } from '../../security/secure-store';
 import { SessionStatus, useSessionStore } from '../../stores/session.store';
 import { getBiometryLabel } from '../../utils/biometry';
 
-export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackParamList, 'Unlock'>): ReactElement => {
+// Reached from the splash, which already made this lock episode's biometric attempt, so only the button offers it again.
+export const UnlockScreen = ({ navigation, route }: NativeStackScreenProps<LockedStackParamList, 'Unlock'>): ReactElement => {
   const { walletService } = useContainer();
   const queryClient = useQueryClient();
   const { setStatus, bumpRevision } = useSessionStore();
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState(route.params?.error);
   const [submitting, setSubmitting] = useState(false);
   const biometric = useBiometricStatusQuery();
   const biometricLabel = biometric.data?.enabled ? getBiometryLabel(biometric.data.kind) : undefined;
-  const autoPromptedRef = useRef(false);
   const passwordRef = useRef<TextInputInstance>(null);
   // Password and biometric unlocks share one in-flight slot, so they never queue up behind each other.
   const unlockingRef = useRef(false);
@@ -51,8 +52,10 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
         await queryClient.invalidateQueries({ queryKey: queryKeys.biometric() });
       }
 
-      if (!isAppError(unlockError, AppErrorCode.BIOMETRICS_CANCELED)) {
-        setError(toErrorMessage(unlockError));
+      const message = describeBiometricFailure(unlockError, biometricLabel);
+
+      if (message) {
+        setError(message);
       }
 
       passwordRef.current?.focus();
@@ -60,24 +63,11 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
     finally {
       unlockingRef.current = false;
     }
-  }, [onUnlocked, queryClient, walletService]);
+  }, [biometricLabel, onUnlocked, queryClient, walletService]);
 
-  // Offer the biometric prompt once as soon as the status query reports it is enabled.
-  // Without biometrics the password field takes focus instead.
   useEffect(() => {
-    if (biometric.isPending || autoPromptedRef.current) {
-      return;
-    }
-
-    autoPromptedRef.current = true;
-
-    if (biometric.data?.enabled) {
-      unlockWithBiometrics();
-    }
-    else {
-      passwordRef.current?.focus();
-    }
-  }, [biometric.data?.enabled, biometric.isPending, unlockWithBiometrics]);
+    passwordRef.current?.focus();
+  }, []);
 
   const unlock = async (): Promise<void> => {
     if (!password || unlockingRef.current) {

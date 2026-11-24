@@ -1,6 +1,7 @@
 import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import React, { ReactElement, useMemo } from 'react';
 
+import { SplashPage } from '../components/pages';
 import { AccountSettingsScreen } from '../containers/main/account-settings-screen';
 import { AccountsScreen } from '../containers/main/accounts-screen';
 import { ActivityDetailScreen } from '../containers/main/activity-detail-screen';
@@ -33,6 +34,7 @@ import { CreatePasswordScreen } from '../containers/onboarding/create-password-s
 import { ImportWalletScreen } from '../containers/onboarding/import-wallet-screen';
 import { WelcomeScreen } from '../containers/onboarding/welcome-screen';
 import { ResetWalletScreen } from '../containers/reset-wallet-screen';
+import { SplashScreen } from '../containers/splash-screen';
 import { UnlockScreen } from '../containers/unlock-screen';
 import { SessionStatus, useSessionStore } from '../stores/session.store';
 import { motion, useThemeColors } from '../theme';
@@ -67,7 +69,9 @@ const LockedNavigator = (): ReactElement => {
 
   return (
     <LockedStack.Navigator screenOptions={screenOptions}>
-      <LockedStack.Screen name='Unlock' component={UnlockScreen} />
+      <LockedStack.Screen name='Splash' component={SplashScreen} />
+      {/* Fades in from the splash rather than sliding over it. */}
+      <LockedStack.Screen name='Unlock' component={UnlockScreen} options={{ animation: 'fade' }} />
       <LockedStack.Screen name='ResetWallet' component={ResetWalletScreen} />
     </LockedStack.Navigator>
   );
@@ -116,12 +120,13 @@ const MainNavigator = (): ReactElement => {
 };
 
 // The session status decides which stack exists, so locked screens are never mounted behind the unlock page.
-export const RootNavigator = (): ReactElement | null => {
+export const RootNavigator = (): ReactElement => {
   const status = useSessionStore(state => state.status);
 
   switch (status) {
+    // Holds the launch logo until the stored wallet status is read.
     case SessionStatus.BOOTING:
-      return null;
+      return <SplashPage />;
     case SessionStatus.EMPTY:
       return <OnboardingNavigator />;
     case SessionStatus.LOCKED:

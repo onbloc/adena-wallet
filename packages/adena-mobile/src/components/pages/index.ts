@@ -30,6 +30,7 @@ export * from './send-amount';
 export * from './send-nft';
 export * from './send-recipient';
 export * from './settings';
+export * from './splash';
 export * from './token-details';
 export * from './unlock';
 export * from './wallet-home';

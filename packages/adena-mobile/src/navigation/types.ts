@@ -13,7 +13,9 @@ export type OnboardingStackParamList = {
 };
 
 export type LockedStackParamList = {
-  Unlock: undefined;
+  Splash: undefined;
+  // `error` explains why the splash's biometric attempt fell back to the password.
+  Unlock: { error?: string } | undefined;
   ResetWallet: undefined;
 };
 

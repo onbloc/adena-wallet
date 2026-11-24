@@ -30,6 +30,19 @@ describe('RootNavigator', () => {
   it('mounts only the stack of the session status', async () => {
     useSessionStore.setState({ status: SessionStatus.LOCKED });
     await render(<RootNavigator />);
-    expect(routes()).toEqual(['Unlock', 'ResetWallet']);
+    expect(routes()).toEqual(['Splash', 'Unlock', 'ResetWallet']);
+  });
+
+  it('holds the launch logo while the wallet status is read', async () => {
+    useSessionStore.setState({ status: SessionStatus.BOOTING });
+    await render(<RootNavigator />);
+    expect(screen.getByLabelText('Adena')).toBeTruthy();
+    expect(routes()).toEqual([]);
+  });
+
+  it('starts onboarding without the splash when there is no wallet', async () => {
+    useSessionStore.setState({ status: SessionStatus.EMPTY });
+    await render(<RootNavigator />);
+    expect(routes()).toEqual(['Welcome', 'BackupPhrase', 'ImportWallet', 'CreatePassword']);
   });
 });

@@ -3,7 +3,7 @@ import React, { ReactElement, useState } from 'react';
 import { Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { AppFailurePage } from '../components/pages';
+import { AppFailurePage, SplashPage } from '../components/pages';
 import { AppErrorCode, isAppError } from '../core/errors';
 import { ContainerProvider } from '../di/container-provider';
 import { resetNativeGeneralStorage } from '../di/create-native-container';
@@ -71,6 +71,7 @@ const AppRoot = (): ReactElement => {
     <SafeAreaProvider>
       <SystemThemeProvider>
         {bootError !== undefined && renderBootError()}
+        {bootError === undefined && !container && <SplashPage />}
         {container && (
           <ContainerProvider container={container}>
             <QueryClientProvider client={queryClient}>
