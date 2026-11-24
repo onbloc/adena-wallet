@@ -1,8 +1,8 @@
 import { StyleSheet } from 'react-native';
 
-import { colors, radius, spacing } from '../../../theme';
+import { makeStyles, radius, spacing } from '../../../theme';
 
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   body: { gap: spacing.space16 },
   qr: { alignItems: 'center', paddingVertical: spacing.space24 },
   qrCompact: { paddingVertical: spacing.space4 },
@@ -18,4 +18,4 @@ export const styles = StyleSheet.create({
   },
   actions: { flexDirection: 'row', gap: spacing.space12 },
   action: { flex: 1 },
-});
+}));

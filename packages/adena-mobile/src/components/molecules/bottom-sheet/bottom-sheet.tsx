@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { motion, spacing } from '../../../theme';
 import { IconButton, Text } from '../../atoms';
-import { styles } from './bottom-sheet.styles';
+import { useStyles } from './bottom-sheet.styles';
 import { SheetKeyboardContext, useSheetKeyboard } from './sheet-keyboard';
 
 export interface BottomSheetProps {
@@ -26,6 +26,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 // The scrim fades over the whole screen while only the sheet slides, so the backdrop
 // never trails the sheet on its way up.
 export const BottomSheet = ({ visible, title, description, onClose, dismissible = true, onDismissed, onOpened, children }: PropsWithChildren<BottomSheetProps>): ReactElement => {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const progress = useRef(new Animated.Value(0)).current;
   const onDismissedRef = useRef(onDismissed);

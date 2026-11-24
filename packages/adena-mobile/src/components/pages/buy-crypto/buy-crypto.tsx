@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { LocalTokenIcon } from '../../../domain/token';
 import { Button, Text } from '../../atoms';
 import { BottomSheet, InlineAlert, KeypadKey, ListRow, NumericKeypad, Screen, TokenImage, TopBar } from '../../molecules';
-import { styles } from './buy-crypto.styles';
+import { useStyles } from './buy-crypto.styles';
 
 export interface BuyTokenView {
   key: string;
@@ -36,52 +36,56 @@ export interface BuyCryptoPageProps {
   onBack: () => void;
 }
 
-export const BuyCryptoPage = (props: BuyCryptoPageProps): ReactElement => (
-  <Screen
-    scrollable={false}
-    header={<TopBar title='Buy crypto' onBack={props.onBack} />}
-    footer={<Button label='Continue' disabled={!props.canContinue} onPress={props.onContinue} testID='buy-continue' />}
-  >
-    <View style={styles.amountBlock}>
-      <Text variant='meta' color='secondary'>You pay</Text>
-      <View style={styles.amountRow}>
-        <Text variant='display' tabular numberOfLines={1} adjustsFontSizeToFit style={styles.amount} testID='buy-amount'>
-          {props.amountLabel || '0'}
-        </Text>
-        <View style={styles.currency}>
-          <Text variant='row'>{props.currency}</Text>
-        </View>
-      </View>
-      {props.estimateLabel ? <Text variant='meta' color='secondary' tabular>{props.estimateLabel}</Text> : null}
-    </View>
-    {props.unavailable && <InlineAlert tone='neutral' title={props.unavailable.title} description={props.unavailable.description} />}
-    <View style={styles.bottom}>
-      {props.token && (
-        <ListRow
-          leading={<TokenImage symbol={props.token.symbol} localIcon={props.token.localIcon} imageUrl={props.token.imageUrl} />}
-          label={props.token.name}
-          description={props.token.balanceLabel ?? props.token.symbol}
-          onPress={props.tokenOptions.length > 1 ? props.onOpenTokenPicker : undefined}
-          testID='buy-token'
-        />
-      )}
-      <NumericKeypad onKeyPress={props.onKeyPress} />
-    </View>
-    <BottomSheet visible={props.tokenPickerVisible} title='Select token' onClose={props.onCloseTokenPicker}>
-      {props.tokenOptions.map((option) => {
-        const handlePress = (): void => props.onSelectToken(option.key);
+export const BuyCryptoPage = (props: BuyCryptoPageProps): ReactElement => {
+  const styles = useStyles();
 
-        return (
+  return (
+    <Screen
+      scrollable={false}
+      header={<TopBar title='Buy crypto' onBack={props.onBack} />}
+      footer={<Button label='Continue' disabled={!props.canContinue} onPress={props.onContinue} testID='buy-continue' />}
+    >
+      <View style={styles.amountBlock}>
+        <Text variant='meta' color='secondary'>You pay</Text>
+        <View style={styles.amountRow}>
+          <Text variant='display' tabular numberOfLines={1} adjustsFontSizeToFit style={styles.amount} testID='buy-amount'>
+            {props.amountLabel || '0'}
+          </Text>
+          <View style={styles.currency}>
+            <Text variant='row'>{props.currency}</Text>
+          </View>
+        </View>
+        {props.estimateLabel ? <Text variant='meta' color='secondary' tabular>{props.estimateLabel}</Text> : null}
+      </View>
+      {props.unavailable && <InlineAlert tone='neutral' title={props.unavailable.title} description={props.unavailable.description} />}
+      <View style={styles.bottom}>
+        {props.token && (
           <ListRow
-            key={option.key}
-            leading={<TokenImage symbol={option.symbol} localIcon={option.localIcon} imageUrl={option.imageUrl} />}
-            label={option.name}
-            description={option.balanceLabel ?? option.symbol}
-            showChevron={false}
-            onPress={handlePress}
+            leading={<TokenImage symbol={props.token.symbol} localIcon={props.token.localIcon} imageUrl={props.token.imageUrl} />}
+            label={props.token.name}
+            description={props.token.balanceLabel ?? props.token.symbol}
+            onPress={props.tokenOptions.length > 1 ? props.onOpenTokenPicker : undefined}
+            testID='buy-token'
           />
-        );
-      })}
-    </BottomSheet>
-  </Screen>
-);
+        )}
+        <NumericKeypad onKeyPress={props.onKeyPress} />
+      </View>
+      <BottomSheet visible={props.tokenPickerVisible} title='Select token' onClose={props.onCloseTokenPicker}>
+        {props.tokenOptions.map((option) => {
+          const handlePress = (): void => props.onSelectToken(option.key);
+
+          return (
+            <ListRow
+              key={option.key}
+              leading={<TokenImage symbol={option.symbol} localIcon={option.localIcon} imageUrl={option.imageUrl} />}
+              label={option.name}
+              description={option.balanceLabel ?? option.symbol}
+              showChevron={false}
+              onPress={handlePress}
+            />
+          );
+        })}
+      </BottomSheet>
+    </Screen>
+  );
+};

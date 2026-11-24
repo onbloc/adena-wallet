@@ -1,6 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import React, { ReactElement, useState } from 'react';
-import { Alert, StatusBar } from 'react-native';
+import { Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppFailurePage } from '../components/pages';
@@ -11,6 +11,7 @@ import { useNativeContainerQuery } from '../queries/boot.queries';
 import { createQueryClient } from '../queries/query-client';
 import { AppErrorBoundary } from './app-error-boundary';
 import { AppShell } from './app-shell';
+import { SystemThemeProvider } from './app-theme-provider';
 
 const queryClient = createQueryClient();
 
@@ -68,17 +69,18 @@ const AppRoot = (): ReactElement => {
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle='dark-content' />
-      {bootError !== undefined && renderBootError()}
-      {container && (
-        <ContainerProvider container={container}>
-          <QueryClientProvider client={queryClient}>
-            <AppErrorBoundary>
-              <AppShell />
-            </AppErrorBoundary>
-          </QueryClientProvider>
-        </ContainerProvider>
-      )}
+      <SystemThemeProvider>
+        {bootError !== undefined && renderBootError()}
+        {container && (
+          <ContainerProvider container={container}>
+            <QueryClientProvider client={queryClient}>
+              <AppErrorBoundary>
+                <AppShell />
+              </AppErrorBoundary>
+            </QueryClientProvider>
+          </ContainerProvider>
+        )}
+      </SystemThemeProvider>
     </SafeAreaProvider>
   );
 };

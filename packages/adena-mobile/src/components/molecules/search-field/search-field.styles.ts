@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles, radius, sizes, spacing, typography } from '../../../theme';
 
-import { colors, radius, sizes, spacing, typography } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   field: {
     minHeight: sizes.control,
     borderRadius: radius.input,
@@ -16,4 +14,4 @@ export const styles = StyleSheet.create({
   },
   focused: { borderColor: colors.border.focus, backgroundColor: colors.background.surface },
   input: { ...typography.body, flex: 1, paddingVertical: 0 },
-});
+}));

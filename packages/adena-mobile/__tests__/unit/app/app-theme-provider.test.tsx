@@ -1,6 +1,6 @@
 import { act, render, screen } from '@testing-library/react-native';
 import React, { ReactElement } from 'react';
-import { Text } from 'react-native';
+import { Appearance, Text } from 'react-native';
 
 import { AppThemeProvider } from '../../../src/app/app-theme-provider';
 import { resolveColorScheme } from '../../../src/domain/preferences';
@@ -82,6 +82,24 @@ describe('AppThemeProvider', () => {
     });
     expect(screen.getByTestId('theme').props.children).toBe('light:light');
     expect(statusBarStyle()).toBe('dark-content');
+  });
+
+  it('forces the native appearance only for Light and Dark', async () => {
+    const setColorScheme = jest.spyOn(Appearance, 'setColorScheme').mockImplementation(() => undefined);
+
+    await mount();
+    expect(setColorScheme).toHaveBeenLastCalledWith('unspecified');
+
+    await act(() => {
+      preferenceService.update({ theme: 'dark' });
+    });
+    expect(setColorScheme).toHaveBeenLastCalledWith('dark');
+
+    await act(() => {
+      preferenceService.update({ theme: 'system' });
+    });
+    expect(setColorScheme).toHaveBeenLastCalledWith('unspecified');
+    setColorScheme.mockRestore();
   });
 
   it('follows OS changes only while set to Auto', async () => {

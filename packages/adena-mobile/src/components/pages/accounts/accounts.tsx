@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
 
+import { AvatarColor } from '../../../domain/account';
 import { formatAddress } from '../../../utils/address';
 import { Avatar, Button, Icon } from '../../atoms';
 import { ListRow, Screen, SectionLabel, TopBar } from '../../molecules';
@@ -10,7 +11,7 @@ export interface AccountListItem {
   address: string;
   sourceLabel: string;
   selected: boolean;
-  avatarColor?: string;
+  avatarColor?: AvatarColor;
   avatarPhoto?: string;
 }
 

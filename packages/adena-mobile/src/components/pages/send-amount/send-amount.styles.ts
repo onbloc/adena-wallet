@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles, radius, sizes, spacing } from '../../../theme';
 
-import { colors, radius, sizes, spacing } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   amountBlock: { gap: spacing.space8 },
   amountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.space16 },
   // Hero amount, larger than the display role.
@@ -26,4 +24,4 @@ export const styles = StyleSheet.create({
   reviewRecipient: { gap: spacing.space4, paddingTop: spacing.space8 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.space16, paddingTop: spacing.space8 },
   totalValue: { flexShrink: 1, textAlign: 'right' },
-});
+}));

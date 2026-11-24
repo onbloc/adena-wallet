@@ -10,7 +10,7 @@ import { ExploreScreen } from '../containers/main/explore-screen';
 import { HomeScreen } from '../containers/main/home-screen';
 import { useContainer } from '../di/container-provider';
 import { useWalletSnapshot } from '../hooks/use-wallet-snapshot';
-import { colors } from '../theme';
+import { useThemeColors } from '../theme';
 import { MainTabParamList } from './types';
 
 const Tabs = createBottomTabNavigator<MainTabParamList>();
@@ -40,6 +40,7 @@ const TabBar = ({ state, navigation, showExplore }: BottomTabBarProps & { showEx
 };
 
 export const MainTabs = (): ReactElement => {
+  const colors = useThemeColors();
   const { exploreService } = useContainer();
   const { network } = useWalletSnapshot();
   // Explore is curated per chain family (e.g. hidden on AtomOne).

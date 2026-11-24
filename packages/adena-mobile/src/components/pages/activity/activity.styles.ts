@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles, sizes } from '../../../theme';
 
-import { colors, sizes } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   root: { flex: 1, backgroundColor: colors.background.canvas },
   content: { paddingHorizontal: sizes.screenInset, paddingTop: sizes.contentTop },
-});
+}));

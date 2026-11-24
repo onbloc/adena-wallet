@@ -1,17 +1,17 @@
 import React, { ReactElement } from 'react';
 import { View } from 'react-native';
 
-import { colors, StatusTone } from '../../../theme';
+import { StatusTone, ThemeColors, useThemeColors } from '../../../theme';
 import { Icon, IconName, Text, TextColor } from '../../atoms';
-import { styles } from './inline-alert.styles';
+import { useStyles } from './inline-alert.styles';
 
-const TONES: Record<StatusTone, { icon: IconName; color: string; text: TextColor }> = {
+const tones = (colors: ThemeColors): Record<StatusTone, { icon: IconName; color: string; text: TextColor }> => ({
   neutral: { icon: 'info', color: colors.icon.secondary, text: 'primary' },
   info: { icon: 'info', color: colors.icon.primary, text: 'primary' },
   success: { icon: 'success', color: colors.status.success, text: 'success' },
   warning: { icon: 'warning', color: colors.status.warning, text: 'warning' },
   error: { icon: 'error', color: colors.status.error, text: 'error' },
-};
+});
 
 export interface InlineAlertProps {
   title: string;
@@ -21,7 +21,8 @@ export interface InlineAlertProps {
 
 // Persistent context placed beside the affected content.
 export const InlineAlert = ({ title, description, tone = 'info' }: InlineAlertProps): ReactElement => {
-  const style = TONES[tone];
+  const styles = useStyles();
+  const style = tones(useThemeColors())[tone];
 
   return (
     <View accessibilityRole='alert' style={styles.box}>

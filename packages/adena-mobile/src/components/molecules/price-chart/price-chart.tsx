@@ -2,7 +2,7 @@ import React, { ReactElement, useState } from 'react';
 import { LayoutChangeEvent, View } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 
-import { colors } from '../../../theme';
+import { useThemeColors } from '../../../theme';
 import { Skeleton, Spinner, Text } from '../../atoms';
 import { CHART_HEIGHT, CHART_PADDING, styles } from './price-chart.styles';
 
@@ -20,6 +20,7 @@ const GRID_LINES = [CHART_PADDING, CHART_HEIGHT / 2, CHART_HEIGHT - CHART_PADDIN
 
 // Line chart over three grid lines (top, middle, bottom), ending with a dot on the latest value.
 export const PriceChart = ({ values, loading = false, updating = false, emptyLabel = 'No price history', accessibilityLabel }: PriceChartProps): ReactElement => {
+  const colors = useThemeColors();
   const [width, setWidth] = useState(0);
   const onLayout = (event: LayoutChangeEvent): void => setWidth(event.nativeEvent.layout.width);
 

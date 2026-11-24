@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles, radius, sizes, spacing } from '../../../theme';
 
-import { colors, radius, sizes, spacing } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   row: {
     minHeight: sizes.assetRow,
     flexDirection: 'row',
@@ -15,4 +13,4 @@ export const styles = StyleSheet.create({
   texts: { flex: 1, gap: 2 },
   // The hugging button defaults to flex-start, which pins it to the top of the row.
   action: { alignSelf: 'center' },
-});
+}));

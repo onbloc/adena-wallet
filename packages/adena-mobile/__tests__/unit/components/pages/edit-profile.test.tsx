@@ -11,7 +11,7 @@ const PHOTO = 'data:image/jpeg;base64,AAAA';
 const props = (overrides: Partial<EditProfilePageProps> = {}): EditProfilePageProps => ({
   name: 'Account 1',
   address,
-  avatarColor: '#0E7490',
+  avatarColor: 'teal',
   onChangePhoto: jest.fn(),
   photoSheetVisible: false,
   onChoosePhoto: jest.fn(),

@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { View } from 'react-native';
 
+import { AvatarColor } from '../../../domain/account';
 import { formatAddress } from '../../../utils/address';
 import { Avatar, Button, IconButton } from '../../atoms';
 import { ListRow, PasswordSheet, PasswordSheetProps, Screen, SectionLabel, TopBar } from '../../molecules';
@@ -10,7 +11,7 @@ export interface AccountSettingsPageProps {
   name: string;
   address: string;
   sourceLabel: string;
-  avatarColor?: string;
+  avatarColor?: AvatarColor;
   avatarPhoto?: string;
   onEditProfile: () => void;
   connectedAppCount: number;

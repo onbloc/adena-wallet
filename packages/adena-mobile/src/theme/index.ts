@@ -1,10 +1,11 @@
-import { colors, palette } from './colors';
+import { darkPalette, palette, themeColors } from './colors';
 import { elevation, motion, radius, sizes, spacing } from './layout';
 import { fontFamily, tabularNumbers, typography } from './typography';
 
 export const theme = {
   palette,
-  colors,
+  colors: themeColors,
+  darkPalette,
   typography,
   fontFamily,
   tabularNumbers,
@@ -19,4 +20,5 @@ export type Theme = typeof theme;
 
 export * from './colors';
 export * from './layout';
+export * from './themed';
 export * from './typography';

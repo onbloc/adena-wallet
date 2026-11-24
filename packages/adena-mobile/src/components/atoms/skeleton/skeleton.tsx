@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useRef } from 'react';
 import { Animated, DimensionValue } from 'react-native';
 
 import { radius } from '../../../theme';
-import { styles } from './skeleton.styles';
+import { useStyles } from './skeleton.styles';
 
 export interface SkeletonProps {
   width?: DimensionValue;
@@ -12,6 +12,7 @@ export interface SkeletonProps {
 
 // Shown before a value is known; never use it for an actual zero.
 export const Skeleton = ({ width = '100%', height = 16, rounded = false }: SkeletonProps): ReactElement => {
+  const styles = useStyles();
   const opacity = useRef(new Animated.Value(0.6)).current;
 
   useEffect(() => {

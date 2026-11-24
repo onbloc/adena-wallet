@@ -3,7 +3,7 @@ import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } fro
 
 import { HapticKind } from '../../../domain/haptics';
 import { useHaptics } from '../../../hooks/use-haptics';
-import { colors, sizes } from '../../../theme';
+import { sizes, ThemeColors, useThemeColors } from '../../../theme';
 import { Icon, IconName } from '../icon';
 import { Spinner } from '../spinner';
 import { Text } from '../text';
@@ -29,14 +29,14 @@ export interface ButtonProps {
   haptic?: boolean;
 }
 
-const TONES: Record<ButtonTone, { background: string; pressed: string; text: string }> = {
+const tones = (colors: ThemeColors): Record<ButtonTone, { background: string; pressed: string; text: string }> => ({
   primary: { background: colors.action.primary, pressed: colors.action.primaryPressed, text: colors.text.inverse },
   secondary: { background: colors.action.secondary, pressed: colors.action.secondaryPressed, text: colors.text.primary },
   tertiary: { background: 'transparent', pressed: colors.action.secondaryPressed, text: colors.text.primary },
   destructive: { background: colors.status.error, pressed: colors.status.error, text: colors.text.inverse },
   destructiveOutline: { background: 'transparent', pressed: colors.background.pressed, text: colors.status.error },
   destructiveText: { background: 'transparent', pressed: colors.background.pressed, text: colors.status.error },
-};
+});
 
 export const Button = ({
   label,
@@ -53,12 +53,13 @@ export const Button = ({
   testID,
   haptic = tone === 'primary' || tone === 'destructive',
 }: ButtonProps): ReactElement => {
-  const palette = TONES[tone];
+  const colors = useThemeColors();
+  const palette = tones(colors)[tone];
   const playHaptic = useHaptics();
   const inactive = disabled && !loading;
   const textColor = inactive ? colors.text.disabled : palette.text;
 
-  const stylePressable = ({ pressed }: PressableStateCallbackType): ({ borderRadius: 999; paddingHorizontal: 24; flexDirection: 'row'; alignItems: 'center'; justifyContent: 'center' } | { alignSelf: 'stretch' } | { alignSelf: 'flex-start' } | { opacity: number } | StyleProp<ViewStyle>)[] => [
+  const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [
     styles.base,
     { height: size === 'compact' ? sizes.controlCompact : sizes.control },
     fullWidth ? styles.fullWidth : styles.hug,

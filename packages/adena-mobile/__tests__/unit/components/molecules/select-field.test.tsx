@@ -2,7 +2,7 @@ import { fireEvent, render, screen, userEvent } from '@testing-library/react-nat
 import React from 'react';
 
 import { SelectField } from '../../../../src/components/molecules';
-import { colors } from '../../../../src/theme';
+import { lightColors } from '../../../../src/theme';
 
 describe('SelectField', () => {
   it('shows the value and opens on press', async () => {
@@ -11,13 +11,13 @@ describe('SelectField', () => {
     await render(<SelectField label='Network' value='Mainnet' placeholder='Choose' onPress={onPress} />);
     await userEvent.setup().press(screen.getByRole('button', { name: 'Network: Mainnet' }));
     expect(onPress).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Mainnet')).toHaveStyle({ color: colors.text.primary });
+    expect(screen.getByText('Mainnet')).toHaveStyle({ color: lightColors.text.primary });
   });
 
   it('falls back to the placeholder', async () => {
     await render(<SelectField label='Network' placeholder='Choose' />);
     expect(screen.getByRole('button', { name: 'Network: Choose' })).toBeTruthy();
-    expect(screen.getByText('Choose')).toHaveStyle({ color: colors.text.disabled });
+    expect(screen.getByText('Choose')).toHaveStyle({ color: lightColors.text.disabled });
   });
 
   it('is inert when disabled', async () => {

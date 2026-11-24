@@ -4,7 +4,7 @@ import React from 'react';
 import { Button, ButtonTone } from '../../../../src/components/atoms';
 import { HapticKind } from '../../../../src/domain/haptics';
 import { HapticsContext } from '../../../../src/hooks/use-haptics';
-import { colors } from '../../../../src/theme';
+import { lightColors } from '../../../../src/theme';
 
 describe('Button', () => {
   it.each<ButtonTone>(['primary', 'secondary', 'tertiary', 'destructive', 'destructiveOutline', 'destructiveText'])('presses with %s tone feedback', async (tone) => {
@@ -21,7 +21,7 @@ describe('Button', () => {
     await render(<Button label='Disabled' disabled size='compact' fullWidth={false} onPress={onPress} testID='btn' />);
     await fireEvent.press(screen.getByTestId('btn'));
     expect(onPress).not.toHaveBeenCalled();
-    expect(screen.getByText('Disabled')).toHaveStyle({ color: colors.text.disabled });
+    expect(screen.getByText('Disabled')).toHaveStyle({ color: lightColors.text.disabled });
   });
 
   it.each<ButtonTone>(['primary', 'secondary'])('shows the default loading label for %s', async (tone) => {
@@ -36,8 +36,8 @@ describe('Button', () => {
 
   it('draws the destructive outline and keeps the label red', async () => {
     await render(<Button label='Disconnect' tone='destructiveOutline' testID='btn' />);
-    expect(screen.getByTestId('btn')).toHaveStyle({ borderColor: colors.status.error, backgroundColor: 'transparent' });
-    expect(screen.getByText('Disconnect')).toHaveStyle({ color: colors.status.error });
+    expect(screen.getByTestId('btn')).toHaveStyle({ borderColor: lightColors.status.error, backgroundColor: 'transparent' });
+    expect(screen.getByText('Disconnect')).toHaveStyle({ color: lightColors.status.error });
   });
 
   it('truncates long labels to one line', async () => {

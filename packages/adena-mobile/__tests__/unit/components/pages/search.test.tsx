@@ -13,7 +13,7 @@ const props = (overrides: Partial<SearchPageProps> = {}): SearchPageProps => ({
   onToggleScope: jest.fn(),
   searching: true,
   tokens: [{ key: 'token:1', name: 'Gno.land', symbol: 'GNOT', localIcon: 'gnot', caption: 'GNOT' }],
-  wallets: [{ key: 'account:1', name: 'Gnome', address, avatarColor: '#0E7490' }],
+  wallets: [{ key: 'account:1', name: 'Gnome', address, avatarColor: 'teal' }],
   collections: [{ key: 'col', name: 'Gnome Punks', caption: 'Gno.land · NFT collection', imageUri: null, imageLoading: false }],
   onOpenToken: jest.fn(),
   onOpenWallet: jest.fn(),

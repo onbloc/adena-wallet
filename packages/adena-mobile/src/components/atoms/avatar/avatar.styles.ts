@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { fixedColors, makeStyles, radius } from '../../../theme';
 
-import { colors, radius } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   base: {
     borderRadius: radius.circle,
     backgroundColor: colors.action.primary,
@@ -11,4 +9,5 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   image: { width: '100%', height: '100%' },
-});
+  onColor: { color: fixedColors.white },
+}));

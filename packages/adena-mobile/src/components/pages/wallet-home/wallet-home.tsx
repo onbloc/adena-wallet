@@ -2,6 +2,8 @@ import React, { ReactElement } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AvatarColor } from '../../../domain/account';
+import { useRefreshControlColors } from '../../../theme';
 import { Avatar, Badge, Button, IconButton, Text, TextColor } from '../../atoms';
 import {
   AddressRow,
@@ -16,13 +18,13 @@ import {
   useFloatingNavigationClearance,
 } from '../../molecules';
 import { AssetItemView, NftCardView } from '../../view-models';
-import { styles } from './wallet-home.styles';
+import { useStyles } from './wallet-home.styles';
 
 export type HomeTab = 'tokens' | 'nfts';
 
 export interface WalletHomePageProps {
   accountName: string;
-  accountAvatarColor?: string;
+  accountAvatarColor?: AvatarColor;
   accountAvatarPhoto?: string;
   address: string;
   networkName: string;
@@ -64,36 +66,46 @@ export interface WalletHomePageProps {
   onManageNfts: () => void;
 }
 
-const NftGrid = ({ collections, imageRetryKey, onOpen }: { collections: NftCardView[]; imageRetryKey?: number; onOpen: (key: string) => void }): ReactElement => (
-  <View style={styles.grid}>
-    {collections.map((collection) => {
-      const handlePress = (): void => onOpen(collection.key);
+const NftGrid = ({ collections, imageRetryKey, onOpen }: { collections: NftCardView[]; imageRetryKey?: number; onOpen: (key: string) => void }): ReactElement => {
+  const styles = useStyles();
 
-      return (
-        <View key={collection.key} style={styles.gridCell}>
-          <NftCard
-            title={collection.title}
-            subtitle={collection.subtitle}
-            imageUri={collection.imageUri}
-            imageLoading={collection.imageLoading}
-            imageRetryKey={imageRetryKey}
-            onPress={handlePress}
-          />
-        </View>
-      );
-    })}
-  </View>
-);
+  return (
+    <View style={styles.grid}>
+      {collections.map((collection) => {
+        const handlePress = (): void => onOpen(collection.key);
+
+        return (
+          <View key={collection.key} style={styles.gridCell}>
+            <NftCard
+              title={collection.title}
+              subtitle={collection.subtitle}
+              imageUri={collection.imageUri}
+              imageLoading={collection.imageLoading}
+              imageRetryKey={imageRetryKey}
+              onPress={handlePress}
+            />
+          </View>
+        );
+      })}
+    </View>
+  );
+};
 
 const DEFAULT_PLACEHOLDER_ROWS = 3;
 
-const AssetListSkeleton = ({ count }: { count: number }): ReactElement => (
-  <View accessibilityLabel='Loading tokens' accessibilityState={{ busy: true }} style={styles.assetList}>
-    {Array.from({ length: count }, (_, index) => <AssetRowSkeleton key={index} />)}
-  </View>
-);
+const AssetListSkeleton = ({ count }: { count: number }): ReactElement => {
+  const styles = useStyles();
+
+  return (
+    <View accessibilityLabel='Loading tokens' accessibilityState={{ busy: true }} style={styles.assetList}>
+      {Array.from({ length: count }, (_, index) => <AssetRowSkeleton key={index} />)}
+    </View>
+  );
+};
 
 export const WalletHomePage = (props: WalletHomePageProps): ReactElement => {
+  const refreshColors = useRefreshControlColors();
+  const styles = useStyles();
   const bottomClearance = useFloatingNavigationClearance();
 
   return (
@@ -109,7 +121,7 @@ export const WalletHomePage = (props: WalletHomePageProps): ReactElement => {
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: bottomClearance }]}
         keyboardShouldPersistTaps='handled'
-        refreshControl={<RefreshControl refreshing={props.refreshing} onRefresh={props.onRefresh} />}
+        refreshControl={<RefreshControl {...refreshColors} refreshing={props.refreshing} onRefresh={props.onRefresh} />}
       >
         {props.isTestnet && (
           <View style={styles.network}>

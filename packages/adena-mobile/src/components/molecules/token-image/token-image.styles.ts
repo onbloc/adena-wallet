@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles } from '../../../theme';
 
-import { colors } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   clip: { overflow: 'hidden' },
   monogram: { backgroundColor: colors.background.pressed, alignItems: 'center', justifyContent: 'center' },
-});
+}));

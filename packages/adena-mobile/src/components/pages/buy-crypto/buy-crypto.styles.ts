@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles, radius, sizes, spacing } from '../../../theme';
 
-import { colors, radius, sizes, spacing } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   amountBlock: { gap: spacing.space8 },
   amountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.space16 },
   // Hero amount, matching the send amount page.
@@ -15,4 +13,4 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.background.subtle,
   },
   bottom: { marginTop: 'auto', gap: spacing.space8 },
-});
+}));

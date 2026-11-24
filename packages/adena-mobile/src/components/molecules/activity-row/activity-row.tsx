@@ -1,10 +1,10 @@
 import React, { ReactElement } from 'react';
-import { Pressable, PressableStateCallbackType, View } from 'react-native';
+import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } from 'react-native';
 
-import { colors } from '../../../theme';
+import { useThemeColors } from '../../../theme';
 import { Icon, IconName, Text, TextColor } from '../../atoms';
 import { AmountTone } from '../../view-models';
-import { styles } from './activity-row.styles';
+import { useStyles } from './activity-row.styles';
 
 export interface ActivityRowProps {
   title: string;
@@ -21,7 +21,9 @@ const AMOUNT_COLOR: Record<ActivityRowProps['tone'], TextColor> = { positive: 's
 
 // Status is a word, an icon and a color: failed rows carry all three.
 export const ActivityRow = ({ title, description, amountLabel, tone, failed, extraInfo, icon, onPress }: ActivityRowProps): ReactElement => {
-  const stylePressable = ({ pressed }: PressableStateCallbackType): ({ minHeight: 60; borderRadius: 12; paddingHorizontal: 12; paddingVertical: 8; flexDirection: 'row'; alignItems: 'center'; gap: 12 } | { backgroundColor: '#F7F8F9' | '#F1F3F4' })[] => [styles.row, { backgroundColor: pressed ? colors.background.pressed : colors.background.subtle }];
+  const styles = useStyles();
+  const colors = useThemeColors();
+  const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [styles.row, { backgroundColor: pressed ? colors.background.pressed : colors.background.subtle }];
 
   return (
     <Pressable

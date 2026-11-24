@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppLogoKind, appLogos } from '../../../assets';
 import { ListRow, TopBar, useFloatingNavigationClearance } from '../../molecules';
-import { styles } from './explore.styles';
+import { useStyles } from './explore.styles';
 
 export interface ExploreAppView {
   id: string;
@@ -20,6 +20,7 @@ export interface ExplorePageProps {
 }
 
 const AppLogo = ({ logo }: { logo: string }): ReactElement => {
+  const styles = useStyles();
   const entry = appLogos[logo];
 
   if (!entry) {
@@ -32,6 +33,7 @@ const AppLogo = ({ logo }: { logo: string }): ReactElement => {
 };
 
 export const ExplorePage = ({ apps, onOpenApp }: ExplorePageProps): ReactElement => {
+  const styles = useStyles();
   const bottomClearance = useFloatingNavigationClearance();
 
   return (

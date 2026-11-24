@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles, radius, sizes, spacing } from '../../../theme';
 
-import { colors, radius, sizes, spacing } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   // Pills share the row width equally, as in the token details design.
   row: { flexDirection: 'row', gap: spacing.space8 },
   pill: {
@@ -16,4 +14,4 @@ export const styles = StyleSheet.create({
   },
   active: { backgroundColor: colors.action.primary },
   pressed: { backgroundColor: colors.action.secondaryPressed },
-});
+}));

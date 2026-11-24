@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, ButtonTone, Text } from '../../atoms';
-import { styles } from './app-failure.styles';
+import { useStyles } from './app-failure.styles';
 
 export interface AppFailureAction {
   label: string;
@@ -18,18 +18,22 @@ export interface AppFailurePageProps {
 }
 
 // Shown when the app cannot boot or a screen crashed.
-export const AppFailurePage = ({ title, description, actions = [] }: AppFailurePageProps): ReactElement => (
-  <SafeAreaView style={styles.container}>
-    <View style={styles.body}>
-      <Text variant='section' align='center'>{title}</Text>
-      <Text variant='meta' color='secondary' align='center'>{description}</Text>
-    </View>
-    {actions.length > 0 && (
-      <View style={styles.actions}>
-        {actions.map(action => (
-          <Button key={action.label} label={action.label} tone={action.tone} onPress={action.onPress} fullWidth />
-        ))}
+export const AppFailurePage = ({ title, description, actions = [] }: AppFailurePageProps): ReactElement => {
+  const styles = useStyles();
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.body}>
+        <Text variant='section' align='center'>{title}</Text>
+        <Text variant='meta' color='secondary' align='center'>{description}</Text>
       </View>
-    )}
-  </SafeAreaView>
-);
+      {actions.length > 0 && (
+        <View style={styles.actions}>
+          {actions.map(action => (
+            <Button key={action.label} label={action.label} tone={action.tone} onPress={action.onPress} fullWidth />
+          ))}
+        </View>
+      )}
+    </SafeAreaView>
+  );
+};

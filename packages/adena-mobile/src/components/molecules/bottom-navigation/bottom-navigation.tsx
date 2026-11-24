@@ -6,7 +6,7 @@ import { HapticKind } from '../../../domain/haptics';
 import { useHaptics } from '../../../hooks/use-haptics';
 import { sizes, spacing } from '../../../theme';
 import { IconButton, IconName } from '../../atoms';
-import { ITEM_SIZE, styles } from './bottom-navigation.styles';
+import { ITEM_SIZE, useStyles } from './bottom-navigation.styles';
 
 export interface BottomNavigationItem<T extends string> {
   key: T;
@@ -35,6 +35,7 @@ export const useFloatingNavigationClearance = (): number => {
 
 // Floating destination pill plus a distinct primary action; the host positions it over the content.
 export const BottomNavigation = <T extends string>({ items, selected, onSelect, primaryAction }: BottomNavigationProps<T>): ReactElement => {
+  const styles = useStyles();
   const playHaptic = useHaptics();
 
   const handlePrimaryAction = (): void => {

@@ -9,15 +9,15 @@ describe('SecretImportMode', () => {
 });
 
 describe('AvatarColor', () => {
-  it('has a theme color for every preset', () => {
-    expect(Object.keys(avatarColors).sort()).toEqual([...AVATAR_COLORS].sort());
+  it('has a theme color for every preset except ink, which follows the primary action', () => {
+    expect(Object.keys(avatarColors).sort()).toEqual(AVATAR_COLORS.filter(color => color !== 'ink').sort());
     Object.values(avatarColors).forEach(hex => expect(hex).toMatch(/^#[0-9A-F]{6}$/));
   });
 
   it('accepts only known presets and resolves them for display', () => {
     expect(isAvatarColor('teal')).toBe(true);
     expect(isAvatarColor('neon')).toBe(false);
-    expect(toAvatarColor({ avatarColor: 'teal' })).toBe(avatarColors.teal);
+    expect(toAvatarColor({ avatarColor: 'teal' })).toBe('teal');
     expect(toAvatarColor({ avatarColor: 'neon' as never })).toBeUndefined();
     expect(toAvatarColor(null)).toBeUndefined();
   });

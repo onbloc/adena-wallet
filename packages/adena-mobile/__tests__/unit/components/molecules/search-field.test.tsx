@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
 import { SearchField } from '../../../../src/components/molecules';
-import { colors } from '../../../../src/theme';
+import { lightColors } from '../../../../src/theme';
 
 describe('SearchField', () => {
   it('types, focuses, blurs and clears', async () => {
@@ -27,7 +27,7 @@ describe('SearchField', () => {
     const onChangeText = jest.fn();
 
     await render(<SearchField value='x' onChangeText={onChangeText} placeholder='Search' disabled />);
-    expect(screen.getByLabelText('Search')).toHaveStyle({ color: colors.text.disabled });
+    expect(screen.getByLabelText('Search')).toHaveStyle({ color: lightColors.text.disabled });
     expect(screen.getByLabelText('Search').props.editable).toBe(false);
     await fireEvent.press(screen.getByRole('button', { name: 'Clear' }));
     expect(onChangeText).not.toHaveBeenCalled();

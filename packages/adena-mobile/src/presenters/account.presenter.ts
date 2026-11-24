@@ -1,6 +1,5 @@
-import { Account, isAvatarColor } from '../domain/account';
-import { avatarColors } from '../theme';
+import { Account, AvatarColor, isAvatarColor } from '../domain/account';
 
-// Resolves a stored avatar color; unknown values (older or newer builds) use the default avatar.
-export const toAvatarColor = (account?: Pick<Account, 'avatarColor'> | null): string | undefined =>
-  isAvatarColor(account?.avatarColor) ? avatarColors[account.avatarColor] : undefined;
+// Drops unknown stored values (older or newer builds) so they render the default avatar.
+export const toAvatarColor = (account?: Pick<Account, 'avatarColor'> | null): AvatarColor | undefined =>
+  isAvatarColor(account?.avatarColor) ? account.avatarColor : undefined;

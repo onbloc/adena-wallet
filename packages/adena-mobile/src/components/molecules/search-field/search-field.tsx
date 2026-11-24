@@ -1,9 +1,10 @@
 import React, { ReactElement, Ref, useState } from 'react';
 import { TextInput, TextInputInstance, TextInputProps, View } from 'react-native';
 
-import { colors } from '../../../theme';
+import { useAppTheme } from '../../../hooks/use-app-theme';
+import { useThemeColors } from '../../../theme';
 import { Icon, IconButton } from '../../atoms';
-import { styles } from './search-field.styles';
+import { useStyles } from './search-field.styles';
 
 export interface SearchFieldProps extends Omit<TextInputProps, 'style' | 'value' | 'onChangeText' | 'editable'> {
   value: string;
@@ -14,6 +15,9 @@ export interface SearchFieldProps extends Omit<TextInputProps, 'style' | 'value'
 }
 
 export const SearchField = ({ value, onChangeText, placeholder, disabled = false, ref, ...rest }: SearchFieldProps): ReactElement => {
+  const styles = useStyles();
+  const colors = useThemeColors();
+  const { scheme } = useAppTheme();
   const [focused, setFocused] = useState(false);
   const muted = disabled ? colors.text.disabled : colors.icon.primary;
 
@@ -37,6 +41,7 @@ export const SearchField = ({ value, onChangeText, placeholder, disabled = false
         placeholder={placeholder}
         accessibilityLabel={placeholder}
         placeholderTextColor={colors.text.secondary}
+        keyboardAppearance={scheme}
         selectionColor={colors.text.primary}
         autoCapitalize='none'
         autoCorrect={false}

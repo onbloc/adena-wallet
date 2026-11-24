@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { fontFamily, makeStyles, sizes, spacing } from '../../../theme';
 
-import { colors, fontFamily, sizes, spacing } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   row: { flexDirection: 'row', gap: spacing.space24 },
   tab: {
     height: sizes.tab,
@@ -15,4 +13,4 @@ export const styles = StyleSheet.create({
   active: { borderBottomColor: colors.border.focus },
   label: { fontFamily: fontFamily.medium },
   activeLabel: { fontFamily: fontFamily.semiBold },
-});
+}));

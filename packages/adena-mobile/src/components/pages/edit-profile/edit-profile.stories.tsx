@@ -2,7 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import { fn } from 'storybook/test';
 
 import { SAMPLE_ADDRESS, SAMPLE_AVATAR_PHOTO } from '../../../stories/fixtures';
-import { avatarColors } from '../../../theme';
 import { EditProfilePage } from './edit-profile';
 
 const meta = {
@@ -12,7 +11,7 @@ const meta = {
   args: {
     name: 'Gnome Wallet',
     address: SAMPLE_ADDRESS,
-    avatarColor: avatarColors.teal,
+    avatarColor: 'teal',
     onChangePhoto: fn(),
     photoSheetVisible: false,
     onChoosePhoto: fn(),

@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles, radius, sizes, spacing } from '../../../theme';
 
-import { colors, radius, sizes, spacing } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   container: { gap: spacing.space8 },
   field: {
     minHeight: sizes.control,
@@ -14,4 +12,4 @@ export const styles = StyleSheet.create({
   },
   disabled: { backgroundColor: colors.action.disabled, borderColor: colors.action.disabled },
   value: { flex: 1 },
-});
+}));

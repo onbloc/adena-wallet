@@ -19,7 +19,7 @@ const meta = {
       { key: 'gno.land/r/gnoswap/gns.GNS', name: 'Gnoswap', symbol: 'GNS', caption: 'GNS' },
     ],
     wallets: [
-      { key: 'account:1', name: 'Gnome Wallet', address: SAMPLE_ADDRESS, avatarColor: '#0E7490' },
+      { key: 'account:1', name: 'Gnome Wallet', address: SAMPLE_ADDRESS, avatarColor: 'teal' },
       { key: 'contact:1', name: 'Gnomad', address: SAMPLE_RECIPIENT },
     ],
     collections: [{ key: 'gno.land/r/demo/nft', name: 'Gnome Punks', caption: 'Gno.land Mainnet · NFT collection', imageUri: null, imageLoading: false }],

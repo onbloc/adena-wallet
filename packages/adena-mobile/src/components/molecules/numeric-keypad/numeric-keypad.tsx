@@ -1,11 +1,11 @@
 import React, { ReactElement } from 'react';
-import { Pressable, PressableStateCallbackType, View } from 'react-native';
+import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } from 'react-native';
 
 import { HapticKind } from '../../../domain/haptics';
 import { useHaptics } from '../../../hooks/use-haptics';
-import { colors } from '../../../theme';
+import { useThemeColors } from '../../../theme';
 import { Icon, Text } from '../../atoms';
-import { styles } from './numeric-keypad.styles';
+import { useStyles } from './numeric-keypad.styles';
 
 export type KeypadKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | 'backspace';
 
@@ -17,6 +17,8 @@ const ROWS: KeypadKey[][] = [
 ];
 
 export const NumericKeypad = ({ onKeyPress }: { onKeyPress: (key: KeypadKey) => void }): ReactElement => {
+  const styles = useStyles();
+  const colors = useThemeColors();
   const playHaptic = useHaptics();
 
   return (
@@ -29,7 +31,7 @@ export const NumericKeypad = ({ onKeyPress }: { onKeyPress: (key: KeypadKey) => 
               onKeyPress(key);
             };
 
-            const stylePressable = ({ pressed }: PressableStateCallbackType): (false | { flex: number; height: number; alignItems: 'center'; justifyContent: 'center'; borderRadius: 12 } | { backgroundColor: '#F1F3F4' })[] => [styles.key, pressed && styles.pressed];
+            const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [styles.key, pressed && styles.pressed];
 
             return (
               <Pressable

@@ -3,7 +3,7 @@ import { useWindowDimensions, View } from 'react-native';
 
 import { Badge, Button, Text } from '../../atoms';
 import { BottomSheet, QrCode } from '../../molecules';
-import { styles } from './receive.styles';
+import { useStyles } from './receive.styles';
 
 export interface ReceivePageProps {
   accountName: string;
@@ -20,6 +20,7 @@ export interface ReceivePageProps {
 const COMPACT_HEIGHT = 720;
 
 export const ReceivePage = ({ accountName, address, networkName, onCopy, onShare, onClose, onOpenNetworks, onScan }: ReceivePageProps): ReactElement => {
+  const styles = useStyles();
   const { height } = useWindowDimensions();
   const compact = height < COMPACT_HEIGHT;
 

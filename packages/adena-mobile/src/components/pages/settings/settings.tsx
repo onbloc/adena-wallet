@@ -1,7 +1,8 @@
 import React, { PropsWithChildren, ReactElement, useState } from 'react';
 import { View } from 'react-native';
 
-import { colors } from '../../../theme';
+import { AvatarColor } from '../../../domain/account';
+import { useThemeColors } from '../../../theme';
 import { formatAddress } from '../../../utils/address';
 import { Avatar, Icon, IconName, Switch, Text } from '../../atoms';
 import { ListRow, Screen, SectionLabel, TopBar } from '../../molecules';
@@ -22,7 +23,7 @@ export type SettingsSheet = (typeof SettingsSheet)[keyof typeof SettingsSheet];
 export interface SettingsAccountView {
   name: string;
   address: string;
-  avatarColor?: string;
+  avatarColor?: AvatarColor;
   avatarPhoto?: string;
 }
 
@@ -57,20 +58,26 @@ export interface SettingsPageProps {
   onBack: () => void;
 }
 
-const SwitchRow = ({ label, icon, value, onChange }: { label: string; icon: IconName; value: boolean; onChange: (value: boolean) => void }): ReactElement => (
-  <View style={styles.switchRow}>
-    <Icon name={icon} size={20} color={colors.icon.secondary} />
-    <Text variant='row' style={styles.switchLabel}>{label}</Text>
-    <Switch value={value} onValueChange={onChange} accessibilityLabel={label} />
-  </View>
-);
+const SwitchRow = ({ label, icon, value, onChange }: { label: string; icon: IconName; value: boolean; onChange: (value: boolean) => void }): ReactElement => {
+  const colors = useThemeColors();
 
-const Section = ({ label, children }: PropsWithChildren<{ label: string }>): ReactElement => (
-  <View style={styles.section}>
-    <SectionLabel label={label} />
-    <View style={styles.rows}>{children}</View>
-  </View>
-);
+  return (
+    <View style={styles.switchRow}>
+      <Icon name={icon} size={20} color={colors.icon.secondary} />
+      <Text variant='row' style={styles.switchLabel}>{label}</Text>
+      <Switch value={value} onValueChange={onChange} accessibilityLabel={label} />
+    </View>
+  );
+};
+
+const Section = ({ label, children }: PropsWithChildren<{ label: string }>): ReactElement => {
+  return (
+    <View style={styles.section}>
+      <SectionLabel label={label} />
+      <View style={styles.rows}>{children}</View>
+    </View>
+  );
+};
 
 const titleOf = (options: SettingsOptionView[], value: string): string => options.find(option => option.value === value)?.title ?? value;
 

@@ -5,7 +5,7 @@ import { SvgUri, SvgXml } from 'react-native-svg';
 import { assets } from '../../../assets';
 import { ImageSourceKind, resolveImageSource } from '../../../utils/image-source';
 import { Skeleton } from '../../atoms';
-import { styles } from './nft-image.styles';
+import { useStyles } from './nft-image.styles';
 
 export interface NftImageProps {
   uri?: string | null;
@@ -18,6 +18,7 @@ export interface NftImageProps {
 // Square artwork frame; renders SVG (inline or remote) and raster images, with a placeholder on failure.
 export const NftImage = ({ uri, loading = false, size = '100%', retryKey }: NftImageProps): ReactElement => {
   // Failure belongs to one source and retry key; keyed elements remount per URI so an old element cannot report late errors.
+  const styles = useStyles();
   const [failure, setFailure] = useState<{ uri?: string | null; retryKey?: string | number } | null>(null);
   const failed = failure !== null && failure.uri === uri && failure.retryKey === retryKey;
   const source = failed ? { kind: ImageSourceKind.NONE } : resolveImageSource(uri);

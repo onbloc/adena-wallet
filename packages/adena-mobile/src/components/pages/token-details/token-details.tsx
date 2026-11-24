@@ -2,6 +2,7 @@ import React, { ReactElement, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useRefreshControlColors } from '../../../theme';
 import { Button, Skeleton, Spinner, Text, TextColor } from '../../atoms';
 import {
   ActivityList,
@@ -17,7 +18,7 @@ import {
   TopBar,
 } from '../../molecules';
 import { AssetItemView } from '../../view-models';
-import { styles } from './token-details.styles';
+import { useStyles } from './token-details.styles';
 
 export interface TokenMarketView {
   priceLabel?: string;
@@ -58,6 +59,8 @@ const CHANGE_LINE_HEIGHT = 18;
 
 // Layout follows the "Token details" design: price, chart, ranges, About, Stats, Links, then balance and activity.
 export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<R>): ReactElement => {
+  const refreshColors = useRefreshControlColors();
+  const styles = useStyles();
   const [aboutExpanded, setAboutExpanded] = useState(false);
   const { asset, market } = props;
 
@@ -66,7 +69,7 @@ export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <TopBar title='Token details' onBack={props.onBack} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled' refreshControl={<RefreshControl refreshing={props.refreshing} onRefresh={props.onRefresh} />}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled' refreshControl={<RefreshControl {...refreshColors} refreshing={props.refreshing} onRefresh={props.onRefresh} />}>
         <View style={styles.identity}>
           <TokenImage symbol={asset.symbol} localIcon={asset.localIcon} imageUrl={asset.imageUrl} size={40} />
           <View style={styles.names}>
@@ -153,13 +156,17 @@ export interface TokenDetailsUnavailablePageProps {
   onBack: () => void;
 }
 
-export const TokenDetailsUnavailablePage = ({ loading, onBack }: TokenDetailsUnavailablePageProps): ReactElement => (
-  <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-    <TopBar title='Token details' onBack={onBack} />
-    <View style={styles.content}>
-      {loading
-        ? <View style={styles.unavailable} accessibilityLabel='Loading token'><Spinner /></View>
-        : <EmptyState title='Token not found' description='This token isn’t available on the current network.' actionLabel='Go back' onAction={onBack} />}
-    </View>
-  </SafeAreaView>
-);
+export const TokenDetailsUnavailablePage = ({ loading, onBack }: TokenDetailsUnavailablePageProps): ReactElement => {
+  const styles = useStyles();
+
+  return (
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+      <TopBar title='Token details' onBack={onBack} />
+      <View style={styles.content}>
+        {loading
+          ? <View style={styles.unavailable} accessibilityLabel='Loading token'><Spinner /></View>
+          : <EmptyState title='Token not found' description='This token isn’t available on the current network.' actionLabel='Go back' onAction={onBack} />}
+      </View>
+    </SafeAreaView>
+  );
+};

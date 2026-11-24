@@ -45,7 +45,7 @@ import {
 } from 'lucide-react-native';
 import React, { ReactElement } from 'react';
 
-import { colors, sizes } from '../../../theme';
+import { sizes, useThemeColors } from '../../../theme';
 
 // 13 guide icon families plus wallet-specific glyphs, all on a 24px / 2px-stroke grid.
 const ICONS = {
@@ -101,8 +101,9 @@ export interface IconProps {
   color?: string;
 }
 
-export const Icon = ({ name, size = sizes.icon, color = colors.icon.primary }: IconProps): ReactElement => {
+export const Icon = ({ name, size = sizes.icon, color }: IconProps): ReactElement => {
   const Glyph = ICONS[name];
+  const fallback = useThemeColors().icon.primary;
 
-  return <Glyph size={size} color={color} strokeWidth={sizes.iconStroke} />;
+  return <Glyph size={size} color={color ?? fallback} strokeWidth={sizes.iconStroke} />;
 };

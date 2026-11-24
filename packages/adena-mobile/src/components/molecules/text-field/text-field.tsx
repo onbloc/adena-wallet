@@ -1,10 +1,11 @@
 import React, { ReactElement, Ref, useState } from 'react';
 import { Platform, TextInput, TextInputBlurEvent, TextInputFocusEvent, TextInputInstance, TextInputProps, View } from 'react-native';
 
-import { colors } from '../../../theme';
+import { useAppTheme } from '../../../hooks/use-app-theme';
+import { useThemeColors } from '../../../theme';
 import { Icon, IconButton, IconName, Text } from '../../atoms';
 import { useSheetKeyboardHandle } from '../bottom-sheet/sheet-keyboard';
-import { styles } from './text-field.styles';
+import { useStyles } from './text-field.styles';
 
 // Keeps secrets out of iOS Passwords / Google Password Manager and keyboard learning. Applied after the
 // caller's props, so a secret field can never be turned back into an autofill target.
@@ -46,6 +47,9 @@ export const TextField = ({
   ref,
   ...inputProps
 }: TextFieldProps): ReactElement => {
+  const styles = useStyles();
+  const colors = useThemeColors();
+  const { scheme } = useAppTheme();
   const [focused, setFocused] = useState(false);
   const sheetKeyboard = useSheetKeyboardHandle();
   const [revealed, setRevealed] = useState(false);
@@ -88,6 +92,7 @@ export const TextField = ({
           multiline={multiline}
           secureTextEntry={secure && !revealed}
           placeholderTextColor={colors.text.disabled}
+          keyboardAppearance={scheme}
           selectionColor={colors.text.primary}
           onFocus={handleFocus}
           onBlur={handleBlur}

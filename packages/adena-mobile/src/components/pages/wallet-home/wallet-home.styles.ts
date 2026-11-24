@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles, sizes, spacing } from '../../../theme';
 
-import { colors, sizes, spacing } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   root: { flex: 1, backgroundColor: colors.background.canvas },
   topBar: { height: sizes.topBar, flexDirection: 'row', alignItems: 'center', gap: spacing.space8, paddingHorizontal: sizes.screenInset },
   identity: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.space8, minHeight: sizes.touchTarget },
@@ -15,4 +13,4 @@ export const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: spacing.space16 },
   gridCell: { width: '48%' },
   loading: { paddingVertical: spacing.space32 },
-});
+}));

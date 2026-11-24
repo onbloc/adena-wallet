@@ -1,9 +1,9 @@
 import React, { ReactElement, ReactNode } from 'react';
 import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } from 'react-native';
 
-import { colors } from '../../../theme';
+import { useThemeColors } from '../../../theme';
 import { Icon, IconName, Text, TextColor } from '../../atoms';
-import { styles } from './list-row.styles';
+import { useStyles } from './list-row.styles';
 
 export interface ListRowProps {
   label: string;
@@ -34,6 +34,8 @@ export const ListRow = ({
   onPress,
   testID,
 }: ListRowProps): ReactElement => {
+  const styles = useStyles();
+  const colors = useThemeColors();
   const chevron = showChevron ?? Boolean(onPress);
   const labelColor: TextColor = disabled ? 'disabled' : destructive ? 'error' : 'primary';
   const content = (

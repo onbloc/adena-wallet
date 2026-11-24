@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 import { HapticKind } from '../../../domain/haptics';
 import { useHaptics } from '../../../hooks/use-haptics';
 import { Text } from '../../atoms';
-import { styles } from './tabs.styles';
+import { useStyles } from './tabs.styles';
 
 export interface TabItem<T extends string> {
   key: T;
@@ -20,6 +20,7 @@ export interface TabsProps<T extends string> {
 
 // Section tabs: selection uses a 2px underline plus primary text.
 export const Tabs = <T extends string>({ items, selected, onSelect }: TabsProps<T>): ReactElement => {
+  const styles = useStyles();
   const playHaptic = useHaptics();
 
   return (

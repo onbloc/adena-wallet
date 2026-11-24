@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { View } from 'react-native';
 
+import { AvatarColor } from '../../../domain/account';
 import { LocalTokenIcon } from '../../../domain/token';
 import { formatAddress } from '../../../utils/address';
 import { Avatar, Chip, Text } from '../../atoms';
@@ -21,7 +22,7 @@ export interface SearchWalletView {
   key: string;
   name: string;
   address: string;
-  avatarColor?: string;
+  avatarColor?: AvatarColor;
   avatarPhoto?: string;
 }
 
