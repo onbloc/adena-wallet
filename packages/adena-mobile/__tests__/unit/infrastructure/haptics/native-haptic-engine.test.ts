@@ -17,4 +17,19 @@ describe('nativeHapticEngine', () => {
       ['notificationSuccess', options],
     ]);
   });
+
+  it('turns itself off when the native module is missing instead of throwing', () => {
+    jest.isolateModules(() => {
+      const { trigger: isolatedTrigger } = jest.requireMock<typeof import('react-native-haptic-feedback')>('react-native-haptic-feedback');
+      const { nativeHapticEngine: engine } = jest.requireActual<typeof import('../../../../src/infrastructure/haptics/native-haptic-engine')>('../../../../src/infrastructure/haptics/native-haptic-engine');
+
+      jest.mocked(isolatedTrigger).mockClear().mockImplementationOnce(() => {
+        throw new Error('RNHapticFeedback could not be found');
+      });
+
+      expect(() => engine.play(HapticKind.IMPACT)).not.toThrow();
+      engine.play(HapticKind.SELECTION);
+      expect(isolatedTrigger).toHaveBeenCalledTimes(1);
+    });
+  });
 });

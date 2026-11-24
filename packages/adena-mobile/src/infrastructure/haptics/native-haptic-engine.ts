@@ -10,7 +10,21 @@ const FEEDBACK: Record<HapticKind, keyof typeof HapticFeedbackTypes> = {
   [HapticKind.SUCCESS]: 'notificationSuccess',
 };
 
+let available = true;
+
 // Respects the system "touch feedback" setting on Android; no vibration fallback on iOS.
+// Haptics are optional: a binary without the native module turns them off instead of failing the tap.
 export const nativeHapticEngine: HapticEngine = {
-  play: kind => trigger(FEEDBACK[kind], { enableVibrateFallback: false, ignoreAndroidSystemSettings: false }),
+  play: (kind) => {
+    if (!available) {
+      return;
+    }
+
+    try {
+      trigger(FEEDBACK[kind], { enableVibrateFallback: false, ignoreAndroidSystemSettings: false });
+    }
+    catch {
+      available = false;
+    }
+  },
 };
