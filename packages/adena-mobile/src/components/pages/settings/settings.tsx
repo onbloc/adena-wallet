@@ -2,9 +2,8 @@ import React, { PropsWithChildren, ReactElement, useState } from 'react';
 import { View } from 'react-native';
 
 import { AvatarColor } from '../../../domain/account';
-import { useThemeColors } from '../../../theme';
 import { formatAddress } from '../../../utils/address';
-import { Avatar, Icon, IconName, Switch, Text } from '../../atoms';
+import { Avatar, Switch, Text } from '../../atoms';
 import { ListRow, Screen, SectionLabel, TopBar } from '../../molecules';
 import { styles } from './settings.styles';
 import { OptionSheet, SettingsOptionView, ToggleSheet } from './settings-sheets';
@@ -58,17 +57,12 @@ export interface SettingsPageProps {
   onBack: () => void;
 }
 
-const SwitchRow = ({ label, icon, value, onChange }: { label: string; icon: IconName; value: boolean; onChange: (value: boolean) => void }): ReactElement => {
-  const colors = useThemeColors();
-
-  return (
-    <View style={styles.switchRow}>
-      <Icon name={icon} size={20} color={colors.icon.secondary} />
-      <Text variant='row' style={styles.switchLabel}>{label}</Text>
-      <Switch value={value} onValueChange={onChange} accessibilityLabel={label} />
-    </View>
-  );
-};
+const SwitchRow = ({ label, value, onChange }: { label: string; value: boolean; onChange: (value: boolean) => void }): ReactElement => (
+  <View style={styles.switchRow}>
+    <Text variant='row' style={styles.switchLabel}>{label}</Text>
+    <Switch value={value} onValueChange={onChange} accessibilityLabel={label} />
+  </View>
+);
 
 const Section = ({ label, children }: PropsWithChildren<{ label: string }>): ReactElement => {
   return (
@@ -112,11 +106,11 @@ export const SettingsPage = (props: SettingsPageProps): ReactElement => {
         <ListRow label='Address book' onPress={props.onOpenAddressBook} />
       </Section>
       <Section label='General'>
-        <ListRow label='Theme' leadingIcon='themeAuto' value={titleOf(props.themeOptions, props.theme)} onPress={open(SettingsSheet.THEME)} />
-        <ListRow label='Local currency' leadingIcon='currency' value={codeOf(props.currencyOptions, props.currency)} onPress={open(SettingsSheet.CURRENCY)} />
-        <ListRow label='Language' leadingIcon='language' value={titleOf(props.languageOptions, props.language)} onPress={open(SettingsSheet.LANGUAGE)} />
-        <ListRow label='Balances and activity' leadingIcon='balances' onPress={open(SettingsSheet.BALANCES)} />
-        <SwitchRow label='Haptic touch' icon='haptics' value={props.hapticsEnabled} onChange={props.onToggleHaptics} />
+        <ListRow label='Theme' value={titleOf(props.themeOptions, props.theme)} onPress={open(SettingsSheet.THEME)} />
+        <ListRow label='Local currency' value={codeOf(props.currencyOptions, props.currency)} onPress={open(SettingsSheet.CURRENCY)} />
+        <ListRow label='Language' value={titleOf(props.languageOptions, props.language)} onPress={open(SettingsSheet.LANGUAGE)} />
+        <ListRow label='Balances and activity' onPress={open(SettingsSheet.BALANCES)} />
+        <SwitchRow label='Haptic touch' value={props.hapticsEnabled} onChange={props.onToggleHaptics} />
       </Section>
       <Section label='Privacy and security'>
         <ListRow label='Change password' onPress={props.onOpenChangePassword} />

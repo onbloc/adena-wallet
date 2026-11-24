@@ -14,9 +14,9 @@ const meta = {
     networkName: 'Mainnet',
     connectedAppCount: 2,
     themeOptions: [
-      { value: 'system', title: 'Auto', description: 'Adapts to your device’s settings.', icon: 'themeAuto' },
-      { value: 'light', title: 'Light', description: 'Always use light theme.', icon: 'sun' },
-      { value: 'dark', title: 'Dark', description: 'Always use dark theme.', icon: 'moon' },
+      { value: 'system', title: 'Auto', description: 'Adapts to your device’s settings.' },
+      { value: 'light', title: 'Light', description: 'Always use light theme.' },
+      { value: 'dark', title: 'Dark', description: 'Always use dark theme.' },
     ],
     theme: 'system',
     onSelectTheme: fn(),

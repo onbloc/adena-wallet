@@ -1,8 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { useThemeColors } from '../../../theme';
-import { Icon, IconName, Switch, Text } from '../../atoms';
+import { Icon, Switch, Text } from '../../atoms';
 import { BottomSheet } from '../../molecules';
 import { styles } from './settings.styles';
 
@@ -12,7 +11,6 @@ export interface SettingsOptionView {
   description?: string;
   // Secondary label after the title, e.g. a currency code.
   code?: string;
-  icon?: IconName;
 }
 
 export interface OptionSheetProps {
@@ -26,8 +24,6 @@ export interface OptionSheetProps {
 
 // Single-choice sheet; the selected row carries a check.
 export const OptionSheet = ({ visible, title, options, selected, onSelect, onClose }: OptionSheetProps): ReactElement => {
-  const colors = useThemeColors();
-
   return (
     <BottomSheet visible={visible} title={title} onClose={onClose}>
       <View accessibilityRole='radiogroup' style={styles.options}>
@@ -44,7 +40,6 @@ export const OptionSheet = ({ visible, title, options, selected, onSelect, onClo
               onPress={handlePress}
               style={styles.option}
             >
-              {option.icon && <Icon name={option.icon} size={20} color={colors.icon.secondary} />}
               <View style={styles.optionTexts}>
                 <View style={styles.optionTitle}>
                   <Text variant='row' numberOfLines={1}>{option.title}</Text>

@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import React, { ReactElement } from 'react';
 
 import packageJson from '../../../../package.json';
-import { IconName } from '../../../components/atoms';
 import { SettingsOptionView, SettingsPage } from '../../../components/pages';
 import { KeyringType } from '../../../crypto/keyring';
 import { useContainer } from '../../../di/container-provider';
@@ -14,7 +13,6 @@ import {
   SUPPORTED_CURRENCIES,
   SUPPORTED_LANGUAGES,
   THEME_OPTIONS,
-  ThemePreference,
 } from '../../../domain/preferences';
 import { usePreference } from '../../../hooks/use-preference';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
@@ -22,13 +20,10 @@ import { MainStackParamList } from '../../../navigation/types';
 import { toAvatarColor } from '../../../presenters/account.presenter';
 import { SessionStatus, useSessionStore } from '../../../stores/session.store';
 
-const THEME_ICONS: Record<ThemePreference, IconName> = { system: 'themeAuto', light: 'sun', dark: 'moon' };
-
 const THEME_VIEWS: SettingsOptionView[] = THEME_OPTIONS.map(option => ({
   value: option.value,
   title: option.name,
   description: option.description,
-  icon: THEME_ICONS[option.value],
 }));
 
 const CURRENCY_VIEWS: SettingsOptionView[] = SUPPORTED_CURRENCIES.map(option => ({ value: option.code, title: option.name, code: option.code }));
