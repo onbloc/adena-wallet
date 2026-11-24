@@ -40,7 +40,7 @@ describe('AccountsScreen', () => {
 
   it('derives from the first HD keyring when an imported key is selected', async () => {
     const { env, account } = await setupWallet();
-    const imported = await env.container.walletService.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD, 'Imported');
+    const imported = await env.container.walletService.importPrivateKey(PRIVATE_KEY, 'Imported');
 
     env.container.accountService.selectAccount(imported.id);
     await renderScreen(AccountsScreen, { env });
@@ -55,7 +55,7 @@ describe('AccountsScreen', () => {
   it('sends the user to import a phrase when there is no HD keyring', async () => {
     const { env, account } = await setupWallet();
 
-    await env.container.walletService.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD, 'Imported');
+    await env.container.walletService.importPrivateKey(PRIVATE_KEY, 'Imported');
     await env.container.walletService.removeAccount(account.id, TEST_PASSWORD);
     expect(env.container.accountService.getAccounts().every(item => item.keyringType === KeyringType.PRIVATE_KEY)).toBe(true);
     const { navigation } = await renderScreen(AccountsScreen, { env });

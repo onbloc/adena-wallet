@@ -1,5 +1,5 @@
-import React, { ReactElement } from 'react';
-import { View } from 'react-native';
+import React, { ReactElement, useRef } from 'react';
+import { TextInputInstance, View } from 'react-native';
 
 import { colors } from '../../../theme';
 import { Button, Icon, IconButton, Spinner, Text, TextColor } from '../../atoms';
@@ -20,10 +20,6 @@ export interface CloudBackupListItem {
 }
 
 export type StrengthColor = Extract<TextColor, 'error' | 'warning' | 'success'>;
-
-// Keeps backup passwords out of iCloud Keychain / Google Password Manager: saving one there would put
-// it next to the backup in the same account.
-const NO_AUTOFILL = { textContentType: 'none', autoComplete: 'off', importantForAutofill: 'no' } as const;
 
 export interface BackupPasswordFormProps {
   password: string;
@@ -65,43 +61,57 @@ export interface CloudBackupPageProps {
 }
 
 // Second step of a backup, shown in place of the page content once the wallet password was accepted.
-const BackupPasswordForm = ({ providerName, form }: { providerName: string; form: BackupPasswordFormProps }): ReactElement => (
-  <>
-    <Text variant='section'>Create a backup password</Text>
-    <Text variant='body' color='secondary'>
-      {`This password encrypts your backup in ${providerName}. It is never saved, so you will need it to restore. Use a different password from your wallet password.`}
-    </Text>
-    <TextField
-      label='Backup password'
-      value={form.password}
-      onChangeText={form.onChangePassword}
-      placeholder='At least 12 characters'
-      helper={form.password ? undefined : 'Use 12 or more characters. Several unrelated words work well.'}
-      secure
-      autoCapitalize='none'
-      autoCorrect={false}
-      {...NO_AUTOFILL}
-      disabled={form.submitting}
-      error={form.passwordError}
-      testID='backup-password-input'
-    />
-    {form.strength && !form.passwordError && <StrengthMeter strength={form.strength} />}
-    <TextField
-      label='Confirm backup password'
-      value={form.confirmPassword}
-      onChangeText={form.onChangeConfirmPassword}
-      placeholder='Enter the password again'
-      secure
-      autoCapitalize='none'
-      autoCorrect={false}
-      {...NO_AUTOFILL}
-      disabled={form.submitting}
-      error={form.confirmError}
-      testID='backup-password-confirm'
-    />
-    <PasswordNote />
-  </>
-);
+// These are backup passwords, not the wallet password, so biometrics never fill them.
+const BackupPasswordForm = ({ providerName, form }: { providerName: string; form: BackupPasswordFormProps }): ReactElement => {
+  const confirmRef = useRef<TextInputInstance>(null);
+
+  const handleConfirmSubmit = (): void => {
+    if (form.password && form.confirmPassword && !form.submitting) {
+      form.onSubmit();
+    }
+  };
+
+  return (
+    <>
+      <Text variant='section'>Create a backup password</Text>
+      <Text variant='body' color='secondary'>
+        {`This password encrypts your backup in ${providerName}. It is never saved, so you will need it to restore. Use a different password from your wallet password.`}
+      </Text>
+      <TextField
+        label='Backup password'
+        value={form.password}
+        onChangeText={form.onChangePassword}
+        placeholder='At least 12 characters'
+        helper={form.password ? undefined : 'Use 12 or more characters. Several unrelated words work well.'}
+        secure
+        // Secure fields never autofill or save: a saved copy would sit next to the backup in the same account.
+        autoFocus
+        returnKeyType='next'
+        submitBehavior='submit'
+        onSubmitEditing={() => confirmRef.current?.focus()}
+        disabled={form.submitting}
+        error={form.passwordError}
+        testID='backup-password-input'
+      />
+      {form.strength && !form.passwordError && <StrengthMeter strength={form.strength} />}
+      <TextField
+        ref={confirmRef}
+        label='Confirm backup password'
+        value={form.confirmPassword}
+        onChangeText={form.onChangeConfirmPassword}
+        placeholder='Enter the password again'
+        secure
+        returnKeyType='done'
+        submitBehavior='submit'
+        onSubmitEditing={handleConfirmSubmit}
+        disabled={form.submitting}
+        error={form.confirmError}
+        testID='backup-password-confirm'
+      />
+      <PasswordNote />
+    </>
+  );
+};
 
 const STRENGTH_LEVELS = 3;
 

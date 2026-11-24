@@ -82,7 +82,7 @@ export const CloudBackupScreen = ({ navigation }: NativeStackScreenProps<MainSta
     walletPasswordRef.current = password;
     setNotice(undefined);
     setForm(EMPTY_FORM);
-  });
+  }, { prompt: { title: 'Back up wallet', cancel: 'Use password' } });
 
   const refreshBackups = (): void => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.restorableBackups(false) });
@@ -117,7 +117,7 @@ export const CloudBackupScreen = ({ navigation }: NativeStackScreenProps<MainSta
     setDeleteTarget(null);
     setStatus(cloudBackupService.getLocalStatus());
     showToast(`Backup deleted from ${providerName}`);
-  });
+  }, { prompt: { title: 'Delete backup', cancel: 'Use password' } });
 
   const discardForm = (): void => {
     walletPasswordRef.current = null;

@@ -45,7 +45,7 @@ describe('AccountSettingsScreen', () => {
 
   it('removes an imported account behind the password gate', async () => {
     const { env } = await setupWallet();
-    const imported = await env.container.walletService.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD, 'Imported');
+    const imported = await env.container.walletService.importPrivateKey(PRIVATE_KEY, 'Imported');
     const { navigation } = await renderScreen(AccountSettingsScreen, { env, params: { accountId: imported.id } });
 
     expect(screen.getByText('Imported key')).toBeTruthy();

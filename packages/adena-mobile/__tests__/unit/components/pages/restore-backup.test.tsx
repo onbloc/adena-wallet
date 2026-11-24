@@ -63,7 +63,7 @@ describe('RestoreBackupPage', () => {
 
   it('keeps the backup password out of password managers', async () => {
     await renderPage(<RestoreBackupPage {...props()} />);
-    expect(screen.getByTestId('restore-backup-password').props).toMatchObject({ textContentType: 'none', autoComplete: 'off', importantForAutofill: 'no' });
+    expect(screen.getByTestId('restore-backup-password').props).toMatchObject({ textContentType: 'none', autoComplete: 'off', importantForAutofill: 'noExcludeDescendants' });
   });
 
   it('shows loading, empty and error states', async () => {

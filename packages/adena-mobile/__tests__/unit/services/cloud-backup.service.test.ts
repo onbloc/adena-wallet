@@ -55,7 +55,7 @@ describe('CloudBackupService', () => {
   it('creates an encrypted backup of every keyring and records it locally', async () => {
     const { backup, cloudBackupStore, container } = await setup();
 
-    await container.walletService.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD, 'Imported');
+    await container.walletService.importPrivateKey(PRIVATE_KEY, 'Imported');
     const status = await create(backup);
 
     expect(cloudBackupStore.files.size).toBe(1);
@@ -111,7 +111,7 @@ describe('CloudBackupService', () => {
     await container.accountService.createAccount(account.keyringId, KeyringType.HD_WALLET);
     expect(backup.getLocalStatus()).toMatchObject({ outdated: true });
 
-    const imported = await container.walletService.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+    const imported = await container.walletService.importPrivateKey(PRIVATE_KEY);
 
     tick();
     const updated = await create(backup);
@@ -237,7 +237,7 @@ describe('CloudBackupService', () => {
     const second = await container.accountService.createAccount(source.account.keyringId, KeyringType.HD_WALLET, 'Second');
     const third = await container.accountService.createAccount(source.account.keyringId, KeyringType.HD_WALLET, 'Third');
 
-    await container.walletService.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD, 'Imported');
+    await container.walletService.importPrivateKey(PRIVATE_KEY, 'Imported');
     await container.walletService.removeAccount(second.id, TEST_PASSWORD);
     await create(source.backup);
     const original = container.accountService.getAccounts();
@@ -412,7 +412,7 @@ describe('CloudBackupService', () => {
   it('restores the account order, avatar colors and the selected account', async () => {
     const source = await setup();
     const { container } = source;
-    const imported = await container.walletService.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD, 'Imported');
+    const imported = await container.walletService.importPrivateKey(PRIVATE_KEY, 'Imported');
     const second = await container.accountService.createAccount(source.account.keyringId, KeyringType.HD_WALLET, 'Second');
 
     container.accountService.updateProfile(second.id, { name: 'Second', avatarColor: 'violet' });

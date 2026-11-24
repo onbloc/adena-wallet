@@ -1,11 +1,12 @@
-import React, { ReactElement, useEffect, useMemo, useState } from 'react';
-import { Linking } from 'react-native';
+import React, { ReactElement, useEffect, useMemo, useRef, useState } from 'react';
+import { Linking, TextInputInstance } from 'react-native';
 
 import { InjectSheetAuthView, InjectSheetPage, SheetAuthMode } from '../../components/pages';
 import { toErrorMessage } from '../../core/error-message';
 import { AppError, AppErrorCode, isAppError } from '../../core/errors';
 import { useContainer } from '../../di/container-provider';
 import { DappMethod, DappRequest } from '../../domain/dapp';
+import { describeBiometricFailure } from '../../hooks/use-biometric-password';
 import { useDappRequestFlow } from '../../hooks/use-dapp-request-flow';
 import NativeAdenaInjectSheet from '../../native/NativeAdenaInjectSheet';
 import { useBiometricStatusQuery, useWalletStatusQuery } from '../../queries/wallet.queries';
@@ -57,6 +58,11 @@ export interface InjectSheetScreenProps {
   session?: SheetSession;
 }
 
+const isBiometricFallback = (error: unknown): boolean =>
+  isAppError(error, AppErrorCode.BIOMETRICS_CANCELED)
+  || isAppError(error, AppErrorCode.BIOMETRICS_UNAVAILABLE)
+  || isAppError(error, AppErrorCode.INVALID_PASSWORD);
+
 export const InjectSheetScreen = ({ requestUrl, callerPackage, session: providedSession }: InjectSheetScreenProps): ReactElement => {
   const { dappService, walletService } = useContainer();
   const [ownSession] = useState(createSheetSession);
@@ -66,8 +72,24 @@ export const InjectSheetScreen = ({ requestUrl, callerPackage, session: provided
   const biometricLabel = biometric?.enabled ? getBiometryLabel(biometric.kind) : undefined;
   const [password, setPassword] = useState('');
   const [usePassword, setUsePassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string>();
+  const [focusRequest, setFocusRequest] = useState(0);
+  const passwordRef = useRef<TextInputInstance>(null);
   const [done, setDone] = useState(false);
   const biometricMode = Boolean(biometricLabel) && !usePassword;
+
+  // Focus follows the switch to the password, once the field is rendered.
+  useEffect(() => {
+    if (focusRequest > 0) {
+      passwordRef.current?.focus();
+    }
+  }, [focusRequest]);
+
+  const switchToPassword = (message?: string): void => {
+    setUsePassword(true);
+    setPasswordError(message);
+    setFocusRequest(value => value + 1);
+  };
 
   const parsed = useMemo((): ParsedRequest => {
     if (!requestUrl) {
@@ -119,9 +141,19 @@ export const InjectSheetScreen = ({ requestUrl, callerPackage, session: provided
         mode: biometricMode ? SheetAuthMode.BIOMETRIC : SheetAuthMode.PASSWORD,
         biometricLabel,
         password,
-        onChangePassword: setPassword,
-        onUsePassword: biometricMode ? (): void => setUsePassword(true) : undefined,
-        onUseBiometrics: biometricLabel && !biometricMode ? (): void => setUsePassword(false) : undefined,
+        onChangePassword: (value: string): void => {
+          setPassword(value);
+          setPasswordError(undefined);
+        },
+        onUsePassword: biometricMode ? (): void => switchToPassword() : undefined,
+        onUseBiometrics: biometricLabel && !biometricMode
+          ? (): void => {
+              setUsePassword(false);
+              setPasswordError(undefined);
+            }
+          : undefined,
+        passwordError,
+        passwordRef,
       }
     : undefined;
 
@@ -139,9 +171,11 @@ export const InjectSheetScreen = ({ requestUrl, callerPackage, session: provided
     flow.resetApproval();
     session.inFlight = true;
     const callbackUrl = await flow.approve().catch((error: unknown) => {
-      // Lockout or a changed enrollment: biometrics cannot succeed, so offer the password.
-      if (biometricMode && isAppError(error, AppErrorCode.BIOMETRICS_UNAVAILABLE)) {
-        setUsePassword(true);
+      // Like every wallet password prompt: a cancel, lockout, changed enrollment or stale escrowed
+      // password falls back to the focused password field, with biometrics still offered.
+      if (biometricMode && isBiometricFallback(error)) {
+        flow.resetApproval();
+        switchToPassword(describeBiometricFailure(error, biometricLabel));
       }
 
       return null;

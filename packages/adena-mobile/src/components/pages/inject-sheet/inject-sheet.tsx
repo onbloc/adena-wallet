@@ -1,5 +1,5 @@
-import React, { ReactElement } from 'react';
-import { ScrollView, View } from 'react-native';
+import React, { ReactElement, RefObject, useEffect, useState } from 'react';
+import { Keyboard, LayoutAnimation, ScrollView, TextInputInstance, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { spacing } from '../../../theme';
@@ -23,6 +23,9 @@ export interface InjectSheetAuthView {
   // Switches between biometrics and the password (offered when biometrics are enabled).
   onUsePassword?: () => void;
   onUseBiometrics?: () => void;
+  // Why biometrics fell back to the password, shown on the field.
+  passwordError?: string;
+  passwordRef?: RefObject<TextInputInstance | null>;
 }
 
 export interface InjectSheetPageProps {
@@ -50,14 +53,43 @@ export interface InjectSheetPageProps {
   onReject: () => void;
 }
 
+// The activity is edge-to-edge, so adjustResize does not shrink it; the sheet pads itself above the IME.
+const useKeyboardHeight = (): number => {
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    const update = (next: number): void => {
+      LayoutAnimation.configureNext(LayoutAnimation.create(250, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
+      setHeight(next);
+    };
+    const subscriptions = [
+      Keyboard.addListener('keyboardDidShow', event => update(event.endCoordinates.height)),
+      Keyboard.addListener('keyboardDidHide', () => update(0)),
+    ];
+
+    return (): void => subscriptions.forEach(subscription => subscription.remove());
+  }, []);
+
+  return height;
+};
+
 // Bottom sheet drawn by the translucent Android activity on top of the calling dApp.
 export const InjectSheetPage = (props: InjectSheetPageProps): ReactElement => {
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
+  const bottomPadding = keyboardHeight > 0 ? keyboardHeight + insets.bottom + spacing.space16 : Math.max(insets.bottom, spacing.space24);
+
+  // Return approves like the button, only when approval is possible.
+  const handleSubmitPassword = (): void => {
+    if (props.canApprove && !props.approving) {
+      props.onApprove();
+    }
+  };
 
   return (
     <View style={styles.root}>
       <View style={styles.scrim} />
-      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.space24) }]} accessibilityViewIsModal>
+      <View style={[styles.sheet, { paddingBottom: bottomPadding }]} accessibilityViewIsModal>
         <View style={styles.handle} />
         <Text variant='title'>{props.unavailable?.title ?? props.title}</Text>
         {props.unavailable
@@ -69,7 +101,7 @@ export const InjectSheetPage = (props: InjectSheetPageProps): ReactElement => {
             )
           : (
               <>
-                <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+                <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps='handled'>
                   <DappRequester style={styles.origin} dappName={props.dappName} origin={props.origin} callerPackage={props.callerPackage} />
                   {props.rows.map(row => <KeyValueRow key={row.label} label={row.label} value={row.value} multiline={row.multiline} />)}
                   {props.loading && <Skeleton height={96} />}
@@ -84,12 +116,17 @@ export const InjectSheetPage = (props: InjectSheetPageProps): ReactElement => {
                   {props.feeWarning && <InlineAlert tone='warning' title='High network fee' description={props.feeWarning} />}
                   {props.auth?.mode === SheetAuthMode.PASSWORD && (
                     <TextField
+                      ref={props.auth.passwordRef}
                       label='Wallet password'
                       value={props.auth.password}
                       onChangeText={props.auth.onChangePassword}
                       placeholder='Password'
                       secure
-                      autoCapitalize='none'
+                      returnKeyType='go'
+                      submitBehavior='submit'
+                      onSubmitEditing={handleSubmitPassword}
+                      error={props.auth.passwordError}
+                      testID='inject-sheet-password'
                     />
                   )}
                   {props.auth?.mode === SheetAuthMode.BIOMETRIC && props.auth.biometricLabel && (

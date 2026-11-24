@@ -39,6 +39,35 @@ describe('CloudBackupScreen', () => {
     expect(toastMessage()).toBe('Backed up to iCloud');
   });
 
+  it('takes the wallet password from biometrics first, and never for the backup password', async () => {
+    const { env } = await setupWallet();
+
+    await env.container.walletService.enableBiometricUnlock(TEST_PASSWORD);
+    await renderScreen(CloudBackupScreen, { env });
+    await fireEvent.press(await screen.findByRole('button', { name: 'Back up now' }));
+
+    expect(await screen.findByText('Create a backup password')).toBeTruthy();
+    // The released wallet password is checked against the backup password like a typed one.
+    await enterBackupPassword(TEST_PASSWORD);
+    expect(await screen.findByText('Use a different password from your wallet password')).toBeTruthy();
+    await enterBackupPassword();
+    expect(await screen.findByText('Your backup is ready')).toBeTruthy();
+    expect(env.cloudBackupStore.files.size).toBe(1);
+  });
+
+  it('deletes a backup with biometrics first', async () => {
+    const { env } = await setupWallet();
+
+    await env.container.cloudBackupService.createBackup({ walletPassword: TEST_PASSWORD, backupPassword: BACKUP_PASSWORD, confirmPassword: BACKUP_PASSWORD });
+    await env.container.walletService.enableBiometricUnlock(TEST_PASSWORD);
+    await renderScreen(CloudBackupScreen, { env });
+    await fireEvent.press(await screen.findByRole('button', { name: 'Delete backup' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Delete' }));
+
+    expect(await screen.findByRole('button', { name: 'Back up now' })).toBeTruthy();
+    expect(env.cloudBackupStore.files.size).toBe(0);
+  });
+
   it('rejects a wrong wallet password in the sheet', async () => {
     const { env } = await setupWallet();
 
@@ -75,7 +104,7 @@ describe('CloudBackupScreen', () => {
     expect(screen.getByText('Password strength: Too weak')).toBeTruthy();
     expect(screen.getByTestId('backup-password-input').props.textContentType).toBe('none');
     expect(screen.getByTestId('backup-password-input').props.autoComplete).toBe('off');
-    expect(screen.getByTestId('backup-password-input').props.importantForAutofill).toBe('no');
+    expect(screen.getByTestId('backup-password-input').props.importantForAutofill).toBe('noExcludeDescendants');
     await enterBackupPassword('sunshine2024!');
     expect(await screen.findByText('Backup password is too easy to guess. Add more unrelated words or characters.')).toBeTruthy();
     await fireEvent.changeText(screen.getByTestId('backup-password-input'), 'tangerine kayak');

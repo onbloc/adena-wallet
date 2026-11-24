@@ -317,6 +317,37 @@ describe('InjectSheetScreen', () => {
     expect(mockNative.current?.complete).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['a canceled prompt', new AppError(AppErrorCode.BIOMETRICS_CANCELED, 'canceled'), undefined],
+    ['a stale escrowed password', new AppError(AppErrorCode.INVALID_PASSWORD, 'stale'), 'Biometric password is out of date. Enter your password.'],
+    ['a lockout', new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'locked out'), 'Fingerprint is unavailable. Enter your password.'],
+  ])('falls back to the password field after %s, like every wallet password prompt', async (_name, error, message) => {
+    const { Platform } = jest.requireActual('react-native');
+    const original = Platform.OS;
+
+    Platform.OS = 'android';
+    (useBiometricStatusQuery as jest.Mock).mockReturnValue({ data: { enabled: true, kind: BiometryKind.FINGERPRINT } });
+    const failing = flow({ approve: jest.fn().mockRejectedValue(error) });
+
+    (useDappRequestFlow as jest.Mock).mockReturnValue(failing);
+
+    try {
+      await renderScreen('adena://request?payload=x');
+      await act(async () => page().onApprove());
+      expect(page().auth).toMatchObject({ mode: SheetAuthMode.PASSWORD, passwordError: message });
+      expect(page().auth?.passwordRef).toBeDefined();
+      // The raw biometric error does not show as a failed request.
+      expect(failing.resetApproval).toHaveBeenCalledTimes(2);
+      expect(page().auth?.onUseBiometrics).toBeDefined();
+
+      await act(async () => page().auth?.onChangePassword('typed'));
+      expect(page().auth?.passwordError).toBeUndefined();
+    }
+    finally {
+      Platform.OS = original;
+    }
+  });
+
   it('locks into a done state after success so nothing is approved or answered twice', async () => {
     const approved = flow();
 

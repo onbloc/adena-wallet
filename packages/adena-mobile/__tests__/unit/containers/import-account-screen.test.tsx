@@ -13,35 +13,32 @@ const settle = async (): Promise<void> => {
   await waitFor(() => expect(screen.getByRole('button', { name: 'Import' })).toBeTruthy());
 };
 
-const fill = async (secretLabel: string, secret: string, password: string, name?: string): Promise<void> => {
+const fill = async (secretLabel: string, secret: string, name?: string): Promise<void> => {
   await fireEvent.changeText(screen.getByLabelText(secretLabel), secret);
-  await fireEvent.changeText(screen.getByLabelText('Wallet password'), password);
 
   if (name !== undefined) {
     await fireEvent.changeText(screen.getByLabelText('Account name'), name);
   }
 };
 
+// The wallet is unlocked, so importing never asks for the wallet password.
 describe('ImportAccountScreen', () => {
   beforeEach(resetStores);
 
-  it('imports a recovery phrase after a wrong password', async () => {
+  it('imports a recovery phrase without the wallet password, and it survives a relock', async () => {
     const { env } = await setupWallet();
     const { navigation } = await renderScreen(ImportAccountScreen, { env, params: { mode: SecretImportMode.MNEMONIC } });
 
     expect(screen.getByText('Import recovery phrase')).toBeTruthy();
-    await fill('Recovery phrase', OTHER_MNEMONIC, 'wrong password', 'Second');
-    await fireEvent.press(screen.getByRole('button', { name: 'Import' }));
-    expect(await screen.findByText('Incorrect password.')).toBeTruthy();
-    await settle();
-
-    await fireEvent.changeText(screen.getByLabelText('Wallet password'), TEST_PASSWORD);
-    expect(screen.queryByText('Incorrect password.')).toBeNull();
+    expect(screen.queryByLabelText('Wallet password')).toBeNull();
+    await fill('Recovery phrase', OTHER_MNEMONIC, 'Second');
     await fireEvent.press(screen.getByRole('button', { name: 'Import' }));
 
     await waitFor(() => expect(navigation.popToTop).toHaveBeenCalled());
     await settle();
     expect(toastMessage()).toBe('Second imported');
+    env.container.walletService.lock();
+    await env.container.walletService.unlock(TEST_PASSWORD);
     expect(env.container.accountService.getAccounts().filter(item => item.keyringType === KeyringType.HD_WALLET)).toHaveLength(2);
   });
 
@@ -49,7 +46,7 @@ describe('ImportAccountScreen', () => {
     const { env } = await setupWallet();
 
     await renderScreen(ImportAccountScreen, { env, params: { mode: SecretImportMode.MNEMONIC } });
-    await fill('Recovery phrase', 'not valid words', TEST_PASSWORD);
+    await fill('Recovery phrase', 'not valid words');
     await fireEvent.press(screen.getByRole('button', { name: 'Import' }));
     expect(await screen.findByText('Invalid recovery phrase')).toBeTruthy();
     await settle();
@@ -66,7 +63,7 @@ describe('ImportAccountScreen', () => {
     const { navigation } = await renderScreen(ImportAccountScreen, { env, params: { mode: SecretImportMode.PRIVATE_KEY } });
 
     expect(screen.getByText('Import private key')).toBeTruthy();
-    await fill('Private key', 'xyz', TEST_PASSWORD);
+    await fill('Private key', 'xyz');
     await fireEvent.press(screen.getByRole('button', { name: 'Import' }));
     expect(await screen.findByText('Invalid private key')).toBeTruthy();
     await settle();

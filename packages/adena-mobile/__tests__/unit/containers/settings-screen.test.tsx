@@ -62,7 +62,7 @@ describe('SettingsScreen', () => {
 
   it('falls back to the first HD keyring for the recovery phrase', async () => {
     const { env, account } = await setupWallet();
-    const imported = await env.container.walletService.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD, 'Imported');
+    const imported = await env.container.walletService.importPrivateKey(PRIVATE_KEY, 'Imported');
 
     env.container.accountService.selectAccount(imported.id);
     const { navigation } = await renderScreen(SettingsScreen, { env });
@@ -74,7 +74,7 @@ describe('SettingsScreen', () => {
   it('does nothing for the recovery phrase without an HD keyring', async () => {
     const { env, account } = await setupWallet();
 
-    await env.container.walletService.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD, 'Imported');
+    await env.container.walletService.importPrivateKey(PRIVATE_KEY, 'Imported');
     await env.container.walletService.removeAccount(account.id, TEST_PASSWORD);
     const { navigation } = await renderScreen(SettingsScreen, { env });
 

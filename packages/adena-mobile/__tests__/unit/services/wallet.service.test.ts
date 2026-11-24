@@ -791,6 +791,16 @@ describe('WalletService.restoreWallet', () => {
     expect(await container.walletService.getStatus()).toBe('unlocked');
   });
 
+  it('lets the restored session import without the password', async () => {
+    const { container } = createTestContainer();
+
+    await container.walletService.restoreWallet({ keyrings: [keyrings[1]], accounts: [{ keyringId: 'pk', name: 'Key', hdIndex: 0 }], password: TEST_PASSWORD });
+    await container.walletService.addMnemonicKeyring(OTHER_MNEMONIC);
+    container.walletService.lock();
+    await container.walletService.unlock(TEST_PASSWORD);
+    expect(container.accountService.getAccounts()).toHaveLength(2);
+  });
+
   it('adds index 0 for a keyring the backup lists without accounts', async () => {
     const { container } = createTestContainer();
 

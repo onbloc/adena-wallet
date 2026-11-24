@@ -72,6 +72,14 @@ const BackupOptions = ({ props, state }: { props: RestoreBackupPageProps; state:
 
 export const RestoreBackupPage = (props: RestoreBackupPageProps): ReactElement => {
   const { state, providerName } = props;
+
+  // Return submits like the button: never empty, never twice.
+  const handleSubmitEditing = (): void => {
+    if (props.password && !props.submitting) {
+      props.onSubmit();
+    }
+  };
+
   const footer = state.kind === 'ready'
     ? (
         <Button
@@ -109,13 +117,10 @@ export const RestoreBackupPage = (props: RestoreBackupPageProps): ReactElement =
             onChangeText={props.onChangePassword}
             placeholder='Backup password'
             secure
-            autoCapitalize='none'
-            autoCorrect={false}
-            textContentType='none'
-            autoComplete='off'
-            importantForAutofill='no'
             autoFocus
-            onSubmitEditing={props.onSubmit}
+            returnKeyType='go'
+            submitBehavior='submit'
+            onSubmitEditing={handleSubmitEditing}
             disabled={props.submitting}
             error={props.error}
             testID='restore-backup-password'
