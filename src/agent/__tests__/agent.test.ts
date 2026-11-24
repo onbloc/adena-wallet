@@ -36,10 +36,10 @@ const results = (events: GenerateEvent[]) =>
   events.filter((event) => event.type === GenerateEventType.ToolResult);
 
 /** An agent over a scripted model, a fake Onbloc MCP and a fake wallet; `prepared` collects what it builds. */
-function setup(steps: Step[], { balance = '10000000' }: { balance?: string } = {}) {
+function setup(steps: Step[], { balance = '10000000', holdings }: { balance?: string; holdings?: unknown[] } = {}) {
   const mcp = fakeOnblocMcp([
     { name: 'get_native_balance', output: { address: account, denom: 'ugnot', balance } },
-    { name: 'get_token_balances', output: { address: account, items: [
+    { name: 'get_token_balances', output: { address: account, items: holdings ?? [
       { address: account, symbol: 'WIZ', amount: '300', decimals: 0, tokenId: 'gno.land/r/wiz' },
       { address: account, symbol: 'xGNS', amount: '17528000000', decimals: 6, tokenId: 'gno.land/r/xgns' },
     ] } },
@@ -253,5 +253,39 @@ describe('AIAgent', () => {
 
     await expect(collect(real.run({ prompt: 'go' }))).rejects.toThrow('needs the account');
     expect(wallet.calls).toEqual([]);
+  });
+
+  it('shows the model a token holding by its identity and exact amount only', async () => {
+    const holding = {
+      address: account,
+      tokenId: 'gno.land/r/gnoswap/gns',
+      symbol: 'GNS',
+      amount: '63607',
+      decimals: 6,
+      logoUrl: 'https://example.test/logo.png',
+      usdPrice: '0.42',
+    };
+    const { agent, model } = setup([call('get_token_balances', {}), answer('63607 GNS')], { holdings: [holding] });
+
+    await collect(agent.run({ prompt: 'My tokens' }));
+
+    const prompt = JSON.stringify(model.doGenerateCalls[1].prompt);
+    expect(prompt).toContain('63607');
+    expect(prompt).toContain('gno.land/r/gnoswap/gns');
+    expect(prompt).not.toContain('logoUrl');
+    expect(prompt).not.toContain('usdPrice');
+  });
+
+  it.each([
+    ['an amount that is not a string', { to: RECIPIENT, amount: 5, token: 'GNOT' }],
+    ['a missing token', { to: RECIPIENT, amount: '1' }],
+  ])('never lets %s reach the wallet', async (_label, input) => {
+    const { agent, wallet, prepared } = setup([call(ToolName.Transfer, input), answer('x')]);
+
+    const events = await collect(agent.run({ prompt: 'go' }));
+
+    expect(events).toContainEqual(expect.objectContaining({ type: GenerateEventType.ToolCall, name: ToolName.Transfer, invalid: true }));
+    expect(wallet.calls).toEqual([]);
+    expect(prepared).toEqual([]);
   });
 });
