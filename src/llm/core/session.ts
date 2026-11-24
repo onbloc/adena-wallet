@@ -24,8 +24,8 @@ export function chatSessionKey(scope: ChatScope): string {
     : JSON.stringify(['adena-chat-v1', scope.mode]);
 }
 
-export function canRememberTurn(event: { aborted: boolean; finishReason?: string; messages: readonly ModelMessage[] }): boolean {
-  return !event.aborted && event.finishReason === 'stop' && event.messages.length > 0;
+export function canRememberTurn(event: { aborted: boolean; finishReason?: string; verifiedAnswer?: true; messages: readonly ModelMessage[] }): boolean {
+  return !event.aborted && (event.verifiedAnswer === true || (event.finishReason === 'stop' && event.messages.length > 0));
 }
 
 /** Persist user/answer text only, never tool calls, tool results, or wallet state. */

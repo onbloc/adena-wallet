@@ -73,7 +73,7 @@ describe('AIAgent', () => {
   const send = call(ToolName.Transfer, { to: RECIPIENT, amount: '1', token: 'GNOT' });
 
   it("reads for the agent's account and feeds the result to the model", async () => {
-    const { agent, model, mcp } = setup([call('get_native_balance', {}), answer('42 GNOT')], { balance: '42000000' });
+    const { agent, model, mcp } = setup([call('get_native_balance', {}), answer('42000000 GNOT')], { balance: '42000000' });
 
     const events = await collect(agent.run({ prompt: 'My balance' }));
 
@@ -182,7 +182,7 @@ describe('AIAgent', () => {
 
     const texts = (await collect(agent.run({ prompt: 'go' }))).filter((e) => e.type === GenerateEventType.Text);
 
-    expect(texts).toEqual([{ type: GenerateEventType.Text, delta: 'Your balance is 10 GNOT' }]);
+    expect(texts).toEqual([{ type: GenerateEventType.Text, delta: '10 GNOT' }]);
   });
 
   it('is the LLM alone when it has no wallet', async () => {

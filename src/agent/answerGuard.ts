@@ -1,5 +1,6 @@
 import { GenerateEventType, type GenerateEvent } from '../llm/core';
 import { ToolName, WalletStatus } from './wallet/constants';
+import { formatOnblocBalance } from './onblocBalances';
 
 /**
  * Holds the model's text back and shows it only if the tools support it. Answers that rest on
@@ -15,6 +16,7 @@ export async function* guardAnswer(
   let readSucceeded = false;
   let readFailed = false;
   const outcomes: string[] = [];
+  const balances = new Map<string, string>();
 
   for await (const event of events) {
     switch (event.type) {
@@ -35,7 +37,11 @@ export async function* guardAnswer(
         const value = ok && 'value' in decision ? decision.value : undefined;
         const status = typeof value === 'object' && value !== null && 'status' in value ? value.status : undefined;
         if (isRead(event.name)) {
-          if (ok && (event.name !== ToolName.GetApprovals || status === WalletStatus.Ok)) readSucceeded = true;
+          if (event.name === 'get_native_balance' || event.name === 'get_token_balances') {
+            const formatted = formatOnblocBalance(event.name, decision);
+            if (formatted === undefined) readFailed = true;
+            else balances.set(event.name, formatted);
+          } else if (ok && (event.name !== ToolName.GetApprovals || status === WalletStatus.Ok)) readSucceeded = true;
           else readFailed = true;
         } else {
           outcomes.push(status === WalletStatus.Prepared ? 'Unsigned transaction prepared. Nothing was sent.'
@@ -54,13 +60,15 @@ export async function* guardAnswer(
           yield event;
           break;
         }
-        const trusted = readSucceeded && !readFailed && !outcomes.length;
+        const verifiedAnswer = balances.size > 0 && !readSucceeded && !readFailed && !outcomes.length;
+        const trusted = (readSucceeded || verifiedAnswer) && !readFailed && !outcomes.length;
         const lookupFailure = 'Some Onbloc lookups failed. Review the individual tool results.';
         const answer = outcomes.length ? [...outcomes, ...(readFailed ? [lookupFailure] : [])].join(' ')
-          : !readSucceeded ? 'No Onbloc lookup returned verified data.'
-            : readFailed ? lookupFailure : text || 'Onbloc returned data; no model summary was produced.';
+          : balances.size && (verifiedAnswer || readFailed) ? [...balances.values(), ...(readFailed ? [lookupFailure] : [])].join('\n\n')
+            : !readSucceeded ? 'No Onbloc lookup returned verified data.'
+              : readFailed ? lookupFailure : text || 'Onbloc returned data; no model summary was produced.';
         yield { type: GenerateEventType.Text, delta: answer };
-        yield trusted ? event : { ...event, messages: [] };
+        yield verifiedAnswer ? { ...event, verifiedAnswer: true } : trusted ? event : { ...event, messages: [] };
         break;
       }
       default:

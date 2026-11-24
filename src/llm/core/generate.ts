@@ -80,6 +80,8 @@ export type GenerateEvent =
       metrics: Metrics;
       aborted: boolean;
       finishReason?: string;
+      /** The application rendered a complete answer directly from validated balance results. */
+      verifiedAnswer?: true;
       /** Provider warnings, e.g. unsupported options. */
       warnings: string[];
       /** Raw assistant and tool messages for this run; never replay tool calls as chat history. */
