@@ -14,7 +14,7 @@ export interface SensitiveClipboard {
 
 interface CopiedSecret {
   value: string;
-  copiedAt: number;
+  expiresAt: number;
 }
 
 const wipeClipboard = (): boolean => {
@@ -38,8 +38,8 @@ const wipeIfStillCopied = async (value: string): Promise<void> => {
   }
 };
 
-// The clipboard reads as '' while backgrounded (Android 10+, iOS), so a hidden app wipes it
-// unconditionally inside the TTL window and verifies once it is active again.
+// Backgrounding keeps the secret for the TTL so it can be pasted elsewhere; the clipboard reads as ''
+// while backgrounded (Android 10+, iOS), so an expiry missed there is checked on the next `active`.
 export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): SensitiveClipboard => {
   const showToast = useToastStore(state => state.show);
   const copiedRef = useRef<CopiedSecret | undefined>(undefined);
@@ -62,7 +62,7 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
     clearTimeout(timerRef.current);
     timerRef.current = undefined;
 
-    const wiped = Date.now() - copied.copiedAt < ttlMs && wipeClipboard();
+    const wiped = Date.now() < copied.expiresAt && wipeClipboard();
 
     if (appStateRef.current !== 'active') {
       // Keep the secret so the next `active` can confirm the wipe.
@@ -74,7 +74,7 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
     }
 
     forget();
-  }, [forget, ttlMs]);
+  }, [forget]);
 
   const expire = useCallback(async (): Promise<void> => {
     const copied = copiedRef.current;
@@ -86,7 +86,7 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
     timerRef.current = undefined;
 
     if (appStateRef.current !== 'active') {
-      wipeClipboard();
+      // Verified on the next `active`; the native sensitive copy also expires on its own.
       return;
     }
 
@@ -98,7 +98,7 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
     Clipboard.setString(value);
     showToast(message, 'success');
     clearTimeout(timerRef.current);
-    copiedRef.current = { value, copiedAt: Date.now() };
+    copiedRef.current = { value, expiresAt: Date.now() + ttlMs };
     timerRef.current = setTimeout(expire, ttlMs);
   }, [expire, showToast, ttlMs]);
 
@@ -108,10 +108,7 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
 
       const copied = copiedRef.current;
 
-      if (state === 'background') {
-        clear();
-      }
-      else if (state === 'active' && copied !== undefined && timerRef.current === undefined) {
+      if (state === 'active' && copied !== undefined && timerRef.current === undefined) {
         wipeIfStillCopied(copied.value).then(() => {
           if (copiedRef.current === copied) {
             forget();
@@ -120,16 +117,18 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
       }
     });
 
-    return (): void => {
-      subscription.remove();
+    return (): void => subscription.remove();
+  }, [forget]);
 
-      if (copiedRef.current !== undefined && Date.now() - copiedRef.current.copiedAt < ttlMs) {
-        wipeClipboard();
-      }
+  // Unmount only (no deps), so effect re-runs never wipe a secret the user is still pasting.
+  useEffect(() => (): void => {
+    if (copiedRef.current !== undefined && Date.now() < copiedRef.current.expiresAt) {
+      wipeClipboard();
+    }
 
-      forget();
-    };
-  }, [clear, forget, ttlMs]);
+    clearTimeout(timerRef.current);
+    copiedRef.current = undefined;
+  }, []);
 
   return { copy, clear };
 };
