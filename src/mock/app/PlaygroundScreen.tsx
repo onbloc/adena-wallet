@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 
 import { AIAgent, type ConversationSettings, type PreparedTransaction } from '../../agent';
-import { Harness } from '../../harness/core';
+import { DEFAULT_BUDGET, Harness } from '../../harness/core';
 import { createOnblocToolSource, GNO_MAINNET_CHAIN } from '../../harness/mcp';
 import {
   chatSessionKey,
@@ -92,6 +92,7 @@ export default function PlaygroundScreen() {
   const [thinking, setThinking] = useState(false);
   const [showReasoning, setShowReasoning] = useState(false);
   const [useTools, setUseTools] = useState(true);
+  const [allowTransactionPreparation, setAllowTransactionPreparation] = useState(false);
   // The mock wallet shown in Settings; `key` is the address it was created for.
   const [walletView, setWalletView] = useState<{ key: string; state: WalletState } | null>(null);
   // Prompt that started the last run, shown as the user message.
@@ -178,7 +179,7 @@ export default function PlaygroundScreen() {
   const canRun =
     ready &&
     session.ready &&
-    preparation.ready &&
+    (!allowTransactionPreparation || preparation.ready) &&
     (!onblocMode || onbloc !== undefined) &&
     !preparing &&
     !run.running &&
@@ -210,9 +211,10 @@ export default function PlaygroundScreen() {
     const text = prompt.trim();
     if (!text) return;
     setSetupError(null);
-    // Load the balances before the prompt is sent, so a failure keeps the prompt in the composer.
-    const onblocWallet = onbloc && useTools ? await ensureOnblocWallet(onbloc) : null;
-    if (onbloc && useTools && !onblocWallet) return;
+    // The read-only agent needs no mock wallet. Fund one only when preparation is enabled.
+    const onblocWallet = onbloc && useTools && allowTransactionPreparation
+      ? await ensureOnblocWallet(onbloc) : null;
+    if (onbloc && useTools && allowTransactionPreparation && !onblocWallet) return;
     if (visibleScope.current !== scopeKey) return;
     const view = { scope: scopeKey };
     displayedRun.current = view;
@@ -225,7 +227,7 @@ export default function PlaygroundScreen() {
       prompt: text,
       // With the wallet on the agent brings its own system prompt; with no Onbloc settings it is a plain chat.
       system:
-        onbloc && !onblocWallet
+        onbloc && !useTools
           ? 'Wallet tools are disabled. Do not claim to have checked wallet data.'
           : undefined,
       temperature: temperatureValue,
@@ -235,7 +237,8 @@ export default function PlaygroundScreen() {
     const previousTurn = session.turns.at(-1);
     await start((signal) => {
       const harness = new Harness({
-        toolSources: onbloc && onblocWallet ? [createOnblocToolSource(onbloc)] : [],
+        toolSources: onbloc && useTools ? [createOnblocToolSource(onbloc)] : [],
+        budget: { ...DEFAULT_BUDGET, maxTokens: 2 * llm.contextTokens, timeoutMs: 5 * 60_000 },
       });
       const onTransaction = async ({ summary }: PreparedTransaction) => {
         // The persisted record is bound to this run's original scope, even after a switch.
@@ -247,7 +250,9 @@ export default function PlaygroundScreen() {
       const agent = onblocWallet
         ? new AIAgent({ llm, harness, wallet: onblocWallet, onTransaction })
         : new AIAgent({ llm, harness });
-      return session.run(agent, settings, { account: onblocWallet ? onbloc?.account : undefined, signal });
+      return session.run(agent, settings, {
+        account: useTools ? onbloc?.account : undefined, signal, allowTransactionPreparation: !!onblocWallet,
+      });
     });
     if (displayedRun.current === view && visibleScope.current === view.scope) {
       const lastTurn = session.turns.at(-1);
@@ -315,7 +320,7 @@ export default function PlaygroundScreen() {
           <TextInput
             style={[styles.input, onblocSettings.endpointError !== null && styles.invalid]}
             value={mcpUrl}
-            onChangeText={value => { clearDisplayedRun(); setMcpUrl(value); }}
+            onChangeText={value => { clearDisplayedRun(); setAllowTransactionPreparation(false); setMcpUrl(value); }}
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="url"
@@ -329,7 +334,7 @@ export default function PlaygroundScreen() {
           <TextInput
             style={[styles.input, onblocSettings.accountError !== null && styles.invalid]}
             value={myAddress}
-            onChangeText={value => { clearDisplayedRun(); setMyAddress(value); }}
+            onChangeText={value => { clearDisplayedRun(); setAllowTransactionPreparation(false); setMyAddress(value); }}
             autoCapitalize="none"
             autoCorrect={false}
             placeholder="g1..."
@@ -341,8 +346,8 @@ export default function PlaygroundScreen() {
           {onblocMode ? (
             <>
               <Text style={styles.muted}>
-                Reads: Onbloc api-v3 (mainnet). transfer and approve: mock wallet funded from the
-                Onbloc balances; it only prepares transactions and never signs.
+                Reads use Onbloc api-v3 (mainnet). When enabled, transaction preparation uses a
+                mock wallet funded from Onbloc balances; it never signs or sends.
               </Text>
               {onbloc && <BalancesCard wallet={wallet} activeAddress={onbloc.account} />}
               <View style={styles.row}>
@@ -390,8 +395,20 @@ export default function PlaygroundScreen() {
               <Switch value={useTools} disabled={preparing || run.running} onValueChange={value => {
                 clearDisplayedRun();
                 setUseTools(value);
+                if (!value) setAllowTransactionPreparation(false);
               }} />
-              <Text style={styles.switchLabel}>Wallet tools (Onbloc reads + mock wallet actions)</Text>
+              <Text style={styles.switchLabel}>Onbloc read tools</Text>
+            </View>
+          )}
+          {onblocMode && (
+            <View style={styles.rowCenter}>
+              <Switch
+                accessibilityLabel="Allow transaction preparation"
+                value={allowTransactionPreparation}
+                disabled={!onbloc || !useTools || preparing || run.running}
+                onValueChange={setAllowTransactionPreparation}
+              />
+              <Text style={styles.switchLabel}>Allow mock transaction preparation</Text>
             </View>
           )}
           <View style={styles.row}>
@@ -414,6 +431,13 @@ export default function PlaygroundScreen() {
         {onblocMode && !onbloc && <Text style={styles.error}>
           Fix the MCP URL and My address in Settings.
         </Text>}
+        {onbloc && useTools && (
+          <Text style={styles.muted}>
+            {allowTransactionPreparation
+              ? 'Transaction preparation enabled. Nothing is signed or sent.'
+              : 'Read-only. Enable transaction preparation in Settings to prepare transfers or approvals.'}
+          </Text>
+        )}
         {preparing && <Text style={styles.muted}>Loading balances from Onbloc...</Text>}
         {setupError !== null && <Text style={styles.error}>{setupError}</Text>}
         {session.error && (
