@@ -147,7 +147,7 @@ export class AIAgent {
       }
       const action = proposal.operation;
       const contacts = (await this.wallet.getContacts?.()) ?? [];
-      const all = createWalletTools({ sdk: this.wallet, account: options.account, contacts, onTransaction: this.onTransaction });
+      const all = createWalletTools({ sdk: this.wallet, account: options.account, contacts, userText: this.userText(settings), onTransaction: this.onTransaction });
       if (!Object.hasOwn(all, action)) {
         yield { type: 'text', delta: `The wallet does not support ${action}. No transaction was prepared.` };
         yield completion;
@@ -207,7 +207,7 @@ export class AIAgent {
   private async *answerLookups(intent: Extract<RequestIntent, { kind: 'lookup' }>, settings: AnswerSettings, options: RunOptions): AsyncGenerator<GenerateEvent> {
     const other = intent.requests.find(request => request.target === 'other');
     const walletTools = this.wallet && this.onTransaction && other
-      ? Object.fromEntries(Object.entries(createWalletTools({ sdk: this.wallet, account: options.account, contacts: [], onTransaction: this.onTransaction })).filter(([, tool]) => tool.effect === 'read')) : {};
+      ? Object.fromEntries(Object.entries(createWalletTools({ sdk: this.wallet, account: options.account, contacts: [], userText: this.userText(settings), onTransaction: this.onTransaction })).filter(([, tool]) => tool.effect === 'read')) : {};
     const run = await this.harness.startRun({ account: options.account, chainId: this.chainId, operationId: `lookup-${++this.runs}`,
       scope: 'read-only', purpose: 'mainnet-read', walletTools, signal: options.signal });
     try {

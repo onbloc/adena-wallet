@@ -11,6 +11,7 @@ function setup(options: FakeWalletOptions = {}) {
     sdk: wallet,
     account: ACCOUNT,
     contacts: [FRIEND],
+    userText: `${RECIPIENT} ${FRIEND.alias} bob`,
     onTransaction: (transaction) => {
       prepared.push(transaction);
     },
@@ -98,6 +99,7 @@ describe('transfer', () => {
       sdk: fakeWallet(),
       account: ACCOUNT,
       contacts: [],
+      userText: RECIPIENT,
       onTransaction: () => {
         throw new Error('app is gone');
       },
@@ -185,6 +187,68 @@ describe('createWalletTools', () => {
   });
 });
 
+describe('trusted recipient authorization', () => {
+  it.each([
+    ['Send 1 GNOT', ToolName.Transfer, { ...input, to: FRIEND.alias }],
+    ['Send 1 GNOT', ToolName.Transfer, input],
+    ['Approve 1 GNOT', ToolName.Approve, { spender: FRIEND.alias, amount: '1', token: 'gns' }],
+    ['Approve 1 GNOT', ToolName.Approve, { spender: RECIPIENT, amount: '1', token: 'gns' }],
+    ['Send 1 GNOT to Caroline', ToolName.Transfer, { ...input, to: FRIEND.alias }],
+    [`Send 1 GNOT to ${RECIPIENT}xyz`, ToolName.Transfer, input],
+  ])('rejects an unmentioned target in %p', async (userText, name, params) => {
+    const wallet = fakeWallet();
+    const onTransaction = jest.fn();
+    const walletTools = createWalletTools({ sdk: wallet, account: ACCOUNT, contacts: [FRIEND], userText, onTransaction });
+    const started = await new Harness().startRun({
+      account: ACCOUNT, chainId: 'test-chain', operationId: 'target-guard', scope: 'prepare-wallet', walletTools,
+    });
+    expect(await started.dispatch({ name, input: params })).toEqual({ kind: 'denied', code: 'TARGET_CHANGED' });
+    expect(wallet.calls).toEqual([]);
+    expect(onTransaction).not.toHaveBeenCalled();
+    started.close();
+  });
+
+  it.each([
+    [`Send to ${RECIPIENT}`, ToolName.Transfer, { ...input, to: RECIPIENT }, RECIPIENT],
+    ['Send to CAROL', ToolName.Transfer, { ...input, to: FRIEND.alias }, FRIEND.address],
+    ['Send to Carol', ToolName.Transfer, { ...input, to: FRIEND.address }, FRIEND.address],
+    [`Send to ${FRIEND.address}`, ToolName.Transfer, { ...input, to: FRIEND.alias }, FRIEND.address],
+    ['Approve Carol', ToolName.Approve, { spender: FRIEND.address, amount: '1', token: 'gns' }, FRIEND.address],
+  ])('allows a target explicitly named in %p', async (userText, name, params, expectedAddress) => {
+    const wallet = fakeWallet();
+    const onTransaction = jest.fn();
+    const walletTools = createWalletTools({ sdk: wallet, account: ACCOUNT, contacts: [FRIEND], userText, onTransaction });
+    const started = await new Harness().startRun({
+      account: ACCOUNT, chainId: 'test-chain', operationId: 'explicit-target', scope: 'prepare-wallet', walletTools,
+    });
+    expect(await started.dispatch({ name, input: params }))
+      .toEqual({ kind: 'result', value: expect.objectContaining({ status: WalletStatus.Prepared }) });
+    expect(wallet.calls).toHaveLength(1);
+    expect(wallet.calls[0].params.to ?? wallet.calls[0].params.spender).toBe(expectedAddress);
+    expect(onTransaction).toHaveBeenCalledTimes(1);
+    started.close();
+  });
+
+  it('does not infer an address from an ambiguous contact name', async () => {
+    const wallet = fakeWallet();
+    const onTransaction = jest.fn();
+    const walletTools = createWalletTools({
+      sdk: wallet, account: ACCOUNT, userText: `Send to ${FRIEND.alias}`, onTransaction,
+      contacts: [FRIEND, { alias: FRIEND.alias.toUpperCase(), address: RECIPIENT }],
+    });
+    const started = await new Harness().startRun({
+      account: ACCOUNT, chainId: 'test-chain', operationId: 'ambiguous-contact', scope: 'prepare-wallet', walletTools,
+    });
+    expect(await started.dispatch({ name: ToolName.Transfer, input: { ...input, to: FRIEND.alias } }))
+      .toEqual({ kind: 'denied', code: 'TARGET_CHANGED' });
+    expect(await started.dispatch({ name: ToolName.Transfer, input: { ...input, to: FRIEND.address } }))
+      .toEqual({ kind: 'denied', code: 'TARGET_CHANGED' });
+    expect(wallet.calls).toEqual([]);
+    expect(onTransaction).not.toHaveBeenCalled();
+    started.close();
+  });
+});
+
 describe('wallet dispatch policy', () => {
   it('offers allowance reads in read-only scope and blocks preparation before calling the wallet', async () => {
     const { all, wallet, prepared } = setup({ allowances: [{ spender: RECIPIENT, token: 'GNS', amount: '5' }] });
@@ -209,6 +273,31 @@ describe('wallet dispatch policy', () => {
       [ToolName.Approve, 'denied', 'OUT_OF_SCOPE'],
       [ToolName.GetApprovals, 'result', undefined],
     ]);
+    started.close();
+  });
+
+  it('blocks a concurrent preparation in read-only scope without touching the wallet', async () => {
+    const wallet = fakeWallet();
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    wallet.getAllowances = async () => {
+      entered.resolve();
+      await release.promise;
+      return [];
+    };
+    const onTransaction = jest.fn();
+    const walletTools = createWalletTools({ sdk: wallet, account: ACCOUNT, contacts: [], userText: RECIPIENT, onTransaction });
+    const started = await new Harness().startRun({
+      account: ACCOUNT, chainId: 'test-chain', operationId: 'read-concurrent', scope: 'read-only', walletTools,
+    });
+    const read = started.dispatch({ name: ToolName.GetApprovals, input: {} });
+    await entered.promise;
+    const preparation = started.dispatch({ name: ToolName.Transfer, input });
+    release.resolve();
+    expect((await read).kind).toBe('result');
+    expect(await preparation).toEqual({ kind: 'denied', code: 'OUT_OF_SCOPE' });
+    expect(wallet.calls).toEqual([]);
+    expect(onTransaction).not.toHaveBeenCalled();
     started.close();
   });
 
@@ -245,22 +334,71 @@ describe('wallet dispatch policy', () => {
     expect(prepared).toEqual([]);
   });
 
-  it('preserves and audits a prepared result handed to the app after cancellation', async () => {
-    const { all, wallet, prepared } = setup();
+  it.each([
+    [ToolName.Transfer, input],
+    [ToolName.Approve, { spender: RECIPIENT, amount: '10', token: 'gns' }],
+  ])('drops %s before handoff when cancellation occurs during preparation', async (name, params) => {
+    const wallet = fakeWallet();
+    const prepared: PreparedTransaction[] = [];
     const entered = Promise.withResolvers<void>();
     const release = Promise.withResolvers<void>();
-    const transfer = wallet.transfer.bind(wallet);
-    wallet.transfer = async params => {
-      const transaction = await transfer(params);
-      entered.resolve();
-      await release.promise;
-      return transaction;
-    };
+    if (name === ToolName.Transfer) {
+      const transfer = wallet.transfer.bind(wallet);
+      wallet.transfer = async args => {
+        const transaction = await transfer(args);
+        entered.resolve();
+        await release.promise;
+        return transaction;
+      };
+    } else {
+      const approve = wallet.approve!.bind(wallet);
+      wallet.approve = async args => {
+        const transaction = await approve(args);
+        entered.resolve();
+        await release.promise;
+        return transaction;
+      };
+    }
+    const all = createWalletTools({
+      sdk: wallet, account: ACCOUNT, contacts: [FRIEND], userText: RECIPIENT,
+      onTransaction: transaction => { prepared.push(transaction); },
+    });
     const events: PolicyEvent[] = [];
     const controller = new AbortController();
     const started = await new Harness({ audit: event => { events.push(event); } }).startRun({
-      account: ACCOUNT, chainId: 'test-chain', operationId: 'late', scope: 'prepare-wallet',
+      account: ACCOUNT, chainId: 'test-chain', operationId: 'before-handoff', scope: 'prepare-wallet',
       purpose: 'mainnet-read', walletTools: all, signal: controller.signal,
+    });
+
+    const pending = started.dispatch({ name, input: params });
+    await entered.promise;
+    controller.abort();
+    expect(await pending).toEqual({ kind: 'denied', code: 'CANCELLED' });
+    release.resolve();
+    expect(prepared).toHaveLength(0);
+    expect(wallet.calls).toHaveLength(1);
+    expect(events.map(event => [event.tool, event.decision, event.denial]))
+      .toEqual([[name, 'denied', 'CANCELLED']]);
+  });
+
+  it('preserves and audits a result when cancellation occurs after handoff begins', async () => {
+    const wallet = fakeWallet();
+    const prepared: PreparedTransaction[] = [];
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const walletTools = createWalletTools({
+      sdk: wallet, account: ACCOUNT, contacts: [], userText: RECIPIENT,
+      onTransaction: async transaction => {
+        prepared.push(transaction);
+        entered.resolve();
+        await release.promise;
+      },
+    });
+    const events: PolicyEvent[] = [];
+    const controller = new AbortController();
+    const started = await new Harness({ audit: event => { events.push(event); } }).startRun({
+      account: ACCOUNT, chainId: 'test-chain', operationId: 'after-handoff', scope: 'prepare-wallet',
+      purpose: 'mainnet-read', walletTools, signal: controller.signal,
     });
 
     const pending = started.dispatch({ name: ToolName.Transfer, input });
@@ -277,6 +415,37 @@ describe('wallet dispatch policy', () => {
     expect(await started.dispatch({ name: ToolName.Transfer, input })).toEqual({ kind: 'denied', code: 'CANCELLED' });
     expect(wallet.calls).toHaveLength(1);
   });
+});
+
+it('preserves a handoff already in progress when the run times out', async () => {
+  jest.useFakeTimers();
+  try {
+    const wallet = fakeWallet();
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const onTransaction = jest.fn(async () => {
+      entered.resolve();
+      await release.promise;
+    });
+    const walletTools = createWalletTools({ sdk: wallet, account: ACCOUNT, contacts: [], userText: RECIPIENT, onTransaction });
+    const events: PolicyEvent[] = [];
+    const started = await new Harness({ audit: event => { events.push(event); } }).startRun({
+      account: ACCOUNT, chainId: 'test-chain', operationId: 'timeout-handoff', scope: 'prepare-wallet',
+      walletTools, budget: { timeoutMs: 10 },
+    });
+    const pending = started.dispatch({ name: ToolName.Transfer, input });
+    await entered.promise;
+    jest.advanceTimersByTime(10);
+    release.resolve();
+    expect(await pending).toEqual({
+      kind: 'result', value: expect.objectContaining({ status: WalletStatus.Prepared }),
+    });
+    expect(onTransaction).toHaveBeenCalledTimes(1);
+    expect(events.map(event => [event.tool, event.decision, event.denial]))
+      .toEqual([[ToolName.Transfer, 'result', undefined]]);
+  } finally {
+    jest.useRealTimers();
+  }
 });
 
 it('does not start preparation after the run deadline', async () => {
@@ -297,13 +466,95 @@ it('does not start preparation after the run deadline', async () => {
   }
 });
 
+it('does not hand a transaction to the app after the deadline, even before the timer callback runs', async () => {
+  jest.useFakeTimers();
+  try {
+    const { all, wallet, prepared } = setup();
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const transfer = wallet.transfer.bind(wallet);
+    wallet.transfer = async params => {
+      const transaction = await transfer(params);
+      entered.resolve();
+      await release.promise;
+      return transaction;
+    };
+    const started = await new Harness().startRun({
+      account: ACCOUNT, chainId: 'test-chain', operationId: 'deadline', scope: 'prepare-wallet',
+      walletTools: all, budget: { timeoutMs: 10 },
+    });
+    const pending = started.dispatch({ name: ToolName.Transfer, input });
+    await entered.promise;
+    jest.setSystemTime(Date.now() + 10);
+    release.resolve();
+    expect(await pending).toEqual({ kind: 'denied', code: 'CANCELLED' });
+    expect(prepared).toEqual([]);
+    started.close();
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
+it('reports cancellation if wallet preparation fails after cancellation and before handoff', async () => {
+  const { all, wallet, prepared } = setup();
+  const entered = Promise.withResolvers<void>();
+  const release = Promise.withResolvers<void>();
+  wallet.transfer = async () => {
+    entered.resolve();
+    await release.promise;
+    throw new WalletError(WalletErrorCode.WalletFailed, 'cancelled by wallet');
+  };
+  const controller = new AbortController();
+  const started = await new Harness().startRun({
+    account: ACCOUNT, chainId: 'test-chain', operationId: 'failed-before-handoff', scope: 'prepare-wallet',
+    walletTools: all, signal: controller.signal,
+  });
+  const pending = started.dispatch({ name: ToolName.Transfer, input });
+  await entered.promise;
+  controller.abort();
+  release.resolve();
+  expect(await pending).toEqual({ kind: 'denied', code: 'CANCELLED' });
+  expect(prepared).toEqual([]);
+});
+
+it('retains an already handed-off transaction if auditing fails, and blocks queued preparations', async () => {
+  const { all, wallet, prepared } = setup();
+  const auditEntered = Promise.withResolvers<void>();
+  const releaseAudit = Promise.withResolvers<void>();
+  let auditCalls = 0;
+  const audit = jest.fn(async () => {
+    if (++auditCalls === 1) {
+      auditEntered.resolve();
+      await releaseAudit.promise;
+      throw new Error('audit unavailable');
+    }
+  });
+  const started = await new Harness({ audit }).startRun({
+    account: ACCOUNT, chainId: 'test-chain', operationId: 'audit-failure', scope: 'prepare-wallet',
+    walletTools: all,
+  });
+  const first = started.dispatch({ name: ToolName.Transfer, input });
+  await auditEntered.promise;
+  const second = started.dispatch({ name: ToolName.Transfer, input });
+  await Promise.resolve();
+  expect(wallet.calls).toHaveLength(1);
+  releaseAudit.resolve();
+  expect(await first).toEqual({
+    kind: 'result', value: expect.objectContaining({ status: WalletStatus.Prepared }), auditFailed: true,
+  });
+  expect(await second).toEqual({ kind: 'denied', code: 'RUN_PAUSED' });
+  expect(prepared).toHaveLength(1);
+  expect(wallet.calls).toHaveLength(1);
+  started.close();
+});
+
 it('does not call a failed app handoff a cancellation merely because it failed late', async () => {
   const wallet = fakeWallet();
   const received: PreparedTransaction[] = [];
   const entered = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
   const walletTools = createWalletTools({
-    sdk: wallet, account: ACCOUNT, contacts: [],
+    sdk: wallet, account: ACCOUNT, contacts: [], userText: RECIPIENT,
     onTransaction: async transaction => {
       received.push(transaction);
       entered.resolve();
