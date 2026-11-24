@@ -11,6 +11,7 @@ const accountAddress = 'g1manfred47kzduec920z88wfr64ylksmdcedlf5';
 const props = (overrides: Partial<SendRecipientPageProps> = {}): SendRecipientPageProps => ({
   query: 'g1jg',
   onChangeQuery: jest.fn(),
+  onScan: jest.fn(),
   result: { key: 'result', label: 'Unknown address', address: resultAddress },
   addressBook: [{ key: 'book-1', label: 'Alice', address: bookAddress }],
   myAccounts: [{ key: 'acc-2', label: 'Account 2', address: accountAddress }],
@@ -33,6 +34,7 @@ describe('SendRecipientPage', () => {
     await fireEvent.press(screen.getByTestId('recipient-result'));
     await fireEvent.press(screen.getByRole('button', { name: 'Alice, g1us84…njlj' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Account 2, g1manf…dlf5' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Scan QR code' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
 
     expect(page.onChangeQuery).toHaveBeenNthCalledWith(1, resultAddress);
@@ -40,6 +42,7 @@ describe('SendRecipientPage', () => {
     expect(page.onSelectRecipient).toHaveBeenNthCalledWith(1, resultAddress);
     expect(page.onSelectRecipient).toHaveBeenNthCalledWith(2, bookAddress);
     expect(page.onSelectRecipient).toHaveBeenNthCalledWith(3, accountAddress);
+    expect(page.onScan).toHaveBeenCalledTimes(1);
     expect(page.onClose).toHaveBeenCalledTimes(1);
   });
 

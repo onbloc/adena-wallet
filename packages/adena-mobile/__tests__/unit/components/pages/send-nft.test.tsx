@@ -14,6 +14,7 @@ const props = (overrides: Partial<SendNftPageProps> = {}): SendNftPageProps => (
   imageUri: 'https://example.com/42.png',
   recipient: 'g1us',
   onChangeRecipient: jest.fn(),
+  onScanRecipient: jest.fn(),
   suggestions: [{ key: 'book-1', label: 'Alice', address: suggestion }],
   onSelectSuggestion: jest.fn(),
   canReview: true,
@@ -49,11 +50,13 @@ describe('SendNftPage', () => {
     expect(screen.getByText('Suggestions')).toBeTruthy();
     await fireEvent.changeText(screen.getByLabelText('Recipient address'), recipient);
     await fireEvent.press(screen.getByRole('button', { name: 'Alice, g1us84…njlj' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Scan QR code' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Review transfer' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
 
     expect(page.onChangeRecipient).toHaveBeenCalledWith(recipient);
     expect(page.onSelectSuggestion).toHaveBeenCalledWith(suggestion);
+    expect(page.onScanRecipient).toHaveBeenCalledTimes(1);
     expect(page.onReview).toHaveBeenCalledTimes(1);
     expect(page.onBack).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('Review NFT transfer')).toBeNull();

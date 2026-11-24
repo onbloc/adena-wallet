@@ -27,7 +27,7 @@ export type MainTabParamList = {
 export type MainStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
   ManageNfts: undefined;
-  SendNft: { collection: NftCollection; item: NftItem };
+  SendNft: { collection: NftCollection; item: NftItem; scannedAddress?: string };
   AddressBook: undefined;
   AddressBookEdit: { entry?: AddressBookEntry } | undefined;
   ResetWallet: undefined;
@@ -40,9 +40,11 @@ export type MainStackParamList = {
   Accounts: undefined;
   ImportAccount: { mode: SecretImportMode };
   AccountSettings: { accountId: string };
-  SendRecipient: { tokenId?: string } | undefined;
+  SendRecipient: { tokenId?: string; scannedAddress?: string } | undefined;
   SendAmount: { toAddress: string; tokenId?: string };
   Receive: undefined;
+  // The scanned address is written back as `scannedAddress` on the route with this key.
+  QrScanner: { returnKey: string };
   Settings: undefined;
   RecoveryPhrase: { keyringId: string };
   ChangePassword: undefined;

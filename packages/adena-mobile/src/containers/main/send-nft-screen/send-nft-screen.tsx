@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import React, { ReactElement, useRef, useState } from 'react';
+import React, { ReactElement, useEffect, useRef, useState } from 'react';
 
 import { SendNftPage } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
@@ -26,7 +26,7 @@ interface PreparedNftTransfer {
 }
 
 export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'SendNft'>): ReactElement => {
-  const { collection, item } = route.params;
+  const { collection, item, scannedAddress } = route.params;
   const { nftService, transactionService, accountService, addressBookService, chainRegistry } = useContainer();
   const { account, accounts, network } = useWalletSnapshot();
   const queryClient = useQueryClient();
@@ -34,6 +34,7 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
   const image = useNftTokenUriQuery(network, item.packagePath, item.nftId, collection.supportsTokenUri);
   const [recipient, setRecipient] = useState('');
   const [prepared, setPrepared] = useState<PreparedNftTransfer | null>(null);
+  const [appliedScan, setAppliedScan] = useState<string>();
   const sendingRef = useRef(false);
   const feeSelection = useFeeSelection(prepared?.estimate ?? null, network);
 
@@ -57,6 +58,8 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
       return { account, network, toAddress: trimmed, draft, estimate: await transactionService.estimateFee(draft, account, network) };
     },
   });
+
+  const resetPrepare = prepare.reset;
 
   const send = useMutation({
     mutationFn: async () => {
@@ -82,6 +85,24 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
     setRecipient(value);
     prepare.reset();
   };
+
+  const handleScanRecipient = (): void => navigation.navigate('QrScanner', { returnKey: route.key });
+
+  // The scanner writes its result onto this route; apply it once, then clear it so a repeat scan applies again.
+  if (scannedAddress !== appliedScan) {
+    setAppliedScan(scannedAddress);
+
+    if (scannedAddress) {
+      setRecipient(scannedAddress);
+    }
+  }
+
+  useEffect(() => {
+    if (scannedAddress) {
+      resetPrepare();
+      navigation.setParams({ scannedAddress: undefined });
+    }
+  }, [navigation, resetPrepare, scannedAddress]);
 
   const handleReview = (): void => prepare.mutate(undefined, {
     onSuccess: (result) => {
@@ -116,6 +137,7 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
       imageUri={image.data}
       recipient={recipient}
       onChangeRecipient={handleChangeRecipient}
+      onScanRecipient={handleScanRecipient}
       recipientError={trimmed && !valid ? (trimmed === ownAddress ? 'This is your current account.' : `Enter a valid ${network.chainName} address.`) : undefined}
       suggestions={valid ? [] : suggestions}
       onSelectSuggestion={handleChangeRecipient}

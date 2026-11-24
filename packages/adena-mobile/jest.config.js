@@ -24,6 +24,8 @@ module.exports = {
   transformIgnorePatterns: [`node_modules/(?!(\\.pnpm/[^/]+/node_modules/)?(${ESM_PACKAGES})/)`, '/adena-module/dist/'],
   moduleNameMapper: {
     '^react-native-mmkv$': '<rootDir>/__tests__/mocks/react-native-mmkv.ts',
+    '^react-native-vision-camera$': '<rootDir>/__tests__/mocks/react-native-vision-camera.tsx',
+    '^react-native-vision-camera-barcode-scanner$': '<rootDir>/__tests__/mocks/react-native-vision-camera-barcode-scanner.ts',
     '^storybook/test$': '<rootDir>/__tests__/mocks/storybook-test.ts',
     '\\.svg$': '<rootDir>/__tests__/mocks/svg.tsx',
     '\\.(jpg|png)$': '<rootDir>/__tests__/mocks/image.ts',

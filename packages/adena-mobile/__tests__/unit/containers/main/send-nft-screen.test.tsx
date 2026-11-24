@@ -24,7 +24,7 @@ const deferred = <T,>(): { promise: Promise<T>; resolve: (value: T) => void } =>
   return { promise, resolve };
 };
 
-const setup = async () => {
+const setup = async (extraParams: Record<string, unknown> = {}) => {
   const nftService = {
     createTransferDraft: jest.fn((_account: unknown, _network: unknown, _item: unknown, toAddress: string): TransactionDraft => (
       { networkId: NETWORK.id, chainId: NETWORK.chainId, messages: [{ toAddress }], fee: { gasWanted: '0', gasFee: '' }, memo: '' })),
@@ -43,8 +43,8 @@ const setup = async () => {
     addressBookService: { getEntriesFor: () => [] },
     chainRegistry: { forNetwork: () => ({ isValidAddress: (value: string) => /^g1[a-z0-9]{38}$/.test(value) }) },
   });
-  const navigation = { goBack: jest.fn(), popToTop: jest.fn() };
-  const route = { key: 'SendNft', name: 'SendNft', params: { collection: COLLECTION, item: ITEM } };
+  const navigation = { goBack: jest.fn(), popToTop: jest.fn(), navigate: jest.fn(), setParams: jest.fn() };
+  const route = { key: 'SendNft', name: 'SendNft', params: { collection: COLLECTION, item: ITEM, ...extraParams } };
   const Screen = SendNftScreen as unknown as React.ComponentType<{ navigation: unknown; route: unknown }>;
 
   await render(
@@ -57,6 +57,15 @@ const setup = async () => {
 };
 
 describe('SendNftScreen', () => {
+  it('scans into the recipient field and consumes the scanned param', async () => {
+    const { navigation } = await setup({ scannedAddress: FIRST });
+
+    expect(screen.getByPlaceholderText('Recipient address').props.value).toBe(FIRST);
+    expect(navigation.setParams).toHaveBeenCalledWith({ scannedAddress: undefined });
+    await fireEvent.press(screen.getByRole('button', { name: 'Scan QR code' }));
+    expect(navigation.navigate).toHaveBeenCalledWith('QrScanner', { returnKey: 'SendNft' });
+  });
+
   // Let query notifications scheduled on a timer land before the tree unmounts.
   afterEach(() => act(() => new Promise<void>((done) => {
     setTimeout(done, 0);

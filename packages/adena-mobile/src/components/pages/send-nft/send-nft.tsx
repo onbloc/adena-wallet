@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 import { shortenAddress } from '../../../utils/address';
 import { Avatar, Button, Text } from '../../atoms';
-import { InlineAlert, ListRow, NftImage, ReviewSheet, ReviewSheetProps, Screen, SearchField, SectionLabel, TopBar } from '../../molecules';
+import { InlineAlert, ListRow, NftImage, RecipientField, ReviewSheet, ReviewSheetProps, Screen, SectionLabel, TopBar } from '../../molecules';
 import { RecipientItem } from '../send-recipient';
 import { styles } from './send-nft.styles';
 
@@ -13,6 +13,7 @@ export interface SendNftPageProps {
   imageUri?: string | null;
   recipient: string;
   onChangeRecipient: (value: string) => void;
+  onScanRecipient: () => void;
   recipientError?: string;
   suggestions: RecipientItem[];
   onSelectSuggestion: (address: string) => void;
@@ -36,7 +37,7 @@ export const SendNftPage = (props: SendNftPageProps): ReactElement => (
         <Text variant='meta' color='secondary'>{props.collectionName}</Text>
       </View>
     </View>
-    <SearchField value={props.recipient} onChangeText={props.onChangeRecipient} placeholder='Recipient address' />
+    <RecipientField value={props.recipient} onChangeText={props.onChangeRecipient} onScan={props.onScanRecipient} placeholder='Recipient address' />
     {props.recipientError && <InlineAlert tone='error' title={props.recipientError} />}
     {props.prepareError && <InlineAlert tone='error' title='Unable to prepare the transfer' description={props.prepareError} />}
     {props.suggestions.length > 0 && <SectionLabel label='Suggestions' />}

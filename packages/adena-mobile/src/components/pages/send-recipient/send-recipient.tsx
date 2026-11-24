@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 
 import { shortenAddress } from '../../../utils/address';
 import { Avatar, IconButton } from '../../atoms';
-import { InlineAlert, ListRow, Screen, SearchField, SectionLabel, TopBar } from '../../molecules';
+import { InlineAlert, ListRow, RecipientField, Screen, SectionLabel, TopBar } from '../../molecules';
 
 export interface RecipientItem {
   key: string;
@@ -13,6 +13,7 @@ export interface RecipientItem {
 export interface SendRecipientPageProps {
   query: string;
   onChangeQuery: (value: string) => void;
+  onScan: () => void;
   result?: RecipientItem;
   error?: string;
   addressBook: RecipientItem[];
@@ -21,7 +22,7 @@ export interface SendRecipientPageProps {
   onClose: () => void;
 }
 
-export const SendRecipientPage = ({ query, onChangeQuery, result, error, addressBook, myAccounts, onSelectRecipient, onClose }: SendRecipientPageProps): ReactElement => {
+export const SendRecipientPage = ({ query, onChangeQuery, onScan, result, error, addressBook, myAccounts, onSelectRecipient, onClose }: SendRecipientPageProps): ReactElement => {
   const handleListRowPress = (): void => {
     if (result) {
       onSelectRecipient(result.address);
@@ -37,7 +38,7 @@ export const SendRecipientPage = ({ query, onChangeQuery, result, error, address
         />
       )}
     >
-      <SearchField value={query} onChangeText={onChangeQuery} placeholder='Address' testID='recipient-search' />
+      <RecipientField value={query} onChangeText={onChangeQuery} onScan={onScan} testID='recipient-search' />
       {error && <InlineAlert tone='error' title={error} />}
       {result && (
         <>

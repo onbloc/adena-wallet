@@ -45,6 +45,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Adena uses the camera to scan wallet address QR codes.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Adena uses Face ID to unlock your wallet.</string>
 	<key>RCTNewArchEnabled</key>

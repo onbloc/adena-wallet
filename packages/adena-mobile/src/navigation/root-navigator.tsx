@@ -16,6 +16,7 @@ import { ManageTokensScreen } from '../containers/main/manage-tokens-screen';
 import { NetworksScreen } from '../containers/main/networks-screen';
 import { NftCollectionScreen } from '../containers/main/nft-collection-screen';
 import { NftDetailScreen } from '../containers/main/nft-detail-screen';
+import { QrScannerScreen } from '../containers/main/qr-scanner-screen';
 import { ReceiveScreen } from '../containers/main/receive-screen';
 import { RecoveryPhraseScreen } from '../containers/main/recovery-phrase-screen';
 import { SendAmountScreen } from '../containers/main/send-amount-screen';
@@ -84,6 +85,7 @@ const MainNavigator = (): ReactElement => (
       component={ReceiveScreen}
       options={{ presentation: 'transparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } }}
     />
+    <MainStack.Screen name='QrScanner' component={QrScannerScreen} options={{ presentation: 'fullScreenModal' }} />
     <MainStack.Screen name='Settings' component={SettingsScreen} />
     <MainStack.Screen name='RecoveryPhrase' component={RecoveryPhraseScreen} />
     <MainStack.Screen name='ChangePassword' component={ChangePasswordScreen} />

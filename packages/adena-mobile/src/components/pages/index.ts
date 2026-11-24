@@ -18,6 +18,7 @@ export * from './manage-tokens';
 export * from './networks';
 export * from './nft-collection';
 export * from './nft-detail';
+export * from './qr-scanner';
 export * from './receive';
 export * from './recovery-phrase';
 export * from './reset-wallet';
