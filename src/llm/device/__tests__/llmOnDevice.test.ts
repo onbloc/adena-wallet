@@ -27,16 +27,17 @@ const llamaModel = (model: MockLanguageModelV4) =>
     unload: jest.fn().mockResolvedValue(undefined),
   });
 
-/** Streams its text in two pieces. */
-const streaming = () =>
+/** Streams its text in pieces. */
+const streaming = (...pieces: string[]) =>
   new MockLanguageModelV4({
     doStream: async () => ({
       stream: new ReadableStream({
         start(controller) {
           controller.enqueue({ type: 'stream-start', warnings: [] });
           controller.enqueue({ type: 'text-start', id: 't' });
-          controller.enqueue({ type: 'text-delta', id: 't', delta: 'Hel' });
-          controller.enqueue({ type: 'text-delta', id: 't', delta: 'lo' });
+          for (const delta of pieces.length > 0 ? pieces : ['Hel', 'lo']) {
+            controller.enqueue({ type: 'text-delta', id: 't', delta });
+          }
           controller.enqueue({ type: 'text-end', id: 't' });
           controller.enqueue({ type: 'finish', finishReason: { unified: 'stop', raw: 'stop' }, usage: usage(2) });
           controller.close();
@@ -114,6 +115,18 @@ describe('LLMOnDevice', () => {
       { type: GenerateEventType.Text, delta: 'Hel' },
       { type: GenerateEventType.Text, delta: 'lo' },
     ]);
+  });
+
+  it('uses a plain JSON-schema grammar for structured output and leaves plain text alone', async () => {
+    const model = streaming('{"route":', '"prepare"}');
+    const llm = await loaded(model);
+
+    await collect(llm.generate({ prompt: 'classify', outputSchema: z.object({ route: z.string() }) }));
+    await collect(llm.generate({ prompt: 'hi' }));
+
+    expect(model.doStreamCalls[0].responseFormat?.type).toBe('json');
+    expect(model.doStreamCalls[0].providerOptions).toEqual({ llama: { jinja: false } });
+    expect(model.doStreamCalls[1].providerOptions).toBeUndefined();
   });
 
   it('bounds an on-device conversation by the loaded context window', async () => {

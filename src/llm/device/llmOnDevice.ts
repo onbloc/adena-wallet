@@ -8,6 +8,7 @@ import {
   type LLMGenerateOptions,
 } from '../core';
 import { DEFAULT_CONTEXT_PARAMS, DEFAULT_MODEL_ID } from './config';
+import { withPlainJsonGrammar } from './jsonGrammar';
 import { LlamaRuntime, type RuntimeStatus } from './runtime';
 import { withCompletedToolCalls } from './toolCalls';
 
@@ -68,9 +69,10 @@ export class LLMOnDevice implements LLM {
   ): AsyncGenerator<GenerateEvent> {
     const model = this.runtime.model;
     if (!model) throw new Error('Model is not loaded');
+    const jsonModel = withPlainJsonGrammar(model);
     // With tools on, native llama may publish a tool call before its arguments are complete.
     const toolsOn = options.loop !== undefined || settings.tools !== undefined;
-    yield* generate(toolsOn ? withCompletedToolCalls(model) : model, {
+    yield* generate(toolsOn ? withCompletedToolCalls(jsonModel) : jsonModel, {
       ...settings, ...options, contextTokens: resolveContextTokens(options.contextTokens, this.contextTokens),
     });
   }

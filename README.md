@@ -53,7 +53,8 @@ src/llm/                      The language model
                                 model), generate (events, TTFT, tok/s, warnings), ToolLoop (the hook
                                 an agent drives the tool loop with), index.ts
   device/                       LLMOnDevice (llama.rn): load/unload/generate, status for React;
-                                useLlm(llm) hook; runtime.ts, config.ts (model, context size)
+                                useLlm(llm) hook; runtime.ts, config.ts (model, context size);
+                                jsonGrammar.ts (structured output without the Jinja grammar)
 src/harness/                  Bounds and polices a tool-using run
   core/                         Harness: step/token/time budget, scopes, decisions. No model, no AI SDK
   mcp/                          tool sources backed by MCP servers (Onbloc), and a fake one for tests
@@ -358,6 +359,17 @@ preset replaces `fetch` with a stub, hence the separate config.
   llama-server (`-c` in `src/mock/cli/with-server.sh`, `SERVER_CONTEXT_TOKENS` in
   `src/mock/cli/lib/server.ts`) must use the same value to match the phone. Change the model or
   context size in `src/llm/device/config.ts`.
+- Structured output (classification, proposals) must not use llama.rn's Jinja path: for a
+  reasoning model like Qwen3.5 its grammar is registered as a user grammar, so llama.cpp never
+  prefills the generation prompt. The grammar then asks the model to write the assistant header
+  itself and allows a free-text `<think>` block before the JSON: a 2B model fills it with long
+  reasoning (~260 tokens, ~10 s on a phone) and the JSON arrives with that text in front, so the
+  request fails with `ADENA_INTENT_INVALID`. `src/llm/device/jsonGrammar.ts` sends `jinja: false`
+  for structured calls, which gives a plain JSON-schema grammar. It relies on the model's legacy
+  chat template (ChatML for Qwen); a model whose template is not supported there fails with
+  `this custom template is not supported`. The cause is in native code shared with Android, so
+  Android should be affected the same way (not verified there). llama-server on the desktop does
+  not show it.
 
 ## Scripts
 
