@@ -1,6 +1,7 @@
 import { createAiSdkRun } from './aiSdkBridge';
 import { guardAnswer } from './answerGuard';
 import { buildWalletPrompt } from './prompts';
+import { formatOnblocBalance, requestedBalanceSymbol } from './onblocBalances';
 import type { TransactionHandler, WalletSdk } from './wallet/port';
 import { createWalletTools } from './wallet/tools';
 import type { Harness, WalletTool } from '../harness/core';
@@ -82,6 +83,28 @@ export class AIAgent {
       return;
     }
     if (!account) throw new TypeError('An agent with a wallet needs the account to act for: run(settings, { account })');
+    const last = settings.messages?.at(-1);
+    const question = settings.prompt ?? (last?.role === 'user' && typeof last.content === 'string' ? last.content : '');
+    const symbol = requestedBalanceSymbol(question);
+    if (symbol) {
+      const started = Date.now();
+      const run = await this.harness.startRun({ account, chainId: this.chainId, operationId: `balance-${++this.runs}`,
+        scope: 'read-only', purpose: 'mainnet-read', signal, budget: { maxToolCalls: 1, timeoutMs: RUN_TIMEOUT_MS } });
+      try {
+        const name = symbol.toUpperCase() === 'GNOT' ? 'get_native_balance' : 'get_token_balances';
+        const id = run.operationId;
+        yield { type: 'tool-call', id, name, input: {}, invalid: false };
+        const output = await run.dispatch({ name, input: {} });
+        yield { type: 'tool-result', id, name, output };
+        const answer = formatOnblocBalance(name, output, symbol);
+        if (!run.signal.aborted) yield { type: 'text', delta: answer ?? `Could not verify the ${symbol} balance.` };
+        yield { type: 'done', aborted: run.signal.aborted, verifiedAnswer: answer !== undefined && !run.signal.aborted ? true : undefined,
+          warnings: [], messages: [], metrics: { totalMs: Date.now() - started, ttftMs: null } };
+      } finally {
+        run.close();
+      }
+      return;
+    }
     const contacts = (await wallet.getContacts?.()) ?? [];
     const walletTools = createWalletTools({ sdk: wallet, account, contacts, onTransaction });
     const { loop, isRead } = await this.startLoop({

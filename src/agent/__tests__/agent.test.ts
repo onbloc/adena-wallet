@@ -39,6 +39,10 @@ const results = (events: GenerateEvent[]) =>
 function setup(steps: Step[], { balance = '10000000' }: { balance?: string } = {}) {
   const mcp = fakeOnblocMcp([
     { name: 'get_native_balance', output: { address: account, denom: 'ugnot', balance } },
+    { name: 'get_token_balances', output: { address: account, items: [
+      { address: account, symbol: 'WIZ', amount: '300', decimals: 0, tokenId: 'gno.land/r/wiz' },
+      { address: account, symbol: 'xGNS', amount: '17528000000', decimals: 6, tokenId: 'gno.land/r/xgns' },
+    ] } },
   ]);
   const wallet = fakeWallet({ contacts: [FRIEND] });
   const prepared: PreparedTransaction[] = [];
@@ -80,6 +84,14 @@ describe('AIAgent', () => {
     expect(mcp.calls).toEqual([{ name: 'get_native_balance', arguments: { address: account } }]);
     expect(events).toContainEqual({ type: GenerateEventType.Text, delta: '42 GNOT' });
     expect(JSON.stringify(model.doGenerateCalls[1].prompt)).toContain('42000000');
+  });
+
+  it.each(['What is my xGNS balance?', '내 xGNS 잔액은 얼마야?'])('fetches only the requested holding: %s', async prompt => {
+    const { agent, mcp, model } = setup([]);
+    const events = await collect(agent.run({ messages: [{ role: 'user', content: prompt }] }));
+    expect(mcp.calls).toEqual([{ name: 'get_token_balances', arguments: { address: account } }]);
+    expect(events.filter(e => e.type === GenerateEventType.Text)).toEqual([{ type: GenerateEventType.Text, delta: '17528 xGNS (gno.land/r/xgns)' }]);
+    expect(model.doGenerateCalls).toHaveLength(0);
   });
 
   it('reads through the harness and prepares a transfer in one run', async () => {
