@@ -31,9 +31,11 @@ export const SendRecipientScreen = ({ navigation, route }: NativeStackScreenProp
   }, [navigation, scannedAddress]);
 
   const trimmed = query.trim();
-  const valid = trimmed.length > 0 && chainRegistry.forNetwork(network).isValidAddress(trimmed, network);
-  const own = accounts.find(item => accountService.getAddress(item, network) === trimmed);
-  const saved = addressBookService.findByAddress(trimmed);
+  // Canonical lowercase form, so `G1…` input matches own accounts and saved entries and is what gets signed.
+  const address = trimmed.length > 0 ? chainRegistry.forNetwork(network).normalizeAddress(trimmed, network) : null;
+  const valid = address !== null;
+  const own = address ? accounts.find(item => accountService.getAddress(item, network) === address) : undefined;
+  const saved = address ? addressBookService.findByAddress(address) : undefined;
 
   const handleSelectRecipient = (toAddress: string): void => navigation.navigate('SendAmount', { toAddress, tokenId });
 
@@ -44,7 +46,7 @@ export const SendRecipientScreen = ({ navigation, route }: NativeStackScreenProp
       query={query}
       onChangeQuery={setQuery}
       onScan={handleScan}
-      result={valid ? { key: trimmed, label: saved?.name ?? own?.name ?? 'Address', address: trimmed } : undefined}
+      result={address ? { key: address, label: saved?.name ?? own?.name ?? 'Address', address } : undefined}
       error={trimmed.length > 0 && !valid ? `Enter a valid ${network.chainName} address.` : undefined}
       addressBook={addressBookService.getEntriesFor(network).map(entry => ({ key: entry.id, label: entry.name, address: entry.address }))}
       myAccounts={accounts

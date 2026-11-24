@@ -21,11 +21,12 @@ describe('ChangePasswordScreen', () => {
     getBiometryKind: jest.fn(),
     isBiometricUnlockEnabled: jest.fn(),
   };
-  let blurListener: () => void;
+  const listeners: Record<string, (event?: unknown) => void> = {};
+  const blurListener = (): void => listeners.blur();
   const navigation = {
     goBack: jest.fn(),
-    addListener: jest.fn((_event: string, handler: () => void) => {
-      blurListener = handler;
+    addListener: jest.fn((event: string, handler: (event?: unknown) => void) => {
+      listeners[event] = handler;
       return jest.fn();
     }),
   };
@@ -188,5 +189,33 @@ describe('ChangePasswordScreen', () => {
     await waitFor(() => expect(screen.getByTestId('current-password-input').props.value).toBe(''));
     expect(screen.getByTestId('new-password-input').props.value).toBe('');
     expect(screen.getByTestId('new-password-confirm').props.value).toBe('');
+  });
+
+  it('blocks leaving while the change is in flight', async () => {
+    let finish!: () => void;
+
+    walletService.changePassword.mockImplementationOnce(() => new Promise<void>((done) => {
+      finish = done;
+    }));
+    await setup();
+    await screen.findByRole('switch', { name: /Unlock with/ });
+    await fill();
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('change-password-submit'));
+    });
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    const removal = { preventDefault: jest.fn() };
+
+    listeners.beforeRemove(removal);
+    expect(navigation.goBack).not.toHaveBeenCalled();
+    expect(removal.preventDefault).toHaveBeenCalledTimes(1);
+
+    await act(async () => finish());
+    await waitFor(() => expect(navigation.goBack).toHaveBeenCalledTimes(1));
+    const afterwards = { preventDefault: jest.fn() };
+
+    listeners.beforeRemove(afterwards);
+    expect(afterwards.preventDefault).not.toHaveBeenCalled();
   });
 });

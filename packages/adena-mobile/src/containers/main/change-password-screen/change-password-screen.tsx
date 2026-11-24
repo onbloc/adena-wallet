@@ -40,9 +40,16 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
       setConfirmPassword('');
     };
     const unsubscribeBlur = navigation.addListener('blur', clearPasswords);
+    // Leaving mid-change would let the completion's goBack pop the screen below.
+    const unsubscribeBeforeRemove = navigation.addListener('beforeRemove', (event) => {
+      if (submittingRef.current) {
+        event.preventDefault();
+      }
+    });
 
     return (): void => {
       unsubscribeBlur();
+      unsubscribeBeforeRemove();
       clearPasswords();
     };
   }, [navigation]);
@@ -67,7 +74,7 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
       return true;
     }
     catch {
-      // Drop the credential escrowed with the old password; it can no longer unlock.
+      // Keep the preference consistent: the old credential was already removed before re-encrypting.
       await walletService.disableBiometricUnlock().catch(() => undefined);
       setBiometricChoice(false);
       showToast(`Password changed, but ${biometricLabel ?? 'biometric'} unlock could not be updated`, 'warning');
@@ -102,6 +109,9 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
       await walletService.changePassword(currentPassword, newPassword);
     }
     catch (error) {
+      // The biometric credential may already be gone (it is removed before re-encrypting).
+      queryClient.invalidateQueries({ queryKey: queryKeys.biometric() });
+
       if (isAppError(error, AppErrorCode.WEAK_PASSWORD)) {
         setNewError(error.message);
       }
@@ -118,7 +128,14 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
       showToast('Password changed', 'success');
     }
 
+    submittingRef.current = false;
     navigation.goBack();
+  };
+
+  const handleBack = (): void => {
+    if (!submittingRef.current) {
+      navigation.goBack();
+    }
   };
 
   const handleChangeCurrentPassword = (value: string): void => {
@@ -153,7 +170,7 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
       onToggleBiometric={setBiometricChoice}
       submitting={submitting}
       onSubmit={submit}
-      onBack={navigation.goBack}
+      onBack={handleBack}
     />
   );
 };

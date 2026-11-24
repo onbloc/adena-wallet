@@ -54,6 +54,7 @@ export const createFakeChainModule = (family: ChainFamily) => {
       family,
       deriveAddress: jest.fn(fakeAddress),
       isValidAddress: jest.fn((address: string, network: Network) => address.startsWith(`${network.addressPrefix}1`)),
+      normalizeAddress: jest.fn((address: string, network: Network) => (address.startsWith(`${network.addressPrefix}1`) ? address : null)),
       getChainId: jest.fn(async () => 'fake-chain'),
       getNativeBalance: jest.fn(),
       parseMessages: jest.fn(),
@@ -61,6 +62,7 @@ export const createFakeChainModule = (family: ChainFamily) => {
       estimateFee: jest.fn(),
       signTransaction: jest.fn(),
       broadcastTransaction: jest.fn(),
+      getTransactionStatus: jest.fn(async () => 'pending'),
     },
     assets: {
       family,

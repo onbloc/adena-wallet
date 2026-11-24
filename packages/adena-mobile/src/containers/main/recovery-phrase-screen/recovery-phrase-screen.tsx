@@ -21,17 +21,20 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
   const clipboard = useSensitiveClipboard();
   const { clear: clearClipboard } = clipboard;
 
-  // Drop the revealed phrase when leaving the screen or the app goes to the background.
+  // Drop the revealed phrase when leaving the screen or the app stops being active (app switcher snapshot).
+  // The clipboard hook handles app state on its own; FLAG_SECURE arrives with the native module work.
   useEffect(() => {
-    const hide = (): void => {
+    const hideWords = (): void => {
       revealEpochRef.current += 1;
       setWords(undefined);
-      clearClipboard();
     };
-    const unsubscribeBlur = navigation.addListener('blur', hide);
+    const unsubscribeBlur = navigation.addListener('blur', () => {
+      hideWords();
+      clearClipboard();
+    });
     const appState = AppState.addEventListener('change', (state) => {
-      if (state === 'background') {
-        hide();
+      if (state === 'inactive' || state === 'background') {
+        hideWords();
       }
     });
 

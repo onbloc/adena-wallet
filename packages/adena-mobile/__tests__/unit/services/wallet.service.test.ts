@@ -345,16 +345,37 @@ describe('WalletService', () => {
       await expect(wallet.unlock(TEST_PASSWORD)).resolves.toBeUndefined();
     });
 
-    it('replaces the stale escrowed password when biometrics are re-enabled', async () => {
-      const { wallet } = await setup();
+    it('removes the escrowed password before re-encrypting so the old one is never left stored', async () => {
+      const { wallet, secureStore } = await setup();
 
       await wallet.enableBiometricUnlock(TEST_PASSWORD);
       await wallet.changePassword(TEST_PASSWORD, NEXT_PASSWORD);
+      expect(await secureStore.hasItem(SecureKey.BIOMETRIC_PASSWORD)).toBe(false);
       wallet.lock();
-      expect(await codeOf(() => wallet.unlockWithBiometrics({ title: 'Unlock' }))).toBe('INVALID_PASSWORD');
+      expect(await codeOf(() => wallet.unlockWithBiometrics({ title: 'Unlock' }))).toBe('BIOMETRICS_UNAVAILABLE');
 
       await wallet.unlock(NEXT_PASSWORD);
       await wallet.enableBiometricUnlock(NEXT_PASSWORD);
+      wallet.lock();
+      await expect(wallet.unlockWithBiometrics({ title: 'Unlock' })).resolves.toBeUndefined();
+    });
+
+    it('keeps the escrowed password when the current password is wrong', async () => {
+      const { wallet, secureStore } = await setup();
+
+      await wallet.enableBiometricUnlock(TEST_PASSWORD);
+      expect(await codeOf(() => wallet.changePassword('wrong password', NEXT_PASSWORD))).toBe('INVALID_PASSWORD');
+      expect(await secureStore.hasItem(SecureKey.BIOMETRIC_PASSWORD)).toBe(true);
+    });
+
+    it('does not re-encrypt when the escrowed password cannot be removed', async () => {
+      const { wallet, secureStore } = await setup();
+
+      await wallet.enableBiometricUnlock(TEST_PASSWORD);
+      const removeItem = jest.spyOn(secureStore, 'removeItem').mockRejectedValueOnce(new Error('keychain busy'));
+
+      await expect(wallet.changePassword(TEST_PASSWORD, NEXT_PASSWORD)).rejects.toThrow('keychain busy');
+      removeItem.mockRestore();
       wallet.lock();
       await expect(wallet.unlockWithBiometrics({ title: 'Unlock' })).resolves.toBeUndefined();
     });

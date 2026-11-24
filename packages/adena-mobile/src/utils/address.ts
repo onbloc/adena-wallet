@@ -1,17 +1,21 @@
-import { fromBech32 } from '@cosmjs/encoding';
+import { fromBech32, toBech32 } from '@cosmjs/encoding';
 
 const ADDRESS_BYTE_LENGTH = 20;
 
-export const isValidAddress = (address: string, prefix = 'g'): boolean => {
+// Canonical lowercase bech32, or null. All-uppercase input (e.g. QR) is accepted; mixed case is rejected (BIP-173).
+export const normalizeAddress = (address: string, prefix = 'g'): string | null => {
   try {
-    const decoded = fromBech32(address);
+    const decoded = fromBech32(address.trim());
 
-    return decoded.prefix === prefix && decoded.data.length === ADDRESS_BYTE_LENGTH;
+    return decoded.prefix === prefix && decoded.data.length === ADDRESS_BYTE_LENGTH ? toBech32(prefix, decoded.data) : null;
   }
   catch {
-    return false;
+    return null;
   }
 };
+
+// Only the canonical form is valid, so anything signed or compared is already normalized.
+export const isValidAddress = (address: string, prefix = 'g'): boolean => normalizeAddress(address, prefix) === address;
 
 // Display-only truncation matching the Adena extension; copy and signing always use the full string.
 export const formatAddress = (address: string, length = 4): string =>

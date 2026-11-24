@@ -12,6 +12,7 @@ import { Network } from '../../../domain/network';
 import { Token, tokenPriceKey } from '../../../domain/token';
 import { TransactionDraft } from '../../../domain/transaction';
 import { useFeeSelection } from '../../../hooks/use-fee-selection';
+import { usePendingBroadcast } from '../../../hooks/use-pending-broadcast';
 import { useWalletAssets } from '../../../hooks/use-wallet-assets';
 import { MainStackParamList } from '../../../navigation/types';
 import { queryKeys } from '../../../queries/query-keys';
@@ -39,7 +40,8 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
   const queryClient = useQueryClient();
   const showToast = useToastStore(state => state.show);
 
-  const [tokenId, setTokenId] = useState(route.params.tokenId ?? network.nativeToken.id);
+  const requestedTokenId = route.params.tokenId;
+  const [tokenId, setTokenId] = useState(requestedTokenId ?? network.nativeToken.id);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [memoVisible, setMemoVisible] = useState(false);
   const [memo, setMemo] = useState('');
@@ -55,7 +57,10 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
     return usd === null ? undefined : `≈ ${formatUSD(usd)}`;
   }, [prices]);
 
-  const asset = wallet.assets.find(item => item.token.id === tokenId) ?? wallet.assets.find(item => item.token.isNative);
+  // A requested token that is not listed (e.g. hidden) is reported instead of silently sending the native coin.
+  const asset = wallet.assets.find(item => item.token.id === tokenId)
+    ?? (tokenId === requestedTokenId ? undefined : wallet.assets.find(item => item.token.isNative));
+  const tokenUnavailable = !asset && !wallet.loading && tokenId === requestedTokenId;
   const token = asset?.token;
   const decimals = token?.decimals ?? network.nativeToken.decimals;
   const balance = asset?.amount;
@@ -92,6 +97,16 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
     },
   });
 
+  const handleCommitted = useCallback((): void => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.balances() });
+    queryClient.invalidateQueries({ queryKey: [...queryKeys.all, 'activities'] });
+    showToast('Transaction confirmed', 'success');
+    setPrepared(null);
+    navigation.popToTop();
+  }, [navigation, queryClient, showToast]);
+
+  const pendingBroadcast = usePendingBroadcast(handleCommitted);
+
   const send = useMutation({
     mutationFn: async () => {
       if (!prepared || !feeSelection.fee) {
@@ -104,13 +119,7 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
       await transactionService.assertSufficientFunds(draft, prepared.account, prepared.network, transfer, prepared.estimate.storageDeposit);
       return transactionService.signAndBroadcast(draft, prepared.account, prepared.network);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.balances() });
-      queryClient.invalidateQueries({ queryKey: [...queryKeys.all, 'activities'] });
-      showToast('Transaction confirmed', 'success');
-      setPrepared(null);
-      navigation.popToTop();
-    },
+    onSuccess: handleCommitted,
   });
 
   const review: TransferReview | undefined = useMemo(() => {
@@ -149,22 +158,36 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
     max.mutate(undefined, { onSuccess: setAmount });
   };
 
-  const handleReview = (): void => prepare.mutate(undefined, {
-    onSuccess: (result) => {
-      feeSelection.reset();
-      setPrepared(result);
-    },
-  });
-
-  // isPending reaches the button a tick after mutate(); the ref blocks a second tap in between.
-  const handleConfirm = (): void => {
-    if (sendingRef.current) {
+  const handleReview = (): void => {
+    if (!pendingBroadcast.canSend) {
       return;
     }
 
+    prepare.mutate(undefined, {
+      onSuccess: (result) => {
+        feeSelection.reset();
+        setPrepared(result);
+      },
+    });
+  };
+
+  // isPending reaches the button a tick after mutate(); the ref blocks a second tap in between.
+  const handleConfirm = (): void => {
+    if (sendingRef.current || !prepared) {
+      return;
+    }
+
+    const sentNetwork = prepared.network;
+
     sendingRef.current = true;
     send.mutateAsync()
-      .catch(() => undefined)
+      .catch((error) => {
+        // Unknown outcome: close the review so the same draft cannot be confirmed again.
+        if (pendingBroadcast.track(error, sentNetwork)) {
+          send.reset();
+          setPrepared(null);
+        }
+      })
       .finally(() => {
         sendingRef.current = false;
       });
@@ -207,12 +230,15 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
       recipientAddress={toAddress}
       recipientLabel={recipientName ?? 'Recipient'}
       onChangeRecipient={navigation.goBack}
-      error={exceedsBalance
-        ? 'Insufficient balance'
-        : prepare.error
-          ? toErrorMessage(prepare.error)
-          : max.error ? toErrorMessage(max.error) : undefined}
-      canReview={isPositiveAmount(amount) && !exceedsBalance && Boolean(token)}
+      error={tokenUnavailable
+        ? 'This token isn’t in your token list. Turn it on in Manage tokens or pick another token.'
+        : exceedsBalance
+          ? 'Insufficient balance'
+          : prepare.error
+            ? toErrorMessage(prepare.error)
+            : max.error ? toErrorMessage(max.error) : undefined}
+      notice={pendingBroadcast.notice}
+      canReview={isPositiveAmount(amount) && !exceedsBalance && Boolean(token) && pendingBroadcast.canSend}
       preparing={prepare.isPending || max.isPending}
       onKeyPress={handleKeyPress}
       onMax={handleMax}

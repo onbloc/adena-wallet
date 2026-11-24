@@ -298,20 +298,53 @@ describe('CosmosChainRepository', () => {
       await expect(repository.broadcastTransaction({ encoded }, network)).resolves.toEqual({ hash: toHex(sha256(new Uint8Array([1, 2, 3]))).toUpperCase(), height: '5' });
     });
 
-    it('keeps AppErrors and wraps other failures as TRANSACTION_FAILED', async () => {
+    it('rejects definitively on a CheckTx code or a client error', async () => {
       const { repository, http } = setup();
 
-      // HTTP failures are already NETWORK_ERROR AppErrors (as FetchHttpClient raises them) and pass through.
-      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'NETWORK_ERROR', message: `404 ${urls().txs}` });
+      http.on(urls().txs, { tx_response: { txhash: 'X', code: 5, raw_log: 'insufficient funds', height: '0' } });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: 'Broadcast failed (code 5): insufficient funds' });
+      http.on(urls().txs, () => {
+        throw new HttpStatusError(400, null, 'bad tx');
+      });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'NETWORK_ERROR', message: 'bad tx' });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, { ...network, restUrl: undefined }))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+    });
+
+    it('reports an unknown outcome as pending with the computed hash', async () => {
+      const { repository, http } = setup();
+      const hash = toHex(sha256(new Uint8Array([1, 2, 3]))).toUpperCase();
+      const pending = { code: 'TRANSACTION_PENDING', hash };
+
       http.on(urls().txs, () => {
         throw new Error('socket hang up');
       });
-      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: 'socket hang up' });
-      http.on(urls().txs, { tx_response: { txhash: 'X', code: 5, raw_log: 'insufficient funds', height: '0' } });
-      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: 'Broadcast failed (code 5): insufficient funds' });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject(pending);
+      http.on(urls().txs, () => {
+        throw new HttpStatusError(504);
+      });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject(pending);
       http.on(urls().txs, {});
-      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ message: 'Broadcast returned no tx_response' });
-      await expect(errorOf(repository.broadcastTransaction({ encoded }, { ...network, restUrl: undefined }))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject(pending);
+      // Code 19: already in the mempool.
+      http.on(urls().txs, { tx_response: { txhash: 'X', code: 19, raw_log: 'tx already in mempool', height: '0' } });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject(pending);
+    });
+  });
+
+  describe('getTransactionStatus', () => {
+    it('maps the indexed tx code and treats not found or failures as pending', async () => {
+      const { repository, http } = setup();
+      const url = `${REST}/cosmos/tx/v1beta1/txs/ABC`;
+
+      await expect(repository.getTransactionStatus('ABC', network)).resolves.toBe('pending');
+      http.on(url, { tx_response: { code: 0 } });
+      await expect(repository.getTransactionStatus('ABC', network)).resolves.toBe('committed');
+      http.on(url, { tx_response: { code: 11 } });
+      await expect(repository.getTransactionStatus('ABC', network)).resolves.toBe('failed');
+      http.on(url, () => {
+        throw new HttpStatusError(503);
+      });
+      await expect(repository.getTransactionStatus('ABC', network)).resolves.toBe('pending');
     });
   });
 });

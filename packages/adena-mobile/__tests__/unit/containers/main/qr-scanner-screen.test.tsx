@@ -6,6 +6,8 @@ import { useCameraDevice, useCameraPermission } from 'react-native-vision-camera
 import { useBarcodeScannerOutput } from 'react-native-vision-camera-barcode-scanner';
 
 import { QrScannerScreen } from '../../../../src/containers/main/qr-scanner-screen';
+import { useToastStore } from '../../../../src/stores/toast.store';
+import { normalizeAddress } from '../../../../src/utils/address';
 import { ACCOUNT, createWrapper, NETWORK } from '../../../helpers/query-wrapper';
 
 jest.mock('@react-navigation/native', () => ({ ...jest.requireActual('@react-navigation/native'), useIsFocused: () => true }));
@@ -36,7 +38,7 @@ const setup = async (params: { returnKey?: string } | undefined = { returnKey: '
   const { Wrapper } = createWrapper({
     accountService: { getCurrentAccount: () => ACCOUNT, getAccounts: () => [ACCOUNT], getAddress: () => 'g1self' },
     networkService: { getCurrentNetwork: () => NETWORK, getNetworks: () => [NETWORK] },
-    chainRegistry: { forNetwork: () => ({ isValidAddress: (value: string) => /^g1[a-z0-9]{38}$/.test(value) }) },
+    chainRegistry: { forNetwork: () => ({ normalizeAddress: (value: string) => normalizeAddress(value, 'g') }) },
   });
   const navigation = { goBack: jest.fn(), dispatch: jest.fn(), replace: jest.fn() };
   const route = { key: 'QrScanner-1', name: 'QrScanner', params };
@@ -72,6 +74,25 @@ describe('QrScannerScreen', () => {
       source: 'SendRecipient-1',
     }));
     expect(navigation.goBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns the canonical lowercase address for an uppercase QR and notes ignored parameters', async () => {
+    useToastStore.setState({ toast: null });
+    const { navigation } = await setup();
+
+    await scan(`GNO:${ADDRESS.toUpperCase()}?AMOUNT=1`);
+
+    expect(navigation.dispatch).toHaveBeenCalledWith(expect.objectContaining({ payload: { params: { scannedAddress: ADDRESS } } }));
+    expect(useToastStore.getState().toast).toMatchObject({ message: 'Only the address from this QR code was used.' });
+  });
+
+  it('rejects a payment URI for another chain family', async () => {
+    const { navigation } = await setup();
+
+    await scan(`cosmos:${ADDRESS}`);
+
+    expect(screen.getByText('Not a valid Gno.land address')).toBeTruthy();
+    expect(navigation.dispatch).not.toHaveBeenCalled();
   });
 
   it('continues to the send flow when opened without a return route', async () => {

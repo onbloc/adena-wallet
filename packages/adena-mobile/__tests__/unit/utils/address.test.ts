@@ -1,6 +1,6 @@
 import { toBech32 } from '@cosmjs/encoding';
 
-import { formatAddress, formatHash, getInitials, isValidAddress } from '../../../src/utils/address';
+import { formatAddress, formatHash, getInitials, isValidAddress, normalizeAddress } from '../../../src/utils/address';
 
 const VALID = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
 
@@ -24,6 +24,23 @@ describe('isValidAddress', () => {
 
   it.each(['', 'g1', 'not an address', `${VALID.slice(0, -1)}x`, VALID.toUpperCase().slice(0, 10), '🙂'])('rejects malformed input %p', (value) => {
     expect(isValidAddress(value)).toBe(false);
+  });
+});
+
+describe('normalizeAddress', () => {
+  it('returns the canonical lowercase form of an all-uppercase address', () => {
+    expect(normalizeAddress(VALID.toUpperCase())).toBe(VALID);
+    expect(normalizeAddress(` ${VALID} `)).toBe(VALID);
+  });
+
+  it('rejects mixed case (BIP-173), other prefixes and malformed input', () => {
+    expect(normalizeAddress(`G${VALID.slice(1)}`)).toBeNull();
+    expect(normalizeAddress(VALID, 'atone')).toBeNull();
+    expect(normalizeAddress('g1nope')).toBeNull();
+  });
+
+  it('keeps isValidAddress to the canonical form so uppercase is never signed as-is', () => {
+    expect(isValidAddress(VALID.toUpperCase())).toBe(false);
   });
 });
 

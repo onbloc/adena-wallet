@@ -57,6 +57,13 @@ const baseAccountOf = (account: unknown): RawAccount | null => {
 const isAccountNotFound = (error: unknown): boolean =>
   error instanceof HttpStatusError && error.status === 404 && (error.body as { code?: unknown } | null)?.code === GRPC_NOT_FOUND;
 
+// CheckTx rejected the tx with an ABCI code (e.g. 5 insufficient funds).
+export class CosmosTxRejectedError extends AppError {
+  constructor(readonly abciCode: number, rawLog: string) {
+    super(AppErrorCode.TRANSACTION_FAILED, `Broadcast failed (code ${abciCode}): ${rawLog}`);
+  }
+}
+
 // Cosmos SDK LCD (REST) contract used by AtomOne, mirroring the extension's CosmosQueryClient.
 export class CosmosLcdClient {
   constructor(private readonly http: HttpClient) {}
@@ -166,13 +173,29 @@ export class CosmosLcdClient {
     const response = body.tx_response;
 
     if (!response) {
-      throw new AppError(AppErrorCode.TRANSACTION_FAILED, 'Broadcast returned no tx_response');
+      throw new AppError(AppErrorCode.NETWORK_ERROR, 'Broadcast returned no tx_response');
     }
 
     if (response.code !== 0) {
-      throw new AppError(AppErrorCode.TRANSACTION_FAILED, `Broadcast failed (code ${response.code}): ${response.raw_log}`);
+      throw new CosmosTxRejectedError(response.code, response.raw_log);
     }
 
     return { txhash: response.txhash, height: response.height };
+  }
+
+  // Null while the tx is not indexed (404); otherwise its DeliverTx code.
+  async getTx(restUrl: string, hash: string): Promise<{ code: number } | null> {
+    try {
+      const body = await this.http.request<{ tx_response?: { code?: number } }>(this.url(restUrl, `/cosmos/tx/v1beta1/txs/${hash}`));
+
+      return body.tx_response ? { code: body.tx_response.code ?? 0 } : null;
+    }
+    catch (error) {
+      if (error instanceof HttpStatusError && error.status === 404) {
+        return null;
+      }
+
+      throw error;
+    }
   }
 }

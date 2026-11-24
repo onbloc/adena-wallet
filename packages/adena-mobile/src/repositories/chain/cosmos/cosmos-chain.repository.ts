@@ -1,13 +1,14 @@
 import { ripemd160, Secp256k1, sha256 } from '@cosmjs/crypto';
 import { fromBase64, toBase64, toBech32, toHex } from '@cosmjs/encoding';
 
-import { AppError, AppErrorCode } from '../../../core/errors';
+import { AppError, AppErrorCode, TransactionPendingError } from '../../../core/errors';
 import { TokenBalance } from '../../../domain/account';
 import { COSMOS_FEE_POLICY, FeeEstimate } from '../../../domain/fee';
 import { ChainFamily, Network } from '../../../domain/network';
-import { BroadcastResult, MessageSummary, SignedTransaction, TransactionDraft } from '../../../domain/transaction';
-import { CosmosAccountInfo, CosmosLcdClient } from '../../../infrastructure/http/cosmos-lcd.client';
-import { isValidAddress } from '../../../utils/address';
+import { BroadcastResult, MessageSummary, SignedTransaction, TransactionDraft, TransactionStatus } from '../../../domain/transaction';
+import { CosmosAccountInfo, CosmosLcdClient, CosmosTxRejectedError } from '../../../infrastructure/http/cosmos-lcd.client';
+import { HttpStatusError } from '../../../infrastructure/http/http-client';
+import { isValidAddress, normalizeAddress } from '../../../utils/address';
 import { formatTokenAmount, parseCoin } from '../../../utils/amount';
 import { BigNumber } from '../../../utils/big-number';
 import { ChainRepository, SigningKey, SimulationSigner } from '../chain-repository';
@@ -38,6 +39,18 @@ const toCosmosFee = (fee: { gasWanted: string; gasFee: string }): CosmosFee => {
 const networkError = (error: unknown): AppError =>
   error instanceof AppError ? error : new AppError(AppErrorCode.NETWORK_ERROR, (error as Error)?.message, { cause: error });
 
+// ABCI code 19: the tx is already in the mempool, so it may still commit.
+const TX_IN_MEMPOOL_CACHE = 19;
+
+// Only a CheckTx verdict or a client-side 4xx proves the tx was not accepted; transport errors leave it unknown.
+const isDefinitiveRejection = (error: unknown): boolean => {
+  if (error instanceof CosmosTxRejectedError) {
+    return error.abciCode !== TX_IN_MEMPOOL_CACHE;
+  }
+
+  return error instanceof HttpStatusError && error.status >= 400 && error.status < 500 && error.status !== 408 && error.status !== 429;
+};
+
 // AtomOne (Cosmos SDK) signing over LCD REST with SIGN_MODE_DIRECT, like the extension's wallet sends.
 export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
   readonly family = ChainFamily.COSMOS;
@@ -50,6 +63,10 @@ export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
 
   isValidAddress(address: string, network: Network): boolean {
     return isValidAddress(address, network.addressPrefix);
+  }
+
+  normalizeAddress(address: string, network: Network): string | null {
+    return normalizeAddress(address, network.addressPrefix);
   }
 
   getChainId(network: Network): Promise<string> {
@@ -144,13 +161,31 @@ export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
 
   // BROADCAST_MODE_SYNC: success means the tx passed CheckTx, as in the extension.
   async broadcastTransaction(signed: SignedTransaction, network: Network): Promise<BroadcastResult> {
-    try {
-      const result = await this.lcd.broadcastSync(restUrlOf(network), signed.encoded);
+    const restUrl = restUrlOf(network);
+    const hash = toHex(sha256(fromBase64(signed.encoded))).toUpperCase();
 
-      return { hash: result.txhash || toHex(sha256(fromBase64(signed.encoded))).toUpperCase(), height: result.height };
+    try {
+      const result = await this.lcd.broadcastSync(restUrl, signed.encoded);
+
+      return { hash: result.txhash || hash, height: result.height };
     }
     catch (error) {
-      throw error instanceof AppError ? error : new AppError(AppErrorCode.TRANSACTION_FAILED, (error as Error)?.message, { cause: error });
+      if (isDefinitiveRejection(error)) {
+        throw error instanceof AppError ? error : new AppError(AppErrorCode.TRANSACTION_FAILED, (error as Error)?.message, { cause: error });
+      }
+
+      throw new TransactionPendingError(hash, undefined, { cause: error });
+    }
+  }
+
+  async getTransactionStatus(hash: string, network: Network): Promise<TransactionStatus> {
+    try {
+      const tx = await this.lcd.getTx(restUrlOf(network), hash);
+
+      return tx === null ? 'pending' : tx.code === 0 ? 'committed' : 'failed';
+    }
+    catch {
+      return 'pending';
     }
   }
 }

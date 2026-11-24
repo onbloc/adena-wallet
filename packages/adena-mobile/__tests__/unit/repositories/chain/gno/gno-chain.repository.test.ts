@@ -1,7 +1,7 @@
 import { Secp256k1, Secp256k1Signature, sha256 } from '@cosmjs/crypto';
-import { fromBase64, toBase64 } from '@cosmjs/encoding';
+import { fromBase64, toBase64, toHex } from '@cosmjs/encoding';
 import { Any } from '@gnolang/gno-js-client';
-import { PubKeySecp256k1, Tx } from '@gnolang/tm2-js-client';
+import { InsufficientFeeError, PubKeySecp256k1, Tx } from '@gnolang/tm2-js-client';
 
 import { AppError } from '../../../../../src/core/errors';
 import { deriveKeyPair, KeyPair } from '../../../../../src/crypto/key-pair';
@@ -402,17 +402,52 @@ describe('GnoChainRepository', () => {
       expect(endpoint).toBe('broadcast_tx_commit');
     });
 
-    it('wraps broadcast failures as TRANSACTION_FAILED', async () => {
+    it('wraps node verdicts (TM2Error) as TRANSACTION_FAILED', async () => {
       const { repository, mutable } = setup();
 
       mutable.sendTransaction = async () => {
-        throw new Error('insufficient fee');
+        throw new InsufficientFeeError('fee too low');
       };
 
       await expect(errorOf(repository.broadcastTransaction({ encoded: 'AAAA' }, network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: 'insufficient fee' });
-      mutable.sendTransaction = () => Promise.reject(undefined);
-      await expect(errorOf(repository.broadcastTransaction({ encoded: 'AAAA' }, network))).resolves.toMatchObject({ message: 'Broadcast failed' });
       await expect(errorOf(new GnoChainRepository(failingFactory).broadcastTransaction({ encoded: 'AAAA' }, network))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+    });
+
+    // e.g. broadcast_tx_commit timing out while the tx still commits.
+    it('reports transport failures as pending with the tx hash', async () => {
+      const { repository, mutable } = setup();
+      const hash = toHex(sha256(fromBase64('AAAA'))).toUpperCase();
+
+      mutable.sendTransaction = async () => {
+        throw new Error('timed out waiting for tx to be included in a block');
+      };
+
+      await expect(errorOf(repository.broadcastTransaction({ encoded: 'AAAA' }, network))).resolves.toMatchObject({ code: 'TRANSACTION_PENDING', hash });
+      mutable.sendTransaction = () => Promise.reject(undefined);
+      await expect(errorOf(repository.broadcastTransaction({ encoded: 'AAAA' }, network))).resolves.toMatchObject({ code: 'TRANSACTION_PENDING', hash });
+    });
+  });
+
+  describe('getTransactionStatus', () => {
+    it('reads the committed result and treats lookup failures as pending', async () => {
+      const { repository, mutable } = setup();
+      let asked: unknown;
+
+      mutable.getTransaction = async (hash: never) => {
+        asked = hash;
+        return { tx_result: { ResponseBase: { Error: null } } };
+      };
+
+      await expect(repository.getTransactionStatus('ABCD', network)).resolves.toBe('committed');
+      expect(asked).toBe('ABCD');
+      mutable.getTransaction = async () => ({ tx_result: { ResponseBase: { Error: { '@type': '/std.OutOfGasError' } } } });
+      await expect(repository.getTransactionStatus('ABCD', network)).resolves.toBe('failed');
+      mutable.getTransaction = async () => {
+        throw new Error('tx not found');
+      };
+
+      await expect(repository.getTransactionStatus('ABCD', network)).resolves.toBe('pending');
+      await expect(new GnoChainRepository(failingFactory).getTransactionStatus('ABCD', network)).resolves.toBe('pending');
     });
   });
 });

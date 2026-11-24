@@ -80,7 +80,8 @@ export class VaultService {
     });
   }
 
-  changePassword(currentPassword: string, nextPassword: string): Promise<void> {
+  // `beforeSave` runs after the current password is verified and before re-encrypting; a rejection aborts the change.
+  changePassword(currentPassword: string, nextPassword: string, beforeSave?: () => Promise<void>): Promise<void> {
     const issue = findPasswordIssue(nextPassword, { current: currentPassword });
 
     if (issue) {
@@ -88,7 +89,10 @@ export class VaultService {
     }
 
     return this.queue.run(async () => {
-      await this.save(await this.openChecked(currentPassword), nextPassword);
+      const content = await this.openChecked(currentPassword);
+
+      await beforeSave?.();
+      await this.save(content, nextPassword);
     });
   }
 

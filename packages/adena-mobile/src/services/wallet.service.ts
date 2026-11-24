@@ -225,9 +225,10 @@ export class WalletService {
     this.preferenceRepository.update({ biometricUnlockEnabled: false });
   }
 
-  // Biometric unlock keeps the old escrowed password; callers re-enable it with the new one.
+  // The biometric credential (plaintext password) is removed before re-encrypting, so an interruption can
+  // never leave the old password stored; callers re-enable biometrics with the new password afterwards.
   changePassword(currentPassword: string, nextPassword: string): Promise<void> {
-    return this.runCurrent(() => this.vaultService.changePassword(currentPassword, nextPassword));
+    return this.runCurrent(() => this.vaultService.changePassword(currentPassword, nextPassword, () => this.biometricRepository.clear()));
   }
 
   async revealMnemonic(keyringId: string, password: string): Promise<string> {

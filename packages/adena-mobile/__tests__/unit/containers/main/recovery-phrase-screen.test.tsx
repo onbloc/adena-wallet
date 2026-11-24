@@ -12,7 +12,8 @@ const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top:
 const MNEMONIC = 'abandon ability able about above absent absorb abstract absurd abuse access accident';
 
 describe('RecoveryPhraseScreen', () => {
-  let appStateListener: (state: AppStateStatus) => void;
+  let appStateListeners: ((state: AppStateStatus) => void)[];
+  const emitAppState = (state: AppStateStatus): void => appStateListeners.forEach(listener => listener(state));
   let blurListener: () => void;
 
   const setup = async (revealMnemonic: jest.Mock) => {
@@ -37,8 +38,9 @@ describe('RecoveryPhraseScreen', () => {
   };
 
   beforeEach(() => {
+    appStateListeners = [];
     jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, handler) => {
-      appStateListener = handler as (state: AppStateStatus) => void;
+      appStateListeners.push(handler as (state: AppStateStatus) => void);
       return { remove: jest.fn() } as unknown as ReturnType<typeof AppState.addEventListener>;
     });
   });
@@ -94,17 +96,62 @@ describe('RecoveryPhraseScreen', () => {
     expect(Clipboard.setString).toHaveBeenCalledTimes(2);
   });
 
-  it('hides the revealed phrase when the app goes to the background', async () => {
+  it('hides the revealed phrase as soon as the app is inactive (app switcher snapshot)', async () => {
     await setup(jest.fn(async () => MNEMONIC));
     await fireEvent.press(screen.getByRole('button', { name: 'Reveal phrase' }));
     expect(screen.getByText('abandon')).toBeTruthy();
 
-    await act(async () => appStateListener('inactive'));
-    expect(screen.getByText('abandon')).toBeTruthy();
-    await act(async () => appStateListener('background'));
+    await act(async () => emitAppState('inactive'));
 
     expect(screen.queryByText('abandon')).toBeNull();
     expect(screen.getByRole('button', { name: 'Show recovery phrase' })).toBeTruthy();
+  });
+
+  it('wipes the clipboard on background even though it reads empty there', async () => {
+    jest.useFakeTimers();
+    await revealAndCopy();
+    // Android 10+ and iOS return '' to a backgrounded app.
+    jest.mocked(Clipboard.getString).mockResolvedValue('');
+
+    await act(async () => emitAppState('background'));
+
+    expect(Clipboard.setString).toHaveBeenLastCalledWith('');
+    expect(Clipboard.setString).toHaveBeenCalledTimes(2);
+  });
+
+  it('re-checks the clipboard on the next active and wipes the phrase if it is still there', async () => {
+    jest.useFakeTimers();
+    await revealAndCopy();
+    jest.mocked(Clipboard.setString).mockImplementationOnce(() => {
+      throw new Error('clipboard unavailable');
+    });
+
+    await act(async () => emitAppState('background'));
+    jest.mocked(Clipboard.getString).mockResolvedValue(MNEMONIC);
+    await act(async () => emitAppState('active'));
+
+    expect(Clipboard.getString).toHaveBeenCalledTimes(1);
+    expect(Clipboard.setString).toHaveBeenLastCalledWith('');
+
+    // Verified once; later state changes leave the clipboard alone.
+    jest.mocked(Clipboard.setString).mockClear();
+    await act(async () => emitAppState('background'));
+    await act(async () => emitAppState('active'));
+    expect(Clipboard.setString).not.toHaveBeenCalled();
+  });
+
+  it('does not wipe unrelated clipboard content once the 60 second window has passed', async () => {
+    jest.useFakeTimers();
+    await revealAndCopy();
+    // Timers are suspended in the background: the window passes without the timer firing.
+    await act(async () => emitAppState('inactive'));
+    jest.setSystemTime(Date.now() + SENSITIVE_CLIPBOARD_TTL_MS);
+    await act(async () => emitAppState('background'));
+    expect(Clipboard.setString).toHaveBeenCalledTimes(1);
+
+    jest.mocked(Clipboard.getString).mockResolvedValue('something else');
+    await act(async () => emitAppState('active'));
+    expect(Clipboard.setString).toHaveBeenCalledTimes(1);
   });
 
   it('does not show a phrase whose reveal finished after leaving the screen', async () => {

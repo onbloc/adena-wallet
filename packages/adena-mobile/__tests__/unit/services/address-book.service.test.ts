@@ -39,6 +39,17 @@ describe('AddressBookService', () => {
     expect(service.getEntriesFor(COSMOS_NETWORK).map(entry => entry.name)).toEqual(['atone']);
   });
 
+  it('stores the canonical address and matches case-insensitively', () => {
+    const { service, modules } = setup();
+
+    modules.gno.chain.normalizeAddress.mockImplementation((address: string) => address.toLowerCase());
+    const entry = service.add({ name: 'gno', address: 'G1AAAA' }, GNO_NETWORK);
+
+    expect(entry.address).toBe(G1);
+    expect(service.findByAddress('G1AAAA')).toEqual(entry);
+    expect(() => service.add({ name: 'again', address: G1 }, GNO_NETWORK)).toThrow('This address is already saved');
+  });
+
   it('finds entries by exact address', () => {
     const { service } = setup();
     const entry = service.add({ name: 'gno', address: G1 }, GNO_NETWORK);

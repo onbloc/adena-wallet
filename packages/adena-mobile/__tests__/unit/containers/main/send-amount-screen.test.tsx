@@ -3,9 +3,11 @@ import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SendAmountScreen } from '../../../../src/containers/main/send-amount-screen';
+import { AppError, AppErrorCode, TransactionPendingError } from '../../../../src/core/errors';
 import { FeeEstimate, GNO_FEE_POLICY } from '../../../../src/domain/fee';
 import { Token, TokenType } from '../../../../src/domain/token';
-import { TransactionDraft } from '../../../../src/domain/transaction';
+import { TransactionDraft, TransactionStatus } from '../../../../src/domain/transaction';
+import { PENDING_NOTICE, PENDING_POLL_ATTEMPTS, PENDING_POLL_INTERVAL_MS, UNCONFIRMED_NOTICE } from '../../../../src/hooks/use-pending-broadcast';
 import { useWalletAssets } from '../../../../src/hooks/use-wallet-assets';
 import { ACCOUNT, createWrapper, NETWORK } from '../../../helpers/query-wrapper';
 
@@ -25,7 +27,7 @@ const deferred = <T,>(): { promise: Promise<T>; resolve: (value: T) => void } =>
   return { promise, resolve };
 };
 
-const setup = async (prices?: Record<string, unknown>) => {
+const setup = async (prices?: Record<string, unknown>, params: Record<string, unknown> = {}) => {
   jest.mocked(useWalletAssets).mockReturnValue({
     account: ACCOUNT,
     network: NETWORK,
@@ -46,6 +48,7 @@ const setup = async (prices?: Record<string, unknown>) => {
     maxTransferAmount: jest.fn(),
     assertSufficientFunds: jest.fn(async (..._args: unknown[]) => undefined),
     signAndBroadcast: jest.fn(async (_draft: TransactionDraft) => ({ hash: 'h', height: '1' })),
+    getTransactionStatus: jest.fn(async (): Promise<TransactionStatus> => 'pending'),
   };
   const { Wrapper } = createWrapper({
     transactionService,
@@ -53,7 +56,7 @@ const setup = async (prices?: Record<string, unknown>) => {
     addressBookService: { findByAddress: () => undefined },
   });
   const navigation = { goBack: jest.fn(), popToTop: jest.fn() };
-  const route = { key: 'SendAmount', name: 'SendAmount', params: { toAddress: RECIPIENT } };
+  const route = { key: 'SendAmount', name: 'SendAmount', params: { toAddress: RECIPIENT, ...params } };
   const Screen = SendAmountScreen as unknown as React.ComponentType<{ navigation: unknown; route: unknown }>;
 
   await render(
@@ -136,5 +139,78 @@ describe('SendAmountScreen', () => {
 
     expect(transactionService.signAndBroadcast).toHaveBeenCalledTimes(1);
     expect(navigation.popToTop).toHaveBeenCalledTimes(1);
+  });
+
+  const confirmOnce = async (transactionService: Awaited<ReturnType<typeof setup>>['transactionService'], error: unknown): Promise<void> => {
+    transactionService.signAndBroadcast.mockRejectedValueOnce(error);
+    await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
+    await fireEvent.press(screen.getByTestId('send-review'));
+    await fireEvent.press(await screen.findByTestId('review-confirm'));
+  };
+
+  describe('when the broadcast outcome is unknown', () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    it('closes the review and blocks a re-send until the tx hash is found committed', async () => {
+      const { transactionService, navigation } = await setup();
+
+      await confirmOnce(transactionService, new TransactionPendingError('ABC'));
+
+      expect(screen.queryByTestId('review-confirm')).toBeNull();
+      expect(screen.getByText(PENDING_NOTICE)).toBeTruthy();
+      await fireEvent.press(screen.getByTestId('send-review'));
+      expect(transactionService.estimateFee).toHaveBeenCalledTimes(1);
+
+      transactionService.getTransactionStatus.mockResolvedValueOnce('pending').mockResolvedValueOnce('committed');
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS * 2));
+
+      expect(transactionService.getTransactionStatus).toHaveBeenCalledWith('ABC', NETWORK);
+      expect(transactionService.signAndBroadcast).toHaveBeenCalledTimes(1);
+      expect(navigation.popToTop).toHaveBeenCalledTimes(1);
+    });
+
+    it('allows a retry once the tx is found failed', async () => {
+      const { transactionService } = await setup();
+
+      await confirmOnce(transactionService, new TransactionPendingError('ABC'));
+      transactionService.getTransactionStatus.mockResolvedValueOnce('failed');
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
+
+      expect(screen.queryByText(PENDING_NOTICE)).toBeNull();
+      await fireEvent.press(screen.getByTestId('send-review'));
+      expect(await screen.findByTestId('review-confirm')).toBeTruthy();
+    });
+
+    it('stops polling after a while and keeps a notice while allowing a new send', async () => {
+      const { transactionService } = await setup();
+
+      await confirmOnce(transactionService, new TransactionPendingError('ABC'));
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS * PENDING_POLL_ATTEMPTS));
+
+      expect(transactionService.getTransactionStatus).toHaveBeenCalledTimes(PENDING_POLL_ATTEMPTS);
+      expect(screen.getByText(UNCONFIRMED_NOTICE)).toBeTruthy();
+      await fireEvent.press(screen.getByTestId('send-review'));
+      expect(await screen.findByTestId('review-confirm')).toBeTruthy();
+    });
+  });
+
+  it('keeps the review open for a definitive rejection so the user can retry', async () => {
+    const { transactionService } = await setup();
+
+    await confirmOnce(transactionService, new AppError(AppErrorCode.TRANSACTION_FAILED, 'insufficient funds'));
+
+    expect(await screen.findByText('insufficient funds')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('review-confirm'));
+    expect(transactionService.signAndBroadcast).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports a requested token that is not listed instead of sending the native coin', async () => {
+    const { transactionService } = await setup(undefined, { tokenId: 'gno.land/r/demo/hidden' });
+
+    expect(screen.getByText(/This token isn’t in your token list/)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
+    await fireEvent.press(screen.getByTestId('send-review'));
+    expect(transactionService.createTransferDraft).not.toHaveBeenCalled();
   });
 });

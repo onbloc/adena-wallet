@@ -8,13 +8,15 @@ import { useCopyToClipboard } from '../../../hooks/use-copy-to-clipboard';
 import { useWalletAssets } from '../../../hooks/use-wallet-assets';
 import { MainStackParamList } from '../../../navigation/types';
 import { formatActivityAmount, formatDateTime, toActivityView } from '../../../presenters/activity.presenter';
+import { useToastStore } from '../../../stores/toast.store';
 import { formatAddress, formatHash } from '../../../utils/address';
-import { transactionExplorerUrl } from '../../../utils/explorer';
+import { explorerName, transactionExplorerUrl } from '../../../utils/explorer';
 
 export const ActivityDetailScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'ActivityDetail'>): ReactElement => {
   const { activity } = route.params;
   const { allTokens, network } = useWalletAssets();
   const copy = useCopyToClipboard();
+  const showToast = useToastStore(state => state.show);
   const view = toActivityView(activity, allTokens);
   const explorerUrl = transactionExplorerUrl(network, activity.hash);
 
@@ -41,6 +43,10 @@ export const ActivityDetailScreen = ({ navigation, route }: NativeStackScreenPro
     },
   ];
 
+  const handleOpenExplorer = (url: string): void => {
+    Linking.openURL(url).catch(() => showToast(`Couldn’t open ${explorerName(network)}`, 'error'));
+  };
+
   return (
     <ActivityDetailPage
       title={activity.extraInfo ? `${activity.title} ${activity.extraInfo}` : activity.title}
@@ -48,7 +54,8 @@ export const ActivityDetailScreen = ({ navigation, route }: NativeStackScreenPro
       amountColor={view.tone === AmountTone.POSITIVE ? 'success' : view.tone === AmountTone.MUTED ? 'disabled' : 'primary'}
       status={view.statusLabel}
       rows={rows}
-      onOpenExplorer={explorerUrl ? (): Promise<void> => Linking.openURL(explorerUrl) : undefined}
+      onOpenExplorer={explorerUrl ? (): void => handleOpenExplorer(explorerUrl) : undefined}
+      explorerName={explorerName(network)}
       onBack={navigation.goBack}
     />
   );

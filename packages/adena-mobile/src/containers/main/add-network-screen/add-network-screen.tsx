@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useRef, useState } from 'react';
 
 import { AddNetworkPage } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
@@ -17,6 +17,8 @@ export const AddNetworkScreen = ({ navigation }: NativeStackScreenProps<MainStac
   const [rpcUrl, setRpcUrl] = useState('');
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
+  // `submitting` reaches the button a render later; the ref blocks a second tap in between.
+  const submittingRef = useRef(false);
   const base = baseNetworks[baseIndex];
 
   const handleChangeRpcUrl = (value: string): void => {
@@ -27,6 +29,11 @@ export const AddNetworkScreen = ({ navigation }: NativeStackScreenProps<MainStac
   const handleSelectBaseNetwork = (): void => setBaseIndex(index => (index + 1) % baseNetworks.length);
 
   const handleSubmit = async (): Promise<void> => {
+    if (submittingRef.current) {
+      return;
+    }
+
+    submittingRef.current = true;
     setSubmitting(true);
 
     try {
@@ -34,14 +41,16 @@ export const AddNetworkScreen = ({ navigation }: NativeStackScreenProps<MainStac
 
       networkService.selectNetwork(network.id);
       bumpRevision();
+      // The screen is leaving; keep the guard set so nothing else is submitted.
       navigation.pop(2);
+      return;
     }
     catch (submitError) {
       setError(toErrorMessage(submitError));
     }
-    finally {
-      setSubmitting(false);
-    }
+
+    submittingRef.current = false;
+    setSubmitting(false);
   };
 
   return (

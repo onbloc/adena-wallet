@@ -52,6 +52,8 @@ export interface SendAmountPageProps {
   recipientLabel: string;
   onChangeRecipient?: () => void;
   error?: string;
+  // Non-error status, e.g. a previous transfer still awaiting confirmation.
+  notice?: string;
   canReview: boolean;
   preparing: boolean;
   onKeyPress: (key: KeypadKey) => void;
@@ -132,6 +134,7 @@ export const SendAmountPage = (props: SendAmountPageProps): ReactElement => (
     />
     <ListRow label='Memo' value={props.memo || 'Optional'} onPress={props.onOpenMemo} />
     {props.error && <InlineAlert tone='error' title={props.error} />}
+    {!props.error && props.notice && <InlineAlert tone='warning' title={props.notice} />}
     <View style={styles.keypad}>
       <NumericKeypad onKeyPress={props.onKeyPress} />
     </View>

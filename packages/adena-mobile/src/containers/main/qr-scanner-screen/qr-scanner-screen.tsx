@@ -9,6 +9,7 @@ import { QrScannerPage, QrScannerStatus } from '../../../components/pages';
 import { useContainer } from '../../../di/container-provider';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
 import { MainStackParamList } from '../../../navigation/types';
+import { useToastStore } from '../../../stores/toast.store';
 import { parseRecipientQr } from '../../../utils/recipient-qr';
 
 // Module constant: the scanner output is recreated whenever this array identity changes.
@@ -32,6 +33,7 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
   const returnKey = route.params?.returnKey;
   const { chainRegistry } = useContainer();
   const { network } = useWalletSnapshot();
+  const showToast = useToastStore(state => state.show);
   const permission = useCameraPermission();
   const device = useCameraDevice('back');
   const focused = useIsFocused();
@@ -51,7 +53,7 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
       .catch(() => setDeclined(true));
   }, [canRequestPermission, requestPermission]);
 
-  const isValidAddress = (address: string): boolean => chainRegistry.forNetwork(network).isValidAddress(address, network);
+  const normalizeAddress = (address: string): string | null => chainRegistry.forNetwork(network).normalizeAddress(address, network);
 
   // Codes keep arriving every frame; only the first valid one is used.
   const handleScan = (barcodes: Barcode[]): void => {
@@ -65,15 +67,21 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
       return;
     }
 
-    const address = payloads.map(payload => parseRecipientQr(payload, isValidAddress)).find(Boolean);
+    const result = payloads.map(payload => parseRecipientQr(payload, network, normalizeAddress)).find(Boolean);
 
-    if (!address) {
+    if (!result) {
       setError(`Not a valid ${network.chainName} address`);
       return;
     }
 
+    const { address } = result;
+
     doneRef.current = true;
     setDone(true);
+
+    if (result.ignoredParams) {
+      showToast('Only the address from this QR code was used.', 'info');
+    }
 
     if (!returnKey) {
       navigation.replace('SendRecipient', { scannedAddress: address });

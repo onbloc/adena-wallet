@@ -1,8 +1,8 @@
 import { ripemd160, Secp256k1, sha256 } from '@cosmjs/crypto';
-import { fromBase64, toBase64, toBech32 } from '@cosmjs/encoding';
-import { KeySigner, TransactionEndpoint, Tx } from '@gnolang/tm2-js-client';
+import { fromBase64, toBase64, toBech32, toHex } from '@cosmjs/encoding';
+import { KeySigner, TM2Error, TransactionEndpoint, Tx } from '@gnolang/tm2-js-client';
 
-import { AppError, AppErrorCode } from '../../../core/errors';
+import { AppError, AppErrorCode, TransactionPendingError } from '../../../core/errors';
 import { TokenBalance } from '../../../domain/account';
 import { FeeEstimate, GNO_FEE_POLICY } from '../../../domain/fee';
 import { ChainFamily, Network } from '../../../domain/network';
@@ -12,8 +12,9 @@ import {
   SignedTransaction,
   TransactionDraft,
   TransactionFee,
+  TransactionStatus,
 } from '../../../domain/transaction';
-import { isValidAddress } from '../../../utils/address';
+import { isValidAddress, normalizeAddress } from '../../../utils/address';
 import { formatTokenAmount, parseCoin } from '../../../utils/amount';
 import { BigNumber } from '../../../utils/big-number';
 import { ChainRepository, SigningKey, SimulationSigner } from '../chain-repository';
@@ -85,6 +86,10 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
 
   isValidAddress(address: string, network: Network): boolean {
     return isValidAddress(address, network.addressPrefix);
+  }
+
+  normalizeAddress(address: string, network: Network): string | null {
+    return normalizeAddress(address, network.addressPrefix);
   }
 
   async getChainId(network: Network): Promise<string> {
@@ -277,7 +282,27 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
       return { hash: result.hash, height: result.height, data: result.deliver_tx.ResponseBase.Data ?? undefined };
     }
     catch (error) {
-      throw new AppError(AppErrorCode.TRANSACTION_FAILED, (error as Error)?.message ?? 'Broadcast failed', { cause: error });
+      // A TM2Error is the node's CheckTx/DeliverTx verdict; anything else (timeout, transport) leaves the outcome unknown.
+      if (error instanceof TM2Error) {
+        throw new AppError(AppErrorCode.TRANSACTION_FAILED, error.message || 'Broadcast failed', { cause: error });
+      }
+
+      throw new TransactionPendingError(gnoTxHash(signed), undefined, { cause: error });
+    }
+  }
+
+  async getTransactionStatus(hash: string, network: Network): Promise<TransactionStatus> {
+    try {
+      const result = await (await this.provider(network)).getTransaction(hash);
+
+      return result.tx_result.ResponseBase.Error ? 'failed' : 'committed';
+    }
+    catch {
+      // Not indexed yet, or the node is unreachable.
+      return 'pending';
     }
   }
 }
+
+// tm2 tx hash: sha256 of the encoded tx, hex like the RPC reports it.
+export const gnoTxHash = (signed: SignedTransaction): string => toHex(sha256(fromBase64(signed.encoded))).toUpperCase();

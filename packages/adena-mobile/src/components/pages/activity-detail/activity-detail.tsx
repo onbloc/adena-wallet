@@ -13,13 +13,15 @@ export interface ActivityDetailPageProps {
   // Truncated values carry `onCopy` so the full string stays reachable.
   rows: { label: string; value: string; multiline?: boolean; onCopy?: () => void; copyLabel?: string }[];
   onOpenExplorer?: () => void;
+  // e.g. "Gnoscan" or "Mintscan".
+  explorerName?: string;
   onBack: () => void;
 }
 
-export const ActivityDetailPage = ({ title, amountLabel, amountColor, status, rows, onOpenExplorer, onBack }: ActivityDetailPageProps): ReactElement => (
+export const ActivityDetailPage = ({ title, amountLabel, amountColor, status, rows, onOpenExplorer, explorerName = 'explorer', onBack }: ActivityDetailPageProps): ReactElement => (
   <Screen
     header={<TopBar title='Activity detail' onBack={onBack} />}
-    footer={onOpenExplorer && <Button label='View on Gnoscan' tone='secondary' trailingIcon='chevronRight' onPress={onOpenExplorer} />}
+    footer={onOpenExplorer && <Button label={`View on ${explorerName}`} tone='secondary' trailingIcon='chevronRight' onPress={onOpenExplorer} />}
   >
     <View style={styles.hero}>
       <Badge label={status} tone={status === 'Confirmed' ? 'success' : 'error'} />

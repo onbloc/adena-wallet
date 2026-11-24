@@ -20,6 +20,7 @@ const props = (overrides: Partial<ActivityDetailPageProps> = {}): ActivityDetail
     { label: 'Fee', value: '0.0001 GNOT' },
   ],
   onOpenExplorer: jest.fn(),
+  explorerName: 'Gnoscan',
   onBack: jest.fn(),
   ...overrides,
 });
@@ -55,5 +56,12 @@ describe('ActivityDetailPage', () => {
     expect(screen.queryByText('-1,000,000,000.123456 GNOT')).toBeNull();
     expect(screen.queryByRole('button', { name: 'View on Gnoscan' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Copy transaction hash' })).toBeNull();
+  });
+
+  it('names the explorer of the network', async () => {
+    await renderPage(<ActivityDetailPage {...props({ explorerName: 'Mintscan' })} />);
+
+    expect(screen.getByRole('button', { name: 'View on Mintscan' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'View on Gnoscan' })).toBeNull();
   });
 });

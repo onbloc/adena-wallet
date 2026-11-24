@@ -20,6 +20,8 @@ export interface SendNftPageProps {
   canReview: boolean;
   preparing: boolean;
   prepareError?: string;
+  // Non-error status, e.g. a previous transfer still awaiting confirmation.
+  notice?: string;
   onReview: () => void;
   review: Omit<ReviewSheetProps, 'title' | 'confirmLabel'>;
   onBack: () => void;
@@ -40,6 +42,7 @@ export const SendNftPage = (props: SendNftPageProps): ReactElement => (
     <RecipientField value={props.recipient} onChangeText={props.onChangeRecipient} onScan={props.onScanRecipient} placeholder='Recipient address' />
     {props.recipientError && <InlineAlert tone='error' title={props.recipientError} />}
     {props.prepareError && <InlineAlert tone='error' title='Unable to prepare the transfer' description={props.prepareError} />}
+    {props.notice && <InlineAlert tone='warning' title={props.notice} />}
     {props.suggestions.length > 0 && <SectionLabel label='Suggestions' />}
     {props.suggestions.map((item) => {
       const handlePress = (): void => props.onSelectSuggestion(item.address);

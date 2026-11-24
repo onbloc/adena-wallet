@@ -11,6 +11,7 @@ import {
   SignedTransaction,
   TransactionDraft,
   TransactionFee,
+  TransactionStatus,
 } from '../domain/transaction';
 import { ChainRegistry } from '../repositories/chain/chain-registry';
 import { SigningKey, SimulationSigner } from '../repositories/chain/chain-repository';
@@ -175,6 +176,10 @@ export class TransactionService {
 
   broadcast(signed: SignedTransaction, network: Network): Promise<BroadcastResult> {
     return this.chainRegistry.forNetwork(network).broadcastTransaction(signed, network);
+  }
+
+  getTransactionStatus(hash: string, network: Network): Promise<TransactionStatus> {
+    return this.chainRegistry.forNetwork(network).getTransactionStatus(hash, network);
   }
 
   async signAndBroadcast(draft: TransactionDraft, account: Account, network: Network): Promise<BroadcastResult> {

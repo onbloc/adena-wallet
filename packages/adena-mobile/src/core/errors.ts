@@ -25,6 +25,7 @@ export const AppErrorCode = {
   CRYPTO_UNAVAILABLE: 'CRYPTO_UNAVAILABLE',
   MIGRATION_FAILED: 'MIGRATION_FAILED',
   TRANSACTION_FAILED: 'TRANSACTION_FAILED',
+  TRANSACTION_PENDING: 'TRANSACTION_PENDING',
 } as const;
 
 export const BIOMETRICS_INVALIDATED_MESSAGE
@@ -48,3 +49,10 @@ export class AppError extends Error {
 
 export const isAppError = (error: unknown, code?: AppErrorCode): error is AppError =>
   error instanceof AppError && (code === undefined || error.code === code);
+
+// The broadcast outcome is unknown (timeout, network error): the tx may still commit, so it must not be re-sent blindly.
+export class TransactionPendingError extends AppError {
+  constructor(readonly hash: string, message = 'The transaction was sent but not confirmed yet', options?: { cause?: unknown }) {
+    super(AppErrorCode.TRANSACTION_PENDING, message, options);
+  }
+}

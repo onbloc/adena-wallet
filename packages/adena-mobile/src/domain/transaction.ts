@@ -25,6 +25,9 @@ export interface BroadcastResult {
   data?: string;
 }
 
+// Lookup result for a broadcast tx; `pending` also covers "not found yet" and lookup failures.
+export type TransactionStatus = 'committed' | 'failed' | 'pending';
+
 // Human-readable message description used by review screens.
 export interface MessageSummary {
   title: string;
