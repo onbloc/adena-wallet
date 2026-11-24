@@ -1,8 +1,8 @@
 import { StyleSheet } from 'react-native';
 
-import { colors, radius, spacing } from '../../../theme';
+import { makeStyles, radius, spacing } from '../../../theme';
 
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   root: { flex: 1, justifyContent: 'flex-end' },
   scrim: { ...StyleSheet.absoluteFill, backgroundColor: colors.overlay.scrim },
   sheet: {
@@ -20,4 +20,4 @@ export const styles = StyleSheet.create({
   origin: { gap: 2, paddingBottom: spacing.space4 },
   actions: { flexDirection: 'row', gap: spacing.space8 },
   action: { flex: 1 },
-});
+}));

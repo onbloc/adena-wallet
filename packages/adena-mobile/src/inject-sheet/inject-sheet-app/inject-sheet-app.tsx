@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import React, { ReactElement, useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AppThemeProvider, SystemThemeProvider } from '../../app/app-theme-provider';
 import { ErrorBoundary } from '../../app/error-boundary';
 import { InjectSheetPage } from '../../components/pages';
 import { ContainerProvider } from '../../di/container-provider';
@@ -52,18 +53,20 @@ const InjectSheetRoot = ({ requestUrl, sheetToken, callerPackage }: InjectSheetA
   if (bootError) {
     return (
       <SafeAreaProvider>
-        <InjectSheetPage
-          title=''
-          rows={[]}
-          messages={[]}
-          loading={false}
-          unavailable={{ title: 'Adena could not start', description: bootError }}
-          approveLabel=''
-          approving={false}
-          canApprove={false}
-          onApprove={handleApprove}
-          onReject={handleReject}
-        />
+        <SystemThemeProvider>
+          <InjectSheetPage
+            title=''
+            rows={[]}
+            messages={[]}
+            loading={false}
+            unavailable={{ title: 'Adena could not start', description: bootError }}
+            approveLabel=''
+            approving={false}
+            canApprove={false}
+            onApprove={handleApprove}
+            onReject={handleReject}
+          />
+        </SystemThemeProvider>
       </SafeAreaProvider>
     );
   }
@@ -96,12 +99,15 @@ const InjectSheetRoot = ({ requestUrl, sheetToken, callerPackage }: InjectSheetA
     <SafeAreaProvider>
       <ContainerProvider container={container}>
         <QueryClientProvider client={queryClient}>
-          <ErrorBoundary
-            fallback={fallbackErrorBoundary}
-            onError={handleError}
-          >
-            <InjectSheetScreen requestUrl={requestUrl} callerPackage={callerPackage} session={session} />
-          </ErrorBoundary>
+          {/* Follows the same Theme setting as the main app; it is a separate JS root. */}
+          <AppThemeProvider>
+            <ErrorBoundary
+              fallback={fallbackErrorBoundary}
+              onError={handleError}
+            >
+              <InjectSheetScreen requestUrl={requestUrl} callerPackage={callerPackage} session={session} />
+            </ErrorBoundary>
+          </AppThemeProvider>
         </QueryClientProvider>
       </ContainerProvider>
     </SafeAreaProvider>

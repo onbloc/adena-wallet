@@ -1,10 +1,8 @@
-import { StyleSheet } from 'react-native';
-
-import { colors, radius, spacing } from '../../../theme';
+import { makeStyles, radius, spacing } from '../../../theme';
 
 const BADGE_SIZE = 64;
 
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.space16 },
   badge: {
     width: BADGE_SIZE,
@@ -35,4 +33,4 @@ export const styles = StyleSheet.create({
   strength: { marginTop: -spacing.space8, gap: spacing.space4 },
   meter: { flexDirection: 'row', gap: spacing.space4 },
   meterSegment: { flex: 1, height: 4, borderRadius: radius.circle, backgroundColor: colors.border.subtle },
-});
+}));

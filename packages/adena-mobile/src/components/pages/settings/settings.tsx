@@ -133,7 +133,7 @@ export const SettingsPage = (props: SettingsPageProps): ReactElement => {
         )}
         <ListRow label='Recovery phrase' onPress={props.onOpenRecoveryPhrase} />
         {props.cloudBackupLabel && props.onOpenCloudBackup && (
-          <ListRow label={props.cloudBackupLabel} leadingIcon='cloud' value={props.cloudBackupValue} valueColor='warning' onPress={props.onOpenCloudBackup} />
+          <ListRow label={props.cloudBackupLabel} value={props.cloudBackupValue} valueColor='warning' onPress={props.onOpenCloudBackup} />
         )}
         <ListRow label='Lock wallet' onPress={props.onLock} />
         <ListRow label='Reset wallet' destructive onPress={props.onOpenReset} />

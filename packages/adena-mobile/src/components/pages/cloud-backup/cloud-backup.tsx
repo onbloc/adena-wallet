@@ -1,10 +1,10 @@
 import React, { ReactElement, useRef } from 'react';
 import { TextInputInstance, View } from 'react-native';
 
-import { colors } from '../../../theme';
+import { useThemeColors } from '../../../theme';
 import { Button, Icon, IconButton, Spinner, Text, TextColor } from '../../atoms';
 import { Dialog, InlineAlert, PasswordSheet, PasswordSheetProps, Screen, TextField, TopBar } from '../../molecules';
-import { styles } from './cloud-backup.styles';
+import { useStyles } from './cloud-backup.styles';
 
 export type CloudBackupPageState
   = | { kind: 'loading' }
@@ -115,95 +115,119 @@ const BackupPasswordForm = ({ providerName, form }: { providerName: string; form
 
 const STRENGTH_LEVELS = 3;
 
-const StrengthMeter = ({ strength }: { strength: NonNullable<BackupPasswordFormProps['strength']> }): ReactElement => (
-  <View style={styles.strength}>
-    {strength.level !== undefined && (
-      <View style={styles.meter} testID='backup-password-meter'>
-        {Array.from({ length: STRENGTH_LEVELS }, (_, index) => (
-          <View
-            key={index}
-            style={[styles.meterSegment, index < strength.level! && { backgroundColor: colors.status[strength.color] }]}
-          />
-        ))}
-      </View>
-    )}
-    <Text variant='meta' color={strength.color}>{`Password strength: ${strength.label}`}</Text>
-  </View>
-);
+const StrengthMeter = ({ strength }: { strength: NonNullable<BackupPasswordFormProps['strength']> }): ReactElement => {
+  const styles = useStyles();
+  const colors = useThemeColors();
 
-const BackupList = ({ backups, onDelete }: { backups: CloudBackupListItem[]; onDelete?: (id: string) => void }): ReactElement => (
-  <View style={styles.items}>
-    <Text variant='row'>Backups in this account</Text>
-    {backups.map(backup => (
-      <View key={backup.id} style={styles.item} testID={`cloud-backup-item-${backup.id}`}>
-        <View style={styles.itemLabel}>
-          <Text variant='body'>{backup.label}</Text>
-          <Text variant='meta' color='secondary'>{backup.current ? 'This wallet' : 'Another wallet or device'}</Text>
+  return (
+    <View style={styles.strength}>
+      {strength.level !== undefined && (
+        <View style={styles.meter} testID='backup-password-meter'>
+          {Array.from({ length: STRENGTH_LEVELS }, (_, index) => (
+            <View
+              key={index}
+              style={[styles.meterSegment, index < strength.level! && { backgroundColor: colors.status[strength.color] }]}
+            />
+          ))}
         </View>
-        {onDelete && (
-          <IconButton icon='trash' accessibilityLabel={`Delete ${backup.label}`} onPress={() => onDelete(backup.id)} testID={`cloud-backup-item-delete-${backup.id}`} />
-        )}
-      </View>
-    ))}
-  </View>
-);
-
-const Header = ({ title, providerName }: { title: string; providerName: string }): ReactElement => (
-  <View style={styles.header}>
-    <View style={styles.badge}>
-      <Icon name='cloud' color={colors.icon.primary} />
+      )}
+      <Text variant='meta' color={strength.color}>{`Password strength: ${strength.label}`}</Text>
     </View>
-    <View style={styles.headerTexts}>
-      <Text variant='section'>{title}</Text>
-      <Text variant='meta' color='secondary'>{providerName}</Text>
-    </View>
-  </View>
-);
+  );
+};
 
-const PasswordNote = (): ReactElement => (
-  <View style={styles.note}>
-    <Icon name='shield' color={colors.icon.primary} />
-    <View style={styles.noteTexts}>
-      <Text variant='row'>Keep your password safe</Text>
-      <Text variant='meta' color='secondary'>You'll need your backup password when restoring this wallet.</Text>
-    </View>
-  </View>
-);
+const BackupList = ({ backups, onDelete }: { backups: CloudBackupListItem[]; onDelete?: (id: string) => void }): ReactElement => {
+  const styles = useStyles();
 
-const BackedUpContent = ({ providerName, state }: { providerName: string; state: Extract<CloudBackupPageState, { kind: 'backedUp' }> }): ReactElement => (
-  <>
-    <Header
-      title={state.remoteChange ? state.remoteChange.title : state.outdated ? 'Your backup is out of date' : 'Your backup is ready'}
-      providerName={providerName}
-    />
-    <Text variant='body' color='secondary'>{`Restore your wallet using your ${providerName} account and backup password.`}</Text>
-    {state.remoteChange && <InlineAlert tone='warning' title={state.remoteChange.title} description={state.remoteChange.description} />}
-    {state.outdated && (
-      <InlineAlert
-        tone='warning'
-        title='Accounts changed since your last backup'
-        description='Back up again so a restore includes every account on this device.'
-      />
-    )}
+  return (
     <View style={styles.items}>
-      {state.items.map(item => (
-        <View key={item} style={styles.item} accessible accessibilityLabel={`${item}, ${state.outdated ? 'Out of date' : 'Backed up'}`}>
-          <Text variant='row' style={styles.itemLabel}>{item}</Text>
-          {state.outdated
-            ? <Text variant='meta' color='warning'>Out of date</Text>
-            : (
-                <>
-                  <Text variant='meta' color='success'>Backed up</Text>
-                  <Icon name='check' size={20} color={colors.icon.primary} />
-                </>
-              )}
+      <Text variant='row'>Backups in this account</Text>
+      {backups.map(backup => (
+        <View key={backup.id} style={styles.item} testID={`cloud-backup-item-${backup.id}`}>
+          <View style={styles.itemLabel}>
+            <Text variant='body'>{backup.label}</Text>
+            <Text variant='meta' color='secondary'>{backup.current ? 'This wallet' : 'Another wallet or device'}</Text>
+          </View>
+          {onDelete && (
+            <IconButton icon='trash' accessibilityLabel={`Delete ${backup.label}`} onPress={() => onDelete(backup.id)} testID={`cloud-backup-item-delete-${backup.id}`} />
+          )}
         </View>
       ))}
     </View>
-    <Text variant='meta' color='secondary'>{`Last backup: ${state.backedUpAt}`}</Text>
-    <PasswordNote />
-  </>
-);
+  );
+};
+
+const Header = ({ title, providerName }: { title: string; providerName: string }): ReactElement => {
+  const styles = useStyles();
+  const colors = useThemeColors();
+
+  return (
+    <View style={styles.header}>
+      <View style={styles.badge}>
+        <Icon name='cloud' color={colors.icon.primary} />
+      </View>
+      <View style={styles.headerTexts}>
+        <Text variant='section'>{title}</Text>
+        <Text variant='meta' color='secondary'>{providerName}</Text>
+      </View>
+    </View>
+  );
+};
+
+const PasswordNote = (): ReactElement => {
+  const styles = useStyles();
+  const colors = useThemeColors();
+
+  return (
+    <View style={styles.note}>
+      <Icon name='shield' color={colors.icon.primary} />
+      <View style={styles.noteTexts}>
+        <Text variant='row'>Keep your password safe</Text>
+        <Text variant='meta' color='secondary'>You'll need your backup password when restoring this wallet.</Text>
+      </View>
+    </View>
+  );
+};
+
+const BackedUpContent = ({ providerName, state }: { providerName: string; state: Extract<CloudBackupPageState, { kind: 'backedUp' }> }): ReactElement => {
+  const styles = useStyles();
+  const colors = useThemeColors();
+
+  return (
+    <>
+      <Header
+        title={state.remoteChange ? state.remoteChange.title : state.outdated ? 'Your backup is out of date' : 'Your backup is ready'}
+        providerName={providerName}
+      />
+      <Text variant='body' color='secondary'>{`Restore your wallet using your ${providerName} account and backup password.`}</Text>
+      {state.remoteChange && <InlineAlert tone='warning' title={state.remoteChange.title} description={state.remoteChange.description} />}
+      {state.outdated && (
+        <InlineAlert
+          tone='warning'
+          title='Accounts changed since your last backup'
+          description='Back up again so a restore includes every account on this device.'
+        />
+      )}
+      <View style={styles.items}>
+        {state.items.map(item => (
+          <View key={item} style={styles.item} accessible accessibilityLabel={`${item}, ${state.outdated ? 'Out of date' : 'Backed up'}`}>
+            <Text variant='row' style={styles.itemLabel}>{item}</Text>
+            {state.outdated
+              ? <Text variant='meta' color='warning'>Out of date</Text>
+              : (
+                  <>
+                    <Text variant='meta' color='success'>Backed up</Text>
+                    <Icon name='check' size={20} color={colors.icon.primary} />
+                  </>
+                )}
+          </View>
+        ))}
+      </View>
+      <Text variant='meta' color='secondary'>{`Last backup: ${state.backedUpAt}`}</Text>
+      <PasswordNote />
+    </>
+  );
+};
 
 const NoneContent = ({ providerName }: { providerName: string }): ReactElement => (
   <>
@@ -216,6 +240,7 @@ const NoneContent = ({ providerName }: { providerName: string }): ReactElement =
 );
 
 const Footer = ({ props }: { props: CloudBackupPageProps }): ReactElement | null => {
+  const styles = useStyles();
   const { state, backupForm } = props;
 
   if (backupForm) {
@@ -249,6 +274,7 @@ const Footer = ({ props }: { props: CloudBackupPageProps }): ReactElement | null
 };
 
 export const CloudBackupPage = (props: CloudBackupPageProps): ReactElement => {
+  const styles = useStyles();
   const { state, providerName } = props;
 
   return (

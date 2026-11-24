@@ -69,7 +69,8 @@ class SceneDelegate: RCTDefaultReactNativeFactoryDelegate, UIWindowSceneDelegate
     }
     let cover = UIStoryboard(name: "LaunchScreen", bundle: nil).instantiateInitialViewController()?.view
       ?? UIView()
-    cover.backgroundColor = cover.backgroundColor ?? .systemBackground
+    // Matches the JS canvas; the window's interface style follows the in-app Theme setting.
+    cover.backgroundColor = UIColor(named: "LaunchBackground") ?? .systemBackground
     cover.frame = window.bounds
     cover.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     window.addSubview(cover)

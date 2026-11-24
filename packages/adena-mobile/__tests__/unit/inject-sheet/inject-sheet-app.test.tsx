@@ -5,10 +5,13 @@ import { InjectSheetPage, InjectSheetPageProps } from '../../../src/components/p
 import InjectSheetApp from '../../../src/inject-sheet/inject-sheet-app';
 import { finishSheet, SheetSession } from '../../../src/inject-sheet/inject-sheet-screen';
 import { useNativeContainerQuery } from '../../../src/queries/boot.queries';
+import { StoragePreferenceRepository } from '../../../src/repositories/preference.repository';
+import { PreferenceService } from '../../../src/services/preference.service';
+import { MemoryKeyValueStore } from '../../../src/storage/memory-key-value-store';
 
 type MockNative = { complete: jest.Mock; dismiss: jest.Mock; onDismissRequest: jest.Mock };
 const mockNative = { current: null as MockNative | null };
-const mockSheet = { crash: false, inFlightOnCrash: false, session: null as SheetSession | null };
+const mockSheet = { crash: false, inFlightOnCrash: false, session: null as SheetSession | null, scheme: '' };
 let dismissListener: ((token: string) => void) | undefined;
 const removeListener = jest.fn();
 const createNative = (): MockNative => ({
@@ -38,6 +41,7 @@ jest.mock('../../../src/inject-sheet/inject-sheet-screen', () => {
     finishSheet: jest.fn(),
     InjectSheetScreen: ({ requestUrl, session }: { requestUrl?: string; session: SheetSession }): ReactElement => {
       mockSheet.session = session;
+      mockSheet.scheme = jest.requireActual('../../../src/hooks/use-app-theme').useAppTheme().scheme;
 
       if (mockSheet.crash) {
         session.inFlight = mockSheet.inFlightOnCrash;
@@ -55,7 +59,8 @@ const pageProps = (): InjectSheetPageProps => (InjectSheetPage as unknown as jes
 describe('InjectSheetApp', () => {
   const parseRequestUrl = jest.fn((url: string) => ({ requestId: url }));
   const failUnexpected = jest.fn(() => 'cb://fail');
-  const container = { dappService: { parseRequestUrl, failUnexpected } };
+  const preferenceService = new PreferenceService(new StoragePreferenceRepository(new MemoryKeyValueStore()));
+  const container = { dappService: { parseRequestUrl, failUnexpected }, preferenceService };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -80,6 +85,14 @@ describe('InjectSheetApp', () => {
     (useNativeContainerQuery as jest.Mock).mockReturnValue(boot({ data: container }));
     await render(<InjectSheetApp requestUrl='adena://request?payload=x' />);
     expect(screen.getByText('screen:adena://request?payload=x')).toBeTruthy();
+  });
+
+  it('follows the stored theme preference like the main app', async () => {
+    preferenceService.update({ theme: 'dark' });
+    (useNativeContainerQuery as jest.Mock).mockReturnValue(boot({ data: container }));
+    await render(<InjectSheetApp requestUrl='adena://request?payload=x' />);
+    expect(mockSheet.scheme).toBe('dark');
+    preferenceService.update({ theme: 'system' });
   });
 
   it('shows a closable failure page when boot fails', async () => {

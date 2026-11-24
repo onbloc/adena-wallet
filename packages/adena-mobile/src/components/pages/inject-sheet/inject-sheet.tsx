@@ -6,7 +6,7 @@ import { spacing } from '../../../theme';
 import { Button, Skeleton, Text } from '../../atoms';
 import { InlineAlert, KeyValueRow, TextField } from '../../molecules';
 import { DappMessageList, DappMessageView, DappRequester } from '../dapp-request';
-import { styles } from './inject-sheet.styles';
+import { useStyles } from './inject-sheet.styles';
 
 export const SheetAuthMode = {
   BIOMETRIC: 'biometric',
@@ -75,6 +75,7 @@ const useKeyboardHeight = (): number => {
 
 // Bottom sheet drawn by the translucent Android activity on top of the calling dApp.
 export const InjectSheetPage = (props: InjectSheetPageProps): ReactElement => {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   const bottomPadding = keyboardHeight > 0 ? keyboardHeight + insets.bottom + spacing.space16 : Math.max(insets.bottom, spacing.space24);
