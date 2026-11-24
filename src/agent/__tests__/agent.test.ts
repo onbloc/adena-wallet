@@ -118,6 +118,29 @@ describe('AIAgent', () => {
     expect(followup).toContain('What was my balance?');
   });
 
+  it('answers a public realm read from standard text without marking it as a verified balance', async () => {
+    const path = 'gno.land/r/gnoswap/gns';
+    const mcp = fakeOnblocMcp([
+      { name: 'get_realm_info', content: [{ type: 'text', text: 'BalanceOf is in gns.gno' }] },
+      { name: 'get_realm_source', content: [{ type: 'text', text: 'func BalanceOf() { return balance }' }] },
+    ]);
+    const model = new MockLanguageModelV4({ doGenerate: [
+      call('get_realm_info', { path }),
+      call('get_realm_source', { path, filename: 'gns.gno' }),
+      answer('BalanceOf reads the balance.'),
+    ] });
+    const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
+    const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })] });
+    const events = await collect(new AIAgent({ llm, harness }).run({ prompt: 'Where is BalanceOf and what does it do?' }, { account }));
+    expect(mcp.calls).toEqual([
+      { name: 'get_realm_info', arguments: { path } },
+      { name: 'get_realm_source', arguments: { path, filename: 'gns.gno' } },
+    ]);
+    expect(JSON.stringify(model.doGenerateCalls[2].prompt)).toContain('func BalanceOf()');
+    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'BalanceOf reads the balance.' });
+    expect(events[events.length - 1]).not.toHaveProperty('verifiedAnswer', true);
+  });
+
   it.each(['What is my xGNS balance?', '내 xGNS 잔액은 얼마야?'])(
     'lets the model select a balance operation rather than shortcutting the text: %s', async prompt => {
       const request = { kind: 'one', asset: { kind: 'symbol', value: 'xGNS' } };

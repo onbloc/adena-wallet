@@ -89,6 +89,16 @@ describe('structured balance operations', () => {
     expect(result).toMatchObject({ status: 'partial', missing: ['tokens'], assets: [{ symbol: 'GNOT' }] });
   });
 
+  it('does not turn an unstructured balance claim into a verified balance', async () => {
+    const { result, audit } = await query([
+      { name: 'get_native_balance', content: [{ type: 'text', text: '100 GNOT' }] },
+    ], one('GNOT'));
+    expect(result).toMatchObject({ status: 'unavailable', missing: ['native'], assets: [] });
+    expect(audit).toContainEqual(expect.objectContaining({
+      tool: 'get_native_balance', decision: 'denied', denial: 'INVALID_OUTPUT',
+    }));
+  });
+
   it.each([
     ['another account', { ...native, address: 'g1anotheraccount' }],
     ['another network', { ...native, network: 'another-chain' }],
