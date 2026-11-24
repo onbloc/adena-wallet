@@ -2,18 +2,23 @@ import { decodeTransactionMessage } from '@adena-wallet/sdk';
 
 import { TransactionType, WalletErrorCode } from '../../agent';
 import { AdenaWalletSdk, type AdenaTransaction } from '../adenaWalletSdk';
-import { pickToken, type TokenResolver } from '../tokens';
+import { isNativeSymbol, nativeToken, pickToken, type TokenResolver } from '../tokens';
 
 const sender = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
 const other = 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6';
 const spender = 'g1tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s';
 const gns = { packagePath: 'gno.land/r/gnoswap/gns', symbol: 'GNS', amount: '63607', decimals: 6 };
 
-function makeSdk(chainId?: string) {
+function makeSdk(
+  chainId?: string,
+  { nativeBalance = (1n << 63n) - 1n, tokenBalance = 63607n } = {}
+) {
   const lookups: [string, string][] = [];
   const tokens: TokenResolver = async (query, owner) => {
     lookups.push([query, owner]);
-    return pickToken(query, [gns]);
+    return isNativeSymbol(query)
+      ? nativeToken(nativeBalance)
+      : pickToken(query, [{ ...gns, amount: tokenBalance.toString() }]);
   };
   return { sdk: new AdenaWalletSdk({ tokens, chainId }), lookups };
 }
@@ -90,6 +95,33 @@ describe('transfer', () => {
       summary: { amount: '9223372036854.775807' },
     });
   });
+
+  it.each([
+    ['GNOT', '10', '10', 10000000n],
+    ['GNS', '0.063607', '0.063607', 63607n],
+  ])('allows a transfer of the entire %s balance', async (token, amount, canonical, balance) => {
+    const { sdk } = makeSdk(undefined, { nativeBalance: balance, tokenBalance: balance });
+
+    const { summary } = await sdk.transfer(send(amount, token));
+
+    expect(summary).toMatchObject({ amount: canonical, token });
+  });
+
+  it.each([
+    ['GNOT', '10.000001', 10000000n, '10'],
+    ['GNS', '0.063608', 63607n, '0.063607'],
+    ['GNOT', '0.000001', 0n, '0'],
+    ['GNS', '0.000001', 0n, '0'],
+    ['GNOT', '9007199254.740993', 9007199254740992n, '9007199254.740992'],
+    ['GNS', '9007199254.740993', 9007199254740992n, '9007199254.740992'],
+  ])('refuses %s %s against a balance of %s base units', async (token, amount, balance, available) => {
+    const { sdk } = makeSdk(undefined, { nativeBalance: balance, tokenBalance: balance });
+
+    await expect(sdk.transfer(send(amount, token))).rejects.toMatchObject({
+      code: WalletErrorCode.InsufficientBalance,
+      message: `Balance is too low (available ${available} ${token})`,
+    });
+  });
 });
 
 describe('approve', () => {
@@ -111,6 +143,16 @@ describe('approve', () => {
       value: { caller: sender, pkg_path: gns.packagePath, func: 'Approve', args: [spender, '10000000'] },
     });
     expect((tx as AdenaTransaction).signatures).toEqual([]);
+  });
+
+  it('allows an approval even when the owner holds none of that token', async () => {
+    const { sdk } = makeSdk(undefined, { tokenBalance: 0n });
+
+    const { tx } = await sdk.approve({ from: sender, spender, amount: '100', token: 'GNS' });
+
+    expect(firstMessage(tx)).toMatchObject({
+      value: { func: 'Approve', args: [spender, '100000000'] },
+    });
   });
 
   it.each([

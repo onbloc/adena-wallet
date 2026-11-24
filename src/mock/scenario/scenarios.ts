@@ -33,4 +33,5 @@ export const SCENARIOS: Scenario[] = [
   { name: 'unknown token: nothing prepared', prompt: 'Send 1 FOO to carol', expected: none },
   { name: 'approval of the native token: nothing prepared', prompt: 'Approve carol to spend 5 GNOT', expected: none },
   { name: 'zero amount: nothing prepared', prompt: 'Send 0 GNOT to carol', expected: none },
+  { name: 'insufficient GNOT balance: nothing prepared', prompt: 'Send 100 GNOT to carol', expected: none },
 ];

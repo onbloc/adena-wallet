@@ -147,14 +147,21 @@ format and chain id are assumptions, not real Gno.land values.
 ### The Adena wallet (`src/adena`)
 
 `new AdenaWalletSdk({ tokens, chainId? })` builds Adena transactions from its arguments. It has
-no account and no connection to a wallet. `tokens` resolves a token (`createOnblocTokenResolver`
-reads the sender's `get_token_balances`; GNOT is native and needs no lookup).
+no account and no connection to a wallet. `tokens` resolves a token and its owner's balance in
+base units (`ResolvedToken.balance: bigint`). `createOnblocTokenResolver` reads
+`get_native_balance` for GNOT and `get_token_balances` for GRC20 tokens on each resolution.
 
 - `transfer` builds a bank `MsgSend` (GNOT, in `ugnot`) or a GRC20 `Transfer` realm call;
   `approve` builds a GRC20 `Approve` call (none for GNOT). The model never chooses the realm,
   function or arguments: they come from the resolved token and the checked address and amount.
   `tx` is an unsigned `TransactionBuilder.build()` result: pass it to `adenaSDK.signTransaction`.
 - Amounts are exact base units (`bigint`), at most int64.
+- `transfer` refuses an amount above the sender's resolved balance with `insufficient_balance`;
+  no transaction is built. Amounts equal to the balance are allowed. Fees are **not** included
+  in this check, so a full-balance transfer can still lack funds for gas. `approve` may exceed
+  the token balance because an allowance does not transfer tokens.
+- The balance is a snapshot, not a reservation. The signing wallet must recheck funds and fees
+  before signing or broadcasting; other transactions may have changed the available balance.
 - No `getAllowances` (nothing here can list an owner's allowances), so `get_approvals` is not
   offered; no contacts.
 - A token must be among the sender's holdings; a symbol shared by several is refused with their
@@ -203,13 +210,15 @@ fields in Settings gives a plain chat without the wallet.
 `npm test` scripts the model, so it checks the wiring, not what the model does with a human
 sentence. `make scenario` (jest, `jest.scenario.config.js`, `src/mock/scenario/*.scenario.ts`)
 runs the real agent against llama-server at temperature 0, once per scenario: the Onbloc reads
-are a fixed fake (10 GNOT, 250 GNS), the wallet is `AdenaWalletSdk` with one contact (`carol`).
+are a fixed fake (10 GNOT, 250 GNS). Both the agent and `createOnblocTokenResolver` read that
+same fake MCP; the wallet is `AdenaWalletSdk` with one contact (`carol`).
 Each scenario in `scenarios.ts` is a plain-language prompt and what it must produce:
 
 - a transfer or an approval: the prepared transaction's summary **and** its decoded Adena
   message (`MsgSend` in ugnot, or a GRC20 `Transfer` / `Approve` call with the exact base-unit
   args) must match, the sender is the account, and nothing is signed;
-- or no transaction at all (missing recipient, unknown token, GNOT approval, zero amount).
+- or no transaction at all (missing recipient, unknown token, GNOT approval, zero amount,
+  insufficient balance).
 
 Balance questions are answered by the agent without the model, so they are not scenarios.
 

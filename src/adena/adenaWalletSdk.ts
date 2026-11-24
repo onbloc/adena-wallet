@@ -57,6 +57,12 @@ export class AdenaWalletSdk implements WalletSdk {
   async transfer(params: TransferParams): Promise<PreparedTransaction<TransferSummary>> {
     const { from, token, units } = await this.#resolve(params);
     const to = this.#address(params.to, 'Recipient is not a valid g1... address');
+    if (units > token.balance) {
+      throw new WalletError(
+        WalletErrorCode.InsufficientBalance,
+        `Balance is too low (available ${fromBaseUnits(token.balance, token.decimals)} ${token.symbol})`
+      );
+    }
     const message =
       token.packagePath === undefined
         ? makeMsgSendMessage({ from_address: from, to_address: to, amount: `${units}${NATIVE_DENOM}` })

@@ -1,6 +1,6 @@
 import { WalletErrorCode } from '../../agent';
 import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
-import { createOnblocTokenResolver, NATIVE_TOKEN, pickToken } from '../tokens';
+import { createOnblocTokenResolver, pickToken } from '../tokens';
 
 const owner = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
 const gns = { packagePath: 'gno.land/r/gnoswap/gns', symbol: 'GNS', amount: '63607', decimals: 6 };
@@ -8,21 +8,17 @@ const wugnot = { packagePath: 'gno.land/r/gnoland/wugnot', symbol: 'WUGNOT', amo
 
 describe('pickToken', () => {
   it('finds a token by its symbol in any case', () => {
-    expect(pickToken(' gns ', [wugnot, gns])).toEqual({ symbol: 'GNS', decimals: 6, packagePath: gns.packagePath });
+    expect(pickToken(' gns ', [wugnot, gns])).toEqual({ symbol: 'GNS', decimals: 6, packagePath: gns.packagePath, balance: 63607n });
   });
 
   it('finds a token by its package path', () => {
     expect(pickToken(wugnot.packagePath, [gns, wugnot]).symbol).toBe('WUGNOT');
   });
 
-  it('answers GNOT with the native token without looking at the holdings', () => {
-    expect(pickToken('gnot', [])).toBe(NATIVE_TOKEN);
-  });
-
-  it('lets the native token win its symbol over a GRC20 token calling itself GNOT', () => {
+  it('does not treat a GRC20 token calling itself GNOT as the native token', () => {
     const lookalike = { ...gns, packagePath: 'gno.land/r/scam/gnot', symbol: 'GNOT' };
 
-    expect(pickToken('GNOT', [lookalike])).toBe(NATIVE_TOKEN);
+    expect(() => pickToken('GNOT', [lookalike])).toThrow(expect.objectContaining({ code: WalletErrorCode.UnknownToken }));
     expect(pickToken(lookalike.packagePath, [lookalike]).packagePath).toBe(lookalike.packagePath);
   });
 
@@ -39,6 +35,16 @@ describe('pickToken', () => {
         message: expect.stringContaining(`${gns.packagePath}, ${twin.packagePath}`),
       })
     );
+  });
+
+  it.each([undefined, '-1', '1.5', '1e6', '9'.repeat(79)])('refuses a holding with an unreadable balance: %p', (amount) => {
+    expect(() => pickToken('GNS', [{ ...gns, amount }])).toThrow(
+      expect.objectContaining({ code: WalletErrorCode.UnknownToken })
+    );
+  });
+
+  it('keeps balances above the safe integer range exact', () => {
+    expect(pickToken('GNS', [{ ...gns, amount: '9007199254740993' }]).balance).toBe(9007199254740993n);
   });
 
   it.each([[null], [[null, 'junk', { packagePath: 5, symbol: 'GNS', decimals: 6 }, { ...gns, decimals: -1 }]]])(
@@ -58,15 +64,45 @@ describe('createOnblocTokenResolver', () => {
 
     const token = await createOnblocTokenResolver({ endpoint, fetcher })('GNS', owner);
 
-    expect(token).toEqual({ symbol: 'GNS', decimals: 6, packagePath: gns.packagePath });
+    expect(token).toEqual({ symbol: 'GNS', decimals: 6, packagePath: gns.packagePath, balance: 63607n });
     expect(calls).toEqual([{ name: 'get_token_balances', arguments: { address: owner } }]);
   });
 
-  it('does not call the MCP for the native token', async () => {
-    const { fetcher, calls } = server({ address: owner, items: [] });
+  it('reads the native balance for GNOT instead of a GRC20 lookalike', async () => {
+    const { fetcher, calls } = fakeOnblocMcp([
+      { name: 'get_native_balance', output: { address: owner, denom: 'ugnot', balance: '9007199254740993' } },
+      { name: 'get_token_balances', output: { address: owner, items: [{ ...gns, symbol: 'GNOT' }] } },
+    ]);
 
-    await expect(createOnblocTokenResolver({ endpoint, fetcher })('GNOT', owner)).resolves.toBe(NATIVE_TOKEN);
-    expect(calls).toEqual([]);
+    await expect(createOnblocTokenResolver({ endpoint, fetcher })(' gnot ', owner)).resolves.toEqual({
+      symbol: 'GNOT', decimals: 6, balance: 9007199254740993n,
+    });
+    expect(calls).toEqual([{ name: 'get_native_balance', arguments: { address: owner } }]);
+  });
+
+  it.each([
+    { denom: 'ugnot', balance: '0' },
+    { denom: 'ugnot', balance: '1' },
+  ])('accepts a small native balance: %j', async (output) => {
+    const { fetcher } = fakeOnblocMcp([{ name: 'get_native_balance', output: { address: owner, ...output } }]);
+
+    await expect(createOnblocTokenResolver({ endpoint, fetcher })('GNOT', owner)).resolves.toMatchObject({
+      balance: BigInt(output.balance),
+    });
+  });
+
+  it.each([
+    { denom: 'other', balance: '10' },
+    { denom: 'ugnot', balance: '-1' },
+    { denom: 'ugnot', balance: '1.5' },
+    { denom: 'ugnot', balance: '9'.repeat(79) },
+    { denom: 'ugnot' },
+  ])('fails closed on an invalid native balance: %j', async (output) => {
+    const { fetcher } = fakeOnblocMcp([{ name: 'get_native_balance', output: { address: owner, ...output } }]);
+
+    await expect(createOnblocTokenResolver({ endpoint, fetcher })('GNOT', owner)).rejects.toMatchObject({
+      code: WalletErrorCode.WalletFailed,
+    });
   });
 
   it('turns a failed lookup into a wallet error the model can read', async () => {

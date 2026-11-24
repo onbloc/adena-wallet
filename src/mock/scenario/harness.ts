@@ -2,7 +2,7 @@
 // Onbloc (fake MCP) and the real Adena transaction builder, and collects what it prepared.
 import { decodeTransactionMessage } from '@adena-wallet/sdk';
 
-import { AdenaWalletSdk, pickToken, type AdenaTransaction } from '../../adena';
+import { AdenaWalletSdk, createOnblocTokenResolver, type AdenaTransaction } from '../../adena';
 import { AIAgent, type PreparedTransaction, type WalletSdk } from '../../agent';
 import { Harness } from '../../harness/core';
 import { createOnblocToolSource } from '../../harness/mcp';
@@ -41,13 +41,6 @@ export const serverUrl = () => process.env.SCENARIO_URL ?? DEFAULT_SERVER_URL;
 /** One agent over the model server; each `ask` is an independent single-turn conversation. */
 export async function createScenarioRunner(url = serverUrl()): Promise<ScenarioRunner> {
   const llm = new LLMFromModel(await connectModel(url, DEFAULT_MODEL_NAME), { contextTokens: SERVER_CONTEXT_TOKENS });
-  const adena = new AdenaWalletSdk({ tokens: async (query) => pickToken(query, [GNS]) });
-  // Adena has no address book; the scenarios give the model one contact to name.
-  const wallet: WalletSdk = {
-    getContacts: async () => [{ alias: 'carol', address: CAROL }],
-    transfer: (params) => adena.transfer(params),
-    approve: (params) => adena.approve(params),
-  };
 
   return {
     async ask(prompt) {
@@ -55,11 +48,18 @@ export async function createScenarioRunner(url = serverUrl()): Promise<ScenarioR
         { name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: GNOT_UNITS } },
         { name: 'get_token_balances', output: { address: ACCOUNT, items: [GNS] } },
       ]);
+      const onbloc = { endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher };
+      const adena = new AdenaWalletSdk({ tokens: createOnblocTokenResolver(onbloc) });
+      const wallet: WalletSdk = {
+        getContacts: async () => [{ alias: 'carol', address: CAROL }],
+        transfer: (params) => adena.transfer(params),
+        approve: (params) => adena.approve(params),
+      };
       const prepared: PreparedTransaction[] = [];
       const agent = new AIAgent({
         llm,
         harness: new Harness({
-          toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })],
+          toolSources: [createOnblocToolSource(onbloc)],
         }),
         wallet,
         onTransaction: (transaction) => {
