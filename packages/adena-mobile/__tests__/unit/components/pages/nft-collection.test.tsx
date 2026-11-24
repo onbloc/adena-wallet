@@ -6,10 +6,11 @@ import { renderPage } from './render-page';
 
 const props = (overrides: Partial<NftCollectionPageProps> = {}): NftCollectionPageProps => ({
   name: 'GnoPunks',
-  countLabel: '2 items',
+  subtitle: 'gno.land/r/demo/punks',
+  stats: [{ label: 'Owned', value: '2' }, { label: 'Symbol', value: 'PUNK' }],
   items: [
-    { key: 'punk-1', title: 'Punk #1', subtitle: 'GnoPunks', imageUri: 'https://example.com/1.png', imageLoading: false },
-    { key: 'punk-2', title: 'Punk #2', imageUri: null, imageLoading: true },
+    { key: 'punk-1', title: '#1', subtitle: 'Punk', imageUri: 'https://example.com/1.png', imageLoading: false },
+    { key: 'punk-2', title: '#2', imageUri: null, imageLoading: true },
   ],
   loading: false,
   hasMore: true,
@@ -26,9 +27,13 @@ describe('NftCollectionPage', () => {
 
     await renderPage(<NftCollectionPage {...page} />);
 
-    expect(screen.getByText('2 items')).toBeTruthy();
+    expect(screen.getByText('NFT collection')).toBeTruthy();
+    expect(screen.getByText('GnoPunks')).toBeTruthy();
+    expect(screen.getByText('gno.land/r/demo/punks')).toBeTruthy();
+    expect(screen.getByText('PUNK')).toBeTruthy();
+    expect(screen.getByText('Owned')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Punk #1' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Punk #2' }));
+    await fireEvent.press(screen.getByRole('button', { name: '#2' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Load more' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
 

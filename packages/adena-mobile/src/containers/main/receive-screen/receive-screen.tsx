@@ -15,6 +15,11 @@ export const ReceiveScreen = ({ navigation }: NativeStackScreenProps<MainStackPa
 
   const handleShare = (): Promise<{ action: string; activityType: string | undefined }> => Share.share({ message: address });
 
+  // The sheet is replaced rather than stacked under the next screen.
+  const handleOpenNetworks = (): void => navigation.replace('Networks');
+
+  const handleScan = (): void => navigation.replace('QrScanner');
+
   return (
     <ReceivePage
       accountName={account?.name ?? ''}
@@ -23,6 +28,8 @@ export const ReceiveScreen = ({ navigation }: NativeStackScreenProps<MainStackPa
       onCopy={handleCopy}
       onShare={handleShare}
       onClose={navigation.goBack}
+      onOpenNetworks={handleOpenNetworks}
+      onScan={handleScan}
     />
   );
 };

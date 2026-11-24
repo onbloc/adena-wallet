@@ -24,11 +24,12 @@ interface ScannerCameraProps {
 const ScannerCamera = ({ device, isActive, onScan, onError }: ScannerCameraProps): ReactElement => {
   const output = useBarcodeScannerOutput({ barcodeFormats: QR_FORMATS, onBarcodeScanned: onScan, onError });
 
-  return <Camera style={StyleSheet.absoluteFill} device={device} isActive={isActive} outputs={[output]} onError={onError} />;
+  // TextureView preview so the rounded viewfinder also clips it on Android.
+  return <Camera style={StyleSheet.absoluteFill} device={device} isActive={isActive} outputs={[output]} onError={onError} implementationMode='compatible' />;
 };
 
 export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'QrScanner'>): ReactElement => {
-  const { returnKey } = route.params;
+  const returnKey = route.params?.returnKey;
   const { chainRegistry } = useContainer();
   const { network } = useWalletSnapshot();
   const permission = useCameraPermission();
@@ -73,9 +74,17 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
 
     doneRef.current = true;
     setDone(true);
+
+    if (!returnKey) {
+      navigation.replace('SendRecipient', { scannedAddress: address });
+      return;
+    }
+
     navigation.dispatch({ ...CommonActions.setParams({ scannedAddress: address }), source: returnKey });
     navigation.goBack();
   };
+
+  const handleShowMyQr = (): void => navigation.replace('Receive');
 
   const handleCameraError = (): void => setError('The camera stopped unexpectedly.');
 
@@ -92,9 +101,10 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
       camera={device && permission.hasPermission
         ? <ScannerCamera device={device} isActive={focused && !done} onScan={handleScan} onError={handleCameraError} />
         : undefined}
-      hint={`Scan a ${network.chainName} address QR code`}
+      hint={`${network.chainName} wallet address`}
       error={error}
       onOpenSettings={handleOpenSettings}
+      onShowMyQr={handleShowMyQr}
       onClose={navigation.goBack}
     />
   );

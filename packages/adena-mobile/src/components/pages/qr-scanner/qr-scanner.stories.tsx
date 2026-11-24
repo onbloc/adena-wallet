@@ -13,7 +13,7 @@ const meta = {
   title: 'Pages/QrScanner',
   component: QrScannerPage,
   parameters: { layout: 'fullscreen' },
-  args: { status: 'scanning', camera: CAMERA, hint: 'Scan a Gno.land address QR code', onOpenSettings: fn(), onClose: fn() },
+  args: { status: 'scanning', camera: CAMERA, hint: 'Gno.land wallet address', onOpenSettings: fn(), onShowMyQr: fn(), onClose: fn() },
 } satisfies Meta<typeof QrScannerPage>;
 
 export default meta;

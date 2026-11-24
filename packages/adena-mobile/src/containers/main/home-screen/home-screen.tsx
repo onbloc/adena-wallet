@@ -46,13 +46,19 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
     ? portfolio.usd - portfolio.usd / (1 + portfolio.change24h / 100)
     : null;
 
+  const ownedTotal = (collections.data ?? []).reduce((sum, collection) => sum + collection.ownedCount, 0);
+  const collectionCount = collections.data?.length ?? 0;
+  const nftSummary = collectionCount > 0
+    ? `${ownedTotal} ${ownedTotal === 1 ? 'collectible' : 'collectibles'} · ${collectionCount} ${collectionCount === 1 ? 'collection' : 'collections'}`
+    : undefined;
+
   const handleCopyAddress = (): void => copy(address);
 
   const handleOpenAccounts = (): void => navigation.navigate('Accounts');
 
   const handleOpenSettings = (): void => navigation.navigate('Settings');
 
-  const handleOpenNetworks = (): void => navigation.navigate('Networks');
+  const handleScan = (): void => navigation.navigate('QrScanner');
 
   const handleOpenToken = (tokenId: string): void => navigation.navigate('TokenDetails', { tokenId });
 
@@ -93,6 +99,7 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
         imageUri: thumbnails[collection.id]?.uri,
         imageLoading: thumbnails[collection.id]?.loading ?? false,
       }))}
+      nftSummary={nftSummary}
       nftSupported={Boolean(network.apiUrl)}
       nftLoading={collections.isPending && collections.fetchStatus !== 'idle'}
       tab={tab}
@@ -102,7 +109,7 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
       onCopyAddress={handleCopyAddress}
       onOpenAccounts={handleOpenAccounts}
       onOpenSettings={handleOpenSettings}
-      onOpenNetworks={handleOpenNetworks}
+      onScan={handleScan}
       onOpenToken={handleOpenToken}
       onOpenCollection={handleOpenCollection}
       onManageTokens={handleManageTokens}

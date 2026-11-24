@@ -43,8 +43,9 @@ export type MainStackParamList = {
   SendRecipient: { tokenId?: string; scannedAddress?: string } | undefined;
   SendAmount: { toAddress: string; tokenId?: string };
   Receive: undefined;
-  // The scanned address is written back as `scannedAddress` on the route with this key.
-  QrScanner: { returnKey: string };
+  // With a return key the scanned address is written back as `scannedAddress` on that route;
+  // without one the scanner continues to the send flow.
+  QrScanner: { returnKey?: string } | undefined;
   Settings: undefined;
   RecoveryPhrase: { keyringId: string };
   ChangePassword: undefined;

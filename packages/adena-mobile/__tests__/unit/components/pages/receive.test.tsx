@@ -35,6 +35,19 @@ describe('ReceivePage', () => {
     expect(page.onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('opens networks and the scanner when provided', async () => {
+    const page = props({ onOpenNetworks: jest.fn(), onScan: jest.fn() });
+
+    await renderPage(<ReceivePage {...page} />);
+
+    expect(screen.getByText('Wallet address')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Gno.land' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Scan a QR code' }));
+
+    expect(page.onOpenNetworks).toHaveBeenCalledTimes(1);
+    expect(page.onScan).toHaveBeenCalledTimes(1);
+  });
+
   it('renders long names and testnet labels', async () => {
     const accountName = 'An extremely long account name used for layout testing purposes';
 

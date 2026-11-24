@@ -1,18 +1,18 @@
 import { StyleSheet } from 'react-native';
 
-import { colors, fontFamily, sizes } from '../../../theme';
+import { colors, fontFamily, sizes, spacing } from '../../../theme';
 
 export const styles = StyleSheet.create({
-  row: { flexDirection: 'row' },
+  row: { flexDirection: 'row', gap: spacing.space16 },
   tab: {
     height: sizes.tab,
-    minWidth: 88,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.space8,
     alignItems: 'center',
     justifyContent: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
   active: { borderBottomColor: colors.border.focus },
+  label: { fontFamily: fontFamily.medium },
   activeLabel: { fontFamily: fontFamily.semiBold },
 });

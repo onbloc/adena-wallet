@@ -44,7 +44,7 @@ const props = (overrides: Partial<WalletHomePageProps> = {}): WalletHomePageProp
   onCopyAddress: jest.fn(),
   onOpenAccounts: jest.fn(),
   onOpenSettings: jest.fn(),
-  onOpenNetworks: jest.fn(),
+  onScan: jest.fn(),
   onOpenToken: jest.fn(),
   onOpenCollection: jest.fn(),
   onManageTokens: jest.fn(),
@@ -60,12 +60,12 @@ describe('WalletHomePage', () => {
 
     await renderPage(<WalletHomePage {...page} />);
 
-    expect(screen.getByText('Mainnet')).toBeTruthy();
+    expect(screen.queryByText('Mainnet')).toBeNull();
     expect(screen.getByText('+1.2%')).toBeTruthy();
     expect(screen.getByText('g1jg8m…sqf5')).toBeTruthy();
     expect(screen.queryByText('Unable to load balances')).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'Switch account' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Select network' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Scan QR code' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Settings' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Copy address' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Send' }));
@@ -74,10 +74,10 @@ describe('WalletHomePage', () => {
     await fireEvent.press(screen.getByText('Gnoswap'));
     await fireEvent.press(screen.getByRole('button', { name: 'Manage tokens' }));
     await fireEvent.press(screen.getByRole('tab', { name: 'NFTs' }));
-    await act(() => refreshControlOf(screen.getByText('Mainnet')).onRefresh());
+    await act(() => refreshControlOf(screen.getByText('+1.2%')).onRefresh());
 
     expect(page.onOpenAccounts).toHaveBeenCalledTimes(1);
-    expect(page.onOpenNetworks).toHaveBeenCalledTimes(1);
+    expect(page.onScan).toHaveBeenCalledTimes(1);
     expect(page.onOpenSettings).toHaveBeenCalledTimes(1);
     expect(page.onCopyAddress).toHaveBeenCalledTimes(1);
     expect(page.onSend).toHaveBeenCalledTimes(1);
@@ -117,11 +117,12 @@ describe('WalletHomePage', () => {
   });
 
   it('lists collections on the NFTs tab and opens them', async () => {
-    const page = props({ tab: 'nfts' });
+    const page = props({ tab: 'nfts', nftSummary: '4 collectibles · 2 collections' });
 
     await renderPage(<WalletHomePage {...page} />);
 
     expect(screen.queryByRole('button', { name: 'Manage tokens' })).toBeNull();
+    expect(screen.getByText('4 collectibles · 2 collections')).toBeTruthy();
     expect(screen.getByText('3 items')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Gnopher' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Untitled' }));
@@ -141,6 +142,7 @@ describe('WalletHomePage', () => {
 
     await rerender(<WalletHomePage {...props({ tab: 'nfts', collections: [] })} />);
     expect(screen.getByText('No collectibles yet')).toBeTruthy();
+    expect(screen.queryByText(/collectibles ·/)).toBeNull();
     expect(screen.getByRole('button', { name: 'Manage NFTs' })).toBeTruthy();
   });
 

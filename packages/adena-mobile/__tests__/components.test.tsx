@@ -53,7 +53,7 @@ describe('WalletHomePage', () => {
     onCopyAddress: jest.fn(),
     onOpenAccounts: jest.fn(),
     onOpenSettings: jest.fn(),
-    onOpenNetworks: jest.fn(),
+    onScan: jest.fn(),
     onOpenToken: jest.fn(),
     onOpenCollection: jest.fn(),
     onManageTokens: jest.fn(),

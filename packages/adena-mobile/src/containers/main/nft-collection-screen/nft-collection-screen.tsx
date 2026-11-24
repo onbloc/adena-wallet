@@ -19,6 +19,12 @@ export const NftCollectionScreen = ({ navigation, route }: NativeStackScreenProp
     nftId: item.nftId,
     enabled: collection.supportsTokenUri,
   })));
+  const thumbnail = useNftImages(network, [{
+    key: collection.id,
+    packagePath: collection.packagePath,
+    nftId: collection.thumbnailNftId,
+    enabled: collection.supportsTokenUri,
+  }])[collection.id];
 
   const handleLoadMore = (): void => {
     itemsQuery.fetchNextPage();
@@ -35,11 +41,18 @@ export const NftCollectionScreen = ({ navigation, route }: NativeStackScreenProp
   return (
     <NftCollectionPage
       name={collection.name}
-      countLabel={`${collection.ownedCount} owned · ${collection.symbol}`}
+      subtitle={collection.packagePath}
+      thumbnailUri={thumbnail?.uri}
+      thumbnailLoading={thumbnail?.loading}
+      stats={[
+        { label: 'Owned', value: String(collection.ownedCount) },
+        { label: 'Symbol', value: collection.symbol },
+        { label: 'Network', value: network.networkName },
+      ]}
       items={items.map(item => ({
         key: item.nftId,
-        title: `${item.name} #${item.nftId}`,
-        subtitle: item.symbol,
+        title: `#${item.nftId}`,
+        subtitle: item.name,
         imageUri: images[item.nftId]?.uri,
         imageLoading: images[item.nftId]?.loading ?? false,
       }))}

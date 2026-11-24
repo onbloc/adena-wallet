@@ -33,7 +33,7 @@ export const Tabs = <T extends string>({ items, selected, onSelect }: TabsProps<
           onPress={handlePress}
           style={[styles.tab, active && styles.active]}
         >
-          <Text variant='meta' color={item.disabled ? 'disabled' : active ? 'primary' : 'secondary'} style={active && styles.activeLabel}>
+          <Text variant='body' color={item.disabled ? 'disabled' : active ? 'primary' : 'secondary'} style={active ? styles.activeLabel : styles.label}>
             {item.label}
           </Text>
         </Pressable>

@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 
 import { Badge, Button, Text } from '../../atoms';
 import { BottomSheet, QrCode } from '../../molecules';
@@ -12,22 +12,38 @@ export interface ReceivePageProps {
   onCopy: () => void;
   onShare: () => void;
   onClose: () => void;
+  onOpenNetworks?: () => void;
+  onScan?: () => void;
 }
 
-export const ReceivePage = ({ accountName, address, networkName, onCopy, onShare, onClose }: ReceivePageProps): ReactElement => (
-  <BottomSheet visible title='Receive' onClose={onClose}>
-    <View style={styles.qr}>
-      <QrCode value={address} />
-    </View>
-    <View style={styles.identity}>
-      <Text variant='row'>{accountName}</Text>
-      <Badge label={networkName} />
-    </View>
-    <Text variant='meta' color='secondary' selectable>{address}</Text>
-    <View style={styles.actions}>
-      <Button label='Copy address' leadingIcon='copy' size='compact' style={styles.action} onPress={onCopy} />
-      <Button label='Share' tone='secondary' size='compact' style={styles.action} onPress={onShare} />
-    </View>
-    <Text variant='meta' color='secondary' align='center'>{`Only send ${networkName} assets to this address.`}</Text>
-  </BottomSheet>
-);
+// The sheet does not scroll, so short screens get a smaller code to keep every action visible.
+const COMPACT_HEIGHT = 720;
+
+export const ReceivePage = ({ accountName, address, networkName, onCopy, onShare, onClose, onOpenNetworks, onScan }: ReceivePageProps): ReactElement => {
+  const { height } = useWindowDimensions();
+  const compact = height < COMPACT_HEIGHT;
+
+  return (
+    <BottomSheet visible title='Receive' onClose={onClose}>
+      <View style={[styles.qr, compact && styles.qrCompact]}>
+        <QrCode value={address} size={compact ? 136 : 180} />
+      </View>
+      <View style={styles.identity}>
+        <Text variant='row' numberOfLines={1} style={styles.accountName}>{accountName}</Text>
+        {onOpenNetworks
+          ? <Button label={networkName} tone='secondary' size='compact' fullWidth={false} onPress={onOpenNetworks} />
+          : <Badge label={networkName} />}
+      </View>
+      <View style={styles.addressBox}>
+        <Text variant='meta' color='secondary' align='center'>Wallet address</Text>
+        <Text variant='body' align='center' tabular selectable>{address}</Text>
+      </View>
+      <View style={styles.actions}>
+        <Button label='Copy address' leadingIcon='copy' style={styles.action} onPress={onCopy} />
+        <Button label='Share' tone='secondary' style={styles.action} onPress={onShare} />
+      </View>
+      <Text variant='meta' color='secondary' align='center'>{`Only send ${networkName} assets to this address.`}</Text>
+      {onScan && <Button label='Scan a QR code' leadingIcon='scan' tone='secondary' size='compact' onPress={onScan} />}
+    </BottomSheet>
+  );
+};

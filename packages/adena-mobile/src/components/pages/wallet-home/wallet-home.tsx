@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Avatar, Badge, Button, Icon, IconButton, Text, TextColor } from '../../atoms';
+import { Avatar, Badge, Button, IconButton, Text, TextColor } from '../../atoms';
 import {
   AddressRow,
   AssetRow,
@@ -30,6 +30,8 @@ export interface WalletHomePageProps {
   error?: string;
   assets: AssetItemView[];
   collections: NftCardView[];
+  // Caption above the NFT grid, e.g. "3 collectibles · 2 collections".
+  nftSummary?: string;
   nftSupported: boolean;
   nftLoading: boolean;
   tab: HomeTab;
@@ -39,7 +41,7 @@ export interface WalletHomePageProps {
   onCopyAddress: () => void;
   onOpenAccounts: () => void;
   onOpenSettings: () => void;
-  onOpenNetworks: () => void;
+  onScan: () => void;
   onOpenToken: (tokenId: string) => void;
   onOpenCollection: (collectionId: string) => void;
   onManageTokens: () => void;
@@ -74,18 +76,19 @@ export const WalletHomePage = (props: WalletHomePageProps): ReactElement => (
       <Pressable accessibilityRole='button' accessibilityLabel='Switch account' onPress={props.onOpenAccounts} style={styles.identity}>
         <Avatar name={props.accountName} />
         <Text variant='row' numberOfLines={1} style={styles.identityName}>{props.accountName}</Text>
-        <Icon name='chevronDown' size={18} />
       </Pressable>
-      <IconButton icon='globe' variant='surface' accessibilityLabel='Select network' onPress={props.onOpenNetworks} />
+      <IconButton icon='scan' variant='surface' accessibilityLabel='Scan QR code' onPress={props.onScan} />
       <IconButton icon='settings' variant='surface' accessibilityLabel='Settings' onPress={props.onOpenSettings} />
     </View>
     <ScrollView
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={props.refreshing} onRefresh={props.onRefresh} />}
     >
-      <View style={styles.network}>
-        <Badge label={props.networkName} tone={props.isTestnet ? 'warning' : 'neutral'} />
-      </View>
+      {props.isTestnet && (
+        <View style={styles.network}>
+          <Badge label={props.networkName} tone='warning' />
+        </View>
+      )}
       <BalanceHeader
         value={props.headline}
         caption={props.headlineCaption}
@@ -131,7 +134,12 @@ export const WalletHomePage = (props: WalletHomePageProps): ReactElement => (
             ? <Text variant='meta' color='secondary' align='center' style={styles.loading}>Loading collectibles…</Text>
             : props.collections.length === 0
               ? <EmptyState title='No collectibles yet' />
-              : <NftGrid collections={props.collections} onOpen={props.onOpenCollection} />
+              : (
+                  <>
+                    {props.nftSummary && <Text variant='meta' color='secondary'>{props.nftSummary}</Text>}
+                    <NftGrid collections={props.collections} onOpen={props.onOpenCollection} />
+                  </>
+                )
       )}
       {props.tab === 'nfts' && props.nftSupported && (
         <Button label='Manage NFTs' tone='tertiary' size='compact' onPress={props.onManageNfts} />

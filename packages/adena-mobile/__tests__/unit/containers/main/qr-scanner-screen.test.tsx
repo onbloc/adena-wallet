@@ -32,14 +32,14 @@ const scan = (...values: string[]): Promise<void> => act(async () => {
   options.onBarcodeScanned(values.map(rawValue => ({ rawValue })));
 });
 
-const setup = async () => {
+const setup = async (params: { returnKey?: string } | undefined = { returnKey: 'SendRecipient-1' }) => {
   const { Wrapper } = createWrapper({
     accountService: { getCurrentAccount: () => ACCOUNT, getAccounts: () => [ACCOUNT], getAddress: () => 'g1self' },
     networkService: { getCurrentNetwork: () => NETWORK, getNetworks: () => [NETWORK] },
     chainRegistry: { forNetwork: () => ({ isValidAddress: (value: string) => /^g1[a-z0-9]{38}$/.test(value) }) },
   });
-  const navigation = { goBack: jest.fn(), dispatch: jest.fn() };
-  const route = { key: 'QrScanner-1', name: 'QrScanner', params: { returnKey: 'SendRecipient-1' } };
+  const navigation = { goBack: jest.fn(), dispatch: jest.fn(), replace: jest.fn() };
+  const route = { key: 'QrScanner-1', name: 'QrScanner', params };
   const Screen = QrScannerScreen as unknown as React.ComponentType<{ navigation: unknown; route: unknown }>;
 
   await render(
@@ -71,6 +71,26 @@ describe('QrScannerScreen', () => {
       payload: { params: { scannedAddress: ADDRESS } },
       source: 'SendRecipient-1',
     }));
+    expect(navigation.goBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('continues to the send flow when opened without a return route', async () => {
+    const { navigation } = await setup({});
+
+    await scan(ADDRESS);
+
+    expect(navigation.dispatch).not.toHaveBeenCalled();
+    expect(navigation.replace).toHaveBeenCalledWith('SendRecipient', { scannedAddress: ADDRESS });
+  });
+
+  it('shows the receive sheet and closes from the back action', async () => {
+    const { navigation } = await setup();
+
+    expect(screen.getByText('Gno.land wallet address')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Show my QR code' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+
+    expect(navigation.replace).toHaveBeenCalledWith('Receive');
     expect(navigation.goBack).toHaveBeenCalledTimes(1);
   });
 

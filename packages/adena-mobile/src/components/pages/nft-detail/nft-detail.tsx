@@ -2,23 +2,38 @@ import React, { ReactElement } from 'react';
 import { View } from 'react-native';
 
 import { Button, Text } from '../../atoms';
-import { Card, KeyValueRow, NftImage, Screen, SectionLabel, TopBar } from '../../molecules';
+import { KeyValueRow, ListRow, NftImage, Screen, SectionLabel, TopBar } from '../../molecules';
 import { styles } from './nft-detail.styles';
 
 export interface NftDetailPageProps {
   name: string;
   collectionName: string;
+  // Secondary line of the collection row, e.g. the realm path.
+  collectionDescription?: string;
   imageUri?: string | null;
   imageLoading: boolean;
   description?: string;
   rows: { label: string; value: string }[];
   traits: { label: string; value: string }[];
+  onOpenCollection?: () => void;
   onSend?: () => void;
   onBack: () => void;
 }
 
-export const NftDetailPage = ({ name, collectionName, imageUri, imageLoading, description, rows, traits, onSend, onBack }: NftDetailPageProps): ReactElement => (
-  <Screen header={<TopBar title='NFT details' onBack={onBack} />} footer={onSend && <Button label='Send' onPress={onSend} />}>
+export const NftDetailPage = ({
+  name,
+  collectionName,
+  collectionDescription,
+  imageUri,
+  imageLoading,
+  description,
+  rows,
+  traits,
+  onOpenCollection,
+  onSend,
+  onBack,
+}: NftDetailPageProps): ReactElement => (
+  <Screen header={<TopBar title='NFT details' variant='root' onBack={onBack} />} footer={onSend && <Button label='Send' onPress={onSend} />}>
     <View style={styles.image}>
       <NftImage uri={imageUri} loading={imageLoading} size='70%' />
     </View>
@@ -26,10 +41,13 @@ export const NftDetailPage = ({ name, collectionName, imageUri, imageLoading, de
       <Text variant='title'>{name}</Text>
       <Text variant='meta' color='secondary'>{collectionName}</Text>
     </View>
-    {description && <Text variant='body' color='secondary'>{description}</Text>}
-    <Card>
-      {rows.map(row => <KeyValueRow key={row.label} label={row.label} value={row.value} />)}
-    </Card>
+    {onOpenCollection && <ListRow label={collectionName} description={collectionDescription} onPress={onOpenCollection} />}
+    {description && <Text variant='body'>{description}</Text>}
+    {rows.length > 0 && (
+      <View>
+        {rows.map(row => <KeyValueRow key={row.label} label={row.label} value={row.value} emphasis />)}
+      </View>
+    )}
     {traits.length > 0 && (
       <>
         <SectionLabel label='Traits' />
