@@ -175,16 +175,15 @@ describe('AIAgent', () => {
     expect(prompt).not.toContain('get_approvals');
   });
 
-  it('replaces an answer that rests on no lookup and no action', async () => {
-    const { agent } = setup([answer('You have 5 GNOT')]);
+  it('allows a terminology explanation without pretending it came from a wallet lookup', async () => {
+    const { agent, mcp } = setup([answer('GNOT is the native token.')]);
 
-    const events = await collect(agent.run({ prompt: 'go' }));
+    const events = await collect(agent.run({ prompt: 'What does native token mean?' }));
 
-    expect(events).toContainEqual({
-      type: GenerateEventType.Text,
-      delta: 'No Onbloc lookup returned verified data.',
-    });
-    expect(events).not.toContainEqual({ type: GenerateEventType.Text, delta: 'You have 5 GNOT' });
+    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'GNOT is the native token.' });
+    expect(mcp.calls).toEqual([]);
+    const done = events.at(-1);
+    expect(done?.type === GenerateEventType.Done && done.verifiedAnswer).toBeUndefined();
   });
 
   it('reports a failed lookup even when a wallet action ran, and does not remember the turn', async () => {

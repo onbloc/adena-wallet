@@ -124,6 +124,47 @@ describe('agent conversations', () => {
     expect(handoff).not.toHaveBeenCalled();
   });
 
+  it('remembers a wallet explanation between a portfolio lookup and a fresh native lookup', async () => {
+    const native = { address: ACCOUNT, denom: 'ugnot', balance: '10000000' };
+    const mcp = fakeOnblocMcp([
+      { name: 'get_native_balance', output: native },
+      { name: 'get_token_balances', output: { address: ACCOUNT, items: [] } },
+    ]);
+    const correction = 'GNOT is the native token; ugnot is its base unit.';
+    const model = new MockLanguageModelV4({ doGenerate: [
+      reply(correction),
+      {
+        content: [{ type: 'tool-call', toolCallId: 'fresh-native', toolName: 'get_native_balance', input: '{}' }],
+        finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
+      },
+      reply('Current native balance'),
+    ] });
+    const wallet = fakeWallet();
+    const handoff = jest.fn();
+    const agent = new AIAgent({
+      llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })),
+      harness: new Harness({ toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })] }),
+      wallet, onTransaction: handoff,
+    });
+    const conversation = agent.createConversation({ account: ACCOUNT });
+    await collect(conversation.run({ prompt: 'Show me all my assets.' }));
+
+    const explanation = await collect(conversation.run({ prompt: 'Is native token the right term?' }));
+    expect(explanation).toContainEqual({ type: GenerateEventType.Text, delta: correction });
+    expect(conversation.turns.map((turn) => turn.prompt)).toEqual([
+      'Show me all my assets.', 'Is native token the right term?',
+    ]);
+    native.balance = '2000000';
+    const fresh = await collect(conversation.run({ prompt: 'Look up that native balance again.' }));
+
+    expect(fresh).toContainEqual({ type: GenerateEventType.Text, delta: '2 GNOT' });
+    expect(JSON.stringify(model.doGenerateCalls[1].prompt)).toContain(correction);
+    expect(mcp.calls.filter((call) => call.name === 'get_native_balance')).toHaveLength(2);
+    expect(conversation.turns).toHaveLength(3);
+    expect(wallet.calls).toEqual([]);
+    expect(handoff).not.toHaveBeenCalled();
+  });
+
   it('persists additional history eviction when a tool result fills the next model step', async () => {
     const model = new MockLanguageModelV4({ doGenerate: [
       {

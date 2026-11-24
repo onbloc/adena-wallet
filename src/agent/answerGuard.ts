@@ -3,9 +3,8 @@ import { ToolName, WalletStatus } from './wallet/constants';
 import { formatOnblocBalance } from './onblocBalances';
 
 /**
- * Holds the model's text back and shows it only if the tools support it. Answers that rest on
- * no lookup, or on a failed one, are replaced by a fixed message, and such a turn is not
- * remembered (`messages` is emptied). `isRead` tells the read tools from the wallet actions.
+ * Renders wallet outcomes from tool results. Tool-free text is a model explanation, not a
+ * verified wallet lookup. Failed/incomplete tool runs cannot become trusted conversation turns.
  */
 export async function* guardAnswer(
   events: AsyncIterable<GenerateEvent>,
@@ -15,8 +14,10 @@ export async function* guardAnswer(
   let text = '';
   let readSucceeded = false;
   let readFailed = false;
+  let toolAttempted = false;
   const outcomes: string[] = [];
   const balances = new Map<string, string>();
+  const pending = new Set<string>();
 
   for await (const event of events) {
     switch (event.type) {
@@ -28,10 +29,14 @@ export async function* guardAnswer(
         text += event.delta;
         break;
       case GenerateEventType.ToolCall:
+        toolAttempted = true;
+        pending.add(event.id);
         if (event.invalid) readFailed = true;
         yield event;
         break;
       case GenerateEventType.ToolResult: {
+        toolAttempted = true;
+        pending.delete(event.id);
         const decision = event.output;
         const ok = typeof decision === 'object' && decision !== null && 'kind' in decision && decision.kind === 'result';
         const value = ok && 'value' in decision ? decision.value : undefined;
@@ -51,6 +56,8 @@ export async function* guardAnswer(
         break;
       }
       case GenerateEventType.ToolError:
+        toolAttempted = true;
+        pending.delete(event.id);
         if (event.name === ToolName.Transfer || event.name === ToolName.Approve) outcomes.push('Transaction preparation was not confirmed.');
         else readFailed = true;
         yield event;
@@ -60,15 +67,22 @@ export async function* guardAnswer(
           yield event;
           break;
         }
-        const verifiedAnswer = balances.size > 0 && !readSucceeded && !readFailed && !outcomes.length;
-        const trusted = (readSucceeded || verifiedAnswer) && !readFailed && !outcomes.length;
+        if (pending.size > 0) readFailed = true;
+        const verifiedAnswer = balances.size > 0 && !readFailed && !outcomes.length;
+        const explanation = !toolAttempted && !readFailed && text.trim().length > 0;
+        const trusted = explanation || ((readSucceeded || verifiedAnswer) && !readFailed && !outcomes.length);
         const lookupFailure = 'Some Onbloc lookups failed. Review the individual tool results.';
         const answer = outcomes.length ? [...outcomes, ...(readFailed ? [lookupFailure] : [])].join(' ')
-          : balances.size && (verifiedAnswer || readFailed) ? [...balances.values(), ...(readFailed ? [lookupFailure] : [])].join('\n\n')
-            : !readSucceeded ? 'No Onbloc lookup returned verified data.'
-              : readFailed ? lookupFailure : text || 'Onbloc returned data; no model summary was produced.';
+          : balances.size ? [...balances.values(), ...(readFailed ? [lookupFailure] : [])].join('\n\n')
+            : readFailed ? lookupFailure
+              : readSucceeded ? text || 'Onbloc returned data; no model summary was produced.'
+                : explanation ? text : 'No wallet lookup or answer completed.';
         yield { type: GenerateEventType.Text, delta: answer };
-        yield verifiedAnswer ? { ...event, verifiedAnswer: true } : trusted ? event : { ...event, messages: [] };
+        const done = explanation ? {
+          ...event,
+          warnings: [...event.warnings, 'No wallet lookup was performed; this is an unverified model explanation.'],
+        } : event;
+        yield verifiedAnswer ? { ...done, verifiedAnswer: true } : trusted ? done : { ...done, messages: [] };
         break;
       }
       default:

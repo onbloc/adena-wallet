@@ -106,11 +106,16 @@ fails with `ADENA_CONTEXT_LIMIT`; shorten the question or start a larger support
 If the current tool exchange outgrows the budget, the run also fails rather than cutting tool
 arguments or results. Removed turns are forgotten by subsequent requests.
 
-Only completed trusted/verified answer turns are remembered. Cancelled, incomplete and
-unverified turns are not committed. Persisted chat is text only: tool calls, transaction
-objects and signing authority are never restored or replayed. A prior balance answer is
-conversation context, not proof of the current balance; current wallet facts still require
-a fresh successful lookup.
+Completed tool-free explanations and corrections are retained as conversation text. They carry
+a warning that no wallet lookup was performed; this is not verified wallet data. The guard
+does not semantically verify every statement in free-form model text. Current wallet facts
+must come from successful tool results, not from remembered explanations.
+
+Cancelled, incomplete and failed-lookup turns are not committed. Persisted chat is text only:
+tool calls, transaction objects and signing authority are never restored or replayed. A prior
+balance answer is conversation context, not proof of the current balance. Balance amounts are
+formatted by code even when NFT or other reads succeed in the same run; those extra reads must
+not cause a raw base-unit model summary to replace the formatted balances.
 
 The app restores chats separately for each endpoint, chain and account; switching scopes
 aborts the old turn. Keep the same separation when using `saved` outside the app. Existing app

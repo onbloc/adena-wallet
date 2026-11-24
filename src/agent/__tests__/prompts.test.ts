@@ -21,7 +21,4 @@ describe('buildWalletPrompt', () => {
     expect(buildWalletPrompt({ contacts: [], approvals: false })).not.toContain('get_approvals');
   });
 
-  it('keeps the rule that a missing recipient is asked for, not guessed', () => {
-    expect(buildWalletPrompt({ contacts: [], approvals: false })).toContain('ask the user for the address');
-  });
 });

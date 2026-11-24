@@ -1,7 +1,7 @@
-import { GenerateEventType, type GenerateEvent } from '../../llm/core';
+import { canRememberTurn, GenerateEventType, type GenerateEvent } from '../../llm/core';
 import { guardAnswer } from '../answerGuard';
 
-const isRead = (name: string) => name === 'read';
+const isRead = (name: string) => name !== 'transfer' && name !== 'approve';
 
 const metrics = { totalMs: 1 } as Extract<GenerateEvent, { type: 'done' }>['metrics'];
 const done = (overrides: Partial<Extract<GenerateEvent, { type: 'done' }>> = {}): GenerateEvent => ({
@@ -51,6 +51,68 @@ describe('guardAnswer', () => {
     expect(last.messages).toHaveLength(1);
   });
 
+  it('keeps a tool-free explanation in the conversation without marking it as verified wallet data', async () => {
+    const { answer, last } = await guard(text('GNOT is the native token; ugnot is its base unit.'), done({ finishReason: 'stop' }));
+
+    expect(answer).toEqual(['GNOT is the native token; ugnot is its base unit.']);
+    expect(last.verifiedAnswer).toBeUndefined();
+    expect(canRememberTurn(last)).toBe(true);
+  });
+
+  it('reports a failed lookup even when no lookup succeeded, and does not remember it', async () => {
+    const { answer, last } = await guard(
+      toolCall('read'), toolResult('read', { kind: 'denied', code: 'MCP_UNAVAILABLE' }),
+      text('Your balance is zero.'), done({ finishReason: 'stop' })
+    );
+
+    expect(answer).toEqual(['Some Onbloc lookups failed. Review the individual tool results.']);
+    expect(canRememberTurn(last)).toBe(false);
+  });
+
+  it('does not treat an unfinished tool call as a tool-free explanation', async () => {
+    const { answer, last } = await guard(toolCall('read'), text('Everything is fine.'), done({ finishReason: 'stop' }));
+
+    expect(answer).not.toContain('Everything is fine.');
+    expect(canRememberTurn(last)).toBe(false);
+  });
+
+  it('formats balances even when another successful read would otherwise allow the model summary through', async () => {
+    const { answer, last } = await guard(
+      toolResult('get_native_balance', { kind: 'result', value: { untrustedData: { denom: 'ugnot', balance: '44289888655' } } }),
+      toolResult('get_nfts_balance', { kind: 'result', value: { untrustedData: { items: [] } } }),
+      toolResult('get_token_balances', { kind: 'result', value: { untrustedData: {
+        items: [{ symbol: 'xGNS', tokenId: 'gno.land/r/xgns', amount: '17528000000', decimals: 6 }],
+      } } }),
+      text('Networking token: 44289888655. xGNS: 17528000000.'), done({ finishReason: 'stop' })
+    );
+
+    expect(answer).toEqual(['44289.888655 GNOT\n\nGRC20 balances:\n- 17528 xGNS (gno.land/r/xgns)']);
+    expect(last.verifiedAnswer).toBe(true);
+    expect(canRememberTurn(last)).toBe(true);
+  });
+
+  it('shows the verified part of a mixed lookup but does not save a partially failed turn', async () => {
+    const { answer, last } = await guard(
+      toolResult('get_native_balance', { kind: 'result', value: { untrustedData: { denom: 'ugnot', balance: '1000000' } } }),
+      toolResult('get_nfts_balance', { kind: 'denied', code: 'MCP_UNAVAILABLE' }),
+      text('Everything succeeded.'), done({ finishReason: 'stop' })
+    );
+
+    expect(answer).toEqual(['1 GNOT\n\nSome Onbloc lookups failed. Review the individual tool results.']);
+    expect(last.verifiedAnswer).toBeUndefined();
+    expect(canRememberTurn(last)).toBe(false);
+  });
+
+  it('does not remember a balance turn while another lookup remains unfinished', async () => {
+    const { last } = await guard(
+      toolResult('get_native_balance', { kind: 'result', value: { untrustedData: { denom: 'ugnot', balance: '1000000' } } }),
+      toolCall('get_nfts_balance'), text('Everything succeeded.'), done({ finishReason: 'stop' })
+    );
+
+    expect(last.verifiedAnswer).toBeUndefined();
+    expect(canRememberTurn(last)).toBe(false);
+  });
+
   it('reports a prepared transaction in its own words, whatever the model says, and does not remember the turn', async () => {
     const { answer, last } = await guard(toolCall('transfer'), prepared, text('Payment confirmed on chain.'), done());
 
@@ -61,7 +123,7 @@ describe('guardAnswer', () => {
   it.each([
     ['an error result', toolResult('transfer', { kind: 'result', value: { status: 'error', code: 'invalid_address' } })],
     ['a denied call', toolResult('transfer', { kind: 'denied', code: 'BUDGET_EXHAUSTED' })],
-    ['a tool error', { type: GenerateEventType.ToolError, id: 'x', name: 'transfer', error: 'boom' } as GenerateEvent],
+    ['a tool error', { type: GenerateEventType.ToolError, id: 'transfer', name: 'transfer', error: 'boom' } as GenerateEvent],
   ])('does not claim a preparation after %s', async (_label, failure) => {
     const { answer } = await guard(toolCall('transfer'), failure, text('Done'), done());
 

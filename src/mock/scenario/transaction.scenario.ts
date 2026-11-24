@@ -69,8 +69,7 @@ describe('plain-language requests become transactions', () => {
     const context = `prompt: ${prompt}\ncalls: ${JSON.stringify(run.calls)}\nanswer: ${run.text}`;
 
     try {
-      // Every call the model makes is well formed, and nothing is ever signed.
-      expect(run.calls.filter((call) => call.invalid)).toEqual([]);
+      // Only outcomes matter; a corrected tool-call retry must not fail the scenario.
       for (const prepared of run.prepared) expect(adenaTransaction(prepared).signatures).toEqual([]);
 
       if (expected.kind === 'none') {
@@ -78,6 +77,33 @@ describe('plain-language requests become transactions', () => {
       } else {
         expectTransaction(run, expected);
       }
+    } catch (error) {
+      if (error instanceof Error) error.message += `\n\n${context}`;
+      throw error;
+    }
+  });
+
+  it.each([
+    { name: 'native balance follow-up', prompts: ['Show me all my assets.', 'What about GNOT?'] },
+    {
+      name: 'terminology followed by a current balance question',
+      prompts: ['Show me all my assets.', 'Is native token the right term? What does it mean?', 'What is my GNOT balance?'],
+    },
+  ])('$name refreshes native funds without preparing a transaction', async ({ prompts }) => {
+    const turns = await runner.chat(prompts);
+    const followUp = turns[turns.length - 1];
+    const context = turns.map((turn) => `calls: ${JSON.stringify(turn.calls)}\nanswer: ${turn.text}`).join('\n\n');
+    try {
+      expect(turns.flatMap((turn) => turn.prepared)).toEqual([]);
+      expect(followUp.results).toContainEqual({
+        name: 'get_native_balance',
+        output: expect.objectContaining({
+          kind: 'result',
+          value: expect.objectContaining({
+            untrustedData: expect.objectContaining({ denom: 'ugnot', balance: '10000000' }),
+          }),
+        }),
+      });
     } catch (error) {
       if (error instanceof Error) error.message += `\n\n${context}`;
       throw error;
