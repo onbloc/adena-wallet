@@ -62,7 +62,7 @@ export const Button = ({
   const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [
     styles.base,
     { height: size === 'compact' ? sizes.controlCompact : sizes.control },
-    fullWidth ? styles.fullWidth : styles.hug,
+    fullWidth ? styles.fullWidth : [styles.hug, styles.hugContent],
     { backgroundColor: inactive ? colors.action.disabled : pressed ? palette.pressed : palette.background },
     tone === 'destructive' && pressed && styles.destructivePressed,
     tone === 'destructiveOutline' && { borderWidth: 1.5, borderColor: inactive ? colors.action.disabled : colors.status.error },
@@ -88,13 +88,13 @@ export const Button = ({
       style={stylePressable}
     >
       {loading
-        ? <View style={styles.leading}><Spinner tone={tone === 'primary' || tone === 'destructive' ? 'inverse' : 'primary'} /></View>
-        : leadingIcon && <View style={styles.leading}><Icon name={leadingIcon} color={textColor} size={20} /></View>}
+        ? <View style={fullWidth && styles.leading}><Spinner tone={tone === 'primary' || tone === 'destructive' ? 'inverse' : 'primary'} /></View>
+        : leadingIcon && <View style={fullWidth && styles.leading}><Icon name={leadingIcon} color={textColor} size={20} /></View>}
       <Text variant='button' numberOfLines={1} style={{ color: textColor }}>
         {loading ? loadingLabel : label}
       </Text>
       {!loading && trailingIcon && (
-        <View style={styles.trailing}><Icon name={trailingIcon} color={textColor} size={20} /></View>
+        <View style={fullWidth && styles.trailing}><Icon name={trailingIcon} color={textColor} size={20} /></View>
       )}
     </Pressable>
   );
