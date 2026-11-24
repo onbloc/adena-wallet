@@ -29,7 +29,7 @@ const adenaWallet: ScenarioWalletFactory = (onbloc): WalletSdk => {
   };
 };
 
-export async function createServerScenarioRunner(url = serverUrl()) {
+export async function createServerScenarioRunner(url = serverUrl(), allowTransactionPreparation = true) {
   const llm = new LLMFromModel(await connectModel(url, DEFAULT_MODEL_NAME), { contextTokens: SERVER_CONTEXT_TOKENS });
-  return createScenarioRunner({ llm, createWallet: adenaWallet });
+  return createScenarioRunner({ llm, createWallet: adenaWallet, allowTransactionPreparation });
 }

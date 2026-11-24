@@ -58,10 +58,12 @@ async function collectTurn(
 export function createScenarioRunner({
   llm,
   createWallet,
+  allowTransactionPreparation = true,
   settings = { temperature: 0 },
 }: {
   llm: LLM;
   createWallet: ScenarioWalletFactory;
+  allowTransactionPreparation?: boolean;
   settings?: ScenarioSettings;
 }): ScenarioRunner {
   const timing = new TimingLLM(llm);
@@ -79,7 +81,7 @@ export function createScenarioRunner({
       wallet: createWallet(onbloc),
       onTransaction: (transaction) => { prepared.push(transaction); },
     });
-    return { conversation: agent.createConversation({ account: ACCOUNT, allowTransactionPreparation: true }), prepared };
+    return { conversation: agent.createConversation({ account: ACCOUNT, allowTransactionPreparation }), prepared };
   }
 
   return {

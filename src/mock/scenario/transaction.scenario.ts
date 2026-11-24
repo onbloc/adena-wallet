@@ -98,3 +98,20 @@ describe('plain-language requests become transactions', () => {
     }
   });
 });
+
+describe('read-only wallet with a real model', () => {
+  let runner: ScenarioRunner;
+  beforeAll(async () => { runner = await createServerScenarioRunner(serverUrl(), false); });
+
+  it('reads GNS in Korean without substituting native funds', async () => {
+    const turn = await runner.ask('내 GNS 얼마나 있어?');
+    expect(turn.prepared).toEqual([]);
+    expect(turn.text).toMatch(/\b250 GNS\b/);
+    expect(turn.text).not.toContain('10 GNOT');
+  });
+
+  it('cannot hand a transaction to the wallet on a direct send request', async () => {
+    const turn = await runner.ask('Send 1 GNOT to carol.');
+    expect(turn.prepared).toEqual([]);
+  });
+});

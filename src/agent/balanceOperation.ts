@@ -82,8 +82,14 @@ export type BalanceResult = z.infer<typeof balanceResultSchema>;
 
 export const balanceToolDefinition: ToolDefinition = {
   name: 'get_balance',
-  description: 'Read one identified asset balance or all balances for the current account. Use an asset ID to distinguish tokens with the same symbol.',
-  inputSchema: balanceRequestSchema,
+  description: 'Read wallet balances. For a named token, use {"kind":"one","asset":{"kind":"symbol","value":"GNS"}} with the requested symbol. Use {"kind":"all"} for the whole portfolio.',
+  // Chat templates that list top-level properties cannot describe a root oneOf.
+  // Execution still validates the selected variant with balanceRequestSchema.
+  inputSchema: z.strictObject({
+    kind: z.enum(['all', 'one']),
+    asset: z.strictObject({ kind: z.enum(['symbol', 'id']), value: assetId }).optional()
+      .describe('Required for one; omit for all.'),
+  }),
 };
 
 /** Uses the existing run: its account, chain, scope, cancellation, budget and audit still apply. */
