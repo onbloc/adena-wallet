@@ -1,5 +1,5 @@
 import { allowed, evaluate, isTool, selectionSchema, toolsFor } from './tools';
-import type { Decision, RemoteTool, RunPurpose, Scope, Selection, ToolDefinition, ToolSource, WalletContext, WalletReader } from './tools';
+import type { Decision, RemoteTool, RunPurpose, Scope, Selection, ToolDefinition, ToolSource, WalletContext, WalletReader, WalletTool } from './tools';
 
 export type RunContext = WalletContext & Readonly<{
   operationId: string;
@@ -7,6 +7,8 @@ export type RunContext = WalletContext & Readonly<{
   purpose?: RunPurpose;
   selection?: Selection;
   signal?: AbortSignal;
+  /** Trusted operations bound to this account; preparation never signs or sends. */
+  walletTools?: Readonly<Record<string, WalletTool>>;
   /** Overrides the harness's budget for this run. */
   budget?: Partial<Budget>;
 }>;
@@ -64,6 +66,13 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
       const { maxSteps, maxToolCalls, maxTokens, timeoutMs } = checked({ ...budget, ...run.budget });
       const context: WalletContext = Object.freeze({ account: run.account, chainId: run.chainId });
       const selection = run.selection === undefined ? undefined : selectionSchema.parse(run.selection);
+      const offered = new Map(Object.entries(run.walletTools ?? {}));
+      for (const [name, tool] of offered) {
+        if (name !== tool.definition.name || isTool(name) || Object.hasOwn(Object.prototype, name)) {
+          throw new Error('Wallet tool name conflicts with a reserved name.');
+        }
+        if (tool.effect !== 'read' && tool.effect !== 'prepare') throw new Error('Invalid wallet tool effect.');
+      }
       const controller = new AbortController();
       const signal = controller.signal;
       const sourceSignal = run.signal;
@@ -79,16 +88,16 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
 
       let remote: ReadonlyMap<string, RemoteTool> | undefined;
       try {
-        if (toolSources.length > 0 && scope === 'read-only' && run.purpose === 'mainnet-read') {
+        if (toolSources.length > 0 && (scope === 'read-only' || scope === 'prepare-wallet') && run.purpose === 'mainnet-read') {
           const found = new Map<string, RemoteTool>();
           for (const source of toolSources) {
             for (const [name, tool] of await source(context, signal)) {
-              if (found.has(name)) throw new Error('Two tool sources offer the same tool name.');
+              if (name !== tool.definition.name || found.has(name)) throw new Error('Invalid or duplicate remote tool name.');
               found.set(name, tool);
             }
           }
           for (const name of found.keys()) {
-            if (isTool(name) || Object.hasOwn(Object.prototype, name)) throw new Error('Remote tool name conflicts with a reserved name.');
+            if (isTool(name) || offered.has(name) || Object.hasOwn(Object.prototype, name)) throw new Error('Remote tool name conflicts with a reserved name.');
           }
           remote = found;
         }
@@ -96,7 +105,12 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
         cancel();
         throw new Error('Could not discover remote tools.', { cause });
       }
-      const tools = Object.freeze(remote ? Array.from(remote.values(), tool => tool.definition) : toolsFor(scope, wallet, run.purpose));
+      const tools = Object.freeze([
+        ...(remote ? Array.from(remote.values(), tool => tool.definition) : toolsFor(scope, wallet, run.purpose)),
+        ...Array.from(offered.values())
+          .filter(tool => tool.effect === 'read' || scope === 'prepare-wallet')
+          .map(tool => tool.definition),
+      ]);
       const enabled = new Set(tools.map(tool => tool.name));
 
       let paused = false;
@@ -133,10 +147,12 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
       async function evaluateProposal(proposal: { name: string; input: unknown }): Promise<Decision> {
         const name = proposal.name;
         const local = isTool(name);
+        const walletTool = offered.get(name);
         const tool = remote?.get(name);
-        if (!local && !tool) return { kind: 'denied', code: 'UNKNOWN_TOOL' };
+        if (!local && !walletTool && !tool) return { kind: 'denied', code: 'UNKNOWN_TOOL' };
         if (local && !allowed(scope, name)) return { kind: 'denied', code: 'OUT_OF_SCOPE' };
-        if (!enabled.has(proposal.name)) {
+        if (walletTool?.effect === 'prepare' && scope !== 'prepare-wallet') return { kind: 'denied', code: 'OUT_OF_SCOPE' };
+        if (!enabled.has(name)) {
           return { kind: 'denied', code: run.purpose === undefined ? 'UNKNOWN_TOOL' : 'OUT_OF_SCOPE' };
         }
         if (signal.aborted || Date.now() >= deadline) return { kind: 'denied', code: 'CANCELLED' };
@@ -145,14 +161,17 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
         calls++;
         try {
           const decision = local ? await evaluate(name, proposal.input, context, selection, wallet, signal)
-            : await tool?.execute(proposal.input);
+            : walletTool ? await walletTool.execute(proposal.input, signal) : await tool?.execute(proposal.input);
           if (!decision) return { kind: 'denied', code: 'UNKNOWN_TOOL' };
-          if (signal.aborted || Date.now() >= deadline) return { kind: 'denied', code: 'CANCELLED' };
-          if (paused) return { kind: 'denied', code: 'RUN_PAUSED' };
+          // Once a transaction is handed to the app, cancellation cannot undo the handoff.
+          if (walletTool?.effect !== 'prepare') {
+            if (signal.aborted || Date.now() >= deadline) return { kind: 'denied', code: 'CANCELLED' };
+            if (paused) return { kind: 'denied', code: 'RUN_PAUSED' };
+          }
           if (decision.kind === 'clarify' || decision.kind === 'approval-required') paused = true;
           return decision;
         } catch {
-          return { kind: 'denied', code: signal.aborted ? 'CANCELLED' : local ? 'WALLET_UNAVAILABLE' : 'MCP_UNAVAILABLE' };
+          return { kind: 'denied', code: signal.aborted && walletTool?.effect !== 'prepare' ? 'CANCELLED' : local || walletTool ? 'WALLET_UNAVAILABLE' : 'MCP_UNAVAILABLE' };
         }
       }
 
@@ -162,7 +181,7 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
         if (audit) await audit({
           operationId,
           at: Date.now(),
-          ...(isTool(name) || remote?.has(name) ? { tool: name } : {}),
+          ...(isTool(name) || remote?.has(name) || offered.has(name) ? { tool: name } : {}),
           decision: decision.kind,
           ...(decision.kind === 'denied' ? { denial: decision.code } : {}),
         });

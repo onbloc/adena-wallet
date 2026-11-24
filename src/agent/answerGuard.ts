@@ -29,24 +29,21 @@ export async function* guardAnswer(
         if (event.invalid) readFailed = true;
         yield event;
         break;
-      case GenerateEventType.ToolResult:
+      case GenerateEventType.ToolResult: {
+        const decision = event.output;
+        const ok = typeof decision === 'object' && decision !== null && 'kind' in decision && decision.kind === 'result';
+        const value = ok && 'value' in decision ? decision.value : undefined;
+        const status = typeof value === 'object' && value !== null && 'status' in value ? value.status : undefined;
         if (isRead(event.name)) {
-          const ok = typeof event.output === 'object' && event.output !== null && 'kind' in event.output && event.output.kind === 'result';
-          if (ok) readSucceeded = true;
+          if (ok && (event.name !== ToolName.GetApprovals || status === WalletStatus.Ok)) readSucceeded = true;
           else readFailed = true;
         } else {
-          const output = event.output;
-          const status = typeof output === 'object' && output !== null && 'status' in output ? output.status : undefined;
-          if (event.name === ToolName.GetApprovals) {
-            if (status === WalletStatus.Ok) readSucceeded = true;
-            else readFailed = true;
-          } else {
-            outcomes.push(status === WalletStatus.Prepared ? 'Unsigned transaction prepared. Nothing was sent.'
-              : 'Transaction preparation was not confirmed.');
-          }
+          outcomes.push(status === WalletStatus.Prepared ? 'Unsigned transaction prepared. Nothing was sent.'
+            : 'Transaction preparation was not confirmed.');
         }
         yield event;
         break;
+      }
       case GenerateEventType.ToolError:
         if (event.name === ToolName.Transfer || event.name === ToolName.Approve) outcomes.push('Transaction preparation was not confirmed.');
         else readFailed = true;

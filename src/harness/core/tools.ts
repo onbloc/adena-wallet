@@ -22,7 +22,7 @@ export const actionSchema = z.discriminatedUnion('kind', [
 export type WalletContext = Readonly<z.infer<typeof accountSchema>>;
 export type Selection = z.infer<typeof selectionSchema>;
 export type WalletAction = Readonly<Selection & WalletContext>;
-export type Scope = 'read-only' | 'prepare-transfer' | 'manage-session';
+export type Scope = 'read-only' | 'prepare-transfer' | 'manage-session' | 'prepare-wallet';
 export type WalletReader = {
   getBalances?(context: WalletContext, signal: AbortSignal): Promise<unknown>;
   findTokens?(context: WalletContext, symbol: string, signal: AbortSignal): Promise<unknown>;
@@ -59,6 +59,13 @@ export type RemoteTool = Readonly<{
   execute(raw: unknown): Promise<Decision>;
 }>;
 
+/** A trusted, run-bound wallet operation. Preparing a transaction does not sign or send it. */
+export type WalletTool = Readonly<{
+  definition: ToolDefinition;
+  effect: 'read' | 'prepare';
+  execute(raw: unknown, signal: AbortSignal): Promise<Decision>;
+}>;
+
 /**
  * Finds the remote tools for a run's account and chain. Returns none when the source does not
  * serve them (another chain, an invalid account). Closes its connection when `signal` aborts.
@@ -72,7 +79,7 @@ export function isTool(name: string): name is ToolName {
 
 export function allowed(scope: Scope, name: ToolName): boolean {
   switch (definitions[name].effect) {
-    case 'read': return scope === 'read-only' || scope === 'prepare-transfer' || scope === 'manage-session';
+    case 'read': return scope === 'read-only' || scope === 'prepare-transfer' || scope === 'manage-session' || scope === 'prepare-wallet';
     case 'propose': return scope === 'prepare-transfer';
     case 'session': return scope === 'manage-session';
   }

@@ -1,10 +1,9 @@
-import { asSchema, type ToolSet } from 'ai';
 import { createAiSdkRun } from './aiSdkBridge';
 import { guardAnswer } from './answerGuard';
 import { buildWalletPrompt } from './prompts';
 import type { TransactionHandler, WalletSdk } from './wallet/port';
 import { createWalletTools } from './wallet/tools';
-import type { Harness } from '../harness/core';
+import type { Harness, WalletTool } from '../harness/core';
 import { GNO_MAINNET_CHAIN } from '../harness/mcp';
 import type { GenerateEvent, GenerateSettings, LLM, ToolLoop } from '../llm/core';
 
@@ -107,26 +106,22 @@ export class AIAgent {
   }
 
   /**
-   * Starts a harness run. The wallet tools bypass the harness, so their schemas are added to
-   * the input estimate here.
+   * Starts one harness run for both read tools and unsigned wallet preparation.
    */
   private async startLoop({ account, walletTools, maxOutputTokens, signal }: {
     account: string;
-    walletTools: ToolSet;
+    walletTools: Readonly<Record<string, WalletTool>>;
     maxOutputTokens: number;
     signal?: AbortSignal;
   }): Promise<{ loop: ToolLoop; isRead(toolName: string): boolean }> {
     const contextTokens = this.llm.contextTokens;
     const totalTokens = 2 * contextTokens;
-    const walletDefinitions = await Promise.all(Object.entries(walletTools).map(async ([name, { description, inputSchema }]) => (
-      { name, description, inputSchema: await asSchema(inputSchema).jsonSchema }
-    )));
     const run = await this.harness.startRun({
       account, chainId: this.chainId, operationId: `agent-${++this.runs}`,
-      scope: 'read-only', purpose: 'mainnet-read', signal,
+      scope: 'prepare-wallet', purpose: 'mainnet-read', walletTools, signal,
       budget: { maxSteps: MAX_STEPS, maxToolCalls: MAX_STEPS - 1, maxTokens: totalTokens, timeoutMs: RUN_TIMEOUT_MS },
     });
-    if (run.tools.length === 0) {
+    if (!run.tools.some(tool => !Object.hasOwn(walletTools, tool.name))) {
       run.close();
       throw new Error('No read tools are available. Check the account, the chain and the harness tool sources.');
     }
@@ -134,19 +129,16 @@ export class AIAgent {
       run, maxOutputTokens: Math.min(maxOutputTokens, 512), budget: { kind: 'local' },
       estimateInputTokens: ({ instructions, messages, tools }) => {
         // Conservative local estimate. Reserve enough room for the output in the device context.
-        const bytes = new TextEncoder().encode(JSON.stringify([instructions, messages, tools, walletDefinitions])).byteLength;
+        const bytes = new TextEncoder().encode(JSON.stringify([instructions, messages, tools])).byteLength;
         const estimate = Math.ceil(bytes / BYTES_PER_TOKEN) + 512;
         return estimate + Math.min(maxOutputTokens, 512) > contextTokens ? totalTokens : estimate;
       },
       projectResult: compactHoldings,
       onInterrupt: () => run.close(),
     });
-    const harnessTools = options.tools;
     return {
-      // Harness tools win a name clash: a wallet tool must not replace a read.
-      loop: { options: { ...options, tools: { ...walletTools, ...harnessTools } }, close: run.close },
-      /** True for the harness's read tools, false for the wallet action tools. */
-      isRead: (toolName) => Object.hasOwn(harnessTools, toolName),
+      loop: { options, close: run.close },
+      isRead: (toolName) => !Object.hasOwn(walletTools, toolName) || walletTools[toolName].effect === 'read',
     };
   }
 }

@@ -1,6 +1,6 @@
 import { Harness } from '../harness';
 import type { PolicyEvent, RunContext } from '../dispatch';
-import type { RemoteTool, ToolSource } from '../tools';
+import type { RemoteTool, ToolSource, WalletTool } from '../tools';
 
 const run: RunContext = {
   account: 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v',
@@ -13,6 +13,11 @@ const run: RunContext = {
 const tool = (name: string): RemoteTool => ({
   definition: { name, description: name, jsonSchema: { type: 'object', properties: {} } },
   execute: async () => ({ kind: 'result', value: `${name} ran` }),
+});
+
+const walletTool = (name: string, effect: WalletTool['effect']): WalletTool => ({
+  ...tool(name),
+  effect,
 });
 
 /** A source that offers the named tools and records the account it was asked for. */
@@ -57,6 +62,70 @@ describe('Harness', () => {
     const harness = new Harness({ toolSources: [source('constructor').toolSource] });
 
     await expect(harness.startRun(run)).rejects.toThrow('Could not discover remote tools.');
+  });
+
+  it('rejects a remote name that conflicts with a wallet tool, even when it is out of scope', async () => {
+    const harness = new Harness({ toolSources: [source('transfer').toolSource] });
+
+    await expect(harness.startRun({ ...run, walletTools: { transfer: walletTool('transfer', 'prepare') } }))
+      .rejects.toThrow('Could not discover remote tools.');
+  });
+
+  it('rejects wallet and remote tools whose catalog names do not match their keys', async () => {
+    const harness = new Harness();
+    await expect(harness.startRun({ ...run, walletTools: { transfer: walletTool('other', 'prepare') } }))
+      .rejects.toThrow('Wallet tool name');
+
+    const sourceWithWrongName: ToolSource = async () => new Map([['ping', tool('transfer')]]);
+    await expect(new Harness({ toolSources: [sourceWithWrongName] }).startRun(run))
+      .rejects.toThrow('Could not discover remote tools.');
+  });
+
+  it('lists remote reads alongside wallet tools and applies a shared call budget', async () => {
+    const execute = jest.fn(async () => ({ kind: 'result' as const, value: 'prepared' }));
+    const transfer: WalletTool = { ...walletTool('transfer', 'prepare'), execute };
+    const events: PolicyEvent[] = [];
+    const harness = new Harness({ toolSources: [source('ping').toolSource], audit: event => { events.push(event); } });
+    const started = await harness.startRun({
+      ...run, scope: 'prepare-wallet', walletTools: { transfer }, budget: { maxToolCalls: 1 },
+    });
+
+    expect(started.tools.map(tool => tool.name)).toEqual(['ping', 'transfer']);
+    expect((await started.dispatch({ name: 'ping', input: {} })).kind).toBe('result');
+    expect(await started.dispatch({ name: 'transfer', input: {} })).toEqual({ kind: 'denied', code: 'BUDGET_EXHAUSTED' });
+    expect(execute).not.toHaveBeenCalled();
+    expect(events.map(event => [event.tool, event.decision, event.denial])).toEqual([
+      ['ping', 'result', undefined], ['transfer', 'denied', 'BUDGET_EXHAUSTED'],
+    ]);
+    started.close();
+  });
+
+  it('drops an allowance read that finishes after cancellation', async () => {
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const controller = new AbortController();
+    const read: WalletTool = {
+      ...walletTool('get_approvals', 'read'),
+      async execute(_input, signal) {
+        expect(signal.aborted).toBe(false);
+        entered.resolve();
+        await release.promise;
+        expect(signal.aborted).toBe(true);
+        return { kind: 'result', value: 'late read' };
+      },
+    };
+    const events: PolicyEvent[] = [];
+    const started = await new Harness({ audit: event => { events.push(event); } }).startRun({
+      ...run, walletTools: { get_approvals: read }, signal: controller.signal,
+    });
+
+    const pending = started.dispatch({ name: 'get_approvals', input: {} });
+    await entered.promise;
+    controller.abort();
+    release.resolve();
+    expect(await pending).toEqual({ kind: 'denied', code: 'CANCELLED' });
+    expect(events.map(event => [event.tool, event.decision, event.denial]))
+      .toEqual([['get_approvals', 'denied', 'CANCELLED']]);
   });
 
   it('denies a tool the model invents', async () => {

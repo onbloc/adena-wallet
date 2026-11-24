@@ -22,8 +22,8 @@ const step = (content: unknown[], unified: 'tool-calls' | 'stop') => ({
   usage: usage(5),
   warnings: [],
 });
-const call = (toolName: string, input: unknown) =>
-  step([{ type: 'tool-call', toolCallId: toolName, toolName, input: JSON.stringify(input) }], 'tool-calls');
+const call = (toolName: string, input: unknown, id = toolName) =>
+  step([{ type: 'tool-call', toolCallId: id, toolName, input: JSON.stringify(input) }], 'tool-calls');
 const answer = (value: string) => step([{ type: 'text', text: value }], 'stop');
 type Step = ReturnType<typeof step>;
 
@@ -89,7 +89,7 @@ describe('AIAgent', () => {
 
     expect(results(events)).toEqual([
       expect.objectContaining({ name: 'get_native_balance', output: expect.objectContaining({ kind: 'result' }) }),
-      expect.objectContaining({ name: ToolName.Transfer, output: expect.objectContaining({ status: WalletStatus.Prepared }) }),
+      expect.objectContaining({ name: ToolName.Transfer, output: { kind: 'result', value: expect.objectContaining({ status: WalletStatus.Prepared }) } }),
     ]);
     expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'Unsigned transaction prepared. Nothing was sent.' });
     expect(prepared).toEqual([
@@ -97,6 +97,14 @@ describe('AIAgent', () => {
     ]);
     const done = events[events.length - 1];
     expect(done).toMatchObject({ type: GenerateEventType.Done, messages: [] });
+  });
+
+  it('does not hand a transaction to the app once reads consume the tool budget', async () => {
+    const reads = [1, 2, 3, 4].map(n => call('get_native_balance', {}, `read-${n}`));
+    const { agent, prepared } = setup([...reads, send]);
+    const events = await collect(agent.run({ prompt: 'go' }));
+    expect(results(events).at(-1)).toMatchObject({ name: ToolName.Transfer, output: { kind: 'denied', code: 'BUDGET_EXHAUSTED' } });
+    expect(prepared).toEqual([]);
   });
 
   it("gives the model the wallet's contacts by name", async () => {
