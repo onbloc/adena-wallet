@@ -1,11 +1,13 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useRef, useState } from 'react';
 
 import { SendNftPage } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
+import { Account } from '../../../domain/account';
 import { FeeEstimate } from '../../../domain/fee';
+import { Network } from '../../../domain/network';
 import { TransactionDraft } from '../../../domain/transaction';
 import { useFeeSelection } from '../../../hooks/use-fee-selection';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
@@ -13,6 +15,15 @@ import { MainStackParamList } from '../../../navigation/types';
 import { useNftTokenUriQuery } from '../../../queries/nft.queries';
 import { queryKeys } from '../../../queries/query-keys';
 import { useToastStore } from '../../../stores/toast.store';
+
+// Everything the review shows and the broadcast signs, captured when the fee was estimated.
+interface PreparedNftTransfer {
+  account: Account;
+  network: Network;
+  toAddress: string;
+  draft: TransactionDraft;
+  estimate: FeeEstimate;
+}
 
 export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'SendNft'>): ReactElement => {
   const { collection, item } = route.params;
@@ -22,7 +33,8 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
   const showToast = useToastStore(state => state.show);
   const image = useNftTokenUriQuery(network, item.packagePath, item.nftId, collection.supportsTokenUri);
   const [recipient, setRecipient] = useState('');
-  const [prepared, setPrepared] = useState<{ draft: TransactionDraft; estimate: FeeEstimate } | null>(null);
+  const [prepared, setPrepared] = useState<PreparedNftTransfer | null>(null);
+  const sendingRef = useRef(false);
   const feeSelection = useFeeSelection(prepared?.estimate ?? null, network);
 
   const trimmed = recipient.trim();
@@ -33,32 +45,29 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
     ...accounts.filter(item2 => item2.id !== account?.id).map(other => ({ key: other.id, label: other.name, address: accountService.getAddress(other, network) })),
   ].filter(entry => !trimmed || entry.address.includes(trimmed) || entry.label.toLowerCase().includes(trimmed.toLowerCase()));
 
+  // Results are applied through per-call callbacks, which reset() detaches, so an edit discards an in-flight estimate.
   const prepare = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<PreparedNftTransfer> => {
       if (!account) {
         throw new Error('No account selected');
       }
 
       const draft = nftService.createTransferDraft(account, network, item, trimmed);
 
-      return { draft, estimate: await transactionService.estimateFee(draft, account, network) };
-    },
-    onSuccess: (result) => {
-      feeSelection.reset();
-      setPrepared(result);
+      return { account, network, toAddress: trimmed, draft, estimate: await transactionService.estimateFee(draft, account, network) };
     },
   });
 
   const send = useMutation({
     mutationFn: async () => {
-      if (!account || !prepared || !feeSelection.fee) {
+      if (!prepared || !feeSelection.fee) {
         throw new Error('Nothing to send');
       }
 
       const draft = { ...prepared.draft, fee: { gasWanted: feeSelection.fee.gasWanted, gasFee: feeSelection.fee.gasFee } };
 
-      await transactionService.assertSufficientFunds(draft, account, network);
-      return transactionService.signAndBroadcast(draft, account, network);
+      await transactionService.assertSufficientFunds(draft, prepared.account, prepared.network);
+      return transactionService.signAndBroadcast(draft, prepared.account, prepared.network);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...queryKeys.all, 'nft-collections'] });
@@ -74,7 +83,31 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
     prepare.reset();
   };
 
-  const handleReview = (): void => prepare.mutate();
+  const handleReview = (): void => prepare.mutate(undefined, {
+    onSuccess: (result) => {
+      feeSelection.reset();
+      setPrepared(result);
+    },
+  });
+
+  // isPending reaches the button a tick after mutate(); the ref blocks a second tap in between.
+  const handleConfirm = (): void => {
+    if (sendingRef.current) {
+      return;
+    }
+
+    sendingRef.current = true;
+    send.mutateAsync()
+      .catch(() => undefined)
+      .finally(() => {
+        sendingRef.current = false;
+      });
+  };
+
+  const handleCloseReview = (): void => {
+    send.reset();
+    setPrepared(null);
+  };
 
   return (
     <SendNftPage
@@ -85,7 +118,7 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
       onChangeRecipient={handleChangeRecipient}
       recipientError={trimmed && !valid ? (trimmed === ownAddress ? 'This is your current account.' : `Enter a valid ${network.chainName} address.`) : undefined}
       suggestions={valid ? [] : suggestions}
-      onSelectSuggestion={setRecipient}
+      onSelectSuggestion={handleChangeRecipient}
       canReview={valid}
       preparing={prepare.isPending}
       prepareError={prepare.error ? toErrorMessage(prepare.error) : undefined}
@@ -93,17 +126,14 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
       review={{
         visible: Boolean(prepared),
         rows: [
-          { label: 'To', value: trimmed, multiline: true },
-          { label: 'Network', value: network.networkName },
+          { label: 'To', value: prepared?.toAddress ?? '', multiline: true },
+          { label: 'Network', value: prepared?.network.networkName ?? network.networkName },
         ],
         fee: feeSelection.selectorProps,
         error: send.error ? toErrorMessage(send.error) : undefined,
         confirming: send.isPending,
-        onConfirm: () => send.mutate(),
-        onClose: () => {
-          send.reset();
-          setPrepared(null);
-        },
+        onConfirm: handleConfirm,
+        onClose: handleCloseReview,
       }}
       onBack={navigation.goBack}
     />

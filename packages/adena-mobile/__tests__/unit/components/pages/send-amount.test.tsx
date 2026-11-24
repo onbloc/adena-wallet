@@ -113,7 +113,7 @@ describe('SendAmountPage', () => {
   });
 
   it('reviews the transfer with memo and total and reports confirm, fee and close', async () => {
-    const transfer = review();
+    const transfer = review({ memo: 'Rent for November' });
     const page = props({ amount: '999999999999.123456', memo: 'Rent for November', review: transfer, reviewError: 'Out of gas' });
 
     await renderPage(<SendAmountPage {...page} />);

@@ -1,5 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 import { RecoveryPhrasePage } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
@@ -13,9 +14,27 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
   const [words, setWords] = useState<string[]>();
   const [error, setError] = useState<string>();
   const [verifying, setVerifying] = useState(false);
+  // Bumped on every hide so a reveal still in flight cannot show the phrase afterwards.
+  const revealEpochRef = useRef(0);
 
-  // Drop the revealed phrase from component state when leaving the screen.
-  useEffect(() => navigation.addListener('blur', () => setWords(undefined)), [navigation]);
+  // Drop the revealed phrase when leaving the screen or the app goes to the background.
+  useEffect(() => {
+    const hide = (): void => {
+      revealEpochRef.current += 1;
+      setWords(undefined);
+    };
+    const unsubscribeBlur = navigation.addListener('blur', hide);
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state === 'background') {
+        hide();
+      }
+    });
+
+    return (): void => {
+      unsubscribeBlur();
+      appState.remove();
+    };
+  }, [navigation]);
 
   const handleChangePassword = (value: string): void => {
     setPassword(value);
@@ -23,10 +42,16 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
   };
 
   const handleReveal = async (): Promise<void> => {
+    const epoch = revealEpochRef.current;
+
     setVerifying(true);
 
     try {
       const mnemonic = await walletService.revealMnemonic(route.params.keyringId, password);
+
+      if (epoch !== revealEpochRef.current) {
+        return;
+      }
 
       setWords(mnemonic.split(' '));
       setPassword('');

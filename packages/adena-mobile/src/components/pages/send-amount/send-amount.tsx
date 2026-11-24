@@ -22,6 +22,7 @@ export interface TransferReview {
   amountLabel: string;
   recipientAddress: string;
   networkName: string;
+  memo?: string;
   totalLabel?: string;
   fee: FeeSelectorProps;
 }
@@ -109,7 +110,7 @@ export const SendAmountPage = (props: SendAmountPageProps): ReactElement => (
         rows={[
           { label: 'To', value: props.review.recipientAddress, multiline: true },
           { label: 'Network', value: props.review.networkName },
-          ...(props.memo ? [{ label: 'Memo', value: props.memo, multiline: true }] : []),
+          ...(props.review.memo ? [{ label: 'Memo', value: props.review.memo, multiline: true }] : []),
           ...(props.review.totalLabel ? [{ label: 'Total', value: props.review.totalLabel, emphasis: true }] : []),
         ]}
         fee={props.review.fee}

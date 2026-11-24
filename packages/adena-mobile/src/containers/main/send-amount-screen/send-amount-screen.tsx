@@ -1,12 +1,15 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import React, { ReactElement, useMemo, useState } from 'react';
+import React, { ReactElement, useMemo, useRef, useState } from 'react';
 
 import { applyKeypadKey, KeypadKey } from '../../../components/molecules';
 import { SendAmountPage, TransferReview } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
+import { Account } from '../../../domain/account';
 import { FeeEstimate } from '../../../domain/fee';
+import { Network } from '../../../domain/network';
+import { Token } from '../../../domain/token';
 import { TransactionDraft } from '../../../domain/transaction';
 import { useFeeSelection } from '../../../hooks/use-fee-selection';
 import { useWalletAssets } from '../../../hooks/use-wallet-assets';
@@ -14,6 +17,17 @@ import { MainStackParamList } from '../../../navigation/types';
 import { queryKeys } from '../../../queries/query-keys';
 import { useToastStore } from '../../../stores/toast.store';
 import { addAmount, compareAmount, formatTokenAmount, isPositiveAmount, parseCoin, toBaseUnit, toDisplayAmount } from '../../../utils/amount';
+
+// Everything the review shows and the broadcast signs, captured when the fee was estimated.
+interface PreparedTransfer {
+  account: Account;
+  network: Network;
+  token: Token;
+  amount: string;
+  memo: string;
+  draft: TransactionDraft;
+  estimate: FeeEstimate;
+}
 
 export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'SendAmount'>): ReactElement => {
   const { toAddress } = route.params;
@@ -28,7 +42,8 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
   const [memoVisible, setMemoVisible] = useState(false);
   const [memo, setMemo] = useState('');
   const [amount, setAmount] = useState('');
-  const [prepared, setPrepared] = useState<{ draft: TransactionDraft; estimate: FeeEstimate } | null>(null);
+  const [prepared, setPrepared] = useState<PreparedTransfer | null>(null);
+  const sendingRef = useRef(false);
   const feeSelection = useFeeSelection(prepared?.estimate ?? null, network);
 
   const asset = wallet.assets.find(item => item.token.id === tokenId) ?? wallet.assets.find(item => item.token.isNative);
@@ -40,20 +55,18 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
   const recipientName = addressBookService.findByAddress(toAddress)?.name
     ?? accountService.getAccounts().find(item => accountService.getAddress(item, network) === toAddress)?.name;
 
+  // Results are applied through per-call callbacks, which reset() detaches, so an edit discards an in-flight estimate.
   const prepare = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<PreparedTransfer> => {
       if (!account || !token) {
         throw new Error('Select an account and token');
       }
 
-      const draft = await transactionService.createTransferDraft({ account, network, token, toAddress, amount: baseAmount, memo });
+      const input = { account, network, token, amount: baseAmount, memo };
+      const draft = await transactionService.createTransferDraft({ ...input, toAddress });
       const estimate = await transactionService.estimateFee(draft, account, network);
 
-      return { draft, estimate };
-    },
-    onSuccess: (result) => {
-      feeSelection.reset();
-      setPrepared(result);
+      return { ...input, draft, estimate };
     },
   });
 
@@ -64,21 +77,23 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
         throw new Error('Select an account and token');
       }
 
-      return transactionService.maxTransferAmount({ account, network, token, toAddress, balance });
+      const maxAmount = await transactionService.maxTransferAmount({ account, network, token, toAddress, balance });
+
+      return compareAmount(maxAmount, '0') > 0 ? toDisplayAmount(maxAmount, token.decimals) : '';
     },
-    onSuccess: maxAmount => setAmount(compareAmount(maxAmount, '0') > 0 ? toDisplayAmount(maxAmount, decimals) : ''),
   });
 
   const send = useMutation({
     mutationFn: async () => {
-      if (!account || !prepared || !feeSelection.fee || !token) {
+      if (!prepared || !feeSelection.fee) {
         throw new Error('Nothing to send');
       }
 
       const draft = { ...prepared.draft, fee: { gasWanted: feeSelection.fee.gasWanted, gasFee: feeSelection.fee.gasFee } };
+      const transfer = { token: prepared.token, amount: prepared.amount };
 
-      await transactionService.assertSufficientFunds(draft, account, network, { token, amount: baseAmount }, prepared.estimate.storageDeposit);
-      return transactionService.signAndBroadcast(draft, account, network);
+      await transactionService.assertSufficientFunds(draft, prepared.account, prepared.network, transfer, prepared.estimate.storageDeposit);
+      return transactionService.signAndBroadcast(draft, prepared.account, prepared.network);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.balances() });
@@ -90,22 +105,24 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
   });
 
   const review: TransferReview | undefined = useMemo(() => {
-    if (!prepared || !token || !feeSelection.fee) {
+    if (!prepared || !feeSelection.fee) {
       return undefined;
     }
 
-    const feeToken = network.feeToken;
+    const { token: sent, amount: sentAmount, network: sentNetwork } = prepared;
+    const feeToken = sentNetwork.feeToken;
     const fee = addAmount(parseCoin(feeSelection.fee.gasFee)?.amount ?? '0', prepared.estimate.storageDeposit ?? '0');
 
     return {
-      amountLabel: `${formatTokenAmount(baseAmount, token.decimals)} ${token.symbol}`,
+      amountLabel: `${formatTokenAmount(sentAmount, sent.decimals)} ${sent.symbol}`,
       recipientAddress: toAddress,
-      networkName: network.networkName,
+      networkName: sentNetwork.networkName,
+      memo: prepared.memo,
       // A total only makes sense when the amount and the fee are the same coin.
-      totalLabel: token.denom === feeToken.denom ? `${formatTokenAmount(addAmount(baseAmount, fee), feeToken.decimals)} ${feeToken.symbol}` : undefined,
+      totalLabel: sent.denom === feeToken.denom ? `${formatTokenAmount(addAmount(sentAmount, fee), feeToken.decimals)} ${feeToken.symbol}` : undefined,
       fee: feeSelection.selectorProps,
     };
-  }, [baseAmount, feeSelection.fee, feeSelection.selectorProps, network.feeToken, network.networkName, prepared, toAddress, token]);
+  }, [feeSelection.fee, feeSelection.selectorProps, prepared, toAddress]);
 
   const handleKeyPress = (key: KeypadKey): void => {
     prepare.reset();
@@ -115,16 +132,38 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
 
   const handleMax = (): void => {
     prepare.reset();
-    max.mutate();
+    max.mutate(undefined, { onSuccess: setAmount });
   };
 
-  const handleReview = (): void => prepare.mutate();
+  const handleReview = (): void => prepare.mutate(undefined, {
+    onSuccess: (result) => {
+      feeSelection.reset();
+      setPrepared(result);
+    },
+  });
 
-  const handleConfirm = (): void => send.mutate();
+  // isPending reaches the button a tick after mutate(); the ref blocks a second tap in between.
+  const handleConfirm = (): void => {
+    if (sendingRef.current) {
+      return;
+    }
+
+    sendingRef.current = true;
+    send.mutateAsync()
+      .catch(() => undefined)
+      .finally(() => {
+        sendingRef.current = false;
+      });
+  };
 
   const handleCloseReview = (): void => {
     send.reset();
     setPrepared(null);
+  };
+
+  const handleChangeMemo = (value: string): void => {
+    prepare.reset();
+    setMemo(value);
   };
 
   const handleOpenMemo = (): void => setMemoVisible(true);
@@ -139,6 +178,7 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
     setTokenId(nextTokenId);
     setAmount('');
     prepare.reset();
+    max.reset();
     setPickerVisible(false);
   };
 
@@ -166,7 +206,7 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
       onConfirm={handleConfirm}
       onCloseReview={handleCloseReview}
       memo={memo}
-      onChangeMemo={setMemo}
+      onChangeMemo={handleChangeMemo}
       memoSheetVisible={memoVisible}
       onOpenMemo={handleOpenMemo}
       onCloseMemo={handleCloseMemo}
