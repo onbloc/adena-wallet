@@ -5,7 +5,7 @@ import type { TransactionHandler, WalletSdk } from './wallet/port';
 import { createWalletTools } from './wallet/tools';
 import type { Harness, WalletTool } from '../harness/core';
 import { GNO_MAINNET_CHAIN } from '../harness/mcp';
-import type { GenerateEvent, GenerateSettings, LLM, ToolLoop } from '../llm/core';
+import { estimateContextInput, type GenerateEvent, type GenerateSettings, type LLM, type ToolLoop } from '../llm/core';
 
 function compactHoldings(name: string, output: unknown): unknown {
   if (name !== 'get_token_balances' || !output || typeof output !== 'object' ||
@@ -19,10 +19,6 @@ function compactHoldings(name: string, output: unknown): unknown {
   return { ...output, value: { ...output.value, untrustedData: { ...data, items } } };
 }
 
-// Qwen3.5 tokenizer, measured: 4.1 bytes/token on prompt and tool schemas, 3.5 on Korean text,
-// 2.45 on a get_token_balances result. 2 keeps ~20% margin below the densest of those; counting
-// every byte as a token overshoots 2-4x and ran out of budget after one tool call.
-const BYTES_PER_TOKEN = 2;
 // An on-device model is slow: the whole run, tool calls included, is bounded by this.
 const RUN_TIMEOUT_MS = 5 * 60_000;
 // Max model calls per run with wallet tools (e.g. a balance read -> transfer -> answer).
@@ -127,12 +123,8 @@ export class AIAgent {
     }
     const options = createAiSdkRun({
       run, maxOutputTokens: Math.min(maxOutputTokens, 512), budget: { kind: 'local' },
-      estimateInputTokens: ({ instructions, messages, tools }) => {
-        // Conservative local estimate. Reserve enough room for the output in the device context.
-        const bytes = new TextEncoder().encode(JSON.stringify([instructions, messages, tools])).byteLength;
-        const estimate = Math.ceil(bytes / BYTES_PER_TOKEN) + 512;
-        return estimate + Math.min(maxOutputTokens, 512) > contextTokens ? totalTokens : estimate;
-      },
+      contextWindow: contextTokens,
+      estimateInputTokens: ({ instructions, messages, tools }) => estimateContextInput([instructions, messages, tools]),
       projectResult: compactHoldings,
       onInterrupt: () => run.close(),
     });

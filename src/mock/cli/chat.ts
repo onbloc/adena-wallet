@@ -9,15 +9,18 @@
 import { readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline/promises';
 
-import type { LanguageModel, ModelMessage } from 'ai';
+import type { LanguageModel } from 'ai';
 
 import { AIAgent, type PreparedTransaction } from '../../agent';
 import { Harness } from '../../harness/core';
 import { createOnblocToolSource, gnoPublicAddress, type OnblocMcpConfig } from '../../harness/mcp';
 import {
+  canRememberTurn,
+  createChatSession,
   DEFAULT_GENERATE_SETTINGS,
   GenerateEventType,
   LLMFromModel,
+  type ChatSession,
   type GenerateSettings,
 } from '../../llm/core';
 import { describeTransaction } from '../app/describeTransaction';
@@ -97,7 +100,7 @@ function printBalances(balances: Record<string, Balances>, you: string | undefin
 }
 
 /** The conversation so far and, with --onbloc, the agent and its mock wallet. */
-type Session = { agent?: AIAgent; sdk?: MockWalletSdk; history: ModelMessage[] };
+type Session = { agent?: AIAgent; sdk?: MockWalletSdk; chat: ChatSession };
 
 async function main() {
   const options = parseOptions(process.argv.slice(2));
@@ -150,12 +153,12 @@ async function main() {
   // The server's model; with --onbloc an agent reads through Onbloc and prepares transactions on a mock wallet.
   const llm = new LLMFromModel(model, { contextTokens: SERVER_CONTEXT_TOKENS });
   const newSession = async (): Promise<Session> => {
-    if (!options.onbloc) return { history: [] };
+    if (!options.onbloc) return { chat: createChatSession() };
     console.error('loading balances from Onbloc...');
     const sdk = await createOnblocMockWallet({ onbloc: options.onbloc });
     const harness = new Harness({ toolSources: [createOnblocToolSource(options.onbloc)] });
     const agent = new AIAgent({ llm, harness, wallet: sdk, onTransaction: printTransaction });
-    return { sdk, agent, history: [] };
+    return { sdk, agent, chat: createChatSession() };
   };
   let session = await newSession();
 
@@ -164,9 +167,11 @@ async function main() {
 
   /** One question and the model's whole answer, tools included. */
   async function ask1(text: string) {
-    const messages: ModelMessage[] = [...session.history, { role: 'user', content: text }];
+    const messages = session.chat.messages(text);
     const controller = new AbortController();
     turnAbort = controller;
+    let answer = '';
+    let remember = false;
     let lineOpen = false;
     const endLine = () => {
       if (lineOpen) process.stdout.write('\n');
@@ -186,6 +191,7 @@ async function main() {
       for await (const event of events) {
         switch (event.type) {
           case GenerateEventType.Text:
+            answer += event.delta;
             process.stdout.write(event.delta);
             lineOpen = true;
             break;
@@ -209,15 +215,15 @@ async function main() {
             if (tokensPerSec !== undefined) stats.push(`${tokensPerSec.toFixed(1)} tok/s`);
             console.log(dim(`  (${event.aborted ? 'stopped, ' : ''}${stats.join(', ')})`));
             for (const warning of event.warnings) console.log(dim(`  warning: ${warning}`));
-            // A stopped turn is not remembered.
-            if (!event.aborted && event.messages.length) session.history = [...messages, ...event.messages];
+            remember = canRememberTurn(event);
           }
         }
       }
+      if (remember && !controller.signal.aborted) session.chat.complete(text, answer);
     } catch (error) {
       endLine();
       console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
-      console.error('(this question was dropped; /reset starts over if the conversation got too long)');
+      console.error('(this question was not added to the conversation)');
       if (options.prompt !== undefined) process.exitCode = 1;
     } finally {
       turnAbort = null;

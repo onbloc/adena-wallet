@@ -1,4 +1,5 @@
 import {
+  asSchema,
   isStepCount,
   streamText,
   type LanguageModel,
@@ -6,6 +7,7 @@ import {
   type ToolSet,
 } from 'ai';
 import type { ToolLoop } from './loop';
+import { compactContext, estimateContextInput } from './session';
 
 /** What to answer: one prompt, or a whole conversation. */
 type GenerateInput =
@@ -31,6 +33,8 @@ export type GenerateOptions = GenerateSettings & {
   signal?: AbortSignal;
   /** Tools and per-step hooks from the layer above; closed when the generation ends. */
   loop?: ToolLoop;
+  /** Bound each model step to this context window. Managed loops apply their own budget. */
+  contextTokens?: number;
 };
 
 export type Metrics = {
@@ -78,7 +82,7 @@ export type GenerateEvent =
       finishReason?: string;
       /** Provider warnings, e.g. unsupported options. */
       warnings: string[];
-      /** What the model said and did (assistant and tool messages), to append to a conversation. Empty if aborted. */
+      /** Raw assistant and tool messages for this run; never replay tool calls as chat history. */
       messages: ModelMessage[];
     };
 
@@ -97,7 +101,7 @@ const errorMessage = (error: unknown) =>
  */
 export async function* generate(
   model: LanguageModel,
-  { signal, maxSteps, loop, ...options }: GenerateOptions,
+  { signal, maxSteps, loop, contextTokens, ...options }: GenerateOptions,
   now: () => number = () => Date.now()
 ): AsyncGenerator<GenerateEvent> {
   const startedAt = now();
@@ -109,11 +113,27 @@ export async function* generate(
   let responseMessages: ModelMessage[] = [];
 
   try {
+    const bounded = contextTokens !== undefined && !loop?.options.prepareStep;
+    const maxOutputTokens = options.maxOutputTokens ?? 512;
+    const tools = loop?.options.tools ?? options.tools;
+    const schemas = bounded && tools
+      ? await Promise.all(Object.entries(tools).map(async ([name, definition]) =>
+        [name, definition.description, await asSchema(definition.inputSchema).jsonSchema]))
+      : [];
     const result = streamText({
       model,
       ...options,
       ...(maxSteps !== undefined && { stopWhen: isStepCount(maxSteps) }),
       abortSignal: signal,
+      ...(bounded && {
+        maxOutputTokens,
+        prepareStep: ({ messages, instructions }) => {
+          const context = compactContext(messages, candidate =>
+            estimateContextInput([instructions, schemas, candidate]) + maxOutputTokens <= (contextTokens ?? Infinity));
+          if (!context) throw new Error('ADENA_CONTEXT_LIMIT: Current request and tool results exceed the model context.');
+          return { messages: context };
+        },
+      }),
       ...loop?.options,
       onError: () => {}, // errors are rethrown from the stream below
     });

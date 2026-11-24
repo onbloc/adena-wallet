@@ -16,8 +16,9 @@ import {
 
 import { AIAgent, type PreparedTransaction } from '../../agent';
 import { Harness } from '../../harness/core';
-import { createOnblocToolSource } from '../../harness/mcp';
+import { createOnblocToolSource, GNO_MAINNET_CHAIN } from '../../harness/mcp';
 import {
+  chatSessionKey,
   DEFAULT_GENERATE_SETTINGS,
   TEMPERATURE_RANGE,
   type CallRecord,
@@ -35,6 +36,8 @@ import type { MockWalletSdk, WalletState } from '../wallet/mockWalletSdk';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
 import type { Balances } from '../wallet/tokens';
 import { describeTransaction } from './describeTransaction';
+import { useChatSession } from './useChatSession';
+import { usePreparationHistory } from './usePreparationHistory';
 import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL, resolveOnblocSettings } from './onblocSettings';
 
 /** Parses user input; null when empty, non-numeric, non-integer (if required) or out of range. */
@@ -94,8 +97,9 @@ export default function PlaygroundScreen() {
   const [walletView, setWalletView] = useState<{ key: string; state: WalletState } | null>(null);
   // Prompt that started the last run, shown as the user message.
   const [submittedPrompt, setSubmittedPrompt] = useState<string | null>(null);
-  // Transactions the agent prepared in the current run; the user signs them in their own wallet.
-  const [prepared, setPrepared] = useState<PreparedTransaction[]>([]);
+  const [remembered, setRemembered] = useState(false);
+  // Only the summary is retained in memory; transaction objects are never persisted.
+  const [prepared, setPrepared] = useState<PreparedTransaction['summary'][]>([]);
   const [tab, setTab] = useState<'chat' | 'settings'>('chat');
   // Editable Onbloc settings, in memory only. Clear both fields for a plain chat without the wallet.
   const [mcpUrl, setMcpUrl] = useState(DEFAULT_ONBLOC_MCP_URL);
@@ -111,14 +115,29 @@ export default function PlaygroundScreen() {
           ...(__DEV__ ? { allowLoopbackHttp: true as const } : {}),
         }
       : undefined;
-  const wallet = onbloc && walletView?.key === onbloc.account ? walletView.state : EMPTY_WALLET;
+  const walletScope = onbloc && {
+    mode: 'onbloc' as const, endpoint: onbloc.endpoint, chainId: GNO_MAINNET_CHAIN, account: onbloc.account,
+  };
+  const scope = walletScope && useTools ? walletScope : { mode: 'plain' as const };
+  const scopeKey = chatSessionKey(scope);
+  const walletKey = walletScope && chatSessionKey(walletScope);
+  const session = useChatSession(scope);
+  const preparation = usePreparationHistory(walletScope);
+  const wallet = walletKey && walletView?.key === walletKey ? walletView.state : EMPTY_WALLET;
   const [preparing, setPreparing] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [keyboardShown, setKeyboardShown] = useState(false);
   const scrollRef = useRef<ScrollViewInstance>(null);
   // Wallet kept across runs, so later runs reuse the loaded balances. One per address.
   const walletRef = useRef<{ key: string; sdk: MockWalletSdk } | null>(null);
+  const visibleScope = useRef(scopeKey);
+  const displayedRun = useRef<{ scope: string } | null>(null);
   const chat = tab === 'chat';
+
+  useEffect(() => {
+    visibleScope.current = scopeKey;
+  }, [scopeKey]);
+  useEffect(() => () => { displayedRun.current = null; }, []);
 
   // Drops the home-indicator padding while the keyboard covers it.
   useEffect(() => {
@@ -140,6 +159,18 @@ export default function PlaygroundScreen() {
     setWalletView(null);
   };
 
+  const clearDisplayedRun = () => {
+    displayedRun.current = null;
+    setSubmittedPrompt(null);
+    setRemembered(false);
+    setPrepared([]);
+  };
+
+  const clearChat = () => {
+    session.reset();
+    clearDisplayedRun();
+  };
+
   const temperatureValue = parseBounded(temperature, TEMPERATURE_RANGE);
   const maxTokensValue = parseBounded(maxTokens, MAX_OUTPUT_TOKENS_RANGE, true);
 
@@ -147,6 +178,8 @@ export default function PlaygroundScreen() {
   const ready = status.state === 'ready';
   const canRun =
     ready &&
+    session.ready &&
+    preparation.ready &&
     (!onblocMode || onbloc !== undefined) &&
     !preparing &&
     !run.running &&
@@ -156,12 +189,13 @@ export default function PlaygroundScreen() {
 
   /** The mock wallet funded with the account's Onbloc balances; null (reason shown) if they cannot be read. */
   const ensureOnblocWallet = async (config: NonNullable<typeof onbloc>) => {
-    if (walletRef.current?.key === config.account) return walletRef.current.sdk;
+    const key = chatSessionKey({ mode: 'onbloc', endpoint: config.endpoint, chainId: GNO_MAINNET_CHAIN, account: config.account });
+    if (walletRef.current?.key === key) return walletRef.current.sdk;
     setPreparing(true);
     try {
       const sdk = await createOnblocMockWallet({ onbloc: config });
-      walletRef.current = { key: config.account, sdk };
-      setWalletView({ key: config.account, state: sdk.inspect() });
+      walletRef.current = { key, sdk };
+      setWalletView({ key, state: sdk.inspect() });
       return sdk;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
@@ -173,17 +207,23 @@ export default function PlaygroundScreen() {
   };
 
   const onRun = async () => {
-    if (temperatureValue === null || maxTokensValue === null || (onblocMode && !onbloc)) return;
+    if (!canRun || temperatureValue === null || maxTokensValue === null || (onblocMode && !onbloc)) return;
+    const text = prompt.trim();
+    const messages = session.messages(text);
+    if (!messages || !text) return;
     setSetupError(null);
     // Load the balances before the prompt is sent, so a failure keeps the prompt in the composer.
     const onblocWallet = onbloc && useTools ? await ensureOnblocWallet(onbloc) : null;
     if (onbloc && useTools && !onblocWallet) return;
-    setSubmittedPrompt(prompt);
+    const view = { scope: scopeKey };
+    displayedRun.current = view;
+    setSubmittedPrompt(text);
+    setRemembered(false);
     setPrepared([]);
     // The prompt is now the user message in the chat: clear the composer.
     setPrompt('');
     const settings: GenerateSettings = {
-      prompt,
+      messages,
       // With the wallet on the agent brings its own system prompt; with no Onbloc settings it is a plain chat.
       system:
         onbloc && !onblocWallet
@@ -193,18 +233,27 @@ export default function PlaygroundScreen() {
       maxOutputTokens: maxTokensValue,
       reasoning: thinking ? 'provider-default' : 'none',
     };
-    await start((signal) => {
+    const answer = await start((signal) => {
       if (!onbloc || !onblocWallet) return llm.generate(settings, { signal });
       // The agent reads through Onbloc, prepares transactions on the wallet, stays within the
       // harness budget and checks its answer against what the tools returned.
       const harness = new Harness({ toolSources: [createOnblocToolSource(onbloc)] });
-      const onTransaction = (transaction: PreparedTransaction) =>
-        setPrepared((list) => [...list, transaction]);
+      const onTransaction = async ({ summary }: PreparedTransaction) => {
+        // The persisted record is bound to this run's original scope, even after a switch.
+        await preparation.record(summary.type);
+        setPrepared((list) =>
+          displayedRun.current === view && visibleScope.current === view.scope ? [...list, summary] : list
+        );
+      };
       return new AIAgent({ llm, harness, wallet: onblocWallet, onTransaction }).run(settings, {
         account: onbloc.account,
         signal,
       });
     });
+    if (answer) {
+      const stored = session.complete(text, answer);
+      if (displayedRun.current === view && visibleScope.current === view.scope) setRemembered(stored);
+    }
   };
 
   const sendDisabled = !run.running && !canRun;
@@ -267,12 +316,12 @@ export default function PlaygroundScreen() {
           <TextInput
             style={[styles.input, onblocSettings.endpointError !== null && styles.invalid]}
             value={mcpUrl}
-            onChangeText={setMcpUrl}
+            onChangeText={value => { clearDisplayedRun(); setMcpUrl(value); }}
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="url"
             placeholder="https://.../mcp"
-            editable={!preparing}
+            editable={!preparing && !run.running}
           />
           {onblocSettings.endpointError !== null && (
             <Text style={styles.error}>{onblocSettings.endpointError}</Text>
@@ -281,11 +330,11 @@ export default function PlaygroundScreen() {
           <TextInput
             style={[styles.input, onblocSettings.accountError !== null && styles.invalid]}
             value={myAddress}
-            onChangeText={setMyAddress}
+            onChangeText={value => { clearDisplayedRun(); setMyAddress(value); }}
             autoCapitalize="none"
             autoCorrect={false}
             placeholder="g1..."
-            editable={!preparing}
+            editable={!preparing && !run.running}
           />
           {onblocSettings.accountError !== null && (
             <Text style={styles.error}>{onblocSettings.accountError}</Text>
@@ -339,10 +388,17 @@ export default function PlaygroundScreen() {
 
           {onblocMode && (
             <View style={styles.rowCenter}>
-              <Switch value={useTools} onValueChange={setUseTools} />
+              <Switch value={useTools} disabled={preparing || run.running} onValueChange={value => {
+                clearDisplayedRun();
+                setUseTools(value);
+              }} />
               <Text style={styles.switchLabel}>Wallet tools (Onbloc reads + mock wallet actions)</Text>
             </View>
           )}
+          <View style={styles.row}>
+            <Button label="Clear conversation" onPress={clearChat}
+              disabled={preparing || run.running || !session.turns.length} />
+          </View>
         </ScrollView>
       )}
 
@@ -353,7 +409,7 @@ export default function PlaygroundScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         onContentSizeChange={() => {
-          if (run.running) scrollRef.current?.scrollToEnd({ animated: true });
+          if (chat) scrollRef.current?.scrollToEnd({ animated: run.running });
         }}
       >
         {onblocMode && !onbloc && <Text style={styles.error}>
@@ -361,9 +417,44 @@ export default function PlaygroundScreen() {
         </Text>}
         {preparing && <Text style={styles.muted}>Loading balances from Onbloc...</Text>}
         {setupError !== null && <Text style={styles.error}>{setupError}</Text>}
-        {submittedPrompt === null ? (
+        {session.error && (
+          <View>
+            <Text style={styles.error}>{session.error}</Text>
+            <Button label={session.ready ? 'Retry saving conversation' : 'Retry loading conversation'} onPress={session.retry} />
+          </View>
+        )}
+        {!session.ready && !session.error && <Text style={styles.muted}>Loading conversation...</Text>}
+        {preparation.error && (
+          <View>
+            <Text style={styles.error}>{preparation.error}</Text>
+            <Button label={preparation.ready ? 'Retry saving preparation status' : 'Retry loading preparation status'} onPress={preparation.retry} />
+          </View>
+        )}
+        {!preparation.ready && !preparation.error && <Text style={styles.muted}>Loading preparation history...</Text>}
+        {preparation.prepared.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.label}>Preparation history</Text>
+            {preparation.prepared.map((kind, index) => (
+              <Text key={index} style={styles.mono}>
+                {kind === 'transfer' ? 'Transfer' : 'Approval'} prepared.
+              </Text>
+            ))}
+            <Text style={styles.muted}>
+              This app did not sign or send these transactions. Later wallet activity is unknown.
+              Transaction details were not saved and are not restored.
+            </Text>
+          </View>
+        )}
+        {session.turns.slice(0, submittedPrompt !== null && remembered ? -1 : undefined).map((turn, index) => (
+          <View key={index}>
+            <View style={styles.userBubble}><Text style={styles.userText} selectable>{turn.prompt}</Text></View>
+            <Text style={styles.output} selectable>{turn.answer}</Text>
+          </View>
+        ))}
+        {submittedPrompt === null && session.ready && !session.turns.length && (
           <Text style={styles.muted}>Send a prompt to start.</Text>
-        ) : (
+        )}
+        {submittedPrompt !== null && (
           <>
             <View style={styles.userBubble}>
               <Text style={styles.userText} selectable>
@@ -388,7 +479,7 @@ export default function PlaygroundScreen() {
             </Text>
             {run.aborted && <Text style={styles.muted}>(stopped)</Text>}
 
-            {prepared.map(({ summary }, index) => (
+            {prepared.map((summary, index) => (
               <TransactionCard key={index} summary={summary} />
             ))}
 

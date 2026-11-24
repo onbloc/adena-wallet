@@ -40,6 +40,25 @@ describe('LLMFromModel', () => {
     expect(events[events.length - 1]).toMatchObject({ type: GenerateEventType.Done, aborted: false });
   });
 
+  it('applies its configured context window to conversation history', async () => {
+    const model = answering('hello');
+    const llm = new LLMFromModel(model, { contextTokens: 1600 });
+    await collect(llm.generate({
+      messages: [
+        { role: 'user', content: 'old question' },
+        { role: 'assistant', content: 'x'.repeat(5000) },
+        { role: 'user', content: 'recent question' },
+        { role: 'assistant', content: 'recent answer' },
+        { role: 'user', content: 'current question' },
+      ],
+      maxOutputTokens: 128,
+    }));
+    const prompt = JSON.stringify(model.doStreamCalls[0].prompt);
+    expect(prompt).not.toContain('old question');
+    expect(prompt).toContain('recent question');
+    expect(prompt).toContain('current question');
+  });
+
   it('closes the tool loop it is handed when the generation ends', async () => {
     const close = jest.fn();
     const llm = new LLMFromModel(answering('hello'));

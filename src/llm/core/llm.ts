@@ -28,6 +28,6 @@ export class LLMFromModel implements LLM {
   }
 
   generate(settings: GenerateSettings, options: LLMGenerateOptions = {}) {
-    return generate(this.model, { ...settings, ...options });
+    return generate(this.model, { ...settings, ...options, contextTokens: this.contextTokens });
   }
 }

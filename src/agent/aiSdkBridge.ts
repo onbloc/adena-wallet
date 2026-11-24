@@ -1,6 +1,7 @@
 import { asSchema, jsonSchema, tool } from 'ai';
 import type { GenerateTextOnStepEndCallback, Instructions, JSONSchema7, LanguageModel, ModelMessage, PrepareStepFunction, StopCondition, ToolSet } from 'ai';
 import type { Decision, HarnessRun } from '../harness/core';
+import { compactContext } from '../llm/core';
 
 export type Interruption = Extract<Decision, { kind: 'clarify' | 'approval-required' }>;
 export type AiSdkBudget =
@@ -40,9 +41,10 @@ function createAiSdkTools({ run, onInterrupt, projectResult }: {
 }
 
 /** Options for one AI SDK generation loop. Close the run in the consumer's finally block. */
-export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budget, onInterrupt, projectResult }: {
+export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budget, onInterrupt, projectResult, contextWindow }: {
   run: HarnessRun;
   maxOutputTokens: number;
+  contextWindow?: number;
   /** Include instructions, tool schema and provider formatting overhead for this step. */
   estimateInputTokens: (input: Readonly<{
     model: LanguageModel;
@@ -60,7 +62,12 @@ export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budg
     definitions ??= Promise.all(run.tools.map(async ({ name, description }) => ({
       name, description, inputSchema: await asSchema(tools[name].inputSchema).jsonSchema,
     })));
-    const inputTokenUpperBound = estimateInputTokens({ model, messages, instructions, tools: await definitions });
+    const schemas = await definitions;
+    const estimate = (candidate: ModelMessage[]) => estimateInputTokens({ model, messages: candidate, instructions, tools: schemas });
+    const context = contextWindow === undefined ? messages
+      : compactContext(messages, candidate => estimate(candidate) + maxOutputTokens <= contextWindow);
+    if (!context) throw new Error('ADENA_CONTEXT_LIMIT: Current request and tool results exceed the model context.');
+    const inputTokenUpperBound = estimate(context);
     const limit = run.beginStep(maxOutputTokens, inputTokenUpperBound);
     if (limit === undefined) throw new Error('ADENA_RUN_CANNOT_START_STEP');
     if (budget.kind === 'cloud' && !await budget.reserveStep({ operationId: run.operationId, stepNumber, inputTokenUpperBound, maxOutputTokens: limit, signal: run.signal })) {
@@ -68,7 +75,7 @@ export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budg
       throw new Error('ADENA_CLOUD_BUDGET_EXHAUSTED');
     }
     if (run.signal.aborted) throw new Error('ADENA_RUN_CANCELLED');
-    return { maxOutputTokens: limit };
+    return { messages: context, maxOutputTokens: limit };
   };
   const onStepEnd: GenerateTextOnStepEndCallback<ToolSet> = ({ usage }) => {
     run.finishStep(usage.totalTokens);

@@ -302,6 +302,34 @@ describe('generate with tools', () => {
     expect(JSON.stringify(model.doStreamCalls[1].prompt)).toContain('ABC');
   });
 
+  it('compacts earlier text turns on each step without losing the current tool exchange', async () => {
+    const { ran, tools } = setup();
+    const model = stepsModel([toolCall('lookup', { key: 'abc' }), answer]);
+    await collect(generate(model, {
+      messages: [
+        { role: 'user', content: 'old-prompt' },
+        { role: 'assistant', content: 'x'.repeat(5000) },
+        { role: 'user', content: 'recent-prompt' },
+        { role: 'assistant', content: 'recent-answer' },
+        { role: 'user', content: 'current-request' },
+      ],
+      tools, maxSteps: 3, contextTokens: 1800, maxOutputTokens: 128,
+    }));
+    expect(ran).toEqual(['abc']);
+    expect(model.doStreamCalls).toHaveLength(2);
+    for (const call of model.doStreamCalls) {
+      const prompt = JSON.stringify(call.prompt);
+      expect(prompt).not.toContain('old-prompt');
+      expect(prompt).toContain('recent-prompt');
+      expect(prompt).toContain('current-request');
+    }
+    const continuation = JSON.stringify(model.doStreamCalls[1].prompt);
+    expect(continuation).toContain('tool-call');
+    expect(continuation).toContain('tool-result');
+    expect(continuation).toContain('c1');
+    expect(continuation).toContain('ABC');
+  });
+
   it('stops after one model call by default even when a tool ran', async () => {
     const { tools } = setup();
     const model = stepsModel([toolCall('lookup', { key: 'abc' })]);

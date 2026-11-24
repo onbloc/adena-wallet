@@ -116,6 +116,25 @@ describe('LLMOnDevice', () => {
     ]);
   });
 
+  it('bounds an on-device conversation by the loaded context window', async () => {
+    const model = streaming();
+    const llm = await loaded(model);
+    await collect(llm.generate({
+      messages: [
+        { role: 'user', content: 'old question' },
+        { role: 'assistant', content: 'x'.repeat(20_000) },
+        { role: 'user', content: 'recent question' },
+        { role: 'assistant', content: 'recent answer' },
+        { role: 'user', content: 'current question' },
+      ],
+      maxOutputTokens: 128,
+    }));
+    const prompt = JSON.stringify(model.doStreamCalls[0].prompt);
+    expect(prompt).not.toContain('old question');
+    expect(prompt).toContain('recent question');
+    expect(prompt).toContain('current question');
+  });
+
   it('completes each step before its tool calls are streamed when tools are on', async () => {
     const llm = await loaded(toolCalling());
     const tools = {

@@ -69,6 +69,8 @@ export class LLMOnDevice implements LLM {
     if (!model) throw new Error('Model is not loaded');
     // With tools on, native llama may publish a tool call before its arguments are complete.
     const toolsOn = options.loop !== undefined || settings.tools !== undefined;
-    yield* generate(toolsOn ? withCompletedToolCalls(model) : model, { ...settings, ...options });
+    yield* generate(toolsOn ? withCompletedToolCalls(model) : model, {
+      ...settings, ...options, contextTokens: this.contextTokens,
+    });
   }
 }

@@ -7,3 +7,5 @@ export type { GenerateEvent, GenerateOptions, GenerateSettings, Metrics } from '
 export { LLMFromModel } from './llm';
 export type { LLM, LLMGenerateOptions } from './llm';
 export type { ToolLoop } from './loop';
+export { canRememberTurn, chatSessionKey, compactContext, createChatSession, estimateContextInput } from './session';
+export type { ChatScope, ChatSession, ChatTurn } from './session';
