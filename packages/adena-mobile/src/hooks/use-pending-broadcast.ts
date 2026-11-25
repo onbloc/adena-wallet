@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { TransactionPendingError } from '../core/errors';
@@ -5,6 +6,7 @@ import { useContainer } from '../di/container-provider';
 import { Account } from '../domain/account';
 import { Network } from '../domain/network';
 import { BroadcastResult } from '../domain/transaction';
+import { queryKeys } from '../queries/query-keys';
 import { PendingReconciliation, SettledPending } from '../services/transaction.service';
 import { PendingBroadcast, pendingScope, usePendingBroadcastStore } from '../stores/pending-broadcast.store';
 import { useToastStore } from '../stores/toast.store';
@@ -46,6 +48,7 @@ let nextRound = 1;
 export const usePendingBroadcast = (account: Account | null, network: Network, onCommitted: () => void): PendingBroadcastGuard => {
   const { transactionService, pendingBroadcastRepository: repository } = useContainer();
   const showToast = useToastStore(state => state.show);
+  const queryClient = useQueryClient();
   const accountId = account?.id;
   const scope = accountId ? pendingScope(accountId, network.chainId) : null;
   const pending = usePendingBroadcastStore(state => (scope ? state.entries[scope] : undefined)) ?? null;
@@ -131,6 +134,12 @@ export const usePendingBroadcast = (account: Account | null, network: Network, o
         }
       }
 
+      // Any landed tx moved balances (a failed one still paid its fee), whichever screen sent it.
+      if (result.settled.some(item => item.status !== 'not_included')) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.balances() });
+        void queryClient.invalidateQueries({ queryKey: [...queryKeys.all, 'activities'] });
+      }
+
       if (ownCommitted) {
         onCommittedRef.current();
       }
@@ -159,7 +168,7 @@ export const usePendingBroadcast = (account: Account | null, network: Network, o
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [checkingRound, ownerId, repository, scope, setEntry, showToast, transactionService]);
+  }, [checkingRound, ownerId, queryClient, repository, scope, setEntry, showToast, transactionService]);
 
   const watch = useCallback((hash: string, sender: Account, sentNetwork: Network): void => {
     // TransactionService normally saved it before broadcasting; only write when it is missing.

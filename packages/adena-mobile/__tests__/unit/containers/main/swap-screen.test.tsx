@@ -681,6 +681,32 @@ describe('SwapScreen review', () => {
   });
 });
 
+describe('SwapScreen pending settlement', () => {
+  beforeEach(resetStores);
+
+  afterEach(() => act(() => new Promise<void>((done) => {
+    setTimeout(done, 0);
+  })));
+
+  it('refreshes balances when a restored pending tx it does not own confirms', async () => {
+    const { env, account, network, address } = await setup({}, undefined, ({ env: testEnv, account: sender, network: current }) => {
+      testEnv.container.pendingBroadcastRepository.add({ hashes: ['OLD'], accountId: sender.id, chainId: current.chainId, createdAt: Date.now() });
+    });
+    const balance = (): unknown => screen.getByTestId('swap-sell-balance').props.children;
+
+    await waitFor(() => expect(balance()).toBe('Balance 100'), LOOKUP);
+    jest.spyOn(env.container.transactionService, 'reconcilePending').mockImplementation(async () => {
+      const [record] = env.container.pendingBroadcastRepository.list(account.id, network.chainId);
+
+      env.gno.state.balances[address] = '50000000ugnot';
+      return { status: 'none', settled: record ? [{ id: record.id, status: 'committed', hash: 'OLD' }] : [] };
+    });
+
+    await waitFor(() => expect(balance()).toBe('Balance 50'), { timeout: PENDING_POLL_INTERVAL_MS + 2000 });
+    expect(toastMessage()).toBe('Your previous transaction was confirmed.');
+  }, 15_000);
+});
+
 describe('swap screen helpers', () => {
   const token = (id: string, symbol: string, volume?: number): SwapToken => ({ id, symbol, name: symbol, swapPath: id, volume24hUsd: volume } as SwapToken);
 
