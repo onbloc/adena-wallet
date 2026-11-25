@@ -4,11 +4,22 @@ import { TransactionType, WalletErrorCode } from '../../agent';
 import { AdenaWalletSdk, type AdenaTransaction } from '../adenaWalletSdk';
 import { createOnblocTokenResolver, isNativeSymbol, nativeToken, pickToken, type TokenResolver } from '../tokens';
 import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
+import { isValidGnoAddress } from '../../harness/mcp';
 
 const sender = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
-const other = 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6';
-const spender = 'g1tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s';
+const other = 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpqcg7v29';
+const spender = 'g1tvdw0s3jn54khce6mua7lqpzry9x8gf2u50rw9';
 const gns = { packagePath: 'gno.land/r/gnoswap/gns', symbol: 'GNS', amount: '63607', decimals: 6 };
+
+it('uses checksum-valid distinct fixture addresses and rejects the former invalid fixture', async () => {
+  const invalid = 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6';
+  expect(new Set([sender, other, spender]).size).toBe(3);
+  expect([sender, other, spender].every(isValidGnoAddress)).toBe(true);
+  expect(isValidGnoAddress(invalid)).toBe(false);
+  const { sdk } = makeSdk();
+  await expect(sdk.transfer({ ...send('1'), to: invalid })).rejects.toMatchObject({ code: WalletErrorCode.InvalidAddress });
+  await expect(sdk.approve({ from: sender, spender: invalid, amount: '1', token: 'GNS' })).rejects.toMatchObject({ code: WalletErrorCode.InvalidAddress });
+});
 
 function makeSdk(
   chainId?: string,
