@@ -52,9 +52,12 @@ src/llm/                      The language model
   core/                         portable, no React Native: LLM (interface), LLMFromModel (any AI SDK
                                 model), generate (events, TTFT, tok/s, warnings), ToolLoop (the hook
                                 an agent drives the tool loop with), index.ts
+  remote/                       createLLMRemote({ provider, apiKey, model, baseURL? }): Anthropic, OpenAI
+                                (Responses API, Codex) or any OpenAI-compatible server. No React Native
   device/                       LLMOnDevice (llama.rn): load/unload/generate, status for React;
                                 useLlm(llm) hook; runtime.ts, config.ts (model, context size);
                                 jsonGrammar.ts (structured output without the Jinja grammar)
+  createLlm.ts                  createLLM(remote?): on-device without options, hosted with them
 src/harness/                  Bounds and polices a tool-using run
   core/                         Harness: step/token/time budget, scopes, decisions. No model, no AI SDK
   mcp/                          tool sources backed by MCP servers (Onbloc), and a fake one for tests
@@ -74,7 +77,8 @@ src/mock/                     Test-only code, nothing above depends on it
 ```
 
 ```ts
-const llm = new LLMOnDevice();                        // or new LLMFromModel(model) on a desktop
+const llm = createLLM();                              // on-device; call llm.load() first
+// const llm = createLLM({ provider: 'anthropic', apiKey, model: 'claude-sonnet-4-5' });  // hosted
 const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint })] });
 const agent = new AIAgent({ llm, harness, wallet, onTransaction });   // owns the conversation
 for await (const event of agent.run({ prompt }, { account, contextTokens: 8192 })) { /* text, tool calls, done */ }
