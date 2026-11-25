@@ -1,19 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import Storage from 'expo-sqlite/kv-store';
-import type { AIAgent, AgentConversation, ConversationSettings } from '../../agent';
+import type { AIAgent, AgentSettings } from '../../agent';
 import { chatSessionKey, createChatSession, type ChatScope, type ChatSession, type ChatTurn, type GenerateEvent } from '../../llm/core';
 
 type Loaded = { key: string; persistent: boolean; session: ChatSession };
 type Failure = { kind: 'load' | 'save'; message: string };
-type ActiveRun = { entry: Loaded; conversation: AgentConversation; controller: AbortController };
+type ActiveRun = { entry: Loaded; agent: AIAgent; controller: AbortController };
 
 export type ChatSessionRunOptions = { account?: string; contextTokens?: number; signal?: AbortSignal; allowTransactionPreparation?: boolean };
 export type ChatSessionState = {
   readonly ready: boolean;
   readonly turns: readonly ChatTurn[];
+  /** The conversation to give the agent that runs next: `new AIAgent({ ..., session: history })`. */
+  readonly history: ChatSession | undefined;
   readonly error: string | undefined;
   retry(): void;
-  run(agent: AIAgent, settings: ConversationSettings, options?: ChatSessionRunOptions): AsyncGenerator<GenerateEvent>;
+  run(agent: AIAgent, settings: AgentSettings, options?: ChatSessionRunOptions): AsyncGenerator<GenerateEvent>;
   reset(): void;
 };
 
@@ -91,28 +93,31 @@ export function useChatSession(scope: ChatScope): ChatSessionState {
   return {
     ready: current !== undefined,
     get turns() { return current?.session.turns ?? []; },
+    get history() { return current?.session; },
     error: failures.get(key)?.message,
     retry: () => current ? publish(current) : setAttempt(value => value + 1),
     async *run(
       agent: AIAgent,
-      settings: ConversationSettings,
+      settings: AgentSettings,
       options: ChatSessionRunOptions = {}
     ): AsyncGenerator<GenerateEvent> {
       if (!current || activeScope.current !== current.key) throw new Error('Conversation is unavailable.');
+      if (agent.session !== current.session) throw new Error('The agent continues another conversation.');
       if (activeRun.current) throw new Error('A conversation is already running.');
       const entry = current;
       const controller = new AbortController();
-      const conversation = agent.createConversation({
-        session: entry.session, account: options.account, contextTokens: options.contextTokens,
-        allowTransactionPreparation: options.allowTransactionPreparation,
-      });
-      const active = { entry, conversation, controller };
+      const active = { entry, agent, controller };
       const abort = () => controller.abort();
       activeRun.current = active;
       options.signal?.addEventListener('abort', abort, { once: true });
       if (options.signal?.aborted) controller.abort();
       try {
-        yield* conversation.run(settings, { signal: controller.signal });
+        yield* agent.run(settings, {
+          account: options.account,
+          contextTokens: options.contextTokens,
+          allowTransactionPreparation: options.allowTransactionPreparation,
+          signal: controller.signal,
+        });
       } finally {
         options.signal?.removeEventListener('abort', abort);
         if (activeRun.current === active) {
@@ -127,7 +132,7 @@ export function useChatSession(scope: ChatScope): ChatSessionState {
         const active = activeRun.current;
         activeRun.current = null;
         active.controller.abort();
-        active.conversation.reset();
+        active.agent.reset();
       }
       current.session.reset();
       publish(current, true);

@@ -1,7 +1,7 @@
 // Runs plain-language requests through the real agent over fixed Onbloc reads. Each request gets a
 // fresh conversation. Portable: the model and the wallet come from the caller, so the same runner
 // serves jest (llama-server, the Adena wallet) and the app (the on-device model, a mock wallet).
-import { AIAgent, type AgentConversation, type PreparedTransaction, type WalletSdk } from '../../agent';
+import { AIAgent, type PreparedTransaction, type WalletSdk } from '../../agent';
 import { DEFAULT_BUDGET, Harness } from '../../harness/core';
 import { createOnblocToolSource, type OnblocMcpConfig } from '../../harness/mcp';
 import { GenerateEventType, type LLM } from '../../llm/core';
@@ -31,7 +31,7 @@ export type ScenarioSettings = { temperature?: number; maxOutputTokens?: number;
 export type ScenarioWalletFactory = (onbloc: OnblocMcpConfig) => WalletSdk;
 
 async function collectTurn(
-  conversation: AgentConversation,
+  agent: AIAgent,
   transactions: PreparedTransaction[],
   timing: TimingLLM,
   prompt: string,
@@ -41,7 +41,7 @@ async function collectTurn(
   const start = transactions.length;
   const run: ScenarioRun = { prepared: [], calls: [], results: [], text: '', stages: [] };
   timing.take();
-  for await (const event of conversation.run({ prompt, ...settings }, { signal })) {
+  for await (const event of agent.run({ prompt, ...settings }, { account: ACCOUNT, allowTransactionPreparation: true, signal })) {
     if (event.type === GenerateEventType.ToolCall) {
       run.calls.push({ name: event.name, input: event.input, invalid: Boolean(event.invalid) });
     } else if (event.type === GenerateEventType.ToolResult) {
@@ -66,6 +66,7 @@ export function createScenarioRunner({
 }): ScenarioRunner {
   const timing = new TimingLLM(llm);
 
+  /** A fresh agent, so a request starts a conversation of its own. */
   function startConversation() {
     const mcp = fakeReads();
     const onbloc = { endpoint: FAKE_ENDPOINT, fetcher: mcp.fetcher };
@@ -79,18 +80,18 @@ export function createScenarioRunner({
       wallet: createWallet(onbloc),
       onTransaction: (transaction) => { prepared.push(transaction); },
     });
-    return { conversation: agent.createConversation({ account: ACCOUNT, allowTransactionPreparation: true }), prepared };
+    return { agent, prepared };
   }
 
   return {
     async ask(prompt, signal) {
-      const { conversation, prepared } = startConversation();
-      return collectTurn(conversation, prepared, timing, prompt, settings, signal);
+      const { agent, prepared } = startConversation();
+      return collectTurn(agent, prepared, timing, prompt, settings, signal);
     },
     async chat(prompts, signal) {
-      const { conversation, prepared } = startConversation();
+      const { agent, prepared } = startConversation();
       const turns: ScenarioRun[] = [];
-      for (const prompt of prompts) turns.push(await collectTurn(conversation, prepared, timing, prompt, settings, signal));
+      for (const prompt of prompts) turns.push(await collectTurn(agent, prepared, timing, prompt, settings, signal));
       return turns;
     },
   };

@@ -1,7 +1,8 @@
 /// <reference types="node" />
 // Talk to the model in your own words, to see how far it gets. The model runs
-// on this Mac via llama-server. By default it is a plain chat; --onbloc adds
-// read-only Onbloc tools, with mock transaction preparation available by explicit opt-in.
+// on this Mac via llama-server. Every request is classified first; without an account the chat
+// answers questions only, and --onbloc adds read-only Onbloc tools for that account, with mock
+// transaction preparation available by explicit opt-in.
 //
 //   make chat                                   interactive
 //   make chat PROMPT="Tell me a joke"            one question, then exit
@@ -11,7 +12,7 @@ import { createInterface } from 'node:readline/promises';
 
 import type { LanguageModel } from 'ai';
 
-import { AIAgent, formatBalance, type AgentConversation, type ConversationSettings, type PreparedTransaction } from '../../agent';
+import { AIAgent, formatBalance, type AgentSettings, type PreparedTransaction } from '../../agent';
 import { DEFAULT_BUDGET, Harness } from '../../harness/core';
 import { createOnblocToolSource, gnoPublicAddress, type OnblocMcpConfig } from '../../harness/mcp';
 import {
@@ -98,8 +99,8 @@ function printBalances(balances: Record<string, Balances>, you: string | undefin
   }
 }
 
-/** The conversation so far and, with --onbloc, the agent and its mock wallet. */
-type Session = { agent?: AIAgent; sdk?: MockWalletSdk; chat: AgentConversation };
+/** The agent, which keeps the conversation, and with --allow-transaction-preparation its mock wallet. */
+type Session = { agent: AIAgent; sdk?: MockWalletSdk };
 
 async function main() {
   const options = parseOptions(process.argv.slice(2));
@@ -152,10 +153,7 @@ async function main() {
   // Read-only runs need no mock wallet or upfront balance fetch.
   const llm = new LLMFromModel(model, { contextTokens: SERVER_CONTEXT_TOKENS });
   const newSession = async (): Promise<Session> => {
-    if (!options.onbloc) {
-      const agent = new AIAgent({ llm, harness: new Harness() });
-      return { chat: agent.createConversation({ contextTokens: options.contextTokens }) };
-    }
+    if (!options.onbloc) return { agent: new AIAgent({ llm, harness: new Harness() }) };
     let sdk: MockWalletSdk | undefined;
     if (options.allowTransactionPreparation) {
       console.error('loading balances from Onbloc...');
@@ -168,10 +166,7 @@ async function main() {
     const agent = sdk
       ? new AIAgent({ llm, harness, wallet: sdk, onTransaction: printTransaction })
       : new AIAgent({ llm, harness });
-    return { agent, sdk, chat: agent.createConversation({
-      account: options.onbloc.account, contextTokens: options.contextTokens,
-      allowTransactionPreparation: options.allowTransactionPreparation,
-    }) };
+    return { agent, sdk };
   };
   let session = await newSession();
 
@@ -189,13 +184,18 @@ async function main() {
     };
 
     try {
-      const settings: ConversationSettings = {
+      const settings: AgentSettings = {
         prompt: text,
         system: options.system,
         temperature: options.temperature,
         maxOutputTokens: options.maxTokens,
       };
-      const events = session.chat.run(settings, { signal: controller.signal });
+      const events = session.agent.run(settings, {
+        account: options.onbloc?.account,
+        contextTokens: options.contextTokens,
+        allowTransactionPreparation: options.allowTransactionPreparation,
+        signal: controller.signal,
+      });
       for await (const event of events) {
         switch (event.type) {
           case GenerateEventType.Text:
@@ -235,7 +235,7 @@ async function main() {
     }
   }
 
-  const mode = !options.onbloc ? 'plain chat (no wallet; --onbloc adds reads)'
+  const mode = !options.onbloc ? 'no account: questions only (--onbloc links the Onbloc account)'
     : options.allowTransactionPreparation ? 'Onbloc reads + mock transaction preparation (never signs or sends)'
       : 'Onbloc reads only (--allow-transaction-preparation enables mock transaction preparation)';
   console.error(`model: ${options.model} @ ${options.url} - ${mode}`);
@@ -257,19 +257,19 @@ async function main() {
     if (text === '/help') {
       console.log(USAGE.slice(USAGE.indexOf('In the chat:')));
     } else if (text === '/reset') {
-      session.chat.reset();
+      session.agent.reset();
       session = await newSession();
       console.log(session.sdk ? '  conversation and wallet reset' : '  conversation reset');
     } else if (text === '/balances') {
       if (session.sdk) printBalances(session.sdk.inspect().balances, you);
-      else if (session.agent && options.onbloc) {
+      else if (options.onbloc) {
         try {
           const balance = await session.agent.getBalance({ kind: 'all' }, { account: options.onbloc.account });
           console.log(`  ${formatBalance(balance)}`);
         } catch (error) {
           console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
         }
-      } else console.log('  No wallet: start with --onbloc.');
+      } else console.log('  No account: start with --onbloc.');
     } else if (text.startsWith('/')) {
       console.log(`  unknown command: ${text} (try /help)`);
     } else {

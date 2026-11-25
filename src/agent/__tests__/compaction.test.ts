@@ -19,16 +19,16 @@ describe('agent context compaction', () => {
       content: [{ type: 'text', text: intentReplyText({ kind: 'lookup', requests: [{ target: 'balance', request: { kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } } }] }) }],
       finishReason: { unified: 'stop', raw: 'stop' }, usage, warnings: [],
     }] });
-    const agent = new AIAgent({
-      llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })),
-      harness: new Harness({ toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })] }), wallet, onTransaction,
-    });
     const session = createChatSession();
     session.complete('old request', 'x'.repeat(20000));
     session.complete('send one to alice', 'An unsigned transaction was prepared. Previous balance: 999 GNOT.');
-    const conversation = agent.createConversation({ account: ACCOUNT, saved: session.serialize() });
+    const agent = new AIAgent({
+      llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })),
+      harness: new Harness({ toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })] }), wallet, onTransaction,
+      session: createChatSession(session.serialize()),
+    });
     let text = '';
-    for await (const event of conversation.run({ prompt: 'What is my GNOT balance now?', maxOutputTokens: 128 })) if (event.type === 'text') text += event.delta;
+    for await (const event of agent.run({ prompt: 'What is my GNOT balance now?', maxOutputTokens: 128 }, { account: ACCOUNT })) if (event.type === 'text') text += event.delta;
     const prompt = JSON.stringify(model.doGenerateCalls[0].prompt);
     expect(prompt).not.toContain('old request');
     expect(prompt).toContain('send one to alice');
@@ -37,6 +37,6 @@ describe('agent context compaction', () => {
     expect(mcp.calls).toEqual([{ name: 'get_native_balance', arguments: { address: ACCOUNT } }]);
     expect(wallet.calls).toEqual([]);
     expect(onTransaction).not.toHaveBeenCalled();
-    expect(conversation.serialize()).not.toContain('old request');
+    expect(agent.serialize()).not.toContain('old request');
   });
 });

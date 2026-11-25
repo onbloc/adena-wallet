@@ -10,9 +10,11 @@ import { intentReplyText } from '../../../agent/testing/intentReply';
 import { Harness } from '../../../harness/core';
 import {
   chatSessionKey,
+  createChatSession,
   GenerateEventType,
   LLMFromModel,
   type ChatScope,
+  type ChatSession,
   type ChatTurn,
   type GenerateEvent,
   type LLM,
@@ -37,8 +39,8 @@ const wallet: ChatScope = {
 };
 const other: ChatScope = { ...wallet, account: RECIPIENT };
 
-function newAgent(llm: LLM) {
-  return new AIAgent({ llm, harness: new Harness(), wallet: fakeWallet(), onTransaction: jest.fn() });
+function newAgent(llm: LLM, session: ChatSession | undefined) {
+  return new AIAgent({ llm, harness: new Harness(), wallet: fakeWallet(), onTransaction: jest.fn(), session });
 }
 
 async function consume(events: AsyncIterable<GenerateEvent>, aborted = false) {
@@ -47,7 +49,7 @@ async function consume(events: AsyncIterable<GenerateEvent>, aborted = false) {
   }
 }
 
-function blockedAgent() {
+function blockedAgent(session: ChatSession | undefined) {
   let signal: AbortSignal | undefined;
   const { promise: ready, resolve: started } = Promise.withResolvers<void>();
   const { promise: blocked, resolve: release } = Promise.withResolvers<void>();
@@ -71,7 +73,7 @@ function blockedAgent() {
       };
     },
   };
-  return { agent: newAgent(llm), ready, release, get signal() { return signal; } };
+  return { agent: newAgent(llm, session), ready, release, get signal() { return signal; } };
 }
 
 const actEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
@@ -110,7 +112,7 @@ describe('useChatSession', () => {
     expect(current.ready).toBe(true);
     expect(current.turns).toEqual(original);
     jest.clearAllMocks();
-    const blocked = blockedAgent();
+    const blocked = blockedAgent(current.history);
     let pending!: Promise<void>;
     await act(async () => {
       pending = consume(current.run(blocked.agent, { prompt: 'Pending question' }, { account: RECIPIENT }), true);
@@ -139,7 +141,7 @@ describe('useChatSession', () => {
     await act(async () => { root.render(<Probe scope={other} />); });
     expect(current.ready).toBe(true);
     jest.clearAllMocks();
-    const blocked = blockedAgent();
+    const blocked = blockedAgent(current.history);
     let pending!: Promise<void>;
     await act(async () => {
       pending = consume(current.run(blocked.agent, { prompt: 'Pending question' }, { account: RECIPIENT }), true);
@@ -181,7 +183,7 @@ describe('useChatSession', () => {
       doGenerate: [reply(intentReplyText({ kind: 'explanation' })), reply('Carol is the recipient.')],
     });
     const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
-    const agent = newAgent(llm);
+    const agent = newAgent(llm, current.history);
     const prompt = 'Which recipient did I just name?';
 
     await act(async () => {
@@ -204,5 +206,16 @@ describe('useChatSession', () => {
     expect(current.ready).toBe(true);
     expect(current.turns).toEqual(expected);
     expect(model.doGenerateCalls).toHaveLength(2);
+  });
+
+  it('rejects an agent built with another conversation\'s session', async () => {
+    await act(async () => { root.render(<Probe scope={other} />); });
+    expect(current.ready).toBe(true);
+    const llm: LLM = { contextTokens: 8192, async *generate() { throw new Error('unreachable'); } };
+    const agent = newAgent(llm, createChatSession());
+
+    await expect(consume(current.run(agent, { prompt: 'Hello' }, { account: RECIPIENT }))).rejects.toThrow(
+      'The agent continues another conversation.',
+    );
   });
 });

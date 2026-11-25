@@ -84,49 +84,44 @@ describe('integrated request execution', () => {
   });
   it('does not trust a classifier-selected symbol embedded in a different requested symbol', async () => {
     const { agent } = setup([], { intent: { kind: 'lookup', requests: [{ target: 'balance', request: one('GNS') }] } });
-    const conversation = agent.createConversation({ account: ACCOUNT });
-    const events = await collect(conversation.run({ prompt: 'My xGNS balance?' }));
+    const events = await collect(agent.run({ prompt: 'My xGNS balance?' }, { account: ACCOUNT }));
     expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
-    expect(conversation.turns).toEqual([]);
+    expect(agent.turns).toEqual([]);
     expect(textOf(events)).toContain('selected asset differs');
   });
   it('displays partial normalized assets but does not commit an incomplete portfolio', async () => {
     const { agent } = setup([], { intent: { kind: 'lookup', requests: [{ target: 'balance', request: { kind: 'all' } }] },
       tools: [{ name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: '1000000' } }] });
-    const conversation = agent.createConversation({ account: ACCOUNT });
-    const events = await collect(conversation.run({ prompt: 'Show all my assets.' }));
+    const events = await collect(agent.run({ prompt: 'Show all my assets.' }, { account: ACCOUNT }));
     expect(textOf(events)).toContain('1 GNOT');
     expect(textOf(events)).toContain('token balances');
     expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
-    expect(conversation.turns).toEqual([]);
+    expect(agent.turns).toEqual([]);
   });
   it('preserves explanation and fresh balance in both the answer and retained conversation', async () => {
     const { agent } = setup([answer('GNOT is native to Gno.land.')], { intent: { kind: 'lookup', requests: [{ target: 'balance', request: one('GNOT') }], explanation: 'What is GNOT?' } });
-    const chat = agent.createConversation({ account: ACCOUNT });
-    const events = await collect(chat.run({ prompt: 'Explain GNOT and show my balance.' }));
+    const events = await collect(agent.run({ prompt: 'Explain GNOT and show my balance.' }, { account: ACCOUNT }));
     expect(textOf(events)).toContain('42 GNOT');
     expect(textOf(events)).toContain('GNOT is native to Gno.land.');
-    expect(chat.turns[0].answer).toBe(textOf(events));
+    expect(agent.turns[0].answer).toBe(textOf(events));
   });
   it('preserves approval data next to normalized balances', async () => {
     const { agent } = setup([call('get_approvals')], { intent: { kind: 'lookup', requests: [
       { target: 'balance', request: one('GNOT') }, { target: 'other', query: 'List my approvals.' },
     ] }, selection: ['get_approvals'], walletOptions: { allowances: [{ spender: RECIPIENT, token: 'GNS', amount: '10' }] } });
-    const chat = agent.createConversation({ account: ACCOUNT });
-    const events = await collect(chat.run({ prompt: 'Balance and approvals.' }));
+    const events = await collect(agent.run({ prompt: 'Balance and approvals.' }, { account: ACCOUNT }));
     expect(textOf(events)).toContain('42 GNOT');
     expect(textOf(events)).toContain(RECIPIENT);
     expect(textOf(events)).toContain('"amount": "10"');
-    expect(chat.turns[0].answer).toBe(textOf(events));
+    expect(agent.turns[0].answer).toBe(textOf(events));
   });
   it('does not accept an unrelated balance call instead of selected transaction history', async () => {
     const { agent, mcp } = setup([call('get_native_balance'), answer('All history returned.')], {
       intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }] }, selection: ['list_account_transactions'],
     });
-    const chat = agent.createConversation({ account: ACCOUNT });
-    await expect(collect(chat.run({ prompt: 'Recent transactions.' }))).rejects.toThrow();
+    await expect(collect(agent.run({ prompt: 'Recent transactions.' }, { account: ACCOUNT }))).rejects.toThrow();
     expect(mcp.calls).toEqual([]);
-    expect(chat.turns).toEqual([]);
+    expect(agent.turns).toEqual([]);
   });
   it('renders every selected history result and stops without a summary model call', async () => {
     const { agent, model } = setup([call('list_account_transactions', { limit: 5 })], {
@@ -139,10 +134,9 @@ describe('integrated request execution', () => {
   });
   it('does not commit the available part when another requested capability is unavailable', async () => {
     const { agent } = setup([], { intent: { kind: 'lookup', requests: [{ target: 'balance', request: one('GNOT') }, { target: 'other', query: 'List sessions.' }] }, selection: [] });
-    const chat = agent.createConversation({ account: ACCOUNT });
-    const events = await collect(chat.run({ prompt: 'Balance and sessions.' }));
+    const events = await collect(agent.run({ prompt: 'Balance and sessions.' }, { account: ACCOUNT }));
     expect(textOf(events)).toContain('42 GNOT');
-    expect(chat.turns).toEqual([]);
+    expect(agent.turns).toEqual([]);
     expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
   });
   it('uses wallet allowance reads without external MCP or address-book access', async () => {
@@ -245,20 +239,20 @@ describe('integrated request execution', () => {
       proposal({ ...transferProposal, recipient: FRIEND.alias }), answer(intentReplyText({ kind: 'explanation' })), answer('You are welcome.'),
     ], { intent: prepare });
     wallet.getContacts = jest.fn().mockRejectedValue(new Error('Address book unavailable'));
-    const chat = agent.createConversation({ account: ACCOUNT, allowTransactionPreparation: true });
-    const clarification = await collect(chat.run({ prompt: 'Send 1 GNOT.' }));
+    const run = (prompt: string) => collect(agent.run({ prompt }, permission));
+    const clarification = await run('Send 1 GNOT.');
     expect(textOf(clarification)).toBe(question);
     expect(prepared).toEqual([]);
     expect(wallet.calls).toEqual([]);
     expect(fetcher).not.toHaveBeenCalled();
-    expect(chat.turns[0]).toEqual({ prompt: 'Send 1 GNOT.', answer: question });
+    expect(agent.turns[0]).toEqual({ prompt: 'Send 1 GNOT.', answer: question });
     expect(wallet.getContacts).not.toHaveBeenCalled();
     wallet.getContacts = async () => [FRIEND];
-    await collect(chat.run({ prompt: 'To carol.' }));
+    await run('To carol.');
     expect(prepared).toHaveLength(1);
     expect(prepared[0].summary).toMatchObject({ to: FRIEND.address, amount: '1' });
     expect(JSON.stringify(model.doGenerateCalls[3].prompt)).toContain(question);
-    await collect(chat.run({ prompt: 'Thanks.' }));
+    await run('Thanks.');
     expect(wallet.calls).toHaveLength(1);
     expect(prepared).toHaveLength(1);
     expect(model.doGenerateCalls).toHaveLength(6);
@@ -418,10 +412,9 @@ describe('indexed source evidence', () => {
     ['wrong declaration', { path, filename: 'vault.gno', content: '\n\nfunc Deposit() {}' }],
   ])('does not trust %s source evidence', async (_label, source) => {
     const { agent } = setup([call('get_realm_info', { path })], { withWallet: false, intent, selection: ['get_realm_info'], tools: [info, { name: 'get_realm_source', output: source }] });
-    const chat = agent.createConversation({ account: ACCOUNT });
-    const events = await collect(chat.run({ prompt: `${path}: Deposit implementation?` }));
+    const events = await collect(agent.run({ prompt: `${path}: Deposit implementation?` }, { account: ACCOUNT }));
     expect(textOf(events)).toContain('could not be verified');
     expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
-    expect(chat.turns).toEqual([]);
+    expect(agent.turns).toEqual([]);
   });
 });

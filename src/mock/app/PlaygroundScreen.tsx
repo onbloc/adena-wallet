@@ -14,7 +14,7 @@ import {
   type ScrollViewInstance,
 } from 'react-native';
 
-import { AIAgent, type ConversationSettings, type PreparedTransaction } from '../../agent';
+import { AIAgent, type AgentSettings, type PreparedTransaction } from '../../agent';
 import { DEFAULT_BUDGET, Harness } from '../../harness/core';
 import { createOnblocToolSource, GNO_MAINNET_CHAIN } from '../../harness/mcp';
 import {
@@ -240,6 +240,8 @@ export default function PlaygroundScreen() {
     if (!canRun || temperatureValue === null || maxTokensValue === null || (onblocMode && !onbloc)) return;
     const text = prompt.trim();
     if (!text) return;
+    const history = session.history;
+    if (!history) return;
     setSetupError(null);
     // The read-only agent needs no mock wallet. Fund one only when preparation is enabled.
     const onblocWallet = onbloc && useTools && allowTransactionPreparation
@@ -253,9 +255,9 @@ export default function PlaygroundScreen() {
     setPrepared([]);
     // The prompt is now the user message in the chat: clear the composer.
     setPrompt('');
-    const settings: ConversationSettings = {
+    const settings: AgentSettings = {
       prompt: text,
-      // With the wallet on the agent brings its own system prompt; with no Onbloc settings it is a plain chat.
+      // The agent brings its own system prompt; this only says when the wallet tools are switched off.
       system:
         onbloc && !useTools
           ? 'Wallet tools are disabled. Do not claim to have checked wallet data.'
@@ -278,8 +280,8 @@ export default function PlaygroundScreen() {
         );
       };
       const agent = onblocWallet
-        ? new AIAgent({ llm, harness, wallet: onblocWallet, onTransaction })
-        : new AIAgent({ llm, harness });
+        ? new AIAgent({ llm, harness, wallet: onblocWallet, onTransaction, session: history })
+        : new AIAgent({ llm, harness, session: history });
       return session.run(agent, settings, {
         account: useTools ? onbloc?.account : undefined, signal, allowTransactionPreparation: !!onblocWallet,
       });

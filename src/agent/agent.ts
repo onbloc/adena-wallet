@@ -3,7 +3,7 @@ import { createAiSdkRun } from './aiSdkBridge';
 import { guardAnswer } from './answerGuard';
 import { balanceRequestSchema, balanceResultSchema, balanceToolDefinition, getBalance as readBalance } from './balanceOperation';
 import type { BalanceAdapter, BalanceRequest, BalanceResult } from './balanceOperation';
-import { AgentConversation, type ConversationOptions } from './conversation';
+import { describeToolRecord } from './toolRecord';
 import { buildWalletPrompt } from './prompts';
 import { realmEvidence } from './realmEvidence';
 import type { RealmEvidence } from './realmEvidence';
@@ -14,11 +14,26 @@ import { createWalletTools } from './wallet/tools';
 import type { Decision, Harness, HarnessRun } from '../harness/core';
 import { GNO_MAINNET_CHAIN } from '../harness/mcp';
 import { onblocBalanceAdapter } from './onblocBalanceAdapter';
-import { estimateContextInput, type GenerateEvent, type GenerateSettings, type LLM, type ToolLoop } from '../llm/core';
+import {
+  applyToolEvent,
+  canRememberTurn,
+  createChatSession,
+  DEFAULT_GENERATE_SETTINGS,
+  estimateContextInput,
+  GenerateEventType,
+  type CallRecord,
+  type ChatSession,
+  type GenerateEvent,
+  type GenerateSettings,
+  type LLM,
+  type ToolLoop,
+} from '../llm/core';
 
 export type AIAgentOptions = {
   llm: LLM;
   harness: Harness;
+  /** The conversation to continue, e.g. restored with `createChatSession(saved)`; a new one by default. */
+  session?: ChatSession;
   chainId?: string;
   balanceAdapter?: BalanceAdapter;
 } & (
@@ -33,6 +48,8 @@ export type AgentRunOptions = {
   allowTransactionPreparation?: boolean;
   onContextCompacted?: (droppedTurns: number) => void;
 };
+/** What one turn needs from the host: the prompt, and how the model should answer it. */
+export type AgentSettings = Omit<GenerateSettings, 'prompt' | 'messages'> & { prompt: string };
 type RunOptions = AgentRunOptions & { contextTokens: number; signal: AbortSignal };
 type AccountRunOptions = RunOptions & { account: string };
 type AnswerSettings = Omit<GenerateSettings, 'prompt' | 'messages'> & { messages: ModelMessage[] };
@@ -50,27 +67,43 @@ function requireAccount(options: RunOptions): AccountRunOptions {
   return { ...options, account: options.account };
 }
 
-/** Composes domain policy with provider-independent operations and the host's harness limits. */
+/** The assistant: an LLM, a harness and a wallet, with the conversation it keeps going. */
 export class AIAgent {
   readonly llm: LLM;
   readonly harness: Harness;
   readonly wallet?: WalletSdk;
+  /** What was said and called so far. */
+  readonly session: ChatSession;
   private readonly onTransaction?: TransactionHandler;
   private readonly chainId: string;
   private readonly balanceAdapter: BalanceAdapter;
+  private active?: AbortController;
+  private revision = 0;
   private runs = 0;
 
-  constructor({ llm, harness, wallet, onTransaction, chainId = GNO_MAINNET_CHAIN, balanceAdapter = onblocBalanceAdapter }: AIAgentOptions) {
+  constructor({ llm, harness, wallet, onTransaction, session, chainId = GNO_MAINNET_CHAIN, balanceAdapter = onblocBalanceAdapter }: AIAgentOptions) {
     this.llm = llm;
     this.harness = harness;
     this.wallet = wallet;
     this.onTransaction = onTransaction;
+    this.session = session ?? createChatSession();
     this.chainId = chainId;
     this.balanceAdapter = balanceAdapter;
   }
 
-  createConversation(options: ConversationOptions = {}): AgentConversation {
-    return new AgentConversation(this, options);
+  get turns() {
+    return this.session.turns;
+  }
+
+  serialize(): string {
+    return this.session.serialize();
+  }
+
+  /** Forgets the conversation and stops the turn in progress; whatever it still produces is not remembered. */
+  reset(): void {
+    this.revision++;
+    this.active?.abort();
+    this.session.reset();
   }
 
   /** Structured queries need no model; every provider call stays in the same run. */
@@ -84,10 +117,69 @@ export class AIAgent {
     }
   }
 
-  async *run(settings: GenerateSettings, {
-    account, signal, contextTokens = this.llm.contextTokens, onContextCompacted, allowTransactionPreparation = false,
-  }: AgentRunOptions = {}): AsyncGenerator<GenerateEvent> {
+  /**
+   * One turn of the conversation. The prompt joins the history; once the turn completes it is
+   * remembered with what the agent called and what came of it, so later turns know.
+   */
+  async *run(settings: AgentSettings, options: AgentRunOptions = {}): AsyncGenerator<GenerateEvent> {
+    const { signal, contextTokens = this.llm.contextTokens, onContextCompacted } = options;
     if (!Number.isSafeInteger(contextTokens) || contextTokens <= 0 || contextTokens > this.llm.contextTokens) throw new RangeError('contextTokens must be a positive integer within the model context.');
+    if (this.active) throw new Error('A conversation already has an active turn.');
+    if (!settings.prompt.trim()) throw new TypeError('A conversation prompt must not be empty.');
+    const outputTokens = settings.maxOutputTokens ?? DEFAULT_GENERATE_SETTINGS.maxOutputTokens;
+    if (!Number.isSafeInteger(outputTokens) || outputTokens <= 0) throw new RangeError('maxOutputTokens must be a positive integer.');
+    // Every turn starts with the structured classification call, which is capped at 512 tokens.
+    const reservedOutput = Math.min(outputTokens, 512);
+    // Reject an oversized current request unchanged, before discovery or wallet access.
+    if (estimateContextInput([settings.system, [{ role: 'user', content: settings.prompt }]]) + reservedOutput > contextTokens) {
+      throw new Error('ADENA_CONTEXT_LIMIT: Current request exceeds the conversation context; shorten it.');
+    }
+
+    const revision = this.revision;
+    const controller = new AbortController();
+    this.active = controller;
+    const abort = () => controller.abort(signal?.reason);
+    signal?.addEventListener('abort', abort, { once: true });
+    if (signal?.aborted) abort();
+    const { prompt, ...generation } = settings;
+    let answer = '';
+    let calls: CallRecord[] = [];
+    let completed = false;
+    try {
+      const events = this.execute({ ...generation, messages: this.session.messages(prompt) }, {
+        ...options,
+        signal: controller.signal,
+        contextTokens,
+        onContextCompacted: (count) => {
+          if (revision !== this.revision || controller.signal.aborted) return;
+          this.session.trimOldest(count);
+          onContextCompacted?.(count);
+        },
+      });
+      for await (const event of events) {
+        if (event.type === GenerateEventType.Text) answer += event.delta;
+        else if (event.type === GenerateEventType.ToolCall || event.type === GenerateEventType.ToolResult || event.type === GenerateEventType.ToolError) {
+          calls = applyToolEvent(calls, event);
+        }
+        if (event.type === GenerateEventType.Done && !completed) {
+          completed = true;
+          if (revision === this.revision && !controller.signal.aborted && canRememberTurn(event)) {
+            this.session.complete(prompt, answer, describeToolRecord(calls));
+          }
+        }
+        yield event;
+      }
+    } finally {
+      controller.abort();
+      signal?.removeEventListener('abort', abort);
+      if (this.active === controller) this.active = undefined;
+    }
+  }
+
+  /** Classifies the request on the history in `settings.messages`, then answers it by its route. */
+  private async *execute(settings: GenerateSettings, {
+    account, signal, contextTokens, onContextCompacted, allowTransactionPreparation = false,
+  }: RunOptions): AsyncGenerator<GenerateEvent> {
     const started = Date.now();
     const controller = new AbortController();
     const abort = () => controller.abort(signal?.reason);

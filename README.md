@@ -59,8 +59,8 @@ src/harness/                  Bounds and polices a tool-using run
   core/                         Harness: step/token/time budget, scopes, decisions. No model, no AI SDK
   mcp/                          tool sources backed by MCP servers (Onbloc), and a fake one for tests
 src/agent/                    AIAgent({ llm, harness, wallet }): the assistant
-  agent.ts, aiSdkBridge.ts      a harness run turned into a ToolLoop for llm.generate
-  conversation.ts               account-bound text history, turn lifecycle, context budget and reset
+  agent.ts, aiSdkBridge.ts      the entry point: one turn (history, classification, answer), a harness run as a ToolLoop
+  toolRecord.ts                 the compact record of a turn's tool calls kept in the history
   requestIntent.ts              schema-constrained request classification before wallet execution
   answerGuard.ts, prompts.ts    the answer checked against what the tools returned; the system prompt
   wallet/                       the WalletSdk port, ToolName/status constants, the zod tools
@@ -76,9 +76,8 @@ src/mock/                     Test-only code, nothing above depends on it
 ```ts
 const llm = new LLMOnDevice();                        // or new LLMFromModel(model) on a desktop
 const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint })] });
-const agent = new AIAgent({ llm, harness, wallet, onTransaction });
-const conversation = agent.createConversation({ account, contextTokens: 8192 });
-for await (const event of conversation.run({ prompt })) { /* text, tool calls, done */ }
+const agent = new AIAgent({ llm, harness, wallet, onTransaction });   // owns the conversation
+for await (const event of agent.run({ prompt }, { account, contextTokens: 8192 })) { /* text, tool calls, done */ }
 ```
 
 Dependencies point down only, and `npm run lint` enforces it: `mock` may use everything; `agent`
@@ -89,12 +88,13 @@ the mock; `llm/core` runs without React Native; `harness/core` does not know its
 
 ## Conversations and context limits
 
-`agent.createConversation({ account?, contextTokens?, saved? })` owns the history of one chat.
-Call `conversation.run({ prompt, ...generationSettings })` repeatedly; callers no longer need
-to assemble `messages` or append answers. `turns` exposes retained text turns, `serialize()`
-saves a version-1 snapshot, and `reset()` aborts the active turn and clears history. Concurrent
-turns on the same conversation are rejected. `agent.run` remains the lower-level, stateless
-single-run API for explicit messages and isolated integrations.
+`AIAgent` is the only entry point and it owns the conversation: call `agent.run({ prompt,
+...generationSettings }, { account?, contextTokens?, ... })` repeatedly; callers do not assemble
+`messages` or append answers. Chatting and using tools are one flow: every turn is classified, so
+a question in the middle of a chat can read the wallet or prepare a transaction. `turns` exposes
+the retained turns, `serialize()` saves a snapshot, `reset()` aborts the active turn and clears
+the history, and `new AIAgent({ ..., session: createChatSession(saved) })` continues a saved
+conversation. Concurrent turns on one agent are rejected.
 
 The conversation defaults to the model's context window (8192 for the default model).
 `contextTokens` can be set lower, never above that window. Each model step reserves room for
@@ -115,16 +115,22 @@ data. A lookup or preparation request cannot be reinterpreted as an explanation 
 the model did not call a tool. Missing required results are explicit failures, not remembered
 answers. The guard does not semantically verify every statement in free-form explanation text.
 
-Cancelled, incomplete and failed-lookup turns are not committed. Persisted chat is text only:
-tool calls, transaction objects and signing authority are never restored or replayed. A prior
-balance answer is conversation context, not proof of the current balance. Balance amounts are
-formatted by code even when NFT or other reads succeed in the same run; those extra reads must
-not cause a raw base-unit model summary to replace the formatted balances.
+Cancelled, incomplete and failed-lookup turns are not committed. A committed turn keeps the user
+text, the answer and a **tool record**: for each tool call its name, its input and a few words on
+what came of it (`prepared, unsigned and completed: 1 GNOT to g1...`, `refused (code)`, `denied
+(code)`, or just the read status), so later turns know what was called and prepared. The record is
+written by code and never carries raw tool output, which is untrusted data and can hold
+instructions. It says that the values are past and may be stale, and that a completed action is
+never repeated: remembering a transfer is not permission to prepare it again, and transaction
+objects and signing authority are never restored. A prior balance answer is conversation context,
+not proof of the current balance. Balance amounts are formatted by code even when NFT or other
+reads succeed in the same run; those extra reads must not cause a raw base-unit model summary to
+replace the formatted balances.
 
 The app restores chats separately for each endpoint, chain and account; switching scopes
-aborts the old turn. Keep the same separation when using `saved` outside the app. Existing app
-storage uses an injected `ChatSession` through `createConversation({ account, session })`,
-so loading and saving do not create a second copy of the conversation.
+aborts the old turn. Keep the same separation when using `saved` outside the app. The app keeps
+one `ChatSession` per scope and builds each run's agent with `session: history`, so loading and
+saving do not create a second copy of the conversation.
 
 ## Intent-first wallet execution
 
@@ -161,8 +167,7 @@ checks, wallet validation and user review of the exact unsigned transaction rema
 No signing or broadcasting is introduced.
 
 Transaction preparation additionally requires host permission:
-`agent.run(settings, { account, allowTransactionPreparation: true })` or
-`agent.createConversation({ account, allowTransactionPreparation: true })`. The default is false;
+`agent.run(settings, { account, allowTransactionPreparation: true })`. The default is false;
 classification never grants that permission. Wallet reads and preparation do not require an
 unrelated MCP server to exist.
 
@@ -205,21 +210,18 @@ structured proposal --> harness dispatch --> adapter (src/agent/wallet/tools.ts)
 ```
 
 There is no account in the wallet or in the agent: each wallet method builds a transaction from
-the arguments it is given. A conversation binds the account selected by the app, and the agent
-injects it as `from`; the model never chooses it. Create a separate conversation when switching
-accounts.
+the arguments it is given. Each run binds the account selected by the app, and the agent injects
+it as `from`; the model never chooses it. Chat, questions and explanations work without an
+account; a lookup or a preparation without one fails with `ADENA_ACCOUNT_REQUIRED` (link a wallet).
+Use a separate agent (or `reset()`) when switching accounts.
 
 ```ts
 const agent = new AIAgent({
   llm, harness, wallet,
   onTransaction: ({ summary, tx }) => { /* sign `tx` in the user's wallet */ },
 });
-const conversation = agent.createConversation({ account: 'g1...', contextTokens: 8192 });
-conversation.run({ prompt });                       // subsequent calls retain this chat's context
+agent.run({ prompt }, { account: 'g1...', contextTokens: 8192 });   // later runs retain this chat's context
 ```
-
-A run keeps the account it started with. The low-level `agent.run(settings, { account })` API
-still accepts an explicit conversation, but the CLI and app use the managed conversation API.
 
 `?` methods are optional: `approve` is executable only when the wallet implements it;
 `get_approvals` is offered to read-only model execution only when the wallet lists allowances.
