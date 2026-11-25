@@ -282,6 +282,36 @@ describe('DappService', () => {
     });
   });
 
+  describe('expiry', () => {
+    it('refuses to approve a request that expired during review', async () => {
+      let clock = Date.now();
+      const env = createTestContainer({ now: () => clock });
+      const account = await env.container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+      const network = env.container.networkService.getCurrentNetwork();
+      const service = env.container.dappService;
+      const caller = env.container.accountService.getAddress(account, network);
+      const expiresAt = Date.now() + 60_000;
+
+      env.container.connectedAppService.touch(ORIGIN, { name: 'Example' }, account.id, network.id);
+      const connect = service.parseRequestUrl(buildDappRequestUrl(payload({ expiresAt })));
+      const tx = service.parseRequestUrl(buildDappRequestUrl(payload({
+        id: 'req-2',
+        method: 'sign-and-broadcast',
+        chainId: 'gnoland-1',
+        expiresAt,
+        params: { messages: [{ type: '/vm.m_call', value: { caller, pkg_path: 'gno.land/r/demo/counter', func: 'Increment', args: [] } }] },
+      }))) as DappTransactionRequest;
+      const context = service.resolveContext(tx);
+      const { draft } = await service.prepareTransaction(tx, context);
+
+      clock = expiresAt + 1;
+      expect(await codeOf(() => service.approveConnect(connect, context))).toBe('REQUEST_EXPIRED');
+      expect(await codeOf(() => service.approveTransaction(tx, context, draft))).toBe('REQUEST_EXPIRED');
+      expect(env.gno.state.broadcasts).toEqual([]);
+      expect(readResponse(service.fail(tx, await catchError(() => service.approveTransaction(tx, context, draft)))).error.code).toBe('REQUEST_EXPIRED');
+    });
+  });
+
   describe('failure responses', () => {
     it('rejects with USER_REJECTED', async () => {
       const { service } = await setup();

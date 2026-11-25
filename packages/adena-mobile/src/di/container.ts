@@ -184,7 +184,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),
     walletService,
     dappService: overrides.dappService
-      ?? new DappService(networkService, accountService, transactionService, connectedAppService, new StorageProcessedDappRequestRepository(keyValueStore, infra.now)),
+      ?? new DappService(networkService, accountService, transactionService, connectedAppService, new StorageProcessedDappRequestRepository(keyValueStore, infra.now), infra.now),
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
     cloudBackupService,

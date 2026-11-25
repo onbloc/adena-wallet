@@ -54,6 +54,7 @@ export class DappService {
     private readonly transactionService: TransactionService,
     private readonly connectedAppService: ConnectedAppService,
     private readonly processedRequests: ProcessedDappRequestRepository = new MemoryProcessedDappRequestRepository(),
+    private readonly now: () => number = Date.now,
   ) {}
 
   // callerPackage: Android's launching package (InjectSheetActivity), never a payload field.
@@ -203,6 +204,11 @@ export class DappService {
 
   // Marks the request in the shared store before signing, so another sheet or screen cannot approve it too.
   private begin(request: DappRequest): void {
+    // Checked again here: the request may have sat in review past its deadline.
+    if (request.expiresAt !== undefined && request.expiresAt < this.now()) {
+      throw new AppError(AppErrorCode.REQUEST_EXPIRED, 'This request has expired');
+    }
+
     if (this.isProcessed(request)) {
       throw duplicateRequest();
     }
