@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useRef, useState } from 'react';
 
 import { AccountsPage } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
@@ -20,6 +20,8 @@ export const AccountsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
   const bumpRevision = useSessionStore(state => state.bumpRevision);
   const showToast = useToastStore(state => state.show);
   const [adding, setAdding] = useState(false);
+  // State updates land after the next render, so a quick second tap would add a second account.
+  const addingRef = useRef(false);
 
   // New accounts derive from the keyring of the selected HD account (or the first HD keyring).
   const addAccount = async (): Promise<void> => {
@@ -30,6 +32,11 @@ export const AccountsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
       return;
     }
 
+    if (addingRef.current) {
+      return;
+    }
+
+    addingRef.current = true;
     setAdding(true);
 
     try {
@@ -43,6 +50,7 @@ export const AccountsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
       showToast(toErrorMessage(error), 'error');
     }
     finally {
+      addingRef.current = false;
       setAdding(false);
     }
   };
