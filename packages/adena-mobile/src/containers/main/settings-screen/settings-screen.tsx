@@ -1,9 +1,9 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useCallback } from 'react';
 
 import packageJson from '../../../../package.json';
-import { SettingsOptionView, SettingsPage } from '../../../components/pages';
+import { SettingsBiometricView, SettingsOptionView, SettingsPage } from '../../../components/pages';
 import { KeyringType } from '../../../crypto/keyring';
 import { useContainer } from '../../../di/container-provider';
 import {
@@ -14,11 +14,16 @@ import {
   SUPPORTED_LANGUAGES,
   THEME_OPTIONS,
 } from '../../../domain/preferences';
+import { usePasswordGate } from '../../../hooks/use-password-gate';
 import { usePreference } from '../../../hooks/use-preference';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
 import { MainStackParamList } from '../../../navigation/types';
 import { toAvatarColor } from '../../../presenters/account.presenter';
+import { queryKeys } from '../../../queries/query-keys';
+import { useBiometricStatusQuery } from '../../../queries/wallet.queries';
 import { SessionStatus, useSessionStore } from '../../../stores/session.store';
+import { useToastStore } from '../../../stores/toast.store';
+import { getBiometryLabel } from '../../../utils/biometry';
 
 const THEME_VIEWS: SettingsOptionView[] = THEME_OPTIONS.map(option => ({
   value: option.value,
@@ -42,6 +47,20 @@ export const SettingsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
   const hideSmallBalances = usePreference('hideSmallBalances');
   const hideUnknownTokens = usePreference('hideUnknownTokens');
   const hapticsEnabled = usePreference('hapticsEnabled');
+  const showToast = useToastStore(state => state.show);
+  const biometricStatus = useBiometricStatusQuery();
+  const biometricLabel = getBiometryLabel(biometricStatus.data?.kind ?? null);
+
+  // Re-enabling only needs the current password, not a password change.
+  const enableBiometrics = useCallback(async (password: string): Promise<void> => {
+    try {
+      await walletService.enableBiometricUnlock(password);
+    }
+    finally {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.biometric() });
+    }
+  }, [queryClient, walletService]);
+  const biometricGate = usePasswordGate(enableBiometrics, { biometrics: false });
 
   const recoveryKeyringId = account?.keyringType === KeyringType.HD_WALLET
     ? account.keyringId
@@ -97,6 +116,21 @@ export const SettingsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
 
   const handleOpenAddressBook = (): void => navigation.navigate('AddressBook');
 
+  const handleToggleBiometric = (value: boolean): void => {
+    if (value) {
+      biometricGate.open();
+      return;
+    }
+
+    walletService.disableBiometricUnlock()
+      .catch(() => showToast(`Couldn’t turn off ${biometricLabel ?? 'biometric'} unlock`, 'error'))
+      .finally(() => queryClient.invalidateQueries({ queryKey: queryKeys.biometric() }));
+  };
+
+  const biometric: SettingsBiometricView | undefined = biometricLabel
+    ? { label: biometricLabel, enabled: Boolean(biometricStatus.data?.enabled), onToggle: handleToggleBiometric, sheet: biometricGate.sheetProps }
+    : undefined;
+
   const handleOpenReset = (): void => navigation.navigate('ResetWallet');
 
   return (
@@ -127,6 +161,7 @@ export const SettingsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
       onOpenConnectedApps={handleOpenConnectedApps}
       onOpenRecoveryPhrase={handleOpenRecoveryPhrase}
       onOpenChangePassword={handleOpenChangePassword}
+      biometric={biometric}
       onLock={handleLock}
       onOpenAddressBook={handleOpenAddressBook}
       onOpenReset={handleOpenReset}

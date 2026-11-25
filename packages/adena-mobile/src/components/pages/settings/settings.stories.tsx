@@ -53,3 +53,14 @@ export const Default: Story = {};
 export const DarkThemeFiltersOff: Story = { args: { theme: 'dark', hideSmallBalances: false, hideUnknownTokens: false, hapticsEnabled: false } };
 
 export const WithoutAccount: Story = { args: { account: undefined } };
+
+export const WithBiometrics: Story = {
+  args: {
+    biometric: {
+      label: 'Face ID',
+      enabled: false,
+      onToggle: fn(),
+      sheet: { visible: false, password: '', onChangePassword: fn(), submitting: false, onConfirm: fn(), onClose: fn() },
+    },
+  },
+};

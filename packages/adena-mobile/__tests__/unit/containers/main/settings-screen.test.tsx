@@ -1,9 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SettingsScreen } from '../../../../src/containers/main/settings-screen';
+import { AppError, AppErrorCode } from '../../../../src/core/errors';
 import { DEFAULT_PREFERENCES, StoragePreferenceRepository } from '../../../../src/repositories/preference.repository';
+import { BiometryKind } from '../../../../src/security/secure-store';
 import { PreferenceService } from '../../../../src/services/preference.service';
 import { MemoryKeyValueStore } from '../../../../src/storage/memory-key-value-store';
 import { ACCOUNT, createWrapper, NETWORK } from '../../../helpers/query-wrapper';
@@ -11,14 +13,35 @@ import { ACCOUNT, createWrapper, NETWORK } from '../../../helpers/query-wrapper'
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
 const ADDRESS = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
 
-const setup = async () => {
+// Biometric unlock that starts off (e.g. after an invalidated enrollment) and accepts only 'secret'.
+const createWalletService = () => {
+  let enabled = false;
+
+  return {
+    lock: jest.fn(),
+    getBiometryKind: jest.fn(async () => BiometryKind.FACE),
+    isBiometricUnlockEnabled: jest.fn(async () => enabled),
+    enableBiometricUnlock: jest.fn(async (password: string) => {
+      if (password !== 'secret') {
+        throw new AppError(AppErrorCode.INVALID_PASSWORD, 'Invalid password');
+      }
+
+      enabled = true;
+    }),
+    disableBiometricUnlock: jest.fn(async () => {
+      enabled = false;
+    }),
+  };
+};
+
+const setup = async (walletService: Record<string, unknown> = { lock: jest.fn() }) => {
   const store = new MemoryKeyValueStore();
   const preferenceService = new PreferenceService(new StoragePreferenceRepository(store));
   const { Wrapper } = createWrapper({
     accountService: { getCurrentAccount: () => ACCOUNT, getAccounts: () => [ACCOUNT], getAddress: () => ADDRESS },
     networkService: { getCurrentNetwork: () => NETWORK, getNetworks: () => [NETWORK] },
     connectedAppService: { getConnectedApps: () => [] },
-    walletService: { lock: jest.fn() },
+    walletService,
     preferenceService,
   });
   const navigation = { goBack: jest.fn(), navigate: jest.fn() };
@@ -85,5 +108,30 @@ describe('SettingsScreen', () => {
 
     expect(preferenceService.get()).toEqual({ ...DEFAULT_PREFERENCES, hideSmallBalances: false, hideUnknownTokens: false, hapticsEnabled: false });
     expect(screen.getByRole('switch', { name: 'Hide small balances' }).props.accessibilityState).toEqual(expect.objectContaining({ checked: false }));
+  });
+
+  it('turns biometric unlock back on with the current password alone', async () => {
+    const walletService = createWalletService();
+
+    await setup(walletService);
+    const toggle = await screen.findByRole('switch', { name: 'Unlock with Face ID' });
+
+    expect(toggle.props.accessibilityState).toEqual(expect.objectContaining({ checked: false }));
+    await fireEvent.press(toggle);
+    await fireEvent.changeText(screen.getByPlaceholderText('Password'), 'wrong');
+    await fireEvent.press(screen.getByRole('button', { name: 'Turn on' }));
+
+    expect(await screen.findByText('Incorrect password.')).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByPlaceholderText('Password'), 'secret');
+    await fireEvent.press(screen.getByRole('button', { name: 'Turn on' }));
+
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Unlock with Face ID' }).props.accessibilityState).toEqual(expect.objectContaining({ checked: true })));
+    expect(walletService.enableBiometricUnlock).toHaveBeenLastCalledWith('secret');
+
+    await fireEvent.press(screen.getByRole('switch', { name: 'Unlock with Face ID' }));
+
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Unlock with Face ID' }).props.accessibilityState).toEqual(expect.objectContaining({ checked: false })));
+    expect(walletService.disableBiometricUnlock).toHaveBeenCalledTimes(1);
   });
 });

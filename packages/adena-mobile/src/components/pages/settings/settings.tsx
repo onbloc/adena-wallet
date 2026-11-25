@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { AvatarColor } from '../../../domain/account';
 import { formatAddress } from '../../../utils/address';
 import { Avatar, Switch, Text } from '../../atoms';
-import { ListRow, Screen, SectionLabel, TopBar } from '../../molecules';
+import { ListRow, PasswordSheet, PasswordSheetProps, Screen, SectionLabel, TopBar } from '../../molecules';
 import { styles } from './settings.styles';
 import { OptionSheet, SettingsOptionView, ToggleSheet } from './settings-sheets';
 
@@ -24,6 +24,14 @@ export interface SettingsAccountView {
   address: string;
   avatarColor?: AvatarColor;
   avatarPhoto?: string;
+}
+
+export interface SettingsBiometricView {
+  label: string;
+  enabled: boolean;
+  onToggle: (value: boolean) => void;
+  // Asks for the wallet password before turning biometric unlock on.
+  sheet: Omit<PasswordSheetProps, 'title' | 'description' | 'confirmLabel'>;
 }
 
 export interface SettingsPageProps {
@@ -52,6 +60,8 @@ export interface SettingsPageProps {
   onOpenAddressBook: () => void;
   onOpenRecoveryPhrase: () => void;
   onOpenChangePassword: () => void;
+  // Hidden when the device has no enrolled biometrics.
+  biometric?: SettingsBiometricView;
   onLock: () => void;
   onOpenReset: () => void;
   onBack: () => void;
@@ -114,6 +124,9 @@ export const SettingsPage = (props: SettingsPageProps): ReactElement => {
       </Section>
       <Section label='Privacy and security'>
         <ListRow label='Change password' onPress={props.onOpenChangePassword} />
+        {props.biometric && (
+          <SwitchRow label={`Unlock with ${props.biometric.label}`} value={props.biometric.enabled} onChange={props.biometric.onToggle} />
+        )}
         <ListRow label='Recovery phrase' onPress={props.onOpenRecoveryPhrase} />
         <ListRow label='Lock wallet' onPress={props.onLock} />
         <ListRow label='Reset wallet' destructive onPress={props.onOpenReset} />
@@ -143,6 +156,14 @@ export const SettingsPage = (props: SettingsPageProps): ReactElement => {
         onSelect={pick(props.onSelectLanguage)}
         onClose={close}
       />
+      {props.biometric && (
+        <PasswordSheet
+          {...props.biometric.sheet}
+          title={`Unlock with ${props.biometric.label}`}
+          description='Enter your password to turn on biometric unlock.'
+          confirmLabel='Turn on'
+        />
+      )}
       <ToggleSheet
         visible={sheet === SettingsSheet.BALANCES}
         title='Balances and activity'
