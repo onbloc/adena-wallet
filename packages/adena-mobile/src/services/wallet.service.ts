@@ -16,6 +16,7 @@ import { BiometryKind, SecurePrompt } from '../security/secure-store';
 import { createId } from '../utils/id';
 import { AccountService } from './account.service';
 import { KeyringSession } from './keyring-session';
+import { ResetMarker } from './reset-marker';
 import { VaultService } from './vault.service';
 
 // Any store that keeps data per account and must drop it when the account is removed.
@@ -65,9 +66,15 @@ export class WalletService {
     private readonly accountScopedData: AccountScopedData[],
     private readonly biometricRepository: BiometricCredentialRepository,
     private readonly preferenceRepository: PreferenceRepository,
+    private readonly resetMarker?: ResetMarker,
   ) {}
 
   async getStatus(): Promise<WalletStatus> {
+    // An unfinished reset stays on the lock screen, where the reset can be retried.
+    if (this.resetMarker?.isPending()) {
+      return WalletStatus.LOCKED;
+    }
+
     if (!(await this.vaultService.exists())) {
       return WalletStatus.EMPTY;
     }
@@ -120,6 +127,7 @@ export class WalletService {
     const epoch = this.keyringSession.epoch;
 
     return this.accountService.runExclusive(async () => {
+      this.assertNoPendingReset();
       await this.openSession(await this.vaultService.open(password), epoch);
     });
   }
@@ -134,6 +142,7 @@ export class WalletService {
     const epoch = this.keyringSession.epoch;
 
     return this.accountService.runExclusive(async () => {
+      this.assertNoPendingReset();
       const password = await this.biometricRepository.readCredential(prompt);
 
       if (!password) {
@@ -149,6 +158,12 @@ export class WalletService {
     this.assertCurrent(epoch);
     this.keyringSession.open(content.keyrings);
     await this.restoreMissingAccounts(content.keyrings);
+  }
+
+  private assertNoPendingReset(): void {
+    if (this.resetMarker?.isPending()) {
+      throw new AppError(AppErrorCode.RESET_INCOMPLETE, 'The last reset did not finish. Reset the wallet again.');
+    }
   }
 
   private assertCurrent(epoch: number): void {

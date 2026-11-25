@@ -1,3 +1,5 @@
+import { AppErrorCode } from '../../../src/core/errors';
+import { createContainer } from '../../../src/di/container';
 import { StorageKey } from '../../../src/migration/storage-keys';
 import { SecurePasswordAttemptRepository } from '../../../src/repositories/password-attempt.repository';
 import { SecureVaultRepository } from '../../../src/repositories/vault.repository';
@@ -78,5 +80,22 @@ describe('AppResetService', () => {
     await reset.resetAll();
     await unlocking;
     expect(await repository.exists()).toBe(false);
+  });
+  it('keeps a reset that failed part way retryable, even after a restart', async () => {
+    const { container, secureStore, keyValueStore } = createTestContainer();
+
+    await container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+    jest.spyOn(secureStore, 'removeItem').mockRejectedValueOnce(new Error('Keychain locked'));
+    await expect(container.appResetService.resetAll()).rejects.toThrow('Keychain locked');
+
+    // A fresh container over the same storage stands in for an app restart.
+    const restarted = createContainer({ secureStore, keyValueStore, vaultCipher: new ScryptXChaChaVaultCipher({ N: 2 ** 10, r: 8, p: 1 }) });
+
+    expect(await restarted.walletService.getStatus()).toBe('locked');
+    await expect(restarted.walletService.unlock(TEST_PASSWORD)).rejects.toMatchObject({ code: AppErrorCode.RESET_INCOMPLETE });
+
+    await restarted.appResetService.resetAll();
+    expect(await restarted.walletService.getStatus()).toBe('empty');
+    expect(keyValueStore.getAllKeys()).toEqual([StorageKey.SCHEMA_VERSION]);
   });
 });
