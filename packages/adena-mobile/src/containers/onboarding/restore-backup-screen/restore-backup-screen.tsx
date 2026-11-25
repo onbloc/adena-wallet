@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { ReactElement, useRef, useState } from 'react';
+import React, { ReactElement, useEffect, useRef, useState } from 'react';
 
 import { RestoreBackupPage, RestoreBackupPageState, RestoreDeleteStep } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
@@ -34,6 +34,21 @@ export const RestoreBackupScreen = ({ navigation }: NativeStackScreenProps<Onboa
   const [deleteStep, setDeleteStep] = useState<RestoreDeleteStep>();
   const [deleting, setDeleting] = useState(false);
   const submittingRef = useRef(false);
+  // Bumped when the user leaves, so an open that settles afterwards cannot take over another onboarding flow.
+  const operationRef = useRef(0);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      operationRef.current += 1;
+      submittingRef.current = false;
+      setSubmitting(false);
+    });
+
+    return (): void => {
+      unsubscribe();
+      operationRef.current += 1;
+    };
+  }, [navigation]);
 
   const backups = backupsQuery.data ?? [];
   const selected = backups.find(backup => backup.fileName === selectedId)?.fileName ?? backups[0]?.fileName;
@@ -58,15 +73,25 @@ export const RestoreBackupScreen = ({ navigation }: NativeStackScreenProps<Onboa
 
     submittingRef.current = true;
     setSubmitting(true);
+    const operation = ++operationRef.current;
 
     try {
       const content = await cloudBackupService.openBackup(selected, password);
+
+      // Dropped unused when the user left meanwhile.
+      if (operation !== operationRef.current) {
+        return;
+      }
 
       setRestoreBackup(content);
       setPassword('');
       navigation.navigate('CreatePassword');
     }
     catch (openError) {
+      if (operation !== operationRef.current) {
+        return;
+      }
+
       if (isAppError(openError, AppErrorCode.INVALID_PASSWORD)) {
         setError('Incorrect backup password.');
       }
@@ -78,8 +103,10 @@ export const RestoreBackupScreen = ({ navigation }: NativeStackScreenProps<Onboa
       }
     }
     finally {
-      submittingRef.current = false;
-      setSubmitting(false);
+      if (operation === operationRef.current) {
+        submittingRef.current = false;
+        setSubmitting(false);
+      }
     }
   };
 

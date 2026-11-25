@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 
 import { RestoreBackupScreen } from '../../../src/containers/onboarding/restore-backup-screen';
 import { useOnboardingStore } from '../../../src/stores/onboarding.store';
@@ -32,6 +32,46 @@ describe('RestoreBackupScreen', () => {
     expect(navigation.navigate).toHaveBeenCalledWith('CreatePassword');
     expect(useOnboardingStore.getState().restoreBackup?.keyrings[0]).toMatchObject({ mnemonic: TEST_MNEMONIC });
     expect(screen.getByTestId('restore-backup-password').props.value).toBe('');
+  });
+
+  // The user backs out while the backup is still decrypting and starts creating a new wallet.
+  it.each(['blur', 'unmount'] as const)('drops a backup that finishes opening after the screen lost focus (%s)', async (leave) => {
+    const env = await createEnvWithBackup();
+    const open = env.container.cloudBackupService.openBackup.bind(env.container.cloudBackupService);
+    let release: () => void = () => undefined;
+
+    jest.spyOn(env.container.cloudBackupService, 'openBackup').mockImplementation(async (...args) => {
+      const content = await open(...args);
+
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return content;
+    });
+    const { navigation, unmount } = await renderScreen(RestoreBackupScreen, { env });
+
+    await fireEvent.changeText(await screen.findByTestId('restore-backup-password'), BACKUP_PASSWORD);
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    });
+
+    if (leave === 'blur') {
+      await act(() => navigation.emit('blur'));
+    }
+    else {
+      await unmount();
+    }
+
+    useOnboardingStore.getState().setMnemonic(TEST_MNEMONIC);
+    await act(async () => {
+      release();
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    expect(useOnboardingStore.getState()).toMatchObject({ mnemonic: TEST_MNEMONIC, restoreBackup: null });
+    expect(navigation.navigate).not.toHaveBeenCalled();
+    jest.restoreAllMocks();
   });
 
   it('rejects a wrong backup password', async () => {

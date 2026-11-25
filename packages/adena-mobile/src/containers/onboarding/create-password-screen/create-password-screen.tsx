@@ -15,8 +15,10 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
   const { walletService, cloudBackupService } = useContainer();
   const mnemonic = useOnboardingStore(state => state.mnemonic);
   const restoreBackup = useOnboardingStore(state => state.restoreBackup);
-  // Fixed at mount: the store is cleared on success while the button still shows its progress label.
-  const [restoring] = useState(restoreBackup !== null);
+  // Fixed at mount: the flow this screen was opened for. The store is cleared on success while the button
+  // still shows its progress label, and a later change there (e.g. a stale restore) must not swap the flow.
+  const [source] = useState(() => (restoreBackup ? { restoreBackup, mnemonic: null } : { restoreBackup: null, mnemonic }));
+  const restoring = source.restoreBackup !== null;
   const clearOnboarding = useOnboardingStore(state => state.clear);
   const { setStatus, bumpRevision } = useSessionStore();
   const showToast = useToastStore(state => state.show);
@@ -81,7 +83,9 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
       return;
     }
 
-    if (!mnemonic && !restoreBackup) {
+    // The phrase or backup the user chose is gone or was replaced: start over instead of using another one.
+    if ((!source.mnemonic && !source.restoreBackup) || mnemonic !== source.mnemonic || restoreBackup !== source.restoreBackup) {
+      clearOnboarding();
       navigation.popToTop();
       return;
     }
@@ -91,11 +95,11 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
 
     try {
       // A decrypted cloud backup is rebuilt with every keyring; otherwise one phrase becomes the wallet.
-      if (restoreBackup) {
-        await cloudBackupService.restoreWallet(restoreBackup, password);
+      if (source.restoreBackup) {
+        await cloudBackupService.restoreWallet(source.restoreBackup, password);
       }
-      else if (mnemonic) {
-        await walletService.createWallet({ mnemonic, password });
+      else if (source.mnemonic) {
+        await walletService.createWallet({ mnemonic: source.mnemonic, password });
       }
 
       await enableBiometricsIfSupported();
