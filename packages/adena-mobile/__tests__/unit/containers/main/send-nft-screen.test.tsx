@@ -8,6 +8,7 @@ import { FeeEstimate, GNO_FEE_POLICY } from '../../../../src/domain/fee';
 import { NftCollection, NftItem } from '../../../../src/domain/nft';
 import { TransactionDraft, TransactionStatus } from '../../../../src/domain/transaction';
 import { PENDING_NOTICE, PENDING_POLL_INTERVAL_MS } from '../../../../src/hooks/use-pending-broadcast';
+import { usePendingBroadcastStore } from '../../../../src/stores/pending-broadcast.store';
 import { normalizeAddress } from '../../../../src/utils/address';
 import { ACCOUNT, createWrapper, NETWORK } from '../../../helpers/query-wrapper';
 
@@ -61,6 +62,8 @@ const setup = async (extraParams: Record<string, unknown> = {}, ownAddress = 'g1
 };
 
 describe('SendNftScreen', () => {
+  beforeEach(() => usePendingBroadcastStore.setState({ pending: null }));
+
   it('scans into the recipient field and consumes the scanned param', async () => {
     const { navigation } = await setup({ scannedAddress: FIRST });
 

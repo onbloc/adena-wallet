@@ -9,6 +9,8 @@ import { Token, TokenType } from '../../../../src/domain/token';
 import { TransactionDraft, TransactionStatus } from '../../../../src/domain/transaction';
 import { PENDING_NOTICE, PENDING_POLL_ATTEMPTS, PENDING_POLL_INTERVAL_MS, UNCONFIRMED_NOTICE } from '../../../../src/hooks/use-pending-broadcast';
 import { useWalletAssets } from '../../../../src/hooks/use-wallet-assets';
+import { usePendingBroadcastStore } from '../../../../src/stores/pending-broadcast.store';
+import { useToastStore } from '../../../../src/stores/toast.store';
 import { ACCOUNT, createWrapper, NETWORK } from '../../../helpers/query-wrapper';
 
 jest.mock('../../../../src/hooks/use-wallet-assets', () => ({ useWalletAssets: jest.fn() }));
@@ -69,6 +71,8 @@ const setup = async (prices?: Record<string, unknown>, params: Record<string, un
 };
 
 describe('SendAmountScreen', () => {
+  beforeEach(() => usePendingBroadcastStore.setState({ pending: null }));
+
   // Let query notifications scheduled on a timer land before the tree unmounts.
   afterEach(() => act(() => new Promise<void>((done) => {
     setTimeout(done, 0);
@@ -182,14 +186,64 @@ describe('SendAmountScreen', () => {
       expect(await screen.findByTestId('review-confirm')).toBeTruthy();
     });
 
-    it('stops polling after a while and keeps a notice while allowing a new send', async () => {
+    const exhaustPolling = async (): Promise<void> => {
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS * PENDING_POLL_ATTEMPTS));
+    };
+
+    it('keeps blocking a new send after polling gives up', async () => {
       const { transactionService } = await setup();
 
       await confirmOnce(transactionService, new TransactionPendingError('ABC'));
-      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS * PENDING_POLL_ATTEMPTS));
+      await exhaustPolling();
 
       expect(transactionService.getTransactionStatus).toHaveBeenCalledTimes(PENDING_POLL_ATTEMPTS);
       expect(screen.getByText(UNCONFIRMED_NOTICE)).toBeTruthy();
+      await fireEvent.press(screen.getByTestId('send-review'));
+      expect(transactionService.estimateFee).toHaveBeenCalledTimes(1);
+      expect(screen.queryByTestId('review-confirm')).toBeNull();
+      expect(transactionService.signAndBroadcast).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the block across leaving and reopening the screen, and rechecks on reopen', async () => {
+      const first = await setup();
+
+      await confirmOnce(first.transactionService, new TransactionPendingError('ABC'));
+      await exhaustPolling();
+      await screen.unmount();
+
+      const { transactionService, navigation } = await setup();
+
+      expect(screen.getByText(PENDING_NOTICE)).toBeTruthy();
+      await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
+      await fireEvent.press(screen.getByTestId('send-review'));
+      expect(transactionService.estimateFee).not.toHaveBeenCalled();
+
+      transactionService.getTransactionStatus.mockResolvedValueOnce('committed');
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
+
+      expect(transactionService.getTransactionStatus).toHaveBeenCalledWith('ABC', NETWORK);
+      expect(usePendingBroadcastStore.getState().pending).toBeNull();
+      // This screen did not send it, so it only reports the outcome.
+      expect(navigation.popToTop).not.toHaveBeenCalled();
+      expect(useToastStore.getState().toast?.message).toBe('Your previous transaction was confirmed.');
+      await fireEvent.press(screen.getByTestId('send-review'));
+      expect(await screen.findByTestId('review-confirm')).toBeTruthy();
+    });
+
+    it('allows a new send once a recheck finds the tx failed', async () => {
+      const first = await setup();
+
+      await confirmOnce(first.transactionService, new TransactionPendingError('ABC'));
+      await exhaustPolling();
+      await screen.unmount();
+
+      const { transactionService } = await setup();
+
+      transactionService.getTransactionStatus.mockResolvedValueOnce('pending').mockResolvedValueOnce('failed');
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS * 2));
+
+      expect(screen.queryByText(PENDING_NOTICE)).toBeNull();
+      await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
       await fireEvent.press(screen.getByTestId('send-review'));
       expect(await screen.findByTestId('review-confirm')).toBeTruthy();
     });
