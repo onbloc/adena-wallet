@@ -3,7 +3,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-
 import { percentOfBalance, searchSwapTokens, sortSwapTokens, SwapScreen } from '../../../../src/containers/main/swap-screen';
 import { GNO_FEE_POLICY } from '../../../../src/domain/fee';
 import { SwapToken } from '../../../../src/domain/swap';
-import { PENDING_NOTICE } from '../../../../src/hooks/use-pending-broadcast';
+import { PENDING_NOTICE, PENDING_POLL_INTERVAL_MS, REPLACEABLE_NOTICE } from '../../../../src/hooks/use-pending-broadcast';
 import { SwapMaxResult } from '../../../../src/services/swap.service';
 import { GnoswapFakeOptions, GNS, installGnoswapFakes } from '../../../helpers/gnoswap-fakes';
 import { renderScreen, resetStores, setupWallet, toastMessage } from '../../../helpers/render-screen';
@@ -21,7 +21,9 @@ const typeAmount = async (digits: string): Promise<void> => {
   }
 };
 
-const setup = async (options: GnoswapFakeOptions = {}, networkId?: string) => {
+type Wallet = Awaited<ReturnType<typeof setupWallet>>;
+
+const setup = async (options: GnoswapFakeOptions = {}, networkId?: string, beforeRender?: (wallet: Wallet) => void) => {
   const env = createTestContainer();
   const fakes = installGnoswapFakes(env, { grc20Balances: { [GNS]: '5000000' }, ...options });
   const wallet = await setupWallet(env);
@@ -31,6 +33,8 @@ const setup = async (options: GnoswapFakeOptions = {}, networkId?: string) => {
   if (networkId) {
     env.container.networkService.selectNetwork(networkId);
   }
+
+  beforeRender?.(wallet);
 
   const rendered = await renderScreen(SwapScreen, { env });
 
@@ -275,6 +279,26 @@ describe('SwapScreen', () => {
     expect(await screen.findByText(PENDING_NOTICE, undefined, LOOKUP)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Review swap' })).toBeNull();
   });
+
+  it('replaces a replaceable pending tx pinned to its sequence and clears the record', async () => {
+    const { env, account, network } = await setup({}, undefined, ({ env: testEnv, account: sender, network: current }) => {
+      // Off chain and signed with the current on-chain sequence (3 in the fake node).
+      testEnv.container.pendingBroadcastRepository.add({ hashes: ['OLD'], accountId: sender.id, chainId: current.chainId, createdAt: Date.now(), sequence: '3', accountNumber: '7' });
+    });
+    const sign = jest.spyOn(env.container.transactionService, 'sign');
+
+    expect(await screen.findByText(REPLACEABLE_NOTICE, undefined, { timeout: PENDING_POLL_INTERVAL_MS + 2000 })).toBeTruthy();
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    await press('Review swap');
+    await fireEvent.press(await screen.findByTestId('review-confirm', undefined, LOOKUP));
+
+    await waitFor(() => expect(toastMessage()).toBe('Swap confirmed'), LOOKUP);
+    expect(env.gno.state.broadcasts).toHaveLength(1);
+    expect(sign).toHaveBeenLastCalledWith(expect.anything(), account, network, { sequence: '3', accountNumber: '7' });
+    expect(env.container.pendingBroadcastRepository.list(account.id, network.chainId)).toEqual([]);
+  }, 15_000);
 
   it('edits slippage and deadline in second-level views and persists them on Save', async () => {
     const { env } = await setup();

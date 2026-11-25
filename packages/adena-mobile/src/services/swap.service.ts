@@ -24,7 +24,7 @@ import { GnoRpcTimeoutError } from '../repositories/chain/gno/gno-provider';
 import { SwapRepository } from '../repositories/chain/swap-repository';
 import { DEX_API_CONFIG, DexApiConfig, DexApiConfigMap, DexSwapConfig, isTokenPath } from '../resources';
 import { AccountService } from './account.service';
-import { maxFeeReserve, TransactionService } from './transaction.service';
+import { maxFeeReserve, SignAndBroadcastOptions, TransactionService } from './transaction.service';
 
 // A quote older than this is fetched again before it can be reviewed.
 export const SWAP_QUOTE_TTL_MS = 60_000;
@@ -349,7 +349,7 @@ export class SwapService {
   }
 
   // Re-quotes the exact signed route, refreshes the deadline, then signs and broadcasts.
-  async submit(prepared: PreparedSwap, fee: TransactionFee): Promise<BroadcastResult> {
+  async submit(prepared: PreparedSwap, fee: TransactionFee, options: SignAndBroadcastOptions = {}): Promise<BroadcastResult> {
     const { config, repository } = this.require(prepared.network);
     const { quote, account, network } = prepared;
     const exactOut = quote.exactType === SwapType.EXACT_OUT;
@@ -374,6 +374,6 @@ export class SwapService {
     const draft = await this.buildDraft(prepared, fee);
 
     await this.transactionService.assertSufficientFunds(draft, account, network, { token: prepared.input, amount: prepared.maxAmountIn }, prepared.estimate.storageDeposit);
-    return this.transactionService.signAndBroadcast(draft, account, network);
+    return this.transactionService.signAndBroadcast(draft, account, network, options);
   }
 }

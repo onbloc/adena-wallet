@@ -110,7 +110,8 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
   const [draftAuto, setDraftAuto] = useState(true);
   const [slippageText, setSlippageText] = useState('');
   const [deadlineText, setDeadlineText] = useState('');
-  const [prepared, setPrepared] = useState<PreparedSwap | null>(null);
+  // replacesPending: reviewed while a previous unconfirmed tx could be replaced; sent pinned to its sequence.
+  const [prepared, setPrepared] = useState<(PreparedSwap & { replacesPending?: boolean }) | null>(null);
   // Native max per input/output/balance; an edit bumps the epoch so a late estimate is dropped.
   const [maxCache, setMaxCache] = useState<{ key: string; result: SwapMaxResult } | null>(null);
   const [maxPercent, setMaxPercent] = useState<SwapPercent | null>(null);
@@ -232,7 +233,11 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
         throw new Error('Nothing to swap');
       }
 
-      return swapService.submit(prepared, { gasWanted: feeSelection.fee.gasWanted, gasFee: feeSelection.fee.gasFee });
+      return swapService.submit(
+        prepared,
+        { gasWanted: feeSelection.fee.gasWanted, gasFee: feeSelection.fee.gasFee },
+        { replacePending: prepared.replacesPending },
+      );
     },
     onSuccess: handleCommitted,
   });
@@ -394,7 +399,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     prepare.mutate(undefined, {
       onSuccess: (result) => {
         feeSelection.reset();
-        setPrepared(result);
+        setPrepared({ ...result, replacesPending: pendingBroadcast.replacesPending });
       },
       onError: (error) => {
         // An expired or moved quote is simply fetched again.
