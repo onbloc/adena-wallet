@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles, radius, spacing } from '../../../theme';
 
-import { colors, radius, spacing } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   masked: {
     alignItems: 'center',
     gap: spacing.space12,
@@ -10,4 +8,4 @@ export const styles = StyleSheet.create({
     borderRadius: radius.smallControl,
     backgroundColor: colors.background.subtle,
   },
-});
+}));

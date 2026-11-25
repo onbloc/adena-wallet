@@ -6,6 +6,7 @@ import { ImportWalletPage } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
 import { SecretImportMode } from '../../../domain/account';
+import { useHideWhenInactive } from '../../../hooks/use-hide-when-inactive';
 import { MainStackParamList } from '../../../navigation/types';
 import { useSessionStore } from '../../../stores/session.store';
 import { useToastStore } from '../../../stores/toast.store';
@@ -20,6 +21,7 @@ export const ImportAccountScreen = ({ navigation, route }: NativeStackScreenProp
   const [accountName, setAccountName] = useState('');
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
+  const { hidden, reveal } = useHideWhenInactive();
   const submittingRef = useRef(false);
 
   const submit = async (): Promise<void> => {
@@ -61,6 +63,8 @@ export const ImportAccountScreen = ({ navigation, route }: NativeStackScreenProp
       mode={mode}
       secret={secret}
       onChangeSecret={handleChangeSecret}
+      hidden={hidden}
+      onReveal={reveal}
       accountName={accountName}
       onChangeAccountName={setAccountName}
       error={error}

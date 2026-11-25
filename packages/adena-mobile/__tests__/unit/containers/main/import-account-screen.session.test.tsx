@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ImportAccountScreen } from '../../../../src/containers/main/import-account-screen';
@@ -56,5 +57,26 @@ describe('ImportAccountScreen while unlocked', () => {
     expect(walletService.importPrivateKey).toHaveBeenCalledTimes(1);
     await act(async () => reject(new AppError(AppErrorCode.INVALID_REQUEST, 'Invalid private key')));
     expect(await screen.findByText('Invalid private key')).toBeTruthy();
+  });
+
+  it('hides the private key when the app goes to the background and keeps it for the import', async () => {
+    let listener: (state: AppStateStatus) => void = () => undefined;
+
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, handler) => {
+      listener = handler as (state: AppStateStatus) => void;
+      return { remove: jest.fn() } as never;
+    });
+    const { walletService } = await setup(SecretImportMode.PRIVATE_KEY);
+
+    await fireEvent.changeText(screen.getByTestId('import-secret'), 'a'.repeat(64));
+    await act(async () => listener('background'));
+    expect(screen.queryByTestId('import-secret')).toBeNull();
+    expect(screen.queryByDisplayValue('a'.repeat(64))).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('import-reveal'));
+    expect(screen.getByDisplayValue('a'.repeat(64))).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('import-submit'));
+    await waitFor(() => expect(walletService.importPrivateKey).toHaveBeenCalledWith('a'.repeat(64), ''));
+    jest.restoreAllMocks();
   });
 });

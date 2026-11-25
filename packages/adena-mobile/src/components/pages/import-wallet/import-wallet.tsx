@@ -4,7 +4,7 @@ import { TextInputInstance, View } from 'react-native';
 import { SecretImportMode } from '../../../domain/account';
 import { Button, Text } from '../../atoms';
 import { Screen, TextField, TopBar } from '../../molecules';
-import { styles } from './import-wallet.styles';
+import { useStyles } from './import-wallet.styles';
 
 export interface ImportWalletPageProps {
   title?: string;
@@ -38,6 +38,7 @@ export const ImportWalletPage = ({
   onSubmit,
   onBack,
 }: ImportWalletPageProps): ReactElement => {
+  const styles = useStyles();
   const accountNameRef = useRef<TextInputInstance>(null);
   const canSubmit = Boolean(secret.trim()) && !submitting;
 
