@@ -5,6 +5,7 @@ import { AppError, isAppError, TransactionPendingError } from '../../../src/core
 import { decodeBase64Url } from '../../../src/deeplink/base64url';
 import { buildDappRequestUrl, DappRequestPayload } from '../../../src/deeplink/dapp-protocol';
 import { DappTransactionRequest } from '../../../src/domain/dapp';
+import { StorageProcessedDappRequestRepository } from '../../../src/repositories/processed-dapp-request.repository';
 import { catchError } from '../../helpers/service-fakes';
 import { createTestContainer, TEST_MNEMONIC, TEST_PASSWORD } from '../../helpers/test-container';
 
@@ -323,11 +324,13 @@ describe('DappService', () => {
 
     it('maps unknown errors to TRANSACTION_FAILED', async () => {
       const { service } = await setup();
-      const request = service.parseRequestUrl(buildDappRequestUrl(payload()));
+      const request = (id: string) => service.parseRequestUrl(buildDappRequestUrl(payload({ id })));
 
-      expect(readResponse(service.fail(request, new AppError('INSUFFICIENT_BALANCE', 'Not enough'))).error).toEqual({ code: 'INSUFFICIENT_BALANCE', message: 'Not enough' });
-      expect(readResponse(service.fail(request, new Error('rpc down at http://10.0.0.1'))).error).toEqual({ code: 'UNEXPECTED_ERROR', message: 'The request could not be completed' });
-      expect(readResponse(service.fail(request, 'weird')).error).toEqual({ code: 'UNEXPECTED_ERROR', message: 'The request could not be completed' });
+      expect(readResponse(service.fail(request('a'), new AppError('INSUFFICIENT_BALANCE', 'Not enough'))).error).toEqual({ code: 'INSUFFICIENT_BALANCE', message: 'Not enough' });
+      expect(readResponse(service.fail(request('b'), new Error('rpc down at http://10.0.0.1'))).error).toEqual({ code: 'UNEXPECTED_ERROR', message: 'The request could not be completed' });
+      expect(readResponse(service.fail(request('c'), 'weird')).error).toEqual({ code: 'UNEXPECTED_ERROR', message: 'The request could not be completed' });
+      // A repeated answer keeps the first outcome.
+      expect(readResponse(service.fail(request('a'), 'weird')).error).toEqual({ code: 'INSUFFICIENT_BALANCE', message: 'Not enough' });
     });
 
     it('keeps the code and hash of an unknown broadcast outcome', async () => {
@@ -357,7 +360,80 @@ describe('DappService', () => {
       service.reject(request);
       expect(service.isProcessed(service.parseRequestUrl(buildDappRequestUrl(payload())))).toBe(true);
       expect(service.isProcessed(otherOrigin)).toBe(false);
-      expect(readResponse(service.rejectDuplicate(request))).toMatchObject({ requestId: 'req-1', status: 'failure', error: { code: 'DUPLICATE_REQUEST' } });
+      expect(readResponse(service.answerDuplicate(request))).toEqual({
+        requestId: 'req-1', status: 'failure', error: { code: 'USER_REJECTED', message: 'User rejected the request' },
+      });
+    });
+
+    it('answers a duplicate of a pending broadcast with its hash', async () => {
+      const { container, service, txRequest } = await setup();
+      const request = txRequest();
+      const context = service.resolveContext(request);
+      const { draft } = await service.prepareTransaction(request, context);
+
+      jest.spyOn(container.transactionService, 'signAndBroadcast').mockRejectedValue(new TransactionPendingError('HASH'));
+      await catchError(() => service.approveTransaction(request, context, draft));
+      // The screen was requeued without answering; the replay must still carry the hash.
+      expect(readResponse(service.answerDuplicate(txRequest()))).toEqual({
+        requestId: 'req-1', status: 'failure', error: { code: 'TRANSACTION_PENDING', message: 'The transaction was sent but not confirmed yet' }, data: { hash: 'HASH' },
+      });
+      expect(readResponse(service.fail(request, await catchError(() => service.approveTransaction(txRequest(), context, draft))))).toMatchObject({
+        error: { code: 'TRANSACTION_PENDING' }, data: { hash: 'HASH' },
+      });
+    });
+
+    it('replays a broadcast result whose callback never opened', async () => {
+      const { service, txRequest, keyValueStore } = await setup();
+      const request = txRequest();
+      const context = service.resolveContext(request);
+      const { draft } = await service.prepareTransaction(request, context);
+
+      await service.approveTransaction(request, context, draft);
+      expect(readResponse(service.answerDuplicate(txRequest()))).toEqual({
+        requestId: 'req-1', status: 'success', data: { hash: 'HASH', height: '42', committed: expect.any(Boolean) },
+      });
+      expect(new StorageProcessedDappRequestRepository(keyValueStore).get(`${ORIGIN}\nreq-1`)).toMatchObject({ state: 'done', tx: { hash: 'HASH' } });
+    });
+
+    it('tells a second sheet the request is still being processed, without overwriting it', async () => {
+      const { container, service, txRequest } = await setup();
+      const request = txRequest();
+      const context = service.resolveContext(request);
+      const { draft } = await service.prepareTransaction(request, context);
+      let settle: (result: { hash: string; height: string; committed: boolean }) => void = () => undefined;
+
+      jest.spyOn(container.transactionService, 'signAndBroadcast').mockImplementation(() => new Promise((resolve) => {
+        settle = resolve;
+      }));
+      const first = service.approveTransaction(request, context, draft);
+      const second = txRequest();
+
+      expect(readResponse(service.answerDuplicate(second))).toEqual({
+        requestId: 'req-1', status: 'failure', error: { code: 'REQUEST_IN_PROGRESS', message: 'This request is still being processed. Wait for its result.' },
+      });
+      expect(readResponse(service.reject(second)).error.code).toBe('REQUEST_IN_PROGRESS');
+      expect(readResponse(service.fail(second, await catchError(() => service.approveTransaction(second, context, draft)))).error.code).toBe('REQUEST_IN_PROGRESS');
+      settle({ hash: 'HASH', height: '7', committed: true });
+      expect(readResponse(await first)).toMatchObject({ status: 'success', data: { hash: 'HASH' } });
+      expect(readResponse(service.answerDuplicate(second))).toMatchObject({ status: 'success', data: { hash: 'HASH', height: '7', committed: true } });
+    });
+
+    it('keeps signed bytes and account data out of storage', async () => {
+      const { service, txRequest, keyValueStore, address } = await setup();
+      const connect = service.parseRequestUrl(buildDappRequestUrl(payload({ id: 'req-c' })));
+      const request = txRequest({ method: 'sign-transaction' });
+      const context = service.resolveContext(request);
+      const { draft } = await service.prepareTransaction(request, context);
+      const signed = readResponse(await service.approveTransaction(request, context, draft));
+
+      service.approveConnect(connect, service.resolveContext(connect));
+      const stored = keyValueStore.getString('processed-dapp-requests') ?? '';
+
+      expect(stored).not.toContain(signed.data.signedTx);
+      expect(stored).not.toContain(address);
+      expect(readResponse(service.answerDuplicate(txRequest({ method: 'sign-transaction' })))).toEqual({
+        requestId: 'req-1', status: 'failure', error: { code: 'DUPLICATE_REQUEST', message: 'This request was already answered.' },
+      });
     });
 
     it('persists processed requests in storage', async () => {

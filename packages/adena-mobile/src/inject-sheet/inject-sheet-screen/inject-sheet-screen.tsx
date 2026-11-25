@@ -139,7 +139,7 @@ export const InjectSheetScreen = ({ requestUrl, callerPackage, session: provided
     : status === WalletStatus.EMPTY
       ? { title: 'Set up Adena first', description: 'Create or import a wallet in Adena, then try again from the app.' }
       : parsed.duplicate
-        ? { title: 'Request already handled', description: 'This request was answered before. Start a new request from the app.' }
+        ? { title: 'Request already handled', description: 'Adena already received this request. Close to send its status back to the app.' }
         : done
           ? { title: 'Response sent', description: 'You can return to the app.' }
           : undefined;
@@ -220,7 +220,7 @@ export const InjectSheetScreen = ({ requestUrl, callerPackage, session: provided
     }
 
     if (parsed.duplicate && parsed.request) {
-      answer(dappService.rejectDuplicate(parsed.request));
+      answer(dappService.answerDuplicate(parsed.request));
       return;
     }
 

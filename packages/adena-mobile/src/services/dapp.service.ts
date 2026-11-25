@@ -4,7 +4,12 @@ import { Account } from '../domain/account';
 import { DappMethod, DappRequest, DappResponse, DappResponseStatus, DappTransactionRequest } from '../domain/dapp';
 import { Network } from '../domain/network';
 import { MessageSummary, TransactionDraft, TransactionFee } from '../domain/transaction';
-import { MemoryProcessedDappRequestRepository, ProcessedDappRequestRepository } from '../repositories/processed-dapp-request.repository';
+import {
+  MemoryProcessedDappRequestRepository,
+  ProcessedDappRequest,
+  ProcessedDappRequestRepository,
+  ProcessedDappRequestState,
+} from '../repositories/processed-dapp-request.repository';
 import { parseCoin } from '../utils/amount';
 import { BigNumber } from '../utils/big-number';
 import { AccountService } from './account.service';
@@ -19,7 +24,48 @@ const PACKAGE_NAME_PATTERN = /^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i;
 // A dApp fee above this multiple of the wallet's estimate is flagged (never blocked).
 export const DAPP_FEE_WARNING_MULTIPLIER = 3;
 
-const duplicateRequest = (): AppError => new AppError(AppErrorCode.DUPLICATE_REQUEST, 'This request was already handled. Send a new request.');
+const duplicateRequest = (): AppError => new AppError(AppErrorCode.DUPLICATE_REQUEST, 'This request is already being handled.');
+
+type ResponseBody = Omit<DappResponse, 'requestId'>;
+
+const failure = (code: string, message: string, data?: Record<string, unknown>): ResponseBody =>
+  ({ status: DappResponseStatus.FAILURE, error: { code, message }, ...(data ? { data } : {}) });
+
+const ANSWERED = failure(AppErrorCode.DUPLICATE_REQUEST, 'This request was already answered.');
+
+// What the dApp was (or will be) told, kept so a duplicate gets the same outcome instead of a new prompt.
+const toProcessed = (response: ResponseBody): ProcessedDappRequest => {
+  const hash = response.data?.hash;
+  const tx = typeof hash === 'string' ? { hash } : undefined;
+
+  if (response.status === DappResponseStatus.SUCCESS) {
+    const { height, committed } = response.data ?? {};
+
+    return tx
+      ? {
+          state: ProcessedDappRequestState.DONE,
+          tx: { ...tx, ...(typeof height === 'string' ? { height } : {}), ...(typeof committed === 'boolean' ? { committed } : {}) },
+        }
+      : { state: ProcessedDappRequestState.DONE };
+  }
+
+  const pending = response.error?.code === AppErrorCode.TRANSACTION_PENDING && tx;
+
+  return { state: pending ? ProcessedDappRequestState.PENDING : ProcessedDappRequestState.FAILED, ...(pending ? { tx } : {}), error: response.error };
+};
+
+const fromProcessed = ({ state, tx, error }: ProcessedDappRequest): ResponseBody => {
+  switch (state) {
+    case ProcessedDappRequestState.IN_PROGRESS:
+      return failure(AppErrorCode.REQUEST_IN_PROGRESS, 'This request is still being processed. Wait for its result.');
+    case ProcessedDappRequestState.PENDING:
+      return failure(error?.code ?? AppErrorCode.TRANSACTION_PENDING, error?.message ?? 'The transaction was sent but not confirmed yet', tx && { hash: tx.hash });
+    case ProcessedDappRequestState.DONE:
+      return tx ? { status: DappResponseStatus.SUCCESS, data: { ...tx } } : ANSWERED;
+    default:
+      return error ? failure(error.code, error.message) : ANSWERED;
+  }
+};
 
 const processedKey = (request: DappRequest): string => `${request.callbackOrigin}\n${request.requestId}`;
 
@@ -69,8 +115,12 @@ export class DappService {
     return this.processedRequests.has(processedKey(request));
   }
 
-  rejectDuplicate(request: DappRequest): string {
-    return this.fail(request, duplicateRequest());
+  // Answers a repeated request with the state of the first one: still processing, pending with its hash,
+  // or the original outcome. Never asks for a new request, which could execute it twice.
+  answerDuplicate(request: DappRequest): string {
+    const record = this.processedRequests.get(processedKey(request)) ?? { state: ProcessedDappRequestState.DONE };
+
+    return buildCallbackUrl(request.callbackUrl, { requestId: request.requestId, ...fromProcessed(record) });
   }
 
   resolveContext(request: DappRequest): DappRequestContext {
@@ -172,8 +222,11 @@ export class DappService {
       return this.respond(request, { status: DappResponseStatus.SUCCESS, data: { ...result } });
     }
     catch (error) {
-      // An unknown broadcast outcome keeps the mark, so the request cannot be broadcast again.
-      if (!(error instanceof TransactionPendingError)) {
+      // An unknown broadcast outcome keeps the mark with its hash, so the request cannot be broadcast again.
+      if (error instanceof TransactionPendingError) {
+        this.processedRequests.set(processedKey(request), toProcessed(failure(error.code, error.message, { hash: error.hash })));
+      }
+      else {
         this.processedRequests.remove(processedKey(request));
       }
 
@@ -182,7 +235,7 @@ export class DappService {
   }
 
   reject(request: DappRequest): string {
-    return this.respond(request, { status: DappResponseStatus.FAILURE, error: { code: AppErrorCode.USER_REJECTED, message: 'User rejected the request' } });
+    return this.answer(request, { status: DappResponseStatus.FAILURE, error: { code: AppErrorCode.USER_REJECTED, message: 'User rejected the request' } });
   }
 
   // Only AppError messages (written for dApps) are forwarded; anything else stays generic.
@@ -194,12 +247,12 @@ export class DappService {
     // An unknown broadcast outcome carries the hash, so the dApp can track the transaction.
     const data = error instanceof TransactionPendingError ? { data: { hash: error.hash } } : {};
 
-    return this.respond(request, { status: DappResponseStatus.FAILURE, error: { code: error.code, message: error.message }, ...data });
+    return this.answer(request, { status: DappResponseStatus.FAILURE, error: { code: error.code, message: error.message }, ...data });
   }
 
   // Crashes (error boundaries) must not leak internal error text to the dApp.
   failUnexpected(request: DappRequest): string {
-    return this.respond(request, { status: DappResponseStatus.FAILURE, error: { code: AppErrorCode.UNEXPECTED_ERROR, message: 'The request could not be completed' } });
+    return this.answer(request, { status: DappResponseStatus.FAILURE, error: { code: AppErrorCode.UNEXPECTED_ERROR, message: 'The request could not be completed' } });
   }
 
   // Marks the request in the shared store before signing, so another sheet or screen cannot approve it too.
@@ -213,11 +266,17 @@ export class DappService {
       throw duplicateRequest();
     }
 
-    this.processedRequests.add(processedKey(request));
+    this.processedRequests.set(processedKey(request), { state: ProcessedDappRequestState.IN_PROGRESS });
   }
 
-  private respond(request: DappRequest, response: Omit<DappResponse, 'requestId'>): string {
-    this.processedRequests.add(processedKey(request));
+  // The outcome of this service's own approval; it replaces the in-progress mark.
+  private respond(request: DappRequest, response: ResponseBody): string {
+    this.processedRequests.set(processedKey(request), toProcessed(response));
     return buildCallbackUrl(request.callbackUrl, { requestId: request.requestId, ...response });
+  }
+
+  // A rejection or failure must not overwrite a request another sheet is approving, or hide a pending hash.
+  private answer(request: DappRequest, response: ResponseBody): string {
+    return this.isProcessed(request) ? this.answerDuplicate(request) : this.respond(request, response);
   }
 }
