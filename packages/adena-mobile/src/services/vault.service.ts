@@ -17,6 +17,8 @@ export class VaultService {
   // Key of the stored vault from the last password check or write, so an unlocked session can
   // write without the password. Never persisted; WalletService wipes it on lock, reset wipes it too.
   private sessionKey: VaultKey | null = null;
+  // Bumped whenever the session key is forgotten, so work that awaited across a lock can tell.
+  private sessionGeneration = 0;
 
   constructor(
     private readonly vaultRepository: VaultRepository,
@@ -35,11 +37,13 @@ export class VaultService {
 
   create(keyrings: KeyringRecord[], password: string): Promise<VaultContent> {
     return this.queue.run(async () => {
+      const generation = this.sessionGeneration;
+
       if (await this.vaultRepository.exists()) {
         throw new AppError(AppErrorCode.WALLET_ALREADY_EXISTS, 'A wallet already exists on this device');
       }
 
-      return this.save({ keyrings }, password);
+      return this.save({ keyrings }, password, generation);
     });
   }
 
@@ -64,6 +68,7 @@ export class VaultService {
 
   addKeyring(keyring: KeyringRecord, password: string): Promise<VaultContent> {
     return this.queue.run(async () => {
+      const generation = this.sessionGeneration;
       const content = await this.openChecked(password);
 
       // Checked against the vault itself, so it holds even after every account of a keyring was removed.
@@ -71,15 +76,16 @@ export class VaultService {
         throw new AppError(AppErrorCode.WALLET_ALREADY_EXISTS, 'This wallet is already added');
       }
 
-      return this.save({ ...content, keyrings: [...content.keyrings, keyring] }, password);
+      return this.save({ ...content, keyrings: [...content.keyrings, keyring] }, password, generation);
     });
   }
 
   removeKeyring(keyringId: string, password: string): Promise<VaultContent> {
     return this.queue.run(async () => {
+      const generation = this.sessionGeneration;
       const content = await this.openChecked(password);
 
-      return this.save({ ...content, keyrings: content.keyrings.filter(keyring => keyring.id !== keyringId) }, password);
+      return this.save({ ...content, keyrings: content.keyrings.filter(keyring => keyring.id !== keyringId) }, password, generation);
     });
   }
 
@@ -92,10 +98,11 @@ export class VaultService {
     }
 
     return this.queue.run(async () => {
+      const generation = this.sessionGeneration;
       const content = await this.openChecked(currentPassword);
 
       await beforeSave?.();
-      await this.save(content, nextPassword);
+      await this.save(content, nextPassword, generation);
     });
   }
 
@@ -106,17 +113,21 @@ export class VaultService {
   forgetSessionKey(): void {
     wipeVaultKey(this.sessionKey);
     this.sessionKey = null;
+    this.sessionGeneration += 1;
   }
 
   // Adds a keyring with the session key instead of a password. Not a password guess, so not throttled.
   addKeyringWithSessionKey(keyring: KeyringRecord): Promise<VaultContent> {
     return this.queue.run(async () => {
       const key = this.sessionKey;
+      const generation = this.sessionGeneration;
       const record = await this.vaultRepository.read();
 
       if (!key || !record) {
         throw new AppError(AppErrorCode.WALLET_LOCKED, 'Unlock the wallet again');
       }
+
+      this.assertSession(key, generation);
 
       const migrated = migrateData<VaultContent>(JSON.parse(this.cipher.decryptWithKey(record.payload, key)), record.contentVersion, VAULT_MIGRATIONS);
       const content = migrated.data;
@@ -127,8 +138,12 @@ export class VaultService {
 
       const seeded = await withCachedSeeds({ ...content, keyrings: [...content.keyrings, keyring] });
 
+      // A lock during the seed derivation wiped the key; encrypting with it would make the vault unreadable.
+      this.assertSession(key, generation);
+      const payload = this.cipher.encryptWithKey(JSON.stringify(seeded), key);
+
       this.writes += 1;
-      await this.vaultRepository.write({ contentVersion: VAULT_CONTENT_VERSION, payload: this.cipher.encryptWithKey(JSON.stringify(seeded), key) });
+      await this.vaultRepository.write({ contentVersion: VAULT_CONTENT_VERSION, payload });
       return seeded;
     });
   }
@@ -143,6 +158,12 @@ export class VaultService {
     });
   }
 
+  private assertSession(key: VaultKey, generation: number): void {
+    if (this.sessionKey !== key || this.sessionGeneration !== generation) {
+      throw new AppError(AppErrorCode.WALLET_LOCKED, 'Wallet was locked before the change was saved');
+    }
+  }
+
   private openChecked(password: string): Promise<VaultContent> {
     return this.attemptLimiter.run(() => this.decrypt(password));
   }
@@ -150,6 +171,7 @@ export class VaultService {
   // Decrypts and migrates. Re-encrypting with current settings only changes the stored format,
   // so a failed re-save does not block the unlock; it is retried on the next one.
   private async decrypt(password: string): Promise<VaultContent> {
+    const generation = this.sessionGeneration;
     const record = await this.vaultRepository.read();
 
     if (!record) {
@@ -158,7 +180,7 @@ export class VaultService {
 
     const { plaintext, key } = await this.cipher.decryptKeyed(record.payload, password);
 
-    this.rememberKey(key);
+    this.rememberKey(key, generation);
     const migrated = migrateData<VaultContent>(JSON.parse(plaintext), record.contentVersion, VAULT_MIGRATIONS);
     const missingSeed = !migrated.data.keyrings.every(hasCachedSeed);
 
@@ -169,7 +191,7 @@ export class VaultService {
     const seeded = await withCachedSeeds(migrated.data);
 
     try {
-      await this.write(seeded, password);
+      await this.write(seeded, password, generation);
     }
     catch {
       // Keep the readable copy as it is.
@@ -178,15 +200,15 @@ export class VaultService {
     return seeded;
   }
 
-  private async save(content: VaultContent, password: string): Promise<VaultContent> {
+  private async save(content: VaultContent, password: string, generation: number): Promise<VaultContent> {
     const seeded = await withCachedSeeds(content);
 
-    await this.write(seeded, password);
+    await this.write(seeded, password, generation);
     return seeded;
   }
 
   // A write re-salts the vault, so the session key follows it once the write landed.
-  private async write(content: VaultContent, password: string): Promise<void> {
+  private async write(content: VaultContent, password: string, generation: number): Promise<void> {
     const { payload, key } = await this.cipher.encryptKeyed(JSON.stringify(content), password);
 
     this.writes += 1;
@@ -199,10 +221,16 @@ export class VaultService {
       throw error;
     }
 
-    this.rememberKey(key);
+    this.rememberKey(key, generation);
   }
 
-  private rememberKey(key: VaultKey): void {
+  // A key derived across a lock is dropped, so no session key outlives the session it was made for.
+  private rememberKey(key: VaultKey, generation: number): void {
+    if (this.sessionGeneration !== generation) {
+      wipeVaultKey(key);
+      return;
+    }
+
     if (this.sessionKey !== key) {
       wipeVaultKey(this.sessionKey);
     }
