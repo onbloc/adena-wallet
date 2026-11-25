@@ -50,6 +50,7 @@ import { PasswordAttemptLimiter } from '../services/password-attempt-limiter';
 import { PreferenceService } from '../services/preference.service';
 import { PriceService } from '../services/price.service';
 import { ResetMarker } from '../services/reset-marker';
+import { RestoreMarker } from '../services/restore-marker';
 import { TokenService } from '../services/token.service';
 import { TransactionService } from '../services/transaction.service';
 import { VaultService } from '../services/vault.service';
@@ -148,7 +149,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const resetMarker = new ResetMarker(keyValueStore);
   const migrationService = overrides.migrationService ?? new MigrationService(keyValueStore, secureStore);
   const walletService = overrides.walletService
-    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker);
+    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker, new RestoreMarker(keyValueStore));
   const cloudBackupService = overrides.cloudBackupService ?? new CloudBackupService(
     infra.cloudBackupStore ?? new NativeCloudBackupStore(null, CloudBackupProvider.ICLOUD),
     infra.backupCodec ?? new BackupCodec(new ScryptXChaChaVaultCipher(BACKUP_KDF_SETTINGS)),

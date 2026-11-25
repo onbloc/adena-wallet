@@ -1,5 +1,6 @@
 import { AppError, AppErrorCode, isAppError } from '../../../src/core/errors';
 import { KeyringType } from '../../../src/crypto/keyring';
+import { StorageKey } from '../../../src/migration/storage-keys';
 import { backupFileName } from '../../../src/repositories/cloud-backup/cloud-backup-store';
 import { SecureKey } from '../../../src/security/secure-keys';
 import { BACKUP_PASSWORD_SAME_AS_WALLET, fingerprintOf } from '../../../src/services/cloud-backup.service';
@@ -15,6 +16,12 @@ const codeOf = async (run: () => unknown): Promise<unknown> => {
   const error = await catchError(run);
 
   return isAppError(error) ? error.code : error;
+};
+
+const waitFor = async (condition: () => boolean): Promise<void> => {
+  for (let tries = 0; !condition() && tries < 500; tries += 1) {
+    await new Promise(resolve => setTimeout(resolve, 5));
+  }
 };
 
 const setup = async (options: Parameters<typeof createTestContainer>[0] = {}) => {
@@ -462,6 +469,41 @@ describe('CloudBackupService', () => {
     jest.restoreAllMocks();
     await target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
     expect(target.container.accountService.getAccounts()).toHaveLength(2);
+  });
+
+  it('rolls an interrupted restore back on the next launch so it can be restored again', async () => {
+    const source = await setup();
+
+    await source.container.accountService.createAccount(source.account.keyringId, KeyringType.HD_WALLET, 'Second');
+    await source.container.accountService.createAccount(source.account.keyringId, KeyringType.HD_WALLET, 'Third');
+    const created = await create(source.backup);
+    const fileName = created.kind === 'backedUp' ? created.fileName : '';
+    const target = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files } });
+    const content = await target.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+    const original = target.container.accountService.appendAccount.bind(target.container.accountService);
+    let calls = 0;
+
+    // The app dies while the second account is written: that call never returns.
+    jest.spyOn(target.container.accountService, 'appendAccount').mockImplementation((...args) => {
+      calls += 1;
+      return calls === 2 ? new Promise(() => undefined) : original(...args);
+    });
+    void target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+    await waitFor(() => calls === 2);
+    expect(await target.secureStore.hasItem(SecureKey.VAULT)).toBe(true);
+    jest.restoreAllMocks();
+
+    const relaunched = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files }, relaunch: target });
+
+    expect(await relaunched.container.walletService.getStatus()).toBe('empty');
+    expect(await relaunched.secureStore.hasItem(SecureKey.VAULT)).toBe(false);
+    expect(relaunched.container.accountService.getAccounts()).toEqual([]);
+    expect(relaunched.keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
+
+    await relaunched.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+    expect(relaunched.container.accountService.getAccounts().map(account => account.name)).toEqual(['Account 1', 'Second', 'Third']);
+    expect(relaunched.container.cloudBackupService.getLocalStatus()).toMatchObject({ kind: 'backedUp', fileName, outdated: false });
+    expect(relaunched.keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
   });
 
   it('fingerprints the account layout, ignoring names and order', () => {

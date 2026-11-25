@@ -21,9 +21,15 @@ export const createTestBackupCodec = (): BackupCodec =>
 
 // Every platform dependency is swapped for an in-memory fake.
 // `cloudBackupStoreOverride` swaps the in-memory cloud for another store (e.g. the native adapter over a mock).
-export const createTestContainer = (options: { now?: () => number; cloudBackup?: MemoryCloudBackupStoreOptions; cloudBackupStoreOverride?: CloudBackupStore } = {}) => {
-  const secureStore = new MemorySecureStore();
-  const keyValueStore = new MemoryKeyValueStore();
+// `relaunch` reuses the storage of an earlier container, like the app starting again on the same device.
+export const createTestContainer = (options: {
+  now?: () => number;
+  cloudBackup?: MemoryCloudBackupStoreOptions;
+  cloudBackupStoreOverride?: CloudBackupStore;
+  relaunch?: { secureStore: MemorySecureStore; keyValueStore: MemoryKeyValueStore };
+} = {}) => {
+  const secureStore = options.relaunch?.secureStore ?? new MemorySecureStore();
+  const keyValueStore = options.relaunch?.keyValueStore ?? new MemoryKeyValueStore();
   const gno = createFakeGnoProvider({ chainId: 'gnoland-1' });
   const http = new FakeHttpClient();
   const cloudBackupStore = new MemoryCloudBackupStore({ now: options.now, ...options.cloudBackup });

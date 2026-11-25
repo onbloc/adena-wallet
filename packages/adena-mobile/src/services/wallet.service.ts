@@ -17,6 +17,7 @@ import { createId } from '../utils/id';
 import { AccountService } from './account.service';
 import { KeyringSession } from './keyring-session';
 import { ResetMarker } from './reset-marker';
+import { RestoreMarker } from './restore-marker';
 import { VaultService } from './vault.service';
 
 // Any store that keeps data per account and must drop it when the account is removed.
@@ -60,6 +61,10 @@ export interface RestoreWalletInput {
   // Falls back to the first account when missing or not restored.
   selected?: { keyringId: string; hdIndex: number };
   password: string;
+  // Recorded in the restore marker; the backup this restore comes from.
+  backupId?: string;
+  // Runs before the restore counts as finished (e.g. saving the backup status); a throw undoes the restore.
+  onRestored?: () => void;
 }
 
 // Wallet lifecycle: create/import, lock/unlock, biometrics and keyring management.
@@ -76,12 +81,17 @@ export class WalletService {
     private readonly biometricRepository: BiometricCredentialRepository,
     private readonly preferenceRepository: PreferenceRepository,
     private readonly resetMarker?: ResetMarker,
+    private readonly restoreMarker?: RestoreMarker,
   ) {}
 
   async getStatus(): Promise<WalletStatus> {
     // An unfinished reset stays on the lock screen, where the reset can be retried.
     if (this.resetMarker?.isPending()) {
       return WalletStatus.LOCKED;
+    }
+
+    if (this.restoreMarker?.isPending()) {
+      await this.rollBackInterruptedRestore();
     }
 
     if (!(await this.vaultService.exists())) {
@@ -133,14 +143,29 @@ export class WalletService {
 
   // Rebuilds a wallet from a decrypted backup: one new vault holding every keyring, then each account at its index.
   // All or nothing: if any account cannot be rebuilt, the new vault is removed again.
-  restoreWallet({ keyrings, accounts, selected, password }: RestoreWalletInput): Promise<Account> {
+  restoreWallet({ keyrings, accounts, selected, password, backupId, onRestored }: RestoreWalletInput): Promise<Account> {
     this.validateRestoreInput(keyrings, accounts);
     this.validatePassword(password);
     const epoch = this.keyringSession.epoch;
 
     return this.accountService.runExclusive(async () => {
       this.assertCurrent(epoch);
-      const content = await this.vaultService.create(keyrings, password);
+
+      // Checked before the marker is set, so a launch-time rollback can never remove a wallet that was already here.
+      if (await this.vaultService.exists()) {
+        throw new AppError(AppErrorCode.WALLET_ALREADY_EXISTS, 'A wallet already exists on this device');
+      }
+
+      this.restoreMarker?.markPending(backupId ?? null);
+      let content: VaultContent;
+
+      try {
+        content = await this.vaultService.create(keyrings, password);
+      }
+      catch (error) {
+        this.restoreMarker?.clear();
+        throw error;
+      }
 
       try {
         this.assertCurrent(epoch);
@@ -160,6 +185,8 @@ export class WalletService {
           ?? this.accountService.getAccounts()[0];
         const selectedAccount = this.accountService.selectAccount(current.id);
 
+        onRestored?.();
+        this.restoreMarker?.clear();
         // Like createWallet, enabling biometrics right after the restore can skip another scrypt run.
         this.createdWith = { digest: digestPassword(password), epoch: this.keyringSession.epoch, vaultRevision: this.vaultService.revision };
         return selectedAccount;
@@ -168,9 +195,26 @@ export class WalletService {
         this.keyringSession.close();
         this.accountService.clear();
         // The restore error is what the user needs to see, even if the cleanup fails too.
-        await this.vaultService.destroy().catch(() => undefined);
+        // A failed cleanup keeps the marker, so the next launch retries it.
+        await this.vaultService.destroy().then(() => this.restoreMarker?.clear(), () => undefined);
         throw error;
       }
+    });
+  }
+
+  // The backup cannot be read again without its password, so a restore cut short is undone
+  // and the app returns to onboarding. Queued behind a restore still running in this process.
+  private rollBackInterruptedRestore(): Promise<void> {
+    return this.accountService.runExclusive(async () => {
+      if (!this.restoreMarker?.isPending()) {
+        return;
+      }
+
+      this.createdWith = null;
+      this.keyringSession.close();
+      await this.vaultService.destroy();
+      this.accountService.clear();
+      this.restoreMarker.clear();
     });
   }
 

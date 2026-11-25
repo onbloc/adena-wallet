@@ -11,6 +11,7 @@ export const StorageKey = {
   NFT_PREFERENCES: 'nft-preferences',
   PENDING_BROADCASTS: 'pending-broadcasts',
   RESET_PENDING: 'reset.pending',
+  RESTORE_PENDING: 'restore.pending',
   CLOUD_BACKUP: 'cloud-backup',
 } as const;
 

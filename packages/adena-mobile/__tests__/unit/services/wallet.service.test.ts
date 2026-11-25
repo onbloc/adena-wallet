@@ -3,6 +3,7 @@ import { deriveKeyPair } from '../../../src/crypto/key-pair';
 import { KeyringType } from '../../../src/crypto/keyring';
 import { isValidMnemonic, mnemonicToSeed } from '../../../src/crypto/mnemonic';
 import { isAvatarColor } from '../../../src/domain/account';
+import { StorageKey } from '../../../src/migration/storage-keys';
 import { StorageAccountRepository } from '../../../src/repositories/account.repository';
 import { SecureBiometricCredentialRepository } from '../../../src/repositories/biometric-credential.repository';
 import { StoragePreferenceRepository } from '../../../src/repositories/preference.repository';
@@ -891,9 +892,16 @@ describe('WalletService.restoreWallet', () => {
     jest.restoreAllMocks();
   });
 
-  it('does not overwrite an existing wallet', async () => {
-    const { wallet } = await setup();
+  it('does not overwrite an existing wallet, nor leave a marker that would remove it on the next launch', async () => {
+    const { wallet, secureStore, keyValueStore } = await setup();
 
     expect(await codeOf(() => wallet.restoreWallet({ keyrings: [...keyrings], accounts: [], password: TEST_PASSWORD }))).toBe('WALLET_ALREADY_EXISTS');
+    expect(keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
+
+    const relaunched = createTestContainer({ relaunch: { secureStore, keyValueStore } });
+
+    expect(await relaunched.container.walletService.getStatus()).toBe('locked');
+    await relaunched.container.walletService.unlock(TEST_PASSWORD);
+    expect(relaunched.container.accountService.getAccounts()).toHaveLength(1);
   });
 });

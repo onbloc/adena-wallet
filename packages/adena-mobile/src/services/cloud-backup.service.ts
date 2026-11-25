@@ -272,9 +272,8 @@ export class CloudBackupService {
         hdIndex: account.hdIndex,
         ...(isAvatarColor(account.avatarColor) && { avatarColor: account.avatarColor }),
       }));
-    const selected = await this.walletService.restoreWallet({ keyrings, accounts, selected: content.selected, password: walletPassword });
-
-    this.stateRepository.save({
+    // Saved inside the restore, so an interrupted one leaves neither a partial wallet nor a stale status.
+    const saveState = (): void => this.stateRepository.save({
       backupId: content.backupId,
       fileName: backupFileName(content.backupId),
       backedUpAt: content.createdAt,
@@ -283,7 +282,7 @@ export class CloudBackupService {
       ...countKeyrings(content.keyrings),
     });
 
-    return selected;
+    return this.walletService.restoreWallet({ keyrings, accounts, selected: content.selected, password: walletPassword, backupId: content.backupId, onRestored: saveState });
   }
 
   // The plaintext header of a cloud file, null when it is gone, or the change when no header can be read.
