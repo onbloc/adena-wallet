@@ -4,8 +4,9 @@ import { percentOfBalance, searchSwapTokens, sortSwapTokens, SwapScreen } from '
 import { GNO_FEE_POLICY } from '../../../../src/domain/fee';
 import { SwapToken } from '../../../../src/domain/swap';
 import { PENDING_NOTICE, PENDING_POLL_INTERVAL_MS, REPLACEABLE_NOTICE } from '../../../../src/hooks/use-pending-broadcast';
-import { SwapMaxResult } from '../../../../src/services/swap.service';
-import { GnoswapFakeOptions, GNS, installGnoswapFakes } from '../../../helpers/gnoswap-fakes';
+import { queryKeys } from '../../../../src/queries/query-keys';
+import { SWAP_QUOTE_TTL_MS, SwapMaxResult } from '../../../../src/services/swap.service';
+import { GnoswapFakeOptions, GNS, installGnoswapFakes, qeval } from '../../../helpers/gnoswap-fakes';
 import { renderScreen, resetStores, setupWallet, toastMessage } from '../../../helpers/render-screen';
 import { createTestContainer } from '../../../helpers/test-container';
 
@@ -252,6 +253,49 @@ describe('SwapScreen', () => {
     await typeAmount('1');
     expect(await screen.findByText('Retry quote', undefined, LOOKUP)).toBeTruthy();
     expect(screen.queryByText('Insufficient liquidity')).toBeNull();
+  });
+
+  it('stops offering review when a background quote refresh fails, until a retry succeeds', async () => {
+    let down = false;
+    const { client } = await setup({
+      drySwap: (expression) => {
+        if (down) {
+          throw new Error('socket hang up');
+        }
+
+        return qeval.drySwapSplit.replace('"1000000"', `"${/"(\d+)", "EXACT_IN"/.exec(expression)?.[1]}"`);
+      },
+    });
+
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    down = true;
+    await act(() => client.refetchQueries({ queryKey: [...queryKeys.all, 'swap-quote'] }));
+
+    expect(await screen.findByText('Retry quote', undefined, LOOKUP)).toBeTruthy();
+    expect(screen.queryByText('Review swap')).toBeNull();
+    expect(screen.queryByText('4.15136')).toBeNull();
+    down = false;
+    await press('Retry quote');
+    expect(await screen.findByText('Review swap', undefined, LOOKUP)).toBeTruthy();
+  });
+
+  it('offers a retry instead of review once the shown quote is past its TTL', async () => {
+    await setup();
+    await pickGns();
+    // The screen's clock runs past the TTL; the service still stamps quotes with the real time.
+    const now = jest.spyOn(Date, 'now').mockReturnValue(Date.now() + SWAP_QUOTE_TTL_MS + 1000);
+
+    try {
+      await typeAmount('1');
+      expect(await screen.findByText('Retry quote', undefined, LOOKUP)).toBeTruthy();
+      expect(screen.queryByText('Review swap')).toBeNull();
+      expect(screen.getByText('The quote expired. Fetch a new one.')).toBeTruthy();
+    }
+    finally {
+      now.mockRestore();
+    }
   });
 
   it('reviews and submits the swap, then refreshes', async () => {

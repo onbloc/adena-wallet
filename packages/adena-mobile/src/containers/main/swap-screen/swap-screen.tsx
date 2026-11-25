@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { ReactElement, useCallback, useMemo, useRef, useState } from 'react';
+import React, { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { applyKeypadKey, KeypadKey } from '../../../components/molecules';
 import { SwapDetailsView, SwapPage, SwapPercent, SwapReviewView, SwapTokenView } from '../../../components/pages';
@@ -41,7 +41,7 @@ import {
   SwapQuoteStatus,
 } from '../../../presenters/swap.presenter';
 import { NO_ID_KEY, queryKeys } from '../../../queries/query-keys';
-import { PreparedSwap, SwapMaxResult } from '../../../services/swap.service';
+import { PreparedSwap, SWAP_QUOTE_TTL_MS, SwapMaxResult } from '../../../services/swap.service';
 import { useToastStore } from '../../../stores/toast.store';
 import { formatPackagePath } from '../../../utils/address';
 import { compareAmount, formatTokenAmount, isPositiveAmount, toBaseUnit, toDisplayAmount } from '../../../utils/amount';
@@ -159,10 +159,25 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     retry: false,
   });
   // A quote for another amount, side or pair is never shown or used.
-  const quote = quoteQuery.data && quoteQuery.data.exactType === exactType && quoteQuery.data.requestedAmount === amountRaw
+  const currentQuote = quoteQuery.data && quoteQuery.data.exactType === exactType && quoteQuery.data.requestedAmount === amountRaw
     && quoteQuery.data.inputTokenId === input?.id && quoteQuery.data.outputTokenId === output?.id
     ? quoteQuery.data
     : undefined;
+  const [expiredQuotedAt, setExpiredQuotedAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!currentQuote) {
+      return undefined;
+    }
+
+    const timer = setTimeout(() => setExpiredQuotedAt(currentQuote.quotedAt), Math.max(0, currentQuote.quotedAt + SWAP_QUOTE_TTL_MS - Date.now()));
+
+    return (): void => clearTimeout(timer);
+  }, [currentQuote]);
+
+  const quoteExpired = currentQuote !== undefined && expiredQuotedAt === currentQuote.quotedAt;
+  // Neither is a failed refetch's leftover nor an expired quote offered for review.
+  const quote = currentQuote && !quoteQuery.isError && !quoteExpired ? currentQuote : undefined;
   const slippageBps = slippageToBps(effectiveSlippage(settings));
   const limits = quote ? swapLimits(quote, slippageBps) : undefined;
   // What may leave the wallet: the typed input, or EXACT_OUT's amountInMax once quoted.
@@ -174,7 +189,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
       return SwapQuoteStatus.READY;
     }
 
-    if (quoteQuery.isError && quoteEnabled && !quoteQuery.isFetching) {
+    if ((quoteQuery.isError || quoteExpired) && quoteEnabled && !quoteQuery.isFetching) {
       return isAppError(quoteQuery.error, AppErrorCode.SWAP_NO_ROUTE) ? SwapQuoteStatus.NO_ROUTE : SwapQuoteStatus.ERROR;
     }
 
@@ -549,7 +564,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     ? 'Couldn’t load the token list. Try again later.'
     : maxError ?? (prepare.error
       ? toErrorMessage(prepare.error)
-      : quoteStatus === SwapQuoteStatus.ERROR ? toErrorMessage(quoteQuery.error) : undefined);
+      : quoteStatus === SwapQuoteStatus.ERROR ? (quoteQuery.isError ? toErrorMessage(quoteQuery.error) : 'The quote expired. Fetch a new one.') : undefined);
   const approximateNotice = maxApproximate && input && swapConfig
     ? `Couldn’t estimate the network fee, so ${toDisplayAmount(swapConfig.nativeFeeReserve, input.decimals)} ${input.symbol} is kept back. The amount is approximate.`
     : undefined;
