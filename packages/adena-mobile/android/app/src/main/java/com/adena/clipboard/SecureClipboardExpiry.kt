@@ -72,6 +72,9 @@ internal object SecureClipboardExpiry {
     return true
   }
 
+  /** Drops the marker and the alarm without touching the clipboard. */
+  fun cancel(context: Context) = forget(context)
+
   private fun isExpired(context: Context): Boolean {
     val prefs = prefs(context)
     val savedBoot = prefs.getInt(KEY_BOOT_COUNT, -1)

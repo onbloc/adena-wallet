@@ -47,6 +47,16 @@ const wipeClipboard = (): boolean => {
   }
 };
 
+// Stops the native expiry from firing later; a missing or failing module never blocks the wipe.
+const cancelNativeExpiry = (): void => {
+  try {
+    NativeAdenaSecureClipboard?.cancelExpiry();
+  }
+  catch {
+    // The native expiry only clears a clip that still matches the secret.
+  }
+};
+
 const wipeIfStillCopied = async (value: string): Promise<void> => {
   try {
     if (await Clipboard.getString() === value) {
@@ -70,6 +80,7 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
     clearTimeout(timerRef.current);
     timerRef.current = undefined;
     copiedRef.current = undefined;
+    cancelNativeExpiry();
   }, []);
 
   const clear = useCallback(async (): Promise<void> => {
@@ -83,6 +94,10 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
     timerRef.current = undefined;
 
     const wiped = Date.now() < copied.expiresAt && wipeClipboard();
+
+    if (wiped) {
+      cancelNativeExpiry();
+    }
 
     if (appStateRef.current !== 'active') {
       // Keep the secret so the next `active` can confirm the wipe.
@@ -152,7 +167,9 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
   // Unmount only (no deps), so effect re-runs never wipe a secret the user is still pasting.
   useEffect(() => (): void => {
     if (copiedRef.current !== undefined && Date.now() < copiedRef.current.expiresAt) {
-      wipeClipboard();
+      if (wipeClipboard()) {
+        cancelNativeExpiry();
+      }
     }
 
     clearTimeout(timerRef.current);

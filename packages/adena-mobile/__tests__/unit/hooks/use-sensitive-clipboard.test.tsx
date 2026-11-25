@@ -7,7 +7,8 @@ import { useToastStore } from '../../../src/stores/toast.store';
 
 const SECRET = 'abandon ability able about above absent absorb abstract absurd abuse access accident';
 
-const mockNative = { current: null as { setSensitiveString: jest.Mock } | null };
+const mockNative = { current: null as { setSensitiveString: jest.Mock; cancelExpiry: jest.Mock } | null };
+const createNative = () => ({ setSensitiveString: jest.fn(), cancelExpiry: jest.fn() });
 
 jest.mock('../../../src/native/NativeAdenaSecureClipboard', () => ({
   __esModule: true,
@@ -184,7 +185,7 @@ describe('useSensitiveClipboard', () => {
 
   describe('native sensitive copy', () => {
     it('marks the secret sensitive through the native module', async () => {
-      mockNative.current = { setSensitiveString: jest.fn() };
+      mockNative.current = createNative();
       const { result } = await renderHook(() => useSensitiveClipboard());
 
       await act(async () => result.current.copy(SECRET, 'Copied'));
@@ -194,7 +195,7 @@ describe('useSensitiveClipboard', () => {
     });
 
     it('keeps the background, deferred-active and unmount handling', async () => {
-      mockNative.current = { setSensitiveString: jest.fn() };
+      mockNative.current = createNative();
       const { result, unmount } = await renderHook(() => useSensitiveClipboard());
 
       expect(result.current.outlivesBackground).toBe(true);
@@ -214,7 +215,7 @@ describe('useSensitiveClipboard', () => {
     });
 
     it('wipes on background again when a later native copy fails', async () => {
-      mockNative.current = { setSensitiveString: jest.fn() };
+      mockNative.current = createNative();
       const { result } = await renderHook(() => useSensitiveClipboard());
 
       await act(async () => result.current.copy(SECRET, 'Copied'));
@@ -229,11 +230,10 @@ describe('useSensitiveClipboard', () => {
     });
 
     it('falls back to the plain clipboard when the module throws', async () => {
-      mockNative.current = {
-        setSensitiveString: jest.fn(() => {
-          throw new Error('unavailable');
-        }),
-      };
+      mockNative.current = createNative();
+      mockNative.current.setSensitiveString.mockImplementation(() => {
+        throw new Error('unavailable');
+      });
       const { result } = await renderHook(() => useSensitiveClipboard());
 
       await act(async () => result.current.copy(SECRET, 'Copied'));
@@ -241,6 +241,111 @@ describe('useSensitiveClipboard', () => {
       // The plain fallback has no expiry, so it is wiped on background.
       await act(async () => emitAppState('background'));
       expect(Clipboard.setString).toHaveBeenLastCalledWith('');
+    });
+  });
+
+  describe('native expiry cancel', () => {
+    const throwingCancel = (): void => {
+      mockNative.current!.cancelExpiry.mockImplementation(() => {
+        throw new Error('unavailable');
+      });
+    };
+
+    const renderNativeAndCopy = async (failCopy = false) => {
+      mockNative.current = createNative();
+
+      if (failCopy) {
+        mockNative.current.setSensitiveString.mockImplementation(() => {
+          throw new Error('unavailable');
+        });
+      }
+
+      const hook = await renderHook(() => useSensitiveClipboard());
+
+      await act(async () => hook.result.current.copy(SECRET, 'Copied'));
+      return hook;
+    };
+
+    it.each([false, true])('clear() wipes and cancels the native expiry (cancel throws: %s)', async (throws) => {
+      const { result } = await renderNativeAndCopy();
+
+      if (throws) {
+        throwingCancel();
+      }
+
+      await act(async () => result.current.clear());
+      expect(Clipboard.setString).toHaveBeenLastCalledWith('');
+      expect(mockNative.current!.cancelExpiry).toHaveBeenCalled();
+    });
+
+    it.each([false, true])('the TTL wipe cancels the native expiry (cancel throws: %s)', async (throws) => {
+      await renderNativeAndCopy();
+
+      if (throws) {
+        throwingCancel();
+      }
+
+      jest.mocked(Clipboard.getString).mockResolvedValue(SECRET);
+
+      await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
+      expect(Clipboard.setString).toHaveBeenLastCalledWith('');
+      expect(mockNative.current!.cancelExpiry).toHaveBeenCalled();
+    });
+
+    it('cancels the native expiry when the TTL finds replaced content', async () => {
+      await renderNativeAndCopy();
+      jest.mocked(Clipboard.getString).mockResolvedValue('something else');
+
+      await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
+      expect(Clipboard.setString).not.toHaveBeenCalled();
+      expect(mockNative.current!.cancelExpiry).toHaveBeenCalled();
+    });
+
+    it('cancels the native expiry when the next active finds replaced content', async () => {
+      await renderNativeAndCopy();
+      await act(async () => emitAppState('background'));
+      await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
+      expect(mockNative.current!.cancelExpiry).not.toHaveBeenCalled();
+
+      jest.mocked(Clipboard.getString).mockResolvedValue('something else');
+      await act(async () => emitAppState('active'));
+      expect(Clipboard.setString).not.toHaveBeenCalled();
+      expect(mockNative.current!.cancelExpiry).toHaveBeenCalled();
+    });
+
+    it.each([false, true])('the background wipe cancels the native expiry (cancel throws: %s)', async (throws) => {
+      await renderNativeAndCopy(true);
+
+      if (throws) {
+        throwingCancel();
+      }
+
+      await act(async () => emitAppState('background'));
+      expect(Clipboard.setString).toHaveBeenLastCalledWith('');
+      expect(mockNative.current!.cancelExpiry).toHaveBeenCalled();
+    });
+
+    it.each([false, true])('the unmount wipe cancels the native expiry (cancel throws: %s)', async (throws) => {
+      const { unmount } = await renderNativeAndCopy();
+
+      if (throws) {
+        throwingCancel();
+      }
+
+      await unmount();
+      expect(Clipboard.setString).toHaveBeenLastCalledWith('');
+      expect(mockNative.current!.cancelExpiry).toHaveBeenCalled();
+    });
+
+    it('keeps the native expiry armed when unmounting past the window', async () => {
+      const { unmount } = await renderNativeAndCopy();
+
+      await act(async () => emitAppState('background'));
+      jest.setSystemTime(Date.now() + SENSITIVE_CLIPBOARD_TTL_MS);
+
+      await unmount();
+      expect(Clipboard.setString).not.toHaveBeenCalled();
+      expect(mockNative.current!.cancelExpiry).not.toHaveBeenCalled();
     });
   });
 });

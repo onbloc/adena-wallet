@@ -30,4 +30,9 @@
   });
 }
 
+// The pasteboard expiration date covers iOS; there is no marker to drop.
+- (void)cancelExpiry
+{
+}
+
 @end

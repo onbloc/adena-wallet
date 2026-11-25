@@ -6,6 +6,8 @@ import { TurboModuleRegistry } from 'react-native';
 // Android hides it from clipboard previews (API 33+); iOS keeps it off Universal Clipboard.
 export interface Spec extends TurboModule {
   setSensitiveString(value: string, expiresInMs: number): void;
+  // Drops the pending expiry once JS has wiped or let go of the copy (no-op on iOS).
+  cancelExpiry(): void;
 }
 
 export default TurboModuleRegistry.get<Spec>('AdenaSecureClipboard');

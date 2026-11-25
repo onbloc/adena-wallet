@@ -47,6 +47,11 @@ class AdenaSecureClipboardModule(reactContext: ReactApplicationContext) :
     handler.postDelayed(clearTask, delayMs)
   }
 
+  override fun cancelExpiry() {
+    handler.removeCallbacks(clearTask)
+    SecureClipboardExpiry.cancel(reactApplicationContext)
+  }
+
   override fun onHostResume() {
     clearIfExpired()
     watchFocus(reactApplicationContext.currentActivity?.window?.decorView)
