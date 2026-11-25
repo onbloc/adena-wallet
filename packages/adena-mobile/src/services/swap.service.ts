@@ -156,7 +156,7 @@ export class SwapService {
       repository.findRouteCandidates(network, config, request),
       repository.getRouterFeeBps(network, config).catch(() => null),
     ]);
-    let routeRejected = false;
+    let transportFailed = false;
     const results = await Promise.all(candidates.map(async (candidate) => {
       let encoded: ReturnType<typeof encodeRoutes>;
 
@@ -165,7 +165,6 @@ export class SwapService {
         encoded = encodeRoutes(candidate.routes);
       }
       catch {
-        routeRejected = true;
         return null;
       }
 
@@ -173,7 +172,6 @@ export class SwapService {
         const dry = await repository.drySwap(network, config, { ...request, ...encoded });
 
         if (!this.fills(exactType, amount, dry, hopCount(candidate.routes))) {
-          routeRejected = true;
           return null;
         }
 
@@ -181,8 +179,8 @@ export class SwapService {
       }
       catch (error) {
         // Only the router's own answer refuses the route; timeouts and transport failures say nothing about it.
-        if (error instanceof SwapDataError) {
-          routeRejected = true;
+        if (!(error instanceof SwapDataError)) {
+          transportFailed = true;
         }
 
         return null;
@@ -194,9 +192,10 @@ export class SwapService {
     const best = results.reduce<(typeof results)[number]>((current, next) => (next && (!current || better(next, current)) ? next : current), null);
 
     if (!best) {
-      throw candidates.length === 0 || routeRejected
-        ? new AppError(AppErrorCode.SWAP_NO_ROUTE, 'Not enough liquidity for this swap')
-        : new AppError(AppErrorCode.SWAP_QUOTE_FAILED, 'Couldn’t get a quote. Check your connection and try again.');
+      // No liquidity only when every candidate was refused; any unanswered one leaves a retry.
+      throw transportFailed
+        ? new AppError(AppErrorCode.SWAP_QUOTE_FAILED, 'Couldn’t get a quote. Check your connection and try again.')
+        : new AppError(AppErrorCode.SWAP_NO_ROUTE, 'Not enough liquidity for this swap');
     }
 
     const routerFeeBps = feeBps ?? 0;

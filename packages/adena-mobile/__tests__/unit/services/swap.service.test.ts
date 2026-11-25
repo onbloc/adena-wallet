@@ -126,6 +126,25 @@ describe('SwapService', () => {
     await expectCode(vm.service.getQuote({ network: vm.network, input: vm.gnot, output: vm.gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
   });
 
+  it('offers a retry when one pool candidate is refused and the others time out', async () => {
+    let calls = 0;
+    const { service, network, gnot, gns, dryExpressions } = await setup({
+      route: null,
+      drySwap: () => {
+        calls += 1;
+
+        if (calls === 1) {
+          throw new TM2Error('unknown error: /vm.VMError', 'panic: pool does not exist');
+        }
+
+        throw new Error('timeout');
+      },
+    });
+
+    await expectCode(service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_QUOTE_FAILED);
+    expect(dryExpressions.length).toBeGreaterThan(1);
+  });
+
   it('rejects the same token on both sides and invalid amounts', async () => {
     const { service, network, gnot, tokens } = await setup();
     const wugnot = tokens.find(token => token.id === WUGNOT)!;
