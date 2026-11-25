@@ -538,8 +538,8 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
         priceImpactHigh: isHighPriceImpact(quote.priceImpactPercent),
         slippageLabel,
         limit: quote.exactType === SwapType.EXACT_OUT
-          ? { label: 'Max. sent', value: `${formatSwapAmount(displayAmount(limits.maxAmountIn, input.decimals))} ${input.symbol}` }
-          : { label: 'Min. received', value: `${formatSwapAmount(displayAmount(limits.minAmountOut, output.decimals))} ${output.symbol}` },
+          ? { label: 'Max. sent', value: `${formatTokenAmount(limits.maxAmountIn, input.decimals)} ${input.symbol}` }
+          : { label: 'Min. received', value: `${formatTokenAmount(limits.minAmountOut, output.decimals)} ${output.symbol}` },
         routerFeeLabel: `${formatPercent(quote.routerFeeBps / 100)} · ${formatSwapAmount(displayAmount(routerFeeOf(quote.amountOut, quote.routerFeeBps), output.decimals))} ${output.symbol}`,
         routes: buildRouteViews(quote, tokens),
       }
@@ -552,8 +552,9 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
 
     const { input: paid, output: received, quote: signed } = prepared;
     const exactOut = signed.exactType === SwapType.EXACT_OUT;
-    const outLabel = `${formatSwapAmount(displayAmount(signed.amountOut, received.decimals))} ${received.symbol}`;
-    const minLabel = `${formatSwapAmount(displayAmount(prepared.minAmountOut, received.decimals))} ${received.symbol}`;
+    // Signed amounts and limits at full precision; only the estimated output is compact.
+    const outLabel = `${exactOut ? formatTokenAmount(signed.amountOut, received.decimals) : formatSwapAmount(displayAmount(signed.amountOut, received.decimals))} ${received.symbol}`;
+    const minLabel = `${formatTokenAmount(prepared.minAmountOut, received.decimals)} ${received.symbol}`;
     const maxLabel = `${formatTokenAmount(prepared.maxAmountIn, paid.decimals)} ${paid.symbol}`;
     const routeLabel = buildRouteViews(signed, tokens)
       .map(view => `${view.share} ${view.steps.map(step => (step.fee ? `› ${step.symbol} (${step.fee})` : step.symbol)).join(' ')}`)

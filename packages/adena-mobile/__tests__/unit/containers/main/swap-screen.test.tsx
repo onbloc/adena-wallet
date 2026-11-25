@@ -190,6 +190,18 @@ describe('SwapScreen', () => {
     expect(screen.getByText(/is wrapped for the swap; what it doesn’t use stays in your wallet as wugnot/)).toBeTruthy();
   });
 
+  it('shows the exact output in the review at full precision', async () => {
+    await setup();
+
+    await pickGns();
+    await fireEvent.press(screen.getByRole('button', { name: 'Buy amount' }));
+    await typeAmount('4.123456');
+    await within(screen.getByTestId('swap-sell')).findByText('0.962929', undefined, LOOKUP);
+    await press('Review swap');
+    await screen.findByText('Confirm swap', undefined, LOOKUP);
+    expect(screen.getByText('4.123456 GNS')).toBeTruthy();
+  });
+
   it('checks the balance against amountInMax for an exact output', async () => {
     const { env, address } = await setup();
 
@@ -327,7 +339,7 @@ describe('SwapScreen', () => {
     await press('Review swap');
     expect(await screen.findByText('Confirm swap', undefined, LOOKUP)).toBeTruthy();
     // Auto 0.5% of 4,151,365.
-    expect(screen.getByText('4.1306 GNS')).toBeTruthy();
+    expect(screen.getByText('4.130608 GNS')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('review-confirm'));
     await waitFor(() => expect(toastMessage()).toBe('Swap confirmed'), LOOKUP);
     expect(env.gno.state.broadcasts).toHaveLength(1);
@@ -585,8 +597,8 @@ describe('SwapScreen', () => {
     await typeAmount('1');
     await screen.findByText('4.15136', undefined, LOOKUP);
     await fireEvent.press(screen.getByTestId('swap-details-toggle'));
-    // 4,151,365 x 0.99 = 4,109,851.
-    expect(screen.getByText('4.10985 GNS')).toBeTruthy();
+    // 4,151,365 x 0.99 = 4,109,851, shown in full.
+    expect(screen.getByText('4.109851 GNS')).toBeTruthy();
     expect(screen.getByText('1%')).toBeTruthy();
   });
 
