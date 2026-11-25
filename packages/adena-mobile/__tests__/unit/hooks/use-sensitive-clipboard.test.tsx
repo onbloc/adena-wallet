@@ -197,7 +197,9 @@ describe('useSensitiveClipboard', () => {
       mockNative.current = { setSensitiveString: jest.fn() };
       const { result, unmount } = await renderHook(() => useSensitiveClipboard());
 
+      expect(result.current.outlivesBackground).toBe(true);
       await act(async () => result.current.copy(SECRET, 'Copied'));
+      // The native copy expires on its own, so backgrounding keeps it pasteable elsewhere.
       await act(async () => emitAppState('background'));
       await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
       expect(Clipboard.setString).not.toHaveBeenCalled();
@@ -221,6 +223,9 @@ describe('useSensitiveClipboard', () => {
 
       await act(async () => result.current.copy(SECRET, 'Copied'));
       expect(Clipboard.setString).toHaveBeenCalledWith(SECRET);
+      // The plain fallback has no expiry, so it is wiped on background.
+      await act(async () => emitAppState('background'));
+      expect(Clipboard.setString).toHaveBeenLastCalledWith('');
     });
   });
 });

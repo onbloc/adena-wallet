@@ -37,8 +37,6 @@ const writeSecret = (value: string, ttlMs: number): boolean => {
   return false;
 };
 
-const OUTLIVES_BACKGROUND = Boolean(NativeAdenaSecureClipboard);
-
 const wipeClipboard = (): boolean => {
   try {
     Clipboard.setString('');
@@ -161,5 +159,5 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
     copiedRef.current = undefined;
   }, []);
 
-  return { copy, clear, outlivesBackground: OUTLIVES_BACKGROUND };
+  return { copy, clear, outlivesBackground: Boolean(NativeAdenaSecureClipboard) };
 };
