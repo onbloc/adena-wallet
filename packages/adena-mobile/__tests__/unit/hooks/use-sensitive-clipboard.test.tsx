@@ -63,18 +63,41 @@ describe('useSensitiveClipboard', () => {
     expect(Clipboard.setString).toHaveBeenCalledTimes(1);
   });
 
-  it.each<AppStateStatus>(['inactive', 'background'])('keeps the secret on %s so it can be pasted elsewhere', async (state) => {
+  it('keeps the secret while the app is only inactive', async () => {
     await renderAndCopy();
 
-    await act(async () => emitAppState(state));
+    await act(async () => emitAppState('inactive'));
     await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS - 1));
 
     expect(Clipboard.setString).toHaveBeenCalledTimes(1);
   });
 
-  it('defers an expiry missed in the background to the next active, then forgets the secret', async () => {
-    await renderAndCopy();
+  it('wipes the secret on background, since nothing would clear it at the deadline there', async () => {
+    const { result } = await renderAndCopy();
+
+    expect(result.current.outlivesBackground).toBe(false);
     await act(async () => emitAppState('background'));
+    expect(Clipboard.setString).toHaveBeenLastCalledWith('');
+
+    // Remaining backgrounded past the deadline leaves nothing to clean up.
+    await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
+    await act(async () => emitAppState('active'));
+    expect(Clipboard.setString).toHaveBeenCalledTimes(2);
+  });
+
+  it('wipes on background a secret whose expiry was deferred while inactive', async () => {
+    await renderAndCopy();
+
+    await act(async () => emitAppState('inactive'));
+    await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
+    expect(Clipboard.setString).toHaveBeenCalledTimes(1);
+    await act(async () => emitAppState('background'));
+    expect(Clipboard.setString).toHaveBeenLastCalledWith('');
+  });
+
+  it('defers an expiry missed while inactive to the next active, then forgets the secret', async () => {
+    await renderAndCopy();
+    await act(async () => emitAppState('inactive'));
     await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
     expect(Clipboard.getString).not.toHaveBeenCalled();
     expect(Clipboard.setString).toHaveBeenCalledTimes(1);
@@ -84,7 +107,7 @@ describe('useSensitiveClipboard', () => {
     expect(Clipboard.setString).toHaveBeenLastCalledWith('');
     expect(Clipboard.setString).toHaveBeenCalledTimes(2);
 
-    await act(async () => emitAppState('background'));
+    await act(async () => emitAppState('inactive'));
     await act(async () => emitAppState('active'));
     expect(Clipboard.getString).toHaveBeenCalledTimes(1);
     expect(Clipboard.setString).toHaveBeenCalledTimes(2);
@@ -92,7 +115,7 @@ describe('useSensitiveClipboard', () => {
 
   it('does not wipe unrelated content on the next active after a missed expiry', async () => {
     await renderAndCopy();
-    await act(async () => emitAppState('background'));
+    await act(async () => emitAppState('inactive'));
     await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
 
     jest.mocked(Clipboard.getString).mockResolvedValue('something else');

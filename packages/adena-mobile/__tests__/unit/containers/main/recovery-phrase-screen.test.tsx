@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RecoveryPhraseScreen } from '../../../../src/containers/main/recovery-phrase-screen';
 import { SENSITIVE_CLIPBOARD_TTL_MS } from '../../../../src/hooks/use-sensitive-clipboard';
+import { useToastStore } from '../../../../src/stores/toast.store';
 import { createWrapper } from '../../../helpers/query-wrapper';
 
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
@@ -120,47 +121,29 @@ describe('RecoveryPhraseScreen', () => {
     expect(screen.getByRole('button', { name: 'Show recovery phrase' })).toBeTruthy();
   });
 
-  it('keeps the copied phrase while backgrounded so it can be pasted in another app', async () => {
+  it('wipes the copied phrase once the app goes to the background', async () => {
     jest.useFakeTimers();
     await revealAndCopy();
+    expect(useToastStore.getState().toast?.message).toBe('Recovery phrase copied. The clipboard clears in 60 seconds or when you leave Adena.');
 
+    // Without a native expiry nothing could clear it at the deadline while backgrounded.
     await act(async () => emitAppState('background'));
-
-    expect(Clipboard.setString).toHaveBeenCalledTimes(1);
-  });
-
-  it('wipes the phrase on the next active when the window expired in the background', async () => {
-    jest.useFakeTimers();
-    await revealAndCopy();
-    await act(async () => emitAppState('background'));
-    // Android 10+ and iOS return '' to a backgrounded app, so the expiry is deferred.
-    jest.mocked(Clipboard.getString).mockResolvedValue('');
-    await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
-    expect(Clipboard.setString).toHaveBeenCalledTimes(1);
-
-    jest.mocked(Clipboard.getString).mockResolvedValue(MNEMONIC);
-    await act(async () => emitAppState('active'));
     expect(Clipboard.setString).toHaveBeenLastCalledWith('');
 
-    // Verified once; later state changes leave the clipboard alone.
     jest.mocked(Clipboard.setString).mockClear();
-    await act(async () => emitAppState('background'));
+    await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
     await act(async () => emitAppState('active'));
     expect(Clipboard.setString).not.toHaveBeenCalled();
   });
 
-  it('does not wipe unrelated clipboard content once the 60 second window has passed', async () => {
+  it('wipes on background a phrase whose window passed while the app was inactive', async () => {
     jest.useFakeTimers();
     await revealAndCopy();
-    // Timers are suspended in the background: the window passes without the timer firing.
+    // Timers are suspended while inactive: the window passes without the timer firing.
     await act(async () => emitAppState('inactive'));
     jest.setSystemTime(Date.now() + SENSITIVE_CLIPBOARD_TTL_MS);
     await act(async () => emitAppState('background'));
-    expect(Clipboard.setString).toHaveBeenCalledTimes(1);
-
-    jest.mocked(Clipboard.getString).mockResolvedValue('something else');
-    await act(async () => emitAppState('active'));
-    expect(Clipboard.setString).toHaveBeenCalledTimes(1);
+    expect(Clipboard.setString).toHaveBeenLastCalledWith('');
   });
 
   it('wipes the copied phrase when the screen unmounts inside the window', async () => {

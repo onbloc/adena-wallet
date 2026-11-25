@@ -8,6 +8,8 @@ export const SENSITIVE_CLIPBOARD_TTL_MS = 60_000;
 
 export interface SensitiveClipboard {
   copy: (value: string, message: string) => void;
+  // False when nothing can clear the secret while the app is backgrounded, so it is wiped on leaving.
+  outlivesBackground: boolean;
   // Wipes the copied secret; while the app is not active the wipe is re-checked on the next `active`.
   clear: () => Promise<void>;
 }
@@ -15,7 +17,16 @@ export interface SensitiveClipboard {
 interface CopiedSecret {
   value: string;
   expiresAt: number;
+  expiresNatively: boolean;
 }
+
+// The plain clipboard has no expiry of its own, and JS timers pause in the background.
+const writeSecret = (value: string): boolean => {
+  Clipboard.setString(value);
+  return false;
+};
+
+const OUTLIVES_BACKGROUND = false;
 
 const wipeClipboard = (): boolean => {
   try {
@@ -38,8 +49,8 @@ const wipeIfStillCopied = async (value: string): Promise<void> => {
   }
 };
 
-// Backgrounding keeps the secret for the TTL so it can be pasted elsewhere; the clipboard reads as ''
-// while backgrounded (Android 10+, iOS), so an expiry missed there is checked on the next `active`.
+// The TTL can be enforced in the background only when the platform expires the copy itself; otherwise
+// the secret is wiped once the app is backgrounded. An expiry missed there is checked on the next `active`.
 export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): SensitiveClipboard => {
   const showToast = useToastStore(state => state.show);
   const copiedRef = useRef<CopiedSecret | undefined>(undefined);
@@ -95,10 +106,11 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
   }, [forget]);
 
   const copy = useCallback((value: string, message: string): void => {
-    Clipboard.setString(value);
+    const expiresNatively = writeSecret(value);
+
     showToast(message, 'success');
     clearTimeout(timerRef.current);
-    copiedRef.current = { value, expiresAt: Date.now() + ttlMs };
+    copiedRef.current = { value, expiresAt: Date.now() + ttlMs, expiresNatively };
     timerRef.current = setTimeout(expire, ttlMs);
   }, [expire, showToast, ttlMs]);
 
@@ -107,6 +119,14 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
       appStateRef.current = state;
 
       const copied = copiedRef.current;
+
+      // Nothing would clear it at the deadline while backgrounded, so it goes now (writes are allowed there).
+      // A secret still tracked here was never confirmed wiped, even past its deadline.
+      if (state === 'background' && copied !== undefined && !copied.expiresNatively) {
+        wipeClipboard();
+        forget();
+        return;
+      }
 
       if (state === 'active' && copied !== undefined && timerRef.current === undefined) {
         wipeIfStillCopied(copied.value).then(() => {
@@ -130,5 +150,5 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
     copiedRef.current = undefined;
   }, []);
 
-  return { copy, clear };
+  return { copy, clear, outlivesBackground: OUTLIVES_BACKGROUND };
 };

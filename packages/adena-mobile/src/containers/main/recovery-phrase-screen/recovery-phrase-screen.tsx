@@ -58,7 +58,12 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
 
   const handleCopy = (): void => {
     if (words) {
-      clipboard.copy(words.join(' '), 'Recovery phrase copied. The clipboard clears in 60 seconds.');
+      clipboard.copy(
+        words.join(' '),
+        clipboard.outlivesBackground
+          ? 'Recovery phrase copied. The clipboard clears in 60 seconds.'
+          : 'Recovery phrase copied. The clipboard clears in 60 seconds or when you leave Adena.',
+      );
     }
   };
 
