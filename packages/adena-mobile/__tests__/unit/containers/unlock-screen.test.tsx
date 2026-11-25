@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import React from 'react';
 
 import { UnlockScreen } from '../../../src/containers/unlock-screen';
-import { AppError, AppErrorCode } from '../../../src/core/errors';
+import { AppError, AppErrorCode, BIOMETRICS_INVALIDATED_MESSAGE } from '../../../src/core/errors';
 import { BiometryKind } from '../../../src/security/secure-store';
 import { SessionStatus, useSessionStore } from '../../../src/stores/session.store';
 import { createWrapper } from '../../helpers/query-wrapper';
@@ -25,6 +25,7 @@ describe('UnlockScreen', () => {
     unlockWithBiometrics: jest.fn(),
     getBiometryKind: jest.fn(),
     isBiometricUnlockEnabled: jest.fn(),
+    disableBiometricUnlock: jest.fn(),
   };
   const props = { navigation: { navigate: jest.fn() }, route: { key: 'Unlock', name: 'Unlock' } } as unknown as UnlockProps;
 
@@ -39,6 +40,7 @@ describe('UnlockScreen', () => {
     walletService.getBiometryKind.mockResolvedValue(BiometryKind.FACE);
     walletService.isBiometricUnlockEnabled.mockResolvedValue(true);
     walletService.unlockWithBiometrics.mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_CANCELED));
+    walletService.disableBiometricUnlock.mockResolvedValue(undefined);
     useSessionStore.setState({ status: SessionStatus.LOCKED });
   });
 
@@ -82,5 +84,29 @@ describe('UnlockScreen', () => {
     await fireEvent.press(screen.getByTestId('unlock-submit'));
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
     expect(walletService.unlock).toHaveBeenCalledTimes(2);
+  });
+
+  it('turns biometric unlock off once when the enrolled biometrics changed', async () => {
+    walletService.unlockWithBiometrics.mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE));
+    walletService.disableBiometricUnlock.mockImplementation(async () => {
+      walletService.isBiometricUnlockEnabled.mockResolvedValue(false);
+    });
+    await setup();
+
+    expect(await screen.findByText(BIOMETRICS_INVALIDATED_MESSAGE)).toBeTruthy();
+    expect(walletService.disableBiometricUnlock).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Use Face ID' })).toBeNull());
+    expect(walletService.isBiometricUnlockEnabled).toHaveBeenCalledTimes(2);
+    expect(walletService.unlockWithBiometrics).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps biometric unlock on when biometrics are only unavailable', async () => {
+    walletService.unlockWithBiometrics.mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric authentication is unavailable'));
+    await setup();
+
+    expect(await screen.findByText('Biometric authentication is unavailable')).toBeTruthy();
+    expect(walletService.disableBiometricUnlock).not.toHaveBeenCalled();
+    expect(walletService.isBiometricUnlockEnabled).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Use Face ID' })).toBeTruthy();
   });
 });

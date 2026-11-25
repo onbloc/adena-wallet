@@ -3,7 +3,7 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
 
 import { APP_CONFIG } from '../config/app';
-import { AppError, AppErrorCode } from '../core/errors';
+import { AppError, AppErrorCode, BIOMETRICS_INVALIDATED_MESSAGE } from '../core/errors';
 import { deriveKeyPair, keyPairFromPrivateKey, wipeKeyPair } from '../crypto/key-pair';
 import { isValidPrivateKeyHex, KeyringRecord, KeyringType } from '../crypto/keyring';
 import { generateMnemonic, isValidMnemonic, mnemonicToSeed, normalizeMnemonic } from '../crypto/mnemonic';
@@ -146,6 +146,11 @@ export class WalletService {
       const password = await this.biometricRepository.readCredential(prompt);
 
       if (!password) {
+        // iOS may report an item invalidated by an enrollment change as missing; a cancel rejects instead.
+        if (this.preferenceRepository.get().biometricUnlockEnabled) {
+          throw new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE);
+        }
+
         throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
       }
 

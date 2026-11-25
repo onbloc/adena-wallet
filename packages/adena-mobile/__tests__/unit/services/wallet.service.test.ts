@@ -197,6 +197,15 @@ describe('WalletService', () => {
       expect(await wallet.getStatus()).toBe('locked');
     });
 
+    it('reports an invalidated credential when the item is unreadable while the preference is on', async () => {
+      const { wallet, secureStore } = await setup();
+
+      await wallet.enableBiometricUnlock(TEST_PASSWORD);
+      wallet.lock();
+      await secureStore.removeItem(SecureKey.BIOMETRIC_PASSWORD);
+      expect(await codeOf(() => wallet.unlockWithBiometrics({ title: 'Unlock' }))).toBe('BIOMETRICS_INVALIDATED');
+    });
+
     it('is disabled when the credential is gone even if the preference is on', async () => {
       const { wallet, secureStore } = await setup();
 

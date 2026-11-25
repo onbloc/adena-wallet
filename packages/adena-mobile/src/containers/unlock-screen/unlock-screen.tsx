@@ -1,4 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useQueryClient } from '@tanstack/react-query';
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 
 import { UnlockPage } from '../../components/pages';
@@ -6,12 +7,14 @@ import { toErrorMessage } from '../../core/error-message';
 import { AppErrorCode, isAppError } from '../../core/errors';
 import { useContainer } from '../../di/container-provider';
 import { LockedStackParamList } from '../../navigation/types';
+import { queryKeys } from '../../queries/query-keys';
 import { useBiometricStatusQuery } from '../../queries/wallet.queries';
 import { SessionStatus, useSessionStore } from '../../stores/session.store';
 import { getBiometryLabel } from '../../utils/biometry';
 
 export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackParamList, 'Unlock'>): ReactElement => {
   const { walletService } = useContainer();
+  const queryClient = useQueryClient();
   const { setStatus, bumpRevision } = useSessionStore();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string>();
@@ -39,6 +42,12 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
       onUnlocked();
     }
     catch (unlockError) {
+      // Only a permanent invalidation drops the setting; lockouts and missing enrollment are transient.
+      if (isAppError(unlockError, AppErrorCode.BIOMETRICS_INVALIDATED)) {
+        await walletService.disableBiometricUnlock().catch(() => undefined);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.biometric() });
+      }
+
       if (!isAppError(unlockError, AppErrorCode.BIOMETRICS_CANCELED)) {
         setError(toErrorMessage(unlockError));
       }
@@ -46,7 +55,7 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
     finally {
       unlockingRef.current = false;
     }
-  }, [onUnlocked, walletService]);
+  }, [onUnlocked, queryClient, walletService]);
 
   // Offer the biometric prompt once as soon as the status query reports it is enabled.
   useEffect(() => {
