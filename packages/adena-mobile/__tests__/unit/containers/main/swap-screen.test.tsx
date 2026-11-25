@@ -316,6 +316,38 @@ describe('SwapScreen', () => {
     expect(env.gno.state.broadcasts).toHaveLength(1);
   });
 
+  it('clears a moved-quote review error once the quote is fetched again', async () => {
+    const { env, dryExpressions } = await setup();
+    const message = 'The quote is inconsistent. Fetch a new one.';
+
+    jest.spyOn(env.container.swapService, 'prepare').mockRejectedValueOnce(new AppError(AppErrorCode.SWAP_PRICE_MOVED, message));
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    await press('Review swap');
+
+    await waitFor(() => expect(dryExpressions).toHaveLength(2), LOOKUP);
+    expect(await screen.findByText('Review swap', undefined, LOOKUP)).toBeTruthy();
+    expect(screen.queryByText(message)).toBeNull();
+    expect(toastMessage()).toBe(message);
+  });
+
+  it('keeps the pending notice visible next to a review error', async () => {
+    const { env } = await setup({}, undefined, ({ env: testEnv, account: sender, network: current }) => {
+      testEnv.container.pendingBroadcastRepository.add({ hashes: ['OLD'], accountId: sender.id, chainId: current.chainId, createdAt: Date.now(), sequence: '3', accountNumber: '7' });
+    });
+
+    jest.spyOn(env.container.swapService, 'prepare').mockRejectedValueOnce(new Error('Simulation failed'));
+    await screen.findByText(REPLACEABLE_NOTICE, undefined, { timeout: PENDING_POLL_INTERVAL_MS + 2000 });
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    await press('Review swap');
+
+    expect(await screen.findByText('Simulation failed', undefined, LOOKUP)).toBeTruthy();
+    expect(screen.getByText(REPLACEABLE_NOTICE)).toBeTruthy();
+  }, 15_000);
+
   it('drops the approximate-Max notice once the swap completes', async () => {
     const { env } = await setup();
 

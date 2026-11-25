@@ -423,8 +423,10 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
         setPrepared({ ...result, replacesPending: pendingBroadcast.replacesPending });
       },
       onError: (error) => {
-        // An expired or moved quote is simply fetched again.
+        // An expired or moved quote is fetched again; its error must not outlive the new quote.
         if (isAppError(error, AppErrorCode.SWAP_PRICE_MOVED)) {
+          prepare.reset();
+          showToast(toErrorMessage(error), 'info');
           void quoteQuery.refetch();
         }
       },

@@ -333,7 +333,7 @@ export const SwapPage = (props: SwapPageProps): ReactElement => {
         </View>
         {props.details && <Details details={props.details} expanded={props.detailsExpanded} onToggle={props.onToggleDetails} />}
         {props.error && <InlineAlert tone='error' title={props.error} />}
-        {!props.error && props.notice && <InlineAlert tone='warning' title={props.notice} />}
+        {props.notice && <InlineAlert tone='warning' title={props.notice} />}
       </ScrollView>
       <View style={styles.dock}>
         <View style={styles.chips}>
