@@ -37,7 +37,6 @@ export class AgentConversation {
     if (!Number.isSafeInteger(this.contextTokens) || this.contextTokens <= 0 || this.contextTokens > agent.llm.contextTokens) {
       throw new RangeError('Conversation contextTokens must be a positive integer within the model context.');
     }
-    if (agent.wallet && !options.account) throw new TypeError('A wallet conversation needs an account.');
     this.account = options.account;
     this.allowTransactionPreparation = options.allowTransactionPreparation === true;
     this.session = options.session ?? createChatSession(options.saved);
@@ -65,7 +64,8 @@ export class AgentConversation {
     if (!settings.prompt.trim()) throw new TypeError('A conversation prompt must not be empty.');
     const outputTokens = settings.maxOutputTokens ?? DEFAULT_GENERATE_SETTINGS.maxOutputTokens;
     if (!Number.isSafeInteger(outputTokens) || outputTokens <= 0) throw new RangeError('maxOutputTokens must be a positive integer.');
-    const reservedOutput = this.account ? Math.min(outputTokens, 512) : outputTokens;
+    // Every turn starts with the structured classification call, which is capped at 512 tokens.
+    const reservedOutput = Math.min(outputTokens, 512);
     const current: ModelMessage[] = [{ role: 'user', content: settings.prompt }];
     // Reject an oversized current request unchanged, before discovery or wallet access.
     if (estimateContextInput([settings.system, current]) + reservedOutput > this.contextTokens) {

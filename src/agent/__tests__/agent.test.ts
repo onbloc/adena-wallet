@@ -3,7 +3,7 @@ import { MockLanguageModelV4 } from 'ai/test';
 import { DEFAULT_BUDGET, Harness, type Budget } from '../../harness/core';
 import { createOnblocToolSource } from '../../harness/mcp';
 import { fakeOnblocMcp, type FakeOnblocTool } from '../../harness/mcp/testing/fakeOnblocMcp';
-import { LLMFromModel, type GenerateEvent } from '../../llm/core';
+import { canRememberTurn, LLMFromModel, type GenerateEvent } from '../../llm/core';
 import { AIAgent } from '../agent';
 import type { BalanceRequest } from '../balanceOperation';
 import type { PreparationProposal, RequestIntent } from '../requestIntent';
@@ -368,12 +368,31 @@ describe('integrated request execution', () => {
     expect(doneOf(await collect(stopped.agent.run({ prompt: 'Read data.' }, { account: ACCOUNT, signal: controller.signal })))?.aborted).toBe(true);
     expect(stopped.fetcher).not.toHaveBeenCalled();
   });
-  it('keeps plain no-account chat tool-free and requires an account for configured wallets', async () => {
-    const { agent } = setup([]);
-    await expect(collect(agent.run({ prompt: 'Read data.' }))).rejects.toThrow('needs the account');
-    const model = new MockLanguageModelV4({ doGenerate: [answer('Hello')] });
-    const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
-    expect(textOf(await collect(new AIAgent({ llm, harness: new Harness() }).run({ prompt: 'Hello' })))).toBe('Hello');
+  it('answers a question without an account: the route never depends on one', async () => {
+    const { agent, model, wallet } = setup([answer('GNOT is the native token.')], { intent: { kind: 'explanation' } });
+    expect(textOf(await collect(agent.run({ prompt: 'What is GNOT?' })))).toBe('GNOT is the native token.');
+    expect(model.doGenerateCalls).toHaveLength(2);
+    expect(wallet.calls).toEqual([]);
+  });
+  it('answers small talk freely and remembers it, without tools or the explanation warning', async () => {
+    const { agent, model, mcp } = setup([answer('Why did the token cross the chain? To get to the other block.')], { intent: { kind: 'chat' } });
+    const events = await collect(agent.run({ prompt: 'Tell me a joke.' }, { account: ACCOUNT }));
+    expect(textOf(events)).toContain('other block');
+    const done = doneOf(events);
+    expect(done).toMatchObject({ warnings: [], aborted: false });
+    expect(done?.type === 'done' && canRememberTurn(done)).toBe(true);
+    expect(mcp.calls).toEqual([]);
+    expect(model.doGenerateCalls).toHaveLength(2);
+  });
+  it.each([
+    ['a balance lookup', native],
+    ['a transfer', prepare],
+  ])('asks the host to link a wallet when %s has no account', async (_label, intent) => {
+    const { agent, mcp, wallet, model } = setup([send], { intent });
+    await expect(collect(agent.run({ prompt: 'Send 1 GNOT to carol.' }, { allowTransactionPreparation: true }))).rejects.toThrow('ADENA_ACCOUNT_REQUIRED');
+    expect(mcp.calls).toEqual([]);
+    expect(wallet.calls).toEqual([]);
+    expect(model.doGenerateCalls).toHaveLength(1);
   });
 });
 

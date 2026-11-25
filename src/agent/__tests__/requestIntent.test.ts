@@ -63,7 +63,7 @@ describe('request intent classification', () => {
       explanation: 'What is a token allowance?',
     },
     { kind: 'prepare' },
-    { kind: 'unsupported' },
+    { kind: 'chat' },
   ];
 
   it.each(intents)('preserves every requirement in wire output %j without returning classifier text', async intent => {

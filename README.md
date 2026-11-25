@@ -131,7 +131,7 @@ so loading and saving do not create a second copy of the conversation.
 Before accessing wallet tools, the agent makes a bounded, tool-free classification call. It
 uses the same conversation context, a fixed system prompt, and schema-constrained JSON output.
 The model returns `lookup` requirements, optional requested conceptual explanation, or an
-`explanation`, `prepare`, `clarification`, or `unsupported` route;
+`explanation`, `prepare`, `clarification`, or `chat` route;
 the agent validates it and maps it to a typed execution policy. The classification response
 itself is neither displayed as the answer nor appended to chat history.
 
@@ -141,7 +141,7 @@ itself is neither displayed as the answer nor appended to chat history.
 | Balance lookup | Normalized `get_balance` operation for each classified asset requirement | Complete fresh results for every required balance |
 | Other wallet lookup | Exact read-only catalog selection, then scoped model/tool execution | Every selected read succeeds; unrelated balances or model text do not complete it |
 | Transaction preparation | Host opt-in, strict structured proposal, then selected action dispatch with any normalized balance prerequisite | A matching actual preparation result or a reported refusal/failure |
-| Unsupported request | Fixed wallet-scope refusal | No wallet execution |
+| Small talk, anything else, or an action the wallet cannot do | Answer model without tools; it says plainly what it cannot do | A conversational answer; nothing prepared or read |
 
 Preparation requests, including incomplete ones, use a focused tool-free parser. Its proposal
 contains the operation (`transfer` or `approve`), a supplied recipient/address alias, a symbol
@@ -287,14 +287,17 @@ base units (`ResolvedToken.balance: bigint`). `createOnblocTokenResolver` reads
 ## Free chat (desktop)
 
 To see how far the model gets with plain human language, talk to it yourself. It runs on this
-Mac through llama-server; by default it is a plain chat with no wallet. `--onbloc` adds the
-wallet: the app's prompt and tools. It answers in the language you write in (English and
-Korean both work; the scenarios in `src/mock/scenario/scenarios.ts` include Korean prompts, and you can type any language into the chat).
+Mac through llama-server. Every request is classified first, with or without an account: an
+explanation or a clarification is answered without tools, while reading wallet data or preparing a
+transaction needs the account, and without one the agent fails with `ADENA_ACCOUNT_REQUIRED` (link
+a wallet). `--onbloc` gives the chat that account, the app's prompt and its tools. It answers in the
+language you write in (English and Korean both work; the scenarios in
+`src/mock/scenario/scenarios.ts` include Korean prompts, and you can type any language into the chat).
 
 ```bash
-make chat                                        # interactive plain chat; the conversation is remembered
-make chat PROMPT="Tell me a joke"                # one question, then exit
-make chat ARGS="--onbloc"                        # with the wallet (below)
+make chat                                        # interactive, no account: questions only; the conversation is remembered
+make chat PROMPT="What is GNOT?"                 # one question, then exit
+make chat ARGS="--onbloc"                        # with an account: wallet data and actions (below)
 make chat ARGS="--context-tokens 4096"           # lower the chat's context budget
 ```
 
@@ -315,7 +318,8 @@ read from the Onbloc api-v3 MCP: balances, tokens and transactions come from mai
 GNS balances (read once when the wallet is created); `/reset` and the app's Reset wallet read
 them again. Defaults are the dev endpoint and account in `src/mock/app/onblocSettings.ts`; for
 the CLI, `EXPO_PUBLIC_ONBLOC_MCP_URL` / `EXPO_PUBLIC_ONBLOC_ACCOUNT` override them. Clearing both
-fields in Settings gives a plain chat without the wallet.
+fields in Settings leaves the chat without an account: questions are still answered, and wallet
+data or actions fail with `ADENA_ACCOUNT_REQUIRED`.
 
 ## Scenario tests (real model)
 

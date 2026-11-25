@@ -27,22 +27,25 @@ async function collect(events: AsyncIterable<GenerateEvent>) {
   return out;
 }
 
+// Every turn is a classification call followed by the answer call.
 function setup(answers = ['First answer', 'Follow-up answer']) {
-  const model = new MockLanguageModelV4({ doGenerate: answers.map(reply) });
+  const model = new MockLanguageModelV4({
+    doGenerate: answers.flatMap((answer) => [reply(intentReplyText({ kind: 'explanation' })), reply(answer)]),
+  });
   const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
-  return { agent: new AIAgent({ llm, harness: new Harness() }), model, llm };
+  return { agent: new AIAgent({ llm, harness: new Harness(), wallet: fakeWallet(), onTransaction: jest.fn() }), model, llm };
 }
 
 describe('agent conversations', () => {
   it('continues a restored conversation without the caller assembling any messages', async () => {
     const { agent, model } = setup();
-    const first = agent.createConversation();
+    const first = agent.createConversation({ account: ACCOUNT });
     await collect(first.run({ prompt: 'Remember that the recipient is Carol.' }));
-    const restored = agent.createConversation({ saved: first.serialize() });
+    const restored = agent.createConversation({ account: ACCOUNT, saved: first.serialize() });
 
     await collect(restored.run({ prompt: 'Who is the recipient?' }));
 
-    const prompt = JSON.stringify(model.doGenerateCalls[1].prompt);
+    const prompt = JSON.stringify(model.doGenerateCalls[3].prompt);
     expect(prompt).toContain('Remember that the recipient is Carol.');
     expect(prompt).toContain('First answer');
     expect(prompt).toContain('Who is the recipient?');
@@ -55,21 +58,21 @@ describe('agent conversations', () => {
   it('removes old turns from persistent memory but preserves the recent turn and current request intact', async () => {
     const { agent, model } = setup();
     const session = createChatSession();
-    session.complete('obsolete topic', 'x'.repeat(6000));
+    session.complete('obsolete topic', 'x'.repeat(20000));
     session.complete('The recipient is Carol.', 'I will use Carol.');
-    const conversation = agent.createConversation({ session, contextTokens: 2048 });
+    const conversation = agent.createConversation({ account: ACCOUNT, session, contextTokens: 6144 });
     const current = 'Which recipient did I just name?';
 
     await collect(conversation.run({ prompt: current, maxOutputTokens: 128 }));
 
-    const firstPrompt = JSON.stringify(model.doGenerateCalls[0].prompt);
+    const firstPrompt = JSON.stringify(model.doGenerateCalls[1].prompt);
     expect(firstPrompt).not.toContain('obsolete topic');
     expect(firstPrompt).toContain('The recipient is Carol.');
     expect(firstPrompt).toContain(current);
     expect(conversation.turns.map((turn) => turn.prompt)).toEqual(['The recipient is Carol.', current]);
     expect(conversation.serialize()).not.toContain('obsolete topic');
     await collect(conversation.run({ prompt: 'Continue.', maxOutputTokens: 128 }));
-    expect(JSON.stringify(model.doGenerateCalls[1].prompt)).not.toContain('obsolete topic');
+    expect(JSON.stringify(model.doGenerateCalls[3].prompt)).not.toContain('obsolete topic');
   });
 
   it('rejects an oversized current request before any model or wallet access, without deleting history', async () => {
@@ -197,7 +200,7 @@ describe('agent conversations', () => {
         execute: async () => ({ kind: 'result', value: { status: 'complete' } }),
       },
     ]])] });
-    const agent = new AIAgent({ llm, harness });
+    const agent = new AIAgent({ llm, harness, wallet: fakeWallet(), onTransaction: jest.fn() });
     const session = createChatSession();
     session.complete('obsolete topic', 'x'.repeat(12000));
     session.complete('recent topic', 'r'.repeat(2500));
@@ -247,39 +250,51 @@ describe('agent conversations', () => {
     expect(mcp.calls).toEqual([]);
   });
 
-  it('does not expose or execute caller-provided tools in an accountless conversation', async () => {
+  it('does not expose or execute caller-provided tools in an explanation turn', async () => {
     const execute = jest.fn(async () => ({ secret: 'unexpected' }));
-    const model = new MockLanguageModelV4({ doGenerate: [reply('Done')] });
+    const model = new MockLanguageModelV4({ doGenerate: [reply(intentReplyText({ kind: 'explanation' })), reply('Done')] });
     const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
-    const conversation = new AIAgent({ llm, harness: new Harness() }).createConversation();
+    const conversation = new AIAgent({ llm, harness: new Harness(), wallet: fakeWallet(), onTransaction: jest.fn() })
+      .createConversation({ account: ACCOUNT });
 
     await collect(conversation.run({
       prompt: 'Try the supplied tool.', maxSteps: 3,
       tools: { caller_tool: tool({ inputSchema: z.object({}), execute }) },
     }));
 
-    expect(model.doGenerateCalls[0].tools ?? []).toEqual([]);
+    expect(model.doGenerateCalls).toHaveLength(2);
+    for (const call of model.doGenerateCalls) expect(call.tools ?? []).toEqual([]);
     expect(execute).not.toHaveBeenCalled();
   });
 
   it.each([0, -1, 1.5, NaN, Infinity, 8193])('rejects a context budget outside the model limits: %p', (contextTokens) => {
-    expect(() => setup().agent.createConversation({ contextTokens })).toThrow(RangeError);
+    expect(() => setup().agent.createConversation({ account: ACCOUNT, contextTokens })).toThrow(RangeError);
   });
 
   it('does not allow overlapping turns or a late result to repopulate a reset conversation', async () => {
     const { promise: ready, resolve: started } = Promise.withResolvers<void>();
     const { promise: blocked, resolve: release } = Promise.withResolvers<void>();
+    let calls = 0;
+    const done = (text: string): GenerateEvent => ({ type: GenerateEventType.Done, metrics: { totalMs: 1, ttftMs: null },
+      aborted: false, finishReason: 'stop', warnings: [], messages: [{ role: 'assistant', content: text }] });
     const llm: LLM = {
       contextTokens: 8192,
+      // Even calls classify the request, odd calls answer it; the first answer blocks.
       async *generate() {
+        if (calls++ % 2 === 0) {
+          const route = intentReplyText({ kind: 'explanation' });
+          yield { type: GenerateEventType.Text, delta: route };
+          yield done(route);
+          return;
+        }
         started();
         await blocked;
         yield { type: GenerateEventType.Text, delta: 'Late answer' };
-        yield { type: GenerateEventType.Done, metrics: { totalMs: 1, ttftMs: null }, aborted: false,
-          finishReason: 'stop', warnings: [], messages: [{ role: 'assistant', content: 'Late answer' }] };
+        yield done('Late answer');
       },
     };
-    const conversation = new AIAgent({ llm, harness: new Harness() }).createConversation();
+    const conversation = new AIAgent({ llm, harness: new Harness(), wallet: fakeWallet(), onTransaction: jest.fn() })
+      .createConversation({ account: ACCOUNT });
     const pending = collect(conversation.run({ prompt: 'Old request' }));
     await ready;
 

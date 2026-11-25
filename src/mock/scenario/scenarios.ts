@@ -166,8 +166,10 @@ export const ROUTING_SCENARIOS: Scenario[] = twins([
   { name: 'route: staking is not supported, no tools', en: 'Stake my GNOT', ko: '내 GNOT 스테이킹해줘', expected: answer() },
   { name: 'route: buying is not supported, no tools', en: 'Buy 5 BTC for me', ko: 'BTC 5개 사줘', expected: answer() },
   { name: 'route: sending an NFT is not supported', en: 'Send my NFT to carol', ko: '내 NFT를 carol에게 보내줘', expected: answer([], [], ['get_nfts_balance']) },
-  { name: 'route: off-topic question, no tools', en: "What's the weather today?", ko: '오늘 날씨 어때?', expected: answer() },
-  { name: 'route: greeting, no tools', en: 'hi', ko: '안녕', expected: answer() },
+  { name: 'route: off-topic question is answered, no tools', en: "What's the weather today?", ko: '오늘 날씨 어때?', expected: answer() },
+  { name: 'route: greeting is answered, no tools', en: 'hi', ko: '안녕', expected: answer() },
+  { name: 'route: small talk is answered, no tools', en: 'Tell me a joke', ko: '농담 하나 해줘', expected: answer() },
+  { name: 'route: a general task is answered, no tools', en: 'Write a haiku about autumn', ko: '가을에 대한 하이쿠를 써줘', expected: answer() },
   { name: 'route: nonsense, no tools', en: 'asdf qwer', ko: 'ㅁㄴㅇㄹ', expected: answer() },
 ]);
 

@@ -52,7 +52,7 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
     toolAttempted = true;
     pending.set(event.id, { name: event.name, input: event.input });
     if (event.invalid) readFailed = true;
-    if (intent.kind === 'explanation' || intent.kind === 'clarification' || intent.kind === 'unsupported'
+    if (intent.kind === 'explanation' || intent.kind === 'clarification' || intent.kind === 'chat'
       || (intent.kind === 'prepare' && !isRead(event.name) && event.name !== intent.action)) mismatch = true;
     if (event.name === balanceToolDefinition.name) {
       const request = balanceRequestSchema.safeParse(event.input);
@@ -137,7 +137,7 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         const lookupComplete = !!lookup?.requests.length && balanceComplete && otherComplete && evidenceComplete;
         const explanationRequested = lookup?.explanation !== undefined;
         const explanationComplete = !explanationRequested || !!text.trim();
-        const modelOnly = (intent.kind === 'explanation' || intent.kind === 'clarification') && !toolAttempted && !readFailed && !!text.trim();
+        const modelOnly = (intent.kind === 'explanation' || intent.kind === 'clarification' || intent.kind === 'chat') && !toolAttempted && !readFailed && !!text.trim();
         const complete = lookupComplete && explanationComplete && !readFailed && !mismatch && !selectionConflict && !outcomes.length;
         const facts = balances.map(formatBalance);
         for (const [name, values] of reads) {
@@ -155,8 +155,9 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         if (selectionConflict) sections.push('The selected asset differs from the asset mentioned. Please confirm which asset you want.');
         yield { type: 'text', delta: sections.join('\n\n') || 'No wallet lookup or answer completed.' };
         const warnings = [...event.warnings];
-        if (modelOnly) warnings.push('No wallet lookup was performed; this is an unverified model explanation.');
-        else if (explanationRequested && text.trim()) warnings.push('The explanatory text is model-generated; current facts are rendered separately from tool results.');
+        if (modelOnly) {
+          if (intent.kind !== 'chat') warnings.push('No wallet lookup was performed; this is an unverified model explanation.');
+        } else if (explanationRequested && text.trim()) warnings.push('The explanatory text is model-generated; current facts are rendered separately from tool results.');
         if (auditFailed || policy.auditFailed?.()) warnings.push('Audit logging failed. Completed tool results were preserved and further execution was paused.');
         const completion = { ...done, warnings };
         yield complete && !event.aborted ? { ...completion, verifiedAnswer: true }

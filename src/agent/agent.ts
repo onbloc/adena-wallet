@@ -33,10 +33,22 @@ export type AgentRunOptions = {
   allowTransactionPreparation?: boolean;
   onContextCompacted?: (droppedTurns: number) => void;
 };
-type RunOptions = AgentRunOptions & { account: string; contextTokens: number; signal: AbortSignal };
+type RunOptions = AgentRunOptions & { contextTokens: number; signal: AbortSignal };
+type AccountRunOptions = RunOptions & { account: string };
 type AnswerSettings = Omit<GenerateSettings, 'prompt' | 'messages'> & { messages: ModelMessage[] };
 type DoneEvent = Extract<GenerateEvent, { type: 'done' }>;
 const REQUEST_TIMEOUT_MS = 5 * 60_000;
+const ANSWER_INSTRUCTIONS = {
+  explanation: 'Explain only concepts, not current wallet or chain facts. Use no tools.',
+  clarification: 'Ask a concise clarification about missing details, ambiguous tasks, or which independent action to perform first. Prepare nothing.',
+  chat: 'Reply naturally to the conversation. You can only explain concepts, read the wallet\'s data and prepare transfers and approvals; if asked for anything else (swap, stake, buy, bridge, send an NFT), say plainly that you cannot. This reply has no wallet data and prepares nothing: never claim to have read the wallet or done a wallet action. Use no tools.',
+} as const;
+
+/** A wallet action acts for an account: without one the host has to link a wallet first. */
+function requireAccount(options: RunOptions): AccountRunOptions {
+  if (!options.account) throw new Error('ADENA_ACCOUNT_REQUIRED: Link a wallet to read wallet data or prepare transactions.');
+  return { ...options, account: options.account };
+}
 
 /** Composes domain policy with provider-independent operations and the host's harness limits. */
 export class AIAgent {
@@ -76,11 +88,6 @@ export class AIAgent {
     account, signal, contextTokens = this.llm.contextTokens, onContextCompacted, allowTransactionPreparation = false,
   }: AgentRunOptions = {}): AsyncGenerator<GenerateEvent> {
     if (!Number.isSafeInteger(contextTokens) || contextTokens <= 0 || contextTokens > this.llm.contextTokens) throw new RangeError('contextTokens must be a positive integer within the model context.');
-    if (!account) {
-      if (this.wallet) throw new TypeError('An agent with a wallet needs the account to act for: run(settings, { account })');
-      yield* this.llm.generate({ ...settings, tools: undefined }, { signal, contextTokens, onContextCompacted });
-      return;
-    }
     const started = Date.now();
     const controller = new AbortController();
     const abort = () => controller.abort(signal?.reason);
@@ -118,19 +125,15 @@ export class AIAgent {
   }
 
   private async *answerRequest(intent: RequestIntent, settings: AnswerSettings, options: RunOptions): AsyncGenerator<GenerateEvent> {
-    if (intent.kind === 'unsupported') {
-      yield { type: 'text', delta: 'I can help with wallet explanations, current read-only data, and explicitly enabled unsigned transaction preparation.' };
-      yield this.done(options.signal);
-    } else if (intent.kind === 'explanation' || intent.kind === 'clarification') {
+    if (intent.kind === 'explanation' || intent.kind === 'clarification' || intent.kind === 'chat') {
       yield* guardAnswer(this.llm.generate({
         ...settings, tools: undefined, outputSchema: undefined,
-        system: [settings.system ?? this.prompt(), intent.kind === 'explanation'
-          ? 'Explain only concepts, not current wallet or chain facts. Use no tools.'
-          : 'Ask a concise clarification about missing details, ambiguous tasks, or which independent action to perform first. Prepare nothing.'].join('\n\n'),
+        system: [settings.system ?? this.prompt(), ANSWER_INSTRUCTIONS[intent.kind]].join('\n\n'),
       }, options), () => true, intent);
     } else if (intent.kind === 'lookup') {
-      yield* this.answerLookups(intent, settings, options);
+      yield* this.answerLookups(intent, settings, requireAccount(options));
     } else {
+      const { account } = requireAccount(options);
       if (!options.allowTransactionPreparation || !this.wallet || !this.onTransaction) {
         yield { type: 'text', delta: 'Transaction preparation is not enabled for this run. No transaction was prepared.' };
         yield this.done(options.signal);
@@ -147,13 +150,13 @@ export class AIAgent {
       }
       const action = proposal.operation;
       const contacts = (await this.wallet.getContacts?.()) ?? [];
-      const all = createWalletTools({ sdk: this.wallet, account: options.account, contacts, onTransaction: this.onTransaction });
+      const all = createWalletTools({ sdk: this.wallet, account, contacts, onTransaction: this.onTransaction });
       if (!Object.hasOwn(all, action)) {
         yield { type: 'text', delta: `The wallet does not support ${action}. No transaction was prepared.` };
         yield completion;
         return;
       }
-      const run = await this.harness.startRun({ account: options.account, chainId: this.chainId, operationId: `prepare-${++this.runs}`,
+      const run = await this.harness.startRun({ account, chainId: this.chainId, operationId: `prepare-${++this.runs}`,
         scope: 'prepare-wallet', purpose: 'mainnet-read', walletTools: { [action]: all[action] }, signal: options.signal });
       try {
         yield* this.prepareEvents(proposal, run, completion);
@@ -204,7 +207,7 @@ export class AIAgent {
     yield* guardAnswer(events, tool => tool !== name, { kind: 'prepare', action: name }, { auditFailed: () => run.auditFailed });
   }
 
-  private async *answerLookups(intent: Extract<RequestIntent, { kind: 'lookup' }>, settings: AnswerSettings, options: RunOptions): AsyncGenerator<GenerateEvent> {
+  private async *answerLookups(intent: Extract<RequestIntent, { kind: 'lookup' }>, settings: AnswerSettings, options: AccountRunOptions): AsyncGenerator<GenerateEvent> {
     const other = intent.requests.find(request => request.target === 'other');
     const walletTools = this.wallet && this.onTransaction && other
       ? Object.fromEntries(Object.entries(createWalletTools({ sdk: this.wallet, account: options.account, contacts: [], onTransaction: this.onTransaction })).filter(([, tool]) => tool.effect === 'read')) : {};
