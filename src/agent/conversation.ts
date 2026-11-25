@@ -10,12 +10,30 @@ import {
   type GenerateEvent,
   type GenerateSettings,
 } from '../llm/core';
-import type { AIAgent } from './agent';
+import type { AIAgent, PendingPreparation } from './agent';
+
+/** Ephemeral, one-shot clarification state. Never serialize or share across wallet scopes. */
+export type ConversationPendingState = Readonly<{ clear(): void }>;
+const pendingStates = new WeakMap<ConversationPendingState, { revision: number; pending?: PendingPreparation }>();
+
+export function createConversationPendingState(): ConversationPendingState {
+  const state: ConversationPendingState = Object.freeze({
+    clear() {
+      const entry = pendingStates.get(state)!;
+      entry.revision++;
+      entry.pending = undefined;
+    },
+  });
+  pendingStates.set(state, { revision: 0 });
+  return state;
+}
 
 export type ConversationSettings = Omit<GenerateSettings, 'prompt' | 'messages'> & { prompt: string };
 export type ConversationOptions = {
   account?: string;
   contextTokens?: number;
+  /** A host may retain this only for the lifetime of the same account and network scope. */
+  pendingState?: ConversationPendingState;
   /** Permit unsigned transaction preparation for each turn; defaults to false. */
   allowTransactionPreparation?: boolean;
 } & (
@@ -29,6 +47,7 @@ export class AgentConversation {
   private readonly session: ChatSession;
   private readonly account?: string;
   private readonly allowTransactionPreparation: boolean;
+  private readonly pendingState: ConversationPendingState;
   private active?: AbortController;
   private revision = 0;
 
@@ -40,6 +59,8 @@ export class AgentConversation {
     if (agent.wallet && !options.account) throw new TypeError('A wallet conversation needs an account.');
     this.account = options.account;
     this.allowTransactionPreparation = options.allowTransactionPreparation === true;
+    this.pendingState = options.pendingState ?? createConversationPendingState();
+    if (!pendingStates.has(this.pendingState)) throw new TypeError('Invalid conversation pending state.');
     this.session = options.session ?? createChatSession(options.saved);
   }
 
@@ -53,6 +74,7 @@ export class AgentConversation {
 
   reset(): void {
     this.revision++;
+    this.pendingState.clear();
     this.active?.abort();
     this.session.reset();
   }
@@ -62,6 +84,11 @@ export class AgentConversation {
     { signal }: { signal?: AbortSignal } = {}
   ): AsyncGenerator<GenerateEvent> {
     if (this.active) throw new Error('A conversation already has an active turn.');
+    const entry = pendingStates.get(this.pendingState)!;
+    const pendingPreparation = this.allowTransactionPreparation && entry.pending?.candidateIds.includes(settings.prompt.trim())
+      ? entry.pending : undefined;
+    this.pendingState.clear();
+    const pendingRevision = entry.revision;
     if (!settings.prompt.trim()) throw new TypeError('A conversation prompt must not be empty.');
     const outputTokens = settings.maxOutputTokens ?? DEFAULT_GENERATE_SETTINGS.maxOutputTokens;
     if (!Number.isSafeInteger(outputTokens) || outputTokens <= 0) throw new RangeError('maxOutputTokens must be a positive integer.');
@@ -81,6 +108,7 @@ export class AgentConversation {
     const { prompt, ...generation } = settings;
     let answer = '';
     let completed = false;
+    let nextPending: PendingPreparation | undefined;
     try {
       for await (const event of this.agent.run(
         { ...generation, messages: this.session.messages(prompt) },
@@ -89,6 +117,8 @@ export class AgentConversation {
           signal: controller.signal,
           allowTransactionPreparation: this.allowTransactionPreparation,
           contextTokens: this.contextTokens,
+          pendingPreparation,
+          onAmbiguousPreparation: (pending) => { nextPending = pending; },
           onContextCompacted: (count) => {
             if (revision !== this.revision || controller.signal.aborted) return;
             this.session.trimOldest(count);
@@ -98,13 +128,17 @@ export class AgentConversation {
         if (event.type === GenerateEventType.Text) answer += event.delta;
         if (event.type === GenerateEventType.Done && !completed) {
           completed = true;
-          if (revision === this.revision && !controller.signal.aborted && canRememberTurn(event)) {
-            this.session.complete(prompt, answer);
+          if (revision === this.revision && !controller.signal.aborted && !event.aborted) {
+            if (this.allowTransactionPreparation && entry.revision === pendingRevision && event.finishReason === 'stop') {
+              entry.pending = nextPending;
+            }
+            if (canRememberTurn(event)) this.session.complete(prompt, answer);
           }
         }
         yield event;
       }
     } finally {
+      if (controller.signal.aborted && entry.revision === pendingRevision) this.pendingState.clear();
       controller.abort();
       signal?.removeEventListener('abort', abort);
       if (this.active === controller) this.active = undefined;

@@ -1,4 +1,5 @@
 import type { ModelMessage } from 'ai';
+import { exactAmountEvidence, fractionEvidence, pairedDecimalAmount } from './amountEvidence';
 import { createAiSdkRun } from './aiSdkBridge';
 import { guardAnswer } from './answerGuard';
 import { balanceRequestSchema, balanceResultSchema, balanceToolDefinition, getBalance as readBalance } from './balanceOperation';
@@ -7,7 +8,7 @@ import { AgentConversation, type ConversationOptions } from './conversation';
 import { buildWalletPrompt } from './prompts';
 import { realmEvidence } from './realmEvidence';
 import type { RealmEvidence } from './realmEvidence';
-import { classifyRequest, proposePreparation, selectLookupTools, type LookupToolSelection, type PreparationProposal, type RequestIntent } from './requestIntent';
+import { classifyRequest, proposePreparation, selectLookupTools, type LookupToolSelection, type PreparationPlanning, type PreparationProposal, type RequestIntent } from './requestIntent';
 import type { TransactionHandler, WalletSdk } from './wallet/port';
 import { fromBaseUnits } from './wallet/amount';
 import { createWalletTools } from './wallet/tools';
@@ -25,6 +26,12 @@ export type AIAgentOptions = {
   | { wallet?: undefined; onTransaction?: undefined }
   | { wallet: WalletSdk; onTransaction: TransactionHandler }
 );
+export type PendingPreparation = {
+  proposal: Exclude<PreparationProposal, { operation: 'clarification' }>;
+  candidateIds: string[];
+  account: string;
+  chainId: string;
+};
 export type AgentRunOptions = {
   account?: string;
   signal?: AbortSignal;
@@ -32,11 +39,31 @@ export type AgentRunOptions = {
   /** Host permission, independent of the model's classification. Defaults to false. */
   allowTransactionPreparation?: boolean;
   onContextCompacted?: (droppedTurns: number) => void;
+  /** Host-owned, one-turn state from a prior SDK ambiguity; never derived from model text. */
+  pendingPreparation?: PendingPreparation;
+  onAmbiguousPreparation?: (pending: PendingPreparation) => void;
 };
 type RunOptions = AgentRunOptions & { account: string; contextTokens: number; signal: AbortSignal };
 type AnswerSettings = Omit<GenerateSettings, 'prompt' | 'messages'> & { messages: ModelMessage[] };
 type DoneEvent = Extract<GenerateEvent, { type: 'done' }>;
 const REQUEST_TIMEOUT_MS = 5 * 60_000;
+
+// Match complete user-supplied identifiers, not a symbol embedded in another symbol
+// or a package path embedded in a longer path.
+function mentionsIdentifier(text: string, value: string, exact = false, minimum = 1): boolean {
+  const source = exact ? text : text.toLowerCase();
+  const needle = exact ? value : value.toLowerCase();
+  const identifier = /[\p{L}\p{M}\p{N}_/-]/u;
+  let matches = 0;
+  for (let index = source.indexOf(needle); needle && index !== -1; index = source.indexOf(needle, index + 1)) {
+    const before = Array.from(source.slice(0, index)).at(-1) ?? '';
+    const after = Array.from(source.slice(index + needle.length))[0] ?? '';
+    const koreanParticle = !exact && /^[a-z0-9.]+$/i.test(needle) && /^\p{Script=Hangul}$/u.test(after);
+    if (!identifier.test(before) && (!identifier.test(after) || koreanParticle) && ++matches >= minimum) return true;
+  }
+  return false;
+}
+
 
 /** Composes domain policy with provider-independent operations and the host's harness limits. */
 export class AIAgent {
@@ -74,6 +101,7 @@ export class AIAgent {
 
   async *run(settings: GenerateSettings, {
     account, signal, contextTokens = this.llm.contextTokens, onContextCompacted, allowTransactionPreparation = false,
+    pendingPreparation, onAmbiguousPreparation,
   }: AgentRunOptions = {}): AsyncGenerator<GenerateEvent> {
     if (!Number.isSafeInteger(contextTokens) || contextTokens <= 0 || contextTokens > this.llm.contextTokens) throw new RangeError('contextTokens must be a positive integer within the model context.');
     if (!account) {
@@ -89,12 +117,21 @@ export class AIAgent {
     if (signal?.aborted) abort();
     let firstVisibleAt: number | undefined;
     try {
-      const classified = await classifyRequest(this.llm, settings, { signal: controller.signal, contextTokens, onContextCompacted });
+      const messages: ModelMessage[] = settings.messages ?? [{ role: 'user', content: settings.prompt }];
+      const latest = messages.at(-1);
+      const choice = latest?.role === 'user' && typeof latest.content === 'string' ? latest.content.trim() : '';
+      const selected = pendingPreparation?.account === account && pendingPreparation.chainId === this.chainId
+        && pendingPreparation.candidateIds.includes(choice) ? choice : undefined;
+      const classified = selected
+        ? { aborted: false as const, intent: { kind: 'prepare' as const }, messages,
+          metrics: { totalMs: 0, ttftMs: null, outputTokens: 0 }, warnings: [] as string[] }
+        : await classifyRequest(this.llm, settings, { signal: controller.signal, contextTokens, onContextCompacted });
       if (classified.aborted || controller.signal.aborted) {
         yield { ...this.done(controller.signal), warnings: classified.warnings, metrics: { ...classified.metrics, totalMs: Date.now() - started, ttftMs: null } };
         return;
       }
-      const options: RunOptions = { account, signal: controller.signal, contextTokens, onContextCompacted, allowTransactionPreparation };
+      const options: RunOptions = { account, signal: controller.signal, contextTokens, onContextCompacted, allowTransactionPreparation,
+        onAmbiguousPreparation, pendingPreparation: selected ? pendingPreparation : undefined };
       const { prompt: _prompt, ...answerSettings } = settings;
       const events = this.answerRequest(classified.intent, { ...answerSettings, messages: classified.messages }, options);
       for await (const event of events) {
@@ -125,8 +162,11 @@ export class AIAgent {
       yield* guardAnswer(this.llm.generate({
         ...settings, tools: undefined, outputSchema: undefined,
         system: [settings.system ?? this.prompt(), intent.kind === 'explanation'
-          ? 'Explain only concepts, not current wallet or chain facts. Use no tools.'
-          : 'Ask a concise clarification about missing details, ambiguous tasks, or which independent action to perform first. Prepare nothing.'].join('\n\n'),
+          ? 'Explain briefly in the user’s language, using Gno.land conventions and examples only. Its native coin is GNOT; contract-issued GRC20 tokens are not native coins. Do not infer what the user holds or take any wallet action.'
+          : 'Ask a concise question in the user’s language. If they requested multiple actions, name each action and ask which to perform first. Do not invent missing details or prerequisite lookups. Prepare nothing.',
+          options.allowTransactionPreparation
+            ? 'The host permits unsigned preparation for eligible requests, but this response uses no tools and prepares nothing. Do not claim preparation is globally disabled.'
+            : 'This run cannot prepare transactions.'].join('\n\n'),
       }, options), () => true, intent);
     } else if (intent.kind === 'lookup') {
       yield* this.answerLookups(intent, settings, options);
@@ -136,18 +176,66 @@ export class AIAgent {
         yield this.done(options.signal);
         return;
       }
-      const planned = await proposePreparation(this.llm, settings.messages, options);
-      const completion = { ...this.done(options.signal), metrics: planned.metrics, warnings: planned.warnings };
-      if (planned.aborted || options.signal.aborted) { yield { ...completion, aborted: true }; return; }
-      const proposal = planned.proposal;
+      const selected = options.pendingPreparation;
+      if (!selected && /(?:^|[\s(:])[-−]\d/u.test(this.userText(settings))) {
+        yield { type: 'text', delta: 'A negative amount is not valid for a wallet transaction. No transaction was prepared.' };
+        yield this.done(options.signal);
+        return;
+      }
+      let planned: PreparationPlanning | undefined;
+      try {
+        planned = selected ? undefined : await proposePreparation(this.llm, settings.messages, options);
+      } catch (error) {
+        if (!(error instanceof Error) || !error.message.startsWith('ADENA_PREPARATION_INVALID:')) throw error;
+        yield { type: 'text', delta: /[\uac00-\ud7a3]/u.test(this.userText(settings))
+          ? '받는 사람, 자산, 금액을 모두 알려 주시겠어요? 금액은 음수가 아니어야 합니다. 거래는 준비되지 않았습니다.'
+          : 'Which recipient, asset, and amount should I use? Amounts must be non-negative. No transaction was prepared.' };
+        yield this.done(options.signal);
+        return;
+      }
+      const completion = planned ? { ...this.done(options.signal), metrics: planned.metrics, warnings: planned.warnings } : this.done(options.signal);
+      if (planned?.aborted || options.signal.aborted) { yield { ...completion, aborted: true }; return; }
+      let proposal = selected
+        ? { ...selected.proposal, asset: { kind: 'id' as const, value: this.userText(settings).trim() } }
+        : planned!.aborted ? undefined : planned!.proposal;
+      if (!proposal) return;
       if (proposal.operation === 'clarification') {
         yield { type: 'text', delta: proposal.question };
         yield { ...completion, messages: [{ role: 'assistant', content: proposal.question }] };
         return;
       }
+      const authorizedText = this.userText(settings);
+      if (!selected && proposal.amount.kind === 'fraction' && !fractionEvidence(authorizedText, proposal.amount)) {
+        const value = pairedDecimalAmount(authorizedText, proposal.asset.value);
+        if (value) {
+          proposal = { ...proposal, amount: { kind: 'exact', value } };
+        } else {
+          yield { type: 'text', delta: 'Please specify the exact amount or an unambiguous share of the balance. No transaction was prepared.' };
+          yield completion;
+          return;
+        }
+      }
+      if (!selected && proposal.recipient.toLowerCase() === proposal.asset.value.toLowerCase()
+        && !mentionsIdentifier(authorizedText, proposal.recipient, false, 2)) {
+        yield { type: 'text', delta: /[\uac00-\ud7a3]/u.test(authorizedText)
+          ? '받는 사람이 누구인가요? 자산과 받는 사람을 각각 확인해 주세요. 거래는 준비되지 않았습니다.'
+          : 'Who is the recipient? Please identify the recipient separately from the asset. No transaction was prepared.' };
+        yield completion;
+        return;
+      }
+      if (!selected && (!mentionsIdentifier(authorizedText, proposal.recipient)
+        || !mentionsIdentifier(authorizedText, proposal.asset.value, proposal.asset.kind === 'id')
+        || proposal.amount.kind === 'exact' && !exactAmountEvidence(authorizedText, proposal.amount.value))) {
+        yield { type: 'text', delta: /[\uac00-\ud7a3]/u.test(authorizedText)
+          ? '받는 사람, 수량과 정확한 자산을 모두 확인해 주세요. 거래는 준비되지 않았습니다.'
+          : 'Please confirm the recipient, amount, and exact asset for this transaction. No transaction was prepared.' };
+        yield completion;
+        return;
+      }
       const action = proposal.operation;
       const contacts = (await this.wallet.getContacts?.()) ?? [];
-      const all = createWalletTools({ sdk: this.wallet, account: options.account, contacts, userText: this.userText(settings), onTransaction: this.onTransaction });
+      const all = createWalletTools({ sdk: this.wallet, account: options.account, contacts, userText: authorizedText,
+        authorizedRecipient: selected?.proposal.recipient, onTransaction: this.onTransaction });
       if (!Object.hasOwn(all, action)) {
         yield { type: 'text', delta: `The wallet does not support ${action}. No transaction was prepared.` };
         yield completion;
@@ -156,13 +244,17 @@ export class AIAgent {
       const run = await this.harness.startRun({ account: options.account, chainId: this.chainId, operationId: `prepare-${++this.runs}`,
         scope: 'prepare-wallet', purpose: 'mainnet-read', walletTools: { [action]: all[action] }, signal: options.signal });
       try {
-        yield* this.prepareEvents(proposal, run, completion);
+        yield* this.prepareEvents(proposal, run, completion, pending => {
+          const recipient = contacts.find(contact => contact.alias.toLowerCase() === proposal.recipient.trim().toLowerCase())?.address
+            ?? proposal.recipient;
+          options.onAmbiguousPreparation?.({ ...pending, proposal: { ...pending.proposal, recipient } });
+        });
       } finally { run.close(); }
     }
   }
 
   private async *prepareEvents(proposal: Exclude<PreparationProposal, { operation: 'clarification' }>,
-    run: HarnessRun, completion: DoneEvent): AsyncGenerator<GenerateEvent> {
+    run: HarnessRun, completion: DoneEvent, onAmbiguousPreparation?: (pending: PendingPreparation) => void): AsyncGenerator<GenerateEvent> {
     let amount: string;
     if (proposal.amount.kind === 'fraction') {
       const request: BalanceRequest = { kind: 'one', asset: proposal.asset };
@@ -198,7 +290,16 @@ export class AIAgent {
     const input = { [name === 'transfer' ? 'to' : 'spender']: proposal.recipient, amount: amount!, token: proposal.asset.value };
     const events = (async function* (): AsyncGenerator<GenerateEvent> {
       yield { type: 'tool-call', id, name, input, invalid: false };
-      yield { type: 'tool-result', id, name, output: await run.dispatch({ name, input }) };
+      const output = await run.dispatch({ name, input });
+      if (!run.signal.aborted && !run.auditFailed && proposal.asset.kind === 'symbol' && output.kind === 'result'
+        && typeof output.value === 'object' && output.value !== null && 'code' in output.value
+        && output.value.code === 'ambiguous_token' && 'candidateIds' in output.value
+        && Array.isArray(output.value.candidateIds) && output.value.candidateIds.length >= 2
+        && output.value.candidateIds.every((id: unknown) => typeof id === 'string' && id.length > 0)) {
+        onAmbiguousPreparation?.({ proposal, candidateIds: [...output.value.candidateIds],
+          account: run.context.account, chainId: run.context.chainId });
+      }
+      yield { type: 'tool-result', id, name, output };
       yield { ...completion, aborted: run.signal.aborted };
     })();
     yield* guardAnswer(events, tool => tool !== name, { kind: 'prepare', action: name }, { auditFailed: () => run.auditFailed });

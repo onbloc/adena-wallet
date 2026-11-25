@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import Storage from 'expo-sqlite/kv-store';
-import type { AIAgent, AgentConversation, ConversationSettings } from '../../agent';
+import { createConversationPendingState, type AIAgent, type AgentConversation, type ConversationSettings } from '../../agent';
 import { chatSessionKey, createChatSession, type ChatScope, type ChatSession, type ChatTurn, type GenerateEvent } from '../../llm/core';
 
 type Loaded = { key: string; persistent: boolean; session: ChatSession };
@@ -28,6 +29,16 @@ export function useChatSession(scope: ChatScope): ChatSessionState {
   const writes = useRef(Promise.resolve());
   const activeRun = useRef<ActiveRun | null>(null);
   const activeScope = useRef<string | null>(key);
+  const [pendingState] = useState(createConversationPendingState);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', state => {
+      if (state !== 'background') return;
+      pendingState.clear();
+      activeRun.current?.controller.abort();
+    });
+    return () => subscription.remove();
+  }, [pendingState]);
 
   useEffect(() => {
     activeScope.current = key;
@@ -65,9 +76,10 @@ export function useChatSession(scope: ChatScope): ChatSessionState {
     return () => {
       disposed = true;
       activeScope.current = null;
+      pendingState.clear();
       if (activeRun.current?.entry.key === key) activeRun.current.controller.abort();
     };
-  }, [key, persistent, attempt]);
+  }, [key, persistent, attempt, pendingState]);
 
   const current = loaded?.key === key ? loaded : undefined;
   function publish(entry: Loaded, clear = false) {
@@ -102,9 +114,11 @@ export function useChatSession(scope: ChatScope): ChatSessionState {
       if (activeRun.current) throw new Error('A conversation is already running.');
       const entry = current;
       const controller = new AbortController();
+      if (!options.allowTransactionPreparation) pendingState.clear();
       const conversation = agent.createConversation({
         session: entry.session, account: options.account, contextTokens: options.contextTokens,
         allowTransactionPreparation: options.allowTransactionPreparation,
+        pendingState,
       });
       const active = { entry, conversation, controller };
       const abort = () => controller.abort();
@@ -123,6 +137,7 @@ export function useChatSession(scope: ChatScope): ChatSessionState {
     },
     reset() {
       if (!current) return;
+      pendingState.clear();
       if (activeRun.current?.entry.session === current.session) {
         const active = activeRun.current;
         activeRun.current = null;

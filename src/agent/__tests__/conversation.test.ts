@@ -7,6 +7,8 @@ import { createOnblocToolSource } from '../../harness/mcp';
 import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
 import { createChatSession, GenerateEventType, LLMFromModel, type GenerateEvent, type LLM } from '../../llm/core';
 import { AIAgent } from '../agent';
+import { createConversationPendingState } from '../conversation';
+import { WalletError } from '../wallet/port';
 import { intentReplyText } from '../testing/intentReply';
 import { ACCOUNT, RECIPIENT, fakeWallet } from '../testing/fakeWallet';
 
@@ -265,6 +267,139 @@ describe('agent conversations', () => {
   it.each([0, -1, 1.5, NaN, Infinity, 8193])('rejects a context budget outside the model limits: %p', (contextTokens) => {
     expect(() => setup().agent.createConversation({ contextTokens })).toThrow(RangeError);
   });
+
+  it('resolves a wallet-reported token candidate without trusting a changed contact', async () => {
+    const candidates = ['gno.land/r/a/gns', 'gno.land/r/b/gns'];
+    const contacts = [{ alias: 'carol', address: RECIPIENT }];
+    const wallet = fakeWallet({ contacts });
+    const transfer = wallet.transfer.bind(wallet);
+    wallet.transfer = jest.fn(async params => {
+      if (params.token === 'GNS') throw new WalletError('ambiguous_token', 'Choose a token.', candidates);
+      return transfer(params);
+    });
+    const handoff = jest.fn();
+    const model = new MockLanguageModelV4({ doGenerate: [
+      reply(intentReplyText({ kind: 'prepare' })),
+      reply(JSON.stringify({ operation: 'transfer', recipient: 'carol',
+        asset: { kind: 'symbol', value: 'GNS' }, amount: { kind: 'exact', value: '1' } })),
+    ] });
+    const agent = new AIAgent({
+      llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })),
+      harness: new Harness(), wallet, onTransaction: handoff,
+    });
+    const conversation = agent.createConversation({ account: ACCOUNT, allowTransactionPreparation: true });
+    await collect(conversation.run({ prompt: 'Send 1 GNS to carol' }));
+    expect(handoff).not.toHaveBeenCalled();
+    contacts[0].address = 'g1different';
+    await collect(conversation.run({ prompt: candidates[1] }));
+    expect(wallet.calls).toEqual([{ method: 'transfer', params: {
+      from: ACCOUNT, to: RECIPIENT, amount: '1', token: candidates[1],
+    } }]);
+    expect(handoff).toHaveBeenCalledTimes(1);
+    expect(model.doGenerateCalls).toHaveLength(2);
+  });
+
+  it('does not treat yes or a later candidate as approval of an earlier ambiguity', async () => {
+    const candidates = ['gno.land/r/a/gns', 'gno.land/r/b/gns'];
+    const wallet = fakeWallet({ failWith: new WalletError('ambiguous_token', 'Choose a token.', candidates) });
+    const handoff = jest.fn();
+    const model = new MockLanguageModelV4({ doGenerate: [
+      reply(intentReplyText({ kind: 'prepare' })),
+      reply(JSON.stringify({ operation: 'transfer', recipient: RECIPIENT,
+        asset: { kind: 'symbol', value: 'GNS' }, amount: { kind: 'exact', value: '1' } })),
+      reply(intentReplyText({ kind: 'unsupported' })),
+      reply(intentReplyText({ kind: 'unsupported' })),
+    ] });
+    const agent = new AIAgent({
+      llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })),
+      harness: new Harness(), wallet, onTransaction: handoff,
+    });
+    const conversation = agent.createConversation({ account: ACCOUNT, allowTransactionPreparation: true });
+    await collect(conversation.run({ prompt: `Send 1 GNS to ${RECIPIENT}` }));
+    await collect(conversation.run({ prompt: 'yes' }));
+    await collect(conversation.run({ prompt: candidates[0] }));
+    expect(wallet.calls).toHaveLength(1);
+    expect(handoff).not.toHaveBeenCalled();
+    expect(model.doGenerateCalls).toHaveLength(4);
+  });
+
+  it.each(['account', 'chainId'] as const)('rejects a candidate if the holder is accidentally shared across a different %s', async field => {
+    const candidates = ['gno.land/r/a/gns', 'gno.land/r/b/gns'];
+    const wallet = fakeWallet({ failWith: new WalletError('ambiguous_token', 'Choose a token.', candidates) });
+    const handoff = jest.fn();
+    const model = new MockLanguageModelV4({ doGenerate: [
+      reply(intentReplyText({ kind: 'prepare' })),
+      reply(JSON.stringify({ operation: 'transfer', recipient: RECIPIENT,
+        asset: { kind: 'symbol', value: 'GNS' }, amount: { kind: 'exact', value: '1' } })),
+      reply(intentReplyText({ kind: 'unsupported' })),
+    ] });
+    const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
+    const state = createConversationPendingState();
+    const first = new AIAgent({ llm, harness: new Harness(), wallet, onTransaction: handoff, chainId: 'chain-a' });
+    const second = new AIAgent({ llm, harness: new Harness(), wallet, onTransaction: handoff,
+      chainId: field === 'chainId' ? 'chain-b' : 'chain-a' });
+    await collect(first.createConversation({ account: ACCOUNT, pendingState: state, allowTransactionPreparation: true })
+      .run({ prompt: `Send 1 GNS to ${RECIPIENT}` }));
+    await collect(second.createConversation({
+      account: field === 'account' ? 'another-account' : ACCOUNT, pendingState: state, allowTransactionPreparation: true,
+    }).run({ prompt: candidates[0] }));
+    expect(wallet.calls).toHaveLength(1);
+    expect(handoff).not.toHaveBeenCalled();
+    expect(model.doGenerateCalls).toHaveLength(3);
+  });
+
+  it('passes a structured ambiguity only to the next exact candidate turn, including across recreated conversations', async () => {
+    const { agent } = setup();
+    const pending = {
+      account: ACCOUNT, chainId: 'gnoland-1',
+      proposal: { operation: 'transfer' as const, recipient: RECIPIENT,
+        asset: { kind: 'symbol' as const, value: 'GNS' }, amount: { kind: 'exact' as const, value: '1' } },
+      candidateIds: ['gno.land/r/a/gns', 'gno.land/r/b/gns'],
+    };
+    const run = jest.spyOn(agent, 'run').mockImplementation(async function* (_settings, options) {
+      if (run.mock.calls.length === 1) options?.onAmbiguousPreparation?.(pending);
+      yield { type: GenerateEventType.Text, delta: 'answer' };
+      yield { type: GenerateEventType.Done, metrics: { totalMs: 1, ttftMs: null }, aborted: false,
+        finishReason: 'stop', warnings: [], messages: [{ role: 'assistant', content: 'answer' }] };
+    });
+    const state = createConversationPendingState();
+    const first = agent.createConversation({ pendingState: state, allowTransactionPreparation: true });
+    await collect(first.run({ prompt: 'Send 1 GNS' }));
+    expect(first.serialize()).not.toContain('gno.land/r/a/gns');
+    const second = agent.createConversation({ pendingState: state, allowTransactionPreparation: true });
+    await collect(second.run({ prompt: ' gno.land/r/a/gns ' }));
+    expect(run.mock.calls[1][1]?.pendingPreparation).toEqual(pending);
+    await collect(second.run({ prompt: 'gno.land/r/a/gns' }));
+    expect(run.mock.calls[2][1]?.pendingPreparation).toBeUndefined();
+  });
+
+  it.each(['unrelated', 'reset', 'clear', 'cancel'] as const)(
+    'invalidates pending ambiguity after %s', async invalidation => {
+      const { agent } = setup();
+      const pending = {
+        account: ACCOUNT, chainId: 'gnoland-1',
+        proposal: { operation: 'transfer' as const, recipient: RECIPIENT,
+          asset: { kind: 'symbol' as const, value: 'GNS' }, amount: { kind: 'exact' as const, value: '1' } },
+        candidateIds: ['gno.land/r/a/gns', 'gno.land/r/b/gns'],
+      };
+      const run = jest.spyOn(agent, 'run').mockImplementation(async function* (_settings, options) {
+        if (run.mock.calls.length === 1) options?.onAmbiguousPreparation?.(pending);
+        yield { type: GenerateEventType.Text, delta: 'answer' };
+        yield { type: GenerateEventType.Done, metrics: { totalMs: 1, ttftMs: null }, aborted: false,
+          finishReason: 'stop', warnings: [], messages: [{ role: 'assistant', content: 'answer' }] };
+      });
+      const state = createConversationPendingState();
+      const conversation = agent.createConversation({ pendingState: state, allowTransactionPreparation: true });
+      const controller = new AbortController();
+      if (invalidation === 'cancel') controller.abort();
+      await collect(conversation.run({ prompt: 'Send 1 GNS' }, { signal: controller.signal }));
+      if (invalidation === 'unrelated') await collect(conversation.run({ prompt: 'What is GNS?' }));
+      if (invalidation === 'reset') conversation.reset();
+      if (invalidation === 'clear') state.clear();
+      await collect(conversation.run({ prompt: 'gno.land/r/a/gns' }));
+      expect(run.mock.calls[run.mock.calls.length - 1][1]?.pendingPreparation).toBeUndefined();
+    },
+  );
 
   it('does not allow overlapping turns or a late result to repopulate a reset conversation', async () => {
     const { promise: ready, resolve: started } = Promise.withResolvers<void>();

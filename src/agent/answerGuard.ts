@@ -123,8 +123,7 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
       if (balance.request.kind === 'one' &&
         (balance.request.asset.kind === 'symbol' && (contradictsSymbolMention(userText, balance.request.asset.value)
           || balance.assets.some(asset => contradictsSymbolMention(userText, asset.symbol)))
-        || balance.request.asset.kind === 'id' && !userText.toLowerCase().includes(balance.request.asset.value.toLowerCase())
-          && balance.assets.some(asset => contradictsSymbolMention(userText, asset.symbol)))) {
+        || balance.request.asset.kind === 'id' && !userText.includes(balance.request.asset.value))) {
         selectionConflict = true;
         conflictedSelections.add(event.id);
       }
@@ -186,7 +185,10 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         const sections = outcomes.length ? [...outcomes] : facts;
         if ((modelOnly || explanationRequested) && text.trim()) sections.push(text);
         if (readFailed) sections.push('Some lookups could not be verified. Review the individual tool results.');
-        else if (lookup && !lookupComplete && !policy.evidence?.selected()) sections.push('The required wallet lookups did not complete successfully.');
+        else if (lookup && !lookupComplete && !policy.evidence?.selected()) {
+          const other = lookup.requests.find(request => request.target === 'other');
+          sections.push(other ? `Unable to complete the requested lookup: ${other.query}` : 'The required wallet lookups did not complete successfully.');
+        }
         if (explanationRequested && !explanationComplete) sections.push('The requested explanation did not complete.');
         if (intent.kind === 'prepare' && !prepared && !outcomes.length) sections.push('No transaction was prepared. The requested preparation did not complete.');
         if (mismatch) sections.push('Tool results did not match the requested action and are not trusted.');

@@ -1,4 +1,5 @@
 import { act } from 'react';
+import { AppState } from 'react-native';
 import Storage from 'expo-sqlite/kv-store';
 import { createRoot, type Root } from 'test-renderer';
 import { simulateStreamingMiddleware, wrapLanguageModel } from 'ai';
@@ -87,14 +88,18 @@ describe('useChatSession', () => {
     await act(async () => { root.unmount(); });
   });
 
-  it('aborts a switched-away run and keeps its late persistence bound to the original scope', async () => {
-    const original = [{ prompt: 'Original question', answer: 'Original answer' }];
-    const destination = [{ prompt: 'Wallet question', answer: 'Wallet answer' }];
+  it.each([
+    ['mode', plain, wallet],
+    ['account', wallet, { ...wallet, account: 'another-account' }],
+    ['network', wallet, { ...wallet, chainId: 'another-chain' }],
+  ] as const)('isolates late responses and saved candidates after changing %s', async (_, source, target) => {
+    const original = [{ prompt: 'Which GNS?', answer: 'GNS: gno.land/r/a/gns or gno.land/r/b/gns.' }];
+    const destination = [{ prompt: 'My GNOT balance?', answer: '2 GNOT' }];
     const originalSnapshot = JSON.stringify({ version: 1, turns: original });
     const destinationSnapshot = JSON.stringify({ version: 1, turns: destination });
-    await Storage.setItem(chatSessionKey(plain), originalSnapshot);
-    await Storage.setItem(chatSessionKey(wallet), destinationSnapshot);
-    await act(async () => { root.render(<Probe scope={plain} />); });
+    await Storage.setItem(chatSessionKey(source), originalSnapshot);
+    await Storage.setItem(chatSessionKey(target), destinationSnapshot);
+    await act(async () => { root.render(<Probe scope={source} />); });
     expect(current.ready).toBe(true);
     expect(current.turns).toEqual(original);
     jest.clearAllMocks();
@@ -105,7 +110,7 @@ describe('useChatSession', () => {
       await blocked.ready;
     });
 
-    await act(async () => { root.render(<Probe scope={wallet} />); });
+    await act(async () => { root.render(<Probe scope={target} />); });
 
     expect(blocked.signal?.aborted).toBe(true);
     expect(current.turns).toEqual(destination);
@@ -114,10 +119,26 @@ describe('useChatSession', () => {
       await pending;
     });
     expect(current.turns).toEqual(destination);
-    expect(Storage.setItem).toHaveBeenCalledWith(chatSessionKey(plain), originalSnapshot);
-    expect(Storage.setItem).not.toHaveBeenCalledWith(chatSessionKey(wallet), expect.anything());
-    expect(await Storage.getItem(chatSessionKey(wallet))).toBe(destinationSnapshot);
-    expect(await Storage.getItem(chatSessionKey(plain))).toBe(originalSnapshot);
+    expect(Storage.setItem).toHaveBeenCalledWith(chatSessionKey(source), originalSnapshot);
+    expect(Storage.setItem).not.toHaveBeenCalledWith(chatSessionKey(target), expect.anything());
+    expect(await Storage.getItem(chatSessionKey(target))).toBe(destinationSnapshot);
+    expect(await Storage.getItem(chatSessionKey(source))).toBe(originalSnapshot);
+  });
+
+  it('cancels a pending answer on background without saving it after foregrounding', async () => {
+    await act(async () => { root.render(<Probe scope={wallet} />); });
+    const change = jest.mocked(AppState.addEventListener).mock.calls.find(([type]) => type === 'change')![1];
+    const blocked = blockedAgent();
+    const pending = consume(current.run(blocked.agent, { prompt: 'Show my holdings' }));
+    await blocked.ready;
+    await act(async () => {
+      change('background');
+      change('active');
+      blocked.release();
+      await pending;
+    });
+    expect(blocked.signal?.aborted).toBe(true);
+    expect(current.turns).toEqual([]);
   });
 
   it('does not repopulate cleared memory or storage when an aborted run returns late', async () => {

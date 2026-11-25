@@ -90,6 +90,14 @@ describe('integrated request execution', () => {
     expect(conversation.turns).toEqual([]);
     expect(textOf(events)).toContain('selected asset differs');
   });
+  it('does not verify a balance selected by an invented package ID', async () => {
+    const { agent } = setup([], { intent: { kind: 'lookup', requests: [
+      { target: 'balance', request: { kind: 'one', asset: { kind: 'id', value: 'gno.land/r/gns' } } },
+    ] } });
+    const events = await collect(agent.run({ prompt: 'My GNS balance?' }, { account: ACCOUNT }));
+    expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
+    expect(textOf(events)).toContain('Please confirm which asset');
+  });
   it('displays partial normalized assets but does not commit an incomplete portfolio', async () => {
     const { agent } = setup([], { intent: { kind: 'lookup', requests: [{ target: 'balance', request: { kind: 'all' } }] },
       tools: [{ name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: '1000000' } }] });
@@ -172,11 +180,23 @@ describe('integrated request execution', () => {
       amount: { kind: 'exact', value: '1' } });
     const { agent, wallet, prepared } = setup([planned], { intent: prepare });
     const events = await collect(agent.run({ prompt: 'Send 1 GNOT to carol.' }, permission));
-    expect(events).toContainEqual(expect.objectContaining({
-      type: 'tool-result', name: operation, output: { kind: 'denied', code: 'TARGET_CHANGED' },
-    }));
+    expect(textOf(events)).toContain('No transaction was prepared');
     expect(wallet.calls).toEqual([]);
     expect(prepared).toEqual([]);
+  });
+  it('does not use the sole asset mention as an invented recipient', async () => {
+    const { agent, wallet } = setup([proposal({ operation: 'transfer', recipient: 'GNOT',
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: '1' } })], { intent: prepare });
+    const events = await collect(agent.run({ prompt: 'Send 1 GNOT.' }, permission));
+    expect(wallet.calls).toEqual([]);
+    expect(textOf(events)).toMatch(/recipient/i);
+  });
+  it('grounds Latin names and quantities followed by Korean particles', async () => {
+    const { agent, wallet, prepared } = setup([proposal({ operation: 'transfer', recipient: FRIEND.alias,
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: '1' } })], { intent: prepare });
+    await collect(agent.run({ prompt: 'carol에게 GNOT 1개 보내줘' }, permission));
+    expect(wallet.calls).toEqual([{ method: 'transfer', params: { from: ACCOUNT, to: FRIEND.address, amount: '1', token: 'GNOT' } }]);
+    expect(prepared).toHaveLength(1);
   });
   it('prepares once without external reads or a fallible post-preparation model call', async () => {
     const { agent, model, prepared, wallet, fetcher } = setup([send], { intent: prepare, remote: false });
@@ -249,7 +269,7 @@ describe('integrated request execution', () => {
     expect(fetcher).not.toHaveBeenCalled();
     expect(model.doGenerateCalls).toHaveLength(2);
   });
-  it('retains planner clarification and resolves a follow-up without replaying preparation authority', async () => {
+  it('retains planner clarification and permits a fully restated follow-up', async () => {
     const question = 'Who should receive 1 GNOT?';
     const { agent, prepared, wallet, fetcher, model } = setup([
       proposal({ operation: 'clarification', question }), answer(intentReplyText(prepare)),
@@ -265,7 +285,7 @@ describe('integrated request execution', () => {
     expect(chat.turns[0]).toEqual({ prompt: 'Send 1 GNOT.', answer: question });
     expect(wallet.getContacts).not.toHaveBeenCalled();
     wallet.getContacts = async () => [FRIEND];
-    await collect(chat.run({ prompt: 'To carol.' }));
+    await collect(chat.run({ prompt: 'Send 1 GNOT to carol.' }));
     expect(prepared).toHaveLength(1);
     expect(prepared[0].summary).toMatchObject({ to: FRIEND.address, amount: '1' });
     expect(JSON.stringify(model.doGenerateCalls[3].prompt)).toContain(question);
@@ -273,6 +293,98 @@ describe('integrated request execution', () => {
     expect(wallet.calls).toHaveLength(1);
     expect(prepared).toHaveLength(1);
     expect(model.doGenerateCalls).toHaveLength(6);
+  });
+  it('rejects a planner-invented package ID even when the symbol was requested', async () => {
+    const { agent, wallet, prepared } = setup([proposal({ operation: 'transfer', recipient: FRIEND.alias,
+      asset: { kind: 'id', value: 'gno.land/r/invented/gns' }, amount: { kind: 'exact', value: '1' } })], { intent: prepare });
+    const events = await collect(agent.run({ prompt: 'Send 1 GNS to carol.' }, permission));
+    expect(wallet.calls).toEqual([]);
+    expect(prepared).toEqual([]);
+    expect(textOf(events)).toContain('No transaction was prepared');
+  });
+  it('does not prepare a model-invented exact amount', async () => {
+    const { agent, wallet } = setup([proposal({ operation: 'transfer', recipient: FRIEND.alias,
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: '1' } })], { intent: prepare });
+    const events = await collect(agent.run({ prompt: 'Send GNOT to carol.' }, permission));
+    expect(wallet.calls).toEqual([]);
+    expect(textOf(events)).toContain('No transaction was prepared');
+  });
+  it('safely refuses a negative amount returned by the planner', async () => {
+    const { agent, wallet } = setup([answer(JSON.stringify({ operation: 'transfer', recipient: FRIEND.alias,
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: '-1' } }))], { intent: prepare });
+    const events = await collect(agent.run({ prompt: 'Send -1 GNOT to carol.' }, permission));
+    expect(wallet.calls).toEqual([]);
+    expect(textOf(events)).toMatch(/negative/i);
+    expect(textOf(events)).toContain('No transaction was prepared');
+  });
+  it('recovers an explicit decimal amount instead of using an invented fraction', async () => {
+    const { agent, wallet } = setup([proposal({ operation: 'transfer', recipient: FRIEND.alias,
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'fraction', numerator: '1', denominator: '8' } })], { intent: prepare });
+    await collect(agent.run({ prompt: 'Send 1.25 GNOT to carol.' }, permission));
+    expect(wallet.calls).toEqual([{ method: 'transfer', params: { from: ACCOUNT, to: FRIEND.address, amount: '1.25', token: 'GNOT' } }]);
+  });
+  it('rejects a fraction not supported by the user-supplied share', async () => {
+    const { agent, wallet, fetcher } = setup([proposal({ operation: 'transfer', recipient: FRIEND.alias,
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'fraction', numerator: '1', denominator: '8' } })], { intent: prepare });
+    const events = await collect(agent.run({ prompt: 'Send half my GNOT to carol.' }, permission));
+    expect(wallet.calls).toEqual([]);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(textOf(events)).toContain('No transaction was prepared');
+  });
+  it.each([
+    ['Send 1.25 GNOT to carol.', '1'],
+    ['Send 1.25 GNOT to carol.', '25'],
+    ['Send 10% of my GNOT to carol.', '10'],
+  ])('does not mistake a numeric substring or share for an exact amount: %s', async (prompt, amount) => {
+    const { agent, wallet } = setup([proposal({ operation: 'transfer', recipient: FRIEND.alias,
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: amount } })], { intent: prepare });
+    const events = await collect(agent.run({ prompt }, permission));
+    expect(wallet.calls).toEqual([]);
+    expect(textOf(events)).toContain('No transaction was prepared');
+  });
+  it('does not use an unrelated decimal fee as a fallback amount', async () => {
+    const { agent, wallet } = setup([proposal({ operation: 'transfer', recipient: FRIEND.alias,
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'fraction', numerator: '1', denominator: '2' } })], { intent: prepare });
+    const events = await collect(agent.run({ prompt: 'Send a quarter of my GNOT to carol with a 1.25 fee.' }, permission));
+    expect(wallet.calls).toEqual([]);
+    expect(textOf(events)).toContain('No transaction was prepared');
+  });
+  it('requires restating the recipient when a follow-up supplies only a package ID', async () => {
+    const asset = 'gno.land/r/example/token';
+    const { agent, wallet, prepared } = setup([
+      proposal({ operation: 'clarification', question: 'Which asset should I send?' }),
+      answer(intentReplyText(prepare)),
+      proposal({ operation: 'transfer', recipient: FRIEND.alias, asset: { kind: 'id', value: asset },
+        amount: { kind: 'exact', value: '1' } }),
+    ], { intent: prepare });
+    const chat = agent.createConversation({ account: ACCOUNT, allowTransactionPreparation: true });
+    await collect(chat.run({ prompt: 'Send 1 token to carol.' }));
+    const events = await collect(chat.run({ prompt: asset }));
+    expect(wallet.calls).toEqual([]);
+    expect(prepared).toEqual([]);
+    expect(textOf(events)).toContain('No transaction was prepared');
+  });
+  it('does not treat model-authored clarification text as authorization to reuse an identity', async () => {
+    const { agent, wallet } = setup([proposal({ operation: 'transfer', recipient: FRIEND.alias,
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: '1' } })], { intent: prepare });
+    const events = await collect(agent.run({ messages: [
+      { role: 'user', content: 'Send 1 GNOT to carol.' },
+      { role: 'assistant', content: 'Which asset should I send to carol?' },
+      { role: 'user', content: 'GNOT' },
+    ] }, permission));
+    expect(wallet.calls).toEqual([]);
+    expect(textOf(events)).toContain('No transaction was prepared');
+  });
+  it('does not recover a recipient from an unrelated completed turn', async () => {
+    const { agent, wallet } = setup([proposal({ operation: 'transfer', recipient: FRIEND.alias,
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: '1' } })], { intent: prepare });
+    const events = await collect(agent.run({ messages: [
+      { role: 'user', content: 'Send 1 GNOT to carol.' },
+      { role: 'assistant', content: 'Unsigned transaction prepared.' },
+      { role: 'user', content: 'Send 1 GNOT.' },
+    ] }, permission));
+    expect(wallet.calls).toEqual([]);
+    expect(textOf(events)).toContain('No transaction was prepared');
   });
   it.each([
     { units: '9223372036854775806', numerator: '1', denominator: '2', expected: '4611686018427.387903' },
@@ -331,7 +443,8 @@ describe('integrated request execution', () => {
     JSON.stringify([transferProposal, transferProposal]),
   ])('rejects malformed preparation output before discovery or execution: %s', async output => {
     const { agent, wallet, prepared, fetcher, model } = setup([answer(output)], { intent: prepare });
-    await expect(collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission))).rejects.toThrow('ADENA_PREPARATION_INVALID');
+    const events = await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission));
+    expect(textOf(events)).toContain('No transaction was prepared');
     expect(fetcher).not.toHaveBeenCalled();
     expect(wallet.calls).toEqual([]);
     expect(prepared).toEqual([]);
@@ -340,7 +453,8 @@ describe('integrated request execution', () => {
   it('rejects a length-truncated proposal even when its JSON is otherwise valid', async () => {
     const { agent, wallet, prepared, fetcher, model } = setup([{ ...send,
       finishReason: { unified: 'length', raw: 'length' } }], { intent: prepare });
-    await expect(collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission))).rejects.toThrow('ADENA_PREPARATION_INVALID');
+    const events = await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission));
+    expect(textOf(events)).toContain('No transaction was prepared');
     expect(fetcher).not.toHaveBeenCalled();
     expect(wallet.calls).toEqual([]);
     expect(prepared).toEqual([]);
