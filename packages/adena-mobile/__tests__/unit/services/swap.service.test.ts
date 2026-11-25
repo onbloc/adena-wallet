@@ -269,6 +269,16 @@ describe('SwapService', () => {
     });
   });
 
+  it('reviews GRC20 tokens under the chain symbol and name, not the API metadata', async () => {
+    const { service, network, account, gnot, gns } = await setup();
+    const spoofed = { ...gns, symbol: 'USDC', name: 'USD Coin' };
+    const quote = await service.getQuote({ network, input: gnot, output: spoofed, exactType: 'EXACT_IN', amount: '1000000' });
+    const prepared = await service.prepare({ account, network, input: gnot, output: spoofed, quote, settings: DEFAULT_SWAP_SETTINGS });
+
+    expect(prepared.output).toMatchObject({ id: GNS, symbol: 'GNS', name: 'GNS' });
+    expect(prepared.input).toBe(gnot);
+  });
+
   it('checks the input balance together with the fee before signing', async () => {
     const { service, network, account, gnot, gns, env, address } = await setup();
     const quote = await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' });

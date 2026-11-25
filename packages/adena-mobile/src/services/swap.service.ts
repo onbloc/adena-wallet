@@ -236,17 +236,23 @@ export class SwapService {
     return (diff < 0n ? -diff : diff) <= BigInt(hops);
   }
 
-  // GRC20 metadata from the API is only trusted once the chain agrees on the registry entry and decimals.
-  private async assertOnChainTokens(network: Network, tokens: SwapToken[]): Promise<void> {
+  // GRC20 decimals from the API must match the chain; the shown symbol and name are replaced with the chain's.
+  private async onChainTokens(network: Network, tokens: SwapToken[]): Promise<SwapToken[]> {
     const assets = this.chainRegistry.assets(network);
 
-    for (const token of tokens.filter(item => item.type === TokenType.GRC20)) {
+    return Promise.all(tokens.map(async (token) => {
+      if (token.type !== TokenType.GRC20) {
+        return token;
+      }
+
       const onChain = await assets.findToken(token.id, network);
 
       if (!onChain || onChain.decimals !== token.decimals) {
         throw new AppError(AppErrorCode.SWAP_INVALID_TOKEN, `${token.symbol} details don’t match the chain. Swap is blocked for this token.`);
       }
-    }
+
+      return { ...token, symbol: onChain.symbol, name: onChain.name };
+    }));
   }
 
   private async buildDraft(prepared: Omit<PreparedSwap, 'draft' | 'estimate' | 'preparedAt'>, fee: TransactionFee): Promise<TransactionDraft> {
@@ -273,11 +279,11 @@ export class SwapService {
     return { networkId: network.id, chainId: network.chainId, messages, fee, memo: '' };
   }
 
-  async prepare({ account, network, input, output, quote, settings }: PrepareSwapInput): Promise<PreparedSwap> {
+  async prepare({ account, network, input: listedInput, output: listedOutput, quote, settings }: PrepareSwapInput): Promise<PreparedSwap> {
     const { config, repository } = this.require(network);
 
-    if (quote.networkId !== network.id || quote.inputTokenId !== input.id || quote.outputTokenId !== output.id
-      || quote.inputPath !== input.swapPath || quote.outputPath !== output.swapPath) {
+    if (quote.networkId !== network.id || quote.inputTokenId !== listedInput.id || quote.outputTokenId !== listedOutput.id
+      || quote.inputPath !== listedInput.swapPath || quote.outputPath !== listedOutput.swapPath) {
       throw new AppError(AppErrorCode.SWAP_PRICE_MOVED, 'The quote no longer matches the selected tokens');
     }
 
@@ -292,7 +298,7 @@ export class SwapService {
       throw new AppError(AppErrorCode.SWAP_PRICE_MOVED, 'The quote is inconsistent. Fetch a new one.');
     }
 
-    await this.assertOnChainTokens(network, [input, output]);
+    const [input, output] = await this.onChainTokens(network, [listedInput, listedOutput]);
 
     const slippageBps = slippageToBps(effectiveSlippage(settings));
     const limits = swapLimits(quote, slippageBps);
