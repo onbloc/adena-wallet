@@ -28,6 +28,14 @@ describe('StorageProcessedDappRequestRepository', () => {
     expect(['a', 'b', 'c'].map(key => repository.has(key))).toEqual([false, true, true]);
   });
 
+  it('removes a key for every instance on the same store', () => {
+    const store = new MemoryKeyValueStore();
+
+    ['a', 'b'].forEach(key => new StorageProcessedDappRequestRepository(store).add(key));
+    new StorageProcessedDappRequestRepository(store).remove('a');
+    expect(['a', 'b'].map(key => new StorageProcessedDappRequestRepository(store).has(key))).toEqual([false, true]);
+  });
+
   it('ignores corrupted storage', () => {
     const store = new MemoryKeyValueStore();
 
@@ -42,5 +50,7 @@ describe('MemoryProcessedDappRequestRepository', () => {
 
     repository.add('a');
     expect(repository.has('a')).toBe(true);
+    repository.remove('a');
+    expect(repository.has('a')).toBe(false);
   });
 });

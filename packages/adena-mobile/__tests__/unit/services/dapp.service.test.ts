@@ -1,7 +1,7 @@
 import { fromBase64 } from '@cosmjs/encoding';
 import { Tx } from '@gnolang/tm2-js-client';
 
-import { AppError, isAppError } from '../../../src/core/errors';
+import { AppError, isAppError, TransactionPendingError } from '../../../src/core/errors';
 import { decodeBase64Url } from '../../../src/deeplink/base64url';
 import { buildDappRequestUrl, DappRequestPayload } from '../../../src/deeplink/dapp-protocol';
 import { DappTransactionRequest } from '../../../src/domain/dapp';
@@ -234,6 +234,51 @@ describe('DappService', () => {
 
       container.walletService.lock();
       expect(await codeOf(() => service.approveTransaction(request, context, draft))).toBe('WALLET_LOCKED');
+    });
+  });
+
+  describe('approving once', () => {
+    it('lets only one of two sheets for the same request sign and broadcast', async () => {
+      const { service, txRequest, gno } = await setup();
+      const first = txRequest();
+      const second = txRequest();
+      const context = service.resolveContext(first);
+      const { draft } = await service.prepareTransaction(first, context);
+      const results = await Promise.allSettled([
+        service.approveTransaction(first, context, draft),
+        service.approveTransaction(second, context, draft),
+      ]);
+
+      expect(results.map(result => result.status)).toEqual(['fulfilled', 'rejected']);
+      expect(isAppError((results[1] as PromiseRejectedResult).reason, 'DUPLICATE_REQUEST')).toBe(true);
+      expect(gno.state.broadcasts).toHaveLength(1);
+      expect(await codeOf(() => service.approveConnect(service.parseRequestUrl(buildDappRequestUrl(payload())), context))).toBe('DUPLICATE_REQUEST');
+    });
+
+    it('keeps a definitely failed approval retryable', async () => {
+      const { container, service, txRequest, gno } = await setup();
+      const request = txRequest();
+      const context = service.resolveContext(request);
+      const { draft } = await service.prepareTransaction(request, context);
+
+      container.walletService.lock();
+      expect(await codeOf(() => service.approveTransaction(request, context, draft))).toBe('WALLET_LOCKED');
+      expect(service.isProcessed(request)).toBe(false);
+      await container.walletService.unlock(TEST_PASSWORD);
+      await service.approveTransaction(request, context, draft);
+      expect(gno.state.broadcasts).toHaveLength(1);
+    });
+
+    it('blocks a second approval after an unknown broadcast outcome', async () => {
+      const { container, service, txRequest } = await setup();
+      const request = txRequest();
+      const context = service.resolveContext(request);
+      const { draft } = await service.prepareTransaction(request, context);
+      const broadcast = jest.spyOn(container.transactionService, 'signAndBroadcast').mockRejectedValue(new TransactionPendingError('HASH'));
+
+      expect(await codeOf(() => service.approveTransaction(request, context, draft))).toBe('TRANSACTION_PENDING');
+      expect(await codeOf(() => service.approveTransaction(txRequest(), context, draft))).toBe('DUPLICATE_REQUEST');
+      expect(broadcast).toHaveBeenCalledTimes(1);
     });
   });
 

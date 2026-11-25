@@ -1,4 +1,4 @@
-import { AppError, AppErrorCode, isAppError } from '../core/errors';
+import { AppError, AppErrorCode, isAppError, TransactionPendingError } from '../core/errors';
 import { buildCallbackUrl, parseDappRequestUrl } from '../deeplink/dapp-protocol';
 import { Account } from '../domain/account';
 import { DappMethod, DappRequest, DappResponse, DappResponseStatus, DappTransactionRequest } from '../domain/dapp';
@@ -18,6 +18,8 @@ const PACKAGE_NAME_PATTERN = /^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i;
 
 // A dApp fee above this multiple of the wallet's estimate is flagged (never blocked).
 export const DAPP_FEE_WARNING_MULTIPLIER = 3;
+
+const duplicateRequest = (): AppError => new AppError(AppErrorCode.DUPLICATE_REQUEST, 'This request was already handled. Send a new request.');
 
 const processedKey = (request: DappRequest): string => `${request.callbackOrigin}\n${request.requestId}`;
 
@@ -67,7 +69,7 @@ export class DappService {
   }
 
   rejectDuplicate(request: DappRequest): string {
-    return this.fail(request, new AppError(AppErrorCode.DUPLICATE_REQUEST, 'This request was already handled. Send a new request.'));
+    return this.fail(request, duplicateRequest());
   }
 
   resolveContext(request: DappRequest): DappRequestContext {
@@ -127,15 +129,23 @@ export class DappService {
   }
 
   approveConnect(request: DappRequest, context: DappRequestContext): string {
-    this.connectedAppService.touch(request.callbackOrigin, request.dapp, context.account.id, context.network.id, request.callerPackage);
-    return this.respond(request, {
-      status: DappResponseStatus.SUCCESS,
-      data: {
-        address: context.address,
-        publicKey: context.account.publicKey,
-        chainId: context.network.chainId,
-      },
-    });
+    this.begin(request);
+
+    try {
+      this.connectedAppService.touch(request.callbackOrigin, request.dapp, context.account.id, context.network.id, request.callerPackage);
+      return this.respond(request, {
+        status: DappResponseStatus.SUCCESS,
+        data: {
+          address: context.address,
+          publicKey: context.account.publicKey,
+          chainId: context.network.chainId,
+        },
+      });
+    }
+    catch (error) {
+      this.processedRequests.remove(processedKey(request));
+      throw error;
+    }
   }
 
   async approveTransaction(
@@ -145,17 +155,29 @@ export class DappService {
   ): Promise<string> {
     const { account, network } = context;
 
-    this.connectedAppService.markUsed(request.callbackOrigin, account.id, network.id, request.callerPackage);
+    this.begin(request);
 
-    if (request.method === DappMethod.SIGN_TRANSACTION) {
-      const signed = await this.transactionService.sign(draft, account, network);
+    try {
+      this.connectedAppService.markUsed(request.callbackOrigin, account.id, network.id, request.callerPackage);
 
-      return this.respond(request, { status: DappResponseStatus.SUCCESS, data: { signedTx: signed.encoded, address: context.address } });
+      if (request.method === DappMethod.SIGN_TRANSACTION) {
+        const signed = await this.transactionService.sign(draft, account, network);
+
+        return this.respond(request, { status: DappResponseStatus.SUCCESS, data: { signedTx: signed.encoded, address: context.address } });
+      }
+
+      const result = await this.transactionService.signAndBroadcast(draft, account, network);
+
+      return this.respond(request, { status: DappResponseStatus.SUCCESS, data: { ...result } });
     }
+    catch (error) {
+      // An unknown broadcast outcome keeps the mark, so the request cannot be broadcast again.
+      if (!(error instanceof TransactionPendingError)) {
+        this.processedRequests.remove(processedKey(request));
+      }
 
-    const result = await this.transactionService.signAndBroadcast(draft, account, network);
-
-    return this.respond(request, { status: DappResponseStatus.SUCCESS, data: { ...result } });
+      throw error;
+    }
   }
 
   reject(request: DappRequest): string {
@@ -174,6 +196,15 @@ export class DappService {
   // Crashes (error boundaries) must not leak internal error text to the dApp.
   failUnexpected(request: DappRequest): string {
     return this.respond(request, { status: DappResponseStatus.FAILURE, error: { code: AppErrorCode.UNEXPECTED_ERROR, message: 'The request could not be completed' } });
+  }
+
+  // Marks the request in the shared store before signing, so another sheet or screen cannot approve it too.
+  private begin(request: DappRequest): void {
+    if (this.isProcessed(request)) {
+      throw duplicateRequest();
+    }
+
+    this.processedRequests.add(processedKey(request));
   }
 
   private respond(request: DappRequest, response: Omit<DappResponse, 'requestId'>): string {

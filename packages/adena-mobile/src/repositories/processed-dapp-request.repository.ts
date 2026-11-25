@@ -5,6 +5,7 @@ import { KeyValueStore, readJson, writeJson } from '../storage/key-value-store';
 export interface ProcessedDappRequestRepository {
   has(key: string): boolean;
   add(key: string): void;
+  remove(key: string): void;
 }
 
 interface ProcessedEntry {
@@ -33,6 +34,10 @@ export class StorageProcessedDappRequestRepository implements ProcessedDappReque
     writeJson(this.store, StorageKey.PROCESSED_DAPP_REQUESTS, entries.slice(-this.maxEntries));
   }
 
+  remove(key: string): void {
+    writeJson(this.store, StorageKey.PROCESSED_DAPP_REQUESTS, this.live().filter(entry => entry.key !== key));
+  }
+
   private live(): ProcessedEntry[] {
     const entries = readJson<ProcessedEntry[]>(this.store, StorageKey.PROCESSED_DAPP_REQUESTS);
     const cutoff = this.now() - this.ttlMs;
@@ -52,5 +57,9 @@ export class MemoryProcessedDappRequestRepository implements ProcessedDappReques
 
   add(key: string): void {
     this.keys.add(key);
+  }
+
+  remove(key: string): void {
+    this.keys.delete(key);
   }
 }

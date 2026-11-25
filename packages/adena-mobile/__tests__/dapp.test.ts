@@ -103,7 +103,7 @@ describe('DappService', () => {
     expect(readResponse(container.dappService.fail(request, error))).toMatchObject({ status: 'failure', error: { code: 'NOT_CONNECTED' } });
 
     // A connect from the same origin unlocks transactions for that account on any network.
-    const connect = container.dappService.parseRequestUrl(buildDappRequestUrl(basePayload()));
+    const connect = container.dappService.parseRequestUrl(buildDappRequestUrl(basePayload({ id: 'connect-1' })));
 
     container.dappService.approveConnect(connect, container.dappService.resolveContext(connect));
     expect(() => container.dappService.resolveContext(request)).not.toThrow();
