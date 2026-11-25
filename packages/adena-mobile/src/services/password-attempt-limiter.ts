@@ -1,5 +1,5 @@
 import { AppError, AppErrorCode, isAppError } from '../core/errors';
-import { PasswordAttemptRepository } from '../repositories/password-attempt.repository';
+import { PasswordAttemptRepository, PasswordAttemptState } from '../repositories/password-attempt.repository';
 import { SerialQueue } from '../utils/serial-queue';
 
 export const FREE_PASSWORD_ATTEMPTS = 4;
@@ -21,10 +21,11 @@ const formatWait = (ms: number): string => {
   return seconds < 60 ? `${seconds} seconds` : `${Math.ceil(seconds / 60)} minutes`;
 };
 
+// Shared by every limiter in the JS runtime: the main app and each inject sheet build their own container.
+const attemptQueue = new SerialQueue();
+
 // One persisted attempt limit for every password check (unlock, reveal, remove, settings, inject sheet).
 export class PasswordAttemptLimiter {
-  private readonly queue = new SerialQueue();
-
   constructor(
     private readonly repository: PasswordAttemptRepository,
     private readonly now: () => number = Date.now,
@@ -48,7 +49,7 @@ export class PasswordAttemptLimiter {
   // Deadline check, password check and failure update run as one queued step, so overlapping
   // attempts each see the failures recorded before them.
   run<T>(check: () => Promise<T>): Promise<T> {
-    return this.queue.run(() => this.attempt(check));
+    return attemptQueue.run(() => this.attempt(check));
   }
 
   private async attempt<T>(check: () => Promise<T>): Promise<T> {
@@ -58,6 +59,12 @@ export class PasswordAttemptLimiter {
       throw new AppError(AppErrorCode.PASSWORD_ATTEMPTS_EXCEEDED, `Too many attempts. Try again in ${formatWait(remaining)}.`);
     }
 
+    // Counted as a failure before the slow check, so a reader elsewhere (or a killed process) cannot get a free guess.
+    const before = await this.repository.get();
+    const pending = { failures: before.failures + 1, lockedUntil: this.now() + delayAfter(before.failures + 1) };
+
+    await this.repository.save(pending);
+
     try {
       const result = await check();
 
@@ -65,8 +72,8 @@ export class PasswordAttemptLimiter {
       return result;
     }
     catch (error) {
-      if (isAppError(error, AppErrorCode.INVALID_PASSWORD)) {
-        await this.recordFailure();
+      if (!isAppError(error, AppErrorCode.INVALID_PASSWORD)) {
+        await this.undo(pending, before);
       }
 
       throw error;
@@ -81,10 +88,12 @@ export class PasswordAttemptLimiter {
     }
   }
 
-  private async recordFailure(): Promise<void> {
-    const { failures } = await this.repository.get();
-    const next = failures + 1;
+  // Not a password failure: restores the earlier state unless another attempt changed it since.
+  private async undo(pending: PasswordAttemptState, before: PasswordAttemptState): Promise<void> {
+    const current = await this.repository.get();
 
-    await this.repository.save({ failures: next, lockedUntil: this.now() + delayAfter(next) });
+    if (current.failures === pending.failures && current.lockedUntil === pending.lockedUntil) {
+      await this.repository.save(before);
+    }
   }
 }

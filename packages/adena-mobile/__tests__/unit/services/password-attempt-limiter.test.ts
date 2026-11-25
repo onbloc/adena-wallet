@@ -140,4 +140,38 @@ describe('PasswordAttemptLimiter', () => {
     expect(remaining).toBeGreaterThan(9_000);
     expect(remaining).toBeLessThanOrEqual(10_000);
   });
+
+  it('serializes attempts across limiter instances, so a second container cannot guess during the check', async () => {
+    const { clock, repository, limiter } = setup();
+    const other = new PasswordAttemptLimiter(repository, () => clock.now);
+    let release: () => void = () => undefined;
+    const slowWrong = () => new Promise<never>((_, reject) => {
+      release = () => reject(new AppError('INVALID_PASSWORD'));
+    });
+    const otherCheck = jest.fn(wrongPassword);
+
+    repository.state = { failures: FREE_PASSWORD_ATTEMPTS, lockedUntil: 0 };
+    const first = catchError(() => limiter.run(slowWrong));
+    const second = catchError(() => other.run(otherCheck));
+
+    await new Promise(resolve => setTimeout(resolve, 0));
+    release();
+    await first;
+    expect(isAppError(await second, 'PASSWORD_ATTEMPTS_EXCEEDED')).toBe(true);
+    expect(otherCheck).not.toHaveBeenCalled();
+    expect(repository.state.failures).toBe(FREE_PASSWORD_ATTEMPTS + 1);
+  });
+
+  it('records the failure before the check runs and undoes it on success', async () => {
+    const { limiter, repository } = setup();
+    let seen: PasswordAttemptState | undefined;
+
+    await limiter.run(async () => {
+      seen = repository.state;
+      return 'ok';
+    });
+    // Another JS runtime reading during the check already sees this attempt counted.
+    expect(seen?.failures).toBe(1);
+    expect(repository.state).toEqual({ failures: 0, lockedUntil: 0 });
+  });
 });
