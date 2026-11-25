@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
 import { SplashScreen } from '../../../src/containers/splash-screen';
-import { AppError, AppErrorCode } from '../../../src/core/errors';
+import { AppError, AppErrorCode, BIOMETRICS_INVALIDATED_MESSAGE } from '../../../src/core/errors';
 import { BiometryKind } from '../../../src/security/secure-store';
 import { SessionStatus, useSessionStore } from '../../../src/stores/session.store';
 import { createWrapper } from '../../helpers/query-wrapper';
@@ -85,5 +85,16 @@ describe('SplashScreen', () => {
     await rendered.rerender(tree());
     await rendered.rerender(tree());
     expect(walletService.unlockWithBiometrics).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes the biometric status before falling back when biometrics changed', async () => {
+    walletService.unlockWithBiometrics.mockImplementation(async () => {
+      walletService.isBiometricUnlockEnabled.mockResolvedValue(false);
+      throw new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE);
+    });
+    await setup().view;
+
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith('Unlock', { error: BIOMETRICS_INVALIDATED_MESSAGE }));
+    expect(walletService.isBiometricUnlockEnabled).toHaveBeenCalledTimes(2);
   });
 });

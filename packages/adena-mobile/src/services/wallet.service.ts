@@ -144,16 +144,7 @@ export class WalletService {
 
     return this.accountService.runExclusive(async () => {
       this.assertNoPendingReset();
-      const password = await this.biometricRepository.readCredential(prompt);
-
-      if (!password) {
-        // iOS may report an item invalidated by an enrollment change as missing; a cancel rejects instead.
-        if (this.preferenceRepository.get().biometricUnlockEnabled) {
-          throw new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE);
-        }
-
-        throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
-      }
+      const password = await this.readEscrowedPassword(prompt);
 
       await this.openSession(await this.vaultService.openWithEscrowedPassword(password), epoch);
     });
@@ -253,14 +244,39 @@ export class WalletService {
       throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
     }
 
-    const password = await this.biometricRepository.readCredential(prompt);
-
-    if (!password) {
-      throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
-    }
+    const password = await this.readEscrowedPassword(prompt);
 
     await this.vaultService.openWithEscrowedPassword(password);
     return password;
+  }
+
+  // An invalidated credential turns biometric unlock off, so the prompt is not offered again.
+  private async readEscrowedPassword(prompt: SecurePrompt): Promise<string> {
+    let password: string | null;
+
+    try {
+      password = await this.biometricRepository.readCredential(prompt);
+    }
+    catch (error) {
+      if (isAppError(error, AppErrorCode.BIOMETRICS_INVALIDATED)) {
+        await this.disableBiometricUnlock().catch(() => undefined);
+      }
+
+      throw error;
+    }
+
+    if (password) {
+      return password;
+    }
+
+    // Enabled but missing: iOS reports an invalidated item this way, as does a password change whose
+    // re-enable did not finish. A cancel rejects instead, so it never lands here.
+    if (this.preferenceRepository.get().biometricUnlockEnabled) {
+      await this.disableBiometricUnlock().catch(() => undefined);
+      throw new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE);
+    }
+
+    throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
   }
 
   // Adding a key reveals nothing, so the unlocked session writes the vault with its cached key and

@@ -353,7 +353,9 @@ describe('WalletService', () => {
       await wallet.changePassword(TEST_PASSWORD, NEXT_PASSWORD);
       expect(await secureStore.hasItem(SecureKey.BIOMETRIC_PASSWORD)).toBe(false);
       wallet.lock();
-      expect(await codeOf(() => wallet.unlockWithBiometrics({ title: 'Unlock' }))).toBe('BIOMETRICS_UNAVAILABLE');
+      // The stale setting is turned off instead of failing on every lock.
+      expect(await codeOf(() => wallet.unlockWithBiometrics({ title: 'Unlock' }))).toBe('BIOMETRICS_INVALIDATED');
+      expect(await wallet.isBiometricUnlockEnabled()).toBe(false);
 
       await wallet.unlock(NEXT_PASSWORD);
       await wallet.enableBiometricUnlock(NEXT_PASSWORD);

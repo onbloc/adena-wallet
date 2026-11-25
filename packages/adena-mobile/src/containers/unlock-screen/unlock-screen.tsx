@@ -46,9 +46,8 @@ export const UnlockScreen = ({ navigation, route }: NativeStackScreenProps<Locke
       onUnlocked();
     }
     catch (unlockError) {
-      // Only a permanent invalidation drops the setting; lockouts and missing enrollment are transient.
+      // The service already turned the setting off; refresh so the prompt is not offered again.
       if (isAppError(unlockError, AppErrorCode.BIOMETRICS_INVALIDATED)) {
-        await walletService.disableBiometricUnlock().catch(() => undefined);
         await queryClient.invalidateQueries({ queryKey: queryKeys.biometric() });
       }
 

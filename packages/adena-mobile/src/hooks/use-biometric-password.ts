@@ -1,9 +1,11 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { IconName } from '../components/atoms';
 import { toErrorMessage } from '../core/error-message';
 import { AppErrorCode, isAppError } from '../core/errors';
 import { useContainer } from '../di/container-provider';
+import { queryKeys } from '../queries/query-keys';
 import { useBiometricStatusQuery } from '../queries/wallet.queries';
 import { BiometryKind, SecurePrompt } from '../security/secure-store';
 import { getBiometryLabel } from '../utils/biometry';
@@ -45,6 +47,7 @@ export const describeBiometricFailure = (error: unknown, label = 'Biometrics'): 
 // The wallet password released by biometrics, through the same service path as biometric unlock.
 export const useBiometricPassword = (): UseBiometricPasswordReturn => {
   const { walletService } = useContainer();
+  const queryClient = useQueryClient();
   const status = useBiometricStatusQuery();
   const label = status.data?.enabled ? getBiometryLabel(status.data.kind) : undefined;
   const option: BiometricOption | undefined = label
@@ -56,9 +59,13 @@ export const useBiometricPassword = (): UseBiometricPasswordReturn => {
       return { ok: true, password: await walletService.readBiometricPassword(prompt) };
     }
     catch (error) {
+      if (isAppError(error, AppErrorCode.BIOMETRICS_INVALIDATED)) {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.biometric() });
+      }
+
       return { ok: false, message: describeBiometricFailure(error, label) };
     }
-  }, [label, walletService]);
+  }, [label, queryClient, walletService]);
 
   return { ready: !status.isPending, option, read };
 };

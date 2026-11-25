@@ -115,26 +115,25 @@ describe('UnlockScreen', () => {
     expect(walletService.unlock).toHaveBeenCalledTimes(2);
   });
 
-  it('turns biometric unlock off once when the enrolled biometrics changed', async () => {
-    walletService.unlockWithBiometrics.mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE));
-    walletService.disableBiometricUnlock.mockImplementation(async () => {
+  it('drops the biometric button once the enrolled biometrics changed', async () => {
+    // The service turns the setting off before it rejects; the screen only refreshes the status.
+    walletService.unlockWithBiometrics.mockImplementation(async () => {
       walletService.isBiometricUnlockEnabled.mockResolvedValue(false);
+      throw new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE);
     });
     await setup();
+    await fireEvent.press(await screen.findByRole('button', { name: 'Use Face ID' }));
 
     expect(await screen.findByText(BIOMETRICS_INVALIDATED_MESSAGE)).toBeTruthy();
-    expect(walletService.disableBiometricUnlock).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Use Face ID' })).toBeNull());
-    expect(walletService.isBiometricUnlockEnabled).toHaveBeenCalledTimes(2);
-    expect(walletService.unlockWithBiometrics).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps biometric unlock on when biometrics are only unavailable', async () => {
-    walletService.unlockWithBiometrics.mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric authentication is unavailable'));
+  it('keeps the biometric button when biometrics are only unavailable', async () => {
+    walletService.unlockWithBiometrics.mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE));
     await setup();
+    await fireEvent.press(await screen.findByRole('button', { name: 'Use Face ID' }));
 
-    expect(await screen.findByText('Biometric authentication is unavailable')).toBeTruthy();
-    expect(walletService.disableBiometricUnlock).not.toHaveBeenCalled();
+    expect(await screen.findByText('Face ID is unavailable. Enter your password.')).toBeTruthy();
     expect(walletService.isBiometricUnlockEnabled).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('button', { name: 'Use Face ID' })).toBeTruthy();
   });
