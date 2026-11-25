@@ -169,6 +169,17 @@ describe('SwapService', () => {
     expect(env.gno.state.broadcasts).toHaveLength(0);
   });
 
+  it('refuses to sign a quote that expired while the review was open', async () => {
+    const { service, network, account, gnot, gns, env, dryExpressions } = await setup();
+    const quote = await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' });
+    const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: DEFAULT_SWAP_SETTINGS });
+
+    now += SWAP_QUOTE_TTL_MS + 1;
+    await expectCode(service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' }), AppErrorCode.SWAP_PRICE_MOVED);
+    expect(dryExpressions).toHaveLength(1);
+    expect(env.gno.state.broadcasts).toHaveLength(0);
+  });
+
   it('blocks tokens whose API decimals disagree with the chain, expired quotes and tampered routes', async () => {
     const mismatch = await setup({ decimals: { [GNS]: 8 } });
     const quote = await mismatch.service.getQuote({ network: mismatch.network, input: mismatch.gnot, output: mismatch.gns, exactType: 'EXACT_IN', amount: '1000000' });

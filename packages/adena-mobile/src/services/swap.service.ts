@@ -357,10 +357,15 @@ export class SwapService {
     return { amount: max.toString(), approximate };
   }
 
-  // Re-quotes the exact signed route, refreshes the deadline, then signs and broadcasts.
+  // Rejects an expired quote, re-quotes the exact signed route, refreshes the deadline, then signs and broadcasts.
   async submit(prepared: PreparedSwap, fee: TransactionFee, options: SignAndBroadcastOptions = {}): Promise<BroadcastResult> {
     const { config, repository } = this.require(prepared.network);
     const { quote, account, network } = prepared;
+
+    if (this.now() - quote.quotedAt > SWAP_QUOTE_TTL_MS) {
+      throw new AppError(AppErrorCode.SWAP_PRICE_MOVED, 'The quote expired. Review a new quote.');
+    }
+
     const exactOut = quote.exactType === SwapType.EXACT_OUT;
     const dry = await repository.drySwap(network, config, {
       inputPath: quote.inputPath,

@@ -269,6 +269,25 @@ describe('SwapScreen', () => {
     expect(env.gno.state.broadcasts).toHaveLength(1);
   });
 
+  it('closes the review and fetches a new quote when the price moved before confirm', async () => {
+    let amountOut = '4151365';
+    const { env } = await setup({ drySwap: () => `("1000000" string)\n("${amountOut}" string)\n(undefined)` });
+
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    await press('Review swap');
+    await screen.findByText('Confirm swap', undefined, LOOKUP);
+    amountOut = '4000000';
+    await fireEvent.press(screen.getByTestId('review-confirm'));
+
+    await waitFor(() => expect(screen.queryByText('Confirm swap')).toBeNull(), LOOKUP);
+    expect(toastMessage()).toBe('The price moved beyond your slippage. Review a new quote.');
+    expect(await within(screen.getByTestId('swap-buy')).findByText('4', undefined, LOOKUP)).toBeTruthy();
+    expect(screen.getByText('Review swap')).toBeTruthy();
+    expect(env.gno.state.broadcasts).toHaveLength(0);
+  });
+
   it('stores a swap with an unknown outcome for its account and network, so it stays blocked after a restart', async () => {
     const { env, account, network } = await setup();
     const provider = await env.gno.factory();

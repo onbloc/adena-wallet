@@ -149,8 +149,9 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
   const quoteEnabled = supported && Boolean(input && output) && !sameToken && debouncedRaw !== '0' && debouncedRaw === amountRaw
     && !(exactType === SwapType.EXACT_IN && input?.isNative && minDeposit && compareAmount(amountRaw, minDeposit) < 0);
 
+  const quoteKey = queryKeys.swapQuote(network.id, input?.id ?? NO_ID_KEY, output?.id ?? NO_ID_KEY, `${exactType}:${debouncedRaw}`);
   const quoteQuery = useQuery({
-    queryKey: queryKeys.swapQuote(network.id, input?.id ?? NO_ID_KEY, output?.id ?? NO_ID_KEY, `${exactType}:${debouncedRaw}`),
+    queryKey: quoteKey,
     queryFn: () => swapService.getQuote({ network, input: input!, output: output!, exactType, amount: debouncedRaw }),
     enabled: quoteEnabled && !prepared,
     staleTime: QUOTE_STALE_MS,
@@ -425,6 +426,13 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
         if (pendingBroadcast.track(error, sender, sentNetwork)) {
           submit.reset();
           setPrepared(null);
+        }
+        // Moved or expired: drop the stale quote and close the review so a fresh quote is fetched.
+        else if (isAppError(error, AppErrorCode.SWAP_PRICE_MOVED)) {
+          submit.reset();
+          setPrepared(null);
+          showToast(toErrorMessage(error), 'info');
+          void queryClient.resetQueries({ queryKey: quoteKey, exact: true });
         }
       })
       .finally(() => {
