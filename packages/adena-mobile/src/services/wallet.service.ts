@@ -163,7 +163,14 @@ export class WalletService {
         content = await this.vaultService.create(keyrings, password);
       }
       catch (error) {
-        this.restoreMarker?.clear();
+        // Another wallet got there first and nothing was written: that vault must stay.
+        if (isAppError(error, AppErrorCode.WALLET_ALREADY_EXISTS)) {
+          this.restoreMarker?.clear();
+          throw error;
+        }
+
+        // A failed second slot write still leaves a readable vault, so it is undone like a later failure.
+        await this.undoRestore().catch(() => undefined);
         throw error;
       }
 
@@ -192,11 +199,8 @@ export class WalletService {
         return selectedAccount;
       }
       catch (error) {
-        this.keyringSession.close();
-        this.accountService.clear();
-        // The restore error is what the user needs to see, even if the cleanup fails too.
-        // A failed cleanup keeps the marker, so the next launch retries it.
-        await this.vaultService.destroy().then(() => this.restoreMarker?.clear(), () => undefined);
+        // The restore error is what the user needs to see; a failed cleanup keeps the marker for the next launch.
+        await this.undoRestore().catch(() => undefined);
         throw error;
       }
     });
@@ -206,16 +210,19 @@ export class WalletService {
   // and the app returns to onboarding. Queued behind a restore still running in this process.
   private rollBackInterruptedRestore(): Promise<void> {
     return this.accountService.runExclusive(async () => {
-      if (!this.restoreMarker?.isPending()) {
-        return;
+      if (this.restoreMarker?.isPending()) {
+        await this.undoRestore();
       }
-
-      this.createdWith = null;
-      this.keyringSession.close();
-      await this.vaultService.destroy();
-      this.accountService.clear();
-      this.restoreMarker.clear();
     });
+  }
+
+  // Removes a restore's vault (both slots) and partial accounts; the marker is cleared only once that worked.
+  private async undoRestore(): Promise<void> {
+    this.createdWith = null;
+    this.keyringSession.close();
+    this.accountService.clear();
+    await this.vaultService.destroy();
+    this.restoreMarker?.clear();
   }
 
   private validateRestoreInput(keyrings: KeyringRecord[], accounts: RestoreWalletInput['accounts']): void {

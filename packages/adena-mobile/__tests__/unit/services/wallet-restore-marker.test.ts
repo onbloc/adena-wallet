@@ -69,4 +69,55 @@ describe('WalletService.restoreWallet restore marker', () => {
     expect(keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
     expect(await container.walletService.getStatus()).toBe('empty');
   });
+
+  // The vault repository writes two slots; the first one alone is already a readable vault.
+  const failSecondVaultSlot = (secureStore: ReturnType<typeof createTestContainer>['secureStore']) => {
+    const setItem = secureStore.setItem.bind(secureStore);
+    let vaultWrites = 0;
+
+    return jest.spyOn(secureStore, 'setItem').mockImplementation((key, value, options) => {
+      if (key === SecureKey.VAULT || key === SecureKey.VAULT_STAGING) {
+        vaultWrites += 1;
+
+        if (vaultWrites === 2) {
+          return Promise.reject(new Error('keychain write failed'));
+        }
+      }
+
+      return setItem(key, value, options);
+    });
+  };
+
+  it('removes the half-written vault when its second slot cannot be written', async () => {
+    const { container, secureStore, keyValueStore } = createTestContainer();
+
+    failSecondVaultSlot(secureStore);
+    expect(await catchError(() => container.walletService.restoreWallet({ keyrings: [...keyrings], accounts: [], password: TEST_PASSWORD })))
+      .toEqual(new Error('keychain write failed'));
+    jest.restoreAllMocks();
+
+    expect(await secureStore.hasItem(SecureKey.VAULT)).toBe(false);
+    expect(await secureStore.hasItem(SecureKey.VAULT_STAGING)).toBe(false);
+    expect(keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
+    expect(await container.walletService.getStatus()).toBe('empty');
+  });
+
+  it('keeps the marker when that cleanup fails too, so the next launch rolls the restore back', async () => {
+    const { container, secureStore, keyValueStore } = createTestContainer();
+
+    failSecondVaultSlot(secureStore);
+    jest.spyOn(secureStore, 'removeItem').mockRejectedValue(new Error('keychain delete failed'));
+    expect(await catchError(() => container.walletService.restoreWallet({ keyrings: [...keyrings], accounts: [], password: TEST_PASSWORD })))
+      .toEqual(new Error('keychain write failed'));
+    jest.restoreAllMocks();
+
+    expect(await secureStore.hasItem(SecureKey.VAULT_STAGING)).toBe(true);
+    expect(keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeDefined();
+
+    const relaunched = createTestContainer({ relaunch: { secureStore, keyValueStore } });
+
+    expect(await relaunched.container.walletService.getStatus()).toBe('empty');
+    expect(await secureStore.hasItem(SecureKey.VAULT_STAGING)).toBe(false);
+    expect(keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
+  });
 });
