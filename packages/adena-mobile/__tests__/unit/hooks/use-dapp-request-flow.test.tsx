@@ -229,4 +229,32 @@ describe('useDappRequestFlow', () => {
     await waitFor(() => expect(result.current.feeWarning).toBe('The app set a fee more than 3x the estimated 0.1 GNOT. Approve only if you expect it.'));
     expect(result.current.canApprove).toBe(true);
   });
+
+  it('never reuses a draft prepared for another request with the same id', async () => {
+    const dapp = createDapp();
+    const first = { draft: { fee: { gasFee: '1ugnot', gasWanted: '1' } }, summaries: [{ title: 'M1', rows: [] }] };
+    const second = { draft: { fee: { gasFee: '2ugnot', gasWanted: '1' } }, summaries: [{ title: 'M2', rows: [] }] };
+    const container = { dappService: dapp } as unknown as AppContainer;
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <ContainerProvider container={container}><QueryClientProvider client={client}>{children}</QueryClientProvider></ContainerProvider>
+    );
+    const fromA = { method: DappMethod.SIGN_AND_BROADCAST, requestId: '1', callbackOrigin: 'https://a.example', messages: ['M1'] } as unknown as DappRequest;
+    const fromB = { method: DappMethod.SIGN_AND_BROADCAST, requestId: '1', callbackOrigin: 'https://b.example', messages: ['M2'] } as unknown as DappRequest;
+
+    dapp.prepareTransaction.mockResolvedValueOnce(first).mockResolvedValueOnce(second);
+    const a = await renderHook(() => useDappRequestFlow(fromA, { allowCrossNetwork: false }), { wrapper });
+
+    await waitFor(() => expect(a.result.current.canApprove).toBe(true));
+    await a.unmount();
+    expect(client.getQueryCache().findAll({ queryKey: ['adena', 'dapp-request'] })).toHaveLength(0);
+
+    const b = await renderHook(() => useDappRequestFlow(fromB, { allowCrossNetwork: false }), { wrapper });
+
+    await waitFor(() => expect(b.result.current.messages).toEqual(second.summaries));
+    await act(async () => {
+      await b.result.current.approve();
+    });
+    expect(dapp.approveTransaction).toHaveBeenLastCalledWith(fromB, context, second.draft);
+  });
 });

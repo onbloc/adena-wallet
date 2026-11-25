@@ -1,5 +1,7 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 
 import { DappMessageView } from '../components/pages';
 import { toErrorMessage } from '../core/error-message';
@@ -50,8 +52,14 @@ export interface DappRequestFlow {
   rejectionUrl: () => string | null;
 }
 
+// requestId is chosen by the dApp, so the cached draft is keyed by the whole request (minus receive time).
+const requestDigest = (request: DappRequest | null): string =>
+  request ? bytesToHex(sha256(utf8ToBytes(JSON.stringify({ ...request, receivedAt: undefined })))) : '';
+
 export const useDappRequestFlow = (request: DappRequest | null, options: DappRequestFlowOptions): DappRequestFlow => {
   const { dappService } = useContainer();
+  const queryClient = useQueryClient();
+  const digest = useMemo(() => requestDigest(request), [request]);
 
   const resolve = (): { context?: DappRequestContext; error?: string; cause?: unknown } => {
     if (!request) {
@@ -69,8 +77,14 @@ export const useDappRequestFlow = (request: DappRequest | null, options: DappReq
   const needsSwitch = Boolean(context?.requiresNetworkSwitch) && !options.allowCrossNetwork;
   const isTransaction = request !== null && request.method !== DappMethod.CONNECT;
 
+  const preparedKey = [...queryKeys.all, 'dapp-request', request?.callbackOrigin, request?.method, request?.requestId, digest, context?.network.id, context?.account.id];
+  const preparedKeyHash = JSON.stringify(preparedKey);
+
+  // A finished (approved, rejected or unmounted) request drops its draft.
+  useEffect(() => (): void => queryClient.removeQueries({ queryKey: JSON.parse(preparedKeyHash), exact: true }), [preparedKeyHash, queryClient]);
+
   const prepared = useQuery({
-    queryKey: [...queryKeys.all, 'dapp-request', request?.requestId, context?.network.id, context?.account.id],
+    queryKey: preparedKey,
     queryFn: () => {
       if (!request || request.method === DappMethod.CONNECT || !context) {
         throw new Error('Nothing to prepare');
