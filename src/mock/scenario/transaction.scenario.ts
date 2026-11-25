@@ -51,18 +51,23 @@ describe('plain-language requests become transactions', () => {
     }
   });
 
-  it.each([...SCENARIOS, ...EXTRA_SCENARIOS])('$name', async ({ prompt, expected, before = [] }) => {
+  it.each([...SCENARIOS, ...EXTRA_SCENARIOS])('$name', async ({ prompt, expected, before = [], beforeExpected = [] }) => {
     const turns = await runner.chat([...before, prompt]);
     const run = turns[turns.length - 1];
     const context = `prompts: ${JSON.stringify([...before, prompt])}\ncalls: ${JSON.stringify(run.calls)}\nanswer: ${run.text}`;
 
     try {
+      for (const [index, prior] of beforeExpected.entries()) {
+        expect(checkScenarioRun(turns[index], prior)).toEqual({ ok: true });
+        for (const prepared of turns[index].prepared) expect(adenaTransaction(prepared).signatures).toEqual([]);
+        if ((prior.kind === 'transfer' || prior.kind === 'allowance') && turns[index].prepared.length) expectMessage(turns[index], prior);
+      }
       // Only outcomes matter; a corrected tool-call retry must not fail the scenario.
       for (const prepared of run.prepared) expect(adenaTransaction(prepared).signatures).toEqual([]);
 
       // The summaries first (what the model chose), then the message that will be signed.
       expect(checkScenarioRun(run, expected)).toEqual({ ok: true });
-      if (expected.kind === 'transfer' || expected.kind === 'allowance') expectMessage(run, expected);
+      if ((expected.kind === 'transfer' || expected.kind === 'allowance') && run.prepared.length) expectMessage(run, expected);
     } catch (error) {
       if (error instanceof Error) error.message += `\n\n${context}`;
       throw error;

@@ -137,6 +137,9 @@ export function checkScenarioRun(
   run: Pick<ScenarioRun, 'calls' | 'results' | 'text'> & { prepared: readonly { summary: PreparedSummary; tx?: unknown }[] },
   expected: Expected
 ): Verdict {
+  if ((expected.kind === 'transfer' || expected.kind === 'allowance') && expected.orClarification && run.prepared.length === 0) {
+    return checkScenarioRun(run, { kind: 'none', response: 'clarification', evidence: expected.orClarification });
+  }
   const verdict = checkRun({ ...run, prepared: run.prepared.map(({ summary }) => summary) }, expected);
   if (!verdict.ok || expected.kind !== 'none' || expected.response === undefined) return verdict;
   if (expected.response === 'explanation' && (run.calls.length > 0 || run.results.length > 0)) {

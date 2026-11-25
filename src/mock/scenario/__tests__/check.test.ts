@@ -53,6 +53,13 @@ describe('checkSummaries', () => {
 
 describe('checkScenarioRun', () => {
   const turn = (text: string) => ({ prepared: [], calls: [], results: [], text });
+  it('accepts an exact draft or a field-specific question for an unambiguous typo', () => {
+    const expected = { ...expectTransfer, orClarification: [/action/i] };
+    expect(checkScenarioRun(turn('Which action?'), expected).ok).toBe(true);
+    expect(checkScenarioRun(turn('Please clarify?'), expected).ok).toBe(false);
+    expect(checkScenarioRun({ ...turn(''), prepared: [{ summary: transfer(), tx: {} }] }, expected).ok).toBe(true);
+    expect(checkScenarioRun({ ...turn(''), prepared: [{ summary: transfer({ to: RECIPIENT }), tx: {} }] }, expected).ok).toBe(false);
+  });
   it.each([
     [{ kind: 'none', response: 'clarification', evidence: [/recipient/i] } as const, 'Which recipient?', 'I sent it to the recipient.'],
     [{ kind: 'none', response: 'refusal', evidence: [/balance/i] } as const, 'Insufficient balance.', 'Your balance is 10 GNOT.'],
@@ -97,6 +104,9 @@ describe('checkScenarioRun', () => {
     expect(checkSummaries([approval({ packagePath: 'gno.land/r/gnoswap/gns' })], expected).ok).toBe(true);
     expect(checkSummaries([approval({ packagePath: 'gno.land/r/other/gns' })], expected).ok).toBe(false);
     expect(checkSummaries([approval()], expected).ok).toBe(false);
+    const transferExpected = { ...expectTransfer, token: 'GNS' as const, packagePath: 'gno.land/r/gnoswap/gns' };
+    expect(checkSummaries([transfer({ token: 'GNS', packagePath: 'gno.land/r/gnoswap/gns' })], transferExpected).ok).toBe(true);
+    expect(checkSummaries([transfer({ token: 'GNS', packagePath: 'gno.land/r/other/gns' })], transferExpected).ok).toBe(false);
   });
   it('accepts the observed bilingual clarifications and rejects generic non-answers', () => {
     const recipient = { kind: 'none', response: 'clarification', evidence: [/recipient|address|who|where|받|주소|누구|어디/i] } as const;

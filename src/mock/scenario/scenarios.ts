@@ -5,8 +5,8 @@ export type Read = { name: string; input?: unknown };
 
 /** What the run must produce. */
 export type Expected =
-  | { kind: 'transfer'; to: string; amount: string; token: 'GNOT' | 'GNS'; packagePath?: string }
-  | { kind: 'allowance'; spender: string; amount: string; token: 'GNS'; packagePath?: string }
+  | { kind: 'transfer'; to: string; amount: string; token: 'GNOT' | 'GNS'; packagePath?: string; orClarification?: readonly RegExp[] }
+  | { kind: 'allowance'; spender: string; amount: string; token: 'GNS'; packagePath?: string; orClarification?: readonly RegExp[] }
   | { kind: 'none'; response?: 'clarification' | 'refusal' | 'explanation' | 'read-only'; evidence?: readonly RegExp[]; errorCodes?: readonly string[] }
   | { kind: 'answer'; reads: readonly Read[]; allow?: readonly string[]; says?: readonly string[] };
 
@@ -16,16 +16,17 @@ export type Scenario = {
   expected: Expected;
   /** Earlier turns of the same conversation. Only the turn of `prompt` is judged. */
   before?: readonly string[];
+  beforeExpected?: readonly Expected[];
 };
 
-const transfer = (to: string, amount: string, token: 'GNOT' | 'GNS' = 'GNOT'): Expected => ({
+const transfer = (to: string, amount: string, token: 'GNOT' | 'GNS' = 'GNOT'): Extract<Expected, { kind: 'transfer' }> => ({
   kind: 'transfer',
   to,
   amount,
   token,
   ...(token === 'GNS' ? { packagePath: GNS_PATH } : {}),
 });
-const allowance = (spender: string, amount: string): Expected => ({ kind: 'allowance', spender, amount, token: 'GNS', packagePath: GNS_PATH });
+const allowance = (spender: string, amount: string): Extract<Expected, { kind: 'allowance' }> => ({ kind: 'allowance', spender, amount, token: 'GNS', packagePath: GNS_PATH });
 const none: Expected = { kind: 'none' };
 const noAction = (response: NonNullable<Extract<Expected, { kind: 'none' }>['response']>, ...evidence: RegExp[]): Expected =>
   ({ kind: 'none', response, evidence });
@@ -82,31 +83,42 @@ export const KOREAN_SCENARIOS: Scenario[] = ENGLISH_SCENARIOS.map(({ name, expec
 
 export const SCENARIOS: Scenario[] = [...ENGLISH_SCENARIOS, ...KOREAN_SCENARIOS];
 
-// Requests with mistakes. A letter missing from the verb or the token symbol can be read back, so
-// the transaction is still prepared. What carries the money cannot be guessed: a misspelled
-// contact, a cut-off address and a missing token must prepare nothing (the model should ask).
-// Korean typos are the usual ones: unfinished syllables, wrong vowels, sound-alike words.
+// Typos must not be silently resolved into transaction details.
 const ADDRESS_MISSING_LAST_CHAR = RECIPIENT.slice(0, -1);
-export const TYPO_SCENARIOS: Scenario[] = [
-  { name: 'typo: verb "snd"', prompt: `Snd 1 GNOT to ${RECIPIENT}`, expected: transfer(RECIPIENT, '1') },
-  { name: 'typo: verb "sned", lowercase symbol', prompt: 'sned 2 gnot to carol', expected: transfer(CAROL, '2') },
-  { name: 'typo: token "got" for GNOT', prompt: `Send 1 got to ${RECIPIENT}`, expected: transfer(RECIPIENT, '1') },
-  { name: 'typo: token "gsn" for GNS', prompt: 'Send 25 gsn to carol', expected: transfer(CAROL, '25', 'GNS') },
-  { name: 'typo: verb and token', prompt: `snd 1 got to ${RECIPIENT}`, expected: transfer(RECIPIENT, '1') },
-  { name: 'typo: approve "aprove"', prompt: 'Aprove carol to spend up to 10 GNS', expected: allowance(CAROL, '10') },
-  { name: 'typo: misspelled contact: nothing prepared', prompt: 'Send 1 GNOT to carl', expected: none },
-  { name: 'typo: address missing a character: nothing prepared', prompt: `Send 1 GNOT to ${ADDRESS_MISSING_LAST_CHAR}`, expected: none },
-  { name: 'typo: no token: nothing prepared', prompt: `Snd 1 to ${RECIPIENT}`, expected: none },
-  { name: 'ko typo: unfinished verb "전ㅅ"', prompt: `${RECIPIENT} 주소로 1 gnot 전ㅅ`, expected: transfer(RECIPIENT, '1') },
-  { name: 'ko typo: wrong ending "보내조"', prompt: 'carol에게 1 gnot 보내조', expected: transfer(CAROL, '1') },
-  { name: 'ko typo: token "got" and verb "소금"', prompt: `${RECIPIENT} 주소로 1 got 소금`, expected: transfer(RECIPIENT, '1') },
-  { name: 'ko typo: token "gsn" for GNS', prompt: 'carol에게 gsn 25개 전송', expected: transfer(CAROL, '25', 'GNS') },
-  { name: 'ko typo: verb "젼숑" and token "got"', prompt: `${RECIPIENT} 주소로 1 got 젼숑`, expected: transfer(RECIPIENT, '1') },
-  { name: 'ko typo: approve "슨인"', prompt: 'carol이 GNS를 10개까지 쓸 수 있게 슨인해줘', expected: allowance(CAROL, '10') },
-  { name: 'ko typo: misspelled contact: nothing prepared', prompt: 'carl에게 1 GNOT 보내줘', expected: none },
-  { name: 'ko typo: address missing a character: nothing prepared', prompt: `${ADDRESS_MISSING_LAST_CHAR} 주소로 1 GNOT 전송`, expected: none },
-  { name: 'ko typo: no token: nothing prepared', prompt: `${RECIPIENT} 주소로 1 젼숑`, expected: none },
+const asset = { kind: 'none', response: 'clarification', evidence: [/token|asset|symbol|currency|토큰|자산|코인|종류/i] } as const;
+const target = { kind: 'none', response: 'clarification', evidence: [/recipient|address|contact|who|주소|받는|수신|누구/i] } as const;
+const action = { kind: 'none', response: 'clarification', evidence: [/action|send|transfer|approv|무엇|전송|보내|승인|동작|작업/i] } as const;
+const typoCases = [
+  { name: 'verb "snd"', prompt: `Snd 1 GNOT to ${RECIPIENT}`, expected: action, clear: true, corrected: `Send 1 GNOT to ${RECIPIENT}`, result: transfer(RECIPIENT, '1') },
+  { name: 'verb "sned", lowercase symbol', prompt: 'sned 2 gnot to carol', expected: action, clear: true, corrected: 'Send 2 GNOT to carol', result: transfer(CAROL, '2') },
+  { name: 'token "got" for GNOT', prompt: `Send 1 got to ${RECIPIENT}`, expected: asset, corrected: `Send 1 GNOT to ${RECIPIENT}`, result: transfer(RECIPIENT, '1') },
+  { name: 'token "gsn" for GNS', prompt: 'Send 25 gsn to carol', expected: asset, corrected: 'Send 25 GNS to carol', result: transfer(CAROL, '25', 'GNS') },
+  { name: 'verb and token', prompt: `snd 1 got to ${RECIPIENT}`, expected: asset, corrected: `Send 1 GNOT to ${RECIPIENT}`, result: transfer(RECIPIENT, '1') },
+  { name: 'approve "aprove"', prompt: 'Aprove carol to spend up to 10 GNS', expected: action, clear: true, corrected: 'Approve carol to spend up to 10 GNS', result: allowance(CAROL, '10') },
+  { name: 'misspelled contact', prompt: 'Send 1 GNOT to carl', expected: target, corrected: 'Send 1 GNOT to carol', result: transfer(CAROL, '1') },
+  { name: 'address missing a character', prompt: `Send 1 GNOT to ${ADDRESS_MISSING_LAST_CHAR}`, expected: target, corrected: `Send 1 GNOT to ${RECIPIENT}`, result: transfer(RECIPIENT, '1') },
+  { name: 'no token', prompt: `Snd 1 to ${RECIPIENT}`, expected: asset, corrected: `Send 1 GNOT to ${RECIPIENT}`, result: transfer(RECIPIENT, '1') },
+  { name: 'ko: unfinished verb "전ㅅ"', prompt: `${RECIPIENT} 주소로 1 gnot 전ㅅ`, expected: action, corrected: `${RECIPIENT} 주소로 1 GNOT 보내줘`, result: transfer(RECIPIENT, '1') },
+  { name: 'ko: wrong ending "보내조"', prompt: 'carol에게 1 gnot 보내조', expected: action, clear: true, corrected: 'carol에게 1 GNOT 보내줘', result: transfer(CAROL, '1') },
+  { name: 'ko: token "got" and verb "소금"', prompt: `${RECIPIENT} 주소로 1 got 소금`, expected: asset, corrected: `${RECIPIENT} 주소로 1 GNOT 보내줘`, result: transfer(RECIPIENT, '1') },
+  { name: 'ko: token "gsn" for GNS', prompt: 'carol에게 gsn 25개 전송', expected: asset, corrected: 'carol에게 GNS 25개 보내줘', result: transfer(CAROL, '25', 'GNS') },
+  { name: 'ko: verb "젼숑" and token "got"', prompt: `${RECIPIENT} 주소로 1 got 젼숑`, expected: asset, corrected: `${RECIPIENT} 주소로 1 GNOT 보내줘`, result: transfer(RECIPIENT, '1') },
+  { name: 'ko: approve "슨인"', prompt: 'carol이 GNS를 10개까지 쓸 수 있게 슨인해줘', expected: action, corrected: 'carol이 GNS를 10개까지 쓸 수 있게 승인해줘', result: allowance(CAROL, '10') },
+  { name: 'ko: misspelled contact', prompt: 'carl에게 1 GNOT 보내줘', expected: target, corrected: 'carol에게 1 GNOT 보내줘', result: transfer(CAROL, '1') },
+  { name: 'ko: address missing a character', prompt: `${ADDRESS_MISSING_LAST_CHAR} 주소로 1 GNOT 전송`, expected: target, corrected: `${RECIPIENT} 주소로 1 GNOT 보내줘`, result: transfer(RECIPIENT, '1') },
+  { name: 'ko: no token', prompt: `${RECIPIENT} 주소로 1 젼숑`, expected: asset, corrected: `${RECIPIENT} 주소로 1 GNOT 보내줘`, result: transfer(RECIPIENT, '1') },
 ];
+export const TYPO_SCENARIOS: Scenario[] = typoCases.flatMap((item) => {
+  const { name, prompt, expected, corrected, result } = item;
+  const initial: Expected = 'clear' in item ? { ...result, orClarification: [/action|send|transfer|approv|token|asset|amount|recipient|address|무엇|전송|보내|승인|토큰|자산|금액|주소|받는/i] } : expected;
+  const korean = name.startsWith('ko: ');
+  const label = `${korean ? 'ko typo:' : 'typo:'} ${korean ? name.slice(4) : name}`;
+  return [
+    { name: label, prompt, expected: initial },
+    { name: `${label} corrected`, prompt: corrected, before: [prompt], beforeExpected: [initial], expected: result },
+    { name: `${label} bare yes`, prompt: korean ? '네' : 'yes', before: [prompt], beforeExpected: [initial], expected: 'clear' in item ? none : expected },
+  ];
+});
 
 type Pair = {
   name: string;
