@@ -74,7 +74,7 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
     navigation.popToTop();
   }, [navigation, queryClient, showToast]);
 
-  const pendingBroadcast = usePendingBroadcast(handleCommitted);
+  const pendingBroadcast = usePendingBroadcast(account, network, handleCommitted);
 
   const send = useMutation({
     mutationFn: async () => {
@@ -133,13 +133,13 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
       return;
     }
 
-    const sentNetwork = prepared.network;
+    const { account: sender, network: sentNetwork } = prepared;
 
     sendingRef.current = true;
     send.mutateAsync()
       .catch((error) => {
         // Unknown outcome: close the review so the same draft cannot be confirmed again.
-        if (pendingBroadcast.track(error, sentNetwork)) {
+        if (pendingBroadcast.track(error, sender, sentNetwork)) {
           send.reset();
           setPrepared(null);
         }

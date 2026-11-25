@@ -8,6 +8,8 @@ import { FeeEstimate, GNO_FEE_POLICY } from '../../../../src/domain/fee';
 import { NftCollection, NftItem } from '../../../../src/domain/nft';
 import { TransactionDraft, TransactionStatus } from '../../../../src/domain/transaction';
 import { PENDING_NOTICE, PENDING_POLL_INTERVAL_MS } from '../../../../src/hooks/use-pending-broadcast';
+import { StoragePendingBroadcastRepository } from '../../../../src/repositories/pending-broadcast.repository';
+import { MemoryKeyValueStore } from '../../../../src/storage/memory-key-value-store';
 import { usePendingBroadcastStore } from '../../../../src/stores/pending-broadcast.store';
 import { normalizeAddress } from '../../../../src/utils/address';
 import { ACCOUNT, createWrapper, NETWORK } from '../../../helpers/query-wrapper';
@@ -43,6 +45,7 @@ const setup = async (extraParams: Record<string, unknown> = {}, ownAddress = 'g1
   const { Wrapper } = createWrapper({
     nftService,
     transactionService,
+    pendingBroadcastRepository: new StoragePendingBroadcastRepository(new MemoryKeyValueStore()),
     accountService: { getCurrentAccount: () => ACCOUNT, getAccounts: () => [ACCOUNT], getAddress: () => ownAddress },
     networkService: { getCurrentNetwork: () => NETWORK, getNetworks: () => [NETWORK] },
     addressBookService: { getEntriesFor: () => [] },
@@ -62,7 +65,7 @@ const setup = async (extraParams: Record<string, unknown> = {}, ownAddress = 'g1
 };
 
 describe('SendNftScreen', () => {
-  beforeEach(() => usePendingBroadcastStore.setState({ pending: null }));
+  beforeEach(() => usePendingBroadcastStore.setState({ entries: {} }));
 
   it('scans into the recipient field and consumes the scanned param', async () => {
     const { navigation } = await setup({ scannedAddress: FIRST });

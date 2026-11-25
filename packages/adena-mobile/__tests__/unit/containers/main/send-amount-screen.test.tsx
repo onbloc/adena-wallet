@@ -9,6 +9,8 @@ import { Token, TokenType } from '../../../../src/domain/token';
 import { TransactionDraft, TransactionStatus } from '../../../../src/domain/transaction';
 import { PENDING_NOTICE, PENDING_POLL_ATTEMPTS, PENDING_POLL_INTERVAL_MS, UNCONFIRMED_NOTICE } from '../../../../src/hooks/use-pending-broadcast';
 import { useWalletAssets } from '../../../../src/hooks/use-wallet-assets';
+import { StoragePendingBroadcastRepository } from '../../../../src/repositories/pending-broadcast.repository';
+import { MemoryKeyValueStore } from '../../../../src/storage/memory-key-value-store';
 import { usePendingBroadcastStore } from '../../../../src/stores/pending-broadcast.store';
 import { useToastStore } from '../../../../src/stores/toast.store';
 import { ACCOUNT, createWrapper, NETWORK } from '../../../helpers/query-wrapper';
@@ -28,6 +30,9 @@ const deferred = <T,>(): { promise: Promise<T>; resolve: (value: T) => void } =>
 
   return { promise, resolve };
 };
+
+// Survives a simulated restart, which only resets the in-memory store.
+let keyValueStore = new MemoryKeyValueStore();
 
 const setup = async (prices?: Record<string, unknown>, params: Record<string, unknown> = {}) => {
   jest.mocked(useWalletAssets).mockReturnValue({
@@ -54,6 +59,7 @@ const setup = async (prices?: Record<string, unknown>, params: Record<string, un
   };
   const { Wrapper } = createWrapper({
     transactionService,
+    pendingBroadcastRepository: new StoragePendingBroadcastRepository(keyValueStore),
     accountService: { getAccounts: () => [], getAddress: () => 'g1self' },
     addressBookService: { findByAddress: () => undefined },
   });
@@ -71,7 +77,10 @@ const setup = async (prices?: Record<string, unknown>, params: Record<string, un
 };
 
 describe('SendAmountScreen', () => {
-  beforeEach(() => usePendingBroadcastStore.setState({ pending: null }));
+  beforeEach(() => {
+    keyValueStore = new MemoryKeyValueStore();
+    usePendingBroadcastStore.setState({ entries: {} });
+  });
 
   // Let query notifications scheduled on a timer land before the tree unmounts.
   afterEach(() => act(() => new Promise<void>((done) => {
@@ -222,7 +231,7 @@ describe('SendAmountScreen', () => {
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
 
       expect(transactionService.getTransactionStatus).toHaveBeenCalledWith('ABC', NETWORK);
-      expect(usePendingBroadcastStore.getState().pending).toBeNull();
+      expect(usePendingBroadcastStore.getState().entries).toEqual({});
       // This screen did not send it, so it only reports the outcome.
       expect(navigation.popToTop).not.toHaveBeenCalled();
       expect(useToastStore.getState().toast?.message).toBe('Your previous transaction was confirmed.');
@@ -246,6 +255,72 @@ describe('SendAmountScreen', () => {
       await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
       await fireEvent.press(screen.getByTestId('send-review'));
       expect(await screen.findByTestId('review-confirm')).toBeTruthy();
+    });
+
+    const restart = async (): Promise<void> => {
+      await screen.unmount();
+      usePendingBroadcastStore.setState({ entries: {} });
+    };
+
+    it('keeps a re-send blocked after an app restart until the persisted hash is found committed', async () => {
+      const first = await setup();
+      const repository = new StoragePendingBroadcastRepository(keyValueStore);
+
+      await confirmOnce(first.transactionService, new TransactionPendingError('ABC'));
+      expect(repository.get(ACCOUNT.id, NETWORK.id)).toMatchObject({ hash: 'ABC', accountId: ACCOUNT.id, networkId: NETWORK.id });
+      await restart();
+
+      const { transactionService, navigation } = await setup();
+
+      expect(screen.getByText(PENDING_NOTICE)).toBeTruthy();
+      await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
+      await fireEvent.press(screen.getByTestId('send-review'));
+      expect(transactionService.estimateFee).not.toHaveBeenCalled();
+
+      transactionService.getTransactionStatus.mockResolvedValueOnce('pending').mockResolvedValueOnce('committed');
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS * 2));
+
+      expect(transactionService.getTransactionStatus).toHaveBeenCalledWith('ABC', NETWORK);
+      expect(repository.get(ACCOUNT.id, NETWORK.id)).toBeUndefined();
+      expect(navigation.popToTop).not.toHaveBeenCalled();
+      expect(useToastStore.getState().toast?.message).toBe('Your previous transaction was confirmed.');
+      await fireEvent.press(screen.getByTestId('send-review'));
+      expect(await screen.findByTestId('review-confirm')).toBeTruthy();
+    });
+
+    it('unblocks after a restart once the persisted hash is found failed', async () => {
+      const first = await setup();
+
+      await confirmOnce(first.transactionService, new TransactionPendingError('ABC'));
+      await exhaustPolling();
+      await restart();
+
+      const { transactionService } = await setup();
+
+      expect(screen.getByText(PENDING_NOTICE)).toBeTruthy();
+      transactionService.getTransactionStatus.mockResolvedValueOnce('failed');
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
+
+      expect(new StoragePendingBroadcastRepository(keyValueStore).get(ACCOUNT.id, NETWORK.id)).toBeUndefined();
+      expect(screen.queryByText(PENDING_NOTICE)).toBeNull();
+      await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
+      await fireEvent.press(screen.getByTestId('send-review'));
+      expect(await screen.findByTestId('review-confirm')).toBeTruthy();
+    });
+
+    it('is not blocked by a pending tx of another account or network', async () => {
+      const repository = new StoragePendingBroadcastRepository(keyValueStore);
+
+      repository.save({ hash: 'OTHER-ACCOUNT', accountId: 'acc-2', networkId: NETWORK.id, createdAt: 0 });
+      repository.save({ hash: 'OTHER-NETWORK', accountId: ACCOUNT.id, networkId: 'other-net', createdAt: 0 });
+      const { transactionService } = await setup();
+
+      expect(screen.queryByText(PENDING_NOTICE)).toBeNull();
+      await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
+      await fireEvent.press(screen.getByTestId('send-review'));
+      expect(await screen.findByTestId('review-confirm')).toBeTruthy();
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
+      expect(transactionService.getTransactionStatus).not.toHaveBeenCalled();
     });
   });
 

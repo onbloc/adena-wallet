@@ -83,6 +83,20 @@ describe('WalletService', () => {
     expect(isAppError(missing, 'WALLET_NOT_FOUND')).toBe(true);
   });
 
+  it('drops the removed account\'s pending broadcasts', async () => {
+    const { container } = createTestContainer();
+    const first = await container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+    const imported = await container.walletService.importPrivateKey(PRIVATE_KEY);
+    const repository = container.pendingBroadcastRepository;
+
+    repository.save({ hash: 'A', accountId: first.id, networkId: 'n', createdAt: 0 });
+    repository.save({ hash: 'B', accountId: imported.id, networkId: 'n', createdAt: 0 });
+    await container.walletService.removeAccount(imported.id, TEST_PASSWORD);
+
+    expect(repository.get(imported.id, 'n')).toBeUndefined();
+    expect(repository.get(first.id, 'n')?.hash).toBe('A');
+  });
+
   it('unlocks with biometrics only after the user enabled it', async () => {
     const { container, secureStore } = createTestContainer();
 

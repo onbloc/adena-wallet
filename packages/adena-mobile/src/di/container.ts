@@ -15,6 +15,7 @@ import { DexMarketDataRepository, MarketDataRepository } from '../repositories/m
 import { StorageNetworkRepository } from '../repositories/network.repository';
 import { StorageNftPreferenceRepository } from '../repositories/nft-preference.repository';
 import { SecurePasswordAttemptRepository } from '../repositories/password-attempt.repository';
+import { PendingBroadcastRepository, StoragePendingBroadcastRepository } from '../repositories/pending-broadcast.repository';
 import { StoragePreferenceRepository } from '../repositories/preference.repository';
 import { ApiPriceRepository, PriceRepository } from '../repositories/price.repository';
 import { StorageTokenListRepository } from '../repositories/token-list.repository';
@@ -89,7 +90,11 @@ export interface Services {
   migrationService: MigrationService;
 }
 
-export type AppContainer = Services & { keyringSession: KeyringSession; chainRegistry: ChainRegistry };
+export type AppContainer = Services & {
+  keyringSession: KeyringSession;
+  chainRegistry: ChainRegistry;
+  pendingBroadcastRepository: PendingBroadcastRepository;
+};
 
 export const createContainer = (infra: Infrastructure, overrides: Partial<Services> = {}): AppContainer => {
   const { secureStore, keyValueStore } = infra;
@@ -109,6 +114,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const connectedAppRepository = new StorageConnectedAppRepository(keyValueStore);
   const preferenceRepository = new StoragePreferenceRepository(keyValueStore);
   const tokenListRepository = new StorageTokenListRepository(keyValueStore);
+  const pendingBroadcastRepository = new StoragePendingBroadcastRepository(keyValueStore);
 
   const keyringSession = new KeyringSession();
   const attemptLimiter = new PasswordAttemptLimiter(new SecurePasswordAttemptRepository(secureStore), infra.now);
@@ -130,6 +136,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   return {
     keyringSession,
     chainRegistry,
+    pendingBroadcastRepository,
     accountService,
     accountPhotoService,
     hapticsService: overrides.hapticsService ?? new HapticsService(preferenceRepository, infra.hapticEngine ?? NOOP_HAPTIC_ENGINE),
@@ -149,7 +156,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService, resetMarker),
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),
     walletService: overrides.walletService
-      ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService], biometricRepository, preferenceRepository, resetMarker),
+      ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker),
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
   };

@@ -8,6 +8,7 @@ export const StorageKey = {
   TOKEN_LISTS: 'token-lists',
   ADDRESS_BOOK: 'address-book',
   NFT_PREFERENCES: 'nft-preferences',
+  PENDING_BROADCASTS: 'pending-broadcasts',
   RESET_PENDING: 'reset.pending',
 } as const;
 
