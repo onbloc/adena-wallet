@@ -86,6 +86,18 @@ describe('SwapScreen', () => {
     expect(screen.getByText(/^1 GNOT = 4\.15136 GNS/)).toBeTruthy();
   });
 
+  it('announces each amount field value and marks the estimated one busy while quoting', async () => {
+    await setup();
+
+    await pickGns();
+    await typeAmount('1');
+    expect(screen.getByRole('button', { name: 'Sell amount' }).props.accessibilityValue).toEqual({ text: '1' });
+    expect(screen.getByRole('button', { name: 'Buy amount' }).props.accessibilityState).toMatchObject({ busy: true });
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    expect(screen.getByRole('button', { name: 'Buy amount' }).props.accessibilityValue).toEqual({ text: '4.15136' });
+    expect(screen.getByRole('button', { name: 'Buy amount' }).props.accessibilityState).toMatchObject({ busy: false });
+  });
+
   it('flags an amount above the balance', async () => {
     await setup();
 

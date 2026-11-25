@@ -148,7 +148,8 @@ const AmountField = ({ side, label, onFocus, testID }: { side: SwapSideView; lab
     <Pressable
       accessibilityRole='button'
       accessibilityLabel={`${label} amount`}
-      accessibilityState={{ selected: Boolean(side.focused) }}
+      accessibilityValue={{ text: side.amount || '0' }}
+      accessibilityState={{ selected: Boolean(side.focused), busy: Boolean(side.loading) }}
       onPress={onFocus}
       style={styles.amountField}
       testID={testID}
