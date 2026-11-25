@@ -1,11 +1,13 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 
 import { percentOfBalance, searchSwapTokens, sortSwapTokens, SwapScreen } from '../../../../src/containers/main/swap-screen';
+import { AppError, AppErrorCode } from '../../../../src/core/errors';
 import { GNO_FEE_POLICY } from '../../../../src/domain/fee';
 import { SwapToken } from '../../../../src/domain/swap';
 import { PENDING_NOTICE, PENDING_POLL_INTERVAL_MS, REPLACEABLE_NOTICE } from '../../../../src/hooks/use-pending-broadcast';
 import { queryKeys } from '../../../../src/queries/query-keys';
 import { SWAP_QUOTE_TTL_MS, SwapMaxResult } from '../../../../src/services/swap.service';
+import { PREVIOUS_TRANSACTION_RESOLVED_MESSAGE } from '../../../../src/services/transaction.service';
 import { useSessionStore } from '../../../../src/stores/session.store';
 import { GnoswapFakeOptions, GNS, installGnoswapFakes, qeval } from '../../../helpers/gnoswap-fakes';
 import { renderScreen, resetStores, setupWallet, toastMessage } from '../../../helpers/render-screen';
@@ -362,6 +364,65 @@ describe('SwapScreen', () => {
     expect(await screen.findByText(PENDING_NOTICE, undefined, LOOKUP)).toBeTruthy();
     expect(toastMessage()).not.toBe('Swap confirmed');
   });
+
+  it('keeps the swap being typed when an earlier mempool-only swap confirms later', async () => {
+    const { env, account, network } = await setup();
+    let committed = false;
+
+    jest.spyOn(env.container.swapService, 'submit').mockResolvedValueOnce({ hash: 'SUBMITTED', height: '0', committed: false });
+    jest.spyOn(env.container.transactionService, 'reconcilePending').mockImplementation(async () => {
+      const [record] = env.container.pendingBroadcastRepository.list(account.id, network.chainId);
+
+      return committed && record
+        ? { status: 'none', settled: [{ id: record.id, status: 'committed', hash: 'SUBMITTED' }] }
+        : { status: 'pending', settled: [] };
+    });
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    await press('Review swap');
+    await fireEvent.press(await screen.findByTestId('review-confirm', undefined, LOOKUP));
+    await screen.findByText(PENDING_NOTICE, undefined, LOOKUP);
+
+    await typeAmount('2');
+    committed = true;
+    await waitFor(() => expect(toastMessage()).toBe('Swap confirmed'), { timeout: PENDING_POLL_INTERVAL_MS + 2000 });
+    expect(within(screen.getByTestId('swap-sell')).getByText('12')).toBeTruthy();
+    expect(screen.queryByText(PENDING_NOTICE)).toBeNull();
+  }, 15_000);
+
+  it('keeps a replacement review open mid-confirm when the replaced swap confirms, and shows why it failed', async () => {
+    const { env, account, network } = await setup();
+    let phase: 'replaceable' | 'committed' = 'replaceable';
+    let rejectReplacement!: (error: unknown) => void;
+
+    jest.spyOn(env.container.swapService, 'submit')
+      .mockResolvedValueOnce({ hash: 'SUBMITTED', height: '0', committed: false })
+      .mockReturnValueOnce(new Promise((_, reject) => {
+        rejectReplacement = reject;
+      }));
+    jest.spyOn(env.container.transactionService, 'reconcilePending').mockImplementation(async () => {
+      const [record] = env.container.pendingBroadcastRepository.list(account.id, network.chainId);
+
+      return phase === 'committed' && record
+        ? { status: 'none', settled: [{ id: record.id, status: 'committed', hash: 'SUBMITTED' }] }
+        : { status: 'replaceable', sequence: '3', settled: [] };
+    });
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    await press('Review swap');
+    await fireEvent.press(await screen.findByTestId('review-confirm', undefined, LOOKUP));
+    await screen.findByText(REPLACEABLE_NOTICE, undefined, { timeout: PENDING_POLL_INTERVAL_MS + 2000 });
+
+    await press('Review swap');
+    await fireEvent.press(await screen.findByTestId('review-confirm', undefined, LOOKUP));
+    phase = 'committed';
+    await waitFor(() => expect(toastMessage()).toBe('Swap confirmed'), { timeout: PENDING_POLL_INTERVAL_MS + 2000 });
+    expect(screen.getByTestId('review-confirm')).toBeTruthy();
+    await act(async () => rejectReplacement(new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, PREVIOUS_TRANSACTION_RESOLVED_MESSAGE)));
+    expect(await screen.findByText(PREVIOUS_TRANSACTION_RESOLVED_MESSAGE, undefined, LOOKUP)).toBeTruthy();
+  }, 20_000);
 
   it('stores a swap with an unknown outcome for its account and network, so it stays blocked after a restart', async () => {
     const { env, account, network } = await setup();

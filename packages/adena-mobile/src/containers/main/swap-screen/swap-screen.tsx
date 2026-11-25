@@ -220,17 +220,23 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     };
   }, [balances, fiatOf]);
 
-  const handleCommitted = useCallback((): void => {
+  const announceConfirmed = useCallback((): void => {
     queryClient.invalidateQueries({ queryKey: queryKeys.balances() });
     queryClient.invalidateQueries({ queryKey: [...queryKeys.all, 'activities'] });
     playHaptic(HapticKind.SUCCESS);
     showToast('Swap confirmed', 'success');
-    setPrepared(null);
-    setAmount('');
-    setExactSide('sell');
   }, [playHaptic, queryClient, showToast]);
 
-  const pendingBroadcast = usePendingBroadcast(account ?? null, network, handleCommitted);
+  // An earlier swap confirmed later: keep what is being typed; a replacement review mid-confirm stays so its error shows.
+  const handlePolledCommit = useCallback((): void => {
+    announceConfirmed();
+
+    if (!sendingRef.current) {
+      setPrepared(current => (current?.replacesPending ? null : current));
+    }
+  }, [announceConfirmed]);
+
+  const pendingBroadcast = usePendingBroadcast(account ?? null, network, handlePolledCommit);
 
   // Edits detach the in-flight estimate through reset(), like the send flow.
   const prepare = useMutation({
@@ -437,7 +443,11 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     submit.mutateAsync()
       .then((result) => {
         if (result.committed) {
-          handleCommitted();
+          announceConfirmed();
+          submit.reset();
+          setPrepared(null);
+          setAmount('');
+          setExactSide('sell');
           return;
         }
 
