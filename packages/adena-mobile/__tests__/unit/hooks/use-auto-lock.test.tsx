@@ -99,6 +99,32 @@ describe('useAutoLock', () => {
     expect(lock).not.toHaveBeenCalled();
   });
 
+  it('counts the idle time before a short background stay', async () => {
+    await setup();
+    await act(async () => {
+      jest.advanceTimersByTime(APP_CONFIG.autoLockMs - 30_000);
+    });
+    await changeAppState('background');
+    jest.setSystemTime(Date.now() + 30_000);
+    await changeAppState('active');
+    expect(lock).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the remaining idle time after a short background stay', async () => {
+    await setup();
+    await act(async () => {
+      jest.advanceTimersByTime(APP_CONFIG.autoLockMs - 60_000);
+    });
+    await changeAppState('background');
+    jest.setSystemTime(Date.now() + 1000);
+    await changeAppState('active');
+    expect(lock).not.toHaveBeenCalled();
+    await act(async () => {
+      jest.advanceTimersByTime(60_000);
+    });
+    expect(lock).toHaveBeenCalledTimes(1);
+  });
+
   it('locks when the clock moved backwards while backgrounded', async () => {
     await setup();
     await changeAppState('background');

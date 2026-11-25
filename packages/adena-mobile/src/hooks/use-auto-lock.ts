@@ -16,8 +16,10 @@ export const useAutoLock = (): (() => void) => {
   const lastActiveAtRef = useRef(0);
   const backgroundedAtRef = useRef<number | null>(null);
 
-  const lockIfExpired = useCallback((since: number) => {
-    if (useSessionStore.getState().status === SessionStatus.UNLOCKED && shouldAutoLock(since, Date.now(), APP_CONFIG.autoLockMs)) {
+  const lockIfExpired = useCallback((...since: number[]) => {
+    const now = Date.now();
+
+    if (useSessionStore.getState().status === SessionStatus.UNLOCKED && since.some(at => shouldAutoLock(at, now, APP_CONFIG.autoLockMs))) {
       lockWallet();
     }
   }, [lockWallet]);
@@ -33,8 +35,8 @@ export const useAutoLock = (): (() => void) => {
         const backgroundedAt = backgroundedAtRef.current;
 
         backgroundedAtRef.current = null;
-        lockIfExpired(backgroundedAt);
-        lastActiveAtRef.current = Date.now();
+        // Returning is not a touch: the idle time before backgrounding still counts.
+        lockIfExpired(backgroundedAt, lastActiveAtRef.current);
       }
     });
 
