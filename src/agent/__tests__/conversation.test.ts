@@ -193,7 +193,7 @@ describe('agent conversations', () => {
       'lookup',
       {
         definition: { name: 'lookup', description: 'Look up data', jsonSchema: { type: 'object', properties: {} } },
-        execute: async () => ({ kind: 'result', value: { data: 'data'.repeat(3000) } }),
+        execute: async () => ({ kind: 'result', value: { data: 'data'.repeat(3600) } }),
       },
     ], [
       'status',
@@ -205,7 +205,7 @@ describe('agent conversations', () => {
     const agent = new AIAgent({ llm, harness });
     const session = createChatSession();
     session.complete('obsolete topic', 'x'.repeat(12000));
-    session.complete('recent topic', 'r'.repeat(2500));
+    session.complete('recent topic', 'r'.repeat(200));
     const conversation = agent.createConversation({ account: ACCOUNT, session, contextTokens: 8192 });
 
     await collect(conversation.run({ prompt: 'Look up current data.', system: 'Be concise.', maxOutputTokens: 128 }));
@@ -214,7 +214,7 @@ describe('agent conversations', () => {
     const continuation = JSON.stringify(model.doGenerateCalls[4].prompt);
     expect(continuation).not.toContain('recent topic');
     expect(continuation).toContain('lookup-now');
-    expect(continuation).toContain('data'.repeat(3000));
+    expect(continuation).toContain('data'.repeat(3600));
     expect(conversation.turns.map((turn) => turn.prompt)).toEqual(['Look up current data.']);
     expect(conversation.serialize()).not.toContain('recent topic');
   });
@@ -475,6 +475,90 @@ describe('agent conversations', () => {
     await collect(second.run({ prompt: 'gno.land/r/a/gns' }));
     expect(run.mock.calls[2][1]?.pendingPreparation).toBeUndefined();
   });
+
+  it.each(['candidate', 'clarification'] as const)(
+    'revokes in-flight %s authority when the shared state is cleared, reset, or reused',
+    async kind => {
+      for (const mode of ['clear', 'reset', 'new turn'] as const) {
+        const { agent } = setup();
+        const pending = {
+          account: ACCOUNT, chainId: 'gnoland-1',
+          proposal: { operation: 'transfer' as const, recipient: RECIPIENT,
+            asset: { kind: 'symbol' as const, value: 'GNS' }, amount: { kind: 'exact' as const, value: '1' },
+            amountEvidence: { kind: 'literal' as const, span: '1' },
+            authorization: { kind: 'explicit' as const, evidence: 'Send 1 GNS', followup: false, balanceReferent: false } },
+          candidateIds: ['gno.land/r/a/gns', 'gno.land/r/b/gns'],
+        };
+        const { promise: ready, resolve: started } = Promise.withResolvers<void>();
+        const { promise: blocked, resolve: release } = Promise.withResolvers<void>();
+        let selectionSignal: AbortSignal | undefined;
+        const run = jest.spyOn(agent, 'run').mockImplementation(async function* (_settings, options) {
+          if (run.mock.calls.length === 1) {
+            if (kind === 'candidate') options?.onAmbiguousPreparation?.(pending);
+            else options?.onPreparationClarification?.('Send GNS', 'amount');
+          }
+          if (options?.pendingPreparation || options?.pendingClarification) {
+            selectionSignal = options.signal;
+            started();
+            await blocked;
+          }
+          yield { type: GenerateEventType.Done, metrics: { totalMs: 1, ttftMs: null },
+            aborted: !!options?.signal?.aborted, finishReason: 'stop', warnings: [], messages: [] };
+        });
+        const state = createConversationPendingState();
+        const conversation = () => agent.createConversation({ account: ACCOUNT, pendingState: state, allowTransactionPreparation: true });
+        await collect(conversation().run({ prompt: 'Send GNS' }));
+        const active = conversation();
+        const selection = collect(active.run({ prompt: kind === 'candidate' ? pending.candidateIds[0] : '1' }));
+        await ready;
+        if (mode === 'clear') state.clear();
+        else if (mode === 'reset') conversation().reset();
+        else await collect(conversation().run({ prompt: 'Something else' }));
+        expect(selectionSignal?.aborted).toBe(true);
+        release();
+        await selection;
+      }
+    },
+  );
+
+  it.each(['none', 'clear', 'reset', 'new turn'] as const)(
+    'controls host handoff for an in-flight token choice after %s', async mode => {
+      const candidates = ['gno.land/r/a/gns', 'gno.land/r/b/gns'];
+      const wallet = fakeWallet();
+      const transfer = wallet.transfer.bind(wallet);
+      const { promise: ready, resolve: started } = Promise.withResolvers<void>();
+      const { promise: blocked, resolve: release } = Promise.withResolvers<void>();
+      let calls = 0;
+      wallet.transfer = async params => {
+        if (++calls === 1) throw new WalletError('ambiguous_token', 'Choose a token.', candidates);
+        started();
+        await blocked;
+        return transfer(params);
+      };
+      const handoff = jest.fn();
+      const model = new MockLanguageModelV4({ doGenerate: [
+        reply(intentReplyText({ kind: 'prepare' })),
+        reply(JSON.stringify({ operation: 'transfer', recipient: RECIPIENT,
+          asset: { kind: 'symbol', value: 'GNS' }, amount: { kind: 'exact', value: '1' } })),
+        reply(intentReplyText({ kind: 'unsupported' })),
+      ] });
+      const agent = new AIAgent({
+        llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })),
+        harness: new Harness(), wallet, onTransaction: handoff,
+      });
+      const state = createConversationPendingState();
+      const conversation = () => agent.createConversation({ account: ACCOUNT, pendingState: state, allowTransactionPreparation: true });
+      await collect(conversation().run({ prompt: `Send 1 GNS to ${RECIPIENT}` }));
+      const selection = collect(conversation().run({ prompt: candidates[0] }));
+      await ready;
+      if (mode === 'clear') state.clear();
+      else if (mode === 'reset') conversation().reset();
+      else if (mode === 'new turn') await collect(conversation().run({ prompt: 'Something else' }));
+      release();
+      await selection;
+      expect(handoff).toHaveBeenCalledTimes(mode === 'none' ? 1 : 0);
+    },
+  );
 
   it.each(['unrelated', 'reset', 'clear', 'cancel'] as const)(
     'invalidates pending ambiguity after %s', async invalidation => {

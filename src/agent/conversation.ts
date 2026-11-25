@@ -16,6 +16,7 @@ import type { AIAgent, BalanceReferent, PendingClarification, PendingPreparation
 export type ConversationPendingState = Readonly<{ clear(): void }>;
 const pendingStates = new WeakMap<ConversationPendingState, {
   revision: number;
+  activeAuthority?: AbortController;
   pending?: PendingPreparation;
   clarification?: { value: PendingClarification; account?: string; agent: AIAgent };
   balance?: { value: BalanceReferent; account?: string; agent: AIAgent };
@@ -25,6 +26,8 @@ export function createConversationPendingState(): ConversationPendingState {
   const state: ConversationPendingState = Object.freeze({
     clear() {
       const entry = pendingStates.get(state)!;
+      entry.activeAuthority?.abort();
+      entry.activeAuthority = undefined;
       entry.revision++;
       entry.pending = undefined;
       entry.clarification = undefined;
@@ -114,6 +117,7 @@ export class AgentConversation {
 
     const revision = this.revision;
     const controller = new AbortController();
+    if (pendingPreparation || pendingClarification) entry.activeAuthority = controller;
     this.active = controller;
     const abort = () => controller.abort(signal?.reason);
     signal?.addEventListener('abort', abort, { once: true });
@@ -165,6 +169,7 @@ export class AgentConversation {
         yield event;
       }
     } finally {
+      if (entry.activeAuthority === controller) entry.activeAuthority = undefined;
       if (controller.signal.aborted && entry.revision === pendingRevision) this.pendingState.clear();
       controller.abort();
       signal?.removeEventListener('abort', abort);
