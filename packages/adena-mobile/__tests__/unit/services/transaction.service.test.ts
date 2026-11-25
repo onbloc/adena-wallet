@@ -35,6 +35,9 @@ const codeOf = async (run: () => unknown) => {
   return isAppError(error) ? error.code : error;
 };
 
+// Every record resolved by one hash, nothing left.
+const settledAs = (status: 'committed' | 'failed', hash: string, id = hash) => ({ status: 'none', settled: [{ id, status, hash }] });
+
 const estimate = (overrides: Partial<FeeEstimate> = {}): FeeEstimate => ({
   gasUsed: '100000', gasPrice: '0.001', denom: 'ugnot', policy: GNO_FEE_POLICY, ...overrides,
 });
@@ -260,7 +263,7 @@ describe('TransactionService', () => {
     };
 
     const repositoryOf = (env: Env) => new StoragePendingBroadcastRepository(env.keyValueStore);
-    const recordOf = (env: Env) => repositoryOf(env).get(env.account.id, env.network.chainId);
+    const recordOf = (env: Env) => repositoryOf(env).list(env.account.id, env.network.chainId)[0];
     const restartedService = (env: Env) =>
       new TransactionService(env.container.chainRegistry, env.container.accountService, env.container.keyringSession, repositoryOf(env));
     const hashOf = (env: Env, encoded: string) => env.container.chainRegistry.forNetwork(env.network).transactionHash({ encoded });
@@ -289,7 +292,7 @@ describe('TransactionService', () => {
       const signed = env.gno.state.broadcasts[0];
       const hash = hashOf(env, signed);
 
-      expect(recordOf(env)).toEqual({ hashes: [hash], accountId: env.account.id, chainId: env.network.chainId, createdAt: expect.any(Number), sequence: '3', accountNumber: '7' });
+      expect(recordOf(env)).toEqual({ id: hash, hashes: [hash], accountId: env.account.id, chainId: env.network.chainId, createdAt: expect.any(Number), sequence: '3', accountNumber: '7' });
 
       // Killed here: a fresh service over the same storage still sees the in-flight tx.
       const restarted = restartedService(env);
@@ -327,7 +330,7 @@ describe('TransactionService', () => {
       const draft = await signedDraft(env);
       const sign = jest.spyOn(env.service, 'sign');
 
-      repositoryOf(env).save({ hashes: ['EARLIER'], accountId: env.account.id, chainId: env.network.chainId, createdAt: 0 });
+      repositoryOf(env).add({ hashes: ['EARLIER'], accountId: env.account.id, chainId: env.network.chainId, createdAt: 0 });
 
       expect(await codeOf(() => env.service.signAndBroadcast(draft, env.account, env.network))).toBe('PREVIOUS_TRANSACTION_PENDING');
       expect(sign).not.toHaveBeenCalled();
@@ -355,7 +358,7 @@ describe('TransactionService', () => {
         const chain = env.container.chainRegistry.forNetwork(env.network);
         const sign = jest.spyOn(chain, 'signTransaction');
 
-        await expect(restarted.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'replaceable', sequence: '3' });
+        await expect(restarted.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'replaceable', sequence: '3', settled: [] });
         expect(await codeOf(() => restarted.signAndBroadcast(draft, env.account, env.network))).toBe('PREVIOUS_TRANSACTION_PENDING');
 
         let recordDuringBroadcast: unknown;
@@ -385,7 +388,7 @@ describe('TransactionService', () => {
         env.gno.state.sequence = '4';
         const restarted = restartedService(env);
 
-        await expect(restarted.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'not_included' });
+        await expect(restarted.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'none', settled: [{ id: expect.any(String), status: 'not_included' }] });
         expect(recordOf(env)).toBeUndefined();
         await expect(restarted.signAndBroadcast(draft, env.account, env.network)).resolves.toMatchObject({ hash: 'HASH' });
       });
@@ -397,12 +400,12 @@ describe('TransactionService', () => {
 
         env.gno.state.transactions[hash] = 'committed';
         env.gno.state.sequence = '4';
-        await expect(restartedService(env).reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'committed', hash });
+        await expect(restartedService(env).reconcilePending(env.account, env.network)).resolves.toEqual(settledAs('committed', hash));
         expect(recordOf(env)).toBeUndefined();
 
-        repositoryOf(env).save({ hashes: ['F'], accountId: env.account.id, chainId: env.network.chainId, createdAt: 0, sequence: '4' });
+        repositoryOf(env).add({ hashes: ['F'], accountId: env.account.id, chainId: env.network.chainId, createdAt: 0, sequence: '4' });
         env.gno.state.transactions.F = 'failed';
-        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'failed', hash: 'F' });
+        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual(settledAs('failed', 'F'));
         expect(recordOf(env)).toBeUndefined();
       });
 
@@ -417,7 +420,7 @@ describe('TransactionService', () => {
           return getAccount(...args);
         };
 
-        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'committed', hash });
+        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual(settledAs('committed', hash));
       });
 
       it('stays blocked when any lookup fails during reconcile', async () => {
@@ -430,12 +433,12 @@ describe('TransactionService', () => {
           throw new Error('socket hang up');
         };
 
-        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'pending' });
+        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'pending', settled: [] });
         env.gno.provider.getTransaction = async () => {
           throw new Error('timeout');
         };
 
-        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'pending' });
+        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'pending', settled: [] });
         expect(recordOf(env)).toBeDefined();
         expect(await codeOf(() => env.service.signAndBroadcast(draft, env.account, env.network))).toBe('PREVIOUS_TRANSACTION_PENDING');
       });
@@ -460,7 +463,7 @@ describe('TransactionService', () => {
         // The same draft re-signed is the same tx: its rejection keeps the original hash tracked.
         expect(await codeOf(() => env.service.signAndBroadcast(draft, env.account, env.network, { replacePending: true }))).toBe('PREVIOUS_TRANSACTION_PENDING');
         expect(recordOf(env)?.hashes).toEqual([original]);
-        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'committed', hash: original });
+        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual(settledAs('committed', original));
 
         // Committed before signing: the pinned path refuses without broadcasting.
         env.gno.state.broadcasts = [];
@@ -499,10 +502,10 @@ describe('TransactionService', () => {
         expect(env.gno.state.broadcasts).toEqual([]);
 
         // Its tx used a sequence <= the current one, so the current one becomes the bound to pin and compare.
-        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'replaceable', sequence: '3' });
+        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'replaceable', sequence: '3', settled: [] });
         expect(recordOf(env)).toMatchObject({ hashes: ['LEGACY'], sequence: '3' });
         env.gno.state.sequence = '4';
-        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'not_included' });
+        await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'none', settled: [{ id: expect.any(String), status: 'not_included' }] });
       });
 
       it('blocks a send on another network of the same chain', async () => {
@@ -512,7 +515,118 @@ describe('TransactionService', () => {
 
         await killBeforeBroadcast(env, { ...draft, networkId: custom.id }, custom);
         expect(await codeOf(() => env.service.signAndBroadcast(draft, env.account, env.network))).toBe('PREVIOUS_TRANSACTION_PENDING');
-        expect(repositoryOf(env).get(env.account.id, custom.chainId)).toBeDefined();
+        expect(repositoryOf(env).list(env.account.id, custom.chainId)[0]).toBeDefined();
+      });
+
+      describe('several records of one account and chain', () => {
+        const recordsOf = (env: Env) => repositoryOf(env).list(env.account.id, env.network.chainId);
+        const storedDocument = (env: Env) => env.keyValueStore.getString(StorageKey.PENDING_BROADCASTS) ?? '';
+
+        it('keeps both legacy records of the built-in and a custom network and resolves each on its own', async () => {
+          const env = await setup();
+          const draft = await signedDraft(env);
+          const custom = `custom:${env.network.chainId}:http://localhost:26657`;
+
+          writeJson(env.keyValueStore, StorageKey.PENDING_BROADCASTS, {
+            [`${env.account.id}:${env.network.id}`]: { hash: 'DEFAULT', accountId: env.account.id, networkId: env.network.id, createdAt: 1 },
+            [`${env.account.id}:${custom}`]: { hash: 'CUSTOM', accountId: env.account.id, networkId: custom, createdAt: 2 },
+          });
+          expect(recordsOf(env).map(record => record.hashes)).toEqual([['DEFAULT'], ['CUSTOM']]);
+
+          env.gno.state.transactions.DEFAULT = 'committed';
+          env.gno.state.sequence = '4';
+          const first = await env.service.reconcilePending(env.account, env.network);
+
+          // Resolving the first leaves the second, and it still blocks a send.
+          expect(storedDocument(env)).toContain('CUSTOM');
+          expect(await codeOf(() => env.service.signAndBroadcast(draft, env.account, env.network))).toBe('PREVIOUS_TRANSACTION_PENDING');
+          expect(first).toEqual({ status: 'replaceable', sequence: '4', settled: [{ id: `${env.account.id}:${env.network.id}`, status: 'committed', hash: 'DEFAULT' }] });
+          expect(recordsOf(env)).toMatchObject([{ hashes: ['CUSTOM'], sequence: '4' }]);
+
+          env.gno.state.transactions.CUSTOM = 'failed';
+          await expect(env.service.reconcilePending(env.account, env.network)).resolves.toMatchObject({ status: 'none', settled: [{ status: 'failed', hash: 'CUSTOM' }] });
+          await expect(env.service.signAndBroadcast(draft, env.account, env.network)).resolves.toMatchObject({ committed: true });
+          expect(env.gno.state.broadcasts).toHaveLength(1);
+        });
+
+        const twoSequences = (env: Env) => {
+          const repository = repositoryOf(env);
+
+          repository.add({ hashes: ['LOW'], accountId: env.account.id, chainId: env.network.chainId, createdAt: 1, sequence: '3', accountNumber: '7' });
+          repository.add({ hashes: ['HIGH'], accountId: env.account.id, chainId: env.network.chainId, createdAt: 2, sequence: '4', accountNumber: '7' });
+        };
+
+        it('resolves records with different sequences independently and unblocks once both are gone', async () => {
+          const env = await setup();
+          const draft = await signedDraft(env);
+
+          twoSequences(env);
+          await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'pending', settled: [] });
+          expect(recordsOf(env).map(record => record.id)).toEqual(['LOW', 'HIGH']);
+
+          // The higher record's sequence moved on: it is dropped, while the lower one is found committed.
+          env.gno.state.transactions.LOW = 'committed';
+          env.gno.state.sequence = '5';
+          await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({
+            status: 'none',
+            settled: [{ id: 'LOW', status: 'committed', hash: 'LOW' }, { id: 'HIGH', status: 'not_included' }],
+          });
+          await expect(env.service.signAndBroadcast(draft, env.account, env.network)).resolves.toMatchObject({ committed: true });
+        });
+
+        it('stays blocked while one of the records is still unresolved', async () => {
+          const env = await setup();
+          const draft = await signedDraft(env);
+
+          twoSequences(env);
+          env.gno.state.transactions.LOW = 'committed';
+          env.gno.state.sequence = '4';
+          await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({
+            status: 'replaceable', sequence: '4', settled: [{ id: 'LOW', status: 'committed', hash: 'LOW' }],
+          });
+          expect(await codeOf(() => env.service.signAndBroadcast(draft, env.account, env.network))).toBe('PREVIOUS_TRANSACTION_PENDING');
+
+          env.gno.state.sequence = '5';
+          await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'none', settled: [{ id: 'HIGH', status: 'not_included' }] });
+          expect(recordsOf(env)).toEqual([]);
+        });
+
+        it('refuses a pinned replacement while two records exist and allows it once one replaceable record is left', async () => {
+          const env = await setup();
+          const draft = await signedDraft(env);
+          const sign = jest.spyOn(env.service, 'sign');
+          const repository = repositoryOf(env);
+
+          repository.add({ hashes: ['A'], accountId: env.account.id, chainId: env.network.chainId, createdAt: 1, sequence: '3', accountNumber: '7' });
+          repository.add({ hashes: ['B'], accountId: env.account.id, chainId: env.network.chainId, createdAt: 2, sequence: '3', accountNumber: '7' });
+          // Both are still current, yet neither is offered for replacement.
+          await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'pending', settled: [] });
+          expect(await codeOf(() => env.service.signAndBroadcast(draft, env.account, env.network, { replacePending: true }))).toBe('PREVIOUS_TRANSACTION_PENDING');
+          expect(sign).not.toHaveBeenCalled();
+
+          repository.discardHash(env.account.id, env.network.chainId, 'A');
+          await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'replaceable', sequence: '3', settled: [] });
+          await expect(env.service.signAndBroadcast(draft, env.account, env.network, { replacePending: true })).resolves.toMatchObject({ committed: true });
+          expect(sign).toHaveBeenLastCalledWith(draft, env.account, env.network, { sequence: '3', accountNumber: '7' });
+          expect(recordsOf(env)).toEqual([]);
+        });
+
+        it('refuses a pinned replacement when another record appears while signing', async () => {
+          const env = await setup();
+          const draft = await signedDraft(env);
+          const repository = repositoryOf(env);
+          const sign = env.service.sign.bind(env.service);
+
+          repository.add({ hashes: ['A'], accountId: env.account.id, chainId: env.network.chainId, createdAt: 1, sequence: '3', accountNumber: '7' });
+          jest.spyOn(env.service, 'sign').mockImplementationOnce(async (...args) => {
+            repository.add({ hashes: ['B'], accountId: env.account.id, chainId: env.network.chainId, createdAt: 2, sequence: '3' });
+            return sign(...args);
+          });
+
+          expect(await codeOf(() => env.service.signAndBroadcast(draft, env.account, env.network, { replacePending: true }))).toBe('PREVIOUS_TRANSACTION_PENDING');
+          expect(env.gno.state.broadcasts).toEqual([]);
+          expect(recordsOf(env).map(record => record.hashes)).toEqual([['A'], ['B']]);
+        });
       });
     });
   });
@@ -545,12 +659,12 @@ describe('TransactionService', () => {
       const { chain, repository, service } = setupSync();
 
       await expect(service.signAndBroadcast(DRAFT, ACCOUNT, NETWORK)).resolves.toEqual({ hash: 'SYNC', height: '0', committed: false });
-      expect(repository.get(ACCOUNT.id, NETWORK.chainId)).toMatchObject({ hashes: ['SYNC'], sequence: '9', accountNumber: '2' });
+      expect(repository.list(ACCOUNT.id, NETWORK.chainId)[0]).toMatchObject({ hashes: ['SYNC'], sequence: '9', accountNumber: '2' });
       expect(await codeOf(() => service.signAndBroadcast(DRAFT, ACCOUNT, NETWORK))).toBe('PREVIOUS_TRANSACTION_PENDING');
 
       chain.findTransaction.mockResolvedValue('committed');
-      await expect(service.reconcilePending(ACCOUNT, NETWORK)).resolves.toEqual({ status: 'committed', hash: 'SYNC' });
-      expect(repository.get(ACCOUNT.id, NETWORK.chainId)).toBeUndefined();
+      await expect(service.reconcilePending(ACCOUNT, NETWORK)).resolves.toEqual(settledAs('committed', 'SYNC'));
+      expect(repository.list(ACCOUNT.id, NETWORK.chainId)[0]).toBeUndefined();
     });
   });
 });

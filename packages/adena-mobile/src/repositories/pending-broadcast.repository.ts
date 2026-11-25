@@ -5,6 +5,8 @@ import { KeyValueStore, readJson, writeJson } from '../storage/key-value-store';
 // A send whose outcome is unknown. Only hashes, ids and signer state, never the signed tx.
 // Scoped by chain id, not network id: a custom network on the same chain shares the signer sequence.
 export interface PendingBroadcastRecord {
+  // Stable for the record's lifetime: its first hash, or the storage key of a legacy record.
+  id: string;
   // The original tx plus any replacement signed with the same sequence, so at most one can commit.
   hashes: string[];
   accountId: string;
@@ -15,6 +17,8 @@ export interface PendingBroadcastRecord {
   accountNumber?: string;
 }
 
+export type NewPendingBroadcastRecord = Omit<PendingBroadcastRecord, 'id'>;
+
 // Shape written by the previous version: one hash, scoped by network id.
 interface LegacyPendingBroadcastRecord {
   hash: string;
@@ -23,12 +27,10 @@ interface LegacyPendingBroadcastRecord {
   createdAt: number;
 }
 
-type StoredRecord = PendingBroadcastRecord | LegacyPendingBroadcastRecord;
+type StoredRecord = PendingBroadcastRecord | NewPendingBroadcastRecord | LegacyPendingBroadcastRecord;
 type Document = Record<string, StoredRecord>;
 
 const CUSTOM_NETWORK_PREFIX = 'custom:';
-
-const scopeKey = (accountId: string, chainId: string): string => `${accountId}:${chainId}`;
 
 // Built-in ids map through the network list; custom ids embed the chain id (`custom:<chainId>:<rpcUrl>`).
 export const chainIdOfNetworkId = (networkId: string): string => {
@@ -39,24 +41,33 @@ export const chainIdOfNetworkId = (networkId: string): string => {
   return BUILT_IN_NETWORKS.find(network => network.id === networkId)?.chainId ?? networkId;
 };
 
-const normalize = (stored: StoredRecord): PendingBroadcastRecord => {
+// Older documents are keyed by scope; the key stays the id so each stored record survives on its own.
+const normalize = (key: string, stored: StoredRecord): PendingBroadcastRecord => {
   if ('hashes' in stored && Array.isArray(stored.hashes)) {
-    return stored;
+    return { ...stored, id: 'id' in stored && stored.id ? stored.id : key };
   }
 
   const { hash, networkId, ...rest } = stored as LegacyPendingBroadcastRecord;
 
-  return { ...rest, hashes: [hash], chainId: chainIdOfNetworkId(networkId) };
+  return { ...rest, id: key, hashes: [hash], chainId: chainIdOfNetworkId(networkId) };
 };
 
-// At most one per account and chain, since sending there stays blocked while it exists.
+const inScope = (accountId: string, chainId: string) => (record: PendingBroadcastRecord): boolean =>
+  record.accountId === accountId && record.chainId === chainId;
+
+// Several records may share an account and chain (e.g. legacy ones written per network); each is
+// tracked and resolved on its own, and sending there stays blocked while any of them exists.
 export interface PendingBroadcastRepository {
-  get(accountId: string, chainId: string): PendingBroadcastRecord | undefined;
-  save(record: PendingBroadcastRecord): void;
-  // Drops the whole record once one of its txs is resolved; no-op unless it tracks `hash`,
-  // so a stale poll cannot drop a newer record.
-  remove(accountId: string, chainId: string, hash: string): void;
-  // Forgets one tx that was definitely not accepted; the record goes once no hash is left.
+  // Oldest first.
+  list(accountId: string, chainId: string): PendingBroadcastRecord[];
+  // The record that tracks `hash`, if any.
+  find(accountId: string, chainId: string, hash: string): PendingBroadcastRecord | undefined;
+  add(record: NewPendingBroadcastRecord): PendingBroadcastRecord;
+  // Replaces the record with the same id; no-op once it is gone, so a stale write cannot revive it.
+  update(record: PendingBroadcastRecord): void;
+  // Drops the record tracking `hash` once one of its txs is resolved; returns whether one was dropped.
+  remove(accountId: string, chainId: string, hash: string): boolean;
+  // Forgets one tx that was definitely not accepted; its record goes once no hash is left.
   discardHash(accountId: string, chainId: string, hash: string): void;
   removeAccount(accountId: string): void;
 }
@@ -64,16 +75,14 @@ export interface PendingBroadcastRepository {
 export class StoragePendingBroadcastRepository implements PendingBroadcastRepository {
   constructor(private readonly store: KeyValueStore) {}
 
-  // Re-keys legacy records by chain id; if two map to the same scope, the first one is kept.
   private read(): Record<string, PendingBroadcastRecord> {
     const document = readJson<Document>(this.store, StorageKey.PENDING_BROADCASTS) ?? {};
     const records: Record<string, PendingBroadcastRecord> = {};
 
-    for (const stored of Object.values(document)) {
-      const record = normalize(stored);
-      const key = scopeKey(record.accountId, record.chainId);
+    for (const [key, stored] of Object.entries(document)) {
+      const record = normalize(key, stored);
 
-      records[key] = records[key] ?? record;
+      records[record.id] = record;
     }
 
     return records;
@@ -83,30 +92,55 @@ export class StoragePendingBroadcastRepository implements PendingBroadcastReposi
     writeJson(this.store, StorageKey.PENDING_BROADCASTS, records);
   }
 
-  get(accountId: string, chainId: string): PendingBroadcastRecord | undefined {
-    return this.read()[scopeKey(accountId, chainId)];
+  list(accountId: string, chainId: string): PendingBroadcastRecord[] {
+    return Object.values(this.read())
+      .filter(inScope(accountId, chainId))
+      .sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
   }
 
-  save(record: PendingBroadcastRecord): void {
-    this.write({ ...this.read(), [scopeKey(record.accountId, record.chainId)]: record });
+  find(accountId: string, chainId: string, hash: string): PendingBroadcastRecord | undefined {
+    return this.list(accountId, chainId).find(record => record.hashes.includes(hash));
   }
 
-  remove(accountId: string, chainId: string, hash: string): void {
+  add(record: NewPendingBroadcastRecord): PendingBroadcastRecord {
     const records = this.read();
-    const key = scopeKey(accountId, chainId);
+    let id = record.hashes[0];
 
-    if (!records[key]?.hashes.includes(hash)) {
-      return;
+    for (let suffix = 1; records[id]; suffix += 1) {
+      id = `${record.hashes[0]}#${suffix}`;
     }
 
-    delete records[key];
-    this.write(records);
+    const added = { ...record, id };
+
+    this.write({ ...records, [id]: added });
+    return added;
+  }
+
+  update(record: PendingBroadcastRecord): void {
+    const records = this.read();
+
+    if (records[record.id]) {
+      this.write({ ...records, [record.id]: record });
+    }
+  }
+
+  remove(accountId: string, chainId: string, hash: string): boolean {
+    const record = this.find(accountId, chainId, hash);
+
+    if (!record) {
+      return false;
+    }
+
+    const { [record.id]: _removed, ...rest } = this.read();
+
+    this.write(rest);
+    return true;
   }
 
   discardHash(accountId: string, chainId: string, hash: string): void {
-    const record = this.get(accountId, chainId);
+    const record = this.find(accountId, chainId, hash);
 
-    if (!record?.hashes.includes(hash)) {
+    if (!record) {
       return;
     }
 
@@ -115,7 +149,7 @@ export class StoragePendingBroadcastRepository implements PendingBroadcastReposi
       return;
     }
 
-    this.save({ ...record, hashes: record.hashes.filter(item => item !== hash) });
+    this.update({ ...record, hashes: record.hashes.filter(item => item !== hash) });
   }
 
   removeAccount(accountId: string): void {

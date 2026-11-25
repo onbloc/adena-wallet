@@ -45,7 +45,7 @@ const setup = async (extraParams: Record<string, unknown> = {}, ownAddress = 'g1
     estimateFee: jest.fn(async () => ESTIMATE),
     assertSufficientFunds: jest.fn(async (..._args: unknown[]) => undefined),
     signAndBroadcast: jest.fn(async (_draft: TransactionDraft, ..._rest: unknown[]): Promise<BroadcastResult> => ({ hash: 'h', height: '1', committed: true })),
-    reconcilePending: jest.fn(async (..._args: unknown[]): Promise<PendingReconciliation> => ({ status: 'pending' })),
+    reconcilePending: jest.fn(async (..._args: unknown[]): Promise<PendingReconciliation> => ({ status: 'pending', settled: [] })),
   };
   const { Wrapper } = createWrapper({
     nftService,
@@ -190,7 +190,7 @@ describe('SendNftScreen', () => {
       expect(screen.getByText(PENDING_NOTICE)).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Review transfer' }).props.accessibilityState?.disabled).toBe(true);
 
-      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'committed', hash: 'ABC' });
+      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'none', settled: [{ id: 'ABC', status: 'committed', hash: 'ABC' }] });
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
 
       expect(transactionService.signAndBroadcast).toHaveBeenCalledTimes(1);
@@ -210,7 +210,7 @@ describe('SendNftScreen', () => {
       expect(useToastStore.getState().toast?.message).toBe('Transaction sent. Waiting for confirmation.');
       expect(screen.getByText(PENDING_NOTICE)).toBeTruthy();
 
-      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'committed', hash: 'SYNC' });
+      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'none', settled: [{ id: 'SYNC', status: 'committed', hash: 'SYNC' }] });
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
 
       expect(navigation.popToTop).toHaveBeenCalledTimes(1);
@@ -226,7 +226,7 @@ describe('SendNftScreen', () => {
       await fireEvent.press(await screen.findByTestId('review-confirm'));
       await act(() => jest.advanceTimersByTimeAsync(500));
 
-      transactionService.reconcilePending.mockResolvedValue({ status: 'replaceable', sequence: '3' });
+      transactionService.reconcilePending.mockResolvedValue({ status: 'replaceable', sequence: '3', settled: [] });
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
       expect(screen.getByText(REPLACEABLE_NOTICE)).toBeTruthy();
 

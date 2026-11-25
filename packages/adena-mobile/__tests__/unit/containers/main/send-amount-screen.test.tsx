@@ -70,7 +70,7 @@ const setup = async (prices?: Record<string, unknown>, params: Record<string, un
     maxTransferAmount: jest.fn(),
     assertSufficientFunds: jest.fn(async (..._args: unknown[]) => undefined),
     signAndBroadcast: jest.fn(async (_draft: TransactionDraft, ..._rest: unknown[]): Promise<BroadcastResult> => ({ hash: 'h', height: '1', committed: true })),
-    reconcilePending: jest.fn(async (..._args: unknown[]): Promise<PendingReconciliation> => ({ status: 'pending' })),
+    reconcilePending: jest.fn(async (..._args: unknown[]): Promise<PendingReconciliation> => ({ status: 'pending', settled: [] })),
   };
   const { Wrapper } = createWrapper({
     transactionService,
@@ -204,7 +204,7 @@ describe('SendAmountScreen', () => {
       await fireEvent.press(screen.getByTestId('send-review'));
       expect(transactionService.estimateFee).toHaveBeenCalledTimes(1);
 
-      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'pending' }).mockResolvedValueOnce({ status: 'committed', hash: 'ABC' });
+      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'pending', settled: [] }).mockResolvedValueOnce({ status: 'none', settled: [{ id: 'ABC', status: 'committed', hash: 'ABC' }] });
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS * 2));
 
       expect(transactionService.reconcilePending).toHaveBeenCalledWith(ACCOUNT, NETWORK);
@@ -216,7 +216,7 @@ describe('SendAmountScreen', () => {
       const { transactionService } = await setup();
 
       await confirmOnce(transactionService, new TransactionPendingError('ABC'));
-      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'failed', hash: 'ABC' });
+      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'none', settled: [{ id: 'ABC', status: 'failed', hash: 'ABC' }] });
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
 
       expect(screen.queryByText(PENDING_NOTICE)).toBeNull();
@@ -256,7 +256,7 @@ describe('SendAmountScreen', () => {
       await fireEvent.press(screen.getByTestId('send-review'));
       expect(transactionService.estimateFee).not.toHaveBeenCalled();
 
-      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'committed', hash: 'ABC' });
+      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'none', settled: [{ id: 'ABC', status: 'committed', hash: 'ABC' }] });
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
 
       expect(transactionService.reconcilePending).toHaveBeenCalledWith(ACCOUNT, NETWORK);
@@ -277,7 +277,7 @@ describe('SendAmountScreen', () => {
 
       const { transactionService } = await setup();
 
-      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'pending' }).mockResolvedValueOnce({ status: 'failed', hash: 'ABC' });
+      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'pending', settled: [] }).mockResolvedValueOnce({ status: 'none', settled: [{ id: 'ABC', status: 'failed', hash: 'ABC' }] });
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS * 2));
 
       expect(screen.queryByText(PENDING_NOTICE)).toBeNull();
@@ -296,7 +296,7 @@ describe('SendAmountScreen', () => {
       const repository = new StoragePendingBroadcastRepository(keyValueStore);
 
       await confirmOnce(first.transactionService, new TransactionPendingError('ABC'));
-      expect(repository.get(ACCOUNT.id, NETWORK.chainId)).toMatchObject({ hashes: ['ABC'], accountId: ACCOUNT.id, chainId: NETWORK.chainId });
+      expect(repository.list(ACCOUNT.id, NETWORK.chainId)[0]).toMatchObject({ hashes: ['ABC'], accountId: ACCOUNT.id, chainId: NETWORK.chainId });
       await restart();
 
       const { transactionService, navigation } = await setup();
@@ -306,11 +306,11 @@ describe('SendAmountScreen', () => {
       await fireEvent.press(screen.getByTestId('send-review'));
       expect(transactionService.estimateFee).not.toHaveBeenCalled();
 
-      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'pending' }).mockResolvedValueOnce({ status: 'committed', hash: 'ABC' });
+      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'pending', settled: [] }).mockResolvedValueOnce({ status: 'none', settled: [{ id: 'ABC', status: 'committed', hash: 'ABC' }] });
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS * 2));
 
       expect(transactionService.reconcilePending).toHaveBeenCalledWith(ACCOUNT, NETWORK);
-      expect(repository.get(ACCOUNT.id, NETWORK.chainId)).toBeUndefined();
+      expect(repository.list(ACCOUNT.id, NETWORK.chainId)[0]).toBeUndefined();
       expect(navigation.popToTop).not.toHaveBeenCalled();
       expect(useToastStore.getState().toast?.message).toBe('Your previous transaction was confirmed.');
       await fireEvent.press(screen.getByTestId('send-review'));
@@ -348,11 +348,11 @@ describe('SendAmountScreen', () => {
       expect(transactionService.estimateFee).not.toHaveBeenCalled();
       expect(screen.queryByTestId('review-confirm')).toBeNull();
 
-      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'pending' }).mockResolvedValueOnce({ status: 'committed', hash: 'SIGNED' });
+      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'pending', settled: [] }).mockResolvedValueOnce({ status: 'none', settled: [{ id: 'SIGNED', status: 'committed', hash: 'SIGNED' }] });
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS * 2));
 
       expect(transactionService.reconcilePending).toHaveBeenCalledWith(ACCOUNT, NETWORK);
-      expect(new StoragePendingBroadcastRepository(keyValueStore).get(ACCOUNT.id, NETWORK.chainId)).toBeUndefined();
+      expect(new StoragePendingBroadcastRepository(keyValueStore).list(ACCOUNT.id, NETWORK.chainId)[0]).toBeUndefined();
       expect(navigation.popToTop).not.toHaveBeenCalled();
       await fireEvent.press(screen.getByTestId('send-review'));
       expect(await screen.findByTestId('review-confirm')).toBeTruthy();
@@ -371,10 +371,10 @@ describe('SendAmountScreen', () => {
       const { transactionService } = await setup();
 
       expect(screen.getByText(PENDING_NOTICE)).toBeTruthy();
-      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'failed', hash: 'ABC' });
+      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'none', settled: [{ id: 'ABC', status: 'failed', hash: 'ABC' }] });
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
 
-      expect(new StoragePendingBroadcastRepository(keyValueStore).get(ACCOUNT.id, NETWORK.chainId)).toBeUndefined();
+      expect(new StoragePendingBroadcastRepository(keyValueStore).list(ACCOUNT.id, NETWORK.chainId)[0]).toBeUndefined();
       expect(screen.queryByText(PENDING_NOTICE)).toBeNull();
       await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
       await fireEvent.press(screen.getByTestId('send-review'));
@@ -450,7 +450,7 @@ describe('SendAmountScreen', () => {
       expect(transactionService.signAndBroadcast.mock.calls[0][3]).toEqual({ replacePending: true });
       expect(chain.signTransaction).toHaveBeenLastCalledWith(expect.anything(), expect.anything(), NETWORK, { sequence: '3', accountNumber: '7' });
       expect(chain.broadcastTransaction).toHaveBeenCalledTimes(2);
-      expect(new StoragePendingBroadcastRepository(keyValueStore).get(ACCOUNT.id, NETWORK.chainId)).toBeUndefined();
+      expect(new StoragePendingBroadcastRepository(keyValueStore).list(ACCOUNT.id, NETWORK.chainId)[0]).toBeUndefined();
     });
 
     it('clears the block and allows a normal send once the sequence advanced without the tx', async () => {
@@ -480,7 +480,7 @@ describe('SendAmountScreen', () => {
       await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
       await fireEvent.press(screen.getByTestId('send-review'));
       expect(transactionService.estimateFee).not.toHaveBeenCalled();
-      expect(new StoragePendingBroadcastRepository(keyValueStore).get(ACCOUNT.id, NETWORK.chainId)).toBeDefined();
+      expect(new StoragePendingBroadcastRepository(keyValueStore).list(ACCOUNT.id, NETWORK.chainId)[0]).toBeDefined();
     });
 
     it('reports a committed original as confirmed after a restart', async () => {
@@ -491,7 +491,7 @@ describe('SendAmountScreen', () => {
 
       expect(useToastStore.getState().toast?.message).toBe('Your previous transaction was confirmed.');
       expect(navigation.popToTop).not.toHaveBeenCalled();
-      expect(new StoragePendingBroadcastRepository(keyValueStore).get(ACCOUNT.id, NETWORK.chainId)).toBeUndefined();
+      expect(new StoragePendingBroadcastRepository(keyValueStore).list(ACCOUNT.id, NETWORK.chainId)[0]).toBeUndefined();
     });
 
     it('waits for a tx the node only accepted into the mempool instead of reporting it confirmed', async () => {
@@ -506,9 +506,9 @@ describe('SendAmountScreen', () => {
       expect(useToastStore.getState().toast?.message).toBe('Transaction sent. Waiting for confirmation.');
       expect(screen.queryByTestId('review-confirm')).toBeNull();
       expect(screen.getByText(PENDING_NOTICE)).toBeTruthy();
-      expect(new StoragePendingBroadcastRepository(keyValueStore).get(ACCOUNT.id, NETWORK.chainId)?.hashes).toEqual(['SYNC']);
+      expect(new StoragePendingBroadcastRepository(keyValueStore).list(ACCOUNT.id, NETWORK.chainId)[0]?.hashes).toEqual(['SYNC']);
 
-      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'committed', hash: 'SYNC' });
+      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'none', settled: [{ id: 'SYNC', status: 'committed', hash: 'SYNC' }] });
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
 
       expect(navigation.popToTop).toHaveBeenCalledTimes(1);
@@ -527,11 +527,36 @@ describe('SendAmountScreen', () => {
       expect(transactionService.estimateFee).not.toHaveBeenCalled();
     });
 
+    it('reports each of several records as it settles and stays blocked until none is left', async () => {
+      const repository = new StoragePendingBroadcastRepository(keyValueStore);
+
+      repository.add({ hashes: ['A'], accountId: ACCOUNT.id, chainId: NETWORK.chainId, createdAt: 1 });
+      repository.add({ hashes: ['B'], accountId: ACCOUNT.id, chainId: NETWORK.chainId, createdAt: 2 });
+      const { transactionService } = await setup();
+
+      transactionService.reconcilePending
+        .mockResolvedValueOnce({ status: 'pending', settled: [{ id: 'A', status: 'committed', hash: 'A' }] })
+        .mockImplementationOnce(async () => {
+          // The service drops a record whose sequence was consumed.
+          repository.remove(ACCOUNT.id, NETWORK.chainId, 'B');
+          return { status: 'none', settled: [{ id: 'B', status: 'not_included' }] };
+        });
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
+
+      expect(useToastStore.getState().toast?.message).toBe('Your previous transaction was confirmed.');
+      expect(repository.list(ACCOUNT.id, NETWORK.chainId).map(record => record.id)).toEqual(['B']);
+      expect(screen.getByText(PENDING_NOTICE)).toBeTruthy();
+
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
+      expect(useToastStore.getState().toast?.message).toBe(NOT_INCLUDED_MESSAGE);
+      expect(screen.queryByText(PENDING_NOTICE)).toBeNull();
+    });
+
     it('is not blocked by a pending tx of another account or chain', async () => {
       const repository = new StoragePendingBroadcastRepository(keyValueStore);
 
-      repository.save({ hashes: ['OTHER-ACCOUNT'], accountId: 'acc-2', chainId: NETWORK.chainId, createdAt: 0 });
-      repository.save({ hashes: ['OTHER-CHAIN'], accountId: ACCOUNT.id, chainId: 'other-chain', createdAt: 0 });
+      repository.add({ hashes: ['OTHER-ACCOUNT'], accountId: 'acc-2', chainId: NETWORK.chainId, createdAt: 0 });
+      repository.add({ hashes: ['OTHER-CHAIN'], accountId: ACCOUNT.id, chainId: 'other-chain', createdAt: 0 });
       const { transactionService } = await setup();
 
       expect(screen.queryByText(PENDING_NOTICE)).toBeNull();

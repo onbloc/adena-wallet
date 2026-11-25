@@ -5,9 +5,10 @@ import { useContainer } from '../di/container-provider';
 import { Account } from '../domain/account';
 import { Network } from '../domain/network';
 import { BroadcastResult } from '../domain/transaction';
-import { PendingReconciliation } from '../services/transaction.service';
+import { PendingReconciliation, SettledPending } from '../services/transaction.service';
 import { PendingBroadcast, pendingScope, usePendingBroadcastStore } from '../stores/pending-broadcast.store';
 import { useToastStore } from '../stores/toast.store';
+import { StatusTone } from '../theme/colors';
 
 export const PENDING_POLL_INTERVAL_MS = 3_000;
 export const PENDING_POLL_ATTEMPTS = 20;
@@ -16,6 +17,12 @@ export const PENDING_NOTICE = 'Your transaction was sent but is not confirmed ye
 export const UNCONFIRMED_NOTICE = 'We still couldn’t confirm your previous transaction. Sending stays paused until it is confirmed or fails. Check Activity, or reopen this screen to check again.';
 export const REPLACEABLE_NOTICE = 'Your previous transaction was not confirmed. Sending again replaces it, so only one can go through.';
 export const NOT_INCLUDED_MESSAGE = 'Your previous transaction was not sent. You can send again.';
+
+const SETTLED_TOASTS: Record<SettledPending['status'], [string, StatusTone]> = {
+  committed: ['Your previous transaction was confirmed.', 'success'],
+  failed: ['The transaction failed. You can try again.', 'error'],
+  not_included: [NOT_INCLUDED_MESSAGE, 'info'],
+};
 
 export interface PendingBroadcastGuard {
   // False while a previous send of unknown outcome blocks this account and chain, unless it may be replaced.
@@ -33,9 +40,9 @@ let nextOwnerId = 1;
 let nextRound = 1;
 
 // A broadcast that timed out may still commit, so re-sending could pay twice.
-// The record is persisted per account and chain and reconciled against the chain; sending stays
-// blocked until it commits, fails, or its sequence is consumed by another tx. While its sequence is
-// still current, only a replacement pinned to that sequence is allowed.
+// Records are persisted per account and chain and each is reconciled against the chain; sending stays
+// blocked until every one commits, fails, or has its sequence consumed by another tx. While a single
+// record is left with its sequence still current, only a replacement pinned to that sequence is allowed.
 export const usePendingBroadcast = (account: Account | null, network: Network, onCommitted: () => void): PendingBroadcastGuard => {
   const { transactionService, pendingBroadcastRepository: repository } = useContainer();
   const showToast = useToastStore(state => state.show);
@@ -43,7 +50,7 @@ export const usePendingBroadcast = (account: Account | null, network: Network, o
   const scope = accountId ? pendingScope(accountId, network.chainId) : null;
   const pending = usePendingBroadcastStore(state => (scope ? state.entries[scope] : undefined)) ?? null;
   const setEntry = usePendingBroadcastStore(state => state.set);
-  const stored = accountId ? repository.get(accountId, network.chainId) : undefined;
+  const stored = accountId ? repository.list(accountId, network.chainId).length > 0 : false;
   const [ownerId] = useState(() => nextOwnerId++);
   const onCommittedRef = useRef(onCommitted);
   const accountRef = useRef(account);
@@ -66,7 +73,7 @@ export const usePendingBroadcast = (account: Account | null, network: Network, o
     if (current?.phase === 'unconfirmed') {
       setEntry(key, { ...current, phase: 'checking', round: nextRound++ });
     }
-    else if (!current && repository.get(accountId, network.chainId)) {
+    else if (!current && repository.list(accountId, network.chainId).length > 0) {
       setEntry(key, { accountId, network, phase: 'checking', round: nextRound++, replaceable: false, ownerId: 0 });
     }
   }, [accountId, network, repository, setEntry]);
@@ -101,57 +108,48 @@ export const usePendingBroadcast = (account: Account | null, network: Network, o
       attempts += 1;
 
       const result: PendingReconciliation = await transactionService.reconcilePending(sender, checking.network)
-        .catch(() => ({ status: 'pending' as const }));
+        .catch(() => ({ status: 'pending' as const, settled: [] }));
 
       if (cancelled) {
         return;
       }
 
-      // reconcilePending already dropped the record; repeated here in case another writer re-saved it.
-      if (result.status === 'committed' || result.status === 'failed') {
-        repository.remove(checking.accountId, checking.network.chainId, result.hash);
+      let ownCommitted = false;
+
+      // Each settled record is reported once, by the reconcile that removed it.
+      for (const item of result.settled) {
+        // reconcilePending already dropped the record; repeated here in case another writer re-saved it.
+        if (item.status !== 'not_included') {
+          repository.remove(checking.accountId, checking.network.chainId, item.hash);
+        }
+
+        if (item.status === 'committed' && checking.ownerId === ownerId && checking.ownedRecordId === item.id) {
+          ownCommitted = true;
+        }
+        else {
+          showToast(...SETTLED_TOASTS[item.status]);
+        }
       }
 
-      switch (result.status) {
-        case 'committed':
-          if (settle(null)) {
-            if (checking.ownerId === ownerId) {
-              onCommittedRef.current();
-            }
-            else {
-              showToast('Your previous transaction was confirmed.', 'success');
-            }
-          }
+      if (ownCommitted) {
+        onCommittedRef.current();
+      }
 
-          break;
-        case 'failed':
-          if (settle(null)) {
-            showToast('The transaction failed. You can try again.', 'error');
-          }
+      if (result.status === 'none') {
+        settle(null);
+        return;
+      }
 
-          break;
-        case 'not_included':
-          if (settle(null)) {
-            showToast(NOT_INCLUDED_MESSAGE, 'info');
-          }
+      const replaceable = result.status === 'replaceable';
+      const exhausted = attempts >= PENDING_POLL_ATTEMPTS;
+      const latest = usePendingBroadcastStore.getState().entries[key];
 
-          break;
-        case 'none':
-          settle(null);
-          break;
-        default: {
-          const replaceable = result.status === 'replaceable';
-          const exhausted = attempts >= PENDING_POLL_ATTEMPTS;
-          const latest = usePendingBroadcastStore.getState().entries[key];
+      if (latest && (exhausted || latest.replaceable !== replaceable)) {
+        settle({ ...latest, replaceable, phase: exhausted ? 'unconfirmed' : 'checking' });
+      }
 
-          if (latest && (exhausted || latest.replaceable !== replaceable)) {
-            settle({ ...latest, replaceable, phase: exhausted ? 'unconfirmed' : 'checking' });
-          }
-
-          if (!exhausted) {
-            timer = setTimeout(poll, PENDING_POLL_INTERVAL_MS);
-          }
-        }
+      if (!exhausted) {
+        timer = setTimeout(poll, PENDING_POLL_INTERVAL_MS);
       }
     };
 
@@ -165,12 +163,11 @@ export const usePendingBroadcast = (account: Account | null, network: Network, o
 
   const watch = useCallback((hash: string, sender: Account, sentNetwork: Network): void => {
     // TransactionService normally saved it before broadcasting; only write when it is missing.
-    if (!repository.get(sender.id, sentNetwork.chainId)?.hashes.includes(hash)) {
-      repository.save({ hashes: [hash], accountId: sender.id, chainId: sentNetwork.chainId, createdAt: Date.now() });
-    }
+    const record = repository.find(sender.id, sentNetwork.chainId, hash)
+      ?? repository.add({ hashes: [hash], accountId: sender.id, chainId: sentNetwork.chainId, createdAt: Date.now() });
 
     setEntry(pendingScope(sender.id, sentNetwork.chainId), {
-      accountId: sender.id, network: sentNetwork, phase: 'checking', round: nextRound++, replaceable: false, ownerId,
+      accountId: sender.id, network: sentNetwork, phase: 'checking', round: nextRound++, replaceable: false, ownerId, ownedRecordId: record.id,
     });
     showToast('Transaction sent. Waiting for confirmation.', 'info');
   }, [ownerId, repository, setEntry, showToast]);

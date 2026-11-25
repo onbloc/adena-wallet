@@ -47,15 +47,20 @@ export interface SignAndBroadcastOptions {
   replacePending?: boolean;
 }
 
-// Outcome of checking a pending record against the chain. committed/failed: a hash is on chain;
-// not_included: its sequence went to another tx; both remove the record. replaceable: not on chain and
-// the sequence is still current, so only a pinned replacement may be sent. pending: unknown, stays blocked.
+// A record settled by a reconcile. committed/failed: one of its hashes is on chain; not_included: its
+// sequence went to another tx. Each removes only that record.
+export type SettledPending
+  = { id: string; status: 'committed' | 'failed'; hash: string }
+    | { id: string; status: 'not_included' };
+
+// Combined state of an account and chain after checking every record. none: nothing left. replaceable:
+// a single record is left, not on chain with its sequence still current, so only a pinned replacement
+// may be sent. pending: anything else, stays blocked. `settled` lists only records this call removed.
 export type PendingReconciliation
-  = { status: 'none' }
-    | { status: 'committed' | 'failed'; hash: string }
-    | { status: 'not_included' }
-    | { status: 'replaceable'; sequence: string }
-    | { status: 'pending' };
+  = ({ status: 'none' } | { status: 'replaceable'; sequence: string } | { status: 'pending' })
+    & { settled: SettledPending[] };
+
+type RecordOutcome = SettledPending | { status: 'replaceable'; sequence: string } | { status: 'pending' };
 
 // Chain-agnostic transaction pipeline: draft -> fee -> sign -> broadcast.
 export class TransactionService {
@@ -214,8 +219,7 @@ export class TransactionService {
     network: Network,
     { replacePending = false }: SignAndBroadcastOptions = {},
   ): Promise<BroadcastResult> {
-    const replaced = this.pendingBroadcasts.get(account.id, network.chainId);
-    const pin = replacePending ? this.replacementPin(replaced) : undefined;
+    const { record: replaced, pin } = replacePending ? this.replacementTarget(account, network) : {};
 
     if (!replacePending) {
       this.assertNoPendingBroadcast(account, network);
@@ -224,22 +228,27 @@ export class TransactionService {
     const signed = await this.sign(draft, account, network, pin);
     const hash = this.chainRegistry.forNetwork(network).transactionHash(signed);
     // Checked again right before saving: another send or a reconcile may have run while this one was signing.
-    const current = this.pendingBroadcasts.get(account.id, network.chainId);
+    const records = this.pendingBroadcasts.list(account.id, network.chainId);
+    const current = replaced && records.find(record => record.id === replaced.id);
     // Re-signing the same draft with the same sequence yields the same tx, which is already tracked.
-    const alreadyTracked = Boolean(pin && current?.hashes.includes(hash));
+    const alreadyTracked = Boolean(current?.hashes.includes(hash));
 
-    if (pin && replaced) {
+    if (replaced) {
       if (!current || !sameRecord(current, replaced)) {
         throw new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, PREVIOUS_TRANSACTION_RESOLVED_MESSAGE);
       }
 
+      if (records.length > 1) {
+        throw new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, PREVIOUS_TRANSACTION_PENDING_MESSAGE);
+      }
+
       if (!alreadyTracked) {
-        this.pendingBroadcasts.save({ ...current, hashes: [...current.hashes, hash] });
+        this.pendingBroadcasts.update({ ...current, hashes: [...current.hashes, hash] });
       }
     }
     else {
       this.assertNoPendingBroadcast(account, network);
-      this.pendingBroadcasts.save({
+      this.pendingBroadcasts.add({
         hashes: [hash],
         accountId: account.id,
         chainId: network.chainId,
@@ -279,59 +288,105 @@ export class TransactionService {
     }
   }
 
-  // Settles a pending record by its hashes, then by the signer sequence: once the chain moved past
-  // that sequence without any of the hashes, none of them can ever be included.
+  // Checks every record of the account and chain on its own: by its hashes, then by the signer
+  // sequence, since once the chain moved past it without any of its hashes none can be included.
   async reconcilePending(account: Account, network: Network): Promise<PendingReconciliation> {
-    const record = this.pendingBroadcasts.get(account.id, network.chainId);
+    const records = this.pendingBroadcasts.list(account.id, network.chainId);
 
-    if (!record) {
-      return { status: 'none' };
+    if (records.length === 0) {
+      return { status: 'none', settled: [] };
     }
 
-    const chain = this.chainRegistry.forNetwork(network);
+    const outcomes = new Map<string, RecordOutcome>();
+    const unfound: PendingBroadcastRecord[] = [];
 
-    try {
-      const found = await this.findAny(record, network);
+    for (const record of records) {
+      const found = await this.findAny(record, network).catch(() => null);
 
-      if (found) {
-        return this.resolve(record, found);
+      if (found === null) {
+        outcomes.set(record.id, { status: 'pending' });
       }
+      else if (found) {
+        outcomes.set(record.id, this.resolve(record, found));
+      }
+      else {
+        unfound.push(record);
+      }
+    }
 
-      const sequence = await chain.getAccountSequence(this.accountService.getAddress(account, network), network);
+    if (unfound.length > 0) {
+      const sequence = await this.readSequence(account, network);
+
+      for (const record of unfound) {
+        outcomes.set(record.id, sequence === undefined ? { status: 'pending' } : await this.reconcileBySequence(record, sequence, network));
+      }
+    }
+
+    const settled = records.flatMap((record) => {
+      const outcome = outcomes.get(record.id);
+
+      return outcome && 'id' in outcome ? [outcome] : [];
+    });
+    const remaining = this.pendingBroadcasts.list(account.id, network.chainId);
+
+    if (remaining.length === 0) {
+      return { status: 'none', settled };
+    }
+
+    // Replacement only with a single record left: several may hold different sequences, and they
+    // settle as the chain advances (the lower one is included or its sequence gets consumed).
+    const only = remaining.length === 1 ? outcomes.get(remaining[0].id) : undefined;
+
+    return only?.status === 'replaceable' ? { status: 'replaceable', sequence: only.sequence, settled } : { status: 'pending', settled };
+  }
+
+  // Undefined on an RPC error, which keeps every unfound record pending.
+  private async readSequence(account: Account, network: Network): Promise<string | undefined> {
+    try {
+      return await this.chainRegistry.forNetwork(network).getAccountSequence(this.accountService.getAddress(account, network), network);
+    }
+    catch {
+      return undefined;
+    }
+  }
+
+  private async reconcileBySequence(record: PendingBroadcastRecord, sequence: string, network: Network): Promise<RecordOutcome> {
+    try {
       // A tx that committed between the lookup and the sequence read shows up now.
       const late = await this.findAny(record, network);
 
       if (late) {
         return this.resolve(record, late);
       }
-
-      const current = this.pendingBroadcasts.get(account.id, network.chainId);
-
-      // A replacement may have been appended meanwhile; its hash was not looked up.
-      if (!current || !sameRecord(current, record)) {
-        return { status: 'pending' };
-      }
-
-      // Legacy record: its tx used some sequence <= the current one, and a smaller one is already
-      // consumed (its hash was not found), so the current sequence is a safe bound to pin and compare.
-      if (record.sequence === undefined) {
-        this.pendingBroadcasts.save({ ...record, sequence });
-        return { status: 'replaceable', sequence };
-      }
-
-      const onChain = BigInt(sequence);
-      const recorded = BigInt(record.sequence);
-
-      if (onChain > recorded) {
-        this.pendingBroadcasts.remove(account.id, network.chainId, record.hashes[0]);
-        return { status: 'not_included' };
-      }
-
-      return onChain === recorded ? { status: 'replaceable', sequence } : { status: 'pending' };
     }
     catch {
       return { status: 'pending' };
     }
+
+    const current = this.pendingBroadcasts.list(record.accountId, record.chainId).find(item => item.id === record.id);
+
+    // A replacement may have been appended meanwhile; its hash was not looked up.
+    if (!current || !sameRecord(current, record)) {
+      return { status: 'pending' };
+    }
+
+    // Legacy record: its tx used some sequence <= the current one, and a smaller one is already
+    // consumed (its hash was not found), so the current sequence is a safe bound to pin and compare.
+    if (record.sequence === undefined) {
+      this.pendingBroadcasts.update({ ...record, sequence });
+      return { status: 'replaceable', sequence };
+    }
+
+    const onChain = BigInt(sequence);
+    const recorded = BigInt(record.sequence);
+
+    if (onChain > recorded) {
+      return this.pendingBroadcasts.remove(record.accountId, record.chainId, record.hashes[0])
+        ? { id: record.id, status: 'not_included' }
+        : { status: 'pending' };
+    }
+
+    return onChain === recorded ? { status: 'replaceable', sequence } : { status: 'pending' };
   }
 
   private async findAny(record: PendingBroadcastRecord, network: Network): Promise<{ hash: string; status: NonNullable<TransactionLookup> } | undefined> {
@@ -348,26 +403,32 @@ export class TransactionService {
     return undefined;
   }
 
-  private resolve(record: PendingBroadcastRecord, found: { hash: string; status: NonNullable<TransactionLookup> }): PendingReconciliation {
-    this.pendingBroadcasts.remove(record.accountId, record.chainId, found.hash);
-    return found;
+  // Reported only by the call that removed the record, so concurrent reconciles do not report it twice.
+  private resolve(record: PendingBroadcastRecord, found: { hash: string; status: NonNullable<TransactionLookup> }): RecordOutcome {
+    return this.pendingBroadcasts.remove(record.accountId, record.chainId, found.hash)
+      ? { id: record.id, ...found }
+      : { status: 'pending' };
   }
 
-  private replacementPin(record: PendingBroadcastRecord | undefined): SignerSequence {
+  // A pinned replacement needs exactly one record, already checked against the chain.
+  private replacementTarget(account: Account, network: Network): { record: PendingBroadcastRecord; pin: SignerSequence } {
+    const records = this.pendingBroadcasts.list(account.id, network.chainId);
+    const [record] = records;
+
     if (!record) {
       throw new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, PREVIOUS_TRANSACTION_RESOLVED_MESSAGE);
     }
 
-    // Set once reconcilePending has checked the record against the chain.
-    if (record.sequence === undefined) {
+    // Several records may hold different sequences; none is offered for replacement until one is left.
+    if (records.length > 1 || record.sequence === undefined) {
       throw new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, PREVIOUS_TRANSACTION_PENDING_MESSAGE);
     }
 
-    return { sequence: record.sequence, accountNumber: record.accountNumber };
+    return { record, pin: { sequence: record.sequence, accountNumber: record.accountNumber } };
   }
 
   private assertNoPendingBroadcast(account: Account, network: Network): void {
-    if (this.pendingBroadcasts.get(account.id, network.chainId)) {
+    if (this.pendingBroadcasts.list(account.id, network.chainId).length > 0) {
       throw new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, PREVIOUS_TRANSACTION_PENDING_MESSAGE);
     }
   }
