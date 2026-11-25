@@ -112,7 +112,7 @@ function correctedAmountText(text: string): string {
 }
 
 export function exactAmountEvidence(text: string, value: string, asset = ''): boolean {
-  if (signedAmount.test(text)) return false;
+  if (signedAmount.test(text) || normalizeDecimal(value) === null) return false;
   text = correctedAmountText(text);
   const amounts = wordAmounts(text);
   const remainder = withoutMixedNumbers(text, amounts);
@@ -137,6 +137,6 @@ export function pairedDecimalAmount(text: string, asset: string): string | undef
   if (words.length || numbers.length !== 1 || !numbers[0][0].includes('.')) return undefined;
   const value = numbers[0][0];
   if (normalizeDecimal(value) === null) return undefined;
-  const pair = new RegExp(`(?:${escapeRegex(value)}\\s+(?:of\\s+the\\s+token\\s+at\\s+)?${escapeRegex(asset)}|${escapeRegex(asset)}\\s+${escapeRegex(value)})(?=$|[^\\p{L}\\p{N}_/]|\\p{Script=Hangul})`, 'iu');
+  const pair = new RegExp(`(?<![\\p{L}\\p{N}_/.-])(?:${escapeRegex(value)}\\s+(?:of\\s+the\\s+token\\s+at\\s+)?${escapeRegex(asset)}|${escapeRegex(asset)}\\s+${escapeRegex(value)})(?=$|[^\\p{L}\\p{N}_/]|\\p{Script=Hangul})`, 'iu');
   return pair.test(remainder) ? value : undefined;
 }
