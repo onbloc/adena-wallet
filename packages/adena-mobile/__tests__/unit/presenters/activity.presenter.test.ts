@@ -53,10 +53,14 @@ describe('formatActivityAmount', () => {
     expect(formatActivityAmount({ value: '12345', denom: 'gno.land/r/demo/foo' }, TOKENS)).toBe('1.2345 FOO');
   });
 
-  it('keeps raw values and the last path segment for unknown denoms', () => {
-    expect(formatActivityAmount({ value: '7', denom: 'gno.land/r/demo/nft' }, TOKENS)).toBe('7 nft');
-    expect(formatActivityAmount({ value: '7', denom: 'uatom' }, [])).toBe('7 uatom');
-    expect(formatActivityAmount({ value: '7', denom: '' }, [])).toBe('7 ');
+  it('marks amounts of unknown denoms as raw base units with the last path segment', () => {
+    expect(formatActivityAmount({ value: '1000000', denom: 'gno.land/r/demo/bar' }, TOKENS)).toBe('1000000 bar (raw)');
+    expect(formatActivityAmount({ value: '7', denom: 'uatom' }, [])).toBe('7 uatom (raw)');
+    expect(formatActivityAmount({ value: '7', denom: '' }, [])).toBe('7 (raw)');
+  });
+
+  it('keeps NFT counts plain', () => {
+    expect(formatActivityAmount({ value: '7', denom: 'gno.land/r/demo/nft' }, TOKENS, true)).toBe('7 nft');
   });
 });
 
@@ -141,6 +145,11 @@ describe('toActivityView', () => {
     expect(view.tone).toBe(AmountTone.MUTED);
     expect(view.statusLabel).toBe('Failed');
     expect(view.dateLabel).toBeUndefined();
+  });
+
+  it('does not show an unlisted token amount as whole tokens', () => {
+    expect(toActivityView(activity({ amount: { value: '1000000', denom: 'gno.land/r/demo/bar' } }), TOKENS).amountLabel).toBe('-1000000 bar (raw)');
+    expect(toActivityView(activity({ type: ActivityType.TRANSFER_GRC721, amount: { value: '1', denom: 'gno.land/r/demo/nft' } }), TOKENS).amountLabel).toBe('-1 nft');
   });
 });
 

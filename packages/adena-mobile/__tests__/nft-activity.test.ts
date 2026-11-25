@@ -62,9 +62,9 @@ describe('activity presenter', () => {
   const tokens = [{ id: 'ugnot', denom: 'ugnot', symbol: 'GNOT', decimals: 6 }] as never[];
   const base: Activity = { hash: 'h1', type: 'TRANSFER', title: 'Receive', status: 'SUCCESS', direction: 'in', from: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5', amount: { value: '1500000', denom: 'ugnot' }, timestamp: '2026-11-23T09:00:00' };
 
-  it('formats amounts with token metadata and keeps unknown denoms raw', () => {
+  it('formats amounts with token metadata and keeps NFT counts plain', () => {
     expect(toActivityView(base, tokens)).toMatchObject({ amountLabel: '+1.5 GNOT', tone: 'positive', description: 'From: g1jg8m...fvsqf5' });
-    expect(toActivityView({ ...base, amount: { value: '3', denom: 'gno.land/r/x/nft' } }, tokens).amountLabel).toBe('+3 nft');
+    expect(toActivityView({ ...base, type: 'TRANSFER_GRC721', amount: { value: '3', denom: 'gno.land/r/x/nft' } }, tokens).amountLabel).toBe('+3 nft');
   });
 
   it('groups by day with Today / Yesterday titles', () => {

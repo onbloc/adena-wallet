@@ -28,12 +28,15 @@ export const findActivityToken = (denom: string, tokens: Token[]): Token | undef
   tokens.find(item => item.id === denom || item.denom === denom)
   ?? tokens.find(item => item.type === TokenType.GRC20 && item.pkgPath === denom);
 
-// Resolves a raw amount to "1.5 GNOT"; unknown denoms keep the raw value and the last path segment.
-export const formatActivityAmount = (amount: ActivityAmount, tokens: Token[]): string => {
+// Resolves a raw amount to "1.5 GNOT". Without known decimals a fungible amount is marked raw so it
+// is not mistaken for whole tokens; NFT counts (`isCount`) have no decimals and stay plain.
+export const formatActivityAmount = (amount: ActivityAmount, tokens: Token[], isCount = false): string => {
   const token = findActivityToken(amount.denom, tokens);
 
   if (!token) {
-    return `${amount.value} ${amount.denom.split('/').pop() ?? amount.denom}`;
+    const unit = amount.denom.split('/').pop() ?? amount.denom;
+
+    return [amount.value, unit, isCount ? '' : '(raw)'].filter(Boolean).join(' ');
   }
 
   return `${formatTokenAmount(amount.value, token.decimals)} ${token.symbol}`;
@@ -80,7 +83,7 @@ export const toActivityView = (activity: Activity, tokens: Token[]): ActivityVie
   const counterparty = activity.direction === ActivityDirection.IN ? activity.from : activity.to;
   const hasAmount = activity.amount && activity.amount.value !== '' && activity.amount.value !== '0';
   const signedAmount = hasAmount && activity.amount
-    ? `${activity.direction === ActivityDirection.IN ? '+' : activity.direction === ActivityDirection.OUT ? '-' : ''}${formatActivityAmount(activity.amount, tokens)}`
+    ? `${activity.direction === ActivityDirection.IN ? '+' : activity.direction === ActivityDirection.OUT ? '-' : ''}${formatActivityAmount(activity.amount, tokens, activity.type === ActivityType.TRANSFER_GRC721)}`
     : undefined;
 
   return {
