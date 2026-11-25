@@ -1,33 +1,18 @@
-import { RemoteProvider, type RemoteProviderOptions } from '../../llm/remote';
-
-// The provider's own variable is the usual place for its key; SCENARIO_API_KEY overrides it.
-const KEY_VARS: Record<RemoteProvider, string> = {
-  [RemoteProvider.Anthropic]: 'ANTHROPIC_API_KEY',
-  [RemoteProvider.OpenAI]: 'OPENAI_API_KEY',
-  [RemoteProvider.OpenAICompatible]: 'SCENARIO_API_KEY',
-};
+import type { RemoteLlmOptions } from '../../llm/remote';
 
 type Env = Record<string, string | undefined>;
 
 /**
- * The hosted model the scenarios should run on, from SCENARIO_PROVIDER / SCENARIO_MODEL /
- * SCENARIO_BASE_URL / SCENARIO_CONTEXT_TOKENS and the key variable. No SCENARIO_PROVIDER: undefined
- * (the local server). Throws on a half-set remote; the message never contains the key.
+ * The hosted OpenAI model the scenarios should run on: SCENARIO_REMOTE set, the key in OPENAI_API_KEY,
+ * and an optional SCENARIO_CONTEXT_TOKENS. No SCENARIO_REMOTE: undefined (the local server), even
+ * if a key is set. Throws on a half-set remote; the message never contains the key.
  */
-export function remoteOptionsFromEnv(env: Env): RemoteProviderOptions | undefined {
+export function remoteOptionsFromEnv(env: Env): RemoteLlmOptions | undefined {
   const get = (name: string) => env[name]?.trim() || undefined;
-  const provider = get('SCENARIO_PROVIDER');
-  if (provider === undefined) return undefined;
+  if (get('SCENARIO_REMOTE') === undefined) return undefined;
 
-  if (!Object.values<string>(RemoteProvider).includes(provider)) {
-    throw new Error(`SCENARIO_PROVIDER must be one of ${Object.values(RemoteProvider).join(', ')} (got "${provider}").`);
-  }
-  const known = provider as RemoteProvider;
-  const model = get('SCENARIO_MODEL');
-  if (!model) throw new Error('Set SCENARIO_MODEL for the remote scenarios.');
-  const keyVar = KEY_VARS[known];
-  const apiKey = get('SCENARIO_API_KEY') ?? get(keyVar);
-  if (!apiKey) throw new Error(`Set ${keyVar} (or SCENARIO_API_KEY) for the remote scenarios.`);
+  const apiKey = get('OPENAI_API_KEY');
+  if (!apiKey) throw new Error('Set OPENAI_API_KEY for the remote scenarios.');
 
   const rawContext = get('SCENARIO_CONTEXT_TOKENS');
   const contextTokens = rawContext === undefined ? undefined : Number(rawContext);
@@ -38,5 +23,5 @@ export function remoteOptionsFromEnv(env: Env): RemoteProviderOptions | undefine
     throw new Error(`SCENARIO_CONTEXT_TOKENS must be positive (got "${rawContext}").`);
   }
 
-  return { provider: known, apiKey, model, baseURL: get('SCENARIO_BASE_URL'), contextTokens };
+  return { apiKey, contextTokens };
 }

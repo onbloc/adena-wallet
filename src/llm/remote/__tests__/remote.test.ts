@@ -1,66 +1,36 @@
 import type { LanguageModel } from 'ai';
-import { DEFAULT_REMOTE_CONTEXT_TOKENS, RemoteProvider, type RemoteProviderOptions } from '../config';
+import { DEFAULT_REMOTE_CONTEXT_TOKENS, REMOTE_MODEL, type RemoteLlmOptions } from '../config';
 import { createRemoteModel } from '../createModel';
 import { createLLMRemote } from '../llmRemote';
 
-const options = (patch: Partial<RemoteProviderOptions> = {}): RemoteProviderOptions => ({
-  provider: RemoteProvider.Anthropic,
-  apiKey: 'sk-test',
-  model: 'claude-test',
-  ...patch,
-});
+const options = (patch: Partial<RemoteLlmOptions> = {}): RemoteLlmOptions => ({ apiKey: 'sk-test', ...patch });
 
 // Calls the model once against a stubbed fetch; returns the request it sent.
-async function sentRequest(model: LanguageModel, responseBody: unknown) {
+async function sentRequest(model: LanguageModel) {
   const fetchMock = jest
     .spyOn(globalThis, 'fetch')
-    .mockResolvedValue(new Response(JSON.stringify(responseBody), { headers: { 'content-type': 'application/json' } }));
+    .mockResolvedValue(new Response('{}', { headers: { 'content-type': 'application/json' } }));
   try {
-    // The body shape is irrelevant here, only the request.
+    // The response shape is irrelevant here, only the request.
     await Promise.resolve(
       (model as Exclude<LanguageModel, string>).doGenerate({
         prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }],
       })
     ).catch(() => undefined);
     const [url, init] = fetchMock.mock.calls[0];
-    return { url: String(url), headers: new Headers(init?.headers) };
+    return { url: String(url), headers: new Headers(init?.headers), body: JSON.parse(String(init?.body)) };
   } finally {
     fetchMock.mockRestore();
   }
 }
 
 describe('createRemoteModel', () => {
-  it('sends the Anthropic key as x-api-key, not in the URL', async () => {
-    const { url, headers } = await sentRequest(createRemoteModel(options()), {});
-
-    expect(url).toBe('https://api.anthropic.com/v1/messages');
-    expect(headers.get('x-api-key')).toBe('sk-test');
-  });
-
-  it('sends the OpenAI key as a Bearer token to the Responses API', async () => {
-    const { url, headers } = await sentRequest(
-      createRemoteModel(options({ provider: RemoteProvider.OpenAI, model: 'gpt-5-codex' })),
-      {}
-    );
+  it('sends the key as a Bearer token to the OpenAI Responses API, asking for the fixed model', async () => {
+    const { url, headers, body } = await sentRequest(createRemoteModel(options()));
 
     expect(url).toBe('https://api.openai.com/v1/responses');
     expect(headers.get('authorization')).toBe('Bearer sk-test');
-  });
-
-  it('sends an openai-compatible key to the given baseURL', async () => {
-    const { url, headers } = await sentRequest(
-      createRemoteModel(options({ provider: RemoteProvider.OpenAICompatible, baseURL: 'https://proxy.test/v1' })),
-      {}
-    );
-
-    expect(url).toBe('https://proxy.test/v1/chat/completions');
-    expect(headers.get('authorization')).toBe('Bearer sk-test');
-  });
-
-  it('honours a baseURL override for a named provider', async () => {
-    const { url } = await sentRequest(createRemoteModel(options({ baseURL: 'https://proxy.test/v1' })), {});
-
-    expect(url).toBe('https://proxy.test/v1/messages');
+    expect(body.model).toBe(REMOTE_MODEL);
   });
 
   it('sends requests through the fetch it was given, not the global one', async () => {
@@ -82,18 +52,6 @@ describe('createRemoteModel', () => {
 
   it.each(['', '   '])('rejects an empty apiKey (%j) instead of going keyless', (apiKey) => {
     expect(() => createRemoteModel(options({ apiKey }))).toThrow('apiKey is empty');
-  });
-
-  it('rejects an empty model', () => {
-    expect(() => createRemoteModel(options({ model: ' ' }))).toThrow('model is empty');
-  });
-
-  it('requires a baseURL for openai-compatible', () => {
-    expect(() => createRemoteModel(options({ provider: RemoteProvider.OpenAICompatible }))).toThrow('baseURL is required');
-  });
-
-  it('rejects an unknown provider', () => {
-    expect(() => createRemoteModel(options({ provider: 'nope' as RemoteProvider }))).toThrow('Unknown remote provider');
   });
 });
 

@@ -52,8 +52,8 @@ src/llm/                      The language model
   core/                         portable, no React Native: LLM (interface), LLMFromModel (any AI SDK
                                 model), generate (events, TTFT, tok/s, warnings), ToolLoop (the hook
                                 an agent drives the tool loop with), index.ts
-  remote/                       createLLMRemote({ provider, apiKey, model, baseURL? }): Anthropic, OpenAI
-                                (Responses API, Codex) or any OpenAI-compatible server. No React Native
+  remote/                       createLLMRemote({ apiKey }): the hosted OpenAI model (Responses API), fixed to
+                                `gpt-6-luna`. No React Native
   device/                       LLMOnDevice (llama.rn): load/unload/generate, status for React;
                                 useLlm(llm) hook; runtime.ts, config.ts (model, context size);
                                 jsonGrammar.ts (structured output without the Jinja grammar)
@@ -78,7 +78,7 @@ src/mock/                     Test-only code, nothing above depends on it
 
 ```ts
 const llm = createLLM();                              // on-device; call llm.load() first
-// const llm = createLLM({ provider: 'anthropic', apiKey, model: 'claude-sonnet-4-5' });  // hosted
+// const llm = createLLM({ apiKey });  // hosted OpenAI (gpt-6-luna)
 const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint })] });
 const agent = new AIAgent({ llm, harness, wallet, onTransaction });   // owns the conversation
 for await (const event of agent.run({ prompt }, { account, contextTokens: 8192 })) { /* text, tool calls, done */ }
@@ -408,32 +408,29 @@ deterministic across builds or machines, so a failing scenario can be a model li
 problem, not necessarily a code bug. Set `SCENARIO_URL` to use another server. The jest-expo
 preset replaces `fetch` with a stub, hence the separate config.
 
-### Hosted models (Anthropic, OpenAI, compatible)
+### Hosted model (OpenAI)
 
-The same scenarios run on a hosted model with `make scenario-remote`; the local run
-(`make scenario`) is unchanged and ignores these variables. Hosted runs are billed by the provider.
+The same scenarios run on the hosted OpenAI model (`gpt-6-luna`, fixed in `src/llm/remote/config.ts`)
+with `make scenario-remote`; the local run (`make scenario`) is unchanged and ignores these variables.
+Hosted runs are billed by OpenAI.
 
 | Variable | |
 | --- | --- |
-| `SCENARIO_PROVIDER` | `anthropic`, `openai` (Responses API, Codex models) or `openai-compatible`; required |
-| `SCENARIO_MODEL` | model id, required |
-| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | key of that provider; `SCENARIO_API_KEY` overrides it and serves `openai-compatible` |
-| `SCENARIO_BASE_URL` | optional endpoint (a proxy); required for `openai-compatible` |
+| `OPENAI_API_KEY` | the API key, required |
 | `SCENARIO_CONTEXT_TOKENS` | optional context window; default 128000 |
 
 ```bash
-SCENARIO_PROVIDER=anthropic SCENARIO_MODEL=<model id> ANTHROPIC_API_KEY=... make scenario-remote
+OPENAI_API_KEY=... make scenario-remote
 ```
 
 Keys come from the environment only, never from the repo; `.env` is git-ignored, but jest does not
-read it, so export the variables. Do not put a key in an `EXPO_PUBLIC_*` variable: those are
-bundled into the app. The test title names the target (`[anthropic:<model>]`). The context window
+read it, so export the variable. Do not put a key in an `EXPO_PUBLIC_*` variable: those are
+bundled into the app. The test title names the target (`[openai:gpt-6-luna]`). The context window
 is far above the local 8192, so the agent's token budgets differ from a local run.
 
-In the app, Settings > *Model* switches between the on-device model and a hosted one (model name,
-API key, optional Base URL). The key is kept in memory only (re-enter it after a restart), is sent
-only to the provider or the Base URL (which must be https; loopback http only in development), and
-is not written to the benchmark log. Requests stream through `expo/fetch`.
+In the app, Settings > *Model* switches between the on-device model and OpenAI (API key only; the
+model and endpoint are fixed). The key is kept in memory only (re-enter it after a restart), is sent
+only to OpenAI, and is not written to the benchmark log. Requests stream through `expo/fetch`.
 
 ## Benchmark in the app (on a phone)
 
@@ -525,7 +522,7 @@ Shortcuts (`make help`):
 make init   # npm install; installs bun and llama.cpp via brew if missing
 make test   # typecheck + lint + jest (mock model, no LLM)
 make scenario # plain-language requests -> transactions, against the local model (slow; not in make test)
-make scenario-remote # the same scenarios on a hosted model (costs money): SCENARIO_PROVIDER, SCENARIO_MODEL and a key variable
+make scenario-remote # the same scenarios on the hosted OpenAI model (costs money): needs OPENAI_API_KEY
 make chat   # talk to the local model; PROMPT="..." asks once, ARGS="--onbloc" adds the wallet
 make build  # Release build only: make build ios|android
 make deploy # Release build + install on a connected phone: make deploy ios|android

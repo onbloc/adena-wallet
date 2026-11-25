@@ -24,11 +24,11 @@ test: ## Typecheck + lint + all jest tests (mock model, no LLM)
 	npm test
 
 scenario: ## Run the plain-language -> transaction scenarios against the local model (slow; not part of make test)
-	$(WITH_SERVER) env -u SCENARIO_PROVIDER SCENARIO_URL=$(URL) npm run scenario
+	$(WITH_SERVER) env -u SCENARIO_REMOTE SCENARIO_URL=$(URL) npm run scenario
 
-scenario-remote: ## Same scenarios on a hosted model (costs money). Env: SCENARIO_PROVIDER, SCENARIO_MODEL, ANTHROPIC_API_KEY | OPENAI_API_KEY | SCENARIO_API_KEY (+ SCENARIO_BASE_URL)
-	@test -n "$$SCENARIO_PROVIDER" || { echo "set SCENARIO_PROVIDER (anthropic|openai|openai-compatible), SCENARIO_MODEL and the API key variable" >&2; exit 1; }
-	npm run scenario
+scenario-remote: ## Same scenarios on the hosted OpenAI model (costs money). Env: OPENAI_API_KEY
+	@test -n "$$OPENAI_API_KEY" || { echo "set OPENAI_API_KEY" >&2; exit 1; }
+	SCENARIO_REMOTE=1 npm run scenario
 
 chat: ## Chat with the local model. Vars: PROMPT="..." asks once; ARGS="--onbloc" adds the wallet (Onbloc reads, mock transfer/approve)
 	$(WITH_SERVER) bun src/mock/cli/chat.ts --url $(URL) $(if $(PROMPT),--prompt "$$PROMPT") $(ARGS)

@@ -32,6 +32,7 @@ import {
   type RuntimeStatus,
 } from '../../llm/device';
 import { createLLM } from '../../llm/createLlm';
+import { REMOTE_MODEL } from '../../llm/remote';
 import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk, WalletState } from '../wallet/mockWalletSdk';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
@@ -97,13 +98,11 @@ const EMPTY_WALLET: WalletState = { balances: {} };
 const local = new LLMOnDevice();
 
 // Hosted requests stream through expo/fetch; the key is entered in Settings and kept in memory only.
-const LLM_SETTINGS_ENV = { fetch: expoFetch, ...(__DEV__ ? { allowLoopbackHttp: true as const } : {}) };
+const LLM_SETTINGS_ENV = { fetch: expoFetch };
 
 const LLM_SOURCE_LABELS: Record<LlmSource, string> = {
   device: 'On-device',
-  anthropic: 'Anthropic',
   openai: 'OpenAI',
-  'openai-compatible': 'Compatible',
 };
 
 /** The scenarios the Benchmark button runs, chosen in Settings. */
@@ -121,13 +120,8 @@ const BENCHMARK_SETS = {
 export default function PlaygroundScreen() {
   const { status, run, start, stop, load, unload, remove } = useLlm(local);
   const [llmSource, setLlmSource] = useState<LlmSource>('device');
-  const [remoteModel, setRemoteModel] = useState('');
   const [apiKey, setApiKey] = useState('');
-  const [baseUrl, setBaseUrl] = useState('');
-  const llmSettings = useMemo(
-    () => resolveLlmSettings(llmSource, remoteModel, apiKey, baseUrl, LLM_SETTINGS_ENV),
-    [llmSource, remoteModel, apiKey, baseUrl]
-  );
+  const llmSettings = useMemo(() => resolveLlmSettings(llmSource, apiKey, LLM_SETTINGS_ENV), [llmSource, apiKey]);
   const remote = llmSettings.remote;
   const remoteMode = llmSource !== 'device';
   const llm: LLM = useMemo(() => (remote ? createLLM(remote) : local), [remote]);
@@ -323,7 +317,7 @@ export default function PlaygroundScreen() {
   /** The benchmark header lines about the model; never the API key. */
   const describeLlm = () =>
     remote
-      ? [`provider: ${remote.provider}`, `model: ${remote.model}`, `context: ${llm.contextTokens} tokens (hosted)`]
+      ? ['provider: openai', `model: ${REMOTE_MODEL}`, `context: ${llm.contextTokens} tokens (hosted)`]
       : [
           `model: ${DEFAULT_MODEL_ID}`,
           `context: n_ctx ${local.contextTokens}`,
@@ -351,7 +345,7 @@ export default function PlaygroundScreen() {
         <View style={styles.headerRow}>
           <Text style={[styles.status, styles.flex]} numberOfLines={2}>
             {remoteMode
-              ? remote ? `Ready (${remote.provider}: ${remote.model})` : 'Set model and API key in Settings'
+              ? remote ? `Ready (openai: ${REMOTE_MODEL})` : 'Set the API key in Settings'
               : describeStatus(status)}
           </Text>
           {!remoteMode && <Button label="Load" onPress={() => void load()} disabled={busy || ready} />}
@@ -396,17 +390,7 @@ export default function PlaygroundScreen() {
           </View>
           {remoteMode ? (
             <>
-              <Text style={styles.label}>Model name</Text>
-              <TextInput
-                style={[styles.input, llmSettings.modelError !== null && styles.invalid]}
-                value={remoteModel}
-                onChangeText={setRemoteModel}
-                autoCapitalize="none"
-                autoCorrect={false}
-                placeholder={llmSource === 'openai' ? 'gpt-5-codex' : 'model id'}
-                editable={!run.running && !bench.running}
-              />
-              {llmSettings.modelError !== null && <Text style={styles.error}>{llmSettings.modelError}</Text>}
+              <Text style={styles.mono}>{REMOTE_MODEL}</Text>
               <Text style={styles.label}>API key</Text>
               <TextInput
                 style={[styles.input, llmSettings.keyError !== null && styles.invalid]}
@@ -420,21 +404,9 @@ export default function PlaygroundScreen() {
                 editable={!run.running && !bench.running}
               />
               {llmSettings.keyError !== null && <Text style={styles.error}>{llmSettings.keyError}</Text>}
-              <Text style={styles.label}>Base URL{llmSource === 'openai-compatible' ? '' : ' (optional)'}</Text>
-              <TextInput
-                style={[styles.input, llmSettings.baseUrlError !== null && styles.invalid]}
-                value={baseUrl}
-                onChangeText={setBaseUrl}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                placeholder="https://.../v1"
-                editable={!run.running && !bench.running}
-              />
-              {llmSettings.baseUrlError !== null && <Text style={styles.error}>{llmSettings.baseUrlError}</Text>}
               <Text style={styles.muted}>
-                The key stays in memory and is sent only to the provider (or the Base URL). Runs and
-                benchmarks are billed by the provider.
+                The key stays in memory and is sent only to OpenAI. Runs and benchmarks are billed by
+                OpenAI.
               </Text>
             </>
           ) : (

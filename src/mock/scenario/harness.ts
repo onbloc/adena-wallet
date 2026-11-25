@@ -1,4 +1,4 @@
-// jest scenarios: a model (llama-server over HTTP by default, a hosted provider with SCENARIO_PROVIDER)
+// jest scenarios: a model (llama-server over HTTP by default, hosted OpenAI with SCENARIO_REMOTE)
 // and the real Adena transaction builder. Node only: the Adena
 // SDK is not bundled into the app (see README), so the app builds its own runner (see benchmark).
 import { decodeTransactionMessage } from '@adena-wallet/sdk';
@@ -6,7 +6,7 @@ import { decodeTransactionMessage } from '@adena-wallet/sdk';
 import { AdenaWalletSdk, createOnblocTokenResolver, type AdenaTransaction } from '../../adena';
 import type { PreparedTransaction, WalletSdk } from '../../agent';
 import { LLMFromModel, type LLM } from '../../llm/core';
-import { createLLMRemote } from '../../llm/remote';
+import { createLLMRemote, REMOTE_MODEL } from '../../llm/remote';
 import { connectModel, DEFAULT_MODEL_NAME, DEFAULT_SERVER_URL, SERVER_CONTEXT_TOKENS } from '../cli/lib/server';
 import { CAROL } from './fixture';
 import { remoteOptionsFromEnv } from './remoteEnv';
@@ -32,11 +32,9 @@ const adenaWallet: ScenarioWalletFactory = (onbloc): WalletSdk => {
   };
 };
 
-/** What the scenarios run on: a hosted model (SCENARIO_PROVIDER set) or the local server. */
-export const scenarioTarget = (env = process.env) => {
-  const remote = remoteOptionsFromEnv(env);
-  return remote ? `${remote.provider}:${remote.model}` : `local:${serverUrl()}`;
-};
+/** What the scenarios run on: the hosted OpenAI model (SCENARIO_REMOTE set) or the local server. */
+export const scenarioTarget = (env = process.env) =>
+  remoteOptionsFromEnv(env) ? `openai:${REMOTE_MODEL}` : `local:${serverUrl()}`;
 
 async function createScenarioLLM(): Promise<LLM> {
   const remote = remoteOptionsFromEnv(process.env);
