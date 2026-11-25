@@ -12,6 +12,24 @@ const approval = (overrides: Partial<Extract<PreparedSummary, { type: typeof Tra
 const expectTransfer = { kind: 'transfer', to: CAROL, amount: '1', token: 'GNOT' } as const;
 const expectApproval = { kind: 'allowance', spender: CAROL, amount: '10', token: 'GNS' } as const;
 
+it('requires both zero drafts and meaningful clarification evidence', () => {
+  const expected = { kind: 'none', response: 'clarification', evidence: [/token/i] } as const;
+  const run = { prepared: [], calls: [], text: 'Which token do you mean?' };
+  expect(checkRun(run, expected)).toEqual({ ok: true });
+  expect(checkRun({ ...run, text: 'Please clarify?' }, expected).ok).toBe(false);
+  expect(checkRun({ ...run, text: 'token' }, expected).ok).toBe(false);
+  expect(checkRun({ ...run, prepared: [transfer()] }, expected).ok).toBe(false);
+});
+
+it('accepts an exact draft or a field-specific question for an unambiguous typo', () => {
+  const expected = { ...expectTransfer, orClarification: [/action/i] };
+  const run = { prepared: [], calls: [], text: 'Which action?' };
+  expect(checkRun(run, expected).ok).toBe(true);
+  expect(checkRun({ ...run, text: 'Please clarify?' }, expected).ok).toBe(false);
+  expect(checkRun({ ...run, prepared: [transfer()] }, expected).ok).toBe(true);
+  expect(checkRun({ ...run, prepared: [transfer({ to: RECIPIENT })] }, expected).ok).toBe(false);
+});
+
 describe('checkSummaries', () => {
   it('accepts exactly the expected transfer and approval', () => {
     expect(checkSummaries([transfer()], expectTransfer)).toEqual({ ok: true });

@@ -57,9 +57,24 @@ describe('scenarios', () => {
     });
 
     it('cut the address by exactly one character where the address is the mistake', () => {
-      const cutOff = TYPO_SCENARIOS.filter(({ name }) => name.includes('address missing'));
+      const cutOff = TYPO_SCENARIOS.filter(({ name, before }) => name.includes('address missing') && !before);
       expect(cutOff).toHaveLength(2);
       for (const { prompt } of cutOff) expect(prompt).toMatch(/g1[0-9a-z]{37}(?![0-9a-z])/);
+    });
+
+    it('checks clarification before corrected requests and bare consent in both languages', () => {
+      for (const prefix of ['typo:', 'ko typo:']) {
+        const initial = TYPO_SCENARIOS.filter(({ name, before }) => name.startsWith(prefix) && !before);
+        for (const scenario of initial) {
+          if (scenario.expected.kind === 'none') expect(scenario.expected).toMatchObject({ response: 'clarification' });
+          else expect(scenario.expected).toHaveProperty('orClarification');
+          const followups = TYPO_SCENARIOS.filter(({ before }) => before?.[0] === scenario.prompt);
+          expect(followups).toHaveLength(2);
+          expect(followups.every(({ beforeExpected }) => beforeExpected?.[0] === scenario.expected)).toBe(true);
+          expect(followups.find(({ name }) => name.endsWith('corrected'))?.expected.kind).not.toBe('none');
+          expect(followups.find(({ name }) => name.endsWith('bare yes'))?.expected.kind).toBe('none');
+        }
+      }
     });
   });
 
@@ -104,7 +119,7 @@ describe('scenarios', () => {
 
   it('puts what only a later turn can answer after the turn it follows', () => {
     for (const scenario of FOLLOW_UP_SCENARIOS) expect(scenario.before?.length).toBeGreaterThan(0);
-    for (const scenario of [...SCENARIOS, ...TYPO_SCENARIOS, ...ARGUMENT_SCENARIOS, ...ROUTING_SCENARIOS, ...READ_SCENARIOS]) {
+    for (const scenario of [...SCENARIOS, ...ARGUMENT_SCENARIOS, ...ROUTING_SCENARIOS, ...READ_SCENARIOS]) {
       expect(scenario.before).toBeUndefined();
     }
   });

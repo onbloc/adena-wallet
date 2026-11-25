@@ -165,7 +165,7 @@ export async function runBenchmark({
       const runStarted = now();
       const record: RunRecord = { ms: 0 };
       try {
-        // A follow-up replays its earlier turns first; the verdict is on the last turn, the time on all.
+        // Time all turns and judge any explicitly specified earlier outcomes.
         const turns = scenario?.before?.length ? await runner.chat([...scenario.before, prompt], signal) : [await runner.ask(prompt, signal)];
         if (signal?.aborted) { aborted = true; break rounds; }
         const result = turns[turns.length - 1];
@@ -174,6 +174,14 @@ export async function runBenchmark({
         record.stages = turns.flatMap((turn) => turn.stages);
         if (scenario) {
           record.verdict = checkRun({ prepared: summaries, calls: result.calls, text: result.text }, scenario.expected);
+          for (const [index, expected] of (scenario.beforeExpected ?? []).entries()) {
+            const turn = turns[index];
+            const prior = checkRun({ prepared: turn.prepared.map(({ summary }) => summary), calls: turn.calls, text: turn.text }, expected);
+            if (!prior.ok) {
+              record.verdict = { ok: false, reason: `turn ${index + 1}: ${prior.reason}` };
+              break;
+            }
+          }
           // Nothing prepared: say what the model asked for and what the wallet answered.
           const why = !record.verdict.ok && result.prepared.length === 0 ? explainNothing(result) : undefined;
           if (!record.verdict.ok && why !== undefined) record.verdict = { ok: false, reason: `${record.verdict.reason} (${why})` };

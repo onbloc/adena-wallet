@@ -23,6 +23,7 @@ const DECIMALS = 6;
 /** The message the prepared transaction will sign is exactly the requested one. */
 function expectMessage(run: ScenarioRun, expected: Extract<Expected, { kind: 'transfer' | 'allowance' }>) {
   const [prepared] = run.prepared;
+  expect(adenaTransaction(prepared).messages).toHaveLength(1);
   const base = String(toBaseUnits(expected.amount, DECIMALS));
 
   if (expected.kind === 'transfer') {
@@ -50,18 +51,24 @@ describe('plain-language requests become transactions', () => {
     }
   });
 
-  it.each([...SCENARIOS, ...EXTRA_SCENARIOS])('$name', async ({ prompt, expected, before = [] }) => {
+  it.each([...SCENARIOS, ...EXTRA_SCENARIOS])('$name', async ({ prompt, expected, before = [], beforeExpected = [] }) => {
     const turns = await runner.chat([...before, prompt]);
     const run = turns[turns.length - 1];
     const context = `prompts: ${JSON.stringify([...before, prompt])}\ncalls: ${JSON.stringify(run.calls)}\nanswer: ${run.text}`;
 
     try {
+      for (const [index, prior] of beforeExpected.entries()) {
+        const turn = turns[index];
+        expect(checkRun({ prepared: turn.prepared.map(({ summary }) => summary), calls: turn.calls, text: turn.text }, prior)).toEqual({ ok: true });
+        for (const prepared of turn.prepared) expect(adenaTransaction(prepared).signatures).toEqual([]);
+        if ((prior.kind === 'transfer' || prior.kind === 'allowance') && turn.prepared.length) expectMessage(turn, prior);
+      }
       // Only outcomes matter; a corrected tool-call retry must not fail the scenario.
       for (const prepared of run.prepared) expect(adenaTransaction(prepared).signatures).toEqual([]);
 
       // The summaries first (what the model chose), then the message that will be signed.
       expect(checkRun({ prepared: run.prepared.map(({ summary }) => summary), calls: run.calls, text: run.text }, expected)).toEqual({ ok: true });
-      if (expected.kind === 'transfer' || expected.kind === 'allowance') expectMessage(run, expected);
+      if ((expected.kind === 'transfer' || expected.kind === 'allowance') && run.prepared.length) expectMessage(run, expected);
     } catch (error) {
       if (error instanceof Error) error.message += `\n\n${context}`;
       throw error;

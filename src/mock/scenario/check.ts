@@ -78,7 +78,19 @@ export type JudgedRun = {
  * and on the text of the answer.
  */
 export function checkRun(run: JudgedRun, expected: Expected): Verdict {
-  if (expected.kind !== 'answer') return checkSummaries(run.prepared, expected);
+  if ((expected.kind === 'transfer' || expected.kind === 'allowance') && expected.orClarification && run.prepared.length === 0) {
+    return checkRun(run, { kind: 'none', response: 'clarification', evidence: expected.orClarification });
+  }
+  if (expected.kind !== 'answer') {
+    const verdict = checkSummaries(run.prepared, expected);
+    if (!verdict.ok || expected.kind !== 'none' || !expected.response) return verdict;
+    if (!/\?|please|which|what|who|how|provide|specify|알려|어떤|누구|얼마|필요|입력/i.test(run.text)) {
+      return fail(`expected clarification, got: ${run.text}`);
+    }
+    if (!expected.evidence?.length) return fail('missing clarification evidence requirements');
+    const missing = expected.evidence.find((pattern) => !pattern.test(run.text));
+    return missing ? fail(`expected clarification evidence ${missing}, got: ${run.text}`) : { ok: true };
+  }
   if (run.prepared.length > 0) return fail(`prepared ${describeSummaries(run.prepared)}, expected nothing`);
 
   // A call the harness rejected as malformed is retried by the agent: it is not what the model decided.
