@@ -71,4 +71,16 @@ describe('amount evidence', () => {
   ])('does not mistake part of an expression or an asset for the amount: %s', (text, amount, asset) => {
     expect(exactAmountEvidence(text, amount, asset)).toBe(false);
   });
+
+  it('rejects an exact amount beyond the supported decimal precision', () => {
+    const amount = '1'.repeat(41);
+    expect(exactAmountEvidence(`Send ${amount} GNOT to carol`, amount, 'GNOT')).toBe(false);
+    expect(exactAmountEvidence(`Send ${'1'.repeat(40)} GNOT to carol`, '1'.repeat(40), 'GNOT')).toBe(true);
+  });
+
+  it('pairs a decimal with the whole asset name, not a suffix of another asset', () => {
+    expect(pairedDecimalAmount('Send XGNOT 12.3 to carol', 'GNOT')).toBeUndefined();
+    expect(pairedDecimalAmount('Send GNOT 12.3 to carol', 'GNOT')).toBe('12.3');
+    expect(pairedDecimalAmount('Send 12.3 GNOT to carol', 'GNOT')).toBe('12.3');
+  });
 });
