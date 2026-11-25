@@ -426,6 +426,20 @@ describe('GnoChainRepository', () => {
       mutable.sendTransaction = () => Promise.reject(undefined);
       await expect(errorOf(repository.broadcastTransaction({ encoded: 'AAAA' }, network))).resolves.toMatchObject({ code: 'TRANSACTION_PENDING', hash });
     });
+
+    it('reports the same hash before broadcasting as a pending error carries', async () => {
+      const { repository, mutable } = setup();
+      const signed = await repository.signTransaction(draftOf([send()]), keyPair, network);
+
+      mutable.sendTransaction = async () => {
+        throw new Error('timed out');
+      };
+
+      const error = await errorOf(repository.broadcastTransaction(signed, network));
+
+      expect(repository.transactionHash(signed)).toMatch(/^[0-9A-F]{64}$/);
+      expect(error).toMatchObject({ code: 'TRANSACTION_PENDING', hash: repository.transactionHash(signed) });
+    });
   });
 
   describe('getTransactionStatus', () => {

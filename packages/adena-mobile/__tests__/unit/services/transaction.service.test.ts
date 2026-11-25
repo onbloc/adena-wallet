@@ -1,6 +1,10 @@
+import { InsufficientFeeError } from '@gnolang/tm2-js-client';
+
 import { isAppError } from '../../../src/core/errors';
 import { FeeEstimate, GNO_FEE_POLICY } from '../../../src/domain/fee';
+import { StoragePendingBroadcastRepository } from '../../../src/repositories/pending-broadcast.repository';
 import { getNativeTokenFor } from '../../../src/resources';
+import { TransactionService } from '../../../src/services/transaction.service';
 import { catchError, makeToken, networkById } from '../../helpers/service-fakes';
 import { createTestContainer, TEST_MNEMONIC, TEST_PASSWORD } from '../../helpers/test-container';
 
@@ -223,6 +227,96 @@ describe('TransactionService', () => {
       container.walletService.lock();
       expect(await codeOf(() => service.signAndBroadcast({ ...draft, fee: { gasWanted: '1', gasFee: '1ugnot' } }, account, network))).toBe('WALLET_LOCKED');
       expect(gno.state.broadcasts).toEqual([]);
+    });
+  });
+
+  describe('pending broadcast record', () => {
+    type Env = Awaited<ReturnType<typeof setup>>;
+
+    const signedDraft = async ({ service, account, network, gnot }: Env) =>
+      service.withEstimatedFee(await service.createTransferDraft({ account, network, token: gnot, toAddress: RECIPIENT, amount: '1' }), account, network);
+
+    // A broadcast whose response never arrives until the test settles it.
+    const hangBroadcast = (env: Env) => {
+      let fail!: (error: unknown) => void;
+      const sent = new Promise<void>((sentDone) => {
+        env.gno.provider.sendTransaction = (encoded: string) => new Promise<never>((_, reject) => {
+          env.gno.state.broadcasts.push(encoded);
+          fail = reject;
+          sentDone();
+        });
+      });
+
+      return { sent, fail: (error: unknown) => fail(error) };
+    };
+
+    const recordOf = (env: Env) => new StoragePendingBroadcastRepository(env.keyValueStore).get(env.account.id, env.network.id);
+
+    it('keeps the hash saved while the broadcast response is pending and refuses a send after a restart', async () => {
+      const env = await setup();
+      const draft = await signedDraft(env);
+      const hanging = hangBroadcast(env);
+      const result = env.service.signAndBroadcast(draft, env.account, env.network).catch((error: unknown) => error);
+
+      await hanging.sent;
+      const signed = env.gno.state.broadcasts[0];
+      const hash = env.container.chainRegistry.forNetwork(env.network).transactionHash({ encoded: signed });
+
+      expect(recordOf(env)).toMatchObject({ hash, accountId: env.account.id, networkId: env.network.id });
+
+      // Killed here: a fresh service over the same storage still sees the in-flight tx.
+      const restarted = new TransactionService(env.container.chainRegistry, env.container.accountService, env.container.keyringSession, new StoragePendingBroadcastRepository(env.keyValueStore));
+
+      expect(await codeOf(() => restarted.signAndBroadcast(draft, env.account, env.network))).toBe('PREVIOUS_TRANSACTION_PENDING');
+      expect(env.gno.state.broadcasts).toHaveLength(1);
+
+      // Settle the hanging call so nothing is left open; a transport failure keeps the record.
+      hanging.fail(new Error('socket closed'));
+      expect(await result).toMatchObject({ code: 'TRANSACTION_PENDING', hash });
+      expect(recordOf(env)?.hash).toBe(hash);
+    });
+
+    it('removes the record once the broadcast commits', async () => {
+      const env = await setup();
+
+      await expect(env.service.signAndBroadcast(await signedDraft(env), env.account, env.network)).resolves.toMatchObject({ hash: 'HASH' });
+      expect(recordOf(env)).toBeUndefined();
+    });
+
+    it('removes the record on a definitive rejection so the user can retry', async () => {
+      const env = await setup();
+      const draft = await signedDraft(env);
+
+      env.gno.provider.sendTransaction = async () => {
+        throw new InsufficientFeeError('fee too low');
+      };
+
+      expect(await codeOf(() => env.service.signAndBroadcast(draft, env.account, env.network))).toBe('TRANSACTION_FAILED');
+      expect(recordOf(env)).toBeUndefined();
+    });
+
+    it('refuses to sign or broadcast while a record exists for the account and network', async () => {
+      const env = await setup();
+      const draft = await signedDraft(env);
+      const sign = jest.spyOn(env.service, 'sign');
+
+      new StoragePendingBroadcastRepository(env.keyValueStore).save({ hash: 'EARLIER', accountId: env.account.id, networkId: env.network.id, createdAt: 0 });
+
+      expect(await codeOf(() => env.service.signAndBroadcast(draft, env.account, env.network))).toBe('PREVIOUS_TRANSACTION_PENDING');
+      expect(sign).not.toHaveBeenCalled();
+      expect(env.gno.state.broadcasts).toEqual([]);
+      expect(recordOf(env)?.hash).toBe('EARLIER');
+    });
+
+    it('refuses a second send that starts while the first is still signing', async () => {
+      const env = await setup();
+      const draft = await signedDraft(env);
+      const first = env.service.signAndBroadcast(draft, env.account, env.network);
+      const second = env.service.signAndBroadcast(draft, env.account, env.network);
+
+      await expect(first).resolves.toMatchObject({ hash: 'HASH' });
+      expect(await codeOf(() => second)).toBe('PREVIOUS_TRANSACTION_PENDING');
+      expect(env.gno.state.broadcasts).toHaveLength(1);
     });
   });
 });

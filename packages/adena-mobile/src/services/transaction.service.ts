@@ -1,6 +1,6 @@
 import { fromBase64 } from '@cosmjs/encoding';
 
-import { AppError, AppErrorCode } from '../core/errors';
+import { AppError, AppErrorCode, TransactionPendingError } from '../core/errors';
 import { Account } from '../domain/account';
 import { computeFee, DEFAULT_FEE_SELECTION, FeeEstimate, FeeSelection } from '../domain/fee';
 import { Network } from '../domain/network';
@@ -15,6 +15,7 @@ import {
 } from '../domain/transaction';
 import { ChainRegistry } from '../repositories/chain/chain-registry';
 import { SigningKey, SimulationSigner } from '../repositories/chain/chain-repository';
+import { PendingBroadcastRepository } from '../repositories/pending-broadcast.repository';
 import { getDefaultTokensFor } from '../resources';
 import { addAmount, compareAmount, parseCoin } from '../utils/amount';
 import { BigNumber } from '../utils/big-number';
@@ -36,12 +37,15 @@ export interface TransferInput {
 
 const EMPTY_FEE: TransactionFee = { gasWanted: '0', gasFee: '' };
 
+export const PREVIOUS_TRANSACTION_PENDING_MESSAGE = 'A previous transaction is not confirmed yet. Check Activity before sending again.';
+
 // Chain-agnostic transaction pipeline: draft -> fee -> sign -> broadcast.
 export class TransactionService {
   constructor(
     private readonly chainRegistry: ChainRegistry,
     private readonly accountService: AccountService,
     private readonly keyringSession: KeyringSession,
+    private readonly pendingBroadcasts: PendingBroadcastRepository,
   ) {}
 
   async createTransferDraft({ account, network, token, toAddress, amount, memo }: TransferInput): Promise<TransactionDraft> {
@@ -182,7 +186,41 @@ export class TransactionService {
     return this.chainRegistry.forNetwork(network).getTransactionStatus(hash, network);
   }
 
+  // The hash is persisted before sending, so a kill mid-broadcast still blocks a re-send after restart.
+  // It is dropped only on a definite outcome; an unknown one keeps it until polling settles it.
   async signAndBroadcast(draft: TransactionDraft, account: Account, network: Network): Promise<BroadcastResult> {
-    return this.broadcast(await this.sign(draft, account, network), network);
+    this.assertNoPendingBroadcast(account, network);
+    const signed = await this.sign(draft, account, network);
+    const hash = this.chainRegistry.forNetwork(network).transactionHash(signed);
+
+    // Checked again right before saving: another send may have started while this one was signing.
+    this.assertNoPendingBroadcast(account, network);
+    this.pendingBroadcasts.save({ hash, accountId: account.id, networkId: network.id, createdAt: Date.now() });
+
+    try {
+      const result = await this.broadcast(signed, network);
+
+      this.pendingBroadcasts.remove(account.id, network.id, hash);
+      return result;
+    }
+    catch (error) {
+      if (error instanceof TransactionPendingError) {
+        throw error;
+      }
+
+      if (error instanceof AppError) {
+        this.pendingBroadcasts.remove(account.id, network.id, hash);
+        throw error;
+      }
+
+      // Not a classified rejection, so the node may still have received it.
+      throw new TransactionPendingError(hash, undefined, { cause: error });
+    }
+  }
+
+  private assertNoPendingBroadcast(account: Account, network: Network): void {
+    if (this.pendingBroadcasts.get(account.id, network.id)) {
+      throw new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, PREVIOUS_TRANSACTION_PENDING_MESSAGE);
+    }
   }
 }

@@ -329,6 +329,17 @@ describe('CosmosChainRepository', () => {
       http.on(urls().txs, { tx_response: { txhash: 'X', code: 19, raw_log: 'tx already in mempool', height: '0' } });
       await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject(pending);
     });
+
+    it('reports the same hash before broadcasting as a pending error carries', async () => {
+      const { repository, http } = setup();
+
+      http.on(urls().txs, () => {
+        throw new Error('socket hang up');
+      });
+
+      expect(repository.transactionHash({ encoded })).toBe(toHex(sha256(new Uint8Array([1, 2, 3]))).toUpperCase());
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ hash: repository.transactionHash({ encoded }) });
+    });
   });
 
   describe('getTransactionStatus', () => {

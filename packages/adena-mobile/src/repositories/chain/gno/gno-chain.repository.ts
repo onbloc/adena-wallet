@@ -271,6 +271,10 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
     }
   }
 
+  transactionHash(signed: SignedTransaction): string {
+    return gnoTxHash(signed);
+  }
+
   async broadcastTransaction(signed: SignedTransaction, network: Network): Promise<BroadcastResult> {
     const provider = await this.provider(network).catch((error) => {
       throw toNetworkError(error);

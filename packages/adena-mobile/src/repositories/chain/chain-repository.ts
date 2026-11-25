@@ -36,6 +36,8 @@ export interface ChainRepository<TMessage = unknown> {
   // Simulates the draft and reports gas usage plus the chain's gas price.
   estimateFee(draft: TransactionDraft<TMessage>, signer: SimulationSigner, network: Network): Promise<FeeEstimate>;
   signTransaction(draft: TransactionDraft<TMessage>, key: SigningKey, network: Network): Promise<SignedTransaction>;
+  // The hash the node will report for this tx, in the form getTransactionStatus accepts.
+  transactionHash(signed: SignedTransaction): string;
   // Throws TransactionPendingError (with the tx hash) when the outcome is unknown; other errors are definitive rejections.
   broadcastTransaction(signed: SignedTransaction, network: Network): Promise<BroadcastResult>;
   getTransactionStatus(hash: string, network: Network): Promise<TransactionStatus>;

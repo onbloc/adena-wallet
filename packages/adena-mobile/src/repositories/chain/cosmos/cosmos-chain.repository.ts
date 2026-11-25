@@ -159,10 +159,14 @@ export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
     return { encoded: toBase64(txBytes) };
   }
 
+  transactionHash(signed: SignedTransaction): string {
+    return cosmosTxHash(signed);
+  }
+
   // BROADCAST_MODE_SYNC: success means the tx passed CheckTx, as in the extension.
   async broadcastTransaction(signed: SignedTransaction, network: Network): Promise<BroadcastResult> {
     const restUrl = restUrlOf(network);
-    const hash = toHex(sha256(fromBase64(signed.encoded))).toUpperCase();
+    const hash = cosmosTxHash(signed);
 
     try {
       const result = await this.lcd.broadcastSync(restUrl, signed.encoded);
@@ -189,3 +193,6 @@ export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
     }
   }
 }
+
+// sha256 of the TxRaw bytes, uppercase hex like the LCD reports `txhash`.
+export const cosmosTxHash = (signed: SignedTransaction): string => toHex(sha256(fromBase64(signed.encoded))).toUpperCase();

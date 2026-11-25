@@ -124,7 +124,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const networkService = overrides.networkService ?? new NetworkService(networkRepository, chainRegistry);
   const balanceService = overrides.balanceService ?? new BalanceService(chainRegistry, accountService);
   const transactionService = overrides.transactionService
-    ?? new TransactionService(chainRegistry, accountService, keyringSession);
+    ?? new TransactionService(chainRegistry, accountService, keyringSession, pendingBroadcastRepository);
   const connectedAppService = overrides.connectedAppService ?? new ConnectedAppService(connectedAppRepository);
   const priceService = overrides.priceService ?? new PriceService(priceRepository);
   const tokenService = overrides.tokenService ?? new TokenService(chainRegistry, accountService, tokenListRepository);

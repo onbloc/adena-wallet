@@ -27,8 +27,9 @@ export const NETWORK: Network = {
 
 export const ACCOUNT: Account = { id: 'acc-1', keyringId: 'k', keyringType: KeyringType.HD_WALLET, name: 'A', hdIndex: 0, publicKey: 'pk', createdAt: 0 };
 
+// Infinite gcTime: a mutation's default 5 min gc timer would keep Jest from exiting.
 export const createTestQueryClient = (): QueryClient =>
-  new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { gcTime: Infinity } } });
 
 // Wraps hooks with a fresh query client and a partial fake container; photos and haptics default to none,
 // preferences to an in-memory store.

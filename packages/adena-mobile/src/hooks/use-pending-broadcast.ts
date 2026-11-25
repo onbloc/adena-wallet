@@ -41,7 +41,8 @@ export const usePendingBroadcast = (account: Account | null, network: Network, o
     onCommittedRef.current = onCommitted;
   }, [onCommitted]);
 
-  // Opening a send screen checks a given-up or persisted (e.g. from before a restart) tx again.
+  // Opening a send screen checks a given-up or persisted tx again, whoever wrote the record
+  // (e.g. TransactionService right before the app was killed mid-broadcast).
   useEffect(() => {
     if (!accountId) {
       return;
@@ -129,8 +130,11 @@ export const usePendingBroadcast = (account: Account | null, network: Network, o
       return false;
     }
 
-    // Persisted first, so a crash or restart right after still blocks a re-send.
-    repository.save({ hash: error.hash, accountId: sender.id, networkId: sentNetwork.id, createdAt: Date.now() });
+    // TransactionService normally saved it before broadcasting; only write when it is missing or differs.
+    if (repository.get(sender.id, sentNetwork.id)?.hash !== error.hash) {
+      repository.save({ hash: error.hash, accountId: sender.id, networkId: sentNetwork.id, createdAt: Date.now() });
+    }
+
     setEntry(pendingScope(sender.id, sentNetwork.id), { hash: error.hash, accountId: sender.id, network: sentNetwork, phase: 'checking', ownerId });
     showToast('Transaction sent. Waiting for confirmation.', 'info');
     return true;

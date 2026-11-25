@@ -6,10 +6,14 @@ import { SendAmountScreen } from '../../../../src/containers/main/send-amount-sc
 import { AppError, AppErrorCode, TransactionPendingError } from '../../../../src/core/errors';
 import { FeeEstimate, GNO_FEE_POLICY } from '../../../../src/domain/fee';
 import { Token, TokenType } from '../../../../src/domain/token';
-import { TransactionDraft, TransactionStatus } from '../../../../src/domain/transaction';
+import { BroadcastResult, TransactionDraft, TransactionStatus } from '../../../../src/domain/transaction';
 import { PENDING_NOTICE, PENDING_POLL_ATTEMPTS, PENDING_POLL_INTERVAL_MS, UNCONFIRMED_NOTICE } from '../../../../src/hooks/use-pending-broadcast';
 import { useWalletAssets } from '../../../../src/hooks/use-wallet-assets';
+import { ChainRegistry } from '../../../../src/repositories/chain/chain-registry';
 import { StoragePendingBroadcastRepository } from '../../../../src/repositories/pending-broadcast.repository';
+import { AccountService } from '../../../../src/services/account.service';
+import { KeyringSession } from '../../../../src/services/keyring-session';
+import { TransactionService } from '../../../../src/services/transaction.service';
 import { MemoryKeyValueStore } from '../../../../src/storage/memory-key-value-store';
 import { usePendingBroadcastStore } from '../../../../src/stores/pending-broadcast.store';
 import { useToastStore } from '../../../../src/stores/toast.store';
@@ -286,6 +290,50 @@ describe('SendAmountScreen', () => {
       expect(useToastStore.getState().toast?.message).toBe('Your previous transaction was confirmed.');
       await fireEvent.press(screen.getByTestId('send-review'));
       expect(await screen.findByTestId('review-confirm')).toBeTruthy();
+    });
+
+    // The app is killed before the broadcast responds, so the screen never sees an error to track.
+    it('keeps a re-send blocked after a restart while the broadcast response is still pending', async () => {
+      const first = await setup();
+      const response = deferred<BroadcastResult>();
+      const chain = {
+        signTransaction: async () => ({ encoded: 'AAAA' }),
+        transactionHash: () => 'SIGNED',
+        broadcastTransaction: jest.fn(() => response.promise),
+      };
+      const real = new TransactionService(
+        { forNetwork: () => chain } as unknown as ChainRegistry,
+        {} as AccountService,
+        { withKeyPair: (_id: string, _index: number, task: (key: unknown) => unknown) => task({}) } as unknown as KeyringSession,
+        new StoragePendingBroadcastRepository(keyValueStore),
+      );
+
+      first.transactionService.signAndBroadcast.mockImplementationOnce(draft => real.signAndBroadcast(draft, ACCOUNT, NETWORK));
+      await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
+      await fireEvent.press(screen.getByTestId('send-review'));
+      await fireEvent.press(await screen.findByTestId('review-confirm'));
+      expect(chain.broadcastTransaction).toHaveBeenCalledTimes(1);
+      await restart();
+
+      const { transactionService, navigation } = await setup();
+
+      expect(screen.getByText(PENDING_NOTICE)).toBeTruthy();
+      await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
+      await fireEvent.press(screen.getByTestId('send-review'));
+      expect(transactionService.estimateFee).not.toHaveBeenCalled();
+      expect(screen.queryByTestId('review-confirm')).toBeNull();
+
+      transactionService.getTransactionStatus.mockResolvedValueOnce('pending').mockResolvedValueOnce('committed');
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS * 2));
+
+      expect(transactionService.getTransactionStatus).toHaveBeenCalledWith('SIGNED', NETWORK);
+      expect(new StoragePendingBroadcastRepository(keyValueStore).get(ACCOUNT.id, NETWORK.id)).toBeUndefined();
+      expect(navigation.popToTop).not.toHaveBeenCalled();
+      await fireEvent.press(screen.getByTestId('send-review'));
+      expect(await screen.findByTestId('review-confirm')).toBeTruthy();
+
+      // Settle the call left over from before the restart so nothing stays open.
+      await act(async () => response.resolve({ hash: 'SIGNED', height: '1' }));
     });
 
     it('unblocks after a restart once the persisted hash is found failed', async () => {
