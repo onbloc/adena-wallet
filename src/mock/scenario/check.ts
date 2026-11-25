@@ -73,6 +73,16 @@ export type JudgedRun = {
 };
 
 /**
+ * The calls the model decided on, and the first one outside what an `answer` allows. A call the
+ * harness rejected as malformed is retried by the agent: it is not what the model decided.
+ */
+function answerCalls(run: JudgedRun, expected: Extract<Expected, { kind: 'answer' }>) {
+  const calls = run.calls.filter((call) => !call.invalid);
+  const allowed = new Set([...expected.reads.map(({ name }) => name), ...(expected.allow ?? [])]);
+  return { calls, allowed, stray: calls.find(({ name }) => !allowed.has(name)) };
+}
+
+/**
  * Whether a run is what the scenario expects. A transaction is judged on its summary; an `answer`
  * on what the model called (nothing outside `reads` and `allow`, each read with its exact input)
  * and on the text of the answer. A run that returned is never the `error` a scenario expects: the
@@ -83,10 +93,7 @@ export function checkRun(run: JudgedRun, expected: Expected): Verdict {
   if (expected.kind !== 'answer') return checkSummaries(run.prepared, expected);
   if (run.prepared.length > 0) return fail(`prepared ${describeSummaries(run.prepared)}, expected nothing`);
 
-  // A call the harness rejected as malformed is retried by the agent: it is not what the model decided.
-  const calls = run.calls.filter((call) => !call.invalid);
-  const allowed = new Set([...expected.reads.map(({ name }) => name), ...(expected.allow ?? [])]);
-  const stray = calls.find(({ name }) => !allowed.has(name));
+  const { calls, allowed, stray } = answerCalls(run, expected);
   if (stray !== undefined) {
     const want = expected.reads.length === 0 ? 'no tool call' : `only ${[...allowed].join(', ')}`;
     return fail(`called ${stray.name}(${canonical(stray.input)}), expected ${want}`);
@@ -100,6 +107,41 @@ export function checkRun(run: JudgedRun, expected: Expected): Verdict {
   }
   const missing = (expected.says ?? []).filter((text) => !run.text.includes(text));
   return missing.length === 0 ? { ok: true } : fail(`the answer lacks ${missing.map((text) => JSON.stringify(text)).join(', ')}`);
+}
+
+/** Tool calling on its own: did the model pick the right tool, and fill its arguments right? */
+export type ToolCalling = {
+  /** Expected calls were made without unrelated calls. */
+  tool: boolean;
+  /** Every argument exact. Undefined when there is nothing to compare, or when the tool was wrong. */
+  args: boolean | undefined;
+};
+
+/** Tool calls for scenarios with explicit expectations; none/error do not specify expected calls. */
+export function judgeToolCalling(run: JudgedRun, expected: Expected): ToolCalling | undefined {
+  switch (expected.kind) {
+    case 'error':
+    case 'none':
+      return undefined;
+    case 'answer': {
+      if (run.prepared.length > 0) return { tool: false, args: undefined };
+      const { calls, stray } = answerCalls(run, expected);
+      const tool = stray === undefined && expected.reads.every(({ name }) => calls.some((call) => call.name === name));
+      const withInput = expected.reads.filter((read) => read.input !== undefined);
+      const args =
+        tool && withInput.length > 0
+          ? withInput.every((read) => calls.some((call) => call.name === read.name && canonical(call.input) === canonical(read.input)))
+          : undefined;
+      return { tool, args };
+    }
+    default: {
+      const name = expected.kind === 'transfer' ? 'transfer' : 'approve';
+      const calls = run.calls.filter((call) => !call.invalid);
+      const actions = calls.filter((call) => call.name === name);
+      const tool = actions.length === 1 && calls.every((call) => call.name === name || call.name === 'get_balance');
+      return { tool, args: tool && run.prepared.length === 1 ? checkSummaries(run.prepared, expected).ok : undefined };
+    }
+  }
 }
 
 const WALLET_ACTIONS = ['transfer', 'approve'];

@@ -332,3 +332,62 @@ describe('runBenchmark without an account and with an expected error', () => {
     expect(none.items[0]).toMatchObject({ passed: 0, reasons: [{ text: 'raised no error, expected ADENA_ACCOUNT_REQUIRED', count: 1 }] });
   });
 });
+
+describe('runBenchmark tool calling and hit-rate intervals', () => {
+  const gnotOne = { kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } };
+  const read: Scenario = {
+    name: 'balance of GNOT',
+    prompt: 'how much GNOT?',
+    expected: { kind: 'answer', reads: [{ name: 'get_balance', input: gnotOne }] },
+  };
+  const calling = (input: unknown): ScenarioRun => ({ ...run(), calls: [{ name: 'get_balance', input, invalid: false }] });
+
+  it('counts the right tool, and the arguments only of the runs that used it', async () => {
+    // Right tool and input; right tool, wrong input; no tool at all.
+    const { runner } = fakeRunner([calling(gnotOne), calling({ kind: 'all' }), run()]);
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [read] }, runs: 3, onLog });
+
+    expect(report.toolCalling).toEqual({ tool: { hit: 2, total: 3 }, args: { hit: 1, total: 2 } });
+    expect(lines.some((line) => line.startsWith('tool choice: 2/3 (66.7%, 95% CI '))).toBe(true);
+    expect(lines.some((line) => line.startsWith('arguments (right tool only): 1/2 (50.0%, 95% CI '))).toBe(true);
+  });
+
+  it('leaves an errored run out of the tool rates, and says so next to them', async () => {
+    const { runner } = fakeRunner([calling(gnotOne), new Error('ADENA_INTENT_INVALID: bad')]);
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [read] }, runs: 2, onLog });
+
+    expect(report).toMatchObject({ passed: 1, errored: 1, toolCalling: { tool: { hit: 1, total: 1 } } });
+    expect(lines).toContain('  (the tool rates leave out 1 errored run(s): see errors below)');
+  });
+
+  it('reports unavailable argument rates when no arguments can be judged', async () => {
+    const { runner } = fakeRunner([run()]);
+    const { lines, onLog } = collect();
+    await bench({ runner, target: { kind: 'scenarios', scenarios: [read] }, runs: 1, onLog });
+    expect(lines).toContain('arguments (right tool only): 0/0 (N/A)');
+  });
+
+  it('gives the 95% Wilson interval of a hit rate, which is far from 100% after a few clean runs', async () => {
+    const { runner } = fakeRunner([calling(gnotOne)]);
+    const { lines, onLog } = collect();
+
+    await bench({ runner, target: { kind: 'scenarios', scenarios: [read] }, runs: 20, onLog });
+
+    expect(lines).toContain('passed: 20/20 (100.0%, 95% CI 83.9-100.0%)');
+    expect(lines).toContain(' 20/20  balance of GNOT  [95% CI 83.9-100.0%]');
+  });
+
+  it('leaves the interval off a scenario with few runs, and reports no tool calling for a prompt', async () => {
+    const { runner } = fakeRunner([calling(gnotOne)]);
+    const { lines, onLog } = collect();
+    await bench({ runner, target: { kind: 'scenarios', scenarios: [read] }, runs: 2, onLog });
+    expect(lines).toContain('  2/2  balance of GNOT');
+
+    const prompt = await bench({ runner: fakeRunner([run()]).runner, target: { kind: 'prompt', prompt: 'send 1 to carol' }, runs: 1, onLog: collect().onLog });
+    expect(prompt.toolCalling).toBeUndefined();
+  });
+});

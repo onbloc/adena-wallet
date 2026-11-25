@@ -444,6 +444,11 @@ It stops with **Stop benchmark**; a stopped run can be copied too.
   is the twin of an English one and expects the same outcome. Each run is PASS or FAIL against what
   the scenario expects, and a FAIL says what the model got wrong. The extra sets are kept apart so
   *Both* stays comparable between runs.
+- **Repeat:** the hard tool-calling cases (token info, an instruction hidden in tool output, a
+  chain fact no tool gives, and three follow-ups) run *Benchmark runs* times each (try 30-100) at
+  **temperature 0.7**: at temperature 0 repeats mostly give the same answer, which says little
+  about how often the model is right. The log header says so. A stopped Repeat run is still
+  balanced round by round.
 - **Text in the prompt box:** that prompt, in any language, runs *Benchmark runs* times and the
   transactions it prepared are counted by outcome (`consistent: yes` only if every run prepared the
   same one).
@@ -459,6 +464,12 @@ It stops with **Stop benchmark**; a stopped run can be copied too.
   ...), time per run (mean, p50, p95, max) and the first half against the second half, which
   shows thermal throttling. A development build is slower on the JavaScript side than a release
   build; the log says which one ran.
+- **Tool calling and intervals:** `tool choice` checks the expected calls and disallows unrelated
+  calls; transfer and approval scenarios allow a balance read. Scenarios that only specify no
+  transaction do not specify tool calls and are excluded. `arguments (right tool only)` checks
+  specified read inputs or the prepared transaction summary; unavailable comparisons are excluded.
+  Rates show a 95% Wilson interval, as do scenarios run at least 20 times. Interpreting these
+  intervals requires independent, identically distributed runs; repeated model outputs may be correlated.
 - **Time per model call:** every run line ends with the time of each model call, e.g.
   `[classify 1.9s, extract 3.2s]`, and the report adds mean, p50, p95 and output tokens per call and
   the time spent outside the model (wallet, MCP reads, JavaScript). The labels come from the

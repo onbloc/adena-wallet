@@ -5,6 +5,7 @@ import {
   FOLLOW_UP_SCENARIOS,
   KOREAN_SCENARIOS,
   READ_SCENARIOS,
+  REPEAT_SCENARIOS,
   ROUTING_SCENARIOS,
   SCENARIOS,
   TYPO_SCENARIOS,
@@ -119,5 +120,14 @@ describe('scenarios', () => {
     // Both an answer that needs no wallet and a wallet action that does.
     expect(without.some(({ expected }) => expected.kind === 'answer')).toBe(true);
     expect(without.some(({ expected }) => expected.kind === 'error')).toBe(true);
+  });
+
+  it('repeats only English reads and follow-ups, which the other sets already hold', () => {
+    const known = [...READ_SCENARIOS, ...FOLLOW_UP_SCENARIOS];
+    expect(REPEAT_SCENARIOS.length).toBeGreaterThan(0);
+    for (const scenario of REPEAT_SCENARIOS) {
+      expect(known).toContain(scenario);
+      expect(scenario.prompt).not.toMatch(HANGUL);
+    }
   });
 });

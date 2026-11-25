@@ -43,6 +43,7 @@ import {
   FOLLOW_UP_SCENARIOS,
   KOREAN_SCENARIOS,
   READ_SCENARIOS,
+  REPEAT_SCENARIOS,
   ROUTING_SCENARIOS,
   SCENARIOS,
   TYPO_SCENARIOS,
@@ -51,7 +52,7 @@ import { describeTransaction } from './describeTransaction';
 import { useChatSession } from './useChatSession';
 import { usePreparationHistory } from './usePreparationHistory';
 import { BenchmarkLog } from './BenchmarkLog';
-import { BENCHMARK_RUNS_RANGE, DEFAULT_BENCHMARK_RUNS, useBenchmark } from './useBenchmark';
+import { BENCHMARK_RUNS_RANGE, DEFAULT_BENCHMARK_RUNS, REPEAT_SETTINGS, useBenchmark } from './useBenchmark';
 import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL, resolveOnblocSettings } from './onblocSettings';
 import { describeRuntime } from './describeRuntime';
 import { LLM_SOURCES, resolveLlmSettings, type LlmSource } from './llmSettings';
@@ -115,6 +116,7 @@ const BENCHMARK_SETS = {
   route: { label: 'Routing', scenarios: ROUTING_SCENARIOS },
   reads: { label: 'Reads', scenarios: READ_SCENARIOS },
   follow: { label: 'Follow-ups', scenarios: FOLLOW_UP_SCENARIOS },
+  repeat: { label: 'Repeat', scenarios: REPEAT_SCENARIOS },
 } as const;
 
 export default function PlaygroundScreen() {
@@ -220,6 +222,8 @@ export default function PlaygroundScreen() {
   const temperatureValue = parseBounded(temperature, TEMPERATURE_RANGE);
   const maxTokensValue = parseBounded(maxTokens, MAX_OUTPUT_TOKENS_RANGE, true);
   const benchRunsValue = parseBounded(benchRuns, BENCHMARK_RUNS_RANGE, true);
+  // The Repeat set (with an empty prompt box) samples at temperature 0.7 instead of 0.
+  const repeatChosen = benchSet === 'repeat' && prompt.trim() === '';
 
   const busy = !remoteMode && (status.state === 'downloading' || status.state === 'loading');
   const ready = remoteMode ? remote !== null : status.state === 'ready';
@@ -331,7 +335,8 @@ export default function PlaygroundScreen() {
     void bench.start(
       text === '' ? { kind: 'scenarios', scenarios: BENCHMARK_SETS[benchSet].scenarios } : { kind: 'prompt', prompt: text },
       benchRunsValue,
-      describeLlm()
+      describeLlm(),
+      repeatChosen ? REPEAT_SETTINGS : undefined
     );
   };
 
@@ -549,7 +554,8 @@ export default function PlaygroundScreen() {
             Benchmark button: with an empty prompt box it runs the chosen scenarios this many times; with
             text in the box it runs that prompt (any language) this many times and counts the different
             transactions. Fixed: temperature 0, 512 output tokens, no thinking, a mock wallet and fake
-            Onbloc reads (no network).
+            Onbloc reads (no network). Repeat samples at temperature 0.7 instead, to measure how often
+            the model gets its hard cases right: set Benchmark runs to 30-100.
           </Text>
         </ScrollView>
       )}

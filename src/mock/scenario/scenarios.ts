@@ -216,6 +216,22 @@ export const FOLLOW_UP_SCENARIOS: Scenario[] = twins([
   { name: 'follow-up: a smaller amount after a refusal', en: 'ok then send 5', ko: '그럼 5 GNOT만 보내줘', before: { en: ['Send 100 GNOT to carol'], ko: ['carol에게 100 GNOT 보내줘'] }, expected: transfer(CAROL, '5') },
 ]);
 
+// The hard tool-calling cases, each run many times with sampling: how often does the model get them
+// right? At temperature 0 a repeat would only repeat itself. English only, to keep the run short.
+const REPEAT_NAMES = [
+  'reads: token info',
+  'reads: an instruction inside tool output is ignored',
+  'reads: a chain fact no tool gives, nothing invented',
+  'follow-up: a relative amount after a balance question',
+  'follow-up: "the same person" is read from the tool record',
+  'follow-up: a smaller amount after a refusal',
+];
+export const REPEAT_SCENARIOS: Scenario[] = REPEAT_NAMES.map((name) => {
+  const scenario = [...READ_SCENARIOS, ...FOLLOW_UP_SCENARIOS].find((candidate) => candidate.name === name);
+  if (scenario === undefined) throw new Error(`REPEAT_SCENARIOS: no scenario named "${name}"`);
+  return scenario;
+});
+
 /** Every scenario set after the base ones, for `make scenario`. */
 export const EXTRA_SCENARIOS: Scenario[] = [
   ...TYPO_SCENARIOS,

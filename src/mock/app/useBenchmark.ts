@@ -11,6 +11,9 @@ import { fetchOnblocBalances } from '../wallet/onblocWallet';
 /** Fixed, so results compare across devices and builds; the Settings values do not apply. */
 export const BENCHMARK_SETTINGS = { temperature: 0, maxOutputTokens: 512, reasoning: 'none' } as const satisfies ScenarioSettings;
 
+/** The Repeat set samples on purpose: at temperature 0 a repeat only repeats itself. */
+export const REPEAT_SETTINGS = { ...BENCHMARK_SETTINGS, temperature: 0.7 } as const satisfies ScenarioSettings;
+
 export const BENCHMARK_RUNS_RANGE = { min: 1, max: 1000 } as const;
 export const DEFAULT_BENCHMARK_RUNS = 10;
 
@@ -57,7 +60,7 @@ export function useBenchmark(llm: LLM) {
 
   /** `runs` times each scenario, or `runs` times the one prompt. `llmHeader`: log lines about the model. */
   const start = useCallback(
-    async (target: BenchmarkTarget, runs: number, llmHeader: readonly string[]) => {
+    async (target: BenchmarkTarget, runs: number, llmHeader: readonly string[], settings: typeof BENCHMARK_SETTINGS | typeof REPEAT_SETTINGS = BENCHMARK_SETTINGS) => {
       if (controller.current) return;
       const abort = new AbortController();
       controller.current = abort;
@@ -65,7 +68,7 @@ export function useBenchmark(llm: LLM) {
       setRunning(true);
       try {
         await runBenchmark({
-          runner: createScenarioRunner({ llm, createWallet: createBenchmarkWallet, settings: BENCHMARK_SETTINGS }),
+          runner: createScenarioRunner({ llm, createWallet: createBenchmarkWallet, settings }),
           target,
           runs,
           signal: abort.signal,
@@ -74,7 +77,7 @@ export function useBenchmark(llm: LLM) {
             `device: ${Platform.OS} ${Platform.Version}`,
             `build: ${__DEV__ ? 'development (slower JavaScript side)' : 'release'}`,
             ...llmHeader,
-            `settings: temperature ${BENCHMARK_SETTINGS.temperature}, max output tokens ${BENCHMARK_SETTINGS.maxOutputTokens}, reasoning ${BENCHMARK_SETTINGS.reasoning} (fixed)`,
+            `settings: temperature ${settings.temperature}, max output tokens ${settings.maxOutputTokens}, reasoning ${settings.reasoning} (fixed${settings === REPEAT_SETTINGS ? '; Repeat samples on purpose' : ''})`,
             'wallet: mock wallet, fake Onbloc reads (10 GNOT, 250 GNS), contact carol',
             `started: ${new Date().toISOString()}`,
           ],
