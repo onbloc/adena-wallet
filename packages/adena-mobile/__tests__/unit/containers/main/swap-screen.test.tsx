@@ -227,6 +227,23 @@ describe('SwapScreen', () => {
     expect(within(screen.getByTestId('swap-buy')).getByText('4.15136')).toBeTruthy();
   });
 
+  it('says an amount beyond int64 raw units is too large instead of offering a retry', async () => {
+    const { routeBodies } = await setup();
+
+    await pickGns();
+    await fireEvent.press(screen.getByRole('button', { name: 'Buy amount' }));
+    // 10^13 GNS is 10^19 raw units, above int64.
+    await typeAmount('10000000000000');
+    expect(await screen.findByText('Amount too large', undefined, LOOKUP)).toBeTruthy();
+    await act(() => new Promise<void>((done) => {
+      setTimeout(done, 600);
+    }));
+    expect(screen.getByText('Amount too large')).toBeTruthy();
+    expect(screen.queryByText('Retry quote')).toBeNull();
+    expect(screen.queryByText('Enter an amount greater than zero')).toBeNull();
+    expect(routeBodies).toHaveLength(0);
+  });
+
   it('searches the token selector by symbol and package path', async () => {
     await setup();
     await screen.findByText('Balance 100', undefined, LOOKUP);

@@ -25,6 +25,8 @@ export interface SwapActionInput {
   input?: SwapToken;
   output?: SwapToken;
   hasAmount: boolean;
+  // The exact amount's raw units exceed int64, which no quote or tx can carry.
+  tooLarge?: boolean;
   insufficient: boolean;
   // Display amount of the native wrap minimum when the input is below it.
   belowMinimumLabel?: string;
@@ -60,6 +62,10 @@ export const swapActionState = (input: SwapActionInput): SwapActionState => {
 
   if (!input.hasAmount) {
     return state('Enter an amount');
+  }
+
+  if (input.tooLarge) {
+    return state('Amount too large');
   }
 
   if (input.insufficient) {

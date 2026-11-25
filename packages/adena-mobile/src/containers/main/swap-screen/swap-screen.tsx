@@ -14,6 +14,7 @@ import {
   HIGH_SLIPPAGE_PERCENT,
   isValidDeadline,
   isValidSlippage,
+  MAX_INT64,
   routerFeeOf,
   slippageToBps,
   swapLimits,
@@ -144,9 +145,10 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
   const debouncedRaw = useDebouncedValue(amountRaw, QUOTE_DEBOUNCE_MS);
   const inputBalance = input ? balances?.[input.id] : undefined;
   const hasAmount = amountRaw !== '0';
+  const tooLarge = BigInt(amountRaw) > MAX_INT64;
   const minDeposit = swapConfig?.wrappedNative.minDeposit;
   const sameToken = Boolean(input && output && input.swapPath === output.swapPath);
-  const quoteEnabled = supported && Boolean(input && output) && !sameToken && debouncedRaw !== '0' && debouncedRaw === amountRaw
+  const quoteEnabled = supported && Boolean(input && output) && !sameToken && debouncedRaw !== '0' && debouncedRaw === amountRaw && !tooLarge
     && !(exactType === SwapType.EXACT_IN && input?.isNative && minDeposit && compareAmount(amountRaw, minDeposit) < 0);
 
   const quoteKey = queryKeys.swapQuote(network.id, input?.id ?? NO_ID_KEY, output?.id ?? NO_ID_KEY, `${exactType}:${debouncedRaw}`);
@@ -268,6 +270,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     input,
     output,
     hasAmount,
+    tooLarge,
     insufficient,
     belowMinimumLabel: belowMinimum && input && minDeposit ? `${toDisplayAmount(minDeposit, input.decimals)} ${input.symbol}` : undefined,
     sameToken,

@@ -31,6 +31,7 @@ describe('swapActionState', () => {
     expect(label({ output: undefined })).toBe('Select a token');
     expect(label({ sameToken: true })).toBe('Select a different token');
     expect(label({ hasAmount: false })).toBe('Enter an amount');
+    expect(label({ tooLarge: true, insufficient: true })).toBe('Amount too large');
     expect(label({ insufficient: true })).toBe('Not enough GNOT');
     expect(label({ belowMinimumLabel: '0.001 GNOT' })).toBe('Minimum 0.001 GNOT');
     expect(label({ canSend: false })).toBe('Waiting for previous swap…');
