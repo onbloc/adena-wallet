@@ -1,18 +1,13 @@
-import { CAROL, RECIPIENT } from './fixture';
+import { CAROL, GNS_PATH, RECIPIENT } from './fixture';
 
 /** A read the model must make: the tool and, when given, its exact input. */
 export type Read = { name: string; input?: unknown };
 
 /** What the run must produce. */
 export type Expected =
-  | { kind: 'transfer'; to: string; amount: string; token: 'GNOT' | 'GNS' }
-  | { kind: 'allowance'; spender: string; amount: string; token: 'GNS' }
-  /** Nothing may be prepared; what the model calls is not judged. */
-  | { kind: 'none' }
-  /**
-   * Nothing prepared, and the model calls only `reads` (and `allow`): no tool at all for an
-   * explanation or a refusal. The answer must contain every `says` text.
-   */
+  | { kind: 'transfer'; to: string; amount: string; token: 'GNOT' | 'GNS'; packagePath?: string }
+  | { kind: 'allowance'; spender: string; amount: string; token: 'GNS'; packagePath?: string }
+  | { kind: 'none'; response?: 'clarification' | 'refusal' | 'explanation' | 'read-only'; evidence?: readonly RegExp[]; errorCodes?: readonly string[] }
   | { kind: 'answer'; reads: readonly Read[]; allow?: readonly string[]; says?: readonly string[] };
 
 export type Scenario = {
@@ -28,9 +23,12 @@ const transfer = (to: string, amount: string, token: 'GNOT' | 'GNS' = 'GNOT'): E
   to,
   amount,
   token,
+  ...(token === 'GNS' ? { packagePath: GNS_PATH } : {}),
 });
-const allowance = (spender: string, amount: string): Expected => ({ kind: 'allowance', spender, amount, token: 'GNS' });
+const allowance = (spender: string, amount: string): Expected => ({ kind: 'allowance', spender, amount, token: 'GNS', packagePath: GNS_PATH });
 const none: Expected = { kind: 'none' };
+const noAction = (response: NonNullable<Extract<Expected, { kind: 'none' }>['response']>, ...evidence: RegExp[]): Expected =>
+  ({ kind: 'none', response, evidence });
 const answer = (reads: Read[] = [], says: string[] = [], allow: string[] = []): Expected => ({ kind: 'answer', reads, says, allow });
 const balanceOf = (symbol: string): Read => ({ name: 'get_balance', input: { kind: 'one', asset: { kind: 'symbol', value: symbol } } });
 const allBalances: Read = { name: 'get_balance', input: { kind: 'all' } };
@@ -199,4 +197,28 @@ export const EXTRA_SCENARIOS: Scenario[] = [
   ...ROUTING_SCENARIOS,
   ...READ_SCENARIOS,
   ...FOLLOW_UP_SCENARIOS,
+  { name: 'T1 transfer not approval', prompt: 'Send 10 GNS to carol, do not approve spending.', expected: transfer(CAROL, '10', 'GNS') },
+  { name: 'T1 approval not transfer', prompt: 'Approve carol to spend 10 GNS; do not send it.', expected: allowance(CAROL, '10') },
+  { name: 'T2 hypothetical transfer', prompt: 'If I sent 1 GNOT to carol, what would happen? Do not send it.', expected: noAction('explanation', /GNOT/i, /carol/i) },
+  { name: 'T2 how to transfer in Korean', prompt: 'carol에게 GNOT을 보내는 방법만 설명해줘. 실제로 보내지 마.', expected: noAction('explanation', /GNOT/i, /보내|전송|send|transfer/i) },
+  { name: 'T3 missing recipient', prompt: 'Send 1 GNOT', expected: noAction('clarification', /recipient|address|who|where|받|주소|누구|어디/i) },
+  { name: 'T3 missing recipient in Korean', prompt: 'GNOT 1개 보내줘', expected: noAction('clarification', /받|주소|누구|어디|recipient|address|who|where/i) },
+  { name: 'T3 missing amount', prompt: 'Send GNOT to carol', expected: noAction('clarification', /amount|how much|quantity|얼마|수량|금액|몇/i) },
+  { name: 'T3 missing amount in Korean', prompt: 'carol에게 GNOT 보내줘', expected: noAction('clarification', /얼마|수량|금액|몇|amount|how much|quantity/i) },
+  { name: 'T4 unknown contact', prompt: 'Send 1 GNOT to dave', expected: noAction('clarification', /dave/i, /contact|address|find|unknown|연락처|주소|찾|없/i) },
+  { name: 'T4 invalid address', prompt: 'Send 1 GNOT to g1broken', expected: { kind: 'none', response: 'refusal', evidence: [/address|invalid|주소/i], errorCodes: ['invalid_address'] } },
+  { name: 'T5 recipient correction', prompt: 'Send 1 GNOT to Dave — no, to carol instead.', expected: transfer(CAROL, '1') },
+  { name: 'T5 recipient correction in Korean', prompt: 'GNOT 1개를 dave 말고 carol에게 보내줘.', expected: transfer(CAROL, '1') },
+  { name: 'T6 excess precision', prompt: 'Send 0.0000001 GNOT to carol', expected: { kind: 'none', response: 'refusal', evidence: [/precision|decimal|small|unit|represent|정밀|소수|단위/i], errorCodes: ['invalid_amount'] } },
+  { name: 'T6 negative amount', prompt: 'Send -1 GNOT to carol', expected: { kind: 'none', response: 'refusal', evidence: [/amount|negative|positive|금액|수량|음수|양수/i], errorCodes: ['invalid_amount'] } },
+  { name: 'T6 insufficient balance', prompt: 'Send 100 GNOT to carol', expected: { kind: 'none', response: 'refusal', evidence: [/balance|insufficient|funds|잔액|부족/i], errorCodes: ['insufficient_balance'] } },
+  { name: 'T6 insufficient balance in Korean', prompt: 'carol에게 GNOT 100개 보내줘', expected: { kind: 'none', response: 'refusal', evidence: [/잔액|부족|balance|insufficient|funds/i], errorCodes: ['insufficient_balance'] } },
+  { name: 'unknown token', prompt: 'Send 1 FOO to carol', expected: { kind: 'none', response: 'refusal', evidence: [/FOO/i, /token|asset|토큰|자산/i], errorCodes: ['unknown_token'] } },
+  { name: 'native token allowance', prompt: 'Approve carol to spend 5 GNOT', expected: { kind: 'none', response: 'refusal', evidence: [/GNOT/i, /native|allowance|approv|네이티브|승인|허용/i], errorCodes: ['unsupported_token'] } },
+  { name: 'E3 Korean transfer', prompt: 'carol에게 GNS 25개 보내줘', expected: transfer(CAROL, '25', 'GNS') },
+  { name: 'E3 Korean approval', prompt: 'carol이 GNS 10개를 사용하도록 승인해줘', expected: allowance(CAROL, '10') },
+  { name: 'E4 multiple actions need clarification', prompt: 'Send 1 GNOT to carol and approve carol to spend 10 GNS. Which should I do?', expected: noAction('clarification', /send|transfer/i, /approv/i) },
+  { name: 'E4 multiple actions need clarification in Korean', prompt: 'carol에게 GNOT 1개를 보내고 GNS 10개 사용 승인도 해줘. 어떤 걸 먼저 할지 물어봐.', expected: noAction('clarification', /보내|전송|send|transfer/i, /승인|approv/i) },
+  { name: 'explain allowance', prompt: 'What is a token allowance? Do not approve anything.', expected: noAction('explanation', /allowance|approv|승인|허용/i, /spend|permission|limit|사용|권한|한도/i) },
+  { name: 'explain allowance in Korean', prompt: '토큰 사용 승인이 뭔지 설명해줘. 승인 거래는 만들지 마.', expected: noAction('explanation', /승인|허용|allowance|approv/i, /사용|권한|한도|spend|permission|limit/i) },
 ];

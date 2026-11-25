@@ -1,7 +1,7 @@
 // Scenario tests: a real model turns plain-language requests into transactions. They need a
 // running llama-server and are not part of `npm test`; run them with `make scenario`.
 import { toBaseUnits } from '../../agent';
-import { checkRun } from './check';
+import { checkScenarioRun } from './check';
 import {
   GNS_PATH,
   ACCOUNT,
@@ -23,6 +23,7 @@ const DECIMALS = 6;
 /** The message the prepared transaction will sign is exactly the requested one. */
 function expectMessage(run: ScenarioRun, expected: Extract<Expected, { kind: 'transfer' | 'allowance' }>) {
   const [prepared] = run.prepared;
+  expect(adenaTransaction(prepared).messages).toHaveLength(1);
   const base = String(toBaseUnits(expected.amount, DECIMALS));
 
   if (expected.kind === 'transfer') {
@@ -60,12 +61,37 @@ describe('plain-language requests become transactions', () => {
       for (const prepared of run.prepared) expect(adenaTransaction(prepared).signatures).toEqual([]);
 
       // The summaries first (what the model chose), then the message that will be signed.
-      expect(checkRun({ prepared: run.prepared.map(({ summary }) => summary), calls: run.calls, text: run.text }, expected)).toEqual({ ok: true });
+      expect(checkScenarioRun(run, expected)).toEqual({ ok: true });
       if (expected.kind === 'transfer' || expected.kind === 'allowance') expectMessage(run, expected);
     } catch (error) {
       if (error instanceof Error) error.message += `\n\n${context}`;
       throw error;
     }
+  });
+
+  it('T5 does not reuse a recipient from a previous request', async () => {
+    const turns = await runner.chat(['Who is carol in my contacts?', 'Send 1 GNOT.']);
+    expect(turns.flatMap((turn) => turn.prepared)).toEqual([]);
+    expect(checkScenarioRun(turns[1], {
+      kind: 'none', response: 'clarification', evidence: [/recipient|address|who|where/i],
+    })).toEqual({ ok: true });
+  });
+
+  it.each([
+    ['GNOT', '10'],
+    ['GNS', '250'],
+  ])('R1 reads the exact %s balance', async (symbol, amount) => {
+    const turn = await runner.ask(`What is my ${symbol} balance?`);
+    expect(checkScenarioRun(turn, {
+      kind: 'none', response: 'read-only', evidence: [new RegExp(`\\b${symbol}\\b`, 'i'), new RegExp(`\\b${amount}\\b`)],
+    })).toEqual({ ok: true });
+  });
+
+  it('R5 explains native terminology without confusing it with all holdings', async () => {
+    const turn = await runner.ask('What does native token mean? Does that mean all my holdings are native?');
+    expect(checkScenarioRun(turn, {
+      kind: 'none', response: 'explanation', evidence: [/\bGNOT\b/i, /\bGRC20\b/i, /not|non.native|other|different|\bno\b/i],
+    })).toEqual({ ok: true });
   });
 
   it.each([
@@ -110,8 +136,15 @@ describe('read-only wallet with a real model', () => {
     expect(turn.text).not.toContain('10 GNOT');
   });
 
-  it('cannot hand a transaction to the wallet on a direct send request', async () => {
-    const turn = await runner.ask('Send 1 GNOT to carol.');
-    expect(turn.prepared).toEqual([]);
+  it.each([
+    ['transfer', 'Send 1 GNOT to carol.'],
+    ['approval', 'Approve carol to spend 10 GNS.'],
+    ['Korean transfer', 'carol에게 GNOT 1개 보내줘.'],
+    ['Korean approval', 'carol에게 GNS 10개 사용을 승인해줘.'],
+  ])('T8 read-only mode refuses %s without preparing', async (_name, prompt) => {
+    const turn = await runner.ask(prompt);
+    expect(checkScenarioRun(turn, {
+      kind: 'none', response: 'refusal', evidence: [/read.only|unable|cannot|can't|not available|not enabled|권한|불가능|없|않|지원/i],
+    })).toEqual({ ok: true });
   });
 });

@@ -12,7 +12,7 @@ const transfer = (to: string, amount: string): PreparedTransaction => ({
 const run = (...prepared: PreparedTransaction[]): ScenarioRun => ({ prepared, calls: [], results: [], text: '', stages: [] });
 
 const send: Scenario = { name: 'send to carol', prompt: 'send 1 to carol', expected: { kind: 'transfer', to: CAROL, amount: '1', token: 'GNOT' } };
-const ask: Scenario = { name: 'no recipient', prompt: 'send 1', expected: { kind: 'none' } };
+const ask: Scenario = { name: 'no recipient', prompt: 'send 1', expected: { kind: 'none', response: 'clarification', evidence: [/recipient/i] } };
 
 let clock = { t: 0 };
 type BenchOptions = Parameters<typeof runBenchmark>[0];
@@ -56,7 +56,7 @@ describe('runBenchmark over scenarios', () => {
   });
 
   it('counts passes per scenario and says what the model got wrong', async () => {
-    const answers = [run(transfer(CAROL, '1')), run(), run(transfer(CAROL, '2')), run()];
+    const answers = [run(transfer(CAROL, '1')), { ...run(), text: 'Which recipient?' }, run(transfer(CAROL, '2')), { ...run(), text: 'Which recipient?' }];
     const { runner } = fakeRunner(answers);
     const { lines, onLog } = collect();
 
@@ -69,6 +69,14 @@ describe('runBenchmark over scenarios', () => {
     expect(lines.find((line) => line.startsWith('[3/4]'))).toBe('[3/4] FAIL send to carol  1.0s  - amount: got 2, expected 1');
     expect(lines).toContain('round 1/2: 2/2 passed, 2.0s elapsed');
     expect(lines).toContain('round 2/2: 1/2 passed, 4.0s elapsed');
+  });
+
+  it('fails a silent no-transaction result instead of counting it as a successful clarification', async () => {
+    const { runner } = fakeRunner([run()]);
+    const { onLog } = collect();
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [ask] }, runs: 1, onLog });
+    expect(report.passed).toBe(0);
+    expect(report.items[0].reasons).toEqual([{ text: 'expected clarification, got an empty response', count: 1 }]);
   });
 
   it('counts an error by its code, fails that run and carries on', async () => {

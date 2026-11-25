@@ -6,10 +6,10 @@ import { AdenaWalletSdk, createOnblocTokenResolver, type AdenaTransaction } from
 import type { PreparedTransaction, WalletSdk } from '../../agent';
 import { LLMFromModel } from '../../llm/core';
 import { connectModel, DEFAULT_MODEL_NAME, DEFAULT_SERVER_URL, SERVER_CONTEXT_TOKENS } from '../cli/lib/server';
-import { CAROL } from './fixture';
+import { CAROL, type ScenarioReadsFactory } from './fixture';
 import { createScenarioRunner, type ScenarioWalletFactory } from './runner';
 
-export { ACCOUNT, CAROL, GNS_PATH, RECIPIENT } from './fixture';
+export { ACCOUNT, CAROL, GNS_PATH, RECIPIENT, TWIN_GNS_PATH, fakeReads, twinGnsHoldings } from './fixture';
 export type { ScenarioRun, ScenarioRunner } from './runner';
 
 /** The wallet here is AdenaWalletSdk, which builds every `tx`. */
@@ -29,7 +29,11 @@ const adenaWallet: ScenarioWalletFactory = (onbloc): WalletSdk => {
   };
 };
 
-export async function createServerScenarioRunner(url = serverUrl(), allowTransactionPreparation = true) {
+export async function createServerScenarioRunner(
+  url = serverUrl(),
+  allowTransactionPreparation = true,
+  readsFactory?: ScenarioReadsFactory
+) {
   const llm = new LLMFromModel(await connectModel(url, DEFAULT_MODEL_NAME), { contextTokens: SERVER_CONTEXT_TOKENS });
-  return createScenarioRunner({ llm, createWallet: adenaWallet, allowTransactionPreparation });
+  return createScenarioRunner({ llm, createWallet: adenaWallet, allowTransactionPreparation, readsFactory });
 }

@@ -1,6 +1,7 @@
 import { TransactionType, type AllowanceSummary, type TransferSummary } from '../../agent';
 import { ACCOUNT } from './fixture';
 import type { Expected } from './scenarios';
+import type { ScenarioRun } from './runner';
 
 export type PreparedSummary = TransferSummary | AllowanceSummary;
 export type Verdict = { ok: true } | { ok: false; reason: string };
@@ -54,6 +55,7 @@ export function checkSummaries(prepared: readonly PreparedSummary[], expected: E
   }
   compare('amount', summary.amount, expected.amount);
   compare('token', summary.token, expected.token);
+  if (expected.packagePath) compare('packagePath', summary.packagePath ?? '(missing)', expected.packagePath);
   return wrong.length === 0 ? { ok: true } : fail(wrong.join('; '));
 }
 
@@ -128,4 +130,43 @@ export function explainNothing(run: {
   }
   const said = run.text.trim().replace(/\s+/g, ' ');
   return said === '' ? undefined : `the model replied: ${JSON.stringify(said.length > 120 ? `${said.slice(0, 120)}...` : said)}`;
+}
+
+/** Judge the complete observable turn, not merely the absence of a transaction. */
+export function checkScenarioRun(
+  run: Pick<ScenarioRun, 'calls' | 'results' | 'text'> & { prepared: readonly { summary: PreparedSummary; tx?: unknown }[] },
+  expected: Expected
+): Verdict {
+  const verdict = checkRun({ ...run, prepared: run.prepared.map(({ summary }) => summary) }, expected);
+  if (!verdict.ok || expected.kind !== 'none' || expected.response === undefined) return verdict;
+  if (expected.response === 'explanation' && (run.calls.length > 0 || run.results.length > 0)) {
+    return fail('expected an explanation without tool activity');
+  }
+  if (expected.response === 'read-only' && [...run.calls, ...run.results].some(({ name }) => name === 'transfer' || name === 'approve' || name === 'draft_send')) {
+    return fail('expected a read-only response without a preparation attempt');
+  }
+  if (!run.text.trim()) return fail(`expected ${expected.response}, got an empty response`);
+  const responsePatterns: Record<typeof expected.response, RegExp> = {
+    clarification: /\?|please|which|what|who|how much|provide|specify|알려|어떤|누구|얼마|필요|입력/i,
+    refusal: /cannot|can't|unable|not |no |invalid|unsupported|insufficient|too low|must|greater|positive|read.only|부족|불가능|없|않|안 |지원하지|필요|양수|권한/i,
+    explanation: /[a-z가-힣]/i,
+    'read-only': /[a-z가-힣]/i,
+  };
+  const errorCodes = run.results.flatMap(({ name, output }) => {
+    if ((name !== 'transfer' && name !== 'approve') ||
+        !output || typeof output !== 'object' || !('kind' in output) || output.kind !== 'result' ||
+        !('value' in output) || !output.value || typeof output.value !== 'object') return [];
+    return 'status' in output.value && output.value.status === 'error' && 'code' in output.value &&
+      typeof output.value.code === 'string' ? [output.value.code] : [];
+  });
+  const walletError = errorCodes.length > 0;
+  if (expected.errorCodes && walletError && !expected.errorCodes.includes(errorCodes[errorCodes.length - 1])) {
+    return fail(`wallet error ${errorCodes[errorCodes.length - 1]}, expected ${expected.errorCodes.join(' or ')}`);
+  }
+  if (!responsePatterns[expected.response].test(run.text) && !(expected.response === 'refusal' && walletError)) {
+    return fail(`expected ${expected.response}, got: ${run.text}`);
+  }
+  if (!expected.evidence?.length) return fail(`missing evidence requirements for ${expected.response}`);
+  const missing = expected.evidence.find((pattern) => !pattern.test(run.text));
+  return missing ? fail(`expected ${expected.response} evidence ${missing}, got: ${run.text}`) : { ok: true };
 }

@@ -1,7 +1,7 @@
 import { WalletError, WalletErrorCode, type WalletSdk } from '../../agent';
 import { MockWalletSdk } from '../wallet/mockWalletSdk';
 import { TokenSymbol } from '../wallet/tokens';
-import { ACCOUNT, CAROL } from './fixture';
+import { ACCOUNT, CAROL, GNS_PATH } from './fixture';
 
 /**
  * The wallet the app's benchmark runs on: the mock wallet holding the fixture balances (10 GNOT,
@@ -17,12 +17,18 @@ export function createBenchmarkWallet(): WalletSdk {
   });
   return {
     getContacts: () => mock.getContacts(),
-    transfer: (params) => mock.transfer(params),
+    transfer: async (params) => {
+      const prepared = await mock.transfer(params);
+      return prepared.summary.token === TokenSymbol.Gns
+        ? { ...prepared, summary: { ...prepared.summary, packagePath: GNS_PATH } }
+        : prepared;
+    },
     approve: async (params) => {
       if (params.token.trim().toLowerCase() === TokenSymbol.Gnot.toLowerCase()) {
         throw new WalletError(WalletErrorCode.UnsupportedToken, `${TokenSymbol.Gnot} is the native token: it has no allowance`);
       }
-      return mock.approve(params);
+      const prepared = await mock.approve(params);
+      return { ...prepared, summary: { ...prepared.summary, packagePath: GNS_PATH } };
     },
   };
 }
