@@ -1,5 +1,7 @@
 import { AppError, AppErrorCode, isAppError } from '../../../src/core/errors';
+import { deriveKeyPair } from '../../../src/crypto/key-pair';
 import { KeyringType } from '../../../src/crypto/keyring';
+import { mnemonicToSeed } from '../../../src/crypto/mnemonic';
 import { StorageKey } from '../../../src/migration/storage-keys';
 import { backupFileName } from '../../../src/repositories/cloud-backup/cloud-backup-store';
 import { SecureKey } from '../../../src/security/secure-keys';
@@ -504,6 +506,67 @@ describe('CloudBackupService', () => {
     expect(relaunched.container.accountService.getAccounts().map(account => account.name)).toEqual(['Account 1', 'Second', 'Third']);
     expect(relaunched.container.cloudBackupService.getLocalStatus()).toMatchObject({ kind: 'backedUp', fileName, outdated: false });
     expect(relaunched.keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
+  });
+
+  // A phrase's first key also imported on its own; after general storage was lost only one account holds it.
+  const sharedKeyWallet = async () => {
+    const source = await setup();
+    const { container, account } = source;
+
+    await container.accountService.createAccount(account.keyringId, KeyringType.HD_WALLET, 'Second');
+    await container.walletService.removeAccount(account.id, TEST_PASSWORD);
+    const first = deriveKeyPair(await mnemonicToSeed(TEST_MNEMONIC), 0);
+    const imported = await container.walletService.importPrivateKey(Buffer.from(first.privateKey).toString('hex'));
+
+    container.walletService.lock();
+    source.keyValueStore.clearAll();
+    await container.walletService.unlock(TEST_PASSWORD);
+    return { ...source, hdKeyringId: account.keyringId, pkKeyringId: imported.keyringId };
+  };
+
+  it('backs up and restores a keyring whose key already has an account elsewhere, without inventing one', async () => {
+    const source = await sharedKeyWallet();
+    const original = source.container.accountService.getAccounts();
+    const created = await create(source.backup);
+    const fileName = created.kind === 'backedUp' ? created.fileName : '';
+    const target = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files } });
+    const content = await target.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+
+    expect(original.map(item => item.keyringId)).toEqual([source.hdKeyringId]);
+    expect(content.keyrings.find(keyring => keyring.id === source.pkKeyringId)?.accounts).toEqual([]);
+
+    await target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+    const restored = target.container.accountService.getAccounts();
+
+    expect(restored.map(({ keyringId, name, hdIndex, publicKey }) => ({ keyringId, name, hdIndex, publicKey })))
+      .toEqual(original.map(({ keyringId, name, hdIndex, publicKey }) => ({ keyringId, name, hdIndex, publicKey })));
+    expect(await target.container.walletService.getStatus()).toBe('unlocked');
+    expect(target.keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
+    expect(target.container.cloudBackupService.getLocalStatus()).toMatchObject({ kind: 'backedUp', outdated: false, mnemonicCount: 1, privateKeyCount: 1 });
+
+    // Both keyrings are in the restored vault.
+    target.container.walletService.lock();
+    await target.container.walletService.unlock(NEW_WALLET_PASSWORD);
+    expect(await target.container.walletService.revealMnemonic(source.hdKeyringId, NEW_WALLET_PASSWORD)).toBe(TEST_MNEMONIC);
+    await expect(target.container.keyringSession.withKeyPair(source.pkKeyringId, 0, async () => true)).resolves.toBe(true);
+  });
+
+  it('still restores an older backup that wrote a placeholder row for such a keyring', async () => {
+    const source = await sharedKeyWallet();
+    const created = await create(source.backup);
+    const fileName = created.kind === 'backedUp' ? created.fileName : '';
+    const target = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files } });
+    const content = await target.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+    const legacy = {
+      ...content,
+      version: 2,
+      keyrings: content.keyrings.map(keyring => (keyring.accounts.length > 0 ? keyring : { ...keyring, accounts: [{ name: '', hdIndex: 0, position: 1 }] })),
+    };
+
+    await target.container.cloudBackupService.restoreWallet(legacy, NEW_WALLET_PASSWORD);
+    expect(target.container.accountService.getAccounts().map(item => item.keyringId)).toEqual([source.hdKeyringId]);
+    expect(await target.container.walletService.getStatus()).toBe('unlocked');
+    expect(target.keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
   });
 
   it('fingerprints the account layout, ignoring names and order', () => {

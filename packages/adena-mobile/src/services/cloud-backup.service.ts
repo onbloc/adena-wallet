@@ -6,7 +6,7 @@ import { KeyringRecord, KeyringType } from '../crypto/keyring';
 import { Account, isAvatarColor } from '../domain/account';
 import { CloudBackupState, CloudBackupStateRepository } from '../repositories/cloud-backup/backup-state.repository';
 import { BACKUP_FILE_PATTERN, backupFileName, CloudBackupProvider, CloudBackupStore } from '../repositories/cloud-backup/cloud-backup-store';
-import { BACKUP_VERSION, BackupAccount, BackupCodec, BackupContent, BackupHeader, BackupKeyring, headerOf } from '../security/backup-codec';
+import { BACKUP_VERSION, BackupAccount, BackupCodec, BackupContent, BackupHeader, BackupKeyring, headerOf, PLACEHOLDER_ACCOUNT_VERSION } from '../security/backup-codec';
 import { BACKUP_PASSWORD_ISSUE_MESSAGE, findBackupPasswordIssue } from '../security/password-policy';
 import { createId } from '../utils/id';
 import { SerialQueue } from '../utils/serial-queue';
@@ -268,10 +268,11 @@ export class CloudBackupService {
   }
 
   // Rebuilds the wallet through WalletService, then records the backup as current for this device.
+  // A keyring without account rows gets index 0 there, unless its key already has an account.
   async restoreWallet(content: BackupContent, walletPassword: string): Promise<Account> {
     const keyrings: KeyringRecord[] = content.keyrings.map(toKeyringRecord);
     const accounts = content.keyrings
-      .flatMap(keyring => keyring.accounts.map(account => ({ keyringId: keyring.id, account })))
+      .flatMap(keyring => accountRowsOf(keyring, content.version).map(account => ({ keyringId: keyring.id, account })))
       .map((entry, order) => ({ ...entry, order: entry.account.position ?? order }))
       .sort((a, b) => a.order - b.order)
       .map(({ keyringId, account }) => ({
@@ -398,7 +399,7 @@ const countKeyrings = (keyrings: BackupKeyring[]): Pick<CloudBackupState, 'mnemo
   privateKeyCount: keyrings.filter(keyring => keyring.type === KeyringType.PRIVATE_KEY).length,
 });
 
-// Display positions follow the account list; index-0 placeholders of keyrings without accounts come last.
+// Display positions follow the account list.
 const assignPositions = (keyrings: BackupKeyring[], accounts: Account[]): void => {
   const order = new Map(accounts.map((account, index) => [`${account.keyringId}:${account.hdIndex}`, index]));
 
@@ -416,11 +417,18 @@ const toBackupKeyring = (record: KeyringRecord, accounts: Account[]): BackupKeyr
     .filter(account => account.keyringId === record.id)
     .sort((a, b) => a.hdIndex - b.hdIndex)
     .map(account => ({ name: account.name, hdIndex: account.hdIndex, ...(account.avatarColor && { avatarColor: account.avatarColor }) }));
-  const backupAccounts: BackupAccount[] = owned.length > 0 ? owned : [{ name: '', hdIndex: 0 }];
 
   return record.type === KeyringType.HD_WALLET
-    ? { id: record.id, type: record.type, mnemonic: record.mnemonic, createdAt: record.createdAt, accounts: backupAccounts }
-    : { id: record.id, type: record.type, privateKey: record.privateKey, createdAt: record.createdAt, accounts: backupAccounts };
+    ? { id: record.id, type: record.type, mnemonic: record.mnemonic, createdAt: record.createdAt, accounts: owned }
+    : { id: record.id, type: record.type, privateKey: record.privateKey, createdAt: record.createdAt, accounts: owned };
+};
+
+// Older files stood in for a keyring without accounts with an unnamed index-0 row; it is not a real account.
+const accountRowsOf = (keyring: BackupKeyring, version: number): BackupAccount[] => {
+  const [only] = keyring.accounts;
+  const placeholder = version <= PLACEHOLDER_ACCOUNT_VERSION && keyring.accounts.length === 1 && only.name === '' && only.hdIndex === 0;
+
+  return placeholder ? [] : keyring.accounts;
 };
 
 const toKeyringRecord = (keyring: BackupKeyring): KeyringRecord =>

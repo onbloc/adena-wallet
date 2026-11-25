@@ -7,9 +7,13 @@ import { isValidMnemonic, normalizeMnemonic } from '../crypto/mnemonic';
 import { EncryptedPayload, KdfSettings, VaultCipher } from './vault-cipher';
 
 export const BACKUP_FORMAT = 'adena-wallet-backup';
-// v2 adds the write revision, account order, avatar colors and the selected account. v1 files still decode.
-export const BACKUP_VERSION = 2;
+// v2 adds the write revision, account order, avatar colors and the selected account.
+// v3 lets a keyring list no accounts (its key already belongs to another keyring's account). v1 and v2 files still decode.
+export const BACKUP_VERSION = 3;
 const LEGACY_VERSION = 1;
+
+// Before v3 a keyring without accounts was written with this placeholder row.
+export const PLACEHOLDER_ACCOUNT_VERSION = 2;
 
 // The file sits in the user's cloud where it can be attacked offline, so it uses a costlier scrypt than the vault.
 export const BACKUP_KDF_SETTINGS: KdfSettings = { N: 2 ** 17, r: 8, p: 1 };
@@ -109,7 +113,7 @@ const assertVersion = (version: unknown): void => {
     throw new AppError(AppErrorCode.BACKUP_UNSUPPORTED_VERSION, 'This backup was made by a newer version of Adena. Update the app to restore it.');
   }
 
-  if (version !== BACKUP_VERSION && version !== LEGACY_VERSION) {
+  if (version !== BACKUP_VERSION && version !== PLACEHOLDER_ACCOUNT_VERSION && version !== LEGACY_VERSION) {
     throw corrupted('version');
   }
 };
@@ -168,7 +172,7 @@ export class BackupCodec {
       throw corrupted('header');
     }
 
-    if (parsed.version === BACKUP_VERSION ? !isRevision(parsed.revision) : parsed.revision !== undefined) {
+    if (parsed.version === LEGACY_VERSION ? parsed.revision !== undefined : !isRevision(parsed.revision)) {
       throw corrupted('header');
     }
 
@@ -243,7 +247,7 @@ function assertContent(content: unknown, header: BackupHeader): asserts content 
   let accountCount = 0;
 
   for (const keyring of content.keyrings as unknown[]) {
-    const { id, secret, accounts } = assertKeyring(keyring);
+    const { id, secret, accounts } = assertKeyring(keyring, content.version === BACKUP_VERSION);
 
     if (ids.has(id) || secrets.has(secret)) {
       throw corrupted('duplicate keyring');
@@ -283,14 +287,14 @@ function assertContent(content: unknown, header: BackupHeader): asserts content 
 }
 
 // Returns the id, a normalized form of the secret (for the duplicate check) and the checked accounts.
-function assertKeyring(keyring: unknown): { id: string; secret: string; accounts: BackupAccount[] } {
+function assertKeyring(keyring: unknown, allowNoAccounts: boolean): { id: string; secret: string; accounts: BackupAccount[] } {
   if (!isRecord(keyring) || typeof keyring.id !== 'string' || !keyring.id || keyring.id.length > 64 || !isTimestamp(keyring.createdAt)) {
     throw corrupted('keyring');
   }
 
   const accounts = keyring.accounts;
 
-  if (!Array.isArray(accounts) || accounts.length === 0 || accounts.length > BACKUP_LIMITS.maxAccounts) {
+  if (!Array.isArray(accounts) || (accounts.length === 0 && !allowNoAccounts) || accounts.length > BACKUP_LIMITS.maxAccounts) {
     throw corrupted('accounts');
   }
 
@@ -311,7 +315,7 @@ function assertKeyring(keyring: unknown): { id: string; secret: string; accounts
   }
 
   if (keyring.type === KeyringType.PRIVATE_KEY && typeof keyring.privateKey === 'string' && isValidPrivateKeyHex(keyring.privateKey)) {
-    if (accounts.length !== 1 || !indices.has(0)) {
+    if (accounts.length > 1 || (accounts.length === 1 && !indices.has(0))) {
       throw corrupted('accounts');
     }
 

@@ -50,7 +50,7 @@ describe('BackupCodec', () => {
     expect(raw).not.toContain('abandon');
     expect(raw).not.toContain(PRIVATE_KEY);
     expect(raw).not.toContain('Savings');
-    expect(JSON.parse(raw)).toMatchObject({ format: BACKUP_FORMAT, version: 2, backupId: 'a'.repeat(32), createdAt: 1_700_000_000_000, revision: 1 });
+    expect(JSON.parse(raw)).toMatchObject({ format: BACKUP_FORMAT, version: 3, backupId: 'a'.repeat(32), createdAt: 1_700_000_000_000, revision: 1 });
     await expect(codec.decode(raw, BACKUP_PASSWORD)).resolves.toEqual(content());
   });
 
@@ -91,9 +91,9 @@ describe('BackupCodec', () => {
   it('refuses files from a newer app version and unknown versions', async () => {
     const envelope = JSON.parse(await codec.encode(content(), BACKUP_PASSWORD));
 
-    expect(await codeOf(() => codec.decode(JSON.stringify({ ...envelope, version: 3 }), BACKUP_PASSWORD))).toBe(AppErrorCode.BACKUP_UNSUPPORTED_VERSION);
+    expect(await codeOf(() => codec.decode(JSON.stringify({ ...envelope, version: 4 }), BACKUP_PASSWORD))).toBe(AppErrorCode.BACKUP_UNSUPPORTED_VERSION);
     expect(await codeOf(() => codec.decode(JSON.stringify({ ...envelope, version: 0 }), BACKUP_PASSWORD))).toBe(AppErrorCode.BACKUP_CORRUPTED);
-    expect(await codeOf(async () => codec.decode(await sealRaw({ ...content(), version: 3 }), BACKUP_PASSWORD))).toBe(AppErrorCode.BACKUP_UNSUPPORTED_VERSION);
+    expect(await codeOf(async () => codec.decode(await sealRaw({ ...content(), version: 4 }), BACKUP_PASSWORD))).toBe(AppErrorCode.BACKUP_UNSUPPORTED_VERSION);
   });
 
   it('still decodes version 1 files, reading their revision as 0', async () => {
@@ -184,7 +184,6 @@ describe('BackupCodec', () => {
       'not an object',
       { ...content(), keyrings: [] },
       { ...content(), keyrings: [{ ...hd, mnemonic: 'abandon abandon' }] },
-      { ...content(), keyrings: [{ ...hd, accounts: [] }] },
       { ...content(), keyrings: [{ ...hd, accounts: [{ name: 'A', hdIndex: 0 }, { name: 'B', hdIndex: 0 }] }] },
       { ...content(), keyrings: [{ ...hd, accounts: [{ name: 'A', hdIndex: -1 }] }] },
       { ...content(), keyrings: [hd, { ...hd, id: 'k3' }] },
@@ -201,6 +200,22 @@ describe('BackupCodec', () => {
       JSON.stringify({ ...JSON.parse(await sealRaw('x')), encryption: await cipher.encrypt('not json', BACKUP_PASSWORD) }),
       BACKUP_PASSWORD,
     ))).toBe(AppErrorCode.BACKUP_CORRUPTED);
+  });
+
+  it('accepts a keyring without accounts only from version 3 on', async () => {
+    const [hd, pk] = content().keyrings;
+    const withoutAccounts = content({ keyrings: [hd, { ...pk, accounts: [] }] });
+
+    await expect(codec.decode(await codec.encode(withoutAccounts, BACKUP_PASSWORD), BACKUP_PASSWORD)).resolves.toEqual(withoutAccounts);
+
+    for (const keyrings of [[{ ...hd, accounts: [] }], [hd, { ...pk, accounts: [] }]]) {
+      expect(await codeOf(async () => codec.decode(await sealRaw({ ...content(), version: 2, keyrings }, { version: 2 }), BACKUP_PASSWORD))).toBe(AppErrorCode.BACKUP_CORRUPTED);
+    }
+
+    // A version 2 file with the old placeholder row still decodes.
+    const legacy = { ...content(), version: 2, keyrings: [hd, { ...pk, accounts: [{ name: '', hdIndex: 0 }] }] };
+
+    await expect(codec.decode(await sealRaw(legacy, { version: 2 }), BACKUP_PASSWORD)).resolves.toEqual(legacy);
   });
 
   it('refuses to encode invalid content', async () => {
