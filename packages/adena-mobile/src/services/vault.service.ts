@@ -13,12 +13,18 @@ import { PasswordAttemptLimiter } from './password-attempt-limiter';
 // Every read-modify-write runs on one queue, so overlapping updates cannot drop each other's keyrings.
 export class VaultService {
   private readonly queue = new SerialQueue();
+  private writes = 0;
 
   constructor(
     private readonly vaultRepository: VaultRepository,
     private readonly cipher: VaultCipher,
     private readonly attemptLimiter: PasswordAttemptLimiter,
   ) {}
+
+  // Changes on every vault write or wipe, so a caller can tell the stored vault is still the one it saw.
+  get revision(): number {
+    return this.writes;
+  }
 
   exists(): Promise<boolean> {
     return this.vaultRepository.exists();
@@ -87,7 +93,10 @@ export class VaultService {
   }
 
   destroy(): Promise<void> {
-    return this.queue.run(() => this.vaultRepository.clear());
+    return this.queue.run(async () => {
+      this.writes += 1;
+      await this.vaultRepository.clear();
+    });
   }
 
   private openChecked(password: string): Promise<VaultContent> {
@@ -133,6 +142,7 @@ export class VaultService {
   private async write(content: VaultContent, password: string): Promise<void> {
     const payload = await this.cipher.encrypt(JSON.stringify(content), password);
 
+    this.writes += 1;
     await this.vaultRepository.write({ contentVersion: VAULT_CONTENT_VERSION, payload });
   }
 }

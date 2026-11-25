@@ -1,6 +1,6 @@
 import * as Keychain from 'react-native-keychain';
 
-import { AppError, AppErrorCode } from '../core/errors';
+import { AppError, AppErrorCode, BIOMETRICS_INVALIDATED_MESSAGE } from '../core/errors';
 import { SecureKey } from './secure-keys';
 import { BiometryKind, SecureAccessPolicy, SecureReadOptions, SecureStore, SecureWriteOptions } from './secure-store';
 
@@ -15,7 +15,6 @@ const BIOMETRIC_UNAVAILABLE_CODES = new Set<string>([
   Keychain.ERROR_CODE.BIOMETRIC_LOCKOUT,
   Keychain.ERROR_CODE.BIOMETRIC_LOCKOUT_PERMANENT,
   Keychain.ERROR_CODE.BIOMETRIC_TEMPORARILY_UNAVAILABLE,
-  Keychain.ERROR_CODE.AUTH_INVALIDATED,
   Keychain.ERROR_CODE.PASSCODE_NOT_SET,
 ]);
 
@@ -24,6 +23,11 @@ const toAppError = (error: unknown): AppError => {
 
   if (code && CANCEL_CODES.has(code)) {
     return new AppError(AppErrorCode.BIOMETRICS_CANCELED, 'Authentication was canceled', { cause: error });
+  }
+
+  // Android: the biometry-bound key was invalidated by a biometric enrollment change.
+  if (code === Keychain.ERROR_CODE.AUTH_INVALIDATED) {
+    return new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE, { cause: error });
   }
 
   if (code && BIOMETRIC_UNAVAILABLE_CODES.has(code)) {
@@ -82,6 +86,7 @@ export class KeychainSecureStore implements SecureStore {
         accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
         accessControl: biometric ? Keychain.ACCESS_CONTROL.BIOMETRY_CURRENT_SET : undefined,
         storage: biometric ? Keychain.STORAGE_TYPE.AES_GCM : Keychain.STORAGE_TYPE.AES_GCM_NO_AUTH,
+        authenticationPrompt: biometric ? options?.prompt : undefined,
       });
 
       if (!result) {

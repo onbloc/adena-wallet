@@ -71,6 +71,16 @@ describe('KeychainSecureStore', () => {
     }));
   });
 
+  it('passes the prompt only for biometric writes', async () => {
+    const prompt = { title: 'Enable biometric unlock', subtitle: 'Confirm', cancel: 'Not now' };
+
+    await store.setItem(SecureKey.BIOMETRIC_PASSWORD, 'pw', { policy: SecureAccessPolicy.BIOMETRIC, prompt });
+    expect(mocked.setGenericPassword).toHaveBeenLastCalledWith('biometric-password', 'pw', expect.objectContaining({ authenticationPrompt: prompt }));
+
+    await store.setItem(SecureKey.VAULT, 'v', { prompt });
+    expect(mocked.setGenericPassword.mock.lastCall?.[2].authenticationPrompt).toBeUndefined();
+  });
+
   it('treats a false write result as a storage error', async () => {
     mocked.setGenericPassword.mockResolvedValueOnce(false);
     const error = await capture(store.setItem(SecureKey.VAULT, 'v'));
@@ -94,7 +104,7 @@ describe('KeychainSecureStore', () => {
     [Keychain.ERROR_CODE.BIOMETRIC_LOCKOUT, 'BIOMETRICS_UNAVAILABLE'],
     [Keychain.ERROR_CODE.BIOMETRIC_LOCKOUT_PERMANENT, 'BIOMETRICS_UNAVAILABLE'],
     [Keychain.ERROR_CODE.BIOMETRIC_TEMPORARILY_UNAVAILABLE, 'BIOMETRICS_UNAVAILABLE'],
-    [Keychain.ERROR_CODE.AUTH_INVALIDATED, 'BIOMETRICS_UNAVAILABLE'],
+    [Keychain.ERROR_CODE.AUTH_INVALIDATED, 'BIOMETRICS_INVALIDATED'],
     [Keychain.ERROR_CODE.PASSCODE_NOT_SET, 'BIOMETRICS_UNAVAILABLE'],
     [Keychain.ERROR_CODE.INTERNAL_ERROR, 'STORAGE_ERROR'],
   ] as const)('maps read error %s to %s', async (code, expected) => {

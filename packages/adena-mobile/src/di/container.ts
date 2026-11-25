@@ -32,6 +32,7 @@ import { NftService } from '../services/nft.service';
 import { PasswordAttemptLimiter } from '../services/password-attempt-limiter';
 import { PreferenceService } from '../services/preference.service';
 import { PriceService } from '../services/price.service';
+import { ResetMarker } from '../services/reset-marker';
 import { TokenService } from '../services/token.service';
 import { TransactionService } from '../services/transaction.service';
 import { VaultService } from '../services/vault.service';
@@ -102,6 +103,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const tokenService = overrides.tokenService ?? new TokenService(chainRegistry, accountService, tokenListRepository);
   const nftService = overrides.nftService
     ?? new NftService(chainRegistry, accountService, new StorageNftPreferenceRepository(keyValueStore));
+  const resetMarker = new ResetMarker(keyValueStore);
   const migrationService = overrides.migrationService ?? new MigrationService(keyValueStore, secureStore);
 
   return {
@@ -119,10 +121,10 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     addressBookService: overrides.addressBookService
       ?? new AddressBookService(new StorageAddressBookRepository(keyValueStore), chainRegistry),
     exploreService: overrides.exploreService ?? new ExploreService(),
-    appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService),
+    appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService, resetMarker),
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),
     walletService: overrides.walletService
-      ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService], biometricRepository, preferenceRepository),
+      ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService], biometricRepository, preferenceRepository, resetMarker),
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
   };

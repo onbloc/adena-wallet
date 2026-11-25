@@ -1,5 +1,6 @@
 import { isAppError } from '../../../src/core/errors';
-import { isValidMnemonic } from '../../../src/crypto/mnemonic';
+import { deriveKeyPair } from '../../../src/crypto/key-pair';
+import { isValidMnemonic, mnemonicToSeed } from '../../../src/crypto/mnemonic';
 import { StorageAccountRepository } from '../../../src/repositories/account.repository';
 import { SecureBiometricCredentialRepository } from '../../../src/repositories/biometric-credential.repository';
 import { StoragePreferenceRepository } from '../../../src/repositories/preference.repository';
@@ -8,7 +9,7 @@ import { SecureKey } from '../../../src/security/secure-keys';
 import { AccountService } from '../../../src/services/account.service';
 import { KeyringSession } from '../../../src/services/keyring-session';
 import { VaultService } from '../../../src/services/vault.service';
-import { WalletService } from '../../../src/services/wallet.service';
+import { ENABLE_BIOMETRICS_PROMPT, WalletService } from '../../../src/services/wallet.service';
 import { MemoryKeyValueStore } from '../../../src/storage/memory-key-value-store';
 import { catchError, createFakeRegistry } from '../../helpers/service-fakes';
 import { createTestContainer, TEST_MNEMONIC, TEST_PASSWORD } from '../../helpers/test-container';
@@ -129,6 +130,37 @@ describe('WalletService', () => {
       ]);
     });
 
+    it('still unlocks when a keyring holds the same key as another after general storage was lost', async () => {
+      const { wallet, accounts, account, keyValueStore } = await setup();
+      const second = await accounts.createAccount(account.keyringId, 'HD_WALLET');
+      const first = deriveKeyPair(await mnemonicToSeed(TEST_MNEMONIC), 0);
+
+      // The first HD account is removed, then its key is imported on its own.
+      await wallet.removeAccount(account.id, TEST_PASSWORD);
+      const imported = await wallet.importPrivateKey(Buffer.from(first.privateKey).toString('hex'), TEST_PASSWORD);
+
+      wallet.lock();
+      keyValueStore.clearAll();
+      await expect(wallet.unlock(TEST_PASSWORD)).resolves.toBeUndefined();
+      expect(accounts.getAccounts().map(item => item.publicKey)).toEqual([account.publicKey]);
+      expect(imported.publicKey).toBe(account.publicKey);
+      expect(second.publicKey).not.toBe(account.publicKey);
+
+      wallet.lock();
+      await expect(wallet.unlock(TEST_PASSWORD)).resolves.toBeUndefined();
+    });
+
+    it('closes the session when rebuilding accounts fails', async () => {
+      const { container, wallet, accounts, keyValueStore } = await setup();
+
+      wallet.lock();
+      keyValueStore.clearAll();
+      jest.spyOn(accounts, 'appendAccount').mockRejectedValueOnce(new Error('Storage write failed'));
+      await expect(wallet.unlock(TEST_PASSWORD)).rejects.toThrow('Storage write failed');
+      expect(container.keyringSession.isUnlocked()).toBe(false);
+      expect(await wallet.getStatus()).toBe('locked');
+    });
+
     it('keeps existing accounts untouched', async () => {
       const { wallet, accounts } = await setup();
       const before = accounts.getAccounts();
@@ -197,6 +229,15 @@ describe('WalletService', () => {
       expect(await wallet.getStatus()).toBe('locked');
     });
 
+    it('reports an invalidated credential when the item is unreadable while the preference is on', async () => {
+      const { wallet, secureStore } = await setup();
+
+      await wallet.enableBiometricUnlock(TEST_PASSWORD);
+      wallet.lock();
+      await secureStore.removeItem(SecureKey.BIOMETRIC_PASSWORD);
+      expect(await codeOf(() => wallet.unlockWithBiometrics({ title: 'Unlock' }))).toBe('BIOMETRICS_INVALIDATED');
+    });
+
     it('is disabled when the credential is gone even if the preference is on', async () => {
       const { wallet, secureStore } = await setup();
 
@@ -213,6 +254,54 @@ describe('WalletService', () => {
       expect(await wallet.isBiometricUnlockEnabled()).toBe(false);
       expect(container.preferenceService.get().biometricUnlockEnabled).toBe(false);
       expect(await secureStore.hasItem(SecureKey.BIOMETRIC_PASSWORD)).toBe(false);
+    });
+
+    describe('right after creation', () => {
+      let verify: jest.SpyInstance;
+
+      beforeEach(() => {
+        verify = jest.spyOn(VaultService.prototype, 'verifyPassword');
+      });
+
+      afterEach(() => verify.mockRestore());
+
+      it('skips the second password check and asks with the enable prompt', async () => {
+        const { wallet, secureStore } = await setup();
+        const setItem = jest.spyOn(secureStore, 'setItem');
+
+        await wallet.enableBiometricUnlock(TEST_PASSWORD);
+        expect(verify).not.toHaveBeenCalled();
+        expect(setItem).toHaveBeenCalledWith(SecureKey.BIOMETRIC_PASSWORD, TEST_PASSWORD, expect.objectContaining({ prompt: ENABLE_BIOMETRICS_PROMPT }));
+        expect(await wallet.isBiometricUnlockEnabled()).toBe(true);
+
+        // One-shot: the next call verifies again.
+        await wallet.enableBiometricUnlock(TEST_PASSWORD);
+        expect(verify).toHaveBeenCalledTimes(1);
+      });
+
+      it('verifies again after a lock', async () => {
+        const { wallet } = await setup();
+
+        wallet.lock();
+        await wallet.unlock(TEST_PASSWORD);
+        await wallet.enableBiometricUnlock(TEST_PASSWORD);
+        expect(verify).toHaveBeenCalledTimes(1);
+      });
+
+      it('verifies again after another vault write', async () => {
+        const { wallet } = await setup();
+
+        await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+        await wallet.enableBiometricUnlock(TEST_PASSWORD);
+        expect(verify).toHaveBeenCalledTimes(1);
+      });
+
+      it('still rejects a different password', async () => {
+        const { wallet } = await setup();
+
+        expect(await codeOf(() => wallet.enableBiometricUnlock('wrong password'))).toBe('INVALID_PASSWORD');
+        expect(verify).toHaveBeenCalledTimes(1);
+      });
     });
 
     it('rejects a stale escrowed password after a password change', async () => {

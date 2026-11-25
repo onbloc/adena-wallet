@@ -1,7 +1,9 @@
 import { fromHex, toBase64 } from '@cosmjs/encoding';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
 
 import { APP_CONFIG } from '../config/app';
-import { AppError, AppErrorCode } from '../core/errors';
+import { AppError, AppErrorCode, BIOMETRICS_INVALIDATED_MESSAGE, isAppError } from '../core/errors';
 import { deriveKeyPair, keyPairFromPrivateKey, wipeKeyPair } from '../crypto/key-pair';
 import { isValidPrivateKeyHex, KeyringRecord, KeyringType } from '../crypto/keyring';
 import { generateMnemonic, isValidMnemonic, mnemonicToSeed, normalizeMnemonic } from '../crypto/mnemonic';
@@ -14,6 +16,7 @@ import { BiometryKind, SecurePrompt } from '../security/secure-store';
 import { createId } from '../utils/id';
 import { AccountService } from './account.service';
 import { KeyringSession } from './keyring-session';
+import { ResetMarker } from './reset-marker';
 import { VaultService } from './vault.service';
 
 // Any store that keeps data per account and must drop it when the account is removed.
@@ -29,6 +32,21 @@ export const WalletStatus = {
 
 export type WalletStatus = (typeof WalletStatus)[keyof typeof WalletStatus];
 
+export const ENABLE_BIOMETRICS_PROMPT: SecurePrompt = {
+  title: 'Enable biometric unlock',
+  subtitle: 'Confirm to unlock Adena with biometrics',
+  cancel: 'Not now',
+};
+
+// The password a wallet was just created with, as a digest, valid only for that session and vault write.
+interface CreatedWithPassword {
+  digest: string;
+  epoch: number;
+  vaultRevision: number;
+}
+
+const digestPassword = (password: string): string => bytesToHex(sha256(utf8ToBytes(password)));
+
 export interface CreateWalletInput {
   mnemonic: string;
   password: string;
@@ -39,6 +57,8 @@ export interface CreateWalletInput {
 // Keyring and account changes run on AccountService's mutation queue, so duplicate checks,
 // index allocation and keyring removal see each other.
 export class WalletService {
+  private createdWith: CreatedWithPassword | null = null;
+
   constructor(
     private readonly vaultService: VaultService,
     private readonly keyringSession: KeyringSession,
@@ -46,9 +66,15 @@ export class WalletService {
     private readonly accountScopedData: AccountScopedData[],
     private readonly biometricRepository: BiometricCredentialRepository,
     private readonly preferenceRepository: PreferenceRepository,
+    private readonly resetMarker?: ResetMarker,
   ) {}
 
   async getStatus(): Promise<WalletStatus> {
+    // An unfinished reset stays on the lock screen, where the reset can be retried.
+    if (this.resetMarker?.isPending()) {
+      return WalletStatus.LOCKED;
+    }
+
     if (!(await this.vaultService.exists())) {
       return WalletStatus.EMPTY;
     }
@@ -91,6 +117,7 @@ export class WalletService {
       this.assertCurrent(epoch);
       this.accountService.clear();
       this.keyringSession.open(content.keyrings);
+      this.createdWith = { digest: digestPassword(password), epoch: this.keyringSession.epoch, vaultRevision: this.vaultService.revision };
       return this.accountService.appendAccount(record.id, record.type, accountName ?? 'Account 1');
     });
   }
@@ -100,11 +127,13 @@ export class WalletService {
     const epoch = this.keyringSession.epoch;
 
     return this.accountService.runExclusive(async () => {
+      this.assertNoPendingReset();
       await this.openSession(await this.vaultService.open(password), epoch);
     });
   }
 
   lock(): void {
+    this.createdWith = null;
     this.keyringSession.close();
   }
 
@@ -113,9 +142,15 @@ export class WalletService {
     const epoch = this.keyringSession.epoch;
 
     return this.accountService.runExclusive(async () => {
+      this.assertNoPendingReset();
       const password = await this.biometricRepository.readCredential(prompt);
 
       if (!password) {
+        // iOS may report an item invalidated by an enrollment change as missing; a cancel rejects instead.
+        if (this.preferenceRepository.get().biometricUnlockEnabled) {
+          throw new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE);
+        }
+
         throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
       }
 
@@ -127,7 +162,21 @@ export class WalletService {
   private async openSession(content: VaultContent, epoch: number): Promise<void> {
     this.assertCurrent(epoch);
     this.keyringSession.open(content.keyrings);
-    await this.restoreMissingAccounts(content.keyrings);
+
+    try {
+      await this.restoreMissingAccounts(content.keyrings);
+    }
+    catch (error) {
+      // A failed unlock must not leave decrypted keyrings in memory behind a locked UI.
+      this.keyringSession.close();
+      throw error;
+    }
+  }
+
+  private assertNoPendingReset(): void {
+    if (this.resetMarker?.isPending()) {
+      throw new AppError(AppErrorCode.RESET_INCOMPLETE, 'The last reset did not finish. Reset the wallet again.');
+    }
   }
 
   private assertCurrent(epoch: number): void {
@@ -144,14 +193,31 @@ export class WalletService {
     return this.preferenceRepository.get().biometricUnlockEnabled && (await this.biometricRepository.hasCredential());
   }
 
-  async enableBiometricUnlock(password: string): Promise<void> {
+  async enableBiometricUnlock(password: string, prompt: SecurePrompt = ENABLE_BIOMETRICS_PROMPT): Promise<void> {
+    const justCreated = this.consumeCreatedWith(password);
+
     if (!(await this.biometricRepository.getBiometryKind())) {
       throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric authentication is not available');
     }
 
-    await this.vaultService.verifyPassword(password);
-    await this.biometricRepository.saveCredential(password);
+    // Skips a second scrypt run right after creation; any lock, reset or vault write since then forces it.
+    if (!justCreated) {
+      await this.vaultService.verifyPassword(password);
+    }
+
+    await this.biometricRepository.saveCredential(password, prompt);
     this.preferenceRepository.update({ biometricUnlockEnabled: true });
+  }
+
+  // One-shot: true only for the creation password while that session and vault are unchanged.
+  private consumeCreatedWith(password: string): boolean {
+    const created = this.createdWith;
+
+    this.createdWith = null;
+    return created !== null
+      && created.epoch === this.keyringSession.epoch
+      && created.vaultRevision === this.vaultService.revision
+      && created.digest === digestPassword(password);
   }
 
   async disableBiometricUnlock(): Promise<void> {
@@ -254,7 +320,12 @@ export class WalletService {
 
     for (const keyring of keyrings) {
       if (!accounts.some(account => account.keyringId === keyring.id)) {
-        await this.accountService.appendAccount(keyring.id, keyring.type);
+        // The same key can sit in two keyrings (a phrase and its exported private key); one account is enough.
+        await this.accountService.appendAccount(keyring.id, keyring.type).catch((error: unknown) => {
+          if (!isAppError(error, AppErrorCode.WALLET_ALREADY_EXISTS)) {
+            throw error;
+          }
+        });
       }
     }
   }
