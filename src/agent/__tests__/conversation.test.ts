@@ -99,6 +99,7 @@ describe('agent conversations', () => {
     const model = new MockLanguageModelV4({ doGenerate: [
       reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'other', query: 'Inspect NFTs and recent transactions.' }] })),
       reply(JSON.stringify({ toolNames: ['get_nfts_balance', 'list_account_transactions'] })),
+      reply('{"supported":true}'),
       {
         content: [{ type: 'tool-call', toolCallId: 'current-read', toolName: 'get_nfts_balance', input: '{}' }],
         finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
@@ -123,7 +124,7 @@ describe('agent conversations', () => {
 
     await collect(conversation.run({ prompt: 'Please inspect my funds.', maxOutputTokens: 128 }));
 
-    const prompt = JSON.stringify(model.doGenerateCalls[3].prompt);
+    const prompt = JSON.stringify(model.doGenerateCalls[4].prompt);
     expect(prompt).not.toContain('obsolete topic');
     expect(prompt).toContain('Send one to Carol.');
     expect(prompt).toContain('current-read');
@@ -142,6 +143,7 @@ describe('agent conversations', () => {
     const correction = 'GNOT is the native token; ugnot is its base unit.';
     const model = new MockLanguageModelV4({ doGenerate: [
       reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'balance', request: { kind: 'all' } }] })),
+      reply('{"kind":"all"}'),
       reply(intentReplyText({ kind: 'explanation' })),
       reply(correction),
       reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'balance', request: { kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } } }] })),
@@ -165,7 +167,7 @@ describe('agent conversations', () => {
     const fresh = await collect(conversation.run({ prompt: 'Look up that native balance again.' }));
 
     expect(fresh).toContainEqual({ type: GenerateEventType.Text, delta: '2 GNOT' });
-    expect(JSON.stringify(model.doGenerateCalls[3].prompt)).toContain(correction);
+    expect(JSON.stringify(model.doGenerateCalls[4].prompt)).toContain(correction);
     expect(mcp.calls.filter((call) => call.name === 'get_native_balance')).toHaveLength(2);
     expect(conversation.turns).toHaveLength(3);
     expect(wallet.calls).toEqual([]);
@@ -176,6 +178,7 @@ describe('agent conversations', () => {
     const model = new MockLanguageModelV4({ doGenerate: [
       reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'other', query: 'Look up current data and its status.' }] })),
       reply(JSON.stringify({ toolNames: ['lookup', 'status'] })),
+      reply('{"supported":true}'),
       {
         content: [{ type: 'tool-call', toolCallId: 'lookup-now', toolName: 'lookup', input: '{}' }],
         finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
@@ -207,8 +210,8 @@ describe('agent conversations', () => {
 
     await collect(conversation.run({ prompt: 'Look up current data.', system: 'Be concise.', maxOutputTokens: 128 }));
 
-    expect(JSON.stringify(model.doGenerateCalls[2].prompt)).toContain('recent topic');
-    const continuation = JSON.stringify(model.doGenerateCalls[3].prompt);
+    expect(JSON.stringify(model.doGenerateCalls[3].prompt)).toContain('recent topic');
+    const continuation = JSON.stringify(model.doGenerateCalls[4].prompt);
     expect(continuation).not.toContain('recent topic');
     expect(continuation).toContain('lookup-now');
     expect(continuation).toContain('data'.repeat(3000));
@@ -297,6 +300,106 @@ describe('agent conversations', () => {
     } }]);
     expect(handoff).toHaveBeenCalledTimes(1);
     expect(model.doGenerateCalls).toHaveLength(2);
+  });
+
+  it.each([
+    ['2', true],
+    ['Send 2 GNOT', false],
+  ])('only continues an incomplete preparation for an explicit field response: %s', async (followup, prepares) => {
+    const model = new MockLanguageModelV4({ doGenerate: [
+      reply(intentReplyText({ kind: 'prepare' })),
+      reply(JSON.stringify({ operation: 'clarification', question: 'What amount?' })),
+      ...(prepares ? [] : [reply(intentReplyText({ kind: 'prepare' }))]),
+      reply(JSON.stringify({ operation: 'transfer', recipient: RECIPIENT,
+        asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: '2' } })),
+    ] });
+    const wallet = fakeWallet();
+    const handoff = jest.fn();
+    const agent = new AIAgent({
+      llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })),
+      harness: new Harness(), wallet, onTransaction: handoff,
+    });
+    const conversation = agent.createConversation({ account: ACCOUNT, allowTransactionPreparation: true });
+    await collect(conversation.run({ prompt: `Send GNOT to ${RECIPIENT}` }));
+    await collect(conversation.run({ prompt: followup }));
+    expect(wallet.calls).toHaveLength(prepares ? 1 : 0);
+    expect(handoff).toHaveBeenCalledTimes(prepares ? 1 : 0);
+  });
+
+  it('does not reuse the recipient from a completed preparation', async () => {
+    const classification = reply(intentReplyText({ kind: 'prepare' }));
+    const proposal = (amount: string) => reply(JSON.stringify({ operation: 'transfer', recipient: RECIPIENT,
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: amount } }));
+    const model = new MockLanguageModelV4({ doGenerate: [classification, proposal('1'), classification, proposal('2')] });
+    const wallet = fakeWallet();
+    const handoff = jest.fn();
+    const agent = new AIAgent({
+      llm: new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() })),
+      harness: new Harness(), wallet, onTransaction: handoff,
+    });
+    const conversation = agent.createConversation({ account: ACCOUNT, allowTransactionPreparation: true });
+    await collect(conversation.run({ prompt: `Send 1 GNOT to ${RECIPIENT}` }));
+    await collect(conversation.run({ prompt: 'Send 2 GNOT' }));
+    expect(wallet.calls).toHaveLength(1);
+    expect(handoff).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['next turn', 'reset', 'clear', 'cancel'] as const)('keeps clarification state one-shot and clears it on %s', async mode => {
+    const { agent } = setup();
+    const run = jest.spyOn(agent, 'run').mockImplementation(async function* (_settings, options) {
+      if (run.mock.calls.length === 1) options?.onPreparationClarification?.('Send GNOT to Carol', 'amount');
+      yield { type: GenerateEventType.Done, metrics: { totalMs: 1, ttftMs: null }, aborted: false,
+        finishReason: 'stop', warnings: [], messages: [{ role: 'assistant', content: 'What amount?' }] };
+    });
+    const state = createConversationPendingState();
+    const conversation = agent.createConversation({ pendingState: state, allowTransactionPreparation: true });
+    const controller = new AbortController();
+    if (mode === 'cancel') controller.abort();
+    await collect(conversation.run({ prompt: 'Send GNOT to Carol' }, { signal: controller.signal }));
+    if (mode === 'reset') conversation.reset();
+    if (mode === 'clear') state.clear();
+    await collect(conversation.run({ prompt: '2' }));
+    expect(run.mock.calls[1][1]?.pendingClarification).toEqual(mode === 'next turn' ? { text: 'Send GNOT to Carol', slot: 'amount' } : undefined);
+    await collect(conversation.run({ prompt: '3' }));
+    expect(run.mock.calls[2][1]?.pendingClarification).toBeUndefined();
+  });
+
+  it.each(['next turn', 'reset', 'clear', 'cancel'] as const)('scopes a balance referent to one turn and clears it on %s', async mode => {
+    const { agent } = setup();
+    const asset = { kind: 'symbol' as const, value: 'GNOT' };
+    const run = jest.spyOn(agent, 'run').mockImplementation(async function* (_settings, options) {
+      if (run.mock.calls.length === 1) options?.onBalanceReferent?.(asset);
+      yield { type: GenerateEventType.Done, metrics: { totalMs: 1, ttftMs: null }, aborted: false,
+        finishReason: 'stop', warnings: [], messages: [] };
+    });
+    const state = createConversationPendingState();
+    const conversation = agent.createConversation({ account: ACCOUNT, pendingState: state });
+    const controller = new AbortController();
+    if (mode === 'cancel') controller.abort();
+    await collect(conversation.run({ prompt: 'GNOT balance?' }, { signal: controller.signal }));
+    if (mode === 'reset') conversation.reset();
+    if (mode === 'clear') state.clear();
+    await collect(conversation.run({ prompt: 'send half of it' }));
+    expect(run.mock.calls[1][1]?.balanceReferent).toEqual(mode === 'next turn' ? asset : undefined);
+    await collect(conversation.run({ prompt: 'send half of it again' }));
+    expect(run.mock.calls[2][1]?.balanceReferent).toBeUndefined();
+  });
+
+  it('retains clarification across recreated conversations only for the same agent and account', async () => {
+    const { agent } = setup();
+    const run = jest.spyOn(agent, 'run').mockImplementation(async function* (_settings, options) {
+      if (run.mock.calls.length === 1 || run.mock.calls.length === 3) options?.onPreparationClarification?.('Send GNOT to Carol', 'amount');
+      yield { type: GenerateEventType.Done, metrics: { totalMs: 1, ttftMs: null }, aborted: false,
+        finishReason: 'stop', warnings: [], messages: [{ role: 'assistant', content: 'What amount?' }] };
+    });
+    const state = createConversationPendingState();
+    const conversation = (account: string) => agent.createConversation({ account, pendingState: state, allowTransactionPreparation: true });
+    await collect(conversation(ACCOUNT).run({ prompt: 'Send GNOT to Carol' }));
+    await collect(conversation(ACCOUNT).run({ prompt: '2' }));
+    expect(run.mock.calls[1][1]?.pendingClarification).toEqual({ text: 'Send GNOT to Carol', slot: 'amount' });
+    await collect(conversation(ACCOUNT).run({ prompt: 'Send GNOT to Carol' }));
+    await collect(conversation('another-account').run({ prompt: '2' }));
+    expect(run.mock.calls[3][1]?.pendingClarification).toBeUndefined();
   });
 
   it('does not treat yes or a later candidate as approval of an earlier ambiguity', async () => {

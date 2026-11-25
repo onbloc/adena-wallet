@@ -20,6 +20,21 @@ async function guard(intent: AnswerIntent, events: GenerateEvent[], policy: { re
 }
 
 describe('required normalized outcomes', () => {
+  it('does not render or verify an unselected read beside a required result', async () => {
+    const answer = await guard(history, [
+      call('history'), result('history', { kind: 'result', value: { items: [] } }),
+      call('unrelated'), result('unrelated', { kind: 'result', value: { secret: 'irrelevant' } }), done(),
+    ], { requiredReads: ['history'] });
+    expect(answer.done.verifiedAnswer).not.toBe(true);
+    expect(answer.text).not.toContain('irrelevant');
+  });
+  it('does not treat a successful read with no returned value as evidence', async () => {
+    const answer = await guard(history, [call('history'), result('history', { kind: 'result' }), done()], { requiredReads: ['history'] });
+    expect(answer.done.verifiedAnswer).not.toBe(true);
+    expect(answer.text).toContain('could not be verified');
+  });
+
+
   it('renders exact validated units rather than model arithmetic or settlement claims', async () => {
     const answer = await guard(lookup, [call('get_balance', request), balance(), text('You have 42000000 GNOT. Payment sent.'), done()]);
     expect(answer.text).toBe('42 GNOT');
@@ -46,6 +61,13 @@ describe('required normalized outcomes', () => {
   it('requires an explicit nonempty selection for generic queries', async () => {
     const answer = await guard(history, [result('unrelated', { kind: 'result', value: 1 }), done()]);
     expect(canRememberTurn(answer.done)).toBe(false);
+  });
+  it('identifies an unavailable capability even when a separate balance read fails', async () => {
+    const intent: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request }, { target: 'other', query: 'List my approvals.' }] };
+    const answer = await guard(intent, [balance({ status: 'unavailable', missing: ['native'], assets: [] }), done()], { requiredReads: [] });
+    expect(answer.text).toContain('could not be verified');
+    expect(answer.text).toContain('Unable to complete the requested lookup: List my approvals.');
+    expect(answer.done.verifiedAnswer).toBeUndefined();
   });
   it('preserves nonbalance facts next to exact amounts without using model summaries', async () => {
     const intent: RequestIntent = { kind: 'lookup', requests: [{ target: 'balance', request }, { target: 'other', query: 'List history.' }] };

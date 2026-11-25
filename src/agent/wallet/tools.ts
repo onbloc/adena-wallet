@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { fromBaseUnits } from './amount';
 
 import { ToolName, WalletErrorCode, WalletStatus } from './constants';
 import { WalletError, type Contact, type PreparedTransaction, type TransactionHandler, type WalletSdk } from './port';
@@ -77,6 +78,15 @@ function resolveTarget(contacts: readonly Contact[], target: string): string {
   }
   return resolved;
 }
+/** The native bank denomination is already in base units, unlike token display amounts. */
+function resolveAmountUnit(amount: string, token: string): { amount: string; token: string } {
+  if (token !== 'ugnot') return { amount, token };
+  if (!/^\d{1,40}$/.test(amount)) {
+    throw new WalletError(WalletErrorCode.InvalidAmount, 'An ugnot amount must be a whole number of base units.');
+  }
+  return { amount: fromBaseUnits(BigInt(amount), 6), token: 'GNOT' };
+}
+
 
 function mentions(text: string, value: string): boolean {
   const needle = value.trim().toLowerCase();
@@ -88,10 +98,8 @@ function mentions(text: string, value: string): boolean {
     const before = index === 0 ? '' : String.fromCodePoint(text.codePointAt(previousIndex)!);
     const afterIndex = index + needle.length;
     const after = afterIndex === text.length ? '' : String.fromCodePoint(text.codePointAt(afterIndex)!);
-    // Korean particles can directly follow a Latin contact name, but never split an address or
-    // allow a name embedded in another Latin/digit identifier.
-    const koreanSuffix = /^[a-z]+$/i.test(needle) && /^\p{Script=Hangul}$/u.test(after);
-    if (!word.test(before) && (!word.test(after) || koreanSuffix)) return true;
+    const suffix = /^(?:에게로|한테로|께서는|에게|한테|으로|께서|에서|부터|까지|은|는|이|가|을|를|에|로|와|과|께|도|만)(?![\p{L}\p{M}\p{N}_])/u.test(text.slice(afterIndex));
+    if (!word.test(before) && (!word.test(after) || suffix)) return true;
   }
   return false;
 }
@@ -151,11 +159,11 @@ export function createWalletTools({ sdk, account, contacts, userText, authorized
       }),
       authorize: ({ to }) => authorized(to),
       run: async ({ to, amount, token }, signal, cancelled) => {
+        const requested = resolveAmountUnit(amount, token);
         const prepared = await handoff(() => sdk.transfer({
           from: account,
           to: resolveTarget(contacts, to),
-          amount,
-          token,
+          ...requested,
         }), signal, cancelled);
         if (!prepared) return undefined;
         const { summary } = prepared;
@@ -183,11 +191,11 @@ export function createWalletTools({ sdk, account, contacts, userText, authorized
         }),
         authorize: ({ spender }) => authorized(spender),
         run: async ({ spender, amount, token }, signal, cancelled) => {
+          const requested = resolveAmountUnit(amount, token);
           const prepared = await handoff(() => approve({
             from: account,
             spender: resolveTarget(contacts, spender),
-            amount,
-            token,
+            ...requested,
           }), signal, cancelled);
           if (!prepared) return undefined;
           const { summary } = prepared;

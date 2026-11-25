@@ -10,11 +10,16 @@ import {
   type GenerateEvent,
   type GenerateSettings,
 } from '../llm/core';
-import type { AIAgent, PendingPreparation } from './agent';
+import type { AIAgent, BalanceReferent, PendingClarification, PendingPreparation } from './agent';
 
 /** Ephemeral, one-shot clarification state. Never serialize or share across wallet scopes. */
 export type ConversationPendingState = Readonly<{ clear(): void }>;
-const pendingStates = new WeakMap<ConversationPendingState, { revision: number; pending?: PendingPreparation }>();
+const pendingStates = new WeakMap<ConversationPendingState, {
+  revision: number;
+  pending?: PendingPreparation;
+  clarification?: { value: PendingClarification; account?: string; agent: AIAgent };
+  balance?: { value: BalanceReferent; account?: string; agent: AIAgent };
+}>();
 
 export function createConversationPendingState(): ConversationPendingState {
   const state: ConversationPendingState = Object.freeze({
@@ -22,6 +27,8 @@ export function createConversationPendingState(): ConversationPendingState {
       const entry = pendingStates.get(state)!;
       entry.revision++;
       entry.pending = undefined;
+      entry.clarification = undefined;
+      entry.balance = undefined;
     },
   });
   pendingStates.set(state, { revision: 0 });
@@ -85,8 +92,14 @@ export class AgentConversation {
   ): AsyncGenerator<GenerateEvent> {
     if (this.active) throw new Error('A conversation already has an active turn.');
     const entry = pendingStates.get(this.pendingState)!;
+    const clarification = entry.clarification;
+    const pendingClarification = this.allowTransactionPreparation && clarification && clarification.account === this.account &&
+      clarification.agent === this.agent ? clarification.value : undefined;
     const pendingPreparation = this.allowTransactionPreparation && entry.pending?.candidateIds.includes(settings.prompt.trim())
       ? entry.pending : undefined;
+    const balance = entry.balance;
+    const balanceReferent = balance && balance.account === this.account && balance.agent === this.agent
+      ? balance.value : undefined;
     this.pendingState.clear();
     const pendingRevision = entry.revision;
     if (!settings.prompt.trim()) throw new TypeError('A conversation prompt must not be empty.');
@@ -108,6 +121,8 @@ export class AgentConversation {
     const { prompt, ...generation } = settings;
     let answer = '';
     let completed = false;
+    let nextClarification: PendingClarification | undefined;
+    let nextBalanceReferent: BalanceReferent | undefined;
     let nextPending: PendingPreparation | undefined;
     try {
       for await (const event of this.agent.run(
@@ -118,9 +133,15 @@ export class AgentConversation {
           allowTransactionPreparation: this.allowTransactionPreparation,
           contextTokens: this.contextTokens,
           pendingPreparation,
+          pendingClarification,
+          onPreparationClarification: (text, slot) => { nextClarification = { text, slot }; },
+          balanceReferent,
+          onBalanceReferent: (asset) => { nextBalanceReferent = asset; },
           onAmbiguousPreparation: (pending) => { nextPending = pending; },
           onContextCompacted: (count) => {
             if (revision !== this.revision || controller.signal.aborted) return;
+            nextClarification = undefined;
+            nextBalanceReferent = undefined;
             this.session.trimOldest(count);
           },
         }
@@ -129,8 +150,14 @@ export class AgentConversation {
         if (event.type === GenerateEventType.Done && !completed) {
           completed = true;
           if (revision === this.revision && !controller.signal.aborted && !event.aborted) {
+            if (this.allowTransactionPreparation && entry.revision === pendingRevision && event.finishReason === 'stop' && nextClarification) {
+              entry.clarification = { value: nextClarification, account: this.account, agent: this.agent };
+            }
             if (this.allowTransactionPreparation && entry.revision === pendingRevision && event.finishReason === 'stop') {
               entry.pending = nextPending;
+            }
+            if (entry.revision === pendingRevision && event.finishReason === 'stop' && nextBalanceReferent) {
+              entry.balance = { value: nextBalanceReferent, account: this.account, agent: this.agent };
             }
             if (canRememberTurn(event)) this.session.complete(prompt, answer);
           }
