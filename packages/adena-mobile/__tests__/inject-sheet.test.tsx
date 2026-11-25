@@ -11,7 +11,7 @@ import { createSheetSession, InjectSheetScreen } from '../src/inject-sheet/injec
 import NativeAdenaInjectSheet from '../src/native/NativeAdenaInjectSheet';
 import { createTestContainer, TEST_MNEMONIC, TEST_PASSWORD } from './helpers/test-container';
 
-jest.mock('../src/native/NativeAdenaInjectSheet', () => ({ __esModule: true, default: { complete: jest.fn(), dismiss: jest.fn() } }));
+jest.mock('../src/native/NativeAdenaInjectSheet', () => ({ __esModule: true, default: { complete: jest.fn(), dismiss: jest.fn(), setBusy: jest.fn() } }));
 
 const native = NativeAdenaInjectSheet as unknown as { complete: jest.Mock; dismiss: jest.Mock };
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };

@@ -47,6 +47,12 @@ export const finishSheet = (token: string | undefined, callbackUrl: string | nul
   }
 };
 
+const setSheetBusy = (token: string | undefined, busy: boolean): void => {
+  if (NativeAdenaInjectSheet && token) {
+    NativeAdenaInjectSheet.setBusy(token, busy);
+  }
+};
+
 interface ParsedRequest {
   request: DappRequest | null;
   error?: string;
@@ -174,6 +180,7 @@ export const InjectSheetScreen = ({ requestUrl, callerPackage, session: provided
 
     flow.resetApproval();
     session.inFlight = true;
+    setSheetBusy(session.token, true);
     const callbackUrl = await flow.approve().catch((error: unknown) => {
       // Like every wallet password prompt: a cancel, lockout, changed enrollment or stale escrowed
       // password falls back to the focused password field, with biometrics still offered.
@@ -197,6 +204,9 @@ export const InjectSheetScreen = ({ requestUrl, callerPackage, session: provided
       setDone(true);
       answer(callbackUrl);
     }
+
+    // Cleared after the answer, so a back press cannot slip in before complete.
+    setSheetBusy(session.token, false);
   };
 
   const handleReject = (): void => {

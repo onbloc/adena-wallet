@@ -2,11 +2,13 @@ package com.adena.injectsheet
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import com.adena.specs.NativeAdenaInjectSheetSpec
 import com.facebook.react.bridge.ReactApplicationContext
 import java.lang.ref.WeakReference
+import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
 /** Ends an inject sheet, addressed by its launch token: opens the dApp callback with the response, or just closes. */
@@ -19,19 +21,29 @@ class AdenaInjectSheetModule(reactContext: ReactApplicationContext) : NativeAden
   override fun getName(): String = NAME
 
   override fun complete(sheetToken: String, callbackUrl: String) {
-    val activity = sheet(sheetToken) ?: return
+    // Each launched sheet answers once; an unknown or already answered token is dropped.
+    val caller = launched.remove(sheetToken) ?: return
+    val activity = sheet(sheetToken)
+    if (activity == null) {
+      // The sheet closed while JS was still signing; the dApp must still get the result.
+      if (isAllowedCallback(callbackUrl)) {
+        openCallback(reactApplicationContext.applicationContext, Uri.parse(callbackUrl), caller.packageName)
+      }
+      return
+    }
     activity.runOnUiThread {
       // The response goes only to the callback the user reviewed, never back to the launching app:
       // a caller can claim any callback origin, so a result intent would hand it another origin's response.
       activity.setResult(Activity.RESULT_OK)
       if (isAllowedCallback(callbackUrl)) {
-        openCallback(activity, Uri.parse(callbackUrl))
+        openCallback(activity, Uri.parse(callbackUrl), caller.packageName)
       }
       activity.finish()
     }
   }
 
   override fun dismiss(sheetToken: String) {
+    launched.remove(sheetToken)
     val activity = sheet(sheetToken) ?: return
     activity.runOnUiThread {
       activity.setResult(Activity.RESULT_CANCELED)
@@ -39,21 +51,25 @@ class AdenaInjectSheetModule(reactContext: ReactApplicationContext) : NativeAden
     }
   }
 
+  override fun setBusy(sheetToken: String, busy: Boolean) {
+    sheets[sheetToken]?.get()?.busy = busy
+  }
+
   // BROWSABLE limits the callback to components that accept untrusted links. An app callback
   // without it is still delivered, but only to the package that launched the sheet.
-  private fun openCallback(activity: InjectSheetActivity, uri: Uri) {
+  private fun openCallback(context: Context, uri: Uri, callerPackage: String?) {
     val browsable = Intent(Intent.ACTION_VIEW, uri)
         .addCategory(Intent.CATEGORY_BROWSABLE)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     try {
-      activity.startActivity(browsable)
+      context.startActivity(browsable)
       return
     } catch (_: ActivityNotFoundException) {
       // Falls through to the caller-scoped attempt below.
     }
-    val caller = activity.callerPackage ?: return
+    val caller = callerPackage ?: return
     try {
-      activity.startActivity(Intent(Intent.ACTION_VIEW, uri).setPackage(caller).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+      context.startActivity(Intent(Intent.ACTION_VIEW, uri).setPackage(caller).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     } catch (_: ActivityNotFoundException) {
       // The dApp disappeared; finishing still returns to the previous screen.
     }
@@ -78,11 +94,22 @@ class AdenaInjectSheetModule(reactContext: ReactApplicationContext) : NativeAden
         "adena",
     )
 
+    private const val MAX_LAUNCHED = 32
+
+    private class Caller(val packageName: String?)
+
     private val sheets = ConcurrentHashMap<String, WeakReference<InjectSheetActivity>>()
+    // Outlives the activity so a late complete can still reach the callback; bounded and answered once.
+    private val launched: MutableMap<String, Caller> = Collections.synchronizedMap(
+        object : LinkedHashMap<String, Caller>() {
+          override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Caller>?): Boolean = size > MAX_LAUNCHED
+        },
+    )
     @Volatile private var instance: WeakReference<AdenaInjectSheetModule>? = null
 
     fun register(token: String, activity: InjectSheetActivity) {
       sheets[token] = WeakReference(activity)
+      launched[token] = Caller(activity.callerPackage)
     }
 
     fun unregister(token: String) {

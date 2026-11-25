@@ -14,7 +14,9 @@ import { useBiometricStatusQuery, useWalletStatusQuery } from '../../../src/quer
 import { BiometryKind } from '../../../src/security/secure-store';
 import { WalletStatus } from '../../../src/services/wallet.service';
 
-const mockNative = { current: { complete: jest.fn(), dismiss: jest.fn() } as { complete: jest.Mock; dismiss: jest.Mock } | null };
+type MockNative = { complete: jest.Mock; dismiss: jest.Mock; setBusy: jest.Mock };
+const createNative = (): MockNative => ({ complete: jest.fn(), dismiss: jest.fn(), setBusy: jest.fn() });
+const mockNative = { current: createNative() as MockNative | null };
 
 jest.mock('../../../src/native/NativeAdenaInjectSheet', () => ({
   __esModule: true,
@@ -63,7 +65,7 @@ const flowRequest = () => (useDappRequestFlow as jest.Mock).mock.calls.at(-1)[0]
 
 describe('finishSheet', () => {
   beforeEach(() => {
-    mockNative.current = { complete: jest.fn(), dismiss: jest.fn() };
+    mockNative.current = createNative();
   });
 
   it('completes natively the sheet with the token', () => {
@@ -106,7 +108,7 @@ describe('InjectSheetScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockNative.current = { complete: jest.fn(), dismiss: jest.fn() };
+    mockNative.current = createNative();
     session = createSheetSession('sheet-1');
     isProcessed.mockReturnValue(false);
     (useWalletStatusQuery as jest.Mock).mockReturnValue({ data: WalletStatus.LOCKED });
@@ -210,6 +212,33 @@ describe('InjectSheetScreen', () => {
     await renderScreen('adena://request?payload=x');
     await act(async () => page().onApprove());
     expect(inFlight).toBe(true);
+  });
+
+  it('keeps the native sheet busy until the approval is answered', async () => {
+    let busyWhileSigning: unknown[] = [];
+    const signing = flow({
+      approve: jest.fn(async () => {
+        busyWhileSigning = mockNative.current?.setBusy.mock.calls.at(-1) ?? [];
+
+        return 'cb://ok';
+      }),
+    });
+
+    (useDappRequestFlow as jest.Mock).mockReturnValue(signing);
+    await renderScreen('adena://request?payload=x');
+    await act(async () => page().onApprove());
+    expect(busyWhileSigning).toEqual(['sheet-1', true]);
+    expect(mockNative.current?.setBusy).toHaveBeenLastCalledWith('sheet-1', false);
+    // Busy is cleared only after complete, so back cannot close the sheet in between.
+    expect(mockNative.current?.complete.mock.invocationCallOrder[0])
+      .toBeLessThan(mockNative.current?.setBusy.mock.invocationCallOrder.at(-1) ?? 0);
+  });
+
+  it('clears the native busy flag when approval fails', async () => {
+    (useDappRequestFlow as jest.Mock).mockReturnValue(flow({ approve: jest.fn().mockRejectedValue(new Error('network')) }));
+    await renderScreen('adena://request?payload=x');
+    await act(async () => page().onApprove());
+    expect(mockNative.current?.setBusy.mock.calls).toEqual([['sheet-1', true], ['sheet-1', false]]);
   });
 
   it('ignores approve and reject taps while an approval is in flight', async () => {

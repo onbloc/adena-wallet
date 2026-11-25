@@ -7,6 +7,8 @@ export interface Spec extends TurboModule {
   // Opens the callback URL (never returned as an activity result) and closes that sheet.
   complete(sheetToken: string, callbackUrl: string): void;
   dismiss(sheetToken: string): void;
+  // True while an approval signs or broadcasts: back then cannot close the sheet before it answers.
+  setBusy(sheetToken: string, busy: boolean): void;
   // Back was pressed on the sheet with this token; JS answers the dApp, then completes or dismisses.
   readonly onDismissRequest: CodegenTypes.EventEmitter<string>;
 }

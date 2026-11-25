@@ -25,6 +25,9 @@ class InjectSheetActivity : ReactActivity() {
 
   private var dismissRequested = false
 
+  // Set by JS while an approval signs or broadcasts; back must not close the sheet then.
+  @Volatile var busy = false
+
   override fun onCreate(savedInstanceState: Bundle?) {
     WindowProtection.apply(this)
     callerPackage = systemCallerPackage()
@@ -39,8 +42,12 @@ class InjectSheetActivity : ReactActivity() {
     super.onDestroy()
   }
 
-  // Back answers the dApp with a rejection through JS; a second press closes even if JS is stuck.
+  // Back answers the dApp with a rejection through JS; a second press closes even if JS is stuck,
+  // unless an approval is in flight.
   override fun invokeDefaultOnBackPressed() {
+    if (busy) {
+      return
+    }
     if (!dismissRequested && AdenaInjectSheetModule.requestDismiss(sheetToken)) {
       dismissRequested = true
       return
