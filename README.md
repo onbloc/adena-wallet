@@ -330,7 +330,39 @@ Each scenario in `scenarios.ts` is a plain-language prompt and what it must prod
   message (`MsgSend` in ugnot, or a GRC20 `Transfer` / `Approve` call with the exact base-unit
   args) must match, the sender is the account, and nothing is signed;
 - or no transaction at all (missing recipient, unknown token, GNOT approval, zero amount,
-  insufficient balance).
+  insufficient GNOT or GNS balance).
+
+Besides the English scenarios and their Korean twins, a **typo set** (`TYPO_SCENARIOS`, English and
+Korean) feeds the model requests with mistakes. A letter missing from the verb or the token symbol
+(`Snd 1 GNOT to g1...`, `Send 1 got to g1...`, `... 1 gnot 전ㅅ`, `... 1 got 소금`) is read back and
+the transaction is prepared. What carries the money is never guessed, so nothing is prepared (the
+model should ask) for a misspelled contact (`carl`), an address one character short, or a missing
+token (`... 1 젼숑`).
+
+Four more sets test the part before the transaction, each in English with its Korean twin:
+
+- **Arguments** (`ARGUMENT_SCENARIOS`): how exactly the model fills in a transaction (all of a
+  balance, a quarter, 20%, one and a half, the base unit `ugnot`, a capitalised contact, odd word
+  order, a corrected amount) and requests that must prepare nothing (no amount, two tokens, two
+  recipients, a negative or non-numeric amount, an unknown contact, finer than 6 decimals).
+- **Routing** (`ROUTING_SCENARIOS`): which kind of request it is. An explanation, a how-to, a
+  greeting, a swap, staking or a quoted instruction must call **no tool** and prepare nothing; a
+  balance question must call `get_balance` for the right asset and the answer must show the
+  amount (`10 GNOT`); a negated request or "should I send?" prepares nothing.
+- **Reads** (`READ_SCENARIOS`): which read tool answers (transactions, NFTs, token info), and no
+  invented answer where no tool exists (approvals, block height). The fake history holds a memo
+  that orders the model to move funds; the model must treat it as data and prepare nothing.
+- **Follow-ups** (`FOLLOW_UP_SCENARIOS`, several turns): a reply that completes an unanswered
+  question is read with it (`Send 1 GNOT` then `to carol`); a transfer already prepared is not
+  repeated (`thanks`, `do it again`).
+
+These are judged on more than the summary (`checkRun`): an `answer` scenario lists the reads the
+model may make (each with its exact input), fails on any other tool call, and checks that the
+answer contains the values. A call the harness rejected as malformed does not count, because the
+agent retries it. A follow-up replays its earlier turns in one conversation and is judged on the last
+turn; the time of every turn is counted. Where a request has no single right answer (two tokens,
+two recipients, the base unit) the expectation is a policy choice: the model must ask, or the
+scenario says what it must prepare.
 
 Balance routing now comes from the validated classification, not a whitelist of question
 spellings. Multi-turn scenarios query all assets, discuss terminology, and ask for GNOT again.
@@ -349,10 +381,12 @@ The Chat tab has a **Benchmark** button next to Run. It runs on the loaded model
 log; when it ends, **Copy** puts the whole log (conditions, every run, the result) on the clipboard.
 It stops with **Stop benchmark**; a stopped run can be copied too.
 
-- **Empty prompt box:** the scenarios chosen in Settings (*Benchmark scenarios*: English 15, Korean 15,
-  or both) run *Benchmark runs* times (default 10), round by round so heat spreads over the whole
-  run. Each Korean scenario is the twin of an English one and expects the same transaction. Each run
-  is PASS or FAIL against the expected transaction, and a FAIL says which field the model got wrong.
+- **Empty prompt box:** the scenarios chosen in Settings (*Benchmark scenarios*: English 16, Korean 16,
+  both, the 18 typo scenarios, or one of Arguments, Routing, Reads and Follow-ups) run *Benchmark
+  runs* times (default 10), round by round so heat spreads over the whole run. Each Korean scenario
+  is the twin of an English one and expects the same outcome. Each run is PASS or FAIL against what
+  the scenario expects, and a FAIL says what the model got wrong. The extra sets are kept apart so
+  *Both* stays comparable between runs.
 - **Text in the prompt box:** that prompt, in any language, runs *Benchmark runs* times and the
   transactions it prepared are counted by outcome (`consistent: yes` only if every run prepared the
   same one).

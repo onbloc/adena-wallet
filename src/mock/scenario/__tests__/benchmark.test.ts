@@ -242,3 +242,56 @@ describe('runBenchmark explains a run that prepared nothing', () => {
     expect(report.items[0].reasons).toEqual([{ text: 'amount: got 2, expected 1', count: 1 }]);
   });
 });
+
+describe('runBenchmark follow-ups and answers', () => {
+  const stage: Stage = { label: 'classify', ms: 100 };
+  const turn = (...prepared: PreparedTransaction[]): ScenarioRun => ({ ...run(...prepared), stages: [stage] });
+  const thanks: Scenario = { name: 'thanks', prompt: 'thanks', before: ['send 1 to carol'], expected: { kind: 'none' } };
+  const chatRunner = (turns: ScenarioRun[]) => {
+    const chats: (readonly string[])[] = [];
+    const runner: ScenarioRunner = {
+      ask: async () => { throw new Error('a follow-up must run as one conversation'); },
+      chat: async (prompts) => { chats.push(prompts); return turns; },
+    };
+    return { runner, chats };
+  };
+
+  it('replays the earlier turns in one conversation and judges only the last turn', async () => {
+    const { runner, chats } = chatRunner([turn(transfer(CAROL, '1')), turn()]);
+    const { onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [thanks] }, runs: 1, onLog });
+
+    expect(chats).toEqual([['send 1 to carol', 'thanks']]);
+    expect(report).toMatchObject({ passed: 1, errored: 0 });
+  });
+
+  it('fails a follow-up that repeats what an earlier turn prepared', async () => {
+    const { runner } = chatRunner([turn(transfer(CAROL, '1')), turn(transfer(CAROL, '1'))]);
+    const { onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [thanks] }, runs: 1, onLog });
+
+    expect(report.items[0].reasons).toEqual([{ text: `prepared transfer 1 GNOT to ${CAROL}, expected nothing`, count: 1 }]);
+  });
+
+  it('counts the model calls of every turn', async () => {
+    const { runner } = chatRunner([turn(), turn()]);
+    const { onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [thanks] }, runs: 1, onLog });
+
+    expect(report.stages).toMatchObject([{ label: 'classify', count: 2 }]);
+  });
+
+  it('judges an answer on the tools the model called', async () => {
+    const explain: Scenario = { name: 'what is GNOT', prompt: 'What is GNOT?', expected: { kind: 'answer', reads: [] } };
+    const called: ScenarioRun = { ...run(), calls: [{ name: 'get_balance', input: {}, invalid: false }] };
+    const { runner } = fakeRunner([run(), called]);
+    const { onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [explain] }, runs: 2, onLog });
+
+    expect(report.items[0]).toMatchObject({ runs: 2, passed: 1, reasons: [{ text: 'called get_balance({}), expected no tool call', count: 1 }] });
+  });
+});

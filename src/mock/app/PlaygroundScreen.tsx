@@ -34,7 +34,16 @@ import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk, WalletState } from '../wallet/mockWalletSdk';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
 import type { Balances } from '../wallet/tokens';
-import { ENGLISH_SCENARIOS, KOREAN_SCENARIOS, SCENARIOS } from '../scenario/scenarios';
+import {
+  ARGUMENT_SCENARIOS,
+  ENGLISH_SCENARIOS,
+  FOLLOW_UP_SCENARIOS,
+  KOREAN_SCENARIOS,
+  READ_SCENARIOS,
+  ROUTING_SCENARIOS,
+  SCENARIOS,
+  TYPO_SCENARIOS,
+} from '../scenario/scenarios';
 import { describeTransaction } from './describeTransaction';
 import { useChatSession } from './useChatSession';
 import { usePreparationHistory } from './usePreparationHistory';
@@ -88,6 +97,11 @@ const BENCHMARK_SETS = {
   en: { label: 'English', scenarios: ENGLISH_SCENARIOS },
   ko: { label: 'Korean', scenarios: KOREAN_SCENARIOS },
   all: { label: 'Both', scenarios: SCENARIOS },
+  typo: { label: 'Typos', scenarios: TYPO_SCENARIOS },
+  args: { label: 'Arguments', scenarios: ARGUMENT_SCENARIOS },
+  route: { label: 'Routing', scenarios: ROUTING_SCENARIOS },
+  reads: { label: 'Reads', scenarios: READ_SCENARIOS },
+  follow: { label: 'Follow-ups', scenarios: FOLLOW_UP_SCENARIOS },
 } as const;
 
 export default function PlaygroundScreen() {
@@ -451,7 +465,7 @@ export default function PlaygroundScreen() {
             editable={!bench.running}
           />
           <Text style={styles.label}>Benchmark scenarios</Text>
-          <View style={styles.row}>
+          <View style={styles.wrapRow}>
             {(Object.keys(BENCHMARK_SETS) as (keyof typeof BENCHMARK_SETS)[]).map((id) => (
               <Button
                 key={id}
@@ -782,6 +796,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: '700' },
   card: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, gap: 6 },
   row: { flexDirection: 'row', gap: 8 },
+  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   rowCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   flex: { flex: 1 },
   label: { fontSize: 13, fontWeight: '600', marginTop: 4 },

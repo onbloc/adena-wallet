@@ -1,7 +1,7 @@
 // Scenario tests: a real model turns plain-language requests into transactions. They need a
 // running llama-server and are not part of `npm test`; run them with `make scenario`.
 import { toBaseUnits } from '../../agent';
-import { checkSummaries } from './check';
+import { checkRun } from './check';
 import {
   GNS_PATH,
   ACCOUNT,
@@ -12,7 +12,7 @@ import {
   type ScenarioRun,
   type ScenarioRunner,
 } from './harness';
-import { SCENARIOS, type Expected } from './scenarios';
+import { EXTRA_SCENARIOS, SCENARIOS, type Expected } from './scenarios';
 
 // A slow on-device-sized model: the agent's own run budget is 5 minutes.
 jest.setTimeout(5 * 60_000);
@@ -21,7 +21,7 @@ jest.setTimeout(5 * 60_000);
 const DECIMALS = 6;
 
 /** The message the prepared transaction will sign is exactly the requested one. */
-function expectMessage(run: ScenarioRun, expected: Exclude<Expected, { kind: 'none' }>) {
+function expectMessage(run: ScenarioRun, expected: Extract<Expected, { kind: 'transfer' | 'allowance' }>) {
   const [prepared] = run.prepared;
   const base = String(toBaseUnits(expected.amount, DECIMALS));
 
@@ -50,17 +50,18 @@ describe('plain-language requests become transactions', () => {
     }
   });
 
-  it.each(SCENARIOS)('$name', async ({ prompt, expected }) => {
-    const run = await runner.ask(prompt);
-    const context = `prompt: ${prompt}\ncalls: ${JSON.stringify(run.calls)}\nanswer: ${run.text}`;
+  it.each([...SCENARIOS, ...EXTRA_SCENARIOS])('$name', async ({ prompt, expected, before = [] }) => {
+    const turns = await runner.chat([...before, prompt]);
+    const run = turns[turns.length - 1];
+    const context = `prompts: ${JSON.stringify([...before, prompt])}\ncalls: ${JSON.stringify(run.calls)}\nanswer: ${run.text}`;
 
     try {
       // Only outcomes matter; a corrected tool-call retry must not fail the scenario.
       for (const prepared of run.prepared) expect(adenaTransaction(prepared).signatures).toEqual([]);
 
       // The summaries first (what the model chose), then the message that will be signed.
-      expect(checkSummaries(run.prepared.map(({ summary }) => summary), expected)).toEqual({ ok: true });
-      if (expected.kind !== 'none') expectMessage(run, expected);
+      expect(checkRun({ prepared: run.prepared.map(({ summary }) => summary), calls: run.calls, text: run.text }, expected)).toEqual({ ok: true });
+      if (expected.kind === 'transfer' || expected.kind === 'allowance') expectMessage(run, expected);
     } catch (error) {
       if (error instanceof Error) error.message += `\n\n${context}`;
       throw error;

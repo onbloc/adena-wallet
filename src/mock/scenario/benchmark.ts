@@ -1,7 +1,7 @@
 // Runs scenarios or one prompt many times and reports how often the agent prepares exactly the
 // expected transaction. Judged on the summaries alone (what the model chose). Portable: it needs
 // only a ScenarioRunner, so it runs in the app on a phone and in a CLI.
-import { checkSummaries, describeSummaries, explainNothing, type Verdict } from './check';
+import { checkRun, describeSummaries, explainNothing, type Verdict } from './check';
 import type { ScenarioRunner } from './runner';
 import type { Scenario } from './scenarios';
 import type { Stage, StageLabel } from './timing';
@@ -165,13 +165,15 @@ export async function runBenchmark({
       const runStarted = now();
       const record: RunRecord = { ms: 0 };
       try {
-        const result = await runner.ask(prompt, signal);
+        // A follow-up replays its earlier turns first; the verdict is on the last turn, the time on all.
+        const turns = scenario?.before?.length ? await runner.chat([...scenario.before, prompt], signal) : [await runner.ask(prompt, signal)];
         if (signal?.aborted) { aborted = true; break rounds; }
+        const result = turns[turns.length - 1];
         const summaries = result.prepared.map((prepared) => prepared.summary);
         record.outcome = describeSummaries(summaries);
-        record.stages = result.stages;
+        record.stages = turns.flatMap((turn) => turn.stages);
         if (scenario) {
-          record.verdict = checkSummaries(summaries, scenario.expected);
+          record.verdict = checkRun({ prepared: summaries, calls: result.calls, text: result.text }, scenario.expected);
           // Nothing prepared: say what the model asked for and what the wallet answered.
           const why = !record.verdict.ok && result.prepared.length === 0 ? explainNothing(result) : undefined;
           if (!record.verdict.ok && why !== undefined) record.verdict = { ok: false, reason: `${record.verdict.reason} (${why})` };

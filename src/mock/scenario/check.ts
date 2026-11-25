@@ -25,7 +25,7 @@ const fail = (reason: string): Verdict => ({ ok: false, reason });
  * transaction. The transaction builder is deterministic, so the same summary gives the same
  * transaction.
  */
-export function checkSummaries(prepared: readonly PreparedSummary[], expected: Expected): Verdict {
+export function checkSummaries(prepared: readonly PreparedSummary[], expected: Exclude<Expected, { kind: 'answer' }>): Verdict {
   if (expected.kind === 'none') {
     return prepared.length === 0 ? { ok: true } : fail(`prepared ${describeSummaries(prepared)}, expected nothing`);
   }
@@ -55,6 +55,49 @@ export function checkSummaries(prepared: readonly PreparedSummary[], expected: E
   compare('amount', summary.amount, expected.amount);
   compare('token', summary.token, expected.token);
   return wrong.length === 0 ? { ok: true } : fail(wrong.join('; '));
+}
+
+/** JSON text with the object keys sorted, so equal values match whatever order the model wrote them in. */
+const canonical = (value: unknown): string =>
+  JSON.stringify(value, (_key, item: unknown) =>
+    item !== null && typeof item === 'object' && !Array.isArray(item)
+      ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b)))
+      : item
+  );
+
+/** What a run left behind, as far as a verdict needs it. */
+export type JudgedRun = {
+  prepared: readonly PreparedSummary[];
+  calls: readonly { name: string; input: unknown; invalid: boolean }[];
+  text: string;
+};
+
+/**
+ * Whether a run is what the scenario expects. A transaction is judged on its summary; an `answer`
+ * on what the model called (nothing outside `reads` and `allow`, each read with its exact input)
+ * and on the text of the answer.
+ */
+export function checkRun(run: JudgedRun, expected: Expected): Verdict {
+  if (expected.kind !== 'answer') return checkSummaries(run.prepared, expected);
+  if (run.prepared.length > 0) return fail(`prepared ${describeSummaries(run.prepared)}, expected nothing`);
+
+  // A call the harness rejected as malformed is retried by the agent: it is not what the model decided.
+  const calls = run.calls.filter((call) => !call.invalid);
+  const allowed = new Set([...expected.reads.map(({ name }) => name), ...(expected.allow ?? [])]);
+  const stray = calls.find(({ name }) => !allowed.has(name));
+  if (stray !== undefined) {
+    const want = expected.reads.length === 0 ? 'no tool call' : `only ${[...allowed].join(', ')}`;
+    return fail(`called ${stray.name}(${canonical(stray.input)}), expected ${want}`);
+  }
+  for (const read of expected.reads) {
+    const made = calls.filter(({ name }) => name === read.name);
+    if (made.length === 0) return fail(`did not call ${read.name}`);
+    if (read.input !== undefined && !made.some(({ input }) => canonical(input) === canonical(read.input))) {
+      return fail(`${read.name} input: got ${made.map(({ input }) => canonical(input)).join(' | ')}, expected ${canonical(read.input)}`);
+    }
+  }
+  const missing = (expected.says ?? []).filter((text) => !run.text.includes(text));
+  return missing.length === 0 ? { ok: true } : fail(`the answer lacks ${missing.map((text) => JSON.stringify(text)).join(', ')}`);
 }
 
 const WALLET_ACTIONS = ['transfer', 'approve'];

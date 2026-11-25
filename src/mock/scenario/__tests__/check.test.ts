@@ -1,5 +1,5 @@
 import { TransactionType } from '../../../agent';
-import { checkSummaries, describeSummaries, explainNothing, type PreparedSummary } from '../check';
+import { checkRun, checkSummaries, describeSummaries, explainNothing, type JudgedRun, type PreparedSummary } from '../check';
 import { ACCOUNT, CAROL, RECIPIENT } from '../fixture';
 
 const transfer = (overrides: Partial<Extract<PreparedSummary, { type: typeof TransactionType.Transfer }>> = {}): PreparedSummary => ({
@@ -95,5 +95,77 @@ describe('explainNothing', () => {
 
   it('shortens a long reply', () => {
     expect(explainNothing({ calls: [], results: [], text: 'x'.repeat(200) })).toBe(`the model replied: "${'x'.repeat(120)}..."`);
+  });
+});
+
+describe('checkRun', () => {
+  const call = (name: string, input: unknown = {}, invalid = false) => ({ name, input, invalid });
+  const run = (overrides: Partial<JudgedRun> = {}): JudgedRun => ({ prepared: [], calls: [], text: '', ...overrides });
+  const gnotOne = { kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } };
+  const explanation = { kind: 'answer', reads: [] } as const;
+  const balanceRead = { kind: 'answer', reads: [{ name: 'get_balance', input: gnotOne }], says: ['10 GNOT'] } as const;
+
+  it('judges a transaction by its summary', () => {
+    expect(checkRun(run({ prepared: [transfer()] }), expectTransfer)).toEqual({ ok: true });
+    expect(checkRun(run({ prepared: [transfer({ amount: '2' })] }), expectTransfer)).toEqual({ ok: false, reason: 'amount: got 2, expected 1' });
+  });
+
+  it('accepts an answer that called no tool when none was expected', () => {
+    expect(checkRun(run({ text: 'GNOT is the native token.' }), explanation)).toEqual({ ok: true });
+  });
+
+  it('fails an explanation that called a tool, and names the call', () => {
+    const verdict = checkRun(run({ calls: [call('get_balance', { kind: 'all' })] }), explanation);
+
+    expect(verdict).toEqual({ ok: false, reason: 'called get_balance({"kind":"all"}), expected no tool call' });
+  });
+
+  it('fails an answer that prepared a transaction', () => {
+    expect(checkRun(run({ prepared: [transfer()] }), explanation)).toEqual({ ok: false, reason: `prepared transfer 1 GNOT to ${CAROL}, expected nothing` });
+  });
+
+  it('wants each read with its exact input, whatever the order of the keys', () => {
+    const reordered = { asset: { value: 'GNOT', kind: 'symbol' }, kind: 'one' };
+
+    expect(checkRun(run({ calls: [call('get_balance', reordered)], text: 'You have 10 GNOT' }), balanceRead)).toEqual({ ok: true });
+  });
+
+  it('says what input the model sent when it is not the expected one', () => {
+    const all = { kind: 'all' };
+
+    expect(checkRun(run({ calls: [call('get_balance', all)], text: '10 GNOT' }), balanceRead)).toEqual({
+      ok: false,
+      reason: `get_balance input: got {"kind":"all"}, expected ${JSON.stringify({ asset: { kind: 'symbol', value: 'GNOT' }, kind: 'one' })}`,
+    });
+  });
+
+  it('fails when a required read was never made', () => {
+    expect(checkRun(run({ text: '10 GNOT' }), balanceRead)).toEqual({ ok: false, reason: 'did not call get_balance' });
+  });
+
+  it('does not accept a read that was neither required nor allowed', () => {
+    const verdict = checkRun(run({ calls: [call('get_balance', gnotOne), call('list_account_transactions')], text: '10 GNOT' }), balanceRead);
+
+    expect(verdict).toEqual({ ok: false, reason: 'called list_account_transactions({}), expected only get_balance' });
+  });
+
+  it('lets an allowed read happen without requiring it', () => {
+    const expected = { kind: 'answer', reads: [{ name: 'get_token_info' }], allow: ['get_balance'] } as const;
+
+    expect(checkRun(run({ calls: [call('get_token_info')] }), expected)).toEqual({ ok: true });
+    expect(checkRun(run({ calls: [call('get_balance'), call('get_token_info')] }), expected)).toEqual({ ok: true });
+  });
+
+  it('ignores a call the harness rejected as malformed, which the agent retries', () => {
+    const calls = [call('get_balance', { kind: 'one' }, true), call('get_balance', gnotOne)];
+
+    expect(checkRun(run({ calls, text: '10 GNOT' }), balanceRead)).toEqual({ ok: true });
+    expect(checkRun(run({ calls: [call('get_balance', {}, true)] }), explanation)).toEqual({ ok: true });
+  });
+
+  it('requires the answer to contain every value, and lists the missing ones', () => {
+    const expected = { kind: 'answer', reads: [{ name: 'get_balance' }], says: ['10 GNOT', '250 GNS'] } as const;
+
+    expect(checkRun(run({ calls: [call('get_balance')], text: '10 GNOT' }), expected)).toEqual({ ok: false, reason: 'the answer lacks "250 GNS"' });
   });
 });
