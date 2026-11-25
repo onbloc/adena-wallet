@@ -123,6 +123,21 @@ describe('SwapService', () => {
     await expectCode(ignoring.service.getQuote({ network: ignoring.network, input: ignoring.gnot, output: ignoring.gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_QUOTE_FAILED);
   });
 
+  it('treats a malformed pool page as a failed quote, not as the end of the list', async () => {
+    for (const malformed of [{ length: 0 }, '']) {
+      const { service, network, gnot, gns } = await setup({ route: routeDevNone, poolPages: [malformed] });
+
+      await expectCode(service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_QUOTE_FAILED);
+    }
+
+    // A page whose rows are all filtered out is not the end either.
+    const [direct, ...others] = poolsDev.data.filter(pool => [pool.tokenA.path, pool.tokenB.path].sort().join() === [WUGNOT, GNS].sort().join());
+    const unsupportedFee = { ...poolsDev.data.find(pool => pool !== direct && !others.includes(pool))!, fee: 1 };
+    const filtered = await setup({ route: routeDevNone, poolPages: [[unsupportedFee], [direct]] });
+
+    expect((await filtered.service.getQuote({ network: filtered.network, input: filtered.gnot, output: filtered.gns, exactType: 'EXACT_IN', amount: '1000000' })).routes[0].hops).toHaveLength(1);
+  });
+
   it('reports no route for an empty answer, failing dry runs or a partial fill', async () => {
     const empty = await setup({ route: { estimatedRoutes: [] }, pools: [] });
 

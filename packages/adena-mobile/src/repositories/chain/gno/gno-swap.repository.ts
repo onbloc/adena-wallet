@@ -90,12 +90,14 @@ export class GnoSwapRepository implements SwapRepository<GnoMessage> {
 
     for (let page = 1; page <= MAX_POOL_PAGES; page += 1) {
       const raw = await this.api.getPools(apiUrl, page, POOL_PAGE_SIZE);
+      // Parsed first, so a malformed payload fails the search instead of passing for the end of the list.
+      const parsed = parsePools(raw, feeTiers);
 
-      if ((raw as unknown[]).length === 0) {
+      if (Array.isArray(raw) && raw.length === 0) {
         return { pools: [...pools.values()], complete: true };
       }
 
-      parsePools(raw, feeTiers).forEach(pool => pools.set(`${pool.tokenA}:${pool.tokenB}:${pool.fee}`, pool));
+      parsed.forEach(pool => pools.set(`${pool.tokenA}:${pool.tokenB}:${pool.fee}`, pool));
     }
 
     return { pools: [...pools.values()], complete: false };
