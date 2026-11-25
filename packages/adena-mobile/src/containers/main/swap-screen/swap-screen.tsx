@@ -71,6 +71,23 @@ export const sortSwapTokens = (tokens: SwapToken[], balances?: Record<string, st
 
 export const searchSwapTokens = (tokens: SwapToken[], query: string): SwapToken[] => tokens.filter(token => matches(token, query));
 
+// Locked in the reviewed network's fee token on top of the gas fee, which the fee selector shows alone.
+const storageDepositRows = ({ estimate, network }: PreparedSwap): { label: string; value: string }[] => {
+  const deposit = estimate.storageDeposit ?? '0';
+
+  return compareAmount(deposit, '0') > 0 ? [{ label: 'Storage deposit', value: `${formatTokenAmount(deposit, network.feeToken.decimals)} ${network.feeToken.symbol}` }] : [];
+};
+
+const reviewWarning = ({ input, output, quote }: PreparedSwap, maxLabel: string, minLabel: string): string | undefined => {
+  const warnings = [
+    isHighPriceImpact(quote.priceImpactPercent) ? `High price impact (${formatPriceImpact(quote.priceImpactPercent)}).` : undefined,
+    quote.exactType === SwapType.EXACT_OUT && input.isNative ? `${maxLabel} is wrapped for the swap; what it doesn’t use stays in your wallet as wugnot.` : undefined,
+    output.isNative ? `At least ${minLabel} arrives as ${output.symbol}; anything above it stays wrapped as wugnot.` : undefined,
+  ].filter(Boolean);
+
+  return warnings.length ? warnings.join(' ') : undefined;
+};
+
 // Raw share of the balance, capped at the spendable maximum (the native coin's balance minus fee and deposit).
 export const percentOfBalance = (balance: string, percent: SwapPercent, cap?: string): string => {
   const share = (BigInt(balance) * BigInt(percent)) / 100n;
@@ -562,11 +579,6 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     const routeLabel = buildRouteViews(signed, [paid, received, ...tokens])
       .map(view => `${view.share} ${view.steps.map(step => (step.fee ? `› ${step.symbol} (${step.fee})` : step.symbol)).join(' ')}`)
       .join('\n');
-    const warnings = [
-      isHighPriceImpact(signed.priceImpactPercent) ? `High price impact (${formatPriceImpact(signed.priceImpactPercent)}).` : undefined,
-      exactOut && paid.isNative ? `${maxLabel} is wrapped for the swap; what it doesn’t use stays in your wallet as wugnot.` : undefined,
-      received.isNative ? `At least ${minLabel} arrives as ${received.symbol}; anything above it stays wrapped as wugnot.` : undefined,
-    ].filter(Boolean);
 
     return {
       pay: exactOut
@@ -580,10 +592,11 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
         { label: 'Max. slippage', value: formatPercent(prepared.slippageBps / 100) },
         { label: 'Route', value: routeLabel, multiline: true },
         { label: 'Router fee', value: formatPercent(signed.routerFeeBps / 100) },
+        ...storageDepositRows(prepared),
         { label: 'Deadline', value: `${prepared.deadlineMinutes} min` },
         { label: 'Network', value: prepared.network.networkName },
       ],
-      warning: warnings.length ? warnings.join(' ') : undefined,
+      warning: reviewWarning(prepared, maxLabel, minLabel),
       fee: feeSelection.selectorProps,
     };
   }, [feeSelection.fee, feeSelection.selectorProps, fiatOf, prepared, toView, tokens]);

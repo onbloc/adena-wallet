@@ -637,6 +637,37 @@ describe('SwapScreen', () => {
   });
 });
 
+describe('SwapScreen review', () => {
+  beforeEach(resetStores);
+
+  afterEach(() => act(() => new Promise<void>((done) => {
+    setTimeout(done, 0);
+  })));
+
+  it.each([
+    ['2500000', '2.5 GNOT'],
+    ['0', null],
+  ])('discloses a storage deposit of %s ugnot in the fee token only when positive', async (storageDeposit, label) => {
+    const { env } = await setup();
+
+    jest.spyOn(env.container.transactionService, 'estimateFee')
+      .mockResolvedValue({ gasUsed: '1000000', gasPrice: '0.001', denom: 'ugnot', policy: GNO_FEE_POLICY, storageDeposit });
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    await press('Review swap');
+    await screen.findByText('Confirm swap', undefined, LOOKUP);
+
+    if (label) {
+      expect(screen.getByText('Storage deposit')).toBeTruthy();
+      expect(screen.getByText(label)).toBeTruthy();
+    }
+    else {
+      expect(screen.queryByText('Storage deposit')).toBeNull();
+    }
+  });
+});
+
 describe('swap screen helpers', () => {
   const token = (id: string, symbol: string, volume?: number): SwapToken => ({ id, symbol, name: symbol, swapPath: id, volume24hUsd: volume } as SwapToken);
 
