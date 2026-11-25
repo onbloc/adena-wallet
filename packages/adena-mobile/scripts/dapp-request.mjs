@@ -17,7 +17,8 @@ import { existsSync, readFileSync } from 'node:fs';
 // can be repeated and keep their order.
 //
 // Common flags: --chain <chainId> (default gnoland-1), --sign-only (sign-transaction instead of
-// sign-and-broadcast), --callback <url> (default https://example.com/adena-callback), --memo <text>.
+// sign-and-broadcast), --callback <url> (default https://example.com/adena-callback), --memo <text>,
+// --expires-in <seconds> (transactions only, default 3600, at most 86400).
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -152,6 +153,11 @@ switch (command) {
 
   default:
     fail('Commands: connect | send | call | tx | doc | decode');
+}
+
+// Transaction requests must expire within 24 hours of reaching the wallet.
+if (payload.method !== 'connect') {
+  payload.expiresAt = Date.now() + Number(flag('expires-in', '3600')) * 1000;
 }
 
 console.log(`adena://request?payload=${encodeURIComponent(toBase64Url(JSON.stringify(payload)))}`);

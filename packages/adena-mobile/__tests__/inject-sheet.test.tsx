@@ -58,6 +58,7 @@ describe('Android overlay inject sheet', () => {
 
     await renderSheet(env.container, request({
       method: 'sign-and-broadcast',
+      expiresAt: Date.now() + 600_000,
       chainId: 'gnoland-1',
       params: { messages: [{ type: '/vm.m_call', value: { caller: address, pkg_path: 'gno.land/r/demo/counter', func: 'Increment' } }] },
     }));
@@ -85,6 +86,7 @@ describe('Android overlay inject sheet', () => {
       .mockRejectedValue(new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, 'A previous transaction is not confirmed yet.'));
     await renderSheet(env.container, request({
       method: 'sign-and-broadcast',
+      expiresAt: Date.now() + 600_000,
       chainId: 'gnoland-1',
       params: { messages: [{ type: '/vm.m_call', value: { caller: env.container.accountService.getAddress(account, network), pkg_path: 'gno.land/r/demo/counter', func: 'Increment' } }] },
     }));
@@ -147,6 +149,7 @@ describe('Android overlay inject sheet', () => {
     env.container.connectedAppService.touch('exampleapp:', { name: 'Example' }, account.id, network.id);
     await renderSheet(env.container, request({
       method: 'sign-and-broadcast',
+      expiresAt: Date.now() + 600_000,
       chainId: 'gnoland-1',
       params: {
         messages: [{

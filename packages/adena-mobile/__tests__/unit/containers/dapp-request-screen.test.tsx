@@ -34,6 +34,7 @@ const activate = (overrides: Partial<DappRequestPayload> = {}, patch: Partial<Da
 
 const callRequest = (address: string, chainId = 'gnoland-1'): Partial<DappRequestPayload> => ({
   method: 'sign-and-broadcast',
+  expiresAt: Date.now() + 600_000,
   chainId,
   params: { memo: 'hello memo', messages: [{ type: '/vm.m_call', value: { caller: address, pkg_path: 'gno.land/r/demo/counter', func: 'Increment', args: [] } }] },
 });

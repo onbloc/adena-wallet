@@ -8,6 +8,10 @@ import { decodeBase64Url, encodeBase64Url } from './base64url';
  *
  * Request:  adena://request?payload=<base64url(JSON RequestPayload)>
  * Response: <callback>?response=<base64url(JSON DappResponse)>
+ *
+ * expiresAt (ms since epoch) is optional for connect. Transaction requests must set it, at most
+ * APP_CONFIG.dappRequestTtlMs (24 h) after the wallet receives them; otherwise INVALID_REQUEST.
+ * This keeps every transaction request expired before its processed mark is forgotten.
  */
 export const PROTOCOL_VERSION = 1;
 export const REQUEST_HOST = 'request';
@@ -131,6 +135,15 @@ export const parseDappRequestUrl = (url: string, now: number = Date.now()): Dapp
 
   if (expiresAt !== undefined && expiresAt < now) {
     throw new AppError(AppErrorCode.REQUEST_EXPIRED, 'This request has expired');
+  }
+
+  if (payload.method !== DappMethod.CONNECT) {
+    if (expiresAt === undefined) {
+      invalid('expiresAt is required for transaction requests');
+    }
+    else if (expiresAt > now + APP_CONFIG.dappRequestTtlMs) {
+      invalid('expiresAt must be within 24 hours');
+    }
   }
 
   const base = {

@@ -1,3 +1,4 @@
+import { APP_CONFIG } from '../config/app';
 import { StorageKey } from '../migration/storage-keys';
 import { KeyValueStore, readJson, writeJson } from '../storage/key-value-store';
 
@@ -34,7 +35,7 @@ interface ProcessedEntry extends Partial<ProcessedDappRequest> {
   at: number;
 }
 
-export const PROCESSED_REQUEST_TTL_MS = 24 * 60 * 60 * 1000;
+export const PROCESSED_REQUEST_TTL_MS = APP_CONFIG.dappRequestTtlMs;
 export const MAX_PROCESSED_REQUESTS = 500;
 
 const STATES: string[] = Object.values(ProcessedDappRequestState);

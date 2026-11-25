@@ -141,7 +141,7 @@ node scripts/dapp-request.mjs tx --chain dev.gnoswap --caller <g1 sender> --send
 node scripts/dapp-request.mjs decode '<callback url from the browser>'
 ```
 
-Add `--sign-only` for `sign-transaction` (signed, not broadcast). `tx` builds one multi-message transaction (up to 16 messages); repeat `--send` / `--call` in the order the messages should run.
+Add `--sign-only` for `sign-transaction` (signed, not broadcast). Transaction requests (`sign-transaction`, `sign-and-broadcast`) must set `expiresAt` (ms since epoch) no more than 24 hours after the wallet receives them, or they are answered `INVALID_REQUEST`; the script sets one hour (`--expires-in <seconds>`). `expiresAt` stays optional for `connect`. `tx` builds one multi-message transaction (up to 16 messages); repeat `--send` / `--call` in the order the messages should run.
 
 
 ```bash
@@ -151,4 +151,4 @@ adb shell am start -a android.intent.action.VIEW -d "adena://request?payload=<ba
 xcrun simctl openurl booted "adena://request?payload=<base64url JSON>"
 ```
 
-Build the payload with `buildDappRequestUrl` (`src/deeplink/dapp-protocol.ts`) or see the protocol section below.
+Build the payload with `buildDappRequestUrl` (`src/deeplink/dapp-protocol.ts`) or see the protocol notes at the top of that file.

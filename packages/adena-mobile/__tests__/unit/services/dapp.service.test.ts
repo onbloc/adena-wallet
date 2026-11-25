@@ -43,7 +43,7 @@ const setup = async ({ connected = true } = {}) => {
 
   const call = (caller = address) => ({ type: '/vm.m_call', value: { caller, pkg_path: 'gno.land/r/demo/counter', func: 'Increment', args: [] } });
   const txRequest = (overrides: Partial<DappRequestPayload> = {}, params: DappRequestPayload['params'] = { messages: [call()] }) =>
-    service.parseRequestUrl(buildDappRequestUrl(payload({ method: 'sign-and-broadcast', chainId: 'gnoland-1', params, ...overrides }))) as DappTransactionRequest;
+    service.parseRequestUrl(buildDappRequestUrl(payload({ method: 'sign-and-broadcast', chainId: 'gnoland-1', expiresAt: Date.now() + 600_000, params, ...overrides }))) as DappTransactionRequest;
 
   return { ...env, service, account, network, address, call, txRequest };
 };

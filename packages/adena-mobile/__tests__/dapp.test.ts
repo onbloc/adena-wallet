@@ -63,7 +63,7 @@ describe('dapp protocol', () => {
 
   it('requires chainId and messages for transaction requests', () => {
     expectAppError(
-      () => parseDappRequestUrl(buildDappRequestUrl(basePayload({ method: 'sign-and-broadcast', params: { messages: [] } }))),
+      () => parseDappRequestUrl(buildDappRequestUrl(basePayload({ method: 'sign-and-broadcast', expiresAt: Date.now() + 600_000, params: { messages: [] } }))),
       'INVALID_REQUEST',
     );
   });
@@ -87,6 +87,7 @@ describe('DappService', () => {
     const { container, address } = await setup({ connected: false });
     const request = container.dappService.parseRequestUrl(buildDappRequestUrl(basePayload({
       method: 'sign-and-broadcast',
+      expiresAt: Date.now() + 600_000,
       chainId: 'gnoland-1',
       params: { messages: [{ type: '/vm.m_call', value: { caller: address, pkg_path: 'gno.land/r/demo/counter', func: 'Increment', args: [] } }] },
     })));
@@ -123,6 +124,7 @@ describe('DappService', () => {
     const { container, address, gno } = await setup();
     const request = container.dappService.parseRequestUrl(buildDappRequestUrl(basePayload({
       method: 'sign-and-broadcast',
+      expiresAt: Date.now() + 600_000,
       chainId: 'gnoland-1',
       params: { messages: [{ type: '/vm.m_call', value: { caller: address, pkg_path: 'gno.land/r/demo/counter', func: 'Increment', args: [] } }] },
     }))) as DappTransactionRequest;
@@ -141,6 +143,7 @@ describe('DappService', () => {
     const recipient = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
     const request = container.dappService.parseRequestUrl(buildDappRequestUrl(basePayload({
       method: 'sign-and-broadcast',
+      expiresAt: Date.now() + 600_000,
       chainId: 'gnoland-1',
       params: {
         messages: [
@@ -166,6 +169,7 @@ describe('DappService', () => {
     const other = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
     const request = container.dappService.parseRequestUrl(buildDappRequestUrl(basePayload({
       method: 'sign-and-broadcast',
+      expiresAt: Date.now() + 600_000,
       chainId: 'gnoland-1',
       params: {
         messages: [

@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
+import { APP_CONFIG } from '../../../src/config/app';
 import { AppErrorCode, isAppError } from '../../../src/core/errors';
 import { decodeBase64Url, encodeBase64Url } from '../../../src/deeplink/base64url';
 import {
@@ -15,6 +16,7 @@ import {
   REQUEST_HOST,
 } from '../../../src/deeplink/dapp-protocol';
 import { DappMethod, DappResponseStatus } from '../../../src/domain/dapp';
+import { PROCESSED_REQUEST_TTL_MS } from '../../../src/repositories/processed-dapp-request.repository';
 
 const NOW = 1_700_000_000_000;
 
@@ -30,6 +32,7 @@ const connect = (overrides: Partial<DappRequestPayload> = {}): DappRequestPayloa
 const sign = (overrides: Partial<DappRequestPayload> = {}): DappRequestPayload => connect({
   method: DappMethod.SIGN_AND_BROADCAST,
   chainId: 'gnoland1',
+  expiresAt: NOW + 60_000,
   params: { messages: [{ type: '/bank.MsgSend' }] },
   ...overrides,
 });
@@ -157,6 +160,21 @@ describe('parseDappRequestUrl', () => {
     expect(request).toMatchObject({ method: DappMethod.SIGN_TRANSACTION, memo: '', messages: [1] });
     expect(request).toHaveProperty('gasWanted', undefined);
     expect(request).toHaveProperty('gasFee', undefined);
+  });
+
+  it.each([DappMethod.SIGN_AND_BROADCAST, DappMethod.SIGN_TRANSACTION])('requires a bounded expiresAt for %s', (method) => {
+    expectInvalid(() => parseDappRequestUrl(buildDappRequestUrl(sign({ method, expiresAt: undefined })), NOW), 'expiresAt is required for transaction requests');
+    expectInvalid(() => parseDappRequestUrl(buildDappRequestUrl(sign({ method, expiresAt: NOW + APP_CONFIG.dappRequestTtlMs + 1 })), NOW), 'expiresAt must be within 24 hours');
+    expect(parseDappRequestUrl(buildDappRequestUrl(sign({ method, expiresAt: NOW + APP_CONFIG.dappRequestTtlMs })), NOW).expiresAt).toBe(NOW + APP_CONFIG.dappRequestTtlMs);
+  });
+
+  it('keeps expiresAt optional and unbounded for connect', () => {
+    expect(parseDappRequestUrl(buildDappRequestUrl(connect()), NOW).expiresAt).toBeUndefined();
+    expect(parseDappRequestUrl(buildDappRequestUrl(connect({ expiresAt: NOW + 2 * APP_CONFIG.dappRequestTtlMs })), NOW).requestId).toBe('req-1');
+  });
+
+  it('cannot expire a transaction request after its processed mark is forgotten', () => {
+    expect(APP_CONFIG.dappRequestTtlMs).toBe(PROCESSED_REQUEST_TTL_MS);
   });
 
   it('ignores a non-numeric expiresAt', () => {
