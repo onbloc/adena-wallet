@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetch as expoFetch } from 'expo/fetch';
 import {
   Keyboard,
@@ -22,6 +22,7 @@ import {
   DEFAULT_GENERATE_SETTINGS,
   TEMPERATURE_RANGE,
   type CallRecord,
+  type LLM,
 } from '../../llm/core';
 import {
   DEFAULT_MODEL_ID,
@@ -30,6 +31,7 @@ import {
   useLlm,
   type RuntimeStatus,
 } from '../../llm/device';
+import { createLLM } from '../../llm/createLlm';
 import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk, WalletState } from '../wallet/mockWalletSdk';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
@@ -50,6 +52,8 @@ import { usePreparationHistory } from './usePreparationHistory';
 import { BenchmarkLog } from './BenchmarkLog';
 import { BENCHMARK_RUNS_RANGE, DEFAULT_BENCHMARK_RUNS, useBenchmark } from './useBenchmark';
 import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL, resolveOnblocSettings } from './onblocSettings';
+import { describeRuntime } from './describeRuntime';
+import { LLM_SOURCES, resolveLlmSettings, type LlmSource } from './llmSettings';
 
 /** Parses user input; null when empty, non-numeric, non-integer (if required) or out of range. */
 function parseBounded(
@@ -89,8 +93,18 @@ const compact = (text: string, max: number) => {
 
 const EMPTY_WALLET: WalletState = { balances: {} };
 
-// One model for the app: a loaded model holds its memory.
-const llm = new LLMOnDevice();
+// One on-device model for the app: a loaded model holds its memory. A hosted model is built from Settings.
+const local = new LLMOnDevice();
+
+// Hosted requests stream through expo/fetch; the key is entered in Settings and kept in memory only.
+const LLM_SETTINGS_ENV = { fetch: expoFetch, ...(__DEV__ ? { allowLoopbackHttp: true as const } : {}) };
+
+const LLM_SOURCE_LABELS: Record<LlmSource, string> = {
+  device: 'On-device',
+  anthropic: 'Anthropic',
+  openai: 'OpenAI',
+  'openai-compatible': 'Compatible',
+};
 
 /** The scenarios the Benchmark button runs, chosen in Settings. */
 const BENCHMARK_SETS = {
@@ -105,8 +119,19 @@ const BENCHMARK_SETS = {
 } as const;
 
 export default function PlaygroundScreen() {
-  const { status, run, start, stop, load, unload, remove } = useLlm(llm);
-  const bench = useBenchmark(llm, DEFAULT_MODEL_ID);
+  const { status, run, start, stop, load, unload, remove } = useLlm(local);
+  const [llmSource, setLlmSource] = useState<LlmSource>('device');
+  const [remoteModel, setRemoteModel] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
+  const llmSettings = useMemo(
+    () => resolveLlmSettings(llmSource, remoteModel, apiKey, baseUrl, LLM_SETTINGS_ENV),
+    [llmSource, remoteModel, apiKey, baseUrl]
+  );
+  const remote = llmSettings.remote;
+  const remoteMode = llmSource !== 'device';
+  const llm: LLM = useMemo(() => (remote ? createLLM(remote) : local), [remote]);
+  const bench = useBenchmark(llm);
   const [benchRuns, setBenchRuns] = useState(String(DEFAULT_BENCHMARK_RUNS));
   const [benchSet, setBenchSet] = useState<keyof typeof BENCHMARK_SETS>('all');
   const [prompt, setPrompt] = useState('');
@@ -202,8 +227,8 @@ export default function PlaygroundScreen() {
   const maxTokensValue = parseBounded(maxTokens, MAX_OUTPUT_TOKENS_RANGE, true);
   const benchRunsValue = parseBounded(benchRuns, BENCHMARK_RUNS_RANGE, true);
 
-  const busy = status.state === 'downloading' || status.state === 'loading';
-  const ready = status.state === 'ready';
+  const busy = !remoteMode && (status.state === 'downloading' || status.state === 'loading');
+  const ready = remoteMode ? remote !== null : status.state === 'ready';
   const canRun =
     ready &&
     session.ready &&
@@ -295,13 +320,24 @@ export default function PlaygroundScreen() {
   const sendDisabled = !run.running && !canRun;
   const benchDisabled = !bench.running && !canBenchmark;
 
+  /** The benchmark header lines about the model; never the API key. */
+  const describeLlm = () =>
+    remote
+      ? [`provider: ${remote.provider}`, `model: ${remote.model}`, `context: ${llm.contextTokens} tokens (hosted)`]
+      : [
+          `model: ${DEFAULT_MODEL_ID}`,
+          `context: n_ctx ${local.contextTokens}`,
+          ...describeRuntime(local.runtimeInfo(), status.state === 'ready' ? status.loadMs : undefined),
+        ];
+
   /** An empty prompt box runs every scenario; text in it runs that prompt alone. */
   const onBenchmark = () => {
     if (benchRunsValue === null) return;
     const text = prompt.trim();
     void bench.start(
       text === '' ? { kind: 'scenarios', scenarios: BENCHMARK_SETS[benchSet].scenarios } : { kind: 'prompt', prompt: text },
-      benchRunsValue
+      benchRunsValue,
+      describeLlm()
     );
   };
 
@@ -311,14 +347,16 @@ export default function PlaygroundScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>On-device LLM Playground</Text>
+        <Text style={styles.title}>{remoteMode ? 'Hosted' : 'On-device'} LLM Playground</Text>
         <View style={styles.headerRow}>
           <Text style={[styles.status, styles.flex]} numberOfLines={2}>
-            {describeStatus(status)}
+            {remoteMode
+              ? remote ? `Ready (${remote.provider}: ${remote.model})` : 'Set model and API key in Settings'
+              : describeStatus(status)}
           </Text>
-          <Button label="Load" onPress={() => void load()} disabled={busy || ready} />
+          {!remoteMode && <Button label="Load" onPress={() => void load()} disabled={busy || ready} />}
         </View>
-        {status.state === 'downloading' && (
+        {!remoteMode && status.state === 'downloading' && (
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${status.percentage}%` }]} />
           </View>
@@ -345,19 +383,77 @@ export default function PlaygroundScreen() {
           contentContainerStyle={styles.settingsContent}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.mono}>{DEFAULT_MODEL_ID}</Text>
-          <View style={styles.row}>
-            <Button
-              label="Unload"
-              onPress={() => void unload()}
-              disabled={busy || run.running || status.state === 'idle'}
-            />
-            <Button
-              label="Delete file"
-              onPress={() => void remove()}
-              disabled={busy || run.running}
-            />
+          <Text style={styles.label}>Model</Text>
+          <View style={styles.wrapRow}>
+            {LLM_SOURCES.map((id) => (
+              <Button
+                key={id}
+                label={`${llmSource === id ? '● ' : ''}${LLM_SOURCE_LABELS[id]}`}
+                onPress={() => setLlmSource(id)}
+                disabled={run.running || bench.running}
+              />
+            ))}
           </View>
+          {remoteMode ? (
+            <>
+              <Text style={styles.label}>Model name</Text>
+              <TextInput
+                style={[styles.input, llmSettings.modelError !== null && styles.invalid]}
+                value={remoteModel}
+                onChangeText={setRemoteModel}
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder={llmSource === 'openai' ? 'gpt-5-codex' : 'model id'}
+                editable={!run.running && !bench.running}
+              />
+              {llmSettings.modelError !== null && <Text style={styles.error}>{llmSettings.modelError}</Text>}
+              <Text style={styles.label}>API key</Text>
+              <TextInput
+                style={[styles.input, llmSettings.keyError !== null && styles.invalid]}
+                value={apiKey}
+                onChangeText={setApiKey}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="off"
+                placeholder="sk-..."
+                editable={!run.running && !bench.running}
+              />
+              {llmSettings.keyError !== null && <Text style={styles.error}>{llmSettings.keyError}</Text>}
+              <Text style={styles.label}>Base URL{llmSource === 'openai-compatible' ? '' : ' (optional)'}</Text>
+              <TextInput
+                style={[styles.input, llmSettings.baseUrlError !== null && styles.invalid]}
+                value={baseUrl}
+                onChangeText={setBaseUrl}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                placeholder="https://.../v1"
+                editable={!run.running && !bench.running}
+              />
+              {llmSettings.baseUrlError !== null && <Text style={styles.error}>{llmSettings.baseUrlError}</Text>}
+              <Text style={styles.muted}>
+                The key stays in memory and is sent only to the provider (or the Base URL). Runs and
+                benchmarks are billed by the provider.
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.mono}>{DEFAULT_MODEL_ID}</Text>
+              <View style={styles.row}>
+                <Button
+                  label="Unload"
+                  onPress={() => void unload()}
+                  disabled={busy || run.running || status.state === 'idle'}
+                />
+                <Button
+                  label="Delete file"
+                  onPress={() => void remove()}
+                  disabled={busy || run.running}
+                />
+              </View>
+            </>
+          )}
 
           <Text style={styles.label}>MCP URL (api-v3)</Text>
           <TextInput

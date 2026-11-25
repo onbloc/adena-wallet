@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
-import type { LLMOnDevice } from '../../llm/device';
-import { describeRuntime } from './describeRuntime';
+import type { LLM } from '../../llm/core';
 import { runBenchmark, type BenchmarkTarget } from '../scenario/benchmark';
 import { createBenchmarkWallet } from '../scenario/benchmarkWallet';
 import { ACCOUNT, FAKE_ENDPOINT, fakeReads } from '../scenario/fixture';
@@ -19,8 +18,8 @@ export const DEFAULT_BENCHMARK_RUNS = 10;
 const TAIL_LINES = 300;
 const REDRAW_MS = 150;
 
-/** Runs the benchmark on the loaded model and keeps its log for the screen. */
-export function useBenchmark(llm: LLMOnDevice, modelId: string) {
+/** Runs the benchmark on the given model (on-device or hosted) and keeps its log for the screen. */
+export function useBenchmark(llm: LLM) {
   const [running, setRunning] = useState(false);
   // What the screen draws; `lines` below keeps every line.
   const [view, setView] = useState<{ total: number; tail: readonly string[] }>({ total: 0, tail: [] });
@@ -56,9 +55,9 @@ export function useBenchmark(llm: LLMOnDevice, modelId: string) {
     };
   }, []);
 
-  /** `runs` times each scenario, or `runs` times the one prompt. */
+  /** `runs` times each scenario, or `runs` times the one prompt. `llmHeader`: log lines about the model. */
   const start = useCallback(
-    async (target: BenchmarkTarget, runs: number) => {
+    async (target: BenchmarkTarget, runs: number, llmHeader: readonly string[]) => {
       if (controller.current) return;
       const abort = new AbortController();
       controller.current = abort;
@@ -74,9 +73,7 @@ export function useBenchmark(llm: LLMOnDevice, modelId: string) {
           header: [
             `device: ${Platform.OS} ${Platform.Version}`,
             `build: ${__DEV__ ? 'development (slower JavaScript side)' : 'release'}`,
-            `model: ${modelId}`,
-            `context: n_ctx ${llm.contextTokens}`,
-            ...describeRuntime(llm.runtimeInfo(), llm.status.state === 'ready' ? llm.status.loadMs : undefined),
+            ...llmHeader,
             `settings: temperature ${BENCHMARK_SETTINGS.temperature}, max output tokens ${BENCHMARK_SETTINGS.maxOutputTokens}, reasoning ${BENCHMARK_SETTINGS.reasoning} (fixed)`,
             'wallet: mock wallet, fake Onbloc reads (10 GNOT, 250 GNS), contact carol',
             `started: ${new Date().toISOString()}`,
@@ -95,7 +92,7 @@ export function useBenchmark(llm: LLMOnDevice, modelId: string) {
         redrawNow();
       }
     },
-    [llm, modelId, log, redrawNow]
+    [llm, log, redrawNow]
   );
 
   const stop = useCallback(() => controller.current?.abort(), []);

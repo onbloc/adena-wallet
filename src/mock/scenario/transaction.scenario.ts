@@ -1,14 +1,14 @@
-// Scenario tests: a real model turns plain-language requests into transactions. They need a
-// running llama-server and are not part of `npm test`; run them with `make scenario`.
+// Scenario tests: a model turns plain-language requests into transactions. They run on the local
+// llama-server (`make scenario`) or a hosted model (`make scenario-remote`) and are not part of `npm test`.
 import { toBaseUnits } from '../../agent';
 import { checkRun } from './check';
 import {
   GNS_PATH,
   ACCOUNT,
   adenaTransaction,
-  createServerScenarioRunner,
+  createEnvScenarioRunner,
   firstMessage,
-  serverUrl,
+  scenarioTarget,
   type ScenarioRun,
   type ScenarioRunner,
 } from './harness';
@@ -39,14 +39,14 @@ function expectMessage(run: ScenarioRun, expected: Extract<Expected, { kind: 'tr
   }
 }
 
-describe('plain-language requests become transactions', () => {
+describe(`plain-language requests become transactions [${scenarioTarget()}]`, () => {
   let runner: ScenarioRunner;
 
   beforeAll(async () => {
     try {
-      runner = await createServerScenarioRunner();
+      runner = await createEnvScenarioRunner();
     } catch (error) {
-      throw new Error(`${String(error)}\nStart the server with \`make scenario\`, or set SCENARIO_URL (now ${serverUrl()}).`);
+      throw new Error(`${String(error)}\nLocal: \`make scenario\` (SCENARIO_URL to use another server). Hosted: \`make scenario-remote\`.`);
     }
   });
 

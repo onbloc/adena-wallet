@@ -71,7 +71,7 @@ src/adena/                    AdenaWalletSdk: the WalletSdk port over @adena-wal
   adenaWalletSdk.ts, tokens.ts  builds the transaction, hands it to Adena to approve; token symbol -> package path
 src/mock/                     Test-only code, nothing above depends on it
   wallet/                       MockWalletSdk (read-only), fixture, tokens, funding the mock from Onbloc
-  app/                          Playground screen, prepared-transaction cards, Settings (MCP URL, address), benchmark log
+  app/                          Playground screen, prepared-transaction cards, Settings (model source and API key, MCP URL, address), benchmark log
   cli/                          make chat (chat.ts), with-server.sh
   scenario/                     scenarios, their check, the runner and the benchmark engine (portable: jest and app)
 ```
@@ -408,6 +408,33 @@ deterministic across builds or machines, so a failing scenario can be a model li
 problem, not necessarily a code bug. Set `SCENARIO_URL` to use another server. The jest-expo
 preset replaces `fetch` with a stub, hence the separate config.
 
+### Hosted models (Anthropic, OpenAI, compatible)
+
+The same scenarios run on a hosted model with `make scenario-remote`; the local run
+(`make scenario`) is unchanged and ignores these variables. Hosted runs are billed by the provider.
+
+| Variable | |
+| --- | --- |
+| `SCENARIO_PROVIDER` | `anthropic`, `openai` (Responses API, Codex models) or `openai-compatible`; required |
+| `SCENARIO_MODEL` | model id, required |
+| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | key of that provider; `SCENARIO_API_KEY` overrides it and serves `openai-compatible` |
+| `SCENARIO_BASE_URL` | optional endpoint (a proxy); required for `openai-compatible` |
+| `SCENARIO_CONTEXT_TOKENS` | optional context window; default 128000 |
+
+```bash
+SCENARIO_PROVIDER=anthropic SCENARIO_MODEL=<model id> ANTHROPIC_API_KEY=... make scenario-remote
+```
+
+Keys come from the environment only, never from the repo; `.env` is git-ignored, but jest does not
+read it, so export the variables. Do not put a key in an `EXPO_PUBLIC_*` variable: those are
+bundled into the app. The test title names the target (`[anthropic:<model>]`). The context window
+is far above the local 8192, so the agent's token budgets differ from a local run.
+
+In the app, Settings > *Model* switches between the on-device model and a hosted one (model name,
+API key, optional Base URL). The key is kept in memory only (re-enter it after a restart), is sent
+only to the provider or the Base URL (which must be https; loopback http only in development), and
+is not written to the benchmark log. Requests stream through `expo/fetch`.
+
 ## Benchmark in the app (on a phone)
 
 The Chat tab has a **Benchmark** button next to Run. It runs on the loaded model and shows a live
@@ -498,6 +525,7 @@ Shortcuts (`make help`):
 make init   # npm install; installs bun and llama.cpp via brew if missing
 make test   # typecheck + lint + jest (mock model, no LLM)
 make scenario # plain-language requests -> transactions, against the local model (slow; not in make test)
+make scenario-remote # the same scenarios on a hosted model (costs money): SCENARIO_PROVIDER, SCENARIO_MODEL and a key variable
 make chat   # talk to the local model; PROMPT="..." asks once, ARGS="--onbloc" adds the wallet
 make build  # Release build only: make build ios|android
 make deploy # Release build + install on a connected phone: make deploy ios|android

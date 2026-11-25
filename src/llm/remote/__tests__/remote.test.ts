@@ -63,6 +63,23 @@ describe('createRemoteModel', () => {
     expect(url).toBe('https://proxy.test/v1/messages');
   });
 
+  it('sends requests through the fetch it was given, not the global one', async () => {
+    const global = jest.spyOn(globalThis, 'fetch');
+    const custom = jest.fn().mockResolvedValue(new Response('{}', { headers: { 'content-type': 'application/json' } }));
+    try {
+      await Promise.resolve(
+        (createRemoteModel(options({ fetch: custom })) as Exclude<LanguageModel, string>).doGenerate({
+          prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }],
+        })
+      ).catch(() => undefined);
+
+      expect(custom).toHaveBeenCalledTimes(1);
+      expect(global).not.toHaveBeenCalled();
+    } finally {
+      global.mockRestore();
+    }
+  });
+
   it.each(['', '   '])('rejects an empty apiKey (%j) instead of going keyless', (apiKey) => {
     expect(() => createRemoteModel(options({ apiKey }))).toThrow('apiKey is empty');
   });

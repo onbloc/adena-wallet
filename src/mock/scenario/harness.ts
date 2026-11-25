@@ -1,12 +1,15 @@
-// jest scenarios: a real model over HTTP and the real Adena transaction builder. Node only: the Adena
+// jest scenarios: a model (llama-server over HTTP by default, a hosted provider with SCENARIO_PROVIDER)
+// and the real Adena transaction builder. Node only: the Adena
 // SDK is not bundled into the app (see README), so the app builds its own runner (see benchmark).
 import { decodeTransactionMessage } from '@adena-wallet/sdk';
 
 import { AdenaWalletSdk, createOnblocTokenResolver, type AdenaTransaction } from '../../adena';
 import type { PreparedTransaction, WalletSdk } from '../../agent';
-import { LLMFromModel } from '../../llm/core';
+import { LLMFromModel, type LLM } from '../../llm/core';
+import { createLLMRemote } from '../../llm/remote';
 import { connectModel, DEFAULT_MODEL_NAME, DEFAULT_SERVER_URL, SERVER_CONTEXT_TOKENS } from '../cli/lib/server';
 import { CAROL } from './fixture';
+import { remoteOptionsFromEnv } from './remoteEnv';
 import { createScenarioRunner, type ScenarioWalletFactory } from './runner';
 
 export { ACCOUNT, CAROL, GNS_PATH, RECIPIENT } from './fixture';
@@ -29,7 +32,18 @@ const adenaWallet: ScenarioWalletFactory = (onbloc): WalletSdk => {
   };
 };
 
-export async function createServerScenarioRunner(url = serverUrl()) {
-  const llm = new LLMFromModel(await connectModel(url, DEFAULT_MODEL_NAME), { contextTokens: SERVER_CONTEXT_TOKENS });
-  return createScenarioRunner({ llm, createWallet: adenaWallet });
+/** What the scenarios run on: a hosted model (SCENARIO_PROVIDER set) or the local server. */
+export const scenarioTarget = (env = process.env) => {
+  const remote = remoteOptionsFromEnv(env);
+  return remote ? `${remote.provider}:${remote.model}` : `local:${serverUrl()}`;
+};
+
+async function createScenarioLLM(): Promise<LLM> {
+  const remote = remoteOptionsFromEnv(process.env);
+  if (remote) return createLLMRemote(remote);
+  return new LLMFromModel(await connectModel(serverUrl(), DEFAULT_MODEL_NAME), { contextTokens: SERVER_CONTEXT_TOKENS });
+}
+
+export async function createEnvScenarioRunner() {
+  return createScenarioRunner({ llm: await createScenarioLLM(), createWallet: adenaWallet });
 }

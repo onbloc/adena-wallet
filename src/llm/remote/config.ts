@@ -16,6 +16,8 @@ export type RemoteProviderOptions = {
   baseURL?: string;
   /** Context window of `model`, in tokens. */
   contextTokens?: number;
+  /** Custom fetch; React Native needs a streaming one (expo/fetch), its global fetch cannot stream. */
+  fetch?: typeof fetch;
 };
 
 // Conservative default; hosted models are far above the on-device 8192.
