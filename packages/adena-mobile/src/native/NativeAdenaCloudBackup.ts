@@ -10,7 +10,7 @@ export interface Spec extends TurboModule {
   signIn(): Promise<void>;
   list(): Promise<Array<{ name: string; modifiedAt: number }>>;
   read(name: string): Promise<string>;
-  // Replaces the whole file in one step; never leaves a partial file behind.
+  // Creates the file in one step and fails when it already exists; never leaves a partial file behind.
   write(name: string, contents: string): Promise<void>;
   // Resolves when the file is already gone.
   remove(name: string): Promise<void>;

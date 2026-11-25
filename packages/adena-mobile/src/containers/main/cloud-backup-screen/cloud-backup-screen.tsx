@@ -19,6 +19,7 @@ import {
 } from '../../../presenters/cloud-backup.presenter';
 import { useCloudBackupStatusQuery, useRestorableBackupsQuery } from '../../../queries/cloud-backup.queries';
 import { queryKeys } from '../../../queries/query-keys';
+import { isSameBackup } from '../../../repositories/cloud-backup/cloud-backup-store';
 import { BACKUP_PASSWORD_ISSUE_MESSAGE, BackupPasswordStrength, evaluateBackupPassword, PasswordIssue } from '../../../security/password-policy';
 import { CloudBackupStatus } from '../../../services/cloud-backup.service';
 import { useToastStore } from '../../../stores/toast.store';
@@ -254,7 +255,7 @@ export const CloudBackupScreen = ({ navigation }: NativeStackScreenProps<MainSta
       ? { kind: 'error', ...describeBackupError(statusQuery.error, provider) }
       : { kind: 'loading' };
 
-  const deleteDialogDescription = deleteTarget && deleteTarget !== ownFileName
+  const deleteDialogDescription = deleteTarget && !isSameBackup(deleteTarget, ownFileName)
     ? `This backup belongs to another wallet or device. Once deleted, it can't be restored from ${providerName}.`
     : undefined;
 

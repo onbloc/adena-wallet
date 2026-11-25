@@ -61,6 +61,11 @@ export class MemoryCloudBackupStore implements CloudBackupStore {
 
   async write(name: string, contents: string): Promise<void> {
     this.check();
+
+    if (this.files.has(name)) {
+      throw new AppError(AppErrorCode.STORAGE_ERROR, 'The backup file already exists.');
+    }
+
     this.files.set(name, { contents, modifiedAt: this.now() });
   }
 

@@ -7,7 +7,10 @@ public final class AdenaCloudBackupStore: NSObject {
   @objc public static let errorCodeKey = "code"
 
   private static let errorDomain = "AdenaCloudBackup"
-  private static let namePattern = try! NSRegularExpression(pattern: "^adena-backup-[0-9a-f]{32}\\.json$")
+  // Single-file names from older apps, or one immutable file per revision: adena-backup-<id>.<revision>-<nonce>.json
+  private static let namePattern = try! NSRegularExpression(
+    pattern: "^adena-backup-[0-9a-f]{32}(\\.(0|[1-9][0-9]{0,14})-[0-9a-f]{16})?\\.json$"
+  )
   private static let placeholderPrefix = "."
   private static let placeholderSuffix = ".icloud"
 
@@ -148,16 +151,16 @@ public final class AdenaCloudBackupStore: NSObject {
         values.isExcludedFromBackup = true
         try staging.setResourceValues(values)
 
+        // Create-only: every backup write is a new immutable file, so a competing write never replaces another copy.
+        guard !self.exists(destination) else {
+          throw Self.failure("E_FAILED", "The backup file already exists")
+        }
         var writeError: Error?
         try self.coordinate { coordinator, coordinationError in
-          coordinator.coordinate(writingItemAt: destination, options: .forReplacing, error: coordinationError) { writeURL in
+          coordinator.coordinate(writingItemAt: destination, options: [], error: coordinationError) { writeURL in
             do {
-              if self.fileManager.fileExists(atPath: writeURL.path) {
-                // Swaps the staged file in atomically; a reader sees the old or the new file, never a mix.
-                _ = try self.fileManager.replaceItemAt(writeURL, withItemAt: staging)
-              } else {
-                try self.fileManager.moveItem(at: staging, to: writeURL)
-              }
+              // Fails instead of replacing when the file appeared meanwhile; a reader never sees a partial file.
+              try self.fileManager.moveItem(at: staging, to: writeURL)
             } catch {
               writeError = error
             }

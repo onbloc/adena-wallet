@@ -3,7 +3,7 @@ import { deriveKeyPair } from '../../../src/crypto/key-pair';
 import { KeyringType } from '../../../src/crypto/keyring';
 import { mnemonicToSeed } from '../../../src/crypto/mnemonic';
 import { StorageKey } from '../../../src/migration/storage-keys';
-import { backupFileName } from '../../../src/repositories/cloud-backup/cloud-backup-store';
+import { backupFileName, parseBackupFileName } from '../../../src/repositories/cloud-backup/cloud-backup-store';
 import { SecureKey } from '../../../src/security/secure-keys';
 import { BACKUP_PASSWORD_SAME_AS_WALLET, fingerprintOf } from '../../../src/services/cloud-backup.service';
 import { FREE_PASSWORD_ATTEMPTS } from '../../../src/services/password-attempt-limiter';
@@ -57,6 +57,15 @@ const twoDevices = async () => {
   return { a, b: { ...b, backup: b.container.cloudBackupService }, fileName };
 };
 
+type Store = Awaited<ReturnType<typeof setup>>['cloudBackupStore'];
+
+// Header revisions of every stored version, ascending.
+const revisionsIn = (store: Store): number[] =>
+  [...store.files.values()].map(file => JSON.parse(file.contents).revision as number).sort((a, b) => a - b);
+
+const newestName = (store: Store): string =>
+  [...store.files.keys()].sort((a, b) => (parseBackupFileName(b)?.revision ?? 0) - (parseBackupFileName(a)?.revision ?? 0))[0];
+
 const createOn = (backup: Awaited<ReturnType<typeof setup>>['backup'], walletPassword: string, overwrite?: boolean) =>
   backup.createBackup({ walletPassword, backupPassword: BACKUP_PASSWORD, confirmPassword: BACKUP_PASSWORD, overwrite });
 
@@ -88,7 +97,7 @@ describe('CloudBackupService', () => {
 
     expect(status).toEqual({ kind: 'backedUp', fileName: name, backedUpAt: 1_700_000_000_000, outdated: false, mnemonicCount: 1, privateKeyCount: 1 });
 
-    expect(name).toMatch(/^adena-backup-[0-9a-f]{32}\.json$/);
+    expect(name).toMatch(/^adena-backup-[0-9a-f]{32}\.1-[0-9a-f]{16}\.json$/);
     expect(file.contents).not.toContain('abandon');
     expect(file.contents).not.toContain(PRIVATE_KEY);
     expect(file.contents).not.toContain(BACKUP_PASSWORD);
@@ -124,7 +133,7 @@ describe('CloudBackupService', () => {
     await expect(backup.verifyWalletPassword(TEST_PASSWORD)).resolves.toBeUndefined();
   });
 
-  it('marks the backup outdated when keyrings or accounts change, and updates it in place', async () => {
+  it('marks the backup outdated when keyrings or accounts change, and writes each update as a new version', async () => {
     const { backup, cloudBackupStore, container, account, tick } = await setup();
 
     await create(backup);
@@ -142,7 +151,10 @@ describe('CloudBackupService', () => {
     const updated = await create(backup);
 
     expect(updated).toMatchObject({ outdated: false, backedUpAt: 1_700_000_001_000, privateKeyCount: 1 });
-    expect([...cloudBackupStore.files.keys()]).toEqual([fileName]);
+    // The replaced version stays as a fallback.
+    expect(cloudBackupStore.files.has(fileName)).toBe(true);
+    expect(revisionsIn(cloudBackupStore)).toEqual([1, 2]);
+    expect(updated).toMatchObject({ fileName: newestName(cloudBackupStore) });
 
     await container.walletService.removeAccount(imported.id, TEST_PASSWORD);
     expect(backup.getLocalStatus()).toMatchObject({ outdated: true });
@@ -348,35 +360,141 @@ describe('CloudBackupService', () => {
     expect(await b.backup.getStatus()).not.toHaveProperty('remoteChange');
     a.tick();
     await createOn(a.backup, TEST_PASSWORD);
-    const writtenByA = a.cloudBackupStore.files.get(fileName)!.contents;
+    const writtenByA = new Map(a.cloudBackupStore.files);
 
     expect(await b.backup.getStatus()).toMatchObject({ kind: 'backedUp', remoteChange: 'updatedElsewhere' });
     expect(await codeOf(() => createOn(b.backup, NEW_WALLET_PASSWORD))).toBe(AppErrorCode.BACKUP_CONFLICT);
-    expect(a.cloudBackupStore.files.get(fileName)!.contents).toBe(writtenByA);
+    expect(a.cloudBackupStore.files).toEqual(writtenByA);
+    expect(a.cloudBackupStore.files.has(fileName)).toBe(true);
 
     // An explicit overwrite wins and bumps the revision past both devices.
     await createOn(b.backup, NEW_WALLET_PASSWORD, true);
-    expect(JSON.parse(a.cloudBackupStore.files.get(fileName)!.contents).revision).toBe(3);
+    expect(revisionsIn(a.cloudBackupStore)).toEqual([2, 3]);
     expect(await b.backup.getStatus()).not.toHaveProperty('remoteChange');
     expect(await a.backup.getStatus()).toMatchObject({ remoteChange: 'updatedElsewhere' });
     expect(await codeOf(() => createOn(a.backup, TEST_PASSWORD))).toBe(AppErrorCode.BACKUP_CONFLICT);
+  });
+
+  it('keeps both copies when two devices write on top of the same revision, and reports the conflict', async () => {
+    const { a, b } = await twoDevices();
+    const writeOnA = a.cloudBackupStore.write.bind(a.cloudBackupStore);
+    let releaseA = (): void => undefined;
+    const held = new Promise<void>((resolve) => {
+      releaseA = resolve;
+    });
+    const write = jest.spyOn(a.cloudBackupStore, 'write').mockImplementationOnce(async (name, contents) => {
+      await held;
+      return writeOnA(name, contents);
+    });
+
+    // Device A has read revision 1 and is uploading; device B reads the same revision and finishes first.
+    a.tick();
+    const writingOnA = createOn(a.backup, TEST_PASSWORD);
+
+    await waitFor(() => write.mock.calls.length > 0);
+    await createOn(b.backup, NEW_WALLET_PASSWORD);
+    releaseA();
+    await writingOnA;
+
+    const headers = [...a.cloudBackupStore.files.values()].map(file => JSON.parse(file.contents));
+
+    expect(headers.map(header => header.revision).sort()).toEqual([1, 2, 2]);
+    expect(await a.backup.getStatus()).toMatchObject({ remoteChange: 'updatedElsewhere' });
+    expect(await b.backup.getStatus()).toMatchObject({ remoteChange: 'updatedElsewhere' });
+    expect(await codeOf(() => createOn(a.backup, TEST_PASSWORD))).toBe(AppErrorCode.BACKUP_CONFLICT);
+
+    // A restore offers the backup once, as its newest readable version (the later write).
+    const restoring = createTestContainer({ cloudBackup: { files: a.cloudBackupStore.files } }).container.cloudBackupService;
+    const backups = await restoring.findBackups();
+    const newest = headers.filter(header => header.revision === 2).sort((x, y) => y.createdAt - x.createdAt)[0];
+
+    expect(backups).toHaveLength(1);
+    expect(parseBackupFileName(backups[0].fileName)?.revision).toBe(2);
+    expect((await restoring.openBackup(backups[0].fileName, BACKUP_PASSWORD)).createdAt).toBe(newest.createdAt);
+    jest.restoreAllMocks();
+  });
+
+  it('never prunes a version written by another device after it last looked', async () => {
+    const { a, b } = await twoDevices();
+    const remove = a.cloudBackupStore.remove.bind(a.cloudBackupStore);
+    let late: string | undefined;
+
+    a.tick();
+    await createOn(a.backup, TEST_PASSWORD);
+    // B writes its revision while A is between listing and pruning.
+    jest.spyOn(a.cloudBackupStore, 'remove').mockImplementation(async (name) => {
+      if (!late) {
+        await createOn(b.backup, NEW_WALLET_PASSWORD, true);
+        late = newestName(a.cloudBackupStore);
+      }
+
+      return remove(name);
+    });
+    a.tick();
+    await createOn(a.backup, TEST_PASSWORD);
+    jest.restoreAllMocks();
+
+    expect(late).toBeDefined();
+    expect(a.cloudBackupStore.files.has(late!)).toBe(true);
+    expect(await a.backup.getStatus()).toMatchObject({ remoteChange: 'updatedElsewhere' });
+  });
+
+  it('still reads, restores and upgrades a backup in the single-file format', async () => {
+    const source = await setup();
+
+    await create(source.backup);
+    const [[, file]] = [...source.cloudBackupStore.files];
+    const backupId = JSON.parse(file.contents).backupId as string;
+    const legacy = backupFileName(backupId);
+    const target = createTestContainer();
+    const service = target.container.cloudBackupService;
+
+    target.cloudBackupStore.files.set(legacy, file);
+    expect(await service.findBackups()).toEqual([{ fileName: legacy, modifiedAt: file.modifiedAt, current: false }]);
+    await service.restoreWallet(await service.openBackup(legacy, BACKUP_PASSWORD), NEW_WALLET_PASSWORD);
+    expect(await service.getStatus()).toMatchObject({ kind: 'backedUp', fileName: legacy });
+    expect(await service.getStatus()).not.toHaveProperty('remoteChange');
+
+    // The next write goes to a new version and keeps the old file until a later write replaces both.
+    await createOn(service, NEW_WALLET_PASSWORD);
+    expect(target.cloudBackupStore.files.has(legacy)).toBe(true);
+    expect(await service.getStatus()).not.toHaveProperty('remoteChange');
+    await createOn(service, NEW_WALLET_PASSWORD);
+    expect(target.cloudBackupStore.files.has(legacy)).toBe(false);
+    expect(revisionsIn(target.cloudBackupStore)).toEqual([2, 3]);
+
+    // Deleting the backup removes every version.
+    await service.deleteBackup(legacy, { walletPassword: NEW_WALLET_PASSWORD });
+    expect(target.cloudBackupStore.files.size).toBe(0);
+    expect(service.getLocalStatus()).toEqual({ kind: 'none' });
+  });
+
+  it('refuses a version whose header disagrees with its file name', async () => {
+    const { backup, cloudBackupStore } = await setup();
+
+    await create(backup);
+    const [[name, file]] = [...cloudBackupStore.files];
+    const renamed = name.replace('.1-', '.5-');
+
+    cloudBackupStore.files.set(renamed, file);
+    expect(await codeOf(() => backup.openBackup(renamed, BACKUP_PASSWORD))).toBe(AppErrorCode.BACKUP_CORRUPTED);
+    expect(await backup.getStatus()).toMatchObject({ remoteChange: 'unreadable' });
   });
 
   it('detects a cloud copy rolled back to an older revision', async () => {
     const { backup, cloudBackupStore, tick } = await setup();
 
     await create(backup);
-    const [fileName] = [...cloudBackupStore.files.keys()];
-    const first = cloudBackupStore.files.get(fileName)!;
-
     tick();
     await createOn(backup, TEST_PASSWORD, false);
-    cloudBackupStore.files.set(fileName, first);
+    // The cloud went back to a snapshot holding only the first version.
+    cloudBackupStore.files.delete(newestName(cloudBackupStore));
 
     expect(await backup.getStatus()).toMatchObject({ remoteChange: 'rolledBack' });
     expect(await codeOf(() => create(backup))).toBe(AppErrorCode.BACKUP_CONFLICT);
     await createOn(backup, TEST_PASSWORD, true);
-    expect(JSON.parse(cloudBackupStore.files.get(fileName)!.contents).revision).toBe(3);
+    expect(revisionsIn(cloudBackupStore)).toEqual([1, 3]);
+    expect(await backup.getStatus()).not.toHaveProperty('remoteChange');
   });
 
   it('reports a damaged cloud copy and replaces it only when asked', async () => {
@@ -607,7 +725,8 @@ describe('CloudBackupService write that times out but lands', () => {
     tick();
     await create(backup);
     expect(await backup.getStatus()).toMatchObject({ kind: 'backedUp', backedUpAt: 1_700_000_003_000 });
-    expect(cloudBackupStore.files.size).toBe(1);
+    expect(await backup.getStatus()).not.toHaveProperty('remoteChange');
+    expect(revisionsIn(cloudBackupStore)).toEqual([3, 4]);
     expect(keyValueStore.getString(StorageKey.CLOUD_BACKUP_PENDING_WRITE)).toBeUndefined();
   });
 
@@ -620,8 +739,10 @@ describe('CloudBackupService write that times out but lands', () => {
 
     tick();
     await create(backup);
-    expect([...cloudBackupStore.files.keys()]).toEqual([fileName]);
-    expect(backup.getLocalStatus()).toMatchObject({ kind: 'backedUp', fileName, backedUpAt: 1_700_000_001_000 });
+    const backupIds = [...cloudBackupStore.files.keys()].map(name => parseBackupFileName(name)?.backupId);
+
+    expect(backupIds).toEqual([parseBackupFileName(fileName)?.backupId, parseBackupFileName(fileName)?.backupId]);
+    expect(backup.getLocalStatus()).toMatchObject({ kind: 'backedUp', fileName: newestName(cloudBackupStore), backedUpAt: 1_700_000_001_000 });
   });
 
   it('reuses the backupId when the first write never landed', async () => {
@@ -632,7 +753,9 @@ describe('CloudBackupService write that times out but lands', () => {
     expect(cloudBackupStore.files.size).toBe(0);
     await create(backup);
     await create(backup);
-    expect(cloudBackupStore.files.size).toBe(1);
+    await create(backup);
+    expect(new Set([...cloudBackupStore.files.keys()].map(name => parseBackupFileName(name)?.backupId)).size).toBe(1);
+    expect(revisionsIn(cloudBackupStore)).toEqual([2, 3]);
   });
 
   it('still reports a write from another device while its own write is unconfirmed', async () => {

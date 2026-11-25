@@ -23,6 +23,14 @@ describe('MemoryCloudBackupStore', () => {
     expect(await codeOf(() => store.read(NAME))).toBe(AppErrorCode.BACKUP_NOT_FOUND);
   });
 
+  it('never replaces an existing file', async () => {
+    const store = new MemoryCloudBackupStore();
+
+    await store.write(NAME, 'first');
+    expect(await codeOf(() => store.write(NAME, 'second'))).toBe(AppErrorCode.STORAGE_ERROR);
+    expect(await store.read(NAME)).toBe('first');
+  });
+
   it('needs sign-in when configured like Google Drive', async () => {
     const store = new MemoryCloudBackupStore({ provider: 'google-drive', requiresSignIn: true });
 

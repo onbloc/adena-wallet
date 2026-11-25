@@ -1,6 +1,6 @@
 import { AppErrorCode, isAppError } from '../../../../src/core/errors';
 import NativeAdenaCloudBackup, { CLOUD_BACKUP_ERROR, Spec } from '../../../../src/native/NativeAdenaCloudBackup';
-import { backupFileName, CloudBackupProvider } from '../../../../src/repositories/cloud-backup/cloud-backup-store';
+import { backupFileName, backupVersionFileName, CloudBackupProvider } from '../../../../src/repositories/cloud-backup/cloud-backup-store';
 import { NativeCloudBackupStore } from '../../../../src/repositories/cloud-backup/native-cloud-backup-store';
 import { catchError } from '../../../helpers/service-fakes';
 
@@ -90,10 +90,12 @@ describe('NativeCloudBackupStore', () => {
     const native = createNative();
     const store = new NativeCloudBackupStore(native, CloudBackupProvider.ICLOUD);
 
-    native.list.mockResolvedValue([{ name: 'notes.txt', modifiedAt: 1 }, { name: NAME, modifiedAt: Number.NaN }]);
-    expect(await store.list()).toEqual([{ name: NAME, modifiedAt: 0 }]);
+    const version = backupVersionFileName('a'.repeat(32), 12, 'f'.repeat(16));
 
-    for (const name of ['../vault.json', 'adena-backup-x.json', '']) {
+    native.list.mockResolvedValue([{ name: 'notes.txt', modifiedAt: 1 }, { name: NAME, modifiedAt: Number.NaN }, { name: version, modifiedAt: 2 }]);
+    expect(await store.list()).toEqual([{ name: NAME, modifiedAt: 0 }, { name: version, modifiedAt: 2 }]);
+
+    for (const name of ['../vault.json', 'adena-backup-x.json', '', NAME.replace('.json', '.01-ffffffffffffffff.json'), NAME.replace('.json', '.1-fff.json')]) {
       expect(await codeOf(() => store.read(name))).toBe(AppErrorCode.INVALID_REQUEST);
       expect(await codeOf(() => store.write(name, 'x'))).toBe(AppErrorCode.INVALID_REQUEST);
       expect(await codeOf(() => store.remove(name))).toBe(AppErrorCode.INVALID_REQUEST);

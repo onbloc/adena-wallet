@@ -5,10 +5,10 @@ import { AppError, AppErrorCode, isAppError } from '../core/errors';
 import { KeyringRecord, KeyringType } from '../crypto/keyring';
 import { Account, isAvatarColor } from '../domain/account';
 import { CloudBackupState, CloudBackupStateRepository } from '../repositories/cloud-backup/backup-state.repository';
-import { BACKUP_FILE_PATTERN, backupFileName, CloudBackupProvider, CloudBackupStore } from '../repositories/cloud-backup/cloud-backup-store';
+import { backupFileName, backupVersionFileName, CloudBackupFile, CloudBackupProvider, CloudBackupStore, parseBackupFileName } from '../repositories/cloud-backup/cloud-backup-store';
 import { BACKUP_VERSION, BackupAccount, BackupCodec, BackupContent, BackupHeader, BackupKeyring, headerOf, PLACEHOLDER_ACCOUNT_VERSION } from '../security/backup-codec';
 import { BACKUP_PASSWORD_ISSUE_MESSAGE, findBackupPasswordIssue } from '../security/password-policy';
-import { createId } from '../utils/id';
+import { createId, randomBytes } from '../utils/id';
 import { SerialQueue } from '../utils/serial-queue';
 import { AccountService } from './account.service';
 import { PasswordAttemptLimiter } from './password-attempt-limiter';
@@ -65,10 +65,22 @@ const CONFLICT_MESSAGE: Record<RemoteChange, string> = {
 
 const corrupted = (detail: string): AppError => new AppError(AppErrorCode.BACKUP_CORRUPTED, `This backup file is damaged (${detail}).`);
 
+// One cloud file of a backup: its plaintext header, or the change when no header can be read.
+interface RemoteVersion {
+  name: string;
+  modifiedAt: number;
+  // From the file name; null for the single-file format.
+  nameRevision: number | null;
+  header: BackupHeader | RemoteChange;
+}
+
+// The file each opened backup was read from, so a restore records the real file name.
+const openedFiles = new WeakMap<BackupContent, string>();
+
 // Encrypted wallet backup in the user's own cloud. The backup password never leaves memory and is
 // never stored; nothing is uploaded without it, so account changes only mark the backup outdated.
-// Each write bumps a revision kept in the file header (bound to the encrypted copy), so a copy written
-// by another device or rolled back is reported instead of being overwritten silently.
+// Each write bumps a revision kept in the file header (bound to the encrypted copy) and goes to a new file,
+// so a copy written by another device or rolled back is reported and never overwritten.
 export class CloudBackupService {
   private readonly queue = new SerialQueue();
 
@@ -123,21 +135,20 @@ export class CloudBackupService {
       await this.store.signIn();
     }
 
-    const files = await this.store.list();
-    const remote = files.some(file => file.name === known.fileName) ? await this.readRemoteHeader(known.fileName) : null;
+    const versions = await this.readVersions(known.backupId);
 
-    if (remote === null) {
+    if (versions.length === 0) {
       this.stateRepository.clear();
       return { kind: 'none' };
     }
 
-    state = this.adoptPendingWrite(pending, remote) ?? state;
+    state = this.adoptPendingWrite(pending, versions) ?? state;
 
     if (!state) {
       return { kind: 'none' };
     }
 
-    const remoteChange = compareRemote(state, remote);
+    const remoteChange = compareVersions(state, versions);
 
     return { ...this.getLocalStatus(), ...(remoteChange && { remoteChange }) };
   }
@@ -172,24 +183,22 @@ export class CloudBackupService {
       const pending = this.pendingWriteFor(saved);
       // A first backup whose write was never confirmed keeps its backupId, so a retry leaves no orphan file.
       const backupId = saved?.backupId ?? pending?.backupId ?? createId();
-      const fileName = backupFileName(backupId);
-      const remote = saved || pending ? await this.readRemoteHeader(fileName) : null;
-      const previous = (remote === null ? null : this.adoptPendingWrite(pending, remote)) ?? saved;
+      const versions = saved || pending ? await this.readVersions(backupId) : [];
+      const previous = this.adoptPendingWrite(pending, versions) ?? saved;
       const reference = previous ?? pending;
-      let revision = 1;
 
-      if (reference && remote !== null) {
-        const change = compareRemote(reference, remote);
+      if (reference && versions.length > 0) {
+        const change = compareVersions(reference, versions);
 
         if (change && !overwrite) {
           throw new AppError(AppErrorCode.BACKUP_CONFLICT, CONFLICT_MESSAGE[change]);
         }
       }
 
-      if (previous || remote !== null) {
-        revision = Math.max(previous?.revision ?? 0, typeof remote === 'object' && remote !== null ? remote.revision : 0) + 1;
-      }
-
+      // The newest stored version is kept when older ones are pruned, even if this device knew a later one.
+      const newestStored = Math.max(0, ...versions.map(knownRevision).filter(revision => revision !== null));
+      const revision = previous || versions.length > 0 ? Math.max(previous?.revision ?? 0, newestStored) + 1 : 1;
+      const fileName = backupVersionFileName(backupId, revision, bytesToHex(randomBytes(8)));
       const { content, fingerprint } = await this.snapshot(walletPassword, backupId, revision);
       const encoded = await this.codec.encode(content, backupPassword);
       const next: CloudBackupState = { backupId, fileName, backedUpAt: content.createdAt, revision, fingerprint, ...countKeyrings(content.keyrings) };
@@ -198,15 +207,18 @@ export class CloudBackupService {
       await this.store.write(fileName, encoded);
       this.stateRepository.save(next);
       this.stateRepository.clearPendingWrite();
+      await this.pruneVersions(next, versions, newestStored);
 
       return this.getLocalStatus();
     });
   }
 
-  // Removes one Adena backup from the cloud; the wallet on this device is untouched. While a wallet exists
-  // the wallet password is required; before setup the caller must have confirmed the deletion explicitly.
+  // Removes one Adena backup (every stored version of it) from the cloud; the wallet on this device is untouched.
+  // While a wallet exists the wallet password is required; before setup the caller must have confirmed the deletion explicitly.
   deleteBackup(fileName: string, options: { walletPassword?: string } = {}): Promise<void> {
-    if (!BACKUP_FILE_PATTERN.test(fileName)) {
+    const backupId = parseBackupFileName(fileName)?.backupId;
+
+    if (backupId === undefined) {
       return Promise.reject(new AppError(AppErrorCode.INVALID_REQUEST, 'Invalid backup file name'));
     }
 
@@ -220,38 +232,49 @@ export class CloudBackupService {
       }
 
       await this.store.signIn();
+      const names = new Set([fileName, ...versionFilesOf(await this.store.list(), backupId).map(file => file.name)]);
 
-      try {
-        await this.store.remove(fileName);
-      }
-      catch (error) {
-        if (!isAppError(error, AppErrorCode.BACKUP_NOT_FOUND)) {
-          throw error;
+      for (const name of names) {
+        try {
+          await this.store.remove(name);
+        }
+        catch (error) {
+          if (!isAppError(error, AppErrorCode.BACKUP_NOT_FOUND)) {
+            throw error;
+          }
         }
       }
 
-      if (this.stateRepository.get()?.fileName === fileName) {
+      if (this.stateRepository.get()?.backupId === backupId) {
         this.stateRepository.clear();
       }
 
-      if (this.stateRepository.getPendingWrite()?.fileName === fileName) {
+      if (this.stateRepository.getPendingWrite()?.backupId === backupId) {
         this.stateRepository.clearPendingWrite();
       }
     });
   }
 
-  // Newest first. Without `interactive`, Google Drive fails with CLOUD_BACKUP_NOT_SIGNED_IN until access is granted.
+  // One entry per backup, pointing at its newest readable version; newest first.
+  // Without `interactive`, Google Drive fails with CLOUD_BACKUP_NOT_SIGNED_IN until access is granted.
   async findBackups(options: { interactive?: boolean } = {}): Promise<RestorableBackup[]> {
     if (options.interactive) {
       await this.store.signIn();
     }
 
     const files = await this.store.list();
-    const currentFileName = this.stateRepository.get()?.fileName;
+    const backupIds = new Set(files.map(file => parseBackupFileName(file.name)?.backupId).filter(id => id !== undefined));
+    const currentBackupId = this.stateRepository.get()?.backupId;
+    const backups: RestorableBackup[] = [];
 
-    return files
-      .map(file => ({ fileName: file.name, modifiedAt: file.modifiedAt, current: file.name === currentFileName }))
-      .sort((a, b) => b.modifiedAt - a.modifiedAt);
+    for (const backupId of backupIds) {
+      const group = versionFilesOf(files, backupId);
+      const newest = group.length === 1 ? group[0] : newestVersion(await this.readVersionsOf(group, backupId)) ?? newestFile(group);
+
+      backups.push({ fileName: newest.name, modifiedAt: newest.modifiedAt, current: backupId === currentBackupId });
+    }
+
+    return backups.sort((a, b) => b.modifiedAt - a.modifiedAt);
   }
 
   // Throttled like the wallet password, with its own counter that a factory reset keeps.
@@ -259,12 +282,16 @@ export class CloudBackupService {
     const raw = await this.store.read(fileName);
     // Fails fast on a damaged or renamed file instead of counting it as a wrong password.
     const envelope = this.codec.parseEnvelope(raw);
+    const parts = parseBackupFileName(fileName);
 
-    if (backupFileName(envelope.backupId) !== fileName) {
+    if (parts?.backupId !== envelope.backupId || (parts.revision !== null && parts.revision !== headerOf(envelope).revision)) {
       throw corrupted('file name');
     }
 
-    return this.restoreLimiter.run(() => this.codec.decode(raw, backupPassword));
+    const content = await this.restoreLimiter.run(() => this.codec.decode(raw, backupPassword));
+
+    openedFiles.set(content, fileName);
+    return content;
   }
 
   // Rebuilds the wallet through WalletService, then records the backup as current for this device.
@@ -284,7 +311,7 @@ export class CloudBackupService {
     // Saved inside the restore, so an interrupted one leaves neither a partial wallet nor a stale status.
     const saveState = (): void => this.stateRepository.save({
       backupId: content.backupId,
-      fileName: backupFileName(content.backupId),
+      fileName: openedFiles.get(content) ?? backupFileName(content.backupId),
       backedUpAt: content.createdAt,
       revision: content.revision,
       fingerprint: fingerprintOf(this.accountService.getAccounts()),
@@ -302,14 +329,62 @@ export class CloudBackupService {
   }
 
   // A cloud copy matching the pending write is this device's own write that outlived a JS timeout.
-  private adoptPendingWrite(pending: CloudBackupState | null, remote: BackupHeader | RemoteChange): CloudBackupState | null {
-    if (!pending || compareRemote(pending, remote) !== null) {
+  private adoptPendingWrite(pending: CloudBackupState | null, versions: RemoteVersion[]): CloudBackupState | null {
+    if (!pending || !versions.some(version => matches(pending, version.header))) {
       return null;
     }
 
     this.stateRepository.save(pending);
     this.stateRepository.clearPendingWrite();
     return pending;
+  }
+
+  // Every stored version of a backup; files gone between listing and reading are skipped.
+  private async readVersions(backupId: string): Promise<RemoteVersion[]> {
+    return this.readVersionsOf(versionFilesOf(await this.store.list(), backupId), backupId);
+  }
+
+  private async readVersionsOf(files: CloudBackupFile[], backupId: string): Promise<RemoteVersion[]> {
+    const versions: RemoteVersion[] = [];
+
+    for (const file of files) {
+      const nameRevision = parseBackupFileName(file.name)?.revision ?? null;
+      const header = await this.readRemoteHeader(file.name);
+
+      if (header !== null) {
+        // A header that disagrees with its file name was copied or renamed.
+        const consistent = typeof header === 'string' || (header.backupId === backupId && (nameRevision === null || header.revision === nameRevision));
+
+        versions.push({ name: file.name, modifiedAt: file.modifiedAt, nameRevision, header: consistent ? header : RemoteChange.UNREADABLE });
+      }
+    }
+
+    return versions;
+  }
+
+  // Once the new version reads back, drops versions older than the newest one it replaced, which stays as a fallback.
+  // Only files seen before the write are touched, so a version another device wrote meanwhile survives.
+  private async pruneVersions(written: CloudBackupState, seen: RemoteVersion[], keepFrom: number): Promise<void> {
+    try {
+      const header = await this.readRemoteHeader(written.fileName);
+
+      if (header === null || !matches(written, header)) {
+        return;
+      }
+
+      for (const version of seen) {
+        const revision = knownRevision(version);
+        // A damaged single-file copy has no known revision; replacing it needed an explicit overwrite.
+        const superseded = revision === null ? version.header === RemoteChange.UNREADABLE : revision < keepFrom;
+
+        if (superseded) {
+          await this.store.remove(version.name);
+        }
+      }
+    }
+    catch {
+      // The new version is stored; leftovers are pruned by the next write.
+    }
   }
 
   // The plaintext header of a cloud file, null when it is gone, or the change when no header can be read.
@@ -372,20 +447,57 @@ export class CloudBackupService {
   }
 }
 
-// Null when the cloud copy is exactly the one this device last wrote or restored.
-const compareRemote = (state: CloudBackupState, remote: BackupHeader | RemoteChange): RemoteChange | null => {
-  if (typeof remote === 'string') {
-    return remote;
+// Whether a cloud version is exactly the one this device last wrote or restored.
+const matches = (state: CloudBackupState, header: BackupHeader | RemoteChange): boolean =>
+  typeof header !== 'string' && header.revision === state.revision && header.createdAt === state.backedUpAt && header.backupId === state.backupId;
+
+// Null when this device's version is present and nothing at or past its revision was written elsewhere.
+// Older versions are the ones it replaced. Two writes of the same revision both survive and show up here.
+const compareVersions = (state: CloudBackupState, versions: RemoteVersion[]): RemoteChange | null => {
+  let own = false;
+  let newer = false;
+  let unreadable = false;
+
+  for (const version of versions) {
+    const { header } = version;
+
+    if (typeof header === 'string') {
+      if (version.nameRevision === null || version.nameRevision >= state.revision) {
+        newer ||= header === RemoteChange.UPDATED_ELSEWHERE;
+        unreadable ||= header !== RemoteChange.UPDATED_ELSEWHERE;
+      }
+    }
+    else if (matches(state, header)) {
+      own = true;
+    }
+    else if (header.revision >= state.revision) {
+      newer = true;
+    }
   }
 
-  if (remote.revision < state.revision) {
-    return RemoteChange.ROLLED_BACK;
+  if (newer) {
+    return RemoteChange.UPDATED_ELSEWHERE;
   }
 
-  return remote.revision === state.revision && remote.createdAt === state.backedUpAt && remote.backupId === state.backupId
-    ? null
-    : RemoteChange.UPDATED_ELSEWHERE;
+  if (unreadable) {
+    return RemoteChange.UNREADABLE;
+  }
+
+  return own ? null : RemoteChange.ROLLED_BACK;
 };
+
+const knownRevision = (version: RemoteVersion): number | null =>
+  typeof version.header === 'string' ? version.nameRevision : version.header.revision;
+
+const versionFilesOf = (files: CloudBackupFile[], backupId: string): CloudBackupFile[] =>
+  files.filter(file => parseBackupFileName(file.name)?.backupId === backupId);
+
+// The readable version with the highest revision; the later write breaks a tie.
+const newestVersion = (versions: RemoteVersion[]): RemoteVersion | undefined => versions
+  .filter(version => typeof version.header !== 'string')
+  .sort((a, b) => (b.header as BackupHeader).revision - (a.header as BackupHeader).revision || b.modifiedAt - a.modifiedAt)[0];
+
+const newestFile = (files: CloudBackupFile[]): CloudBackupFile => [...files].sort((a, b) => b.modifiedAt - a.modifiedAt)[0];
 
 // Changes when a keyring or account index is added or removed; renames do not count.
 export const fingerprintOf = (accounts: Account[]): string => {

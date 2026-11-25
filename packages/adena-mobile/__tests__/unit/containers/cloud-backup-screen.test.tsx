@@ -4,7 +4,7 @@ import { AppState } from 'react-native';
 import { CloudBackupScreen } from '../../../src/containers/main/cloud-backup-screen';
 import { AppError, AppErrorCode } from '../../../src/core/errors';
 import { KeyringType } from '../../../src/crypto/keyring';
-import { backupFileName } from '../../../src/repositories/cloud-backup/cloud-backup-store';
+import { backupFileName, backupVersionFileName } from '../../../src/repositories/cloud-backup/cloud-backup-store';
 import { renderScreen, resetStores, setupWallet, toastMessage } from '../../helpers/render-screen';
 import { createTestContainer, TEST_PASSWORD } from '../../helpers/test-container';
 
@@ -226,8 +226,9 @@ describe('CloudBackupScreen', () => {
     const { env } = await setupWallet();
 
     await env.container.cloudBackupService.createBackup({ walletPassword: TEST_PASSWORD, backupPassword: BACKUP_PASSWORD, confirmPassword: BACKUP_PASSWORD });
-    const [[name, file]] = [...env.cloudBackupStore.files];
+    const [[, file]] = [...env.cloudBackupStore.files];
     const envelope = JSON.parse(file.contents);
+    const name = backupVersionFileName(envelope.backupId, 2, 'b'.repeat(16));
 
     // Another device wrote revision 2 (only the header matters for the status check).
     env.cloudBackupStore.files.set(name, { ...file, contents: JSON.stringify({ ...envelope, revision: 2, createdAt: envelope.createdAt + 1 }) });
@@ -242,7 +243,8 @@ describe('CloudBackupScreen', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Replace' }));
 
     expect(await screen.findByText('Your backup is ready')).toBeTruthy();
-    expect(JSON.parse(env.cloudBackupStore.files.get(name)!.contents).revision).toBe(3);
+    expect(JSON.parse(env.cloudBackupStore.files.get(name)!.contents).revision).toBe(2);
+    expect([...env.cloudBackupStore.files.values()].map(stored => JSON.parse(stored.contents).revision)).toContain(3);
   });
 
   it('shows an unavailable cloud and retries', async () => {

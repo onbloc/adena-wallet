@@ -133,21 +133,16 @@ class AdenaCloudBackupModule(reactContext: ReactApplicationContext) : NativeAden
     request("GET", "$DRIVE_FILES/${file.id}?alt=media")
   }
 
-  // Drive stores an upload as one revision only when it completes, so a failed upload never leaves a partial file.
+  // Create-only: every backup write is a new immutable file, so a competing write can never replace another copy.
+  // Drive stores an upload only when it completes, so a failed upload never leaves a partial file.
   override fun write(name: String, contents: String, promise: Promise) = runIo(promise) {
-    val existing = findFiles(checkedName(name))
-    if (existing.isEmpty()) {
-      val boundary = "adena-${UUID.randomUUID()}"
-      val metadata = JSONObject().put("name", name).put("parents", JSONArray().put(APP_DATA_FOLDER))
-      val body =
-          "--$boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n$metadata\r\n" +
-              "--$boundary\r\nContent-Type: application/json\r\n\r\n$contents\r\n--$boundary--"
-      request("POST", "$DRIVE_UPLOAD?uploadType=multipart&fields=id", body, "multipart/related; boundary=$boundary")
-    } else {
-      // HttpURLConnection has no PATCH; Google APIs accept the method override header.
-      request("POST", "$DRIVE_UPLOAD/${existing.first().id}?uploadType=media&fields=id", contents, "application/json", "PATCH")
-      existing.drop(1).forEach { duplicate -> deleteQuietly(duplicate.id) }
-    }
+    if (findFiles(checkedName(name)).isNotEmpty()) throw DriveException(E_FAILED, "The backup file already exists")
+    val boundary = "adena-${UUID.randomUUID()}"
+    val metadata = JSONObject().put("name", name).put("parents", JSONArray().put(APP_DATA_FOLDER))
+    val body =
+        "--$boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n$metadata\r\n" +
+            "--$boundary\r\nContent-Type: application/json\r\n\r\n$contents\r\n--$boundary--"
+    request("POST", "$DRIVE_UPLOAD?uploadType=multipart&fields=id", body, "multipart/related; boundary=$boundary")
     null
   }
 
@@ -207,22 +202,21 @@ class AdenaCloudBackupModule(reactContext: ReactApplicationContext) : NativeAden
   }
 
   // A rejected token is evicted from the Play services cache, then retried once with a fresh one.
-  private fun request(method: String, url: String, body: String? = null, contentType: String? = null, methodOverride: String? = null): String {
+  private fun request(method: String, url: String, body: String? = null, contentType: String? = null): String {
     val token = accessToken()
-    val first = send(method, url, body, contentType, methodOverride, token)
+    val first = send(method, url, body, contentType, token)
     if (first.first != HttpURLConnection.HTTP_UNAUTHORIZED) return checked(first)
     runCatching { GoogleAuthUtil.clearToken(reactApplicationContext, token) }
-    return checked(send(method, url, body, contentType, methodOverride, accessToken()))
+    return checked(send(method, url, body, contentType, accessToken()))
   }
 
-  private fun send(method: String, url: String, body: String?, contentType: String?, methodOverride: String?, token: String): Pair<Int, String> {
+  private fun send(method: String, url: String, body: String?, contentType: String?, token: String): Pair<Int, String> {
     val connection = URL(url).openConnection() as HttpURLConnection
     try {
       connection.requestMethod = method
       connection.connectTimeout = TIMEOUT_MS
       connection.readTimeout = TIMEOUT_MS
       connection.setRequestProperty("Authorization", "Bearer $token")
-      methodOverride?.let { connection.setRequestProperty("X-HTTP-Method-Override", it) }
       if (body != null) {
         val bytes = body.toByteArray(Charsets.UTF_8)
         connection.doOutput = true
@@ -307,7 +301,8 @@ class AdenaCloudBackupModule(reactContext: ReactApplicationContext) : NativeAden
     private const val DRIVE_UPLOAD = "https://www.googleapis.com/upload/drive/v3/files"
     private const val APP_DATA_FOLDER = "appDataFolder"
     private const val FILE_PREFIX = "adena-backup-"
-    private val NAME_PATTERN = Regex("^adena-backup-[0-9a-f]{32}\\.json$")
+    // Single-file names from older apps, or one immutable file per revision: adena-backup-<id>.<revision>-<nonce>.json
+    private val NAME_PATTERN = Regex("^adena-backup-[0-9a-f]{32}(\\.(0|[1-9][0-9]{0,14})-[0-9a-f]{16})?\\.json$")
     private const val TIMEOUT_MS = 30_000
     private val AVAILABLE_STATUSES =
         setOf(ConnectionResult.SUCCESS, ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED, ConnectionResult.SERVICE_UPDATING)
