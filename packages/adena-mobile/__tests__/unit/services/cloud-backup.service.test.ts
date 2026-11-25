@@ -42,6 +42,22 @@ const setup = async (options: Parameters<typeof createTestContainer>[0] = {}) =>
 const create = (backup: Awaited<ReturnType<typeof setup>>['backup']) =>
   backup.createBackup({ walletPassword: TEST_PASSWORD, backupPassword: BACKUP_PASSWORD, confirmPassword: BACKUP_PASSWORD });
 
+// Two devices on one cloud account after a restore share the backupId (audit #2).
+const twoDevices = async () => {
+  const a = await setup();
+
+  await create(a.backup);
+  const fileName = [...a.cloudBackupStore.files.keys()][0];
+  const b = createTestContainer({ cloudBackup: { files: a.cloudBackupStore.files } });
+  const content = await b.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+
+  await b.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+  return { a, b: { ...b, backup: b.container.cloudBackupService }, fileName };
+};
+
+const createOn = (backup: Awaited<ReturnType<typeof setup>>['backup'], walletPassword: string, overwrite?: boolean) =>
+  backup.createBackup({ walletPassword, backupPassword: BACKUP_PASSWORD, confirmPassword: BACKUP_PASSWORD, overwrite });
+
 describe('CloudBackupService', () => {
   it('reports availability and the provider, never throwing', async () => {
     const { backup, cloudBackupStore } = await setup();
@@ -324,22 +340,6 @@ describe('CloudBackupService', () => {
     expect(await secureStore.hasItem(SecureKey.BACKUP_PASSWORD_ATTEMPTS)).toBe(false);
   });
 
-  // Two devices on one cloud account after a restore share the backupId (audit #2).
-  const twoDevices = async () => {
-    const a = await setup();
-
-    await create(a.backup);
-    const fileName = [...a.cloudBackupStore.files.keys()][0];
-    const b = createTestContainer({ cloudBackup: { files: a.cloudBackupStore.files } });
-    const content = await b.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
-
-    await b.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
-    return { a, b: { ...b, backup: b.container.cloudBackupService }, fileName };
-  };
-
-  const createOn = (backup: Awaited<ReturnType<typeof setup>>['backup'], walletPassword: string, overwrite?: boolean) =>
-    backup.createBackup({ walletPassword, backupPassword: BACKUP_PASSWORD, confirmPassword: BACKUP_PASSWORD, overwrite });
-
   it('reports a backup updated on another device and never overwrites it silently', async () => {
     const { a, b, fileName } = await twoDevices();
 
@@ -512,5 +512,84 @@ describe('CloudBackupService', () => {
 
     expect(fingerprintOf([{ ...base, keyringId: 'k', hdIndex: 1, name: 'X' }, { ...base, keyringId: 'k', hdIndex: 0, name: 'Y' }])).toBe(a);
     expect(fingerprintOf([{ ...base, keyringId: 'k', hdIndex: 0, name: 'A' }])).not.toBe(a);
+  });
+});
+
+// A JS timeout does not cancel the native upload, so the write may still land after it was reported as failed.
+describe('CloudBackupService write that times out but lands', () => {
+  const landThenTimeOut = (store: Awaited<ReturnType<typeof setup>>['cloudBackupStore']): void => {
+    const write = store.write.bind(store);
+
+    jest.spyOn(store, 'write').mockImplementationOnce(async (name, contents) => {
+      await write(name, contents);
+      throw new AppError(AppErrorCode.NETWORK_ERROR, 'iCloud did not respond. Try again.');
+    });
+  };
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('recognizes its own landed update instead of reporting a change on another device', async () => {
+    const { backup, cloudBackupStore, keyValueStore, tick } = await setup();
+
+    await create(backup);
+    tick();
+    landThenTimeOut(cloudBackupStore);
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.NETWORK_ERROR);
+
+    expect(await backup.getStatus()).not.toHaveProperty('remoteChange');
+    expect(keyValueStore.getString(StorageKey.CLOUD_BACKUP_PENDING_WRITE)).toBeUndefined();
+    tick();
+    landThenTimeOut(cloudBackupStore);
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.NETWORK_ERROR);
+    tick();
+    await create(backup);
+    expect(await backup.getStatus()).toMatchObject({ kind: 'backedUp', backedUpAt: 1_700_000_003_000 });
+    expect(cloudBackupStore.files.size).toBe(1);
+    expect(keyValueStore.getString(StorageKey.CLOUD_BACKUP_PENDING_WRITE)).toBeUndefined();
+  });
+
+  it('reuses the backupId of an unconfirmed first backup instead of leaving an orphan file', async () => {
+    const { backup, cloudBackupStore, tick } = await setup();
+
+    landThenTimeOut(cloudBackupStore);
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.NETWORK_ERROR);
+    const [fileName] = [...cloudBackupStore.files.keys()];
+
+    tick();
+    await create(backup);
+    expect([...cloudBackupStore.files.keys()]).toEqual([fileName]);
+    expect(backup.getLocalStatus()).toMatchObject({ kind: 'backedUp', fileName, backedUpAt: 1_700_000_001_000 });
+  });
+
+  it('reuses the backupId when the first write never landed', async () => {
+    const { backup, cloudBackupStore } = await setup();
+
+    jest.spyOn(cloudBackupStore, 'write').mockRejectedValueOnce(new AppError(AppErrorCode.NETWORK_ERROR, 'iCloud did not respond. Try again.'));
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.NETWORK_ERROR);
+    expect(cloudBackupStore.files.size).toBe(0);
+    await create(backup);
+    await create(backup);
+    expect(cloudBackupStore.files.size).toBe(1);
+  });
+
+  it('still reports a write from another device while its own write is unconfirmed', async () => {
+    const { a, b } = await twoDevices();
+
+    a.tick();
+    jest.spyOn(a.cloudBackupStore, 'write').mockRejectedValueOnce(new AppError(AppErrorCode.NETWORK_ERROR, 'iCloud did not respond. Try again.'));
+    expect(await codeOf(() => createOn(a.backup, TEST_PASSWORD))).toBe(AppErrorCode.NETWORK_ERROR);
+    await createOn(b.backup, NEW_WALLET_PASSWORD);
+    expect(await a.backup.getStatus()).toMatchObject({ remoteChange: 'updatedElsewhere' });
+    expect(await codeOf(() => createOn(a.backup, TEST_PASSWORD))).toBe(AppErrorCode.BACKUP_CONFLICT);
+  });
+
+  it('reports the landed first backup as backed up', async () => {
+    const { backup, cloudBackupStore } = await setup();
+
+    landThenTimeOut(cloudBackupStore);
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.NETWORK_ERROR);
+    expect(backup.getLocalStatus()).toEqual({ kind: 'none' });
+    expect(await backup.getStatus()).toMatchObject({ kind: 'backedUp', outdated: false });
+    expect(await backup.getStatus()).not.toHaveProperty('remoteChange');
   });
 });

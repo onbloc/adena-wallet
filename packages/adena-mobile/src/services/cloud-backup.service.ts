@@ -111,9 +111,11 @@ export class CloudBackupService {
 
   // Confirms the recorded backup still exists in the cloud and is the copy this device knows.
   async getStatus(options: { interactive?: boolean } = {}): Promise<CloudBackupStatus> {
-    const state = this.stateRepository.get();
+    let state = this.stateRepository.get();
+    const pending = this.pendingWriteFor(state);
+    const known = state ?? pending;
 
-    if (!state) {
+    if (!known) {
       return { kind: 'none' };
     }
 
@@ -122,16 +124,16 @@ export class CloudBackupService {
     }
 
     const files = await this.store.list();
+    const remote = files.some(file => file.name === known.fileName) ? await this.readRemoteHeader(known.fileName) : null;
 
-    if (!files.some(file => file.name === state.fileName)) {
+    if (remote === null) {
       this.stateRepository.clear();
       return { kind: 'none' };
     }
 
-    const remote = await this.readRemoteHeader(state.fileName);
+    state = this.adoptPendingWrite(pending, remote) ?? state;
 
-    if (remote === null) {
-      this.stateRepository.clear();
+    if (!state) {
       return { kind: 'none' };
     }
 
@@ -166,34 +168,36 @@ export class CloudBackupService {
 
     return this.queue.run(async () => {
       await this.store.signIn();
-      const previous = this.stateRepository.get();
-      const backupId = previous?.backupId ?? createId();
+      const saved = this.stateRepository.get();
+      const pending = this.pendingWriteFor(saved);
+      // A first backup whose write was never confirmed keeps its backupId, so a retry leaves no orphan file.
+      const backupId = saved?.backupId ?? pending?.backupId ?? createId();
       const fileName = backupFileName(backupId);
+      const remote = saved || pending ? await this.readRemoteHeader(fileName) : null;
+      const previous = (remote === null ? null : this.adoptPendingWrite(pending, remote)) ?? saved;
+      const reference = previous ?? pending;
       let revision = 1;
 
-      if (previous) {
-        const remote = await this.readRemoteHeader(fileName);
-        const change = remote === null ? null : compareRemote(previous, remote);
+      if (reference && remote !== null) {
+        const change = compareRemote(reference, remote);
 
         if (change && !overwrite) {
           throw new AppError(AppErrorCode.BACKUP_CONFLICT, CONFLICT_MESSAGE[change]);
         }
+      }
 
-        revision = Math.max(previous.revision, typeof remote === 'object' && remote !== null ? remote.revision : 0) + 1;
+      if (previous || remote !== null) {
+        revision = Math.max(previous?.revision ?? 0, typeof remote === 'object' && remote !== null ? remote.revision : 0) + 1;
       }
 
       const { content, fingerprint } = await this.snapshot(walletPassword, backupId, revision);
       const encoded = await this.codec.encode(content, backupPassword);
+      const next: CloudBackupState = { backupId, fileName, backedUpAt: content.createdAt, revision, fingerprint, ...countKeyrings(content.keyrings) };
 
+      this.stateRepository.savePendingWrite(next);
       await this.store.write(fileName, encoded);
-      this.stateRepository.save({
-        backupId,
-        fileName,
-        backedUpAt: content.createdAt,
-        revision,
-        fingerprint,
-        ...countKeyrings(content.keyrings),
-      });
+      this.stateRepository.save(next);
+      this.stateRepository.clearPendingWrite();
 
       return this.getLocalStatus();
     });
@@ -228,6 +232,10 @@ export class CloudBackupService {
 
       if (this.stateRepository.get()?.fileName === fileName) {
         this.stateRepository.clear();
+      }
+
+      if (this.stateRepository.getPendingWrite()?.fileName === fileName) {
+        this.stateRepository.clearPendingWrite();
       }
     });
   }
@@ -283,6 +291,24 @@ export class CloudBackupService {
     });
 
     return this.walletService.restoreWallet({ keyrings, accounts, selected: content.selected, password: walletPassword, backupId: content.backupId, onRestored: saveState });
+  }
+
+  // A pending write only counts for the backup this device tracks (or for a first backup).
+  private pendingWriteFor(state: CloudBackupState | null): CloudBackupState | null {
+    const pending = this.stateRepository.getPendingWrite();
+
+    return pending && (!state || pending.backupId === state.backupId) ? pending : null;
+  }
+
+  // A cloud copy matching the pending write is this device's own write that outlived a JS timeout.
+  private adoptPendingWrite(pending: CloudBackupState | null, remote: BackupHeader | RemoteChange): CloudBackupState | null {
+    if (!pending || compareRemote(pending, remote) !== null) {
+      return null;
+    }
+
+    this.stateRepository.save(pending);
+    this.stateRepository.clearPendingWrite();
+    return pending;
   }
 
   // The plaintext header of a cloud file, null when it is gone, or the change when no header can be read.

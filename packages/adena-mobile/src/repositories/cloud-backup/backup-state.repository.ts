@@ -18,6 +18,11 @@ export interface CloudBackupStateRepository {
   get(): CloudBackupState | null;
   save(state: CloudBackupState): void;
   clear(): void;
+  // The state a cloud write would record, kept until that write is confirmed: a write that timed out
+  // in JS may still land natively, and is then recognized as this device's own.
+  getPendingWrite(): CloudBackupState | null;
+  savePendingWrite(state: CloudBackupState): void;
+  clearPendingWrite(): void;
 }
 
 const isState = (value: unknown): value is Omit<CloudBackupState, 'revision'> & { revision?: number } => {
@@ -35,10 +40,7 @@ export class StorageCloudBackupStateRepository implements CloudBackupStateReposi
   constructor(private readonly store: KeyValueStore) {}
 
   get(): CloudBackupState | null {
-    const state = readJson<unknown>(this.store, StorageKey.CLOUD_BACKUP);
-
-    // Records saved before revisions existed read as revision 0.
-    return isState(state) ? { ...state, revision: typeof state.revision === 'number' && Number.isSafeInteger(state.revision) ? state.revision : 0 } : null;
+    return this.read(StorageKey.CLOUD_BACKUP);
   }
 
   save(state: CloudBackupState): void {
@@ -47,5 +49,24 @@ export class StorageCloudBackupStateRepository implements CloudBackupStateReposi
 
   clear(): void {
     this.store.remove(StorageKey.CLOUD_BACKUP);
+  }
+
+  getPendingWrite(): CloudBackupState | null {
+    return this.read(StorageKey.CLOUD_BACKUP_PENDING_WRITE);
+  }
+
+  savePendingWrite(state: CloudBackupState): void {
+    writeJson(this.store, StorageKey.CLOUD_BACKUP_PENDING_WRITE, state);
+  }
+
+  clearPendingWrite(): void {
+    this.store.remove(StorageKey.CLOUD_BACKUP_PENDING_WRITE);
+  }
+
+  private read(key: StorageKey): CloudBackupState | null {
+    const state = readJson<unknown>(this.store, key);
+
+    // Records saved before revisions existed read as revision 0.
+    return isState(state) ? { ...state, revision: typeof state.revision === 'number' && Number.isSafeInteger(state.revision) ? state.revision : 0 } : null;
   }
 }

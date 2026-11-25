@@ -34,3 +34,17 @@ describe('StorageCloudBackupStateRepository', () => {
     expect(new StorageCloudBackupStateRepository(store).get()).toBeNull();
   });
 });
+
+describe('StorageCloudBackupStateRepository pending write', () => {
+  it('keeps the pending write apart from the confirmed state', () => {
+    const store = new MemoryKeyValueStore();
+    const repository = new StorageCloudBackupStateRepository(store);
+
+    expect(repository.getPendingWrite()).toBeNull();
+    repository.savePendingWrite({ ...STATE, revision: 4 });
+    expect(repository.getPendingWrite()).toEqual({ ...STATE, revision: 4 });
+    expect(repository.get()).toBeNull();
+    repository.clearPendingWrite();
+    expect(repository.getPendingWrite()).toBeNull();
+  });
+});
