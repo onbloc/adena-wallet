@@ -47,6 +47,11 @@ export interface SignAndBroadcastOptions {
   replacePending?: boolean;
 }
 
+export interface EstimateFeeOptions {
+  // false never hands the key to the simulation, e.g. before the user approved the tx.
+  signing?: boolean;
+}
+
 // A record settled by a reconcile. committed/failed: one of its hashes is on chain; not_included: its
 // sequence went to another tx. Each removes only that record.
 export type SettledPending
@@ -110,10 +115,10 @@ export class TransactionService {
     return this.chainRegistry.forNetwork(network).describeMessages(draft.messages, network);
   }
 
-  estimateFee(draft: TransactionDraft, account: Account, network: Network): Promise<FeeEstimate> {
+  estimateFee(draft: TransactionDraft, account: Account, network: Network, { signing = true }: EstimateFeeOptions = {}): Promise<FeeEstimate> {
     const signer: SimulationSigner = {
       publicKey: fromBase64(account.publicKey),
-      withKey: this.keyringSession.isUnlocked()
+      withKey: signing && this.keyringSession.isUnlocked()
         ? <T>(task: (key: SigningKey) => Promise<T>): Promise<T> => this.keyringSession.withKeyPair(account.keyringId, account.hdIndex, task)
         : undefined,
     };
@@ -127,8 +132,14 @@ export class TransactionService {
     return { ...draft, fee: { gasWanted, gasFee } };
   }
 
-  async withEstimatedFee(draft: TransactionDraft, account: Account, network: Network, selection?: FeeSelection): Promise<TransactionDraft> {
-    return this.applyFee(draft, await this.estimateFee(draft, account, network), selection);
+  async withEstimatedFee(
+    draft: TransactionDraft,
+    account: Account,
+    network: Network,
+    selection?: FeeSelection,
+    options?: EstimateFeeOptions,
+  ): Promise<TransactionDraft> {
+    return this.applyFee(draft, await this.estimateFee(draft, account, network, options), selection);
   }
 
   // Largest amount of `token` that still leaves room for the network fee and the storage

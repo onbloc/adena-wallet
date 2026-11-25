@@ -161,16 +161,18 @@ export class DappService {
       ? { gasWanted: request.gasWanted, gasFee: `${requestedCoin.amount}${requestedCoin.denom}` }
       : null;
     const summaries = (priced: TransactionDraft): MessageSummary[] => this.transactionService.describe(priced, network);
+    // Runs before approval, so it must not sign: code-bearing messages fall back to the static gas table.
+    const estimate = (): Promise<TransactionDraft> => this.transactionService.withEstimatedFee(draft, account, network, undefined, { signing: false });
 
     if (!requestedFee) {
-      const priced = await this.transactionService.withEstimatedFee(draft, account, network);
+      const priced = await estimate();
 
       return { draft: priced, summaries: summaries(priced) };
     }
 
     const priced = { ...draft, fee: requestedFee };
     // The estimate only informs a warning; a failed estimate keeps the dApp's fee as before.
-    const estimated = await this.transactionService.withEstimatedFee(draft, account, network).catch(() => null);
+    const estimated = await estimate().catch(() => null);
 
     return {
       draft: priced,

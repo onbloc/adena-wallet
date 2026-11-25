@@ -177,6 +177,27 @@ describe('DappService', () => {
       expect((await service.prepareTransaction(request, service.resolveContext(request))).draft.fee.gasFee).toBe('111ugnot');
     });
 
+    it.each([
+      ['without', {}],
+      ['with', { gasWanted: '500000', gasFee: '600ugnot' }],
+    ])('never signs a code-bearing request while preparing it, %s a dApp fee', async (_, fee) => {
+      const { container, service, txRequest, gno, address } = await setup();
+      const files = [{ name: 'script.gno', body: 'package main\n\nfunc main() {}' }];
+      const messages = [
+        { type: '/vm.m_run', value: { caller: address, send: '', package: { name: 'main', path: '', files } } },
+        { type: '/vm.m_addpkg', value: { creator: address, send: '', package: { name: 'demo', path: 'gno.land/r/demo/x', files } } },
+      ];
+      const withKeyPair = jest.spyOn(container.keyringSession, 'withKeyPair');
+      const request = txRequest({}, { messages, ...fee });
+
+      expect(container.keyringSession.isUnlocked()).toBe(true);
+      const prepared = await service.prepareTransaction(request, service.resolveContext(request));
+
+      expect(withKeyPair).not.toHaveBeenCalled();
+      expect(gno.state.simulated).toEqual([]);
+      expect(prepared.summaries.map(summary => summary.title)).toEqual(['Run', 'Add package']);
+    });
+
     it('shows the storage deposit cap of a call', async () => {
       const { service, txRequest, call } = await setup();
       const message = call();
