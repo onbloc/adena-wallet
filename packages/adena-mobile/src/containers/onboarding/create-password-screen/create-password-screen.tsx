@@ -131,11 +131,20 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
   };
 
   const handleChangePassword = (value: string): void => {
+    // The vault is encrypted with the password captured on submit; later edits would not apply.
+    if (submittingRef.current) {
+      return;
+    }
+
     setPassword(value);
     setPasswordError(undefined);
   };
 
   const handleChangeConfirmPassword = (value: string): void => {
+    if (submittingRef.current) {
+      return;
+    }
+
     setConfirmPassword(value);
     setConfirmError(undefined);
   };

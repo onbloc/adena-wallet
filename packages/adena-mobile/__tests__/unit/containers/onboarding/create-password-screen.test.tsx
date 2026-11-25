@@ -84,6 +84,31 @@ describe('CreatePasswordScreen', () => {
     expect(walletService.enableBiometricUnlock).not.toHaveBeenCalled();
   });
 
+  it('freezes both password fields while the wallet is being created', async () => {
+    let finish: () => void = () => undefined;
+
+    walletService.createWallet.mockImplementation(() => new Promise<void>((resolve) => {
+      finish = resolve;
+    }));
+    await renderScreen();
+    await fireEvent.changeText(screen.getByTestId('password-input'), TEST_PASSWORD);
+    await fireEvent.changeText(screen.getByTestId('password-confirm'), TEST_PASSWORD);
+    // fireEvent would wait for the pending creation, so the press is not awaited.
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('password-submit'));
+    });
+
+    for (const testID of ['password-input', 'password-confirm']) {
+      expect(screen.getByTestId(testID).props.editable).toBe(false);
+      // A late change event from the native field is ignored as well.
+      await act(async () => screen.getByTestId(testID).props.onChangeText('other password 123'));
+      expect(screen.getByTestId(testID).props.value).toBe(TEST_PASSWORD);
+    }
+
+    await act(async () => finish());
+    expect(walletService.createWallet).toHaveBeenCalledWith({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+  });
+
   it('enables biometric unlock automatically when the device supports it', async () => {
     walletService.getBiometryKind.mockResolvedValue(BiometryKind.FACE);
     walletService.createWallet.mockResolvedValue(undefined);

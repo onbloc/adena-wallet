@@ -57,6 +57,7 @@ export const CreatePasswordPage = ({
       secure
       autoCapitalize='none'
       textContentType='newPassword'
+      disabled={submitting}
       error={passwordError}
       testID='password-input'
     />
@@ -73,6 +74,7 @@ export const CreatePasswordPage = ({
       secure
       autoCapitalize='none'
       textContentType='newPassword'
+      disabled={submitting}
       error={confirmError}
       testID='password-confirm'
     />
