@@ -8,9 +8,9 @@ import { createFakeGnoProvider } from '../../helpers/fake-gno-provider';
 import { FakeHttpClient } from '../../helpers/fake-http';
 
 const SERVICE_KEYS: (keyof Services)[] = [
-  'walletService', 'accountService', 'networkService', 'balanceService', 'tokenService', 'priceService',
+  'walletService', 'accountService', 'accountPhotoService', 'hapticsService', 'networkService', 'balanceService', 'tokenService', 'priceService',
   'marketDataService', 'nftService', 'activityService', 'addressBookService', 'exploreService', 'onrampService', 'appResetService',
-  'transactionService', 'preferenceService', 'migrationService',
+  'transactionService', 'dappService', 'connectedAppService', 'preferenceService', 'migrationService', 'cloudBackupService',
 ];
 
 const network = (family: ChainFamily): Network => ({ family } as Network);
@@ -35,6 +35,13 @@ describe('createContainer', () => {
     expect(container.keyringSession).toBeDefined();
     expect(hasModule(container, ChainFamily.GNO)).toBe(true);
     expect(hasModule(container, ChainFamily.COSMOS)).toBe(false);
+  });
+
+  it('defaults to an unavailable cloud backup store when none is injected', async () => {
+    const container = createContainer(baseInfra());
+
+    expect(container.cloudBackupService.provider).toBe('icloud');
+    expect(await container.cloudBackupService.isAvailable()).toBe(false);
   });
 
   it('uses injected chain modules, http, cipher, price and market repositories', async () => {

@@ -13,7 +13,9 @@ import { AddressBookScreen } from '../containers/main/address-book-screen';
 import { BuyCryptoScreen } from '../containers/main/buy-crypto-screen';
 import { ChangePasswordScreen } from '../containers/main/change-password-screen';
 import { CheckoutScreen } from '../containers/main/checkout-screen';
+import { CloudBackupScreen } from '../containers/main/cloud-backup-screen';
 import { ConnectedAppsScreen } from '../containers/main/connected-apps-screen';
+import { DappRequestScreen } from '../containers/main/dapp-request-screen';
 import { EditProfileScreen } from '../containers/main/edit-profile-screen';
 import { ImportAccountScreen } from '../containers/main/import-account-screen';
 import { ManageNftsScreen } from '../containers/main/manage-nfts-screen';
@@ -33,6 +35,7 @@ import { TokenDetailsScreen } from '../containers/main/token-details-screen';
 import { BackupPhraseScreen } from '../containers/onboarding/backup-phrase-screen';
 import { CreatePasswordScreen } from '../containers/onboarding/create-password-screen';
 import { ImportWalletScreen } from '../containers/onboarding/import-wallet-screen';
+import { RestoreBackupScreen } from '../containers/onboarding/restore-backup-screen';
 import { WelcomeScreen } from '../containers/onboarding/welcome-screen';
 import { ResetWalletScreen } from '../containers/reset-wallet-screen';
 import { SplashScreen } from '../containers/splash-screen';
@@ -62,6 +65,7 @@ const OnboardingNavigator = (): ReactElement => {
       <OnboardingStack.Screen name='BackupPhrase' component={BackupPhraseScreen} />
       <OnboardingStack.Screen name='ImportWallet' component={ImportWalletScreen} />
       <OnboardingStack.Screen name='CreatePassword' component={CreatePasswordScreen} />
+      <OnboardingStack.Screen name='RestoreBackup' component={RestoreBackupScreen} />
       <OnboardingStack.Screen name={SHEET_ROUTE} component={SheetScreen} options={sheetOptions} />
     </OnboardingStack.Navigator>
   );
@@ -111,12 +115,18 @@ const MainNavigator = (): ReactElement => {
       <MainStack.Screen name='Settings' component={SettingsScreen} />
       <MainStack.Screen name='RecoveryPhrase' component={RecoveryPhraseScreen} />
       <MainStack.Screen name='ChangePassword' component={ChangePasswordScreen} />
+      <MainStack.Screen name='CloudBackup' component={CloudBackupScreen} />
       <MainStack.Screen name='ConnectedApps' component={ConnectedAppsScreen} />
       <MainStack.Screen name='Networks' component={NetworksScreen} />
       <MainStack.Screen name='AddNetwork' component={AddNetworkScreen} />
       <MainStack.Screen name='Search' component={SearchScreen} />
       <MainStack.Screen name='BuyCrypto' component={BuyCryptoScreen} />
       <MainStack.Screen name='Checkout' component={CheckoutScreen} />
+      <MainStack.Screen
+        name='DappRequest'
+        component={DappRequestScreen}
+        options={{ presentation: 'fullScreenModal', gestureEnabled: false }}
+      />
       {/* Hosts every BottomSheet of this stack (see molecules/bottom-sheet). */}
       <MainStack.Screen name={SHEET_ROUTE} component={SheetScreen} options={sheetOptions} />
     </MainStack.Navigator>

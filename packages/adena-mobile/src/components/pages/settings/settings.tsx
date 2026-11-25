@@ -64,6 +64,10 @@ export interface SettingsPageProps {
   biometric?: SettingsBiometricView;
   onLock: () => void;
   onOpenReset: () => void;
+  // "iCloud backup" / "Google Drive backup"; the row is hidden without it.
+  cloudBackupLabel?: string;
+  cloudBackupValue?: string;
+  onOpenCloudBackup?: () => void;
   onBack: () => void;
 }
 
@@ -128,6 +132,9 @@ export const SettingsPage = (props: SettingsPageProps): ReactElement => {
           <SwitchRow label={`Unlock with ${props.biometric.label}`} value={props.biometric.enabled} onChange={props.biometric.onToggle} />
         )}
         <ListRow label='Recovery phrase' onPress={props.onOpenRecoveryPhrase} />
+        {props.cloudBackupLabel && props.onOpenCloudBackup && (
+          <ListRow label={props.cloudBackupLabel} value={props.cloudBackupValue} valueColor='warning' onPress={props.onOpenCloudBackup} />
+        )}
         <ListRow label='Lock wallet' onPress={props.onLock} />
         <ListRow label='Reset wallet' destructive onPress={props.onOpenReset} />
       </Section>

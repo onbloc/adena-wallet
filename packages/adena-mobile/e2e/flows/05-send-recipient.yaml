@@ -1,0 +1,25 @@
+appId: ${APP_ID}
+name: Validate the send recipient
+tags: [wallet, send]
+---
+- runFlow: ../subflows/import-wallet.yaml
+- tapOn:
+    id: home-send
+- assertVisible: Send to
+- tapOn:
+    id: recipient-search
+- inputText: g1notanaddress
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- assertVisible: Enter a valid .* address\.
+- assertNotVisible:
+    id: recipient-result
+- tapOn:
+    id: recipient-search
+- eraseText: 40
+- inputText: ${RECIPIENT}
+- runFlow: ../subflows/dismiss-keyboard.yaml
+- assertVisible:
+    id: recipient-result
+- tapOn:
+    id: recipient-result
+- assertVisible: Send amount

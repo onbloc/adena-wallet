@@ -2,6 +2,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 
+import NativeAdenaSecureClipboard from '../native/NativeAdenaSecureClipboard';
 import { useToastStore } from '../stores/toast.store';
 
 export const SENSITIVE_CLIPBOARD_TTL_MS = 60_000;
@@ -20,13 +21,21 @@ interface CopiedSecret {
   expiresNatively: boolean;
 }
 
-// The plain clipboard has no expiry of its own, and JS timers pause in the background.
-const writeSecret = (value: string): boolean => {
+// The native copy expires on its own, also while backgrounded; the plain clipboard is the fallback.
+const writeSecret = (value: string, ttlMs: number): boolean => {
+  if (NativeAdenaSecureClipboard) {
+    try {
+      NativeAdenaSecureClipboard.setSensitiveString(value, ttlMs);
+      return true;
+    }
+    catch {
+      // Falls back to the plain clipboard below.
+    }
+  }
+
   Clipboard.setString(value);
   return false;
 };
-
-const OUTLIVES_BACKGROUND = false;
 
 const wipeClipboard = (): boolean => {
   try {
@@ -38,14 +47,32 @@ const wipeClipboard = (): boolean => {
   }
 };
 
-const wipeIfStillCopied = async (value: string): Promise<void> => {
+// Stops the native expiry from firing later; a missing or failing module never blocks the wipe.
+const cancelNativeExpiry = (): void => {
   try {
-    if (await Clipboard.getString() === value) {
-      Clipboard.setString('');
-    }
+    NativeAdenaSecureClipboard?.cancelExpiry();
   }
   catch {
-    // Nothing more to do when the clipboard cannot be read.
+    // The native expiry only clears a clip that still matches the secret.
+  }
+};
+
+// `unknown`: the clip could not be read (Android 10+ without input focus reads ''), so ownership is open.
+type WipeOutcome = 'wiped' | 'replaced' | 'unknown';
+
+const wipeIfStillCopied = async (value: string): Promise<WipeOutcome> => {
+  try {
+    const current = await Clipboard.getString();
+
+    if (current === value) {
+      Clipboard.setString('');
+      return 'wiped';
+    }
+
+    return current ? 'replaced' : 'unknown';
+  }
+  catch {
+    return 'unknown';
   }
 };
 
@@ -61,7 +88,27 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
     clearTimeout(timerRef.current);
     timerRef.current = undefined;
     copiedRef.current = undefined;
+    cancelNativeExpiry();
   }, []);
+
+  // An unverified wipe keeps a retry: the native expiry rechecks on focus, the JS copy on the next `active`.
+  const settle = useCallback((copied: CopiedSecret, outcome: WipeOutcome): void => {
+    if (copiedRef.current !== copied) {
+      return;
+    }
+
+    if (outcome !== 'unknown') {
+      forget();
+      return;
+    }
+
+    clearTimeout(timerRef.current);
+    timerRef.current = undefined;
+
+    if (copied.expiresNatively) {
+      copiedRef.current = undefined;
+    }
+  }, [forget]);
 
   const clear = useCallback(async (): Promise<void> => {
     const copied = copiedRef.current;
@@ -75,17 +122,22 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
 
     const wiped = Date.now() < copied.expiresAt && wipeClipboard();
 
+    if (wiped) {
+      cancelNativeExpiry();
+    }
+
     if (appStateRef.current !== 'active') {
       // Keep the secret so the next `active` can confirm the wipe.
       return;
     }
 
-    if (!wiped) {
-      await wipeIfStillCopied(copied.value);
+    if (wiped) {
+      forget();
+      return;
     }
 
-    forget();
-  }, [forget]);
+    settle(copied, await wipeIfStillCopied(copied.value));
+  }, [forget, settle]);
 
   const expire = useCallback(async (): Promise<void> => {
     const copied = copiedRef.current;
@@ -101,12 +153,11 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
       return;
     }
 
-    await wipeIfStillCopied(copied.value);
-    forget();
-  }, [forget]);
+    settle(copied, await wipeIfStillCopied(copied.value));
+  }, [settle]);
 
   const copy = useCallback((value: string, message: string): void => {
-    const expiresNatively = writeSecret(value);
+    const expiresNatively = writeSecret(value, ttlMs);
 
     showToast(message, 'success');
     clearTimeout(timerRef.current);
@@ -129,26 +180,24 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
       }
 
       if (state === 'active' && copied !== undefined && timerRef.current === undefined) {
-        wipeIfStillCopied(copied.value).then(() => {
-          if (copiedRef.current === copied) {
-            forget();
-          }
-        });
+        wipeIfStillCopied(copied.value).then(outcome => settle(copied, outcome));
       }
     });
 
     return (): void => subscription.remove();
-  }, [forget]);
+  }, [forget, settle]);
 
   // Unmount only (no deps), so effect re-runs never wipe a secret the user is still pasting.
   useEffect(() => (): void => {
     if (copiedRef.current !== undefined && Date.now() < copiedRef.current.expiresAt) {
-      wipeClipboard();
+      if (wipeClipboard()) {
+        cancelNativeExpiry();
+      }
     }
 
     clearTimeout(timerRef.current);
     copiedRef.current = undefined;
   }, []);
 
-  return { copy, clear, outlivesBackground: OUTLIVES_BACKGROUND };
+  return { copy, clear, outlivesBackground: Boolean(NativeAdenaSecureClipboard) };
 };

@@ -7,6 +7,7 @@ describe('APP_CONFIG', () => {
       autoLockMs: 300_000,
       mnemonicStrength: 256,
       dappRequestMaxBytes: 65_536,
+      dappRequestTtlMs: 86_400_000,
     });
   });
 });

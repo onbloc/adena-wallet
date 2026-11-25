@@ -1,0 +1,912 @@
+import { AppError, AppErrorCode, isAppError } from '../../../src/core/errors';
+import { deriveKeyPair } from '../../../src/crypto/key-pair';
+import { KeyringType } from '../../../src/crypto/keyring';
+import { mnemonicToSeed } from '../../../src/crypto/mnemonic';
+import { StorageKey } from '../../../src/migration/storage-keys';
+import { backupFileName, parseBackupFileName } from '../../../src/repositories/cloud-backup/cloud-backup-store';
+import { SecureKey } from '../../../src/security/secure-keys';
+import { BACKUP_PASSWORD_SAME_AS_WALLET, fingerprintOf } from '../../../src/services/cloud-backup.service';
+import { FREE_PASSWORD_ATTEMPTS } from '../../../src/services/password-attempt-limiter';
+import { catchError } from '../../helpers/service-fakes';
+import { createTestContainer, TEST_MNEMONIC, TEST_PASSWORD } from '../../helpers/test-container';
+
+const BACKUP_PASSWORD = 'violet orbit lantern 42';
+const NEW_WALLET_PASSWORD = 'quiet meadow trumpet 7';
+const PRIVATE_KEY = '1'.repeat(64);
+
+const codeOf = async (run: () => unknown): Promise<unknown> => {
+  const error = await catchError(run);
+
+  return isAppError(error) ? error.code : error;
+};
+
+const waitFor = async (condition: () => boolean): Promise<void> => {
+  for (let tries = 0; !condition() && tries < 500; tries += 1) {
+    await new Promise(resolve => setTimeout(resolve, 5));
+  }
+};
+
+const setup = async (options: Parameters<typeof createTestContainer>[0] = {}) => {
+  let clock = 1_700_000_000_000;
+  const env = createTestContainer({ now: () => clock, ...options });
+  const account = await env.container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+
+  return {
+    ...env,
+    account,
+    backup: env.container.cloudBackupService,
+    tick: (ms = 1000): void => {
+      clock += ms;
+    },
+  };
+};
+
+const create = (backup: Awaited<ReturnType<typeof setup>>['backup']) =>
+  backup.createBackup({ walletPassword: TEST_PASSWORD, backupPassword: BACKUP_PASSWORD, confirmPassword: BACKUP_PASSWORD });
+
+// Two devices on one cloud account after a restore share the backupId (audit #2).
+const twoDevices = async () => {
+  const a = await setup();
+
+  await create(a.backup);
+  const fileName = [...a.cloudBackupStore.files.keys()][0];
+  const b = createTestContainer({ cloudBackup: { files: a.cloudBackupStore.files } });
+  const content = await b.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+
+  await b.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+  return { a, b: { ...b, backup: b.container.cloudBackupService }, fileName };
+};
+
+type Store = Awaited<ReturnType<typeof setup>>['cloudBackupStore'];
+
+// Header revisions of every stored version, ascending.
+const revisionsIn = (store: Store): number[] =>
+  [...store.files.values()].map(file => JSON.parse(file.contents).revision as number).sort((a, b) => a - b);
+
+const newestName = (store: Store): string =>
+  [...store.files.keys()].sort((a, b) => (parseBackupFileName(b)?.revision ?? 0) - (parseBackupFileName(a)?.revision ?? 0))[0];
+
+const createOn = (backup: Awaited<ReturnType<typeof setup>>['backup'], walletPassword: string, overwrite?: boolean) =>
+  backup.createBackup({ walletPassword, backupPassword: BACKUP_PASSWORD, confirmPassword: BACKUP_PASSWORD, overwrite });
+
+describe('CloudBackupService', () => {
+  it('reports availability and the provider, never throwing', async () => {
+    const { backup, cloudBackupStore } = await setup();
+
+    expect(backup.provider).toBe('icloud');
+    expect(await backup.isAvailable()).toBe(true);
+    jest.spyOn(cloudBackupStore, 'isAvailable').mockRejectedValue(new Error('boom'));
+    expect(await backup.isAvailable()).toBe(false);
+  });
+
+  it('starts without a backup', async () => {
+    const { backup } = await setup();
+
+    expect(backup.getLocalStatus()).toEqual({ kind: 'none' });
+    expect(await backup.getStatus()).toEqual({ kind: 'none' });
+  });
+
+  it('creates an encrypted backup of every keyring and records it locally', async () => {
+    const { backup, cloudBackupStore, container } = await setup();
+
+    await container.walletService.importPrivateKey(PRIVATE_KEY, 'Imported');
+    const status = await create(backup);
+
+    expect(cloudBackupStore.files.size).toBe(1);
+    const [[name, file]] = [...cloudBackupStore.files];
+
+    expect(status).toEqual({ kind: 'backedUp', fileName: name, backedUpAt: 1_700_000_000_000, outdated: false, mnemonicCount: 1, privateKeyCount: 1 });
+
+    expect(name).toMatch(/^adena-backup-[0-9a-f]{32}\.1-[0-9a-f]{16}\.json$/);
+    expect(file.contents).not.toContain('abandon');
+    expect(file.contents).not.toContain(PRIVATE_KEY);
+    expect(file.contents).not.toContain(BACKUP_PASSWORD);
+    expect(await backup.getStatus()).toEqual(status);
+  });
+
+  it('requires the wallet password and a valid, different backup password', async () => {
+    const { backup, cloudBackupStore } = await setup();
+
+    expect(await codeOf(() => backup.createBackup({ walletPassword: 'wrong password!', backupPassword: BACKUP_PASSWORD, confirmPassword: BACKUP_PASSWORD })))
+      .toBe(AppErrorCode.INVALID_PASSWORD);
+    expect(await codeOf(() => backup.createBackup({ walletPassword: TEST_PASSWORD, backupPassword: 'short', confirmPassword: 'short' })))
+      .toBe(AppErrorCode.WEAK_PASSWORD);
+    expect(await codeOf(() => backup.createBackup({ walletPassword: TEST_PASSWORD, backupPassword: BACKUP_PASSWORD, confirmPassword: 'other' })))
+      .toBe(AppErrorCode.WEAK_PASSWORD);
+    expect(await codeOf(() => backup.createBackup({ walletPassword: TEST_PASSWORD, backupPassword: TEST_PASSWORD, confirmPassword: TEST_PASSWORD })))
+      .toBe(AppErrorCode.WEAK_PASSWORD);
+    expect(backup.findBackupPasswordIssue(TEST_PASSWORD, TEST_PASSWORD, TEST_PASSWORD)).toBe(BACKUP_PASSWORD_SAME_AS_WALLET);
+    expect(backup.findBackupPasswordIssue(BACKUP_PASSWORD, BACKUP_PASSWORD, TEST_PASSWORD)).toBeNull();
+    expect(cloudBackupStore.files.size).toBe(0);
+    await expect(backup.verifyWalletPassword(TEST_PASSWORD)).resolves.toBeUndefined();
+  });
+
+  it('holds the backup password to a stronger policy than the wallet password', async () => {
+    const { backup } = await setup();
+
+    // Valid wallet passwords that are too weak for a file facing offline guessing.
+    expect(backup.findBackupPasswordIssue('sunshine2024!', 'sunshine2024!')).toBe('Backup password is too easy to guess. Add more unrelated words or characters.');
+    expect(backup.findBackupPasswordIssue('orbit lan 4', 'orbit lan 4')).toBe('Backup password must be 12~256 characters');
+    expect(backup.findBackupPasswordIssue('tangerine kayak', 'tangerine kayak')).toBeNull();
+    expect(await codeOf(() => backup.createBackup({ walletPassword: TEST_PASSWORD, backupPassword: 'sunshine2024!', confirmPassword: 'sunshine2024!' })))
+      .toBe(AppErrorCode.WEAK_PASSWORD);
+    await expect(backup.verifyWalletPassword(TEST_PASSWORD)).resolves.toBeUndefined();
+  });
+
+  it('marks the backup outdated when keyrings or accounts change, and writes each update as a new version', async () => {
+    const { backup, cloudBackupStore, container, account, tick } = await setup();
+
+    await create(backup);
+    const [fileName] = [...cloudBackupStore.files.keys()];
+
+    container.accountService.renameAccount(account.id, 'Renamed');
+    expect(backup.getLocalStatus()).toMatchObject({ outdated: false });
+
+    await container.accountService.createAccount(account.keyringId, KeyringType.HD_WALLET);
+    expect(backup.getLocalStatus()).toMatchObject({ outdated: true });
+
+    const imported = await container.walletService.importPrivateKey(PRIVATE_KEY);
+
+    tick();
+    const updated = await create(backup);
+
+    expect(updated).toMatchObject({ outdated: false, backedUpAt: 1_700_000_001_000, privateKeyCount: 1 });
+    // The replaced version stays as a fallback.
+    expect(cloudBackupStore.files.has(fileName)).toBe(true);
+    expect(revisionsIn(cloudBackupStore)).toEqual([1, 2]);
+    expect(updated).toMatchObject({ fileName: newestName(cloudBackupStore) });
+
+    await container.walletService.removeAccount(imported.id, TEST_PASSWORD);
+    expect(backup.getLocalStatus()).toMatchObject({ outdated: true });
+  });
+
+  it('never uploads by itself when accounts change', async () => {
+    const { backup, cloudBackupStore, container, account } = await setup();
+
+    await create(backup);
+    const write = jest.spyOn(cloudBackupStore, 'write');
+
+    await container.accountService.createAccount(account.keyringId, KeyringType.HD_WALLET);
+    await backup.getStatus();
+    expect(write).not.toHaveBeenCalled();
+  });
+
+  it('forgets a backup that was deleted from the cloud elsewhere', async () => {
+    const { backup, cloudBackupStore } = await setup();
+
+    await create(backup);
+    cloudBackupStore.files.clear();
+    expect(await backup.getStatus()).toEqual({ kind: 'none' });
+    expect(backup.getLocalStatus()).toEqual({ kind: 'none' });
+  });
+
+  it('keeps the backup record when a listing misses its file or fails', async () => {
+    const { backup, cloudBackupStore, tick } = await setup();
+    const created = await create(backup);
+
+    // An iCloud listing that only saw the directory (e.g. evicted container) returns nothing.
+    jest.spyOn(cloudBackupStore, 'list').mockResolvedValueOnce([]);
+    expect(await backup.getStatus()).toEqual(created);
+    jest.spyOn(cloudBackupStore, 'list').mockRejectedValueOnce(new AppError(AppErrorCode.NETWORK_ERROR));
+    expect(await codeOf(() => backup.getStatus())).toBe(AppErrorCode.NETWORK_ERROR);
+    jest.spyOn(cloudBackupStore, 'list').mockResolvedValueOnce([]);
+    jest.spyOn(cloudBackupStore, 'read').mockRejectedValueOnce(new AppError(AppErrorCode.NETWORK_ERROR));
+    expect(await codeOf(() => backup.getStatus())).toBe(AppErrorCode.NETWORK_ERROR);
+    expect(backup.getLocalStatus()).toEqual(created);
+    jest.restoreAllMocks();
+
+    // The next backup stays a version of the same backup.
+    tick();
+    jest.spyOn(cloudBackupStore, 'list').mockResolvedValueOnce([]);
+    await create(backup);
+    expect(new Set([...cloudBackupStore.files.keys()].map(name => parseBackupFileName(name)?.backupId)).size).toBe(1);
+    expect(revisionsIn(cloudBackupStore)).toEqual([1, 2]);
+  });
+
+  it('surfaces cloud errors without recording a backup', async () => {
+    const { backup, cloudBackupStore } = await setup();
+
+    cloudBackupStore.failNext(new AppError(AppErrorCode.CLOUD_BACKUP_QUOTA));
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.CLOUD_BACKUP_QUOTA);
+    expect(backup.getLocalStatus()).toEqual({ kind: 'none' });
+  });
+
+  it('signs in to Google Drive before creating, deleting or an interactive status check', async () => {
+    const { backup, cloudBackupStore } = await setup({ cloudBackup: { provider: 'google-drive', requiresSignIn: true } });
+
+    expect(await codeOf(() => backup.findBackups())).toBe(AppErrorCode.CLOUD_BACKUP_NOT_SIGNED_IN);
+    await create(backup);
+    expect(cloudBackupStore.signInCalls).toBe(1);
+    expect(await backup.getStatus({ interactive: true })).toMatchObject({ kind: 'backedUp' });
+    await backup.deleteBackup([...cloudBackupStore.files.keys()][0], { walletPassword: TEST_PASSWORD });
+    expect(cloudBackupStore.signInCalls).toBe(3);
+  });
+
+  it('deletes only the cloud copy, also when it is already gone', async () => {
+    const { backup, cloudBackupStore, container } = await setup();
+    const remove = (fileName: string) => backup.deleteBackup(fileName, { walletPassword: TEST_PASSWORD });
+
+    await create(backup);
+    const [fileName] = [...cloudBackupStore.files.keys()];
+
+    await remove(fileName);
+    expect(cloudBackupStore.files.size).toBe(0);
+    expect(backup.getLocalStatus()).toEqual({ kind: 'none' });
+    expect(await container.walletService.getStatus()).toBe('unlocked');
+
+    await create(backup);
+    const [second] = [...cloudBackupStore.files.keys()];
+
+    cloudBackupStore.files.clear();
+    await remove(second);
+    expect(backup.getLocalStatus()).toEqual({ kind: 'none' });
+    await remove(second);
+
+    await create(backup);
+    const [third] = [...cloudBackupStore.files.keys()];
+
+    cloudBackupStore.failNext(new AppError(AppErrorCode.NETWORK_ERROR));
+    expect(await codeOf(() => remove(third))).toBe(AppErrorCode.NETWORK_ERROR);
+    expect(backup.getLocalStatus()).toMatchObject({ kind: 'backedUp' });
+  });
+
+  it('requires the wallet password to delete any backup while a wallet exists', async () => {
+    const { backup, cloudBackupStore } = await setup();
+    const other = backupFileName('5'.repeat(32));
+
+    await create(backup);
+    cloudBackupStore.files.set(other, { contents: '{}', modifiedAt: 1 });
+
+    expect(await codeOf(() => backup.deleteBackup(other))).toBe(AppErrorCode.INVALID_REQUEST);
+    expect(await codeOf(() => backup.deleteBackup(other, { walletPassword: 'wrong password!' }))).toBe(AppErrorCode.INVALID_PASSWORD);
+    expect(await codeOf(() => backup.deleteBackup('../etc/passwd', { walletPassword: TEST_PASSWORD }))).toBe(AppErrorCode.INVALID_REQUEST);
+    expect(cloudBackupStore.files.has(other)).toBe(true);
+
+    // A backup of another wallet goes; this wallet's own record stays.
+    await backup.deleteBackup(other, { walletPassword: TEST_PASSWORD });
+    expect(cloudBackupStore.files.has(other)).toBe(false);
+    expect(backup.getLocalStatus()).toMatchObject({ kind: 'backedUp' });
+    expect((await backup.findBackups()).map(item => item.current)).toEqual([true]);
+  });
+
+  it('deletes a backup without a password before any wallet exists', async () => {
+    const env = createTestContainer();
+    const fileName = backupFileName('6'.repeat(32));
+
+    env.cloudBackupStore.files.set(fileName, { contents: '{}', modifiedAt: 1 });
+    await env.container.cloudBackupService.deleteBackup(fileName);
+    expect(env.cloudBackupStore.files.size).toBe(0);
+  });
+
+  it('lists restorable backups newest first', async () => {
+    const { backup, cloudBackupStore } = await setup();
+
+    cloudBackupStore.files.set(backupFileName('1'.repeat(32)), { contents: '{}', modifiedAt: 10 });
+    cloudBackupStore.files.set(backupFileName('2'.repeat(32)), { contents: '{}', modifiedAt: 30 });
+    const only = (fileName: string, modifiedAt: number) => ({ fileName, modifiedAt, current: false, versions: [{ fileName, revision: null, modifiedAt, current: false }] });
+
+    expect(await backup.findBackups({ interactive: true })).toEqual([only(backupFileName('2'.repeat(32)), 30), only(backupFileName('1'.repeat(32)), 10)]);
+  });
+
+  it('restores every keyring and account into a new wallet with a new password', async () => {
+    const source = await setup();
+    const { container } = source;
+
+    container.accountService.renameAccount(source.account.id, 'Main');
+    const second = await container.accountService.createAccount(source.account.keyringId, KeyringType.HD_WALLET, 'Second');
+    const third = await container.accountService.createAccount(source.account.keyringId, KeyringType.HD_WALLET, 'Third');
+
+    await container.walletService.importPrivateKey(PRIVATE_KEY, 'Imported');
+    await container.walletService.removeAccount(second.id, TEST_PASSWORD);
+    await create(source.backup);
+    const original = container.accountService.getAccounts();
+
+    // A new device: empty wallet, same cloud.
+    const target = createTestContainer({ cloudBackup: {} });
+    const fileName = [...source.cloudBackupStore.files.keys()][0];
+
+    target.cloudBackupStore.files.set(fileName, source.cloudBackupStore.files.get(fileName)!);
+    const [found] = await target.container.cloudBackupService.findBackups();
+    const content = await target.container.cloudBackupService.openBackup(found.fileName, BACKUP_PASSWORD);
+    const selected = await target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+    const restored = target.container.accountService.getAccounts();
+
+    // Importing selected the new account on the source device, and the restore keeps that selection.
+    expect(selected.name).toBe('Imported');
+    expect(restored.map(({ name, hdIndex, publicKey, keyringType }) => ({ name, hdIndex, publicKey, keyringType })))
+      .toEqual(original.map(({ name, hdIndex, publicKey, keyringType }) => ({ name, hdIndex, publicKey, keyringType })));
+    expect(restored.find(item => item.name === 'Third')?.hdIndex).toBe(third.hdIndex);
+    expect(await target.container.walletService.getStatus()).toBe('unlocked');
+
+    // The new password opens the vault; the old one does not.
+    target.container.walletService.lock();
+    expect(await codeOf(() => target.container.walletService.unlock(TEST_PASSWORD))).toBe(AppErrorCode.INVALID_PASSWORD);
+    await target.container.walletService.unlock(NEW_WALLET_PASSWORD);
+    const main = restored.find(item => item.name === 'Main')!;
+
+    expect(await target.container.walletService.revealMnemonic(main.keyringId, NEW_WALLET_PASSWORD)).toBe(TEST_MNEMONIC);
+
+    // The restored backup is current for the new device.
+    expect(target.container.cloudBackupService.getLocalStatus()).toMatchObject({ kind: 'backedUp', outdated: false, mnemonicCount: 1, privateKeyCount: 1 });
+  });
+
+  it('refuses a weak new wallet password without writing a vault', async () => {
+    const source = await setup();
+
+    await create(source.backup);
+    const target = createTestContainer();
+    const fileName = [...source.cloudBackupStore.files.keys()][0];
+
+    target.cloudBackupStore.files.set(fileName, source.cloudBackupStore.files.get(fileName)!);
+    const content = await target.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+
+    expect(await codeOf(() => target.container.cloudBackupService.restoreWallet(content, 'short'))).toBe(AppErrorCode.WEAK_PASSWORD);
+    expect(await target.container.walletService.getStatus()).toBe('empty');
+  });
+
+  it('throttles wrong backup passwords with a counter that a factory reset keeps', async () => {
+    const source = await setup();
+
+    await create(source.backup);
+    const fileName = [...source.cloudBackupStore.files.keys()][0];
+
+    await source.container.appResetService.resetAll();
+    // Reset leaves the cloud copy alone.
+    expect(source.cloudBackupStore.files.has(fileName)).toBe(true);
+
+    for (let attempt = 0; attempt < FREE_PASSWORD_ATTEMPTS + 1; attempt += 1) {
+      expect(await codeOf(() => source.backup.openBackup(fileName, 'wrong password!'))).toBe(AppErrorCode.INVALID_PASSWORD);
+    }
+
+    expect(await codeOf(() => source.backup.openBackup(fileName, BACKUP_PASSWORD))).toBe(AppErrorCode.PASSWORD_ATTEMPTS_EXCEEDED);
+    await source.container.appResetService.resetAll();
+    expect(await source.secureStore.hasItem(SecureKey.BACKUP_PASSWORD_ATTEMPTS)).toBe(true);
+    expect(await codeOf(() => source.backup.openBackup(fileName, BACKUP_PASSWORD))).toBe(AppErrorCode.PASSWORD_ATTEMPTS_EXCEEDED);
+    // The wallet password limit is separate.
+    expect(await source.secureStore.hasItem(SecureKey.PASSWORD_ATTEMPTS)).toBe(false);
+  });
+
+  it('does not count a damaged file as a wrong password', async () => {
+    const { backup, cloudBackupStore, secureStore } = await setup();
+    const fileName = backupFileName('3'.repeat(32));
+
+    cloudBackupStore.files.set(fileName, { contents: 'garbage', modifiedAt: 1 });
+    expect(await codeOf(() => backup.openBackup(fileName, BACKUP_PASSWORD))).toBe(AppErrorCode.BACKUP_CORRUPTED);
+    expect(await codeOf(() => backup.openBackup(backupFileName('4'.repeat(32)), BACKUP_PASSWORD))).toBe(AppErrorCode.BACKUP_NOT_FOUND);
+    expect(await secureStore.hasItem(SecureKey.BACKUP_PASSWORD_ATTEMPTS)).toBe(false);
+  });
+
+  it('reports a backup updated on another device and never overwrites it silently', async () => {
+    const { a, b, fileName } = await twoDevices();
+
+    expect(await b.backup.getStatus()).not.toHaveProperty('remoteChange');
+    a.tick();
+    await createOn(a.backup, TEST_PASSWORD);
+    const writtenByA = new Map(a.cloudBackupStore.files);
+
+    expect(await b.backup.getStatus()).toMatchObject({ kind: 'backedUp', remoteChange: 'updatedElsewhere' });
+    expect(await codeOf(() => createOn(b.backup, NEW_WALLET_PASSWORD))).toBe(AppErrorCode.BACKUP_CONFLICT);
+    expect(a.cloudBackupStore.files).toEqual(writtenByA);
+    expect(a.cloudBackupStore.files.has(fileName)).toBe(true);
+
+    // An explicit overwrite wins and bumps the revision past both devices.
+    await createOn(b.backup, NEW_WALLET_PASSWORD, true);
+    expect(revisionsIn(a.cloudBackupStore)).toEqual([2, 3]);
+    expect(await b.backup.getStatus()).not.toHaveProperty('remoteChange');
+    expect(await a.backup.getStatus()).toMatchObject({ remoteChange: 'updatedElsewhere' });
+    expect(await codeOf(() => createOn(a.backup, TEST_PASSWORD))).toBe(AppErrorCode.BACKUP_CONFLICT);
+  });
+
+  it('keeps both copies when two devices write on top of the same revision, and reports the conflict', async () => {
+    const { a, b } = await twoDevices();
+    const writeOnA = a.cloudBackupStore.write.bind(a.cloudBackupStore);
+    let releaseA = (): void => undefined;
+    const held = new Promise<void>((resolve) => {
+      releaseA = resolve;
+    });
+    const write = jest.spyOn(a.cloudBackupStore, 'write').mockImplementationOnce(async (name, contents) => {
+      await held;
+      return writeOnA(name, contents);
+    });
+
+    // Device A has read revision 1 and is uploading; device B reads the same revision and finishes first.
+    a.tick();
+    const writingOnA = createOn(a.backup, TEST_PASSWORD);
+
+    await waitFor(() => write.mock.calls.length > 0);
+    await createOn(b.backup, NEW_WALLET_PASSWORD);
+    releaseA();
+    await writingOnA;
+
+    const headers = [...a.cloudBackupStore.files.values()].map(file => JSON.parse(file.contents));
+
+    expect(headers.map(header => header.revision).sort()).toEqual([1, 2, 2]);
+    expect(await a.backup.getStatus()).toMatchObject({ remoteChange: 'updatedElsewhere' });
+    expect(await b.backup.getStatus()).toMatchObject({ remoteChange: 'updatedElsewhere' });
+    expect(await codeOf(() => createOn(a.backup, TEST_PASSWORD))).toBe(AppErrorCode.BACKUP_CONFLICT);
+
+    // A restore offers the backup once, defaulting to its newest readable version (the later write) and listing every copy.
+    const restoring = createTestContainer({ cloudBackup: { files: a.cloudBackupStore.files } }).container.cloudBackupService;
+    const backups = await restoring.findBackups();
+    const newest = headers.filter(header => header.revision === 2).sort((x, y) => y.createdAt - x.createdAt)[0];
+
+    expect(backups).toHaveLength(1);
+    expect(parseBackupFileName(backups[0].fileName)?.revision).toBe(2);
+    expect(backups[0].versions.map(version => version.revision)).toEqual([2, 2, 1]);
+    expect(backups[0].versions[0].fileName).toBe(backups[0].fileName);
+    expect(new Set(backups[0].versions.map(version => version.fileName))).toEqual(new Set(a.cloudBackupStore.files.keys()));
+    expect((await restoring.openBackup(backups[0].fileName, BACKUP_PASSWORD)).createdAt).toBe(newest.createdAt);
+    jest.restoreAllMocks();
+  });
+
+  it('never prunes a version written by another device after it last looked', async () => {
+    const { a, b } = await twoDevices();
+    const remove = a.cloudBackupStore.remove.bind(a.cloudBackupStore);
+    let late: string | undefined;
+
+    a.tick();
+    await createOn(a.backup, TEST_PASSWORD);
+    // B writes its revision while A is between listing and pruning.
+    jest.spyOn(a.cloudBackupStore, 'remove').mockImplementation(async (name) => {
+      if (!late) {
+        await createOn(b.backup, NEW_WALLET_PASSWORD, true);
+        late = newestName(a.cloudBackupStore);
+      }
+
+      return remove(name);
+    });
+    a.tick();
+    await createOn(a.backup, TEST_PASSWORD);
+    jest.restoreAllMocks();
+
+    expect(late).toBeDefined();
+    expect(a.cloudBackupStore.files.has(late!)).toBe(true);
+    expect(await a.backup.getStatus()).toMatchObject({ remoteChange: 'updatedElsewhere' });
+  });
+
+  it('still reads, restores and upgrades a backup in the single-file format', async () => {
+    const source = await setup();
+
+    await create(source.backup);
+    const [[, file]] = [...source.cloudBackupStore.files];
+    const backupId = JSON.parse(file.contents).backupId as string;
+    const legacy = backupFileName(backupId);
+    const target = createTestContainer();
+    const service = target.container.cloudBackupService;
+
+    target.cloudBackupStore.files.set(legacy, file);
+    expect(await service.findBackups()).toEqual([
+      { fileName: legacy, modifiedAt: file.modifiedAt, current: false, versions: [{ fileName: legacy, revision: null, modifiedAt: file.modifiedAt, current: false }] },
+    ]);
+    await service.restoreWallet(await service.openBackup(legacy, BACKUP_PASSWORD), NEW_WALLET_PASSWORD);
+    expect(await service.getStatus()).toMatchObject({ kind: 'backedUp', fileName: legacy });
+    expect(await service.getStatus()).not.toHaveProperty('remoteChange');
+
+    // The next write goes to a new version and keeps the old file until a later write replaces both.
+    await createOn(service, NEW_WALLET_PASSWORD);
+    expect(target.cloudBackupStore.files.has(legacy)).toBe(true);
+    expect(await service.getStatus()).not.toHaveProperty('remoteChange');
+    await createOn(service, NEW_WALLET_PASSWORD);
+    expect(target.cloudBackupStore.files.has(legacy)).toBe(false);
+    expect(revisionsIn(target.cloudBackupStore)).toEqual([2, 3]);
+
+    // Deleting the backup removes every version.
+    await service.deleteBackup(legacy, { walletPassword: NEW_WALLET_PASSWORD });
+    expect(target.cloudBackupStore.files.size).toBe(0);
+    expect(service.getLocalStatus()).toEqual({ kind: 'none' });
+  });
+
+  it('refuses a version whose header disagrees with its file name', async () => {
+    const { backup, cloudBackupStore } = await setup();
+
+    await create(backup);
+    const [[name, file]] = [...cloudBackupStore.files];
+    const renamed = name.replace('.1-', '.5-');
+
+    cloudBackupStore.files.set(renamed, file);
+    expect(await codeOf(() => backup.openBackup(renamed, BACKUP_PASSWORD))).toBe(AppErrorCode.BACKUP_CORRUPTED);
+    expect(await backup.getStatus()).toMatchObject({ remoteChange: 'unreadable' });
+  });
+
+  it('detects a cloud copy rolled back to an older revision', async () => {
+    const { backup, cloudBackupStore, tick } = await setup();
+
+    await create(backup);
+    tick();
+    await createOn(backup, TEST_PASSWORD, false);
+    // The cloud went back to a snapshot holding only the first version.
+    cloudBackupStore.files.delete(newestName(cloudBackupStore));
+
+    expect(await backup.getStatus()).toMatchObject({ remoteChange: 'rolledBack' });
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.BACKUP_CONFLICT);
+    await createOn(backup, TEST_PASSWORD, true);
+    expect(revisionsIn(cloudBackupStore)).toEqual([1, 3]);
+    expect(await backup.getStatus()).not.toHaveProperty('remoteChange');
+  });
+
+  it('reports a damaged cloud copy and replaces it only when asked', async () => {
+    const { backup, cloudBackupStore } = await setup();
+
+    await create(backup);
+    const [fileName] = [...cloudBackupStore.files.keys()];
+
+    cloudBackupStore.files.set(fileName, { contents: 'garbage', modifiedAt: 1 });
+    expect(await backup.getStatus()).toMatchObject({ remoteChange: 'unreadable' });
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.BACKUP_CONFLICT);
+    await createOn(backup, TEST_PASSWORD, true);
+    expect(await backup.getStatus()).not.toHaveProperty('remoteChange');
+  });
+
+  it('does not count a tampered nonce, ciphertext or file name as a wrong password', async () => {
+    const { backup, cloudBackupStore, secureStore } = await setup();
+
+    await create(backup);
+    const [fileName] = [...cloudBackupStore.files.keys()];
+    const envelope = JSON.parse(cloudBackupStore.files.get(fileName)!.contents);
+    const tampered = [
+      { ...envelope, encryption: { ...envelope.encryption, cipher: { ...envelope.encryption.cipher, nonce: envelope.encryption.cipher.nonce.slice(4) } } },
+      { ...envelope, encryption: { ...envelope.encryption, cipher: { ...envelope.encryption.cipher, nonce: '!!not base64!!' } } },
+      { ...envelope, encryption: { ...envelope.encryption, ciphertext: 'AAAA' } },
+      { ...envelope, encryption: { ...envelope.encryption, kdf: { ...envelope.encryption.kdf, salt: 'AA==' } } },
+    ];
+
+    for (const value of tampered) {
+      cloudBackupStore.files.set(fileName, { contents: JSON.stringify(value), modifiedAt: 1 });
+      expect(await codeOf(() => backup.openBackup(fileName, BACKUP_PASSWORD))).toBe(AppErrorCode.BACKUP_CORRUPTED);
+    }
+
+    // The same file under another backup's name.
+    const renamed = backupFileName('7'.repeat(32));
+
+    cloudBackupStore.files.set(renamed, { contents: JSON.stringify(envelope), modifiedAt: 1 });
+    expect(await codeOf(() => backup.openBackup(renamed, BACKUP_PASSWORD))).toBe(AppErrorCode.BACKUP_CORRUPTED);
+    expect(await secureStore.hasItem(SecureKey.BACKUP_PASSWORD_ATTEMPTS)).toBe(false);
+  });
+
+  it('restores the account order, avatar colors and the selected account', async () => {
+    const source = await setup();
+    const { container } = source;
+    const imported = await container.walletService.importPrivateKey(PRIVATE_KEY, 'Imported');
+    const second = await container.accountService.createAccount(source.account.keyringId, KeyringType.HD_WALLET, 'Second');
+
+    container.accountService.updateProfile(second.id, { name: 'Second', avatarColor: 'violet' });
+    container.accountService.selectAccount(imported.id);
+    await create(source.backup);
+
+    const target = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files } });
+    const fileName = [...source.cloudBackupStore.files.keys()][0];
+    const content = await target.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+    const selected = await target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+
+    // Colors come back exactly: the default first account, the random one picked at import and the edited one.
+    expect(imported.avatarColor).toBeDefined();
+    expect(target.container.accountService.getAccounts().map(({ name, avatarColor }) => ({ name, avatarColor })))
+      .toEqual([{ name: 'Account 1', avatarColor: undefined }, { name: 'Imported', avatarColor: imported.avatarColor }, { name: 'Second', avatarColor: 'violet' }]);
+    expect(selected.name).toBe('Imported');
+    expect(target.container.accountService.getCurrentAccount()?.name).toBe('Imported');
+  });
+
+  it('leaves no partial wallet when an account cannot be rebuilt', async () => {
+    const source = await setup();
+
+    await source.container.accountService.createAccount(source.account.keyringId, KeyringType.HD_WALLET, 'Second');
+    await create(source.backup);
+    const target = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files } });
+    const fileName = [...source.cloudBackupStore.files.keys()][0];
+    const content = await target.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+    const original = target.container.accountService.appendAccount.bind(target.container.accountService);
+    let calls = 0;
+
+    jest.spyOn(target.container.accountService, 'appendAccount').mockImplementation(async (...args) => {
+      calls += 1;
+
+      if (calls === 2) {
+        throw new AppError(AppErrorCode.STORAGE_ERROR, 'disk full');
+      }
+
+      return original(...args);
+    });
+
+    expect(await codeOf(() => target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD))).toBe(AppErrorCode.STORAGE_ERROR);
+    expect(await target.container.walletService.getStatus()).toBe('empty');
+    expect(target.container.accountService.getAccounts()).toEqual([]);
+    expect(target.container.cloudBackupService.getLocalStatus()).toEqual({ kind: 'none' });
+
+    // Nothing is left in the way of a second attempt.
+    jest.restoreAllMocks();
+    await target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+    expect(target.container.accountService.getAccounts()).toHaveLength(2);
+  });
+
+  it('rolls an interrupted restore back on the next launch so it can be restored again', async () => {
+    const source = await setup();
+
+    await source.container.accountService.createAccount(source.account.keyringId, KeyringType.HD_WALLET, 'Second');
+    await source.container.accountService.createAccount(source.account.keyringId, KeyringType.HD_WALLET, 'Third');
+    const created = await create(source.backup);
+    const fileName = created.kind === 'backedUp' ? created.fileName : '';
+    const target = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files } });
+    const content = await target.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+    const original = target.container.accountService.appendAccount.bind(target.container.accountService);
+    let calls = 0;
+
+    // The app dies while the second account is written: that call never returns.
+    jest.spyOn(target.container.accountService, 'appendAccount').mockImplementation((...args) => {
+      calls += 1;
+      return calls === 2 ? new Promise(() => undefined) : original(...args);
+    });
+    void target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+    await waitFor(() => calls === 2);
+    expect(await target.secureStore.hasItem(SecureKey.VAULT)).toBe(true);
+    jest.restoreAllMocks();
+
+    const relaunched = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files }, relaunch: target });
+
+    expect(await relaunched.container.walletService.getStatus()).toBe('empty');
+    expect(await relaunched.secureStore.hasItem(SecureKey.VAULT)).toBe(false);
+    expect(relaunched.container.accountService.getAccounts()).toEqual([]);
+    expect(relaunched.keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
+
+    await relaunched.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+    expect(relaunched.container.accountService.getAccounts().map(account => account.name)).toEqual(['Account 1', 'Second', 'Third']);
+    expect(relaunched.container.cloudBackupService.getLocalStatus()).toMatchObject({ kind: 'backedUp', fileName, outdated: false });
+    expect(relaunched.keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
+  });
+
+  // A phrase's first key also imported on its own; after general storage was lost only one account holds it.
+  const sharedKeyWallet = async () => {
+    const source = await setup();
+    const { container, account } = source;
+
+    await container.accountService.createAccount(account.keyringId, KeyringType.HD_WALLET, 'Second');
+    await container.walletService.removeAccount(account.id, TEST_PASSWORD);
+    const first = deriveKeyPair(await mnemonicToSeed(TEST_MNEMONIC), 0);
+    const imported = await container.walletService.importPrivateKey(Buffer.from(first.privateKey).toString('hex'));
+
+    container.walletService.lock();
+    source.keyValueStore.clearAll();
+    await container.walletService.unlock(TEST_PASSWORD);
+    return { ...source, hdKeyringId: account.keyringId, pkKeyringId: imported.keyringId };
+  };
+
+  it('backs up and restores a keyring whose key already has an account elsewhere, without inventing one', async () => {
+    const source = await sharedKeyWallet();
+    const original = source.container.accountService.getAccounts();
+    const created = await create(source.backup);
+    const fileName = created.kind === 'backedUp' ? created.fileName : '';
+    const target = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files } });
+    const content = await target.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+
+    expect(original.map(item => item.keyringId)).toEqual([source.hdKeyringId]);
+    expect(content.keyrings.find(keyring => keyring.id === source.pkKeyringId)?.accounts).toEqual([]);
+
+    await target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+    const restored = target.container.accountService.getAccounts();
+
+    expect(restored.map(({ keyringId, name, hdIndex, publicKey }) => ({ keyringId, name, hdIndex, publicKey })))
+      .toEqual(original.map(({ keyringId, name, hdIndex, publicKey }) => ({ keyringId, name, hdIndex, publicKey })));
+    expect(await target.container.walletService.getStatus()).toBe('unlocked');
+    expect(target.keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
+    expect(target.container.cloudBackupService.getLocalStatus()).toMatchObject({ kind: 'backedUp', outdated: false, mnemonicCount: 1, privateKeyCount: 1 });
+
+    // Both keyrings are in the restored vault.
+    target.container.walletService.lock();
+    await target.container.walletService.unlock(NEW_WALLET_PASSWORD);
+    expect(await target.container.walletService.revealMnemonic(source.hdKeyringId, NEW_WALLET_PASSWORD)).toBe(TEST_MNEMONIC);
+    await expect(target.container.keyringSession.withKeyPair(source.pkKeyringId, 0, async () => true)).resolves.toBe(true);
+  });
+
+  it('still restores an older backup that wrote a placeholder row for such a keyring', async () => {
+    const source = await sharedKeyWallet();
+    const created = await create(source.backup);
+    const fileName = created.kind === 'backedUp' ? created.fileName : '';
+    const target = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files } });
+    const content = await target.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+    const legacy = {
+      ...content,
+      version: 2,
+      keyrings: content.keyrings.map(keyring => (keyring.accounts.length > 0 ? keyring : { ...keyring, accounts: [{ name: '', hdIndex: 0, position: 1 }] })),
+    };
+
+    await target.container.cloudBackupService.restoreWallet(legacy, NEW_WALLET_PASSWORD);
+    expect(target.container.accountService.getAccounts().map(item => item.keyringId)).toEqual([source.hdKeyringId]);
+    expect(await target.container.walletService.getStatus()).toBe('unlocked');
+    expect(target.keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
+  });
+
+  it('fingerprints the account layout, ignoring names and order', () => {
+    const base = { id: 'a', keyringType: KeyringType.HD_WALLET, publicKey: 'p', createdAt: 0 };
+    const a = fingerprintOf([{ ...base, keyringId: 'k', hdIndex: 0, name: 'A' }, { ...base, keyringId: 'k', hdIndex: 1, name: 'B' }]);
+
+    expect(fingerprintOf([{ ...base, keyringId: 'k', hdIndex: 1, name: 'X' }, { ...base, keyringId: 'k', hdIndex: 0, name: 'Y' }])).toBe(a);
+    expect(fingerprintOf([{ ...base, keyringId: 'k', hdIndex: 0, name: 'A' }])).not.toBe(a);
+  });
+});
+
+// A JS timeout does not cancel the native upload, so the write may still land after it was reported as failed.
+describe('CloudBackupService write that times out but lands', () => {
+  const landThenTimeOut = (store: Awaited<ReturnType<typeof setup>>['cloudBackupStore']): void => {
+    const write = store.write.bind(store);
+
+    jest.spyOn(store, 'write').mockImplementationOnce(async (name, contents) => {
+      await write(name, contents);
+      throw new AppError(AppErrorCode.NETWORK_ERROR, 'iCloud did not respond. Try again.');
+    });
+  };
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('recognizes its own landed update instead of reporting a change on another device', async () => {
+    const { backup, cloudBackupStore, keyValueStore, tick } = await setup();
+
+    await create(backup);
+    tick();
+    landThenTimeOut(cloudBackupStore);
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.NETWORK_ERROR);
+
+    expect(await backup.getStatus()).not.toHaveProperty('remoteChange');
+    expect(keyValueStore.getString(StorageKey.CLOUD_BACKUP_PENDING_WRITE)).toBeUndefined();
+    tick();
+    landThenTimeOut(cloudBackupStore);
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.NETWORK_ERROR);
+    tick();
+    await create(backup);
+    expect(await backup.getStatus()).toMatchObject({ kind: 'backedUp', backedUpAt: 1_700_000_003_000 });
+    expect(await backup.getStatus()).not.toHaveProperty('remoteChange');
+    expect(revisionsIn(cloudBackupStore)).toEqual([3, 4]);
+    expect(keyValueStore.getString(StorageKey.CLOUD_BACKUP_PENDING_WRITE)).toBeUndefined();
+  });
+
+  it('reuses the backupId of an unconfirmed first backup instead of leaving an orphan file', async () => {
+    const { backup, cloudBackupStore, tick } = await setup();
+
+    landThenTimeOut(cloudBackupStore);
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.NETWORK_ERROR);
+    const [fileName] = [...cloudBackupStore.files.keys()];
+
+    tick();
+    await create(backup);
+    const backupIds = [...cloudBackupStore.files.keys()].map(name => parseBackupFileName(name)?.backupId);
+
+    expect(backupIds).toEqual([parseBackupFileName(fileName)?.backupId, parseBackupFileName(fileName)?.backupId]);
+    expect(backup.getLocalStatus()).toMatchObject({ kind: 'backedUp', fileName: newestName(cloudBackupStore), backedUpAt: 1_700_000_001_000 });
+  });
+
+  it('reuses the backupId when the first write never landed', async () => {
+    const { backup, cloudBackupStore } = await setup();
+
+    jest.spyOn(cloudBackupStore, 'write').mockRejectedValueOnce(new AppError(AppErrorCode.NETWORK_ERROR, 'iCloud did not respond. Try again.'));
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.NETWORK_ERROR);
+    expect(cloudBackupStore.files.size).toBe(0);
+    await create(backup);
+    await create(backup);
+    await create(backup);
+    expect(new Set([...cloudBackupStore.files.keys()].map(name => parseBackupFileName(name)?.backupId)).size).toBe(1);
+    expect(revisionsIn(cloudBackupStore)).toEqual([2, 3]);
+  });
+
+  it('still reports a write from another device while its own write is unconfirmed', async () => {
+    const { a, b } = await twoDevices();
+
+    a.tick();
+    jest.spyOn(a.cloudBackupStore, 'write').mockRejectedValueOnce(new AppError(AppErrorCode.NETWORK_ERROR, 'iCloud did not respond. Try again.'));
+    expect(await codeOf(() => createOn(a.backup, TEST_PASSWORD))).toBe(AppErrorCode.NETWORK_ERROR);
+    await createOn(b.backup, NEW_WALLET_PASSWORD);
+    expect(await a.backup.getStatus()).toMatchObject({ remoteChange: 'updatedElsewhere' });
+    expect(await codeOf(() => createOn(a.backup, TEST_PASSWORD))).toBe(AppErrorCode.BACKUP_CONFLICT);
+  });
+
+  it('reports the landed first backup as backed up', async () => {
+    const { backup, cloudBackupStore } = await setup();
+
+    landThenTimeOut(cloudBackupStore);
+    expect(await codeOf(() => create(backup))).toBe(AppErrorCode.NETWORK_ERROR);
+    expect(backup.getLocalStatus()).toEqual({ kind: 'none' });
+    expect(await backup.getStatus()).toMatchObject({ kind: 'backedUp', outdated: false });
+    expect(await backup.getStatus()).not.toHaveProperty('remoteChange');
+  });
+});
+
+// The backup status a restore saved belongs to the restored wallet and goes with it.
+describe('CloudBackupService restore rollback', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('rolls back the backup status a restore saved when it stopped before clearing its marker', async () => {
+    const source = await setup();
+    const created = await create(source.backup);
+    const fileName = created.kind === 'backedUp' ? created.fileName : '';
+    const original = source.cloudBackupStore.files.get(fileName);
+    const target = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files } });
+    const content = await target.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+    const remove = target.keyValueStore.remove.bind(target.keyValueStore);
+
+    // The process stops right after the status was saved: the marker is never cleared.
+    jest.spyOn(target.keyValueStore, 'remove').mockImplementation(key => key !== StorageKey.RESTORE_PENDING && remove(key));
+    await target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+    expect(target.keyValueStore.getString(StorageKey.CLOUD_BACKUP)).toBeDefined();
+    jest.restoreAllMocks();
+
+    const relaunched = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files }, relaunch: target });
+
+    expect(await relaunched.container.walletService.getStatus()).toBe('empty');
+    expect(relaunched.keyValueStore.getString(StorageKey.CLOUD_BACKUP)).toBeUndefined();
+    expect(relaunched.container.cloudBackupService.getLocalStatus()).toEqual({ kind: 'none' });
+
+    // A different wallet backs up as a new backup and leaves the previous wallet's file alone.
+    const walletService = relaunched.container.walletService;
+
+    await walletService.createWallet({ mnemonic: walletService.generateMnemonic(), password: NEW_WALLET_PASSWORD });
+    const next = await createOn(relaunched.container.cloudBackupService, NEW_WALLET_PASSWORD);
+    const nextName = next.kind === 'backedUp' ? next.fileName : '';
+
+    expect(parseBackupFileName(nextName)?.backupId).not.toBe(parseBackupFileName(fileName)?.backupId);
+    expect(source.cloudBackupStore.files.get(fileName)).toEqual(original);
+    expect(source.cloudBackupStore.files.size).toBe(2);
+  });
+
+  it('drops a previous wallet\'s backup status before a restore starts', async () => {
+    const source = await setup();
+    const created = await create(source.backup);
+    const fileName = created.kind === 'backedUp' ? created.fileName : '';
+    const content = await source.backup.openBackup(fileName, BACKUP_PASSWORD);
+    // General storage survived without its vault (e.g. a device restore without the keychain).
+    const target = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files } });
+
+    const stale = JSON.stringify({ ...JSON.parse(source.keyValueStore.getString(StorageKey.CLOUD_BACKUP)!), backupId: 'f'.repeat(32) });
+
+    target.keyValueStore.setString(StorageKey.CLOUD_BACKUP, stale);
+    target.keyValueStore.setString(StorageKey.CLOUD_BACKUP_PENDING_WRITE, stale);
+    jest.spyOn(target.container.accountService, 'appendAccount').mockRejectedValueOnce(new Error('disk full'));
+    expect(await catchError(() => target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD))).toEqual(new Error('disk full'));
+    jest.restoreAllMocks();
+    expect(target.keyValueStore.getString(StorageKey.CLOUD_BACKUP)).toBeUndefined();
+    expect(target.keyValueStore.getString(StorageKey.CLOUD_BACKUP_PENDING_WRITE)).toBeUndefined();
+  });
+});
+
+// iCloud uploads a written file in the background; only an uploaded copy counts as backed up.
+describe('CloudBackupService upload in the background', () => {
+  it('keeps a write pending until the provider uploaded it, and only then prunes', async () => {
+    const { backup, cloudBackupStore, keyValueStore, tick } = await setup({ cloudBackup: { backgroundUploads: true } });
+
+    const first = await create(backup);
+    const firstName = first.kind === 'backedUp' ? first.fileName : '';
+
+    expect(first).toMatchObject({ kind: 'backedUp', uploading: {} });
+    expect(JSON.parse(keyValueStore.getString(StorageKey.CLOUD_BACKUP)!)).toMatchObject({ fileName: firstName, uploading: true });
+    expect(await backup.getStatus()).toMatchObject({ uploading: {} });
+
+    cloudBackupStore.finishUpload(firstName);
+    expect(await backup.getStatus()).not.toHaveProperty('uploading');
+    expect(backup.getLocalStatus()).not.toHaveProperty('uploading');
+
+    // Versions older than the newest one replaced stay until the new write is uploaded.
+    tick();
+    await create(backup);
+    tick();
+    const third = await create(backup);
+
+    expect(revisionsIn(cloudBackupStore)).toEqual([1, 2, 3]);
+    cloudBackupStore.finishUpload([...cloudBackupStore.files.keys()].find(name => parseBackupFileName(name)?.revision === 2)!);
+    cloudBackupStore.finishUpload(third.kind === 'backedUp' ? third.fileName : '');
+    expect(await backup.getStatus()).not.toHaveProperty('uploading');
+    tick();
+    cloudBackupStore.backgroundUploads = false;
+    await create(backup);
+    expect(revisionsIn(cloudBackupStore)).toEqual([3, 4]);
+  });
+
+  it('reports an upload error and keeps the write pending', async () => {
+    const { backup, cloudBackupStore } = await setup({ cloudBackup: { backgroundUploads: true } });
+    const created = await create(backup);
+    const fileName = created.kind === 'backedUp' ? created.fileName : '';
+    const quota = new AppError(AppErrorCode.CLOUD_BACKUP_QUOTA, 'iCloud storage is full');
+
+    cloudBackupStore.failUpload(fileName, quota);
+    expect(await backup.getStatus()).toMatchObject({ kind: 'backedUp', uploading: { error: quota } });
+    expect(backup.getLocalStatus()).toMatchObject({ uploading: {} });
+
+    cloudBackupStore.finishUpload(fileName);
+    expect(await backup.getStatus()).not.toHaveProperty('uploading');
+  });
+});

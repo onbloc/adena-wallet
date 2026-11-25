@@ -187,20 +187,31 @@ describe('GnoChainRepository', () => {
     it('summarizes every message type', () => {
       const messages: GnoMessage[] = [
         { type: '/bank.MsgSend', value: { from_address: caller, to_address: RECIPIENT, amount: '1500000ugnot,7foo' } },
-        { type: '/vm.m_call', value: { caller, send: '', max_deposit: '', pkg_path: 'gno.land/r/demo/x', func: 'Do', args: ['a', 'b'] } },
+        { type: '/vm.m_call', value: { caller, send: '', max_deposit: '', pkg_path: 'gno.land/r/demo/x', func: 'Do', args: ['a', 'b, c'] } },
         { type: '/vm.m_call', value: { caller, send: '1ugnot', max_deposit: '', pkg_path: 'gno.land/r/demo/x', func: 'Do', args: null } },
         { type: '/vm.m_call', value: { caller, send: '', max_deposit: '', pkg_path: 'gno.land/r/demo/x', func: 'Do', args: [] } },
         { ...addpkg(), value: { ...(addpkg().value as object), send: '100000000000000000000ugnot' } } as GnoMessage,
-        { ...run(), value: { ...(run().value as object), package: { name: 'main', path: '', files: [{ name: 'a.gno', body: '' }, { name: 'b.gno', body: '' }] } } } as GnoMessage,
+        { ...run(), value: { ...(run().value as object), package: { name: 'main', path: '', files: [{ name: 'a.gno', body: 'package main' }, { name: 'b.gno', body: '' }] } } } as GnoMessage,
       ];
 
       expect(setup().repository.describeMessages(messages, network)).toEqual([
         { title: 'Transfer', details: [{ label: 'To', value: RECIPIENT }, { label: 'Amount', value: '1.5 GNOT, 7foo' }] },
-        { title: 'Call', details: [{ label: 'Package', value: 'gno.land/r/demo/x' }, { label: 'Function', value: 'Do' }, { label: 'Arguments', value: 'a, b' }, { label: 'Send', value: '0 GNOT' }] },
+        { title: 'Call', details: [{ label: 'Package', value: 'gno.land/r/demo/x' }, { label: 'Function', value: 'Do' }, { label: 'Arguments', value: '1. "a"\n2. "b, c"' }, { label: 'Send', value: '0 GNOT' }] },
         { title: 'Call', details: [{ label: 'Package', value: 'gno.land/r/demo/x' }, { label: 'Function', value: 'Do' }, { label: 'Arguments', value: '-' }, { label: 'Send', value: '0.000001 GNOT' }] },
         { title: 'Call', details: [{ label: 'Package', value: 'gno.land/r/demo/x' }, { label: 'Function', value: 'Do' }, { label: 'Arguments', value: '-' }, { label: 'Send', value: '0 GNOT' }] },
-        { title: 'Add package', details: [{ label: 'Package', value: 'gno.land/r/demo/x' }, { label: 'Files', value: '1' }, { label: 'Send', value: '100,000,000,000,000 GNOT' }] },
-        { title: 'Run', details: [{ label: 'Files', value: 'a.gno, b.gno' }, { label: 'Send', value: '0 GNOT' }] },
+        {
+          title: 'Add package',
+          details: [{ label: 'Package', value: 'gno.land/r/demo/x' }, { label: 'Files', value: '1' }, { label: 'Send', value: '100,000,000,000,000 GNOT' }],
+          code: [{ name: 'x.gno', body: 'package x' }],
+          warning: expect.stringContaining('publishes the code'),
+        },
+        {
+          title: 'Run',
+          details: [{ label: 'Files', value: 'a.gno, b.gno' }, { label: 'Send', value: '0 GNOT' }],
+          // The full source is part of the review, not just the file names.
+          code: [{ name: 'a.gno', body: 'package main' }, { name: 'b.gno', body: '' }],
+          warning: expect.stringContaining('runs code with your account\'s permissions'),
+        },
       ]);
     });
 

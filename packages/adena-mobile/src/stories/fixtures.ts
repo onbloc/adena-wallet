@@ -1,4 +1,5 @@
 // Shared sample data for page stories; public test addresses only.
+import { DappMessageView } from '../components/pages';
 import { AssetItemView, NftCardView } from '../components/view-models';
 
 export const SAMPLE_ADDRESS = 'g1semyl4hhfvkjmrg3e3ef8v0dkx0d6asffvakl4';
@@ -17,3 +18,9 @@ export const SAMPLE_COLLECTIONS: NftCardView[] = [
 
 // Generated 16x16 gradient standing in for a picked profile photo.
 export const SAMPLE_AVATAR_PHOTO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAB30lEQVR42g3LIc6GIACA4f8Q3wE8gAfgAB7A7EgmRnQkEiMyksmZ3jkSiRkdieSMnuj36c/fb6Kb6CfExDAxTsgJNWEm3ESc2CbSRJmoE/fE32+mm+lnxMwwM87IGTVjZtxMnNlm0kyZqTP3/AVNp+k1QjNoRo3UKI3ROE3UbJqkKZqqufUXFrqFfkEsDAvjglxQC2bBLcSFbSEtlIW6cC9fsHSW3iIsg2W0SIuyGIuzRMtmSZZiqZbbfsHTeXqP8Aye0SM9ymM8zhM9myd5iqd6bv+FQBfoAyIwBMaADKiACbhADGyBFCiBGrjDF1a6lX5FrAwr44pcUStmxa3ElW0lrZSVunKvX9jpdvodsTPsjDtyR+2YHbcTd7adtFN26s69f+GgO+gPxMFwMB7IA3VgDtxBPNgO0kE5qAf38YVMl+kzIjNkxozMqIzJuEzMbJmUKZmaufMXTrqT/kScDCfjiTxRJ+bEncST7SSdlJN6cp9fuOgu+gtxMVyMF/JCXZgLdxEvtot0US7qxX19odE1+oZoDI2xIRuqYRquERtbIzVKozbu9oWH7qF/EA/Dw/ggH9SDeXAP8WF7SA/loT7czxdeupf+RbwML+OLfFEv5sW9xJftJb2Ul/pyv/wDjaGkEBBTcVQAAAAASUVORK5CYII=';
+
+export const SWAP_MESSAGES: DappMessageView[] = [
+  { title: 'Call', details: [{ label: 'Function', value: 'Approve' }, { label: 'Package', value: 'gno.land/r/gnoland/wugnot' }, { label: 'Arguments', value: 'g1vc883gshu5z7ytk5cdynhc8c2dh67pdp4cszkp, 1000000' }] },
+  { title: 'Call', details: [{ label: 'Function', value: 'Deposit' }, { label: 'Package', value: 'gno.land/r/gnoland/wugnot' }, { label: 'Send', value: '1 GNOT' }] },
+  { title: 'Call', details: [{ label: 'Function', value: 'ExactInSwapRoute' }, { label: 'Package', value: 'gno.land/r/gnoswap/router' }, { label: 'Arguments', value: 'wugnot → GNS, 1000000, min 4550753' }] },
+];

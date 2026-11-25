@@ -21,7 +21,10 @@ const BackupStub = ({ navigation }: NativeStackScreenProps<OnboardingStackParamL
 
 describe('WelcomeScreen', () => {
   it('drops the generated phrase when the user backs out to the start', async () => {
-    const { Wrapper } = createWrapper({ walletService: { generateMnemonic: () => TEST_MNEMONIC } });
+    const { Wrapper } = createWrapper({
+      walletService: { generateMnemonic: () => TEST_MNEMONIC },
+      cloudBackupService: { provider: 'icloud', isAvailable: async () => false, findBackups: async () => [] },
+    });
 
     await render(wrapPage(
       <Wrapper>

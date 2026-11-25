@@ -15,7 +15,9 @@
     "storybook": "storybook dev -p 6006",
     "build:storybook": "storybook build -o storybook-static",
     "test:ci": "jest --ci",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "e2e": "bash e2e/run.sh",
+    "e2e:smoke": "bash e2e/run.sh --include-tags smoke"
   },
   "dependencies": {
     "@cosmjs/amino": "0.39.0",
@@ -97,6 +99,20 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs}": "eslint --fix"
+  },
+  "codegenConfig": {
+    "name": "AdenaMobileSpecs",
+    "type": "modules",
+    "jsSrcsDir": "src/native",
+    "android": {
+      "javaPackageName": "com.adena.specs"
+    },
+    "ios": {
+      "modulesProvider": {
+        "AdenaCloudBackup": "AdenaCloudBackup",
+        "AdenaSecureClipboard": "AdenaSecureClipboard"
+      }
+    }
   },
   "packageManager": "pnpm@11.28.11"
 }

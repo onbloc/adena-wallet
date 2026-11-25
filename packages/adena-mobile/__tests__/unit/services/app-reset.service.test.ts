@@ -25,12 +25,16 @@ describe('AppResetService', () => {
     keyValueStore.setString(StorageKey.ACCOUNTS, '{}');
     keyValueStore.setString('anything', '1');
     keyValueStore.setString(`${ACCOUNT_PHOTO_KEY_PREFIX}acc-1`, 'data:image/jpeg;base64,AAAA');
+    // The local backup record goes too; the cloud copy itself is kept.
+    keyValueStore.setString(StorageKey.CLOUD_BACKUP, '{}');
+    keyValueStore.setString(StorageKey.PROCESSED_DAPP_REQUESTS, '{}');
     const vaultService = new VaultService(new SecureVaultRepository(secureStore), new ScryptXChaChaVaultCipher(), new PasswordAttemptLimiter(new SecurePasswordAttemptRepository(secureStore)));
 
     await new AppResetService(session, vaultService, secureStore, keyValueStore, new MigrationService(keyValueStore, secureStore)).resetAll();
 
     expect(session.isUnlocked()).toBe(false);
     expect(await secureStore.getItem(SecureKey.STORAGE_ENCRYPTION_KEY)).toBe('x');
+    expect(await secureStore.getItem(SecureKey.BACKUP_PASSWORD_ATTEMPTS)).toBe('x');
 
     for (const key of [SecureKey.VAULT, SecureKey.BIOMETRIC_PASSWORD, SecureKey.PASSWORD_ATTEMPTS]) {
       expect(await secureStore.hasItem(key)).toBe(false);
@@ -44,9 +48,10 @@ describe('AppResetService', () => {
   it('wipes a full wallet, including the password lockout, so onboarding can start over', async () => {
     let now = 1_000_000;
     const { container, secureStore } = createTestContainer({ now: () => now });
+    const account = await container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+    const network = container.networkService.getCurrentNetwork();
 
-    await container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
-
+    container.connectedAppService.touch('https://dapp.example.com', { name: 'Example' }, account.id, network.id);
     container.walletService.lock();
 
     for (let i = 0; i < 6; i++) {
@@ -57,6 +62,7 @@ describe('AppResetService', () => {
     await container.appResetService.resetAll();
 
     expect(await container.walletService.getStatus()).toBe('empty');
+    expect(container.connectedAppService.getConnectedApps()).toEqual([]);
     expect(container.accountService.getAccounts()).toEqual([]);
     expect(await secureStore.hasItem(SecureKey.PASSWORD_ATTEMPTS)).toBe(false);
     now += 1;

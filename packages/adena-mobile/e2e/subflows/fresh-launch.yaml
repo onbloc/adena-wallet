@@ -1,0 +1,20 @@
+appId: ${APP_ID}
+---
+# iOS keeps Keychain items across reinstalls, so clear it with the app data.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - clearKeychain
+- launchApp:
+    clearState: true
+# A deep-link prompt left over from an earlier flow would cover the app.
+- runFlow:
+    when:
+      visible: (Open|열기)
+    commands:
+      - tapOn: (Cancel|취소)
+- extendedWaitUntil:
+    visible:
+      id: welcome-create
+    timeout: 30000

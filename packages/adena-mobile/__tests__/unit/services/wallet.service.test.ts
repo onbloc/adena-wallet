@@ -1,7 +1,9 @@
 import { isAppError } from '../../../src/core/errors';
 import { deriveKeyPair } from '../../../src/crypto/key-pair';
+import { KeyringType } from '../../../src/crypto/keyring';
 import { isValidMnemonic, mnemonicToSeed } from '../../../src/crypto/mnemonic';
 import { isAvatarColor } from '../../../src/domain/account';
+import { StorageKey } from '../../../src/migration/storage-keys';
 import { StorageAccountRepository } from '../../../src/repositories/account.repository';
 import { SecureBiometricCredentialRepository } from '../../../src/repositories/biometric-credential.repository';
 import { StoragePreferenceRepository } from '../../../src/repositories/preference.repository';
@@ -517,6 +519,7 @@ describe('WalletService', () => {
       const imported = await wallet.importPrivateKey(PRIVATE_KEY);
 
       for (const owner of [account, imported]) {
+        container.connectedAppService.touch('https://dapp.example.com', { name: 'Example' }, owner.id, network.id);
         container.nftService.setPinned(owner, network, 'gno.land/r/demo/nft', true);
         container.tokenService.setVisibility(owner, network, 'x', true);
       }
@@ -525,6 +528,7 @@ describe('WalletService', () => {
       container.accountPhotoService.save(imported.id, 'data:image/jpeg;base64,BBBB');
 
       await wallet.removeAccount(imported.id, TEST_PASSWORD);
+      expect(container.connectedAppService.getConnectedApps().map(app => app.accountId)).toEqual([account.id]);
       expect(container.accountPhotoService.get(imported.id)).toBeUndefined();
       expect(container.accountPhotoService.get(account.id)).toBe('data:image/jpeg;base64,AAAA');
       expect(container.nftService.getPreferences(imported, network).pinned).toEqual([]);
@@ -765,5 +769,139 @@ describe('WalletService import without the password', () => {
     expect(vaultOf(wallet).hasSessionKey()).toBe(true);
     await container.appResetService.resetAll();
     expect(vaultOf(wallet).hasSessionKey()).toBe(false);
+  });
+});
+
+describe('WalletService.restoreWallet', () => {
+  const keyrings = [
+    { id: 'hd', type: KeyringType.HD_WALLET, mnemonic: TEST_MNEMONIC, createdAt: 1 },
+    { id: 'pk', type: KeyringType.PRIVATE_KEY, privateKey: PRIVATE_KEY, createdAt: 2 },
+  ] as const;
+
+  it('creates one vault with every keyring and rebuilds accounts at their indices', async () => {
+    const { container } = createTestContainer();
+    const selected = await container.walletService.restoreWallet({
+      keyrings: [...keyrings],
+      accounts: [{ keyringId: 'hd', name: 'Main', hdIndex: 0 }, { keyringId: 'hd', name: 'Far', hdIndex: 4 }, { keyringId: 'pk', name: 'Key', hdIndex: 0 }],
+      password: TEST_PASSWORD,
+    });
+
+    expect(selected.name).toBe('Main');
+    expect(container.accountService.getCurrentAccount()?.id).toBe(selected.id);
+    expect(container.accountService.getAccounts().map(item => [item.name, item.hdIndex])).toEqual([['Main', 0], ['Far', 4], ['Key', 0]]);
+    expect(await container.walletService.getStatus()).toBe('unlocked');
+  });
+
+  it('lets the restored session import without the password', async () => {
+    const { container } = createTestContainer();
+
+    await container.walletService.restoreWallet({ keyrings: [keyrings[1]], accounts: [{ keyringId: 'pk', name: 'Key', hdIndex: 0 }], password: TEST_PASSWORD });
+    await container.walletService.addMnemonicKeyring(OTHER_MNEMONIC);
+    container.walletService.lock();
+    await container.walletService.unlock(TEST_PASSWORD);
+    expect(container.accountService.getAccounts()).toHaveLength(2);
+  });
+
+  it('adds index 0 for a keyring the backup lists without accounts', async () => {
+    const { container } = createTestContainer();
+
+    await container.walletService.restoreWallet({ keyrings: [...keyrings], accounts: [{ keyringId: 'pk', name: 'Key', hdIndex: 0 }], password: TEST_PASSWORD });
+    expect(container.accountService.getAccounts().map(item => item.keyringId).sort()).toEqual(['hd', 'pk']);
+  });
+
+  it('rejects invalid input before touching storage', async () => {
+    const { container } = createTestContainer();
+    const restore = (input: Partial<Parameters<typeof container.walletService.restoreWallet>[0]>) => codeOf(() => container.walletService.restoreWallet({
+      keyrings: [...keyrings],
+      accounts: [],
+      password: TEST_PASSWORD,
+      ...input,
+    }));
+
+    expect(await restore({ keyrings: [] })).toBe('INVALID_REQUEST');
+    expect(await restore({ keyrings: [keyrings[0], keyrings[0]] })).toBe('INVALID_REQUEST');
+    expect(await restore({ accounts: [{ keyringId: 'missing', name: 'x', hdIndex: 0 }] })).toBe('INVALID_REQUEST');
+    expect(await restore({ keyrings: [{ ...keyrings[0], mnemonic: 'abandon' }] })).toBe('INVALID_REQUEST');
+    expect(await restore({ keyrings: [{ ...keyrings[1], privateKey: 'zz' }] })).toBe('INVALID_REQUEST');
+    expect(await restore({ password: 'short' })).toBe('WEAK_PASSWORD');
+    // Hardened (2^31+) and out-of-range indices would only fail after the vault was written.
+    expect(await restore({ accounts: [{ keyringId: 'hd', name: 'x', hdIndex: 2 ** 31 }] })).toBe('INVALID_REQUEST');
+    expect(await restore({ accounts: [{ keyringId: 'hd', name: 'x', hdIndex: 2 ** 32 }] })).toBe('INVALID_REQUEST');
+    expect(await restore({ accounts: [{ keyringId: 'hd', name: 'x', hdIndex: -1 }] })).toBe('INVALID_REQUEST');
+    expect(await restore({ accounts: [{ keyringId: 'hd', name: 'x', hdIndex: 1 }, { keyringId: 'hd', name: 'y', hdIndex: 1 }] })).toBe('INVALID_REQUEST');
+    expect(await container.walletService.getStatus()).toBe('empty');
+  });
+
+  it('restores avatar colors and the selected account', async () => {
+    const { container } = createTestContainer();
+    const selected = await container.walletService.restoreWallet({
+      keyrings: [...keyrings],
+      accounts: [{ keyringId: 'hd', name: 'Main', hdIndex: 0 }, { keyringId: 'pk', name: 'Key', hdIndex: 0, avatarColor: 'teal' }],
+      selected: { keyringId: 'pk', hdIndex: 0 },
+      password: TEST_PASSWORD,
+    });
+
+    expect(selected).toMatchObject({ name: 'Key', avatarColor: 'teal' });
+    expect(container.accountService.getCurrentAccount()?.id).toBe(selected.id);
+  });
+
+  it('keeps the default color of backed-up accounts without one instead of picking a random one', async () => {
+    const { container } = createTestContainer();
+
+    await container.walletService.restoreWallet({
+      keyrings: [...keyrings],
+      accounts: [{ keyringId: 'hd', name: 'Main', hdIndex: 0 }, { keyringId: 'hd', name: 'Second', hdIndex: 1 }, { keyringId: 'pk', name: 'Key', hdIndex: 0, avatarColor: 'teal' }],
+      password: TEST_PASSWORD,
+    });
+
+    expect(container.accountService.getAccounts().map(item => item.avatarColor)).toEqual([undefined, undefined, 'teal']);
+  });
+
+  it('lets biometrics be enabled right after the restore without another password check', async () => {
+    const { container } = createTestContainer();
+    const verify = jest.spyOn(VaultService.prototype, 'verifyPassword');
+
+    await container.walletService.restoreWallet({ keyrings: [...keyrings], accounts: [], password: TEST_PASSWORD });
+    await container.walletService.enableBiometricUnlock(TEST_PASSWORD);
+    expect(verify).not.toHaveBeenCalled();
+    verify.mockRestore();
+  });
+
+  it('removes the new vault again when an account cannot be rebuilt', async () => {
+    const { container } = createTestContainer();
+    const original = container.accountService.appendAccount.bind(container.accountService);
+    let calls = 0;
+
+    jest.spyOn(container.accountService, 'appendAccount').mockImplementation(async (...args) => {
+      calls += 1;
+
+      if (calls === 2) {
+        throw new Error('derivation failed');
+      }
+
+      return original(...args);
+    });
+
+    expect(await catchError(() => container.walletService.restoreWallet({
+      keyrings: [...keyrings],
+      accounts: [{ keyringId: 'hd', name: 'Main', hdIndex: 0 }, { keyringId: 'pk', name: 'Key', hdIndex: 0 }],
+      password: TEST_PASSWORD,
+    }))).toEqual(new Error('derivation failed'));
+    expect(await container.walletService.getStatus()).toBe('empty');
+    expect(container.accountService.getAccounts()).toEqual([]);
+    jest.restoreAllMocks();
+  });
+
+  it('does not overwrite an existing wallet, nor leave a marker that would remove it on the next launch', async () => {
+    const { wallet, secureStore, keyValueStore } = await setup();
+
+    expect(await codeOf(() => wallet.restoreWallet({ keyrings: [...keyrings], accounts: [], password: TEST_PASSWORD }))).toBe('WALLET_ALREADY_EXISTS');
+    expect(keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
+
+    const relaunched = createTestContainer({ relaunch: { secureStore, keyValueStore } });
+
+    expect(await relaunched.container.walletService.getStatus()).toBe('locked');
+    await relaunched.container.walletService.unlock(TEST_PASSWORD);
+    expect(relaunched.container.accountService.getAccounts()).toHaveLength(1);
   });
 });

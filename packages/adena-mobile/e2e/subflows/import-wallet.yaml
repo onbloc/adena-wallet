@@ -1,0 +1,12 @@
+appId: ${APP_ID}
+---
+- runFlow: fresh-launch.yaml
+- tapOn:
+    id: welcome-import
+- tapOn:
+    id: import-secret
+- inputText: ${MNEMONIC}
+- runFlow: dismiss-keyboard.yaml
+- tapOn:
+    id: import-submit
+- runFlow: set-password.yaml

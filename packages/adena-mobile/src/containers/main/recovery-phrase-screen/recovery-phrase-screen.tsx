@@ -28,7 +28,8 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
   const { onClose: closeRevealSheet } = reveal.sheetProps;
 
   // Drop the revealed phrase when leaving the screen or the app stops being active (app switcher snapshot).
-  // The clipboard hook handles app state on its own; FLAG_SECURE arrives with the native module work.
+  // The clipboard hook handles app state (and the native sensitive copy) on its own; FLAG_SECURE and the
+  // iOS privacy cover protect every window app-wide.
   useEffect(() => {
     const hideWords = (): void => {
       revealEpochRef.current += 1;

@@ -38,6 +38,7 @@ describe('CreatePasswordScreen', () => {
     getBiometryKind: jest.fn(),
     isBiometricUnlockEnabled: jest.fn(),
   };
+  const cloudBackupService = { restoreWallet: jest.fn() };
   let beforeRemove: ((event: { preventDefault: () => void }) => void) | undefined;
   const navigation = {
     goBack: jest.fn(),
@@ -51,7 +52,7 @@ describe('CreatePasswordScreen', () => {
   const props = { navigation, route: { key: 'CreatePassword', name: 'CreatePassword' } } as unknown as CreatePasswordProps;
 
   const renderScreen = async (): Promise<void> => {
-    const { Wrapper } = createWrapper({ walletService });
+    const { Wrapper } = createWrapper({ walletService, cloudBackupService });
 
     await render(wrapPage(<Wrapper><CreatePasswordScreen {...props} /></Wrapper>));
   };
@@ -69,7 +70,7 @@ describe('CreatePasswordScreen', () => {
     walletService.isBiometricUnlockEnabled.mockResolvedValue(false);
     walletService.getStatus.mockResolvedValue(SessionStatus.UNLOCKED);
     beforeRemove = undefined;
-    useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC });
+    useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC, restoreBackup: null });
     useSessionStore.setState({ status: SessionStatus.EMPTY });
     useToastStore.getState().dismiss();
   });
@@ -234,5 +235,42 @@ describe('CreatePasswordScreen', () => {
 
     await fireEvent.changeText(screen.getByTestId('password-input'), TEST_PASSWORD);
     expect(screen.getByTestId('password-strength')).toBeTruthy();
+  });
+
+  it('restores a decrypted cloud backup with the new password instead of creating a wallet', async () => {
+    const backup = { version: 1, backupId: 'a'.repeat(32), createdAt: 1, keyrings: [] } as never;
+
+    useOnboardingStore.setState({ mnemonic: null, restoreBackup: backup });
+    cloudBackupService.restoreWallet.mockResolvedValue(undefined);
+    await fillAndSubmit();
+
+    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
+    expect(screen.queryByText('Creating wallet…')).toBeNull();
+    expect(cloudBackupService.restoreWallet).toHaveBeenCalledWith(backup, TEST_PASSWORD);
+    expect(walletService.createWallet).not.toHaveBeenCalled();
+    expect(useOnboardingStore.getState().restoreBackup).toBeNull();
+  });
+
+  it('never swaps the phrase it was opened with for a backup set later', async () => {
+    const backup = { version: 1, backupId: 'a'.repeat(32), createdAt: 1, keyrings: [] } as never;
+
+    await renderScreen();
+    await act(() => useOnboardingStore.getState().setRestoreBackup(backup));
+    await fireEvent.changeText(screen.getByTestId('password-input'), TEST_PASSWORD);
+    await fireEvent.changeText(screen.getByTestId('password-confirm'), TEST_PASSWORD);
+    await fireEvent.press(screen.getByTestId('password-submit'));
+
+    expect(cloudBackupService.restoreWallet).not.toHaveBeenCalled();
+    expect(walletService.createWallet).not.toHaveBeenCalled();
+    expect(props.navigation.popToTop).toHaveBeenCalled();
+    expect(useOnboardingStore.getState()).toMatchObject({ mnemonic: null, restoreBackup: null });
+  });
+
+  it('goes back to the start without a phrase or backup', async () => {
+    useOnboardingStore.setState({ mnemonic: null, restoreBackup: null });
+    await fillAndSubmit();
+
+    expect(props.navigation.popToTop).toHaveBeenCalled();
+    expect(walletService.createWallet).not.toHaveBeenCalled();
   });
 });

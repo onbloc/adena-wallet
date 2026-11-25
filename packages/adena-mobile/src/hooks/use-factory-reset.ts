@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 
 import { toErrorMessage } from '../core/error-message';
 import { useContainer } from '../di/container-provider';
+import { useDappRequestStore } from '../stores/dapp-request.store';
 import { useOnboardingStore } from '../stores/onboarding.store';
 import { SessionStatus, useSessionStore } from '../stores/session.store';
 import { useToastStore } from '../stores/toast.store';
@@ -34,6 +35,7 @@ export const useFactoryReset = (): (() => Promise<void>) => {
     }
 
     queryClient.clear();
+    useDappRequestStore.setState({ queue: [], active: null, inFlight: false });
     useOnboardingStore.getState().clear();
     useToastStore.getState().dismiss();
     useSessionStore.setState(state => ({ status: SessionStatus.EMPTY, revision: state.revision + 1 }));

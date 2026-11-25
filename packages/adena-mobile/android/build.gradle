@@ -20,3 +20,42 @@ buildscript {
 
 apply plugin: "com.facebook.react.rootproject"
 
+// react-native-quick-crypto statically links a prebuilt OpenSSL from a third-party Maven
+// namespace. Its checksum is pinned here; a library upgrade that changes it fails the build
+// until the new artifact is reviewed and re-pinned.
+def pinnedNativeArtifacts = [
+    [
+        owner: 'react-native-quick-crypto',
+        notation: 'io.github.ronickg:openssl-static:3.6.2-3@aar',
+        sha256: '4d9c6a10e2909c0cdbd9cf9af25ef4267c46489f450427941bfa14bb7d07d030',
+    ],
+]
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+tasks.register('verifyPinnedNativeArtifacts') {
+    doLast {
+        pinnedNativeArtifacts.each { pin ->
+            def owner = rootProject.findProject(":${pin.owner}")
+            if (owner == null) {
+                throw new GradleException("Pinned artifact owner :${pin.owner} is not in the build.")
+            }
+            def coordinates = pin.notation.replaceAll(/@.*$/, '')
+            if (!owner.file('build.gradle').text.contains("'${coordinates}'")) {
+                throw new GradleException("${pin.owner} no longer depends on ${coordinates}; review and re-pin.")
+            }
+            def configuration = configurations.detachedConfiguration(dependencies.create(pin.notation))
+            configuration.transitive = false
+            def digest = java.security.MessageDigest.getInstance('SHA-256')
+                .digest(configuration.singleFile.bytes)
+                .encodeHex()
+                .toString()
+            if (digest != pin.sha256) {
+                throw new GradleException("Checksum mismatch for ${pin.notation}: expected ${pin.sha256}, got ${digest}.")
+            }
+        }
+    }
+}

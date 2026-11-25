@@ -8,6 +8,12 @@ export interface KeyPair {
 
 export const DEFAULT_COIN_TYPE = 118;
 
+// Account indices are non-hardened BIP-32 children: 0 <= index < 2^31.
+export const HD_INDEX_LIMIT = 2 ** 31;
+
+export const isHdIndex = (value: unknown): value is number =>
+  Number.isInteger(value) && (value as number) >= 0 && (value as number) < HD_INDEX_LIMIT;
+
 // m/44'/{coinType}'/0'/0/{index}, the path shared by Gno and Cosmos SDK chains.
 export const makeHdPath = (index: number, coinType = DEFAULT_COIN_TYPE): HdPath => [
   Slip10RawIndex.hardened(44),

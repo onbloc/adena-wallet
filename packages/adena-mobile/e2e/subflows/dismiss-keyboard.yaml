@@ -1,0 +1,5 @@
+appId: ${APP_ID}
+---
+# hideKeyboard is flaky on iOS for multiline and secure fields; tapping the header blurs the input instead.
+- tapOn:
+    point: 50%,10%

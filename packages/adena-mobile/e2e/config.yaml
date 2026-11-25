@@ -1,0 +1,5 @@
+# Maestro workspace config. Run through `pnpm e2e` so the dApp deep links are generated.
+flows:
+  - flows/*
+executionOrder:
+  continueOnFailure: true

@@ -698,3 +698,34 @@ describe('TransactionService', () => {
     });
   });
 });
+
+describe('TransactionService.signAndBroadcast onSigned', () => {
+  type Env = Awaited<ReturnType<typeof setup>>;
+
+  const signedDraft = async ({ service, account, network, gnot }: Env) =>
+    service.withEstimatedFee(await service.createTransferDraft({ account, network, token: gnot, toAddress: RECIPIENT, amount: '1' }), account, network);
+  const recordOf = (env: Env) => new StoragePendingBroadcastRepository(env.keyValueStore).list(env.account.id, env.network.chainId)[0];
+
+  it('reports the hash once it is journaled and before the tx is sent', async () => {
+    const env = await setup();
+    const seen: { hash: string; journaled: string[] | undefined; sent: number }[] = [];
+
+    await env.service.signAndBroadcast(await signedDraft(env), env.account, env.network, {
+      onSigned: hash => seen.push({ hash, journaled: recordOf(env)?.hashes, sent: env.gno.state.broadcasts.length }),
+    });
+    expect(seen).toEqual([{ hash: expect.any(String), journaled: [seen[0].hash], sent: 0 }]);
+  });
+
+  it('sends nothing and drops the hash when the hash cannot be reported', async () => {
+    const env = await setup();
+    const error = await catchError(async () => env.service.signAndBroadcast(await signedDraft(env), env.account, env.network, {
+      onSigned: () => {
+        throw new Error('storage full');
+      },
+    }));
+
+    expect((error as Error).message).toBe('storage full');
+    expect(env.gno.state.broadcasts).toEqual([]);
+    expect(recordOf(env)).toBeUndefined();
+  });
+});

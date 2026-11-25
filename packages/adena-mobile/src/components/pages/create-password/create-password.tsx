@@ -22,6 +22,9 @@ export interface CreatePasswordPageProps {
   submitting: boolean;
   onSubmit: () => void;
   onBack: () => void;
+  // The restore flow reuses this page with its own wording.
+  submitLabel?: string;
+  submittingLabel?: string;
 }
 
 export const CreatePasswordPage = ({
@@ -35,6 +38,8 @@ export const CreatePasswordPage = ({
   submitting,
   onSubmit,
   onBack,
+  submitLabel = 'Create wallet',
+  submittingLabel = 'Creating wallet…',
 }: CreatePasswordPageProps): ReactElement => {
   const confirmRef = useRef<TextInputInstance>(null);
 
@@ -49,8 +54,8 @@ export const CreatePasswordPage = ({
       header={<TopBar title='Set a password' onBack={onBack} />}
       footer={(
         <Button
-          label='Create wallet'
-          loadingLabel='Creating wallet…'
+          label={submitLabel}
+          loadingLabel={submittingLabel}
           disabled={!password || !confirmPassword}
           loading={submitting}
           onPress={onSubmit}

@@ -38,13 +38,14 @@ const setup = async (walletService: Record<string, unknown> = { lock: jest.fn() 
   const store = new MemoryKeyValueStore();
   const preferenceService = new PreferenceService(new StoragePreferenceRepository(store));
   const { Wrapper } = createWrapper({
+    cloudBackupService: { isAvailable: async () => false, getLocalStatus: () => null, provider: 'icloud' },
     accountService: { getCurrentAccount: () => ACCOUNT, getAccounts: () => [ACCOUNT], getAddress: () => ADDRESS },
     networkService: { getCurrentNetwork: () => NETWORK, getNetworks: () => [NETWORK] },
     connectedAppService: { getConnectedApps: () => [] },
     walletService,
     preferenceService,
   });
-  const navigation = { goBack: jest.fn(), navigate: jest.fn() };
+  const navigation = { goBack: jest.fn(), navigate: jest.fn(), addListener: jest.fn(() => jest.fn()) };
   const Screen = SettingsScreen as unknown as React.ComponentType<{ navigation: unknown; route: unknown }>;
 
   await render(

@@ -166,10 +166,21 @@ describe('AccountService', () => {
       const random = jest.fn(() => 0);
       const { service } = setup({ random });
 
-      const first = await service.appendAccount('hd', KeyringType.HD_WALLET, undefined, AvatarColor.PINK);
-      const second = await service.appendAccount('hd', KeyringType.HD_WALLET, undefined, AvatarColor.GREEN);
+      const first = await service.appendAccount('hd', KeyringType.HD_WALLET, undefined, { avatarColor: AvatarColor.PINK });
+      const second = await service.appendAccount('hd', KeyringType.HD_WALLET, undefined, { avatarColor: AvatarColor.GREEN });
 
       expect([first.avatarColor, second.avatarColor]).toEqual([AvatarColor.PINK, AvatarColor.GREEN]);
+      expect(random).not.toHaveBeenCalled();
+    });
+
+    it('keeps the default color when asked to, even for a later account', async () => {
+      const random = jest.fn(() => 0);
+      const { service } = setup({ random });
+
+      await service.appendAccount('hd', KeyringType.HD_WALLET);
+      const second = await service.appendAccount('hd', KeyringType.HD_WALLET, undefined, { avatarColor: null });
+
+      expect(second.avatarColor).toBeUndefined();
       expect(random).not.toHaveBeenCalled();
     });
   });
@@ -290,5 +301,25 @@ describe('AccountService', () => {
     service.clear();
     expect(service.getAccounts()).toEqual([]);
     expect(service.getCurrentAccount()).toBeNull();
+  });
+
+  describe('appendAccount at a requested index', () => {
+    it('derives the requested index and refuses taken or invalid ones', async () => {
+      const { service } = setup();
+      const second = await service.appendAccount('hd', KeyringType.HD_WALLET, 'Gap', { hdIndex: 2 });
+      const next = await service.appendAccount('hd', KeyringType.HD_WALLET);
+
+      expect(second.hdIndex).toBe(2);
+      expect(next.hdIndex).toBe(3);
+
+      for (const index of [2, -1, 1.5]) {
+        const error = await catchError(() => service.appendAccount('hd', KeyringType.HD_WALLET, undefined, { hdIndex: index }));
+
+        expect(isAppError(error, 'INVALID_REQUEST')).toBe(true);
+      }
+
+      expect(isAppError(await catchError(() => service.appendAccount('pk', KeyringType.PRIVATE_KEY, undefined, { hdIndex: 1 })), 'INVALID_REQUEST')).toBe(true);
+      expect((await service.appendAccount('pk', KeyringType.PRIVATE_KEY, undefined, { hdIndex: 0 })).hdIndex).toBe(0);
+    });
   });
 });

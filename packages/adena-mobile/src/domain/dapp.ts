@@ -7,6 +7,8 @@ export interface DappMetadata {
 export interface ConnectedApp {
   // Normalized callback origin, e.g. "https://app.example.com" or "exampleapp:".
   origin: string;
+  // Android package that launched the connect, as reported by the system; absent on iOS.
+  callerPackage?: string;
   name: string;
   icon?: string;
   networkId: string;
@@ -34,7 +36,10 @@ interface DappRequestBase {
   requestId: string;
   method: DappMethod;
   callbackUrl: string;
+  // Self-declared by the requester; only the user's review vouches for it.
   callbackOrigin: string;
+  // Android launching package reported by the system (not by the payload); absent on iOS.
+  callerPackage?: string;
   dapp: DappMetadata;
   chainId?: string;
   expiresAt?: number;

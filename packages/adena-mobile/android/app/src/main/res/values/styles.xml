@@ -3,7 +3,17 @@
     <!-- Base application theme; DayNight picks values-night when the system or the app forces dark. -->
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+        <!-- Theme canvas color (values-night for dark), also the Android 12+ splash background; avoids a flash at launch. -->
         <item name="android:windowBackground">@color/window_background</item>
+    </style>
+
+    <!-- inject sheet: transparent window so the calling dApp stays visible underneath. -->
+    <style name="Theme.Adena.InjectSheet" parent="AppTheme">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Translucent</item>
     </style>
 
 </resources>

@@ -45,6 +45,13 @@ export const PREVIOUS_TRANSACTION_RESOLVED_MESSAGE = 'The previous transaction w
 export interface SignAndBroadcastOptions {
   // Replace the unconfirmed tx of this account and chain: signed with its sequence, so only one can commit.
   replacePending?: boolean;
+  // Called with the hash once it is journaled, before the tx is sent.
+  onSigned?: (hash: string) => void;
+}
+
+export interface EstimateFeeOptions {
+  // false never hands the key to the simulation, e.g. before the user approved the tx.
+  signing?: boolean;
 }
 
 // A record settled by a reconcile. committed/failed: one of its hashes is on chain; not_included: its
@@ -110,10 +117,10 @@ export class TransactionService {
     return this.chainRegistry.forNetwork(network).describeMessages(draft.messages, network);
   }
 
-  estimateFee(draft: TransactionDraft, account: Account, network: Network): Promise<FeeEstimate> {
+  estimateFee(draft: TransactionDraft, account: Account, network: Network, { signing = true }: EstimateFeeOptions = {}): Promise<FeeEstimate> {
     const signer: SimulationSigner = {
       publicKey: fromBase64(account.publicKey),
-      withKey: this.keyringSession.isUnlocked()
+      withKey: signing && this.keyringSession.isUnlocked()
         ? <T>(task: (key: SigningKey) => Promise<T>): Promise<T> => this.keyringSession.withKeyPair(account.keyringId, account.hdIndex, task)
         : undefined,
     };
@@ -127,8 +134,14 @@ export class TransactionService {
     return { ...draft, fee: { gasWanted, gasFee } };
   }
 
-  async withEstimatedFee(draft: TransactionDraft, account: Account, network: Network, selection?: FeeSelection): Promise<TransactionDraft> {
-    return this.applyFee(draft, await this.estimateFee(draft, account, network), selection);
+  async withEstimatedFee(
+    draft: TransactionDraft,
+    account: Account,
+    network: Network,
+    selection?: FeeSelection,
+    options?: EstimateFeeOptions,
+  ): Promise<TransactionDraft> {
+    return this.applyFee(draft, await this.estimateFee(draft, account, network, options), selection);
   }
 
   // Largest amount of `token` that still leaves room for the network fee and the storage
@@ -217,7 +230,7 @@ export class TransactionService {
     draft: TransactionDraft,
     account: Account,
     network: Network,
-    { replacePending = false }: SignAndBroadcastOptions = {},
+    { replacePending = false, onSigned }: SignAndBroadcastOptions = {},
   ): Promise<BroadcastResult> {
     const { records: replaced, pin } = replacePending ? this.replacementTarget(account, network) : {};
 
@@ -258,6 +271,18 @@ export class TransactionService {
         sequence: signed.sequence,
         accountNumber: signed.accountNumber,
       });
+    }
+
+    try {
+      onSigned?.(hash);
+    }
+    catch (error) {
+      // Nothing was sent, so the hash must not block the next send.
+      if (!alreadyTracked) {
+        this.pendingBroadcasts.discardHash(account.id, network.chainId, hash);
+      }
+
+      throw error;
     }
 
     try {

@@ -155,4 +155,15 @@ describe('SettingsPage', () => {
 
     expect(screen.getAllByRole('switch').map(item => item.props.accessibilityLabel)).toEqual(['Haptic touch']);
   });
+
+  it('shows the cloud backup row only when available', async () => {
+    await renderPage(<SettingsPage {...props()} />);
+    expect(screen.queryByText('iCloud backup')).toBeNull();
+
+    const onOpenCloudBackup = jest.fn();
+
+    await renderPage(<SettingsPage {...props({ cloudBackupLabel: 'iCloud backup', cloudBackupValue: 'Out of date', onOpenCloudBackup })} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'iCloud backup, Out of date' }));
+    expect(onOpenCloudBackup).toHaveBeenCalledTimes(1);
+  });
 });

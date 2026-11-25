@@ -10,6 +10,8 @@ export const SecureKey = {
   STORAGE_ENCRYPTION_KEY: 'storage-encryption-key',
   // Failed password attempts and back-off deadline, shared by every password prompt.
   PASSWORD_ATTEMPTS: 'password-attempts',
+  // Failed cloud backup password attempts during restore; survives a factory reset.
+  BACKUP_PASSWORD_ATTEMPTS: 'backup-password-attempts',
   // Schema version of secure items, used by secure migrations.
   SECURE_SCHEMA_VERSION: 'secure-schema-version',
 } as const;

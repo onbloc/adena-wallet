@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme, NavigationContainer, Theme } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
-import React, { ReactElement, ReactNode, useMemo } from 'react';
+import React, { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AppFailurePage } from '../components/pages';
@@ -8,6 +8,7 @@ import { toErrorMessage } from '../core/error-message';
 import { useContainer } from '../di/container-provider';
 import { useAppTheme } from '../hooks/use-app-theme';
 import { useAutoLock } from '../hooks/use-auto-lock';
+import { useDeepLinkHandler } from '../hooks/use-deep-link-handler';
 import { HapticsContext } from '../hooks/use-haptics';
 import { navigationRef } from '../navigation/navigation-ref';
 import { RootNavigator } from '../navigation/root-navigator';
@@ -18,7 +19,7 @@ import { AppThemeProvider } from './app-theme-provider';
 import { ToastHost } from './toast-host';
 
 // Navigation chrome (scene backgrounds, transitions) follows the resolved scheme.
-const ThemedNavigationContainer = ({ children }: { children: ReactNode }): ReactElement => {
+const ThemedNavigationContainer = ({ children, onReady }: { children: ReactNode; onReady?: () => void }): ReactElement => {
   const { scheme } = useAppTheme();
   const theme = useMemo<Theme>(() => {
     const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
@@ -38,12 +39,13 @@ const ThemedNavigationContainer = ({ children }: { children: ReactNode }): React
     };
   }, [scheme]);
 
-  return <NavigationContainer ref={navigationRef} theme={theme}>{children}</NavigationContainer>;
+  return <NavigationContainer ref={navigationRef} theme={theme} onReady={onReady}>{children}</NavigationContainer>;
 };
 
 export const AppShell = (): ReactElement => {
   const { walletService, hapticsService } = useContainer();
   const status = useSessionStore(state => state.status);
+  const [navigationReady, setNavigationReady] = useState(false);
 
   // Hydrates the session store from the persisted wallet state. A refetch after the cache is
   // cleared on lock/reset must not override the status those flows already set.
@@ -64,6 +66,8 @@ export const AppShell = (): ReactElement => {
 
   const recordActivity = useAutoLock();
 
+  useDeepLinkHandler(navigationReady);
+
   const retryBootstrap = (): void => {
     bootstrap.refetch();
   };
@@ -78,13 +82,14 @@ export const AppShell = (): ReactElement => {
     );
   }
 
-  // Touch events bubble here from every screen and reset the idle timer.
+  const handleReady = (): void => setNavigationReady(true);
 
+  // Touch events bubble here from every screen and reset the idle timer.
   return (
     <AppThemeProvider>
       <HapticsContext value={hapticsService.play}>
         <View style={styles.root} onTouchStart={recordActivity}>
-          <ThemedNavigationContainer>
+          <ThemedNavigationContainer onReady={handleReady}>
             <RootNavigator />
             <ToastHost />
           </ThemedNavigationContainer>

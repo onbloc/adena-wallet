@@ -1,6 +1,7 @@
 import { fromBase64, toBase64 } from '@cosmjs/encoding';
 
 import { AppError, AppErrorCode } from '../core/errors';
+import { isHdIndex } from '../crypto/key-pair';
 import { KeyringType } from '../crypto/keyring';
 import { Account, ACCOUNT_NAME_MAX_LENGTH, AvatarColor, isAvatarColor, pickAvatarColor } from '../domain/account';
 import { Network } from '../domain/network';
@@ -15,16 +16,20 @@ export interface AccountWithAddress extends Account {
 }
 
 // Manages account metadata across keyrings; addresses are resolved per network.
-export class AccountService {
-  // Account and keyring mutations share this queue (WalletService runs on it too), so index
-  // allocation and keyring removal always see each other's result.
-  private readonly mutations = new SerialQueue();
+export interface AppendAccountOptions {
+  hdIndex?: number;
+  avatarColor?: AvatarColor | null;
+}
 
+export class AccountService {
+  // Account and keyring mutations share `mutations` (WalletService runs on it too), so index
+  // allocation and keyring removal always see each other's result.
   constructor(
     private readonly accountRepository: AccountRepository,
     private readonly keyringSession: KeyringSession,
     private readonly chainRegistry: ChainRegistry,
     private readonly random: () => number = Math.random,
+    private readonly mutations: SerialQueue = new SerialQueue(),
   ) {}
 
   getAccounts(): Account[] {
@@ -73,17 +78,23 @@ export class AccountService {
   }
 
   // createAccount for callers already inside runExclusive (queuing again would deadlock).
-  // A given (e.g. backed-up) avatarColor is kept; otherwise the wallet's first account uses the
-  // default color and later ones get a random preset.
-  async appendAccount(keyringId: string, keyringType: KeyringType, name?: string, avatarColor?: AvatarColor): Promise<Account> {
+  // `hdIndex` rebuilds a known layout (backup restore); otherwise the next free index is used.
+  // A given avatarColor is kept and `null` keeps the default; otherwise the wallet's first account
+  // uses the default color and later ones get a random preset.
+  async appendAccount(keyringId: string, keyringType: KeyringType, name?: string, options: AppendAccountOptions = {}): Promise<Account> {
+    const { hdIndex: requestedIndex, avatarColor } = options;
     const epoch = this.keyringSession.epoch;
     const keyringAccounts = this.getAccounts().filter(account => account.keyringId === keyringId);
 
-    if (keyringType !== KeyringType.HD_WALLET && keyringAccounts.length > 0) {
+    if (keyringType !== KeyringType.HD_WALLET && (keyringAccounts.length > 0 || (requestedIndex ?? 0) !== 0)) {
       throw new AppError(AppErrorCode.INVALID_REQUEST, 'Single-key keyrings hold exactly one account');
     }
 
-    const hdIndex = keyringAccounts.reduce((max, account) => Math.max(max, account.hdIndex + 1), 0);
+    if (requestedIndex !== undefined && (!isHdIndex(requestedIndex) || keyringAccounts.some(account => account.hdIndex === requestedIndex))) {
+      throw new AppError(AppErrorCode.INVALID_REQUEST, 'This account index is not available');
+    }
+
+    const hdIndex = requestedIndex ?? keyringAccounts.reduce((max, account) => Math.max(max, account.hdIndex + 1), 0);
     const publicKey = toBase64(await this.keyringSession.withKeyPair(keyringId, hdIndex, async keyPair => keyPair.publicKey));
 
     // A lock or reset while deriving must not write the account into the next session's storage.
@@ -118,9 +129,13 @@ export class AccountService {
     return account;
   }
 
-  private resolveAvatarColor(existing: Account[], avatarColor?: AvatarColor): Pick<Account, 'avatarColor'> {
+  private resolveAvatarColor(existing: Account[], avatarColor?: AvatarColor | null): Pick<Account, 'avatarColor'> {
     if (isAvatarColor(avatarColor)) {
       return { avatarColor };
+    }
+
+    if (avatarColor === null) {
+      return {};
     }
 
     return existing.length === 0 ? {} : { avatarColor: pickAvatarColor(this.random) };

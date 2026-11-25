@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react-native';
 
 import { useFactoryReset } from '../../../src/hooks/use-factory-reset';
+import { useDappRequestStore } from '../../../src/stores/dapp-request.store';
 import { useOnboardingStore } from '../../../src/stores/onboarding.store';
 import { SessionStatus, useSessionStore } from '../../../src/stores/session.store';
 import { useToastStore } from '../../../src/stores/toast.store';
@@ -22,6 +23,7 @@ describe('useFactoryReset', () => {
     useSessionStore.setState({ status: SessionStatus.UNLOCKED, revision: 0 });
     useOnboardingStore.setState({ mnemonic: 'abandon about' });
     useToastStore.getState().show('Copied');
+    useDappRequestStore.setState({ queue: ['adena://request?payload=a'], inFlight: true });
   });
 
   it('clears caches and client stores and returns to onboarding', async () => {
@@ -34,6 +36,7 @@ describe('useFactoryReset', () => {
     expect(client.getQueryData(['secret'])).toBeUndefined();
     expect(useOnboardingStore.getState().mnemonic).toBeNull();
     expect(useToastStore.getState().toast).toBeNull();
+    expect(useDappRequestStore.getState()).toMatchObject({ queue: [], active: null, inFlight: false });
     expect(useSessionStore.getState()).toMatchObject({ status: SessionStatus.EMPTY, revision: 1 });
   });
 
