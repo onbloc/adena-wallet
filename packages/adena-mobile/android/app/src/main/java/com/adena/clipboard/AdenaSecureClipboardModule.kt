@@ -8,6 +8,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.PersistableBundle
+import android.view.View
+import android.view.ViewTreeObserver
 import com.adena.specs.NativeAdenaSecureClipboardSpec
 import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.bridge.ReactApplicationContext
@@ -17,11 +19,14 @@ class AdenaSecureClipboardModule(reactContext: ReactApplicationContext) :
     NativeAdenaSecureClipboardSpec(reactContext), LifecycleEventListener {
 
   private val handler = Handler(Looper.getMainLooper())
-  private val clearTask = Runnable { SecureClipboardExpiry.clearIfExpired(reactApplicationContext) }
+  private val clearTask = Runnable { clearIfExpired() }
+  // The clip is readable only with window focus, which arrives after onHostResume.
+  private val focusListener = ViewTreeObserver.OnWindowFocusChangeListener { hasFocus -> if (hasFocus) clearIfExpired() }
+  private var focusView: View? = null
 
   init {
     // Eagerly created at app start: enforces a deadline missed while the process was dead.
-    if (!SecureClipboardExpiry.clearIfExpired(reactContext)) {
+    if (!clearIfExpired()) {
       SecureClipboardExpiry.remainingMs(reactContext)?.let { handler.postDelayed(clearTask, it) }
     }
     reactContext.addLifecycleEventListener(this)
@@ -43,17 +48,33 @@ class AdenaSecureClipboardModule(reactContext: ReactApplicationContext) :
   }
 
   override fun onHostResume() {
-    SecureClipboardExpiry.clearIfExpired(reactApplicationContext)
+    clearIfExpired()
+    watchFocus(reactApplicationContext.currentActivity?.window?.decorView)
   }
 
-  override fun onHostPause() = Unit
+  override fun onHostPause() = watchFocus(null)
 
-  override fun onHostDestroy() = Unit
+  override fun onHostDestroy() = watchFocus(null)
 
   override fun invalidate() {
     reactApplicationContext.removeLifecycleEventListener(this)
     handler.removeCallbacks(clearTask)
+    handler.post { watchFocus(null) }
     super.invalidate()
+  }
+
+  private fun clearIfExpired(): Boolean =
+      SecureClipboardExpiry.clearIfExpired(
+          reactApplicationContext,
+          focused = reactApplicationContext.currentActivity?.hasWindowFocus() == true,
+      )
+
+  // Main thread only (lifecycle callbacks).
+  private fun watchFocus(view: View?) {
+    if (view === focusView) return
+    focusView?.viewTreeObserver?.takeIf { it.isAlive }?.removeOnWindowFocusChangeListener(focusListener)
+    focusView = view
+    view?.viewTreeObserver?.addOnWindowFocusChangeListener(focusListener)
   }
 
   companion object {

@@ -48,17 +48,23 @@ internal object SecureClipboardExpiry {
     return (prefs.getLong(KEY_ELAPSED_DEADLINE, 0L) - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
   }
 
-  /** Clears the clip once the deadline passed, unless it now readably holds something else. */
-  fun clearIfExpired(context: Context): Boolean {
+  /**
+   * Once the deadline passed, clears the clip only if it still holds the copied secret. Returns false while the
+   * clip cannot be inspected: Android 10+ hides it (and its description) from apps without window focus, so the
+   * marker stays and the next focused check decides. [focused]: the caller's window has focus.
+   */
+  fun clearIfExpired(context: Context, focused: Boolean): Boolean {
     val prefs = prefs(context)
     val hash = prefs.getString(KEY_HASH, null) ?: return false
     if (!isExpired(context)) return false
 
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
     if (clipboard != null) {
-      // Android 10+ hides the clipboard from background apps (null); clearing then beats leaving the secret.
-      val current = runCatching { clipboard.primaryClip?.getItemAt(0)?.text?.toString() }.getOrNull()
-      if (current == null || sha256(current) == hash) {
+      val clip = runCatching { clipboard.primaryClip }.getOrNull()
+      // A null clip is only known to be empty where reading is allowed.
+      if (clip == null && !focused && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) return false
+      val current = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString()
+      if (current != null && sha256(current) == hash) {
         clear(clipboard)
       }
     }

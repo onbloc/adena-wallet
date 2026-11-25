@@ -4,9 +4,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 
-/** Fired by the expiry alarm, also when the app process was killed after the copy. */
+/** Fired by the expiry alarm, also when the app process was killed after the copy. Runs without window focus. */
 class SecureClipboardClearReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
-    SecureClipboardExpiry.clearIfExpired(context)
+    SecureClipboardExpiry.clearIfExpired(context, focused = false)
   }
 }
