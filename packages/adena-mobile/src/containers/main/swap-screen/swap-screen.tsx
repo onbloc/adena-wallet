@@ -86,6 +86,18 @@ const parseSlippageText = (text: string): number | null => {
   return /^\d{1,2}(\.\d{1,2})?$/.test(normalized) ? Number(normalized) : null;
 };
 
+const slippageWarningOf = (slippage: number | null): string | undefined => {
+  if (slippage === null || !isValidSlippage(slippage)) {
+    return undefined;
+  }
+
+  if (slippage > HIGH_SLIPPAGE_PERCENT) {
+    return 'High slippage: your swap may be front-run and fill at a worse price.';
+  }
+
+  return slippage < 0.05 ? 'Very low slippage: the swap may fail.' : undefined;
+};
+
 const parseDeadlineText = (text: string): number | null => (/^\d{1,3}$/.test(text.trim()) ? Number(text) : null);
 
 export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'Swap'>): ReactElement => {
@@ -502,17 +514,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
   const slippageError = !draftAuto && slippageText.length > 0 && !isValidSlippage(parsedSlippage)
     ? 'Enter 0.01% to 50% with up to two decimals.'
     : undefined;
-  const slippageWarning = ((): string | undefined => {
-    if (draftAuto || parsedSlippage === null || !isValidSlippage(parsedSlippage)) {
-      return undefined;
-    }
-
-    if (parsedSlippage > HIGH_SLIPPAGE_PERCENT) {
-      return 'High slippage: your swap may be front-run and fill at a worse price.';
-    }
-
-    return parsedSlippage < 0.05 ? 'Very low slippage: the swap may fail.' : undefined;
-  })();
+  const slippageWarning = draftAuto ? undefined : slippageWarningOf(parsedSlippage);
   const deadlineError = deadlineText.length > 0 && !isValidDeadline(parsedDeadline) ? 'Enter 1 to 180 minutes.' : undefined;
   const draftSlippage = draftAuto ? null : parsedSlippage;
   const settingsChanged = draftSlippage !== settings.slippage || parsedDeadline !== settings.deadlineMinutes;
