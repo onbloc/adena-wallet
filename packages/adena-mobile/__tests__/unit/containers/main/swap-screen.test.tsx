@@ -563,6 +563,20 @@ describe('SwapScreen', () => {
     expect(screen.queryByText('Swap settings')).toBeNull();
   });
 
+  it('accepts a comma as the slippage decimal separator', async () => {
+    const { env } = await setup();
+
+    await fireEvent.press(screen.getByTestId('swap-settings'));
+    await fireEvent.press(screen.getByTestId('swap-settings-slippage-row'));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Custom' }));
+    await fireEvent.changeText(screen.getByTestId('swap-settings-slippage'), '0,75');
+    expect(screen.queryByText('Enter 0.01% to 50% with up to two decimals.')).toBeNull();
+    await fireEvent.press(screen.getByTestId('swap-settings-done'));
+    expect(screen.getByRole('button', { name: 'Max slippage, 0.75%' })).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('swap-settings-save'));
+    expect(env.container.preferenceService.get().swapSlippage).toBe(0.75);
+  });
+
   it('applies saved slippage to the quote limits', async () => {
     const { env } = await setup();
 

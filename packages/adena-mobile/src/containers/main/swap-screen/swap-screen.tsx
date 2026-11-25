@@ -79,7 +79,12 @@ export const percentOfBalance = (balance: string, percent: SwapPercent, cap?: st
   return (share < limit ? share : limit > 0n ? limit : 0n).toString();
 };
 
-const parseSlippageText = (text: string): number | null => (/^\d{1,2}(\.\d{1,2})?$/.test(text.trim()) ? Number(text) : null);
+// Comma-decimal locales type "0,5" on the decimal pad.
+const parseSlippageText = (text: string): number | null => {
+  const normalized = text.trim().replace(',', '.');
+
+  return /^\d{1,2}(\.\d{1,2})?$/.test(normalized) ? Number(normalized) : null;
+};
 
 const parseDeadlineText = (text: string): number | null => (/^\d{1,3}$/.test(text.trim()) ? Number(text) : null);
 
