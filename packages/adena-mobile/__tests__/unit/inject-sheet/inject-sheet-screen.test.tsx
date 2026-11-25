@@ -4,11 +4,12 @@ import React from 'react';
 import { Linking } from 'react-native';
 
 import { InjectSheetPage, InjectSheetPageProps, SheetAuthMode } from '../../../src/components/pages';
-import { AppError, AppErrorCode } from '../../../src/core/errors';
+import { AppError, AppErrorCode, BIOMETRICS_INVALIDATED_MESSAGE } from '../../../src/core/errors';
 import { AppContainer } from '../../../src/di/container';
 import { ContainerProvider } from '../../../src/di/container-provider';
 import { DappRequestFlowOptions, useDappRequestFlow } from '../../../src/hooks/use-dapp-request-flow';
 import { createSheetSession, finishSheet, InjectSheetScreen, SheetSession } from '../../../src/inject-sheet/inject-sheet-screen';
+import { queryKeys } from '../../../src/queries/query-keys';
 import { useBiometricStatusQuery, useWalletStatusQuery } from '../../../src/queries/wallet.queries';
 import { BiometryKind } from '../../../src/security/secure-store';
 import { WalletStatus } from '../../../src/services/wallet.service';
@@ -321,6 +322,7 @@ describe('InjectSheetScreen', () => {
     ['a canceled prompt', new AppError(AppErrorCode.BIOMETRICS_CANCELED, 'canceled'), undefined],
     ['a stale escrowed password', new AppError(AppErrorCode.INVALID_PASSWORD, 'stale'), 'Biometric password is out of date. Enter your password.'],
     ['a lockout', new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'locked out'), 'Fingerprint is unavailable. Enter your password.'],
+    ['a changed enrollment', new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE), BIOMETRICS_INVALIDATED_MESSAGE],
   ])('falls back to the password field after %s, like every wallet password prompt', async (_name, error, message) => {
     const { Platform } = jest.requireActual('react-native');
     const original = Platform.OS;
@@ -346,6 +348,17 @@ describe('InjectSheetScreen', () => {
     finally {
       Platform.OS = original;
     }
+  });
+
+  it('refreshes the biometric status after a changed enrollment', async () => {
+    const invalidate = jest.spyOn(QueryClient.prototype, 'invalidateQueries');
+
+    (useBiometricStatusQuery as jest.Mock).mockReturnValue({ data: { enabled: true, kind: BiometryKind.FINGERPRINT } });
+    (useDappRequestFlow as jest.Mock).mockReturnValue(flow({ approve: jest.fn().mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_INVALIDATED)) }));
+    await renderScreen('adena://request?payload=x');
+    await act(async () => page().onApprove());
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.biometric() });
+    invalidate.mockRestore();
   });
 
   it('locks into a done state after success so nothing is approved or answered twice', async () => {

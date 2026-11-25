@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import React, { ReactElement, useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, TextInputInstance } from 'react-native';
 
@@ -9,6 +10,7 @@ import { DappMethod, DappRequest } from '../../domain/dapp';
 import { describeBiometricFailure } from '../../hooks/use-biometric-password';
 import { useDappRequestFlow } from '../../hooks/use-dapp-request-flow';
 import NativeAdenaInjectSheet from '../../native/NativeAdenaInjectSheet';
+import { queryKeys } from '../../queries/query-keys';
 import { useBiometricStatusQuery, useWalletStatusQuery } from '../../queries/wallet.queries';
 import { WalletStatus } from '../../services/wallet.service';
 import { getBiometryLabel } from '../../utils/biometry';
@@ -61,10 +63,12 @@ export interface InjectSheetScreenProps {
 const isBiometricFallback = (error: unknown): boolean =>
   isAppError(error, AppErrorCode.BIOMETRICS_CANCELED)
   || isAppError(error, AppErrorCode.BIOMETRICS_UNAVAILABLE)
+  || isAppError(error, AppErrorCode.BIOMETRICS_INVALIDATED)
   || isAppError(error, AppErrorCode.INVALID_PASSWORD);
 
 export const InjectSheetScreen = ({ requestUrl, callerPackage, session: providedSession }: InjectSheetScreenProps): ReactElement => {
   const { dappService, walletService } = useContainer();
+  const queryClient = useQueryClient();
   const [ownSession] = useState(createSheetSession);
   const session = providedSession ?? ownSession;
   const status = useWalletStatusQuery().data ?? null;
@@ -174,6 +178,11 @@ export const InjectSheetScreen = ({ requestUrl, callerPackage, session: provided
       // Like every wallet password prompt: a cancel, lockout, changed enrollment or stale escrowed
       // password falls back to the focused password field, with biometrics still offered.
       if (biometricMode && isBiometricFallback(error)) {
+        // The service turned biometric unlock off; refresh so it is not offered again.
+        if (isAppError(error, AppErrorCode.BIOMETRICS_INVALIDATED)) {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.biometric() });
+        }
+
         flow.resetApproval();
         switchToPassword(describeBiometricFailure(error, biometricLabel));
       }
