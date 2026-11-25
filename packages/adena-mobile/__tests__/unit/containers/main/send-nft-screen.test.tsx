@@ -12,6 +12,7 @@ import { StoragePendingBroadcastRepository } from '../../../../src/repositories/
 import { PendingReconciliation } from '../../../../src/services/transaction.service';
 import { MemoryKeyValueStore } from '../../../../src/storage/memory-key-value-store';
 import { usePendingBroadcastStore } from '../../../../src/stores/pending-broadcast.store';
+import { useSessionStore } from '../../../../src/stores/session.store';
 import { useToastStore } from '../../../../src/stores/toast.store';
 import { normalizeAddress } from '../../../../src/utils/address';
 import { ACCOUNT, createWrapper, NETWORK } from '../../../helpers/query-wrapper';
@@ -22,6 +23,8 @@ const SECOND = 'g1us8428u2a5satrlxzagqqa5m6vmuze025anjlj';
 const ESTIMATE: FeeEstimate = { gasUsed: '100000', gasPrice: '0.001', denom: 'ugnot', policy: GNO_FEE_POLICY };
 const COLLECTION: NftCollection = { id: 'c', packagePath: 'gno.land/r/demo/nft', name: 'Gnophers', symbol: 'GNO', ownedCount: 1, supportsTokenUri: false, supportsMetadata: false };
 const ITEM: NftItem = { collectionId: 'c', packagePath: 'gno.land/r/demo/nft', nftId: '42', name: 'Gnopher', symbol: 'GNO' };
+const OTHER_NETWORK = { ...NETWORK, id: 'other', feeToken: { id: 'ufoo', symbol: 'FOO', denom: 'ufoo', decimals: 6 } };
+let currentNetwork = NETWORK;
 
 const deferred = <T,>(): { promise: Promise<T>; resolve: (value: T) => void } => {
   let resolve!: (value: T) => void;
@@ -49,7 +52,7 @@ const setup = async (extraParams: Record<string, unknown> = {}, ownAddress = 'g1
     transactionService,
     pendingBroadcastRepository: new StoragePendingBroadcastRepository(new MemoryKeyValueStore()),
     accountService: { getCurrentAccount: () => ACCOUNT, getAccounts: () => [ACCOUNT], getAddress: () => ownAddress },
-    networkService: { getCurrentNetwork: () => NETWORK, getNetworks: () => [NETWORK] },
+    networkService: { getCurrentNetwork: () => currentNetwork, getNetworks: () => [NETWORK] },
     addressBookService: { getEntriesFor: () => [] },
     chainRegistry: { forNetwork: () => ({ normalizeAddress: (value: string) => normalizeAddress(value, 'g') }) },
   });
@@ -67,7 +70,10 @@ const setup = async (extraParams: Record<string, unknown> = {}, ownAddress = 'g1
 };
 
 describe('SendNftScreen', () => {
-  beforeEach(() => usePendingBroadcastStore.setState({ entries: {} }));
+  beforeEach(() => {
+    currentNetwork = NETWORK;
+    usePendingBroadcastStore.setState({ entries: {} });
+  });
 
   it('scans into the recipient field and consumes the scanned param', async () => {
     const { navigation } = await setup({ scannedAddress: FIRST });
@@ -151,6 +157,19 @@ describe('SendNftScreen', () => {
     expect(screen.getByText('2.5 GNOT')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('review-confirm'));
     expect(transactionService.assertSufficientFunds.mock.calls[0][4]).toBe('2500000');
+  });
+
+  it('keeps formatting the fee with the reviewed network after the current network changes', async () => {
+    await setup();
+
+    await fireEvent.changeText(screen.getByPlaceholderText('Recipient address'), FIRST);
+    await fireEvent.press(screen.getByRole('button', { name: 'Review transfer' }));
+    await screen.findByTestId('review-confirm');
+    currentNetwork = OTHER_NETWORK;
+    await act(async () => useSessionStore.getState().bumpRevision());
+
+    expect(screen.getByText(/ GNOT$/)).toBeTruthy();
+    expect(screen.queryByText(/ FOO$/)).toBeNull();
   });
 
   describe('when the broadcast outcome is unknown', () => {

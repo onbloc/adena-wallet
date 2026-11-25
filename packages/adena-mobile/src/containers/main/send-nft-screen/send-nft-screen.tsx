@@ -40,7 +40,7 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
   const [prepared, setPrepared] = useState<PreparedNftTransfer | null>(null);
   const [appliedScan, setAppliedScan] = useState<string>();
   const sendingRef = useRef(false);
-  const feeSelection = useFeeSelection(prepared?.estimate ?? null, network);
+  const feeSelection = useFeeSelection(prepared?.estimate ?? null, prepared?.network ?? network);
 
   const trimmed = recipient.trim();
   const ownAddress = account ? accountService.getAddress(account, network) : '';

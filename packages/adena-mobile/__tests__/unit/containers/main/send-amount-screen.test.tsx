@@ -47,20 +47,22 @@ const deferred = <T,>(): { promise: Promise<T>; resolve: (value: T) => void } =>
 // Survives a simulated restart, which only resets the in-memory store.
 let keyValueStore = new MemoryKeyValueStore();
 
+const walletAssets = (network = NETWORK, prices?: Record<string, unknown>) => ({
+  account: ACCOUNT,
+  network,
+  tokens: [],
+  allTokens: [],
+  assets: [{ token: GNOT, amount: '100000000', quantityLabel: '100 GNOT', trend: 'neutral', usdValue: null, loading: false }],
+  portfolio: null,
+  prices,
+  error: null,
+  loading: false,
+  refreshing: false,
+  refetch: jest.fn(),
+} as unknown as ReturnType<typeof useWalletAssets>);
+
 const setup = async (prices?: Record<string, unknown>, params: Record<string, unknown> = {}) => {
-  jest.mocked(useWalletAssets).mockReturnValue({
-    account: ACCOUNT,
-    network: NETWORK,
-    tokens: [],
-    allTokens: [],
-    assets: [{ token: GNOT, amount: '100000000', quantityLabel: '100 GNOT', trend: 'neutral', usdValue: null, loading: false }],
-    portfolio: null,
-    prices,
-    error: null,
-    loading: false,
-    refreshing: false,
-    refetch: jest.fn(),
-  } as unknown as ReturnType<typeof useWalletAssets>);
+  jest.mocked(useWalletAssets).mockReturnValue(walletAssets(NETWORK, prices));
   const transactionService = {
     createTransferDraft: jest.fn(async ({ amount, memo }: { amount: string; memo: string }): Promise<TransactionDraft> => (
       { networkId: NETWORK.id, chainId: NETWORK.chainId, messages: [{ amount }], fee: { gasWanted: '0', gasFee: '' }, memo })),
@@ -80,13 +82,14 @@ const setup = async (prices?: Record<string, unknown>, params: Record<string, un
   const route = { key: 'SendAmount', name: 'SendAmount', params: { toAddress: RECIPIENT, ...params } };
   const Screen = SendAmountScreen as unknown as React.ComponentType<{ navigation: unknown; route: unknown }>;
 
-  await render(
+  const tree = (): React.ReactElement => (
     <SafeAreaProvider initialMetrics={metrics}>
       <Wrapper><Screen navigation={navigation} route={route} /></Wrapper>
-    </SafeAreaProvider>,
+    </SafeAreaProvider>
   );
+  const { rerender } = await render(tree());
 
-  return { transactionService, navigation };
+  return { transactionService, navigation, rerender: () => rerender(tree()) };
 };
 
 describe('SendAmountScreen', () => {
@@ -133,6 +136,19 @@ describe('SendAmountScreen', () => {
     await act(async () => slow.resolve(ESTIMATE));
 
     expect(screen.queryByText('Confirm send')).toBeNull();
+  });
+
+  it('keeps formatting the fee with the reviewed network after the current network changes', async () => {
+    const { rerender } = await setup();
+
+    await fireEvent.press(screen.getByRole('keyboardkey', { name: '1' }));
+    await fireEvent.press(screen.getByTestId('send-review'));
+    await screen.findByTestId('review-confirm');
+    jest.mocked(useWalletAssets).mockReturnValue(walletAssets({ ...NETWORK, id: 'other', feeToken: { id: 'ufoo', symbol: 'FOO', denom: 'ufoo', decimals: 6 } }));
+    await rerender();
+
+    expect(screen.getByText(/^0\.\d+ GNOT$/)).toBeTruthy();
+    expect(screen.queryByText(/ FOO$/)).toBeNull();
   });
 
   it('shows fiat estimates from the cached prices and goes back to change the recipient', async () => {

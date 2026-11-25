@@ -50,7 +50,7 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
   const [amount, setAmount] = useState('');
   const [prepared, setPrepared] = useState<PreparedTransfer | null>(null);
   const sendingRef = useRef(false);
-  const feeSelection = useFeeSelection(prepared?.estimate ?? null, network);
+  const feeSelection = useFeeSelection(prepared?.estimate ?? null, prepared?.network ?? network);
   const { prices } = wallet;
 
   const fiatOf = useCallback((value: string, of: Token): string | undefined => {
