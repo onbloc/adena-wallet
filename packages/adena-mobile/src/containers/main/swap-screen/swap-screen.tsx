@@ -255,7 +255,6 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
         { replacePending: prepared.replacesPending },
       );
     },
-    onSuccess: handleCommitted,
   });
 
   const action = swapActionState({
@@ -436,7 +435,17 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
 
     sendingRef.current = true;
     submit.mutateAsync()
-      .catch((error) => {
+      .then((result) => {
+        if (result.committed) {
+          handleCommitted();
+          return;
+        }
+
+        // Only accepted into the mempool: wait for it like an unknown outcome, as the send flow does.
+        pendingBroadcast.trackSubmitted(result, sender, sentNetwork);
+        submit.reset();
+        setPrepared(null);
+      }, (error) => {
         // Unknown outcome: close the review so the same swap cannot be confirmed again.
         if (pendingBroadcast.track(error, sender, sentNetwork)) {
           submit.reset();

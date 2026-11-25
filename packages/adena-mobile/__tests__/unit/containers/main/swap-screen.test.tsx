@@ -349,6 +349,20 @@ describe('SwapScreen', () => {
     expect(screen.queryByText(/ OTHER$/)).toBeNull();
   });
 
+  it('waits for a swap that was only accepted into the mempool instead of reporting it confirmed', async () => {
+    const { env } = await setup();
+
+    jest.spyOn(env.container.swapService, 'submit').mockResolvedValueOnce({ hash: 'SUBMITTED', height: '0', committed: false });
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    await press('Review swap');
+    await fireEvent.press(await screen.findByTestId('review-confirm', undefined, LOOKUP));
+
+    expect(await screen.findByText(PENDING_NOTICE, undefined, LOOKUP)).toBeTruthy();
+    expect(toastMessage()).not.toBe('Swap confirmed');
+  });
+
   it('stores a swap with an unknown outcome for its account and network, so it stays blocked after a restart', async () => {
     const { env, account, network } = await setup();
     const provider = await env.gno.factory();
