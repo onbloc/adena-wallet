@@ -1,4 +1,4 @@
-import { AppError, AppErrorCode } from '../core/errors';
+import { AppError, AppErrorCode, BIOMETRICS_INVALIDATED_MESSAGE } from '../core/errors';
 import { BIOMETRIC_VAULT_ERROR, Spec as BiometricVault } from '../native/NativeAdenaBiometricVault';
 import { SecureKey } from '../security/secure-keys';
 import { BiometryKind, SecurePrompt, SecureStore } from '../security/secure-store';
@@ -34,7 +34,7 @@ const toAppError = (error: unknown): AppError => {
     case BIOMETRIC_VAULT_ERROR.UNAVAILABLE:
       return new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric authentication is unavailable', { cause: error });
     case BIOMETRIC_VAULT_ERROR.KEY_INVALIDATED:
-      return new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometrics changed. Unlock with your password and turn biometric unlock on again.', { cause: error });
+      return new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE, { cause: error });
     default:
       return new AppError(AppErrorCode.STORAGE_ERROR, 'Secure storage access failed', { cause: error });
   }

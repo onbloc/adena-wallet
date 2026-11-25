@@ -99,7 +99,7 @@ describe('AndroidBiometricCredentialRepository', () => {
 
     const error = await catchError(() => repository.readCredential({ title: 'Unlock' }));
 
-    expect(isAppError(error, 'BIOMETRICS_UNAVAILABLE')).toBe(true);
+    expect(isAppError(error, 'BIOMETRICS_INVALIDATED')).toBe(true);
     await expect(repository.hasCredential()).resolves.toBe(false);
     expect(vault.deleteKey).toHaveBeenCalledWith('adena.biometric-password');
   });
