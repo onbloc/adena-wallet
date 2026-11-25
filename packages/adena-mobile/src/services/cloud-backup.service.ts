@@ -352,6 +352,8 @@ export class CloudBackupService {
       revision: content.revision,
       fingerprint: fingerprintOf(this.accountService.getAccounts()),
       ...countKeyrings(content.keyrings),
+      // The opened file may only exist in the local container (e.g. an iCloud upload blocked by quota).
+      uploading: true,
     });
 
     return this.walletService.restoreWallet({ keyrings, accounts, selected: content.selected, password: walletPassword, backupId: content.backupId, onRestored: saveState });

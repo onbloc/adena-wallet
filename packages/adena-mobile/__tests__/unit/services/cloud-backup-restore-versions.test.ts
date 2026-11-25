@@ -1,5 +1,5 @@
 import { AppErrorCode, isAppError } from '../../../src/core/errors';
-import { backupVersionFileName, parseBackupFileName } from '../../../src/repositories/cloud-backup/cloud-backup-store';
+import { backupVersionFileName, parseBackupFileName, UploadState } from '../../../src/repositories/cloud-backup/cloud-backup-store';
 import { FREE_PASSWORD_ATTEMPTS } from '../../../src/services/password-attempt-limiter';
 import { catchError } from '../../helpers/service-fakes';
 import { createTestContainer, TEST_MNEMONIC, TEST_PASSWORD } from '../../helpers/test-container';
@@ -89,5 +89,22 @@ describe('CloudBackupService restore versions', () => {
 
     expect(found.fileName).toBe(name);
     expect(found.versions.map(version => version.fileName)).toEqual([name]);
+  });
+
+  it('keeps a restored copy unconfirmed until the provider reports it uploaded', async () => {
+    const source = await setup();
+
+    await create(source.backup);
+    const fileName = [...source.cloudBackupStore.files.keys()][0];
+    const target = createTestContainer({ cloudBackup: { files: new Map(source.cloudBackupStore.files) } });
+    const restoring = target.container.cloudBackupService;
+
+    // A copy left only in the local container, e.g. an iCloud upload blocked by quota.
+    target.cloudBackupStore.uploads.set(fileName, UploadState.UPLOADING);
+    await restoring.restoreWallet(await restoring.openBackup(fileName, BACKUP_PASSWORD), NEW_WALLET_PASSWORD);
+
+    expect(await restoring.getStatus()).toMatchObject({ kind: 'backedUp', uploading: {} });
+    target.cloudBackupStore.finishUpload(fileName);
+    expect(await restoring.getStatus()).not.toHaveProperty('uploading');
   });
 });
