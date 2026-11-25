@@ -100,7 +100,8 @@ export class TokenService {
 
     const list = this.tokenListRepository.get(account.id, network.id) ?? [];
     const existing = list.find(item => item.id === token.id);
-    const managed = toManaged(token, existing?.source ?? TokenSource.CUSTOM);
+    // An explicit add makes a discovered token the user's own, so the unknown-token filter no longer hides it.
+    const managed = toManaged(token, existing?.source === TokenSource.DEFAULT ? TokenSource.DEFAULT : TokenSource.CUSTOM);
 
     this.tokenListRepository.save(account.id, network.id, [...list.filter(item => item.id !== token.id), managed]);
     return managed;

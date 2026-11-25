@@ -5,8 +5,10 @@ import React, { ReactElement, useMemo, useState } from 'react';
 import { AddTokenPage } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
+import { usePreference } from '../../../hooks/use-preference';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
 import { MainStackParamList } from '../../../navigation/types';
+import { isHiddenAsUnknown } from '../../../presenters/asset.presenter';
 import { queryKeys } from '../../../queries/query-keys';
 import { useTokenListQuery, useTokenRegistryQuery } from '../../../queries/token.queries';
 import { useToastStore } from '../../../stores/toast.store';
@@ -20,6 +22,7 @@ export const AddTokenScreen = ({ navigation, route }: NativeStackScreenProps<Mai
   const showToast = useToastStore(state => state.show);
   const registry = useTokenRegistryQuery(network);
   const tokenList = useTokenListQuery(account, network);
+  const hideUnknownTokens = usePreference('hideUnknownTokens');
   const [query, setQuery] = useState(route.params?.query ?? '');
   const trimmed = query.trim();
 
@@ -47,7 +50,11 @@ export const AddTokenScreen = ({ navigation, route }: NativeStackScreenProps<Mai
     },
   });
 
-  const added = useMemo(() => new Set((tokenList.data ?? []).filter(token => token.visible).map(token => token.id)), [tokenList.data]);
+  // A token Home hides as unknown still offers Add, which promotes it to a custom token.
+  const added = useMemo(
+    () => new Set((tokenList.data ?? []).filter(token => token.visible && !isHiddenAsUnknown(token, hideUnknownTokens)).map(token => token.id)),
+    [tokenList.data, hideUnknownTokens],
+  );
   const needle = trimmed.toLowerCase();
   const registryTokens = (registry.data?.pages ?? []).flatMap(page => page.tokens);
   const candidates = lookup.data ? [lookup.data, ...registryTokens.filter(token => token.id !== lookup.data?.id)] : registryTokens;

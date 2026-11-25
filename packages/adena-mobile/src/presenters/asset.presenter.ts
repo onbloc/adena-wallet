@@ -83,6 +83,9 @@ export interface PortfolioFilter {
   hideUnknownTokens: boolean;
 }
 
+// Shared by Home and Add token so a token hidden here is never shown as already added.
+export const isHiddenAsUnknown = (token: ManagedToken, hideUnknownTokens: boolean): boolean => hideUnknownTokens && isUnknownToken(token);
+
 // Home list filter: small means a known USD value under the threshold; the native coin and user-added tokens always stay.
 export const filterPortfolioAssets = (assets: AssetView[], tokens: ManagedToken[], filter: PortfolioFilter): AssetView[] =>
   assets.filter((asset) => {
@@ -92,7 +95,7 @@ export const filterPortfolioAssets = (assets: AssetView[], tokens: ManagedToken[
       return true;
     }
 
-    if (filter.hideUnknownTokens && managed && isUnknownToken(managed)) {
+    if (managed && isHiddenAsUnknown(managed, filter.hideUnknownTokens)) {
       return false;
     }
 

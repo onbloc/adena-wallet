@@ -204,13 +204,31 @@ describe('TokenService', () => {
       expect(repository.get(account.id, GNO_NETWORK.id)).toHaveLength(1);
     });
 
-    it('re-adding keeps the original source, shows it again and does not duplicate', async () => {
+    it('re-adding a default token keeps its source, shows it again and does not duplicate', async () => {
       const { service, repository, assets } = setup();
 
-      repository.save(account.id, GNO_NETWORK.id, [managed({ id: 'foo', visible: false, source: 'discovered' })]);
+      repository.save(account.id, GNO_NETWORK.id, [managed({ id: 'foo', visible: false, source: 'default' })]);
       assets.findToken.mockResolvedValue(makeToken({ id: 'foo' }));
-      expect(await service.addCustomToken(account, GNO_NETWORK, 'foo')).toMatchObject({ source: 'discovered', visible: true });
+      expect(await service.addCustomToken(account, GNO_NETWORK, 'foo')).toMatchObject({ source: 'default', visible: true });
       expect(repository.get(account.id, GNO_NETWORK.id)).toHaveLength(1);
+    });
+
+    it('promotes an already discovered, unlisted token to custom and keeps it through a refresh', async () => {
+      const { service, repository, assets } = setup();
+      const foo = makeToken({ id: 'foo' });
+
+      assets.discoverHeldTokens.mockResolvedValue([foo]);
+      await service.getTokenList(account, GNO_NETWORK);
+      expect(repository.get(account.id, GNO_NETWORK.id)?.find(token => token.id === 'foo')).toMatchObject({ source: 'discovered' });
+
+      assets.findToken.mockResolvedValue(foo);
+      expect(await service.addCustomToken(account, GNO_NETWORK, 'foo')).toMatchObject({ source: 'custom', visible: true });
+
+      const refreshed = (await service.getTokenList(account, GNO_NETWORK)).filter(token => token.id === 'foo');
+
+      expect(refreshed).toHaveLength(1);
+      expect(refreshed[0]).toMatchObject({ source: 'custom', visible: true });
+      expect(refreshed[0].listed).toBeUndefined();
     });
 
     it('rejects ids missing from the registry', async () => {
