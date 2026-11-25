@@ -159,8 +159,9 @@ export class WalletService {
       await this.restoreMissingAccounts(content.keyrings);
     }
     catch (error) {
-      // A failed unlock must not leave decrypted keyrings in memory behind a locked UI.
+      // A failed unlock must not leave decrypted keyrings or the vault key in memory behind a locked UI.
       this.keyringSession.close();
+      this.vaultService.forgetSessionKey();
       throw error;
     }
   }
