@@ -1,3 +1,5 @@
+import { TM2Error } from '@gnolang/tm2-js-client';
+
 import { AppError, AppErrorCode } from '../../../core/errors';
 import { Network } from '../../../domain/network';
 import { MAX_INT64, SwapQuoteSource, SwapToken, SwapType } from '../../../domain/swap';
@@ -9,7 +11,7 @@ import { GnoMessage } from './gno-messages';
 import { GnoProviderFactory } from './gno-provider';
 import { gnoLiteral } from './gno-qeval';
 import { buildSwapMessages, SwapMessageToken } from './gno-swap-messages';
-import { buildPoolCandidates, parseDrySwapResult, parsePools, parseRouteResponse, parseSwapFee, parseSwapPrices, parseSwapTokens } from './gno-swap-parsers';
+import { buildPoolCandidates, parseDrySwapResult, parsePools, parseRouteResponse, parseSwapFee, parseSwapPrices, parseSwapTokens, SwapDataError } from './gno-swap-parsers';
 import { GnoTokenResourceRepository } from './gno-token-resource.repository';
 
 const TOKENS_TTL_MS = 5 * 60_000;
@@ -63,7 +65,12 @@ export class GnoSwapRepository implements SwapRepository<GnoMessage> {
 
     // An answered "no route" is trusted; only an unavailable or malformed API falls back to the pool list.
     if (fromApi === null) {
-      const pools = await this.api.getPools(config.apiUrl).then(raw => parsePools(raw, swap.feeTiers)).catch(() => []);
+      const pools = await this.api.getPools(config.apiUrl).then(raw => parsePools(raw, swap.feeTiers)).catch(() => null);
+
+      // Neither source answered, so this is an outage rather than a missing route.
+      if (pools === null) {
+        throw new AppError(AppErrorCode.SWAP_QUOTE_FAILED, 'Couldn’t get a quote. Check your connection and try again.');
+      }
 
       candidates.push(...buildPoolCandidates(pools, inputPath, outputPath).map(route => ({ routes: [route], source: SwapQuoteSource.POOLS })));
     }
@@ -78,7 +85,12 @@ export class GnoSwapRepository implements SwapRepository<GnoMessage> {
     const args = [request.inputPath, request.outputPath, request.amount, request.exactType, request.routeArr, request.quoteArr, limit].map(gnoLiteral).join(', ');
     const provider = await this.providerFactory(network.rpcUrl);
 
-    return parseDrySwapResult(await provider.evaluateExpression(swap.routerPath, `DrySwapRoute(${args})`));
+    // A VM error (e.g. a panic) is the router refusing the route, unlike a transport failure.
+    const raw = await provider.evaluateExpression(swap.routerPath, `DrySwapRoute(${args})`).catch((error: unknown) => {
+      throw error instanceof TM2Error ? new SwapDataError(error.log || error.message) : error;
+    });
+
+    return parseDrySwapResult(raw);
   }
 
   getRouterFeeBps(network: Network, config: DexApiConfig): Promise<number> {

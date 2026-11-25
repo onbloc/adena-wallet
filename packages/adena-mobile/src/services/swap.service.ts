@@ -20,7 +20,7 @@ import {
 import { TokenType } from '../domain/token';
 import { BroadcastResult, TransactionDraft, TransactionFee } from '../domain/transaction';
 import { ChainRegistry } from '../repositories/chain/chain-registry';
-import { GnoRpcTimeoutError } from '../repositories/chain/gno/gno-provider';
+import { SwapDataError } from '../repositories/chain/gno/gno-swap-parsers';
 import { SwapRepository } from '../repositories/chain/swap-repository';
 import { DEX_API_CONFIG, DexApiConfig, DexApiConfigMap, DexSwapConfig, isTokenPath } from '../resources';
 import { AccountService } from './account.service';
@@ -152,9 +152,18 @@ export class SwapService {
     ]);
     let routeRejected = false;
     const results = await Promise.all(candidates.map(async (candidate) => {
+      let encoded: ReturnType<typeof encodeRoutes>;
+
       try {
         validateRoutes(candidate.routes, request.inputPath, request.outputPath, config.swap.feeTiers, isTokenPath);
-        const encoded = encodeRoutes(candidate.routes);
+        encoded = encodeRoutes(candidate.routes);
+      }
+      catch {
+        routeRejected = true;
+        return null;
+      }
+
+      try {
         const dry = await repository.drySwap(network, config, { ...request, ...encoded });
 
         if (!this.fills(exactType, amount, dry, hopCount(candidate.routes))) {
@@ -165,8 +174,8 @@ export class SwapService {
         return { candidate, encoded, dry };
       }
       catch (error) {
-        // Timeouts and transport failures say nothing about the route; anything else is the router (or the data) refusing it.
-        if (!(error instanceof GnoRpcTimeoutError) && !(error instanceof AppError)) {
+        // Only the router's own answer refuses the route; timeouts and transport failures say nothing about it.
+        if (error instanceof SwapDataError) {
           routeRejected = true;
         }
 

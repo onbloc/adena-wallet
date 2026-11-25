@@ -25,7 +25,8 @@ export interface GnoswapFakeOptions {
   grc20Balances?: Record<string, string>;
   // On-chain decimals per token path (defaults to 6).
   decimals?: Record<string, number>;
-  pools?: unknown;
+  // Raw `/pools` data; `null` makes the pools API fail.
+  pools?: unknown | null;
 }
 
 const keysOf = (expression: string): string[] => [...expression.matchAll(/Get\("([^"]+)"\)/g)].map(match => match[1]);
@@ -37,7 +38,10 @@ export const installGnoswapFakes = (env: TestEnv, options: GnoswapFakeOptions = 
 
   env.http.on(`${GNOSWAP_API}/token-metas`, metas);
   env.http.on(`${GNOSWAP_API}/tokens/prices`, prices);
-  env.http.on(`${GNOSWAP_API}/pools`, { data: options.pools ?? poolsDev.data });
+
+  if (options.pools !== null) {
+    env.http.on(`${GNOSWAP_API}/pools`, { data: options.pools ?? poolsDev.data });
+  }
 
   if (options.route !== null) {
     env.http.on(`${GNOSWAP_API}/api/route`, (init?: HttpRequest) => {

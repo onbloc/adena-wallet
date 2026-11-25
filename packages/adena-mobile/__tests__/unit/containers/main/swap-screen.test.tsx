@@ -245,6 +245,15 @@ describe('SwapScreen', () => {
     expect(await screen.findByText('Insufficient liquidity', undefined, LOOKUP)).toBeTruthy();
   });
 
+  it('offers a retry instead of insufficient liquidity when the swap APIs are unreachable', async () => {
+    await setup({ route: null, pools: null });
+
+    await pickGns();
+    await typeAmount('1');
+    expect(await screen.findByText('Retry quote', undefined, LOOKUP)).toBeTruthy();
+    expect(screen.queryByText('Insufficient liquidity')).toBeNull();
+  });
+
   it('reviews and submits the swap, then refreshes', async () => {
     const { env } = await setup();
 

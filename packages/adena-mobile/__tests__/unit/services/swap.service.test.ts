@@ -1,6 +1,6 @@
 import { fromBase64 } from '@cosmjs/encoding';
 import { MsgCall } from '@gnolang/gno-js-client';
-import { Tx } from '@gnolang/tm2-js-client';
+import { TM2Error, Tx } from '@gnolang/tm2-js-client';
 
 import { AppErrorCode, isAppError } from '../../../src/core/errors';
 import { FeeEstimate, GNO_FEE_POLICY } from '../../../src/domain/fee';
@@ -93,6 +93,36 @@ describe('SwapService', () => {
     const partial = await setup({ drySwap: '("999" string)\n("5" string)\n(undefined)' });
 
     await expectCode(partial.service.getQuote({ network: partial.network, input: partial.gnot, output: partial.gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
+  });
+
+  it('reports a failed quote, not missing liquidity, when neither the route API nor the pools answer', async () => {
+    const { service, network, gnot, gns } = await setup({ route: null, pools: null });
+
+    await expectCode(service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_QUOTE_FAILED);
+  });
+
+  it('still reports no route when the API is down but the pools answer without one', async () => {
+    const { service, network, gnot, gns } = await setup({ route: null, pools: [] });
+
+    await expectCode(service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
+  });
+
+  it('treats only a VM error from the dry run as a refused route, not a transport failure', async () => {
+    const transport = await setup({
+      drySwap: () => {
+        throw new Error('socket hang up');
+      },
+    });
+
+    await expectCode(transport.service.getQuote({ network: transport.network, input: transport.gnot, output: transport.gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_QUOTE_FAILED);
+
+    const vm = await setup({
+      drySwap: () => {
+        throw new TM2Error('unknown error: /vm.VMError', 'panic: pool does not exist');
+      },
+    });
+
+    await expectCode(vm.service.getQuote({ network: vm.network, input: vm.gnot, output: vm.gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
   });
 
   it('rejects the same token on both sides and invalid amounts', async () => {
