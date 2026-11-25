@@ -43,6 +43,10 @@ class SceneDelegate: RCTDefaultReactNativeFactoryDelegate, UIWindowSceneDelegate
       name: UIScreen.capturedDidChangeNotification,
       object: nil
     )
+    // The change notification does not fire for a capture that was already running at launch.
+    if windowScene.screen.isCaptured {
+      showPrivacyCover()
+    }
   }
 
   func sceneWillResignActive(_ scene: UIScene) {
@@ -50,7 +54,9 @@ class SceneDelegate: RCTDefaultReactNativeFactoryDelegate, UIWindowSceneDelegate
   }
 
   func sceneDidBecomeActive(_ scene: UIScene) {
-    if window?.windowScene?.screen.isCaptured != true {
+    if window?.windowScene?.screen.isCaptured == true {
+      showPrivacyCover()
+    } else {
       hidePrivacyCover()
     }
   }
